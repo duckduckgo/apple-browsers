@@ -36,8 +36,7 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
     private let isShiftPressed: () -> Bool
     private let isCommandPressed: () -> Bool
     private let firePixel: (PixelKitEvent) -> Void
-    /// Deletion-flow pixels fire at `.dailyAndCount` (matching the address-bar delete pixels), not
-    /// `firePixel`'s `.dailyAndStandard`.
+    /// Deletion-flow pixels fire at `.dailyAndCount`, matching the address-bar delete pixels.
     private let fireDailyCountPixel: (PixelKitEvent) -> Void
     private let presentDeleteConfirmation: @MainActor (String, NSWindow?) async -> Bool
 
@@ -309,8 +308,7 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
         }
 
         fireDailyCountPixel(NewTabPagePixel.ntpAiChatRecentChatDeleteConfirmed)
-        // Native delete is synchronous; JS clear + sync run in the background (see AIChatDeleter).
-        // No wait needed — the NTP re-fetches via omnibar_getAiChats, which reads native storage.
+        // No wait needed: the native delete is synchronous and the NTP re-fetches via omnibar_getAiChats.
         aiChatDeleter.deleteChat(chatID: chatId)
         return true
     }
@@ -325,8 +323,7 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
         historyCoordinator.removeUrlEntry(url, completion: nil)
     }
 
-    /// Same confirmation dialog as the address-bar delete flow — a sheet on `sourceWindow`, or an
-    /// app-modal alert when it's nil.
+    /// Same dialog as the address-bar delete flow: a sheet on `sourceWindow`, or app-modal when nil.
     @MainActor
     static func presentNativeDeleteConfirmation(title: String, sourceWindow: NSWindow?) async -> Bool {
         let alert = NSAlert()

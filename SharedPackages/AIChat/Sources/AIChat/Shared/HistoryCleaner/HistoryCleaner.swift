@@ -28,11 +28,10 @@ public protocol HistoryCleaning {
     @MainActor func deleteAIChats(chatIDs: [String]) async -> Result<Void, Error>
 }
 
-/// Splits `deleteAIChat` into its two phases so a caller can await the fast native-storage delete
-/// without blocking on the slow JS clear — e.g. to keep a post-delete re-fetch from resurrecting the chat.
+/// Splits `deleteAIChat`'s two phases so a caller can await the fast native delete without the slow JS clear.
 public protocol PhasedAIChatHistoryCleaning: HistoryCleaning {
-    /// Deletes the chat from native storage and writes the `locallyDeletedChatIds` tombstone.
-    /// `nil` means native storage was unavailable (flag off or migration pending), not a failure.
+    /// Deletes the chat from native storage and writes the `locallyDeletedChatIds` tombstone;
+    /// `nil` means native storage was unavailable (not a failure).
     @MainActor func deleteAIChatFromNativeStorage(chatID: String) -> Result<Void, Error>?
 
     /// Clears the JS layer (localStorage + IndexedDB) via a headless WebView; `nil` clears all chats.

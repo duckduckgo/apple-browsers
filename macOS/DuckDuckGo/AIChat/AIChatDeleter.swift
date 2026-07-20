@@ -23,13 +23,8 @@ import UserScript
 import os.log
 
 protocol AIChatDeleting: AnyObject {
-    /// Deletes the chat from native storage synchronously (tombstone written before returning), then
-    /// clears JS-layer storage and propagates the deletion to sync in the background. A caller that
-    /// only needs the chat gone from native storage can return as soon as this call does.
-    ///
-    /// `onComplete` runs once the background work finishes, success or failure. Use it to refresh UI
-    /// that the JS clear (not the native phase) is responsible for, so a failed delete reappears
-    /// honestly instead of staying optimistically hidden.
+    /// Native-storage delete (with tombstone) is synchronous; JS clear + sync propagation run in the
+    /// background. `onComplete` fires when that background work finishes, success or failure.
     @MainActor func deleteChat(chatID: String, onComplete: (() -> Void)?)
 }
 
@@ -39,10 +34,8 @@ extension AIChatDeleting {
     }
 }
 
-/// Mirrors iOS's `AIChatDeleter`: deletes a Duck.ai chat via the shared `HistoryCleaner` and, on
-/// success, records it with `AIChatSyncCleaning` to propagate to the sync server. Unlike iOS it
-/// splits the native delete from the JS clear, so a caller needn't wait on the up-to-5s headless
-/// WebView clear before responding.
+/// Mirrors iOS's `AIChatDeleter`: deletes via the shared `HistoryCleaner` and, on success, records
+/// the deletion with `AIChatSyncCleaning` to propagate to the server.
 final class AIChatDeleter: AIChatDeleting {
     private let historyCleaner: PhasedAIChatHistoryCleaning
     private let syncCleaner: () -> AIChatSyncCleaning?
@@ -66,8 +59,7 @@ final class AIChatDeleter: AIChatDeleting {
         Task { @MainActor [historyCleaner, syncCleaner, recordsSyncDeletion, firePixel] in
             let jsResult = await historyCleaner.clearJSData(chatID: chatID)
 
-            // Failure precedence matches HistoryCleaner.performClear: a native-storage failure wins;
-            // otherwise the JS-clear result decides.
+            // Failure precedence matches HistoryCleaner.performClear: native failure wins, else JS result.
             let overallResult: Result<Void, Error>
             if case .failure = nativeResult {
                 overallResult = nativeResult ?? jsResult

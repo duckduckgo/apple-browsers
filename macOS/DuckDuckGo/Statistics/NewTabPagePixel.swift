@@ -161,8 +161,7 @@ enum NewTabPagePixel: PixelKitEvent {
     case aiChatRecentChatSelectedMouse
     case aiChatRecentChatSelectedKeyboard
 
-    // These use an `ntp_` prefix, not this file's usual `new-tab-page_`: the names are shared
-    // cross-platform, since content-scope-scripts fires no telemetry for these and relies on native.
+    // `ntp_` prefix (not this file's usual `new-tab-page_`): these names are shared cross-platform.
     case ntpAiChatRecentChatDeleteButtonClicked
     case ntpAiChatRecentChatDeleteConfirmed
     case ntpAiChatRecentChatDeleteCancelled

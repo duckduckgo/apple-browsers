@@ -91,13 +91,11 @@ public protocol NewTabPageOmnibarConfigProviding: AnyObject {
     var selectedReasoningEffort: String? { get set }
     var selectedReasoningEffortPublisher: AnyPublisher<String?, Never> { get }
 
-    /// Whether recent-chat suggestions can be deleted. Published so the client can push
-    /// `omnibar_onConfigUpdate` when the flag flips at runtime.
+    /// Whether recent-chat suggestions can be deleted. Published so the client can push `omnibar_onConfigUpdate`.
     var isAIChatDeletionEnabled: Bool { get }
     var isAIChatDeletionEnabledPublisher: AnyPublisher<Bool, Never> { get }
 
-    /// Whether history-entry suggestions can be deleted. Published so the client can push
-    /// `omnibar_onConfigUpdate` when the flag flips at runtime.
+    /// Whether history-entry suggestions can be deleted. Published so the client can push `omnibar_onConfigUpdate`.
     var isSearchSuggestionDeletionEnabled: Bool { get }
     var isSearchSuggestionDeletionEnabledPublisher: AnyPublisher<Bool, Never> { get }
 }

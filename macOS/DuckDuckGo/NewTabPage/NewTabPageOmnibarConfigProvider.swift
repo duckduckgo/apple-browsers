@@ -327,8 +327,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
         featureFlagger.isFeatureOn(.aiChatNtpSuggestionsDeletion)
     }
 
-    /// Re-emits on any feature-flag change so the client can push `omnibar_onConfigUpdate`, toggling
-    /// the recent-chat delete button on an open NTP without a reload.
+    /// Re-emits on feature-flag change so the client can push `omnibar_onConfigUpdate` (no reload needed).
     var isAIChatDeletionEnabledPublisher: AnyPublisher<Bool, Never> {
         featureFlagger.updatesPublisher
             .compactMap { [weak self] in self?.isAIChatDeletionEnabled }
@@ -341,8 +340,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
         featureFlagger.isFeatureOn(.ntpSearchSuggestionsDeletion)
     }
 
-    /// Re-emits on any feature-flag change so the client can push `omnibar_onConfigUpdate`, toggling
-    /// the history-suggestion delete button on an open NTP without a reload.
+    /// Re-emits on feature-flag change so the client can push `omnibar_onConfigUpdate` (no reload needed).
     var isSearchSuggestionDeletionEnabledPublisher: AnyPublisher<Bool, Never> {
         featureFlagger.updatesPublisher
             .compactMap { [weak self] in self?.isSearchSuggestionDeletionEnabled }

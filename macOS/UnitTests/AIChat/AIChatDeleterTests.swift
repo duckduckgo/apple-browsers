@@ -42,9 +42,8 @@ final class AIChatDeleterTests: XCTestCase {
         super.tearDown()
     }
 
-    /// `deleteChat` runs its work in a background Task, so each test waits on that path's real
-    /// terminal event (its last mock call) — waiting on `clearJSData` merely being invoked raced
-    /// the rest of the Task and flaked in CI.
+    /// `deleteChat` runs in a background Task, so tests wait on each path's terminal event (its last
+    /// mock call), not on `clearJSData` being invoked — the latter raced the Task and flaked in CI.
     private func makeSUT(recordsSyncDeletion: Bool = true, onFirePixel: ((String) -> Void)? = nil) -> AIChatDeleter {
         AIChatDeleter(
             historyCleaner: historyCleaner,

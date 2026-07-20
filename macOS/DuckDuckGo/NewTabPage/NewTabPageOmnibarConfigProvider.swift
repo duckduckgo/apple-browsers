@@ -327,9 +327,8 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
         featureFlagger.isFeatureOn(.aiChatNtpSuggestionsDeletion)
     }
 
-    /// Re-emits the current `isAIChatDeletionEnabled` value whenever the feature-flagger reports
-    /// any change. The client uses this to push `omnibar_onConfigUpdate` so an open NTP shows or
-    /// hides the recent-chat delete button without a reload when the flag flips.
+    /// Re-emits on any feature-flag change so the client can push `omnibar_onConfigUpdate`, toggling
+    /// the recent-chat delete button on an open NTP without a reload.
     var isAIChatDeletionEnabledPublisher: AnyPublisher<Bool, Never> {
         featureFlagger.updatesPublisher
             .compactMap { [weak self] in self?.isAIChatDeletionEnabled }
@@ -342,9 +341,8 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
         featureFlagger.isFeatureOn(.ntpSearchSuggestionsDeletion)
     }
 
-    /// Re-emits the current `isSearchSuggestionDeletionEnabled` value whenever the feature-flagger
-    /// reports any change. The client uses this to push `omnibar_onConfigUpdate` so an open NTP
-    /// shows or hides the history-suggestion delete button without a reload when the flag flips.
+    /// Re-emits on any feature-flag change so the client can push `omnibar_onConfigUpdate`, toggling
+    /// the history-suggestion delete button on an open NTP without a reload.
     var isSearchSuggestionDeletionEnabledPublisher: AnyPublisher<Bool, Never> {
         featureFlagger.updatesPublisher
             .compactMap { [weak self] in self?.isSearchSuggestionDeletionEnabled }

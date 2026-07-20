@@ -940,9 +940,8 @@ final class AIChatOmnibarContainerViewController: NSViewController {
                     }
                     PixelKit.fire(AIChatPixel.aiChatRecentChatDeleteConfirmed, frequency: .dailyAndCount, includeAppVersionParameter: true)
                     self.omnibarController.suggestionsViewModel.removeSuggestion(suggestion)
-                    // Refresh only once deletion has fully completed: if native storage isn't available,
-                    // the chat is only actually gone once the JS-layer clear finishes, and refreshing
-                    // any earlier could re-fetch and show the "deleted" chat again.
+                    // Refresh after deletion completes: when native storage is unavailable, only the
+                    // JS clear removes the chat, so an earlier refresh could re-show it.
                     self.aiChatDeleter.deleteChat(chatID: suggestion.chatId) { [weak self] in
                         self?.omnibarController.refreshSuggestions()
                     }

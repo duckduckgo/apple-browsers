@@ -36,8 +36,8 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
     private let isShiftPressed: () -> Bool
     private let isCommandPressed: () -> Bool
     private let firePixel: (PixelKitEvent) -> Void
-    /// Fires deletion-flow pixels at `.dailyAndCount`, matching the equivalent address-bar pixels
-    /// (`AIChatPixel.aiChatRecentChatDelete*`), rather than `firePixel`'s `.dailyAndStandard` default.
+    /// Deletion-flow pixels fire at `.dailyAndCount` (matching the address-bar delete pixels), not
+    /// `firePixel`'s `.dailyAndStandard`.
     private let fireDailyCountPixel: (PixelKitEvent) -> Void
     private let presentDeleteConfirmation: @MainActor (String, NSWindow?) async -> Bool
 
@@ -309,8 +309,8 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
         }
 
         fireDailyCountPixel(NewTabPagePixel.ntpAiChatRecentChatDeleteConfirmed)
-        // Native storage deletion (fast) happens before this call returns; JS-layer clearing and
-        // sync propagation continue in the background — see AIChatDeleter.
+        // Native delete is synchronous; JS clear + sync run in the background (see AIChatDeleter).
+        // No wait needed — the NTP re-fetches via omnibar_getAiChats, which reads native storage.
         aiChatDeleter.deleteChat(chatID: chatId)
         return true
     }
@@ -325,8 +325,8 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
         historyCoordinator.removeUrlEntry(url, completion: nil)
     }
 
-    /// Presents the same native confirmation dialog as the address-bar recent-chat delete flow,
-    /// as a sheet on `sourceWindow` when available (falling back to an app-modal alert otherwise).
+    /// Same confirmation dialog as the address-bar delete flow — a sheet on `sourceWindow`, or an
+    /// app-modal alert when it's nil.
     @MainActor
     static func presentNativeDeleteConfirmation(title: String, sourceWindow: NSWindow?) async -> Bool {
         let alert = NSAlert()

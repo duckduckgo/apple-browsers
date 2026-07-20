@@ -23,16 +23,13 @@ import UserScript
 import os.log
 
 protocol AIChatDeleting: AnyObject {
-    /// Deletes a chat from native storage synchronously (tombstone written before returning), then
-    /// continues clearing JS-layer storage and propagating the deletion to sync in the background.
-    /// Callers that need the chat gone before re-querying (e.g. a suggestions re-fetch) only need
-    /// to wait for this call to return, not for the deletion to fully complete.
+    /// Deletes the chat from native storage synchronously (tombstone written before returning), then
+    /// clears JS-layer storage and propagates the deletion to sync in the background. A caller that
+    /// only needs the chat gone from native storage can return as soon as this call does.
     ///
-    /// `onComplete`, if provided, runs once the full deletion pipeline (JS-layer clear and, on
-    /// success, sync propagation) has finished — regardless of whether it succeeded. Use it to
-    /// refresh UI that reads from a source the synchronous native-storage phase alone might not
-    /// have updated: on success the chat is gone everywhere; on failure it may still be present,
-    /// so re-fetching honestly reflects the real state rather than the optimistic removal.
+    /// `onComplete` runs once the background work finishes, success or failure. Use it to refresh UI
+    /// that the JS clear (not the native phase) is responsible for, so a failed delete reappears
+    /// honestly instead of staying optimistically hidden.
     @MainActor func deleteChat(chatID: String, onComplete: (() -> Void)?)
 }
 
@@ -42,11 +39,10 @@ extension AIChatDeleting {
     }
 }
 
-/// Mirrors iOS's `AIChatDeleter`: deletes a single Duck.ai chat via the shared `HistoryCleaner` and,
-/// on success, records the deletion with `AIChatSyncCleaning` so it propagates to the sync server.
-/// Unlike iOS, native storage deletion and JS-layer clearing are split so a caller can respond to a
-/// UI request as soon as the chat is gone from native storage, without waiting on the JS clear
-/// (which runs a headless WebView and can take up to 5 seconds).
+/// Mirrors iOS's `AIChatDeleter`: deletes a Duck.ai chat via the shared `HistoryCleaner` and, on
+/// success, records it with `AIChatSyncCleaning` to propagate to the sync server. Unlike iOS it
+/// splits the native delete from the JS clear, so a caller needn't wait on the up-to-5s headless
+/// WebView clear before responding.
 final class AIChatDeleter: AIChatDeleting {
     private let historyCleaner: PhasedAIChatHistoryCleaning
     private let syncCleaner: () -> AIChatSyncCleaning?
@@ -70,8 +66,8 @@ final class AIChatDeleter: AIChatDeleting {
         Task { @MainActor [historyCleaner, syncCleaner, recordsSyncDeletion, firePixel] in
             let jsResult = await historyCleaner.clearJSData(chatID: chatID)
 
-            // Same failure precedence as HistoryCleaner.performClear: a native-storage failure wins,
-            // otherwise the JS-clear result (success or failure) is what matters.
+            // Failure precedence matches HistoryCleaner.performClear: a native-storage failure wins;
+            // otherwise the JS-clear result decides.
             let overallResult: Result<Void, Error>
             if case .failure = nativeResult {
                 overallResult = nativeResult ?? jsResult
@@ -89,8 +85,7 @@ final class AIChatDeleter: AIChatDeleting {
             case .failure(let error):
                 Logger.aiChat.debug("AIChatDeleter: failed to delete chat \(chatID): \(error.localizedDescription)")
                 firePixel(AIChatPixel.aiChatSingleDeleteFailed)
-                // Mirror iOS: surface the JS-load diagnostic when the failure was a headless-WebView
-                // script load failure, so delete-path breakages are attributable.
+                // Mirror iOS: attribute headless-WebView script-load failures via the JS-load pixel.
                 if let userScriptError = error as? UserScriptError {
                     userScriptError.fireLoadJSFailedPixelIfNeeded()
                 }

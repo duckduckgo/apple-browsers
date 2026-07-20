@@ -212,12 +212,10 @@ enum AIChatPixel: PixelKitEvent {
     /// Event Trigger: User cancels deletion of a recent chat suggestion in the address bar
     case aiChatRecentChatDeleteCancelled
 
-    /// Event Trigger: A single chat deletion (address bar or NTP) completes successfully, i.e. the
-    /// native-storage delete and JS-layer clear both succeeded.
+    /// Event Trigger: A single chat deletion (address bar or NTP) succeeds — native delete and JS clear both OK.
     case aiChatSingleDeleteSuccessful
 
-    /// Event Trigger: A single chat deletion (address bar or NTP) fails — the native-storage delete
-    /// or the JS-layer clear reported an error.
+    /// Event Trigger: A single chat deletion (address bar or NTP) fails — native delete or JS clear errored.
     case aiChatSingleDeleteFailed
 
     case aiChatSyncScopedSyncTokenError(reason: String)

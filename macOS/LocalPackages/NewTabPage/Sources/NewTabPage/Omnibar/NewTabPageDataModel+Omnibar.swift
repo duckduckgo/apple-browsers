@@ -148,13 +148,11 @@ public extension NewTabPageDataModel {
         /// Backend-provided attachment limits, already tier-resolved. `nil` on older native builds
         /// or when the backend omits them, in which case the web falls back to its built-in defaults.
         let attachmentLimits: AttachmentLimits?
-        /// When true, the omnibar shows a delete button on recent-chat suggestions and sends
-        /// `omnibar_confirmDeleteAiChat` when it's clicked. Driven by the `aiChatNtpSuggestionsDeletion`
-        /// feature flag and reactive over `omnibar_onConfigUpdate`.
+        /// When true, recent-chat suggestions show a delete button that sends `omnibar_confirmDeleteAiChat`.
+        /// Driven by `aiChatNtpSuggestionsDeletion`, reactive over `omnibar_onConfigUpdate`.
         let enableAiChatDeletion: Bool?
-        /// When true, the omnibar shows a delete button on history-entry suggestions and sends
-        /// `omnibar_removeSuggestion` when it's clicked. Driven by the `ntpSearchSuggestionsDeletion`
-        /// feature flag and reactive over `omnibar_onConfigUpdate`.
+        /// When true, history-entry suggestions show a delete button that sends `omnibar_removeSuggestion`.
+        /// Driven by `ntpSearchSuggestionsDeletion`, reactive over `omnibar_onConfigUpdate`.
         let enableSearchSuggestionDeletion: Bool?
     }
 

@@ -43,9 +43,8 @@ public protocol NewTabPageOmnibarActionsHandling: AnyObject {
     @MainActor
     func viewAllAiChats(target: NewTabPageDataModel.OpenTarget)
 
-    /// Shows the native delete-confirmation dialog for a recent AI chat and, on confirm, starts
-    /// deleting it. Returns once the user has made a choice; the deletion itself may still be
-    /// completing in the background when this returns `true`.
+    /// Shows the delete-confirmation dialog for a recent chat and, on confirm, starts deleting it.
+    /// Returns the user's choice; deletion may still be finishing in the background when it returns `true`.
     @MainActor
     func confirmDeleteAiChat(chatId: String, title: String, sourceWindow: NSWindow?) async -> Bool
 

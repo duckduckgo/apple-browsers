@@ -161,10 +161,8 @@ enum NewTabPagePixel: PixelKitEvent {
     case aiChatRecentChatSelectedMouse
     case aiChatRecentChatSelectedKeyboard
 
-    // Deletion pixels use an `ntp_` prefix (not `new-tab-page_`) to match the wire names agreed
-    // with the other platforms — the C-S-S PR that adds these NTP delete buttons dropped its own
-    // telemetry schemas in favor of native firing them, so the names need to stay cross-platform.
-    // See macOS/PixelDefinitions/pixels/definitions/new_tab_page_pixels.json5
+    // These use an `ntp_` prefix, not this file's usual `new-tab-page_`: the names are shared
+    // cross-platform, since content-scope-scripts fires no telemetry for these and relies on native.
     case ntpAiChatRecentChatDeleteButtonClicked
     case ntpAiChatRecentChatDeleteConfirmed
     case ntpAiChatRecentChatDeleteCancelled

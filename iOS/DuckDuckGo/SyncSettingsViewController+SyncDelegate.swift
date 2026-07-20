@@ -789,13 +789,6 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
 
     func confirmAndDeleteAllData() async -> Bool {
         let deviceCount = viewModel.devices.count
-        if useSimplifiedLayoutV2 {
-            do {
-                try await authenticateUser()
-            } catch {
-                return false
-            }
-        }
         return await withCheckedContinuation { continuation in
             let alert = UIAlertController(title: useSimplifiedLayoutV2 ? UserText.simplifiedSyncDeleteAllConfirmTitle : UserText.syncDeleteAllConfirmTitle,
                                           message: useSimplifiedLayoutV2 ? UserText.simplifiedSyncDeleteAllConfirmMessage : UserText.syncDeleteAllConfirmMessage,

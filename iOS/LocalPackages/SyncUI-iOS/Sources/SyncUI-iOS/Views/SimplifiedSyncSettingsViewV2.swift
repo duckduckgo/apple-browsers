@@ -607,7 +607,7 @@ extension SimplifiedSyncSettingsViewV2 {
     var deleteSection: some View {
         Section {
             Button(role: .destructive) {
-                model.deleteAllData()
+                model.deleteAllData(requireAuthentication: true)
             } label: {
                 Text(UserText.simplifiedDeleteSyncDataButton)
             }

@@ -3217,8 +3217,7 @@ extension TabViewController {
             let persistICS = FilePreviewHelper.shouldPersistInDownloads(
                 mimeType: MIMEType(from: navigationResponse.response.mimeType),
                 url: navigationResponse.response.url,
-                filename: navigationResponse.response.suggestedFilename,
-                featureFlagger: featureFlagger
+                filename: navigationResponse.response.suggestedFilename
             )
             do {
                 if let download = try downloadManager.makeDownload(navigationResponse: navigationResponse,
@@ -3429,8 +3428,7 @@ extension TabViewController {
               !download.temporary,
               !FilePreviewHelper.handlesDownloadNatively(mimeType: download.mimeType,
                                                          url: download.url,
-                                                         filename: download.filename,
-                                                         featureFlagger: featureFlagger)
+                                                         filename: download.filename)
         else { return }
 
         let attributedMessage = DownloadActionMessageViewHelper.makeDownloadStartedMessage(for: download)
@@ -3465,8 +3463,7 @@ extension TabViewController {
         DispatchQueue.main.async {
             let handledNatively = FilePreviewHelper.handlesDownloadNatively(mimeType: download.mimeType,
                                                                             url: download.location,
-                                                                            filename: download.filename,
-                                                                            featureFlagger: self.featureFlagger)
+                                                                            filename: download.filename)
             if !download.temporary && !handledNatively {
                 let attributedMessage = DownloadActionMessageViewHelper.makeDownloadFinishedMessage(for: download)
                 let addressBarBottom = self.appSettings.currentAddressBarPosition.isBottom
@@ -3486,12 +3483,11 @@ extension TabViewController {
     private func previewDownloadedFileIfNecessary(_ download: Download) {
         let canAutoPreview = FilePreviewHelper.canAutoPreview(mimeType: download.mimeType,
                                                               url: download.location,
-                                                              filename: download.filename,
-                                                              featureFlagger: featureFlagger)
+                                                              filename: download.filename)
         guard let delegate = self.delegate,
               delegate.tabCheckIfItsBeingCurrentlyPresented(self),
               canAutoPreview,
-              let fileHandler = FilePreviewHelper.fileHandlerForDownload(download, viewController: self, featureFlagger: featureFlagger)
+              let fileHandler = FilePreviewHelper.fileHandlerForDownload(download, viewController: self)
         else { return }
 
         if mostRecentAutoPreviewDownloadID == download.id {

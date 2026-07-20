@@ -295,9 +295,6 @@
 /* Title for the New Voice Chat row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newVoiceChat" = "New Voice Chat";
 
-/* Title of the confirmation shown when the user taps Fire in Duck.ai chat history to delete all chats; the number is the chat count. Do not translate - stringsdict entry */
-"aiChat.history.deleteAll.confirmation.title" = "aiChat.history.deleteAll.confirmation.title";
-
 /* Primary button on the empty Duck.ai chat-history screen; opens the Duck.ai web chat. */
 "aiChat.history.emptyState.openDuckAi" = "Open Duck.ai";
 

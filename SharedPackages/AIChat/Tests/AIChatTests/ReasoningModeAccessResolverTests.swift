@@ -1,6 +1,5 @@
 //
 //  ReasoningModeAccessResolverTests.swift
-//  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -17,9 +16,8 @@
 //  limitations under the License.
 //
 
-import AIChat
 import XCTest
-@testable import DuckDuckGo
+@testable import AIChat
 
 final class ReasoningModeAccessResolverTests: XCTestCase {
 

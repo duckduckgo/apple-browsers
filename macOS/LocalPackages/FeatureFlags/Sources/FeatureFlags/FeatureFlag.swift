@@ -336,6 +336,12 @@ public enum FeatureFlag: String, CaseIterable {
     /// Enables the reasoning effort picker in the Duck.ai omnibar
     case aiChatOmnibarReasoningEffort
 
+    /// Gates the "Try for free"/"Upgrade" subscription-upsell tags and confirmation dialog on
+    /// gated models/reasoning efforts in the Duck.ai omnibar — a kill switch independent of the
+    /// underlying tier gating, which stays in effect (gated rows just become inert) if disabled.
+    /// https://app.asana.com/1/137249556945/project/1208671677432066/task/1215275657171787
+    case aiChatOmnibarSubscriptionUpsell
+
     /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1214283076614743?focus=true
     case aiChatOmnibarVoiceChatAccess
 
@@ -691,6 +697,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.omnibarWebSearch), category: .duckAI)
         case .aiChatOmnibarReasoningEffort:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.omnibarReasoningEffort), category: .duckAI)
+        case .aiChatOmnibarSubscriptionUpsell:
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.omnibarSubscriptionUpsell), category: .duckAI)
         case .aiChatOmnibarVoiceChatAccess:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.omnibarVoiceChatAccess), category: .duckAI)
         case .aiChatSidebarAttachMoreTabs:

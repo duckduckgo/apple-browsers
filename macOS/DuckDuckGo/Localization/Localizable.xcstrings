@@ -7221,6 +7221,366 @@
         }
       }
     },
+    "aichat.model-picker.pro-exclusive" : {
+      "comment" : "Label above the gated models in the model picker menu, shown to Plus subscribers — they're already a subscriber, so the gated models (all Pro-only) are called out specifically rather than reusing the generic 'Subscriber Exclusive' label",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pro exklusiv"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Pro Exclusive"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pro exclusivo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exclusif à la version Pro"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esclusiva Pro"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alleen voor Pro-leden"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tylko dla planu Pro"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exclusivo do Pro"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Эксклюзивно для Pro"
+          }
+        }
+      }
+    },
+    "aichat.model-picker.subscriber-exclusive" : {
+      "comment" : "Label above the gated (subscriber-only) models in the model picker menu, shown to free users where the gated models are a mix of Plus and Pro",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exklusiv für Abonnenten"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Subscriber Exclusive"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exclusivo para suscriptores"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Réservé aux abonnés"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esclusiva per abbonati"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alleen voor abonnees"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tylko dla subskrybentów"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exclusivo para subscritores"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Эксклюзивно для подписчиков"
+          }
+        }
+      }
+    },
+    "aichat.model-picker.tier-badge.plus" : {
+      "comment" : "Trailing badge on a model picker row for a model that requires a Plus subscription",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PLUS"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "PLUS"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PLUS"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PLUS"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PLUS"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PLUS"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PLUS"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PLUS"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PLUS"
+          }
+        }
+      }
+    },
+    "aichat.model-picker.tier-badge.pro" : {
+      "comment" : "Trailing badge on a model picker row for a model that requires a Pro subscription",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PRO"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "PRO"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PRO"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PRO"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PRO"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PRO"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PRO"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PRO"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PRO"
+          }
+        }
+      }
+    },
+    "aichat.model-picker.try-for-free" : {
+      "comment" : "Text of the yellow badge in the model picker and reasoning-effort picker that opens the subscription purchase flow, shown to free users",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "KOSTENLOS TESTEN"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "TRY FOR FREE"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PROBAR GRATIS"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ESSAYER GRATUITEMENT"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PROVA GRATUITAMENTE"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PROBEER GRATIS"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "WYPRÓBUJ BEZPŁATNIE"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "EXPERIMENTAR GRATUITAMENTE"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "БЕСПЛАТНОЕ ОЗНАКОМЛЕНИЕ"
+          }
+        }
+      }
+    },
+    "aichat.model-picker.upgrade" : {
+      "comment" : "Text of the yellow badge in the model picker and reasoning-effort picker that opens the subscription upgrade flow, shown to Plus subscribers",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "UPGRADE"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "UPGRADE"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ACTUALIZAR"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "CHANGER DE FORFAIT"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "FAI L'UPGRADE"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "UPGRADEN"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PRZEJDŹ NA WYŻSZY PLAN"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ATUALIZAR"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ПОВЫСИТЬ ТАРИФ"
+          }
+        }
+      }
+    },
     "aichat.omnibar.image-gen-placeholder" : {
       "comment" : "Placeholder text in AI chat input when image generation mode is active",
       "extractionState" : "extracted_with_value",
@@ -7468,55 +7828,55 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sofortige Antworten"
+            "value" : "Antwortet schnell"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Answers right away"
+            "value" : "Answers quickly"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Responde de inmediato"
+            "value" : "Responde rápidamente"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Réponses immédiates"
+            "value" : "Répond rapidement"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Risposte immediate"
+            "value" : "Risponde rapidamente"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Geeft meteen antwoord"
+            "value" : "Antwoordt snel"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Odpowiedzi od razu"
+            "value" : "Szybkie odpowiedzi"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Responder de imediato"
+            "value" : "Responde rapidamente"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Моментальные ответы."
+            "value" : "Быстрые ответы"
           }
         }
       }
@@ -7588,55 +7948,55 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nimmt sich einen Moment Zeit zum Antworten"
+            "value" : "Für komplexe Aufgaben"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Takes a moment to respond"
+            "value" : "For complex tasks"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tarda un momento en responder"
+            "value" : "Para tareas complejas"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Prend un moment pour répondre"
+            "value" : "Pour des tâches complexes"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Richiede un momento per rispondere"
+            "value" : "Per attività complesse"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Het duurt even om te reageren"
+            "value" : "Voor complexe taken"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Potrzebuje chwili, by odpowiedzieć"
+            "value" : "Do złożonych zadań"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Demora um momento a responder"
+            "value" : "Para tarefas complexas"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ответ занимает чуть больше времени."
+            "value" : "Для сложных задач"
           }
         }
       }
@@ -7708,55 +8068,55 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Recherchiert, bevor du antwortest"
+            "value" : "Für analytische Aufgaben"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Researches before responding"
+            "value" : "For analytical tasks"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Investiga antes de responder"
+            "value" : "Para tareas de análisis"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Effectue des recherches avant de répondre"
+            "value" : "Pour les tâches analytiques"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cerca prima di rispondere"
+            "value" : "Per attività analitiche"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Onderzoekt voordat wordt gereageerd"
+            "value" : "Voor analytische taken"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Przeprowadź badania przed odpowiedzią"
+            "value" : "Do zadań analitycznych"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Pesquisa antes de responder"
+            "value" : "Para tarefas analíticas"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "ИИ собирает и изучает данные, прежде чем дать ответ."
+            "value" : "Для аналитических задач"
           }
         }
       }
@@ -8477,6 +8837,486 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Показать вкладку"
+          }
+        }
+      }
+    },
+    "aichat.subscription-upsell-dialog.have-subscription-button" : {
+      "comment" : "Button in the subscription upsell dialog for a user who already has a subscription and wants to sign in rather than purchase again",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ich habe ein Abonnement"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "I Have a Subscription"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tengo una suscripción"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "J'ai un abonnement"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ho un abbonamento"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ik heb een abonnement"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mam subskrypcję"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tenho uma subscrição"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "У меня уже есть подписка"
+          }
+        }
+      }
+    },
+    "aichat.subscription-upsell-dialog.message" : {
+      "comment" : "Body text of the dialog shown when the user taps a gated reasoning effort",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erhalte Zugang zu den fortschrittlichen KI-Modellen in Duck.ai, indem du DuckDuckGo abonnierst, was auch unser VPN und andere Premium-Datenschutzmaßnahmen beinhaltet."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Get access to advanced AI models in Duck.ai by subscribing to DuckDuckGo, which also includes our VPN and other premium privacy protections."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Obtén acceso a modelos avanzados de IA en Duck.ai suscribiéndote a DuckDuckGo, que también incluye nuestra VPN y otras protecciones de privacidad premium."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Accédez à des modèles d'IA avancés dans Duck.ai en vous abonnant à DuckDuckGo, qui comprend également notre VPN et d'autres protections de confidentialité premium."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Accedi ai modelli avanzati di AI su Duck.ai abbonandoti a DuckDuckGo, che include anche la nostra VPN e altre protezioni della privacy premium."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Krijg toegang tot geavanceerde AI-modellen in Duck.ai door je te abonneren op DuckDuckGo, dat ook onze VPN en andere premium privacybescherming omvat."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uzyskaj dostęp do zaawansowanych modeli sztucznej inteligencji w Duck.ai, subskrybując DuckDuckGo, co obejmuje również naszą sieć VPN i inne usługi ochrony prywatności premium."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Obtém acesso a modelos avançados de IA no Duck.ai ao subscreveres o DuckDuckGo, que também inclui a nossa VPN e outras proteções de privacidade premium."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подписка DuckDuckGo позволит вам пользоваться продвинутыми ИИ-моделями в Duck.ai, а также сервисом VPN и другими видами повышенной защиты."
+          }
+        }
+      }
+    },
+    "aichat.subscription-upsell-dialog.not-now-button" : {
+      "comment" : "Button in the subscription upsell dialog that dismisses it without taking any action",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jetzt nicht"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Not Now"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ahora no"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pas maintenant"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Non adesso"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Niet nu"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie teraz"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agora não"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не сейчас"
+          }
+        }
+      }
+    },
+    "aichat.subscription-upsell-dialog.pro-message" : {
+      "comment" : "Body text of the subscription upsell dialog, shown to an existing Plus subscriber",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entsperre mehr Modelle, verbessertes AI-Reasoning und höhere Nutzungslimits wie beim Plus-Plan, indem du ein Upgrade auf Pro machst."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Unlock more models, higher AI reasoning, and higher usage limits than the Plus plan by upgrading to Pro."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desbloquea más modelos, un mayor razonamiento de IA y límites de uso más altos que en el plan Plus al actualizar a Pro."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En passant au forfait Pro, accédez à davantage de modèles, à un raisonnement plus poussé de l'IA et à des limites d'utilisation plus élevées qu'avec le forfait Plus."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Passa a Pro per sbloccare più modelli, una logica AI superiore e limiti di utilizzo più alti rispetto al piano Plus."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ontgrendel meer modellen, hoger AI-redeneringsvermogen en hogere gebruikslimieten dan het Plus-abonnement door te upgraden naar Pro."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Odblokuj więcej modeli, wyższe rozumowanie AI i dwukrotnie wyższe limity użytkowania niż w planie Plus dzięki przejściu na plan Pro."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ao atualizar para o Pro, desbloqueias mais modelos, raciocínio de IA superior e limites de utilização mais elevados do que no plano Plus."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Перейдите на тариф Pro, чтобы получить доступ к большему количеству моделей, более интенсивным рассуждениям ИИ и лимитам выше, чем в тарифе Plus."
+          }
+        }
+      }
+    },
+    "aichat.subscription-upsell-dialog.pro-title" : {
+      "comment" : "Title of the subscription upsell dialog, shown to an existing Plus subscriber",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Upgrade auf Pro"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Upgrade to Pro"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Actualizar a Pro"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Passer à Pro"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Passa a Pro"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Upgraden naar Pro"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Przejdź na poziom Pro"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Atualizar para o Pro"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Перейти на Pro"
+          }
+        }
+      }
+    },
+    "aichat.subscription-upsell-dialog.title" : {
+      "comment" : "Title of the dialog shown when the user taps a gated reasoning effort",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai mit einem DuckDuckGo-Abo aktualisieren"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Upgrade Duck.ai with a DuckDuckGo subscription"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Actualiza Duck.ai con una suscripción a DuckDuckGo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Améliorez Duck.ai avec un abonnement DuckDuckGo"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Effettua l'upgrade di Duck.ai con un abbonamento DuckDuckGo"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai upgraden met een DuckDuckGo-abonnement"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zwiększ możliwości Duck.ai przy użyciu subskrypcji DuckDuckGo"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Melhorar o Duck.ai com uma subscrição da DuckDuckGo"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Улучшите Duck.ai с подпиской DuckDuckGo"
+          }
+        }
+      }
+    },
+    "aichat.subscription-upsell-dialog.try-for-free-button" : {
+      "comment" : "Primary button in the subscription upsell dialog, shown when the user is still eligible for an introductory free trial — matches the badge/tag text",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kostenlos testen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Try for Free"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Probar gratis"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Essayer gratuitement"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prova gratuitamente"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Probeer gratis"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wypróbuj bezpłatnie"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Experimentar gratuitamente"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Бесплатное ознакомление"
+          }
+        }
+      }
+    },
+    "aichat.subscription-upsell-dialog.upgrade-button" : {
+      "comment" : "Primary button in the subscription upsell dialog, shown when the user already has a subscription or has already used their free trial",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Upgrade"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Upgrade"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Actualizar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Changer de forfait"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fai l'upgrade"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Upgraden"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Przejdź na wyższy plan"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Atualizar"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Повысить тариф"
           }
         }
       }

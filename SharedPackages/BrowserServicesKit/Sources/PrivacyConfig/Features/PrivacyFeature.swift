@@ -299,9 +299,6 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215099690878849
     case tabsSaveOptimization
 
-    /// https://app.asana.com/1/137249556945/project/715106103902962/task/1213690148091855
-    case icsCalendarLinks
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215169783702336
     case walletPassDownload
 
@@ -551,6 +548,11 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Enables the reasoning effort picker in the Duck.ai omnibar
     case omnibarReasoningEffort
+
+    /// Enables the subscription-upsell "Try for free"/"Upgrade" tags and confirmation dialog on
+    /// gated models/reasoning efforts in the Duck.ai omnibar. A kill switch independent of the
+    /// underlying tier gating, which stays in effect (gated rows just become inert) if disabled.
+    case omnibarSubscriptionUpsell
 
     /// Enables 1-click voice-chat access from the Duck.ai omnibar (mic icon shown when input is empty)
     case omnibarVoiceChatAccess

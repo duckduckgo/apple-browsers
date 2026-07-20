@@ -32,7 +32,6 @@ public struct ScanQRCodeViewV2: View {
 
     @ObservedObject var model: ScanOrPasteCodeViewModel
     @State private var selectedTab: Tab = .scanQRCode
-    @State private var isShowingSyncCodeSheet = false
     @State private var showIntroAnimation = true
 
     public init(model: ScanOrPasteCodeViewModel) {
@@ -56,13 +55,16 @@ public struct ScanQRCodeViewV2: View {
             }
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button {
-                    isShowingSyncCodeSheet = true
+                    model.isShowingSyncCodeSheet = true
                 } label: {
                     Image(uiImage: DesignSystemImages.Glyphs.Size24.qr)
                 }
             }
         }
-        .sheet(isPresented: $isShowingSyncCodeSheet) {
+        .sheet(isPresented: $model.isShowingSyncCodeSheet, onDismiss: {
+            model.onSyncCodeSheetDismissed?()
+            model.onSyncCodeSheetDismissed = nil
+        }) {
             SyncCodeSheetView(model: model)
         }
         .navigationBarTitleDisplayMode(.inline)
@@ -84,7 +86,7 @@ public struct ScanQRCodeViewV2: View {
     private var contentPanel: some View {
         switch selectedTab {
         case .scanQRCode:
-            ScanTabView(model: model, isCameraActive: !isShowingSyncCodeSheet, showIntroAnimation: $showIntroAnimation)
+            ScanTabView(model: model, isCameraActive: !model.isShowingSyncCodeSheet, showIntroAnimation: $showIntroAnimation)
         case .enterCode:
             EnterCodeTabView(model: model)
         }

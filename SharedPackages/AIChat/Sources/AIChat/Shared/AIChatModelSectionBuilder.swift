@@ -84,3 +84,56 @@ public enum AIChatModelSectionBuilder {
         return sections
     }
 }
+
+/// A gated (subscriber-only) model paired with the public tier required to unlock it.
+public struct AIChatGatedModel {
+    public let model: AIChatModel
+    public let requiredTier: AIChatModelPublicAccessTier
+}
+
+public extension AIChatModelSectionBuilder {
+    /// Splits models into accessible and gated (each paired with its required tier), keeping gated
+    /// models visible rather than hiding higher-tier ones like `buildSections` does.
+    static func groupByAccess(models: [AIChatModel]) -> (accessible: [AIChatModel], gated: [AIChatGatedModel]) {
+        let accessible = models.filter { $0.entityHasAccess }
+        let gated = models.compactMap { model -> AIChatGatedModel? in
+            guard !model.entityHasAccess, let requiredTier = model.lowestPublicAccessTier else { return nil }
+            return AIChatGatedModel(model: model, requiredTier: requiredTier)
+        }
+        return (accessible, gated)
+    }
+
+    /// PoC ordering: per-tier "recommended" first, rest keep API order. Delete when backend ships ordering (task 1216559729471554).
+    static func orderedAccessibleModels(_ models: [AIChatModel], userTier: AIChatUserTier) -> [AIChatModel] {
+        var remaining = models
+        var recommended: [AIChatModel] = []
+        for matches in recommendedModelMatchers(for: userTier) {
+            guard let index = remaining.firstIndex(where: { matches($0.name.lowercased()) }) else { continue }
+            recommended.append(remaining.remove(at: index))
+        }
+        return recommended + remaining
+    }
+
+    /// Per-tier "recommended" matchers in display order, matched by lowercased name substring (family, not id).
+    private static func recommendedModelMatchers(for userTier: AIChatUserTier) -> [(String) -> Bool] {
+        let isFullGPT: (String) -> Bool = { $0.contains("gpt") && !$0.contains("mini") && !$0.contains("nano") }
+        switch userTier {
+        case .free:
+            return [
+                { $0.contains("nano") },
+                { $0.contains("mini") },
+                { $0.contains("claude") && $0.contains("haiku") }
+            ]
+        case .plus, .internal:
+            return [
+                isFullGPT,
+                { $0.contains("claude") && $0.contains("sonnet") }
+            ]
+        case .pro:
+            return [
+                isFullGPT,
+                { $0.contains("claude") && $0.contains("opus") }
+            ]
+        }
+    }
+}

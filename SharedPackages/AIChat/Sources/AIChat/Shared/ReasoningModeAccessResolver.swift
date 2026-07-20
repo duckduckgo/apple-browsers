@@ -1,6 +1,5 @@
 //
 //  ReasoningModeAccessResolver.swift
-//  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -17,9 +16,9 @@
 //  limitations under the License.
 //
 
-import AIChat
+import Foundation
 
-protocol ReasoningModeAccessResolving {
+public protocol ReasoningModeAccessResolving {
     /// The public access tier required to use `mode` on `model`, or `nil` when the mode
     /// is already accessible to the current user (or the model doesn't support it).
     func requiredPublicTier(for mode: AIChatReasoningMode, model: AIChatModel) -> AIChatModelPublicAccessTier?
@@ -28,15 +27,17 @@ protocol ReasoningModeAccessResolving {
     func canSelect(modeRequiring requiredTier: AIChatModelPublicAccessTier, userTier: AIChatUserTier) -> Bool
 }
 
-struct ReasoningModeAccessResolver: ReasoningModeAccessResolving {
+public struct ReasoningModeAccessResolver: ReasoningModeAccessResolving {
 
-    func requiredPublicTier(for mode: AIChatReasoningMode, model: AIChatModel) -> AIChatModelPublicAccessTier? {
+    public init() {}
+
+    public func requiredPublicTier(for mode: AIChatReasoningMode, model: AIChatModel) -> AIChatModelPublicAccessTier? {
         guard !model.accessibleReasoningModes.contains(mode) else { return nil }
         guard let effort = model.reasoningEffort(for: mode) else { return nil }
         return model.lowestPublicAccessTier(for: effort)
     }
 
-    func canSelect(modeRequiring requiredTier: AIChatModelPublicAccessTier, userTier: AIChatUserTier) -> Bool {
+    public func canSelect(modeRequiring requiredTier: AIChatModelPublicAccessTier, userTier: AIChatUserTier) -> Bool {
         switch requiredTier {
         case .free:
             return true

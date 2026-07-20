@@ -209,6 +209,26 @@ final class HistoryCleanerTests: XCTestCase {
         XCTAssertEqual(mockJSCleaner.clearJSDataCalls, ["target-chat"])
     }
 
+    func testWhenDeleteAIChatsThenDeletesOnlySelectedChatsAndFilesInOneJSSession() async {
+        mockFlagProvider.isNativeDataStorageEnabledResult = true
+        mockHandler.stubbedIsMigrationDone = true
+        mockHandler.stubbedFiles = [
+            DuckAiFileMetadata(uuid: "file-1", chatId: "chat-a", dataSize: 10),
+            DuckAiFileMetadata(uuid: "file-2", chatId: "chat-b", dataSize: 20),
+            DuckAiFileMetadata(uuid: "file-3", chatId: "chat-c", dataSize: 30)
+        ]
+        let sut = makeSUT(nativeStorageHandler: mockHandler, featureFlagProvider: mockFlagProvider)
+
+        let result = await sut.deleteAIChats(chatIDs: ["chat-a", "chat-c"])
+
+        XCTAssertNotNil(try? result.get())
+        XCTAssertEqual(mockHandler.deletedFileUUIDs, ["file-1", "file-3"], "Only files for the selected chats should be deleted")
+        XCTAssertEqual(mockHandler.deletedChatIDs, ["chat-a", "chat-c"])
+        XCTAssertEqual(mockHandler.listFilesCallCount, 1, "Files must be listed once for the whole batch, not per chat")
+        XCTAssertEqual(mockHandler.deleteAllChatsCallCount, 0, "Bulk delete must not be used for a selected subset")
+        XCTAssertEqual(mockJSCleaner.clearJSDataBatchCalls, [["chat-a", "chat-c"]], "JS clearing runs once for the set")
+    }
+
     func testWhenDeleteAIChatWithNoMatchingFilesThenOnlyChatIsDeleted() async {
         mockFlagProvider.isNativeDataStorageEnabledResult = true
         mockHandler.stubbedIsMigrationDone = true
@@ -267,6 +287,7 @@ private final class CallCountingStorageHandler: DuckAiNativeStorageHandling {
     private(set) var deleteAllFilesCallCount = 0
     private(set) var deleteChatCallCount = 0
     private(set) var deleteFileCallCount = 0
+    private(set) var listFilesCallCount = 0
     private(set) var deletedChatIDs: [String] = []
     private(set) var deletedFileUUIDs: [String] = []
 
@@ -296,6 +317,7 @@ private final class CallCountingStorageHandler: DuckAiNativeStorageHandling {
     func getFile(uuid: String) throws -> DuckAiFileContent? { nil }
 
     func listFiles() throws -> [DuckAiFileMetadata] {
+        listFilesCallCount += 1
         if let error = stubbedListFilesError { throw error }
         return stubbedFiles
     }
@@ -319,10 +341,17 @@ private final class CallCountingStorageHandler: DuckAiNativeStorageHandling {
 private final class MockAIChatJSDataCleaner: AIChatJSDataCleaning {
     var stubbedResult: Result<Void, Error> = .success(())
     private(set) var clearJSDataCalls: [String?] = []
+    private(set) var clearJSDataBatchCalls: [[String]] = []
 
     @MainActor
     func clearJSData(chatID: String?) async -> Result<Void, Error> {
         clearJSDataCalls.append(chatID)
+        return stubbedResult
+    }
+
+    @MainActor
+    func clearJSData(chatIDs: [String]) async -> Result<Void, Error> {
+        clearJSDataBatchCalls.append(chatIDs)
         return stubbedResult
     }
 }

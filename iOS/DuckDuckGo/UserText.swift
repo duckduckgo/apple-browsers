@@ -1350,6 +1350,9 @@ public struct UserText {
     public static let simplifiedSyncTurnOffAction = NSLocalizedString("sync.simplified.turn.off.action", value: "Turn Off", comment: "Alert button to confirm turning off sync")
     public static let simplifiedRecoveryCodeCopiedToast = NSLocalizedString("sync.simplified.recovery.code.copied.toast", value: "Recovery code copied", comment: "Toast message shown after copying recovery code to clipboard from settings")
     public static let simplifiedSyncSetupFailedToast = NSLocalizedString("sync.simplified.setup.failed.toast", value: "Couldn't enable Sync & Backup", comment: "Toast message shown when sync setup fails")
+    public static let simplifiedSyncDeleteAllConfirmTitle = NotLocalizedString("sync.simplified.delete.all.confirm.title", value: "Turn Off Sync & Backup and Delete Server Data?", comment: "Title of the dialog to confirm turning off sync and deleting server data")
+    public static let simplifiedSyncDeleteAllConfirmMessage = NotLocalizedString("sync.simplified.delete.all.confirm.message", value: "All devices using Sync & Backup will be disconnected and your synced data will be deleted from the server.", comment: "Message for the dialog to confirm turning off sync and deleting server data")
+    public static let simplifiedSyncDataDeletedToast = NotLocalizedString("sync.simplified.data-deleted.toast", value: "Server Data Deleted", comment: "Toast message shown after synced server data is deleted")
 
     // MARK: Sync Errors
     static let syncLimitExceededTitle = NSLocalizedString("prefrences.sync.limit-exceeded-title", value: "Sync Paused", comment: "Title for sync limits exceeded warning")

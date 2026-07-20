@@ -23,7 +23,7 @@
             }
         ]
     },
-    "m_tab_bar_close_other_tabs": {
+    "tab_bar_close_other_tabs": {
         "description": "User confirms 'Close Other Tabs' from the long-press / right-click menu on a tab in the iPad tabs bar, closing every tab except the pressed one.",
         "owners": ["dus7"],
         "triggers": ["other"],

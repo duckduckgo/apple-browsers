@@ -121,33 +121,125 @@ final class SubscriptionOnboardingVPNActivationViewModelTests: XCTestCase {
         XCTAssertEqual(delegate.completedSections, [.vpn])
     }
 
-    func testRefreshVPNConnectionInfoFetchesAndFormatsNewConnection() async {
+    func testWhenAlreadyOnThenOnAppearFetchesOnlyVPNConnectionInfo() async {
         let service = MockConnectionInfoService(results: [valencia])
-        let viewModel = makeViewModel(service: service)
+        let viewModel = makeViewModel(service: service, controller: MockVPNController(isConnected: true))
 
-        await viewModel.refreshVPNConnectionInfo()
-
-        XCTAssertEqual(viewModel.vpnIPText, "45.132.71.9")
-        XCTAssertEqual(viewModel.vpnLocationText, "🇪🇸 Valencia, Spain")
-    }
-
-    func testRefreshVPNConnectionInfoFetchesOnlyOnce() async {
-        let service = MockConnectionInfoService(results: [valencia, madrid])
-        let viewModel = makeViewModel(service: service)
-
-        await viewModel.refreshVPNConnectionInfo()
-        await viewModel.refreshVPNConnectionInfo()
+        await viewModel.onAppear()
 
         XCTAssertEqual(service.fetchCallCount, 1)
+        XCTAssertEqual(viewModel.vpnIPText, "45.132.71.9")
+        XCTAssertEqual(viewModel.vpnLocationText, "🇪🇸 Valencia, Spain")
+        XCTAssertEqual(viewModel.realIPText, "-")
+    }
+
+    func testWhenAlreadyOnAndOnAppearCalledTwiceThenVPNConnectionIsFetchedOnce() async {
+        let service = MockConnectionInfoService(results: [valencia])
+        let viewModel = makeViewModel(service: service, controller: MockVPNController(isConnected: true))
+
+        await viewModel.onAppear()
+        await viewModel.onAppear()
+
+        XCTAssertEqual(service.fetchCallCount, 1)
+    }
+
+    func testWhenAlreadyOnThenOnAppearReportsSectionComplete() async {
+        let delegate = SpySectionDelegate()
+        let viewModel = makeViewModel(controller: MockVPNController(isConnected: true), delegate: delegate)
+
+        await viewModel.onAppear()
+
+        XCTAssertEqual(delegate.completedSections, [.vpn])
+    }
+
+    func testWhenTunnelConnectsThenVPNConnectionInfoIsFetched() async {
+        let service = MockConnectionInfoService(results: [valencia])
+        let controller = MockVPNController(isConnected: false)
+        let viewModel = makeViewModel(service: service, controller: controller)
+
+        await waitFor(viewModel.$vpnConnectionInfo, toEqual: valencia) {
+            controller.simulateConnected()
+        }
+
+        XCTAssertEqual(viewModel.vpnIPText, "45.132.71.9")
+    }
+
+    func testWhenTurnedOnThenPreVPNIPIsRetainedInRealIPRow() async {
+        let service = MockConnectionInfoService(results: [madrid, valencia])
+        let controller = MockVPNController(isConnected: false)
+        let viewModel = makeViewModel(service: service, controller: controller)
+
+        await viewModel.onAppear()
+        XCTAssertEqual(viewModel.realIPText, "31.120.130.50")
+
+        await waitFor(viewModel.$vpnConnectionInfo, toEqual: valencia) {
+            controller.simulateConnected()
+        }
+
+        XCTAssertEqual(viewModel.realIPText, "31.120.130.50")
+        XCTAssertEqual(viewModel.vpnIPText, "45.132.71.9")
+    }
+
+    // MARK: - Nearest location
+
+    func testWhenNearestLocationIsSelectedThenNearestIndicatorIsShownAndLocationHasNoSuffix() async {
+        let service = MockConnectionInfoService(results: [valencia])
+        let viewModel = makeViewModel(service: service,
+                                      controller: MockVPNController(isConnected: true),
+                                      locationProvider: MockVPNLocationProvider(isNearestSelected: true))
+
+        await viewModel.onAppear()
+
+        XCTAssertEqual(viewModel.vpnLocationText, "🇪🇸 Valencia, Spain")
+        XCTAssertEqual(viewModel.vpnLocationNearestIndicator, UserText.netPVPNLocationNearest)
+    }
+
+    func testWhenSpecificLocationIsSelectedThenNearestIndicatorIsNil() async {
+        let service = MockConnectionInfoService(results: [valencia])
+        let viewModel = makeViewModel(service: service,
+                                      controller: MockVPNController(isConnected: true),
+                                      locationProvider: MockVPNLocationProvider(isNearestSelected: false))
+
+        await viewModel.onAppear()
+
+        XCTAssertEqual(viewModel.vpnLocationText, "🇪🇸 Valencia, Spain")
+        XCTAssertNil(viewModel.vpnLocationNearestIndicator)
+    }
+
+    // MARK: - Permission denial (inferred)
+
+    func testWhenTurnOnLeavesTunnelOffThenDidDenyVPNPermissionBecomesTrue() async {
+        let controller = MockVPNController(isConnected: false)
+        let viewModel = makeViewModel(controller: controller)
+
+        await viewModel.turnOnVPN()
+
+        XCTAssertTrue(viewModel.didDenyVPNPermission)
+    }
+
+    func testWhenTunnelConnectsAfterInferredDenialThenDidDenyVPNPermissionIsCleared() async {
+        let controller = MockVPNController(isConnected: false)
+        let viewModel = makeViewModel(controller: controller)
+
+        await viewModel.turnOnVPN()
+        XCTAssertTrue(viewModel.didDenyVPNPermission)
+
+        await waitFor(viewModel.$connectionState, toEqual: .on) {
+            controller.simulateConnected()
+        }
+
+        XCTAssertFalse(viewModel.didDenyVPNPermission)
     }
 
     // MARK: - Helpers
 
     private func makeViewModel(service: SubscriptionOnboardingConnectionInfoService = MockConnectionInfoService(results: []),
                                controller: SubscriptionOnboardingVPNControlling = MockVPNController(isConnected: false),
+                               locationProvider: SubscriptionOnboardingVPNLocationProviding = MockVPNLocationProvider(),
                                delegate: SubscriptionOnboardingSectionDelegate? = nil) -> SubscriptionOnboardingVPNActivationViewModel {
         SubscriptionOnboardingVPNActivationViewModel(connectionInfoService: service,
                                                      vpnController: controller,
+                                                     vpnLocationProvider: locationProvider,
                                                      delegate: delegate,
                                                      locale: enUS)
     }
@@ -204,8 +296,18 @@ private final class MockVPNController: SubscriptionOnboardingVPNControlling {
         startCallCount += 1
     }
 
+    func isVPNConfigured() async -> Bool { false }
+
     func simulateConnected() {
         subject.send(true)
+    }
+}
+
+private final class MockVPNLocationProvider: SubscriptionOnboardingVPNLocationProviding {
+    let isNearestSelected: Bool
+
+    init(isNearestSelected: Bool = false) {
+        self.isNearestSelected = isNearestSelected
     }
 }
 

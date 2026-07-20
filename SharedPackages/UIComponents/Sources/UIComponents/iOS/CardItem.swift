@@ -99,12 +99,33 @@ public struct CardItemText {
     public let font: CardItemFont
     public let color: Color?
     public let modifier: AnyViewModifier?
+    /// An optional second run appended inline after `text` (e.g. a "(Nearest)" indicator), in the same
+    /// `font` coloured `secondaryColor`. Honored by a card item's body text run.
+    /// The defaults keep every existing call site unchanged.
+    public let secondaryText: String?
+    public let secondaryColor: Color?
 
-    public init(_ text: String, font: CardItemFont, color: Color? = nil, modifier: AnyViewModifier? = nil) {
+    public init(_ text: String, font: CardItemFont, color: Color? = nil, modifier: AnyViewModifier? = nil,
+                secondaryText: String? = nil, secondaryColor: Color? = nil) {
         self.text = text
         self.font = font
         self.color = color
         self.modifier = modifier
+        self.secondaryText = secondaryText
+        self.secondaryColor = secondaryColor
+    }
+}
+
+extension CardItemText {
+    /// The text as a SwiftUI `Text`: the main run in `font` coloured `color` (falling back to
+    /// `defaultColor`), plus — when `secondaryText` is set — an inline second run in the same `font`
+    /// coloured `secondaryColor` (or `defaultColor`). The caller applies the modifier.
+    func styledText(defaultColor: Color) -> Text {
+        let main = Text(verbatim: text).font(font.font).foregroundColor(color ?? defaultColor)
+        guard let secondaryText else { return main }
+        return main + Text(verbatim: " " + secondaryText)
+            .font(font.font)
+            .foregroundColor(secondaryColor ?? defaultColor)
     }
 }
 
@@ -211,9 +232,7 @@ private extension CardItem {
             VStack(alignment: .leading, spacing: titleTextSpacing) {
                 titleLine
                 if let text {
-                    Text(verbatim: text.text)
-                        .font(text.font.font)
-                        .foregroundColor(text.color ?? Color(designSystemColor: .textSecondary))
+                    text.styledText(defaultColor: Color(designSystemColor: .textSecondary))
                         .fixedSize(horizontal: false, vertical: true)
                         .applyingModifier(text.modifier)
                 }
@@ -388,6 +407,31 @@ private struct CardItemModifierSamples: View {
     }
 }
 
+/// Showcases ``CardItemText``'s optional inline secondary run (`secondaryText` / `secondaryColor`) — e.g. a
+/// "(Nearest)" indicator tinted differently from the body — versus the same body text without one.
+private struct CardItemSecondaryTextSamples: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            CardItem(
+                icon: CardItemIcon(position: .leading, visual: .image(Image(systemName: "location.fill")), size: .size24),
+                overline: CardItemText("NEW IP ADDRESS", font: .footnoteRegular),
+                title: CardItemText("45.132.71.9", font: .bodyRegular),
+                text: CardItemText("🇪🇸 Valencia, Spain", font: .footnoteRegular,
+                                   color: Color(designSystemColor: .textPrimary),
+                                   secondaryText: "(Nearest)",
+                                   secondaryColor: Color(designSystemColor: .textSecondary)))
+
+            CardItem(
+                icon: CardItemIcon(position: .leading, visual: .image(Image(systemName: "location.fill")), size: .size24),
+                overline: CardItemText("NEW IP ADDRESS", font: .footnoteRegular),
+                title: CardItemText("45.132.71.9", font: .bodyRegular),
+                text: CardItemText("🇪🇸 Valencia, Spain", font: .footnoteRegular,
+                                   color: Color(designSystemColor: .textPrimary)))
+        }
+        .padding()
+    }
+}
+
 #Preview("Light") {
     CardItemPreviewSamples()
 }
@@ -408,6 +452,10 @@ private struct CardItemModifierSamples: View {
 
 #Preview("Modifiers") {
     CardItemModifierSamples()
+}
+
+#Preview("Secondary text") {
+    CardItemSecondaryTextSamples()
 }
 
 #endif

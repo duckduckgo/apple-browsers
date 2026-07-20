@@ -1,5 +1,5 @@
 //
-//  SubscriptionOnboardingView.swift
+//  SubscriptionOnboardingBaseView.swift
 //  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
@@ -63,14 +63,24 @@ enum SubscriptionOnboardingNavigationButton {
     }
 }
 
-/// A footer button: a title and a tap action.
+/// A footer button: a title and either a tap action or a push destination (rendered as a `NavigationLink`).
 struct SubscriptionOnboardingFooterButton {
+    enum Action {
+        case tap(() -> Void)
+        case push(AnyView)
+    }
+
     let title: String
-    let action: () -> Void
+    let action: Action
 
     init(_ title: String, action: @escaping () -> Void) {
         self.title = title
-        self.action = action
+        self.action = .tap(action)
+    }
+
+    init<Destination: View>(_ title: String, push destination: Destination) {
+        self.title = title
+        self.action = .push(AnyView(destination))
     }
 }
 
@@ -81,12 +91,13 @@ enum SubscriptionOnboardingFooter {
     case double(primary: SubscriptionOnboardingFooterButton, secondary: SubscriptionOnboardingFooterButton)
 }
 
-/// A generic, high-level page for the post-subscription onboarding flow: a native navigation bar (an
-/// optional leading back/close button and an optional centered title), an optional ``SubscriptionOnboardingHeaderView``,
-/// a caller-supplied body, and an optional bottom-pinned footer of one or two buttons. The flow presents
-/// it in a `.fullScreenCover`; each concrete section (VPN, Duck.ai, …) supplies its own title, header,
-/// body and footer.
-struct SubscriptionOnboardingView<Content: View>: View {
+/// A generic, high-level page for the post-subscription onboarding flow: toolbar chrome (an optional
+/// leading back/close button and an optional centered title), an optional ``SubscriptionOnboardingHeaderView``,
+/// a caller-supplied body, and an optional bottom-pinned footer of one or two buttons. It carries no
+/// `NavigationView` of its own — the toolbar/title render inside the shared navigation stack applied by
+/// ``subscriptionOnboardingNavigationContainer()``. Each concrete section (VPN, Duck.ai, …) supplies its
+/// own title, header, body and footer.
+struct SubscriptionOnboardingBaseView<Content: View>: View {
 
     private let title: String?
     private let navigationButton: SubscriptionOnboardingNavigationButton?
@@ -111,37 +122,34 @@ struct SubscriptionOnboardingView<Content: View>: View {
     }
 
     var body: some View {
-        NavigationView {
-            let page = ScrollView(showsIndicators: false) {
-                VStack(spacing: Metrics.sectionSpacing) {
-                    header
-                    content
-                }
-                .padding(.vertical, Metrics.contentVerticalPadding)
-                .padding(.horizontal, Metrics.horizontalPadding)
+        let page = ScrollView(showsIndicators: false) {
+            VStack(spacing: Metrics.sectionSpacing) {
+                header
+                content
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(pageBackgroundColor.ignoresSafeArea())
-            .safeAreaInset(edge: .bottom) { footerView }
-            .navigationBarTitleDisplayMode(.inline)
-            .navigationBarBackButtonHidden(true)
-            .navigationBarBackground(pageBackgroundColor)
-
-            // On iOS 26 the toolbar wraps its items in a shared Liquid Glass background (with a drop
-            // shadow). Hide it so the leading button shows only its own circular fill.
-            if #available(iOS 26.0, *) {
-                page.toolbar { toolbarContent.sharedBackgroundVisibility(.hidden) }
-            } else {
-                page.toolbar { toolbarContent }
-            }
+            .padding(.vertical, Metrics.contentVerticalPadding)
+            .padding(.horizontal, Metrics.horizontalPadding)
         }
-        .navigationViewStyle(.stack)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(pageBackgroundColor.ignoresSafeArea())
+        .safeAreaInset(edge: .bottom) { footerView }
+        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden(true)
+        .navigationBarBackground(pageBackgroundColor)
+
+        // On iOS 26 the toolbar wraps its items in a shared Liquid Glass background (with a drop
+        // shadow). Hide it so the leading button shows only its own circular fill.
+        if #available(iOS 26.0, *) {
+            page.toolbar { toolbarContent.sharedBackgroundVisibility(.hidden) }
+        } else {
+            page.toolbar { toolbarContent }
+        }
     }
 }
 
 // MARK: - Navigation bar
 
-private extension SubscriptionOnboardingView {
+private extension SubscriptionOnboardingBaseView {
     @ToolbarContentBuilder
     var toolbarContent: some ToolbarContent {
         ToolbarItem(placement: .navigationBarLeading) {
@@ -172,7 +180,7 @@ private extension SubscriptionOnboardingView {
 
 // MARK: - Footer
 
-private extension SubscriptionOnboardingView {
+private extension SubscriptionOnboardingBaseView {
     @ViewBuilder
     var footerView: some View {
         if let footer {
@@ -198,15 +206,29 @@ private extension SubscriptionOnboardingView {
             .padding(.horizontal, Metrics.horizontalPadding)
     }
 
+    /// A footer button's underlying control: a `Button` for a tap action, or a `NavigationLink` for a push
+    /// destination. The button style is applied by the caller so both cases share it.
+    @ViewBuilder
+    func footerControl(_ button: SubscriptionOnboardingFooterButton) -> some View {
+        switch button.action {
+        case .tap(let action):
+            Button(button.title, action: action)
+        case .push(let destination):
+            NavigationLink(destination: destination) {
+                Text(button.title)
+            }
+        }
+    }
+
     func primaryButton(_ button: SubscriptionOnboardingFooterButton) -> some View {
-        Button(button.title, action: button.action)
+        footerControl(button)
             .buttonStyle(PrimaryButtonStyle())
     }
 
     /// Backs the design system's translucent secondary fill with an opaque page-color capsule so content
     /// scrolling behind the floating footer doesn't show through the button.
     func secondaryButton(_ button: SubscriptionOnboardingFooterButton) -> some View {
-        Button(button.title, action: button.action)
+        footerControl(button)
             .buttonStyle(SecondaryFillButtonStyle())
             .background(pageBackgroundColor)
             .clipShape(Capsule())
@@ -250,23 +272,23 @@ private func onboardingPreviewBody() -> some View {
 private func onboardingPreviewLongBody() -> some View {
     VStack(spacing: 16) {
         SubscriptionOnboardingShowcaseCard(
-            visual: .image(Image(systemName: "bolt.shield.fill")),
+            icon: Image(systemName: "bolt.shield.fill"),
             title: "No data or speed caps",
             text: "Stream, download, and game with as much data as you want. We only throttle connections to prevent abuse or network errors.")
         SubscriptionOnboardingShowcaseCard(
-            visual: .image(Image(systemName: "network")),
+            icon: Image(systemName: "network"),
             title: "All VPNs affect internet speeds",
             text: "Routing traffic through a VPN can cause speed differences. DuckDuckGo VPN is designed to keep them imperceptible for most browsing.")
         SubscriptionOnboardingShowcaseCard(
-            visual: .image(Image(systemName: "hand.raised.fill")),
+            icon: Image(systemName: "hand.raised.fill"),
             title: "Some sites & apps block VPNs",
             text: "No matter which VPN you use, you'll need to turn it off to use certain sites and apps. Banking apps, for example, may block VPNs to help prevent fraud.")
         SubscriptionOnboardingShowcaseCard(
-            visual: .image(Image(systemName: "lock.fill")),
+            icon: Image(systemName: "lock.fill"),
             title: "Secure every connection",
             text: "Your traffic is encrypted end to end, so no one on the network can see the sites you visit or the data you send.")
         SubscriptionOnboardingShowcaseCard(
-            visual: .image(Image(systemName: "eye.slash.fill")),
+            icon: Image(systemName: "eye.slash.fill"),
             title: "Hide your location & IP",
             text: "Sites see the VPN's IP address instead of yours, making it harder to track your location and identity across the web.")
     }
@@ -274,7 +296,7 @@ private func onboardingPreviewLongBody() -> some View {
 
 #Preview("Light") {
     RebrandedPreview {
-        SubscriptionOnboardingView(
+        SubscriptionOnboardingBaseView(
             title: "Step 2 of 4",
             navigationButton: .back({}),
             header: onboardingPreviewHeader(),
@@ -282,12 +304,13 @@ private func onboardingPreviewLongBody() -> some View {
                             secondary: .init("Maybe Later", action: {}))) {
             onboardingPreviewBody()
         }
+        .subscriptionOnboardingNavigationContainer()
     }
 }
 
 #Preview("Dark") {
     RebrandedPreview {
-        SubscriptionOnboardingView(
+        SubscriptionOnboardingBaseView(
             title: "Step 2 of 4",
             navigationButton: .back({}),
             header: onboardingPreviewHeader(),
@@ -295,25 +318,27 @@ private func onboardingPreviewLongBody() -> some View {
                             secondary: .init("Maybe Later", action: {}))) {
             onboardingPreviewBody()
         }
+        .subscriptionOnboardingNavigationContainer()
     }
     .preferredColorScheme(.dark)
 }
 
 #Preview("Carousel, single primary") {
     RebrandedPreview {
-        SubscriptionOnboardingView(
+        SubscriptionOnboardingBaseView(
             title: "Step 1 of 4",
             navigationButton: .close({}),
             header: onboardingPreviewHeader(),
             footer: .single(.init("Continue", action: {}))) {
             SubscriptionOnboardingVPNTipsCarousel()
         }
+        .subscriptionOnboardingNavigationContainer()
     }
 }
 
 #Preview("Long content") {
     RebrandedPreview {
-        SubscriptionOnboardingView(
+        SubscriptionOnboardingBaseView(
             title: "Step 3 of 4",
             navigationButton: .back({}),
             header: onboardingPreviewHeader(),
@@ -321,30 +346,33 @@ private func onboardingPreviewLongBody() -> some View {
                             secondary: .init("Maybe Later", action: {}))) {
             onboardingPreviewLongBody()
         }
+        .subscriptionOnboardingNavigationContainer()
     }
 }
 
 #Preview("Large Text") {
     RebrandedPreview {
-        SubscriptionOnboardingView(
+        SubscriptionOnboardingBaseView(
             title: "Step 2 of 4",
             navigationButton: .back({}),
             header: onboardingPreviewHeader(),
             footer: .single(.init("Turn on VPN", action: {}))) {
             onboardingPreviewBody()
         }
+        .subscriptionOnboardingNavigationContainer()
     }
     .dynamicTypeSize(.accessibility5)
 }
 
 #Preview("Back + step, no footer") {
     RebrandedPreview {
-        SubscriptionOnboardingView(
+        SubscriptionOnboardingBaseView(
             title: "Step 1 of 4",
             navigationButton: .back({}),
             header: onboardingPreviewHeader()) {
             onboardingPreviewBody()
         }
+        .subscriptionOnboardingNavigationContainer()
     }
 }
 

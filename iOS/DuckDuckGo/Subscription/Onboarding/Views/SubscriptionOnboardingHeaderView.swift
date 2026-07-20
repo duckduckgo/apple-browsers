@@ -28,44 +28,47 @@ import UIComponents
 /// the system URL handler. Mirrors the layout of `SettingsDescriptionView`.
 struct SubscriptionOnboardingHeaderView: View {
     private enum Metrics {
-        static let graphicSize: CGFloat = 64
-        static let graphicBottomSpacing: CGFloat = 40
-        static let explanationTopSpacing: CGFloat = 4
+        static let graphicWidth: CGFloat = 128
+        static let graphicHeight: CGFloat = 96
+        static let graphicBottomSpacing: CGFloat = 24
     }
 
     private let visual: Graphic?
     private let title: String
     private let explanation: String?
+    private let explanationTopSpacing: CGFloat
     private let onInfoLinkTap: (() -> Void)?
 
     init(visual: Graphic? = nil,
          title: String,
          explanation: String? = nil,
+         explanationTopSpacing: CGFloat = 4,
          onInfoLinkTap: (() -> Void)? = nil) {
         self.visual = visual
         self.title = title
         self.explanation = explanation
+        self.explanationTopSpacing = explanationTopSpacing
         self.onInfoLinkTap = onInfoLinkTap
     }
 
     var body: some View {
         VStack(spacing: 0) {
             if let visual {
-                GraphicView(visual: visual, size: Metrics.graphicSize)
+                GraphicView(visual: visual, width: Metrics.graphicWidth, height: Metrics.graphicHeight)
                     .accessibilityHidden(true)
                     .padding(.bottom, Metrics.graphicBottomSpacing)
             }
 
             Text(title)
                 .daxTitle1()
-                .multilineTextAlignment(.center)
                 .foregroundColor(Color(designSystemColor: .textPrimary))
 
             if let explanation {
                 explanationView(explanation)
-                    .padding(.top, Metrics.explanationTopSpacing)
+                    .padding(.top, explanationTopSpacing)
             }
         }
+        .multilineTextAlignment(.center)
         .frame(maxWidth: .infinity)
     }
 }

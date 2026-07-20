@@ -31,7 +31,6 @@ struct SubscriptionOnboardingVPNTipsCarousel: View {
         static let horizontalPadding: CGFloat = 28
         static let verticalPadding: CGFloat = 32
         static let cardSpacing: CGFloat = 16
-        static let horizontalInset: CGFloat = 24
         static let iconSpacing: CGFloat = 4
     }
 
@@ -42,7 +41,6 @@ struct SubscriptionOnboardingVPNTipsCarousel: View {
                     card(for: tip)
                 }
             }
-            .padding(.horizontal, Metrics.horizontalInset)
         }
     }
 

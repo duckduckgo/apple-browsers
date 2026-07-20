@@ -84,11 +84,24 @@ extension UserText {
     public static let subscriptionOnboardingVPNActivationOffFootnote = NotLocalizedString("subscription.onboarding.vpn.activation.off.footnote", value: "When the VPN is off, sites and apps can see this info and use it to connect your activity across sessions.", comment: "VPN activation screen footnote below the visible-IP card, shown while the VPN is off")
     public static let subscriptionOnboardingVPNActivationOnFootnote = NotLocalizedString("subscription.onboarding.vpn.activation.on.footnote", value: "When the VPN is on, sites and apps see your new IP instead, helping keep your activity anonymous.", comment: "VPN activation screen footnote below the IP cards, shown once the VPN is on")
     public static let subscriptionOnboardingVPNActivationTurnOnButton = NotLocalizedString("subscription.onboarding.vpn.activation.turn-on.button", value: "Turn On VPN", comment: "VPN activation screen primary button that starts the VPN")
+    public static let subscriptionOnboardingVPNActivationTryAgainButton = NotLocalizedString("subscription.onboarding.vpn.activation.try-again.button", value: "Let's Try That Again", comment: "VPN activation screen primary button shown after the customer declined the system VPN permission prompt, re-presenting it")
     public static let subscriptionOnboardingVPNActivationNextButton = NotLocalizedString("subscription.onboarding.vpn.activation.next.button", value: "Next", comment: "VPN activation screen primary button shown once the VPN is on, advancing the flow")
+    public static let subscriptionOnboardingVPNActivationSkipButton = NotLocalizedString("subscription.onboarding.vpn.activation.skip.button", value: "Not Now", comment: "VPN activation screen secondary button shown after the customer declines the system VPN permission prompt, skipping ahead to the widget step")
+    public static let subscriptionOnboardingVPNActivationTapAllowHint = NotLocalizedString("subscription.onboarding.vpn.activation.tap-allow.hint", value: "Tap allow", comment: "Bouncing pointer hint shown while the system VPN-configuration permission dialog is presented, telling the customer to tap Allow")
+
+    public static let subscriptionOnboardingPlatformIOS = NotLocalizedString("subscription.onboarding.platform.ios", value: "iOS", comment: "Platform name in the Devices info card's platform grid: Apple iOS (brand name, not localized)")
+    public static let subscriptionOnboardingPlatformAndroid = NotLocalizedString("subscription.onboarding.platform.android", value: "Android", comment: "Platform name in the Devices info card's platform grid: Android (brand name, not localized)")
+    public static let subscriptionOnboardingPlatformMac = NotLocalizedString("subscription.onboarding.platform.mac", value: "Mac", comment: "Platform name in the Devices info card's platform grid: Apple Mac (brand name, not localized)")
+    public static let subscriptionOnboardingPlatformWindows = NotLocalizedString("subscription.onboarding.platform.windows", value: "Windows", comment: "Platform name in the Devices info card's platform grid: Microsoft Windows (brand name, not localized)")
 
     public static let subscriptionOnboardingVPNProtectionShielding = NotLocalizedString("subscription.onboarding.vpn.protection.shielding", value: "Shielding your online activity", comment: "VPN activation screen protection row: shielding online activity")
     public static let subscriptionOnboardingVPNProtectionHidingLocation = NotLocalizedString("subscription.onboarding.vpn.protection.hiding-location", value: "Hiding your location & IP address", comment: "VPN activation screen protection row: hiding location and IP address")
     public static let subscriptionOnboardingVPNProtectionBlockingSites = NotLocalizedString("subscription.onboarding.vpn.protection.blocking-sites", value: "Blocking harmful sites", comment: "VPN activation screen protection row: blocking harmful sites")
+
+    // MARK: - VPN widget education screen
+
+    public static let subscriptionOnboardingVPNWidgetEducationTitle = NotLocalizedString("subscription.onboarding.vpn.widget-education.title", value: "Add DuckDuckGo VPN Widget to Your Home Screen", comment: "Title of the VPN widget education screen shown after the VPN is on")
+    public static let subscriptionOnboardingVPNWidgetEducationGotItButton = NotLocalizedString("subscription.onboarding.vpn.widget-education.got-it.button", value: "Got it", comment: "VPN widget education screen button that advances to the VPN tips carousel")
 
     // MARK: - VPN tips screen
 

@@ -49,27 +49,36 @@ public enum GraphicPlayback: Equatable {
     }
 }
 
-/// Renders a ``Graphic`` in a square frame.
+/// Renders a ``Graphic`` in a fixed frame.
+///
+/// The frame is square by default (`init(visual:size:)`); use `init(visual:width:height:)` for a
+/// non-square frame, e.g. to match an animation canvas that is not 1:1.
 ///
 /// `.image` renders natively. `.lottie` is drawn by the environment's ``GraphicLottieRenderer``;
 /// when none is injected it renders nothing. This view owns appearance and Reduce Motion state and
 /// derives the ``GraphicPlayback``, keeping that decision Lottie-free and testable.
 public struct GraphicView: View {
     private let visual: Graphic
-    private let size: CGFloat
+    private let size: CGSize
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.graphicLottieRenderer) private var lottieRenderer
     @State private var hasAppeared = false
 
+    /// Renders the graphic in a square `size`×`size` frame.
     public init(visual: Graphic, size: CGFloat) {
+        self.init(visual: visual, width: size, height: size)
+    }
+
+    /// Renders the graphic in a `width`×`height` frame, for graphics whose aspect ratio is not 1:1.
+    public init(visual: Graphic, width: CGFloat, height: CGFloat) {
         self.visual = visual
-        self.size = size
+        self.size = CGSize(width: width, height: height)
     }
 
     public var body: some View {
         content
-            .frame(width: size, height: size)
+            .frame(width: size.width, height: size.height)
             .onAppear {
                 hasAppeared = true
                 if case .lottie(let name) = visual, lottieRenderer == nil {

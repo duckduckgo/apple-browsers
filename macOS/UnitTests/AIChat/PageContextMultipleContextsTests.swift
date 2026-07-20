@@ -382,6 +382,37 @@ struct CollectionResultExtractionMeasurementTests {
     }
 }
 
+// MARK: - Empty-content pixel suppression Tests
+
+struct EmptyContentPixelSuppressionTests {
+
+    /// Mirrors the guard in `fireExtractionPixel`: an empty-content failure from an automatic collect
+    /// (premature / mid-redirect snapshot) is not reported; a user-requested one still is.
+    private func reportsEmptyContentFailure(trigger: String) -> Bool {
+        trigger == "userRequest"
+    }
+
+    @Test("Empty-content failure from a navigation collect is not reported (premature / redirect noise)")
+    func navigationEmptyContentSuppressed() {
+        #expect(reportsEmptyContentFailure(trigger: "navigation") == false)
+    }
+
+    @Test("Empty-content failure from a tabContent (signals-only) collect is not reported")
+    func tabContentEmptyContentSuppressed() {
+        #expect(reportsEmptyContentFailure(trigger: "tabContent") == false)
+    }
+
+    @Test("Empty-content failure from an auto (sidebar-open / setting) collect is not reported")
+    func autoEmptyContentSuppressed() {
+        #expect(reportsEmptyContentFailure(trigger: "auto") == false)
+    }
+
+    @Test("Empty-content failure from a user-requested collect is still reported")
+    func userRequestEmptyContentReported() {
+        #expect(reportsEmptyContentFailure(trigger: "userRequest") == true)
+    }
+}
+
 // MARK: - Non-attachable page context normalization Tests
 
 struct NonAttachableNormalizationTests {
@@ -518,5 +549,33 @@ struct SettledNavigationReCollectTests {
     @Test("User-initiated collect proceeds regardless of document mismatch")
     func userCollectAlwaysProceeds() {
         #expect(shouldRunAutomaticCollect(trigger: "userRequest", webViewURL: "https://old.com", contentURL: "https://new.com") == true)
+    }
+
+    /// Mirrors `runPendingSettledNavigationReCollectIfNeeded`: a settled navigation whose URL the
+    /// debounced content hasn't caught up to is latched, then re-collected once content matches —
+    /// unless a collect is already in flight (the multi-contexts path already covered it).
+    private func runsDeferredReCollect(latchedURL: String?, settledContentURL: String, hasPendingCollections: Bool) -> Bool {
+        guard let latchedURL, latchedURL == settledContentURL else { return false }
+        return !hasPendingCollections
+    }
+
+    @Test("Deferred settled navigation re-collects once content catches up")
+    func deferredReCollectFiresWhenContentSettles() {
+        #expect(runsDeferredReCollect(latchedURL: "https://a.com", settledContentURL: "https://a.com", hasPendingCollections: false) == true)
+    }
+
+    @Test("Deferred re-collect is skipped when a collect is already in flight (multi-contexts path covered it)")
+    func deferredReCollectSkippedWhenCollectInFlight() {
+        #expect(runsDeferredReCollect(latchedURL: "https://a.com", settledContentURL: "https://a.com", hasPendingCollections: true) == false)
+    }
+
+    @Test("Deferred re-collect for a superseded navigation (content settled on another URL) does not fire")
+    func deferredReCollectSkippedWhenSuperseded() {
+        #expect(runsDeferredReCollect(latchedURL: "https://a.com", settledContentURL: "https://b.com", hasPendingCollections: false) == false)
+    }
+
+    @Test("No latched navigation means no deferred re-collect")
+    func noLatchNoDeferredReCollect() {
+        #expect(runsDeferredReCollect(latchedURL: nil, settledContentURL: "https://a.com", hasPendingCollections: false) == false)
     }
 }

@@ -19,6 +19,7 @@
 import AIChat
 import Foundation
 import PixelKit
+import UserScript
 import os.log
 
 protocol AIChatDeleting: AnyObject {
@@ -27,10 +28,11 @@ protocol AIChatDeleting: AnyObject {
     /// Callers that need the chat gone before re-querying (e.g. a suggestions re-fetch) only need
     /// to wait for this call to return, not for the deletion to fully complete.
     ///
-    /// `onComplete`, if provided, runs once the JS-layer clear has finished — i.e. once the chat is
-    /// guaranteed gone everywhere the app might read chat data from, not just native storage. Use it
-    /// before refreshing any UI that reads from a source the native-storage phase alone might not
-    /// have updated (e.g. when native storage isn't available and only the JS clear removes the chat).
+    /// `onComplete`, if provided, runs once the full deletion pipeline (JS-layer clear and, on
+    /// success, sync propagation) has finished — regardless of whether it succeeded. Use it to
+    /// refresh UI that reads from a source the synchronous native-storage phase alone might not
+    /// have updated: on success the chat is gone everywhere; on failure it may still be present,
+    /// so re-fetching honestly reflects the real state rather than the optimistic removal.
     @MainActor func deleteChat(chatID: String, onComplete: (() -> Void)?)
 }
 
@@ -87,6 +89,11 @@ final class AIChatDeleter: AIChatDeleting {
             case .failure(let error):
                 Logger.aiChat.debug("AIChatDeleter: failed to delete chat \(chatID): \(error.localizedDescription)")
                 firePixel(AIChatPixel.aiChatSingleDeleteFailed)
+                // Mirror iOS: surface the JS-load diagnostic when the failure was a headless-WebView
+                // script load failure, so delete-path breakages are attributable.
+                if let userScriptError = error as? UserScriptError {
+                    userScriptError.fireLoadJSFailedPixelIfNeeded()
+                }
             }
             onComplete?()
         }

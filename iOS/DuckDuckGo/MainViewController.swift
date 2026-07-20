@@ -104,6 +104,9 @@ class MainViewController: UIViewController {
 
     weak var findInPageView: FindInPageView?
 
+    private var didFindInPageHideChrome = false
+    private var findInPageDismissalTimer: Timer?
+
     weak var notificationView: UIView?
 
     var chromeManager: BrowserChromeManager!
@@ -584,6 +587,7 @@ class MainViewController: UIViewController {
 
     deinit {
         chromeMorphAnimator.cancel()
+        findInPageDismissalTimer?.invalidate()
     }
 
     func loadFindInPage() {
@@ -3299,19 +3303,36 @@ class MainViewController: UIViewController {
         guard #available(iOS 16.0, *), featureFlagger.isFeatureOn(.systemFindInPage) else { return }
         rememberFindInPageQuery(for: tab)
         tab?.webView.findInteraction?.dismissFindNavigator()
-        // Restore chrome immediately for our own dismiss paths. Dismissing via the system Done button has no callback,
-        // but `isChromeScrollInteractionDisabled` goes false once the navigator is gone, so a swipe brings it back.
-        setBarsHidden(false, animated: true, customAnimationDuration: nil)
+        restoreChromeIfHiddenByFindInPage()
     }
 
-    /// Hides the browsing chrome when a system find-in-page search is confirmed (the keyboard is dismissed but the find
-    /// navigator stays available). It stays hidden for the rest of the search because `isChromeScrollInteractionDisabled`
-    /// stops swipes from revealing it while the navigator is visible.
     @available(iOS 16.0, *)
     private func hideChromeForConfirmedFindInPage() {
         guard featureFlagger.isFeatureOn(.systemFindInPage),
-              currentTab?.webView.findInteraction?.isFindNavigatorVisible == true else { return }
+              currentTab?.webView.findInteraction?.isFindNavigatorVisible == true,
+              lastChromeVisibilityPercent > 0,
+              !didFindInPageHideChrome else { return }
+
+        didFindInPageHideChrome = true
         setBarsHidden(true, animated: true, customAnimationDuration: nil)
+
+        findInPageDismissalTimer = Timer.scheduledTimer(withTimeInterval: 0.2, repeats: true) { [weak self] timer in
+            guard let self else {
+                timer.invalidate()
+                return
+            }
+            guard self.currentTab?.webView.findInteraction?.isFindNavigatorVisible != true else { return }
+            self.restoreChromeIfHiddenByFindInPage()
+        }
+    }
+
+    private func restoreChromeIfHiddenByFindInPage() {
+        findInPageDismissalTimer?.invalidate()
+        findInPageDismissalTimer = nil
+
+        guard didFindInPageHideChrome else { return }
+        didFindInPageHideChrome = false
+        setBarsHidden(false, animated: true, customAnimationDuration: nil)
     }
 
     // Persist the current query so the find navigator can be prepopulated when reopened on this tab.

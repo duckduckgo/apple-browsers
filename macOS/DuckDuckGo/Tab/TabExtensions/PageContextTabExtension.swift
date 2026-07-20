@@ -245,9 +245,10 @@ final class PageContextTabExtension {
                 /// ignore unsolicited results so they can't overwrite attached context with nil.
                 if self.isContextCollectionEnabled {
                     self.pendingSignalsOnlyCollection = false
+                    let wasForced = self.shouldForceContextCollection
+                    self.shouldForceContextCollection = false
                     self.fireExtractionOutcome(for: pageContext)
-                    // Only deliver a collection that actually has content.
-                    if let pageContext, !pageContext.content.isEmpty {
+                    if Self.shouldDeliverCollectionResult(pageContext, wasForced: wasForced, cached: self.cachedPageContext) {
                         Task {
                             await self.handle(pageContext)
                         }
@@ -308,6 +309,14 @@ final class PageContextTabExtension {
                 self.aiChatSessionStore.sessions[self.tabID]?.chatViewController?.setPageContext(nil)
             }
             .store(in: &sidebarCancellables)
+    }
+
+    /// Results with content always deliver. Empty/nil results deliver only for a forced
+    /// (user-requested) collect — the FE awaits the `getAIChatPageContext` response, so dropping
+    /// them would leave it hanging — and never when they'd replace attached content.
+    static func shouldDeliverCollectionResult(_ result: AIChatPageContextData?, wasForced: Bool, cached: AIChatPageContextData?) -> Bool {
+        if result?.content.isEmpty == false { return true }
+        return wasForced && cached?.content.isEmpty != false
     }
 
     /// This is the main place where page context handling happens.

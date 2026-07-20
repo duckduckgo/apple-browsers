@@ -58,7 +58,7 @@ public struct PageContextExtractionResolver {
 
         let outcome: PageContextExtractionOutcome
         if let pageContext {
-            outcome = pageContext.isEmpty() ? .failure(.emptyContent) : .success
+            outcome = pageContext.content.isEmpty ? .failure(.emptyContent) : .success
         } else {
             outcome = .failure(.deserializeFailed)
         }

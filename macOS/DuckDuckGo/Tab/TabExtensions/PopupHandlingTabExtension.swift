@@ -458,15 +458,10 @@ extension PopupHandlingTabExtension: NavigationResponder {
         }
         Logger.navigation.debug("PopupHandlingTabExtension.decidePolicyFor: \(String(describing: navigationAction)) userInteractionEvent: \(userInteractionEvent ??? "<nil>") currentEvent: \(NSApp.currentEvent ??? "<nil>")")
 
-        // For pinned-tab cross-domain navigations canOpenLinkInCurrentTab is false.
-        // shouldSelectNewTab:true ensures a plain left-click always selects the new tab — the user
-        // clicked a link the pinned tab cannot open in place, so foreground is the right default.
-        // Modifier-key semantics (⌘, ⌘⇧, ⌘⌥, ⌘⌥⇧) are preserved by LinkOpenBehavior as usual.
         let linkOpenBehavior = LinkOpenBehavior(button: navigationAction.navigationType.isMiddleButtonClick ? .middle : .left,
                                                 modifierFlags: userInteractionEvent?.modifierFlags ?? [],
                                                 switchToNewTabWhenOpenedPreference: tabsPreferences.switchToNewTabWhenOpened,
-                                                canOpenLinkInCurrentTab: canOpenLinkInCurrentTab,
-                                                shouldSelectNewTab: !canOpenLinkInCurrentTab)
+                                                canOpenLinkInCurrentTab: canOpenLinkInCurrentTab)
         // Handle behavior for navigation
         switch linkOpenBehavior {
         case .currentTab:

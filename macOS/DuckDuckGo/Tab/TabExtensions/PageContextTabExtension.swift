@@ -46,7 +46,11 @@ final class PageContextTabExtension {
     private let featureFlagger: FeatureFlagger
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let extractionPixelHandler: PageContextExtractionPixelFiring
-    private var lastMainFrameResponse: (url: URL, mimeType: String?)?
+    /// Main-frame MIME types keyed by URL (bounded FIFO). Back/forward cache restores don't re-fire
+    /// `decidePolicy(for navigationResponse:)`, so a single "last response" slot loses the MIME on the way back.
+    private var mainFrameMIMETypes: [URL: String] = [:]
+    private var mainFrameMIMEOrder: [URL] = []
+    private static let maxCachedMainFrameMIMETypes = 100
 
     private var extractionResolver = PageContextExtractionResolver()
 
@@ -399,9 +403,22 @@ final class PageContextTabExtension {
 
     private func preventedAttachReason(for url: URL) -> String? {
         guard let policy = currentAttachabilityPolicy() else { return nil }
-        let mimeType = lastMainFrameResponse.flatMap { $0.url == url ? $0.mimeType : nil }
+        let mimeType = mainFrameMIMETypes[url]
         let verdict = policy.verdict(url: url, mimeType: mimeType)
         return verdict.isAttachable ? nil : (verdict.preventionReason ?? PageContextExtractionOutcome.internalPageCategory)
+    }
+
+    /// Empty/nil MIMEs are ignored — the gate falls back to the URL extension for those.
+    private func recordMainFrameMIME(_ mimeType: String?, for url: URL) {
+        guard let mimeType, !mimeType.isEmpty else { return }
+        if mainFrameMIMETypes[url] == nil {
+            mainFrameMIMEOrder.append(url)
+            if mainFrameMIMEOrder.count > Self.maxCachedMainFrameMIMETypes {
+                let evicted = mainFrameMIMEOrder.removeFirst()
+                mainFrameMIMETypes[evicted] = nil
+            }
+        }
+        mainFrameMIMETypes[url] = mimeType
     }
 
     private func deliverPreventedContext(for url: URL, reason: String, trigger: PageContextExtractionTrigger) {
@@ -462,6 +479,13 @@ final class PageContextTabExtension {
         if let reason = preventedAttachReason(for: url) {
             Logger.aiChat.debug("🚫 PageContext gate: prevented attach (reason=\(reason, privacy: .public)) host=\(url.host ?? "nil", privacy: .public)")
             deliverPreventedContext(for: url, reason: reason, trigger: trigger)
+            return
+        }
+        // Skip automatic collects while the webview still shows the previous document (debounced
+        // `Tab.$content` races the swap on back/forward); the settled-navigation re-collect covers it.
+        if trigger == .navigation || trigger == .tabContent,
+           let webViewURL = webView?.url, webViewURL != url {
+            Logger.aiChat.debug("⏭️ PageContext gate: document mismatch (webView=\(webViewURL.host ?? "nil", privacy: .public) content=\(url.host ?? "nil", privacy: .public)), skipping collect")
             return
         }
         guard let pageContextUserScript, webView != nil else {
@@ -702,6 +726,21 @@ extension PageContextTabExtension: NavigationResponder {
     /// update on same-tab navigation. Mirrors Windows' `NavigationCompleted` re-collect.
     func navigationDidFinish(_ navigation: Navigation) {
         guard !isLoadedInSidebar else { return }
+        reCollectForSettledNavigation(navigation)
+    }
+
+    /// Back/forward cache restores can end in `didFail` (NSURLError -999) after committing — the page
+    /// is displayed but `navigationDidFinish` never fires, so committed failures must re-collect too.
+    func navigation(_ navigation: Navigation, didFailWith error: WKError) {
+        guard !isLoadedInSidebar, navigation.isCommitted else { return }
+        reCollectForSettledNavigation(navigation)
+    }
+
+    /// Collects only once the debounced `Tab.$content` matches this navigation — on fast loads it may
+    /// still reference the previous page, and collecting then would extract the wrong document.
+    @MainActor
+    private func reCollectForSettledNavigation(_ navigation: Navigation) {
+        guard case .url(let url, _, _) = content, url == navigation.url else { return }
         collectPageContextIfNeeded(trigger: .navigation)
         requestSignalsOnlyCollectionIfNeeded()
     }
@@ -709,7 +748,7 @@ extension PageContextTabExtension: NavigationResponder {
     @MainActor
     func decidePolicy(for navigationResponse: NavigationResponse) async -> NavigationResponsePolicy? {
         guard !isLoadedInSidebar, navigationResponse.isForMainFrame else { return .next }
-        lastMainFrameResponse = (navigationResponse.url, navigationResponse.response.mimeType)
+        recordMainFrameMIME(navigationResponse.response.mimeType, for: navigationResponse.url)
         Logger.aiChat.debug("📄 PageContext MIME captured: \(navigationResponse.response.mimeType ?? "nil", privacy: .public) host=\(navigationResponse.url.host ?? "nil", privacy: .public)")
         return .next
     }

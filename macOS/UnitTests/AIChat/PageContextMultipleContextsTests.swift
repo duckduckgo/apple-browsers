@@ -412,3 +412,111 @@ struct NonAttachableNormalizationTests {
         #expect(effectiveAttachable(pageIsNonAttachable: false, contextAttachable: true) == true)
     }
 }
+
+// MARK: - Main-frame MIME cache (back/forward attachability) Tests
+
+struct MainFrameMIMECacheTests {
+
+    /// Mirrors `PageContextTabExtension`'s per-URL MIME cache: back/forward restores don't re-fire the
+    /// navigation-response callback, so the MIME must survive navigating away and back.
+    private final class MIMECache {
+        private var types: [String: String] = [:]
+        private var order: [String] = []
+        private let cap: Int
+        init(cap: Int = 100) { self.cap = cap }
+        func record(_ mime: String?, for url: String) {
+            guard let mime, !mime.isEmpty else { return }
+            if types[url] == nil {
+                order.append(url)
+                if order.count > cap { types[order.removeFirst()] = nil }
+            }
+            types[url] = mime
+        }
+        func mime(for url: String) -> String? { types[url] }
+    }
+
+    @Test("MIME for a URL survives navigating away and back (unlike a last-response slot)")
+    func mimeSurvivesBackForward() {
+        let cache = MIMECache()
+        cache.record("application/pdf", for: "https://arxiv.org/pdf/2602.11988")
+        cache.record("text/html", for: "https://en.wikipedia.org/wiki/Potato")
+        #expect(cache.mime(for: "https://arxiv.org/pdf/2602.11988") == "application/pdf")
+    }
+
+    @Test("Empty or nil MIME is not recorded")
+    func emptyMIMENotRecorded() {
+        let cache = MIMECache()
+        cache.record(nil, for: "https://example.com")
+        cache.record("", for: "https://example.com")
+        #expect(cache.mime(for: "https://example.com") == nil)
+    }
+
+    @Test("Cache is bounded FIFO — the oldest URL is evicted past the cap")
+    func boundedFIFO() {
+        let cache = MIMECache(cap: 2)
+        cache.record("a/a", for: "u1")
+        cache.record("b/b", for: "u2")
+        cache.record("c/c", for: "u3")
+        #expect(cache.mime(for: "u1") == nil)
+        #expect(cache.mime(for: "u2") == "b/b")
+        #expect(cache.mime(for: "u3") == "c/c")
+    }
+}
+
+// MARK: - Settled-navigation re-collect Tests
+
+struct SettledNavigationReCollectTests {
+
+    /// Mirrors `PageContextTabExtension.reCollectForSettledNavigation` + the committed-didFail hook:
+    /// committed failures (back/forward -999 restores) re-collect like didFinish, only on a URL match.
+    private func shouldReCollect(event: String, isCommitted: Bool, contentURL: String?, navigationURL: String) -> Bool {
+        if event == "didFail" && !isCommitted { return false }
+        guard let contentURL else { return false }
+        return contentURL == navigationURL
+    }
+
+    @Test("didFinish with settled content re-collects")
+    func didFinishSettledReCollects() {
+        #expect(shouldReCollect(event: "didFinish", isCommitted: true, contentURL: "https://a.com", navigationURL: "https://a.com") == true)
+    }
+
+    @Test("Committed didFail (back/forward cache restore, -999) re-collects like didFinish")
+    func committedDidFailReCollects() {
+        #expect(shouldReCollect(event: "didFail", isCommitted: true, contentURL: "https://a.com", navigationURL: "https://a.com") == true)
+    }
+
+    @Test("Uncommitted didFail (real load failure, nothing displayed) does not re-collect")
+    func uncommittedDidFailSkips() {
+        #expect(shouldReCollect(event: "didFail", isCommitted: false, contentURL: "https://a.com", navigationURL: "https://a.com") == false)
+    }
+
+    @Test("Stale debounced content (previous page's URL) skips the re-collect")
+    func staleContentSkips() {
+        #expect(shouldReCollect(event: "didFinish", isCommitted: true, contentURL: "https://old.com", navigationURL: "https://new.com") == false)
+        #expect(shouldReCollect(event: "didFail", isCommitted: true, contentURL: "https://old.com", navigationURL: "https://new.com") == false)
+    }
+
+    /// Mirrors the document-match guard in `collectPageContextIfNeeded`: automatic collects only run
+    /// when the webview is displaying the page being gated on; user collects always proceed.
+    private func shouldRunAutomaticCollect(trigger: String, webViewURL: String?, contentURL: String) -> Bool {
+        guard trigger == "navigation" || trigger == "tabContent" else { return true }
+        guard let webViewURL else { return true }
+        return webViewURL == contentURL
+    }
+
+    @Test("Automatic collect is skipped while the webview still displays the previous document")
+    func automaticCollectSkippedOnDocumentMismatch() {
+        #expect(shouldRunAutomaticCollect(trigger: "navigation", webViewURL: "https://old.com", contentURL: "https://new.com") == false)
+        #expect(shouldRunAutomaticCollect(trigger: "tabContent", webViewURL: "https://old.com", contentURL: "https://new.com") == false)
+    }
+
+    @Test("Automatic collect proceeds when webview and content agree")
+    func automaticCollectProceedsOnMatch() {
+        #expect(shouldRunAutomaticCollect(trigger: "navigation", webViewURL: "https://a.com", contentURL: "https://a.com") == true)
+    }
+
+    @Test("User-initiated collect proceeds regardless of document mismatch")
+    func userCollectAlwaysProceeds() {
+        #expect(shouldRunAutomaticCollect(trigger: "userRequest", webViewURL: "https://old.com", contentURL: "https://new.com") == true)
+    }
+}

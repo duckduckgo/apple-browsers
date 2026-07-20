@@ -357,6 +357,41 @@ class SwitchBarTextEntryView: UIView {
         textField.delegate = self
         textField.addTarget(self, action: #selector(textFieldEditingChanged), for: .editingChanged)
         syncActiveControl()
+        setupPasteAndGoMenuItem()
+    }
+
+    // MARK: - Paste & Go
+
+    /// iOS 15 fallback; iOS 16+ builds the menu via the `editMenuFor…` delegate methods below.
+    private func setupPasteAndGoMenuItem() {
+        guard #unavailable(iOS 16.0) else { return }
+        UIMenuController.shared.menuItems = [
+            UIMenuItem(title: UserText.actionPasteAndGo, action: #selector(pasteURLAndGo))
+        ]
+    }
+
+    override func canPerformAction(_ action: Selector, withSender sender: Any?) -> Bool {
+        if action == #selector(pasteURLAndGo) {
+            return UIPasteboard.general.hasStrings
+        }
+        return super.canPerformAction(action, withSender: sender)
+    }
+
+    @objc private func pasteURLAndGo() {
+        guard let pastedText = UIPasteboard.general.string,
+              !pastedText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+        handler.updateCurrentText(pastedText)
+        handler.submitText(pastedText)
+    }
+
+    /// Appends "Paste & Go" to the long-press menu when the clipboard has text (iOS 16+).
+    @available(iOS 16.0, *)
+    private func pasteAndGoEditMenu(appendingTo suggestedActions: [UIMenuElement]) -> UIMenu? {
+        guard UIPasteboard.general.hasStrings else { return nil }
+        let pasteAndGo = UIAction(title: UserText.actionPasteAndGo) { [weak self] _ in
+            self?.pasteURLAndGo()
+        }
+        return UIMenu(children: suggestedActions + [pasteAndGo])
     }
 
     // MARK: - Setup Methods
@@ -1112,9 +1147,19 @@ extension SwitchBarTextEntryView: UITextViewDelegate {
         }
         return true
     }
+
+    @available(iOS 16.0, *)
+    func textView(_ textView: UITextView, editMenuForTextIn range: NSRange, suggestedActions: [UIMenuElement]) -> UIMenu? {
+        pasteAndGoEditMenu(appendingTo: suggestedActions)
+    }
 }
 
 extension SwitchBarTextEntryView: UITextFieldDelegate {
+
+    @available(iOS 16.0, *)
+    func textField(_ textField: UITextField, editMenuForCharactersIn range: NSRange, suggestedActions: [UIMenuElement]) -> UIMenu? {
+        pasteAndGoEditMenu(appendingTo: suggestedActions)
+    }
 
     func textFieldDidBeginEditing(_ textField: UITextField) {
         hasBeenInteractedWith = true

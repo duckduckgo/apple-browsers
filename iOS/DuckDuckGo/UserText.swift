@@ -142,7 +142,7 @@ public struct UserText {
     public static let aiChatHistorySearchAccessibilityLabel = NotLocalizedString("aiChat.history.search.a11y", value: "Search", comment: "Accessibility label for the search button in the Duck.ai chat history navigation bar.")
     public static let aiChatHistoryMenuAccessibilityLabel = NotLocalizedString("aiChat.history.menu.a11y", value: "More", comment: "Accessibility label for the overflow (three dots) menu button in the Duck.ai chat history navigation bar.")
     public static func aiChatHistoryDeleteAllConfirmationTitle(count: Int) -> String {
-        let format = NSLocalizedString("aiChat.history.deleteAll.confirmation.title", comment: "Title of the confirmation shown when the user taps Fire in Duck.ai chat history to delete all chats; the number is the chat count. Do not translate - stringsdict entry")
+        let format = Bundle.main.localizedString(forKey: "aiChat.history.deleteAll.confirmation.title", value: nil, table: nil)
         return String.localizedStringWithFormat(format, count)
     }
     public static func aiChatHistoryDownloadCompleteMessage(count: Int) -> String {

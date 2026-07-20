@@ -25,8 +25,30 @@ struct ShowQRCodeViewModel {
     let codeForDisplayOrPasting: String
     let qrCodeString: String
 
+    var codeForDisplay: String {
+        Self.strippingPairingURL(from: codeForDisplayOrPasting)
+    }
+
     func copy() {
         UIPasteboard.general.string = codeForDisplayOrPasting
+    }
+
+    private static func strippingPairingURL(from code: String) -> String {
+        guard let url = URL(string: code),
+              url.scheme?.hasPrefix("http") == true,
+              let fragment = URLComponents(url: url, resolvingAgainstBaseURL: false)?.fragment else {
+            return code
+        }
+
+        let parameters = fragment
+            .split(separator: "&")
+            .reduce(into: [String: String]()) { result, part in
+                let keyValue = part.split(separator: "=", maxSplits: 1)
+                guard keyValue.count == 2 else { return }
+                result[String(keyValue[0])] = String(keyValue[1])
+            }
+
+        return parameters["code2"] ?? parameters["code"] ?? code
     }
 
 }

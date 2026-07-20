@@ -210,4 +210,40 @@ final class ScanOrPasteCodeViewModelTests {
         // THEN
         #expect(result == false)
     }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Code for display strips the pairing URL and keeps the code2 payload", .timeLimit(.minutes(1)))
+    func codeForDisplayStripsPairingURL() {
+        // GIVEN
+        let payload = "eyJ2ZXJzaW9uIjoiMiJ9"
+        let url = "https://duckduckgo.com/sync/pairing/#&code2=\(payload)"
+        let sut = ScanOrPasteCodeViewModel(codeForDisplayOrPasting: url, qrCodeString: url, source: .connect)
+
+        // THEN
+        #expect(sut.showQRCodeModel.codeForDisplay == payload)
+        #expect(sut.showQRCodeModel.codeForDisplayOrPasting == url)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Code for display strips the pairing URL and keeps the legacy code payload", .timeLimit(.minutes(1)))
+    func codeForDisplayStripsLegacyPairingURL() {
+        // GIVEN
+        let payload = "ABCDEFGHIJ"
+        let url = "https://duckduckgo.com/sync/pairing/#&code=\(payload)&deviceName=iPhone"
+        let sut = ScanOrPasteCodeViewModel(codeForDisplayOrPasting: url, qrCodeString: url, source: .connect)
+
+        // THEN
+        #expect(sut.showQRCodeModel.codeForDisplay == payload)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Code for display returns the code unchanged when it is not a pairing URL", .timeLimit(.minutes(1)))
+    func codeForDisplayReturnsNonURLCodeUnchanged() {
+        // GIVEN
+        let code = "eyJyZWNvdmVyeSI6eyJ1c2VyX2lkIjoiMSJ9fQ=="
+        let sut = ScanOrPasteCodeViewModel(codeForDisplayOrPasting: code, qrCodeString: code, source: .recovery)
+
+        // THEN
+        #expect(sut.showQRCodeModel.codeForDisplay == code)
+    }
 }

@@ -2468,6 +2468,9 @@ private extension UnifiedToggleInputCoordinator {
         // Tool selection toggles the model-chip + reasoning-picker visibility. Route through the
         // canonical updaters so we don't clobber the other signals (`hasSubmittedPrompt`, `host`).
         updateModelChipVisibility()
+        // Reflect the image-generation tool in the input placeholder ("Create images privately").
+        viewController.handler.isImageGenerationSelected = toolsController.selectedTool == .imageGeneration
+        viewController.refreshPlaceholderForCurrentMode()
     }
 
     func resetToolsSelection() {

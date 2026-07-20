@@ -2283,6 +2283,7 @@ public struct UserText {
     public static let aiChatHeaderNewChatAccessibilityLabel = NotLocalizedString("aichat.header.newChat.a11y", value: "New chat", comment: "Accessibility label for the new-chat button in the Duck.ai tab header")
     public static let aiChatHeaderPlusMenuAccessibilityLabel = NSLocalizedString("aichat.header.plusMenu.a11y", value: "New", comment: "Accessibility label for the Plus (+) button in the Duck.ai tab header that opens a menu of new-chat and new-tab actions")
     public static let aiChatHeaderNewVoiceChatTitle = NSLocalizedString("aichat.header.plusMenu.newVoiceChat", value: "New Voice Chat", comment: "Title for the New Voice Chat row in the Duck.ai tab header Plus (+) menu")
+    public static let aiChatHeaderNewImageTitle = NotLocalizedString("aichat.header.plusMenu.newImage", value: "New Image", comment: "Title for the New Image row in the Duck.ai tab header Plus (+) menu — opens Duck.ai in image generation mode")
     public static let aiChatHeaderNewTabTitle = NSLocalizedString("aichat.header.plusMenu.newTab", value: "New Tab", comment: "Title for the New Tab row in the Duck.ai tab header Plus (+) menu")
     public static let aiChatHeaderNewSearchTitle = NSLocalizedString("aichat.header.plusMenu.newSearch", value: "New Search", comment: "Title for the New Search row in the Duck.ai tab header Plus (+) menu — opens a new tab and forces search mode for that entry")
     public static let aiChatHeaderNewFireTabTitle = NSLocalizedString("aichat.header.plusMenu.newFireTab", value: "New Fire Tab", comment: "Title for the New Fire Tab row in the Duck.ai tab header Plus (+) menu")
@@ -2415,6 +2416,8 @@ public struct UserText {
     public static let searchInputFieldPlaceholderDuckAI = NSLocalizedString("input.field.placeholder.duckai", value: "Ask anything privately", comment: "Placeholder text for the duck.ai input field")
 
     public static let aiChatFollowUpPlaceholder = NSLocalizedString("input.field.placeholder.duckai.followup", value: "Reply...", comment: "Placeholder text for the duck.ai input field when a chat is already active")
+
+    public static let aiChatImageGenerationPlaceholder = NotLocalizedString("input.field.placeholder.duckai.imageGeneration", value: "Create images privately", comment: "Placeholder text for the duck.ai input field when the image generation tool is selected")
 
     // MARK: - AI Chat Welcome Message
     public static let aiChatWelcomeMessage = NSLocalizedString("duckai.welcome.message", value: "All chats are %@ private", comment: "Welcome message in Duck.ai contextual sheet. %@ is replaced by a shield icon.")

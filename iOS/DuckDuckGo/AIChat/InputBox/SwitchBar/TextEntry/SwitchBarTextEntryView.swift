@@ -512,8 +512,11 @@ class SwitchBarTextEntryView: UIView {
         case .search:
             return UserText.searchDuckDuckGo
         case .aiChat:
-            return handler.hasSubmittedPrompt
-                ? UserText.aiChatFollowUpPlaceholder
+            if handler.hasSubmittedPrompt {
+                return UserText.aiChatFollowUpPlaceholder
+            }
+            return handler.isImageGenerationSelected
+                ? UserText.aiChatImageGenerationPlaceholder
                 : UserText.searchInputFieldPlaceholderDuckAI
         }
     }

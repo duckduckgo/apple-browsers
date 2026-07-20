@@ -812,7 +812,8 @@ private extension MainViewController {
     }
 
     func setUpAIChatTabChatHeader() {
-        let headerView = AIChatTabChatHeaderView(isFireModeEnabled: fireModeCapability.isFireModeEnabled)
+        let headerView = AIChatTabChatHeaderView(isFireModeEnabled: fireModeCapability.isFireModeEnabled,
+                                                 shouldShowImageGeneration: featureFlagger.isFeatureOn(.aiChatNativeSidebar))
         headerView.delegate = self
         headerView.translatesAutoresizingMaskIntoConstraints = false
         viewCoordinator.aiChatTabChatHeaderContainer.addSubview(headerView)
@@ -1377,6 +1378,13 @@ extension MainViewController: AIChatTabChatHeaderViewDelegate {
 
     func aiChatTabChatHeaderDidTapNewVoiceChat() {
         onDuckAIVoiceModeRequested()
+    }
+
+    func aiChatTabChatHeaderDidTapNewImage() {
+        unifiedToggleInputCoordinator?.startNewChat()
+        unifiedToggleInputCoordinator?.selectTool(.imageGeneration)
+        unifiedToggleInputCoordinator?.showExpanded(inputMode: .aiChat)
+        currentTab?.submitStartChatAction()
     }
 
     func aiChatTabChatHeaderDidTapNewTab() {

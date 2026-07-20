@@ -326,12 +326,7 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
     /// Same dialog as the address-bar delete flow: a sheet on `sourceWindow`, or app-modal when nil.
     @MainActor
     static func presentNativeDeleteConfirmation(title: String, sourceWindow: NSWindow?) async -> Bool {
-        let alert = NSAlert()
-        alert.messageText = UserText.removeRecentChatConfirmationTitle
-        alert.informativeText = String(format: UserText.removeRecentChatConfirmationMessage, title)
-        alert.addButton(withTitle: UserText.removeRecentChatConfirmationButton, response: .OK)
-        alert.buttons.first?.hasDestructiveAction = true
-        alert.addButton(withTitle: UserText.cancel, response: .cancel, keyEquivalent: .escape)
+        let alert = NSAlert.recentChatDeleteConfirmation(title: title)
 
         let response: NSApplication.ModalResponse
         if let sourceWindow {

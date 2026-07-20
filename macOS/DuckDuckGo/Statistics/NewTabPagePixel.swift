@@ -161,7 +161,6 @@ enum NewTabPagePixel: PixelKitEvent {
     case aiChatRecentChatSelectedMouse
     case aiChatRecentChatSelectedKeyboard
 
-    // `ntp_` prefix (not this file's usual `new-tab-page_`): these names are shared cross-platform.
     case ntpAiChatRecentChatDeleteButtonClicked
     case ntpAiChatRecentChatDeleteConfirmed
     case ntpAiChatRecentChatDeleteCancelled

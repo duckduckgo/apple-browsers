@@ -53,9 +53,9 @@ class FaviconsHelperTests: XCTestCase {
         let result = FaviconsHelper.loadFaviconSync(forDomain: "duckduckgo.com",
                                                    usingCache: .fireproof,
                                                    useFakeFavicon: true)
-        
+
         XCTAssertNotNil(result.image)
-        XCTAssertEqual(result.image?.accessibilityIdentifier, "Logo")
+        XCTAssertEqual(result.image?.accessibilityIdentifier, "duckduckgo-favicon-128x128")
         XCTAssertFalse(result.isFake)
     }
     

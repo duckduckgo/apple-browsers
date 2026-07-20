@@ -261,6 +261,30 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
         }
     }
 
+    func testWhenPageContextNotAttachableButOtherAttachmentsAvailableThenAskAboutPageActionIsDisabled() {
+        let prefs = StubAIChatPreferences()
+        prefs.selectedModelId = "mixed-model"
+        let sut = makeCoordinator(host: .contextualChat, preferences: prefs)
+        sut.modelStore.models = [makeModel(id: "mixed-model", supportsImageUpload: true, supportedFileTypes: ["application/pdf"])]
+        sut.onPageContextAttachRequested = {}
+        sut.isPageContextAttachable = { false }
+        sut.updateImageButtonVisibility()
+
+        let actions = attachmentMenuActionsByTitle(for: sut)
+        // The menu still shows (photo/file available); the page-context item is disabled.
+        XCTAssertNotNil(actions[UserText.aiChatAttachmentOptionAttachPhoto])
+        XCTAssertTrue(actions[UserText.aiChatAttachmentOptionAskAboutPage]?.attributes.contains(.disabled) == true)
+    }
+
+    func testWhenPageContextIsOnlyAttachmentAndNotAttachableThenAttachButtonHidden() {
+        let sut = makeCoordinator(host: .contextualChat)
+        sut.onPageContextAttachRequested = {}
+        sut.isPageContextAttachable = { false }
+        sut.updateImageButtonVisibility()
+
+        XCTAssertTrue(sut.viewController.isImageButtonHidden)
+    }
+
     func testWhenPageContextActionAvailableOutsideContextualChatThenAttachmentMenuDoesNotShowAskAboutPageAction() {
         let prefs = StubAIChatPreferences()
         prefs.selectedModelId = "mixed-model"

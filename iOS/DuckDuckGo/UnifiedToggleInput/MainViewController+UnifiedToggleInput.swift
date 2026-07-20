@@ -179,12 +179,13 @@ extension MainViewController {
     /// Programmatic dismiss of an active UTI omnibar session (the intent-path used by
     /// `dismissOmniBar`, toolbar buttons, etc.). On a Duck.ai tab this routes through the snap
     /// dismiss so the AI tab's auto-expand doesn't bring the keyboard back up.
-    func deactivateUnifiedToggleInputOmnibarSession() {
+    func deactivateUnifiedToggleInputOmnibarSession(animated: Bool = true) {
         guard let coordinator = unifiedToggleInputCoordinator, coordinator.isOmnibarSession else { return }
         if currentTab?.isAITab == true {
+            // Already snaps back to AI-tab chrome (no crossfade), so `animated` doesn't apply here.
             dismissFocusedOmnibarToAITabChrome(coordinator: coordinator)
         } else {
-            coordinator.deactivateToOmnibar()
+            coordinator.deactivateToOmnibar(animateDismiss: animated)
         }
     }
 

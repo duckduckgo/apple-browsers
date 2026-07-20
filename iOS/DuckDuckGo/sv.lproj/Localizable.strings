@@ -3037,7 +3037,7 @@
 "network.protection.vpn.data-volume" = "Datavolym";
 
 /* Footer text for the Exclude CGNAT setting item. */
-"network.protection.vpn.exclude.cgnat.setting.footer" = "Rekommenderas att avaktiveras så att all din trafik går via VPN. Prova att aktivera det om du har problem med funktioner såsom Wi-Fi-samtal, meddelanden eller röstbrevlåda.";
+"network.protection.vpn.exclude.cgnat.setting.footer" = "Kringgå VPN för operatörstjänster, till exempel wifi-samtal och röstbrevlåda.";
 
 /* Title for the Exclude CGNAT setting item. */
 "network.protection.vpn.exclude.cgnat.setting.title" = "Exkludera operatörstjänster";
@@ -3115,10 +3115,10 @@
 "network.protection.vpn.shortcuts.section.header" = "Genvägar";
 
 /* Footer text for the Strict Routing setting item. The 'Learn more' text is a Markdown link. */
-"network.protection.vpn.strict.routing.setting.footer" = "Rekommenderas på nätverk du inte litar på, t.ex. offentlig wifi på hotell, barer etc. Prova att avaktivera det om du har problem med funktioner (t.ex. CarPlay, AirDrop, etc.) eller med att ansluta till andra enheter. [Läs mer](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)";
+"network.protection.vpn.strict.routing.setting.footer" = "Blockera appar från att kringgå VPN. Om du har problem med wifi-funktioner (som AirDrop eller iPhone-spegling) kan det hjälpa att stänga av det. Det rekommenderas starkt för nätverk som du inte litar på, till exempel offentliga wifi-nätverk. [Läs mer](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack).";
 
 /* Title for the Strict Routing setting item. */
-"network.protection.vpn.strict.routing.setting.title" = "Strikt routning";
+"network.protection.vpn.strict.routing.setting.title" = "Aktivera strikt routning (rekommenderas)";
 
 /* Confirm button for the new address bar picker */
 "new.address.bar.picker.confirm" = "Bekräfta";
@@ -5432,8 +5432,28 @@
 /* Button to delete all chats in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.chats.button" = "Radera chattar";
 
-/* Do not translate - stringsdict entry */
-"aiChat.history.deleteAll.confirmation.title" = "aiChat.history.deleteAll.confirmation.title";
-
 /* Top-level attachment menu option to attach the current page content to an AI chat message */
 "aichat.attachment.option.ask.about.page" = "Fråga om sidan";
+
+/* Status view message shown while the VPN is on but Strict routing is off */
+"network.protection.status.header.message.strict.routing.off" = "Viss trafik kan kringgå VPN när Strikt routning är av. Strikt routning rekommenderas för offentliga nätverk.";
+
+/* Label for the status pill shown while the VPN's Strict routing setting is off */
+"network.protection.status.view.strict.routing.pill.off" = "Strikt routning: Av";
+
+/* Label for the status pill shown while the VPN's Strict routing setting is on */
+"network.protection.status.view.strict.routing.pill.on" = "Strikt routning: På";
+
+/* Tooltip shown for the status pill while the VPN's Strict routing setting is off */
+"network.protection.status.view.strict.routing.pill.tooltip.off" = "Strikt routning rekommenderas för offentliga nätverk.";
+
+/* Tooltip shown for the status pill while the VPN's Strict routing setting is on */
+"network.protection.status.view.strict.routing.pill.tooltip.on" = "Vissa appar kanske inte fungerar när Strikt routning är på.";
+
+/* Title of the Troubleshooting section in the VPN status screen. */
+"network.protection.status.view.troubleshooting.section.title" = "Felsökning";
+
+/* The body of the notification reminding the user to turn the VPN Strict routing setting back on */
+"network.protection.strict.routing.reminder.notification.body" = "Viss trafik kan kringgå VPN när Strikt routning är av. Strikt routning rekommenderas för offentliga nätverk.";
+/* The title of the notification reminding the user to turn the VPN Strict routing setting back on */
+"network.protection.strict.routing.reminder.notification.title" = "Strikt routning är AV";

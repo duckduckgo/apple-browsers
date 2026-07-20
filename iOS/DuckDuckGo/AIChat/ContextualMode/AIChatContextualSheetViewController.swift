@@ -154,6 +154,10 @@ final class AIChatContextualSheetViewController: UIViewController {
     private var isWaitingForInitialPromptResponseState = false
     private var initialPromptRevealFallbackWorkItem: DispatchWorkItem?
 
+    /// Tracks whether the "Ask about page" quick action chip is currently on screen, so the impression
+    /// pixel fires once per appearance rather than on every view-state update.
+    private var isAskAboutPageQuickActionVisible = false
+
     // MARK: - UI Components
 
     private lazy var headerView: UIView = {
@@ -943,6 +947,7 @@ private extension AIChatContextualSheetViewController {
         expandButton.isEnabled = viewState.isExpandButtonEnabled
         contextualInputViewController.updateStartActions(suggestions: viewState.suggestions, quickActions: viewState.quickActions)
         contextualInputViewController.updateSuggestionsLoading(viewState.suggestionsLoadState == .loading)
+        fireAskAboutPageShownPixelIfNeeded(for: viewState)
 
         switch viewState.content {
         case .nativeInput:
@@ -983,6 +988,20 @@ private extension AIChatContextualSheetViewController {
         case .clearPrompt:
             contextualInputViewController.setText("")
         }
+    }
+
+    private func fireAskAboutPageShownPixelIfNeeded(for viewState: SheetViewState) {
+        let isVisible: Bool
+        switch viewState.content {
+        case .nativeInput:
+            isVisible = viewState.quickActions.contains(.askAboutPage)
+        case .webView:
+            isVisible = false
+        }
+
+        defer { isAskAboutPageQuickActionVisible = isVisible }
+        guard isVisible, !isAskAboutPageQuickActionVisible else { return }
+        pixelHandler.fireQuickActionAskAboutPageShown()
     }
 }
 

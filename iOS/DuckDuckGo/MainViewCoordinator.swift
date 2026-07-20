@@ -147,7 +147,7 @@ class MainViewCoordinator {
             navigationBarContainer.alpha = 1
             navigationBarContainer.isUserInteractionEnabled = true
             if position.isBottom {
-                setContentContainerBottomAnchorMode(.toolbar)
+                setContentContainerBottomAnchorMode(requesting: .toolbar)
             }
             isOmnibarInToolbar = false
             return
@@ -165,7 +165,7 @@ class MainViewCoordinator {
             navigationBarContainer.isUserInteractionEnabled = true
             // Span content full-bleed to the main view bottom (behind the floating toolbar) so the
             // web scroll edge sits at the screen bottom and content doesn't move when the bars hide.
-            setContentContainerBottomAnchorMode(preferredBottomContentAnchorModeForVisibleChrome())
+            setContentContainerBottomAnchorMode(requesting: preferredBottomContentAnchorModeForVisibleChrome())
             isOmnibarInToolbar = false
         case .bottom:
             guard FloatingUILayoutPolicy.shouldHostOmnibarInFloatingToolbar(
@@ -191,7 +191,7 @@ class MainViewCoordinator {
             navigationBarContainer.alpha = 0
             navigationBarContainer.isUserInteractionEnabled = false
             superview.bringSubviewToFront(toolbar)
-            setContentContainerBottomAnchorMode(preferredBottomContentAnchorModeForVisibleChrome())
+            setContentContainerBottomAnchorMode(requesting: preferredBottomContentAnchorModeForVisibleChrome())
             isOmnibarInToolbar = true
         }
     }
@@ -264,7 +264,7 @@ class MainViewCoordinator {
 
         if isUnifiedToggleInputVisible {
             navigationBarContainer.isHidden = false
-            setContentContainerBottomAnchorMode(.unifiedToggleInput)
+            setContentContainerBottomAnchorMode(requesting: .unifiedToggleInput)
             return
         }
 
@@ -275,7 +275,7 @@ class MainViewCoordinator {
             navigationBarContainer.isHidden = true
         }
 
-        setContentContainerBottomAnchorMode(.safeArea)
+        setContentContainerBottomAnchorMode(requesting: .safeArea)
     }
 
     func showNavigationBarWithBottomPosition() {
@@ -285,7 +285,7 @@ class MainViewCoordinator {
             navigationBarContainer.isHidden = false
             navigationBarContainer.alpha = 1
             navigationBarContainer.isUserInteractionEnabled = true
-            setContentContainerBottomAnchorMode(.unifiedToggleInput)
+            setContentContainerBottomAnchorMode(requesting: .unifiedToggleInput)
             return
         }
 
@@ -298,9 +298,9 @@ class MainViewCoordinator {
         }
 
         if isNavigationChromeHidden {
-            setContentContainerBottomAnchorMode(.unifiedToggleInput)
+            setContentContainerBottomAnchorMode(requesting: .unifiedToggleInput)
         } else {
-            setContentContainerBottomAnchorMode(preferredBottomContentAnchorModeForVisibleChrome())
+            setContentContainerBottomAnchorMode(requesting: preferredBottomContentAnchorModeForVisibleChrome())
         }
     }
 
@@ -560,11 +560,11 @@ class MainViewCoordinator {
         navigationBarContainer.isHidden = hidden
         applyAITabCollapsedTopSeparatorVisibility()
         if hidden {
-            setContentContainerBottomAnchorMode(.safeArea)
+            setContentContainerBottomAnchorMode(requesting: .safeArea)
         } else if isNavigationChromeHidden {
-            setContentContainerBottomAnchorMode(.unifiedToggleInput)
+            setContentContainerBottomAnchorMode(requesting: .unifiedToggleInput)
         } else {
-            setContentContainerBottomAnchorMode(.toolbar)
+            setContentContainerBottomAnchorMode(requesting: .toolbar)
         }
     }
 
@@ -598,9 +598,9 @@ class MainViewCoordinator {
                 constraints.statusBackgroundBottomToSafeAreaTop.isActive = true
             }
             if navigationBarContainer.isHidden {
-                setContentContainerBottomAnchorMode(.safeArea)
+                setContentContainerBottomAnchorMode(requesting: .safeArea)
             } else {
-                setContentContainerBottomAnchorMode(.unifiedToggleInput)
+                setContentContainerBottomAnchorMode(requesting: .unifiedToggleInput)
             }
         } else {
             isNavigationChromeHidden = false
@@ -614,9 +614,9 @@ class MainViewCoordinator {
                 constraints.navigationBarContainerBottom.constant = 0
             }
             if navigationBarContainer.isHidden {
-                setContentContainerBottomAnchorMode(.safeArea)
+                setContentContainerBottomAnchorMode(requesting: .safeArea)
             } else {
-                setContentContainerBottomAnchorMode(preferredBottomContentAnchorModeForVisibleChrome())
+                setContentContainerBottomAnchorMode(requesting: preferredBottomContentAnchorModeForVisibleChrome())
             }
         }
     }
@@ -714,15 +714,20 @@ class MainViewCoordinator {
     /// `.safeArea` then, matching what `setAITabBottomChromeHidden(true)` would set.
     func anchorContentContainerToInputTop() {
         if navigationBarContainer.isHidden {
-            setContentContainerBottomAnchorMode(.safeArea)
+            setContentContainerBottomAnchorMode(requesting: .safeArea)
         } else {
-            setContentContainerBottomAnchorMode(.unifiedToggleInput)
+            setContentContainerBottomAnchorMode(requesting: .unifiedToggleInput)
         }
     }
 
-    /// The UTI owns the bottom anchor whenever it's visible and not voice-mode-hidden, regardless of what a caller requests.
-    private func setContentContainerBottomAnchorMode(_ mode: ContentContainerBottomAnchorMode) {
-        let resolvedMode: ContentContainerBottomAnchorMode = (isUnifiedToggleInputVisible && !navigationBarContainer.isHidden) ? .unifiedToggleInput : mode
+    private var shouldUnifiedToggleInputOwnBottomAnchor: Bool {
+        isUnifiedToggleInputVisible
+            && !navigationBarContainer.isHidden
+            && !constraints.navigationBarContainerTop.isActive
+    }
+
+    private func setContentContainerBottomAnchorMode(requesting requestedMode: ContentContainerBottomAnchorMode) {
+        let resolvedMode: ContentContainerBottomAnchorMode = shouldUnifiedToggleInputOwnBottomAnchor ? .unifiedToggleInput : requestedMode
         constraints.contentContainerBottomToToolbarTop.isActive = resolvedMode == .toolbar
         constraints.contentContainerBottomToUnifiedToggleInputTop.isActive = resolvedMode == .unifiedToggleInput
         constraints.contentContainerBottomToSafeArea.isActive = resolvedMode == .safeArea
@@ -739,12 +744,10 @@ class MainViewCoordinator {
     }
 
     private func activateBaseContentContainerTopAnchor() {
+        // Floating UI spans content to the screen top for both bar positions; chrome is reserved via obscured insets.
         let useFloatingTop = isFloatingUIEnabled
-            && addressBarPosition == .top
             && !isUnifiedToggleInputVisible
             && (aiChatTabChatHeaderContainer?.isHidden ?? true)
-        // Floating top spans to the screen edge (behind the status bar) so content can underflow all
-        // the way up; otherwise content sits below the chrome via the topSlide anchor.
         setContentContainerTopAnchorMode(useFloatingTop ? .floatingBehindBar : .standard)
     }
 

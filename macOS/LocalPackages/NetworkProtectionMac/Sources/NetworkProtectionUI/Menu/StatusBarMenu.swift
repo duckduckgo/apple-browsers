@@ -50,6 +50,7 @@ public final class StatusBarMenu: NSObject {
     private let isExtensionUpdateOfferedPublisher: CurrentValuePublisher<Bool, Never>
     private let userDefaults: UserDefaults
     private let locationFormatter: VPNLocationFormatting
+    private let isStrictRoutingAvailable: Bool
     private let uninstallHandler: UninstallHandler
     private let onWillShowPopover: (() async -> Void)?
     private let buttonClickedHandler: (() -> Void)?
@@ -84,6 +85,7 @@ public final class StatusBarMenu: NSObject {
                 isExtensionUpdateOfferedPublisher: CurrentValuePublisher<Bool, Never>,
                 userDefaults: UserDefaults,
                 locationFormatter: VPNLocationFormatting,
+                isStrictRoutingAvailable: Bool = false,
                 onWillShowPopover: (() async -> Void)? = nil,
                 uninstallHandler: @escaping UninstallHandler,
                 buttonClickedHandler: (() -> Void)? = nil,
@@ -107,6 +109,7 @@ public final class StatusBarMenu: NSObject {
         self.isExtensionUpdateOfferedPublisher = isExtensionUpdateOfferedPublisher
         self.userDefaults = userDefaults
         self.locationFormatter = locationFormatter
+        self.isStrictRoutingAvailable = isStrictRoutingAvailable
         self.uninstallHandler = uninstallHandler
         self.onWillShowPopover = onWillShowPopover
         self.buttonClickedHandler = buttonClickedHandler
@@ -205,6 +208,7 @@ public final class StatusBarMenu: NSObject {
                 isMenuBarStatusView: isMenuBarStatusView,
                 userDefaults: userDefaults,
                 locationFormatter: locationFormatter,
+                isStrictRoutingAvailable: isStrictRoutingAvailable,
                 uninstallHandler: uninstallHandler,
                 subscriptionExpiredViewAppearHandler: subscriptionExpiredViewAppearHandler,
                 subscriptionExpiredViewSubscribeButtonClickPixelHandler: subscriptionExpiredViewSubscribeButtonClickPixelHandler,

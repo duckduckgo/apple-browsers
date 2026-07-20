@@ -29,6 +29,10 @@ enum SubscriptionFunnelOrigin: String {
     /// https://app.asana.com/1/137249556945/project/1207260194172075/task/1213994750860308
     case skippedOnboarding = "funnel_modal_ios__skippedonboardingupsell"
 
+    /// User entered the funnel via the day-7 promo half-sheet shown to existing users who haven't seen any subscription offer.
+    /// https://app.asana.com/1/137249556945/project/1207260194172075/task/1214800683792174
+    case existingUserPromo = "funnel_modal_ios__subscriptionnudge"
+
     /// User entered the funnel via the App Settings screen.
     /// https://app.asana.com/1/137249556945/project/1207260194172075/task/1210468753388392
     case appSettings = "funnel_appsettings_ios"

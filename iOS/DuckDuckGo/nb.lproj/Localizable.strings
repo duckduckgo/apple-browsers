@@ -3037,7 +3037,7 @@
 "network.protection.vpn.data-volume" = "Datavolum";
 
 /* Footer text for the Exclude CGNAT setting item. */
-"network.protection.vpn.exclude.cgnat.setting.footer" = "Anbefales å slå av, slik at all trafikken din går gjennom VPN. Hvis du har problemer med funksjoner som Wi-Fi-anrop, meldinger eller talepost, kan du prøve å slå det på.";
+"network.protection.vpn.exclude.cgnat.setting.footer" = "Omgå VPN for operatørtjenester, som wifi-anrop og telefonsvarer.";
 
 /* Title for the Exclude CGNAT setting item. */
 "network.protection.vpn.exclude.cgnat.setting.title" = "Ekskluder operatørtjenester";
@@ -3115,10 +3115,10 @@
 "network.protection.vpn.shortcuts.section.header" = "Snarveier";
 
 /* Footer text for the Strict Routing setting item. The 'Learn more' text is a Markdown link. */
-"network.protection.vpn.strict.routing.setting.footer" = "Anbefales på nettverk du ikke stoler på, f.eks. offentlig wifi på hoteller, barer osv. Hvis du har problemer med funksjoner (som CarPlay, AirDrop osv.) eller med å koble til andre enheter, kan du prøve å slå det av. [Finn ut mer](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)";
+"network.protection.vpn.strict.routing.setting.footer" = "Blokker apper fra å omgå VPN. Hvis du har problemer med wifi-funksjoner (som AirDrop eller iPhone-speiling), kan det hjelpe å slå det av. Sterkt anbefalt på nettverk du ikke stoler på, som offentlig wifi. [Finn ut mer](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack).";
 
 /* Title for the Strict Routing setting item. */
-"network.protection.vpn.strict.routing.setting.title" = "Streng ruting";
+"network.protection.vpn.strict.routing.setting.title" = "Håndhev streng ruting (anbefales)";
 
 /* Confirm button for the new address bar picker */
 "new.address.bar.picker.confirm" = "Bekreft";
@@ -5432,8 +5432,28 @@
 /* Button to delete all chats in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.chats.button" = "Slett chatter";
 
-/* Do not translate - stringsdict entry */
-"aiChat.history.deleteAll.confirmation.title" = "aiChat.history.deleteAll.confirmation.title";
-
 /* Top-level attachment menu option to attach the current page content to an AI chat message */
 "aichat.attachment.option.ask.about.page" = "Spør om siden";
+
+/* Status view message shown while the VPN is on but Strict routing is off */
+"network.protection.status.header.message.strict.routing.off" = "Noe trafikk kan omgå VPN når streng ruting er av. Streng ruting anbefales for offentlige nettverk.";
+
+/* Label for the status pill shown while the VPN's Strict routing setting is off */
+"network.protection.status.view.strict.routing.pill.off" = "Streng ruting: Av";
+
+/* Label for the status pill shown while the VPN's Strict routing setting is on */
+"network.protection.status.view.strict.routing.pill.on" = "Streng ruting: På";
+
+/* Tooltip shown for the status pill while the VPN's Strict routing setting is off */
+"network.protection.status.view.strict.routing.pill.tooltip.off" = "Streng ruting anbefales for offentlige nettverk.";
+
+/* Tooltip shown for the status pill while the VPN's Strict routing setting is on */
+"network.protection.status.view.strict.routing.pill.tooltip.on" = "Noen apper fungerer kanskje ikke når streng ruting er på.";
+
+/* Title of the Troubleshooting section in the VPN status screen. */
+"network.protection.status.view.troubleshooting.section.title" = "Feilsøking";
+
+/* The body of the notification reminding the user to turn the VPN Strict routing setting back on */
+"network.protection.strict.routing.reminder.notification.body" = "Noe trafikk kan omgå VPN når det er av. Streng ruting anbefales for offentlige nettverk.";
+/* The title of the notification reminding the user to turn the VPN Strict routing setting back on */
+"network.protection.strict.routing.reminder.notification.title" = "Streng ruting er AV";

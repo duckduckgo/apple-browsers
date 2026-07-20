@@ -311,27 +311,6 @@ struct LegacyFireDialogView: ModalView {
         .fixedSize(horizontal: false, vertical: true)
     }
 
-    private func presentManageFireproof() {
-        // Use the app's preferences presenter to begin a sheet on the parent window (stacks above the Fire sheet)
-        Task { @MainActor in
-            // await for the dialog to complete and trigger data reload
-            await Application.appDelegate.dataClearingPreferences.presentManageFireproofSitesDialog()
-            viewModel.clearingOption = viewModel.clearingOption
-        }
-    }
-
-    private func presentIndividualSites() {
-        // Close the dialog and open History->Sites management
-        if let window = NSApp.mainWindow {
-            window.endSheet(window.attachedSheet ?? window)
-        }
-        Application.appDelegate.windowControllersManager
-            .lastKeyMainWindowController?
-            .mainViewController
-            .browserTabViewController
-            .openNewTab(with: .history(pane: .allSites))
-    }
-
     // MARK: - Sites overlay
     private var sitesOverlay: some View {
         VStack(spacing: 0) {
@@ -486,7 +465,7 @@ struct LegacyFireDialogView: ModalView {
 
     private var fireproofSectionView: some View {
         RowWithPressEffect(roundedCorners: .bottom, rowCornerRadius: style.rowCornerRadius, isEnabled: true) {
-            presentManageFireproof()
+            viewModel.showManageFireproofSites()
         } content: {
             HStack(alignment: .center, spacing: 0) {
                 HStack(spacing: 6) {
@@ -505,7 +484,7 @@ struct LegacyFireDialogView: ModalView {
 
                 Spacer(minLength: 4)
 
-                Button(UserText.fireDialogFireproofSitesManage) { presentManageFireproof() }
+                Button(UserText.fireDialogFireproofSitesManage) { viewModel.showManageFireproofSites() }
                     .buttonStyle(
                         StandardButtonStyle(
                             fontSize: 11,
@@ -537,7 +516,7 @@ struct LegacyFireDialogView: ModalView {
                 .tinted(with: individualSitesColor))
                 .accessibilityHidden(true)
             TextButton(UserText.fireDialogManageIndividualSitesLink, textColor: Color(individualSitesColor), fontSize: 11) {
-                presentIndividualSites()
+                viewModel.deleteIndividualSites()
             }
             .accessibilityIdentifier("FireDialogView.individualSitesLink")
             .accessibilityHidden(isShowingSitesOverlay)
@@ -781,7 +760,8 @@ private class MockAIChatHistoryCleaner: AIChatHistoryCleaning {
         featureFlagger: Application.appDelegate.featureFlagger,
         tld: tld,
         windowControllersManager: Application.appDelegate.windowControllersManager,
-        dataClearingPreferences: Application.appDelegate.dataClearingPreferences
+        dataClearingPreferences: Application.appDelegate.dataClearingPreferences,
+        pixelFiring: nil
     )
 
     PreviewView(showWindowTitle: false) {
@@ -826,7 +806,8 @@ private class MockAIChatHistoryCleaner: AIChatHistoryCleaning {
         clearingOption: .allData,
         tld: tld,
         windowControllersManager: Application.appDelegate.windowControllersManager,
-        dataClearingPreferences: Application.appDelegate.dataClearingPreferences
+        dataClearingPreferences: Application.appDelegate.dataClearingPreferences,
+        pixelFiring: nil
     )
 
     return PreviewView(showWindowTitle: false) {

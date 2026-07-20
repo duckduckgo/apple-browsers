@@ -3037,7 +3037,7 @@
 "network.protection.vpn.data-volume" = "Datu apjoms";
 
 /* Footer text for the Exclude CGNAT setting item. */
-"network.protection.vpn.exclude.cgnat.setting.footer" = "Ieteicams izslēgt, lai visa tava datplūsma notiktu caur VPN. Ja rodas problēmas ar tādām funkcijām kā Wi-Fi zvani, ziņojumapmaiņa vai balss pasts, mēģini to ieslēgt.";
+"network.protection.vpn.exclude.cgnat.setting.footer" = "Ļauj mobilo sakaru operatora pakalpojumiem, piemēram, Wi-Fi zvaniem un balss pastam, apiet VPN.";
 
 /* Title for the Exclude CGNAT setting item. */
 "network.protection.vpn.exclude.cgnat.setting.title" = "Neietvert operatora pakalpojumus";
@@ -3115,10 +3115,10 @@
 "network.protection.vpn.shortcuts.section.header" = "Saīsnes";
 
 /* Footer text for the Strict Routing setting item. The 'Learn more' text is a Markdown link. */
-"network.protection.vpn.strict.routing.setting.footer" = "Ieteicama tīklos, kuriem neuzticies, piemēram, publiskam Wi-Fi viesnīcās, bāros u.tml. Ja rodas problēmas ar funkcijām (piemēram, CarPlay, AirDrop u.c.) vai savienošanos ar citām ierīcēm, pamēģini to izslēgt. [Uzzināt vairāk](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)";
+"network.protection.vpn.strict.routing.setting.footer" = "Bloķē lietotnes, kas apiet VPN. Ja rodas problēmas ar Wi-Fi funkcijām (piemēram, AirDrop vai iPhone Mirroring), var palīdzēt tās izslēgšana. Stingri ieteicams tīklos, kuriem neuzticies, piemēram, publiskajā Wi-Fi. [Uzzināt vairāk](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack).";
 
 /* Title for the Strict Routing setting item. */
-"network.protection.vpn.strict.routing.setting.title" = "Stingra maršrutēšana";
+"network.protection.vpn.strict.routing.setting.title" = "Ieslēgt stingro maršrutēšanu (ieteicams)";
 
 /* Confirm button for the new address bar picker */
 "new.address.bar.picker.confirm" = "Apstiprināt";
@@ -5432,8 +5432,28 @@
 /* Button to delete all chats in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.chats.button" = "Dzēst sarunas";
 
-/* Do not translate - stringsdict entry */
-"aiChat.history.deleteAll.confirmation.title" = "aiChat.history.deleteAll.confirmation.title";
-
 /* Top-level attachment menu option to attach the current page content to an AI chat message */
 "aichat.attachment.option.ask.about.page" = "Jautā par lapu";
+
+/* Status view message shown while the VPN is on but Strict routing is off */
+"network.protection.status.header.message.strict.routing.off" = "Daļa datplūsmas var apiet VPN, kamēr stingrā maršrutēšana ir izslēgta. Publiskajos tīklos ieteicams izmantot stingro maršrutēšanu.";
+
+/* Label for the status pill shown while the VPN's Strict routing setting is off */
+"network.protection.status.view.strict.routing.pill.off" = "Stingrā maršrutēšana: izslēgta";
+
+/* Label for the status pill shown while the VPN's Strict routing setting is on */
+"network.protection.status.view.strict.routing.pill.on" = "Stingra maršrutēšana: ieslēgta";
+
+/* Tooltip shown for the status pill while the VPN's Strict routing setting is off */
+"network.protection.status.view.strict.routing.pill.tooltip.off" = "Publiskajos tīklos ieteicams izmantot stingro maršrutēšanu.";
+
+/* Tooltip shown for the status pill while the VPN's Strict routing setting is on */
+"network.protection.status.view.strict.routing.pill.tooltip.on" = "Dažas lietotnes var nedarboties, kamēr ir ieslēgta stingrā maršrutēšana.";
+
+/* Title of the Troubleshooting section in the VPN status screen. */
+"network.protection.status.view.troubleshooting.section.title" = "Problēmu novēršana";
+
+/* The body of the notification reminding the user to turn the VPN Strict routing setting back on */
+"network.protection.strict.routing.reminder.notification.body" = "Daļa datplūsmas var apiet VPN, kamēr tā ir izslēgta. Publiskajos tīklos ieteicams izmantot stingro maršrutēšanu.";
+/* The title of the notification reminding the user to turn the VPN Strict routing setting back on */
+"network.protection.strict.routing.reminder.notification.title" = "Stingrā maršrutēšana ir IZSLĒGTA";

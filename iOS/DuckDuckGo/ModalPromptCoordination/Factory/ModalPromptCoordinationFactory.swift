@@ -40,6 +40,10 @@ enum ModalPromptCoordinationFactory {
         let defaultBrowserModalPromptProvider = DefaultBrowserModalPromptProvider(presenter: dependency.defaultBrowserPromptPresenter)
         let winBackOfferModalPromptProvider = WinBackOfferModalPromptProvider(presenter: dependency.winBackOfferPresenter, coordinator: dependency.winBackOfferCoordinator)
         let subscriptionPromoModalPromptProvider = SubscriptionPromoModalPromptProvider(presenter: dependency.subscriptionPromoPresenter, coordinator: dependency.subscriptionPromoCoordinator)
+        let subscriptionPromoExistingUserModalPromptProvider = SubscriptionPromoModalPromptProvider(
+            presenter: dependency.subscriptionPromoExistingUserPresenter,
+            coordinator: dependency.subscriptionPromoExistingUserCoordinator
+        )
         let whatsNewModalPromptProvider = WhatsNewCoordinator(
             displayContext: .scheduled,
             repository: dependency.whatsNewRepository,
@@ -65,6 +69,7 @@ enum ModalPromptCoordinationFactory {
                 defaultBrowser: defaultBrowserModalPromptProvider,
                 winBackOffer: winBackOfferModalPromptProvider,
                 subscriptionPromo: subscriptionPromoModalPromptProvider,
+                subscriptionPromoExistingUser: subscriptionPromoExistingUserModalPromptProvider,
                 whatsNew: whatsNewModalPromptProvider,
                 cookiePopupProtectionOptIn: cookiePopupProtectionOptInModalPromptProvider
             )
@@ -125,6 +130,8 @@ extension ModalPromptCoordinationFactory {
         let winBackOfferCoordinator: WinBackOfferCoordinating
         let subscriptionPromoPresenter: SubscriptionPromoPresenting
         let subscriptionPromoCoordinator: SubscriptionPromoCoordinating
+        let subscriptionPromoExistingUserPresenter: SubscriptionPromoPresenting
+        let subscriptionPromoExistingUserCoordinator: SubscriptionPromoCoordinating
         let userScriptsDependencies: DefaultScriptSourceProvider.Dependencies
         let omniBarFocuser: OmniBarFocuserProvider
     }

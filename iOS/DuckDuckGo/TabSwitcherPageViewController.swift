@@ -238,7 +238,7 @@ class TabSwitcherPageViewController: UIViewController {
         trackerInfoModel = .trackerInfoPanel(
             state: state,
             onTap: { },
-            onInfo: { [weak self] in
+            onDismiss: { [weak self] in
                 self?.presentHideTrackerCountAlert()
             }
         )

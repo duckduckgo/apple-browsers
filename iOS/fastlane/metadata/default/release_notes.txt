@@ -1,1 +1,2 @@
+• On iPad, if you have the Duck.ai address bar toggle enabled, you can now switch models directly from the address bar. Simply tap the model name to open the model picker menu.
 • This update includes various improvements and fixes a few bugs.

@@ -248,6 +248,35 @@
         "suffixes": ["daily_count"],
         "parameters": ["appVersion", "pixelSource", "channel"]
     },
+    "m_mac_aichat_addressbar_subscription_upsell_triggered": {
+        "description": "Fired when user taps a gated model or reasoning effort in the native omnibar picker, routing them to the subscription purchase/upgrade flow",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "current_tier",
+                "type": "string",
+                "description": "The user's subscription tier at the time of the gated selection",
+                "enum": ["free", "plus", "pro", "internal"]
+            },
+            {
+                "key": "required_tier",
+                "type": "string",
+                "description": "The public subscription tier required to unlock the gated model or reasoning effort",
+                "enum": ["free", "plus", "pro"]
+            },
+            {
+                "key": "flow_type",
+                "type": "string",
+                "description": "Which subscription flow the user was routed to",
+                "enum": ["purchase", "upgrade"]
+            }
+        ]
+    },
     "m_mac_aichat_new_voice_chat_omnibar_native": {
         "description": "Fired when user opens a new Duck.ai voice chat from the native omnibar",
         "owners": ["jotaemepereira"],

@@ -28,8 +28,14 @@ final class MockFeatureFlagger: FeatureFlagger {
 
     var enabledFeatureFlags: [FeatureFlag] = []
 
+    private let updatesSubject = PassthroughSubject<Void, Never>()
     var updatesPublisher: AnyPublisher<Void, Never> {
-        PassthroughSubject().eraseToAnyPublisher()
+        updatesSubject.eraseToAnyPublisher()
+    }
+
+    /// Call this method in tests to trigger the updates publisher
+    func triggerUpdate() {
+        updatesSubject.send()
     }
 
     public init(internalUserDecider: InternalUserDecider = DefaultInternalUserDecider(store: MockInternalUserStoring()),

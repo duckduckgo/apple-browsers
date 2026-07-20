@@ -1649,7 +1649,7 @@ extension SettingsViewModel: DataImportViewControllerDelegate {
 extension SettingsViewModel {
 
     enum SettingsDeepLinkSection: Identifiable, Equatable {
-        case netP
+        case netP(scrollToStrictRouting: Bool = false)
         case dbp
         case itr
         case subscriptionFlow(redirectURLComponents: URLComponents? = nil)

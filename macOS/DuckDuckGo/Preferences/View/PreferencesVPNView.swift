@@ -70,23 +70,23 @@ extension Preferences {
                         )
                     }
 
-                    if model.isStrictRoutingAvailable {
-                        SpacedCheckbox {
-                            ToggleMenuItemWithDescription(
-                                UserText.vpnStrictRoutingSettingTitle,
-                                UserText.vpnStrictRoutingSettingDescription,
-                                isOn: $model.enforceRoutes,
-                                spacing: 12
-                            )
-                        }
-                    }
-
                     if model.isExcludeCGNATAvailable {
                         SpacedCheckbox {
                             ToggleMenuItemWithDescription(
                                 UserText.vpnExcludeCGNATSettingTitle,
                                 UserText.vpnExcludeCGNATSettingDescription,
                                 isOn: $model.excludeCGNAT,
+                                spacing: 12
+                            )
+                        }
+                    }
+
+                    if model.isStrictRoutingAvailable {
+                        SpacedCheckbox {
+                            ToggleMenuItemWithDescription(
+                                UserText.vpnStrictRoutingSettingTitle,
+                                UserText.vpnStrictRoutingSettingDescription,
+                                isOn: $model.enforceRoutes,
                                 spacing: 12
                             )
                         }
@@ -148,6 +148,12 @@ extension Preferences {
 
                 PreferencePaneSection(UserText.vpnDnsServerTitle) {
                     PreferencePaneSubSection {
+                        if model.isCustomDNSSelected {
+                            TextMenuItemCaption(UserText.vpnDnsServerIPv4Disclaimer)
+                        } else {
+                            TextMenuItemCaption(UserText.vpnSecureDNSSettingDescription)
+                        }
+
                         Picker(selection: $model.isCustomDNSSelected, label: EmptyView()) {
                             VStack(alignment: .leading, spacing: 8) {
                                 Text(UserText.vpnDnsServerPickerDefaultTitle)
@@ -192,41 +198,36 @@ extension Preferences {
                                 model.isCustomDNSSelected = false
                             }
                         }
-
-                        if model.isCustomDNSSelected {
-                            TextMenuItemCaption(UserText.vpnDnsServerIPv4Disclaimer)
-                        } else {
-                            TextMenuItemCaption(UserText.vpnSecureDNSSettingDescription)
-                        }
                     }
                 }.sheet(isPresented: $showsCustomDNSServerPageSheet) {
                     CustomDNSServerPageSheet(model: model,
                                              isSheetPresented: $showsCustomDNSServerPageSheet)
                 }
 
-                // SECTION: Diagnostics
+                // SECTION: Troubleshooting
 
-                if model.showsCopyDiagnosticsButton {
-                    PreferencePaneSection {
-                        Button(copyDiagnosticsButtonTitle) {
-                            Task { @MainActor in
-                                await model.copySupportInfo()
+                if model.showsCopyDiagnosticsButton || model.showUninstallVPN {
+                    PreferencePaneSection(UserText.vpnTroubleshootingTitle) {
+                        if model.showsCopyDiagnosticsButton {
+                            PreferencePaneSubSection {
+                                Button(copyDiagnosticsButtonTitle) {
+                                    Task { @MainActor in
+                                        await model.copySupportInfo()
+                                    }
+                                }
+                                .disabled(model.copySupportInfoState != .idle)
+
+                                TextMenuItemCaption(UserText.vpnSettingsCopyDiagnosticsCaption)
                             }
                         }
-                        .disabled(model.copySupportInfoState != .idle)
 
-                        TextMenuItemCaption(UserText.vpnSettingsCopyDiagnosticsCaption)
-                    }
-                    .padding(.bottom, 12)
-                }
-
-                // SECTION: Uninstall
-
-                if model.showUninstallVPN {
-                    PreferencePaneSection {
-                        Button(UserText.uninstallVPNButtonTitle) {
-                            Task { @MainActor in
-                                await model.uninstallVPN()
+                        if model.showUninstallVPN {
+                            PreferencePaneSubSection {
+                                Button(UserText.uninstallVPNButtonTitle) {
+                                    Task { @MainActor in
+                                        await model.uninstallVPN()
+                                    }
+                                }
                             }
                         }
                     }

@@ -579,3 +579,40 @@ struct SettledNavigationReCollectTests {
         #expect(runsDeferredReCollect(latchedURL: nil, settledContentURL: "https://a.com", hasPendingCollections: false) == false)
     }
 }
+
+// MARK: - Collection result delivery
+
+/// `PageContextTabExtension.shouldDeliverCollectionResult`: which collection results reach
+/// `handle()`. A forced (user-requested) collect must resolve even when empty — the FE awaits
+/// the `getAIChatPageContext` response — but must never replace attached content.
+struct PageContextCollectionResultDeliveryTests {
+
+    private func context(content: String) -> AIChatPageContextData {
+        AIChatPageContextData(title: "Title", favicon: [], url: "https://example.com", content: content, truncated: false, fullContentLength: content.count)
+    }
+
+    @Test("A result with content is always delivered")
+    func resultWithContentIsDelivered() {
+        #expect(PageContextTabExtension.shouldDeliverCollectionResult(context(content: "body"), wasForced: false, cached: nil))
+        #expect(PageContextTabExtension.shouldDeliverCollectionResult(context(content: "body"), wasForced: true, cached: context(content: "old")))
+    }
+
+    @Test("An unsolicited empty or nil result is dropped")
+    func unforcedEmptyResultIsDropped() {
+        #expect(!PageContextTabExtension.shouldDeliverCollectionResult(context(content: ""), wasForced: false, cached: nil))
+        #expect(!PageContextTabExtension.shouldDeliverCollectionResult(nil, wasForced: false, cached: nil))
+    }
+
+    @Test("A forced empty result is delivered when nothing with content is attached, so the awaiting FE request resolves")
+    func forcedEmptyResultIsDeliveredWhenNothingAttached() {
+        #expect(PageContextTabExtension.shouldDeliverCollectionResult(context(content: ""), wasForced: true, cached: nil))
+        #expect(PageContextTabExtension.shouldDeliverCollectionResult(nil, wasForced: true, cached: nil))
+        #expect(PageContextTabExtension.shouldDeliverCollectionResult(nil, wasForced: true, cached: context(content: "")))
+    }
+
+    @Test("A forced empty result never replaces attached content")
+    func forcedEmptyResultKeepsAttachedContent() {
+        #expect(!PageContextTabExtension.shouldDeliverCollectionResult(context(content: ""), wasForced: true, cached: context(content: "attached")))
+        #expect(!PageContextTabExtension.shouldDeliverCollectionResult(nil, wasForced: true, cached: context(content: "attached")))
+    }
+}

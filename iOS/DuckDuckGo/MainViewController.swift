@@ -1174,6 +1174,12 @@ class MainViewController: UIViewController {
             latestKeyboardFrame = .zero
             adjustUI(withKeyboardFrame: .zero)
         }
+
+        // Checked here (not `keyboardWillHide`) so the find navigator's visibility has settled: it stays visible when a
+        // search is confirmed, but is gone when the user dismisses find — which also hides the keyboard.
+        if #available(iOS 16.0, *) {
+            hideChromeForConfirmedFindInPage()
+        }
     }
 
     private var isAnyAITabUTIState: Bool {
@@ -3293,6 +3299,19 @@ class MainViewController: UIViewController {
         guard #available(iOS 16.0, *), featureFlagger.isFeatureOn(.systemFindInPage) else { return }
         rememberFindInPageQuery(for: tab)
         tab?.webView.findInteraction?.dismissFindNavigator()
+        // Restore chrome immediately for our own dismiss paths. Dismissing via the system Done button has no callback,
+        // but `isChromeScrollInteractionDisabled` goes false once the navigator is gone, so a swipe brings it back.
+        setBarsHidden(false, animated: true, customAnimationDuration: nil)
+    }
+
+    /// Hides the browsing chrome when a system find-in-page search is confirmed (the keyboard is dismissed but the find
+    /// navigator stays available). It stays hidden for the rest of the search because `isChromeScrollInteractionDisabled`
+    /// stops swipes from revealing it while the navigator is visible.
+    @available(iOS 16.0, *)
+    private func hideChromeForConfirmedFindInPage() {
+        guard featureFlagger.isFeatureOn(.systemFindInPage),
+              currentTab?.webView.findInteraction?.isFindNavigatorVisible == true else { return }
+        setBarsHidden(true, animated: true, customAnimationDuration: nil)
     }
 
     // Persist the current query so the find navigator can be prepopulated when reopened on this tab.
@@ -4176,9 +4195,15 @@ extension MainViewController: BrowserChromeDelegate {
         return !shouldPinChrome && !daxDialogsManager.shouldShowFireButtonPulse
     }
 
-    /// No hide/show bars on scroll. On when bar hides behind web keyboard (else page jerks).
+    /// No hide/show bars on scroll. On when bar hides behind web keyboard (else page jerks), and while the system
+    /// find-in-page navigator is visible so swipes can't reveal the chrome — the user must dismiss find first.
     var isChromeScrollInteractionDisabled: Bool {
-        isBottomAddressBarHiddenForWebKeyboard
+        if isBottomAddressBarHiddenForWebKeyboard { return true }
+        if #available(iOS 16.0, *), featureFlagger.isFeatureOn(.systemFindInPage),
+           currentTab?.webView.findInteraction?.isFindNavigatorVisible == true {
+            return true
+        }
+        return false
     }
 
     /// When `true`, the omni bar and toolbar are never hidden on scroll.

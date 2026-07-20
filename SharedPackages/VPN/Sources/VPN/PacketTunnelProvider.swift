@@ -276,6 +276,10 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                     snoozeEnded: snoozeJustEnded
                 )
 
+                if !isEnforceRoutesActive {
+                    self.notificationsPresenter.showStrictRoutingReminderNotification()
+                }
+
                 snoozeJustEnded = false
             }
 
@@ -286,6 +290,18 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     public var isKillSwitchEnabled: Bool {
         guard #available(macOS 11.0, iOS 14.2, *) else { return false }
         return self.protocolConfiguration.enforceRoutes || self.protocolConfiguration.includeAllNetworks
+    }
+
+    /// Whether strict routing is actually applied to this tunnel session.
+    ///
+    /// Inside the tunnel, the applied truth lives on `protocolConfiguration` (bound to the NECP session
+    /// at creation time), not on `settings.enforceRoutes` — the latter is user intent for the *next*
+    /// session and can be stale here (e.g. the macOS system extension can't read the app's defaults, and
+    /// system/on-demand starts don't deliver a settings snapshot). Read this, not `settings`, for
+    /// routing-dependent behavior in the extension.
+    public var isEnforceRoutesActive: Bool {
+        guard #available(macOS 11.0, iOS 14.2, *) else { return false }
+        return self.protocolConfiguration.enforceRoutes
     }
 
     // MARK: - Tunnel Settings
@@ -377,6 +393,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     private let tunnelHealth: NetworkProtectionTunnelHealthStore
     private let controllerErrorStore: NetworkProtectionTunnelErrorStore
     private let knownFailureStore: NetworkProtectionKnownFailureStore
+    private let errorStateReset: VPNErrorStateReset
     private let snoozeTimingStore: NetworkProtectionSnoozeTimingStore
     private let wireGuardInterface: WireGuardGoInterface
     private let deviceManager: NetworkProtectionDeviceManagement
@@ -453,6 +470,8 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         self.tunnelHealth = tunnelHealthStore
         self.controllerErrorStore = controllerErrorStore
         self.knownFailureStore = knownFailureStore
+        self.errorStateReset = VPNErrorStateReset(errorMessageStore: controllerErrorStore,
+                                                  knownFailureStore: knownFailureStore)
         self.snoozeTimingStore = snoozeTimingStore
         self.wireGuardInterface = wireGuardInterface
         self.settings = settings
@@ -728,7 +747,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
         switch result {
         case .connected:
-            self.tunnelHealth.isHavingConnectivityIssues = false
+            self.clearResolvedIssueState()
 
         case .reconnected(let failureCount):
             providerEvents.fire(
@@ -743,7 +762,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                         server: serverName))
             }
 
-            self.tunnelHealth.isHavingConnectivityIssues = false
+            self.clearResolvedIssueState()
 
         case .disconnected(let failureCount):
             if failureCount == 1 {
@@ -1060,15 +1079,24 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     /// Resets the issue state when startup up the tunnel manually.
     ///
     /// When the tunnel is started by on-demand the issue state should not be cleared until the tester
-    /// reports a working connection.
+    /// reports a working connection (see `clearResolvedIssueState()`).
     ///
     private func resetIssueStateOnTunnelStart(_ startupOptions: StartupOptions) {
         guard startupOptions.startupMethod != .automaticOnDemand else {
             return
         }
 
+        clearResolvedIssueState()
+    }
+
+    /// Clears the issue state once a working connection is confirmed (and on manual start).
+    ///
+    /// On-demand starts skip `resetIssueStateOnTunnelStart`, so without this a failed start's error
+    /// lingers in the stores and resurfaces when the tunnel later disconnects.
+    ///
+    private func clearResolvedIssueState() {
         tunnelHealth.isHavingConnectivityIssues = false
-        controllerErrorStore.lastErrorMessage = nil
+        errorStateReset.clear()
     }
 
     // MARK: - Tunnel Configuration

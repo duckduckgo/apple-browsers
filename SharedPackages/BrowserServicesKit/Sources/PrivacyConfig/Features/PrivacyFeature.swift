@@ -134,6 +134,10 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     // Controls visibility of the "Manage individual sites" link in the Fire dialog
     case fireDialogIndividualSitesLink
 
+    // Simplified Fire dialog
+    // https://app.asana.com/1/137249556945/project/1208671677432066/task/1214715437711872?focus=true
+    case fireDialogSimplified
+
     /// Use WKDownload for favicon fetching to bypass App Transport Security restrictions on HTTP URLs
     case faviconWKDownload
 
@@ -201,9 +205,6 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     case screenTimeCleaning
 
-    /// Enables the custom NSPanel-based bookmarks bar menu (replacing NSPopover) with NSGlassEffectView on macOS 26
-    case bookmarksBarMenusCustomWindow
-
     /// https://app.asana.com/1/137249556945/project/1211264967278501/task/1211806114021633?focus=true
     case onboardingRebranding
 
@@ -258,16 +259,6 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213336304802675
     case showNTPAfterIdleReturn
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214749215529034?focus=true
-    case escapeHatchActions
-
-    /// Surfaces the escape-hatch "delete tab" action as a dedicated Fire button on the card and removes it from the menu.
-    /// https://app.asana.com/1/137249556945/project/1211654189969294/task/1215358250572341?focus=true
-    case escapeHatchFireButton
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215530020470713?focus=true
-    case escapeHatchHideShortcut
-
     case crashReportOptInStatusResetting
 
     case screenTimeCleaning
@@ -287,6 +278,9 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213965646075290
     case fireButtonRefinements
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216535350078652
+    case fireButtonSingleTabDeleteAll
+
     /// https://app.asana.com/1/137249556945/project/392891325557410/task/1212828713075939?focus=true
     case omniBarLongPressMenu
 
@@ -305,12 +299,6 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215099690878849
     case tabsSaveOptimization
 
-    /// https://app.asana.com/1/137249556945/project/715106103902962/task/1213690148091855
-    case icsCalendarLinks
-
-    /// https://app.asana.com/1/137249556945/project/1215172677539195/task/1215631408578779
-    case vcardContactLinks
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215169783702336
     case walletPassDownload
 
@@ -320,12 +308,13 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215385432113040?focus=true
     case removeChatHistory
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215816968312844?focus=true
-    case staleFaviconCleanup
-
     /// NA experiment: search token to speed up SERP by combining Index/Deep responses.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216365830146824
     case searchTokenExperiment
+
+    /// NA Experiment: tailor the onboarding flow based on the user's download reason.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216491579842691?focus=true
+    case onboardingFlowByDownloadReasonExperiment
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {
@@ -563,6 +552,11 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables the reasoning effort picker in the Duck.ai omnibar
     case omnibarReasoningEffort
 
+    /// Enables the subscription-upsell "Try for free"/"Upgrade" tags and confirmation dialog on
+    /// gated models/reasoning efforts in the Duck.ai omnibar. A kill switch independent of the
+    /// underlying tier gating, which stays in effect (gated rows just become inert) if disabled.
+    case omnibarSubscriptionUpsell
+
     /// Enables 1-click voice-chat access from the Duck.ai omnibar (mic icon shown when input is empty)
     case omnibarVoiceChatAccess
 
@@ -609,6 +603,12 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Enables the macOS native "Customize Responses" UI (omnibar + New Tab Page entry points).
     case customizeResponses
+
+    /// Native Chats screen redesign: search toggle, overflow menu, and multi-select actions.
+    case historyMultiselect
+
+    /// Replaces Duck.ai's web-based chat sidebar with native UI.
+    case nativeSidebar
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {
@@ -722,6 +722,7 @@ public enum AutoconsentSubfeature: String, CaseIterable, PrivacySubfeature {
     case heuristicAction
     case cookiePopupPreferenceSetting
     case cookiePopupOptInDialog
+    case cookiePopupOptInDialogExperiment
 }
 
 public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
@@ -740,6 +741,7 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case freeTrialConversionWideEvent
     case subscriptionPromoForReinstallers
     case subscriptionExpirationReminderNotification
+    case subscriptionPromoForExistingUsers
 }
 
 public enum DuckPlayerSubfeature: String, PrivacySubfeature {

@@ -53,4 +53,12 @@ public protocol NewTabPageOmnibarActionsHandling: AnyObject {
     @MainActor
     func removeSuggestion(_ url: String)
 
+    /// Opens the Duck.ai Customize Responses modal from the NTP omnibar Tools menu.
+    @MainActor
+    func openCustomizeResponses()
+
+    /// Persists whether the stored response customization is applied (from the row's toggle).
+    @MainActor
+    func setCustomizeResponsesActive(_ active: Bool)
+
 }

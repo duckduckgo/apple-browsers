@@ -66,8 +66,14 @@ struct VPNUpsellPopoverView: View {
 
     var body: some View {
         VStack(spacing: Constants.outerVerticalSpacing) {
-            animatedHeader
-                .padding(.horizontal, Constants.headerHorizontalPadding)
+            Group {
+                if viewModel.isAppRebranded {
+                    rebrandHeader
+                } else {
+                    animatedHeader
+                }
+            }
+            .padding(.horizontal, Constants.headerHorizontalPadding)
 
             VStack(spacing: Constants.innerVerticalSpacing) {
                 titleAndSubtitle
@@ -97,6 +103,10 @@ struct VPNUpsellPopoverView: View {
                 .frame(width: Constants.subscriptionSize.width, height: Constants.subscriptionSize.height)
                 .clipped()
             }
+    }
+
+    private var rebrandHeader: some View {
+        Image(.desktopMobileSubscription96)
     }
 
     private var titleAndSubtitle: some View {
@@ -136,13 +146,18 @@ struct VPNUpsellPopoverView: View {
 
     private var actionButtons: some View {
         HStack(spacing: Constants.actionButtonHorizontalSpacing) {
-            Button {
+            let dismissButton = Button {
                 viewModel.dismiss()
             } label: {
                 Text(UserText.vpnUpsellPopoverNoThanksButton)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
-            .buttonStyle(StandardButtonStyle(pillShape: true))
+
+            if viewModel.isAppRebranded {
+                dismissButton.buttonStyle(DismissActionButtonStyle(pillShape: true, showsBorder: false, stateColors: .themedDismissButton))
+            } else {
+                dismissButton.buttonStyle(StandardButtonStyle(pillShape: true))
+            }
 
             Button {
                 viewModel.showSubscriptionLandingPage()
@@ -150,7 +165,10 @@ struct VPNUpsellPopoverView: View {
                 Text(viewModel.featureSet.mainCTATitle.capitalized)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
-            .buttonStyle(DefaultActionButtonStyle(enabled: true, shouldBeFixedVertical: false, pillShape: true))
+            .buttonStyle(DefaultActionButtonStyle(enabled: true,
+                                                  shouldBeFixedVertical: false,
+                                                  stateColors: viewModel.isAppRebranded ? .themedActionButton : .legacyActionButton,
+                                                  pillShape: true))
         }
         .frame(height: Constants.actionButtonHeight)
     }

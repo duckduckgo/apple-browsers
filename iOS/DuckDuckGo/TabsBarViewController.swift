@@ -66,9 +66,11 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
         case currentMode
     }
     
-    @IBOutlet weak var collectionView: UICollectionView!
-    @IBOutlet weak var buttonsStack: UIStackView!
-    @IBOutlet weak var buttonsBackground: UIView!
+    private let tabsBarView = TabsBarView()
+
+    var collectionView: UICollectionView { tabsBarView.collectionView }
+    var buttonsStack: UIStackView { tabsBarView.buttonsStack }
+    var buttonsBackground: UIView { tabsBarView.buttonsBackground }
 
     lazy var fireButton: UIButton = {
         createButton(image: DesignSystemImages.Glyphs.Size24.fireSolid)
@@ -125,12 +127,21 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
         return tabsModel?.currentIndex
     }
 
-    static func createFromXib() -> TabsBarViewController {
-        let storyboard = UIStoryboard(name: "TabSwitcher", bundle: nil)
-        let controller: TabsBarViewController = storyboard.instantiateViewController(identifier: "TabsBar") { coder in
-            TabsBarViewController(coder: coder)
-        }
-        return controller
+    init() {
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    static func create() -> TabsBarViewController {
+        TabsBarViewController()
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override func loadView() {
+        view = tabsBarView
     }
     
     override func viewDidLoad() {
@@ -151,8 +162,7 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
         // Prefetching can drop a still-visible cell during a fast scroll and not re-display it
         // (a gap). Prefetching gains are marginal here and on top of that we're not handling it properly (no willDisplay).
         collectionView.isPrefetchingEnabled = false
-
-        collectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.leadingInset).isActive = true
+        collectionView.register(TabsBarCell.self, forCellWithReuseIdentifier: TabsBarCell.reuseIdentifier)
 
         addTabButton.setImage(DesignSystemImages.Glyphs.Size24.add, for: .normal)
         fireButton.setImage(DesignSystemImages.Glyphs.Size24.fireSolid, for: .normal)
@@ -243,7 +253,7 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
         aiChatChip.setSheetState(isContextualSheetPresented ? .open : .closed)
     }
 
-    @IBAction func onFireButtonPressed() {
+    @objc private func onFireButtonPressed() {
         
         func showClearDataAlert() {
             guard let tabManager, let daxDialogsManager else {
@@ -257,6 +267,7 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
                 tabViewModel: tabManager.viewModelForCurrentTab(),
                 pixelSource: .browsing,
                 fireContext: .default(daxDialogsManager: daxDialogsManager),
+                isSingleTab: tabManager.currentTabsModel.count == 1,
                 browsingMode: tabManager.currentBrowsingMode,
                 onConfirm: { [weak self] fireRequest in
                     guard let self = self else { return }
@@ -272,7 +283,7 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
         }
     }
 
-    @IBAction func onNewTabPressed() {
+    @objc private func onNewTabPressed() {
         DailyPixel.fireDailyAndCount(pixel: .tabBarNewTab)
         requestNewTab(type: .currentMode)
     }
@@ -629,7 +640,7 @@ extension TabsBarViewController: UICollectionViewDataSource {
     }
 
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "Tab", for: indexPath) as? TabsBarCell else {
+        guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: TabsBarCell.reuseIdentifier, for: indexPath) as? TabsBarCell else {
             fatalError("Unable to create TabBarCell")
         }
         

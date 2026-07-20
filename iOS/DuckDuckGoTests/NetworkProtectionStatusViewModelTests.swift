@@ -19,6 +19,7 @@
 
 import XCTest
 import Combine
+import Core
 import VPN
 import NetworkExtension
 import VPNTestUtils
@@ -83,9 +84,12 @@ import Subscription
     }
 
     func testStatusUpdate_notconnected_setsHeaderTitleToOff() async {
-        viewModel.headerTitle = ""
-        await whenStatusUpdate_notConnected()
-        XCTAssertEqual(self.viewModel.headerTitle, UserText.netPStatusHeaderTitleOff)
+        let offTitleStates: [ConnectionStatus] = [.disconnected, .disconnecting, .notConfigured, .connecting, .reasserting]
+        for status in offTitleStates {
+            viewModel.headerTitle = ""
+            statusObserver.subject.send(status)
+            await waitFor(condition: self.viewModel.headerTitle == UserText.netPStatusHeaderTitleOff)
+        }
     }
 
     func testStatusUpdate_connected_setsStatusImageIDToVPN() async {
@@ -288,6 +292,108 @@ import Subscription
         }
         let expectation = XCTNSPredicateExpectation(predicate: predicate, object: nil)
         await fulfillment(of: [expectation], timeout: 20)
+    }
+
+    // MARK: - Strict routing pill
+
+    func testShowsStrictRoutingPillWhenEnabledAndAvailable() {
+        let model = makeStrictRoutingViewModel(isStrictRoutingAvailable: true)
+        model.isNetPEnabled = true
+        XCTAssertTrue(model.showStrictRoutingPill)
+    }
+
+    func testHidesStrictRoutingPillWhenUnavailable() {
+        let model = makeStrictRoutingViewModel(isStrictRoutingAvailable: false)
+        model.isNetPEnabled = true
+        XCTAssertFalse(model.showStrictRoutingPill)
+    }
+
+    func testHidesStrictRoutingPillWhenVPNOff() {
+        let model = makeStrictRoutingViewModel(isStrictRoutingAvailable: true)
+        model.isNetPEnabled = false
+        XCTAssertFalse(model.showStrictRoutingPill)
+    }
+
+    func testHidesStrictRoutingPillWhileReasserting() async {
+        let statusObserver = MockConnectionStatusObserver()
+        let model = makeStrictRoutingViewModel(isStrictRoutingAvailable: true, statusObserver: statusObserver)
+
+        statusObserver.subject.send(.connected(connectedDate: Date()))
+        await waitFor(condition: model.isNetPEnabled)
+        XCTAssertTrue(model.showStrictRoutingPill)
+
+        // Reasserting is presented as an off/connecting state, matching the rest of the status UI,
+        // so the pill and its on-state message are hidden while the tunnel reasserts.
+        statusObserver.subject.send(.reasserting)
+        await waitFor(condition: !model.isNetPEnabled)
+        XCTAssertFalse(model.showStrictRoutingPill)
+        XCTAssertEqual(model.headerMessage, UserText.netPStatusHeaderMessageOff)
+    }
+
+    func testHeaderMessageWarnsWhenStrictRoutingOff() {
+        let model = makeStrictRoutingViewModel(isStrictRoutingAvailable: true)
+        model.isNetPEnabled = true
+        model.enforceRoutes = false
+        XCTAssertEqual(model.headerMessage, UserText.netPStatusHeaderMessageStrictRoutingOff)
+    }
+
+    func testHeaderMessageReflectsOnStateWhenStrictRoutingOn() {
+        let model = makeStrictRoutingViewModel(isStrictRoutingAvailable: true)
+        model.isNetPEnabled = true
+        model.enforceRoutes = true
+        XCTAssertEqual(model.headerMessage, UserText.netPStatusHeaderMessageOn)
+    }
+
+    func testHeaderMessageReflectsOffStateWhenVPNOff() {
+        let model = makeStrictRoutingViewModel(isStrictRoutingAvailable: true)
+        model.isNetPEnabled = false
+        model.enforceRoutes = true
+        XCTAssertEqual(model.headerMessage, UserText.netPStatusHeaderMessageOff)
+    }
+
+    func testHeaderMessageReflectsOnStateWhenStrictRoutingUnavailable() {
+        let model = makeStrictRoutingViewModel(isStrictRoutingAvailable: false)
+        model.isNetPEnabled = true
+        model.enforceRoutes = false
+        XCTAssertEqual(model.headerMessage, UserText.netPStatusHeaderMessageOn)
+    }
+
+    func testStrictRoutingAvailabilityRefreshesWhenFeatureFlagChanges() throws {
+        let featureFlagger = MockFeatureFlagger()
+        let model = makeStrictRoutingViewModel(featureFlagger: featureFlagger)
+        XCTAssertFalse(model.isStrictRoutingAvailable)
+
+        featureFlagger.enabledFeatureFlags = [.vpnStrictRoutingToggle]
+        featureFlagger.triggerUpdate()
+
+        try waitForPublisher(model.$isStrictRoutingAvailable, toEmit: true)
+    }
+
+    private func makeStrictRoutingViewModel(isStrictRoutingAvailable: Bool,
+                                            statusObserver: ConnectionStatusObserver = MockConnectionStatusObserver()) -> NetworkProtectionStatusViewModel {
+        makeStrictRoutingViewModel(
+            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: isStrictRoutingAvailable ? [.vpnStrictRoutingToggle] : []),
+            statusObserver: statusObserver
+        )
+    }
+
+    private func makeStrictRoutingViewModel(featureFlagger: MockFeatureFlagger,
+                                            statusObserver: ConnectionStatusObserver = MockConnectionStatusObserver()) -> NetworkProtectionStatusViewModel {
+        // Use an isolated defaults suite so setting `enforceRoutes` doesn't leak into the shared
+        // app-group defaults and pollute other tests.
+        let suiteName = "test.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        addTeardownBlock {
+            defaults.removePersistentDomain(forName: suiteName)
+        }
+
+        return NetworkProtectionStatusViewModel(tunnelController: MockTunnelController(),
+                                                settings: VPNSettings(defaults: defaults),
+                                                statusObserver: statusObserver,
+                                                serverInfoObserver: MockConnectionServerInfoObserver(),
+                                                locationListRepository: MockNetworkProtectionLocationListRepository(),
+                                                enablesUnifiedFeedbackForm: false,
+                                                featureFlagger: featureFlagger)
     }
 
     private func serverAttributes() -> NetworkProtectionServerInfo.ServerAttributes {

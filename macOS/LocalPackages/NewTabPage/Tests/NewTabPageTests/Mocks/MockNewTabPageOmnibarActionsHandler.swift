@@ -26,6 +26,8 @@ final class MockNewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandlin
     var openAiChatHandler: ((String, Bool, NewTabPageDataModel.OpenAiChatTrigger, NewTabPageDataModel.OpenTarget) -> Void)?
     var confirmDeleteAiChatHandler: ((String, String, NSWindow?) async -> Bool)?
     var removeSuggestionHandler: ((String) -> Void)?
+    var openCustomizeResponsesHandler: (() -> Void)?
+    var setCustomizeResponsesActiveHandler: ((Bool) -> Void)?
 
     @MainActor
     func submitSearch(_ term: String, target: NewTabPageDataModel.OpenTarget) {
@@ -68,5 +70,15 @@ final class MockNewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandlin
     @MainActor
     func removeSuggestion(_ url: String) {
         removeSuggestionHandler?(url)
+    }
+
+    @MainActor
+    func openCustomizeResponses() {
+        openCustomizeResponsesHandler?()
+    }
+
+    @MainActor
+    func setCustomizeResponsesActive(_ active: Bool) {
+        setCustomizeResponsesActiveHandler?(active)
     }
 }

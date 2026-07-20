@@ -2,7 +2,7 @@
 //  OnboardingView+AddToDockContent.swift
 //  DuckDuckGo
 //
-//  Copyright © 2024 DuckDuckGo. All rights reserved.
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -17,78 +17,155 @@
 //  limitations under the License.
 //
 
-import SwiftUI
+import DuckUI
 import Onboarding
+import SwiftUI
 
 extension OnboardingView {
 
+    /// Figma: https://www.figma.com/design/YPE94Xkcrk2uqiF2l4VmSv/Onboarding--2026-?node-id=12203-26425
     struct AddToDockPromoContent: View {
 
-        @State private var showAddToDockTutorial = false
+        @Environment(\.onboardingTheme) private var onboardingTheme
+        @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-        private let isAnimating: Binding<Bool>
-        private let isSkipped: Binding<Bool>
+        @State private var showAddToDockTutorial = false
+        @State private var shouldStartTypingTitle = false
+        @State private var showContent = false
+        @Binding var isVisible: Bool
+        private let content: OnboardingAddToDockContent
         private let showTutorialAction: () -> Void
         private let dismissAction: (_ fromAddToDock: Bool) -> Void
 
         init(
-            isAnimating: Binding<Bool> = .constant(true),
-            isSkipped: Binding<Bool>,
+            content: OnboardingAddToDockContent,
+            isVisible: Binding<Bool>,
             showTutorialAction: @escaping () -> Void,
             dismissAction: @escaping (_ fromAddToDock: Bool) -> Void
         ) {
-            self.isAnimating = isAnimating
-            self.isSkipped = isSkipped
+            self.content = content
+            self._isVisible = isVisible
             self.showTutorialAction = showTutorialAction
             self.dismissAction = dismissAction
         }
 
         var body: some View {
             if showAddToDockTutorial {
-                OnboardingAddToDockTutorialContent(cta: UserText.AddToDockOnboarding.Buttons.gotIt, isSkipped: isSkipped) {
+                OnboardingView.AddToDockTutorialContent(
+                    content: content.tutorialStepContent,
+                    isVisible: $isVisible
+                ) {
                     dismissAction(true)
                 }
             } else {
-                ContextualDaxDialogContent(
-                    title: UserText.AddToDockOnboarding.Promo.title,
-                    titleFont: Font(UIFont.daxTitle3()),
-                    message: NSAttributedString(string: UserText.AddToDockOnboarding.Promo.introMessage),
-                    messageFont: Font.system(size: 16),
-                    customView: AnyView(addToDockPromoView),
-                    customActionView: AnyView(customActionView),
-                    skipAnimations: isSkipped
-                )
+                promoContent
             }
         }
 
-        private var addToDockPromoView: some View {
-            AddToDockPromoView()
-                .aspectRatio(contentMode: .fit)
-                .padding(.vertical)
+        private var promoContent: some View {
+            LinearDialogContentContainer(
+                metrics: .init(
+                    outerSpacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing,
+                    textSpacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing,
+                    contentSpacing: onboardingTheme.linearOnboardingMetrics.buttonSpacing,
+                    actionsSpacing: onboardingTheme.linearOnboardingMetrics.actionsSpacing
+                ),
+                message: AnyView(
+                    Text(content.message)
+                    .foregroundColor(onboardingTheme.colorPalette.textPrimary)
+                    .font(onboardingTheme.typography.body)
+                    .multilineTextAlignment(.center)
+                ),
+                content: AnyView(
+                    OnboardingView.AddToDockPromoView()
+                        .padding(.vertical)
+                ),
+                showContent: $showContent,
+                title: {
+                    TypingText(
+                        content.title,
+                        startAnimating: $shouldStartTypingTitle,
+                        onTypingFinished: { [reduceMotion] in
+                            if reduceMotion {
+                                showContent = true
+                            } else {
+                                withAnimation { showContent = true }
+                            }
+                        })
+                    .foregroundColor(onboardingTheme.colorPalette.textPrimary)
+                    .font(onboardingTheme.typography.title)
+                    .multilineTextAlignment(.center)
+                },
+                actions: {
+                    VStack(spacing: onboardingTheme.linearOnboardingMetrics.buttonSpacing) {
+                        Button(action: showTutorial) {
+                            Text(content.primaryCTA)
+                        }
+                        .buttonStyle(onboardingTheme.primaryButtonStyle.style)
+
+                        Button(action: { dismissAction(false) }) {
+                            Text(content.secondaryCTA)
+                        }
+                        .buttonStyle(onboardingTheme.secondaryButtonStyle.style)
+                    }
+                }
+            )
+            .onBubbleVisibilityChanged(isVisible: $isVisible, shouldStartTyping: $shouldStartTypingTitle, showContent: $showContent)
         }
 
-        private var customActionView: some View {
-            VStack {
-                OnboardingCTAButton(
-                    title: UserText.AddToDockOnboarding.Buttons.tutorial,
-                    buttonStyle: .primary(compact: false),
-                    action: {
-                        showTutorialAction()
-                        isSkipped.wrappedValue = false
-                        showAddToDockTutorial = true
-                    }
-                )
+        /// Hide → resize → show transition into the tutorial. Internal view swap, so we drive
+        /// the resize explicitly with `withAnimation`.
+        private func showTutorial() {
+            isVisible = false
+            showTutorialAction()
 
-                OnboardingCTAButton(
-                    title: UserText.AddToDockOnboarding.Buttons.skip,
-                    buttonStyle: .ghost,
-                    action: {
-                        dismissAction(false)
-                    }
-                )
+            // Reduce Motion: jump to the final tutorial state.
+            guard !reduceMotion else {
+                showAddToDockTutorial = true
+                isVisible = true
+                return
+            }
+
+            if #available(iOS 17.0, *) {
+                withAnimation(.easeInOut(duration: OnboardingBubbleAnimationMetrics.bubbleResizeAnimationDuration)) {
+                    showAddToDockTutorial = true
+                } completion: {
+                    withAnimation { isVisible = true }
+                }
+            } else {
+                withAnimation(.easeInOut(duration: OnboardingBubbleAnimationMetrics.bubbleResizeAnimationDuration)) {
+                    showAddToDockTutorial = true
+                }
+                // Timing-based fallback for iOS 16 (no completion handler on withAnimation).
+                DispatchQueue.main.asyncAfter(deadline: .now() + OnboardingBubbleAnimationMetrics.contentFadeInDelay) {
+                    withAnimation { isVisible = true }
+                }
             }
         }
+    }
 
+    /// Thin wrapper that passes the localised tutorial copy to `AddToDockTutorialView`.
+    /// Figma: https://www.figma.com/design/YPE94Xkcrk2uqiF2l4VmSv/Onboarding--2026-?node-id=12203-27033
+    struct AddToDockTutorialContent: View {
+        @Binding var isVisible: Bool
+        let content: OnboardingAddToDockContent.TutorialStepContent
+        let dismissAction: () -> Void
+
+        init(content: OnboardingAddToDockContent.TutorialStepContent, isVisible: Binding<Bool>, dismissAction: @escaping () -> Void) {
+            self.content = content
+            self._isVisible = isVisible
+            self.dismissAction = dismissAction
+        }
+
+        var body: some View {
+            OnboardingView.AddToDockTutorialView(
+                title: content.title,
+                message: content.message,
+                isVisible: $isVisible,
+                cta: content.primaryCTA,
+                action: dismissAction
+            )
+        }
     }
 
 }

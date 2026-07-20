@@ -243,6 +243,24 @@ struct DefaultColorPalette: ColorPaletteDefinition {
         case .alertGreen: return alertGreen
         case .alertYellow: return alertYellow
         case .shieldPrivacy: return shieldPrivacy
+        // VPN pill + header animation, per the Figma spec. Backgrounds and foregrounds (text/icon)
+        // vary by light/dark mode, with a darker interaction (hover/press) variant of each.
+        case .vpnGreen:
+            return DynamicColor(lightColor: RebrandingColor.Green.green20, darkColor: RebrandingColor.Green.green70)
+        case .vpnGreenPressed:
+            return DynamicColor(lightColor: RebrandingColor.Green.green30, darkColor: RebrandingColor.Green.green80)
+        case .vpnGreenForeground:
+            return DynamicColor(lightColor: RebrandingColor.Lilypad.lilypad90, darkColor: RebrandingColor.Lilypad.lilypad10)
+        case .vpnGreenForegroundPressed:
+            return DynamicColor(lightColor: RebrandingColor.Lilypad.lilypad100, darkColor: RebrandingColor.Lilypad.lilypad0)
+        case .vpnYellow:
+            return DynamicColor(lightColor: RebrandingColor.Pollen.pollen30, darkColor: RebrandingColor.Pollen.pollen70)
+        case .vpnYellowPressed:
+            return DynamicColor(lightColor: RebrandingColor.Pollen.pollen40, darkColor: RebrandingColor.Pollen.pollen80)
+        case .vpnYellowForeground:
+            return DynamicColor(lightColor: RebrandingColor.Pollen.pollen80, darkColor: RebrandingColor.Pollen.pollen20)
+        case .vpnYellowForegroundPressed:
+            return DynamicColor(lightColor: RebrandingColor.Pollen.pollen90, darkColor: RebrandingColor.Pollen.pollen10)
         case .border: return border
         case .accentTextPrimary: return accentTextPrimary
         case .textPlaceholder: return textPlaceholder
@@ -399,6 +417,8 @@ private extension DefaultColorPalette {
             return DynamicColor(lightColor: RebrandingColor.Eggshell.eggshell90.opacity(0.16), darkColor: RebrandingColor.GrayScale.white.opacity(0.09))
         case .alertGreen:
             return DynamicColor(staticColor: RebrandingColor.Green.green40)
+        case .calendarStripYellow:
+            return DynamicColor(staticColor: RebrandingColor.Pollen.pollen20)
         }
     }
 

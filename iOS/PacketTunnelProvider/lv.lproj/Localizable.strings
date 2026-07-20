@@ -22,3 +22,8 @@
 /* The body of the notification shown when VPN connects successfully after snooze with the city + state/country as formatted parameter */
 "network.protection.success.notification.subtitle.snooze.ended.including.serverLocation" = "VPN snauda ir beigusies. Ierīces datplūsma tiek maršrutēta caur: %@.";
 
+/* The body of the notification reminding the user to turn the VPN Strict routing setting back on */
+"network.protection.strict.routing.reminder.notification.body" = "Daļa datplūsmas var apiet VPN, kamēr tā ir izslēgta. Publiskajos tīklos ieteicams izmantot stingro maršrutēšanu.";
+
+/* The title of the notification reminding the user to turn the VPN Strict routing setting back on */
+"network.protection.strict.routing.reminder.notification.title" = "Stingrā maršrutēšana ir IZSLĒGTA";

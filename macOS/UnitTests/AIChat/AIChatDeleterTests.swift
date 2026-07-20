@@ -191,6 +191,9 @@ private final class MockPhasedHistoryCleaner: PhasedAIChatHistoryCleaning {
 
     @MainActor
     func deleteAIChat(chatID: String) async -> Result<Void, Error> { .success(()) }
+
+    @MainActor
+    func deleteAIChats(chatIDs: [String]) async -> Result<Void, Error> { .success(()) }
 }
 
 private final class MockAIChatDeleterSyncCleaner: AIChatSyncCleaning {

@@ -275,9 +275,12 @@ final class WindowsManager {
             if let existing = Application.appDelegate.windowControllersManager.mainWindowControllers.first(where: {
                 $0.mainViewController.tabCollectionViewModel.burnerMode == burnerMode
             })?.fireWindowSession {
+                dataStore.fireWindowSession = existing
                 fireWindowSession = existing
             } else {
                 let newSession = FireWindowSession()
+                newSession.websiteDataStore = dataStore
+                dataStore.fireWindowSession = newSession
                 if let registry = Application.appDelegate.burnerDuckAiStorageRegistry {
                     let dataStoreKey = ObjectIdentifier(dataStore)
                     newSession.onDeinit { [weak registry] in

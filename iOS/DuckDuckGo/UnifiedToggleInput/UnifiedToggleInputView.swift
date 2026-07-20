@@ -104,9 +104,6 @@ final class UnifiedToggleInputView: UIView {
         /// Outer horizontal margin for the expanded card at the bottom-bar position.
         static let cardHorizontalMarginBottom: CGFloat = 8
         static let cardVerticalMarginBottom: CGFloat = 8
-        /// Page-context chip's leading inset within the card. Decoupled from `cardHorizontalMargin`
-        /// so the card's outer margin can change without shifting the chip.
-        static let pageContextChipLeadingInset: CGFloat = 16
         /// Omnibar pill's horizontal inset; the card's hand-off start width so it animates to the
         /// narrower editing margins. Mirrors `DefaultOmniBarView`'s portrait value (landscape/iPad differ).
         static let omnibarMatchingHorizontalMargin: CGFloat = 16
@@ -379,24 +376,13 @@ final class UnifiedToggleInputView: UIView {
 
     func bindPageContextChip(to viewModel: UnifiedToggleInputPageContextChipViewModel) {
         pageContextChipCancellables.removeAll()
-        pageContextChip.onTapToAttach = { [weak viewModel] in viewModel?.tapToAttach() }
-        pageContextChip.onRemove = { [weak viewModel] in viewModel?.tapToRemove() }
+        attachmentsStrip.onPageContextRemove = { [weak viewModel] in viewModel?.tapToRemove() }
         viewModel.$state
-            .sink { [weak self] state in self?.pageContextChip.configure(state: state) }
+            .sink { [weak self] state in self?.attachmentsStrip.setPageContextChipState(state) }
             .store(in: &pageContextChipCancellables)
         viewModel.$isVisible
-            .sink { [weak self] isVisible in self?.isPageContextChipPresent = isVisible }
+            .sink { [weak self] isVisible in self?.attachmentsStrip.setPageContextChipVisible(isVisible) }
             .store(in: &pageContextChipCancellables)
-    }
-
-    private var isPageContextChipPresent: Bool = false {
-        didSet {
-            guard oldValue != isPageContextChipPresent else { return }
-            pageContextChip.isHidden = !isPageContextChipPresent
-            pageContextChipHeightConstraint.isActive = !isPageContextChipPresent
-            layoutIfNeeded()
-            onNeedsHierarchyLayout?()
-        }
     }
 
     // MARK: - Components
@@ -412,7 +398,6 @@ final class UnifiedToggleInputView: UIView {
     private lazy var inlineDismissButton: UIButton = Self.makeInlineDismissButton()
     private let attachmentsStrip = UnifiedToggleInputAttachmentsStripView()
     private let toolsToolbar = UnifiedToggleInputToolbarView()
-    private let pageContextChip = AIChatContextChipView()
     private var pageContextChipCancellables = Set<AnyCancellable>()
 
     private lazy var aiTabCollapsedFireButton: UIButton = {
@@ -425,6 +410,10 @@ final class UnifiedToggleInputView: UIView {
 
     /// The collapsed AI-tab fire button. Exposed for onboarding highlight and enable/disable targeting.
     var aiTabFireButton: UIButton { aiTabCollapsedFireButton }
+
+    func setMenuAlertVisible(_ isVisible: Bool, animated: Bool) {
+        aiTabCollapsedMenuButton.setMenuAlertVisible(isVisible, animated: animated)
+    }
 
     private lazy var aiTabCollapsedMenuButton: UIButton = {
         let button = Self.makeAITabAccessoryButton(image: DesignSystemImages.Glyphs.Size24.menuHamburger, traitCollection: traitCollection)
@@ -553,7 +542,6 @@ final class UnifiedToggleInputView: UIView {
     private var textEntryViewTrailingConstraint: NSLayoutConstraint!
     private var toolbarBottomConstraint: NSLayoutConstraint!
     private var attachmentsStripHeightConstraint: NSLayoutConstraint!
-    private var pageContextChipHeightConstraint: NSLayoutConstraint!
     private var toolbarHeightConstraint: NSLayoutConstraint!
 
     // MARK: - Initialization
@@ -1217,8 +1205,8 @@ final class UnifiedToggleInputView: UIView {
     }
 
     private func updateAttachmentsStripLayout() {
-        let hasAttachments = !attachmentsStrip.attachments.isEmpty
-        let showStrip = hasAttachments && isExpanded && handler.currentToggleState == .aiChat
+        let hasVisibleStripItems = !attachmentsStrip.attachments.isEmpty || attachmentsStrip.hasVisiblePageContext
+        let showStrip = hasVisibleStripItems && isExpanded && handler.currentToggleState == .aiChat
         attachmentsStripHeightConstraint.constant = showStrip ? UnifiedToggleInputAttachmentsStripView.Constants.stripHeight : 0
         attachmentsStrip.alpha = showStrip ? 1 : 0
     }
@@ -1230,11 +1218,11 @@ final class UnifiedToggleInputView: UIView {
         let hasInvalidAttachment = isAIChatMode && attachmentsStrip.attachments.contains(where: \.isInvalid)
 
         toolsToolbar.isSubmitEnabled = !hasInvalidAttachment && (hasText || hasValidAttachment)
-        updateNewPromptSubmitStyle()
+        updateSubmitButtonStyle()
     }
 
-    private func updateNewPromptSubmitStyle() {
-        toolsToolbar.usesNewPromptSubmitStyle = handler.submitsAIChatOnKeyboardReturn
+    private func updateSubmitButtonStyle() {
+        toolsToolbar.usesNewPromptSubmitStyle = handler.usesReturnKeySubmitButtonStyle
     }
 
     private func submitCurrentInput() {
@@ -1428,10 +1416,6 @@ private extension UnifiedToggleInputView {
         textEntryView.placeholderTextColor = UIColor(designSystemColor: .textTertiary)
         addSubview(textEntryView)
 
-        pageContextChip.translatesAutoresizingMaskIntoConstraints = false
-        pageContextChip.isHidden = true
-        addSubview(pageContextChip)
-
         attachmentsStrip.translatesAutoresizingMaskIntoConstraints = false
         attachmentsStrip.clipsToBounds = false
         attachmentsStrip.alpha = 0
@@ -1521,12 +1505,11 @@ private extension UnifiedToggleInputView {
         inlineDismissTopConstraint = inlineDismissButton.topAnchor.constraint(equalTo: cardView.topAnchor, constant: Constants.toggleTopPadding)
         inlineDismissCenterYConstraint = inlineDismissButton.centerYAnchor.constraint(equalTo: textEntryView.centerYAnchor)
         inputTopConstraint = textEntryView.topAnchor.constraint(equalTo: toggleView.bottomAnchor, constant: 0)
-        inputBottomConstraint = pageContextChip.topAnchor.constraint(equalTo: textEntryView.bottomAnchor)
+        inputBottomConstraint = attachmentsStrip.topAnchor.constraint(equalTo: textEntryView.bottomAnchor)
         textEntryViewLeadingConstraint = textEntryView.leadingAnchor.constraint(equalTo: cardView.leadingAnchor)
         textEntryViewTrailingConstraint = textEntryView.trailingAnchor.constraint(equalTo: cardView.trailingAnchor)
         toolbarBottomConstraint = toolsToolbar.bottomAnchor.constraint(equalTo: cardView.bottomAnchor)
         attachmentsStripHeightConstraint = attachmentsStrip.heightAnchor.constraint(equalToConstant: 0)
-        pageContextChipHeightConstraint = pageContextChip.heightAnchor.constraint(equalToConstant: 0)
         toolbarHeightConstraint = toolsToolbar.heightAnchor.constraint(equalToConstant: 0)
 
         NSLayoutConstraint.activate([
@@ -1550,10 +1533,6 @@ private extension UnifiedToggleInputView {
             textEntryViewTrailingConstraint,
 
             inputBottomConstraint,
-            pageContextChip.leadingAnchor.constraint(equalTo: cardView.leadingAnchor, constant: Constants.pageContextChipLeadingInset),
-            pageContextChipHeightConstraint,
-
-            attachmentsStrip.topAnchor.constraint(equalTo: pageContextChip.bottomAnchor),
             attachmentsStrip.leadingAnchor.constraint(equalTo: cardView.leadingAnchor),
             attachmentsStrip.trailingAnchor.constraint(equalTo: cardView.trailingAnchor),
             attachmentsStripHeightConstraint,
@@ -1605,10 +1584,10 @@ private extension UnifiedToggleInputView {
             }
             .store(in: &cancellables)
 
-        handler.submitsAIChatOnKeyboardReturnPublisher
+        handler.usesReturnKeySubmitButtonStylePublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
-                self?.updateNewPromptSubmitStyle()
+                self?.updateSubmitButtonStyle()
             }
             .store(in: &cancellables)
 

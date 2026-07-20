@@ -418,6 +418,10 @@ final class MockDuckPlayerFeatureFlagger: FeatureFlagger {
         return nil
     }
 
+    func assignedCohort<Flag: FeatureFlagDescribing>(for featureFlag: Flag, allowOverride: Bool) -> (any FeatureFlagCohortDescribing)? {
+        return nil
+    }
+
     var allActiveExperiments: Experiments = [:]
 }
 
@@ -615,6 +619,8 @@ final class DuckPlayerBrowserChromeDelegateMock: BrowserChromeDelegate {
     }
 
     var canHideBars: Bool = false
+
+    var isChromeScrollInteractionDisabled: Bool = false
 
     var isToolbarHidden: Bool = false
 

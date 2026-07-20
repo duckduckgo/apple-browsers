@@ -253,6 +253,9 @@
 /* Error message displayed when the user has attached more images than are allowed in one message. Parameter is the backend-provided maximum number of images per message. */
 "aichat.attachment.image.turn.limit" = "You can only attach %d images at a time.";
 
+/* Top-level attachment menu option to attach the current page content to an AI chat message */
+"aichat.attachment.option.ask.about.page" = "Ask About Page";
+
 /* Top-level attachment menu option to add a file to an AI chat message */
 "aichat.attachment.option.attach.file" = "Add File";
 
@@ -291,9 +294,6 @@
 
 /* Title for the New Voice Chat row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newVoiceChat" = "New Voice Chat";
-
-/* Title of the confirmation shown when the user taps Fire in Duck.ai chat history to delete all chats; the number is the chat count. Do not translate - stringsdict entry */
-"aiChat.history.deleteAll.confirmation.title" = "aiChat.history.deleteAll.confirmation.title";
 
 /* Primary button on the empty Duck.ai chat-history screen; opens the Duck.ai web chat. */
 "aiChat.history.emptyState.openDuckAi" = "Open Duck.ai";
@@ -413,10 +413,10 @@
 "alert.sync-already-paired-with-account-button" = "Got It";
 
 /* Description for Sync error shown when both devices are already paired with the same account */
-"alert.sync-already-paired-with-account-description" = "You're already paired with this account on both devices.";
+"alert.sync-already-paired-with-account-description" = "These devices are already connected to Sync & Backup.";
 
 /* Title for Sync error shown when both devices are already paired with the same account */
-"alert.sync-already-paired-with-account-title" = "Already Paired";
+"alert.sync-already-paired-with-account-title" = "Already synced.";
 
 /* Description for alert shown when sync error occurs because of bad bookmarks data */
 "alert.sync-bookmarks-bad-data-error-description" = "Some bookmarks are formatted incorrectly or too long and were not synced.";
@@ -437,10 +437,10 @@
 "alert.sync-cancelled-from-other-device-title" = "Sync canceled from your other device.";
 
 /* Description for Sync error shown when a third-party recovery code can only be used with Duck.ai */
-"alert.sync-code-only-compatible-with-duckai-description" = "In your browser, visit duck.ai, go to Settings, then under “Sync & Backup” select “Turn On” and then “Sync with another device”.";
+"alert.sync-code-only-compatible-with-duckai-description" = "In your other browser, visit Duck.ai, go to Settings, then under “Sync & Backup” select “Turn On” and then “Sync with another device”.";
 
 /* Title for Sync error shown when a third-party recovery code can only be used with Duck.ai */
-"alert.sync-code-only-compatible-with-duckai-title" = "Scan this code from Duck.ai Settings.";
+"alert.sync-code-only-compatible-with-duckai-title" = "Scan this code using a browser other than DuckDuckGo.";
 
 /* Description for alert shown when sync error occurs because of bad credentials data */
 "alert.sync-credentials-bad-data-error-description" = "Some passwords are formatted incorrectly or too long and were not synced.";
@@ -466,6 +466,12 @@
 /* Sync error alert action button title, takes the user to the sync settings page. */
 "alert.sync-error-action" = "Sync Settings";
 
+/* Description for generic Sync setup failure alerts */
+"alert.sync-failed-description" = "Please try again.";
+
+/* Title for generic Sync setup failure alerts */
+"alert.sync-failed-title" = "Sync failed.";
+
 /* Description for Sync error shown when a third-party account already has a native DuckDuckGo Sync credential */
 "alert.sync-from-another-connected-device-description" = "Please Sync this device from an already-connected DuckDuckGo browser on another device.";
 
@@ -490,6 +496,9 @@
 /* Title for alert shown when sync paused for an error */
 "alert.sync-paused-title" = "Sync is Paused";
 
+/* Button title for Sync setup error alerts */
+"alert.sync-setup-error-got-it-button" = "Got It";
+
 /* Switch account button in alert */
 "alert.sync-switch-account-button" = "Switch Sync";
 
@@ -501,9 +510,6 @@
 
 /* Description for alert shown when sync error occurs because of too many requests */
 "alert.sync-too-many-requests-error-description" = "Sync & Backup is temporarily unavailable.";
-
-/* Description for Sync error shown when the app version does not support the scanned Sync code */
-"alert.sync-update-required-description" = "This code is not supported in the current app version.";
 
 /* Title for Sync error shown when the app version does not support the scanned Sync code */
 "alert.sync-update-required-title" = "Update the DuckDuckGo browser and try again.";
@@ -539,13 +545,13 @@
 "alert.unable-to-remove-device-description" = "Unable to remove this device from Sync & Backup.";
 
 /* Description for unable to scan qr code error */
-"alert.unable-to-scan-qr-code-description" = "Sorry, this code is invalid. Please make sure the correct code was entered or scanned.";
+"alert.unable-to-scan-qr-code-description" = "Please make sure the correct code was entered or scanned.";
+
+/* Title for unable to scan qr code error */
+"alert.unable-to-scan-qr-code-title" = "This is not a valid Sync code.";
 
 /* Description for unable to sync to server error */
 "alert.unable-to-sync-to-server-description" = "Unable to connect to the server.";
-
-/* Description for unable to sync with another device error */
-"alert.unable-to-sync-with-other-device-description" = "Unable to Sync with another device.";
 
 /* Description for unable to turn sync off error */
 "alert.unable-to-turn-sync-off-description" = "Unable to turn Sync & Backup off.";
@@ -1394,10 +1400,10 @@
 "cookie-popup-protection.opt-in.confirm" = "Confirm";
 
 /* Body of the opt-in dialog when cookie pop-up protection is off */
-"cookie-popup-protection.opt-in.disabled.body" = "We'll aim to select the most private cookie options available and close these for you. If they don't have opt-outs, we'll save you a click and accept these cookies for you.";
+"cookie-popup-protection.opt-in.disabled.body" = "We'll aim to reject as many cookies as possible. If there's no reject option, we'll save you a click and accept these cookies for you.";
 
 /* Primary (recommended) option when cookie pop-up protection is off */
-"cookie-popup-protection.opt-in.disabled.primary-option" = "Manage or accept cookies for me";
+"cookie-popup-protection.opt-in.disabled.primary-option" = "Reject when possible or accept for me";
 
 /* Secondary option when cookie pop-up protection is off */
 "cookie-popup-protection.opt-in.disabled.secondary-option" = "I'll keep handling them myself";
@@ -1409,10 +1415,10 @@
 "cookie-popup-protection.opt-in.enabled.body" = "We can save you a click and accept these cookies for you.";
 
 /* Primary (recommended) option when cookie pop-up protection is already enabled */
-"cookie-popup-protection.opt-in.enabled.primary-option" = "Accept no-opt-out cookies for me";
+"cookie-popup-protection.opt-in.enabled.primary-option" = "Accept cookies that can't be rejected";
 
 /* Secondary option when cookie pop-up protection is already enabled */
-"cookie-popup-protection.opt-in.enabled.secondary-option" = "I'll keep handling them myself";
+"cookie-popup-protection.opt-in.enabled.secondary-option" = "I'll keep accepting them myself";
 
 /* Title of the opt-in dialog when cookie pop-up protection is already enabled */
 "cookie-popup-protection.opt-in.enabled.title" = "Tired of cookie pop-ups that don't let you opt out?";
@@ -2836,6 +2842,9 @@ https://duckduckgo.com/mac";
 /* Message label text for the status view when VPN is disconnected */
 "network.protection.status.header.message.on" = "All device Internet traffic is being secured\nthrough the VPN.";
 
+/* Status view message shown while the VPN is on but Strict routing is off */
+"network.protection.status.header.message.strict.routing.off" = "Some traffic may bypass the VPN while Strict Routing is off. Strict Routing is recommended for public networks.";
+
 /* Header title label text for the status view when VPN is disconnected */
 "network.protection.status.header.title.off" = "DuckDuckGo VPN is Off";
 
@@ -2878,8 +2887,29 @@ https://duckduckgo.com/mac";
 /* Label shown on the title of the settings section in NetworkProtection's status view. */
 "network.protection.status.view.settings.section.title" = "Manage";
 
+/* Label for the status pill shown while the VPN's Strict routing setting is off */
+"network.protection.status.view.strict.routing.pill.off" = "Strict routing: Off";
+
+/* Label for the status pill shown while the VPN's Strict routing setting is on */
+"network.protection.status.view.strict.routing.pill.on" = "Strict routing: On";
+
+/* Tooltip shown for the status pill while the VPN's Strict routing setting is off */
+"network.protection.status.view.strict.routing.pill.tooltip.off" = "Strict Routing is recommended for public networks.";
+
+/* Tooltip shown for the status pill while the VPN's Strict routing setting is on */
+"network.protection.status.view.strict.routing.pill.tooltip.on" = "Some apps may not work while Strict Routing is on.";
+
 /* Title label text for the status view when netP is disconnected */
 "network.protection.status.view.title" = "VPN";
+
+/* Title of the Troubleshooting section in the VPN status screen. */
+"network.protection.status.view.troubleshooting.section.title" = "Troubleshooting";
+
+/* The body of the notification reminding the user to turn the VPN Strict routing setting back on */
+"network.protection.strict.routing.reminder.notification.body" = "Some traffic may bypass the VPN while off. Strict Routing is recommended for public networks.";
+
+/* The title of the notification reminding the user to turn the VPN Strict routing setting back on */
+"network.protection.strict.routing.reminder.notification.title" = "Strict Routing is OFF";
 
 /* The body of the notification shown when VPN reconnects successfully */
 "network.protection.success.notification.body" = "DuckDuckGo VPN is On. Your location and online activity are protected.";
@@ -2912,7 +2942,7 @@ https://duckduckgo.com/mac";
 "network.protection.vpn.data-volume" = "Data Volume";
 
 /* Footer text for the Exclude CGNAT setting item. */
-"network.protection.vpn.exclude.cgnat.setting.footer" = "Recommended off so all your traffic goes through the VPN. If you have problems with features like Wi-Fi calling, messaging, or voicemail, try turning it on.";
+"network.protection.vpn.exclude.cgnat.setting.footer" = "Bypass the VPN for carrier services, such as Wi-Fi calling and voicemail.";
 
 /* Title for the Exclude CGNAT setting item. */
 "network.protection.vpn.exclude.cgnat.setting.title" = "Exclude Carrier Services";
@@ -2990,10 +3020,10 @@ https://duckduckgo.com/mac";
 "network.protection.vpn.shortcuts.section.header" = "Shortcuts";
 
 /* Footer text for the Strict Routing setting item. The 'Learn more' text is a Markdown link. */
-"network.protection.vpn.strict.routing.setting.footer" = "Recommended on networks you don’t trust, e.g. public wifi in hotels, bars, etc. If you have problems with features (like CarPlay, AirDrop, etc.) or connecting to other devices, try turning it off. [Learn more](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)";
+"network.protection.vpn.strict.routing.setting.footer" = "Block apps from bypassing the VPN. If you have problems with Wi-Fi features (such as AirDrop or iPhone Mirroring), turning it off may help. Strongly recommended on networks you don’t trust, such as public Wi-Fi. [Learn more](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack).";
 
 /* Title for the Strict Routing setting item. */
-"network.protection.vpn.strict.routing.setting.title" = "Strict Routing";
+"network.protection.vpn.strict.routing.setting.title" = "Enforce Strict Routing (Recommended)";
 
 /* Confirm button for the new address bar picker */
 "new.address.bar.picker.confirm" = "Confirm";
@@ -4610,7 +4640,7 @@ Take back control of your personal information with the browser designed for dat
 "sync.remove-device.title" = "Remove Device?";
 
 /* Toast message shown after sync is enabled by connecting with another device */
-"sync.simplified.device-synced.toast" = "Device synced successfully!";
+"sync.simplified.device-synced.toast" = "New device added!";
 
 /* Toast message shown after sync is successfully enabled */
 "sync.simplified.enabled.toast" = "Sync & Backup enabled";

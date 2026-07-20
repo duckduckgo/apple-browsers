@@ -220,7 +220,17 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
             let okAction = UIAlertAction(title: type.buttonTitle, style: .default, handler: nil)
             alertController.addAction(okAction)
 
-            if type == .unableToSyncToServer || type == .unableToSyncWithDevice || type == .unableToMergeTwoAccounts {
+            if isPresentingV2ConnectingSheet {
+                viewModel.dismissConnectingSheet { [weak self] in
+                    guard let self else {
+                        continuation.resume()
+                        return
+                    }
+                    self.present(alertController, animated: true) {
+                        continuation.resume()
+                    }
+                }
+            } else if type == .unableToSyncToServer || type == .unableToSyncWithDevice || type == .unableToMergeTwoAccounts {
                 // Gives time to the is syncing view to appear
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
                     self.dismissPresentedViewController { [weak self] in
@@ -613,8 +623,12 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
             qrCodeString: stringForQRCode,
             source: CodeCollectionSource(syncSetupSource: source))
         model.delegate = self
-        
-        let controller = UIHostingController(rootView: AnyView(SimplifiedScanOrShowCodeView(model: model)))
+        scanCodeViewModel = model
+
+        let rootView = useSimplifiedLayoutV2
+            ? AnyView(ScanQRCodeViewV2(model: model))
+            : AnyView(SimplifiedScanOrShowCodeView(model: model))
+        let controller = UIHostingController(rootView: rootView)
 
         let navController = UIDevice.current.userInterfaceIdiom == .phone
         ? PortraitNavigationController(rootViewController: controller)
@@ -633,7 +647,9 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
             navController.modalPresentationStyle = .fullScreen
         }
         navigationController?.present(navController, animated: true) {
-            self.checkCameraPermission(model: model)
+            if !self.useSimplifiedLayoutV2 {
+                self.checkCameraPermission(model: model)
+            }
             if let onPresentPixelInfo {
                 let pixelSource = self.source ?? onPresentPixelInfo.source.rawValue
                 var parameters = [
@@ -644,6 +660,10 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                 Pixel.fire(pixel: onPresentPixelInfo.pixel, withAdditionalParameters: parameters, includedParameters: [.appVersion])
             }
         }
+    }
+
+    func requestCameraPermission(for model: ScanOrPasteCodeViewModel) {
+        checkCameraPermission(model: model)
     }
 
     func checkCameraPermission(model: ScanOrPasteCodeViewModel) {
@@ -680,7 +700,11 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         let isConfirmed = await presentPairingV2ConfirmationAlert(message: message)
         if !isConfirmed {
             sendSyncConfirmationDeniedSetupEndedAbandonedPixel(setupRole: setupRole)
-            dismissPairingV2UIAfterDeniedConfirmation()
+            if isPresentingV2ConnectingSheet {
+                viewModel.connectingSheetPhase = nil
+            } else {
+                dismissPairingV2UIAfterDeniedConfirmation()
+            }
         } else {
             pairingV2PeerKind = peerKind
         }
@@ -688,17 +712,38 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
     }
 
     private func presentPairingV2ConfirmationAlert(message: String) async -> Bool {
-        await withCheckedContinuation { continuation in
+        await dismissSyncCodeSheetIfPresented()
+
+        return await withCheckedContinuation { continuation in
             let alert = UIAlertController(title: UserText.syncPairingV2ConfirmationTitle, message: message, preferredStyle: .alert)
             alert.addAction(UIAlertAction(title: UserText.actionCancel, style: .cancel) { _ in
                 continuation.resume(returning: false)
             })
-            alert.addAction(UIAlertAction(title: UserText.syncPairingV2ConfirmationAction, style: .default) { _ in
+            let confirmAction = UIAlertAction(title: UserText.syncPairingV2ConfirmationAction, style: .default) { _ in
                 continuation.resume(returning: true)
-            })
+            }
+            alert.addAction(confirmAction)
+            alert.preferredAction = confirmAction
 
-            let viewControllerToPresentFrom = navigationController?.presentedViewController ?? presentedViewController ?? self
-            viewControllerToPresentFrom.present(alert, animated: true)
+            topmostPresentedViewController().present(alert, animated: true)
+        }
+    }
+
+    private func topmostPresentedViewController() -> UIViewController {
+        var topController: UIViewController = view.window?.rootViewController ?? navigationController ?? self
+        while let presented = topController.presentedViewController, !presented.isBeingDismissed {
+            topController = presented
+        }
+        return topController
+    }
+
+    private func dismissSyncCodeSheetIfPresented() async {
+        guard let scanCodeViewModel, scanCodeViewModel.isShowingSyncCodeSheet else { return }
+        await withCheckedContinuation { continuation in
+            scanCodeViewModel.onSyncCodeSheetDismissed = {
+                continuation.resume()
+            }
+            scanCodeViewModel.isShowingSyncCodeSheet = false
         }
     }
 

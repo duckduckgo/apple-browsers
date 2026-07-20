@@ -312,7 +312,7 @@ struct OnboardingIntroContentProviderTests {
             let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
 
             // WHEN
-            let result = sut.browserComparisonContent
+            let result = sut.setDefaultBrowserContent
 
             // THEN
             #expect(result.title == expectedTitle)
@@ -327,7 +327,7 @@ struct OnboardingIntroContentProviderTests {
             let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
 
             // WHEN
-            let result = sut.browserComparisonContent
+            let result = sut.setDefaultBrowserContent
 
             // THEN
             #expect(result.primaryCTA == UserText.Onboarding.BrowsersComparison.cta)
@@ -342,10 +342,25 @@ struct OnboardingIntroContentProviderTests {
             let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
 
             // WHEN
-            let result = sut.browserComparisonContent
+            let result = sut.setDefaultBrowserContent
 
             // THEN
             #expect(result.secondaryCTA == UserText.onboardingSkip)
+        }
+
+        @Test(
+            "Check browser comparison has no sub-header",
+            arguments: [.default, .duckAI] as [OnboardingFlowType]
+        )
+        func checkBrowserComparisonHasNoSubHeader(flow: OnboardingFlowType) {
+            // GIVEN
+            let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
+
+            // WHEN
+            let result = sut.setDefaultBrowserContent
+
+            // THEN
+            #expect(result.subHeader == nil)
         }
 
         @Test(
@@ -357,7 +372,7 @@ struct OnboardingIntroContentProviderTests {
             let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
 
             // WHEN
-            let result = sut.browserComparisonContent
+            let result = sut.setDefaultBrowserContent
 
             // THEN
             #expect(result.features == RebrandedComparisonTableModel.defaultBrowserFeatures)
@@ -366,7 +381,7 @@ struct OnboardingIntroContentProviderTests {
     }
 
     @Suite("AI Comparison Content")
-    struct AIComparisonContent {
+    struct AIIntroContent {
 
         @Test(
             "Check AI comparison title is correct",
@@ -377,7 +392,7 @@ struct OnboardingIntroContentProviderTests {
             let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
 
             // WHEN
-            let result = sut.aiComparisonContent
+            let result = sut.aiIntroContent
 
             // THEN
             #expect(result.title == UserText.Onboarding.DuckAICPP.AIComparison.title)
@@ -392,10 +407,25 @@ struct OnboardingIntroContentProviderTests {
             let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
 
             // WHEN
-            let result = sut.aiComparisonContent
+            let result = sut.aiIntroContent
 
             // THEN
             #expect(result.subHeader == UserText.Onboarding.DuckAICPP.AIComparison.subHeader)
+        }
+
+        @Test(
+            "Check AI comparison has no secondary CTA",
+            arguments: [.default, .duckAI] as [OnboardingFlowType]
+        )
+        func checkAIComparisonHasNoSecondaryCTA(flow: OnboardingFlowType) {
+            // GIVEN
+            let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
+
+            // WHEN
+            let result = sut.aiIntroContent
+
+            // THEN
+            #expect(result.secondaryCTA == nil)
         }
 
         @Test(
@@ -407,7 +437,7 @@ struct OnboardingIntroContentProviderTests {
             let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
 
             // WHEN
-            let result = sut.aiComparisonContent
+            let result = sut.aiIntroContent
 
             // THEN
             #expect(result.primaryCTA == UserText.Onboarding.DuckAICPP.AIComparison.cta)
@@ -422,7 +452,7 @@ struct OnboardingIntroContentProviderTests {
             let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
 
             // WHEN
-            let result = sut.aiComparisonContent
+            let result = sut.aiIntroContent
 
             // THEN
             #expect(result.features == RebrandedComparisonTableModel.defaultAIFeatures)
@@ -839,6 +869,76 @@ struct OnboardingIntroContentProviderTests {
 
     }
 
+    @Suite("Download Reason Content")
+    struct DownloadReasonContent {
+
+        @Test(
+            "Check download reason title is correct",
+            arguments: [.default, .duckAI] as [OnboardingFlowType]
+        )
+        func checkDownloadReasonTitle(flow: OnboardingFlowType) {
+            // GIVEN
+            let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
+
+            // WHEN
+            let result = sut.downloadReasonContent
+
+            // THEN
+            #expect(result.title == UserText.Onboarding.DownloadReason.title)
+        }
+
+        @Test(
+            "Check download reason message is correct",
+            arguments: [.default, .duckAI] as [OnboardingFlowType]
+        )
+        func checkDownloadReasonMessage(flow: OnboardingFlowType) {
+            // GIVEN
+            let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
+
+            // WHEN
+            let result = sut.downloadReasonContent
+
+            // THEN
+            #expect(result.message == UserText.Onboarding.DownloadReason.message)
+        }
+
+        @Test(
+            "Check download reason primary CTA is next",
+            arguments: [.default, .duckAI] as [OnboardingFlowType]
+        )
+        func checkDownloadReasonPrimaryCTA(flow: OnboardingFlowType) {
+            // GIVEN
+            let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
+
+            // WHEN
+            let result = sut.downloadReasonContent
+
+            // THEN
+            #expect(result.primaryCTA == UserText.Onboarding.DownloadReason.cta)
+        }
+
+        @Test(
+            "Check download reason options map each tile to its reason and label",
+            arguments: [OnboardingFlowType.default, .duckAI] as [OnboardingFlowType]
+        )
+        func checkDownloadReasonOptions(flow: OnboardingFlowType) {
+            // GIVEN
+            let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
+            let expectedOptions: [OnboardingDownloadReasonContent.Option] = [
+                .init(reason: .browserPrivately, icon: OnboardingImageResources.DownloadReason.search, title: UserText.Onboarding.DownloadReason.browsePrivately),
+                .init(reason: .privateAIChat, icon: OnboardingImageResources.DownloadReason.aiChat, title: UserText.Onboarding.DownloadReason.chatWithAI),
+                .init(reason: .noAI, icon: OnboardingImageResources.DownloadReason.noAI, title: UserText.Onboarding.DownloadReason.removeAI),
+                .init(reason: .blockAds, icon: OnboardingImageResources.DownloadReason.blockAds, title: UserText.Onboarding.DownloadReason.blockAds)
+            ]
+
+            // WHEN
+            let result = sut.downloadReasonContent
+
+            #expect(result.options == expectedOptions)
+        }
+
+    }
+
     @Suite("Dax Animations")
     struct DaxAnimations {
 
@@ -852,21 +952,30 @@ struct OnboardingIntroContentProviderTests {
         }
 
         @Test(
+            "Check download reason uses wingBottom animation",
+            arguments: [.default, .duckAI] as [OnboardingFlowType]
+        )
+        func downloadReasonDaxAnimation(flow: OnboardingFlowType) {
+            let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
+            #expect(sut.downloadReasonContent.daxAnimation == .wingBottom)
+        }
+
+        @Test(
             "Check browser comparison uses wingBottom animation",
             arguments: [.default, .duckAI] as [OnboardingFlowType]
         )
         func browserComparisonDaxAnimation(flow: OnboardingFlowType) {
             let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
-            #expect(sut.browserComparisonContent.daxAnimation == .wingBottom)
+            #expect(sut.setDefaultBrowserContent.daxAnimation == .wingBottom)
         }
 
         @Test(
             "Check AI comparison uses wingBottom animation",
             arguments: [.default, .duckAI] as [OnboardingFlowType]
         )
-        func aiComparisonDaxAnimation(flow: OnboardingFlowType) {
+        func aiIntroDaxAnimation(flow: OnboardingFlowType) {
             let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
-            #expect(sut.aiComparisonContent.daxAnimation == .wingBottom)
+            #expect(sut.aiIntroContent.daxAnimation == .wingBottom)
         }
 
         @Test(

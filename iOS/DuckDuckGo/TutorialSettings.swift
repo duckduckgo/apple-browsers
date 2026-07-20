@@ -38,6 +38,13 @@ protocol TutorialSettings: AnyObject {
     /// with a different launch context. This prevents flow switching mid-onboarding.
     var onboardingFlowType: OnboardingFlowType? { get set }
 
+    /// The download reason the user selected on the Download Screen, or `nil` if not yet chosen.
+    ///
+    /// Persisted alongside ``onboardingFlowType`` so the tailored default flow can be
+    /// reconstructed when onboarding resumes after an app relaunch. Remains `nil` for flows
+    /// that don't show the Download Screen (e.g. the Duck.ai Custom Product Page flow).
+    var onboardingDownloadReason: OnboardingDownloadReason? { get set }
+
 }
 
 final class DefaultTutorialSettings: TutorialSettings {
@@ -52,6 +59,7 @@ final class DefaultTutorialSettings: TutorialSettings {
         static let hasSeenOnboarding = "com.duckduckgo.tutorials.hasSeenOnboarding"
         static let hasSkippedOnboarding = "com.duckduckgo.tutorials.hasSkippedOnboarding"
         static let onboardingFlowType = "com.duckduckgo.tutorials.onboardingFlowType"
+        static let onboardingDownloadReason = "com.duckduckgo.tutorials.onboardingDownloadReason"
     }
 
     private func userDefaults() -> UserDefaults {
@@ -93,6 +101,18 @@ final class DefaultTutorialSettings: TutorialSettings {
         }
         set {
             userDefaults().set(newValue?.rawValue, forKey: Keys.onboardingFlowType)
+        }
+    }
+
+    public var onboardingDownloadReason: OnboardingDownloadReason? {
+        get {
+            guard let rawValue = userDefaults().string(forKey: Keys.onboardingDownloadReason) else {
+                return nil
+            }
+            return OnboardingDownloadReason(rawValue: rawValue)
+        }
+        set {
+            userDefaults().set(newValue?.rawValue, forKey: Keys.onboardingDownloadReason)
         }
     }
 

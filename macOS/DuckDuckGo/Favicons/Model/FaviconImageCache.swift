@@ -338,6 +338,16 @@ final class FaviconImageCache: FaviconImageCaching {
         await deleteFaviconsAndNotify { _ in true }
     }
 
+    /// Debug: drops every decoded favicon image from the in-memory `NSCache`, leaving the persisted
+    /// store, the metadata map, and references intact. Images re-decode lazily from the store on the
+    /// next `get(faviconUrl:)`. Posts `.faviconCacheUpdated` (no payload) so open UI re-resolves and
+    /// the reload is observable.
+    @MainActor
+    func clearInMemoryCache() {
+        imageCache.removeAllObjects()
+        NotificationCenter.default.post(name: .faviconCacheUpdated, object: nil)
+    }
+
     /// Removes matching favicons. The set to delete is resolved from the store — the inspector's source
     /// of truth — rather than the in-memory `entries`, which may not yet hold every stored row (e.g.
     /// before `load()` finishes); filtering memory would let deletes silently no-op while the store keeps

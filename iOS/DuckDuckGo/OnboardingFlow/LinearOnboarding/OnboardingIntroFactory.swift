@@ -48,25 +48,16 @@ enum OnboardingIntroFactory {
     /// 
     /// - Parameters:
     ///   - viewModel: The ViewModel to wire.
-    ///   - isRebranded: `true` if needs to use rebranding visual language. `false` otherwise.
     ///   - delegate: The delegate for the onboarding flow.
     /// - Returns: A new instance of the linear onboarding view controller with the provided view model.
     static func makeController(
         viewModel: OnboardingIntroViewModel,
-        isRebranded: Bool,
         delegate: OnboardingDelegate
     ) -> UIViewController {
-        let controller: Onboarding = if isRebranded {
-            OnboardingIntroViewController(
-                rootView: RebrandedOnboardingView(model: viewModel),
-                viewModel: viewModel
-            )
-        } else {
-            OnboardingIntroViewController(
+        let controller = OnboardingIntroViewController(
                 rootView: OnboardingView(model: viewModel),
                 viewModel: viewModel
             )
-        }
         controller.delegate = delegate
         return controller
     }

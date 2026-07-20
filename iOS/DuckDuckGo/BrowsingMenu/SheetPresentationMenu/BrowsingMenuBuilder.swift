@@ -209,6 +209,7 @@ final class BrowsingMenuBuilder: BrowsingMenuBuilding {
             .init(entryBuilder.makeReloadEntry()),
             .init(entryBuilder.makeReportBrokenSiteEntry()),
             .init(entryBuilder.makeToggleProtectionEntry()),
+            .init(entryBuilder.makeCopyLinkEntry()),
             .init(entryBuilder.makePrintEntry())
         ].compactMap { $0 }
 

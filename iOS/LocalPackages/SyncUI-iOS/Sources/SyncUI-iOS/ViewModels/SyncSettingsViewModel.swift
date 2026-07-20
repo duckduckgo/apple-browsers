@@ -182,6 +182,7 @@ public class SyncSettingsViewModel: ObservableObject {
         case connecting
         case syncAnotherDevice
         case recoverYourData
+        case deviceConnected
 
         // Constant on purpose: `.sheet(item:)` re-presents whenever the item's identity changes, so a
         // per-case id would dismiss and re-present the sheet on every phase change. A stable id keeps
@@ -421,12 +422,10 @@ public class SyncSettingsViewModel: ObservableObject {
     }
 
     public func showSyncWithAnotherDeviceInConnectingSheet() {
-        scheduleSyncEnabledToastAfterSyncWithAnotherDevicePromptDismissal()
         connectingSheetPhase = .syncAnotherDevice
     }
 
     public func syncAnotherDeviceFromConnectingSheet() {
-        shouldShowSyncEnabledToastAfterSyncWithAnotherDevicePromptDismissal = false
         postConnectingSheetDismissAction = { [weak self] in self?.scanQRCode() }
         connectingSheetPhase = nil
     }
@@ -436,7 +435,20 @@ public class SyncSettingsViewModel: ObservableObject {
     }
 
     public func recoverYourDataDoneFromConnectingSheet() {
-        postConnectingSheetDismissAction = { [weak self] in self?.syncWithAnotherDevicePromptDidDismiss() }
+        connectingSheetPhase = nil
+    }
+
+    public func showDeviceConnectedInConnectingSheet(recoveryCode: String) {
+        self.recoveryCode = recoveryCode
+        connectingSheetPhase = .deviceConnected
+    }
+
+    public func deviceConnectedDoneFromConnectingSheet() {
+        connectingSheetPhase = nil
+    }
+
+    public func dismissConnectingSheet(then action: (() -> Void)? = nil) {
+        postConnectingSheetDismissAction = action
         connectingSheetPhase = nil
     }
 

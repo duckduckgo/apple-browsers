@@ -86,6 +86,7 @@ final class SettingsViewModel: ObservableObject {
     var dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?
     private let freemiumPIREligibilityChecker: FreemiumPIREligibilityChecking
     private let profileStateManager: DBPProfileStateManaging
+    private let freemiumDBPUserStateManager: FreemiumDBPUserStateManaging
     weak var autoClearActionDelegate: SettingsAutoClearActionDelegate?
     let mobileCustomization: MobileCustomization
     let userScriptsDependencies: DefaultScriptSourceProvider.Dependencies
@@ -209,6 +210,12 @@ final class SettingsViewModel: ObservableObject {
         case .noProfile: return .off
         case .unknown: return nil
         }
+    }
+
+    /// True once the user's first freemium scan has finished (results exist, even if no
+    /// matches). Used to switch the entry-point CTA from "start scan" to "show results".
+    var hasCompletedFreemiumScan: Bool {
+        freemiumDBPUserStateManager.firstScanResult != nil
     }
 
     var isDefaultOmnibarModeEnabled: Bool {
@@ -416,10 +423,6 @@ final class SettingsViewModel: ObservableObject {
 
     var shouldShowNTPAfterIdleSetting: Bool {
         featureFlagger.isFeatureOn(.showNTPAfterIdleReturn)
-    }
-
-    var shouldShowLastTabShortcutSetting: Bool {
-        featureFlagger.isFeatureOn(.escapeHatchHideShortcut)
     }
 
     var lastTabShortcutEnabledBinding: Binding<Bool> {
@@ -1036,6 +1039,7 @@ final class SettingsViewModel: ObservableObject {
          dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?,
          freemiumPIREligibilityChecker: FreemiumPIREligibilityChecking,
          profileStateManager: DBPProfileStateManaging,
+         freemiumDBPUserStateManager: FreemiumDBPUserStateManaging,
          winBackOfferVisibilityManager: WinBackOfferVisibilityManaging,
          mobileCustomization: MobileCustomization,
          userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
@@ -1080,6 +1084,7 @@ final class SettingsViewModel: ObservableObject {
         self.dataBrokerProtectionViewControllerProvider = dataBrokerProtectionViewControllerProvider
         self.freemiumPIREligibilityChecker = freemiumPIREligibilityChecker
         self.profileStateManager = profileStateManager
+        self.freemiumDBPUserStateManager = freemiumDBPUserStateManager
         self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
         self.mobileCustomization = mobileCustomization
         self.userScriptsDependencies = userScriptsDependencies
@@ -1644,7 +1649,7 @@ extension SettingsViewModel: DataImportViewControllerDelegate {
 extension SettingsViewModel {
 
     enum SettingsDeepLinkSection: Identifiable, Equatable {
-        case netP
+        case netP(scrollToStrictRouting: Bool = false)
         case dbp
         case itr
         case subscriptionFlow(redirectURLComponents: URLComponents? = nil)

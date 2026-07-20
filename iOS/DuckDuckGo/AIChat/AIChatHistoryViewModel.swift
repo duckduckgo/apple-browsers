@@ -22,6 +22,7 @@ import Foundation
 import UIKit
 import AIChat
 import Core
+import PrivacyConfig
 import DesignResourcesKitIcons
 import os.log
 
@@ -60,12 +61,19 @@ final class AIChatHistoryViewModel: ObservableObject {
     private let mutationQueue: DispatchQueue
     private let instrumentation: AIChatHistoryInstrumentation
     private let source: AIChatHistorySource
+    private let featureFlagger: FeatureFlagger
     private var cancellables: Set<AnyCancellable> = []
+
+    /// Gates the redesigned Chats UI (overflow menu + multi-select); off keeps the original layout.
+    var isRedesignEnabled: Bool {
+        featureFlagger.isFeatureOn(.aiChatHistoryMultiselect)
+    }
 
     weak var delegate: AIChatHistoryViewModelDelegate?
 
     init(
         reader: ChatHistoryReading,
+        featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
         fireExecutor: FireExecuting? = nil,
         downloader: ChatHistoryDownloading? = nil,
         pinner: ChatPinning? = nil,
@@ -74,6 +82,7 @@ final class AIChatHistoryViewModel: ObservableObject {
         instrumentation: AIChatHistoryInstrumentation = DefaultAIChatHistoryInstrumentation()
     ) {
         self.reader = reader
+        self.featureFlagger = featureFlagger
         self.fireExecutor = fireExecutor
         self.downloader = downloader
         self.pinner = pinner
@@ -217,20 +226,49 @@ final class AIChatHistoryViewModel: ObservableObject {
         fireExecutor.scheduleSync()
     }
 
+    /// Never fire-mode (sheet only surfaces persistent chats); one batch burn, sync flushed once.
+    func burnSelectedChats(chatIds: [String]) async {
+        guard let fireExecutor, !chatIds.isEmpty else { return }
+        let result = await fireExecutor.burnChats(chatIDs: chatIds, isFireMode: false)
+        guard case .success = result else { return }
+        fireExecutor.scheduleSync()
+    }
+
     func downloadChat(chatId: String) {
-        // Image-gen exports do enough I/O to freeze the sheet — dispatch off-main.
-        guard let downloader else { return }
+        guard downloader != nil else { return }
         instrumentation.downloadStarted()
+        exportChats([chatId]) { [weak self] urls in
+            guard let filename = urls.first?.lastPathComponent else { return }
+            self?.delegate?.viewModelDidExportChat(filename: filename)
+        }
+    }
+
+    func downloadSelectedChats(chatIds: [String]) {
+        exportChats(chatIds) { [weak self] urls in
+            self?.delegate?.viewModelDidExportChats(count: urls.count)
+        }
+    }
+
+    private func exportChats(_ chatIds: [String], onExported: @escaping ([URL]) -> Void) {
+        guard let downloader, !chatIds.isEmpty else { return }
         let instrumentation = instrumentation
-        mutationQueue.async { [weak self] in
-            do {
-                let url = try downloader.downloadChat(chatId: chatId)
-                DispatchQueue.main.async { [weak self] in
-                    self?.delegate?.viewModelDidExportChat(filename: url.lastPathComponent)
+        mutationQueue.async {
+            var urls: [URL] = []
+            for chatId in chatIds {
+                do {
+                    urls.append(try downloader.downloadChat(chatId: chatId))
+                } catch {
+                    Logger.aiChat.debug("Chat export failed: \(error.localizedDescription)")
+                    instrumentation.downloadFailed(error: error)
                 }
-            } catch {
-                Logger.aiChat.debug("Chat export failed: \(error.localizedDescription)")
-                instrumentation.downloadFailed(error: error)
+            }
+            DispatchQueue.main.async { [weak self] in
+                // Chats were attempted (input was non-empty); an empty result means every one failed.
+                if urls.isEmpty {
+                    self?.delegate?.viewModelDidFailExport()
+                } else {
+                    onExported(urls)
+                }
             }
         }
     }
@@ -336,4 +374,13 @@ protocol AIChatHistoryViewModelDelegate: AnyObject {
     /// `filename` with a "Show" action that dismisses the sheet and opens the in-app
     /// Downloads list.
     func viewModelDidExportChat(filename: String)
+
+    /// A multi-select export finished. `count` chats were each written to disk as their own
+    /// file; present one aggregate "N chats downloaded" toast with a "Show" action that
+    /// dismisses the sheet and opens the in-app Downloads list.
+    func viewModelDidExportChats(count: Int)
+
+    /// An export produced no files — a single download failed, or every selected chat failed.
+    /// Present a "download failed" error toast. (Not called when nothing was selected.)
+    func viewModelDidFailExport()
 }

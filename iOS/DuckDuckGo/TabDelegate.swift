@@ -33,6 +33,10 @@ protocol TabDelegate: AnyObject {
 
     func tabWillRequestNewTab(_ tab: TabViewController) -> UIKeyModifierFlags?
 
+    /// The current cached search token, or nil if none is live. Used by the SERP interceptor
+    /// to attach `X-DDG-Search-Token` for the treatment cohort of the Search Token experiment.
+    func searchToken(for tab: TabViewController) -> String?
+
     func tabDidRequestNewTab(_ tab: TabViewController)
 
     func tabDidRequestNewVoiceChat(_ tab: TabViewController)
@@ -54,6 +58,10 @@ protocol TabDelegate: AnyObject {
              didRequestNewTabForUrl url: URL,
              openedByPage: Bool,
              inheritingAttribution: AdClickAttributionLogic.State?)
+
+    /// Called on navigate forward on a tab that had just closed a link-opened tab via back.
+    /// Re-open that tab at `url` as a child of `tab` again.
+    func tab(_ tab: TabViewController, didRequestReopenClosedTabAt url: URL)
 
     func tab(_ tab: TabViewController,
              didRequestNewBackgroundTabForUrl url: URL,
@@ -186,5 +194,7 @@ extension TabDelegate {
     func tabDidRequestNewVoiceChat(_ tab: TabViewController) {}
 
     func tab(_ tab: TabViewController, didFailDuckAINavigationFor url: URL, error: Error) {}
+
+    func searchToken(for tab: TabViewController) -> String? { nil }
 
 }

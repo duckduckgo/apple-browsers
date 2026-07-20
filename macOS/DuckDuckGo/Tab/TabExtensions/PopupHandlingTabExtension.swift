@@ -437,7 +437,16 @@ extension PopupHandlingTabExtension: NavigationResponder {
         // Links clicked in a pinned tab navigating to another domain should open in a new tab
         let canOpenLinkInCurrentTab: Bool = {
             let isNavigatingToAnotherDomain = navigationAction.url.host != targetFrame.url.host && !targetFrame.url.isEmpty
-            let isNavigatingAwayFromPinnedTab = isLinkActivated && self.isTabPinned() && isNavigatingToAnotherDomain && navigationAction.isForMainFrame
+            // Don't treat leaving an internal error page as navigating away from a pinned tab: the SSL
+            // "Accept risk and visit site" reload navigates from duck://error back to the failing site,
+            // whose host differs from the error page's, so it would otherwise wrongly spawn a new tab
+            // (which re-shows the warning, as the SSL bypass flag lives only on the original tab).
+            let isLeavingErrorPage = targetFrame.url.isErrorURL
+            let isNavigatingAwayFromPinnedTab = isLinkActivated
+                && self.isTabPinned()
+                && isNavigatingToAnotherDomain
+                && navigationAction.isForMainFrame
+                && !isLeavingErrorPage
             return !isNavigatingAwayFromPinnedTab
         }()
 
@@ -449,10 +458,15 @@ extension PopupHandlingTabExtension: NavigationResponder {
         }
         Logger.navigation.debug("PopupHandlingTabExtension.decidePolicyFor: \(String(describing: navigationAction)) userInteractionEvent: \(userInteractionEvent ??? "<nil>") currentEvent: \(NSApp.currentEvent ??? "<nil>")")
 
+        // For pinned-tab cross-domain navigations canOpenLinkInCurrentTab is false.
+        // shouldSelectNewTab:true ensures a plain left-click always selects the new tab — the user
+        // clicked a link the pinned tab cannot open in place, so foreground is the right default.
+        // Modifier-key semantics (⌘, ⌘⇧, ⌘⌥, ⌘⌥⇧) are preserved by LinkOpenBehavior as usual.
         let linkOpenBehavior = LinkOpenBehavior(button: navigationAction.navigationType.isMiddleButtonClick ? .middle : .left,
                                                 modifierFlags: userInteractionEvent?.modifierFlags ?? [],
                                                 switchToNewTabWhenOpenedPreference: tabsPreferences.switchToNewTabWhenOpened,
-                                                canOpenLinkInCurrentTab: canOpenLinkInCurrentTab)
+                                                canOpenLinkInCurrentTab: canOpenLinkInCurrentTab,
+                                                shouldSelectNewTab: !canOpenLinkInCurrentTab)
         // Handle behavior for navigation
         switch linkOpenBehavior {
         case .currentTab:

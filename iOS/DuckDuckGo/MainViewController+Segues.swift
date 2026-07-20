@@ -69,7 +69,6 @@ extension MainViewController {
         )
         let controller = OnboardingIntroFactory.makeController(
             viewModel: viewModel,
-            isRebranded: featureFlagger.isFeatureOn(.onboardingRebranding),
             delegate: self
         )
         controller.modalPresentationStyle = .overFullScreen
@@ -226,29 +225,22 @@ extension MainViewController {
             storageHandler: duckAiNativeStorageHandler
         )
 
-        let storyboard = UIStoryboard(name: "TabSwitcher", bundle: nil)
-        guard let controller = storyboard.instantiateInitialViewController(creator: { coder in
-            TabSwitcherViewController(coder: coder,
-                                      bookmarksDatabase: self.bookmarksDatabase,
-                                      syncService: self.syncService,
-                                      featureFlagger: self.featureFlagger,
-                                      favicons: self.favicons,
-                                      tabManager: self.tabManager,
-                                      aiChatSettings: self.aiChatSettings,
-                                      appSettings: self.appSettings,
-                                      privacyStats: self.privacyStats,
-                                      productSurfaceTelemetry: self.productSurfaceTelemetry,
-                                      historyManager: self.historyManager,
-                                      fireproofing: self.fireproofing,
-                                      keyValueStore: self.keyValueStore,
-                                      daxDialogsManager: self.daxDialogsManager,
-                                      initialTrackerCountState: initialTrackerCountState,
-                                      duckAIGridContentProvider: duckAIGridContentProvider,
-                                      duckAIVoiceSessionTracker: self.duckAIVoiceSessionTracker)
-        }) else {
-            assertionFailure()
-            return
-        }
+        let controller = TabSwitcherViewController(bookmarksDatabase: self.bookmarksDatabase,
+                                                   syncService: self.syncService,
+                                                   featureFlagger: self.featureFlagger,
+                                                   favicons: self.favicons,
+                                                   tabManager: self.tabManager,
+                                                   aiChatSettings: self.aiChatSettings,
+                                                   appSettings: self.appSettings,
+                                                   privacyStats: self.privacyStats,
+                                                   productSurfaceTelemetry: self.productSurfaceTelemetry,
+                                                   historyManager: self.historyManager,
+                                                   fireproofing: self.fireproofing,
+                                                   keyValueStore: self.keyValueStore,
+                                                   daxDialogsManager: self.daxDialogsManager,
+                                                   initialTrackerCountState: initialTrackerCountState,
+                                                   duckAIGridContentProvider: duckAIGridContentProvider,
+                                                   duckAIVoiceSessionTracker: self.duckAIVoiceSessionTracker)
 
         controller.transitioningDelegate = tabSwitcherTransition
         controller.delegate = self
@@ -295,12 +287,12 @@ extension MainViewController {
         }, deepLinkTarget: .subscriptionWelcome)
     }
 
-    func segueToVPN() {
+    func segueToVPN(scrollToStrictRouting: Bool = false) {
         Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()
         launchSettings(completion: {
-            $0.triggerDeepLinkNavigation(to: .netP)
-        }, deepLinkTarget: .netP)
+            $0.triggerDeepLinkNavigation(to: .netP(scrollToStrictRouting: scrollToStrictRouting))
+        }, deepLinkTarget: .netP(scrollToStrictRouting: scrollToStrictRouting))
     }
 
     func segueToDataBrokerProtection() {
@@ -507,6 +499,7 @@ extension MainViewController {
                                                   dataBrokerProtectionViewControllerProvider: dbpIOSPublicInterface,
                                                   freemiumPIREligibilityChecker: freemiumPIREligibilityChecker,
                                                   profileStateManager: profileStateManager,
+                                                  freemiumDBPUserStateManager: freemiumDBPUserStateManager,
                                                   winBackOfferVisibilityManager: winBackOfferVisibilityManager,
                                                   mobileCustomization: mobileCustomization,
                                                   userScriptsDependencies: userScriptsDependencies,
@@ -671,7 +664,6 @@ class SettingsUINavigationController: UINavigationController {
         // Bail out to home instead of popping to the Settings root
         // when leaving the onboarding subscription flow without a purchase.
         if dismissesModalOnSubscriptionBailout,
-           viewControllers.count == 2,
            !didAcquireSubscription {
             dismiss(animated: true)
             return nil
@@ -690,6 +682,28 @@ class SettingsUINavigationController: UINavigationController {
         }
     }
 
+}
+
+final class DataBrokerProtectionSubscriptionFlowNavigationController: UINavigationController {
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+
+        let surfaceColor = UIColor(designSystemColor: .surface)
+        view.backgroundColor = surfaceColor
+        navigationBar.tintColor = UIColor(designSystemColor: .textPrimary)
+        navigationBar.isTranslucent = false
+        navigationBar.barTintColor = surfaceColor
+        navigationBar.backgroundColor = surfaceColor
+        viewControllers.first?.navigationItem.leftBarButtonItem = UIBarButtonItem(barButtonSystemItem: .close,
+                                                                                  target: self,
+                                                                                  action: #selector(dismissSubscriptionFlow))
+    }
+
+    @objc
+    private func dismissSubscriptionFlow() {
+        dismiss(animated: true)
+    }
 }
 
 extension NSNotification.Name {

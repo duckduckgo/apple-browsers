@@ -17,6 +17,7 @@
 //
 import NetworkProtectionUI
 import AppKit
+import PrivacyConfig
 
 protocol IconsProviding {
     var addressBarCookiesIconsProvider: AddressBarCookiesIconsProviding { get }
@@ -28,21 +29,29 @@ protocol IconsProviding {
     var vpnNavigationIconsProvider: IconProvider { get }
     var suggestionsIconsProvider: SuggestionsIconsProviding { get }
     var addressBarButtonsIconsProvider: AddressBarPermissionButtonsIconsProviding { get }
+}
 
-    var fireInfoGraphic: NSImage { get }
+struct IconsProvidingFactory {
+
+    static func buildColorsProvider(featureFlagger: FeatureFlagger) -> IconsProviding {
+        if featureFlagger.isFeatureOn(.appRebranding) {
+            return CurrentIconsProvider()
+        }
+
+        return LegacyIconsProvider()
+    }
 }
 
 final class LegacyIconsProvider: IconsProviding {
-    var addressBarCookiesIconsProvider: AddressBarCookiesIconsProviding = LegacyAddressBarCookiesIconsProvider()
-    var navigationToolbarIconsProvider: NavigationToolbarIconsProviding = LegacyNavigationToolbarIconsProvider()
-    var moreOptionsMenuIconsProvider: MoreOptionsMenuIconsProviding = LegacyMoreOptionsMenuIcons()
+    var addressBarCookiesIconsProvider: AddressBarCookiesIconsProviding = CurrentAddressBarCookiesIconsProvider()
+    var navigationToolbarIconsProvider: NavigationToolbarIconsProviding = CurrentNavigationToolbarIconsProvider()
+    var moreOptionsMenuIconsProvider: MoreOptionsMenuIconsProviding = CurrentMoreOptionsMenuIcons()
     var fireButtonStyleProvider: FireButtonIconStyleProviding = LegacyFireButtonIconStyleProvider()
-    var settingsIconProvider: SettingsIconsProviding = LegacySettingsIconProvider()
-    var bookmarksIconsProvider: BookmarksIconsProviding = LegacyBookmarksIconsProvider()
-    var vpnNavigationIconsProvider: IconProvider = NavigationBarIconProvider()
-    var suggestionsIconsProvider: SuggestionsIconsProviding = LegacySuggestionsIconsProvider()
-    var addressBarButtonsIconsProvider: AddressBarPermissionButtonsIconsProviding = LegacyAddressBarPermissionButtonIconsProvider()
-    var fireInfoGraphic: NSImage = .fireHeader
+    var settingsIconProvider: SettingsIconsProviding = CurrentSettingsIconProvider()
+    var bookmarksIconsProvider: BookmarksIconsProviding = CurrentBookmarksIconsProvider()
+    var vpnNavigationIconsProvider: IconProvider = CurrentVPNNavigationBarIconProvider()
+    var suggestionsIconsProvider: SuggestionsIconsProviding = CurrentSuggestionsIconsProvider()
+    var addressBarButtonsIconsProvider: AddressBarPermissionButtonsIconsProviding = CurrentAddressBarPermissionButtonIconsProvider()
 }
 
 final class CurrentIconsProvider: IconsProviding {
@@ -55,5 +64,4 @@ final class CurrentIconsProvider: IconsProviding {
     var vpnNavigationIconsProvider: IconProvider = CurrentVPNNavigationBarIconProvider()
     var suggestionsIconsProvider: SuggestionsIconsProviding = CurrentSuggestionsIconsProvider()
     var addressBarButtonsIconsProvider: AddressBarPermissionButtonsIconsProviding = CurrentAddressBarPermissionButtonIconsProvider()
-    var fireInfoGraphic: NSImage = .newFireHeader
 }

@@ -419,6 +419,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
 
     private func present(for textField: UITextField, suggestionsDependencies: SuggestionTrayDependencies, textEntryMode: TextEntryMode, animated: Bool) {
         guard editingStateViewController == nil else { return }
+        omniDelegate?.onDidBeginEditing()
 
         let switchBarHandler = createSwitchBarHandler(for: textField, initialToggleState: textEntryMode)
         let shouldAutoSelectText = shouldAutoSelectTextForUrl(textField)
@@ -762,11 +763,13 @@ extension DefaultOmniBarViewController {
             selectedTool: selectedTool,
             attachments: attachments,
             reasoningMode: iPadReasoningModeForSubmitPixel,
-            modelId: modelPickerController?.currentModelId
+            modelId: modelPickerController?.currentModelId,
+            surface: .addressBar
         )
         UnifiedToggleInputCoordinatorPixelHelper.fireToolSubmittedPixelIfNeeded(
             selectedTool: selectedTool,
-            attachments: attachments
+            attachments: attachments,
+            surface: .addressBar
         )
     }
 

@@ -17,6 +17,7 @@
 //
 
 import Combine
+import WebKit
 
 public protocol NewTabPageOmnibarConfigProviding: AnyObject {
 
@@ -42,6 +43,17 @@ public protocol NewTabPageOmnibarConfigProviding: AnyObject {
     var isImageGenerationEnabled: Bool { get }
 
     var isWebSearchEnabled: Bool { get }
+
+    /// Whether the "Customize Responses" tool is shown in the NTP omnibar Tools menu.
+    var isCustomizeResponsesEnabled: Bool { get }
+
+    /// Customize Responses row state (sub-label + toggle) for the window hosting `requestingWebView`;
+    /// pass `nil` to resolve the current key window.
+    @MainActor
+    func customizeResponsesState(requestingWebView: WKWebView?) -> NewTabPageDataModel.OmnibarCustomizeResponsesState
+
+    /// Fires when the stored response customization changes, so the client re-pushes the config.
+    var customizeResponsesStatePublisher: AnyPublisher<Void, Never> { get }
 
     /// Whether the attach-tabs (and files) affordance is enabled. Driven by the
     /// `aiChatNtpAttachMoreTabs` feature flag. Published so the client can push an

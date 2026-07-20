@@ -104,22 +104,21 @@ class SwitchBarTextEntryView: UIView {
                 textView.isHidden = false
             }
 
-            // Transfer FR while both controls are visible so UIKit keeps the keyboard alive
-            // without a dismiss/re-present cycle.
-            if wasFirstResponder { _ = becomeFirstResponder() }
+            // Without this the caret animates in from a stale position, because the style flip runs
+            // inside the coordinator's mode-change UIView.animate. updateTextViewHeight stays outside
+            // so the height still animates with that transaction.
+            UIView.performWithoutAnimation {
+                adjustTextViewContentInset()
+                if wasFirstResponder { _ = becomeFirstResponder() }
+                if style == .singleLine && textView.isFirstResponder { _ = textView.resignFirstResponder() }
+                if style == .multiLine && textField.isFirstResponder { _ = textField.resignFirstResponder() }
+                syncActiveControl()
+                updatePlaceholderVisibility()
+                updateKeyboardConfiguration()
+                (usesTextField ? textField : textView).layoutIfNeeded()
+            }
 
-            // If becomeFirstResponder() returned false the outgoing control is still FR.
-            // Resign it explicitly so it is never hidden while holding keyboard focus.
-            if style == .singleLine && textView.isFirstResponder { _ = textView.resignFirstResponder() }
-            if style == .multiLine && textField.isFirstResponder { _ = textField.resignFirstResponder() }
-
-            // Hide the outgoing control — it has now lost first responder.
-            syncActiveControl()
-
-            updatePlaceholderVisibility()
-            updateKeyboardConfiguration()
             updateTextViewHeight()
-            adjustTextViewContentInset()
         }
     }
 

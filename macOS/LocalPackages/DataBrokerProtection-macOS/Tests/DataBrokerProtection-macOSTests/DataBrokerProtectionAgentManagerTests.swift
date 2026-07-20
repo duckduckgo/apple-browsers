@@ -765,11 +765,11 @@ struct MockConfigurationStore: ConfigurationStoring {
         return nil
     }
 
-    mutating func saveData(_ data: Data, for configuration: Configuration) throws {
+    func saveData(_ data: Data, for configuration: Configuration) throws {
         return
     }
 
-    mutating func saveEtag(_ etag: String, for configuration: Configuration) throws {
+    func saveEtag(_ etag: String, for configuration: Configuration) throws {
         return
     }
 

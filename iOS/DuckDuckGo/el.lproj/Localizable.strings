@@ -401,10 +401,10 @@
 "alert.sync-already-paired-with-account-button" = "Το κατάλαβα";
 
 /* Description for Sync error shown when both devices are already paired with the same account */
-"alert.sync-already-paired-with-account-description" = "Έχεις ήδη κάνει ζεύξη με αυτόν τον λογαριασμό και στις δύο συσκευές.";
+"alert.sync-already-paired-with-account-description" = "Αυτές οι συσκευές είναι ήδη συνδεδεμένες στο Sync & Backup.";
 
 /* Title for Sync error shown when both devices are already paired with the same account */
-"alert.sync-already-paired-with-account-title" = "Ήδη σε ζεύξη";
+"alert.sync-already-paired-with-account-title" = "Έχει γίνει ήδη συγχρονισμός.";
 
 /* Description for alert shown when sync error occurs because of bad bookmarks data */
 "alert.sync-bookmarks-bad-data-error-description" = "Ορισμένοι σελιδοδείκτες δεν έχουν μορφοποιηθεί σωστά ή είναι πολύ μεγάλοι και δεν συγχρονίστηκαν.";
@@ -425,10 +425,10 @@
 "alert.sync-cancelled-from-other-device-title" = "Ο συγχρονισμός ακυρώθηκε από την άλλη συσκευή σου.";
 
 /* Description for Sync error shown when a third-party recovery code can only be used with Duck.ai */
-"alert.sync-code-only-compatible-with-duckai-description" = "Στο πρόγραμμα περιήγησής σου, επισκέψου το duck.ai, πήγαινε στις Ρυθμίσεις, στη συνέχεια στην ενότητα «Sync & Backup» επίλεξε «Ενεργοποίηση» και, στη συνέχεια, «Συγχρονισμός με άλλη συσκευή».";
+"alert.sync-code-only-compatible-with-duckai-description" = "Στο άλλο πρόγραμμα περιήγησής σας, επισκεφθείτε το Duck.ai, μεταβείτε στις Ρυθμίσεις, στη συνέχεια στην ενότητα «Sync & Backup» επιλέξτε «Ενεργοποίηση» και μετά «Συγχρονισμός με άλλη συσκευή».";
 
 /* Title for Sync error shown when a third-party recovery code can only be used with Duck.ai */
-"alert.sync-code-only-compatible-with-duckai-title" = "Σάρωσε αυτόν τον κωδικό από τις ρυθμίσεις του Duck.ai.";
+"alert.sync-code-only-compatible-with-duckai-title" = "Σαρώστε αυτόν τον κώδικα χρησιμοποιώντας ένα πρόγραμμα περιήγησης εκτός του DuckDuckGo.";
 
 /* Description for alert shown when sync error occurs because of bad credentials data */
 "alert.sync-credentials-bad-data-error-description" = "Ορισμένοι κωδικοί πρόσβασης δεν έχουν μορφοποιηθεί σωστά ή είναι πολύ μεγάλοι και δεν συγχρονίστηκαν.";
@@ -454,6 +454,12 @@
 /* Sync error alert action button title, takes the user to the sync settings page. */
 "alert.sync-error-action" = "Ρυθμίσεις συγχρονισμού";
 
+/* Description for generic Sync setup failure alerts */
+"alert.sync-failed-description" = "Δοκιμάστε ξανά.";
+
+/* Title for generic Sync setup failure alerts */
+"alert.sync-failed-title" = "Ο συγχρονισμός απέτυχε.";
+
 /* Description for Sync error shown when a third-party account already has a native DuckDuckGo Sync credential */
 "alert.sync-from-another-connected-device-description" = "Συγχρόνισε αυτήν τη συσκευή από ένα ήδη συνδεδεμένο πρόγραμμα περιήγησης DuckDuckGo σε άλλη συσκευή.";
 
@@ -478,6 +484,9 @@
 /* Title for alert shown when sync paused for an error */
 "alert.sync-paused-title" = "Ο συγχρονισμός έχει τεθεί σε παύση";
 
+/* Button title for Sync setup error alerts */
+"alert.sync-setup-error-got-it-button" = "Το κατάλαβα";
+
 /* Switch account button in alert */
 "alert.sync-switch-account-button" = "Αλλαγή συγχρονισμού";
 
@@ -489,9 +498,6 @@
 
 /* Description for alert shown when sync error occurs because of too many requests */
 "alert.sync-too-many-requests-error-description" = "Το Sync & Backup είναι προσωρινά μη διαθέσιμο.";
-
-/* Description for Sync error shown when the app version does not support the scanned Sync code */
-"alert.sync-update-required-description" = "Αυτός ο κώδικας δεν υποστηρίζεται στην τρέχουσα έκδοση της εφαρμογής.";
 
 /* Title for Sync error shown when the app version does not support the scanned Sync code */
 "alert.sync-update-required-title" = "Ενημέρωσε το πρόγραμμα περιήγησης DuckDuckGo και δοκίμασε ξανά.";
@@ -527,13 +533,15 @@
 "alert.unable-to-remove-device-description" = "Δεν είναι δυνατή η κατάργηση αυτής της συσκευής από τη λειτουργία Συγχρονισμός και δημιουργία αντιγράφων ασφαλείας.";
 
 /* Description for unable to scan qr code error */
-"alert.unable-to-scan-qr-code-description" = "Δυστυχώς, αυτός ο κωδικός δεν είναι έγκυρος. Βεβαιωθείτε ότι ο σωστός κωδικός έχει εισαχθεί ή σαρωθεί.";
+"alert.unable-to-scan-qr-code-description" = "Βεβαιωθείτε ότι ο σωστός κωδικός έχει εισαχθεί ή σαρωθεί.";
+
+/* Title for unable to scan qr code error */
+"alert.unable-to-scan-qr-code-title" = "Αυτός δεν είναι έγκυρος κωδικός συγχρονισμού.";
 
 /* Description for unable to sync to server error */
 "alert.unable-to-sync-to-server-description" = "Δεν είναι δυνατή η σύνδεση με τον διακομιστή.";
 
 /* Description for unable to sync with another device error */
-"alert.unable-to-sync-with-other-device-description" = "Δεν είναι δυνατός ο συγχρονισμός με άλλη συσκευή.";
 
 /* Description for unable to turn sync off error */
 "alert.unable-to-turn-sync-off-description" = "Δεν είναι δυνατή η απενεργοποίηση της λειτουργίας Συγχρονισμός και δημιουργία αντιγράφων ασφαλείας.";
@@ -1418,10 +1426,10 @@
 "cookie-popup-protection.opt-in.confirm" = "Επιβεβαίωση";
 
 /* Body of the opt-in dialog when cookie pop-up protection is off */
-"cookie-popup-protection.opt-in.disabled.body" = "Θα στοχεύσουμε στην επιλογή των πιο ιδιωτικών διαθέσιμων επιλογών cookie και θα τα κλείσουμε για εσένα. Εάν δεν έχουν εξαιρέσεις, θα σας γλιτώσουμε ένα κλικ και θα αποδεχτούμε αυτά τα cookie για εσάς.";
+"cookie-popup-protection.opt-in.disabled.body" = "Θα προσπαθήσουμε να απορρίψουμε όσο το δυνατόν περισσότερα cookie. Εάν δεν υπάρχει επιλογή απόρριψης, θα σας γλιτώσουμε ένα κλικ και θα αποδεχτούμε αυτά τα cookie για εσάς.";
 
 /* Primary (recommended) option when cookie pop-up protection is off */
-"cookie-popup-protection.opt-in.disabled.primary-option" = "Διαχειριστείτε ή αποδεχθείτε cookie για εμένα";
+"cookie-popup-protection.opt-in.disabled.primary-option" = "Απόρριψη όποτε είναι εφικτό ή αποδοχή για μένα";
 
 /* Secondary option when cookie pop-up protection is off */
 "cookie-popup-protection.opt-in.disabled.secondary-option" = "Θα συνεχίσω να τα διαχειρίζομαι εγώ προσωπικά";
@@ -1433,10 +1441,10 @@
 "cookie-popup-protection.opt-in.enabled.body" = "Μπορούμε να σας γλιτώσουμε ένα κλικ και να αποδεχτούμε αυτά τα cookie για εσάς.";
 
 /* Primary (recommended) option when cookie pop-up protection is already enabled */
-"cookie-popup-protection.opt-in.enabled.primary-option" = "Αποδοχή cookie χωρίς δυνατότητα εξαίρεσης για μένα";
+"cookie-popup-protection.opt-in.enabled.primary-option" = "Αποδοχή cookie που δεν μπορούν να απορριφθούν";
 
 /* Secondary option when cookie pop-up protection is already enabled */
-"cookie-popup-protection.opt-in.enabled.secondary-option" = "Θα συνεχίσω να τα διαχειρίζομαι εγώ προσωπικά";
+"cookie-popup-protection.opt-in.enabled.secondary-option" = "Θα συνεχίσω να τα αποδέχομαι εγώ προσωπικά";
 
 /* Title of the opt-in dialog when cookie pop-up protection is already enabled */
 "cookie-popup-protection.opt-in.enabled.title" = "Κουραστήκατε από τα αναδυόμενα παράθυρα για cookie που δεν σας επιτρέπουν να εξαιρεθείτε;";
@@ -3029,7 +3037,7 @@
 "network.protection.vpn.data-volume" = "Όγκος δεδομένων";
 
 /* Footer text for the Exclude CGNAT setting item. */
-"network.protection.vpn.exclude.cgnat.setting.footer" = "Συνιστάται να απενεργοποιηθεί, ώστε το σύνολο της επισκεψιμότητάς σας να περνάει μέσω του VPN. Εάν αντιμετωπίζετε προβλήματα με λειτουργίες όπως κλήσεις Wi-Fi, ανταλλαγή μηνυμάτων ή φωνητικά μηνύματα, δοκιμάστε να προβείτε σε ενεργοποίηση.";
+"network.protection.vpn.exclude.cgnat.setting.footer" = "Παρακάμψτε το VPN για υπηρεσίες παρόχου κινητής τηλεφωνίας, όπως κλήσεις Wi-Fi και φωνητικά μηνύματα.";
 
 /* Title for the Exclude CGNAT setting item. */
 "network.protection.vpn.exclude.cgnat.setting.title" = "Εξαίρεση Υπηρεσιών Παρόχου";
@@ -3107,10 +3115,10 @@
 "network.protection.vpn.shortcuts.section.header" = "Συντομευσεις";
 
 /* Footer text for the Strict Routing setting item. The 'Learn more' text is a Markdown link. */
-"network.protection.vpn.strict.routing.setting.footer" = "Συνιστάται σε δίκτυα που δεν εμπιστεύεσαι, π.χ. δημόσιο wifi σε ξενοδοχεία, μπαρ κ.λπ. Εάν αντιμετωπίζεις προβλήματα με λειτουργίες (όπως CarPlay, AirDrop κ.λπ.) ή με τη σύνδεση σε άλλες συσκευές, δοκίμασε να το απενεργοποιήσεις. [Μάθε περισσότερα](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)";
+"network.protection.vpn.strict.routing.setting.footer" = "Αποκλεισμός εφαρμογών από παράκαμψη του VPN. Εάν αντιμετωπίζετε προβλήματα με τις λειτουργίες Wi-Fi (όπως το AirDrop ή το iPhone Mirroring), η απενεργοποίησή του μπορεί να βοηθήσει. Συνιστάται ιδιαίτερα σε δίκτυα που δεν εμπιστεύεστε, όπως δημόσια Wi-Fi. [Μάθετε περισσότερα](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack).";
 
 /* Title for the Strict Routing setting item. */
-"network.protection.vpn.strict.routing.setting.title" = "Αυστηρή δρομολόγηση";
+"network.protection.vpn.strict.routing.setting.title" = "Επιβολή Αυστηρής δρομολόγησης (συνιστάται)";
 
 /* Confirm button for the new address bar picker */
 "new.address.bar.picker.confirm" = "Επιβεβαίωση";
@@ -4046,7 +4054,19 @@
 "settings.cookie.pop-up-protection.protection" = "Προστασία αναδυόμενων παραθύρων για cookies";
 
 /* Explanation in Settings how the cookie pop up protection feature works */
-"settings.cookie.pop.up.protection.explanation" = "Το DuckDuckGo θα προσπαθήσει να επιλέξει τις πιο ιδιωτικές ρυθμίσεις που υπάρχουν διαθέσιμες και να αποκρύψει αυτά τα αναδυόμενα παράθυρα για εσάς.\n[Μάθετε περισσότερα](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
+"settings.cookie.pop.up.protection.explanation" = "Το DuckDuckGo μπορεί να διαχειρίζεται αυτόματα τις προτιμήσεις για τα cookie ώστε να μεγιστοποιείται το απόρρητο, να ελαχιστοποιούνται τα cookie και να κλείνουν αυτά τα αναδυόμενα παράθυρα.\n[Μάθετε περισσότερα](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
+
+/* Explanation below the auto-manage cookie pop-ups toggle in settings */
+"settings.cookie.auto-manage.explanation" = "Θα προσπαθήσουμε να επιλέξουμε μόνο τις πιο ιδιωτικές διαθέσιμες επιλογές cookie για εσάς και έπειτα να κλείσουμε αυτά τα αναδυόμενα παράθυρα.";
+
+/* Title for the auto-manage cookie pop-ups toggle in settings */
+"settings.cookie.auto-manage.title" = "Αυτόματη διαχείριση αναδυόμενων παραθύρων cookie";
+
+/* Explanation below the pop-ups without opt-outs toggle in settings */
+"settings.cookie.popups-without-opt-outs.explanation" = "Επίσης, επιτρέψτε στο DuckDuckGo να σας γλιτώσει ένα κλικ αποδεχόμενο cookie εκ μέρους σας, ώστε να κλείνουν τα αναδυόμενα παράθυρα που δεν σας επιτρέπουν να εξαιρεθείτε.";
+
+/* Title for the pop-ups without opt-outs toggle in settings */
+"settings.cookie.popups-without-opt-outs.title" = "Αναδυόμενα παράθυρα χωρίς επιλογή εξαίρεσης";
 
 /* Settings screen cell text for Cookie popups */
 "settings.cookie.popups" = "Διαχείριση αναδυόμενων παραθύρων cookies";
@@ -4814,7 +4834,7 @@
 "sync.remove-device.title" = "Αφαίρεση συσκευής;";
 
 /* Toast message shown after sync is enabled by connecting with another device */
-"sync.simplified.device-synced.toast" = "Η συσκευή συγχρονίστηκε επιτυχώς!";
+"sync.simplified.device-synced.toast" = "Προστέθηκε νέα συσκευή!";
 
 /* Toast message shown after sync is successfully enabled */
 "sync.simplified.enabled.toast" = "Το Sync & Backup ενεργοποιήθηκε";
@@ -5412,5 +5432,28 @@
 /* Button to delete all chats in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.chats.button" = "Διαγραφή συνομιλιών";
 
-/* Do not translate - stringsdict entry */
-"aiChat.history.deleteAll.confirmation.title" = "aiChat.history.deleteAll.confirmation.title";
+/* Top-level attachment menu option to attach the current page content to an AI chat message */
+"aichat.attachment.option.ask.about.page" = "Ρώτα για τη σελίδα";
+
+/* Status view message shown while the VPN is on but Strict routing is off */
+"network.protection.status.header.message.strict.routing.off" = "Ορισμένη επισκεψιμότητα ενδέχεται να παρακάμπτει το VPN όσο η Αυστηρή δρομολόγηση είναι απενεργοποιημένη. Η Αυστηρή δρομολόγηση συνιστάται για δημόσια δίκτυα.";
+
+/* Label for the status pill shown while the VPN's Strict routing setting is off */
+"network.protection.status.view.strict.routing.pill.off" = "Αυστηρή δρομολόγηση: Απενεργοποιημένη";
+
+/* Label for the status pill shown while the VPN's Strict routing setting is on */
+"network.protection.status.view.strict.routing.pill.on" = "Αυστηρή δρομολόγηση: Ενεργοποιημένη";
+
+/* Tooltip shown for the status pill while the VPN's Strict routing setting is off */
+"network.protection.status.view.strict.routing.pill.tooltip.off" = "Η Αυστηρή δρομολόγηση συνιστάται για δημόσια δίκτυα.";
+
+/* Tooltip shown for the status pill while the VPN's Strict routing setting is on */
+"network.protection.status.view.strict.routing.pill.tooltip.on" = "Ορισμένες εφαρμογές ενδέχεται να μη λειτουργούν όσο είναι ενεργοποιημένη η Αυστηρή δρομολόγηση.";
+
+/* Title of the Troubleshooting section in the VPN status screen. */
+"network.protection.status.view.troubleshooting.section.title" = "Αντιμετώπιση προβλημάτων";
+
+/* The body of the notification reminding the user to turn the VPN Strict routing setting back on */
+"network.protection.strict.routing.reminder.notification.body" = "Ορισμένη επισκεψιμότητα ενδέχεται να παρακάμπτει το VPN όσο είναι απενεργοποιημένο. Η Αυστηρή δρομολόγηση συνιστάται για δημόσια δίκτυα.";
+/* The title of the notification reminding the user to turn the VPN Strict routing setting back on */
+"network.protection.strict.routing.reminder.notification.title" = "Η Αυστηρή δρομολόγηση είναι απενεργοποιημένη";

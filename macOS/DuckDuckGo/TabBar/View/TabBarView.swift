@@ -20,6 +20,26 @@ import AppKit
 
 final class TabBarView: MouseOverView {
 
+    private var windowDraggingView: WindowDraggingView? {
+        subviews.first { $0 is WindowDraggingView && !$0.isHidden } as? WindowDraggingView
+    }
+
+    // Empty tab-bar chrome should drag the window; the scroll/collection views swallow those
+    // clicks, so redirect them to the dragging view. Tabs and buttons resolve to their own views.
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        guard let hit = super.hitTest(point) else { return nil }
+
+        // Only redirect the initial click; drag-and-drop destination resolution is also hitTest-based.
+        guard NSApp.currentEvent?.type == .leftMouseDown else { return hit }
+
+        if hit is TabBarScrollView || hit is NSClipView || hit is TabBarCollectionView,
+           let windowDraggingView {
+            return windowDraggingView
+        }
+
+        return hit
+    }
+
     override func isAccessibilityElement() -> Bool {
         return true
     }

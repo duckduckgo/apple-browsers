@@ -209,43 +209,103 @@ extension LaunchOptionsHandler {
         featureFlagOverrideStore: KeyValueStoring,
         configRolloutStore: UserDefaults
     ) {
-        let featureFlagPersistor = FeatureFlagLocalOverridesUserDefaultsPersistor(keyValueStore: featureFlagOverrideStore)
+        // Read the group-ID prefix once; used for suite-namespaced stores.
+        let groupIdPrefix = Bundle.main.object(forInfoDictionaryKey: "DuckDuckGoGroupIdentifierPrefix") as? String
+
+        if arguments.contains("-clearAllDefaults") {
+            clearAllDefaults(groupIdPrefix: groupIdPrefix)
+        }
+
+        if arguments.contains("-backdateInstallDate") {
+            backdateInstallDate(groupIdPrefix: groupIdPrefix)
+        }
+
+        // Writing ATB keys in -backdateInstallDate makes hasInstallStatistics=true, which causes
+        // assignVariantIfNeeded to return early without calling onVariantAssigned → primeForUse()
+        // is never called → isDismissed stays true (its default) → contextual dax dialogs are
+        // suppressed. Pass -setDaxNotDismissed to explicitly opt in to contextual dax dialogs.
+        if arguments.contains("-setDaxNotDismissed") {
+            userDefaults.set(false, forKey: "com.duckduckgo.ios.daxOnboardingIsDismissed")
+        }
+
+        // Dax state overrides — used by upgrade-path tests to simulate pre-feature-build UserDefaults.
+        if arguments.contains("-setDaxState.browsingFinalDialogShown") {
+            userDefaults.set(true, forKey: "com.duckduckgo.ios.daxOnboardingFinalDialogSeen")
+        }
+
+        applyFlagOverrides(featureFlagOverrideStore: featureFlagOverrideStore, configRolloutStore: configRolloutStore)
+    }
+
+    // MARK: - State reset helpers
+
+    /// Wipes all persistent state so the test run starts with a clean slate.
+    /// Must be called before feature-flag overrides are written.
+    private func clearAllDefaults(groupIdPrefix: String?) {
+        if let bundleID = Bundle.main.bundleIdentifier {
+            userDefaults.removePersistentDomain(forName: bundleID)
+        }
+        if let prefix = groupIdPrefix {
+            let suite = "\(prefix).statistics"
+            UserDefaults(suiteName: suite)?.removePersistentDomain(forName: suite)
+        }
+        clearAppSupportFiles()
+    }
+
+    private func clearAppSupportFiles() {
+        guard let appSupportDir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else { return }
+        let fm = FileManager.default
+
+        // PromptCooldownKeyValueFilesStore — must be removed before AppKeyValueFileStoreService
+        // opens the file and acquires its lock.
+        try? fm.removeItem(at: appSupportDir.appendingPathComponent("AppKeyValueStore"))
+
+        // Tab model — KeyValueFileStore files written by TabsModelPersistence.
+        // Without these the app restores the previous browsing session on relaunch.
+        try? fm.removeItem(at: appSupportDir.appendingPathComponent("TabsModel"))
+        try? fm.removeItem(at: appSupportDir.appendingPathComponent("FireTabsModel"))
+
+        // WebKit per-tab interaction state (scroll position, form data, WKWebView session).
+        // Stored under <AppSupport>/<BundleID>/webview-interaction/ by TabInteractionStateDiskSource.
+        if let bundleID = Bundle.main.bundleIdentifier {
+            try? fm.removeItem(at: appSupportDir
+                .appendingPathComponent(bundleID)
+                .appendingPathComponent("webview-interaction"))
+        }
+    }
+
+    /// Sets the ATB install date to 7 days ago so the promo cooldown is already satisfied.
+    /// Also writes ATB keys so `hasInstallStatistics` returns true, preventing
+    /// `StatisticsLoader.fireInstallPixel` from overwriting the backdated date.
+    /// Persists the VARIANT environment variable into the statistics store so that
+    /// `isReturningUser` checks inside promo coordinators match the onboarding path.
+    private func backdateInstallDate(groupIdPrefix: String?) {
+        guard let prefix = groupIdPrefix,
+              let sevenDaysAgo = Calendar.current.date(byAdding: .day, value: -7, to: Date()) else { return }
+
+        let suite = "\(prefix).statistics"
+        let statisticsDefaults = UserDefaults(suiteName: suite)
+        statisticsDefaults?.set(sevenDaysAgo.timeIntervalSince1970, forKey: "com.duckduckgo.statistics.installdate.key")
+        statisticsDefaults?.set("v1-1", forKey: "com.duckduckgo.statistics.atb.key")
+        statisticsDefaults?.set("v1-1", forKey: "com.duckduckgo.statistics.retentionatb.key")
+        statisticsDefaults?.set("v1-1", forKey: "com.duckduckgo.statistics.appretentionatb.key")
+        if let variant = ProcessInfo.processInfo.environment["VARIANT"] {
+            statisticsDefaults?.set(variant, forKey: "com.duckduckgo.statistics.variant.key")
+        }
+    }
+
+    // MARK: - Feature flag / experiment override helpers
+
+    private func applyFlagOverrides(featureFlagOverrideStore: KeyValueStoring, configRolloutStore: UserDefaults) {
+        let persistor = FeatureFlagLocalOverridesUserDefaultsPersistor(keyValueStore: featureFlagOverrideStore)
 
         for arg in arguments {
             guard arg.hasPrefix("-") else { continue }
-            let key = String(arg.dropFirst()) // Remove leading "-"
+            let key = String(arg.dropFirst())
 
             if applyInternalUserOverrideIfPresent(key: key) { continue }
-
-            // Feature flag: ff.<flagName>
-            // Read as string (same approach as experiment which works)
-            if key.hasPrefix(UITestOverrides.featureFlagPrefix) {
-                let flagName = String(key.dropFirst(UITestOverrides.featureFlagPrefix.count))
-                if let flag = FeatureFlag(rawValue: flagName),
-                   let stringValue = userDefaults.string(forKey: key) {
-                    let enabled = stringValue.lowercased() == "true"
-                    featureFlagPersistor.set(enabled, for: flag)
-                }
-            }
-
-            // Config rollout: config.rollout.<path> -> config.<path>.enabled
-            if key.hasPrefix(UITestOverrides.configRolloutPrefix) {
-                let featurePath = String(key.dropFirst(UITestOverrides.configRolloutPrefix.count))
-                if let stringValue = userDefaults.string(forKey: key) {
-                    let enabled = stringValue.lowercased() == "true"
-                    let targetKey = "config.\(featurePath).enabled"
-                    configRolloutStore.set(enabled, forKey: targetKey)
-                }
-            }
-
-            // Experiment: experiment.<flagName>
-            if key.hasPrefix(UITestOverrides.experimentCohortPrefix) {
-                let flagName = String(key.dropFirst(UITestOverrides.experimentCohortPrefix.count))
-                if let flag = FeatureFlag(rawValue: flagName),
-                   let cohortID = userDefaults.string(forKey: key), !cohortID.isEmpty {
-                    featureFlagPersistor.setExperiment(cohortID, for: flag)
-                }
-            }
+            applyFeatureFlagOverride(key: key, persistor: persistor)
+            applyConfigRolloutOverride(key: key, configRolloutStore: configRolloutStore)
+            applyExperimentOverride(key: key, persistor: persistor)
         }
     }
 
@@ -255,5 +315,31 @@ extension LaunchOptionsHandler {
             internalUserStore.isInternalUser = true
         }
         return true
+    }
+
+    // Feature flag: -ff.<flagName> true/false
+    private func applyFeatureFlagOverride(key: String, persistor: FeatureFlagLocalOverridesUserDefaultsPersistor) {
+        guard key.hasPrefix(UITestOverrides.featureFlagPrefix) else { return }
+        let flagName = String(key.dropFirst(UITestOverrides.featureFlagPrefix.count))
+        guard let flag = FeatureFlag(rawValue: flagName),
+              let stringValue = userDefaults.string(forKey: key) else { return }
+        persistor.set(stringValue.lowercased() == "true", for: flag)
+    }
+
+    // Config rollout: -config.rollout.<path> true/false → config.<path>.enabled
+    private func applyConfigRolloutOverride(key: String, configRolloutStore: UserDefaults) {
+        guard key.hasPrefix(UITestOverrides.configRolloutPrefix) else { return }
+        let featurePath = String(key.dropFirst(UITestOverrides.configRolloutPrefix.count))
+        guard let stringValue = userDefaults.string(forKey: key) else { return }
+        configRolloutStore.set(stringValue.lowercased() == "true", forKey: "config.\(featurePath).enabled")
+    }
+
+    // Experiment: -experiment.<flagName> <cohortID>
+    private func applyExperimentOverride(key: String, persistor: FeatureFlagLocalOverridesUserDefaultsPersistor) {
+        guard key.hasPrefix(UITestOverrides.experimentCohortPrefix) else { return }
+        let flagName = String(key.dropFirst(UITestOverrides.experimentCohortPrefix.count))
+        guard let flag = FeatureFlag(rawValue: flagName),
+              let cohortID = userDefaults.string(forKey: key), !cohortID.isEmpty else { return }
+        persistor.setExperiment(cohortID, for: flag)
     }
 }

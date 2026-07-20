@@ -56,6 +56,7 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsRootView> {
     let syncCredentialsAdapter: SyncCredentialsAdapter
     let syncCreditCardsAdapter: SyncCreditCardsAdapter?
     var connector: RemoteConnecting?
+    weak var scanCodeViewModel: ScanOrPasteCodeViewModel?
 
     let userAuthenticator = UserAuthenticator(reason: UserText.syncUserUserAuthenticationReason,
                                               cancelTitle: UserText.autofillLoginListAuthenticationCancelButton)
@@ -102,6 +103,10 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsRootView> {
     var onConfirmAndDeleteAllData: (() -> Void)?
 
     let useSimplifiedLayoutV2: Bool
+
+    private var sourcePixelParameters: [String: String] {
+        source.map { [PixelParameters.source: $0] } ?? [:]
+    }
 
     // For some reason, on iOS 14, the viewDidLoad wasn't getting called so do some setup here
     init(
@@ -504,14 +509,31 @@ extension SyncSettingsViewController: ScanOrPasteCodeViewModelDelegate {
     func loginAndShowDeviceConnected(recoveryKey: SyncCode.RecoveryKey) async throws {
         let registeredDevices = try await syncService.login(recoveryKey, deviceName: deviceName, deviceType: deviceType)
         mapDevices(registeredDevices)
-        Pixel.fire(pixel: .syncLogin, includedParameters: [.appVersion])
-        presentSyncCompletionAfterDelay()
+        Pixel.fire(pixel: .syncLogin,
+                   withAdditionalParameters: sourcePixelParameters,
+                   includedParameters: [.appVersion],
+                   onComplete: { _ in })
+        if isPresentingV2ConnectingSheet {
+            presentDeviceAddedSuccessScreen()
+        } else {
+            presentSyncCompletionAfterDelay()
+        }
     }
 
     func presentSyncCompletionAfterDelay() {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             self.dismissVCAndShowDeviceSyncedToast()
         }
+    }
+
+    var isPresentingV2ConnectingSheet: Bool {
+        useSimplifiedLayoutV2 && viewModel.connectingSheetPhase != nil
+    }
+
+    func presentDeviceAddedSuccessScreen() {
+        enableAutoRestoreByDefaultIfNeeded()
+        refreshAutoRestoreDecisionState()
+        viewModel.showDeviceConnectedInConnectingSheet(recoveryCode: recoveryCode)
     }
 
     func startPolling() {
@@ -592,10 +614,9 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
     }
 
     func controllerDidCreateSyncAccount(shouldShowSyncEnabled: Bool) {
-        let additionalParameters = source.map { ["source": $0] } ?? [:]
-        Pixel.fire(pixel: .syncSignupConnect, withAdditionalParameters: additionalParameters, includedParameters: [.appVersion])
+        Pixel.fire(pixel: .syncSignupConnect, withAdditionalParameters: sourcePixelParameters, includedParameters: [.appVersion])
 
-        if shouldShowSyncEnabled {
+        if shouldShowSyncEnabled, !isPresentingV2ConnectingSheet {
             dismissVCAndShowDeviceSyncedToast()
         }
         viewModel.syncEnabled(recoveryCode: recoveryCode)
@@ -606,14 +627,14 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
         await showPreparingSync()
     }
     
-    private func waitForDevicesToChangeThenPresentSyncing() {
+    private func waitForDevicesToChange(then action: @escaping (SyncSettingsViewController) -> Void) {
         viewModel.$devices
             .removeDuplicates()
             .dropFirst()
             .prefix(1)
             .sink { [weak self] _ in
                 guard let self else { return }
-                self.dismissVCAndShowDeviceSyncedToast()
+                action(self)
             }.store(in: &cancellables)
     }
 
@@ -626,10 +647,13 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
                    withAdditionalParameters: parameters,
                    includedParameters: [.appVersion])
         pairingV2PeerKind = nil
+        let presentResult: (SyncSettingsViewController) -> Void = isPresentingV2ConnectingSheet
+            ? { $0.presentDeviceAddedSuccessScreen() }
+            : { $0.dismissVCAndShowDeviceSyncedToast() }
         if shouldWaitForDevicesToChange {
-            waitForDevicesToChangeThenPresentSyncing()
+            waitForDevicesToChange(then: presentResult)
         } else {
-            dismissVCAndShowDeviceSyncedToast()
+            presentResult(self)
         }
     }
     
@@ -643,7 +667,11 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
         pairingV2JoinerCodeSource = codeVersion == .v2 && setupSource == .exchange ? codeSource : nil
         sendCodeRecognisedPixel(setupSource: setupSource, codeSource: codeSource, codeVersion: codeVersion)
         await dismissPresentedViewController()
-        await showPreparingSync(context: setupSource == .recovery ? .recoveringData : .syncingDevices)
+        if useSimplifiedLayoutV2, setupSource == .exchange {
+            viewModel.connectingSheetPhase = .connecting
+        } else {
+            await showPreparingSync(context: setupSource == .recovery ? .recoveringData : .syncingDevices)
+        }
     }
 
     func controllerWillPerformServerSyncOperation(setupRole _: SyncSetupRole) async -> Bool {
@@ -661,13 +689,17 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
     
     func controllerDidCompleteLogin(registeredDevices: [RegisteredDevice], isRecovery _: Bool, setupRole: SyncSetupRole) {
         mapDevices(registeredDevices)
-        Pixel.fire(pixel: .syncLogin, includedParameters: [.appVersion])
+        Pixel.fire(pixel: .syncLogin, withAdditionalParameters: sourcePixelParameters, includedParameters: [.appVersion])
         if case .receiver(.recovery, _) = setupRole {
             Task {
                 await connectionController.cancel()
             }
         }
-        presentSyncCompletionAfterDelay()
+        if isPresentingV2ConnectingSheet {
+            presentDeviceAddedSuccessScreen()
+        } else {
+            presentSyncCompletionAfterDelay()
+        }
         guard case .receiver(let syncSetupSource, let syncCodeSource) = setupRole else {
             // .sharer reaches here only via the connect flow (exchange-sharer terminates in controllerDidFinishTransmittingRecoveryKey).
             let parameters = syncSetupPixelParameters(setupSource: .connect,

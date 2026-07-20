@@ -18,6 +18,7 @@
 
 import Foundation
 import Cocoa
+import DesignResourcesKit
 
 extension NSAlert {
 
@@ -168,8 +169,8 @@ extension NSAlert {
         alert.messageText = UserText.syncPairingV2ConfirmationTitle
         alert.informativeText = message
         alert.alertStyle = .informational
-        alert.addButton(withTitle: UserText.cancel)
         alert.addButton(withTitle: UserText.syncPairingV2ConfirmationAction)
+        alert.addButton(withTitle: UserText.cancel)
         return alert
     }
 
@@ -204,7 +205,7 @@ extension NSAlert {
         let alert = NSAlert()
         alert.messageText = UserText.warnBeforeQuitDialogHeader(clearChats)
         alert.alertStyle = .warning
-        alert.icon = .burnAlert
+        alert.icon = DesignSystemRebrand.isAppRebranded() ? .burnAlert : .burnAlertLegacy
         alert.addButton(withTitle: UserText.clearAndQuit)
         alert.addButton(withTitle: UserText.quitWithoutClearing)
         alert.addButton(withTitle: UserText.cancel)

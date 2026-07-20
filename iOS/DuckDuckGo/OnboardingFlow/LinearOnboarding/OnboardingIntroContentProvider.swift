@@ -26,8 +26,9 @@ import PrivacyConfig
 protocol OnboardingIntroContentProviding {
     var landingContent: OnboardingLandingContent { get }
     var introStepContent: OnboardingIntroStepContent { get }
-    var browserComparisonContent: OnboardingBrowserComparisonContent { get }
-    var aiComparisonContent: OnboardingAIComparisonContent { get }
+    var downloadReasonContent: OnboardingDownloadReasonContent { get }
+    var setDefaultBrowserContent: OnboardingComparisonContent { get }
+    var aiIntroContent: OnboardingComparisonContent { get }
     var addToDockContent: OnboardingAddToDockContent { get }
     var appIconColorContent: OnboardingAppIconColorContent { get }
     var addressBarPositionContent: OnboardingAddressBarPositionContent { get }
@@ -129,26 +130,67 @@ extension OnboardingIntroContentProvider {
 
 }
 
-// MARK: - Content Provider + Browser Comparison (Protections activated!)
+// MARK: - Content Provider + Download Reason (Set things up your way)
 
-struct OnboardingBrowserComparisonContent: Equatable {
+struct OnboardingDownloadReasonContent: Equatable {
+    /// A selectable reason tile.
+    struct Option: Hashable {
+        let reason: OnboardingDownloadReason
+        let icon: OnboardingImageResource
+        let title: String
+    }
+
     let title: String
-    let features: [RebrandedComparisonTableModel.Feature]
+    let message: String
+    let options: [Option]
     let primaryCTA: String
-    let secondaryCTA: String
     let daxAnimation: DaxAnimation
 }
 
 extension OnboardingIntroContentProvider {
 
-    var browserComparisonContent: OnboardingBrowserComparisonContent {
+    /// Content for the Download Reason Screen.
+    var downloadReasonContent: OnboardingDownloadReasonContent {
+        OnboardingDownloadReasonContent(
+            title: UserText.Onboarding.DownloadReason.title,
+            message: UserText.Onboarding.DownloadReason.message,
+            options: [
+                .init(reason: .browserPrivately, icon: OnboardingImageResources.DownloadReason.search, title: UserText.Onboarding.DownloadReason.browsePrivately),
+                .init(reason: .privateAIChat, icon: OnboardingImageResources.DownloadReason.aiChat, title: UserText.Onboarding.DownloadReason.chatWithAI),
+                .init(reason: .noAI, icon: OnboardingImageResources.DownloadReason.noAI, title: UserText.Onboarding.DownloadReason.removeAI),
+                .init(reason: .blockAds, icon: OnboardingImageResources.DownloadReason.blockAds, title: UserText.Onboarding.DownloadReason.blockAds)
+            ],
+            primaryCTA: UserText.Onboarding.DownloadReason.cta,
+            daxAnimation: .wingBottom
+        )
+    }
+
+}
+
+// MARK: - Content Provider + Comparison Chart
+
+struct OnboardingComparisonContent: Equatable {
+    let title: String
+    /// When set, renders as a text-and-icons table header; absent for icon-only headers.
+    let subHeader: String?
+    let features: [RebrandedComparisonTableModel.Feature]
+    let primaryCTA: String
+    /// When set, renders a secondary skip button below the primary CTA.
+    let secondaryCTA: String?
+    let daxAnimation: DaxAnimation
+}
+
+extension OnboardingIntroContentProvider {
+
+    var setDefaultBrowserContent: OnboardingComparisonContent {
         let title = switch flowType {
         case .default: UserText.Onboarding.BrowsersComparison.title
         case .duckAI: UserText.Onboarding.DuckAICPP.BrowserComparison.title
         }
 
-        return OnboardingBrowserComparisonContent(
+        return OnboardingComparisonContent(
             title: title,
+            subHeader: nil,
             features: RebrandedComparisonTableModel.defaultBrowserFeatures,
             primaryCTA: UserText.Onboarding.BrowsersComparison.cta,
             secondaryCTA: UserText.onboardingSkip,
@@ -156,26 +198,13 @@ extension OnboardingIntroContentProvider {
         )
     }
 
-}
-
-// MARK: - Content Provider + AI Comparison (AI Protections activated!)
-
-struct OnboardingAIComparisonContent: Equatable {
-    let title: String
-    let subHeader: String
-    let features: [RebrandedComparisonTableModel.Feature]
-    let primaryCTA: String
-    let daxAnimation: DaxAnimation
-}
-
-extension OnboardingIntroContentProvider {
-
-    var aiComparisonContent: OnboardingAIComparisonContent {
-        OnboardingAIComparisonContent(
+    var aiIntroContent: OnboardingComparisonContent {
+        OnboardingComparisonContent(
             title: UserText.Onboarding.DuckAICPP.AIComparison.title,
             subHeader: UserText.Onboarding.DuckAICPP.AIComparison.subHeader,
             features: RebrandedComparisonTableModel.defaultAIFeatures,
             primaryCTA: UserText.Onboarding.DuckAICPP.AIComparison.cta,
+            secondaryCTA: nil,
             daxAnimation: .wingBottom
         )
     }

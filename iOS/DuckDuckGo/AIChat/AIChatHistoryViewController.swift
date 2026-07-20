@@ -555,7 +555,11 @@ final class AIChatHistoryViewController: UIViewController {
     }
 
     @objc private func downloadSelectedTapped() {
-        // TODO: multi-download wiring — https://app.asana.com/1/137249556945/task/1216558977091672
+        let selectedChatIds = (tableView.indexPathsForSelectedRows ?? [])
+            .compactMap { viewModel.chatId(forRowAt: $0) }
+        guard !selectedChatIds.isEmpty else { return }
+        viewModel.downloadSelectedChats(chatIds: selectedChatIds)
+        exitSelectionMode()
     }
 
 }

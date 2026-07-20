@@ -145,6 +145,12 @@ public struct UserText {
         let format = NSLocalizedString("aiChat.history.deleteAll.confirmation.title", comment: "Title of the confirmation shown when the user taps Fire in Duck.ai chat history to delete all chats; the number is the chat count. Do not translate - stringsdict entry")
         return String.localizedStringWithFormat(format, count)
     }
+    public static func aiChatHistoryDownloadCompleteMessage(count: Int) -> String {
+        let value = count == 1 ? "%d chat downloaded" : "%d chats downloaded"
+        let format = NotLocalizedString("aiChat.history.download.complete.message", value: value, comment: "Toast confirming the selected Duck.ai chats were saved to Downloads; the number is how many chats were downloaded.")
+        return String.localizedStringWithFormat(format, count)
+    }
+    public static let aiChatHistoryDownloadFailedMessage = NotLocalizedString("aiChat.history.download.failed.message", value: "Couldn't download. Please try again.", comment: "Error toast shown when a Duck.ai chat download fails and nothing was saved.")
     public static let actionAIChatSettings = NSLocalizedString("action.title.aiChat.settings", value: "Duck.ai Settings", comment: "Open AI Chat settings action in the menu list")
     public static let sectionTitleSuggestions = NotLocalizedString("section.title.suggestions", value: "Suggestions", comment: "Section header title above search suggestions")
     public static let aiChatSuggestedChatsTitle = NotLocalizedString("aiChat.suggestedChats.title", value: "Chats", comment: "Section header title above suggested Duck.ai chats")

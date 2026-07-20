@@ -51,6 +51,7 @@ final class PageContextTabExtension {
     private var mainFrameMIMETypes: [URL: String] = [:]
     private var mainFrameMIMEOrder: [URL] = []
     private static let maxCachedMainFrameMIMETypes = 100
+    private var pendingSettledNavigationURL: URL?
 
     private var extractionResolver = PageContextExtractionResolver()
 
@@ -177,6 +178,9 @@ final class PageContextTabExtension {
                 }
                 self.handleNavigationForMultipleContexts(from: previousContent, to: tabContent)
                 self.sendNonAttachableContextIfNeeded()
+                // A settled navigation that beat this debounced update deferred its re-collect; now
+                // that `content` matches, run it (a fast / back-forward restore the delegate missed).
+                self.runPendingSettledNavigationReCollectIfNeeded()
                 // Signals-only collection is driven from `navigationDidFinish` (post-load, parsed
                 // markup). Collecting here at didCommit too would race the post-load re-collect for
                 // the single-shot `pendingSignalsOnlyCollection` flag and let stale signals win.
@@ -452,6 +456,7 @@ final class PageContextTabExtension {
                                      latency: PageContextExtractionLatencyBucket?) {
         guard isExtractionMeasurementEnabled else { return }
         guard isSidebarVisibleForTab else { return }
+        if case .failure(.emptyContent) = outcome, trigger != .userRequest { return }
         // A navigation triggers several automatic collects (navigation re-collect + signals-only);
         // report only the first. User/setting collects (.userRequest / .auto) always report.
         if trigger == .navigation || trigger == .tabContent {
@@ -740,7 +745,23 @@ extension PageContextTabExtension: NavigationResponder {
     /// still reference the previous page, and collecting then would extract the wrong document.
     @MainActor
     private func reCollectForSettledNavigation(_ navigation: Navigation) {
-        guard case .url(let url, _, _) = content, url == navigation.url else { return }
+        guard case .url(let url, _, _) = content, url == navigation.url else {
+            pendingSettledNavigationURL = navigation.url
+            return
+        }
+        pendingSettledNavigationURL = nil
+        collectPageContextIfNeeded(trigger: .navigation)
+        requestSignalsOnlyCollectionIfNeeded()
+    }
+
+    private func runPendingSettledNavigationReCollectIfNeeded() {
+        guard let pendingURL = pendingSettledNavigationURL else { return }
+        guard case .url(let url, _, _) = content, url == pendingURL else {
+            pendingSettledNavigationURL = nil
+            return
+        }
+        pendingSettledNavigationURL = nil
+        guard !extractionResolver.hasPendingCollections else { return }
         collectPageContextIfNeeded(trigger: .navigation)
         requestSignalsOnlyCollectionIfNeeded()
     }

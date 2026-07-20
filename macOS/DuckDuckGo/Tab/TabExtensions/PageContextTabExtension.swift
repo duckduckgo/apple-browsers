@@ -209,6 +209,7 @@ final class PageContextTabExtension {
         aiChatMenuConfiguration.valuesChangedPublisher
             .map { aiChatMenuConfiguration.shouldAutomaticallySendPageContext }
             .removeDuplicates()
+            .receive(on: DispatchQueue.main)
             .sink { [weak self] isEnabled in
                 guard let self else {
                     return

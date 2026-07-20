@@ -235,6 +235,7 @@ final class AIChatHistoryViewModel: ObservableObject {
     }
 
     func downloadChat(chatId: String) {
+        guard downloader != nil else { return }
         instrumentation.downloadStarted()
         exportChats([chatId]) { [weak self] urls in
             guard let filename = urls.first?.lastPathComponent else { return }

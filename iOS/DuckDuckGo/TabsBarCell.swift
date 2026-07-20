@@ -200,6 +200,15 @@ class TabsBarCell: UICollectionViewCell {
         model.addObserver(self)
 
         label.primaryColor = theme.barTintColor
+        applyCurrentStyle(isCurrent: isCurrent, isNextCurrent: isNextCurrent, withTheme: theme)
+
+        labelRemoveButtonConstraint?.isActive = true
+        removeButton.isHidden = false
+
+        applyModel(model)
+    }
+
+    func applyCurrentStyle(isCurrent: Bool, isNextCurrent: Bool, withTheme theme: Theme) {
         if isCurrent {
             topBackgroundView.backgroundColor = theme.omniBarBackgroundColor
             bottomBackgroundView.backgroundColor = theme.omniBarBackgroundColor
@@ -208,12 +217,7 @@ class TabsBarCell: UICollectionViewCell {
             bottomBackgroundView.backgroundColor = .clear
             separatorView.backgroundColor = theme.tabsBarSeparatorColor
         }
-
-        labelRemoveButtonConstraint?.isActive = true
         separatorView.isHidden = isCurrent || isNextCurrent
-        removeButton.isHidden = false
-
-        applyModel(model)
     }
 
     /// Configures the cell to render without a backing `Tab`.

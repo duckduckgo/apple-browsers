@@ -31,6 +31,7 @@ protocol TabsBarDelegate: NSObjectProtocol {
     
     func tabsBar(_ controller: TabsBarViewController, didSelectTabAtIndex index: Int)
     func tabsBar(_ controller: TabsBarViewController, didRemoveTabAtIndex index: Int)
+    func tabsBar(_ controller: TabsBarViewController, didRequestCloseOtherTabsForTabAtIndex index: Int)
     func tabsBar(_ controller: TabsBarViewController, didRequestMoveTabFromIndex fromIndex: Int, toIndex: Int)
     func tabsBarDidRequestNewTab(_ controller: TabsBarViewController)
     func tabsBarDidRequestForgetAll(_ controller: TabsBarViewController, fireRequest: FireRequest)
@@ -111,9 +112,27 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
     private lazy var tabSwitcherButton: TabSwitcherStaticButton = TabSwitcherStaticButton(showMenuOnLongPress: false)
 
     private let longPressTabGesture = UILongPressGestureRecognizer()
+    /// Long-press / right-click context menu for a tab (Close Tab / Close Other Tabs).
+    private lazy var tabContextMenuInteraction = UIContextMenuInteraction(delegate: self)
     private var cancellables = Set<AnyCancellable>()
-    
+
     private weak var pressedCell: TabsBarCell?
+    /// Index of the tab under the press, captured when the reorder gesture begins.
+    private var pressedIndexPath: IndexPath?
+    /// Horizontal offset of the touch within the pressed cell, captured at touch-down.
+    private var pressedGrabXInCell: CGFloat?
+
+    /// Whether a tab context menu is presented or being configured.
+    private var isTabMenuActive = false
+    /// Whether a collection-view reload was requested while an interaction deferred it.
+    private var pendingCollectionReload = false
+    /// Whether a reorder or context-menu interaction is in progress.
+    private var isTabInteractionActive: Bool { isTabMenuActive || pressedIndexPath != nil }
+
+    /// Snapshot of the pressed cell shown as the context-menu preview.
+    private var tabMenuPreviewSnapshot: UIView?
+    /// The cell hidden while its snapshot stands in as the menu preview.
+    private weak var tabMenuSourceCell: UICollectionViewCell?
 
     var tabsCount: Int {
         return tabsModel?.count ?? 0
@@ -392,10 +411,44 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
     }
 
     private func reloadData() {
-        collectionView.reloadData()
+        if isTabInteractionActive {
+            pendingCollectionReload = true
+        } else {
+            collectionView.reloadData()
+        }
         tabSwitcherButton.tabCount = tabsCount
         tabSwitcherButton.isFireMode = (tabManager?.currentBrowsingMode ?? .normal) == .fire
         tabSwitcherButton.hasUnread = hasUnread
+    }
+
+    private func flushPendingReloadIfNeeded() {
+        guard !isTabInteractionActive, pendingCollectionReload else { return }
+        pendingCollectionReload = false
+        collectionView.reloadData()
+    }
+
+    /// willEndFor (the normal cleanup) isn't guaranteed to fire for a configured menu that never commits;
+    /// clearing at the next gesture stops a missed callback from freezing the bar (reloads deferred forever).
+    private func resetTabMenuStateIfNeeded() {
+        guard isTabMenuActive || tabMenuSourceCell != nil || tabMenuPreviewSnapshot != nil else { return }
+        isTabMenuActive = false
+        tabMenuSourceCell?.isHidden = false
+        tabMenuSourceCell = nil
+        tabMenuPreviewSnapshot?.removeFromSuperview()
+        tabMenuPreviewSnapshot = nil
+        flushPendingReloadIfNeeded()
+    }
+
+    /// Repaints selection styling in place so the selected tab shows during a drag/menu while the reload stays deferred.
+    private func restyleVisibleCellsForCurrentSelection() {
+        let theme = ThemeManager.shared.currentTheme
+        let current = currentIndex
+        for indexPath in collectionView.indexPathsForVisibleItems {
+            guard let cell = collectionView.cellForItem(at: indexPath) as? TabsBarCell else { continue }
+            cell.applyCurrentStyle(isCurrent: indexPath.row == current,
+                                   isNextCurrent: indexPath.row + 1 == current,
+                                   withTheme: theme)
+        }
     }
 
     func backgroundTabAdded() {
@@ -408,6 +461,10 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
 
     func reloadCell(for tab: Tab) {
         guard let index = tabsModel?.indexOf(tab: tab) else { return }
+        guard !isTabInteractionActive else {
+            pendingCollectionReload = true
+            return
+        }
         let indexPath = IndexPath(item: index, section: 0)
         guard collectionView.indexPathsForVisibleItems.contains(indexPath) else { return }
         collectionView.reloadItems(at: [indexPath])
@@ -418,6 +475,14 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
         longPressTabGesture.minimumPressDuration = 0.1
         longPressTabGesture.delegate = self
         collectionView.addGestureRecognizer(longPressTabGesture)
+
+        // addInteraction installs the menu's recognizer; capture it (diff the set) and require the reorder
+        // to fail against it. Reference-based, so no dependency on a private class name.
+        let gesturesBeforeMenu = Set(collectionView.gestureRecognizers ?? [])
+        collectionView.addInteraction(tabContextMenuInteraction)
+        let menuGestures = (collectionView.gestureRecognizers ?? []).filter { !gesturesBeforeMenu.contains($0) }
+        assert(!menuGestures.isEmpty, "Context menu interaction installed no gesture recognizer; reorder/menu arbitration is broken")
+        menuGestures.forEach { longPressTabGesture.require(toFail: $0) }
     }
 
     private var offCenterAdjustment: CGFloat = 0
@@ -426,14 +491,18 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
         
         switch gesture.state {
         case .began:
+            resetTabMenuStateIfNeeded()
             guard let path = collectionView.indexPathForItem(at: locationInCollectionView) else { return }
             offCenterAdjustment = 0
+            pressedIndexPath = path
             delegate?.tabsBar(self, didSelectTabAtIndex: path.row)
+            restyleVisibleCellsForCurrentSelection()
 
         case .changed:
-            guard let path = collectionView.indexPathForItem(at: locationInCollectionView) else { return }
-            if pressedCell == nil, let cell = collectionView.cellForItem(at: path) as? TabsBarCell {
-                offCenterAdjustment = cell.bounds.midX - gesture.location(in: cell).x
+            // Reuse the .began index; a fast move may have slid the finger onto a neighbour by now.
+            if pressedCell == nil, let path = pressedIndexPath,
+               let cell = collectionView.cellForItem(at: path) as? TabsBarCell {
+                offCenterAdjustment = cell.bounds.midX - (pressedGrabXInCell ?? gesture.location(in: cell).x)
                 cell.isPressed = true
                 pressedCell = cell
                 collectionView.beginInteractiveMovementForItem(at: path)
@@ -455,8 +524,12 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
         guard let path = collectionView.indexPathForItem(at: touch.location(in: collectionView)),
               let cell = collectionView.cellForItem(at: path) as? TabsBarCell else {
+            pressedGrabXInCell = nil
             return true
         }
+
+        // Capture the grab point now (touch-down), before require(toFail:) delays the drag start.
+        pressedGrabXInCell = touch.location(in: cell).x
 
         // Don't recognize if pressing delete button
         return cell.removeButton.hitTest(touch.location(in: cell.removeButton), with: nil) == nil
@@ -465,6 +538,9 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
     private func releasePressedCell() {
         pressedCell?.isPressed = false
         pressedCell = nil
+        pressedIndexPath = nil
+        pressedGrabXInCell = nil
+        flushPendingReloadIfNeeded()
     }
     
     private func enableInteractionsWithPointer() {
@@ -581,9 +657,68 @@ extension TabsBarViewController: UIContextMenuInteractionDelegate {
 
     func contextMenuInteraction(_ interaction: UIContextMenuInteraction,
                                 configurationForMenuAtLocation location: CGPoint) -> UIContextMenuConfiguration? {
-        UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { [weak self] _ in
+        if interaction === tabContextMenuInteraction {
+            guard let indexPath = collectionView.indexPathForItem(at: location),
+                  tabsModel?.get(tabAt: indexPath.row) != nil else { return nil }
+            resetTabMenuStateIfNeeded()
+            // Set before selecting so the select's reload defers instead of recycling the previewed cell.
+            isTabMenuActive = true
+            delegate?.tabsBar(self, didSelectTabAtIndex: indexPath.row)
+            restyleVisibleCellsForCurrentSelection()
+            return UIContextMenuConfiguration(identifier: NSNumber(value: indexPath.row), previewProvider: nil) { [weak self] _ in
+                self?.makeTabContextMenu(forTabAt: indexPath.row)
+            }
+        }
+        return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { [weak self] _ in
             self?.makeAIChatChipMenu()
         }
+    }
+
+    func contextMenuInteraction(_ interaction: UIContextMenuInteraction,
+                                previewForHighlightingMenuWithConfiguration configuration: UIContextMenuConfiguration) -> UITargetedPreview? {
+        return tabMenuTargetedPreview(for: interaction, configuration: configuration)
+    }
+
+    func contextMenuInteraction(_ interaction: UIContextMenuInteraction,
+                                willEndFor configuration: UIContextMenuConfiguration,
+                                animator: UIContextMenuInteractionAnimating?) {
+        guard interaction === tabContextMenuInteraction else { return }
+        isTabMenuActive = false
+        // No dismissing preview is implemented, so the system reuses the highlight preview; clean up after it settles.
+        let snapshot = tabMenuPreviewSnapshot
+        let sourceCell = tabMenuSourceCell
+        tabMenuPreviewSnapshot = nil
+        tabMenuSourceCell = nil
+        let cleanup = { [weak self] in
+            snapshot?.removeFromSuperview()
+            sourceCell?.isHidden = false
+            self?.flushPendingReloadIfNeeded()
+        }
+        if let animator {
+            animator.addCompletion(cleanup)
+        } else {
+            cleanup()
+        }
+    }
+
+    /// Lifts a snapshot, not the live cell (a reload recycles it) and not nil (that lifts the whole strip). nil for the Duck.ai chip.
+    private func tabMenuTargetedPreview(for interaction: UIContextMenuInteraction,
+                                        configuration: UIContextMenuConfiguration) -> UITargetedPreview? {
+        guard interaction === tabContextMenuInteraction,
+              let row = (configuration.identifier as? NSNumber)?.intValue,
+              let cell = collectionView.cellForItem(at: IndexPath(item: row, section: 0)),
+              let snapshot = cell.snapshotView(afterScreenUpdates: true) else {
+            return nil
+        }
+        snapshot.isUserInteractionEnabled = false
+        snapshot.frame = cell.frame
+        collectionView.addSubview(snapshot)
+        tabMenuPreviewSnapshot = snapshot
+        cell.isHidden = true
+        tabMenuSourceCell = cell
+        let parameters = UIPreviewParameters()
+        parameters.backgroundColor = .clear
+        return UITargetedPreview(view: snapshot, parameters: parameters)
     }
 
 }
@@ -630,7 +765,49 @@ extension TabsBarViewController: UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, moveItemAt sourceIndexPath: IndexPath, to destinationIndexPath: IndexPath) {
         delegate?.tabsBar(self, didRequestMoveTabFromIndex: sourceIndexPath.row, toIndex: destinationIndexPath.row)
     }
-    
+
+}
+
+extension TabsBarViewController {
+
+    private func makeTabContextMenu(forTabAt index: Int) -> UIMenu? {
+        guard let tab = tabsModel?.get(tabAt: index) else { return nil }
+
+        let closeTab = UIAction(title: UserText.closeTabs(withCount: 1),
+                                image: DesignSystemImages.Glyphs.Size16.closeOutline,
+                                attributes: .destructive) { [weak self] _ in
+            self?.closeTabFromContextMenu(tab)
+        }
+
+        guard tabsCount > 1 else {
+            return UIMenu(children: [closeTab])
+        }
+
+        let closeOtherTabs = UIAction(title: UserText.tabSwitcherCloseOtherTabs(withCount: 2),
+                                      image: DesignSystemImages.Glyphs.Size16.tabCloseAlt,
+                                      attributes: .destructive) { [weak self] _ in
+            self?.closeOtherTabsFromContextMenu(keeping: tab)
+        }
+
+        return UIMenu(children: [closeTab, closeOtherTabs])
+    }
+
+    private func closeTabFromContextMenu(_ tab: Tab) {
+        guard let index = tabsModel?.indexOf(tab: tab) else { return }
+        closeTab(at: index)
+    }
+
+    private func closeTab(at index: Int) {
+        let tabState = index == currentIndex ? "active" : "inactive"
+        DailyPixel.fireDailyAndCount(pixel: .tabBarTabClosed, withAdditionalParameters: [PixelParameters.tabState: tabState])
+        delegate?.tabsBar(self, didRemoveTabAtIndex: index)
+    }
+
+    private func closeOtherTabsFromContextMenu(keeping tab: Tab) {
+        guard let index = tabsModel?.indexOf(tab: tab) else { return }
+        delegate?.tabsBar(self, didRequestCloseOtherTabsForTabAtIndex: index)
+    }
+
 }
 
 extension TabsBarViewController: UICollectionViewDataSource {
@@ -659,8 +836,7 @@ extension TabsBarViewController: UICollectionViewDataSource {
                 let tabIndex = self.tabsModel?.indexOf(tab: model)
                 else { return }
 
-            // Failsafe: if the tab isn't fully in view, only scroll it into view, don't close a tab
-            // the user can't fully see. A second tap, once it's visible, closes it.
+            // Failsafe: don't close a tab that isn't fully visible; scroll it in first (a second tap closes it).
             let indexPath = IndexPath(item: tabIndex, section: 0)
             let visibleRect = CGRect(origin: self.collectionView.contentOffset, size: self.collectionView.bounds.size)
             if let attributes = self.collectionView.layoutAttributesForItem(at: indexPath),
@@ -669,9 +845,7 @@ extension TabsBarViewController: UICollectionViewDataSource {
                 return
             }
 
-            let tabState = tabIndex == self.currentIndex ? "active" : "inactive"
-            DailyPixel.fireDailyAndCount(pixel: .tabBarTabClosed, withAdditionalParameters: [PixelParameters.tabState: tabState])
-            self.delegate?.tabsBar(self, didRemoveTabAtIndex: tabIndex)
+            self.closeTab(at: tabIndex)
         }
         return cell
     }
@@ -715,7 +889,35 @@ extension MainViewController: TabsBarDelegate {
             closeTab(tab)
         }
     }
-    
+
+    func tabsBar(_ controller: TabsBarViewController, didRequestCloseOtherTabsForTabAtIndex index: Int) {
+        let model = tabManager.currentTabsModel
+        guard let keptTab = model.get(tabAt: index) else { return }
+        let otherTabsCount = model.tabs.count - 1
+        guard otherTabsCount > 0 else { return }
+
+        let alert = UIAlertController(
+            title: UserText.alertTitleCloseOtherTabs(withCount: otherTabsCount),
+            message: UserText.alertMessageCloseOtherTabs(withCount: otherTabsCount),
+            preferredStyle: .alert)
+        alert.addAction(title: UserText.actionCancel, style: .cancel)
+        alert.addAction(title: UserText.closeTabs(withCount: otherTabsCount), style: .destructive) { [weak self] in
+            guard let self else { return }
+            // Recompute live: the tab set can change while the alert is up.
+            let currentModel = self.tabManager.currentTabsModel
+            guard currentModel.tabs.contains(where: { $0 === keptTab }) else { return }
+            let tabsToClose = currentModel.tabs.filter { $0 !== keptTab }
+            guard !tabsToClose.isEmpty else { return }
+            DailyPixel.fireDailyAndCount(pixel: .tabBarCloseOtherTabs)
+            self.tabManager.select(keptTab, dismissCurrent: false)
+            self.notifyTabsWillClose(tabsToClose)
+            self.tabManager.bulkRemoveTabs(tabsToClose)
+            self.tabsBarController?.refresh(tabsModel: self.tabManager.currentTabsModel, scrollToSelected: true)
+            self.updateCurrentTab()
+        }
+        present(alert, animated: true)
+    }
+
     func tabsBar(_ controller: TabsBarViewController, didRequestMoveTabFromIndex fromIndex: Int, toIndex: Int) {
         let tabsModel = tabManager.currentTabsModel
         guard let tab = tabsModel.get(tabAt: fromIndex) else {

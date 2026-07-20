@@ -291,6 +291,22 @@ struct SidebarOpenExtractionMeasurementTests {
         #expect(sidebarOpenOutcome(isURL: true, preventedReason: nil, isContextCollectionEnabled: false) == .none)
     }
 
+    private func deliversPreventedContextOnSidebarOpen(isURL: Bool, preventedReason: String?) -> Bool {
+        guard isURL else { return false }
+        return preventedReason != nil
+    }
+
+    @Test("Non-attachable URL pushes an attachable:false context on sidebar open so the FE hides Ask-About-Page")
+    func nonAttachableURLDeliversPreventedContext() {
+        #expect(deliversPreventedContextOnSidebarOpen(isURL: true, preventedReason: "pdf") == true)
+        #expect(deliversPreventedContextOnSidebarOpen(isURL: true, preventedReason: "image") == true)
+    }
+
+    @Test("Attachable URL does not push a prevented context on sidebar open")
+    func attachableURLDoesNotDeliverPreventedContext() {
+        #expect(deliversPreventedContextOnSidebarOpen(isURL: true, preventedReason: nil) == false)
+    }
+
     private final class Guard {
         private var didReportExtraction = false
         private var didReportSidebarOpen = false
@@ -363,5 +379,36 @@ struct CollectionResultExtractionMeasurementTests {
     @Test("Unsolicited collection result reports nothing")
     func unsolicitedReportsNothing() {
         #expect(firesExtractionOutcome(isContextCollectionEnabled: false, pendingSignalsOnly: false) == false)
+    }
+}
+
+// MARK: - Non-attachable page context normalization Tests
+
+struct NonAttachableNormalizationTests {
+
+    private func effectiveAttachable(pageIsNonAttachable: Bool, contextAttachable: Bool?) -> Bool? {
+        guard pageIsNonAttachable, contextAttachable != false else { return contextAttachable }
+        return false
+    }
+
+    @Test("Raw collected context (attachable nil) on a non-attachable page is forced to false")
+    func rawContextForcedFalse() {
+        #expect(effectiveAttachable(pageIsNonAttachable: true, contextAttachable: nil) == false)
+    }
+
+    @Test("attachable:true on a non-attachable page is forced to false")
+    func trueForcedFalseOnNonAttachable() {
+        #expect(effectiveAttachable(pageIsNonAttachable: true, contextAttachable: true) == false)
+    }
+
+    @Test("Already-false context on a non-attachable page stays false")
+    func falseStaysFalse() {
+        #expect(effectiveAttachable(pageIsNonAttachable: true, contextAttachable: false) == false)
+    }
+
+    @Test("Attachable page leaves attachable untouched (nil stays nil = attachable, true stays true)")
+    func attachablePageUntouched() {
+        #expect(effectiveAttachable(pageIsNonAttachable: false, contextAttachable: nil) == nil)
+        #expect(effectiveAttachable(pageIsNonAttachable: false, contextAttachable: true) == true)
     }
 }

@@ -237,8 +237,11 @@ final class PageContextTabExtension {
                 if self.isContextCollectionEnabled {
                     self.pendingSignalsOnlyCollection = false
                     self.fireExtractionOutcome(for: pageContext)
-                    Task {
-                        await self.handle(pageContext)
+                    // Only deliver a collection that actually has content.
+                    if let pageContext, !pageContext.content.isEmpty {
+                        Task {
+                            await self.handle(pageContext)
+                        }
                     }
                 } else if self.pendingSignalsOnlyCollection {
                     self.pendingSignalsOnlyCollection = false
@@ -307,17 +310,39 @@ final class PageContextTabExtension {
             return
         }
         shouldForceContextCollection = false
+        let gatedPageContext = forcingNonAttachableIfNeeded(pageContext)
         // Page-type signals (for duck.ai page shortcuts) ride the collected payload from
         // Content-Scope-Scripts (includePageTypeSignals) and are preserved through favicon encoding.
-        cachedPageContext = replaceFaviconURLWithEncodedData(pageContext)
+        cachedPageContext = replaceFaviconURLWithEncodedData(gatedPageContext)
         if let chatViewController = aiChatSessionStore.sessions[tabID]?.chatViewController {
             chatViewController.setPageContext(cachedPageContext)
-            if pageContext != nil, pageContext?.attachable != false {
+            if gatedPageContext != nil, gatedPageContext?.attachable != false {
                 // New attachable context pushed — reset the consumed flag so navigation
                 // won't clear it until the next prompt is submitted.
                 hasContextBeenConsumedByChat = false
             }
         }
+    }
+
+    private func forcingNonAttachableIfNeeded(_ pageContext: AIChatPageContextData?) -> AIChatPageContextData? {
+        guard let pageContext,
+              case .url(let url, _, _) = content,
+              preventedAttachReason(for: url) != nil,
+              pageContext.attachable != false else {
+            return pageContext
+        }
+        return AIChatPageContextData(
+            title: pageContext.title,
+            favicon: pageContext.favicon,
+            url: pageContext.url,
+            content: pageContext.content,
+            truncated: pageContext.truncated,
+            fullContentLength: pageContext.fullContentLength,
+            attachable: false,
+            tabId: pageContext.tabId,
+            pageTypeSignals: pageContext.pageTypeSignals,
+            attached: pageContext.attached
+        )
     }
 
     private func deliverContextToCurrentSidebar() {
@@ -364,7 +389,7 @@ final class PageContextTabExtension {
             return
         }
         if let reason = preventedAttachReason(for: url) {
-            fireExtractionPixel(.prevented(reason), trigger: .navigation, latency: nil)
+            deliverPreventedContext(for: url, reason: reason, trigger: .navigation)
             return
         }
         if isContextCollectionEnabled, !extractionResolver.hasPendingCollections {

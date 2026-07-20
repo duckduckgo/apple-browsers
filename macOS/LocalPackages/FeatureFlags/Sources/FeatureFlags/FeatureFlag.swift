@@ -756,7 +756,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .aiChatNativeDataAccess:
             Config(source: .remoteReleasable(AIChatSubfeature.nativeDataAccess), category: .duckAI)
         case .aiChatCustomizeResponses:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.customizeResponses), category: .duckAI)
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.customizeResponses), category: .duckAI)
         case .aiFeaturesNativeControls:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.aiFeaturesNativeControls), category: .duckAI)
         case .aiChatNativeVoicePermissionFlow:

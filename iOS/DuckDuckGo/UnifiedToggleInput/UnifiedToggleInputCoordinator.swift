@@ -917,10 +917,13 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         DispatchQueue.main.async { [weak self] in
             guard let self, case .omnibar(.active) = displayState else { return }
             viewController.activateInput()
-            if selectsAllText {
-                DispatchQueue.main.async { [weak self] in
-                    guard let self, case .omnibar(.active) = displayState else { return }
+            guard omnibarPrefilledText != nil else { return }
+            DispatchQueue.main.async { [weak self] in
+                guard let self, case .omnibar(.active) = displayState else { return }
+                if selectsAllText {
                     viewController.selectAllText()
+                } else {
+                    viewController.moveCaretToStart()
                 }
             }
         }

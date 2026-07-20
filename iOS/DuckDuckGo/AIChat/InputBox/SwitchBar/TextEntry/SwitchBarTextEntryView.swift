@@ -927,6 +927,17 @@ class SwitchBarTextEntryView: UIView {
         }
     }
 
+    func moveCaretToStart() {
+        if usesTextField {
+            let start = textField.beginningOfDocument
+            textField.selectedTextRange = textField.textRange(from: start, to: start)
+        } else {
+            let start = textView.beginningOfDocument
+            textView.selectedTextRange = textView.textRange(from: start, to: start)
+            textView.scrollRangeToVisible(NSRange(location: 0, length: 0))
+        }
+    }
+
     func setQueryText(_ text: String) {
         if usesTextField {
             textField.text = text

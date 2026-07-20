@@ -488,8 +488,6 @@ extension OnboardingView {
             }
         }
 
-        // TODO: Replace with the designed Download Screen (separate UI task). Minimal placeholder https://app.asana.com/1/137249556945/task/1215563968127475
-        // so the flow runs end-to-end: tapping an option persists the reason and advances.
         private func downloadReasonView(content: OnboardingDownloadReasonContent) -> some View {
             DownloadReasonContent(
                 content: content,

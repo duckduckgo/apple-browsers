@@ -134,7 +134,7 @@ extension OnboardingIntroContentProvider {
 
 struct OnboardingDownloadReasonContent: Equatable {
     /// A selectable reason tile.
-    struct Option: Equatable, Hashable {
+    struct Option: Hashable {
         let reason: OnboardingDownloadReason
         let icon: OnboardingImageResource
         let title: String

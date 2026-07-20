@@ -22,7 +22,7 @@ import SwiftUI
 /// The generated `struct ImageResource` is internal to the package and not possible to access from another target.
 /// `OnboardingImageResource`is a minimal UI-Framework agnostic thin wrapper that carries the
 /// only two things needed to resolve an asset — its `name` and the `bundle`
-/// Fore more info see:
+/// For more info see:
 /// - [Swift Forum](https://forums.swift.org/t/xcode15-generated-imageresource-with-public-access/67293)
 /// - [Developer Forum](https://developer.apple.com/forums/thread/756954)
 public struct OnboardingImageResource: Hashable {

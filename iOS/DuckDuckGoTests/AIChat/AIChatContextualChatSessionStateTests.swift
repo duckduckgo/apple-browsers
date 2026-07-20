@@ -268,6 +268,34 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         XCTAssertEqual(sessionState.chipState, .placeholder)
     }
 
+    /// Navigating to a non-attachable page (e.g. a PDF) clears via a nil update; the persistent
+    /// UTI host chip must be cleared too, or the previous page's context rides the next prompt.
+    func testUpdateContextWithNilDeliversUTIChipClear() {
+        // Given
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+        sessionState.updateContext(makeTestContext(title: "Previous Page"))
+
+        var receivedEffect: SheetEffect?
+        sessionState.effects
+            .sink { effect in
+                if case .deliverPageContext = effect {
+                    receivedEffect = effect
+                }
+            }
+            .store(in: &cancellables)
+
+        // When
+        sessionState.updateContext(nil)
+
+        // Then
+        if case .deliverPageContext(let contextData, let targets) = receivedEffect {
+            XCTAssertNil(contextData)
+            XCTAssertTrue(targets.contains(.utiChip))
+        } else {
+            XCTFail("Expected deliverPageContext effect clearing the UTI chip")
+        }
+    }
+
     func testUpdateContextWithIdleNilDoesNotClearManualAttachmentWhenAutoAttachDisabled() {
         mockSettings.isAutomaticContextAttachmentEnabled = false
         let context = makeTestContext(title: "Manually Attached Page")

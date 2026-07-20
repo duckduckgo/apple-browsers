@@ -453,6 +453,8 @@ final class AIChatContextualChatSessionState {
             Logger.aiChat.debug("[SessionState] Context collection returned nil - clearing context and downgrading to placeholder")
             latestContext = nil
             chipState = .placeholder
+            // Clear the persistent UTI host chip
+            emit(.deliverPageContext(nil, targets: .utiChip))
             cleanupFlags()
             rebuildViewState()
             return

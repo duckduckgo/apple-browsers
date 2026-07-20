@@ -64,7 +64,7 @@ let package = Package(
         .package(url: "https://github.com/1024jp/GzipSwift.git", exact: "6.0.1"),
         .package(url: "https://github.com/vapor/jwt-kit.git", exact: "4.13.5"),
         .package(url: "https://github.com/pointfreeco/swift-clocks.git", exact: "1.0.6"),
-        .package(url: "https://github.com/duckduckgo/content-scope-scripts.git", exact: "15.12.0"),
+        .package(url: "https://github.com/duckduckgo/content-scope-scripts.git", exact: "15.18.0"),
         .package(path: "../URLPredictor"),
         .package(path: "../Infrastructure/SystemFrameworksExtensions"),
     ],

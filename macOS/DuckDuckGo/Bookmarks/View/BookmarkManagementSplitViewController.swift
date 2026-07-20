@@ -28,11 +28,13 @@ final class BookmarkManagementSplitViewController: NSSplitViewController {
     private static let minimumSidebarWidth: CGFloat = 150
     private static let maximumSidebarWidth: CGFloat = 400
     private static let defaultSidebarWidth: CGFloat = 320
+    private static let minimumDetailWidth: CGFloat = 415
 
-    /// Drives the sidebar width. `NSSplitViewController` is Auto-Layout based, so the divider position set by
-    /// dragging is otherwise overridden by constraints. We own this constraint and update it from the drag
-    /// delegate so the sidebar actually resizes.
+    /// We own the sidebar width; NSSplitViewController's Auto Layout otherwise overrides the dragged divider position.
     private var sidebarWidthConstraint: NSLayoutConstraint?
+
+    /// User's chosen width; the constraint may be clamped smaller on a narrow window and restored when space allows.
+    private lazy var preferredSidebarWidth: CGFloat = Self.defaultSidebarWidth
 
     lazy var sidebarViewController: BookmarkManagementSidebarViewController = BookmarkManagementSidebarViewController(bookmarkManager: bookmarkManager, dragDropManager: dragDropManager)
     lazy var detailViewController: BookmarkManagementDetailViewController = BookmarkManagementDetailViewController(bookmarkManager: bookmarkManager, dragDropManager: dragDropManager, pinningManager: pinningManager)
@@ -67,13 +69,12 @@ final class BookmarkManagementSplitViewController: NSSplitViewController {
         let sidebarViewItem = NSSplitViewItem(contentListWithViewController: sidebarViewController)
         sidebarViewItem.minimumThickness = Self.minimumSidebarWidth
         sidebarViewItem.maximumThickness = Self.maximumSidebarWidth
-        // Sidebar holds its (draggable) width; the detail pane absorbs the remaining space.
         sidebarViewItem.holdingPriority = .defaultHigh
 
         addSplitViewItem(sidebarViewItem)
 
         let detailViewItem = NSSplitViewItem(viewController: detailViewController)
-        detailViewItem.minimumThickness = 415
+        detailViewItem.minimumThickness = Self.minimumDetailWidth
         detailViewItem.holdingPriority = .defaultLow
         addSplitViewItem(detailViewItem)
 
@@ -86,12 +87,25 @@ final class BookmarkManagementSplitViewController: NSSplitViewController {
         sidebarViewController.delegate = self
         detailViewController.delegate = self
 
-        // Just below `.required` so it decisively drives the width over NSSplitViewController's holding-priority
-        // constraints, while still yielding to the required min/max thickness so it can never become unsatisfiable.
+        // Just below `.required`: wins over holding-priority constraints but still yields to the min/max thickness.
         let widthConstraint = sidebarViewController.view.widthAnchor.constraint(equalToConstant: Self.defaultSidebarWidth)
         widthConstraint.priority = .init(999)
         widthConstraint.isActive = true
         sidebarWidthConstraint = widthConstraint
+    }
+
+    override func viewDidLayout() {
+        super.viewDidLayout()
+        guard splitView.bounds.width > 0 else { return }
+        // Re-clamp on resize so the detail pane keeps its minimum; the preferred width returns when space allows.
+        let clamped = max(Self.minimumSidebarWidth, min(preferredSidebarWidth, maxSidebarWidth(in: splitView)))
+        if sidebarWidthConstraint?.constant != clamped {
+            sidebarWidthConstraint?.constant = clamped
+        }
+    }
+
+    private func maxSidebarWidth(in splitView: NSSplitView) -> CGFloat {
+        min(Self.maximumSidebarWidth, splitView.bounds.width - splitView.dividerThickness - Self.minimumDetailWidth)
     }
 
     /// If search bar is focused, make it so that clicking outside of it
@@ -114,7 +128,9 @@ extension BookmarkManagementSplitViewController: BookmarkManagementSidebarViewCo
     }
 
     override func splitView(_ splitView: NSSplitView, constrainSplitPosition proposedPosition: CGFloat, ofSubviewAt dividerIndex: Int) -> CGFloat {
-        let clamped = max(Self.minimumSidebarWidth, min(proposedPosition, Self.maximumSidebarWidth))
+        // Cap so the detail pane keeps its minimum width even on a narrow bookmarks area.
+        let clamped = max(Self.minimumSidebarWidth, min(proposedPosition, maxSidebarWidth(in: splitView)))
+        preferredSidebarWidth = clamped
         sidebarWidthConstraint?.constant = clamped
         return clamped
     }

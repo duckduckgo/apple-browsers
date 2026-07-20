@@ -2017,8 +2017,8 @@
 		C18390D32F50A002001939B9 /* UnifiedToggleInputAttachmentThumbnailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C18390D22F50A002001939B9 /* UnifiedToggleInputAttachmentThumbnailView.swift */; };
 		C18390D52F50A003001939B9 /* UnifiedToggleInputAttachmentsStripView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C18390D42F50A003001939B9 /* UnifiedToggleInputAttachmentsStripView.swift */; };
 		C18390D72F50A004001939B9 /* UnifiedToggleInputImageEncoderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C18390D62F50A004001939B9 /* UnifiedToggleInputImageEncoderTests.swift */; };
-		C18578952EB7C0340049D2CE /* autofill-extension-dark.json in Resources */ = {isa = PBXBuildFile; fileRef = C18578932EB7C0340049D2CE /* autofill-extension-dark.json */; };
-		C18578A02EB7D0020049D2CE /* autofill-extension-light.json in Resources */ = {isa = PBXBuildFile; fileRef = C185789F2EB7D0020049D2CE /* autofill-extension-light.json */; };
+		C18578952EB7C0340049D2CE /* autofill-extension-dark-legacy.json in Resources */ = {isa = PBXBuildFile; fileRef = C18578932EB7C0340049D2CE /* autofill-extension-dark-legacy.json */; };
+		C18578A02EB7D0020049D2CE /* autofill-extension-light-legacy.json in Resources */ = {isa = PBXBuildFile; fileRef = C185789F2EB7D0020049D2CE /* autofill-extension-light-legacy.json */; };
 		C185ED612BD4329700BAE9DC /* ImportPasswordsViaSyncStatusHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = C185ED602BD4329700BAE9DC /* ImportPasswordsViaSyncStatusHandler.swift */; };
 		C185ED672BD43DA100BAE9DC /* ImportPasswordsViaSyncStatusHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C185ED632BD438AF00BAE9DC /* ImportPasswordsViaSyncStatusHandlerTests.swift */; };
 		C189966E2E4F45A200246F22 /* Logger+DaxEasterEgg.swift in Sources */ = {isa = PBXBuildFile; fileRef = C189966D2E4F45A200246F22 /* Logger+DaxEasterEgg.swift */; };
@@ -2427,6 +2427,8 @@
 		EB636BDE30C2031DD6A90899 /* StartupOnboardingCover.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD8CF8E4B152CDB3A4ACB14C /* StartupOnboardingCover.swift */; };
 		ED39ED412FE607620011B7C3 /* confirmation-prompt-128.json in Resources */ = {isa = PBXBuildFile; fileRef = ED39ED402FE607620011B7C3 /* confirmation-prompt-128.json */; };
 		ED4B3F3D2F191E5F006C5FE4 /* PrivacyConfig in Frameworks */ = {isa = PBXBuildFile; productRef = ED4B3F3C2F191E5F006C5FE4 /* PrivacyConfig */; };
+		ED7373F8300E2E54006C656D /* autofill-extension-light.json in Resources */ = {isa = PBXBuildFile; fileRef = ED7373F7300E2E54006C656D /* autofill-extension-light.json */; };
+		ED7373F9300E2E54006C656D /* autofill-extension-dark.json in Resources */ = {isa = PBXBuildFile; fileRef = ED7373F6300E2E54006C656D /* autofill-extension-dark.json */; };
 		EDB406DD2FFBB06300118162 /* success.json in Resources */ = {isa = PBXBuildFile; fileRef = EDB406DC2FFBB06300118162 /* success.json */; };
 		EDE3A7162FD7198B00048D27 /* shield-dot.json in Resources */ = {isa = PBXBuildFile; fileRef = EDE3A7142FD7198B00048D27 /* shield-dot.json */; };
 		EDE3A7172FD7198B00048D27 /* shield.new.json in Resources */ = {isa = PBXBuildFile; fileRef = EDE3A7152FD7198B00048D27 /* shield.new.json */; };
@@ -4730,8 +4732,8 @@
 		C18390D22F50A002001939B9 /* UnifiedToggleInputAttachmentThumbnailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedToggleInputAttachmentThumbnailView.swift; sourceTree = "<group>"; };
 		C18390D42F50A003001939B9 /* UnifiedToggleInputAttachmentsStripView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedToggleInputAttachmentsStripView.swift; sourceTree = "<group>"; };
 		C18390D62F50A004001939B9 /* UnifiedToggleInputImageEncoderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedToggleInputImageEncoderTests.swift; sourceTree = "<group>"; };
-		C18578932EB7C0340049D2CE /* autofill-extension-dark.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "autofill-extension-dark.json"; sourceTree = "<group>"; };
-		C185789F2EB7D0020049D2CE /* autofill-extension-light.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "autofill-extension-light.json"; sourceTree = "<group>"; };
+		C18578932EB7C0340049D2CE /* autofill-extension-dark-legacy.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "autofill-extension-dark-legacy.json"; sourceTree = "<group>"; };
+		C185789F2EB7D0020049D2CE /* autofill-extension-light-legacy.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "autofill-extension-light-legacy.json"; sourceTree = "<group>"; };
 		C185ED602BD4329700BAE9DC /* ImportPasswordsViaSyncStatusHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportPasswordsViaSyncStatusHandler.swift; sourceTree = "<group>"; };
 		C185ED632BD438AF00BAE9DC /* ImportPasswordsViaSyncStatusHandlerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportPasswordsViaSyncStatusHandlerTests.swift; sourceTree = "<group>"; };
 		C189966D2E4F45A200246F22 /* Logger+DaxEasterEgg.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Logger+DaxEasterEgg.swift"; sourceTree = "<group>"; };
@@ -5183,6 +5185,8 @@
 		EA8E5DCD620608EB3A162D3D /* AIChatTabChatHeaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatTabChatHeaderView.swift; sourceTree = "<group>"; };
 		EAB19ED9268963510015D3EA /* DomainMatchingTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DomainMatchingTests.swift; sourceTree = "<group>"; };
 		ED39ED402FE607620011B7C3 /* confirmation-prompt-128.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "confirmation-prompt-128.json"; sourceTree = "<group>"; };
+		ED7373F6300E2E54006C656D /* autofill-extension-dark.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "autofill-extension-dark.json"; sourceTree = "<group>"; };
+		ED7373F7300E2E54006C656D /* autofill-extension-light.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "autofill-extension-light.json"; sourceTree = "<group>"; };
 		EDB06E4C5FAE7E6BC7CDC6CC /* OnboardingView+AppIconPickerContent.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "OnboardingView+AppIconPickerContent.swift"; sourceTree = "<group>"; };
 		EDB406DC2FFBB06300118162 /* success.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = success.json; sourceTree = "<group>"; };
 		EDE3A7132FD7198B00048D27 /* dark-shield-dot.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "dark-shield-dot.json"; sourceTree = "<group>"; };
@@ -9576,8 +9580,10 @@
 			children = (
 				C145F6C92F8D0201006CD340 /* export-passwords-dark-optimised.json */,
 				C145F6CA2F8D0201006CD340 /* export-passwords-light-optimised.json */,
-				C18578932EB7C0340049D2CE /* autofill-extension-dark.json */,
-				C185789F2EB7D0020049D2CE /* autofill-extension-light.json */,
+				C18578932EB7C0340049D2CE /* autofill-extension-dark-legacy.json */,
+				C185789F2EB7D0020049D2CE /* autofill-extension-light-legacy.json */,
+				ED7373F6300E2E54006C656D /* autofill-extension-dark.json */,
+				ED7373F7300E2E54006C656D /* autofill-extension-light.json */,
 				EDB406DC2FFBB06300118162 /* success.json */,
 				C15516052D47D2EF001B94E9 /* success-legacy.json */,
 				ED39ED402FE607620011B7C3 /* confirmation-prompt-128.json */,
@@ -12363,17 +12369,19 @@
 				9880723825FA4E450039EF4B /* menu_light.json in Resources */,
 				85371D242121B9D500920548 /* new_tab.json in Resources */,
 				FADE0001C0FFEE00A5311003 /* PageSuggestionsCatalog.json in Resources */,
-				C18578952EB7C0340049D2CE /* autofill-extension-dark.json in Resources */,
+				C18578952EB7C0340049D2CE /* autofill-extension-dark-legacy.json in Resources */,
 				85DFEDF724CB1CAB00973FE7 /* ShareSheet.xcassets in Resources */,
 				98DA6B3322243CC3006EA9EB /* Feedback.xcassets in Resources */,
 				1EE411F728587AC50003FE64 /* PrivacyIcon.xcassets in Resources */,
 				6553AFF72D95B8EA00D64241 /* DuckPlayer-PrimingAnimation.json in Resources */,
 				6FE3AF462D9ECF6B001AE6B8 /* shield-dot-legacy.json in Resources */,
 				F1000FEB2FA3B25D00D96ED0 /* Fire.xcassets in Resources */,
+				ED7373F8300E2E54006C656D /* autofill-extension-light.json in Resources */,
+				ED7373F9300E2E54006C656D /* autofill-extension-dark.json in Resources */,
 				6FE3AF472D9ECF6B001AE6B8 /* dark-shield-dot-legacy.json in Resources */,
 				8548D96825262C33005AAE49 /* view_highlight.json in Resources */,
 				855ED5142E84226000047A88 /* SharedWidgetAssets.xcassets in Resources */,
-				C18578A02EB7D0020049D2CE /* autofill-extension-light.json in Resources */,
+				C18578A02EB7D0020049D2CE /* autofill-extension-light-legacy.json in Resources */,
 				85F0E97329952D7A003D5181 /* DuckDuckGo Recovery Document.pdf in Resources */,
 				9FA30B1B2F6F87E900F5AA9D /* 01_Fire_rebranded.json in Resources */,
 				9880723725FA4E450039EF4B /* menu_dark.json in Resources */,

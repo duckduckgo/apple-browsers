@@ -150,6 +150,7 @@ class TabViewController: UIViewController {
     /// this tab navigates elsewhere.
     var reopenableClosedTabURL: URL? {
         didSet {
+            guard reopenableClosedTabURL != oldValue else { return }
             delegate?.tabLoadingStateDidChange(tab: self)
         }
     }
@@ -1309,6 +1310,9 @@ class TabViewController: UIViewController {
             }
 
         case #keyPath(WKWebView.url):
+            // Cleared here, so we act on same-document navigation too.
+            reopenableClosedTabURL = nil
+
             // A short delay is required here, because the URL takes some time
             // to propagate to the webView.url property accessor and might not
             // be immediately available in the observer
@@ -2146,7 +2150,6 @@ extension TabViewController: WKNavigationDelegate {
 
     func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
         navigationPixelResponder.didStart(navigation)
-        reopenableClosedTabURL = nil
         lastError = nil
         lastRenderedURL = webView.url
         cancelTrackerNetworksAnimation()

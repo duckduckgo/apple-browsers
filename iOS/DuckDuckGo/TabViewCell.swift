@@ -245,7 +245,7 @@ class TabViewCell: UICollectionViewCell {
                                                             height: Constants.cellLogoSize),
                                                format: renderFormat)
         return renderer.image { _ in
-            UIImage(resource: .logo).draw(in: CGRect(x: 0,
+            UIImage(rebrandable: "duckduckgo-favicon-128x128")?.draw(in: CGRect(x: 0,
                                                      y: 0,
                                                      width: Constants.cellLogoSize,
                                                      height: Constants.cellLogoSize))
@@ -551,7 +551,7 @@ class TabViewCell: UICollectionViewCell {
             updateEmptyTabLabel(for: tab)
             link?.isHidden = false
             link?.text = UserText.homeTabSearchAndFavorites
-            favicon.image = UIImage(resource: .logo)
+            favicon.image = UIImage(rebrandable: "duckduckgo-favicon-128x128")
             unread.isHidden = true
             self.preview?.isHidden = !tab.viewed
             title.isHidden = !tab.viewed

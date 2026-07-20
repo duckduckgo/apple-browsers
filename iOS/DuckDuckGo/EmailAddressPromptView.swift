@@ -18,6 +18,7 @@
 //
 
 import SwiftUI
+import DesignResourcesKitIcons
 import DesignResourcesKit
 
 struct EmailAddressPromptView: View {
@@ -159,7 +160,7 @@ private enum Const {
 }
 
 private extension Image {
-    static let logo = Image(.logo)
+    static let logo = Image(rebrandable: "duckduckgo-favicon-24x24")
 }
 
 struct DuckAddressPromptView_Previews: PreviewProvider {

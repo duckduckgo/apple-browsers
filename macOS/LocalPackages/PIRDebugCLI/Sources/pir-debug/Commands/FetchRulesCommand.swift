@@ -107,7 +107,7 @@ struct FetchRulesCommand: CLIRunnable {
             Log.error(error.message)
             return CLIExit.usageError
         } catch {
-            Log.error(error.localizedDescription)
+            Log.error(String(describing: error))
             return CLIExit.usageError
         }
     }
@@ -150,15 +150,21 @@ struct FetchRulesCommand: CLIRunnable {
         defer { try? FileManager.default.removeItem(at: archiveURL) }
         try FileManager.default.createDirectory(at: extractionDir, withIntermediateDirectories: true)
 
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/unzip")
-        process.arguments = ["-o", "-q", archiveURL.path, "-d", extractionDir.path]
-        process.standardOutput = FileHandle.standardError
-        process.standardError = FileHandle.standardError
-        try process.run()
-        process.waitUntilExit()
-        guard process.terminationStatus == 0 else {
-            throw CLIUsageError("Failed to unzip broker archive (unzip exited \(process.terminationStatus)).")
+        do {
+            let process = Process()
+            process.executableURL = URL(fileURLWithPath: "/usr/bin/unzip")
+            process.arguments = ["-o", "-q", archiveURL.path, "-d", extractionDir.path]
+            process.standardOutput = FileHandle.standardError
+            process.standardError = FileHandle.standardError
+            try process.run()
+            process.waitUntilExit()
+            guard process.terminationStatus == 0 else {
+                throw CLIUsageError("Failed to unzip broker archive (unzip exited \(process.terminationStatus)).")
+            }
+        } catch {
+            // Don't leak the extraction dir if unzip fails to launch or exits non-zero.
+            try? FileManager.default.removeItem(at: extractionDir)
+            throw error
         }
         return extractionDir
     }

@@ -41,6 +41,10 @@ struct ScanCommand: CLIRunnable {
     var activationPolicy: NSApplication.ActivationPolicy { runtime.showWebview ? .accessory : .prohibited }
     var watchdogTimeout: TimeInterval? { runtime.timeout }
 
+    func validateOptions() throws {
+        try runtime.checkBounds(checkTimeout: true)
+    }
+
     func execute() async -> Int32 {
         Log.verbose = runtime.verbose
         do {
@@ -63,7 +67,7 @@ struct ScanCommand: CLIRunnable {
                 userAgentApplicationName: "pir-debug")
             let session = try PIRDebugSession(configuration: configuration)
 
-            let eventsWriter = out.makeEventsWriter()
+            let eventsWriter = try out.makeEventsWriter()
             let eventsTask = eventsWriter.map { writer in
                 Task { for await event in session.events { writer.write(event) } }
             }
@@ -80,7 +84,7 @@ struct ScanCommand: CLIRunnable {
                     let result = try await session.scan(broker: broker, profile: dbpProfile)
                     results.append(result)
                 } catch {
-                    throw CLIOperationError(error.localizedDescription)
+                    throw CLIOperationError(String(describing: error))
                 }
             }
 
@@ -98,7 +102,7 @@ struct ScanCommand: CLIRunnable {
             Log.error(error.message)
             return CLIExit.usageError
         } catch {
-            Log.error(error.localizedDescription)
+            Log.error(String(describing: error))
             return CLIExit.usageError
         }
     }

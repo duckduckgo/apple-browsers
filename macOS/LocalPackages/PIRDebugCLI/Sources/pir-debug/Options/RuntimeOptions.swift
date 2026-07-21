@@ -33,4 +33,18 @@ struct RuntimeOptions: ParsableArguments {
 
     @Flag(name: .long, help: "Verbose progress logging on stderr.")
     var verbose = false
+
+    /// Validates the numeric knobs so bad input becomes a clean usage error (exit 2) instead of
+    /// trapping later (e.g. `UInt64(negative)` in the watchdog / await-time conversions).
+    /// - Parameter checkTimeout: bound `--timeout` too; skipped by `serve`, which ignores it.
+    func checkBounds(checkTimeout: Bool) throws {
+        guard awaitTime >= 0 else {
+            throw CLIUsageError("--await-time must be >= 0 (got \(awaitTime)).")
+        }
+        if checkTimeout {
+            guard timeout > 0, timeout <= 86_400 else {
+                throw CLIUsageError("--timeout must be > 0 and <= 86400 seconds (got \(timeout)).")
+            }
+        }
+    }
 }

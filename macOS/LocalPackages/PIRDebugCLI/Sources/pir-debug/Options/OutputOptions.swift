@@ -32,7 +32,13 @@ struct OutputOptions: ParsableArguments {
         ResultWriter(outputPath: output)
     }
 
-    func makeEventsWriter() -> EventsWriter? {
-        EventsWriter(path: events)
+    /// Returns `nil` when `--events` was not supplied; throws a usage error (→ exit 2) when a path
+    /// was given but its destination cannot be opened, rather than silently dropping the stream.
+    func makeEventsWriter() throws -> EventsWriter? {
+        guard let events else { return nil }
+        guard let writer = EventsWriter(path: events) else {
+            throw CLIUsageError("Could not open --events destination for writing: \(events)")
+        }
+        return writer
     }
 }

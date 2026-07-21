@@ -30,9 +30,9 @@ final class EventsWriter {
     private let ownsHandle: Bool
     private let encoder = CLIJSON.lineEncoder()
 
-    /// Creates a writer for the given `--events` value, or returns `nil` when no path was supplied.
-    init?(path: String?) {
-        guard let path else { return nil }
+    /// Creates a writer for the given `--events` value, returning `nil` only when the destination
+    /// file cannot be opened (the caller turns that into a usage error).
+    init?(path: String) {
         if path == Self.stderrToken {
             self.handle = .standardError
             self.ownsHandle = false

@@ -72,6 +72,9 @@ enum ContentScopeScriptResolver {
         }
         process.waitUntilExit()
         guard process.terminationStatus == 0 else {
+            if process.terminationStatus == 127 {
+                throw CLIUsageError("content-scope-scripts build failed: 'node' was not found on PATH (env exited 127). Install Node and ensure it is on PATH.")
+            }
             throw CLIUsageError("content-scope-scripts build failed (node exited \(process.terminationStatus)).")
         }
     }
@@ -101,9 +104,12 @@ enum ContentScopeScriptResolver {
             throw CLIUsageError("Could not download C-S-S artifact for branch \(branch).")
         }
         guard http.statusCode == 200 else {
-            throw CLIUsageError("Branch \(branch) has no CI build: dist artifact missing at \(sha) (HTTP \(http.statusCode)).")
+            if http.statusCode == 404 {
+                throw CLIUsageError("Branch \(branch) has no CI build: dist artifact missing at \(sha).")
+            }
+            throw CLIUsageError("Could not download the C-S-S artifact for branch \(branch) at \(sha) (HTTP \(http.statusCode)); retry later.")
         }
-        try data.write(to: cached)
+        try data.write(to: cached, options: .atomic)
         Log.info("Using injected script: \(cached.path)")
         return cached
     }
@@ -134,8 +140,8 @@ enum ContentScopeScriptResolver {
             return try JSONDecoder().decode(CommitResponse.self, from: data).sha
         case 404:
             throw CLIUsageError("No pr-releases build for branch '\(branch)' (ref \(ref) not found).")
-        case 403:
-            throw CLIUsageError("GitHub API rate-limited (unauthenticated limit is 60 req/hr). Set GITHUB_TOKEN to raise it.")
+        case 403, 429:
+            throw CLIUsageError("GitHub API rejected the request (HTTP \(http.statusCode)); the unauthenticated limit is 60 req/hr — set GITHUB_TOKEN to raise it (or check the token if one is set).")
         default:
             throw CLIUsageError("GitHub API error resolving branch \(branch) (HTTP \(http.statusCode)).")
         }

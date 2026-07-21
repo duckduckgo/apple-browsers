@@ -40,10 +40,12 @@ enum OptOutSupport {
                        brokerId: Int64,
                        index: Int?,
                        allMatches: Bool) throws -> [PIRExtractedProfileRecord] {
-        var pool = records.filter { $0.brokerId == brokerId }
-        if pool.isEmpty { pool = records } // fall back if the result came from a different id scheme
+        // Broker stable IDs are deterministic (djb2 of the URL), computed identically by scan and
+        // opt-out, so an empty pool means the results file genuinely has no records for this broker
+        // — never silently opt out a different broker's profiles against it.
+        let pool = records.filter { $0.brokerId == brokerId }
         guard !pool.isEmpty else {
-            throw CLIUsageError("The extracted results contain no profiles.")
+            throw CLIUsageError("The extracted results contain no profiles for the selected broker (brokerId \(brokerId)); confirm the results JSON came from a scan of this broker.")
         }
         if allMatches { return pool }
         if let index {

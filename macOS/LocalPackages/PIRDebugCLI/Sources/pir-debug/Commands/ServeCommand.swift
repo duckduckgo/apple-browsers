@@ -44,6 +44,10 @@ struct ServeCommand: CLIRunnable {
     // Long-running: no watchdog.
     var watchdogTimeout: TimeInterval? { nil }
 
+    func validateOptions() throws {
+        try runtime.checkBounds(checkTimeout: false)
+    }
+
     // MARK: - Request bodies
 
     private struct ScanRequest: Decodable {
@@ -106,9 +110,10 @@ struct ServeCommand: CLIRunnable {
                 }
             }
 
-            let server = DebugHTTPServer(port: port)
+            let server = DebugHTTPServer(port: port, requireLoopback: true)
             registerRoutes(on: server, state: state)
             try server.start()
+            try await Self.waitUntilListening(server, port: port)
             Log.info("pir-debug serve listening on 127.0.0.1:\(port). Ctrl-C to stop.")
 
             // Long-running: never return so the delegate does not exit(). The server runs on its own
@@ -120,7 +125,7 @@ struct ServeCommand: CLIRunnable {
             Log.error(error.message)
             return CLIExit.usageError
         } catch {
-            Log.error(error.localizedDescription)
+            Log.error(String(describing: error))
             return CLIExit.usageError
         }
     }
@@ -177,7 +182,9 @@ struct ServeCommand: CLIRunnable {
                   let req = try? JSONDecoder().decode(ScanRequest.self, from: body) else {
                 return .text("Invalid scan request body", status: .badRequest)
             }
-            let jobId = state.createJob(kind: "scan")
+            guard let jobId = state.tryCreateJob(kind: "scan") else {
+                return Self.jsonResponse(["error": "A job is already running; retry when it completes."], status: .conflict)
+            }
             Self.startScan(req: req, jobId: jobId, state: state)
             return Self.jsonResponse(["jobId": jobId], status: .accepted)
         }
@@ -187,7 +194,9 @@ struct ServeCommand: CLIRunnable {
                   let req = try? JSONDecoder().decode(OptOutRequest.self, from: body) else {
                 return .text("Invalid optout request body", status: .badRequest)
             }
-            let jobId = state.createJob(kind: "optout")
+            guard let jobId = state.tryCreateJob(kind: "optout") else {
+                return Self.jsonResponse(["error": "A job is already running; retry when it completes."], status: .conflict)
+            }
             Self.startOptOut(req: req, jobId: jobId, state: state)
             return Self.jsonResponse(["jobId": jobId], status: .accepted)
         }
@@ -207,7 +216,7 @@ struct ServeCommand: CLIRunnable {
                 let data = selected.count == 1 ? try encoder.encode(results[0]) : try encoder.encode(results)
                 state.completeJob(id: jobId, resultData: data)
             } catch {
-                state.failJob(id: jobId, error: error.localizedDescription)
+                state.failJob(id: jobId, error: String(describing: error))
             }
         }
     }
@@ -238,10 +247,11 @@ struct ServeCommand: CLIRunnable {
                     results.append(result)
                 }
                 let encoder = CLIJSON.prettyEncoder()
-                let data = results.count == 1 ? try encoder.encode(results[0]) : try encoder.encode(results)
+                let singleShape = !(req.allMatches ?? false) && results.count == 1
+                let data = singleShape ? try encoder.encode(results[0]) : try encoder.encode(results)
                 state.completeJob(id: jobId, resultData: data)
             } catch {
-                state.failJob(id: jobId, error: error.localizedDescription)
+                state.failJob(id: jobId, error: String(describing: error))
             }
         }
     }
@@ -259,6 +269,27 @@ struct ServeCommand: CLIRunnable {
             try await Task.sleep(nanoseconds: UInt64(max(0, pollInterval) * 1_000_000_000))
         }
         return fallback
+    }
+
+    /// Polls the listener until it reports `.running`, throwing a usage error (→ exit 2) if the bind
+    /// fails (e.g. port already in use, which `NWListener` surfaces asynchronously) rather than
+    /// letting the command print "listening" and hang forever.
+    private static func waitUntilListening(_ server: DebugHTTPServer, port: UInt16) async throws {
+        for _ in 0..<50 {
+            switch server.state {
+            case .running:
+                return
+            case .failed(let message):
+                throw CLIUsageError("Could not start server on port \(port): \(message)")
+            case .stopped:
+                // start() sets .starting synchronously; observing .stopped afterwards means the bind
+                // failed (e.g. port already in use) and the listener tore itself down.
+                throw CLIUsageError("Could not start server on port \(port); is the port already in use?")
+            case .starting:
+                try? await Task.sleep(nanoseconds: 100_000_000)
+            }
+        }
+        throw CLIUsageError("Timed out waiting for the server to start on port \(port).")
     }
 
     // MARK: - JSON

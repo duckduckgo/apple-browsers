@@ -27,12 +27,15 @@ protocol CLIRunnable: ParsableCommand {
     var activationPolicy: NSApplication.ActivationPolicy { get }
     /// Watchdog timeout in seconds; `nil` disables the watchdog (used by the long-running `serve`).
     var watchdogTimeout: TimeInterval? { get }
+    /// Validates option bounds before the watchdog is armed and the engine runs. Default: no-op.
+    func validateOptions() throws
     func execute() async -> Int32
 }
 
 extension CLIRunnable {
     var activationPolicy: NSApplication.ActivationPolicy { .prohibited }
     var watchdogTimeout: TimeInterval? { 600 }
+    func validateOptions() throws {}
 }
 
 /// Runs a parsed command on a `@MainActor` task from `applicationDidFinishLaunching`, arms the
@@ -48,7 +51,7 @@ final class CLIAppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         if let timeout = command.watchdogTimeout {
             Task { @MainActor in
-                try? await Task.sleep(nanoseconds: UInt64(timeout * 1_000_000_000))
+                try? await Task.sleep(nanoseconds: UInt64(max(0, timeout) * 1_000_000_000))
                 Log.error("Timed out after \(timeout)s")
                 exit(CLIExit.timeout)
             }

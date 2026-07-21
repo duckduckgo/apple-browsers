@@ -46,9 +46,20 @@ final class ServeState: @unchecked Sendable {
     /// Brokers cached at startup (immutable).
     let brokers: [DataBroker]
 
+    /// Caps to keep a long-running server's memory bounded.
+    private let maxJobs = 1000
+    private let maxEvents = 50_000
+
     private let lock = NSLock()
     private var jobs: [String: Job] = [:]
+    private var jobOrder: [String] = []
+    /// The single in-flight job, if any. Only one job runs at a time so concurrent scans/opt-outs
+    /// cannot trample the shared session's multi-step state (`pendingOptOut`, the email store).
+    private var activeJobId: String?
     private var events: [PIRDebugEvent] = []
+    /// Number of events dropped off the front by the `maxEvents` cap; keeps `/events` cursors
+    /// monotonic across trims.
+    private var eventsBase = 0
 
     init(session: PIRDebugSession, brokers: [DataBroker]) {
         self.session = session
@@ -57,15 +68,22 @@ final class ServeState: @unchecked Sendable {
 
     // MARK: - Jobs
 
-    func createJob(kind: String) -> String {
-        let id = UUID().uuidString
+    /// Creates a job only if none is currently running, returning its id; returns `nil` (→ HTTP 409)
+    /// when a job is already in flight.
+    func tryCreateJob(kind: String) -> String? {
         lock.lock(); defer { lock.unlock() }
+        guard activeJobId == nil else { return nil }
+        let id = UUID().uuidString
         jobs[id] = Job(id: id, kind: kind)
+        jobOrder.append(id)
+        activeJobId = id
+        evictOldJobsLocked()
         return id
     }
 
     func completeJob(id: String, resultData: Data) {
         lock.lock(); defer { lock.unlock() }
+        if activeJobId == id { activeJobId = nil }
         guard let job = jobs[id] else { return }
         job.status = "succeeded"
         job.resultData = resultData
@@ -73,9 +91,19 @@ final class ServeState: @unchecked Sendable {
 
     func failJob(id: String, error: String) {
         lock.lock(); defer { lock.unlock() }
+        if activeJobId == id { activeJobId = nil }
         guard let job = jobs[id] else { return }
         job.status = "failed"
         job.error = error
+    }
+
+    /// Drops the oldest finished jobs once over `maxJobs`; never evicts the active job. Must be
+    /// called with `lock` held.
+    private func evictOldJobsLocked() {
+        while jobs.count > maxJobs, let oldest = jobOrder.first(where: { $0 != activeJobId }) {
+            jobs[oldest] = nil
+            jobOrder.removeAll { $0 == oldest }
+        }
     }
 
     /// A JSON body for `GET /jobs/<id>`, embedding the stored result JSON verbatim, or `nil` if the
@@ -97,12 +125,21 @@ final class ServeState: @unchecked Sendable {
     func appendEvent(_ event: PIRDebugEvent) {
         lock.lock(); defer { lock.unlock() }
         events.append(event)
+        if events.count > maxEvents {
+            let overflow = events.count - maxEvents
+            events.removeFirst(overflow)
+            eventsBase += overflow
+        }
     }
 
-    /// Returns events with index >= `since` and the next cursor to poll with.
+    /// Returns events with absolute index >= `since` and the next cursor to poll with. Cursors are
+    /// absolute counts (surviving trims); a `since` older than the trim window jumps forward to the
+    /// oldest retained event.
     func eventsSince(_ since: Int) -> (nextCursor: Int, events: [PIRDebugEvent]) {
         lock.lock(); defer { lock.unlock() }
-        let start = max(0, min(since, events.count))
-        return (events.count, Array(events[start...]))
+        let total = eventsBase + events.count
+        let effectiveSince = max(since, eventsBase)
+        let start = max(0, min(effectiveSince - eventsBase, events.count))
+        return (total, Array(events[start...]))
     }
 }

@@ -59,6 +59,16 @@ guard let command = parsed as? CLIRunnable else {
     exit(CLIExit.success)
 }
 
+// Validate option bounds before arming the watchdog, so bad numeric flags exit 2 rather than
+// trapping in a nanosecond conversion. (Called explicitly — the bootstrap runs `execute()` directly
+// rather than ArgumentParser's `run()`, which would otherwise invoke `validate()`.)
+do {
+    try command.validateOptions()
+} catch {
+    FileHandle.standardError.write(Data(("Error: \(error)\n").utf8))
+    exit(CLIExit.usageError)
+}
+
 // MARK: - Bootstrap NSApplication and run
 
 runInApplication(command)

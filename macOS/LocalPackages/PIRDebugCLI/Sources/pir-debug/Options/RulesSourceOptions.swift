@@ -82,10 +82,14 @@ struct RulesSourceOptions: ParsableArguments {
         return RemoteBrokerRulesProvider(endpoint: environment == .staging ? .staging : .production)
     }
 
-    /// The remote endpoint for `fetch-rules`. Throws ``CLIUsageError`` for local sources.
+    /// The remote endpoint for `fetch-rules`. Throws ``CLIUsageError`` for local sources or when
+    /// more than one remote source is given.
     func makeRemoteEndpoint() throws -> RemoteBrokerEndpoint {
         if rulesDir != nil || brokerFile != nil {
-            throw CLIUsageError("fetch-rules requires a remote source (--dbp-api-branch, --dbp-api-url, or --environment).")
+            throw CLIUsageError("fetch-rules needs a remote source; --rules-dir/--broker-file are local. Use --dbp-api-branch, --dbp-api-url, or --environment.")
+        }
+        guard [dbpApiBranch, dbpApiURL].compactMap({ $0 }).count <= 1 else {
+            throw CLIUsageError("Specify only one remote source (--dbp-api-branch or --dbp-api-url).")
         }
         if let dbpApiBranch {
             return .stagingBranch(dbpApiBranch)

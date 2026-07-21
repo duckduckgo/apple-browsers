@@ -60,6 +60,15 @@ struct OptOutCommand: CLIRunnable {
     var activationPolicy: NSApplication.ActivationPolicy { runtime.showWebview ? .accessory : .prohibited }
     var watchdogTimeout: TimeInterval? { runtime.timeout }
 
+    func validateOptions() throws {
+        try runtime.checkBounds(checkTimeout: true)
+        if waitForEmail {
+            guard pollInterval > 0 else {
+                throw CLIUsageError("--poll-interval must be > 0 (got \(pollInterval)).")
+            }
+        }
+    }
+
     func execute() async -> Int32 {
         Log.verbose = runtime.verbose
         do {
@@ -91,7 +100,7 @@ struct OptOutCommand: CLIRunnable {
                 userAgentApplicationName: "pir-debug")
             let session = try PIRDebugSession(configuration: configuration)
 
-            let eventsWriter = out.makeEventsWriter()
+            let eventsWriter = try out.makeEventsWriter()
             let eventsTask = eventsWriter.map { writer in
                 Task { for await event in session.events { writer.write(event) } }
             }
@@ -104,29 +113,37 @@ struct OptOutCommand: CLIRunnable {
             for record in selectedRecords {
                 let singleQueryProfile = try OptOutSupport.reconstructSingleQueryProfile(for: record, from: debugProfile)
                 Log.info("Opt-out: \(record.profileQueryLabel)")
-                var result = try await session.optOut(broker: dataBroker,
-                                                      profile: singleQueryProfile.toDataBrokerProtectionProfile(),
-                                                      extractedProfile: record.extractedProfile)
-
-                if result.awaitingEmailConfirmation, waitForEmail {
-                    result = try await waitForEmailAndContinue(session: session, initial: result)
+                do {
+                    var result = try await session.optOut(broker: dataBroker,
+                                                          profile: singleQueryProfile.toDataBrokerProtectionProfile(),
+                                                          extractedProfile: record.extractedProfile)
+                    if result.awaitingEmailConfirmation, waitForEmail {
+                        result = try await waitForEmailAndContinue(session: session, initial: result)
+                    }
+                    results.append(result)
+                } catch {
+                    throw CLIOperationError(String(describing: error))
                 }
-                results.append(result)
             }
 
             let anyFailed = results.contains { !$0.success && !$0.awaitingEmailConfirmation }
-            if results.count == 1, let single = results.first {
+            // --all-matches always yields an array (even for a single match) so callers get a stable shape.
+            if !allMatches, results.count == 1, let single = results.first {
                 try out.resultWriter.write(single)
             } else {
                 try out.resultWriter.write(results)
             }
             return anyFailed ? CLIExit.operationFailed : CLIExit.success
+        } catch let error as CLIOperationError {
+            Log.error(error.message)
+            return CLIExit.operationFailed
         } catch let error as CLIUsageError {
             Log.error(error.message)
             return CLIExit.usageError
         } catch {
-            Log.error(error.localizedDescription)
-            return CLIExit.operationFailed
+            // Setup / rules-fetch failures (the spec's canonical exit-2 case) reach here.
+            Log.error(String(describing: error))
+            return CLIExit.usageError
         }
     }
 

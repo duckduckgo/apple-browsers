@@ -241,9 +241,7 @@ final class Fire: FireProtocol {
 
         var shouldClose: Bool {
             switch self {
-            case .tab(tabViewModel: _, selectedDomains: _, parentTabCollectionViewModel: _, close: let close),
-                    .window(tabCollectionViewModel: _, selectedDomains: _, close: let close),
-                    .allWindows(mainWindowControllers: _, selectedDomains: _, customURLToOpen: _, close: let close):
+            case .tab(_, _, _, let close), .window(_, _, let close), .allWindows(_, _, _, let close):
                 return close
             case .none:
                 return true
@@ -254,9 +252,7 @@ final class Fire: FireProtocol {
         /// burns) clears site data without touching tabs.
         var closesTabs: Bool {
             switch self {
-            case .tab(tabViewModel: _, selectedDomains: _, parentTabCollectionViewModel: _, close: let close),
-                    .window(tabCollectionViewModel: _, selectedDomains: _, close: let close),
-                    .allWindows(mainWindowControllers: _, selectedDomains: _, customURLToOpen: _, close: let close):
+            case .tab(_, _, _, let close), .window(_, _, let close), .allWindows(_, _, _, let close):
                 return close
             case .none:
                 return false
@@ -287,7 +283,8 @@ final class Fire: FireProtocol {
 
         func shouldPlayFireAnimation(decider: VisualizeFireSettingsDecider) -> Bool {
             switch self {
-            // We don't present the fire animation if user burns from the privacy feed
+            // We don't present the native fire animation if user burns from
+            // New Tab Page's privacy feed. Instead it's played in the privacy feed itself.
             case .none:
                 return false
             case .tab, .window, .allWindows:
@@ -722,8 +719,7 @@ final class Fire: FireProtocol {
                     || windowController.mainViewController.tabCollectionViewModel.pinnedTabsManager?.isEmpty ?? false else { continue }
 
             // Windows we can't keep open are closed now; the ones we keep have their tabs replaced with
-            // a fresh New Tab later in `burnTabs`. We deliberately don't insert a placeholder tab here –
-            // doing so briefly showed an extra New Tab in the tab bar before `burnTabs` replaced it.
+            // a fresh New Tab later in `burnTabs`.
             if !shouldKeepWindowOpenWhenBurning(windowController) {
                 windowController.close()
             }

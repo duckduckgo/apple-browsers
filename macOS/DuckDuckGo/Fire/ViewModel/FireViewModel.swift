@@ -31,7 +31,7 @@ extension Fire.BurningData {
      */
     func shouldDelayShowingDialog(decider: VisualizeFireSettingsDecider) -> Bool {
         switch self {
-        case .specificDomains(_, closesTabs: false):
+        case .specificDomains(_, false):
             return decider.shouldShowFireAnimation
         default:
             return false

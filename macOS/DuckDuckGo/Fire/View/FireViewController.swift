@@ -282,7 +282,7 @@ final class FireViewController: NSViewController {
                 } else if self.isKeyWindowController {
                     // The full-window fire animation isn't covering this burn (it's disabled, or this is
                     // a New Tab Page site burn that only plays the in-page animation). Show the
-                    // "Deleting browsing data…" progress dialog directly so the burn still has visible
+                    // "Deleting browsing data" progress dialog directly so the burn still has visible
                     // feedback, mirroring what `animateFire` presents once the animation finishes.
                     // (For New Tab Page burns `isFirePresentationInProgress` still defers the container
                     // by 1s so the in-page animation plays first.)

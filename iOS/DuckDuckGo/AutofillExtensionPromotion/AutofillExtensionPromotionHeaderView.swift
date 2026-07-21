@@ -83,14 +83,19 @@ struct AutofillExtensionPromotionHeaderView: View {
         @Environment(\.colorScheme) private var colorScheme
 
         private var lottieFileName: String {
-            colorScheme == .dark ? "autofill-extension-dark" : "autofill-extension-light"
+            if AppRebrand.isAppRebranded() {
+                colorScheme == .dark ? "autofill-extension-dark" : "autofill-extension-light"
+            } else {
+                colorScheme == .dark ? "autofill-extension-dark-legacy" : "autofill-extension-light-legacy"
+            }
         }
 
         var body: some View {
             LottieView(
                 lottieFile: lottieFileName,
                 loopMode: .mode(.loop),
-                isAnimating: $isAnimating
+                isAnimating: $isAnimating,
+                contentSize: CGSize(width: 320, height: 140)
             )
             .frame(width: 320)
             .aspectRatio(contentMode: .fit)

@@ -2436,6 +2436,7 @@
 		ED4B3F3D2F191E5F006C5FE4 /* PrivacyConfig in Frameworks */ = {isa = PBXBuildFile; productRef = ED4B3F3C2F191E5F006C5FE4 /* PrivacyConfig */; };
 		ED7373F8300E2E54006C656D /* autofill-extension-light.json in Resources */ = {isa = PBXBuildFile; fileRef = ED7373F7300E2E54006C656D /* autofill-extension-light.json */; };
 		ED7373F9300E2E54006C656D /* autofill-extension-dark.json in Resources */ = {isa = PBXBuildFile; fileRef = ED7373F6300E2E54006C656D /* autofill-extension-dark.json */; };
+		ED737415300F9964006C656D /* AppIcon-Alpha.icon in Resources */ = {isa = PBXBuildFile; fileRef = ED737414300F9964006C656D /* AppIcon-Alpha.icon */; };
 		EDB406DD2FFBB06300118162 /* success.json in Resources */ = {isa = PBXBuildFile; fileRef = EDB406DC2FFBB06300118162 /* success.json */; };
 		EDE3A7162FD7198B00048D27 /* shield-dot.json in Resources */ = {isa = PBXBuildFile; fileRef = EDE3A7142FD7198B00048D27 /* shield-dot.json */; };
 		EDE3A7172FD7198B00048D27 /* shield.new.json in Resources */ = {isa = PBXBuildFile; fileRef = EDE3A7152FD7198B00048D27 /* shield.new.json */; };
@@ -5201,6 +5202,7 @@
 		ED39ED402FE607620011B7C3 /* confirmation-prompt-128.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "confirmation-prompt-128.json"; sourceTree = "<group>"; };
 		ED7373F6300E2E54006C656D /* autofill-extension-dark.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "autofill-extension-dark.json"; sourceTree = "<group>"; };
 		ED7373F7300E2E54006C656D /* autofill-extension-light.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "autofill-extension-light.json"; sourceTree = "<group>"; };
+		ED737414300F9964006C656D /* AppIcon-Alpha.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = "AppIcon-Alpha.icon"; sourceTree = "<group>"; };
 		EDB06E4C5FAE7E6BC7CDC6CC /* OnboardingView+AppIconPickerContent.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "OnboardingView+AppIconPickerContent.swift"; sourceTree = "<group>"; };
 		EDB406DC2FFBB06300118162 /* success.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = success.json; sourceTree = "<group>"; };
 		EDE3A7132FD7198B00048D27 /* dark-shield-dot.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "dark-shield-dot.json"; sourceTree = "<group>"; };
@@ -10647,6 +10649,7 @@
 				ED1AD3EA3001475100F2ADD6 /* AppIcon-purple.icon */,
 				ED1AD3EB3001475100F2ADD6 /* AppIcon-white.icon */,
 				ED1AD3EC3001475100F2ADD6 /* AppIcon-yellow.icon */,
+				ED737414300F9964006C656D /* AppIcon-Alpha.icon */,
 			);
 			path = Icons;
 			sourceTree = "<group>";
@@ -12388,6 +12391,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				ED737415300F9964006C656D /* AppIcon-Alpha.icon in Resources */,
 				654244122D6DDD030087A9EE /* mediaControl.js in Resources */,
 				6505529D2D6741BD0067D4F2 /* muteAudio.js in Resources */,
 				F47E53DB250A9A1C0037C686 /* OnboardingAnimations.xcassets in Resources */,
@@ -16017,7 +16021,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = "AppIcon-yellow AppIcon-blue AppIcon-purple AppIcon-green AppIcon-black AppIcon-pink AppIcon-white";
-				ASSETCATALOG_COMPILER_APPICON_NAME = "DDG-AppIcon-Experimental";
+				ASSETCATALOG_COMPILER_APPICON_NAME = "AppIcon-black";
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = DuckDuckGo/DuckDuckGoExperimental.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Distribution";
@@ -17406,7 +17410,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = "AppIcon-yellow AppIcon-blue AppIcon-purple AppIcon-green AppIcon-black AppIcon-pink AppIcon-white";
-				ASSETCATALOG_COMPILER_APPICON_NAME = "DDG-AppIcon-Alpha";
+				ASSETCATALOG_COMPILER_APPICON_NAME = "AppIcon-Alpha";
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = DuckDuckGo/DuckDuckGoAlpha.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Distribution";
@@ -17765,7 +17769,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = "AppIcon-yellow AppIcon-blue AppIcon-purple AppIcon-green AppIcon-black AppIcon-pink AppIcon-white";
-				ASSETCATALOG_COMPILER_APPICON_NAME = "DDG-AppIcon-Alpha";
+				ASSETCATALOG_COMPILER_APPICON_NAME = "AppIcon-Alpha";
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = DuckDuckGo/DuckDuckGoAlpha.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Distribution";

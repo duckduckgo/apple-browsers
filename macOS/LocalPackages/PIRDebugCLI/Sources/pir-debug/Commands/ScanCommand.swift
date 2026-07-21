@@ -76,8 +76,12 @@ struct ScanCommand: CLIRunnable {
             var results: [PIRScanResult] = []
             for broker in selected {
                 Log.info("Scanning \(broker.name)…")
-                let result = try await session.scan(broker: broker, profile: dbpProfile)
-                results.append(result)
+                do {
+                    let result = try await session.scan(broker: broker, profile: dbpProfile)
+                    results.append(result)
+                } catch {
+                    throw CLIOperationError(error.localizedDescription)
+                }
             }
 
             let anyError = results.contains { $0.queryStatuses.contains { $0.outcome == .error } }
@@ -87,6 +91,9 @@ struct ScanCommand: CLIRunnable {
                 try out.resultWriter.write(results)
             }
             return anyError ? CLIExit.operationFailed : CLIExit.success
+        } catch let error as CLIOperationError {
+            Log.error(error.message)
+            return CLIExit.operationFailed
         } catch let error as CLIUsageError {
             Log.error(error.message)
             return CLIExit.usageError

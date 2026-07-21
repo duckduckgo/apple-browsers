@@ -490,52 +490,50 @@ struct NonAttachableNormalizationTests {
 
 struct MainFrameMIMECacheTests {
 
-    /// Mirrors `PageContextTabExtension`'s per-URL MIME cache: back/forward restores don't re-fire the
-    /// navigation-response callback, so the MIME must survive navigating away and back.
-    private final class MIMECache {
-        private var types: [String: String] = [:]
-        private var order: [String] = []
-        private let cap: Int
-        init(cap: Int = 100) { self.cap = cap }
-        func record(_ mime: String?, for url: String) {
-            guard let mime, !mime.isEmpty else { return }
-            if types[url] == nil {
-                order.append(url)
-                if order.count > cap { types[order.removeFirst()] = nil }
-            }
-            types[url] = mime
-        }
-        func mime(for url: String) -> String? { types[url] }
-    }
+    private let pdfURL = URL(string: "https://arxiv.org/pdf/2602.11988")!
+    private let htmlURL = URL(string: "https://en.wikipedia.org/wiki/Potato")!
 
     @available(iOS 16, macOS 13, *)
     @Test("MIME for a URL survives navigating away and back (unlike a last-response slot)", .timeLimit(.minutes(1)))
     func mimeSurvivesBackForward() {
-        let cache = MIMECache()
-        cache.record("application/pdf", for: "https://arxiv.org/pdf/2602.11988")
-        cache.record("text/html", for: "https://en.wikipedia.org/wiki/Potato")
-        #expect(cache.mime(for: "https://arxiv.org/pdf/2602.11988") == "application/pdf")
+        var cache = MainFrameMIMECache()
+        cache.record("application/pdf", for: pdfURL)
+        cache.record("text/html", for: htmlURL)
+        #expect(cache[pdfURL] == "application/pdf")
     }
 
     @available(iOS 16, macOS 13, *)
     @Test("Empty or nil MIME is not recorded", .timeLimit(.minutes(1)))
     func emptyMIMENotRecorded() {
-        let cache = MIMECache()
-        cache.record(nil, for: "https://example.com")
-        cache.record("", for: "https://example.com")
-        #expect(cache.mime(for: "https://example.com") == nil)
+        var cache = MainFrameMIMECache()
+        cache.record(nil, for: htmlURL)
+        cache.record("", for: htmlURL)
+        #expect(cache[htmlURL] == nil)
     }
 
     @available(iOS 16, macOS 13, *)
     @Test("Cache is bounded FIFO — the oldest URL is evicted past the cap", .timeLimit(.minutes(1)))
     func boundedFIFO() {
-        let cache = MIMECache(cap: 2)
-        cache.record("a/a", for: "u1")
-        cache.record("b/b", for: "u2")
-        cache.record("c/c", for: "u3")
-        #expect(cache.mime(for: "u1") == nil)
-        #expect(cache.mime(for: "u2") == "b/b")
-        #expect(cache.mime(for: "u3") == "c/c")
+        let urls = (1...3).map { URL(string: "https://example.com/\($0)")! }
+        var cache = MainFrameMIMECache(capacity: 2)
+        cache.record("a/a", for: urls[0])
+        cache.record("b/b", for: urls[1])
+        cache.record("c/c", for: urls[2])
+        #expect(cache[urls[0]] == nil)
+        #expect(cache[urls[1]] == "b/b")
+        #expect(cache[urls[2]] == "c/c")
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Re-recording a cached URL updates the MIME without double-counting against the cap", .timeLimit(.minutes(1)))
+    func reRecordUpdatesInPlace() {
+        let urls = (1...2).map { URL(string: "https://example.com/\($0)")! }
+        var cache = MainFrameMIMECache(capacity: 2)
+        cache.record("a/a", for: urls[0])
+        cache.record("b/b", for: urls[1])
+        cache.record("a/b", for: urls[0])
+        #expect(cache[urls[0]] == "a/b")
+        #expect(cache[urls[1]] == "b/b")
     }
 }
 

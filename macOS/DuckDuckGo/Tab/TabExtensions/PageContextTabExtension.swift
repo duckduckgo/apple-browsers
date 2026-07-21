@@ -46,11 +46,7 @@ final class PageContextTabExtension {
     private let featureFlagger: FeatureFlagger
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let extractionPixelHandler: PageContextExtractionPixelFiring
-    /// Main-frame MIME types keyed by URL (bounded FIFO). Back/forward cache restores don't re-fire
-    /// `decidePolicy(for navigationResponse:)`, so a single "last response" slot loses the MIME on the way back.
-    private var mainFrameMIMETypes: [URL: String] = [:]
-    private var mainFrameMIMEOrder: [URL] = []
-    private static let maxCachedMainFrameMIMETypes = 100
+    private var mainFrameMIMECache = MainFrameMIMECache()
     private var pendingSettledNavigationURL: URL?
 
     private var extractionResolver = PageContextExtractionResolver()
@@ -417,22 +413,8 @@ final class PageContextTabExtension {
 
     private func preventedAttachReason(for url: URL) -> String? {
         guard let policy = currentAttachabilityPolicy() else { return nil }
-        let mimeType = mainFrameMIMETypes[url]
-        let verdict = policy.verdict(url: url, mimeType: mimeType)
+        let verdict = policy.verdict(url: url, mimeType: mainFrameMIMECache[url])
         return verdict.isAttachable ? nil : (verdict.preventionReason ?? PageContextExtractionOutcome.internalPageCategory)
-    }
-
-    /// Empty/nil MIMEs are ignored — the gate falls back to the URL extension for those.
-    private func recordMainFrameMIME(_ mimeType: String?, for url: URL) {
-        guard let mimeType, !mimeType.isEmpty else { return }
-        if mainFrameMIMETypes[url] == nil {
-            mainFrameMIMEOrder.append(url)
-            if mainFrameMIMEOrder.count > Self.maxCachedMainFrameMIMETypes {
-                let evicted = mainFrameMIMEOrder.removeFirst()
-                mainFrameMIMETypes[evicted] = nil
-            }
-        }
-        mainFrameMIMETypes[url] = mimeType
     }
 
     private func deliverPreventedContext(for url: URL, reason: String, trigger: PageContextExtractionTrigger) {
@@ -724,6 +706,34 @@ final class PageContextTabExtension {
     }
 }
 
+/// Main-frame MIME types keyed by URL (bounded FIFO). Back/forward cache restores don't re-fire
+/// `decidePolicy(for navigationResponse:)`, so a single "last response" slot loses the MIME on the way back.
+struct MainFrameMIMECache {
+    private var mimeTypes: [URL: String] = [:]
+    private var order: [URL] = []
+    private let capacity: Int
+
+    init(capacity: Int = 100) {
+        self.capacity = capacity
+    }
+
+    subscript(url: URL) -> String? {
+        mimeTypes[url]
+    }
+
+    /// Empty/nil MIMEs are ignored — the attachability gate falls back to the URL extension for those.
+    mutating func record(_ mimeType: String?, for url: URL) {
+        guard let mimeType, !mimeType.isEmpty else { return }
+        if mimeTypes[url] == nil {
+            order.append(url)
+            if order.count > capacity {
+                mimeTypes[order.removeFirst()] = nil
+            }
+        }
+        mimeTypes[url] = mimeType
+    }
+}
+
 protocol PageContextProtocol: AnyObject, NavigationResponder {
     /// Appends a user text selection to the sidebar's selection-context list. See the
     /// implementation in `PageContextTabExtension` for buffering/lifecycle semantics.
@@ -779,7 +789,7 @@ extension PageContextTabExtension: NavigationResponder {
     @MainActor
     func decidePolicy(for navigationResponse: NavigationResponse) async -> NavigationResponsePolicy? {
         guard !isLoadedInSidebar, navigationResponse.isForMainFrame else { return .next }
-        recordMainFrameMIME(navigationResponse.response.mimeType, for: navigationResponse.url)
+        mainFrameMIMECache.record(navigationResponse.response.mimeType, for: navigationResponse.url)
         Logger.aiChat.debug("📄 PageContext MIME captured: \(navigationResponse.response.mimeType ?? "nil", privacy: .public) host=\(navigationResponse.url.host ?? "nil", privacy: .public)")
         return .next
     }

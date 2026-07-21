@@ -444,21 +444,26 @@ final class TabCollectionViewModel: NSObject {
 
         shouldReturnToPreviousActiveTab = true
         tabCollection.append(tab: tab)
-        if tab.content == .newtab {
-            NotificationCenter.default.post(name: .newTabPageOpen, object: nil)
-            if isBurner {
-                var persistor = SubscriptionPromoUserDefaultsPersistor(keyValueStore: UserDefaults.standard)
-                if persistor.fireTabVisitCount < SubscriptionPromoConstants.requiredVisitCount {
-                    persistor.fireTabVisitCount += 1
-                }
-            }
-        }
+        handleNewTabPageSideEffects(for: tab)
         let insertionIndex = tabCollection.tabs.indices.index(before: tabCollection.tabs.endIndex)
         if selected {
             selectUnpinnedTab(at: insertionIndex, forceChange: forceChange)
         }
         delegate?.tabCollectionViewModelDidAppend(self, selected: selected)
         return insertionIndex
+    }
+
+    /// Side effects that accompany opening a New Tab Page tab, shared by the append and
+    /// atomic-replace paths.
+    private func handleNewTabPageSideEffects(for tab: Tab) {
+        guard tab.content == .newtab else { return }
+        NotificationCenter.default.post(name: .newTabPageOpen, object: nil)
+        if isBurner {
+            var persistor = SubscriptionPromoUserDefaultsPersistor(keyValueStore: UserDefaults.standard)
+            if persistor.fireTabVisitCount < SubscriptionPromoConstants.requiredVisitCount {
+                persistor.fireTabVisitCount += 1
+            }
+        }
     }
 
     func append(tabs: [AnyTab], andSelect shouldSelectLastTab: Bool) {
@@ -755,6 +760,20 @@ final class TabCollectionViewModel: NSObject {
         } else {
             selectionIndex = nil
         }
+        delegate?.tabCollectionViewModelDidMultipleChanges(self)
+    }
+
+    /// Atomically removes all unpinned tabs and appends `tab`, emitting a single batched change so the
+    /// tab bar reloads instead of animating an individual insertion. Used when burning replaces a
+    /// window's contents with a fresh tab, avoiding a visible flash of the tab being inserted before
+    /// the others are removed.
+    func removeAllTabs(andAppend tab: Tab, forceChange: Bool = false) {
+        guard changesEnabled || forceChange else { return }
+
+        shouldReturnToPreviousActiveTab = true
+        tabCollection.removeAll(andAppend: tab)
+        handleNewTabPageSideEffects(for: tab)
+        selectUnpinnedTab(at: 0, forceChange: forceChange)
         delegate?.tabCollectionViewModelDidMultipleChanges(self)
     }
 

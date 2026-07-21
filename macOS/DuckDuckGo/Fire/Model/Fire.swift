@@ -699,8 +699,10 @@ final class Fire: FireProtocol {
             guard pinnedTabsManagerProvider.pinnedTabsMode == .shared
                     || windowController.mainViewController.tabCollectionViewModel.pinnedTabsManager?.isEmpty ?? false else { continue }
 
-            let inserted = (insertNewTabIfNeeded(into: windowController, with: url) != nil)
-            if !inserted {
+            // Windows we can't keep open are closed now; the ones we keep have their tabs replaced with
+            // a fresh New Tab later in `burnTabs`. We deliberately don't insert a placeholder tab here –
+            // doing so briefly showed an extra New Tab in the tab bar before `burnTabs` replaced it.
+            if !shouldKeepWindowOpenWhenBurning(windowController) {
                 windowController.close()
             }
         }
@@ -732,18 +734,31 @@ final class Fire: FireProtocol {
         }
     }
 
+    /// Whether burning should keep `windowController`'s window open by giving it a fresh New Tab,
+    /// rather than closing the window entirely.
+    @MainActor
+    func shouldKeepWindowOpenWhenBurning(_ windowController: MainWindowController) -> Bool {
+        return !visualizeFireAnimationDecider.isOpenFireWindowByDefaultEnabled
+            && !windowController.mainViewController.isBurner
+            && windowController.mainViewController.tabCollectionViewModel.pinnedTabs.isEmpty
+            && windowControllersManager.lastKeyMainWindowController(where: { !$0.mainViewController.isBurner }) === windowController
+            // don‘t keep an open window for inactive app
+            && self.isAppActiveProvider()
+    }
+
+    /// Builds the replacement New Tab a kept-open window is reset to after burning.
+    @MainActor
+    func makeReplacementNewTab(with customURL: URL? = nil) -> Tab {
+        let newTabContent: Tab.TabContent = customURL.map { .contentFromURL($0, source: .ui) } ?? .newtab
+        return Tab(content: newTabContent, shouldLoadInBackground: false, burnerMode: .regular)
+    }
+
     @MainActor
     func insertNewTabIfNeeded(into windowController: MainWindowController, with customURL: URL? = nil) -> Int? {
         // If closing all Tabs/Windows: Insert a new (Regular) tab to prevent window closing:
-        guard !visualizeFireAnimationDecider.isOpenFireWindowByDefaultEnabled,
-              !windowController.mainViewController.isBurner,
-              windowController.mainViewController.tabCollectionViewModel.pinnedTabs.isEmpty,
-              windowControllersManager.lastKeyMainWindowController(where: { !$0.mainViewController.isBurner }) === windowController,
-              // don‘t keep an open window for inactive app
-              self.isAppActiveProvider() else { return nil }
+        guard shouldKeepWindowOpenWhenBurning(windowController) else { return nil }
 
-        let newTabContent: Tab.TabContent = customURL.map { .contentFromURL($0, source: .ui) } ?? .newtab
-        let newTab = Tab(content: newTabContent, shouldLoadInBackground: false, burnerMode: .regular)
+        let newTab = makeReplacementNewTab(with: customURL)
         let insertionIndex = windowController.mainViewController.tabCollectionViewModel.append(tab: newTab, selected: false, forceChange: true)
 
         return insertionIndex
@@ -1060,12 +1075,14 @@ final class Fire: FireProtocol {
                 let unpinnedTabIDs = tabCollectionViewModel.tabCollection.tabs.map(\.uuid)
                 let pinnedTabIDs = tabCollectionViewModel.pinnedTabsManager?.tabCollection.tabs.map(\.uuid) ?? []
                 closeFloatingAIChatWindows(for: unpinnedTabIDs + pinnedTabIDs)
-                // If closing last Window: Insert a new tab to prevent key window closing:
-                var insertedTabIndex: Int?
-                if windowControllersManager.mainWindowControllers.count == 1 {
-                    insertedTabIndex = insertNewTabIfNeeded(into: windowControllersManager.mainWindowControllers[0])
+                // If closing the last Window, keep it open by replacing its tabs with a fresh New Tab.
+                // This is done as a single atomic update so no intermediate/extra tab is ever shown.
+                if windowControllersManager.mainWindowControllers.count == 1,
+                   shouldKeepWindowOpenWhenBurning(windowControllersManager.mainWindowControllers[0]) {
+                    tabCollectionViewModel.removeAllTabs(andAppend: makeReplacementNewTab(), forceChange: true)
+                } else {
+                    tabCollectionViewModel.removeAllTabs(forceChange: true)
                 }
-                tabCollectionViewModel.removeAllTabs(except: insertedTabIndex, forceChange: true)
                 let result = burnPinnedTabs(in: tabCollectionViewModel)
                 measureError(result)
                 selectPinnedTabIfNeeded(in: tabCollectionViewModel)
@@ -1081,9 +1098,13 @@ final class Fire: FireProtocol {
                 let unpinnedTabIDs = tabCollectionViewModel.tabCollection.tabs.map(\.uuid)
                 let pinnedTabIDs = tabCollectionViewModel.pinnedTabsManager?.tabCollection.tabs.map(\.uuid) ?? []
                 closeFloatingAIChatWindows(for: unpinnedTabIDs + pinnedTabIDs)
-                // If closing all Tabs/Windows: Insert a new tab to prevent key window closing:
-                let insertedTabIndex = insertNewTabIfNeeded(into: windowController, with: customURL)
-                tabCollectionViewModel.removeAllTabs(except: insertedTabIndex, forceChange: true)
+                // If closing all Tabs/Windows, keep the key window open by replacing its tabs with a fresh
+                // New Tab. This is done as a single atomic update so no intermediate/extra tab is ever shown.
+                if shouldKeepWindowOpenWhenBurning(windowController) {
+                    tabCollectionViewModel.removeAllTabs(andAppend: makeReplacementNewTab(with: customURL), forceChange: true)
+                } else {
+                    tabCollectionViewModel.removeAllTabs(forceChange: true)
+                }
                 let result = burnPinnedTabs(in: windowController.mainViewController.tabCollectionViewModel)
                 measureError(result)
                 selectPinnedTabIfNeeded(in: tabCollectionViewModel)

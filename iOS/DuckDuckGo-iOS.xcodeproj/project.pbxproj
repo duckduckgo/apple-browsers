@@ -567,7 +567,9 @@
 		6F23316E2DD52E1B004D102D /* TabSwitcherStaticButtonTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F23316D2DD52E1B004D102D /* TabSwitcherStaticButtonTests.swift */; };
 		6F2BB1A22F59D628004B1DBE /* SafariRedirectHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F4C21B72F598E06003AACBE /* SafariRedirectHandler.swift */; };
 		6F33F3942E786888002E95B1 /* duckduckgo-ai-transition.json in Resources */ = {isa = PBXBuildFile; fileRef = 6F33F3912E786888002E95B1 /* duckduckgo-ai-transition.json */; };
+		6F33F3B42E786888002E95B1 /* duckduckgo-ai-transition-legacy.json in Resources */ = {isa = PBXBuildFile; fileRef = 6F33F3B12E786888002E95B1 /* duckduckgo-ai-transition-legacy.json */; };
 		6F33F3962E7969B1002E95B1 /* duckduckgo-ai-transition-dark.json in Resources */ = {isa = PBXBuildFile; fileRef = 6F33F3952E7969B1002E95B1 /* duckduckgo-ai-transition-dark.json */; };
+		6F33F3B62E7969B1002E95B1 /* duckduckgo-ai-transition-dark-legacy.json in Resources */ = {isa = PBXBuildFile; fileRef = 6F33F3B52E7969B1002E95B1 /* duckduckgo-ai-transition-dark-legacy.json */; };
 		6F33F3982E797C65002E95B1 /* AnimatedDaxLogoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F33F3972E797C65002E95B1 /* AnimatedDaxLogoView.swift */; };
 		6F3529FF2CDCEDFF00A59170 /* OmniBarLoadingStateBearerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F3529FE2CDCEDF700A59170 /* OmniBarLoadingStateBearerTests.swift */; };
 		6F3537A42C4AC140009F8717 /* NewTabPageDaxLogoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F3537A32C4AC140009F8717 /* NewTabPageDaxLogoView.swift */; };
@@ -3274,7 +3276,9 @@
 		6F23316A2DD4E2C4004D102D /* TabSwitcherButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabSwitcherButton.swift; sourceTree = "<group>"; };
 		6F23316D2DD52E1B004D102D /* TabSwitcherStaticButtonTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabSwitcherStaticButtonTests.swift; sourceTree = "<group>"; };
 		6F33F3912E786888002E95B1 /* duckduckgo-ai-transition.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "duckduckgo-ai-transition.json"; sourceTree = "<group>"; };
+		6F33F3B12E786888002E95B1 /* duckduckgo-ai-transition-legacy.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "duckduckgo-ai-transition-legacy.json"; sourceTree = "<group>"; };
 		6F33F3952E7969B1002E95B1 /* duckduckgo-ai-transition-dark.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "duckduckgo-ai-transition-dark.json"; sourceTree = "<group>"; };
+		6F33F3B52E7969B1002E95B1 /* duckduckgo-ai-transition-dark-legacy.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "duckduckgo-ai-transition-dark-legacy.json"; sourceTree = "<group>"; };
 		6F33F3972E797C65002E95B1 /* AnimatedDaxLogoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnimatedDaxLogoView.swift; sourceTree = "<group>"; };
 		6F3529FE2CDCEDF700A59170 /* OmniBarLoadingStateBearerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniBarLoadingStateBearerTests.swift; sourceTree = "<group>"; };
 		6F3537A32C4AC140009F8717 /* NewTabPageDaxLogoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPageDaxLogoView.swift; sourceTree = "<group>"; };
@@ -7132,7 +7136,9 @@
 			isa = PBXGroup;
 			children = (
 				6F33F3952E7969B1002E95B1 /* duckduckgo-ai-transition-dark.json */,
+				6F33F3B52E7969B1002E95B1 /* duckduckgo-ai-transition-dark-legacy.json */,
 				6F33F3912E786888002E95B1 /* duckduckgo-ai-transition.json */,
+				6F33F3B12E786888002E95B1 /* duckduckgo-ai-transition-legacy.json */,
 				6F33F3972E797C65002E95B1 /* AnimatedDaxLogoView.swift */,
 				31B5E8C42E1E64D400EECC1E /* DaxLogoManager.swift */,
 			);
@@ -12390,6 +12396,7 @@
 				84E341A01E2F7EFB00BDBA6F /* LaunchScreen.storyboard in Resources */,
 				F4F7F10C25813FE200045D62 /* 03_Airstream_divided_by_four.json in Resources */,
 				6F33F3962E7969B1002E95B1 /* duckduckgo-ai-transition-dark.json in Resources */,
+				6F33F3B62E7969B1002E95B1 /* duckduckgo-ai-transition-dark-legacy.json in Resources */,
 				C15516062D47D2EF001B94E9 /* success-legacy.json in Resources */,
 				D664C7B72B289AA200CBFA76 /* Subscription.storekit in Resources */,
 				85AE668E2097206E0014CF04 /* NotificationView.xib in Resources */,
@@ -12440,6 +12447,7 @@
 				C17BDC702E16D9290082485E /* password-keys.json in Resources */,
 				310C24E22E6B6ACB00D5A372 /* toggle-ios-light.json in Resources */,
 				6F33F3942E786888002E95B1 /* duckduckgo-ai-transition.json in Resources */,
+				6F33F3B42E786888002E95B1 /* duckduckgo-ai-transition-legacy.json in Resources */,
 				9830A06325ED0DB900DB64DE /* BrowsingMenu.xcassets in Resources */,
 				98EF177D21837E35006750C1 /* new_tab_dark.json in Resources */,
 				9FADFCB92F68D54600CA16F7 /* Rebranded-AddToDock-tutorial.mp4 in Resources */,

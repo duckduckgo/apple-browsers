@@ -36,7 +36,7 @@ struct DefaultSubscriptionOnboardingViewFactory: SubscriptionOnboardingViewFacto
         case .vpn:
             return AnyView(SubscriptionOnboardingVPNActivationView().subscriptionOnboardingNavigationContainer())
         case .duckAI:
-            return AnyView(placeholder(for: section))
+            return AnyView(SubscriptionOnboardingDuckAIView().subscriptionOnboardingNavigationContainer())
         }
     }
 
@@ -50,12 +50,6 @@ struct DefaultSubscriptionOnboardingViewFactory: SubscriptionOnboardingViewFacto
 }
 
 private extension DefaultSubscriptionOnboardingViewFactory {
-    func placeholder(for section: SubscriptionOnboardingSection) -> some View {
-        SubscriptionOnboardingBaseView {
-            Text(verbatim: "\(section)")
-        }
-    }
-
     func infoPlaceholder(for item: SubscriptionOnboardingChecklistItem, onClose: @escaping () -> Void) -> some View {
         SubscriptionOnboardingBaseView(navigationButton: .close(onClose)) {
             Text(verbatim: "\(item)")

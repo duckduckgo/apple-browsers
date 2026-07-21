@@ -146,6 +146,8 @@ public extension DesignSystemImages {
         }
 
         public enum Size16 {
+            public static var aiGeneral: DesignSystemImage { .init(resource: .aiGeneral16) }
+            public static var priceTag: DesignSystemImage { .init(resource: .priceTag16) }
             public static var accessibility: DesignSystemImage { .init(resource: .accessibility16) }
             public static var add: DesignSystemImage { .init(resource: .add16) }
             public static var addToHome: DesignSystemImage { .init(resource: .addToHome16) }

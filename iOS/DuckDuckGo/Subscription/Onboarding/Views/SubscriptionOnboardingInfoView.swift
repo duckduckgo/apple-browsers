@@ -89,7 +89,8 @@ extension SubscriptionOnboardingInfoContent {
     static func content(for item: SubscriptionOnboardingChecklistItem) -> SubscriptionOnboardingInfoContent? {
         switch item {
         case .vpn: return .vpn
-        case .idtr, .duckAI, .pir: return nil
+        case .duckAI: return .duckAI
+        case .idtr, .pir: return nil
         }
     }
 
@@ -100,6 +101,15 @@ extension SubscriptionOnboardingInfoContent {
         explanation: UserText.subscriptionOnboardingVPNInfoExplanation,
         features: VPNInfoFeature.allCases.map {
             Feature(icon: $0.icon, title: $0.title, body: $0.body, showsPlatformGrid: $0 == .devices)
+        })
+
+    /// The Duck.ai "Learn More" content.
+    static let duckAI = SubscriptionOnboardingInfoContent(
+        visual: .image(Image(.onboardingDuckAI128)),
+        title: UserText.subscriptionOnboardingDuckAIInfoTitle,
+        explanation: UserText.subscriptionOnboardingDuckAIInfoExplanation,
+        features: DuckAIInfoFeature.allCases.map {
+            Feature(icon: $0.icon, title: $0.title, body: $0.body)
         })
 }
 
@@ -150,6 +160,41 @@ private enum VPNInfoFeature: CaseIterable {
         case .secureDNS: Image(uiImage: DesignSystemImages.Glyphs.Size16.deviceLaptopLock)
         case .alwaysOn: Image(uiImage: DesignSystemImages.Glyphs.Size16.checkCircle)
         case .wireGuard: Image(uiImage: DesignSystemImages.Glyphs.Size16.lock)
+        }
+    }
+}
+
+/// The Duck.ai features listed on the Duck.ai info sheet.
+private enum DuckAIInfoFeature: CaseIterable {
+    case models
+    case privacy
+    case price
+    case access
+
+    var title: String {
+        switch self {
+        case .models: UserText.subscriptionOnboardingDuckAIInfoModelsTitle
+        case .privacy: UserText.subscriptionOnboardingDuckAIInfoPrivacyTitle
+        case .price: UserText.subscriptionOnboardingDuckAIInfoPriceTitle
+        case .access: UserText.subscriptionOnboardingDuckAIInfoAccessTitle
+        }
+    }
+
+    var body: String {
+        switch self {
+        case .models: UserText.subscriptionOnboardingDuckAIInfoModelsBody
+        case .privacy: UserText.subscriptionOnboardingDuckAIInfoPrivacyBody
+        case .price: UserText.subscriptionOnboardingDuckAIInfoPriceBody
+        case .access: UserText.subscriptionOnboardingDuckAIInfoAccessBody
+        }
+    }
+
+    var icon: Image {
+        switch self {
+        case .models: Image(uiImage: DesignSystemImages.Glyphs.Size16.aiGeneral)
+        case .privacy: Image(uiImage: DesignSystemImages.Glyphs.Size16.shield)
+        case .price: Image(uiImage: DesignSystemImages.Glyphs.Size16.priceTag)
+        case .access: Image(uiImage: DesignSystemImages.Glyphs.Size16.globe)
         }
     }
 }

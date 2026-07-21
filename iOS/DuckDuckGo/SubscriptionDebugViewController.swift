@@ -129,6 +129,7 @@ final class SubscriptionDebugViewController: UITableViewController {
 
     enum OnboardingRows: Int, CaseIterable {
         case vpn
+        case duckAI
     }
 
     private var notificationAuthStatusText: String = "Loading"
@@ -321,6 +322,9 @@ final class SubscriptionDebugViewController: UITableViewController {
             case .vpn:
                 cell.textLabel?.text = "VPN"
                 cell.accessoryType = .disclosureIndicator
+            case .duckAI:
+                cell.textLabel?.text = "Duck.ai"
+                cell.accessoryType = .disclosureIndicator
             case .none:
                 break
             }
@@ -395,6 +399,7 @@ final class SubscriptionDebugViewController: UITableViewController {
         case .onboarding:
             switch OnboardingRows(rawValue: indexPath.row) {
             case .vpn: showVPNOnboarding()
+            case .duckAI: showDuckAIOnboarding()
             default: break
             }
         case .none:
@@ -845,6 +850,13 @@ final class SubscriptionDebugViewController: UITableViewController {
             rootView: SubscriptionOnboardingVPNActivationView()
                 .subscriptionOnboardingNavigationContainer()
                 .graphicLottieRenderer(Self.onboardingLottieRenderer))
+        present(hostingController, animated: true)
+    }
+
+    private func showDuckAIOnboarding() {
+        let hostingController = UIHostingController(
+            rootView: SubscriptionOnboardingDuckAIView()
+                .subscriptionOnboardingNavigationContainer())
         present(hostingController, animated: true)
     }
 

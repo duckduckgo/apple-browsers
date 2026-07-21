@@ -59,6 +59,28 @@ extension UserText {
 
     public static let subscriptionOnboardingDuckAIModelSelectedValue = NotLocalizedString("subscription.onboarding.duck-ai.model.selected.value", value: "Selected", comment: "VoiceOver value announced for the currently selected model row in the Duck.ai model picker")
 
+    public static let subscriptionOnboardingDuckAIActivationTitle = NotLocalizedString("subscription.onboarding.duck-ai.activation.title", value: "Duck.ai Private Chat", comment: "Duck.ai onboarding screen title")
+    public static let subscriptionOnboardingDuckAIActivationExplanation = NotLocalizedString("subscription.onboarding.duck-ai.activation.explanation", value: "Your subscription unlocks premium models. Chats are anonymized by us and never used to train AI. [Learn More](learn-more)", comment: "Duck.ai onboarding screen subtitle explaining the subscription unlocks premium models. The bracketed 'Learn More' is a tappable link to the Duck.ai info screen")
+    public static let subscriptionOnboardingDuckAIActivationStartButton = NotLocalizedString("subscription.onboarding.duck-ai.activation.start.button", value: "Start Duck.ai Chat", comment: "Duck.ai onboarding primary button that opens a chat with the selected model")
+    public static let subscriptionOnboardingDuckAIActivationSkipButton = NotLocalizedString("subscription.onboarding.duck-ai.activation.skip.button", value: "Not Now", comment: "Duck.ai onboarding secondary button that skips starting a chat")
+
+    public static let subscriptionOnboardingDuckAIInfoTitle = NotLocalizedString("subscription.onboarding.duck-ai.info.title", value: "Chat privately with advanced AI models", comment: "Duck.ai info sheet title")
+    public static let subscriptionOnboardingDuckAIInfoExplanation = NotLocalizedString("subscription.onboarding.duck-ai.info.explanation", value: "Duck.ai lets you chat privately with advanced AI models, your conversations are anonymized by us and never used to train AI.", comment: "Duck.ai info sheet subtitle")
+
+    public static let subscriptionOnboardingDuckAIInfoModelsTitle = NotLocalizedString("subscription.onboarding.duck-ai.info.models.title", value: "Advanced AI models from OpenAI, Anthropic, and others", comment: "Duck.ai info sheet feature card title: advanced models")
+    public static let subscriptionOnboardingDuckAIInfoModelsBody = NotLocalizedString("subscription.onboarding.duck-ai.info.models.body", value: "Subscriber-exclusive GPT-5.4 and Claude Sonnet 4.6 are ideal for complex tasks like advanced coding, ideation, problem solving, and reasoning, all with greater accuracy and speed. We regularly add support for new models soon after they're released.", comment: "Duck.ai info sheet feature card description: advanced models")
+
+    public static let subscriptionOnboardingDuckAIInfoPrivacyTitle = NotLocalizedString("subscription.onboarding.duck-ai.info.privacy.title", value: "Active Privacy Protection on every chat", comment: "Duck.ai info sheet feature card title: privacy protection")
+    public static let subscriptionOnboardingDuckAIInfoPrivacyBody = NotLocalizedString("subscription.onboarding.duck-ai.info.privacy.body", value: "Your chats are anonymized by DuckDuckGo and are never used to train AI models.", comment: "Duck.ai info sheet feature card description: privacy protection")
+
+    public static let subscriptionOnboardingDuckAIInfoPriceTitle = NotLocalizedString("subscription.onboarding.duck-ai.info.price.title", value: "Premium AI models without a premium price", comment: "Duck.ai info sheet feature card title: price")
+    public static let subscriptionOnboardingDuckAIInfoPriceBody = NotLocalizedString("subscription.onboarding.duck-ai.info.price.body", value: "Subscribers get multiple AI models for cheaper than the cost of subscribing to each model individually from the model providers.", comment: "Duck.ai info sheet feature card description: price")
+
+    public static let subscriptionOnboardingDuckAIInfoAccessTitle = NotLocalizedString("subscription.onboarding.duck-ai.info.access.title", value: "Access from any browser, on any device", comment: "Duck.ai info sheet feature card title: access anywhere")
+    public static let subscriptionOnboardingDuckAIInfoAccessBody = NotLocalizedString("subscription.onboarding.duck-ai.info.access.body", value: "You can access Duck.ai's advanced AI models in any web browser by activating your subscription in Duck.ai settings. Duck.ai is also built in to the DuckDuckGo browser, giving you easy access to Duck.ai while browsing.", comment: "Duck.ai info sheet feature card description: access anywhere")
+
+    public static let subscriptionOnboardingDuckAIChatCloseButton = NotLocalizedString("subscription.onboarding.duck-ai.chat.close.button", value: "Close", comment: "Accessibility label for the button that closes the Duck.ai web chat opened from onboarding")
+
     public static let subscriptionOnboardingFreeTrialTitlePrefix = NotLocalizedString("subscription.onboarding.free-trial.title.prefix", value: "Day ", comment: "Free-trial calendar card title text before the current trial-day number, e.g. the 'Day ' in 'Day 3 of your free trial'")
     public static let subscriptionOnboardingFreeTrialTitleSuffix = NotLocalizedString("subscription.onboarding.free-trial.title.suffix", value: " of your free trial", comment: "Free-trial calendar card title text after the current trial-day number, e.g. the ' of your free trial' in 'Day 3 of your free trial'")
     public static let subscriptionOnboardingFreeTrialBillingFormat = NotLocalizedString("subscription.onboarding.free-trial.billing", value: "Billing starts on %@", comment: "Free-trial calendar card billing line. %@ is the formatted billing start date, e.g. 'May 7, 2026'")

@@ -55,6 +55,7 @@ final class DBPService: NSObject {
 
 #if DEBUG
         let launchOptionsHandler = LaunchOptionsHandler()
+        // Seed cached profile state so UI tests can verify deferred Secure Vault initialization skip paths.
         if let profileStateRawValue = launchOptionsHandler.pirProfileStateOverride,
            let profileState = DBPProfileState(rawValue: profileStateRawValue) {
             profileStateManager.setProfileStateForTesting(profileState)

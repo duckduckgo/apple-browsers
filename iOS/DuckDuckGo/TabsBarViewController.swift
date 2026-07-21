@@ -472,7 +472,9 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
 
     private func configureGestures() {
         longPressTabGesture.addTarget(self, action: #selector(handleLongPressTabGesture))
-        longPressTabGesture.minimumPressDuration = 0.1
+        // Long enough that a swipe moves past the gesture's slop and fails it (so the strip scrolls),
+        // short enough to still precede the context menu's own long-press.
+        longPressTabGesture.minimumPressDuration = 0.15
         longPressTabGesture.delegate = self
         collectionView.addGestureRecognizer(longPressTabGesture)
 

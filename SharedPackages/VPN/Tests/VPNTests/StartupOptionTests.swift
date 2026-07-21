@@ -219,6 +219,58 @@ final class StartupOptionsTests: XCTestCase {
         XCTAssertFalse(other.isOrphanProxyDetectionEnabled)
     }
 
+    func testVPNSettingsSnapshotRoundTripsEnforceRoutesFlag() throws {
+        let snapshot = VPNSettingsSnapshot(
+            registrationKeyValidity: .custom(3600),
+            selectedEnvironment: .production,
+            selectedServer: .automatic,
+            selectedLocation: .nearest,
+            dnsSettings: .ddg(blockRiskyDomains: true),
+            excludeLocalNetworks: false,
+            enforceRoutes: false
+        )
+
+        let decoded = try JSONDecoder().decode(VPNSettingsSnapshot.self, from: JSONEncoder().encode(snapshot))
+
+        XCTAssertFalse(decoded.enforceRoutes)
+    }
+
+    func testVPNSettingsSnapshotDefaultsEnforceRoutesWhenMissingFromPayload() throws {
+        // Simulate a snapshot persisted by an older version that predates carrying the flag.
+        let snapshot = VPNSettingsSnapshot(
+            registrationKeyValidity: .custom(3600),
+            selectedEnvironment: .production,
+            selectedServer: .automatic,
+            selectedLocation: .nearest,
+            dnsSettings: .ddg(blockRiskyDomains: true),
+            excludeLocalNetworks: false
+        )
+        let encoded = try JSONEncoder().encode(snapshot)
+        var json = try XCTUnwrap(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+        json.removeValue(forKey: "enforceRoutes")
+        let legacyData = try JSONSerialization.data(withJSONObject: json)
+
+        let decoded = try JSONDecoder().decode(VPNSettingsSnapshot.self, from: legacyData)
+
+        XCTAssertTrue(decoded.enforceRoutes)
+    }
+
+    func testVPNSettingsSnapshotCarriesEnforceRoutesFromSettings() {
+        let sourceDefaults = UserDefaults(suiteName: "enforce-routes-source-test")!
+        defer { sourceDefaults.removePersistentDomain(forName: "enforce-routes-source-test") }
+        let vpnSettings = VPNSettings(defaults: sourceDefaults)
+        vpnSettings.enforceRoutes = false
+
+        let snapshot = VPNSettingsSnapshot(from: vpnSettings)
+        XCTAssertFalse(snapshot.enforceRoutes)
+
+        let targetDefaults = UserDefaults(suiteName: "enforce-routes-apply-test")!
+        defer { targetDefaults.removePersistentDomain(forName: "enforce-routes-apply-test") }
+        let other = VPNSettings(defaults: targetDefaults)
+        snapshot.applyTo(other)
+        XCTAssertFalse(other.enforceRoutes)
+    }
+
     func testCorruptedVPNSettingsResultInResetOption() {
         let corruptedData = "invalid json data".data(using: .utf8)!
 

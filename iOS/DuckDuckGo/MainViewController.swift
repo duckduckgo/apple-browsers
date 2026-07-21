@@ -769,7 +769,7 @@ class MainViewController: UIViewController {
 
         // Automation bypass: a UI-test override can mark onboarding already-completed without ever
         // calling onboardingCompleted(controller:), so apply the rollout Duck Player defaults here too.
-        if case .overridden(.uiTests(completed: true)) = onboardingStatus {
+        if case .overridden(.uiTests(completed: true)) = onboardingStatus, ProcessInfo.isRunningUITests {
             appSettings.applyAdBlockingRolloutDuckPlayerDefaultsIfNeeded(rolloutActive: adBlockingAvailability.areAdBlockingDefaultsActive)
         }
 
@@ -927,26 +927,27 @@ class MainViewController: UIViewController {
         if !viewCoordinator.logoContainer.isHidden,
            self.tabManager.current()?.link == nil,
            let tab = self.tabManager.currentTabsModel.currentTab {
-            // Home screen with logo
+            // Preview is optional; run completion even if the snapshot fails so the switcher opens on the first tap.
             if let image = viewCoordinator.logoContainer.createImageSnapshot(inBounds: viewCoordinator.contentContainer.frame) {
                 previewsSource.update(preview: image, forTab: tab)
-                completion?()
             }
+            completion?()
 
         } else if let currentTab = self.tabManager.current(), currentTab.link != nil {
             // Web view
             currentTab.preparePreview(completion: { image in
-                guard let image else { return }
-                self.previewsSource.update(preview: image,
-                                           forTab: currentTab.tabModel)
+                if let image {
+                    self.previewsSource.update(preview: image,
+                                               forTab: currentTab.tabModel)
+                }
                 completion?()
             })
         } else if let tab = self.tabManager.currentTabsModel.currentTab {
             // Favorites, etc
             if let image = viewCoordinator.contentContainer.createImageSnapshot() {
                 previewsSource.update(preview: image, forTab: tab)
-                completion?()
             }
+            completion?()
         } else {
             completion?()
         }
@@ -1080,11 +1081,11 @@ class MainViewController: UIViewController {
         )
     }
 
-    func presentNetworkProtectionStatusSettingsModal(origin: SubscriptionFunnelOrigin) {
+    func presentNetworkProtectionStatusSettingsModal(origin: SubscriptionFunnelOrigin, scrollToStrictRouting: Bool = false) {
         Task {
             if let canShowVPNInUI = try? await subscriptionManager.isFeatureIncludedInSubscription(.networkProtection),
                canShowVPNInUI {
-                segueToVPN()
+                segueToVPN(scrollToStrictRouting: scrollToStrictRouting)
             } else {
                 segueToDuckDuckGoSubscription(origin: origin.rawValue)
             }
@@ -1410,7 +1411,10 @@ class MainViewController: UIViewController {
     @objc func refreshViewsBasedOnDuckPlayerPresentation(notification: Notification) {
         guard let isVisible = notification.userInfo?[DuckPlayerNativeUIPresenter.NotificationKeys.isVisible] as? Bool else { return }
         duckPlayerEntryPointVisible = isVisible
-        refreshViewsBasedOnAddressBarPosition(appSettings.currentAddressBarPosition)
+        // Pill visibility only drives the omnibar separator. A full address-bar refresh here would
+        // clobber scroll-hidden chrome (the bar reappears over the floating capsule) and disrupt an
+        // active UTI / the NTP.
+        updateChromeForDuckPlayer()
     }
 
     func refreshViewsBasedOnAddressBarPosition(_ position: AddressBarPosition) {
@@ -1513,6 +1517,11 @@ class MainViewController: UIViewController {
         switch position {
         case .top: break // no-op
         case .bottom:
+            // Re-assert bottom-bar spacing so the field isn't stuck in the top-glass (clear) state.
+            // A Duck Player round-trip can leave `isUsingSmallTopSpacing` stale, dropping the field's
+            // opaque fill (and its contrast) until restart.
+            viewCoordinator.omniBar.adjust(for: .bottom)
+            viewCoordinator.omniBar.barView.restoreFloatingFieldAppearance()
             // Use higher delays then refreshViewsBasedOnAddressBarPosition
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.31) {
                 if self.duckPlayerEntryPointVisible {
@@ -2682,11 +2691,12 @@ class MainViewController: UIViewController {
         }
     }
 
-    func dismissOmniBar() {
+    /// - Parameter animated: animate the UTI collapse; pass `false` when a full-screen surface (tab switcher / new tab) immediately follows.
+    func dismissOmniBar(animated: Bool = true) {
         hideSuggestionTray()
         teardownPopoverSuggestions()
         viewCoordinator.omniBar.endEditing()
-        deactivateUnifiedToggleInputOmnibarSession()
+        deactivateUnifiedToggleInputOmnibarSession(animated: animated)
         refreshOmniBar()
     }
 
@@ -3262,8 +3272,8 @@ class MainViewController: UIViewController {
             ViewHighlighter.hideAll()
         }
         daxDialogsManager.fireButtonPulseCancelled()
-        // Reset omnibar editing state before creating a new tab.
-        dismissOmniBar()
+        // Tear down active editing before building the new tab; non-animated so its collapse doesn't race the new tab's focus animation.
+        dismissOmniBar(animated: false)
         hideNotificationBarIfBrokenSitePromptShown()
         currentTab?.aiChatContextualSheetCoordinator.dismissSheet()
 
@@ -4227,6 +4237,7 @@ extension MainViewController: BrowserChromeDelegate {
     }
 
     var canHideBars: Bool {
+        if currentTab?.isLoading == true { return false }
         // Keep bars shown on the error page: the webView is hidden, so scroll can't self-heal a stuck-hidden bar.
         if currentTab?.isError == true { return false }
         return !shouldPinChrome && !daxDialogsManager.shouldShowFireButtonPulse
@@ -5005,8 +5016,8 @@ extension MainViewController: OmniBarDelegate {
         }
     }
 
-    func performCancel() {
-        dismissOmniBar()
+    func performCancel(animated: Bool = true) {
+        dismissOmniBar(animated: animated)
         omniBar.cancel()
         hideSuggestionTray()
         themeColorManager.updateThemeColor()
@@ -5050,21 +5061,18 @@ extension MainViewController: OmniBarDelegate {
         ])
         guard !duckAIFireOnboardingFlow.controlsLocked else { return }
         postIdleSessionInstrumentation.sessionEnded(reason: .tabSwitcherSelected)
-        performCancel()
         newTab()
     }
 
     private func newFireTabLongPressMenuAction() {
         postIdleSessionInstrumentation.sessionEnded(reason: .tabSwitcherSelected)
         tabManager.setBrowsingMode(.fire, source: .longPressTabsIcon)
-        performCancel()
         newTab()
     }
 
     private func newNormalTabLongPressMenuAction() {
         postIdleSessionInstrumentation.sessionEnded(reason: .tabSwitcherSelected)
         tabManager.setBrowsingMode(.normal, source: .longPressTabsIcon)
-        performCancel()
         newTab()
     }
 
@@ -5780,6 +5788,10 @@ extension MainViewController: NewTabPageControllerDelegate {
 
 extension MainViewController: TabDelegate {
 
+    func searchToken(for tab: TabViewController) -> String? {
+        searchTokenFetcher.retrieveToken()
+    }
+
     var isEmailProtectionSignedIn: Bool {
         emailManager.isSignedIn
     }
@@ -6070,6 +6082,10 @@ extension MainViewController: TabDelegate {
 
     }
 
+    func tab(_ tab: TabViewController, didRequestReopenClosedTabAt url: URL) {
+        self.tab(tab, didRequestNewTabForUrl: url, openedByPage: true, inheritingAttribution: nil)
+    }
+
     func tab(_ tab: TabViewController, didChangePrivacyInfo privacyInfo: PrivacyInfo?) {
         if currentTab == tab {
             viewCoordinator.omniBar.updatePrivacyIcon(for: privacyInfo)
@@ -6345,40 +6361,6 @@ extension MainViewController: TabDelegate {
 
 }
 
-// MARK: - AIChatHistoryViewModelDelegate
-
-extension MainViewController: AIChatHistoryViewModelDelegate {
-
-    func viewModelDidRequestOpenNewChat() {
-        dismiss(animated: true) { [weak self] in
-            self?.openAIChat()
-        }
-    }
-
-    func viewModelDidRequestOpenChat(chatId: String) {
-        let url = aiChatSettings.aiChatURL.withChatID(chatId)
-        dismiss(animated: true) { [weak self] in
-            self?.onChatHistorySelected(url: url)
-        }
-    }
-
-    func viewModelDidExportChat(filename: String) {
-        let message = DownloadActionMessageViewHelper.makeDownloadFinishedMessage(forFilename: filename)
-        let addressBarBottom = appSettings.currentAddressBarPosition.isBottom
-        ActionMessageView.present(
-            message: message,
-            numberOfLines: 2,
-            actionTitle: UserText.actionGenericShow,
-            presentationLocation: .withBottomBar(andAddressBarBottom: addressBarBottom),
-            onAction: { [weak self] in
-                self?.dismiss(animated: true) { [weak self] in
-                    self?.segueToDownloads()
-                }
-            }
-        )
-    }
-}
-
 extension MainViewController: TabSwitcherDelegate {
 
     func tabSwitcher(_ tabSwitcher: TabSwitcherViewController, didFinishWithSelectedTab tab: Tab?) {
@@ -6606,7 +6588,8 @@ extension MainViewController: TabSwitcherButtonDelegate {
 
         performActionIfAITab { DailyPixel.fireDailyAndCount(pixel: .aiChatTabSwitcherOpened) }
 
-        performCancel()
+        // Snap the UTI away so its collapse doesn't overlap the tab switcher segue (non-animated dismiss restores resting layout synchronously).
+        performCancel(animated: false)
         showTabSwitcher()
     }
 
@@ -6710,7 +6693,17 @@ extension MainViewController {
                 self.showKeyboardAfterFireButton = showKeyboardAfterFireButton
             }
 
-            self.daxDialogsManager.clearedBrowserData()
+            // The NTP's viewDidAppear may have fired during the fire animation and already called
+            // nextHomeScreenMessageNew(), setting currentHomeSpec (e.g. to .final for the "High five!"
+            // dialog). Calling clearedBrowserData() unconditionally would reset currentHomeSpec to nil,
+            // making isShowingContextualOnboardingDialog return false and allowing the subscription promo
+            // to appear on top of the pending dialog when the user backgrounds and foregrounds.
+            //
+            // When a home spec is already set, the browsing context was already cleared inside
+            // nextHomeScreenMessageNew(); skip the redundant call here.
+            if !self.daxDialogsManager.isShowingContextualOnboardingDialog {
+                self.daxDialogsManager.clearedBrowserData()
+            }
         }
     }
     

@@ -22,3 +22,8 @@
 /* The body of the notification shown when VPN connects successfully after snooze with the city + state/country as formatted parameter */
 "network.protection.success.notification.subtitle.snooze.ended.including.serverLocation" = "Amânarea VPN a luat sfârșit. Se dirijează traficul dispozitivului prin %@.";
 
+/* The body of the notification reminding the user to turn the VPN Strict routing setting back on */
+"network.protection.strict.routing.reminder.notification.body" = "Este posibil ca o parte din trafic să ocolească VPN-ul în timp ce acesta este dezactivat. Direcționarea strictă este recomandată pentru rețelele publice.";
+
+/* The title of the notification reminding the user to turn the VPN Strict routing setting back on */
+"network.protection.strict.routing.reminder.notification.title" = "Direcționarea strictă este DEZACTIVATĂ";

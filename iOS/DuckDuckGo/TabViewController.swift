@@ -144,6 +144,16 @@ class TabViewController: UIViewController {
             delegate?.tabLoadingStateDidChange(tab: self)
         }
     }
+
+    /// URL of a tab this tab opened that was just closed via the back button. When set, the forward
+    /// button re-opens it (only if the web view has no forward entry). Cleared once consumed or when
+    /// this tab navigates elsewhere.
+    var reopenableClosedTabURL: URL? {
+        didSet {
+            guard reopenableClosedTabURL != oldValue else { return }
+            delegate?.tabLoadingStateDidChange(tab: self)
+        }
+    }
     
     weak var delegate: TabDelegate?
     var aiChatContentHandlingDelegate: AIChatContentHandlingDelegate? {
@@ -1306,6 +1316,9 @@ class TabViewController: UIViewController {
             }
 
         case #keyPath(WKWebView.url):
+            // Cleared here, so we act on same-document navigation too.
+            reopenableClosedTabURL = nil
+
             // A short delay is required here, because the URL takes some time
             // to propagate to the webView.url property accessor and might not
             // be immediately available in the observer
@@ -1476,7 +1489,7 @@ class TabViewController: UIViewController {
 
         // Clear navigation error when going back
         lastError = nil
-        
+
         if let url = url, url.isDuckPlayer {
             webView.stopLoading()
             if webView.canGoBack {
@@ -1486,6 +1499,7 @@ class TabViewController: UIViewController {
                 return
             }
             if openingTab != nil {
+                stashReopenableStateOnOpener()
                 delegate?.tabDidRequestClose(self)
                 return
             }
@@ -1510,11 +1524,18 @@ class TabViewController: UIViewController {
         }
 
         if openingTab != nil {
+            stashReopenableStateOnOpener()
             delegate?.tabDidRequestClose(self)
         }
-        
+
     }
-    
+
+    /// Records the closed tab's URL on the opener so its forward button can re-open it.
+    private func stashReopenableStateOnOpener() {
+        guard let openingTab else { return }
+        openingTab.reopenableClosedTabURL = webView.url
+    }
+
     func goForward() {
         addressBarURLFilter.beginUserNavigation()
         dismissJSAlertIfNeeded()
@@ -1523,7 +1544,12 @@ class TabViewController: UIViewController {
         lastError = nil
 
         if webView.goForward() != nil {
+            reopenableClosedTabURL = nil
             duckPlayerNavigationHandler.handleGoForward(webView: webView)
+            chromeDelegate?.omniBar.endEditing()
+        } else if let reopenableClosedTabURL {
+            self.reopenableClosedTabURL = nil
+            delegate?.tab(self, didRequestReopenClosedTabAt: reopenableClosedTabURL)
             chromeDelegate?.omniBar.endEditing()
         }
     }
@@ -2767,14 +2793,18 @@ extension TabViewController: WKNavigationDelegate {
             }
         }
 
+        // Compose the synchronous main-frame request mutations (referrer trimming -> GPC -> search-token
+        // signals) in one pass and reload at most once.
+        var modifiedRequest = navigationAction.request
+        var didModifyRequest = false
+
         if navigationAction.isTargetingMainFrame(),
            !(navigationAction.request.url?.isCustomURLScheme() ?? false),
            navigationAction.navigationType != .backForward,
-           let newRequest = referrerTrimming.trimReferrer(forNavigation: navigationAction,
-                                                          originUrl: webView.url ?? navigationAction.sourceFrame.webView?.url) {
-            wrappedHandler(.cancel)
-            load(urlRequest: newRequest)
-            return
+           let trimmed = referrerTrimming.trimReferrer(forNavigation: navigationAction,
+                                                       originUrl: webView.url ?? navigationAction.sourceFrame.webView?.url) {
+            modifiedRequest = trimmed
+            didModifyRequest = true
         }
 
         if navigationAction.isTargetingMainFrame(),
@@ -2782,9 +2812,30 @@ extension TabViewController: WKNavigationDelegate {
            !navigationAction.shouldDownload,
            !(navigationAction.request.url?.isCustomURLScheme() ?? false),
            navigationAction.navigationType != .backForward,
-           let request = requestForDoNotSell(basedOn: navigationAction.request) {
+           let gpcRequest = requestForDoNotSell(basedOn: modifiedRequest) {
+            modifiedRequest = gpcRequest
+            didModifyRequest = true
+        }
+
+        // Attach Search Token experiment signals (dindexexp param + token header) to SERP navigations.
+        // Enrolled devices only, skipping back/forward so we don't wipe forward history.
+        if navigationAction.isTargetingMainFrame(),
+           navigationAction.navigationType != .backForward,
+           let url = navigationAction.request.url,
+           SerpSearchTokenInterceptor.isSerpURL(url),
+           let cohort = featureFlagger.assignedCohort(for: FeatureFlag.searchTokenExperiment) as? FeatureFlag.SearchTokenExperimentCohort {
+            let token = cohort == .treatment ? delegate?.searchToken(for: self) : nil
+            if let signalled = SerpSearchTokenInterceptor.signalledRequest(for: modifiedRequest,
+                                                                           cohort: cohort,
+                                                                           token: token) {
+                modifiedRequest = signalled
+                didModifyRequest = true
+            }
+        }
+
+        if didModifyRequest {
             wrappedHandler(.cancel)
-            load(urlRequest: request)
+            load(urlRequest: modifiedRequest)
             return
         }
 
@@ -3192,8 +3243,7 @@ extension TabViewController {
             let persistICS = FilePreviewHelper.shouldPersistInDownloads(
                 mimeType: MIMEType(from: navigationResponse.response.mimeType),
                 url: navigationResponse.response.url,
-                filename: navigationResponse.response.suggestedFilename,
-                featureFlagger: featureFlagger
+                filename: navigationResponse.response.suggestedFilename
             )
             do {
                 if let download = try downloadManager.makeDownload(navigationResponse: navigationResponse,
@@ -3404,8 +3454,7 @@ extension TabViewController {
               !download.temporary,
               !FilePreviewHelper.handlesDownloadNatively(mimeType: download.mimeType,
                                                          url: download.url,
-                                                         filename: download.filename,
-                                                         featureFlagger: featureFlagger)
+                                                         filename: download.filename)
         else { return }
 
         let attributedMessage = DownloadActionMessageViewHelper.makeDownloadStartedMessage(for: download)
@@ -3440,8 +3489,7 @@ extension TabViewController {
         DispatchQueue.main.async {
             let handledNatively = FilePreviewHelper.handlesDownloadNatively(mimeType: download.mimeType,
                                                                             url: download.location,
-                                                                            filename: download.filename,
-                                                                            featureFlagger: self.featureFlagger)
+                                                                            filename: download.filename)
             if !download.temporary && !handledNatively {
                 let attributedMessage = DownloadActionMessageViewHelper.makeDownloadFinishedMessage(for: download)
                 let addressBarBottom = self.appSettings.currentAddressBarPosition.isBottom
@@ -3461,12 +3509,11 @@ extension TabViewController {
     private func previewDownloadedFileIfNecessary(_ download: Download) {
         let canAutoPreview = FilePreviewHelper.canAutoPreview(mimeType: download.mimeType,
                                                               url: download.location,
-                                                              filename: download.filename,
-                                                              featureFlagger: featureFlagger)
+                                                              filename: download.filename)
         guard let delegate = self.delegate,
               delegate.tabCheckIfItsBeingCurrentlyPresented(self),
               canAutoPreview,
-              let fileHandler = FilePreviewHelper.fileHandlerForDownload(download, viewController: self, featureFlagger: featureFlagger)
+              let fileHandler = FilePreviewHelper.fileHandlerForDownload(download, viewController: self)
         else { return }
 
         if mostRecentAutoPreviewDownloadID == download.id {
@@ -4955,7 +5002,7 @@ extension TabViewController: Navigatable {
 
     public var canGoForward: Bool {
         let webViewCanGoForward = webView.canGoForward
-        return webViewCanGoForward && !isError
+        return (webViewCanGoForward && !isError) || reopenableClosedTabURL != nil
     }
 
 }

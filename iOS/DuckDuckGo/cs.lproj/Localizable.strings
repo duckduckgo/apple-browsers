@@ -3037,7 +3037,7 @@
 "network.protection.vpn.data-volume" = "Objem dat";
 
 /* Footer text for the Exclude CGNAT setting item. */
-"network.protection.vpn.exclude.cgnat.setting.footer" = "Doporučujeme vypnout, aby veškerý tvůj provoz procházel přes VPN. Pokud máš problémy s funkcemi, jako je volání přes Wi-Fi, zasílání zpráv nebo hlasová schránka, zkus toto nastavení zapnout.";
+"network.protection.vpn.exclude.cgnat.setting.footer" = "Obejdi VPN pro služby operátora, jako je volání přes Wi-Fi a hlasová schránka.";
 
 /* Title for the Exclude CGNAT setting item. */
 "network.protection.vpn.exclude.cgnat.setting.title" = "Vyloučit služby operátorů";
@@ -3115,10 +3115,10 @@
 "network.protection.vpn.shortcuts.section.header" = "Zkratky";
 
 /* Footer text for the Strict Routing setting item. The 'Learn more' text is a Markdown link. */
-"network.protection.vpn.strict.routing.setting.footer" = "Doporučeno v sítích, kterým nedůvěřujete, jako jsou veřejné wifi v hotelech, barech atd. Pokud máte problémy s funkcemi (jako je CarPlay, AirDrop atd.) nebo s připojením k jiným zařízením, zkuste tuto funkci vypnout. [Další informace](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)";
+"network.protection.vpn.strict.routing.setting.footer" = "Zabraň aplikacím v obcházení VPN. Pokud máš problémy s funkcemi Wi-Fi (jako je AirDrop nebo zrcadlení iPhonu), zkus toto nastavení vypnout. Důrazně doporučeno v sítích, kterým nedůvěřuješ, jako je veřejná Wi-Fi. [Další informace](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack).";
 
 /* Title for the Strict Routing setting item. */
-"network.protection.vpn.strict.routing.setting.title" = "Přísné směrování";
+"network.protection.vpn.strict.routing.setting.title" = "Vynutit přísné směrování (doporučeno)";
 
 /* Confirm button for the new address bar picker */
 "new.address.bar.picker.confirm" = "Potvrdit";
@@ -5432,8 +5432,28 @@
 /* Button to delete all chats in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.chats.button" = "Smazat chaty";
 
-/* Do not translate - stringsdict entry */
-"aiChat.history.deleteAll.confirmation.title" = "aiChat.history.deleteAll.confirmation.title";
-
 /* Top-level attachment menu option to attach the current page content to an AI chat message */
 "aichat.attachment.option.ask.about.page" = "Zeptat se ohledně stránky";
+
+/* Status view message shown while the VPN is on but Strict routing is off */
+"network.protection.status.header.message.strict.routing.off" = "Když je přísné směrování vypnuté, část provozu může síť VPN obcházet. Pro veřejné sítě se doporučuje přísné směrování.";
+
+/* Label for the status pill shown while the VPN's Strict routing setting is off */
+"network.protection.status.view.strict.routing.pill.off" = "Přísné směrování: Vypnuto";
+
+/* Label for the status pill shown while the VPN's Strict routing setting is on */
+"network.protection.status.view.strict.routing.pill.on" = "Přísné směrování: Zapnuto";
+
+/* Tooltip shown for the status pill while the VPN's Strict routing setting is off */
+"network.protection.status.view.strict.routing.pill.tooltip.off" = "Pro veřejné sítě se doporučuje přísné směrování.";
+
+/* Tooltip shown for the status pill while the VPN's Strict routing setting is on */
+"network.protection.status.view.strict.routing.pill.tooltip.on" = "Když je zapnuté přísné směrování, některé aplikace nemusí fungovat.";
+
+/* Title of the Troubleshooting section in the VPN status screen. */
+"network.protection.status.view.troubleshooting.section.title" = "Řešení problémů";
+
+/* The body of the notification reminding the user to turn the VPN Strict routing setting back on */
+"network.protection.strict.routing.reminder.notification.body" = "Při vypnutí může část provozu VPN obcházet. Pro veřejné sítě se doporučuje přísné směrování.";
+/* The title of the notification reminding the user to turn the VPN Strict routing setting back on */
+"network.protection.strict.routing.reminder.notification.title" = "Přísné směrování je VYPNUTO";

@@ -1359,6 +1359,31 @@ extension Pixel {
          */
         case subscriptionSkippedOnboardingPromotionDismiss
 
+        /**
+         * Event Trigger: The subscription promotion modal is shown to an existing user (7+ days since install)
+         * who has never seen a subscription offer
+         *
+         * Anomaly Investigation:
+         * - This should only be fired from `SubscriptionPromoExistingUserCoordinator`
+         */
+        case subscriptionExistingUserPromotionImpression
+
+        /**
+         * Event Trigger: The user tapped the CTA on the existing-user subscription promotion modal
+         *
+         * Anomaly Investigation:
+         * - This should only be fired from `SubscriptionPromoExistingUserCoordinator`
+         */
+        case subscriptionExistingUserPromotionTap
+
+        /**
+         * Event Trigger: The user dismissed the existing-user subscription promotion modal
+         *
+         * Anomaly Investigation:
+         * - This should only be fired from `SubscriptionPromoExistingUserCoordinator`
+         */
+        case subscriptionExistingUserPromotionDismiss
+
         // Win-back Offer
         case subscriptionWinBackOfferLaunchPromptShown
         case subscriptionWinBackOfferLaunchPromptCTAClicked
@@ -1819,6 +1844,8 @@ extension Pixel {
         case aiChatPageContextExtractionSuccess
         case aiChatPageContextExtractionFailed
         case aiChatPageContextExtractionPrevented
+
+        case aiChatContextualQuickActionAskAboutPageShown
         case aiChatContextualQuickActionAskAboutPageSelected
         case aiChatContextualRecentChatsPopupDisplayed
         case aiChatContextualRecentChatSelected
@@ -3293,6 +3320,10 @@ extension Pixel.Event {
         case .subscriptionSkippedOnboardingPromotionTap: return "m_privacy-pro_skipped_onboarding_promotion_tap"
         case .subscriptionSkippedOnboardingPromotionDismiss: return "m_privacy-pro_skipped_onboarding_promotion_dismiss"
 
+        case .subscriptionExistingUserPromotionImpression: return "m_privacy-pro_existing_user_promotion_impression"
+        case .subscriptionExistingUserPromotionTap: return "m_privacy-pro_existing_user_promotion_tap"
+        case .subscriptionExistingUserPromotionDismiss: return "m_privacy-pro_existing_user_promotion_dismiss"
+
         // Win-back Offer
         case .subscriptionWinBackOfferLaunchPromptShown: return "m_privacy-pro_winback_launch_prompt_shown"
         case .subscriptionWinBackOfferLaunchPromptCTAClicked: return "m_privacy-pro_winback_launch_prompt_clicked"
@@ -3732,6 +3763,7 @@ extension Pixel.Event {
         case .aiChatPageContextExtractionSuccess: return "aichat_page_context_extraction_success"
         case .aiChatPageContextExtractionFailed: return "aichat_page_context_extraction_failed"
         case .aiChatPageContextExtractionPrevented: return "aichat_page_context_extraction_prevented"
+        case .aiChatContextualQuickActionAskAboutPageShown: return "m_aichat_contextual_quick_action_ask_about_page_shown"
         case .aiChatContextualQuickActionAskAboutPageSelected: return "m_aichat_contextual_quick_action_ask_about_page_selected"
         case .aiChatContextualRecentChatsPopupDisplayed: return "m_aichat_contextual_recent_chats_popup_displayed"
         case .aiChatContextualRecentChatSelected: return "m_aichat_contextual_recent_chat_selected"

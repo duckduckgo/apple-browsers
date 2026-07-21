@@ -24,6 +24,7 @@ import BrowserServicesKit
 import Networking
 import PixelKit
 import PixelExperimentKit
+import PrivacyConfig
 import os.log
 
 public class StatisticsLoader {
@@ -46,8 +47,14 @@ public class StatisticsLoader {
     init(statisticsStore: StatisticsStore = StatisticsUserDefaults(),
          returnUserMeasurement: ReturnUserMeasurement = KeychainReturnUserMeasurement(),
          usageSegmentation: UsageSegmenting = UsageSegmentation(pixelEvents: UsageSegmentation.pixelEvents),
-         fireAppRetentionExperimentPixels: @escaping () -> Void = PixelKit.fireAppRetentionExperimentPixels,
-         fireSearchExperimentPixels: @escaping () -> Void = PixelKit.fireSearchExperimentPixels,
+         fireAppRetentionExperimentPixels: @escaping () -> Void = {
+            PixelKit.fireAppRetentionExperimentPixels()
+            StatisticsLoader.fireSearchTokenExperimentPixels(metric: "app_use")
+         },
+         fireSearchExperimentPixels: @escaping () -> Void = {
+            PixelKit.fireSearchExperimentPixels()
+            StatisticsLoader.fireSearchTokenExperimentPixels(metric: "search")
+         },
          fireOSDistributionPixel: @escaping (OSDistributionPixel.Metric) -> Void = PixelKit.fireOSDistributionPixel(metric:),
          pixelFiring: PixelFiring.Type = Pixel.self,
          isPad: Bool = UIDevice.current.userInterfaceIdiom == .pad) {
@@ -59,6 +66,18 @@ public class StatisticsLoader {
         self.fireOSDistributionPixel = fireOSDistributionPixel
         self.pixelFiring = pixelFiring
         self.isPad = isPad
+    }
+
+    /// Fires the d1-4 conversion-window metric scoped to the search-token experiment only.
+    static func fireSearchTokenExperimentPixels(metric: String) {
+        for threshold in [1, 4, 6, 11, 21, 30] {
+            PixelKit.fireExperimentPixelIfThresholdReached(
+                for: iOSBrowserConfigSubfeature.searchTokenExperiment.rawValue,
+                metric: metric,
+                conversionWindowDays: 1...4,
+                threshold: threshold
+            )
+        }
     }
 
     public func load(shouldRefreshAtb: Bool = true, completion: @escaping Completion = {}) {

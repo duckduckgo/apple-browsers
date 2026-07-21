@@ -3037,7 +3037,7 @@
 "network.protection.vpn.data-volume" = "Volume dati";
 
 /* Footer text for the Exclude CGNAT setting item. */
-"network.protection.vpn.exclude.cgnat.setting.footer" = "Si consiglia di disattivare questa opzione in modo che tutto il traffico passi attraverso la VPN. Se hai problemi con funzioni come le chiamate Wi-Fi, i messaggi o la segreteria telefonica, prova ad attivare questa opzione.";
+"network.protection.vpn.exclude.cgnat.setting.footer" = "Bypassa la VPN per i servizi dell'operatore, come le chiamate Wi-Fi e la segreteria telefonica.";
 
 /* Title for the Exclude CGNAT setting item. */
 "network.protection.vpn.exclude.cgnat.setting.title" = "Escludi servizi operatore";
@@ -3115,10 +3115,10 @@
 "network.protection.vpn.shortcuts.section.header" = "Scorciatoie";
 
 /* Footer text for the Strict Routing setting item. The 'Learn more' text is a Markdown link. */
-"network.protection.vpn.strict.routing.setting.footer" = "Consigliata su reti di cui non ti fidi, ad esempio Wi-Fi pubblico in hotel, bar, ecc. Se riscontri problemi con alcune funzioni (come CarPlay, AirDrop, ecc.) o con la connessione ad altri dispositivi, prova a disattivarla. [Scopri di più](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)";
+"network.protection.vpn.strict.routing.setting.footer" = "Blocca le app che evitano di bypassare la VPN. Se riscontri problemi con alcune funzioni Wi-Fi (come AirDrop o iPhone Mirroring), disattivarla potrebbe essere utile. Fortemente consigliata su reti di cui non hai fiducia, come le reti Wi-Fi pubbliche. [Scopri di più](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack).";
 
 /* Title for the Strict Routing setting item. */
-"network.protection.vpn.strict.routing.setting.title" = "Routing rigido";
+"network.protection.vpn.strict.routing.setting.title" = "Applica routing rigido (consigliato)";
 
 /* Confirm button for the new address bar picker */
 "new.address.bar.picker.confirm" = "Conferma";
@@ -5432,8 +5432,28 @@
 /* Button to delete all chats in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.chats.button" = "Elimina chat";
 
-/* Do not translate - stringsdict entry */
-"aiChat.history.deleteAll.confirmation.title" = "aiChat.history.deleteAll.confirmation.title";
-
 /* Top-level attachment menu option to attach the current page content to an AI chat message */
 "aichat.attachment.option.ask.about.page" = "Richiedi informazioni sulla pagina";
+
+/* Status view message shown while the VPN is on but Strict routing is off */
+"network.protection.status.header.message.strict.routing.off" = "Parte del traffico potrebbe aggirare la VPN mentre il routing rigido è disattivato. Il routing rigido è consigliato per le reti pubbliche.";
+
+/* Label for the status pill shown while the VPN's Strict routing setting is off */
+"network.protection.status.view.strict.routing.pill.off" = "Routing rigido: disattivato";
+
+/* Label for the status pill shown while the VPN's Strict routing setting is on */
+"network.protection.status.view.strict.routing.pill.on" = "Routing rigido: attivo";
+
+/* Tooltip shown for the status pill while the VPN's Strict routing setting is off */
+"network.protection.status.view.strict.routing.pill.tooltip.off" = "Il routing rigido è consigliato per le reti pubbliche.";
+
+/* Tooltip shown for the status pill while the VPN's Strict routing setting is on */
+"network.protection.status.view.strict.routing.pill.tooltip.on" = "Alcune app potrebbero non funzionare mentre il routing rigoroso è attivo.";
+
+/* Title of the Troubleshooting section in the VPN status screen. */
+"network.protection.status.view.troubleshooting.section.title" = "Risoluzione dei problemi";
+
+/* The body of the notification reminding the user to turn the VPN Strict routing setting back on */
+"network.protection.strict.routing.reminder.notification.body" = "Parte del traffico potrebbe bypassare la VPN quando è disattivata. Il routing rigido è consigliato per le reti pubbliche.";
+/* The title of the notification reminding the user to turn the VPN Strict routing setting back on */
+"network.protection.strict.routing.reminder.notification.title" = "Il routing rigido è disattivato";

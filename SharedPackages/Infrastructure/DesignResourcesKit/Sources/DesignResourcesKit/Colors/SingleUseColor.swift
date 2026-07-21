@@ -124,6 +124,7 @@ public extension SingleUseColor {
         case decorationSecondary
 
         case alertGreen
+        case calendarStripYellow
     }
 
 }

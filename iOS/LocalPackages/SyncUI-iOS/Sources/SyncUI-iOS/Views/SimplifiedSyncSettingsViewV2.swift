@@ -56,6 +56,11 @@ public struct SimplifiedSyncSettingsViewV2: View {
         .animation(.easeInOut(duration: 0.3), value: model.devices.isEmpty)
         .applyListStyle()
         .environmentObject(model)
+        .onChange(of: model.isSyncEnabled) { isEnabled in
+            if !isEnabled {
+                selectedDevice = nil
+            }
+        }
         .alert(isPresented: $model.shouldShowPasscodeRequiredAlert) {
             Alert(
                 title: Text(UserText.syncPasscodeRequiredAlertTitle),
@@ -65,22 +70,6 @@ public struct SimplifiedSyncSettingsViewV2: View {
                     model.shouldShowPasscodeRequiredAlert = false
                 })
             )
-        }
-        .sheet(item: $selectedDevice) { device in
-            Group {
-                if device.isThisDevice {
-                    EditDeviceView(model: model.createEditDeviceModel(device))
-                } else {
-                    RemoveDeviceView(model: model.createRemoveDeviceModel(device))
-                }
-            }
-            .modifier {
-                if #available(iOS 16.0, *) {
-                    $0.presentationDetents([.medium])
-                } else {
-                    $0
-                }
-            }
         }
         .sheet(item: $model.connectingSheetPhase, onDismiss: {
             model.connectingSheetDidDismiss()
@@ -455,7 +444,11 @@ extension SimplifiedSyncSettingsViewV2 {
     var devicesList: some View {
         ForEach(model.devices) { device in
             Button {
-                selectedDevice = device
+                Task { @MainActor in
+                    if await model.commonAuthenticate() {
+                        selectedDevice = device
+                    }
+                }
             } label: {
                 HStack {
                     deviceTypeImage(device)
@@ -472,6 +465,24 @@ extension SimplifiedSyncSettingsViewV2 {
             }
             .transition(.opacity)
             .accessibility(identifier: "device")
+            .background(
+                NavigationLink(isActive: manageDeviceBinding(for: device)) {
+                    ManageDeviceViewV2(model: model, device: device)
+                } label: {
+                    EmptyView()
+                }
+                .accessibilityHidden(true)
+            )
+        }
+    }
+
+    func manageDeviceBinding(for device: SyncSettingsViewModel.Device) -> Binding<Bool> {
+        Binding {
+            selectedDevice?.id == device.id
+        } set: { isActive in
+            if !isActive {
+                selectedDevice = nil
+            }
         }
     }
 
@@ -596,7 +607,7 @@ extension SimplifiedSyncSettingsViewV2 {
     var deleteSection: some View {
         Section {
             Button(role: .destructive) {
-                model.deleteAllData()
+                model.deleteAllData(requireAuthentication: true)
             } label: {
                 Text(UserText.simplifiedDeleteSyncDataButton)
             }

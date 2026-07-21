@@ -69,6 +69,24 @@ enum SubscriptionFunnelOrigin: String {
     /// User entered the funnel via the VPN menu-bar status item popover when their subscription was revoked.
     /// https://app.asana.com/1/137249556945/project/1207260194172075/task/1214811710571517
     case vpnMenuBarRevoked = "funnel_menubar_macos__subscriptionvpnrevoked"
+
+    // MARK: - Duck.ai Omnibar Origins
+
+    /// User entered the funnel by tapping a gated model in the address bar's duck.ai model picker.
+    /// https://app.asana.com/1/137249556945/project/1208671677432066/task/1215275657171787
+    case addressBarModelPicker = "funnel_addressbar_macos__modelpicker"
+
+    /// User entered the funnel by tapping a gated reasoning effort in the address bar's duck.ai omnibar.
+    /// https://app.asana.com/1/137249556945/project/1208671677432066/task/1215275657171787
+    case addressBarReasoningPicker = "funnel_addressbar_macos__reasoningpicker"
+
+    /// User entered the funnel by tapping a gated model in duck.ai's own model picker.
+    /// https://app.asana.com/1/137249556945/project/1208671677432066/task/1215275657171787
+    case duckAIModelPicker = "funnel_duckai_macos__modelpicker"
+
+    /// User entered the funnel by tapping a gated reasoning effort in duck.ai's own omnibar.
+    /// https://app.asana.com/1/137249556945/project/1208671677432066/task/1215275657171787
+    case duckAIReasoningPicker = "funnel_duckai_macos__reasoningpicker"
 }
 
 /// Represents the origin point from which the user enters the subscription restore funnel in the macOS app.

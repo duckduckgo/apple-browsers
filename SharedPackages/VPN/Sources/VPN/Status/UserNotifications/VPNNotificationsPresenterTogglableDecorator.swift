@@ -36,6 +36,12 @@ final public class VPNNotificationsPresenterTogglableDecorator: VPNNotifications
         }
     }
 
+    public func showStrictRoutingReminderNotification() {
+        if settings.notifyStatusChanges {
+            wrappeePresenter.showStrictRoutingReminderNotification()
+        }
+    }
+
     public func showReconnectingNotification() {
         if settings.notifyStatusChanges {
             wrappeePresenter.showReconnectingNotification()

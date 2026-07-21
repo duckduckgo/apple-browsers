@@ -3037,7 +3037,7 @@
 "network.protection.vpn.data-volume" = "データ量";
 
 /* Footer text for the Exclude CGNAT setting item. */
-"network.protection.vpn.exclude.cgnat.setting.footer" = "すべてのトラフィックがVPNを通るように、オフにすることをおすすめします。Wi-Fi通話、メッセージ、留守番電話などの機能に問題がある場合は、オンにしてみてください。";
+"network.protection.vpn.exclude.cgnat.setting.footer" = "Wi-Fi通話やボイスメールなどの通信事業者サービスは、VPNを経由せずに接続します。";
 
 /* Title for the Exclude CGNAT setting item. */
 "network.protection.vpn.exclude.cgnat.setting.title" = "キャリアサービスを除外";
@@ -3115,10 +3115,10 @@
 "network.protection.vpn.shortcuts.section.header" = "ショートカット";
 
 /* Footer text for the Strict Routing setting item. The 'Learn more' text is a Markdown link. */
-"network.protection.vpn.strict.routing.setting.footer" = "ホテルやバーなどの公共Wi-Fiなど、信頼できないネットワークでの使用をおすすめします。CarPlayやAirDropなどの機能に問題がある場合や、他のデバイスとの接続に問題がある場合は、この機能をオフにしてみてください。[詳細](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)";
+"network.protection.vpn.strict.routing.setting.footer" = "アプリがVPNのバイパスをブロックします。AirDropやiPhoneミラーリングなどのWi-Fi機能に問題がある場合は、オフにすると解決する可能性があります。公共Wi-Fiなど、信頼できないネットワークでは強く推奨されます。[詳細](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)。";
 
 /* Title for the Strict Routing setting item. */
-"network.protection.vpn.strict.routing.setting.title" = "厳格なルーティング";
+"network.protection.vpn.strict.routing.setting.title" = "厳格なルーティングを強制する（推奨）";
 
 /* Confirm button for the new address bar picker */
 "new.address.bar.picker.confirm" = "確認";
@@ -5432,8 +5432,28 @@
 /* Button to delete all chats in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.chats.button" = "チャットを削除";
 
-/* Do not translate - stringsdict entry */
-"aiChat.history.deleteAll.confirmation.title" = "aiChat.history.deleteAll.confirmation.title";
-
 /* Top-level attachment menu option to attach the current page content to an AI chat message */
 "aichat.attachment.option.ask.about.page" = "ページについてお尋ねください";
+
+/* Status view message shown while the VPN is on but Strict routing is off */
+"network.protection.status.header.message.strict.routing.off" = "厳格なルーティングがオフの間は、一部のトラフィックがVPNをバイパスする可能性があります。公共ネットワークでは、厳格なルーティングの使用をおすすめします。";
+
+/* Label for the status pill shown while the VPN's Strict routing setting is off */
+"network.protection.status.view.strict.routing.pill.off" = "厳格なルーティング：無効";
+
+/* Label for the status pill shown while the VPN's Strict routing setting is on */
+"network.protection.status.view.strict.routing.pill.on" = "厳格なルーティング：オン";
+
+/* Tooltip shown for the status pill while the VPN's Strict routing setting is off */
+"network.protection.status.view.strict.routing.pill.tooltip.off" = "公共ネットワークでは、厳格なルーティングが推奨されます。";
+
+/* Tooltip shown for the status pill while the VPN's Strict routing setting is on */
+"network.protection.status.view.strict.routing.pill.tooltip.on" = "厳格なルーティングが有効な間は、一部のアプリが動作しない場合があります。";
+
+/* Title of the Troubleshooting section in the VPN status screen. */
+"network.protection.status.view.troubleshooting.section.title" = "トラブルシューティング";
+
+/* The body of the notification reminding the user to turn the VPN Strict routing setting back on */
+"network.protection.strict.routing.reminder.notification.body" = "オフの間、一部のトラフィックがVPNをバイパスする可能性があります。公共ネットワークでは、厳格なルーティングが推奨されます。";
+/* The title of the notification reminding the user to turn the VPN Strict routing setting back on */
+"network.protection.strict.routing.reminder.notification.title" = "厳格なルーティングは無効です";

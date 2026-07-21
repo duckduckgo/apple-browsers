@@ -3037,7 +3037,7 @@
 "network.protection.vpn.data-volume" = "Ilość danych";
 
 /* Footer text for the Exclude CGNAT setting item. */
-"network.protection.vpn.exclude.cgnat.setting.footer" = "Zalecane jest wyłączenie tej opcji, aby cały ruch przechodził przez VPN. Jeśli masz problemy z funkcjami, takimi jak połączenia Wi-Fi, wiadomości lub poczta głosowa, spróbuj włączyć tę opcję.";
+"network.protection.vpn.exclude.cgnat.setting.footer" = "Omiń sieć VPN w przypadku usług operatora, takich jak połączenia Wi-Fi i poczta głosowa.";
 
 /* Title for the Exclude CGNAT setting item. */
 "network.protection.vpn.exclude.cgnat.setting.title" = "Wyklucz usługi operatorów";
@@ -3115,10 +3115,10 @@
 "network.protection.vpn.shortcuts.section.header" = "Skróty";
 
 /* Footer text for the Strict Routing setting item. The 'Learn more' text is a Markdown link. */
-"network.protection.vpn.strict.routing.setting.footer" = "Polecane w sieciach, którym nie ufasz, np. publiczne Wi-Fi w hotelach, barach itd. Jeśli masz problemy z funkcjami (takimi jak CarPlay, AirDrop itp.) lub łączeniem się z innymi urządzeniami, spróbuj je wyłączyć. [Dowiedz się więcej](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)";
+"network.protection.vpn.strict.routing.setting.footer" = "Blokuj aplikacjom możliwość pomijania VPN. Jeśli masz problemy z funkcjami Wi-Fi (takimi jak AirDrop lub iPhone Mirroring), wyłączenie tej opcji może pomóc. Zdecydowanie zalecane w sieciach, którym nie ufasz, takich jak publiczne Wi-Fi. [Dowiedz się więcej](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack).";
 
 /* Title for the Strict Routing setting item. */
-"network.protection.vpn.strict.routing.setting.title" = "Ścisły routing";
+"network.protection.vpn.strict.routing.setting.title" = "Wymuś ścisły routing (zalecane)";
 
 /* Confirm button for the new address bar picker */
 "new.address.bar.picker.confirm" = "Potwierdź";
@@ -5432,8 +5432,28 @@
 /* Button to delete all chats in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.chats.button" = "Usuń czaty";
 
-/* Do not translate - stringsdict entry */
-"aiChat.history.deleteAll.confirmation.title" = "aiChat.history.deleteAll.confirmation.title";
-
 /* Top-level attachment menu option to attach the current page content to an AI chat message */
 "aichat.attachment.option.ask.about.page" = "Zapytaj o stronę";
+
+/* Status view message shown while the VPN is on but Strict routing is off */
+"network.protection.status.header.message.strict.routing.off" = "Część ruchu może ominąć sieć VPN, gdy ścisły routing jest wyłączony. Ścisły routing jest zalecany w przypadku sieci publicznych.";
+
+/* Label for the status pill shown while the VPN's Strict routing setting is off */
+"network.protection.status.view.strict.routing.pill.off" = "Ścisły routing: Wyłączony";
+
+/* Label for the status pill shown while the VPN's Strict routing setting is on */
+"network.protection.status.view.strict.routing.pill.on" = "Ścisły routing: Włączony";
+
+/* Tooltip shown for the status pill while the VPN's Strict routing setting is off */
+"network.protection.status.view.strict.routing.pill.tooltip.off" = "Ścisły routing jest zalecany w przypadku sieci publicznych.";
+
+/* Tooltip shown for the status pill while the VPN's Strict routing setting is on */
+"network.protection.status.view.strict.routing.pill.tooltip.on" = "Niektóre aplikacje mogą nie działać, gdy włączony jest ścisły routing.";
+
+/* Title of the Troubleshooting section in the VPN status screen. */
+"network.protection.status.view.troubleshooting.section.title" = "Rozwiązywanie problemów";
+
+/* The body of the notification reminding the user to turn the VPN Strict routing setting back on */
+"network.protection.strict.routing.reminder.notification.body" = "Niektóre dane mogą pomijać VPN, gdy jest on wyłączony. Ścisły routing jest zalecany w przypadku sieci publicznych.";
+/* The title of the notification reminding the user to turn the VPN Strict routing setting back on */
+"network.protection.strict.routing.reminder.notification.title" = "Ścisły routing jest WYŁĄCZONY";

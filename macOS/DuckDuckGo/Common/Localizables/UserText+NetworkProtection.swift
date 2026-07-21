@@ -240,6 +240,8 @@ extension UserText {
 
     static let vpnShortcutsSettingsTitle = NSLocalizedString("vpn.shortcuts.settings.title", value: "Shortcuts", comment: "Shortcuts section title in VPN settings")
 
+    static let vpnTroubleshootingTitle = NSLocalizedString("vpn.troubleshooting.title", value: "Troubleshooting", comment: "Troubleshooting section title in VPN settings")
+
     static let vpnNotificationsSettingsTitle = NSLocalizedString("vpn.notifications.settings.title", value: "Notifications", comment: "Notifications section title in VPN settings")
 
     static let vpnAdvancedSettingsTitle = NSLocalizedString("vpn.advanced.settings.title", value: "Advanced", comment: "VPN Advanced section title in VPN settings")
@@ -341,13 +343,13 @@ extension UserText {
 
     static let vpnExcludeLocalNetworksSettingDescription = NSLocalizedString("vpn.setting.description.exclude.local.networks", value: "Bypass the VPN for local network connections, like to a printer.", comment: "Exclude Local Networks setting description")
 
-    static let vpnStrictRoutingSettingTitle = NSLocalizedString("vpn.setting.title.strict.routing", value: "Strict routing", comment: "Strict routing setting title")
+    static let vpnStrictRoutingSettingTitle = NSLocalizedString("vpn.setting.title.strict.routing", value: "Enforce Strict Routing (Recommended)", comment: "Strict routing setting title")
 
-    static let vpnStrictRoutingSettingDescription = NSLocalizedString("vpn.setting.description.strict.routing", value: "Recommended on networks you don’t trust, e.g. public wifi in hotels, bars, etc. If you have problems with features (like AirDrop, Sidecar, etc.) or connecting to other devices, try turning it off. [Learn more](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)", comment: "Strict routing setting description. The 'Learn more' text is a Markdown link.")
+    static let vpnStrictRoutingSettingDescription = NSLocalizedString("vpn.setting.description.strict.routing", value: "Block apps from bypassing the VPN. If you have problems with Wi-Fi features (such as AirDrop or iPhone Mirroring), turning it off may help. Strongly recommended on networks you don’t trust, such as public Wi-Fi. [Learn more](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack).", comment: "Strict routing setting description. The 'Learn more' text is a Markdown link.")
 
-    static let vpnExcludeCGNATSettingTitle = NSLocalizedString("vpn.setting.title.exclude.cgnat", value: "Exclude carrier services", comment: "Exclude CGNAT setting title")
+    static let vpnExcludeCGNATSettingTitle = NSLocalizedString("vpn.setting.title.exclude.cgnat", value: "Exclude Carrier Services", comment: "Exclude CGNAT setting title")
 
-    static let vpnExcludeCGNATSettingDescription = NSLocalizedString("vpn.setting.description.exclude.cgnat", value: "Recommended off so all your traffic goes through the VPN. If you have problems connecting to online services, try turning it on.", comment: "Exclude CGNAT setting description")
+    static let vpnExcludeCGNATSettingDescription = NSLocalizedString("vpn.setting.description.exclude.cgnat", value: "Bypass the VPN for carrier services, such as Wi-Fi calling and voicemail.", comment: "Exclude CGNAT setting description")
 
     static let openVPNButtonTitle = NSLocalizedString("vpn.button.title.open.vpn", value: "Open VPN…", comment: "Uninstall VPN button title")
 

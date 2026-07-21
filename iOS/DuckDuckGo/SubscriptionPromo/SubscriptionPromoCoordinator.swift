@@ -28,6 +28,9 @@ import Subscription
 /// Self-contained: owns eligibility, pixel firing, and CTA navigation.
 /// Uses only stable, synchronous signals — no dependency on async product availability.
 protocol SubscriptionPromoCoordinating: AnyObject {
+    /// Per-coordinator presentation gate. Each coordinator decides independently whether the
+    /// current onboarding state permits the launch prompt to be shown.
+    func isEligibleToPresent(isOnboardingComplete: Bool) -> Bool
     func shouldPresentLaunchPrompt() -> Bool
     func markLaunchPromptPresented()
     func promoTitle() -> String
@@ -65,6 +68,10 @@ final class SubscriptionPromoCoordinator: SubscriptionPromoCoordinating {
     }
 
     // MARK: - Eligibility
+
+    func isEligibleToPresent(isOnboardingComplete: Bool) -> Bool {
+         daxDialogsSettings.isDismissed
+    }
 
     func shouldPresentLaunchPrompt() -> Bool {
         guard !daxDialogsSettings.subscriptionPromotionDialogShown else {

@@ -1625,6 +1625,7 @@ private final class MockContextualModePixelHandler: AIChatContextualModePixelFir
     var expandButtonTappedFired = false
     var newChatButtonTappedFired = false
     var quickActionSummarizeSelectedFired = false
+    var quickActionAskAboutPageShownCount = 0
     var fireButtonTappedFired = false
     var fireButtonConfirmedFired = false
     var pageContextAutoAttachedFired = false
@@ -1645,6 +1646,7 @@ private final class MockContextualModePixelHandler: AIChatContextualModePixelFir
     func fireExpandButtonTapped() { expandButtonTappedFired = true }
     func fireNewChatButtonTapped() { newChatButtonTappedFired = true }
     func fireQuickActionSummarizeSelected() { quickActionSummarizeSelectedFired = true }
+    func fireQuickActionAskAboutPageShown() { quickActionAskAboutPageShownCount += 1 }
     func fireQuickActionAskAboutPageSelected() {}
     func fireRecentChatsPopupDisplayed() {}
     func fireRecentChatSelected() {}
@@ -1671,6 +1673,7 @@ private final class MockContextualModePixelHandler: AIChatContextualModePixelFir
         expandButtonTappedFired = false
         newChatButtonTappedFired = false
         quickActionSummarizeSelectedFired = false
+        quickActionAskAboutPageShownCount = 0
         fireButtonTappedFired = false
         fireButtonConfirmedFired = false
         pageContextAutoAttachedFired = false

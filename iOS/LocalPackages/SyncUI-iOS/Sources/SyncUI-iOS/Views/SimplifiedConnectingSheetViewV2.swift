@@ -40,6 +40,9 @@ public struct SimplifiedConnectingSheetViewV2: View {
             case .recoverYourData:
                 RecoverYourDataView(model: model)
                     .transition(.opacity)
+            case .deviceConnected:
+                SyncDeviceAddedViewV2(model: model)
+                    .transition(.opacity)
             case .none:
                 EmptyView()
             }
@@ -63,6 +66,10 @@ public struct SimplifiedConnectingSheetViewV2: View {
     SimplifiedConnectingSheetViewV2(model: .connectingSheetPreview(phase: .syncAnotherDevice))
 }
 
+#Preview("Device Connected") {
+    SimplifiedConnectingSheetViewV2(model: .connectingSheetPreview(phase: .deviceConnected))
+}
+
 private extension SyncSettingsViewModel {
     static func connectingSheetPreview(phase: ConnectingSheetPhase) -> SyncSettingsViewModel {
         let model = SyncSettingsViewModel(
@@ -72,6 +79,7 @@ private extension SyncSettingsViewModel {
         )
         model.isSyncEnabled = true
         model.devices = [.init(id: "1", name: "Dave’s iPhone", type: "phone", isThisDevice: true)]
+        model.recoveryCode = "y2cJyqsW3FPSJ9y2cJyqsW3FPSJ9y2cJyqsW3FPSJ9"
         model.connectingSheetPhase = phase
         return model
     }

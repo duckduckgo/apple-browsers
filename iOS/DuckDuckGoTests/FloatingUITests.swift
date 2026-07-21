@@ -28,6 +28,7 @@ final class FloatingUIManagerTests: XCTestCase {
         let manager = FloatingUIManager(
             featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.floatingUI]),
             isPadProvider: { false },
+            isSupportedOSProvider: { true },
             unifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider(isAvailable: true)
         )
 
@@ -38,6 +39,7 @@ final class FloatingUIManagerTests: XCTestCase {
         let manager = FloatingUIManager(
             featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.floatingUI]),
             isPadProvider: { false },
+            isSupportedOSProvider: { true },
             unifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider(isAvailable: false)
         )
 
@@ -48,6 +50,7 @@ final class FloatingUIManagerTests: XCTestCase {
         let manager = FloatingUIManager(
             featureFlagger: MockFeatureFlagger(enabledFeatureFlags: []),
             isPadProvider: { false },
+            isSupportedOSProvider: { true },
             unifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider(isAvailable: true)
         )
 
@@ -58,6 +61,18 @@ final class FloatingUIManagerTests: XCTestCase {
         let manager = FloatingUIManager(
             featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.floatingUI]),
             isPadProvider: { true },
+            isSupportedOSProvider: { true },
+            unifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider(isAvailable: true)
+        )
+
+        XCTAssertFalse(manager.isFloatingUIEnabled)
+    }
+
+    func testWhenOSIsUnsupportedThenFloatingUIIsDisabled() {
+        let manager = FloatingUIManager(
+            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.floatingUI]),
+            isPadProvider: { false },
+            isSupportedOSProvider: { false },
             unifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider(isAvailable: true)
         )
 

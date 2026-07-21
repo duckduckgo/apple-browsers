@@ -36,12 +36,12 @@ final class CompleteDownloadRowViewModelTests {
     }
 
     @available(iOS 17, *)
-    @Test("Returns a prepared event for a single-VEVENT .ics file when the flag is on", .timeLimit(.minutes(1)))
+    @Test("Returns a prepared event for a single-VEVENT .ics file", .timeLimit(.minutes(1)))
     func preparesEventForSingleVEvent() throws {
         let url = try writeTempFile(name: "single.ics", contents: Fixtures.singleEvent)
         defer { try? FileManager.default.removeItem(at: url) }
 
-        let viewModel = CompleteDownloadRowViewModel(fileURL: url, featureFlagger: flaggerWithICSOn())
+        let viewModel = CompleteDownloadRowViewModel(fileURL: url)
         let prepared = viewModel.preparePreviewEvent()
 
         #expect(prepared != nil)
@@ -49,22 +49,12 @@ final class CompleteDownloadRowViewModelTests {
     }
 
     @available(iOS 17, *)
-    @Test("Returns nil when the feature flag is off", .timeLimit(.minutes(1)))
-    func returnsNilWhenFlagIsOff() throws {
-        let url = try writeTempFile(name: "single.ics", contents: Fixtures.singleEvent)
-        defer { try? FileManager.default.removeItem(at: url) }
-
-        let viewModel = CompleteDownloadRowViewModel(fileURL: url, featureFlagger: MockFeatureFlagger())
-        #expect(viewModel.preparePreviewEvent() == nil)
-    }
-
-    @available(iOS 17, *)
-    @Test("Returns nil for a non-.ics file even when the flag is on", .timeLimit(.minutes(1)))
+    @Test("Returns nil for a non-.ics file", .timeLimit(.minutes(1)))
     func returnsNilForNonICSExtension() throws {
         let url = try writeTempFile(name: "calendar.txt", contents: Fixtures.singleEvent)
         defer { try? FileManager.default.removeItem(at: url) }
 
-        let viewModel = CompleteDownloadRowViewModel(fileURL: url, featureFlagger: flaggerWithICSOn())
+        let viewModel = CompleteDownloadRowViewModel(fileURL: url)
         #expect(viewModel.preparePreviewEvent() == nil)
     }
 
@@ -74,7 +64,7 @@ final class CompleteDownloadRowViewModelTests {
         let url = try writeTempFile(name: "multi.ics", contents: Fixtures.multipleEvents)
         defer { try? FileManager.default.removeItem(at: url) }
 
-        let viewModel = CompleteDownloadRowViewModel(fileURL: url, featureFlagger: flaggerWithICSOn())
+        let viewModel = CompleteDownloadRowViewModel(fileURL: url)
         #expect(viewModel.preparePreviewEvent() == nil)
     }
 
@@ -84,7 +74,7 @@ final class CompleteDownloadRowViewModelTests {
         let url = try writeTempFile(name: "broken.ics", contents: "not a calendar")
         defer { try? FileManager.default.removeItem(at: url) }
 
-        let viewModel = CompleteDownloadRowViewModel(fileURL: url, featureFlagger: flaggerWithICSOn())
+        let viewModel = CompleteDownloadRowViewModel(fileURL: url)
         #expect(viewModel.preparePreviewEvent() == nil)
     }
 
@@ -96,7 +86,7 @@ final class CompleteDownloadRowViewModelTests {
         let url = try writeTempFile(name: "single.vcf", contents: Fixtures.singleContact)
         defer { try? FileManager.default.removeItem(at: url) }
 
-        let viewModel = CompleteDownloadRowViewModel(fileURL: url, featureFlagger: MockFeatureFlagger())
+        let viewModel = CompleteDownloadRowViewModel(fileURL: url)
         let contact = viewModel.preparePreviewContact()
 
         #expect(contact?.givenName == "John")
@@ -110,7 +100,6 @@ final class CompleteDownloadRowViewModelTests {
         defer { try? FileManager.default.removeItem(at: url) }
 
         let viewModel = CompleteDownloadRowViewModel(fileURL: url,
-                                                     featureFlagger: MockFeatureFlagger(),
                                                      pixelFiring: PixelFiringMock.self)
         let contact = viewModel.preparePreviewContact()
 
@@ -126,7 +115,6 @@ final class CompleteDownloadRowViewModelTests {
         defer { try? FileManager.default.removeItem(at: url) }
 
         let viewModel = CompleteDownloadRowViewModel(fileURL: url,
-                                                     featureFlagger: MockFeatureFlagger(),
                                                      pixelFiring: PixelFiringMock.self)
         #expect(viewModel.preparePreviewContact() == nil)
     }
@@ -137,7 +125,7 @@ final class CompleteDownloadRowViewModelTests {
         let url = try writeTempFile(name: "contact.txt", contents: Fixtures.singleContact)
         defer { try? FileManager.default.removeItem(at: url) }
 
-        let viewModel = CompleteDownloadRowViewModel(fileURL: url, featureFlagger: MockFeatureFlagger())
+        let viewModel = CompleteDownloadRowViewModel(fileURL: url)
         #expect(viewModel.preparePreviewContact() == nil)
     }
 
@@ -187,10 +175,6 @@ final class CompleteDownloadRowViewModelTests {
     }
 
     // MARK: - Helpers
-
-    private func flaggerWithICSOn() -> MockFeatureFlagger {
-        MockFeatureFlagger(enabledFeatureFlags: [.icsCalendarLinks])
-    }
 
     private func writeTempFile(name: String, contents: String) throws -> URL {
         let url = FileManager.default.temporaryDirectory

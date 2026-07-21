@@ -59,6 +59,16 @@ public enum SharedDesignSystemColor {
     // Shield
     case shieldPrivacy
 
+    // VPN
+    case vpnGreen
+    case vpnGreenPressed
+    case vpnGreenForeground
+    case vpnGreenForegroundPressed
+    case vpnYellow
+    case vpnYellowPressed
+    case vpnYellowForeground
+    case vpnYellowForegroundPressed
+
     // Buttons/Primary
     case buttonsPrimaryDefault
     case buttonsPrimaryPressed

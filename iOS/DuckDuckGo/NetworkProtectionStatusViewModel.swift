@@ -25,6 +25,7 @@ import VPN
 import WidgetKit
 import BrowserServicesKit
 import Core
+import PrivacyConfig
 import Subscription
 import TipKit
 
@@ -92,7 +93,7 @@ final class NetworkProtectionStatusViewModel: ObservableObject {
         return formatter
     }()
 
-    private let featureFlagger = AppDependencyProvider.shared.featureFlagger
+    private let featureFlagger: FeatureFlagger
     private let tunnelController: (TunnelController & TunnelSessionProvider)
     private let statusObserver: ConnectionStatusObserver
     private let serverInfoObserver: ConnectionServerInfoObserver
@@ -177,6 +178,38 @@ final class NetworkProtectionStatusViewModel: ObservableObject {
 
     @Published public var animationsOn: Bool = false
 
+    // MARK: Security
+
+    /// Whether the Strict routing toggle should be shown in the status view's Security section.
+    @Published public private(set) var isStrictRoutingAvailable: Bool
+
+    /// Backs the Strict routing toggle in the status view's Security section. Writing it routes the
+    /// change through `VPNSettings`, which restarts the tunnel to apply the new routing.
+    @Published public var enforceRoutes: Bool {
+        didSet {
+            guard settings.enforceRoutes != enforceRoutes else {
+                return
+            }
+            settings.enforceRoutes = enforceRoutes
+        }
+    }
+
+    /// Whether the Strict routing status pill should be shown under the header. It reflects the current
+    /// Strict routing state whenever the VPN is on, in both the on and off positions.
+    public var showStrictRoutingPill: Bool {
+        isStrictRoutingAvailable && isNetPEnabled
+    }
+
+    /// The message shown under the header. While the VPN is on but Strict routing is off it warns that
+    /// some traffic may bypass the VPN; otherwise it reflects the plain on/off state.
+    public var headerMessage: String {
+        if isNetPEnabled, isStrictRoutingAvailable, !enforceRoutes {
+            return UserText.netPStatusHeaderMessageStrictRoutingOff
+        }
+
+        return isNetPEnabled ? UserText.netPStatusHeaderMessageOn : UserText.netPStatusHeaderMessageOff
+    }
+
     public let enablesUnifiedFeedbackForm: Bool
 
     public init(tunnelController: (TunnelController & TunnelSessionProvider),
@@ -188,6 +221,7 @@ final class NetworkProtectionStatusViewModel: ObservableObject {
                 timeLapsedFormatter: VPNTimeFormatting = VPNTimeFormatter(),
                 locationListRepository: NetworkProtectionLocationListRepository,
                 enablesUnifiedFeedbackForm: Bool,
+                featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
                 featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery()) {
         self.tunnelController = tunnelController
         self.settings = settings
@@ -197,6 +231,7 @@ final class NetworkProtectionStatusViewModel: ObservableObject {
         self.controllerErrorPublisher = controllerErrorPublisher
         self.timeLapsedFormatter = timeLapsedFormatter
         self.enablesUnifiedFeedbackForm = enablesUnifiedFeedbackForm
+        self.featureFlagger = featureFlagger
         self.featureDiscovery = featureDiscovery
 
         self.headerTitle = Self.titleText(status: statusObserver.recentValue)
@@ -205,6 +240,8 @@ final class NetworkProtectionStatusViewModel: ObservableObject {
         self.preferredLocation = NetworkProtectionLocationStatusModel(selectedLocation: settings.selectedLocation)
 
         self.dnsSettings = settings.dnsSettings
+        self.isStrictRoutingAvailable = featureFlagger.isFeatureOn(.vpnStrictRoutingToggle)
+        self.enforceRoutes = settings.enforceRoutes
 
         self.tipsModel = VPNTipsModel(
             statusObserver: statusObserver,
@@ -231,6 +268,8 @@ final class NetworkProtectionStatusViewModel: ObservableObject {
         setUpServerInfoPublishers()
         setUpLocationPublishers()
         setUpDNSSettingsPublisher()
+        setUpEnforceRoutesPublisher()
+        setUpStrictRoutingAvailabilityPublisher()
         setUpThroughputRefreshTimer()
         setUpErrorPublishers()
         setUpControllerErrorPublisher()
@@ -500,6 +539,28 @@ final class NetworkProtectionStatusViewModel: ObservableObject {
         settings.dnsSettingsPublisher
             .receive(on: DispatchQueue.main)
             .assign(to: \.dnsSettings, onWeaklyHeld: self)
+            .store(in: &cancellables)
+    }
+
+    /// Keeps the Strict routing toggle in sync when `enforceRoutes` changes elsewhere (e.g. the
+    /// toggle in VPN settings), so both surfaces always reflect the same value.
+    private func setUpEnforceRoutesPublisher() {
+        settings.enforceRoutesPublisher
+            .receive(on: DispatchQueue.main)
+            .assign(to: \.enforceRoutes, onWeaklyHeld: self)
+            .store(in: &cancellables)
+    }
+
+    /// Keeps the Strict routing availability in sync as the feature flag changes at runtime
+    /// (remote config update or a local override), so the pill and Security section
+    /// appear/disappear live, matching the behavior of VPN settings.
+    private func setUpStrictRoutingAvailabilityPublisher() {
+        featureFlagger.updatesPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in
+                guard let self else { return }
+                self.isStrictRoutingAvailable = self.featureFlagger.isFeatureOn(.vpnStrictRoutingToggle)
+            }
             .store(in: &cancellables)
     }
 

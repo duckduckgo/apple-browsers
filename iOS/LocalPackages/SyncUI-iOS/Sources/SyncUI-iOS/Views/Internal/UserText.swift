@@ -135,6 +135,9 @@ public struct UserText {
     static let simplifiedMyDevicesSectionHeader = NotLocalizedString("sync.simplified.my.devices.section.header", bundle: Bundle.module, value: "My Devices", comment: "My Devices section header shown when Sync & Backup is enabled")
     static let simplifiedSyncStatusOn = NotLocalizedString("sync.simplified.status.on", bundle: Bundle.module, value: "On", comment: "Status label shown next to the title when Sync & Backup is enabled")
     static let simplifiedSyncStatusOff = NotLocalizedString("sync.simplified.status.off", bundle: Bundle.module, value: "Off", comment: "Status label shown next to the title when Sync & Backup is disabled")
+    static let simplifiedManageDeviceStatusSynced = NotLocalizedString("sync.simplified.manage.device.status.synced", bundle: Bundle.module, value: "Synced", comment: "Status label shown under a device name on the manage device screen when the device is synced")
+    static let simplifiedManageDeviceRemoveFooter = NotLocalizedString("sync.simplified.manage.device.remove.footer", bundle: Bundle.module, value: "This device will no longer be able to access your synced data if you remove it.", comment: "Footer caption shown under the Remove Device button on the manage device screen")
+    static let simplifiedManageDeviceTurnOffFooter = NotLocalizedString("sync.simplified.manage.device.turn.off.footer", bundle: Bundle.module, value: "This device will no longer be able to access your synced data if this is turned off.", comment: "Footer caption shown under the Sync & Backup This Device toggle on the manage this device screen")
     static let simplifiedSyncWithAnotherDeviceButton = NSLocalizedString("sync.simplified.with.another.device.button", bundle: Bundle.module, value: "Sync With Another Device", comment: "Sync With Another Device sync setup button label")
     static let simplifiedUseRecoveryCodeButton = NSLocalizedString("sync.simplified.use.recovery.code.button", bundle: Bundle.module, value: "Use Recovery Code", comment: "Use Recovery Code sync setup button label")
     static let simplifiedRecoverSyncedDataButton = NotLocalizedString("sync.simplified.recover.synced.data.button", bundle: Bundle.module, value: "Recover Synced Data", comment: "Recover Synced Data sync setup button label")
@@ -166,6 +169,14 @@ public struct UserText {
     static let simplifiedRecoverYourDataV2Description = NotLocalizedString("sync.simplified.recover.your.data.v2.description", bundle: Bundle.module, value: "Use this code to restore your data if you lose access to this device. Keep it safe.", comment: "Description on the recover-your-data screen explaining what the recovery code is for")
     static let simplifiedRecoveryCodeLabel = NotLocalizedString("sync.simplified.recovery.code.label", bundle: Bundle.module, value: "Recovery Code", comment: "Label above the recovery code on the recover-your-data screen")
     static let simplifiedDownloadYourRecoveryCodeButton = NotLocalizedString("sync.simplified.download.your.recovery.code.button", bundle: Bundle.module, value: "Download Your Recovery Code", comment: "Button to download the recovery code on the recover-your-data screen")
+
+    // Simplified Device Added (V2 success screen shown after joining a sync account)
+    static let simplifiedDeviceAddedV2FallbackDeviceName = NotLocalizedString("sync.simplified.device.added.v2.fallback.device.name", bundle: Bundle.module, value: "This device", comment: "Fallback subject used in the device-added success title when the current device's name is unavailable. Substituted as %@ in simplifiedDeviceAddedV2Title.")
+    static func simplifiedDeviceAddedV2Title(_ deviceName: String) -> String {
+        let format = NotLocalizedString("sync.simplified.device.added.v2.title", bundle: Bundle.module, value: "%@ has been added to Sync & Backup.", comment: "Title on the success screen shown after a device joins Sync & Backup. %@ is the name of the current device that was just added.")
+        return String(format: format, deviceName)
+    }
+    static let simplifiedDeviceAddedV2Description = NotLocalizedString("sync.simplified.device.added.v2.description", bundle: Bundle.module, value: "Use this code to restore your data if you lose access to your devices. Keep it safe.", comment: "Description on the device-added success screen explaining what the recovery code is for")
 
     // Simplified QR Scanning
     static let simplifiedScanTitle = NSLocalizedString("sync.simplified.scan-or-view-code.title", bundle: Bundle.module, value: "Sync Your Devices", comment: "Navigation title for simplified QR scanning screen")

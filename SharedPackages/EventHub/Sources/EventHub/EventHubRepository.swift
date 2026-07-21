@@ -24,7 +24,7 @@ public protocol EventHubRepository {
 /// follow-up implementation task fills these in.
 public final class EventHubKeyValueRepository: EventHubRepository {
     /// The single key under which the map of pixel-name to `EventHubStoredPixelState` is stored.
-    public static let storageKey = "eventhub.pixel.states"
+    public static let storageKey = "eventhub_pixel_states"
 
     private let store: KeyValueStoring
     private let parser: EventHubConfigParsing

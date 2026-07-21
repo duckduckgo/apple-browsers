@@ -37,9 +37,6 @@ public struct SimplifiedConnectingSheetViewV2: View {
             case .syncAnotherDevice:
                 SyncAnotherDevicePromptViewV2(model: model)
                     .transition(.opacity)
-            case .recoverYourData:
-                RecoverYourDataView(model: model)
-                    .transition(.opacity)
             case .deviceConnected:
                 SyncDeviceAddedViewV2(model: model)
                     .transition(.opacity)
@@ -54,20 +51,28 @@ public struct SimplifiedConnectingSheetViewV2: View {
 
 #if DEBUG
 #Preview("Connecting") {
-    SimplifiedConnectingSheetViewV2(model: .connectingSheetPreview(phase: .connecting))
+    RebrandedPreview(isRebranded: true) {
+        SimplifiedConnectingSheetViewV2(model: .connectingSheetPreview(phase: .connecting))
+    }
 }
 
 #Preview("Connecting – Dark") {
-    SimplifiedConnectingSheetViewV2(model: .connectingSheetPreview(phase: .connecting))
-        .preferredColorScheme(.dark)
+    RebrandedPreview(isRebranded: true) {
+        SimplifiedConnectingSheetViewV2(model: .connectingSheetPreview(phase: .connecting))
+    }
+    .preferredColorScheme(.dark)
 }
 
 #Preview("Sync Another Device") {
-    SimplifiedConnectingSheetViewV2(model: .connectingSheetPreview(phase: .syncAnotherDevice))
+    RebrandedPreview(isRebranded: true) {
+        SimplifiedConnectingSheetViewV2(model: .connectingSheetPreview(phase: .syncAnotherDevice(isConnecting: false)))
+    }
 }
 
 #Preview("Device Connected") {
-    SimplifiedConnectingSheetViewV2(model: .connectingSheetPreview(phase: .deviceConnected))
+    RebrandedPreview(isRebranded: true) {
+        SimplifiedConnectingSheetViewV2(model: .connectingSheetPreview(phase: .deviceConnected))
+    }
 }
 
 private extension SyncSettingsViewModel {

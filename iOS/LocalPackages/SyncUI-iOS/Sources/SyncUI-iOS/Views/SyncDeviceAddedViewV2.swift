@@ -76,7 +76,7 @@ struct SyncDeviceAddedViewV2: View {
 
     private var headerSection: some View {
         Section {
-            VStack(spacing: 8) {
+            VStack(spacing: 24) {
                 Image(rebrandable: "Sync-Start-128", bundle: .module)
                     .resizable()
                     .aspectRatio(contentMode: .fit)

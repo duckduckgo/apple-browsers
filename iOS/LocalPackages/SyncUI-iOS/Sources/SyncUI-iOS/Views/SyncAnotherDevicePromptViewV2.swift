@@ -26,59 +26,76 @@ struct SyncAnotherDevicePromptViewV2: View {
     @ObservedObject var model: SyncSettingsViewModel
 
     var body: some View {
-        VStack(spacing: 0) {
+        NavigationView {
             VStack(spacing: 0) {
-                Image(rebrandable: "Desktop-Sync-New-Feature-128", bundle: .module)
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(width: 128, height: 96)
+                VStack(spacing: 0) {
+                    Image(rebrandable: "Desktop-Mobile-Sync-Pair-Feature-128", bundle: .module)
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 128, height: 96)
 
-                Text(UserText.simplifiedSyncAnotherDeviceV2Title)
-                    .daxTitle1()
-                    .multilineTextAlignment(.center)
-                    .padding(.vertical, 24)
+                    Text(UserText.simplifiedSyncAnotherDeviceV2Title)
+                        .daxTitle1()
+                        .multilineTextAlignment(.center)
+                        .padding(.vertical, 24)
 
-                if let deviceName = model.thisDeviceName {
-                    Text(UserText.simplifiedSyncAnotherDeviceV2Body(deviceName))
+                    Text(UserText.simplifiedSyncAnotherDeviceV2Body)
                         .daxBodyRegular()
-                        .foregroundColor(Color(designSystemColor: .textSecondary))
                         .multilineTextAlignment(.center)
                         .fixedSize(horizontal: false, vertical: true)
                 }
-            }
-            .foregroundStyle(Color(designSystemColor: .textPrimary))
-            .padding(.top, 56)
+                .foregroundStyle(Color(designSystemColor: .textPrimary))
+                .padding(.top, 20)
 
-            Spacer()
+                Spacer()
 
-            VStack(spacing: 8) {
-                Button {
-                    model.syncAnotherDeviceFromConnectingSheet()
-                } label: {
-                    HStack(spacing: 8) {
-                        Image(uiImage: DesignSystemImages.Glyphs.Size24.add)
-                        Text(UserText.simplifiedSyncWithAnotherDeviceButton)
+                VStack(spacing: 8) {
+                    Button {
+                        model.syncAnotherDeviceFromConnectingSheet()
+                    } label: {
+                        HStack(spacing: 8) {
+                            Image(uiImage: DesignSystemImages.Glyphs.Size24.add)
+                            Text(UserText.simplifiedSyncWithAnotherDeviceButton)
+                        }
                     }
-                }
-                .buttonStyle(PrimaryButtonStyle())
+                    .buttonStyle(PrimaryButtonStyle())
+                    .disabled(model.isConnectingThisDeviceOnly)
 
-                Button {
-                    model.notNowFromConnectingSheet()
-                } label: {
-                    Text(UserText.simplifiedSyncAnotherDeviceNotNow)
+                    Button {
+                        model.syncThisDeviceOnlyFromConnectingSheet()
+                    } label: {
+                        HStack(spacing: 8) {
+                            if model.isConnectingThisDeviceOnly {
+                                ProgressView()
+                            }
+                            Text(UserText.simplifiedSyncThisDeviceOnly)
+                        }
+                    }
+                    .buttonStyle(SecondaryFillButtonStyle())
+                    .disabled(model.isConnectingThisDeviceOnly)
                 }
-                .buttonStyle(SecondaryFillButtonStyle())
+                .padding(.bottom, 20)
             }
-            .padding(.bottom, 20)
+            .padding(.horizontal, 24)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button {
+                        model.dismissConnectingSheet()
+                    } label: {
+                        Image(uiImage: DesignSystemImages.Glyphs.Size24.close)
+                    }
+                    .accessibilityLabel(UserText.simplifiedScanCloseButton)
+                }
+            }
         }
-        .padding(.horizontal, 24)
     }
 }
 
 #if DEBUG
 
 private extension SyncSettingsViewModel {
-    static func previewModel() -> SyncSettingsViewModel {
+    static func previewModel(isConnecting: Bool = false) -> SyncSettingsViewModel {
         let model = SyncSettingsViewModel(
             isOnDevEnvironment: { false },
             switchToProdEnvironment: {},
@@ -86,6 +103,7 @@ private extension SyncSettingsViewModel {
         )
         model.isSyncEnabled = true
         model.devices = [.init(id: "1", name: "Dave’s iPhone", type: "phone", isThisDevice: true)]
+        model.connectingSheetPhase = .syncAnotherDevice(isConnecting: isConnecting)
         return model
     }
 }
@@ -93,6 +111,12 @@ private extension SyncSettingsViewModel {
 #Preview("Rebranded") {
     RebrandedPreview(isRebranded: true) {
         SyncAnotherDevicePromptViewV2(model: .previewModel())
+    }
+}
+
+#Preview("Connecting") {
+    RebrandedPreview(isRebranded: true) {
+        SyncAnotherDevicePromptViewV2(model: .previewModel(isConnecting: true))
     }
 }
 

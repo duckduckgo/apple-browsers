@@ -139,6 +139,7 @@ public class SyncSettingsViewModel: ObservableObject {
     public enum SyncSetupEntryPoint: Equatable {
         case pairing
         case simplifiedToggle
+        case simplifiedToggleV2
     }
 
     public enum PreservedAccountContinuation: Equatable {
@@ -180,8 +181,7 @@ public class SyncSettingsViewModel: ObservableObject {
 
     public enum ConnectingSheetPhase: Equatable, Identifiable {
         case connecting
-        case syncAnotherDevice
-        case recoverYourData
+        case syncAnotherDevice(isConnecting: Bool)
         case deviceConnected
 
         // Constant on purpose: `.sheet(item:)` re-presents whenever the item's identity changes, so a
@@ -191,6 +191,10 @@ public class SyncSettingsViewModel: ObservableObject {
     }
 
     @Published public var connectingSheetPhase: ConnectingSheetPhase?
+
+    public var isConnectingThisDeviceOnly: Bool {
+        connectingSheetPhase == .syncAnotherDevice(isConnecting: true)
+    }
 
     @Published var shouldShowPasscodeRequiredAlert: Bool = false
 
@@ -353,6 +357,9 @@ public class SyncSettingsViewModel: ObservableObject {
                 delegate?.showSyncWithAnotherDevice()
             case .simplifiedToggle:
                 beginSimplifiedSyncSetup()
+            case .simplifiedToggleV2:
+                isBusy = false
+                connectingSheetPhase = .syncAnotherDevice(isConnecting: false)
             }
         case .recover:
             isRecoverSyncedDataSheetVisible = true
@@ -383,6 +390,15 @@ public class SyncSettingsViewModel: ObservableObject {
         isBusy = true
         Task { @MainActor in
             await beginFlow(for: .setup(.simplifiedToggle))
+        }
+    }
+
+    public func showSyncAnotherDevicePromptFromToggleV2() {
+        guard !isBusy else { return }
+        guard isAccountCreationAvailable else { return }
+        isBusy = true
+        Task { @MainActor in
+            await beginFlow(for: .setup(.simplifiedToggleV2))
         }
     }
 
@@ -424,21 +440,16 @@ public class SyncSettingsViewModel: ObservableObject {
         return true
     }
 
-    public func showSyncWithAnotherDeviceInConnectingSheet() {
-        connectingSheetPhase = .syncAnotherDevice
-    }
-
     public func syncAnotherDeviceFromConnectingSheet() {
         postConnectingSheetDismissAction = { [weak self] in self?.scanQRCode() }
         connectingSheetPhase = nil
     }
 
-    public func notNowFromConnectingSheet() {
-        connectingSheetPhase = .recoverYourData
-    }
-
-    public func recoverYourDataDoneFromConnectingSheet() {
-        connectingSheetPhase = nil
+    @MainActor
+    public func syncThisDeviceOnlyFromConnectingSheet() {
+        guard !isBusy else { return }
+        connectingSheetPhase = .syncAnotherDevice(isConnecting: true)
+        beginSimplifiedSyncSetup()
     }
 
     public func showDeviceConnectedInConnectingSheet(recoveryCode: String) {

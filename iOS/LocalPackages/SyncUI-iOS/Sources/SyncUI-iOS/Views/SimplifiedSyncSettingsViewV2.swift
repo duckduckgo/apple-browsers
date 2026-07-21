@@ -163,7 +163,7 @@ extension SimplifiedSyncSettingsViewV2 {
         if model.isSyncEnabled {
             return model.isAIChatSyncEnabled ? UserText.simplifiedSyncEnabledHeaderMessage : UserText.simplifiedSyncEnabledHeaderMessageBasic
         } else {
-            return model.isAIChatSyncEnabled ? UserText.simplifiedSyncHeaderMessage : UserText.simplifiedSyncHeaderMessageBasic
+            return model.isAIChatSyncEnabled ? UserText.simplifiedSyncHeaderMessageV2 : UserText.simplifiedSyncHeaderMessageBasicV2
         }
     }
 
@@ -215,7 +215,7 @@ extension SimplifiedSyncSettingsViewV2 {
                     set: { newValue in
                         if newValue {
                             model.delegate?.fireSyncSetupPixel(event: .backUpThisDeviceTapped)
-                            model.enableSyncToggleTapped()
+                            model.showSyncAnotherDevicePromptFromToggleV2()
                         } else {
                             model.disableSyncToggleTapped()
                         }
@@ -227,12 +227,15 @@ extension SimplifiedSyncSettingsViewV2 {
             }
             .animation(.easeInOut(duration: 0.3), value: model.isBusy)
             .disabled(model.isBusy || (!model.isSyncEnabled && !model.isAccountCreationAvailable))
-
-            if !model.isSyncEnabled {
-                syncWithAnotherDeviceButton
-            }
         }
         .listRowBackground(Color(designSystemColor: .surface))
+
+        if !model.isSyncEnabled {
+            Section {
+                syncWithAnotherDeviceButton
+            }
+            .listRowBackground(Color(designSystemColor: .surface))
+        }
     }
 
     @ViewBuilder
@@ -258,10 +261,13 @@ extension SimplifiedSyncSettingsViewV2 {
                 model.delegate?.fireSyncSetupPixel(event: .recoverSyncedDataTapped)
                 model.beginRecoverFlow()
             } label: {
-                Text(UserText.simplifiedRecoverSyncedDataButton)
-                    .daxBodyRegular()
-                    .foregroundColor(Color(designSystemColor: .textPrimary))
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                HStack {
+                    Text(UserText.simplifiedHaveRecoveryCodeButton)
+                        .daxBodyRegular()
+                        .foregroundColor(Color(designSystemColor: .textPrimary))
+                    Spacer()
+                    disclosureChevron
+                }
             }
             .sheet(isPresented: $model.isRecoverSyncedDataSheetVisible) {
                 RecoverSyncedDataView(model: model, onCancel: {
@@ -270,13 +276,7 @@ extension SimplifiedSyncSettingsViewV2 {
             }
             .disabled(!model.isAccountRecoveryAvailable)
         } header: {
-            // Top-only gap above this section per the design. A clear header adds space above the
-            // card without touching the gap below it — unlike `listSectionSpacing`, which pads both
-            // sides of a section. Height is tuned against the canvas.
-            Color.clear
-                .frame(height: 44)
-                .listRowInsets(EdgeInsets())
-                .accessibilityHidden(true)
+            Text(UserText.simplifiedRecoverSyncedDataSectionHeader)
         }
         .listRowBackground(Color(designSystemColor: .surface))
     }
@@ -286,19 +286,16 @@ extension SimplifiedSyncSettingsViewV2 {
         Section {
             NavigationLink(destination: PlatformLinksView(model: model, source: source)) {
                 Label(title: {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(UserText.simplifiedGetDesktopBrowserTitle)
-                            .daxBodyRegular()
-                            .foregroundColor(Color(designSystemColor: .textPrimary))
-                        Text(UserText.simplifiedGetDesktopBrowserSubtitle)
-                            .daxFootnoteRegular()
-                            .foregroundColor(Color(designSystemColor: .textSecondary))
-                    }
+                    Text(UserText.simplifiedGetOurDesktopBrowserTitle)
+                        .daxBodyRegular()
+                        .foregroundColor(Color(designSystemColor: .textPrimary))
                 }, icon: {
                     Image(uiImage: DesignSystemImages.Color.Size24.deviceLaptopInstall)
                 })
             }
             .buttonStyle(.plain)
+        } header: {
+            Text(UserText.simplifiedDownloadSectionHeader)
         }
         .listRowBackground(Color(designSystemColor: .surface))
     }

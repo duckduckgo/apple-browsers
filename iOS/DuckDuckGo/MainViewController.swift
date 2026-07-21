@@ -898,8 +898,8 @@ class MainViewController: UIViewController {
             self?.currentTab?.aiChatContextualSheetCoordinator.dismissSheet()
             self?.newTab()
         } onSwipeStarted: { [weak self] in
-            self?.performCancel()
-            self?.hideKeyboard()
+            self?.performCancel(animated: false)
+            self?.hideKeyboard(animated: false)
             self?.updatePreviewForCurrentTab()
         }
 
@@ -4023,8 +4023,8 @@ extension MainViewController: BrowserChromeDelegate {
         updateUnifiedInputContentVisibility(for: coordinator)
     }
 
-    private func hideKeyboard() {
-        dismissOmniBar()
+    private func hideKeyboard(animated: Bool = true) {
+        dismissOmniBar(animated: animated)
         _ = findInPageView?.resignFirstResponder()
     }
 
@@ -5972,7 +5972,17 @@ extension MainViewController: TabDelegate {
 
     func capturePreviewForTab(_ tab: TabViewController) {
         // Capture source tab preview now; otherwise its thumbnail stays stale once we switch to the new tab.
-        guard tab.link != nil, let image = tab.preparePreviewSync() else { return }
+        guard tab.link != nil else { return }
+
+        if floatingUIManager.isFloatingUIEnabled {
+            tab.preparePreview { [weak self, weak tab] image in
+                guard let self, let tab, let image else { return }
+                previewsSource.update(preview: image, forTab: tab.tabModel)
+            }
+            return
+        }
+
+        guard let image = tab.preparePreviewSync() else { return }
         previewsSource.update(preview: image, forTab: tab.tabModel)
     }
 

@@ -304,3 +304,92 @@ final class FloatingDomainCapsuleControllerTests: XCTestCase {
         XCTAssertEqual(midWidth, capsuleWidth, accuracy: 0.5)
     }
 }
+
+final class WebViewPreviewSnapshotGeometryTests: XCTestCase {
+
+    func testWhenWebViewBoundsAreValidThenVisibleRectUsesTheFullViewport() {
+        let bounds = CGRect(x: 0, y: 0, width: 320, height: 640)
+
+        XCTAssertEqual(WebViewPreviewSnapshotGeometry.visibleRect(webViewBounds: bounds), bounds)
+    }
+
+    func testWhenViewportIsEmptyThenVisibleRectIsNil() {
+        XCTAssertNil(WebViewPreviewSnapshotGeometry.visibleRect(webViewBounds: .zero))
+    }
+}
+
+final class FloatingOmnibarSwipeGeometryTests: XCTestCase {
+
+    private let bounds = CGRect(x: 0, y: 0, width: 300, height: 60)
+
+    func testWhenSwipingLeftThenOutgoingCollapsesFromRightAndIncomingExpandsFromRight() {
+        let rects = FloatingOmnibarSwipeGeometry.visibleRects(bounds: bounds, progress: 0.25, direction: .left)
+
+        XCTAssertEqual(rects.outgoing, CGRect(x: 0, y: 0, width: 217, height: 60))
+        XCTAssertEqual(rects.incoming, CGRect(x: 233, y: 0, width: 67, height: 60))
+        XCTAssertEqual(rects.incoming.minX - rects.outgoing.maxX, 16)
+    }
+
+    func testWhenSwipingRightThenOutgoingCollapsesFromLeftAndIncomingExpandsFromLeft() {
+        let rects = FloatingOmnibarSwipeGeometry.visibleRects(bounds: bounds, progress: 0.25, direction: .right)
+
+        XCTAssertEqual(rects.outgoing, CGRect(x: 83, y: 0, width: 217, height: 60))
+        XCTAssertEqual(rects.incoming, CGRect(x: 0, y: 0, width: 67, height: 60))
+        XCTAssertEqual(rects.outgoing.minX - rects.incoming.maxX, 16)
+    }
+
+    func testWhenProgressExceedsBoundsThenGeometryIsClamped() {
+        let beforeStart = FloatingOmnibarSwipeGeometry.visibleRects(bounds: bounds, progress: -1, direction: .left)
+        let afterEnd = FloatingOmnibarSwipeGeometry.visibleRects(bounds: bounds, progress: 2, direction: .left)
+
+        XCTAssertEqual(beforeStart.outgoing.width, bounds.width)
+        XCTAssertEqual(beforeStart.incoming.width, 0)
+        XCTAssertEqual(afterEnd.outgoing.width, 0)
+        XCTAssertEqual(afterEnd.incoming.width, bounds.width)
+    }
+
+    func testWhenSwipeIsBeforeHandoffThenIncomingBarAndTextRemainHidden() {
+        let morph = FloatingOmnibarSwipeMorph.values(progress: 0.19)
+
+        XCTAssertEqual(morph.incomingBarAlpha, 0)
+        XCTAssertEqual(morph.outgoingTextAlpha, 1)
+        XCTAssertEqual(morph.incomingTextAlpha, 0)
+    }
+
+    func testWhenSwipeCrossesMidpointThenTextHandoffIsUnderway() {
+        let morph = FloatingOmnibarSwipeMorph.values(progress: 0.5)
+
+        XCTAssertEqual(morph.incomingBarAlpha, 1)
+        XCTAssertEqual(morph.outgoingTextAlpha, 0)
+        XCTAssertEqual(morph.incomingTextAlpha, 0.75, accuracy: 0.001)
+    }
+
+    func testWhenSwipingThenTextTracksMovingFieldEdges() {
+        let left = FloatingOmnibarSwipeGeometry.visibleRects(bounds: bounds, progress: 0.25, direction: .left)
+        let right = FloatingOmnibarSwipeGeometry.visibleRects(bounds: bounds, progress: 0.25, direction: .right)
+
+        XCTAssertEqual(FloatingOmnibarSwipeGeometry.trailingTranslationX(bounds: bounds, visibleRect: left.outgoing), -83)
+        XCTAssertEqual(FloatingOmnibarSwipeGeometry.leadingTranslationX(bounds: bounds, visibleRect: left.incoming), 233)
+        XCTAssertEqual(FloatingOmnibarSwipeGeometry.leadingTranslationX(bounds: bounds, visibleRect: right.outgoing), 83)
+        XCTAssertEqual(FloatingOmnibarSwipeGeometry.trailingTranslationX(bounds: bounds, visibleRect: right.incoming), -233)
+    }
+
+    func testWhenSwipeEndsThenToolbarRemovesMasksAndIncomingView() {
+        let toolbar = BrowserToolbarView(frame: CGRect(x: 0, y: 0, width: 320, height: 140))
+        let outgoingView = UIView()
+        let incomingView = UIView()
+        toolbar.setFloatingStyleEnabled(true)
+        toolbar.setOmnibarView(outgoingView, height: 60)
+        toolbar.layoutIfNeeded()
+
+        toolbar.beginOmnibarSwipe(with: incomingView)
+        toolbar.updateOmnibarSwipe(progress: 0.5, direction: .left)
+        XCTAssertNotNil(outgoingView.layer.mask)
+        XCTAssertNotNil(incomingView.layer.mask)
+
+        toolbar.endOmnibarSwipe()
+        XCTAssertNil(outgoingView.layer.mask)
+        XCTAssertNil(incomingView.layer.mask)
+        XCTAssertNil(incomingView.superview)
+    }
+}

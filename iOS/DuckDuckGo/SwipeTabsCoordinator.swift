@@ -143,6 +143,7 @@ class SwipeTabsCoordinator: NSObject {
     weak var swipeOverlayView: TabSwipeOverlayView?
 
     private var overlayActive = false
+    private var floatingIncomingOmnibarController: OmniBarViewController?
 
     /// Off-screen snapshot of the destination tab's chrome (omnibar / AI header) that slides in
     /// from the lead edge alongside the webview preview. Built only when crossing the
@@ -224,14 +225,20 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
 
         case .starting(let startPosition):
             let offset = startPosition.x - scrollView.contentOffset.x
-            if !activateSwipeOverlay() {
+            if floatingUIManager.isFloatingUIEnabled {
+                prepareCurrentView()
+                preparePreview(offset)
+                prepareFloatingBottomOmnibarSwipe(offset: offset)
+            } else if !activateSwipeOverlay() {
                 // Fallback: legacy visual prep when the overlay isn't installed yet.
                 prepareCurrentView()
                 preparePreview(offset)
                 prepareAuxiliarySwipeSnapshots()
             }
             state = .swiping(startPosition, offset.sign)
-            onSwipeStarted()
+            if !floatingUIManager.isFloatingUIEnabled {
+                onSwipeStarted()
+            }
 
         case .swiping(let startPosition, let sign):
             let offset = startPosition.x - scrollView.contentOffset.x
@@ -249,6 +256,7 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
                 for snapshot in auxiliarySwipeViewSnapshots {
                     snapshot.transform.tx = offset
                 }
+                updateFloatingBottomOmnibarSwipe(offset: offset)
             } else {
                 cleanUpViews()
                 state = .starting(startPosition)
@@ -265,7 +273,7 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
     /// occlude what's underneath. Touching the live views' alpha while a refresh is firing
     /// during the swipe was the cause of the "stacked screens" / "offset chrome" artifacts.
     private func activateSwipeOverlay() -> Bool {
-        guard let overlay = swipeOverlayView else {
+        guard !floatingUIManager.isFloatingUIEnabled, let overlay = swipeOverlayView else {
             return false
         }
 
@@ -413,14 +421,20 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
             return
         }
 
-        let targetSize = coordinator.contentContainer.frame.size
-        var height = targetSize.height
+        let targetFrame: CGRect
+        if floatingUIManager.isFloatingUIEnabled {
+            targetFrame = currentView?.frame ?? coordinator.contentContainer.bounds
+        } else {
+            targetFrame = coordinator.contentContainer.bounds
+        }
+        var height = targetFrame.height
 
         let tab = tabsModel.get(tabAt: nextIndex)
 
         if let tab, let image = tabPreviewsSource.preview(for: tab) {
             createPreviewFromImage(image)
-            if appSettings.currentAddressBarPosition.isBottom,
+            if !floatingUIManager.isFloatingUIEnabled,
+               appSettings.currentAddressBarPosition.isBottom,
                tab.link != nil,
                let collectionView = coordinator.navigationBarContainer.subviews.first as? UICollectionView {
                 // Adjust the preview height to account for the omnibar at the bottom
@@ -428,18 +442,61 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
                 // We need to subtract the omnibar height from the total height to get the visible content area
                 // Note: We use the collectionView's height directly instead of navigationBarContainer.height
                 // because the container height can change when the keyboard appears
-                height = targetSize.height - collectionView.frame.size.height
+                height = targetFrame.height - collectionView.frame.size.height
             }
-            preview?.frame = CGRect(x: 0, y: 0, width: targetSize.width, height: height)
+            preview?.frame = CGRect(x: targetFrame.minX, y: targetFrame.minY, width: targetFrame.width, height: height)
         } else if tab?.link == nil {
             let targetFrame = CGRect(origin: .zero, size: coordinator.contentContainer.frame.size)
             createPreviewFromLogoContainerWithSize(targetFrame.size)
             preview?.frame = targetFrame
         }
 
-        preview?.frame.origin.x = coordinator.contentContainer.frame.width * CGFloat(modifier)
+        preview?.frame.origin.x += coordinator.contentContainer.frame.width * CGFloat(modifier)
 
         prepareChromePreview(modifier: modifier, destinationTab: tab)
+    }
+
+    private func prepareFloatingBottomOmnibarSwipe(offset: CGFloat) {
+        guard appSettings.currentAddressBarPosition.isBottom,
+              coordinator.isOmnibarInToolbar,
+              let currentIndex = tabsModel.currentIndex else {
+            return
+        }
+
+        let destinationIndex = currentIndex + (offset > 0 ? -1 : 1)
+        let hasNewTabDestination = destinationIndex == tabsModel.count && tabsModel.tabs.last?.link != nil
+        guard tabsModel.tabs.indices.contains(destinationIndex) || hasNewTabDestination else { return }
+
+        let controller = makeSwipeTemplateController()
+        coordinator.parentController?.addChild(controller)
+        configureSwipeTemplate(controller, at: destinationIndex)
+        controller.barView.setIconContainersAlpha(0)
+        coordinator.omniBar.barView.setIconContainersAlpha(0)
+        coordinator.toolbar.beginOmnibarSwipe(with: controller.barView)
+        controller.didMove(toParent: coordinator.parentController)
+        floatingIncomingOmnibarController = controller
+        updateFloatingBottomOmnibarSwipe(offset: offset)
+    }
+
+    private func updateFloatingBottomOmnibarSwipe(offset: CGFloat) {
+        guard floatingIncomingOmnibarController != nil else { return }
+        let width = coordinator.contentContainer.bounds.width
+        guard width > 0 else { return }
+
+        let direction: FloatingOmnibarSwipeDirection = offset < 0 ? .left : .right
+        coordinator.toolbar.updateOmnibarSwipe(
+            progress: min(abs(offset) / width, 1),
+            direction: direction
+        )
+    }
+
+    private func cleanUpFloatingBottomOmnibarSwipe() {
+        coordinator.toolbar.endOmnibarSwipe()
+        coordinator.omniBar.barView.setIconContainersAlpha(1)
+        floatingIncomingOmnibarController?.barView.setIconContainersAlpha(1)
+        floatingIncomingOmnibarController?.willMove(toParent: nil)
+        floatingIncomingOmnibarController?.removeFromParent()
+        floatingIncomingOmnibarController = nil
     }
 
     /// Builds an off-screen full-screen facade of the destination tab's chrome so it slides in
@@ -577,7 +634,7 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
 
     private func createPreviewFromImage(_ image: UIImage) {
         let imageView = UIImageView(image: image)
-        imageView.contentMode = .scaleAspectFill
+        imageView.contentMode = floatingUIManager.isFloatingUIEnabled ? .scaleToFill : .scaleAspectFill
         coordinator.contentContainer.addSubview(imageView)
         preview = imageView
     }
@@ -599,6 +656,9 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
     func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {
         switch state {
         case .idle:
+            if floatingUIManager.isFloatingUIEnabled {
+                onSwipeStarted()
+            }
             state = .starting(scrollView.contentOffset)
 
         default: break
@@ -645,6 +705,7 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
 
     private func cleanUpViews() {
         deactivateSwipeOverlay()
+        cleanUpFloatingBottomOmnibarSwipe()
         currentView?.transform = .identity
         currentView = nil
         preview?.removeFromSuperview()
@@ -748,8 +809,8 @@ extension SwipeTabsCoordinator {
             collectionView.layer.removeAllAnimations()
             cleanUpViews()
             state = .idle
-            externalPanStartOffset = collectionView.contentOffset
             scrollViewWillBeginDragging(collectionView)
+            externalPanStartOffset = collectionView.contentOffset
 
         case .changed:
             let translation = gesture.translation(in: panView).x
@@ -812,6 +873,50 @@ extension SwipeTabsCoordinator {
 
 }
 
+private extension SwipeTabsCoordinator {
+
+    func makeSwipeTemplateController() -> OmniBarViewController {
+        OmniBarFactory.createOmniBarViewController(
+            with: omnibarDependencies,
+            isFloatingUIEnabled: floatingUIManager.isFloatingUIEnabled
+        )
+    }
+
+    func configureSwipeTemplate(_ omniBar: OmniBar, at index: Int) {
+        let tab = tabsModel?.get(tabAt: index)
+        let url = tab?.link?.url
+
+        omniBar.showSeparator()
+        omniBar.adjust(for: appSettings.currentAddressBarPosition)
+        if floatingUIManager.isFloatingUIEnabled {
+            if appSettings.currentAddressBarPosition.isBottom {
+                omniBar.barView.makeOpaque()
+            } else {
+                omniBar.barView.makeGlass()
+            }
+        }
+        omniBar.configureForSwipeTemplate(
+            isExpandedPhone: coordinator.omniBar.isExpandedPhone,
+            tabCount: tabsModel.count
+        )
+        omniBar.barView.setFloatingMinimalChromeBar(
+            coordinator.omniBar.isExpandedPhone && floatingUIManager.isFloatingUIEnabled
+        )
+
+        if tab?.isAITab == true {
+            omniBar.enterAIChatMode()
+        } else if let url {
+            omniBar.startBrowsing()
+            omniBar.resetPrivacyIcon(for: url)
+        } else {
+            omniBar.stopBrowsing()
+        }
+
+        omniBar.refreshText(forUrl: url, forceFullURL: appSettings.showFullSiteAddress)
+        omniBar.refreshFireMode(fireMode: tab?.fireTab ?? false)
+    }
+}
+
 // MARK: UICollectionViewDataSource
 extension SwipeTabsCoordinator: UICollectionViewDataSource {
     
@@ -839,42 +944,13 @@ extension SwipeTabsCoordinator: UICollectionViewDataSource {
         if isCurrentTab {
             cell.omniBar = coordinator.omniBar
         } else {
-            // Strong reference while we use the omnibar
-            let tab = tabsModel?.get(tabAt: indexPath.row)
-            let url = tab?.link?.url
-
-            let controller = cell.controller ?? OmniBarFactory.createOmniBarViewController(
-                with: omnibarDependencies,
-                isFloatingUIEnabled: floatingUIManager.isFloatingUIEnabled
-            )
-
-            coordinator.parentController?.addChild(controller)
-
-            cell.omniBar = controller
-
-            cell.omniBar?.showSeparator()
-            cell.omniBar?.adjust(for: appSettings.currentAddressBarPosition)
-
-            cell.omniBar?.configureForSwipeTemplate(
-                isExpandedPhone: coordinator.omniBar.isExpandedPhone,
-                tabCount: tabsModel.count
-            )
-            // Give template omnibars the same minimal-chrome glass as the current bar while swiping.
-            cell.omniBar?.barView.setFloatingMinimalChromeBar(
-                coordinator.omniBar.isExpandedPhone && floatingUIManager.isFloatingUIEnabled
-            )
-            
-            if tab?.isAITab == true {
-                cell.omniBar?.enterAIChatMode()
-            } else if let url {
-                cell.omniBar?.startBrowsing()
-                cell.omniBar?.resetPrivacyIcon(for: url)
-            } else {
-                cell.omniBar?.stopBrowsing()
+            let controller = cell.controller ?? makeSwipeTemplateController()
+            if controller.parent == nil {
+                coordinator.parentController?.addChild(controller)
             }
 
-            cell.omniBar?.refreshText(forUrl: url, forceFullURL: appSettings.showFullSiteAddress)
-            cell.omniBar?.refreshFireMode(fireMode: tab?.fireTab ?? false)
+            cell.omniBar = controller
+            configureSwipeTemplate(controller, at: indexPath.row)
 
             controller.didMove(toParent: coordinator.parentController)
             cell.controller = controller

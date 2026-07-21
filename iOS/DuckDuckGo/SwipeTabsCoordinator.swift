@@ -21,6 +21,58 @@ import UIKit
 import Core
 import BrowserServicesKit
 
+enum FloatingSwipePreviewGeometry {
+
+    static func destinationFrame(isAITab: Bool,
+                                 superviewBounds: CGRect,
+                                 contentContainerFrame: CGRect,
+                                 safeAreaInsets: UIEdgeInsets,
+                                 aiHeaderHeight: CGFloat,
+                                 aiInputHeight: CGFloat) -> CGRect {
+        let frameInSuperview: CGRect
+        if isAITab {
+            let top = superviewBounds.minY + safeAreaInsets.top + aiHeaderHeight
+            let bottom = superviewBounds.maxY - safeAreaInsets.bottom - aiInputHeight
+            frameInSuperview = CGRect(
+                x: superviewBounds.minX,
+                y: top,
+                width: superviewBounds.width,
+                height: max(bottom - top, 0)
+            )
+        } else {
+            frameInSuperview = superviewBounds
+        }
+
+        return frameInSuperview.offsetBy(
+            dx: -contentContainerFrame.minX,
+            dy: -contentContainerFrame.minY
+        )
+    }
+}
+
+enum SwipeTabBoundaryPolicy {
+
+    static func crossesAITabBoundary(currentIsAITab: Bool, destinationIsAITab: Bool) -> Bool {
+        currentIsAITab != destinationIsAITab
+    }
+}
+
+enum LiveTabSwipePolicy {
+
+    static func shouldUseLiveDestination(isFloatingUIEnabled: Bool, hasWebDestination: Bool) -> Bool {
+        isFloatingUIEnabled && hasWebDestination
+    }
+
+    static func shouldKeepDestinationView(targetIndex: Int, currentIndex: Int?, tabCount: Int) -> Bool {
+        targetIndex < tabCount && targetIndex != (currentIndex ?? targetIndex)
+    }
+}
+
+struct SwipeChromeSnapshot {
+    let image: UIImage
+    let captureRect: CGRect
+}
+
 class SwipeTabsCoordinator: NSObject {
     
     static let tabGap: CGFloat = 10
@@ -33,6 +85,8 @@ class SwipeTabsCoordinator: NSObject {
     weak var appSettings: AppSettings!
     private let omnibarDependencies: OmnibarDependencyProvider
     private let floatingUIManager: FloatingUIManaging
+    private let liveTabControllerProvider: (Tab) -> TabViewController?
+    private let inputStateProvider: (Tab) -> TabInputState
 
     let selectTab: (Tab) -> Void
     let newTab: () -> Void
@@ -63,6 +117,8 @@ class SwipeTabsCoordinator: NSObject {
          appSettings: AppSettings,
          omnibarDependencies: OmnibarDependencyProvider,
          floatingUIManager: FloatingUIManaging,
+         liveTabControllerProvider: @escaping (Tab) -> TabViewController?,
+         inputStateProvider: @escaping (Tab) -> TabInputState,
          selectTab: @escaping (Tab) -> Void,
          newTab: @escaping () -> Void,
          onSwipeStarted: @escaping () -> Void) {
@@ -72,6 +128,8 @@ class SwipeTabsCoordinator: NSObject {
         self.appSettings = appSettings
         self.omnibarDependencies = omnibarDependencies
         self.floatingUIManager = floatingUIManager
+        self.liveTabControllerProvider = liveTabControllerProvider
+        self.inputStateProvider = inputStateProvider
         self.selectTab = selectTab
         self.newTab = newTab
         self.onSwipeStarted = onSwipeStarted
@@ -144,6 +202,10 @@ class SwipeTabsCoordinator: NSObject {
 
     private var overlayActive = false
     private var floatingIncomingOmnibarController: OmniBarViewController?
+    private var liveDestinationController: TabViewController?
+    private var liveChromeControllers: [UIViewController] = []
+    private weak var liveSourceChromeView: UIView?
+    private var hiddenLiveSourceChromeViews: [(view: UIView, alpha: CGFloat)] = []
 
     /// Off-screen snapshot of the destination tab's chrome (omnibar / AI header) that slides in
     /// from the lead edge alongside the webview preview. Built only when crossing the
@@ -158,8 +220,8 @@ class SwipeTabsCoordinator: NSObject {
     /// these from scratch with `layer.render` because the pill containers use
     /// `UIVisualEffectView` (iOS 26 glass) and the pills carry shadows — both of which
     /// `layer.render(in:)` ignores. Captured by the host when a Duck.ai tab refreshes.
-    var cachedAIHeaderSnapshot: UIImage?
-    var cachedAIUTIBarSnapshot: UIImage?
+    var cachedAIHeaderSnapshot: SwipeChromeSnapshot?
+    var cachedAIUTIBarSnapshot: SwipeChromeSnapshot?
 
     /// Pixel-perfect cached snapshot of the live legacy omnibar, captured via `drawHierarchy`
     /// while the user is on a regular tab. Used as the regular-tab destination facade — when
@@ -167,7 +229,8 @@ class SwipeTabsCoordinator: NSObject {
     /// rendering path (drawHierarchy → real bitmap with shadows + effects) means there's no
     /// visible "snap" between facade and real. A `layer.render` facade would render the
     /// omnibar flat, so removing it exposes the real omnibar's shadows as a single-frame flash.
-    var cachedLegacyOmnibarSnapshot: UIImage?
+    var cachedLegacyOmnibarSnapshot: SwipeChromeSnapshot?
+    var cachedRegularToolbarSnapshot: SwipeChromeSnapshot?
 
     private var omniBarHeight: CGFloat {
         DefaultOmniBarView.expectedHeight
@@ -227,7 +290,16 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
             let offset = startPosition.x - scrollView.contentOffset.x
             if floatingUIManager.isFloatingUIEnabled {
                 prepareCurrentView()
-                preparePreview(offset)
+                let didPrepareLiveDestination = prepareLiveDestination(offset: offset)
+                if !didPrepareLiveDestination {
+                    preparePreview(offset)
+                }
+                if isCrossingAITabBoundary(offset: offset) {
+                    if !didPrepareLiveDestination {
+                        prepareLiveDestinationChrome(offset: offset)
+                    }
+                    prepareLiveOutgoingChrome()
+                }
                 prepareFloatingBottomOmnibarSwipe(offset: offset)
             } else if !activateSwipeOverlay() {
                 // Fallback: legacy visual prep when the overlay isn't installed yet.
@@ -256,6 +328,7 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
                 for snapshot in auxiliarySwipeViewSnapshots {
                     snapshot.transform.tx = offset
                 }
+                liveSourceChromeView?.transform.tx = offset
                 updateFloatingBottomOmnibarSwipe(offset: offset)
             } else {
                 cleanUpViews()
@@ -354,21 +427,18 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
         teardownAuxiliarySwipeSnapshots()
 
         for view in auxiliarySwipeViews {
-            guard !view.isHidden, view.bounds.width > 0, view.bounds.height > 0 else {
+            guard !view.isHidden, view.alpha > 0.01, view.bounds.width > 0, view.bounds.height > 0 else {
                 continue
             }
 
-            let renderer = UIGraphicsImageRenderer(size: view.bounds.size)
-            let image = renderer.image { _ in
-                view.drawHierarchy(in: view.bounds, afterScreenUpdates: false)
-            }
-            let snapshot = UIImageView(image: image)
+            guard let chromeSnapshot = makeChromeSnapshot(of: view) else { continue }
+            let snapshot = UIImageView(image: chromeSnapshot.image)
 
             // Convert the original's frame into the superview's coordinate space — auxiliary
             // views live as descendants (e.g. unifiedToggleInputContainer is inside
             // navigationBarContainer), so their `.frame` is in their parent's coords, not the
             // root's.
-            let frameInSuperview = view.convert(view.bounds, to: coordinator.superview)
+            let frameInSuperview = view.convert(chromeSnapshot.captureRect, to: coordinator.superview)
             snapshot.frame = frameInSuperview
             coordinator.superview.addSubview(snapshot)
             auxiliarySwipeViewSnapshots.append(snapshot)
@@ -387,6 +457,30 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
             original.alpha = 1
         }
         hiddenAuxiliaryOriginals = []
+    }
+
+    private func makeChromeSnapshot(of view: UIView) -> SwipeChromeSnapshot? {
+        guard view.bounds.width > 0, view.bounds.height > 0 else { return nil }
+
+        var captureRect = view.bounds
+        accumulateVisibleBounds(of: view, relativeTo: view, into: &captureRect)
+        captureRect = captureRect.insetBy(dx: -12, dy: -12)
+
+        let renderer = UIGraphicsImageRenderer(size: captureRect.size)
+        let image = renderer.image { _ in
+            view.drawHierarchy(
+                in: view.bounds.offsetBy(dx: -captureRect.minX, dy: -captureRect.minY),
+                afterScreenUpdates: false
+            )
+        }
+        return SwipeChromeSnapshot(image: image, captureRect: captureRect)
+    }
+
+    private func accumulateVisibleBounds(of view: UIView, relativeTo rootView: UIView, into bounds: inout CGRect) {
+        for subview in view.subviews where !subview.isHidden && subview.alpha > 0.01 {
+            bounds = bounds.union(subview.convert(subview.bounds, to: rootView))
+            accumulateVisibleBounds(of: subview, relativeTo: rootView, into: &bounds)
+        }
     }
     
     private func swipeCurrentViewProportionally(offset: CGFloat) {
@@ -421,15 +515,24 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
             return
         }
 
+        let tab = tabsModel.get(tabAt: nextIndex)
         let targetFrame: CGRect
         if floatingUIManager.isFloatingUIEnabled {
-            targetFrame = currentView?.frame ?? coordinator.contentContainer.bounds
+            targetFrame = FloatingSwipePreviewGeometry.destinationFrame(
+                isAITab: tab?.isAITab == true,
+                superviewBounds: coordinator.superview.bounds,
+                contentContainerFrame: coordinator.contentContainer.frame,
+                safeAreaInsets: coordinator.superview.safeAreaInsets,
+                aiHeaderHeight: max(coordinator.aiChatTabChatHeaderContainer.bounds.height, 60),
+                aiInputHeight: max(
+                    coordinator.unifiedToggleInputContainer.bounds.height,
+                    DefaultOmniBarView.expectedHeight
+                )
+            )
         } else {
             targetFrame = coordinator.contentContainer.bounds
         }
         var height = targetFrame.height
-
-        let tab = tabsModel.get(tabAt: nextIndex)
 
         if let tab, let image = tabPreviewsSource.preview(for: tab) {
             createPreviewFromImage(image)
@@ -456,6 +559,257 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
         prepareChromePreview(modifier: modifier, destinationTab: tab)
     }
 
+    private func prepareLiveDestination(offset: CGFloat) -> Bool {
+        guard let currentIndex = tabsModel.currentIndex else { return false }
+        let modifier = offset > 0 ? -1 : 1
+        let destinationIndex = currentIndex + modifier
+        guard let tab = tabsModel.get(tabAt: destinationIndex),
+              LiveTabSwipePolicy.shouldUseLiveDestination(
+                isFloatingUIEnabled: floatingUIManager.isFloatingUIEnabled,
+                hasWebDestination: tab.link != nil
+              ) else {
+            return false
+        }
+        if liveDestinationController?.tabModel === tab {
+            return true
+        }
+        tearDownLiveSwipeViews()
+        guard let controller = liveTabControllerProvider(tab),
+              controller.parent == nil else {
+            return false
+        }
+
+        let frame = FloatingSwipePreviewGeometry.destinationFrame(
+            isAITab: tab.isAITab,
+            superviewBounds: coordinator.superview.bounds,
+            contentContainerFrame: coordinator.contentContainer.frame,
+            safeAreaInsets: coordinator.superview.safeAreaInsets,
+            aiHeaderHeight: max(coordinator.aiChatTabChatHeaderContainer.bounds.height, 60),
+            aiInputHeight: max(
+                coordinator.unifiedToggleInputContainer.bounds.height,
+                DefaultOmniBarView.expectedHeight
+            )
+        )
+
+        coordinator.parentController?.addChild(controller)
+        controller.view.frame = frame.offsetBy(
+            dx: CGFloat(modifier) * coordinator.contentContainer.bounds.width,
+            dy: 0
+        )
+        controller.view.isUserInteractionEnabled = false
+        coordinator.contentContainer.addSubview(controller.view)
+        controller.didMove(toParent: coordinator.parentController)
+        liveDestinationController = controller
+        preview = controller.view
+        if isCrossingAITabBoundary(offset: offset) {
+            prepareLiveChromePreview(modifier: modifier, destinationTab: tab)
+        }
+        return true
+    }
+
+    private func prepareLiveChromePreview(modifier: Int, destinationTab: Tab) {
+        chromePreview?.removeFromSuperview()
+        chromePreview = nil
+
+        let superview = coordinator.superview
+        let container = UIView(frame: CGRect(
+            x: CGFloat(modifier) * superview.bounds.width,
+            y: 0,
+            width: superview.bounds.width,
+            height: superview.bounds.height
+        ))
+        container.isUserInteractionEnabled = false
+        container.overrideUserInterfaceStyle = superview.traitCollection.userInterfaceStyle
+        superview.addSubview(container)
+
+        if destinationTab.isAITab {
+            addLiveAIChrome(for: destinationTab, to: container)
+        } else {
+            addLiveRegularChrome(for: destinationTab, to: container)
+        }
+
+        chromePreview = container
+    }
+
+    private func prepareLiveDestinationChrome(offset: CGFloat) {
+        guard let currentIndex = tabsModel.currentIndex else { return }
+        let modifier = offset > 0 ? -1 : 1
+        let destinationIndex = currentIndex + modifier
+        guard let destinationTab = tabsModel.get(tabAt: destinationIndex) else { return }
+        prepareLiveChromePreview(modifier: modifier, destinationTab: destinationTab)
+    }
+
+    private func addLiveAIChrome(for tab: Tab, to container: UIView) {
+        let state = inputStateProvider(tab)
+        let header = AIChatTabChatHeaderView(isFireModeEnabled: true)
+        header.isUserInteractionEnabled = false
+
+        let headerHeight = max(coordinator.aiChatTabChatHeaderContainer.bounds.height, 60)
+        header.frame = CGRect(
+            x: 0,
+            y: coordinator.superview.safeAreaInsets.top,
+            width: container.bounds.width,
+            height: headerHeight
+        )
+        container.addSubview(header)
+        header.configure(isSubscriptionActive: false)
+        header.setTabIconState(
+            count: tabsModel.count,
+            hasUnread: tabsModel.hasUnread,
+            isFireMode: tab.fireTab
+        )
+        header.setVoiceSessionActive(state.isVoiceSessionActive)
+
+        guard state.aiChatInputBoxVisibility != .hidden else { return }
+
+        let inputController = UnifiedToggleInputViewController(isToggleEnabled: true, isFireTab: tab.fireTab)
+        inputController.loadViewIfNeeded()
+        inputController.view.isUserInteractionEnabled = false
+
+        let inputHeight = max(coordinator.unifiedToggleInputContainer.bounds.height, DefaultOmniBarView.expectedHeight)
+        inputController.view.frame = CGRect(
+            x: 0,
+            y: container.bounds.height - coordinator.superview.safeAreaInsets.bottom - inputHeight,
+            width: container.bounds.width,
+            height: inputHeight
+        )
+        coordinator.parentController?.addChild(inputController)
+        container.addSubview(inputController.view)
+        inputController.didMove(toParent: coordinator.parentController)
+        inputController.apply(
+            UTIViewConfig(
+                cardLayout: .flanked,
+                cardPosition: .bottom,
+                usesOmnibarMargins: false,
+                inactiveAppearance: false,
+                inputMode: .aiChat,
+                isTopBarPosition: false,
+                isInlineDismissHidden: true,
+                isAITab: true
+            ),
+            animated: false
+        )
+        inputController.text = state.text
+        inputController.setAITabCollapsedFooterPoseActive(true)
+        liveChromeControllers.append(inputController)
+    }
+
+    private func addLiveRegularChrome(for tab: Tab, to container: UIView) {
+        let index = tabsModel.tabs.firstIndex { $0 === tab } ?? 0
+        let omnibarController = makeSwipeTemplateController()
+        configureSwipeTemplate(omnibarController, at: index)
+        omnibarController.barView.isUserInteractionEnabled = false
+        coordinator.parentController?.addChild(omnibarController)
+        liveChromeControllers.append(omnibarController)
+
+        let toolbar = makeReadOnlyToolbar()
+        let omnibarHeight = omnibarController.barView.expectedHeight
+        let toolbarHeight: CGFloat
+        if appSettings.currentAddressBarPosition.isBottom {
+            toolbar.setOmnibarView(omnibarController.barView, height: omnibarHeight)
+            toolbarHeight = BrowserToolbarView.totalHeight(withOmnibarHeight: omnibarHeight, isFloating: true)
+        } else {
+            let barView = omnibarController.barView
+            barView.frame = CGRect(
+                x: 0,
+                y: coordinator.superview.safeAreaInsets.top,
+                width: container.bounds.width,
+                height: omnibarHeight
+            )
+            container.addSubview(barView)
+            toolbarHeight = BrowserToolbarView.floatingButtonsHeight
+        }
+        omnibarController.didMove(toParent: coordinator.parentController)
+
+        toolbar.frame = CGRect(
+            x: 0,
+            y: container.bounds.height - coordinator.superview.safeAreaInsets.bottom - toolbarHeight,
+            width: container.bounds.width,
+            height: toolbarHeight
+        )
+        container.addSubview(toolbar)
+    }
+
+    private func makeReadOnlyToolbar() -> BrowserToolbarView {
+        let toolbar = BrowserToolbarView()
+        toolbar.setFloatingStyleEnabled(true)
+        toolbar.isUserInteractionEnabled = false
+        let buttons = coordinator.toolbar.arrangedToolbarButtonViews.map { sourceView -> UIView in
+            guard let sourceButton = sourceView as? UIButton else {
+                let spacer = UIView()
+                spacer.frame.size = sourceView.bounds.size
+                return spacer
+            }
+            let button = UIButton(type: .system)
+            button.configuration = sourceButton.configuration
+            button.setImage(sourceButton.image(for: .normal), for: .normal)
+            button.tintColor = sourceButton.tintColor
+            button.isUserInteractionEnabled = false
+            return button
+        }
+        toolbar.setToolbarButtons(buttons)
+        return toolbar
+    }
+
+    private func prepareLiveOutgoingChrome() {
+        guard liveSourceChromeView == nil else { return }
+        guard let currentIndex = tabsModel.currentIndex,
+              let currentTab = tabsModel.get(tabAt: currentIndex) else {
+            return
+        }
+
+        let superview = coordinator.superview
+        let container = UIView(frame: superview.bounds)
+        container.isUserInteractionEnabled = false
+        container.overrideUserInterfaceStyle = superview.traitCollection.userInterfaceStyle
+        superview.addSubview(container)
+        if currentTab.isAITab {
+            addLiveAIChrome(for: currentTab, to: container)
+        } else {
+            addLiveRegularChrome(for: currentTab, to: container)
+        }
+        liveSourceChromeView = container
+
+        hiddenLiveSourceChromeViews = auxiliarySwipeViews.compactMap { view in
+            guard !view.isHidden, view.alpha > 0.01 else { return nil }
+            let alpha = view.alpha
+            view.alpha = 0
+            return (view: view, alpha: alpha)
+        }
+    }
+
+    private func tearDownLiveSwipeViews(keepDestinationView: Bool = false) {
+        for entry in hiddenLiveSourceChromeViews {
+            entry.view.alpha = entry.alpha
+        }
+        hiddenLiveSourceChromeViews = []
+        liveSourceChromeView?.removeFromSuperview()
+        liveSourceChromeView = nil
+        chromePreview?.removeFromSuperview()
+        chromePreview = nil
+
+        if let liveDestinationController {
+            if preview === liveDestinationController.view {
+                preview = nil
+            }
+            liveDestinationController.view.transform = .identity
+            liveDestinationController.willMove(toParent: nil)
+            if !keepDestinationView {
+                liveDestinationController.view.removeFromSuperview()
+            }
+            liveDestinationController.removeFromParent()
+            liveDestinationController.view.isUserInteractionEnabled = true
+        }
+        liveDestinationController = nil
+
+        for controller in liveChromeControllers {
+            controller.willMove(toParent: nil)
+            controller.view.removeFromSuperview()
+            controller.removeFromParent()
+        }
+        liveChromeControllers = []
+    }
+
     private func prepareFloatingBottomOmnibarSwipe(offset: CGFloat) {
         guard appSettings.currentAddressBarPosition.isBottom,
               coordinator.isOmnibarInToolbar,
@@ -466,6 +820,9 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
         let destinationIndex = currentIndex + (offset > 0 ? -1 : 1)
         let hasNewTabDestination = destinationIndex == tabsModel.count && tabsModel.tabs.last?.link != nil
         guard tabsModel.tabs.indices.contains(destinationIndex) || hasNewTabDestination else { return }
+        let currentTab = tabsModel.get(tabAt: currentIndex)
+        let destinationTab = tabsModel.get(tabAt: destinationIndex)
+        guard currentTab?.isAITab != true, destinationTab?.isAITab != true else { return }
 
         let controller = makeSwipeTemplateController()
         coordinator.parentController?.addChild(controller)
@@ -497,6 +854,19 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
         floatingIncomingOmnibarController?.willMove(toParent: nil)
         floatingIncomingOmnibarController?.removeFromParent()
         floatingIncomingOmnibarController = nil
+    }
+
+    private func isCrossingAITabBoundary(offset: CGFloat) -> Bool {
+        guard let currentIndex = tabsModel.currentIndex,
+              let currentTab = tabsModel.get(tabAt: currentIndex) else {
+            return false
+        }
+        let destinationIndex = currentIndex + (offset > 0 ? -1 : 1)
+        guard let destinationTab = tabsModel.get(tabAt: destinationIndex) else { return false }
+        return SwipeTabBoundaryPolicy.crossesAITabBoundary(
+            currentIsAITab: currentTab.isAITab,
+            destinationIsAITab: destinationTab.isAITab
+        )
     }
 
     /// Builds an off-screen full-screen facade of the destination tab's chrome so it slides in
@@ -543,14 +913,12 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
                 container.addSubview(utiBar)
             }
         } else {
-            if let omnibar = makeRegularOmnibarSnapshot(for: destinationTab) {
-                omnibar.frame = CGRect(
-                    x: 0,
-                    y: regularChromePreviewYPosition(),
-                    width: superview.bounds.width,
-                    height: DefaultOmniBarView.expectedHeight
-                )
+            if !appSettings.currentAddressBarPosition.isBottom,
+               let omnibar = makeRegularOmnibarSnapshot(for: destinationTab) {
                 container.addSubview(omnibar)
+            }
+            if let toolbar = makeRegularToolbarSnapshot() {
+                container.addSubview(toolbar)
             }
         }
 
@@ -583,11 +951,32 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
     /// `drawHierarchy` without putting it in the window (which causes a flash), so per-tab
     /// configuration is a known limitation.
     private func makeRegularOmnibarSnapshot(for tab: Tab) -> UIView? {
-        guard let image = cachedLegacyOmnibarSnapshot else {
-            return nil
-        }
+        guard let snapshot = cachedLegacyOmnibarSnapshot else { return nil }
         _ = tab
-        return UIImageView(image: image)
+        let imageView = UIImageView(image: snapshot.image)
+        imageView.frame = CGRect(
+            x: snapshot.captureRect.minX,
+            y: regularChromePreviewYPosition() + snapshot.captureRect.minY,
+            width: snapshot.image.size.width,
+            height: snapshot.image.size.height
+        )
+        return imageView
+    }
+
+    private func makeRegularToolbarSnapshot() -> UIView? {
+        guard let snapshot = cachedRegularToolbarSnapshot else { return nil }
+        let superview = coordinator.superview
+        let toolbarOriginY = superview.bounds.maxY
+            - superview.safeAreaInsets.bottom
+            - coordinator.toolbar.bounds.height
+        let imageView = UIImageView(image: snapshot.image)
+        imageView.frame = CGRect(
+            x: snapshot.captureRect.minX,
+            y: toolbarOriginY + snapshot.captureRect.minY,
+            width: snapshot.image.size.width,
+            height: snapshot.image.size.height
+        )
+        return imageView
     }
 
     /// Returns the cached AI tab header snapshot — captured live by `drawHierarchy` while the
@@ -595,15 +984,13 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
     /// shadows that `CALayer.render` can't reproduce. Built fresh views lose those entirely
     /// (the pills go flat), so we trade a frame of staleness for visual fidelity.
     private func makeAIHeaderSnapshotForAITabDestination() -> UIView? {
-        guard let image = cachedAIHeaderSnapshot else {
-            return nil
-        }
-        let imageView = UIImageView(image: image)
+        guard let snapshot = cachedAIHeaderSnapshot else { return nil }
+        let imageView = UIImageView(image: snapshot.image)
         imageView.frame = CGRect(
-            x: 0,
-            y: coordinator.superview.safeAreaInsets.top,
-            width: image.size.width,
-            height: image.size.height
+            x: snapshot.captureRect.minX,
+            y: coordinator.superview.safeAreaInsets.top + snapshot.captureRect.minY,
+            width: snapshot.image.size.width,
+            height: snapshot.image.size.height
         )
         return imageView
     }
@@ -611,12 +998,17 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
     /// Returns the cached UTI bar snapshot — same trade-off as the header: `drawHierarchy`
     /// catches the live shadows / blur, `layer.render` doesn't.
     private func makeUTIBarSnapshotForAITabDestination() -> UIView? {
-        guard let image = cachedAIUTIBarSnapshot else {
-            return nil
-        }
-        let imageView = UIImageView(image: image)
-        let yPosition = coordinator.superview.bounds.height - coordinator.superview.safeAreaInsets.bottom - image.size.height
-        imageView.frame = CGRect(x: 0, y: yPosition, width: image.size.width, height: image.size.height)
+        guard let snapshot = cachedAIUTIBarSnapshot else { return nil }
+        let inputOriginY = coordinator.superview.bounds.height
+            - coordinator.superview.safeAreaInsets.bottom
+            - coordinator.unifiedToggleInputContainer.bounds.height
+        let imageView = UIImageView(image: snapshot.image)
+        imageView.frame = CGRect(
+            x: snapshot.captureRect.minX,
+            y: inputOriginY + snapshot.captureRect.minY,
+            width: snapshot.image.size.width,
+            height: snapshot.image.size.height
+        )
         return imageView
     }
 
@@ -634,7 +1026,8 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
 
     private func createPreviewFromImage(_ image: UIImage) {
         let imageView = UIImageView(image: image)
-        imageView.contentMode = floatingUIManager.isFloatingUIEnabled ? .scaleToFill : .scaleAspectFill
+        imageView.contentMode = .scaleAspectFill
+        imageView.clipsToBounds = true
         coordinator.contentContainer.addSubview(imageView)
         preview = imageView
     }
@@ -693,6 +1086,14 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
             assertionFailure("invalid index")
             return
         }
+        let keepsLiveDestination = LiveTabSwipePolicy.shouldKeepDestinationView(
+            targetIndex: index,
+            currentIndex: tabsModel.currentIndex,
+            tabCount: tabsModel.count
+        )
+        tearDownLiveSwipeViews(keepDestinationView: keepsLiveDestination)
+        chromePreview?.removeFromSuperview()
+        chromePreview = nil
         feedbackGenerator.selectionChanged()
         if index >= tabsModel.count {
             newTab()
@@ -705,6 +1106,7 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
 
     private func cleanUpViews() {
         deactivateSwipeOverlay()
+        tearDownLiveSwipeViews()
         cleanUpFloatingBottomOmnibarSwipe()
         currentView?.transform = .identity
         currentView = nil
@@ -735,6 +1137,7 @@ extension SwipeTabsCoordinator {
     /// rendering goes through UIKit's real pipeline, picking up shadows and effects that
     /// `layer.render` ignores. Called by the host whenever a non-AI tab refreshes.
     func captureLegacyOmnibarSnapshotIfPossible() {
+        guard floatingUIManager.isFloatingUIEnabled else { return }
         let barView = coordinator.omniBar.barView
         guard barView.bounds.width > 0, barView.bounds.height > 0 else {
             return
@@ -743,10 +1146,16 @@ extension SwipeTabsCoordinator {
             // `drawHierarchy` needs the view in a window for layer composition to be valid.
             return
         }
-        let renderer = UIGraphicsImageRenderer(size: barView.bounds.size)
-        cachedLegacyOmnibarSnapshot = renderer.image { _ in
-            barView.drawHierarchy(in: barView.bounds, afterScreenUpdates: false)
+        cachedLegacyOmnibarSnapshot = makeChromeSnapshot(of: barView)
+
+        guard let toolbar = coordinator.toolbar,
+              !toolbar.isHidden,
+              toolbar.window != nil,
+              toolbar.bounds.width > 0,
+              toolbar.bounds.height > 0 else {
+            return
         }
+        cachedRegularToolbarSnapshot = makeChromeSnapshot(of: toolbar)
     }
 
     /// Captures pixel-perfect images of the AI chrome (header + UTI bar) using `drawHierarchy`
@@ -754,22 +1163,17 @@ extension SwipeTabsCoordinator {
     /// so the cache stays current with subscription state, model, etc. Skips views that are
     /// currently hidden or unsized — the cache then represents the most recent valid render.
     func captureAIChromeSnapshotsIfPossible() {
+        guard floatingUIManager.isFloatingUIEnabled else { return }
         if let header = coordinator.aiChatTabChatHeaderContainer,
            !header.isHidden,
            header.bounds.width > 0, header.bounds.height > 0 {
-            let renderer = UIGraphicsImageRenderer(size: header.bounds.size)
-            cachedAIHeaderSnapshot = renderer.image { _ in
-                header.drawHierarchy(in: header.bounds, afterScreenUpdates: false)
-            }
+            cachedAIHeaderSnapshot = makeChromeSnapshot(of: header)
         }
 
         if let uti = coordinator.unifiedToggleInputContainer,
            !uti.isHidden,
            uti.bounds.width > 0, uti.bounds.height > 0 {
-            let renderer = UIGraphicsImageRenderer(size: uti.bounds.size)
-            cachedAIUTIBarSnapshot = renderer.image { _ in
-                uti.drawHierarchy(in: uti.bounds, afterScreenUpdates: false)
-            }
+            cachedAIUTIBarSnapshot = makeChromeSnapshot(of: uti)
         }
     }
 

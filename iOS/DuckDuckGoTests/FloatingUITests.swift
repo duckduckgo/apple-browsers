@@ -318,6 +318,108 @@ final class WebViewPreviewSnapshotGeometryTests: XCTestCase {
     }
 }
 
+final class FloatingSwipePreviewGeometryTests: XCTestCase {
+
+    private let superviewBounds = CGRect(x: 0, y: 0, width: 390, height: 844)
+    private let safeAreaInsets = UIEdgeInsets(top: 59, left: 0, bottom: 34, right: 0)
+
+    func testWhenDestinationIsAITabThenFrameFitsBetweenAIChrome() {
+        let frame = FloatingSwipePreviewGeometry.destinationFrame(
+            isAITab: true,
+            superviewBounds: superviewBounds,
+            contentContainerFrame: CGRect(x: 0, y: 50, width: 390, height: 760),
+            safeAreaInsets: safeAreaInsets,
+            aiHeaderHeight: 84,
+            aiInputHeight: 120
+        )
+
+        XCTAssertEqual(frame, CGRect(x: 0, y: 93, width: 390, height: 547))
+    }
+
+    func testWhenDestinationIsRegularTabThenFrameUsesFullFloatingViewport() {
+        let frame = FloatingSwipePreviewGeometry.destinationFrame(
+            isAITab: false,
+            superviewBounds: superviewBounds,
+            contentContainerFrame: CGRect(x: 0, y: 143, width: 390, height: 547),
+            safeAreaInsets: safeAreaInsets,
+            aiHeaderHeight: 84,
+            aiInputHeight: 120
+        )
+
+        XCTAssertEqual(frame, CGRect(x: 0, y: -143, width: 390, height: 844))
+    }
+}
+
+final class SwipeTabBoundaryPolicyTests: XCTestCase {
+
+    func testWhenOnlyOneTabIsAITabThenBoundaryIsCrossed() {
+        XCTAssertTrue(SwipeTabBoundaryPolicy.crossesAITabBoundary(currentIsAITab: true, destinationIsAITab: false))
+        XCTAssertTrue(SwipeTabBoundaryPolicy.crossesAITabBoundary(currentIsAITab: false, destinationIsAITab: true))
+    }
+
+    func testWhenTabsHaveSameTypeThenBoundaryIsNotCrossed() {
+        XCTAssertFalse(SwipeTabBoundaryPolicy.crossesAITabBoundary(currentIsAITab: true, destinationIsAITab: true))
+        XCTAssertFalse(SwipeTabBoundaryPolicy.crossesAITabBoundary(currentIsAITab: false, destinationIsAITab: false))
+    }
+}
+
+final class LiveTabSwipePolicyTests: XCTestCase {
+
+    func testWhenFloatingUIHasWebDestinationThenLiveDestinationIsUsed() {
+        XCTAssertTrue(
+            LiveTabSwipePolicy.shouldUseLiveDestination(
+                isFloatingUIEnabled: true,
+                hasWebDestination: true
+            )
+        )
+    }
+
+    func testWhenFloatingUIIsDisabledThenLiveDestinationIsNotUsed() {
+        XCTAssertFalse(
+            LiveTabSwipePolicy.shouldUseLiveDestination(
+                isFloatingUIEnabled: false,
+                hasWebDestination: true
+            )
+        )
+    }
+
+    func testWhenDestinationHasNoWebContentThenLiveDestinationIsNotUsed() {
+        XCTAssertFalse(
+            LiveTabSwipePolicy.shouldUseLiveDestination(
+                isFloatingUIEnabled: true,
+                hasWebDestination: false
+            )
+        )
+    }
+
+    func testWhenCommittingDifferentExistingTabThenDestinationViewIsKeptForTransition() {
+        XCTAssertTrue(
+            LiveTabSwipePolicy.shouldKeepDestinationView(
+                targetIndex: 2,
+                currentIndex: 1,
+                tabCount: 3
+            )
+        )
+    }
+
+    func testWhenCancellingOrOpeningNewTabThenDestinationViewIsNotKept() {
+        XCTAssertFalse(
+            LiveTabSwipePolicy.shouldKeepDestinationView(
+                targetIndex: 1,
+                currentIndex: 1,
+                tabCount: 3
+            )
+        )
+        XCTAssertFalse(
+            LiveTabSwipePolicy.shouldKeepDestinationView(
+                targetIndex: 3,
+                currentIndex: 2,
+                tabCount: 3
+            )
+        )
+    }
+}
+
 final class FloatingOmnibarSwipeGeometryTests: XCTestCase {
 
     private let bounds = CGRect(x: 0, y: 0, width: 300, height: 60)

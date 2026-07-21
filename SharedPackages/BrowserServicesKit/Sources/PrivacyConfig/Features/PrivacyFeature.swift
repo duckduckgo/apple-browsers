@@ -253,6 +253,10 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213037858764805
     case crashCollectionLimitCallStackTreeDepth
 
+    /// Enables sending MetricKit launch-time telemetry pixels.
+    /// https://app.asana.com/1/137249556945/project/1208671677432066/task/1214963974721156
+    case launchTimeMetrics
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212835969125260
     case browsingMenuSheetEnabledByDefault
 
@@ -315,6 +319,9 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// NA Experiment: tailor the onboarding flow based on the user's download reason.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216491579842691?focus=true
     case onboardingFlowByDownloadReasonExperiment
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216629730083154?focus=true
+    case systemFindInPage
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {

@@ -347,6 +347,10 @@ final class UnifiedToggleInputViewController: UIViewController {
         inputBarView.selectAllText()
     }
 
+    func moveCaretToStart() {
+        inputBarView.moveCaretToStart()
+    }
+
     var placeholderWindowX: CGFloat? { inputBarView.placeholderWindowX }
 
     var defaultPlaceholderColor: UIColor { inputBarView.defaultPlaceholderColor }

@@ -1160,8 +1160,19 @@ extension MainViewController: UnifiedToggleInputOmnibarActivating {
         coordinator.updateInputMode(inputMode, animated: false)
         let isToggleEnabled = isAIChatSearchInputToggleEnabledForCurrentOnboardingState()
         coordinator.updateToggleEnabled(isToggleEnabled)
-        coordinator.activateFromOmnibar(prefilledText: currentText, inputMode: inputMode, cardPosition: position)
+        coordinator.activateFromOmnibar(prefilledText: currentText,
+                                        shouldSelectAllText: shouldAutoSelectOmnibarText(currentText),
+                                        inputMode: inputMode,
+                                        cardPosition: position)
         return .intercept
+    }
+
+    private func shouldAutoSelectOmnibarText(_ text: String?) -> Bool {
+        guard let text = text?.trimmingWhitespace(), !text.isEmpty else { return false }
+        if URL(trimmedAddressBarString: text, useUnifiedLogic: isUnifiedURLPredictionEnabled) != nil {
+            return true
+        }
+        return shouldAutoSelectTextForSERPQuery()
     }
 }
 

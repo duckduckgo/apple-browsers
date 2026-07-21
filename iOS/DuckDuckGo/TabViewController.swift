@@ -3771,6 +3771,18 @@ extension TabViewController: UIGestureRecognizerDelegate {
     }
 
     func requestFindInPage() {
+        if #available(iOS 16.0, *), featureFlagger.isFeatureOn(.systemFindInPage) {
+            webView.isFindInteractionEnabled = true
+            let findInteraction = webView.findInteraction
+            // Ignore repeat invocations while find is open so in-progress text isn't replaced with a stored query.
+            guard findInteraction?.isFindNavigatorVisible == false else { return }
+            // Default to empty (not nil) so this tab's field doesn't fall back to the system-wide retained query from another tab.
+            findInteraction?.searchText = (webView as? WebView)?.lastFindInPageQuery ?? ""
+            findInteraction?.presentFindNavigator(showingReplace: false)
+            (webView as? WebView)?.beginTrackingFindInPageQuery()
+            return
+        }
+
         guard findInPage == nil else { return }
         findInPage = FindInPage(webView: webView)
         delegate?.tabDidRequestFindInPage(tab: self)

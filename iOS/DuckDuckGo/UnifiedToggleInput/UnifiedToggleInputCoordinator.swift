@@ -863,7 +863,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     // MARK: - Omnibar State
 
-    func activateFromOmnibar(prefilledText: String? = nil, inputMode: TextEntryMode = .search, cardPosition: UnifiedToggleInputCardPosition = .top) {
+    func activateFromOmnibar(prefilledText: String? = nil, shouldSelectAllText: Bool = true, inputMode: TextEntryMode = .search, cardPosition: UnifiedToggleInputCardPosition = .top) {
         cancelTopOmnibarKeyboardPresentationFallback()
         isAwaitingTopOmnibarKeyboardPresentation = cardPosition == .top
         displayState = .omnibar(.active)
@@ -887,15 +887,15 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
         // Set text before apply so clearDismissSnapshot sees the correct handler state when
         // it fires inside applyCardLayout — otherwise textRightInset starts at the no-button value.
-        let shouldSelectAllText: Bool
+        let selectsAllText: Bool
         if let text = prefilledText, !text.isEmpty {
             setText(text)
             textState = .prefilledSelected
             omnibarPrefilledText = text
-            shouldSelectAllText = true
+            selectsAllText = shouldSelectAllText
         } else {
             omnibarPrefilledText = nil
-            shouldSelectAllText = false
+            selectsAllText = false
         }
         updateFloatingReturnKeyState()
 
@@ -917,10 +917,13 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         DispatchQueue.main.async { [weak self] in
             guard let self, case .omnibar(.active) = displayState else { return }
             viewController.activateInput()
-            if shouldSelectAllText {
-                DispatchQueue.main.async { [weak self] in
-                    guard let self, case .omnibar(.active) = displayState else { return }
+            guard omnibarPrefilledText != nil else { return }
+            DispatchQueue.main.async { [weak self] in
+                guard let self, case .omnibar(.active) = displayState else { return }
+                if selectsAllText {
                     viewController.selectAllText()
+                } else {
+                    viewController.moveCaretToStart()
                 }
             }
         }

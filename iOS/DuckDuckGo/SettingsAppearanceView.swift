@@ -60,11 +60,13 @@ struct SettingsAppearanceView: View {
     var body: some View {
         List {
             Section {
-                // App Icon
                 let image = Image(uiImage: viewModel.state.appIcon.smallImage)
+                    // Necessary to counteract the vertical padding added in SettingsCellView,
+                    // otherwise the cell is taller than it needs to be and taller than the others.
+                    .frame(height: 20)
                 SettingsCellView(label: UserText.settingsIcon,
                                  action: { viewModel.presentLegacyView(.appIcon ) },
-                                 accessory: .image(image),
+                                 accessory: .custom(AnyView(image)),
                                  disclosureIndicator: true,
                                  isButton: true)
 

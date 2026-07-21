@@ -38,9 +38,18 @@ extension OnboardingView {
             static let selectionRingWidth: CGFloat = 2.0
             // Layout
             static let spacing: CGFloat = 44.0
+            static let columnCount = 4
+            static let swatchRowSpacing: CGFloat = 17.0
+            static let swatchColumnSpacing: CGFloat = 24.0
         }
 
         @StateObject private var viewModel = RebrandedAppIconPickerViewModel()
+
+        private var iconRows: [[RebrandedAppIconPickerViewModel.RebrandedDisplayModel]] {
+            stride(from: 0, to: viewModel.items.count, by: Metrics.columnCount).map { start in
+                Array(viewModel.items[start..<min(start + Metrics.columnCount, viewModel.items.count)])
+            }
+        }
 
         var body: some View {
             VStack(spacing: Metrics.spacing) {
@@ -48,12 +57,16 @@ extension OnboardingView {
                     .resizable()
                     .frame(width: Metrics.iconSize, height: Metrics.iconSize)
                     .cornerRadius(Metrics.cornerRadius)
-                HStack {
-                    ForEach(viewModel.items, id: \.icon) { item in
-                        colorCircle(color: item.color, isSelected: item.isSelected)
-                            .onTapGesture {
-                                viewModel.changeApp(icon: item.icon)
+                VStack(spacing: Metrics.swatchRowSpacing) {
+                    ForEach(Array(iconRows.enumerated()), id: \.offset) { _, row in
+                        HStack(spacing: Metrics.swatchColumnSpacing) {
+                            ForEach(row, id: \.icon) { item in
+                                colorCircle(color: item.color, isSelected: item.isSelected)
+                                    .onTapGesture {
+                                        viewModel.changeApp(icon: item.icon)
+                                    }
                             }
+                        }
                     }
                 }
             }
@@ -74,4 +87,8 @@ extension OnboardingView {
                         .opacity(isSelected ? 1 : 0))
         }
     }
+}
+
+#Preview {
+    OnboardingView.AppIconPicker()
 }

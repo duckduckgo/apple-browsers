@@ -20,12 +20,9 @@
 import SwiftUI
 
 /// Builds the views for the post-subscription onboarding flow. The flow view model (next PR) owns a
-/// factory and asks it for the current section's screen, so the flow itself stays view-agnostic. It also
-/// builds the shared "Learn More" info sheets, keyed by ``SubscriptionOnboardingChecklistItem``, which a
-/// section presents on demand.
+/// factory and asks it for the current section's screen, so the flow itself stays view-agnostic.
 protocol SubscriptionOnboardingViewFactory {
     func makeView(for section: SubscriptionOnboardingSection) -> AnyView
-    func makeInfoView(for item: SubscriptionOnboardingChecklistItem, onClose: @escaping () -> Void) -> AnyView
 }
 
 /// The default factory. The real section screens are wired in as later checkpoints build them (VPN and
@@ -38,22 +35,5 @@ struct DefaultSubscriptionOnboardingViewFactory: SubscriptionOnboardingViewFacto
         case .duckAI:
             return AnyView(SubscriptionOnboardingDuckAIView().subscriptionOnboardingNavigationContainer())
         }
-    }
-
-    func makeInfoView(for item: SubscriptionOnboardingChecklistItem, onClose: @escaping () -> Void) -> AnyView {
-        guard let content = SubscriptionOnboardingInfoContent.content(for: item) else {
-            return AnyView(infoPlaceholder(for: item, onClose: onClose))
-        }
-        return AnyView(SubscriptionOnboardingInfoView(content: content, onClose: onClose)
-            .subscriptionOnboardingNavigationContainer())
-    }
-}
-
-private extension DefaultSubscriptionOnboardingViewFactory {
-    func infoPlaceholder(for item: SubscriptionOnboardingChecklistItem, onClose: @escaping () -> Void) -> some View {
-        SubscriptionOnboardingBaseView(navigationButton: .close(onClose)) {
-            Text(verbatim: "\(item)")
-        }
-        .subscriptionOnboardingNavigationContainer()
     }
 }

@@ -37,9 +37,17 @@ final class TapAllowHintOverlayWindow {
 
         // Screen-centre-relative target for the arrow *tip* (the dialog is centred): its left "Allow" button.
         // No API exposes the dialog's layout, so these are hand-tuned; `hintView` factors in the bubble height
-        // so the tip — not the bubble centre — lands here.
-        static let hintOffsetX: CGFloat = -77
-        static let hintOffsetY: CGFloat = 125
+        // so the tip — not the bubble centre — lands here. iOS 26's Liquid Glass alert is wider, more padded,
+        // and left-aligned, so it gets its own offsets from the iOS 18-era layout.
+        // TODO: the iOS 26 offsets are *estimated* from the redesign (more spacious → the button row sits lower
+        // and its centre shifts further out), not measured — calibrate on-device with the view debugger.
+        static var hintOffsetX: CGFloat {
+            return -77
+        }
+        static var hintOffsetY: CGFloat {
+            if #available(iOS 26, *) { return 143 }
+            return 125
+        }
     }
 
     private var window: UIWindow?

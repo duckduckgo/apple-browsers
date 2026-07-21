@@ -21,10 +21,11 @@ import Combine
 import Foundation
 import VPN
 
-/// Drives the VPN activation screen (the same screen in two states: off and on). It fetches the real
+/// Drives the VPN activation screen (the same screen in two states: off and on). It fetches the original
 /// connection info while off (caching it as the "hidden" card once on), starts the VPN through the
-/// injected controller, and — when the tunnel reaches connected — re-reads the connection to describe the
-/// new (egress) IP and reports completion up to the flow via ``SubscriptionOnboardingSectionDelegate``.
+/// injected controller, and — when the tunnel reaches connected — describes the new (egress) IP and location
+/// from the shared server-info observer (the same source the VPN settings screen reads) and reports
+/// completion up to the flow via ``SubscriptionOnboardingSectionDelegate``.
 final class SubscriptionOnboardingVPNActivationViewModel: ObservableObject {
 
     /// The two states of the single activation screen.
@@ -33,42 +34,63 @@ final class SubscriptionOnboardingVPNActivationViewModel: ObservableObject {
         case on
     }
 
-    /// Shown in the info cards until the corresponding fetch resolves.
-    static let placeholder = "-"
+    /// The lifecycle of one connection-info fetch, kept as its own axis separate from ``ConnectionState`` so
+    /// the two orthogonal concerns — what the user/tunnel is doing vs. whether the IP lookup has resolved —
+    /// are never squeezed into one combined state.
+    enum ConnectionInfoState: Equatable {
+        case idle
+        case loading
+        case loaded(SubscriptionOnboardingConnectionInfo)
+        case failed
+
+        /// A fetch should (re)start only when nothing is in flight or already resolved; a prior failure is
+        /// retried on the next appearance, mirroring the previous "retry while still unresolved" behavior.
+        var shouldStartFetch: Bool {
+            switch self {
+            case .idle, .failed: return true
+            case .loading, .loaded: return false
+            }
+        }
+    }
+
+    /// Shown in the IP row of an info card until the corresponding fetch resolves (or when it has no value,
+    /// e.g. entering with the VPN already on, which never fetches the original IP).
+    static let ipPlaceholder = "-.-.-"
+    /// Shown in the location row of an info card until the corresponding fetch resolves.
+    static let locationPlaceholder = "-,-"
 
     @Published private(set) var connectionState: ConnectionState
 
-    /// The actual (pre-VPN) connection, fetched while off and cached; `nil` until the fetch resolves.
-    @Published private(set) var actualConnectionInfo: SubscriptionOnboardingConnectionInfo?
-    /// The VPN egress connection, fetched once connected; `nil` until then.
-    @Published private(set) var vpnConnectionInfo: SubscriptionOnboardingConnectionInfo?
+    /// The original (pre-VPN) connection, fetched while off and retained.
+    @Published private(set) var originalConnectionInfo: ConnectionInfoState = .idle
+    /// The VPN egress server info (address + location) from the shared server-info observer — the same source
+    /// the VPN settings screen reads. Address and location are read independently, matching that screen.
+    @Published private(set) var vpnServerInfo: NetworkProtectionStatusServerInfo = .unknown
 
-    /// Whether the customer most likely declined the system VPN permission prompt. Inferred, not observed:
-    /// ``turnOnVPN()`` calls the tunnel controller's non-throwing `start()`, which swallows
-    /// `StartError.configSystemPermissionsDenied` (returns early with no thrown error and no error-publisher
-    /// signal), so the denial can't be detected directly. We infer it from "the tunnel is still off once
-    /// `start()` resolves", and clear it when the connection observer reports connected. Drives the
-    /// off-state retry/skip buttons.
+    /// Whether the customer declined the system VPN-configuration prompt, observed from the controller's
+    /// configuration-denied signal. Persists across retries and clears once the tunnel connects.
     @Published private(set) var didDenyVPNPermission = false
 
     private let connectionInfoService: SubscriptionOnboardingConnectionInfoService
     private let vpnController: SubscriptionOnboardingVPNControlling
     private let vpnLocationProvider: SubscriptionOnboardingVPNLocationProviding
+    private let serverInfoObserver: ConnectionServerInfoObserver
     private weak var delegate: SubscriptionOnboardingSectionDelegate?
     private let locale: Locale
 
     private var hasReportedCompletion = false
-    private var isFetchingVPNConnectionInfo = false
     private var cancellables = Set<AnyCancellable>()
 
     init(connectionInfoService: SubscriptionOnboardingConnectionInfoService = DefaultSubscriptionOnboardingConnectionInfoService(),
          vpnController: SubscriptionOnboardingVPNControlling = DefaultSubscriptionOnboardingVPNController(),
          vpnLocationProvider: SubscriptionOnboardingVPNLocationProviding = DefaultSubscriptionOnboardingVPNLocationProvider(),
+         serverInfoObserver: ConnectionServerInfoObserver = AppDependencyProvider.shared.serverInfoObserver,
          delegate: SubscriptionOnboardingSectionDelegate? = nil,
          locale: Locale = .current) {
         self.connectionInfoService = connectionInfoService
         self.vpnController = vpnController
         self.vpnLocationProvider = vpnLocationProvider
+        self.serverInfoObserver = serverInfoObserver
         self.delegate = delegate
         self.locale = locale
         self.connectionState = vpnController.isConnected ? .on : .off
@@ -78,64 +100,73 @@ final class SubscriptionOnboardingVPNActivationViewModel: ObservableObject {
 
     // MARK: - Display values
 
-    var realIPText: String { actualConnectionInfo?.ip ?? Self.placeholder }
-    var realLocationText: String { actualConnectionInfo?.displayLocation(locale: locale) ?? Self.placeholder }
-    var vpnIPText: String { vpnConnectionInfo?.ip ?? Self.placeholder }
+    var originalIPText: String { ipText(for: originalConnectionInfo) }
+    var originalLocationText: String { locationText(for: originalConnectionInfo) }
+    var vpnIPText: String { vpnServerInfo.serverAddress ?? Self.ipPlaceholder }
 
-    var vpnLocationText: String { vpnConnectionInfo?.displayLocation(locale: locale) ?? Self.placeholder }
+    var vpnLocationText: String {
+        guard let attributes = vpnServerInfo.serverLocation else { return Self.locationPlaceholder }
+        return SubscriptionOnboardingConnectionInfo.displayLocation(city: attributes.city,
+                                                                    country: attributes.country,
+                                                                    locale: locale)
+    }
 
     /// The "(Nearest)" indicator the existing VPN status/location UI shows when the "nearest available"
-    /// (automatic) location is selected (see ``NetworkProtectionStatusView`` and
-    /// ``UserText/netPVPNLocationNearest``); `nil` for a specific location or before the egress info
-    /// resolves. Rendered as a separate, `.textSecondary`-tinted run alongside ``vpnLocationText``.
     var vpnLocationNearestIndicator: String? {
-        guard vpnConnectionInfo != nil, vpnLocationProvider.isNearestSelected else { return nil }
+        guard vpnServerInfo.serverLocation != nil, vpnLocationProvider.isNearestSelected else { return nil }
         return UserText.netPVPNLocationNearest
+    }
+
+    /// The IP text for a fetch state: the address once `.loaded`, otherwise the IP placeholder (loading,
+    /// failed, or not yet started all read the same on this screen).
+    private func ipText(for state: ConnectionInfoState) -> String {
+        guard case .loaded(let info) = state else { return Self.ipPlaceholder }
+        return info.ip
+    }
+
+    /// The location text for a fetch state, following the same placeholder rule as ``ipText(for:)``.
+    private func locationText(for state: ConnectionInfoState) -> String {
+        guard case .loaded(let info) = state else { return Self.locationPlaceholder }
+        return info.displayLocation(locale: locale)
     }
 
     // MARK: - Actions
 
-    /// Fetches when the view appears. While off, the real (pre-VPN) IP is fetched and then retained, so the
-    /// real-IP row keeps showing it after the VPN comes on. If the tunnel is already on we only fetch the VPN
-    /// (egress) IP — the pre-VPN IP can no longer be observed — and report completion. Awaitable so it can be
-    /// driven from the view's `.task` (auto-cancelled on disappear) and unit-tested directly. Each value is
-    /// fetched at most once; a failure leaves the "-" placeholders in place rather than surfacing an error.
-    @MainActor
-    func onAppear() async {
-        if connectionState == .off, actualConnectionInfo == nil {
-            actualConnectionInfo = try? await connectionInfoService.fetchConnectionInfo()
-        }
-        if connectionState == .on {
+    /// Kicks off the appropriate fetch when the view appears, then returns immediately (fire-and-forget)
+    func onAppear() {
+        switch connectionState {
+        case .off:
+            fetchOriginalConnectionInfo()
+        case .on:
             reportCompletionIfNeeded()
-            await fetchVPNConnectionInfo()
+            vpnServerInfo = serverInfoObserver.recentValue
         }
     }
 
-    /// Starts the VPN. The off→on transition is driven by the connection observer, not this call, so the
-    /// screen reflects the real tunnel state rather than an optimistic guess. Once `start()` resolves (which
-    /// includes the system permission prompt), a still-off tunnel is taken as an inferred permission denial
-    /// — see ``didDenyVPNPermission``.
+    /// Starts the VPN. Doesn't clear ``didDenyVPNPermission`` — the denied state must survive a retry and
+    /// clears only on connect; a denial arrives via the configuration-denied signal (see ``observeConnection()``).
     @MainActor
     func turnOnVPN() async {
         await vpnController.start()
-        didDenyVPNPermission = connectionState == .off
     }
 
-    /// Whether a VPN configuration is already installed. When it isn't, starting shows the system permission
-    /// prompt — the view uses this to decide whether to show the "Tap allow" hint.
+    /// Whether a VPN configuration is already installed. When it isn't, starting shows the system permission prompt
     func isVPNConfigured() async -> Bool {
         await vpnController.isVPNConfigured()
     }
 
-    /// Fetches the VPN (egress) IP once. Called by ``onAppear()`` if already on, and by the connection
-    /// observer when the tunnel transitions to connected. The in-flight guard is set synchronously before
-    /// the `await`, so two overlapping callers can't both start a fetch.
-    @MainActor
-    private func fetchVPNConnectionInfo() async {
-        guard vpnConnectionInfo == nil, !isFetchingVPNConnectionInfo else { return }
-        isFetchingVPNConnectionInfo = true
-        defer { isFetchingVPNConnectionInfo = false }
-        vpnConnectionInfo = try? await connectionInfoService.fetchConnectionInfo()
+    /// Fetches the original (pre-VPN) IP into ``originalConnectionInfo``.
+    private func fetchOriginalConnectionInfo() {
+        guard originalConnectionInfo.shouldStartFetch else { return }
+        originalConnectionInfo = .loading
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            do {
+                self.originalConnectionInfo = .loaded(try await self.connectionInfoService.fetchConnectionInfo())
+            } catch {
+                self.originalConnectionInfo = .failed
+            }
+        }
     }
 
     // MARK: - Connection observing
@@ -146,6 +177,20 @@ final class SubscriptionOnboardingVPNActivationViewModel: ObservableObject {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] isConnected in
                 self?.handleConnectionChange(isConnected: isConnected)
+            }
+            .store(in: &cancellables)
+
+        vpnController.configurationDeniedPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in
+                self?.didDenyVPNPermission = true
+            }
+            .store(in: &cancellables)
+
+        serverInfoObserver.publisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] serverInfo in
+                self?.vpnServerInfo = serverInfo
             }
             .store(in: &cancellables)
     }
@@ -159,7 +204,6 @@ final class SubscriptionOnboardingVPNActivationViewModel: ObservableObject {
         if isConnected {
             didDenyVPNPermission = false
             reportCompletionIfNeeded()
-            Task { @MainActor [weak self] in await self?.fetchVPNConnectionInfo() }
         }
     }
 
@@ -177,6 +221,8 @@ final class SubscriptionOnboardingVPNActivationViewModel: ObservableObject {
 protocol SubscriptionOnboardingVPNControlling {
     var isConnected: Bool { get }
     var isConnectedPublisher: AnyPublisher<Bool, Never> { get }
+    /// Fires when the customer declines the system VPN-configuration prompt.
+    var configurationDeniedPublisher: AnyPublisher<Void, Never> { get }
     func start() async
     /// Whether a VPN configuration is already installed. If not, starting triggers the system permission
     /// prompt — used to decide whether to show the "Tap allow" hint.
@@ -205,6 +251,10 @@ final class DefaultSubscriptionOnboardingVPNController: SubscriptionOnboardingVP
             .eraseToAnyPublisher()
     }
 
+    var configurationDeniedPublisher: AnyPublisher<Void, Never> {
+        tunnelController.configurationDeniedPublisher
+    }
+
     func start() async {
         await tunnelController.start()
     }
@@ -224,10 +274,7 @@ private extension ConnectionStatus {
 // MARK: - VPN location seam
 
 /// The view model's window onto the selected VPN location: whether the "nearest available" (automatic)
-/// location is selected. Reads the same source-of-truth as the existing VPN status/location UI
-/// (`VPNSettings.selectedLocation`, see ``NetworkProtectionLocationStatusModel`` and
-/// ``NetworkProtectionVPNLocationViewModel``), so the onboarding egress location can show the same
-/// "(Nearest)" indicator. A protocol so previews and tests can drive it without touching `VPNSettings`.
+/// location is selected.
 protocol SubscriptionOnboardingVPNLocationProviding {
     var isNearestSelected: Bool { get }
 }
@@ -255,6 +302,8 @@ struct PreviewSubscriptionOnboardingVPNController: SubscriptionOnboardingVPNCont
         Just(isConnected).eraseToAnyPublisher()
     }
 
+    var configurationDeniedPublisher: AnyPublisher<Void, Never> { Empty().eraseToAnyPublisher() }
+
     func start() async {}
 
     func isVPNConfigured() async -> Bool { false }
@@ -271,6 +320,8 @@ struct RevealPreviewSubscriptionOnboardingVPNController: SubscriptionOnboardingV
     var isConnectedPublisher: AnyPublisher<Bool, Never> {
         subject.eraseToAnyPublisher()
     }
+
+    var configurationDeniedPublisher: AnyPublisher<Void, Never> { Empty().eraseToAnyPublisher() }
 
     func start() async {
         subject.send(true)
@@ -291,35 +342,65 @@ struct PreviewSubscriptionOnboardingVPNLocationProvider: SubscriptionOnboardingV
     let isNearestSelected: Bool
 }
 
+/// A fixed server-info observer for previews: reports a single seeded value, so the egress card renders it
+/// through the same path production uses (rather than a live tunnel).
+struct PreviewConnectionServerInfoObserver: ConnectionServerInfoObserver {
+    let serverInfo: NetworkProtectionStatusServerInfo
+
+    init(_ serverInfo: NetworkProtectionStatusServerInfo = .unknown) {
+        self.serverInfo = serverInfo
+    }
+
+    var publisher: AnyPublisher<NetworkProtectionStatusServerInfo, Never> { Just(serverInfo).eraseToAnyPublisher() }
+    var recentValue: NetworkProtectionStatusServerInfo { serverInfo }
+}
+
+private extension NetworkProtectionStatusServerInfo {
+    /// Builds egress server info from an onboarding connection-info fixture for previews (``ServerAttributes``
+    /// has no public initializer, so city/country are round-tripped through JSON).
+    static func previewServerInfo(_ info: SubscriptionOnboardingConnectionInfo?) -> NetworkProtectionStatusServerInfo {
+        guard let info else { return .unknown }
+        let json = "{\"city\":\"\(info.city)\",\"country\":\"\(info.country)\",\"state\":\"\"}"
+        let attributes = try? JSONDecoder().decode(NetworkProtectionServerInfo.ServerAttributes.self, from: Data(json.utf8))
+        return NetworkProtectionStatusServerInfo(serverLocation: attributes, serverAddress: info.ip)
+    }
+}
+
 extension SubscriptionOnboardingVPNActivationViewModel {
     /// A view model seeded with fixed connection info for previews — no network, no tunnel. Pass `nil`
-    /// connection info to preview the loading state (the info cards render the `-` placeholder).
+    /// connection info to preview the loading state (the info cards render the placeholders).
     static func preview(state: ConnectionState,
-                        realConnectionInfo: SubscriptionOnboardingConnectionInfo?,
+                        originalConnectionInfo: SubscriptionOnboardingConnectionInfo?,
                         vpnConnectionInfo: SubscriptionOnboardingConnectionInfo? = nil,
-                        isNearestSelected: Bool = false) -> SubscriptionOnboardingVPNActivationViewModel {
+                        isNearestSelected: Bool = false,
+                        didDenyVPNPermission: Bool = false) -> SubscriptionOnboardingVPNActivationViewModel {
+        let serverInfo = NetworkProtectionStatusServerInfo.previewServerInfo(vpnConnectionInfo)
         let viewModel = SubscriptionOnboardingVPNActivationViewModel(
             connectionInfoService: PreviewSubscriptionOnboardingConnectionInfoService(),
             vpnController: PreviewSubscriptionOnboardingVPNController(isConnected: state == .on),
             vpnLocationProvider: PreviewSubscriptionOnboardingVPNLocationProvider(isNearestSelected: isNearestSelected),
+            serverInfoObserver: PreviewConnectionServerInfoObserver(serverInfo),
             locale: Locale(identifier: "en_US"))
-        viewModel.actualConnectionInfo = realConnectionInfo
-        viewModel.vpnConnectionInfo = vpnConnectionInfo
+        viewModel.originalConnectionInfo = originalConnectionInfo.map(ConnectionInfoState.loaded) ?? .loading
+        viewModel.vpnServerInfo = serverInfo
+        viewModel.didDenyVPNPermission = didDenyVPNPermission
         return viewModel
     }
 
     /// A view model that starts off and transitions to on when the VPN is turned on, for previewing the
     /// off→on reveal. The egress info is seeded so the on-state cards show a value once revealed.
-    static func previewReveal(real: SubscriptionOnboardingConnectionInfo?,
+    static func previewReveal(original: SubscriptionOnboardingConnectionInfo?,
                               vpn: SubscriptionOnboardingConnectionInfo?,
                               isNearestSelected: Bool = false) -> SubscriptionOnboardingVPNActivationViewModel {
+        let serverInfo = NetworkProtectionStatusServerInfo.previewServerInfo(vpn)
         let viewModel = SubscriptionOnboardingVPNActivationViewModel(
             connectionInfoService: PreviewSubscriptionOnboardingConnectionInfoService(),
             vpnController: RevealPreviewSubscriptionOnboardingVPNController(),
             vpnLocationProvider: PreviewSubscriptionOnboardingVPNLocationProvider(isNearestSelected: isNearestSelected),
+            serverInfoObserver: PreviewConnectionServerInfoObserver(serverInfo),
             locale: Locale(identifier: "en_US"))
-        viewModel.actualConnectionInfo = real
-        viewModel.vpnConnectionInfo = vpn
+        viewModel.originalConnectionInfo = original.map(ConnectionInfoState.loaded) ?? .loading
+        viewModel.vpnServerInfo = serverInfo
         return viewModel
     }
 }

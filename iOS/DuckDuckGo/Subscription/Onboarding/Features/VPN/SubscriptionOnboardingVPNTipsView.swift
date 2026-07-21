@@ -22,7 +22,7 @@ import SwiftUI
 /// The post-activation "What to know about using your VPN" screen: the shared tips carousel with a single
 /// button that returns to the VPN activation screen.
 struct SubscriptionOnboardingVPNTipsView: View {
-    /// The "Step X of Y" indicator is owned by the flow (a later stage), so it is passed in; nil hides it.
+
     var title: String? = nil
 
     @Environment(\.dismiss) private var dismiss
@@ -34,6 +34,7 @@ struct SubscriptionOnboardingVPNTipsView: View {
             header: SubscriptionOnboardingHeaderView(title: UserText.subscriptionOnboardingVPNTipsTitle),
             footer: .single(.init(UserText.subscriptionOnboardingVPNTipsDoneButton) { dismiss() })) {
             SubscriptionOnboardingVPNTipsCarousel()
+                .padding(.top, 24)
         }
     }
 }

@@ -24,18 +24,16 @@ import AIChat
 
 /// The Duck.ai model-picker onboarding screen, built by ``SubscriptionOnboardingViewFactory`` on
 /// ``SubscriptionOnboardingBaseView``. It lists the available AI models (from
-/// ``SubscriptionOnboardingDuckAIActivationViewModel``), presents the "Learn More" info sheet, and — on
-/// "Start Duck.ai Chat" — launches the web chat with the selected model (persisted by the view model) in a
-/// full-screen modal.
+/// ``SubscriptionOnboardingDuckAIViewModel``), presents the "Learn More" info sheet, and — on
+/// "Start Duck.ai Chat" — persists the selected model and asks the flow to launch Duck.ai chat.
 struct SubscriptionOnboardingDuckAIView: View {
-    @StateObject private var viewModel: SubscriptionOnboardingDuckAIActivationViewModel
+    @StateObject private var viewModel: SubscriptionOnboardingDuckAIViewModel
     private let title: String?
 
     @Environment(\.dismiss) private var dismiss
     @State private var isShowingInfoSheet = false
-    @State private var isShowingChat = false
 
-    init(viewModel: @autoclosure @escaping () -> SubscriptionOnboardingDuckAIActivationViewModel = SubscriptionOnboardingDuckAIActivationViewModel(),
+    init(viewModel: @autoclosure @escaping () -> SubscriptionOnboardingDuckAIViewModel = SubscriptionOnboardingDuckAIViewModel(),
          title: String? = nil) {
         _viewModel = StateObject(wrappedValue: viewModel())
         self.title = title
@@ -48,7 +46,6 @@ struct SubscriptionOnboardingDuckAIView: View {
             header: header,
             footer: footer) {
             // TODO: handle loading / empty / error states. If the /models fetch fails or returns nothing
-            // (offline, not subscribed), this renders an empty picker — no spinner, message, or retry.
             SubscriptionOnboardingAIModelPicker(
                 models: viewModel.availableModels,
                 selectedModelID: viewModel.selectedModelID,
@@ -58,9 +55,6 @@ struct SubscriptionOnboardingDuckAIView: View {
         .sheet(isPresented: $isShowingInfoSheet) {
             SubscriptionOnboardingInfoView(content: .duckAI, onClose: { isShowingInfoSheet = false })
                 .subscriptionOnboardingNavigationContainer()
-        }
-        .sheet(isPresented: $isShowingChat) {
-            SubscriptionOnboardingDuckAIChatView(onClose: { isShowingChat = false })
         }
     }
 }
@@ -80,7 +74,6 @@ private extension SubscriptionOnboardingDuckAIView {
         .double(
             primary: .init(UserText.subscriptionOnboardingDuckAIActivationStartButton) {
                 viewModel.startChat()
-                isShowingChat = true
             },
             secondary: .init(UserText.subscriptionOnboardingDuckAIActivationSkipButton) {
                 dismiss()
@@ -105,10 +98,20 @@ private final class PreviewAIModelProvider: SubscriptionOnboardingAIModelProvidi
     func updateSelectedModel(_ modelID: String) {}
 }
 
+/// Resolves to no models, mimicking a failed or empty `/models` fetch so the empty-list state can be previewed.
+@MainActor
+private final class EmptyPreviewAIModelProvider: SubscriptionOnboardingAIModelProviding {
+    let models: [AIChatModel] = []
+    var persistedModelID: String?
+    var onModelsUpdated: (() -> Void)?
+    func fetchModels() { onModelsUpdated?() }
+    func updateSelectedModel(_ modelID: String) {}
+}
+
 #Preview("Light") {
     RebrandedPreview {
         SubscriptionOnboardingDuckAIView(
-            viewModel: SubscriptionOnboardingDuckAIActivationViewModel(modelProvider: PreviewAIModelProvider()))
+            viewModel: SubscriptionOnboardingDuckAIViewModel(modelProvider: PreviewAIModelProvider()))
             .subscriptionOnboardingNavigationContainer()
     }
 }
@@ -116,10 +119,18 @@ private final class PreviewAIModelProvider: SubscriptionOnboardingAIModelProvidi
 #Preview("Dark") {
     RebrandedPreview {
         SubscriptionOnboardingDuckAIView(
-            viewModel: SubscriptionOnboardingDuckAIActivationViewModel(modelProvider: PreviewAIModelProvider()))
+            viewModel: SubscriptionOnboardingDuckAIViewModel(modelProvider: PreviewAIModelProvider()))
             .subscriptionOnboardingNavigationContainer()
     }
     .preferredColorScheme(.dark)
+}
+
+#Preview("Empty") {
+    RebrandedPreview {
+        SubscriptionOnboardingDuckAIView(
+            viewModel: SubscriptionOnboardingDuckAIViewModel(modelProvider: EmptyPreviewAIModelProvider()))
+            .subscriptionOnboardingNavigationContainer()
+    }
 }
 
 #endif

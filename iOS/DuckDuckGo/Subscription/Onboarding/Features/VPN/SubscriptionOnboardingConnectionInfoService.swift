@@ -36,6 +36,12 @@ extension SubscriptionOnboardingConnectionInfo {
     /// the shared ``NetworkProtectionVPNCountryLabelsModel``), the city, and the localized country name.
     /// `locale` is injectable so the country name is deterministic under test.
     func displayLocation(locale: Locale = .current) -> String {
+        Self.displayLocation(city: city, country: country, locale: locale)
+    }
+
+    /// Formats a `city` + `country` (ISO region code) as `"🇪🇸 Madrid, Spain"`. Shared with the VPN egress
+    /// card, whose location comes from the VPN server info rather than a ``SubscriptionOnboardingConnectionInfo``.
+    static func displayLocation(city: String, country: String, locale: Locale = .current) -> String {
         let flag = NetworkProtectionVPNCountryLabelsModel(country: country).emoji
         let countryName = locale.localizedString(forRegionCode: country) ?? country
         return "\(flag) \(city), \(countryName)"

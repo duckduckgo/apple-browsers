@@ -23,7 +23,7 @@ import UIComponents
 import AIChat
 
 /// The Duck.ai model picker: every available model is a row in a single `SubscriptionOnboardingCard`,
-/// with a "PLUS" marker on premium models and a checkmark on the selected one. The model list comes from
+/// with a "PLUS"/"PRO" tier marker on paid models and a checkmark on the selected one. The model list comes from
 /// a backend call (`AIChatModelsService`) performed at the screen layer, so this view takes the resolved
 /// `AIChatModel`s, the selected id, and a selection callback — it holds no state and makes no network
 /// calls itself.
@@ -63,8 +63,8 @@ private extension SubscriptionOnboardingAIModelPicker {
             if nameParts.count > 1 {
                 details.append(CardItemText(String(nameParts[1]), font: .bodyRegular))
             }
-            if model.isAdvanced {
-                details.append(CardItemText(UserText.subscriptionOnboardingDuckAIPlusMarker, font: .footnoteRegular))
+            if let tierMarker = tierMarker(for: model) {
+                details.append(CardItemText(tierMarker, font: .footnoteRegular))
             }
 
             return CardItem(
@@ -73,6 +73,16 @@ private extension SubscriptionOnboardingAIModelPicker {
                 titleDetails: details,
                 trailing: model.id == selectedModelID ? .checkmark(Color(designSystemColor: .accentPrimary)) : nil,
                 accessibilityValue: model.id == selectedModelID ? UserText.subscriptionOnboardingDuckAIModelSelectedValue : nil)
+        }
+    }
+
+    /// The inline PLUS/PRO badge for a model, or `nil` when it needs none. Reads
+    /// ``AIChatModel/lowestPublicAccessTier`` so the badge matches how the model menu groups tiers.
+    func tierMarker(for model: AIChatModel) -> String? {
+        switch model.lowestPublicAccessTier {
+        case .plus: return UserText.subscriptionOnboardingDuckAIPlusMarker
+        case .pro: return UserText.subscriptionOnboardingDuckAIProMarker
+        case .free, nil: return nil
         }
     }
 
@@ -101,8 +111,9 @@ private struct SubscriptionOnboardingAIModelPickerPreviewHost: View {
 private let previewModels: [AIChatModel] = [
     AIChatModel(id: "gpt-4o-mini", name: "GPT-4o mini", provider: .openAI, supportsImageUpload: false, entityHasAccess: true, accessTier: ["free"]),
     AIChatModel(id: "llama-3.3", name: "Llama 3.3", provider: .meta, supportsImageUpload: false, entityHasAccess: true, accessTier: ["free"]),
-    AIChatModel(id: "claude-sonnet", name: "Claude Sonnet", provider: .anthropic, supportsImageUpload: false, entityHasAccess: true, accessTier: ["plus"]),
+    AIChatModel(id: "claude-sonnet", name: "Claude Sonnet", provider: .anthropic, supportsImageUpload: false, entityHasAccess: true, accessTier: ["plus", "pro"]),
     AIChatModel(id: "gpt-4o", name: "GPT-4o", provider: .openAI, supportsImageUpload: false, entityHasAccess: true, accessTier: ["plus"]),
+    AIChatModel(id: "claude-opus", name: "Claude Opus", provider: .anthropic, supportsImageUpload: false, entityHasAccess: true, accessTier: ["pro"]),
 ]
 
 #Preview("Light") {

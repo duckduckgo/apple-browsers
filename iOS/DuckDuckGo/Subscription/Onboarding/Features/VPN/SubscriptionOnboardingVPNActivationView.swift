@@ -45,8 +45,6 @@ struct SubscriptionOnboardingVPNActivationView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var isShowingInfoSheet = false
     @State private var tapAllowHint = TapAllowHintOverlayWindow()
-    /// True from tapping "Turn On VPN" until `start()` resolves, so the scene going inactive is read as the
-    /// system permission dialog appearing rather than an unrelated interruption.
     @State private var awaitingPermissionPrompt = false
 
     init(viewModel: @autoclosure @escaping () -> SubscriptionOnboardingVPNActivationViewModel = SubscriptionOnboardingVPNActivationViewModel(),
@@ -63,7 +61,7 @@ struct SubscriptionOnboardingVPNActivationView: View {
             footer: footer) {
             content
         }
-        .task { await viewModel.onAppear() }
+        .onAppear { viewModel.onAppear() }
         .sheet(isPresented: $isShowingInfoSheet) {
             SubscriptionOnboardingInfoView(content: .vpn, onClose: { isShowingInfoSheet = false })
                 .subscriptionOnboardingNavigationContainer()
@@ -76,7 +74,7 @@ struct SubscriptionOnboardingVPNActivationView: View {
             guard awaitingPermissionPrompt else { return }
             tapAllowHint.hide()
         }
-        // Safety net: tear the hint window down if the screen leaves while the dialog is still up.
+        // Safety net
         .onDisappear { tapAllowHint.hide() }
     }
 }
@@ -87,8 +85,14 @@ private extension SubscriptionOnboardingVPNActivationView {
     var header: SubscriptionOnboardingHeaderView {
         switch viewModel.connectionState {
         case .off:
+            if viewModel.didDenyVPNPermission {
+                return SubscriptionOnboardingHeaderView(
+                    visual: .image(Image(.onboardingCriticalUpdate128)),
+                    title: UserText.subscriptionOnboardingVPNActivationDeniedTitle,
+                    explanation: UserText.subscriptionOnboardingVPNActivationDeniedExplanation)
+            }
             return SubscriptionOnboardingHeaderView(
-                visual: .image(Image(.onboardingHeaderVPNDeactivated128)),
+                visual: .image(Image(.onboardingVPNDeactivated128)),
                 title: UserText.subscriptionOnboardingVPNActivationOffTitle,
                 explanation: UserText.subscriptionOnboardingVPNActivationOffExplanation,
                 onInfoLinkTap: { isShowingInfoSheet = true })
@@ -118,16 +122,19 @@ private extension SubscriptionOnboardingVPNActivationView {
         if viewModel.connectionState == .off {
             VStack(spacing: Metrics.infoCardStackSpacing) {
                 SubscriptionOnboardingVPNInfoCard(state: .visibleIP,
-                                                  ipAddress: viewModel.realIPText,
-                                                  location: viewModel.realLocationText)
+                                                  ipAddress: viewModel.originalIPText,
+                                                  location: viewModel.originalLocationText)
                 footnote(UserText.subscriptionOnboardingVPNActivationOffFootnote)
             }
         } else {
             VStack(spacing: Metrics.infoCardStackSpacing) {
                 VStack(spacing: Metrics.onInfoCardsSpacing) {
+                    // The original (pre-VPN) IP card is always shown; when there is no value to display —
+                    // e.g. entering with the VPN already on, which never fetches it — the rows fall back to
+                    // the placeholders.
                     SubscriptionOnboardingVPNInfoCard(state: .hiddenIP,
-                                                      ipAddress: viewModel.realIPText,
-                                                      location: viewModel.realLocationText)
+                                                      ipAddress: viewModel.originalIPText,
+                                                      location: viewModel.originalLocationText)
                     SubscriptionOnboardingVPNInfoCard(state: .newIP,
                                                       ipAddress: viewModel.vpnIPText,
                                                       location: viewModel.vpnLocationText,
@@ -157,7 +164,7 @@ private extension SubscriptionOnboardingVPNActivationView {
             .daxFootnoteRegular()
             .multilineTextAlignment(.leading)
             .foregroundColor(Color(designSystemColor: .textSecondary))
-            .frame(maxWidth: .infinity)
+            .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 
@@ -190,7 +197,6 @@ private extension SubscriptionOnboardingVPNActivationView {
     }
 }
 
-/// The three protections listed on the activation screen; they render inactive while off and active once on.
 private enum VPNProtection: CaseIterable {
     case shielding
     case hidingLocation
@@ -214,8 +220,6 @@ private extension SubscriptionOnboardingConnectionInfo {
     static let valencia = SubscriptionOnboardingConnectionInfo(ip: "45.132.71.9", city: "Valencia", country: "ES")
 }
 
-/// Renders the on-state header Lottie in previews; at runtime the flow host injects its own renderer,
-/// matching the convention in `SubscriptionOnboardingProgressView`.
 private let previewLottieRenderer = GraphicLottieRenderer { name, _ in
     AnyView(
         Lottie.LottieView(animation: .named(name))
@@ -224,10 +228,11 @@ private let previewLottieRenderer = GraphicLottieRenderer { name, _ in
 }
 
 private func activationPreview(state: SubscriptionOnboardingVPNActivationViewModel.ConnectionState,
-                               real: SubscriptionOnboardingConnectionInfo?,
-                               vpn: SubscriptionOnboardingConnectionInfo? = nil) -> some View {
+                               original: SubscriptionOnboardingConnectionInfo?,
+                               vpn: SubscriptionOnboardingConnectionInfo? = nil,
+                               didDeny: Bool = false) -> some View {
     SubscriptionOnboardingVPNActivationView(
-        viewModel: .preview(state: state, realConnectionInfo: real, vpnConnectionInfo: vpn),
+        viewModel: .preview(state: state, originalConnectionInfo: original, vpnConnectionInfo: vpn, didDenyVPNPermission: didDeny),
         title: String(format: UserText.subscriptionOnboardingStepIndicatorFormat, 1, 4))
     .subscriptionOnboardingNavigationContainer()
     .graphicLottieRenderer(previewLottieRenderer)
@@ -235,38 +240,65 @@ private func activationPreview(state: SubscriptionOnboardingVPNActivationViewMod
 
 #Preview("Off - Light") {
     RebrandedPreview {
-        activationPreview(state: .off, real: .madrid)
+        activationPreview(state: .off, original: .madrid)
     }
 }
 
 #Preview("Off - loading") {
     RebrandedPreview {
-        activationPreview(state: .off, real: nil)
+        activationPreview(state: .off, original: nil)
     }
+}
+
+#Preview("Off - denied") {
+    RebrandedPreview {
+        activationPreview(state: .off, original: .madrid, didDeny: true)
+    }
+}
+
+#Preview("Off - denied - Dark") {
+    RebrandedPreview {
+        activationPreview(state: .off, original: .madrid, didDeny: true)
+    }
+    .preferredColorScheme(.dark)
+}
+
+#Preview("Off - denied - Large Text") {
+    RebrandedPreview {
+        activationPreview(state: .off, original: .madrid, didDeny: true)
+    }
+    .dynamicTypeSize(.accessibility5)
 }
 
 #Preview("On - Light") {
     RebrandedPreview {
-        activationPreview(state: .on, real: .madrid, vpn: .valencia)
+        activationPreview(state: .on, original: .madrid, vpn: .valencia)
     }
 }
 
 #Preview("On - loading") {
     RebrandedPreview {
-        activationPreview(state: .on, real: .madrid, vpn: nil)
+        activationPreview(state: .on, original: .madrid, vpn: nil)
+    }
+}
+
+#Preview("On - no original IP") {
+    RebrandedPreview {
+        // Direct on-state entry: no original (pre-VPN) IP, so its card shows the placeholders.
+        activationPreview(state: .on, original: nil, vpn: .valencia)
     }
 }
 
 #Preview("On - Dark") {
     RebrandedPreview {
-        activationPreview(state: .on, real: .madrid, vpn: .valencia)
+        activationPreview(state: .on, original: .madrid, vpn: .valencia)
     }
     .preferredColorScheme(.dark)
 }
 
 #Preview("On - Large Text") {
     RebrandedPreview {
-        activationPreview(state: .on, real: .madrid, vpn: .valencia)
+        activationPreview(state: .on, original: .madrid, vpn: .valencia)
     }
     .dynamicTypeSize(.accessibility5)
 }
@@ -276,7 +308,7 @@ private func activationPreview(state: SubscriptionOnboardingVPNActivationViewMod
 /// also tap "Turn On VPN" to trigger it manually.
 private struct VPNRevealPreview: View {
     @StateObject private var viewModel = SubscriptionOnboardingVPNActivationViewModel.previewReveal(
-        real: .madrid, vpn: .valencia)
+        original: .madrid, vpn: .valencia)
 
     var body: some View {
         SubscriptionOnboardingVPNActivationView(

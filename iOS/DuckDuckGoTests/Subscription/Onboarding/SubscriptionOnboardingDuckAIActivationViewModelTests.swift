@@ -160,4 +160,5 @@ private final class SpySectionDelegate: SubscriptionOnboardingSectionDelegate {
     func sectionDidComplete(_ section: SubscriptionOnboardingSection) {
         completedSections.append(section)
     }
+    func launchDuckAIChat(modelID: String?) {}
 }

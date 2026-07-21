@@ -171,6 +171,7 @@ public extension DesignSystemImages {
             public static var aiModelOSS: DesignSystemImage { .init(resource: .aiModelOSS16) }
             public static var alert: DesignSystemImage { .init(resource: .alert16) }
             public static var alertRecolorable: DesignSystemImage { .init(resource: .alertRecolorable16) }
+            public static var announce: DesignSystemImage { .init(resource: .announce16) }
             public static var arrowCircleRight: DesignSystemImage { .init(resource: .arrowCircleRight16) }
             public static var arrowCircleDownLeft: DesignSystemImage { .init(resource: .arrowCircleDownLeft16) }
             public static var arrowCircleUpLeft: DesignSystemImage { .init(resource: .arrowCircleUpLeft16) }
@@ -203,6 +204,7 @@ public extension DesignSystemImages {
             public static var chevronMediumRight: DesignSystemImage { .init(resource: .chevronMediumRight16) }
             public static var clear: DesignSystemImage { .init(resource: .clear16) }
             public static var clearSolid: DesignSystemImage { .init(resource: .clearSolid16) }
+            public static var clock: DesignSystemImage { .init(resource: .clock16) }
             public static var close: DesignSystemImage { .init(resource: .close16) }
             public static var closeOutline: DesignSystemImage { .init(resource: .closeOutline16) }
             public static var closeSolidAlt: DesignSystemImage { .init(resource: .closeSolidAlt16) }
@@ -210,6 +212,7 @@ public extension DesignSystemImages {
             public static var cookieWhole: DesignSystemImage { .init(resource: .cookieWhole16) }
             public static var compose: DesignSystemImage { .init(resource: .compose16) }
             public static var copy: DesignSystemImage { .init(resource: .copy16) }
+            public static var card: DesignSystemImage { .init(resource: .card16) }
             public static var creditCard: DesignSystemImage { .init(resource: .creditCard16) }
             public static var currency: DesignSystemImage { .init(resource: .currency16) }
             public static var cut: DesignSystemImage { .init(resource: .cut16) }
@@ -257,6 +260,7 @@ public extension DesignSystemImages {
             public static var folderGoto: DesignSystemImage { .init(resource: .folderGoto16) }
             public static var folderMove: DesignSystemImage { .init(resource: .folderMove16) }
             public static var folderNew: DesignSystemImage { .init(resource: .folderNew16) }
+            public static var formAutofill: DesignSystemImage { .init(resource: .formAutofill16) }
             public static var gift: DesignSystemImage { .init(resource: .gift16) }
             public static var glasses: DesignSystemImage { .init(resource: .glasses16) }
             public static var globe: DesignSystemImage { .init(resource: .globe16) }

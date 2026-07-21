@@ -92,6 +92,7 @@ final class SettingsViewModel: ObservableObject {
     let userScriptsDependencies: DefaultScriptSourceProvider.Dependencies
     private let onboardingSearchExperienceSettingsResolver: OnboardingSearchExperienceSettingsResolver
     private let adBlockingAvailability: AdBlockingAvailabilityProviding
+    private let aiChatViewControllerManager: AIChatViewControllerManager?
 
     private lazy var newBadgeVisibilityManager: NewBadgeVisibilityManaging = {
         NewBadgeVisibilityManager(
@@ -1048,10 +1049,12 @@ final class SettingsViewModel: ObservableObject {
          tabSwitcherSettings: TabSwitcherSettings = DefaultTabSwitcherSettings(),
          autoplaySettings: AutoplaySettings = DefaultAutoplaySettings(),
          darkReaderFeatureSettings: DarkReaderFeatureSettings,
-         adBlockingAvailability: AdBlockingAvailabilityProviding
+         adBlockingAvailability: AdBlockingAvailabilityProviding,
+         aiChatViewControllerManager: AIChatViewControllerManager? = nil
     ) {
 
         self.darkReaderFeatureSettings = darkReaderFeatureSettings
+        self.aiChatViewControllerManager = aiChatViewControllerManager
         self.state = SettingsState.defaults
         self.tabSwitcherSettings = tabSwitcherSettings
         self.autoplaySettings = autoplaySettings
@@ -1573,7 +1576,7 @@ extension SettingsViewModel {
         case .unprotectedSites: pushViewController(legacyViewProvider.unprotectedSites)
         case .fireproofSites: pushViewController(legacyViewProvider.fireproofSites)
         case .keyboard: pushViewController(legacyViewProvider.keyboard)
-        case .debug: pushViewController(legacyViewProvider.debug)
+        case .debug: pushViewController(legacyViewProvider.debug(aiChatViewControllerManager: aiChatViewControllerManager))
             
         case .feedback:
             presentViewController(legacyViewProvider.feedback, modal: false)

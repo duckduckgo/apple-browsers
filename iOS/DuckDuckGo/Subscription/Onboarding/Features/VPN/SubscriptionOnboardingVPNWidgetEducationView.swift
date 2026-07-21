@@ -24,7 +24,7 @@ import SwiftUI
 /// numbered steps extracted from `WidgetEducationView`) inside the onboarding page chrome, with a single
 /// "Got it" button that continues to the VPN tips carousel.
 struct SubscriptionOnboardingVPNWidgetEducationView: View {
-    /// The "Step X of Y" indicator is owned by the flow (a later stage), so it is passed in; nil hides it.
+
     var title: String? = nil
 
     @Environment(\.dismiss) private var dismiss

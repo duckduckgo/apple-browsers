@@ -17,9 +17,10 @@
 //  limitations under the License.
 //
 
-/// Receives completion events from an onboarding section. The flow view model (next PR) conforms to this
-/// to advance the flow when a section finishes — e.g. the VPN reaches `.connected`, or a Duck.ai model is
-/// chosen.
+/// Receives events from an onboarding section. The flow view model (next PR) conforms to this to advance the
+/// flow when a section finishes — e.g. the VPN reaches `.connected`, or a Duck.ai model is chosen — and to
+/// launch the Duck.ai chat when the Duck.ai section requests it.
 protocol SubscriptionOnboardingSectionDelegate: AnyObject {
     func sectionDidComplete(_ section: SubscriptionOnboardingSection)
+    func launchDuckAIChat(modelID: String?)
 }

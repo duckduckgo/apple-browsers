@@ -23,9 +23,9 @@ import DesignResourcesKitIcons
 import UIComponents
 
 /// A generic "Learn More" info sheet for a subscription protection: a hero header above a scrollable list
-/// of feature cards, with a close button that returns to the section that presented it. The content is
-/// supplied per ``SubscriptionOnboardingChecklistItem`` by ``SubscriptionOnboardingViewFactory``, so the
-/// same view renders the VPN, IDTR, Duck.ai … info screens.
+/// of feature cards, with a close button that returns to the screen that presented it. The presenting
+/// screen supplies the matching ``SubscriptionOnboardingInfoContent`` (`.vpn`, `.idtr`, `.duckAI`, `.pir`),
+/// so the same view renders the VPN, IDTR, Duck.ai … info screens.
 struct SubscriptionOnboardingInfoView: View {
     let content: SubscriptionOnboardingInfoContent
     let onClose: () -> Void
@@ -50,9 +50,9 @@ struct SubscriptionOnboardingInfoView: View {
     private var featureCards: some View {
         VStack(spacing: Metrics.cardSpacing) {
             ForEach(content.features) { feature in
-                if feature.showsPlatformGrid {
+                if let platforms = feature.platforms {
                     SubscriptionOnboardingShowcaseCard(icon: feature.icon, title: feature.title, text: feature.body) {
-                        SubscriptionOnboardingPlatformGrid()
+                        SubscriptionOnboardingPlatformGrid(platforms: platforms)
                     }
                 } else {
                     SubscriptionOnboardingShowcaseCard(icon: feature.icon, title: feature.title, text: feature.body)
@@ -73,8 +73,9 @@ struct SubscriptionOnboardingInfoContent {
         let icon: Image
         let title: String
         let body: String
-        /// Whether the card shows the platform grid in its footer — only the VPN "Devices" card does.
-        var showsPlatformGrid = false
+        /// The platforms to show in the card's footer grid, or `nil` for no grid. Only the VPN "Devices"
+        /// card and the PIR "Platforms" card show one; PIR passes a Mac/Windows-only subset.
+        var platforms: [SubscriptionOnboardingPlatformGrid.Platform]?
     }
 
     let visual: Graphic
@@ -84,13 +85,13 @@ struct SubscriptionOnboardingInfoContent {
 }
 
 extension SubscriptionOnboardingInfoContent {
-    /// The info-sheet content for a checklist item, or `nil` for protections whose info screen has not been
-    /// built yet (IDTR, Duck.ai, PIR — Stage 3).
+    /// The info-sheet content for a checklist item.
     static func content(for item: SubscriptionOnboardingChecklistItem) -> SubscriptionOnboardingInfoContent? {
         switch item {
         case .vpn: return .vpn
+        case .idtr: return .idtr
         case .duckAI: return .duckAI
-        case .idtr, .pir: return nil
+        case .pir: return .pir
         }
     }
 
@@ -100,7 +101,17 @@ extension SubscriptionOnboardingInfoContent {
         title: UserText.subscriptionOnboardingVPNInfoTitle,
         explanation: UserText.subscriptionOnboardingVPNInfoExplanation,
         features: VPNInfoFeature.allCases.map {
-            Feature(icon: $0.icon, title: $0.title, body: $0.body, showsPlatformGrid: $0 == .devices)
+            Feature(icon: $0.icon, title: $0.title, body: $0.body,
+                    platforms: $0 == .devices ? SubscriptionOnboardingPlatformGrid.Platform.allCases : nil)
+        })
+
+    /// The IDTR "Learn More" content.
+    static let idtr = SubscriptionOnboardingInfoContent(
+        visual: .image(Image(.onboardingIDTR128)),
+        title: UserText.subscriptionOnboardingIDTRInfoTitle,
+        explanation: UserText.subscriptionOnboardingIDTRInfoExplanation,
+        features: IDTRInfoFeature.allCases.map {
+            Feature(icon: $0.icon, title: $0.title, body: $0.body)
         })
 
     /// The Duck.ai "Learn More" content.
@@ -110,6 +121,16 @@ extension SubscriptionOnboardingInfoContent {
         explanation: UserText.subscriptionOnboardingDuckAIInfoExplanation,
         features: DuckAIInfoFeature.allCases.map {
             Feature(icon: $0.icon, title: $0.title, body: $0.body)
+        })
+
+    /// The PIR "Learn More" content.
+    static let pir = SubscriptionOnboardingInfoContent(
+        visual: .image(Image(.personalInformationRemover128)),
+        title: UserText.subscriptionOnboardingPIRInfoTitle,
+        explanation: UserText.subscriptionOnboardingPIRInfoExplanation,
+        features: PIRInfoFeature.allCases.map {
+            Feature(icon: $0.icon, title: $0.title, body: $0.body,
+                    platforms: $0 == .platforms ? [.mac, .windows] : nil)
         })
 }
 
@@ -199,10 +220,101 @@ private enum DuckAIInfoFeature: CaseIterable {
     }
 }
 
+/// The IDTR features listed on the IDTR info sheet.
+private enum IDTRInfoFeature: CaseIterable {
+    case financialLosses
+    case creditReport
+    case walletItems
+    case caseManager
+    case rapidResponse
+    case emergencyCash
+    case authorities
+    case medical
+
+    var title: String {
+        switch self {
+        case .financialLosses: UserText.subscriptionOnboardingIDTRInfoFinancialLossesTitle
+        case .creditReport: UserText.subscriptionOnboardingIDTRInfoCreditReportTitle
+        case .walletItems: UserText.subscriptionOnboardingIDTRInfoWalletTitle
+        case .caseManager: UserText.subscriptionOnboardingIDTRInfoCaseManagerTitle
+        case .rapidResponse: UserText.subscriptionOnboardingIDTRInfoRapidResponseTitle
+        case .emergencyCash: UserText.subscriptionOnboardingIDTRInfoEmergencyCashTitle
+        case .authorities: UserText.subscriptionOnboardingIDTRInfoAuthoritiesTitle
+        case .medical: UserText.subscriptionOnboardingIDTRInfoMedicalTitle
+        }
+    }
+
+    var body: String {
+        switch self {
+        case .financialLosses: UserText.subscriptionOnboardingIDTRInfoFinancialLossesBody
+        case .creditReport: UserText.subscriptionOnboardingIDTRInfoCreditReportBody
+        case .walletItems: UserText.subscriptionOnboardingIDTRInfoWalletBody
+        case .caseManager: UserText.subscriptionOnboardingIDTRInfoCaseManagerBody
+        case .rapidResponse: UserText.subscriptionOnboardingIDTRInfoRapidResponseBody
+        case .emergencyCash: UserText.subscriptionOnboardingIDTRInfoEmergencyCashBody
+        case .authorities: UserText.subscriptionOnboardingIDTRInfoAuthoritiesBody
+        case .medical: UserText.subscriptionOnboardingIDTRInfoMedicalBody
+        }
+    }
+
+    /// `walletItems` has no matching design-system glyph — a placeholder, flagged for a real icon.
+    var icon: Image {
+        switch self {
+        case .financialLosses: Image(uiImage: DesignSystemImages.Glyphs.Size16.currency)
+        case .creditReport: Image(uiImage: DesignSystemImages.Glyphs.Size16.profileLock)
+        case .walletItems: Image(uiImage: DesignSystemImages.Glyphs.Size16.card)
+        case .caseManager: Image(uiImage: DesignSystemImages.Glyphs.Size16.support)
+        case .rapidResponse: Image(uiImage: DesignSystemImages.Glyphs.Size16.clock)
+        case .emergencyCash: Image(uiImage: DesignSystemImages.Glyphs.Size16.creditCard)
+        case .authorities: Image(uiImage: DesignSystemImages.Glyphs.Size16.announce)
+        case .medical: Image(uiImage: DesignSystemImages.Glyphs.Size16.profile)
+        }
+    }
+}
+
+/// The PIR features listed on the PIR info sheet.
+private enum PIRInfoFeature: CaseIterable {
+    case platforms
+    case repeatedScans
+    case onDevice
+    case automated
+    case monitorProgress
+
+    var title: String {
+        switch self {
+        case .platforms: UserText.subscriptionOnboardingPIRInfoPlatformsTitle
+        case .repeatedScans: UserText.subscriptionOnboardingPIRInfoScansTitle
+        case .onDevice: UserText.subscriptionOnboardingPIRInfoOnDeviceTitle
+        case .automated: UserText.subscriptionOnboardingPIRInfoAutomatedTitle
+        case .monitorProgress: UserText.subscriptionOnboardingPIRInfoMonitorTitle
+        }
+    }
+
+    var body: String {
+        switch self {
+        case .platforms: UserText.subscriptionOnboardingPIRInfoPlatformsBody
+        case .repeatedScans: UserText.subscriptionOnboardingPIRInfoScansBody
+        case .onDevice: UserText.subscriptionOnboardingPIRInfoOnDeviceBody
+        case .automated: UserText.subscriptionOnboardingPIRInfoAutomatedBody
+        case .monitorProgress: UserText.subscriptionOnboardingPIRInfoMonitorBody
+        }
+    }
+
+    var icon: Image {
+        switch self {
+        case .platforms: Image(uiImage: DesignSystemImages.Glyphs.Size16.deviceAll)
+        case .repeatedScans: Image(uiImage: DesignSystemImages.Glyphs.Size16.reload)
+        case .onDevice: Image(uiImage: DesignSystemImages.Glyphs.Size16.deviceLaptopLock)
+        case .automated: Image(uiImage: DesignSystemImages.Glyphs.Size16.formAutofill)
+        case .monitorProgress: Image(uiImage: DesignSystemImages.Glyphs.Size16.support)
+        }
+    }
+}
+
 // MARK: - Platform grid
 
-/// The 2-column platform grid shown in the footer of the VPN info sheet's "Devices" card: one `CardItem`
-/// per platform (a leading platform glyph and its name).
+/// The 2-column platform grid shown in the footer of a "Platforms"/"Devices" info-sheet card (VPN, PIR):
+/// one `CardItem` per platform (a leading platform glyph and its name).
 struct SubscriptionOnboardingPlatformGrid: View {
     private enum Metrics {
         static let columnSpacing: CGFloat = 4
@@ -213,14 +325,21 @@ struct SubscriptionOnboardingPlatformGrid: View {
         static let secondColumnMaxWidth: CGFloat = 121
     }
 
+    private let platforms: [Platform]
+
     private let columns = [
         GridItem(.flexible(maximum: Metrics.firstColumnMaxWidth), spacing: Metrics.columnSpacing, alignment: .leading),
         GridItem(.flexible(maximum: Metrics.secondColumnMaxWidth), spacing: Metrics.columnSpacing, alignment: .leading)
     ]
 
+    /// Defaults to all four platforms (the VPN "Devices" card); PIR is Mac/Windows-only and passes a subset.
+    init(platforms: [Platform] = Platform.allCases) {
+        self.platforms = platforms
+    }
+
     var body: some View {
         LazyVGrid(columns: columns, alignment: .leading, spacing: Metrics.rowSpacing) {
-            ForEach(Platform.allCases, id: \.self) { platform in
+            ForEach(platforms, id: \.self) { platform in
                 CardItem(
                     icon: CardItemIcon(position: .leadingColumn, visual: .image(platform.icon), size: .size24, spacing: Metrics.iconSpacing),
                     title: CardItemText(platform.name, font: .subheadRegular))
@@ -229,8 +348,9 @@ struct SubscriptionOnboardingPlatformGrid: View {
         .padding(.top, Metrics.topPadding)
     }
 
-    /// The four platforms shown in the Devices card, each with its design-system glyph and display name.
-    private enum Platform: CaseIterable {
+    /// The platforms selectable for a card's grid — VPN's "Devices" card shows all four; PIR's "Platforms"
+    /// card shows only Mac and Windows.
+    enum Platform: CaseIterable {
         case iOS
         case android
         case mac
@@ -279,6 +399,20 @@ struct SubscriptionOnboardingPlatformGrid: View {
             .subscriptionOnboardingNavigationContainer()
     }
     .dynamicTypeSize(.accessibility5)
+}
+
+#Preview("IDTR") {
+    RebrandedPreview {
+        SubscriptionOnboardingInfoView(content: .idtr, onClose: {})
+            .subscriptionOnboardingNavigationContainer()
+    }
+}
+
+#Preview("PIR") {
+    RebrandedPreview {
+        SubscriptionOnboardingInfoView(content: .pir, onClose: {})
+            .subscriptionOnboardingNavigationContainer()
+    }
 }
 
 #endif

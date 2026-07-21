@@ -47,8 +47,11 @@ final class SubscriptionDebugViewController: UITableViewController {
         AppDependencyProvider.shared.subscriptionManager.currentEnvironment
     }
 
-    init?(coder: NSCoder, subscriptionDataReporter: SubscriptionDataReporting) {
+    private let aiChatViewControllerManager: AIChatViewControllerManager?
+
+    init?(coder: NSCoder, subscriptionDataReporter: SubscriptionDataReporting, aiChatViewControllerManager: AIChatViewControllerManager?) {
         self.reporter = subscriptionDataReporter
+        self.aiChatViewControllerManager = aiChatViewControllerManager
         super.init(coder: coder)
     }
     
@@ -130,6 +133,7 @@ final class SubscriptionDebugViewController: UITableViewController {
     enum OnboardingRows: Int, CaseIterable {
         case vpn
         case duckAI
+        case tapAllowOverlay
     }
 
     private var notificationAuthStatusText: String = "Loading"
@@ -325,6 +329,9 @@ final class SubscriptionDebugViewController: UITableViewController {
             case .duckAI:
                 cell.textLabel?.text = "Duck.ai"
                 cell.accessoryType = .disclosureIndicator
+            case .tapAllowOverlay:
+                cell.textLabel?.text = "Tap Allow Overlay Playground"
+                cell.accessoryType = .disclosureIndicator
             case .none:
                 break
             }
@@ -400,6 +407,7 @@ final class SubscriptionDebugViewController: UITableViewController {
             switch OnboardingRows(rawValue: indexPath.row) {
             case .vpn: showVPNOnboarding()
             case .duckAI: showDuckAIOnboarding()
+            case .tapAllowOverlay: showTapAllowOverlayPlayground()
             default: break
             }
         case .none:
@@ -855,9 +863,16 @@ final class SubscriptionDebugViewController: UITableViewController {
 
     private func showDuckAIOnboarding() {
         let hostingController = UIHostingController(
-            rootView: SubscriptionOnboardingDuckAIView()
+            rootView: SubscriptionOnboardingDuckAIView(
+                viewModel: SubscriptionOnboardingDuckAIViewModel(delegate: self))
                 .subscriptionOnboardingNavigationContainer())
         present(hostingController, animated: true)
+    }
+
+    private func showTapAllowOverlayPlayground() {
+        let hostingController = UIHostingController(rootView: TapAllowOverlayPlaygroundView())
+        hostingController.title = "Tap Allow Overlay"
+        navigationController?.pushViewController(hostingController, animated: true)
     }
 
     /// Draws `Graphic.lottie` for the onboarding preview from this debug host, since `UIComponents` has no
@@ -876,5 +891,14 @@ final class SubscriptionDebugViewController: UITableViewController {
 extension Bool {
     fileprivate var toString: String {
         String(self)
+    }
+}
+
+extension SubscriptionDebugViewController: SubscriptionOnboardingSectionDelegate {
+    func sectionDidComplete(_ section: SubscriptionOnboardingSection) {}
+
+    func launchDuckAIChat(modelID: String?) {
+        guard let aiChatViewControllerManager else { return }
+        aiChatViewControllerManager.openAIChat(modelId: modelID, on: presentedViewController ?? self)
     }
 }

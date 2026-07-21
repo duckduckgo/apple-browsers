@@ -61,6 +61,17 @@ final class NetworkProtectionTunnelController: VPNConnectionContextProvidingTunn
         controllerErrorSubject.eraseToAnyPublisher()
     }
 
+    /// Signals that the customer declined the system prompt to add the VPN configuration.
+    ///
+    /// Kept separate from `controllerErrorPublisher` because a denial is an intentional user action: it must
+    /// not raise an error banner or fire a failure pixel (see `start()`). It fires only so screens that need
+    /// to react to a denial — e.g. subscription onboarding activation — can observe it precisely instead of
+    /// inferring it from a still-disconnected state after a start attempt.
+    private let configurationDeniedSubject = PassthroughSubject<Void, Never>()
+    var configurationDeniedPublisher: AnyPublisher<Void, Never> {
+        configurationDeniedSubject.eraseToAnyPublisher()
+    }
+
     // Wide Event
     private let wideEvent: WideEventManaging
     private var connectionWideEventData: VPNConnectionWideEventData?
@@ -222,6 +233,7 @@ final class NetworkProtectionTunnelController: VPNConnectionContextProvidingTunn
 
             completeAndCleanupConnectionWideEvent(with: error, description: error.contextualizedDescription())
             if case StartError.configSystemPermissionsDenied = error {
+                configurationDeniedSubject.send()
                 return
             }
 

@@ -40,6 +40,7 @@ struct PIRDebug: ParsableCommand {
         """,
         subcommands: [
             ScanCommand.self,
+            OptOutCommand.self,
             ValidateCommand.self,
             ListBrokersCommand.self,
             FetchRulesCommand.self,

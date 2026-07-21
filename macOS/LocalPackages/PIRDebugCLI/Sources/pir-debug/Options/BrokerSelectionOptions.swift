@@ -32,13 +32,18 @@ struct BrokerSelectionOptions: ParsableArguments {
     /// Filters `brokers` per the selection. Throws ``CLIUsageError`` when nothing matches or when
     /// neither a selector nor `--all` was supplied.
     func select(from brokers: [DataBroker]) throws -> [DataBroker] {
-        if let broker {
-            let needle = broker.lowercased()
+        try Self.select(selector: broker, all: all, from: brokers)
+    }
+
+    /// Selects brokers by name/domain (exact match first, then substring), or all when `all` is set.
+    static func select(selector: String?, all: Bool, from brokers: [DataBroker]) throws -> [DataBroker] {
+        if let selector {
+            let needle = selector.lowercased()
             let exact = brokers.filter { $0.name.lowercased() == needle || $0.url.lowercased() == needle }
             if !exact.isEmpty { return exact }
             let partial = brokers.filter { $0.name.lowercased().contains(needle) || $0.url.lowercased().contains(needle) }
             guard !partial.isEmpty else {
-                throw CLIUsageError("No broker matches '\(broker)' in the rules source.")
+                throw CLIUsageError("No broker matches '\(selector)' in the rules source.")
             }
             return partial
         }

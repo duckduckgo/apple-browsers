@@ -1092,6 +1092,7 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
             tabCount: tabsModel.count
         )
         tearDownLiveSwipeViews(keepDestinationView: keepsLiveDestination)
+        cleanUpFloatingBottomOmnibarSwipe()
         chromePreview?.removeFromSuperview()
         chromePreview = nil
         feedbackGenerator.selectionChanged()

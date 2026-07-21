@@ -201,17 +201,26 @@ final class Fire: FireProtocol {
     private var dispatchGroup: DispatchGroup?
 
     enum BurningData: Equatable {
-        case specificDomains(_ domains: Set<String>, shouldPlayFireAnimation: Bool)
+        case specificDomains(_ domains: Set<String>, closesTabs: Bool)
         case all
 
-        func shouldPlayFireAnimation(decider: VisualizeFireSettingsDecider) -> Bool {
+        /// Whether the burn closes/replaces tabs (all-data, window or tab burns) and therefore
+        /// presents the full-window fire treatment — the fire animation and/or the
+        /// "Deleting browsing data…" progress dialog. New Tab Page privacy-feed site burns clear
+        /// data in place without touching tabs. Independent of whether the fire animation is enabled.
+        var closesTabs: Bool {
             switch self {
-            case .all, .specificDomains(_, shouldPlayFireAnimation: true):
-                return decider.shouldShowFireAnimation
-            // We don't present the fire animation if user burns from the privacy feed
-            case .specificDomains(_, shouldPlayFireAnimation: false):
-                return false
+            case .all:
+                return true
+            case .specificDomains(_, closesTabs: let closesTabs):
+                return closesTabs
             }
+        }
+
+        func shouldPlayFireAnimation(decider: VisualizeFireSettingsDecider) -> Bool {
+            // We don't present the fire animation if the user burns from the privacy feed.
+            guard closesTabs else { return false }
+            return decider.shouldShowFireAnimation
         }
     }
 
@@ -238,6 +247,19 @@ final class Fire: FireProtocol {
                 return close
             case .none:
                 return true
+            }
+        }
+
+        /// Whether the burn closes/replaces tabs in a window. `.none` (New Tab Page privacy-feed
+        /// burns) clears site data without touching tabs.
+        var closesTabs: Bool {
+            switch self {
+            case .tab(tabViewModel: _, selectedDomains: _, parentTabCollectionViewModel: _, close: let close),
+                    .window(tabCollectionViewModel: _, selectedDomains: _, close: let close),
+                    .allWindows(mainWindowControllers: _, selectedDomains: _, customURLToOpen: _, close: let close):
+                return close
+            case .none:
+                return false
             }
         }
 
@@ -367,7 +389,7 @@ final class Fire: FireProtocol {
         let domains = domainsToBurn(from: entity)
         assert(domains.areAllETLDPlus1(tld: tld))
 
-        burningData = .specificDomains(domains, shouldPlayFireAnimation: entity.shouldPlayFireAnimation(decider: visualizeFireAnimationDecider))
+        burningData = .specificDomains(domains, closesTabs: entity.closesTabs)
 
         dataClearingWideEventService?.start(.clearLastSessionState)
         let lastSessionStateResult = burnLastSessionState()

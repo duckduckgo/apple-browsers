@@ -3080,6 +3080,14 @@
 		B313C04F2E1FD91200C34AE6 /* AutoconsentPixels.swift in Sources */ = {isa = PBXBuildFile; fileRef = B313C04E2E1FD91200C34AE6 /* AutoconsentPixels.swift */; };
 		B313C0502E1FD91200C34AE6 /* AutoconsentPixels.swift in Sources */ = {isa = PBXBuildFile; fileRef = B313C04E2E1FD91200C34AE6 /* AutoconsentPixels.swift */; };
 		B502A3D12F23B4DF00F1AF8B /* XCTestCase+Helpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = B502A3D02F23B4DF00F1AF8B /* XCTestCase+Helpers.swift */; };
+		B5165043300FACD7007AE203 /* upsell_devices_reveal.json in Resources */ = {isa = PBXBuildFile; fileRef = B5165042300FACD7007AE203 /* upsell_devices_reveal.json */; };
+		B5165044300FACD7007AE203 /* upsell_devices_loop.json in Resources */ = {isa = PBXBuildFile; fileRef = B5165041300FACD7007AE203 /* upsell_devices_loop.json */; };
+		B5165045300FACD7007AE203 /* upsell_devices_reveal.json in Resources */ = {isa = PBXBuildFile; fileRef = B5165042300FACD7007AE203 /* upsell_devices_reveal.json */; };
+		B5165046300FACD7007AE203 /* upsell_devices_loop.json in Resources */ = {isa = PBXBuildFile; fileRef = B5165041300FACD7007AE203 /* upsell_devices_loop.json */; };
+		B5165047300FACD7007AE203 /* upsell_devices_reveal.json in Resources */ = {isa = PBXBuildFile; fileRef = B5165042300FACD7007AE203 /* upsell_devices_reveal.json */; };
+		B5165048300FACD7007AE203 /* upsell_devices_loop.json in Resources */ = {isa = PBXBuildFile; fileRef = B5165041300FACD7007AE203 /* upsell_devices_loop.json */; };
+		B5165049300FACD7007AE203 /* upsell_devices_reveal.json in Resources */ = {isa = PBXBuildFile; fileRef = B5165042300FACD7007AE203 /* upsell_devices_reveal.json */; };
+		B516504A300FACD7007AE203 /* upsell_devices_loop.json in Resources */ = {isa = PBXBuildFile; fileRef = B5165041300FACD7007AE203 /* upsell_devices_loop.json */; };
 		B51792B12F7C4F790018ED80 /* PermissionCenterViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B51792B02F7C4F790018ED80 /* PermissionCenterViewModelTests.swift */; };
 		B51792B22F7C4F790018ED80 /* PermissionCenterViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B51792B02F7C4F790018ED80 /* PermissionCenterViewModelTests.swift */; };
 		B51A90DA2F044C3E00FB9C0C /* ScriptStyleProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B51A90D92F044C3E00FB9C0C /* ScriptStyleProviderTests.swift */; };
@@ -3577,10 +3585,10 @@
 		BB153C5F2F3A11EA004D9F5E /* MemoryReportingContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB153C5A2F3A11EA004D9F5E /* MemoryReportingContext.swift */; };
 		BB153C602F3A11EA004D9F5E /* MemoryUsageIntervalPixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB153C5B2F3A11EA004D9F5E /* MemoryUsageIntervalPixel.swift */; };
 		BB153C612F3A11EA004D9F5E /* MemoryReportingBuckets.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB153C592F3A11EA004D9F5E /* MemoryReportingBuckets.swift */; };
-		BB1F8E122E3CC5C40043648F /* sparkleloop_wide.json in Resources */ = {isa = PBXBuildFile; fileRef = BB1F8E112E3CC5C40043648F /* sparkleloop_wide.json */; };
-		BB1F8E132E3CC5C40043648F /* sparkleloop_wide.json in Resources */ = {isa = PBXBuildFile; fileRef = BB1F8E112E3CC5C40043648F /* sparkleloop_wide.json */; };
-		BB1F8E142E3CC5C40043648F /* sparkleloop_wide.json in Resources */ = {isa = PBXBuildFile; fileRef = BB1F8E112E3CC5C40043648F /* sparkleloop_wide.json */; };
-		BB1F8E152E3CC5C40043648F /* sparkleloop_wide.json in Resources */ = {isa = PBXBuildFile; fileRef = BB1F8E112E3CC5C40043648F /* sparkleloop_wide.json */; };
+		BB1F8E122E3CC5C40043648F /* sparkleloop_wide_legacy.json in Resources */ = {isa = PBXBuildFile; fileRef = BB1F8E112E3CC5C40043648F /* sparkleloop_wide_legacy.json */; };
+		BB1F8E132E3CC5C40043648F /* sparkleloop_wide_legacy.json in Resources */ = {isa = PBXBuildFile; fileRef = BB1F8E112E3CC5C40043648F /* sparkleloop_wide_legacy.json */; };
+		BB1F8E142E3CC5C40043648F /* sparkleloop_wide_legacy.json in Resources */ = {isa = PBXBuildFile; fileRef = BB1F8E112E3CC5C40043648F /* sparkleloop_wide_legacy.json */; };
+		BB1F8E152E3CC5C40043648F /* sparkleloop_wide_legacy.json in Resources */ = {isa = PBXBuildFile; fileRef = BB1F8E112E3CC5C40043648F /* sparkleloop_wide_legacy.json */; };
 		BB25827A2E9EC778002B8DB5 /* SERPSettingsProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB2582792E9EC770002B8DB5 /* SERPSettingsProvider.swift */; };
 		BB25827B2E9EC778002B8DB5 /* SERPSettingsProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB2582792E9EC770002B8DB5 /* SERPSettingsProvider.swift */; };
 		BB3229052D08644400DA92E9 /* TabBarRemoteMessageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB3229042D08643700DA92E9 /* TabBarRemoteMessageView.swift */; };
@@ -3728,10 +3736,10 @@
 		BBBD2A062E2FE4C6005E7664 /* ViewExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBD2A042E2FE4C3005E7664 /* ViewExtensions.swift */; };
 		BBBD2A082E2FE548005E7664 /* PillCollectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBD2A072E2FE544005E7664 /* PillCollectionView.swift */; };
 		BBBD2A092E2FE548005E7664 /* PillCollectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBD2A072E2FE544005E7664 /* PillCollectionView.swift */; };
-		BBBED48B2E3B60D2003A9AA6 /* privacypro_devices.json in Resources */ = {isa = PBXBuildFile; fileRef = BBBED48A2E3B60D2003A9AA6 /* privacypro_devices.json */; };
-		BBBED48C2E3B60D2003A9AA6 /* privacypro_devices.json in Resources */ = {isa = PBXBuildFile; fileRef = BBBED48A2E3B60D2003A9AA6 /* privacypro_devices.json */; };
-		BBBED48D2E3B60D2003A9AA6 /* privacypro_devices.json in Resources */ = {isa = PBXBuildFile; fileRef = BBBED48A2E3B60D2003A9AA6 /* privacypro_devices.json */; };
-		BBBED48E2E3B60D2003A9AA6 /* privacypro_devices.json in Resources */ = {isa = PBXBuildFile; fileRef = BBBED48A2E3B60D2003A9AA6 /* privacypro_devices.json */; };
+		BBBED48B2E3B60D2003A9AA6 /* privacypro_devices_legacy.json in Resources */ = {isa = PBXBuildFile; fileRef = BBBED48A2E3B60D2003A9AA6 /* privacypro_devices_legacy.json */; };
+		BBBED48C2E3B60D2003A9AA6 /* privacypro_devices_legacy.json in Resources */ = {isa = PBXBuildFile; fileRef = BBBED48A2E3B60D2003A9AA6 /* privacypro_devices_legacy.json */; };
+		BBBED48D2E3B60D2003A9AA6 /* privacypro_devices_legacy.json in Resources */ = {isa = PBXBuildFile; fileRef = BBBED48A2E3B60D2003A9AA6 /* privacypro_devices_legacy.json */; };
+		BBBED48E2E3B60D2003A9AA6 /* privacypro_devices_legacy.json in Resources */ = {isa = PBXBuildFile; fileRef = BBBED48A2E3B60D2003A9AA6 /* privacypro_devices_legacy.json */; };
 		BBBEE1BF2C4FF63600035ABA /* SortBookmarksViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBEE1BE2C4FF63600035ABA /* SortBookmarksViewModelTests.swift */; };
 		BBBEE1C02C4FF63600035ABA /* SortBookmarksViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBEE1BE2C4FF63600035ABA /* SortBookmarksViewModelTests.swift */; };
 		BBC063E82C5A9E4B007BDC18 /* BookmarkManagementDetailViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBC063E72C5A9E4B007BDC18 /* BookmarkManagementDetailViewModelTests.swift */; };
@@ -6274,6 +6282,8 @@
 		B313C04E2E1FD91200C34AE6 /* AutoconsentPixels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoconsentPixels.swift; sourceTree = "<group>"; };
 		B4635C8FD7CF47F0A3D22F8A /* AutoconsentPopupManagedEvent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoconsentPopupManagedEvent.swift; sourceTree = "<group>"; };
 		B502A3D02F23B4DF00F1AF8B /* XCTestCase+Helpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "XCTestCase+Helpers.swift"; sourceTree = "<group>"; };
+		B5165041300FACD7007AE203 /* upsell_devices_loop.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = upsell_devices_loop.json; sourceTree = "<group>"; };
+		B5165042300FACD7007AE203 /* upsell_devices_reveal.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = upsell_devices_reveal.json; sourceTree = "<group>"; };
 		B51792B02F7C4F790018ED80 /* PermissionCenterViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionCenterViewModelTests.swift; sourceTree = "<group>"; };
 		B51A90D92F044C3E00FB9C0C /* ScriptStyleProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptStyleProviderTests.swift; sourceTree = "<group>"; };
 		B520EBE02EC4D66A00D286E4 /* LoadingIndicatorPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoadingIndicatorPolicy.swift; sourceTree = "<group>"; };
@@ -6603,7 +6613,7 @@
 		BB153C592F3A11EA004D9F5E /* MemoryReportingBuckets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoryReportingBuckets.swift; sourceTree = "<group>"; };
 		BB153C5A2F3A11EA004D9F5E /* MemoryReportingContext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoryReportingContext.swift; sourceTree = "<group>"; };
 		BB153C5B2F3A11EA004D9F5E /* MemoryUsageIntervalPixel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoryUsageIntervalPixel.swift; sourceTree = "<group>"; };
-		BB1F8E112E3CC5C40043648F /* sparkleloop_wide.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = sparkleloop_wide.json; sourceTree = "<group>"; };
+		BB1F8E112E3CC5C40043648F /* sparkleloop_wide_legacy.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = sparkleloop_wide_legacy.json; sourceTree = "<group>"; };
 		BB2582792E9EC770002B8DB5 /* SERPSettingsProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SERPSettingsProvider.swift; sourceTree = "<group>"; };
 		BB3229042D08643700DA92E9 /* TabBarRemoteMessageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabBarRemoteMessageView.swift; sourceTree = "<group>"; };
 		BB32A87C2E3CF75700E0C2AF /* VPNUpsellPopoverViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNUpsellPopoverViewModelTests.swift; sourceTree = "<group>"; };
@@ -6680,7 +6690,7 @@
 		BBBD2A012E2FE44B005E7664 /* ThankYouView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThankYouView.swift; sourceTree = "<group>"; };
 		BBBD2A042E2FE4C3005E7664 /* ViewExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewExtensions.swift; sourceTree = "<group>"; };
 		BBBD2A072E2FE544005E7664 /* PillCollectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PillCollectionView.swift; sourceTree = "<group>"; };
-		BBBED48A2E3B60D2003A9AA6 /* privacypro_devices.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = privacypro_devices.json; sourceTree = "<group>"; };
+		BBBED48A2E3B60D2003A9AA6 /* privacypro_devices_legacy.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = privacypro_devices_legacy.json; sourceTree = "<group>"; };
 		BBBEE1BE2C4FF63600035ABA /* SortBookmarksViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SortBookmarksViewModelTests.swift; sourceTree = "<group>"; };
 		BBC063E72C5A9E4B007BDC18 /* BookmarkManagementDetailViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarkManagementDetailViewModelTests.swift; sourceTree = "<group>"; };
 		BBC114642D89E859007A82D8 /* TabCollectionViewModelCloseTabLogicTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabCollectionViewModelCloseTabLogicTests.swift; sourceTree = "<group>"; };
@@ -12682,8 +12692,10 @@
 		BDE981DB2BBD110800645880 /* Assets */ = {
 			isa = PBXGroup;
 			children = (
-				BBBED48A2E3B60D2003A9AA6 /* privacypro_devices.json */,
-				BB1F8E112E3CC5C40043648F /* sparkleloop_wide.json */,
+				BBBED48A2E3B60D2003A9AA6 /* privacypro_devices_legacy.json */,
+				BB1F8E112E3CC5C40043648F /* sparkleloop_wide_legacy.json */,
+				B5165041300FACD7007AE203 /* upsell_devices_loop.json */,
+				B5165042300FACD7007AE203 /* upsell_devices_reveal.json */,
 				B5D2087F300076B100B5671D /* vpn-animation.json */,
 				BD384AC82BBC821100EF3735 /* vpn-dark-mode.json */,
 				BD384AC72BBC821100EF3735 /* vpn-light-mode.json */,
@@ -14258,7 +14270,7 @@
 				CD2AB5C82C8223040019EB49 /* phishingHashPrefixes.json in Resources */,
 				BBBD29952E2EB70A005E7664 /* pictogramDaxHeart.json in Resources */,
 				3706FCB4293F65D500E42796 /* CrashReports.storyboard in Resources */,
-				BBBED48B2E3B60D2003A9AA6 /* privacypro_devices.json in Resources */,
+				BBBED48B2E3B60D2003A9AA6 /* privacypro_devices_legacy.json in Resources */,
 				3706FCB5293F65D500E42796 /* trackerData.json in Resources */,
 				BB0DA4D12DB1629A00AB9C29 /* shield-green-hover.json in Resources */,
 				3706FCB7293F65D500E42796 /* 01_Fire_really_small.json in Resources */,
@@ -14268,7 +14280,7 @@
 				3706FCBE293F65D500E42796 /* autoconsent-bundle.js in Resources */,
 				3706FCBF293F65D500E42796 /* ContentOverlay.storyboard in Resources */,
 				378CA3A02FBC79290043CF38 /* AppIcon.icon in Resources */,
-				BB1F8E132E3CC5C40043648F /* sparkleloop_wide.json in Resources */,
+				BB1F8E132E3CC5C40043648F /* sparkleloop_wide_legacy.json in Resources */,
 				B5EA14AB2FFFDB8000FC2512 /* Shield-Color-24.json in Resources */,
 				3706FCC0293F65D500E42796 /* FindInPage.storyboard in Resources */,
 				37EE56012D5F197300D53C7C /* dark-flame-mouse-over.json in Resources */,
@@ -14296,6 +14308,8 @@
 				37EE56112D5F197300D53C7C /* NavigationBar.storyboard in Resources */,
 				EEC8EB3F2982CA440065AA39 /* JSAlert.storyboard in Resources */,
 				3706FCC3293F65D500E42796 /* userscript.js in Resources */,
+				B5165047300FACD7007AE203 /* upsell_devices_reveal.json in Resources */,
+				B5165048300FACD7007AE203 /* upsell_devices_loop.json in Resources */,
 				3706FCC8293F65D500E42796 /* Assets.xcassets in Resources */,
 				9FBB0C012CB94FC10006B6A6 /* view_highlight.json in Resources */,
 				84DD63E52E9788960043A25E /* TabBar.storyboard in Resources */,
@@ -14378,10 +14392,12 @@
 			buildActionMask = 2147483647;
 			files = (
 				4B1561872F2FF36400E444AA /* macos-config.json in Resources */,
+				B5165043300FACD7007AE203 /* upsell_devices_reveal.json in Resources */,
+				B5165044300FACD7007AE203 /* upsell_devices_loop.json in Resources */,
 				BDE981DA2BBD10D600645880 /* vpn-light-mode.json in Resources */,
-				BB1F8E152E3CC5C40043648F /* sparkleloop_wide.json in Resources */,
+				BB1F8E152E3CC5C40043648F /* sparkleloop_wide_legacy.json in Resources */,
 				B5D20880300076B100B5671D /* vpn-animation.json in Resources */,
-				BBBED48C2E3B60D2003A9AA6 /* privacypro_devices.json in Resources */,
+				BBBED48C2E3B60D2003A9AA6 /* privacypro_devices_legacy.json in Resources */,
 				7BA7CC482AD11E5C0042E5CE /* Assets.xcassets in Resources */,
 				1EC711552D03421B0009EB5C /* Localizable.xcstrings in Resources */,
 				BDE981D92BBD10D600645880 /* vpn-dark-mode.json in Resources */,
@@ -14393,10 +14409,12 @@
 			buildActionMask = 2147483647;
 			files = (
 				4B1561882F2FF36400E444AA /* macos-config.json in Resources */,
+				B5165049300FACD7007AE203 /* upsell_devices_reveal.json in Resources */,
+				B516504A300FACD7007AE203 /* upsell_devices_loop.json in Resources */,
 				BDADBDCD2BD2BC5700421B9B /* vpn-light-mode.json in Resources */,
-				BB1F8E122E3CC5C40043648F /* sparkleloop_wide.json in Resources */,
+				BB1F8E122E3CC5C40043648F /* sparkleloop_wide_legacy.json in Resources */,
 				B5D20881300076B100B5671D /* vpn-animation.json in Resources */,
-				BBBED48D2E3B60D2003A9AA6 /* privacypro_devices.json in Resources */,
+				BBBED48D2E3B60D2003A9AA6 /* privacypro_devices_legacy.json in Resources */,
 				7BA7CC472AD11E5C0042E5CE /* Assets.xcassets in Resources */,
 				1EC711562D03421B0009EB5C /* Localizable.xcstrings in Resources */,
 				BDADBDCC2BD2BC4D00421B9B /* vpn-dark-mode.json in Resources */,
@@ -14495,7 +14513,7 @@
 				CD2AB5C72C8223030019EB49 /* phishingHashPrefixes.json in Resources */,
 				BBBD29942E2EB70A005E7664 /* pictogramDaxHeart.json in Resources */,
 				AA693E5E2696E5B90007BB78 /* CrashReports.storyboard in Resources */,
-				BBBED48E2E3B60D2003A9AA6 /* privacypro_devices.json in Resources */,
+				BBBED48E2E3B60D2003A9AA6 /* privacypro_devices_legacy.json in Resources */,
 				9833913127AAA4B500DAF119 /* trackerData.json in Resources */,
 				BB0DA4D22DB1629A00AB9C29 /* shield-green-hover.json in Resources */,
 				8511E18425F82B34002F516B /* 01_Fire_really_small.json in Resources */,
@@ -14507,7 +14525,7 @@
 				378CA39F2FBC79290043CF38 /* AppIcon.icon in Resources */,
 				844178682EE9799B009BDC3A /* TabBar.storyboard in Resources */,
 				B5EA14AA2FFFDB8000FC2512 /* Shield-Color-24.json in Resources */,
-				BB1F8E142E3CC5C40043648F /* sparkleloop_wide.json in Resources */,
+				BB1F8E142E3CC5C40043648F /* sparkleloop_wide_legacy.json in Resources */,
 				85A0117425AF2EDF00FA6A0C /* FindInPage.storyboard in Resources */,
 				37EE55D82D5F197300D53C7C /* dark-flame-mouse-over.json in Resources */,
 				37EE55D92D5F197300D53C7C /* dark-shield.json in Resources */,
@@ -14533,6 +14551,8 @@
 				37EE55E72D5F197300D53C7C /* trackers-3.json in Resources */,
 				37EE55E82D5F197300D53C7C /* NavigationBar.storyboard in Resources */,
 				EEC111E4294D06020086524F /* JSAlert.storyboard in Resources */,
+				B5165045300FACD7007AE203 /* upsell_devices_reveal.json in Resources */,
+				B5165046300FACD7007AE203 /* upsell_devices_loop.json in Resources */,
 				B31055C627A1BA1D001AC618 /* userscript.js in Resources */,
 				AA585D86248FD31400E9A3E2 /* Assets.xcassets in Resources */,
 				9FBB0C002CB94FC10006B6A6 /* view_highlight.json in Resources */,

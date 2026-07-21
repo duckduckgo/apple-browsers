@@ -73,9 +73,12 @@ struct OptOutCommand: CLIRunnable {
             guard matched.count == 1, let dataBroker = matched.first else {
                 throw CLIUsageError("--broker '\(broker)' matched \(matched.count) brokers; be more specific.")
             }
-            let brokerId = DebugHelper.stableId(for: dataBroker.with(id: DebugHelper.stableId(for: dataBroker)))
+            let brokerId = OptOutSupport.stableBrokerId(dataBroker)
 
-            let selectedRecords = try select(records: records, brokerId: brokerId)
+            let selectedRecords = try OptOutSupport.select(records: records,
+                                                           brokerId: brokerId,
+                                                           index: index,
+                                                           allMatches: allMatches)
             Log.info("Opting out \(selectedRecords.count) extracted profile(s) from \(dataBroker.name).")
 
             let configuration = try PIRDebugSessionConfiguration(
@@ -99,7 +102,7 @@ struct OptOutCommand: CLIRunnable {
 
             var results: [PIROptOutResult] = []
             for record in selectedRecords {
-                let singleQueryProfile = try reconstructSingleQueryProfile(for: record, from: debugProfile)
+                let singleQueryProfile = try OptOutSupport.reconstructSingleQueryProfile(for: record, from: debugProfile)
                 Log.info("Opt-out: \(record.profileQueryLabel)")
                 var result = try await session.optOut(broker: dataBroker,
                                                       profile: singleQueryProfile.toDataBrokerProtectionProfile(),
@@ -149,57 +152,7 @@ struct OptOutCommand: CLIRunnable {
         guard let data = try? Data(contentsOf: url) else {
             throw CLIUsageError("Could not read extracted results file: \(url.path)")
         }
-        let decoder = JSONDecoder()
-        if let single = try? decoder.decode(PIRScanResult.self, from: data) {
-            return single.extractedProfiles
-        }
-        if let many = try? decoder.decode([PIRScanResult].self, from: data) {
-            return many.flatMap { $0.extractedProfiles }
-        }
-        throw CLIUsageError("Could not decode a scan result from \(url.lastPathComponent).")
+        return try OptOutSupport.records(from: data)
     }
 
-    private func select(records: [PIRExtractedProfileRecord], brokerId: Int64) throws -> [PIRExtractedProfileRecord] {
-        var pool = records.filter { $0.brokerId == brokerId }
-        if pool.isEmpty { pool = records } // fall back if the result came from a different id scheme
-
-        guard !pool.isEmpty else {
-            throw CLIUsageError("The extracted results contain no profiles.")
-        }
-        if allMatches {
-            return pool
-        }
-        if let index {
-            guard pool.indices.contains(index) else {
-                throw CLIUsageError("--index \(index) is out of range (0..<\(pool.count)).")
-            }
-            return [pool[index]]
-        }
-        if pool.count == 1 {
-            return pool
-        }
-        throw CLIUsageError("\(pool.count) extracted profiles; select one with --index <n> or opt out all with --all-matches.")
-    }
-
-    /// Rebuilds a single-query `DebugProfile` whose profile query matches the extracted record's
-    /// label, so a fresh session resolves the correct (single) profile query and the stable IDs line
-    /// up for email-confirmation keying.
-    private func reconstructSingleQueryProfile(for record: PIRExtractedProfileRecord,
-                                               from profile: DebugProfile) throws -> DebugProfile {
-        for name in profile.names {
-            for address in profile.addresses {
-                let label = "\(name.firstName) \(name.lastName) x \(address.city) \(address.state)"
-                if label == record.profileQueryLabel {
-                    return DebugProfile(names: [name],
-                                        addresses: [address],
-                                        phones: profile.phones,
-                                        birthYear: profile.birthYear)
-                }
-            }
-        }
-        if profile.names.count == 1, profile.addresses.count == 1 {
-            return profile
-        }
-        throw CLIUsageError("Profile has no name/address combination matching '\(record.profileQueryLabel)'. Pass the same --profile used for the scan.")
-    }
 }

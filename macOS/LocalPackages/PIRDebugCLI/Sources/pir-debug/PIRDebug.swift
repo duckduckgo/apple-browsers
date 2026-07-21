@@ -44,5 +44,6 @@ struct PIRDebug: ParsableCommand {
             ValidateCommand.self,
             ListBrokersCommand.self,
             FetchRulesCommand.self,
+            ServeCommand.self,
         ])
 }

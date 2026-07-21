@@ -254,10 +254,15 @@ public final class ContentScopeUserScript: NSObject, UserScript, UserScriptMessa
     public var messageNames: [String] = []
     public weak var delegate: ContentScopeUserScriptDelegate?
 
+    /// - Parameter customJSSourceURL: When non-nil, the content-scope script is read fresh from this
+    ///   file URL (bypassing `JSFileCache`) instead of the bundled resource. Defaults to `nil`
+    ///   (bundled + cached) so no existing call site changes behaviour. Only intended for debug
+    ///   surfaces (e.g. the DBP debug web view) that override the injected script.
     public init(_ privacyConfigManager: PrivacyConfigurationManaging,
                 properties: ContentScopeProperties,
                 scriptContext: ContentScopeScriptContext = .contentScope(),
                 allowedNonisolatedFeatures: [String] = [],
+                customJSSourceURL: URL? = nil,
                 privacyConfigurationJSONGenerator: CustomisedPrivacyConfigurationJSONGenerating?
     ) throws {
         self.scriptContext = scriptContext
@@ -272,6 +277,7 @@ public final class ContentScopeUserScript: NSObject, UserScript, UserScriptMessa
             properties: properties,
             scriptContext: scriptContext,
             config: broker.messagingConfig(),
+            customJSSourceURL: customJSSourceURL,
             privacyConfigurationJSONGenerator: privacyConfigurationJSONGenerator
         )
     }
@@ -280,6 +286,7 @@ public final class ContentScopeUserScript: NSObject, UserScript, UserScriptMessa
                                       properties: ContentScopeProperties,
                                       scriptContext: ContentScopeScriptContext,
                                       config: WebkitMessagingConfig,
+                                      customJSSourceURL: URL? = nil,
                                       privacyConfigurationJSONGenerator: CustomisedPrivacyConfigurationJSONGenerating?
     ) throws -> String {
         let privacyConfigJsonData = privacyConfigurationJSONGenerator?.privacyConfiguration ?? privacyConfigurationManager.currentConfig
@@ -293,12 +300,18 @@ public final class ContentScopeUserScript: NSObject, UserScript, UserScriptMessa
             return ""
         }
 
-        return try loadJS(scriptContext.fileName, from: ContentScopeScripts.Bundle, withReplacements: [
+        let replacements = [
             "$CONTENT_SCOPE$": privacyConfigJson,
             "$USER_UNPROTECTED_DOMAINS$": userUnprotectedDomainsString,
             "$USER_PREFERENCES$": jsonPropertiesString,
             "$WEBKIT_MESSAGING_CONFIG$": jsonConfigString
-        ])
+        ]
+
+        if let customJSSourceURL {
+            return try loadJS(fromFileURL: customJSSourceURL, withReplacements: replacements)
+        }
+
+        return try loadJS(scriptContext.fileName, from: ContentScopeScripts.Bundle, withReplacements: replacements)
     }
 
     private static func encodeProperties(_ properties: ContentScopeProperties, scriptContext: ContentScopeScriptContext) throws -> String {

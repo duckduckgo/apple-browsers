@@ -80,6 +80,7 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
     public let featureFlagger: DBPFeatureFlagging
     public let applicationNameForUserAgentProvider: () -> String?
     public let contentBlocking: DBPWebViewContentBlocking?
+    public let customContentScopeJSURL: URL?
     public var fetchedEmail: String?
     public var emailData: ExtractedEmailData = [:]
     private let actionsHandlerMode: ActionsHandlerMode
@@ -100,6 +101,7 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
                 executionConfig: BrokerJobExecutionConfig,
                 actionsHandlerMode: ActionsHandlerMode,
                 contentBlocking: DBPWebViewContentBlocking? = nil,
+                customContentScopeJSURL: URL? = nil,
                 shouldRunNextStep: @escaping () -> Bool) {
         self.privacyConfig = privacyConfig
         self.prefs = prefs
@@ -116,6 +118,7 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
         self.featureFlagger = featureFlagger
         self.applicationNameForUserAgentProvider = applicationNameForUserAgentProvider
         self.contentBlocking = contentBlocking
+        self.customContentScopeJSURL = customContentScopeJSURL
     }
 
     public func optOut(extractedProfile: ExtractedProfile,
@@ -200,7 +203,7 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
         recordDebugEvent(kind: .wait,
                          actionType: actionsHandler?.currentAction()?.actionType,
                          details: "Waiting \(operationAwaitTime)s (between actions)")
-        try? await Task.sleep(nanoseconds: UInt64(operationAwaitTime) * 1_000_000_000)
+        try? await Task.sleep(nanoseconds: UInt64(max(0, operationAwaitTime) * 1_000_000_000))
 
         let shouldContinue = self.shouldRunNextStep()
         if let action = actionsHandler?.nextAction(), shouldContinue {

@@ -65,7 +65,8 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
                 executionConfig: BrokerJobExecutionConfig,
                 shouldContinueActionHandler: @escaping () -> Bool,
                 applicationNameForUserAgentProvider: () -> String?,
-                contentBlocking: DBPWebViewContentBlocking? = nil) throws {
+                contentBlocking: DBPWebViewContentBlocking? = nil,
+                customContentScopeJSURL: URL? = nil) throws {
         self.isFakeBroker = isFakeBroker
         self.executionConfig = executionConfig
         let configuration = WKWebViewConfiguration()
@@ -74,7 +75,8 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
                                                        delegate: delegate,
                                                        executionConfig: executionConfig,
                                                        shouldContinueActionHandler: shouldContinueActionHandler,
-                                                       contentBlocking: contentBlocking)
+                                                       contentBlocking: contentBlocking,
+                                                       customContentScopeJSURL: customContentScopeJSURL)
         configuration.preferences.setValue(true, forKey: "developerExtrasEnabled")
         configuration.websiteDataStore = WKWebsiteDataStore.nonPersistent()
         if let applicationNameForUserAgent = applicationNameForUserAgentProvider() {

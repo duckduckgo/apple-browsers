@@ -56,6 +56,7 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
     public let featureFlagger: DBPFeatureFlagging
     public let applicationNameForUserAgentProvider: () -> String?
     public let contentBlocking: DBPWebViewContentBlocking?
+    public let customContentScopeJSURL: URL?
     public var fetchedEmail: String?
     public var emailData: ExtractedEmailData = [:]
 
@@ -72,6 +73,7 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
                 pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
                 executionConfig: BrokerJobExecutionConfig,
                 contentBlocking: DBPWebViewContentBlocking? = nil,
+                customContentScopeJSURL: URL? = nil,
                 shouldRunNextStep: @escaping () -> Bool
     ) {
         self.privacyConfig = privacyConfig
@@ -88,6 +90,7 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
         self.featureFlagger = featureFlagger
         self.applicationNameForUserAgentProvider = applicationNameForUserAgentProvider
         self.contentBlocking = contentBlocking
+        self.customContentScopeJSURL = customContentScopeJSURL
     }
 
     @MainActor
@@ -159,7 +162,7 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
                          actionType: actionsHandler?.currentAction()?.actionType,
                          details: "Waiting \(operationAwaitTime)s (between actions)")
 
-        try? await Task.sleep(nanoseconds: UInt64(operationAwaitTime) * 1_000_000_000)
+        try? await Task.sleep(nanoseconds: UInt64(max(0, operationAwaitTime) * 1_000_000_000))
 
         let shouldContinue = self.shouldRunNextStep()
         if let action = actionsHandler?.nextAction(), shouldContinue {

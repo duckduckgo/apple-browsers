@@ -66,20 +66,31 @@ public struct EmailService: EmailServiceProtocol {
     private let settings: DataBrokerProtectionSettings
     private let servicePixel: DataBrokerProtectionBackendServicePixels
 
+    /// When provided, used verbatim as the services base URL instead of `settings.endpointURL`.
+    /// This lets a custom endpoint (e.g. a localhost fake broker) work in release builds, where
+    /// `settings.endpointURL` only honours a custom serviceRoot under `#if DEBUG`.
+    private let baseURL: URL?
+
+    private var servicesBaseURL: URL {
+        baseURL ?? settings.endpointURL
+    }
+
     public init(urlSession: URLSession = URLSession.shared,
                 authenticationManager: DataBrokerProtectionAuthenticationManaging,
                 settings: DataBrokerProtectionSettings,
-                servicePixel: DataBrokerProtectionBackendServicePixels) {
+                servicePixel: DataBrokerProtectionBackendServicePixels,
+                baseURL: URL? = nil) {
         self.urlSession = urlSession
         self.authenticationManager = authenticationManager
         self.settings = settings
         self.servicePixel = servicePixel
+        self.baseURL = baseURL
     }
 
     public func getEmail(dataBrokerURL: String, attemptId: UUID) async throws -> EmailData {
         Logger.service.log("✉️ [EmailService] Getting email for dataBroker: \(dataBrokerURL, privacy: .public), attemptId: \(attemptId.uuidString, privacy: .public)")
 
-        var urlComponents = URLComponents(url: settings.endpointURL, resolvingAgainstBaseURL: true)
+        var urlComponents = URLComponents(url: servicesBaseURL, resolvingAgainstBaseURL: true)
         urlComponents?.path += "\(Constants.endpointSubPath)/generate"
         urlComponents?.queryItems = [
             URLQueryItem(name: "dataBroker", value: dataBrokerURL),
@@ -171,7 +182,7 @@ public struct EmailService: EmailServiceProtocol {
 
     private func extractEmailLink(email: String, attemptId: UUID) async throws -> EmailResponse {
         Logger.service.log("✉️ [EmailService] Extracting email link for: \(email, privacy: .public), attemptId: \(attemptId.uuidString, privacy: .public)")
-        var urlComponents = URLComponents(url: settings.endpointURL, resolvingAgainstBaseURL: true)
+        var urlComponents = URLComponents(url: servicesBaseURL, resolvingAgainstBaseURL: true)
         urlComponents?.path += "\(Constants.endpointSubPath)/links"
         urlComponents?.queryItems = [
             URLQueryItem(name: "e", value: email),

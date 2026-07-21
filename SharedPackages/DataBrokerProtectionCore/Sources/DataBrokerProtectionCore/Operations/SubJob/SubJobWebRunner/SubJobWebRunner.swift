@@ -46,6 +46,11 @@ public protocol SubJobWebRunning: CCFCommunicationDelegate {
     var applicationNameForUserAgentProvider: () -> String? { get }
     var contentBlocking: DBPWebViewContentBlocking? { get }
 
+    /// Optional file URL overriding the bundled `contentScopeIsolated.js` for this runner's web view.
+    /// `nil` (the default) uses the bundled resource. Only used when `initialize()` builds the
+    /// `DataBrokerProtectionWebViewHandler` internally.
+    var customContentScopeJSURL: URL? { get }
+
     var webViewHandler: WebViewHandler? { get set }
     var actionsHandler: ActionsHandler? { get }
     var continuation: CheckedContinuation<ReturnValue, Error>? { get set }
@@ -382,7 +387,8 @@ public extension SubJobWebRunning {
                                                                                executionConfig: executionConfig,
                                                                                shouldContinueActionHandler: shouldRunNextStep,
                                                                                applicationNameForUserAgentProvider: applicationNameProvider,
-                                                                               contentBlocking: contentBlocking)
+                                                                               contentBlocking: contentBlocking,
+                                                                               customContentScopeJSURL: customContentScopeJSURL)
         }
 
         await webViewHandler?.initializeWebView(showWebView: showWebView)

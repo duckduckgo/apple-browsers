@@ -34,7 +34,8 @@ final class DataBrokerUserContentController: WKUserContentController {
          delegate: CCFCommunicationDelegate,
          executionConfig: BrokerJobExecutionConfig,
          shouldContinueActionHandler: @escaping () -> Bool,
-         contentBlocking: DBPWebViewContentBlocking?) throws {
+         contentBlocking: DBPWebViewContentBlocking?,
+         customContentScopeJSURL: URL? = nil) throws {
         super.init()
 
         dataBrokerUserScripts = try DataBrokerUserScript(privacyConfig: privacyConfigurationManager,
@@ -42,7 +43,8 @@ final class DataBrokerUserContentController: WKUserContentController {
                                                          delegate: delegate,
                                                          executionConfig: executionConfig,
                                                          shouldContinueActionHandler: shouldContinueActionHandler,
-                                                         contentBlocking: contentBlocking)
+                                                         contentBlocking: contentBlocking,
+                                                         customContentScopeJSURL: customContentScopeJSURL)
         dataBrokerUserScripts?.userScripts.forEach {
             let userScript = $0.makeWKUserScriptSync()
             self.installUserScripts([userScript], handlers: [$0])
@@ -100,10 +102,12 @@ final class DataBrokerUserScript: UserScriptsProvider {
          delegate: CCFCommunicationDelegate,
          executionConfig: BrokerJobExecutionConfig,
          shouldContinueActionHandler: @escaping () -> Bool,
-         contentBlocking: DBPWebViewContentBlocking?) throws {
+         contentBlocking: DBPWebViewContentBlocking?,
+         customContentScopeJSURL: URL? = nil) throws {
         contentScopeUserScriptIsolated = try ContentScopeUserScript(privacyConfig.withDataBrokerProtectionFeatureOverride,
                                                                     properties: prefs,
                                                                     scriptContext: .contentScopeIsolated,
+                                                                    customJSSourceURL: customContentScopeJSURL,
                                                                     privacyConfigurationJSONGenerator: nil)
         dataBrokerFeature = DataBrokerProtectionFeature(delegate: delegate, executionConfig: executionConfig, shouldContinueActionHandler: shouldContinueActionHandler)
         dataBrokerFeature.broker = contentScopeUserScriptIsolated.broker
@@ -179,7 +183,8 @@ extension WKWebViewConfiguration {
                                       delegate: CCFCommunicationDelegate,
                                       executionConfig: BrokerJobExecutionConfig,
                                       shouldContinueActionHandler: @escaping () -> Bool,
-                                      contentBlocking: DBPWebViewContentBlocking?) throws {
+                                      contentBlocking: DBPWebViewContentBlocking?,
+                                      customContentScopeJSURL: URL? = nil) throws {
         setURLSchemeHandler(WebViewSchemeHandler(), forURLScheme: WebViewSchemeHandler.dataBrokerProtectionScheme)
         preferences.isFraudulentWebsiteWarningEnabled = false
         let userContentController = try DataBrokerUserContentController(with: privacyConfig,
@@ -187,7 +192,8 @@ extension WKWebViewConfiguration {
                                                                         delegate: delegate,
                                                                         executionConfig: executionConfig,
                                                                         shouldContinueActionHandler: shouldContinueActionHandler,
-                                                                        contentBlocking: contentBlocking)
+                                                                        contentBlocking: contentBlocking,
+                                                                        customContentScopeJSURL: customContentScopeJSURL)
         self.userContentController = userContentController
     }
 }

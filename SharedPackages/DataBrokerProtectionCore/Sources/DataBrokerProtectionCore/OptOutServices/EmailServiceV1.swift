@@ -118,14 +118,25 @@ public struct EmailServiceV1: EmailServiceV1Protocol {
     private let settings: DataBrokerProtectionSettings
     private let servicePixel: DataBrokerProtectionBackendServicePixels
 
+    /// When provided, used verbatim as the services base URL instead of `settings.endpointURL`.
+    /// This lets a custom endpoint (e.g. a localhost fake broker) work in release builds, where
+    /// `settings.endpointURL` only honours a custom serviceRoot under `#if DEBUG`.
+    private let baseURL: URL?
+
+    private var servicesBaseURL: URL {
+        baseURL ?? settings.endpointURL
+    }
+
     public init(urlSession: URLSession = URLSession.shared,
                 authenticationManager: DataBrokerProtectionAuthenticationManaging,
                 settings: DataBrokerProtectionSettings,
-                servicePixel: DataBrokerProtectionBackendServicePixels) {
+                servicePixel: DataBrokerProtectionBackendServicePixels,
+                baseURL: URL? = nil) {
         self.urlSession = urlSession
         self.authenticationManager = authenticationManager
         self.settings = settings
         self.servicePixel = servicePixel
+        self.baseURL = baseURL
     }
 
     public func fetchEmailData(items: [EmailDataRequestItemV1]) async throws -> EmailDataResponseV1 {
@@ -139,7 +150,7 @@ public struct EmailServiceV1: EmailServiceV1Protocol {
             throw EmailErrorV1.batchSizeExceeded
         }
 
-        var urlComponents = URLComponents(url: settings.endpointURL, resolvingAgainstBaseURL: true)
+        var urlComponents = URLComponents(url: servicesBaseURL, resolvingAgainstBaseURL: true)
         urlComponents?.path += "\(Constants.endpointSubPath)/email-data"
 
         guard let url = urlComponents?.url else {
@@ -177,7 +188,7 @@ public struct EmailServiceV1: EmailServiceV1Protocol {
         }
         Logger.service.log("✉️ [EmailServiceV1] Deleting email data for \(items.count, privacy: .public) items")
 
-        var urlComponents = URLComponents(url: settings.endpointURL, resolvingAgainstBaseURL: true)
+        var urlComponents = URLComponents(url: servicesBaseURL, resolvingAgainstBaseURL: true)
         urlComponents?.path += "\(Constants.endpointSubPath)/email-data/delete"
 
         guard let url = urlComponents?.url else {

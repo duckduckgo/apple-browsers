@@ -72,6 +72,20 @@ extension UserScript {
         return js.applyingReplacements(replacements)
     }
 
+    /// Loads a JavaScript file directly from a file URL, bypassing `JSFileCache`.
+    ///
+    /// The file is read fresh on every call (no caching), which is required for mutable
+    /// override files — the cache is keyed for immutable bundle resources only. Replacements
+    /// are applied identically to `loadJS(_:from:withReplacements:)`.
+    public static func loadJS(fromFileURL fileURL: URL, withReplacements replacements: [String: String] = [:]) throws -> String {
+        do {
+            let js = try String(contentsOf: fileURL)
+            return js.applyingReplacements(replacements)
+        } catch {
+            throw UserScriptError.failedToLoadJS(jsFile: fileURL.lastPathComponent, error: error)
+        }
+    }
+
     fileprivate nonisolated static func prepareScriptSource(from source: String) -> String {
         let hash = SHA256.hash(data: Data(source.utf8)).hashValue
 

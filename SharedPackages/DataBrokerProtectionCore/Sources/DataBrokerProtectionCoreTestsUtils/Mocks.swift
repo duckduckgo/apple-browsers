@@ -202,6 +202,8 @@ public final class PrivacyConfigurationManagingMock: PrivacyConfigurationManagin
 
 public final class PrivacyConfigurationMock: PrivacyConfiguration {
 
+    public init() {}
+
     public var identifier: String = "mock"
     public var version: String? = "123456789"
 

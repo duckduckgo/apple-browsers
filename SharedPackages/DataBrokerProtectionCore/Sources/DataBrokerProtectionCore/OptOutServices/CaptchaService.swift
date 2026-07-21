@@ -156,14 +156,25 @@ public struct CaptchaService: CaptchaServiceProtocol {
     private let settings: DataBrokerProtectionSettings
     private let servicePixel: DataBrokerProtectionBackendServicePixels
 
+    /// When provided, used verbatim as the services base URL instead of `settings.endpointURL`.
+    /// This lets a custom endpoint (e.g. a localhost fake broker) work in release builds, where
+    /// `settings.endpointURL` only honours a custom serviceRoot under `#if DEBUG`.
+    private let baseURL: URL?
+
+    private var servicesBaseURL: URL {
+        baseURL ?? settings.endpointURL
+    }
+
     public init(urlSession: URLSession = URLSession.shared,
                 authenticationManager: DataBrokerProtectionAuthenticationManaging,
                 settings: DataBrokerProtectionSettings,
-                servicePixel: DataBrokerProtectionBackendServicePixels) {
+                servicePixel: DataBrokerProtectionBackendServicePixels,
+                baseURL: URL? = nil) {
         self.urlSession = urlSession
         self.authenticationManager = authenticationManager
         self.settings = settings
         self.servicePixel = servicePixel
+        self.baseURL = baseURL
     }
 
     public func submitCaptchaInformation(_ captchaInfo: GetCaptchaInfoResponse,
@@ -214,7 +225,7 @@ public struct CaptchaService: CaptchaServiceProtocol {
                                                  attemptId: UUID,
                                                  dataBrokerURL: String,
                                                  dataBrokerVersion: String) async throws -> CaptchaTransaction {
-        var urlComponents = URLComponents(url: settings.endpointURL, resolvingAgainstBaseURL: true)
+        var urlComponents = URLComponents(url: servicesBaseURL, resolvingAgainstBaseURL: true)
         urlComponents?.path += "\(Constants.endpointSubPath)/submit"
         urlComponents?.queryItems = [URLQueryItem(name: "attemptId", value: attemptId.uuidString)]
 
@@ -310,7 +321,7 @@ public struct CaptchaService: CaptchaServiceProtocol {
                                                   dataBrokerURL: String,
                                                   dataBrokerVersion: String) async throws -> CaptchaResult {
 
-        var urlComponents = URLComponents(url: settings.endpointURL, resolvingAgainstBaseURL: true)
+        var urlComponents = URLComponents(url: servicesBaseURL, resolvingAgainstBaseURL: true)
         urlComponents?.path += "\(Constants.endpointSubPath)/result"
 
         urlComponents?.queryItems = [

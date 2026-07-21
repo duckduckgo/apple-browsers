@@ -81,11 +81,10 @@ stderr.) A clean `--help`/`--version` still exits 0.
 | `2` | Usage / configuration error — bad flags, unreadable/undecodable files, more than one rules or script source, a rules-fetch failure. |
 | `3` | Timeout — the `--timeout` watchdog fired. |
 
-> **Behavioural note (accurate to the code):** `scan` returns `1` only when a query *completes* with
-> an `error` outcome. If the scan instead *throws* (engine/setup failure), `ScanCommand` currently
-> maps that to exit `2`, not `1`. `optout` maps a thrown operation failure to exit `1`. This is a
-> minor divergence from the spec's "scan/opt-out error ⇒ 1" wording; documented here rather than
-> changed (this step is docs-only).
+> **Behavioural note (accurate to the code):** both `scan` and `optout` map a **thrown failure of
+> the scan/opt-out operation itself** to exit `1`, while **setup and rules-fetch failures** (bad
+> flags, unreadable files, a remote rules fetch that fails) exit `2`. A scan query that *completes*
+> with an `error` outcome also exits `1`.
 
 ---
 
@@ -305,7 +304,7 @@ needed to drive a later `optout` (deterministic across processes):
     "name": "John Smith",
     "alternativeNames": [],
     "addressFull": null,
-    "addresses": [ { "city": "Dallas", "state": "TX", "fullAddress": "…" } ],
+    "addresses": [ { "city": "Dallas", "state": "TX" } ],
     "phoneNumbers": [],
     "relatives": [],
     "profileUrl": "https://fakebroker.com/profile/1",
@@ -399,15 +398,16 @@ One JSON object per line:
 
 ## `serve` HTTP API
 
-Localhost only, **no auth**, default port **8475**. Route handlers are synchronous and share one
-serial queue, so `POST /scan` and `POST /optout` validate the request, kick off the work in a
-background task, and return **`202 {jobId}`** immediately; poll `GET /jobs/<id>` for the result.
+Bound to `127.0.0.1` only, **no auth**, default port **8475**. Route handlers are synchronous and
+share one serial queue, so `POST /scan` and `POST /optout` validate the request, kick off the work
+in a background task, and return **`202 {jobId}`** immediately; poll `GET /jobs/<id>` for the
+result. Only **one job runs at a time**: a `POST` while a job is in flight returns **`409`**.
 
 | Method / path | Body | Response |
 |---------------|------|----------|
 | `GET /` | — | Endpoint listing. |
-| `POST /scan` | `{ "profile": <DebugProfile>, "broker"?: string, "all"?: bool }` | `202 { "jobId": "<uuid>" }` |
-| `POST /optout` | `{ "profile": <DebugProfile>, "broker": string, "extracted": <scan result JSON>, "index"?: int, "allMatches"?: bool, "waitForEmail"?: bool, "pollInterval"?: number }` | `202 { "jobId": "<uuid>" }` |
+| `POST /scan` | `{ "profile": <DebugProfile>, "broker"?: string, "all"?: bool }` | `202 { "jobId": "<uuid>" }`, or `409` if a job is running |
+| `POST /optout` | `{ "profile": <DebugProfile>, "broker": string, "extracted": <scan result JSON>, "index"?: int, "allMatches"?: bool, "waitForEmail"?: bool, "pollInterval"?: number }` | `202 { "jobId": "<uuid>" }`, or `409` if a job is running |
 | `GET /jobs/<id>` | — | `{ "id", "kind", "status": "running"\|"succeeded"\|"failed", "error"?, "result"? }` |
 | `GET /brokers` | — | Array of `{ name, url, version, optOutUrl, stepTypes }` |
 | `GET /events?since=<cursor>` | — | `{ "nextCursor": int, "events": [ <PIRDebugEvent> … ] }` |
@@ -415,7 +415,8 @@ background task, and return **`202 {jobId}`** immediately; poll `GET /jobs/<id>`
 `extracted` in `POST /optout` is the scan **result JSON itself** (a `PIRScanResult` object or an
 array of them), not a file path. `since` defaults to `0`; poll with the returned `nextCursor`.
 
-> `serve` required adding a `202 accepted` case to `DebugServer`'s `HTTPStatusCode`.
+> `serve` required adding `202 accepted` and `409 conflict` cases to `DebugServer`'s
+> `HTTPStatusCode`.
 
 ---
 
@@ -564,12 +565,16 @@ so both the Swift contract and the JS artifact come from the same tree. Revert b
 - **`fetch-rules`** unzips the broker archive with the system `/usr/bin/unzip`.
 - **`--css-checkout`** builds with the system `node` (`/usr/bin/env node`); it must be installed and
   on `PATH`.
-- **`serve`** required adding a `202 accepted` case to `DebugServer`'s `HTTPStatusCode`.
+- **`serve`** required adding `202 accepted` and `409 conflict` cases to `DebugServer`'s
+  `HTTPStatusCode`.
+- **`serve` binds `127.0.0.1` only** (loopback), and runs **one job at a time** — a `POST /scan` or
+  `POST /optout` while another job is in flight returns **HTTP 409** (so concurrent jobs cannot
+  corrupt the single shared session's multi-step state). Its job table and event buffer are capped
+  to keep a long-running server's memory bounded; `/events` cursors stay monotonic across trims.
+- **`--all-matches` always emits a JSON array** (even for a single match); a single-profile opt-out
+  (via `--index` or a lone match) emits a single object.
 - An **opt-out that halts awaiting email confirmation without `--wait-for-email` exits `0`** (an
   expected halt, not a failure).
-- **`scan` maps a *thrown* engine error to exit `2`** (usage/config), whereas a *completed* query
-  with `error` outcome exits `1`. `optout` maps a thrown operation failure to exit `1`. See the exit
-  code note above.
 - **Acceptance criteria 1, 3, and 5** (live headless scan, headed scan with `--show-webview`, and
   the opt-out email-confirmation continuation) require a manual run against a **running** fake
   broker and were **not** automatically verified.

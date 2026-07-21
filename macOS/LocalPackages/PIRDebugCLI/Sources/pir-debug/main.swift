@@ -34,19 +34,28 @@ let parsed: ParsableCommand
 do {
     parsed = try PIRDebug.parseAsRoot()
 } catch {
-    // Help/version requests exit cleanly; everything else is a usage/config error (exit 2).
-    let message = PIRDebug.fullMessage(for: error)
+    // Help/version requests render cleanly and exit 0; everything else is a usage/config error.
     if PIRDebug.exitCode(for: error) == .success {
-        if !message.isEmpty { FileHandle.standardError.write(Data((message + "\n").utf8)) }
-        exit(CLIExit.success)
+        PIRDebug.exit(withError: error) // renders the right (sub)command help to the swapped stdout
     }
-    if !message.isEmpty { FileHandle.standardError.write(Data((message + "\n").utf8)) }
+    FileHandle.standardError.write(Data((PIRDebug.fullMessage(for: error) + "\n").utf8))
     exit(CLIExit.usageError)
 }
 
 guard let command = parsed as? CLIRunnable else {
-    // A command group invoked without a subcommand — show help and exit cleanly.
-    FileHandle.standardError.write(Data((PIRDebug.helpMessage() + "\n").utf8))
+    // A built-in command (e.g. `help <sub>`) or a group invoked with no subcommand: it does not
+    // touch the engine, so run it directly rather than bootstrapping NSApplication.
+    var runnable = parsed
+    do {
+        try runnable.run()
+    } catch {
+        // A thrown help/clean-exit (e.g. a group with no subcommand) exits 0; anything else is usage.
+        if PIRDebug.exitCode(for: error) == .success {
+            PIRDebug.exit(withError: error)
+        }
+        FileHandle.standardError.write(Data((PIRDebug.fullMessage(for: error) + "\n").utf8))
+        exit(CLIExit.usageError)
+    }
     exit(CLIExit.success)
 }
 

@@ -20,8 +20,14 @@ import ArgumentParser
 import Foundation
 import PIRDebugKit
 
-/// Selects the broker rules source. Exactly one source must be resolvable. `--environment` also
-/// selects the email/captcha services endpoint.
+/// The DBP environment: base for remote rules fetch and for the email/captcha services endpoint.
+enum RulesEnvironment: String, ExpressibleByArgument {
+    case staging
+    case production
+}
+
+/// Selects the broker rules source. At most one explicit source may be given; with none, rules are
+/// fetched remotely from `--environment`. `--environment` also selects the services endpoint.
 struct RulesSourceOptions: ParsableArguments {
 
     @Option(name: .long, help: "Directory of broker JSON files (e.g. a dbp-api checkout's dbp-json/data/json/).", completion: .directory)
@@ -30,16 +36,29 @@ struct RulesSourceOptions: ParsableArguments {
     @Option(name: .long, help: "A single broker JSON file.", completion: .file(extensions: ["json"]))
     var brokerFile: String?
 
+    @Option(name: .long, help: "Fetch rules from a dbp-api staging branch deploy (branch name is sanitized: lowercase, [a-z0-9.-]).")
+    var dbpApiBranch: String?
+
+    @Option(name: .long, help: "Fetch rules from a verbatim dbp-api base URL.")
+    var dbpApiURL: String?
+
+    @Option(name: .long, help: "DBP environment for remote rules fetch and email/captcha services.")
+    var environment: RulesEnvironment = .staging
+
+    /// The email/captcha services endpoint, always derived from `--environment`.
     var resolvedServicesEndpoint: PIRServicesEndpoint {
-        .staging
+        switch environment {
+        case .staging: return .staging
+        case .production: return .production
+        }
     }
 
-    /// Builds the `BrokerRulesProviding` for the selected source. Throws ``CLIUsageError`` when the
-    /// combination is invalid.
+    /// Builds the `BrokerRulesProviding` for the selected source. Throws ``CLIUsageError`` when more
+    /// than one explicit source is given.
     func makeProvider() throws -> BrokerRulesProviding {
-        let localSources = [rulesDir, brokerFile].compactMap { $0 }
-        guard localSources.count <= 1 else {
-            throw CLIUsageError("Specify only one rules source (--rules-dir or --broker-file).")
+        let explicit = [rulesDir, brokerFile, dbpApiBranch, dbpApiURL].compactMap { $0 }
+        guard explicit.count <= 1 else {
+            throw CLIUsageError("Specify only one rules source (--rules-dir, --broker-file, --dbp-api-branch, or --dbp-api-url).")
         }
 
         if let rulesDir {
@@ -48,7 +67,36 @@ struct RulesSourceOptions: ParsableArguments {
         if let brokerFile {
             return try localProvider(path: brokerFile)
         }
-        throw CLIUsageError("A rules source is required: --rules-dir or --broker-file.")
+        if let dbpApiBranch {
+            Log.info("Fetching rules from dbp-api branch: \(PIRDebugBranchNameSanitizer.sanitize(dbpApiBranch))")
+            return RemoteBrokerRulesProvider(endpoint: .stagingBranch(dbpApiBranch))
+        }
+        if let dbpApiURL {
+            guard let url = URL(string: dbpApiURL), url.scheme != nil else {
+                throw CLIUsageError("Invalid --dbp-api-url: \(dbpApiURL)")
+            }
+            Log.info("Fetching rules from custom dbp-api URL: \(url.absoluteString)")
+            return RemoteBrokerRulesProvider(endpoint: .custom(url))
+        }
+        Log.info("Fetching rules from \(environment.rawValue) environment.")
+        return RemoteBrokerRulesProvider(endpoint: environment == .staging ? .staging : .production)
+    }
+
+    /// The remote endpoint for `fetch-rules`. Throws ``CLIUsageError`` for local sources.
+    func makeRemoteEndpoint() throws -> RemoteBrokerEndpoint {
+        if rulesDir != nil || brokerFile != nil {
+            throw CLIUsageError("fetch-rules requires a remote source (--dbp-api-branch, --dbp-api-url, or --environment).")
+        }
+        if let dbpApiBranch {
+            return .stagingBranch(dbpApiBranch)
+        }
+        if let dbpApiURL {
+            guard let url = URL(string: dbpApiURL), url.scheme != nil else {
+                throw CLIUsageError("Invalid --dbp-api-url: \(dbpApiURL)")
+            }
+            return .custom(url)
+        }
+        return environment == .staging ? .staging : .production
     }
 
     private func localProvider(path: String) throws -> BrokerRulesProviding {

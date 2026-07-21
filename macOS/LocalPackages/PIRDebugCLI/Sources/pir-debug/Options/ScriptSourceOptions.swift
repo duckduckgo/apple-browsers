@@ -26,14 +26,36 @@ struct ScriptSourceOptions: ParsableArguments {
     @Option(name: .long, help: "Path to a contentScopeIsolated.js file to inject (bypasses the JS cache).", completion: .file())
     var cssScript: String?
 
+    @Option(name: .long, help: "A content-scope-scripts checkout to build and inject.", completion: .directory)
+    var cssCheckout: String?
+
+    @Flag(name: .long, help: "Skip the C-S-S build; use the existing dist artifact in --css-checkout.")
+    var cssNoBuild = false
+
+    @Option(name: .long, help: "A content-scope-scripts branch; downloads its pr-releases CI build (verbatim branch name).")
+    var cssBranch: String?
+
     /// Resolves the injected-script source. Throws ``CLIUsageError`` on an invalid combination.
     func resolve() async throws -> InjectedScriptSource {
+        let explicit = [cssScript, cssCheckout, cssBranch].compactMap { $0 }
+        guard explicit.count <= 1 else {
+            throw CLIUsageError("Specify only one script source (--css-script, --css-checkout, or --css-branch).")
+        }
+
         if let cssScript {
             let url = URL(fileURLWithPath: (cssScript as NSString).expandingTildeInPath)
             guard FileManager.default.fileExists(atPath: url.path) else {
                 throw CLIUsageError("Script file does not exist: \(url.path)")
             }
             Log.info("Using injected script: \(url.path)")
+            return .file(url)
+        }
+        if let cssCheckout {
+            let url = try await ContentScopeScriptResolver.fromCheckout(path: cssCheckout, noBuild: cssNoBuild)
+            return .file(url)
+        }
+        if let cssBranch {
+            let url = try await ContentScopeScriptResolver.fromBranch(cssBranch)
             return .file(url)
         }
         return .bundled

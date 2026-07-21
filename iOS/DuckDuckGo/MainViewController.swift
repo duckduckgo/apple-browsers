@@ -2821,6 +2821,11 @@ class MainViewController: UIViewController {
     }
 
     private func resetBarsAfterTransitionAnimationIfNeeded(wasKeyboardShowing: Bool) {
+        if shouldKeepChromeHiddenForFindInPage {
+            setBarsHidden(true, animated: false, customAnimationDuration: nil)
+            return
+        }
+
         // Rotation changes the bar geometry, so the scroll-hide state can't carry across it.
         // Reset to revealed (editing and AI chrome manage their own layout).
         if !self.isCurrentTabUsingUnifiedInputAIChrome, !wasKeyboardShowing {
@@ -2873,7 +2878,8 @@ class MainViewController: UIViewController {
             // Do this async otherwise the toolbar buttons skew to the right
             if self.viewCoordinator.constraints.navigationBarContainerTop.constant >= 0,
                !self.isInMinimalChromeLayout,
-               !self.isCurrentTabUsingUnifiedInputAIChrome {
+               !self.isCurrentTabUsingUnifiedInputAIChrome,
+               !self.shouldKeepChromeHiddenForFindInPage {
                 self.showBars()
             }
             // If tabs have been udpated, do this async to make sure size calcs are current
@@ -3310,6 +3316,7 @@ class MainViewController: UIViewController {
     private func hideChromeForConfirmedFindInPage() {
         guard featureFlagger.isFeatureOn(.systemFindInPage),
               currentTab?.webView.findInteraction?.isFindNavigatorVisible == true,
+              !AppWidthObserver.shared.isPad || !AppWidthObserver.shared.isLargeWidth,
               lastChromeVisibilityPercent > 0,
               !didFindInPageHideChrome else { return }
 
@@ -3333,6 +3340,15 @@ class MainViewController: UIViewController {
         guard didFindInPageHideChrome else { return }
         didFindInPageHideChrome = false
         setBarsHidden(false, animated: true, customAnimationDuration: nil)
+    }
+
+    private var shouldKeepChromeHiddenForFindInPage: Bool {
+        guard didFindInPageHideChrome,
+              !AppWidthObserver.shared.isPad || !AppWidthObserver.shared.isLargeWidth else { return false }
+        if #available(iOS 16.0, *) {
+            return currentTab?.webView.findInteraction?.isFindNavigatorVisible == true
+        }
+        return false
     }
 
     // Persist the current query so the find navigator can be prepopulated when reopened on this tab.

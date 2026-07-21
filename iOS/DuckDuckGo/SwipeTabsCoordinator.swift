@@ -549,7 +549,6 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
             }
             preview?.frame = CGRect(x: targetFrame.minX, y: targetFrame.minY, width: targetFrame.width, height: height)
         } else if tab?.link == nil {
-            let targetFrame = CGRect(origin: .zero, size: coordinator.contentContainer.frame.size)
             createPreviewFromLogoContainerWithSize(targetFrame.size)
             preview?.frame = targetFrame
         }

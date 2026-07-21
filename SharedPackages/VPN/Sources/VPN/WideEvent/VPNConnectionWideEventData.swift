@@ -151,8 +151,10 @@ extension VPNConnectionWideEventData {
         case unknown
     }
 
-    /// This exists in order to tell us how a user entered the VPN screen. This is particularly useful in cases where metrics suggest that the VPN is being started
-    /// without an auth token - this should be impossible, but this will help us detect if it ever happens.
+    /// Identifies the in-app surface a user came from when starting the VPN from the status screen. This is
+    /// particularly useful in cases where metrics suggest that the VPN is being started without an auth token -
+    /// this should be impossible, but this will help us detect if it ever happens. Only user-initiated starts
+    /// carry a source; on-demand and system-initiated starts have no entry context at all.
     public enum ScreenSource: String, Codable, CaseIterable, Equatable {
         case subscriptionSettings = "subscription_settings"
         case subscriptionEmail = "subscription_email"
@@ -163,24 +165,17 @@ extension VPNConnectionWideEventData {
         case widget
         case shortcut
         case notification
-        case unknown
     }
 
     public enum TokenState: String, Codable, CaseIterable, Equatable {
         case present
         case missing
         case readError = "read_error"
-        case unknown
     }
 
     public struct EntryContext: Codable, Equatable {
         public let source: ScreenSource
         public let tokenState: TokenState
-
-        public static let unknown = EntryContext(
-            source: .unknown,
-            tokenState: .unknown
-        )
 
         public init(source: ScreenSource,
                     tokenState: TokenState) {

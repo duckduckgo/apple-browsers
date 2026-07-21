@@ -138,15 +138,14 @@
                     "address_bar",
                     "widget",
                     "shortcut",
-                    "notification",
-                    "unknown"
+                    "notification"
                 ]
             },
             {
                 "key": "feature.data.ext.vpn_screen_entry_token_state",
                 "type": "string",
-                "description": "Whether a local Privacy Pro token container was present when the VPN screen opened. Not populated on macOS (captured on iOS only).",
-                "enum": ["present", "missing", "read_error", "unknown"]
+                "description": "Whether a local Privacy Pro token container was present at connect time. Not populated on macOS (captured on iOS only).",
+                "enum": ["present", "missing", "read_error"]
             },
             {
                 "key": "feature.data.ext.onboarding_status",

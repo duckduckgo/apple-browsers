@@ -44,7 +44,7 @@ import Subscription
         statusObserver = MockConnectionStatusObserver()
         serverInfoObserver = MockConnectionServerInfoObserver()
         viewModel = NetworkProtectionStatusViewModel(tunnelController: tunnelController,
-                                                     entryContextProvider: { .unknown },
+                                                     entryContextProvider: { .init(source: .toolbar, tokenState: .present) },
                                                      settings: VPNSettings(defaults: .networkProtectionGroupDefaults),
                                                      statusObserver: statusObserver,
                                                      serverInfoObserver: serverInfoObserver,
@@ -307,7 +307,7 @@ import Subscription
     // MARK: - Helpers
 
     private func makeViewModel(controllerErrorPublisher: AnyPublisher<String?, Never> = Empty(completeImmediately: false).eraseToAnyPublisher(),
-                               entryContextProvider: @escaping () -> VPNConnectionWideEventData.EntryContext = { .unknown },
+                               entryContextProvider: @escaping () -> VPNConnectionWideEventData.EntryContext = { .init(source: .toolbar, tokenState: .present) },
                                errorObserver: ConnectionErrorObserver = MockConnectionErrorObserver()) -> NetworkProtectionStatusViewModel {
         NetworkProtectionStatusViewModel(tunnelController: tunnelController,
                                          entryContextProvider: entryContextProvider,
@@ -435,7 +435,7 @@ import Subscription
         }
 
         return NetworkProtectionStatusViewModel(tunnelController: MockTunnelController(),
-                                                entryContextProvider: { .unknown },
+                                                entryContextProvider: { .init(source: .toolbar, tokenState: .present) },
                                                 settings: VPNSettings(defaults: defaults),
                                                 statusObserver: statusObserver,
                                                 serverInfoObserver: MockConnectionServerInfoObserver(),

@@ -26,9 +26,9 @@ import UIComponents
 class TabsBarCell: UICollectionViewCell {
 
     static let reuseIdentifier = "Tab"
+    static let cornerRadius: CGFloat = 12
 
     private enum Constants {
-        static let cornerRadius: CGFloat = 12
         static let faviconCornerRadius: CGFloat = 4
         static let faviconSize: CGFloat = 16
         static let faviconContainerWidth: CGFloat = 24
@@ -80,7 +80,7 @@ class TabsBarCell: UICollectionViewCell {
         contentView.clipsToBounds = true
 
         topBackgroundView.translatesAutoresizingMaskIntoConstraints = false
-        topBackgroundView.layer.cornerRadius = Constants.cornerRadius
+        topBackgroundView.layer.cornerRadius = Self.cornerRadius
 
         bottomBackgroundView.translatesAutoresizingMaskIntoConstraints = false
 

@@ -571,10 +571,48 @@ extension TabsBarViewController: UICollectionViewDelegate {
         guard tabsModel?.get(tabAt: indexPath.row) != nil else { return nil }
         // No select-before-menu: selecting reloads and recycles the cell UIKit is lifting for the preview,
         // producing a stale preview. UIKit lifts the real cell as-is and escalates a continued drag into
-        // the reorder.
-        return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { [weak self] _ in
+        // the reorder. The row is tagged so the preview can be shaped to the pressed cell (below).
+        return UIContextMenuConfiguration(identifier: NSNumber(value: indexPath.row), previewProvider: nil) { [weak self] _ in
             self?.makeTabContextMenu(forTabAt: indexPath.row)
         }
+    }
+
+    func collectionView(_ collectionView: UICollectionView,
+                        previewForHighlightingContextMenuWithConfiguration configuration: UIContextMenuConfiguration) -> UITargetedPreview? {
+        return tabMenuPreview(for: configuration)
+    }
+
+    func collectionView(_ collectionView: UICollectionView,
+                        previewForDismissingContextMenuWithConfiguration configuration: UIContextMenuConfiguration) -> UITargetedPreview? {
+        return tabMenuPreview(for: configuration)
+    }
+
+    /// Shapes the tab menu's lift to the tab's rounded-top / flush-bottom outline (only the top corners are
+    /// rounded), instead of UIKit's default all-corners-rounded platter.
+    private func tabMenuPreview(for configuration: UIContextMenuConfiguration) -> UITargetedPreview? {
+        guard let row = (configuration.identifier as? NSNumber)?.intValue,
+              let cell = collectionView.cellForItem(at: IndexPath(item: row, section: 0)) else {
+            return nil
+        }
+        let parameters = UIPreviewParameters()
+        applyTabLiftStyle(to: parameters, cell: cell, backgroundColor: tabLiftBackgroundColor)
+        return UITargetedPreview(view: cell, parameters: parameters)
+    }
+
+    /// Half-opaque tab colour for lift previews, so an inactive tab (clear cell background) still reads as a
+    /// card rather than transparent.
+    private var tabLiftBackgroundColor: UIColor {
+        ThemeManager.shared.currentTheme.omniBarBackgroundColor.withAlphaComponent(0.5)
+    }
+
+    /// Shared preview styling: the tab outline (rounded top, flush bottom) and no shadow. Caller picks the
+    /// background (half-opaque for the lift, clear for the drop-into-place preview).
+    private func applyTabLiftStyle(to parameters: UIPreviewParameters, cell: UICollectionViewCell, backgroundColor: UIColor) {
+        parameters.backgroundColor = backgroundColor
+        parameters.visiblePath = UIBezierPath(roundedRect: cell.bounds,
+                                              byRoundingCorners: [.topLeft, .topRight],
+                                              cornerRadii: CGSize(width: TabsBarCell.cornerRadius, height: TabsBarCell.cornerRadius))
+        parameters.shadowPath = UIBezierPath()
     }
 
 }
@@ -594,16 +632,13 @@ extension TabsBarViewController: UICollectionViewDragDelegate {
     }
 
     func collectionView(_ collectionView: UICollectionView, dragPreviewParametersForItemAt indexPath: IndexPath) -> UIDragPreviewParameters? {
-        return tabDragPreviewParameters(at: indexPath)
+        return tabDragPreviewParameters(at: indexPath, backgroundColor: tabLiftBackgroundColor)
     }
 
-    /// Clips the lifted-tab preview to the tab corner radius (clear background) so an inactive tab lifts as
-    /// a rounded shape with no square white corners.
-    private func tabDragPreviewParameters(at indexPath: IndexPath) -> UIDragPreviewParameters? {
+    private func tabDragPreviewParameters(at indexPath: IndexPath, backgroundColor: UIColor) -> UIDragPreviewParameters? {
         guard let cell = collectionView.cellForItem(at: indexPath) else { return nil }
         let parameters = UIDragPreviewParameters()
-        parameters.backgroundColor = .clear
-        parameters.visiblePath = UIBezierPath(roundedRect: cell.bounds, cornerRadius: 12)
+        applyTabLiftStyle(to: parameters, cell: cell, backgroundColor: backgroundColor)
         return parameters
     }
 
@@ -616,7 +651,7 @@ extension TabsBarViewController: UICollectionViewDropDelegate {
     }
 
     func collectionView(_ collectionView: UICollectionView, dropPreviewParametersForItemAt indexPath: IndexPath) -> UIDragPreviewParameters? {
-        return tabDragPreviewParameters(at: indexPath)
+        return tabDragPreviewParameters(at: indexPath, backgroundColor: .clear)
     }
 
     func collectionView(_ collectionView: UICollectionView,

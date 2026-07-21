@@ -38,6 +38,8 @@ public enum PIRDebugError: Error, LocalizedError {
     case remoteRulesServerError(statusCode: Int?)
     /// A remote response body could not be interpreted.
     case remoteRulesClientError
+    /// The per-session ephemeral `UserDefaults` suite could not be created.
+    case ephemeralDefaultsUnavailable
 
     public var errorDescription: String? {
         switch self {
@@ -59,6 +61,8 @@ public enum PIRDebugError: Error, LocalizedError {
             return "Remote rules server error (status \(statusCode.map(String.init) ?? "unknown"))"
         case .remoteRulesClientError:
             return "Remote rules client error"
+        case .ephemeralDefaultsUnavailable:
+            return "Could not create an ephemeral UserDefaults suite for this session"
         }
     }
 }

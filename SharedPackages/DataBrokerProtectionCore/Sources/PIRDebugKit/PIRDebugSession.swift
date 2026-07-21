@@ -92,7 +92,9 @@ public final class PIRDebugSession {
         // Settings over an ephemeral UserDefaults suite — never UserDefaults.standard / UserDefaults.dbp.
         let suiteName = "com.duckduckgo.pir-debug.session.\(UUID().uuidString)"
         self.userDefaultsSuiteName = suiteName
-        let defaults = UserDefaults(suiteName: suiteName) ?? .standard
+        guard let defaults = UserDefaults(suiteName: suiteName) else {
+            throw PIRDebugError.ephemeralDefaultsUnavailable
+        }
         let settings = DataBrokerProtectionSettings(defaults: defaults)
         settings.selectedEnvironment = configuration.servicesEndpoint.selectedEnvironment
         self.settings = settings
@@ -216,7 +218,7 @@ public final class PIRDebugSession {
                     profileQueryLabel: label,
                     outcome: .error,
                     extractedProfileCount: 0,
-                    error: error.localizedDescription))
+                    error: String(describing: error)))
             }
         }
 
@@ -261,6 +263,10 @@ public final class PIRDebugSession {
 
     /// Runs `EmailConfirmationDataService.checkForEmailConfirmationData()` and returns the
     /// confirmation URL now available for the pending opt-out (or `nil` if not ready yet).
+    ///
+    /// `@MainActor` so it never reads `pendingOptOut` / the email store concurrently with the
+    /// `@MainActor` `scan`/`runOptOut` writers (the `serve` command can invoke both at once).
+    @MainActor
     public func checkEmailConfirmation() async throws -> URL? {
         try await emailConfirmationDataService.checkForEmailConfirmationData()
         guard let pending = pendingOptOut else { return nil }
@@ -361,7 +367,7 @@ public final class PIRDebugSession {
             pendingOptOut = nil
             return result(success: true, awaiting: false, error: nil)
         } catch {
-            return result(success: false, awaiting: false, error: error.localizedDescription)
+            return result(success: false, awaiting: false, error: String(describing: error))
         }
     }
 

@@ -25,6 +25,15 @@ public protocol BrokerRulesProviding {
     func fetchBrokers() async throws -> [DataBroker]
 }
 
+/// A `DataBroker` decoder matching the app's runtime decode (`.millisecondsSince1970`), so that
+/// `validate` / local / inline sources catch exactly what the running app would reject or accept —
+/// notably `removedAt`, the only date-typed field.
+func makeBrokerRulesDecoder() -> JSONDecoder {
+    let decoder = JSONDecoder()
+    decoder.dateDecodingStrategy = .millisecondsSince1970
+    return decoder
+}
+
 /// A per-file decoding failure, surfaced instead of failing a whole batch.
 public struct BrokerRulesDecodingError: Error, CustomStringConvertible {
     public let fileURL: URL
@@ -48,7 +57,7 @@ public struct InlineJSONBrokerRulesProvider: BrokerRulesProviding {
     }
 
     public func fetchBrokers() async throws -> [DataBroker] {
-        [try JSONDecoder().decode(DataBroker.self, from: data)]
+        [try makeBrokerRulesDecoder().decode(DataBroker.self, from: data)]
     }
 }
 
@@ -83,11 +92,12 @@ public final class LocalFileBrokerRulesProvider: BrokerRulesProviding {
             fileURLs = [url]
         }
 
+        let decoder = makeBrokerRulesDecoder()
         var brokers: [DataBroker] = []
         for fileURL in fileURLs {
             do {
                 let data = try Data(contentsOf: fileURL)
-                brokers.append(try JSONDecoder().decode(DataBroker.self, from: data))
+                brokers.append(try decoder.decode(DataBroker.self, from: data))
             } catch {
                 errors.append(BrokerRulesDecodingError(fileURL: fileURL, underlyingError: error))
             }

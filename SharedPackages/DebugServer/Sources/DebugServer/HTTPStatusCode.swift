@@ -27,6 +27,7 @@ public enum HTTPStatusCode: Int, Sendable, Hashable {
     case badRequest = 400
     case notFound = 404
     case methodNotAllowed = 405
+    case conflict = 409
     case internalServerError = 500
 
     var reasonPhrase: String {
@@ -38,6 +39,7 @@ public enum HTTPStatusCode: Int, Sendable, Hashable {
         case .badRequest: return "Bad Request"
         case .notFound: return "Not Found"
         case .methodNotAllowed: return "Method Not Allowed"
+        case .conflict: return "Conflict"
         case .internalServerError: return "Internal Server Error"
         }
     }

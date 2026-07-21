@@ -42,6 +42,7 @@ public final class DebugHTTPServer: HTTPServerProtocol {
     public var stateDidChange: (@Sendable (ServerState) -> Void)?
 
     private let port: UInt16
+    private let requireLoopback: Bool
     private let queue: DispatchQueue
     private var listener: NWListener?
     private var activeConnections: [NWConnection] = []
@@ -56,9 +57,13 @@ public final class DebugHTTPServer: HTTPServerProtocol {
 
     /// Creates a new debug server.
     ///
-    /// - Parameter port: The TCP port to listen on. Defaults to `8473`.
-    public init(port: UInt16 = 8473) {
+    /// - Parameters:
+    ///   - port: The TCP port to listen on. Defaults to `8473`.
+    ///   - requireLoopback: When `true`, the listener binds to `127.0.0.1` only, rejecting
+    ///     connections from other hosts. Defaults to `false` to preserve existing behavior.
+    public init(port: UInt16 = 8473, requireLoopback: Bool = false) {
         self.port = port
+        self.requireLoopback = requireLoopback
         self.queue = DispatchQueue(label: "com.debugserver.listener", qos: .userInitiated)
     }
 
@@ -73,7 +78,13 @@ public final class DebugHTTPServer: HTTPServerProtocol {
 
             let parameters = NWParameters.tcp
             let nwPort = NWEndpoint.Port(rawValue: port)!
-            let listener = try NWListener(using: parameters, on: nwPort)
+            let listener: NWListener
+            if requireLoopback {
+                parameters.requiredLocalEndpoint = .hostPort(host: .ipv4(.loopback), port: nwPort)
+                listener = try NWListener(using: parameters)
+            } else {
+                listener = try NWListener(using: parameters, on: nwPort)
+            }
 
             listener.stateUpdateHandler = { [weak self] listenerState in
                 self?.handleListenerStateChange(listenerState)

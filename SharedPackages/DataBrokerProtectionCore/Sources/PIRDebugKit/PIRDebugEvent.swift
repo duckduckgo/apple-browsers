@@ -75,10 +75,22 @@ public struct PIRDebugEvent: Codable, Sendable, Equatable {
         return formatter
     }()
 
+    /// Fallback for externally produced timestamps lacking fractional seconds.
+    private static let iso8601NoFraction: ISO8601DateFormatter = {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime]
+        return formatter
+    }()
+
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         let timestampString = try container.decode(String.self, forKey: .timestamp)
-        self.timestamp = Self.iso8601.date(from: timestampString) ?? Date(timeIntervalSince1970: 0)
+        guard let parsed = Self.iso8601.date(from: timestampString)
+                ?? Self.iso8601NoFraction.date(from: timestampString) else {
+            throw DecodingError.dataCorruptedError(forKey: .timestamp, in: container,
+                                                   debugDescription: "Not an ISO-8601 timestamp: \(timestampString)")
+        }
+        self.timestamp = parsed
         self.profileQueryLabel = try container.decode(String.self, forKey: .profileQueryLabel)
         self.kind = try container.decode(Kind.self, forKey: .kind)
         self.actionType = try container.decodeIfPresent(String.self, forKey: .actionType)

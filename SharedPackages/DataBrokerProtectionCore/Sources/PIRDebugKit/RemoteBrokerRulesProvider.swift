@@ -178,8 +178,9 @@ public final class RemoteBrokerRulesProvider: BrokerRulesProviding {
         defer { try? fileManager.removeItem(at: archiveURL) }
 
         do {
-            try fileManager.unzipItem(at: archiveURL, to: extractionDir)
+            try fileManager.unzipItem(at: archiveURL, to: extractionDir, allowUncontainedSymlinks: false)
         } catch {
+            try? fileManager.removeItem(at: extractionDir)
             throw error
         }
         return extractionDir

@@ -60,7 +60,10 @@ public final class PIRDebugPrivacyConfigurationManager: PrivacyConfigurationMana
 
         let suiteName = "com.duckduckgo.pir-debug.privacy-config.\(UUID().uuidString)"
         self.userDefaultsSuiteName = suiteName
-        self.userDefaults = UserDefaults(suiteName: suiteName) ?? .standard
+        guard let userDefaults = UserDefaults(suiteName: suiteName) else {
+            throw PIRDebugError.ephemeralDefaultsUnavailable
+        }
+        self.userDefaults = userDefaults
 
         self.privacyConfig = AppPrivacyConfiguration(
             data: data,

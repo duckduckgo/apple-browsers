@@ -34,6 +34,9 @@ let package = Package(
             name: "DataBrokerProtectionDebugServer",
             targets: ["DataBrokerProtectionDebugServer"]),
         .library(name: "DataBrokerProtectionCoreTestsUtils", targets: ["DataBrokerProtectionCoreTestsUtils"]),
+        .library(
+            name: "PIRDebugKit",
+            targets: ["PIRDebugKit"]),
     ],
     dependencies: [
         .package(path: "../BrowserServicesKit"),
@@ -81,6 +84,31 @@ let package = Package(
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
+            ]
+        ),
+        .target(
+            name: "PIRDebugKit",
+            dependencies: [
+                "DataBrokerProtectionCore",
+                .product(name: "BrowserServicesKit", package: "BrowserServicesKit"),
+                .product(name: "PrivacyConfig", package: "BrowserServicesKit"),
+                .product(name: "PixelKit", package: "BrowserServicesKit"),
+                "ZIPFoundation",
+            ],
+            resources: [.copy("Resources/macos-config.json")],
+            swiftSettings: [
+                .define("DEBUG", .when(configuration: .debug))
+            ]
+        ),
+        .testTarget(
+            name: "PIRDebugKitTests",
+            dependencies: [
+                "PIRDebugKit",
+                "DataBrokerProtectionCore",
+                "ZIPFoundation",
+            ],
+            resources: [
+                .copy("Resources")
             ]
         ),
         .testTarget(

@@ -104,6 +104,7 @@ class MainViewController: UIViewController {
 
     weak var findInPageView: FindInPageView?
 
+    private var isFindInPageChromeLockActive = false
     private var didFindInPageHideChrome = false
     private var findInPageDismissalTimer: Timer?
 
@@ -3327,11 +3328,13 @@ class MainViewController: UIViewController {
         guard featureFlagger.isFeatureOn(.systemFindInPage),
               currentTab?.webView.findInteraction?.isFindNavigatorVisible == true,
               !AppWidthObserver.shared.isPad || !AppWidthObserver.shared.isLargeWidth,
-              lastChromeVisibilityPercent > 0,
-              !didFindInPageHideChrome else { return }
+              !isFindInPageChromeLockActive else { return }
 
-        didFindInPageHideChrome = true
-        setBarsHidden(true, animated: true, customAnimationDuration: nil)
+        isFindInPageChromeLockActive = true
+        didFindInPageHideChrome = lastChromeVisibilityPercent > 0
+        if didFindInPageHideChrome {
+            setBarsHidden(true, animated: true, customAnimationDuration: nil)
+        }
 
         findInPageDismissalTimer = Timer.scheduledTimer(withTimeInterval: 0.2, repeats: true) { [weak self] timer in
             guard let self else {
@@ -3347,13 +3350,15 @@ class MainViewController: UIViewController {
         findInPageDismissalTimer?.invalidate()
         findInPageDismissalTimer = nil
 
-        guard didFindInPageHideChrome else { return }
+        isFindInPageChromeLockActive = false
+        let shouldRestoreChrome = didFindInPageHideChrome
         didFindInPageHideChrome = false
+        guard shouldRestoreChrome else { return }
         setBarsHidden(false, animated: true, customAnimationDuration: nil)
     }
 
     private var shouldKeepChromeHiddenForFindInPage: Bool {
-        guard didFindInPageHideChrome,
+        guard isFindInPageChromeLockActive,
               !AppWidthObserver.shared.isPad || !AppWidthObserver.shared.isLargeWidth else { return false }
         if #available(iOS 16.0, *) {
             return currentTab?.webView.findInteraction?.isFindNavigatorVisible == true

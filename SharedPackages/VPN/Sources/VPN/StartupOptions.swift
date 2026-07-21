@@ -32,7 +32,6 @@ public struct VPNSettingsSnapshot: Codable, Equatable {
     let dnsSettings: NetworkProtectionDNSSettings
     let excludeLocalNetworks: Bool
     let excludeCGNAT: Bool
-    let isOrphanProxyDetectionEnabled: Bool
 
     enum CodingKeys: String, CodingKey {
         case registrationKeyValidity
@@ -42,7 +41,6 @@ public struct VPNSettingsSnapshot: Codable, Equatable {
         case dnsSettings
         case excludeLocalNetworks
         case excludeCGNAT
-        case isOrphanProxyDetectionEnabled
     }
 
     /// Create a snapshot of the current VPN settings
@@ -54,7 +52,6 @@ public struct VPNSettingsSnapshot: Codable, Equatable {
         self.dnsSettings = settings.dnsSettings
         self.excludeLocalNetworks = settings.excludeLocalNetworks
         self.excludeCGNAT = settings.excludeCGNAT
-        self.isOrphanProxyDetectionEnabled = settings.isOrphanProxyDetectionEnabled
     }
 
     /// Create a snapshot with explicit values
@@ -64,8 +61,7 @@ public struct VPNSettingsSnapshot: Codable, Equatable {
                 selectedLocation: VPNSettings.SelectedLocation,
                 dnsSettings: NetworkProtectionDNSSettings,
                 excludeLocalNetworks: Bool,
-                excludeCGNAT: Bool = UserDefaults.excludeCGNATDefaultValue,
-                isOrphanProxyDetectionEnabled: Bool = UserDefaults.orphanProxyDetectionEnabledDefaultValue) {
+                excludeCGNAT: Bool = UserDefaults.excludeCGNATDefaultValue) {
         self.registrationKeyValidity = registrationKeyValidity
         self.selectedEnvironment = selectedEnvironment
         self.selectedServer = selectedServer
@@ -73,7 +69,6 @@ public struct VPNSettingsSnapshot: Codable, Equatable {
         self.dnsSettings = dnsSettings
         self.excludeLocalNetworks = excludeLocalNetworks
         self.excludeCGNAT = excludeCGNAT
-        self.isOrphanProxyDetectionEnabled = isOrphanProxyDetectionEnabled
     }
 
     /// Custom decoding so snapshots persisted by older versions still decode, falling back to default
@@ -87,8 +82,6 @@ public struct VPNSettingsSnapshot: Codable, Equatable {
         dnsSettings = try container.decode(NetworkProtectionDNSSettings.self, forKey: .dnsSettings)
         excludeLocalNetworks = try container.decode(Bool.self, forKey: .excludeLocalNetworks)
         excludeCGNAT = try container.decodeIfPresent(Bool.self, forKey: .excludeCGNAT) ?? UserDefaults.excludeCGNATDefaultValue
-        isOrphanProxyDetectionEnabled = try container.decodeIfPresent(Bool.self, forKey: .isOrphanProxyDetectionEnabled)
-            ?? UserDefaults.orphanProxyDetectionEnabledDefaultValue
     }
 
     /// Apply these settings to a VPNSettings instance
@@ -100,7 +93,6 @@ public struct VPNSettingsSnapshot: Codable, Equatable {
         settings.dnsSettings = dnsSettings
         settings.excludeLocalNetworks = excludeLocalNetworks
         settings.excludeCGNAT = excludeCGNAT
-        settings.isOrphanProxyDetectionEnabled = isOrphanProxyDetectionEnabled
     }
 }
 

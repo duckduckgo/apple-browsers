@@ -102,6 +102,7 @@ struct ScanCommand: CLIRunnable {
             Log.error(error.message)
             return CLIExit.usageError
         } catch {
+            // Setup / rules-fetch failures (the spec's canonical exit-2 case) reach here.
             Log.error(String(describing: error))
             return CLIExit.usageError
         }

@@ -28,16 +28,19 @@ final class ServeState: @unchecked Sendable {
 
     /// A single asynchronous job (scan or optout).
     final class Job {
+        enum Kind: String { case scan, optout }
+        enum Status: String { case running, succeeded, failed }
+
         let id: String
-        let kind: String
-        var status: String // "running" | "succeeded" | "failed"
+        let kind: Kind
+        var status: Status
         var resultData: Data?
         var error: String?
 
-        init(id: String, kind: String) {
+        init(id: String, kind: Kind) {
             self.id = id
             self.kind = kind
-            self.status = "running"
+            self.status = .running
         }
     }
 
@@ -70,7 +73,7 @@ final class ServeState: @unchecked Sendable {
 
     /// Creates a job only if none is currently running, returning its id; returns `nil` (→ HTTP 409)
     /// when a job is already in flight.
-    func tryCreateJob(kind: String) -> String? {
+    func tryCreateJob(kind: Job.Kind) -> String? {
         lock.lock(); defer { lock.unlock() }
         guard activeJobId == nil else { return nil }
         let id = UUID().uuidString
@@ -85,7 +88,7 @@ final class ServeState: @unchecked Sendable {
         lock.lock(); defer { lock.unlock() }
         if activeJobId == id { activeJobId = nil }
         guard let job = jobs[id] else { return }
-        job.status = "succeeded"
+        job.status = .succeeded
         job.resultData = resultData
     }
 
@@ -93,7 +96,7 @@ final class ServeState: @unchecked Sendable {
         lock.lock(); defer { lock.unlock() }
         if activeJobId == id { activeJobId = nil }
         guard let job = jobs[id] else { return }
-        job.status = "failed"
+        job.status = .failed
         job.error = error
     }
 
@@ -111,7 +114,7 @@ final class ServeState: @unchecked Sendable {
     func jobResponse(id: String) -> Data? {
         lock.lock(); defer { lock.unlock() }
         guard let job = jobs[id] else { return nil }
-        var object: [String: Any] = ["id": job.id, "kind": job.kind, "status": job.status]
+        var object: [String: Any] = ["id": job.id, "kind": job.kind.rawValue, "status": job.status.rawValue]
         if let error = job.error { object["error"] = error }
         if let resultData = job.resultData,
            let parsed = try? JSONSerialization.jsonObject(with: resultData) {

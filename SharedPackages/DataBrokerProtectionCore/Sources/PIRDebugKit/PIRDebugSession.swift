@@ -119,17 +119,14 @@ public final class PIRDebugSession {
         self.events = AsyncStream<PIRDebugEvent> { continuation = $0 }
         self.eventContinuation = continuation
 
-        let store = emailConfirmationStore
-        let emailV0 = emailService
-        let emailV1 = emailServiceV1
-        let pixelHandler = configuration.pixelHandler
+        // `sink` (not `self`) is captured by the handler so the session isn't retained by the service.
         let sink = continuation
         self.emailConfirmationDataService = EmailConfirmationDataService(
-            emailConfirmationStore: store,
+            emailConfirmationStore: emailConfirmationStore,
             database: nil,
-            emailServiceV0: emailV0,
-            emailServiceV1: emailV1,
-            pixelHandler: pixelHandler,
+            emailServiceV0: emailService,
+            emailServiceV1: emailServiceV1,
+            pixelHandler: configuration.pixelHandler,
             debugEventHandler: { message in
                 sink?.yield(PIRDebugEvent(profileQueryLabel: "-",
                                           kind: .history,

@@ -33,12 +33,12 @@ public enum RemoteBrokerEndpoint {
     public var baseURL: URL {
         switch self {
         case .production:
-            return URL(string: "https://dbp.duckduckgo.com")!
+            return PIRDebugRemoteHosts.production
         case .staging:
-            return URL(string: "https://dbp-staging.duckduckgo.com")!
+            return PIRDebugRemoteHosts.staging
         case .stagingBranch(let name):
             let sanitized = PIRDebugBranchNameSanitizer.sanitize(name)
-            return URL(string: "https://dbp-staging.duckduckgo.com")!
+            return PIRDebugRemoteHosts.staging
                 .appendingPathComponent("branches")
                 .appendingPathComponent(sanitized)
         case .custom(let url):
@@ -61,6 +61,19 @@ public final class RemoteBrokerRulesProvider: BrokerRulesProviding {
             case activeDataBrokers = "active_data_brokers"
             case testDataBrokers = "test_data_brokers"
         }
+    }
+
+    /// Remote rules downloaded and extracted to a caller-owned temp directory. Shared by
+    /// `fetchBrokers()` and the CLI's `fetch-rules`.
+    public struct MaterializedRules {
+        /// Raw `main_config.json` bytes (byte-identical to the served file).
+        public let mainConfigData: Data
+        /// Temp directory holding the extracted broker JSONs. The caller must remove it.
+        public let extractionDirectory: URL
+        /// Extracted broker files keyed by file name (e.g. `fakebroker.com.json`).
+        public let brokerFilesByName: [String: URL]
+        public let activeDataBrokers: [String]
+        public let testDataBrokers: [String]
     }
 
     public let baseURL: URL
@@ -95,30 +108,40 @@ public final class RemoteBrokerRulesProvider: BrokerRulesProviding {
     }
 
     public func fetchBrokers() async throws -> [DataBroker] {
-        let mainConfig = try await fetchMainConfig()
-        let extractionDir = try await downloadAndExtractAllBrokers()
-        defer { try? fileManager.removeItem(at: extractionDir) }
+        let materialized = try await materialize()
+        defer { try? fileManager.removeItem(at: materialized.extractionDirectory) }
 
-        var wantedFileNames = Set(mainConfig.activeDataBrokers)
+        var wantedFileNames = Set(materialized.activeDataBrokers)
         if includeTestBrokers {
-            wantedFileNames.formUnion(mainConfig.testDataBrokers)
+            wantedFileNames.formUnion(materialized.testDataBrokers)
         }
+
+        let decoder = makeBrokerRulesDecoder()
+        return try materialized.brokerFilesByName
+            .filter { wantedFileNames.contains($0.key) }
+            .sorted { $0.key < $1.key }
+            .map { try decoder.decode(DataBroker.self, from: Data(contentsOf: $0.value)) }
+    }
+
+    /// Downloads and extracts the remote rules to a fresh temp directory the caller owns (and must
+    /// remove via ``MaterializedRules/extractionDirectory``). `fetch-rules` uses this to write the
+    /// files byte-identical to the zip contents; `fetchBrokers()` decodes from it.
+    public func materialize() async throws -> MaterializedRules {
+        let mainConfigData = try await fetchMainConfigData()
+        let config = try JSONDecoder().decode(MainConfigResponse.self, from: mainConfigData)
+        let extractionDir = try await downloadAndExtractAllBrokers()
 
         let jsonDir = extractionDir.appendingPathComponent("json", isDirectory: true)
         let searchDir = fileManager.fileExists(atPath: jsonDir.path) ? jsonDir : extractionDir
         let fileURLs = try fileManager.contentsOfDirectory(at: searchDir,
                                                            includingPropertiesForKeys: nil,
                                                            options: [.skipsHiddenFiles])
-
-        let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .millisecondsSince1970
-
-        var brokers: [DataBroker] = []
-        for fileURL in fileURLs where wantedFileNames.contains(fileURL.lastPathComponent) {
-            let data = try Data(contentsOf: fileURL)
-            brokers.append(try decoder.decode(DataBroker.self, from: data))
-        }
-        return brokers
+        let byName = Dictionary(fileURLs.map { ($0.lastPathComponent, $0) }, uniquingKeysWith: { first, _ in first })
+        return MaterializedRules(mainConfigData: mainConfigData,
+                                 extractionDirectory: extractionDir,
+                                 brokerFilesByName: byName,
+                                 activeDataBrokers: config.activeDataBrokers,
+                                 testDataBrokers: config.testDataBrokers)
     }
 
     // MARK: - Requests
@@ -139,7 +162,7 @@ public final class RemoteBrokerRulesProvider: BrokerRulesProviding {
         return components?.url ?? baseURL.appendingPathComponent("dbp/remote/v0")
     }
 
-    private func fetchMainConfig() async throws -> MainConfigResponse {
+    private func fetchMainConfigData() async throws -> Data {
         var request = URLRequest(url: mainConfigURL())
         request.httpMethod = "GET"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -158,7 +181,7 @@ public final class RemoteBrokerRulesProvider: BrokerRulesProviding {
         guard httpResponse.statusCode == 200 else {
             throw PIRDebugError.remoteRulesServerError(statusCode: httpResponse.statusCode)
         }
-        return try JSONDecoder().decode(MainConfigResponse.self, from: data)
+        return data
     }
 
     private func downloadAndExtractAllBrokers() async throws -> URL {

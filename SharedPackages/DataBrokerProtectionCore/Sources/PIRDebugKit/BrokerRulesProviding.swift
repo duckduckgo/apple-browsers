@@ -26,9 +26,10 @@ public protocol BrokerRulesProviding {
 }
 
 /// A `DataBroker` decoder matching the app's runtime decode (`.millisecondsSince1970`), so that
-/// `validate` / local / inline sources catch exactly what the running app would reject or accept —
-/// notably `removedAt`, the only date-typed field.
-func makeBrokerRulesDecoder() -> JSONDecoder {
+/// `validate` / local / inline / remote sources catch exactly what the running app would reject or
+/// accept — notably `removedAt`, the only date-typed field. Public so the CLI's `validate` uses the
+/// same decoder rather than a plain one.
+public func makeBrokerRulesDecoder() -> JSONDecoder {
     let decoder = JSONDecoder()
     decoder.dateDecodingStrategy = .millisecondsSince1970
     return decoder

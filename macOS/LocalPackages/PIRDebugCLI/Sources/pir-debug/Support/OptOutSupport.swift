@@ -23,16 +23,27 @@ import PIRDebugKit
 /// Shared opt-out helpers used by the `optout` command and the `serve` job runner.
 enum OptOutSupport {
 
-    /// Decodes extracted-profile records from a scan result (a single object or an array).
+    /// The extracted-profile records from a scan result, accepting either a single `PIRScanResult`
+    /// object or an array of them. Used both when reading a `results.json` file (`optout`) and when
+    /// decoding the inline `extracted` field of a `serve` opt-out request body.
+    struct ExtractedRecords: Decodable {
+        let records: [PIRExtractedProfileRecord]
+
+        init(from decoder: Decoder) throws {
+            let container = try decoder.singleValueContainer()
+            if let single = try? container.decode(PIRScanResult.self) {
+                records = single.extractedProfiles
+            } else if let many = try? container.decode([PIRScanResult].self) {
+                records = many.flatMap { $0.extractedProfiles }
+            } else {
+                throw CLIUsageError("Could not decode a scan result from the extracted input.")
+            }
+        }
+    }
+
+    /// Decodes extracted-profile records from a scan result file (a single object or an array).
     static func records(from data: Data) throws -> [PIRExtractedProfileRecord] {
-        let decoder = JSONDecoder()
-        if let single = try? decoder.decode(PIRScanResult.self, from: data) {
-            return single.extractedProfiles
-        }
-        if let many = try? decoder.decode([PIRScanResult].self, from: data) {
-            return many.flatMap { $0.extractedProfiles }
-        }
-        throw CLIUsageError("Could not decode a scan result from the extracted input.")
+        try JSONDecoder().decode(ExtractedRecords.self, from: data).records
     }
 
     /// Selects records for the given broker, honoring `index` / `allMatches`.

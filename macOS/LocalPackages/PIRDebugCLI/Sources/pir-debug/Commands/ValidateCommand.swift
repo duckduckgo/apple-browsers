@@ -20,6 +20,7 @@ import AppKit
 import ArgumentParser
 import DataBrokerProtectionCore
 import Foundation
+import PIRDebugKit
 
 struct ValidateCommand: CLIRunnable {
 
@@ -55,16 +56,17 @@ struct ValidateCommand: CLIRunnable {
                 throw CLIUsageError("No JSON files to validate. Pass --rules-dir or --broker-file.")
             }
 
+            let decoder = makeBrokerRulesDecoder()
             var results: [FileResult] = []
             for fileURL in files {
                 do {
                     let data = try Data(contentsOf: fileURL)
-                    let broker = try JSONDecoder().decode(DataBroker.self, from: data)
+                    let broker = try decoder.decode(DataBroker.self, from: data)
                     results.append(FileResult(file: fileURL.path, ok: true, brokerName: broker.name, error: nil))
                     Log.debug("OK  \(fileURL.lastPathComponent)")
                 } catch {
-                    results.append(FileResult(file: fileURL.path, ok: false, brokerName: nil, error: error.localizedDescription))
-                    Log.error("FAIL \(fileURL.lastPathComponent): \(error.localizedDescription)")
+                    results.append(FileResult(file: fileURL.path, ok: false, brokerName: nil, error: String(describing: error)))
+                    Log.error("FAIL \(fileURL.lastPathComponent): \(String(describing: error))")
                 }
             }
 
@@ -76,7 +78,7 @@ struct ValidateCommand: CLIRunnable {
             Log.error(error.message)
             return CLIExit.usageError
         } catch {
-            Log.error(error.localizedDescription)
+            Log.error(String(describing: error))
             return CLIExit.usageError
         }
     }

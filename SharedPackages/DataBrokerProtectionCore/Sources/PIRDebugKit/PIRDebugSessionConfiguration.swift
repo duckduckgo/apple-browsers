@@ -30,8 +30,8 @@ public enum PIRServicesEndpoint: Equatable {
 
     public var baseURL: URL {
         switch self {
-        case .production: return URL(string: "https://dbp.duckduckgo.com")!
-        case .staging: return URL(string: "https://dbp-staging.duckduckgo.com")!
+        case .production: return PIRDebugRemoteHosts.production
+        case .staging: return PIRDebugRemoteHosts.staging
         case .custom(let url): return url
         }
     }

@@ -56,24 +56,10 @@ struct ServeCommand: CLIRunnable {
         let all: Bool?
     }
 
-    private struct ScanResultInput: Decodable {
-        let records: [PIRExtractedProfileRecord]
-        init(from decoder: Decoder) throws {
-            let container = try decoder.singleValueContainer()
-            if let single = try? container.decode(PIRScanResult.self) {
-                records = single.extractedProfiles
-            } else if let many = try? container.decode([PIRScanResult].self) {
-                records = many.flatMap { $0.extractedProfiles }
-            } else {
-                throw CLIUsageError("Could not decode extracted scan result.")
-            }
-        }
-    }
-
     private struct OptOutRequest: Decodable {
         let profile: DebugProfile
         let broker: String
-        let extracted: ScanResultInput
+        let extracted: OptOutSupport.ExtractedRecords
         let index: Int?
         let allMatches: Bool?
         let waitForEmail: Bool?
@@ -182,7 +168,7 @@ struct ServeCommand: CLIRunnable {
                   let req = try? JSONDecoder().decode(ScanRequest.self, from: body) else {
                 return .text("Invalid scan request body", status: .badRequest)
             }
-            guard let jobId = state.tryCreateJob(kind: "scan") else {
+            guard let jobId = state.tryCreateJob(kind: .scan) else {
                 return Self.jsonResponse(["error": "A job is already running; retry when it completes."], status: .conflict)
             }
             Self.startScan(req: req, jobId: jobId, state: state)
@@ -194,7 +180,7 @@ struct ServeCommand: CLIRunnable {
                   let req = try? JSONDecoder().decode(OptOutRequest.self, from: body) else {
                 return .text("Invalid optout request body", status: .badRequest)
             }
-            guard let jobId = state.tryCreateJob(kind: "optout") else {
+            guard let jobId = state.tryCreateJob(kind: .optout) else {
                 return Self.jsonResponse(["error": "A job is already running; retry when it completes."], status: .conflict)
             }
             Self.startOptOut(req: req, jobId: jobId, state: state)

@@ -524,8 +524,7 @@ class TabsBarViewController: UIViewController {
 
 extension TabsBarViewController: UIContextMenuInteractionDelegate {
 
-    // Serves the Duck.ai chip's own interaction; the tab menu now uses the collection view's built-in
-    // contextMenuConfigurationForItemAt (see UICollectionViewDelegate).
+    // Duck.ai chip only; the tab menu uses the collection view's contextMenuConfigurationForItemAt.
     func contextMenuInteraction(_ interaction: UIContextMenuInteraction,
                                 configurationForMenuAtLocation location: CGPoint) -> UIContextMenuConfiguration? {
         return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { [weak self] _ in
@@ -569,9 +568,7 @@ extension TabsBarViewController: UICollectionViewDelegate {
                         contextMenuConfigurationForItemAt indexPath: IndexPath,
                         point: CGPoint) -> UIContextMenuConfiguration? {
         guard tabsModel?.get(tabAt: indexPath.row) != nil else { return nil }
-        // No select-before-menu: selecting reloads and recycles the cell UIKit is lifting for the preview,
-        // producing a stale preview. UIKit lifts the real cell as-is and escalates a continued drag into
-        // the reorder. The row is tagged so the preview can be shaped to the pressed cell (below).
+
         return UIContextMenuConfiguration(identifier: NSNumber(value: indexPath.row), previewProvider: nil) { [weak self] _ in
             self?.makeTabContextMenu(forTabAt: indexPath.row)
         }
@@ -587,8 +584,6 @@ extension TabsBarViewController: UICollectionViewDelegate {
         return tabMenuPreview(for: configuration)
     }
 
-    /// Shapes the tab menu's lift to the tab's rounded-top / flush-bottom outline (only the top corners are
-    /// rounded), instead of UIKit's default all-corners-rounded platter.
     private func tabMenuPreview(for configuration: UIContextMenuConfiguration) -> UITargetedPreview? {
         guard let row = (configuration.identifier as? NSNumber)?.intValue,
               let cell = collectionView.cellForItem(at: IndexPath(item: row, section: 0)) else {
@@ -599,14 +594,11 @@ extension TabsBarViewController: UICollectionViewDelegate {
         return UITargetedPreview(view: cell, parameters: parameters)
     }
 
-    /// Half-opaque tab colour for lift previews, so an inactive tab (clear cell background) still reads as a
-    /// card rather than transparent.
+    /// Half-opaque so an inactive tab (clear cell) reads as a card, not transparent, when lifted.
     private var tabLiftBackgroundColor: UIColor {
         ThemeManager.shared.currentTheme.omniBarBackgroundColor.withAlphaComponent(0.5)
     }
 
-    /// Shared preview styling: the tab outline (rounded top, flush bottom) and no shadow. Caller picks the
-    /// background (half-opaque for the lift, clear for the drop-into-place preview).
     private func applyTabLiftStyle(to parameters: UIPreviewParameters, cell: UICollectionViewCell, backgroundColor: UIColor) {
         parameters.backgroundColor = backgroundColor
         parameters.visiblePath = UIBezierPath(roundedRect: cell.bounds,
@@ -666,14 +658,25 @@ extension TabsBarViewController: UICollectionViewDropDelegate {
               let destinationIndexPath = coordinator.destinationIndexPath,
               let tabsModel,
               let tab = tabsModel.get(tabAt: sourceIndexPath.row) else { return }
-        // Reorder the model and the cell together. No select or reload here: reordering doesn't change which
-        // tab is current, and moveItem carries each cell's styling to its new slot. A reload inside a batch
-        // update asserts, and moving the model up front keeps the cell move from running on a stale model.
-        collectionView.performBatchUpdates {
+
+        collectionView.performBatchUpdates({
             tabsModel.move(tab: tab, to: destinationIndexPath.row)
             collectionView.moveItem(at: sourceIndexPath, to: destinationIndexPath)
-        }
+        }, completion: { [weak self] _ in
+            self?.refreshVisibleCellStyles()
+        })
         coordinator.drop(item.dragItem, toItemAt: destinationIndexPath)
+    }
+
+    private func refreshVisibleCellStyles() {
+        let theme = ThemeManager.shared.currentTheme
+        let current = currentIndex
+        for indexPath in collectionView.indexPathsForVisibleItems {
+            guard let cell = collectionView.cellForItem(at: indexPath) as? TabsBarCell else { continue }
+            cell.applyCurrentStyle(isCurrent: indexPath.row == current,
+                                   isNextCurrent: indexPath.row + 1 == current,
+                                   withTheme: theme)
+        }
     }
 
 }

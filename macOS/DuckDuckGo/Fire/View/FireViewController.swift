@@ -279,14 +279,16 @@ final class FireViewController: NSViewController {
                     Task {
                         await self.animateFire(burningData: burningData)
                     }
-                } else if burningData.closesTabs, self.isKeyWindowController {
-                    // Fire animation is disabled, so nothing covers the burn. Show the
-                    // "Deleting browsing data…" progress dialog directly for tab/window/all-data
-                    // burns, mirroring what `animateFire` presents once the animation finishes.
+                } else if self.isKeyWindowController {
+                    // The full-window fire animation isn't covering this burn (it's disabled, or this is
+                    // a New Tab Page site burn that only plays the in-page animation). Show the
+                    // "Deleting browsing data…" progress dialog directly so the burn still has visible
+                    // feedback, mirroring what `animateFire` presents once the animation finishes.
+                    // (For New Tab Page burns `isFirePresentationInProgress` still defers the container
+                    // by 1s so the in-page animation plays first.)
                     self.showBurningProgressIndicator()
                 } else {
-                    // No fire UI for this burn on this window (e.g. a New Tab Page site burn, or a
-                    // non-key window): make sure a progress dialog left visible by a previous burn
+                    // Non-key window: make sure a progress dialog left visible by a previous burn
                     // isn't shown.
                     self.hideBurningProgressIndicator()
                 }

@@ -110,7 +110,7 @@
                 "key": "feature.data.ext.is_setup",
                 "type": "string",
                 "description": "Is the current flow setup or reconnection",
-                "enum": ["yes", "no", "unknown", "true", "false"]
+                "enum": ["yes", "no", "unknown"]
             },
             {
                 "key": "feature.data.ext.vpn_screen_source",

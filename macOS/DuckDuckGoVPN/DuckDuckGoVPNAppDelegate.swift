@@ -461,6 +461,7 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
             isExtensionUpdateOfferedPublisher: isExtensionUpdateOfferedPublisher,
             userDefaults: .netP,
             locationFormatter: DefaultVPNLocationFormatter(),
+            isStrictRoutingAvailable: featureFlagger.isFeatureOn(.vpnStrictRoutingToggle),
             onWillShowPopover: { [weak self] in
                 await self?.tunnelController.refreshSystemState()
             },

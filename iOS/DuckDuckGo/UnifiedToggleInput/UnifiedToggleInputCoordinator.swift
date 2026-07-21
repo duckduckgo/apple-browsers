@@ -1716,6 +1716,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     /// must set this so the picker presents from the correct level.
     weak var attachmentPresentingViewController: UIViewController?
     var onPageContextAttachRequested: (() -> Void)?
+    /// Whether the current page can be attached. When false, the "Ask about page" menu action is disabled. Host-injected; nil ⇒ attachable.
+    var isPageContextAttachable: (() -> Bool)?
     /// Reports whether page context is attached but not yet submitted, for the voice-tap pixel. Host-injected; nil off the contextual sheet.
     var hasPendingPageContextProvider: (() -> Bool)?
 
@@ -2276,7 +2278,9 @@ private extension UnifiedToggleInputCoordinator {
     }
 
     func makeAttachmentMenu() -> UIMenu? {
-        let pageContextActionHandler = isContextualChatState ? onPageContextAttachRequested : nil
+        // Disable "Ask about page" for non-attachable pages (blocklisted media / special page).
+        let canAttachPageContext = isContextualChatState && (isPageContextAttachable?() ?? true)
+        let pageContextActionHandler = canAttachPageContext ? onPageContextAttachRequested : nil
         return attachmentPresenter.makeAttachmentMenu(
             presenterProvider: { [weak self] in
                 self?.attachmentPresenterViewController
@@ -2290,7 +2294,7 @@ private extension UnifiedToggleInputCoordinator {
     }
 
     func updateAttachButtonPresentation() {
-        let supportsPageContextAttachment = isContextualChatState && onPageContextAttachRequested != nil
+        let supportsPageContextAttachment = isContextualChatState && onPageContextAttachRequested != nil && (isPageContextAttachable?() ?? true)
         let supportsAttachments = selectedModelSupportsImageUpload || !allowedFileUTTypes.isEmpty || supportsPageContextAttachment
         let hasAvailableAttachmentAction = attachmentPolicy.canAttachImages || canPresentFilePicker || supportsPageContextAttachment
         let canAttachMore = hasAvailableAttachmentAction && !viewController.isGenerating

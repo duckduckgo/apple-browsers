@@ -22,3 +22,8 @@
 /* The body of the notification shown when VPN connects successfully after snooze with the city + state/country as formatted parameter */
 "network.protection.success.notification.subtitle.snooze.ended.including.serverLocation" = "Wstrzymanie VPN zostało zakończone. Przekierowanie ruchu urządzenia przez %@.";
 
+/* The body of the notification reminding the user to turn the VPN Strict routing setting back on */
+"network.protection.strict.routing.reminder.notification.body" = "Niektóre dane mogą pomijać VPN, gdy jest on wyłączony. Ścisły routing jest zalecany w przypadku sieci publicznych.";
+
+/* The title of the notification reminding the user to turn the VPN Strict routing setting back on */
+"network.protection.strict.routing.reminder.notification.title" = "Ścisły routing jest WYŁĄCZONY";

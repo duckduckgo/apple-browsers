@@ -19,12 +19,6 @@
 
 import AIChat
 
-enum AIChatModelPublicAccessTier: Hashable {
-    case free
-    case plus
-    case pro
-}
-
 struct UnifiedToggleInputModelMenu: Equatable {
     struct Section: Equatable {
         let title: String
@@ -101,29 +95,5 @@ extension UnifiedToggleInputModelMenu.Item {
         self.provider = model.provider
         self.isSelected = model.id == selectedId
         self.accessTier = accessTier
-    }
-}
-
-extension AIChatModel {
-    var lowestPublicAccessTier: AIChatModelPublicAccessTier? {
-        lowestPublicAccessTier(from: accessTier)
-    }
-
-    func lowestPublicAccessTier(for effort: AIChatReasoningEffort) -> AIChatModelPublicAccessTier? {
-        guard let accessTier = accessTier(for: effort) else { return nil }
-        return lowestPublicAccessTier(from: accessTier)
-    }
-
-    private func lowestPublicAccessTier(from accessTier: [String]) -> AIChatModelPublicAccessTier? {
-        if accessTier.contains(AIChatUserTier.free.rawValue) {
-            return .free
-        }
-        if accessTier.contains(AIChatUserTier.plus.rawValue) {
-            return .plus
-        }
-        if accessTier.contains(AIChatUserTier.pro.rawValue) {
-            return .pro
-        }
-        return nil
     }
 }

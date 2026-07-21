@@ -3037,7 +3037,7 @@
 "network.protection.vpn.data-volume" = "Adatmennyiség";
 
 /* Footer text for the Exclude CGNAT setting item. */
-"network.protection.vpn.exclude.cgnat.setting.footer" = "Ajánlott kikapcsolni, hogy az összes forgalmad a VPN-en keresztül menjen. Ha problémáid vannak olyan funkciókkal, mint a Wi-Fi-hívás, az üzenetküldés vagy a hangposta, próbáld meg bekapcsolni.";
+"network.protection.vpn.exclude.cgnat.setting.footer" = "Kerüld meg a VPN-t a szolgáltatói funkciók, például a Wi-Fi-hívás és a hangposta esetén.";
 
 /* Title for the Exclude CGNAT setting item. */
 "network.protection.vpn.exclude.cgnat.setting.title" = "Szolgáltatói szolgáltatások kizárása";
@@ -3115,10 +3115,10 @@
 "network.protection.vpn.shortcuts.section.header" = "Gyorsparancsok";
 
 /* Footer text for the Strict Routing setting item. The 'Learn more' text is a Markdown link. */
-"network.protection.vpn.strict.routing.setting.footer" = "Nem megbízható hálózatokon ajánlott, pl. nyilvános wifi szállodákban, bárokban stb. Ha problémákat tapasztalsz a funkciókkal (például a CarPlay, az AirDrop stb.) vagy más eszközökhöz való csatlakozással, próbáld meg kikapcsolni. [További információk](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)";
+"network.protection.vpn.strict.routing.setting.footer" = "Akadályozd meg, hogy az alkalmazások megkerüljék a VPN-t. Ha problémákat tapasztalsz a Wi-Fi-funkciókkal (például AirDrop vagy iPhone-tükrözés), a kikapcsolás segíthet. Kifejezetten ajánlott a nem megbízható hálózatokon, például nyilvános Wi-Fi esetén. [További információk](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack).";
 
 /* Title for the Strict Routing setting item. */
-"network.protection.vpn.strict.routing.setting.title" = "Szigorú útvonalvezetés";
+"network.protection.vpn.strict.routing.setting.title" = "Szigorú útvonalválasztás kényszerítése (ajánlott)";
 
 /* Confirm button for the new address bar picker */
 "new.address.bar.picker.confirm" = "Megerősítés";
@@ -5432,8 +5432,28 @@
 /* Button to delete all chats in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.chats.button" = "Beszélgetések törlése";
 
-/* Do not translate - stringsdict entry */
-"aiChat.history.deleteAll.confirmation.title" = "aiChat.history.deleteAll.confirmation.title";
-
 /* Top-level attachment menu option to attach the current page content to an AI chat message */
 "aichat.attachment.option.ask.about.page" = "Kérdezz az oldalról";
+
+/* Status view message shown while the VPN is on but Strict routing is off */
+"network.protection.status.header.message.strict.routing.off" = "Kikapcsolt szigorú útvonalválasztás esetén egyes forgalmak megkerülhetik a VPN-t. A szigorú útvonalválasztás a nyilvános hálózatok esetén ajánlott.";
+
+/* Label for the status pill shown while the VPN's Strict routing setting is off */
+"network.protection.status.view.strict.routing.pill.off" = "Szigorú útvonalválasztás: Ki";
+
+/* Label for the status pill shown while the VPN's Strict routing setting is on */
+"network.protection.status.view.strict.routing.pill.on" = "Szigorú útvonalválasztás: Be";
+
+/* Tooltip shown for the status pill while the VPN's Strict routing setting is off */
+"network.protection.status.view.strict.routing.pill.tooltip.off" = "Nyilvános hálózatok esetén ajánlott a szigorú útvonalválasztás.";
+
+/* Tooltip shown for the status pill while the VPN's Strict routing setting is on */
+"network.protection.status.view.strict.routing.pill.tooltip.on" = "Egyes alkalmazások nem működhetnek, amíg a szigorú útvonalválasztás be van kapcsolva.";
+
+/* Title of the Troubleshooting section in the VPN status screen. */
+"network.protection.status.view.troubleshooting.section.title" = "Hibaelhárítás";
+
+/* The body of the notification reminding the user to turn the VPN Strict routing setting back on */
+"network.protection.strict.routing.reminder.notification.body" = "Kikapcsolt állapotában bizonyos forgalmak megkerülhetik a VPN-t. Nyilvános hálózatok esetén ajánlott a szigorú útvonalválasztás.";
+/* The title of the notification reminding the user to turn the VPN Strict routing setting back on */
+"network.protection.strict.routing.reminder.notification.title" = "A szigorú útvonalválasztás KI van kapcsolva";

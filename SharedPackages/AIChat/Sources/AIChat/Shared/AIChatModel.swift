@@ -58,6 +58,12 @@ public struct AIChatModel {
         !supportedFileTypes.isEmpty
     }
 
+    /// Whether this is an advanced (paid-tier) model — i.e. not available on the free tier. Single source
+    /// of truth for the basic/advanced split in the model picker and the "PLUS" marker in onboarding.
+    public var isAdvanced: Bool {
+        !accessTier.contains(AIChatUserTier.free.rawValue)
+    }
+
     public init(
         id: String,
         name: String,

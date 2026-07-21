@@ -31,6 +31,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
 
     private final class MockPageContextHandler: AIChatPageContextHandling {
         var triggerContextCollectionCallCount = 0
+        var lastTriggerContextCollectionTrigger: PageContextExtractionTrigger?
         var triggerContextCollectionReturnValue = true
         var clearCallCount = 0
         var clearAttachedContextCallCount = 0
@@ -46,10 +47,24 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
             contextSubject.send(context)
         }
 
-        func triggerContextCollection() -> Bool {
+        var isCurrentPageAttachableReturnValue = true
+        var reportAttachabilityMeasurementCallCount = 0
+        var lastReportAttachabilityMeasurementTrigger: PageContextExtractionTrigger?
+
+        func triggerContextCollection(trigger: PageContextExtractionTrigger) -> Bool {
             triggerContextCollectionCallCount += 1
+            lastTriggerContextCollectionTrigger = trigger
             onTriggerContextCollection?()
             return triggerContextCollectionReturnValue
+        }
+
+        func isCurrentPageAttachable() -> Bool {
+            isCurrentPageAttachableReturnValue
+        }
+
+        func reportAttachabilityMeasurement(trigger: PageContextExtractionTrigger) {
+            reportAttachabilityMeasurementCallCount += 1
+            lastReportAttachabilityMeasurementTrigger = trigger
         }
 
         func clear() {
@@ -229,6 +244,32 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
 
         // Then
         XCTAssertNotNil(sut.sheetViewController?.delegate)
+    }
+
+    @MainActor
+    func testPresentSheetMeasuresAttachabilityWhenNoCollectionTriggered() async {
+        // Auto-attach off + suggested prompts off (defaults) → no collection → attachability still measured.
+        await sut.presentSheet(from: mockPresentingVC)
+
+        XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 0)
+        XCTAssertEqual(mockPageContextHandler.reportAttachabilityMeasurementCallCount, 1)
+        XCTAssertEqual(mockPageContextHandler.lastReportAttachabilityMeasurementTrigger, .navigation)
+    }
+
+    @MainActor
+    func testURLChangeRefreshesQuickActionsForAttachability() async {
+        // Covers back/forward navigation: the URL-change (originating) signal must refresh affordances,
+        // not just `didFinish` (which cached back-navigations may not fire).
+        await sut.presentSheet(from: mockPresentingVC)
+        XCTAssertEqual(sut.sessionState.viewState.quickActions, [.askAboutPage])
+
+        mockPageContextHandler.isCurrentPageAttachableReturnValue = false
+        originatingTabURLSubject.send(URL(string: "https://example.com/image.png"))
+        XCTAssertEqual(sut.sessionState.viewState.quickActions, [])
+
+        mockPageContextHandler.isCurrentPageAttachableReturnValue = true
+        originatingTabURLSubject.send(URL(string: "https://duckduckgo.com/?q=cats"))
+        XCTAssertEqual(sut.sessionState.viewState.quickActions, [.askAboutPage])
     }
     
     // MARK: - clearActiveChat Tests

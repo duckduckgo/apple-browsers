@@ -1346,6 +1346,46 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         XCTAssertEqual(sessionState.viewState.quickActions, [.askAboutPage])
     }
 
+    func testQuickActionsEmptyWhenPageNotAttachable() {
+        // Given a non-attachable page (blocklisted), the "Ask about page" affordance is suppressed.
+        sessionState = AIChatContextualChatSessionState(
+            aiChatSettings: mockSettings,
+            pixelHandler: mockPixelHandler,
+            featureFlagger: mockFeatureFlagger,
+            isCurrentPageAttachable: { false }
+        )
+
+        XCTAssertEqual(sessionState.viewState.quickActions, [])
+    }
+
+    func testQuickActionsShowAskAboutPageWhenPageAttachable() {
+        sessionState = AIChatContextualChatSessionState(
+            aiChatSettings: mockSettings,
+            pixelHandler: mockPixelHandler,
+            featureFlagger: mockFeatureFlagger,
+            isCurrentPageAttachable: { true }
+        )
+
+        XCTAssertEqual(sessionState.viewState.quickActions, [.askAboutPage])
+    }
+
+    func testQuickActionsRefreshedForCurrentPageWhenAttachabilityChanges() {
+        var attachable = true
+        sessionState = AIChatContextualChatSessionState(
+            aiChatSettings: mockSettings,
+            pixelHandler: mockPixelHandler,
+            featureFlagger: mockFeatureFlagger,
+            isCurrentPageAttachable: { attachable }
+        )
+        XCTAssertEqual(sessionState.viewState.quickActions, [.askAboutPage])
+
+        // A URL change to a non-attachable page must refresh the quick actions, not leave them stale.
+        attachable = false
+        sessionState.refreshForCurrentPage()
+
+        XCTAssertEqual(sessionState.viewState.quickActions, [])
+    }
+
     // MARK: - Suggested Prompts Coexistence Tests
 
     func testQuickActionsIsAskAboutPageWhenSuggestedPromptsOnAndPlaceholder() {
@@ -1585,6 +1625,7 @@ private final class MockContextualModePixelHandler: AIChatContextualModePixelFir
     var expandButtonTappedFired = false
     var newChatButtonTappedFired = false
     var quickActionSummarizeSelectedFired = false
+    var quickActionAskAboutPageShownCount = 0
     var fireButtonTappedFired = false
     var fireButtonConfirmedFired = false
     var pageContextAutoAttachedFired = false
@@ -1605,6 +1646,7 @@ private final class MockContextualModePixelHandler: AIChatContextualModePixelFir
     func fireExpandButtonTapped() { expandButtonTappedFired = true }
     func fireNewChatButtonTapped() { newChatButtonTappedFired = true }
     func fireQuickActionSummarizeSelected() { quickActionSummarizeSelectedFired = true }
+    func fireQuickActionAskAboutPageShown() { quickActionAskAboutPageShownCount += 1 }
     func fireQuickActionAskAboutPageSelected() {}
     func fireRecentChatsPopupDisplayed() {}
     func fireRecentChatSelected() {}
@@ -1631,6 +1673,7 @@ private final class MockContextualModePixelHandler: AIChatContextualModePixelFir
         expandButtonTappedFired = false
         newChatButtonTappedFired = false
         quickActionSummarizeSelectedFired = false
+        quickActionAskAboutPageShownCount = 0
         fireButtonTappedFired = false
         fireButtonConfirmedFired = false
         pageContextAutoAttachedFired = false

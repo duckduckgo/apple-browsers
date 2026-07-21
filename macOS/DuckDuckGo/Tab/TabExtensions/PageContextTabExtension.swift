@@ -54,6 +54,8 @@ final class PageContextTabExtension {
     /// so its overlapping navigation/signals-only collects don't each fire a pixel. Reset on new URL.
     private var didReportExtractionForCurrentNavigation = false
 
+    private var didReportSidebarOpenOutcomeForCurrentNavigation = false
+
     /// Safety-net window for a fire-and-forget `collect()` whose result never arrives (hung JS,
     /// torn-down page). After it, `scheduleCollectionTimeout` fires `.timeout` and drops the pending
     /// entry so the queue can't leak.
@@ -164,9 +166,10 @@ final class PageContextTabExtension {
                     self.pendingSelectionContexts = []
                     // Drop the previous page's outstanding collects so a slow or never-resolving
                     // collect can't pair (FIFO) with this page's result and mis-attribute its
-                    // extraction telemetry (trigger/latency/outcome).
+                    // extraction measurement (trigger/latency/outcome).
                     self.extractionResolver.reset()
                     self.didReportExtractionForCurrentNavigation = false
+                    self.didReportSidebarOpenOutcomeForCurrentNavigation = false
                 }
                 self.handleNavigationForMultipleContexts(from: previousContent, to: tabContent)
                 self.sendNonAttachableContextIfNeeded()
@@ -239,7 +242,6 @@ final class PageContextTabExtension {
                     }
                 } else if self.pendingSignalsOnlyCollection {
                     self.pendingSignalsOnlyCollection = false
-                    self.fireExtractionOutcome(for: pageContext)
                     Task {
                         await self.handleSignalsOnly(pageContext)
                     }
@@ -319,6 +321,7 @@ final class PageContextTabExtension {
     }
 
     private func deliverContextToCurrentSidebar() {
+        reportSidebarOpenExtractionOutcome()
         if let cachedPageContext, isContextCollectionEnabled {
             Task { await self.handle(cachedPageContext) }
         } else {
@@ -337,10 +340,36 @@ final class PageContextTabExtension {
         return PageContextAttachabilityPolicy(settings: blocklist)
     }
 
-    /// Extraction telemetry (success / failure / prevented / timeout) is only reported once the
+    /// Extraction measurement (success / failure / prevented / timeout) is only reported once the
     /// `aiPageContextBlocklist` privacy config is present
     private var isExtractionMeasurementEnabled: Bool {
         currentAttachabilityPolicy() != nil
+    }
+
+    private var isSidebarVisibleForTab: Bool {
+        aiChatSessionStore.sessions[tabID]?.chatViewController != nil
+    }
+
+    private func reportSidebarOpenExtractionOutcome() {
+        guard isSidebarVisibleForTab,
+              isExtractionMeasurementEnabled,
+              !didReportExtractionForCurrentNavigation,
+              !didReportSidebarOpenOutcomeForCurrentNavigation else {
+            return
+        }
+        didReportSidebarOpenOutcomeForCurrentNavigation = true
+
+        guard case .url(let url, _, _) = content else {
+            fireExtractionPixel(.prevented(PageContextExtractionOutcome.internalPageCategory), trigger: .navigation, latency: nil)
+            return
+        }
+        if let reason = preventedAttachReason(for: url) {
+            fireExtractionPixel(.prevented(reason), trigger: .navigation, latency: nil)
+            return
+        }
+        if isContextCollectionEnabled, !extractionResolver.hasPendingCollections {
+            collectPageContextIfNeeded(trigger: .auto)
+        }
     }
 
     private func preventedAttachReason(for url: URL) -> String? {
@@ -380,6 +409,7 @@ final class PageContextTabExtension {
                                      trigger: PageContextExtractionTrigger,
                                      latency: PageContextExtractionLatencyBucket?) {
         guard isExtractionMeasurementEnabled else { return }
+        guard isSidebarVisibleForTab else { return }
         // A navigation triggers several automatic collects (navigation re-collect + signals-only);
         // report only the first. User/setting collects (.userRequest / .auto) always report.
         if trigger == .navigation || trigger == .tabContent {
@@ -600,9 +630,7 @@ final class PageContextTabExtension {
             return
         }
         pendingSignalsOnlyCollection = true
-        extractionResolver.requested(trigger: .tabContent)
         pageContextUserScript.collect()
-        scheduleCollectionTimeout()
     }
 
     /// Delivers a signals-only payload from a collected context: keeps the Content-Scope-Scripts

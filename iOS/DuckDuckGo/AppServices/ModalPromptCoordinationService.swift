@@ -39,6 +39,7 @@ struct ModalPromptProviders {
     let defaultBrowser: ModalPromptProvider
     let winBackOffer: ModalPromptProvider
     let subscriptionPromo: ModalPromptProvider
+    let subscriptionPromoExistingUser: ModalPromptProvider
     let whatsNew: ModalPromptProvider
     let cookiePopupProtectionOptIn: ModalPromptProvider
 }
@@ -47,7 +48,6 @@ struct ModalPromptProviders {
 final class ModalPromptCoordinationService {
     private let modalPromptCoordinationManager: ModalPromptCoordinationManaging
     private let launchSourceManager: LaunchSourceManaging
-    private let contextualOnboardingStatusProvider: ContextualDaxDialogStatusProvider
 
     convenience init(
         launchSourceManager: LaunchSourceManaging,
@@ -61,15 +61,17 @@ final class ModalPromptCoordinationService {
         // Priority order:
         // 1. WinBack Offer
         // 2. Subscription Promo (delayed/reinstaller)
-        // 3. AddressBar Picker
-        // 4. Set As Default Browser
-        //  4.1 Re-activation Prompt
-        //  4.2 Default Browser Prompt
-        // 5. What's New
-        // 6. Cookie Pop-up Protection opt-in
+        // 3. Subscription Promo (existing user, day 7)
+        // 4. AddressBar Picker
+        // 5. Set As Default Browser
+        //  5.1 Re-activation Prompt
+        //  5.2 Default Browser Prompt
+        // 6. What's New
+        // 7. Cookie Pop-up Protection opt-in
         let providers: [ModalPromptProvider] = [
             providers.winBackOffer,
             providers.subscriptionPromo,
+            providers.subscriptionPromoExistingUser,
             providers.newAddressBarPicker,
             providers.defaultBrowser,
             providers.whatsNew,
@@ -83,29 +85,23 @@ final class ModalPromptCoordinationService {
         let modalPromptCoordinationManager = ModalPromptCoordinationManager(
             providers: providers,
             cooldownManager: cooldownManager,
+            onboardingStatusProvider: contextualOnboardingStatusProvider
         )
 
-        self.init(launchSourceManager: launchSourceManager, contextualOnboardingStatusProvider: contextualOnboardingStatusProvider, modalPromptCoordinationManager: modalPromptCoordinationManager)
+        self.init(launchSourceManager: launchSourceManager, modalPromptCoordinationManager: modalPromptCoordinationManager)
     }
 
     init(
         launchSourceManager: LaunchSourceManaging,
-        contextualOnboardingStatusProvider: ContextualDaxDialogStatusProvider,
         modalPromptCoordinationManager: ModalPromptCoordinationManaging
     ) {
         self.launchSourceManager = launchSourceManager
-        self.contextualOnboardingStatusProvider = contextualOnboardingStatusProvider
         self.modalPromptCoordinationManager = modalPromptCoordinationManager
     }
 
     func presentModalPromptIfNeeded(from viewController: ModalPromptPresenter) {
         guard launchSourceManager.source == .standard else {
             Logger.modalPrompt.info("[Modal Prompt Coordination] - Skipping modal prompt - Launched from non-standard source.")
-            return
-        }
-
-        guard contextualOnboardingStatusProvider.hasSeenOnboarding else {
-            Logger.modalPrompt.info("[Modal Prompt Coordination] - Skipping modal prompt - Onboarding not completed.")
             return
         }
 
@@ -117,7 +113,6 @@ final class ModalPromptCoordinationService {
         }
 
         Logger.modalPrompt.info("[Modal Prompt Coordination] - ✓ App Launched from standard source.")
-        Logger.modalPrompt.info("[Modal Prompt Coordination] - ✓ Onboarding has been seen.")
         let presentationStatusMessage: String
         if isOmniBarEditing {
             presentationStatusMessage = "OmniBar editing sheet is presented; evaluating modal prompts."

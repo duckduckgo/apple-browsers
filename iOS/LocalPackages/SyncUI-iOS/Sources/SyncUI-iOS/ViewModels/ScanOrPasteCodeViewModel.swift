@@ -71,6 +71,10 @@ public class ScanOrPasteCodeViewModel: ObservableObject {
     @Published var isValidating = false
     @Published var invalidCode = false
 
+    @Published public var isShowingSyncCodeSheet = false
+
+    public var onSyncCodeSheetDismissed: (() -> Void)?
+
     var canSubmitManualCode: Bool {
         manuallyEnteredCode?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false
     }

@@ -3037,7 +3037,7 @@
 "network.protection.vpn.data-volume" = "Duomenų kiekis";
 
 /* Footer text for the Exclude CGNAT setting item. */
-"network.protection.vpn.exclude.cgnat.setting.footer" = "Rekomenduojama išjungti, kad visas tavo srautas eitų per VPN. Jei kyla problemų dėl tokių funkcijų kaip „Wi-Fi“ skambučiai, pranešimai ar balso paštas, pabandyk šią parinktį įjungti.";
+"network.protection.vpn.exclude.cgnat.setting.footer" = "Leisti mobiliojo ryšio operatoriaus paslaugoms (pvz., „Wi-Fi“ skambučiams ir balso paštui) aplenkti VPN.";
 
 /* Title for the Exclude CGNAT setting item. */
 "network.protection.vpn.exclude.cgnat.setting.title" = "Išskirti operatoriaus paslaugas";
@@ -3115,10 +3115,10 @@
 "network.protection.vpn.shortcuts.section.header" = "Šaukiniai";
 
 /* Footer text for the Strict Routing setting item. The 'Learn more' text is a Markdown link. */
-"network.protection.vpn.strict.routing.setting.footer" = "Rekomenduojama nepatikimuose tinkluose, pvz., viešajame „Wi-Fi“ tinkle viešbučiuose, baruose ir pan. Jei kyla problemų dėl funkcijų (pvz., „CarPlay“, „AirDrop“ ir pan.) ar jungiantis prie kitų įrenginių, pabandyk šią parinktį išjungti. [Sužinoti daugiau](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)";
+"network.protection.vpn.strict.routing.setting.footer" = "Neleisti programoms aplenkti VPN. Jei kyla problemų naudojant „Wi-Fi“ funkcijas (pvz., „AirDrop“ ar „iPhone Mirroring“), gali padėti, jei šią funkciją išjungsi. Primygtinai rekomenduojama naudoti nepatikimuose tinkluose, pavyzdžiui, viešajame „Wi-Fi“. [Sužinok daugiau](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack).";
 
 /* Title for the Strict Routing setting item. */
-"network.protection.vpn.strict.routing.setting.title" = "Griežtas maršruto parinkimas";
+"network.protection.vpn.strict.routing.setting.title" = "Taikyti griežtą maršruto parinkimą (rekomenduojama)";
 
 /* Confirm button for the new address bar picker */
 "new.address.bar.picker.confirm" = "Patvirtinti";
@@ -5432,8 +5432,28 @@
 /* Button to delete all chats in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.chats.button" = "Trinti pokalbius";
 
-/* Do not translate - stringsdict entry */
-"aiChat.history.deleteAll.confirmation.title" = "aiChat.history.deleteAll.confirmation.title";
-
 /* Top-level attachment menu option to attach the current page content to an AI chat message */
 "aichat.attachment.option.ask.about.page" = "Klausk apie puslapį";
+
+/* Status view message shown while the VPN is on but Strict routing is off */
+"network.protection.status.header.message.strict.routing.off" = "Kai griežtas maršruto parinkimas išjungtas, dalis srauto gali aplenkti VPN. Viešuosiuose tinkluose rekomenduojama naudoti griežtą maršruto parinkimą.";
+
+/* Label for the status pill shown while the VPN's Strict routing setting is off */
+"network.protection.status.view.strict.routing.pill.off" = "Griežtas maršruto parinkimas: išjungtas";
+
+/* Label for the status pill shown while the VPN's Strict routing setting is on */
+"network.protection.status.view.strict.routing.pill.on" = "Griežtas maršruto parinkimas: įjungtas";
+
+/* Tooltip shown for the status pill while the VPN's Strict routing setting is off */
+"network.protection.status.view.strict.routing.pill.tooltip.off" = "Viešuosiuose tinkluose rekomenduojama naudoti griežtą maršruto parinkimą.";
+
+/* Tooltip shown for the status pill while the VPN's Strict routing setting is on */
+"network.protection.status.view.strict.routing.pill.tooltip.on" = "Įjungus griežtą maršruto parinkimą, kai kurios programos gali neveikti.";
+
+/* Title of the Troubleshooting section in the VPN status screen. */
+"network.protection.status.view.troubleshooting.section.title" = "Trikčių šalinimas";
+
+/* The body of the notification reminding the user to turn the VPN Strict routing setting back on */
+"network.protection.strict.routing.reminder.notification.body" = "Išjungus šią funkciją, dalis srauto gali aplenkti VPN. Viešuosiuose tinkluose rekomenduojama naudoti griežtą maršruto parinkimą.";
+/* The title of the notification reminding the user to turn the VPN Strict routing setting back on */
+"network.protection.strict.routing.reminder.notification.title" = "Griežtas maršruto parinkimas IŠJUNGTAS";

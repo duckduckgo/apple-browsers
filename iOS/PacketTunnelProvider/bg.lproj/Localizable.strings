@@ -22,3 +22,8 @@
 /* The body of the notification shown when VPN connects successfully after snooze with the city + state/country as formatted parameter */
 "network.protection.success.notification.subtitle.snooze.ended.including.serverLocation" = "Отлагането на VPN приключи. Трафикът на устройството се маршрутизира през %@.";
 
+/* The body of the notification reminding the user to turn the VPN Strict routing setting back on */
+"network.protection.strict.routing.reminder.notification.body" = "Част от трафика може да заобикаля VPN, докато е изключена. Стриктната маршрутизация се препоръчва за обществени мрежи.";
+
+/* The title of the notification reminding the user to turn the VPN Strict routing setting back on */
+"network.protection.strict.routing.reminder.notification.title" = "Стриктната маршрутизация е ИЗКЛЮЧЕНА";

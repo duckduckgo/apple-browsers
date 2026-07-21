@@ -646,8 +646,8 @@ final class MainCoordinator {
         controller.segueToSubscriptionWelcome()
     }
 
-    func presentNetworkProtectionStatusSettingsModal(origin: SubscriptionFunnelOrigin) {
-        controller.presentNetworkProtectionStatusSettingsModal(origin: origin)
+    func presentNetworkProtectionStatusSettingsModal(origin: SubscriptionFunnelOrigin, scrollToStrictRouting: Bool = false) {
+        controller.presentNetworkProtectionStatusSettingsModal(origin: origin, scrollToStrictRouting: scrollToStrictRouting)
     }
 
     func presentDataBrokerProtectionDashboard() {

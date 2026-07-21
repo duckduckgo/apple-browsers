@@ -122,14 +122,24 @@ final class FireCoordinator {
                 let view = LegacyFireDialogView(
                     viewModel: config.viewModel,
                     showIndividualSitesLink: config.showIndividualSitesLink,
-                    onConfirm: config.onConfirm
+                    onConfirm: { response in
+                        if case .noAction = response {
+                            pixelFiring?.fire(FireDialogPixel.fireDialogCancel, frequency: .dailyAndCount, doNotEnforcePrefix: true)
+                        }
+                        config.onConfirm(response)
+                    }
                 )
                 return DefaultFireDialogPresenter(view: view)
             }
             let view = FireDialogView(
                 viewModel: config.viewModel,
                 showIndividualSitesLink: config.showIndividualSitesLink,
-                onConfirm: config.onConfirm
+                onConfirm: { response in
+                    if case .noAction = response {
+                        pixelFiring?.fire(FireDialogPixel.fireDialogCancel, frequency: .dailyAndCount, doNotEnforcePrefix: true)
+                    }
+                    config.onConfirm(response)
+                }
             )
             return DefaultFireDialogPresenter(view: view)
         }
@@ -250,7 +260,8 @@ extension FireCoordinator {
             scopeVisits: scopeVisits,
             tld: tld,
             windowControllersManager: self.windowControllersManager,
-            dataClearingPreferences: self.dataClearingPreferences
+            dataClearingPreferences: self.dataClearingPreferences,
+            pixelFiring: self.pixelFiring
         )
 
         let response: FireDialogView.Response = await withCheckedContinuation { (continuation: CheckedContinuation<FireDialogView.Response, Never>) in
@@ -332,15 +343,30 @@ extension FireCoordinator {
             dataClearingWideEventService?.complete()
             return
         }
-        pixelFiring?.fire(GeneralPixel.fireButtonFirstBurn, frequency: .legacyDailyNoSuffix)
+
         switch result.clearingOption {
         case .currentTab:
-            pixelFiring?.fire(GeneralPixel.fireButton(option: .tab))
             guard let tabCollectionViewModel,
                   let tabViewModel = tabCollectionViewModel.selectedTabViewModel else {
                 assertionFailure("No tab selected")
                 return
             }
+            pixelFiring?.fire(GeneralPixel.fireButton(option: .tab))
+            pixelFiring?.fire(
+                FireDialogPixel.burn(
+                    .currentTab(
+                        .init(
+                            pinned: tabViewModel.isPinned,
+                            closeTab: result.includeTabsAndWindows,
+                            clearHistory: result.includeHistory,
+                            clearSiteData: result.includeCookiesAndSiteData
+                        )
+                    )
+                ),
+                frequency: .dailyAndCount,
+                doNotEnforcePrefix: true
+            )
+
             let entity = Fire.BurningEntity.tab(tabViewModel: tabViewModel,
                                                 selectedDomains: result.selectedCookieDomains ?? [],
                                                 parentTabCollectionViewModel: tabCollectionViewModel,
@@ -353,11 +379,27 @@ extension FireCoordinator {
                                                 dataClearingWideEventService: dataClearingWideEventService)
 
         case .currentWindow:
-            pixelFiring?.fire(GeneralPixel.fireButton(option: .window))
             guard let tabCollectionViewModel else {
                 assertionFailure("Missing TabCollectionViewModel for window scope")
                 return
             }
+
+            pixelFiring?.fire(GeneralPixel.fireButton(option: .window))
+            pixelFiring?.fire(
+                FireDialogPixel.burn(
+                    .currentWindow(
+                        .init(
+                            hasPinnedTabs: !tabCollectionViewModel.pinnedTabs.isEmpty,
+                            closeWindow: result.includeTabsAndWindows,
+                            clearHistory: result.includeHistory,
+                            clearSiteData: result.includeCookiesAndSiteData
+                        )
+                    )
+                ),
+                frequency: .dailyAndCount,
+                doNotEnforcePrefix: true
+            )
+
             let entity = Fire.BurningEntity.window(tabCollectionViewModel: tabCollectionViewModel,
                                                    selectedDomains: result.selectedCookieDomains ?? [],
                                                    close: result.includeTabsAndWindows)
@@ -370,6 +412,22 @@ extension FireCoordinator {
 
         case .allData:
             pixelFiring?.fire(GeneralPixel.fireButton(option: .allSites))
+            pixelFiring?.fire(
+                FireDialogPixel.burn(
+                    .allData(
+                        .init(
+                            hasPinnedTabs: !windowControllersManager.pinnedTabsManagerProvider.arePinnedTabsEmpty,
+                            closeWindows: result.includeTabsAndWindows,
+                            clearHistory: result.includeHistory,
+                            clearSiteData: result.includeCookiesAndSiteData,
+                            clearAIChats: result.includeChatHistory
+                        )
+                    )
+                ),
+                frequency: .dailyAndCount,
+                doNotEnforcePrefix: true
+            )
+
             // "All" implies history too; respect includeHistory by routing via burnAll or burnEntity
             if isAllHistorySelected && result.includeTabsAndWindows && result.includeHistory {
                 dataClearingWideEventService?.start(options: result, path: .burnAll, isAutoClear: false)
@@ -400,6 +458,10 @@ extension FireCoordinator {
                 .filter { $0.content.isHistory }
             historyTabs.forEach { $0.reload() }
         }
+
+        pixelFiring?.fire(GeneralPixel.fireButtonFirstBurn, frequency: .legacyDailyNoSuffix)
+        pixelFiring?.fire(FireDialogPixel.fireStarted, frequency: .dailyAndCount, doNotEnforcePrefix: true)
+        pixelFiring?.fire(FireDialogPixel.fireStartedInSession, frequency: .dailyAndCount, doNotEnforcePrefix: true)
 
         // Complete wide event tracking
         dataClearingWideEventService?.complete()

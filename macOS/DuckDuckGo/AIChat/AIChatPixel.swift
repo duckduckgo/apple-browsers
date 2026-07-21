@@ -291,6 +291,10 @@ enum AIChatPixel: PixelKitEvent {
     /// Event Trigger: User selects a reasoning effort from the native omnibar picker
     case aiChatAddressBarReasoningEffortSelected
 
+    /// Event Trigger: User taps a gated model or reasoning effort in the native omnibar picker,
+    /// routing them to the subscription purchase/upgrade flow.
+    case aiChatAddressBarSubscriptionUpsellTriggered(currentTier: String, requiredTier: String, flowType: String)
+
     /// Event Trigger: User opens a new voice Duck.ai chat from the native omnibar
     case aiChatNewVoiceChatOmnibarNative
 
@@ -639,6 +643,8 @@ enum AIChatPixel: PixelKitEvent {
             return "aichat_addressbar_model_selected"
         case .aiChatAddressBarReasoningEffortSelected:
             return "aichat_addressbar_reasoning_effort_selected"
+        case .aiChatAddressBarSubscriptionUpsellTriggered:
+            return "aichat_addressbar_subscription_upsell_triggered"
         case .aiChatNewVoiceChatOmnibarNative:
             return "aichat_new_voice_chat_omnibar_native"
         case .aiChatAddressBarImageGenerationActivated:
@@ -852,6 +858,8 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatNtpCustomizeResponsesOpened,
                 .serpSettingsUnrecognizedValue:
             return nil
+        case .aiChatAddressBarSubscriptionUpsellTriggered(let currentTier, let requiredTier, let flowType):
+            return ["current_tier": currentTier, "required_tier": requiredTier, "flow_type": flowType]
         case .aiChatIsEnabled(let isEnabled):
             return ["is_enabled": isEnabled ? "1" : "0"]
         case .aiFeaturesState(let duckAI, let searchAssist, let hideAIImages, let noAI):
@@ -996,6 +1004,7 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatAddressBarMentionPickerCanceled,
                 .aiChatAddressBarModelSelected,
                 .aiChatAddressBarReasoningEffortSelected,
+                .aiChatAddressBarSubscriptionUpsellTriggered,
                 .aiChatNtpSubmitWithImage,
                 .aiChatNtpModelSelected,
                 .aiChatNtpReasoningEffortSelected,

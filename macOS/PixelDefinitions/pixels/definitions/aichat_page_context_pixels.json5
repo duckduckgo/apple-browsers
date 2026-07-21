@@ -79,8 +79,9 @@
             "channel",
             {
                 "key": "category",
-                "description": "The prevention category: a blocklist media category key (e.g. pdf, image, video, audio) or internalPage.",
-                "type": "string"
+                "description": "The prevention category: a blocklist media category key from aiPageContextBlocklist, or internalPage for native special pages (non-web tab content, about:blank, Duck.ai).",
+                "type": "string",
+                "enum": ["pdf", "image", "video", "audio", "internalPage"]
             },
             {
                 "key": "reason",

@@ -52,11 +52,9 @@ final class ModalPromptCoordinationServiceTests {
     func whenDifferentNonStandardLaunchSourcesThenModalIsNotPresented(launchSource: LaunchSource) {
         // GIVEN
         launchSourceManagerMock.source = launchSource
-        contextualOnboardingMock.hasSeenOnboarding = true
         presenterMock.presentedViewController = nil
         sut = ModalPromptCoordinationService(
             launchSourceManager: launchSourceManagerMock,
-            contextualOnboardingStatusProvider: contextualOnboardingMock,
             modalPromptCoordinationManager: managerMock
         )
 
@@ -71,11 +69,9 @@ final class ModalPromptCoordinationServiceTests {
     func whenLaunchSourceIsStandardThenModalIsPresented() {
         // GIVEN
         launchSourceManagerMock.source = .standard
-        contextualOnboardingMock.hasSeenOnboarding = true
         presenterMock.presentedViewController = nil
         sut = ModalPromptCoordinationService(
             launchSourceManager: launchSourceManagerMock,
-            contextualOnboardingStatusProvider: contextualOnboardingMock,
             modalPromptCoordinationManager: managerMock
         )
 
@@ -87,58 +83,16 @@ final class ModalPromptCoordinationServiceTests {
         #expect(managerMock.capturedPresenter === presenterMock)
     }
 
-    // MARK: - Onboarding Checks
-
-    @Test("Check Modal Is Not Presented When Onboarding Is Not Completed")
-    func whenOnboardingNotCompletedThenModalIsNotPresented() {
-        // GIVEN
-        launchSourceManagerMock.source = .standard
-        contextualOnboardingMock.hasSeenOnboarding = false
-        presenterMock.presentedViewController = nil
-        sut = ModalPromptCoordinationService(
-            launchSourceManager: launchSourceManagerMock,
-            contextualOnboardingStatusProvider: contextualOnboardingMock,
-            modalPromptCoordinationManager: managerMock
-        )
-
-        // WHEN
-        sut.presentModalPromptIfNeeded(from: presenterMock)
-
-        // THEN
-        #expect(!managerMock.didCallPresentModalPromptIfNeeded)
-    }
-
-    @Test("Check Modal Is Presented When Onboarding Is Completed")
-    func whenOnboardingCompletedThenModalIsPresented() {
-        // GIVEN
-        launchSourceManagerMock.source = .standard
-        contextualOnboardingMock.hasSeenOnboarding = true
-        presenterMock.presentedViewController = nil
-        sut = ModalPromptCoordinationService(
-            launchSourceManager: launchSourceManagerMock,
-            contextualOnboardingStatusProvider: contextualOnboardingMock,
-            modalPromptCoordinationManager: managerMock
-        )
-
-        // WHEN
-        sut.presentModalPromptIfNeeded(from: presenterMock)
-
-        // THEN
-        #expect(managerMock.didCallPresentModalPromptIfNeeded)
-    }
-
     // MARK: - Presented View Controller Checks
 
     @Test("Check Modal Is Not Presented When Another Modal Is Already Presented")
     func whenAnotherModalIsPresentedThenModalIsNotPresented() {
         // GIVEN
         launchSourceManagerMock.source = .standard
-        contextualOnboardingMock.hasSeenOnboarding = true
         let alreadyPresentedVC = UIViewController()
         presenterMock.presentedViewController = alreadyPresentedVC
         sut = ModalPromptCoordinationService(
             launchSourceManager: launchSourceManagerMock,
-            contextualOnboardingStatusProvider: contextualOnboardingMock,
             modalPromptCoordinationManager: managerMock
         )
 
@@ -153,11 +107,9 @@ final class ModalPromptCoordinationServiceTests {
     func whenNoModalIsPresentedThenModalIsPresented() {
         // GIVEN
         launchSourceManagerMock.source = .standard
-        contextualOnboardingMock.hasSeenOnboarding = true
         presenterMock.presentedViewController = nil
         sut = ModalPromptCoordinationService(
             launchSourceManager: launchSourceManagerMock,
-            contextualOnboardingStatusProvider: contextualOnboardingMock,
             modalPromptCoordinationManager: managerMock
         )
 
@@ -172,13 +124,11 @@ final class ModalPromptCoordinationServiceTests {
     func whenPresentedModalIsBeingDismissedThenModalIsPresented() {
         // GIVEN
         launchSourceManagerMock.source = .standard
-        contextualOnboardingMock.hasSeenOnboarding = true
         let dismissingVC = MockDismissingViewController()
         dismissingVC.isBeingDismissed = true
         presenterMock.presentedViewController = dismissingVC
         sut = ModalPromptCoordinationService(
             launchSourceManager: launchSourceManagerMock,
-            contextualOnboardingStatusProvider: contextualOnboardingMock,
             modalPromptCoordinationManager: managerMock
         )
 
@@ -193,13 +143,11 @@ final class ModalPromptCoordinationServiceTests {
     func whenOmniBarEditingStateIsPresentedThenModalIsPresented() {
         // GIVEN
         launchSourceManagerMock.source = .standard
-        contextualOnboardingMock.hasSeenOnboarding = true
         presenterMock.presentedViewController = OmniBarEditingStateViewController(
             switchBarHandler: MockSwitchBarHandler()
         )
         sut = ModalPromptCoordinationService(
             launchSourceManager: launchSourceManagerMock,
-            contextualOnboardingStatusProvider: contextualOnboardingMock,
             modalPromptCoordinationManager: managerMock
         )
 
@@ -214,11 +162,9 @@ final class ModalPromptCoordinationServiceTests {
     func whenMultipleConditionsFailThenModalIsNotPresented() {
         // GIVEN
         launchSourceManagerMock.source = .URL
-        contextualOnboardingMock.hasSeenOnboarding = false
         presenterMock.presentedViewController = UIViewController()
         sut = ModalPromptCoordinationService(
             launchSourceManager: launchSourceManagerMock,
-            contextualOnboardingStatusProvider: contextualOnboardingMock,
             modalPromptCoordinationManager: managerMock
         )
 
@@ -234,6 +180,7 @@ final class ModalPromptCoordinationServiceTests {
         arguments: [
             ProviderPriority.winBackOffer,
             .subscriptionPromo,
+            .subscriptionPromoExistingUser,
             .newAddressBarPicker,
             .defaultBrowser,
             .whatsNew,
@@ -250,12 +197,12 @@ final class ModalPromptCoordinationServiceTests {
             defaultBrowser: MockModalPromptProvider(shouldReturnPrompt: priority == .defaultBrowser),
             winBackOffer: MockModalPromptProvider(shouldReturnPrompt: priority == .winBackOffer),
             subscriptionPromo: MockModalPromptProvider(shouldReturnPrompt: priority == .subscriptionPromo),
+            subscriptionPromoExistingUser: MockModalPromptProvider(shouldReturnPrompt: priority == .subscriptionPromoExistingUser),
             whatsNew: MockModalPromptProvider(shouldReturnPrompt: priority == .whatsNew),
             cookiePopupProtectionOptIn: MockModalPromptProvider(shouldReturnPrompt: priority == .cookiePopupProtectionOptIn),
         )
 
         launchSourceManagerMock.source = .standard
-        contextualOnboardingMock.hasSeenOnboarding = true
         presenterMock.presentedViewController = nil
 
         sut = ModalPromptCoordinationService(
@@ -288,6 +235,7 @@ extension ModalPromptProviders {
         switch priority {
         case .winBackOffer: return winBackOffer
         case .subscriptionPromo: return subscriptionPromo
+        case .subscriptionPromoExistingUser: return subscriptionPromoExistingUser
         case .defaultBrowser: return defaultBrowser
         case .newAddressBarPicker: return newAddressBarPicker
         case .whatsNew: return whatsNew
@@ -300,10 +248,11 @@ extension ModalPromptProviders {
 enum ProviderPriority: Int, CaseIterable, CustomStringConvertible {
     case winBackOffer = 0
     case subscriptionPromo = 1
-    case newAddressBarPicker = 2
-    case defaultBrowser = 3
-    case whatsNew = 4
-    case cookiePopupProtectionOptIn = 5
+    case subscriptionPromoExistingUser = 2
+    case newAddressBarPicker = 3
+    case defaultBrowser = 4
+    case whatsNew = 5
+    case cookiePopupProtectionOptIn = 6
 
     var index: Int { rawValue }
 
@@ -311,6 +260,7 @@ enum ProviderPriority: Int, CaseIterable, CustomStringConvertible {
         switch self {
         case .winBackOffer: return "WinBackOffer"
         case .subscriptionPromo: return "SubscriptionPromo"
+        case .subscriptionPromoExistingUser: return "SubscriptionPromoExistingUser"
         case .newAddressBarPicker: return "NewAddressBarPicker"
         case .defaultBrowser: return "DefaultBrowser"
         case .whatsNew: return "WhatsNew"

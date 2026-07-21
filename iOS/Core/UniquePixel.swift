@@ -26,6 +26,7 @@ import Persistence
 /// The 'onComplete' closure is always called - even when no pixel is fired.
 /// In those scenarios a 'UniquePixelError' is returned denoting the reason.
 ///
+/// Deprecated. Use PixelKit (`.uniqueByName` frequency) for new pixels.
 public final class UniquePixel {
 
     public enum Error: Swift.Error {

@@ -30,6 +30,7 @@ import Persistence
 /// The 'onComplete' closure is always called - even when no pixel is fired.
 /// In those scenarios a 'DailyPixelError' is returned denoting the reason.
 /// 
+/// Deprecated. Use PixelKit (`.daily` frequency) for new pixels.
 public final class DailyPixel {
 
     public enum Error: Swift.Error {

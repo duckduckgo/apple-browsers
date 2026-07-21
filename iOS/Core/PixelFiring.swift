@@ -21,6 +21,7 @@ import Foundation
 import Networking
 import PixelKit
 
+/// Deprecated. Use PixelKit's `PixelFiring` for new pixels.
 public protocol PixelFiring {
 
     static func fire(_ pixel: Pixel.Event,

@@ -39,6 +39,7 @@ public protocol PersistentPixelFiring {
     func sendQueuedPixels(completion: @escaping (PersistentPixelStorageError?) -> Void)
 }
 
+/// Deprecated. Use PixelKit (which also has retry support) for new pixels.
 public final class PersistentPixel: PersistentPixelFiring {
 
     enum Constants {

@@ -17,9 +17,11 @@
 //
 
 import SwiftUI
+import AppKit
 import BrowserServicesKit
 import DataBrokerProtectionCore
 import FeatureFlags
+import UniformTypeIdentifiers
 
 struct DataBrokerRunCustomJSONView: View {
     private enum Constants {
@@ -200,8 +202,44 @@ struct DataBrokerRunCustomJSONView: View {
                         .padding(.top, 6)
                 }
             }
+
+            Divider()
+
+            contentScopeScriptField
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+    }
+
+    private var contentScopeScriptField: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Custom contentScopeIsolated.js (optional)")
+                .font(.caption)
+                .foregroundColor(.secondary)
+            HStack(spacing: 8) {
+                TextField("Leave empty to use the bundled script", text: $viewModel.customContentScopeScriptPath)
+                    .font(monospacedTextFont)
+                    .autocorrectionDisabled()
+                Button("Choose...") {
+                    chooseContentScopeScript()
+                }
+                if !viewModel.customContentScopeScriptPath.isEmpty {
+                    Button("Clear") {
+                        viewModel.customContentScopeScriptPath = ""
+                    }
+                }
+            }
+        }
+    }
+
+    private func chooseContentScopeScript() {
+        let panel = NSOpenPanel()
+        panel.canChooseFiles = true
+        panel.canChooseDirectories = false
+        panel.allowsMultipleSelection = false
+        panel.allowedContentTypes = [.javaScript]
+        if panel.runModal() == .OK, let url = panel.url {
+            viewModel.customContentScopeScriptPath = url.path
+        }
     }
 
     private var presetForm: some View {

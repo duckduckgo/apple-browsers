@@ -18,14 +18,12 @@
 
 import BrowserServicesKit
 import Common
-import ConcurrencyExtensions
-import ContentScopeScripts
 import DataBrokerProtectionCore
-import enum UserScript.UserScriptError
 import FeatureFlags
 import Foundation
 import FoundationExtensions
 import os.log
+import PIRDebugKit
 import PixelKit
 import PrivacyConfig
 
@@ -182,6 +180,10 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
     @Published var presetsText: String = ""
     @Published var presets: [ProfilePreset] = []
 
+    /// Optional path to a custom `contentScopeIsolated.js` used for debug-mode runs. Empty means the
+    /// bundled script. Threaded through `InjectedScriptSource.file(url)` into the session.
+    @Published var customContentScopeScriptPath: String = ""
+
     var alert: AlertUI?
     var selectedDataBroker: DataBroker?
     var error: Error?
@@ -190,29 +192,24 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
     let brokerResources: [BrokerResource]
     var brokers: [DataBroker] { brokerResources.map(\.broker) }
 
-    private let emailService: EmailService
-    lazy var emailConfirmationDataService: EmailConfirmationDataServiceProvider = {
-        EmailConfirmationDataService(emailConfirmationStore: debugEmailConfirmationStore,
-                                     database: nil,
-                                     emailServiceV0: emailService,
-                                     emailServiceV1: emailServiceV1,
-                                     pixelHandler: pixelHandler,
-                                     debugEventHandler: { [weak self] message in
-                                        self?.addHistoryDebugEvent(summary: "Email confirmation", details: message)
-                                     })
-    }()
-    let debugEmailConfirmationStore = DebugEmailConfirmationStore()
-    let captchaService: CaptchaService
-    private let emailServiceV1: EmailServiceV1Protocol
-    let privacyConfigManager: PrivacyConfigurationManaging
+    /// Real PixelKit-backed handler (stays app-side; used by the vault error reporter for the broker
+    /// picker). Never passed into PIRDebugKit — the session gets ``fakePixelHandler`` instead.
     let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
     let fakePixelHandler: EventMapping<DataBrokerProtectionSharedPixels> = EventMapping { event, _, _, _ in
         Logger.dataBrokerProtection.debug("Debug event: \(String(describing: event), privacy: .public)")
     }
-    let contentScopeProperties: ContentScopeProperties
     private let authenticationManager: DataBrokerProtectionAuthenticationManaging
     let featureFlagger: DBPFeatureFlagging
     let applicationNameForUserAgentProvider: () -> String?
+
+    /// The engine. Recreated at the start of each scan and each fresh opt-out (so edited broker JSON
+    /// and a changed script path take effect); the email-confirmation check/continue reuse the
+    /// session that ran the opt-out.
+    private(set) var session: PIRDebugSession?
+    private var eventTask: Task<Void, Never>?
+    var currentStepType: StepType = .scan
+    /// Fallback store used only before any session has been created.
+    let placeholderEmailConfirmationStore = DebugEmailConfirmationStore()
 
     private var isSyncingAgeFields = false
 
@@ -233,60 +230,105 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
     init(authenticationManager: DataBrokerProtectionAuthenticationManaging,
          featureFlagger: DBPFeatureFlagging,
          applicationNameForUserAgentProvider: @escaping () -> String?) {
-        let privacyConfigurationManager = DBPPrivacyConfigurationManager()
         self.featureFlagger = featureFlagger
         self.applicationNameForUserAgentProvider = applicationNameForUserAgentProvider
-        let features = ContentScopeFeatureToggles(emailProtection: false,
-                                                  emailProtectionIncontextSignup: false,
-                                                  credentialsAutofill: false,
-                                                  identitiesAutofill: false,
-                                                  creditCardsAutofill: false,
-                                                  credentialsSaving: false,
-                                                  passwordGeneration: false,
-                                                  inlineIconCredentials: false,
-                                                  thirdPartyCredentialsProvider: false,
-                                                  unknownUsernameCategorization: false,
-                                                  partialFormSaves: false,
-                                                  passwordVariantCategorization: false,
-                                                  inputFocusApi: false,
-                                                  autocompleteAttributeSupport: false)
-
-        let sessionKey = UUID().uuidString
-        let messageSecret = UUID().uuidString
         self.authenticationManager = authenticationManager
-        let contentScopeProperties = ContentScopeProperties(gpcEnabled: false,
-                                                            sessionKey: sessionKey,
-                                                            messageSecret: messageSecret,
-                                                            featureToggles: features)
 
-        let dbpSettings = DataBrokerProtectionSettings(defaults: .dbp)
-        let backendServicePixels = DefaultDataBrokerProtectionBackendServicePixels(pixelHandler: fakePixelHandler,
-                                                                                   settings: dbpSettings)
-        self.emailService = EmailService(authenticationManager: authenticationManager,
-                                         settings: dbpSettings,
-                                         servicePixel: backendServicePixels)
-        self.captchaService = CaptchaService(authenticationManager: authenticationManager,
-                                             settings: dbpSettings,
-                                             servicePixel: backendServicePixels)
-
-        self.privacyConfigManager = privacyConfigurationManager
-        self.contentScopeProperties = contentScopeProperties
-
+        // Real pixels + vault are app-side only: the vault backs the broker picker and requires app
+        // entitlements. The scan/opt-out engine (PIRDebugSession) is built lazily per run and never
+        // touches the vault, PixelKit, or the app group.
         let pixelKit = PixelKit.shared!
         let sharedPixelsHandler = DataBrokerProtectionSharedPixelsHandler(pixelKit: pixelKit, platform: .macOS)
         self.pixelHandler = sharedPixelsHandler
-        let reporter = DataBrokerProtectionSecureVaultErrorReporter(pixelHandler: sharedPixelsHandler, privacyConfigManager: privacyConfigurationManager)
+        let reporter = DataBrokerProtectionSecureVaultErrorReporter(pixelHandler: sharedPixelsHandler,
+                                                                    privacyConfigManager: DBPPrivacyConfigurationManager())
         let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(directoryName: DatabaseConstants.directoryName, fileName: DatabaseConstants.fileName, appGroupIdentifier: Bundle.main.appGroupName)
         let vaultFactory = createDataBrokerProtectionSecureVaultFactory(appGroupName: Bundle.main.appGroupName, databaseFileURL: databaseURL)
         let vault = try! vaultFactory.makeVault(reporter: reporter)
 
         self.brokerResources = try! vault.fetchAllBrokerResources()
 
-        self.emailServiceV1 = EmailServiceV1(authenticationManager: authenticationManager,
-                                             settings: dbpSettings,
-                                             servicePixel: backendServicePixels)
-
         loadPresets()
+    }
+
+    deinit {
+        eventTask?.cancel()
+    }
+
+    // MARK: - Session
+
+    /// The injected-script source derived from the optional custom script path.
+    private var scriptSource: InjectedScriptSource {
+        let trimmed = customContentScopeScriptPath.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return .bundled }
+        return .file(URL(fileURLWithPath: trimmed))
+    }
+
+    /// Email/captcha endpoint matching the app's configured DBP endpoint (passed to the session as an
+    /// explicit base URL so targeting doesn't depend on the `#if DEBUG` serviceRoot override).
+    private var servicesEndpoint: PIRServicesEndpoint {
+        .custom(DataBrokerProtectionSettings(defaults: .dbp).endpointURL)
+    }
+
+    /// Builds a fresh session for the current inputs and starts consuming its event stream.
+    @MainActor
+    private func recreateSession() throws -> PIRDebugSession {
+        eventTask?.cancel()
+        let configuration = try PIRDebugSessionConfiguration(
+            rulesSource: InlineJSONBrokerRulesProvider(json: "{}"), // unused: the debug window scans a broker it decodes itself
+            authManager: authenticationManager,
+            scriptSource: scriptSource,
+            showWebView: true,
+            operationAwaitTime: 3,
+            servicesEndpoint: servicesEndpoint,
+            userAgentApplicationName: applicationNameForUserAgentProvider(),
+            featureFlagger: featureFlagger,
+            pixelHandler: fakePixelHandler)
+        let newSession = try PIRDebugSession(configuration: configuration)
+        self.session = newSession
+        let stream = newSession.events
+        eventTask = Task { [weak self] in
+            for await event in stream {
+                await self?.handleSessionEvent(event)
+            }
+        }
+        return newSession
+    }
+
+    @MainActor
+    private func handleSessionEvent(_ event: PIRDebugEvent) {
+        let kind = Self.debugEventKind(from: event.kind)
+        let summary: String
+        if event.kind == .history {
+            summary = "Email confirmation"
+        } else {
+            summary = "\(currentStepType.rawValue) > \(event.actionType ?? "unknown")"
+        }
+        debugEvents.append(DebugLogEvent(timestamp: event.timestamp,
+                                         kind: kind,
+                                         profileQueryLabel: event.profileQueryLabel,
+                                         summary: summary,
+                                         details: event.details))
+        if event.kind != .history {
+            updateProgress("\(kind.rawValue): \(summary)")
+        }
+    }
+
+    private static func debugEventKind(from kind: PIRDebugEvent.Kind) -> DebugEventKind {
+        switch kind {
+        case .actionPayload: return .actionPayload
+        case .actionResponse: return .actionResponse
+        case .actionRetry: return .actionRetry
+        case .wait: return .wait
+        case .history: return .history
+        }
+    }
+
+    private func makeProfile() -> DataBrokerProtectionProfile {
+        .init(names: names.compactMap { $0.toModel() },
+              addresses: addresses.compactMap { $0.toModel() },
+              phones: [String](),
+              birthYear: Int(birthYear) ?? 1990)
     }
 
     @MainActor
@@ -294,92 +336,85 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
         self.error = nil
         self.results.removeAll()
         self.debugEvents.removeAll()
-        self.debugEmailConfirmationStore.reset()
         self.isProgressActive = true
         self.progressText = "Starting scan..."
-        if let data = jsonString.data(using: .utf8) {
+
+        guard let data = jsonString.data(using: .utf8) else {
+            self.isProgressActive = false
+            self.progressText = "Idle"
+            return
+        }
+
+        let dataBroker: DataBroker
+        do {
+            dataBroker = try JSONDecoder().decode(DataBroker.self, from: data)
+        } catch {
+            self.isProgressActive = false
+            self.progressText = "Idle"
+            showAlert(for: error)
+            return
+        }
+        self.selectedDataBroker = dataBroker
+
+        let profile = makeProfile()
+        let queries = createBrokerProfileQueryData(for: dataBroker)
+        var queriesById: [Int64: BrokerProfileQueryData] = [:]
+        for query in queries {
+            queriesById[DebugHelper.stableId(for: query.profileQuery)] = query
+        }
+
+        let session: PIRDebugSession
+        do {
+            session = try recreateSession()
+        } catch {
+            self.isProgressActive = false
+            self.progressText = "Idle"
+            showAlert(for: error)
+            return
+        }
+
+        currentStepType = .scan
+        for query in queries {
+            addScanStartedEvent(for: query)
+        }
+
+        Task { @MainActor in
             do {
-                let decoder = JSONDecoder()
-                let dataBroker = try decoder.decode(DataBroker.self, from: data)
-                self.selectedDataBroker = dataBroker
-                let brokerProfileQueryData = createBrokerProfileQueryData(for: dataBroker)
-                let group = DispatchGroup()
+                let result = try await session.scan(broker: dataBroker, profile: profile)
 
-                for query in brokerProfileQueryData {
-                    group.enter()
+                for record in result.extractedProfiles {
+                    guard let query = queriesById[record.profileQueryId] else { continue }
+                    self.results.append(DebugScanResult(dataBroker: query.dataBroker,
+                                                        profileQuery: query.profileQuery,
+                                                        extractedProfile: record.extractedProfile))
+                }
 
-                    Task {
-                        do {
-                            addScanStartedEvent(for: query)
-                            let stageCalculator = FakeStageDurationCalculator { [weak self] kind, actionType, details in
-                                let profileQuery = self?.profileQueryText(for: query.profileQuery) ?? "-"
-                                let summary = self?.actionSummary(stepType: .scan,
-                                                                  actionType: actionType) ?? "-"
-                                let progressText = self?.currentActionText(stepType: .scan,
-                                                                           actionType: actionType,
-                                                                           prefix: kind.rawValue) ?? "-"
-                                self?.addDebugEvent(kind: kind,
-                                                    summary: summary,
-                                                    profileQueryLabel: profileQuery,
-                                                    details: details,
-                                                    progressText: progressText)
-                            }
-                            let runner = BrokerProfileScanSubJobWebRunner(
-                                privacyConfig: self.privacyConfigManager,
-                                prefs: self.contentScopeProperties,
-                                context: query,
-                                emailConfirmationDataService: self.emailConfirmationDataService,
-                                captchaService: self.captchaService,
-                                featureFlagger: self.featureFlagger,
-                                applicationNameForUserAgentProvider: self.applicationNameForUserAgentProvider,
-                                stageDurationCalculator: stageCalculator,
-                                pixelHandler: fakePixelHandler,
-                                executionConfig: .init(),
-                                shouldRunNextStep: { true }
-                            )
-                            let extractedProfiles = try await runner.scan(showWebView: true) { true }
-                            let brokerId = DebugHelper.stableId(for: query.dataBroker)
-                            let profileQueryId = DebugHelper.stableId(for: query.profileQuery)
-                            let assignedProfiles: [ExtractedProfile] = extractedProfiles.map { profile in
-                                debugEmailConfirmationStore.storeExtractedProfile(profile,
-                                                                             brokerId: brokerId,
-                                                                             profileQueryId: profileQueryId,
-                                                                             stableId: DebugHelper.stableId(for: profile))
-                            }
-                            addScanResultEvents(for: query, extractedProfiles: assignedProfiles)
-
-                            Task { @MainActor in
-                                for extractedProfile in assignedProfiles {
-                                    self.results.append(DebugScanResult(dataBroker: query.dataBroker,
-                                                                        profileQuery: query.profileQuery,
-                                                                        extractedProfile: extractedProfile))
-                                }
-                            }
-                            group.leave()
-                        } catch let UserScriptError.failedToLoadJS(jsFile, error) {
-                            pixelHandler.fire(.userScriptLoadJSFailed(jsFile: jsFile, error: error))
-                            try await Task.sleep(interval: 1.0) // give time for the pixel to be sent
-                            fatalError("Failed to load JS file \(jsFile): \(error.localizedDescription)")
-                        } catch {
-                            addScanErrorEvent(for: query, error: error)
-                            self.error = error
-                            group.leave()
-                        }
+                for status in result.queryStatuses {
+                    guard let query = queriesById[status.profileQueryId] else { continue }
+                    switch status.outcome {
+                    case .matches, .noMatch:
+                        let profilesForQuery = result.extractedProfiles
+                            .filter { $0.profileQueryId == status.profileQueryId }
+                            .map { $0.extractedProfile }
+                        addScanResultEvents(for: query, extractedProfiles: profilesForQuery)
+                    case .error:
+                        let error = DataBrokerProtectionError.unknown(status.error ?? "Unknown error")
+                        addScanErrorEvent(for: query, error: error)
+                        self.error = error
                     }
                 }
-                group.notify(queue: .main) {
-                    self.isProgressActive = false
-                    self.progressText = "Idle"
-                    if let error = self.error {
-                        self.showAlert(for: error)
-                    } else if self.results.count == 0 {
-                        self.showNoResultsAlert()
-                    }
+
+                self.isProgressActive = false
+                self.progressText = "Idle"
+                if let error = self.error {
+                    self.showAlert(for: error)
+                } else if self.results.isEmpty {
+                    self.showNoResultsAlert()
                 }
             } catch {
                 self.isProgressActive = false
                 self.progressText = "Idle"
-                showAlert(for: error)
+                self.showAlert(for: error)
             }
         }
     }
@@ -398,91 +433,55 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
         isProgressActive = true
         progressText = "Starting opt-out..."
         addOptOutStartedEvent(for: scanResult)
-        let brokerProfileQueryData = BrokerProfileQueryData(
-            dataBroker: dataBroker,
-            profileQuery: scanResult.profileQuery,
-            scanJobData: ScanJobData(
-                brokerId: DebugHelper.stableId(for: scanResult.dataBroker),
-                profileQueryId: DebugHelper.stableId(for: scanResult.profileQuery),
-                historyEvents: [HistoryEvent]()
-            )
-        )
-        Task {
+        currentStepType = .optOut
+
+        let session: PIRDebugSession
+        do {
+            session = try recreateSession()
+        } catch {
+            isProgressActive = false
+            progressText = "Idle"
+            showAlert(for: error)
+            return
+        }
+
+        Task { @MainActor in
             do {
-                let stageCalculator = FakeStageDurationCalculator { [weak self] kind, actionType, details in
-                    let profileQuery = self?.profileQueryText(for: brokerProfileQueryData.profileQuery) ?? "-"
-                    let summary = self?.actionSummary(stepType: .optOut, actionType: actionType) ?? "-"
-                    let progressText = self?.currentActionText(stepType: .optOut,
-                                                               actionType: actionType,
-                                                               prefix: kind.rawValue) ?? "-"
-                    self?.addDebugEvent(kind: kind,
-                                        summary: summary,
-                                        profileQueryLabel: profileQuery,
-                                        details: details,
-                                        progressText: progressText)
-                }
-                let runner = BrokerProfileOptOutSubJobWebRunner(
-                    privacyConfig: self.privacyConfigManager,
-                    prefs: self.contentScopeProperties,
-                    context: brokerProfileQueryData,
-                    emailConfirmationDataService: self.emailConfirmationDataService,
-                    captchaService: self.captchaService,
-                    featureFlagger: self.featureFlagger,
-                    applicationNameForUserAgentProvider: self.applicationNameForUserAgentProvider,
-                    stageCalculator: stageCalculator,
-                    pixelHandler: fakePixelHandler,
-                    executionConfig: .init(),
-                    actionsHandlerMode: .optOut,
-                    shouldRunNextStep: { true }
-                )
+                let result = try await session.optOut(broker: dataBroker,
+                                                      profileQuery: scanResult.profileQuery,
+                                                      extractedProfile: scanResult.extractedProfile)
 
-                try await runner.optOut(extractedProfile: scanResult.extractedProfile,
-                                        showWebView: true) { true }
-
-                if scanResult.dataBroker.requiresEmailConfirmationDuringOptOut() {
-                    addOptOutAwaitingEmailConfirmationEvent(for: scanResult)
-                    Task { @MainActor in
-                        self.isProgressActive = false
-                        self.progressText = "Awaiting email confirmation"
-                        self.showAlert = true
-                        self.alert = AlertUI(title: "Opt-out submitted awaiting email confirmation",
-                                             description: "Use \"Check for email confirmation\" to continue. You may need to run it multiple times.")
-                    }
-                    return
-                }
-
-                addOptOutConfirmedEvent(for: scanResult)
-                Task { @MainActor in
+                if result.awaitingEmailConfirmation {
+                    self.addOptOutAwaitingEmailConfirmationEvent(for: scanResult)
+                    self.isProgressActive = false
+                    self.progressText = "Awaiting email confirmation"
+                    self.showAlert = true
+                    self.alert = AlertUI(title: "Opt-out submitted awaiting email confirmation",
+                                         description: "Use \"Check for email confirmation\" to continue. You may need to run it multiple times.")
+                } else if result.success {
+                    self.addOptOutConfirmedEvent(for: scanResult)
                     self.isProgressActive = false
                     self.progressText = "Idle"
                     self.showAlert = true
                     self.alert = AlertUI(title: "Success!", description: "We finished the opt out process for the selected profile.")
-                }
-
-            } catch let UserScriptError.failedToLoadJS(jsFile, error) {
-                pixelHandler.fire(.userScriptLoadJSFailed(jsFile: jsFile, error: error))
-                try await Task.sleep(interval: 1.0) // give time for the pixel to be sent
-                fatalError("Failed to load JS file \(jsFile): \(error.localizedDescription)")
-            } catch {
-                addOptOutErrorEvent(for: scanResult, error: error)
-                Task { @MainActor in
+                } else {
+                    let error = DataBrokerProtectionError.unknown(result.error ?? "Unknown error")
+                    self.addOptOutErrorEvent(for: scanResult, error: error)
                     self.isProgressActive = false
                     self.progressText = "Idle"
+                    self.showAlert(for: error)
                 }
-                showAlert(for: error)
+            } catch {
+                self.addOptOutErrorEvent(for: scanResult, error: error)
+                self.isProgressActive = false
+                self.progressText = "Idle"
+                self.showAlert(for: error)
             }
         }
     }
 
     private func createBrokerProfileQueryData(for broker: DataBroker) -> [BrokerProfileQueryData] {
-        let profile: DataBrokerProtectionProfile =
-            .init(
-                names: names.compactMap { $0.toModel() },
-                addresses: addresses.compactMap { $0.toModel() },
-                phones: [String](),
-                birthYear: Int(birthYear) ?? 1990
-            )
-        let profileQueries = profile.profileQueries
+        let profileQueries = makeProfile().profileQueries
         var brokerProfileQueryData = [BrokerProfileQueryData]()
 
         let resolvedBroker = broker.with(id: DebugHelper.stableId(for: broker))
@@ -578,43 +577,6 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
 
     var applicationNameForUserAgentDisplayValue: String {
         applicationNameForUserAgentProvider() ?? "nil"
-    }
-
-    func addDebugEvent(kind: DebugEventKind, summary: String, profileQueryLabel: String, details: String, progressText: String) {
-        let event = DebugLogEvent(
-            timestamp: Date(),
-            kind: kind,
-            profileQueryLabel: profileQueryLabel,
-            summary: summary,
-            details: details
-        )
-        Task { @MainActor in
-            self.debugEvents.append(event)
-        }
-        updateProgress(progressText)
-    }
-
-    func addHistoryDebugEvent(summary: String, details: String) {
-        let event = DebugLogEvent(
-            timestamp: Date(),
-            kind: .history,
-            profileQueryLabel: "-",
-            summary: summary,
-            details: details
-        )
-        Task { @MainActor in
-            self.debugEvents.append(event)
-        }
-    }
-
-    func actionSummary(stepType: StepType, actionType: ActionType?) -> String {
-        let typeText = actionType?.rawValue ?? "unknown"
-        return "\(stepType.rawValue) > \(typeText)"
-    }
-
-    func currentActionText(stepType: StepType, actionType: ActionType?, prefix: String) -> String {
-        let typeText = actionType?.rawValue ?? "unknown"
-        return "\(prefix): \(stepType.rawValue) > \(typeText)"
     }
 
     func profileQueryText(for profileQuery: ProfileQuery) -> String {
@@ -755,104 +717,6 @@ struct DebugEventRow: Identifiable {
     let profileQueryLabel: String
     let summary: String
     let details: String
-}
-
-final class FakeStageDurationCalculator: StageDurationCalculator, DebugEventReporting {
-
-    var attemptId: UUID = UUID()
-    var isImmediateOperation: Bool = false
-    var isFreeScan: Bool?
-    var tries = 1
-    private let onDebugEvent: ((DebugEventKind, ActionType?, String) -> Void)?
-
-    init(onDebugEvent: ((DebugEventKind, ActionType?, String) -> Void)? = nil) {
-        self.onDebugEvent = onDebugEvent
-    }
-
-    func durationSinceLastStage() -> Double {
-        0.0
-    }
-
-    func durationSinceStartTime() -> Double {
-        0.0
-    }
-
-    func fireOptOutStart() {
-    }
-
-    func setEmailPattern(_ emailPattern: String?) {
-    }
-
-    func fireOptOutEmailGenerate() {
-    }
-
-    func fireOptOutCaptchaParse() {
-    }
-
-    func fireOptOutCaptchaSend() {
-    }
-
-    func fireOptOutCaptchaSolve() {
-    }
-
-    func fireOptOutSubmit() {
-    }
-
-    func fireOptOutEmailReceive() {
-    }
-
-    func fireOptOutEmailConfirm() {
-    }
-
-    func fireOptOutEmailGetData() {
-    }
-
-    func fireOptOutFillForm() {
-    }
-
-    func fireOptOutValidate() {
-    }
-
-    func fireOptOutSubmitSuccess(tries: Int) {
-    }
-
-    func fireOptOutFailure(tries: Int, error: Error) {
-    }
-
-    func fireScanSuccess(matchesFound: Int) {
-    }
-
-    func fireScanNoResults() {
-    }
-
-    func fireScanError(error: Error) {
-    }
-
-    func setStage(_ stage: Stage) {
-    }
-
-    func setLastAction(_ action: Action) {
-    }
-
-    func fireOptOutConditionFound() {
-    }
-
-    func fireOptOutConditionNotFound() {
-    }
-
-    func resetTries() {
-        self.tries = 1
-    }
-
-    func incrementTries() {
-        self.tries += 1
-    }
-
-    func recordDebugEvent(kind: DebugEventKind,
-                          actionType: ActionType?,
-                          details: String) {
-        onDebugEvent?(kind, actionType, details)
-    }
 }
 
 extension DataBrokerProtectionError {

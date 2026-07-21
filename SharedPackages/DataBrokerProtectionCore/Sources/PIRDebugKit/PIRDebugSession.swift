@@ -42,7 +42,9 @@ public final class PIRDebugSession {
     private let emailService: EmailService
     private let emailServiceV1: EmailServiceV1
     private let captchaService: CaptchaService
-    private let emailConfirmationStore = DebugEmailConfirmationStore()
+    /// The in-memory email-confirmation store backing this session. Exposed so a host UI (the debug
+    /// window) can query awaiting/with-link state to drive its email-confirmation buttons.
+    public let emailConfirmationStore = DebugEmailConfirmationStore()
     private let emailConfirmationDataService: EmailConfirmationDataService
 
     private let settings: DataBrokerProtectionSettings
@@ -236,6 +238,21 @@ public final class PIRDebugSession {
                        extractedProfile: ExtractedProfile) async throws -> PIROptOutResult {
         let resolvedBroker = broker.with(id: DebugHelper.stableId(for: broker))
         let profileQuery = try resolveProfileQuery(for: extractedProfile, in: profile)
+        return await runOptOut(broker: resolvedBroker,
+                               profileQuery: profileQuery,
+                               extractedProfile: extractedProfile,
+                               mode: .optOut)
+    }
+
+    /// Opt-out variant that takes the exact `ProfileQuery` the extracted profile came from, rather
+    /// than resolving it from a `DataBrokerProtectionProfile`. The debug window uses this because it
+    /// already holds the originating profile query and may run a multi-query profile against a fresh
+    /// session (where index-based resolution is unavailable).
+    @MainActor
+    public func optOut(broker: DataBroker,
+                       profileQuery: ProfileQuery,
+                       extractedProfile: ExtractedProfile) async throws -> PIROptOutResult {
+        let resolvedBroker = broker.with(id: DebugHelper.stableId(for: broker))
         return await runOptOut(broker: resolvedBroker,
                                profileQuery: profileQuery,
                                extractedProfile: extractedProfile,

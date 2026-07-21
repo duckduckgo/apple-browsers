@@ -32,7 +32,6 @@ protocol TabsBarDelegate: NSObjectProtocol {
     func tabsBar(_ controller: TabsBarViewController, didSelectTabAtIndex index: Int)
     func tabsBar(_ controller: TabsBarViewController, didRemoveTabAtIndex index: Int)
     func tabsBar(_ controller: TabsBarViewController, didRequestCloseOtherTabsForTabAtIndex index: Int)
-    func tabsBar(_ controller: TabsBarViewController, didRequestMoveTabFromIndex fromIndex: Int, toIndex: Int)
     func tabsBarDidRequestNewTab(_ controller: TabsBarViewController)
     func tabsBarDidRequestForgetAll(_ controller: TabsBarViewController, fireRequest: FireRequest)
     func tabsBarDidRequestFireEducationDialog(_ controller: TabsBarViewController)
@@ -629,16 +628,16 @@ extension TabsBarViewController: UICollectionViewDropDelegate {
     func collectionView(_ collectionView: UICollectionView, performDropWith coordinator: UICollectionViewDropCoordinator) {
         guard let item = coordinator.items.first,
               let sourceIndexPath = item.sourceIndexPath,
-              let destinationIndexPath = coordinator.destinationIndexPath else { return }
-        // Move the model and the cell together in one batch so the reorder is consistent with UIKit's drop.
-        // Reload in the completion (after the drop settles) to refresh current-tab styling; reloading
-        // immediately was reverted by the drop teardown.
-        collectionView.performBatchUpdates({
-            self.delegate?.tabsBar(self, didRequestMoveTabFromIndex: sourceIndexPath.row, toIndex: destinationIndexPath.row)
+              let destinationIndexPath = coordinator.destinationIndexPath,
+              let tabsModel,
+              let tab = tabsModel.get(tabAt: sourceIndexPath.row) else { return }
+        // Reorder the model and the cell together. No select or reload here: reordering doesn't change which
+        // tab is current, and moveItem carries each cell's styling to its new slot. A reload inside a batch
+        // update asserts, and moving the model up front keeps the cell move from running on a stale model.
+        collectionView.performBatchUpdates {
+            tabsModel.move(tab: tab, to: destinationIndexPath.row)
             collectionView.moveItem(at: sourceIndexPath, to: destinationIndexPath)
-        }, completion: { [weak self] _ in
-            self?.reloadData()
-        })
+        }
         coordinator.drop(item.dragItem, toItemAt: destinationIndexPath)
     }
 
@@ -794,15 +793,6 @@ extension MainViewController: TabsBarDelegate {
         present(alert, animated: true)
     }
 
-    func tabsBar(_ controller: TabsBarViewController, didRequestMoveTabFromIndex fromIndex: Int, toIndex: Int) {
-        let tabsModel = tabManager.currentTabsModel
-        guard let tab = tabsModel.get(tabAt: fromIndex) else {
-            return
-        }
-        tabsModel.move(tab: tab, to: toIndex)
-        selectTab(tab)
-    }
-    
     func tabsBarDidRequestNewTab(_ controller: TabsBarViewController) {
         newTab()
     }

@@ -33,10 +33,12 @@ struct NetworkProtectionRootView: View {
         let tunnelController = AppDependencyProvider.shared.networkProtectionTunnelController
         _statusViewModel = StateObject(wrappedValue: NetworkProtectionStatusViewModel(
             tunnelController: tunnelController,
-            entryContext: VPNConnectionWideEventData.EntryContext(
-                source: source,
-                localTokenState: subscriptionManager.localTokenState()
-            ),
+            entryContextProvider: {
+                VPNConnectionWideEventData.EntryContext(
+                    source: source,
+                    localTokenState: subscriptionManager.localTokenState()
+                )
+            },
             settings: AppDependencyProvider.shared.vpnSettings,
             statusObserver: AppDependencyProvider.shared.connectionObserver,
             serverInfoObserver: AppDependencyProvider.shared.serverInfoObserver,

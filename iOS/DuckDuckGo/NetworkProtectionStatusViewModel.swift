@@ -95,7 +95,7 @@ final class NetworkProtectionStatusViewModel: ObservableObject {
 
     private let featureFlagger: FeatureFlagger
     private let tunnelController: (VPNConnectionContextProvidingTunnelController & TunnelSessionProvider)
-    private let entryContext: VPNConnectionWideEventData.EntryContext
+    private let entryContextProvider: () -> VPNConnectionWideEventData.EntryContext
     private let statusObserver: ConnectionStatusObserver
     private let serverInfoObserver: ConnectionServerInfoObserver
     private let errorObserver: ConnectionErrorObserver
@@ -214,7 +214,7 @@ final class NetworkProtectionStatusViewModel: ObservableObject {
     public let enablesUnifiedFeedbackForm: Bool
 
     public init(tunnelController: (VPNConnectionContextProvidingTunnelController & TunnelSessionProvider),
-                entryContext: VPNConnectionWideEventData.EntryContext,
+                entryContextProvider: @escaping () -> VPNConnectionWideEventData.EntryContext,
                 settings: VPNSettings,
                 statusObserver: ConnectionStatusObserver,
                 serverInfoObserver: ConnectionServerInfoObserver,
@@ -226,7 +226,7 @@ final class NetworkProtectionStatusViewModel: ObservableObject {
                 featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
                 featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery()) {
         self.tunnelController = tunnelController
-        self.entryContext = entryContext
+        self.entryContextProvider = entryContextProvider
         self.settings = settings
         self.statusObserver = statusObserver
         self.serverInfoObserver = serverInfoObserver
@@ -635,7 +635,7 @@ final class NetworkProtectionStatusViewModel: ObservableObject {
 
     @MainActor
     private func enableNetP() async {
-        await tunnelController.start(entryContext: entryContext)
+        await tunnelController.start(entryContext: entryContextProvider())
     }
 
     @MainActor

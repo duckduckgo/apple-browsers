@@ -44,7 +44,7 @@ import Subscription
         statusObserver = MockConnectionStatusObserver()
         serverInfoObserver = MockConnectionServerInfoObserver()
         viewModel = NetworkProtectionStatusViewModel(tunnelController: tunnelController,
-                                                     entryContext: .unknown,
+                                                     entryContextProvider: { .unknown },
                                                      settings: VPNSettings(defaults: .networkProtectionGroupDefaults),
                                                      statusObserver: statusObserver,
                                                      serverInfoObserver: serverInfoObserver,
@@ -78,11 +78,28 @@ import Subscription
             source: .toolbar,
             tokenState: .missing
         )
-        let viewModel = makeViewModel(entryContext: entryContext)
+        let viewModel = makeViewModel(entryContextProvider: { entryContext })
 
         await viewModel.didToggleNetP(to: true)
 
         XCTAssertEqual(tunnelController.startEntryContexts, [entryContext])
+    }
+
+    func testWhenNetPIsEnabledThenEntryContextIsResolvedAtConnectTimeNotAtConstruction() async {
+        // The token state can change between opening the VPN screen and tapping connect. The wide event
+        // should record the state at connect time, so the provider must be evaluated lazily.
+        var tokenState: VPNConnectionWideEventData.TokenState = .missing
+        let viewModel = makeViewModel(entryContextProvider: {
+            VPNConnectionWideEventData.EntryContext(source: .toolbar, tokenState: tokenState)
+        })
+
+        // A token appears after construction but before the user connects.
+        tokenState = .present
+
+        await viewModel.didToggleNetP(to: true)
+
+        XCTAssertEqual(tunnelController.startEntryContexts,
+                       [VPNConnectionWideEventData.EntryContext(source: .toolbar, tokenState: .present)])
     }
 
     func testDidToggleNetPToFalse_setsTunnelControllerStateToFalse() async {
@@ -290,10 +307,10 @@ import Subscription
     // MARK: - Helpers
 
     private func makeViewModel(controllerErrorPublisher: AnyPublisher<String?, Never> = Empty(completeImmediately: false).eraseToAnyPublisher(),
-                               entryContext: VPNConnectionWideEventData.EntryContext = .unknown,
+                               entryContextProvider: @escaping () -> VPNConnectionWideEventData.EntryContext = { .unknown },
                                errorObserver: ConnectionErrorObserver = MockConnectionErrorObserver()) -> NetworkProtectionStatusViewModel {
         NetworkProtectionStatusViewModel(tunnelController: tunnelController,
-                                         entryContext: entryContext,
+                                         entryContextProvider: entryContextProvider,
                                          settings: VPNSettings(defaults: .networkProtectionGroupDefaults),
                                          statusObserver: statusObserver,
                                          serverInfoObserver: serverInfoObserver,
@@ -418,7 +435,7 @@ import Subscription
         }
 
         return NetworkProtectionStatusViewModel(tunnelController: MockTunnelController(),
-                                                entryContext: .unknown,
+                                                entryContextProvider: { .unknown },
                                                 settings: VPNSettings(defaults: defaults),
                                                 statusObserver: statusObserver,
                                                 serverInfoObserver: MockConnectionServerInfoObserver(),

@@ -7027,7 +7027,7 @@
 				C66CF1E0260F3B8AF9E7DC03 /* LaunchTimeMetricsSubscriber.swift */,
 				16B67D705D3CBCF2B6C7FBA4 /* LaunchTimeMetricsService.swift */,
 			);
-            name = LaunchTimeMetrics;
+			name = LaunchTimeMetrics;
 			path = LaunchTimeMetrics;
 			sourceTree = "<group>";
 		};
@@ -19065,10 +19065,10 @@
 			productName = Lottie;
 		};
 		D1A4C0DE2F210003004E5001 /* Lottie */ = {
-            isa = XCSwiftPackageProductDependency;
-            package = 9F8FE9472BAE50E50071E372 /* XCRemoteSwiftPackageReference "lottie-spm" */;
-            productName = Lottie;
-        };
+			isa = XCSwiftPackageProductDependency;
+			package = 9F8FE9472BAE50E50071E372 /* XCRemoteSwiftPackageReference "lottie-spm" */;
+			productName = Lottie;
+		};
 		9F909E382EEA6BD00057F518 /* UIKitExtensions */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = UIKitExtensions;

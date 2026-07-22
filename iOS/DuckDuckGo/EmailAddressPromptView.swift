@@ -163,9 +163,8 @@ private extension Image {
     static let logo = Image(rebrandable: "duckduckgo-favicon-24x24")
 }
 
-struct DuckAddressPromptView_Previews: PreviewProvider {
-    static var previews: some View {
-        let viewModel = EmailAddressPromptViewModel(userEmail: "dax@duck.com")
-        EmailAddressPromptView(viewModel: viewModel)
+#Preview {
+    RebrandedPreview {
+        EmailAddressPromptView(viewModel: EmailAddressPromptViewModel(userEmail: "dax@duck.com"))
     }
 }

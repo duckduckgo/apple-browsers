@@ -3670,8 +3670,8 @@ extension Pixel.Event {
         case .aiChatSettingsMenuAIChatSettingsTapped: return "m_aichat_settings_menu_aichat_settings_tapped"
         case .aiChatSettingsMenuNewChatTabTapped: return "m_aichat_settings_menu_new_chat_tab_tapped"
         case .aiChatSettingsMenuFeedbackTapped: return "m_aichat_settings_menu_feedback_tapped"
-        case .aiChatFeedbackOptionSelected: return "m_aichat_feedback_option_selected"
-        case .aiChatNewImageTapped: return "m_aichat_new_image_tapped"
+        case .aiChatFeedbackOptionSelected: return "aichat_feedback_option_selected"
+        case .aiChatNewImageTapped: return "aichat_new_image_tapped"
 
         case .aiChatTabSwitcherOpened: return "m_aichat_tab_switcher_opened"
         case .aiChatFireButtonTapped: return "m_aichat_fire_button_tapped"

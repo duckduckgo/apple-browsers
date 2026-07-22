@@ -56,7 +56,7 @@
         "suffixes": ["first_daily_count", "platform", "form_factor"],
         "parameters": ["appVersion"]
     },
-    "m_aichat_feedback_option_selected": {
+    "aichat_feedback_option_selected": {
         "description": "Fires when user picks a sentiment in the Duck.ai feedback sheet; the `sentiment` parameter records which option was chosen before the feedback form opens",
         "owners": ["SabrinaTardio"],
         "triggers": ["other"],
@@ -71,7 +71,7 @@
             }
         ]
     },
-    "m_aichat_new_image_tapped": {
+    "aichat_new_image_tapped": {
         "description": "Fires when user taps the New Image option in the Duck.ai tab header Plus (+) menu, starting a Duck.ai chat in image-generation mode",
         "owners": ["SabrinaTardio"],
         "triggers": ["other"],

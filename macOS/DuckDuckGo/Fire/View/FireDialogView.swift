@@ -118,8 +118,8 @@ struct FireDialogView: ModalView {
     }
 
     var body: some View {
-        VStack(spacing: 24) {
-            ZStack {
+        ZStack {
+            VStack(spacing: 24) {
                 VStack(spacing: 24) {
                     headerView
                         .padding(.top, 14) // presenter sheet crops the padding 🤷‍♂️
@@ -147,47 +147,42 @@ struct FireDialogView: ModalView {
                     )
                 }
                 .padding(.horizontal, Constants.horizontalPadding)
+                .background(alignment: .topTrailing) {
+                    moreOptionsMenu
+                        .menuIndicator(.hidden)
+                        .fixedSize()
+                        .accessibilityLabel(UserText.fireDialogMoreOptions)
+                        .accessibilityIdentifier("FireDialogView.toolbarMoreButton")
+                        .padding(.top, 16)
+                        .padding(.trailing, Constants.toolbarHorizontalPadding)
 
-                // Sites Overlay
-                if isShowingSitesOverlay {
-                    // Scrim fades independently and stays above content
-                    Color.black.opacity(0.35)
-                        .zIndex(9)
-
-                    // Sliding sheet anchored above footer
-                    VStack(spacing: 0) {
-                        Spacer(minLength: 62)
-
-                        sitesOverlay
-
-                        // Separator above the footer
-                        Color(designSystemColor: .containerBorderPrimary)
-                            .frame(height: 1)
-                    }
-                    .zIndex(11)
-                    .transition(.move(edge: .bottom))
                 }
-            }
-            .background(alignment: .topTrailing) {
-                moreOptionsMenu
-                    .menuIndicator(.hidden)
-                    .fixedSize()
-                    .accessibilityLabel(UserText.fireDialogMoreOptions)
-                    .accessibilityIdentifier("FireDialogView.toolbarMoreButton")
-                    .padding(.top, 16)
-                    .padding(.trailing, Constants.toolbarHorizontalPadding)
+                .animation(.easeOut(duration: NSAnimationContext.current.duration),
+                           value: isAnimatingSitesOverlay)
 
+                footerView
+                    .zIndex(10)
+                    .background(Color(designSystemColor: .surfaceSecondary, palette: themeManager.designColorPalette))
             }
-            .animation(.easeOut(duration: NSAnimationContext.current.duration),
-                       value: isAnimatingSitesOverlay)
+            .readSize { size in
+                // Set exact content height to avoid content shifting and animation jumping when sheet resizes
+                viewHeight = size.height
+            }
 
-            footerView
-                .zIndex(10)
-                .background(Color(designSystemColor: .surfaceSecondary, palette: themeManager.designColorPalette))
-        }
-        .readSize { size in
-            // Set exact content height to avoid content shifting and animation jumping when sheet resizes
-            viewHeight = size.height
+            // Sites Overlay — spans the full dialog height (incl. footer) so it fully covers the footer
+            if isShowingSitesOverlay {
+                // Scrim fades independently and stays above content
+                Color.black.opacity(0.35)
+                    .zIndex(9)
+
+                VStack(spacing: 0) {
+                    Spacer(minLength: 62)
+
+                    sitesOverlay
+                }
+                .zIndex(11)
+                .transition(.move(edge: .bottom))
+            }
         }
         .frame(width: Constants.viewSize.width, height: viewHeight, alignment: .top)
         .background(Color(designSystemColor: .surfaceSecondary))

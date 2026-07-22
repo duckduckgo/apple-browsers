@@ -64,7 +64,7 @@ public final class EventHub: EventHubManaging {
     private let parser: EventHubConfigParsing
     private let settings: EventHubSettingsProviding
     private let clock: EventHubClock
-    private let scheduler: EventHubScheduling
+    private let scheduler: EventHubScheduler
     private let subject = PassthroughSubject<FiredPixel, Never>()
 
     public var firedPixelsPublisher: AnyPublisher<FiredPixel, Never> { subject.eraseToAnyPublisher() }
@@ -73,7 +73,7 @@ public final class EventHub: EventHubManaging {
     /// `internal IReadOnlyCollection<PixelState> ActivePixelStates` marker (exposed to tests only).
     var activePixelStates: [PixelState] { [] }
 
-    public init(repository: EventHubStore, parser: EventHubConfigParsing, settings: EventHubSettingsProviding, clock: EventHubClock, scheduler: EventHubScheduling) {
+    public init(repository: EventHubStore, parser: EventHubConfigParsing, settings: EventHubSettingsProviding, clock: EventHubClock, scheduler: EventHubScheduler) {
         self.repository = repository
         self.parser = parser
         self.settings = settings

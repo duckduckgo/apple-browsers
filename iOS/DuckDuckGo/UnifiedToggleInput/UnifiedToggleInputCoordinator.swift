@@ -244,9 +244,11 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private let hidesToggleOnDuckAITab: Bool
     private(set) var isOnboardingLocked: Bool = false
     private(set) var displayState: UnifiedToggleInputDisplayState = .hidden
-    private(set) var textState: InputTextState = .empty
-    /// Omnibar prefill (usually the page URL); lets the shortcut tell an untouched prefill from user text.
-    private var omnibarPrefilledText: String?
+    var textState: InputTextState { textModel.textState }
+    private var omnibarPrefilledText: String? {
+        get { textModel.omnibarPrefilledText }
+        set { textModel.omnibarPrefilledText = newValue }
+    }
     private(set) var inputMode: TextEntryMode = .aiChat
     private let stateStore: UnifiedInputStateStoring
     private let switchBarSubmissionMetrics: SwitchBarSubmissionMetricsProviding
@@ -255,10 +257,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private(set) var currentTabUID: TabUID?
     private var lastActivatedTabUID: TabUID?
     private var isApplyingState = false
-    /// True while a dismiss-time visible-text clear is in flight. The deferred
-    /// `clearText()` is a UI cleanup, not a user intent to delete their typed text;
-    /// per-tab persistence must keep the draft so re-activating the same tab restores it.
-    private var isPerformingDismissCleanup = false
+    private var isPerformingDismissCleanup: Bool { textModel.isPerformingDismissCleanup }
     private(set) var committedInputMode: TextEntryMode = .search
     private(set) var cardPosition: UnifiedToggleInputCardPosition = .bottom
     private(set) var isInputVisibleForKeyboard: Bool = true
@@ -285,7 +284,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     /// (the per-tab pin must survive so `activateForTab` can restore the recovery chip).
     private var isClearingModelPickerPinWithoutPersist = false
 
-    private(set) var currentText: String = ""
+    private var textModel: UTITextModel!
+    var currentText: String { textModel.currentText }
     var hasActiveChat: Bool { boundUserScript != nil }
     var switchBarHandler: SwitchBarHandling { viewController.handler }
     var onAnimatedDismissToOmnibar: ((_ completion: (() -> Void)?) -> Void)?
@@ -378,10 +378,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         intentSubject.eraseToAnyPublisher()
     }
 
-    private let textChangeSubject = PassthroughSubject<String, Never>()
-    var textChangePublisher: AnyPublisher<String, Never> {
-        textChangeSubject.eraseToAnyPublisher()
-    }
+    var textChangePublisher: AnyPublisher<String, Never> { textModel.textChangePublisher }
 
     private let modeChangeSubject = PassthroughSubject<TextEntryMode, Never>()
     var modeChangePublisher: AnyPublisher<TextEntryMode, Never> {
@@ -460,6 +457,12 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         floatingReturnKeyViewController = UnifiedToggleInputFloatingReturnKeyViewController()
         super.init()
         viewController.delegate = self
+        textModel = UTITextModel(sideEffects: .init(
+            applyTextToView: { [weak self] in self?.viewController.text = $0 },
+            persistDraft: { [weak self] in self?.persistDraftToStore() },
+            updateFloatingReturnKey: { [weak self] in self?.updateFloatingReturnKeyState() },
+            clearAttachmentValidationErrorIfPossible: { [weak self] in self?.clearAttachmentValidationErrorIfPossible() }
+        ))
         attachmentPresenter.pixelSurfaceProvider = { [weak self] in
             self?.pixelSurface ?? .addressBar
         }
@@ -734,8 +737,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     private func clearStoreEntryAfterSubmission() {
-        currentText = ""
-        textState = .empty
+        textModel.resetToEmpty()
         guard let uid = currentTabUID else { return }
         var cleared = snapshotCurrentState()
         cleared.text = ""
@@ -785,8 +787,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         fetchModels()
 
         if let prefilledText, !prefilledText.isEmpty {
-            setText(prefilledText)
-            textState = .prefilledSelected
+            textModel.setText(prefilledText)
+            textModel.markPrefilledSelected()
         }
         updateFloatingReturnKeyState()
 
@@ -873,8 +875,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         // it fires inside applyCardLayout — otherwise textRightInset starts at the no-button value.
         let selectsAllText: Bool
         if let text = prefilledText, !text.isEmpty {
-            setText(text)
-            textState = .prefilledSelected
+            textModel.setText(text)
+            textModel.markPrefilledSelected()
             omnibarPrefilledText = text
             selectsAllText = shouldSelectAllText
         } else {
@@ -986,11 +988,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     // MARK: - Text Management
 
     func setText(_ text: String) {
-        currentText = text
-        textState = text.isEmpty ? .empty : .userTyped
-        viewController.text = text
-        persistDraftToStore()
-        updateFloatingReturnKeyState()
+        textModel.setText(text)
     }
 
     // MARK: - Input Management
@@ -1189,20 +1187,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     func clearText() {
-        // Dismiss-time clear: scrub the visible input but keep the per-tab draft.
-        // - Bypass setText() so coordinator.currentText (the source of truth for the
-        //   flush snapshot) isn't reset to "".
-        // - textState reflects what's visible, so reset it to .empty.
-        // - The handler's text publisher still emits "" downstream (because the
-        //   text view's text changes); the gate in unifiedToggleInputVC(_:didChangeText:)
-        //   covers the queued sink that fires next runloop tick.
-        isPerformingDismissCleanup = true
-        textState = .empty
-        omnibarPrefilledText = nil
-        viewController.text = ""
-        DispatchQueue.main.async { [weak self] in
-            self?.isPerformingDismissCleanup = false
-        }
+        textModel.clearForDismiss()
     }
 
     func stopGeneratingButtonTapped() {
@@ -1946,13 +1931,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
     }
 
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didChangeText text: String) {
-        if UnifiedInputTextChangeGate.shouldIgnore(text: text, duringDismissCleanup: isPerformingDismissCleanup) { return }
-        currentText = text
-        textState = text.isEmpty ? .empty : .userTyped
-        persistDraftToStore()
-        clearAttachmentValidationErrorIfPossible()
-        updateFloatingReturnKeyState()
-        textChangeSubject.send(text)
+        textModel.handleUserTextChange(text)
     }
 
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didChangeMode mode: TextEntryMode) {

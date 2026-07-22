@@ -3,7 +3,7 @@ import Foundation
 /// A single pixel parameter's runtime behavior. `CounterParameter` owns its counter value, the
 /// stop-at-max-bucket logic, and its own per-tab dedup set (native/`.empty`-tab events are never
 /// deduped). `DataParameter` owns only its last-seen value.
-public protocol Parameter: AnyObject {
+protocol Parameter: AnyObject {
     /// Processes an event whose source already matched this parameter's config source (or, for an
     /// immediate-trigger's data param, the triggering event itself). Returns `true` if state changed.
     @discardableResult
@@ -24,8 +24,8 @@ public protocol Parameter: AnyObject {
     func queryValue() -> String?
 }
 
-public enum ParameterFactory {
-    public static func make(_ config: TelemetryParameterConfig) -> Parameter? {
+enum ParameterFactory {
+    static func make(_ config: TelemetryParameterConfig) -> Parameter? {
         if config.isCounter, let buckets = config.buckets {
             return CounterParameter(buckets: buckets)
         }
@@ -36,20 +36,20 @@ public enum ParameterFactory {
     }
 }
 
-public final class CounterParameter: Parameter {
+final class CounterParameter: Parameter {
     private let buckets: BucketList
     private var value: Int
     private var stopCounting: Bool
     private var dedupSeen: Set<EventHubTabID> = []
 
-    public init(buckets: BucketList, initialState: ParamState = ParamState(value: 0)) {
+    init(buckets: BucketList, initialState: ParamState = ParamState(value: 0)) {
         self.buckets = buckets
         self.value = initialState.value
         self.stopCounting = initialState.stopCounting
     }
 
     @discardableResult
-    public func handle(data: [String: Any]?, tabID: EventHubTabID) -> Bool {
+    func handle(data: [String: Any]?, tabID: EventHubTabID) -> Bool {
         guard !stopCounting else { return false }
         // Native events (tabID == .empty) opt out of dedup: every call is a genuine occurrence.
         if tabID != .empty {
@@ -63,16 +63,16 @@ public final class CounterParameter: Parameter {
         return true
     }
 
-    public func onNavigationStarted(tabID: EventHubTabID) { dedupSeen.remove(tabID) }
-    public func onTabClosed(tabID: EventHubTabID) { dedupSeen.remove(tabID) }
+    func onNavigationStarted(tabID: EventHubTabID) { dedupSeen.remove(tabID) }
+    func onTabClosed(tabID: EventHubTabID) { dedupSeen.remove(tabID) }
 
-    public var state: ParamState { ParamState(value: value, stopCounting: stopCounting) }
-    public func restoreState(_ state: ParamState) { value = state.value; stopCounting = state.stopCounting }
+    var state: ParamState { ParamState(value: value, stopCounting: stopCounting) }
+    func restoreState(_ state: ParamState) { value = state.value; stopCounting = state.stopCounting }
 
-    public func queryValue() -> String? { BucketCounter.bucketCount(value, buckets: buckets) }
+    func queryValue() -> String? { BucketCounter.bucketCount(value, buckets: buckets) }
 }
 
-public final class DataParameter: Parameter {
+final class DataParameter: Parameter {
     /// RFC 3986 "unreserved" characters (alphanumerics plus `-._~`) are left unescaped; everything
     /// else — including `"`, `{`, `}`, `:`, and space — is percent-encoded. This matches the
     /// compact-JSON-then-percent-encode format the ported `EventHubDataParameterTests` expect once
@@ -84,13 +84,13 @@ public final class DataParameter: Parameter {
     private let dataKey: String?
     private var lastValue: String?
 
-    public init(dataKey: String?, initialState: ParamState = ParamState(value: 0)) {
+    init(dataKey: String?, initialState: ParamState = ParamState(value: 0)) {
         self.dataKey = dataKey
         self.lastValue = initialState.lastDataValue
     }
 
     @discardableResult
-    public func handle(data: [String: Any]?, tabID: EventHubTabID) -> Bool {
+    func handle(data: [String: Any]?, tabID: EventHubTabID) -> Bool {
         guard let dataKey, let data, let raw = data[dataKey] else { return false }
         guard let encoded = try? JSONSerialization.data(withJSONObject: raw, options: [.fragmentsAllowed]),
               let compact = String(data: encoded, encoding: .utf8) else { return false }
@@ -98,11 +98,11 @@ public final class DataParameter: Parameter {
         return true
     }
 
-    public func onNavigationStarted(tabID: EventHubTabID) {}
-    public func onTabClosed(tabID: EventHubTabID) {}
+    func onNavigationStarted(tabID: EventHubTabID) {}
+    func onTabClosed(tabID: EventHubTabID) {}
 
-    public var state: ParamState { ParamState(value: 0, lastDataValue: lastValue) }
-    public func restoreState(_ state: ParamState) { lastValue = state.lastDataValue }
+    var state: ParamState { ParamState(value: 0, lastDataValue: lastValue) }
+    func restoreState(_ state: ParamState) { lastValue = state.lastDataValue }
 
-    public func queryValue() -> String? { lastValue }
+    func queryValue() -> String? { lastValue }
 }

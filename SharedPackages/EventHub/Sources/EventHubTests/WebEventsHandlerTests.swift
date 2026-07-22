@@ -1,14 +1,12 @@
 import Testing
 import Foundation
 import WebKit
-import Combine
 @testable import EventHub
 
 @Suite("WebEventsHandler")
 struct WebEventsHandlerTests {
     private final class SpyManager: EventHubManaging {
         var handledWebEvents: [(data: [String: Any], tabID: EventHubTabID)] = []
-        var firedPixelsPublisher: AnyPublisher<FiredPixel, Never> { Empty().eraseToAnyPublisher() }
         func handleWebEvent(_ webEventData: [String: Any], tabID: EventHubTabID) {
             handledWebEvents.append((webEventData, tabID))
         }

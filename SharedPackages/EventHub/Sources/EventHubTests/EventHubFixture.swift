@@ -18,12 +18,12 @@ final class EventHubFixture {
     let scheduler: ManualEventHubScheduler
     let repository: EventHubStore
     let manager: EventHub
-    private(set) var fired: [FiredPixel] = []
+    private let spyPixelFiring = SpyPixelFiring()
+    var fired: [FiredPixel] { spyPixelFiring.fired }
 
     private let enabledSubject: CurrentValueSubject<Bool, Never>
     private let settingsSubject: CurrentValueSubject<Data?, Never>
     private let settingsJSON: String
-    private var cancellable: AnyCancellable?
 
     private init(store: InMemoryKeyValueStore, settingsJSON: String, enabled: Bool, hasSettings: Bool) {
         self.store = store
@@ -37,8 +37,8 @@ final class EventHubFixture {
 
         let settingsProvider = FakeEventHubSettingsProviding(enabled: enabledSubject.eraseToAnyPublisher(), settings: settingsSubject.eraseToAnyPublisher())
 
-        self.manager = EventHub(repository: repository, parser: parser, settings: settingsProvider, clock: scheduler, scheduler: scheduler)
-        self.cancellable = manager.firedPixelsPublisher.sink { [weak self] in self?.fired.append($0) }
+        self.manager = EventHub(store: repository, parser: parser, settings: settingsProvider,
+                                 scheduler: scheduler, pixelFiring: spyPixelFiring)
     }
 
     /// A foregrounded fixture with config applied — the common "active period" starting point.

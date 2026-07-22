@@ -138,7 +138,7 @@ struct EventHubTests {
 
         #expect(f.fired.count == 1)
         let pixel = try #require(f.fired.first)
-        #expect(pixel.name == Self.pixel1 + "_windows")
+        #expect(pixel.name == Self.pixel1)
         #expect(pixel.parameters["count"] == "1-2")
         #expect(pixel.parameters["attributionPeriod"] == EventHubFixture.expectedAttribution(periodSeconds: 86400))
     }

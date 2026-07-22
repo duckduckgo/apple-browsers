@@ -73,7 +73,7 @@ struct EventHubNativeIngressTests {
         let f = EventHubFixture.active(Self.immediateConfig)
         f.manager.handleImmediateEvent("impression")
         #expect(f.fired.count == 1)
-        #expect(f.fired.first?.name == "webEvent_impression_windows")
+        #expect(f.fired.first?.name == "webEvent_impression")
     }
 
     @Test("handleImmediateEvent forwards the data object to data-template params")
@@ -90,7 +90,7 @@ struct EventHubNativeIngressTests {
         let f = EventHubFixture.active(Self.bothConfig)
         f.manager.handleImmediateEvent("test")
         #expect(f.fired.count == 1)
-        #expect(f.fired.first?.name == "imm_windows")
+        #expect(f.fired.first?.name == "imm")
         #expect(f.count(of: "per") == 0)
     }
 

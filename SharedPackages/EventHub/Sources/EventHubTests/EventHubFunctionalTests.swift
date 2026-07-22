@@ -51,28 +51,26 @@ struct EventHubFunctionalTests {
     } } }
     """
 
-    /// A class (not a struct): the `firedPixelsPublisher` sink must mutate `fired` from inside an
-    /// `@escaping` Combine closure, which requires reference semantics — capturing an `inout` struct
-    /// parameter in an escaping closure is illegal in Swift. Mirrors `EventHubFixture`'s own
-    /// class-based design (Task 7) for exactly this reason.
+    /// A class (not a struct): mirrors `EventHubFixture`'s own class-based design (Task 7) so `manager`
+    /// and `handler` can share reference semantics with the rest of the harness.
     private final class Harness {
         let scheduler = ManualEventHubScheduler(startMillis: 1_780_000_000_000)
         let repository: EventHubStore
         let manager: EventHub
         let handler: WebEventsHandler
-        private(set) var fired: [FiredPixel] = []
-        private var cancellable: AnyCancellable?
+        private let spyPixelFiring = SpyPixelFiring()
+        var fired: [FiredPixel] { spyPixelFiring.fired }
 
         init(settingsJSON: String) {
             let parser = EventHubConfigParser()
             let store = InMemoryKeyValueStore()
             repository = EventHubKeyValueStore(store: store, parser: parser)
             let settings = StaticSettingsProviding(json: settingsJSON)
-            manager = EventHub(repository: repository, parser: parser, settings: settings, clock: scheduler, scheduler: scheduler)
+            manager = EventHub(store: repository, parser: parser, settings: settings,
+                                scheduler: scheduler, pixelFiring: spyPixelFiring)
             handler = WebEventsHandler(manager: manager, tabIDProvider: { _ in .new() })
             manager.onAppForegrounded()
             manager.onConfigChanged()
-            cancellable = manager.firedPixelsPublisher.sink { [weak self] in self?.fired.append($0) }
         }
 
         func sendWebEvent(_ type: String, tabID: EventHubTabID) async throws {
@@ -94,7 +92,7 @@ struct EventHubFunctionalTests {
         try await harness.sendWebEvent("adwall", tabID: .new())
         harness.scheduler.advance(by: Self.periodSeconds)
 
-        #expect(harness.fired.contains { $0.name == "webTelemetry_adwalls_day_windows" && $0.parameters["adwallCount"] == "1" })
+        #expect(harness.fired.contains { $0.name == "webTelemetry_adwalls_day" && $0.parameters["adwallCount"] == "1" })
     }
 
     @Test("zero-event period fires the zero-bucket pixel but skips the gte-1 pixel")
@@ -104,8 +102,8 @@ struct EventHubFunctionalTests {
         // Send no events: let a full period elapse and inspect what fires.
         harness.scheduler.advance(by: Self.periodSeconds)
 
-        #expect(harness.fired.contains { $0.name == "webTelemetry_testPixel_zero_windows" && $0.parameters["count"] == "0" })
-        #expect(!harness.fired.contains { $0.name == "webTelemetry_testPixel_onlyPositive_windows" })
+        #expect(harness.fired.contains { $0.name == "webTelemetry_testPixel_zero" && $0.parameters["count"] == "0" })
+        #expect(!harness.fired.contains { $0.name == "webTelemetry_testPixel_onlyPositive" })
     }
 
     @Test("adwall is counted once per tab")
@@ -117,7 +115,7 @@ struct EventHubFunctionalTests {
         try await harness.sendWebEvent("adwall", tabID: tab)
         harness.scheduler.advance(by: Self.periodSeconds)
 
-        let adwallPixels = harness.fired.filter { $0.name == "webTelemetry_adwalls_day_windows" }
+        let adwallPixels = harness.fired.filter { $0.name == "webTelemetry_adwalls_day" }
         #expect(adwallPixels.contains { $0.parameters["adwallCount"] == "1" })
         #expect(!adwallPixels.contains { $0.parameters["adwallCount"] == "2" })
     }
@@ -140,7 +138,7 @@ struct EventHubFunctionalTests {
 
         harness.scheduler.advance(by: Self.periodSeconds)
 
-        #expect(harness.fired.contains { $0.name == "webTelemetry_adwalls_day_windows" && $0.parameters["adwallCount"] == "3" })
+        #expect(harness.fired.contains { $0.name == "webTelemetry_adwalls_day" && $0.parameters["adwallCount"] == "3" })
     }
 
     @Test("immediate event fires a pixel inline")
@@ -149,7 +147,7 @@ struct EventHubFunctionalTests {
 
         try await harness.sendWebEvent("impression", tabID: .new())
 
-        #expect(harness.fired.contains { $0.name == "webEvent_impression_windows" })
+        #expect(harness.fired.contains { $0.name == "webEvent_impression" })
     }
 
     @Test("disabling the feature clears pending state")
@@ -162,7 +160,7 @@ struct EventHubFunctionalTests {
         // EventHubFixture provides, to flip `enabled` to false mid-test.
         harness.scheduler.advance(by: Self.periodSeconds * 2)
 
-        #expect(!harness.fired.contains { $0.name == "webTelemetry_adwalls_day_windows" && $0.parameters["adwallCount"] == "1" })
+        #expect(!harness.fired.contains { $0.name == "webTelemetry_adwalls_day" && $0.parameters["adwallCount"] == "1" })
     }
 
     @Test("counter survives a simulated restart and the elapsed period catches up on next foreground")
@@ -174,9 +172,9 @@ struct EventHubFunctionalTests {
         // First run: count one adwall event over a repository backed by `sharedStore`.
         let firstScheduler = ManualEventHubScheduler(startMillis: 1_780_000_000_000)
         let firstRepository = EventHubKeyValueStore(store: sharedStore, parser: parser)
-        let firstManager = EventHub(repository: firstRepository, parser: parser,
-                                                 settings: StaticSettingsProviding(json: Self.adwallConfig),
-                                                 clock: firstScheduler, scheduler: firstScheduler)
+        let firstManager = EventHub(store: firstRepository, parser: parser,
+                                     settings: StaticSettingsProviding(json: Self.adwallConfig),
+                                     scheduler: firstScheduler, pixelFiring: SpyPixelFiring())
         let firstHandler = WebEventsHandler(manager: firstManager, tabIDProvider: { _ in tab })
         firstManager.onAppForegrounded()
         firstManager.onConfigChanged()
@@ -189,16 +187,14 @@ struct EventHubFunctionalTests {
         // the app had been closed while the period elapsed).
         let secondScheduler = ManualEventHubScheduler(startMillis: 1_780_000_000_000 + Int64((Self.periodSeconds + 10) * 1000))
         let secondRepository = EventHubKeyValueStore(store: sharedStore, parser: parser)
-        let secondManager = EventHub(repository: secondRepository, parser: parser,
-                                                  settings: StaticSettingsProviding(json: Self.adwallConfig),
-                                                  clock: secondScheduler, scheduler: secondScheduler)
-        var fired: [FiredPixel] = []
-        let cancellable = secondManager.firedPixelsPublisher.sink { fired.append($0) }
-        defer { cancellable.cancel() }
+        let secondPixelFiring = SpyPixelFiring()
+        let secondManager = EventHub(store: secondRepository, parser: parser,
+                                      settings: StaticSettingsProviding(json: Self.adwallConfig),
+                                      scheduler: secondScheduler, pixelFiring: secondPixelFiring)
 
         secondManager.onAppForegrounded()
         secondManager.onConfigChanged()
 
-        #expect(fired.contains { $0.name == "webTelemetry_adwalls_day_windows" && $0.parameters["adwallCount"] == "1" })
+        #expect(secondPixelFiring.fired.contains { $0.name == "webTelemetry_adwalls_day" && $0.parameters["adwallCount"] == "1" })
     }
 }

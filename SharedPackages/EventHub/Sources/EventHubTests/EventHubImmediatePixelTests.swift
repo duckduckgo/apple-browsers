@@ -16,7 +16,7 @@ struct EventHubImmediatePixelTests {
         let f = EventHubFixture.active(Self.immediateConfig)
         f.manager.handleWebEvent(EventHubFixture.webEvent("impression"), tabID: .new())
         #expect(f.fired.count == 1)
-        #expect(f.fired.first?.name == "webEvent_impression_windows")
+        #expect(f.fired.first?.name == "webEvent_impression")
     }
 
     @Test("immediate pixels are not deduplicated")

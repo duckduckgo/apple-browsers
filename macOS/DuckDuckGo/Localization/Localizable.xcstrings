@@ -104019,9 +104019,6 @@
         }
       }
     },
-    "selected" : {
-
-    },
     "send.browser.feedback" : {
       "comment" : "Menu with feedback commands",
       "extractionState" : "extracted_with_value",

@@ -786,7 +786,7 @@ private struct FireDialogTabButton: View {
         .buttonStyle(.plain)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(tab.title)
-        .accessibilityValue(isSelected ? "selected" : "")
+        .accessibilityValue(isSelected ? UserText.fireDialogAccessibilitySelected : "")
         .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
     }
 }

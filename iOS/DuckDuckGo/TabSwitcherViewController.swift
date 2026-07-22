@@ -306,6 +306,7 @@ class TabSwitcherViewController: UIViewController {
 
     private func setupPagingScrollView() {
         let isFireModeEnabled = fireModeCapability.isFireModeEnabled
+        let isFloatingUIEnabled = floatingUIManaging.isFloatingUIEnabled
 
         pagingScrollView = UIScrollView()
         pagingScrollView.isPagingEnabled = isFireModeEnabled
@@ -367,6 +368,7 @@ class TabSwitcherViewController: UIViewController {
                 tabSwitcherSettings: tabSwitcherSettings,
                 trackerCountViewModel: nil,
                 isFireModeEnabled: isFireModeEnabled,
+                isFloatingUIEnabled: isFloatingUIEnabled,
                 duckAIGridContentProvider: duckAIGridContentProvider,
                 duckAIVoiceSessionTracker: duckAIVoiceSessionTracker)
             firePageController?.pageDelegate = self

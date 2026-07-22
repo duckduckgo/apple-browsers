@@ -374,11 +374,17 @@ class TabsBarViewController: UIViewController {
             DailyPixel.fire(pixel: .tabBarOpenTabCountDaily, withAdditionalParameters: ["tab_count": tabCountBucket])
         }
 
-        let availableWidth = collectionView.frame.size.width
-        let itemWidth = (collectionView.collectionViewLayout as? UICollectionViewFlowLayout)?.itemSize.width ?? 0
-        if availableWidth > 0, itemWidth > 0, CGFloat(tabsCount) * itemWidth > availableWidth {
+        if isStripOverflowing {
             DailyPixel.fire(pixel: .tabBarOverflowDaily)
         }
+    }
+
+    /// True when tabs are floored at min width so the strip scrolls. Inactive tabs then hide the close
+    /// button (kept on the active tab, revealed on pointer hover); touch closes the rest via long press.
+    private var isStripOverflowing: Bool {
+        let availableWidth = collectionView.frame.size.width
+        let itemWidth = (collectionView.collectionViewLayout as? UICollectionViewFlowLayout)?.itemSize.width ?? 0
+        return availableWidth > 0 && itemWidth > 0 && CGFloat(tabsCount) * itemWidth > availableWidth
     }
 
     /// Equal share of the strip, capped at `maxWidth` then floored at `minWidth` (floor wins).
@@ -671,10 +677,12 @@ extension TabsBarViewController: UICollectionViewDropDelegate {
     private func refreshVisibleCellStyles() {
         let theme = ThemeManager.shared.currentTheme
         let current = currentIndex
+        let hidesInactiveCloseButton = isStripOverflowing
         for indexPath in collectionView.indexPathsForVisibleItems {
             guard let cell = collectionView.cellForItem(at: indexPath) as? TabsBarCell else { continue }
             cell.applyCurrentStyle(isCurrent: indexPath.row == current,
                                    isNextCurrent: indexPath.row + 1 == current,
+                                   hidesInactiveCloseButton: hidesInactiveCloseButton,
                                    withTheme: theme)
         }
     }
@@ -743,7 +751,7 @@ extension TabsBarViewController: UICollectionViewDataSource {
         let isCurrent = indexPath.row == currentIndex
         let isNextCurrent = indexPath.row + 1 == currentIndex
         let isFireModeEnabled = fireModeCapability?.isFireModeEnabled ?? false
-        cell.update(model: model, isCurrent: isCurrent, isNextCurrent: isNextCurrent, isFireModeEnabled: isFireModeEnabled, withTheme: ThemeManager.shared.currentTheme)
+        cell.update(model: model, isCurrent: isCurrent, isNextCurrent: isNextCurrent, hidesInactiveCloseButton: isStripOverflowing, isFireModeEnabled: isFireModeEnabled, withTheme: ThemeManager.shared.currentTheme)
         cell.onRemove = { [weak self, weak model] in
             guard let self = self, let model = model,
                 let tabIndex = self.tabsModel?.indexOf(tab: model)

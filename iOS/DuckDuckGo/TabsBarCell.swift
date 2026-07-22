@@ -64,6 +64,9 @@ class TabsBarCell: UICollectionViewCell {
     private weak var model: Tab?
     private var isFireModeEnabled = false
 
+    private var hidesCloseButtonUntilHover = false
+    private var isPointerHovering = false
+
     override init(frame: CGRect) {
         super.init(frame: frame)
 
@@ -73,6 +76,11 @@ class TabsBarCell: UICollectionViewCell {
     @available(*, unavailable)
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        isPointerHovering = false
     }
 
     private func setUpSubviews() {
@@ -117,6 +125,7 @@ class TabsBarCell: UICollectionViewCell {
         contentView.addSubview(separatorView)
         contentView.addSubview(removeButton)
         contentView.addInteraction(UIPointerInteraction(delegate: self))
+        contentView.addGestureRecognizer(UIHoverGestureRecognizer(target: self, action: #selector(handleHover)))
 
         let titleTrailingConstraint = contentView.trailingAnchor.constraint(equalTo: titleStackView.trailingAnchor,
                                                                             constant: Constants.titleTrailingInset)
@@ -168,6 +177,14 @@ class TabsBarCell: UICollectionViewCell {
     @objc private func onRemovePressed() {
         onRemove?()
     }
+
+    @objc private func handleHover(_ recognizer: UIHoverGestureRecognizer) {
+        let hovering = recognizer.state == .began || recognizer.state == .changed
+        guard hovering != isPointerHovering else { return }
+        isPointerHovering = hovering
+        updateCloseButtonVisibility()
+        UIView.animate(withDuration: 0.15) { self.contentView.layoutIfNeeded() }
+    }
     
     override func layoutSubviews() {
         super.layoutSubviews()
@@ -189,26 +206,24 @@ class TabsBarCell: UICollectionViewCell {
     func update(model: Tab,
                 isCurrent: Bool,
                 isNextCurrent: Bool,
+                hidesInactiveCloseButton: Bool,
                 isFireModeEnabled: Bool,
                 withTheme theme: Theme) {
         accessibilityElements = [label, removeButton]
-        
+
         self.model?.removeObserver(self)
-        
+
         self.model = model
         self.isFireModeEnabled = isFireModeEnabled
         model.addObserver(self)
 
         label.primaryColor = theme.barTintColor
-        applyCurrentStyle(isCurrent: isCurrent, isNextCurrent: isNextCurrent, withTheme: theme)
-
-        labelRemoveButtonConstraint?.isActive = true
-        removeButton.isHidden = false
+        applyCurrentStyle(isCurrent: isCurrent, isNextCurrent: isNextCurrent, hidesInactiveCloseButton: hidesInactiveCloseButton, withTheme: theme)
 
         applyModel(model)
     }
 
-    func applyCurrentStyle(isCurrent: Bool, isNextCurrent: Bool, withTheme theme: Theme) {
+    func applyCurrentStyle(isCurrent: Bool, isNextCurrent: Bool, hidesInactiveCloseButton: Bool, withTheme theme: Theme) {
         if isCurrent {
             topBackgroundView.backgroundColor = theme.omniBarBackgroundColor
             bottomBackgroundView.backgroundColor = theme.omniBarBackgroundColor
@@ -218,6 +233,16 @@ class TabsBarCell: UICollectionViewCell {
             separatorView.backgroundColor = theme.tabsBarSeparatorColor
         }
         separatorView.isHidden = isCurrent || isNextCurrent
+
+        hidesCloseButtonUntilHover = hidesInactiveCloseButton && !isCurrent
+        updateCloseButtonVisibility()
+    }
+
+    /// Shows the close button unless the strip is overflowing and this inactive tab isn't hovered by a pointer.
+    private func updateCloseButtonVisibility() {
+        let showsCloseButton = !hidesCloseButtonUntilHover || isPointerHovering
+        removeButton.isHidden = !showsCloseButton
+        labelRemoveButtonConstraint?.isActive = showsCloseButton
     }
 
     /// Configures the cell to render without a backing `Tab`.
@@ -299,5 +324,5 @@ extension TabsBarCell: UIPointerInteractionDelegate {
     func pointerInteraction(_ interaction: UIPointerInteraction, styleFor region: UIPointerRegion) -> UIPointerStyle? {
         return .init(effect: .highlight(.init(view: contentView)))
     }
-    
+
 }

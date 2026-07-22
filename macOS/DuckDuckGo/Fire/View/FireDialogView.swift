@@ -94,22 +94,14 @@ struct FireDialogView: ModalView {
         viewModel.cookiesSitesCountForCurrentScope > 0
     }
 
-    private var historySubtitle: String {
+    private var historyDetail: String {
         let count = viewModel.historyItemsCountForCurrentScope
-        guard count > 0 else { return UserText.none }
-        switch viewModel.clearingOption {
-        case .currentTab:
-            return UserText.fireDialogHistoryItemsSubtitleTab(count)
-        case .currentWindow:
-            return UserText.fireDialogHistoryItemsSubtitleWindow(count)
-        case .allData:
-            return UserText.fireDialogHistoryItemsSubtitle(count)
-        }
+        return count > 0 ? UserText.fireDialogHistoryItemsDetail(count) : UserText.none
     }
 
-    private var cookiesSubtitle: String {
+    private var cookiesDetail: String {
         let count = viewModel.cookiesSitesCountForCurrentScope
-        return count == 0 ? UserText.none : UserText.fireDialogCookiesCountSubtitle(count)
+        return count > 0 ? UserText.fireDialogCookiesSitesDetail(count) : UserText.none
     }
 
     private var isDeleteEnabled: Bool {
@@ -352,7 +344,7 @@ struct FireDialogView: ModalView {
             sectionRow(
                 icon: DesignSystemImages.Glyphs.Size16.history,
                 title: UserText.fireDialogHistoryTitle,
-                subtitle: historySubtitle,
+                detail: historyDetail,
                 isOn: Binding {
                     viewModel.includeHistory && isIncludeHistoryEnabled
                 } set: {
@@ -369,7 +361,8 @@ struct FireDialogView: ModalView {
             sectionRow(
                 icon: DesignSystemImages.Glyphs.Size16.cookie,
                 title: UserText.cookiesAndSiteDataTitle,
-                subtitle: cookiesSubtitle,
+                subtitle: UserText.fireDialogCookiesSignOutWarning,
+                detail: cookiesDetail,
                 isOn: Binding { viewModel.includeCookiesAndSiteData && isIncludeCookiesAndSiteDataEnabled } set: { viewModel.includeCookiesAndSiteData = $0 },
                 // don‘t show the ℹ button when there‘s no site data in scope
                 infoAction: isIncludeCookiesAndSiteDataEnabled ? { isShowingSitesOverlay = true } : nil,
@@ -389,7 +382,6 @@ struct FireDialogView: ModalView {
                 sectionRow(
                     icon: DesignSystemImages.Glyphs.Size16.aiChat,
                     title: UserText.fireDialogChatHistoryTitle,
-                    subtitle: UserText.fireDialogChatHistorySubtitle,
                     isOn: $viewModel.includeChatHistorySetting,
                     toggleId: "FireDialogView.chatsToggle"
                 )
@@ -490,56 +482,65 @@ struct FireDialogView: ModalView {
         )
     }
 
-    private func sectionRow(icon: NSImage, title: String, subtitle: String, isOn: Binding<Bool>, infoAction: (() -> Void)? = nil, infoEnabled: Bool = true, isEnabled: Bool = true, roundedCorners: RowCornerRadius = .none, toggleId: String) -> some View {
+    private func sectionRow(icon: NSImage, title: String, subtitle: String? = nil, detail: String? = nil, isOn: Binding<Bool>, infoAction: (() -> Void)? = nil, infoEnabled: Bool = true, isEnabled: Bool = true, roundedCorners: RowCornerRadius = .none, toggleId: String) -> some View {
         RowWithPressEffect(roundedCorners: roundedCorners, rowCornerRadius: style.rowCornerRadius, isEnabled: isEnabled) {
             guard isEnabled else { return }
             isOn.wrappedValue.toggle()
         } content: {
-            HStack(spacing: 6) {
-                HStack(spacing: 6) {
+            HStack(spacing: 8) {
+                HStack(spacing: 12) {
                     Image(nsImage: icon)
-                        .padding(.trailing, 2)
 
-                    VStack(alignment: .leading, spacing: 2) {
+                    VStack(alignment: .leading, spacing: 4) {
                         Text(title)
                             .font(.system(size: 13))
                             .foregroundColor(Color(designSystemColor: .textPrimary))
-                        Text(subtitle)
-                            .font(.system(size: 11))
-                            .foregroundColor(Color(designSystemColor: .textSecondary))
-                            .multilineTextAlignment(.leading)
-                            .fixedSize(horizontal: false, vertical: true)
-                            .layoutPriority(3)
+                            .lineLimit(1)
+                        if let subtitle {
+                            Text(subtitle)
+                                .font(.system(size: 11))
+                                .foregroundColor(Color(designSystemColor: .textSecondary))
+                                .multilineTextAlignment(.leading)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .layoutPriority(3)
+                        }
                     }
                 }
                 .accessibilityElement(children: .combine)
                 .accessibilityLabel(title)
-                .accessibilityValue(subtitle)
+                .accessibilityValue(subtitle ?? detail ?? "")
                 .accessibilityAddTraits(.updatesFrequently)
 
                 Spacer()
 
-                if let infoAction {
-                    Button(action: infoAction) {
-                        Image(nsImage: DesignSystemImages.Glyphs.Size12.info)
-                            .padding(4)
+                HStack(spacing: 8) {
+                    if let infoAction {
+                        Button(action: infoAction) {
+                            Image(nsImage: DesignSystemImages.Glyphs.Size12.info)
+                                .padding(4)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(UserText.fireDialogSitesOverlayTitle)
+                        .accessibilityIdentifier("FireDialogView.cookiesInfoButton")
+                        .disabled(!infoEnabled)
+                        .opacity(infoEnabled ? 1.0 : 0.4)
                     }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel(UserText.fireDialogSitesOverlayTitle)
-                    .accessibilityIdentifier("FireDialogView.cookiesInfoButton")
-                    .disabled(!infoEnabled)
-                    .opacity(infoEnabled ? 1.0 : 0.4)
-                    .padding(.trailing, 4)
-                }
 
-                Group {
+                    if let detail {
+                        Text(detail)
+                            .font(.system(size: 11))
+                            .foregroundColor(Color(designSystemColor: .textSecondary))
+                            .lineLimit(1)
+                            .fixedSize()
+                    }
+
                     Toggle(isOn: isOn)
                         .toggleStyle(FireToggleStyle(onFill: style.knobFillColor, knobFill: Color(designSystemColor: .accentContentPrimary)))
                         .accessibilityLabel(title)
                         .accessibilityIdentifier(toggleId)
                 }
             }
-            .padding(.vertical, 12)
+            .padding(.vertical, 16)
             .padding(.horizontal, 16)
             .frame(width: Constants.sectionRowWidth, alignment: .leading)
         }

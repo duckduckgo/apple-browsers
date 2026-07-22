@@ -78,6 +78,14 @@ struct UserText {
         return String.localizedStringWithFormat(template, count)
     }
 
+    static func fireDialogHistoryItemsDetail(_ count: Int) -> String {
+        NotLocalizedString("fire.dialog.history.detail", value: count == 1 ? "1 item" : "\(count) items", comment: "Detail label next to the History toggle showing the number of history items that will be deleted.")
+    }
+    static func fireDialogCookiesSitesDetail(_ count: Int) -> String {
+        NotLocalizedString("fire.dialog.cookies.detail", value: count == 1 ? "1 site" : "\(count) sites", comment: "Detail label next to the Cookies toggle showing the number of sites whose cookies/site data will be deleted.")
+    }
+    static let fireDialogCookiesSignOutWarning = NotLocalizedString("fire.dialog.cookies.sign.out.warning", value: "May sign you out of accounts.", comment: "Subtitle shown under the Cookies row warning that deleting may sign the user out of accounts.")
+
     static let fireDialogChatHistoryTitle = NSLocalizedString("fire.dialog.chats.title", value: "Duck.ai chats", comment: "Section title. Toggle that controls whether Duck.ai chat history is deleted.")
     static let fireDialogChatHistorySubtitle = NSLocalizedString("fire.dialog.chats.subtitle", value: "Delete all chats.", comment: "Subtitle shown under the Duck.ai chats row to explain that chat history will be deleted.")
 

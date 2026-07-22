@@ -163,8 +163,10 @@ private extension Image {
     static let logo = Image(rebrandable: "duckduckgo-favicon-24x24")
 }
 
+#if DEBUG
 #Preview {
     RebrandedPreview {
         EmailAddressPromptView(viewModel: EmailAddressPromptViewModel(userEmail: "dax@duck.com"))
     }
 }
+#endif

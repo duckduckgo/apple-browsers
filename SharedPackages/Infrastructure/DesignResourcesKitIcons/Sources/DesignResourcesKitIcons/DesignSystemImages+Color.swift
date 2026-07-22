@@ -19,8 +19,16 @@
 public extension DesignSystemImages {
     enum Color {
         public enum Size12 {
-            public static var chat: DesignSystemImage { .init(resource: .chatColor12) }
-            public static var chatPinned: DesignSystemImage { .init(resource: .chatPinned12) }
+            public static var chat: DesignSystemImage {
+                AppRebrand.isAppRebranded()
+                    ? .init(resource: .chatColor12)
+                    : .init(resource: .chatColor12Legacy)
+            }
+            public static var chatPinned: DesignSystemImage {
+                AppRebrand.isAppRebranded()
+                    ? .init(resource: .chatPinnedColor12)
+                    : .init(resource: .chatPinnedColor12Legacy)
+            }
         }
 
         public enum Size16 {

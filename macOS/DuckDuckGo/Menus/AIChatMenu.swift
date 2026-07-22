@@ -180,7 +180,7 @@ final class AIChatMenu: NSMenu {
             let item = NSMenuItem(title: chat.title, action: #selector(chatItemTapped(_:)), keyEquivalent: "")
             item.target = self
             item.representedObject = chat
-            item.image = chat.isPinned ? DesignSystemImages.Glyphs.Size12.pin : DesignSystemImages.Glyphs.Size12.chat
+            item.image = chat.isPinned ? DesignSystemImages.Color.Size12.chatPinned : DesignSystemImages.Color.Size12.chat
             insertItem(item, at: labelIndex + 1 + offset)
             chatItems.append(item)
         }

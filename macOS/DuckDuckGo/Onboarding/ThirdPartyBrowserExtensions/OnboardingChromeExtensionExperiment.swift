@@ -28,8 +28,8 @@ struct OnboardingChromeExtensionExperiment {
     private static let subfeatureID = MacOSBrowserConfigSubfeature.onboardingChromeExtension.rawValue
 
     enum Metric: String {
-        case setAsDefault = "setAsDefault"
-        case onboardingCompleted = "onboardingCompleted"
+        case setAsDefault
+        case onboardingCompleted
     }
 
     private enum ConversionWindows {

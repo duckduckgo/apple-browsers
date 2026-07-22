@@ -120,7 +120,7 @@ struct FireDialogView: ModalView {
     }
 
     var body: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 24) {
             ZStack {
                 VStack(spacing: 24) {
                     headerView
@@ -348,7 +348,7 @@ struct FireDialogView: ModalView {
 
     private var sectionsView: some View {
         VStack(alignment: .leading, spacing: 0) {
-            // Row 2: History
+            // Row 1: History
             sectionRow(
                 icon: DesignSystemImages.Glyphs.Size16.history,
                 title: UserText.fireDialogHistoryTitle,
@@ -365,7 +365,7 @@ struct FireDialogView: ModalView {
             .accessibilityHidden(isShowingSitesOverlay)
             sectionDivider()
 
-            // Row 3: Cookies and Site Data
+            // Row 2: Cookies and Site Data
             sectionRow(
                 icon: DesignSystemImages.Glyphs.Size16.cookie,
                 title: UserText.cookiesAndSiteDataTitle,
@@ -385,7 +385,7 @@ struct FireDialogView: ModalView {
             if viewModel.shouldShowChatHistoryToggle {
                 sectionDivider()
 
-            // Row 4: Chat History
+            // Row 3: Chat History
                 sectionRow(
                     icon: DesignSystemImages.Glyphs.Size16.aiChat,
                     title: UserText.fireDialogChatHistoryTitle,
@@ -397,7 +397,6 @@ struct FireDialogView: ModalView {
             }
         }
         .padding(.top, 4)
-        .padding(.bottom, 8)
         .fixedSize(horizontal: false, vertical: true)
     }
 
@@ -726,7 +725,7 @@ private struct FireDialogTabButton: View {
 
     var body: some View {
         Button(action: onTap) {
-            VStack(spacing: 10) {
+            VStack(spacing: 6) {
                 ZStack {
                     Circle()
                         .fill(isSelected ? Color(designSystemColor: .accentFirePrimary).opacity(0.12) : Color.clear)
@@ -742,6 +741,7 @@ private struct FireDialogTabButton: View {
                 Text(tab.title)
                     .font(.system(size: 12, weight: isSelected ? .medium : .regular))
                     .foregroundColor(isSelected ? Color(designSystemColor: .accentFirePrimary) : Color(designSystemColor: .textSecondary))
+                    .padding(.bottom, -3)
             }
             .frame(maxWidth: .infinity)
             .padding(20)

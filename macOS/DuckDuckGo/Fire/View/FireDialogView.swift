@@ -140,10 +140,6 @@ struct FireDialogView: ModalView {
                             .inset(by: 0.5)
                             .stroke(Color(designSystemColor: .containerBorderPrimary), lineWidth: 1)
                     )
-
-                    if showIndividualSitesLink {
-                        individualSitesLink
-                    }
                 }
                 .padding(.horizontal, Constants.horizontalPadding)
                 .padding(.bottom, Constants.horizontalPadding)
@@ -363,22 +359,7 @@ struct FireDialogView: ModalView {
                 )
                 .accessibilityHidden(isShowingSitesOverlay)
             }
-            sectionDivider(padding: 0)
-
-            // Fireproof section
-            if viewModel.mode.shouldShowFireproofSection {
-                fireproofSectionView
-                    .accessibilityHidden(isShowingSitesOverlay)
-            }
         }
-        .background(
-            RoundedRectangle(cornerRadius: style.rowCornerRadius, style: .continuous)
-                .fill(Color(designSystemColor: .containerFillPrimary))
-                .overlay(
-                    RoundedRectangle(cornerRadius: style.rowCornerRadius, style: .continuous)
-                        .stroke(Color(designSystemColor: .containerBorderPrimary), lineWidth: 1)
-                )
-        )
         .padding(.top, 4)
         .padding(.bottom, 8)
         .fixedSize(horizontal: false, vertical: true)
@@ -536,70 +517,8 @@ struct FireDialogView: ModalView {
         }
     }
 
-    private var fireproofSectionView: some View {
-        RowWithPressEffect(roundedCorners: .bottom, rowCornerRadius: style.rowCornerRadius, isEnabled: true) {
-            viewModel.showManageFireproofSites()
-        } content: {
-            HStack(alignment: .center, spacing: 0) {
-                HStack(spacing: 6) {
-                    Image(nsImage: DesignSystemImages.Glyphs.Size16.fireproof)
-                        .foregroundColor(Color(designSystemColor: .iconsSecondary))
-
-                    Text(UserText.fireproofCookiesAndSiteDataExplanation)
-                        .font(.system(size: 11))
-                        .foregroundColor(Color(designSystemColor: .textSecondary))
-                        .multilineTextAlignment(.leading)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                .accessibilityElement(children: .combine)
-                .accessibilityLabel(UserText.fireproofCookiesAndSiteDataExplanation)
-                .accessibilityAddTraits(.isStaticText)
-
-                Spacer(minLength: 4)
-
-                Button(UserText.fireDialogFireproofSitesManage) { viewModel.showManageFireproofSites() }
-                    .buttonStyle(
-                        StandardButtonStyle(
-                            fontSize: 11,
-                            topPadding: 3,
-                            bottomPadding: 3,
-                            horizontalPadding: 12,
-                            backgroundColor: Color(designSystemColor: .buttonsSecondaryFillDefault),
-                            backgroundPressedColor: Color(designSystemColor: .buttonsSecondaryFillPressed)
-                        )
-                    )
-                    .fixedSize(horizontal: true, vertical: true)
-                    .frame(alignment: .trailing)
-                    .accessibilityLabel(UserText.manageFireproofSites)
-                    .accessibilityIdentifier("FireDialogView.manageFireproofButton")
-            }
-            .padding(.vertical, 12)
-            .padding(.horizontal, 16)
-            .frame(width: Constants.sectionRowWidth, alignment: .leading)
-        }
-    }
-
     private var individualSitesColor: NSColor {
         style.individualSitesColor
-    }
-
-    private var individualSitesLink: some View {
-        HStack(spacing: 8) {
-            Image(nsImage: DesignSystemImages.Glyphs.Size16.globeBlocked
-                .tinted(with: individualSitesColor))
-                .accessibilityHidden(true)
-            TextButton(UserText.fireDialogManageIndividualSitesLink, textColor: Color(individualSitesColor), fontSize: 11) {
-                viewModel.deleteIndividualSites()
-            }
-            .accessibilityIdentifier("FireDialogView.individualSitesLink")
-            .accessibilityHidden(isShowingSitesOverlay)
-
-            Image(nsImage: DesignSystemImages.Glyphs.Size16.chevronRight
-                .resized(to: NSSize(width: 12, height: 12))
-                .tinted(with: individualSitesColor))
-                .accessibilityHidden(true)
-
-        }
     }
 
     private var deleteButtonBackground: LinearGradient {

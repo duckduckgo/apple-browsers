@@ -111,7 +111,7 @@ struct ScanTabView: View {
                     CameraPermissionDeniedView(model: model)
                 } else if model.videoPermission == .authorised && !model.showCamera {
                     CameraUnavailableView()
-                } else if model.showCamera && isCameraActive {
+                } else if model.videoPermission == .authorised && model.showCamera && isCameraActive {
                     QRCodeScannerView {
                         return await model.codeScanned($0)
                     } onCameraUnavailable: {
@@ -271,9 +271,11 @@ private struct QRScannerOverlay: View {
             withAnimation(.spring(response: animationResponse, dampingFraction: 0.6).delay(animationDelay)) {
                 isExpanded = true
             }
-            DispatchQueue.main.asyncAfter(deadline: .now() + animationDelay + animationResponse) {
-                onAnimationComplete?()
-            }
+        }
+        .task {
+            try? await Task.sleep(nanoseconds: UInt64((animationDelay + animationResponse) * 1_000_000_000))
+            guard !Task.isCancelled else { return }
+            onAnimationComplete?()
         }
     }
 }

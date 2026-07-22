@@ -57,6 +57,7 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsRootView> {
     let syncCreditCardsAdapter: SyncCreditCardsAdapter?
     var connector: RemoteConnecting?
     weak var scanCodeViewModel: ScanOrPasteCodeViewModel?
+    var codeCollectionIntent: CodeCollectionIntent?
 
     let userAuthenticator = UserAuthenticator(reason: UserText.syncUserUserAuthenticationReason,
                                               cancelTitle: UserText.autofillLoginListAuthenticationCancelButton)
@@ -513,9 +514,12 @@ extension SyncSettingsViewController: ScanOrPasteCodeViewModelDelegate {
                    withAdditionalParameters: sourcePixelParameters,
                    includedParameters: [.appVersion],
                    onComplete: { _ in })
-        if isPresentingV2ConnectingSheet {
+        switch (isPresentingV2ConnectingSheet, viewModel.connectingSheetPhase) {
+        case (true, .recovering):
+            viewModel.showRecoveryCompleteInConnectingSheet(recoveryCode: recoveryCode)
+        case (true, _):
             presentDeviceAddedSuccessScreen()
-        } else {
+        case (false, _):
             presentSyncCompletionAfterDelay()
         }
     }
@@ -667,9 +671,12 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
         pairingV2JoinerCodeSource = codeVersion == .v2 && setupSource == .exchange ? codeSource : nil
         sendCodeRecognisedPixel(setupSource: setupSource, codeSource: codeSource, codeVersion: codeVersion)
         await dismissPresentedViewController()
-        if useSimplifiedLayoutV2, setupSource == .exchange {
+        switch (useSimplifiedLayoutV2, codeCollectionIntent) {
+        case (true, .recoverData):
+            viewModel.connectingSheetPhase = .recovering
+        case (true, .syncAnotherDevice):
             viewModel.connectingSheetPhase = .connecting
-        } else {
+        default:
             await showPreparingSync(context: setupSource == .recovery ? .recoveringData : .syncingDevices)
         }
     }
@@ -695,9 +702,12 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
                 await connectionController.cancel()
             }
         }
-        if isPresentingV2ConnectingSheet {
+        switch (isPresentingV2ConnectingSheet, viewModel.connectingSheetPhase) {
+        case (true, .recovering):
+            viewModel.showRecoveryCompleteInConnectingSheet(recoveryCode: recoveryCode)
+        case (true, _):
             presentDeviceAddedSuccessScreen()
-        } else {
+        case (false, _):
             presentSyncCompletionAfterDelay()
         }
         guard case .receiver(let syncSetupSource, let syncCodeSource) = setupRole else {

@@ -183,6 +183,8 @@ public class SyncSettingsViewModel: ObservableObject {
         case connecting
         case syncAnotherDevice(isConnecting: Bool)
         case deviceConnected
+        case recovering
+        case recoveryComplete
 
         // Constant on purpose: `.sheet(item:)` re-presents whenever the item's identity changes, so a
         // per-case id would dismiss and re-present the sheet on every phase change. A stable id keeps
@@ -463,6 +465,19 @@ public class SyncSettingsViewModel: ObservableObject {
     }
 
     public func deviceConnectedDoneFromConnectingSheet() {
+        connectingSheetPhase = nil
+    }
+
+    public func showRecoveringInConnectingSheet() {
+        connectingSheetPhase = .recovering
+    }
+
+    public func showRecoveryCompleteInConnectingSheet(recoveryCode: String) {
+        self.recoveryCode = recoveryCode
+        connectingSheetPhase = .recoveryComplete
+    }
+
+    public func recoveryCompleteDoneFromConnectingSheet() {
         connectingSheetPhase = nil
     }
 

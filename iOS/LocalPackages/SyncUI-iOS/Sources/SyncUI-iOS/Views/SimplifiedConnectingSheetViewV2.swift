@@ -33,18 +33,20 @@ public struct SimplifiedConnectingSheetViewV2: View {
             switch model.connectingSheetPhase {
             case .connecting:
                 SimplifiedConnectingContentViewV2()
-                    .transition(.opacity)
             case .syncAnotherDevice:
                 SyncAnotherDevicePromptViewV2(model: model)
-                    .transition(.opacity)
+            case .recoverYourData:
+                RecoverYourDataView(model: model)
             case .deviceConnected:
                 SyncDeviceAddedViewV2(model: model)
-                    .transition(.opacity)
+            case .recovering:
+                RecoveringDataContentViewV2()
+            case .recoveryComplete:
+                SyncRecoveryCompleteViewV2(model: model)
             case .none:
                 EmptyView()
             }
         }
-        .animation(.easeInOut(duration: 0.3), value: model.connectingSheetPhase)
         .background(Color(designSystemColor: .backgroundSheets).ignoresSafeArea())
     }
 }
@@ -73,6 +75,15 @@ public struct SimplifiedConnectingSheetViewV2: View {
     RebrandedPreview(isRebranded: true) {
         SimplifiedConnectingSheetViewV2(model: .connectingSheetPreview(phase: .deviceConnected))
     }
+}
+
+
+#Preview("Recovering") {
+    SimplifiedConnectingSheetViewV2(model: .connectingSheetPreview(phase: .recovering))
+}
+
+#Preview("Recovery Completed") {
+    SimplifiedConnectingSheetViewV2(model: .connectingSheetPreview(phase: .recoveryComplete))
 }
 
 private extension SyncSettingsViewModel {

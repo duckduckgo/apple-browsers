@@ -42,7 +42,8 @@ struct FireDialogView: ModalView {
         static let toolbarHorizontalPadding: CGFloat = AppVersion.isLiquidGlassSupported ? 20 : 16
         static let horizontalPadding: CGFloat = AppVersion.isLiquidGlassSupported ? 24 : 16
         static let bottomPadding: CGFloat = AppVersion.isLiquidGlassSupported ? 24 : 16
-        static var sectionRowWidth: CGFloat { viewSize.width - 2 * horizontalPadding }
+        static let boxContentPadding: CGFloat = 16
+        static var sectionRowWidth: CGFloat { viewSize.width - 2 * horizontalPadding - 2 * boxContentPadding }
     }
 
     @State private var viewHeight: CGFloat = Constants.viewSize.height
@@ -132,7 +133,7 @@ struct FireDialogView: ModalView {
                         }
                         sectionsView
                     }
-                    .padding(16)
+                    .padding(Constants.boxContentPadding)
                     .cornerRadius(24)
                     .overlay(
                         RoundedRectangle(cornerRadius: 24)

@@ -1,18 +1,6 @@
 import Foundation
 import Combine
 
-/// A fired telemetry pixel: the config name with the `_<platform>` suffix appended by the app-layer
-/// wiring (out of scope for this package — see Global Constraints), plus its query parameters.
-public struct FiredPixel: Equatable, Sendable {
-    public let name: String
-    public let parameters: [String: String]
-
-    public init(name: String, parameters: [String: String]) {
-        self.name = name
-        self.parameters = parameters
-    }
-}
-
 /// The EventHub runtime. Receives web events and browser-native signals, routes them to the configured
 /// telemetry, maintains aggregation state and period windows, and fires telemetry pixels. Lifecycle and
 /// navigation signals are delivered by the (out-of-scope) wiring layer, which calls these methods.

@@ -2238,6 +2238,7 @@
 		CB781CD2301130CD008DCD60 /* UTISessionMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB781CD1301130CD008DCD60 /* UTISessionMonitor.swift */; };
 		CB781CD4301135BE008DCD60 /* UTITextModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB781CD3301135BE008DCD60 /* UTITextModelTests.swift */; };
 		CB781CD6301135FA008DCD60 /* UTITextModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB781CD5301135FA008DCD60 /* UTITextModel.swift */; };
+		CB781CD830113BAC008DCD60 /* UTIStateMachine.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB781CD730113BAC008DCD60 /* UTIStateMachine.swift */; };
 		CB7CF9FA2F9A6C100051BEE9 /* CircularButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB7CF9F92F9A6C100051BEE9 /* CircularButton.swift */; };
 		CB7E0A212D5E1D96002A7C0C /* UIInteractionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB7E0A202D5E1D96002A7C0C /* UIInteractionManager.swift */; };
 		CB7E0A232D5E1E55002A7C0C /* LaunchActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB7E0A222D5E1E55002A7C0C /* LaunchActionHandler.swift */; };
@@ -4973,6 +4974,7 @@
 		CB781CD1301130CD008DCD60 /* UTISessionMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UTISessionMonitor.swift; sourceTree = "<group>"; };
 		CB781CD3301135BE008DCD60 /* UTITextModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UTITextModelTests.swift; sourceTree = "<group>"; };
 		CB781CD5301135FA008DCD60 /* UTITextModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UTITextModel.swift; sourceTree = "<group>"; };
+		CB781CD730113BAC008DCD60 /* UTIStateMachine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UTIStateMachine.swift; sourceTree = "<group>"; };
 		CB7CF9F92F9A6C100051BEE9 /* CircularButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CircularButton.swift; sourceTree = "<group>"; };
 		CB7E0A202D5E1D96002A7C0C /* UIInteractionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIInteractionManager.swift; sourceTree = "<group>"; };
 		CB7E0A222D5E1E55002A7C0C /* LaunchActionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchActionHandler.swift; sourceTree = "<group>"; };
@@ -10292,6 +10294,7 @@
 			children = (
 				CB781CD1301130CD008DCD60 /* UTISessionMonitor.swift */,
 				CB781CD5301135FA008DCD60 /* UTITextModel.swift */,
+				CB781CD730113BAC008DCD60 /* UTIStateMachine.swift */,
 			);
 			path = Coordinator;
 			sourceTree = "<group>";
@@ -13046,6 +13049,7 @@
 				9FE08BDC2C2A88FA001D5EBC /* OnboardingIntroViewController.swift in Sources */,
 				3666D86130016E4D00B63F99 /* SubscriptionOnboardingVPNTipsCarousel.swift in Sources */,
 				3666D86330016E4D00B63F99 /* SubscriptionOnboardingFreeTrialCalendarCard.swift in Sources */,
+				CB781CD830113BAC008DCD60 /* UTIStateMachine.swift in Sources */,
 				3666D86430016E4D00B63F99 /* SubscriptionOnboardingAIModelPicker.swift in Sources */,
 				3666D86530016E4D00B63F99 /* SubscriptionOnboardingProgressView.swift in Sources */,
 				CB6D179F2FA38FAD00ECD5AE /* UnifiedToggleInputHost.swift in Sources */,

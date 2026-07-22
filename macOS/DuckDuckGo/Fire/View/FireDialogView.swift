@@ -74,6 +74,7 @@ struct FireDialogView: ModalView {
         }
     }
     @State private var isAnimatingSitesOverlay: Bool = false
+    @State private var isSectionsExpanded: Bool = false
 
     init(viewModel: FireDialogViewModel,
          showSitesOverlay: Bool = false, // for Previews - @State flag to show "sites to be removed" overlay
@@ -131,7 +132,13 @@ struct FireDialogView: ModalView {
                             segmentedControlView
                                 .accessibilityHidden(isShowingSitesOverlay)
                         }
-                        sectionsView
+                        VStack(spacing: 0) {
+                            detailsDisclosureView
+                                .accessibilityHidden(isShowingSitesOverlay)
+                            if isSectionsExpanded {
+                                sectionsView
+                            }
+                        }
                     }
                     .padding(Constants.boxContentPadding)
                     .cornerRadius(24)
@@ -308,6 +315,36 @@ struct FireDialogView: ModalView {
             ]
         )
         .accessibilityIdentifier("FireDialogView.segmentedControl")
+    }
+
+    private var detailsDisclosureView: some View {
+        HStack {
+            Text(UserText.fireDialogChooseWhatToDelete)
+                .font(.system(size: 11))
+                .foregroundColor(Color(designSystemColor: .textSecondary))
+
+            Spacer()
+
+            Button {
+                withAnimation(.easeOut(duration: 0.2)) {
+                    isSectionsExpanded.toggle()
+                }
+            } label: {
+                Image(nsImage: (isSectionsExpanded ? DesignSystemImages.Glyphs.Size24.chevronUpSmall : DesignSystemImages.Glyphs.Size24.chevronDownSmall))
+                    .resizable()
+                    .renderingMode(.template)
+                    .frame(width: 12, height: 12)
+                    .foregroundColor(Color(designSystemColor: .iconsSecondary))
+                    .padding(6)
+                    .background(Circle().fill(Color(designSystemColor: .controlsFillPrimary)))
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(UserText.fireDialogChooseWhatToDelete)
+            .accessibilityValue(isSectionsExpanded ? "expanded" : "collapsed")
+            .accessibilityAddTraits(.isButton)
+            .accessibilityIdentifier("FireDialogView.detailsDisclosureButton")
+        }
+        .padding(.horizontal, 4)
     }
 
     private var sectionsView: some View {

@@ -499,6 +499,7 @@ struct UserText {
     // MARK: - Simplified Fire Dialog
     static let fireDialogModeFromThisTab = NotLocalizedString("fire.dialog.mode.tab", value: "From this tab", comment: "Fire dialog mode for clearing data from current tab")
     static let fireDialogModeAllData = NotLocalizedString("fire.dialog.mode.all.data", value: "All data", comment: "Fire dialog mode for clearing all browsing data")
+    static let fireDialogChooseWhatToDelete = NotLocalizedString("fire.dialog.choose.what.to.delete", value: "Choose what to delete", comment: "Fire dialog disclosure label that expands/collapses the data type toggles")
 
     // MARK: - Fire dialog sites list sheet
     static let fireDialogSitesOverlayTitle = NSLocalizedString("fire.dialog.sites.overlay.title",

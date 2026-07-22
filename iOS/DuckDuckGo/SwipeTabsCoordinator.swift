@@ -524,10 +524,7 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
                 contentContainerFrame: coordinator.contentContainer.frame,
                 safeAreaInsets: coordinator.superview.safeAreaInsets,
                 aiHeaderHeight: max(coordinator.aiChatTabChatHeaderContainer.bounds.height, 60),
-                aiInputHeight: max(
-                    coordinator.unifiedToggleInputContainer.bounds.height,
-                    DefaultOmniBarView.expectedHeight
-                )
+                aiInputHeight: DefaultOmniBarView.expectedHeight
             )
         } else {
             targetFrame = coordinator.contentContainer.bounds
@@ -584,10 +581,7 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
             contentContainerFrame: coordinator.contentContainer.frame,
             safeAreaInsets: coordinator.superview.safeAreaInsets,
             aiHeaderHeight: max(coordinator.aiChatTabChatHeaderContainer.bounds.height, 60),
-            aiInputHeight: max(
-                coordinator.unifiedToggleInputContainer.bounds.height,
-                DefaultOmniBarView.expectedHeight
-            )
+            aiInputHeight: DefaultOmniBarView.expectedHeight
         )
 
         coordinator.parentController?.addChild(controller)
@@ -640,7 +634,10 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
 
     private func addLiveAIChrome(for tab: Tab, to container: UIView) {
         let state = inputStateProvider(tab)
-        let header = AIChatTabChatHeaderView(isFireModeEnabled: true)
+        let header = AIChatTabChatHeaderView(
+            isFireModeEnabled: true,
+            shouldShowImageGeneration: omnibarDependencies.featureFlagger.isFeatureOn(.aiChatNativeSidebar)
+        )
         header.isUserInteractionEnabled = false
 
         let headerHeight = max(coordinator.aiChatTabChatHeaderContainer.bounds.height, 60)
@@ -665,7 +662,7 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
         inputController.loadViewIfNeeded()
         inputController.view.isUserInteractionEnabled = false
 
-        let inputHeight = max(coordinator.unifiedToggleInputContainer.bounds.height, DefaultOmniBarView.expectedHeight)
+        let inputHeight = DefaultOmniBarView.expectedHeight
         inputController.view.frame = CGRect(
             x: 0,
             y: container.bounds.height - coordinator.superview.safeAreaInsets.bottom - inputHeight,
@@ -1122,6 +1119,10 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
 extension SwipeTabsCoordinator {
 
     func refresh(tabsModel: TabsModelManaging, scrollToSelected: Bool = false) {
+        if liveDestinationController != nil || liveSourceChromeView != nil || !liveChromeControllers.isEmpty {
+            cleanUpViews()
+            state = .idle
+        }
         self.tabsModel = tabsModel
         coordinator.navigationBarCollectionView.reloadData()
         

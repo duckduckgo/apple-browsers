@@ -371,6 +371,7 @@ class MainViewController: UIViewController {
     lazy var minimalChromeSettings: MinimalChromeSettingsProviding = MinimalChromeSettings()
     var unifiedToggleInputCoordinator: UnifiedToggleInputCoordinator?
     var unifiedInputStateStore: UnifiedInputStateStore?
+    var isPaidAIChatEnabledForSwipe = false
     var unifiedToggleInputCancellables = Set<AnyCancellable>()
     var unifiedToggleInputFloatingReturnKeyKeyboardBottomConstraint: NSLayoutConstraint?
     var unifiedToggleInputFloatingReturnKeyInputTopConstraint: NSLayoutConstraint?
@@ -894,6 +895,9 @@ class MainViewController: UIViewController {
                                                     },
                                                     inputStateProvider: { [weak self] tab in
                                                         self?.unifiedInputStateStore?.state(for: tab.uid) ?? TabInputState()
+                                                    },
+                                                    isPaidAIChatEnabledProvider: { [weak self] in
+                                                        self?.isPaidAIChatEnabledForSwipe ?? false
                                                     }) { [weak self] tab in
 
             guard tab !== self?.tabManager.currentTabsModel.currentTab else {

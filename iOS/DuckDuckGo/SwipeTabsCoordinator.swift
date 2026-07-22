@@ -87,6 +87,7 @@ class SwipeTabsCoordinator: NSObject {
     private let floatingUIManager: FloatingUIManaging
     private let liveTabControllerProvider: (Tab) -> TabViewController?
     private let inputStateProvider: (Tab) -> TabInputState
+    private let isPaidAIChatEnabledProvider: () -> Bool
 
     let selectTab: (Tab) -> Void
     let newTab: () -> Void
@@ -119,6 +120,7 @@ class SwipeTabsCoordinator: NSObject {
          floatingUIManager: FloatingUIManaging,
          liveTabControllerProvider: @escaping (Tab) -> TabViewController?,
          inputStateProvider: @escaping (Tab) -> TabInputState,
+         isPaidAIChatEnabledProvider: @escaping () -> Bool,
          selectTab: @escaping (Tab) -> Void,
          newTab: @escaping () -> Void,
          onSwipeStarted: @escaping () -> Void) {
@@ -130,6 +132,7 @@ class SwipeTabsCoordinator: NSObject {
         self.floatingUIManager = floatingUIManager
         self.liveTabControllerProvider = liveTabControllerProvider
         self.inputStateProvider = inputStateProvider
+        self.isPaidAIChatEnabledProvider = isPaidAIChatEnabledProvider
         self.selectTab = selectTab
         self.newTab = newTab
         self.onSwipeStarted = onSwipeStarted
@@ -648,7 +651,7 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
             height: headerHeight
         )
         container.addSubview(header)
-        header.configure(isSubscriptionActive: false)
+        header.configure(isSubscriptionActive: isPaidAIChatEnabledProvider())
         header.setTabIconState(
             count: tabsModel.count,
             hasUnread: tabsModel.hasUnread,

@@ -365,10 +365,10 @@ struct FireDialogView: ModalView {
                 subtitle: UserText.fireDialogCookiesSignOutWarning,
                 detail: cookiesDetail,
                 isOn: Binding { viewModel.includeCookiesAndSiteData && isIncludeCookiesAndSiteDataEnabled } set: { viewModel.includeCookiesAndSiteData = $0 },
-                // don‘t show the ℹ button when there‘s no site data in scope
-                infoAction: isIncludeCookiesAndSiteDataEnabled ? { isShowingSitesOverlay = true } : nil,
-                // grey-out the ℹ button when the toggle is Off
-                infoEnabled: viewModel.includeCookiesAndSiteData,
+                // don‘t make the detail label clickable when there‘s no site data in scope
+                detailAction: isIncludeCookiesAndSiteDataEnabled ? { isShowingSitesOverlay = true } : nil,
+                // grey-out the detail label when the toggle is Off
+                detailActionEnabled: viewModel.includeCookiesAndSiteData,
                 isEnabled: isIncludeCookiesAndSiteDataEnabled,
                 roundedCorners: viewModel.mode.shouldShowFireproofSection ? .none : .bottom,
                 toggleId: "FireDialogView.cookiesToggle"
@@ -484,7 +484,7 @@ struct FireDialogView: ModalView {
         )
     }
 
-    private func sectionRow(icon: NSImage, title: String, subtitle: String? = nil, detail: String? = nil, isOn: Binding<Bool>, infoAction: (() -> Void)? = nil, infoEnabled: Bool = true, isEnabled: Bool = true, roundedCorners: RowCornerRadius = .none, toggleId: String) -> some View {
+    private func sectionRow(icon: NSImage, title: String, subtitle: String? = nil, detail: String? = nil, isOn: Binding<Bool>, detailAction: (() -> Void)? = nil, detailActionEnabled: Bool = true, isEnabled: Bool = true, roundedCorners: RowCornerRadius = .none, toggleId: String) -> some View {
         RowWithPressEffect(roundedCorners: roundedCorners, rowCornerRadius: style.rowCornerRadius, isEnabled: isEnabled) {
             guard isEnabled else { return }
             isOn.wrappedValue.toggle()
@@ -516,24 +516,13 @@ struct FireDialogView: ModalView {
                 Spacer()
 
                 HStack(spacing: 8) {
-                    if let infoAction {
-                        Button(action: infoAction) {
-                            Image(nsImage: DesignSystemImages.Glyphs.Size12.info)
-                                .padding(4)
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel(UserText.fireDialogSitesOverlayTitle)
-                        .accessibilityIdentifier("FireDialogView.cookiesInfoButton")
-                        .disabled(!infoEnabled)
-                        .opacity(infoEnabled ? 1.0 : 0.4)
-                    }
-
                     if let detail {
-                        Text(detail)
-                            .font(.system(size: 11))
-                            .foregroundColor(Color(designSystemColor: .textSecondary))
-                            .lineLimit(1)
-                            .fixedSize()
+                        SectionRowDetailLabel(
+                            text: detail,
+                            action: detailAction,
+                            isEnabled: detailActionEnabled,
+                            accessibilityIdentifier: "FireDialogView.cookiesDetailButton"
+                        )
                     }
 
                     Toggle(isOn: isOn)
@@ -552,6 +541,47 @@ struct FireDialogView: ModalView {
         HStack(spacing: 0) {
             Rectangle().fill(Color(designSystemColor: .containerBorderPrimary)).frame(height: 1)
                 .padding(.horizontal, padding)
+        }
+    }
+
+    /// A section row's trailing detail text (e.g. "6 sites"). When `action` is provided, it
+    /// becomes clickable: a pill-shaped background fades in on hover, with a pointing-hand cursor.
+    private struct SectionRowDetailLabel: View {
+        let text: String
+        let action: (() -> Void)?
+        var isEnabled: Bool = true
+        var accessibilityIdentifier: String?
+
+        @State private var isHovered = false
+
+        var body: some View {
+            if let action {
+                Button(action: action) {
+                    label
+                }
+                .buttonStyle(.plain)
+                .disabled(!isEnabled)
+                .onHover { isHovered = $0 }
+                .cursor(.pointingHand)
+                .accessibilityIdentifier(accessibilityIdentifier ?? "")
+            } else {
+                label
+            }
+        }
+
+        private var label: some View {
+            Text(text)
+                .font(.system(size: 11))
+                .foregroundColor(Color(designSystemColor: .textSecondary))
+                .lineLimit(1)
+                .fixedSize()
+                .padding(.horizontal, 8)
+                .frame(height: 24)
+                .background(
+                    Capsule(style: .continuous)
+                        .fill(isHovered && isEnabled ? Color(designSystemColor: .buttonsSecondaryFillDefault) : Color.clear)
+                )
+                .opacity(action != nil && !isEnabled ? 0.4 : 1.0)
         }
     }
 

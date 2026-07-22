@@ -211,9 +211,9 @@ struct LegacyFireDialogView: ModalView {
             containerBorder: Color(designSystemColor: .containerBorderPrimary),
             containerCornerRadius: style.segmentedControlCornerRadius,
             segmentCornerRadius: style.segmentedControlItemCornerRadius,
-            selectedForeground: Color(designSystemColor: .accentPrimary),
+            selectedForeground: style.selectedForeground,
             unselectedForeground: Color(designSystemColor: .buttonsSecondaryFillText),
-            selectedIconBackground: Color(designSystemColor: .accentGlowSecondary),
+            selectedIconBackground: style.selectedIconBackground,
             selectedSegmentFill: Color(designSystemColor: .surfaceTertiary),
             selectedSegmentStroke: Color(designSystemColor: .containerBorderPrimary),
             selectedSegmentShadowColor: Color(designSystemColor: .shadowTertiary),
@@ -602,13 +602,27 @@ private struct FireDialogStyle {
     let rowCornerRadius: CGFloat
     let segmentedControlCornerRadius: CGFloat
     let segmentedControlItemCornerRadius: CGFloat
+    let selectedForeground: Color
+    let selectedIconBackground: Color
 
     private static var `default`: FireDialogStyle {
-        FireDialogStyle(knobFillColor: Color(designSystemColor: .accentPrimary), individualSitesColor: NSColor(designSystemColor: .accentTextPrimary), rowCornerRadius: 12, segmentedControlCornerRadius: 12, segmentedControlItemCornerRadius: 10)
+        FireDialogStyle(knobFillColor: Color(designSystemColor: .accentPrimary),
+                        individualSitesColor: NSColor(designSystemColor: .accentTextPrimary),
+                        rowCornerRadius: 12,
+                        segmentedControlCornerRadius: 12,
+                        segmentedControlItemCornerRadius: 10,
+                        selectedForeground: Color(designSystemColor: .accentPrimary),
+                        selectedIconBackground: Color(designSystemColor: .accentGlowSecondary))
     }
 
     private static var rebranded: FireDialogStyle {
-        FireDialogStyle(knobFillColor: Color(singleUseColor: .fireModeAccent), individualSitesColor: NSColor(designSystemColor: .textPrimary), rowCornerRadius: 16, segmentedControlCornerRadius: 16, segmentedControlItemCornerRadius: 14)
+        FireDialogStyle(knobFillColor: Color(singleUseColor: .fireModeAccent),
+                        individualSitesColor: NSColor(designSystemColor: .textPrimary),
+                        rowCornerRadius: 16,
+                        segmentedControlCornerRadius: 16,
+                        segmentedControlItemCornerRadius: 14,
+                        selectedForeground: Color(designSystemColor: .accentFirePrimary),
+                        selectedIconBackground: Color(designSystemColor: .accentFireGlowSecondary))
     }
 
     static var current: FireDialogStyle {

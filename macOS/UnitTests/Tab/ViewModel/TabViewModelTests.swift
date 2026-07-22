@@ -17,6 +17,7 @@
 //
 
 import Combine
+import DesignResourcesKit
 import DesignResourcesKitIcons
 import FeatureFlags
 import MaliciousSiteProtection
@@ -364,8 +365,8 @@ final class TabViewModelTests: XCTestCase {
     @MainActor
     func testDisplayedFaviconForBookmarks() {
         let tabViewModel = TabViewModel.forTabWithURL(URL.bookmarks)
-
-        XCTAssertImagesEqual(tabViewModel.favicon, .bookmarksFolder)
+        let expectedFavicon = NSImage.bookmarksFolder
+        XCTAssertImagesEqual(tabViewModel.favicon, expectedFavicon)
     }
 
     @MainActor

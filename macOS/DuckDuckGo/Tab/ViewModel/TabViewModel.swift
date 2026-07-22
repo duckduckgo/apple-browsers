@@ -27,6 +27,7 @@ import MaliciousSiteProtection
 import PrivacyConfig
 import PrivacyDashboard
 import WebKit
+import DesignResourcesKit
 import DesignResourcesKitIcons
 import WebExtensions
 
@@ -655,7 +656,7 @@ private extension NSAttributedString {
 
     static let settingsTrustedIndicator = trustedIndicatorAttributedString(with: .settingsMulticolor16,
                                                                            title: UserText.settings)
-    static let bookmarksTrustedIndicator = trustedIndicatorAttributedString(with: .bookmarksFolder,
+    static let bookmarksTrustedIndicator = trustedIndicatorAttributedString(with: DesignSystemRebrand.isAppRebranded() ? DesignSystemImages.Color.Size16.bookmarksNew : .bookmarksFolder,
                                                                             title: UserText.bookmarks)
     static let historyTrustedIndicator = trustedIndicatorAttributedString(with: .historyFavicon,
                                                                           title: UserText.mainMenuHistory)

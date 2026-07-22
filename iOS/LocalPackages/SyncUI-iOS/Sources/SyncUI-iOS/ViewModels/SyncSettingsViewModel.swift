@@ -287,13 +287,16 @@ public class SyncSettingsViewModel: ObservableObject {
         delegate?.fireAutoRestorePixel(event: .manualRecoveryShown)
     }
 
-    func deleteAllData() {
+    func deleteAllData(requireAuthentication: Bool = false) {
         isBusy = true
         Task { @MainActor in
+            defer { isBusy = false }
+            if requireAuthentication {
+                guard await commonAuthenticate() else { return }
+            }
             if await delegate!.confirmAndDeleteAllData() {
                 isSyncEnabled = false
             }
-            isBusy = false
         }
     }
 

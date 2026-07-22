@@ -52,11 +52,19 @@ public extension DesignSystemImages {
                     ? .init(resource: .appearanceColor16)
                     : .init(resource: .appearanceColor16Legacy)
             }
-            public static var assist: DesignSystemImage { .init(resource: .assistColor16) }
+            public static var assist: DesignSystemImage {
+                AppRebrand.isAppRebranded()
+                    ? .init(resource: .assistColor16)
+                    : .init(resource: .assistColor16Legacy)
+            }
             public static var autofill: DesignSystemImage { .init(resource: .autofillColor16) }
             public static var bitwarden: DesignSystemImage { .init(resource: .bitwardenColor16) }
             public static var bitwardenLocked: DesignSystemImage { .init(resource: .bitwardenLockedColor16) }
-            public static var bookmark: DesignSystemImage { .init(resource: .bookmarkColor16) }
+            public static var bookmark: DesignSystemImage {
+                AppRebrand.isAppRebranded()
+                    ? .init(resource: .bookmarkColor16)
+                    : .init(resource: .bookmarkColor16Legacy)
+            }
             public static var bookmarkFavorite: DesignSystemImage { .init(resource: .bookmarkFavoriteColor16) }
             public static var bookmarkImport: DesignSystemImage { .init(resource: .bookmarkImportColor16) }
             public static var bookmarksNew: DesignSystemImage { .init(resource: .bookmarksNewColor16) }
@@ -127,12 +135,20 @@ public extension DesignSystemImages {
                     ? .init(resource: .fireColor16)
                     : .init(resource: .fireColor16Legacy)
             }
-            public static var folder: DesignSystemImage { .init(resource: .folderColor16) }
+            public static var folder: DesignSystemImage {
+                AppRebrand.isAppRebranded()
+                    ? .init(resource: .folderColor16)
+                    : .init(resource: .folderColor16Legacy)
+            }
             public static var folderWin: DesignSystemImage { .init(resource: .folderWinColor16) }
             public static var globe: DesignSystemImage { .init(resource: .globeColor16) }
             public static var heart: DesignSystemImage { .init(resource: .heartColor16) }
             public static var heartGrey: DesignSystemImage { .init(resource: .heartGreyColor16) }
-            public static var hideAIGeneratedImages: DesignSystemImage { .init(resource: .imageAIBlocked16) }
+            public static var hideAIGeneratedImages: DesignSystemImage {
+                AppRebrand.isAppRebranded()
+                    ? .init(resource: .imageAIBlocked16)
+                    : .init(resource: .imageAIBlocked16Legacy)
+            }
             public static var history: DesignSystemImage { .init(resource: .historyColor16) }
             public static var home: DesignSystemImage { .init(resource: .homeColor16) }
             public static var hourglass: DesignSystemImage { .init(resource: .hourglassColor16) }

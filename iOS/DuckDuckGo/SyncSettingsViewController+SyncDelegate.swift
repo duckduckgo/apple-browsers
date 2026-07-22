@@ -790,8 +790,8 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
     func confirmAndDeleteAllData() async -> Bool {
         let deviceCount = viewModel.devices.count
         return await withCheckedContinuation { continuation in
-            let alert = UIAlertController(title: UserText.syncDeleteAllConfirmTitle,
-                                          message: UserText.syncDeleteAllConfirmMessage,
+            let alert = UIAlertController(title: useSimplifiedLayoutV2 ? UserText.simplifiedSyncDeleteAllConfirmTitle : UserText.syncDeleteAllConfirmTitle,
+                                          message: useSimplifiedLayoutV2 ? UserText.simplifiedSyncDeleteAllConfirmMessage : UserText.syncDeleteAllConfirmMessage,
                                           preferredStyle: .alert)
             alert.addAction(title: UserText.actionCancel, style: .cancel) {
                 continuation.resume(returning: false)
@@ -803,6 +803,9 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                         Pixel.fire(pixel: .syncDisabledAndDeleted, withAdditionalParameters: [PixelParameters.connectedDevices: "\(deviceCount)"])
                         self?.viewModel.isSyncEnabled = false
                         self?.syncPausedStateManager.syncDidTurnOff()
+                        if self?.useSimplifiedLayoutV2 == true {
+                            ActionMessageView.present(message: UserText.simplifiedSyncDataDeletedToast)
+                        }
                         continuation.resume(returning: true)
                     } catch {
                         await self?.handleError(SyncErrorMessage.unableToDeleteData, error: error, event: .syncDeleteAccountError)

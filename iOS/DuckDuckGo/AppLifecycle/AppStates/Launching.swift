@@ -177,6 +177,7 @@ struct Launching: LaunchingHandling {
                                     freemiumPIRDebugSettings: freemiumPIRDebugSettings)
         let configurationService = RemoteConfigurationService()
         let crashCollectionService = CrashCollectionService(featureFlagger: featureFlagger)
+        let launchTimeMetricsService = LaunchTimeMetricsService(featureFlagger: featureFlagger)
         let statisticsService = StatisticsService()
 
         let productSurfaceTelemetry = PixelProductSurfaceTelemetry(featureFlagger: featureFlagger, dailyPixelFiring: DailyPixel.self)
@@ -376,6 +377,7 @@ struct Launching: LaunchingHandling {
                                reportingService: reportingService,
                                subscriptionService: subscriptionService,
                                crashCollectionService: crashCollectionService,
+                               launchTimeMetricsService: launchTimeMetricsService,
                                maliciousSiteProtectionService: maliciousSiteProtectionService,
                                statisticsService: statisticsService,
                                keyValueFileStoreService: appKeyValueFileStoreService,

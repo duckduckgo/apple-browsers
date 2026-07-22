@@ -95,7 +95,7 @@ public struct ScanQRCodeViewV2: View {
 
 #if DEBUG
 #Preview {
-    let sampleCode = "eyJyZWNvdmVyeSI6eyJ1c2VyX2lkIjoiNjgwRDQ1QjUtNUU2RS00MzQ3LTlDNDQtQjZGQkU4MEZDNEE3IiwicHJpbWFyeV9rZXkiOiJBQkNERUZHSElKS0xNTk9QUVJTVFVWV1hZWiJ9fQ=="
+    let sampleCode = "https://duckduckgo.com/sync/pairing/#&code2=eyJ2ZXJzaW9uIjoiMiIsImNoYW5uZWxJZCI6IjY4MEQ0NUI1LTVFNkUtNDM0Ny05QzQ0LUI2RkJFODBGQzRBNyIsInB1YmxpY0tleSI6IkFCQ0RFRkdISUpLTE1OT1BRUlNUVVZXWFlaIn0"
 
     return NavigationView {
         RebrandedPreview(isRebranded: true) {
@@ -107,7 +107,7 @@ public struct ScanQRCodeViewV2: View {
 }
 
 #Preview("Enter Code") {
-    let sampleCode = "eyJyZWNvdmVyeSI6eyJ1c2VyX2lkIjoiNjgwRDQ1QjUtNUU2RS00MzQ3LTlDNDQtQjZGQkU4MEZDNEE3IiwicHJpbWFyeV9rZXkiOiJBQkNERUZHSElKS0xNTk9QUVJTVFVWV1hZWiJ9fQ=="
+    let sampleCode = "https://duckduckgo.com/sync/pairing/#&code2=eyJ2ZXJzaW9uIjoiMiIsImNoYW5uZWxJZCI6IjY4MEQ0NUI1LTVFNkUtNDM0Ny05QzQ0LUI2RkJFODBGQzRBNyIsInB1YmxpY0tleSI6IkFCQ0RFRkdISUpLTE1OT1BRUlNUVVZXWFlaIn0"
 
     return NavigationView {
         RebrandedPreview(isRebranded: true) {

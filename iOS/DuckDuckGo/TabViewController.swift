@@ -878,6 +878,17 @@ class TabViewController: UIViewController {
         updateWebViewBottomAnchor(for: 1.0)
     }
 
+    @discardableResult
+    private func setWebViewObscuredContentInsetsIfSupported(_ insets: UIEdgeInsets) -> Bool {
+        guard #available(iOS 26, *),
+              let webView,
+              webView.responds(to: #selector(setter: WKWebView.obscuredContentInsets)) else {
+            return false
+        }
+        webView.obscuredContentInsets = insets
+        return true
+    }
+
     func updateWebViewBottomAnchor(for barsVisibilityPercent: CGFloat) {
         let isUnifiedToggleInputAffectingBottomLayout = isAITab && unifiedToggleInputFeature.isAvailable
         if appSettings.currentAddressBarPosition == .bottom && !isUnifiedToggleInputAffectingBottomLayout {
@@ -916,15 +927,14 @@ class TabViewController: UIViewController {
             // AI tabs with the unified toggle input own their own bottom layout, so keep the web view
             // full-bleed with no obscured region there.
             let isUnifiedToggleInputAffectingLayout = isAITab && unifiedToggleInputFeature.isAvailable
-            if #available(iOS 26, *) {
+            let obscuredInsets: UIEdgeInsets = isUnifiedToggleInputAffectingLayout
+                ? .zero
+                : (chromeDelegate?.floatingWebViewObscuredInsets(for: barsVisibilityPercent) ?? .zero)
+            if setWebViewObscuredContentInsetsIfSupported(obscuredInsets) {
                 // Keep the web view full-bleed and reserve the chrome region via WebKit's public
                 // `obscuredContentInsets`, which positions page fixed/sticky elements and the layout
                 // viewport reliably (including on load) and lets content scroll behind the glass.
                 webViewBottomAnchorConstraint?.constant = 0
-                let obscuredInsets: UIEdgeInsets = isUnifiedToggleInputAffectingLayout
-                    ? .zero
-                    : (chromeDelegate?.floatingWebViewObscuredInsets(for: barsVisibilityPercent) ?? .zero)
-                webView?.obscuredContentInsets = obscuredInsets
                 // `obscuredContentInsets` does not adjust the scroll view's content/indicator insets in
                 // UIKit, so scrollable content would rest behind the bars. Feed the chrome region
                 // (beyond the device safe area, which the scroll view already accounts for) into
@@ -950,9 +960,7 @@ class TabViewController: UIViewController {
             borderView.isHidden = false
             borderView.bottomAlpha = AppWidthObserver.shared.isLargeWidth ? 0 : barsVisibilityPercent
             // Defensive: clear any obscured insets left over if floating UI was toggled off at runtime.
-            if #available(iOS 26, *) {
-                webView?.obscuredContentInsets = .zero
-            }
+            setWebViewObscuredContentInsetsIfSupported(.zero)
         }
     }
 
@@ -3771,6 +3779,18 @@ extension TabViewController: UIGestureRecognizerDelegate {
     }
 
     func requestFindInPage() {
+        if #available(iOS 16.0, *), featureFlagger.isFeatureOn(.systemFindInPage) {
+            webView.isFindInteractionEnabled = true
+            let findInteraction = webView.findInteraction
+            // Ignore repeat invocations while find is open so in-progress text isn't replaced with a stored query.
+            guard findInteraction?.isFindNavigatorVisible == false else { return }
+            // Default to empty (not nil) so this tab's field doesn't fall back to the system-wide retained query from another tab.
+            findInteraction?.searchText = (webView as? WebView)?.lastFindInPageQuery ?? ""
+            findInteraction?.presentFindNavigator(showingReplace: false)
+            (webView as? WebView)?.beginTrackingFindInPageQuery()
+            return
+        }
+
         guard findInPage == nil else { return }
         findInPage = FindInPage(webView: webView)
         delegate?.tabDidRequestFindInPage(tab: self)

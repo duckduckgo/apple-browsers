@@ -53,6 +53,7 @@ protocol SwitchBarHandling: AnyObject {
     var isTopBarPosition: Bool { get }
     var isToggleEnabled: Bool { get }
     var isFireTab: Bool { get }
+    var isImageGenerationSelected: Bool { get }
 
     var isUsingExpandedBottomBarHeight: Bool { get }
     var isUsingFadeOutAnimation: Bool { get }
@@ -96,6 +97,7 @@ protocol SwitchBarHandling: AnyObject {
 extension SwitchBarHandling {
     func saveToggleState() {}
     func stopGeneratingButtonTapped() {}
+    var isImageGenerationSelected: Bool { false }
     var usesExpandedAIChatTextEntryLayout: Bool { false }
     var usesLegacyLayoutMetrics: Bool { false }
     var submitsAIChatOnKeyboardReturn: Bool { true }

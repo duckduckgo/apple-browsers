@@ -18,6 +18,7 @@
 
 import AppKit
 import Foundation
+import PrivacyConfig
 
 protocol TabStyleProviding {
     var separatorColor: NSColor { get }
@@ -41,7 +42,7 @@ protocol TabStyleProviding {
     var tabButtonActionsHighlightedCornerRadius: CGFloat { get }
 }
 
-final class TabAnimationsStyleProvider: TabStyleProviding {
+final class LegacyTabAnimationsStyleProvider: TabStyleProviding {
     private let palette: ThemeColors
 
     var separatorColor: NSColor { palette.surfaceDecorationTertiary }
@@ -68,9 +69,40 @@ final class TabAnimationsStyleProvider: TabStyleProviding {
     }
 }
 
+final class TabAnimationsStyleProvider: TabStyleProviding {
+    private let palette: ThemeColors
+
+    var separatorColor: NSColor { palette.surfaceDecorationTertiary }
+    var selectedTabColor: NSColor { palette.surfacePrimary }
+    var hoverTabColor: NSColor { palette.surfacePrimary }
+
+    let separatorHeight: CGFloat = 16
+    let tabsScrollViewHeight: CGFloat = 38
+    let pinnedTabsContainerViewHeight: CGFloat = 38
+    let standardTabHeight: CGFloat = 38
+    let pinnedTabWidth: CGFloat = 38
+    let pinnedTabHeight: CGFloat = 38
+    let shouldShowSShapedTab = true
+    let shouldShowTabSeparators = true
+    let isRoundedBackgroundPresentOnHover = true
+    let tabSpacing: CGFloat = 0
+    let applyTabShadow: Bool = false
+    let standardTabCornerRadius: CGFloat = 10.0
+    let tabButtonActionsSelectedCornerRadius: CGFloat = 6
+    let tabButtonActionsHighlightedCornerRadius: CGFloat = 4
+
+    init(palette: ThemeColors) {
+        self.palette = palette
+    }
+}
+
 struct TabStyleProvidingFactory {
 
-    static func buildStyleProvider(palette: ThemeColors) -> TabStyleProviding {
-        TabAnimationsStyleProvider(palette: palette)
+    static func buildStyleProvider(featureFlagger: FeatureFlagger, palette: ThemeColors) -> TabStyleProviding {
+        if featureFlagger.isFeatureOn(.appRebranding) {
+            return TabAnimationsStyleProvider(palette: palette)
+        }
+
+        return LegacyTabAnimationsStyleProvider(palette: palette)
     }
 }

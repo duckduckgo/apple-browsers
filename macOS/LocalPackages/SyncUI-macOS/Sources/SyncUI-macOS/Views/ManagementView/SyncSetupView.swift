@@ -18,6 +18,7 @@
 
 import SwiftUI
 import SwiftUIExtensions
+import DesignResourcesKit
 
 struct SyncSetupView<ViewModel>: View where ViewModel: ManagementViewModel {
     @EnvironmentObject var model: ViewModel
@@ -69,7 +70,7 @@ struct SyncSetupView<ViewModel>: View where ViewModel: ManagementViewModel {
                     await model.syncWithAnotherDevicePressed()
                 }
             }
-            .buttonStyle(SyncWithAnotherDeviceButtonStyle(enabled: model.isConnectingDevicesAvailable))
+            .buttonStyle(SyncWithAnotherDeviceButtonStyle(enabled: model.isConnectingDevicesAvailable, isAppRebranded: model.isAppRebranded))
             .disabled(!model.isConnectingDevicesAvailable)
             .padding(.bottom, model.isAppRebranded ? 10 : 0)
         }
@@ -98,24 +99,35 @@ struct SyncSetupView<ViewModel>: View where ViewModel: ManagementViewModel {
 private struct SyncWithAnotherDeviceButtonStyle: ButtonStyle {
 
     public let enabled: Bool
+    public let isAppRebranded: Bool
 
-    public init(enabled: Bool) {
+    public init(enabled: Bool, isAppRebranded: Bool) {
         self.enabled = enabled
+        self.isAppRebranded = isAppRebranded
     }
 
     public func makeBody(configuration: Self.Configuration) -> some View {
+        let enabledBackgroundColor: Color
+        let disabledBackgroundColor: Color
+        let labelColor: Color
 
-        let enabledBackgroundColor = configuration.isPressed ? Color(NSColor.controlAccentColor).opacity(0.5) : Color(NSColor.controlAccentColor)
-        let disabledBackgroundColor = Color.gray.opacity(0.1)
-        let labelColor = enabled ? Color.white : Color.primary.opacity(0.3)
+        if isAppRebranded {
+            enabledBackgroundColor = configuration.isPressed ? Color(designSystemColor: .accentSecondary) : Color(designSystemColor: .accentPrimary)
+            disabledBackgroundColor = Color(designSystemColor: .controlsFillTertiary)
+            labelColor = enabled ? Color(designSystemColor: .accentContentPrimary) : Color(designSystemColor: .textTertiary)
+        } else {
+            enabledBackgroundColor = configuration.isPressed ? Color(NSColor.controlAccentColor).opacity(0.5) : Color(NSColor.controlAccentColor)
+            disabledBackgroundColor = Color.gray.opacity(0.1)
+            labelColor = enabled ? Color.white : Color.primary.opacity(0.3)
+        }
 
-        configuration.label
+        return configuration.label
             .lineLimit(1)
             .font(.body.bold())
             .frame(height: 32)
             .padding(.horizontal, 24)
             .background(enabled ? enabledBackgroundColor : disabledBackgroundColor)
             .foregroundColor(labelColor)
-            .cornerRadius(8)
+            .cornerRadius(isAppRebranded ? 16 : 8)
     }
 }

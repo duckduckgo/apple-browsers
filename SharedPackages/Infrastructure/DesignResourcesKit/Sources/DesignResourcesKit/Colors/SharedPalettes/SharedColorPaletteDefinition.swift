@@ -163,7 +163,9 @@ protocol SharedColorPaletteDefinition {
     static var statusWarningContentPrimary: DynamicColor { get }
     static var statusWarningFillPrimary: DynamicColor { get }
     static var statusWarningPrimary: DynamicColor { get }
-    static var statusYellow: DynamicColor { get }
+    static var statusYellowPrimary: DynamicColor { get }
+    static var statusYellowSecondary: DynamicColor { get }
+    static var statusYellowTertiary: DynamicColor { get }
 
     // MARK: - Surface Colors
     static var surfaceBackdrop: DynamicColor { get }

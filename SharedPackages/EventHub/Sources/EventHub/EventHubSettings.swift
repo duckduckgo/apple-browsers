@@ -46,9 +46,11 @@ public final class EventHubSettings: EventHubSettingsProviding {
     private static func strip(_ settings: Data?, suppressed: Set<String>) -> Data? {
         guard !suppressed.isEmpty, let settings else { return settings }
         do {
+            // Fail closed: if we cannot verify the settings JSON shape when suppressed is non-empty,
+            // expose no telemetry at all rather than risk collecting without consent.
             guard var object = try JSONSerialization.jsonObject(with: settings) as? [String: Any],
                   var telemetry = object[telemetryKey] as? [String: Any] else {
-                return settings
+                return nil
             }
             for name in suppressed { telemetry.removeValue(forKey: name) }
             object[telemetryKey] = telemetry

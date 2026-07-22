@@ -67,7 +67,7 @@ public class ScanOrPasteCodeViewModel: ObservableObject {
     @Published public var videoPermission: VideoPermission = .unknown
 
     @Published var showCamera = true
-    @Published var isScanningEnabled = false
+    @Published var isScanningEnabled = true
     @Published var state = State.showScanner
     @Published var manuallyEnteredCode: String?
     @Published var isValidating = false
@@ -114,6 +114,11 @@ public class ScanOrPasteCodeViewModel: ObservableObject {
     @MainActor
     func scanningCanBegin() {
         isScanningEnabled = true
+    }
+
+    @MainActor
+    func resetScanningGate() {
+        isScanningEnabled = false
     }
 
     func introAnimationCompleted() {

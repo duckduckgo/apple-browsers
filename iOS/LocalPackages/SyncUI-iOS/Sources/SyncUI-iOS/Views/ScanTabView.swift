@@ -53,6 +53,7 @@ struct ScanTabView: View {
         .ignoresSafeArea(.all, edges: .bottom)
         .onPreferenceChange(InstructionsHeightKey.self) { instructionsHeight = $0 }
         .onAppear {
+            model.resetScanningGate()
             model.prepareCameraForIntroIfAuthorized()
         }
     }

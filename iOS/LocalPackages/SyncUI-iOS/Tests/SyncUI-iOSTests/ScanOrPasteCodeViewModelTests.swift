@@ -48,21 +48,31 @@ final class ScanOrPasteCodeViewModelTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Scanning can begin enables scanning", .timeLimit(.minutes(1)))
-    func scanningCanBeginEnablesScanning() {
+    @Test("Scanning is enabled by default", .timeLimit(.minutes(1)))
+    func scanningIsEnabledByDefault() {
         let sut = makeSUT()
-        #expect(sut.isScanningEnabled == false)
-
-        sut.scanningCanBegin()
 
         #expect(sut.isScanningEnabled == true)
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Code scanned before scanning is enabled is ignored", .timeLimit(.minutes(1)))
-    func codeScannedBeforeScanningEnabledIsIgnored() async {
+    @Test("Reset scanning gate then scanning can begin toggles scanning", .timeLimit(.minutes(1)))
+    func resetScanningGateThenScanningCanBeginTogglesScanning() {
+        let sut = makeSUT()
+
+        sut.resetScanningGate()
+        #expect(sut.isScanningEnabled == false)
+
+        sut.scanningCanBegin()
+        #expect(sut.isScanningEnabled == true)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Code scanned while the scanning gate is closed is ignored", .timeLimit(.minutes(1)))
+    func codeScannedWhileGateClosedIsIgnored() async {
         let sut = makeSUT()
         delegate.syncCodeEnteredResult = true
+        sut.resetScanningGate()
 
         let used = await sut.codeScanned("qr-code")
 
@@ -71,10 +81,11 @@ final class ScanOrPasteCodeViewModelTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Code scanned after scanning is enabled is forwarded to the delegate", .timeLimit(.minutes(1)))
-    func codeScannedAfterScanningEnabledIsForwarded() async {
+    @Test("Code scanned after scanning can begin is forwarded to the delegate", .timeLimit(.minutes(1)))
+    func codeScannedAfterScanningCanBeginIsForwarded() async {
         let sut = makeSUT()
         delegate.syncCodeEnteredResult = true
+        sut.resetScanningGate()
         sut.scanningCanBegin()
 
         let used = await sut.codeScanned("qr-code")
@@ -223,7 +234,6 @@ final class ScanOrPasteCodeViewModelTests {
         // GIVEN
         let sut = makeSUT()
         delegate.syncCodeEnteredResult = true
-        sut.scanningCanBegin()
 
         // WHEN
         let result = await sut.codeScanned("scanned-code")
@@ -241,7 +251,6 @@ final class ScanOrPasteCodeViewModelTests {
         // GIVEN
         let sut = makeSUT()
         delegate.syncCodeEnteredResult = false
-        sut.scanningCanBegin()
 
         // WHEN
         let result = await sut.codeScanned("scanned-code")

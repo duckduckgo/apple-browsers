@@ -3,6 +3,11 @@ import Combine
 /// Declares that a set of EventHub telemetry configs are gated behind a user-consent decision. Owning
 /// features (which know both their config names and their consent state) implement one of these;
 /// EventHub itself stays consent-agnostic and only removes the named configs while consent is withheld.
+// TODO(eventhub): This mirrors Windows' IEventHubConsentRequirement design (one requirement per
+// consent-gated metric group, combined via combineLatest). Not yet confirmed as the final Apple
+// approach — review before this ships. See the requester's note when this file was written
+// (2026-07-22): "keep it in tests for now, but I am not sure if I will follow the same path as on
+// Windows."
 public protocol EventHubConsentRequirement {
     /// Stable identifier for the consent group (e.g. `"adBlockV2Telemetry"`).
     var consentID: String { get }

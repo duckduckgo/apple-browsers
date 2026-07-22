@@ -9,10 +9,11 @@ public protocol EventHubSettingsProviding {
     var settingsPublisher: AnyPublisher<Data?, Never> { get }
 }
 
-/// Stub: `settingsPublisher` passes the raw feature settings straight through, performing no consent
-/// stripping. `EventHubSettingsTests` is expected to fail until a follow-up implementation task fills
-/// this in.
+/// Combines the raw feature settings with the live consent state of every `EventHubConsentRequirement`,
+/// removing the `telemetry` entries for any consent group that is not currently granted.
 public final class EventHubSettings: EventHubSettingsProviding {
+    private static let telemetryKey = "telemetry"
+
     public let enabledPublisher: AnyPublisher<Bool, Never>
     public let settingsPublisher: AnyPublisher<Data?, Never>
 
@@ -22,6 +23,40 @@ public final class EventHubSettings: EventHubSettingsProviding {
         consentRequirements: [EventHubConsentRequirement]
     ) {
         self.enabledPublisher = featureEnabledPublisher
-        self.settingsPublisher = featureSettingsPublisher
+        self.settingsPublisher = Publishers.CombineLatest(featureSettingsPublisher, Self.suppressedNames(consentRequirements))
+            .map(Self.strip)
+            .eraseToAnyPublisher()
+    }
+
+    private static func suppressedNames(_ requirements: [EventHubConsentRequirement]) -> AnyPublisher<Set<String>, Never> {
+        guard !requirements.isEmpty else {
+            return Just(Set<String>()).eraseToAnyPublisher()
+        }
+        let perRequirement = requirements.map { requirement in
+            requirement.isGrantedPublisher.map { (requirement.configNames, $0) }.eraseToAnyPublisher()
+        }
+        let combined = perRequirement.dropFirst().reduce(perRequirement[0].map { [$0] }.eraseToAnyPublisher()) { accumulated, next in
+            accumulated.combineLatest(next).map { $0 + [$1] }.eraseToAnyPublisher()
+        }
+        return combined
+            .map { states in Set(states.filter { !$0.1 }.flatMap(\.0)) }
+            .eraseToAnyPublisher()
+    }
+
+    private static func strip(_ settings: Data?, suppressed: Set<String>) -> Data? {
+        guard !suppressed.isEmpty, let settings else { return settings }
+        do {
+            guard var object = try JSONSerialization.jsonObject(with: settings) as? [String: Any],
+                  var telemetry = object[telemetryKey] as? [String: Any] else {
+                return settings
+            }
+            for name in suppressed { telemetry.removeValue(forKey: name) }
+            object[telemetryKey] = telemetry
+            return try JSONSerialization.data(withJSONObject: object)
+        } catch {
+            // Fail closed: if we cannot reliably strip a gated entry, expose no telemetry at all
+            // rather than risk collecting without consent.
+            return nil
+        }
     }
 }

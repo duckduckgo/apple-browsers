@@ -184,7 +184,7 @@ final class AIChatMenu: NSMenu {
             insertItem(item, at: labelIndex + 1 + offset)
             chatItems.append(item)
         }
-    
+
         if hasMore {
             let separator = NSMenuItem.separator()
             let viewAllItem = NSMenuItem(title: UserText.aiChatMenuViewAllChats, action: #selector(viewAllChatsTapped), keyEquivalent: "")

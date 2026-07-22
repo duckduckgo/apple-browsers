@@ -21,12 +21,15 @@ import SwiftUI
 import DesignResourcesKit
 import UIComponents
 import AIChat
+import Common
 
 /// The Duck.ai model picker: every available model is a row in a single `SubscriptionOnboardingCard`,
 /// with a "PLUS"/"PRO" tier marker on paid models and a checkmark on the selected one. The model list comes from
 /// a backend call (`AIChatModelsService`) performed at the screen layer, so this view takes the resolved
 /// `AIChatModel`s, the selected id, and a selection callback — it holds no state and makes no network
 /// calls itself.
+///
+/// Rows are non-interactive on iPad: model preselection has no way to reach a fresh iPad chat session
 struct SubscriptionOnboardingAIModelPicker: View {
     private enum Metrics {
         static let iconTextSpacing: CGFloat = 16
@@ -49,11 +52,17 @@ struct SubscriptionOnboardingAIModelPicker: View {
                                    style: .borderless,
                                    padding: 0,
                                    contentInset: .init(horizontal: Metrics.contentInsetHorizontal, vertical: Metrics.contentInsetVertical),
-                                   onSelect: CardItemList.selectAction(over: models) { onSelect($0.id) })
+                                   onSelect: CardItemList.selectAction(over: models, where: { _ in isSelectable }) { onSelect($0.id) })
     }
 }
 
 private extension SubscriptionOnboardingAIModelPicker {
+    /// Whether rows show/report a selection at all — false on iPad, where model preselection has no way
+    /// to reach a fresh chat session, so neither the checkmark nor its accessibility value should appear.
+    var isSelectable: Bool {
+        !DevicePlatform.isIpad
+    }
+
     var cardItems: [CardItem] {
         models.map { model in
             let nameParts = model.name.split(separator: " ", maxSplits: 1)
@@ -71,8 +80,8 @@ private extension SubscriptionOnboardingAIModelPicker {
                 icon: CardItemIcon(position: .leadingColumn, visual: icon(for: model), size: .size24, spacing: Metrics.iconTextSpacing),
                 title: CardItemText(title, font: .bodyRegular),
                 titleDetails: details,
-                trailing: model.id == selectedModelID ? .checkmark(Color(designSystemColor: .accentPrimary)) : nil,
-                accessibilityValue: model.id == selectedModelID ? UserText.subscriptionOnboardingDuckAIModelSelectedValue : nil)
+                trailing: isSelectable && model.id == selectedModelID ? .checkmark(Color(designSystemColor: .accentPrimary)) : nil,
+                accessibilityValue: isSelectable && model.id == selectedModelID ? UserText.subscriptionOnboardingDuckAIModelSelectedValue : nil)
         }
     }
 

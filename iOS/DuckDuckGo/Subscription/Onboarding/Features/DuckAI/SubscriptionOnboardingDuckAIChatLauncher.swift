@@ -34,6 +34,12 @@ private final class SubscriptionOnboardingNoOpPageContextHandler: AIChatPageCont
     func clearAttachedContext() {}
 }
 
+/// There's no tab behind onboarding for `unifiedToggleInputDidRequestAIVoiceChat` to hand off to, so the voice shortcut is reported unavailable —
+/// it's disabled at the source instead of leaving the button tappable with nowhere to go.
+private struct SubscriptionOnboardingNoOpVoiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding {
+    var isAvailable: Bool { false }
+}
+
 /// No browser tab is behind this surface, so every browser-integration callback is a no-op.
 private final class SubscriptionOnboardingNoOpSheetCoordinatorDelegate: AIChatContextualSheetCoordinatorDelegate {
     func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator, didRequestToLoad url: URL) {}
@@ -48,8 +54,7 @@ private final class SubscriptionOnboardingNoOpSheetCoordinatorDelegate: AIChatCo
 }
 
 /// Launches the production Duck.ai contextual chat sheet from post-subscription onboarding by reusing
-/// `AIChatContextualSheetCoordinator` directly — the same coordinator `TabViewController` uses — rather than
-/// building a standalone chat surface. There's no tab behind onboarding, so the tab-scoped dependencies
+/// `AIChatContextualSheetCoordinator` directly. There's no tab behind onboarding, so the tab-scoped dependencies
 /// (page context, tab URL publishers, browser-integration delegate) are all no-ops; everything else
 /// (settings, feature flags, content blocking) is sourced the same way production does.
 @MainActor
@@ -69,24 +74,19 @@ final class SubscriptionOnboardingDuckAIChatLauncher {
             pageContextHandler: SubscriptionOnboardingNoOpPageContextHandler(),
             tabURLPublishers: AIChatTabURLPublishers(originating: Just<URL?>(nil).eraseToAnyPublisher(),
                                                       didFinish: Just<URL?>(nil).eraseToAnyPublisher()),
-            isFireTab: false
+            presentsFullScreen: true,
+            voiceShortcutFeature: SubscriptionOnboardingNoOpVoiceShortcutFeature()
         )
         coordinator.delegate = delegate
     }
 
     /// Presents the sheet from `presentingViewController`, then preselects `modelID` once the sheet's UTI
-    /// host exists (iPhone only — see `AIChatContextualSheetCoordinator.preselectModel(_:)`).
+    /// host exists (iPhone only).
     func present(from presentingViewController: UIViewController, modelID: String?) {
         Task { @MainActor in
             await coordinator.presentSheet(from: presentingViewController)
-            // Force full-screen for onboarding, overriding the default medium/large detents shared with the
-            // production tab sheet — set here rather than in the shared VC/coordinator so tab behavior is untouched.
-            if let sheet = coordinator.sheetViewController?.sheetPresentationController {
-                sheet.detents = [.large()]
-                sheet.selectedDetentIdentifier = .large
-                sheet.largestUndimmedDetentIdentifier = .large
-                sheet.prefersGrabberVisible = false
-            }
+            // There's no tab behind onboarding to expand into.
+            coordinator.sheetViewController?.hideExpandButton()
             if let modelID {
                 coordinator.preselectModel(modelID)
             }

@@ -45,7 +45,6 @@ struct SubscriptionOnboardingDuckAIView: View {
             navigationButton: .back({ dismiss() }),
             header: header,
             footer: footer) {
-            // TODO: handle loading / empty / error states. If the /models fetch fails or returns nothing
             SubscriptionOnboardingAIModelPicker(
                 models: viewModel.availableModels,
                 selectedModelID: viewModel.selectedModelID,

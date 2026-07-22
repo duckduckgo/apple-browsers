@@ -27,9 +27,7 @@ import AIChat
 @MainActor
 protocol SubscriptionOnboardingAIModelProviding: AnyObject {
     var models: [AIChatModel] { get }
-    /// The currently persisted (or best-default) model id, once models have resolved.
     var persistedModelID: String? { get }
-    /// Called whenever the resolved model list changes.
     var onModelsUpdated: (() -> Void)? { get set }
     func fetchModels()
     func updateSelectedModel(_ modelID: String)
@@ -37,8 +35,6 @@ protocol SubscriptionOnboardingAIModelProviding: AnyObject {
 
 @MainActor
 final class DefaultSubscriptionOnboardingAIModelProvider: SubscriptionOnboardingAIModelProviding {
-    // Built lazily so `init()` stays non-isolated (the default view-model argument is constructed from a
-    // non-isolated context); `UTIModelStore` is `@MainActor`, so it's created on first access here.
     private lazy var store = UTIModelStore(modelsService: AIChatModelsService(),
                                            preferences: AIChatPreferencesPersistor(),
                                            subscriptionManager: AppDependencyProvider.shared.subscriptionManager)
@@ -56,8 +52,7 @@ final class DefaultSubscriptionOnboardingAIModelProvider: SubscriptionOnboarding
     func updateSelectedModel(_ modelID: String) { store.updateSelectedModel(modelID, isNewChatContext: true) }
 }
 
-/// Backs the Duck.ai onboarding screen: fetches the available AI models, tracks the selected one, and — on
-/// "Start Duck.ai Chat" — persists it so the launched web chat opens with it.
+/// Backs the Duck.ai onboarding screen: fetches the available AI models, tracks the selected one, and persists it so the launched web chat opens with it.
 final class SubscriptionOnboardingDuckAIViewModel: ObservableObject {
 
     @Published private(set) var models: [AIChatModel] = []
@@ -66,9 +61,6 @@ final class SubscriptionOnboardingDuckAIViewModel: ObservableObject {
     private let modelProvider: SubscriptionOnboardingAIModelProviding
     private weak var delegate: SubscriptionOnboardingSectionDelegate?
 
-    // TODO: display all models, not just those the customer can access. Pending a design decision on how
-    // locked (higher-tier) models should appear — e.g. dimmed / non-selectable — before dropping this filter.
-    /// The models to show, filtered to those the customer can use and ordered premium-first to match the design.
     var availableModels: [AIChatModel] {
         let accessible = models.filter { $0.entityHasAccess }
         return accessible.filter(\.isAdvanced) + accessible.filter { !$0.isAdvanced }
@@ -93,15 +85,13 @@ final class SubscriptionOnboardingDuckAIViewModel: ObservableObject {
         modelProvider.fetchModels()
     }
 
-    /// Updates the on-screen selection only. The choice is persisted on ``startChat()``, so tapping a row and
-    /// then skipping never mutates the customer's global model.
+    /// Updates the on-screen selection only.
     @MainActor
     func select(_ modelID: String) {
         selectedModelID = modelID
     }
 
-    /// Persists the committed model (default or tapped) so the launched chat opens with it, reports the
-    /// section complete, and asks the flow to launch Duck.ai chat.
+    /// Persists the committed model (default or tapped) so the launched chat opens with it
     @MainActor
     func startChat() {
         if let selectedModelID {

@@ -6504,10 +6504,10 @@
 		362977D2300EE908007E1AD8 /* DuckAI */ = {
 			isa = PBXGroup;
 			children = (
-				367D2AC73011137D007A8F59 /* SubscriptionOnboardingDuckAIChatLauncher.swift */,
 				362977CF300EE908007E1AD8 /* SubscriptionOnboardingDuckAIViewModel.swift */,
 				362977D1300EE908007E1AD8 /* SubscriptionOnboardingDuckAIView.swift */,
 				3666D85930016E4D00B63F99 /* SubscriptionOnboardingAIModelPicker.swift */,
+				367D2AC73011137D007A8F59 /* SubscriptionOnboardingDuckAIChatLauncher.swift */,
 			);
 			path = DuckAI;
 			sourceTree = "<group>";
@@ -7015,7 +7015,6 @@
 				C66CF1E0260F3B8AF9E7DC03 /* LaunchTimeMetricsSubscriber.swift */,
 				16B67D705D3CBCF2B6C7FBA4 /* LaunchTimeMetricsService.swift */,
 			);
-			name = LaunchTimeMetrics;
 			path = LaunchTimeMetrics;
 			sourceTree = "<group>";
 		};
@@ -8647,7 +8646,6 @@
 				9FD3DB3A2FB6E82000A7C56E /* OnboardingIntroFactory.swift */,
 				9FC0E3D32FAAED9000B11ECD /* OnboardingIntroContentProvider.swift */,
 				DD503EBD506182525F5E8107 /* OnboardingView+Landing.swift */,
-				9785D25DF2EA27126C8A33B8 /* OnboardingView+IntroDialogContent.swift */,
 				9FA8A60130086ABF000DF5DE /* OnboardingView+DownloadReasonContent.swift */,
 				970C8DE9831CD77A979A1354 /* OnboardingView+SkipOnboardingContent.swift */,
 				9FADFC5F2F62384C00CA16F7 /* OnboardingView+RestorePromptDialogContent.swift */,
@@ -14998,7 +14996,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				C51DE2491C1278EF27899BB1 /* FileLoader.swift in Sources */,
 				98E563432DE8B04D00E6E75F /* HtmlTestDataLoader.swift in Sources */,
 				98E563442DE8B04D00E6E75F /* CoreDataDatabaseTestUtilities.swift in Sources */,
 				98E563452DE8B04D00E6E75F /* XCTestCaseExtension.swift in Sources */,
@@ -15121,7 +15118,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				C2920E700F7D448614155BC5 /* FileLoader.swift in Sources */,
 				98E5644C2DE8DDDC00E6E75F /* MockOmnibarDependency.swift in Sources */,
 				98E5644D2DE8DDDC00E6E75F /* MockPrivacyDataReporter.swift in Sources */,
 				9FC0E3DA2FAB05C500B11ECD /* MockOnboardingIntroContentProvider.swift in Sources */,

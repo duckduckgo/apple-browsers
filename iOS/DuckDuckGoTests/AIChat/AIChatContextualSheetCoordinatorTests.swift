@@ -776,6 +776,69 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         XCTAssertEqual(secondPresenter.presentCallCount, 0)
     }
 
+    // MARK: - presentsFullScreen Tests
+
+    @MainActor
+    func testPresentSheetUsesMediumAndLargeDetentsByDefault() async {
+        let window = UIWindow()
+        let rootVC = UIViewController()
+        window.rootViewController = rootVC
+        window.makeKeyAndVisible()
+
+        await sut.presentSheet(from: rootVC)
+
+        let sheet = sut.sheetViewController!.sheetPresentationController!
+        XCTAssertEqual(sheet.detents.count, 2)
+        XCTAssertEqual(sheet.selectedDetentIdentifier, .medium)
+        XCTAssertEqual(sheet.largestUndimmedDetentIdentifier, .medium)
+        XCTAssertTrue(sheet.prefersGrabberVisible)
+    }
+
+    @MainActor
+    func testPresentSheetUsesLargeDetentOnlyWhenPresentsFullScreenIsTrue() async {
+        let fullScreenSUT = AIChatContextualSheetCoordinator(
+            voiceSearchHelper: MockVoiceSearchHelper(),
+            aiChatSettings: mockSettings,
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            contentBlockingAssetsPublisher: contentBlockingSubject.eraseToAnyPublisher(),
+            featureDiscovery: MockFeatureDiscovery(),
+            featureFlagger: mockFeatureFlagger,
+            unifiedToggleInputFeature: mockUnifiedToggleInputFeature,
+            pageContextHandler: mockPageContextHandler,
+            tabURLPublishers: AIChatTabURLPublishers(
+                originating: originatingTabURLSubject.eraseToAnyPublisher(),
+                didFinish: didFinishTabURLSubject.eraseToAnyPublisher()
+            ),
+            presentsFullScreen: true
+        )
+        let window = UIWindow()
+        let rootVC = UIViewController()
+        window.rootViewController = rootVC
+        window.makeKeyAndVisible()
+
+        await fullScreenSUT.presentSheet(from: rootVC)
+
+        let sheet = fullScreenSUT.sheetViewController!.sheetPresentationController!
+        XCTAssertEqual(sheet.detents.count, 1)
+        XCTAssertEqual(sheet.selectedDetentIdentifier, .large)
+        XCTAssertEqual(sheet.largestUndimmedDetentIdentifier, .large)
+        XCTAssertFalse(sheet.prefersGrabberVisible)
+    }
+
+    // MARK: - hideExpandButton Tests
+
+    @MainActor
+    func testHideExpandButtonHidesExpandButtonOnSheetViewController() async {
+        await sut.presentSheet(from: mockPresentingVC)
+        let sheetVC = sut.sheetViewController!
+
+        XCTAssertFalse(sheetVC.isExpandButtonHidden)
+
+        sheetVC.hideExpandButton()
+
+        XCTAssertTrue(sheetVC.isExpandButtonHidden)
+    }
+
     // MARK: - originatingURLPublisher Tests
 
     @MainActor

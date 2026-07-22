@@ -124,6 +124,8 @@ final class AIChatContextualSheetViewController: UIViewController {
     private let featureFlagger: FeatureFlagger
     private let suggestionsReader: AIChatSuggestionsReading?
     private let persistentUTIHost: AIChatContextualUTIHost?
+    /// Presents at `.large()` only, with no grabber — for surfaces with no tab behind the sheet (e.g. onboarding).
+    private let presentsFullScreen: Bool
     private var recentChatsPopup: AIChatRecentChatsPopupViewController?
     private var popupWindow: UIWindow?
     private var isFetchingRecentChats = false
@@ -296,7 +298,8 @@ final class AIChatContextualSheetViewController: UIViewController {
          appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
          persistentUTIHost: AIChatContextualUTIHost? = nil,
-         suggestionsReader: AIChatSuggestionsReading? = nil) {
+         suggestionsReader: AIChatSuggestionsReading? = nil,
+         presentsFullScreen: Bool = false) {
         self.sessionState = sessionState
         self.aiChatSettings = aiChatSettings
         self.voiceSearchHelper = voiceSearchHelper
@@ -306,6 +309,7 @@ final class AIChatContextualSheetViewController: UIViewController {
         self.featureFlagger = featureFlagger
         self.persistentUTIHost = persistentUTIHost
         self.suggestionsReader = suggestionsReader
+        self.presentsFullScreen = presentsFullScreen
         super.init(nibName: nil, bundle: nil)
         configureModalPresentation()
     }
@@ -398,11 +402,18 @@ final class AIChatContextualSheetViewController: UIViewController {
 
         sheet.delegate = self
         presentationController?.delegate = self
-        sheet.detents = [.medium(), .large()]
-        sheet.selectedDetentIdentifier = .medium
-        sheet.largestUndimmedDetentIdentifier = .medium
+        if presentsFullScreen {
+            sheet.detents = [.large()]
+            sheet.selectedDetentIdentifier = .large
+            sheet.largestUndimmedDetentIdentifier = .large
+            sheet.prefersGrabberVisible = false
+        } else {
+            sheet.detents = [.medium(), .large()]
+            sheet.selectedDetentIdentifier = .medium
+            sheet.largestUndimmedDetentIdentifier = .medium
+            sheet.prefersGrabberVisible = true
+        }
         sheet.prefersScrollingExpandsWhenScrolledToEdge = false
-        sheet.prefersGrabberVisible = true
         sheet.prefersEdgeAttachedInCompactHeight = true
         sheet.preferredCornerRadius = SheetMetrics.cornerRadius
     }
@@ -457,6 +468,15 @@ final class AIChatContextualSheetViewController: UIViewController {
         }
         transitionToWebView()
         expandToLargeDetent()
+    }
+
+    /// Hides the expand button permanently — for surfaces with no tab behind the sheet to expand into (e.g. onboarding).
+    func hideExpandButton() {
+        expandButton.isHidden = true
+    }
+
+    var isExpandButtonHidden: Bool {
+        expandButton.isHidden
     }
 
 }

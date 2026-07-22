@@ -89,6 +89,9 @@ final class AIChatContextualSheetCoordinator {
     private let duckAiFireModeStorageHandler: DuckAiNativeStorageHandling?
     private let debugSettings: AIChatDebugSettingsHandling
     private let isFireTab: Bool
+    /// Presents at `.large()` only, with no grabber
+    private let presentsFullScreen: Bool
+    private let voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding
     static let contextualContextCollectionTimeout: TimeInterval = 5
 
     /// Handler for page context - single source of truth.
@@ -152,7 +155,10 @@ final class AIChatContextualSheetCoordinator {
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
          duckAiFireModeStorageHandler: DuckAiNativeStorageHandling? = nil,
          debugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings(),
-         pixelHandler: AIChatContextualModePixelFiring = AIChatContextualModePixelHandler()) {
+         pixelHandler: AIChatContextualModePixelFiring = AIChatContextualModePixelHandler(),
+         presentsFullScreen: Bool = false,
+         voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding = DuckAIVoiceShortcutFeature()) {
+        self.voiceShortcutFeature = voiceShortcutFeature
         self.voiceSearchHelper = voiceSearchHelper
         self.aiChatSettings = aiChatSettings
         self.privacyConfigurationManager = privacyConfigurationManager
@@ -167,6 +173,7 @@ final class AIChatContextualSheetCoordinator {
         self.duckAiFireModeStorageHandler = duckAiFireModeStorageHandler
         self.debugSettings = debugSettings
         self.pixelHandler = pixelHandler
+        self.presentsFullScreen = presentsFullScreen
         self.sessionState = AIChatContextualChatSessionState(
             aiChatSettings: aiChatSettings,
             pixelHandler: pixelHandler,
@@ -238,12 +245,6 @@ final class AIChatContextualSheetCoordinator {
         sheetViewController?.dismiss(animated: true)
     }
 
-    /// Forces the starting model for the bound chat
-    func preselectModel(_ modelID: String) {
-        guard let persistentUTIHost else { return }
-        persistentUTIHost.preselectModel(modelID)
-    }
-
     private func handleSheetDismissed() {
         guard isSheetPresented else { return }
         isSheetPresented = false
@@ -298,6 +299,13 @@ final class AIChatContextualSheetCoordinator {
         }
     }
 
+
+    /// Preselect the starting model for the bound chat
+    func preselectModel(_ modelID: String) {
+        guard let persistentUTIHost else { return }
+        persistentUTIHost.preselectModel(modelID)
+    }
+
     /// Returns true if the contextual sheet has been shown.
     var hasActiveSheet: Bool {
         sheetViewController != nil
@@ -347,7 +355,8 @@ private extension AIChatContextualSheetCoordinator {
             pixelHandler: pixelHandler,
             featureFlagger: featureFlagger,
             persistentUTIHost: persistentUTIHost,
-            suggestionsReader: suggestionsReader
+            suggestionsReader: suggestionsReader,
+            presentsFullScreen: presentsFullScreen
         )
         sheetVC.delegate = self
         sheetViewController = sheetVC
@@ -381,6 +390,7 @@ private extension AIChatContextualSheetCoordinator {
             isCurrentPageAttachable: { [weak self] in self?.pageContextHandler.isCurrentPageAttachable() ?? true },
             isFireTab: isFireTab,
             lastUsedModelProvider: duckAiLastUsedModelProvider,
+            voiceShortcutFeature: voiceShortcutFeature,
             startsPreSubmit: startsPreSubmit
         )
         host.onAttachRequested = { [weak self] in

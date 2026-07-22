@@ -4,9 +4,9 @@ import WebKit
 import Combine
 @testable import EventHub
 
-@Suite("EventHubMessageHandler")
-struct EventHubMessageHandlerTests {
-    private final class SpyManager: EventHubPixelManaging {
+@Suite("WebEventsHandler")
+struct WebEventsHandlerTests {
+    private final class SpyManager: EventHubManaging {
         var handledWebEvents: [(data: [String: Any], tabID: EventHubTabID)] = []
         var firedPixelsPublisher: AnyPublisher<FiredPixel, Never> { Empty().eraseToAnyPublisher() }
         func handleWebEvent(_ webEventData: [String: Any], tabID: EventHubTabID) {
@@ -24,7 +24,7 @@ struct EventHubMessageHandlerTests {
 
     @Test("featureName targets webEvents")
     func featureNameTargetsWebEvents() {
-        let handler = EventHubMessageHandler(manager: SpyManager(), tabIDProvider: { _ in .new() })
+        let handler = WebEventsHandler(manager: SpyManager(), tabIDProvider: { _ in .new() })
         #expect(handler.featureName == "webEvents")
     }
 
@@ -32,7 +32,7 @@ struct EventHubMessageHandlerTests {
     func handlerForwardsEventWithTypeToManager() async throws {
         let manager = SpyManager()
         let tab = EventHubTabID.new()
-        let handler = EventHubMessageHandler(manager: manager, tabIDProvider: { _ in tab })
+        let handler = WebEventsHandler(manager: manager, tabIDProvider: { _ in tab })
 
         let notify = try #require(handler.handler(forMethodNamed: "webEvent"))
         _ = try await notify(["type": "click", "data": [String: Any]()], WKScriptMessage())
@@ -48,7 +48,7 @@ struct EventHubMessageHandlerTests {
     ] as [[String: Any]])
     func handlerDoesNotForwardWhenTypeMissingOrEmpty(params: [String: Any]) async throws {
         let manager = SpyManager()
-        let handler = EventHubMessageHandler(manager: manager, tabIDProvider: { _ in .new() })
+        let handler = WebEventsHandler(manager: manager, tabIDProvider: { _ in .new() })
 
         let notify = try #require(handler.handler(forMethodNamed: "webEvent"))
         _ = try await notify(params, WKScriptMessage())

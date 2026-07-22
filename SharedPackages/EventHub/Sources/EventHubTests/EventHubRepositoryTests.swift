@@ -2,8 +2,8 @@ import Testing
 import Foundation
 @testable import EventHub
 
-@Suite("EventHubRepository")
-struct EventHubRepositoryTests {
+@Suite("EventHubStore")
+struct EventHubStoreTests {
     static let sampleConfig = TelemetryPixelConfig(
         name: "testPixel",
         state: "enabled",
@@ -20,10 +20,10 @@ struct EventHubRepositoryTests {
         ])
 
     let store = InMemoryKeyValueStore()
-    let repository: EventHubRepository
+    let repository: EventHubStore
 
     init() {
-        repository = EventHubKeyValueRepository(store: store, parser: EventHubConfigParser())
+        repository = EventHubKeyValueStore(store: store, parser: EventHubConfigParser())
     }
 
     @Test("savePixelState then pixelState(named:) round trips correctly")
@@ -65,7 +65,7 @@ struct EventHubRepositoryTests {
     func getPixelStateReturnsNilForCorruptConfigJSON() {
         store.set(
             try? JSONEncoder().encode(["corrupt": EventHubStoredPixelState(periodStartMillis: 0, periodEndMillis: 1000, paramsJSON: "{\"count\":{\"value\":1}}", configJSON: "not valid json")]),
-            forKey: EventHubKeyValueRepository.storageKey)
+            forKey: EventHubKeyValueStore.storageKey)
 
         #expect(repository.pixelState(named: "corrupt") == nil)
     }
@@ -75,9 +75,9 @@ struct EventHubRepositoryTests {
         repository.savePixelState(PixelState(pixelName: "good", periodStartMillis: 0, periodEndMillis: 86_400_000,
                                               config: Self.sampleConfig, params: ["count": ParamState(value: 0)]))
 
-        var stored = (try? JSONDecoder().decode([String: EventHubStoredPixelState].self, from: store.object(forKey: EventHubKeyValueRepository.storageKey) as? Data ?? Data())) ?? [:]
+        var stored = (try? JSONDecoder().decode([String: EventHubStoredPixelState].self, from: store.object(forKey: EventHubKeyValueStore.storageKey) as? Data ?? Data())) ?? [:]
         stored["bad"] = EventHubStoredPixelState(periodStartMillis: 0, periodEndMillis: 1000, paramsJSON: "{}", configJSON: "corrupt")
-        store.set(try? JSONEncoder().encode(stored), forKey: EventHubKeyValueRepository.storageKey)
+        store.set(try? JSONEncoder().encode(stored), forKey: EventHubKeyValueStore.storageKey)
 
         let results = repository.allPixelStates()
 
@@ -134,11 +134,11 @@ struct EventHubRepositoryTests {
         repository.savePixelState(PixelState(pixelName: "testPixel", periodStartMillis: 0, periodEndMillis: 86_400_000,
                                               config: Self.sampleConfig, params: ["count": ParamState(value: 1)]))
 
-        var stored = (try? JSONDecoder().decode([String: EventHubStoredPixelState].self, from: store.object(forKey: EventHubKeyValueRepository.storageKey) as? Data ?? Data())) ?? [:]
+        var stored = (try? JSONDecoder().decode([String: EventHubStoredPixelState].self, from: store.object(forKey: EventHubKeyValueStore.storageKey) as? Data ?? Data())) ?? [:]
         if let existing = stored["testPixel"] {
             stored["testPixel"] = EventHubStoredPixelState(periodStartMillis: existing.periodStartMillis, periodEndMillis: existing.periodEndMillis, paramsJSON: "not json", configJSON: existing.configJSON)
         }
-        store.set(try? JSONEncoder().encode(stored), forKey: EventHubKeyValueRepository.storageKey)
+        store.set(try? JSONEncoder().encode(stored), forKey: EventHubKeyValueStore.storageKey)
 
         let restored = try #require(repository.pixelState(named: "testPixel"))
         #expect(restored.params.isEmpty)

@@ -26,12 +26,12 @@ struct EventHubPersistenceIntegrationTests {
                                    config: config, params: ["adwallCount": ParamState(value: 1)])
 
         // Persist through one repository instance backed by real UserDefaults...
-        EventHubKeyValueRepository(store: defaults, parser: parser).savePixelState(original)
+        EventHubKeyValueStore(store: defaults, parser: parser).savePixelState(original)
 
         // ...then read it back through a brand-new repository instance over the same UserDefaults
         // suite. A fresh instance holds no in-memory copy, so this forces a real decode from disk-backed
         // storage rather than a cache hit.
-        let restored = EventHubKeyValueRepository(store: defaults, parser: parser).pixelState(named: original.pixelName)
+        let restored = EventHubKeyValueStore(store: defaults, parser: parser).pixelState(named: original.pixelName)
 
         let unwrapped = try #require(restored)
         #expect(unwrapped.pixelName == original.pixelName)

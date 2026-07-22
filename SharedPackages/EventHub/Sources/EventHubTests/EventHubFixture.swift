@@ -2,12 +2,12 @@ import Foundation
 import Combine
 @testable import EventHub
 
-/// Shared test fixture for the EventHub pixel manager. Wires a real `EventHubKeyValueRepository` over an
+/// Shared test fixture for the EventHub pixel manager. Wires a real `EventHubKeyValueStore` over an
 /// `InMemoryKeyValueStore`, a real `EventHubConfigParser`, a fake `EventHubSettingsProviding` whose
 /// enabled-state and settings are controllable (and changeable mid-test), and a single
 /// `ManualEventHubScheduler` that the manager uses for both time (`nowMillis()`) and period-end timers.
 /// Fired pixels are captured in `fired`.
-final class EventHubManagerFixture {
+final class EventHubFixture {
     /// A fixed wall-clock (2026-01-02T00:01:00Z) so attributionPeriod values are deterministic.
     static let start = ISO8601DateFormatter().date(from: "2026-01-02T00:01:00Z")!
 
@@ -16,8 +16,8 @@ final class EventHubManagerFixture {
 
     let store: InMemoryKeyValueStore
     let scheduler: ManualEventHubScheduler
-    let repository: EventHubRepository
-    let manager: EventHubPixelManager
+    let repository: EventHubStore
+    let manager: EventHub
     private(set) var fired: [FiredPixel] = []
 
     private let enabledSubject: CurrentValueSubject<Bool, Never>
@@ -31,27 +31,27 @@ final class EventHubManagerFixture {
         self.scheduler = ManualEventHubScheduler(startMillis: Int64(Self.start.timeIntervalSince1970 * 1000))
 
         let parser = EventHubConfigParser()
-        self.repository = EventHubKeyValueRepository(store: store, parser: parser)
+        self.repository = EventHubKeyValueStore(store: store, parser: parser)
         self.enabledSubject = CurrentValueSubject(enabled)
         self.settingsSubject = CurrentValueSubject(hasSettings ? settingsJSON.data(using: .utf8) : nil)
 
         let settingsProvider = FakeEventHubSettingsProviding(enabled: enabledSubject.eraseToAnyPublisher(), settings: settingsSubject.eraseToAnyPublisher())
 
-        self.manager = EventHubPixelManager(repository: repository, parser: parser, settings: settingsProvider, clock: scheduler, scheduler: scheduler)
+        self.manager = EventHub(repository: repository, parser: parser, settings: settingsProvider, clock: scheduler, scheduler: scheduler)
         self.cancellable = manager.firedPixelsPublisher.sink { [weak self] in self?.fired.append($0) }
     }
 
     /// A foregrounded fixture with config applied — the common "active period" starting point.
-    static func active(_ settingsJSON: String, enabled: Bool = true, hasSettings: Bool = true) -> EventHubManagerFixture {
-        let fixture = EventHubManagerFixture(store: InMemoryKeyValueStore(), settingsJSON: settingsJSON, enabled: enabled, hasSettings: hasSettings)
+    static func active(_ settingsJSON: String, enabled: Bool = true, hasSettings: Bool = true) -> EventHubFixture {
+        let fixture = EventHubFixture(store: InMemoryKeyValueStore(), settingsJSON: settingsJSON, enabled: enabled, hasSettings: hasSettings)
         fixture.manager.onAppForegrounded()
         fixture.manager.onConfigChanged()
         return fixture
     }
 
     /// A backgrounded fixture (config not yet applied) — for foreground-gating scenarios.
-    static func background(_ settingsJSON: String, enabled: Bool = true, hasSettings: Bool = true) -> EventHubManagerFixture {
-        EventHubManagerFixture(store: InMemoryKeyValueStore(), settingsJSON: settingsJSON, enabled: enabled, hasSettings: hasSettings)
+    static func background(_ settingsJSON: String, enabled: Bool = true, hasSettings: Bool = true) -> EventHubFixture {
+        EventHubFixture(store: InMemoryKeyValueStore(), settingsJSON: settingsJSON, enabled: enabled, hasSettings: hasSettings)
     }
 
     static func webEvent(_ type: String) -> [String: Any] {
@@ -89,19 +89,19 @@ final class EventHubManagerFixture {
     /// Plants a corrupt persisted state directly into the store (an active period window, but an
     /// unparseable config snapshot) so load-time resilience can be exercised on the next start.
     func plantCorruptState(_ pixelName: String) {
-        var stored = (try? JSONDecoder().decode([String: EventHubStoredPixelState].self, from: store.object(forKey: EventHubKeyValueRepository.storageKey) as? Data ?? Data())) ?? [:]
+        var stored = (try? JSONDecoder().decode([String: EventHubStoredPixelState].self, from: store.object(forKey: EventHubKeyValueStore.storageKey) as? Data ?? Data())) ?? [:]
         stored[pixelName] = EventHubStoredPixelState(periodStartMillis: 0, periodEndMillis: .max, paramsJSON: "{}", configJSON: "not valid json")
-        store.set(try? JSONEncoder().encode(stored), forKey: EventHubKeyValueRepository.storageKey)
+        store.set(try? JSONEncoder().encode(stored), forKey: EventHubKeyValueStore.storageKey)
     }
 
     /// Builds a fresh, foregrounded manager over the same persisted store (simulates a restart).
-    func restart() -> EventHubManagerFixture {
+    func restart() -> EventHubFixture {
         // Backgrounding is a flush boundary, but the write-behind flush runs on the scheduler, so
         // advance virtual time to let it complete before "restarting" over the same persisted store.
         manager.onAppBackgrounded()
         scheduler.advance(by: Self.writeBehindFlush)
 
-        let fixture = EventHubManagerFixture(store: store, settingsJSON: settingsJSON, enabled: enabledSubject.value, hasSettings: true)
+        let fixture = EventHubFixture(store: store, settingsJSON: settingsJSON, enabled: enabledSubject.value, hasSettings: true)
         fixture.manager.onAppForegrounded()
         fixture.manager.onConfigChanged()
         return fixture

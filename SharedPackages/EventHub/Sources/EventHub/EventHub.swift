@@ -16,7 +16,7 @@ public struct FiredPixel: Equatable, Sendable {
 /// The EventHub runtime. Receives web events and browser-native signals, routes them to the configured
 /// telemetry, maintains aggregation state and period windows, and fires telemetry pixels. Lifecycle and
 /// navigation signals are delivered by the (out-of-scope) wiring layer, which calls these methods.
-public protocol EventHubPixelManaging: AnyObject {
+public protocol EventHubManaging: AnyObject {
     var firedPixelsPublisher: AnyPublisher<FiredPixel, Never> { get }
 
     /// Processes an incoming `webEvent` envelope (`{ "type": ..., "data": ... }`) from the tab
@@ -51,7 +51,7 @@ public protocol EventHubPixelManaging: AnyObject {
     func onAppBackgrounded()
 }
 
-public extension EventHubPixelManaging {
+public extension EventHubManaging {
     func handleImmediateEvent(_ type: String) { handleImmediateEvent(type, data: nil) }
     func handleAggregatedEvent(_ type: String) { handleAggregatedEvent(type, data: nil) }
 }
@@ -59,8 +59,8 @@ public extension EventHubPixelManaging {
 /// Stub: every method is a no-op; `firedPixelsPublisher` never emits; `isEnabled()` always returns
 /// `false`. Every manager test task (7–12) is expected to fail until a follow-up implementation task
 /// fills these in.
-public final class EventHubPixelManager: EventHubPixelManaging {
-    private let repository: EventHubRepository
+public final class EventHub: EventHubManaging {
+    private let repository: EventHubStore
     private let parser: EventHubConfigParsing
     private let settings: EventHubSettingsProviding
     private let clock: EventHubClock
@@ -73,7 +73,7 @@ public final class EventHubPixelManager: EventHubPixelManaging {
     /// `internal IReadOnlyCollection<PixelState> ActivePixelStates` marker (exposed to tests only).
     var activePixelStates: [PixelState] { [] }
 
-    public init(repository: EventHubRepository, parser: EventHubConfigParsing, settings: EventHubSettingsProviding, clock: EventHubClock, scheduler: EventHubScheduling) {
+    public init(repository: EventHubStore, parser: EventHubConfigParsing, settings: EventHubSettingsProviding, clock: EventHubClock, scheduler: EventHubScheduling) {
         self.repository = repository
         self.parser = parser
         self.settings = settings

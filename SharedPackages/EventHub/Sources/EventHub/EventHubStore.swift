@@ -3,7 +3,7 @@ import Persistence
 
 /// Persists per-pixel EventHub runtime state across app restarts. State survives the fire button and
 /// is only cleared by EventHub itself (period fire, config disable). Backed by the key-value store.
-public protocol EventHubRepository {
+public protocol EventHubStore {
     /// Returns the persisted state for the named pixel, or `nil` if absent or corrupt.
     func pixelState(named name: String) -> PixelState?
 
@@ -20,9 +20,9 @@ public protocol EventHubRepository {
     func deleteAllPixelStates()
 }
 
-/// Stub: every method is a no-op / always-miss. `EventHubRepositoryTests` is expected to fail until a
+/// Stub: every method is a no-op / always-miss. `EventHubStoreTests` is expected to fail until a
 /// follow-up implementation task fills these in.
-public final class EventHubKeyValueRepository: EventHubRepository {
+public final class EventHubKeyValueStore: EventHubStore {
     /// The single key under which the map of pixel-name to `EventHubStoredPixelState` is stored.
     public static let storageKey = "eventhub_pixel_states"
 

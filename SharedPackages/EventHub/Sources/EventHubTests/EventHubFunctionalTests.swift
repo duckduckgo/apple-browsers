@@ -53,23 +53,23 @@ struct EventHubFunctionalTests {
 
     /// A class (not a struct): the `firedPixelsPublisher` sink must mutate `fired` from inside an
     /// `@escaping` Combine closure, which requires reference semantics — capturing an `inout` struct
-    /// parameter in an escaping closure is illegal in Swift. Mirrors `EventHubManagerFixture`'s own
+    /// parameter in an escaping closure is illegal in Swift. Mirrors `EventHubFixture`'s own
     /// class-based design (Task 7) for exactly this reason.
     private final class Harness {
         let scheduler = ManualEventHubScheduler(startMillis: 1_780_000_000_000)
-        let repository: EventHubRepository
-        let manager: EventHubPixelManager
-        let handler: EventHubMessageHandler
+        let repository: EventHubStore
+        let manager: EventHub
+        let handler: WebEventsHandler
         private(set) var fired: [FiredPixel] = []
         private var cancellable: AnyCancellable?
 
         init(settingsJSON: String) {
             let parser = EventHubConfigParser()
             let store = InMemoryKeyValueStore()
-            repository = EventHubKeyValueRepository(store: store, parser: parser)
+            repository = EventHubKeyValueStore(store: store, parser: parser)
             let settings = StaticSettingsProviding(json: settingsJSON)
-            manager = EventHubPixelManager(repository: repository, parser: parser, settings: settings, clock: scheduler, scheduler: scheduler)
-            handler = EventHubMessageHandler(manager: manager, tabIDProvider: { _ in .new() })
+            manager = EventHub(repository: repository, parser: parser, settings: settings, clock: scheduler, scheduler: scheduler)
+            handler = WebEventsHandler(manager: manager, tabIDProvider: { _ in .new() })
             manager.onAppForegrounded()
             manager.onConfigChanged()
             cancellable = manager.firedPixelsPublisher.sink { [weak self] in self?.fired.append($0) }
@@ -159,7 +159,7 @@ struct EventHubFunctionalTests {
         try await harness.sendWebEvent("adwall", tabID: .new())
         // NOTE: this fixture's settings are static (Just(...)) — a follow-up implementation task
         // porting this test for real needs a settable settings publisher here, as
-        // EventHubManagerFixture provides, to flip `enabled` to false mid-test.
+        // EventHubFixture provides, to flip `enabled` to false mid-test.
         harness.scheduler.advance(by: Self.periodSeconds * 2)
 
         #expect(!harness.fired.contains { $0.name == "webTelemetry_adwalls_day_windows" && $0.parameters["adwallCount"] == "1" })
@@ -173,11 +173,11 @@ struct EventHubFunctionalTests {
 
         // First run: count one adwall event over a repository backed by `sharedStore`.
         let firstScheduler = ManualEventHubScheduler(startMillis: 1_780_000_000_000)
-        let firstRepository = EventHubKeyValueRepository(store: sharedStore, parser: parser)
-        let firstManager = EventHubPixelManager(repository: firstRepository, parser: parser,
+        let firstRepository = EventHubKeyValueStore(store: sharedStore, parser: parser)
+        let firstManager = EventHub(repository: firstRepository, parser: parser,
                                                  settings: StaticSettingsProviding(json: Self.adwallConfig),
                                                  clock: firstScheduler, scheduler: firstScheduler)
-        let firstHandler = EventHubMessageHandler(manager: firstManager, tabIDProvider: { _ in tab })
+        let firstHandler = WebEventsHandler(manager: firstManager, tabIDProvider: { _ in tab })
         firstManager.onAppForegrounded()
         firstManager.onConfigChanged()
 
@@ -188,8 +188,8 @@ struct EventHubFunctionalTests {
         // Second run over the SAME store, with the clock started past the persisted period end (as if
         // the app had been closed while the period elapsed).
         let secondScheduler = ManualEventHubScheduler(startMillis: 1_780_000_000_000 + Int64((Self.periodSeconds + 10) * 1000))
-        let secondRepository = EventHubKeyValueRepository(store: sharedStore, parser: parser)
-        let secondManager = EventHubPixelManager(repository: secondRepository, parser: parser,
+        let secondRepository = EventHubKeyValueStore(store: sharedStore, parser: parser)
+        let secondManager = EventHub(repository: secondRepository, parser: parser,
                                                   settings: StaticSettingsProviding(json: Self.adwallConfig),
                                                   clock: secondScheduler, scheduler: secondScheduler)
         var fired: [FiredPixel] = []

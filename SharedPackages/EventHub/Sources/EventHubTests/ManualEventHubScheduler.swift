@@ -4,7 +4,7 @@ import Foundation
 /// Test double standing in for both `EventHubClock` and `EventHubScheduling`: a single manually-driven
 /// virtual clock, exactly as the Windows fixture's single Rx `TestScheduler` drove both `Now` and period
 /// timers. `advance(by:)` loops so an action that reschedules another already-due action also fires
-/// within the same call (see `EventHubPixelManagerTests.firingResetsTheCounterForTheNextPeriod`, which
+/// within the same call (see `EventHubTests.firingResetsTheCounterForTheNextPeriod`, which
 /// relies on the period-end firing and the next period's timer both being live after one `advance`).
 final class ManualEventHubScheduler: EventHubClock, EventHubScheduling {
     private var currentMillis: Int64

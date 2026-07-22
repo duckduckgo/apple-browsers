@@ -18,25 +18,25 @@ struct EventHubPersistenceThrottlingTests {
 
     @Test("burst counts every event without loss")
     func burstCountsEveryEventWithoutLoss() {
-        let f = EventHubManagerFixture.active(Self.burstConfig)
+        let f = EventHubFixture.active(Self.burstConfig)
         for _ in 0..<Self.burstSize {
-            f.manager.handleWebEvent(EventHubManagerFixture.webEvent("e"), tabID: .new())
+            f.manager.handleWebEvent(EventHubFixture.webEvent("e"), tabID: .new())
         }
         #expect(f.count(of: "burst") == Self.burstSize)
     }
 
     @Test("burst coalesces persistence writes")
     func burstCoalescesPersistenceWrites() {
-        let f = EventHubManagerFixture.active(Self.burstConfig)
+        let f = EventHubFixture.active(Self.burstConfig)
         let baseline = f.store.setCallCount
 
         for _ in 0..<Self.burstSize {
-            f.manager.handleWebEvent(EventHubManagerFixture.webEvent("e"), tabID: .new())
+            f.manager.handleWebEvent(EventHubFixture.webEvent("e"), tabID: .new())
         }
 
         // Counting is synchronous but persistence is deferred, so advance time to actually run the
         // write-behind flush — otherwise this would assert against zero writes trivially.
-        f.advance(by: EventHubManagerFixture.writeBehindFlush)
+        f.advance(by: EventHubFixture.writeBehindFlush)
 
         // Writes must be coalesced — far fewer than one per event (a per-event write would be ~burstSize).
         #expect(f.store.setCallCount - baseline < 50)
@@ -44,9 +44,9 @@ struct EventHubPersistenceThrottlingTests {
 
     @Test("burst count survives a restart")
     func burstCountSurvivesRestart() {
-        let f = EventHubManagerFixture.active(Self.burstConfig)
+        let f = EventHubFixture.active(Self.burstConfig)
         for _ in 0..<Self.burstSize {
-            f.manager.handleWebEvent(EventHubManagerFixture.webEvent("e"), tabID: .new())
+            f.manager.handleWebEvent(EventHubFixture.webEvent("e"), tabID: .new())
         }
 
         let restarted = f.restart()

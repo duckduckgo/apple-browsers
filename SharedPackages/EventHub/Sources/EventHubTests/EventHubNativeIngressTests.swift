@@ -70,7 +70,7 @@ struct EventHubNativeIngressTests {
 
     @Test("handleImmediateEvent fires the matching immediate pixel")
     func handleImmediateEventFiresMatchingImmediatePixel() {
-        let f = EventHubManagerFixture.active(Self.immediateConfig)
+        let f = EventHubFixture.active(Self.immediateConfig)
         f.manager.handleImmediateEvent("impression")
         #expect(f.fired.count == 1)
         #expect(f.fired.first?.name == "webEvent_impression_windows")
@@ -79,7 +79,7 @@ struct EventHubNativeIngressTests {
     @Test("handleImmediateEvent forwards the data object to data-template params")
     func handleImmediateEventForwardsDataObject() {
         struct LoginPayload: Encodable { let loginState: String }
-        let f = EventHubManagerFixture.active(Self.immediateDataConfig)
+        let f = EventHubFixture.active(Self.immediateDataConfig)
         f.manager.handleImmediateEvent("login", data: LoginPayload(loginState: "logged-in"))
         #expect(f.fired.count == 1)
         #expect(f.fired.first?.parameters["loginState"] == "%22logged-in%22")
@@ -87,7 +87,7 @@ struct EventHubNativeIngressTests {
 
     @Test("handleImmediateEvent does not count toward a period counter of the same source")
     func handleImmediateEventDoesNotCountPeriodCounter() {
-        let f = EventHubManagerFixture.active(Self.bothConfig)
+        let f = EventHubFixture.active(Self.bothConfig)
         f.manager.handleImmediateEvent("test")
         #expect(f.fired.count == 1)
         #expect(f.fired.first?.name == "imm_windows")
@@ -96,21 +96,21 @@ struct EventHubNativeIngressTests {
 
     @Test("handleImmediateEvent fires nothing when the feature is disabled")
     func handleImmediateEventFiresNothingWhenDisabled() {
-        let f = EventHubManagerFixture.active(Self.immediateConfig, enabled: false)
+        let f = EventHubFixture.active(Self.immediateConfig, enabled: false)
         f.manager.handleImmediateEvent("impression")
         #expect(f.fired.isEmpty)
     }
 
     @Test("handleImmediateEvent fires nothing for an unknown or empty type", arguments: ["unknown", ""])
     func handleImmediateEventFiresNothingForUnknownOrEmptyType(type: String) {
-        let f = EventHubManagerFixture.active(Self.immediateConfig)
+        let f = EventHubFixture.active(Self.immediateConfig)
         f.manager.handleImmediateEvent(type)
         #expect(f.fired.isEmpty)
     }
 
     @Test("handleImmediateEvent ignores unserialisable data and still fires")
     func handleImmediateEventIgnoresUnserialisableDataAndStillFires() {
-        let f = EventHubManagerFixture.active(Self.immediateConfig)
+        let f = EventHubFixture.active(Self.immediateConfig)
         // The payload's encode(to:) throws; the fail-safe path drops the data and a parameter-less
         // immediate pixel still fires rather than the whole call aborting.
         f.manager.handleImmediateEvent("impression", data: ThrowingData())
@@ -121,14 +121,14 @@ struct EventHubNativeIngressTests {
 
     @Test("handleAggregatedEvent increments the matching counter")
     func handleAggregatedEventIncrementsMatchingCounter() {
-        let f = EventHubManagerFixture.active(Self.periodConfig)
+        let f = EventHubFixture.active(Self.periodConfig)
         f.manager.handleAggregatedEvent("test")
         #expect(f.count(of: Self.pixel1) == 1)
     }
 
     @Test("handleAggregatedEvent counts every call with no per-tab dedup")
     func handleAggregatedEventCountsEveryCallNoDedup() {
-        let f = EventHubManagerFixture.active(Self.periodConfig)
+        let f = EventHubFixture.active(Self.periodConfig)
         // The differentiator from the web path: three identical native events (no tab) count three
         // times, whereas three same-tab web events on one page would dedup to one.
         f.manager.handleAggregatedEvent("test")
@@ -139,7 +139,7 @@ struct EventHubNativeIngressTests {
 
     @Test("handleAggregatedEvent stops at the open-ended bucket")
     func handleAggregatedEventStopsAtOpenEndedBucket() throws {
-        let f = EventHubManagerFixture.active(Self.periodConfig)
+        let f = EventHubFixture.active(Self.periodConfig)
         for _ in 0..<41 {
             f.manager.handleAggregatedEvent("test")
         }
@@ -151,7 +151,7 @@ struct EventHubNativeIngressTests {
     @Test("handleAggregatedEvent records the last data value from a matching source")
     func handleAggregatedEventRecordsLastDataValue() {
         struct LoginPayload: Encodable { let loginState: String }
-        let f = EventHubManagerFixture.active(Self.periodDataConfig)
+        let f = EventHubFixture.active(Self.periodDataConfig)
         f.manager.handleAggregatedEvent("yt", data: LoginPayload(loginState: "a"))
         f.manager.handleAggregatedEvent("yt", data: LoginPayload(loginState: "b"))
         f.advance(by: 60)
@@ -161,7 +161,7 @@ struct EventHubNativeIngressTests {
 
     @Test("handleAggregatedEvent does not fire an immediate pixel of the same source")
     func handleAggregatedEventDoesNotFireImmediatePixel() {
-        let f = EventHubManagerFixture.active(Self.bothConfig)
+        let f = EventHubFixture.active(Self.bothConfig)
         f.manager.handleAggregatedEvent("test")
         #expect(f.fired.isEmpty)
         #expect(f.count(of: "per") == 1)
@@ -169,14 +169,14 @@ struct EventHubNativeIngressTests {
 
     @Test("handleAggregatedEvent counts nothing when the feature is disabled")
     func handleAggregatedEventCountsNothingWhenDisabled() {
-        let f = EventHubManagerFixture.active(Self.periodConfig, enabled: false)
+        let f = EventHubFixture.active(Self.periodConfig, enabled: false)
         f.manager.handleAggregatedEvent("test")
         #expect(f.state(of: Self.pixel1) == nil)
     }
 
     @Test("handleAggregatedEvent counts nothing for an unknown or empty type", arguments: ["unknown", ""])
     func handleAggregatedEventCountsNothingForUnknownOrEmptyType(type: String) {
-        let f = EventHubManagerFixture.active(Self.periodConfig)
+        let f = EventHubFixture.active(Self.periodConfig)
         f.manager.handleAggregatedEvent(type)
         #expect(f.count(of: Self.pixel1) == 0)
     }

@@ -171,6 +171,9 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
             defer { optionsViewModel.isBusy = false }
             do {
                 guard await self.performDeferredPreservedAccountCleanupIfNeeded() else {
+                    if useSimplifiedLayoutV2 {
+                        optionsViewModel.connectingSheetPhase = .syncAnotherDevice(isConnecting: false)
+                    }
                     return
                 }
                 try await self.syncService.createAccount(deviceName: self.deviceName, deviceType: self.deviceType)
@@ -511,6 +514,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         case .simplifiedToggle:
             viewModel.beginSimplifiedSyncSetup()
         case .simplifiedToggleV2:
+            viewModel.isBusy = false
             viewModel.connectingSheetPhase = .syncAnotherDevice(isConnecting: false)
         }
     }

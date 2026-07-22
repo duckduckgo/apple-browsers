@@ -184,6 +184,7 @@ class SwipeTabsCoordinator: NSObject {
     /// blur and exposes nested shadow/card layers as "stacked screens." See
     /// `prepareAuxiliarySwipeSnapshots` for the snapshot path.
     var auxiliarySwipeViews: [UIView] = []
+    var liveSwipeChromeViews: [UIView] = []
 
     /// Active snapshot views of `auxiliarySwipeViews` during a swipe, parked in the superview
     /// so they ignore the source view's clipping / hierarchy. Reset by `cleanUpViews`.
@@ -750,7 +751,7 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
         }
         liveSourceChromeView = container
 
-        hiddenLiveSourceChromeViews = auxiliarySwipeViews.compactMap { view in
+        hiddenLiveSourceChromeViews = liveSwipeChromeViews.compactMap { view in
             guard !view.isHidden, view.alpha > 0.01 else { return nil }
             let alpha = view.alpha
             view.alpha = 0

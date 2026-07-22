@@ -30,6 +30,10 @@ extension MainViewController {
         swipeTabsCoordinator?.auxiliarySwipeViews = [
             viewCoordinator.unifiedToggleInputContainer,
             viewCoordinator.aiChatTabChatHeaderContainer,
+        ]
+        swipeTabsCoordinator?.liveSwipeChromeViews = [
+            viewCoordinator.unifiedToggleInputContainer,
+            viewCoordinator.aiChatTabChatHeaderContainer,
             viewCoordinator.unifiedInputContentContainer,
             viewCoordinator.navigationBarCollectionView,
             viewCoordinator.toolbar,

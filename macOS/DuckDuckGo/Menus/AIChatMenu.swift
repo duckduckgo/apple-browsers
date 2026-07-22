@@ -189,7 +189,7 @@ final class AIChatMenu: NSMenu {
             let separator = NSMenuItem.separator()
             let viewAllItem = NSMenuItem(title: UserText.aiChatMenuViewAllChats, action: #selector(viewAllChatsTapped), keyEquivalent: "")
             viewAllItem.target = self
-            viewAllItem.image = origin == .moreOptionsMenu ? DesignSystemImages.Glyphs.Size16.aiChatHistory : DesignSystemImages.Glyphs.Size12.aiChatHistory
+            viewAllItem.image = DesignSystemImages.Glyphs.Size12.aiChatHistory
             let insertIndex = labelIndex + 1 + chats.count
             insertItem(separator, at: insertIndex)
             insertItem(viewAllItem, at: insertIndex + 1)

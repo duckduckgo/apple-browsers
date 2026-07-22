@@ -24,7 +24,7 @@ import BrowserServicesKit
 import Carbon.HIToolbox
 
 /// Hosts the Duck.ai Customize Responses card in a modal over the browser window: a borderless
-/// window with a dimming scrim and a centered Duck.ai web view at `?placement=native-customize-modal`.
+/// window with a dimming scrim and a centered Duck.ai web view at `?customize-responses=full`.
 @MainActor
 final class CustomizeResponsesModalController: NSObject {
 

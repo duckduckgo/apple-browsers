@@ -114,6 +114,14 @@ final class UserText {
     static let networkProtectionSiteTroubleShootingViewTitle = NSLocalizedString("network.protection.site.troubleshooting.title", bundle: Bundle.module, value: "Website Preferences", comment: "Title for VPN website preferences view")
     static let networkProtectionSiteTroubleShootingViewExcludeWebsite = NSLocalizedString("network.protection.site.troubleshooting.exclude", bundle: Bundle.module, value: "Exclude %@ from VPN", comment: "Option to exclude a “%@” website from the VPN")
 
+    // MARK: Security
+
+    static let networkProtectionStrictRoutingPillOn = NSLocalizedString("network.protection.status.view.strict.routing.pill.on", bundle: Bundle.module, value: "Strict routing: On", comment: "Label for the status pill shown while the VPN's Strict routing setting is on")
+    static let networkProtectionStrictRoutingPillOff = NSLocalizedString("network.protection.status.view.strict.routing.pill.off", bundle: Bundle.module, value: "Strict routing: Off", comment: "Label for the status pill shown while the VPN's Strict routing setting is off")
+    static let networkProtectionStrictRoutingPillTooltipOn = NSLocalizedString("network.protection.status.view.strict.routing.pill.tooltip.on", bundle: Bundle.module, value: "Some apps may not work while Strict Routing is on.", comment: "Tooltip shown when hovering the status pill while the VPN's Strict routing setting is on")
+    static let networkProtectionStrictRoutingPillTooltipOff = NSLocalizedString("network.protection.status.view.strict.routing.pill.tooltip.off", bundle: Bundle.module, value: "Strict Routing is recommended for public networks.", comment: "Tooltip shown when hovering the status pill while the VPN's Strict routing setting is off")
+    static let networkProtectionStatusHeaderMessageStrictRoutingOff = NSLocalizedString("network.protection.status.header.message.strict.routing.off", bundle: Bundle.module, value: "Some traffic may bypass the VPN while Strict Routing is off. Strict Routing is recommended for public networks.", comment: "Status view message shown while the VPN is on but Strict routing is off")
+
     // MARK: Updating Appex to Sysex for App Store builds
 
     static let vpnAppStoreSysexUpdatePromptTitle = NSLocalizedString("vpn.appstore.sysex.update.prompt.title", bundle: Bundle.module, value: "New VPN version available!", comment: "Title shown to users to ask them to update the VPN to our System Extension, which requires reinstalling the VPN")

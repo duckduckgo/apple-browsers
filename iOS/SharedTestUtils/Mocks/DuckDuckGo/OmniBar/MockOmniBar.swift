@@ -129,6 +129,8 @@ final class MockOmniBar: OmniBar {
         func restoreBarChrome() { }
         func makeGlass() { }
         func makeOpaque() { }
+        func restoreFloatingFieldAppearance() { }
+        func updateAIChatButtonForContextualSheet(isPresented: Bool) { }
         func setFloatingMinimalChromeBar(_ enabled: Bool) { }
 
         var progressView: DuckDuckGo.ProgressView?

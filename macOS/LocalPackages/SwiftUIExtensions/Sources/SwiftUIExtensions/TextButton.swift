@@ -17,19 +17,25 @@
 //
 
 import SwiftUI
+import DesignResourcesKit
 
 public typealias LinkButton = TextButton
 public struct TextButton: View {
 
     public let title: String
-    public let textColor: Color
     public let fontSize: CGFloat
     public let fontWeight: Font.Weight
     public let action: () -> Void
 
+    /// Explicit color supplied by the caller. When `nil`, the rebrandable link color is resolved in `body`
+    /// from the environment palette, so it tracks theme changes.
+    private let explicitTextColor: Color?
+
+    @Environment(\.designSystemPalette) private var palette
+
     public init(_ title: String, textColor: Color? = nil, fontSize: CGFloat = NSFont.systemFontSize, weight: Font.Weight = .regular, action: @escaping () -> Void) {
         self.title = title
-        self.textColor = textColor ?? Color(.linkBlue)
+        self.explicitTextColor = textColor
         self.fontSize = fontSize
         self.fontWeight = weight
         self.action = action
@@ -40,7 +46,7 @@ public struct TextButton: View {
             Text(title)
                 .font(.system(size: fontSize))
                 .fontWeight(fontWeight)
-                .foregroundColor(textColor)
+                .foregroundColor(explicitTextColor ?? .rebrandableLink(palette: palette))
         }
         .buttonStyle(.plain)
         .cursor(.pointingHand)

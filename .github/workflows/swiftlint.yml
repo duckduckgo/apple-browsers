@@ -3,7 +3,7 @@ on:
   push:
     branches: [main]
   pull_request:
-    types: [labeled, unlabeled, opened, reopened, edited, synchronize, ready_for_review]
+    types: [labeled, unlabeled, opened, reopened, synchronize, ready_for_review]
 
 jobs:
   should-run-checks:

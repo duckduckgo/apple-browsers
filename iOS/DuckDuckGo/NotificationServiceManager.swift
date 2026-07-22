@@ -71,7 +71,9 @@ final class NotificationServiceManager: NSObject, NotificationServiceManaging {
         case InactivityNotificationSchedulerService.Constants.notificationIdentifier:
             handleInactivityNotification(for: response)
         case let raw where NetworkProtectionNotificationIdentifier(rawValue: raw) != nil:
-            handleVPNNotification()
+            if let identifier = NetworkProtectionNotificationIdentifier(rawValue: raw) {
+                handleVPNNotification(identifier: identifier)
+            }
         case let raw where DataBrokerProtectionNotificationIdentifier(rawValue: raw) != nil:
             if let identifier = DataBrokerProtectionNotificationIdentifier(rawValue: raw) {
                 handleDataBrokerProtectionNotification(identifier: identifier)
@@ -94,8 +96,10 @@ private extension NotificationServiceManager {
     }
     
     @MainActor
-    func handleVPNNotification() {
-        mainCoordinator.presentNetworkProtectionStatusSettingsModal(origin: .notificationVPN)
+    func handleVPNNotification(identifier: NetworkProtectionNotificationIdentifier) {
+        let scrollToStrictRouting = identifier == .strictRoutingReminder
+        mainCoordinator.presentNetworkProtectionStatusSettingsModal(entryPoint: .notification,
+                                                                    scrollToStrictRouting: scrollToStrictRouting)
     }
 
     @MainActor

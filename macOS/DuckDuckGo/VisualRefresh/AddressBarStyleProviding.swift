@@ -127,7 +127,7 @@ final class LegacyAddressBarStyleProvider: AddressBarStyleProviding {
     let addressBarInactiveBackgroundViewVerticalPadding: CGFloat = 2 // Not used in Legacy Mode
     let shouldShowNewSearchIcon: Bool = true
     let shouldAddPaddingToAddressBarButtons: Bool = true
-    let privacyShieldStyleProvider: PrivacyShieldAddressBarStyleProviding = CurrentPrivacyShieldAddressBarStyleProvider()
+    let privacyShieldStyleProvider: PrivacyShieldAddressBarStyleProviding = LegacyPrivacyShieldAddressBarStyleProvider()
     let shouldAddAddressBarShadowWhenInactive: Bool = true
     let tabBarButtonSize: CGFloat = 28
     let addressBarButtonSize: CGFloat = 28
@@ -272,7 +272,7 @@ final class CurrentAddressBarStyleProvider: AddressBarStyleProviding {
     let addTabButtonPadding: CGFloat = 32                       // Takes into account the extra 24pts (12pts for each inset on s-shaped tabs)
     let aiChatOmnibarTextContainerLeadingPadding: CGFloat = 13
     let aiChatOmnibarTextContainerTopPadding: CGFloat = 6
-    let privacyShieldStyleProvider: PrivacyShieldAddressBarStyleProviding = CurrentPrivacyShieldAddressBarStyleProvider()
+    let privacyShieldStyleProvider: PrivacyShieldAddressBarStyleProviding = LatestPrivacyShieldAddressBarStyleProvider()
     let suggestionHighlightCornerRadius: CGFloat = 12
     let suggestionHighlightHorizontalPadding: CGFloat = 5
     let suggestionIconViewLeadingPadding: CGFloat = 17

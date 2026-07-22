@@ -147,7 +147,7 @@ class MainViewCoordinator {
             navigationBarContainer.alpha = 1
             navigationBarContainer.isUserInteractionEnabled = true
             if position.isBottom {
-                setContentContainerBottomAnchorMode(.toolbar)
+                setContentContainerBottomAnchorMode(requesting: .toolbar)
             }
             isOmnibarInToolbar = false
             return
@@ -165,7 +165,7 @@ class MainViewCoordinator {
             navigationBarContainer.isUserInteractionEnabled = true
             // Span content full-bleed to the main view bottom (behind the floating toolbar) so the
             // web scroll edge sits at the screen bottom and content doesn't move when the bars hide.
-            setContentContainerBottomAnchorMode(preferredBottomContentAnchorModeForVisibleChrome())
+            setContentContainerBottomAnchorMode(requesting: preferredBottomContentAnchorModeForVisibleChrome())
             isOmnibarInToolbar = false
         case .bottom:
             guard FloatingUILayoutPolicy.shouldHostOmnibarInFloatingToolbar(
@@ -191,7 +191,7 @@ class MainViewCoordinator {
             navigationBarContainer.alpha = 0
             navigationBarContainer.isUserInteractionEnabled = false
             superview.bringSubviewToFront(toolbar)
-            setContentContainerBottomAnchorMode(preferredBottomContentAnchorModeForVisibleChrome())
+            setContentContainerBottomAnchorMode(requesting: preferredBottomContentAnchorModeForVisibleChrome())
             isOmnibarInToolbar = true
         }
     }
@@ -264,7 +264,7 @@ class MainViewCoordinator {
 
         if isUnifiedToggleInputVisible {
             navigationBarContainer.isHidden = false
-            setContentContainerBottomAnchorMode(.unifiedToggleInput)
+            setContentContainerBottomAnchorMode(requesting: .unifiedToggleInput)
             return
         }
 
@@ -275,7 +275,7 @@ class MainViewCoordinator {
             navigationBarContainer.isHidden = true
         }
 
-        setContentContainerBottomAnchorMode(.safeArea)
+        setContentContainerBottomAnchorMode(requesting: .safeArea)
     }
 
     func showNavigationBarWithBottomPosition() {
@@ -285,7 +285,7 @@ class MainViewCoordinator {
             navigationBarContainer.isHidden = false
             navigationBarContainer.alpha = 1
             navigationBarContainer.isUserInteractionEnabled = true
-            setContentContainerBottomAnchorMode(.unifiedToggleInput)
+            setContentContainerBottomAnchorMode(requesting: .unifiedToggleInput)
             return
         }
 
@@ -298,9 +298,9 @@ class MainViewCoordinator {
         }
 
         if isNavigationChromeHidden {
-            setContentContainerBottomAnchorMode(.unifiedToggleInput)
+            setContentContainerBottomAnchorMode(requesting: .unifiedToggleInput)
         } else {
-            setContentContainerBottomAnchorMode(preferredBottomContentAnchorModeForVisibleChrome())
+            setContentContainerBottomAnchorMode(requesting: preferredBottomContentAnchorModeForVisibleChrome())
         }
     }
 
@@ -560,11 +560,11 @@ class MainViewCoordinator {
         navigationBarContainer.isHidden = hidden
         applyAITabCollapsedTopSeparatorVisibility()
         if hidden {
-            setContentContainerBottomAnchorMode(.safeArea)
+            setContentContainerBottomAnchorMode(requesting: .safeArea)
         } else if isNavigationChromeHidden {
-            setContentContainerBottomAnchorMode(.unifiedToggleInput)
+            setContentContainerBottomAnchorMode(requesting: .unifiedToggleInput)
         } else {
-            setContentContainerBottomAnchorMode(.toolbar)
+            setContentContainerBottomAnchorMode(requesting: .toolbar)
         }
     }
 
@@ -598,9 +598,9 @@ class MainViewCoordinator {
                 constraints.statusBackgroundBottomToSafeAreaTop.isActive = true
             }
             if navigationBarContainer.isHidden {
-                setContentContainerBottomAnchorMode(.safeArea)
+                setContentContainerBottomAnchorMode(requesting: .safeArea)
             } else {
-                setContentContainerBottomAnchorMode(.unifiedToggleInput)
+                setContentContainerBottomAnchorMode(requesting: .unifiedToggleInput)
             }
         } else {
             isNavigationChromeHidden = false
@@ -614,9 +614,9 @@ class MainViewCoordinator {
                 constraints.navigationBarContainerBottom.constant = 0
             }
             if navigationBarContainer.isHidden {
-                setContentContainerBottomAnchorMode(.safeArea)
+                setContentContainerBottomAnchorMode(requesting: .safeArea)
             } else {
-                setContentContainerBottomAnchorMode(preferredBottomContentAnchorModeForVisibleChrome())
+                setContentContainerBottomAnchorMode(requesting: preferredBottomContentAnchorModeForVisibleChrome())
             }
         }
     }
@@ -714,16 +714,23 @@ class MainViewCoordinator {
     /// `.safeArea` then, matching what `setAITabBottomChromeHidden(true)` would set.
     func anchorContentContainerToInputTop() {
         if navigationBarContainer.isHidden {
-            setContentContainerBottomAnchorMode(.safeArea)
+            setContentContainerBottomAnchorMode(requesting: .safeArea)
         } else {
-            setContentContainerBottomAnchorMode(.unifiedToggleInput)
+            setContentContainerBottomAnchorMode(requesting: .unifiedToggleInput)
         }
     }
 
-    private func setContentContainerBottomAnchorMode(_ mode: ContentContainerBottomAnchorMode) {
-        constraints.contentContainerBottomToToolbarTop.isActive = mode == .toolbar
-        constraints.contentContainerBottomToUnifiedToggleInputTop.isActive = mode == .unifiedToggleInput
-        constraints.contentContainerBottomToSafeArea.isActive = mode == .safeArea
+    private var shouldUnifiedToggleInputOwnBottomAnchor: Bool {
+        isUnifiedToggleInputVisible
+            && !navigationBarContainer.isHidden
+            && !constraints.navigationBarContainerTop.isActive
+    }
+
+    private func setContentContainerBottomAnchorMode(requesting requestedMode: ContentContainerBottomAnchorMode) {
+        let resolvedMode: ContentContainerBottomAnchorMode = shouldUnifiedToggleInputOwnBottomAnchor ? .unifiedToggleInput : requestedMode
+        constraints.contentContainerBottomToToolbarTop.isActive = resolvedMode == .toolbar
+        constraints.contentContainerBottomToUnifiedToggleInputTop.isActive = resolvedMode == .unifiedToggleInput
+        constraints.contentContainerBottomToSafeArea.isActive = resolvedMode == .safeArea
     }
 
     /// Activates the resting content-container top anchor for the current mode. In floating top
@@ -737,12 +744,10 @@ class MainViewCoordinator {
     }
 
     private func activateBaseContentContainerTopAnchor() {
+        // Floating UI spans content to the screen top for both bar positions; chrome is reserved via obscured insets.
         let useFloatingTop = isFloatingUIEnabled
-            && addressBarPosition == .top
             && !isUnifiedToggleInputVisible
             && (aiChatTabChatHeaderContainer?.isHidden ?? true)
-        // Floating top spans to the screen edge (behind the status bar) so content can underflow all
-        // the way up; otherwise content sits below the chrome via the topSlide anchor.
         setContentContainerTopAnchorMode(useFloatingTop ? .floatingBehindBar : .standard)
     }
 
@@ -784,28 +789,47 @@ class MainViewCoordinator {
         isNavBarContainerBottomKeyboardBased = false
     }
 
-    /// Sets up nav bar for minimal chrome with bottom address bar:
-    /// keyboard-based bottom, expandable height, screen-edge bottom limit.
-    func applyMinimalChromeBottomLayout() {
-        // Bottom: keyboard-based
-        constraints.navigationBarContainerBottom.isActive = false
-        constraints.navigationBarContainerBottomSafeAreaFloor?.isActive = false
-        constraints.navigationBarContainerBottom = navigationBarContainer.bottomAnchor
-            .constraint(equalTo: superview.keyboardLayoutGuide.topAnchor)
-        constraints.navigationBarContainerBottom.priority = .defaultHigh
-        constraints.navigationBarContainerBottom.isActive = true
-        isNavBarContainerBottomKeyboardBased = true
-
-        // Bottom limit: screen edge (extends past safe area for home indicator)
-        let limit = navigationBarContainer.bottomAnchor
-            .constraint(lessThanOrEqualTo: superview.bottomAnchor)
-        limit.isActive = true
-        constraints.navigationBarContainerBottomSafeAreaFloor = limit
+    /// Minimal chrome bottom bar setup. Expandable height. Pin to screen bottom or to keyboard.
+    func applyMinimalChromeBottomLayout(pinnedToScreenBottom: Bool = false) {
+        setMinimalChromeBottomAnchor(pinnedToScreenBottom: pinnedToScreenBottom)
 
         // Height: expandable
         constraints.navigationBarContainerHeight.isActive = false
         constraints.navigationBarContainerMinHeight.isActive = true
         constraints.navigationBarCollectionViewSafeAreaBottom.isActive = true
+    }
+
+    /// Flip minimal chrome bar between screen bottom and above keyboard. No-op if not minimal chrome bottom.
+    func updateMinimalChromeBottomAnchor(pinnedToScreenBottom: Bool) {
+        guard isInMinimalChromeLayout, addressBarPosition.isBottom else { return }
+        setMinimalChromeBottomAnchor(pinnedToScreenBottom: pinnedToScreenBottom)
+    }
+
+    private func setMinimalChromeBottomAnchor(pinnedToScreenBottom: Bool) {
+        constraints.navigationBarContainerBottom.isActive = false
+        constraints.navigationBarContainerBottomSafeAreaFloor?.isActive = false
+        constraints.navigationBarContainerBottomSafeAreaFloor = nil
+
+        if pinnedToScreenBottom {
+            // Stick to screen bottom. Keyboard covers bar.
+            constraints.navigationBarContainerBottom = navigationBarContainer.bottomAnchor
+                .constraint(equalTo: superview.bottomAnchor)
+            constraints.navigationBarContainerBottom.isActive = true
+            isNavBarContainerBottomKeyboardBased = false
+        } else {
+            // Ride on top of keyboard for omnibar editing.
+            constraints.navigationBarContainerBottom = navigationBarContainer.bottomAnchor
+                .constraint(equalTo: superview.keyboardLayoutGuide.topAnchor)
+            constraints.navigationBarContainerBottom.priority = .defaultHigh
+            constraints.navigationBarContainerBottom.isActive = true
+            isNavBarContainerBottomKeyboardBased = true
+
+            // Do not go past screen edge.
+            let limit = navigationBarContainer.bottomAnchor
+                .constraint(lessThanOrEqualTo: superview.bottomAnchor)
+            limit.isActive = true
+            constraints.navigationBarContainerBottomSafeAreaFloor = limit
+        }
     }
 
     /// Resets nav bar from minimal chrome to default layout.

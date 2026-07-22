@@ -26,4 +26,5 @@ public enum NetworkProtectionNotificationIdentifier: String {
     case entitlement = "network-protection.notification.entitlement"
     case snoozeEnded = "network-protection.notification.snooze-ended"
     case debugEvent = "network-protection.notification.debug-event"
+    case strictRoutingReminder = "network-protection.notification.strict-routing-reminder"
 }

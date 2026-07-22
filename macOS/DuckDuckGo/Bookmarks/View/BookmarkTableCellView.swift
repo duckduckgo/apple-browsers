@@ -18,6 +18,7 @@
 
 import AppKit
 import Foundation
+import DesignResourcesKitIcons
 
 @objc protocol BookmarkTableCellViewDelegate: AnyObject {
 
@@ -225,7 +226,7 @@ final class BookmarkTableCellView: NSTableCellView {
             accessoryImageView.isHidden = false
         }
 
-        accessoryImageView.image = bookmark.isFavorite ? .favoriteFilledBorder : nil
+        accessoryImageView.image = bookmark.isFavorite ? DesignSystemImages.Color.Size16.favorite : nil
         accessoryImageView.setAccessibilityIdentifier("BookmarkTableCellView.accessoryImageView")
         accessoryImageView.setAccessibilityValue(bookmark.isFavorite ? "Favorited" : "Unfavorited")
         titleLabel.stringValue = bookmark.title

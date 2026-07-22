@@ -253,6 +253,63 @@ final class TunnelControllerViewModelTests: XCTestCase {
         XCTAssertFalse(model.showServerDetails)
     }
 
+    // MARK: - Strict routing pill
+
+    @MainActor
+    func testShowsStrictRoutingPillWhenConnectedAndAvailable() async throws {
+        let model = makeModel(status: .connected(connectedDate: Date()), isStrictRoutingAvailable: true)
+        XCTAssertTrue(model.showStrictRoutingPill)
+    }
+
+    @MainActor
+    func testHidesStrictRoutingPillWhenUnavailable() async throws {
+        let model = makeModel(status: .connected(connectedDate: Date()), isStrictRoutingAvailable: false)
+        XCTAssertFalse(model.showStrictRoutingPill)
+    }
+
+    @MainActor
+    func testHidesStrictRoutingPillWhenDisconnected() async throws {
+        let model = makeModel(status: .disconnected, isStrictRoutingAvailable: true)
+        XCTAssertFalse(model.showStrictRoutingPill)
+    }
+
+    @MainActor
+    func testHeaderMessageWarnsWhenStrictRoutingOff() async throws {
+        let model = makeModel(status: .connected(connectedDate: Date()), isStrictRoutingAvailable: true, enforceRoutes: false)
+        XCTAssertEqual(model.headerMessage, UserText.networkProtectionStatusHeaderMessageStrictRoutingOff)
+    }
+
+    @MainActor
+    func testHeaderMessageReflectsOnStateWhenStrictRoutingOn() async throws {
+        let model = makeModel(status: .connected(connectedDate: Date()), isStrictRoutingAvailable: true, enforceRoutes: true)
+        XCTAssertEqual(model.headerMessage, UserText.networkProtectionStatusHeaderMessageOn)
+    }
+
+    @MainActor
+    private func makeModel(status: ConnectionStatus,
+                           isStrictRoutingAvailable: Bool = false,
+                           enforceRoutes: Bool = false) -> TunnelControllerViewModel {
+        let testSuiteName = "test.\(UUID().uuidString)"
+        let testDefaults = UserDefaults(suiteName: testSuiteName)!
+        addTeardownBlock {
+            testDefaults.removePersistentDomain(forName: testSuiteName)
+        }
+
+        let vpnSettings = VPNSettings(defaults: testDefaults)
+        vpnSettings.enforceRoutes = enforceRoutes
+
+        return TunnelControllerViewModel(
+            controller: MockTunnelController(),
+            onboardingStatusPublisher: Just(OnboardingStatus.completed).eraseToAnyPublisher(),
+            statusReporter: MockStatusReporter(status: status),
+            vpnAppState: .init(defaults: testDefaults),
+            vpnSettings: vpnSettings,
+            proxySettings: .init(defaults: testDefaults),
+            locationFormatter: MockVPNLocationFormatter(),
+            isStrictRoutingAvailable: isStrictRoutingAvailable,
+            uiActionHandler: MockVPNUIActionHandler())
+    }
+
     /// We expect the model to properly reflect the data volume.
     ///
     @MainActor

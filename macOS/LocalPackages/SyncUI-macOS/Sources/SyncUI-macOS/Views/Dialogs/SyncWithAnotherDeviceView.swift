@@ -40,7 +40,7 @@ struct SyncWithAnotherDeviceView: View {
     var body: some View {
         SyncDialog(spacing: 20.0) {
             VStack(spacing: 20.0) {
-                Image(.syncPair96)
+                Image(model.isAppRebranded ? .syncPair96 : .syncPair96Legacy)
                 SyncUIViews.TextHeader(text: UserText.syncWithAnotherDeviceTitle)
             }
 

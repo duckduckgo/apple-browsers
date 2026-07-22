@@ -182,6 +182,7 @@ public class SyncSettingsViewModel: ObservableObject {
         case connecting
         case syncAnotherDevice
         case recoverYourData
+        case deviceConnected
 
         // Constant on purpose: `.sheet(item:)` re-presents whenever the item's identity changes, so a
         // per-case id would dismiss and re-present the sheet on every phase change. A stable id keeps
@@ -286,13 +287,16 @@ public class SyncSettingsViewModel: ObservableObject {
         delegate?.fireAutoRestorePixel(event: .manualRecoveryShown)
     }
 
-    func deleteAllData() {
+    func deleteAllData(requireAuthentication: Bool = false) {
         isBusy = true
         Task { @MainActor in
+            defer { isBusy = false }
+            if requireAuthentication {
+                guard await commonAuthenticate() else { return }
+            }
             if await delegate!.confirmAndDeleteAllData() {
                 isSyncEnabled = false
             }
-            isBusy = false
         }
     }
 
@@ -434,6 +438,20 @@ public class SyncSettingsViewModel: ObservableObject {
     }
 
     public func recoverYourDataDoneFromConnectingSheet() {
+        connectingSheetPhase = nil
+    }
+
+    public func showDeviceConnectedInConnectingSheet(recoveryCode: String) {
+        self.recoveryCode = recoveryCode
+        connectingSheetPhase = .deviceConnected
+    }
+
+    public func deviceConnectedDoneFromConnectingSheet() {
+        connectingSheetPhase = nil
+    }
+
+    public func dismissConnectingSheet(then action: (() -> Void)? = nil) {
+        postConnectingSheetDismissAction = action
         connectingSheetPhase = nil
     }
 

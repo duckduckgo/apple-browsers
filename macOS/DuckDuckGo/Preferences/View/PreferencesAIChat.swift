@@ -48,7 +48,7 @@ extension Preferences {
                     HStack {
                         VStack(alignment: .leading) {
                             TextAndImageMenuItemHeader(UserText.aiChatTitle,
-                                                       image: Image(nsImage: DesignSystemImages.Color.Size16.aiChatGradient),
+                                                       image: Image(nsImage: DesignSystemImages.Color.Size16.aiChat),
                                                        bottomPadding: 2)
                             TextMenuItemCaption(UserText.aiChatDescription)
 
@@ -60,7 +60,7 @@ extension Preferences {
                                         Text(UserText.duckAiSettingsLink)
                                         Image(.externalAppScheme)
                                     }
-                                    .foregroundColor(Color.linkBlue)
+                                    .rebrandableLinkForeground()
                                     .cursor(.pointingHand)
                                 }
                                 .buttonStyle(.plain)
@@ -246,7 +246,7 @@ extension Preferences {
                                     Text(UserText.searchAssistSettingsLink)
                                     Image(.externalAppScheme)
                                 }
-                                .foregroundColor(Color.linkBlue)
+                                .rebrandableLinkForeground()
                                 .cursor(.pointingHand)
                             }
                             .buttonStyle(.plain)
@@ -269,7 +269,7 @@ extension Preferences {
                                     Text(UserText.searchAIFeaturesSettingsLink)
                                     Image(.externalAppScheme)
                                 }
-                                .foregroundColor(Color.linkBlue)
+                                .rebrandableLinkForeground()
                                 .cursor(.pointingHand)
                             }
                             .buttonStyle(.plain)

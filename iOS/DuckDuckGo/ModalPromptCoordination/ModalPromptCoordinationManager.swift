@@ -39,21 +39,19 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
     private let providers: [any ModalPromptProvider]
     private let cooldownManager: PromptCooldownManaging
     private let scheduler: ModalPromptScheduling
+    private let onboardingStatusProvider: ContextualDaxDialogStatusProvider
 
     private(set) var didPresentModalPromptThisSession = false
 
-    /// Creates a new modal prompts coordination manager.
-    ///
-    /// - Parameters:
-    ///   - providers: Array of providers in priority order (first = highest priority).
-    ///   - cooldownManager: Manager for the cooldown period between prompts.
     init(
         providers: [any ModalPromptProvider],
         cooldownManager: PromptCooldownManaging,
+        onboardingStatusProvider: ContextualDaxDialogStatusProvider,
         modalPromptScheduling: ModalPromptScheduling = ModalPromptScheduler()
     ) {
         self.providers = providers
         self.cooldownManager = cooldownManager
+        self.onboardingStatusProvider = onboardingStatusProvider
         self.scheduler = modalPromptScheduling
     }
 
@@ -75,7 +73,12 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
             return
         }
 
+        let isOnboardingComplete = onboardingStatusProvider.hasSeenOnboarding
         for provider in providers {
+            guard provider.isEligibleToPresent(isOnboardingComplete: isOnboardingComplete) else {
+                Logger.modalPrompt.debug("[Modal Prompt Coordination] - \(type(of: provider)) is not eligible to present (isOnboardingComplete: \(isOnboardingComplete)).")
+                continue
+            }
             guard let modalPromptConfiguration = provider.provideModalPrompt() else { continue }
 
             // Set at commit time (not in the present completion) so the sync banner can't slip in

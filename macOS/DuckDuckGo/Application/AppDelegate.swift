@@ -946,6 +946,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                           fireproofDomains: fireproofDomains,
                                           faviconManagement: faviconManager,
                                           windowControllersManager: windowControllersManager,
+                                          dataClearingPreferences: dataClearingPreferences,
                                           pixelFiring: PixelKit.shared,
                                           wideEventManaging: wideEvent,
                                           aiChatSyncCleaner: { Application.appDelegate.aiChatSyncCleaner })
@@ -2345,7 +2346,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                 fireViewModel: fireCoordinator.fireViewModel,
                                                 stateRestorationManager: self.stateRestorationManager,
                                                 aiChatSyncCleaner: aiChatSyncCleaner,
-                                                wideEvent: wideEvent)
+                                                wideEvent: wideEvent,
+                                                pixelFiring: PixelKit.shared)
         self.autoClearHandler = autoClearHandler
         DispatchQueue.main.async {
             autoClearHandler.handleAppLaunch()

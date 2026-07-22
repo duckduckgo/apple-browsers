@@ -268,6 +268,34 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         XCTAssertEqual(sessionState.chipState, .placeholder)
     }
 
+    /// Navigating to a non-attachable page (e.g. a PDF) clears via a nil update; the persistent
+    /// UTI host chip must be cleared too, or the previous page's context rides the next prompt.
+    func testUpdateContextWithNilDeliversUTIChipClear() {
+        // Given
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+        sessionState.updateContext(makeTestContext(title: "Previous Page"))
+
+        var receivedEffect: SheetEffect?
+        sessionState.effects
+            .sink { effect in
+                if case .deliverPageContext = effect {
+                    receivedEffect = effect
+                }
+            }
+            .store(in: &cancellables)
+
+        // When
+        sessionState.updateContext(nil)
+
+        // Then
+        if case .deliverPageContext(let contextData, let targets) = receivedEffect {
+            XCTAssertNil(contextData)
+            XCTAssertTrue(targets.contains(.utiChip))
+        } else {
+            XCTFail("Expected deliverPageContext effect clearing the UTI chip")
+        }
+    }
+
     func testUpdateContextWithIdleNilDoesNotClearManualAttachmentWhenAutoAttachDisabled() {
         mockSettings.isAutomaticContextAttachmentEnabled = false
         let context = makeTestContext(title: "Manually Attached Page")
@@ -282,6 +310,102 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         } else {
             XCTFail("Expected manually attached chip to survive idle nil replay")
         }
+    }
+
+    /// Extraction can return a titled payload with no content; measurement reports it as
+    /// `.emptyContent`, so the attach path must treat it like nil instead of attaching an empty chip.
+    func testWhenUpdateContextHasEmptyContentThenChipDowngradesToPlaceholder() {
+        // Given
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+        sessionState.updateContext(makeTestContext(title: "Previous Page"))
+
+        // When
+        sessionState.updateContext(makeTestContext(title: "Titled But Empty", content: ""))
+
+        // Then
+        XCTAssertNil(sessionState.latestContext)
+        XCTAssertEqual(sessionState.chipState, .placeholder)
+    }
+
+    func testWhenUpdateContextHasEmptyContentThenUTIChipClearIsDelivered() {
+        // Given
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+        sessionState.updateContext(makeTestContext(title: "Previous Page"))
+
+        var receivedEffect: SheetEffect?
+        sessionState.effects
+            .sink { effect in
+                if case .deliverPageContext = effect {
+                    receivedEffect = effect
+                }
+            }
+            .store(in: &cancellables)
+
+        // When
+        sessionState.updateContext(makeTestContext(title: "Titled But Empty", content: ""))
+
+        // Then
+        if case .deliverPageContext(let contextData, let targets) = receivedEffect {
+            XCTAssertNil(contextData)
+            XCTAssertTrue(targets.contains(.utiChip))
+        } else {
+            XCTFail("Expected deliverPageContext effect clearing the UTI chip")
+        }
+    }
+
+    func testWhenUpdateContextHasEmptyContentDuringManualAttachThenManualAttachEnds() {
+        // Given
+        sessionState.beginManualAttach()
+
+        // When
+        sessionState.updateContext(makeTestContext(title: "Titled But Empty", content: ""))
+
+        // Then
+        XCTAssertEqual(sessionState.chipState, .placeholder)
+        XCTAssertTrue(mockPixelHandler.manualAttachEnded)
+        XCTAssertFalse(mockPixelHandler.pageContextManuallyAttachedNativeFired)
+    }
+
+    func testWhenIdleEmptyContentArrivesWithAutoAttachDisabledThenManualAttachmentSurvives() {
+        // Given
+        mockSettings.isAutomaticContextAttachmentEnabled = false
+        let context = makeTestContext(title: "Manually Attached Page")
+        sessionState.beginManualAttach()
+        sessionState.updateContext(context)
+
+        // When
+        sessionState.updateContext(makeTestContext(title: "Titled But Empty", content: ""))
+
+        // Then
+        XCTAssertEqual(sessionState.latestContext?.title, context.title)
+        if case .attached(let attachedContext) = sessionState.chipState {
+            XCTAssertEqual(attachedContext.title, context.title)
+        } else {
+            XCTFail("Expected manually attached chip to survive idle empty-content replay")
+        }
+    }
+
+    /// Signals-only payloads strip content anyway, so an empty-content result must still deliver
+    /// its page-type signals to the frontend (page shortcuts / suggested prompts).
+    func testWhenSignalsOnlyCollectionReturnsEmptyContentThenSignalsPayloadStillDelivered() {
+        // Given
+        let signals = AIChatPageTypeSignals(jsonLdType: ["Recipe"], ogType: "article", lang: "eu")
+        var deliveredPayload: AIChatPageContextData?
+        sessionState.effects
+            .sink { effect in
+                if case .deliverPageContext(let payload, let targets) = effect, targets.contains(.frontendBridge) {
+                    deliveredPayload = payload
+                }
+            }
+            .store(in: &cancellables)
+
+        // When
+        sessionState.markPendingSignalsOnlyCollection()
+        sessionState.updateContext(makeTestContext(title: "Titled But Empty", content: "", pageTypeSignals: signals))
+
+        // Then
+        XCTAssertEqual(deliveredPayload?.pageTypeSignals, signals)
+        XCTAssertEqual(deliveredPayload?.title, "Titled But Empty")
     }
 
     func testUpdateContextDoesNotAutoAttachWhenUserDowngraded() {
@@ -342,6 +466,103 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         // Then
         XCTAssertTrue(mockPixelHandler.pageContextManuallyAttachedFrontendFired)
         XCTAssertTrue(mockPixelHandler.manualAttachEnded)
+    }
+
+    func testManualAttachWithAutoAttachOffStaysStickyAcrossNavigationWhileSheetIsOpen() {
+        mockSettings.isAutomaticContextAttachmentEnabled = false
+        sessionState.beginManualAttach()
+        sessionState.updateContext(makeTestContext(title: "Page A"))
+
+        sessionState.notifyPageChanged()
+        sessionState.updateContext(makeTestContext(title: "Page B"))
+
+        if case .attached(let attachedContext) = sessionState.chipState {
+            XCTAssertEqual(attachedContext.title, "Page A")
+        } else {
+            XCTFail("Expected manually attached chip to stay sticky across navigation")
+        }
+    }
+
+    func testManualAttachWithAutoAttachOffDoesNotClearOnSheetDismissBeforeSubmit() {
+        mockSettings.isAutomaticContextAttachmentEnabled = false
+        sessionState.beginManualAttach()
+        sessionState.updateContext(makeTestContext(title: "Page A"))
+
+        sessionState.handleSheetDismissed()
+
+        if case .attached(let attachedContext) = sessionState.chipState {
+            XCTAssertEqual(attachedContext.title, "Page A")
+        } else {
+            XCTFail("Expected same sheet session context to survive dismiss")
+        }
+    }
+
+    func testManualAttachWithAutoAttachOffDoesNotClearOnSamePageReopen() {
+        let pageURL = URL(string: "https://example.com/page-a")!
+        mockSettings.isAutomaticContextAttachmentEnabled = false
+        sessionState.beginManualAttach()
+        sessionState.updateContext(makeTestContext(title: "Page A", url: pageURL.absoluteString))
+        sessionState.handleSheetDismissed()
+
+        let didClear = sessionState.clearManualContextIfStale(for: pageURL)
+
+        XCTAssertFalse(didClear)
+        if case .attached(let attachedContext) = sessionState.chipState {
+            XCTAssertEqual(attachedContext.title, "Page A")
+        } else {
+            XCTFail("Expected same-page reopen to keep manual context")
+        }
+    }
+
+    func testManualAttachWithAutoAttachOffDoesNotClearOnSameDocumentReopen() {
+        let attachedURL = URL(string: "https://example.com/page-a#attached")!
+        let currentPageURL = URL(string: "https://example.com/page-a#current")!
+        mockSettings.isAutomaticContextAttachmentEnabled = false
+        sessionState.beginManualAttach()
+        sessionState.updateContext(makeTestContext(title: "Page A", url: attachedURL.absoluteString))
+        sessionState.handleSheetDismissed()
+
+        let didClear = sessionState.clearManualContextIfStale(for: currentPageURL)
+
+        XCTAssertFalse(didClear)
+        if case .attached(let attachedContext) = sessionState.chipState {
+            XCTAssertEqual(attachedContext.title, "Page A")
+        } else {
+            XCTFail("Expected same-document reopen to keep manual context")
+        }
+    }
+
+    func testManualAttachWithAutoAttachOffClearsOnDifferentPageReopenBeforeSubmit() {
+        let pageAURL = URL(string: "https://example.com/page-a")!
+        let pageBURL = URL(string: "https://example.com/page-b")!
+        mockSettings.isAutomaticContextAttachmentEnabled = false
+        sessionState.beginManualAttach()
+        sessionState.updateContext(makeTestContext(title: "Page A", url: pageAURL.absoluteString))
+        sessionState.handleSheetDismissed()
+
+        let didClear = sessionState.clearManualContextIfStale(for: pageBURL)
+
+        XCTAssertTrue(didClear)
+        XCTAssertEqual(sessionState.chipState, .placeholder)
+        XCTAssertNil(sessionState.latestContext)
+        XCTAssertFalse(sessionState.userDowngradedToPlaceholder)
+        XCTAssertEqual(sessionState.viewState.quickActions, [.askAboutPage])
+    }
+
+    func testManualAttachWithAutoAttachOffClearsActiveChatOnDifferentPageReopen() {
+        let pageAURL = URL(string: "https://example.com/page-a")!
+        let pageBURL = URL(string: "https://example.com/page-b")!
+        mockSettings.isAutomaticContextAttachmentEnabled = false
+        sessionState.beginManualAttach()
+        sessionState.updateContext(makeTestContext(title: "Page A", url: pageAURL.absoluteString))
+        sessionState.beginChatForUTISubmission()
+        sessionState.handleSheetDismissed()
+
+        let didClear = sessionState.clearManualContextIfStale(for: pageBURL)
+
+        XCTAssertTrue(didClear)
+        XCTAssertEqual(sessionState.chipState, .placeholder)
+        XCTAssertNil(sessionState.latestContext)
     }
 
     func testCancelManualAttach() {
@@ -409,6 +630,19 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
 
         // Then
         XCTAssertEqual(sessionState.contextualChatURL, url)
+    }
+
+    func testBeginChatForUTISubmissionDoesNotStorePageContextURLAsChatURL() {
+        // Given
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+        sessionState.updateContext(makeTestContext(url: "https://example.com/article"))
+
+        // When
+        sessionState.beginChatForUTISubmission()
+
+        // Then
+        XCTAssertEqual(sessionState.frontendState, .chatWithInitialContext)
+        XCTAssertNil(sessionState.contextualChatURL)
     }
 
     func testClearContextualChatURL() {
@@ -909,6 +1143,155 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         XCTAssertFalse(mockPixelHandler.pageContextAutoAttachedFired)
     }
 
+    // MARK: - Stale Auto-Attach Echo Tests (re-attach after submit)
+
+    private func utiDeliveryEffects(_ block: () -> Void) -> [AIChatPageContextData?] {
+        var delivered: [AIChatPageContextData?] = []
+        sessionState.effects
+            .sink { effect in
+                if case .deliverPageContext(let data, let targets) = effect, targets.contains(.utiChip) {
+                    delivered.append(data)
+                }
+            }
+            .store(in: &cancellables)
+        block()
+        return delivered
+    }
+
+    /// Regression test for the bug where, after submitting the first prompt WITH context via the
+    /// contextual UTI, a late auto-attach re-collection for the SAME page (no navigation in between)
+    /// resurrected the UTI chip as pending — silently riding the next message. The stale echo must
+    /// not produce any delivery at all, so the chip stays untouched in its post-submit `.delivered`
+    /// state.
+    func testLateAutoAttachEchoAfterUTISubmissionDoesNotResurrectChip() {
+        // Given
+        sessionState.updateUnifiedToggleInputActive(true)
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+        sessionState.updateContext(makeTestContext(url: "https://example.com/article"))
+        sessionState.beginChatForUTISubmission()
+        XCTAssertEqual(sessionState.frontendState, .chatWithInitialContext)
+
+        // When
+        let delivered = utiDeliveryEffects {
+            sessionState.updateContext(makeTestContext(title: "Article (updated)", url: "https://example.com/article"))
+        }
+
+        // Then
+        XCTAssertTrue(delivered.isEmpty)
+    }
+
+    func testStaleAutoAttachEchoDoesNotMutateStoredContext() {
+        // Given
+        sessionState.updateUnifiedToggleInputActive(true)
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+        sessionState.updateContext(makeTestContext(title: "Original", url: "https://example.com/article"))
+        sessionState.beginChatForUTISubmission()
+        XCTAssertEqual(sessionState.intendedAttachedContext?.title, "Original")
+
+        // When a stale echo of the already-submitted page arrives with a refreshed title
+        sessionState.updateContext(makeTestContext(title: "Echo (updated)", url: "https://example.com/article"))
+
+        // Then the stored attached context still reflects what was submitted, not the ignored echo
+        XCTAssertEqual(sessionState.intendedAttachedContext?.title, "Original")
+    }
+
+    func testUTIChipDeliveryStateMarksStaleEchoDeliveredAndFreshContextPending() {
+        // Given
+        sessionState.updateUnifiedToggleInputActive(true)
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+        sessionState.updateContext(makeTestContext(url: "https://example.com/article"))
+        sessionState.beginChatForUTISubmission()
+
+        // Then
+        let echo = makeTestContext(url: "https://example.com/article").contextData
+        guard case .delivered = sessionState.utiChipDeliveryState(forDelivering: echo) else {
+            return XCTFail("Expected stale echo of already-submitted page to be .delivered")
+        }
+
+        let fresh = makeTestContext(url: "https://example.com/other").contextData
+        guard case .pendingSubmit = sessionState.utiChipDeliveryState(forDelivering: fresh) else {
+            return XCTFail("Expected fresh context to be .pendingSubmit")
+        }
+    }
+
+    func testMarkUTIContextDeliveredRerendersChipAndMarksPageDelivered() {
+        // Given
+        sessionState.updateUnifiedToggleInputActive(true)
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+        sessionState.updateContext(makeTestContext(url: "https://example.com/article"))
+
+        // When
+        let delivered = utiDeliveryEffects {
+            sessionState.markUTIContextDelivered()
+        }
+
+        // Then
+        XCTAssertEqual(delivered.count, 1)
+        XCTAssertEqual(delivered.first??.url, "https://example.com/article")
+
+        let sameURL = makeTestContext(url: "https://example.com/article").contextData
+        guard case .delivered = sessionState.utiChipDeliveryState(forDelivering: sameURL) else {
+            return XCTFail("Expected the delivered page to be marked .delivered")
+        }
+    }
+
+    func testManualReattachOfSameURLAfterSubmitStillDelivers() {
+        // Given
+        sessionState.updateUnifiedToggleInputActive(true)
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+        sessionState.updateContext(makeTestContext(url: "https://example.com/article"))
+        sessionState.beginChatForUTISubmission()
+
+        // When
+        sessionState.beginManualAttach()
+        let delivered = utiDeliveryEffects {
+            sessionState.updateContext(makeTestContext(url: "https://example.com/article"))
+        }
+
+        // Then
+        XCTAssertEqual(delivered.count, 1)
+        XCTAssertEqual(delivered.first??.url, "https://example.com/article")
+
+        let reattached = makeTestContext(url: "https://example.com/article").contextData
+        guard case .pendingSubmit = sessionState.utiChipDeliveryState(forDelivering: reattached) else {
+            return XCTFail("Manual same-URL re-attach after submit must be .pendingSubmit, not suppressed as a stale echo")
+        }
+    }
+
+    func testAutoAttachAfterNavigationBackToSameURLStillDelivers() {
+        // Given
+        sessionState.updateUnifiedToggleInputActive(true)
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+        sessionState.updateContext(makeTestContext(url: "https://example.com/article"))
+        sessionState.beginChatForUTISubmission()
+
+        // When
+        sessionState.notifyPageChanged()
+        let delivered = utiDeliveryEffects {
+            sessionState.updateContext(makeTestContext(url: "https://example.com/article"))
+        }
+
+        // Then
+        XCTAssertEqual(delivered.count, 1)
+    }
+
+    func testAutoAttachForDifferentURLAfterSubmitStillDelivers() {
+        // Given
+        sessionState.updateUnifiedToggleInputActive(true)
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+        sessionState.updateContext(makeTestContext(url: "https://example.com/page-a"))
+        sessionState.beginChatForUTISubmission()
+
+        // When
+        let delivered = utiDeliveryEffects {
+            sessionState.updateContext(makeTestContext(url: "https://example.com/page-b"))
+        }
+
+        // Then
+        XCTAssertEqual(delivered.count, 1)
+        XCTAssertEqual(delivered.first??.url, "https://example.com/page-b")
+    }
+
     func testUTINonNilContextDoesNotDeliverToFrontendForChatWithoutInitialContext() {
         sessionState.updateUnifiedToggleInputActive(true)
         sessionState.handlePromptSubmission("Hello")
@@ -1085,6 +1468,46 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
 
         // Then
         XCTAssertEqual(sessionState.viewState.quickActions, [.askAboutPage])
+    }
+
+    func testQuickActionsEmptyWhenPageNotAttachable() {
+        // Given a non-attachable page (blocklisted), the "Ask about page" affordance is suppressed.
+        sessionState = AIChatContextualChatSessionState(
+            aiChatSettings: mockSettings,
+            pixelHandler: mockPixelHandler,
+            featureFlagger: mockFeatureFlagger,
+            isCurrentPageAttachable: { false }
+        )
+
+        XCTAssertEqual(sessionState.viewState.quickActions, [])
+    }
+
+    func testQuickActionsShowAskAboutPageWhenPageAttachable() {
+        sessionState = AIChatContextualChatSessionState(
+            aiChatSettings: mockSettings,
+            pixelHandler: mockPixelHandler,
+            featureFlagger: mockFeatureFlagger,
+            isCurrentPageAttachable: { true }
+        )
+
+        XCTAssertEqual(sessionState.viewState.quickActions, [.askAboutPage])
+    }
+
+    func testQuickActionsRefreshedForCurrentPageWhenAttachabilityChanges() {
+        var attachable = true
+        sessionState = AIChatContextualChatSessionState(
+            aiChatSettings: mockSettings,
+            pixelHandler: mockPixelHandler,
+            featureFlagger: mockFeatureFlagger,
+            isCurrentPageAttachable: { attachable }
+        )
+        XCTAssertEqual(sessionState.viewState.quickActions, [.askAboutPage])
+
+        // A URL change to a non-attachable page must refresh the quick actions, not leave them stale.
+        attachable = false
+        sessionState.refreshForCurrentPage()
+
+        XCTAssertEqual(sessionState.viewState.quickActions, [])
     }
 
     // MARK: - Suggested Prompts Coexistence Tests
@@ -1303,14 +1726,15 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
 
     private func makeTestContext(title: String = "Test Page",
                                  url: String = "https://example.com",
+                                 content: String = "Test content",
                                  pageTypeSignals: AIChatPageTypeSignals? = nil) -> AIChatPageContext {
         let contextData = AIChatPageContextData(
             title: title,
             favicon: [],
             url: url,
-            content: "Test content",
+            content: content,
             truncated: false,
-            fullContentLength: 12,
+            fullContentLength: content.count,
             pageTypeSignals: pageTypeSignals
         )
         return AIChatPageContext(contextData: contextData, favicon: nil)
@@ -1326,10 +1750,9 @@ private final class MockContextualModePixelHandler: AIChatContextualModePixelFir
     var expandButtonTappedFired = false
     var newChatButtonTappedFired = false
     var quickActionSummarizeSelectedFired = false
+    var quickActionAskAboutPageShownCount = 0
     var fireButtonTappedFired = false
     var fireButtonConfirmedFired = false
-    var pageContextPlaceholderShownFired = false
-    var pageContextPlaceholderTappedFired = false
     var pageContextAutoAttachedFired = false
     var pageContextUpdatedOnNavigationFired = false
     var pageContextManuallyAttachedNativeFired = false
@@ -1348,14 +1771,13 @@ private final class MockContextualModePixelHandler: AIChatContextualModePixelFir
     func fireExpandButtonTapped() { expandButtonTappedFired = true }
     func fireNewChatButtonTapped() { newChatButtonTappedFired = true }
     func fireQuickActionSummarizeSelected() { quickActionSummarizeSelectedFired = true }
+    func fireQuickActionAskAboutPageShown() { quickActionAskAboutPageShownCount += 1 }
     func fireQuickActionAskAboutPageSelected() {}
     func fireRecentChatsPopupDisplayed() {}
     func fireRecentChatSelected() {}
     func fireViewAllChatsTapped() {}
     func fireFireButtonTapped() { fireButtonTappedFired = true }
     func fireFireButtonConfirmed() { fireButtonConfirmedFired = true }
-    func firePageContextPlaceholderShown() { pageContextPlaceholderShownFired = true }
-    func firePageContextPlaceholderTapped() { pageContextPlaceholderTappedFired = true }
     func firePageContextAutoAttached() { pageContextAutoAttachedFired = true }
     func firePageContextUpdatedOnNavigation(url: String) { pageContextUpdatedOnNavigationFired = true }
     func firePageContextManuallyAttachedNative() { pageContextManuallyAttachedNativeFired = true }
@@ -1376,10 +1798,9 @@ private final class MockContextualModePixelHandler: AIChatContextualModePixelFir
         expandButtonTappedFired = false
         newChatButtonTappedFired = false
         quickActionSummarizeSelectedFired = false
+        quickActionAskAboutPageShownCount = 0
         fireButtonTappedFired = false
         fireButtonConfirmedFired = false
-        pageContextPlaceholderShownFired = false
-        pageContextPlaceholderTappedFired = false
         pageContextAutoAttachedFired = false
         pageContextUpdatedOnNavigationFired = false
         pageContextManuallyAttachedNativeFired = false

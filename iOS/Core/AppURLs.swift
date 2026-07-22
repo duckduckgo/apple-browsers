@@ -27,10 +27,24 @@ public extension URL {
     private static let base: String = ProcessInfo.processInfo.environment["BASE_URL", default: "https://duckduckgo.com"]
     private static let duckAiBase: String = ProcessInfo.processInfo.environment["DUCKAI_BASE_URL", default: "https://duck.ai"]
     private static let staticBase: String = "https://staticcdn.duckduckgo.com"
-
+    private static let searchTokenBase: String = ProcessInfo.processInfo.environment["SEARCH_TOKEN_URL", default: "https://links.duckduckgo.com/search-token"]
     static let ddg = URL(string: URL.base)!
     static let duckAi = URL(string: URL.duckAiBase)!
     static let duckAiSettings = URL(string: "\(URL.duckAiBase)/?settings=open")!
+
+    /// Runtime debug override for the search-token URL, set from the Search Token debug screen. `nil` = use env/default.
+    static var searchTokenURLOverride: String? {
+        get { UserDefaults.standard.string(forKey: "com.duckduckgo.debug.searchTokenURL") }
+        set { UserDefaults.standard.set(newValue, forKey: "com.duckduckgo.debug.searchTokenURL") }
+    }
+
+    /// Search Token (Dindex experiment) endpoint. Resolves: debug override → `SEARCH_TOKEN_URL` env → default.
+    static var searchToken: URL {
+        if let override = searchTokenURLOverride, !override.isEmpty, let url = URL(string: override) {
+            return url
+        }
+        return URL(string: searchTokenBase)!
+    }
 
     static let autocomplete = URL(string: "\(base)/ac/")!
     static let emailProtection = URL(string: "\(base)/email")!

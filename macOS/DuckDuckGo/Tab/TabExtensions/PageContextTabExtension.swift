@@ -20,6 +20,7 @@ import AIChat
 import Combine
 import Foundation
 import Navigation
+import os.log
 import PrivacyConfig
 import WebKit
 
@@ -43,6 +44,31 @@ final class PageContextTabExtension {
     private let tabID: TabIdentifier
     private var content: Tab.TabContent = .none
     private let featureFlagger: FeatureFlagger
+    private let privacyConfigurationManager: PrivacyConfigurationManaging
+    private let extractionPixelHandler: PageContextExtractionPixelFiring
+    private var mainFrameMIMECache = MainFrameMIMECache()
+    private var pendingSettledNavigationURL: URL?
+
+    private var extractionResolver = PageContextExtractionResolver()
+
+    /// Set once an automatic (page-load) extraction outcome is reported for the current navigation,
+    /// so its overlapping navigation/signals-only collects don't each fire a pixel. Reset on new URL.
+    private var didReportExtractionForCurrentNavigation = false
+
+    private var didReportSidebarOpenOutcomeForCurrentNavigation = false
+
+    /// Safety-net window for a fire-and-forget `collect()` whose result never arrives (hung JS,
+    /// torn-down page). After it, `scheduleCollectionTimeout` fires `.timeout` and drops the pending
+    /// entry so the queue can't leak.
+    ///
+    /// Kept deliberately generous: a slow collect that resolves *after* this window is still
+    /// delivered to Duck.ai via `handle`, but its pending entry is already gone, so `resolve` finds
+    /// no match and it's mis-recorded as a `.timeout` with no offsetting success pixel. A high value
+    /// makes that late-success mislabeling rare while still bounding the queue (navigation also
+    /// clears it via `extractionResolver.reset()`). Independent of `collectAndWait`'s 5s default —
+    /// that's a separate, synchronous tab-picker path.
+    private static let collectionTimeout: TimeInterval = 30
+
     private let aiChatSessionStore: AIChatSessionStoring
     private let aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable
     private let isLoadedInSidebar: Bool
@@ -92,6 +118,8 @@ final class PageContextTabExtension {
         contentPublisher: some Publisher<Tab.TabContent, Never>,
         tabID: TabIdentifier,
         featureFlagger: FeatureFlagger,
+        privacyConfigurationManager: PrivacyConfigurationManaging,
+        extractionPixelHandler: PageContextExtractionPixelFiring,
         aiChatSessionStore: AIChatSessionStoring,
         aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable,
         isLoadedInSidebar: Bool,
@@ -99,6 +127,8 @@ final class PageContextTabExtension {
     ) {
         self.tabID = tabID
         self.featureFlagger = featureFlagger
+        self.privacyConfigurationManager = privacyConfigurationManager
+        self.extractionPixelHandler = extractionPixelHandler
         self.aiChatSessionStore = aiChatSessionStore
         self.aiChatMenuConfiguration = aiChatMenuConfiguration
         self.isLoadedInSidebar = isLoadedInSidebar
@@ -135,9 +165,18 @@ final class PageContextTabExtension {
                     self.cachedPageContext = nil
                     // Selections are tied to the page they were made on — drop any not-yet-flushed ones.
                     self.pendingSelectionContexts = []
+                    // Drop the previous page's outstanding collects so a slow or never-resolving
+                    // collect can't pair (FIFO) with this page's result and mis-attribute its
+                    // extraction measurement (trigger/latency/outcome).
+                    self.extractionResolver.reset()
+                    self.didReportExtractionForCurrentNavigation = false
+                    self.didReportSidebarOpenOutcomeForCurrentNavigation = false
                 }
                 self.handleNavigationForMultipleContexts(from: previousContent, to: tabContent)
                 self.sendNonAttachableContextIfNeeded()
+                // A settled navigation that beat this debounced update deferred its re-collect; now
+                // that `content` matches, run it (a fast / back-forward restore the delegate missed).
+                self.runPendingSettledNavigationReCollectIfNeeded()
                 // Signals-only collection is driven from `navigationDidFinish` (post-load, parsed
                 // markup). Collecting here at didCommit too would race the post-load re-collect for
                 // the single-shot `pendingSignalsOnlyCollection` flag and let stale signals win.
@@ -166,6 +205,7 @@ final class PageContextTabExtension {
         aiChatMenuConfiguration.valuesChangedPublisher
             .map { aiChatMenuConfiguration.shouldAutomaticallySendPageContext }
             .removeDuplicates()
+            .receive(on: DispatchQueue.main)
             .sink { [weak self] isEnabled in
                 guard let self else {
                     return
@@ -175,7 +215,7 @@ final class PageContextTabExtension {
                     if let cachedPageContext {
                         Task { await self.handle(cachedPageContext) }
                     } else {
-                        collectPageContextIfNeeded()
+                        collectPageContextIfNeeded(trigger: .auto)
                     }
                 }
             }
@@ -201,8 +241,13 @@ final class PageContextTabExtension {
                 /// ignore unsolicited results so they can't overwrite attached context with nil.
                 if self.isContextCollectionEnabled {
                     self.pendingSignalsOnlyCollection = false
-                    Task {
-                        await self.handle(pageContext)
+                    let wasForced = self.shouldForceContextCollection
+                    self.shouldForceContextCollection = false
+                    self.fireExtractionOutcome(for: pageContext)
+                    if Self.shouldDeliverCollectionResult(pageContext, wasForced: wasForced, cached: self.cachedPageContext) {
+                        Task {
+                            await self.handle(pageContext)
+                        }
                     }
                 } else if self.pendingSignalsOnlyCollection {
                     self.pendingSignalsOnlyCollection = false
@@ -234,7 +279,7 @@ final class PageContextTabExtension {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in
                 self?.shouldForceContextCollection = true
-                self?.collectPageContextIfNeeded()
+                self?.collectPageContextIfNeeded(trigger: .userRequest)
             }
             .store(in: &sidebarCancellables)
 
@@ -262,6 +307,14 @@ final class PageContextTabExtension {
             .store(in: &sidebarCancellables)
     }
 
+    /// Results with content always deliver. Empty/nil results deliver only for a forced
+    /// (user-requested) collect — the FE awaits the `getAIChatPageContext` response, so dropping
+    /// them would leave it hanging — and never when they'd replace attached content.
+    static func shouldDeliverCollectionResult(_ result: AIChatPageContextData?, wasForced: Bool, cached: AIChatPageContextData?) -> Bool {
+        if result?.content.isEmpty == false { return true }
+        return wasForced && cached?.content.isEmpty != false
+    }
+
     /// This is the main place where page context handling happens.
     /// We always cache the latest context, and if sidebar is open,
     /// we're passing the context to it.
@@ -271,12 +324,13 @@ final class PageContextTabExtension {
             return
         }
         shouldForceContextCollection = false
+        let gatedPageContext = forcingNonAttachableIfNeeded(pageContext)
         // Page-type signals (for duck.ai page shortcuts) ride the collected payload from
         // Content-Scope-Scripts (includePageTypeSignals) and are preserved through favicon encoding.
-        cachedPageContext = replaceFaviconURLWithEncodedData(pageContext)
+        cachedPageContext = replaceFaviconURLWithEncodedData(gatedPageContext)
         if let chatViewController = aiChatSessionStore.sessions[tabID]?.chatViewController {
             chatViewController.setPageContext(cachedPageContext)
-            if pageContext != nil, pageContext?.attachable != false {
+            if gatedPageContext != nil, gatedPageContext?.attachable != false {
                 // New attachable context pushed — reset the consumed flag so navigation
                 // won't clear it until the next prompt is submitted.
                 hasContextBeenConsumedByChat = false
@@ -284,7 +338,29 @@ final class PageContextTabExtension {
         }
     }
 
+    private func forcingNonAttachableIfNeeded(_ pageContext: AIChatPageContextData?) -> AIChatPageContextData? {
+        guard let pageContext,
+              case .url(let url, _, _) = content,
+              preventedAttachReason(for: url) != nil,
+              pageContext.attachable != false else {
+            return pageContext
+        }
+        return AIChatPageContextData(
+            title: pageContext.title,
+            favicon: pageContext.favicon,
+            url: pageContext.url,
+            content: pageContext.content,
+            truncated: pageContext.truncated,
+            fullContentLength: pageContext.fullContentLength,
+            attachable: false,
+            tabId: pageContext.tabId,
+            pageTypeSignals: pageContext.pageTypeSignals,
+            attached: pageContext.attached
+        )
+    }
+
     private func deliverContextToCurrentSidebar() {
+        reportSidebarOpenExtractionOutcome()
         if let cachedPageContext, isContextCollectionEnabled {
             Task { await self.handle(cachedPageContext) }
         } else {
@@ -293,11 +369,131 @@ final class PageContextTabExtension {
         }
     }
 
-    private func collectPageContextIfNeeded() {
-        guard case .url = content, isContextCollectionEnabled else {
+    // MARK: - Attachability gate
+
+    private func currentAttachabilityPolicy() -> PageContextAttachabilityPolicy? {
+        let settings = privacyConfigurationManager.privacyConfig.settings(for: .pageContext)
+        guard let blocklist = PageContextBlocklistSettings(blocklist: settings["aiPageContextBlocklist"]) else {
+            return nil
+        }
+        return PageContextAttachabilityPolicy(settings: blocklist)
+    }
+
+    /// Extraction measurement (success / failure / prevented / timeout) is only reported once the
+    /// `aiPageContextBlocklist` privacy config is present
+    private var isExtractionMeasurementEnabled: Bool {
+        currentAttachabilityPolicy() != nil
+    }
+
+    private var isSidebarVisibleForTab: Bool {
+        aiChatSessionStore.sessions[tabID]?.chatViewController != nil
+    }
+
+    private func reportSidebarOpenExtractionOutcome() {
+        guard isSidebarVisibleForTab,
+              isExtractionMeasurementEnabled,
+              !didReportExtractionForCurrentNavigation,
+              !didReportSidebarOpenOutcomeForCurrentNavigation else {
             return
         }
-        pageContextUserScript?.collect()
+        didReportSidebarOpenOutcomeForCurrentNavigation = true
+
+        guard case .url(let url, _, _) = content else {
+            fireExtractionPixel(.prevented(PageContextExtractionOutcome.internalPageCategory), trigger: .navigation, latency: nil)
+            return
+        }
+        if let reason = preventedAttachReason(for: url) {
+            deliverPreventedContext(for: url, reason: reason, trigger: .navigation)
+            return
+        }
+        if isContextCollectionEnabled, !extractionResolver.hasPendingCollections {
+            collectPageContextIfNeeded(trigger: .auto)
+        }
+    }
+
+    private func preventedAttachReason(for url: URL) -> String? {
+        guard let policy = currentAttachabilityPolicy() else { return nil }
+        let verdict = policy.verdict(url: url, mimeType: mainFrameMIMECache[url])
+        return verdict.isAttachable ? nil : (verdict.preventionReason ?? PageContextExtractionOutcome.internalPageCategory)
+    }
+
+    private func deliverPreventedContext(for url: URL, reason: String, trigger: PageContextExtractionTrigger) {
+        let context = AIChatPageContextData(
+            title: content.title ?? "",
+            favicon: [],
+            url: url.absoluteString,
+            content: "",
+            truncated: false,
+            fullContentLength: 0,
+            attachable: false
+        )
+        Task { await handle(context) }
+        fireExtractionPixel(.prevented(reason), trigger: trigger, latency: nil)
+    }
+
+    private func fireExtractionOutcome(for pageContext: AIChatPageContextData?) {
+        // No pending request → duplicate or a collect we didn't initiate; skip the pixel.
+        guard let resolution = extractionResolver.resolve(pageContext: pageContext) else {
+            return
+        }
+        fire(resolution)
+    }
+
+    private func fire(_ resolution: PageContextExtractionResolver.Resolution) {
+        fireExtractionPixel(resolution.outcome, trigger: resolution.trigger, latency: resolution.latency)
+    }
+
+    private func fireExtractionPixel(_ outcome: PageContextExtractionOutcome,
+                                     trigger: PageContextExtractionTrigger,
+                                     latency: PageContextExtractionLatencyBucket?) {
+        guard isExtractionMeasurementEnabled else { return }
+        guard isSidebarVisibleForTab else { return }
+        if case .failure(.emptyContent) = outcome, trigger != .userRequest { return }
+        // A navigation triggers several automatic collects (navigation re-collect + signals-only);
+        // report only the first. User/setting collects (.userRequest / .auto) always report.
+        if trigger == .navigation || trigger == .tabContent {
+            guard !didReportExtractionForCurrentNavigation else { return }
+            didReportExtractionForCurrentNavigation = true
+        }
+        Logger.aiChat.debug("📊 PageContext extraction outcome: \(String(describing: outcome), privacy: .public) trigger=\(trigger.rawValue, privacy: .public) latency=\(latency?.rawValue ?? "nil", privacy: .public)")
+        extractionPixelHandler.fire(outcome, trigger: trigger, latency: latency)
+    }
+
+    /// Fires `.timeout` for any collect that hasn't produced a result within the timeout window and
+    /// clears its pending entry, so a never-resolving collect neither loses its pixel nor lets a
+    /// stale entry mis-attribute a later navigation.
+    private func scheduleCollectionTimeout() {
+        DispatchQueue.main.asyncAfter(deadline: .now() + Self.collectionTimeout) { [weak self] in
+            guard let self else { return }
+            self.extractionResolver.expireCollections(olderThan: Self.collectionTimeout).forEach { self.fire($0) }
+        }
+    }
+
+    private func collectPageContextIfNeeded(trigger: PageContextExtractionTrigger) {
+        guard case .url(let url, _, _) = content, isContextCollectionEnabled else {
+            return
+        }
+        if let reason = preventedAttachReason(for: url) {
+            Logger.aiChat.debug("🚫 PageContext gate: prevented attach (reason=\(reason, privacy: .public)) host=\(url.host ?? "nil", privacy: .public)")
+            deliverPreventedContext(for: url, reason: reason, trigger: trigger)
+            return
+        }
+        // Skip automatic collects while the webview still shows the previous document (debounced
+        // `Tab.$content` races the swap on back/forward); the settled-navigation re-collect covers it.
+        if trigger == .navigation || trigger == .tabContent,
+           let webViewURL = webView?.url, webViewURL != url {
+            Logger.aiChat.debug("⏭️ PageContext gate: document mismatch (webView=\(webViewURL.host ?? "nil", privacy: .public) content=\(url.host ?? "nil", privacy: .public)), skipping collect")
+            return
+        }
+        guard let pageContextUserScript, webView != nil else {
+            Logger.aiChat.debug("⚠️ PageContext gate: no webview/user script, cannot collect host=\(url.host ?? "nil", privacy: .public)")
+            fireExtractionPixel(.failure(.noWebView), trigger: trigger, latency: nil)
+            return
+        }
+        extractionResolver.requested(trigger: trigger)
+        Logger.aiChat.debug("✅ PageContext gate: attachable, collecting host=\(url.host ?? "nil", privacy: .public) trigger=\(trigger.rawValue, privacy: .public)")
+        pageContextUserScript.collect()
+        scheduleCollectionTimeout()
     }
 
     // MARK: - Selection Context ("Attach to Duck.ai")
@@ -398,7 +594,7 @@ final class PageContextTabExtension {
                                 contextConsumed: hasContextBeenConsumedByChat,
                                 fromAttachablePage: previousWasURL) {
         case .collectNewContext:
-            collectPageContextIfNeeded()
+            collectPageContextIfNeeded(trigger: .navigation)
         case .sendNavigationSignal:
             session.chatViewController?.setPageContext(nil)
         case .keepExistingContext:
@@ -468,10 +664,15 @@ final class PageContextTabExtension {
     private func requestSignalsOnlyCollectionIfNeeded() {
         guard featureFlagger.isFeatureOn(.aiChatPageContext),
               featureFlagger.isFeatureOn(.sidebarSuggestedPrompts),
-              case .url = content,
+              case .url(let url, _, _) = content,
               !isContextCollectionEnabled,
               aiChatSessionStore.sessions[tabID]?.chatViewController != nil,
               let pageContextUserScript else {
+            return
+        }
+        if let reason = preventedAttachReason(for: url) {
+            Logger.aiChat.debug("🚫 PageContext gate (signals-only): prevented (reason=\(reason, privacy: .public)) host=\(url.host ?? "nil", privacy: .public)")
+            deliverPreventedContext(for: url, reason: reason, trigger: .tabContent)
             return
         }
         pendingSignalsOnlyCollection = true
@@ -505,6 +706,34 @@ final class PageContextTabExtension {
     }
 }
 
+/// Main-frame MIME types keyed by URL (bounded FIFO). Back/forward cache restores don't re-fire
+/// `decidePolicy(for navigationResponse:)`, so a single "last response" slot loses the MIME on the way back.
+struct MainFrameMIMECache {
+    private var mimeTypes: [URL: String] = [:]
+    private var order: [URL] = []
+    private let capacity: Int
+
+    init(capacity: Int = 100) {
+        self.capacity = capacity
+    }
+
+    subscript(url: URL) -> String? {
+        mimeTypes[url]
+    }
+
+    /// Empty/nil MIMEs are ignored — the attachability gate falls back to the URL extension for those.
+    mutating func record(_ mimeType: String?, for url: URL) {
+        guard let mimeType, !mimeType.isEmpty else { return }
+        if mimeTypes[url] == nil {
+            order.append(url)
+            if order.count > capacity {
+                mimeTypes[order.removeFirst()] = nil
+            }
+        }
+        mimeTypes[url] = mimeType
+    }
+}
+
 protocol PageContextProtocol: AnyObject, NavigationResponder {
     /// Appends a user text selection to the sidebar's selection-context list. See the
     /// implementation in `PageContextTabExtension` for buffering/lifecycle semantics.
@@ -522,8 +751,47 @@ extension PageContextTabExtension: NavigationResponder {
     /// update on same-tab navigation. Mirrors Windows' `NavigationCompleted` re-collect.
     func navigationDidFinish(_ navigation: Navigation) {
         guard !isLoadedInSidebar else { return }
-        collectPageContextIfNeeded()
+        reCollectForSettledNavigation(navigation)
+    }
+
+    /// Back/forward cache restores can end in `didFail` (NSURLError -999) after committing — the page
+    /// is displayed but `navigationDidFinish` never fires, so committed failures must re-collect too.
+    func navigation(_ navigation: Navigation, didFailWith error: WKError) {
+        guard !isLoadedInSidebar, navigation.isCommitted else { return }
+        reCollectForSettledNavigation(navigation)
+    }
+
+    /// Collects only once the debounced `Tab.$content` matches this navigation — on fast loads it may
+    /// still reference the previous page, and collecting then would extract the wrong document.
+    @MainActor
+    private func reCollectForSettledNavigation(_ navigation: Navigation) {
+        guard case .url(let url, _, _) = content, url == navigation.url else {
+            pendingSettledNavigationURL = navigation.url
+            return
+        }
+        pendingSettledNavigationURL = nil
+        collectPageContextIfNeeded(trigger: .navigation)
         requestSignalsOnlyCollectionIfNeeded()
+    }
+
+    private func runPendingSettledNavigationReCollectIfNeeded() {
+        guard let pendingURL = pendingSettledNavigationURL else { return }
+        guard case .url(let url, _, _) = content, url == pendingURL else {
+            pendingSettledNavigationURL = nil
+            return
+        }
+        pendingSettledNavigationURL = nil
+        guard !extractionResolver.hasPendingCollections else { return }
+        collectPageContextIfNeeded(trigger: .navigation)
+        requestSignalsOnlyCollectionIfNeeded()
+    }
+
+    @MainActor
+    func decidePolicy(for navigationResponse: NavigationResponse) async -> NavigationResponsePolicy? {
+        guard !isLoadedInSidebar, navigationResponse.isForMainFrame else { return .next }
+        mainFrameMIMECache.record(navigationResponse.response.mimeType, for: navigationResponse.url)
+        Logger.aiChat.debug("📄 PageContext MIME captured: \(navigationResponse.response.mimeType ?? "nil", privacy: .public) host=\(navigationResponse.url.host ?? "nil", privacy: .public)")
+        return .next
     }
 }
 

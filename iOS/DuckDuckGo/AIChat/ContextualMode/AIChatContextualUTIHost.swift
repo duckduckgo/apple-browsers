@@ -42,6 +42,9 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate {
     var onAttachRequested: (() -> Void)?
     var onRemoveRequested: (() -> Void)?
     var onPromptSubmitted: (() -> Void)?
+    /// Fires on every prompt delivery so the session state can mark context delivered and re-render the chip.
+    var onPromptDelivered: (() -> Void)?
+    var onAIVoiceChatRequested: (() -> Void)?
 
     var attachedContextURL: URL? {
         chipViewModel.attachedContext.flatMap { URL(string: $0.contextData.url) }
@@ -53,8 +56,10 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate {
         initialAttachmentDeliveryState: PageContextAttachmentDeliveryState = .delivered,
         hasActiveChat: @escaping () -> Bool,
         isAutoAttachEnabled: @escaping () -> Bool,
+        isCurrentPageAttachable: @escaping () -> Bool = { true },
         isFireTab: Bool,
         lastUsedModelProvider: DuckAiLastUsedModelProviding? = nil,
+        voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding = DuckAIVoiceShortcutFeature(),
         startsPreSubmit: Bool = false
     ) {
         self.hasActiveChat = hasActiveChat
@@ -80,6 +85,15 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate {
             isAutoAttachEnabled: isAutoAttachEnabled
         )
         coordinator.delegate = self
+        coordinator.updateAIVoiceChatAvailability(voiceShortcutFeature.isAvailable)
+        coordinator.onPageContextAttachRequested = { [weak chipViewModel] in
+            chipViewModel?.tapToAttach()
+        }
+        coordinator.isPageContextAttachable = isCurrentPageAttachable
+        coordinator.hasPendingPageContextProvider = { [weak chipViewModel] in
+            chipViewModel?.pendingAttachedContextData != nil
+        }
+        coordinator.updateImageButtonVisibility()
         coordinator.viewController.bindPageContextChip(to: chipViewModel)
         chipViewModel.onAttachActionRequested = { [weak self] in
             self?.onAttachRequested?()
@@ -95,6 +109,11 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate {
                 self?.applyCurrentRenderState()
             }
             .store(in: &cancellables)
+    }
+
+    /// Re-evaluates the attach button/menu for the current page (e.g. page-context attachability after navigation).
+    func refreshPageContextAttachability() {
+        coordinator.updateImageButtonVisibility()
     }
 
     func setAttachedContext(_ context: AIChatPageContext, deliveryState: PageContextAttachmentDeliveryState = .pendingSubmit) {
@@ -134,17 +153,18 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate {
         coordinator.observeChatUpdates(publisher)
     }
 
-    func markPromptSubmitted() {
-        chipViewModel.markPromptSubmitted()
+    /// Called when a prompt carrying page context is delivered; routes to the session state via `onPromptDelivered`.
+    func notifyPromptDelivered() {
+        onPromptDelivered?()
     }
 
     func setContextualChatViewController(_ contextualChatViewController: AIChatContextualWebViewController) {
         self.contextualChatViewController = contextualChatViewController
-        coordinator.attachmentPresentingViewController = contextualChatViewController
     }
 
     func installInWebView(_ contextualChatViewController: AIChatContextualWebViewController) {
         setContextualChatViewController(contextualChatViewController)
+        coordinator.attachmentPresentingViewController = contextualChatViewController
 
         let viewController = coordinator.viewController
         guard viewController.parent !== contextualChatViewController else {
@@ -170,6 +190,8 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate {
     }
 
     func mountAtSheetLevel(in sheetViewController: UIViewController) -> UIView {
+        coordinator.attachmentPresentingViewController = sheetViewController
+
         let viewController = coordinator.viewController
         guard viewController.parent !== sheetViewController else {
             return viewController.view
@@ -198,6 +220,10 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate {
 
     func activateInput() {
         coordinator.showExpanded()
+    }
+
+    func deactivateInput() {
+        coordinator.viewController.deactivateInput()
     }
 
     func submitQuickActionPrompt(_ prompt: String) {
@@ -243,7 +269,7 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate {
             onPromptSubmitted?()
             commitDeferredBindIfNeeded()
         }
-        chipViewModel.markPromptSubmitted()
+        onPromptDelivered?()
     }
 
     func unifiedToggleInputDidSubmitPrompt(_ prompt: String,
@@ -263,12 +289,14 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate {
                                                    pageContext: chipViewModel.pendingAttachedContextData,
                                                    reasoningEffort: reasoningEffort)
         commitDeferredBindIfNeeded()
-        chipViewModel.markPromptSubmitted()
+        onPromptDelivered?()
     }
 
     func unifiedToggleInputDidSubmitQuery(_ query: String) {}
     func unifiedToggleInputDidRequestVoiceSearch() {}
-    func unifiedToggleInputDidRequestAIVoiceChat() {}
+    func unifiedToggleInputDidRequestAIVoiceChat() {
+        onAIVoiceChatRequested?()
+    }
     func unifiedToggleInputDidRequestAIChat(prefilledText: String) {}
     func unifiedToggleInputDidChangeHeight() {}
     func unifiedToggleInputDidCommitMode(_ mode: TextEntryMode) {}

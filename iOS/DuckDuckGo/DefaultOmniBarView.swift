@@ -858,6 +858,14 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
             : UIColor(designSystemColor: .urlBar))
     }
 
+    func restoreFloatingFieldAppearance() {
+        // The bottom floating field can lose its opaque fill after an omnibar notification animation
+        // ends, dropping contrast with the toolbar. Re-assert the resting opaque appearance. Top glass
+        // and non-floating are unaffected.
+        guard isFloatingUIEnabled, !shouldUseFloatingTopGlass else { return }
+        makeOpaque()
+    }
+
     func setFloatingMinimalChromeBar(_ enabled: Bool) {
         guard isFloatingUIEnabled, isFloatingMinimalChromeBar != enabled else { return }
         isFloatingMinimalChromeBar = enabled
@@ -2312,6 +2320,12 @@ extension DefaultOmniBarView {
     func updateTextFieldPlaceholderVisibility(hasText: Bool) {
         guard isSearchAreaExpanded else { return }
         textField.alpha = hasText ? 0 : 1
+    }
+
+    func updateAIChatButtonForContextualSheet(isPresented: Bool) {
+        searchAreaView.aiChatButton.setImage(isPresented
+            ? DesignSystemImages.Glyphs.Size24.aiChatDown
+            : DesignSystemImages.Glyphs.Size24.aiChat)
     }
 
     func updateAIChatSendButton(hasText: Bool) {

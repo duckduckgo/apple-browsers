@@ -289,7 +289,7 @@ final class UnifiedToggleInputViewController: UIViewController {
         usesOmnibarMargins = config.usesOmnibarMargins
         isTopBarPosition = config.isTopBarPosition
         // Set before `applyCardLayout` reads the flag.
-        inputBarView.isInlineDismissHidden = config.isAITab
+        inputBarView.isInlineDismissHidden = config.isInlineDismissHidden
         inputBarView.isAITab = config.isAITab
         setInputMode(config.inputMode, animated: animated)
         setInactiveCardAppearance(config.inactiveAppearance)
@@ -345,6 +345,10 @@ final class UnifiedToggleInputViewController: UIViewController {
 
     func selectAllText() {
         inputBarView.selectAllText()
+    }
+
+    func moveCaretToStart() {
+        inputBarView.moveCaretToStart()
     }
 
     var placeholderWindowX: CGFloat? { inputBarView.placeholderWindowX }

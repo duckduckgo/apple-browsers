@@ -243,6 +243,7 @@ final class NetworkProtectionNavBarPopoverManager: NetPPopoverManager {
                 isMenuBarStatusView: false,
                 userDefaults: .netP,
                 locationFormatter: DefaultVPNLocationFormatter(),
+                isStrictRoutingAvailable: featureFlagger.isFeatureOn(.vpnStrictRoutingToggle),
                 uninstallHandler: { [weak self] reason in
 
                     let showNotification = reason == .expiration

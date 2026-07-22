@@ -380,6 +380,79 @@ struct OnboardingIntroContentProviderTests {
 
     }
 
+    @Suite("Comparison Content For Download Reason")
+    struct DownloadReasonComparisonContent {
+
+        private func makeSUT(reason: OnboardingDownloadReason?) -> OnboardingIntroContentProvider {
+            OnboardingIntroContentProvider(
+                flowType: .default,
+                featureFlagger: MockFeatureFlagger(),
+                downloadReasonProvider: { reason }
+            )
+        }
+
+        @Test("Nil reason keeps the original content")
+        func nilReasonUsesDefaultContent() {
+            // GIVEN
+            let sut = makeSUT(reason: nil)
+
+            // WHEN
+            let result = sut.setDefaultBrowserContent
+
+            // THEN
+            #expect(result.title == UserText.Onboarding.BrowsersComparison.title)
+            #expect(result.subHeader == nil)
+            #expect(result.features == RebrandedComparisonTableModel.defaultBrowserFeatures)
+        }
+
+        @Test(
+            "Every reason shows the shared heading and keeps the browser CTAs",
+            arguments: OnboardingDownloadReason.allCases
+        )
+        func sharedHeadingAndCTAs(reason: OnboardingDownloadReason) {
+            // GIVEN
+            let sut = makeSUT(reason: reason)
+
+            // WHEN
+            let result = sut.setDefaultBrowserContent
+
+            // THEN
+            #expect(result.title == UserText.Onboarding.BrowsersComparison.titleDownloadExperiment)
+            #expect(result.primaryCTA == UserText.Onboarding.BrowsersComparison.cta)
+            #expect(result.secondaryCTA == UserText.onboardingSkip)
+        }
+
+        @Test(
+            "Browser-style reasons return their tailored feature list with no sub-header",
+            arguments: [OnboardingDownloadReason.browserPrivately, .noAI, .blockAds]
+        )
+        func browserStyleReasons(reason: OnboardingDownloadReason) {
+            // GIVEN
+            let sut = makeSUT(reason: reason)
+
+            // WHEN
+            let result = sut.setDefaultBrowserContent
+
+            // THEN
+            #expect(result.subHeader == nil)
+            #expect(result.features == RebrandedComparisonTableModel.browserFeatures(for: reason))
+            #expect(!result.features.isEmpty)
+        }
+
+        @Test("The private-AI-chat reason returns the AI-providers table with a sub-header")
+        func privateAIChatReasonUsesAITable() {
+            // GIVEN
+            let sut = makeSUT(reason: .privateAIChat)
+
+            // WHEN
+            let result = sut.setDefaultBrowserContent
+
+            // THEN
+            #expect(result.subHeader == UserText.Onboarding.DuckAICPP.AIComparison.subHeader)
+            #expect(result.features == RebrandedComparisonTableModel.browserFeatures(for: .privateAIChat))
+        }
+    }
+
     @Suite("AI Comparison Content")
     struct AIIntroContent {
 

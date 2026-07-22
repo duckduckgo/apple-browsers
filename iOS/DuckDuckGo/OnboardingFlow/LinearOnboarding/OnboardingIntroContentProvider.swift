@@ -39,10 +39,18 @@ protocol OnboardingIntroContentProviding {
 struct OnboardingIntroContentProvider: OnboardingIntroContentProviding {
     private let flowType: OnboardingFlowType
     private let featureFlagger: FeatureFlagger
+    /// Resolves the user's selected download reason lazily. The reason is chosen mid-flow — after this provider is built — so it's read on demand.
+    /// Defaults to `nil` (control arm and Duck.ai CPP flow).
+    private let downloadReasonProvider: () -> OnboardingDownloadReason?
 
-    init(flowType: OnboardingFlowType, featureFlagger: FeatureFlagger) {
+    init(
+        flowType: OnboardingFlowType,
+        featureFlagger: FeatureFlagger,
+        downloadReasonProvider: @escaping () -> OnboardingDownloadReason? = { nil }
+    ) {
         self.flowType = flowType
         self.featureFlagger = featureFlagger
+        self.downloadReasonProvider = downloadReasonProvider
     }
 }
 
@@ -182,7 +190,8 @@ struct OnboardingComparisonContent: Equatable {
 
 extension OnboardingIntroContentProvider {
 
-    var setDefaultBrowserContent: OnboardingComparisonContent {
+    /// Non-tailored comparison content (No download reason, and Duck.ai CPP flow).
+    private var defaultSetDefaultBrowserContent: OnboardingComparisonContent {
         let title = switch flowType {
         case .default: UserText.Onboarding.BrowsersComparison.title
         case .duckAI: UserText.Onboarding.DuckAICPP.BrowserComparison.title
@@ -192,6 +201,26 @@ extension OnboardingIntroContentProvider {
             title: title,
             subHeader: nil,
             features: RebrandedComparisonTableModel.defaultBrowserFeatures,
+            primaryCTA: UserText.Onboarding.BrowsersComparison.cta,
+            secondaryCTA: UserText.onboardingSkip,
+            daxAnimation: .wingBottom
+        )
+    }
+
+    /// Content for the Set-as-Default comparison chart.
+    ///
+    /// Tailors the comparison table to the user's selected download reason (download-reason experiment).
+    /// When no reason is set — control arm and Duck.ai CPP flow — the original content is returned.
+    var setDefaultBrowserContent: OnboardingComparisonContent {
+        // Return default version of comparison table if download reason is nil (Duck.ai + No experiment enrolled users)
+        guard let reason = downloadReasonProvider() else { return defaultSetDefaultBrowserContent }
+
+        let subHeader = reason == .privateAIChat ? UserText.Onboarding.DuckAICPP.AIComparison.subHeader : nil
+
+        return OnboardingComparisonContent(
+            title: UserText.Onboarding.BrowsersComparison.titleDownloadExperiment,
+            subHeader: subHeader,
+            features: RebrandedComparisonTableModel.browserFeatures(for: reason),
             primaryCTA: UserText.Onboarding.BrowsersComparison.cta,
             secondaryCTA: UserText.onboardingSkip,
             daxAnimation: .wingBottom

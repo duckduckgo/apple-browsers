@@ -694,6 +694,7 @@ private extension MainViewController {
         // collection is ready and would assert.
         reconcileToolbarVisibilityForCurrentTab()
         reconcileAIChromeForCurrentTab()
+        restoreCurrentBarsVisibilityAfterLayoutRefresh()
     }
 
     func refreshAITab(

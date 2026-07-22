@@ -23,6 +23,7 @@ import DataBrokerProtection_iOS
 import SwiftUI
 import UIComponents
 import UIKit
+import VPN
 import DesignResourcesKit
 import DesignResourcesKitIcons
 
@@ -333,7 +334,9 @@ struct SettingsSubscriptionView: View {
             let hasVPNEntitlement = userEntitlements.contains(.networkProtection)
             let isVPNConnected = settingsViewModel.state.networkProtectionConnected
 
-            NavigationLink(destination: LazyView(NetworkProtectionRootView()), isActive: $isShowingVPN) {
+            NavigationLink(
+                destination: LazyView(NetworkProtectionRootView(source: .subscriptionSettings)),
+                isActive: $isShowingVPN) {
                 SettingsCellView(
                     label: UserText.settingsPProVPNTitle,
                     image: Image(uiImage: DesignSystemImages.Color.Size24.vpn),

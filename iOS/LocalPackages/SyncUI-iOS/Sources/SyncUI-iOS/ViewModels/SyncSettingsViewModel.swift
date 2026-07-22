@@ -441,7 +441,12 @@ public class SyncSettingsViewModel: ObservableObject {
     }
 
     public func syncAnotherDeviceFromConnectingSheet() {
-        postConnectingSheetDismissAction = { [weak self] in self?.scanQRCode() }
+        postConnectingSheetDismissAction = { [weak self] in
+            guard let self else { return }
+            guard isConnectingDevicesAvailable else { return }
+            guard isSyncEnabled || isAccountCreationAvailable else { return }
+            delegate?.showSyncWithAnotherDevice()
+        }
         connectingSheetPhase = nil
     }
 

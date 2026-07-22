@@ -584,6 +584,23 @@ final class SyncSettingsViewModelTests: XCTestCase {
         XCTAssertEqual(sut.connectingSheetPhase, .syncAnotherDevice(isConnecting: true))
     }
 
+    func testWhenSyncAnotherDeviceFromConnectingSheetThenPairingStartsAfterDismissWithoutReauthentication() {
+        let delegate = MockSyncSettingsViewModelDelegate()
+        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: delegate)
+        sut.connectingSheetPhase = .syncAnotherDevice(isConnecting: false)
+
+        sut.syncAnotherDeviceFromConnectingSheet()
+
+        XCTAssertNil(sut.connectingSheetPhase)
+        XCTAssertEqual(delegate.showSyncWithAnotherDeviceCallCount, 0)
+        XCTAssertEqual(delegate.authenticateUserCallCount, 0)
+
+        sut.connectingSheetDidDismiss()
+
+        XCTAssertEqual(delegate.showSyncWithAnotherDeviceCallCount, 1)
+        XCTAssertEqual(delegate.authenticateUserCallCount, 0)
+    }
+
     private func makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler,
                          delegate: MockSyncSettingsViewModelDelegate? = nil) -> SyncSettingsViewModel {
         let model = SyncSettingsViewModel(

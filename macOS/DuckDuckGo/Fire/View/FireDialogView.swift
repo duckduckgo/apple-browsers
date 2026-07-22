@@ -62,7 +62,6 @@ struct FireDialogView: ModalView {
     @ObservedObject var viewModel: FireDialogViewModel
     @ObservedObject private var themeManager: ThemeManager = NSApp.delegateTyped.themeManager
     private let style = FireDialogStyle.current
-    private let showIndividualSitesLink: Bool
     private let onConfirm: ((FireDialogView.Response) -> Void)?
     @Environment(\.dismiss) private var dismiss
 
@@ -79,11 +78,9 @@ struct FireDialogView: ModalView {
 
     init(viewModel: FireDialogViewModel,
          showSitesOverlay: Bool = false, // for Previews - @State flag to show "sites to be removed" overlay
-         showIndividualSitesLink: Bool,
          onConfirm: ((FireDialogView.Response) -> Void)? = nil) {
         self.viewModel = viewModel
         self._isShowingSitesOverlay = State(initialValue: showSitesOverlay)
-        self.showIndividualSitesLink = showIndividualSitesLink
         self.onConfirm = onConfirm
     }
 
@@ -950,7 +947,7 @@ private class MockAIChatHistoryCleaner: AIChatHistoryCleaning {
     )
 
     PreviewView(showWindowTitle: false) {
-        FireDialogView(viewModel: vm, showIndividualSitesLink: true)
+        FireDialogView(viewModel: vm)
     }
 }
 
@@ -996,7 +993,7 @@ private class MockAIChatHistoryCleaner: AIChatHistoryCleaning {
     )
 
     return PreviewView(showWindowTitle: false) {
-        FireDialogView(viewModel: vm, showSitesOverlay: true, showIndividualSitesLink: true)
+        FireDialogView(viewModel: vm, showSitesOverlay: true)
     }
 }
 #endif

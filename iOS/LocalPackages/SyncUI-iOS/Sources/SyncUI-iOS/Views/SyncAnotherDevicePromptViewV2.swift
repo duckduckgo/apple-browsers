@@ -86,6 +86,7 @@ struct SyncAnotherDevicePromptViewV2: View {
                         Image(uiImage: DesignSystemImages.Glyphs.Size24.close)
                     }
                     .accessibilityLabel(UserText.simplifiedScanCloseButton)
+                    .disabled(model.isConnectingThisDeviceOnly)
                 }
             }
         }

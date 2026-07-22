@@ -132,13 +132,13 @@ struct FireDialogView: ModalView {
                         }
                         sectionsView
                     }
+                    .padding(16)
                     .cornerRadius(24)
                     .overlay(
                         RoundedRectangle(cornerRadius: 24)
                             .inset(by: 0.5)
                             .stroke(Color(designSystemColor: .containerBorderPrimary), lineWidth: 1)
                     )
-                    .padding(16)
 
                     if showIndividualSitesLink {
                         individualSitesLink

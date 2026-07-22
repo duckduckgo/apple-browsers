@@ -19,15 +19,17 @@
 
 import UIKit
 import Lottie
+import DesignResourcesKitIcons
 
 final class AnimatedDaxLogoView: UIView, DaxLogoViewSwitching {
     private(set) lazy var logoAnimation = LottieAnimationView(name: daxAnimationName)
 
     private var daxAnimationName: String {
-        if traitCollection.userInterfaceStyle == .dark {
-            return Constant.daxLogoAnimationDarkName
+        let isDark = traitCollection.userInterfaceStyle == .dark
+        if AppRebrand.isAppRebranded() {
+            return isDark ? Constant.daxLogoAnimationDarkName : Constant.daxLogoAnimationName
         } else {
-            return Constant.daxLogoAnimationName
+            return isDark ? Constant.daxLogoAnimationDarkNameLegacy : Constant.daxLogoAnimationNameLegacy
         }
     }
 
@@ -89,5 +91,7 @@ final class AnimatedDaxLogoView: UIView, DaxLogoViewSwitching {
     private enum Constant {
         static let daxLogoAnimationName = "duckduckgo-ai-transition.json"
         static let daxLogoAnimationDarkName = "duckduckgo-ai-transition-dark.json"
+        static let daxLogoAnimationNameLegacy = "duckduckgo-ai-transition-legacy.json"
+        static let daxLogoAnimationDarkNameLegacy = "duckduckgo-ai-transition-dark-legacy.json"
     }
 }

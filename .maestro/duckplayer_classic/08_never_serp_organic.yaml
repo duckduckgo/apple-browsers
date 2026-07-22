@@ -32,6 +32,7 @@ tags:
     file: shared/load_serp_url.yaml
 
 # Tap on video in organic results
+- assertVisible: ${output.videoTitle}
 - tapOn: 
     text: ${output.videoTitle}
 

@@ -124,11 +124,22 @@ struct FireDialogView: ModalView {
                     headerView
                         .padding(.top, 14) // presenter sheet crops the padding 🤷‍♂️
                         .accessibilityHidden(isShowingSitesOverlay)
-                    if viewModel.mode.shouldShowSegmentedControl {
-                        segmentedControlView
-                            .accessibilityHidden(isShowingSitesOverlay)
+
+                    VStack(spacing: 16) {
+                        if viewModel.mode.shouldShowSegmentedControl {
+                            segmentedControlView
+                                .accessibilityHidden(isShowingSitesOverlay)
+                        }
+                        sectionsView
                     }
-                    sectionsView
+                    .cornerRadius(24)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 24)
+                            .inset(by: 0.5)
+                            .stroke(Color(designSystemColor: .containerBorderPrimary), lineWidth: 1)
+                    )
+                    .padding(16)
+
                     if showIndividualSitesLink {
                         individualSitesLink
                     }

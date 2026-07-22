@@ -212,6 +212,12 @@ enum AIChatPixel: PixelKitEvent {
     /// Event Trigger: User cancels deletion of a recent chat suggestion in the address bar
     case aiChatRecentChatDeleteCancelled
 
+    /// Event Trigger: A single chat deletion (address bar or NTP) succeeds — native delete and JS clear both OK.
+    case aiChatSingleDeleteSuccessful
+
+    /// Event Trigger: A single chat deletion (address bar or NTP) fails — native delete or JS clear errored.
+    case aiChatSingleDeleteFailed
+
     case aiChatSyncScopedSyncTokenError(reason: String)
     case aiChatSyncEncryptionError(reason: String)
     case aiChatSyncDecryptionError(reason: String)
@@ -290,6 +296,10 @@ enum AIChatPixel: PixelKitEvent {
 
     /// Event Trigger: User selects a reasoning effort from the native omnibar picker
     case aiChatAddressBarReasoningEffortSelected
+
+    /// Event Trigger: User taps a gated model or reasoning effort in the native omnibar picker,
+    /// routing them to the subscription purchase/upgrade flow.
+    case aiChatAddressBarSubscriptionUpsellTriggered(currentTier: String, requiredTier: String, flowType: String)
 
     /// Event Trigger: User opens a new voice Duck.ai chat from the native omnibar
     case aiChatNewVoiceChatOmnibarNative
@@ -580,6 +590,10 @@ enum AIChatPixel: PixelKitEvent {
             return "aichat_recent_chat_delete_confirmed"
         case .aiChatRecentChatDeleteCancelled:
             return "aichat_recent_chat_delete_cancelled"
+        case .aiChatSingleDeleteSuccessful:
+            return "aichat_single_delete_successful"
+        case .aiChatSingleDeleteFailed:
+            return "aichat_single_delete_failed"
 
         case .aiChatSyncScopedSyncTokenError:
             return "aichat_sync_internal_scoped-sync-token-error"
@@ -639,6 +653,8 @@ enum AIChatPixel: PixelKitEvent {
             return "aichat_addressbar_model_selected"
         case .aiChatAddressBarReasoningEffortSelected:
             return "aichat_addressbar_reasoning_effort_selected"
+        case .aiChatAddressBarSubscriptionUpsellTriggered:
+            return "aichat_addressbar_subscription_upsell_triggered"
         case .aiChatNewVoiceChatOmnibarNative:
             return "aichat_new_voice_chat_omnibar_native"
         case .aiChatAddressBarImageGenerationActivated:
@@ -788,6 +804,8 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatRecentChatDeleteButtonClicked,
                 .aiChatRecentChatDeleteConfirmed,
                 .aiChatRecentChatDeleteCancelled,
+                .aiChatSingleDeleteSuccessful,
+                .aiChatSingleDeleteFailed,
                 .aiChatOnboardingTogglePreferenceOn,
                 .aiChatOnboardingTogglePreferenceOff,
                 .aiChatOnboardingFinishedToggleOn,
@@ -852,6 +870,8 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatNtpCustomizeResponsesOpened,
                 .serpSettingsUnrecognizedValue:
             return nil
+        case .aiChatAddressBarSubscriptionUpsellTriggered(let currentTier, let requiredTier, let flowType):
+            return ["current_tier": currentTier, "required_tier": requiredTier, "flow_type": flowType]
         case .aiChatIsEnabled(let isEnabled):
             return ["is_enabled": isEnabled ? "1" : "0"]
         case .aiFeaturesState(let duckAI, let searchAssist, let hideAIImages, let noAI):
@@ -970,6 +990,8 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatRecentChatDeleteButtonClicked,
                 .aiChatRecentChatDeleteConfirmed,
                 .aiChatRecentChatDeleteCancelled,
+                .aiChatSingleDeleteSuccessful,
+                .aiChatSingleDeleteFailed,
                 .aiChatSyncScopedSyncTokenError,
                 .aiChatSyncEncryptionError,
                 .aiChatSyncDecryptionError,
@@ -996,6 +1018,7 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatAddressBarMentionPickerCanceled,
                 .aiChatAddressBarModelSelected,
                 .aiChatAddressBarReasoningEffortSelected,
+                .aiChatAddressBarSubscriptionUpsellTriggered,
                 .aiChatNtpSubmitWithImage,
                 .aiChatNtpModelSelected,
                 .aiChatNtpReasoningEffortSelected,

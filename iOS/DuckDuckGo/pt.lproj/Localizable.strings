@@ -5432,9 +5432,6 @@
 /* Button to delete all chats in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.chats.button" = "Eliminar conversas";
 
-/* Do not translate - stringsdict entry */
-"aiChat.history.deleteAll.confirmation.title" = "aiChat.history.deleteAll.confirmation.title";
-
 /* Top-level attachment menu option to attach the current page content to an AI chat message */
 "aichat.attachment.option.ask.about.page" = "Perguntar sobre a página";
 

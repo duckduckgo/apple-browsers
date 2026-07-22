@@ -53,6 +53,14 @@ import PrivacyConfig
 import WebExtensions
 import DesignResourcesKitIcons
 
+enum WebViewPreviewSnapshotGeometry {
+
+    static func visibleRect(webViewBounds: CGRect) -> CGRect? {
+        guard webViewBounds.width > 0, webViewBounds.height > 0 else { return nil }
+        return webViewBounds
+    }
+}
+
 class TabViewController: UIViewController {
 
     private struct Constants {
@@ -141,6 +149,16 @@ class TabViewController: UIViewController {
     var openedByPage = false
     weak var openingTab: TabViewController? {
         didSet {
+            delegate?.tabLoadingStateDidChange(tab: self)
+        }
+    }
+
+    /// URL of a tab this tab opened that was just closed via the back button. When set, the forward
+    /// button re-opens it (only if the web view has no forward entry). Cleared once consumed or when
+    /// this tab navigates elsewhere.
+    var reopenableClosedTabURL: URL? {
+        didSet {
+            guard reopenableClosedTabURL != oldValue else { return }
             delegate?.tabLoadingStateDidChange(tab: self)
         }
     }
@@ -868,6 +886,17 @@ class TabViewController: UIViewController {
         updateWebViewBottomAnchor(for: 1.0)
     }
 
+    @discardableResult
+    private func setWebViewObscuredContentInsetsIfSupported(_ insets: UIEdgeInsets) -> Bool {
+        guard #available(iOS 26, *),
+              let webView,
+              webView.responds(to: #selector(setter: WKWebView.obscuredContentInsets)) else {
+            return false
+        }
+        webView.obscuredContentInsets = insets
+        return true
+    }
+
     func updateWebViewBottomAnchor(for barsVisibilityPercent: CGFloat) {
         let isUnifiedToggleInputAffectingBottomLayout = isAITab && unifiedToggleInputFeature.isAvailable
         if appSettings.currentAddressBarPosition == .bottom && !isUnifiedToggleInputAffectingBottomLayout {
@@ -906,15 +935,14 @@ class TabViewController: UIViewController {
             // AI tabs with the unified toggle input own their own bottom layout, so keep the web view
             // full-bleed with no obscured region there.
             let isUnifiedToggleInputAffectingLayout = isAITab && unifiedToggleInputFeature.isAvailable
-            if #available(iOS 26, *) {
+            let obscuredInsets: UIEdgeInsets = isUnifiedToggleInputAffectingLayout
+                ? .zero
+                : (chromeDelegate?.floatingWebViewObscuredInsets(for: barsVisibilityPercent) ?? .zero)
+            if setWebViewObscuredContentInsetsIfSupported(obscuredInsets) {
                 // Keep the web view full-bleed and reserve the chrome region via WebKit's public
                 // `obscuredContentInsets`, which positions page fixed/sticky elements and the layout
                 // viewport reliably (including on load) and lets content scroll behind the glass.
                 webViewBottomAnchorConstraint?.constant = 0
-                let obscuredInsets: UIEdgeInsets = isUnifiedToggleInputAffectingLayout
-                    ? .zero
-                    : (chromeDelegate?.floatingWebViewObscuredInsets(for: barsVisibilityPercent) ?? .zero)
-                webView?.obscuredContentInsets = obscuredInsets
                 // `obscuredContentInsets` does not adjust the scroll view's content/indicator insets in
                 // UIKit, so scrollable content would rest behind the bars. Feed the chrome region
                 // (beyond the device safe area, which the scroll view already accounts for) into
@@ -940,9 +968,7 @@ class TabViewController: UIViewController {
             borderView.isHidden = false
             borderView.bottomAlpha = AppWidthObserver.shared.isLargeWidth ? 0 : barsVisibilityPercent
             // Defensive: clear any obscured insets left over if floating UI was toggled off at runtime.
-            if #available(iOS 26, *) {
-                webView?.obscuredContentInsets = .zero
-            }
+            setWebViewObscuredContentInsetsIfSupported(.zero)
         }
     }
 
@@ -1306,6 +1332,9 @@ class TabViewController: UIViewController {
             }
 
         case #keyPath(WKWebView.url):
+            // Cleared here, so we act on same-document navigation too.
+            reopenableClosedTabURL = nil
+
             // A short delay is required here, because the URL takes some time
             // to propagate to the webView.url property accessor and might not
             // be immediately available in the observer
@@ -1476,7 +1505,7 @@ class TabViewController: UIViewController {
 
         // Clear navigation error when going back
         lastError = nil
-        
+
         if let url = url, url.isDuckPlayer {
             webView.stopLoading()
             if webView.canGoBack {
@@ -1486,6 +1515,7 @@ class TabViewController: UIViewController {
                 return
             }
             if openingTab != nil {
+                stashReopenableStateOnOpener()
                 delegate?.tabDidRequestClose(self)
                 return
             }
@@ -1510,11 +1540,18 @@ class TabViewController: UIViewController {
         }
 
         if openingTab != nil {
+            stashReopenableStateOnOpener()
             delegate?.tabDidRequestClose(self)
         }
-        
+
     }
-    
+
+    /// Records the closed tab's URL on the opener so its forward button can re-open it.
+    private func stashReopenableStateOnOpener() {
+        guard let openingTab else { return }
+        openingTab.reopenableClosedTabURL = webView.url
+    }
+
     func goForward() {
         addressBarURLFilter.beginUserNavigation()
         dismissJSAlertIfNeeded()
@@ -1523,7 +1560,12 @@ class TabViewController: UIViewController {
         lastError = nil
 
         if webView.goForward() != nil {
+            reopenableClosedTabURL = nil
             duckPlayerNavigationHandler.handleGoForward(webView: webView)
+            chromeDelegate?.omniBar.endEditing()
+        } else if let reopenableClosedTabURL {
+            self.reopenableClosedTabURL = nil
+            delegate?.tab(self, didRequestReopenClosedTabAt: reopenableClosedTabURL)
             chromeDelegate?.omniBar.endEditing()
         }
     }
@@ -2217,8 +2259,29 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     func preparePreview(completion: @escaping (UIImage?) -> Void) {
+        guard FloatingUIManager(featureFlagger: featureFlagger).isFloatingUIEnabled else {
+            DispatchQueue.main.async { [weak self] in
+                completion(self?.preparePreviewSync(afterScreenUpdates: true))
+            }
+            return
+        }
+
         DispatchQueue.main.async { [weak self] in
-            completion(self?.preparePreviewSync(afterScreenUpdates: true))
+            guard let self,
+                  let webView,
+                  let rect = WebViewPreviewSnapshotGeometry.visibleRect(
+                    webViewBounds: webView.bounds
+                  ) else {
+                completion(nil)
+                return
+            }
+
+            let configuration = WKSnapshotConfiguration()
+            configuration.rect = rect
+            configuration.afterScreenUpdates = true
+            webView.takeSnapshot(with: configuration) { image, _ in
+                completion(image)
+            }
         }
     }
 
@@ -3217,8 +3280,7 @@ extension TabViewController {
             let persistICS = FilePreviewHelper.shouldPersistInDownloads(
                 mimeType: MIMEType(from: navigationResponse.response.mimeType),
                 url: navigationResponse.response.url,
-                filename: navigationResponse.response.suggestedFilename,
-                featureFlagger: featureFlagger
+                filename: navigationResponse.response.suggestedFilename
             )
             do {
                 if let download = try downloadManager.makeDownload(navigationResponse: navigationResponse,
@@ -3429,8 +3491,7 @@ extension TabViewController {
               !download.temporary,
               !FilePreviewHelper.handlesDownloadNatively(mimeType: download.mimeType,
                                                          url: download.url,
-                                                         filename: download.filename,
-                                                         featureFlagger: featureFlagger)
+                                                         filename: download.filename)
         else { return }
 
         let attributedMessage = DownloadActionMessageViewHelper.makeDownloadStartedMessage(for: download)
@@ -3465,8 +3526,7 @@ extension TabViewController {
         DispatchQueue.main.async {
             let handledNatively = FilePreviewHelper.handlesDownloadNatively(mimeType: download.mimeType,
                                                                             url: download.location,
-                                                                            filename: download.filename,
-                                                                            featureFlagger: self.featureFlagger)
+                                                                            filename: download.filename)
             if !download.temporary && !handledNatively {
                 let attributedMessage = DownloadActionMessageViewHelper.makeDownloadFinishedMessage(for: download)
                 let addressBarBottom = self.appSettings.currentAddressBarPosition.isBottom
@@ -3486,12 +3546,11 @@ extension TabViewController {
     private func previewDownloadedFileIfNecessary(_ download: Download) {
         let canAutoPreview = FilePreviewHelper.canAutoPreview(mimeType: download.mimeType,
                                                               url: download.location,
-                                                              filename: download.filename,
-                                                              featureFlagger: featureFlagger)
+                                                              filename: download.filename)
         guard let delegate = self.delegate,
               delegate.tabCheckIfItsBeingCurrentlyPresented(self),
               canAutoPreview,
-              let fileHandler = FilePreviewHelper.fileHandlerForDownload(download, viewController: self, featureFlagger: featureFlagger)
+              let fileHandler = FilePreviewHelper.fileHandlerForDownload(download, viewController: self)
         else { return }
 
         if mostRecentAutoPreviewDownloadID == download.id {
@@ -3749,6 +3808,18 @@ extension TabViewController: UIGestureRecognizerDelegate {
     }
 
     func requestFindInPage() {
+        if #available(iOS 16.0, *), featureFlagger.isFeatureOn(.systemFindInPage) {
+            webView.isFindInteractionEnabled = true
+            let findInteraction = webView.findInteraction
+            // Ignore repeat invocations while find is open so in-progress text isn't replaced with a stored query.
+            guard findInteraction?.isFindNavigatorVisible == false else { return }
+            // Default to empty (not nil) so this tab's field doesn't fall back to the system-wide retained query from another tab.
+            findInteraction?.searchText = (webView as? WebView)?.lastFindInPageQuery ?? ""
+            findInteraction?.presentFindNavigator(showingReplace: false)
+            (webView as? WebView)?.beginTrackingFindInPageQuery()
+            return
+        }
+
         guard findInPage == nil else { return }
         findInPage = FindInPage(webView: webView)
         delegate?.tabDidRequestFindInPage(tab: self)
@@ -4968,7 +5039,7 @@ extension TabViewController: Navigatable {
 
     public var canGoForward: Bool {
         let webViewCanGoForward = webView.canGoForward
-        return webViewCanGoForward && !isError
+        return (webViewCanGoForward && !isError) || reopenableClosedTabURL != nil
     }
 
 }

@@ -29,6 +29,16 @@ public enum SharedDesignSystemColor {
     case accentContentSecondary
     case accentContentTertiary
     case accentFirePrimary
+    case accentFireSecondary
+    case accentFireTertiary
+    case accentFireContentPrimary
+    case accentFireContentSecondary
+    case accentFireContentTertiary
+    case accentFireGlowPrimary
+    case accentFireGlowSecondary
+    case accentFireTextPrimary
+    case accentFireTextSecondary
+    case accentFireTextTertiary
     case accentGlowPrimary
     case accentGlowSecondary
     case accentPrimary
@@ -146,6 +156,11 @@ public enum SharedDesignSystemColor {
     case surfacePrimary
     case surfaceSecondary
     case surfaceTertiary
+
+    // Status
+    case statusYellowPrimary
+    case statusYellowSecondary
+    case statusYellowTertiary
 
     // Surface Decoration
     case surfaceDecorationPrimary

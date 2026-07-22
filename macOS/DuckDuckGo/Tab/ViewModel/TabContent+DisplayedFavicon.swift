@@ -17,6 +17,7 @@
 //
 
 import AppKit
+import DesignResourcesKit
 import DesignResourcesKitIcons
 import FeatureFlags
 import MaliciousSiteProtection
@@ -59,7 +60,7 @@ extension TabContent {
             return .settingsMulticolor16
 
         case .bookmarks:
-            return .bookmarksFolder
+            return DesignSystemRebrand.isAppRebranded() ? DesignSystemImages.Color.Size16.bookmarksNew : .bookmarksFolder
 
         case .onboarding:
             return .onboardingDax

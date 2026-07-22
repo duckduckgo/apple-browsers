@@ -338,7 +338,8 @@ final class MainViewController: NSViewController {
         )
         aiChatOmnibarTextContainerViewController = AIChatOmnibarTextContainerViewController(
             omnibarController: aiChatOmnibarController,
-            themeManager: themeManager
+            themeManager: themeManager,
+            isBurner: tabCollectionViewModel.isBurner
         )
         self.vpnUpsellPopoverPresenter = vpnUpsellPopoverPresenter
         self.startupProfiler = startupProfiler

@@ -229,6 +229,7 @@ extension Pixel {
 
         case tabBarTabSelected
         case tabBarTabClosed
+        case tabBarCloseOtherTabs
         case tabBarNewTab
         case tabBarOverflowDaily
         case tabBarOpenTabCountDaily
@@ -2294,6 +2295,7 @@ extension Pixel.Event {
         case .tabBarTabSwitcherOpened: return "m_tab_manager_opened"
         case .tabBarTabSelected: return "m_tab_bar_tab_selected"
         case .tabBarTabClosed: return "m_tab_bar_tab_closed"
+        case .tabBarCloseOtherTabs: return "tab_bar_close_other_tabs"
         case .tabBarNewTab: return "m_tab_bar_new_tab"
         case .tabBarOverflowDaily: return "m_tab_bar_overflow_daily"
         case .tabBarOpenTabCountDaily: return "m_tab_bar_open_tab_count_daily"

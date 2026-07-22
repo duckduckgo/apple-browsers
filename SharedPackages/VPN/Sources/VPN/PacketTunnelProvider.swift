@@ -1576,7 +1576,6 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     // MARK: - Tunnel heartbeat
 
     private func startHeartbeat() {
-        guard settings.isOrphanProxyDetectionEnabled else { return }
         guard let heartbeatStore else { return }
         heartbeatTask = Task.periodic(interval: Self.heartbeatInterval) { [weak heartbeatStore] in
             heartbeatStore?.recordHeartbeat()

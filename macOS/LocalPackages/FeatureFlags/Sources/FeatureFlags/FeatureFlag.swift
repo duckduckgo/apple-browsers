@@ -68,14 +68,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214946884020610?focus=true
     case vpnExcludeCGNATToggle
 
-    /// Kill switch: enable remotely to disable orphaned-proxy detection (tunnel heartbeat + proxy detection loop + pixel).
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215509351454304
-    case vpnOrphanProxyDetectionKillSwitch
-
-    /// Kill switch: enable remotely to disable the orphaned-proxy full-bypass behavior.
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215509351454309
-    case vpnOrphanProxyBypassKillSwitch
-
     /// Toggle for the Copy VPN Diagnostics button in VPN settings.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215794369750045
     case vpnShowCopyDiagnosticsButton
@@ -186,6 +178,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// Managing state of New Tab Page using tab IDs in frontend
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866719908836
     case newTabPageTabIDs
+
+    /// Enables deleting history-based search suggestions from the New Tab Page omnibar
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216469223737804
+    case ntpSearchSuggestionsDeletion
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866618846917
     /// Note: 'Failsafe' feature flag. See https://app.asana.com/1/137249556945/project/1202500774821704/task/1210572145398078?focus=true
@@ -336,6 +332,12 @@ public enum FeatureFlag: String, CaseIterable {
     /// Enables the reasoning effort picker in the Duck.ai omnibar
     case aiChatOmnibarReasoningEffort
 
+    /// Gates the "Try for free"/"Upgrade" subscription-upsell tags and confirmation dialog on
+    /// gated models/reasoning efforts in the Duck.ai omnibar — a kill switch independent of the
+    /// underlying tier gating, which stays in effect (gated rows just become inert) if disabled.
+    /// https://app.asana.com/1/137249556945/project/1208671677432066/task/1215275657171787
+    case aiChatOmnibarSubscriptionUpsell
+
     /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1214283076614743?focus=true
     case aiChatOmnibarVoiceChatAccess
 
@@ -367,6 +369,10 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// Enables attaching content from multiple open tabs (and files) to the New Tab Page omnibar Duck.ai chat.
     case aiChatNtpAttachMoreTabs
+
+    /// Enables deleting recent AI chats from the New Tab Page omnibar
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216469223760067
+    case aiChatNtpSuggestionsDeletion
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213279513677422
     case aiChatSidebarFloating
@@ -533,10 +539,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .internalOnly, source: .remoteReleasable(NetworkProtectionSubfeature.strictRoutingToggle), category: .vpn)
         case .vpnExcludeCGNATToggle:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(NetworkProtectionSubfeature.excludeCGNAT), category: .vpn)
-        case .vpnOrphanProxyDetectionKillSwitch:
-            Config(source: .remoteReleasable(NetworkProtectionSubfeature.orphanProxyDetectionKillSwitch), category: .vpn)
-        case .vpnOrphanProxyBypassKillSwitch:
-            Config(source: .remoteReleasable(NetworkProtectionSubfeature.orphanProxyBypassKillSwitch), category: .vpn)
         case .vpnShowCopyDiagnosticsButton:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(NetworkProtectionSubfeature.showCopyDiagnosticsButton), category: .vpn)
         case .autoUpdateInDEBUG:
@@ -605,6 +607,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(HtmlNewTabPageSubfeature.omnibar))
         case .newTabPageTabIDs:
             Config(source: .remoteReleasable(HtmlNewTabPageSubfeature.newTabPageTabIDs))
+        case .ntpSearchSuggestionsDeletion:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(HtmlNewTabPageSubfeature.searchSuggestionsDeletion))
         case .supportsAlternateStripePaymentFlow:
             Config(defaultValue: .enabled, source: .remoteReleasable(PrivacyProSubfeature.supportsAlternateStripePaymentFlow), category: .subscription)
         case .refactorOfSyncPreferences:
@@ -691,6 +695,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.omnibarWebSearch), category: .duckAI)
         case .aiChatOmnibarReasoningEffort:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.omnibarReasoningEffort), category: .duckAI)
+        case .aiChatOmnibarSubscriptionUpsell:
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.omnibarSubscriptionUpsell), category: .duckAI)
         case .aiChatOmnibarVoiceChatAccess:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.omnibarVoiceChatAccess), category: .duckAI)
         case .aiChatSidebarAttachMoreTabs:
@@ -711,6 +717,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.ntpWebSearch), category: .duckAI)
         case .aiChatNtpAttachMoreTabs:
             Config(source: .remoteReleasable(AIChatSubfeature.ntpAttachMoreTabs), category: .duckAI)
+        case .aiChatNtpSuggestionsDeletion:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.ntpSuggestionsDeletion), category: .duckAI)
         case .aiChatSidebarFloating:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.sidebarFloating), category: .duckAI)
         case .sidebarSuggestedPrompts:
@@ -748,7 +756,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .aiChatNativeDataAccess:
             Config(source: .remoteReleasable(AIChatSubfeature.nativeDataAccess), category: .duckAI)
         case .aiChatCustomizeResponses:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.customizeResponses), category: .duckAI)
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.customizeResponses), category: .duckAI)
         case .aiFeaturesNativeControls:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.aiFeaturesNativeControls), category: .duckAI)
         case .aiChatNativeVoicePermissionFlow:

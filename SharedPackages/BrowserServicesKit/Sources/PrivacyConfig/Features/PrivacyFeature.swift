@@ -253,6 +253,10 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213037858764805
     case crashCollectionLimitCallStackTreeDepth
 
+    /// Enables sending MetricKit launch-time telemetry pixels.
+    /// https://app.asana.com/1/137249556945/project/1208671677432066/task/1214963974721156
+    case launchTimeMetrics
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212835969125260
     case browsingMenuSheetEnabledByDefault
 
@@ -299,9 +303,6 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215099690878849
     case tabsSaveOptimization
 
-    /// https://app.asana.com/1/137249556945/project/715106103902962/task/1213690148091855
-    case icsCalendarLinks
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215169783702336
     case walletPassDownload
 
@@ -318,6 +319,9 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// NA Experiment: tailor the onboarding flow based on the user's download reason.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216491579842691?focus=true
     case onboardingFlowByDownloadReasonExperiment
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216629730083154?focus=true
+    case systemFindInPage
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {
@@ -376,6 +380,7 @@ public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
     case webViewUserAgent
     case freemiumPIR
     case optOutRetryError96Hours
+    case deferredSecureVaultInit
 }
 
 public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
@@ -516,6 +521,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables attaching content from multiple open tabs to the New Tab Page omnibar Duck.ai chat.
     case ntpAttachMoreTabs
 
+    /// Enables deleting recent AI chats from the New Tab Page omnibar
+    case ntpSuggestionsDeletion
+
     /// Enables page context feature on iPad
     case iPadPageContext
 
@@ -551,6 +559,11 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Enables the reasoning effort picker in the Duck.ai omnibar
     case omnibarReasoningEffort
+
+    /// Enables the subscription-upsell "Try for free"/"Upgrade" tags and confirmation dialog on
+    /// gated models/reasoning efforts in the Duck.ai omnibar. A kill switch independent of the
+    /// underlying tier gating, which stays in effect (gated rows just become inert) if disabled.
+    case omnibarSubscriptionUpsell
 
     /// Enables 1-click voice-chat access from the Duck.ai omnibar (mic icon shown when input is empty)
     case omnibarVoiceChatAccess
@@ -619,6 +632,9 @@ public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Global switch to disable advanced card ordering for the Next Steps List widget
     case nextStepsListAdvancedCardOrdering
+
+    /// Enables deleting history-based search suggestions from the New Tab Page omnibar
+    case searchSuggestionsDeletion
 }
 
 public enum NetworkProtectionSubfeature: String, Equatable, PrivacySubfeature {
@@ -658,14 +674,6 @@ public enum NetworkProtectionSubfeature: String, Equatable, PrivacySubfeature {
     /// Exclude Carrier-Grade NAT (100.64.0.0/10) from the VPN tunnel.
     /// Keeps Wi-Fi calling, Visual Voicemail, and mesh VPNs (Tailscale/ZeroTier) working.
     case excludeCGNAT
-
-    /// Kill switch for the orphaned-proxy detection machinery (tunnel heartbeat + proxy detection loop + pixel).
-    /// Off by default → detection runs; enable remotely to disable it.
-    case orphanProxyDetectionKillSwitch
-
-    /// Kill switch for the orphaned-proxy full-bypass behavior.
-    /// Off by default → bypass engages when an orphaned proxy is detected; enable remotely to disable it.
-    case orphanProxyBypassKillSwitch
 
     /// Toggle for the Copy VPN Diagnostics button in VPN settings/status.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215794369750045

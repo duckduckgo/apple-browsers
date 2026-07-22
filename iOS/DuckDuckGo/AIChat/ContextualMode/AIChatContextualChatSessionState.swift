@@ -445,14 +445,18 @@ final class AIChatContextualChatSessionState {
             return
         }
 
+        let context = context.flatMap { $0.contextData.content.isEmpty ? nil : $0 }
+
         guard let context = context else {
             guard shouldProcessNilContextUpdate else {
                 Logger.aiChat.debug("[SessionState] Ignoring nil context update without active collection")
                 return
             }
-            Logger.aiChat.debug("[SessionState] Context collection returned nil - clearing context and downgrading to placeholder")
+            Logger.aiChat.debug("[SessionState] Context collection returned nil/empty - clearing context and downgrading to placeholder")
             latestContext = nil
             chipState = .placeholder
+            // Clear the persistent UTI host chip
+            emit(.deliverPageContext(nil, targets: .utiChip))
             cleanupFlags()
             rebuildViewState()
             return

@@ -18,6 +18,7 @@
 
 import SwiftUI
 import AppKit
+import DesignResourcesKit
 
 public struct NativeCheckboxToggle: NSViewRepresentable {
     public typealias NSViewType = NSButton
@@ -38,6 +39,7 @@ public struct NativeCheckboxToggle: NSViewRepresentable {
     public func updateNSView(_ nsView: NSButton, context: Context) {
         nsView.state = isOn ? .on : .off
         nsView.title = label
+        nsView.contentTintColor = DesignSystemRebrand.isAppRebranded() ? NSColor(designSystemColor: .accentPrimary) : nil
     }
 
     public func makeCoordinator() -> Coordinator {

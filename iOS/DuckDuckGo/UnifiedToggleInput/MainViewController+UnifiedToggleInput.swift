@@ -694,6 +694,7 @@ private extension MainViewController {
         // collection is ready and would assert.
         reconcileToolbarVisibilityForCurrentTab()
         reconcileAIChromeForCurrentTab()
+        restoreCurrentBarsVisibilityAfterLayoutRefresh()
     }
 
     func refreshAITab(
@@ -812,7 +813,8 @@ private extension MainViewController {
     }
 
     func setUpAIChatTabChatHeader() {
-        let headerView = AIChatTabChatHeaderView(isFireModeEnabled: fireModeCapability.isFireModeEnabled)
+        let headerView = AIChatTabChatHeaderView(isFireModeEnabled: fireModeCapability.isFireModeEnabled,
+                                                 shouldShowImageGeneration: featureFlagger.isFeatureOn(.aiChatNativeSidebar))
         headerView.delegate = self
         headerView.translatesAutoresizingMaskIntoConstraints = false
         viewCoordinator.aiChatTabChatHeaderContainer.addSubview(headerView)
@@ -833,6 +835,7 @@ private extension MainViewController {
     func refreshAIChatTabChatHeaderSubscriptionState() {
         Task { @MainActor [weak self] in
             let isActive = (try? await AppDependencyProvider.shared.subscriptionManager.isFeatureEnabled(.paidAIChat)) ?? false
+            self?.isPaidAIChatEnabledForSwipe = isActive
             self?.aiChatTabChatHeaderView?.configure(isSubscriptionActive: isActive)
         }
     }
@@ -1159,8 +1162,19 @@ extension MainViewController: UnifiedToggleInputOmnibarActivating {
         coordinator.updateInputMode(inputMode, animated: false)
         let isToggleEnabled = isAIChatSearchInputToggleEnabledForCurrentOnboardingState()
         coordinator.updateToggleEnabled(isToggleEnabled)
-        coordinator.activateFromOmnibar(prefilledText: currentText, inputMode: inputMode, cardPosition: position)
+        coordinator.activateFromOmnibar(prefilledText: currentText,
+                                        shouldSelectAllText: shouldAutoSelectOmnibarText(currentText),
+                                        inputMode: inputMode,
+                                        cardPosition: position)
         return .intercept
+    }
+
+    private func shouldAutoSelectOmnibarText(_ text: String?) -> Bool {
+        guard let text = text?.trimmingWhitespace(), !text.isEmpty else { return false }
+        if URL(trimmedAddressBarString: text, useUnifiedLogic: isUnifiedURLPredictionEnabled) != nil {
+            return true
+        }
+        return shouldAutoSelectTextForSERPQuery()
     }
 }
 
@@ -1328,8 +1342,12 @@ extension MainViewController: AIChatTabChatHeaderViewDelegate {
 
     func aiChatTabChatHeaderDidTapChatList() {
         DailyPixel.fireDailyAndCount(pixel: .aiChatOmnibarSidebarButtonTapped)
-        unifiedToggleInputCoordinator?.showCollapsed()
-        currentTab?.submitToggleSidebarAction()
+        if featureFlagger.isFeatureOn(.aiChatNativeSidebar) {
+            openAIChatHistory(source: .addressBar)
+        } else {
+            unifiedToggleInputCoordinator?.showCollapsed()
+            currentTab?.submitToggleSidebarAction()
+        }
     }
 
     func aiChatTabChatHeaderDidTapUpgrade() {
@@ -1377,6 +1395,13 @@ extension MainViewController: AIChatTabChatHeaderViewDelegate {
 
     func aiChatTabChatHeaderDidTapNewVoiceChat() {
         onDuckAIVoiceModeRequested()
+    }
+
+    func aiChatTabChatHeaderDidTapNewImage() {
+        unifiedToggleInputCoordinator?.startNewChat()
+        unifiedToggleInputCoordinator?.selectTool(.imageGeneration)
+        unifiedToggleInputCoordinator?.showExpanded(inputMode: .aiChat)
+        currentTab?.submitStartChatAction()
     }
 
     func aiChatTabChatHeaderDidTapNewTab() {

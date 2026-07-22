@@ -91,6 +91,14 @@ public final class DataBrokerProtectionDebugHTTPServer {
             return try Self.json(service.events(since: since, limit: limit))
         }
 
+        server.addRoute("/api/runtime-status", method: .GET) { _ in
+            let service = service.value
+            guard let status = service.runtimeStatus() else {
+                return .text("Runtime status is only available on iOS", status: .notFound)
+            }
+            return try Self.json(status)
+        }
+
         if let logReader {
             server.addRoute("/api/logs", method: .GET) { request in
                 let logReader = logReader.value

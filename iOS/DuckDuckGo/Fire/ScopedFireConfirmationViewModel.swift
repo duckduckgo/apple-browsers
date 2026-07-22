@@ -46,9 +46,9 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
         case singleTab
         /// Search Suggestions allow deleting History Entries
         case custom(title: String, subtitle: String, action: String)
-        /// Duck.ai chat-history sheet "Delete All": title shows the count; `onDelete` is the
-        /// caller-supplied action (dismiss + fire animation + burn), off the `burn(request:)` path.
-        case deleteAllChats(count: Int, onDelete: () -> Void)
+        /// Duck.ai chat-history delete confirmation (all chats or a selected subset). `count`
+        /// drives the title; `onDelete` is caller-supplied, off the `burn(request:)` path.
+        case deleteChats(count: Int, onDelete: () -> Void)
     }
 
     // MARK: - Constants
@@ -146,7 +146,7 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
             return true
         case .custom:
             return true
-        case .deleteAllChats:
+        case .deleteChats:
             return true
         case .singleTab:
             return tabViewModel?.tab.isAITab == true
@@ -206,9 +206,8 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
                                style: .primary,
                                action: { performCustomRequest(source: source, onConfirm: onConfirm) },
                                accessibilityIdentifier: AccessibilityIdentifiers.thisTab)]
-        case .deleteAllChats(_, let onDelete):
-            // "Delete All" (destructive) over a neutral "Cancel". The caller supplies the burn
-            // action; the chat-history sheet only surfaces persistent chats.
+        case .deleteChats(_, let onDelete):
+            // Destructive delete over a neutral "Cancel"; the caller supplies the burn action.
             return [
                 FireConfirmationButton(title: UserText.scopedFireConfirmationDeleteChatsButton,
                                        style: .primary,
@@ -319,7 +318,7 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
                 : UserText.scopedFireConfirmationAlertSingleTabTitle
         case .custom(let title, _, _):
             return title
-        case .deleteAllChats(let count, _):
+        case .deleteChats(let count, _):
             return UserText.aiChatHistoryDeleteAllConfirmationTitle(count: count)
 
         case .default:
@@ -366,7 +365,7 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
             return nil
         case .custom(_, let subtitle, _):
             return subtitle
-        case .deleteAllChats:
+        case .deleteChats:
             return nil
         case .default:
             break

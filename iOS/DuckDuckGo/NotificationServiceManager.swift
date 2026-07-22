@@ -98,7 +98,7 @@ private extension NotificationServiceManager {
     @MainActor
     func handleVPNNotification(identifier: NetworkProtectionNotificationIdentifier) {
         let scrollToStrictRouting = identifier == .strictRoutingReminder
-        mainCoordinator.presentNetworkProtectionStatusSettingsModal(origin: .notificationVPN,
+        mainCoordinator.presentNetworkProtectionStatusSettingsModal(entryPoint: .notification,
                                                                     scrollToStrictRouting: scrollToStrictRouting)
     }
 

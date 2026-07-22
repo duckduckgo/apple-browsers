@@ -116,7 +116,14 @@ extension NewTabPageActionsManager {
         )
         let omnibarActionHandler = NewTabPageOmnibarActionsHandler(
             windowControllersManager: windowControllersManager,
-            tabsPreferences: tabsPreferences
+            tabsPreferences: tabsPreferences,
+            historyCoordinator: historyCoordinator,
+            aiChatDeleter: AIChatDeleter(historyCleaner: HistoryCleaner(
+                featureFlagger: featureFlagger,
+                privacyConfig: contentBlocking.privacyConfigurationManager,
+                nativeStorageHandler: NSApp.delegateTyped.duckAiNativeStorageHandler,
+                featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: featureFlagger)
+            ))
         )
         let omnibarConfigProvider = NewTabPageOmnibarConfigProvider(
             keyValueStore: keyValueStore,

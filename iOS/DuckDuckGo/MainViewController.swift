@@ -371,6 +371,7 @@ class MainViewController: UIViewController {
     lazy var minimalChromeSettings: MinimalChromeSettingsProviding = MinimalChromeSettings()
     var unifiedToggleInputCoordinator: UnifiedToggleInputCoordinator?
     var unifiedInputStateStore: UnifiedInputStateStore?
+    var isPaidAIChatEnabledForSwipe = false
     var unifiedToggleInputCancellables = Set<AnyCancellable>()
     var unifiedToggleInputFloatingReturnKeyKeyboardBottomConstraint: NSLayoutConstraint?
     var unifiedToggleInputFloatingReturnKeyInputTopConstraint: NSLayoutConstraint?
@@ -888,7 +889,16 @@ class MainViewController: UIViewController {
                                                     tabPreviewsSource: previewsSource,
                                                     appSettings: appSettings,
                                                     omnibarDependencies: omnibarDependencies,
-                                                    floatingUIManager: floatingUIManager) { [weak self] tab in
+                                                    floatingUIManager: floatingUIManager,
+                                                    liveTabControllerProvider: { [weak self] tab in
+                                                        self?.tabManager.controller(for: tab, createIfNeeded: true)
+                                                    },
+                                                    inputStateProvider: { [weak self] tab in
+                                                        self?.unifiedInputStateStore?.state(for: tab.uid) ?? TabInputState()
+                                                    },
+                                                    isPaidAIChatEnabledProvider: { [weak self] in
+                                                        self?.isPaidAIChatEnabledForSwipe ?? false
+                                                    }) { [weak self] tab in
 
             guard tab !== self?.tabManager.currentTabsModel.currentTab else {
                 return
@@ -903,11 +913,22 @@ class MainViewController: UIViewController {
             self?.currentTab?.aiChatContextualSheetCoordinator.dismissSheet()
             self?.newTab()
         } onSwipeStarted: { [weak self] in
-            self?.performCancel()
-            self?.hideKeyboard()
+            self?.performCancel(animated: false)
+            self?.hideKeyboard(animated: false)
             self?.updatePreviewForCurrentTab()
         }
 
+        swipeTabsCoordinator?.auxiliarySwipeViews = [
+            viewCoordinator.unifiedToggleInputContainer,
+            viewCoordinator.aiChatTabChatHeaderContainer,
+        ]
+        swipeTabsCoordinator?.liveSwipeChromeViews = [
+            viewCoordinator.unifiedToggleInputContainer,
+            viewCoordinator.aiChatTabChatHeaderContainer,
+            viewCoordinator.unifiedInputContentContainer,
+            viewCoordinator.navigationBarCollectionView,
+            viewCoordinator.toolbar,
+        ]
         installTabSwipeOverlay()
     }
 
@@ -1082,13 +1103,13 @@ class MainViewController: UIViewController {
         )
     }
 
-    func presentNetworkProtectionStatusSettingsModal(origin: SubscriptionFunnelOrigin, scrollToStrictRouting: Bool = false) {
+    func presentNetworkProtectionStatusSettingsModal(entryPoint: VPNEntryPoint, scrollToStrictRouting: Bool = false) {
         Task {
             if let canShowVPNInUI = try? await subscriptionManager.isFeatureIncludedInSubscription(.networkProtection),
                canShowVPNInUI {
-                segueToVPN(scrollToStrictRouting: scrollToStrictRouting)
+                segueToVPN(source: entryPoint.screenSource, scrollToStrictRouting: scrollToStrictRouting)
             } else {
-                segueToDuckDuckGoSubscription(origin: origin.rawValue)
+                segueToDuckDuckGoSubscription(origin: entryPoint.subscriptionFunnelOrigin.rawValue)
             }
         }
     }
@@ -4099,8 +4120,8 @@ extension MainViewController: BrowserChromeDelegate {
         updateUnifiedInputContentVisibility(for: coordinator)
     }
 
-    private func hideKeyboard() {
-        dismissOmniBar()
+    private func hideKeyboard(animated: Bool = true) {
+        dismissOmniBar(animated: animated)
         _ = findInPageView?.resignFirstResponder()
     }
 
@@ -4363,6 +4384,11 @@ extension MainViewController: BrowserChromeDelegate {
     /// real fraction mid-transition. Call sites that reapply visibility need the true fraction.
     var currentBarsVisibility: CGFloat {
         lastChromeVisibilityPercent
+    }
+
+    func restoreCurrentBarsVisibilityAfterLayoutRefresh() {
+        applyBarsVisibilityState(lastChromeVisibilityPercent, postChromeVisibilityNotification: false)
+        view.layoutIfNeeded()
     }
 
     // 1.0 - full size, 0.0 - hidden
@@ -6054,7 +6080,17 @@ extension MainViewController: TabDelegate {
 
     func capturePreviewForTab(_ tab: TabViewController) {
         // Capture source tab preview now; otherwise its thumbnail stays stale once we switch to the new tab.
-        guard tab.link != nil, let image = tab.preparePreviewSync() else { return }
+        guard tab.link != nil else { return }
+
+        if floatingUIManager.isFloatingUIEnabled {
+            tab.preparePreview { [weak self, weak tab] image in
+                guard let self, let tab, let image else { return }
+                previewsSource.update(preview: image, forTab: tab.tabModel)
+            }
+            return
+        }
+
+        guard let image = tab.preparePreviewSync() else { return }
         previewsSource.update(preview: image, forTab: tab.tabModel)
     }
 
@@ -6222,7 +6258,7 @@ extension MainViewController: TabDelegate {
     }
 
     func tabDidRequestSettingsToVPN(_ tab: TabViewController) {
-        segueToVPN()
+        segueToVPN(source: .browserMenu)
     }
 
     func tabDidRequestSettingsToAIChat(_ tab: TabViewController) {
@@ -6437,6 +6473,11 @@ extension MainViewController: TabSwitcherDelegate {
     }
 
     func tabSwitcher(_ tabSwitcher: TabSwitcherViewController, willCloseTabs tabs: [Tab]) {
+        notifyTabsWillClose(tabs)
+    }
+
+    /// Per-tab close side effects `bulkRemoveTabs` skips: Duck.ai generation instrumentation + (18.4+) web-extension close events.
+    func notifyTabsWillClose(_ tabs: [Tab]) {
         for tab in tabs {
             reportDuckAITabClosedIfNeeded(tab)
         }
@@ -7616,7 +7657,7 @@ extension MainViewController {
             self.launchAutofillLogins(with: currentTab?.url, currentTabUid: currentTab?.tabModel.uid, source: .customizedToolbarButton, selectedAccount: nil)
 
         case .vpn:
-            self.presentNetworkProtectionStatusSettingsModal(origin: .toolbarVPN)
+            self.presentNetworkProtectionStatusSettingsModal(entryPoint: .toolbar)
 
         case .share:
             self.shareCurrentURLFromToolbar()
@@ -7675,7 +7716,7 @@ extension MainViewController {
             onFirePressed()
 
         case .vpn:
-            presentNetworkProtectionStatusSettingsModal(origin: .addressBarVPN)
+            presentNetworkProtectionStatusSettingsModal(entryPoint: .addressBar)
 
         case .zoom:
             showTextZoomEditorIfPossible()

@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import AppKit
 import Common
 import FoundationExtensions
@@ -42,7 +43,8 @@ struct FireDialogView: ModalView {
         static let toolbarHorizontalPadding: CGFloat = AppVersion.isLiquidGlassSupported ? 20 : 16
         static let horizontalPadding: CGFloat = AppVersion.isLiquidGlassSupported ? 24 : 16
         static let bottomPadding: CGFloat = AppVersion.isLiquidGlassSupported ? 24 : 16
-        static var sectionRowWidth: CGFloat { viewSize.width - 2 * horizontalPadding }
+        static let boxContentPadding: CGFloat = 16
+        static var sectionRowWidth: CGFloat { viewSize.width - 2 * horizontalPadding - 2 * boxContentPadding }
     }
 
     @State private var viewHeight: CGFloat = Constants.viewSize.height
@@ -60,7 +62,6 @@ struct FireDialogView: ModalView {
     @ObservedObject var viewModel: FireDialogViewModel
     @ObservedObject private var themeManager: ThemeManager = NSApp.delegateTyped.themeManager
     private let style = FireDialogStyle.current
-    private let showIndividualSitesLink: Bool
     private let onConfirm: ((FireDialogView.Response) -> Void)?
     @Environment(\.dismiss) private var dismiss
 
@@ -73,14 +74,13 @@ struct FireDialogView: ModalView {
         }
     }
     @State private var isAnimatingSitesOverlay: Bool = false
+    @State private var isSectionsExpanded: Bool = false
 
     init(viewModel: FireDialogViewModel,
          showSitesOverlay: Bool = false, // for Previews - @State flag to show "sites to be removed" overlay
-         showIndividualSitesLink: Bool,
          onConfirm: ((FireDialogView.Response) -> Void)? = nil) {
         self.viewModel = viewModel
         self._isShowingSitesOverlay = State(initialValue: showSitesOverlay)
-        self.showIndividualSitesLink = showIndividualSitesLink
         self.onConfirm = onConfirm
     }
 
@@ -92,22 +92,19 @@ struct FireDialogView: ModalView {
         viewModel.cookiesSitesCountForCurrentScope > 0
     }
 
-    private var historySubtitle: String {
+    private var historyDetail: String {
         let count = viewModel.historyItemsCountForCurrentScope
-        guard count > 0 else { return UserText.none }
-        switch viewModel.clearingOption {
-        case .currentTab:
-            return UserText.fireDialogHistoryItemsSubtitleTab(count)
-        case .currentWindow:
-            return UserText.fireDialogHistoryItemsSubtitleWindow(count)
-        case .allData:
-            return UserText.fireDialogHistoryItemsSubtitle(count)
-        }
+        return count > 0 ? UserText.fireDialogHistoryItemsDetail(count) : UserText.none
     }
 
-    private var cookiesSubtitle: String {
+    private var cookiesDetail: String {
         let count = viewModel.cookiesSitesCountForCurrentScope
-        return count == 0 ? UserText.none : UserText.fireDialogCookiesCountSubtitle(count)
+        return count > 0 ? UserText.fireDialogCookiesSitesDetail(count) : UserText.none
+    }
+
+    private var chatsDetail: String {
+        let count = viewModel.chatsCountForCurrentScope
+        return count > 0 ? UserText.fireDialogChatsCountDetail(count) : UserText.none
     }
 
     private var isDeleteEnabled: Bool {
@@ -118,65 +115,72 @@ struct FireDialogView: ModalView {
     }
 
     var body: some View {
-        VStack(spacing: 16) {
-            ZStack {
+        ZStack {
+            VStack(spacing: 24) {
                 VStack(spacing: 24) {
                     headerView
                         .padding(.top, 14) // presenter sheet crops the padding 🤷‍♂️
                         .accessibilityHidden(isShowingSitesOverlay)
-                    if viewModel.mode.shouldShowSegmentedControl {
-                        segmentedControlView
-                            .accessibilityHidden(isShowingSitesOverlay)
+
+                    VStack(spacing: 16) {
+                        if viewModel.mode.shouldShowSegmentedControl {
+                            segmentedControlView
+                                .accessibilityHidden(isShowingSitesOverlay)
+                        }
+                        VStack(spacing: 0) {
+                            detailsDisclosureView
+                                .accessibilityHidden(isShowingSitesOverlay)
+                            if isSectionsExpanded {
+                                sectionsView
+                            }
+                        }
                     }
-                    sectionsView
-                    if showIndividualSitesLink {
-                        individualSitesLink
-                    }
+                    .padding(Constants.boxContentPadding)
+                    .cornerRadius(24)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 24)
+                            .inset(by: 0.5)
+                            .stroke(Color(designSystemColor: .containerBorderPrimary), lineWidth: 1)
+                    )
                 }
                 .padding(.horizontal, Constants.horizontalPadding)
-                .padding(.bottom, Constants.horizontalPadding)
+                .background(alignment: .topTrailing) {
+                    moreOptionsMenu
+                        .menuIndicator(.hidden)
+                        .fixedSize()
+                        .accessibilityLabel(UserText.fireDialogMoreOptions)
+                        .accessibilityIdentifier("FireDialogView.toolbarMoreButton")
+                        .padding(.top, 16)
+                        .padding(.trailing, Constants.toolbarHorizontalPadding)
 
-                // Sites Overlay
-                if isShowingSitesOverlay {
-                    // Scrim fades independently and stays above content
-                    Color.black.opacity(0.35)
-                        .zIndex(9)
-
-                    // Sliding sheet anchored above footer
-                    VStack(spacing: 0) {
-                        Spacer(minLength: 62)
-
-                        sitesOverlay
-
-                        // Separator above the footer
-                        Color(designSystemColor: .containerBorderPrimary)
-                            .frame(height: 1)
-                    }
-                    .zIndex(10)
-                    .transition(.move(edge: .bottom))
                 }
-            }
-            .background(alignment: .topTrailing) {
-                moreOptionsMenu
-                    .menuIndicator(.hidden)
-                    .fixedSize()
-                    .accessibilityLabel(UserText.fireDialogMoreOptions)
-                    .accessibilityIdentifier("FireDialogView.toolbarMoreButton")
-                    .padding(.top, 16)
-                    .padding(.trailing, Constants.toolbarHorizontalPadding)
 
+                footerView
+                    .zIndex(10)
+                    .background(Color(designSystemColor: .surfaceSecondary, palette: themeManager.designColorPalette))
             }
-            .animation(.easeOut(duration: NSAnimationContext.current.duration),
-                       value: isAnimatingSitesOverlay)
+            .readSize { size in
+                // Set exact content height to avoid content shifting and animation jumping when sheet resizes
+                viewHeight = size.height
+            }
 
-            footerView
+            // Sites Overlay — spans the full dialog height (incl. footer) so it fully covers the footer
+            if isShowingSitesOverlay {
+                // Scrim fades independently and stays above content
+                Color.black.opacity(0.35)
+                    .zIndex(9)
+
+                VStack(spacing: 0) {
+                    Spacer(minLength: 62)
+
+                    sitesOverlay
+                }
                 .zIndex(11)
-                .background(Color(designSystemColor: .surfaceSecondary, palette: themeManager.designColorPalette))
+                .transition(.move(edge: .bottom))
+            }
         }
-        .readSize { size in
-            // Set exact content height to avoid content shifting and animation jumping when sheet resizes
-            viewHeight = size.height
-        }
+        .animation(.easeOut(duration: NSAnimationContext.current.duration),
+                   value: isAnimatingSitesOverlay)
         .frame(width: Constants.viewSize.width, height: viewHeight, alignment: .top)
         .background(Color(designSystemColor: .surfaceSecondary))
         .accessibilityElement(children: .contain)
@@ -285,47 +289,60 @@ struct FireDialogView: ModalView {
                 .foregroundColor(Color(designSystemColor: .textPrimary))
                 .accessibilityIdentifier("FireDialogView.title")
         }
-        .padding(.vertical, 16)
+        .padding(.top, 16)
     }
 
     private var segmentedControlView: some View {
-        PillSegmentedControl(
+        FireDialogTabsContainer(
             selection: Binding(
                 get: { viewModel.clearingOption.rawValue },
                 set: { viewModel.clearingOption = FireDialogViewModel.ClearingOption(rawValue: $0) ?? .allData }
             ),
-            segments: [
-                .init(id: FireDialogViewModel.ClearingOption.currentTab.rawValue, title: UserText.fireDialogSegmentTab, image: Image(nsImage: DesignSystemImages.Glyphs.Size24.tabDesktop)),
-                .init(id: FireDialogViewModel.ClearingOption.allData.rawValue, title: UserText.fireDialogSegmentEverything, image: Image(nsImage: DesignSystemImages.Glyphs.Size24.windowsAndTabs))
-            ],
-            containerBackground: .clear,
-            containerBorder: .clear,
-            containerCornerRadius: style.segmentedControlCornerRadius,
-            segmentCornerRadius: style.segmentedControlItemCornerRadius,
-            selectedForeground: style.selectedForeground,
-            unselectedForeground: Color(designSystemColor: .buttonsSecondaryFillText),
-            selectedIconBackground: style.selectedIconBackground,
-            selectedSegmentFill: Color(designSystemColor: .surfaceTertiary),
-            selectedSegmentStroke: Color(designSystemColor: .containerBorderPrimary),
-            selectedSegmentShadowColor: Color(designSystemColor: .shadowTertiary),
-            selectedSegmentShadowRadius: 0,
-            selectedSegmentShadowY: 1,
-            selectedSegmentTopStroke: Color(designSystemColor: .highlightPrimary),
-            hoverSegmentBackground: Color(designSystemColor: .controlsFillPrimary),
-            pressedSegmentBackground: Color(designSystemColor: .controlsFillSecondary),
-            hoverOverlay: Color(designSystemColor: .toneTintPrimary)
+            tabs: [
+                FireDialogTabItem(id: FireDialogViewModel.ClearingOption.currentTab.rawValue, title: UserText.fireDialogModeFromThisTab, image: Image(nsImage: DesignSystemImages.Glyphs.Size16.tabDesktop)),
+                FireDialogTabItem(id: FireDialogViewModel.ClearingOption.allData.rawValue, title: UserText.fireDialogModeAllData, image: Image(nsImage: DesignSystemImages.Glyphs.Size16.browser))
+            ]
         )
-        .frame(height: 84)
         .accessibilityIdentifier("FireDialogView.segmentedControl")
+    }
+
+    private var detailsDisclosureView: some View {
+        HStack {
+            Text(UserText.fireDialogChooseWhatToDelete)
+                .font(.system(size: 11))
+                .foregroundColor(Color(designSystemColor: .textSecondary))
+
+            Spacer()
+
+            Button {
+                withAnimation(.easeOut(duration: 0.2)) {
+                    isSectionsExpanded.toggle()
+                }
+            } label: {
+                Image(nsImage: (isSectionsExpanded ? DesignSystemImages.Glyphs.Size24.chevronUpSmall : DesignSystemImages.Glyphs.Size24.chevronDownSmall))
+                    .resizable()
+                    .renderingMode(.template)
+                    .frame(width: 12, height: 12)
+                    .foregroundColor(Color(designSystemColor: .iconsSecondary))
+                    .padding(6)
+                    .background(Circle().fill(Color(designSystemColor: .controlsFillPrimary)))
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(UserText.fireDialogChooseWhatToDelete)
+            .accessibilityValue(isSectionsExpanded ? UserText.fireDialogAccessibilityDetailsExpanded : UserText.fireDialogAccessibilityDetailsCollapsed)
+            .accessibilityAddTraits(.isButton)
+            .accessibilityIdentifier("FireDialogView.detailsDisclosureButton")
+        }
+        .padding(.horizontal, 4)
     }
 
     private var sectionsView: some View {
         VStack(alignment: .leading, spacing: 0) {
-            // Row 2: History
+            // Row 1: History
             sectionRow(
                 icon: DesignSystemImages.Glyphs.Size16.history,
                 title: UserText.fireDialogHistoryTitle,
-                subtitle: historySubtitle,
+                detail: historyDetail,
                 isOn: Binding {
                     viewModel.includeHistory && isIncludeHistoryEnabled
                 } set: {
@@ -338,16 +355,17 @@ struct FireDialogView: ModalView {
             .accessibilityHidden(isShowingSitesOverlay)
             sectionDivider()
 
-            // Row 3: Cookies and Site Data
+            // Row 2: Cookies and Site Data
             sectionRow(
                 icon: DesignSystemImages.Glyphs.Size16.cookie,
                 title: UserText.cookiesAndSiteDataTitle,
-                subtitle: cookiesSubtitle,
+                subtitle: UserText.fireDialogCookiesSignOutWarning,
+                detail: cookiesDetail,
                 isOn: Binding { viewModel.includeCookiesAndSiteData && isIncludeCookiesAndSiteDataEnabled } set: { viewModel.includeCookiesAndSiteData = $0 },
-                // don‘t show the ℹ button when there‘s no site data in scope
-                infoAction: isIncludeCookiesAndSiteDataEnabled ? { isShowingSitesOverlay = true } : nil,
-                // grey-out the ℹ button when the toggle is Off
-                infoEnabled: viewModel.includeCookiesAndSiteData,
+                // don‘t make the detail label clickable when there‘s no site data in scope
+                detailAction: isIncludeCookiesAndSiteDataEnabled ? { isShowingSitesOverlay = true } : nil,
+                // grey-out the detail label when the toggle is Off
+                detailActionEnabled: viewModel.includeCookiesAndSiteData,
                 isEnabled: isIncludeCookiesAndSiteDataEnabled,
                 roundedCorners: viewModel.mode.shouldShowFireproofSection ? .none : .bottom,
                 toggleId: "FireDialogView.cookiesToggle"
@@ -358,34 +376,19 @@ struct FireDialogView: ModalView {
             if viewModel.shouldShowChatHistoryToggle {
                 sectionDivider()
 
-            // Row 4: Chat History
+            // Row 3: Chat History
                 sectionRow(
                     icon: DesignSystemImages.Glyphs.Size16.aiChat,
                     title: UserText.fireDialogChatHistoryTitle,
-                    subtitle: UserText.fireDialogChatHistorySubtitle,
+                    detail: chatsDetail,
                     isOn: $viewModel.includeChatHistorySetting,
                     toggleId: "FireDialogView.chatsToggle"
                 )
                 .accessibilityHidden(isShowingSitesOverlay)
             }
-            sectionDivider(padding: 0)
-
-            // Fireproof section
-            if viewModel.mode.shouldShowFireproofSection {
-                fireproofSectionView
-                    .accessibilityHidden(isShowingSitesOverlay)
-            }
         }
-        .background(
-            RoundedRectangle(cornerRadius: style.rowCornerRadius, style: .continuous)
-                .fill(Color(designSystemColor: .containerFillPrimary))
-                .overlay(
-                    RoundedRectangle(cornerRadius: style.rowCornerRadius, style: .continuous)
-                        .stroke(Color(designSystemColor: .containerBorderPrimary), lineWidth: 1)
-                )
-        )
         .padding(.top, 4)
-        .padding(.bottom, 8)
+        .padding(.bottom, -10)
         .fixedSize(horizontal: false, vertical: true)
     }
 
@@ -479,132 +482,109 @@ struct FireDialogView: ModalView {
         )
     }
 
-    private func sectionRow(icon: NSImage, title: String, subtitle: String, isOn: Binding<Bool>, infoAction: (() -> Void)? = nil, infoEnabled: Bool = true, isEnabled: Bool = true, roundedCorners: RowCornerRadius = .none, toggleId: String) -> some View {
+    private func sectionRow(icon: NSImage, title: String, subtitle: String? = nil, detail: String? = nil, isOn: Binding<Bool>, detailAction: (() -> Void)? = nil, detailActionEnabled: Bool = true, isEnabled: Bool = true, roundedCorners: RowCornerRadius = .none, toggleId: String) -> some View {
         RowWithPressEffect(roundedCorners: roundedCorners, rowCornerRadius: style.rowCornerRadius, isEnabled: isEnabled) {
             guard isEnabled else { return }
             isOn.wrappedValue.toggle()
         } content: {
-            HStack(spacing: 6) {
-                HStack(spacing: 6) {
+            HStack(spacing: 8) {
+                HStack(spacing: 12) {
                     Image(nsImage: icon)
-                        .padding(.trailing, 2)
 
-                    VStack(alignment: .leading, spacing: 2) {
+                    VStack(alignment: .leading, spacing: 4) {
                         Text(title)
                             .font(.system(size: 13))
                             .foregroundColor(Color(designSystemColor: .textPrimary))
-                        Text(subtitle)
-                            .font(.system(size: 11))
-                            .foregroundColor(Color(designSystemColor: .textSecondary))
-                            .multilineTextAlignment(.leading)
-                            .fixedSize(horizontal: false, vertical: true)
-                            .layoutPriority(3)
+                            .lineLimit(1)
+                        if let subtitle {
+                            Text(subtitle)
+                                .font(.system(size: 11))
+                                .foregroundColor(Color(designSystemColor: .textSecondary))
+                                .multilineTextAlignment(.leading)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .layoutPriority(3)
+                        }
                     }
                 }
                 .accessibilityElement(children: .combine)
                 .accessibilityLabel(title)
-                .accessibilityValue(subtitle)
+                .accessibilityValue(subtitle ?? detail ?? "")
                 .accessibilityAddTraits(.updatesFrequently)
 
                 Spacer()
 
-                if let infoAction {
-                    Button(action: infoAction) {
-                        Image(nsImage: DesignSystemImages.Glyphs.Size12.info)
-                            .padding(4)
+                HStack(spacing: 8) {
+                    if let detail {
+                        SectionRowDetailLabel(
+                            text: detail,
+                            action: detailAction,
+                            isEnabled: detailActionEnabled,
+                            accessibilityIdentifier: "FireDialogView.cookiesDetailButton"
+                        )
                     }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel(UserText.fireDialogSitesOverlayTitle)
-                    .accessibilityIdentifier("FireDialogView.cookiesInfoButton")
-                    .disabled(!infoEnabled)
-                    .opacity(infoEnabled ? 1.0 : 0.4)
-                    .padding(.trailing, 4)
-                }
 
-                Group {
                     Toggle(isOn: isOn)
                         .toggleStyle(FireToggleStyle(onFill: style.knobFillColor, knobFill: Color(designSystemColor: .accentContentPrimary)))
                         .accessibilityLabel(title)
                         .accessibilityIdentifier(toggleId)
                 }
             }
-            .padding(.vertical, 12)
-            .padding(.horizontal, 16)
+            .padding(.vertical, 13)
+            .padding(.horizontal, 4)
             .frame(width: Constants.sectionRowWidth, alignment: .leading)
         }
     }
 
-    private func sectionDivider(padding: CGFloat = 16) -> some View {
+    private func sectionDivider(padding: CGFloat = 4) -> some View {
         HStack(spacing: 0) {
             Rectangle().fill(Color(designSystemColor: .containerBorderPrimary)).frame(height: 1)
                 .padding(.horizontal, padding)
         }
     }
 
-    private var fireproofSectionView: some View {
-        RowWithPressEffect(roundedCorners: .bottom, rowCornerRadius: style.rowCornerRadius, isEnabled: true) {
-            viewModel.showManageFireproofSites()
-        } content: {
-            HStack(alignment: .center, spacing: 0) {
-                HStack(spacing: 6) {
-                    Image(nsImage: DesignSystemImages.Glyphs.Size16.fireproof)
-                        .foregroundColor(Color(designSystemColor: .iconsSecondary))
+    /// A section row's trailing detail text (e.g. "6 sites"). When `action` is provided, it
+    /// becomes clickable: a pill-shaped background fades in on hover, with a pointing-hand cursor.
+    private struct SectionRowDetailLabel: View {
+        let text: String
+        let action: (() -> Void)?
+        var isEnabled: Bool = true
+        var accessibilityIdentifier: String?
 
-                    Text(UserText.fireproofCookiesAndSiteDataExplanation)
-                        .font(.system(size: 11))
-                        .foregroundColor(Color(designSystemColor: .textSecondary))
-                        .multilineTextAlignment(.leading)
-                        .fixedSize(horizontal: false, vertical: true)
+        @State private var isHovered = false
+
+        var body: some View {
+            if let action {
+                Button(action: action) {
+                    label
                 }
-                .accessibilityElement(children: .combine)
-                .accessibilityLabel(UserText.fireproofCookiesAndSiteDataExplanation)
-                .accessibilityAddTraits(.isStaticText)
-
-                Spacer(minLength: 4)
-
-                Button(UserText.fireDialogFireproofSitesManage) { viewModel.showManageFireproofSites() }
-                    .buttonStyle(
-                        StandardButtonStyle(
-                            fontSize: 11,
-                            topPadding: 3,
-                            bottomPadding: 3,
-                            horizontalPadding: 12,
-                            backgroundColor: Color(designSystemColor: .buttonsSecondaryFillDefault),
-                            backgroundPressedColor: Color(designSystemColor: .buttonsSecondaryFillPressed)
-                        )
-                    )
-                    .fixedSize(horizontal: true, vertical: true)
-                    .frame(alignment: .trailing)
-                    .accessibilityLabel(UserText.manageFireproofSites)
-                    .accessibilityIdentifier("FireDialogView.manageFireproofButton")
+                .buttonStyle(.plain)
+                .disabled(!isEnabled)
+                .onHover { isHovered = $0 }
+                .cursor(.pointingHand)
+                .accessibilityIdentifier(accessibilityIdentifier ?? "")
+            } else {
+                label
             }
-            .padding(.vertical, 12)
-            .padding(.horizontal, 16)
-            .frame(width: Constants.sectionRowWidth, alignment: .leading)
+        }
+
+        private var label: some View {
+            Text(text)
+                .font(.system(size: 11))
+                .foregroundColor(Color(designSystemColor: .textSecondary))
+                .lineLimit(1)
+                .fixedSize()
+                .padding(.horizontal, 8)
+                .frame(height: 24)
+                .background(
+                    Capsule(style: .continuous)
+                        .fill(isHovered && isEnabled ? Color(designSystemColor: .buttonsSecondaryFillDefault) : Color.clear)
+                )
+                .opacity(action != nil && !isEnabled ? 0.4 : 1.0)
         }
     }
 
     private var individualSitesColor: NSColor {
         style.individualSitesColor
-    }
-
-    private var individualSitesLink: some View {
-        HStack(spacing: 8) {
-            Image(nsImage: DesignSystemImages.Glyphs.Size16.globeBlocked
-                .tinted(with: individualSitesColor))
-                .accessibilityHidden(true)
-            TextButton(UserText.fireDialogManageIndividualSitesLink, textColor: Color(individualSitesColor), fontSize: 11) {
-                viewModel.deleteIndividualSites()
-            }
-            .accessibilityIdentifier("FireDialogView.individualSitesLink")
-            .accessibilityHidden(isShowingSitesOverlay)
-
-            Image(nsImage: DesignSystemImages.Glyphs.Size16.chevronRight
-                .resized(to: NSSize(width: 12, height: 12))
-                .tinted(with: individualSitesColor))
-                .accessibilityHidden(true)
-
-        }
     }
 
     private var deleteButtonBackground: LinearGradient {
@@ -745,6 +725,72 @@ private struct FireDialogStyle {
     }
 }
 
+// MARK: - Tabs container
+
+private struct FireDialogTabItem: Identifiable {
+    let id: Int
+    let title: String
+    let image: Image
+}
+
+private struct FireDialogTabsContainer: View {
+    @Binding var selection: Int
+    let tabs: [FireDialogTabItem]
+
+    var body: some View {
+        HStack(spacing: 8) {
+            ForEach(tabs) { tab in
+                FireDialogTabButton(tab: tab, isSelected: selection == tab.id) {
+                    selection = tab.id
+                }
+            }
+        }
+        .accessibilityElement(children: .contain)
+    }
+}
+
+private struct FireDialogTabButton: View {
+    let tab: FireDialogTabItem
+    let isSelected: Bool
+    let onTap: () -> Void
+
+    var body: some View {
+        Button(action: onTap) {
+            VStack(spacing: 6) {
+                ZStack {
+                    Circle()
+                        .fill(isSelected ? Color(designSystemColor: .accentFirePrimary).opacity(0.12) : Color.clear)
+                        .frame(width: 32, height: 32)
+                    tab.image
+                        .resizable()
+                        .renderingMode(.template)
+                        .frame(width: 16, height: 16)
+                        .foregroundColor(isSelected ? Color(designSystemColor: .accentFirePrimary) : Color(designSystemColor: .iconsSecondary))
+                }
+                .opacity(0.8)
+
+                Text(tab.title)
+                    .font(.system(size: 12, weight: isSelected ? .medium : .regular))
+                    .foregroundColor(isSelected ? Color(designSystemColor: .accentFirePrimary) : Color(designSystemColor: .textSecondary))
+                    .padding(.bottom, -3)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(20)
+            .background(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(isSelected ? Color(designSystemColor: .surfaceTertiary) : Color(designSystemColor: .containerFillSecondary))
+                    .shadow(color: isSelected ? Color(designSystemColor: .shadowPrimary) : .clear, radius: 4, x: 0, y: 1)
+                    .shadow(color: isSelected ? Color(designSystemColor: .shadowTertiary) : .clear, radius: 1, x: 0, y: 0.25)
+            )
+        }
+        .buttonStyle(.plain)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(tab.title)
+        .accessibilityValue(isSelected ? UserText.fireDialogAccessibilitySelected : "")
+        .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
+    }
+}
+
 // Corner radius configuration for section rows
 private enum RowCornerRadius {
     case top
@@ -879,6 +925,9 @@ private class MockAIChatHistoryCleaner: AIChatHistoryCleaning {
     func cleanAIChatHistory() async -> Result<Void, Error> {
         return .success(())
     }
+    func allChats() -> [DuckAiChat] {
+        []
+    }
 }
 @available(macOS 14.0, *)
 #Preview("Fire Dialog", traits: FireDialogView.Constants.viewSize.fixedLayout) {
@@ -898,7 +947,7 @@ private class MockAIChatHistoryCleaner: AIChatHistoryCleaning {
     )
 
     PreviewView(showWindowTitle: false) {
-        FireDialogView(viewModel: vm, showIndividualSitesLink: true)
+        FireDialogView(viewModel: vm)
     }
 }
 
@@ -944,7 +993,7 @@ private class MockAIChatHistoryCleaner: AIChatHistoryCleaning {
     )
 
     return PreviewView(showWindowTitle: false) {
-        FireDialogView(viewModel: vm, showSitesOverlay: true, showIndividualSitesLink: true)
+        FireDialogView(viewModel: vm, showSitesOverlay: true)
     }
 }
 #endif

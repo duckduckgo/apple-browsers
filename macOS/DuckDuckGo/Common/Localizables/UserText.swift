@@ -78,6 +78,17 @@ struct UserText {
         return String.localizedStringWithFormat(template, count)
     }
 
+    static func fireDialogHistoryItemsDetail(_ count: Int) -> String {
+        NotLocalizedString("fire.dialog.history.detail", value: count == 1 ? "1 item" : "\(count) items", comment: "Detail label next to the History toggle showing the number of history items that will be deleted.")
+    }
+    static func fireDialogCookiesSitesDetail(_ count: Int) -> String {
+        NotLocalizedString("fire.dialog.cookies.detail", value: count == 1 ? "1 site" : "\(count) sites", comment: "Detail label next to the Cookies toggle showing the number of sites whose cookies/site data will be deleted.")
+    }
+    static let fireDialogCookiesSignOutWarning = NotLocalizedString("fire.dialog.cookies.sign.out.warning", value: "May sign you out of accounts.", comment: "Subtitle shown under the Cookies row warning that deleting may sign the user out of accounts.")
+    static func fireDialogChatsCountDetail(_ count: Int) -> String {
+        NotLocalizedString("fire.dialog.chats.detail", value: count == 1 ? "1 chat" : "\(count) chats", comment: "Detail label next to the Duck.ai chats toggle showing the number of chats that will be deleted.")
+    }
+
     static let fireDialogChatHistoryTitle = NSLocalizedString("fire.dialog.chats.title", value: "Duck.ai chats", comment: "Section title. Toggle that controls whether Duck.ai chat history is deleted.")
     static let fireDialogChatHistorySubtitle = NSLocalizedString("fire.dialog.chats.subtitle", value: "Delete all chats.", comment: "Subtitle shown under the Duck.ai chats row to explain that chat history will be deleted.")
 
@@ -495,6 +506,14 @@ struct UserText {
     static let fireDialogDeleteAndClose = NotLocalizedString("fire.dialog.delete.and.close", value: "Delete & Close", comment: "Caption for the Fire dialog action button for deleting data and closing tabs and windows")
     static let fireDialogMenuDeleteIndividualSites = NotLocalizedString("fire.dialog.menu.delete.individual.sites", value: "Delete Individual Sites", comment: "More Options menu item in the Fire dialog that opens the per-site data deletion view")
     static let fireDialogMenuDataDeletionSettings = NotLocalizedString("fire.dialog.menu.data.deletion.settings", value: "Data Deletion Settings…", comment: "More Options menu item in the Fire dialog that opens the Data Clearing settings pane")
+
+    // MARK: - Simplified Fire Dialog
+    static let fireDialogModeFromThisTab = NotLocalizedString("fire.dialog.mode.tab", value: "From this tab", comment: "Fire dialog mode for clearing data from current tab")
+    static let fireDialogModeAllData = NotLocalizedString("fire.dialog.mode.all.data", value: "All data", comment: "Fire dialog mode for clearing all browsing data")
+    static let fireDialogChooseWhatToDelete = NotLocalizedString("fire.dialog.choose.what.to.delete", value: "Choose what to delete", comment: "Fire dialog disclosure label that expands/collapses the data type toggles")
+    static let fireDialogAccessibilityDetailsExpanded = NotLocalizedString("fire.dialog.accessibility.details.expanded", value: "expanded", comment: "Accessiblity value - The fire dialog details are expanded")
+    static let fireDialogAccessibilityDetailsCollapsed = NotLocalizedString("fire.dialog.accessibility.details.collapsed", value: "collapsed", comment: "Accessiblity value - The fire dialog details are collapsed")
+    static let fireDialogAccessibilitySelected = NotLocalizedString("fire.dialog.accessibility.selected", value: "selected", comment: "Accessiblity value - The selected fire dialog mode")
 
     // MARK: - Fire dialog sites list sheet
     static let fireDialogSitesOverlayTitle = NSLocalizedString("fire.dialog.sites.overlay.title",

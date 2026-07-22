@@ -53,6 +53,14 @@ import PrivacyConfig
 import WebExtensions
 import DesignResourcesKitIcons
 
+enum WebViewPreviewSnapshotGeometry {
+
+    static func visibleRect(webViewBounds: CGRect) -> CGRect? {
+        guard webViewBounds.width > 0, webViewBounds.height > 0 else { return nil }
+        return webViewBounds
+    }
+}
+
 class TabViewController: UIViewController {
 
     private struct Constants {
@@ -2251,8 +2259,29 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     func preparePreview(completion: @escaping (UIImage?) -> Void) {
+        guard FloatingUIManager(featureFlagger: featureFlagger).isFloatingUIEnabled else {
+            DispatchQueue.main.async { [weak self] in
+                completion(self?.preparePreviewSync(afterScreenUpdates: true))
+            }
+            return
+        }
+
         DispatchQueue.main.async { [weak self] in
-            completion(self?.preparePreviewSync(afterScreenUpdates: true))
+            guard let self,
+                  let webView,
+                  let rect = WebViewPreviewSnapshotGeometry.visibleRect(
+                    webViewBounds: webView.bounds
+                  ) else {
+                completion(nil)
+                return
+            }
+
+            let configuration = WKSnapshotConfiguration()
+            configuration.rect = rect
+            configuration.afterScreenUpdates = true
+            webView.takeSnapshot(with: configuration) { image, _ in
+                completion(image)
+            }
         }
     }
 

@@ -156,6 +156,7 @@ struct Foreground: ForegroundHandling {
         services.syncService.resume()
         services.remoteMessagingService.resume()
         services.statisticsService.resume()
+        services.launchTimeMetricsService.resume()
         services.defaultBrowserPromptService.resume()
         services.dbpService.resume()
         services.inactivityNotificationSchedulerService.resume()

@@ -130,7 +130,7 @@ public extension SERPSettingsProviding {
         }
 
         do {
-            return try JSONDecoder().decode([String: String].self, from: data)
+            return try decodeSettingsBlob(from: data)
         } catch {
             eventMapper?.fire(.keyValueStoreReadError, error: error, parameters: SERPSettingsReadFailure.decode.pixelParameters)
             return nil
@@ -154,8 +154,10 @@ public extension SERPSettingsProviding {
     ///
     /// - Parameter settings: Complete dictionary of SERP settings to store
     func storeSERPSettings(settings: [String: Any]) {
+        // Store as strings to match the read contract (the SERP may send scalars as JSON numbers).
+        let settingsAsStrings = settings.compactMapValues(Self.settingStringValue(from:))
         do {
-            let data = try JSONSerialization.data(withJSONObject: settings, options: [])
+            let data = try JSONSerialization.data(withJSONObject: settingsAsStrings, options: [])
             let stringData = String(data: data, encoding: .utf8)
             do {
                 try keyValueStore?.set(stringData, forKey: SERPSettingsConstants.serpSettingsStorage)
@@ -282,9 +284,30 @@ public extension SERPSettingsProviding {
         }
 
         do {
-            return try JSONDecoder().decode([String: String].self, from: data)
+            return try decodeSettingsBlob(from: data)
         } catch {
             eventMapper?.fire(.keyValueStoreReadError, error: error, parameters: SERPSettingsReadFailure.decode.pixelParameters)
+            return nil
+        }
+    }
+
+    // Coerce scalars to strings so one number-typed key can't fail the whole decode; throw only when the blob isn't a JSON object.
+    private func decodeSettingsBlob(from data: Data) throws -> [String: String] {
+        let object = try JSONSerialization.jsonObject(with: data)
+        guard let rawDictionary = object as? [String: Any] else {
+            throw SERPSettingsBlobError.notAnObject
+        }
+        return rawDictionary.compactMapValues(Self.settingStringValue(from:))
+    }
+
+    // stringValue renders integers without a decimal (2 -> "2", not "2.0"), matching the SERP raw values.
+    private static func settingStringValue(from value: Any) -> String? {
+        switch value {
+        case let string as String:
+            return string
+        case let number as NSNumber:
+            return number.stringValue
+        default:
             return nil
         }
     }
@@ -306,6 +329,10 @@ public extension SERPSettingsProviding {
             return false
         }
     }
+}
+
+private enum SERPSettingsBlobError: Error {
+    case notAnObject
 }
 
 /// Internal for testing purposes

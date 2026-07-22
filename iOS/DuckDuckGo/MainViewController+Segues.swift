@@ -29,6 +29,38 @@ import Subscription
 import DDGSync
 import os.log
 import DataBrokerProtection_iOS
+import VPN
+
+struct VPNEntryPoint {
+    let screenSource: VPNConnectionWideEventData.ScreenSource
+    let subscriptionFunnelOrigin: SubscriptionFunnelOrigin
+
+    static let toolbar = VPNEntryPoint(
+        screenSource: .toolbar,
+        subscriptionFunnelOrigin: .toolbarVPN)
+
+    static let addressBar = VPNEntryPoint(
+        screenSource: .addressBar,
+        subscriptionFunnelOrigin: .addressBarVPN)
+
+    static let widget = VPNEntryPoint(
+        screenSource: .widget,
+        subscriptionFunnelOrigin: .widgetVPN)
+
+    static let shortcut = VPNEntryPoint(
+        screenSource: .shortcut,
+        subscriptionFunnelOrigin: .shortcutVPN)
+
+    static let notification = VPNEntryPoint(
+        screenSource: .notification,
+        subscriptionFunnelOrigin: .notificationVPN)
+
+    private init(screenSource: VPNConnectionWideEventData.ScreenSource,
+                 subscriptionFunnelOrigin: SubscriptionFunnelOrigin) {
+        self.screenSource = screenSource
+        self.subscriptionFunnelOrigin = subscriptionFunnelOrigin
+    }
+}
 
 extension MainViewController {
 
@@ -287,12 +319,13 @@ extension MainViewController {
         }, deepLinkTarget: .subscriptionWelcome)
     }
 
-    func segueToVPN(scrollToStrictRouting: Bool = false) {
+    func segueToVPN(source: VPNConnectionWideEventData.ScreenSource,
+                    scrollToStrictRouting: Bool = false) {
         Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()
         launchSettings(completion: {
-            $0.triggerDeepLinkNavigation(to: .netP(scrollToStrictRouting: scrollToStrictRouting))
-        }, deepLinkTarget: .netP(scrollToStrictRouting: scrollToStrictRouting))
+            $0.triggerDeepLinkNavigation(to: .netP(source: source, scrollToStrictRouting: scrollToStrictRouting))
+        }, deepLinkTarget: .netP(source: source, scrollToStrictRouting: scrollToStrictRouting))
     }
 
     func segueToDataBrokerProtection() {

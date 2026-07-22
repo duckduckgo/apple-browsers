@@ -349,6 +349,8 @@ final class AddressBarViewController: NSViewController {
         view.wantsLayer = true
         view.layer?.masksToBounds = false
 
+        setupBurnerStyleIfNeeded()
+
         setupAddressBarPlaceHolder()
         addressBarTextField.setAccessibilityIdentifier("AddressBarViewController.addressBarTextField")
 
@@ -776,6 +778,8 @@ final class AddressBarViewController: NSViewController {
             activeBackgroundView.borderColor = isBurner ? colorsProvider.addressBarFireBorderColor : colorsProvider.addressBarActiveBorderColor
         }
 
+        setupBurnerStyleIfNeeded()
+
         setupAddressBarPlaceHolder()
         refreshAddressBarCornerRadius()
         inactiveAddressBarShadowView.isHidden = selectionState.isSelected
@@ -838,6 +842,19 @@ final class AddressBarViewController: NSViewController {
         inactiveBackgroundViewTrailingConstraint.constant = styleProvider.addressBarInactiveBackgroundViewTrailingPadding
         buttonsContainerViewLeadingConstraint.constant = styleProvider.addressBarButtonsContainerViewLeadingPadding
         buttonsContainerViewTrailingConstraint.constant = styleProvider.addressBarButtonsContainerViewTrailingPadding
+    }
+
+    private func setupBurnerStyleIfNeeded() {
+        guard isBurner, themeManager.isAppRebranded else { return }
+
+        let style = BurnerAppearanceStyle()
+
+        switch selectionState {
+        case .inactive, .inactiveWithAIChat:
+            style.disableDarkModeOverride(in: view)
+        default:
+            style.enableDarkModeOverride(in: view)
+        }
     }
 
     private func setupAddressBarPlaceHolder() {
@@ -998,8 +1015,8 @@ final class AddressBarViewController: NSViewController {
         let navigationBarBackgroundColor = colorsProvider.navigationBackgroundColor
 
         NSAppearance.withAppAppearance {
-            // Keep selected appearance when AI chat is active, even if window loses key status
-            let shouldShowActiveState = window.isKeyWindow || selectionState == .activeWithAIChat
+            // Keep selected appearance when AI chat is active (OR) isBurner, even if window loses key status
+            let shouldShowActiveState = window.isKeyWindow || selectionState == .activeWithAIChat || isBurner
             let isToggleFocused = window.firstResponder === addressBarButtonsViewController?.searchModeToggleControl
 
             if shouldShowActiveState {

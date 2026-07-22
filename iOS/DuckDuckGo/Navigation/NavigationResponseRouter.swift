@@ -83,8 +83,7 @@ struct NavigationResponseRouter {
 
         if FilePreviewHelper.canAutoPreview(mimeType: shape.mimeType,
                                             url: shape.url,
-                                            filename: shape.suggestedFilename,
-                                            featureFlagger: featureFlagger) {
+                                            filename: shape.suggestedFilename) {
             pixelFiring.fire(.downloadStarted,
                              withAdditionalParameters: [PixelParameters.canAutoPreviewMIMEType: "1"])
 
@@ -95,8 +94,7 @@ struct NavigationResponseRouter {
 
             let shouldPersist = FilePreviewHelper.shouldPersistInDownloads(mimeType: shape.mimeType,
                                                                            url: shape.url,
-                                                                           filename: shape.suggestedFilename,
-                                                                           featureFlagger: featureFlagger)
+                                                                           filename: shape.suggestedFilename)
             if shouldPersist || !featureFlagger.isFeatureOn(.walletPassDownload) {
                 return .autoPreviewPersist
             }

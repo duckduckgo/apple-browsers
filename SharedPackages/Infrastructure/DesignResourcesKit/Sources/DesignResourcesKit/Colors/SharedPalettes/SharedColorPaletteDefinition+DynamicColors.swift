@@ -35,6 +35,26 @@ extension SharedColorPaletteDefinition {
             return accentContentTertiary
         case .accentFirePrimary:
             return accentFirePrimary
+        case .accentFireSecondary:
+            return accentFireSecondary
+        case .accentFireTertiary:
+            return accentFireTertiary
+        case .accentFireContentPrimary:
+            return accentFireContentPrimary
+        case .accentFireContentSecondary:
+            return accentFireContentSecondary
+        case .accentFireContentTertiary:
+            return accentFireContentTertiary
+        case .accentFireGlowPrimary:
+            return accentFireGlowPrimary
+        case .accentFireGlowSecondary:
+            return accentFireGlowSecondary
+        case .accentFireTextPrimary:
+            return accentFireTextPrimary
+        case .accentFireTextSecondary:
+            return accentFireTextSecondary
+        case .accentFireTextTertiary:
+            return accentFireTextTertiary
         case .accentGlowPrimary:
             return accentGlowPrimary
         case .accentGlowSecondary:
@@ -230,6 +250,14 @@ extension SharedColorPaletteDefinition {
             return shadowSecondary
         case .shadowTertiary:
             return shadowTertiary
+
+        /// Status
+        case .statusYellowPrimary:
+            return statusYellowPrimary
+        case .statusYellowSecondary:
+            return statusYellowSecondary
+        case .statusYellowTertiary:
+            return statusYellowTertiary
 
         /// Surface Colors
         case .surfaceBackdrop:

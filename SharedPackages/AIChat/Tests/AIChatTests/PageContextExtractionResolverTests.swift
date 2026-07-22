@@ -29,6 +29,10 @@ final class PageContextExtractionResolverTests: XCTestCase {
         AIChatPageContextData(title: "", favicon: [], url: "https://example.com", content: "", truncated: false, fullContentLength: 0)
     }
 
+    private func titleOnlyContext() -> AIChatPageContextData {
+        AIChatPageContextData(title: "Title", favicon: [], url: "https://example.com", content: "", truncated: false, fullContentLength: 0)
+    }
+
     private func time(_ seconds: Double) -> DispatchTime {
         DispatchTime(uptimeNanoseconds: UInt64(seconds * 1_000_000_000))
     }
@@ -76,6 +80,14 @@ final class PageContextExtractionResolverTests: XCTestCase {
         var resolver = PageContextExtractionResolver()
         resolver.requested(trigger: .auto)
         XCTAssertEqual(resolver.resolve(pageContext: emptyContext())?.outcome, .failure(.emptyContent))
+    }
+
+    /// A page title alone (e.g. a page whose content extraction found nothing) is not a
+    /// successful extraction — success must mean actual page content was collected.
+    func testWhenTitledContextHasEmptyContentThenEmptyContentFailure() {
+        var resolver = PageContextExtractionResolver()
+        resolver.requested(trigger: .userRequest)
+        XCTAssertEqual(resolver.resolve(pageContext: titleOnlyContext())?.outcome, .failure(.emptyContent))
     }
 
     func testWhenNilContextThenDeserializeFailedFailure() {

@@ -670,6 +670,10 @@ final class UnifiedToggleInputView: UIView {
         textEntryView.selectAllText()
     }
 
+    func moveCaretToStart() {
+        textEntryView.moveCaretToStart()
+    }
+
     var placeholderWindowX: CGFloat? { textEntryView.placeholderWindowX }
 
     var defaultPlaceholderColor: UIColor { textEntryView.defaultPlaceholderColor }

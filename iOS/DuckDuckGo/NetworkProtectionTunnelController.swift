@@ -35,7 +35,7 @@ enum VPNConfigurationRemovalReason: String {
     case debugMenu
 }
 
-final class NetworkProtectionTunnelController: TunnelController, TunnelSessionProvider {
+final class NetworkProtectionTunnelController: VPNConnectionContextProvidingTunnelController, TunnelSessionProvider {
     static var shouldSimulateFailure: Bool = false
 
     private let featureFlagger: FeatureFlagger
@@ -188,7 +188,15 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
     /// Starts the VPN connection used for Network Protection
     ///
     func start() async {
-        setupAndStartConnectionWideEvent()
+        await start(with: nil)
+    }
+
+    func start(entryContext: VPNConnectionWideEventData.EntryContext) async {
+        await start(with: entryContext)
+    }
+
+    private func start(with entryContext: VPNConnectionWideEventData.EntryContext?) async {
+        setupAndStartConnectionWideEvent(entryContext: entryContext)
         controllerErrorSubject.send(nil)
         persistentPixel.fire(
             pixel: .networkProtectionControllerStartAttempt,
@@ -627,10 +635,11 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
 
 private extension NetworkProtectionTunnelController {
     
-    func setupAndStartConnectionWideEvent() {
+    func setupAndStartConnectionWideEvent(entryContext: VPNConnectionWideEventData.EntryContext?) {
         let data = VPNConnectionWideEventData(
             extensionType: .app,
             startupMethod: .manualByMainApp,
+            entryContext: entryContext,
             contextData: WideEventContextData(name: NetworkProtectionFunnelOrigin.appSettings.rawValue)
         )
         self.connectionWideEventData = data

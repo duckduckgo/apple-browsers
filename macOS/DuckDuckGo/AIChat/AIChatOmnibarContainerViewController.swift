@@ -19,6 +19,7 @@
 import Cocoa
 import QuartzCore
 import Combine
+import AppKitExtensions
 import DesignResourcesKit
 import UniformTypeIdentifiers
 import DesignResourcesKitIcons
@@ -324,7 +325,9 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+
         setupUI()
+        setupBurnerStyleIfNeeded()
         setupSuggestionsView()
         subscribeToThemeChanges()
         subscribeToTextChanges()
@@ -439,7 +442,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         submitButton.isEnabled = enabled
         // Tints. Both modes keep the icon constant across hover/press; only the fill animates,
         // so `mouseOverTintColor` / `mouseDownTintColor` stay nil.
-        NSAppearance.withAppAppearance {
+        NSAppearance.withAppearance(from: view) {
             if enabled {
                 if submitButtonMode == .voice {
                     submitButton.normalTintColor = NSColor(designSystemColor: .iconsPrimary)
@@ -485,7 +488,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
                 designSystemColor = .accentPrimary
             }
         }
-        NSAppearance.withAppAppearance {
+        NSAppearance.withAppearance(from: view) {
             submitButton.layer?.backgroundColor = designSystemColor.map { NSColor(designSystemColor: $0).cgColor } ?? NSColor.clear.cgColor
         }
     }
@@ -864,6 +867,16 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         modelPickerButton.trailingAnchor.constraint(equalTo: submitButton.leadingAnchor, constant: -Constants.modelPickerTrailingSpacing).isActive = true
 
         applyTheme(theme: themeManager.theme)
+    }
+
+    // MARK: - Burner Style
+
+    private func setupBurnerStyleIfNeeded() {
+        guard burnerMode.isBurner, themeManager.isAppRebranded else { return }
+
+        let style = BurnerAppearanceStyle()
+        style.enableDarkModeOverride(in: view)
+        style.enableDarkModeOverride(in: suggestionsView)
     }
 
     // MARK: - Suggestions Setup
@@ -1751,40 +1764,58 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         let menu = NSMenu()
         menu.autoenablesItems = false
 
-        let sections = AIChatModelSectionBuilder.buildSections(
-            models: omnibarController.models,
-            hasActiveSubscription: omnibarController.hasActiveSubscription,
-            advancedSectionHeader: UserText.aiChatModelPickerAdvancedSectionHeader,
-            basicSectionHeader: UserText.aiChatModelPickerBasicModelsSectionHeader
-        )
-
-        for (index, section) in sections.enumerated() {
-            if index > 0 {
+        // The controller decides what the menu shows; this only maps each item to an NSMenuItem.
+        for item in omnibarController.modelPickerItems(selectedModelId: selectedModelId) {
+            switch item {
+            case .model(let model, let badge, let isSelected):
+                menu.addItem(modelRow(for: model, trailingText: badge, isSelected: isSelected,
+                                      isDimmed: false, isInteractive: true, in: menu))
+            case .separator:
                 menu.addItem(.separator())
-            }
-            if let header = section.header {
-                let headerItem = NSMenuItem(title: header, action: nil, keyEquivalent: "")
-                headerItem.isEnabled = false
+            case .gatedHeader(let title, let badge, let isMuted, let representativeModel):
+                let headerItem = NSMenuItem.createSubscriberExclusiveHeader(
+                    title: title,
+                    badgeText: badge,
+                    isBadgeMuted: isMuted,
+                    action: #selector(gatedModelSelected(_:)),
+                    target: self,
+                    menu: menu
+                )
+                headerItem.representedObject = representativeModel
                 menu.addItem(headerItem)
-            }
-            for model in section.items {
-                menu.addItem(menuItem(for: model))
+            case .gatedModel(let model, let badge):
+                menu.addItem(modelRow(for: model, trailingText: badge, isSelected: false,
+                                      isDimmed: true, isInteractive: false, in: menu))
             }
         }
 
+        menu.minimumWidth = max(menu.minimumWidth, 320)
         return menu
     }
 
-    private func menuItem(for model: AIChatModel) -> NSMenuItem {
-        let item = NSMenuItem(title: model.name, action: #selector(modelSelected(_:)), keyEquivalent: "")
-        item.target = self
+    private func modelRow(for model: AIChatModel, trailingText: String?, isSelected: Bool, isDimmed: Bool, isInteractive: Bool, in menu: NSMenu) -> NSMenuItem {
+        let title = model.titleComponents
+        let item = NSMenuItem.createModelRow(
+            icon: model.menuIcon,
+            boldTitle: title.bold,
+            regularTitle: title.regular,
+            subtitle: nil,
+            trailingText: trailingText,
+            isSelected: isSelected,
+            isDimmed: isDimmed,
+            isInteractive: isInteractive,
+            action: isInteractive ? #selector(modelSelected(_:)) : #selector(gatedModelSelected(_:)),
+            target: self,
+            menu: menu
+        )
         item.representedObject = model
-        item.image = model.menuIcon
-        item.isEnabled = model.entityHasAccess
-        if model.id == selectedModelId {
-            item.state = .on
-        }
         return item
+    }
+
+    @objc private func gatedModelSelected(_ sender: NSMenuItem) {
+        guard let model = sender.representedObject as? AIChatModel,
+              let requiredTier = omnibarController.requiredTier(for: model) else { return }
+        presentSubscriptionUpsellDialog(requiredTier: requiredTier, origin: .addressBarModelPicker)
     }
 
     @objc private func modelSelected(_ sender: NSMenuItem) {
@@ -1802,31 +1833,99 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
     // MARK: - Reasoning Picker
 
+    /// A floor for the reasoning-effort menu's width, set explicitly because the menu mixes plain
+    /// `NSMenuItem`s (sized by AppKit from their attributed title) with the gated row's custom view
+    /// (sized from its own `fittingSize`) — relying on whichever happens to come out wider left the
+    /// custom row's badge short of the menu's actual rendered width, with a gap after it.
+    private static let reasoningPickerMinimumWidth: CGFloat = 300
+
     @objc private func reasoningPickerButtonClicked() {
         let menu = NSMenu()
         menu.autoenablesItems = false
+        menu.minimumWidth = Self.reasoningPickerMinimumWidth
 
-        let currentEffort = omnibarController.displayedReasoningEffort
-        for effort in omnibarController.pickerReasoningEfforts {
-            let item = NSMenuItem(title: "", action: #selector(reasoningEffortSelected(_:)), keyEquivalent: "")
-            item.attributedTitle = toolsMenuItemAttributedTitle(title: effort.title, subtitle: effort.subtitle)
-            item.target = self
-            item.representedObject = effort
-            item.image = effort.icon
-            if effort == currentEffort {
-                item.state = .on
-            }
-            menu.addItem(item)
+        // The controller decides what the menu shows; this only maps each item to an NSMenuItem.
+        for item in omnibarController.reasoningPickerItems() {
+            menu.addItem(reasoningEffortRow(for: item, in: menu))
         }
 
         menu.popUp(positioning: nil, at: NSPoint(x: 0, y: -5), in: reasoningPickerButton)
     }
 
+    /// Maps a resolved item to a row via `ModelMenuRowView` (shared with the model picker so gated
+    /// rows stay aligned with their siblings). A gated row is interactive only when it shows a badge.
+    private func reasoningEffortRow(for item: AIChatReasoningPickerItem, in menu: NSMenu) -> NSMenuItem {
+        let hasUpsellBadge = item.upsellBadge != nil
+        let menuItem = NSMenuItem.createModelRow(
+            icon: item.effort.icon,
+            boldTitle: item.effort.title,
+            regularTitle: "",
+            subtitle: item.effort.subtitle,
+            subtitleFontSize: 11,
+            trailingText: item.trailingText,
+            trailingBadgeText: item.upsellBadge,
+            isBadgeMuted: item.isBadgeMuted,
+            emphasizesTitle: false,
+            isSelected: item.isSelected,
+            isDimmed: item.isGated && !hasUpsellBadge,
+            isInteractive: !item.isGated || hasUpsellBadge,
+            action: #selector(reasoningEffortSelected(_:)),
+            badgeAction: hasUpsellBadge ? #selector(reasoningEffortBadgeSelected(_:)) : nil,
+            target: self,
+            menu: menu
+        )
+        menuItem.representedObject = item.effort
+        return menuItem
+    }
+
+    @objc private func reasoningEffortBadgeSelected(_ sender: NSMenuItem) {
+        guard let effort = sender.representedObject as? AIChatReasoningEffort,
+              let requiredTier = omnibarController.requiredTier(for: effort) else { return }
+        presentSubscriptionUpsellDialog(requiredTier: requiredTier, origin: .addressBarReasoningPicker)
+    }
+
     @objc private func reasoningEffortSelected(_ sender: NSMenuItem) {
         guard let effort = sender.representedObject as? AIChatReasoningEffort else { return }
-        omnibarController.updateSelectedReasoningEffort(effort)
-        updateReasoningPickerAppearance(effort)
-        PixelKit.fire(AIChatPixel.aiChatAddressBarReasoningEffortSelected, frequency: .dailyAndCount, includeAppVersionParameter: true)
+        switch omnibarController.handleReasoningEffortSelection(effort) {
+        case .selected(let effort):
+            updateReasoningPickerAppearance(effort)
+            PixelKit.fire(AIChatPixel.aiChatAddressBarReasoningEffortSelected, frequency: .dailyAndCount, includeAppVersionParameter: true)
+        case .gated(let requiredTier):
+            // Explains the upsell via a sheet rather than navigating immediately, and leaves the
+            // current selection unchanged.
+            presentSubscriptionUpsellDialog(requiredTier: requiredTier, origin: .addressBarReasoningPicker)
+        }
+    }
+
+    /// Shows the upsell confirmation before routing to the subscription flow — both pickers route a
+    /// gated tap here rather than navigating directly (per design review). A SwiftUI `ModalView`
+    /// rather than `NSAlert`, which can't center its icon/title.
+    private func presentSubscriptionUpsellDialog(requiredTier: AIChatModelPublicAccessTier, origin: SubscriptionFunnelOrigin) {
+        var dialog = AIChatSubscriptionUpsellDialog()
+        switch omnibarController.userTier {
+        case .free:
+            // Title/message stay generic. Only the primary button follows eligibility, matching
+            // the badge/tag text ("Try for Free" vs "Upgrade") — the native purchase flow presents
+            // the trial terms itself, so an ineligible user shouldn't be told "Subscribe" only to
+            // find no trial offered.
+            dialog.primaryButtonText = omnibarController.shouldOfferFreeTrial
+                ? UserText.aiChatSubscriptionUpsellDialogTryForFreeButton
+                : UserText.aiChatSubscriptionUpsellDialogUpgradeButton
+        case .plus, .pro, .internal:
+            // An existing Plus subscriber is upgrading an active subscription, not discovering
+            // one — different copy, and no "I Have a Subscription" button since that doesn't apply.
+            dialog.title = UserText.aiChatSubscriptionUpsellDialogProTitle
+            dialog.message = UserText.aiChatSubscriptionUpsellDialogProMessage
+            dialog.primaryButtonText = UserText.aiChatSubscriptionUpsellDialogUpgradeButton
+            dialog.showsHaveSubscriptionButton = false
+        }
+        dialog.onSubscribe = { [weak self] in
+            self?.omnibarController.presentSubscriptionUpsell(requiredTier: requiredTier, origin: origin)
+        }
+        dialog.onHaveSubscription = { [weak self] in
+            self?.omnibarController.presentSubscriptionActivationFlow()
+        }
+        dialog.show()
     }
 
     private func updateReasoningPickerVisibility() {
@@ -1950,7 +2049,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         shadowView.shadowRadius = barStyleProvider.suggestionShadowRadius
         shadowView.cornerRadius = barStyleProvider.addressBarActiveBackgroundViewRadiusWithSuggestions
 
-        NSAppearance.withAppAppearance {
+        NSAppearance.withAppearance(from: view) {
             shadowView.shadowColor = colorsProvider.addressBarShadowColor
             imageUploadButton.hoverBackgroundColor = .buttonMouseOver
             imageUploadButton.pressedBackgroundColor = .buttonMouseDown

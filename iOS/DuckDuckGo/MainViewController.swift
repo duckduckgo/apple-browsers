@@ -104,6 +104,10 @@ class MainViewController: UIViewController {
 
     weak var findInPageView: FindInPageView?
 
+    private var isFindInPageChromeLockActive = false
+    private var didFindInPageHideChrome = false
+    private var findInPageDismissalTimer: Timer?
+
     weak var notificationView: UIView?
 
     var chromeManager: BrowserChromeManager!
@@ -584,6 +588,7 @@ class MainViewController: UIViewController {
 
     deinit {
         chromeMorphAnimator.cancel()
+        findInPageDismissalTimer?.invalidate()
     }
 
     func loadFindInPage() {
@@ -1090,13 +1095,13 @@ class MainViewController: UIViewController {
         )
     }
 
-    func presentNetworkProtectionStatusSettingsModal(origin: SubscriptionFunnelOrigin, scrollToStrictRouting: Bool = false) {
+    func presentNetworkProtectionStatusSettingsModal(entryPoint: VPNEntryPoint, scrollToStrictRouting: Bool = false) {
         Task {
             if let canShowVPNInUI = try? await subscriptionManager.isFeatureIncludedInSubscription(.networkProtection),
                canShowVPNInUI {
-                segueToVPN(scrollToStrictRouting: scrollToStrictRouting)
+                segueToVPN(source: entryPoint.screenSource, scrollToStrictRouting: scrollToStrictRouting)
             } else {
-                segueToDuckDuckGoSubscription(origin: origin.rawValue)
+                segueToDuckDuckGoSubscription(origin: entryPoint.subscriptionFunnelOrigin.rawValue)
             }
         }
     }
@@ -1187,6 +1192,12 @@ class MainViewController: UIViewController {
         if #available(iOS 26, *) {
             latestKeyboardFrame = .zero
             adjustUI(withKeyboardFrame: .zero)
+        }
+
+        // Checked here (not `keyboardWillHide`) so the find navigator's visibility has settled: it stays visible when a
+        // search is confirmed, but is gone when the user dismisses find — which also hides the keyboard.
+        if #available(iOS 16.0, *) {
+            hideChromeForConfirmedFindInPage()
         }
     }
 
@@ -1917,7 +1928,7 @@ class MainViewController: UIViewController {
         viewCoordinator.logoContainer.isHidden = false
         findInPageView?.isHidden = true
         chromeManager.detach()
-        
+
         currentTab?.dismiss()
         removeHomeScreen()
 
@@ -2439,6 +2450,7 @@ class MainViewController: UIViewController {
         guard let tab else { return }
         previousTab?.aiChatContextualSheetCoordinator.dismissSheet()
         previousTab?.tabModel.openedAfterIdle = false
+        dismissSystemFindNavigator(for: previousTab)
         previousTab?.dismiss()
         hideNotificationBarIfBrokenSitePromptShown()
 
@@ -2833,6 +2845,11 @@ class MainViewController: UIViewController {
     }
 
     private func resetBarsAfterTransitionAnimationIfNeeded(wasKeyboardShowing: Bool) {
+        if shouldKeepChromeHiddenForFindInPage {
+            setBarsHidden(true, animated: false, customAnimationDuration: nil)
+            return
+        }
+
         // Rotation changes the bar geometry, so the scroll-hide state can't carry across it.
         // Reset to revealed (editing and AI chrome manage their own layout).
         if !self.isCurrentTabUsingUnifiedInputAIChrome, !wasKeyboardShowing {
@@ -2885,7 +2902,8 @@ class MainViewController: UIViewController {
             // Do this async otherwise the toolbar buttons skew to the right
             if self.viewCoordinator.constraints.navigationBarContainerTop.constant >= 0,
                !self.isInMinimalChromeLayout,
-               !self.isCurrentTabUsingUnifiedInputAIChrome {
+               !self.isCurrentTabUsingUnifiedInputAIChrome,
+               !self.shouldKeepChromeHiddenForFindInPage {
                 self.showBars()
             }
             // If tabs have been udpated, do this async to make sure size calcs are current
@@ -3272,9 +3290,10 @@ class MainViewController: UIViewController {
         dismissOmniBar(animated: false)
         hideNotificationBarIfBrokenSitePromptShown()
         currentTab?.aiChatContextualSheetCoordinator.dismissSheet()
-        currentTab?.dismiss()
 
         let previousTab = tabManager.current()
+        dismissSystemFindNavigator(for: previousTab)
+        currentTab?.dismiss()
 
         if reuseExisting, let existing = tabManager.firstHomeTab() {
             tabManager.select(existing, dismissCurrent: false)
@@ -3308,6 +3327,63 @@ class MainViewController: UIViewController {
         currentTab?.findInPage?.delegate = self
         findInPageView?.update(with: currentTab?.findInPage, updateTextField: true)
         findInPageView?.updateConstraints()
+    }
+
+    func dismissSystemFindNavigator(for tab: TabViewController?) {
+        guard #available(iOS 16.0, *), featureFlagger.isFeatureOn(.systemFindInPage) else { return }
+        rememberFindInPageQuery(for: tab)
+        tab?.webView.findInteraction?.dismissFindNavigator()
+        restoreChromeIfHiddenByFindInPage()
+    }
+
+    @available(iOS 16.0, *)
+    private func hideChromeForConfirmedFindInPage() {
+        guard featureFlagger.isFeatureOn(.systemFindInPage),
+              currentTab?.webView.findInteraction?.isFindNavigatorVisible == true,
+              !AppWidthObserver.shared.isPad || !AppWidthObserver.shared.isLargeWidth,
+              !isFindInPageChromeLockActive else { return }
+
+        isFindInPageChromeLockActive = true
+        didFindInPageHideChrome = lastChromeVisibilityPercent > 0
+        if didFindInPageHideChrome {
+            setBarsHidden(true, animated: true, customAnimationDuration: nil)
+        }
+
+        findInPageDismissalTimer = Timer.scheduledTimer(withTimeInterval: 0.2, repeats: true) { [weak self] timer in
+            guard let self else {
+                timer.invalidate()
+                return
+            }
+            guard self.currentTab?.webView.findInteraction?.isFindNavigatorVisible != true else { return }
+            self.restoreChromeIfHiddenByFindInPage()
+        }
+    }
+
+    private func restoreChromeIfHiddenByFindInPage() {
+        findInPageDismissalTimer?.invalidate()
+        findInPageDismissalTimer = nil
+
+        isFindInPageChromeLockActive = false
+        let shouldRestoreChrome = didFindInPageHideChrome
+        didFindInPageHideChrome = false
+        guard shouldRestoreChrome else { return }
+        setBarsHidden(false, animated: true, customAnimationDuration: nil)
+    }
+
+    private var shouldKeepChromeHiddenForFindInPage: Bool {
+        guard isFindInPageChromeLockActive,
+              !AppWidthObserver.shared.isPad || !AppWidthObserver.shared.isLargeWidth else { return false }
+        if #available(iOS 16.0, *) {
+            return currentTab?.webView.findInteraction?.isFindNavigatorVisible == true
+        }
+        return false
+    }
+
+    // Persist the current query so the find navigator can be prepopulated when reopened on this tab.
+    @available(iOS 16.0, *)
+    private func rememberFindInPageQuery(for tab: TabViewController?) {
+        // Store the current query as-is (including when cleared) so a deliberate clear isn't overwritten by a stale term.
+        (tab?.webView as? WebView)?.lastFindInPageQuery = tab?.webView.findInteraction?.searchText
     }
 
     func handleVoiceSearchOpenRequest(preferredTarget: VoiceSearchTarget? = nil) {
@@ -4185,9 +4261,15 @@ extension MainViewController: BrowserChromeDelegate {
         return !shouldPinChrome && !daxDialogsManager.shouldShowFireButtonPulse
     }
 
-    /// No hide/show bars on scroll. On when bar hides behind web keyboard (else page jerks).
+    /// No hide/show bars on scroll. On when bar hides behind web keyboard (else page jerks), and while the system
+    /// find-in-page navigator is visible so swipes can't reveal the chrome — the user must dismiss find first.
     var isChromeScrollInteractionDisabled: Bool {
-        isBottomAddressBarHiddenForWebKeyboard
+        if isBottomAddressBarHiddenForWebKeyboard { return true }
+        if #available(iOS 16.0, *), featureFlagger.isFeatureOn(.systemFindInPage),
+           currentTab?.webView.findInteraction?.isFindNavigatorVisible == true {
+            return true
+        }
+        return false
     }
 
     /// When `true`, the omni bar and toolbar are never hidden on scroll.
@@ -6028,6 +6110,10 @@ extension MainViewController: TabDelegate {
 
     }
 
+    func tab(_ tab: TabViewController, didRequestReopenClosedTabAt url: URL) {
+        self.tab(tab, didRequestNewTabForUrl: url, openedByPage: true, inheritingAttribution: nil)
+    }
+
     func tab(_ tab: TabViewController, didChangePrivacyInfo privacyInfo: PrivacyInfo?) {
         if currentTab == tab {
             viewCoordinator.omniBar.updatePrivacyIcon(for: privacyInfo)
@@ -6159,7 +6245,7 @@ extension MainViewController: TabDelegate {
     }
 
     func tabDidRequestSettingsToVPN(_ tab: TabViewController) {
-        segueToVPN()
+        segueToVPN(source: .browserMenu)
     }
 
     func tabDidRequestSettingsToAIChat(_ tab: TabViewController) {
@@ -6187,6 +6273,11 @@ extension MainViewController: TabDelegate {
     }
 
     func closeFindInPage(tab: TabViewController) {
+        if #available(iOS 16.0, *), featureFlagger.isFeatureOn(.systemFindInPage) {
+            dismissSystemFindNavigator(for: tab)
+            return
+        }
+
         if tab === currentTab {
             findInPageView?.done()
         } else {
@@ -6622,6 +6713,8 @@ extension MainViewController {
             } else if request.options.contains(.tabs) && KeyboardSettings().onNewTab && !self.isEscapeHatchBurn(request) {
                 // Escape-hatch burns restore focus in `restoreFocusModeAfterBurnIfNeeded`.
                 let showKeyboardAfterFireButton = DispatchWorkItem {
+                    // A burned Duck.ai chat reopens as a new chat that owns its input; don't focus search over it.
+                    guard self.currentTab?.isAITab != true else { return }
                     if !self.aiChatSettings.isAIChatSearchInputUserSettingsEnabled {
                         self.enterSearch()
                     }
@@ -7546,7 +7639,7 @@ extension MainViewController {
             self.launchAutofillLogins(with: currentTab?.url, currentTabUid: currentTab?.tabModel.uid, source: .customizedToolbarButton, selectedAccount: nil)
 
         case .vpn:
-            self.presentNetworkProtectionStatusSettingsModal(origin: .toolbarVPN)
+            self.presentNetworkProtectionStatusSettingsModal(entryPoint: .toolbar)
 
         case .share:
             self.shareCurrentURLFromToolbar()
@@ -7605,7 +7698,7 @@ extension MainViewController {
             onFirePressed()
 
         case .vpn:
-            presentNetworkProtectionStatusSettingsModal(origin: .addressBarVPN)
+            presentNetworkProtectionStatusSettingsModal(entryPoint: .addressBar)
 
         case .zoom:
             showTextZoomEditorIfPossible()

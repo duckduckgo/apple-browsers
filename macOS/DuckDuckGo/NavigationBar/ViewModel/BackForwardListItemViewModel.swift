@@ -18,6 +18,8 @@
 
 import Cocoa
 import History
+import DesignResourcesKit
+import DesignResourcesKitIcons
 
 final class BackForwardListItemViewModel {
 
@@ -78,7 +80,7 @@ final class BackForwardListItemViewModel {
         case .settings:
             return .settingsMulticolor16
         case .bookmarks:
-            return .bookmarksFolder
+            return DesignSystemRebrand.isAppRebranded() ? DesignSystemImages.Color.Size16.bookmarksNew : .bookmarksFolder
         case .history:
             return .historyFavicon
         case let url where url?.isDuckPlayer == true:

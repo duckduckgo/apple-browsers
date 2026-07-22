@@ -170,6 +170,14 @@ public struct UserText {
     static let simplifiedRecoveryCodeLabel = NotLocalizedString("sync.simplified.recovery.code.label", bundle: Bundle.module, value: "Recovery Code", comment: "Label above the recovery code on the recover-your-data screen")
     static let simplifiedDownloadYourRecoveryCodeButton = NotLocalizedString("sync.simplified.download.your.recovery.code.button", bundle: Bundle.module, value: "Download Your Recovery Code", comment: "Button to download the recovery code on the recover-your-data screen")
 
+    // Simplified Device Added (V2 success screen shown after joining a sync account)
+    static let simplifiedDeviceAddedV2FallbackDeviceName = NotLocalizedString("sync.simplified.device.added.v2.fallback.device.name", bundle: Bundle.module, value: "This device", comment: "Fallback subject used in the device-added success title when the current device's name is unavailable. Substituted as %@ in simplifiedDeviceAddedV2Title.")
+    static func simplifiedDeviceAddedV2Title(_ deviceName: String) -> String {
+        let format = NotLocalizedString("sync.simplified.device.added.v2.title", bundle: Bundle.module, value: "%@ has been added to Sync & Backup.", comment: "Title on the success screen shown after a device joins Sync & Backup. %@ is the name of the current device that was just added.")
+        return String(format: format, deviceName)
+    }
+    static let simplifiedDeviceAddedV2Description = NotLocalizedString("sync.simplified.device.added.v2.description", bundle: Bundle.module, value: "Use this code to restore your data if you lose access to your devices. Keep it safe.", comment: "Description on the device-added success screen explaining what the recovery code is for")
+
     // Simplified QR Scanning
     static let simplifiedScanTitle = NSLocalizedString("sync.simplified.scan-or-view-code.title", bundle: Bundle.module, value: "Sync Your Devices", comment: "Navigation title for simplified QR scanning screen")
     static let simplifiedScanTabScanQRCode = NSLocalizedString("sync.simplified.scan-or-view-code.tab.scan", bundle: Bundle.module, value: "Scan QR Code", comment: "Button title to show QR code scanner")

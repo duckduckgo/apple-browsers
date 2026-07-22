@@ -307,8 +307,16 @@ public struct TunnelControllerView: View {
     @ViewBuilder
     private func statusBadge(isConnected: Bool) -> some View {
         Circle()
-            .fill(isConnected ? Color(designSystemColor: .alertGreen) : Color(designSystemColor: .alertYellow))
+            .fill(statusColor(isConnected: isConnected))
             .frame(width: 8, height: 8)
+    }
+
+    private func statusColor(isConnected: Bool) -> Color {
+        if isAppRebranded {
+            return isConnected ? .green : Color(designSystemColor: .statusYellowSecondary)
+        }
+
+        return isConnected ? .green : .yellow
     }
 
     /// Connected/Selected location

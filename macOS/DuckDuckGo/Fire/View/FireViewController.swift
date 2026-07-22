@@ -279,9 +279,42 @@ final class FireViewController: NSViewController {
                     Task {
                         await self.animateFire(burningData: burningData)
                     }
+                } else if self.isKeyWindowController {
+                    // The full-window fire animation isn't covering this burn (it's disabled, or this is
+                    // a New Tab Page site burn that only plays the in-page animation). Show the
+                    // "Deleting browsing data" progress dialog directly so the burn still has visible
+                    // feedback, mirroring what `animateFire` presents once the animation finishes.
+                    // (For New Tab Page burns `isFirePresentationInProgress` still defers the container
+                    // by 1s so the in-page animation plays first.)
+                    self.showBurningProgressIndicator()
+                } else {
+                    // Non-key window: make sure a progress dialog left visible by a previous burn
+                    // isn't shown.
+                    self.hideBurningProgressIndicator()
                 }
             })
             .store(in: &cancellables)
+    }
+
+    /// Whether this controller's window is the one the fire action was initiated from. Used to present
+    /// the burning UI on a single window only.
+    private var isKeyWindowController: Bool {
+        view.window?.windowController === Application.appDelegate.windowControllersManager.lastKeyMainWindowController
+    }
+
+    /// Reveals the "Deleting browsing data…" progress dialog and hides the fire animation view.
+    private func showBurningProgressIndicator() {
+        fireAnimationView?.isHidden = true
+        progressIndicatorWrapperBG.isHidden = false
+        progressIndicatorWrapper.isHidden = false
+        fakeFireButton.isHidden = false
+    }
+
+    /// Hides the "Deleting browsing data…" progress dialog.
+    private func hideBurningProgressIndicator() {
+        progressIndicatorWrapperBG.isHidden = true
+        progressIndicatorWrapper.isHidden = true
+        fakeFireButton.isHidden = true
     }
 
     private let fireAnimationSpeed = 1.2
@@ -312,11 +345,7 @@ final class FireViewController: NSViewController {
                 guard let self = self else { return }
 
                 // Hide the fire animation view before showing progress indicator
-                self.fireAnimationView?.isHidden = true
-
-                self.progressIndicatorWrapperBG.isHidden = false
-                self.progressIndicatorWrapper.isHidden = false
-                self.fakeFireButton.isHidden = false
+                self.showBurningProgressIndicator()
 
             } ?? completion() // Resume immediately if fireAnimationView is nil
         }
@@ -356,11 +385,7 @@ final class FireViewController: NSViewController {
                     // Waits until windows are closed in Fire.swift
                     DispatchQueue.main.async {
                         // Hide the fire animation view before showing progress indicator
-                        self.fireAnimationView?.isHidden = true
-
-                        self.progressIndicatorWrapperBG.isHidden = false
-                        self.progressIndicatorWrapper.isHidden = false
-                        self.fakeFireButton.isHidden = false
+                        self.showBurningProgressIndicator()
                         Logger.general.debug("Fire animation progress indicator shown")
                     }
                 } else {

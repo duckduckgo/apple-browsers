@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Common
 import Foundation
 import Persistence
 import PersistenceTestingUtils
@@ -168,5 +169,47 @@ final class SERPSettingsProvidingTests: XCTestCase {
         provider.storeSERPSettings(settings: [SERPSettingsConstants.searchAssistKey: "3"])
 
         XCTAssertEqual(notifications, 0)
+    }
+
+    // MARK: - Tolerant decode of non-string scalar values
+
+    func testReadsNumericScalarValues_asStrings_withoutFiringReadError() throws {
+        var firedReadError = false
+        provider.eventMapper = EventMapping<SERPSettingsError> { event, _, _, _ in
+            if case .keyValueStoreReadError = event { firedReadError = true }
+        }
+
+        try mockKeyValueStore.set(#"{"kbe":3,"kbj":1}"#, forKey: SERPSettingsConstants.serpSettingsStorage)
+
+        XCTAssertEqual(provider.searchAssistFrequency, .often)
+        XCTAssertTrue(provider.hideAIGeneratedImages)
+        XCTAssertEqual(provider.serpSettingValue(forKey: SERPSettingsConstants.searchAssistKey), "3")
+        XCTAssertFalse(firedReadError)
+    }
+
+    func testReadsNegativeNumericScalar_asString() throws {
+        try mockKeyValueStore.set(#"{"kbj":-1}"#, forKey: SERPSettingsConstants.serpSettingsStorage)
+
+        XCTAssertFalse(provider.hideAIGeneratedImages) // "-1" means show
+        XCTAssertEqual(provider.serpSettingValue(forKey: SERPSettingsConstants.hideAIGeneratedImagesKey), "-1")
+    }
+
+    func testMixedStringAndNumericBlob_readsAllKeys() throws {
+        try mockKeyValueStore.set(#"{"kbe":"3","kbj":1}"#, forKey: SERPSettingsConstants.serpSettingsStorage)
+
+        XCTAssertEqual(provider.searchAssistFrequency, .often)
+        XCTAssertTrue(provider.hideAIGeneratedImages)
+    }
+
+    func testGenuinelyCorruptBlob_firesReadError_andFallsBackToDefaults() throws {
+        var firedReadError = false
+        provider.eventMapper = EventMapping<SERPSettingsError> { event, _, _, _ in
+            if case .keyValueStoreReadError = event { firedReadError = true }
+        }
+
+        try mockKeyValueStore.set("this is not json", forKey: SERPSettingsConstants.serpSettingsStorage)
+
+        XCTAssertEqual(provider.searchAssistFrequency, .sometimes) // default
+        XCTAssertTrue(firedReadError)
     }
 }

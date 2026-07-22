@@ -38,6 +38,7 @@ protocol AIChatHistoryInstrumentation {
     func pinAdded()
     func pinRemoved()
     func downloadStarted()
+    func downloadSucceeded()
     func selectionDeleteConfirmed()
     func selectionDownloadStarted()
     func chatProtectionTapped()
@@ -96,6 +97,10 @@ final class DefaultAIChatHistoryInstrumentation: AIChatHistoryInstrumentation {
 
     func downloadStarted() {
         fire(.aiChatHistoryDownloadStarted)
+    }
+
+    func downloadSucceeded() {
+        fire(.aiChatHistoryDownloadSuccessful)
     }
 
     func selectionDeleteConfirmed() {

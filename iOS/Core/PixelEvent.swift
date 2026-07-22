@@ -1811,6 +1811,7 @@ extension Pixel {
         case aiChatHistoryPinAdded
         case aiChatHistoryPinRemoved
         case aiChatHistoryDownloadStarted
+        case aiChatHistoryDownloadSuccessful
         case aiChatHistorySelectionDeleteConfirmed
         case aiChatHistorySelectionDownloadStarted
         case aiChatHistoryChatProtectionTapped
@@ -3739,6 +3740,7 @@ extension Pixel.Event {
         case .aiChatHistoryPinAdded: return "aichat_history_pin_added"
         case .aiChatHistoryPinRemoved: return "aichat_history_pin_removed"
         case .aiChatHistoryDownloadStarted: return "aichat_history_download_started"
+        case .aiChatHistoryDownloadSuccessful: return "aichat_history_download_successful"
         case .aiChatHistorySelectionDeleteConfirmed: return "aichat_history_selection_delete_confirmed"
         case .aiChatHistorySelectionDownloadStarted: return "aichat_history_selection_download_started"
         case .aiChatHistoryChatProtectionTapped: return "aichat_history_chat_protection_tapped"

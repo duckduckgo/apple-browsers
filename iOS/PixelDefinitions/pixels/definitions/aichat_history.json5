@@ -79,6 +79,13 @@
         "suffixes": ["first_daily_count", "platform", "form_factor"],
         "parameters": ["appVersion"]
     },
+    "aichat_history_download_successful": {
+        "description": "A chat download/export on the chat history screen produced at least one file. Fires once per download operation (single or multi-select); paired with aichat_history_download_failed it gives the download failure rate",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
     "aichat_history_selection_delete_confirmed": {
         "description": "User confirmed deleting the multi-selected chats on the chat history screen (multi-select delete). Distinct from aichat_history_fire_all_confirmed (delete all) and aichat_history_chat_deleted (single swipe delete)",
         "owners": ["SabrinaTardio"],

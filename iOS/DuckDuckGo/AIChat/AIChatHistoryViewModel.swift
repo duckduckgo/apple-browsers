@@ -276,6 +276,7 @@ final class AIChatHistoryViewModel: ObservableObject {
                 if urls.isEmpty {
                     self?.delegate?.viewModelDidFailExport()
                 } else {
+                    instrumentation.downloadSucceeded()
                     onExported(urls)
                 }
             }

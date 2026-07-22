@@ -20,37 +20,69 @@ public protocol EventHubStore {
     func deleteAllPixelStates()
 }
 
-/// Stub: every method is a no-op / always-miss. `EventHubStoreTests` is expected to fail until a
-/// follow-up implementation task fills these in.
+/// Backs `EventHubStore` with a `ThrowingKeyValueStoring`. All persisted pixel states live under a
+/// single composite key (`storageKey`) as a `[String: EventHubStoredPixelState]` map, JSON-encoded to
+/// `Data`. Read/write/parse failures are treated as absence rather than propagated: a corrupt entry is
+/// skipped, not thrown.
 public final class EventHubKeyValueStore: EventHubStore {
     /// The single key under which the map of pixel-name to `EventHubStoredPixelState` is stored.
     public static let storageKey = "eventhub_pixel_states"
 
-    private let store: KeyValueStoring
+    private let store: ThrowingKeyValueStoring
     private let parser: EventHubConfigParsing
 
-    public init(store: KeyValueStoring, parser: EventHubConfigParsing) {
+    public init(store: ThrowingKeyValueStoring, parser: EventHubConfigParsing) {
         self.store = store
         self.parser = parser
     }
 
     public func pixelState(named name: String) -> PixelState? {
-        nil
+        readMap()[name].flatMap { toPixelState(name: name, entry: $0) }
     }
 
     public func allPixelStates() -> [PixelState] {
-        []
+        readMap().compactMap { name, entry in toPixelState(name: name, entry: entry) }
     }
 
     public func savePixelState(_ state: PixelState) {
-        // no-op
+        guard let configJSON = parser.serializePixelConfig(state.config),
+              let paramsJSON = try? String(data: JSONEncoder().encode(state.params), encoding: .utf8) else {
+            return
+        }
+        var map = readMap()
+        map[state.pixelName] = EventHubStoredPixelState(
+            periodStartMillis: state.periodStartMillis, periodEndMillis: state.periodEndMillis,
+            paramsJSON: paramsJSON, configJSON: configJSON)
+        writeMap(map)
     }
 
     public func deletePixelState(named name: String) {
-        // no-op
+        var map = readMap()
+        guard map.removeValue(forKey: name) != nil else { return }
+        writeMap(map)
     }
 
     public func deleteAllPixelStates() {
-        // no-op
+        try? store.removeObject(forKey: Self.storageKey)
+    }
+
+    private func readMap() -> [String: EventHubStoredPixelState] {
+        guard let data = try? store.object(forKey: Self.storageKey) as? Data,
+              let map = try? JSONDecoder().decode([String: EventHubStoredPixelState].self, from: data) else {
+            return [:]
+        }
+        return map
+    }
+
+    private func writeMap(_ map: [String: EventHubStoredPixelState]) {
+        guard let data = try? JSONEncoder().encode(map) else { return }
+        try? store.set(data, forKey: Self.storageKey)
+    }
+
+    private func toPixelState(name: String, entry: EventHubStoredPixelState) -> PixelState? {
+        guard let config = parser.parseSinglePixelConfig(name: name, json: entry.configJSON) else { return nil }
+        let params = (try? JSONDecoder().decode([String: ParamState].self, from: Data(entry.paramsJSON.utf8))) ?? [:]
+        return PixelState(pixelName: name, periodStartMillis: entry.periodStartMillis,
+                           periodEndMillis: entry.periodEndMillis, config: config, params: params)
     }
 }

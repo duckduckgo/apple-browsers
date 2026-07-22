@@ -21,9 +21,10 @@ import Combine
 import Foundation
 import VPN
 
-/// Drives the VPN activation screen (the same screen in two states: off and on). It fetches the original
-/// connection info while off (caching it as the "hidden" card once on), starts the VPN through the
-/// injected controller, and — when the tunnel reaches connected — describes the new (egress) IP and location
+/// Drives the VPN activation screen (the same screen in two states: off and on). It reads the original
+/// connection info from the shared ``SubscriptionOnboardingPrefetcher`` while off (caching it as the "hidden"
+/// card once on), retrying the fetch on appearance if it hasn't resolved yet; starts the VPN through the
+/// injected controller; and — when the tunnel reaches connected — describes the new (egress) IP and location
 /// from the shared server-info observer (the same source the VPN settings screen reads) and reports
 /// completion up to the flow via ``SubscriptionOnboardingSectionDelegate``.
 final class SubscriptionOnboardingVPNActivationViewModel: ObservableObject {
@@ -37,21 +38,7 @@ final class SubscriptionOnboardingVPNActivationViewModel: ObservableObject {
     /// The lifecycle of one connection-info fetch, kept as its own axis separate from ``ConnectionState`` so
     /// the two orthogonal concerns — what the user/tunnel is doing vs. whether the IP lookup has resolved —
     /// are never squeezed into one combined state.
-    enum ConnectionInfoState: Equatable {
-        case idle
-        case loading
-        case loaded(SubscriptionOnboardingConnectionInfo)
-        case failed
-
-        /// A fetch should (re)start only when nothing is in flight or already resolved; a prior failure is
-        /// retried on the next appearance, mirroring the previous "retry while still unresolved" behavior.
-        var shouldStartFetch: Bool {
-            switch self {
-            case .idle, .failed: return true
-            case .loading, .loaded: return false
-            }
-        }
-    }
+    typealias ConnectionInfoState = SubscriptionOnboardingPrefetcher.FetchState<SubscriptionOnboardingConnectionInfo>
 
     /// Shown in the IP row of an info card until the corresponding fetch resolves (or when it has no value,
     /// e.g. entering with the VPN already on, which never fetches the original IP).
@@ -61,7 +48,7 @@ final class SubscriptionOnboardingVPNActivationViewModel: ObservableObject {
 
     @Published private(set) var connectionState: ConnectionState
 
-    /// The original (pre-VPN) connection, fetched while off and retained.
+    /// The original (pre-VPN) connection, mirrored from the prefetcher while off and retained.
     @Published private(set) var originalConnectionInfo: ConnectionInfoState = .idle
     /// The VPN egress server info (address + location) from the shared server-info observer — the same source
     /// the VPN settings screen reads. Address and location are read independently, matching that screen.
@@ -71,31 +58,30 @@ final class SubscriptionOnboardingVPNActivationViewModel: ObservableObject {
     /// configuration-denied signal. Persists across retries and clears once the tunnel connects.
     @Published private(set) var didDenyVPNPermission = false
 
-    private let connectionInfoService: SubscriptionOnboardingConnectionInfoService
+    private let prefetcher: SubscriptionOnboardingPrefetcher
     private let vpnController: SubscriptionOnboardingVPNControlling
     private let vpnLocationProvider: SubscriptionOnboardingVPNLocationProviding
     private let serverInfoObserver: ConnectionServerInfoObserver
-    private weak var delegate: SubscriptionOnboardingSectionDelegate?
+    // TODO: Wrap in a goBack() intent method and make private once leaf views get delegate via Environment injection (Stage 3).
+    private(set) weak var delegate: SubscriptionOnboardingSectionDelegate?
     private let locale: Locale
 
     private var hasReportedCompletion = false
     private var cancellables = Set<AnyCancellable>()
 
-    init(connectionInfoService: SubscriptionOnboardingConnectionInfoService = DefaultSubscriptionOnboardingConnectionInfoService(),
+    init(prefetcher: SubscriptionOnboardingPrefetcher,
          vpnController: SubscriptionOnboardingVPNControlling = DefaultSubscriptionOnboardingVPNController(),
          vpnLocationProvider: SubscriptionOnboardingVPNLocationProviding = DefaultSubscriptionOnboardingVPNLocationProvider(),
          serverInfoObserver: ConnectionServerInfoObserver = AppDependencyProvider.shared.serverInfoObserver,
          delegate: SubscriptionOnboardingSectionDelegate? = nil,
          locale: Locale = .current) {
-        self.connectionInfoService = connectionInfoService
+        self.prefetcher = prefetcher
         self.vpnController = vpnController
         self.vpnLocationProvider = vpnLocationProvider
         self.serverInfoObserver = serverInfoObserver
         self.delegate = delegate
         self.locale = locale
         self.connectionState = vpnController.isConnected ? .on : .off
-
-        observeConnection()
     }
 
     // MARK: - Display values
@@ -132,15 +118,23 @@ final class SubscriptionOnboardingVPNActivationViewModel: ObservableObject {
 
     // MARK: - Actions
 
-    /// Kicks off the appropriate fetch when the view appears, then returns immediately (fire-and-forget)
+    /// Sets up the connection and prefetcher observers, then kicks off the appropriate fetch for the current
+    /// state when the view appears, and returns immediately (fire-and-forget).
+    @MainActor
     func onAppear() {
+        observeConnection()
         switch connectionState {
         case .off:
-            fetchOriginalConnectionInfo()
+            prefetcher.fetchConnectionInfoIfNeeded()
         case .on:
             reportCompletionIfNeeded()
             vpnServerInfo = serverInfoObserver.recentValue
         }
+    }
+
+    @MainActor
+    func onDisappear() {
+        cancellables.removeAll()
     }
 
     /// Starts the VPN. Doesn't clear ``didDenyVPNPermission`` — the denied state must survive a retry and
@@ -155,23 +149,12 @@ final class SubscriptionOnboardingVPNActivationViewModel: ObservableObject {
         await vpnController.isVPNConfigured()
     }
 
-    /// Fetches the original (pre-VPN) IP into ``originalConnectionInfo``.
-    private func fetchOriginalConnectionInfo() {
-        guard originalConnectionInfo.shouldStartFetch else { return }
-        originalConnectionInfo = .loading
-        Task { @MainActor [weak self] in
-            guard let self else { return }
-            do {
-                self.originalConnectionInfo = .loaded(try await self.connectionInfoService.fetchConnectionInfo())
-            } catch {
-                self.originalConnectionInfo = .failed
-            }
-        }
-    }
-
     // MARK: - Connection observing
 
+    @MainActor
     private func observeConnection() {
+        // onAppear can fire more than once without an intervening onDisappear; avoid stacking duplicate sinks.
+        guard cancellables.isEmpty else { return }
         vpnController.isConnectedPublisher
             .removeDuplicates()
             .receive(on: DispatchQueue.main)
@@ -191,6 +174,13 @@ final class SubscriptionOnboardingVPNActivationViewModel: ObservableObject {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] serverInfo in
                 self?.vpnServerInfo = serverInfo
+            }
+            .store(in: &cancellables)
+
+        prefetcher.$connectionInfo
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] state in
+                self?.originalConnectionInfo = state
             }
             .store(in: &cancellables)
     }
@@ -369,6 +359,7 @@ private extension NetworkProtectionStatusServerInfo {
 extension SubscriptionOnboardingVPNActivationViewModel {
     /// A view model seeded with fixed connection info for previews — no network, no tunnel. Pass `nil`
     /// connection info to preview the loading state (the info cards render the placeholders).
+    @MainActor
     static func preview(state: ConnectionState,
                         originalConnectionInfo: SubscriptionOnboardingConnectionInfo?,
                         vpnConnectionInfo: SubscriptionOnboardingConnectionInfo? = nil,
@@ -376,7 +367,7 @@ extension SubscriptionOnboardingVPNActivationViewModel {
                         didDenyVPNPermission: Bool = false) -> SubscriptionOnboardingVPNActivationViewModel {
         let serverInfo = NetworkProtectionStatusServerInfo.previewServerInfo(vpnConnectionInfo)
         let viewModel = SubscriptionOnboardingVPNActivationViewModel(
-            connectionInfoService: PreviewSubscriptionOnboardingConnectionInfoService(),
+            prefetcher: SubscriptionOnboardingPrefetcher(connectionInfoService: PreviewSubscriptionOnboardingConnectionInfoService()),
             vpnController: PreviewSubscriptionOnboardingVPNController(isConnected: state == .on),
             vpnLocationProvider: PreviewSubscriptionOnboardingVPNLocationProvider(isNearestSelected: isNearestSelected),
             serverInfoObserver: PreviewConnectionServerInfoObserver(serverInfo),
@@ -389,12 +380,13 @@ extension SubscriptionOnboardingVPNActivationViewModel {
 
     /// A view model that starts off and transitions to on when the VPN is turned on, for previewing the
     /// off→on reveal. The egress info is seeded so the on-state cards show a value once revealed.
+    @MainActor
     static func previewReveal(original: SubscriptionOnboardingConnectionInfo?,
                               vpn: SubscriptionOnboardingConnectionInfo?,
                               isNearestSelected: Bool = false) -> SubscriptionOnboardingVPNActivationViewModel {
         let serverInfo = NetworkProtectionStatusServerInfo.previewServerInfo(vpn)
         let viewModel = SubscriptionOnboardingVPNActivationViewModel(
-            connectionInfoService: PreviewSubscriptionOnboardingConnectionInfoService(),
+            prefetcher: SubscriptionOnboardingPrefetcher(connectionInfoService: PreviewSubscriptionOnboardingConnectionInfoService()),
             vpnController: RevealPreviewSubscriptionOnboardingVPNController(),
             vpnLocationProvider: PreviewSubscriptionOnboardingVPNLocationProvider(isNearestSelected: isNearestSelected),
             serverInfoObserver: PreviewConnectionServerInfoObserver(serverInfo),

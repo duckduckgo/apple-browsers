@@ -20,10 +20,11 @@
 import SwiftUI
 
 /// The post-activation "What to know about using your VPN" screen: the shared tips carousel with a single
-/// button that returns to the VPN activation screen.
+/// button that finishes the VPN section and moves the flow to the next one.
 struct SubscriptionOnboardingVPNTipsView: View {
 
     var title: String? = nil
+    weak var delegate: SubscriptionOnboardingSectionDelegate?
 
     @Environment(\.dismiss) private var dismiss
 
@@ -32,7 +33,7 @@ struct SubscriptionOnboardingVPNTipsView: View {
             title: title,
             navigationButton: .back({ dismiss() }),
             header: SubscriptionOnboardingHeaderView(title: UserText.subscriptionOnboardingVPNTipsTitle),
-            footer: .single(.init(UserText.subscriptionOnboardingVPNTipsDoneButton) { dismiss() })) {
+            footer: .single(.init(UserText.subscriptionOnboardingVPNTipsDoneButton) { delegate?.sectionDidRequestAdvance() })) {
             SubscriptionOnboardingVPNTipsCarousel()
                 .padding(.top, 24)
         }

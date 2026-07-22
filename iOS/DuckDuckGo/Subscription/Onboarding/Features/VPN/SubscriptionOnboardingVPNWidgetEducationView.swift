@@ -26,6 +26,7 @@ import SwiftUI
 struct SubscriptionOnboardingVPNWidgetEducationView: View {
 
     var title: String? = nil
+    weak var delegate: SubscriptionOnboardingSectionDelegate?
 
     @Environment(\.dismiss) private var dismiss
 
@@ -35,7 +36,7 @@ struct SubscriptionOnboardingVPNWidgetEducationView: View {
             navigationButton: .back({ dismiss() }),
             header: SubscriptionOnboardingHeaderView(title: UserText.subscriptionOnboardingVPNWidgetEducationTitle),
             footer: .single(.init(UserText.subscriptionOnboardingVPNWidgetEducationGotItButton,
-                                           push: SubscriptionOnboardingVPNTipsView(title: title)))) {
+                                           push: SubscriptionOnboardingVPNTipsView(title: title, delegate: delegate)))) {
             WidgetEducationContentView(
                 thirdParagraphText: UserText.addVPNWidgetSettingsThirdParagraph,
                 thirdParagraphDetail: .image(

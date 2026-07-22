@@ -296,6 +296,9 @@
 		369E692D2E5F6EC200F98A8F /* InactivityNotificationSchedulerServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 369E692C2E5F6EB500F98A8F /* InactivityNotificationSchedulerServiceTests.swift */; };
 		36A05E8D300FB6A100DD8343 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36A05E8C300FB6A100DD8343 /* OnboardingView.swift */; };
 		36A96A0A2E6606CF003D4529 /* LocalNotificationsPlaygroundView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36A96A092E6606C0003D4529 /* LocalNotificationsPlaygroundView.swift */; };
+		36D41E4030112DFD00787BB8 /* SubscriptionOnboardingFlowViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36D41E3F30112DFD00787BB8 /* SubscriptionOnboardingFlowViewModel.swift */; };
+		36D41E42301130C700787BB8 /* SubscriptionOnboardingPrefetcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36D41E41301130C700787BB8 /* SubscriptionOnboardingPrefetcher.swift */; };
+		36D41E44301151BA00787BB8 /* SubscriptionOnboardingConnectionInfoServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36D41E43301151BA00787BB8 /* SubscriptionOnboardingConnectionInfoServiceTests.swift */; };
 		36DDC46C30093068004B1068 /* SubscriptionOnboardingHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36DDC46B30093068004B1068 /* SubscriptionOnboardingHeaderView.swift */; };
 		36DDC47330093082004B1068 /* SubscriptionOnboardingViewFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36DDC47130093082004B1068 /* SubscriptionOnboardingViewFactory.swift */; };
 		36DDC47430093082004B1068 /* SubscriptionOnboardingSectionDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36DDC47030093082004B1068 /* SubscriptionOnboardingSectionDelegate.swift */; };
@@ -3106,6 +3109,9 @@
 		369E692C2E5F6EB500F98A8F /* InactivityNotificationSchedulerServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InactivityNotificationSchedulerServiceTests.swift; sourceTree = "<group>"; };
 		36A05E8C300FB6A100DD8343 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		36A96A092E6606C0003D4529 /* LocalNotificationsPlaygroundView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalNotificationsPlaygroundView.swift; sourceTree = "<group>"; };
+		36D41E3F30112DFD00787BB8 /* SubscriptionOnboardingFlowViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionOnboardingFlowViewModel.swift; sourceTree = "<group>"; };
+		36D41E41301130C700787BB8 /* SubscriptionOnboardingPrefetcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionOnboardingPrefetcher.swift; sourceTree = "<group>"; };
+		36D41E43301151BA00787BB8 /* SubscriptionOnboardingConnectionInfoServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionOnboardingConnectionInfoServiceTests.swift; sourceTree = "<group>"; };
 		36DDC46B30093068004B1068 /* SubscriptionOnboardingHeaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionOnboardingHeaderView.swift; sourceTree = "<group>"; };
 		36DDC46F30093082004B1068 /* SubscriptionOnboardingSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionOnboardingSection.swift; sourceTree = "<group>"; };
 		36DDC47030093082004B1068 /* SubscriptionOnboardingSectionDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionOnboardingSectionDelegate.swift; sourceTree = "<group>"; };
@@ -6788,6 +6794,7 @@
 		3666D87C3001AA9600B63F99 /* Onboarding */ = {
 			isa = PBXGroup;
 			children = (
+				36D41E43301151BA00787BB8 /* SubscriptionOnboardingConnectionInfoServiceTests.swift */,
 				362977D6300EE978007E1AD8 /* SubscriptionOnboardingDuckAIActivationViewModelTests.swift */,
 				36DDC486300A72F9004B1068 /* SubscriptionOnboardingVPNActivationViewModelTests.swift */,
 				36DDC4763009309F004B1068 /* SubscriptionOnboardingSectionTests.swift */,
@@ -6811,6 +6818,8 @@
 		36DDC47230093082004B1068 /* Navigation */ = {
 			isa = PBXGroup;
 			children = (
+				36D41E41301130C700787BB8 /* SubscriptionOnboardingPrefetcher.swift */,
+				36D41E3F30112DFD00787BB8 /* SubscriptionOnboardingFlowViewModel.swift */,
 				36DDC46F30093082004B1068 /* SubscriptionOnboardingSection.swift */,
 				36DDC47030093082004B1068 /* SubscriptionOnboardingSectionDelegate.swift */,
 				36DDC47130093082004B1068 /* SubscriptionOnboardingViewFactory.swift */,
@@ -13614,6 +13623,7 @@
 				569B072A2DD7378700E0719A /* ThreatProtectionView.swift in Sources */,
 				7B4F87EE2D0739EB0010B18F /* SiriBubbleView.swift in Sources */,
 				85DFEDF124C7EEA400973FE7 /* LargeOmniBarState.swift in Sources */,
+				36D41E42301130C700787BB8 /* SubscriptionOnboardingPrefetcher.swift in Sources */,
 				CBB4A8552FD3036500A65956 /* SuggestionsListView.swift in Sources */,
 				CB3CC3372D9EFFB4004D6B33 /* SiteThemeColorManager.swift in Sources */,
 				5BF0B1732FC784D3009D088E /* NavigationResponseRouter.swift in Sources */,
@@ -14130,6 +14140,7 @@
 				31C3149F2D2EEB44009A412A /* AIChatUserScript.swift in Sources */,
 				C13C60DA2E6D7AE100ED2211 /* SwitchBarSubmissionMetrics.swift in Sources */,
 				31C314A02D2EEB44009A412A /* AIChatUserScriptHandling.swift in Sources */,
+				36D41E4030112DFD00787BB8 /* SubscriptionOnboardingFlowViewModel.swift in Sources */,
 				1E4DCF4627B6A33600961E25 /* DownloadsListViewModel.swift in Sources */,
 				37C696772C4957940073E131 /* RemoteMessagingDebugViewController.swift in Sources */,
 				9C120EFD1C1879698FCE275F /* RemoteMessagingUIPreviewsDebugView.swift in Sources */,
@@ -14780,6 +14791,7 @@
 				4EEE6B9BEB9F0F385341C0F1 /* DarkReaderFeatureSettingsTests.swift in Sources */,
 				39BD5432CF6280442CDE88F0 /* DBPIOSContentBlockingTests.swift in Sources */,
 				B7A97190FB026429E034DB99 /* TabViewControllerSiteLoadingPixelTests.swift in Sources */,
+				36D41E44301151BA00787BB8 /* SubscriptionOnboardingConnectionInfoServiceTests.swift in Sources */,
 				A627D8C9C6C477E0A51B89E5 /* NavigationPixelNavigationResponderTests.swift in Sources */,
 				88CED5F7656BFDD8D99B3CA0 /* UnifiedToggleInputReasoningMenuFactoryTests.swift in Sources */,
 				BE83A575896316C700B212FA /* DuckAISubscriptionUpsellPresenterTests.swift in Sources */,

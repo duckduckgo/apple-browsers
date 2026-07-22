@@ -19,21 +19,30 @@
 
 import SwiftUI
 
-/// Builds the views for the post-subscription onboarding flow. The flow view model (next PR) owns a
-/// factory and asks it for the current section's screen, so the flow itself stays view-agnostic.
+/// Builds the views for the post-subscription onboarding flow. The flow view model owns a factory and asks it
+/// for the current section's screen — passing itself as the section's ``SubscriptionOnboardingSectionDelegate``
+/// and its ``SubscriptionOnboardingPrefetcher`` — so the flow itself stays view-agnostic.
 protocol SubscriptionOnboardingViewFactory {
-    func makeView(for section: SubscriptionOnboardingSection) -> AnyView
+    @MainActor
+    func makeView(for section: SubscriptionOnboardingSection,
+                  delegate: SubscriptionOnboardingSectionDelegate,
+                  prefetcher: SubscriptionOnboardingPrefetcher) -> AnyView
 }
 
-/// The default factory. The real section screens are wired in as later checkpoints build them (VPN and
-/// Duck.ai); until then each section renders a placeholder.
+/// The default factory: builds each section's screen with a view model wired to the flow's delegate and
+/// shared prefetcher.
 struct DefaultSubscriptionOnboardingViewFactory: SubscriptionOnboardingViewFactory {
-    func makeView(for section: SubscriptionOnboardingSection) -> AnyView {
+    @MainActor
+    func makeView(for section: SubscriptionOnboardingSection,
+                  delegate: SubscriptionOnboardingSectionDelegate,
+                  prefetcher: SubscriptionOnboardingPrefetcher) -> AnyView {
         switch section {
         case .vpn:
-            return AnyView(SubscriptionOnboardingVPNActivationView().subscriptionOnboardingNavigationContainer())
+            let viewModel = SubscriptionOnboardingVPNActivationViewModel(prefetcher: prefetcher, delegate: delegate)
+            return AnyView(SubscriptionOnboardingVPNActivationView(viewModel: viewModel).subscriptionOnboardingNavigationContainer())
         case .duckAI:
-            return AnyView(SubscriptionOnboardingDuckAIView().subscriptionOnboardingNavigationContainer())
+            let viewModel = SubscriptionOnboardingDuckAIViewModel(prefetcher: prefetcher, delegate: delegate)
+            return AnyView(SubscriptionOnboardingDuckAIView(viewModel: viewModel).subscriptionOnboardingNavigationContainer())
         }
     }
 }

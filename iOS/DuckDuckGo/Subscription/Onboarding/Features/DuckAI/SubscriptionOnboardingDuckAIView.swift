@@ -30,10 +30,10 @@ struct SubscriptionOnboardingDuckAIView: View {
     @StateObject private var viewModel: SubscriptionOnboardingDuckAIViewModel
     private let title: String?
 
-    @Environment(\.dismiss) private var dismiss
     @State private var isShowingInfoSheet = false
 
-    init(viewModel: @autoclosure @escaping () -> SubscriptionOnboardingDuckAIViewModel = SubscriptionOnboardingDuckAIViewModel(),
+    @MainActor
+    init(viewModel: @autoclosure @escaping () -> SubscriptionOnboardingDuckAIViewModel,
          title: String? = nil) {
         _viewModel = StateObject(wrappedValue: viewModel())
         self.title = title
@@ -42,7 +42,7 @@ struct SubscriptionOnboardingDuckAIView: View {
     var body: some View {
         SubscriptionOnboardingBaseView(
             title: title,
-            navigationButton: .back({ dismiss() }),
+            navigationButton: .back({ viewModel.delegate?.sectionDidRequestGoBack() }),
             header: header,
             footer: footer) {
             SubscriptionOnboardingAIModelPicker(
@@ -51,6 +51,7 @@ struct SubscriptionOnboardingDuckAIView: View {
                 onSelect: { viewModel.select($0) })
         }
         .onAppear { viewModel.onAppear() }
+        .onDisappear { viewModel.onDisappear() }
         .sheet(isPresented: $isShowingInfoSheet) {
             SubscriptionOnboardingInfoView(content: .duckAI, onClose: { isShowingInfoSheet = false })
                 .subscriptionOnboardingNavigationContainer()
@@ -75,7 +76,7 @@ private extension SubscriptionOnboardingDuckAIView {
                 viewModel.startChat()
             },
             secondary: .init(UserText.subscriptionOnboardingDuckAIActivationSkipButton) {
-                dismiss()
+                viewModel.skip()
             })
     }
 }
@@ -110,7 +111,7 @@ private final class EmptyPreviewAIModelProvider: SubscriptionOnboardingAIModelPr
 #Preview("Light") {
     RebrandedPreview {
         SubscriptionOnboardingDuckAIView(
-            viewModel: SubscriptionOnboardingDuckAIViewModel(modelProvider: PreviewAIModelProvider()))
+            viewModel: SubscriptionOnboardingDuckAIViewModel(prefetcher: SubscriptionOnboardingPrefetcher(modelProvider: PreviewAIModelProvider())))
             .subscriptionOnboardingNavigationContainer()
     }
 }
@@ -118,7 +119,7 @@ private final class EmptyPreviewAIModelProvider: SubscriptionOnboardingAIModelPr
 #Preview("Dark") {
     RebrandedPreview {
         SubscriptionOnboardingDuckAIView(
-            viewModel: SubscriptionOnboardingDuckAIViewModel(modelProvider: PreviewAIModelProvider()))
+            viewModel: SubscriptionOnboardingDuckAIViewModel(prefetcher: SubscriptionOnboardingPrefetcher(modelProvider: PreviewAIModelProvider())))
             .subscriptionOnboardingNavigationContainer()
     }
     .preferredColorScheme(.dark)
@@ -127,7 +128,7 @@ private final class EmptyPreviewAIModelProvider: SubscriptionOnboardingAIModelPr
 #Preview("Empty") {
     RebrandedPreview {
         SubscriptionOnboardingDuckAIView(
-            viewModel: SubscriptionOnboardingDuckAIViewModel(modelProvider: EmptyPreviewAIModelProvider()))
+            viewModel: SubscriptionOnboardingDuckAIViewModel(prefetcher: SubscriptionOnboardingPrefetcher(modelProvider: EmptyPreviewAIModelProvider())))
             .subscriptionOnboardingNavigationContainer()
     }
 }

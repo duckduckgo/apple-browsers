@@ -58,6 +58,7 @@ protocol SubscriptionOnboardingConnectionInfoService {
 /// (`URLSession.shared.data(from:)` + `JSONDecoder`; see `YoutubeOembedService`).
 struct DefaultSubscriptionOnboardingConnectionInfoService: SubscriptionOnboardingConnectionInfoService {
     private static let connectionInfoURL = URL(string: "https://duckduckgo.com/connection.json")!
+    private static let requestTimeout: TimeInterval = 10
 
     private let urlSession: URLSession
 
@@ -66,7 +67,12 @@ struct DefaultSubscriptionOnboardingConnectionInfoService: SubscriptionOnboardin
     }
 
     func fetchConnectionInfo() async throws -> SubscriptionOnboardingConnectionInfo {
-        let (data, _) = try await urlSession.data(from: Self.connectionInfoURL)
+        var request = URLRequest(url: Self.connectionInfoURL)
+        request.timeoutInterval = Self.requestTimeout
+        let (data, response) = try await urlSession.data(for: request)
+        if let httpResponse = response as? HTTPURLResponse, !(200..<300).contains(httpResponse.statusCode) {
+            throw URLError(.badServerResponse)
+        }
         return try JSONDecoder().decode(SubscriptionOnboardingConnectionInfo.self, from: data)
     }
 }

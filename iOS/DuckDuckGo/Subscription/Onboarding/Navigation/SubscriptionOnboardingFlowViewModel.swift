@@ -19,7 +19,7 @@
 
 import SwiftUI
 
-/// The host that owns a running onboarding flow — the debug entry today, the shipping coordinator later. The
+/// The host that owns a running onboarding flow — the debug menu entry at the moment. The
 /// flow view model forwards the app-level actions it can't perform itself: launching Duck.ai chat, and
 /// finishing (closing) the flow.
 protocol SubscriptionOnboardingFlowHosting: AnyObject {
@@ -29,15 +29,14 @@ protocol SubscriptionOnboardingFlowHosting: AnyObject {
 
 /// Walks an ordered list of ``SubscriptionOnboardingSection``s one at a time, publishing the current section
 /// for ``SubscriptionOnboardingFlowView`` to render. It is each section's ``SubscriptionOnboardingSectionDelegate``
-/// (translating a section's completion and chat-launch requests) and exposes `advance` / `skip` / `goBack` for
-/// the section screens' terminal buttons. It owns the ``SubscriptionOnboardingPrefetcher`` so leaving and
-/// returning to a section re-reads warmed data rather than refetching.
-///
-/// Persistence is deferred to a later checkpoint: with no progress store yet, `skip()` behaves like `advance()`
-/// and `sectionDidComplete(_:)` is not recorded.
-final class SubscriptionOnboardingFlowViewModel: ObservableObject, SubscriptionOnboardingSectionDelegate {
+/// (translating a section's completion and chat-launch requests) and exposes `advance` / `goBack` for
+/// the section screens' terminal buttons. It owns the ``SubscriptionOnboardingPrefetcher`` and kicks off its
+/// fetches at flow start, so leaving and returning to a section re-reads warmed data rather than refetching.
+final class SubscriptionOnboardingFlowViewModel: ObservableObject {
 
     @Published private(set) var currentSection: SubscriptionOnboardingSection?
+
+    let prefetcher: SubscriptionOnboardingPrefetcher
 
     private let sections: [SubscriptionOnboardingSection]
     private var currentIndex = 0
@@ -45,10 +44,13 @@ final class SubscriptionOnboardingFlowViewModel: ObservableObject, SubscriptionO
 
     @MainActor
     init(sections: [SubscriptionOnboardingSection] = SubscriptionOnboardingSection.allCases,
+         prefetcher: SubscriptionOnboardingPrefetcher,
          host: SubscriptionOnboardingFlowHosting? = nil) {
         self.sections = sections
+        self.prefetcher = prefetcher
         self.host = host
         self.currentSection = sections.first
+        prefetcher.prefetch()
     }
 
     // MARK: - Navigation
@@ -64,13 +66,6 @@ final class SubscriptionOnboardingFlowViewModel: ObservableObject, SubscriptionO
         currentSection = sections[currentIndex]
     }
 
-    /// Skips the current section. Identical to ``advance()`` until the progress store lands, at which point a
-    /// skip will be recorded as skipped rather than completed.
-    @MainActor
-    func skip() {
-        advance()
-    }
-
     /// Returns to the previous section, or finishes (closes) the flow when already on the first one.
     @MainActor
     func goBack() {
@@ -81,15 +76,28 @@ final class SubscriptionOnboardingFlowViewModel: ObservableObject, SubscriptionO
         currentIndex -= 1
         currentSection = sections[currentIndex]
     }
+}
 
-    // MARK: - SubscriptionOnboardingSectionDelegate
+// MARK: - SubscriptionOnboardingSectionDelegate
+
+extension SubscriptionOnboardingFlowViewModel: SubscriptionOnboardingSectionDelegate {
 
     func sectionDidComplete(_ section: SubscriptionOnboardingSection) {
-        // Completion drives the checklist percentage, which arrives with the progress store (deferred).
+        // TODO: Completion drives the checklist percentage, which arrives with the progress store
     }
 
-    func launchDuckAIChat(modelID: String?) {
+    func sectionDidRequestDuckAIChat(modelID: String?) {
         host?.launchDuckAIChat(modelID: modelID)
+    }
+
+    @MainActor
+    func sectionDidRequestAdvance() {
+        advance()
+    }
+
+    @MainActor
+    func sectionDidRequestGoBack() {
+        goBack()
     }
 }
 
@@ -110,7 +118,7 @@ struct SubscriptionOnboardingFlowView: View {
     var body: some View {
         ZStack {
             if let section = viewModel.currentSection {
-                factory.makeView(for: section)
+                factory.makeView(for: section, delegate: viewModel, prefetcher: viewModel.prefetcher)
                     .id(section)
                     .transition(.opacity)
             }

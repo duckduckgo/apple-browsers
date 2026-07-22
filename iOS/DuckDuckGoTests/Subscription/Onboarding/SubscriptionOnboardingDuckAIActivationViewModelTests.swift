@@ -1,5 +1,5 @@
 //
-//  SubscriptionOnboardingDuckAIActivationViewModelTests.swift
+//  SubscriptionOnboardingDuckAIViewModelTests.swift
 //  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
@@ -22,7 +22,7 @@ import AIChat
 @testable import DuckDuckGo
 
 @MainActor
-final class SubscriptionOnboardingDuckAIActivationViewModelTests: XCTestCase {
+final class SubscriptionOnboardingDuckAIViewModelTests: XCTestCase {
 
     func testOnAppearFetchesAndPopulatesModels() {
         let provider = MockAIModelProvider(models: [model("a", tier: ["plus"]), model("b", tier: ["free"])])
@@ -121,8 +121,8 @@ final class SubscriptionOnboardingDuckAIActivationViewModelTests: XCTestCase {
     // MARK: - Helpers
 
     private func makeViewModel(provider: MockAIModelProvider,
-                               delegate: SubscriptionOnboardingSectionDelegate? = nil) -> SubscriptionOnboardingDuckAIActivationViewModel {
-        SubscriptionOnboardingDuckAIActivationViewModel(modelProvider: provider, delegate: delegate)
+                               delegate: SubscriptionOnboardingSectionDelegate? = nil) -> SubscriptionOnboardingDuckAIViewModel {
+        SubscriptionOnboardingDuckAIViewModel(prefetcher: SubscriptionOnboardingPrefetcher(modelProvider: provider), delegate: delegate)
     }
 
     private func model(_ id: String, name: String = "Model", tier: [String], hasAccess: Bool = true) -> AIChatModel {
@@ -160,5 +160,7 @@ private final class SpySectionDelegate: SubscriptionOnboardingSectionDelegate {
     func sectionDidComplete(_ section: SubscriptionOnboardingSection) {
         completedSections.append(section)
     }
-    func launchDuckAIChat(modelID: String?) {}
+    func sectionDidRequestDuckAIChat(modelID: String?) {}
+    func sectionDidRequestAdvance() {}
+    func sectionDidRequestGoBack() {}
 }

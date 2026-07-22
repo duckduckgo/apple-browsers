@@ -34,20 +34,20 @@ private enum Metrics {
 /// model and renders the activation screen (the same screen in two states: off and on) plus the section's
 /// internal navigation: the widget-education and tips screens (pushed onto the navigation stack after the
 /// VPN is on) and the "Learn More" info screen (presented as a page sheet). The header, body and footer all switch on
-/// the view model's `connectionState`. The back button pops the navigation stack natively (via the
-/// environment's `dismiss`), returning to the previous flow section once this section is pushed onto the
-/// flow's stack (a later stage).
+/// the view model's `connectionState`. As the section's root screen, the back button asks the flow (via
+/// ``SubscriptionOnboardingSectionDelegate/sectionDidRequestGoBack()``) to move to the previous section,
+/// rather than popping this section's own navigation stack.
 struct SubscriptionOnboardingVPNActivationView: View {
     @StateObject private var viewModel: SubscriptionOnboardingVPNActivationViewModel
 
     private let title: String?
 
-    @Environment(\.dismiss) private var dismiss
     @State private var isShowingInfoSheet = false
     @State private var tapAllowHint = TapAllowHintOverlayWindow()
     @State private var awaitingPermissionPrompt = false
 
-    init(viewModel: @autoclosure @escaping () -> SubscriptionOnboardingVPNActivationViewModel = SubscriptionOnboardingVPNActivationViewModel(),
+    @MainActor
+    init(viewModel: @autoclosure @escaping () -> SubscriptionOnboardingVPNActivationViewModel,
          title: String? = nil) {
         _viewModel = StateObject(wrappedValue: viewModel())
         self.title = title
@@ -56,12 +56,18 @@ struct SubscriptionOnboardingVPNActivationView: View {
     var body: some View {
         SubscriptionOnboardingBaseView(
             title: title,
-            navigationButton: .back({ dismiss() }),
+            navigationButton: .back({ viewModel.delegate?.sectionDidRequestGoBack() }),
             header: header,
             footer: footer) {
             content
         }
         .onAppear { viewModel.onAppear() }
+        .onDisappear {
+            viewModel.onDisappear()
+            // Safety net
+            tapAllowHint.hide()
+            awaitingPermissionPrompt = false
+        }
         .sheet(isPresented: $isShowingInfoSheet) {
             SubscriptionOnboardingInfoView(content: .vpn, onClose: { isShowingInfoSheet = false })
                 .subscriptionOnboardingNavigationContainer()
@@ -74,8 +80,6 @@ struct SubscriptionOnboardingVPNActivationView: View {
             guard awaitingPermissionPrompt else { return }
             tapAllowHint.hide()
         }
-        // Safety net
-        .onDisappear { tapAllowHint.hide() }
     }
 }
 
@@ -171,6 +175,7 @@ private extension SubscriptionOnboardingVPNActivationView {
 // MARK: - Footer
 
 private extension SubscriptionOnboardingVPNActivationView {
+    // TODO: Stop threading delegate through the pushed leaf views' init once Environment injection lands (Stage 3).
     var footer: SubscriptionOnboardingFooter {
         switch viewModel.connectionState {
         case .off:
@@ -189,10 +194,10 @@ private extension SubscriptionOnboardingVPNActivationView {
             }
             return .double(primary: .init(UserText.subscriptionOnboardingVPNActivationTryAgainButton, action: startVPN),
                            secondary: .init(UserText.subscriptionOnboardingVPNActivationSkipButton,
-                                            push: SubscriptionOnboardingVPNWidgetEducationView(title: title)))
+                                            push: SubscriptionOnboardingVPNWidgetEducationView(title: title, delegate: viewModel.delegate)))
         case .on:
             return .single(.init(UserText.subscriptionOnboardingVPNActivationNextButton,
-                                 push: SubscriptionOnboardingVPNWidgetEducationView(title: title)))
+                                 push: SubscriptionOnboardingVPNWidgetEducationView(title: title, delegate: viewModel.delegate)))
         }
     }
 }
@@ -227,6 +232,7 @@ private let previewLottieRenderer = GraphicLottieRenderer { name, _ in
     )
 }
 
+@MainActor
 private func activationPreview(state: SubscriptionOnboardingVPNActivationViewModel.ConnectionState,
                                original: SubscriptionOnboardingConnectionInfo?,
                                vpn: SubscriptionOnboardingConnectionInfo? = nil,

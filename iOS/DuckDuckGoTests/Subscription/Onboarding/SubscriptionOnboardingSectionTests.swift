@@ -20,6 +20,7 @@
 import XCTest
 @testable import DuckDuckGo
 
+@MainActor
 final class SubscriptionOnboardingSectionTests: XCTestCase {
 
     // MARK: - Kind mapping
@@ -41,8 +42,10 @@ final class SubscriptionOnboardingSectionTests: XCTestCase {
     func testWhenMakingViewForEverySectionThenAViewIsReturned() {
         // The factory must be total — it returns a view for every section without trapping.
         let factory = DefaultSubscriptionOnboardingViewFactory()
+        let delegate = SpySectionDelegate()
+        let prefetcher = SubscriptionOnboardingPrefetcher()
         for section in SubscriptionOnboardingSection.allCases {
-            _ = factory.makeView(for: section)
+            _ = factory.makeView(for: section, delegate: delegate, prefetcher: prefetcher)
         }
     }
 
@@ -62,4 +65,14 @@ final class SubscriptionOnboardingSectionTests: XCTestCase {
         XCTAssertNotEqual(SubscriptionOnboardingNavigationButton.back({}).accessibilityLabel,
                           SubscriptionOnboardingNavigationButton.close({}).accessibilityLabel)
     }
+}
+
+private final class SpySectionDelegate: SubscriptionOnboardingSectionDelegate {
+    private(set) var completedSections: [SubscriptionOnboardingSection] = []
+    func sectionDidComplete(_ section: SubscriptionOnboardingSection) {
+        completedSections.append(section)
+    }
+    func sectionDidRequestDuckAIChat(modelID: String?) {}
+    func sectionDidRequestAdvance() {}
+    func sectionDidRequestGoBack() {}
 }

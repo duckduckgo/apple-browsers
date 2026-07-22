@@ -291,7 +291,7 @@ final class SubscriptionOnboardingVPNActivationViewModelTests: XCTestCase {
                                locationProvider: SubscriptionOnboardingVPNLocationProviding = MockVPNLocationProvider(),
                                serverInfoObserver: ConnectionServerInfoObserver = MockConnectionServerInfoObserver(),
                                delegate: SubscriptionOnboardingSectionDelegate? = nil) -> SubscriptionOnboardingVPNActivationViewModel {
-        SubscriptionOnboardingVPNActivationViewModel(connectionInfoService: service,
+        SubscriptionOnboardingVPNActivationViewModel(prefetcher: SubscriptionOnboardingPrefetcher(connectionInfoService: service),
                                                      vpnController: controller,
                                                      vpnLocationProvider: locationProvider,
                                                      serverInfoObserver: serverInfoObserver,
@@ -388,5 +388,7 @@ private final class SpySectionDelegate: SubscriptionOnboardingSectionDelegate {
         completedSections.append(section)
     }
 
-    func launchDuckAIChat(modelID: String?) {}
+    func sectionDidRequestDuckAIChat(modelID: String?) {}
+    func sectionDidRequestAdvance() {}
+    func sectionDidRequestGoBack() {}
 }

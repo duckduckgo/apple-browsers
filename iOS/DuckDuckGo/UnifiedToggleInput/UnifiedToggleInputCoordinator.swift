@@ -167,10 +167,6 @@ struct SubscriptionState {
 @MainActor
 final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
-    private enum Constants {
-        static let topOmnibarKeyboardPresentationTimeout: TimeInterval = 0.35
-    }
-
     private var attachmentPolicy: UTIAttachmentPolicy {
         UTIAttachmentPolicy(
             attachmentLimits: modelStore.attachmentLimits,
@@ -269,8 +265,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     /// bottom floating omnibar is detached from the toolbar). Reused on dismiss to slide the UTI
     /// text back onto the omnibar's text leading edge — the omnibar can't be measured live then.
     var cachedOmnibarPlaceholderWindowX: CGFloat?
-    private var isAwaitingTopOmnibarKeyboardPresentation = false
-    private var topOmnibarKeyboardPresentationFallback: DispatchWorkItem?
+    private var keyboardMonitor: UTIKeyboardMonitor!
     private var invalidAttachmentRecoveryTasks: [UUID: Task<Void, Never>] = [:]
     private var isContentOverlaySuppressed = false
     private var pendingGatedModelId: String?
@@ -430,6 +425,16 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             updateFloatingReturnKey: { [weak self] in self?.updateFloatingReturnKeyState() },
             clearAttachmentValidationErrorIfPossible: { [weak self] in self?.clearAttachmentValidationErrorIfPossible() }
         ))
+        keyboardMonitor = UTIKeyboardMonitor(environment: .init(
+            isOmnibarActiveTopCard: { [weak self] in
+                guard let self else { return false }
+                if case .omnibar(.active) = self.displayState, self.cardPosition == .top { return true }
+                return false
+            },
+            isInputVisibleForKeyboard: { [weak self] in self?.isInputVisibleForKeyboard ?? false },
+            isInputFirstResponder: { [weak self] in self?.viewController.isInputFirstResponder ?? false }
+        ))
+        keyboardMonitor.onTimeoutRequiresInactive = { [weak self] in self?.transitionOmnibarToInactive() }
         attachmentPresenter.pixelSurfaceProvider = { [weak self] in
             self?.pixelSurface ?? .addressBar
         }
@@ -721,8 +726,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     func showCollapsed() {
         // Contextual chat has no AI tab collapsed mode; the host always renders expanded.
         if host == .contextualChat { return }
-        cancelTopOmnibarKeyboardPresentationFallback()
-        isAwaitingTopOmnibarKeyboardPresentation = false
+        keyboardMonitor.disarm()
         let previousDisplayState = displayState
         displayState = .aiTab(.collapsed)
         setInitialInputMode(.aiChat)
@@ -736,8 +740,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     func showExpanded(prefilledText: String? = nil, inputMode: TextEntryMode = .aiChat, activatesInput: Bool = true) {
         guard !isOnboardingLocked else { return }
-        cancelTopOmnibarKeyboardPresentationFallback()
-        isAwaitingTopOmnibarKeyboardPresentation = false
+        keyboardMonitor.disarm()
         let previousDisplayState = displayState
         displayState = host == .contextualChat ? .contextualChat : .aiTab(.expanded)
         // Pixels fire only on a real transition into expanded — header re-entries (Plus → New Chat) call this too but don't actually show either UI.
@@ -784,8 +787,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     func hide() {
-        cancelTopOmnibarKeyboardPresentationFallback()
-        isAwaitingTopOmnibarKeyboardPresentation = false
+        keyboardMonitor.disarm()
         displayState = .hidden
         isClearingModelPickerPinWithoutPersist = true
         isModelPickerForcedVisible = false
@@ -817,8 +819,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     // MARK: - Omnibar State
 
     func activateFromOmnibar(prefilledText: String? = nil, shouldSelectAllText: Bool = true, inputMode: TextEntryMode = .search, cardPosition: UnifiedToggleInputCardPosition = .top) {
-        cancelTopOmnibarKeyboardPresentationFallback()
-        isAwaitingTopOmnibarKeyboardPresentation = cardPosition == .top
+        keyboardMonitor.arm(awaiting: cardPosition == .top)
         displayState = .omnibar(.active)
         if host == .omnibar {
             DailyPixel.fireDailyAndCount(pixel: .aiChatInternalSwitchBarDisplayed)
@@ -864,7 +865,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         intentSubject.send(.showOmnibarEditing(expandedHeight: initialHeight, pendingExpandedHeight: expandedHeight))
 
         if cardPosition == .top {
-            scheduleTopOmnibarKeyboardPresentationFallback()
+            keyboardMonitor.scheduleFallback()
         }
 
         DispatchQueue.main.async { [weak self] in
@@ -885,8 +886,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     func deactivateToOmnibar(resetView: Bool = true, animateDismiss: Bool = true) {
         guard isOmnibarSession else { return }
         inputMode = committedInputMode
-        cancelTopOmnibarKeyboardPresentationFallback()
-        isAwaitingTopOmnibarKeyboardPresentation = false
+        keyboardMonitor.disarm()
         displayState = .hidden
         cardPosition = .bottom
         isInputVisibleForKeyboard = true
@@ -1041,19 +1041,18 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         let isAITabSearch = displayState == .aiTab(.expanded) && inputMode == .search
 
         switch (displayState, isInputVisible) {
-        case (.omnibar(.active), false) where isAwaitingTopOmnibarKeyboardPresentation:
+        case (.omnibar(.active), false) where keyboardMonitor.isAwaitingPresentation:
             return
         case (.omnibar(.active), false) where viewController.isInputFirstResponder:
             // A hardware keyboard is connected (or the keyboard frame went off-screen)
             // while the user is still actively editing. Treat the input as in-use and
             // skip the dismissal — otherwise the bar collapses on every keystroke.
-            cancelTopOmnibarKeyboardPresentationFallback()
+            keyboardMonitor.cancelFallback()
         case (.omnibar(.active), false):
-            cancelTopOmnibarKeyboardPresentationFallback()
+            keyboardMonitor.cancelFallback()
             transitionOmnibarToInactive()
         case (.omnibar(.inactive), true):
-            cancelTopOmnibarKeyboardPresentationFallback()
-            isAwaitingTopOmnibarKeyboardPresentation = false
+            keyboardMonitor.disarm()
             displayState = .omnibar(.active)
             syncInputBehaviorToHandler()
             updateFloatingReturnKeyState()
@@ -1061,8 +1060,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             viewController.apply(renderState.viewConfig, animated: false)
             intentSubject.send(.showOmnibarActive)
         case (.omnibar(.active), true):
-            cancelTopOmnibarKeyboardPresentationFallback()
-            isAwaitingTopOmnibarKeyboardPresentation = false
+            keyboardMonitor.disarm()
         case (.aiTab(.expanded), _) where isAITabSearch:
             let renderState = computeRenderState()
             viewController.apply(renderState.viewConfig, animated: false)
@@ -1118,34 +1116,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         contentViewController.refreshFireMode(fireMode: isFireTab)
     }
 
-    private func cancelTopOmnibarKeyboardPresentationFallback() {
-        topOmnibarKeyboardPresentationFallback?.cancel()
-        topOmnibarKeyboardPresentationFallback = nil
-    }
-
-    private func scheduleTopOmnibarKeyboardPresentationFallback() {
-        let workItem = DispatchWorkItem { [weak self] in
-            guard let self,
-                  case .omnibar(.active) = self.displayState,
-                  self.cardPosition == .top,
-                  self.isAwaitingTopOmnibarKeyboardPresentation else {
-                return
-            }
-
-            self.topOmnibarKeyboardPresentationFallback = nil
-            if !self.isInputVisibleForKeyboard, !self.viewController.isInputFirstResponder {
-                self.transitionOmnibarToInactive()
-            } else {
-                self.isAwaitingTopOmnibarKeyboardPresentation = false
-            }
-        }
-
-        topOmnibarKeyboardPresentationFallback = workItem
-        DispatchQueue.main.asyncAfter(deadline: .now() + Constants.topOmnibarKeyboardPresentationTimeout, execute: workItem)
-    }
-
     private func transitionOmnibarToInactive() {
-        isAwaitingTopOmnibarKeyboardPresentation = false
+        keyboardMonitor.clearAwaiting()
         displayState = .omnibar(.inactive)
         let renderState = computeRenderState()
         // Animated so a concurrent mode change doesn't get snapped to final layout non-animatedly.

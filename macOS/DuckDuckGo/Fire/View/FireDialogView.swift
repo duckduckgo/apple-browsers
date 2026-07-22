@@ -289,33 +289,16 @@ struct FireDialogView: ModalView {
     }
 
     private var segmentedControlView: some View {
-        PillSegmentedControl(
+        FireDialogTabsContainer(
             selection: Binding(
                 get: { viewModel.clearingOption.rawValue },
                 set: { viewModel.clearingOption = FireDialogViewModel.ClearingOption(rawValue: $0) ?? .allData }
             ),
-            segments: [
-                .init(id: FireDialogViewModel.ClearingOption.currentTab.rawValue, title: UserText.fireDialogSegmentTab, image: Image(nsImage: DesignSystemImages.Glyphs.Size24.tabDesktop)),
-                .init(id: FireDialogViewModel.ClearingOption.allData.rawValue, title: UserText.fireDialogSegmentEverything, image: Image(nsImage: DesignSystemImages.Glyphs.Size24.windowsAndTabs))
-            ],
-            containerBackground: .clear,
-            containerBorder: .clear,
-            containerCornerRadius: style.segmentedControlCornerRadius,
-            segmentCornerRadius: style.segmentedControlItemCornerRadius,
-            selectedForeground: style.selectedForeground,
-            unselectedForeground: Color(designSystemColor: .buttonsSecondaryFillText),
-            selectedIconBackground: style.selectedIconBackground,
-            selectedSegmentFill: Color(designSystemColor: .surfaceTertiary),
-            selectedSegmentStroke: Color(designSystemColor: .containerBorderPrimary),
-            selectedSegmentShadowColor: Color(designSystemColor: .shadowTertiary),
-            selectedSegmentShadowRadius: 0,
-            selectedSegmentShadowY: 1,
-            selectedSegmentTopStroke: Color(designSystemColor: .highlightPrimary),
-            hoverSegmentBackground: Color(designSystemColor: .controlsFillPrimary),
-            pressedSegmentBackground: Color(designSystemColor: .controlsFillSecondary),
-            hoverOverlay: Color(designSystemColor: .toneTintPrimary)
+            tabs: [
+                FireDialogTabItem(id: FireDialogViewModel.ClearingOption.currentTab.rawValue, title: UserText.fireDialogModeFromThisTab, image: Image(nsImage: DesignSystemImages.Glyphs.Size16.tabDesktop)),
+                FireDialogTabItem(id: FireDialogViewModel.ClearingOption.allData.rawValue, title: UserText.fireDialogModeAllData, image: Image(nsImage: DesignSystemImages.Glyphs.Size16.browser))
+            ]
         )
-        .frame(height: 84)
         .accessibilityIdentifier("FireDialogView.segmentedControl")
     }
 
@@ -742,6 +725,71 @@ private struct FireDialogStyle {
 
     static var current: FireDialogStyle {
         DesignSystemRebrand.isAppRebranded() ? .rebranded : .default
+    }
+}
+
+// MARK: - Tabs container
+
+private struct FireDialogTabItem: Identifiable {
+    let id: Int
+    let title: String
+    let image: Image
+}
+
+private struct FireDialogTabsContainer: View {
+    @Binding var selection: Int
+    let tabs: [FireDialogTabItem]
+
+    var body: some View {
+        HStack(spacing: 8) {
+            ForEach(tabs) { tab in
+                FireDialogTabButton(tab: tab, isSelected: selection == tab.id) {
+                    selection = tab.id
+                }
+            }
+        }
+        .accessibilityElement(children: .contain)
+    }
+}
+
+private struct FireDialogTabButton: View {
+    let tab: FireDialogTabItem
+    let isSelected: Bool
+    let onTap: () -> Void
+
+    var body: some View {
+        Button(action: onTap) {
+            VStack(spacing: 10) {
+                ZStack {
+                    Circle()
+                        .fill(isSelected ? Color(designSystemColor: .accentFirePrimary).opacity(0.12) : Color.clear)
+                        .frame(width: 32, height: 32)
+                    tab.image
+                        .resizable()
+                        .renderingMode(.template)
+                        .frame(width: 16, height: 16)
+                        .foregroundColor(isSelected ? Color(designSystemColor: .accentFirePrimary) : Color(designSystemColor: .iconsSecondary))
+                }
+                .opacity(0.8)
+
+                Text(tab.title)
+                    .font(.system(size: 12, weight: isSelected ? .medium : .regular))
+                    .foregroundColor(isSelected ? Color(designSystemColor: .accentFirePrimary) : Color(designSystemColor: .textSecondary))
+            }
+            .frame(maxWidth: .infinity)
+            .padding(20)
+            .background(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(isSelected ? Color(designSystemColor: .surfaceTertiary) : Color(designSystemColor: .containerFillSecondary))
+                    .shadow(color: isSelected ? Color(designSystemColor: .shadowPrimary) : .clear, radius: 4, x: 0, y: 1)
+                    .shadow(color: isSelected ? Color(designSystemColor: .shadowTertiary) : .clear, radius: 1, x: 0, y: 0.25)
+            )
+        }
+        .buttonStyle(.plain)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(tab.title)
+        .accessibilityValue(isSelected ? "selected" : "")
+        .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
     }
 }
 

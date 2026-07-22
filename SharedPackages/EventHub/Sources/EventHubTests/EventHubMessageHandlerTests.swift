@@ -35,6 +35,7 @@ struct WebEventsHandlerTests {
         let handler = WebEventsHandler(manager: manager, tabIDProvider: { _ in tab })
 
         let notify = try #require(handler.handler(forMethodNamed: "webEvent"))
+        await bootstrapWebKitForTesting()
         _ = try await notify(["type": "click", "data": [String: Any]()], WKScriptMessage())
 
         #expect(manager.handledWebEvents.count == 1)
@@ -51,6 +52,7 @@ struct WebEventsHandlerTests {
         let handler = WebEventsHandler(manager: manager, tabIDProvider: { _ in .new() })
 
         let notify = try #require(handler.handler(forMethodNamed: "webEvent"))
+        await bootstrapWebKitForTesting()
         _ = try await notify(params, WKScriptMessage())
 
         #expect(manager.handledWebEvents.isEmpty)

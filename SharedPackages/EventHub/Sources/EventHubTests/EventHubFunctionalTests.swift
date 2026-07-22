@@ -51,6 +51,13 @@ struct EventHubFunctionalTests {
     } } }
     """
 
+    /// Bare box so the fixed `tabIDProvider` closure below (installed once, in `init`) can read
+    /// whichever tab ID `sendWebEvent` was most recently asked to send on behalf of — a real
+    /// `WKScriptMessage()` carries no tab identity of its own to derive it from.
+    private final class TabIDBox {
+        var value: EventHubTabID = .new()
+    }
+
     /// A class (not a struct): mirrors `EventHubFixture`'s own class-based design (Task 7) so `manager`
     /// and `handler` can share reference semantics with the rest of the harness.
     private final class Harness {
@@ -59,30 +66,47 @@ struct EventHubFunctionalTests {
         let manager: EventHub
         let handler: WebEventsHandler
         private let spyPixelFiring = SpyPixelFiring()
+        private let tabIDBox = TabIDBox()
+        private let enabledSubject = CurrentValueSubject<Bool, Never>(true)
         var fired: [FiredPixel] { spyPixelFiring.fired }
 
         init(settingsJSON: String) {
             let parser = EventHubConfigParser()
             let store = InMemoryKeyValueStore()
             repository = EventHubKeyValueStore(store: store, parser: parser)
-            let settings = StaticSettingsProviding(json: settingsJSON)
+            let settings = StaticSettingsProviding(json: settingsJSON, enabled: enabledSubject.eraseToAnyPublisher())
             manager = EventHub(store: repository, parser: parser, settings: settings,
                                 scheduler: scheduler, pixelFiring: spyPixelFiring)
-            handler = WebEventsHandler(manager: manager, tabIDProvider: { _ in .new() })
+            let tabIDBox = tabIDBox
+            handler = WebEventsHandler(manager: manager, tabIDProvider: { _ in tabIDBox.value })
             manager.onAppForegrounded()
             manager.onConfigChanged()
         }
 
         func sendWebEvent(_ type: String, tabID: EventHubTabID) async throws {
+            tabIDBox.value = tabID
             let notify = try #require(handler.handler(forMethodNamed: "webEvent"))
+            await bootstrapWebKitForTesting()
             _ = try await notify(["type": type], WKScriptMessage())
         }
+
+        /// Mirrors `EventHubFixture.setEnabled` (Task 8): pushes the new value onto the
+        /// `enabledPublisher` the manager already subscribed to in `init`. The caller still needs to
+        /// call `manager.onConfigChanged()` afterwards to make the manager act on it (same convention
+        /// as `EventHubPixelManagerTests`) — `enabledPublisher` alone only updates `latestEnabled`.
+        func setEnabled(_ value: Bool) { enabledSubject.send(value) }
     }
 
+    /// Settings publisher whose config JSON is fixed for the lifetime of a test but whose `enabled`
+    /// state is controllable mid-test via `Harness.setEnabled`, mirroring `EventHubFixture`'s
+    /// `FakeEventHubSettingsProviding`.
     private struct StaticSettingsProviding: EventHubSettingsProviding {
-        let enabledPublisher: AnyPublisher<Bool, Never> = Just(true).eraseToAnyPublisher()
+        let enabledPublisher: AnyPublisher<Bool, Never>
         let settingsPublisher: AnyPublisher<Data?, Never>
-        init(json: String) { settingsPublisher = Just(json.data(using: .utf8)).eraseToAnyPublisher() }
+        init(json: String, enabled: AnyPublisher<Bool, Never> = Just(true).eraseToAnyPublisher()) {
+            settingsPublisher = Just(json.data(using: .utf8)).eraseToAnyPublisher()
+            enabledPublisher = enabled
+        }
     }
 
     @Test("adwall web event fires a bucketed pixel")
@@ -155,9 +179,8 @@ struct EventHubFunctionalTests {
         let harness = Harness(settingsJSON: Self.adwallConfig)
 
         try await harness.sendWebEvent("adwall", tabID: .new())
-        // NOTE: this fixture's settings are static (Just(...)) — a follow-up implementation task
-        // porting this test for real needs a settable settings publisher here, as
-        // EventHubFixture provides, to flip `enabled` to false mid-test.
+        harness.setEnabled(false)
+        harness.manager.onConfigChanged()
         harness.scheduler.advance(by: Self.periodSeconds * 2)
 
         #expect(!harness.fired.contains { $0.name == "webTelemetry_adwalls_day" && $0.parameters["adwallCount"] == "1" })
@@ -180,6 +203,7 @@ struct EventHubFunctionalTests {
         firstManager.onConfigChanged()
 
         let notify = try #require(firstHandler.handler(forMethodNamed: "webEvent"))
+        await bootstrapWebKitForTesting()
         _ = try await notify(["type": "adwall"], WKScriptMessage())
         firstScheduler.advance(by: 11) // let the write-behind flush persist the pending count
 

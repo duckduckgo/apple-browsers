@@ -19,9 +19,16 @@ public final class WebEventsHandler: Subfeature {
         self.tabIDProvider = tabIDProvider
     }
 
-    /// Stub: always returns `nil` (no method is handled). `WebEventsHandlerTests` is expected to
-    /// fail until a follow-up implementation task fills this in.
     public func handler(forMethodNamed methodName: String) -> Handler? {
-        nil
+        guard methodName == "webEvent" else { return nil }
+        return { [weak self] params, original in
+            guard let self,
+                  let dict = params as? [String: Any],
+                  let type = dict["type"] as? String, !type.isEmpty else {
+                return nil
+            }
+            self.manager.handleWebEvent(dict, tabID: self.tabIDProvider(original))
+            return nil
+        }
     }
 }

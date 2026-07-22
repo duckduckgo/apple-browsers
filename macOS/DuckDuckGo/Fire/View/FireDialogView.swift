@@ -149,7 +149,6 @@ struct FireDialogView: ModalView {
                     )
                 }
                 .padding(.horizontal, Constants.horizontalPadding)
-                .padding(.bottom, Constants.horizontalPadding)
 
                 // Sites Overlay
                 if isShowingSitesOverlay {
@@ -300,7 +299,7 @@ struct FireDialogView: ModalView {
                 .foregroundColor(Color(designSystemColor: .textPrimary))
                 .accessibilityIdentifier("FireDialogView.title")
         }
-        .padding(.vertical, 16)
+        .padding(.top, 16)
     }
 
     private var segmentedControlView: some View {
@@ -340,7 +339,7 @@ struct FireDialogView: ModalView {
             }
             .buttonStyle(.plain)
             .accessibilityLabel(UserText.fireDialogChooseWhatToDelete)
-            .accessibilityValue(isSectionsExpanded ? "expanded" : "collapsed")
+            .accessibilityValue(isSectionsExpanded ? UserText.fireDialogAccessibilityDetailsExpanded : UserText.fireDialogAccessibilityDetailsCollapsed)
             .accessibilityAddTraits(.isButton)
             .accessibilityIdentifier("FireDialogView.detailsDisclosureButton")
         }

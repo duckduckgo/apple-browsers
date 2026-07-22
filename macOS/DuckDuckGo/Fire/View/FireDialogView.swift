@@ -157,8 +157,6 @@ struct FireDialogView: ModalView {
                         .padding(.trailing, Constants.toolbarHorizontalPadding)
 
                 }
-                .animation(.easeOut(duration: NSAnimationContext.current.duration),
-                           value: isAnimatingSitesOverlay)
 
                 footerView
                     .zIndex(10)
@@ -184,6 +182,8 @@ struct FireDialogView: ModalView {
                 .transition(.move(edge: .bottom))
             }
         }
+        .animation(.easeOut(duration: NSAnimationContext.current.duration),
+                   value: isAnimatingSitesOverlay)
         .frame(width: Constants.viewSize.width, height: viewHeight, alignment: .top)
         .background(Color(designSystemColor: .surfaceSecondary))
         .accessibilityElement(children: .contain)

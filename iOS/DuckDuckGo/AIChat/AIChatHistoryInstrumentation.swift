@@ -38,6 +38,9 @@ protocol AIChatHistoryInstrumentation {
     func pinAdded()
     func pinRemoved()
     func downloadStarted()
+    func selectionDeleteConfirmed()
+    func selectionDownloadStarted()
+    func chatProtectionTapped()
     func editModeEntered()
     func newChatTapped()
     func loadFailed(error: Error)
@@ -93,6 +96,18 @@ final class DefaultAIChatHistoryInstrumentation: AIChatHistoryInstrumentation {
 
     func downloadStarted() {
         fire(.aiChatHistoryDownloadStarted)
+    }
+
+    func selectionDeleteConfirmed() {
+        fire(.aiChatHistorySelectionDeleteConfirmed)
+    }
+
+    func selectionDownloadStarted() {
+        fire(.aiChatHistorySelectionDownloadStarted)
+    }
+
+    func chatProtectionTapped() {
+        fire(.aiChatHistoryChatProtectionTapped)
     }
 
     func editModeEntered() {

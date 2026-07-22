@@ -79,6 +79,27 @@
         "suffixes": ["first_daily_count", "platform", "form_factor"],
         "parameters": ["appVersion"]
     },
+    "aichat_history_selection_delete_confirmed": {
+        "description": "User confirmed deleting the multi-selected chats on the chat history screen (multi-select delete). Distinct from aichat_history_fire_all_confirmed (delete all) and aichat_history_chat_deleted (single swipe delete)",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "aichat_history_selection_download_started": {
+        "description": "User tapped Download for the multi-selected chats on the chat history screen (multi-select download). Distinct from aichat_history_download_started (single-chat download)",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "aichat_history_chat_protection_tapped": {
+        "description": "User tapped the Chat Protection item in the overflow menu on the chat history screen, opening the Duck.ai chat-protection page",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
     "aichat_history_edit_mode_entered": {
         "description": "User entered select/edit mode on the chat history screen via the toolbar button",
         "owners": ["SabrinaTardio"],

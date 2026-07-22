@@ -205,6 +205,7 @@ final class AIChatHistoryViewModel: ObservableObject {
     }
 
     func openChatProtection() {
+        instrumentation.chatProtectionTapped()
         delegate?.viewModelDidRequestChatProtection()
     }
 
@@ -233,6 +234,8 @@ final class AIChatHistoryViewModel: ObservableObject {
     /// Never fire-mode (sheet only surfaces persistent chats); one batch burn, sync flushed once.
     func burnSelectedChats(chatIds: [String]) async {
         guard let fireExecutor, !chatIds.isEmpty else { return }
+        // Reached only after the user confirms the multi-select delete action.
+        instrumentation.selectionDeleteConfirmed()
         let result = await fireExecutor.burnChats(chatIDs: chatIds, isFireMode: false)
         guard case .success = result else { return }
         fireExecutor.scheduleSync()
@@ -248,6 +251,8 @@ final class AIChatHistoryViewModel: ObservableObject {
     }
 
     func downloadSelectedChats(chatIds: [String]) {
+        guard downloader != nil, !chatIds.isEmpty else { return }
+        instrumentation.selectionDownloadStarted()
         exportChats(chatIds) { [weak self] urls in
             self?.delegate?.viewModelDidExportChats(count: urls.count)
         }

@@ -771,6 +771,9 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         private(set) var pinAddedCount = 0
         private(set) var pinRemovedCount = 0
         private(set) var downloadStartedCount = 0
+        private(set) var selectionDeleteConfirmedCount = 0
+        private(set) var selectionDownloadStartedCount = 0
+        private(set) var chatProtectionTappedCount = 0
         private(set) var editModeEnteredCount = 0
         private(set) var newChatTappedCount = 0
         private(set) var loadFailedErrors: [Error] = []
@@ -787,6 +790,9 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         func pinAdded() { pinAddedCount += 1 }
         func pinRemoved() { pinRemovedCount += 1 }
         func downloadStarted() { downloadStartedCount += 1 }
+        func selectionDeleteConfirmed() { selectionDeleteConfirmedCount += 1 }
+        func selectionDownloadStarted() { selectionDownloadStartedCount += 1 }
+        func chatProtectionTapped() { chatProtectionTappedCount += 1 }
         func editModeEntered() { editModeEnteredCount += 1 }
         func newChatTapped() { newChatTappedCount += 1 }
         func loadFailed(error: Error) { loadFailedErrors.append(error) }

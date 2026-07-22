@@ -391,6 +391,7 @@ struct FireDialogView: ModalView {
             }
         }
         .padding(.top, 4)
+        .padding(.bottom, -10)
         .fixedSize(horizontal: false, vertical: true)
     }
 
@@ -531,13 +532,13 @@ struct FireDialogView: ModalView {
                         .accessibilityIdentifier(toggleId)
                 }
             }
-            .padding(.vertical, 16)
-            .padding(.horizontal, 16)
+            .padding(.vertical, 13)
+            .padding(.horizontal, 4)
             .frame(width: Constants.sectionRowWidth, alignment: .leading)
         }
     }
 
-    private func sectionDivider(padding: CGFloat = 16) -> some View {
+    private func sectionDivider(padding: CGFloat = 4) -> some View {
         HStack(spacing: 0) {
             Rectangle().fill(Color(designSystemColor: .containerBorderPrimary)).frame(height: 1)
                 .padding(.horizontal, padding)

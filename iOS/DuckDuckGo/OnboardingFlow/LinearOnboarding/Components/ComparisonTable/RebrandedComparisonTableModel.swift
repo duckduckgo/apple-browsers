@@ -124,6 +124,56 @@ extension RebrandedComparisonTableModel.Feature {
 
 }
 
+// MARK: - RebrandedComparisonTableModel + Download-Reason Comparison
+
+//
+// Feature lists for the Set-as-Default comparison chart when the user is enrolled in the
+// download-reason experiment (`OnboardingFlowByDownloadReasonExperiment`).
+// Each download reason shows a different, ordered list.
+// - See: [Set-as-Default (Comparison Chart) step](https://app.asana.com/1/137249556945/task/1216445221863459?focus=true)
+extension RebrandedComparisonTableModel {
+    private typealias Icon = OnboardingRebrandingImages.Comparison
+    private typealias BrowserText = BrowsersComparisonModel.PrivacyFeature.UserText.BrowsersComparison.Features
+    private typealias AIText = UserText.Onboarding.DuckAICPP.AIComparison.Features
+
+    static func browserFeatures(for reason: OnboardingDownloadReason) -> [Feature] {
+        switch reason {
+        case .browserPrivately:
+            return [
+                Feature(icon: Icon.privateSearchIcon, title: BrowserText.privateSearch, competitorAvailability: .unavailable, ddgAvailability: .available),
+                Feature(icon: Icon.shieldIcon, title: BrowserText.trackerBlockers, competitorAvailability: .partial, ddgAvailability: .available),
+                Feature(icon: Icon.eraseDataIcon, title: BrowserText.eraseBrowsingData, competitorAvailability: .unavailable, ddgAvailability: .available),
+                Feature(icon: Icon.privateAIChatIcon, title: BrowserText.privateAIChat, competitorAvailability: .unavailable, ddgAvailability: .available),
+                Feature(icon: Icon.blockAdsIcon, title: BrowserText.cookiePopupsAndAds, competitorAvailability: .unavailable, ddgAvailability: .available),
+            ]
+        case .privateAIChat:
+            return [
+                Feature(icon: Image(""), title: AIText.anonymousChats, competitorAvailability: .unavailable, ddgAvailability: .available),
+                Feature(icon: Icon.privateAIChatIcon, title: AIText.noAccountsNeeded, competitorAvailability: .unavailable, ddgAvailability: .available),
+                Feature(icon: Icon.lockIcon, title: AIText.noTrainingData, competitorAvailability: .unavailable, ddgAvailability: .available),
+                Feature(icon: Icon.aiIcon, title: AIText.onePlaceAccess, competitorAvailability: .unavailable, ddgAvailability: .available),
+                Feature(icon: Icon.shieldIcon, title: BrowserText.privateWebSearch, competitorAvailability: .unavailable, ddgAvailability: .available),
+            ]
+        case .noAI:
+            return [
+                Feature(icon: Image(""), title: BrowserText.noAIAnswers, competitorAvailability: .unavailable, ddgAvailability: .available),
+                Feature(icon: Image(""), title: BrowserText.hideAIImages, competitorAvailability: .unavailable, ddgAvailability: .available),
+                Feature(icon: Icon.privateSearchIcon, title: BrowserText.privateSearch, competitorAvailability: .unavailable, ddgAvailability: .available),
+                Feature(icon: Icon.shieldIcon, title: BrowserText.trackerBlockers, competitorAvailability: .partial, ddgAvailability: .available),
+                Feature(icon: Icon.blockAdsIcon, title: BrowserText.cookiePopupsAndAds, competitorAvailability: .unavailable, ddgAvailability: .available),
+            ]
+        case .blockAds:
+            return [
+                Feature(icon: Icon.blockAdsIcon, title: BrowserText.cookiePopupsAndAds, competitorAvailability: .unavailable, ddgAvailability: .available),
+                Feature(icon: Icon.blockYouTubeAdsIcon, title: BrowserText.duckplayer, competitorAvailability: .unavailable, ddgAvailability: .available),
+                Feature(icon: Icon.lensIcon, title: BrowserText.privateSearch, competitorAvailability: .unavailable, ddgAvailability: .available),
+                Feature(icon: Icon.privateAIChatIcon, title: BrowserText.privateAIChat, competitorAvailability: .unavailable, ddgAvailability: .available),
+                Feature(icon: Icon.shieldIcon, title: BrowserText.trackerBlockers, competitorAvailability: .partial, ddgAvailability: .available),
+            ]
+        }
+    }
+}
+
 // MARK: - RebrandedComparisonTableModel + AI Comparison
 
 extension RebrandedComparisonTableModel {

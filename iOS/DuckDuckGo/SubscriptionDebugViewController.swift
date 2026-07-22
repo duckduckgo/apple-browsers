@@ -36,6 +36,8 @@ final class SubscriptionDebugViewController: UITableViewController {
     private let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
     private lazy var subscriptionUserDefaults = UserDefaults(suiteName: subscriptionAppGroup)!
     private let reporter: SubscriptionDataReporting
+    /// Retained for the lifetime of an in-flight/presented onboarding Duck.ai chat sheet.
+    private var duckAIChatLauncher: SubscriptionOnboardingDuckAIChatLauncher?
 
     private var subscriptionManager: SubscriptionManager {
         AppDependencyProvider.shared.subscriptionManager
@@ -901,15 +903,7 @@ extension SubscriptionDebugViewController: SubscriptionOnboardingSectionDelegate
         // The contextual chat surface needs the app's content-blocking pipeline (which builds the UserScripts
         // bundle carrying SubscriptionUserScript for the paid tier). MainViewController owns it.
         guard let contentBlockingAssetsPublisher = (view.window?.rootViewController as? MainViewController)?.contentBlockingAssetsPublisher else { return }
-        let chatVC = SubscriptionOnboardingDuckAIChatViewController(modelID: modelID,
-                                                                   contentBlockingAssetsPublisher: contentBlockingAssetsPublisher)
-        let navigationController = UINavigationController(rootViewController: chatVC)
-        navigationController.modalPresentationStyle = .popover
-        // Opaque nav bar so the embedded web content (anchored to the VC's view top) sits below the bar.
-        let appearance = UINavigationBarAppearance()
-        appearance.configureWithOpaqueBackground()
-        navigationController.navigationBar.standardAppearance = appearance
-        navigationController.navigationBar.scrollEdgeAppearance = appearance
-        (presentedViewController ?? self).present(navigationController, animated: true)
+        duckAIChatLauncher = SubscriptionOnboardingDuckAIChatLauncher(contentBlockingAssetsPublisher: contentBlockingAssetsPublisher)
+        duckAIChatLauncher?.present(from: presentedViewController ?? self, modelID: modelID)
     }
 }

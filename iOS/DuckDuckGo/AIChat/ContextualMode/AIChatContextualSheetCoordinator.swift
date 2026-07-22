@@ -238,6 +238,12 @@ final class AIChatContextualSheetCoordinator {
         sheetViewController?.dismiss(animated: true)
     }
 
+    /// Forces the starting model for the bound chat
+    func preselectModel(_ modelID: String) {
+        guard let persistentUTIHost else { return }
+        persistentUTIHost.preselectModel(modelID)
+    }
+
     private func handleSheetDismissed() {
         guard isSheetPresented else { return }
         isSheetPresented = false

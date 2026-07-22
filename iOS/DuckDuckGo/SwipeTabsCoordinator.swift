@@ -218,23 +218,6 @@ class SwipeTabsCoordinator: NSObject {
     /// naturally, so we skip the facade.
     weak var chromePreview: UIView?
 
-    /// Pixel-perfect cached snapshots of the real AI chrome views (header + UTI bar), captured
-    /// via `drawHierarchy` while they're actually rendered to the window. We can't rebuild
-    /// these from scratch with `layer.render` because the pill containers use
-    /// `UIVisualEffectView` (iOS 26 glass) and the pills carry shadows — both of which
-    /// `layer.render(in:)` ignores. Captured by the host when a Duck.ai tab refreshes.
-    var cachedAIHeaderSnapshot: SwipeChromeSnapshot?
-    var cachedAIUTIBarSnapshot: SwipeChromeSnapshot?
-
-    /// Pixel-perfect cached snapshot of the live legacy omnibar, captured via `drawHierarchy`
-    /// while the user is on a regular tab. Used as the regular-tab destination facade — when
-    /// the facade is removed at swipe-end, the real omnibar takes its place; matching the
-    /// rendering path (drawHierarchy → real bitmap with shadows + effects) means there's no
-    /// visible "snap" between facade and real. A `layer.render` facade would render the
-    /// omnibar flat, so removing it exposes the real omnibar's shadows as a single-frame flash.
-    var cachedLegacyOmnibarSnapshot: SwipeChromeSnapshot?
-    var cachedRegularToolbarSnapshot: SwipeChromeSnapshot?
-
     private var omniBarHeight: CGFloat {
         DefaultOmniBarView.expectedHeight
     }
@@ -554,8 +537,6 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
         }
 
         preview?.frame.origin.x += coordinator.contentContainer.frame.width * CGFloat(modifier)
-
-        prepareChromePreview(modifier: modifier, destinationTab: tab)
     }
 
     private func prepareLiveDestination(offset: CGFloat) -> Bool {
@@ -868,149 +849,6 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
         )
     }
 
-    /// Builds an off-screen full-screen facade of the destination tab's chrome so it slides in
-    /// alongside the webview preview when the AI↔regular boundary is crossed. The cell-based
-    /// legacy path already animates the omnibar for regular↔regular swipes, so we only act on
-    /// boundary crossings.
-    ///
-    /// The facade is a full-screen `UIView` that hosts the destination's chrome elements at
-    /// their absolute screen positions (regular omnibar at top OR bottom; AI tab = header at
-    /// top + UTI bar at bottom). The container is parked one full screen off the lead edge and
-    /// translated via `transform.tx` proportional to the swipe progress — same math as the
-    /// webview preview, applied to the screen width.
-    private func prepareChromePreview(modifier: Int, destinationTab: Tab?) {
-        chromePreview?.removeFromSuperview()
-        chromePreview = nil
-
-        guard let destinationTab else {
-            return
-        }
-
-        let currentTab = tabsModel.currentIndex.flatMap { tabsModel.get(tabAt: $0) }
-        let currentIsAI = currentTab?.isAITab == true
-        let destinationIsAI = destinationTab.isAITab
-
-        guard currentIsAI != destinationIsAI else {
-            return
-        }
-
-        let superview = coordinator.superview
-        let container = UIView(frame: CGRect(
-            x: CGFloat(modifier) * superview.bounds.width,
-            y: 0,
-            width: superview.bounds.width,
-            height: superview.bounds.height
-        ))
-        container.isUserInteractionEnabled = false
-        container.backgroundColor = .clear
-
-        if destinationIsAI {
-            if let aiHeader = makeAIHeaderSnapshotForAITabDestination() {
-                container.addSubview(aiHeader)
-            }
-            if let utiBar = makeUTIBarSnapshotForAITabDestination() {
-                container.addSubview(utiBar)
-            }
-        } else {
-            if !appSettings.currentAddressBarPosition.isBottom,
-               let omnibar = makeRegularOmnibarSnapshot(for: destinationTab) {
-                container.addSubview(omnibar)
-            }
-            if let toolbar = makeRegularToolbarSnapshot() {
-                container.addSubview(toolbar)
-            }
-        }
-
-        superview.addSubview(container)
-        chromePreview = container
-    }
-
-    /// Y-coordinate (in `superview`'s coordinate space) where the destination regular tab's
-    /// omnibar will live after the swipe settles — tracks the user's address-bar position
-    /// preference, factoring in safe area and toolbar.
-    private func regularChromePreviewYPosition() -> CGFloat {
-        let superview = coordinator.superview
-        let insets = superview.safeAreaInsets
-        if appSettings.currentAddressBarPosition.isBottom {
-            let toolbarHeight = coordinator.toolbar.isHidden ? 0 : coordinator.toolbar.bounds.height
-            return superview.bounds.height - insets.bottom - toolbarHeight - DefaultOmniBarView.expectedHeight
-        } else {
-            return insets.top
-        }
-    }
-
-    /// Returns the cached legacy omnibar snapshot — captured via `drawHierarchy` while the bar
-    /// was actually rendered to the window, so removing this facade at swipe-end reveals a
-    /// pixel-identical real omnibar (no shadow/effect "snap"). The cache reflects the omnibar
-    /// the user most recently saw on a regular tab; if they're swiping to a *different*
-    /// regular tab, the URL text in the snapshot is briefly off, but the styling and layout
-    /// match and the real omnibar takes over the moment the swipe settles.
-    ///
-    /// `_ tab` is unused for now — we don't have a way to render a fresh OmniBar through
-    /// `drawHierarchy` without putting it in the window (which causes a flash), so per-tab
-    /// configuration is a known limitation.
-    private func makeRegularOmnibarSnapshot(for tab: Tab) -> UIView? {
-        guard let snapshot = cachedLegacyOmnibarSnapshot else { return nil }
-        _ = tab
-        let imageView = UIImageView(image: snapshot.image)
-        imageView.frame = CGRect(
-            x: snapshot.captureRect.minX,
-            y: regularChromePreviewYPosition() + snapshot.captureRect.minY,
-            width: snapshot.image.size.width,
-            height: snapshot.image.size.height
-        )
-        return imageView
-    }
-
-    private func makeRegularToolbarSnapshot() -> UIView? {
-        guard let snapshot = cachedRegularToolbarSnapshot else { return nil }
-        let superview = coordinator.superview
-        let toolbarOriginY = superview.bounds.maxY
-            - superview.safeAreaInsets.bottom
-            - coordinator.toolbar.bounds.height
-        let imageView = UIImageView(image: snapshot.image)
-        imageView.frame = CGRect(
-            x: snapshot.captureRect.minX,
-            y: toolbarOriginY + snapshot.captureRect.minY,
-            width: snapshot.image.size.width,
-            height: snapshot.image.size.height
-        )
-        return imageView
-    }
-
-    /// Returns the cached AI tab header snapshot — captured live by `drawHierarchy` while the
-    /// header was rendered to the window, so it includes the iOS 26 glass-pill effects and
-    /// shadows that `CALayer.render` can't reproduce. Built fresh views lose those entirely
-    /// (the pills go flat), so we trade a frame of staleness for visual fidelity.
-    private func makeAIHeaderSnapshotForAITabDestination() -> UIView? {
-        guard let snapshot = cachedAIHeaderSnapshot else { return nil }
-        let imageView = UIImageView(image: snapshot.image)
-        imageView.frame = CGRect(
-            x: snapshot.captureRect.minX,
-            y: coordinator.superview.safeAreaInsets.top + snapshot.captureRect.minY,
-            width: snapshot.image.size.width,
-            height: snapshot.image.size.height
-        )
-        return imageView
-    }
-
-    /// Returns the cached UTI bar snapshot — same trade-off as the header: `drawHierarchy`
-    /// catches the live shadows / blur, `layer.render` doesn't.
-    private func makeUTIBarSnapshotForAITabDestination() -> UIView? {
-        guard let snapshot = cachedAIUTIBarSnapshot else { return nil }
-        let inputOriginY = coordinator.superview.bounds.height
-            - coordinator.superview.safeAreaInsets.bottom
-            - coordinator.unifiedToggleInputContainer.bounds.height
-        let imageView = UIImageView(image: snapshot.image)
-        imageView.frame = CGRect(
-            x: snapshot.captureRect.minX,
-            y: inputOriginY + snapshot.captureRect.minY,
-            width: snapshot.image.size.width,
-            height: snapshot.image.size.height
-        )
-        return imageView
-    }
-
     /// Mirrors `swipePreviewProportionally`'s math so the chrome facade slides in lockstep with
     /// the webview preview — same tab-gap treatment, just applied to the screen width since the
     /// chrome lives outside `contentContainer`.
@@ -1133,51 +971,6 @@ extension SwipeTabsCoordinator {
         
         if scrollToSelected {
             scrollToCurrent()
-        }
-    }
-    
-    /// Captures the live legacy omnibar via `drawHierarchy` so it can be reused as the
-    /// regular-tab destination facade. Same idea as `captureAIChromeSnapshotsIfPossible` —
-    /// rendering goes through UIKit's real pipeline, picking up shadows and effects that
-    /// `layer.render` ignores. Called by the host whenever a non-AI tab refreshes.
-    func captureLegacyOmnibarSnapshotIfPossible() {
-        guard floatingUIManager.isFloatingUIEnabled else { return }
-        let barView = coordinator.omniBar.barView
-        guard barView.bounds.width > 0, barView.bounds.height > 0 else {
-            return
-        }
-        guard barView.window != nil else {
-            // `drawHierarchy` needs the view in a window for layer composition to be valid.
-            return
-        }
-        cachedLegacyOmnibarSnapshot = makeChromeSnapshot(of: barView)
-
-        guard let toolbar = coordinator.toolbar,
-              !toolbar.isHidden,
-              toolbar.window != nil,
-              toolbar.bounds.width > 0,
-              toolbar.bounds.height > 0 else {
-            return
-        }
-        cachedRegularToolbarSnapshot = makeChromeSnapshot(of: toolbar)
-    }
-
-    /// Captures pixel-perfect images of the AI chrome (header + UTI bar) using `drawHierarchy`
-    /// while they're rendered to a window. Called by the host whenever the AI chrome refreshes
-    /// so the cache stays current with subscription state, model, etc. Skips views that are
-    /// currently hidden or unsized — the cache then represents the most recent valid render.
-    func captureAIChromeSnapshotsIfPossible() {
-        guard floatingUIManager.isFloatingUIEnabled else { return }
-        if let header = coordinator.aiChatTabChatHeaderContainer,
-           !header.isHidden,
-           header.bounds.width > 0, header.bounds.height > 0 {
-            cachedAIHeaderSnapshot = makeChromeSnapshot(of: header)
-        }
-
-        if let uti = coordinator.unifiedToggleInputContainer,
-           !uti.isHidden,
-           uti.bounds.width > 0, uti.bounds.height > 0 {
-            cachedAIUTIBarSnapshot = makeChromeSnapshot(of: uti)
         }
     }
 

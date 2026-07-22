@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import AppKit
 import Common
 import FoundationExtensions
@@ -104,6 +105,11 @@ struct FireDialogView: ModalView {
         return count > 0 ? UserText.fireDialogCookiesSitesDetail(count) : UserText.none
     }
 
+    private var chatsDetail: String {
+        let count = viewModel.chatsCountForCurrentScope
+        return count > 0 ? UserText.fireDialogChatsCountDetail(count) : UserText.none
+    }
+
     private var isDeleteEnabled: Bool {
         (viewModel.mode.shouldShowCloseTabsToggle && viewModel.includeTabsAndWindows)
         || (viewModel.includeHistory && isIncludeHistoryEnabled)
@@ -158,7 +164,7 @@ struct FireDialogView: ModalView {
                         Color(designSystemColor: .containerBorderPrimary)
                             .frame(height: 1)
                     }
-                    .zIndex(10)
+                    .zIndex(11)
                     .transition(.move(edge: .bottom))
                 }
             }
@@ -176,7 +182,7 @@ struct FireDialogView: ModalView {
                        value: isAnimatingSitesOverlay)
 
             footerView
-                .zIndex(11)
+                .zIndex(10)
                 .background(Color(designSystemColor: .surfaceSecondary, palette: themeManager.designColorPalette))
         }
         .readSize { size in
@@ -382,6 +388,7 @@ struct FireDialogView: ModalView {
                 sectionRow(
                     icon: DesignSystemImages.Glyphs.Size16.aiChat,
                     title: UserText.fireDialogChatHistoryTitle,
+                    detail: chatsDetail,
                     isOn: $viewModel.includeChatHistorySetting,
                     toggleId: "FireDialogView.chatsToggle"
                 )
@@ -894,6 +901,9 @@ private class MockAIChatHistoryCleaner: AIChatHistoryCleaning {
     }
     func cleanAIChatHistory() async -> Result<Void, Error> {
         return .success(())
+    }
+    func allChats() -> [DuckAiChat] {
+        []
     }
 }
 @available(macOS 14.0, *)

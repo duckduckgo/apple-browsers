@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import AppKit
 import Common
 import FoundationExtensions
@@ -759,6 +760,9 @@ private class MockAIChatHistoryCleaner: AIChatHistoryCleaning {
     }
     func cleanAIChatHistory() async -> Result<Void, Error> {
         return .success(())
+    }
+    func allChats() -> [DuckAiChat] {
+        []
     }
 }
 @available(macOS 14.0, *)

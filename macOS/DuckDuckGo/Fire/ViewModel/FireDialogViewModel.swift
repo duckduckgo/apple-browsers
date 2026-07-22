@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import Cocoa
 import Combine
 import BrowserServicesKit
@@ -192,6 +193,9 @@ final class FireDialogViewModel: ObservableObject {
 
         // Initialize selectable/fireproofed lists so counts are available immediately
         updateItems(for: self.clearingOption)
+
+        // Duck.ai chats aren't scoped by tab/window, so fetch them once
+        self.chats = aiChatHistoryCleaner.allChats()
     }
 
     private func updateLastSelectedClearingOptionIfNeeded() {
@@ -277,6 +281,7 @@ final class FireDialogViewModel: ObservableObject {
     @Published private(set) var fireproofed: [Item] = []
     @Published private(set) var selected: Set<Int> = []
     @Published private(set) var historyVisits: [Visit] = []
+    @Published private(set) var chats: [DuckAiChat] = []
 
     var isPinnedTabSelected: Bool {
         tabCollectionViewModel?.selectedTabViewModel?.tab.isPinned ?? false
@@ -397,6 +402,9 @@ final class FireDialogViewModel: ObservableObject {
 
     /// Cookies/sites are deleted for non-fireproofed visited eTLD+1 domains
     var cookiesSitesCountForCurrentScope: Int { selectable.count }
+
+    /// Duck.ai chats aren't partitioned by tab/window, so this is a global count.
+    var chatsCountForCurrentScope: Int { chats.count }
 
     // MARK: - Selection
 

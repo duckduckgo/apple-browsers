@@ -88,6 +88,14 @@ final class FireViewController: NSViewController {
         indicator.translatesAutoresizingMaskIntoConstraints = false
         indicator.style = .bar
         indicator.isIndeterminate = true
+        indicator.wantsLayer = true
+
+        if let colorFilter = CIFilter(name: "CIFalseColor") {
+            colorFilter.setDefaults()
+            colorFilter.setValue(CIColor(color: NSColor(singleUseColor: .fireButtonGradientStart)), forKey: "inputColor0")
+            colorFilter.setValue(CIColor(color: NSColor(singleUseColor: .fireButtonGradientEnd)), forKey: "inputColor1")
+            indicator.contentFilters = [colorFilter]
+        }
         return indicator
     }()
 

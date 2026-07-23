@@ -601,6 +601,82 @@ final class SyncSettingsViewModelTests: XCTestCase {
         XCTAssertEqual(delegate.authenticateUserCallCount, 0)
     }
 
+    func testWhenShowSuccessDuringConnectingThenFinishAnimationIsArmedInsteadOfNavigating() {
+        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler())
+        sut.connectingSheetPhase = .connecting(isRecovery: false)
+
+        sut.showSuccess(recoveryCode: "code", isRecovery: false)
+
+        XCTAssertEqual(sut.connectingSheetPhase, .connecting(isRecovery: false, isFinishing: true))
+        XCTAssertEqual(sut.recoveryCode, "code")
+    }
+
+    func testWhenShowSuccessDuringConnectingRecoveryThenFinishAnimationIsArmedWithRecoveryFlag() {
+        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler())
+        sut.connectingSheetPhase = .connecting(isRecovery: true)
+
+        sut.showSuccess(recoveryCode: "code", isRecovery: true)
+
+        XCTAssertEqual(sut.connectingSheetPhase, .connecting(isRecovery: true, isFinishing: true))
+    }
+
+    func testWhenShowSuccessOutsideConnectingThenNavigatesToSuccessImmediately() {
+        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler())
+        sut.connectingSheetPhase = .syncAnotherDevice(isConnecting: true)
+
+        sut.showSuccess(recoveryCode: "code", isRecovery: false)
+
+        XCTAssertEqual(sut.connectingSheetPhase, .success(isRecovery: false))
+        XCTAssertEqual(sut.recoveryCode, "code")
+    }
+
+    func testWhenShowSuccessWithNoPhaseThenNavigatesToSuccessImmediately() {
+        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler())
+        sut.connectingSheetPhase = nil
+
+        sut.showSuccess(recoveryCode: "code", isRecovery: true)
+
+        XCTAssertEqual(sut.connectingSheetPhase, .success(isRecovery: true))
+    }
+
+    func testWhenConnectingAnimationFinishesWhileFinishingThenNavigatesToSuccess() {
+        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler())
+        sut.connectingSheetPhase = .connecting(isRecovery: true, isFinishing: true)
+
+        sut.connectingAnimationDidFinish()
+
+        XCTAssertEqual(sut.connectingSheetPhase, .success(isRecovery: true))
+    }
+
+    func testWhenConnectingAnimationFinishesWhileNotFinishingThenPhaseIsUnchanged() {
+        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler())
+        sut.connectingSheetPhase = .connecting(isRecovery: false)
+
+        sut.connectingAnimationDidFinish()
+
+        XCTAssertEqual(sut.connectingSheetPhase, .connecting(isRecovery: false, isFinishing: false))
+    }
+
+    func testWhenConnectingAnimationFinishesOutsideConnectingThenPhaseIsUnchanged() {
+        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler())
+        sut.connectingSheetPhase = .syncAnotherDevice(isConnecting: true)
+
+        sut.connectingAnimationDidFinish()
+
+        XCTAssertEqual(sut.connectingSheetPhase, .syncAnotherDevice(isConnecting: true))
+    }
+
+    func testWhenConnectingCompletesThenAnimationRunsBeforeNavigatingToSuccess() {
+        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler())
+        sut.connectingSheetPhase = .connecting(isRecovery: false)
+
+        sut.showSuccess(recoveryCode: "code", isRecovery: false)
+        XCTAssertEqual(sut.connectingSheetPhase, .connecting(isRecovery: false, isFinishing: true))
+
+        sut.connectingAnimationDidFinish()
+        XCTAssertEqual(sut.connectingSheetPhase, .success(isRecovery: false))
+    }
+
     private func makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler,
                          delegate: MockSyncSettingsViewModelDelegate? = nil) -> SyncSettingsViewModel {
         let model = SyncSettingsViewModel(

@@ -33,8 +33,12 @@ public struct SimplifiedConnectingSheetViewV2: View {
             switch model.connectingSheetPhase {
             case .syncAnotherDevice:
                 SyncAnotherDevicePromptViewV2(model: model)
-            case .connecting(let isRecovery):
-                SimplifiedConnectingContentViewV2(isRecovery: isRecovery)
+            case .connecting(let isRecovery, let isFinishing):
+                SimplifiedConnectingContentViewV2(
+                    isRecovery: isRecovery,
+                    isFinishing: isFinishing,
+                    onAnimationFinished: { model.connectingAnimationDidFinish() }
+                )
             case .success(let isRecovery):
                 SyncSuccessViewV2(model: model, isRecovery: isRecovery)
             case .none:

@@ -180,7 +180,7 @@ public class SyncSettingsViewModel: ObservableObject {
     @Published public var isSyncWithAnotherDevicePromptVisible: Bool = false
 
     public enum ConnectingSheetPhase: Equatable, Identifiable {
-        case connecting(isRecovery: Bool)
+        case connecting(isRecovery: Bool, isFinishing: Bool = false)
         case syncAnotherDevice(isConnecting: Bool)
         case success(isRecovery: Bool)
 
@@ -459,6 +459,15 @@ public class SyncSettingsViewModel: ObservableObject {
 
     public func showSuccess(recoveryCode: String, isRecovery: Bool) {
         self.recoveryCode = recoveryCode
+        if case .connecting = connectingSheetPhase {
+            connectingSheetPhase = .connecting(isRecovery: isRecovery, isFinishing: true)
+        } else {
+            connectingSheetPhase = .success(isRecovery: isRecovery)
+        }
+    }
+
+    public func connectingAnimationDidFinish() {
+        guard case .connecting(let isRecovery, true) = connectingSheetPhase else { return }
         connectingSheetPhase = .success(isRecovery: isRecovery)
     }
 

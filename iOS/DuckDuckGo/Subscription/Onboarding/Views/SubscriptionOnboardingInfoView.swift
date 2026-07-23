@@ -62,6 +62,29 @@ struct SubscriptionOnboardingInfoView: View {
     }
 }
 
+// MARK: - Presentation
+
+extension View {
+    /// Presents a fixed protection's "Learn More" info sheet — a ``SubscriptionOnboardingInfoView`` wrapped in
+    /// the shared navigation container — bound to `isPresented`. Used by the VPN and Duck.ai screens.
+    func subscriptionOnboardingInfoSheet(_ content: SubscriptionOnboardingInfoContent,
+                                         isPresented: Binding<Bool>) -> some View {
+        sheet(isPresented: isPresented) {
+            SubscriptionOnboardingInfoView(content: content, onClose: { isPresented.wrappedValue = false })
+                .subscriptionOnboardingNavigationContainer()
+        }
+    }
+
+    /// Presents the "Learn More" info sheet for whichever checklist `item` is selected (`nil` = dismissed).
+    /// Used by the welcome list, where the presented protection varies with the tapped row.
+    func subscriptionOnboardingInfoSheet(item: Binding<SubscriptionOnboardingChecklistItem?>) -> some View {
+        sheet(item: item) { selected in
+            SubscriptionOnboardingInfoView(content: .content(for: selected), onClose: { item.wrappedValue = nil })
+                .subscriptionOnboardingNavigationContainer()
+        }
+    }
+}
+
 // MARK: - Content
 
 /// The data backing a ``SubscriptionOnboardingInfoView``: the hero header plus the feature cards to list.
@@ -69,12 +92,10 @@ struct SubscriptionOnboardingInfoView: View {
 struct SubscriptionOnboardingInfoContent {
     /// A single feature card on the info sheet.
     struct Feature: Identifiable {
-        let id = UUID()
+        var id: String { title }
         let icon: Image
         let title: String
         let body: String
-        /// The platforms to show in the card's footer grid, or `nil` for no grid. Only the VPN "Devices"
-        /// card and the PIR "Platforms" card show one; PIR passes a Mac/Windows-only subset.
         var platforms: [SubscriptionOnboardingPlatformGrid.Platform]?
     }
 
@@ -85,8 +106,8 @@ struct SubscriptionOnboardingInfoContent {
 }
 
 extension SubscriptionOnboardingInfoContent {
-    /// The info-sheet content for a checklist item.
-    static func content(for item: SubscriptionOnboardingChecklistItem) -> SubscriptionOnboardingInfoContent? {
+    /// The info-sheet content for a checklist item. Total over the fixed set of items, so it's non-optional.
+    static func content(for item: SubscriptionOnboardingChecklistItem) -> SubscriptionOnboardingInfoContent {
         switch item {
         case .vpn: return .vpn
         case .idtr: return .idtr
@@ -100,38 +121,28 @@ extension SubscriptionOnboardingInfoContent {
         visual: .image(Image(.onboardingVPN128)),
         title: UserText.subscriptionOnboardingVPNInfoTitle,
         explanation: UserText.subscriptionOnboardingVPNInfoExplanation,
-        features: VPNInfoFeature.allCases.map {
-            Feature(icon: $0.icon, title: $0.title, body: $0.body,
-                    platforms: $0 == .devices ? SubscriptionOnboardingPlatformGrid.Platform.allCases : nil)
-        })
+        features: VPNInfoFeature.allCases.map(\.feature))
 
     /// The IDTR "Learn More" content.
     static let idtr = SubscriptionOnboardingInfoContent(
         visual: .image(Image(.onboardingIDTR128)),
         title: UserText.subscriptionOnboardingIDTRInfoTitle,
         explanation: UserText.subscriptionOnboardingIDTRInfoExplanation,
-        features: IDTRInfoFeature.allCases.map {
-            Feature(icon: $0.icon, title: $0.title, body: $0.body)
-        })
+        features: IDTRInfoFeature.allCases.map(\.feature))
 
     /// The Duck.ai "Learn More" content.
     static let duckAI = SubscriptionOnboardingInfoContent(
         visual: .image(Image(.onboardingDuckAI128)),
         title: UserText.subscriptionOnboardingDuckAIInfoTitle,
         explanation: UserText.subscriptionOnboardingDuckAIInfoExplanation,
-        features: DuckAIInfoFeature.allCases.map {
-            Feature(icon: $0.icon, title: $0.title, body: $0.body)
-        })
+        features: DuckAIInfoFeature.allCases.map(\.feature))
 
     /// The PIR "Learn More" content.
     static let pir = SubscriptionOnboardingInfoContent(
         visual: .image(Image(.personalInformationRemover128)),
         title: UserText.subscriptionOnboardingPIRInfoTitle,
         explanation: UserText.subscriptionOnboardingPIRInfoExplanation,
-        features: PIRInfoFeature.allCases.map {
-            Feature(icon: $0.icon, title: $0.title, body: $0.body,
-                    platforms: $0 == .platforms ? [.mac, .windows] : nil)
-        })
+        features: PIRInfoFeature.allCases.map(\.feature))
 }
 
 /// The VPN features listed on the VPN info sheet.
@@ -145,42 +156,41 @@ private enum VPNInfoFeature: CaseIterable {
     case alwaysOn
     case wireGuard
 
-    var title: String {
+    var feature: SubscriptionOnboardingInfoContent.Feature {
         switch self {
-        case .devices: UserText.subscriptionOnboardingVPNInfoDevicesTitle
-        case .noLogging: UserText.subscriptionOnboardingVPNInfoNoLoggingTitle
-        case .easyToUse: UserText.subscriptionOnboardingVPNInfoEasyToUseTitle
-        case .fastAndReliable: UserText.subscriptionOnboardingVPNInfoFastReliableTitle
-        case .dataLeakPrevention: UserText.subscriptionOnboardingVPNInfoDataLeakTitle
-        case .secureDNS: UserText.subscriptionOnboardingVPNInfoSecureDNSTitle
-        case .alwaysOn: UserText.subscriptionOnboardingVPNInfoAlwaysOnTitle
-        case .wireGuard: UserText.subscriptionOnboardingVPNInfoWireGuardTitle
-        }
-    }
-
-    var body: String {
-        switch self {
-        case .devices: UserText.subscriptionOnboardingVPNInfoDevicesBody
-        case .noLogging: UserText.subscriptionOnboardingVPNInfoNoLoggingBody
-        case .easyToUse: UserText.subscriptionOnboardingVPNInfoEasyToUseBody
-        case .fastAndReliable: UserText.subscriptionOnboardingVPNInfoFastReliableBody
-        case .dataLeakPrevention: UserText.subscriptionOnboardingVPNInfoDataLeakBody
-        case .secureDNS: UserText.subscriptionOnboardingVPNInfoSecureDNSBody
-        case .alwaysOn: UserText.subscriptionOnboardingVPNInfoAlwaysOnBody
-        case .wireGuard: UserText.subscriptionOnboardingVPNInfoWireGuardBody
-        }
-    }
-
-    var icon: Image {
-        switch self {
-        case .devices: Image(uiImage: DesignSystemImages.Glyphs.Size16.deviceAll)
-        case .noLogging: Image(uiImage: DesignSystemImages.Glyphs.Size16.shield)
-        case .easyToUse: Image(uiImage: DesignSystemImages.Glyphs.Size16.heart)
-        case .fastAndReliable: Image(uiImage: DesignSystemImages.Glyphs.Size16.globe)
-        case .dataLeakPrevention: Image(uiImage: DesignSystemImages.Glyphs.Size16.profileLock)
-        case .secureDNS: Image(uiImage: DesignSystemImages.Glyphs.Size16.deviceLaptopLock)
-        case .alwaysOn: Image(uiImage: DesignSystemImages.Glyphs.Size16.checkCircle)
-        case .wireGuard: Image(uiImage: DesignSystemImages.Glyphs.Size16.lock)
+        case .devices:
+            .init(icon: Image(uiImage: DesignSystemImages.Glyphs.Size16.deviceAll),
+                  title: UserText.subscriptionOnboardingVPNInfoDevicesTitle,
+                  body: UserText.subscriptionOnboardingVPNInfoDevicesBody,
+                  platforms: SubscriptionOnboardingPlatformGrid.Platform.allCases)
+        case .noLogging:
+            .init(icon: Image(uiImage: DesignSystemImages.Glyphs.Size16.shield),
+                  title: UserText.subscriptionOnboardingVPNInfoNoLoggingTitle,
+                  body: UserText.subscriptionOnboardingVPNInfoNoLoggingBody)
+        case .easyToUse:
+            .init(icon: Image(uiImage: DesignSystemImages.Glyphs.Size16.heart),
+                  title: UserText.subscriptionOnboardingVPNInfoEasyToUseTitle,
+                  body: UserText.subscriptionOnboardingVPNInfoEasyToUseBody)
+        case .fastAndReliable:
+            .init(icon: Image(uiImage: DesignSystemImages.Glyphs.Size16.globe),
+                  title: UserText.subscriptionOnboardingVPNInfoFastReliableTitle,
+                  body: UserText.subscriptionOnboardingVPNInfoFastReliableBody)
+        case .dataLeakPrevention:
+            .init(icon: Image(uiImage: DesignSystemImages.Glyphs.Size16.profileLock),
+                  title: UserText.subscriptionOnboardingVPNInfoDataLeakTitle,
+                  body: UserText.subscriptionOnboardingVPNInfoDataLeakBody)
+        case .secureDNS:
+            .init(icon: Image(uiImage: DesignSystemImages.Glyphs.Size16.deviceLaptopLock),
+                  title: UserText.subscriptionOnboardingVPNInfoSecureDNSTitle,
+                  body: UserText.subscriptionOnboardingVPNInfoSecureDNSBody)
+        case .alwaysOn:
+            .init(icon: Image(uiImage: DesignSystemImages.Glyphs.Size16.checkCircle),
+                  title: UserText.subscriptionOnboardingVPNInfoAlwaysOnTitle,
+                  body: UserText.subscriptionOnboardingVPNInfoAlwaysOnBody)
+        case .wireGuard:
+            .init(icon: Image(uiImage: DesignSystemImages.Glyphs.Size16.lock),
+                  title: UserText.subscriptionOnboardingVPNInfoWireGuardTitle,
+                  body: UserText.subscriptionOnboardingVPNInfoWireGuardBody)
         }
     }
 }
@@ -192,30 +202,24 @@ private enum DuckAIInfoFeature: CaseIterable {
     case price
     case access
 
-    var title: String {
+    var feature: SubscriptionOnboardingInfoContent.Feature {
         switch self {
-        case .models: UserText.subscriptionOnboardingDuckAIInfoModelsTitle
-        case .privacy: UserText.subscriptionOnboardingDuckAIInfoPrivacyTitle
-        case .price: UserText.subscriptionOnboardingDuckAIInfoPriceTitle
-        case .access: UserText.subscriptionOnboardingDuckAIInfoAccessTitle
-        }
-    }
-
-    var body: String {
-        switch self {
-        case .models: UserText.subscriptionOnboardingDuckAIInfoModelsBody
-        case .privacy: UserText.subscriptionOnboardingDuckAIInfoPrivacyBody
-        case .price: UserText.subscriptionOnboardingDuckAIInfoPriceBody
-        case .access: UserText.subscriptionOnboardingDuckAIInfoAccessBody
-        }
-    }
-
-    var icon: Image {
-        switch self {
-        case .models: Image(uiImage: DesignSystemImages.Glyphs.Size16.aiGeneral)
-        case .privacy: Image(uiImage: DesignSystemImages.Glyphs.Size16.shield)
-        case .price: Image(uiImage: DesignSystemImages.Glyphs.Size16.priceTag)
-        case .access: Image(uiImage: DesignSystemImages.Glyphs.Size16.globe)
+        case .models:
+            .init(icon: Image(uiImage: DesignSystemImages.Glyphs.Size16.aiGeneral),
+                  title: UserText.subscriptionOnboardingDuckAIInfoModelsTitle,
+                  body: UserText.subscriptionOnboardingDuckAIInfoModelsBody)
+        case .privacy:
+            .init(icon: Image(uiImage: DesignSystemImages.Glyphs.Size16.shield),
+                  title: UserText.subscriptionOnboardingDuckAIInfoPrivacyTitle,
+                  body: UserText.subscriptionOnboardingDuckAIInfoPrivacyBody)
+        case .price:
+            .init(icon: Image(uiImage: DesignSystemImages.Glyphs.Size16.priceTag),
+                  title: UserText.subscriptionOnboardingDuckAIInfoPriceTitle,
+                  body: UserText.subscriptionOnboardingDuckAIInfoPriceBody)
+        case .access:
+            .init(icon: Image(uiImage: DesignSystemImages.Glyphs.Size16.globe),
+                  title: UserText.subscriptionOnboardingDuckAIInfoAccessTitle,
+                  body: UserText.subscriptionOnboardingDuckAIInfoAccessBody)
         }
     }
 }
@@ -231,43 +235,41 @@ private enum IDTRInfoFeature: CaseIterable {
     case authorities
     case medical
 
-    var title: String {
-        switch self {
-        case .financialLosses: UserText.subscriptionOnboardingIDTRInfoFinancialLossesTitle
-        case .creditReport: UserText.subscriptionOnboardingIDTRInfoCreditReportTitle
-        case .walletItems: UserText.subscriptionOnboardingIDTRInfoWalletTitle
-        case .caseManager: UserText.subscriptionOnboardingIDTRInfoCaseManagerTitle
-        case .rapidResponse: UserText.subscriptionOnboardingIDTRInfoRapidResponseTitle
-        case .emergencyCash: UserText.subscriptionOnboardingIDTRInfoEmergencyCashTitle
-        case .authorities: UserText.subscriptionOnboardingIDTRInfoAuthoritiesTitle
-        case .medical: UserText.subscriptionOnboardingIDTRInfoMedicalTitle
-        }
-    }
-
-    var body: String {
-        switch self {
-        case .financialLosses: UserText.subscriptionOnboardingIDTRInfoFinancialLossesBody
-        case .creditReport: UserText.subscriptionOnboardingIDTRInfoCreditReportBody
-        case .walletItems: UserText.subscriptionOnboardingIDTRInfoWalletBody
-        case .caseManager: UserText.subscriptionOnboardingIDTRInfoCaseManagerBody
-        case .rapidResponse: UserText.subscriptionOnboardingIDTRInfoRapidResponseBody
-        case .emergencyCash: UserText.subscriptionOnboardingIDTRInfoEmergencyCashBody
-        case .authorities: UserText.subscriptionOnboardingIDTRInfoAuthoritiesBody
-        case .medical: UserText.subscriptionOnboardingIDTRInfoMedicalBody
-        }
-    }
-
     /// `walletItems` has no matching design-system glyph — a placeholder, flagged for a real icon.
-    var icon: Image {
+    var feature: SubscriptionOnboardingInfoContent.Feature {
         switch self {
-        case .financialLosses: Image(uiImage: DesignSystemImages.Glyphs.Size16.currency)
-        case .creditReport: Image(uiImage: DesignSystemImages.Glyphs.Size16.profileLock)
-        case .walletItems: Image(uiImage: DesignSystemImages.Glyphs.Size16.card)
-        case .caseManager: Image(uiImage: DesignSystemImages.Glyphs.Size16.support)
-        case .rapidResponse: Image(uiImage: DesignSystemImages.Glyphs.Size16.clock)
-        case .emergencyCash: Image(uiImage: DesignSystemImages.Glyphs.Size16.creditCard)
-        case .authorities: Image(uiImage: DesignSystemImages.Glyphs.Size16.announce)
-        case .medical: Image(uiImage: DesignSystemImages.Glyphs.Size16.profile)
+        case .financialLosses:
+            .init(icon: Image(uiImage: DesignSystemImages.Glyphs.Size16.currency),
+                  title: UserText.subscriptionOnboardingIDTRInfoFinancialLossesTitle,
+                  body: UserText.subscriptionOnboardingIDTRInfoFinancialLossesBody)
+        case .creditReport:
+            .init(icon: Image(uiImage: DesignSystemImages.Glyphs.Size16.profileLock),
+                  title: UserText.subscriptionOnboardingIDTRInfoCreditReportTitle,
+                  body: UserText.subscriptionOnboardingIDTRInfoCreditReportBody)
+        case .walletItems:
+            .init(icon: Image(uiImage: DesignSystemImages.Glyphs.Size16.card),
+                  title: UserText.subscriptionOnboardingIDTRInfoWalletTitle,
+                  body: UserText.subscriptionOnboardingIDTRInfoWalletBody)
+        case .caseManager:
+            .init(icon: Image(uiImage: DesignSystemImages.Glyphs.Size16.support),
+                  title: UserText.subscriptionOnboardingIDTRInfoCaseManagerTitle,
+                  body: UserText.subscriptionOnboardingIDTRInfoCaseManagerBody)
+        case .rapidResponse:
+            .init(icon: Image(uiImage: DesignSystemImages.Glyphs.Size16.clock),
+                  title: UserText.subscriptionOnboardingIDTRInfoRapidResponseTitle,
+                  body: UserText.subscriptionOnboardingIDTRInfoRapidResponseBody)
+        case .emergencyCash:
+            .init(icon: Image(uiImage: DesignSystemImages.Glyphs.Size16.creditCard),
+                  title: UserText.subscriptionOnboardingIDTRInfoEmergencyCashTitle,
+                  body: UserText.subscriptionOnboardingIDTRInfoEmergencyCashBody)
+        case .authorities:
+            .init(icon: Image(uiImage: DesignSystemImages.Glyphs.Size16.announce),
+                  title: UserText.subscriptionOnboardingIDTRInfoAuthoritiesTitle,
+                  body: UserText.subscriptionOnboardingIDTRInfoAuthoritiesBody)
+        case .medical:
+            .init(icon: Image(uiImage: DesignSystemImages.Glyphs.Size16.profile),
+                  title: UserText.subscriptionOnboardingIDTRInfoMedicalTitle,
+                  body: UserText.subscriptionOnboardingIDTRInfoMedicalBody)
         }
     }
 }
@@ -280,33 +282,29 @@ private enum PIRInfoFeature: CaseIterable {
     case automated
     case monitorProgress
 
-    var title: String {
+    var feature: SubscriptionOnboardingInfoContent.Feature {
         switch self {
-        case .platforms: UserText.subscriptionOnboardingPIRInfoPlatformsTitle
-        case .repeatedScans: UserText.subscriptionOnboardingPIRInfoScansTitle
-        case .onDevice: UserText.subscriptionOnboardingPIRInfoOnDeviceTitle
-        case .automated: UserText.subscriptionOnboardingPIRInfoAutomatedTitle
-        case .monitorProgress: UserText.subscriptionOnboardingPIRInfoMonitorTitle
-        }
-    }
-
-    var body: String {
-        switch self {
-        case .platforms: UserText.subscriptionOnboardingPIRInfoPlatformsBody
-        case .repeatedScans: UserText.subscriptionOnboardingPIRInfoScansBody
-        case .onDevice: UserText.subscriptionOnboardingPIRInfoOnDeviceBody
-        case .automated: UserText.subscriptionOnboardingPIRInfoAutomatedBody
-        case .monitorProgress: UserText.subscriptionOnboardingPIRInfoMonitorBody
-        }
-    }
-
-    var icon: Image {
-        switch self {
-        case .platforms: Image(uiImage: DesignSystemImages.Glyphs.Size16.deviceAll)
-        case .repeatedScans: Image(uiImage: DesignSystemImages.Glyphs.Size16.reload)
-        case .onDevice: Image(uiImage: DesignSystemImages.Glyphs.Size16.deviceLaptopLock)
-        case .automated: Image(uiImage: DesignSystemImages.Glyphs.Size16.formAutofill)
-        case .monitorProgress: Image(uiImage: DesignSystemImages.Glyphs.Size16.support)
+        case .platforms:
+            .init(icon: Image(uiImage: DesignSystemImages.Glyphs.Size16.deviceAll),
+                  title: UserText.subscriptionOnboardingPIRInfoPlatformsTitle,
+                  body: UserText.subscriptionOnboardingPIRInfoPlatformsBody,
+                  platforms: [.mac, .windows])
+        case .repeatedScans:
+            .init(icon: Image(uiImage: DesignSystemImages.Glyphs.Size16.reload),
+                  title: UserText.subscriptionOnboardingPIRInfoScansTitle,
+                  body: UserText.subscriptionOnboardingPIRInfoScansBody)
+        case .onDevice:
+            .init(icon: Image(uiImage: DesignSystemImages.Glyphs.Size16.deviceLaptopLock),
+                  title: UserText.subscriptionOnboardingPIRInfoOnDeviceTitle,
+                  body: UserText.subscriptionOnboardingPIRInfoOnDeviceBody)
+        case .automated:
+            .init(icon: Image(uiImage: DesignSystemImages.Glyphs.Size16.formAutofill),
+                  title: UserText.subscriptionOnboardingPIRInfoAutomatedTitle,
+                  body: UserText.subscriptionOnboardingPIRInfoAutomatedBody)
+        case .monitorProgress:
+            .init(icon: Image(uiImage: DesignSystemImages.Glyphs.Size16.support),
+                  title: UserText.subscriptionOnboardingPIRInfoMonitorTitle,
+                  body: UserText.subscriptionOnboardingPIRInfoMonitorBody)
         }
     }
 }

@@ -795,7 +795,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     }
 
     @MainActor
-    func testPresentSheetUsesLargeDetentOnlyWhenPresentsFullScreenIsTrue() async {
+    func testPresentSheetPresentsOverFullScreenWithoutSheetPresentationWhenPresentsFullScreenIsTrue() async {
         let fullScreenSUT = AIChatContextualSheetCoordinator(
             voiceSearchHelper: MockVoiceSearchHelper(),
             aiChatSettings: mockSettings,
@@ -818,11 +818,11 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
 
         await fullScreenSUT.presentSheet(from: rootVC)
 
-        let sheet = fullScreenSUT.sheetViewController!.sheetPresentationController!
-        XCTAssertEqual(sheet.detents.count, 1)
-        XCTAssertEqual(sheet.selectedDetentIdentifier, .large)
-        XCTAssertEqual(sheet.largestUndimmedDetentIdentifier, .large)
-        XCTAssertFalse(sheet.prefersGrabberVisible)
+        let sheetVC = fullScreenSUT.sheetViewController!
+        // Onboarding presents as a true full-screen cover, so UIKit provides no sheet presentation controller
+        // (hence no detents/grabber) — see AIChatContextualSheetViewController.configureModalPresentation().
+        XCTAssertEqual(sheetVC.modalPresentationStyle, .overFullScreen)
+        XCTAssertNil(sheetVC.sheetPresentationController)
     }
 
     // MARK: - hideExpandButton Tests

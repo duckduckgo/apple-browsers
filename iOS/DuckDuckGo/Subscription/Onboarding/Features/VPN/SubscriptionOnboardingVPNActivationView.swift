@@ -22,22 +22,19 @@ import UIKit
 import DesignResourcesKit
 import UIComponents
 
-private enum Metrics {
-    static let offContentSpacing: CGFloat = 33
-    static let onContentSpacing: CGFloat = 22
-    static let infoCardStackSpacing: CGFloat = 8
-    static let onInfoCardsSpacing: CGFloat = 12
-    static let featureRowSpacing: CGFloat = 10
-}
-
-/// The VPN activation screen, built by ``SubscriptionOnboardingViewFactory``. It owns the activation view
-/// model and renders the activation screen (the same screen in two states: off and on) plus the section's
-/// internal navigation: the widget-education and tips screens (pushed onto the navigation stack after the
-/// VPN is on) and the "Learn More" info screen (presented as a page sheet). The header, body and footer all switch on
+/// The VPN activation screen. It owns the activation view
+/// model and renders the activation screen. The header, body and footer all switch on
 /// the view model's `connectionState`. As the section's root screen, the back button asks the flow (via
-/// ``SubscriptionOnboardingSectionDelegate/sectionDidRequestGoBack()``) to move to the previous section,
-/// rather than popping this section's own navigation stack.
+/// ``SubscriptionOnboardingSectionDelegate/sectionDidRequestGoBack()``) to move to the previous section.
 struct SubscriptionOnboardingVPNActivationView: View {
+    private enum Metrics {
+        static let offContentSpacing: CGFloat = 33
+        static let onContentSpacing: CGFloat = 22
+        static let infoCardStackSpacing: CGFloat = 8
+        static let onInfoCardsSpacing: CGFloat = 12
+        static let featureRowSpacing: CGFloat = 10
+    }
+
     @StateObject private var viewModel: SubscriptionOnboardingVPNActivationViewModel
 
     private let title: String?
@@ -68,10 +65,7 @@ struct SubscriptionOnboardingVPNActivationView: View {
             tapAllowHint.hide()
             awaitingPermissionPrompt = false
         }
-        .sheet(isPresented: $isShowingInfoSheet) {
-            SubscriptionOnboardingInfoView(content: .vpn, onClose: { isShowingInfoSheet = false })
-                .subscriptionOnboardingNavigationContainer()
-        }
+        .subscriptionOnboardingInfoSheet(.vpn, isPresented: $isShowingInfoSheet)
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.willResignActiveNotification)) { _ in
             guard awaitingPermissionPrompt else { return }
             tapAllowHint.show()
@@ -133,9 +127,6 @@ private extension SubscriptionOnboardingVPNActivationView {
         } else {
             VStack(spacing: Metrics.infoCardStackSpacing) {
                 VStack(spacing: Metrics.onInfoCardsSpacing) {
-                    // The original (pre-VPN) IP card is always shown; when there is no value to display —
-                    // e.g. entering with the VPN already on, which never fetches it — the rows fall back to
-                    // the placeholders.
                     SubscriptionOnboardingVPNInfoCard(state: .hiddenIP,
                                                       ipAddress: viewModel.originalIPText,
                                                       location: viewModel.originalLocationText)
@@ -175,7 +166,6 @@ private extension SubscriptionOnboardingVPNActivationView {
 // MARK: - Footer
 
 private extension SubscriptionOnboardingVPNActivationView {
-    // TODO: Stop threading delegate through the pushed leaf views' init once Environment injection lands (Stage 3).
     var footer: SubscriptionOnboardingFooter {
         switch viewModel.connectionState {
         case .off:

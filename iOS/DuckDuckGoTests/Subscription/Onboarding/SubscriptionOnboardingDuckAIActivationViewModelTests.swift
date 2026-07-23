@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import Combine
 import XCTest
 import AIChat
 @testable import DuckDuckGo
@@ -24,74 +25,90 @@ import AIChat
 @MainActor
 final class SubscriptionOnboardingDuckAIViewModelTests: XCTestCase {
 
-    func testOnAppearFetchesAndPopulatesModels() {
-        let provider = MockAIModelProvider(models: [model("a", tier: ["plus"]), model("b", tier: ["free"])])
-        let viewModel = makeViewModel(provider: provider)
+    private var cancellables = Set<AnyCancellable>()
 
-        viewModel.onAppear()
+    func testOnAppearFetchesAndPopulatesModels() async {
+        let provider = MockAIModelProvider(models: [model("a", tier: ["plus"]), model("b", tier: ["free"])])
+        let (viewModel, _) = makeViewModel(provider: provider)
+
+        await wait(viewModel.$models, until: { !$0.isEmpty }) {
+            viewModel.onAppear()
+        }
 
         XCTAssertEqual(viewModel.models.count, 2)
         XCTAssertEqual(provider.fetchCallCount, 1)
     }
 
-    func testOnAppearCalledTwiceFetchesOnce() {
+    func testOnAppearCalledTwiceFetchesOnce() async {
         let provider = MockAIModelProvider(models: [model("a", tier: ["plus"])])
-        let viewModel = makeViewModel(provider: provider)
+        let (viewModel, _) = makeViewModel(provider: provider)
 
-        viewModel.onAppear()
-        viewModel.onAppear()
+        await wait(viewModel.$models, until: { !$0.isEmpty }) {
+            viewModel.onAppear()
+            viewModel.onAppear()
+        }
 
         XCTAssertEqual(provider.fetchCallCount, 1)
     }
 
-    func testAvailableModelsDropsInaccessibleAndOrdersPremiumFirst() {
+    func testAvailableModelsDropsInaccessibleAndOrdersPremiumFirst() async {
         let provider = MockAIModelProvider(models: [
             model("free1", tier: ["free"]),
             model("plus1", tier: ["plus"]),
             model("noAccess", tier: ["pro"], hasAccess: false),
             model("free2", tier: ["free"])
         ])
-        let viewModel = makeViewModel(provider: provider)
+        let (viewModel, _) = makeViewModel(provider: provider)
 
-        viewModel.onAppear()
+        await wait(viewModel.$models, until: { !$0.isEmpty }) {
+            viewModel.onAppear()
+        }
 
         XCTAssertEqual(viewModel.availableModels.map(\.id), ["plus1", "free1", "free2"])
     }
 
-    func testOnAppearSelectsPersistedModel() {
+    func testOnAppearSelectsPersistedModel() async {
         let provider = MockAIModelProvider(models: [model("a", tier: ["plus"]), model("b", tier: ["free"])], persistedModelID: "b")
-        let viewModel = makeViewModel(provider: provider)
+        let (viewModel, _) = makeViewModel(provider: provider)
 
-        viewModel.onAppear()
+        await wait(viewModel.$selectedModelID, until: { $0 != nil }) {
+            viewModel.onAppear()
+        }
 
         XCTAssertEqual(viewModel.selectedModelID, "b")
     }
 
-    func testOnAppearWithNoModelsLeavesSelectionNil() {
+    func testOnAppearWithNoModelsLeavesSelectionNil() async {
         let provider = MockAIModelProvider(models: [])
-        let viewModel = makeViewModel(provider: provider)
+        let (viewModel, prefetcher) = makeViewModel(provider: provider)
 
-        viewModel.onAppear()
+        await wait(prefetcher.$models, until: { if case .failed = $0 { return true } else { return false } }) {
+            viewModel.onAppear()
+        }
 
         XCTAssertTrue(viewModel.availableModels.isEmpty)
         XCTAssertNil(viewModel.selectedModelID)
     }
 
-    func testSelectionPreservedAcrossModelsRefresh() {
+    func testUserSelectionSurvivesModelLoad() async {
         let provider = MockAIModelProvider(models: [model("a", tier: ["plus"]), model("b", tier: ["free"])], persistedModelID: "a")
-        let viewModel = makeViewModel(provider: provider)
-        viewModel.onAppear()
-        viewModel.select("b")
+        let (viewModel, _) = makeViewModel(provider: provider)
 
-        provider.onModelsUpdated?()
+        // Select before the async fetch resolves; the load must not overwrite the user's choice with the persisted one.
+        await wait(viewModel.$models, until: { !$0.isEmpty }) {
+            viewModel.onAppear()
+            viewModel.select("b")
+        }
 
         XCTAssertEqual(viewModel.selectedModelID, "b")
     }
 
-    func testSelectUpdatesSelectionWithoutPersisting() {
+    func testSelectUpdatesSelectionWithoutPersisting() async {
         let provider = MockAIModelProvider(models: [model("a", tier: ["plus"]), model("b", tier: ["free"])])
-        let viewModel = makeViewModel(provider: provider)
-        viewModel.onAppear()
+        let (viewModel, _) = makeViewModel(provider: provider)
+        await wait(viewModel.$models, until: { !$0.isEmpty }) {
+            viewModel.onAppear()
+        }
 
         viewModel.select("b")
 
@@ -99,10 +116,12 @@ final class SubscriptionOnboardingDuckAIViewModelTests: XCTestCase {
         XCTAssertNil(provider.updatedModelID)
     }
 
-    func testStartChatPersistsSelectedModel() {
+    func testStartChatPersistsSelectedModel() async {
         let provider = MockAIModelProvider(models: [model("a", tier: ["plus"])], persistedModelID: "a")
-        let viewModel = makeViewModel(provider: provider)
-        viewModel.onAppear()
+        let (viewModel, _) = makeViewModel(provider: provider)
+        await wait(viewModel.$selectedModelID, until: { $0 != nil }) {
+            viewModel.onAppear()
+        }
 
         viewModel.startChat()
 
@@ -111,7 +130,7 @@ final class SubscriptionOnboardingDuckAIViewModelTests: XCTestCase {
 
     func testStartChatReportsSectionComplete() {
         let delegate = SpySectionDelegate()
-        let viewModel = makeViewModel(provider: MockAIModelProvider(models: []), delegate: delegate)
+        let (viewModel, _) = makeViewModel(provider: MockAIModelProvider(models: []), delegate: delegate)
 
         viewModel.startChat()
 
@@ -121,12 +140,34 @@ final class SubscriptionOnboardingDuckAIViewModelTests: XCTestCase {
     // MARK: - Helpers
 
     private func makeViewModel(provider: MockAIModelProvider,
-                               delegate: SubscriptionOnboardingSectionDelegate? = nil) -> SubscriptionOnboardingDuckAIViewModel {
-        SubscriptionOnboardingDuckAIViewModel(prefetcher: SubscriptionOnboardingPrefetcher(modelProvider: provider), delegate: delegate)
+                               delegate: SubscriptionOnboardingSectionDelegate? = nil)
+    -> (viewModel: SubscriptionOnboardingDuckAIViewModel, prefetcher: SubscriptionOnboardingPrefetcher) {
+        let prefetcher = SubscriptionOnboardingPrefetcher(modelProvider: provider)
+        let viewModel = SubscriptionOnboardingDuckAIViewModel(prefetcher: prefetcher, delegate: delegate)
+        return (viewModel, prefetcher)
     }
 
     private func model(_ id: String, name: String = "Model", tier: [String], hasAccess: Bool = true) -> AIChatModel {
         AIChatModel(id: id, name: name, provider: .openAI, supportsImageUpload: false, entityHasAccess: hasAccess, accessTier: tier)
+    }
+
+    /// Runs `trigger`, then waits until `publisher` emits a value satisfying `predicate`. Mirrors the helper in
+    /// the VPN activation tests: the model fetch is now async, so results arrive on a later run-loop turn.
+    private func wait<T>(_ publisher: Published<T>.Publisher,
+                         until predicate: @escaping (T) -> Bool,
+                         trigger: () -> Void) async {
+        let expectation = expectation(description: "publisher satisfies predicate")
+        var fulfilled = false
+        publisher
+            .sink { emitted in
+                if predicate(emitted), !fulfilled {
+                    fulfilled = true
+                    expectation.fulfill()
+                }
+            }
+            .store(in: &cancellables)
+        trigger()
+        await fulfillment(of: [expectation], timeout: 1)
     }
 }
 
@@ -134,9 +175,8 @@ final class SubscriptionOnboardingDuckAIViewModelTests: XCTestCase {
 
 @MainActor
 private final class MockAIModelProvider: SubscriptionOnboardingAIModelProviding {
-    let models: [AIChatModel]
+    private let models: [AIChatModel]
     var persistedModelID: String?
-    var onModelsUpdated: (() -> Void)?
     private(set) var fetchCallCount = 0
     private(set) var updatedModelID: String?
 
@@ -145,9 +185,9 @@ private final class MockAIModelProvider: SubscriptionOnboardingAIModelProviding 
         self.persistedModelID = persistedModelID
     }
 
-    func fetchModels() {
+    func fetchModels() async -> [AIChatModel] {
         fetchCallCount += 1
-        onModelsUpdated?()
+        return models
     }
 
     func updateSelectedModel(_ modelID: String) {

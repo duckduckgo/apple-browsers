@@ -21,10 +21,12 @@ import Foundation
 import AIChat
 
 /// Prefetches the data the flow's sections need before the customer reaches them: the current (pre-VPN) connection
-/// info and the available Duck.ai models. Owned by ``SubscriptionOnboardingFlowViewModel`` and fetched once at flow
-/// start, so the result is cached here and simply read by the VPN and Duck.ai screens rather than refetched on every
-/// visit. A screen that finds its fetch still unresolved (or failed) calls the matching `fetchIfNeeded` method from
-/// its own `onAppear`, which is a no-op unless that fetch is `.idle` or `.failed`.
+/// info and the available Duck.ai models. Fetched once at flow start, so the result is cached here and simply read
+/// by the VPN and Duck.ai screens rather than refetched on every visit. A screen that finds its fetch still
+/// unresolved (or failed) calls the matching `fetchIfNeeded` method from its own `onAppear`, which is a no-op
+/// unless that fetch is `.idle` or `.failed`.
+///
+// TODO: will be owned by SubscriptionOnboardingFlowViewModel.swift calling `prefetch()` once at flow start
 @MainActor
 final class SubscriptionOnboardingPrefetcher: ObservableObject {
 
@@ -44,18 +46,11 @@ final class SubscriptionOnboardingPrefetcher: ObservableObject {
         }
     }
 
-    private enum Constants {
-        /// Upper bound on how long the model fetch may stay `.loading` before it is treated as failed, so the
-        /// Duck.ai screen never hangs on a callback that never arrives.
-        static let modelFetchTimeout: TimeInterval = 10
-    }
-
     @Published private(set) var connectionInfo: FetchState<SubscriptionOnboardingConnectionInfo> = .idle
     @Published private(set) var models: FetchState<[AIChatModel]> = .idle
 
     private let connectionInfoService: SubscriptionOnboardingConnectionInfoService
     private let modelProvider: SubscriptionOnboardingAIModelProviding
-    private var modelFetchTimeoutTask: Task<Void, Never>?
 
     init(connectionInfoService: SubscriptionOnboardingConnectionInfoService = DefaultSubscriptionOnboardingConnectionInfoService(),
          modelProvider: SubscriptionOnboardingAIModelProviding = DefaultSubscriptionOnboardingAIModelProvider()) {
@@ -86,17 +81,10 @@ final class SubscriptionOnboardingPrefetcher: ObservableObject {
     func fetchModelsIfNeeded() {
         guard models.shouldStartFetch else { return }
         models = .loading
-        modelProvider.onModelsUpdated = { [weak self] in
+        Task { @MainActor [weak self] in
             guard let self else { return }
-            self.modelFetchTimeoutTask?.cancel()
-            let fetched = self.modelProvider.models
+            let fetched = await self.modelProvider.fetchModels()
             self.models = fetched.isEmpty ? .failed : .loaded(fetched)
-        }
-        modelProvider.fetchModels()
-        modelFetchTimeoutTask = Task { @MainActor [weak self] in
-            try? await Task.sleep(nanoseconds: UInt64(Constants.modelFetchTimeout * 1_000_000_000))
-            guard let self, !Task.isCancelled else { return }
-            if case .loading = self.models { self.models = .failed }
         }
     }
 
@@ -106,3 +94,5 @@ final class SubscriptionOnboardingPrefetcher: ObservableObject {
         modelProvider.updateSelectedModel(modelID)
     }
 }
+
+extension SubscriptionOnboardingPrefetcher.FetchState: Equatable where Value: Equatable {}

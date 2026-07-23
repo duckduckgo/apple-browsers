@@ -133,10 +133,9 @@ final class SubscriptionDebugViewController: UITableViewController {
     }
 
     enum OnboardingRows: Int, CaseIterable {
+        case welcome
         case vpn
         case duckAI
-        case fullFlow
-        case tapAllowOverlay
     }
 
     private var notificationAuthStatusText: String = "Loading"
@@ -326,17 +325,14 @@ final class SubscriptionDebugViewController: UITableViewController {
 
         case .onboarding:
             switch OnboardingRows(rawValue: indexPath.row) {
+            case .welcome:
+                cell.textLabel?.text = "Welcome"
+                cell.accessoryType = .disclosureIndicator
             case .vpn:
                 cell.textLabel?.text = "VPN"
                 cell.accessoryType = .disclosureIndicator
             case .duckAI:
                 cell.textLabel?.text = "Duck.ai"
-                cell.accessoryType = .disclosureIndicator
-            case .fullFlow:
-                cell.textLabel?.text = "Full Flow"
-                cell.accessoryType = .disclosureIndicator
-            case .tapAllowOverlay:
-                cell.textLabel?.text = "Tap Allow Overlay Playground"
                 cell.accessoryType = .disclosureIndicator
             case .none:
                 break
@@ -411,10 +407,9 @@ final class SubscriptionDebugViewController: UITableViewController {
             }
         case .onboarding:
             switch OnboardingRows(rawValue: indexPath.row) {
+            case .welcome: showWelcomeOnboarding()
             case .vpn: showVPNOnboarding()
             case .duckAI: showDuckAIOnboarding()
-            case .fullFlow: showFullOnboardingFlow()
-            case .tapAllowOverlay: showTapAllowOverlayPlayground()
             default: break
             }
         case .none:
@@ -860,6 +855,13 @@ final class SubscriptionDebugViewController: UITableViewController {
         navigationController?.pushViewController(hostingController, animated: true)
     }
 
+    private func showWelcomeOnboarding() {
+        let hostingController = UIHostingController(
+            rootView: SubscriptionOnboardingWelcomeView(onClose: { [weak self] in self?.dismiss(animated: true) })
+                .subscriptionOnboardingNavigationContainer())
+        present(hostingController, animated: true)
+    }
+
     private func showVPNOnboarding() {
         let hostingController = UIHostingController(
             rootView: SubscriptionOnboardingVPNActivationView(
@@ -875,22 +877,6 @@ final class SubscriptionDebugViewController: UITableViewController {
                 viewModel: SubscriptionOnboardingDuckAIViewModel(prefetcher: SubscriptionOnboardingPrefetcher(), delegate: self))
                 .subscriptionOnboardingNavigationContainer())
         present(hostingController, animated: true)
-    }
-
-    private func showFullOnboardingFlow() {
-        let flowViewModel = SubscriptionOnboardingFlowViewModel(
-            prefetcher: SubscriptionOnboardingPrefetcher(),
-            host: self)
-        let hostingController = UIHostingController(
-            rootView: SubscriptionOnboardingFlowView(viewModel: flowViewModel, factory: DefaultSubscriptionOnboardingViewFactory())
-                .graphicLottieRenderer(Self.onboardingLottieRenderer))
-        present(hostingController, animated: true)
-    }
-
-    private func showTapAllowOverlayPlayground() {
-        let hostingController = UIHostingController(rootView: TapAllowOverlayPlaygroundView())
-        hostingController.title = "Tap Allow Overlay"
-        navigationController?.pushViewController(hostingController, animated: true)
     }
 
     /// Draws `Graphic.lottie` for the onboarding preview from this debug host, since `UIComponents` has no
@@ -926,18 +912,12 @@ extension SubscriptionDebugViewController: SubscriptionOnboardingSectionDelegate
     func sectionDidRequestGoBack() {
         dismiss(animated: true)
     }
-}
 
-extension SubscriptionDebugViewController: SubscriptionOnboardingFlowHosting {
-    func launchDuckAIChat(modelID: String?) {
+    private func launchDuckAIChat(modelID: String?) {
         // The contextual chat surface needs the app's content-blocking pipeline (which builds the UserScripts
         // bundle carrying SubscriptionUserScript for the paid tier). MainViewController owns it.
         guard let contentBlockingAssetsPublisher = (view.window?.rootViewController as? MainViewController)?.contentBlockingAssetsPublisher else { return }
         duckAIChatLauncher = SubscriptionOnboardingDuckAIChatLauncher(contentBlockingAssetsPublisher: contentBlockingAssetsPublisher)
         duckAIChatLauncher?.present(from: presentedViewController ?? self, modelID: modelID)
-    }
-
-    func onboardingFlowDidFinish() {
-        dismiss(animated: true)
     }
 }

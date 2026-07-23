@@ -23,6 +23,7 @@
 /// view via ``SubscriptionOnboardingViewFactory`` and reacts to its completion via
 /// ``SubscriptionOnboardingSectionDelegate``.
 enum SubscriptionOnboardingSection: CaseIterable {
+    case welcome
     case vpn
     case duckAI
 
@@ -31,10 +32,12 @@ enum SubscriptionOnboardingSection: CaseIterable {
     enum Kind: Equatable {
         /// Activates a specific premium protection; contributes to the completion percentage.
         case activation(SubscriptionOnboardingChecklistItem)
+        case overview
     }
 
     var kind: Kind {
         switch self {
+        case .welcome: .overview
         case .vpn: .activation(.vpn)
         case .duckAI: .activation(.duckAI)
         }

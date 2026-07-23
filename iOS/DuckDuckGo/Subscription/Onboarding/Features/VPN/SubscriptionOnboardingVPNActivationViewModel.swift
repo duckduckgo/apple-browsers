@@ -21,10 +21,9 @@ import Combine
 import Foundation
 import VPN
 
-/// Drives the VPN activation screen (the same screen in two states: off and on). It reads the original
-/// connection info from the shared ``SubscriptionOnboardingPrefetcher`` while off (caching it as the "hidden"
-/// card once on), retrying the fetch on appearance if it hasn't resolved yet; starts the VPN through the
-/// injected controller; and — when the tunnel reaches connected — describes the new (egress) IP and location
+/// Drives the VPN activation screen. It reads the original
+/// connection info from the shared ``SubscriptionOnboardingPrefetcher`` while off, retrying the fetch on appearance if it hasn't resolved yet;
+/// starts the VPN through the injected controller; and describes the new (egress) IP and location
 /// from the shared server-info observer (the same source the VPN settings screen reads) and reports
 /// completion up to the flow via ``SubscriptionOnboardingSectionDelegate``.
 final class SubscriptionOnboardingVPNActivationViewModel: ObservableObject {
@@ -50,19 +49,17 @@ final class SubscriptionOnboardingVPNActivationViewModel: ObservableObject {
 
     /// The original (pre-VPN) connection, mirrored from the prefetcher while off and retained.
     @Published private(set) var originalConnectionInfo: ConnectionInfoState = .idle
-    /// The VPN egress server info (address + location) from the shared server-info observer — the same source
-    /// the VPN settings screen reads. Address and location are read independently, matching that screen.
+    /// The VPN egress server info (address + location) from the shared server-info observer.
     @Published private(set) var vpnServerInfo: NetworkProtectionStatusServerInfo = .unknown
 
     /// Whether the customer declined the system VPN-configuration prompt, observed from the controller's
-    /// configuration-denied signal. Persists across retries and clears once the tunnel connects.
+    /// configuration-denied signal.
     @Published private(set) var didDenyVPNPermission = false
 
     private let prefetcher: SubscriptionOnboardingPrefetcher
     private let vpnController: SubscriptionOnboardingVPNControlling
     private let vpnLocationProvider: SubscriptionOnboardingVPNLocationProviding
     private let serverInfoObserver: ConnectionServerInfoObserver
-    // TODO: Wrap in a goBack() intent method and make private once leaf views get delegate via Environment injection (Stage 3).
     private(set) weak var delegate: SubscriptionOnboardingSectionDelegate?
     private let locale: Locale
 
@@ -128,7 +125,6 @@ final class SubscriptionOnboardingVPNActivationViewModel: ObservableObject {
             prefetcher.fetchConnectionInfoIfNeeded()
         case .on:
             reportCompletionIfNeeded()
-            vpnServerInfo = serverInfoObserver.recentValue
         }
     }
 
@@ -137,8 +133,7 @@ final class SubscriptionOnboardingVPNActivationViewModel: ObservableObject {
         cancellables.removeAll()
     }
 
-    /// Starts the VPN. Doesn't clear ``didDenyVPNPermission`` — the denied state must survive a retry and
-    /// clears only on connect; a denial arrives via the configuration-denied signal (see ``observeConnection()``).
+    /// Starts the VPN.
     @MainActor
     func turnOnVPN() async {
         await vpnController.start()
@@ -153,7 +148,7 @@ final class SubscriptionOnboardingVPNActivationViewModel: ObservableObject {
 
     @MainActor
     private func observeConnection() {
-        // onAppear can fire more than once without an intervening onDisappear; avoid stacking duplicate sinks.
+        // onAppear can fire more than once without an intervening onDisappear; safety net to avoid stacking duplicate sinks.
         guard cancellables.isEmpty else { return }
         vpnController.isConnectedPublisher
             .removeDuplicates()
@@ -185,7 +180,6 @@ final class SubscriptionOnboardingVPNActivationViewModel: ObservableObject {
             .store(in: &cancellables)
     }
 
-    /// Runs on the main queue (the publisher is delivered there), so the `@Published` mutations are safe.
     private func handleConnectionChange(isConnected: Bool) {
         let newState: ConnectionState = isConnected ? .on : .off
         guard newState != connectionState else { return }
@@ -207,7 +201,7 @@ final class SubscriptionOnboardingVPNActivationViewModel: ObservableObject {
 // MARK: - VPN controller seam
 
 /// The view model's window onto the VPN tunnel: whether it is connected, a stream of that value, and a
-/// way to start it. A protocol so previews and tests can drive the off→on transition without the tunnel.
+/// way to start it.
 protocol SubscriptionOnboardingVPNControlling {
     var isConnected: Bool { get }
     var isConnectedPublisher: AnyPublisher<Bool, Never> { get }

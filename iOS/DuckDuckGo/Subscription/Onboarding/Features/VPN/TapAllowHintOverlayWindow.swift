@@ -22,23 +22,19 @@ import UIKit
 import DesignResourcesKit
 import UIComponents
 
-/// Presents the "Tap allow" pointer in a dedicated `UIWindow` at `.alert + 1` so it renders **above** the
-/// system VPN-configuration permission alert — an in-app overlay would sit behind it. The window is
-/// non-interactive, so taps pass straight through to the real "Allow" button beneath. Held by the view for
+/// Presents the "Tap allow" pointer in a dedicated `UIWindow`. Held by the view for
 /// its lifetime; ``show()`` / ``hide()`` bracket the first-time turn-on.
 @MainActor
 final class TapAllowHintOverlayWindow {
     private enum Metrics {
-        // `FloatingPointerBubble` geometry (see FloatingPointerBubble.swift): a 33pt arrow sits above the pill,
+        // `FloatingPointerBubble` geometry: a 33pt arrow sits above the pill,
         // and the pill is the 17pt "Tap allow" label plus 12pt vertical padding top & bottom (~44pt).
         static let bubbleArrowHeight: CGFloat = 33
         static let bubblePillHeight: CGFloat = 44
         static let bubbleHeight: CGFloat = bubbleArrowHeight + bubblePillHeight
 
         // Screen-centre-relative target for the arrow *tip* (the dialog is centred): its left "Allow" button.
-        // No API exposes the dialog's layout, so these are hand-tuned; `hintView` factors in the bubble height
-        // so the tip — not the bubble centre — lands here. iOS 26's Liquid Glass alert is wider, more padded,
-        // and left-aligned, so it gets its own offsets from the iOS 18-era layout.
+        // No API exposes the dialog's layout, so these are hand-tuned
         static var hintOffsetX: CGFloat {
             return -77
         }

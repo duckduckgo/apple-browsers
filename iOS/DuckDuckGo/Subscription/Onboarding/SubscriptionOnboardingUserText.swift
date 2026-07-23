@@ -22,6 +22,12 @@ import FoundationExtensions
 
 extension UserText {
 
+    // MARK: - Welcome screen
+
+    public static let subscriptionOnboardingWelcomeTitle = NotLocalizedString("subscription.onboarding.welcome.title", value: "Ready to activate your new protections?", comment: "Welcome screen title")
+    public static let subscriptionOnboardingWelcomeExplanation = NotLocalizedString("subscription.onboarding.welcome.explanation", value: "Next, we'll get your VPN online and help you activate all your premium protections.", comment: "Welcome screen subtitle")
+    public static let subscriptionOnboardingWelcomeNextButton = NotLocalizedString("subscription.onboarding.welcome.next.button", value: "Next", comment: "Welcome screen primary button that starts the flow")
+
     public static let subscriptionOnboardingWelcomeVPNTitle = NotLocalizedString("subscription.onboarding.welcome.vpn.title", value: "VPN", comment: "Welcome screen feature-list row title for the VPN")
     public static let subscriptionOnboardingWelcomeVPNBody = NotLocalizedString("subscription.onboarding.welcome.vpn.body", value: "Get an extra layer of online protection with the VPN built for speed and simplicity.", comment: "Welcome screen feature-list row description for the VPN")
 

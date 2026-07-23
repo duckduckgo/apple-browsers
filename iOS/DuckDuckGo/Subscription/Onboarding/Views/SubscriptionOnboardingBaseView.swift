@@ -323,19 +323,6 @@ private func onboardingPreviewLongBody() -> some View {
     .preferredColorScheme(.dark)
 }
 
-#Preview("Carousel, single primary") {
-    RebrandedPreview {
-        SubscriptionOnboardingBaseView(
-            title: "Step 1 of 4",
-            navigationButton: .close({}),
-            header: onboardingPreviewHeader(),
-            footer: .single(.init("Continue", action: {}))) {
-            SubscriptionOnboardingVPNTipsCarousel()
-        }
-        .subscriptionOnboardingNavigationContainer()
-    }
-}
-
 #Preview("Long content") {
     RebrandedPreview {
         SubscriptionOnboardingBaseView(

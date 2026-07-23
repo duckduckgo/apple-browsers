@@ -1211,6 +1211,10 @@ private extension AIChatContextualSheetViewController {
     }
 
     func configureModalPresentation() {
+        guard !presentsFullScreen else {
+            modalPresentationStyle = .overFullScreen
+            return
+        }
         modalPresentationStyle = .pageSheet
         configureSheetPresentation()
     }

@@ -25,6 +25,10 @@ final class SubscriptionOnboardingSectionTests: XCTestCase {
 
     // MARK: - Kind mapping
 
+    func testWhenSectionIsWelcomeThenKindIsOverview() {
+        XCTAssertEqual(SubscriptionOnboardingSection.welcome.kind, .overview)
+    }
+
     func testWhenSectionIsVPNThenKindIsVPNActivation() {
         XCTAssertEqual(SubscriptionOnboardingSection.vpn.kind, .activation(.vpn))
     }
@@ -33,20 +37,8 @@ final class SubscriptionOnboardingSectionTests: XCTestCase {
         XCTAssertEqual(SubscriptionOnboardingSection.duckAI.kind, .activation(.duckAI))
     }
 
-    func testSectionsAreExactlyVPNAndDuckAI() {
-        XCTAssertEqual(SubscriptionOnboardingSection.allCases, [.vpn, .duckAI])
-    }
-
-    // MARK: - View factory
-
-    func testWhenMakingViewForEverySectionThenAViewIsReturned() {
-        // The factory must be total — it returns a view for every section without trapping.
-        let factory = DefaultSubscriptionOnboardingViewFactory()
-        let delegate = SpySectionDelegate()
-        let prefetcher = SubscriptionOnboardingPrefetcher()
-        for section in SubscriptionOnboardingSection.allCases {
-            _ = factory.makeView(for: section, delegate: delegate, prefetcher: prefetcher)
-        }
+    func testSectionsAreExactlyWelcomeVPNAndDuckAI() {
+        XCTAssertEqual(SubscriptionOnboardingSection.allCases, [.welcome, .vpn, .duckAI])
     }
 
     // MARK: - Navigation button accessibility
@@ -65,14 +57,4 @@ final class SubscriptionOnboardingSectionTests: XCTestCase {
         XCTAssertNotEqual(SubscriptionOnboardingNavigationButton.back({}).accessibilityLabel,
                           SubscriptionOnboardingNavigationButton.close({}).accessibilityLabel)
     }
-}
-
-private final class SpySectionDelegate: SubscriptionOnboardingSectionDelegate {
-    private(set) var completedSections: [SubscriptionOnboardingSection] = []
-    func sectionDidComplete(_ section: SubscriptionOnboardingSection) {
-        completedSections.append(section)
-    }
-    func sectionDidRequestDuckAIChat(modelID: String?) {}
-    func sectionDidRequestAdvance() {}
-    func sectionDidRequestGoBack() {}
 }

@@ -149,7 +149,7 @@ extension RebrandedComparisonTableModel {
             ]
         case .privateAIChat:
             return [
-                Feature(icon: Image(""), title: AIText.anonymousChats, competitorAvailability: .unavailable, ddgAvailability: .available),
+                Feature(icon: Image(""), title: AIText.anonymousChats, competitorAvailability: .unavailable, ddgAvailability: .available), // Placeholder icon to be replaced
                 Feature(icon: Icon.privateAIChatIcon, title: AIText.noAccountsNeeded, competitorAvailability: .unavailable, ddgAvailability: .available),
                 Feature(icon: Icon.lockIcon, title: AIText.noTrainingData, competitorAvailability: .unavailable, ddgAvailability: .available),
                 Feature(icon: Icon.aiIcon, title: AIText.onePlaceAccess, competitorAvailability: .unavailable, ddgAvailability: .available),
@@ -157,15 +157,15 @@ extension RebrandedComparisonTableModel {
             ]
         case .noAI:
             return [
-                Feature(icon: Image(""), title: BrowserText.noAIAnswers, competitorAvailability: .unavailable, ddgAvailability: .available),
-                Feature(icon: Image(""), title: BrowserText.hideAIImages, competitorAvailability: .unavailable, ddgAvailability: .available),
-                Feature(icon: Icon.privateSearchIcon, title: BrowserText.privateSearch, competitorAvailability: .unavailable, ddgAvailability: .available),
+                Feature(icon: Image(""), title: BrowserText.noAIAnswers, competitorAvailability: .unavailable, ddgAvailability: .available), // Placeholder icon to be replaced
+                Feature(icon: Image(""), title: BrowserText.hideAIImages, competitorAvailability: .unavailable, ddgAvailability: .available), // Placeholder icon to be replaced
+                Feature(icon: Icon.lensIcon, title: BrowserText.privateSearch, competitorAvailability: .unavailable, ddgAvailability: .available),
                 Feature(icon: Icon.shieldIcon, title: BrowserText.trackerBlockers, competitorAvailability: .partial, ddgAvailability: .available),
-                Feature(icon: Icon.blockAdsIcon, title: BrowserText.cookiePopupsAndAds, competitorAvailability: .unavailable, ddgAvailability: .available),
+                Feature(icon: Image(uiImage: DesignSystemImages.Color.Size24.adsBlocked), title: BrowserText.cookiePopupsAndAds, competitorAvailability: .unavailable, ddgAvailability: .available),
             ]
         case .blockAds:
             return [
-                Feature(icon: Icon.blockAdsIcon, title: BrowserText.cookiePopupsAndAds, competitorAvailability: .unavailable, ddgAvailability: .available),
+                Feature(icon: Image(uiImage: DesignSystemImages.Color.Size24.adsBlocked), title: BrowserText.cookiePopupsAndAds, competitorAvailability: .unavailable, ddgAvailability: .available),
                 Feature(icon: Icon.blockYouTubeAdsIcon, title: BrowserText.duckplayer, competitorAvailability: .unavailable, ddgAvailability: .available),
                 Feature(icon: Icon.lensIcon, title: BrowserText.privateSearch, competitorAvailability: .unavailable, ddgAvailability: .available),
                 Feature(icon: Icon.privateAIChatIcon, title: BrowserText.privateAIChat, competitorAvailability: .unavailable, ddgAvailability: .available),

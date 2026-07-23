@@ -72,7 +72,7 @@ final class UnifiedToggleInputToggleView: UIView {
 
     private lazy var indicator: UIView = {
         let view = UIView()
-        view.backgroundColor = UIColor(designSystemColor: .controlsRaisedFillPrimary)
+        view.backgroundColor = UIColor.systemPink
         view.layer.cornerRadius = Constants.innerCornerRadius
         view.layer.shadowColor = UIColor(designSystemColor: .shadowSecondary).cgColor
         view.layer.shadowOpacity = 1.0

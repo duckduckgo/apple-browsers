@@ -26,6 +26,7 @@ import FeatureFlags
 import FoundationExtensions
 import Lottie
 import OSLog
+import PrivacyConfig
 
 @MainActor
 final class FireViewController: NSViewController {
@@ -36,6 +37,7 @@ final class FireViewController: NSViewController {
 
     private(set) var fireViewModel: FireViewModel
     private let tabCollectionViewModel: TabCollectionViewModel
+    private let featureFlagger: FeatureFlagger
 
     private let themeManager: ThemeManaging
     private var theme: ThemeStyleProviding {
@@ -70,7 +72,7 @@ final class FireViewController: NSViewController {
     private lazy var progressIndicatorBackgroundView: ColorView = {
         let view = ColorView(frame: .zero, backgroundColor: .newTabPageBackground)
         view.translatesAutoresizingMaskIntoConstraints = false
-        view.cornerRadius = 24
+        view.cornerRadius = featureFlagger.isFeatureOn(.fireDialogSimplified) ? 24 : 8
         return view
     }()
 
@@ -88,13 +90,16 @@ final class FireViewController: NSViewController {
         indicator.translatesAutoresizingMaskIntoConstraints = false
         indicator.style = .bar
         indicator.isIndeterminate = true
-        indicator.wantsLayer = true
 
-        if let colorFilter = CIFilter(name: "CIFalseColor") {
-            colorFilter.setDefaults()
-            colorFilter.setValue(CIColor(color: NSColor(singleUseColor: .fireButtonGradientStart)), forKey: "inputColor0")
-            colorFilter.setValue(CIColor(color: NSColor(singleUseColor: .fireButtonGradientEnd)), forKey: "inputColor1")
-            indicator.contentFilters = [colorFilter]
+        if featureFlagger.isFeatureOn(.fireDialogSimplified) {
+            indicator.wantsLayer = true
+
+            if let colorFilter = CIFilter(name: "CIFalseColor") {
+                colorFilter.setDefaults()
+                colorFilter.setValue(CIColor(color: NSColor(singleUseColor: .fireButtonGradientStart)), forKey: "inputColor0")
+                colorFilter.setValue(CIColor(color: NSColor(singleUseColor: .fireButtonGradientEnd)), forKey: "inputColor1")
+                indicator.contentFilters = [colorFilter]
+            }
         }
         return indicator
     }()
@@ -102,17 +107,13 @@ final class FireViewController: NSViewController {
     private lazy var deletingDataLabel: NSTextField = {
         let label = NSTextField(labelWithString: UserText.fireDialogDeletingData)
         label.translatesAutoresizingMaskIntoConstraints = false
+        if featureFlagger.isFeatureOn(.fireDialogSimplified) {
+            label.font = NSFont.systemFont(ofSize: 15, weight: .semibold)
+        } else {
+            label.font = NSFont.systemFont(ofSize: NSFont.smallSystemFontSize)
+        }
         label.alignment = .center
 
-        let paragraphStyle = NSMutableParagraphStyle()
-        paragraphStyle.alignment = .center
-        paragraphStyle.lineHeightMultiple = 20.0 / 15.0
-
-        label.attributedStringValue = NSAttributedString(string: UserText.fireDialogDeletingData, attributes: [
-            .font: NSFont.systemFont(ofSize: 15, weight: .semibold),
-            .kern: -0.23,
-            .paragraphStyle: paragraphStyle
-        ])
         return label
     }()
 
@@ -127,18 +128,20 @@ final class FireViewController: NSViewController {
     private var fireAnimationViewLoadingTask: Task<(), Never>?
     private(set) lazy var fireIndicatorVisibilityManager = FireIndicatorVisibilityManager { [weak self] in self?.view.superview }
 
-    static func create(tabCollectionViewModel: TabCollectionViewModel, fireViewModel: FireViewModel, visualizeFireAnimationDecider: VisualizeFireSettingsDecider) -> FireViewController {
-        return FireViewController(tabCollectionViewModel: tabCollectionViewModel, fireViewModel: fireViewModel, visualizeFireAnimationDecider: visualizeFireAnimationDecider)
+    static func create(tabCollectionViewModel: TabCollectionViewModel, fireViewModel: FireViewModel, visualizeFireAnimationDecider: VisualizeFireSettingsDecider, featureFlagger: FeatureFlagger) -> FireViewController {
+        return FireViewController(tabCollectionViewModel: tabCollectionViewModel, fireViewModel: fireViewModel, visualizeFireAnimationDecider: visualizeFireAnimationDecider, featureFlagger: featureFlagger)
     }
 
     @MainActor
     init(tabCollectionViewModel: TabCollectionViewModel,
          fireViewModel: FireViewModel,
          themeManager: ThemeManaging? = nil,
-         visualizeFireAnimationDecider: VisualizeFireSettingsDecider) {
+         visualizeFireAnimationDecider: VisualizeFireSettingsDecider,
+         featureFlagger: FeatureFlagger) {
         self.tabCollectionViewModel = tabCollectionViewModel
         self.fireViewModel = fireViewModel
         self.themeManager = themeManager ?? NSApp.delegateTyped.themeManager
+        self.featureFlagger = featureFlagger
         self.visualizeFireAnimationDecider = visualizeFireAnimationDecider
 
         super.init(nibName: nil, bundle: nil)
@@ -208,8 +211,8 @@ final class FireViewController: NSViewController {
             // Progress wrapper background (with shadow)
             progressIndicatorWrapperBG.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             progressIndicatorWrapperBG.centerYAnchor.constraint(equalTo: view.centerYAnchor),
-            progressIndicatorWrapperBG.widthAnchor.constraint(equalToConstant: 428),
-            progressIndicatorWrapperBG.heightAnchor.constraint(equalToConstant: 194),
+            progressIndicatorWrapperBG.widthAnchor.constraint(equalToConstant: featureFlagger.isFeatureOn(.fireDialogSimplified) ? 428 : 320),
+            progressIndicatorWrapperBG.heightAnchor.constraint(equalToConstant: featureFlagger.isFeatureOn(.fireDialogSimplified) ? 194 : 220),
 
             // Inner background
             progressIndicatorBackgroundView.topAnchor.constraint(equalTo: progressIndicatorWrapperBG.topAnchor, constant: 10),
@@ -220,21 +223,15 @@ final class FireViewController: NSViewController {
             // Progress indicator wrapper (centered content)
             progressIndicatorWrapper.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             progressIndicatorWrapper.centerYAnchor.constraint(equalTo: view.centerYAnchor),
-            progressIndicatorWrapper.widthAnchor.constraint(equalToConstant: 428),
-            progressIndicatorWrapper.heightAnchor.constraint(equalToConstant: 194),
+            progressIndicatorWrapper.widthAnchor.constraint(equalToConstant: featureFlagger.isFeatureOn(.fireDialogSimplified) ? 428 : 320),
+            progressIndicatorWrapper.heightAnchor.constraint(equalToConstant: featureFlagger.isFeatureOn(.fireDialogSimplified) ? 194 : 220),
 
             // Fire icon
-            fakeFireButtonIconView.topAnchor.constraint(equalTo: progressIndicatorWrapper.topAnchor, constant: 32),
             fakeFireButtonIconView.centerXAnchor.constraint(equalTo: progressIndicatorWrapper.centerXAnchor),
-            fakeFireButtonIconView.widthAnchor.constraint(equalToConstant: 56),
-            fakeFireButtonIconView.heightAnchor.constraint(equalToConstant: 56),
-
-            // Label
-            deletingDataLabel.topAnchor.constraint(equalTo: fakeFireButtonIconView.bottomAnchor, constant: 12),
-            deletingDataLabel.centerXAnchor.constraint(equalTo: progressIndicatorWrapper.centerXAnchor),
+            fakeFireButtonIconView.widthAnchor.constraint(equalToConstant: featureFlagger.isFeatureOn(.fireDialogSimplified) ? 56: 48),
+            fakeFireButtonIconView.heightAnchor.constraint(equalToConstant: featureFlagger.isFeatureOn(.fireDialogSimplified) ? 56 : 48),
 
             // Progress indicator
-            progressIndicator.topAnchor.constraint(equalTo: deletingDataLabel.bottomAnchor, constant: 24),
             progressIndicator.centerXAnchor.constraint(equalTo: progressIndicatorWrapper.centerXAnchor),
             progressIndicator.widthAnchor.constraint(equalToConstant: 210),
             progressIndicator.heightAnchor.constraint(equalToConstant: 18),
@@ -245,6 +242,32 @@ final class FireViewController: NSViewController {
             fakeFireButton.widthAnchor.constraint(equalToConstant: buttonSize),
             fakeFireButton.heightAnchor.constraint(equalToConstant: buttonSize)
         ])
+
+        if featureFlagger.isFeatureOn(.fireDialogSimplified) {
+            NSLayoutConstraint.activate([
+                // Fire icon
+                fakeFireButtonIconView.topAnchor.constraint(equalTo: progressIndicatorWrapper.topAnchor, constant: 32),
+
+                // Progress indicator
+                progressIndicator.topAnchor.constraint(equalTo: deletingDataLabel.bottomAnchor, constant: 24),
+
+                // Label
+                deletingDataLabel.topAnchor.constraint(equalTo: fakeFireButtonIconView.bottomAnchor, constant: 12),
+                deletingDataLabel.centerXAnchor.constraint(equalTo: progressIndicatorWrapper.centerXAnchor)
+            ])
+        } else {
+            NSLayoutConstraint.activate([
+                // Fire icon
+                fakeFireButtonIconView.centerYAnchor.constraint(equalTo: progressIndicatorWrapper.centerYAnchor, constant: -40),
+
+                // Progress indicator
+                progressIndicator.centerYAnchor.constraint(equalTo: progressIndicatorWrapper.centerYAnchor, constant: 13),
+
+                // Label
+                deletingDataLabel.centerXAnchor.constraint(equalTo: progressIndicatorWrapper.centerXAnchor),
+                deletingDataLabel.centerYAnchor.constraint(equalTo: progressIndicatorWrapper.centerYAnchor, constant: 34)
+            ])
+        }
     }
 
     private var fireAnimationEventsCancellable: AnyCancellable?

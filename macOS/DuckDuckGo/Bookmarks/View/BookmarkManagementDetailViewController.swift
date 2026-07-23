@@ -353,7 +353,7 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
     }
 
     /// Bookmark favicons are lazy-loaded: `Bookmark.favicon(.small)` may return `nil` on a cache miss and the
-    /// cell falls back to a default icon. When the image is decoded later, `.faviconCacheUpdated` is posted; reload
+    /// cell falls back to a default icon. When the image is decoded later, `.faviconCacheUpdated` is posted; refresh
     /// the table when the update relates to a host currently displayed in the list (or defensively if no payload).
     private func subscribeToFaviconCacheUpdates() {
         NotificationCenter.default.publisher(for: .faviconCacheUpdated)
@@ -363,7 +363,7 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
                 if let update = notification.faviconsCacheUpdate, update.hosts.isDisjoint(with: self.displayedBookmarkHosts) {
                     return
                 }
-                self.reloadData()
+                self.refreshFavicons()
             }
             .store(in: &cancellables)
     }
@@ -371,6 +371,18 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
     /// Hosts of the bookmarks currently visible in the list, used to filter favicon-cache updates.
     private var displayedBookmarkHosts: Set<String> {
         Set(managementDetailViewModel.visibleBookmarks.compactMap { ($0 as? Bookmark)?.urlObject?.host })
+    }
+
+    /// Refreshes favicons in place on the currently-visible rows instead of `reloadData()`. Rebuilding every
+    /// cell on each favicon-cache update would flicker the icons (blank/placeholder during the decode window).
+    private func refreshFavicons() {
+        dispatchPrecondition(condition: .onQueue(.main))
+        let visibleRows = tableView.rows(in: tableView.visibleRect)
+        guard visibleRows.length > 0 else { return }
+        for row in visibleRows.location..<(visibleRows.location + visibleRows.length) {
+            guard let cell = tableView.view(atColumn: 0, row: row, makeIfNecessary: false) as? BookmarkTableCellView else { continue }
+            cell.refreshDisplayedFavicon()
+        }
     }
 
     override func keyDown(with event: NSEvent) {

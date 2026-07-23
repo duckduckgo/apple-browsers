@@ -1522,9 +1522,6 @@ extension SettingsViewModel {
         Self.recordFirstTap(forKey: key, in: keyValueStore)
     }
 
-    /// Persists the first-tap timestamp for an instructional Next Steps item (Add to Dock /
-    /// Add Widget), but only if one isn't already stored — so repeat taps don't reset the
-    /// dismissal window and leave the row visible indefinitely.
     static func recordFirstTap(forKey key: String,
                                in keyValueStore: ThrowingKeyValueStoring,
                                now: TimeInterval = Date().timeIntervalSinceReferenceDate) {

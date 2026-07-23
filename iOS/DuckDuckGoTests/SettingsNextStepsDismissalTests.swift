@@ -28,11 +28,13 @@ struct SettingsNextStepsDismissalTests {
     private let oneDay: TimeInterval = 24 * 60 * 60
     private let tappedAt: TimeInterval = 1_000_000
 
+    @available(iOS 16, macOS 13, *)
     @Test("Item stays visible when never tapped", .timeLimit(.minutes(1)))
     func itemStaysVisibleWhenNeverTapped() {
         #expect(!SettingsViewModel.hasTapDismissalElapsed(tappedAt: nil, now: tappedAt, interval: oneDay))
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test("Item stays visible before interval elapses", .timeLimit(.minutes(1)))
     func itemStaysVisibleBeforeIntervalElapses() {
         #expect(!SettingsViewModel.hasTapDismissalElapsed(tappedAt: tappedAt,
@@ -40,6 +42,7 @@ struct SettingsNextStepsDismissalTests {
                                                           interval: oneDay))
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test("Item dismisses exactly at interval", .timeLimit(.minutes(1)))
     func itemDismissesExactlyAtInterval() {
         #expect(SettingsViewModel.hasTapDismissalElapsed(tappedAt: tappedAt,
@@ -47,6 +50,7 @@ struct SettingsNextStepsDismissalTests {
                                                          interval: oneDay))
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test("Item dismisses after interval", .timeLimit(.minutes(1)))
     func itemDismissesAfterInterval() {
         #expect(SettingsViewModel.hasTapDismissalElapsed(tappedAt: tappedAt,
@@ -59,6 +63,7 @@ struct SettingsNextStepsDismissalTests {
     private let fourteenDays: TimeInterval = 14 * 24 * 60 * 60
     private let installedAt = Date(timeIntervalSinceReferenceDate: 1_000_000)
 
+    @available(iOS 16, macOS 13, *)
     @Test("Hide button hidden when install date missing", .timeLimit(.minutes(1)))
     func hideButtonHiddenWhenInstallDateMissing() {
         #expect(!SettingsViewModel.hasInstallGracePeriodElapsed(installDate: nil,
@@ -66,6 +71,7 @@ struct SettingsNextStepsDismissalTests {
                                                                requiredInterval: fourteenDays))
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test("Hide button hidden just before grace period elapses", .timeLimit(.minutes(1)))
     func hideButtonHiddenJustBeforeGracePeriodElapses() {
         let now = Date(timeIntervalSinceReferenceDate: installedAt.timeIntervalSinceReferenceDate + fourteenDays - 1)
@@ -74,6 +80,7 @@ struct SettingsNextStepsDismissalTests {
                                                                requiredInterval: fourteenDays))
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test("Hide button appears exactly at grace period", .timeLimit(.minutes(1)))
     func hideButtonAppearsExactlyAtGracePeriod() {
         let now = Date(timeIntervalSinceReferenceDate: installedAt.timeIntervalSinceReferenceDate + fourteenDays)
@@ -82,6 +89,7 @@ struct SettingsNextStepsDismissalTests {
                                                               requiredInterval: fourteenDays))
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test("Hide button appears well after grace period", .timeLimit(.minutes(1)))
     func hideButtonAppearsWellAfterGracePeriod() {
         let now = Date(timeIntervalSinceReferenceDate: installedAt.timeIntervalSinceReferenceDate + fourteenDays * 3)
@@ -92,6 +100,7 @@ struct SettingsNextStepsDismissalTests {
 
     // MARK: - recordFirstTap ("record first tap only" guard for Add to Dock / Add Widget)
 
+    @available(iOS 16, macOS 13, *)
     @Test("First tap records the timestamp", .timeLimit(.minutes(1)))
     func firstTapRecordsTimestamp() throws {
         let store = InMemoryThrowingKeyValueStore()
@@ -100,6 +109,7 @@ struct SettingsNextStepsDismissalTests {
         #expect(stored == tappedAt)
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test("Repeat taps do not reset the dismissal window", .timeLimit(.minutes(1)))
     func repeatTapDoesNotOverwriteTimestamp() throws {
         let store = InMemoryThrowingKeyValueStore()
@@ -109,6 +119,7 @@ struct SettingsNextStepsDismissalTests {
         #expect(stored == tappedAt)
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test("Each item's tap timestamp is tracked independently", .timeLimit(.minutes(1)))
     func tapTimestampsAreIndependentPerKey() throws {
         let store = InMemoryThrowingKeyValueStore()

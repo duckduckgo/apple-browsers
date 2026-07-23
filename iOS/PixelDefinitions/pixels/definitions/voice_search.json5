@@ -5,13 +5,7 @@
         "owners": ["Bunn"],
         "triggers": ["exception"],
         "suffixes": ["daily_count"],
-        "parameters": [
-            "appVersion",
-            "errorDomain",
-            "errorCode",
-            "underlyingErrorDomain",
-            "underlyingErrorCode"
-        ]
+        "parameters": ["appVersion", "errorDomain", "errorCode", "underlyingErrorDomain", "underlyingErrorCode"]
     },
     "m_voice_search_no_speech": {
         "description": "Fires when a voice search session finishes on silence with no recognized words, so neither a done nor a cancelled pixel is sent. Completes the open->done funnel.",

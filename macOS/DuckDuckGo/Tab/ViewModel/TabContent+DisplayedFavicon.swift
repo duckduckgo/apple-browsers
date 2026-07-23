@@ -57,7 +57,7 @@ extension TabContent {
             return .homeFavicon
 
         case .settings:
-            return .settingsMulticolor16
+            return DesignSystemRebrand.isAppRebranded() ? DesignSystemImages.Color.Size16.settings : .settingsMulticolor16Legacy
 
         case .bookmarks:
             return DesignSystemRebrand.isAppRebranded() ? DesignSystemImages.Color.Size16.bookmarksNew : .bookmarksFolder
@@ -66,10 +66,10 @@ extension TabContent {
             return .onboardingDax
 
         case .history:
-            return .historyFavicon
+            return DesignSystemRebrand.isAppRebranded() ? DesignSystemImages.Color.Size16.history : .historyFaviconLegacy
 
         case .subscription:
-            return .privacyPro
+            return DesignSystemRebrand.isAppRebranded() ?  DesignSystemImages.Color.Size16.subscription : .privacyProLegacy
 
         case .identityTheftRestoration:
             return .identityTheftRestorationMulticolor16
@@ -78,18 +78,18 @@ extension TabContent {
             return .homeFavicon
 
         case .aiChat:
-            return .aiChatPreferences
+            return DesignSystemRebrand.isAppRebranded() ? DesignSystemImages.Color.Size16.aiChat : .aiChatPreferencesLegacy
 
         case .url(let url, _, _):
             // Handle special URL types
             if url.isHistory {
-                return .historyFavicon
+                return DesignSystemRebrand.isAppRebranded() ? DesignSystemImages.Color.Size16.history : .historyFaviconLegacy
             } else if url.isDuckPlayer {
                 return .duckPlayerSettings
             } else if url.isDuckAIURL {
-                return .aiChatPreferences
+                return DesignSystemRebrand.isAppRebranded() ? DesignSystemImages.Color.Size16.aiChat : .aiChatPreferencesLegacy
             } else if url.isEmailProtection {
-                return .emailProtectionIcon
+                return DesignSystemRebrand.isAppRebranded() ? DesignSystemImages.Color.Size16.emailProtection : .emailProtectionIconLegacy
             }
 
             // For regular URLs, return the actual favicon if available

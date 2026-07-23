@@ -171,10 +171,10 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
             defer { optionsViewModel.isBusy = false }
             do {
                 guard await self.performDeferredPreservedAccountCleanupIfNeeded() else {
+                    if useSimplifiedLayoutV2 {
+                        optionsViewModel.connectingSheetPhase = .syncAnotherDevice(isConnecting: false)
+                    }
                     return
-                }
-                if useSimplifiedLayoutV2 {
-                    optionsViewModel.connectingSheetPhase = .connecting
                 }
                 try await self.syncService.createAccount(deviceName: self.deviceName, deviceType: self.deviceType)
                 let additionalParameters = self.source.map { ["source": $0] } ?? [:]
@@ -188,7 +188,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                 await self.refreshDevicesAfterSimplifiedSyncEnable()
 
                 if useSimplifiedLayoutV2 {
-                    optionsViewModel.showSyncWithAnotherDeviceInConnectingSheet()
+                    optionsViewModel.showSuccess(recoveryCode: self.recoveryCode, isRecovery: false)
                 } else {
                     let didShowPrompt = optionsViewModel.checkAndShowSyncWithAnotherDevicePrompt()
                     if didShowPrompt {
@@ -199,7 +199,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                 }
             } catch {
                 if useSimplifiedLayoutV2 {
-                    optionsViewModel.connectingSheetPhase = nil
+                    optionsViewModel.connectingSheetPhase = .syncAnotherDevice(isConnecting: false)
                 }
                 self.firePixelIfNeededFor(event: .syncSignupError, error: error)
                 ActionMessageView.present(message: UserText.simplifiedSyncSetupFailedToast)
@@ -391,7 +391,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
 
     @MainActor
     func showSyncWithAnotherDevice() {
-        collectCode(showQRCode: true)
+        collectCode(intent: .syncAnotherDevice)
     }
 
     func showRecoveryCodeEntry() {
@@ -513,13 +513,16 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
             showSyncWithAnotherDevice()
         case .simplifiedToggle:
             viewModel.beginSimplifiedSyncSetup()
+        case .simplifiedToggleV2:
+            viewModel.isBusy = false
+            viewModel.connectingSheetPhase = .syncAnotherDevice(isConnecting: false)
         }
     }
 
     @MainActor
     private func presentRecoveryCodeScan() {
         viewModel.isRecoverSyncedDataSheetVisible = false
-        collectCode(showQRCode: false)
+        collectCode(intent: .recoverData)
     }
 
     @MainActor
@@ -541,10 +544,16 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         completion()
     }
 
-    private func collectCode(showQRCode: Bool) {
+    enum CodeCollectionIntent {
+        case syncAnotherDevice
+        case recoverData
+    }
+
+    private func collectCode(intent: CodeCollectionIntent) {
         pairingV2PeerKind = nil
+        codeCollectionIntent = intent
         guard featureFlagger.isFeatureOn(.exchangeKeysToSyncWithAnotherDevice) else {
-            legacyCollectCode(showQRCode: showQRCode)
+            legacyCollectCode(intent: intent)
             return
         }
         Task { @MainActor in
@@ -567,20 +576,19 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                     return
                 }
             }
-            if !showQRCode {
+            if intent == .recoverData {
                 source = .recovery
             }
             let stringForQRCode = featureFlagger.isFeatureOn(.syncSetupBarcodeIsUrlBased) ? pairingInfo.url.absoluteString : pairingInfo.base64Code
             presentScanOrPasteCodeView(
                 codeForDisplayOrPasting: pairingInfo.base64Code,
                 stringForQRCode: stringForQRCode,
-                showQRCode: showQRCode,
                 source: source,
                 onPresentPixelInfo: .init(pixel: .syncSetupBarcodeScreenShown, source: source, flowVersion: syncSetupPixelFlowVersion))
         }
     }
 
-    private func legacyCollectCode(showQRCode: Bool) {
+    private func legacyCollectCode(intent: CodeCollectionIntent) {
         pairingV2PeerKind = nil
         Task {
             let stringForQRCode: String
@@ -591,13 +599,13 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                 stringForQRCode = recoveryCode
                 codeForDisplayOrPasting = recoveryCode
                 onPresentPixelInfo = nil
-                source = showQRCode ? .exchange : .recovery
+                source = intent == .syncAnotherDevice ? .exchange : .recovery
             } else {
                 do {
                     let pairingInfo = try await connectionController.startConnectMode()
                     stringForQRCode = featureFlagger.isFeatureOn(.syncSetupBarcodeIsUrlBased) ? pairingInfo.url.absoluteString : pairingInfo.base64Code
                     codeForDisplayOrPasting = pairingInfo.base64Code
-                    source = showQRCode ? .connect : .recovery
+                    source = intent == .syncAnotherDevice ? .connect : .recovery
                     onPresentPixelInfo = .init(pixel: .syncSetupBarcodeScreenShown, source: source, flowVersion: syncSetupPixelFlowVersion)
                 } catch {
                     await handleError(SyncErrorMessage.unableToSyncToServer, error: error, event: .syncLoginError)
@@ -607,7 +615,6 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
             presentScanOrPasteCodeView(
                 codeForDisplayOrPasting: codeForDisplayOrPasting,
                 stringForQRCode: stringForQRCode,
-                showQRCode: showQRCode,
                 source: source,
                 onPresentPixelInfo: onPresentPixelInfo)
         }
@@ -615,7 +622,6 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
 
     private func presentScanOrPasteCodeView(codeForDisplayOrPasting: String,
                                             stringForQRCode: String,
-                                            showQRCode: Bool,
                                             source: SyncSetupSource,
                                             onPresentPixelInfo: SyncSetupPixelInfo?) {
         let model = ScanOrPasteCodeViewModel(
@@ -882,7 +888,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
             switch entryPoint {
             case .pairing:
                 return .syncPairing
-            case .simplifiedToggle:
+            case .simplifiedToggle, .simplifiedToggleV2:
                 return .syncBackup
             }
         case .recover:

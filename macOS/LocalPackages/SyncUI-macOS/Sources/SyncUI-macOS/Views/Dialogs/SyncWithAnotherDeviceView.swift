@@ -18,11 +18,13 @@
 
 import SwiftUI
 import SwiftUIExtensions
+import DesignResourcesKit
 
 struct SyncWithAnotherDeviceView: View {
 
     @EnvironmentObject var model: ManagementDialogModel
     @EnvironmentObject var recoveryCodeModel: RecoveryCodeViewModel
+    @Environment(\.designSystemPalette) private var palette
     let codeForDisplayOrPasting: String
     let stringForQRCode: String
 
@@ -139,7 +141,7 @@ struct SyncWithAnotherDeviceView: View {
             Spacer()
             Text(UserText.syncWithAnotherDeviceUseTextCode)
                 .fontWeight(.semibold)
-                .foregroundColor(Color(.linkBlue))
+                .rebrandableLinkForeground()
                 .onTapGesture {
                     showQRCode = false
                 }
@@ -237,7 +239,7 @@ struct SyncWithAnotherDeviceView: View {
             NumberBadge(number: number)
 
             HStack(spacing: 4) {
-                Text(parseBoldMarkdown(markdown))
+                Text(parseBoldMarkdown(markdown, palette: palette))
                     .fixedSize(horizontal: false, vertical: true)
                 if showAppIcon {
                     Image(.duckDuckGo24)
@@ -265,7 +267,7 @@ struct SyncWithAnotherDeviceView: View {
 
     /// Parses bold markdown text and replaces bold styling with primary color.
     ///
-    fileprivate func parseBoldMarkdown(_ string: String) -> AttributedString {
+    fileprivate func parseBoldMarkdown(_ string: String, palette: ColorPalette = DesignSystemPalette.current) -> AttributedString {
         guard var result = try? AttributedString(markdown: string) else {
             var plain = AttributedString(string.replacingOccurrences(of: "**", with: ""))
             plain.foregroundColor = .primary
@@ -273,7 +275,7 @@ struct SyncWithAnotherDeviceView: View {
         }
         for run in result.runs {
             if run.link != nil {
-                result[run.range].foregroundColor = Color(.linkBlue)
+                result[run.range].foregroundColor = .rebrandableLink(palette: palette)
                 result[run.range].inlinePresentationIntent = nil
                 continue
             }

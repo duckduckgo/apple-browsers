@@ -19,8 +19,16 @@
 public extension DesignSystemImages {
     enum Color {
         public enum Size12 {
-            public static var chat: DesignSystemImage { .init(resource: .chatColor12) }
-            public static var chatPinned: DesignSystemImage { .init(resource: .chatPinned12) }
+            public static var chat: DesignSystemImage {
+                AppRebrand.isAppRebranded()
+                    ? .init(resource: .chatColor12)
+                    : .init(resource: .chatColor12Legacy)
+            }
+            public static var chatPinned: DesignSystemImage {
+                AppRebrand.isAppRebranded()
+                    ? .init(resource: .chatPinnedColor12)
+                    : .init(resource: .chatPinnedColor12Legacy)
+            }
         }
 
         public enum Size16 {
@@ -65,17 +73,37 @@ public extension DesignSystemImages {
                     ? .init(resource: .bookmarkColor16)
                     : .init(resource: .bookmarkColor16Legacy)
             }
-            public static var bookmarkFavorite: DesignSystemImage { .init(resource: .bookmarkFavoriteColor16) }
-            public static var bookmarkImport: DesignSystemImage { .init(resource: .bookmarkImportColor16) }
-            public static var bookmarksNew: DesignSystemImage { .init(resource: .bookmarksNewColor16) }
+            public static var bookmarkFavorite: DesignSystemImage {
+                AppRebrand.isAppRebranded()
+                    ? .init(resource: .bookmarkFavoriteColor16)
+                    : .init(resource: .bookmarkFavoriteColor16Legacy)
+            }
+            public static var bookmarkImport: DesignSystemImage {
+                AppRebrand.isAppRebranded()
+                    ? .init(resource: .bookmarkImportColor16)
+                    : .init(resource: .bookmarkImportColor16Legacy)
+            }
+            public static var bookmarksNew: DesignSystemImage {
+                AppRebrand.isAppRebranded()
+                    ? .init(resource: .bookmarksNewColor16)
+                    : .init(resource: .bookmarksNewColor16Legacy)
+            }
             public static var browser: DesignSystemImage { .init(resource: .browserColor16) }
             public static var calendarDay: DesignSystemImage { .init(resource: .calendarDayColor16) }
             public static var calendarMonth: DesignSystemImage { .init(resource: .calendarMonthColor16) }
             public static var calendarToday: DesignSystemImage { .init(resource: .calendarTodayColor16) }
             public static var calendarWeek: DesignSystemImage { .init(resource: .calendarWeekColor16) }
             public static var calendarYesterday: DesignSystemImage { .init(resource: .calendarYesterdayColor16) }
-            public static var chat: DesignSystemImage { .init(resource: .chatColor16) }
-            public static var chatPinned: DesignSystemImage { .init(resource: .chatPinned16) }
+            public static var chat: DesignSystemImage {
+                AppRebrand.isAppRebranded()
+                    ? .init(resource: .chatColor16)
+                    : .init(resource: .chatColor16Legacy)
+            }
+            public static var chatPinned: DesignSystemImage {
+                AppRebrand.isAppRebranded()
+                    ? .init(resource: .chatPinnedColor16)
+                    : .init(resource: .chatPinned16Legacy)
+            }
             public static var cookie: DesignSystemImage {
                 AppRebrand.isAppRebranded()
                     ? .init(resource: .cookieColor16)
@@ -149,7 +177,11 @@ public extension DesignSystemImages {
                     ? .init(resource: .imageAIBlocked16)
                     : .init(resource: .imageAIBlocked16Legacy)
             }
-            public static var history: DesignSystemImage { .init(resource: .historyColor16) }
+            public static var history: DesignSystemImage {
+                AppRebrand.isAppRebranded()
+                    ? .init(resource: .historyColor16)
+                    : .init(resource: .historyColor16Legacy)
+            }
             public static var home: DesignSystemImage { .init(resource: .homeColor16) }
             public static var hourglass: DesignSystemImage { .init(resource: .hourglassColor16) }
             public static var identityBlockedPIR: DesignSystemImage {
@@ -309,15 +341,31 @@ public extension DesignSystemImages {
                     : .init(resource: .autofillColor24Legacy)
             }
             public static var bitwarden: DesignSystemImage { .init(resource: .bitwardenColor24) }
-            public static var bookmark: DesignSystemImage { .init(resource: .bookmarkColor24) }
-            public static var bookmarkFavorite: DesignSystemImage { .init(resource: .bookmarkFavoriteColor24) }
-            public static var bookmarkImport: DesignSystemImage { .init(resource: .bookmarkImportColor24) }
+            public static var bookmark: DesignSystemImage {
+                AppRebrand.isAppRebranded()
+                    ? .init(resource: .bookmarkColor24)
+                    : .init(resource: .bookmarkColor24Legacy)
+            }
+            public static var bookmarkFavorite: DesignSystemImage {
+                AppRebrand.isAppRebranded()
+                    ? .init(resource: .bookmarkFavoriteColor24)
+                    : .init(resource: .bookmarkFavoriteColor24Legacy)
+            }
+            public static var bookmarkImport: DesignSystemImage {
+                AppRebrand.isAppRebranded()
+                    ? .init(resource: .bookmarkImportColor24)
+                    : .init(resource: .bookmarkImportColor24Legacy)
+            }
             public static var bookmarkCheck: DesignSystemImage {
                 AppRebrand.isAppRebranded()
                     ? .init(resource: .bookmarkCheckColor24)
                     : .init(resource: .bookmarkCheckColor24Legacy)
             }
-            public static var bookmarks: DesignSystemImage { .init(resource: .bookmarksColor24) }
+            public static var bookmarks: DesignSystemImage {
+                AppRebrand.isAppRebranded()
+                    ? .init(resource: .bookmarksColor24)
+                    : .init(resource: .bookmarksColor24Legacy)
+            }
             public static var browser: DesignSystemImage { .init(resource: .browserColor24) }
             public static var browserDefault: DesignSystemImage { .init(resource: .browserDefaultColor24) }
             public static var browserGlobe: DesignSystemImage { .init(resource: .browserGlobeColor24) }

@@ -487,7 +487,7 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215359554019438?focus=true
     case floatingUI
 
-    /// https://app.asana.com/1/137249556945/project/392891325557410/task/1216807388526023?focus=true
+    /// https://app.asana.com/1/137249556945/project/392891325557410/task/1216807388526023
     case tabSwitcherJuly2026
 
     /// https://app.asana.com/1/137249556945/project/1211150618152277/task/1213745858492635?focus=true

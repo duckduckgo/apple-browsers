@@ -1441,6 +1441,7 @@ extension SettingsViewModel {
     }
 
     func onSubsequentAppear() {
+        refreshNextStepsVisibility(animated: false)
         Task {
             await setupSubscriptionEnvironment()
         }

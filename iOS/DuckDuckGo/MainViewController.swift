@@ -347,6 +347,7 @@ class MainViewController: UIViewController {
     let themeManager: ThemeManaging
     let keyValueStore: ThrowingKeyValueStoring
     let newTabPagePromoCoordinator: NewTabPagePromoCoordinating
+    let promoQueueDebugSnapshotProvider: PromoQueueDebugSnapshotProviding?
     let recentModalPromptStatusProvider: RecentModalPromptStatusProviding?
     let systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging
     let onboardingResumeStepStore: any KeyedStoring<OnboardingStoringKeys>
@@ -510,6 +511,7 @@ class MainViewController: UIViewController {
         onboardingResumeStepStore: (any KeyedStoring<OnboardingStoringKeys>)? = nil,
         onboardingManager: OnboardingManaging,
         newTabPagePromoCoordinator: NewTabPagePromoCoordinating,
+        promoQueueDebugSnapshotProvider: PromoQueueDebugSnapshotProviding? = nil,
         recentModalPromptStatusProvider: RecentModalPromptStatusProviding? = nil
     ) {
         self.remoteMessagingActionHandler = remoteMessagingActionHandler
@@ -566,6 +568,7 @@ class MainViewController: UIViewController {
         self.contentScopeExperimentsManager = contentScopeExperimentsManager
         self.keyValueStore = keyValueStore
         self.newTabPagePromoCoordinator = newTabPagePromoCoordinator
+        self.promoQueueDebugSnapshotProvider = promoQueueDebugSnapshotProvider
         self.recentModalPromptStatusProvider = recentModalPromptStatusProvider
         self.onboardingResumeStepStore = if let onboardingResumeStepStore { onboardingResumeStepStore } else { UserDefaults.app.keyedStoring() }
         self.customConfigurationURLProvider = customConfigurationURLProvider

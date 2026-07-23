@@ -26,6 +26,21 @@ public protocol MonthlyFreeTrialDeciding {
     func shouldOfferMonthlyFreeTrial() -> Bool
 }
 
+/// A decider that always offers the monthly free trial (the current, pre-experiment behavior).
+///
+/// Intended for contexts that never present the paywall — e.g. app extensions, or the shared
+/// subscription configuration used across many targets — which need to satisfy the API but never
+/// consult the decision. The cohort-aware deciders live in the app targets that actually run the
+/// experiment.
+public struct DefaultMonthlyFreeTrialDecider: MonthlyFreeTrialDeciding {
+
+    public init() {}
+
+    public func shouldOfferMonthlyFreeTrial() -> Bool {
+        true
+    }
+}
+
 extension MonthlyFreeTrialDeciding {
 
     /// Filters products according to the current monthly free-trial decision.

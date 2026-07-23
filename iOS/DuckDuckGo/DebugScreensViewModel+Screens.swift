@@ -169,7 +169,10 @@ extension DebugScreensViewModel {
                 WinBackOfferDebugView(keyValueStore: d.keyValueStore)
             }),
             .view(title: "Modal Prompt Coordination", { d in
-                ModalPromptCoordinationDebugView(keyValueStore: d.keyValueStore)
+                ModalPromptCoordinationDebugView(
+                    keyValueStore: d.keyValueStore,
+                    promoQueueDebugSnapshotProvider: d.promoQueueDebugSnapshotProvider
+                )
             }),
             .view(title: "What's New", { dependencies in
                 WhatsNewDebugView(keyValueStore: dependencies.keyValueStore, remoteMessagingDebugHandler: dependencies.remoteMessagingDebugHandler)

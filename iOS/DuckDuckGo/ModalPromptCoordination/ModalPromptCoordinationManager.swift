@@ -22,6 +22,8 @@ import UIKit
 @MainActor
 protocol ModalPromptCoordinationManaging {
     var didPresentModalPromptThisSession: Bool { get }
+    var hasPendingModalPrompt: Bool { get }
+    var modalAttemptPhase: ModalPromptAttemptPhase { get }
 
     func setCoordinatedAttemptReleaseHandler(_ handler: (@MainActor () -> Void)?)
     func presentModalPromptIfNeeded(from presenter: ModalPromptPresenter)
@@ -201,6 +203,10 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
 
     var hasActiveOrPendingModalAttempt: Bool {
         !legacyActiveAttemptIDs.isEmpty || modalAttemptPhase != .idle || pendingPreparedItem != nil
+    }
+
+    var hasPendingModalPrompt: Bool {
+        pendingPreparedItem != nil
     }
 
     var modalAttemptPhase: ModalPromptAttemptPhase {

@@ -63,6 +63,7 @@ class SettingsLegacyViewProvider: ObservableObject {
     let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
     let freemiumPIRDebugSettings: FreemiumPIRDebugSettings
     let freemiumDBPUserStateManager: FreemiumDBPUserStateManaging
+    let promoQueueDebugSnapshotProvider: PromoQueueDebugSnapshotProviding?
 
     init(syncService: any DDGSyncing,
          syncDataProviders: SyncDataProviders,
@@ -85,7 +86,8 @@ class SettingsLegacyViewProvider: ObservableObject {
          syncAutoRestoreHandler: SyncAutoRestoreHandling,
          freemiumPIRDebugSettings: FreemiumPIRDebugSettings,
          freemiumDBPUserStateManager: FreemiumDBPUserStateManaging,
-         duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil) {
+         duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
+         promoQueueDebugSnapshotProvider: PromoQueueDebugSnapshotProviding?) {
         self.syncService = syncService
         self.syncDataProviders = syncDataProviders
         self.appSettings = appSettings
@@ -108,6 +110,7 @@ class SettingsLegacyViewProvider: ObservableObject {
         self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
         self.freemiumPIRDebugSettings = freemiumPIRDebugSettings
         self.freemiumDBPUserStateManager = freemiumDBPUserStateManager
+        self.promoQueueDebugSnapshotProvider = promoQueueDebugSnapshotProvider
     }
     
     enum LegacyView {
@@ -164,7 +167,8 @@ class SettingsLegacyViewProvider: ObservableObject {
             subscriptionDataReporter: self.subscriptionDataReporter,
             remoteMessagingDebugHandler: self.remoteMessagingDebugHandler,
             webExtensionManager: self.webExtensionManager,
-            duckAiNativeStorageHandler: self.duckAiNativeStorageHandler))
+            duckAiNativeStorageHandler: self.duckAiNativeStorageHandler,
+            promoQueueDebugSnapshotProvider: self.promoQueueDebugSnapshotProvider))
     }
 
     // Legacy UIKit Views (Pushed unmodified)

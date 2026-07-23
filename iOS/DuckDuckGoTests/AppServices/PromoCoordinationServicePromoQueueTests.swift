@@ -47,6 +47,48 @@ final class PromoCoordinationServicePromoQueueTests {
         promoQueueLeaseArbiter = PromoQueueLeaseArbiter()
     }
 
+    @available(iOS 16, *)
+    @Test("Debug Snapshot Reports Effective Feature, Manager, And Arbiter State", .timeLimit(.minutes(1)))
+    func promoQueueDebugSnapshotReflectsLiveCoordinationState() {
+        featureFlaggerMock.enabledFeatureFlags = [.promoPresentationCoordination]
+        managerMock.hasPendingModalPrompt = true
+        sut = PromoCoordinationService(
+            launchSourceManager: launchSourceManagerMock,
+            modalPromptCoordinationManager: managerMock,
+            featureFlagger: featureFlaggerMock,
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter
+        )
+
+        let firstIdentity = VisiblePromoIdentity(surfaceID: UUID(), promoType: .remoteMessage, promoID: "first")
+        let secondIdentity = VisiblePromoIdentity(surfaceID: UUID(), promoType: .remoteMessage, promoID: "second")
+        guard case .acquired(let firstLease) = promoQueueLeaseArbiter.acquireVisiblePromoLease(for: firstIdentity),
+              case .acquired(let secondLease) = promoQueueLeaseArbiter.acquireVisiblePromoLease(for: secondIdentity) else {
+            Issue.record("Expected visible promo lease acquisition")
+            return
+        }
+
+        var snapshot = sut.promoQueueDebugSnapshot
+        #expect(snapshot.isFeatureEnabled)
+        #expect(snapshot.featureState == .enabled)
+        #expect(!snapshot.hasModalLease)
+        #expect(snapshot.modalAttemptPhase == .idle)
+        #expect(snapshot.hasPendingModalPrompt)
+        #expect(snapshot.activeVisiblePromoLeaseCount == 2)
+
+        firstLease.release()
+        secondLease.release()
+        guard case .acquired(let modalLease) = promoQueueLeaseArbiter.acquireModalLease() else {
+            Issue.record("Expected modal lease acquisition")
+            return
+        }
+        managerMock.modalAttemptPhase = .evaluating(modalLease.attemptIdentity)
+
+        snapshot = sut.promoQueueDebugSnapshot
+        #expect(snapshot.hasModalLease)
+        #expect(snapshot.modalAttemptPhase == .evaluating(modalLease.attemptIdentity))
+        #expect(snapshot.activeVisiblePromoLeaseCount == 0)
+    }
+
     // MARK: - Promo Queue Admission
 
     // The arbiter reclaims a lease whose token has deallocated, so a test that needs a lease to keep holding its slot

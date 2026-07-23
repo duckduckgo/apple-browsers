@@ -39,6 +39,20 @@ extension MainViewController: ModalPromptPresenter {
     var modalPromptPresentationViewController: UIViewController? { self }
 }
 
+struct PromoQueueDebugSnapshot: Equatable {
+    let isFeatureEnabled: Bool
+    let featureState: PromoQueueFeatureState
+    let hasModalLease: Bool
+    let modalAttemptPhase: ModalPromptAttemptPhase
+    let hasPendingModalPrompt: Bool
+    let activeVisiblePromoLeaseCount: Int
+}
+
+@MainActor
+protocol PromoQueueDebugSnapshotProviding: AnyObject {
+    var promoQueueDebugSnapshot: PromoQueueDebugSnapshot { get }
+}
+
 // MARK: - Service
 
 struct ModalPromptProviders {
@@ -389,4 +403,18 @@ extension PromoCoordinationService: NewTabPagePromoCoordinating {
 
 extension PromoCoordinationService: RecentModalPromptStatusProviding {
     var wasModalPromptRecentlyPresented: Bool { modalPromptCoordinationManager.didPresentModalPromptThisSession }
+}
+
+extension PromoCoordinationService: PromoQueueDebugSnapshotProviding {
+    var promoQueueDebugSnapshot: PromoQueueDebugSnapshot {
+        let leaseSnapshot = promoQueueLeaseArbiter.snapshot
+        return PromoQueueDebugSnapshot(
+            isFeatureEnabled: featureFlagger.isFeatureOn(.promoPresentationCoordination),
+            featureState: promoQueueFeatureState,
+            hasModalLease: leaseSnapshot.hasModalLease,
+            modalAttemptPhase: modalPromptCoordinationManager.modalAttemptPhase,
+            hasPendingModalPrompt: modalPromptCoordinationManager.hasPendingModalPrompt,
+            activeVisiblePromoLeaseCount: leaseSnapshot.visiblePromoCount
+        )
+    }
 }

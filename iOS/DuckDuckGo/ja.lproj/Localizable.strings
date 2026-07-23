@@ -3199,7 +3199,7 @@
 "omnibar.notification.trackers-blocked" = "%d Trackers";
 
 /* Text displayed on notification appearing in the address bar when YouTube ad blocking is active */
-"omnibar.notification.youtube-ad-block-on" = "YouTube広告ブロックオン";
+"omnibar.notification.youtube-ad-block-on" = "広告ブロックオン";
 
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "了解";
@@ -5317,10 +5317,10 @@
 "windows-waitlist.waitlist-download-screen.try-duckduckgo-for-windows" = "DuckDuckGo for Windowsを入手！";
 
 /* Body text of the bottom sheet asking the user to send an anonymous breakage report */
-"youtube.ad.blocking.breakage-report.message" = "DuckDuckGoに匿名の破損レポートを送信して、広告ブロックの改善に協力しましょう。";
+"youtube.ad.blocking.breakage-report.message" = "DuckDuckGoに匿名のレポートを送信して、広告ブロックの改善に協力しましょう！";
 
 /* Primary action sending an anonymous YouTube ad-blocking breakage report */
-"youtube.ad.blocking.breakage-report.send" = "破損レポートを送信";
+"youtube.ad.blocking.breakage-report.send" = "匿名のレポートを送信";
 
 /* Title of the bottom sheet asking the user to send an anonymous breakage report after disabling YouTube ad blocking */
 "youtube.ad.blocking.breakage-report.title" = "YouTube広告ブロックが機能していませんか？";

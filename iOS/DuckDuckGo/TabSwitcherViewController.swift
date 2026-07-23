@@ -298,8 +298,7 @@ class TabSwitcherViewController: UIViewController {
     }
 
     private func makeChrome() -> TabSwitcherChrome {
-        let isFloating = floatingUIManaging.isFloatingUIEnabled
-        let chrome = TabSwitcherChromeFactory.makeChrome(isFloatingUIEnabled: isFloating,
+        let chrome = TabSwitcherChromeFactory.makeChrome(isFloatingTabSwitcherEnabled: floatingUIManaging.isFloatingTabSwitcherEnabled,
                                                          appSettings: appSettings)
         return chrome
     }

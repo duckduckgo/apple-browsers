@@ -83,19 +83,32 @@ struct FireDialogView: ModalView {
         }
     }
     @State private var isAnimatingChatsOverlay: Bool = false
+    @State private var isShowingHistoryOverlay: Bool = false {
+        didSet {
+            isAnimatingHistoryOverlay = true
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                isAnimatingHistoryOverlay = false
+            }
+        }
+    }
+    @State private var isAnimatingHistoryOverlay: Bool = false
     @State private var isSectionsExpanded: Bool = false
 
+    private let historyDateFormatter: HistoryViewDateFormatting = DefaultHistoryViewDateFormatter()
+
     private var isShowingAnyOverlay: Bool {
-        isShowingSitesOverlay || isShowingChatsOverlay
+        isShowingSitesOverlay || isShowingChatsOverlay || isShowingHistoryOverlay
     }
 
     init(viewModel: FireDialogViewModel,
          showSitesOverlay: Bool = false, // for Previews - @State flag to show "sites to be removed" overlay
          showChatsOverlay: Bool = false, // for Previews - @State flag to show "chats to be removed" overlay
+         showHistoryOverlay: Bool = false, // for Previews - @State flag to show "history items to be removed" overlay
          onConfirm: ((FireDialogView.Response) -> Void)? = nil) {
         self.viewModel = viewModel
         self._isShowingSitesOverlay = State(initialValue: showSitesOverlay)
         self._isShowingChatsOverlay = State(initialValue: showChatsOverlay)
+        self._isShowingHistoryOverlay = State(initialValue: showHistoryOverlay)
         self.onConfirm = onConfirm
     }
 
@@ -210,9 +223,23 @@ struct FireDialogView: ModalView {
                 .zIndex(11)
                 .transition(.move(edge: .bottom))
             }
+
+            // History Overlay — floats above the dimmed footer, leaving it visible (but hidden by the scrim) below
+            if isShowingHistoryOverlay {
+                // Scrim fades independently and stays above content
+                Color.black.opacity(0.5)
+                    .zIndex(9)
+
+                VStack(spacing: 0) {
+                    Spacer(minLength: 167)
+                    historyOverlay
+                }
+                .zIndex(11)
+                .transition(.move(edge: .bottom))
+            }
         }
         .animation(.easeOut(duration: NSAnimationContext.current.duration),
-                   value: isAnimatingSitesOverlay || isAnimatingChatsOverlay)
+                   value: isAnimatingSitesOverlay || isAnimatingChatsOverlay || isAnimatingHistoryOverlay)
         .frame(width: Constants.viewSize.width, height: viewHeight, alignment: .top)
         .background(Color(designSystemColor: .surfaceSecondary))
         .accessibilityElement(children: .contain)
@@ -380,6 +407,10 @@ struct FireDialogView: ModalView {
                 } set: {
                     viewModel.includeHistory = $0
                 },
+                // the history items list is only meaningful for the "From this tab" scope
+                detailAction: (isIncludeHistoryEnabled && viewModel.clearingOption == .currentTab) ? { isShowingHistoryOverlay = true } : nil,
+                detailActionEnabled: viewModel.includeHistory,
+                detailAccessibilityIdentifier: "FireDialogView.historyDetailButton",
                 isEnabled: isIncludeHistoryEnabled,
                 roundedCorners: .top,
                 toggleId: "FireDialogView.historyToggle"
@@ -610,6 +641,115 @@ struct FireDialogView: ModalView {
                 )
         )
         .padding(.horizontal, 8)
+    }
+
+    // MARK: - History overlay
+    private var historyOverlay: some View {
+        VStack(spacing: 0) {
+            historyOverlayHeader
+            historyOverlayList
+        }
+        .background(
+            ZStack {
+                CustomRoundedCornersShape(tl: 24, tr: 24, bl: 0, br: 0)
+                    .fill(Color(designSystemColor: .surfaceSecondary))
+                CustomRoundedCornersShape(tl: 24, tr: 24, bl: 0, br: 0)
+                    .fill(Color(designSystemColor: .containerFillSecondary))
+            }
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .shadow(color: Color.black.opacity(0.15), radius: 16, x: 0, y: 0)
+    }
+
+    private var historyOverlayHeader: some View {
+        HStack(alignment: .center, spacing: 12) {
+            (Text(UserText.fireDialogHistoryOverlayTitleBold(viewModel.historyVisits.count)).fontWeight(.semibold)
+             + Text(" \(UserText.fireDialogHistoryOverlayTitleRegular)"))
+                .font(.system(size: 13))
+                .foregroundColor(Color(designSystemColor: .textPrimary))
+                .multilineTextAlignment(.leading)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityIdentifier("FireDialogView.historyOverlayTitle")
+
+            Spacer(minLength: 8)
+
+            Button(action: { isShowingHistoryOverlay = false }) {
+                Image(nsImage: DesignSystemImages.Glyphs.Size16.close)
+                    .resizable()
+                    .frame(width: 12, height: 12)
+            }
+            .buttonStyle(
+                StandardButtonStyle(topPadding: 6,
+                                    bottomPadding: 6,
+                                    horizontalPadding: 6,
+                                    backgroundColor: Color(designSystemColor: .controlsFillPrimary),
+                                    backgroundPressedColor: Color(designSystemColor: .controlsFillPrimary))
+            )
+            .clipShape(Circle())
+            .accessibilityLabel(UserText.close)
+            .accessibilityIdentifier("FireDialogView.historyOverlayCloseButton")
+            .keyboardShortcut(.cancelAction)
+        }
+        .padding(.top, 22)
+        .padding(.horizontal, Constants.horizontalPadding)
+        .padding(.bottom, 14)
+    }
+
+    private var historyOverlayList: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 0) {
+                ForEach(viewModel.historyVisits, id: \.self) { visit in
+                    historyOverlayRow(for: visit)
+                }
+            }
+            .padding(.leading, 24)
+            .padding(.trailing, 32)
+            .padding(.vertical, 4)
+        }
+        .padding(.top, 11)
+        .padding(.trailing, 8)
+        .background(
+            CustomRoundedCornersShape(tl: 16, tr: 16, bl: 0, br: 0)
+                .fill(Color(designSystemColor: .surfaceSecondary))
+                .overlay(
+                    CustomRoundedCornersShape(tl: 16, tr: 16, bl: 0, br: 0)
+                        .inset(by: 0.5)
+                        .stroke(Color(designSystemColor: .containerBorderPrimary), lineWidth: 1)
+                )
+        )
+        .padding(.horizontal, 8)
+    }
+
+    private func historyOverlayRow(for visit: Visit) -> some View {
+        let visitViewModel = VisitViewModel(visit: visit)
+        let url = visit.historyEntry?.url
+        return HStack(alignment: .top, spacing: 12) {
+            FaviconView(url: url, size: 16)
+                .padding(.top, 2)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(visitViewModel.title)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(Color(designSystemColor: .textPrimary))
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                Text(url?.nakedString ?? "")
+                    .font(.system(size: 11))
+                    .foregroundColor(Color(designSystemColor: .textSecondary))
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .help(visitViewModel.title)
+
+            Text(historyDateFormatter.timeString(for: visit.date))
+                .font(.system(size: 11))
+                .foregroundColor(Color(designSystemColor: .textTertiary))
+                .fixedSize()
+                .padding(.top, 2)
+        }
+        .padding(.vertical, 12)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private func sectionRow(icon: NSImage, title: String, subtitle: String? = nil, detail: String? = nil, isOn: Binding<Bool>, detailAction: (() -> Void)? = nil, detailActionEnabled: Bool = true, detailAccessibilityIdentifier: String = "FireDialogView.cookiesDetailButton", isEnabled: Bool = true, roundedCorners: RowCornerRadius = .none, toggleId: String) -> some View {

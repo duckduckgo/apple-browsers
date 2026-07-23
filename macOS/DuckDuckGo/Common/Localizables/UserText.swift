@@ -547,6 +547,18 @@ struct UserText {
                                                                         value: "will be deleted:",
                                                                         comment: "Regular-weight portion of the simplified Fire dialog's chats overlay title, appended after fireDialogChatsOverlayTitleBold.")
 
+    // MARK: - Simplified Fire dialog history list sheet
+    /// Bold-weight portion of the history overlay title, e.g. "461 history items"; combined with
+    /// `fireDialogHistoryOverlayTitleRegular` to read "461 history items will be deleted:"
+    static func fireDialogHistoryOverlayTitleBold(_ count: Int) -> String {
+        NotLocalizedString("fire.dialog.history.overlay.title.bold",
+                            value: count == 1 ? "1 history item" : "\(count) history items",
+                            comment: "Bold portion of the simplified Fire dialog's history overlay title, stating the number of history items affected.")
+    }
+    static let fireDialogHistoryOverlayTitleRegular = NotLocalizedString("fire.dialog.history.overlay.title.regular",
+                                                                          value: "will be deleted:",
+                                                                          comment: "Regular-weight portion of the simplified Fire dialog's history overlay title, appended after fireDialogHistoryOverlayTitleBold.")
+
     // MARK: - Fire dialog single-entry contextual titles
     /// Title used when reusing the Fire dialog as a single entry point (from History, menu, etc.) with full-time range
     static let deleteBrowsingDataAll = NSLocalizedString("fire.dialog.single.title.all",

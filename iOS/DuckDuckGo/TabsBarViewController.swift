@@ -74,6 +74,7 @@ class TabsBarViewController: UIViewController {
     var buttonsBackground: UIView { tabsBarView.buttonsBackground }
 
     private var addTabButtonLeadingConstraint: NSLayoutConstraint?
+    private var currentLayout: TabsBarLayout?
 
     // Opaque backdrop so tabs scrolling under the sticky button don't show through it.
     private let addTabButtonBackground = UIView()
@@ -179,7 +180,7 @@ class TabsBarViewController: UIViewController {
         buttonsStack.addArrangedSubview(fireButton)
         buttonsStack.addArrangedSubview(tabSwitcherButton)
 
-        // Not in buttonsStack: its position is computed per tab count, see updateAddTabButtonPosition().
+        // Not in buttonsStack: its position is computed per tab count, see recomputeItemSize()/TabsBarLayout.
         addTabButtonBackground.translatesAutoresizingMaskIntoConstraints = false
         addTabButton.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(addTabButtonBackground)
@@ -330,7 +331,6 @@ class TabsBarViewController: UIViewController {
 
         recomputeItemSize()
         reloadData()
-        updateAddTabButtonPosition()
         fireUsageDailyPixels()
 
         if scrollToSelected {
@@ -368,59 +368,23 @@ class TabsBarViewController: UIViewController {
 
     private func recomputeItemSize() {
         let stripWidth = collectionView.frame.size.width
-        guard tabsCount > 0 else { return }
+        guard stripWidth > 0 else { return }
 
-        // Reserves the button's footprint so equal-division tab sizing never fills 100% of stripWidth.
-        let availableWidth = max(0, stripWidth - Constants.buttonWidth - Constants.addTabButtonGap)
-
-        let itemWidth = Self.itemWidth(
-            availableWidth: availableWidth,
-            visibleItems: tabsCount,
-            minWidth: Constants.minItemWidth,
-            maxWidth: maxItemWidth(forStripWidth: stripWidth)
-        )
-
-        if let flowLayout = collectionView.collectionViewLayout as? UICollectionViewFlowLayout {
-            flowLayout.itemSize = CGSize(width: itemWidth, height: view.frame.size.height)
-        }
-    }
-
-    /// Caps flush at the trailing edge only once tabs are floored (can't shrink further to make room) —
-    /// capping based on contentWidth vs availableWidth instead is unsafe: recomputeItemSize's reservation
-    /// only guarantees room for the button in the equal-division/maxWidth-capped regimes, not once floored,
-    /// where contentWidth grows in minWidth increments unrelated to availableWidth.
-    static func addTabButtonLeadingOffset(contentWidth: CGFloat, availableWidth: CGFloat, buttonWidth: CGFloat, gap: CGFloat, isFloored: Bool) -> CGFloat {
-        guard availableWidth > 0 else { return 0 }
-        guard isFloored else { return contentWidth + gap }
-        return max(0, availableWidth - buttonWidth)
-    }
-
-    /// Tabs floored at minWidth, unable to shrink further to make room for the button/scroll reservation.
-    static func isTabStripFloored(itemWidth: CGFloat, minWidth: CGFloat) -> Bool {
-        itemWidth > 0 && itemWidth <= minWidth
-    }
-
-    private func updateAddTabButtonPosition() {
-        let availableWidth = collectionView.frame.size.width
-        guard availableWidth > 0 else { return }
-
-        // Forces layout now — reloadData()/itemSize changes don't recompute contentSize synchronously.
-        collectionView.layoutIfNeeded()
-
-        let contentWidth = collectionView.contentSize.width
-        let itemWidth = (collectionView.collectionViewLayout as? UICollectionViewFlowLayout)?.itemSize.width ?? 0
-        let gap = Constants.addTabButtonGap
-        let isFloored = Self.isTabStripFloored(itemWidth: itemWidth, minWidth: Constants.minItemWidth)
-
-        addTabButtonLeadingConstraint?.constant = Self.addTabButtonLeadingOffset(
-            contentWidth: contentWidth,
-            availableWidth: availableWidth,
+        let layout = TabsBarLayout(
+            stripWidth: stripWidth,
+            tabsCount: tabsCount,
+            minItemWidth: Constants.minItemWidth,
+            maxItemWidth: maxItemWidth(forStripWidth: stripWidth),
             buttonWidth: Constants.buttonWidth,
-            gap: gap,
-            isFloored: isFloored
+            buttonGap: Constants.addTabButtonGap
         )
+        currentLayout = layout
 
-        collectionView.contentInset.right = isFloored ? Constants.buttonWidth + gap : 0
+        if let flowLayout = collectionView.collectionViewLayout as? UICollectionViewFlowLayout, tabsCount > 0 {
+            flowLayout.itemSize = CGSize(width: layout.itemWidth, height: view.frame.size.height)
+        }
+        addTabButtonLeadingConstraint?.constant = layout.addTabButtonLeadingOffset
+        collectionView.contentInset.right = layout.addTabButtonContentInsetRight
     }
 
     /// Half the strip, but in landscape also capped at a third of the full-screen strip so a resize
@@ -454,17 +418,7 @@ class TabsBarViewController: UIViewController {
     /// True when tabs are floored at min width so the strip scrolls. Inactive tabs then hide the close
     /// button (kept on the active tab, revealed on pointer hover); touch closes the rest via long press.
     private var isStripOverflowing: Bool {
-        let itemWidth = (collectionView.collectionViewLayout as? UICollectionViewFlowLayout)?.itemSize.width ?? 0
-        return Self.isTabStripFloored(itemWidth: itemWidth, minWidth: Constants.minItemWidth)
-    }
-
-    /// Equal share of the strip, capped at `maxWidth` then floored at `minWidth` (floor wins).
-    static func itemWidth(availableWidth: CGFloat, visibleItems: Int, minWidth: CGFloat, maxWidth: CGFloat) -> CGFloat {
-        guard visibleItems > 0 else { return 0 }
-        var width = availableWidth / CGFloat(visibleItems)
-        width = min(width, maxWidth)
-        width = max(width, minWidth)
-        return width
+        currentLayout?.isFloored ?? false
     }
 
     private func reloadData() {
@@ -477,7 +431,6 @@ class TabsBarViewController: UIViewController {
     func backgroundTabAdded() {
         recomputeItemSize()
         reloadData()
-        updateAddTabButtonPosition()
         tabSwitcherButton.animateUpdate {
             self.tabSwitcherButton.tabCount = self.tabsCount
         }
@@ -597,7 +550,7 @@ class TabsBarViewController: UIViewController {
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         // Catches layout passes (e.g. the first one) that land before refresh()/backgroundTabAdded().
-        updateAddTabButtonPosition()
+        recomputeItemSize()
         NotificationCenter.default.post(name: TabsBarViewController.viewDidLayoutNotification, object: self)
     }
 }

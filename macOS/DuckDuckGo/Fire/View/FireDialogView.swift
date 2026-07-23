@@ -45,6 +45,7 @@ struct FireDialogView: ModalView {
         static let bottomPadding: CGFloat = AppVersion.isLiquidGlassSupported ? 24 : 16
         static let boxContentPadding: CGFloat = 16
         static var sectionRowWidth: CGFloat { viewSize.width - 2 * horizontalPadding - 2 * boxContentPadding }
+        static let historyOverlayMaxVisibleItems = 100
     }
 
     @State private var viewHeight: CGFloat = Constants.viewSize.height
@@ -407,8 +408,8 @@ struct FireDialogView: ModalView {
                 } set: {
                     viewModel.includeHistory = $0
                 },
-                // the history items list is only meaningful for the "From this tab" scope
-                detailAction: (isIncludeHistoryEnabled && viewModel.clearingOption == .currentTab) ? { isShowingHistoryOverlay = true } : nil,
+                // the history items list isn't supported for the (deprecated, pending removal) Window scope
+                detailAction: (isIncludeHistoryEnabled && viewModel.clearingOption != .currentWindow) ? { isShowingHistoryOverlay = true } : nil,
                 detailActionEnabled: viewModel.includeHistory,
                 detailAccessibilityIdentifier: "FireDialogView.historyDetailButton",
                 isEnabled: isIncludeHistoryEnabled,
@@ -698,8 +699,12 @@ struct FireDialogView: ModalView {
     private var historyOverlayList: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
-                ForEach(viewModel.historyVisits.reversed().lazy, id: \.self) { visit in
+                ForEach(viewModel.historyVisits.reversed().lazy.prefix(Constants.historyOverlayMaxVisibleItems), id: \.self) { visit in
                     historyOverlayRow(for: visit)
+                }
+
+                if viewModel.historyVisits.count > Constants.historyOverlayMaxVisibleItems {
+                    seeFullHistoryButton
                 }
             }
             .padding(.leading, 24)
@@ -718,6 +723,21 @@ struct FireDialogView: ModalView {
                 )
         )
         .padding(.horizontal, 8)
+    }
+
+    private var seeFullHistoryButton: some View {
+        Button {
+            viewModel.openFullHistory()
+        } label: {
+            Text(UserText.fireDialogSeeFullHistory)
+                .font(.system(size: 12, weight: .medium))
+                .foregroundColor(style.selectedForeground)
+                .frame(maxWidth: .infinity, alignment: .center)
+        }
+        .buttonStyle(.plain)
+        .cursor(.pointingHand)
+        .padding(.vertical, 12)
+        .accessibilityIdentifier("FireDialogView.seeFullHistoryButton")
     }
 
     private func historyOverlayRow(for visit: Visit) -> some View {

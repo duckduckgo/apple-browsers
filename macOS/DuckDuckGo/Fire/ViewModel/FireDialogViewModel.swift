@@ -481,6 +481,16 @@ final class FireDialogViewModel: ObservableObject {
         windowControllersManager.showTab(with: .settings(pane: .dataClearing))
     }
 
+    /// Dismisses the dialog and opens the full History View, for "See full history" in the history overlay.
+    func openFullHistory() {
+        pixelFiring?.fire(FireDialogPixel.fireDialogSeeFullHistoryClicked, frequency: .dailyAndCount, doNotEnforcePrefix: true)
+        dismissDialog()
+        windowControllersManager.lastKeyMainWindowController?
+            .mainViewController
+            .browserTabViewController
+            .openNewTab(with: .history(pane: .all))
+    }
+
     private func dismissDialog() {
         guard let window = windowControllersManager.lastKeyMainWindowController?.window else { return }
         window.endSheet(window.attachedSheet ?? window)

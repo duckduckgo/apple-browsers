@@ -37,6 +37,7 @@ enum FireButtonPixel: PixelKitEvent {
     case fireDialogToggleClearAIChats
     case fireDialogDeleteIndividualSitesClicked
     case fireDialogManageFireproofedSites
+    case fireDialogSeeFullHistoryClicked
     case fireDialogCancel
 
     var name: String {
@@ -67,6 +68,8 @@ enum FireButtonPixel: PixelKitEvent {
             return "fire_dialog_delete_individual_sites_clicked_macos"
         case .fireDialogManageFireproofedSites:
             return "fire_dialog_manage_fireproofed_sites_macos"
+        case .fireDialogSeeFullHistoryClicked:
+            return "fire_dialog_see_full_history_clicked_macos"
         case .fireDialogCancel:
             return "fire_dialog_cancel_macos"
         }
@@ -91,6 +94,7 @@ enum FireButtonPixel: PixelKitEvent {
                 .fireDialogToggleClearAIChats,
                 .fireDialogDeleteIndividualSitesClicked,
                 .fireDialogManageFireproofedSites,
+                .fireDialogSeeFullHistoryClicked,
                 .fireDialogCancel:
             return [:]
 

@@ -19,3 +19,16 @@ Detailed rules live in `.cursor/rules/`. Read from the list below when the reque
 | `anti-patterns.mdc` | What NOT to do: singletons, async mistakes, SwiftUI pitfalls, testing mistakes |
 | `user-defaults-storage.mdc` | Storing settings or preferences via `KeyValueStore` |
 | `pixels.mdc` | Defining, naming, or firing pixel events |
+
+## Cursor Cloud specific instructions
+
+The Cursor Cloud VM runs **Linux**, but this is a macOS/Xcode monorepo (Xcode `26.4`, see `.xcode-version`).
+
+- **Cannot run on the Linux cloud VM:** building/running the iOS or macOS browser apps, SwiftLint, and all Swift unit/UI/integration tests. These require macOS + Xcode and run only on macOS CI runners. The build/lint/test commands are documented in `.cursor/rules/development-commands.mdc` and `.cursor/rules/testing.mdc`; do not attempt them here. There is no Swift toolchain installed (only `clang`).
+- **Does run on Linux** (this is the full cross-platform dev surface here, and mirrors the only `ubuntu-latest` CI job, `Pixel Schema Validation`):
+  - Autoconsent bundle rebuild: `npm run rebuild-autoconsent` (i.e. `rollup -c`), run **from inside `iOS/` or `macOS/`**. It regenerates `DuckDuckGo/Autoconsent/autoconsent-bundle.js`.
+  - Pixel tooling, run from inside `iOS/` or `macOS/`: `npm run pixel-lint`, `npm run validate-defs-without-formatting`, `npm run check-wide-events`. (CI additionally passes `-g` a user map from the private `internal-github-asana-utils` repo, which is not needed for local validation.)
+- **Non-obvious gotchas:**
+  - `rollup` and its plugins live in the **repo-root** `node_modules` (root `package.json` holds `@duckduckgo/autoconsent` + rollup), while the pixel tools resolve from `iOS/node_modules` / `macOS/node_modules`. So dependency setup is three installs: repo root, `iOS/`, and `macOS/`.
+  - Running `npm ci` in a platform dir rebuilds the shared repo-root `node_modules`. Do **not** run a rollup build concurrently with any `npm ci` — it fails with a `rollup-plugin-terser` require-stack error. Run them sequentially.
+  - `validate-defs-without-formatting` regenerates tracked files under `PixelDefinitions/wide_events/generated_schemas`; they reproduce identically, so a clean run leaves the git tree clean.

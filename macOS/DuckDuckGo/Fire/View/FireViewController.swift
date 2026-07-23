@@ -70,7 +70,7 @@ final class FireViewController: NSViewController {
     private lazy var progressIndicatorBackgroundView: ColorView = {
         let view = ColorView(frame: .zero, backgroundColor: .newTabPageBackground)
         view.translatesAutoresizingMaskIntoConstraints = false
-        view.cornerRadius = 8
+        view.cornerRadius = 24
         return view
     }()
 
@@ -92,10 +92,19 @@ final class FireViewController: NSViewController {
     }()
 
     private lazy var deletingDataLabel: NSTextField = {
-        let label = NSTextField(labelWithString: UserText.fireDialogDelitingData)
+        let label = NSTextField(labelWithString: UserText.fireDialogDeletingData)
         label.translatesAutoresizingMaskIntoConstraints = false
-        label.font = NSFont.systemFont(ofSize: NSFont.smallSystemFontSize)
         label.alignment = .center
+
+        let paragraphStyle = NSMutableParagraphStyle()
+        paragraphStyle.alignment = .center
+        paragraphStyle.lineHeightMultiple = 20.0 / 15.0
+
+        label.attributedStringValue = NSAttributedString(string: UserText.fireDialogDeletingData, attributes: [
+            .font: NSFont.systemFont(ofSize: 15, weight: .semibold),
+            .kern: -0.23,
+            .paragraphStyle: paragraphStyle
+        ])
         return label
     }()
 
@@ -191,8 +200,8 @@ final class FireViewController: NSViewController {
             // Progress wrapper background (with shadow)
             progressIndicatorWrapperBG.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             progressIndicatorWrapperBG.centerYAnchor.constraint(equalTo: view.centerYAnchor),
-            progressIndicatorWrapperBG.widthAnchor.constraint(equalToConstant: 320),
-            progressIndicatorWrapperBG.heightAnchor.constraint(equalToConstant: 220),
+            progressIndicatorWrapperBG.widthAnchor.constraint(equalToConstant: 428),
+            progressIndicatorWrapperBG.heightAnchor.constraint(equalToConstant: 194),
 
             // Inner background
             progressIndicatorBackgroundView.topAnchor.constraint(equalTo: progressIndicatorWrapperBG.topAnchor, constant: 10),
@@ -203,24 +212,24 @@ final class FireViewController: NSViewController {
             // Progress indicator wrapper (centered content)
             progressIndicatorWrapper.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             progressIndicatorWrapper.centerYAnchor.constraint(equalTo: view.centerYAnchor),
-            progressIndicatorWrapper.widthAnchor.constraint(equalToConstant: 320),
-            progressIndicatorWrapper.heightAnchor.constraint(equalToConstant: 220),
+            progressIndicatorWrapper.widthAnchor.constraint(equalToConstant: 428),
+            progressIndicatorWrapper.heightAnchor.constraint(equalToConstant: 194),
 
             // Fire icon
+            fakeFireButtonIconView.topAnchor.constraint(equalTo: progressIndicatorWrapper.topAnchor, constant: 32),
             fakeFireButtonIconView.centerXAnchor.constraint(equalTo: progressIndicatorWrapper.centerXAnchor),
-            fakeFireButtonIconView.centerYAnchor.constraint(equalTo: progressIndicatorWrapper.centerYAnchor, constant: -40),
-            fakeFireButtonIconView.widthAnchor.constraint(equalToConstant: 48),
-            fakeFireButtonIconView.heightAnchor.constraint(equalToConstant: 48),
-
-            // Progress indicator
-            progressIndicator.centerXAnchor.constraint(equalTo: progressIndicatorWrapper.centerXAnchor),
-            progressIndicator.centerYAnchor.constraint(equalTo: progressIndicatorWrapper.centerYAnchor, constant: 13),
-            progressIndicator.widthAnchor.constraint(equalToConstant: 210),
-            progressIndicator.heightAnchor.constraint(equalToConstant: 18),
+            fakeFireButtonIconView.widthAnchor.constraint(equalToConstant: 56),
+            fakeFireButtonIconView.heightAnchor.constraint(equalToConstant: 56),
 
             // Label
+            deletingDataLabel.topAnchor.constraint(equalTo: fakeFireButtonIconView.bottomAnchor, constant: 12),
             deletingDataLabel.centerXAnchor.constraint(equalTo: progressIndicatorWrapper.centerXAnchor),
-            deletingDataLabel.centerYAnchor.constraint(equalTo: progressIndicatorWrapper.centerYAnchor, constant: 34),
+
+            // Progress indicator
+            progressIndicator.topAnchor.constraint(equalTo: deletingDataLabel.bottomAnchor, constant: 24),
+            progressIndicator.centerXAnchor.constraint(equalTo: progressIndicatorWrapper.centerXAnchor),
+            progressIndicator.widthAnchor.constraint(equalToConstant: 210),
+            progressIndicator.heightAnchor.constraint(equalToConstant: 18),
 
             // Fake fire button (top right)
             fakeFireButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -12),

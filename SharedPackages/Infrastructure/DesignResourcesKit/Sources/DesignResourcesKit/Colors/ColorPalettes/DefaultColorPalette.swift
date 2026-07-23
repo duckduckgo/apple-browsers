@@ -52,6 +52,7 @@ struct DefaultColorPalette: ColorPaletteDefinition {
     private static let xF6CDD1 = Color(0xF6CDD1)
     private static let x5A2A2A = Color(0x5A2A2A)
     private static let xD4452F = Color(0xD4452F)
+    private static let xFFC0CB = Color(0xFFC0CB)
 
     // URL bar
     private static let urlBar = DynamicColor(lightColor: .white, darkColor: x474747)
@@ -333,7 +334,7 @@ struct DefaultColorPalette: ColorPaletteDefinition {
         case .duckAIWebViewBackground:
             return DynamicColor(lightColor: .white, darkColor: .x111111)
         case .unifiedToggleInputCardBackground:
-            return DynamicColor(lightColor: .white, darkColor: x3D3D3D)
+            return DynamicColor(lightColor: xFFC0CB, darkColor: xFFC0CB)
         case .unifiedToggleInputStopButtonBackground:
             return DynamicColor(lightColor: .shade(0.06), darkColor: .tint(0.12))
         case .floatingAddressBarBackground:

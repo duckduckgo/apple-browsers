@@ -18,6 +18,7 @@
 //
 
 import Foundation
+import Persistence
 import Testing
 @testable import DuckDuckGo
 
@@ -87,5 +88,54 @@ struct SettingsNextStepsDismissalTests {
         #expect(SettingsViewModel.hasInstallGracePeriodElapsed(installDate: installedAt,
                                                               now: now,
                                                               requiredInterval: fourteenDays))
+    }
+
+    // MARK: - recordFirstTap ("record first tap only" guard for Add to Dock / Add Widget)
+
+    @Test("First tap records the timestamp", .timeLimit(.minutes(1)))
+    func firstTapRecordsTimestamp() throws {
+        let store = InMemoryThrowingKeyValueStore()
+        SettingsViewModel.recordFirstTap(forKey: "key", in: store, now: tappedAt)
+        let stored = try store.object(forKey: "key") as? Double
+        #expect(stored == tappedAt)
+    }
+
+    @Test("Repeat taps do not reset the dismissal window", .timeLimit(.minutes(1)))
+    func repeatTapDoesNotOverwriteTimestamp() throws {
+        let store = InMemoryThrowingKeyValueStore()
+        SettingsViewModel.recordFirstTap(forKey: "key", in: store, now: tappedAt)
+        SettingsViewModel.recordFirstTap(forKey: "key", in: store, now: tappedAt + oneDay)
+        let stored = try store.object(forKey: "key") as? Double
+        #expect(stored == tappedAt)
+    }
+
+    @Test("Each item's tap timestamp is tracked independently", .timeLimit(.minutes(1)))
+    func tapTimestampsAreIndependentPerKey() throws {
+        let store = InMemoryThrowingKeyValueStore()
+        SettingsViewModel.recordFirstTap(forKey: "dock", in: store, now: tappedAt)
+        SettingsViewModel.recordFirstTap(forKey: "widget", in: store, now: tappedAt + 500)
+        let dock = try store.object(forKey: "dock") as? Double
+        let widget = try store.object(forKey: "widget") as? Double
+        #expect(dock == tappedAt)
+        #expect(widget == tappedAt + 500)
+    }
+}
+
+/// Minimal in-memory `ThrowingKeyValueStoring` for exercising the tap-recording guard
+/// without constructing a full `SettingsViewModel`.
+private final class InMemoryThrowingKeyValueStore: ThrowingKeyValueStoring {
+
+    private var storage: [String: Any] = [:]
+
+    func object(forKey defaultName: String) throws -> Any? {
+        storage[defaultName]
+    }
+
+    func set(_ value: Any?, forKey defaultName: String) throws {
+        storage[defaultName] = value
+    }
+
+    func removeObject(forKey defaultName: String) throws {
+        storage.removeValue(forKey: defaultName)
     }
 }

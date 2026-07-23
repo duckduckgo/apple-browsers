@@ -7103,7 +7103,7 @@
     },
     "aichat.model-picker.advanced-section-header" : {
       "comment" : "Section header in the model picker menu for premium models that require a subscription",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -7163,7 +7163,7 @@
     },
     "aichat.model-picker.basic-models-section-header" : {
       "comment" : "Section header in the model picker menu for basic/free models when user has an active subscription",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {

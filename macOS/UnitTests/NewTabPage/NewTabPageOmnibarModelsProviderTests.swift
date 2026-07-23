@@ -255,7 +255,23 @@ final class NewTabPageOmnibarModelsProviderTests: XCTestCase {
         XCTAssertNotNil(sections[1].header)
     }
 
-    func testWhenSubscribedUserThenTwoSectionsReturned() async {
+    func testWhenSubscribedUserHasGatedModelThenTwoSectionsReturned() async {
+        mockSubscriptionManager.resultSubscription = .success(makeSubscription(tier: .plus))
+        mockModelsService.modelsToReturn = [
+            makeRemoteModel(id: "plus-model", accessTier: ["plus"]),
+            makeRemoteModel(id: "pro-only", accessTier: ["pro"]),
+        ]
+
+        let sections = await provider.fetchAIModelSections()
+
+        XCTAssertEqual(sections.count, 2)
+        XCTAssertNil(sections[0].header)
+        XCTAssertNotNil(sections[1].header)
+    }
+
+    /// A subscribed user with nothing gated gets one flat section — this is what regressed to two
+    /// sections under the old Basic/Advanced split (Asana comment 1216793923923610).
+    func testWhenSubscribedUserHasNothingGatedThenSingleSectionReturned() async {
         mockSubscriptionManager.resultSubscription = .success(makeSubscription(tier: .plus))
         mockModelsService.modelsToReturn = [
             makeRemoteModel(id: "plus-model", accessTier: ["plus"]),
@@ -264,9 +280,26 @@ final class NewTabPageOmnibarModelsProviderTests: XCTestCase {
 
         let sections = await provider.fetchAIModelSections()
 
-        XCTAssertEqual(sections.count, 2)
+        XCTAssertEqual(sections.count, 1)
         XCTAssertNil(sections[0].header)
-        XCTAssertNotNil(sections[1].header)
+    }
+
+    /// Mirrors the address bar's model picker: a subscriber's accessible models — whether "basic"
+    /// or "advanced" tier — render as one flat, ordered section, not split by tier. The old split
+    /// produced a stray unheaded section for a Pro user (who has both kinds accessible), causing a
+    /// UI inconsistency reported in Asana comment 1216793923923610.
+    func testWhenProUserHasBothBasicAndAdvancedModelsThenSingleFlatSectionReturned() async {
+        mockSubscriptionManager.resultSubscription = .success(makeSubscription(tier: .pro))
+        mockModelsService.modelsToReturn = [
+            makeRemoteModel(id: "basic-model", accessTier: ["free", "plus", "pro"]),
+            makeRemoteModel(id: "advanced-model", accessTier: ["plus", "pro"]),
+        ]
+
+        let sections = await provider.fetchAIModelSections()
+
+        XCTAssertEqual(sections.count, 1)
+        XCTAssertNil(sections[0].header)
+        XCTAssertEqual(Set(sections[0].items.map(\.id)), ["basic-model", "advanced-model"])
     }
 
     // MARK: - Caching

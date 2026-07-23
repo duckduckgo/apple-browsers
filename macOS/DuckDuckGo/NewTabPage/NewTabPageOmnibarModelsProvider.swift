@@ -21,8 +21,9 @@ import NewTabPage
 import os.log
 import Subscription
 
-/// Fetches AI models from the duck.ai API and builds sectioned model lists
-/// using the shared section builder for the NTP dropdown.
+/// Fetches AI models from the duck.ai API and builds the sectioned model list for the NTP
+/// dropdown, mirroring the address bar's model picker (accessible models in one flat, ordered
+/// section, then a gated section if anything's gated).
 @MainActor
 final class NewTabPageOmnibarModelsProvider: NewTabPageOmnibarModelsProviding {
 
@@ -47,22 +48,21 @@ final class NewTabPageOmnibarModelsProvider: NewTabPageOmnibarModelsProviding {
             attachmentLimits = mapAttachmentLimits(response.attachmentLimits?.limits(for: userTier))
             isEligibleForFreeTrial = userTier == .free && subscriptionManager.isUserEligibleForFreeTrial()
             let models = response.models.map { AIChatModel(remoteModel: $0, userTier: userTier) }
-            let hasActiveSubscription = userTier != .free
 
-            // Split off gated models rather than letting `buildSections` drop them for subscribers.
+            // Split off gated models rather than hiding higher-tier ones, and keep accessible
+            // models in one flat, ordered section — mirrors the address bar's model picker
+            // (`AIChatOmnibarController.modelPickerItems`) rather than grouping them into
+            // Basic/Advanced sections, which produced a stray empty-header section for tiers
+            // with both kinds of accessible models (e.g. Pro).
             let (accessible, gated) = AIChatModelSectionBuilder.groupByAccess(models: models)
+            let ordered = AIChatModelSectionBuilder.orderedAccessibleModels(accessible, userTier: userTier)
 
-            var result = AIChatModelSectionBuilder.buildSections(
-                models: accessible,
-                hasActiveSubscription: hasActiveSubscription,
-                advancedSectionHeader: UserText.aiChatModelPickerAdvancedSectionHeader,
-                basicSectionHeader: UserText.aiChatModelPickerBasicModelsSectionHeader
-            ).map { section in
+            var result = [
                 NewTabPageDataModel.AIModelSection(
-                    header: section.header,
-                    items: section.items.map { mapToItem($0, requiredTier: nil, userTier: userTier) }
+                    header: nil,
+                    items: ordered.map { mapToItem($0, requiredTier: nil, userTier: userTier) }
                 )
-            }
+            ]
 
             if !gated.isEmpty {
                 // Mirrors the address bar: a free user's gated section mixes Plus+Pro models

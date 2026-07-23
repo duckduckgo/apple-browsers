@@ -514,10 +514,10 @@ extension SyncSettingsViewController: ScanOrPasteCodeViewModelDelegate {
                    withAdditionalParameters: sourcePixelParameters,
                    includedParameters: [.appVersion],
                    onComplete: { _ in })
-        if !isPresentingV2ConnectingSheet {
-            presentSyncCompletionAfterDelay()
-        } else {
+        if isPresentingV2ConnectingSheet {
             presentSuccessScreen(isRecovery: codeCollectionIntent == .recoverData)
+        } else {
+            presentSyncCompletionAfterDelay()
         }
     }
 
@@ -696,10 +696,10 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
                 await connectionController.cancel()
             }
         }
-        if !isPresentingV2ConnectingSheet {
-            presentSyncCompletionAfterDelay()
-        } else {
+        if isPresentingV2ConnectingSheet {
             presentSuccessScreen(isRecovery: codeCollectionIntent == .recoverData)
+        } else {
+            presentSyncCompletionAfterDelay()
         }
         guard case .receiver(let syncSetupSource, let syncCodeSource) = setupRole else {
             // .sharer reaches here only via the connect flow (exchange-sharer terminates in controllerDidFinishTransmittingRecoveryKey).

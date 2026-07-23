@@ -347,6 +347,60 @@ final class ModalPromptCoordinationManagerIntegrationTests {
         #expect(cooldownManager.isInCooldownPeriod)
         #expect(cooldownManager.cooldownInfo.lastPresentationDate == pastTime)
     }
+
+    // MARK: - Promo Queue Lease Integration
+
+    @Test("Coordinated Presentation Retains Lease And Records Cooldown")
+    func whenCoordinatedPromptPresentsThenLeaseAndPersistentCooldownAreRetained() throws {
+        let provider = MockModalPromptProvider()
+        sut = ModalPromptCoordinationManager(
+            providers: [provider],
+            cooldownManager: cooldownManager,
+            onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
+            modalPromptScheduling: schedulerMock
+        )
+        guard case .acquired(let lease) = promoQueueLeaseArbiter.acquireModalLease() else {
+            Issue.record("Expected modal lease acquisition")
+            return
+        }
+
+        let disposition = sut.presentModalPromptIfNeeded(from: presenterMock, with: lease)
+
+        #expect(disposition == .retained)
+        #expect(promoQueueLeaseArbiter.snapshot.modalAttemptIdentity == lease.attemptIdentity)
+        #expect(sut.modalAttemptPhase == .presentationActive(lease.attemptIdentity))
+        #expect(sut.didActuallyPresentModalPromptThisSession)
+        #expect(cooldownManager.isInCooldownPeriod)
+        let storedTimestamp = try keyValueStore.object(
+            forKey: PromptCooldownKeyValueFilesStore.StorageKey.lastPromptShownTimestamp
+        ) as? TimeInterval
+        #expect(storedTimestamp == timeTraveller.getDate().timeIntervalSince1970)
+    }
+
+    @Test("Coordinated Cooldown Denial Releases Lease Before Provider Evaluation")
+    func whenPersistentCooldownBlocksCoordinatedAttemptThenLeaseIsReleased() {
+        cooldownStore.lastPresentationTimestamp = timeTraveller.getDate().timeIntervalSince1970
+        let provider = MockModalPromptProvider()
+        sut = ModalPromptCoordinationManager(
+            providers: [provider],
+            cooldownManager: cooldownManager,
+            onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
+            modalPromptScheduling: schedulerMock
+        )
+        guard case .acquired(let lease) = promoQueueLeaseArbiter.acquireModalLease() else {
+            Issue.record("Expected modal lease acquisition")
+            return
+        }
+
+        let disposition = sut.presentModalPromptIfNeeded(from: presenterMock, with: lease)
+
+        #expect(disposition == .released)
+        #expect(!promoQueueLeaseArbiter.snapshot.hasModalLease)
+        #expect(!provider.didCallProvideModalPrompt)
+        #expect(!presenterMock.didCallPresent)
+    }
 }
 
 // MARK: - Helpers

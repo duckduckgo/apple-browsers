@@ -193,6 +193,233 @@ final class ModalPromptCoordinationServiceTests {
         #expect(!managerMock.didCallPresentModalPromptIfNeeded)
     }
 
+    // MARK: - Promo Queue Admission
+
+    @Test("Enabled Modal Evaluation Acquires Lease Before Calling Manager")
+    func whenPromoQueueIsEnabledThenManagerReceivesAcquiredLease() {
+        featureFlaggerMock.enabledFeatureFlags = [.promoQueue]
+        launchSourceManagerMock.source = .standard
+        presenterMock.presentedViewController = nil
+        sut = ModalPromptCoordinationService(
+            launchSourceManager: launchSourceManagerMock,
+            modalPromptCoordinationManager: managerMock,
+            featureFlagger: featureFlaggerMock,
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter
+        )
+
+        sut.presentModalPromptIfNeeded(from: presenterMock)
+
+        #expect(managerMock.capturedModalLease != nil)
+        #expect(promoQueueLeaseArbiter.snapshot.hasModalLease)
+    }
+
+    @Test("Visible Promo Denial Does Not Reach Modal Manager")
+    func whenVisiblePromoOwnsSlotThenModalManagerIsNotCalled() throws {
+        featureFlaggerMock.enabledFeatureFlags = [.promoQueue]
+        launchSourceManagerMock.source = .standard
+        presenterMock.presentedViewController = nil
+        let visibleIdentity = VisiblePromoIdentity(
+            surfaceID: UUID(),
+            promoType: .remoteMessage,
+            promoID: "rmf"
+        )
+        guard case .acquired = promoQueueLeaseArbiter.acquireVisiblePromoLease(for: visibleIdentity) else {
+            Issue.record("Expected visible promo lease acquisition")
+            return
+        }
+        sut = ModalPromptCoordinationService(
+            launchSourceManager: launchSourceManagerMock,
+            modalPromptCoordinationManager: managerMock,
+            featureFlagger: featureFlaggerMock,
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter
+        )
+
+        sut.presentModalPromptIfNeeded(from: presenterMock)
+
+        #expect(!managerMock.didCallPresentModalPromptIfNeeded)
+        #expect(promoQueueLeaseArbiter.snapshot.visiblePromoIdentities == [visibleIdentity])
+    }
+
+    @Test("Visible Promo Denial Never Queries A Real Provider Chain")
+    func whenVisiblePromoOwnsSlotThenProvidersAreNotQueried() throws {
+        featureFlaggerMock.enabledFeatureFlags = [.promoQueue]
+        launchSourceManagerMock.source = .standard
+        presenterMock.presentedViewController = nil
+        let provider = MockModalPromptProvider()
+        let providers = ModalPromptProviders(
+            newAddressBarPicker: provider,
+            defaultBrowser: provider,
+            winBackOffer: provider,
+            subscriptionPromo: provider,
+            subscriptionPromoExistingUser: provider,
+            whatsNew: provider,
+            cookiePopupProtectionOptIn: provider
+        )
+        let visibleIdentity = VisiblePromoIdentity(
+            surfaceID: UUID(),
+            promoType: .remoteMessage,
+            promoID: "rmf"
+        )
+        guard case .acquired = promoQueueLeaseArbiter.acquireVisiblePromoLease(for: visibleIdentity) else {
+            Issue.record("Expected visible promo lease acquisition")
+            return
+        }
+        sut = ModalPromptCoordinationService(
+            launchSourceManager: launchSourceManagerMock,
+            keyValueStore: try MockKeyValueFileStore(),
+            contextualOnboardingStatusProvider: contextualOnboardingMock,
+            privacyConfigManager: MockPrivacyConfigurationManager(),
+            providers: providers,
+            featureFlagger: featureFlaggerMock,
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter
+        )
+
+        sut.presentModalPromptIfNeeded(from: presenterMock)
+
+        #expect(!provider.didCallProvideModalPrompt)
+        #expect(!presenterMock.didCallPresent)
+    }
+
+    @Test("Disabled Modal Evaluation Uses Legacy Manager Path Without Lease")
+    func whenPromoQueueIsDisabledThenLegacyManagerPathIsUnchanged() {
+        launchSourceManagerMock.source = .standard
+        presenterMock.presentedViewController = nil
+        sut = ModalPromptCoordinationService(
+            launchSourceManager: launchSourceManagerMock,
+            modalPromptCoordinationManager: managerMock,
+            featureFlagger: featureFlaggerMock,
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter
+        )
+
+        sut.presentModalPromptIfNeeded(from: presenterMock)
+
+        #expect(managerMock.didCallPresentModalPromptIfNeeded)
+        #expect(managerMock.capturedModalLease == nil)
+        #expect(!promoQueueLeaseArbiter.snapshot.hasModalLease)
+        #expect(managerMock.reconcilePresentedModalCallCount == 0)
+    }
+
+    @Test("Released Modal Lease Retries Two Active Registrations Once Without Recursion")
+    func whenManagerReleasesModalLeaseThenActiveRegistrationsRetryOnce() {
+        featureFlaggerMock.enabledFeatureFlags = [.promoQueue]
+        launchSourceManagerMock.source = .standard
+        presenterMock.presentedViewController = nil
+        managerMock.coordinatedPresentationDisposition = .released
+        sut = ModalPromptCoordinationService(
+            launchSourceManager: launchSourceManagerMock,
+            modalPromptCoordinationManager: managerMock,
+            featureFlagger: featureFlaggerMock,
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter
+        )
+        let firstSurfaceID = UUID()
+        let secondSurfaceID = UUID()
+        let firstTarget = MockNewTabPagePromoRetryTarget()
+        let secondTarget = MockNewTabPagePromoRetryTarget()
+        firstTarget.isActiveForPromoRetry = false
+        secondTarget.isActiveForPromoRetry = false
+        managerMock.onPresentCoordinated = {
+            firstTarget.isActiveForPromoRetry = true
+            secondTarget.isActiveForPromoRetry = true
+        }
+        firstTarget.onRetry = { [weak self] in
+            guard let self else { return }
+            _ = sut.admitVisiblePromo(
+                VisiblePromoIdentity(surfaceID: firstSurfaceID, promoType: .remoteMessage, promoID: "first")
+            )
+        }
+        secondTarget.onRetry = { [weak self] in
+            guard let self else { return }
+            _ = sut.admitVisiblePromo(
+                VisiblePromoIdentity(surfaceID: secondSurfaceID, promoType: .remoteMessage, promoID: "second")
+            )
+        }
+        let firstRegistration = sut.registerVisiblePromoRetry(for: firstSurfaceID, target: firstTarget)
+        let secondRegistration = sut.registerVisiblePromoRetry(for: secondSurfaceID, target: secondTarget)
+        _ = (firstRegistration, secondRegistration)
+
+        sut.presentModalPromptIfNeeded(from: presenterMock)
+
+        #expect(firstTarget.retryCount == 1)
+        #expect(secondTarget.retryCount == 1)
+        #expect(promoQueueLeaseArbiter.snapshot.visiblePromoCount == 2)
+        #expect(managerMock.didCallPresentModalPromptIfNeeded)
+    }
+
+    @Test("Visible Admission Checkpoint Admits Triggering Surface Before Retrying Other Surface")
+    func whenVisibleAdmissionReleasesDetachedModalThenTriggeringSurfaceWinsBeforeRetrySnapshot() {
+        featureFlaggerMock.enabledFeatureFlags = [.promoQueue]
+        sut = ModalPromptCoordinationService(
+            launchSourceManager: launchSourceManagerMock,
+            modalPromptCoordinationManager: managerMock,
+            featureFlagger: featureFlaggerMock,
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter
+        )
+        guard case .acquired(let modalLease) = promoQueueLeaseArbiter.acquireModalLease() else {
+            Issue.record("Expected modal lease acquisition")
+            return
+        }
+        managerMock.reconcilePresentedModalResult = true
+        managerMock.onReconcilePresentedModal = {
+            modalLease.release()
+        }
+        let triggeringSurfaceID = UUID()
+        let otherSurfaceID = UUID()
+        let triggeringTarget = MockNewTabPagePromoRetryTarget()
+        let otherTarget = MockNewTabPagePromoRetryTarget()
+        otherTarget.onRetry = { [weak self] in
+            guard let self else { return }
+            _ = sut.admitVisiblePromo(
+                VisiblePromoIdentity(surfaceID: otherSurfaceID, promoType: .remoteMessage, promoID: "other")
+            )
+        }
+        let triggeringRegistration = sut.registerVisiblePromoRetry(
+            for: triggeringSurfaceID,
+            target: triggeringTarget
+        )
+        let otherRegistration = sut.registerVisiblePromoRetry(
+            for: otherSurfaceID,
+            target: otherTarget
+        )
+        _ = (triggeringRegistration, otherRegistration)
+
+        let result = sut.admitVisiblePromo(
+            VisiblePromoIdentity(surfaceID: triggeringSurfaceID, promoType: .remoteMessage, promoID: "trigger")
+        )
+
+        guard case .acquired = result else {
+            Issue.record("Expected triggering visible promo to acquire before retries")
+            return
+        }
+        #expect(triggeringTarget.retryCount == 0)
+        #expect(otherTarget.retryCount == 1)
+        #expect(promoQueueLeaseArbiter.snapshot.visiblePromoCount == 2)
+    }
+
+    @Test("Stale Registration Cannot Remove Or Invoke Its Replacement")
+    func whenRegistrationIsReplacedThenOldTokenCannotRemoveReplacement() {
+        featureFlaggerMock.enabledFeatureFlags = [.promoQueue]
+        sut = ModalPromptCoordinationService(
+            launchSourceManager: launchSourceManagerMock,
+            modalPromptCoordinationManager: managerMock,
+            featureFlagger: featureFlaggerMock,
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter
+        )
+        let surfaceID = UUID()
+        let firstTarget = MockNewTabPagePromoRetryTarget()
+        let replacementTarget = MockNewTabPagePromoRetryTarget()
+        let firstRegistration = sut.registerVisiblePromoRetry(for: surfaceID, target: firstTarget)
+        let replacementRegistration = sut.registerVisiblePromoRetry(for: surfaceID, target: replacementTarget)
+
+        firstRegistration.deregister()
+        launchSourceManagerMock.source = .URL
+        presenterMock.presentedViewController = nil
+        sut.presentModalPromptIfNeeded(from: presenterMock)
+        _ = replacementRegistration
+
+        #expect(firstTarget.retryCount == 0)
+        #expect(replacementTarget.retryCount == 1)
+    }
+
     // MARK: - Promo Queue Feature State
 
     @Test("Initial Promo Queue State Is Seeded Before Subscription Updates")
@@ -414,6 +641,18 @@ private final class MockDismissingViewController: UIViewController {
     override var isBeingDismissed: Bool {
         get { _isBeingDismissed }
         set { _isBeingDismissed = newValue }
+    }
+}
+
+@MainActor
+private final class MockNewTabPagePromoRetryTarget: NewTabPagePromoRetrying {
+    var isActiveForPromoRetry = true
+    var onRetry: (@MainActor () -> Void)?
+    private(set) var retryCount = 0
+
+    func retryVisiblePromoAdmission() {
+        retryCount += 1
+        onRetry?()
     }
 }
 

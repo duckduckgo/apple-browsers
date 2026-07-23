@@ -23,6 +23,7 @@ import UIKit
 @MainActor
 final class MockModalPromptPresenter: ModalPromptPresenter {
     var presentedViewController: UIViewController?
+    var modalPromptPresentationViewController: UIViewController?
 
     private(set) var didCallPresent = false
     private(set) var capturedViewController: UIViewController?

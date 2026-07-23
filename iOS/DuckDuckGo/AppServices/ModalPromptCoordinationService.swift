@@ -28,11 +28,14 @@ import UIKit
 @MainActor
 protocol ModalPromptPresenter: AnyObject {
     var presentedViewController: UIViewController? { get }
+    var modalPromptPresentationViewController: UIViewController? { get }
 
     func present(_ viewControllerToPresent: UIViewController, animated flag: Bool, completion: (() -> Void)?)
 }
 
-extension MainViewController: ModalPromptPresenter {}
+extension MainViewController: ModalPromptPresenter {
+    var modalPromptPresentationViewController: UIViewController? { self }
+}
 
 // MARK: - Promo Queue Feature State
 
@@ -67,9 +70,64 @@ enum PromoQueueFeatureState: Equatable {
     }
 }
 
+enum VisiblePromoAdmissionResult {
+    case acquired(PromoQueueVisiblePromoLease)
+    case blockedByModal
+    case blockedByVisiblePromos(Set<VisiblePromoIdentity>)
+    case occupiedSurfaceSlot(VisiblePromoIdentity)
+    case featureDisabled
+    case unavailableDuringTransition
+}
+
+@MainActor
+protocol NewTabPagePromoRetrying: AnyObject {
+    var isActiveForPromoRetry: Bool { get }
+
+    func retryVisiblePromoAdmission()
+}
+
+@MainActor
+final class NewTabPagePromoRetryRegistration {
+    private var deregistrationHandler: (@MainActor () -> Void)?
+
+    init(deregistrationHandler: (@MainActor () -> Void)? = nil) {
+        self.deregistrationHandler = deregistrationHandler
+    }
+
+    func deregister() {
+        let deregistrationHandler = deregistrationHandler
+        self.deregistrationHandler = nil
+        deregistrationHandler?()
+    }
+}
+
 @MainActor
 protocol NewTabPagePromoCoordinating: AnyObject {
     var promoQueueFeatureState: PromoQueueFeatureState { get }
+
+    func admitVisiblePromo(_ identity: VisiblePromoIdentity) -> VisiblePromoAdmissionResult
+    func releaseVisiblePromoLease(_ lease: PromoQueueVisiblePromoLease)
+    func registerVisiblePromoRetry(
+        for surfaceID: UUID,
+        target: NewTabPagePromoRetrying
+    ) -> NewTabPagePromoRetryRegistration
+}
+
+extension NewTabPagePromoCoordinating {
+    func admitVisiblePromo(_ identity: VisiblePromoIdentity) -> VisiblePromoAdmissionResult {
+        .featureDisabled
+    }
+
+    func releaseVisiblePromoLease(_ lease: PromoQueueVisiblePromoLease) {
+        lease.release()
+    }
+
+    func registerVisiblePromoRetry(
+        for surfaceID: UUID,
+        target: NewTabPagePromoRetrying
+    ) -> NewTabPagePromoRetryRegistration {
+        NewTabPagePromoRetryRegistration()
+    }
 }
 
 // MARK: - Service
@@ -86,12 +144,26 @@ struct ModalPromptProviders {
 
 @MainActor
 final class ModalPromptCoordinationService {
+    private final class WeakPromoRetryRegistration {
+        let id: UUID
+        let surfaceID: UUID
+        weak var target: NewTabPagePromoRetrying?
+
+        init(id: UUID, surfaceID: UUID, target: NewTabPagePromoRetrying) {
+            self.id = id
+            self.surfaceID = surfaceID
+            self.target = target
+        }
+    }
+
     private let modalPromptCoordinationManager: ModalPromptCoordinationManaging
     private let launchSourceManager: LaunchSourceManaging
     private let promoQueueLeaseArbiter: PromoQueueLeaseArbitrating
     private let featureFlagger: FeatureFlagger
     private var promoQueueFeatureStateCancellable: AnyCancellable?
     private var pendingPromoQueueFeatureTargetState: PromoQueueFeatureTargetState?
+    private var promoRetryRegistrations = [WeakPromoRetryRegistration]()
+    private var isRetryingVisiblePromoRegistrations = false
 
     private(set) var promoQueueFeatureState: PromoQueueFeatureState
 
@@ -167,6 +239,11 @@ final class ModalPromptCoordinationService {
             return
         }
 
+        if promoQueueFeatureState == .enabled {
+            _ = modalPromptCoordinationManager.reconcilePresentedModal()
+            retryActiveVisiblePromoRegistrations()
+        }
+
         guard launchSourceManager.source == .standard else {
             Logger.modalPrompt.info("[Modal Prompt Coordination] - Skipping modal prompt - Launched from non-standard source.")
             return
@@ -189,7 +266,83 @@ final class ModalPromptCoordinationService {
             presentationStatusMessage = "No Modal is currently presented."
         }
         Logger.modalPrompt.info("[Modal Prompt Coordination] - ✓ \(presentationStatusMessage, privacy: .public)")
-        modalPromptCoordinationManager.presentModalPromptIfNeeded(from: viewController)
+
+        guard promoQueueFeatureState == .enabled else {
+            modalPromptCoordinationManager.presentModalPromptIfNeeded(from: viewController)
+            return
+        }
+
+        switch promoQueueLeaseArbiter.acquireModalLease() {
+        case .acquired(let lease):
+            let disposition = modalPromptCoordinationManager.presentModalPromptIfNeeded(
+                from: viewController,
+                with: lease
+            )
+            if disposition == .released {
+                retryActiveVisiblePromoRegistrations()
+            }
+        case .blockedByModal:
+            Logger.modalPrompt.debug("[Modal Prompt Coordination] - Skipping modal prompt - A coordinated modal attempt already owns the slot.")
+        case .blockedByVisiblePromos:
+            Logger.modalPrompt.debug("[Modal Prompt Coordination] - Skipping modal prompt - One or more visible promos own the slot.")
+        case .occupiedSurfaceSlot:
+            assertionFailure("Modal lease acquisition cannot be blocked by an occupied surface slot.")
+        }
+    }
+
+    func admitVisiblePromo(_ identity: VisiblePromoIdentity) -> VisiblePromoAdmissionResult {
+        switch promoQueueFeatureState {
+        case .disabled:
+            return .featureDisabled
+        case .transitioning:
+            return .unavailableDuringTransition
+        case .enabled:
+            break
+        }
+
+        let didReleaseModalLease = modalPromptCoordinationManager.reconcilePresentedModal()
+        let result: VisiblePromoAdmissionResult
+        switch promoQueueLeaseArbiter.acquireVisiblePromoLease(for: identity) {
+        case .acquired(let lease):
+            result = .acquired(lease)
+        case .blockedByModal:
+            result = .blockedByModal
+        case .blockedByVisiblePromos(let identities):
+            result = .blockedByVisiblePromos(identities)
+        case .occupiedSurfaceSlot(let identity):
+            result = .occupiedSurfaceSlot(identity)
+        }
+
+        if didReleaseModalLease {
+            retryActiveVisiblePromoRegistrations(excluding: identity.surfaceID)
+        }
+        return result
+    }
+
+    func releaseVisiblePromoLease(_ lease: PromoQueueVisiblePromoLease) {
+        lease.release()
+    }
+
+    func registerVisiblePromoRetry(
+        for surfaceID: UUID,
+        target: NewTabPagePromoRetrying
+    ) -> NewTabPagePromoRetryRegistration {
+        let registrationID = UUID()
+        let registration = WeakPromoRetryRegistration(
+            id: registrationID,
+            surfaceID: surfaceID,
+            target: target
+        )
+
+        promoRetryRegistrations.removeAll { $0.surfaceID == surfaceID }
+        promoRetryRegistrations.append(registration)
+
+        return NewTabPagePromoRetryRegistration { [weak self] in
+            self?.deregisterVisiblePromoRetry(
+                for: surfaceID,
+                registrationID: registrationID
+            )
+        }
     }
 
     private func subscribeToPromoQueueFeatureState(initialTargetState: PromoQueueFeatureTargetState) {
@@ -228,11 +381,43 @@ final class ModalPromptCoordinationService {
 
         modalPromptCoordinationManager.promoQueueWillTransition(to: targetState)
 
-        // The manager and NTP transition callbacks will add their target-specific work in Steps 4–6.
-        // Invalidating here establishes the shared serialized reset point for both transition directions.
         promoQueueLeaseArbiter.invalidateAllLeases()
 
         modalPromptCoordinationManager.promoQueueDidTransition(to: targetState)
+
+        promoQueueFeatureState = PromoQueueFeatureState(targetState: targetState)
+        if targetState == .enabled {
+            retryActiveVisiblePromoRegistrations()
+        }
+    }
+
+    private func deregisterVisiblePromoRetry(for surfaceID: UUID, registrationID: UUID) {
+        promoRetryRegistrations.removeAll {
+            $0.surfaceID == surfaceID && $0.id == registrationID
+        }
+    }
+
+    private func retryActiveVisiblePromoRegistrations(excluding excludedSurfaceID: UUID? = nil) {
+        guard !isRetryingVisiblePromoRegistrations else {
+            return
+        }
+
+        isRetryingVisiblePromoRegistrations = true
+        defer {
+            isRetryingVisiblePromoRegistrations = false
+            promoRetryRegistrations.removeAll { $0.target == nil }
+        }
+
+        let registrationsSnapshot = promoRetryRegistrations
+        for registration in registrationsSnapshot {
+            guard registration.surfaceID != excludedSurfaceID,
+                  promoRetryRegistrations.contains(where: { $0.id == registration.id }),
+                  let target = registration.target,
+                  target.isActiveForPromoRetry else {
+                continue
+            }
+            target.retryVisiblePromoAdmission()
+        }
     }
 
 }

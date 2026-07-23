@@ -90,6 +90,7 @@ final class MainWindowController: NSWindowController {
         subscribeToKeyWindow()
         subscribeToThemeChanges()
         subscribeToEffectiveAppearance()
+        subscribeToWindowOcclusion()
 
         applyThemeStyle()
 
@@ -188,6 +189,21 @@ final class MainWindowController: NSWindowController {
         NSApp.publisher(for: \.effectiveAppearance)
             .dropFirst()
             .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.applyThemeStyle()
+            }
+            .store(in: &cancellables)
+    }
+
+    private func subscribeToWindowOcclusion() {
+        // A window occluded by a full screen Space — either another window's native Full Screen or a
+        // WKFullScreenWindowController video — doesn't reliably repaint its titlebar strip when the
+        // system appearance changes while it's off screen: subscribeToEffectiveAppearance() runs, but
+        // the layer color assignment doesn't stick until the window is on screen again. Re-apply the
+        // theme when the window becomes visible, when its effective appearance is guaranteed current.
+        guard AppVersion.isLiquidGlassSupported, let window else { return }
+        NotificationCenter.default.publisher(for: NSWindow.didChangeOcclusionStateNotification, object: window)
+            .filter { ($0.object as? NSWindow)?.occlusionState.contains(.visible) == true }
             .sink { [weak self] _ in
                 self?.applyThemeStyle()
             }
@@ -456,17 +472,6 @@ extension MainWindowController: NSWindowDelegate {
         }
 
         fullscreenController.resetFullscreenExitFlag()
-    }
-
-    func windowDidExitFullScreen(_ notification: Notification) {
-        // While this window was in Full Screen (on its own Space), the app's other windows were
-        // occluded on the background Space. If the system appearance changed during that time, their
-        // titlebar strip re-color from `subscribeToEffectiveAppearance()` didn't reliably reach the
-        // screen. Re-apply the theme to every window now that they're all visible again.
-        guard AppVersion.isLiquidGlassSupported else { return }
-        for windowController in Application.appDelegate.windowControllersManager.mainWindowControllers {
-            windowController.applyThemeStyle()
-        }
     }
 
     private func hideTabBarAndBookmarksBar() {

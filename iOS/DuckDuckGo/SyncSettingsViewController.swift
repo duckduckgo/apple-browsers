@@ -668,12 +668,9 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
         pairingV2JoinerCodeSource = codeVersion == .v2 && setupSource == .exchange ? codeSource : nil
         sendCodeRecognisedPixel(setupSource: setupSource, codeSource: codeSource, codeVersion: codeVersion)
         await dismissPresentedViewController()
-        switch (useSimplifiedLayoutV2, codeCollectionIntent) {
-        case (true, .recoverData):
-            viewModel.connectingSheetPhase = .connecting(isRecovery: true)
-        case (true, .syncAnotherDevice):
-            viewModel.connectingSheetPhase = .connecting(isRecovery: false)
-        default:
+        if useSimplifiedLayoutV2 {
+            viewModel.connectingSheetPhase = .connecting(isRecovery: codeCollectionIntent == .recoverData)
+        } else {
             await showPreparingSync(context: setupSource == .recovery ? .recoveringData : .syncingDevices)
         }
     }

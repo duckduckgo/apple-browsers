@@ -646,9 +646,10 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         XCTAssertTrue(controller.hasExcessTabAttachments)
     }
 
-    func testWhenSubmitWithTabAttachmentsOverCap_ThenSubmitIsBlocked() {
-        // The submit guard is gated on the tab picker being enabled, so turn its flags on.
-        featureFlagger.enabledFeatureFlags = [.aiChatPageContext, .aiChatOmnibarAttachMoreTabs]
+    func testWhenSubmitWithTabAttachmentsOverCap_ThenSubmitIsBlockedEvenWithPickerFlagOff() {
+        // Regression: the cap must hold regardless of `isOmnibarTabPickerEnabled`. Tab cards always
+        // render and shared-state attachments persist if the picker flag flips off mid-session, so a
+        // flag-gated guard would let a prompt ship 4 page contexts. Flags are left OFF here on purpose.
         controller.toggleTabAttachment(makeTabAttachment(id: "tab-1"))
         controller.toggleTabAttachment(makeTabAttachment(id: "tab-2"))
         controller.toggleTabAttachment(makeTabAttachment(id: "tab-3"))

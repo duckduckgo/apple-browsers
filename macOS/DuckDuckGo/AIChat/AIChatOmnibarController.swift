@@ -1113,7 +1113,10 @@ final class AIChatOmnibarController {
 
         // Block submission if too many tabs are attached. Like files, the picker caps at one over
         // the limit (+1) for a visible over-limit cue; hold submit until the excess is removed.
-        if isOmnibarTabPickerEnabled && hasExcessTabAttachments {
+        // Not gated on `isOmnibarTabPickerEnabled`: tab cards always render (they're page content,
+        // not model-typed), and shared-state attachments persist if the picker flag flips off
+        // mid-session — so the cap must hold regardless of the flag to avoid shipping >3 contexts.
+        if hasExcessTabAttachments {
             return
         }
 

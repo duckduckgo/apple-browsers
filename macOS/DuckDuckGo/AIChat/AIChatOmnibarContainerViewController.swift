@@ -306,10 +306,12 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         omnibarController.selectedModelSupportsFileUpload && hasExcessFileAttachments
     }
 
-    /// Tab-side analogue of `hasVisibleImageExcess` — over the tab cap and the tab picker is on,
-    /// so the over-limit cards are actually rendered for the error label to anchor against.
+    /// Tab-side analogue of `hasVisibleImageExcess`. Unlike images/files, tab cards always render
+    /// (they're page content, not model-typed — see `applyPanelAttachmentsFromSharedState`), so this
+    /// isn't gated on the picker flag: whenever the excess exists, its cards are on screen for the
+    /// error label to anchor against, and the cap must hold even if the picker flag flipped off.
     private var hasVisibleTabExcess: Bool {
-        omnibarController.isOmnibarTabPickerEnabled && omnibarController.hasExcessTabAttachments
+        omnibarController.hasExcessTabAttachments
     }
 
     required init?(coder: NSCoder) {
@@ -423,7 +425,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         let canSendImages = omnibarController.isImageGenerationMode || omnibarController.selectedModelSupportsImageUpload
         let imageBlockingExcess = canSendImages && omnibarController.hasExcessActiveTabImageAttachments
         let fileBlockingExcess = omnibarController.selectedModelSupportsFileUpload && hasExcessFileAttachments
-        let tabBlockingExcess = omnibarController.isOmnibarTabPickerEnabled && omnibarController.hasExcessTabAttachments
+        let tabBlockingExcess = omnibarController.hasExcessTabAttachments
         let hasBlockingExcess = imageBlockingExcess || fileBlockingExcess || tabBlockingExcess
 
         // Voice-chat mode only kicks in when the input is empty, the feature flag is on, and we

@@ -25,6 +25,7 @@ protocol HomePageMessagesConfiguration {
     func refresh(openedAfterIdle: Bool)
     
     func dismissHomeMessage(_ homeMessage: HomeMessage) async
+    @MainActor
     func didAppear(_ homeMessage: HomeMessage)
 }
 

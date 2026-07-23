@@ -54,6 +54,9 @@ final class WebViewContainerView: NSView {
 
     private var blurViewIsHiddenCancellable: AnyCancellable?
     private var cancellables = Set<AnyCancellable>()
+    // Kept separate from `cancellables`, which `observeFullScreenWindowWillExitFullScreen` empties as
+    // soon as the Full Screen window starts closing — before `didExitFullScreenNotification` arrives.
+    private var fullScreenExitThemeCancellable: AnyCancellable?
 
     override func layout() {
         super.layout()
@@ -99,6 +102,7 @@ final class WebViewContainerView: NSView {
 
                 self.observeTabMainWindow(fullScreenWindowController)
                 self.observeFullScreenWindowWillExitFullScreen(fullScreenWindowController)
+                self.observeFullScreenWindowDidExitFullScreen(fullScreenWindowController)
             }
             .store(in: &cancellables)
     }
@@ -183,6 +187,26 @@ final class WebViewContainerView: NSView {
                 }
             }
             .store(in: &cancellables)
+    }
+
+    /**
+
+     Fix a stale titlebar strip color on macOS 26 Liquid Glass UI after playing a Full Screen video.
+
+     The MainWindow is occluded by the WKFullScreenWindowController's own window while a video plays in
+     Full Screen, so if the system appearance changes during that time, `MainWindowController` re-colors
+     its (offscreen) titlebar strip but the change doesn't reliably make it onto screen. Once the video
+     Full Screen window closes and the MainWindow is shown again, re-apply the theme to guarantee the
+     strip matches the current appearance.
+    */
+    private func observeFullScreenWindowDidExitFullScreen(_ fullScreenWindowController: NSWindowController) {
+        // Note: stored in `fullScreenExitThemeCancellable`, not `cancellables` — see its declaration.
+        fullScreenExitThemeCancellable = NotificationCenter.default.publisher(for: NSWindow.didExitFullScreenNotification, object: fullScreenWindowController.window)
+            .first()
+            .sink { [weak self] _ in
+                guard let mainWindowController = self?.webView.tabContentView.window?.windowController as? MainWindowController else { return }
+                mainWindowController.applyThemeStyle()
+            }
     }
 
     private enum Selector {

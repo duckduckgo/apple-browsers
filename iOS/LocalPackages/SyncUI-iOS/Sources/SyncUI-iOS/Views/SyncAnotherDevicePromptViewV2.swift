@@ -54,7 +54,7 @@ struct SyncAnotherDevicePromptViewV2: View {
                         model.syncAnotherDeviceFromConnectingSheet()
                     } label: {
                         HStack(spacing: 8) {
-                            Image(uiImage: DesignSystemImages.Glyphs.Size24.add)
+                            Image(uiImage: DesignSystemImages.Glyphs.Size24.qrScan)
                             Text(UserText.simplifiedSyncWithAnotherDeviceButton)
                         }
                     }

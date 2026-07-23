@@ -1,5 +1,5 @@
 //
-//  SyncDeviceAddedViewV2.swift
+//  SyncSuccessViewV2.swift
 //  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
@@ -22,9 +22,10 @@ import DesignResourcesKitIcons
 import DuckUI
 import SwiftUI
 
-struct SyncDeviceAddedViewV2: View {
+struct SyncSuccessViewV2: View {
 
     @ObservedObject var model: SyncSettingsViewModel
+    let isRecovery: Bool
 
     private var autoRestoreBinding: Binding<Bool> {
         Binding {
@@ -38,10 +39,13 @@ struct SyncDeviceAddedViewV2: View {
         NavigationView {
             List {
                 headerSection
-                recoveryCodeSection
 
-                if model.isAutoRestoreFeatureAvailable {
-                    autoRestoreSection
+                if !isRecovery {
+                    recoveryCodeSection
+
+                    if model.isAutoRestoreFeatureAvailable {
+                        autoRestoreSection
+                    }
                 }
             }
             .applyListStyle()
@@ -55,16 +59,28 @@ struct SyncDeviceAddedViewV2: View {
         }
     }
 
+    private var title: String {
+        isRecovery
+            ? UserText.simplifiedRecoveryCompleteV2Title
+            : UserText.simplifiedDeviceAddedV2Title(model.thisDeviceName ?? UserText.simplifiedDeviceAddedV2FallbackDeviceName)
+    }
+
+    private var description: String {
+        isRecovery
+            ? UserText.simplifiedRecoveryCompleteV2Description
+            : UserText.simplifiedDeviceAddedV2Description
+    }
+
     @ViewBuilder
     private var doneButton: some View {
         if #available(iOS 26.0, *) {
-            Button(action: model.deviceConnectedDoneFromConnectingSheet) {
+            Button(action: model.doneFromConnectingSheet) {
                 Image(uiImage: DesignSystemImages.Glyphs.Size24.check)
             }
             .buttonStyle(.glassProminent)
             .tint(Color(designSystemColor: .accentPrimary))
         } else {
-            Button(action: model.deviceConnectedDoneFromConnectingSheet) {
+            Button(action: model.doneFromConnectingSheet) {
                 Image(uiImage: DesignSystemImages.Glyphs.Size24.check)
                     .foregroundColor(.white)
                     .frame(width: 40, height: 40)
@@ -82,12 +98,12 @@ struct SyncDeviceAddedViewV2: View {
                     .aspectRatio(contentMode: .fit)
                     .frame(width: 128, height: 96)
 
-                Text(UserText.simplifiedDeviceAddedV2Title(model.thisDeviceName ?? UserText.simplifiedDeviceAddedV2FallbackDeviceName))
+                Text(title)
                     .daxTitle1()
                     .multilineTextAlignment(.center)
                     .foregroundColor(Color(designSystemColor: .textPrimary))
 
-                Text(UserText.simplifiedDeviceAddedV2Description)
+                Text(description)
                     .daxBodyRegular()
                     .foregroundColor(Color(designSystemColor: .textSecondary))
                     .multilineTextAlignment(.center)
@@ -151,7 +167,7 @@ struct SyncDeviceAddedViewV2: View {
 #if DEBUG
 
 private extension SyncSettingsViewModel {
-    static func deviceAddedPreview(isAutoRestoreAvailable: Bool = true) -> SyncSettingsViewModel {
+    static func syncSuccessPreview(isAutoRestoreAvailable: Bool = true) -> SyncSettingsViewModel {
         let model = SyncSettingsViewModel(
             isOnDevEnvironment: { false },
             switchToProdEnvironment: {},
@@ -166,13 +182,19 @@ private extension SyncSettingsViewModel {
 
 #Preview("Device Added") {
     RebrandedPreview(isRebranded: true) {
-        SyncDeviceAddedViewV2(model: .deviceAddedPreview())
+        SyncSuccessViewV2(model: .syncSuccessPreview(), isRecovery: false)
     }
 }
 
 #Preview("Device Added – No Auto-Restore") {
     RebrandedPreview(isRebranded: true) {
-        SyncDeviceAddedViewV2(model: .deviceAddedPreview(isAutoRestoreAvailable: false))
+        SyncSuccessViewV2(model: .syncSuccessPreview(isAutoRestoreAvailable: false), isRecovery: false)
+    }
+}
+
+#Preview("Recovery Complete") {
+    RebrandedPreview(isRebranded: true) {
+        SyncSuccessViewV2(model: .syncSuccessPreview(), isRecovery: true)
     }
 }
 

@@ -179,6 +179,11 @@ public struct UserText {
     }
     static let simplifiedDeviceAddedV2Description = NotLocalizedString("sync.simplified.device.added.v2.description", bundle: Bundle.module, value: "Use this code to restore your data if you lose access to your devices. Keep it safe.", comment: "Description on the device-added success screen explaining what the recovery code is for")
 
+    // Simplified Recovery (V2 flow shown after scanning a recovery code)
+    static let simplifiedRecoveringDataV2Title = NotLocalizedString("sync.simplified.recovering.data.v2.title", bundle: Bundle.module, value: "Recovering data", comment: "Title shown on the connecting screen while a device's synced data is being recovered")
+    static let simplifiedRecoveryCompleteV2Title = NotLocalizedString("sync.simplified.recovery.complete.v2.title", bundle: Bundle.module, value: "Sync & Backup enabled", comment: "Title on the success screen shown after synced data has been recovered on this device")
+    static let simplifiedRecoveryCompleteV2Description = NotLocalizedString("sync.simplified.recovery.complete.v2.description", bundle: Bundle.module, value: "End-to-end encrypted on all your devices.", comment: "Description on the success screen shown after synced data has been recovered on this device")
+
     // Simplified QR Scanning
     static let simplifiedScanTitle = NSLocalizedString("sync.simplified.scan-or-view-code.title", bundle: Bundle.module, value: "Sync Your Devices", comment: "Navigation title for simplified QR scanning screen")
     static let simplifiedScanTabScanQRCode = NSLocalizedString("sync.simplified.scan-or-view-code.tab.scan", bundle: Bundle.module, value: "Scan QR Code", comment: "Button title to show QR code scanner")

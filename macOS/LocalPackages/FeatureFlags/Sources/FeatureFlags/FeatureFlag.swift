@@ -485,6 +485,12 @@ extension FeatureFlag: FeatureFlagDescribing {
         case treatment
     }
 
+    /// Cohorts for the onboarding Chrome extension install experiment
+    public enum OnboardingChromeExtensionCohort: String, FeatureFlagCohortDescribing {
+        case control
+        case treatment
+    }
+
     private struct Config {
         let defaultValue: FeatureFlagDefaultValue
         let source: FeatureFlagSource
@@ -524,7 +530,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .newTabPageRebranding:
             Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.appRebranding))
         case .onboardingChromeExtension:
-            Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.onboardingChromeExtension))
+            Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.onboardingChromeExtension), cohortType: OnboardingChromeExtensionCohort.self)
         case .fireDialogSimplified:
             Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.fireDialogSimplified))
         case .unknownUsernameCategorization:

@@ -78,6 +78,7 @@ final class FloatingUIManagerTests: XCTestCase {
 
         XCTAssertFalse(manager.isFloatingUIEnabled)
     }
+
 }
 
 final class FloatingUILayoutPolicyTests: XCTestCase {

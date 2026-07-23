@@ -78,6 +78,49 @@ final class FloatingUIManagerTests: XCTestCase {
 
         XCTAssertFalse(manager.isFloatingUIEnabled)
     }
+
+    func testWhenFloatingUIIsEnabledOnSupportedIPhoneThenFloatingTabSwitcherIsEnabled() {
+        let manager = FloatingUIManager(
+            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.floatingUI]),
+            isPadProvider: { false },
+            isSupportedOSProvider: { false },
+            isTabSwitcherSupportedOSProvider: { true },
+            unifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider(isAvailable: false)
+        )
+
+        XCTAssertFalse(manager.isFloatingUIEnabled)
+        XCTAssertTrue(manager.isFloatingTabSwitcherEnabled)
+    }
+
+    func testWhenFloatingUIIsDisabledThenFloatingTabSwitcherIsDisabled() {
+        let manager = FloatingUIManager(
+            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: []),
+            isPadProvider: { false },
+            isTabSwitcherSupportedOSProvider: { true }
+        )
+
+        XCTAssertFalse(manager.isFloatingTabSwitcherEnabled)
+    }
+
+    func testWhenFloatingUIIsEnabledOnIPadThenFloatingTabSwitcherIsDisabled() {
+        let manager = FloatingUIManager(
+            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.floatingUI]),
+            isPadProvider: { true },
+            isTabSwitcherSupportedOSProvider: { true }
+        )
+
+        XCTAssertFalse(manager.isFloatingTabSwitcherEnabled)
+    }
+
+    func testWhenTabSwitcherOSIsUnsupportedThenFloatingTabSwitcherIsDisabled() {
+        let manager = FloatingUIManager(
+            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.floatingUI]),
+            isPadProvider: { false },
+            isTabSwitcherSupportedOSProvider: { false }
+        )
+
+        XCTAssertFalse(manager.isFloatingTabSwitcherEnabled)
+    }
 }
 
 final class FloatingUILayoutPolicyTests: XCTestCase {

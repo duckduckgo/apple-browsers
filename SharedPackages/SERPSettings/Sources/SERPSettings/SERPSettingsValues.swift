@@ -61,3 +61,23 @@ public enum HideAIGeneratedImages {
         }
     }
 }
+
+/// Value encoding for the SERP "Safe Search" setting (`kp`).
+///
+/// Raw values are the `kp` wire values from the SERP settings schema — strict `1`, moderate `-1`,
+/// off `-2`. `rawValue` is the effective value sent in the native → SERP snapshot; ``storageValue``
+/// is what's written to the blob (the default is omitted).
+public enum SafeSearch: String {
+    case strict = "1"
+    case moderate = "-1"
+    case off = "-2"
+
+    /// Bundled default, used when the key is absent from native storage.
+    public static let defaultValue: SafeSearch = .moderate
+
+    /// The value written to native storage, or `nil` for the default (`moderate`), which is stored
+    /// as key-absence — mirroring the SERP, which omits defaults from what it syncs to native.
+    var storageValue: String? {
+        self == .defaultValue ? nil : rawValue
+    }
+}

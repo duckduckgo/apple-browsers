@@ -125,6 +125,7 @@ public extension DesignSystemImages {
                     ? .init(resource: .downloadsColor16)
                     : .init(resource: .downloadsColor16Legacy)
             }
+            public static var duckAI: DesignSystemImage { .init(resource: .duckDuckGoAiColor16) }
             public static var duckDuckGo: DesignSystemImage {
                 AppRebrand.isAppRebranded()
                     ? .init(resource: .duckDuckGoColor16)

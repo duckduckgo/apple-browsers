@@ -186,6 +186,63 @@ final class NewTabPageMessagesModelTests: XCTestCase {
         XCTAssertEqual(messagesConfiguration.lastAppearedHomeMessage, message)
     }
 
+    func testTwoNTPAppearancesBeforeShownStorageCompletesHaveOneUniqueWinner() async throws {
+        let remoteMessage = RemoteMessageModel(
+            id: "message-a",
+            surfaces: .newTabPage,
+            content: .small(titleText: "Title", descriptionText: "Body"),
+            matchingRules: [],
+            exclusionRules: [],
+            isMetricsEnabled: true
+        )
+        let shownUpdateStarted = expectation(description: "Shown store update started")
+        let shownUpdateCompleted = expectation(description: "Shown store update completed")
+        let store = SuspendedShownRemoteMessagingStore(
+            scheduledRemoteMessage: remoteMessage,
+            onShownUpdateStarted: {
+                shownUpdateStarted.fulfill()
+            },
+            onShownUpdateCompleted: {
+                shownUpdateCompleted.fulfill()
+            }
+        )
+        defer {
+            store.completePendingShownUpdate()
+        }
+        let pixelReporter = HomePageMessageShownPixelReporterMock()
+        let configuration = HomePageConfiguration(
+            remoteMessagingStore: store,
+            subscriptionDataReporter: MockSubscriptionDataReporter(),
+            isStillOnboarding: { false },
+            shownPixelReporter: pixelReporter
+        )
+        let promoCoordinator = ArbitratingNewTabPagePromoCoordinatorMock(featureState: .enabled)
+        let firstNTP = createRenderableSUT(
+            homePageMessagesConfiguration: configuration,
+            promoCoordinator: promoCoordinator
+        )
+        let secondNTP = createRenderableSUT(
+            homePageMessagesConfiguration: configuration,
+            promoCoordinator: promoCoordinator
+        )
+
+        XCTAssertNotEqual(firstNTP.surfaceID, secondNTP.surfaceID)
+        try appearRemoteMessageGate(in: firstNTP, expectedMessageID: remoteMessage.id)
+        try appearRemoteMessageGate(in: secondNTP, expectedMessageID: remoteMessage.id)
+        try XCTUnwrap(remoteRenderSession(in: firstNTP)).viewModel.onDidAppear()
+        try XCTUnwrap(remoteRenderSession(in: secondNTP)).viewModel.onDidAppear()
+        await fulfillment(of: [shownUpdateStarted], timeout: 1)
+
+        XCTAssertEqual(pixelReporter.shownCount, 2)
+        XCTAssertEqual(pixelReporter.uniqueShownCount, 1)
+        XCTAssertEqual(store.shownUpdateCallCount, 1)
+        XCTAssertFalse(store.hasShownRemoteMessage(withID: remoteMessage.id))
+
+        store.completePendingShownUpdate()
+        await fulfillment(of: [shownUpdateCompleted], timeout: 1)
+        XCTAssertTrue(store.hasShownRemoteMessage(withID: remoteMessage.id))
+    }
+
     func testSameIDRefreshKeepsLeaseRenderSessionAndAppearanceReservation() throws {
         let promoCoordinator = ArbitratingNewTabPagePromoCoordinatorMock(featureState: .enabled)
         messagesConfiguration.homeMessages = [.mockRemote(id: "message-a", withType: .small(titleText: "First", descriptionText: "Body"))]
@@ -412,6 +469,66 @@ final class NewTabPageMessagesModelTests: XCTestCase {
         XCTAssertEqual(messagesConfiguration.appearanceCallCount, 2)
         sut.homeMessageViewModels.first?.onDidAppear()
         XCTAssertEqual(messagesConfiguration.appearanceCallCount, 3)
+    }
+
+    func testLiveDisableBeforeShownStorageCompletesDoesNotRefireUniqueOnLegacyRepublish() async throws {
+        let remoteMessage = RemoteMessageModel(
+            id: "message-a",
+            surfaces: .newTabPage,
+            content: .small(titleText: "Title", descriptionText: "Body"),
+            matchingRules: [],
+            exclusionRules: [],
+            isMetricsEnabled: true
+        )
+        let shownUpdateStarted = expectation(description: "Shown store update started")
+        let shownUpdateCompleted = expectation(description: "Shown store update completed")
+        let store = SuspendedShownRemoteMessagingStore(
+            scheduledRemoteMessage: remoteMessage,
+            onShownUpdateStarted: {
+                shownUpdateStarted.fulfill()
+            },
+            onShownUpdateCompleted: {
+                shownUpdateCompleted.fulfill()
+            }
+        )
+        defer {
+            store.completePendingShownUpdate()
+        }
+        let pixelReporter = HomePageMessageShownPixelReporterMock()
+        let configuration = HomePageConfiguration(
+            remoteMessagingStore: store,
+            subscriptionDataReporter: MockSubscriptionDataReporter(),
+            isStillOnboarding: { false },
+            shownPixelReporter: pixelReporter
+        )
+        let promoCoordinator = ArbitratingNewTabPagePromoCoordinatorMock(featureState: .enabled)
+        let sut = createRenderableSUT(
+            homePageMessagesConfiguration: configuration,
+            promoCoordinator: promoCoordinator
+        )
+        try appearRemoteMessageGate(in: sut, expectedMessageID: remoteMessage.id)
+        try XCTUnwrap(remoteRenderSession(in: sut)).viewModel.onDidAppear()
+        await fulfillment(of: [shownUpdateStarted], timeout: 1)
+        XCTAssertEqual(store.shownUpdateCallCount, 1)
+
+        promoCoordinator.promoQueueFeatureState = .transitioning(to: .disabled)
+        sut.promoQueueWillTransition(to: .disabled)
+        await waitForNextMainQueueTurn()
+        sut.promoQueueDidTransition(to: .disabled)
+
+        XCTAssertEqual(pixelReporter.shownCount, 2)
+        XCTAssertEqual(pixelReporter.uniqueShownCount, 1)
+        XCTAssertFalse(store.hasShownRemoteMessage(withID: remoteMessage.id))
+
+        sut.homeMessageViewModels.first?.onDidAppear()
+
+        XCTAssertEqual(pixelReporter.shownCount, 3)
+        XCTAssertEqual(pixelReporter.uniqueShownCount, 1)
+        XCTAssertEqual(store.shownUpdateCallCount, 1)
+
+        store.completePendingShownUpdate()
+        await fulfillment(of: [shownUpdateCompleted], timeout: 1)
+        XCTAssertTrue(store.hasShownRemoteMessage(withID: remoteMessage.id))
     }
 
     func testRemovedAndReinsertedSameIDGetsNewGateAndIgnoresStaleGateCallbacks() async throws {
@@ -773,6 +890,7 @@ final class NewTabPageMessagesModelTests: XCTestCase {
 
     private func createSUT(
         isOpenedAfterIdle: Bool = false,
+        homePageMessagesConfiguration: HomePageMessagesConfiguration? = nil,
         promoCoordinator: ArbitratingNewTabPagePromoCoordinatorMock? = nil
     ) -> NewTabPageMessagesModel {
         // Built here rather than as a default argument: the mock is `@MainActor`, and default
@@ -781,7 +899,7 @@ final class NewTabPageMessagesModelTests: XCTestCase {
         let remoteMessageActionHandler = RemoteMessagingActionHandler(lastSearchStateRefresher: RemoteMessagingSurveyLastSearchStateRefresher())
         remoteMessageActionHandler.messageNavigator = DefaultMessageNavigator(delegate: self)
 
-        return NewTabPageMessagesModel(homePageMessagesConfiguration: messagesConfiguration,
+        return NewTabPageMessagesModel(homePageMessagesConfiguration: homePageMessagesConfiguration ?? messagesConfiguration,
                                 notificationCenter: notificationCenter,
                                 pixelFiring: PixelFiringMock.self,
                                 messageActionHandler: remoteMessageActionHandler,
@@ -791,9 +909,13 @@ final class NewTabPageMessagesModelTests: XCTestCase {
     }
 
     private func createRenderableSUT(
+        homePageMessagesConfiguration: HomePageMessagesConfiguration? = nil,
         promoCoordinator: ArbitratingNewTabPagePromoCoordinatorMock
     ) -> NewTabPageMessagesModel {
-        let sut = createSUT(promoCoordinator: promoCoordinator)
+        let sut = createSUT(
+            homePageMessagesConfiguration: homePageMessagesConfiguration,
+            promoCoordinator: promoCoordinator
+        )
         sut.setSurfaceAttachmentProvider { true }
         sut.load()
         sut.setSurfaceRenderable(true)

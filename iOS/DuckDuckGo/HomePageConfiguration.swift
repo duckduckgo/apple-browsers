@@ -26,6 +26,16 @@ import Core
 import Bookmarks
 import os.log
 
+protocol HomePageMessageShownPixelReporting {
+    func fire(_ pixel: Pixel.Event, withAdditionalParameters parameters: [String: String])
+}
+
+struct DefaultHomePageMessageShownPixelReporter: HomePageMessageShownPixelReporting {
+    func fire(_ pixel: Pixel.Event, withAdditionalParameters parameters: [String: String]) {
+        Pixel.fire(pixel: pixel, withAdditionalParameters: parameters)
+    }
+}
+
 final class HomePageConfiguration: HomePageMessagesConfiguration {
 
     // MARK: - Messages
@@ -34,18 +44,22 @@ final class HomePageConfiguration: HomePageMessagesConfiguration {
     private var remoteMessagingStore: RemoteMessagingStoring
     private let subscriptionDataReporter: SubscriptionDataReporting
     private let isStillOnboarding: () -> Bool
+    private let shownPixelReporter: HomePageMessageShownPixelReporting
+    private var firstShownReservations = Set<String>()
 
     var homeMessages: [HomeMessage] = []
 
     init(variantManager: VariantManager? = nil,
          remoteMessagingStore: RemoteMessagingStoring,
          subscriptionDataReporter: SubscriptionDataReporting,
-         isStillOnboarding: @escaping () -> Bool
+         isStillOnboarding: @escaping () -> Bool,
+         shownPixelReporter: HomePageMessageShownPixelReporting = DefaultHomePageMessageShownPixelReporter()
     ) {
         homeMessageStorage = HomeMessageStorage(variantManager: variantManager)
         self.remoteMessagingStore = remoteMessagingStore
         self.subscriptionDataReporter = subscriptionDataReporter
         self.isStillOnboarding = isStillOnboarding
+        self.shownPixelReporter = shownPixelReporter
         homeMessages = buildHomeMessages(openedAfterIdle: false)
     }
 
@@ -96,20 +110,26 @@ final class HomePageConfiguration: HomePageMessagesConfiguration {
         }
     }
 
+    @MainActor
     func didAppear(_ homeMessage: HomeMessage) {
         switch homeMessage {
         case .remoteMessage(let remoteMessage):
             Logger.remoteMessaging.info("Remote message shown: \(remoteMessage.id, privacy: .public)")
             if remoteMessage.isMetricsEnabled {
-                Pixel.fire(pixel: .remoteMessageShown,
-                           withAdditionalParameters: additionalParameters(for: remoteMessage.id))
+                shownPixelReporter.fire(
+                    .remoteMessageShown,
+                    withAdditionalParameters: additionalParameters(for: remoteMessage.id)
+                )
             }
 
-            if !remoteMessagingStore.hasShownRemoteMessage(withID: remoteMessage.id) {
+            if !remoteMessagingStore.hasShownRemoteMessage(withID: remoteMessage.id),
+               firstShownReservations.insert(remoteMessage.id).inserted {
                 Logger.remoteMessaging.info("Remote message shown for first time: \(remoteMessage.id, privacy: .public)")
                 if remoteMessage.isMetricsEnabled {
-                    Pixel.fire(pixel: .remoteMessageShownUnique,
-                               withAdditionalParameters: additionalParameters(for: remoteMessage.id))
+                    shownPixelReporter.fire(
+                        .remoteMessageShownUnique,
+                        withAdditionalParameters: additionalParameters(for: remoteMessage.id)
+                    )
                 }
                 Task {
                     await remoteMessagingStore.updateRemoteMessage(withID: remoteMessage.id, asShown: true)

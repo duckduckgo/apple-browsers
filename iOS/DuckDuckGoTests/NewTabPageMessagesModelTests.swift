@@ -24,6 +24,7 @@ import DDGSync
 
 @testable import DuckDuckGo
 
+@MainActor
 final class NewTabPageMessagesModelTests: XCTestCase {
  
     private var messagesConfiguration: HomePageMessagesConfigurationMock!
@@ -336,8 +337,14 @@ final class NewTabPageMessagesModelTests: XCTestCase {
                                 pixelFiring: PixelFiringMock.self,
                                 messageActionHandler: remoteMessageActionHandler,
                                 imageLoader: MockRemoteMessagingImageLoader(),
+                                promoCoordinator: MockNewTabPagePromoCoordinator(),
                                 isOpenedAfterIdle: { isOpenedAfterIdle })
     }
+}
+
+@MainActor
+private final class MockNewTabPagePromoCoordinator: NewTabPagePromoCoordinating {
+    let promoQueueFeatureState = PromoQueueFeatureState.disabled
 }
 
 extension NewTabPageMessagesModelTests: MessageNavigationDelegate {

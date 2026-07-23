@@ -28,12 +28,14 @@ final class ModalPromptCoordinationManagerTests {
     private let cooldownManagerMock: MockPromptCooldownManager
     private let schedulerMock: MockModalPromptScheduler
     private let presenterMock: MockModalPromptPresenter
+    private let promoQueueLeaseArbiter: PromoQueueLeaseArbiter
     private var sut: ModalPromptCoordinationManager!
 
     init() {
         cooldownManagerMock = MockPromptCooldownManager()
         schedulerMock = MockModalPromptScheduler()
         presenterMock = MockModalPromptPresenter()
+        promoQueueLeaseArbiter = PromoQueueLeaseArbiter()
     }
 
     // MARK: - Cooldown Period Tests
@@ -47,6 +49,7 @@ final class ModalPromptCoordinationManagerTests {
             providers: [provider],
             cooldownManager: cooldownManagerMock,
             onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
             modalPromptScheduling: schedulerMock
         )
         #expect(!presenterMock.didCallPresent)
@@ -71,6 +74,7 @@ final class ModalPromptCoordinationManagerTests {
             providers: [provider],
             cooldownManager: cooldownManagerMock,
             onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
             modalPromptScheduling: schedulerMock
         )
         #expect(!presenterMock.didCallPresent)
@@ -102,6 +106,7 @@ final class ModalPromptCoordinationManagerTests {
             providers: [firstProvider, secondProvider],
             cooldownManager: cooldownManagerMock,
             onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
             modalPromptScheduling: schedulerMock
         )
 
@@ -129,6 +134,7 @@ final class ModalPromptCoordinationManagerTests {
             providers: [firstProvider, secondProvider],
             cooldownManager: cooldownManagerMock,
             onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
             modalPromptScheduling: schedulerMock
         )
 
@@ -160,6 +166,7 @@ final class ModalPromptCoordinationManagerTests {
             providers: [firstProvider, secondProvider, thirdProvider, fourthProvider, fifthProvider],
             cooldownManager: cooldownManagerMock,
             onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
             modalPromptScheduling: schedulerMock
         )
 
@@ -194,6 +201,7 @@ final class ModalPromptCoordinationManagerTests {
             providers: [firstProvider, secondProvider, thirdProvider],
             cooldownManager: cooldownManagerMock,
             onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
             modalPromptScheduling: schedulerMock
         )
 
@@ -228,6 +236,7 @@ final class ModalPromptCoordinationManagerTests {
             providers: [provider],
             cooldownManager: cooldownManagerMock,
             onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
             modalPromptScheduling: schedulerMock
         )
 
@@ -260,6 +269,7 @@ final class ModalPromptCoordinationManagerTests {
             providers: [provider],
             cooldownManager: cooldownManagerMock,
             onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
             modalPromptScheduling: schedulerMock
         )
 
@@ -282,6 +292,7 @@ final class ModalPromptCoordinationManagerTests {
             providers: [provider],
             cooldownManager: cooldownManagerMock,
             onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
             modalPromptScheduling: schedulerMock
         )
 
@@ -302,6 +313,7 @@ final class ModalPromptCoordinationManagerTests {
             providers: [provider],
             cooldownManager: cooldownManagerMock,
             onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
             modalPromptScheduling: schedulerMock
         )
 
@@ -329,6 +341,7 @@ final class ModalPromptCoordinationManagerTests {
             providers: [provider],
             cooldownManager: cooldownManagerMock,
             onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
             modalPromptScheduling: schedulerMock
         )
         #expect(!cooldownManagerMock.didCallRecordLastPromptPresentationTimestamp)
@@ -351,6 +364,7 @@ final class ModalPromptCoordinationManagerTests {
             providers: [provider],
             cooldownManager: cooldownManagerMock,
             onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
             modalPromptScheduling: schedulerMock
         )
         #expect(!sut.didPresentModalPromptThisSession)
@@ -372,6 +386,7 @@ final class ModalPromptCoordinationManagerTests {
             providers: [provider],
             cooldownManager: cooldownManagerMock,
             onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
             modalPromptScheduling: schedulerMock
         )
 
@@ -392,6 +407,7 @@ final class ModalPromptCoordinationManagerTests {
             providers: [provider],
             cooldownManager: cooldownManagerMock,
             onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
             modalPromptScheduling: schedulerMock
         )
 
@@ -412,6 +428,7 @@ final class ModalPromptCoordinationManagerTests {
             providers: [provider],
             cooldownManager: cooldownManagerMock,
             onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
             modalPromptScheduling: schedulerMock
         )
 
@@ -436,6 +453,7 @@ final class ModalPromptCoordinationManagerTests {
             providers: [provider],
             cooldownManager: cooldownManagerMock,
             onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
             modalPromptScheduling: schedulerMock
         )
 
@@ -458,6 +476,7 @@ final class ModalPromptCoordinationManagerTests {
             providers: [provider],
             cooldownManager: cooldownManagerMock,
             onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
             modalPromptScheduling: schedulerMock
         )
 

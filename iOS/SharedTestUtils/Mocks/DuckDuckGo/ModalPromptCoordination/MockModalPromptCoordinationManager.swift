@@ -25,11 +25,25 @@ final class MockModalPromptCoordinationManager: ModalPromptCoordinationManaging 
     private(set) var didCallPresentModalPromptIfNeeded = false
     private(set) var capturedPresenter: ModalPromptPresenter?
     private(set) var callCount = 0
+    private(set) var promoQueueWillTransitionTargets = [PromoQueueFeatureTargetState]()
+    private(set) var promoQueueDidTransitionTargets = [PromoQueueFeatureTargetState]()
     var didPresentModalPromptThisSession = false
+    var onPromoQueueWillTransition: (@MainActor (PromoQueueFeatureTargetState) -> Void)?
+    var onPromoQueueDidTransition: (@MainActor (PromoQueueFeatureTargetState) -> Void)?
 
     func presentModalPromptIfNeeded(from presenter: ModalPromptPresenter) {
         didCallPresentModalPromptIfNeeded = true
         capturedPresenter = presenter
         callCount += 1
+    }
+
+    func promoQueueWillTransition(to targetState: PromoQueueFeatureTargetState) {
+        promoQueueWillTransitionTargets.append(targetState)
+        onPromoQueueWillTransition?(targetState)
+    }
+
+    func promoQueueDidTransition(to targetState: PromoQueueFeatureTargetState) {
+        promoQueueDidTransitionTargets.append(targetState)
+        onPromoQueueDidTransition?(targetState)
     }
 }

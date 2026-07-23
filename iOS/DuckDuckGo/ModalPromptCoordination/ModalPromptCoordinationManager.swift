@@ -24,6 +24,8 @@ protocol ModalPromptCoordinationManaging {
     var didPresentModalPromptThisSession: Bool { get }
 
     func presentModalPromptIfNeeded(from presenter: ModalPromptPresenter)
+    func promoQueueWillTransition(to targetState: PromoQueueFeatureTargetState)
+    func promoQueueDidTransition(to targetState: PromoQueueFeatureTargetState)
 }
 
 /// Manages the coordination and presentation of modal prompts based on priority and cooldown rules.
@@ -40,6 +42,7 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
     private let cooldownManager: PromptCooldownManaging
     private let scheduler: ModalPromptScheduling
     private let onboardingStatusProvider: ContextualDaxDialogStatusProvider
+    private let promoQueueLeaseArbiter: PromoQueueLeaseArbitrating
 
     private(set) var didPresentModalPromptThisSession = false
 
@@ -47,12 +50,22 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
         providers: [any ModalPromptProvider],
         cooldownManager: PromptCooldownManaging,
         onboardingStatusProvider: ContextualDaxDialogStatusProvider,
+        promoQueueLeaseArbiter: PromoQueueLeaseArbitrating,
         modalPromptScheduling: ModalPromptScheduling = ModalPromptScheduler()
     ) {
         self.providers = providers
         self.cooldownManager = cooldownManager
         self.onboardingStatusProvider = onboardingStatusProvider
+        self.promoQueueLeaseArbiter = promoQueueLeaseArbiter
         self.scheduler = modalPromptScheduling
+    }
+
+    func promoQueueWillTransition(to targetState: PromoQueueFeatureTargetState) {
+        // Step 4 adds target-specific attempt cancellation and exact-root handling.
+    }
+
+    func promoQueueDidTransition(to targetState: PromoQueueFeatureTargetState) {
+        // Steps 4–5 add target-specific re-adoption and retry behavior.
     }
 
     /// Attempts to present a modal prompt if one is eligible.

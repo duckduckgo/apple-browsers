@@ -31,6 +31,8 @@ final class ModalPromptCoordinationServiceTests {
     private let contextualOnboardingMock: MockContextualOnboardingStatusProvider
     private let managerMock: MockModalPromptCoordinationManager
     private let presenterMock: MockModalPromptPresenter
+    private let featureFlaggerMock: MockFeatureFlagger
+    private let promoQueueLeaseArbiter: PromoQueueLeaseArbiter
     private var sut: ModalPromptCoordinationService!
 
     init() {
@@ -38,6 +40,8 @@ final class ModalPromptCoordinationServiceTests {
         contextualOnboardingMock = MockContextualOnboardingStatusProvider(hasSeenOnboarding: true)
         managerMock = MockModalPromptCoordinationManager()
         presenterMock = MockModalPromptPresenter()
+        featureFlaggerMock = MockFeatureFlagger()
+        promoQueueLeaseArbiter = PromoQueueLeaseArbiter()
     }
 
     // MARK: - Launch Source Checks
@@ -55,7 +59,9 @@ final class ModalPromptCoordinationServiceTests {
         presenterMock.presentedViewController = nil
         sut = ModalPromptCoordinationService(
             launchSourceManager: launchSourceManagerMock,
-            modalPromptCoordinationManager: managerMock
+            modalPromptCoordinationManager: managerMock,
+            featureFlagger: featureFlaggerMock,
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter
         )
 
         // WHEN
@@ -72,7 +78,9 @@ final class ModalPromptCoordinationServiceTests {
         presenterMock.presentedViewController = nil
         sut = ModalPromptCoordinationService(
             launchSourceManager: launchSourceManagerMock,
-            modalPromptCoordinationManager: managerMock
+            modalPromptCoordinationManager: managerMock,
+            featureFlagger: featureFlaggerMock,
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter
         )
 
         // WHEN
@@ -93,7 +101,9 @@ final class ModalPromptCoordinationServiceTests {
         presenterMock.presentedViewController = alreadyPresentedVC
         sut = ModalPromptCoordinationService(
             launchSourceManager: launchSourceManagerMock,
-            modalPromptCoordinationManager: managerMock
+            modalPromptCoordinationManager: managerMock,
+            featureFlagger: featureFlaggerMock,
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter
         )
 
         // WHEN
@@ -110,7 +120,9 @@ final class ModalPromptCoordinationServiceTests {
         presenterMock.presentedViewController = nil
         sut = ModalPromptCoordinationService(
             launchSourceManager: launchSourceManagerMock,
-            modalPromptCoordinationManager: managerMock
+            modalPromptCoordinationManager: managerMock,
+            featureFlagger: featureFlaggerMock,
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter
         )
 
         // WHEN
@@ -129,7 +141,9 @@ final class ModalPromptCoordinationServiceTests {
         presenterMock.presentedViewController = dismissingVC
         sut = ModalPromptCoordinationService(
             launchSourceManager: launchSourceManagerMock,
-            modalPromptCoordinationManager: managerMock
+            modalPromptCoordinationManager: managerMock,
+            featureFlagger: featureFlaggerMock,
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter
         )
 
         // WHEN
@@ -148,7 +162,9 @@ final class ModalPromptCoordinationServiceTests {
         )
         sut = ModalPromptCoordinationService(
             launchSourceManager: launchSourceManagerMock,
-            modalPromptCoordinationManager: managerMock
+            modalPromptCoordinationManager: managerMock,
+            featureFlagger: featureFlaggerMock,
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter
         )
 
         // WHEN
@@ -165,7 +181,9 @@ final class ModalPromptCoordinationServiceTests {
         presenterMock.presentedViewController = UIViewController()
         sut = ModalPromptCoordinationService(
             launchSourceManager: launchSourceManagerMock,
-            modalPromptCoordinationManager: managerMock
+            modalPromptCoordinationManager: managerMock,
+            featureFlagger: featureFlaggerMock,
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter
         )
 
         // WHEN
@@ -173,6 +191,117 @@ final class ModalPromptCoordinationServiceTests {
 
         // THEN
         #expect(!managerMock.didCallPresentModalPromptIfNeeded)
+    }
+
+    // MARK: - Promo Queue Feature State
+
+    @Test("Initial Promo Queue State Is Seeded Before Subscription Updates")
+    func whenPromoQueueIsInitiallyEnabledThenInitialStateIsEnabled() {
+        featureFlaggerMock.enabledFeatureFlags = [.promoQueue]
+        sut = ModalPromptCoordinationService(
+            launchSourceManager: launchSourceManagerMock,
+            modalPromptCoordinationManager: managerMock,
+            featureFlagger: featureFlaggerMock,
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter
+        )
+
+        #expect(sut.promoQueueFeatureState == .enabled)
+        #expect(managerMock.promoQueueWillTransitionTargets.isEmpty)
+        #expect(managerMock.promoQueueDidTransitionTargets.isEmpty)
+        #expect(featureFlaggerMock.updatesPublisherAccessCount == 1)
+    }
+
+    @Test("Promo Queue Feature Updates Are Deduplicated")
+    func whenFeatureFlagPublishesDuplicateValuesThenOnlyEffectiveChangesTransition() async {
+        sut = ModalPromptCoordinationService(
+            launchSourceManager: launchSourceManagerMock,
+            modalPromptCoordinationManager: managerMock,
+            featureFlagger: featureFlaggerMock,
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter
+        )
+        let initialGeneration = promoQueueLeaseArbiter.snapshot.generation
+
+        featureFlaggerMock.triggerUpdate()
+        await waitForFeatureFlagUpdateDelivery()
+        #expect(managerMock.promoQueueWillTransitionTargets.isEmpty)
+        #expect(promoQueueLeaseArbiter.snapshot.generation == initialGeneration)
+
+        featureFlaggerMock.enabledFeatureFlags = [.promoQueue]
+        featureFlaggerMock.triggerUpdate()
+        await waitForFeatureFlagUpdateDelivery()
+        let enabledGeneration = promoQueueLeaseArbiter.snapshot.generation
+        featureFlaggerMock.triggerUpdate()
+        await waitForFeatureFlagUpdateDelivery()
+
+        #expect(managerMock.promoQueueWillTransitionTargets == [.enabled])
+        #expect(managerMock.promoQueueDidTransitionTargets == [.enabled])
+        #expect(sut.promoQueueFeatureState == .enabled)
+        #expect(featureFlaggerMock.updatesPublisherAccessCount == 1)
+        #expect(enabledGeneration != initialGeneration)
+        #expect(promoQueueLeaseArbiter.snapshot.generation == enabledGeneration)
+    }
+
+    @Test("Promo Queue Feature Subscription Is Cancelled With Service")
+    func whenServiceIsReleasedThenFeatureUpdatesStop() async {
+        sut = ModalPromptCoordinationService(
+            launchSourceManager: launchSourceManagerMock,
+            modalPromptCoordinationManager: managerMock,
+            featureFlagger: featureFlaggerMock,
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter
+        )
+        weak var weakService = sut
+
+        sut = nil
+        #expect(weakService == nil)
+
+        featureFlaggerMock.enabledFeatureFlags = [.promoQueue]
+        featureFlaggerMock.triggerUpdate()
+        await waitForFeatureFlagUpdateDelivery()
+
+        #expect(managerMock.promoQueueWillTransitionTargets.isEmpty)
+        #expect(managerMock.promoQueueDidTransitionTargets.isEmpty)
+    }
+
+    @Test("Promo Queue Transition Barrier Rejects Reentrant Modal Evaluation In Both Directions")
+    func whenTransitionCallbacksReenterModalEvaluationThenEvaluationWaitsForBarrier() async {
+        sut = ModalPromptCoordinationService(
+            launchSourceManager: launchSourceManagerMock,
+            modalPromptCoordinationManager: managerMock,
+            featureFlagger: featureFlaggerMock,
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter
+        )
+        launchSourceManagerMock.source = .standard
+        presenterMock.presentedViewController = nil
+
+        var statesObservedDuringCallbacks = [PromoQueueFeatureState]()
+        managerMock.onPromoQueueWillTransition = { [weak self] _ in
+            guard let self else { return }
+            statesObservedDuringCallbacks.append(sut.promoQueueFeatureState)
+            sut.presentModalPromptIfNeeded(from: presenterMock)
+        }
+        managerMock.onPromoQueueDidTransition = { [weak self] _ in
+            guard let self else { return }
+            statesObservedDuringCallbacks.append(sut.promoQueueFeatureState)
+            sut.presentModalPromptIfNeeded(from: presenterMock)
+        }
+
+        featureFlaggerMock.enabledFeatureFlags = [.promoQueue]
+        featureFlaggerMock.triggerUpdate()
+        await waitForFeatureFlagUpdateDelivery()
+        featureFlaggerMock.enabledFeatureFlags = []
+        featureFlaggerMock.triggerUpdate()
+        await waitForFeatureFlagUpdateDelivery()
+
+        #expect(managerMock.callCount == 0)
+        #expect(
+            statesObservedDuringCallbacks == [
+                .transitioning(to: .enabled),
+                .transitioning(to: .enabled),
+                .transitioning(to: .disabled),
+                .transitioning(to: .disabled),
+            ]
+        )
+        #expect(sut.promoQueueFeatureState == .disabled)
     }
 
     @Test(
@@ -210,7 +339,9 @@ final class ModalPromptCoordinationServiceTests {
             keyValueStore: keyValueStore,
             contextualOnboardingStatusProvider: contextualOnboardingMock,
             privacyConfigManager: privacyConfigManager,
-            providers: providers
+            providers: providers,
+            featureFlagger: featureFlaggerMock,
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter
         )
 
         // WHEN
@@ -223,6 +354,14 @@ final class ModalPromptCoordinationServiceTests {
                 #expect(provider.didCallProvideModalPrompt, "Provider \(providerPriority) should be checked")
             } else {
                 #expect(!provider.didCallProvideModalPrompt, "Provider \(providerPriority) should not be checked")
+            }
+        }
+    }
+
+    private func waitForFeatureFlagUpdateDelivery() async {
+        await withCheckedContinuation { continuation in
+            DispatchQueue.main.async {
+                continuation.resume()
             }
         }
     }

@@ -305,7 +305,8 @@ private struct Metrics {
                 homeMessages: []
             ),
             messageActionHandler: RemoteMessagingActionHandler(),
-            imageLoader: PreviewImageLoader()
+            imageLoader: PreviewImageLoader(),
+            promoCoordinator: PreviewNewTabPagePromoCoordinator()
         ),
         favoritesViewModel: FavoritesPreviewModel()
     )
@@ -330,7 +331,8 @@ private struct Metrics {
                 ]
             ),
             messageActionHandler: RemoteMessagingActionHandler(),
-            imageLoader: PreviewImageLoader()
+            imageLoader: PreviewImageLoader(),
+            promoCoordinator: PreviewNewTabPagePromoCoordinator()
         ),
         favoritesViewModel: FavoritesPreviewModel()
     )
@@ -344,7 +346,8 @@ private struct Metrics {
                 homeMessages: []
             ),
             messageActionHandler: RemoteMessagingActionHandler(),
-            imageLoader: PreviewImageLoader()
+            imageLoader: PreviewImageLoader(),
+            promoCoordinator: PreviewNewTabPagePromoCoordinator()
         ),
         favoritesViewModel: FavoritesPreviewModel(favorites: [])
     )
@@ -358,10 +361,16 @@ private struct Metrics {
                 homeMessages: []
             ),
             messageActionHandler: RemoteMessagingActionHandler(),
-            imageLoader: PreviewImageLoader()
+            imageLoader: PreviewImageLoader(),
+            promoCoordinator: PreviewNewTabPagePromoCoordinator()
         ),
         favoritesViewModel: FavoritesPreviewModel()
     )
+}
+
+@MainActor
+private final class PreviewNewTabPagePromoCoordinator: NewTabPagePromoCoordinating {
+    let promoQueueFeatureState = PromoQueueFeatureState.disabled
 }
 
 private final class PreviewMessagesConfiguration: HomePageMessagesConfiguration {

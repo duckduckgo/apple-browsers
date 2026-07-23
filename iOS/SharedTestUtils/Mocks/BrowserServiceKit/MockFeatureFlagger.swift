@@ -29,7 +29,9 @@ final class MockFeatureFlagger: FeatureFlagger {
     var enabledFeatureFlags: [FeatureFlag] = []
 
     private let updatesSubject = PassthroughSubject<Void, Never>()
+    private(set) var updatesPublisherAccessCount = 0
     var updatesPublisher: AnyPublisher<Void, Never> {
+        updatesPublisherAccessCount += 1
         updatesSubject.eraseToAnyPublisher()
     }
 

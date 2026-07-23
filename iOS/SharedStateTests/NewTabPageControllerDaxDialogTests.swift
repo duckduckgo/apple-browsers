@@ -67,6 +67,7 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
             faviconLoader: EmptyFaviconLoading(),
             remoteMessagingActionHandler: MockRemoteMessagingActionHandler(),
             remoteMessagingImageLoader: MockRemoteMessagingImageLoader(),
+            promoCoordinator: MockNewTabPagePromoCoordinator(),
             appSettings: AppSettingsMock(),
             faviconsCache: Favicons(),
             subscriptionManager: SubscriptionManagerMock(),
@@ -118,6 +119,7 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
             faviconLoader: EmptyFaviconLoading(),
             remoteMessagingActionHandler: MockRemoteMessagingActionHandler(),
             remoteMessagingImageLoader: MockRemoteMessagingImageLoader(),
+            promoCoordinator: MockNewTabPagePromoCoordinator(),
             appSettings: AppSettingsMock(),
             faviconsCache: Favicons(),
             subscriptionManager: SubscriptionManagerMock(),
@@ -273,6 +275,11 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
         let specs: [DaxDialogs.HomeScreenSpec] = [.initial, .subsequent, .final, .addFavorite]
         return specs.randomElement()!
     }
+}
+
+@MainActor
+private final class MockNewTabPagePromoCoordinator: NewTabPagePromoCoordinating {
+    let promoQueueFeatureState = PromoQueueFeatureState.disabled
 }
 
 class CapturingVariantManager: VariantManager {

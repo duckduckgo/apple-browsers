@@ -17,9 +17,11 @@
 //  limitations under the License.
 //
 
-import UIKit
+import Combine
+import Core
 import Persistence
-import protocol PrivacyConfig.PrivacyConfigurationManaging
+import PrivacyConfig
+import UIKit
 
 // MARK: - Modal Prompt Presenter
 
@@ -31,6 +33,44 @@ protocol ModalPromptPresenter: AnyObject {
 }
 
 extension MainViewController: ModalPromptPresenter {}
+
+// MARK: - Promo Queue Feature State
+
+enum PromoQueueFeatureTargetState: Equatable {
+    case disabled
+    case enabled
+
+    init(isEnabled: Bool) {
+        self = isEnabled ? .enabled : .disabled
+    }
+}
+
+enum PromoQueueFeatureState: Equatable {
+    case disabled
+    case transitioning(to: PromoQueueFeatureTargetState)
+    case enabled
+
+    init(targetState: PromoQueueFeatureTargetState) {
+        switch targetState {
+        case .disabled:
+            self = .disabled
+        case .enabled:
+            self = .enabled
+        }
+    }
+
+    var isTransitioning: Bool {
+        if case .transitioning = self {
+            return true
+        }
+        return false
+    }
+}
+
+@MainActor
+protocol NewTabPagePromoCoordinating: AnyObject {
+    var promoQueueFeatureState: PromoQueueFeatureState { get }
+}
 
 // MARK: - Service
 
@@ -48,13 +88,21 @@ struct ModalPromptProviders {
 final class ModalPromptCoordinationService {
     private let modalPromptCoordinationManager: ModalPromptCoordinationManaging
     private let launchSourceManager: LaunchSourceManaging
+    private let promoQueueLeaseArbiter: PromoQueueLeaseArbitrating
+    private let featureFlagger: FeatureFlagger
+    private var promoQueueFeatureStateCancellable: AnyCancellable?
+    private var pendingPromoQueueFeatureTargetState: PromoQueueFeatureTargetState?
+
+    private(set) var promoQueueFeatureState: PromoQueueFeatureState
 
     convenience init(
         launchSourceManager: LaunchSourceManaging,
         keyValueStore: ThrowingKeyValueStoring,
         contextualOnboardingStatusProvider: ContextualDaxDialogStatusProvider,
         privacyConfigManager: PrivacyConfigurationManaging,
-        providers: ModalPromptProviders
+        providers: ModalPromptProviders,
+        featureFlagger: FeatureFlagger,
+        promoQueueLeaseArbiter: PromoQueueLeaseArbitrating
     ) {
 
         // Providers are sort from highest to lowest priority, with item at index 0 being the highest priority.
@@ -85,21 +133,40 @@ final class ModalPromptCoordinationService {
         let modalPromptCoordinationManager = ModalPromptCoordinationManager(
             providers: providers,
             cooldownManager: cooldownManager,
-            onboardingStatusProvider: contextualOnboardingStatusProvider
+            onboardingStatusProvider: contextualOnboardingStatusProvider,
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter
         )
 
-        self.init(launchSourceManager: launchSourceManager, modalPromptCoordinationManager: modalPromptCoordinationManager)
+        self.init(
+            launchSourceManager: launchSourceManager,
+            modalPromptCoordinationManager: modalPromptCoordinationManager,
+            featureFlagger: featureFlagger,
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter
+        )
     }
 
     init(
         launchSourceManager: LaunchSourceManaging,
-        modalPromptCoordinationManager: ModalPromptCoordinationManaging
+        modalPromptCoordinationManager: ModalPromptCoordinationManaging,
+        featureFlagger: FeatureFlagger,
+        promoQueueLeaseArbiter: PromoQueueLeaseArbitrating
     ) {
         self.launchSourceManager = launchSourceManager
         self.modalPromptCoordinationManager = modalPromptCoordinationManager
+        self.featureFlagger = featureFlagger
+        self.promoQueueLeaseArbiter = promoQueueLeaseArbiter
+
+        let initialTargetState = PromoQueueFeatureTargetState(isEnabled: featureFlagger.isFeatureOn(.promoQueue))
+        promoQueueFeatureState = PromoQueueFeatureState(targetState: initialTargetState)
+        subscribeToPromoQueueFeatureState(initialTargetState: initialTargetState)
     }
 
     func presentModalPromptIfNeeded(from viewController: ModalPromptPresenter) {
+        guard !promoQueueFeatureState.isTransitioning else {
+            Logger.modalPrompt.debug("[Modal Prompt Coordination] - Skipping modal prompt during promo queue feature transition.")
+            return
+        }
+
         guard launchSourceManager.source == .standard else {
             Logger.modalPrompt.info("[Modal Prompt Coordination] - Skipping modal prompt - Launched from non-standard source.")
             return
@@ -125,7 +192,52 @@ final class ModalPromptCoordinationService {
         modalPromptCoordinationManager.presentModalPromptIfNeeded(from: viewController)
     }
 
+    private func subscribeToPromoQueueFeatureState(initialTargetState: PromoQueueFeatureTargetState) {
+        promoQueueFeatureStateCancellable = featureFlagger.updatesPublisher
+            .receive(on: DispatchQueue.main)
+            .map { [featureFlagger] in
+                PromoQueueFeatureTargetState(isEnabled: featureFlagger.isFeatureOn(.promoQueue))
+            }
+            .prepend(initialTargetState)
+            .removeDuplicates()
+            .dropFirst()
+            .sink { [weak self] targetState in
+                self?.transitionPromoQueueFeature(to: targetState)
+            }
+    }
+
+    private func transitionPromoQueueFeature(to targetState: PromoQueueFeatureTargetState) {
+        guard !promoQueueFeatureState.isTransitioning else {
+            pendingPromoQueueFeatureTargetState = targetState
+            return
+        }
+
+        guard promoQueueFeatureState != PromoQueueFeatureState(targetState: targetState) else {
+            return
+        }
+
+        promoQueueFeatureState = .transitioning(to: targetState)
+        defer {
+            promoQueueFeatureState = PromoQueueFeatureState(targetState: targetState)
+
+            if let pendingTargetState = pendingPromoQueueFeatureTargetState {
+                pendingPromoQueueFeatureTargetState = nil
+                transitionPromoQueueFeature(to: pendingTargetState)
+            }
+        }
+
+        modalPromptCoordinationManager.promoQueueWillTransition(to: targetState)
+
+        // The manager and NTP transition callbacks will add their target-specific work in Steps 4–6.
+        // Invalidating here establishes the shared serialized reset point for both transition directions.
+        promoQueueLeaseArbiter.invalidateAllLeases()
+
+        modalPromptCoordinationManager.promoQueueDidTransition(to: targetState)
+    }
+
 }
+
+extension ModalPromptCoordinationService: NewTabPagePromoCoordinating {}
 
 extension ModalPromptCoordinationService: RecentModalPromptStatusProviding {
     var wasModalPromptRecentlyPresented: Bool { modalPromptCoordinationManager.didPresentModalPromptThisSession }

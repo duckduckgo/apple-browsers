@@ -35,6 +35,7 @@ final class ModalPromptCoordinationManagerIntegrationTests {
     private let cooldownManager: PromptCooldownManager
     private let schedulerMock: ImmediateScheduler
     private let presenterMock: MockModalPromptPresenter
+    private let promoQueueLeaseArbiter: PromoQueueLeaseArbiter
     private var sut: ModalPromptCoordinationManager!
 
     init() throws {
@@ -53,6 +54,7 @@ final class ModalPromptCoordinationManagerIntegrationTests {
         )
         schedulerMock = ImmediateScheduler()
         presenterMock = MockModalPromptPresenter()
+        promoQueueLeaseArbiter = PromoQueueLeaseArbiter()
     }
 
     @Test("Check Is In Cooldown After Presenting Prompt")
@@ -63,6 +65,7 @@ final class ModalPromptCoordinationManagerIntegrationTests {
             providers: [provider],
             cooldownManager: cooldownManager,
             onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
             modalPromptScheduling: schedulerMock
         )
         #expect(!cooldownManager.isInCooldownPeriod)
@@ -86,6 +89,7 @@ final class ModalPromptCoordinationManagerIntegrationTests {
             providers: [firstProvider],
             cooldownManager: cooldownManager,
             onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
             modalPromptScheduling: schedulerMock
         )
         #expect(cooldownManager.isInCooldownPeriod)
@@ -113,6 +117,7 @@ final class ModalPromptCoordinationManagerIntegrationTests {
             providers: [firstProvider],
             cooldownManager: cooldownManager,
             onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
             modalPromptScheduling: schedulerMock
         )
         #expect(cooldownManager.isInCooldownPeriod)
@@ -143,6 +148,7 @@ final class ModalPromptCoordinationManagerIntegrationTests {
             providers: [provider1, provider2, provider3],
             cooldownManager: cooldownManager,
             onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
             modalPromptScheduling: schedulerMock
         )
 
@@ -201,6 +207,7 @@ final class ModalPromptCoordinationManagerIntegrationTests {
             providers: [provider1, provider2],
             cooldownManager: cooldownManager,
             onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
             modalPromptScheduling: schedulerMock
         )
 
@@ -241,6 +248,7 @@ final class ModalPromptCoordinationManagerIntegrationTests {
             providers: [provider],
             cooldownManager: cooldownManager,
             onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
             modalPromptScheduling: schedulerMock
         )
         let presentationTime = timeTraveller.getDate()
@@ -263,6 +271,7 @@ final class ModalPromptCoordinationManagerIntegrationTests {
             providers: [provider],
             cooldownManager: cooldownManager,
             onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
             modalPromptScheduling: schedulerMock
         )
         var lastPresentationTime = timeTraveller.getDate()
@@ -312,6 +321,7 @@ final class ModalPromptCoordinationManagerIntegrationTests {
             providers: [provider],
             cooldownManager: cooldownManager,
             onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
             modalPromptScheduling: schedulerMock
         )
         let presentationTime = timeTraveller.getDate()

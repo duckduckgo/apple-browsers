@@ -176,6 +176,9 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                     }
                     return
                 }
+                if useSimplifiedLayoutV2 {
+                    optionsViewModel.connectingSheetPhase = .connecting(isRecovery: false)
+                }
                 try await self.syncService.createAccount(deviceName: self.deviceName, deviceType: self.deviceType)
                 let additionalParameters = self.source.map { ["source": $0] } ?? [:]
                 try await Pixel.fire(pixel: .syncSignupDirect, withAdditionalParameters: additionalParameters, includedParameters: [.appVersion])

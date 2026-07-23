@@ -514,13 +514,10 @@ extension SyncSettingsViewController: ScanOrPasteCodeViewModelDelegate {
                    withAdditionalParameters: sourcePixelParameters,
                    includedParameters: [.appVersion],
                    onComplete: { _ in })
-        switch (isPresentingV2ConnectingSheet, viewModel.connectingSheetPhase) {
-        case (true, .recovering):
-            viewModel.showRecoveryCompleteInConnectingSheet(recoveryCode: recoveryCode)
-        case (true, _):
-            presentDeviceAddedSuccessScreen()
-        case (false, _):
+        if !isPresentingV2ConnectingSheet {
             presentSyncCompletionAfterDelay()
+        } else if case .connecting(let isRecovery) = viewModel.connectingSheetPhase {
+            presentSuccessScreen(isRecovery: isRecovery)
         }
     }
 
@@ -534,10 +531,10 @@ extension SyncSettingsViewController: ScanOrPasteCodeViewModelDelegate {
         useSimplifiedLayoutV2 && viewModel.connectingSheetPhase != nil
     }
 
-    func presentDeviceAddedSuccessScreen() {
+    func presentSuccessScreen(isRecovery: Bool) {
         enableAutoRestoreByDefaultIfNeeded()
         refreshAutoRestoreDecisionState()
-        viewModel.showDeviceConnectedInConnectingSheet(recoveryCode: recoveryCode)
+        viewModel.showSuccess(recoveryCode: recoveryCode, isRecovery: isRecovery)
     }
 
     func startPolling() {
@@ -652,7 +649,7 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
                    includedParameters: [.appVersion])
         pairingV2PeerKind = nil
         let presentResult: (SyncSettingsViewController) -> Void = isPresentingV2ConnectingSheet
-            ? { $0.presentDeviceAddedSuccessScreen() }
+            ? { $0.presentSuccessScreen(isRecovery: false) }
             : { $0.dismissVCAndShowDeviceSyncedToast() }
         if shouldWaitForDevicesToChange {
             waitForDevicesToChange(then: presentResult)
@@ -673,9 +670,9 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
         await dismissPresentedViewController()
         switch (useSimplifiedLayoutV2, codeCollectionIntent) {
         case (true, .recoverData):
-            viewModel.connectingSheetPhase = .recovering
+            viewModel.connectingSheetPhase = .connecting(isRecovery: true)
         case (true, .syncAnotherDevice):
-            viewModel.connectingSheetPhase = .connecting
+            viewModel.connectingSheetPhase = .connecting(isRecovery: false)
         default:
             await showPreparingSync(context: setupSource == .recovery ? .recoveringData : .syncingDevices)
         }
@@ -702,13 +699,10 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
                 await connectionController.cancel()
             }
         }
-        switch (isPresentingV2ConnectingSheet, viewModel.connectingSheetPhase) {
-        case (true, .recovering):
-            viewModel.showRecoveryCompleteInConnectingSheet(recoveryCode: recoveryCode)
-        case (true, _):
-            presentDeviceAddedSuccessScreen()
-        case (false, _):
+        if !isPresentingV2ConnectingSheet {
             presentSyncCompletionAfterDelay()
+        } else if case .connecting(let isRecovery) = viewModel.connectingSheetPhase {
+            presentSuccessScreen(isRecovery: isRecovery)
         }
         guard case .receiver(let syncSetupSource, let syncCodeSource) = setupRole else {
             // .sharer reaches here only via the connect flow (exchange-sharer terminates in controllerDidFinishTransmittingRecoveryKey).

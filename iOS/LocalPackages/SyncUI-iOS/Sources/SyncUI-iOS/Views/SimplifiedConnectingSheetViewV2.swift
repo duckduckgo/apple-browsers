@@ -31,18 +31,14 @@ public struct SimplifiedConnectingSheetViewV2: View {
     public var body: some View {
         ZStack {
             switch model.connectingSheetPhase {
-            case .connecting:
-                SimplifiedConnectingContentViewV2()
+            case .connecting(let isRecovery):
+                SimplifiedConnectingContentViewV2(isRecovery: isRecovery)
             case .syncAnotherDevice:
                 SyncAnotherDevicePromptViewV2(model: model)
             case .recoverYourData:
                 RecoverYourDataView(model: model)
-            case .deviceConnected:
-                SyncDeviceAddedViewV2(model: model)
-            case .recovering:
-                RecoveringDataContentViewV2()
-            case .recoveryComplete:
-                SyncRecoveryCompleteViewV2(model: model)
+            case .success(let isRecovery):
+                SyncSuccessViewV2(model: model, isRecovery: isRecovery)
             case .none:
                 EmptyView()
             }
@@ -79,11 +75,11 @@ public struct SimplifiedConnectingSheetViewV2: View {
 
 
 #Preview("Recovering") {
-    SimplifiedConnectingSheetViewV2(model: .connectingSheetPreview(phase: .recovering))
+    SimplifiedConnectingSheetViewV2(model: .connectingSheetPreview(phase: .connecting(isRecovery: true)))
 }
 
 #Preview("Recovery Completed") {
-    SimplifiedConnectingSheetViewV2(model: .connectingSheetPreview(phase: .recoveryComplete))
+    SimplifiedConnectingSheetViewV2(model: .connectingSheetPreview(phase: .success(isRecovery: true)))
 }
 
 private extension SyncSettingsViewModel {

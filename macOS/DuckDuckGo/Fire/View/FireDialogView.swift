@@ -718,7 +718,7 @@ struct FireDialogView: ModalView {
     private var historyOverlayList: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
-                ForEach(viewModel.historyVisits.reversed().lazy.prefix(Constants.historyOverlayMaxVisibleItems), id: \.self) { visit in
+                ForEach(viewModel.historyVisits.sorted { $0.date > $1.date }.prefix(Constants.historyOverlayMaxVisibleItems), id: \.self) { visit in
                     historyOverlayRow(for: visit)
                 }
 

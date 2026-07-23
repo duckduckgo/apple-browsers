@@ -46,6 +46,7 @@ struct FireDialogView: ModalView {
         static let boxContentPadding: CGFloat = 16
         static var sectionRowWidth: CGFloat { viewSize.width - 2 * horizontalPadding - 2 * boxContentPadding }
         static let historyOverlayMaxVisibleItems = 100
+        static let overlayAnimationDuration: TimeInterval = 0.2
     }
 
     @State private var viewHeight: CGFloat = Constants.viewSize.height
@@ -69,7 +70,7 @@ struct FireDialogView: ModalView {
     @State private var isShowingSitesOverlay: Bool = false {
         didSet {
             isAnimatingSitesOverlay = true
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + Constants.overlayAnimationDuration) {
                 isAnimatingSitesOverlay = false
             }
         }
@@ -78,7 +79,7 @@ struct FireDialogView: ModalView {
     @State private var isShowingChatsOverlay: Bool = false {
         didSet {
             isAnimatingChatsOverlay = true
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + Constants.overlayAnimationDuration) {
                 isAnimatingChatsOverlay = false
             }
         }
@@ -87,7 +88,7 @@ struct FireDialogView: ModalView {
     @State private var isShowingHistoryOverlay: Bool = false {
         didSet {
             isAnimatingHistoryOverlay = true
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + Constants.overlayAnimationDuration) {
                 isAnimatingHistoryOverlay = false
             }
         }

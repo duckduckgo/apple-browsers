@@ -523,17 +523,22 @@ struct FireDialogView: ModalView {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 ForEach(viewModel.selectable, id: \.domain) { item in
-                    HStack(spacing: 12) {
-                        FaviconView(url: URL(string: "https://\(item.domain)"), size: 16)
-                        Text(item.domain)
-                            .font(.system(size: 12, weight: .medium))
-                            .foregroundColor(Color(designSystemColor: .textPrimary))
-                            .lineLimit(1)
-                            .truncationMode(.middle)
-                            .help(item.domain)
+                    sitesOverlayRow(for: item)
+                }
+
+                if !viewModel.fireproofed.isEmpty {
+                    Text(UserText.fireproofCookiesAndSiteDataExplanation)
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundColor(Color(designSystemColor: .textSecondary))
+                        .multilineTextAlignment(.leading)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.top, 12)
+                        .padding(.bottom, 4)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+
+                    ForEach(viewModel.fireproofed, id: \.domain) { item in
+                        sitesOverlayRow(for: item)
                     }
-                    .padding(.vertical, 12)
-                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
             }
             .padding(.leading, 24)
@@ -552,6 +557,20 @@ struct FireDialogView: ModalView {
                 )
         )
         .padding(.horizontal, 8)
+    }
+
+    private func sitesOverlayRow(for item: FireDialogViewModel.Item) -> some View {
+        HStack(spacing: 12) {
+            FaviconView(url: URL(string: "https://\(item.domain)"), size: 16)
+            Text(item.domain)
+                .font(.system(size: 12, weight: .medium))
+                .foregroundColor(Color(designSystemColor: .textPrimary))
+                .lineLimit(1)
+                .truncationMode(.middle)
+                .help(item.domain)
+        }
+        .padding(.vertical, 12)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     // MARK: - Chats overlay

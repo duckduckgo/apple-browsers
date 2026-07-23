@@ -27,26 +27,26 @@ struct SettingsNextStepsDismissalTests {
     private let oneDay: TimeInterval = 24 * 60 * 60
     private let tappedAt: TimeInterval = 1_000_000
 
-    @Test("Item stays visible when never tapped")
+    @Test("Item stays visible when never tapped", .timeLimit(.minutes(1)))
     func itemStaysVisibleWhenNeverTapped() {
         #expect(!SettingsViewModel.hasTapDismissalElapsed(tappedAt: nil, now: tappedAt, interval: oneDay))
     }
 
-    @Test("Item stays visible before interval elapses")
+    @Test("Item stays visible before interval elapses", .timeLimit(.minutes(1)))
     func itemStaysVisibleBeforeIntervalElapses() {
         #expect(!SettingsViewModel.hasTapDismissalElapsed(tappedAt: tappedAt,
                                                           now: tappedAt + oneDay - 1,
                                                           interval: oneDay))
     }
 
-    @Test("Item dismisses exactly at interval")
+    @Test("Item dismisses exactly at interval", .timeLimit(.minutes(1)))
     func itemDismissesExactlyAtInterval() {
         #expect(SettingsViewModel.hasTapDismissalElapsed(tappedAt: tappedAt,
                                                          now: tappedAt + oneDay,
                                                          interval: oneDay))
     }
 
-    @Test("Item dismisses after interval")
+    @Test("Item dismisses after interval", .timeLimit(.minutes(1)))
     func itemDismissesAfterInterval() {
         #expect(SettingsViewModel.hasTapDismissalElapsed(tappedAt: tappedAt,
                                                          now: tappedAt + oneDay + 60,
@@ -58,14 +58,14 @@ struct SettingsNextStepsDismissalTests {
     private let fourteenDays: TimeInterval = 14 * 24 * 60 * 60
     private let installedAt = Date(timeIntervalSinceReferenceDate: 1_000_000)
 
-    @Test("Hide button hidden when install date missing")
+    @Test("Hide button hidden when install date missing", .timeLimit(.minutes(1)))
     func hideButtonHiddenWhenInstallDateMissing() {
         #expect(!SettingsViewModel.hasInstallGracePeriodElapsed(installDate: nil,
                                                                now: installedAt,
                                                                requiredInterval: fourteenDays))
     }
 
-    @Test("Hide button hidden just before grace period elapses")
+    @Test("Hide button hidden just before grace period elapses", .timeLimit(.minutes(1)))
     func hideButtonHiddenJustBeforeGracePeriodElapses() {
         let now = Date(timeIntervalSinceReferenceDate: installedAt.timeIntervalSinceReferenceDate + fourteenDays - 1)
         #expect(!SettingsViewModel.hasInstallGracePeriodElapsed(installDate: installedAt,
@@ -73,7 +73,7 @@ struct SettingsNextStepsDismissalTests {
                                                                requiredInterval: fourteenDays))
     }
 
-    @Test("Hide button appears exactly at grace period")
+    @Test("Hide button appears exactly at grace period", .timeLimit(.minutes(1)))
     func hideButtonAppearsExactlyAtGracePeriod() {
         let now = Date(timeIntervalSinceReferenceDate: installedAt.timeIntervalSinceReferenceDate + fourteenDays)
         #expect(SettingsViewModel.hasInstallGracePeriodElapsed(installDate: installedAt,
@@ -81,7 +81,7 @@ struct SettingsNextStepsDismissalTests {
                                                               requiredInterval: fourteenDays))
     }
 
-    @Test("Hide button appears well after grace period")
+    @Test("Hide button appears well after grace period", .timeLimit(.minutes(1)))
     func hideButtonAppearsWellAfterGracePeriod() {
         let now = Date(timeIntervalSinceReferenceDate: installedAt.timeIntervalSinceReferenceDate + fourteenDays * 3)
         #expect(SettingsViewModel.hasInstallGracePeriodElapsed(installDate: installedAt,

@@ -99,6 +99,14 @@ class VoiceSearchFeedbackViewModel: ObservableObject {
                 self.recognizedWords = text
 
                 if speechDidFinish || error != nil || self.hasReachedWordLimit(text) {
+                    if (text ?? "").isEmpty {
+                        // Session ended with no usable transcription: fires no done/cancelled pixel otherwise
+                        if let error {
+                            DailyPixel.fireDailyAndCount(pixel: .voiceSearchError, error: error)
+                        } else {
+                            DailyPixel.fireDailyAndCount(pixel: .voiceSearchNoSpeech)
+                        }
+                    }
                     self.finish()
                 }
             }

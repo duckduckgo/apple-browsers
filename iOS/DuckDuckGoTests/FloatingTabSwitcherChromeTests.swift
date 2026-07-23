@@ -202,6 +202,7 @@ final class FloatingTabSwitcherChromeTests: XCTestCase {
             XCTAssertNil(chrome.fallbackTopBackgroundView.superview)
         } else {
             XCTAssertTrue(chrome.fallbackTopBackgroundView.superview === host)
+            XCTAssertFalse(chrome.fallbackTopBackgroundView.isUserInteractionEnabled)
             XCTAssertEqual(chrome.fallbackTopBackgroundView.backgroundColor?.resolvedColor(with: host.traitCollection),
                            UIColor(designSystemColor: .background).resolvedColor(with: host.traitCollection))
 

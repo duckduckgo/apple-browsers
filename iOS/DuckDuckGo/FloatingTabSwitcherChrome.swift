@@ -41,6 +41,7 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
     let fallbackTopBackgroundView: UIView = {
         let view = UIView()
         view.backgroundColor = UIColor(designSystemColor: .background)
+        view.isUserInteractionEnabled = false
         view.translatesAutoresizingMaskIntoConstraints = false
         return view
     }()

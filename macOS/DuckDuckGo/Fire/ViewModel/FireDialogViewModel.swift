@@ -483,7 +483,6 @@ final class FireDialogViewModel: ObservableObject {
 
     /// Dismisses the dialog and opens the full History View, for "See full history" in the history overlay.
     func openFullHistory() {
-        pixelFiring?.fire(FireDialogPixel.fireDialogSeeFullHistoryClicked, frequency: .dailyAndCount, doNotEnforcePrefix: true)
         dismissDialog()
         windowControllersManager.lastKeyMainWindowController?
             .mainViewController

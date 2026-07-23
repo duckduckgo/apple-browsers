@@ -516,8 +516,8 @@ extension SyncSettingsViewController: ScanOrPasteCodeViewModelDelegate {
                    onComplete: { _ in })
         if !isPresentingV2ConnectingSheet {
             presentSyncCompletionAfterDelay()
-        } else if case .connecting(let isRecovery) = viewModel.connectingSheetPhase {
-            presentSuccessScreen(isRecovery: isRecovery)
+        } else {
+            presentSuccessScreen(isRecovery: codeCollectionIntent == .recoverData)
         }
     }
 
@@ -701,8 +701,8 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
         }
         if !isPresentingV2ConnectingSheet {
             presentSyncCompletionAfterDelay()
-        } else if case .connecting(let isRecovery) = viewModel.connectingSheetPhase {
-            presentSuccessScreen(isRecovery: isRecovery)
+        } else {
+            presentSuccessScreen(isRecovery: codeCollectionIntent == .recoverData)
         }
         guard case .receiver(let syncSetupSource, let syncCodeSource) = setupRole else {
             // .sharer reaches here only via the connect flow (exchange-sharer terminates in controllerDidFinishTransmittingRecoveryKey).

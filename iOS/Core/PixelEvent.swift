@@ -2416,8 +2416,8 @@ extension Pixel.Event {
         case .voiceSearchAIChatDone: return "m_voice_search_aichat_done"
         case .openVoiceSearch: return "m_open_voice_search"
         case .voiceSearchCancelled: return "m_voice_search_cancelled"
-        case .voiceSearchError: return "m_voice_search_error"
-        case .voiceSearchNoSpeech: return "m_voice_search_no_speech"
+        case .voiceSearchError: return "voice_search_error"
+        case .voiceSearchNoSpeech: return "voice_search_no_speech"
             
         case .bookmarkImportSuccess: return "m_bi_s"
         case .bookmarkImportFailure: return "m_bi_e"

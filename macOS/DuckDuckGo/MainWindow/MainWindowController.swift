@@ -418,11 +418,6 @@ extension MainWindowController: NSWindowDelegate {
               let mainWindow = self.window,
               keyWindow.isInHierarchy(of: mainWindow) else { return }
 
-        // This window may have been occluded (e.g. on a different Space while another window
-        // was in Full Screen) while the system appearance changed, missing the titlebar strip
-        // re-color from `subscribeToEffectiveAppearance()`. Re-apply now that it's on screen again.
-        applyThemeStyle()
-
         mainViewController.windowDidBecomeKey()
         lastWindowDidBecomeKeyTimestamp = CACurrentMediaTime()
         if !mainWindow.isPopUpWindow {
@@ -461,6 +456,17 @@ extension MainWindowController: NSWindowDelegate {
         }
 
         fullscreenController.resetFullscreenExitFlag()
+    }
+
+    func windowDidExitFullScreen(_ notification: Notification) {
+        // While this window was in Full Screen (on its own Space), the app's other windows were
+        // occluded on the background Space. If the system appearance changed during that time, their
+        // titlebar strip re-color from `subscribeToEffectiveAppearance()` didn't reliably reach the
+        // screen. Re-apply the theme to every window now that they're all visible again.
+        guard AppVersion.isLiquidGlassSupported else { return }
+        for windowController in Application.appDelegate.windowControllersManager.mainWindowControllers {
+            windowController.applyThemeStyle()
+        }
     }
 
     private func hideTabBarAndBookmarksBar() {

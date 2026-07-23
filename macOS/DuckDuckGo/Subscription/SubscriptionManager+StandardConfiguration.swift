@@ -108,7 +108,8 @@ extension DefaultSubscriptionManager {
                                                                          pixelHandler: pixelHandler)
         self.init(storePurchaseManager: DefaultStorePurchaseManager(subscriptionFeatureMappingCache: subscriptionEndpointService,
                                                                     subscriptionFeatureFlagger: subscriptionFeatureFlagger,
-                                                                    pendingTransactionHandler: pendingTransactionHandler),
+                                                                    pendingTransactionHandler: pendingTransactionHandler,
+                                                                    monthlyFreeTrialDecider: MacOSMonthlyFreeTrialDecider()),
                   oAuthClient: authClient,
                   userDefaults: userDefaults,
                   subscriptionEndpointService: subscriptionEndpointService,

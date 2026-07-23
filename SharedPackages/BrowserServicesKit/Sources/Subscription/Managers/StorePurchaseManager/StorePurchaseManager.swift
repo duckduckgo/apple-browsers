@@ -211,8 +211,9 @@ public final class DefaultStorePurchaseManager: ObservableObject, StorePurchaseM
     public init(subscriptionFeatureMappingCache: any SubscriptionFeatureMappingCache,
                 subscriptionFeatureFlagger: FeatureFlaggerMapping<SubscriptionFeatureFlags>? = nil,
                 productFetcher: ProductFetching = DefaultProductFetcher(),
-                pendingTransactionHandler: PendingTransactionHandling? = nil) {
-        self.storeSubscriptionConfiguration = DefaultStoreSubscriptionConfiguration()
+                pendingTransactionHandler: PendingTransactionHandling? = nil,
+                monthlyFreeTrialDecider: any MonthlyFreeTrialDeciding) {
+        self.storeSubscriptionConfiguration = DefaultStoreSubscriptionConfiguration(monthlyFreeTrialDecider: monthlyFreeTrialDecider)
         self.subscriptionFeatureMappingCache = subscriptionFeatureMappingCache
         self.subscriptionFeatureFlagger = subscriptionFeatureFlagger
         self.productFetcher = productFetcher

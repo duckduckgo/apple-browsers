@@ -776,7 +776,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                                          pixelHandler: pixelHandler)
         let defaultSubscriptionManager = DefaultSubscriptionManager(storePurchaseManager: DefaultStorePurchaseManager(subscriptionFeatureMappingCache: subscriptionEndpointService,
                                                                                                                       subscriptionFeatureFlagger: subscriptionFeatureFlagger,
-                                                                                                                      pendingTransactionHandler: pendingTransactionHandler),
+                                                                                                                      pendingTransactionHandler: pendingTransactionHandler,
+                                                                                                                      monthlyFreeTrialDecider: MacOSMonthlyFreeTrialDecider()),
                                                                     oAuthClient: authClient,
                                                                     userDefaults: subscriptionUserDefaults,
                                                                     subscriptionEndpointService: subscriptionEndpointService,

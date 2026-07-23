@@ -22,7 +22,7 @@ import Testing
 @Suite("Store Subscription Configuration Tests")
 struct StoreSubscriptionConfigurationTests {
 
-    let sut = DefaultStoreSubscriptionConfiguration()
+    let sut = DefaultStoreSubscriptionConfiguration(monthlyFreeTrialDecider: MockMonthlyFreeTrialDecider(shouldOfferMonthlyFreeTrial: true))
 
     @Test("USA region returns expected product identifiers")
     func usaRegionReturnsExpectedProductIdentifiers() {
@@ -108,5 +108,89 @@ struct StoreSubscriptionConfigurationTests {
         // Then
         #expect(actualProducts == expectedROWProducts,
                 "ROW products should match expected list exactly")
+    }
+
+    // MARK: - Monthly free-trial filtering
+
+    @Test("USA region without monthly free trial returns expected product identifiers")
+    func usaRegionWithoutMonthlyFreeTrialReturnsExpectedProductIdentifiers() {
+        // Given
+        let sut = DefaultStoreSubscriptionConfiguration(monthlyFreeTrialDecider: MockMonthlyFreeTrialDecider(shouldOfferMonthlyFreeTrial: false))
+        let expectedUSAProducts: Set<String> = [
+            // Production
+            "ddg.privacy.pro.yearly.renews.us.freetrial",
+            "ddg.subscription.yearly.renews.us.freetrial.pro",
+
+            // iOS Alpha
+            "ios.subscription.1year.freetrial.dev",
+            "ios.subscription.1month.dev.pro",
+            "ios.subscription.1year.freetrial.dev.pro",
+
+            // macOS Debug
+            "subscription.1year.freetrial",
+            "subscription.1year.freetrial.pro",
+
+            // macOS Review
+            "review.subscription.1year.freetrial",
+            "review.subscription.1year.freetrial.pro",
+
+            // TestFlight
+            "tf.sandbox.subscription.1year.freetrial",
+            "tf.sandbox.subscription.1year.freetrial.pro"
+        ]
+
+        // When
+        let actualProducts = Set(sut.subscriptionIdentifiers(for: .usa))
+
+        // Then
+        #expect(actualProducts == expectedUSAProducts,
+                "USA products without monthly free trials should match expected list exactly")
+    }
+
+    @Test("ROW region without monthly free trial returns expected product identifiers")
+    func rowRegionWithoutMonthlyFreeTrialReturnsExpectedProductIdentifiers() {
+        // Given
+        let sut = DefaultStoreSubscriptionConfiguration(monthlyFreeTrialDecider: MockMonthlyFreeTrialDecider(shouldOfferMonthlyFreeTrial: false))
+        let expectedROWProducts: Set<String> = [
+            // Production
+            "ddg.privacy.pro.yearly.renews.row.freetrial",
+            "ddg.subscription.yearly.renews.row.freetrial.pro",
+
+            // iOS Alpha
+            "ios.subscription.1year.row.freetrial.dev",
+            "ios.subscription.1month.row.dev.pro",
+            "ios.subscription.1year.row.freetrial.dev.pro",
+
+            // macOS Debug
+            "subscription.1year.row.freetrial",
+            "subscription.1year.row.freetrial.pro",
+
+            // macOS Review
+            "review.subscription.1year.row.freetrial",
+            "review.subscription.1year.row.freetrial.pro",
+
+            // TestFlight
+            "tf.sandbox.subscription.1year.row.freetrial",
+            "tf.sandbox.subscription.1year.row.freetrial.pro"
+        ]
+
+        // When
+        let actualProducts = Set(sut.subscriptionIdentifiers(for: .restOfWorld))
+
+        // Then
+        #expect(actualProducts == expectedROWProducts,
+                "ROW products without monthly free trials should match expected list exactly")
+    }
+}
+
+private struct MockMonthlyFreeTrialDecider: MonthlyFreeTrialDeciding {
+    let shouldOfferMonthlyFreeTrialValue: Bool
+
+    init(shouldOfferMonthlyFreeTrial: Bool) {
+        self.shouldOfferMonthlyFreeTrialValue = shouldOfferMonthlyFreeTrial
+    }
+
+    func shouldOfferMonthlyFreeTrial() -> Bool {
+        shouldOfferMonthlyFreeTrialValue
     }
 }

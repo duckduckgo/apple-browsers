@@ -418,6 +418,11 @@ extension MainWindowController: NSWindowDelegate {
               let mainWindow = self.window,
               keyWindow.isInHierarchy(of: mainWindow) else { return }
 
+        // This window may have been occluded (e.g. on a different Space while another window
+        // was in Full Screen) while the system appearance changed, missing the titlebar strip
+        // re-color from `subscribeToEffectiveAppearance()`. Re-apply now that it's on screen again.
+        applyThemeStyle()
+
         mainViewController.windowDidBecomeKey()
         lastWindowDidBecomeKeyTimestamp = CACurrentMediaTime()
         if !mainWindow.isPopUpWindow {

@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import Core
 import PrivacyConfig
 import Subscription
 
@@ -29,6 +30,16 @@ struct IOSMonthlyFreeTrialDecider: MonthlyFreeTrialDeciding {
     }
 
     func shouldOfferMonthlyFreeTrial() -> Bool {
-        true
+        // Resolving the cohort here (at the paywall/tier-options request) enrolls the user at the
+        // moment the decision is needed. `treatment` removes the monthly free trial; `control` and
+        // unenrolled users keep the current behavior.
+        let cohort = featureFlagger.resolveCohort(for: FeatureFlag.monthlyFreeTrialExperiment) as? FeatureFlag.MonthlyFreeTrialExperimentCohort
+
+        switch cohort {
+        case .treatment:
+            return false
+        case .control, .none:
+            return true
+        }
     }
 }

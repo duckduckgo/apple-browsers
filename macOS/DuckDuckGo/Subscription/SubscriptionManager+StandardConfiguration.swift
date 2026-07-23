@@ -109,7 +109,7 @@ extension DefaultSubscriptionManager {
         self.init(storePurchaseManager: DefaultStorePurchaseManager(subscriptionFeatureMappingCache: subscriptionEndpointService,
                                                                     subscriptionFeatureFlagger: subscriptionFeatureFlagger,
                                                                     pendingTransactionHandler: pendingTransactionHandler,
-                                                                    monthlyFreeTrialDecider: MacOSMonthlyFreeTrialDecider()),
+                                                                    monthlyFreeTrialDecider: DefaultMonthlyFreeTrialDecider()),
                   oAuthClient: authClient,
                   userDefaults: userDefaults,
                   subscriptionEndpointService: subscriptionEndpointService,

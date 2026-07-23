@@ -609,9 +609,10 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
 
         let subscriptionEndpointService = DefaultSubscriptionEndpointService(apiService: APIServiceFactory.makeAPIServiceForSubscription(withUserAgent: DefaultUserAgentManager.duckDuckGoUserAgent),
                                                                              baseURL: subscriptionEnvironment.serviceEnvironment.url)
-        let monthlyFreeTrialDecider = IOSMonthlyFreeTrialDecider(featureFlagger: featureFlagger)
+        // The tunnel never presents the paywall, so the monthly free-trial decision is never consulted;
+        // use the trivial default rather than the app-only cohort-aware decider.
         let storePurchaseManager = DefaultStorePurchaseManager(subscriptionFeatureMappingCache: subscriptionEndpointService,
-                                                               monthlyFreeTrialDecider: monthlyFreeTrialDecider)
+                                                               monthlyFreeTrialDecider: DefaultMonthlyFreeTrialDecider())
         let subscriptionManager = DefaultSubscriptionManager(storePurchaseManager: storePurchaseManager,
                                                              oAuthClient: authClient,
                                                              userDefaults: UserDefaults.standard,

@@ -58,21 +58,29 @@ final class TabsBarViewControllerSizingTests: XCTestCase {
     private let buttonWidth = TabsBarViewController.Constants.buttonWidth
     private let gap = TabsBarViewController.Constants.addTabButtonGap
 
-    private func addTabButtonLeadingOffset(_ contentWidth: CGFloat, _ availableWidth: CGFloat) -> CGFloat {
-        TabsBarViewController.addTabButtonLeadingOffset(contentWidth: contentWidth, availableWidth: availableWidth, buttonWidth: buttonWidth, gap: gap)
+    private func addTabButtonLeadingOffset(_ contentWidth: CGFloat, _ availableWidth: CGFloat, isFloored: Bool = false) -> CGFloat {
+        TabsBarViewController.addTabButtonLeadingOffset(contentWidth: contentWidth, availableWidth: availableWidth, buttonWidth: buttonWidth, gap: gap, isFloored: isFloored)
     }
 
     func testAddTabButtonSitsGapAfterLastTabWhenTabsDoNotFillStrip() {
         XCTAssertEqual(addTabButtonLeadingOffset(200, 900), 200 + gap, accuracy: accuracy)
     }
 
-    func testAddTabButtonAtExactBoundaryIsFlushWithTrailingEdge() {
-        // Content + gap fills exactly up to where the button would sit flush anyway.
-        XCTAssertEqual(addTabButtonLeadingOffset(900 - buttonWidth - gap, 900), 900 - buttonWidth, accuracy: accuracy)
+    func testAddTabButtonFollowsContentWidthEvenCloseToAvailableWidthWhenNotFloored() {
+        // Capped-but-not-floored tabs can land close to availableWidth (891/900); must still follow
+        // contentWidth, not cap early, else the button sits under the last tab's own content.
+        XCTAssertEqual(addTabButtonLeadingOffset(891, 900), 891 + gap, accuracy: accuracy)
     }
 
-    func testAddTabButtonIsFlushWithTrailingEdgeWhenTabsOverflowStrip() {
-        XCTAssertEqual(addTabButtonLeadingOffset(1500, 900), 900 - buttonWidth, accuracy: accuracy)
+    func testAddTabButtonFlushWithTrailingEdgeWhenFloored() {
+        XCTAssertEqual(addTabButtonLeadingOffset(1500, 900, isFloored: true), 900 - buttonWidth, accuracy: accuracy)
+    }
+
+    func testAddTabButtonFlushEvenWhenFlooredContentStillFitsRawStripWidth() {
+        // Regression: floored tabs whose contentWidth hasn't yet exceeded raw availableWidth (the gap
+        // between the reservation threshold and true overflow) must still cap flush, not overshoot
+        // into the fixed icon cluster by following contentWidth + gap.
+        XCTAssertEqual(addTabButtonLeadingOffset(870, 900, isFloored: true), 900 - buttonWidth, accuracy: accuracy)
     }
 
     func testAddTabButtonOffsetIsJustTheGapWithNoTabs() {
@@ -80,7 +88,6 @@ final class TabsBarViewControllerSizingTests: XCTestCase {
     }
 
     func testAddTabButtonOffsetInDegenerateStripNarrowerThanButton() {
-        // Unrealistic on real devices, but not overflowing (0 <= 20), so still contentWidth + gap.
         XCTAssertEqual(addTabButtonLeadingOffset(0, 20), gap, accuracy: accuracy)
     }
 
@@ -88,18 +95,16 @@ final class TabsBarViewControllerSizingTests: XCTestCase {
         XCTAssertEqual(addTabButtonLeadingOffset(200, 0), 0, accuracy: accuracy)
     }
 
-    func testAddTabButtonNeverSitsUnderLastTabWhenCappedTabsAreCloseToAvailableWidth() {
-        // Regression: capped tabs close to availableWidth (891/900) used to cap the button at 856, under the last tab's own content.
-        XCTAssertEqual(addTabButtonLeadingOffset(891, 900), 891 + gap, accuracy: accuracy)
+    func testTabStripFlooredWhenItemWidthAtMinimum() {
+        XCTAssertTrue(TabsBarViewController.isTabStripFloored(itemWidth: minWidth, minWidth: minWidth))
     }
 
-    func testTabStripNotOverflowingWhenCappedTabsStillFitDespiteBeingCloseToAvailableWidth() {
-        // Regression: this used to be wrongly treated as overflowing, reserving scroll space that cropped the first tab off-screen.
-        XCTAssertFalse(TabsBarViewController.isTabStripOverflowing(contentWidth: 891, availableWidth: 900))
+    func testTabStripNotFlooredWhenItemWidthAboveMinimum() {
+        XCTAssertFalse(TabsBarViewController.isTabStripFloored(itemWidth: minWidth + 1, minWidth: minWidth))
     }
 
-    func testTabStripOverflowingWhenContentExceedsAvailableWidth() {
-        XCTAssertTrue(TabsBarViewController.isTabStripOverflowing(contentWidth: 901, availableWidth: 900))
+    func testTabStripNotFlooredWhenItemWidthIsZero() {
+        XCTAssertFalse(TabsBarViewController.isTabStripFloored(itemWidth: 0, minWidth: minWidth))
     }
 
     @MainActor

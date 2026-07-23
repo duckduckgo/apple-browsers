@@ -385,18 +385,19 @@ class TabsBarViewController: UIViewController {
         }
     }
 
-    /// Caps flush at the trailing edge only once genuinely overflowing — earlier would hide the last tab's own close button.
-    static func addTabButtonLeadingOffset(contentWidth: CGFloat, availableWidth: CGFloat, buttonWidth: CGFloat, gap: CGFloat) -> CGFloat {
+    /// Caps flush at the trailing edge only once tabs are floored (can't shrink further to make room) —
+    /// capping based on contentWidth vs availableWidth instead is unsafe: recomputeItemSize's reservation
+    /// only guarantees room for the button in the equal-division/maxWidth-capped regimes, not once floored,
+    /// where contentWidth grows in minWidth increments unrelated to availableWidth.
+    static func addTabButtonLeadingOffset(contentWidth: CGFloat, availableWidth: CGFloat, buttonWidth: CGFloat, gap: CGFloat, isFloored: Bool) -> CGFloat {
         guard availableWidth > 0 else { return 0 }
-        guard isTabStripOverflowing(contentWidth: contentWidth, availableWidth: availableWidth) else {
-            return contentWidth + gap
-        }
+        guard isFloored else { return contentWidth + gap }
         return max(0, availableWidth - buttonWidth)
     }
 
-    /// contentWidth close to availableWidth is normal (see maxItemWidth) and isn't the same as overflowing.
-    static func isTabStripOverflowing(contentWidth: CGFloat, availableWidth: CGFloat) -> Bool {
-        contentWidth > availableWidth
+    /// Tabs floored at minWidth, unable to shrink further to make room for the button/scroll reservation.
+    static func isTabStripFloored(itemWidth: CGFloat, minWidth: CGFloat) -> Bool {
+        itemWidth > 0 && itemWidth <= minWidth
     }
 
     private func updateAddTabButtonPosition() {
@@ -407,16 +408,19 @@ class TabsBarViewController: UIViewController {
         collectionView.layoutIfNeeded()
 
         let contentWidth = collectionView.contentSize.width
+        let itemWidth = (collectionView.collectionViewLayout as? UICollectionViewFlowLayout)?.itemSize.width ?? 0
         let gap = Constants.addTabButtonGap
+        let isFloored = Self.isTabStripFloored(itemWidth: itemWidth, minWidth: Constants.minItemWidth)
+
         addTabButtonLeadingConstraint?.constant = Self.addTabButtonLeadingOffset(
             contentWidth: contentWidth,
             availableWidth: availableWidth,
             buttonWidth: Constants.buttonWidth,
-            gap: gap
+            gap: gap,
+            isFloored: isFloored
         )
 
-        let isOverflowing = Self.isTabStripOverflowing(contentWidth: contentWidth, availableWidth: availableWidth)
-        collectionView.contentInset.right = isOverflowing ? Constants.buttonWidth + gap : 0
+        collectionView.contentInset.right = isFloored ? Constants.buttonWidth + gap : 0
     }
 
     /// Half the strip, but in landscape also capped at a third of the full-screen strip so a resize
@@ -450,10 +454,8 @@ class TabsBarViewController: UIViewController {
     /// True when tabs are floored at min width so the strip scrolls. Inactive tabs then hide the close
     /// button (kept on the active tab, revealed on pointer hover); touch closes the rest via long press.
     private var isStripOverflowing: Bool {
-        let availableWidth = collectionView.frame.size.width
         let itemWidth = (collectionView.collectionViewLayout as? UICollectionViewFlowLayout)?.itemSize.width ?? 0
-        guard availableWidth > 0, itemWidth > 0 else { return false }
-        return Self.isTabStripOverflowing(contentWidth: CGFloat(tabsCount) * itemWidth, availableWidth: availableWidth)
+        return Self.isTabStripFloored(itemWidth: itemWidth, minWidth: Constants.minItemWidth)
     }
 
     /// Equal share of the strip, capped at `maxWidth` then floored at `minWidth` (floor wins).

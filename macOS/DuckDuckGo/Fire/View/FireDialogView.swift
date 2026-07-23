@@ -690,15 +690,15 @@ struct FireDialogView: ModalView {
             .accessibilityIdentifier("FireDialogView.historyOverlayCloseButton")
             .keyboardShortcut(.cancelAction)
         }
-        .padding(.top, 22)
+        .padding(.top, 24)
         .padding(.horizontal, Constants.horizontalPadding)
-        .padding(.bottom, 14)
+        .padding(.bottom, 16)
     }
 
     private var historyOverlayList: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
-                ForEach(viewModel.historyVisits, id: \.self) { visit in
+                ForEach(viewModel.historyVisits.reversed().lazy, id: \.self) { visit in
                     historyOverlayRow(for: visit)
                 }
             }
@@ -725,9 +725,9 @@ struct FireDialogView: ModalView {
         let url = visit.historyEntry?.url
         return HStack(alignment: .top, spacing: 12) {
             FaviconView(url: url, size: 16)
-                .padding(.top, 2)
+                .padding(.top, 4)
 
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: 6) {
                 Text(visitViewModel.title)
                     .font(.system(size: 12, weight: .medium))
                     .foregroundColor(Color(designSystemColor: .textPrimary))
@@ -748,7 +748,8 @@ struct FireDialogView: ModalView {
                 .fixedSize()
                 .padding(.top, 2)
         }
-        .padding(.vertical, 12)
+        .padding(.top, 8)
+        .padding(.bottom, 9)
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 

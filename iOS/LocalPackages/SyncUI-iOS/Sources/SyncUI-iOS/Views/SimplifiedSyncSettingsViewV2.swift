@@ -247,7 +247,7 @@ extension SimplifiedSyncSettingsViewV2 {
                     .foregroundColor(Color(designSystemColor: .accentPrimary))
             }
         }
-        .disabled(!model.isAccountCreationAvailable)
+        .disabled(!(model.isSyncEnabled || model.isAccountCreationAvailable))
     }
 
     @ViewBuilder

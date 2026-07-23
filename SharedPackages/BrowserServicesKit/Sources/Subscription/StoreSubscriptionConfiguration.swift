@@ -32,11 +32,16 @@ protocol StoreSubscriptionConfiguration {
     func subscriptionIdentifiers(for region: SubscriptionRegion) -> [String]
 }
 
+public protocol MonthlyFreeTrialDeciding {
+    func shouldOfferMonthlyFreeTrial() -> Bool
+}
+
 final class DefaultStoreSubscriptionConfiguration: StoreSubscriptionConfiguration {
 
     private let subscriptions: [StoreSubscriptionDefinition]
+    private let monthlyFreeTrialDecider: any MonthlyFreeTrialDeciding
 
-    convenience init() {
+    convenience init(monthlyFreeTrialDecider: any MonthlyFreeTrialDeciding) {
         self.init(subscriptionDefinitions: [
             // Production shared for iOS and macOS
             .init(name: "DuckDuckGo Private Browser",
@@ -57,10 +62,12 @@ final class DefaultStoreSubscriptionConfiguration: StoreSubscriptionConfiguratio
                   identifiersByRegion: [.usa: ["ios.subscription.1month.freetrial.dev",
                                                "ios.subscription.1year.freetrial.dev",
                                                "ios.subscription.1month.freetrial.dev.\(StoreSubscriptionConstants.proTierIdentifier)",
+                                               "ios.subscription.1month.dev.\(StoreSubscriptionConstants.proTierIdentifier)",
                                                "ios.subscription.1year.freetrial.dev.\(StoreSubscriptionConstants.proTierIdentifier)"],
                                         .restOfWorld: ["ios.subscription.1month.row.freetrial.dev",
                                                        "ios.subscription.1year.row.freetrial.dev",
                                                        "ios.subscription.1month.row.freetrial.dev.\(StoreSubscriptionConstants.proTierIdentifier)",
+                                                       "ios.subscription.1month.row.dev.\(StoreSubscriptionConstants.proTierIdentifier)",
                                                        "ios.subscription.1year.row.freetrial.dev.\(StoreSubscriptionConstants.proTierIdentifier)"]]),
             // macOS debug build
             .init(name: "IAP debug - DDG for macOS",
@@ -99,11 +106,13 @@ final class DefaultStoreSubscriptionConfiguration: StoreSubscriptionConfiguratio
                                                        "tf.sandbox.subscription.1year.row.freetrial",
                                                        "tf.sandbox.subscription.1month.row.freetrial.\(StoreSubscriptionConstants.proTierIdentifier)",
                                                        "tf.sandbox.subscription.1year.row.freetrial.\(StoreSubscriptionConstants.proTierIdentifier)"]])
-        ])
+        ], monthlyFreeTrialDecider: monthlyFreeTrialDecider)
     }
 
-    init(subscriptionDefinitions: [StoreSubscriptionDefinition]) {
+    init(subscriptionDefinitions: [StoreSubscriptionDefinition],
+         monthlyFreeTrialDecider: any MonthlyFreeTrialDeciding) {
         self.subscriptions = subscriptionDefinitions
+        self.monthlyFreeTrialDecider = monthlyFreeTrialDecider
     }
 
     var allSubscriptionIdentifiers: [String] {
@@ -111,11 +120,15 @@ final class DefaultStoreSubscriptionConfiguration: StoreSubscriptionConfiguratio
     }
 
     func subscriptionIdentifiers(for country: String) -> [String] {
-        subscriptions.reduce([], { $0 + $1.identifiers(for: country) })
+        return subscriptions.reduce([], {
+            $0 + $1.identifiers(for: country, shouldOfferMonthlyFreeTrial: monthlyFreeTrialDecider.shouldOfferMonthlyFreeTrial())
+        })
     }
 
     func subscriptionIdentifiers(for region: SubscriptionRegion) -> [String] {
-        subscriptions.reduce([], { $0 + $1.identifiers(for: region) })
+        return subscriptions.reduce([], {
+            $0 + $1.identifiers(for: region, shouldOfferMonthlyFreeTrial: monthlyFreeTrialDecider.shouldOfferMonthlyFreeTrial())
+        })
     }
 }
 
@@ -129,12 +142,44 @@ struct StoreSubscriptionDefinition {
         identifiersByRegion.values.flatMap { $0 }
     }
 
-    func identifiers(for country: String) -> [String] {
-        identifiersByRegion.filter { region, _ in region.contains(country) }.flatMap { _, identifiers in identifiers }
+    func identifiers(for country: String, shouldOfferMonthlyFreeTrial: Bool) -> [String] {
+        identifiersByRegion
+            .filter { region, _ in region.contains(country) }
+            .flatMap { _, identifiers in
+                applyingMonthlyFreeTrialPreference(identifiers, shouldOfferMonthlyFreeTrial: shouldOfferMonthlyFreeTrial)
+            }
     }
 
-    func identifiers(for region: SubscriptionRegion) -> [String] {
-        identifiersByRegion[region] ?? []
+    func identifiers(for region: SubscriptionRegion, shouldOfferMonthlyFreeTrial: Bool) -> [String] {
+        applyingMonthlyFreeTrialPreference(identifiersByRegion[region] ?? [], shouldOfferMonthlyFreeTrial: shouldOfferMonthlyFreeTrial)
+    }
+
+    private func applyingMonthlyFreeTrialPreference(
+        _ identifiers: [String],
+        shouldOfferMonthlyFreeTrial: Bool
+    ) -> [String] {
+        identifiers.filter { identifier in
+            guard identifier.isMonthlySubscriptionIdentifier else {
+                return true
+            }
+
+            if shouldOfferMonthlyFreeTrial {
+                return identifier.includesFreeTrial
+            } else {
+                return !identifier.includesFreeTrial
+            }
+        }
+    }
+}
+
+private extension String {
+    var isMonthlySubscriptionIdentifier: Bool {
+        let components = split(separator: ".")
+        return components.contains("monthly") || components.contains("1month")
+    }
+
+    var includesFreeTrial: Bool {
+        split(separator: ".").contains { $0 == StoreSubscriptionConstants.freeTrialIdentifer }
     }
 }
 

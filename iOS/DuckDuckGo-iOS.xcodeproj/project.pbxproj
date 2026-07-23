@@ -1862,6 +1862,7 @@
 		BBA0000000000000000D0004 /* UnifiedInputStateStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBA0000000000000000D0003 /* UnifiedInputStateStoreTests.swift */; };
 		BBA0000000000000000E0002 /* Logger+UnifiedInputState.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBA0000000000000000E0001 /* Logger+UnifiedInputState.swift */; };
 		BBA0000000000000000F0002 /* UnifiedInputTabState.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBA0000000000000000F0001 /* UnifiedInputTabState.swift */; };
+		BBA8EA4E30120A4600FE41CD /* IOSMonthlyFreeTrialDecider.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBA8EA4D30120A4600FE41CD /* IOSMonthlyFreeTrialDecider.swift */; };
 		BBAFF02D2F6A93F900029537 /* SubscriptionPromoPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBAFF02B2F6A93F900029537 /* SubscriptionPromoPresenter.swift */; };
 		BBAFF02E2F6A93F900029537 /* SubscriptionPromoCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBAFF0292F6A93F900029537 /* SubscriptionPromoCoordinator.swift */; };
 		BBAFF02F2F6A93F900029537 /* SubscriptionPromoLaunchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBAFF02A2F6A93F900029537 /* SubscriptionPromoLaunchView.swift */; };
@@ -4582,6 +4583,7 @@
 		BBA0000000000000000D0003 /* UnifiedInputStateStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedInputStateStoreTests.swift; sourceTree = "<group>"; };
 		BBA0000000000000000E0001 /* Logger+UnifiedInputState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Logger+UnifiedInputState.swift"; sourceTree = "<group>"; };
 		BBA0000000000000000F0001 /* UnifiedInputTabState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedInputTabState.swift; sourceTree = "<group>"; };
+		BBA8EA4D30120A4600FE41CD /* IOSMonthlyFreeTrialDecider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IOSMonthlyFreeTrialDecider.swift; sourceTree = "<group>"; };
 		BBAFF0292F6A93F900029537 /* SubscriptionPromoCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionPromoCoordinator.swift; sourceTree = "<group>"; };
 		BBAFF02A2F6A93F900029537 /* SubscriptionPromoLaunchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionPromoLaunchView.swift; sourceTree = "<group>"; };
 		BBAFF02B2F6A93F900029537 /* SubscriptionPromoPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionPromoPresenter.swift; sourceTree = "<group>"; };
@@ -10539,6 +10541,7 @@
 		D664C7922B289AA000CBFA76 /* Subscription */ = {
 			isa = PBXGroup;
 			children = (
+				BBA8EA4D30120A4600FE41CD /* IOSMonthlyFreeTrialDecider.swift */,
 				3666D84A30004E3E00B63F99 /* Onboarding */,
 				BB3F734C2F321F4000461429 /* FreeTrialPixelHandler.swift */,
 				56D60AA42EE33EA600652ABB /* SubscriptionUserScriptFeatureFlagAdapter.swift */,
@@ -13779,6 +13782,7 @@
 				310C4B47281B60E300BA79A9 /* AutofillLoginDetailsViewModel.swift in Sources */,
 				5BF65FD42F58C01F00BCC9F4 /* SettingsAutoplayView.swift in Sources */,
 				C1F9D9122EEAE70400E35AD5 /* AIChatContextualSheetViewController.swift in Sources */,
+				BBA8EA4E30120A4600FE41CD /* IOSMonthlyFreeTrialDecider.swift in Sources */,
 				A06E1D600618608596891F29 /* AIChatRecentChatsPopupViewController.swift in Sources */,
 				B7A3E1F20A1B2C3D4E5F6A70 /* AIChatRecentChatsPopupViewModel.swift in Sources */,
 				C1F9D91D2EF6400000E35AD5 /* AIChatContextualInputViewController.swift in Sources */,

@@ -22,4 +22,4 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           npx --yes -p danger@13.0.4 -p typescript@6 -- \
-            danger ci --dangerfile duckduckgo/danger-settings/org/allPRs.ts@main
+            danger ci --dangerfile duckduckgo/danger-settings/org/allPRs.ts@jjackson/deprecate-legacy-pixel-system

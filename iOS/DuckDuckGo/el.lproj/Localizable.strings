@@ -103,9 +103,6 @@
 /* Cancel action - button shown in alert */
 "action.title.cancel" = "Ακύρωση";
 
-/* Open the native Duck.ai chat history sheet from the browser menu. */
-"action.title.chats" = "Συνομιλίες";
-
 /* Copy action */
 "action.title.copy" = "Αντιγραφή";
 
@@ -250,6 +247,24 @@
 /* Settings screen title for AI features */
 "ai-features.settings.title" = "Λειτουργίες τεχνητής νοημοσύνης";
 
+/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as a regular text conversation. */
+"aiChat.tabSwitcher.card.chip.chat" = "Συνομιλία";
+
+/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as the transcript of a finished voice conversation. Not translated; final copy will land in a follow-up PR. */
+"aiChat.tabSwitcher.card.chip.transcript" = "Μεταγραφή";
+
+/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as a live voice session. Not translated; final copy will land in a follow-up PR. */
+"aiChat.tabSwitcher.card.chip.voice" = "Φωνητική συνομιλία";
+
+/* Title shown on a Duck.ai tab grid card when the chat has no title yet. Not translated; final copy will land in a follow-up PR. */
+"aiChat.tabSwitcher.card.untitledChat" = "Νέα συνομιλία";
+
+/* Status label at the top of the Duck.ai tab grid card for a tab with a live voice session in progress. A leading microphone glyph is shown next to it in the UI. Not translated; final copy will land in a follow-up PR. */
+"aiChat.tabSwitcher.card.voice.listening" = "Ακρόαση…";
+
+/* VoiceOver label for the Duck.ai tab grid card of a tab with a live voice session — same as the visible status without the decorative emoji. Not translated; final copy will land in a follow-up PR. */
+"aiChat.tabSwitcher.card.voice.listening.accessibilityLabel" = "Ακρόαση…";
+
 /* List row label in the app menu on a Duck.ai tab — opens the recent Duck.ai chats sidebar */
 "aichat.appMenu.chats" = "Συνομιλίες";
 
@@ -282,9 +297,6 @@
 
 /* Error message displayed when the user has attached more images than are allowed in one message. Parameter is the backend-provided maximum number of images per message. */
 "aichat.attachment.image.turn.limit" = "Μπορείτε να επισυνάψετε μόνο %d εικόνες κάθε φορά.";
-
-/* Top-level attachment menu option to attach the current page content to an AI chat message */
-"aichat.attachment.option.ask.about.page" = "Ρώτα για τη σελίδα";
 
 /* Top-level attachment menu option to add a file to an AI chat message */
 "aichat.attachment.option.attach.file" = "Προσθήκη αρχείου";
@@ -325,42 +337,6 @@
 /* Title for the New Voice Chat row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newVoiceChat" = "Νέα φωνητική συνομιλία";
 
-/* Primary button on the empty Duck.ai chat-history screen; opens the Duck.ai web chat. */
-"aiChat.history.emptyState.openDuckAi" = "Άνοιξε το Duck.ai";
-
-/* Title shown when the user has no Duck.ai chat history yet. */
-"aiChat.history.emptyState.title" = "Δεν υπάρχουν πρόσφατες συνομιλίες";
-
-/* Message of the alert shown when Duck.ai chat history fails to load. */
-"aiChat.history.loadError.message" = "Κάτι πήγε στραβά κατά τη φόρτωση των συνομιλιών σου στο Duck.ai. Δοκίμασε ξανά αργότερα.";
-
-/* Title of the alert shown when Duck.ai chat history fails to load. */
-"aiChat.history.loadError.title" = "Δεν ήταν δυνατή η φόρτωση των συνομιλιών";
-
-/* Shown inside the Duck.ai chat history list when the user's search query returns no matching chats. */
-"aiChat.history.noSearchResults.title" = "Δεν βρέθηκαν αντιστοιχίες";
-
-/* Placeholder for the search bar at the top of the Duck.ai chat history list. */
-"aiChat.history.searchBar.placeholder" = "Αναζήτηση";
-
-/* Section header above the user's pinned chats in the Duck.ai chat history list. */
-"aiChat.history.section.pinned" = "Καρφιτσωμένες";
-
-/* Section header above the user's recent (unpinned) chats in the Duck.ai chat history list. */
-"aiChat.history.section.recent" = "Πρόσφατες";
-
-/* Accessibility label for the delete action revealed by swiping a Duck.ai chat row. */
-"aiChat.history.swipe.delete.a11y" = "Διαγραφή συνομιλίας";
-
-/* Accessibility label for the download action revealed by swiping a Duck.ai chat row. */
-"aiChat.history.swipe.download.a11y" = "Λήψη συνομιλίας";
-
-/* Accessibility label for the pin action revealed by leading-swiping a Duck.ai chat row in the Recent section. */
-"aiChat.history.swipe.pin.a11y" = "Καρφίτσωμα συνομιλίας";
-
-/* Accessibility label for the unpin action revealed by leading-swiping a Duck.ai chat row in the Pinned section. */
-"aiChat.history.swipe.unpin.a11y" = "Ξεκαρφίτσωμα συνομιλίας";
-
 /* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.extended.subtitle" = "Για εργασίες ανάλυσης";
 
@@ -399,24 +375,6 @@
 
 /* Headline of the sync promo card shown above the Duck.ai recent chats list. */
 "aiChat.syncPromo.title" = "Απόκτησε πρόσβαση στις συνομιλίες σου σε όλες τις συσκευές σου χρησιμοποιώντας το Sync & Backup.";
-
-/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as a regular text conversation. */
-"aiChat.tabSwitcher.card.chip.chat" = "Συνομιλία";
-
-/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as the transcript of a finished voice conversation. */
-"aiChat.tabSwitcher.card.chip.transcript" = "Μεταγραφή";
-
-/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as a live voice session. */
-"aiChat.tabSwitcher.card.chip.voice" = "Φωνητική συνομιλία";
-
-/* Title shown on a Duck.ai tab grid card when the chat has no title yet. */
-"aiChat.tabSwitcher.card.untitledChat" = "Νέα συνομιλία";
-
-/* Status label at the top of the Duck.ai tab grid card for a tab with a live voice session in progress. A leading microphone glyph is shown next to it in the UI. */
-"aiChat.tabSwitcher.card.voice.listening" = "Ακρόαση…";
-
-/* VoiceOver label for the Duck.ai tab grid card of a tab with a live voice session — same as the visible status without the decorative emoji. */
-"aiChat.tabSwitcher.card.voice.listening.accessibilityLabel" = "Ακρόαση…";
 
 /* Subtitle for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.subtitle" = "Ορισμός τόνου, μήκους και συμπεριφοράς";
@@ -582,6 +540,8 @@
 
 /* Description for unable to sync to server error */
 "alert.unable-to-sync-to-server-description" = "Δεν είναι δυνατή η σύνδεση με τον διακομιστή.";
+
+/* Description for unable to sync with another device error */
 
 /* Description for unable to turn sync off error */
 "alert.unable-to-turn-sync-off-description" = "Δεν είναι δυνατή η απενεργοποίηση της λειτουργίας Συγχρονισμός και δημιουργία αντιγράφων ασφαλείας.";
@@ -3001,9 +2961,6 @@
 /* Message label text for the status view when VPN is disconnected */
 "network.protection.status.header.message.on" = "Όλη η επισκεψιμότητα στο διαδίκτυο από τη συσκευή διασφαλίζεται\n μέσω του VPN.";
 
-/* Status view message shown while the VPN is on but Strict routing is off */
-"network.protection.status.header.message.strict.routing.off" = "Ορισμένη επισκεψιμότητα ενδέχεται να παρακάμπτει το VPN όσο η Αυστηρή δρομολόγηση είναι απενεργοποιημένη. Η Αυστηρή δρομολόγηση συνιστάται για δημόσια δίκτυα.";
-
 /* Header title label text for the status view when VPN is disconnected */
 "network.protection.status.header.title.off" = "Το DuckDuckGo VPN είναι απενεργοποιημένο";
 
@@ -3046,29 +3003,8 @@
 /* Label shown on the title of the settings section in NetworkProtection's status view. */
 "network.protection.status.view.settings.section.title" = "Διαχείριση";
 
-/* Label for the status pill shown while the VPN's Strict routing setting is off */
-"network.protection.status.view.strict.routing.pill.off" = "Αυστηρή δρομολόγηση: Απενεργοποιημένη";
-
-/* Label for the status pill shown while the VPN's Strict routing setting is on */
-"network.protection.status.view.strict.routing.pill.on" = "Αυστηρή δρομολόγηση: Ενεργοποιημένη";
-
-/* Tooltip shown for the status pill while the VPN's Strict routing setting is off */
-"network.protection.status.view.strict.routing.pill.tooltip.off" = "Η Αυστηρή δρομολόγηση συνιστάται για δημόσια δίκτυα.";
-
-/* Tooltip shown for the status pill while the VPN's Strict routing setting is on */
-"network.protection.status.view.strict.routing.pill.tooltip.on" = "Ορισμένες εφαρμογές ενδέχεται να μη λειτουργούν όσο είναι ενεργοποιημένη η Αυστηρή δρομολόγηση.";
-
 /* Title label text for the status view when netP is disconnected */
 "network.protection.status.view.title" = "VPN";
-
-/* Title of the Troubleshooting section in the VPN status screen. */
-"network.protection.status.view.troubleshooting.section.title" = "Αντιμετώπιση προβλημάτων";
-
-/* The body of the notification reminding the user to turn the VPN Strict routing setting back on */
-"network.protection.strict.routing.reminder.notification.body" = "Ορισμένη επισκεψιμότητα ενδέχεται να παρακάμπτει το VPN όσο είναι απενεργοποιημένο. Η Αυστηρή δρομολόγηση συνιστάται για δημόσια δίκτυα.";
-
-/* The title of the notification reminding the user to turn the VPN Strict routing setting back on */
-"network.protection.strict.routing.reminder.notification.title" = "Η Αυστηρή δρομολόγηση είναι απενεργοποιημένη";
 
 /* The body of the notification shown when VPN reconnects successfully */
 "network.protection.success.notification.body" = "Το DuckDuckGo VPN είναι ενεργοποιημένο. Η τοποθεσία και η διαδικτυακή δραστηριότητά σας προστατεύονται.";
@@ -3796,9 +3732,6 @@
 /* Button to delete all tabs and data in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.all.button" = "Διαγραφή όλων";
 
-/* Button to delete all chats in scoped fire confirmation dialog */
-"scoped.fire.confirmation.delete.chats.button" = "Διαγραφή συνομιλιών";
-
 /* Button to delete a single tab and its site data in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.tab.button" = "Διαγραφή καρτέλας";
 
@@ -3977,7 +3910,7 @@
 "settings.aifeatures.chat.suggestions.title" = "Προτάσεις συνομιλίας";
 
 /* Button that turns off all AI features */
-"settings.aifeatures.disable.all" = "Χρησιμοποιήστε το DuckDuckGo χωρίς τεχνητή νοημοσύνη";
+"settings.aifeatures.disable.all" = "Χρήση DuckDuckGo χωρίς τεχνητή νοημοσύνη";
 
 /* Footer text below the disable all AI features button */
 "settings.aifeatures.disable.all.footer" = "Απενεργοποιεί το Duck.ai, αποκρύπτει από την αναζήτηση απαντήσεις που υποβοηθούνται από τεχνητή νοημοσύνη και φιλτράρει γνωστούς ιστότοπους με απατηλό περιεχόμενο τεχνητής νοημοσύνης στα αποτελέσματα αναζήτησης εικόνων.";
@@ -4117,26 +4050,26 @@
 /* The name of the settings section containing options to set up the app */
 "settings.complete.setup" = "Ολοκληρώστε την εγκατάστασή σας";
 
-/* Explanation below the auto-manage cookie pop-ups toggle in settings */
-"settings.cookie.auto-manage.explanation" = "Θα προσπαθήσουμε να επιλέξουμε μόνο τις πιο ιδιωτικές διαθέσιμες επιλογές cookie για εσάς και έπειτα να κλείσουμε αυτά τα αναδυόμενα παράθυρα.";
-
-/* Title for the auto-manage cookie pop-ups toggle in settings */
-"settings.cookie.auto-manage.title" = "Αυτόματη διαχείριση αναδυόμενων παραθύρων cookie";
-
 /* The name of Settings category in Privacy Features related to configuration of the privacy feature related to cookie pop-ups */
 "settings.cookie.pop-up-protection.protection" = "Προστασία αναδυόμενων παραθύρων για cookies";
 
 /* Explanation in Settings how the cookie pop up protection feature works */
 "settings.cookie.pop.up.protection.explanation" = "Το DuckDuckGo μπορεί να διαχειρίζεται αυτόματα τις προτιμήσεις για τα cookie ώστε να μεγιστοποιείται το απόρρητο, να ελαχιστοποιούνται τα cookie και να κλείνουν αυτά τα αναδυόμενα παράθυρα.\n[Μάθετε περισσότερα](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
 
-/* Settings screen cell text for Cookie popups */
-"settings.cookie.popups" = "Διαχείριση αναδυόμενων παραθύρων cookies";
+/* Explanation below the auto-manage cookie pop-ups toggle in settings */
+"settings.cookie.auto-manage.explanation" = "Θα προσπαθήσουμε να επιλέξουμε μόνο τις πιο ιδιωτικές διαθέσιμες επιλογές cookie για εσάς και έπειτα να κλείσουμε αυτά τα αναδυόμενα παράθυρα.";
+
+/* Title for the auto-manage cookie pop-ups toggle in settings */
+"settings.cookie.auto-manage.title" = "Αυτόματη διαχείριση αναδυόμενων παραθύρων cookie";
 
 /* Explanation below the pop-ups without opt-outs toggle in settings */
 "settings.cookie.popups-without-opt-outs.explanation" = "Επίσης, επιτρέψτε στο DuckDuckGo να σας γλιτώσει ένα κλικ αποδεχόμενο cookie εκ μέρους σας, ώστε να κλείνουν τα αναδυόμενα παράθυρα που δεν σας επιτρέπουν να εξαιρεθείτε.";
 
 /* Title for the pop-ups without opt-outs toggle in settings */
 "settings.cookie.popups-without-opt-outs.title" = "Αναδυόμενα παράθυρα χωρίς επιλογή εξαίρεσης";
+
+/* Settings screen cell text for Cookie popups */
+"settings.cookie.popups" = "Διαχείριση αναδυόμενων παραθύρων cookies";
 
 /* Label for customizable toolbar button that deletes tabs and data */
 "settings.customizable.button.delete.tabs.and.data" = "Διαγραφή καρτελών και δεδομένων";
@@ -5452,3 +5385,75 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Τι θέλετε να εισαγάγετε;";
 
+
+/* No comment provided by engineer. */
+"No matches for \"%@\"" = "Δεν υπάρχουν αντιστοιχίες για το «%@»";
+
+
+/* Open the native Duck.ai chat history sheet from the browser menu. */
+"action.title.chats" = "Συνομιλίες";
+
+/* Title shown when the user has no Duck.ai chat history yet. */
+"aiChat.history.emptyState.title" = "Δεν υπάρχουν πρόσφατες συνομιλίες";
+
+/* Primary button on the empty Duck.ai chat-history screen; opens the Duck.ai web chat. */
+"aiChat.history.emptyState.openDuckAi" = "Άνοιξε το Duck.ai";
+
+/* Placeholder for the search bar at the top of the Duck.ai chat history list. */
+"aiChat.history.searchBar.placeholder" = "Αναζήτηση";
+
+/* Section header above the user's pinned chats in the Duck.ai chat history list. */
+"aiChat.history.section.pinned" = "Καρφιτσωμένες";
+
+/* Section header above the user's recent (unpinned) chats in the Duck.ai chat history list. */
+"aiChat.history.section.recent" = "Πρόσφατες";
+
+/* Shown inside the Duck.ai chat history list when the user's search query returns no matching chats. */
+"aiChat.history.noSearchResults.title" = "Δεν βρέθηκαν αντιστοιχίες";
+
+/* Title of the alert shown when Duck.ai chat history fails to load. */
+"aiChat.history.loadError.title" = "Δεν ήταν δυνατή η φόρτωση των συνομιλιών";
+
+/* Message of the alert shown when Duck.ai chat history fails to load. */
+"aiChat.history.loadError.message" = "Κάτι πήγε στραβά κατά τη φόρτωση των συνομιλιών σου στο Duck.ai. Δοκίμασε ξανά αργότερα.";
+
+/* Accessibility label for the delete action revealed by swiping a Duck.ai chat row. */
+"aiChat.history.swipe.delete.a11y" = "Διαγραφή συνομιλίας";
+
+/* Accessibility label for the download action revealed by swiping a Duck.ai chat row. */
+"aiChat.history.swipe.download.a11y" = "Λήψη συνομιλίας";
+
+/* Accessibility label for the pin action revealed by leading-swiping a Duck.ai chat row in the Recent section. */
+"aiChat.history.swipe.pin.a11y" = "Καρφίτσωμα συνομιλίας";
+
+/* Accessibility label for the unpin action revealed by leading-swiping a Duck.ai chat row in the Pinned section. */
+"aiChat.history.swipe.unpin.a11y" = "Ξεκαρφίτσωμα συνομιλίας";
+
+/* Button to delete all chats in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.chats.button" = "Διαγραφή συνομιλιών";
+
+/* Top-level attachment menu option to attach the current page content to an AI chat message */
+"aichat.attachment.option.ask.about.page" = "Ρώτα για τη σελίδα";
+
+/* Status view message shown while the VPN is on but Strict routing is off */
+"network.protection.status.header.message.strict.routing.off" = "Ορισμένη επισκεψιμότητα ενδέχεται να παρακάμπτει το VPN όσο η Αυστηρή δρομολόγηση είναι απενεργοποιημένη. Η Αυστηρή δρομολόγηση συνιστάται για δημόσια δίκτυα.";
+
+/* Label for the status pill shown while the VPN's Strict routing setting is off */
+"network.protection.status.view.strict.routing.pill.off" = "Αυστηρή δρομολόγηση: Απενεργοποιημένη";
+
+/* Label for the status pill shown while the VPN's Strict routing setting is on */
+"network.protection.status.view.strict.routing.pill.on" = "Αυστηρή δρομολόγηση: Ενεργοποιημένη";
+
+/* Tooltip shown for the status pill while the VPN's Strict routing setting is off */
+"network.protection.status.view.strict.routing.pill.tooltip.off" = "Η Αυστηρή δρομολόγηση συνιστάται για δημόσια δίκτυα.";
+
+/* Tooltip shown for the status pill while the VPN's Strict routing setting is on */
+"network.protection.status.view.strict.routing.pill.tooltip.on" = "Ορισμένες εφαρμογές ενδέχεται να μη λειτουργούν όσο είναι ενεργοποιημένη η Αυστηρή δρομολόγηση.";
+
+/* Title of the Troubleshooting section in the VPN status screen. */
+"network.protection.status.view.troubleshooting.section.title" = "Αντιμετώπιση προβλημάτων";
+
+/* The body of the notification reminding the user to turn the VPN Strict routing setting back on */
+"network.protection.strict.routing.reminder.notification.body" = "Ορισμένη επισκεψιμότητα ενδέχεται να παρακάμπτει το VPN όσο είναι απενεργοποιημένο. Η Αυστηρή δρομολόγηση συνιστάται για δημόσια δίκτυα.";
+/* The title of the notification reminding the user to turn the VPN Strict routing setting back on */
+"network.protection.strict.routing.reminder.notification.title" = "Η Αυστηρή δρομολόγηση είναι απενεργοποιημένη";

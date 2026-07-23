@@ -103,9 +103,6 @@
 /* Cancel action - button shown in alert */
 "action.title.cancel" = "İptal";
 
-/* Open the native Duck.ai chat history sheet from the browser menu. */
-"action.title.chats" = "Sohbetler";
-
 /* Copy action */
 "action.title.copy" = "Kopyala";
 
@@ -250,6 +247,24 @@
 /* Settings screen title for AI features */
 "ai-features.settings.title" = "AI Özellikleri";
 
+/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as a regular text conversation. */
+"aiChat.tabSwitcher.card.chip.chat" = "Sohbet";
+
+/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as the transcript of a finished voice conversation. Not translated; final copy will land in a follow-up PR. */
+"aiChat.tabSwitcher.card.chip.transcript" = "Deşifre";
+
+/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as a live voice session. Not translated; final copy will land in a follow-up PR. */
+"aiChat.tabSwitcher.card.chip.voice" = "Sesli Sohbet";
+
+/* Title shown on a Duck.ai tab grid card when the chat has no title yet. Not translated; final copy will land in a follow-up PR. */
+"aiChat.tabSwitcher.card.untitledChat" = "Yeni Sohbet";
+
+/* Status label at the top of the Duck.ai tab grid card for a tab with a live voice session in progress. A leading microphone glyph is shown next to it in the UI. Not translated; final copy will land in a follow-up PR. */
+"aiChat.tabSwitcher.card.voice.listening" = "Dinliyor…";
+
+/* VoiceOver label for the Duck.ai tab grid card of a tab with a live voice session — same as the visible status without the decorative emoji. Not translated; final copy will land in a follow-up PR. */
+"aiChat.tabSwitcher.card.voice.listening.accessibilityLabel" = "Dinliyor…";
+
 /* List row label in the app menu on a Duck.ai tab — opens the recent Duck.ai chats sidebar */
 "aichat.appMenu.chats" = "Sohbetler";
 
@@ -282,9 +297,6 @@
 
 /* Error message displayed when the user has attached more images than are allowed in one message. Parameter is the backend-provided maximum number of images per message. */
 "aichat.attachment.image.turn.limit" = "Bir defada yalnızca %d görsel ekleyebilirsiniz.";
-
-/* Top-level attachment menu option to attach the current page content to an AI chat message */
-"aichat.attachment.option.ask.about.page" = "Sayfa Hakkında Soru Sor";
 
 /* Top-level attachment menu option to add a file to an AI chat message */
 "aichat.attachment.option.attach.file" = "Dosya Ekle";
@@ -325,42 +337,6 @@
 /* Title for the New Voice Chat row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newVoiceChat" = "Yeni Sesli Sohbet";
 
-/* Primary button on the empty Duck.ai chat-history screen; opens the Duck.ai web chat. */
-"aiChat.history.emptyState.openDuckAi" = "Duck.ai'ı aç";
-
-/* Title shown when the user has no Duck.ai chat history yet. */
-"aiChat.history.emptyState.title" = "Yakın zamanda sohbet yok";
-
-/* Message of the alert shown when Duck.ai chat history fails to load. */
-"aiChat.history.loadError.message" = "Duck.ai sohbetleriniz yüklenirken bir sorun oluştu. Lütfen daha sonra tekrar deneyin.";
-
-/* Title of the alert shown when Duck.ai chat history fails to load. */
-"aiChat.history.loadError.title" = "Sohbetler yüklenemedi";
-
-/* Shown inside the Duck.ai chat history list when the user's search query returns no matching chats. */
-"aiChat.history.noSearchResults.title" = "Eşleşme bulunamadı";
-
-/* Placeholder for the search bar at the top of the Duck.ai chat history list. */
-"aiChat.history.searchBar.placeholder" = "Ara";
-
-/* Section header above the user's pinned chats in the Duck.ai chat history list. */
-"aiChat.history.section.pinned" = "Sabitlenmiş";
-
-/* Section header above the user's recent (unpinned) chats in the Duck.ai chat history list. */
-"aiChat.history.section.recent" = "Son";
-
-/* Accessibility label for the delete action revealed by swiping a Duck.ai chat row. */
-"aiChat.history.swipe.delete.a11y" = "Sohbeti sil";
-
-/* Accessibility label for the download action revealed by swiping a Duck.ai chat row. */
-"aiChat.history.swipe.download.a11y" = "Sohbeti indir";
-
-/* Accessibility label for the pin action revealed by leading-swiping a Duck.ai chat row in the Recent section. */
-"aiChat.history.swipe.pin.a11y" = "Sohbeti sabitle";
-
-/* Accessibility label for the unpin action revealed by leading-swiping a Duck.ai chat row in the Pinned section. */
-"aiChat.history.swipe.unpin.a11y" = "Sohbeti sabitlemeyi kaldır";
-
 /* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.extended.subtitle" = "Analitik görevler için";
 
@@ -399,24 +375,6 @@
 
 /* Headline of the sync promo card shown above the Duck.ai recent chats list. */
 "aiChat.syncPromo.title" = "Sync & Backup özelliğini kullanarak sohbetlerinize tüm cihazlarınızdan erişin.";
-
-/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as a regular text conversation. */
-"aiChat.tabSwitcher.card.chip.chat" = "Sohbet";
-
-/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as the transcript of a finished voice conversation. */
-"aiChat.tabSwitcher.card.chip.transcript" = "Deşifre";
-
-/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as a live voice session. */
-"aiChat.tabSwitcher.card.chip.voice" = "Sesli Sohbet";
-
-/* Title shown on a Duck.ai tab grid card when the chat has no title yet. */
-"aiChat.tabSwitcher.card.untitledChat" = "Yeni Sohbet";
-
-/* Status label at the top of the Duck.ai tab grid card for a tab with a live voice session in progress. A leading microphone glyph is shown next to it in the UI. */
-"aiChat.tabSwitcher.card.voice.listening" = "Dinliyor…";
-
-/* VoiceOver label for the Duck.ai tab grid card of a tab with a live voice session — same as the visible status without the decorative emoji. */
-"aiChat.tabSwitcher.card.voice.listening.accessibilityLabel" = "Dinliyor…";
 
 /* Subtitle for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.subtitle" = "Tonu, uzunluğu ve davranış biçimini belirleyin";
@@ -582,6 +540,8 @@
 
 /* Description for unable to sync to server error */
 "alert.unable-to-sync-to-server-description" = "Sunucuya bağlanılamıyor.";
+
+/* Description for unable to sync with another device error */
 
 /* Description for unable to turn sync off error */
 "alert.unable-to-turn-sync-off-description" = "Senkronizasyon ve Yedekleme kapatılamıyor.";
@@ -3001,9 +2961,6 @@
 /* Message label text for the status view when VPN is disconnected */
 "network.protection.status.header.message.on" = "Tüm cihaz internet trafiği VPN ile güvence altında.";
 
-/* Status view message shown while the VPN is on but Strict routing is off */
-"network.protection.status.header.message.strict.routing.off" = "Katı Yönlendirme kapalıyken bazı trafikler VPN'i atlayabilir. Halka açık ağlar için Katı Yönlendirme önerilir.";
-
 /* Header title label text for the status view when VPN is disconnected */
 "network.protection.status.header.title.off" = "DuckDuckGo VPN Kapalı";
 
@@ -3046,29 +3003,8 @@
 /* Label shown on the title of the settings section in NetworkProtection's status view. */
 "network.protection.status.view.settings.section.title" = "Yönet";
 
-/* Label for the status pill shown while the VPN's Strict routing setting is off */
-"network.protection.status.view.strict.routing.pill.off" = "Katı yönlendirme: Kapalı";
-
-/* Label for the status pill shown while the VPN's Strict routing setting is on */
-"network.protection.status.view.strict.routing.pill.on" = "Katı yönlendirme: Açık";
-
-/* Tooltip shown for the status pill while the VPN's Strict routing setting is off */
-"network.protection.status.view.strict.routing.pill.tooltip.off" = "Halka açık ağlar için Katı Yönlendirme önerilir.";
-
-/* Tooltip shown for the status pill while the VPN's Strict routing setting is on */
-"network.protection.status.view.strict.routing.pill.tooltip.on" = "Katı Yönlendirme açıkken bazı uygulamalar çalışmayabilir.";
-
 /* Title label text for the status view when netP is disconnected */
 "network.protection.status.view.title" = "VPN";
-
-/* Title of the Troubleshooting section in the VPN status screen. */
-"network.protection.status.view.troubleshooting.section.title" = "Sorun Giderme";
-
-/* The body of the notification reminding the user to turn the VPN Strict routing setting back on */
-"network.protection.strict.routing.reminder.notification.body" = "Kapalıyken bazı trafikler VPN'i atlayabilir. Halka açık ağlar için Katı Yönlendirme önerilir.";
-
-/* The title of the notification reminding the user to turn the VPN Strict routing setting back on */
-"network.protection.strict.routing.reminder.notification.title" = "Katı Yönlendirme KAPALI";
 
 /* The body of the notification shown when VPN reconnects successfully */
 "network.protection.success.notification.body" = "DuckDuckGo VPN Açık. Konumunuz ve çevrimiçi etkinliğiniz korunuyor.";
@@ -3796,9 +3732,6 @@
 /* Button to delete all tabs and data in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.all.button" = "Tümünü Sil";
 
-/* Button to delete all chats in scoped fire confirmation dialog */
-"scoped.fire.confirmation.delete.chats.button" = "Sohbetleri sil";
-
 /* Button to delete a single tab and its site data in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.tab.button" = "Sekmeyi Sil";
 
@@ -3956,10 +3889,10 @@
 "settings.aifeatures.assist.never" = "Hiçbir zaman";
 
 /* Search Assist frequency option: often show AI-assisted answers */
-"settings.aifeatures.assist.often" = "Sıklıkla";
+"settings.aifeatures.assist.often" = "Sık sık";
 
 /* Search Assist frequency option: show AI-assisted answers on demand */
-"settings.aifeatures.assist.ondemand" = "Talep Üzerine";
+"settings.aifeatures.assist.ondemand" = "İstek üzerine";
 
 /* Search Assist frequency option: sometimes show AI-assisted answers */
 "settings.aifeatures.assist.sometimes" = "Bazen";
@@ -3977,7 +3910,7 @@
 "settings.aifeatures.chat.suggestions.title" = "Sohbet Önerileri";
 
 /* Button that turns off all AI features */
-"settings.aifeatures.disable.all" = "DuckDuckGo'yu AI Olmadan Kullanın";
+"settings.aifeatures.disable.all" = "DuckDuckGo'yu Yapay Zeka Olmadan Kullan";
 
 /* Footer text below the disable all AI features button */
 "settings.aifeatures.disable.all.footer" = "Duck.ai'yi devre dışı bırakır, aramalarda yapay zeka destekli yanıtları gizler ve görsel arama sonuçlarında bilinen yapay zeka spam sitelerini filtreler.";
@@ -4117,26 +4050,26 @@
 /* The name of the settings section containing options to set up the app */
 "settings.complete.setup" = "Kurulumu Tamamlayın";
 
-/* Explanation below the auto-manage cookie pop-ups toggle in settings */
-"settings.cookie.auto-manage.explanation" = "Sizin için mümkün olan en gizli çerez seçeneklerini belirlemeyi hedefleyecek ve ardından bu açılır pencereleri kapatacağız.";
-
-/* Title for the auto-manage cookie pop-ups toggle in settings */
-"settings.cookie.auto-manage.title" = "Çerez Açılır Pencerelerini Otomatik Yönet";
-
 /* The name of Settings category in Privacy Features related to configuration of the privacy feature related to cookie pop-ups */
 "settings.cookie.pop-up-protection.protection" = "Çerez Açılır Pencere Engelleyici";
 
 /* Explanation in Settings how the cookie pop up protection feature works */
 "settings.cookie.pop.up.protection.explanation" = "DuckDuckGo, gizliliği en üst düzeye çıkarmak, çerezleri en aza indirmek ve bu açılır pencereleri kapatmak için çerez tercihlerinizi otomatik olarak yönetebilir.\n[Daha Fazla Bilgi](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
 
-/* Settings screen cell text for Cookie popups */
-"settings.cookie.popups" = "Çerez Açılır Pencerelerini Yönetin";
+/* Explanation below the auto-manage cookie pop-ups toggle in settings */
+"settings.cookie.auto-manage.explanation" = "Sizin için mümkün olan en gizli çerez seçeneklerini belirlemeyi hedefleyecek ve ardından bu açılır pencereleri kapatacağız.";
+
+/* Title for the auto-manage cookie pop-ups toggle in settings */
+"settings.cookie.auto-manage.title" = "Çerez Açılır Pencerelerini Otomatik Yönet";
 
 /* Explanation below the pop-ups without opt-outs toggle in settings */
 "settings.cookie.popups-without-opt-outs.explanation" = "Ayrıca DuckDuckGo'nun, devre dışı bırakma seçeneği sunmayan açılır pencereleri kapatmak için sizin adınıza çerezleri kabul etmesine izin verin. Böylece bir tıklamadan tasarruf edebilirsiniz.";
 
 /* Title for the pop-ups without opt-outs toggle in settings */
 "settings.cookie.popups-without-opt-outs.title" = "Devre Dışı Bırakma Seçeneği Olmayan Açılır Pencereler";
+
+/* Settings screen cell text for Cookie popups */
+"settings.cookie.popups" = "Çerez Açılır Pencerelerini Yönetin";
 
 /* Label for customizable toolbar button that deletes tabs and data */
 "settings.customizable.button.delete.tabs.and.data" = "Sekmeleri ve Verileri Sil";
@@ -5452,3 +5385,75 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Neyi içe aktarmak istiyorsunuz?";
 
+
+/* No comment provided by engineer. */
+"No matches for \"%@\"" = "\"%@\" için eşleşme bulunamadı";
+
+
+/* Open the native Duck.ai chat history sheet from the browser menu. */
+"action.title.chats" = "Sohbetler";
+
+/* Title shown when the user has no Duck.ai chat history yet. */
+"aiChat.history.emptyState.title" = "Yakın zamanda sohbet yok";
+
+/* Primary button on the empty Duck.ai chat-history screen; opens the Duck.ai web chat. */
+"aiChat.history.emptyState.openDuckAi" = "Duck.ai'ı aç";
+
+/* Placeholder for the search bar at the top of the Duck.ai chat history list. */
+"aiChat.history.searchBar.placeholder" = "Ara";
+
+/* Section header above the user's pinned chats in the Duck.ai chat history list. */
+"aiChat.history.section.pinned" = "Sabitlenmiş";
+
+/* Section header above the user's recent (unpinned) chats in the Duck.ai chat history list. */
+"aiChat.history.section.recent" = "Son";
+
+/* Shown inside the Duck.ai chat history list when the user's search query returns no matching chats. */
+"aiChat.history.noSearchResults.title" = "Eşleşme bulunamadı";
+
+/* Title of the alert shown when Duck.ai chat history fails to load. */
+"aiChat.history.loadError.title" = "Sohbetler yüklenemedi";
+
+/* Message of the alert shown when Duck.ai chat history fails to load. */
+"aiChat.history.loadError.message" = "Duck.ai sohbetleriniz yüklenirken bir sorun oluştu. Lütfen daha sonra tekrar deneyin.";
+
+/* Accessibility label for the delete action revealed by swiping a Duck.ai chat row. */
+"aiChat.history.swipe.delete.a11y" = "Sohbeti sil";
+
+/* Accessibility label for the download action revealed by swiping a Duck.ai chat row. */
+"aiChat.history.swipe.download.a11y" = "Sohbeti indir";
+
+/* Accessibility label for the pin action revealed by leading-swiping a Duck.ai chat row in the Recent section. */
+"aiChat.history.swipe.pin.a11y" = "Sohbeti sabitle";
+
+/* Accessibility label for the unpin action revealed by leading-swiping a Duck.ai chat row in the Pinned section. */
+"aiChat.history.swipe.unpin.a11y" = "Sohbeti sabitlemeyi kaldır";
+
+/* Button to delete all chats in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.chats.button" = "Sohbetleri sil";
+
+/* Top-level attachment menu option to attach the current page content to an AI chat message */
+"aichat.attachment.option.ask.about.page" = "Sayfa Hakkında Soru Sor";
+
+/* Status view message shown while the VPN is on but Strict routing is off */
+"network.protection.status.header.message.strict.routing.off" = "Katı Yönlendirme kapalıyken bazı trafikler VPN'i atlayabilir. Halka açık ağlar için Katı Yönlendirme önerilir.";
+
+/* Label for the status pill shown while the VPN's Strict routing setting is off */
+"network.protection.status.view.strict.routing.pill.off" = "Katı yönlendirme: Kapalı";
+
+/* Label for the status pill shown while the VPN's Strict routing setting is on */
+"network.protection.status.view.strict.routing.pill.on" = "Katı yönlendirme: Açık";
+
+/* Tooltip shown for the status pill while the VPN's Strict routing setting is off */
+"network.protection.status.view.strict.routing.pill.tooltip.off" = "Halka açık ağlar için Katı Yönlendirme önerilir.";
+
+/* Tooltip shown for the status pill while the VPN's Strict routing setting is on */
+"network.protection.status.view.strict.routing.pill.tooltip.on" = "Katı Yönlendirme açıkken bazı uygulamalar çalışmayabilir.";
+
+/* Title of the Troubleshooting section in the VPN status screen. */
+"network.protection.status.view.troubleshooting.section.title" = "Sorun Giderme";
+
+/* The body of the notification reminding the user to turn the VPN Strict routing setting back on */
+"network.protection.strict.routing.reminder.notification.body" = "Kapalıyken bazı trafikler VPN'i atlayabilir. Halka açık ağlar için Katı Yönlendirme önerilir.";
+/* The title of the notification reminding the user to turn the VPN Strict routing setting back on */
+"network.protection.strict.routing.reminder.notification.title" = "Katı Yönlendirme KAPALI";

@@ -103,9 +103,6 @@
 /* Cancel action - button shown in alert */
 "action.title.cancel" = "Anuluj";
 
-/* Open the native Duck.ai chat history sheet from the browser menu. */
-"action.title.chats" = "Czaty";
-
 /* Copy action */
 "action.title.copy" = "Kopiuj";
 
@@ -250,6 +247,24 @@
 /* Settings screen title for AI features */
 "ai-features.settings.title" = "Funkcje AI";
 
+/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as a regular text conversation. */
+"aiChat.tabSwitcher.card.chip.chat" = "Czat";
+
+/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as the transcript of a finished voice conversation. Not translated; final copy will land in a follow-up PR. */
+"aiChat.tabSwitcher.card.chip.transcript" = "Transkrypcja";
+
+/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as a live voice session. Not translated; final copy will land in a follow-up PR. */
+"aiChat.tabSwitcher.card.chip.voice" = "Czat głosowy";
+
+/* Title shown on a Duck.ai tab grid card when the chat has no title yet. Not translated; final copy will land in a follow-up PR. */
+"aiChat.tabSwitcher.card.untitledChat" = "Nowy czat";
+
+/* Status label at the top of the Duck.ai tab grid card for a tab with a live voice session in progress. A leading microphone glyph is shown next to it in the UI. Not translated; final copy will land in a follow-up PR. */
+"aiChat.tabSwitcher.card.voice.listening" = "Słuchanie…";
+
+/* VoiceOver label for the Duck.ai tab grid card of a tab with a live voice session — same as the visible status without the decorative emoji. Not translated; final copy will land in a follow-up PR. */
+"aiChat.tabSwitcher.card.voice.listening.accessibilityLabel" = "Słuchanie…";
+
 /* List row label in the app menu on a Duck.ai tab — opens the recent Duck.ai chats sidebar */
 "aichat.appMenu.chats" = "Czaty";
 
@@ -282,9 +297,6 @@
 
 /* Error message displayed when the user has attached more images than are allowed in one message. Parameter is the backend-provided maximum number of images per message. */
 "aichat.attachment.image.turn.limit" = "Możesz dołączyć maksymalnie %d obrazów na raz.";
-
-/* Top-level attachment menu option to attach the current page content to an AI chat message */
-"aichat.attachment.option.ask.about.page" = "Zapytaj o stronę";
 
 /* Top-level attachment menu option to add a file to an AI chat message */
 "aichat.attachment.option.attach.file" = "Dodaj plik";
@@ -325,42 +337,6 @@
 /* Title for the New Voice Chat row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newVoiceChat" = "Nowy czat głosowy";
 
-/* Primary button on the empty Duck.ai chat-history screen; opens the Duck.ai web chat. */
-"aiChat.history.emptyState.openDuckAi" = "Otwórz Duck.ai";
-
-/* Title shown when the user has no Duck.ai chat history yet. */
-"aiChat.history.emptyState.title" = "Brak ostatnich czatów";
-
-/* Message of the alert shown when Duck.ai chat history fails to load. */
-"aiChat.history.loadError.message" = "Nie udało się wczytać czatów Duck.ai. Spróbuj ponownie później.";
-
-/* Title of the alert shown when Duck.ai chat history fails to load. */
-"aiChat.history.loadError.title" = "Nie udało się załadować czatów";
-
-/* Shown inside the Duck.ai chat history list when the user's search query returns no matching chats. */
-"aiChat.history.noSearchResults.title" = "Brak pasujących wyników";
-
-/* Placeholder for the search bar at the top of the Duck.ai chat history list. */
-"aiChat.history.searchBar.placeholder" = "Szukaj";
-
-/* Section header above the user's pinned chats in the Duck.ai chat history list. */
-"aiChat.history.section.pinned" = "Przypięte";
-
-/* Section header above the user's recent (unpinned) chats in the Duck.ai chat history list. */
-"aiChat.history.section.recent" = "Ostatnie";
-
-/* Accessibility label for the delete action revealed by swiping a Duck.ai chat row. */
-"aiChat.history.swipe.delete.a11y" = "Usuń czat";
-
-/* Accessibility label for the download action revealed by swiping a Duck.ai chat row. */
-"aiChat.history.swipe.download.a11y" = "Pobierz czat";
-
-/* Accessibility label for the pin action revealed by leading-swiping a Duck.ai chat row in the Recent section. */
-"aiChat.history.swipe.pin.a11y" = "Przypnij czat";
-
-/* Accessibility label for the unpin action revealed by leading-swiping a Duck.ai chat row in the Pinned section. */
-"aiChat.history.swipe.unpin.a11y" = "Odepnij czat";
-
 /* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.extended.subtitle" = "Do zadań analitycznych";
 
@@ -399,24 +375,6 @@
 
 /* Headline of the sync promo card shown above the Duck.ai recent chats list. */
 "aiChat.syncPromo.title" = "Uzyskaj dostęp do czatów na wielu urządzeniach za pomocą funkcji Sync & Backup.";
-
-/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as a regular text conversation. */
-"aiChat.tabSwitcher.card.chip.chat" = "Czat";
-
-/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as the transcript of a finished voice conversation. */
-"aiChat.tabSwitcher.card.chip.transcript" = "Transkrypcja";
-
-/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as a live voice session. */
-"aiChat.tabSwitcher.card.chip.voice" = "Czat głosowy";
-
-/* Title shown on a Duck.ai tab grid card when the chat has no title yet. */
-"aiChat.tabSwitcher.card.untitledChat" = "Nowy czat";
-
-/* Status label at the top of the Duck.ai tab grid card for a tab with a live voice session in progress. A leading microphone glyph is shown next to it in the UI. */
-"aiChat.tabSwitcher.card.voice.listening" = "Słuchanie…";
-
-/* VoiceOver label for the Duck.ai tab grid card of a tab with a live voice session — same as the visible status without the decorative emoji. */
-"aiChat.tabSwitcher.card.voice.listening.accessibilityLabel" = "Słuchanie…";
 
 /* Subtitle for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.subtitle" = "Ustaw ton, długość i zachowanie";
@@ -582,6 +540,8 @@
 
 /* Description for unable to sync to server error */
 "alert.unable-to-sync-to-server-description" = "Nie można połączyć się z serwerem.";
+
+/* Description for unable to sync with another device error */
 
 /* Description for unable to turn sync off error */
 "alert.unable-to-turn-sync-off-description" = "Nie można wyłączyć synchronizacji i kopii zapasowych.";
@@ -3001,9 +2961,6 @@
 /* Message label text for the status view when VPN is disconnected */
 "network.protection.status.header.message.on" = "Cały ruch internetowy urządzenia jest zabezpieczony\nprzez VPN.";
 
-/* Status view message shown while the VPN is on but Strict routing is off */
-"network.protection.status.header.message.strict.routing.off" = "Część ruchu może ominąć sieć VPN, gdy ścisły routing jest wyłączony. Ścisły routing jest zalecany w przypadku sieci publicznych.";
-
 /* Header title label text for the status view when VPN is disconnected */
 "network.protection.status.header.title.off" = "Usługa DuckDuckGo VPN jest wyłączona";
 
@@ -3046,29 +3003,8 @@
 /* Label shown on the title of the settings section in NetworkProtection's status view. */
 "network.protection.status.view.settings.section.title" = "Zarządzaj";
 
-/* Label for the status pill shown while the VPN's Strict routing setting is off */
-"network.protection.status.view.strict.routing.pill.off" = "Ścisły routing: Wyłączony";
-
-/* Label for the status pill shown while the VPN's Strict routing setting is on */
-"network.protection.status.view.strict.routing.pill.on" = "Ścisły routing: Włączony";
-
-/* Tooltip shown for the status pill while the VPN's Strict routing setting is off */
-"network.protection.status.view.strict.routing.pill.tooltip.off" = "Ścisły routing jest zalecany w przypadku sieci publicznych.";
-
-/* Tooltip shown for the status pill while the VPN's Strict routing setting is on */
-"network.protection.status.view.strict.routing.pill.tooltip.on" = "Niektóre aplikacje mogą nie działać, gdy włączony jest ścisły routing.";
-
 /* Title label text for the status view when netP is disconnected */
 "network.protection.status.view.title" = "VPN";
-
-/* Title of the Troubleshooting section in the VPN status screen. */
-"network.protection.status.view.troubleshooting.section.title" = "Rozwiązywanie problemów";
-
-/* The body of the notification reminding the user to turn the VPN Strict routing setting back on */
-"network.protection.strict.routing.reminder.notification.body" = "Niektóre dane mogą pomijać VPN, gdy jest on wyłączony. Ścisły routing jest zalecany w przypadku sieci publicznych.";
-
-/* The title of the notification reminding the user to turn the VPN Strict routing setting back on */
-"network.protection.strict.routing.reminder.notification.title" = "Ścisły routing jest WYŁĄCZONY";
 
 /* The body of the notification shown when VPN reconnects successfully */
 "network.protection.success.notification.body" = "Usługa DuckDuckGo VPN jest włączona. Twoja lokalizacja i aktywność w Internecie są chronione.";
@@ -3796,9 +3732,6 @@
 /* Button to delete all tabs and data in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.all.button" = "Usuń wszystko";
 
-/* Button to delete all chats in scoped fire confirmation dialog */
-"scoped.fire.confirmation.delete.chats.button" = "Usuń czaty";
-
 /* Button to delete a single tab and its site data in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.tab.button" = "Usuń kartę";
 
@@ -3977,7 +3910,7 @@
 "settings.aifeatures.chat.suggestions.title" = "Sugestie czatu";
 
 /* Button that turns off all AI features */
-"settings.aifeatures.disable.all" = "Korzystaj z DuckDuckGo bez AI";
+"settings.aifeatures.disable.all" = "Używaj DuckDuckGo bez AI";
 
 /* Footer text below the disable all AI features button */
 "settings.aifeatures.disable.all.footer" = "Wyłącza Duck.ai, ukrywa odpowiedzi wspomagane sztuczną inteligencją w wyszukiwaniu i filtruje znane strony ze spamem AI w wynikach wyszukiwania obrazów.";
@@ -3992,10 +3925,10 @@
 "settings.aifeatures.hide.ai.generated.images" = "Ukryj obrazy generowane przez AI";
 
 /* Hide AI-Generated Images option: off (images shown) */
-"settings.aifeatures.hide.ai.generated.images.off" = "Wyłączone";
+"settings.aifeatures.hide.ai.generated.images.off" = "Wył.";
 
 /* Hide AI-Generated Images option: on (images hidden) */
-"settings.aifeatures.hide.ai.generated.images.on" = "Włączone";
+"settings.aifeatures.hide.ai.generated.images.on" = "Wł.";
 
 /* Footnote for the hide AI-generated images setting; ends with a Learn more link to the help page (do not remove the link) */
 "settings.aifeatures.hide.ai.generated.images.subtitle" = "Filtruje znane strony z AI-spamem w wynikach wyszukiwania obrazów. [Dowiedz się więcej](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/results/how-to-filter-out-ai-images-in-duckduckgo-search-results)";
@@ -4117,26 +4050,26 @@
 /* The name of the settings section containing options to set up the app */
 "settings.complete.setup" = "Dokończ swoją konfigurację";
 
-/* Explanation below the auto-manage cookie pop-ups toggle in settings */
-"settings.cookie.auto-manage.explanation" = "Postaramy się wybrać dla Ciebie tylko najbardziej prywatne dostępne opcje plików cookie, a następnie zamknąć te wyskakujące okienka.";
-
-/* Title for the auto-manage cookie pop-ups toggle in settings */
-"settings.cookie.auto-manage.title" = "Automatycznie zarządzaj okienkami z prośbą o zgodę";
-
 /* The name of Settings category in Privacy Features related to configuration of the privacy feature related to cookie pop-ups */
 "settings.cookie.pop-up-protection.protection" = "Ochrona przed wyskakującymi okienkami dotyczącymi plików cookie";
 
 /* Explanation in Settings how the cookie pop up protection feature works */
 "settings.cookie.pop.up.protection.explanation" = "DuckDuckGo może automatycznie zarządzać preferencjami dotyczącymi plików cookie, aby zmaksymalizować prywatność, zminimalizować liczbę plików cookie i zamknąć te wyskakujące okienka.\n[Więcej informacji](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
 
-/* Settings screen cell text for Cookie popups */
-"settings.cookie.popups" = "Zarządzaj okienkami z prośbą o zgodę";
+/* Explanation below the auto-manage cookie pop-ups toggle in settings */
+"settings.cookie.auto-manage.explanation" = "Postaramy się wybrać dla Ciebie tylko najbardziej prywatne dostępne opcje plików cookie, a następnie zamknąć te wyskakujące okienka.";
+
+/* Title for the auto-manage cookie pop-ups toggle in settings */
+"settings.cookie.auto-manage.title" = "Automatycznie zarządzaj okienkami z prośbą o zgodę";
 
 /* Explanation below the pop-ups without opt-outs toggle in settings */
 "settings.cookie.popups-without-opt-outs.explanation" = "Pozwól też DuckDuckGo zaoszczędzić ci kliknięcie, akceptując w Twoim imieniu pliki cookie, aby zamknąć wyskakujące okienka, z których nie możesz zrezygnować.";
 
 /* Title for the pop-ups without opt-outs toggle in settings */
 "settings.cookie.popups-without-opt-outs.title" = "Wyskakujące okienka bez możliwości rezygnacji";
+
+/* Settings screen cell text for Cookie popups */
+"settings.cookie.popups" = "Zarządzaj okienkami z prośbą o zgodę";
 
 /* Label for customizable toolbar button that deletes tabs and data */
 "settings.customizable.button.delete.tabs.and.data" = "Usuń karty i dane";
@@ -5452,3 +5385,75 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Co chcesz importować?";
 
+
+/* No comment provided by engineer. */
+"No matches for \"%@\"" = "Brak dopasowań dla \"%@\"";
+
+
+/* Open the native Duck.ai chat history sheet from the browser menu. */
+"action.title.chats" = "Czaty";
+
+/* Title shown when the user has no Duck.ai chat history yet. */
+"aiChat.history.emptyState.title" = "Brak ostatnich czatów";
+
+/* Primary button on the empty Duck.ai chat-history screen; opens the Duck.ai web chat. */
+"aiChat.history.emptyState.openDuckAi" = "Otwórz Duck.ai";
+
+/* Placeholder for the search bar at the top of the Duck.ai chat history list. */
+"aiChat.history.searchBar.placeholder" = "Szukaj";
+
+/* Section header above the user's pinned chats in the Duck.ai chat history list. */
+"aiChat.history.section.pinned" = "Przypięte";
+
+/* Section header above the user's recent (unpinned) chats in the Duck.ai chat history list. */
+"aiChat.history.section.recent" = "Ostatnie";
+
+/* Shown inside the Duck.ai chat history list when the user's search query returns no matching chats. */
+"aiChat.history.noSearchResults.title" = "Brak pasujących wyników";
+
+/* Title of the alert shown when Duck.ai chat history fails to load. */
+"aiChat.history.loadError.title" = "Nie udało się załadować czatów";
+
+/* Message of the alert shown when Duck.ai chat history fails to load. */
+"aiChat.history.loadError.message" = "Nie udało się wczytać czatów Duck.ai. Spróbuj ponownie później.";
+
+/* Accessibility label for the delete action revealed by swiping a Duck.ai chat row. */
+"aiChat.history.swipe.delete.a11y" = "Usuń czat";
+
+/* Accessibility label for the download action revealed by swiping a Duck.ai chat row. */
+"aiChat.history.swipe.download.a11y" = "Pobierz czat";
+
+/* Accessibility label for the pin action revealed by leading-swiping a Duck.ai chat row in the Recent section. */
+"aiChat.history.swipe.pin.a11y" = "Przypnij czat";
+
+/* Accessibility label for the unpin action revealed by leading-swiping a Duck.ai chat row in the Pinned section. */
+"aiChat.history.swipe.unpin.a11y" = "Odepnij czat";
+
+/* Button to delete all chats in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.chats.button" = "Usuń czaty";
+
+/* Top-level attachment menu option to attach the current page content to an AI chat message */
+"aichat.attachment.option.ask.about.page" = "Zapytaj o stronę";
+
+/* Status view message shown while the VPN is on but Strict routing is off */
+"network.protection.status.header.message.strict.routing.off" = "Część ruchu może ominąć sieć VPN, gdy ścisły routing jest wyłączony. Ścisły routing jest zalecany w przypadku sieci publicznych.";
+
+/* Label for the status pill shown while the VPN's Strict routing setting is off */
+"network.protection.status.view.strict.routing.pill.off" = "Ścisły routing: Wyłączony";
+
+/* Label for the status pill shown while the VPN's Strict routing setting is on */
+"network.protection.status.view.strict.routing.pill.on" = "Ścisły routing: Włączony";
+
+/* Tooltip shown for the status pill while the VPN's Strict routing setting is off */
+"network.protection.status.view.strict.routing.pill.tooltip.off" = "Ścisły routing jest zalecany w przypadku sieci publicznych.";
+
+/* Tooltip shown for the status pill while the VPN's Strict routing setting is on */
+"network.protection.status.view.strict.routing.pill.tooltip.on" = "Niektóre aplikacje mogą nie działać, gdy włączony jest ścisły routing.";
+
+/* Title of the Troubleshooting section in the VPN status screen. */
+"network.protection.status.view.troubleshooting.section.title" = "Rozwiązywanie problemów";
+
+/* The body of the notification reminding the user to turn the VPN Strict routing setting back on */
+"network.protection.strict.routing.reminder.notification.body" = "Niektóre dane mogą pomijać VPN, gdy jest on wyłączony. Ścisły routing jest zalecany w przypadku sieci publicznych.";
+/* The title of the notification reminding the user to turn the VPN Strict routing setting back on */
+"network.protection.strict.routing.reminder.notification.title" = "Ścisły routing jest WYŁĄCZONY";

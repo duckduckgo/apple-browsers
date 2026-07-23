@@ -66,9 +66,9 @@ struct SettingsNextStepsDebugView: View {
 
     /// Clears the tap timestamps and the section-hidden flag so all rows and the section reappear.
     private func resetDismissalState() {
-        try? keyValueStore.set(nil, forKey: SettingsViewModel.Constants.didTapAddToDockNextStepKey)
-        try? keyValueStore.set(nil, forKey: SettingsViewModel.Constants.didTapAddWidgetNextStepKey)
-        try? keyValueStore.set(nil, forKey: SettingsViewModel.Constants.nextStepsSectionHiddenKey)
+        try? keyValueStore.removeObject(forKey: SettingsViewModel.Constants.didTapAddToDockNextStepKey)
+        try? keyValueStore.removeObject(forKey: SettingsViewModel.Constants.didTapAddWidgetNextStepKey)
+        try? keyValueStore.removeObject(forKey: SettingsViewModel.Constants.nextStepsSectionHiddenKey)
         ActionMessageView.present(message: "Next Steps state reset — reopen Settings")
     }
 

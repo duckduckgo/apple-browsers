@@ -78,7 +78,7 @@ extension TabContent {
             return .homeFavicon
 
         case .aiChat:
-            return DesignSystemRebrand.isAppRebranded() ? DesignSystemImages.Color.Size16.aiChat : .aiChatPreferencesLegacy
+            return DesignSystemImages.Color.Size16.duckAI
 
         case .url(let url, _, _):
             // Handle special URL types
@@ -87,7 +87,7 @@ extension TabContent {
             } else if url.isDuckPlayer {
                 return .duckPlayerSettings
             } else if url.isDuckAIURL {
-                return DesignSystemRebrand.isAppRebranded() ? DesignSystemImages.Color.Size16.aiChat : .aiChatPreferencesLegacy
+                return DesignSystemImages.Color.Size16.duckAI
             } else if url.isEmailProtection {
                 return DesignSystemRebrand.isAppRebranded() ? DesignSystemImages.Color.Size16.emailProtection : .emailProtectionIconLegacy
             }

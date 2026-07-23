@@ -403,7 +403,7 @@ final class TabViewModelTests: XCTestCase {
         let aiChatURL = URL(string: "https://duckduckgo.com/?q=DuckDuckGo+AI+Chat&ia=chat&duckai=2")!
         let tabViewModel = TabViewModel.forTabWithURL(aiChatURL, featureFlagger: mockFeatureFlagger)
 
-        XCTAssertImagesEqual(tabViewModel.favicon, .aiChatPreferencesLegacy)
+        XCTAssertImagesEqual(tabViewModel.favicon, DesignSystemImages.Color.Size16.duckAI)
     }
 
     @MainActor
@@ -412,7 +412,7 @@ final class TabViewModelTests: XCTestCase {
         let duckAIURL = URL(string: "https://duck.ai/chat")!
         let tabViewModel = TabViewModel.forTabWithURL(duckAIURL, featureFlagger: mockFeatureFlagger)
 
-        XCTAssertImagesEqual(tabViewModel.favicon, .aiChatPreferencesLegacy)
+        XCTAssertImagesEqual(tabViewModel.favicon, DesignSystemImages.Color.Size16.duckAI)
     }
 
     @MainActor

@@ -65,35 +65,4 @@ final class SyncSettingsViewModelConnectingSheetTests {
 
         #expect(sut.connectingSheetPhase == nil)
     }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("Show sync with another device sets the sync-another-device phase", .timeLimit(.minutes(1)))
-    func showSyncWithAnotherDevice() {
-        let sut = makeSUT()
-
-        sut.showSyncWithAnotherDeviceInConnectingSheet()
-
-        #expect(sut.connectingSheetPhase == .syncAnotherDevice)
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("Not now moves to the recover-your-data phase", .timeLimit(.minutes(1)))
-    func notNowShowsRecoverYourData() {
-        let sut = makeSUT()
-
-        sut.notNowFromConnectingSheet()
-
-        #expect(sut.connectingSheetPhase == .recoverYourData)
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("Recover your data done dismisses the connecting sheet", .timeLimit(.minutes(1)))
-    func recoverYourDataDoneDismisses() {
-        let sut = makeSUT()
-        sut.notNowFromConnectingSheet()
-
-        sut.recoverYourDataDoneFromConnectingSheet()
-
-        #expect(sut.connectingSheetPhase == nil)
-    }
 }

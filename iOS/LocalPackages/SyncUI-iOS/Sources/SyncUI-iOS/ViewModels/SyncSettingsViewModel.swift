@@ -181,8 +181,7 @@ public class SyncSettingsViewModel: ObservableObject {
 
     public enum ConnectingSheetPhase: Equatable, Identifiable {
         case connecting(isRecovery: Bool)
-        case syncAnotherDevice
-        case recoverYourData
+        case syncAnotherDevice(isConnecting: Bool)
         case success(isRecovery: Bool)
 
         // Constant on purpose: `.sheet(item:)` re-presents whenever the item's identity changes, so a

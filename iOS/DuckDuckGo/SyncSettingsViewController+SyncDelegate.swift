@@ -176,9 +176,6 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                     }
                     return
                 }
-                if useSimplifiedLayoutV2 {
-                    optionsViewModel.connectingSheetPhase = .connecting(isRecovery: false)
-                }
                 try await self.syncService.createAccount(deviceName: self.deviceName, deviceType: self.deviceType)
                 let additionalParameters = self.source.map { ["source": $0] } ?? [:]
                 try await Pixel.fire(pixel: .syncSignupDirect, withAdditionalParameters: additionalParameters, includedParameters: [.appVersion])
@@ -191,7 +188,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                 await self.refreshDevicesAfterSimplifiedSyncEnable()
 
                 if useSimplifiedLayoutV2 {
-                    optionsViewModel.showDeviceConnectedInConnectingSheet(recoveryCode: self.recoveryCode)
+                    optionsViewModel.showSuccess(recoveryCode: self.recoveryCode, isRecovery: false)
                 } else {
                     let didShowPrompt = optionsViewModel.checkAndShowSyncWithAnotherDevicePrompt()
                     if didShowPrompt {

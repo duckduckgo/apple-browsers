@@ -31,12 +31,10 @@ public struct SimplifiedConnectingSheetViewV2: View {
     public var body: some View {
         ZStack {
             switch model.connectingSheetPhase {
-            case .connecting(let isRecovery):
-                SimplifiedConnectingContentViewV2(isRecovery: isRecovery)
             case .syncAnotherDevice:
                 SyncAnotherDevicePromptViewV2(model: model)
-            case .recoverYourData:
-                RecoverYourDataView(model: model)
+            case .connecting(let isRecovery):
+                SimplifiedConnectingContentViewV2(isRecovery: isRecovery)
             case .success(let isRecovery):
                 SyncSuccessViewV2(model: model, isRecovery: isRecovery)
             case .none:
@@ -50,13 +48,13 @@ public struct SimplifiedConnectingSheetViewV2: View {
 #if DEBUG
 #Preview("Connecting") {
     RebrandedPreview(isRebranded: true) {
-        SimplifiedConnectingSheetViewV2(model: .connectingSheetPreview(phase: .connecting))
+        SimplifiedConnectingSheetViewV2(model: .connectingSheetPreview(phase: .connecting(isRecovery: false)))
     }
 }
 
 #Preview("Connecting – Dark") {
     RebrandedPreview(isRebranded: true) {
-        SimplifiedConnectingSheetViewV2(model: .connectingSheetPreview(phase: .connecting))
+        SimplifiedConnectingSheetViewV2(model: .connectingSheetPreview(phase: .connecting(isRecovery: false)))
     }
     .preferredColorScheme(.dark)
 }
@@ -69,7 +67,7 @@ public struct SimplifiedConnectingSheetViewV2: View {
 
 #Preview("Device Connected") {
     RebrandedPreview(isRebranded: true) {
-        SimplifiedConnectingSheetViewV2(model: .connectingSheetPreview(phase: .deviceConnected))
+        SimplifiedConnectingSheetViewV2(model: .connectingSheetPreview(phase: .success(isRecovery: false)))
     }
 }
 

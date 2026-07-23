@@ -562,6 +562,84 @@ final class StorePurchaseManagerTests: XCTestCase {
         XCTAssertTrue(yearlyOption?.offer?.isUserEligible ?? false)
     }
 
+    func testSubscriptionTierOptionsOffersOnlyFreeTrialMonthlyWhenTrialEnabled() async {
+        // Given – a paired monthly plan (free-trial + no-trial) and a yearly plan; decider offers the trial
+        mockProductFetcher.mockProducts = makePairedMonthlyPlusProducts()
+        await sut.updateAvailableProducts()
+        mockCache.tierMapping = pairedMonthlyTierMapping()
+
+        // When
+        let result = await sut.subscriptionTierOptions(includeProTier: false)
+
+        // Then – only the free-trial monthly variant is offered; the no-trial sibling is dropped
+        guard case .success(let tierOptions) = result else {
+            XCTFail("Expected success but got failure")
+            return
+        }
+        let optionIDs = Set(tierOptions.products.flatMap { $0.options.map(\.id) })
+        XCTAssertTrue(optionIDs.contains("com.test.monthly.freetrial"))
+        XCTAssertTrue(optionIDs.contains("com.test.yearly"))
+        XCTAssertFalse(optionIDs.contains("com.test.monthly"))
+    }
+
+    func testSubscriptionTierOptionsOffersOnlyNoTrialMonthlyWhenTrialDisabled() async {
+        // Given – the same paired plan, but the decider does not offer the monthly trial
+        let sut = DefaultStorePurchaseManager(subscriptionFeatureMappingCache: mockCache,
+                                              subscriptionFeatureFlagger: mockFeatureFlagger,
+                                              productFetcher: mockProductFetcher,
+                                              monthlyFreeTrialDecider: MockMonthlyFreeTrialDecider(shouldOffer: false))
+        mockProductFetcher.mockProducts = makePairedMonthlyPlusProducts()
+        await sut.updateAvailableProducts()
+        mockCache.tierMapping = pairedMonthlyTierMapping()
+
+        // When
+        let result = await sut.subscriptionTierOptions(includeProTier: false)
+
+        // Then – only the no-trial monthly variant is offered; the free-trial sibling is dropped
+        guard case .success(let tierOptions) = result else {
+            XCTFail("Expected success but got failure")
+            return
+        }
+        let optionIDs = Set(tierOptions.products.flatMap { $0.options.map(\.id) })
+        XCTAssertTrue(optionIDs.contains("com.test.monthly"))
+        XCTAssertTrue(optionIDs.contains("com.test.yearly"))
+        XCTAssertFalse(optionIDs.contains("com.test.monthly.freetrial"))
+    }
+
+    private func makePairedMonthlyPlusProducts() -> [MockSubscriptionProduct] {
+        let monthlyWithTrial = MockSubscriptionProduct(
+            id: "com.test.monthly.freetrial",
+            displayName: "Plus Monthly with Trial",
+            displayPrice: "$9.99",
+            isMonthly: true,
+            hasIntroductoryFreeTrialOffer: true,
+            introOffer: MockIntroductoryOffer(id: "trial1", displayPrice: "$0.00", periodInDays: 7, isFreeTrial: true),
+            isEligibleForFreeTrial: true
+        )
+        let monthlyWithoutTrial = MockSubscriptionProduct(
+            id: "com.test.monthly",
+            displayName: "Plus Monthly",
+            displayPrice: "$9.99",
+            isMonthly: true
+        )
+        let yearly = MockSubscriptionProduct(
+            id: "com.test.yearly",
+            displayName: "Plus Yearly",
+            displayPrice: "$99.99",
+            isYearly: true
+        )
+        return [monthlyWithTrial, monthlyWithoutTrial, yearly]
+    }
+
+    private func pairedMonthlyTierMapping() -> [String: [TierFeature]] {
+        let plusFeatures = [TierFeature(product: .networkProtection, name: .plus)]
+        return [
+            "com.test.monthly.freetrial": plusFeatures,
+            "com.test.monthly": plusFeatures,
+            "com.test.yearly": plusFeatures
+        ]
+    }
+
     func testSubscriptionTierOptionsExcludesProTierWhenNotRequested() async {
         // Given
         let plusMonthly = MockSubscriptionProduct(id: "com.test.monthly", isMonthly: true)
@@ -877,7 +955,9 @@ private class MockStoreSubscriptionConfiguration: StoreSubscriptionConfiguration
 }
 
 private struct MockMonthlyFreeTrialDecider: MonthlyFreeTrialDeciding {
+    var shouldOffer: Bool = true
+
     func shouldOfferMonthlyFreeTrial() -> Bool {
-        true
+        shouldOffer
     }
 }

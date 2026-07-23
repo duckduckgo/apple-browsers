@@ -233,6 +233,13 @@ final class BookmarkTableCellView: NSTableCellView {
         tertiaryTitleLabelValue = bookmark.url
     }
 
+    /// Upgrades the displayed favicon in place once it becomes available, without touching the rest of the
+    /// cell. Never falls back to the placeholder icon, so a transient cache miss doesn't blank a real favicon.
+    func refreshDisplayedFavicon() {
+        guard let bookmark = entity as? Bookmark, let favicon = bookmark.favicon(.small) else { return }
+        faviconImageView.image = favicon
+    }
+
     func update(from folder: BookmarkFolder) {
         self.entity = folder
 

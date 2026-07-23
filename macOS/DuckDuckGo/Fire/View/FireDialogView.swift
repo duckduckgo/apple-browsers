@@ -422,7 +422,7 @@ struct FireDialogView: ModalView {
             // Row 2: Cookies and Site Data
             sectionRow(
                 icon: DesignSystemImages.Glyphs.Size16.cookie,
-                title: UserText.cookiesAndSiteDataTitle,
+                title: UserText.fireDialogCookiesAndOtherData,
                 subtitle: UserText.fireDialogCookiesSignOutWarning,
                 detail: cookiesDetail,
                 isOn: Binding { viewModel.includeCookiesAndSiteData && isIncludeCookiesAndSiteDataEnabled } set: { viewModel.includeCookiesAndSiteData = $0 },

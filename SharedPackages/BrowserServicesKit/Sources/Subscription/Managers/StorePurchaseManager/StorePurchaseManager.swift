@@ -269,8 +269,6 @@ public final class DefaultStorePurchaseManager: ObservableObject, StorePurchaseM
     public func subscriptionTierOptions(includeProTier: Bool) async -> Result<SubscriptionTierOptions, StoreError> {
         let tierProducts = await getAvailableProducts(includeProTier: includeProTier)
 
-        // Apply the monthly free-trial decision (e.g. experiment cohort) as the last step before
-        // building options, so only the cohort-appropriate monthly variant is offered to the user.
         let filteredProducts = monthlyFreeTrialDecider.filteringMonthlyFreeTrialPreference(from: tierProducts)
 
         guard !filteredProducts.isEmpty else {

@@ -517,8 +517,7 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216629730083154?focus=true
     case systemFindInPage
 
-    /// Experiment: offer free trials on yearly plans only, removing the monthly free trial for the
-    /// treatment cohort. US-only; targeting is enforced via the remote configuration.
+    /// Annual-trials experiment. Treatment removes the monthly free trial.
     /// https://app.asana.com/1/137249556945/project/1202500774821704/task/1216172392115585
     case monthlyFreeTrialExperiment
 }
@@ -547,8 +546,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case treatment
     }
 
-    /// Cohorts for the monthly free-trial experiment. `treatment` removes the monthly free trial;
-    /// `control` keeps the current behavior (monthly free trial offered).
+    /// Treatment removes the monthly free trial.
     public enum MonthlyFreeTrialExperimentCohort: String, FeatureFlagCohortDescribing {
         case control
         case treatment

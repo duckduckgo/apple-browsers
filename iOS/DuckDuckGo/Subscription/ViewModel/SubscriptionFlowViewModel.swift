@@ -372,13 +372,20 @@ final class SubscriptionFlowViewModel: ObservableObject {
         DispatchQueue.main.async {
             self.resetState()
         }
+
+        // Only initial-purchase offer screens participate in the experiment.
+        let isInitialPurchaseOfferScreen = flowType.impressionPixel != nil
+            && initialURL.forComparison() != subscriptionManager.url(for: .welcome).forComparison()
+
         if webViewModel.url != subscriptionManager.url(for: currentSubscriptionURL).forComparison() {
-            self.webViewModel.navigationCoordinator.navigateTo(url: initialURL)
+            let urlToLoad = isInitialPurchaseOfferScreen
+                ? MonthlyFreeTrialExperiment.appendingCohortParameter(to: initialURL, resolvedBy: featureFlagger)
+                : initialURL
+            self.webViewModel.navigationCoordinator.navigateTo(url: urlToLoad)
         }
         await self.setupTransactionObserver()
         await self.setupWebViewObservers()
-        if let pixel = flowType.impressionPixel,
-           initialURL.forComparison() != subscriptionManager.url(for: .welcome).forComparison() {
+        if isInitialPurchaseOfferScreen, let pixel = flowType.impressionPixel {
             let origin = URLComponents(url: initialURL, resolvingAgainstBaseURL: false)?
                 .queryItems?
                 .first(where: { $0.name == AttributionParameter.origin })?

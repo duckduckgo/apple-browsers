@@ -563,15 +563,12 @@ final class StorePurchaseManagerTests: XCTestCase {
     }
 
     func testSubscriptionTierOptionsOffersOnlyFreeTrialMonthlyWhenTrialEnabled() async {
-        // Given – a paired monthly plan (free-trial + no-trial) and a yearly plan; decider offers the trial
         mockProductFetcher.mockProducts = makePairedMonthlyPlusProducts()
         await sut.updateAvailableProducts()
         mockCache.tierMapping = pairedMonthlyTierMapping()
 
-        // When
         let result = await sut.subscriptionTierOptions(includeProTier: false)
 
-        // Then – only the free-trial monthly variant is offered; the no-trial sibling is dropped
         guard case .success(let tierOptions) = result else {
             XCTFail("Expected success but got failure")
             return
@@ -583,7 +580,6 @@ final class StorePurchaseManagerTests: XCTestCase {
     }
 
     func testSubscriptionTierOptionsOffersOnlyNoTrialMonthlyWhenTrialDisabled() async {
-        // Given – the same paired plan, but the decider does not offer the monthly trial
         let sut = DefaultStorePurchaseManager(subscriptionFeatureMappingCache: mockCache,
                                               subscriptionFeatureFlagger: mockFeatureFlagger,
                                               productFetcher: mockProductFetcher,
@@ -592,10 +588,8 @@ final class StorePurchaseManagerTests: XCTestCase {
         await sut.updateAvailableProducts()
         mockCache.tierMapping = pairedMonthlyTierMapping()
 
-        // When
         let result = await sut.subscriptionTierOptions(includeProTier: false)
 
-        // Then – only the no-trial monthly variant is offered; the free-trial sibling is dropped
         guard case .success(let tierOptions) = result else {
             XCTFail("Expected success but got failure")
             return

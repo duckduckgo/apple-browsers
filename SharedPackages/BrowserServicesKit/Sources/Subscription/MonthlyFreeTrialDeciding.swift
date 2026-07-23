@@ -18,20 +18,12 @@
 
 import Foundation
 
-/// Decides whether the monthly subscription plans should be offered with a free trial.
-///
-/// The decision is queried at the point the paywall products are requested, so it can reflect
-/// experiment cohort assignment made at that moment rather than a value frozen earlier.
+/// Determines whether monthly subscriptions should include a free trial.
 public protocol MonthlyFreeTrialDeciding {
     func shouldOfferMonthlyFreeTrial() -> Bool
 }
 
-/// A decider that always offers the monthly free trial (the current, pre-experiment behavior).
-///
-/// Intended for contexts that never present the paywall — e.g. app extensions, or the shared
-/// subscription configuration used across many targets — which need to satisfy the API but never
-/// consult the decision. The cohort-aware deciders live in the app targets that actually run the
-/// experiment.
+/// Always offers the monthly free trial.
 public struct DefaultMonthlyFreeTrialDecider: MonthlyFreeTrialDeciding {
 
     public init() {}
@@ -43,21 +35,12 @@ public struct DefaultMonthlyFreeTrialDecider: MonthlyFreeTrialDeciding {
 
 extension MonthlyFreeTrialDeciding {
 
-    /// Filters products according to the current monthly free-trial decision.
-    ///
-    /// See the identifier-based overload for the filtering rule; this simply applies it to a set of
-    /// products, keeping only those whose identifier survives.
     func filteringMonthlyFreeTrialPreference(from products: [any SubscriptionProduct]) -> [any SubscriptionProduct] {
         let allowedIdentifiers = Set(filteringMonthlyFreeTrialPreference(from: products.map(\.id)))
         return products.filter { allowedIdentifiers.contains($0.id) }
     }
 
-    /// Filters product identifiers according to the current monthly free-trial decision.
-    ///
-    /// A monthly identifier is only filtered out when the opposite free-trial variant of the *same* plan
-    /// is also present. In that case only the variant matching `shouldOfferMonthlyFreeTrial()` survives.
-    /// A monthly identifier without a matching sibling, and every non-monthly identifier, passes through
-    /// unchanged — so a lone monthly plan is never hidden.
+    /// Filters paired monthly SKUs; unpaired and non-monthly identifiers remain unchanged.
     func filteringMonthlyFreeTrialPreference(from identifiers: [String]) -> [String] {
         let offerMonthlyFreeTrial = shouldOfferMonthlyFreeTrial()
 
@@ -90,9 +73,7 @@ private extension String {
         split(separator: ".").contains { $0 == StoreSubscriptionConstants.freeTrialIdentifer }
     }
 
-    /// The identifier with any free-trial marker removed, so a free-trial plan and its no-trial
-    /// counterpart resolve to the same key (e.g. `…monthly.renews.us.freetrial` and
-    /// `…monthly.renews.us`, or `…1month.freetrial.dev.pro` and `…1month.dev.pro`).
+    /// Removes the free-trial component for SKU matching.
     var trialAgnosticMonthlyIdentifier: String {
         split(separator: ".")
             .filter { $0 != StoreSubscriptionConstants.freeTrialIdentifer }

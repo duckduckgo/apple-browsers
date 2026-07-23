@@ -22,7 +22,6 @@ import Testing
 @Suite("Monthly Free Trial Deciding – identifier filtering")
 struct MonthlyFreeTrialDecidingTests {
 
-    // A paired plan: a monthly free-trial identifier and its no-trial sibling, plus yearly identifiers.
     private let pairedIdentifiers = [
         "ddg.privacy.pro.yearly.renews.us.freetrial",
         "ddg.privacy.pro.monthly.renews.us.freetrial",

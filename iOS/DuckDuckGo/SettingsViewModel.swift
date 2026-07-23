@@ -218,10 +218,6 @@ final class SettingsViewModel: ObservableObject {
         freemiumDBPUserStateManager.firstScanResult != nil
     }
 
-    var isDefaultOmnibarModeEnabled: Bool {
-        featureFlagger.isFeatureOn(.aiChatOmnibarDefaultPosition)
-    }
-
     var isAIFeaturesNativeControlsEnabled: Bool {
         featureFlagger.isFeatureOn(.aiFeaturesNativeControls)
     }

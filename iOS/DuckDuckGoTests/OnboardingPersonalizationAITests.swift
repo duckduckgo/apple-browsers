@@ -102,8 +102,7 @@ struct OnboardingPersonalizationAIChatTests {
             privacyConfigurationManager: PrivacyConfigurationManagerMock(),
             debugSettings: MockAIChatDebugSettings(),
             keyValueStore: store,
-            notificationCenter: NotificationCenter(),
-            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.aiChatOmnibarDefaultPosition])
+            notificationCenter: NotificationCenter()
         )
     }
 

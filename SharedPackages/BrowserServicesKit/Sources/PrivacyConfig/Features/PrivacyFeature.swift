@@ -453,9 +453,6 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables the omnibar tools (customize, search toggle, image upload) for AI Chat
     case omnibarTools
 
-    /// Enables the default omnibar toggle position setting for AI Chat
-    case omnibarDefaultPosition
-
     case unifiedToggleInput
 
     /// Forward-only lever for the unified toggle input rollout. When disabled, *new* (un-granted)

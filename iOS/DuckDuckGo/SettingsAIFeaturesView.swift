@@ -259,8 +259,7 @@ private extension AIFeaturesSettingsRowProviding {
                 pickerRow
             }
 
-            if viewModel.aiChatSearchInputEnabledBinding.wrappedValue,
-               viewModel.isDefaultOmnibarModeEnabled {
+            if viewModel.aiChatSearchInputEnabledBinding.wrappedValue {
                 SettingsPickerCellView(
                     label: UserText.settingsDefaultOmnibarModeHeader,
                     subtitle: UserText.settingsDefaultOmnibarModeFooter,

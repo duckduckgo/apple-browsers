@@ -88,8 +88,7 @@ struct Launching: LaunchingHandling {
 
         // Initialize configuration with the key-value store
         configuration = AppConfiguration(
-            appKeyValueStore: appKeyValueFileStoreService.keyValueFilesStore,
-            featureFlagger: featureFlagger
+            appKeyValueStore: appKeyValueFileStoreService.keyValueFilesStore
         )
 
         var isBookmarksDBFilePresent: Bool?

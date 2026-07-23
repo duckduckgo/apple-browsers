@@ -333,7 +333,7 @@ struct DefaultColorPalette: ColorPaletteDefinition {
         case .duckAIWebViewBackground:
             return DynamicColor(lightColor: .white, darkColor: .x111111)
         case .unifiedToggleInputCardBackground:
-            return DynamicColor(lightColor: .white, darkColor: x3D3D3D)
+            return DynamicColor(lightColor: .pink, darkColor: .pink)
         case .unifiedToggleInputStopButtonBackground:
             return DynamicColor(lightColor: .shade(0.06), darkColor: .tint(0.12))
         case .floatingAddressBarBackground:

@@ -44,7 +44,7 @@ public enum SingleUseColor {
     /// Duck.ai web view background color (#FFFFFF light / #111111 dark)
     case duckAIWebViewBackground
 
-    /// Card background for the unified toggle input bar (white in light, #3D3D3D in dark)
+    /// Card background for the unified toggle input bar (pink in light, pink in dark)
     case unifiedToggleInputCardBackground
     case unifiedToggleInputAttachmentErrorBannerBackground
     case unifiedToggleInputAttachmentErrorText

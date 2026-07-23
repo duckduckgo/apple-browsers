@@ -533,9 +533,6 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables removing individual AI chat suggestions
     case removeSuggestion
 
-    /// Enables the fire button in the contextual AI chat sheet
-    case contextualFireButton
-
     /// Enables the Duck.ai top-level main menu shortcut (macOS only)
     case mainMenuShortcut
 

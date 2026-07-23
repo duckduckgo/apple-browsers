@@ -119,9 +119,7 @@ final class NewTabPageOmnibarModelsProviderTests: XCTestCase {
 
         _ = await provider.fetchAIModelSections()
 
-        // The backend-sourced file/image limits are absent, but the hardcoded tab cap is always
-        // forwarded so the NTP omnibar can still enforce it. Asserted via Equatable (the struct's
-        // fields are internal to the NewTabPage package — only the public init is reachable here).
+        // File/image limits absent, tab cap still forwarded. Asserted via Equatable (fields are internal).
         let expected = NewTabPageDataModel.AttachmentLimits(
             files: nil,
             images: nil,

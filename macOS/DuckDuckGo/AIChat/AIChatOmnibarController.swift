@@ -513,19 +513,15 @@ final class AIChatOmnibarController {
     }
     var fileAttachmentsDisplayCap: Int { maxFileAttachments + 1 }
 
-    /// Maximum open tabs the user can attach as page context. Hardcoded product constant (not
-    /// backend-driven, unlike images/files). Falls out to the same "+1 over → error → block" cue.
+    /// Hardcoded cap on tabs attached as page context (not backend-driven, unlike images/files).
     static let maxTabAttachments: Int = 3
-    /// One above the cap — `toggleTabAttachment` allows exactly one over so the error label has
-    /// something to anchor against and submit blocks while in that state. Mirrors the image/file cap.
+    /// One over the cap, mirroring the image/file display cap.
     var tabAttachmentsDisplayCap: Int { Self.maxTabAttachments + 1 }
 
-    /// At or above the tab cap.
     var isActiveTabAttachmentsFull: Bool {
         activeTabAttachments.count >= Self.maxTabAttachments
     }
 
-    /// Strictly over the tab cap (one over, by `tabAttachmentsDisplayCap` design).
     var hasExcessTabAttachments: Bool {
         activeTabAttachments.count > Self.maxTabAttachments
     }
@@ -811,7 +807,7 @@ final class AIChatOmnibarController {
         if let index = current.firstIndex(where: { $0.id == attachment.id }) {
             current.remove(at: index)
         } else {
-            // Allow reaching the display cap (one over) so the over-limit cue shows; block beyond.
+            // Allow one over the cap (for the over-limit cue); block beyond.
             guard current.count < tabAttachmentsDisplayCap else { return }
             current.append(attachment)
             prewarmAttachedTab(id: attachment.id)
@@ -1111,11 +1107,7 @@ final class AIChatOmnibarController {
             return
         }
 
-        // Block submission if too many tabs are attached. Like files, the picker caps at one over
-        // the limit (+1) for a visible over-limit cue; hold submit until the excess is removed.
-        // Not gated on `isOmnibarTabPickerEnabled`: tab cards always render (they're page content,
-        // not model-typed), and shared-state attachments persist if the picker flag flips off
-        // mid-session — so the cap must hold regardless of the flag to avoid shipping >3 contexts.
+        // Hold submit while over the tab cap — unconditional, since tab cards render regardless of the picker flag.
         if hasExcessTabAttachments {
             return
         }

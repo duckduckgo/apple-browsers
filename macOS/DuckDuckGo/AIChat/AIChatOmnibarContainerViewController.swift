@@ -306,10 +306,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         omnibarController.selectedModelSupportsFileUpload && hasExcessFileAttachments
     }
 
-    /// Tab-side analogue of `hasVisibleImageExcess`. Unlike images/files, tab cards always render
-    /// (they're page content, not model-typed — see `applyPanelAttachmentsFromSharedState`), so this
-    /// isn't gated on the picker flag: whenever the excess exists, its cards are on screen for the
-    /// error label to anchor against, and the cap must hold even if the picker flag flipped off.
+    /// Tab-side analogue of `hasVisibleImageExcess`. Not picker-flag-gated: tab cards always render.
     private var hasVisibleTabExcess: Bool {
         omnibarController.hasExcessTabAttachments
     }
@@ -1470,8 +1467,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         header.isEnabled = false
         menu.addItem(header)
 
-        // Once the display cap is reached, unattached rows are disabled so the user can't push
-        // further over the limit; attached rows stay interactive so they can remove one.
+        // Disable unattached rows once at the display cap; attached rows stay interactive.
         let atCap = attachedIds.count >= omnibarController.tabAttachmentsDisplayCap
 
         // `openTabsForOmnibarPicker()` returns the current tab first, so the menu shows
@@ -1486,9 +1482,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
                 isDisabled: !isAttached && atCap,
                 onToggle: { [weak self, weak observer, weak menu] in
                     guard let self else { return }
-                    // Compare the real attachment state before and after: the toggle no-ops at the
-                    // display cap, so we must only fire a pixel / count a mutation when it actually
-                    // changed — otherwise an over-cap click would fire a bogus "chosen" pixel.
+                    // Only fire a pixel / count a mutation on a real change — the toggle no-ops at the cap.
                     let wasAttached = self.omnibarController.activeTabAttachments.contains(where: { $0.id == candidate.id })
                     self.omnibarController.toggleTabAttachment(candidate)
                     let nowAttached = self.omnibarController.activeTabAttachments.contains(where: { $0.id == candidate.id })
@@ -1499,9 +1493,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
                         PixelKit.fire(pixel, frequency: .dailyAndCount, includeAppVersionParameter: true)
                         observer?.markDidMutate()
                     }
-                    // The submenu stays open for multi-toggle and never rebuilds, so refresh every
-                    // row from the authoritative attachment list — otherwise checkmarks and the
-                    // disabled appearance go stale once the cap is reached.
+                    // The submenu stays open and never rebuilds, so refresh rows from the attachment list.
                     self.refreshAttachTabsRows(in: menu)
                 }
             )
@@ -1512,8 +1504,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         return menu
     }
 
-    /// Re-applies each attach-tabs row's checkmark and enabled/disabled state from the current
-    /// attachment list. Runs after every toggle because the submenu stays open for multi-toggle.
+    /// Re-applies every row's checkmark + disabled state from the attachment list after a toggle.
     private func refreshAttachTabsRows(in menu: NSMenu?) {
         guard let menu else { return }
         let attachedIds = Set(omnibarController.activeTabAttachments.map(\.id))

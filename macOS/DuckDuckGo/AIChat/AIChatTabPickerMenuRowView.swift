@@ -54,8 +54,7 @@ final class AIChatTabPickerMenuRowView: NSView {
     private let accessoryLabel = NSTextField(labelWithString: "")
     private var trackingArea: NSTrackingArea?
 
-    /// The attached tab's id. Lets the submenu refresh this row from the authoritative attachment
-    /// list after any toggle (the menu stays open for multi-toggle and never rebuilds).
+    /// The tab's id, so the submenu can refresh this row from the attachment list after a toggle.
     let tabId: String
 
     private(set) var isAttached: Bool {
@@ -72,10 +71,7 @@ final class AIChatTabPickerMenuRowView: NSView {
 
     private let onToggle: () -> Void
 
-    /// When true the row is inert (the tab cap is reached and this tab isn't attached): no hover
-    /// highlight, no toggle, and the whole row is dimmed. Attached rows are never disabled so the
-    /// user can always remove one to get back under the cap. Mutable because the submenu stays open
-    /// for multi-toggle, so it's refreshed on every row as the cap is reached / released.
+    /// Inert + dimmed when the cap is reached and this tab isn't attached. Mutable so the still-open submenu can refresh it.
     private var isDisabled: Bool {
         didSet {
             guard oldValue != isDisabled else { return }
@@ -189,9 +185,7 @@ final class AIChatTabPickerMenuRowView: NSView {
             addSubview(accessoryLabel)
         }
 
-        // Dim the whole row (favicon, title, reserved checkmark slot) when it can't be interacted
-        // with, matching how AppKit greys out unavailable menu items. Set directly here because a
-        // `didSet` doesn't fire during initialization.
+        // Set directly (a `didSet` doesn't fire during init).
         alphaValue = isDisabled ? Layout.disabledAlpha : 1.0
 
         updateColors()
@@ -263,14 +257,11 @@ final class AIChatTabPickerMenuRowView: NSView {
         guard !isDisabled else { return }
         let pointInView = convert(event.locationInWindow, from: nil)
         guard bounds.contains(pointInView) else { return }
-        // Don't optimistically flip `isAttached` here — the toggle can no-op at the display cap.
-        // `onToggle` mutates the model and then refreshes this row (and its siblings) from the
-        // authoritative attachment list via `applyState`, so the checkmark always reflects reality.
+        // Don't flip `isAttached` here — the toggle can no-op at the cap; `onToggle` refreshes via `applyState`.
         onToggle()
     }
 
-    /// Re-applies attached + disabled state from the source of truth. Called on every row after any
-    /// toggle so the still-open submenu never shows a stale checkmark or a stale enabled appearance.
+    /// Re-applies attached + disabled state from the source of truth.
     func applyState(isAttached: Bool, isDisabled: Bool) {
         self.isAttached = isAttached
         self.isDisabled = isDisabled

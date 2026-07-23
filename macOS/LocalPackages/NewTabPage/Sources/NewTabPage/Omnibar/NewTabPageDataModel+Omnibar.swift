@@ -64,11 +64,7 @@ public extension NewTabPageDataModel {
         }
     }
 
-    /// Attachment limits forwarded to the web so the NTP omnibar can enforce them instead of
-    /// hardcoding defaults. `files`/`images` are sourced from the Duck.ai backend
-    /// (`/duckchat/v1/models`, field `attachmentLimits`), already tier-resolved, and are optional
-    /// because the backend may omit them (network failure, older backend). `tabs` is a hardcoded
-    /// native product constant and is always present.
+    /// Attachment limits forwarded to the web. `files`/`images` are backend-sourced + optional; `tabs` is a hardcoded native constant.
     struct AttachmentLimits: Codable, Equatable {
         public struct FileLimits: Codable, Equatable {
             let maxPerConversation: Int

@@ -79,9 +79,7 @@ final class NewTabPageOmnibarModelsProvider: NewTabPageOmnibarModelsProviding {
         }
     }
 
-    /// Always returns a struct: `files`/`images` are populated from the backend when present (nil
-    /// otherwise), while `tabs` carries the hardcoded native cap unconditionally so the tab limit
-    /// survives a backend/network omission of the file/image limits.
+    /// `files`/`images` come from the backend when present; `tabs` always carries the hardcoded cap.
     private func mapAttachmentLimits(_ limits: AIChatAttachmentTierLimits?) -> NewTabPageDataModel.AttachmentLimits {
         NewTabPageDataModel.AttachmentLimits(
             files: limits.map {

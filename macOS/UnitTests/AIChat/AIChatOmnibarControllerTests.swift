@@ -611,8 +611,7 @@ final class AIChatOmnibarControllerTests: XCTestCase {
     }
 
     func testWhenToggleTabAttachmentReachesDisplayCap_ThenOneOverIsAllowedButFurtherBlocked() {
-        // maxTabAttachments is 3; the picker allows exactly one over (displayCap 4) so the
-        // over-limit cue can show, then blocks further attaches — mirroring the image/file caps.
+        // Cap is 3; one over (displayCap 4) is allowed for the cue, then further attaches no-op.
         controller.toggleTabAttachment(makeTabAttachment(id: "tab-1"))
         controller.toggleTabAttachment(makeTabAttachment(id: "tab-2"))
         controller.toggleTabAttachment(makeTabAttachment(id: "tab-3"))
@@ -647,9 +646,7 @@ final class AIChatOmnibarControllerTests: XCTestCase {
     }
 
     func testWhenSubmitWithTabAttachmentsOverCap_ThenSubmitIsBlockedEvenWithPickerFlagOff() {
-        // Regression: the cap must hold regardless of `isOmnibarTabPickerEnabled`. Tab cards always
-        // render and shared-state attachments persist if the picker flag flips off mid-session, so a
-        // flag-gated guard would let a prompt ship 4 page contexts. Flags are left OFF here on purpose.
+        // Regression: the cap must hold with the picker flag OFF (left off here on purpose).
         controller.toggleTabAttachment(makeTabAttachment(id: "tab-1"))
         controller.toggleTabAttachment(makeTabAttachment(id: "tab-2"))
         controller.toggleTabAttachment(makeTabAttachment(id: "tab-3"))
@@ -677,8 +674,7 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         XCTAssertFalse(controller.hasExcessTabAttachments)
         controller.updateText("summarize these")
 
-        // When — submit awaits per-tab page-context extraction; the brief sleep lets it settle
-        // (same rationale as `testWhenSubmitWithTabAttachments_ThenSubmitProceedsAndPixelFires`).
+        // When — brief sleep lets the async page-context extraction settle (see sibling submit test).
         controller.submit()
         try? await Task.sleep(nanoseconds: 100_000_000)
 

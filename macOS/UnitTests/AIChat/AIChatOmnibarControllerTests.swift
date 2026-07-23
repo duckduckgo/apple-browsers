@@ -610,6 +610,81 @@ final class AIChatOmnibarControllerTests: XCTestCase {
                        "Order matches the toggle-on order; the duck.ai web app preserves this on submit")
     }
 
+    func testWhenToggleTabAttachmentReachesDisplayCap_ThenOneOverIsAllowedButFurtherBlocked() {
+        // maxTabAttachments is 3; the picker allows exactly one over (displayCap 4) so the
+        // over-limit cue can show, then blocks further attaches — mirroring the image/file caps.
+        controller.toggleTabAttachment(makeTabAttachment(id: "tab-1"))
+        controller.toggleTabAttachment(makeTabAttachment(id: "tab-2"))
+        controller.toggleTabAttachment(makeTabAttachment(id: "tab-3"))
+        controller.toggleTabAttachment(makeTabAttachment(id: "tab-4"))
+
+        XCTAssertEqual(controller.activeTabAttachments.count, 4,
+                       "Attaching one over the cap (displayCap) is allowed to surface the over-limit cue")
+
+        // A fifth attach is a no-op — the list stays at the display cap.
+        controller.toggleTabAttachment(makeTabAttachment(id: "tab-5"))
+        XCTAssertEqual(controller.activeTabAttachments.map(\.id), ["tab-1", "tab-2", "tab-3", "tab-4"],
+                       "Attaching beyond the display cap is a no-op")
+    }
+
+    func testTabAttachmentFullAndExcessPredicates() {
+        XCTAssertFalse(controller.isActiveTabAttachmentsFull)
+        XCTAssertFalse(controller.hasExcessTabAttachments)
+
+        controller.toggleTabAttachment(makeTabAttachment(id: "tab-1"))
+        controller.toggleTabAttachment(makeTabAttachment(id: "tab-2"))
+        controller.toggleTabAttachment(makeTabAttachment(id: "tab-3"))
+
+        // At the cap (3): full, but not yet over.
+        XCTAssertTrue(controller.isActiveTabAttachmentsFull)
+        XCTAssertFalse(controller.hasExcessTabAttachments)
+
+        controller.toggleTabAttachment(makeTabAttachment(id: "tab-4"))
+
+        // One over (4): still full, and now in excess.
+        XCTAssertTrue(controller.isActiveTabAttachmentsFull)
+        XCTAssertTrue(controller.hasExcessTabAttachments)
+    }
+
+    func testWhenSubmitWithTabAttachmentsOverCap_ThenSubmitIsBlocked() {
+        // The submit guard is gated on the tab picker being enabled, so turn its flags on.
+        featureFlagger.enabledFeatureFlags = [.aiChatPageContext, .aiChatOmnibarAttachMoreTabs]
+        controller.toggleTabAttachment(makeTabAttachment(id: "tab-1"))
+        controller.toggleTabAttachment(makeTabAttachment(id: "tab-2"))
+        controller.toggleTabAttachment(makeTabAttachment(id: "tab-3"))
+        controller.toggleTabAttachment(makeTabAttachment(id: "tab-4"))
+        XCTAssertTrue(controller.hasExcessTabAttachments)
+        controller.updateText("summarize these")
+
+        // When
+        controller.submit()
+
+        // Then — submit returns early: no duck.ai tab opened, no prompt posted, attachments retained.
+        XCTAssertFalse(mockTabOpener.openAIChatTabCalled, "Submit is blocked while over the tab cap")
+        XCTAssertNil(AIChatPromptHandler.shared.consumeData(), "No prompt is posted while over the tab cap")
+        XCTAssertEqual(controller.activeTabAttachments.count, 4,
+                       "Over-cap attachments are retained so the user can remove one to unblock submit")
+    }
+
+    func testWhenSubmitWithTabAttachmentsAtCap_ThenSubmitProceeds() async {
+        // At exactly the cap (3, not over), submit must proceed even with the picker enabled.
+        featureFlagger.enabledFeatureFlags = [.aiChatPageContext, .aiChatOmnibarAttachMoreTabs]
+        controller.toggleTabAttachment(makeTabAttachment(id: "tab-1"))
+        controller.toggleTabAttachment(makeTabAttachment(id: "tab-2"))
+        controller.toggleTabAttachment(makeTabAttachment(id: "tab-3"))
+        XCTAssertTrue(controller.isActiveTabAttachmentsFull)
+        XCTAssertFalse(controller.hasExcessTabAttachments)
+        controller.updateText("summarize these")
+
+        // When — submit awaits per-tab page-context extraction; the brief sleep lets it settle
+        // (same rationale as `testWhenSubmitWithTabAttachments_ThenSubmitProceedsAndPixelFires`).
+        controller.submit()
+        try? await Task.sleep(nanoseconds: 100_000_000)
+
+        // Then
+        XCTAssertTrue(mockTabOpener.openAIChatTabCalled, "Submit proceeds when at (not over) the tab cap")
+    }
+
     func testWhenSubmitWithTabAttachments_ThenSharedStateClearsTabAttachments() async {
         // Given — a tab is attached and there's a prompt to submit
         let attachment = makeTabAttachment(id: "tab-1")

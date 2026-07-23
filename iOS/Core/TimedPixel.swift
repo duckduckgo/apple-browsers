@@ -19,7 +19,7 @@
 
 import Foundation
 
-/// Deprecated. Use PixelKit for new pixels.  Consider WideEvents for measuring timeframes.
+/// *** Deprecated. Use PixelKit for new pixels.  Consider WideEvents for measuring timeframes. ***
 public class TimedPixel {
 
     let pixel: Pixel.Event

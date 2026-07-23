@@ -34,6 +34,7 @@ struct FireDialogViewSettings: StoringKeys {
     let lastIncludeHistoryState = StorageKey<Bool>(.fireDialogIncludeHistory)
     let lastIncludeCookiesAndSiteDataState = StorageKey<Bool>(.fireDialogIncludeCookiesAndSiteData)
     let lastIncludeChatHistoryState = StorageKey<Bool>(.fireDialogIncludeChatHistory)
+    let lastSectionsExpandedState = StorageKey<Bool>(.fireDialogSectionsExpanded)
 }
 
 @MainActor
@@ -155,6 +156,7 @@ final class FireDialogViewModel: ObservableObject {
          includeHistory: Bool? = nil,
          includeCookiesAndSiteData: Bool? = nil,
          includeChatHistory: Bool? = nil,
+         sectionsExpanded: Bool? = nil,
          mode: Mode = .fireButton,
          settings: (any KeyedStoring<FireDialogViewSettings>)? = nil,
          scopeCookieDomains: Set<String>? = nil,
@@ -188,6 +190,7 @@ final class FireDialogViewModel: ObservableObject {
         self.includeHistory = includeHistory ?? self.settings.lastIncludeHistoryState ?? true
         self.includeCookiesAndSiteData = includeCookiesAndSiteData ?? self.settings.lastIncludeCookiesAndSiteDataState ?? true
         self.includeChatHistorySetting = includeChatHistory ?? self.settings.lastIncludeChatHistoryState ?? false
+        self.isSectionsExpanded = sectionsExpanded ?? self.settings.lastSectionsExpandedState ?? false
 
         updateLastSelectedClearingOptionIfNeeded()
 
@@ -274,6 +277,13 @@ final class FireDialogViewModel: ObservableObject {
             settings.lastIncludeChatHistoryState = includeChatHistorySetting
             pixelFiring?.fire(FireDialogPixel.fireDialogChangeSettings, frequency: .uniqueByName, doNotEnforcePrefix: true)
             pixelFiring?.fire(FireDialogPixel.fireDialogToggleClearAIChats, frequency: .dailyAndCount, doNotEnforcePrefix: true)
+        }
+    }
+
+    /// Whether the "Choose what to delete" sections are expanded.
+    @Published var isSectionsExpanded: Bool {
+        didSet {
+            settings.lastSectionsExpandedState = isSectionsExpanded
         }
     }
 

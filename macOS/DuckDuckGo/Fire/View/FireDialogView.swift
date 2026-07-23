@@ -93,7 +93,6 @@ struct FireDialogView: ModalView {
         }
     }
     @State private var isAnimatingHistoryOverlay: Bool = false
-    @State private var isSectionsExpanded: Bool = false
 
     private let historyDateFormatter: HistoryViewDateFormatting = DefaultHistoryViewDateFormatter()
 
@@ -163,7 +162,7 @@ struct FireDialogView: ModalView {
                         VStack(spacing: 0) {
                             detailsDisclosureView
                                 .accessibilityHidden(isShowingAnyOverlay)
-                            if isSectionsExpanded {
+                            if viewModel.isSectionsExpanded {
                                 sectionsView
                             }
                         }
@@ -376,10 +375,10 @@ struct FireDialogView: ModalView {
 
             Button {
                 withAnimation(.easeOut(duration: 0.2)) {
-                    isSectionsExpanded.toggle()
+                    viewModel.isSectionsExpanded.toggle()
                 }
             } label: {
-                Image(nsImage: (isSectionsExpanded ? DesignSystemImages.Glyphs.Size24.chevronUpSmall : DesignSystemImages.Glyphs.Size24.chevronDownSmall))
+                Image(nsImage: (viewModel.isSectionsExpanded ? DesignSystemImages.Glyphs.Size24.chevronUpSmall : DesignSystemImages.Glyphs.Size24.chevronDownSmall))
                     .resizable()
                     .renderingMode(.template)
                     .frame(width: 12, height: 12)
@@ -389,7 +388,7 @@ struct FireDialogView: ModalView {
             }
             .buttonStyle(.plain)
             .accessibilityLabel(UserText.fireDialogChooseWhatToDelete)
-            .accessibilityValue(isSectionsExpanded ? UserText.fireDialogAccessibilityDetailsExpanded : UserText.fireDialogAccessibilityDetailsCollapsed)
+            .accessibilityValue(viewModel.isSectionsExpanded ? UserText.fireDialogAccessibilityDetailsExpanded : UserText.fireDialogAccessibilityDetailsCollapsed)
             .accessibilityAddTraits(.isButton)
             .accessibilityIdentifier("FireDialogView.detailsDisclosureButton")
         }

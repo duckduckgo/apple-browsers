@@ -1484,17 +1484,25 @@ final class AIChatOmnibarContainerViewController: NSViewController {
                 isAttached: isAttached,
                 isCurrentTab: candidate.id == currentTabId,
                 isDisabled: !isAttached && atCap,
-                onToggle: { [weak omnibarController, weak observer] in
-                    guard let omnibarController else { return }
-                    // Read state BEFORE toggle so we know which pixel to fire — the toggle
-                    // flips it, so post-toggle we'd see the opposite of "what just happened".
-                    let wasAttached = omnibarController.activeTabAttachments.contains(where: { $0.id == candidate.id })
-                    omnibarController.toggleTabAttachment(candidate)
-                    let pixel: AIChatPixel = wasAttached
-                        ? .aiChatAddressBarAttachTabRemoved
-                        : .aiChatAddressBarAttachTabChosen
-                    PixelKit.fire(pixel, frequency: .dailyAndCount, includeAppVersionParameter: true)
-                    observer?.markDidMutate()
+                onToggle: { [weak self, weak observer, weak menu] in
+                    guard let self else { return }
+                    // Compare the real attachment state before and after: the toggle no-ops at the
+                    // display cap, so we must only fire a pixel / count a mutation when it actually
+                    // changed — otherwise an over-cap click would fire a bogus "chosen" pixel.
+                    let wasAttached = self.omnibarController.activeTabAttachments.contains(where: { $0.id == candidate.id })
+                    self.omnibarController.toggleTabAttachment(candidate)
+                    let nowAttached = self.omnibarController.activeTabAttachments.contains(where: { $0.id == candidate.id })
+                    if nowAttached != wasAttached {
+                        let pixel: AIChatPixel = wasAttached
+                            ? .aiChatAddressBarAttachTabRemoved
+                            : .aiChatAddressBarAttachTabChosen
+                        PixelKit.fire(pixel, frequency: .dailyAndCount, includeAppVersionParameter: true)
+                        observer?.markDidMutate()
+                    }
+                    // The submenu stays open for multi-toggle and never rebuilds, so refresh every
+                    // row from the authoritative attachment list — otherwise checkmarks and the
+                    // disabled appearance go stale once the cap is reached.
+                    self.refreshAttachTabsRows(in: menu)
                 }
             )
             item.view = row
@@ -1502,6 +1510,19 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         }
 
         return menu
+    }
+
+    /// Re-applies each attach-tabs row's checkmark and enabled/disabled state from the current
+    /// attachment list. Runs after every toggle because the submenu stays open for multi-toggle.
+    private func refreshAttachTabsRows(in menu: NSMenu?) {
+        guard let menu else { return }
+        let attachedIds = Set(omnibarController.activeTabAttachments.map(\.id))
+        let atCap = attachedIds.count >= omnibarController.tabAttachmentsDisplayCap
+        for item in menu.items {
+            guard let row = item.view as? AIChatTabPickerMenuRowView else { continue }
+            let isAttached = attachedIds.contains(row.tabId)
+            row.applyState(isAttached: isAttached, isDisabled: !isAttached && atCap)
+        }
     }
 
     @objc private func attachMenuImageOrFileClicked() {

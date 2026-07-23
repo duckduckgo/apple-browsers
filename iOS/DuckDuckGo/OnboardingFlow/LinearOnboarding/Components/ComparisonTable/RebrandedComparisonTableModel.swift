@@ -19,6 +19,7 @@
 
 import SwiftUI
 import Onboarding
+import DesignResourcesKitIcons
 
 struct RebrandedComparisonTableModel {
 
@@ -140,11 +141,11 @@ extension RebrandedComparisonTableModel {
         switch reason {
         case .browserPrivately:
             return [
-                Feature(icon: Icon.privateSearchIcon, title: BrowserText.privateSearch, competitorAvailability: .unavailable, ddgAvailability: .available),
+                Feature(icon: Icon.lensIcon, title: BrowserText.privateSearch, competitorAvailability: .unavailable, ddgAvailability: .available),
                 Feature(icon: Icon.shieldIcon, title: BrowserText.trackerBlockers, competitorAvailability: .partial, ddgAvailability: .available),
                 Feature(icon: Icon.eraseDataIcon, title: BrowserText.eraseBrowsingData, competitorAvailability: .unavailable, ddgAvailability: .available),
                 Feature(icon: Icon.privateAIChatIcon, title: BrowserText.privateAIChat, competitorAvailability: .unavailable, ddgAvailability: .available),
-                Feature(icon: Icon.blockAdsIcon, title: BrowserText.cookiePopupsAndAds, competitorAvailability: .unavailable, ddgAvailability: .available),
+                Feature(icon: Image(uiImage: DesignSystemImages.Color.Size24.adsBlocked), title: BrowserText.cookiePopupsAndAds, competitorAvailability: .unavailable, ddgAvailability: .available),
             ]
         case .privateAIChat:
             return [

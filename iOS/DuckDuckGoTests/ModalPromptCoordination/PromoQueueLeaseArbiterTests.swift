@@ -350,6 +350,22 @@ struct PromoQueueLeaseArbiterTests {
         _ = visibleLease
     }
 
+    @Test("A new process-scoped arbiter starts empty")
+    func newProcessScopedArbiterStartsWithoutInheritedLeases() throws {
+        let previousProcessArbiter = PromoQueueLeaseArbiter()
+        _ = try acquiredLease(
+            from: previousProcessArbiter.acquireVisiblePromoLease(
+                for: makeVisiblePromoIdentity()
+            )
+        )
+
+        let newProcessArbiter = PromoQueueLeaseArbiter()
+
+        #expect(previousProcessArbiter.snapshot.visiblePromoCount == 1)
+        #expect(!newProcessArbiter.snapshot.hasModalLease)
+        #expect(newProcessArbiter.snapshot.visiblePromoIdentities.isEmpty)
+    }
+
     private func makeVisiblePromoIdentity(
         surfaceID: UUID = UUID(),
         promoID: String = "message"

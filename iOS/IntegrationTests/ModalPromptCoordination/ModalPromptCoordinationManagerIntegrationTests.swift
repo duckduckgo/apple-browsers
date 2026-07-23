@@ -403,6 +403,421 @@ final class ModalPromptCoordinationManagerIntegrationTests {
         #expect(!provider.didCallProvideModalPrompt)
         #expect(!presenterMock.didCallPresent)
     }
+
+    // MARK: - Promo Queue Cross-Surface Integration
+
+    @Test("Foreground Retries Active NTP Before Modal Evaluation")
+    func whenActiveNTPRetriesOnForegroundThenItAcquiresBeforeModalProviderEvaluation() {
+        let provider = MockModalPromptProvider()
+        let manager = makeManager(providers: [provider])
+        let service = makeService(manager: manager, promoQueueEnabled: true)
+        let surfaceID = UUID()
+        let retryTarget = IntegrationPromoRetryTarget()
+        var visibleLease: PromoQueueVisiblePromoLease?
+        retryTarget.onRetry = { admissionHandler in
+            let identity = VisiblePromoIdentity(
+                surfaceID: surfaceID,
+                promoType: .remoteMessage,
+                promoID: "rmf"
+            )
+            guard case .acquired(let lease) = admissionHandler(identity) else {
+                Issue.record("Expected foreground NTP retry to acquire the visible promo lease")
+                return
+            }
+            visibleLease = lease
+        }
+        let registration = service.registerVisiblePromoRetry(
+            for: surfaceID,
+            target: retryTarget
+        )
+
+        service.applicationDidBecomeActive()
+        service.presentModalPromptIfNeeded(from: presenterMock)
+
+        #expect(retryTarget.retryCount == 1)
+        #expect(visibleLease != nil)
+        #expect(promoQueueLeaseArbiter.snapshot.visiblePromoCount == 1)
+        #expect(!promoQueueLeaseArbiter.snapshot.hasModalLease)
+        #expect(!provider.didCallProvideModalPrompt)
+        #expect(!provider.didCallDidPresentModal)
+        #expect(!presenterMock.didCallPresent)
+        #expect(!cooldownManager.isInCooldownPeriod)
+        _ = registration
+    }
+
+    @Test("Exact Root Checkpoint Admits Triggering NTP Before Retrying Other Surfaces")
+    func whenExactModalRootDetachesThenTriggeringNTPAdmitsBeforeOtherActiveNTPsRetry() {
+        let scheduler = MockModalPromptScheduler()
+        let attachmentChecker = IntegrationModalRootAttachmentChecker()
+        let presentationHost = UIViewController()
+        attachmentChecker.attach(presentationHost)
+        let presenter = IntegrationAttachingModalPromptPresenter(
+            presentationHost: presentationHost,
+            attachmentChecker: attachmentChecker
+        )
+        let exactRoot = UIViewController()
+        let provider = MockModalPromptProvider()
+        provider.modalConfigurationToReturn = ModalPromptConfiguration(viewController: exactRoot)
+        let manager = makeManager(
+            providers: [provider],
+            scheduler: scheduler,
+            attachmentChecker: attachmentChecker
+        )
+        let service = makeService(manager: manager, promoQueueEnabled: true)
+
+        service.presentModalPromptIfNeeded(from: presenter)
+
+        let firstSurfaceID = UUID()
+        let secondSurfaceID = UUID()
+        let committedAdmission = service.admitVisiblePromo(
+            VisiblePromoIdentity(
+                surfaceID: firstSurfaceID,
+                promoType: .remoteMessage,
+                promoID: "first"
+            )
+        )
+        #expect(committedAdmission.isBlockedByModal)
+        guard case .committed = manager.modalAttemptPhase else {
+            Issue.record("Expected the modal attempt to remain committed during the scheduling window")
+            return
+        }
+
+        scheduler.executeScheduledBlock()
+        scheduler.executeNextMainTurnBlock()
+
+        #expect(presenter.didCallPresent)
+        guard case .presentationActive = manager.modalAttemptPhase else {
+            Issue.record("Expected the attached exact root to own the presentation-active modal lease")
+            return
+        }
+
+        service.applicationDidEnterBackground()
+        #expect(promoQueueLeaseArbiter.snapshot.hasModalLease)
+        guard case .presentationActive = manager.modalAttemptPhase else {
+            Issue.record("Expected backgrounding to preserve the presentation-active modal lease")
+            return
+        }
+        service.applicationDidBecomeActive()
+
+        let nestedChild = UIViewController()
+        attachmentChecker.attach(nestedChild, to: exactRoot)
+        let nestedFlowAdmission = service.admitVisiblePromo(
+            VisiblePromoIdentity(
+                surfaceID: firstSurfaceID,
+                promoType: .remoteMessage,
+                promoID: "first"
+            )
+        )
+        #expect(nestedFlowAdmission.isBlockedByModal)
+        #expect(promoQueueLeaseArbiter.snapshot.hasModalLease)
+
+        let firstTarget = IntegrationPromoRetryTarget()
+        let secondTarget = IntegrationPromoRetryTarget()
+        var secondVisibleLease: PromoQueueVisiblePromoLease?
+        secondTarget.onRetry = { admissionHandler in
+            let identity = VisiblePromoIdentity(
+                surfaceID: secondSurfaceID,
+                promoType: .remoteMessage,
+                promoID: "second"
+            )
+            guard case .acquired(let lease) = admissionHandler(identity) else {
+                Issue.record("Expected the other active NTP to acquire during the guarded retry snapshot")
+                return
+            }
+            secondVisibleLease = lease
+        }
+        let firstRegistration = service.registerVisiblePromoRetry(
+            for: firstSurfaceID,
+            target: firstTarget
+        )
+        let secondRegistration = service.registerVisiblePromoRetry(
+            for: secondSurfaceID,
+            target: secondTarget
+        )
+
+        attachmentChecker.detach(exactRoot)
+        let checkpointAdmission = service.admitVisiblePromo(
+            VisiblePromoIdentity(
+                surfaceID: firstSurfaceID,
+                promoType: .remoteMessage,
+                promoID: "first"
+            )
+        )
+
+        guard case .acquired(let firstVisibleLease) = checkpointAdmission else {
+            Issue.record("Expected the triggering NTP to acquire after exact-root detachment")
+            return
+        }
+        #expect(firstTarget.retryCount == 0)
+        #expect(secondTarget.retryCount == 1)
+        #expect(secondVisibleLease != nil)
+        #expect(!promoQueueLeaseArbiter.snapshot.hasModalLease)
+        #expect(promoQueueLeaseArbiter.snapshot.visiblePromoCount == 2)
+        _ = (firstVisibleLease, firstRegistration, secondRegistration)
+    }
+
+    @Test("Enabling Re-Adopts Legacy Exact Root Before Active NTP Retry")
+    func whenFeatureEnablesWithLegacyModalAttachedThenModalIsReAdoptedBeforeNTPRetry() {
+        let scheduler = MockModalPromptScheduler()
+        let attachmentChecker = IntegrationModalRootAttachmentChecker()
+        let presentationHost = UIViewController()
+        attachmentChecker.attach(presentationHost)
+        let presenter = IntegrationAttachingModalPromptPresenter(
+            presentationHost: presentationHost,
+            attachmentChecker: attachmentChecker
+        )
+        let exactRoot = UIViewController()
+        let provider = MockModalPromptProvider()
+        provider.modalConfigurationToReturn = ModalPromptConfiguration(viewController: exactRoot)
+        let manager = makeManager(
+            providers: [provider],
+            scheduler: scheduler,
+            attachmentChecker: attachmentChecker
+        )
+        let service = makeService(manager: manager, promoQueueEnabled: false)
+
+        service.presentModalPromptIfNeeded(from: presenter)
+        scheduler.executeScheduledBlock()
+
+        #expect(presenter.didCallPresent)
+        #expect(provider.didCallDidPresentModal)
+        #expect(!promoQueueLeaseArbiter.snapshot.hasModalLease)
+
+        let surfaceID = UUID()
+        let retryTarget = IntegrationPromoRetryTarget()
+        var didTransitionAdmission: VisiblePromoAdmissionResult?
+        var retryAdmission: VisiblePromoAdmissionResult?
+        retryTarget.onDidTransition = { [weak service] targetState in
+            guard let service, targetState == .enabled else { return }
+            didTransitionAdmission = service.admitVisiblePromo(
+                VisiblePromoIdentity(
+                    surfaceID: surfaceID,
+                    promoType: .remoteMessage,
+                    promoID: "rmf"
+                )
+            )
+        }
+        retryTarget.onRetry = { admissionHandler in
+            retryAdmission = admissionHandler(
+                VisiblePromoIdentity(
+                    surfaceID: surfaceID,
+                    promoType: .remoteMessage,
+                    promoID: "rmf"
+                )
+            )
+        }
+        let registration = service.registerVisiblePromoRetry(
+            for: surfaceID,
+            target: retryTarget
+        )
+
+        service.transitionPromoQueueFeature(to: .enabled)
+
+        #expect(retryTarget.events == ["will-enable", "did-enable", "retry"])
+        #expect(didTransitionAdmission?.isUnavailableDuringTransition == true)
+        #expect(retryAdmission?.isBlockedByModal == true)
+        #expect(promoQueueLeaseArbiter.snapshot.hasModalLease)
+        #expect(promoQueueLeaseArbiter.snapshot.visiblePromoCount == 0)
+        guard case .presentationActive = manager.modalAttemptPhase else {
+            Issue.record("Expected the attached legacy root to be re-adopted before NTP retry")
+            return
+        }
+        _ = registration
+    }
+
+    @Test("Disabling Cancels Committed Schedule And Rejects Reentrant Admissions")
+    func whenFeatureDisablesDuringCommittedDelayThenStaleWorkCannotPresent() {
+        let scheduler = MockModalPromptScheduler()
+        let provider = MockModalPromptProvider()
+        let manager = makeManager(
+            providers: [provider],
+            scheduler: scheduler
+        )
+        let service = makeService(manager: manager, promoQueueEnabled: true)
+        let surfaceID = UUID()
+        let retryTarget = IntegrationPromoRetryTarget()
+        var callbackAdmissions = [VisiblePromoAdmissionResult]()
+        retryTarget.onWillTransition = { [weak service] _ in
+            guard let service else { return }
+            callbackAdmissions.append(service.admitVisiblePromo(
+                VisiblePromoIdentity(
+                    surfaceID: surfaceID,
+                    promoType: .remoteMessage,
+                    promoID: "will"
+                )
+            ))
+        }
+        retryTarget.onDidTransition = { [weak service] _ in
+            guard let service else { return }
+            callbackAdmissions.append(service.admitVisiblePromo(
+                VisiblePromoIdentity(
+                    surfaceID: surfaceID,
+                    promoType: .remoteMessage,
+                    promoID: "did"
+                )
+            ))
+        }
+        let registration = service.registerVisiblePromoRetry(
+            for: surfaceID,
+            target: retryTarget
+        )
+        retryTarget.isActiveForPromoRetry = false
+
+        service.presentModalPromptIfNeeded(from: presenterMock)
+
+        guard case .committed = manager.modalAttemptPhase else {
+            Issue.record("Expected a committed modal scheduling window")
+            return
+        }
+        #expect(promoQueueLeaseArbiter.snapshot.hasModalLease)
+
+        service.transitionPromoQueueFeature(to: .disabled)
+        scheduler.executeScheduledBlock(includingCancelled: true)
+
+        #expect(retryTarget.events == ["will-disable", "did-disable"])
+        #expect(callbackAdmissions.count == 2)
+        #expect(callbackAdmissions.allSatisfy { $0.isUnavailableDuringTransition })
+        #expect(service.admitVisiblePromo(
+            VisiblePromoIdentity(
+                surfaceID: surfaceID,
+                promoType: .remoteMessage,
+                promoID: "after"
+            )
+        ).isFeatureDisabled)
+        #expect(manager.modalAttemptPhase == .idle)
+        #expect(!manager.hasActiveOrPendingModalAttempt)
+        #expect(!promoQueueLeaseArbiter.snapshot.hasModalLease)
+        #expect(promoQueueLeaseArbiter.snapshot.visiblePromoCount == 0)
+        #expect(!presenterMock.didCallPresent)
+        #expect(!provider.didCallDidPresentModal)
+        #expect(!cooldownManager.isInCooldownPeriod)
+        _ = registration
+    }
+
+    @Test("Silent UIKit Refusal Retries Active NTP Snapshot Without Recursion")
+    func whenPresentedRootNeverAttachesThenTwoActiveNTPsRetryOnceAndRegistrationMutationIsDeferred() {
+        let scheduler = MockModalPromptScheduler()
+        let attachmentChecker = IntegrationModalRootAttachmentChecker()
+        let presentationHost = UIViewController()
+        attachmentChecker.attach(presentationHost)
+        presenterMock.modalPromptPresentationViewController = presentationHost
+        presenterMock.shouldCompletePresentation = false
+        let provider = MockModalPromptProvider()
+        let manager = makeManager(
+            providers: [provider],
+            scheduler: scheduler,
+            attachmentChecker: attachmentChecker
+        )
+        let service = makeService(manager: manager, promoQueueEnabled: true)
+        let firstSurfaceID = UUID()
+        let secondSurfaceID = UUID()
+        let firstTarget = IntegrationPromoRetryTarget()
+        let secondTarget = IntegrationPromoRetryTarget()
+        let replacementTarget = IntegrationPromoRetryTarget()
+        firstTarget.isActiveForPromoRetry = false
+        secondTarget.isActiveForPromoRetry = false
+        var firstVisibleLease: PromoQueueVisiblePromoLease?
+        var secondVisibleLease: PromoQueueVisiblePromoLease?
+        var firstRegistration: NewTabPagePromoRetryRegistration?
+        var replacementRegistration: NewTabPagePromoRetryRegistration?
+        firstTarget.onRetry = { [weak service] admissionHandler in
+            guard let service else { return }
+            guard case .acquired(let lease) = admissionHandler(
+                VisiblePromoIdentity(
+                    surfaceID: firstSurfaceID,
+                    promoType: .remoteMessage,
+                    promoID: "first"
+                )
+            ) else {
+                Issue.record("Expected the first active NTP to acquire after silent refusal")
+                return
+            }
+            firstVisibleLease = lease
+            firstRegistration?.deregister()
+            replacementRegistration = service.registerVisiblePromoRetry(
+                for: firstSurfaceID,
+                target: replacementTarget
+            )
+        }
+        secondTarget.onRetry = { admissionHandler in
+            guard case .acquired(let lease) = admissionHandler(
+                VisiblePromoIdentity(
+                    surfaceID: secondSurfaceID,
+                    promoType: .remoteMessage,
+                    promoID: "second"
+                )
+            ) else {
+                Issue.record("Expected the second active NTP to acquire after silent refusal")
+                return
+            }
+            secondVisibleLease = lease
+        }
+        firstRegistration = service.registerVisiblePromoRetry(
+            for: firstSurfaceID,
+            target: firstTarget
+        )
+        let secondRegistration = service.registerVisiblePromoRetry(
+            for: secondSurfaceID,
+            target: secondTarget
+        )
+
+        service.presentModalPromptIfNeeded(from: presenterMock)
+        firstTarget.isActiveForPromoRetry = true
+        secondTarget.isActiveForPromoRetry = true
+        scheduler.executeScheduledBlock()
+        scheduler.executeNextMainTurnBlock()
+
+        #expect(presenterMock.didCallPresent)
+        #expect(firstTarget.retryCount == 1)
+        #expect(secondTarget.retryCount == 1)
+        #expect(replacementTarget.retryCount == 0)
+        #expect(firstVisibleLease != nil)
+        #expect(secondVisibleLease != nil)
+        #expect(promoQueueLeaseArbiter.snapshot.visiblePromoCount == 2)
+        #expect(!promoQueueLeaseArbiter.snapshot.hasModalLease)
+        #expect(manager.modalAttemptPhase == .idle)
+        #expect(manager.hasActiveOrPendingModalAttempt)
+        #expect(!provider.didCallDidPresentModal)
+        #expect(!cooldownManager.isInCooldownPeriod)
+
+        service.transitionPromoQueueFeature(to: .disabled)
+
+        #expect(!manager.hasActiveOrPendingModalAttempt)
+        #expect(promoQueueLeaseArbiter.snapshot.visiblePromoCount == 0)
+        _ = (firstRegistration, replacementRegistration, secondRegistration)
+    }
+
+    private func makeManager(
+        providers: [any ModalPromptProvider],
+        scheduler: ModalPromptScheduling? = nil,
+        attachmentChecker: ModalPromptRootAttachmentChecking? = nil
+    ) -> ModalPromptCoordinationManager {
+        ModalPromptCoordinationManager(
+            providers: providers,
+            cooldownManager: cooldownManager,
+            onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
+            modalPromptScheduling: scheduler,
+            rootAttachmentChecker: attachmentChecker
+        )
+    }
+
+    private func makeService(
+        manager: ModalPromptCoordinationManager,
+        promoQueueEnabled: Bool
+    ) -> PromoCoordinationService {
+        let launchSourceManager = MockLaunchSourceManager()
+        launchSourceManager.source = .standard
+        let featureFlagger = MockFeatureFlagger(
+            enabledFeatureFlags: promoQueueEnabled ? [.promoPresentationCoordination] : []
+        )
+        return PromoCoordinationService(
+            launchSourceManager: launchSourceManager,
+            modalPromptCoordinationManager: manager,
+            featureFlagger: featureFlagger,
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter
+        )
+    }
 }
 
 // MARK: - Helpers
@@ -419,5 +834,122 @@ private final class ImmediateScheduler: ModalPromptScheduling {
     func scheduleOnNextMainTurn(execute: @escaping @MainActor () -> Void) -> ModalPromptScheduledTask {
         execute()
         return ModalPromptScheduledTask()
+    }
+}
+
+@MainActor
+private final class IntegrationPromoRetryTarget: NewTabPagePromoRetrying {
+    var isActiveForPromoRetry = true
+    var onRetry: (@MainActor (VisiblePromoAdmissionHandler) -> Void)?
+    var onWillTransition: (@MainActor (PromoQueueFeatureTargetState) -> Void)?
+    var onDidTransition: (@MainActor (PromoQueueFeatureTargetState) -> Void)?
+
+    private(set) var retryCount = 0
+    private(set) var events = [String]()
+
+    func retryVisiblePromoAdmission(using admissionHandler: VisiblePromoAdmissionHandler) {
+        retryCount += 1
+        events.append("retry")
+        onRetry?(admissionHandler)
+    }
+
+    func promoQueueWillTransition(to targetState: PromoQueueFeatureTargetState) {
+        events.append("will-\(targetState.eventName)")
+        onWillTransition?(targetState)
+    }
+
+    func promoQueueDidTransition(to targetState: PromoQueueFeatureTargetState) {
+        events.append("did-\(targetState.eventName)")
+        onDidTransition?(targetState)
+    }
+}
+
+@MainActor
+private final class IntegrationModalRootAttachmentChecker: ModalPromptRootAttachmentChecking {
+    private var attachedRoots = Set<ObjectIdentifier>()
+    private var intendedHosts = [ObjectIdentifier: ObjectIdentifier]()
+
+    func attach(_ root: UIViewController, to intendedHost: UIViewController? = nil) {
+        let rootIdentifier = ObjectIdentifier(root)
+        attachedRoots.insert(rootIdentifier)
+        intendedHosts[rootIdentifier] = intendedHost.map(ObjectIdentifier.init)
+    }
+
+    func detach(_ root: UIViewController) {
+        let rootIdentifier = ObjectIdentifier(root)
+        attachedRoots.remove(rootIdentifier)
+        intendedHosts[rootIdentifier] = nil
+    }
+
+    func isAttached(_ root: UIViewController) -> Bool {
+        attachedRoots.contains(ObjectIdentifier(root))
+    }
+
+    func isAttached(_ root: UIViewController, to intendedPresenter: UIViewController?) -> Bool {
+        guard isAttached(root), let intendedPresenter else {
+            return isAttached(root)
+        }
+
+        return intendedHosts[ObjectIdentifier(root)] == ObjectIdentifier(intendedPresenter)
+    }
+}
+
+@MainActor
+private final class IntegrationAttachingModalPromptPresenter: ModalPromptPresenter {
+    let modalPromptPresentationViewController: UIViewController?
+    var presentedViewController: UIViewController?
+    private(set) var didCallPresent = false
+
+    private let attachmentChecker: IntegrationModalRootAttachmentChecker
+
+    init(
+        presentationHost: UIViewController,
+        attachmentChecker: IntegrationModalRootAttachmentChecker
+    ) {
+        modalPromptPresentationViewController = presentationHost
+        self.attachmentChecker = attachmentChecker
+    }
+
+    func present(_ viewControllerToPresent: UIViewController, animated flag: Bool, completion: (() -> Void)?) {
+        didCallPresent = true
+        attachmentChecker.attach(
+            viewControllerToPresent,
+            to: modalPromptPresentationViewController
+        )
+        completion?()
+    }
+}
+
+private extension PromoQueueFeatureTargetState {
+    var eventName: String {
+        switch self {
+        case .disabled:
+            return "disable"
+        case .enabled:
+            return "enable"
+        }
+    }
+}
+
+private extension VisiblePromoAdmissionResult {
+    var isBlockedByModal: Bool {
+        if case .blockedByModal = self {
+            return true
+        }
+        return false
+    }
+
+    var isFeatureDisabled: Bool {
+        if case .featureDisabled = self {
+            return true
+        }
+        return false
+    }
+
+    var isUnavailableDuringTransition: Bool {
+        if case .unavailableDuringTransition = self {
+            return true
+        }
+        return false
     }
 }

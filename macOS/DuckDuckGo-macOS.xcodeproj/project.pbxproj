@@ -4636,6 +4636,22 @@
 		FEE12B412E520E4D00AD9807 /* PromoHistoryRecordTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEE12B412E520E4D00AD9808 /* PromoHistoryRecordTests.swift */; };
 		FEE12B412E520E4D00AD9809 /* PromoHistoryRecordTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEE12B412E520E4D00AD9808 /* PromoHistoryRecordTests.swift */; };
 		FFF6627FC03B410786EF2635 /* RebrandedContextualOnboardingDialogs+SearchCompleted.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E776DE170ED47F4B3E992DF /* RebrandedContextualOnboardingDialogs+SearchCompleted.swift */; };
+		FB07BAD00000000000000011 /* PromptBarShortcut.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD00000000000000001 /* PromptBarShortcut.swift */; };
+		FB07BAD00000000000000016 /* PromptBarShortcut.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD00000000000000001 /* PromptBarShortcut.swift */; };
+		FB07BAD00000000000000012 /* PromptBarPreferencesPersistor.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD00000000000000002 /* PromptBarPreferencesPersistor.swift */; };
+		FB07BAD00000000000000017 /* PromptBarPreferencesPersistor.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD00000000000000002 /* PromptBarPreferencesPersistor.swift */; };
+		FB07BAD00000000000000013 /* PromptBarSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD00000000000000003 /* PromptBarSettings.swift */; };
+		FB07BAD00000000000000018 /* PromptBarSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD00000000000000003 /* PromptBarSettings.swift */; };
+		FB07BAD00000000000000014 /* PromptBarShortcutRecorderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD00000000000000004 /* PromptBarShortcutRecorderView.swift */; };
+		FB07BAD00000000000000019 /* PromptBarShortcutRecorderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD00000000000000004 /* PromptBarShortcutRecorderView.swift */; };
+		FB07BAD00000000000000015 /* PromptBarSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD00000000000000005 /* PromptBarSettingsView.swift */; };
+		FB07BAD00000000000000020 /* PromptBarSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD00000000000000005 /* PromptBarSettingsView.swift */; };
+		FB07BAD00000000000000021 /* PromptBarShortcutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD00000000000000006 /* PromptBarShortcutTests.swift */; };
+		FB07BAD00000000000000024 /* PromptBarShortcutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD00000000000000006 /* PromptBarShortcutTests.swift */; };
+		FB07BAD00000000000000022 /* PromptBarPreferencesPersistorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD00000000000000007 /* PromptBarPreferencesPersistorTests.swift */; };
+		FB07BAD00000000000000025 /* PromptBarPreferencesPersistorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD00000000000000007 /* PromptBarPreferencesPersistorTests.swift */; };
+		FB07BAD00000000000000023 /* PromptBarSettingsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD00000000000000008 /* PromptBarSettingsTests.swift */; };
+		FB07BAD00000000000000026 /* PromptBarSettingsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD00000000000000008 /* PromptBarSettingsTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -7103,6 +7119,14 @@
 		FD23FD2A28816606007F6985 /* AutoconsentMessageProtocolTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AutoconsentMessageProtocolTests.swift; path = UnitTests/Autoconsent/AutoconsentMessageProtocolTests.swift; sourceTree = SOURCE_ROOT; };
 		FD23FD2C2886A81D007F6985 /* AutoconsentManagement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoconsentManagement.swift; sourceTree = "<group>"; };
 		FEE12B412E520E4D00AD9808 /* PromoHistoryRecordTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromoHistoryRecordTests.swift; sourceTree = "<group>"; };
+		FB07BAD00000000000000001 /* PromptBarShortcut.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptBarShortcut.swift; sourceTree = "<group>"; };
+		FB07BAD00000000000000002 /* PromptBarPreferencesPersistor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptBarPreferencesPersistor.swift; sourceTree = "<group>"; };
+		FB07BAD00000000000000003 /* PromptBarSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptBarSettings.swift; sourceTree = "<group>"; };
+		FB07BAD00000000000000004 /* PromptBarShortcutRecorderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptBarShortcutRecorderView.swift; sourceTree = "<group>"; };
+		FB07BAD00000000000000005 /* PromptBarSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptBarSettingsView.swift; sourceTree = "<group>"; };
+		FB07BAD00000000000000006 /* PromptBarShortcutTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptBarShortcutTests.swift; sourceTree = "<group>"; };
+		FB07BAD00000000000000007 /* PromptBarPreferencesPersistorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptBarPreferencesPersistorTests.swift; sourceTree = "<group>"; };
+		FB07BAD00000000000000008 /* PromptBarSettingsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptBarSettingsTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -10935,6 +10959,7 @@
 				4B0511A2262CAA5A00F6079C /* Preferences */,
 				B6FA893A269C414900588ECD /* PrivacyDashboard */,
 				37C9F78E2CF1C855004D73A1 /* PrivacyStats */,
+				FB07BAD00000000000000030 /* PromptBar */,
 				BB8DD9E82EDF73A900F75D8E /* QuitSurvey */,
 				AAC6881528626B6F00D54247 /* RecentlyClosed */,
 				3712091F2C232E2B003ADF3D /* RemoteMessaging */,
@@ -11015,6 +11040,7 @@
 				4B0511EE262CAEB300F6079C /* Preferences */,
 				31E163BB293A577200963C10 /* PrivacyReferenceTests */,
 				CC199E8F2F4E182C00964700 /* Promotions */,
+				FB07BAD00000000000000033 /* PromptBar */,
 				BBE497DC2EDF9AE6000C3DB5 /* QuitSurvey */,
 				AA7E9174286DAFB700AB6B62 /* RecentlyClosed */,
 				373B2F7F2C384DD20013A94B /* RemoteMessaging */,
@@ -13295,6 +13321,44 @@
 			path = Subscription;
 			sourceTree = "<group>";
 		};
+		FB07BAD00000000000000030 /* PromptBar */ = {
+			isa = PBXGroup;
+			children = (
+				FB07BAD00000000000000031 /* Model */,
+				FB07BAD00000000000000032 /* View */,
+			);
+			path = PromptBar;
+			sourceTree = "<group>";
+		};
+		FB07BAD00000000000000031 /* Model */ = {
+			isa = PBXGroup;
+			children = (
+				FB07BAD00000000000000002 /* PromptBarPreferencesPersistor.swift */,
+				FB07BAD00000000000000003 /* PromptBarSettings.swift */,
+				FB07BAD00000000000000001 /* PromptBarShortcut.swift */,
+			);
+			path = Model;
+			sourceTree = "<group>";
+		};
+		FB07BAD00000000000000032 /* View */ = {
+			isa = PBXGroup;
+			children = (
+				FB07BAD00000000000000005 /* PromptBarSettingsView.swift */,
+				FB07BAD00000000000000004 /* PromptBarShortcutRecorderView.swift */,
+			);
+			path = View;
+			sourceTree = "<group>";
+		};
+		FB07BAD00000000000000033 /* PromptBar */ = {
+			isa = PBXGroup;
+			children = (
+				FB07BAD00000000000000007 /* PromptBarPreferencesPersistorTests.swift */,
+				FB07BAD00000000000000008 /* PromptBarSettingsTests.swift */,
+				FB07BAD00000000000000006 /* PromptBarShortcutTests.swift */,
+			);
+			path = PromptBar;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -15533,6 +15597,11 @@
 				3706FB60293F65D500E42796 /* PasswordManagementIdentityItemView.swift in Sources */,
 				3706FB61293F65D500E42796 /* ProgressExtension.swift in Sources */,
 				31C26A0E2CBE9DFE00FFF462 /* AIChatPreferences.swift in Sources */,
+				FB07BAD00000000000000016 /* PromptBarShortcut.swift in Sources */,
+				FB07BAD00000000000000017 /* PromptBarPreferencesPersistor.swift in Sources */,
+				FB07BAD00000000000000018 /* PromptBarSettings.swift in Sources */,
+				FB07BAD00000000000000019 /* PromptBarShortcutRecorderView.swift in Sources */,
+				FB07BAD00000000000000020 /* PromptBarSettingsView.swift in Sources */,
 				84537A032C998C28008723BC /* FireWindowSession.swift in Sources */,
 				BB470EBC2C5A66D6002EE91D /* BookmarkManagementDetailViewModel.swift in Sources */,
 				3706FB65293F65D500E42796 /* PrivacyDashboardWebView.swift in Sources */,
@@ -16816,6 +16885,9 @@
 				9FFBEE702DDEDB3C0058B11A /* MockDefaultBrowserAndDockPromptCoordinator.swift in Sources */,
 				372D43D92DF2573A00A3A10D /* MockFireproofDomains.swift in Sources */,
 				3706FE79293F661700E42796 /* AppearancePreferencesTests.swift in Sources */,
+				FB07BAD00000000000000024 /* PromptBarShortcutTests.swift in Sources */,
+				FB07BAD00000000000000025 /* PromptBarPreferencesPersistorTests.swift in Sources */,
+				FB07BAD00000000000000026 /* PromptBarSettingsTests.swift in Sources */,
 				3706FE7A293F661700E42796 /* FireDialogViewModelTests.swift in Sources */,
 				7B09CBAA2BA4BE8200CF245B /* NetworkProtectionPixelEventTests.swift in Sources */,
 				3706FE7B293F661700E42796 /* HistoryStoringMock.swift in Sources */,
@@ -17679,6 +17751,11 @@
 				369BA9862F31305F0037B56D /* DataClearingPixels.swift in Sources */,
 				AAB7320926DD0CD9002FACF9 /* FireViewController.swift in Sources */,
 				31C26A0D2CBE9DFE00FFF462 /* AIChatPreferences.swift in Sources */,
+				FB07BAD00000000000000011 /* PromptBarShortcut.swift in Sources */,
+				FB07BAD00000000000000012 /* PromptBarPreferencesPersistor.swift in Sources */,
+				FB07BAD00000000000000013 /* PromptBarSettings.swift in Sources */,
+				FB07BAD00000000000000014 /* PromptBarShortcutRecorderView.swift in Sources */,
+				FB07BAD00000000000000015 /* PromptBarSettingsView.swift in Sources */,
 				4B92928C26670D1700AD2C21 /* OutlineSeparatorViewCell.swift in Sources */,
 				8426108D2C9811F30070D5F9 /* KeyEquivalentView.swift in Sources */,
 				CC442CAD2F6C45B8002E8175 /* DockPreferencesModel.swift in Sources */,
@@ -19159,6 +19236,9 @@
 				CC951AC52EB51FE90047E245 /* DefaultBrowserAndDockPromptUserActivityStoreTests.swift in Sources */,
 				37AA017C2E2100DA00844427 /* CrashPixelAppIdentifierTests.swift in Sources */,
 				37CD54B927F1F8AC00F1F7B9 /* AppearancePreferencesTests.swift in Sources */,
+				FB07BAD00000000000000021 /* PromptBarShortcutTests.swift in Sources */,
+				FB07BAD00000000000000022 /* PromptBarPreferencesPersistorTests.swift in Sources */,
+				FB07BAD00000000000000023 /* PromptBarSettingsTests.swift in Sources */,
 				EEF53E182950CED5002D78F4 /* JSAlertViewModelTests.swift in Sources */,
 				376C4DB928A1A48A00CC0F5B /* FireDialogViewModelTests.swift in Sources */,
 				AAEC74B62642CC6A00C2EFBC /* HistoryStoringMock.swift in Sources */,

@@ -248,6 +248,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable
     let aiChatSessionStore: AIChatSessionStoring
     let aiChatPreferences: AIChatPreferences
+    // Shared between the AI Features preferences pane and the future Prompt Bar
+    // controllers (menu bar icon, global shortcut), which observe the same instance.
+    let promptBarSettings: PromptBarSettings
     private(set) var aiChatHistoryCleaner: AIChatHistoryCleaning!
 
     /// Shared across the native address-bar omnibar and the New Tab Page omnibar so that model-selection
@@ -834,11 +837,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         contentScopePreferences = ContentScopePreferences(windowControllersManager: windowControllersManager)
         webTrackingProtectionPreferences = WebTrackingProtectionPreferences(persistor: WebTrackingProtectionPreferencesUserDefaultsPersistor(), windowControllersManager: windowControllersManager)
         cookiePopupProtectionPreferences = CookiePopupProtectionPreferences(persistor: CookiePopupProtectionPreferencesUserDefaultsPersistor(), windowControllersManager: windowControllersManager)
+        promptBarSettings = PromptBarSettings(persistor: PromptBarPreferencesUserDefaultsPersistor(keyValueStore: keyValueStore))
         aiChatPreferences = AIChatPreferences(
             storage: DefaultAIChatPreferencesStorage(),
             aiChatMenuConfiguration: aiChatMenuConfiguration,
             windowControllersManager: windowControllersManager,
-            featureFlagger: featureFlagger
+            featureFlagger: featureFlagger,
+            promptBarSettings: promptBarSettings
         )
 
         let subscriptionNavigationCoordinator = SubscriptionNavigationCoordinator(

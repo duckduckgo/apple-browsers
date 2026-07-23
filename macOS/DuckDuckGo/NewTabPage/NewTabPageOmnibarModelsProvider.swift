@@ -81,7 +81,10 @@ final class NewTabPageOmnibarModelsProvider: NewTabPageOmnibarModelsProviding {
             return result
         } catch {
             Logger.aiChat.error("Failed to fetch models for NTP: \(error.localizedDescription)")
-            return []
+            // Keep serving the last known-good snapshot rather than an empty list — otherwise
+            // `attachmentLimits`/`isEligibleForFreeTrial` (left at their prior values) would
+            // describe a set of models that no longer matches what's returned here.
+            return lastFetchedSections ?? []
         }
     }
 

@@ -301,6 +301,22 @@ final class NewTabPageOmnibarModelsProviderTests: XCTestCase {
         XCTAssertTrue(sections.isEmpty)
     }
 
+    /// A transient failure after a prior success must not mix a fresh-empty model list with the
+    /// stale `isEligibleForFreeTrial`/`attachmentLimits` left over from that success — either both
+    /// describe the last good fetch, or neither does.
+    func testWhenFetchFailsAfterPriorSuccessThenLastKnownGoodSectionsAreReturned() async {
+        mockSubscriptionManager.isEligibleForFreeTrialResult = true
+        mockModelsService.modelsToReturn = [makeRemoteModel(id: "free-model", accessTier: ["free"])]
+        let goodSections = await provider.fetchAIModelSections()
+        XCTAssertFalse(goodSections.isEmpty)
+
+        mockModelsService.errorToThrow = NSError(domain: "test", code: -1)
+        let sectionsAfterFailure = await provider.fetchAIModelSections()
+
+        XCTAssertEqual(sectionsAfterFailure.flatMap(\.items).map(\.id), goodSections.flatMap(\.items).map(\.id))
+        XCTAssertTrue(provider.isEligibleForFreeTrial)
+    }
+
     func testWhenSubscriptionFailsThenDefaultsToFreeUser() async {
         mockSubscriptionManager.resultSubscription = .failure(NSError(domain: "test", code: -1))
         mockModelsService.modelsToReturn = [

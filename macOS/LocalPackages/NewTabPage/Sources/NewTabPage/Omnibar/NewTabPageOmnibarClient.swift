@@ -53,6 +53,7 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
     private let subscriptionDialogPresenter: NewTabPageOmnibarSubscriptionDialogPresenting?
     private var cancellables = Set<AnyCancellable>()
 
+    @MainActor
     public init(configProvider: NewTabPageOmnibarConfigProviding,
                 suggestionsProvider: NewTabPageOmnibarSuggestionsProviding,
                 aiChatsProvider: NewTabPageOmnibarAiChatsProviding,
@@ -92,6 +93,14 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
 
         configProvider.modePublisher
             .filter { $0 == .ai }
+            .sink { [weak self] _ in
+                Task { @MainActor in
+                    await self?.refreshModelsAndNotify()
+                }
+            }
+            .store(in: &cancellables)
+
+        modelsProvider?.modelsDidChangePublisher
             .sink { [weak self] _ in
                 Task { @MainActor in
                     await self?.refreshModelsAndNotify()

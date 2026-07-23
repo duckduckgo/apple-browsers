@@ -17,6 +17,7 @@
 //
 
 import AIChat
+import Combine
 import WebKit
 import XCTest
 @testable import NewTabPage
@@ -93,6 +94,19 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
         let config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
 
         XCTAssertEqual(config.isEligibleForFreeTrial, true)
+    }
+
+    /// NTP reuses one webview per window rather than creating a fresh one per "new tab", so an
+    /// already-open tab relies on this refetch to notice a subscription purchase completing —
+    /// otherwise it keeps showing free-tier gating until the whole window is closed.
+    @MainActor
+    func testWhenModelsProviderSignalsChangeThenModelsAreRefetched() async throws {
+        let expectation = expectation(description: "modelsRefetched")
+        modelsProvider.onFetch = { expectation.fulfill() }
+
+        modelsProvider.modelsDidChangeSubject.send(())
+
+        await fulfillment(of: [expectation], timeout: 1)
     }
 
     // MARK: - setConfig
@@ -988,9 +1002,13 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
 private final class StubNewTabPageOmnibarModelsProvider: NewTabPageOmnibarModelsProviding {
     var lastFetchedSections: [NewTabPageDataModel.AIModelSection]?
     var isEligibleForFreeTrial = false
+    let modelsDidChangeSubject = PassthroughSubject<Void, Never>()
+    var modelsDidChangePublisher: AnyPublisher<Void, Never> { modelsDidChangeSubject.eraseToAnyPublisher() }
+    var onFetch: (() -> Void)?
 
     func fetchAIModelSections() async -> [NewTabPageDataModel.AIModelSection] {
-        lastFetchedSections ?? []
+        onFetch?()
+        return lastFetchedSections ?? []
     }
 }
 

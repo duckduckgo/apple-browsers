@@ -17,6 +17,8 @@
 //
 
 import AIChat
+import Combine
+import Foundation
 import NewTabPage
 import os.log
 import Subscription
@@ -32,6 +34,14 @@ final class NewTabPageOmnibarModelsProvider: NewTabPageOmnibarModelsProviding {
     private(set) var isEligibleForFreeTrial = false
     private let modelsService: AIChatModelsProviding
     private let subscriptionManager: any SubscriptionManager
+
+    /// NTP reuses one webview per window rather than creating a fresh one per "new tab", so an
+    /// already-open tab has no other way to notice a purchase completing mid-session.
+    var modelsDidChangePublisher: AnyPublisher<Void, Never> {
+        NotificationCenter.default.publisher(for: .subscriptionDidChange)
+            .map { _ in () }
+            .eraseToAnyPublisher()
+    }
 
     init(
         modelsService: AIChatModelsProviding = AIChatModelsService(),

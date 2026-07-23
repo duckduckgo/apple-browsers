@@ -18,6 +18,7 @@
 
 import XCTest
 import AIChat
+import Combine
 import NewTabPage
 @testable import Subscription
 import SubscriptionTestingUtilities
@@ -393,6 +394,20 @@ final class NewTabPageOmnibarModelsProviderTests: XCTestCase {
         _ = await provider.fetchAIModelSections()
 
         XCTAssertFalse(provider.isEligibleForFreeTrial)
+    }
+
+    // MARK: - Models-did-change publisher
+
+    /// `NewTabPageOmnibarClient` refetches whenever this fires — the only way an already-open NTP
+    /// tab (one webview reused per window) notices a subscription purchase completing mid-session.
+    func testWhenSubscriptionDidChangeNotificationFiresThenModelsDidChangePublisherEmits() async {
+        let expectation = expectation(description: "modelsDidChangeEmitted")
+        let cancellable = provider.modelsDidChangePublisher.sink { expectation.fulfill() }
+
+        NotificationCenter.default.post(name: .subscriptionDidChange, object: nil)
+
+        await fulfillment(of: [expectation], timeout: 1)
+        cancellable.cancel()
     }
 
     // MARK: - Concurrency

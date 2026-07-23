@@ -16,6 +16,8 @@
 //  limitations under the License.
 //
 
+import Combine
+
 @MainActor
 public protocol NewTabPageOmnibarModelsProviding {
     var lastFetchedSections: [NewTabPageDataModel.AIModelSection]? { get }
@@ -27,10 +29,16 @@ public protocol NewTabPageOmnibarModelsProviding {
     /// "Try for Free" vs "Upgrade" copy independently of `AIModelItem.upsell`, which only encodes
     /// which flow to route to, not eligibility.
     var isEligibleForFreeTrial: Bool { get }
+    /// Fires when tier-affecting state changes upstream (e.g. a subscription purchase completes),
+    /// telling `NewTabPageOmnibarClient` to refetch and re-push the config. NTP reuses one webview
+    /// per window rather than creating a fresh one per "new tab", so nothing else would prompt an
+    /// already-open tab to notice the tier change.
+    var modelsDidChangePublisher: AnyPublisher<Void, Never> { get }
     func fetchAIModelSections() async -> [NewTabPageDataModel.AIModelSection]
 }
 
 public extension NewTabPageOmnibarModelsProviding {
     var attachmentLimits: NewTabPageDataModel.AttachmentLimits? { nil }
     var isEligibleForFreeTrial: Bool { false }
+    var modelsDidChangePublisher: AnyPublisher<Void, Never> { Empty().eraseToAnyPublisher() }
 }

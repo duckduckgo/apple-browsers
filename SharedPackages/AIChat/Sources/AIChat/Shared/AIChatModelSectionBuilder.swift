@@ -27,8 +27,7 @@ public struct AIChatGatedModel {
 public enum AIChatModelSectionBuilder {
 
     /// Splits models into accessible and gated (each paired with its required tier) — gated models
-    /// stay visible (with an upsell) rather than being hidden, even from a subscriber whose tier
-    /// doesn't yet cover them.
+    /// stay visible, with an upsell, rather than being hidden from a subscriber whose tier doesn't yet cover them.
     public static func groupByAccess(models: [AIChatModel]) -> (accessible: [AIChatModel], gated: [AIChatGatedModel]) {
         let accessible = models.filter { $0.entityHasAccess }
         let gated = models.compactMap { model -> AIChatGatedModel? in

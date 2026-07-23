@@ -23,9 +23,8 @@ import NewTabPage
 import os.log
 import Subscription
 
-/// Fetches AI models from the duck.ai API and builds the sectioned model list for the NTP
-/// dropdown, mirroring the address bar's model picker (accessible models in one flat, ordered
-/// section, then a gated section if anything's gated).
+/// Fetches AI models from the duck.ai API and builds the NTP dropdown's model list, mirroring
+/// the address bar's model picker (one flat, ordered section, then a gated section if needed).
 @MainActor
 final class NewTabPageOmnibarModelsProvider: NewTabPageOmnibarModelsProviding {
 
@@ -59,11 +58,8 @@ final class NewTabPageOmnibarModelsProvider: NewTabPageOmnibarModelsProviding {
             isEligibleForFreeTrial = userTier == .free && subscriptionManager.isUserEligibleForFreeTrial()
             let models = response.models.map { AIChatModel(remoteModel: $0, userTier: userTier) }
 
-            // Split off gated models rather than hiding higher-tier ones, and keep accessible
-            // models in one flat, ordered section — mirrors the address bar's model picker
-            // (`AIChatOmnibarController.modelPickerItems`) rather than grouping them into
-            // Basic/Advanced sections, which produced a stray empty-header section for tiers
-            // with both kinds of accessible models (e.g. Pro).
+            // Flat, ordered accessible list mirrors the address bar's `modelPickerItems` — the old
+            // Basic/Advanced split left a stray empty section for tiers with both kinds (e.g. Pro).
             let (accessible, gated) = AIChatModelSectionBuilder.groupByAccess(models: models)
             let ordered = AIChatModelSectionBuilder.orderedAccessibleModels(accessible, userTier: userTier)
 
@@ -91,9 +87,8 @@ final class NewTabPageOmnibarModelsProvider: NewTabPageOmnibarModelsProviding {
             return result
         } catch {
             Logger.aiChat.error("Failed to fetch models for NTP: \(error.localizedDescription)")
-            // Keep serving the last known-good snapshot rather than an empty list — otherwise
-            // `attachmentLimits`/`isEligibleForFreeTrial` (left at their prior values) would
-            // describe a set of models that no longer matches what's returned here.
+            // Keep the last known-good snapshot rather than `[]` — otherwise `attachmentLimits`/
+            // `isEligibleForFreeTrial` (still at their prior values) wouldn't match what's returned here.
             return lastFetchedSections ?? []
         }
     }

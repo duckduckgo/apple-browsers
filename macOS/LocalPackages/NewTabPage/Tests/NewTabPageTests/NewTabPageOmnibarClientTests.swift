@@ -96,9 +96,8 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
         XCTAssertEqual(config.isEligibleForFreeTrial, true)
     }
 
-    /// NTP reuses one webview per window rather than creating a fresh one per "new tab", so an
-    /// already-open tab relies on this refetch to notice a subscription purchase completing —
-    /// otherwise it keeps showing free-tier gating until the whole window is closed.
+    /// NTP reuses one webview per window rather than a fresh one per "new tab", so an already-open
+    /// tab relies on this refetch to notice a subscription purchase completing.
     @MainActor
     func testWhenModelsProviderSignalsChangeThenModelsAreRefetched() async throws {
         let expectation = expectation(description: "modelsRefetched")

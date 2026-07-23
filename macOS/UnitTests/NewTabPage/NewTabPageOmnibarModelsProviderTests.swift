@@ -285,10 +285,8 @@ final class NewTabPageOmnibarModelsProviderTests: XCTestCase {
         XCTAssertNil(sections[0].header)
     }
 
-    /// Mirrors the address bar's model picker: a subscriber's accessible models — whether "basic"
-    /// or "advanced" tier — render as one flat, ordered section, not split by tier. The old split
-    /// produced a stray unheaded section for a Pro user (who has both kinds accessible), causing a
-    /// UI inconsistency reported in Asana comment 1216793923923610.
+    /// Mirrors the address bar: accessible models render as one flat section regardless of tier.
+    /// The old Basic/Advanced split left a stray section for a Pro user (Asana comment 1216793923923610).
     func testWhenProUserHasBothBasicAndAdvancedModelsThenSingleFlatSectionReturned() async {
         mockSubscriptionManager.resultSubscription = .success(makeSubscription(tier: .pro))
         mockModelsService.modelsToReturn = [
@@ -335,9 +333,8 @@ final class NewTabPageOmnibarModelsProviderTests: XCTestCase {
         XCTAssertTrue(sections.isEmpty)
     }
 
-    /// A transient failure after a prior success must not mix a fresh-empty model list with the
-    /// stale `isEligibleForFreeTrial`/`attachmentLimits` left over from that success — either both
-    /// describe the last good fetch, or neither does.
+    /// A transient failure after a prior success must not pair a fresh-empty model list with the
+    /// stale `isEligibleForFreeTrial`/`attachmentLimits` left over from that success.
     func testWhenFetchFailsAfterPriorSuccessThenLastKnownGoodSectionsAreReturned() async {
         mockSubscriptionManager.isEligibleForFreeTrialResult = true
         mockModelsService.modelsToReturn = [makeRemoteModel(id: "free-model", accessTier: ["free"])]

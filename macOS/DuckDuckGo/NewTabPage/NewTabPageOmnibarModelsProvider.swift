@@ -79,20 +79,27 @@ final class NewTabPageOmnibarModelsProvider: NewTabPageOmnibarModelsProviding {
         }
     }
 
-    private func mapAttachmentLimits(_ limits: AIChatAttachmentTierLimits?) -> NewTabPageDataModel.AttachmentLimits? {
-        guard let limits else { return nil }
-        return NewTabPageDataModel.AttachmentLimits(
-            files: .init(
-                maxPerConversation: limits.files.maxPerConversation,
-                maxFileSizeMB: limits.files.maxFileSizeMB,
-                maxTotalFileSizeBytes: limits.files.maxTotalFileSizeBytes,
-                maxPagesPerFile: limits.files.maxPagesPerFile
-            ),
-            images: .init(
-                maxPerTurn: limits.images.maxPerTurn,
-                maxPerConversation: limits.images.maxPerConversation,
-                maxInputCharsWithAttachments: limits.images.maxInputCharsWithAttachments
-            )
+    /// Always returns a struct: `files`/`images` are populated from the backend when present (nil
+    /// otherwise), while `tabs` carries the hardcoded native cap unconditionally so the tab limit
+    /// survives a backend/network omission of the file/image limits.
+    private func mapAttachmentLimits(_ limits: AIChatAttachmentTierLimits?) -> NewTabPageDataModel.AttachmentLimits {
+        NewTabPageDataModel.AttachmentLimits(
+            files: limits.map {
+                .init(
+                    maxPerConversation: $0.files.maxPerConversation,
+                    maxFileSizeMB: $0.files.maxFileSizeMB,
+                    maxTotalFileSizeBytes: $0.files.maxTotalFileSizeBytes,
+                    maxPagesPerFile: $0.files.maxPagesPerFile
+                )
+            },
+            images: limits.map {
+                .init(
+                    maxPerTurn: $0.images.maxPerTurn,
+                    maxPerConversation: $0.images.maxPerConversation,
+                    maxInputCharsWithAttachments: $0.images.maxInputCharsWithAttachments
+                )
+            },
+            tabs: .init(maxAttached: AIChatOmnibarController.maxTabAttachments)
         )
     }
 

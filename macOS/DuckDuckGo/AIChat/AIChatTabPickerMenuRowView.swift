@@ -67,12 +67,18 @@ final class AIChatTabPickerMenuRowView: NSView {
 
     private let onToggle: () -> Void
 
+    /// When true the row is inert (the tab cap is reached and this tab isn't attached): no hover
+    /// highlight, no toggle, and the whole row is dimmed. Attached rows are never disabled so the
+    /// user can always remove one to get back under the cap.
+    private let isDisabled: Bool
+
     override var intrinsicContentSize: NSSize {
         NSSize(width: Layout.width, height: Layout.height)
     }
 
-    init(attachment: AIChatTabAttachment, isAttached: Bool, isCurrentTab: Bool, onToggle: @escaping () -> Void) {
+    init(attachment: AIChatTabAttachment, isAttached: Bool, isCurrentTab: Bool, isDisabled: Bool = false, onToggle: @escaping () -> Void) {
         self.isAttached = isAttached
+        self.isDisabled = isDisabled
         self.onToggle = onToggle
         super.init(frame: NSRect(x: 0, y: 0, width: Layout.width, height: Layout.height))
 
@@ -170,6 +176,12 @@ final class AIChatTabPickerMenuRowView: NSView {
             addSubview(accessoryLabel)
         }
 
+        // Dim the whole row (favicon, title, reserved checkmark slot) when it can't be interacted
+        // with, matching how AppKit greys out unavailable menu items.
+        if isDisabled {
+            alphaValue = 0.4
+        }
+
         updateColors()
     }
 
@@ -209,6 +221,7 @@ final class AIChatTabPickerMenuRowView: NSView {
     }
 
     override func mouseEntered(with event: NSEvent) {
+        guard !isDisabled else { return }
         isHovering = true
     }
 
@@ -235,6 +248,7 @@ final class AIChatTabPickerMenuRowView: NSView {
     /// `NSMenu` would normally close on `mouseUp:` if we let the click bubble back as an item
     /// activation. Toggling locally here without chaining to `super` keeps the submenu open.
     override func mouseUp(with event: NSEvent) {
+        guard !isDisabled else { return }
         let pointInView = convert(event.locationInWindow, from: nil)
         guard bounds.contains(pointInView) else { return }
         isAttached.toggle()

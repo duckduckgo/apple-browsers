@@ -113,13 +113,17 @@ final class NewTabPageOmnibarModelsProviderTests: XCTestCase {
 
     // MARK: - Attachment Limits Tests
 
-    func testWhenResponseHasNoAttachmentLimitsThenProviderLimitsAreNil() async {
+    func testWhenResponseHasNoAttachmentLimitsThenFileAndImageLimitsAreNilButTabLimitIsPresent() async {
         mockModelsService.modelsToReturn = [makeRemoteModel(id: "free-model", accessTier: ["free"])]
         mockModelsService.attachmentLimitsToReturn = nil
 
         _ = await provider.fetchAIModelSections()
 
-        XCTAssertNil(provider.attachmentLimits)
+        // The backend-sourced file/image limits are absent, but the hardcoded tab cap is always
+        // forwarded so the NTP omnibar can still enforce it.
+        XCTAssertNil(provider.attachmentLimits?.files)
+        XCTAssertNil(provider.attachmentLimits?.images)
+        XCTAssertEqual(provider.attachmentLimits?.tabs.maxAttached, AIChatOmnibarController.maxTabAttachments)
     }
 
     func testWhenResponseHasAttachmentLimitsThenTheyAreMappedForFreeTier() async {
@@ -363,7 +367,8 @@ final class NewTabPageOmnibarModelsProviderTests: XCTestCase {
                 maxPerTurn: base + 5,
                 maxPerConversation: base + 6,
                 maxInputCharsWithAttachments: base + 7
-            )
+            ),
+            tabs: .init(maxAttached: AIChatOmnibarController.maxTabAttachments)
         )
     }
 

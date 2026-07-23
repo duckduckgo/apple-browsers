@@ -865,6 +865,10 @@ struct UserText {
         let message = NSLocalizedString("aichat.attachment.file.count.limit", value: "You can only attach %d files per conversation.", comment: "Error message displayed when the user has attached more files than are allowed in a conversation. Parameter is the backend-provided maximum number of files.")
         return String(format: message, maxFilesPerConversation)
     }
+    static func aiChatAttachmentTabCountLimit(maxTabs: Int) -> String {
+        let message = NotLocalizedString("aichat.attachment.tab.count.limit", value: "You can only attach %d tabs at a time.", comment: "Error message displayed when the user has attached more open tabs than are allowed. Parameter is the maximum number of tabs.")
+        return String(format: message, maxTabs)
+    }
     static let aiChatAttachmentPromptTooLong = NSLocalizedString("aichat.attachment.prompt.too.long", value: "That message is too long to send with attachments.", comment: "Error message shown when an AI chat message exceeds the allowed length while attachments are included")
 
     static let aiChatReasoningEffortFastTitle = NSLocalizedString("aichat.reasoning-effort.fast.title", value: "Fast", comment: "Title of the 'Fast' option in the reasoning effort picker menu in AI chat omnibar")

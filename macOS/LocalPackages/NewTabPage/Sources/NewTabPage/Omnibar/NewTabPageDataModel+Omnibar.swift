@@ -64,10 +64,11 @@ public extension NewTabPageDataModel {
         }
     }
 
-    /// Attachment limits sourced from the Duck.ai backend (`/duckchat/v1/models`, field
-    /// `attachmentLimits`), already resolved for the user's tier. Forwarded to the web so the NTP
-    /// omnibar can enforce them instead of hardcoding defaults. Mirrors the resolved shape of
-    /// `AIChat.AIChatAttachmentTierLimits`.
+    /// Attachment limits forwarded to the web so the NTP omnibar can enforce them instead of
+    /// hardcoding defaults. `files`/`images` are sourced from the Duck.ai backend
+    /// (`/duckchat/v1/models`, field `attachmentLimits`), already tier-resolved, and are optional
+    /// because the backend may omit them (network failure, older backend). `tabs` is a hardcoded
+    /// native product constant and is always present.
     struct AttachmentLimits: Codable, Equatable {
         public struct FileLimits: Codable, Equatable {
             let maxPerConversation: Int
@@ -95,12 +96,22 @@ public extension NewTabPageDataModel {
             }
         }
 
-        let files: FileLimits
-        let images: ImageLimits
+        public struct TabLimits: Codable, Equatable {
+            let maxAttached: Int
 
-        public init(files: FileLimits, images: ImageLimits) {
+            public init(maxAttached: Int) {
+                self.maxAttached = maxAttached
+            }
+        }
+
+        let files: FileLimits?
+        let images: ImageLimits?
+        let tabs: TabLimits
+
+        public init(files: FileLimits?, images: ImageLimits?, tabs: TabLimits) {
             self.files = files
             self.images = images
+            self.tabs = tabs
         }
     }
 

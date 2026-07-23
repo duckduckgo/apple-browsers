@@ -268,7 +268,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     /// Whether the attachments error label should be visible — either a sticky pick-time rejection
     /// or a live count-excess cue (one over the cap).
     private var shouldShowAttachmentError: Bool {
-        lastAttachmentError != nil || hasVisibleImageExcess || hasVisibleFileExcess
+        lastAttachmentError != nil || hasVisibleImageExcess || hasVisibleFileExcess || hasVisibleTabExcess
     }
 
     /// Extra height needed beyond text and suggestions for dynamic content like attachments.
@@ -304,6 +304,12 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     /// File-side analogue of `hasVisibleImageExcess`.
     private var hasVisibleFileExcess: Bool {
         omnibarController.selectedModelSupportsFileUpload && hasExcessFileAttachments
+    }
+
+    /// Tab-side analogue of `hasVisibleImageExcess` — over the tab cap and the tab picker is on,
+    /// so the over-limit cards are actually rendered for the error label to anchor against.
+    private var hasVisibleTabExcess: Bool {
+        omnibarController.isOmnibarTabPickerEnabled && omnibarController.hasExcessTabAttachments
     }
 
     required init?(coder: NSCoder) {
@@ -417,7 +423,8 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         let canSendImages = omnibarController.isImageGenerationMode || omnibarController.selectedModelSupportsImageUpload
         let imageBlockingExcess = canSendImages && omnibarController.hasExcessActiveTabImageAttachments
         let fileBlockingExcess = omnibarController.selectedModelSupportsFileUpload && hasExcessFileAttachments
-        let hasBlockingExcess = imageBlockingExcess || fileBlockingExcess
+        let tabBlockingExcess = omnibarController.isOmnibarTabPickerEnabled && omnibarController.hasExcessTabAttachments
+        let hasBlockingExcess = imageBlockingExcess || fileBlockingExcess || tabBlockingExcess
 
         // Voice-chat mode only kicks in when the input is empty, the feature flag is on, and we
         // aren't in image-generation mode (where the button must keep its image-flow semantics).
@@ -1461,14 +1468,20 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         header.isEnabled = false
         menu.addItem(header)
 
+        // Once the display cap is reached, unattached rows are disabled so the user can't push
+        // further over the limit; attached rows stay interactive so they can remove one.
+        let atCap = attachedIds.count >= omnibarController.tabAttachmentsDisplayCap
+
         // `openTabsForOmnibarPicker()` returns the current tab first, so the menu shows
         // "(Current Tab)" pinned on top.
         for candidate in candidates {
+            let isAttached = attachedIds.contains(candidate.id)
             let item = NSMenuItem()
             let row = AIChatTabPickerMenuRowView(
                 attachment: candidate,
-                isAttached: attachedIds.contains(candidate.id),
+                isAttached: isAttached,
                 isCurrentTab: candidate.id == currentTabId,
+                isDisabled: !isAttached && atCap,
                 onToggle: { [weak omnibarController, weak observer] in
                     guard let omnibarController else { return }
                     // Read state BEFORE toggle so we know which pixel to fire — the toggle
@@ -1611,10 +1624,11 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         // overlap the tools row below. Keeping the two decisions in sync prevents that.
         let visibleImageExcess = hasVisibleImageExcess
         let visibleFileExcess = hasVisibleFileExcess
+        let visibleTabExcess = hasVisibleTabExcess
         // A sticky pick-time rejection (size / pages / unsupported / count) takes priority — it
         // names the precise reason the file the user just chose wasn't added. Otherwise fall back
         // to the live count-excess copy; file excess wins over image excess as it's the more
-        // recently introduced and likely thing the user has just done.
+        // recently introduced and likely thing the user has just done, and tab excess falls last.
         attachmentsErrorLabel.isHidden = !shouldShowAttachmentError
         if let lastAttachmentError {
             attachmentsErrorLabel.stringValue = lastAttachmentError
@@ -1624,9 +1638,13 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             attachmentsErrorLabel.stringValue = UserText.aiChatAttachmentFileCountLimit(
                 maxFilesPerConversation: omnibarController.maxFileAttachments
             )
-        } else {
+        } else if visibleImageExcess {
             attachmentsErrorLabel.stringValue = UserText.aiChatAttachmentImageTurnLimit(
                 maxImagesPerTurn: omnibarController.maxImageAttachments
+            )
+        } else if visibleTabExcess {
+            attachmentsErrorLabel.stringValue = UserText.aiChatAttachmentTabCountLimit(
+                maxTabs: AIChatOmnibarController.maxTabAttachments
             )
         }
 

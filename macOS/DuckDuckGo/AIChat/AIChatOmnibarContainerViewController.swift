@@ -19,6 +19,7 @@
 import Cocoa
 import QuartzCore
 import Combine
+import AppKitExtensions
 import DesignResourcesKit
 import UniformTypeIdentifiers
 import DesignResourcesKitIcons
@@ -160,11 +161,14 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     private var submitButtonMouseDownObservation: NSKeyValueObservation?
     private var toolsLeadingToUploadButton: NSLayoutConstraint?
     private var toolsLeadingToContainer: NSLayoutConstraint?
-    private lazy var historyCleaner: HistoryCleaning = HistoryCleaner(
-        featureFlagger: NSApp.delegateTyped.featureFlagger,
-        privacyConfig: NSApp.delegateTyped.privacyFeatures.contentBlocking.privacyConfigurationManager,
-        nativeStorageHandler: duckAiNativeStorageHandler,
-        featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: NSApp.delegateTyped.featureFlagger)
+    private lazy var aiChatDeleter: AIChatDeleting = AIChatDeleter(
+        historyCleaner: HistoryCleaner(
+            featureFlagger: NSApp.delegateTyped.featureFlagger,
+            privacyConfig: NSApp.delegateTyped.privacyFeatures.contentBlocking.privacyConfigurationManager,
+            nativeStorageHandler: duckAiNativeStorageHandler,
+            featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: NSApp.delegateTyped.featureFlagger)
+        ),
+        recordsSyncDeletion: !burnerMode.isBurner
     )
 
     /// Current suggestions height - cached to avoid recalculation
@@ -324,7 +328,9 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+
         setupUI()
+        setupBurnerStyleIfNeeded()
         setupSuggestionsView()
         subscribeToThemeChanges()
         subscribeToTextChanges()
@@ -439,7 +445,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         submitButton.isEnabled = enabled
         // Tints. Both modes keep the icon constant across hover/press; only the fill animates,
         // so `mouseOverTintColor` / `mouseDownTintColor` stay nil.
-        NSAppearance.withAppAppearance {
+        NSAppearance.withAppearance(from: view) {
             if enabled {
                 if submitButtonMode == .voice {
                     submitButton.normalTintColor = NSColor(designSystemColor: .iconsPrimary)
@@ -485,7 +491,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
                 designSystemColor = .accentPrimary
             }
         }
-        NSAppearance.withAppAppearance {
+        NSAppearance.withAppearance(from: view) {
             submitButton.layer?.backgroundColor = designSystemColor.map { NSColor(designSystemColor: $0).cgColor } ?? NSColor.clear.cgColor
         }
     }
@@ -866,6 +872,16 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         applyTheme(theme: themeManager.theme)
     }
 
+    // MARK: - Burner Style
+
+    private func setupBurnerStyleIfNeeded() {
+        guard burnerMode.isBurner, themeManager.isAppRebranded else { return }
+
+        let style = BurnerAppearanceStyle()
+        style.enableDarkModeOverride(in: view)
+        style.enableDarkModeOverride(in: suggestionsView)
+    }
+
     // MARK: - Suggestions Setup
 
     private func setupSuggestionsView() {
@@ -922,13 +938,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
                 PixelKit.fire(AIChatPixel.aiChatRecentChatDeleteButtonClicked, frequency: .dailyAndCount, includeAppVersionParameter: true)
 
-                let alert = NSAlert()
-                alert.messageText = UserText.removeRecentChatConfirmationTitle
-                alert.informativeText = String(format: UserText.removeRecentChatConfirmationMessage, suggestion.title)
-                alert.addButton(withTitle: UserText.removeRecentChatConfirmationButton, response: .OK)
-                alert.buttons.first?.hasDestructiveAction = true
-                alert.addButton(withTitle: UserText.cancel, response: .cancel, keyEquivalent: .escape)
-
+                let alert = NSAlert.recentChatDeleteConfirmation(title: suggestion.title)
                 alert.beginSheetModal(for: window) { [weak self] response in
                     guard let self else { return }
                     guard response == .OK else {
@@ -937,9 +947,9 @@ final class AIChatOmnibarContainerViewController: NSViewController {
                     }
                     PixelKit.fire(AIChatPixel.aiChatRecentChatDeleteConfirmed, frequency: .dailyAndCount, includeAppVersionParameter: true)
                     self.omnibarController.suggestionsViewModel.removeSuggestion(suggestion)
-                    Task { @MainActor in
-                        _ = await self.historyCleaner.deleteAIChat(chatID: suggestion.chatId)
-                        self.omnibarController.refreshSuggestions()
+                    // Refresh after deletion: with native storage unavailable, only the JS clear removes the chat.
+                    self.aiChatDeleter.deleteChat(chatID: suggestion.chatId) { [weak self] in
+                        self?.omnibarController.refreshSuggestions()
                     }
                 }
             }
@@ -2036,7 +2046,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         shadowView.shadowRadius = barStyleProvider.suggestionShadowRadius
         shadowView.cornerRadius = barStyleProvider.addressBarActiveBackgroundViewRadiusWithSuggestions
 
-        NSAppearance.withAppAppearance {
+        NSAppearance.withAppearance(from: view) {
             shadowView.shadowColor = colorsProvider.addressBarShadowColor
             imageUploadButton.hoverBackgroundColor = .buttonMouseOver
             imageUploadButton.pressedBackgroundColor = .buttonMouseDown

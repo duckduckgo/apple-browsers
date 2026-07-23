@@ -654,25 +654,25 @@ private extension NSAttributedString {
 
     static let onboardingTrustedIndicator = NSAttributedString(string: UserText.tabOnboardingTitle)
 
-    static let settingsTrustedIndicator = trustedIndicatorAttributedString(with: .settingsMulticolor16,
+    static let settingsTrustedIndicator = trustedIndicatorAttributedString(with: DesignSystemRebrand.isAppRebranded() ? DesignSystemImages.Color.Size16.settings : .settingsMulticolor16Legacy,
                                                                            title: UserText.settings)
     static let bookmarksTrustedIndicator = trustedIndicatorAttributedString(with: DesignSystemRebrand.isAppRebranded() ? DesignSystemImages.Color.Size16.bookmarksNew : .bookmarksFolder,
                                                                             title: UserText.bookmarks)
-    static let historyTrustedIndicator = trustedIndicatorAttributedString(with: .historyFavicon,
+    static let historyTrustedIndicator = trustedIndicatorAttributedString(with: DesignSystemRebrand.isAppRebranded() ? DesignSystemImages.Color.Size16.history : .historyFaviconLegacy,
                                                                           title: UserText.mainMenuHistory)
     static let dbpTrustedIndicator = trustedIndicatorAttributedString(with: .personalInformationRemovalMulticolor16,
                                                                       title: UserText.tabDataBrokerProtectionTitle)
-    static let subscriptionTrustedIndicator = trustedIndicatorAttributedString(with: .privacyPro,
+    static let subscriptionTrustedIndicator = trustedIndicatorAttributedString(with: DesignSystemRebrand.isAppRebranded() ? DesignSystemImages.Color.Size16.subscription : .privacyProLegacy,
                                                                                title: UserText.subscriptionName)
     static let identityTheftRestorationTrustedIndicator = trustedIndicatorAttributedString(with: .identityTheftRestorationMulticolor16,
                                                                                            title: UserText.identityTheftRestorationOptionsMenuItem)
     static let duckPlayerTrustedIndicator = trustedIndicatorAttributedString(with: .duckPlayerSettings,
                                                                              title: UserText.duckPlayer)
-    static let emailProtectionTrustedIndicator = trustedIndicatorAttributedString(with: .emailProtectionIcon,
+    static let emailProtectionTrustedIndicator = trustedIndicatorAttributedString(with: DesignSystemRebrand.isAppRebranded() ? DesignSystemImages.Color.Size16.emailProtection : .emailProtectionIconLegacy,
                                                                                   title: UserText.emailProtectionPreferences)
     static let releaseNotesTrustedIndicator = trustedIndicatorAttributedString(with: .releaseNotesIndicator,
                                                                                title: UserText.releaseNotesTitle)
-    static let aiChatTrustedIndicator = trustedIndicatorAttributedString(with: .aiChatPreferences,
+    static let aiChatTrustedIndicator = trustedIndicatorAttributedString(with: DesignSystemRebrand.isAppRebranded() ? DesignSystemImages.Color.Size16.aiChat : .aiChatPreferencesLegacy,
                                                                          title: UserText.aiChatAddressBarTrustedIndicator)
 
 }

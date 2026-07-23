@@ -19,18 +19,31 @@
 
 import SwiftUI
 import DesignResourcesKit
+import Lottie
 
 struct SimplifiedConnectingContentViewV2: View {
 
+    let isRecovery: Bool
+    let isFinishing: Bool
+    let onAnimationFinished: () -> Void
+
     var body: some View {
         VStack(spacing: 24) {
-            // TODO: The design uses an animated "Lock-Feature" pictogram (a Lottie/motion node).
-            // This static Sync-Lock-128 asset is an interim stand-in; swap in the canonical
-            // pictogram (or the lock Lottie) when available.
-            Image("Sync-Lock-128", bundle: .module)
-                .padding(.top, 40)
+            LottieView {
+                try await DotLottieFile.named("SyncLock", bundle: .module)
+            }
+            .playbackMode(isFinishing
+                ? .playing(.fromProgress(0, toProgress: 1, loopMode: .playOnce))
+                : .paused(at: .progress(0)))
+            .animationDidFinish { _ in
+                onAnimationFinished()
+            }
+            .resizable()
+            .aspectRatio(contentMode: .fit)
+            .frame(width: 128, height: 128)
+            .padding(.top, 40)
 
-            Text(UserText.simplifiedConnectingV2Title)
+            Text(title)
                 .daxTitle1()
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
@@ -49,15 +62,23 @@ struct SimplifiedConnectingContentViewV2: View {
         .padding(.horizontal, 24)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
+
+    private var title: String {
+        isRecovery ? UserText.simplifiedRecoveringDataV2Title : UserText.simplifiedConnectingV2Title
+    }
 }
 
 #if DEBUG
 #Preview("Connecting") {
-    SimplifiedConnectingContentViewV2()
+    SimplifiedConnectingContentViewV2(isRecovery: false, isFinishing: false, onAnimationFinished: {})
 }
 
 #Preview("Connecting – Dark") {
-    SimplifiedConnectingContentViewV2()
+    SimplifiedConnectingContentViewV2(isRecovery: false, isFinishing: false, onAnimationFinished: {})
         .preferredColorScheme(.dark)
+}
+
+#Preview("Recovering") {
+    SimplifiedConnectingContentViewV2(isRecovery: true, isFinishing: false, onAnimationFinished: {})
 }
 #endif

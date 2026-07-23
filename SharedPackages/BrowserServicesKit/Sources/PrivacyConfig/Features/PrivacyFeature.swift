@@ -380,6 +380,7 @@ public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
     case webViewUserAgent
     case freemiumPIR
     case optOutRetryError96Hours
+    case deferredSecureVaultInit
 }
 
 public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
@@ -520,6 +521,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables attaching content from multiple open tabs to the New Tab Page omnibar Duck.ai chat.
     case ntpAttachMoreTabs
 
+    /// Enables deleting recent AI chats from the New Tab Page omnibar
+    case ntpSuggestionsDeletion
+
     /// Enables page context feature on iPad
     case iPadPageContext
 
@@ -628,6 +632,9 @@ public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Global switch to disable advanced card ordering for the Next Steps List widget
     case nextStepsListAdvancedCardOrdering
+
+    /// Enables deleting history-based search suggestions from the New Tab Page omnibar
+    case searchSuggestionsDeletion
 }
 
 public enum NetworkProtectionSubfeature: String, Equatable, PrivacySubfeature {
@@ -667,14 +674,6 @@ public enum NetworkProtectionSubfeature: String, Equatable, PrivacySubfeature {
     /// Exclude Carrier-Grade NAT (100.64.0.0/10) from the VPN tunnel.
     /// Keeps Wi-Fi calling, Visual Voicemail, and mesh VPNs (Tailscale/ZeroTier) working.
     case excludeCGNAT
-
-    /// Kill switch for the orphaned-proxy detection machinery (tunnel heartbeat + proxy detection loop + pixel).
-    /// Off by default → detection runs; enable remotely to disable it.
-    case orphanProxyDetectionKillSwitch
-
-    /// Kill switch for the orphaned-proxy full-bypass behavior.
-    /// Off by default → bypass engages when an orphaned proxy is detected; enable remotely to disable it.
-    case orphanProxyBypassKillSwitch
 
     /// Toggle for the Copy VPN Diagnostics button in VPN settings/status.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215794369750045

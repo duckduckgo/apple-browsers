@@ -118,7 +118,7 @@ final class AIChatSuggestionsView: NSView {
     }
 
     private func updateSeparatorColor() {
-        NSAppearance.withAppAppearance {
+        NSAppearance.withAppearance(appearance) {
             separatorView.layer?.backgroundColor = NSColor(designSystemColor: .lines).cgColor
         }
     }
@@ -232,7 +232,7 @@ final class AIChatSuggestionsView: NSView {
             let separator = NSView()
             separator.translatesAutoresizingMaskIntoConstraints = false
             separator.wantsLayer = true
-            NSAppearance.withAppAppearance {
+            NSAppearance.withAppearance(appearance) {
                 separator.layer?.backgroundColor = NSColor(designSystemColor: .lines).cgColor
             }
             stackView.addArrangedSubview(separator)

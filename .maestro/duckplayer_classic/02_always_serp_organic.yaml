@@ -36,7 +36,7 @@ tags:
 
 # Tap on video in organic results
 - tapOn: 
-    text: ${output.videoTitle}
+    text: ${output.videoTitle}.*
 
 # Verify Duck Player Classic opens automatically
 - runFlow:

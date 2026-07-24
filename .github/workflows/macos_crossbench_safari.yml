@@ -26,7 +26,7 @@ on:
       sites:
         description: "Comma-separated sites (blank = full 22-site list)"
         required: false
-        default: "apple.com,wikipedia.org,youtube.com"
+        default: ""
       upload-to-clickhouse:
         description: "Upload aggregated per-domain results to ClickHouse"
         type: boolean

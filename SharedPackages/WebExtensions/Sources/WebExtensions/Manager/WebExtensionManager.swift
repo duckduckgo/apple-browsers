@@ -65,8 +65,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     /// consumed by a reload.
     private var unloadedExtensionsCache: [String: WKWebExtension] = [:]
 
-    /// Guards unload/reload paths against a WebKit declarativeNetRequest crash — see
-    /// `WebExtensionUnloadGuard`. `var` only so tests can inject a guard with a controlled clock.
+    /// See `WebExtensionUnloadGuard`. Settable only so tests can inject a controlled clock.
     var unloadGuard: WebExtensionUnloadGuard
 
     /// Pixel firing for analytics.

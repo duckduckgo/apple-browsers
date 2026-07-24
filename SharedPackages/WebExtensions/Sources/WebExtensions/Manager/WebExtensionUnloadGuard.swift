@@ -38,6 +38,8 @@ import WebKit
 ///
 /// Remove this type (and its call sites in `WebExtensionManager`) once the minimum supported
 /// macOS ships the WebKit fix.
+///
+/// Tracked in https://app.asana.com/1/137249556945/project/1201037661562251/task/1216821343663926
 @available(macOS 15.4, iOS 18.4, *)
 @MainActor
 final class WebExtensionUnloadGuard {

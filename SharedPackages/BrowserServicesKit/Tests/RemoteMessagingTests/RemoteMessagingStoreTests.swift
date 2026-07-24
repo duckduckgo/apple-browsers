@@ -60,9 +60,8 @@ class RemoteMessagingStoreTests: XCTestCase {
     }
 
     override func tearDown() async throws {
-        // Fetching in the test body can leave a dismissal in flight. Drain it before the stores are removed,
-        // otherwise the save lands on a store-less coordinator and Core Data raises an Objective-C exception,
-        // which aborts the whole test process instead of failing this one test.
+        // A dismissal left in flight by the test body would save after the stores are removed below, aborting the
+        // whole test process rather than failing this one test.
         await store?.waitForPendingTasks()
         store = nil
 
@@ -671,9 +670,8 @@ class RemoteMessagingStoreTests: XCTestCase {
 
         XCTAssertNil(store.fetchScheduledRemoteMessage(surfaces: .allCases))
 
-        // The fetch dismisses the expired message in a task it never hands back, so this barrier is the only
-        // thing that can guarantee the write has landed. If it stops tracking that task the dismissal becomes
-        // observable only by luck, and the save can outlive the store it was made against.
+        // The fetch dismisses the message in a task it never hands back, so this is the only way to know the
+        // write landed. Without it the assertion below passes only by luck.
         await store.waitForPendingTasks()
 
         XCTAssertEqual(store.fetchDismissedRemoteMessageIDs(), ["auto-dismiss-pending"])

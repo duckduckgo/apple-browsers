@@ -83,7 +83,7 @@ public final class RemoteMessagingStore: RemoteMessagingStoring {
                 guard fetchScheduledRemoteMessage(surfaces: RemoteMessageSurfaceType.allCases, triggerFilter: .any) != nil else {
                     return
                 }
-                startTrackedTask {
+                startTrackedTask(.deleteScheduledMessages) {
                     await self.deleteScheduledMessages()
                 }
             }
@@ -151,49 +151,37 @@ public final class RemoteMessagingStore: RemoteMessagingStoring {
     private let errorEvents: EventMapping<RemoteMessagingStoreError>?
     private var featureFlagDisabledCancellable: AnyCancellable?
 
+    private enum PendingTask: Hashable {
+        case dismissal(messageID: String)
+        case deleteScheduledMessages
+    }
+
     private let pendingTasksLock = NSLock()
-    private var pendingTasks: [UUID: Task<Void, Never>] = [:]
+    private var pendingTasks: [PendingTask: Task<Void, Never>] = [:]
 
-    /// Awaits work the store started by itself, rather than on behalf of the current caller.
-    ///
-    /// Fetching a scheduled message can dismiss an expired one, and the feature flag being turned off can delete
-    /// scheduled messages. Both save on `context` from a task the caller never gets a handle to, so anything that
-    /// tears the Core Data stack down - clearing browsing data, test teardown - has to drain them first: a save
-    /// against a coordinator whose stores have been removed raises `NSInternalInconsistencyException`, and because
-    /// that is an Objective-C exception rather than a Swift error, the `do`/`catch` around each save cannot intercept
-    /// it and the process aborts.
+    /// Awaits the saves the store issues on its own initiative, which callers get no handle on: an expired message
+    /// dismissed during a fetch, or scheduled messages cleared when the feature flag goes off. Tearing the Core Data
+    /// stack down with one in flight aborts the process, because the save raises an Objective-C exception that the
+    /// `catch` around it cannot intercept. Drains only what is in flight when called.
     public func waitForPendingTasks() async {
-        while true {
-            pendingTasksLock.lock()
-            let tasks = Array(pendingTasks.values)
-            pendingTasksLock.unlock()
+        let tasks = pendingTasksLock.withLock { Array(pendingTasks.values) }
 
-            guard !tasks.isEmpty else { return }
+        for task in tasks {
+            await task.value
+        }
+    }
 
-            for task in tasks {
-                await task.value
+    private func startTrackedTask(_ key: PendingTask, operation: @escaping () async -> Void) {
+        pendingTasksLock.withLock {
+            // These saves are idempotent, so a second task would only repeat a write that is already queued.
+            guard pendingTasks[key] == nil else { return }
+
+            // Recorded under the lock so the task cannot finish, and remove itself, before it is in the dictionary.
+            pendingTasks[key] = Task {
+                await operation()
+                self.pendingTasksLock.withLock { self.pendingTasks[key] = nil }
             }
         }
-    }
-
-    /// Runs `operation` in a task that `waitForPendingTasks()` can await.
-    private func startTrackedTask(_ operation: @escaping () async -> Void) {
-        let id = UUID()
-
-        pendingTasksLock.lock()
-        defer { pendingTasksLock.unlock() }
-
-        // Created while the lock is held so the task cannot finish, and try to remove itself, before it is recorded.
-        pendingTasks[id] = Task { [weak self] in
-            await operation()
-            self?.forgetTask(withID: id)
-        }
-    }
-
-    private func forgetTask(withID id: UUID) {
-        pendingTasksLock.lock()
-        pendingTasks[id] = nil
-        pendingTasksLock.unlock()
     }
 }
 
@@ -506,7 +494,7 @@ extension RemoteMessagingStore {
     }
 
     private func dismissExpiredMessage(withID id: String) {
-        startTrackedTask {
+        startTrackedTask(.dismissal(messageID: id)) {
             await self.dismissRemoteMessage(withID: id)
         }
     }

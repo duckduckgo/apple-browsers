@@ -819,8 +819,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         await fullScreenSUT.presentSheet(from: rootVC)
 
         let sheetVC = fullScreenSUT.sheetViewController!
-        // Onboarding presents as a page sheet locked to the large detent (covering ~90%, leaving the presenter
-        // visible behind) with no grabber — see AIChatContextualSheetViewController.configureSheetPresentation().
+        // Onboarding presents as a page sheet locked to the large deten with no grabber — see AIChatContextualSheetViewController.configureSheetPresentation().
         XCTAssertEqual(sheetVC.modalPresentationStyle, .pageSheet)
         let sheet = sheetVC.sheetPresentationController!
         XCTAssertEqual(sheet.detents, [.large()])

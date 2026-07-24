@@ -33,6 +33,7 @@ struct SubscriptionOnboardingInfoView: View {
     private enum Metrics {
         static let cardSpacing: CGFloat = 16
         static let explanationTopSpacing: CGFloat = 24
+        static let disclaimerTopSpacing: CGFloat = 24
     }
 
     var body: some View {
@@ -48,17 +49,34 @@ struct SubscriptionOnboardingInfoView: View {
     }
 
     private var featureCards: some View {
-        VStack(spacing: Metrics.cardSpacing) {
-            ForEach(content.features) { feature in
-                if let platforms = feature.platforms {
-                    SubscriptionOnboardingShowcaseCard(icon: feature.icon, title: feature.title, text: feature.body) {
-                        SubscriptionOnboardingPlatformGrid(platforms: platforms)
+        VStack(spacing: Metrics.disclaimerTopSpacing) {
+            VStack(spacing: Metrics.cardSpacing) {
+                ForEach(content.features) { feature in
+                    if let platforms = feature.platforms {
+                        SubscriptionOnboardingShowcaseCard(icon: feature.icon, title: feature.title, text: feature.body) {
+                            SubscriptionOnboardingPlatformGrid(platforms: platforms)
+                        }
+                    } else {
+                        SubscriptionOnboardingShowcaseCard(icon: feature.icon, title: feature.title, text: feature.body)
                     }
-                } else {
-                    SubscriptionOnboardingShowcaseCard(icon: feature.icon, title: feature.title, text: feature.body)
                 }
             }
+
+            if let disclaimer = content.disclaimer {
+                disclaimerView(disclaimer)
+            }
         }
+    }
+
+    /// The disclaimer renders Markdown, so its `[label](url)` becomes a tappable link that opens in the
+    /// system URL handler (e.g. the Summary of Benefits PDF).
+    private func disclaimerView(_ disclaimer: String) -> some View {
+        Text(LocalizedStringKey(disclaimer))
+            .daxFootnoteRegular()
+            .multilineTextAlignment(.leading)
+            .foregroundColor(Color(designSystemColor: .textSecondary))
+            .tintIfAvailable(Color(designSystemColor: .textSecondary))
+            .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 
@@ -103,6 +121,7 @@ struct SubscriptionOnboardingInfoContent {
     let title: String
     let explanation: String?
     let features: [Feature]
+    var disclaimer: String?
 }
 
 extension SubscriptionOnboardingInfoContent {
@@ -128,7 +147,8 @@ extension SubscriptionOnboardingInfoContent {
         visual: .image(Image(.onboardingIDTR128)),
         title: UserText.subscriptionOnboardingIDTRInfoTitle,
         explanation: UserText.subscriptionOnboardingIDTRInfoExplanation,
-        features: IDTRInfoFeature.allCases.map(\.feature))
+        features: IDTRInfoFeature.allCases.map(\.feature),
+        disclaimer: UserText.subscriptionOnboardingIDTRInfoDisclaimer)
 
     /// The Duck.ai "Learn More" content.
     static let duckAI = SubscriptionOnboardingInfoContent(

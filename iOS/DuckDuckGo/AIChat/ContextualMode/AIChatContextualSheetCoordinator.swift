@@ -109,7 +109,7 @@ protocol AIChatContextualSheetCoordinatorDelegate: AnyObject {
     func aiChatContextualSheetCoordinatorDidDismiss(_ coordinator: AIChatContextualSheetCoordinator)
 }
 
-/// Default no-op so only hosts that care about dismissal (e.g. onboarding) need implement it.
+/// Default no-op so only hosts that care about dismissal need implement it.
 extension AIChatContextualSheetCoordinatorDelegate {
     func aiChatContextualSheetCoordinatorDidDismiss(_ coordinator: AIChatContextualSheetCoordinator) {}
 }
@@ -133,7 +133,7 @@ final class AIChatContextualSheetCoordinator {
     private let duckAiFireModeStorageHandler: DuckAiNativeStorageHandling?
     private let debugSettings: AIChatDebugSettingsHandling
     private let isFireTab: Bool
-    /// A standalone full-screen surface with no browser tab behind it (e.g. onboarding). Presents at `.large()` only
+    /// A standalone full-screen surface with no browser tab behind it. Presents at `.large()` only
     /// with no grabber, and strips the sheet header down to just a close button.
     private let presentsStandaloneFullScreen: Bool
     private let voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding
@@ -778,7 +778,10 @@ extension AIChatContextualSheetCoordinator: AIChatContextualSheetViewControllerD
     func aiChatContextualSheetViewControllerDidConfirmDeleteChat(_ viewController: AIChatContextualSheetViewController) {
         let chatURL = sessionState.contextualChatURL
         clearActiveChat()
-        viewController.dismiss(animated: true)
+        viewController.dismiss(animated: true) { [weak self] in
+            guard let self else { return }
+            self.delegate?.aiChatContextualSheetCoordinatorDidDismiss(self)
+        }
 
         if let chatID = chatURL?.duckAIChatID {
             delegate?.aiChatContextualSheetCoordinator(self, didRequestDeleteChatWithID: chatID)

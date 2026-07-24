@@ -99,7 +99,7 @@ public struct CardItemText {
     public let font: CardItemFont
     public let color: Color?
     public let modifier: AnyViewModifier?
-    /// An optional second run appended inline after `text` (e.g. a "(Nearest)" indicator), in the same
+    /// An optional second run appended inline after `text`in the same
     /// `font` coloured `secondaryColor`. Honored by a card item's body text run.
     /// The defaults keep every existing call site unchanged.
     public let secondaryText: String?
@@ -407,8 +407,6 @@ private struct CardItemModifierSamples: View {
     }
 }
 
-/// Showcases ``CardItemText``'s optional inline secondary run (`secondaryText` / `secondaryColor`) — e.g. a
-/// "(Nearest)" indicator tinted differently from the body — versus the same body text without one.
 private struct CardItemSecondaryTextSamples: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {

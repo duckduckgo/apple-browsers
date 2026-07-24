@@ -870,7 +870,7 @@ final class SubscriptionDebugViewController: UITableViewController {
     private func showVPNOnboarding() {
         let hostingController = UIHostingController(
             rootView: SubscriptionOnboardingVPNActivationView(
-                viewModel: SubscriptionOnboardingVPNActivationViewModel(prefetcher: SubscriptionOnboardingPrefetcher()))
+                viewModel: SubscriptionOnboardingVPNActivationViewModel(prefetcher: SubscriptionOnboardingPrefetcher(), delegate: self))
                 .subscriptionOnboardingNavigationContainer()
                 .graphicLottieRenderer(Self.onboardingLottieRenderer))
         present(hostingController, animated: true)
@@ -887,8 +887,6 @@ final class SubscriptionDebugViewController: UITableViewController {
     private func showTapAllowHintPlayground() {
         let hostingController = UIHostingController(
             rootView: TapAllowHintOverlayPlaygroundView(onClose: { [weak self] in self?.dismiss(animated: true) }))
-        // Full screen with a clear host so the mock dialog's scrim covers everything, matching where the real
-        // (screen-centred) system dialog appears — so the hint offsets line up against the same reference.
         hostingController.modalPresentationStyle = .overFullScreen
         hostingController.view.backgroundColor = .clear
         present(hostingController, animated: true)

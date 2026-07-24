@@ -187,8 +187,7 @@ final class SubscriptionOnboardingDuckAIViewModelTests: XCTestCase {
         AIChatModel(id: id, name: name, provider: .openAI, supportsImageUpload: false, entityHasAccess: hasAccess, accessTier: tier)
     }
 
-    /// Runs `trigger`, then waits until `publisher` emits a value satisfying `predicate`. Mirrors the helper in
-    /// the VPN activation tests: the model fetch is now async, so results arrive on a later run-loop turn.
+    /// Runs `trigger`, then waits until `publisher` emits a value satisfying `predicate`. 
     private func wait<T>(_ publisher: Published<T>.Publisher,
                          until predicate: @escaping (T) -> Bool,
                          trigger: () -> Void) async {

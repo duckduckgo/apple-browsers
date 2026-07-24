@@ -52,7 +52,7 @@ public enum GraphicPlayback: Equatable {
 /// Renders a ``Graphic`` in a fixed frame.
 ///
 /// The frame is square by default (`init(visual:size:)`); use `init(visual:width:height:)` for a
-/// non-square frame, e.g. to match an animation canvas that is not 1:1.
+/// non-square frame.
 ///
 /// `.image` renders natively. `.lottie` is drawn by the environment's ``GraphicLottieRenderer``;
 /// when none is injected it renders nothing. This view owns appearance and Reduce Motion state and

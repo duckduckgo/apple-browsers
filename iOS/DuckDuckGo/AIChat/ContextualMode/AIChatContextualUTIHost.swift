@@ -231,7 +231,7 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate {
         coordinator.viewController.deactivateInput()
     }
 
-    /// Preselects a model on the bound coordinator (e.g. the onboarding-chosen model), so the first submitted
+    /// Preselects a model on the bound coordinator, so the first submitted
     /// prompt — and every subsequent live-pushed one — carries it.
     func preselectModel(_ modelId: String) {
         coordinator.updateSelectedModel(modelId)

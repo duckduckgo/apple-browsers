@@ -36,7 +36,7 @@ struct DuckAIVoiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding {
     }
 }
 
-/// Always-unavailable shortcut for surfaces with no tab to hand a voice chat off to (e.g. standalone onboarding).
+/// Always-unavailable shortcut for surfaces with no tab to hand a voice chat off to.
 struct DuckAIUnavailableVoiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding {
     var isAvailable: Bool { false }
 }

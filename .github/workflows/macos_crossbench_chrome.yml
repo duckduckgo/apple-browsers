@@ -51,10 +51,13 @@ defaults:
 jobs:
   chrome-lcp:
     name: Chrome LCP (live network)
-    # Standard hosted macOS runner (arm64) — free on public repos. If the org
-    # restricts standard runners, switch to macos-15-large / macos-26-xlarge
-    # (those bill).
-    runs-on: macos-latest
+    # Larger Apple Silicon runner. This BILLS (larger runners always do), but
+    # the work is CPU-bound: ~20s of every 44s rep is Perfetto trace parsing,
+    # and a full 22-site run took ~170 min on the free 3-core macos-latest.
+    # Do NOT "upgrade" this to macos-*-large — those are Intel x86_64, which
+    # would make the numbers non-comparable to the arm64 Safari runs and would
+    # not represent any Mac currently sold. Only -xlarge is Apple Silicon.
+    runs-on: macos-26-xlarge
     # 11 loads/site (1 warm-up + 10 measured); a full 22-site live-network run
     # reached 21/22 sites at 160 min (Chrome also installs itself and traces
     # every rep via Perfetto), so give it comfortable headroom.

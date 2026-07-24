@@ -20,11 +20,6 @@ on:
         description: "Repetitions per site"
         required: false
         default: "3"
-  # TEMPORARY: lets the workflow run from this branch before it lands on main
-  # (workflow_dispatch only registers once the file is on the default branch).
-  # Remove before merging.
-  push:
-    branches: [diego/crossbench-chrome-ci]
 
 permissions:
   contents: read
@@ -58,9 +53,8 @@ jobs:
       - name: Run Chrome LCP suite
         # Inputs passed via env, not interpolated into the script, to avoid shell injection.
         env:
-          # Fallbacks cover push-triggered runs, where inputs are empty.
-          SITES: ${{ inputs.sites || 'apple.com,wikipedia.org,youtube.com' }}
-          REPS: ${{ inputs.reps || '3' }}
+          SITES: ${{ inputs.sites }}
+          REPS: ${{ inputs.reps }}
         run: |
           args=(--reps "$REPS")
           if [ -n "$SITES" ]; then

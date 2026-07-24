@@ -41,7 +41,7 @@ struct SyncRecoveryAlternativeView: View {
                     }
                     .frame(height: 56)
 
-                    Image(rebrandable: "Sync-Recover-128")
+                    SyncUIImages.recover
                         .padding(24)
 
                     Text(UserText.syncRecoveryAlternativePromptTitle)

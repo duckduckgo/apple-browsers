@@ -53,7 +53,8 @@ let package = Package(
             ],
             resources: [
                 .process("Resources/SyncMedia.xcassets"),
-                .copy("Resources/SyncScanQRCode.lottie")
+                .copy("Resources/SyncScanQRCode.lottie"),
+                .copy("Resources/SyncLock.lottie")
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))

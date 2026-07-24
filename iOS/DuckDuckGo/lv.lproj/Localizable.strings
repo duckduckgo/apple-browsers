@@ -3199,7 +3199,7 @@
 "omnibar.notification.trackers-blocked" = "%d Trackers";
 
 /* Text displayed on notification appearing in the address bar when YouTube ad blocking is active */
-"omnibar.notification.youtube-ad-block-on" = "YouTube reklāmu bloķēšana ieslēgta";
+"omnibar.notification.youtube-ad-block-on" = "Reklāmu bloķēšana ieslēgta";
 
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Sapratu";
@@ -3864,9 +3864,6 @@
 /* Settings picker label for what to show when returning after inactivity */
 "settings.afterInactivity.v2.label" = "Pēc neaktivitātes perioda";
 
-/* Footer under the AI picker, descriptive sentence without link */
-"settings.ai.new.picker.footer" = "Izmēģini jauno iespēju pārslēgties starp meklēšanu un Duck.ai adrešu joslā.";
-
 /* Settings row that opens Duck.ai in a new tab */
 "settings.aichat.duckai.settings" = "Duck.ai iestatījumi";
 
@@ -3881,9 +3878,6 @@
 
 /* Settings screen footer text for showing AI Chat in the input box */
 "settings.aichat.shortcuts.input.footer" = "Meklē tīmeklī vai jautā Duck.ai tieši adrešu joslā";
-
-/* Title of search assist settings link */
-"settings.aifeatures.assist" = "Meklēšanas Assist iestatījumi";
 
 /* Search Assist frequency option: never show AI-assisted answers */
 "settings.aifeatures.assist.never" = "Nekad";
@@ -5317,10 +5311,10 @@
 "windows-waitlist.waitlist-download-screen.try-duckduckgo-for-windows" = "Iegūsti DuckDuckGo operētājsistēmai Windows!";
 
 /* Body text of the bottom sheet asking the user to send an anonymous breakage report */
-"youtube.ad.blocking.breakage-report.message" = "Nosūti anonīmu ziņojumu par traucējumiem pakalpojumam DuckDuckGo. Palīdzi uzlabot reklāmu bloķēšanu visiem!";
+"youtube.ad.blocking.breakage-report.message" = "Nosūti DuckDuckGo anonīmu ziņojumu un palīdzi uzlabot reklāmu bloķēšanu visiem!";
 
 /* Primary action sending an anonymous YouTube ad-blocking breakage report */
-"youtube.ad.blocking.breakage-report.send" = "Nosūtīt ziņojumu par traucējumiem";
+"youtube.ad.blocking.breakage-report.send" = "Sūtīt anonīmu ziņojumu";
 
 /* Title of the bottom sheet asking the user to send an anonymous breakage report after disabling YouTube ad blocking */
 "youtube.ad.blocking.breakage-report.title" = "YouTube reklāmu bloķēšana nedarbojas?";

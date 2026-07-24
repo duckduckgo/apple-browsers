@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import AppKit
 import Common
 import FoundationExtensions
@@ -760,6 +761,9 @@ private class MockAIChatHistoryCleaner: AIChatHistoryCleaning {
     func cleanAIChatHistory() async -> Result<Void, Error> {
         return .success(())
     }
+    func allChats() -> [DuckAiChat] {
+        []
+    }
 }
 @available(macOS 14.0, *)
 #Preview("Fire Dialog", traits: LegacyFireDialogView.Constants.viewSize.fixedLayout) {
@@ -779,7 +783,7 @@ private class MockAIChatHistoryCleaner: AIChatHistoryCleaning {
     )
 
     PreviewView(showWindowTitle: false) {
-        FireDialogView(viewModel: vm, showIndividualSitesLink: true)
+        LegacyFireDialogView(viewModel: vm, showIndividualSitesLink: true)
     }
 }
 
@@ -825,7 +829,7 @@ private class MockAIChatHistoryCleaner: AIChatHistoryCleaning {
     )
 
     return PreviewView(showWindowTitle: false) {
-        FireDialogView(viewModel: vm, showSitesOverlay: true, showIndividualSitesLink: true)
+        LegacyFireDialogView(viewModel: vm, showSitesOverlay: true, showIndividualSitesLink: true)
     }
 }
 #endif

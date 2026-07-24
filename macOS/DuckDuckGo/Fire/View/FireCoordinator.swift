@@ -133,7 +133,6 @@ final class FireCoordinator {
             }
             let view = FireDialogView(
                 viewModel: config.viewModel,
-                showIndividualSitesLink: config.showIndividualSitesLink,
                 onConfirm: { response in
                     if case .noAction = response {
                         pixelFiring?.fire(FireDialogPixel.fireDialogCancel, frequency: .dailyAndCount, doNotEnforcePrefix: true)

@@ -266,6 +266,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     /// text back onto the omnibar's text leading edge — the omnibar can't be measured live then.
     var cachedOmnibarPlaceholderWindowX: CGFloat?
     private var keyboardMonitor: UTIKeyboardMonitor!
+    private var pixelReporter: UTIPixelReporter!
     private var invalidAttachmentRecoveryTasks: [UUID: Task<Void, Never>] = [:]
     private var isContentOverlaySuppressed = false
     private var pendingGatedModelId: String?
@@ -378,6 +379,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         sessionStateMetrics: SessionStateMetricsProviding = SessionStateMetrics(storage: UserDefaults.standard),
         duckAIWideEventInstrumentation: DuckAIWideEventInstrumentation? = nil,
         duckAIWideEventFlowScope: DuckAIWideEventFlowScope? = nil,
+        pixelFiring: UTIPixelFiring = .live,
         contextualStartsPreSubmit: Bool = false
     ) {
         self.host = host
@@ -388,7 +390,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         self.sessionMonitor = UTISessionMonitor(
             isEnabled: host == .omnibar,
             metrics: sessionStateMetrics,
-            fireBothModesPixel: { DailyPixel.fireDailyAndCount(pixel: .aiChatExperimentalOmnibarSessionBothModes) }
+            fireBothModesPixel: { pixelFiring.fireDailyAndCount(.aiChatExperimentalOmnibarSessionBothModes) }
         )
         self.stateMachine = UTIStateMachine(host: host, hidesToggleOnDuckAITab: hidesToggleOnDuckAITab)
         self.stateStore = stateStore ?? UnifiedInputStateStore(
@@ -435,6 +437,16 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             isInputFirstResponder: { [weak self] in self?.viewController.isInputFirstResponder ?? false }
         ))
         keyboardMonitor.onTimeoutRequiresInactive = { [weak self] in self?.transitionOmnibarToInactive() }
+        pixelReporter = UTIPixelReporter(firing: pixelFiring, context: { [weak self] in
+            guard let self else { return nil }
+            return UTIPixelContext(
+                surface: self.pixelSurface,
+                isDuckAISurfaceForAttribution: self.isDuckAISurfaceForAttribution,
+                inputMode: self.inputMode,
+                currentText: self.currentText,
+                defaultOmnibarMode: self.aiChatSettings.defaultOmnibarMode
+            )
+        })
         attachmentPresenter.pixelSurfaceProvider = { [weak self] in
             self?.pixelSurface ?? .addressBar
         }
@@ -458,10 +470,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             } else {
                 reason = .other
             }
-            DailyPixel.fireDailyAndCount(
-                pixel: .unifiedToggleInputFileValidationFailed,
-                withAdditionalParameters: ["reason": reason.rawValue, "surface": self.pixelSurface.rawValue]
-            )
+            self.pixelReporter.reportFileValidationFailed(reason: reason)
             self.addInvalidFileAttachment(metadata: metadata, validationMessage: message)
         }
         attachmentPresenter.fileMetadataValidationMessage = { [weak self] metadata in
@@ -745,8 +754,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         displayState = host == .contextualChat ? .contextualChat : .aiTab(.expanded)
         // Pixels fire only on a real transition into expanded — header re-entries (Plus → New Chat) call this too but don't actually show either UI.
         if host == .omnibar, previousDisplayState != .aiTab(.expanded) {
-            DailyPixel.fireDailyAndCount(pixel: .aiChatInternalSwitchBarDisplayed)
-            DailyPixel.fireDailyAndCount(pixel: .aiChatExperimentalOmnibarShown)
+            pixelReporter.reportOmnibarInputSurfaceShown()
         }
         setInitialInputMode(inputMode)
         isInputVisibleForKeyboard = true
@@ -822,8 +830,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         keyboardMonitor.arm(awaiting: cardPosition == .top)
         displayState = .omnibar(.active)
         if host == .omnibar {
-            DailyPixel.fireDailyAndCount(pixel: .aiChatInternalSwitchBarDisplayed)
-            DailyPixel.fireDailyAndCount(pixel: .aiChatExperimentalOmnibarShown)
+            pixelReporter.reportOmnibarInputSurfaceShown()
         }
         // Omnibar without a toggle UI locks to .search; inlined to avoid an ordering coupling with `effectiveInputMode`.
         setInitialInputMode(isToggleEnabled ? inputMode : .search)
@@ -972,7 +979,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         }
 
         if didModeChange && host == .omnibar {
-            fireModeSwitchedPixel(to: effectiveMode)
+            pixelReporter.reportModeSwitched(to: effectiveMode)
         }
 
         inputMode = effectiveMode
@@ -1301,7 +1308,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         guard isModelPickerForcedVisible, userScript.canDispatchBridgeMessages else {
             return
         }
-        UnifiedToggleInputCoordinatorPixelHelper.fireSubmitChangeModelPixel(modelId: modelId, surface: pixelSurface)
+        pixelReporter.reportSubmitChangeModel(modelId: modelId)
     }
 
     /// Surfaces the native model picker on the **active** chat in response to the FE's
@@ -1321,7 +1328,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         // expand animation before we ask the button to open its menu.
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
-            UnifiedToggleInputCoordinatorPixelHelper.fireShowModelPickerPixel(surface: self.pixelSurface)
+            self.pixelReporter.reportShowModelPicker()
             if self.viewController.presentModelPickerMenu() {
                 self.fireModelPickerShown()
             }
@@ -1444,19 +1451,19 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     private func fireModelSelectedPixel(modelId: String) {
-        UnifiedToggleInputCoordinatorPixelHelper.fireModelSelectedPixel(modelId: modelId, surface: pixelSurface)
+        pixelReporter.reportModelSelected(modelId: modelId)
     }
 
     private func fireReasoningEffortSelectedPixel(mode: AIChatReasoningMode) {
-        Pixel.fire(pixel: .unifiedToggleInputReasoningEffortSelected, withAdditionalParameters: ["effort_level": mode.rawValue, "surface": pixelSurface.rawValue])
+        pixelReporter.reportReasoningEffortSelected(mode: mode)
     }
 
     private func fireModelPickerShown() {
-        UnifiedToggleInputCoordinatorPixelHelper.fireModelPickerShownPixel(isAITabState: isDuckAISurfaceForAttribution)
+        pixelReporter.reportModelPickerShown()
     }
 
     private func fireReasoningPickerShown() {
-        UnifiedToggleInputCoordinatorPixelHelper.fireReasoningPickerShownPixel(isAITabState: isDuckAISurfaceForAttribution)
+        pixelReporter.reportReasoningPickerShown()
     }
     
     private func requiredPublicTier(for mode: AIChatReasoningMode, model: AIChatModel) -> AIChatModelPublicAccessTier? {
@@ -1569,10 +1576,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     func addFileAttachment(_ fileAttachment: AIChatFileAttachment, sourceURL: URL? = nil) {
         if let validationError = attachmentPolicy.fileValidationError(for: fileAttachment) {
-            DailyPixel.fireDailyAndCount(
-                pixel: .unifiedToggleInputFileValidationFailed,
-                withAdditionalParameters: ["reason": validationError.reason.rawValue, "surface": pixelSurface.rawValue]
-            )
+            pixelReporter.reportFileValidationFailed(reason: validationError.reason)
             viewController.addAttachment(.invalidFile(
                 UnifiedToggleInputInvalidFileAttachment(
                     id: fileAttachment.id,
@@ -1589,7 +1593,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             return
         }
 
-        DailyPixel.fireDailyAndCount(pixel: .unifiedToggleInputFileAttached, withAdditionalParameters: ["surface": pixelSurface.rawValue])
+        pixelReporter.reportFileAttached()
         viewController.addAttachment(.file(fileAttachment))
         persistDraftToStore()
         clearAttachmentValidationErrorIfPossible()
@@ -1634,7 +1638,7 @@ extension UnifiedToggleInputCoordinator {
     
     func handleToolsMenuSelection(_ identifier: UTIToolsMenu.Item.Identifier) {
         if case .customizeResponses = identifier {
-            UnifiedToggleInputCoordinatorPixelHelper.fireCustomizeResponsesSelectedPixel(surface: pixelSurface)
+            pixelReporter.reportCustomizeResponsesSelected()
             viewController.handler.customizeResponsesButtonTapped()
             return
         }
@@ -1657,10 +1661,10 @@ extension UnifiedToggleInputCoordinator {
     private func fireToolToggleTransitionPixel(previous: AIChatRAGTool?, current: AIChatRAGTool?) {
         guard previous != current else { return }
         if let previous, current == nil || current != previous {
-            UnifiedToggleInputCoordinatorPixelHelper.fireToolDeselectedPixel(for: previous, surface: pixelSurface)
+            pixelReporter.reportToolDeselected(previous)
         }
         if let current {
-            UnifiedToggleInputCoordinatorPixelHelper.fireToolSelectedPixel(for: current, surface: pixelSurface)
+            pixelReporter.reportToolSelected(current)
         }
     }
 }
@@ -1715,18 +1719,16 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
 
             switchBarSubmissionMetrics.process(text, for: .aiChat)
             sessionMonitor.recordActivity(mode: .aiChat)
-            UnifiedToggleInputCoordinatorPixelHelper.fireUnifiedPromptSubmittedPixel(
+            pixelReporter.reportPromptSubmitted(
                 hasText: !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
                 selectedTool: toolsController.selectedTool,
                 attachments: viewController.currentAttachments,
                 reasoningMode: reasoningModeForSubmitPixel,
-                modelId: modelStore.persistedModelId,
-                surface: pixelSurface
+                modelId: modelStore.persistedModelId
             )
-            UnifiedToggleInputCoordinatorPixelHelper.fireToolSubmittedPixelIfNeeded(
+            pixelReporter.reportToolSubmittedIfNeeded(
                 selectedTool: toolsController.selectedTool,
-                attachments: viewController.currentAttachments,
-                surface: pixelSurface
+                attachments: viewController.currentAttachments
             )
 
             let configuration = promptSubmissionConfiguration
@@ -1818,14 +1820,14 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
         let previousTool = toolsController.selectedTool
         clearSelectedTool()
         if let previousTool {
-            UnifiedToggleInputCoordinatorPixelHelper.fireToolDeselectedPixel(for: previousTool, surface: pixelSurface)
+            pixelReporter.reportToolDeselected(previousTool)
         }
     }
 
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didRemoveAttachment id: UUID, attachment: UnifiedToggleInputAttachment, isUserInitiated: Bool) {
         removeAttachment(id: id)
         if isUserInitiated {
-            UnifiedToggleInputCoordinatorPixelHelper.fireAttachmentRemovedPixel(for: attachment, surface: pixelSurface)
+            pixelReporter.reportAttachmentRemoved(attachment)
         }
     }
 
@@ -1841,7 +1843,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
 
     func unifiedToggleInputVCDidTapInlineDismiss(_ vc: UnifiedToggleInputViewController) {
         if host == .omnibar {
-            Pixel.fire(pixel: .aiChatExperimentalOmnibarBackButtonPressed, withAdditionalParameters: ["mode": inputMode.rawValue])
+            pixelReporter.reportBackButtonPressed()
         }
         // Visual-only snap to the omnibar destination; then route through the shared dismiss handler.
         vc.applyDismissSnapshot(delegate?.unifiedToggleInputDismissSnapshot() ?? .empty)
@@ -1877,7 +1879,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
 extension UnifiedToggleInputCoordinator {
 
     func insertNewlineFromFloatingReturnKey() {
-        Pixel.fire(pixel: .aiChatExperimentalOmnibarFloatingReturnPressed)
+        pixelReporter.reportFloatingReturnPressed()
         viewController.insertNewlineAtCursor()
     }
 
@@ -2218,7 +2220,7 @@ private extension UnifiedToggleInputCoordinator {
         refreshToolsPresentation()
         syncHasSubmittedPromptToHandler()
         if wasInRecoveryPickerSession {
-            UnifiedToggleInputCoordinatorPixelHelper.fireSubmitChangeModelPromptSentPixel(surface: pixelSurface)
+            pixelReporter.reportSubmitChangeModelPromptSent()
         }
     }
 
@@ -2349,7 +2351,7 @@ private extension UnifiedToggleInputCoordinator {
         viewController.handler.stopGeneratingButtonTappedPublisher
             .sink { [weak self] in
                 guard let self else { return }
-                Pixel.fire(pixel: .unifiedToggleInputStopGenerationTapped, withAdditionalParameters: ["surface": self.pixelSurface.rawValue])
+                self.pixelReporter.reportStopGenerationTapped()
                 self.didPressStopGeneratingButton.send()
             }
             .store(in: &cancellables)
@@ -2399,13 +2401,7 @@ private extension UnifiedToggleInputCoordinator {
             .sink { [weak self] in
                 guard let self else { return }
                 let hasPendingPageContext = self.hasPendingPageContextProvider?() ?? false
-                DailyPixel.fireDailyAndCount(
-                    pixel: .unifiedToggleInputVoiceTapped,
-                    withAdditionalParameters: [
-                        "source": self.pixelSurface.rawValue,
-                        "has_pending_page_context": hasPendingPageContext ? "true" : "false"
-                    ]
-                )
+                self.pixelReporter.reportVoiceTapped(hasPendingPageContext: hasPendingPageContext)
                 self.delegate?.unifiedToggleInputDidRequestAIVoiceChat()
             }
             .store(in: &cancellables)
@@ -2430,18 +2426,6 @@ private extension UnifiedToggleInputCoordinator {
             .store(in: &cancellables)
     }
 
-    // MARK: - Pixels
-
-    private func fireModeSwitchedPixel(to mode: TextEntryMode) {
-        let direction = mode == .search ? "to_search" : "to_duckai"
-        let hadText = !currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        let parameters = [
-            "direction": direction,
-            "had_text": String(hadText),
-            "default_position": aiChatSettings.defaultOmnibarMode.rawValue
-        ]
-        Pixel.fire(pixel: .aiChatExperimentalOmnibarModeSwitched, withAdditionalParameters: parameters)
-    }
 }
 
 private extension NSCache where KeyType == NSString, ObjectType == NSString {

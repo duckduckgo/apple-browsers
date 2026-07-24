@@ -21,11 +21,6 @@ name: macOS - crossbench Safari LCP (live network)
 # comparison (that needs WPR + a dedicated runner, later).
 
 on:
-  # TEMPORARY: a push trigger so this brand-new workflow gets registered and can
-  # then be run via workflow_dispatch from this branch. Removed right after the
-  # first run registers it.
-  push:
-    branches: [ diego/crossbench-safari ]
   workflow_dispatch:
     inputs:
       sites:

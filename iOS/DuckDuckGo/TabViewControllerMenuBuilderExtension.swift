@@ -165,6 +165,7 @@ extension TabViewController {
             } else {
                 entries.append(buildAIChatsEntry(useSmallIcon: useSmallIcon))
             }
+            entries.append(buildAIChatFeedbackEntry(useSmallIcon: useSmallIcon))
             entries.append(buildAIChatSettingsEntry(useSmallIcon: useSmallIcon, useAIGlyph: true))
 
             entries.append(.separator)
@@ -584,7 +585,17 @@ extension TabViewController {
             self?.openAIChatHistory()
         })
     }
-    
+
+    private func buildAIChatFeedbackEntry(useSmallIcon: Bool = true) -> BrowsingMenuEntry {
+        .regular(name: UserText.actionAIChatFeedback,
+                 accessibilityLabel: UserText.actionAIChatFeedback,
+                 image: useSmallIcon ? DesignSystemImages.Glyphs.Size16.feedback : DesignSystemImages.Glyphs.Size24.feedback,
+                 action: { [weak self] in
+            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsMenuFeedbackTapped)
+            self?.openAIChatFeedback()
+        })
+    }
+
     /// Mirrors the Plus-menu "New Voice Chat": starts a Duck.ai voice session.
     private func buildAINewVoiceChatEntry(useSmallIcon: Bool = true) -> BrowsingMenuEntry {
         .regular(name: UserText.aiChatHeaderNewVoiceChatTitle,
@@ -864,6 +875,10 @@ extension TabViewController {
         delegate?.tabDidRequestAIChatHistory(tab: self, source: .browserMenu)
     }
 
+    private func openAIChatFeedback() {
+        delegate?.tabDidRequestAIChatFeedback(tab: self)
+    }
+
     /// The domain the "Disable/Enable Privacy Protection" browsing-menu toggle applies to,
     /// or `nil` when the toggle should not be offered.
     ///
@@ -1089,6 +1104,7 @@ extension TabViewController: BrowsingMenuEntryBuilding {
             buildNewAIChatEntry(withSmallIcon: false),
             buildAINewVoiceChatEntry(useSmallIcon: false),
             chatsEntry,
+            buildAIChatFeedbackEntry(useSmallIcon: false),
             buildOpenSettingsEntry(useSmallIcon: false)
         ]
     }

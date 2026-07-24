@@ -74,6 +74,8 @@ class TabViewController: UIViewController {
     /// auto-expand even before the `?mode=voice` URL is committed to the web view.
     var isVoiceModeRequested = false
 
+    var isDuckAIDeepLinkSurfaceRequested = false
+
     lazy var borderView = StyledTopBottomBorderView()
 
     var privacyDashboardAnchor: UIView!

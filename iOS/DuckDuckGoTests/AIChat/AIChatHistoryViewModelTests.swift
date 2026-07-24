@@ -133,6 +133,16 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         XCTAssertTrue(delegate.didRequestOpenNewChat)
     }
 
+    func testOpenChatProtection_notifiesDelegate() {
+        let sut = makeSUT(chats: [])
+        let delegate = MockDelegate()
+        sut.delegate = delegate
+
+        sut.openChatProtection()
+
+        XCTAssertTrue(delegate.didRequestChatProtection)
+    }
+
     func testChatId_forValidIndexPath_returnsChatId() {
         let sut = makeSUT(chats: [
             chat(id: "p1", pinned: true),
@@ -680,12 +690,14 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         private(set) var exportedFilenames: [String] = []
         private(set) var exportedChatCounts: [Int] = []
         private(set) var didFailExport = false
+        private(set) var didRequestChatProtection = false
 
         func viewModelDidRequestOpenNewChat() { didRequestOpenNewChat = true }
         func viewModelDidRequestOpenChat(chatId: String) { requestedChatId = chatId }
         func viewModelDidExportChat(filename: String) { exportedFilenames.append(filename) }
         func viewModelDidExportChats(count: Int) { exportedChatCounts.append(count) }
         func viewModelDidFailExport() { didFailExport = true }
+        func viewModelDidRequestChatProtection() { didRequestChatProtection = true }
     }
 
     private final class MockChatHistoryFireExecutor: FireExecuting {

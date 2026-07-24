@@ -1731,7 +1731,8 @@ extension Pixel {
         case aiChatSettingsMenuSidebarTapped
         case aiChatSettingsMenuAIChatSettingsTapped
         case aiChatSettingsMenuNewChatTabTapped
-        
+        case aiChatSettingsMenuFeedbackTapped
+
         case aiChatTabSwitcherOpened
         case aiChatFireButtonTapped
         case aiChatTabDidTerminate
@@ -3662,7 +3663,8 @@ extension Pixel.Event {
         case .aiChatSettingsMenuSidebarTapped: return "m_aichat_settings_menu_sidebar_tapped"
         case .aiChatSettingsMenuAIChatSettingsTapped: return "m_aichat_settings_menu_aichat_settings_tapped"
         case .aiChatSettingsMenuNewChatTabTapped: return "m_aichat_settings_menu_new_chat_tab_tapped"
-            
+        case .aiChatSettingsMenuFeedbackTapped: return "m_aichat_settings_menu_feedback_tapped"
+
         case .aiChatTabSwitcherOpened: return "m_aichat_tab_switcher_opened"
         case .aiChatFireButtonTapped: return "m_aichat_fire_button_tapped"
         case .aiChatTabDidTerminate: return "m_aichat_tab_did_terminate"

@@ -481,6 +481,7 @@
 		5A42818D271DCBB511C163EA /* SubscriptionPromoExistingUserCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE011B99901B24D8BE93DA1F /* SubscriptionPromoExistingUserCoordinator.swift */; };
 		5AB12C3D4E5F60718293A4B5 /* AIChatHistoryViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AB12C3D4E5F60718293A4B6 /* AIChatHistoryViewController.swift */; };
 		5AB12C3D4E5F60718293A4B7 /* AIChatHistoryEmptyStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AB12C3D4E5F60718293A4B8 /* AIChatHistoryEmptyStateView.swift */; };
+		38020264FB2DAE065A62DD91 /* DuckAIFeedbackOptionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7EED8132EB6025528FC966F /* DuckAIFeedbackOptionsView.swift */; };
 		5AB12C3D4E5F60718293A4B9 /* AIChatHistoryViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AB12C3D4E5F60718293A4BA /* AIChatHistoryViewModel.swift */; };
 		5AB12C3D4E5F60718293A4BB /* AIChatHistoryCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AB12C3D4E5F60718293A4BC /* AIChatHistoryCell.swift */; };
 		5AB12C3D4E5F60718293A4BF /* MockChatHistoryReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AB12C3D4E5F60718293A4C0 /* MockChatHistoryReader.swift */; };
@@ -3209,6 +3210,7 @@
 		56DC47192E1C087B00ADE613 /* AIChatViewControllerManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatViewControllerManagerTests.swift; sourceTree = "<group>"; };
 		5AB12C3D4E5F60718293A4B6 /* AIChatHistoryViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatHistoryViewController.swift; sourceTree = "<group>"; };
 		5AB12C3D4E5F60718293A4B8 /* AIChatHistoryEmptyStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatHistoryEmptyStateView.swift; sourceTree = "<group>"; };
+		B7EED8132EB6025528FC966F /* DuckAIFeedbackOptionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAIFeedbackOptionsView.swift; sourceTree = "<group>"; };
 		5AB12C3D4E5F60718293A4BA /* AIChatHistoryViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatHistoryViewModel.swift; sourceTree = "<group>"; };
 		5AB12C3D4E5F60718293A4BC /* AIChatHistoryCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatHistoryCell.swift; sourceTree = "<group>"; };
 		5AB12C3D4E5F60718293A4C0 /* MockChatHistoryReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockChatHistoryReader.swift; sourceTree = "<group>"; };
@@ -6119,6 +6121,7 @@
 				EA8E5DCD620608EB3A162D3D /* AIChatTabChatHeaderView.swift */,
 				5AB12C3D4E5F60718293A4B6 /* AIChatHistoryViewController.swift */,
 				5AB12C3D4E5F60718293A4B8 /* AIChatHistoryEmptyStateView.swift */,
+				B7EED8132EB6025528FC966F /* DuckAIFeedbackOptionsView.swift */,
 				5AB12C3D4E5F60718293A4BA /* AIChatHistoryViewModel.swift */,
 				7BE3A9DD8385464FA82977B9 /* AIChatHistoryInstrumentation.swift */,
 				5AB12C3D4E5F60718293A4BC /* AIChatHistoryCell.swift */,
@@ -13695,6 +13698,7 @@
 				CF65ADDC7C8E902826B7931B /* AIChatTabChatHeaderView.swift in Sources */,
 				5AB12C3D4E5F60718293A4B5 /* AIChatHistoryViewController.swift in Sources */,
 				5AB12C3D4E5F60718293A4B7 /* AIChatHistoryEmptyStateView.swift in Sources */,
+				38020264FB2DAE065A62DD91 /* DuckAIFeedbackOptionsView.swift in Sources */,
 				5AB12C3D4E5F60718293A4B9 /* AIChatHistoryViewModel.swift in Sources */,
 				553E0CD471E54E97B85C6F55 /* AIChatHistoryInstrumentation.swift in Sources */,
 				5AB12C3D4E5F60718293A4BB /* AIChatHistoryCell.swift in Sources */,

@@ -67,9 +67,9 @@ jobs:
       uses: actions/cache@v5
       with:
         path: iOS/DerivedData/SourcePackages
-        key: ${{ runner.os }}-ios-${{ env.cache_key_hash }}
+        key: ${{ runner.os }}-ios-experimental-${{ env.cache_key_hash }}
         restore-keys: |
-          ${{ runner.os }}-ios-
+          ${{ runner.os }}-ios-experimental-
 
     - name: Setup Ruby and dependencies
       uses: ./.github/actions/setup-ruby

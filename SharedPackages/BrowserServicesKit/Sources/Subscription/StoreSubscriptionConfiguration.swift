@@ -58,10 +58,12 @@ final class DefaultStoreSubscriptionConfiguration: StoreSubscriptionConfiguratio
                                                "ios.subscription.1year.freetrial.dev",
                                                "ios.subscription.1month.freetrial.dev.\(StoreSubscriptionConstants.proTierIdentifier)",
                                                "ios.subscription.1month.dev.\(StoreSubscriptionConstants.proTierIdentifier)",
+                                               "ios.subscription.1month",
                                                "ios.subscription.1year.freetrial.dev.\(StoreSubscriptionConstants.proTierIdentifier)"],
                                         .restOfWorld: ["ios.subscription.1month.row.freetrial.dev",
                                                        "ios.subscription.1year.row.freetrial.dev",
                                                        "ios.subscription.1month.row.freetrial.dev.\(StoreSubscriptionConstants.proTierIdentifier)",
+                                                       "ios.subscription.1month.row",
                                                        "ios.subscription.1month.row.dev.\(StoreSubscriptionConstants.proTierIdentifier)",
                                                        "ios.subscription.1year.row.freetrial.dev.\(StoreSubscriptionConstants.proTierIdentifier)"]]),
             // macOS debug build

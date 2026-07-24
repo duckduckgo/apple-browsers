@@ -33,59 +33,49 @@ public struct DefaultMonthlyFreeTrialDecider: MonthlyFreeTrialDeciding {
     }
 }
 
+/// A pair of interchangeable monthly SKUs for the free-trial experiment.
+///
+/// `control` is the SKU that includes a free trial; `treatment` is the equivalent SKU without one.
+/// Trial eligibility is a StoreKit product property, not encoded in the identifier, so the two are
+/// matched explicitly rather than by parsing the identifier string.
+struct MonthlyFreeTrialSKUPair {
+    let control: String
+    let treatment: String
+}
+
 extension MonthlyFreeTrialDeciding {
+
+    /// Monthly SKUs swapped based on the experiment cohort. Production IDs to be added.
+    static var monthlyFreeTrialSKUPairs: [MonthlyFreeTrialSKUPair] {
+        [
+            MonthlyFreeTrialSKUPair(control: "ios.subscription.1month.freetrial.dev",
+                                    treatment: "ios.subscription.1month"),
+            MonthlyFreeTrialSKUPair(control: "ios.subscription.1month.row.freetrial.dev",
+                                    treatment: "ios.subscription.1month.row"),
+            MonthlyFreeTrialSKUPair(control: "ios.subscription.1month.freetrial.dev.pro",
+                                    treatment: "ios.subscription.1month.dev.pro"),
+            MonthlyFreeTrialSKUPair(control: "ios.subscription.1month.row.freetrial.dev.pro",
+                                    treatment: "ios.subscription.1month.row.dev.pro")
+        ]
+    }
 
     func filteringMonthlyFreeTrialPreference(from products: [any SubscriptionProduct]) -> [any SubscriptionProduct] {
         let allowedIdentifiers = Set(filteringMonthlyFreeTrialPreference(from: products.map(\.id)))
         return products.filter { allowedIdentifiers.contains($0.id) }
     }
 
-    /// Filters paired monthly SKUs down to a single variant based on the trial preference.
-    ///
-    /// Two monthly identifiers are a "pair" when they're identical except for the `freetrial`
-    /// component, e.g. `ios.subscription.1month.freetrial.dev` and `ios.subscription.1month.dev`.
-    ///
-    /// For each such pair,
-    /// * it keeps the free-trial SKU when `shouldOfferMonthlyFreeTrial()` is `true`
-    /// * it keeps the 'no-trial' SKU otherwise
-    ///
-    /// Unpaired identifiers (yearly, weekly, …) pass through unchanged.
+    /// For each configured SKU pair whose control and treatment variants are both present, keeps the
+    /// variant matching the cohort and drops the other. Identifiers not in a pair pass through
+    /// unchanged, and a pair with only one variant present is left untouched.
     func filteringMonthlyFreeTrialPreference(from identifiers: [String]) -> [String] {
         let offerMonthlyFreeTrial = shouldOfferMonthlyFreeTrial()
+        let present = Set(identifiers)
 
-        return identifiers.filter { identifier in
-            guard identifier.isMonthlySubscriptionIdentifier else { return true }
+        let identifiersToRemove = Set(Self.monthlyFreeTrialSKUPairs.compactMap { pair -> String? in
+            guard present.contains(pair.control), present.contains(pair.treatment) else { return nil }
+            return offerMonthlyFreeTrial ? pair.treatment : pair.control
+        })
 
-            let planKey = identifier.trialAgnosticMonthlyIdentifier
-            let hasOppositeTrialSibling = identifiers.contains { other in
-                other != identifier
-                    && other.isMonthlySubscriptionIdentifier
-                    && other.trialAgnosticMonthlyIdentifier == planKey
-                    && other.includesFreeTrial != identifier.includesFreeTrial
-            }
-
-            guard hasOppositeTrialSibling else { return true }
-
-            return offerMonthlyFreeTrial ? identifier.includesFreeTrial : !identifier.includesFreeTrial
-        }
-    }
-}
-
-private extension String {
-
-    var isMonthlySubscriptionIdentifier: Bool {
-        let components = split(separator: ".")
-        return components.contains("monthly") || components.contains("1month")
-    }
-
-    var includesFreeTrial: Bool {
-        split(separator: ".").contains { $0 == StoreSubscriptionConstants.freeTrialIdentifer }
-    }
-
-    /// Removes the free-trial component for SKU matching.
-    var trialAgnosticMonthlyIdentifier: String {
-        split(separator: ".")
-            .filter { $0 != StoreSubscriptionConstants.freeTrialIdentifer }
-            .joined(separator: ".")
+        return identifiers.filter { !identifiersToRemove.contains($0) }
     }
 }

@@ -22,90 +22,59 @@ import Testing
 @Suite("Monthly Free Trial Deciding – identifier filtering")
 struct MonthlyFreeTrialDecidingTests {
 
-    private let pairedIdentifiers = [
-        "ddg.privacy.pro.yearly.renews.us.freetrial",
-        "ddg.privacy.pro.monthly.renews.us.freetrial",
-        "ddg.privacy.pro.monthly.renews.us",
-        "ddg.subscription.yearly.renews.us.freetrial.pro",
-        "ddg.subscription.monthly.renews.us.freetrial.pro",
-        "ddg.subscription.monthly.renews.us.pro"
-    ]
+    // Mirrors the configured pairs; control includes a free trial, treatment does not.
+    private static let usaControl = "ios.subscription.1month.freetrial.dev"
+    private static let usaTreatment = "ios.subscription.1month"
+    private static let rowControl = "ios.subscription.1month.row.freetrial.dev"
+    private static let rowTreatment = "ios.subscription.1month.row"
 
-    @Test("When offering the trial, a paired monthly plan keeps only the free-trial variant")
-    func offeringTrialKeepsFreeTrialMonthlyOfAPair() {
-        let sut = MockMonthlyFreeTrialDecider(shouldOfferMonthlyFreeTrial: true)
-
-        let result = Set(sut.filteringMonthlyFreeTrialPreference(from: pairedIdentifiers))
-
-        #expect(result == [
-            "ddg.privacy.pro.yearly.renews.us.freetrial",
-            "ddg.privacy.pro.monthly.renews.us.freetrial",
-            "ddg.subscription.yearly.renews.us.freetrial.pro",
-            "ddg.subscription.monthly.renews.us.freetrial.pro"
-        ])
-    }
-
-    @Test("When not offering the trial, a paired monthly plan keeps only the no-trial variant")
-    func notOfferingTrialKeepsNoTrialMonthlyOfAPair() {
-        let sut = MockMonthlyFreeTrialDecider(shouldOfferMonthlyFreeTrial: false)
-
-        let result = Set(sut.filteringMonthlyFreeTrialPreference(from: pairedIdentifiers))
-
-        #expect(result == [
-            "ddg.privacy.pro.yearly.renews.us.freetrial",
-            "ddg.privacy.pro.monthly.renews.us",
-            "ddg.subscription.yearly.renews.us.freetrial.pro",
-            "ddg.subscription.monthly.renews.us.pro"
-        ])
-    }
-
-    @Test("A lone free-trial monthly plan is kept even when not offering the trial")
-    func loneFreeTrialMonthlyIsKeptWhenNotOffering() {
-        let identifiers = [
-            "ddg.privacy.pro.monthly.renews.us.freetrial",
-            "ddg.privacy.pro.yearly.renews.us.freetrial"
-        ]
-        let sut = MockMonthlyFreeTrialDecider(shouldOfferMonthlyFreeTrial: false)
-
-        let result = Set(sut.filteringMonthlyFreeTrialPreference(from: identifiers))
-
-        #expect(result == Set(identifiers), "A monthly plan with no no-trial sibling must never be hidden")
-    }
-
-    @Test("A lone no-trial monthly plan is kept even when offering the trial")
-    func loneNoTrialMonthlyIsKeptWhenOffering() {
-        let identifiers = [
-            "ddg.subscription.monthly.renews.us.pro",
-            "ddg.subscription.yearly.renews.us.freetrial.pro"
-        ]
+    @Test("Control cohort (offering the trial) keeps the control SKU and drops the treatment SKU")
+    func offeringTrialKeepsControlSKU() {
+        let identifiers = [Self.usaControl, Self.usaTreatment, Self.rowControl, Self.rowTreatment]
         let sut = MockMonthlyFreeTrialDecider(shouldOfferMonthlyFreeTrial: true)
 
         let result = Set(sut.filteringMonthlyFreeTrialPreference(from: identifiers))
 
-        #expect(result == Set(identifiers), "A monthly plan with no free-trial sibling must never be hidden")
+        #expect(result == [Self.usaControl, Self.rowControl])
     }
 
-    @Test("Dev-style 1month identifiers are paired correctly")
-    func devStyleMonthlyIdentifiersArePaired() {
-        let identifiers = [
-            "ios.subscription.1year.freetrial.dev.pro",
-            "ios.subscription.1month.freetrial.dev.pro",
-            "ios.subscription.1month.dev.pro"
-        ]
+    @Test("Treatment cohort (not offering the trial) keeps the treatment SKU and drops the control SKU")
+    func notOfferingTrialKeepsTreatmentSKU() {
+        let identifiers = [Self.usaControl, Self.usaTreatment, Self.rowControl, Self.rowTreatment]
         let sut = MockMonthlyFreeTrialDecider(shouldOfferMonthlyFreeTrial: false)
 
         let result = Set(sut.filteringMonthlyFreeTrialPreference(from: identifiers))
 
-        #expect(result == [
-            "ios.subscription.1year.freetrial.dev.pro",
-            "ios.subscription.1month.dev.pro"
-        ])
+        #expect(result == [Self.usaTreatment, Self.rowTreatment])
     }
 
-    @Test("Non-monthly identifiers always pass through untouched")
-    func nonMonthlyIdentifiersPassThrough() {
+    @Test("A pair with only its control variant present is left untouched")
+    func loneControlSKUIsKept() {
+        let identifiers = [Self.usaControl]
+        let offering = MockMonthlyFreeTrialDecider(shouldOfferMonthlyFreeTrial: true)
+        let notOffering = MockMonthlyFreeTrialDecider(shouldOfferMonthlyFreeTrial: false)
+
+        #expect(Set(offering.filteringMonthlyFreeTrialPreference(from: identifiers)) == Set(identifiers))
+        #expect(Set(notOffering.filteringMonthlyFreeTrialPreference(from: identifiers)) == Set(identifiers),
+                "A control SKU whose treatment sibling is absent must never be hidden")
+    }
+
+    @Test("A pair with only its treatment variant present is left untouched")
+    func loneTreatmentSKUIsKept() {
+        let identifiers = [Self.usaTreatment]
+        let offering = MockMonthlyFreeTrialDecider(shouldOfferMonthlyFreeTrial: true)
+        let notOffering = MockMonthlyFreeTrialDecider(shouldOfferMonthlyFreeTrial: false)
+
+        #expect(Set(offering.filteringMonthlyFreeTrialPreference(from: identifiers)) == Set(identifiers),
+                "A treatment SKU whose control sibling is absent must never be hidden")
+        #expect(Set(notOffering.filteringMonthlyFreeTrialPreference(from: identifiers)) == Set(identifiers))
+    }
+
+    @Test("Identifiers not in any configured pair pass through untouched")
+    func unpairedIdentifiersPassThrough() {
         let identifiers = [
-            "ddg.privacy.pro.yearly.renews.us.freetrial",
+            "ios.subscription.1year.freetrial.dev",
+            "ios.subscription.1year.freetrial.dev.pro",
             "ddg.subscription.yearly.renews.us.freetrial.pro"
         ]
         let offering = MockMonthlyFreeTrialDecider(shouldOfferMonthlyFreeTrial: true)
@@ -113,6 +82,17 @@ struct MonthlyFreeTrialDecidingTests {
 
         #expect(Set(offering.filteringMonthlyFreeTrialPreference(from: identifiers)) == Set(identifiers))
         #expect(Set(notOffering.filteringMonthlyFreeTrialPreference(from: identifiers)) == Set(identifiers))
+    }
+
+    @Test("Only the swapped variant is removed; unpaired identifiers in the same list are kept")
+    func onlyPairedVariantIsRemoved() {
+        let yearly = "ios.subscription.1year.freetrial.dev"
+        let identifiers = [Self.usaControl, Self.usaTreatment, yearly]
+        let sut = MockMonthlyFreeTrialDecider(shouldOfferMonthlyFreeTrial: false)
+
+        let result = Set(sut.filteringMonthlyFreeTrialPreference(from: identifiers))
+
+        #expect(result == [Self.usaTreatment, yearly])
     }
 }
 

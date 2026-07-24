@@ -268,6 +268,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private var keyboardMonitor: UTIKeyboardMonitor!
     private var pixelReporter: UTIPixelReporter!
     private var wideEventReporter: UTIWideEventReporter!
+    private var modelSelector: UTIModelSelector!
     private var invalidAttachmentRecoveryTasks: [UUID: Task<Void, Never>] = [:]
     private var isContentOverlaySuppressed = false
     private var pendingGatedModelId: String?
@@ -461,6 +462,21 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                 )
             }
         )
+        modelSelector = UTIModelSelector(
+            modelStore: modelStore,
+            toolsController: toolsController,
+            modelMenuFactory: modelMenuFactory,
+            reasoningMenuFactory: reasoningMenuFactory,
+            view: .init(
+                setModelName: { [weak self] in self?.viewController.modelName = $0 },
+                setModelPickerMenu: { [weak self] in self?.viewController.modelPickerMenu = $0 },
+                setSelectedReasoningMode: { [weak self] in self?.viewController.selectedReasoningMode = $0 },
+                setReasoningButtonHidden: { [weak self] in self?.viewController.isReasoningButtonHidden = $0 },
+                setReasoningPickerMenu: { [weak self] in self?.viewController.reasoningPickerMenu = $0 }
+            ),
+            onModelChosen: { [weak self] in self?.handleModelSelection($0) },
+            onReasoningChosen: { [weak self] in self?.handleReasoningModeSelection($0) }
+        )
         attachmentPresenter.pixelSurfaceProvider = { [weak self] in
             self?.pixelSurface ?? .addressBar
         }
@@ -625,7 +641,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         }
         Logger.unifiedInputState.debug("restoreLastUsedReasoningMode [\(chatID, privacy: .public)]: applying '\(rawValue, privacy: .public)'")
         modelStore.applyChatPersistedReasoningMode(mode)
-        updateReasoningPicker()
+        modelSelector.updateReasoningPicker()
     }
 
     // MARK: - Per-Tab State
@@ -680,7 +696,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             reasoningMode: state.selectedReasoningMode
         )
         handleModelsUpdated()
-        updateReasoningPicker()
+        modelSelector.updateReasoningPicker()
 
         if let tool = state.selectedTool {
             toolsController.select(tool, for: modelStore)
@@ -1393,13 +1409,13 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     private func refreshModelPickerMenuAfterRejectedSelection() {
         DispatchQueue.main.async { [weak self] in
-            self?.updateModelChipLabel()
+            self?.modelSelector.updateModelChipLabel()
         }
     }
 
     private func refreshReasoningPickerMenuAfterRejectedSelection() {
         DispatchQueue.main.async { [weak self] in
-            self?.updateReasoningPicker()
+            self?.modelSelector.updateReasoningPicker()
         }
     }
 
@@ -1442,7 +1458,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     func updateSelectedReasoningMode(_ mode: AIChatReasoningMode) {
         modelStore.updateSelectedReasoningMode(mode)
-        updateReasoningPicker()
+        modelSelector.updateReasoningPicker()
         recordUserChoiceToStore()
     }
 
@@ -1510,48 +1526,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     func clearSelectedTool() {
         resetToolsSelection()
         recordUserChoiceToStore()
-    }
-
-    private func updateModelChipLabel() {
-        let selectedId = modelStore.persistedModelId
-        let shortName = modelMenuFactory.selectedShortName(models: modelStore.models, selectedId: selectedId)
-        if let shortName {
-            viewController.modelName = shortName
-        }
-        viewController.modelPickerMenu = modelStore.models.isEmpty ? nil : modelMenuFactory.makeMenu(
-            models: modelStore.models,
-            selectedId: selectedId,
-            plusSectionTitle: UserText.aiChatPlusModelsSectionHeader,
-            proSectionTitle: UserText.aiChatProModelsSectionHeader
-        ) { [weak self] modelId in
-            self?.handleModelSelection(modelId)
-        }
-    }
-
-    private func buildReasoningPickerMenu() -> UIMenu? {
-        guard let selectedModel else { return nil }
-
-        return reasoningMenuFactory.makeMenu(
-            model: selectedModel,
-            selectedMode: resolvedSelectedReasoningMode
-        ) { [weak self] mode in
-            self?.handleReasoningModeSelection(mode)
-        }
-    }
-
-    private func updateReasoningPicker() {
-        if toolsController.selectedTool == .imageGeneration {
-            // Reasoning effort doesn't apply to image generation; hide the picker without touching the persisted
-            // mode so the previous selection returns when the user deselects the image-gen tool.
-            viewController.isReasoningButtonHidden = true
-            viewController.reasoningPickerMenu = nil
-            return
-        }
-        let selectedMode = resolvedSelectedReasoningMode
-        let shouldHide = !(selectedModel?.supportsReasoningPicker ?? false)
-        viewController.selectedReasoningMode = selectedMode
-        viewController.isReasoningButtonHidden = shouldHide
-        viewController.reasoningPickerMenu = shouldHide ? nil : buildReasoningPickerMenu()
     }
 
     // MARK: - Attachments
@@ -2217,7 +2191,7 @@ private extension UnifiedToggleInputCoordinator {
         // contextual post-submit and image generation stay hidden regardless.
         let shouldHideModelChip = isContextualPostSubmit || isImageGenActive || (hasSubmittedPrompt && !isModelPickerForcedVisible)
         viewController.isModelChipHidden = shouldHideModelChip
-        updateReasoningPicker()
+        modelSelector.updateReasoningPicker()
     }
 
     func syncHasSubmittedPromptToHandler() {
@@ -2268,7 +2242,7 @@ private extension UnifiedToggleInputCoordinator {
 
     func applyToolbarPresentation() {
         refreshToolsPresentation()
-        updateReasoningPicker()
+        modelSelector.updateReasoningPicker()
         updateToolbarAIVoiceChat()
     }
 
@@ -2277,8 +2251,8 @@ private extension UnifiedToggleInputCoordinator {
     func handleModelsUpdated() {
         toolsController.clearSelectionIfUnsupported(for: modelStore)
         removeUnsupportedAttachmentsForSelectedModel()
-        updateModelChipLabel()
-        updateReasoningPicker()
+        modelSelector.updateModelChipLabel()
+        modelSelector.updateReasoningPicker()
         if applyPendingGatedModelSelectionIfPossible() {
             return
         }
@@ -2331,10 +2305,6 @@ private extension UnifiedToggleInputCoordinator {
         updateAttachButtonPresentation()
     }
 
-    var resolvedSelectedReasoningMode: AIChatReasoningMode? {
-        selectedModel?.resolvedReasoningMode(from: persistedReasoningMode)
-    }
-
     /// Reasoning mode to report in submit-time pixels.
     /// Returns `nil` ( "none") whenever the reasoning picker is hidden in the UI:
     /// selected tool hides it, or the model doesn't support a reasoning picker.
@@ -2345,7 +2315,7 @@ private extension UnifiedToggleInputCoordinator {
             return nil
         }
         guard selectedModel?.supportsReasoningPicker == true else { return nil }
-        return resolvedSelectedReasoningMode
+        return modelSelector.resolvedSelectedReasoningMode
     }
 
     // MARK: - Subscriptions

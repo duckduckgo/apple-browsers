@@ -31,7 +31,11 @@ import OSLog
 final class FireViewController: NSViewController {
 
     enum Const {
-        static let animationName = "01_Fire_really_small"
+        static var animationName: String {
+            DesignSystemRebrand.isAppRebranded()
+                ? "02_Fire_rebranded"
+                : "01_Fire_really_small"
+        }
     }
 
     private(set) var fireViewModel: FireViewModel
@@ -317,9 +321,21 @@ final class FireViewController: NSViewController {
         fakeFireButton.isHidden = true
     }
 
-    private let fireAnimationSpeed = 1.2
-    private let fireAnimationBeginning = 0.1
-    private let fireAnimationEnd = 0.63
+    private var fireAnimationSpeed: CGFloat {
+        DesignSystemRebrand.isAppRebranded()
+            ? 1
+            : 1.2
+    }
+    private var fireAnimationBeginning: CGFloat {
+        DesignSystemRebrand.isAppRebranded()
+            ? 0
+            : 0.1
+    }
+    private var fireAnimationEnd: CGFloat {
+        DesignSystemRebrand.isAppRebranded()
+            ? 1
+            : 0.63
+    }
 
     @MainActor
     func animateFireWhenClosing() async {
@@ -428,7 +444,9 @@ private actor FireAnimationViewLoader {
         guard let animation = await animation else {
             return nil
         }
-        let view = LottieAnimationView(animation: animation)
+        // The global default is .mainThread (see AppDelegate), but CPU-rasterizing this full-window 3840x2160 animation can't sustain 30fps.
+        // Our fire animation needs the GPU-backed Core Animation engine.
+        let view = LottieAnimationView(animation: animation, configuration: LottieConfiguration(renderingEngine: .coreAnimation))
         view.identifier = .init(rawValue: animationName)
         return view
     }

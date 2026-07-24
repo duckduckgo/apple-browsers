@@ -24,7 +24,14 @@ extension MainViewController: AIChatHistoryViewModelDelegate {
 
     func viewModelDidRequestOpenNewChat() {
         dismiss(animated: true) { [weak self] in
-            self?.openAIChat()
+            guard let self else { return }
+            if let tab = self.currentTab, tab.isAITab {
+                self.unifiedToggleInputCoordinator?.startNewChat()
+                self.unifiedToggleInputCoordinator?.showExpanded(inputMode: .aiChat)
+                tab.submitStartChatAction()
+            } else {
+                self.openAIChat()
+            }
         }
     }
 

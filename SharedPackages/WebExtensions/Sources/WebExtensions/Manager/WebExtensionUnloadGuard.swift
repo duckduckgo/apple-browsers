@@ -20,33 +20,21 @@ import Foundation
 import os.log
 import WebKit
 
-/// Workaround for a WebKit crash when unloading a web extension that uses declarativeNetRequest
-/// (https://bugs.webkit.org/show_bug.cgi?id=305585).
+/// Delays unloading a declarativeNetRequest extension until shortly after it loads, to avoid a
+/// WebKit crash: unloading one while WebKit is still reading its rules dereferences a null and
+/// crashes the app. Fixed upstream but not yet in any shipping macOS 26.x.
 ///
-/// Loading an extension context starts a fire-and-forget read of its declarativeNetRequest rules
-/// on a background queue. Unloading the context destroys the SQLite store that read uses, and a
-/// store torn down while the read is still queued invokes the completion callback with a null
-/// rules array, which WebKit dereferences — crashing the app. The bug is fixed upstream
-/// (https://commits.webkit.org/305661@main) but the fix has not shipped in any macOS 26.x WebKit.
+/// Callers record each load with `recordLoad(of:)`, then call `awaitSettled(_:)` before unloading.
 ///
-/// The guard closes the race with a "settle window": callers record every successful extension
-/// load (`recordLoad(of:)`) and, before unloading or reloading an extension that requests
-/// declarativeNetRequest, wait until at least `settleWindow` has passed since that extension's
-/// load (`awaitSettled(_:)`). Extensions without the permission never trigger the vulnerable
-/// rules read, so the guard lets them pass immediately — as it does any extension loaded longer
-/// than the window.
-///
-/// Remove this type (and its call sites in `WebExtensionManager`) once the minimum supported
-/// macOS ships the WebKit fix.
-///
-/// Tracked in https://app.asana.com/1/137249556945/project/1201037661562251/task/1216821343663926
+/// Remove once the minimum supported macOS ships the fix.
+/// - WebKit bug: https://bugs.webkit.org/show_bug.cgi?id=305585 (fix: https://commits.webkit.org/305661@main)
+/// - Tracked in: https://app.asana.com/1/137249556945/project/1201037661562251/task/1216821343663926
 @available(macOS 15.4, iOS 18.4, *)
 @MainActor
 final class WebExtensionUnloadGuard {
 
-    /// How long an extension that requests declarativeNetRequest must stay loaded before it may
-    /// be unloaded. The largest load-to-crash gap observed in crash reports was ~1.5s (perf-CI,
-    /// Jul 2026); doubled as a safety factor.
+    /// Minimum time a declarativeNetRequest extension must stay loaded before it may be unloaded.
+    /// The largest load-to-crash gap seen in crash reports was ~1.5s; doubled for safety.
     nonisolated static let defaultSettleWindow: TimeInterval = 3
 
     private static let dnrPermissions: Set<WKWebExtension.Permission> = [
@@ -69,28 +57,30 @@ final class WebExtensionUnloadGuard {
         self.sleeper = sleeper
     }
 
-    /// Records a successful load of the extension so `awaitSettled(_:)` can measure how long it
-    /// has been loaded.
+    /// Records when the extension finished loading, so `awaitSettled(_:)` can tell how long ago.
     func recordLoad(of identifier: String) {
         lastLoadDates[identifier] = now()
     }
 
-    /// Suspends until the extension behind `context` has been loaded for at least `settleWindow`.
-    /// Returns immediately when the extension doesn't request declarativeNetRequest, isn't loaded
-    /// (`context` is nil), or has no recorded load.
+    /// Waits until the extension has been loaded for at least `settleWindow`. Returns immediately
+    /// when it doesn't use declarativeNetRequest, isn't loaded, or loaded long enough ago.
     ///
-    /// Deliberately not applied to the synchronous unload paths (`unloadAllExtensions`,
-    /// user-initiated `uninstallExtension`): those cannot await, and in practice they run long
-    /// after the extension was loaded.
+    /// Not applied to the synchronous unload paths (`unloadAllExtensions`, `uninstallExtension`):
+    /// they can't await, and in practice run long after the load.
     func awaitSettled(_ context: WKWebExtensionContext?) async {
-        guard let context,
-              !Self.dnrPermissions.isDisjoint(with: context.webExtension.requestedPermissions),
+        guard let context, usesDeclarativeNetRequest(context),
               let loadDate = lastLoadDates[context.uniqueIdentifier] else { return }
 
-        let remaining = settleWindow - now().timeIntervalSince(loadDate)
+        let elapsed = now().timeIntervalSince(loadDate)
+        let remaining = settleWindow - elapsed
         guard remaining > 0 else { return }
 
         Logger.webExtensions.debug("⏸️ Delaying unload of '\(context.uniqueIdentifier)' by \(remaining)s for WebKit's in-flight declarativeNetRequest load")
         await sleeper(remaining)
+    }
+
+    private func usesDeclarativeNetRequest(_ context: WKWebExtensionContext) -> Bool {
+        let requested = context.webExtension.requestedPermissions
+        return Self.dnrPermissions.contains { requested.contains($0) }
     }
 }

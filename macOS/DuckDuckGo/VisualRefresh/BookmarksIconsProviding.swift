@@ -36,7 +36,7 @@ protocol BookmarksIconsProviding {
 
 final class LegacyBookmarksIconsProvider: BookmarksIconsProviding {
     var bookmarksManagerRootIcon: NSImage = .bookmarksFolder
-    var bookmarkFolderColorIcon: NSImage = .folder
+    var bookmarkFolderColorIcon: NSImage = .folderLegacy
     var bookmarkFolderIcon: NSImage = .folder16
     var bookmarkIcon: NSImage = .bookmark
     var bookmarkColorIcon: NSImage = .bookmarkDefaultFavicon

@@ -152,6 +152,10 @@ public struct UserText {
     }
     public static let aiChatHistoryDownloadFailedMessage = NotLocalizedString("aiChat.history.download.failed.message", value: "Couldn't download. Please try again.", comment: "Error toast shown when a Duck.ai chat download fails and nothing was saved.")
     public static let actionAIChatSettings = NSLocalizedString("action.title.aiChat.settings", value: "Duck.ai Settings", comment: "Open AI Chat settings action in the menu list")
+    public static let actionAIChatFeedback = NotLocalizedString("action.title.aiChat.feedback", value: "Duck.ai Feedback", comment: "Open the Duck.ai feedback form from the browser menu.")
+    public static let aiChatFeedbackOptionsTitle = NotLocalizedString("aichat.feedback.options.title", value: "Duck.ai Feedback", comment: "Title of the sheet that lets the user choose between positive and critical Duck.ai feedback.")
+    public static let aiChatFeedbackOptionPositive = NotLocalizedString("aichat.feedback.options.positive", value: "Positive", comment: "Row in the Duck.ai feedback sheet for leaving positive feedback.")
+    public static let aiChatFeedbackOptionCritical = NotLocalizedString("aichat.feedback.options.critical", value: "Critical", comment: "Row in the Duck.ai feedback sheet for leaving critical feedback.")
     public static let sectionTitleSuggestions = NotLocalizedString("section.title.suggestions", value: "Suggestions", comment: "Section header title above search suggestions")
     public static let aiChatSuggestedChatsTitle = NotLocalizedString("aiChat.suggestedChats.title", value: "Chats", comment: "Section header title above suggested Duck.ai chats")
     public static let aiChatTabSwitcherCardChipChat = NSLocalizedString("aiChat.tabSwitcher.card.chip.chat", value: "Chat", comment: "Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as a regular text conversation.")

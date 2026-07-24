@@ -360,6 +360,10 @@ private final class MockAiChatsConfigProvider: NewTabPageOmnibarConfigProviding 
     var isVoiceChatAccessEnabledPublisher: AnyPublisher<Bool, Never> { Just(false).eraseToAnyPublisher() }
     var showAskAiSuggestion: Bool = true
     var showAskAiSuggestionPublisher: AnyPublisher<Bool, Never> { Just(true).eraseToAnyPublisher() }
+    var isAIChatDeletionEnabled: Bool = false
+    var isAIChatDeletionEnabledPublisher: AnyPublisher<Bool, Never> { Just(false).eraseToAnyPublisher() }
+    var isSearchSuggestionDeletionEnabled: Bool = false
+    var isSearchSuggestionDeletionEnabledPublisher: AnyPublisher<Bool, Never> { Just(false).eraseToAnyPublisher() }
 }
 
 private extension AIChatSuggestion {

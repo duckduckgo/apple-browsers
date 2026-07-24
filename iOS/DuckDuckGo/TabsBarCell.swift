@@ -26,9 +26,9 @@ import UIComponents
 class TabsBarCell: UICollectionViewCell {
 
     static let reuseIdentifier = "Tab"
+    static let cornerRadius: CGFloat = 12
 
     private enum Constants {
-        static let cornerRadius: CGFloat = 12
         static let faviconCornerRadius: CGFloat = 4
         static let faviconSize: CGFloat = 16
         static let faviconContainerWidth: CGFloat = 24
@@ -64,6 +64,9 @@ class TabsBarCell: UICollectionViewCell {
     private weak var model: Tab?
     private var isFireModeEnabled = false
 
+    private var hidesCloseButtonUntilHover = false
+    private var isPointerHovering = false
+
     override init(frame: CGRect) {
         super.init(frame: frame)
 
@@ -75,12 +78,17 @@ class TabsBarCell: UICollectionViewCell {
         fatalError("init(coder:) has not been implemented")
     }
 
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        isPointerHovering = false
+    }
+
     private func setUpSubviews() {
         clipsToBounds = true
         contentView.clipsToBounds = true
 
         topBackgroundView.translatesAutoresizingMaskIntoConstraints = false
-        topBackgroundView.layer.cornerRadius = Constants.cornerRadius
+        topBackgroundView.layer.cornerRadius = Self.cornerRadius
 
         bottomBackgroundView.translatesAutoresizingMaskIntoConstraints = false
 
@@ -117,6 +125,7 @@ class TabsBarCell: UICollectionViewCell {
         contentView.addSubview(separatorView)
         contentView.addSubview(removeButton)
         contentView.addInteraction(UIPointerInteraction(delegate: self))
+        contentView.addGestureRecognizer(UIHoverGestureRecognizer(target: self, action: #selector(handleHover)))
 
         let titleTrailingConstraint = contentView.trailingAnchor.constraint(equalTo: titleStackView.trailingAnchor,
                                                                             constant: Constants.titleTrailingInset)
@@ -168,6 +177,14 @@ class TabsBarCell: UICollectionViewCell {
     @objc private func onRemovePressed() {
         onRemove?()
     }
+
+    @objc private func handleHover(_ recognizer: UIHoverGestureRecognizer) {
+        let hovering = recognizer.state == .began || recognizer.state == .changed
+        guard hovering != isPointerHovering else { return }
+        isPointerHovering = hovering
+        updateCloseButtonVisibility()
+        UIView.animate(withDuration: 0.15) { self.contentView.layoutIfNeeded() }
+    }
     
     override func layoutSubviews() {
         super.layoutSubviews()
@@ -189,17 +206,24 @@ class TabsBarCell: UICollectionViewCell {
     func update(model: Tab,
                 isCurrent: Bool,
                 isNextCurrent: Bool,
+                hidesInactiveCloseButton: Bool,
                 isFireModeEnabled: Bool,
                 withTheme theme: Theme) {
         accessibilityElements = [label, removeButton]
-        
+
         self.model?.removeObserver(self)
-        
+
         self.model = model
         self.isFireModeEnabled = isFireModeEnabled
         model.addObserver(self)
 
         label.primaryColor = theme.barTintColor
+        applyCurrentStyle(isCurrent: isCurrent, isNextCurrent: isNextCurrent, hidesInactiveCloseButton: hidesInactiveCloseButton, withTheme: theme)
+
+        applyModel(model)
+    }
+
+    func applyCurrentStyle(isCurrent: Bool, isNextCurrent: Bool, hidesInactiveCloseButton: Bool, withTheme theme: Theme) {
         if isCurrent {
             topBackgroundView.backgroundColor = theme.omniBarBackgroundColor
             bottomBackgroundView.backgroundColor = theme.omniBarBackgroundColor
@@ -208,12 +232,17 @@ class TabsBarCell: UICollectionViewCell {
             bottomBackgroundView.backgroundColor = .clear
             separatorView.backgroundColor = theme.tabsBarSeparatorColor
         }
-
-        labelRemoveButtonConstraint?.isActive = isCurrent
         separatorView.isHidden = isCurrent || isNextCurrent
-        removeButton.isHidden = !isCurrent
-        
-        applyModel(model)
+
+        hidesCloseButtonUntilHover = hidesInactiveCloseButton && !isCurrent
+        updateCloseButtonVisibility()
+    }
+
+    /// Shows the close button unless the strip is overflowing and this inactive tab isn't hovered by a pointer.
+    private func updateCloseButtonVisibility() {
+        let showsCloseButton = !hidesCloseButtonUntilHover || isPointerHovering
+        removeButton.isHidden = !showsCloseButton
+        labelRemoveButtonConstraint?.isActive = showsCloseButton
     }
 
     /// Configures the cell to render without a backing `Tab`.
@@ -295,5 +324,5 @@ extension TabsBarCell: UIPointerInteractionDelegate {
     func pointerInteraction(_ interaction: UIPointerInteraction, styleFor region: UIPointerRegion) -> UIPointerStyle? {
         return .init(effect: .highlight(.init(view: contentView)))
     }
-    
+
 }

@@ -57,6 +57,7 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsRootView> {
     let syncCreditCardsAdapter: SyncCreditCardsAdapter?
     var connector: RemoteConnecting?
     weak var scanCodeViewModel: ScanOrPasteCodeViewModel?
+    var codeCollectionIntent: CodeCollectionIntent?
 
     let userAuthenticator = UserAuthenticator(reason: UserText.syncUserUserAuthenticationReason,
                                               cancelTitle: UserText.autofillLoginListAuthenticationCancelButton)
@@ -514,7 +515,7 @@ extension SyncSettingsViewController: ScanOrPasteCodeViewModelDelegate {
                    includedParameters: [.appVersion],
                    onComplete: { _ in })
         if isPresentingV2ConnectingSheet {
-            presentDeviceAddedSuccessScreen()
+            presentSuccessScreen(isRecovery: codeCollectionIntent == .recoverData)
         } else {
             presentSyncCompletionAfterDelay()
         }
@@ -530,10 +531,10 @@ extension SyncSettingsViewController: ScanOrPasteCodeViewModelDelegate {
         useSimplifiedLayoutV2 && viewModel.connectingSheetPhase != nil
     }
 
-    func presentDeviceAddedSuccessScreen() {
+    func presentSuccessScreen(isRecovery: Bool) {
         enableAutoRestoreByDefaultIfNeeded()
         refreshAutoRestoreDecisionState()
-        viewModel.showDeviceConnectedInConnectingSheet(recoveryCode: recoveryCode)
+        viewModel.showSuccess(recoveryCode: recoveryCode, isRecovery: isRecovery)
     }
 
     func startPolling() {
@@ -648,7 +649,7 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
                    includedParameters: [.appVersion])
         pairingV2PeerKind = nil
         let presentResult: (SyncSettingsViewController) -> Void = isPresentingV2ConnectingSheet
-            ? { $0.presentDeviceAddedSuccessScreen() }
+            ? { $0.presentSuccessScreen(isRecovery: false) }
             : { $0.dismissVCAndShowDeviceSyncedToast() }
         if shouldWaitForDevicesToChange {
             waitForDevicesToChange(then: presentResult)
@@ -667,8 +668,8 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
         pairingV2JoinerCodeSource = codeVersion == .v2 && setupSource == .exchange ? codeSource : nil
         sendCodeRecognisedPixel(setupSource: setupSource, codeSource: codeSource, codeVersion: codeVersion)
         await dismissPresentedViewController()
-        if useSimplifiedLayoutV2, setupSource == .exchange {
-            viewModel.connectingSheetPhase = .connecting
+        if useSimplifiedLayoutV2 {
+            viewModel.connectingSheetPhase = .connecting(isRecovery: codeCollectionIntent == .recoverData)
         } else {
             await showPreparingSync(context: setupSource == .recovery ? .recoveringData : .syncingDevices)
         }
@@ -696,7 +697,7 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
             }
         }
         if isPresentingV2ConnectingSheet {
-            presentDeviceAddedSuccessScreen()
+            presentSuccessScreen(isRecovery: codeCollectionIntent == .recoverData)
         } else {
             presentSyncCompletionAfterDelay()
         }

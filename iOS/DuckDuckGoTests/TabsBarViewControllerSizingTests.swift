@@ -24,36 +24,8 @@ import UIKit
 
 final class TabsBarViewControllerSizingTests: XCTestCase {
 
-    private let accuracy: CGFloat = 0.001
-    private let minWidth = TabsBarViewController.Constants.minItemWidth
-
-    private func itemWidth(_ available: CGFloat, _ visibleItems: Int, maxWidth: CGFloat) -> CGFloat {
-        TabsBarViewController.itemWidth(availableWidth: available, visibleItems: visibleItems, minWidth: minWidth, maxWidth: maxWidth)
-    }
-
-    func testTabsAreCappedAtMaxWidth() {
-        XCTAssertEqual(itemWidth(900, 1, maxWidth: 300), 300, accuracy: accuracy)
-        XCTAssertEqual(itemWidth(900, 2, maxWidth: 300), 300, accuracy: accuracy)
-        XCTAssertEqual(itemWidth(900, 3, maxWidth: 300), 300, accuracy: accuracy)
-    }
-
-    func testTabsFillEquallyWhenMaxWidthDoesNotBind() {
-        XCTAssertEqual(itemWidth(900, 4, maxWidth: 300), 225, accuracy: accuracy)
-        XCTAssertEqual(itemWidth(900, 6, maxWidth: 300), 150, accuracy: accuracy)
-    }
-
-    func testTabsFloorAtMinWidth() {
-        XCTAssertEqual(itemWidth(900, 8, maxWidth: 300), 120, accuracy: accuracy)
-        XCTAssertEqual(itemWidth(900, 20, maxWidth: 300), 120, accuracy: accuracy)
-    }
-
-    func testMinWidthWinsWhenMaxBelowFloor() {
-        XCTAssertEqual(itemWidth(300, 1, maxWidth: 99), 120, accuracy: accuracy)
-    }
-
-    func testZeroVisibleItemsReturnsZero() {
-        XCTAssertEqual(itemWidth(900, 0, maxWidth: 300), 0, accuracy: accuracy)
-    }
+    // Per-tab sizing and add-tab-button placement math now lives in TabsBarLayoutTests; this file
+    // covers only the view controller's programmatic hierarchy.
 
     @MainActor
     func testCreateBuildsProgrammaticHierarchy() {
@@ -67,10 +39,12 @@ final class TabsBarViewControllerSizingTests: XCTestCase {
         XCTAssertIdentical(controller.collectionView.delegate, controller)
         XCTAssertIdentical(controller.collectionView.dataSource, controller)
         XCTAssertEqual(controller.buttonsStack.spacing, TabsBarViewController.Constants.stackSpacing)
-        XCTAssertEqual(controller.buttonsStack.arrangedSubviews.count, 4)
-        XCTAssertIdentical(controller.buttonsStack.arrangedSubviews[0], controller.addTabButton)
-        XCTAssertIdentical(controller.buttonsStack.arrangedSubviews[1], controller.aiChatChip)
-        XCTAssertIdentical(controller.buttonsStack.arrangedSubviews[2], controller.fireButton)
+        XCTAssertEqual(controller.buttonsStack.arrangedSubviews.count, 3)
+        XCTAssertIdentical(controller.buttonsStack.arrangedSubviews[0], controller.aiChatChip)
+        XCTAssertIdentical(controller.buttonsStack.arrangedSubviews[1], controller.fireButton)
+        // addTabButton is positioned manually outside buttonsStack, see recomputeItemSize()/TabsBarLayout.
+        XCTAssertFalse(controller.buttonsStack.arrangedSubviews.contains(controller.addTabButton))
+        XCTAssertIdentical(controller.addTabButton.superview, controller.view)
     }
 
     @MainActor

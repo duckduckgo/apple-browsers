@@ -49,6 +49,13 @@
         "suffixes": ["first_daily_count", "platform", "form_factor"],
         "parameters": ["appVersion"]
     },
+    "m_aichat_settings_menu_feedback_tapped": {
+        "description": "Fires when user taps the feedback option in the Duck.ai settings menu",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
     "m_aichat_tab_switcher_opened": {
         "description": "Fires when user opens the tab switcher while in full Duck.ai mode",
         "owners": ["aataraxiaa"],

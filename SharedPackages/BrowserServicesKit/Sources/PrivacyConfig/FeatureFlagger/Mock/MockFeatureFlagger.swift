@@ -39,7 +39,8 @@ public final class MockFeatureFlagger: FeatureFlagger {
 
     public var allActiveExperiments: Experiments = [:]
 
-    private(set) var didCallResolveCohort: Bool = false
+    public private(set) var didCallResolveCohort: Bool = false
+    public private(set) var didCallAssignedCohort: Bool = false
 
     public var internalUserDecider: InternalUserDecider = DefaultInternalUserDecider(store: MockInternalUserStoring())
     public var localOverrides: FeatureFlagLocalOverriding?
@@ -68,10 +69,12 @@ public final class MockFeatureFlagger: FeatureFlagger {
 
     var resolveCohortStub: (any FeatureFlagCohortDescribing)?
     public func resolveCohort<Flag>(for featureFlag: Flag, allowOverride: Bool) -> (any FeatureFlagCohortDescribing)? where Flag: FeatureFlagDescribing {
-        resolveCohortStub
+        didCallResolveCohort = true
+        return resolveCohortStub
     }
 
     public func assignedCohort<Flag: FeatureFlagDescribing>(for featureFlag: Flag, allowOverride: Bool) -> (any FeatureFlagCohortDescribing)? {
-        resolveCohortStub
+        didCallAssignedCohort = true
+        return resolveCohortStub
     }
 }

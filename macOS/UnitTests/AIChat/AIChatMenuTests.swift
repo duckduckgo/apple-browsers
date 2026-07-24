@@ -376,6 +376,10 @@ private final class StubAIChatHistoryCleaner: AIChatHistoryCleaning {
         cleanAIChatHistoryCalled = true
         return result
     }
+
+    func allChats() -> [DuckAiChat] {
+        []
+    }
 }
 
 private final class StubAIChatSyncCleaning: AIChatSyncCleaning {

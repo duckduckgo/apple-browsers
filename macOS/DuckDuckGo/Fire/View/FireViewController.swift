@@ -478,8 +478,7 @@ final class FireViewController: NSViewController {
  */
 private actor FireAnimationViewLoader {
 
-    static let settings = FireViewController.Settings.current
-    static let shared: FireAnimationViewLoader = .init(animationName: settings.animationName)
+    static let shared: FireAnimationViewLoader = .init(animationName: FireViewController.Settings.current.animationName)
 
     @MainActor
     func createAnimationView() async -> LottieAnimationView? {
@@ -488,7 +487,8 @@ private actor FireAnimationViewLoader {
         }
         // The global default is .mainThread (see AppDelegate), but CPU-rasterizing this full-window 3840x2160 animation can't sustain 30fps.
         // Our fire animation needs the GPU-backed Core Animation engine.
-        let view = LottieAnimationView(animation: animation, configuration: LottieConfiguration(renderingEngine: Self.settings.renderingEngine))
+        let settings = FireViewController.Settings.current
+        let view = LottieAnimationView(animation: animation, configuration: LottieConfiguration(renderingEngine: settings.renderingEngine))
         view.identifier = .init(rawValue: animationName)
         return view
     }

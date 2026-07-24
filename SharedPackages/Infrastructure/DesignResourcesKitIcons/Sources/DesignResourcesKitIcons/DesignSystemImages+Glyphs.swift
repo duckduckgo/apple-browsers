@@ -433,6 +433,7 @@ public extension DesignSystemImages {
 
         public enum Size24 {
             public static var accessibility: DesignSystemImage { .init(resource: .accessibility24) }
+            public static var profileBlocked: DesignSystemImage { .init(resource: .profileBlocked24) }
             public static var add: DesignSystemImage { .init(resource: .add24) }
             public static var addition: DesignSystemImage { .init(resource: .addition24) }
             public static var addressBarTop: DesignSystemImage { .init(resource: .addressBarPositionTop24) }
@@ -585,6 +586,7 @@ public extension DesignSystemImages {
             public static var pointUpSolid: DesignSystemImage { .init(resource: .pointUpSolid24) }
             public static var print: DesignSystemImage { .init(resource: .print24) }
             public static var qr: DesignSystemImage { .init(resource: .QR_24) }
+            public static var qrScan: DesignSystemImage { .init(resource: .qrScan24) }
             public static var reload: DesignSystemImage { .init(resource: .reload24) }
             public static var reloadSmall: DesignSystemImage { .init(resource: .reloadSmall24) }
             public static var rename: DesignSystemImage { .init(resource: .rename24) }

@@ -863,7 +863,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     // MARK: - Omnibar State
 
-    func activateFromOmnibar(prefilledText: String? = nil, inputMode: TextEntryMode = .search, cardPosition: UnifiedToggleInputCardPosition = .top) {
+    func activateFromOmnibar(prefilledText: String? = nil, shouldSelectAllText: Bool = true, inputMode: TextEntryMode = .search, cardPosition: UnifiedToggleInputCardPosition = .top) {
         cancelTopOmnibarKeyboardPresentationFallback()
         isAwaitingTopOmnibarKeyboardPresentation = cardPosition == .top
         displayState = .omnibar(.active)
@@ -887,15 +887,15 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
         // Set text before apply so clearDismissSnapshot sees the correct handler state when
         // it fires inside applyCardLayout — otherwise textRightInset starts at the no-button value.
-        let shouldSelectAllText: Bool
+        let selectsAllText: Bool
         if let text = prefilledText, !text.isEmpty {
             setText(text)
             textState = .prefilledSelected
             omnibarPrefilledText = text
-            shouldSelectAllText = true
+            selectsAllText = shouldSelectAllText
         } else {
             omnibarPrefilledText = nil
-            shouldSelectAllText = false
+            selectsAllText = false
         }
         updateFloatingReturnKeyState()
 
@@ -917,10 +917,13 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         DispatchQueue.main.async { [weak self] in
             guard let self, case .omnibar(.active) = displayState else { return }
             viewController.activateInput()
-            if shouldSelectAllText {
-                DispatchQueue.main.async { [weak self] in
-                    guard let self, case .omnibar(.active) = displayState else { return }
+            guard omnibarPrefilledText != nil else { return }
+            DispatchQueue.main.async { [weak self] in
+                guard let self, case .omnibar(.active) = displayState else { return }
+                if selectsAllText {
                     viewController.selectAllText()
+                } else {
+                    viewController.moveCaretToStart()
                 }
             }
         }
@@ -1716,6 +1719,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     /// must set this so the picker presents from the correct level.
     weak var attachmentPresentingViewController: UIViewController?
     var onPageContextAttachRequested: (() -> Void)?
+    /// Whether the current page can be attached. When false, the "Ask about page" menu action is disabled. Host-injected; nil ⇒ attachable.
+    var isPageContextAttachable: (() -> Bool)?
     /// Reports whether page context is attached but not yet submitted, for the voice-tap pixel. Host-injected; nil off the contextual sheet.
     var hasPendingPageContextProvider: (() -> Bool)?
 
@@ -2276,7 +2281,9 @@ private extension UnifiedToggleInputCoordinator {
     }
 
     func makeAttachmentMenu() -> UIMenu? {
-        let pageContextActionHandler = isContextualChatState ? onPageContextAttachRequested : nil
+        // Disable "Ask about page" for non-attachable pages (blocklisted media / special page).
+        let canAttachPageContext = isContextualChatState && (isPageContextAttachable?() ?? true)
+        let pageContextActionHandler = canAttachPageContext ? onPageContextAttachRequested : nil
         return attachmentPresenter.makeAttachmentMenu(
             presenterProvider: { [weak self] in
                 self?.attachmentPresenterViewController
@@ -2290,7 +2297,7 @@ private extension UnifiedToggleInputCoordinator {
     }
 
     func updateAttachButtonPresentation() {
-        let supportsPageContextAttachment = isContextualChatState && onPageContextAttachRequested != nil
+        let supportsPageContextAttachment = isContextualChatState && onPageContextAttachRequested != nil && (isPageContextAttachable?() ?? true)
         let supportsAttachments = selectedModelSupportsImageUpload || !allowedFileUTTypes.isEmpty || supportsPageContextAttachment
         let hasAvailableAttachmentAction = attachmentPolicy.canAttachImages || canPresentFilePicker || supportsPageContextAttachment
         let canAttachMore = hasAvailableAttachmentAction && !viewController.isGenerating
@@ -2464,6 +2471,9 @@ private extension UnifiedToggleInputCoordinator {
         // Tool selection toggles the model-chip + reasoning-picker visibility. Route through the
         // canonical updaters so we don't clobber the other signals (`hasSubmittedPrompt`, `host`).
         updateModelChipVisibility()
+        // Reflect the image-generation tool in the input placeholder ("Create images privately").
+        viewController.handler.isImageGenerationSelected = toolsController.selectedTool == .imageGeneration
+        viewController.refreshPlaceholderForCurrentMode()
     }
 
     func resetToolsSelection() {

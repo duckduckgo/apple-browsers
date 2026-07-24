@@ -71,6 +71,7 @@ enum UserDefaultsKeys: String, StorageKeyDescribing {
     case fireDialogIncludeHistory = "fire-dialog_includeHistoryState"
     case fireDialogIncludeCookiesAndSiteData = "fire-dialog_includeCookiesAndSiteDataState"
     case fireDialogIncludeChatHistory = "fire-dialog_includeChatHistoryState"
+    case fireDialogSectionsExpanded = "fire-dialog_sectionsExpandedState"
 
     // MARK: - Sync Diagnosis Settings
 

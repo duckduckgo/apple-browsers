@@ -94,11 +94,11 @@ struct VPNUpsellPopoverView: View {
 
     private var animatedHeader: some View {
         ZStack {
-            LottieView(animation: .named("sparkleloop_wide"))
+            LottieView(animation: .named("sparkleloop_wide_legacy"))
                 .playing(loopMode: .loop)
                 .frame(width: Constants.sparkleSize.width, height: Constants.sparkleSize.height)
                 .clipped()
-            LottieView(animation: .named("privacypro_devices"))
+            LottieView(animation: .named("privacypro_devices_legacy"))
                 .playing(loopMode: .playOnce)
                 .frame(width: Constants.subscriptionSize.width, height: Constants.subscriptionSize.height)
                 .clipped()
@@ -106,7 +106,16 @@ struct VPNUpsellPopoverView: View {
     }
 
     private var rebrandHeader: some View {
-        Image(.desktopMobileSubscription96)
+        ZStack {
+            LottieView(animation: .named("upsell_devices_loop"))
+                .playing(loopMode: .loop)
+                .frame(width: Constants.sparkleSize.width, height: Constants.sparkleSize.height)
+                .clipped()
+            LottieView(animation: .named("upsell_devices_reveal"))
+                .playing(loopMode: .playOnce)
+                .frame(width: Constants.subscriptionSize.width, height: Constants.subscriptionSize.height)
+                .clipped()
+            }
     }
 
     private var titleAndSubtitle: some View {

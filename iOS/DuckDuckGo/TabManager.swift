@@ -382,6 +382,20 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         return tabControllerCache.first { $0.tabModel === tab }
     }
 
+    @MainActor
+    func controller(for tab: Tab, createIfNeeded: Bool) -> TabViewController? {
+        if let controller = controller(for: tab) {
+            return controller
+        }
+        guard createIfNeeded, tab.link != nil else { return nil }
+
+        let tabInteractionState = interactionStateSource?.popLastStateForTab(tab)
+        let controller = buildController(forTab: tab, inheritedAttribution: nil, interactionState: tabInteractionState)
+        tabControllerCache.append(controller)
+        cacheDelegate?.tabManager(self, didCreateController: controller)
+        return controller
+    }
+
     func controller(forWebView webView: WKWebView) -> TabViewController? {
         return tabControllerCache.first { $0.webView === webView }
     }
@@ -752,7 +766,6 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     }
 
     func cleanupTabsFaviconCache() {
-        guard featureFlagger.isFeatureOn(.staleFaviconCleanup) else { return }
         guard tabsCacheNeedsCleanup else { return }
 
         DispatchQueue.global(qos: .background).async { [weak self] in

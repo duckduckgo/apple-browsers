@@ -74,6 +74,10 @@ final class VPNNotificationsObserver {
     func startObservingVPNStatusChanges() {
         Logger.networkProtection.log("Register with sysex")
 
+        // Register the notification-center delegate at launch so taps on VPN notifications reach
+        // `didReceive`. The permission prompt stays gated on `.serverSelected` below.
+        notificationsPresenter.registerAsNotificationCenterDelegate()
+
         distributedNotificationCenter.publisher(for: .showIssuesStartedNotification)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
@@ -85,6 +89,12 @@ final class VPNNotificationsObserver {
             .sink { [weak self] notification in
                 let serverLocation = notification.object as? String
                 self?.showConnectedNotification(serverLocation: serverLocation)
+            }.store(in: &cancellables)
+
+        distributedNotificationCenter.publisher(for: .showStrictRoutingReminderNotification)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.showStrictRoutingReminderNotification()
             }.store(in: &cancellables)
 
         distributedNotificationCenter.publisher(for: .showIssuesNotResolvedNotification)
@@ -126,6 +136,13 @@ final class VPNNotificationsObserver {
     func showConnectedNotification(serverLocation: String?) {
         Logger.networkProtection.info("Presenting reconnected notification")
         notificationsPresenter.showConnectedNotification(serverLocation: serverLocation, snoozeEnded: false)
+    }
+
+    /// Displays a notice reminding the user to turn Strict routing back on, shown right after the
+    /// connected notification while Strict routing is off.
+    func showStrictRoutingReminderNotification() {
+        Logger.networkProtection.info("Presenting strict routing reminder notification")
+        notificationsPresenter.showStrictRoutingReminderNotification()
     }
 
     /// Displays a notification indicating the VPN is attempting to reconnect.

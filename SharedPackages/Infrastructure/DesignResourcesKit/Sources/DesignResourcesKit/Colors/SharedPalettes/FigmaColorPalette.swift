@@ -114,7 +114,9 @@ struct FigmaColorPalette: SharedColorPaletteDefinition {
     static let statusWarningContentPrimary = DynamicColor(lightHex: 0x191101, darkHex: 0x191101)
     static let statusWarningFillPrimary = DynamicColor(lightHex: 0xffe699, lightOpacityHex: 0x51, darkHex: 0xffb200, darkOpacityHex: 0x1e)
     static let statusWarningPrimary = DynamicColor(lightHex: 0xffc95c, darkHex: 0xffd885)
-    static let statusYellow = DynamicColor(lightHex: 0xfab341, darkHex: 0xfab341)
+    static let statusYellowPrimary = DynamicColor(lightHex: 0xfab341, darkHex: 0xfab341)
+    static let statusYellowSecondary = DynamicColor(lightHex: 0xFFC95C, darkHex: 0xFFC95C)
+    static let statusYellowTertiary = DynamicColor(lightHex: 0xFFD885, darkHex: 0xFFD885)
     static let surfaceBackdrop = DynamicColor(lightHex: 0xe0e0e0, darkHex: 0x050505)
     static let surfaceCanvas = DynamicColor(lightHex: 0xfafafa, darkHex: 0x1c1c1c)
     static let surfaceContrast = DynamicColor(lightHex: 0x000000, lightOpacityHex: 0xf4, darkHex: 0xffffff, darkOpacityHex: 0xf4)
@@ -135,7 +137,7 @@ struct FigmaColorPalette: SharedColorPaletteDefinition {
 
     static let destructiveGlow = DynamicColor(lightHex: 0xee1025, lightOpacityHex: 0x33, darkHex: 0xee1025, darkOpacityHex: 0x33)
 
-    static let alertGreen = DynamicColor(lightColor: .alertGreen, darkColor: .alertGreen)
+    static let alertGreen = DynamicColor(lightColor: RebrandingColor.Green.green40, darkColor: RebrandingColor.Green.green40)
     static let alertYellow = DynamicColor(lightColor: .alertYellow, darkColor: .alertYellow)
 
     static let shieldPrivacy = DynamicColor(lightColor: RebrandingColor.Lilypad.lilypad70, darkColor: RebrandingColor.Lilypad.lilypad50)

@@ -30,6 +30,9 @@ public struct PixelParameters {
     static let test = "test"
     public static let appVersion = "appVersion"
 
+    public static let launchTimeMinMs = "min_launch_duration_ms"
+    public static let launchTimeMaxMs = "max_launch_duration_ms"
+
     public static let autocompleteBookmarkCapable = "bc"
     public static let autocompleteIncludedLocalResults = "sb"
 

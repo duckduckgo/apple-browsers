@@ -24,6 +24,7 @@ import PrivacyConfig
 
 protocol FloatingUIManaging {
     var isFloatingUIEnabled: Bool { get }
+    var isFloatingTabSwitcherEnabled: Bool { get }
 }
 
 final class FloatingUIManager: FloatingUIManaging {
@@ -31,19 +32,28 @@ final class FloatingUIManager: FloatingUIManaging {
     private let featureFlagger: any FeatureFlagger
     private let unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding
     private let isPad: () -> Bool
+    private let isSupportedOS: () -> Bool
+    private let isTabSwitcherSupportedOS: () -> Bool
 
     init(featureFlagger: any FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
          isPadProvider: @escaping () -> Bool = { DevicePlatform.isIpad },
+         isSupportedOSProvider: @escaping () -> Bool = { if #available(iOS 26, *) { true } else { false } },
+         isTabSwitcherSupportedOSProvider: @escaping () -> Bool = { if #available(iOS 18, *) { true } else { false } },
          unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature()) {
         self.featureFlagger = featureFlagger
         self.isPad = isPadProvider
+        self.isSupportedOS = isSupportedOSProvider
+        self.isTabSwitcherSupportedOS = isTabSwitcherSupportedOSProvider
         self.unifiedToggleInputFeature = unifiedToggleInputFeature
     }
 
     var isFloatingUIEnabled: Bool {
-        // Floating UI is iPhone-only and depends on Unified Toggle Input; if either isn't
-        // available it stays off. These are remote-config driven, so no assert here.
-        guard featureFlagger.isFeatureOn(.floatingUI), !isPad() else { return false }
+        // iPhone-only, iOS 26+ (for obscuredContentInsets), and requires Unified Toggle Input.
+        guard featureFlagger.isFeatureOn(.floatingUI), !isPad(), isSupportedOS() else { return false }
         return unifiedToggleInputFeature.isAvailable
+    }
+
+    var isFloatingTabSwitcherEnabled: Bool {
+        featureFlagger.isFeatureOn(.floatingUI) && !isPad() && isTabSwitcherSupportedOS()
     }
 }

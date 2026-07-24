@@ -30,6 +30,11 @@ public enum DuckPlayerContainer {
         static let dragThreshold: CGFloat = 50
         static let dragAreaHeight: CGFloat = 44
         static let contentTopPadding: CGFloat = 24
+        // Side margin for floating pills, matching the toast spacing spec.
+        static let floatingHorizontalMargin: CGFloat = 34
+        // Floating pill sits close to the toolbar; legacy pill keeps the larger gap.
+        static let floatingBottomPadding: CGFloat = 0
+        static let legacyBottomPadding: CGFloat = 20
     }
     public struct PresentationMetrics {
         public let contentWidth: Double
@@ -97,18 +102,21 @@ public enum DuckPlayerContainer {
         let hasBackground: Bool
         let showDragHandle: Bool
         let allowDragGesture: Bool
+        /// Drops the sheet chrome (panel background + top border) so the content floats as a capsule.
+        let floatingStyle: Bool
         let content: (PresentationMetrics) -> Content
         let onDismiss: (Bool) -> Void
         let onPresentDuckPlayer: () -> Void
 
         public init(
-            viewModel: ViewModel, hasBackground: Bool = true, showDragHandle: Bool = true, allowDragGesture: Bool = true, onDismiss: @escaping (Bool) -> Void, onPresentDuckPlayer: @escaping () -> Void,
+            viewModel: ViewModel, hasBackground: Bool = true, showDragHandle: Bool = true, allowDragGesture: Bool = true, floatingStyle: Bool = false, onDismiss: @escaping (Bool) -> Void, onPresentDuckPlayer: @escaping () -> Void,
             @ViewBuilder content: @escaping (PresentationMetrics) -> Content
         ) {
             self.viewModel = viewModel
             self.hasBackground = hasBackground
             self.showDragHandle = showDragHandle
             self.allowDragGesture = allowDragGesture
+            self.floatingStyle = floatingStyle
             self.content = content
             self.onDismiss = onDismiss
             self.onPresentDuckPlayer = onPresentDuckPlayer
@@ -120,6 +128,7 @@ public enum DuckPlayerContainer {
                 containerHeight: containerHeight,
                 showDragHandle: showDragHandle,
                 allowDragGesture: allowDragGesture,
+                floatingStyle: floatingStyle,
                 content: content,
                 onHeightChange: { sheetHeight = $0 },
                 onDismiss: onDismiss,
@@ -140,6 +149,10 @@ public enum DuckPlayerContainer {
                     .frame(alignment: .bottom)
                     .opacity(viewModel.isKeyboardVisible ? 0 : 1)
             }
+            // Floating UI inflates the host's bottom safe area for the toolbar, which the hosting
+            // controller would otherwise apply as padding and push the pill too high. Ignore it at the
+            // root so the pill's bottom constraint alone positions it.
+            .ignoresSafeArea(.container, edges: floatingStyle ? .bottom : [])
         }
     }
 }
@@ -174,6 +187,7 @@ private struct SheetView<Content: View>: View {
     let containerHeight: Double
     let showDragHandle: Bool
     let allowDragGesture: Bool
+    let floatingStyle: Bool
     let content: (DuckPlayerContainer.PresentationMetrics) -> Content
     let onHeightChange: (Double) -> Void
     let onDismiss: (Bool) -> Void
@@ -209,6 +223,49 @@ private struct SheetView<Content: View>: View {
         }
     }
 
+    /// The drag gesture handling swipe-down-to-dismiss and swipe-up-to-open.
+    private var dragGesture: some Gesture {
+        DragGesture()
+            .updating($dragStartOffset) { _, state, _ in
+                if state == nil {
+                    state = sheetOffset
+                    viewModel.setDragging(true)
+                }
+            }
+            .onChanged { value in
+                guard let dragStartOffset else { return }
+
+                let offsetY = value.translation.height
+                if offsetY > 0 {
+                    withAnimation(.spring(duration: 0.3, bounce: 0.2)) {
+                        sheetOffset = dragStartOffset + offsetY
+                    }
+                } else if offsetY < 0 {
+                    // Add some resistance for upward drag
+                    let y = 1.0 / (1.0 + exp(-1 * (abs(offsetY) / 50.0))) - 0.5
+                    withAnimation(.spring(duration: 0.3, bounce: 0.2)) {
+                        sheetOffset = dragStartOffset + y * max(offsetY, -20)
+                    }
+                }
+            }
+            .onEnded { value in
+                viewModel.setDragging(false)
+                let offsetY = value.translation.height
+
+                if offsetY > DuckPlayerContainer.Constants.dragThreshold || value.velocity.height > 50 {
+                    onDismiss(false) // User dismissed the pill
+                } else if offsetY < -DuckPlayerContainer.Constants.dragThreshold || value.velocity.height < -50 {
+                    // Start presenting DuckPlayer immediately
+                    onPresentDuckPlayer()
+
+                } else {
+                    withAnimation(.spring(duration: 0.2, bounce: 0.4)) {
+                        sheetOffset = calculateSheetOffset(for: viewModel.sheetVisible, containerHeight: containerHeight)
+                    }
+                }
+            }
+    }
+
     var body: some View {
         VStack(alignment: .center, spacing: 0) {
             if let sheetWidth {
@@ -220,77 +277,44 @@ private struct SheetView<Content: View>: View {
 
                         content(DuckPlayerContainer.PresentationMetrics(contentWidth: sheetWidth))
                             .padding(.top, showDragHandle ? DuckPlayerContainer.Constants.contentTopPadding : 12)
+                            // The floating pill is a full-area button, so drag over the whole pill
+                            // (not just a top strip) so swipe-to-dismiss works while taps still open.
+                            .applyDragGesture(dragGesture, if: floatingStyle && allowDragGesture)
 
-                        if allowDragGesture {
+                        if allowDragGesture && !floatingStyle {
                             Rectangle()
                                 .fill(Color.clear)
                                 .frame(height: DuckPlayerContainer.Constants.dragAreaHeight)
                                 .contentShape(Rectangle())
-                                .gesture(
-                                    DragGesture()
-                                        .updating($dragStartOffset) { _, state, _ in
-                                            if state == nil {
-                                                state = sheetOffset
-                                                viewModel.setDragging(true)
-                                            }
-                                        }
-                                        .onChanged { value in
-                                            guard let dragStartOffset else { return }
-
-                                            let offsetY = value.translation.height
-                                            if offsetY > 0 {
-                                                withAnimation(.spring(duration: 0.3, bounce: 0.2)) {
-                                                    sheetOffset = dragStartOffset + offsetY
-                                                }
-                                            } else if offsetY < 0 {
-                                                // Add some resistance for upward drag
-                                                let y = 1.0 / (1.0 + exp(-1 * (abs(offsetY) / 50.0))) - 0.5
-                                                withAnimation(.spring(duration: 0.3, bounce: 0.2)) {
-                                                    sheetOffset = dragStartOffset + y * max(offsetY, -20)
-                                                }
-                                            }
-                                        }
-                                        .onEnded { value in
-                                            viewModel.setDragging(false)
-                                            let offsetY = value.translation.height
-
-                                            if offsetY > DuckPlayerContainer.Constants.dragThreshold || value.velocity.height > 50 {
-                                                onDismiss(false) // User dismissed the pill
-                                            } else if offsetY < -DuckPlayerContainer.Constants.dragThreshold || value.velocity.height < -50 {
-                                                // Start presenting DuckPlayer immediately
-                                                onPresentDuckPlayer()
-
-                                            } else {
-                                                withAnimation(.spring(duration: 0.2, bounce: 0.4)) {
-                                                    sheetOffset = calculateSheetOffset(for: viewModel.sheetVisible, containerHeight: containerHeight)
-                                                }
-                                            }
-                                        }
-                                )
+                                .gesture(dragGesture)
                         }
                     }
                 }
-                .padding(.horizontal, 10)
+                .padding(.horizontal, floatingStyle ? DuckPlayerContainer.Constants.floatingHorizontalMargin : 10)
             }
         }
         .onWidthChange { newWidth in
             sheetWidth = newWidth
         }
-        .padding(.bottom, 20)
-        .background(Color(designSystemColor: .panel))
+        .padding(.bottom, floatingStyle ? DuckPlayerContainer.Constants.floatingBottomPadding : DuckPlayerContainer.Constants.legacyBottomPadding)
+        .background(floatingStyle ? Color.clear : Color(designSystemColor: .panel))
         .overlay(
-            Rectangle()
-                .fill(Color(uiColor: UIColor { traitCollection in
-                    switch traitCollection.userInterfaceStyle {
-                    case .dark:
-                        return .black
-                    default:
-                        return UIColor(designSystemColor: .border)
-                    }
-                }))
-                .frame(height: 0.5)
-                .frame(maxWidth: .infinity)
-                .alignmentGuide(.top) { _ in 0 },
+            Group {
+                if !floatingStyle {
+                    Rectangle()
+                        .fill(Color(uiColor: UIColor { traitCollection in
+                            switch traitCollection.userInterfaceStyle {
+                            case .dark:
+                                return .black
+                            default:
+                                return UIColor(designSystemColor: .border)
+                            }
+                        }))
+                        .frame(height: 0.5)
+                        .frame(maxWidth: .infinity)
+                        .alignmentGuide(.top) { _ in 0 }
+                }
+            },
             alignment: .top
         )
         .frame(maxWidth: .infinity)
@@ -327,6 +351,16 @@ private struct SheetView<Content: View>: View {
 // MARK: - View Extensions
 
 extension View {
+    /// Attaches the gesture with high priority when `condition` is true, else returns the view
+    /// unchanged. High priority so a starting swipe wins over the pill's tap and won't open Duck Player.
+    @ViewBuilder func applyDragGesture<G: Gesture>(_ gesture: G, if condition: Bool) -> some View {
+        if condition {
+            self.highPriorityGesture(gesture)
+        } else {
+            self
+        }
+    }
+
     func onWidthChange(perform action: @escaping (Double) -> Void) -> some View {
         background(
             GeometryReader { geometry in

@@ -22,3 +22,8 @@
 /* The body of the notification shown when VPN connects successfully after snooze with the city + state/country as formatted parameter */
 "network.protection.success.notification.subtitle.snooze.ended.including.serverLocation" = "VPN uyku modu sona erdi. Cihaz trafiği %@ üzerinden yönlendiriliyor.";
 
+/* The body of the notification reminding the user to turn the VPN Strict routing setting back on */
+"network.protection.strict.routing.reminder.notification.body" = "Kapalıyken bazı trafikler VPN'i atlayabilir. Halka açık ağlar için Katı Yönlendirme önerilir.";
+
+/* The title of the notification reminding the user to turn the VPN Strict routing setting back on */
+"network.protection.strict.routing.reminder.notification.title" = "Katı Yönlendirme KAPALI";

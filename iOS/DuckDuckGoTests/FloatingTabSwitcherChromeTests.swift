@@ -44,6 +44,9 @@ final class FloatingTabSwitcherChromeTests: XCTestCase {
         XCTAssertEqual(chrome.navigationItem.rightBarButtonItems?.count, 1)
         XCTAssertNil(chrome.navigationItem.title)
         XCTAssertNotNil(chrome.navigationItem.leftBarButtonItems?.first?.menu)
+        if #unavailable(iOS 26.0) {
+            XCTAssertEqual(chrome.navigationItem.rightBarButtonItems?.first?.title, UserText.navigationTitleDone)
+        }
     }
 
     func testWhenRegularSizeWithoutAIChatThenBottomBarHasNoDuckChat() {
@@ -54,8 +57,13 @@ final class FloatingTabSwitcherChromeTests: XCTestCase {
                       canShowSelectionMenu: false,
                       isEditing: false)
 
-        // editMenu, flex, fire, flex, plus
-        XCTAssertEqual(chrome.toolbar.items?.count, 5)
+        if #available(iOS 26.0, *) {
+            XCTAssertEqual(chrome.toolbar.items?.count, 5)
+        } else {
+            XCTAssertEqual(chrome.toolbar.items?.count, 7)
+            XCTAssertEqual(chrome.toolbar.items?.first?.width, 20)
+            XCTAssertEqual(chrome.toolbar.items?.last?.width, 20)
+        }
     }
 
     func testWhenRegularSizeWithAIChatThenBottomBarHasDuckChat() {
@@ -66,11 +74,15 @@ final class FloatingTabSwitcherChromeTests: XCTestCase {
                       canShowSelectionMenu: false,
                       isEditing: false)
 
-        // editMenu, flex, fire, flex, plus, duckChat
-        XCTAssertEqual(chrome.toolbar.items?.count, 6)
+        if #available(iOS 26.0, *) {
+            XCTAssertEqual(chrome.toolbar.items?.count, 6)
+        } else {
+            XCTAssertEqual(chrome.toolbar.items?.count, 9)
+            XCTAssertEqual(chrome.toolbar.items?[6].width, 12)
+        }
     }
 
-    func testWhenEditingThenTopBarHasCloseAndSelectAll() {
+    func testWhenEditingThenTopBarHasLeadingTitleAndSelectAll() {
         let chrome = makeInstalledChrome()
         chrome.setTitle("2 Selected")
 
@@ -79,9 +91,33 @@ final class FloatingTabSwitcherChromeTests: XCTestCase {
                       canShowSelectionMenu: true,
                       isEditing: true)
 
-        XCTAssertEqual(chrome.navigationItem.title, "2 Selected")
+        XCTAssertEqual((chrome.navigationItem.leftBarButtonItems?.first?.customView as? UILabel)?.text, "2 Selected")
+        XCTAssertEqual(chrome.navigationItem.leftBarButtonItems?.count, 1)
+        XCTAssertNil(chrome.navigationItem.title)
         XCTAssertNil(chrome.navigationItem.titleView)
         XCTAssertEqual(chrome.navigationItem.rightBarButtonItems?.first?.title, UserText.selectAllTabs)
+    }
+
+    func testWhenEditingThenBottomBarHasDoneCloseTabsAndMenu() {
+        let chrome = makeInstalledChrome()
+        chrome.actions.onMultiSelectMenuRequested = { UIMenu(children: []) }
+
+        chrome.update(state: .editingRegularSize(selectedCount: 2, totalCount: 4),
+                      tabsStyle: .grid,
+                      canShowSelectionMenu: true,
+                      isEditing: true)
+
+        let items = chrome.toolbar.items ?? []
+        let doneIndex = items.firstIndex { $0.accessibilityLabel == UserText.navigationTitleDone }
+        let closeTabsIndex = items.firstIndex { $0.title == UserText.closeTabs(withCount: 2) }
+        let menuIndex = items.firstIndex { $0.menu != nil }
+
+        guard let doneIndex, let closeTabsIndex, let menuIndex else {
+            XCTFail("Missing selection toolbar items")
+            return
+        }
+        XCTAssertLessThan(doneIndex, closeTabsIndex)
+        XCTAssertLessThan(closeTabsIndex, menuIndex)
     }
 
     func testWhenAllSelectedWhileEditingThenShowsDeselectAll() {
@@ -103,7 +139,8 @@ final class FloatingTabSwitcherChromeTests: XCTestCase {
                       canShowSelectionMenu: false,
                       isEditing: true)
 
-        XCTAssertEqual(chrome.toolbar.items?.last?.isEnabled, false)
+        let closeTabsItem = chrome.toolbar.items?.first { $0.title == UserText.closeTabs(withCount: 0) }
+        XCTAssertEqual(closeTabsItem?.isEnabled, false)
     }
 
     func testWhenTabsSelectedWhileEditingThenCloseTabsEnabled() {
@@ -114,7 +151,8 @@ final class FloatingTabSwitcherChromeTests: XCTestCase {
                       canShowSelectionMenu: true,
                       isEditing: true)
 
-        XCTAssertEqual(chrome.toolbar.items?.last?.isEnabled, true)
+        let closeTabsItem = chrome.toolbar.items?.first { $0.title == UserText.closeTabs(withCount: 2) }
+        XCTAssertEqual(closeTabsItem?.isEnabled, true)
     }
 
     func testWhenStyleMenuBuiltThenItHasGridAndListActions() {

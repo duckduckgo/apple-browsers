@@ -278,7 +278,6 @@ open class TransparentProxyProvider: NETransparentProxyProvider {
 
     @MainActor
     private func startOrphanDetection() {
-        guard settings.isOrphanProxyDetectionEnabled else { return }
         guard heartbeatStore != nil else { return }
         proxyStartedAt = Date()
         orphanFiredForCurrentEpisode = false
@@ -300,7 +299,6 @@ open class TransparentProxyProvider: NETransparentProxyProvider {
 
     @MainActor
     private func scheduleOrphanCheckAfterWake() {
-        guard settings.isOrphanProxyDetectionEnabled else { return }
         guard heartbeatStore != nil, proxyStartedAt != nil else { return }
 
         // The grace period defers *engaging* the bypass after wake, so the tunnel has time to write
@@ -329,7 +327,7 @@ open class TransparentProxyProvider: NETransparentProxyProvider {
         guard let decision = OrphanProxyTester.decision(
             proxyAge: proxyAge,
             heartbeatAge: lastHeartbeat.map { now.timeIntervalSince($0) },
-            bypassEnabled: settings.isOrphanProxyBypassEnabled,
+            bypassEnabled: true,
             isFullBypassEnabled: isFullBypassEnabled,
             orphanFiredForCurrentEpisode: orphanFiredForCurrentEpisode,
             proxyAgeThreshold: Self.orphanProxyAgeThreshold,

@@ -27,6 +27,7 @@ protocol AIChatTabChatHeaderViewDelegate: AnyObject {
     func aiChatTabChatHeaderDidTapClose()
     func aiChatTabChatHeaderDidTapNewChat()
     func aiChatTabChatHeaderDidTapNewVoiceChat()
+    func aiChatTabChatHeaderDidTapNewImage()
     func aiChatTabChatHeaderDidTapNewTab()
     func aiChatTabChatHeaderDidTapNewSearch()
     func aiChatTabChatHeaderDidTapNewFireTab()
@@ -56,6 +57,8 @@ final class AIChatTabChatHeaderView: UIView {
     weak var delegate: AIChatTabChatHeaderViewDelegate?
 
     private let isFireModeEnabled: Bool
+
+    private let shouldShowImageGeneration: Bool
 
     private struct ViewState: Equatable {
         /// `nil` until the first subscription-state check resolves, so we can render a blank
@@ -181,7 +184,17 @@ final class AIChatTabChatHeaderView: UIView {
         ) { [weak self] _ in
             self?.delegate?.aiChatTabChatHeaderDidTapNewSearch()
         }
-        let inTabGroup = UIMenu(options: .displayInline, children: [newChat, newVoiceChat])
+        var inTabActions: [UIAction] = [newChat, newVoiceChat]
+        if shouldShowImageGeneration {
+            let newImage = UIAction(
+                title: UserText.aiChatHeaderNewImageTitle,
+                image: DesignSystemImages.Glyphs.Size24.image
+            ) { [weak self] _ in
+                self?.delegate?.aiChatTabChatHeaderDidTapNewImage()
+            }
+            inTabActions.append(newImage)
+        }
+        let inTabGroup = UIMenu(options: .displayInline, children: inTabActions)
         var newTabActions: [UIAction] = [newTab, newSearch]
         if isFireModeEnabled {
             let newFireTab = UIAction(
@@ -325,14 +338,16 @@ final class AIChatTabChatHeaderView: UIView {
         return stack
     }()
 
-    init(isFireModeEnabled: Bool) {
+    init(isFireModeEnabled: Bool, shouldShowImageGeneration: Bool) {
         self.isFireModeEnabled = isFireModeEnabled
+        self.shouldShowImageGeneration = shouldShowImageGeneration
         super.init(frame: .zero)
         setupUI()
     }
 
     override init(frame: CGRect) {
         self.isFireModeEnabled = false
+        self.shouldShowImageGeneration = false
         super.init(frame: frame)
         setupUI()
     }

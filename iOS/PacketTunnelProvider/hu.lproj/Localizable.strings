@@ -22,3 +22,8 @@
 /* The body of the notification shown when VPN connects successfully after snooze with the city + state/country as formatted parameter */
 "network.protection.success.notification.subtitle.snooze.ended.including.serverLocation" = "A VPN szüneteltetése véget ért. Az eszköz forgalmának átirányítása ezen keresztül: %@.";
 
+/* The body of the notification reminding the user to turn the VPN Strict routing setting back on */
+"network.protection.strict.routing.reminder.notification.body" = "Kikapcsolt állapotában bizonyos forgalmak megkerülhetik a VPN-t. Nyilvános hálózatok esetén ajánlott a szigorú útvonalválasztás.";
+
+/* The title of the notification reminding the user to turn the VPN Strict routing setting back on */
+"network.protection.strict.routing.reminder.notification.title" = "A szigorú útvonalválasztás KI van kapcsolva";

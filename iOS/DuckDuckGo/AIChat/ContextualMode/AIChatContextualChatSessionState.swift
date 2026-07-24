@@ -107,6 +107,9 @@ final class AIChatContextualChatSessionState {
     private let featureFlagger: FeatureFlagger
     private let suggestedPromptsProvider: ContextualSuggestedPromptsProviding
 
+    /// When false, page-context quick actions are suppressed. Fail-open (always attachable) by default.
+    private let isCurrentPageAttachable: () -> Bool
+
     // MARK: - Core State (private(set) - mutations happen via methods)
 
     private(set) var frontendState: FrontendChatState = .noChat
@@ -155,11 +158,13 @@ final class AIChatContextualChatSessionState {
     init(aiChatSettings: AIChatSettingsProvider,
          pixelHandler: AIChatContextualModePixelFiring,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
-         suggestedPromptsProvider: ContextualSuggestedPromptsProviding = DefaultContextualSuggestedPromptsProvider()) {
+         suggestedPromptsProvider: ContextualSuggestedPromptsProviding = DefaultContextualSuggestedPromptsProvider(),
+         isCurrentPageAttachable: @escaping () -> Bool = { true }) {
         self.aiChatSettings = aiChatSettings
         self.pixelHandler = pixelHandler
         self.featureFlagger = featureFlagger
         self.suggestedPromptsProvider = suggestedPromptsProvider
+        self.isCurrentPageAttachable = isCurrentPageAttachable
         self.wasAutoAttachEnabled = aiChatSettings.isAutomaticContextAttachmentEnabled
         rebuildViewState()
     }
@@ -355,6 +360,12 @@ final class AIChatContextualChatSessionState {
         }
     }
 
+    /// Re-evaluate the sheet view state (e.g. "Ask about page" quick action) for the current page's
+    /// attachability. Driven by the URL-change signal so it stays in sync on back/forward navigation.
+    func refreshForCurrentPage() {
+        rebuildViewState()
+    }
+
     func updateUnifiedToggleInputActive(_ isActive: Bool, isImmediateContextual _: Bool = false) {
         isUnifiedToggleInputActive = isActive
         rebuildViewState()
@@ -434,14 +445,18 @@ final class AIChatContextualChatSessionState {
             return
         }
 
+        let context = context.flatMap { $0.contextData.content.isEmpty ? nil : $0 }
+
         guard let context = context else {
             guard shouldProcessNilContextUpdate else {
                 Logger.aiChat.debug("[SessionState] Ignoring nil context update without active collection")
                 return
             }
-            Logger.aiChat.debug("[SessionState] Context collection returned nil - clearing context and downgrading to placeholder")
+            Logger.aiChat.debug("[SessionState] Context collection returned nil/empty - clearing context and downgrading to placeholder")
             latestContext = nil
             chipState = .placeholder
+            // Clear the persistent UTI host chip
+            emit(.deliverPageContext(nil, targets: .utiChip))
             cleanupFlags()
             rebuildViewState()
             return
@@ -662,6 +677,8 @@ private extension AIChatContextualChatSessionState {
     }
 
     private func resolveQuickActions() -> [AIChatContextualQuickAction] {
+        // No "Ask about page" for pages that can't be attached — it would no-op on tap.
+        guard isCurrentPageAttachable() else { return [] }
         if featureFlagger.isFeatureOn(.contextualSuggestedPrompts) {
             switch chipState {
             case .placeholder: return [.askAboutPage]

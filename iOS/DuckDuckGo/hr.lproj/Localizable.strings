@@ -3037,7 +3037,7 @@
 "network.protection.vpn.data-volume" = "Količina podataka";
 
 /* Footer text for the Exclude CGNAT setting item. */
-"network.protection.vpn.exclude.cgnat.setting.footer" = "Preporučuje se biti isključeno kako bi sav tvoj promet prolazio kroz VPN. Ako imaš problema sa značajkama poput Wi-Fi poziva, slanja poruka ili govorne pošte, pokušaj uključiti ovu postavku.";
+"network.protection.vpn.exclude.cgnat.setting.footer" = "Zaobiđi VPN za usluge mobilnog operatera, kao što su Wi-Fi pozivi i govorna pošta.";
 
 /* Title for the Exclude CGNAT setting item. */
 "network.protection.vpn.exclude.cgnat.setting.title" = "Isključi usluge operatera";
@@ -3115,10 +3115,10 @@
 "network.protection.vpn.shortcuts.section.header" = "Prečaci";
 
 /* Footer text for the Strict Routing setting item. The 'Learn more' text is a Markdown link. */
-"network.protection.vpn.strict.routing.setting.footer" = "Preporučuje se na mrežama kojima ne vjerujete, npr. javni Wi-Fi u hotelima, barovima itd. Ako imaš problema s funkcijama (poput CarPlaya, AirDropa itd.) ili povezivanjem s drugim uređajima, pokušaj ih isključiti. [Saznaj više](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)";
+"network.protection.vpn.strict.routing.setting.footer" = "Blokiraj aplikacije u zaobilaženju VPN-a. Ako imaš problema sa značajkama Wi-Fi mreže (poput AirDropa ili iPhone Mirroringa), isključivanje bi moglo pomoći. Strogo se preporučuje na mrežama u koje nemaš povjerenja, poput javnog Wi-Fi-ja. [Saznaj više](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack).";
 
 /* Title for the Strict Routing setting item. */
-"network.protection.vpn.strict.routing.setting.title" = "Strogo usmjeravanje";
+"network.protection.vpn.strict.routing.setting.title" = "Primijeni Strogo usmjeravanje (preporučeno)";
 
 /* Confirm button for the new address bar picker */
 "new.address.bar.picker.confirm" = "Potvrdi";
@@ -5432,8 +5432,28 @@
 /* Button to delete all chats in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.chats.button" = "Izbriši čavrljanja";
 
-/* Do not translate - stringsdict entry */
-"aiChat.history.deleteAll.confirmation.title" = "aiChat.history.deleteAll.confirmation.title";
-
 /* Top-level attachment menu option to attach the current page content to an AI chat message */
 "aichat.attachment.option.ask.about.page" = "Pitaj o stranici";
+
+/* Status view message shown while the VPN is on but Strict routing is off */
+"network.protection.status.header.message.strict.routing.off" = "Dio prometa može zaobići VPN dok je opcija Strogo usmjeravanje isključena. Strogo usmjeravanje preporučuje se za javne mreže.";
+
+/* Label for the status pill shown while the VPN's Strict routing setting is off */
+"network.protection.status.view.strict.routing.pill.off" = "Strogo usmjeravanje: isključeno";
+
+/* Label for the status pill shown while the VPN's Strict routing setting is on */
+"network.protection.status.view.strict.routing.pill.on" = "Strogo usmjeravanje: uključeno";
+
+/* Tooltip shown for the status pill while the VPN's Strict routing setting is off */
+"network.protection.status.view.strict.routing.pill.tooltip.off" = "Strogo usmjeravanje preporučuje se za javne mreže.";
+
+/* Tooltip shown for the status pill while the VPN's Strict routing setting is on */
+"network.protection.status.view.strict.routing.pill.tooltip.on" = "Neke aplikacije možda neće raditi dok je uključeno Strogo usmjeravanje.";
+
+/* Title of the Troubleshooting section in the VPN status screen. */
+"network.protection.status.view.troubleshooting.section.title" = "Rješavanje problema";
+
+/* The body of the notification reminding the user to turn the VPN Strict routing setting back on */
+"network.protection.strict.routing.reminder.notification.body" = "Dio prometa može zaobići VPN dok je isključen. Strogo usmjeravanje preporučuje se za javne mreže.";
+/* The title of the notification reminding the user to turn the VPN Strict routing setting back on */
+"network.protection.strict.routing.reminder.notification.title" = "Strogo usmjeravanje je ISKLJUČENO";

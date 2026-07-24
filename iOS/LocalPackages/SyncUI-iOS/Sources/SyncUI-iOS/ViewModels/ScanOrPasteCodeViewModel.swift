@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import AVFoundation
 import Foundation
 import UIKit
 
@@ -66,10 +67,15 @@ public class ScanOrPasteCodeViewModel: ObservableObject {
     @Published public var videoPermission: VideoPermission = .unknown
 
     @Published var showCamera = true
+    @Published var isScanningEnabled = true
     @Published var state = State.showScanner
     @Published var manuallyEnteredCode: String?
     @Published var isValidating = false
     @Published var invalidCode = false
+
+    @Published public var isShowingSyncCodeSheet = false
+
+    public var onSyncCodeSheetDismissed: (() -> Void)?
 
     var canSubmitManualCode: Bool {
         manuallyEnteredCode?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false
@@ -86,6 +92,7 @@ public class ScanOrPasteCodeViewModel: ObservableObject {
     }
 
     func codeScanned(_ code: String) async -> Bool {
+        guard await MainActor.run(body: { isScanningEnabled }) else { return false }
         // Pre-emptively trigger haptic as soon as we detect a QR code.
         // This feels better than deferring until we've determined whether the code is valid.
         await MainActor.run {
@@ -96,6 +103,22 @@ public class ScanOrPasteCodeViewModel: ObservableObject {
 
     func cameraUnavailable() {
         showCamera = false
+    }
+
+    @MainActor
+    func prepareCameraForIntroIfAuthorized() {
+        guard AVCaptureDevice.authorizationStatus(for: .video) == .authorized else { return }
+        videoPermission = .authorised
+    }
+
+    @MainActor
+    func scanningCanBegin() {
+        isScanningEnabled = true
+    }
+
+    @MainActor
+    func resetScanningGate() {
+        isScanningEnabled = false
     }
 
     func introAnimationCompleted() {

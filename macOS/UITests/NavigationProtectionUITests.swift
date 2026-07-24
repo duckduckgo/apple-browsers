@@ -137,6 +137,7 @@ class NavigationProtectionUITests: UITestCase {
     // MARK: - Click-to-Load Social Media Tests
 
     func testNavigationProtection_SocialMediaEmbeds_ShowsClickToLoad() throws {
+        throw XCTSkip("The Click to Load feature is currently disabled.")
         // Navigate to a test page with social media embeds
         let socialTestURL = URL(string: "https://privacy-test-pages.site/privacy-protections/click-to-load/")!
         addressBarTextField.pasteURL(socialTestURL, pressingEnter: true)

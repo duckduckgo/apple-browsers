@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import AppKit
 import Common
 import FoundationExtensions
@@ -211,9 +212,9 @@ struct LegacyFireDialogView: ModalView {
             containerBorder: Color(designSystemColor: .containerBorderPrimary),
             containerCornerRadius: style.segmentedControlCornerRadius,
             segmentCornerRadius: style.segmentedControlItemCornerRadius,
-            selectedForeground: Color(designSystemColor: .accentPrimary),
+            selectedForeground: style.selectedForeground,
             unselectedForeground: Color(designSystemColor: .buttonsSecondaryFillText),
-            selectedIconBackground: Color(designSystemColor: .accentGlowSecondary),
+            selectedIconBackground: style.selectedIconBackground,
             selectedSegmentFill: Color(designSystemColor: .surfaceTertiary),
             selectedSegmentStroke: Color(designSystemColor: .containerBorderPrimary),
             selectedSegmentShadowColor: Color(designSystemColor: .shadowTertiary),
@@ -309,27 +310,6 @@ struct LegacyFireDialogView: ModalView {
         .padding(.top, 4)
         .padding(.bottom, 8)
         .fixedSize(horizontal: false, vertical: true)
-    }
-
-    private func presentManageFireproof() {
-        // Use the app's preferences presenter to begin a sheet on the parent window (stacks above the Fire sheet)
-        Task { @MainActor in
-            // await for the dialog to complete and trigger data reload
-            await Application.appDelegate.dataClearingPreferences.presentManageFireproofSitesDialog()
-            viewModel.clearingOption = viewModel.clearingOption
-        }
-    }
-
-    private func presentIndividualSites() {
-        // Close the dialog and open History->Sites management
-        if let window = NSApp.mainWindow {
-            window.endSheet(window.attachedSheet ?? window)
-        }
-        Application.appDelegate.windowControllersManager
-            .lastKeyMainWindowController?
-            .mainViewController
-            .browserTabViewController
-            .openNewTab(with: .history(pane: .allSites))
     }
 
     // MARK: - Sites overlay
@@ -486,7 +466,7 @@ struct LegacyFireDialogView: ModalView {
 
     private var fireproofSectionView: some View {
         RowWithPressEffect(roundedCorners: .bottom, rowCornerRadius: style.rowCornerRadius, isEnabled: true) {
-            presentManageFireproof()
+            viewModel.showManageFireproofSites()
         } content: {
             HStack(alignment: .center, spacing: 0) {
                 HStack(spacing: 6) {
@@ -505,7 +485,7 @@ struct LegacyFireDialogView: ModalView {
 
                 Spacer(minLength: 4)
 
-                Button(UserText.fireDialogFireproofSitesManage) { presentManageFireproof() }
+                Button(UserText.fireDialogFireproofSitesManage) { viewModel.showManageFireproofSites() }
                     .buttonStyle(
                         StandardButtonStyle(
                             fontSize: 11,
@@ -537,7 +517,7 @@ struct LegacyFireDialogView: ModalView {
                 .tinted(with: individualSitesColor))
                 .accessibilityHidden(true)
             TextButton(UserText.fireDialogManageIndividualSitesLink, textColor: Color(individualSitesColor), fontSize: 11) {
-                presentIndividualSites()
+                viewModel.deleteIndividualSites()
             }
             .accessibilityIdentifier("FireDialogView.individualSitesLink")
             .accessibilityHidden(isShowingSitesOverlay)
@@ -623,13 +603,27 @@ private struct FireDialogStyle {
     let rowCornerRadius: CGFloat
     let segmentedControlCornerRadius: CGFloat
     let segmentedControlItemCornerRadius: CGFloat
+    let selectedForeground: Color
+    let selectedIconBackground: Color
 
     private static var `default`: FireDialogStyle {
-        FireDialogStyle(knobFillColor: Color(designSystemColor: .accentPrimary), individualSitesColor: NSColor(designSystemColor: .accentTextPrimary), rowCornerRadius: 12, segmentedControlCornerRadius: 12, segmentedControlItemCornerRadius: 10)
+        FireDialogStyle(knobFillColor: Color(designSystemColor: .accentPrimary),
+                        individualSitesColor: NSColor(designSystemColor: .accentTextPrimary),
+                        rowCornerRadius: 12,
+                        segmentedControlCornerRadius: 12,
+                        segmentedControlItemCornerRadius: 10,
+                        selectedForeground: Color(designSystemColor: .accentPrimary),
+                        selectedIconBackground: Color(designSystemColor: .accentGlowSecondary))
     }
 
     private static var rebranded: FireDialogStyle {
-        FireDialogStyle(knobFillColor: Color(singleUseColor: .fireModeAccent), individualSitesColor: NSColor(designSystemColor: .textPrimary), rowCornerRadius: 16, segmentedControlCornerRadius: 16, segmentedControlItemCornerRadius: 14)
+        FireDialogStyle(knobFillColor: Color(singleUseColor: .fireModeAccent),
+                        individualSitesColor: NSColor(designSystemColor: .textPrimary),
+                        rowCornerRadius: 16,
+                        segmentedControlCornerRadius: 16,
+                        segmentedControlItemCornerRadius: 14,
+                        selectedForeground: Color(designSystemColor: .accentFirePrimary),
+                        selectedIconBackground: Color(designSystemColor: .accentFireGlowSecondary))
     }
 
     static var current: FireDialogStyle {
@@ -767,6 +761,9 @@ private class MockAIChatHistoryCleaner: AIChatHistoryCleaning {
     func cleanAIChatHistory() async -> Result<Void, Error> {
         return .success(())
     }
+    func allChats() -> [DuckAiChat] {
+        []
+    }
 }
 @available(macOS 14.0, *)
 #Preview("Fire Dialog", traits: LegacyFireDialogView.Constants.viewSize.fixedLayout) {
@@ -781,11 +778,12 @@ private class MockAIChatHistoryCleaner: AIChatHistoryCleaning {
         featureFlagger: Application.appDelegate.featureFlagger,
         tld: tld,
         windowControllersManager: Application.appDelegate.windowControllersManager,
-        dataClearingPreferences: Application.appDelegate.dataClearingPreferences
+        dataClearingPreferences: Application.appDelegate.dataClearingPreferences,
+        pixelFiring: nil
     )
 
     PreviewView(showWindowTitle: false) {
-        FireDialogView(viewModel: vm, showIndividualSitesLink: true)
+        LegacyFireDialogView(viewModel: vm, showIndividualSitesLink: true)
     }
 }
 
@@ -826,11 +824,12 @@ private class MockAIChatHistoryCleaner: AIChatHistoryCleaning {
         clearingOption: .allData,
         tld: tld,
         windowControllersManager: Application.appDelegate.windowControllersManager,
-        dataClearingPreferences: Application.appDelegate.dataClearingPreferences
+        dataClearingPreferences: Application.appDelegate.dataClearingPreferences,
+        pixelFiring: nil
     )
 
     return PreviewView(showWindowTitle: false) {
-        FireDialogView(viewModel: vm, showSitesOverlay: true, showIndividualSitesLink: true)
+        LegacyFireDialogView(viewModel: vm, showSitesOverlay: true, showIndividualSitesLink: true)
     }
 }
 #endif

@@ -46,6 +46,7 @@ final class ModalPromptCoordinationManagerTests {
         sut = ModalPromptCoordinationManager(
             providers: [provider],
             cooldownManager: cooldownManagerMock,
+            onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
             modalPromptScheduling: schedulerMock
         )
         #expect(!presenterMock.didCallPresent)
@@ -69,6 +70,7 @@ final class ModalPromptCoordinationManagerTests {
         sut = ModalPromptCoordinationManager(
             providers: [provider],
             cooldownManager: cooldownManagerMock,
+            onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
             modalPromptScheduling: schedulerMock
         )
         #expect(!presenterMock.didCallPresent)
@@ -99,6 +101,7 @@ final class ModalPromptCoordinationManagerTests {
         sut = ModalPromptCoordinationManager(
             providers: [firstProvider, secondProvider],
             cooldownManager: cooldownManagerMock,
+            onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
             modalPromptScheduling: schedulerMock
         )
 
@@ -125,6 +128,7 @@ final class ModalPromptCoordinationManagerTests {
         sut = ModalPromptCoordinationManager(
             providers: [firstProvider, secondProvider],
             cooldownManager: cooldownManagerMock,
+            onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
             modalPromptScheduling: schedulerMock
         )
 
@@ -155,6 +159,7 @@ final class ModalPromptCoordinationManagerTests {
         sut = ModalPromptCoordinationManager(
             providers: [firstProvider, secondProvider, thirdProvider, fourthProvider, fifthProvider],
             cooldownManager: cooldownManagerMock,
+            onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
             modalPromptScheduling: schedulerMock
         )
 
@@ -188,6 +193,7 @@ final class ModalPromptCoordinationManagerTests {
         sut = ModalPromptCoordinationManager(
             providers: [firstProvider, secondProvider, thirdProvider],
             cooldownManager: cooldownManagerMock,
+            onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
             modalPromptScheduling: schedulerMock
         )
 
@@ -221,6 +227,7 @@ final class ModalPromptCoordinationManagerTests {
         sut = ModalPromptCoordinationManager(
             providers: [provider],
             cooldownManager: cooldownManagerMock,
+            onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
             modalPromptScheduling: schedulerMock
         )
 
@@ -252,6 +259,7 @@ final class ModalPromptCoordinationManagerTests {
         sut = ModalPromptCoordinationManager(
             providers: [provider],
             cooldownManager: cooldownManagerMock,
+            onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
             modalPromptScheduling: schedulerMock
         )
 
@@ -273,6 +281,7 @@ final class ModalPromptCoordinationManagerTests {
         sut = ModalPromptCoordinationManager(
             providers: [provider],
             cooldownManager: cooldownManagerMock,
+            onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
             modalPromptScheduling: schedulerMock
         )
 
@@ -292,6 +301,7 @@ final class ModalPromptCoordinationManagerTests {
         sut = ModalPromptCoordinationManager(
             providers: [provider],
             cooldownManager: cooldownManagerMock,
+            onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
             modalPromptScheduling: schedulerMock
         )
 
@@ -318,6 +328,7 @@ final class ModalPromptCoordinationManagerTests {
         sut = ModalPromptCoordinationManager(
             providers: [provider],
             cooldownManager: cooldownManagerMock,
+            onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
             modalPromptScheduling: schedulerMock
         )
         #expect(!cooldownManagerMock.didCallRecordLastPromptPresentationTimestamp)
@@ -339,6 +350,7 @@ final class ModalPromptCoordinationManagerTests {
         sut = ModalPromptCoordinationManager(
             providers: [provider],
             cooldownManager: cooldownManagerMock,
+            onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
             modalPromptScheduling: schedulerMock
         )
         #expect(!sut.didPresentModalPromptThisSession)
@@ -359,6 +371,7 @@ final class ModalPromptCoordinationManagerTests {
         sut = ModalPromptCoordinationManager(
             providers: [provider],
             cooldownManager: cooldownManagerMock,
+            onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
             modalPromptScheduling: schedulerMock
         )
 
@@ -378,6 +391,7 @@ final class ModalPromptCoordinationManagerTests {
         sut = ModalPromptCoordinationManager(
             providers: [provider],
             cooldownManager: cooldownManagerMock,
+            onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
             modalPromptScheduling: schedulerMock
         )
 
@@ -397,6 +411,7 @@ final class ModalPromptCoordinationManagerTests {
         sut = ModalPromptCoordinationManager(
             providers: [provider],
             cooldownManager: cooldownManagerMock,
+            onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
             modalPromptScheduling: schedulerMock
         )
 
@@ -420,6 +435,7 @@ final class ModalPromptCoordinationManagerTests {
         sut = ModalPromptCoordinationManager(
             providers: [provider],
             cooldownManager: cooldownManagerMock,
+            onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
             modalPromptScheduling: schedulerMock
         )
 
@@ -441,6 +457,7 @@ final class ModalPromptCoordinationManagerTests {
         sut = ModalPromptCoordinationManager(
             providers: [provider],
             cooldownManager: cooldownManagerMock,
+            onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
             modalPromptScheduling: schedulerMock
         )
 

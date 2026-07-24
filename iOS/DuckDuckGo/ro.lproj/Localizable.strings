@@ -3037,7 +3037,7 @@
 "network.protection.vpn.data-volume" = "Volum de date";
 
 /* Footer text for the Exclude CGNAT setting item. */
-"network.protection.vpn.exclude.cgnat.setting.footer" = "Recomandat dezactivat, astfel încât tot traficul să treacă prin VPN. Dacă ai probleme cu funcții precum apelurile prin Wi-Fi, mesageria sau mesageria vocală, încearcă să le activezi.";
+"network.protection.vpn.exclude.cgnat.setting.footer" = "Ocolește VPN-ul pentru serviciile operatorului, cum ar fi apelurile prin Wi-Fi și mesageria vocală.";
 
 /* Title for the Exclude CGNAT setting item. */
 "network.protection.vpn.exclude.cgnat.setting.title" = "Exclude serviciile operatorului de telefonie mobilă";
@@ -3115,10 +3115,10 @@
 "network.protection.vpn.shortcuts.section.header" = "Scurtături";
 
 /* Footer text for the Strict Routing setting item. The 'Learn more' text is a Markdown link. */
-"network.protection.vpn.strict.routing.setting.footer" = "Recomandat pentru rețele în care nu ai încredere, de ex. Wi-Fi public în hoteluri, baruri etc. Dacă ai probleme cu unele funcții (cum ar fi CarPlay, AirDrop etc.) sau cu conectarea la alte dispozitive, încearcă să dezactivezi. [Află mai multe](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)";
+"network.protection.vpn.strict.routing.setting.footer" = "Blochează aplicațiile să ocolească VPN-ul. Dacă ai probleme cu funcții Wi-Fi (cum ar fi AirDrop sau Oglindire iPhone), dezactivarea acesteia te poate ajuta. Recomandat cu precădere pentru rețele în care nu ai încredere, cum ar fi Wi-Fi-ul public. [Află mai multe](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack).";
 
 /* Title for the Strict Routing setting item. */
-"network.protection.vpn.strict.routing.setting.title" = "Rutare strictă";
+"network.protection.vpn.strict.routing.setting.title" = "Aplică direcționarea strictă (recomandat)";
 
 /* Confirm button for the new address bar picker */
 "new.address.bar.picker.confirm" = "Confirmare";
@@ -5432,8 +5432,28 @@
 /* Button to delete all chats in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.chats.button" = "Șterge chaturile";
 
-/* Do not translate - stringsdict entry */
-"aiChat.history.deleteAll.confirmation.title" = "aiChat.history.deleteAll.confirmation.title";
-
 /* Top-level attachment menu option to attach the current page content to an AI chat message */
 "aichat.attachment.option.ask.about.page" = "Întreabă despre pagină";
+
+/* Status view message shown while the VPN is on but Strict routing is off */
+"network.protection.status.header.message.strict.routing.off" = "Este posibil ca o parte din trafic să ocolească VPN-ul în timp ce direcționarea strictă este dezactivată. Direcționarea strictă este recomandată pentru rețelele publice.";
+
+/* Label for the status pill shown while the VPN's Strict routing setting is off */
+"network.protection.status.view.strict.routing.pill.off" = "Direcționarea strictă: dezactivată";
+
+/* Label for the status pill shown while the VPN's Strict routing setting is on */
+"network.protection.status.view.strict.routing.pill.on" = "Direcționarea strictă: activată";
+
+/* Tooltip shown for the status pill while the VPN's Strict routing setting is off */
+"network.protection.status.view.strict.routing.pill.tooltip.off" = "Direcționarea strictă este recomandată pentru rețelele publice.";
+
+/* Tooltip shown for the status pill while the VPN's Strict routing setting is on */
+"network.protection.status.view.strict.routing.pill.tooltip.on" = "Unele aplicații s-ar putea să nu funcționeze cât timp direcționarea strictă este activată.";
+
+/* Title of the Troubleshooting section in the VPN status screen. */
+"network.protection.status.view.troubleshooting.section.title" = "Depanare";
+
+/* The body of the notification reminding the user to turn the VPN Strict routing setting back on */
+"network.protection.strict.routing.reminder.notification.body" = "Este posibil ca o parte din trafic să ocolească VPN-ul în timp ce acesta este dezactivat. Direcționarea strictă este recomandată pentru rețelele publice.";
+/* The title of the notification reminding the user to turn the VPN Strict routing setting back on */
+"network.protection.strict.routing.reminder.notification.title" = "Direcționarea strictă este DEZACTIVATĂ";

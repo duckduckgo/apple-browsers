@@ -3037,7 +3037,7 @@
 "network.protection.vpn.data-volume" = "Datavolume";
 
 /* Footer text for the Exclude CGNAT setting item. */
-"network.protection.vpn.exclude.cgnat.setting.footer" = "Het wordt aangeraden om deze optie uit te schakelen, zodat al je internetverkeer via de VPN loopt. Probeer deze optie in te schakelen als je problemen ondervindt met functies zoals bellen via wifi, berichten versturen of voicemail.";
+"network.protection.vpn.exclude.cgnat.setting.footer" = "Omzeil het VPN voor providerservices, zoals bellen via wifi en voicemail.";
 
 /* Title for the Exclude CGNAT setting item. */
 "network.protection.vpn.exclude.cgnat.setting.title" = "Uitsluiten van Carrier Services";
@@ -3115,10 +3115,10 @@
 "network.protection.vpn.shortcuts.section.header" = "Sneltoetsen";
 
 /* Footer text for the Strict Routing setting item. The 'Learn more' text is a Markdown link. */
-"network.protection.vpn.strict.routing.setting.footer" = "Aanbevolen op netwerken die je niet vertrouwt, bijv. openbare wifi in hotels, cafés, enz. Ondervind je problemen met functies (zoals CarPlay, AirDrop enz.) of met het verbinden met andere apparaten, probeer deze instelling dan uit te schakelen. [Meer informatie](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)";
+"network.protection.vpn.strict.routing.setting.footer" = "Voorkom dat apps het VPN omzeilen. Als je problemen ondervindt met wifi-functies (zoals AirDrop of iPhone-synchrone weergave), kan het helpen deze uit te schakelen. Sterk aanbevolen op netwerken die je niet vertrouwt, zoals openbare wifi. [Meer informatie](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack).";
 
 /* Title for the Strict Routing setting item. */
-"network.protection.vpn.strict.routing.setting.title" = "Strikte routering";
+"network.protection.vpn.strict.routing.setting.title" = "Strikte routering afdwingen (aanbevolen)";
 
 /* Confirm button for the new address bar picker */
 "new.address.bar.picker.confirm" = "Bevestigen";
@@ -5432,8 +5432,28 @@
 /* Button to delete all chats in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.chats.button" = "Chats verwijderen";
 
-/* Do not translate - stringsdict entry */
-"aiChat.history.deleteAll.confirmation.title" = "aiChat.history.deleteAll.confirmation.title";
-
 /* Top-level attachment menu option to attach the current page content to an AI chat message */
 "aichat.attachment.option.ask.about.page" = "Stel een vraag over de pagina";
+
+/* Status view message shown while the VPN is on but Strict routing is off */
+"network.protection.status.header.message.strict.routing.off" = "Als Stricte Routering uitstaat, kan het zijn dat een deel van het verkeer het VPN omzeilt. Strikte routering wordt aanbevolen voor openbare netwerken.";
+
+/* Label for the status pill shown while the VPN's Strict routing setting is off */
+"network.protection.status.view.strict.routing.pill.off" = "Strikte routering: Uit";
+
+/* Label for the status pill shown while the VPN's Strict routing setting is on */
+"network.protection.status.view.strict.routing.pill.on" = "Strikte routering: Aan";
+
+/* Tooltip shown for the status pill while the VPN's Strict routing setting is off */
+"network.protection.status.view.strict.routing.pill.tooltip.off" = "Strikte routering wordt aanbevolen voor openbare netwerken.";
+
+/* Tooltip shown for the status pill while the VPN's Strict routing setting is on */
+"network.protection.status.view.strict.routing.pill.tooltip.on" = "Sommige apps werken mogelijk niet terwijl Strikte routering is ingeschakeld.";
+
+/* Title of the Troubleshooting section in the VPN status screen. */
+"network.protection.status.view.troubleshooting.section.title" = "Problemen oplossen";
+
+/* The body of the notification reminding the user to turn the VPN Strict routing setting back on */
+"network.protection.strict.routing.reminder.notification.body" = "Als strikte routering uitstaat, kan het zijn dat een deel van het verkeer het VPN omzeilt. Strikte routering wordt aanbevolen voor openbare netwerken.";
+/* The title of the notification reminding the user to turn the VPN Strict routing setting back on */
+"network.protection.strict.routing.reminder.notification.title" = "Strikte routering staat UIT";

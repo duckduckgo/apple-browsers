@@ -24,19 +24,19 @@ import DataBrokerProtectionCoreTestsUtils
 final class DataBrokerProtectionIOSManagerProfileStateTests: XCTestCase {
 
     func test_saveProfileAndPrepareForInitialScans_recordsProfileSaved_afterDatabaseSaveSucceeds() async throws {
-        let (manager, dependencies) = DBPContinuedProcessingTestUtils.makeTestIOSManager()
+        let (manager, dependencies) = DBPIOSManagerTestUtils.makeTestIOSManager()
 
-        try await manager.saveProfileAndPrepareForInitialScans(DBPContinuedProcessingTestUtils.makeProfile())
+        try await manager.saveProfileAndPrepareForInitialScans(DBPIOSManagerTestUtils.makeProfile())
 
         XCTAssertEqual(dependencies.profileStateManager.profileState, .hasProfile)
     }
 
     func test_saveProfileAndPrepareForInitialScans_doesNotRecordProfileSaved_whenDatabaseSaveFails() async {
-        let (manager, dependencies) = DBPContinuedProcessingTestUtils.makeTestIOSManager()
+        let (manager, dependencies) = DBPIOSManagerTestUtils.makeTestIOSManager()
         dependencies.database.saveResult = .failure(MockDatabase.MockError.saveFailed)
 
         do {
-            try await manager.saveProfileAndPrepareForInitialScans(DBPContinuedProcessingTestUtils.makeProfile())
+            try await manager.saveProfileAndPrepareForInitialScans(DBPIOSManagerTestUtils.makeProfile())
             XCTFail("Expected profile save to fail")
         } catch {
             XCTAssertEqual(dependencies.profileStateManager.profileState, .unknown)
@@ -44,7 +44,7 @@ final class DataBrokerProtectionIOSManagerProfileStateTests: XCTestCase {
     }
 
     func test_deleteAllUserProfileData_recordsProfileDeleted_afterDatabaseDeleteSucceeds() throws {
-        let (manager, dependencies) = DBPContinuedProcessingTestUtils.makeTestIOSManager()
+        let (manager, dependencies) = DBPIOSManagerTestUtils.makeTestIOSManager()
         dependencies.profileStateManager.recordProfileSaved()
 
         try manager.deleteAllUserProfileData()
@@ -53,7 +53,7 @@ final class DataBrokerProtectionIOSManagerProfileStateTests: XCTestCase {
     }
 
     func test_recordProfileStateUnknown_clearsStaleProfileState() {
-        let (_, dependencies) = DBPContinuedProcessingTestUtils.makeTestIOSManager()
+        let (_, dependencies) = DBPIOSManagerTestUtils.makeTestIOSManager()
         dependencies.profileStateManager.recordProfileSaved()
 
         dependencies.profileStateManager.recordProfileStateUnknown()

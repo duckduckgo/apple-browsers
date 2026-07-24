@@ -407,21 +407,6 @@ public final class VPNSettings {
         excludeCGNAT = effective
     }
 
-    // MARK: - Orphan Proxy Detection
-
-    /// When `false`, the tunnel stops writing its heartbeat (see `TunnelHeartbeatStore`), which in turn
-    /// disables the transparent proxy's orphan detection. Resolved from a remote kill switch by the app
-    /// and delivered to the tunnel via the startup options snapshot. Defaults to `true`.
-    public var isOrphanProxyDetectionEnabled: Bool {
-        get {
-            defaults.networkProtectionSettingOrphanProxyDetectionEnabled
-        }
-
-        set {
-            defaults.networkProtectionSettingOrphanProxyDetectionEnabled = newValue
-        }
-    }
-
     // MARK: - Exclude APNs
 
     public var excludeAPNsPublisher: AnyPublisher<Bool, Never> {

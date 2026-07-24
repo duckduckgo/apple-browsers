@@ -3037,7 +3037,7 @@
 "network.protection.vpn.data-volume" = "Обем от данни";
 
 /* Footer text for the Exclude CGNAT setting item. */
-"network.protection.vpn.exclude.cgnat.setting.footer" = "Препоръчително е да е изключено, така че целият ти трафик да минава през VPN. Ако имаш проблеми с функции като обаждания през Wi-Fi, съобщения или гласова поща, опитай да го включиш.";
+"network.protection.vpn.exclude.cgnat.setting.footer" = "Заобикаляне на VPN за услуги на оператора, като обаждания през Wi-Fi и гласова поща.";
 
 /* Title for the Exclude CGNAT setting item. */
 "network.protection.vpn.exclude.cgnat.setting.title" = "Изключване на услугите на оператора";
@@ -3115,10 +3115,10 @@
 "network.protection.vpn.shortcuts.section.header" = "Бързи Връзки";
 
 /* Footer text for the Strict Routing setting item. The 'Learn more' text is a Markdown link. */
-"network.protection.vpn.strict.routing.setting.footer" = "Препоръчва се в мрежи, на които не се доверяваш, напр. обществен Wi-Fi в хотели, барове и др. Ако имаш проблеми с функции (като CarPlay, AirDrop и др.) или свързването с други устройства, опитай да го изключиш. [Научи повече](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)";
+"network.protection.vpn.strict.routing.setting.footer" = "Блокирайте заобикалянето на VPN от приложенията. Ако имате проблеми с Wi-Fi функции (като AirDrop или iPhone Mirroring), изключването на функцията може да помогне. Силно препоръчително в мрежи, на които не се доверявате, като например обществени Wi-Fi мрежи. [Научете повече](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack).";
 
 /* Title for the Strict Routing setting item. */
-"network.protection.vpn.strict.routing.setting.title" = "Стриктна маршрутизация";
+"network.protection.vpn.strict.routing.setting.title" = "Прилагане на стриктна маршрутизация (препоръчително)";
 
 /* Confirm button for the new address bar picker */
 "new.address.bar.picker.confirm" = "Потвърдете";
@@ -5432,8 +5432,28 @@
 /* Button to delete all chats in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.chats.button" = "Изтриване на чатовете";
 
-/* Do not translate - stringsdict entry */
-"aiChat.history.deleteAll.confirmation.title" = "aiChat.history.deleteAll.confirmation.title";
-
 /* Top-level attachment menu option to attach the current page content to an AI chat message */
 "aichat.attachment.option.ask.about.page" = "Попитайте за страницата";
+
+/* Status view message shown while the VPN is on but Strict routing is off */
+"network.protection.status.header.message.strict.routing.off" = "Част от трафика може да заобикаля VPN услугата, докато стриктната маршрутизация е изключена. Стриктната маршрутизация се препоръчва за обществени мрежи.";
+
+/* Label for the status pill shown while the VPN's Strict routing setting is off */
+"network.protection.status.view.strict.routing.pill.off" = "Стриктна маршрутизация: Изключена";
+
+/* Label for the status pill shown while the VPN's Strict routing setting is on */
+"network.protection.status.view.strict.routing.pill.on" = "Стриктна маршрутизация: Включена";
+
+/* Tooltip shown for the status pill while the VPN's Strict routing setting is off */
+"network.protection.status.view.strict.routing.pill.tooltip.off" = "Стриктната маршрутизация се препоръчва за обществени мрежи.";
+
+/* Tooltip shown for the status pill while the VPN's Strict routing setting is on */
+"network.protection.status.view.strict.routing.pill.tooltip.on" = "Някои приложения може да не работят, докато е включена стриктната маршрутизация.";
+
+/* Title of the Troubleshooting section in the VPN status screen. */
+"network.protection.status.view.troubleshooting.section.title" = "Отстраняване на неизправности";
+
+/* The body of the notification reminding the user to turn the VPN Strict routing setting back on */
+"network.protection.strict.routing.reminder.notification.body" = "Част от трафика може да заобикаля VPN, докато е изключена. Стриктната маршрутизация се препоръчва за обществени мрежи.";
+/* The title of the notification reminding the user to turn the VPN Strict routing setting back on */
+"network.protection.strict.routing.reminder.notification.title" = "Стриктната маршрутизация е ИЗКЛЮЧЕНА";

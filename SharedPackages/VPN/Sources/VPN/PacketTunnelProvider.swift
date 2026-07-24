@@ -276,6 +276,10 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                     snoozeEnded: snoozeJustEnded
                 )
 
+                if !isEnforceRoutesActive {
+                    self.notificationsPresenter.showStrictRoutingReminderNotification()
+                }
+
                 snoozeJustEnded = false
             }
 
@@ -286,6 +290,18 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     public var isKillSwitchEnabled: Bool {
         guard #available(macOS 11.0, iOS 14.2, *) else { return false }
         return self.protocolConfiguration.enforceRoutes || self.protocolConfiguration.includeAllNetworks
+    }
+
+    /// Whether strict routing is actually applied to this tunnel session.
+    ///
+    /// Inside the tunnel, the applied truth lives on `protocolConfiguration` (bound to the NECP session
+    /// at creation time), not on `settings.enforceRoutes` — the latter is user intent for the *next*
+    /// session and can be stale here (e.g. the macOS system extension can't read the app's defaults, and
+    /// system/on-demand starts don't deliver a settings snapshot). Read this, not `settings`, for
+    /// routing-dependent behavior in the extension.
+    public var isEnforceRoutesActive: Bool {
+        guard #available(macOS 11.0, iOS 14.2, *) else { return false }
+        return self.protocolConfiguration.enforceRoutes
     }
 
     // MARK: - Tunnel Settings
@@ -800,6 +816,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
         let startupOptions = StartupOptions(options: options ?? [:])
         Logger.networkProtection.log("Starting tunnel with options: \(startupOptions.description, privacy: .public)")
+        loopDetector.connectionStarted(isOnDemand: startupOptions.startupMethod == .automaticOnDemand)
         setupAndStartConnectionWideEvent(with: startupOptions.startupMethod)
 
         // Reset snooze if the VPN is restarting.
@@ -1559,7 +1576,6 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     // MARK: - Tunnel heartbeat
 
     private func startHeartbeat() {
-        guard settings.isOrphanProxyDetectionEnabled else { return }
         guard let heartbeatStore else { return }
         heartbeatTask = Task.periodic(interval: Self.heartbeatInterval) { [weak heartbeatStore] in
             heartbeatStore?.recordHeartbeat()
@@ -1742,12 +1758,20 @@ extension PacketTunnelProvider {
     }
 
     func completeAndCleanupConnectionWideEvent(with error: Error? = nil, description: String? = nil) {
+        defer {
+            loopDetector.connectionFinished()
+        }
+
         guard let data = self.connectionWideEventData else { return }
         data.tunnelStartDuration?.complete()
         data.overallDuration?.complete()
         if let error {
             data.errorData = .init(error: error, description: description)
-            wideEvent.completeFlow(data, status: .failure, onComplete: { _, _ in })
+            if loopDetector.shouldSuppressCurrentAttemptTelemetry {
+                wideEvent.discardFlow(data)
+            } else {
+                wideEvent.completeFlow(data, status: .failure, onComplete: { _, _ in })
+            }
         } else {
             wideEvent.completeFlow(data, status: .success, onComplete: { _, _ in })
         }

@@ -3037,7 +3037,7 @@
 "network.protection.vpn.data-volume" = "Όγκος δεδομένων";
 
 /* Footer text for the Exclude CGNAT setting item. */
-"network.protection.vpn.exclude.cgnat.setting.footer" = "Συνιστάται να απενεργοποιηθεί, ώστε το σύνολο της επισκεψιμότητάς σας να περνάει μέσω του VPN. Εάν αντιμετωπίζετε προβλήματα με λειτουργίες όπως κλήσεις Wi-Fi, ανταλλαγή μηνυμάτων ή φωνητικά μηνύματα, δοκιμάστε να προβείτε σε ενεργοποίηση.";
+"network.protection.vpn.exclude.cgnat.setting.footer" = "Παρακάμψτε το VPN για υπηρεσίες παρόχου κινητής τηλεφωνίας, όπως κλήσεις Wi-Fi και φωνητικά μηνύματα.";
 
 /* Title for the Exclude CGNAT setting item. */
 "network.protection.vpn.exclude.cgnat.setting.title" = "Εξαίρεση Υπηρεσιών Παρόχου";
@@ -3115,10 +3115,10 @@
 "network.protection.vpn.shortcuts.section.header" = "Συντομευσεις";
 
 /* Footer text for the Strict Routing setting item. The 'Learn more' text is a Markdown link. */
-"network.protection.vpn.strict.routing.setting.footer" = "Συνιστάται σε δίκτυα που δεν εμπιστεύεσαι, π.χ. δημόσιο wifi σε ξενοδοχεία, μπαρ κ.λπ. Εάν αντιμετωπίζεις προβλήματα με λειτουργίες (όπως CarPlay, AirDrop κ.λπ.) ή με τη σύνδεση σε άλλες συσκευές, δοκίμασε να το απενεργοποιήσεις. [Μάθε περισσότερα](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)";
+"network.protection.vpn.strict.routing.setting.footer" = "Αποκλεισμός εφαρμογών από παράκαμψη του VPN. Εάν αντιμετωπίζετε προβλήματα με τις λειτουργίες Wi-Fi (όπως το AirDrop ή το iPhone Mirroring), η απενεργοποίησή του μπορεί να βοηθήσει. Συνιστάται ιδιαίτερα σε δίκτυα που δεν εμπιστεύεστε, όπως δημόσια Wi-Fi. [Μάθετε περισσότερα](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack).";
 
 /* Title for the Strict Routing setting item. */
-"network.protection.vpn.strict.routing.setting.title" = "Αυστηρή δρομολόγηση";
+"network.protection.vpn.strict.routing.setting.title" = "Επιβολή Αυστηρής δρομολόγησης (συνιστάται)";
 
 /* Confirm button for the new address bar picker */
 "new.address.bar.picker.confirm" = "Επιβεβαίωση";
@@ -5432,8 +5432,28 @@
 /* Button to delete all chats in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.chats.button" = "Διαγραφή συνομιλιών";
 
-/* Do not translate - stringsdict entry */
-"aiChat.history.deleteAll.confirmation.title" = "aiChat.history.deleteAll.confirmation.title";
-
 /* Top-level attachment menu option to attach the current page content to an AI chat message */
 "aichat.attachment.option.ask.about.page" = "Ρώτα για τη σελίδα";
+
+/* Status view message shown while the VPN is on but Strict routing is off */
+"network.protection.status.header.message.strict.routing.off" = "Ορισμένη επισκεψιμότητα ενδέχεται να παρακάμπτει το VPN όσο η Αυστηρή δρομολόγηση είναι απενεργοποιημένη. Η Αυστηρή δρομολόγηση συνιστάται για δημόσια δίκτυα.";
+
+/* Label for the status pill shown while the VPN's Strict routing setting is off */
+"network.protection.status.view.strict.routing.pill.off" = "Αυστηρή δρομολόγηση: Απενεργοποιημένη";
+
+/* Label for the status pill shown while the VPN's Strict routing setting is on */
+"network.protection.status.view.strict.routing.pill.on" = "Αυστηρή δρομολόγηση: Ενεργοποιημένη";
+
+/* Tooltip shown for the status pill while the VPN's Strict routing setting is off */
+"network.protection.status.view.strict.routing.pill.tooltip.off" = "Η Αυστηρή δρομολόγηση συνιστάται για δημόσια δίκτυα.";
+
+/* Tooltip shown for the status pill while the VPN's Strict routing setting is on */
+"network.protection.status.view.strict.routing.pill.tooltip.on" = "Ορισμένες εφαρμογές ενδέχεται να μη λειτουργούν όσο είναι ενεργοποιημένη η Αυστηρή δρομολόγηση.";
+
+/* Title of the Troubleshooting section in the VPN status screen. */
+"network.protection.status.view.troubleshooting.section.title" = "Αντιμετώπιση προβλημάτων";
+
+/* The body of the notification reminding the user to turn the VPN Strict routing setting back on */
+"network.protection.strict.routing.reminder.notification.body" = "Ορισμένη επισκεψιμότητα ενδέχεται να παρακάμπτει το VPN όσο είναι απενεργοποιημένο. Η Αυστηρή δρομολόγηση συνιστάται για δημόσια δίκτυα.";
+/* The title of the notification reminding the user to turn the VPN Strict routing setting back on */
+"network.protection.strict.routing.reminder.notification.title" = "Η Αυστηρή δρομολόγηση είναι απενεργοποιημένη";

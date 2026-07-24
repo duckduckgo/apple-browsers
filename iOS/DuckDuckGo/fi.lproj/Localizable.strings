@@ -3037,7 +3037,7 @@
 "network.protection.vpn.data-volume" = "Datamäärä";
 
 /* Footer text for the Exclude CGNAT setting item. */
-"network.protection.vpn.exclude.cgnat.setting.footer" = "Suositellaan pitämään pois päältä, jotta kaikki liikenteesi kulkee VPN:n kautta. Jos sinulla on ongelmia ominaisuuksien, kuten Wi-Fi-puheluiden, viestien tai vastaajaviestien, kanssa, kokeile ottaa sen käyttöön.";
+"network.protection.vpn.exclude.cgnat.setting.footer" = "Ohita VPN operaattoripalveluissa, kuten Wi-Fi-puheluissa ja vastaajapalvelussa.";
 
 /* Title for the Exclude CGNAT setting item. */
 "network.protection.vpn.exclude.cgnat.setting.title" = "Sulje pois operaattoripalvelut";
@@ -3115,10 +3115,10 @@
 "network.protection.vpn.shortcuts.section.header" = "Pikavalinnat";
 
 /* Footer text for the Strict Routing setting item. The 'Learn more' text is a Markdown link. */
-"network.protection.vpn.strict.routing.setting.footer" = "Suositellaan verkoissa, joihin et luota, esim. julkinen wifi hotelleissa, baareissa, jne. Jos sinulla on ongelmia ominaisuuksien (kuten CarPlayn, AirDropin jne.) tai muihin laitteisiin yhdistämisen kanssa, kokeile kytkeä se pois päältä. [Lue lisää](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)";
+"network.protection.vpn.strict.routing.setting.footer" = "Estä sovelluksia ohittamasta VPN:ää. Jos sinulla on ongelmia Wi-Fi-ominaisuuksien (kuten AirDropin tai iPhone Mirroringin) kanssa, ominaisuuden poistaminen käytöstä voi auttaa. Suositellaan vahvasti verkoissa, joihin et luota, kuten julkisessa Wi-Fi-verkossa. [Lue lisää](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack).";
 
 /* Title for the Strict Routing setting item. */
-"network.protection.vpn.strict.routing.setting.title" = "Tiukka reititys";
+"network.protection.vpn.strict.routing.setting.title" = "Ota käyttöön tiukka reititys (suositus)";
 
 /* Confirm button for the new address bar picker */
 "new.address.bar.picker.confirm" = "Vahvista";
@@ -5432,8 +5432,28 @@
 /* Button to delete all chats in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.chats.button" = "Poista keskustelut";
 
-/* Do not translate - stringsdict entry */
-"aiChat.history.deleteAll.confirmation.title" = "aiChat.history.deleteAll.confirmation.title";
-
 /* Top-level attachment menu option to attach the current page content to an AI chat message */
 "aichat.attachment.option.ask.about.page" = "Kysy sivusta";
+
+/* Status view message shown while the VPN is on but Strict routing is off */
+"network.protection.status.header.message.strict.routing.off" = "Osa liikenteestä saattaa ohittaa VPN:n, kun tiukka reititys on pois päältä. Tiukkaa reititystä suositellaan julkisiin verkkoihin.";
+
+/* Label for the status pill shown while the VPN's Strict routing setting is off */
+"network.protection.status.view.strict.routing.pill.off" = "Tiukka reititys: pois päältä";
+
+/* Label for the status pill shown while the VPN's Strict routing setting is on */
+"network.protection.status.view.strict.routing.pill.on" = "Tiukka reititys: päällä";
+
+/* Tooltip shown for the status pill while the VPN's Strict routing setting is off */
+"network.protection.status.view.strict.routing.pill.tooltip.off" = "Tiukkaa reititystä suositellaan julkisiin verkkoihin.";
+
+/* Tooltip shown for the status pill while the VPN's Strict routing setting is on */
+"network.protection.status.view.strict.routing.pill.tooltip.on" = "Jotkin sovellukset eivät ehkä toimi, kun tiukka reititys on päällä.";
+
+/* Title of the Troubleshooting section in the VPN status screen. */
+"network.protection.status.view.troubleshooting.section.title" = "Vianmääritys";
+
+/* The body of the notification reminding the user to turn the VPN Strict routing setting back on */
+"network.protection.strict.routing.reminder.notification.body" = "Osa liikenteestä saattaa ohittaa VPN:n, kun se on pois päältä. Tiukkaa reititystä suositellaan julkisiin verkkoihin.";
+/* The title of the notification reminding the user to turn the VPN Strict routing setting back on */
+"network.protection.strict.routing.reminder.notification.title" = "Tiukka reititys on pois päältä";

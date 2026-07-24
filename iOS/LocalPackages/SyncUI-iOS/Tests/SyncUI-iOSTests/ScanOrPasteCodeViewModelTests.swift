@@ -48,6 +48,54 @@ final class ScanOrPasteCodeViewModelTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("Scanning is enabled by default", .timeLimit(.minutes(1)))
+    func scanningIsEnabledByDefault() {
+        let sut = makeSUT()
+
+        #expect(sut.isScanningEnabled == true)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Reset scanning gate then scanning can begin toggles scanning", .timeLimit(.minutes(1)))
+    func resetScanningGateThenScanningCanBeginTogglesScanning() {
+        let sut = makeSUT()
+
+        sut.resetScanningGate()
+        #expect(sut.isScanningEnabled == false)
+
+        sut.scanningCanBegin()
+        #expect(sut.isScanningEnabled == true)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Code scanned while the scanning gate is closed is ignored", .timeLimit(.minutes(1)))
+    func codeScannedWhileGateClosedIsIgnored() async {
+        let sut = makeSUT()
+        delegate.syncCodeEnteredResult = true
+        sut.resetScanningGate()
+
+        let used = await sut.codeScanned("qr-code")
+
+        #expect(used == false)
+        #expect(delegate.syncCodeEnteredCalls.isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Code scanned after scanning can begin is forwarded to the delegate", .timeLimit(.minutes(1)))
+    func codeScannedAfterScanningCanBeginIsForwarded() async {
+        let sut = makeSUT()
+        delegate.syncCodeEnteredResult = true
+        sut.resetScanningGate()
+        sut.scanningCanBegin()
+
+        let used = await sut.codeScanned("qr-code")
+
+        #expect(used == true)
+        #expect(delegate.syncCodeEnteredCalls.count == 1)
+        #expect(delegate.syncCodeEnteredCalls.first?.code == "qr-code")
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("Camera unavailable hides the camera", .timeLimit(.minutes(1)))
     func cameraUnavailableHidesCamera() {
         // GIVEN
@@ -209,5 +257,41 @@ final class ScanOrPasteCodeViewModelTests {
 
         // THEN
         #expect(result == false)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Code for display strips the pairing URL and keeps the code2 payload", .timeLimit(.minutes(1)))
+    func codeForDisplayStripsPairingURL() {
+        // GIVEN
+        let payload = "eyJ2ZXJzaW9uIjoiMiJ9"
+        let url = "https://duckduckgo.com/sync/pairing/#&code2=\(payload)"
+        let sut = ScanOrPasteCodeViewModel(codeForDisplayOrPasting: url, qrCodeString: url, source: .connect)
+
+        // THEN
+        #expect(sut.showQRCodeModel.codeForDisplay == payload)
+        #expect(sut.showQRCodeModel.codeForDisplayOrPasting == url)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Code for display strips the pairing URL and keeps the legacy code payload", .timeLimit(.minutes(1)))
+    func codeForDisplayStripsLegacyPairingURL() {
+        // GIVEN
+        let payload = "ABCDEFGHIJ"
+        let url = "https://duckduckgo.com/sync/pairing/#&code=\(payload)&deviceName=iPhone"
+        let sut = ScanOrPasteCodeViewModel(codeForDisplayOrPasting: url, qrCodeString: url, source: .connect)
+
+        // THEN
+        #expect(sut.showQRCodeModel.codeForDisplay == payload)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Code for display returns the code unchanged when it is not a pairing URL", .timeLimit(.minutes(1)))
+    func codeForDisplayReturnsNonURLCodeUnchanged() {
+        // GIVEN
+        let code = "eyJyZWNvdmVyeSI6eyJ1c2VyX2lkIjoiMSJ9fQ=="
+        let sut = ScanOrPasteCodeViewModel(codeForDisplayOrPasting: code, qrCodeString: code, source: .recovery)
+
+        // THEN
+        #expect(sut.showQRCodeModel.codeForDisplay == code)
     }
 }

@@ -34,7 +34,7 @@ public enum OmniBarIcon {
         case .duckPlayer:
             return UIImage(resource: .duckPlayerURLIcon)
         case .duckAI:
-            return DesignSystemImages.Color.Size24.aiChatGradient
+            return DesignSystemImages.Color.Size24.duckAI
         case .specialError:
             return DesignSystemImages.Glyphs.Size24.globe
         }
@@ -856,6 +856,14 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         setFieldBackgroundColor(isFloatingUIEnabled
             ? opaqueFieldBackgroundColor
             : UIColor(designSystemColor: .urlBar))
+    }
+
+    func restoreFloatingFieldAppearance() {
+        // The bottom floating field can lose its opaque fill after an omnibar notification animation
+        // ends, dropping contrast with the toolbar. Re-assert the resting opaque appearance. Top glass
+        // and non-floating are unaffected.
+        guard isFloatingUIEnabled, !shouldUseFloatingTopGlass else { return }
+        makeOpaque()
     }
 
     func setFloatingMinimalChromeBar(_ enabled: Bool) {

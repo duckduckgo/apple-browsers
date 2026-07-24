@@ -106,4 +106,16 @@ final class MockNewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProvidin
     var selectedReasoningEffortPublisher: AnyPublisher<String?, Never> {
         $selectedReasoningEffort.dropFirst().eraseToAnyPublisher()
     }
+
+    @Published var isAIChatDeletionEnabled: Bool = false
+
+    var isAIChatDeletionEnabledPublisher: AnyPublisher<Bool, Never> {
+        $isAIChatDeletionEnabled.removeDuplicates().eraseToAnyPublisher()
+    }
+
+    @Published var isSearchSuggestionDeletionEnabled: Bool = false
+
+    var isSearchSuggestionDeletionEnabledPublisher: AnyPublisher<Bool, Never> {
+        $isSearchSuggestionDeletionEnabled.removeDuplicates().eraseToAnyPublisher()
+    }
 }

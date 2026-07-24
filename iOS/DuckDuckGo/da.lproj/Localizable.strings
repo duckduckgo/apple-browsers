@@ -3037,7 +3037,7 @@
 "network.protection.vpn.data-volume" = "Datamængde";
 
 /* Footer text for the Exclude CGNAT setting item. */
-"network.protection.vpn.exclude.cgnat.setting.footer" = "Anbefales slået fra, så al din trafik går gennem VPN. Hvis du har problemer med funktioner som wi-fi-opkald, beskeder eller telefonsvarer, kan du prøve at aktivere det.";
+"network.protection.vpn.exclude.cgnat.setting.footer" = "Omgå VPN'en for operatørtjenester, såsom wi-fi-opkald og telefonsvarer.";
 
 /* Title for the Exclude CGNAT setting item. */
 "network.protection.vpn.exclude.cgnat.setting.title" = "Udeluk Carrier Services";
@@ -3115,10 +3115,10 @@
 "network.protection.vpn.shortcuts.section.header" = "Genveje";
 
 /* Footer text for the Strict Routing setting item. The 'Learn more' text is a Markdown link. */
-"network.protection.vpn.strict.routing.setting.footer" = "Anbefales på netværk, du ikke har tillid til, f.eks. offentligt wi-fi på hoteller, barer osv. Hvis du har problemer med funktioner (som CarPlay, AirDrop osv.) eller med at forbinde til andre enheder, så prøv at slå det fra. [Læs mere](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)";
+"network.protection.vpn.strict.routing.setting.footer" = "Bloker apps fra at omgå VPN'en. Hvis du har problemer med wi-fi-funktioner (såsom AirDrop eller iPhone-spejling), kan det hjælpe at slå det fra. Stærkt anbefalet på netværk, du ikke har tillid til, såsom offentligt wi-fi. [Læs mere](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack).";
 
 /* Title for the Strict Routing setting item. */
-"network.protection.vpn.strict.routing.setting.title" = "Streng routing";
+"network.protection.vpn.strict.routing.setting.title" = "Aktivér streng routing (anbefales)";
 
 /* Confirm button for the new address bar picker */
 "new.address.bar.picker.confirm" = "Bekræft";
@@ -5432,8 +5432,28 @@
 /* Button to delete all chats in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.chats.button" = "Slet chats";
 
-/* Do not translate - stringsdict entry */
-"aiChat.history.deleteAll.confirmation.title" = "aiChat.history.deleteAll.confirmation.title";
-
 /* Top-level attachment menu option to attach the current page content to an AI chat message */
 "aichat.attachment.option.ask.about.page" = "Spørg om siden";
+
+/* Status view message shown while the VPN is on but Strict routing is off */
+"network.protection.status.header.message.strict.routing.off" = "Noget trafik kan omgå VPN'en, mens streng routing er slået fra. Streng routing anbefales til offentlige netværk.";
+
+/* Label for the status pill shown while the VPN's Strict routing setting is off */
+"network.protection.status.view.strict.routing.pill.off" = "Streng routing: Fra";
+
+/* Label for the status pill shown while the VPN's Strict routing setting is on */
+"network.protection.status.view.strict.routing.pill.on" = "Streng routing: Til";
+
+/* Tooltip shown for the status pill while the VPN's Strict routing setting is off */
+"network.protection.status.view.strict.routing.pill.tooltip.off" = "Streng routing anbefales til offentlige netværk.";
+
+/* Tooltip shown for the status pill while the VPN's Strict routing setting is on */
+"network.protection.status.view.strict.routing.pill.tooltip.on" = "Nogle apps virker muligvis ikke, mens streng routing er slået til.";
+
+/* Title of the Troubleshooting section in the VPN status screen. */
+"network.protection.status.view.troubleshooting.section.title" = "Fejlfinding";
+
+/* The body of the notification reminding the user to turn the VPN Strict routing setting back on */
+"network.protection.strict.routing.reminder.notification.body" = "Noget trafik kan omgå VPN'en, mens den er slået fra. Streng routing anbefales til offentlige netværk.";
+/* The title of the notification reminding the user to turn the VPN Strict routing setting back on */
+"network.protection.strict.routing.reminder.notification.title" = "Streng routing er slået fra";

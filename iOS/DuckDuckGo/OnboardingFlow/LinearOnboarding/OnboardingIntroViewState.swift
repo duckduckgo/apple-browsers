@@ -52,6 +52,7 @@ extension OnboardingIntroViewState.Intro {
 
     enum IntroType: Equatable {
         case startOnboardingDialog(content: OnboardingIntroStepContent, type: IntroDialogType)
+        case downloadReasonDialog(content: OnboardingDownloadReasonContent)
         case setDefaultBrowserDialog(content: OnboardingComparisonContent)
         case aiIntroDialog(content: OnboardingComparisonContent)
         case addToDockPromoDialog(content: OnboardingAddToDockContent)
@@ -59,6 +60,14 @@ extension OnboardingIntroViewState.Intro {
         case chooseAddressBarPositionDialog(content: OnboardingAddressBarPositionContent)
         case chooseSearchExperienceDialog(content: OnboardingSearchExperienceContent)
         case duckAIQueryDialog(content: OnboardingDuckAIQueryContent, defaultMode: DuckAIQueryMode)
+        // NA Experiment: reason-tailored steps. Content-less for now; their content and views are
+        // built in the UI task (add the associated `content:` then).
+        case searchPrivacySettingsDialog
+        case aiSearchSettingsDialog
+        case aiModelDialog
+        case toggleInputModeDialog
+        case keepDuckAIDialog
+        case duckPlayerDialog
     }
 
     struct StepInfo: Equatable {

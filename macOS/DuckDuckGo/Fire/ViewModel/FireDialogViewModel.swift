@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import Cocoa
 import Combine
 import BrowserServicesKit
@@ -33,6 +34,7 @@ struct FireDialogViewSettings: StoringKeys {
     let lastIncludeHistoryState = StorageKey<Bool>(.fireDialogIncludeHistory)
     let lastIncludeCookiesAndSiteDataState = StorageKey<Bool>(.fireDialogIncludeCookiesAndSiteData)
     let lastIncludeChatHistoryState = StorageKey<Bool>(.fireDialogIncludeChatHistory)
+    let lastSectionsExpandedState = StorageKey<Bool>(.fireDialogSectionsExpanded)
 }
 
 @MainActor
@@ -154,13 +156,15 @@ final class FireDialogViewModel: ObservableObject {
          includeHistory: Bool? = nil,
          includeCookiesAndSiteData: Bool? = nil,
          includeChatHistory: Bool? = nil,
+         sectionsExpanded: Bool? = nil,
          mode: Mode = .fireButton,
          settings: (any KeyedStoring<FireDialogViewSettings>)? = nil,
          scopeCookieDomains: Set<String>? = nil,
          scopeVisits: [Visit]? = nil,
          tld: TLD,
          windowControllersManager: WindowControllersManagerProtocol,
-         dataClearingPreferences: DataClearingPreferences) {
+         dataClearingPreferences: DataClearingPreferences,
+         pixelFiring: PixelFiring?) {
 
         self.fireViewModel = fireViewModel
         self.tabCollectionViewModel = tabCollectionViewModel
@@ -171,6 +175,7 @@ final class FireDialogViewModel: ObservableObject {
         self.aiChatHistoryCleaner = aiChatHistoryCleaner
         self.windowControllersManager = windowControllersManager
         self.dataClearingPreferences = dataClearingPreferences
+        self.pixelFiring = pixelFiring
 
         self.tld = tld
         self.mode = mode
@@ -185,11 +190,15 @@ final class FireDialogViewModel: ObservableObject {
         self.includeHistory = includeHistory ?? self.settings.lastIncludeHistoryState ?? true
         self.includeCookiesAndSiteData = includeCookiesAndSiteData ?? self.settings.lastIncludeCookiesAndSiteDataState ?? true
         self.includeChatHistorySetting = includeChatHistory ?? self.settings.lastIncludeChatHistoryState ?? false
+        self.isSectionsExpanded = sectionsExpanded ?? self.settings.lastSectionsExpandedState ?? false
 
         updateLastSelectedClearingOptionIfNeeded()
 
         // Initialize selectable/fireproofed lists so counts are available immediately
         updateItems(for: self.clearingOption)
+
+        // Duck.ai chats aren't scoped by tab/window, so fetch them once
+        self.chats = aiChatHistoryCleaner.allChats()
     }
 
     private func updateLastSelectedClearingOptionIfNeeded() {
@@ -217,6 +226,7 @@ final class FireDialogViewModel: ObservableObject {
     private let aiChatHistoryCleaner: AIChatHistoryCleaning
     private let windowControllersManager: WindowControllersManagerProtocol
     private let dataClearingPreferences: DataClearingPreferences
+    let pixelFiring: PixelFiring?
     let tld: TLD
     let mode: Mode
     private let scopeVisits: [Visit]?
@@ -227,6 +237,7 @@ final class FireDialogViewModel: ObservableObject {
         didSet {
             updateItems(for: clearingOption)
             settings.lastSelectedClearingOption = clearingOption
+            pixelFiring?.fire(FireDialogPixel.fireDialogToggleMode, frequency: .dailyAndCount, doNotEnforcePrefix: true)
         }
     }
 
@@ -234,18 +245,24 @@ final class FireDialogViewModel: ObservableObject {
     @Published var includeTabsAndWindows: Bool {
         didSet {
             settings.lastIncludeTabsAndWindowsState = includeTabsAndWindows
+            pixelFiring?.fire(FireDialogPixel.fireDialogChangeSettings, frequency: .uniqueByName, doNotEnforcePrefix: true)
+            pixelFiring?.fire(FireDialogPixel.fireDialogToggleCloseTabs, frequency: .dailyAndCount, doNotEnforcePrefix: true)
         }
     }
     /// when true, history is cleared for the selected scope.
     @Published var includeHistory: Bool {
         didSet {
             settings.lastIncludeHistoryState = includeHistory
+            pixelFiring?.fire(FireDialogPixel.fireDialogChangeSettings, frequency: .uniqueByName, doNotEnforcePrefix: true)
+            pixelFiring?.fire(FireDialogPixel.fireDialogToggleClearHistory, frequency: .dailyAndCount, doNotEnforcePrefix: true)
         }
     }
     /// when true, cookies/site data are cleared for the selected (non-fireproof) domains in scope.
     @Published var includeCookiesAndSiteData: Bool {
         didSet {
             settings.lastIncludeCookiesAndSiteDataState = includeCookiesAndSiteData
+            pixelFiring?.fire(FireDialogPixel.fireDialogChangeSettings, frequency: .uniqueByName, doNotEnforcePrefix: true)
+            pixelFiring?.fire(FireDialogPixel.fireDialogToggleClearSiteData, frequency: .dailyAndCount, doNotEnforcePrefix: true)
         }
     }
     /// When true, all Duck.ai chat history is cleared.
@@ -258,6 +275,15 @@ final class FireDialogViewModel: ObservableObject {
     @Published var includeChatHistorySetting: Bool {
         didSet {
             settings.lastIncludeChatHistoryState = includeChatHistorySetting
+            pixelFiring?.fire(FireDialogPixel.fireDialogChangeSettings, frequency: .uniqueByName, doNotEnforcePrefix: true)
+            pixelFiring?.fire(FireDialogPixel.fireDialogToggleClearAIChats, frequency: .dailyAndCount, doNotEnforcePrefix: true)
+        }
+    }
+
+    /// Whether the "Choose what to delete" sections are expanded.
+    @Published var isSectionsExpanded: Bool {
+        didSet {
+            settings.lastSectionsExpandedState = isSectionsExpanded
         }
     }
 
@@ -265,6 +291,7 @@ final class FireDialogViewModel: ObservableObject {
     @Published private(set) var fireproofed: [Item] = []
     @Published private(set) var selected: Set<Int> = []
     @Published private(set) var historyVisits: [Visit] = []
+    @Published private(set) var chats: [DuckAiChat] = []
 
     var isPinnedTabSelected: Bool {
         tabCollectionViewModel?.selectedTabViewModel?.tab.isPinned ?? false
@@ -386,6 +413,9 @@ final class FireDialogViewModel: ObservableObject {
     /// Cookies/sites are deleted for non-fireproofed visited eTLD+1 domains
     var cookiesSitesCountForCurrentScope: Int { selectable.count }
 
+    /// Duck.ai chats aren't partitioned by tab/window, so this is a global count.
+    var chatsCountForCurrentScope: Int { chats.count }
+
     // MARK: - Selection
 
     /// Public accessor to the currently selected cookie/site-data domains (eTLD+1)
@@ -437,6 +467,7 @@ final class FireDialogViewModel: ObservableObject {
 
     /// Presents the Manage Fireproof Sites dialog stacked above the Fire dialog, then refreshes the scope.
     func showManageFireproofSites() {
+        pixelFiring?.fire(FireDialogPixel.fireDialogManageFireproofedSites, frequency: .dailyAndCount, doNotEnforcePrefix: true)
         Task { @MainActor in
             await dataClearingPreferences.presentManageFireproofSitesDialog()
             // Refresh selectable/fireproofed lists in case fireproofing changed.
@@ -446,6 +477,7 @@ final class FireDialogViewModel: ObservableObject {
 
     /// Dismisses the dialog and opens the per-site history/deletion view.
     func deleteIndividualSites() {
+        pixelFiring?.fire(FireDialogPixel.fireDialogDeleteIndividualSitesClicked, frequency: .dailyAndCount, doNotEnforcePrefix: true)
         dismissDialog()
         windowControllersManager.lastKeyMainWindowController?
             .mainViewController
@@ -457,6 +489,15 @@ final class FireDialogViewModel: ObservableObject {
     func openDataDeletionSettings() {
         dismissDialog()
         windowControllersManager.showTab(with: .settings(pane: .dataClearing))
+    }
+
+    /// Dismisses the dialog and opens the full History View, for "See full history" in the history overlay.
+    func openFullHistory() {
+        dismissDialog()
+        windowControllersManager.lastKeyMainWindowController?
+            .mainViewController
+            .browserTabViewController
+            .openNewTab(with: .history(pane: .all))
     }
 
     private func dismissDialog() {

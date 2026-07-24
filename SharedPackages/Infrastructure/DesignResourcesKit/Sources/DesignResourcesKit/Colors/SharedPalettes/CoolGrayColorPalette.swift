@@ -81,9 +81,9 @@ struct CoolGrayColorPalette: SharedColorPaletteDefinition {
     static let controlsFillSecondary = DynamicColor(lightHex: 0x212d45, lightOpacityHex: 0x1e, darkHex: 0xc6d3f1, darkOpacityHex: 0x2d)
     static let controlsFillTertiary = DynamicColor(lightHex: 0x212d45, lightOpacityHex: 0x2d, darkHex: 0xc6d3f1, darkOpacityHex: 0x3d)
     static let controlsRaisedBackdrop = DynamicColor(lightHex: 0x050614, lightOpacityHex: 0x16, darkHex: 0xffffff, darkOpacityHex: 0x1e)
-    static let controlsRaisedFillPrimary = DynamicColor(lightHex: 0xf7f8fc, darkHex: 0xdde0ee, darkOpacityHex: 0x2d)
-    static let controlsRaisedFillSecondary = DynamicColor(lightHex: 0xedeef2, darkHex: 0xdde0ee, darkOpacityHex: 0x2d)
-    static let controlsRaisedFillTertiary = DynamicColor(lightHex: 0xedeef2, darkHex: 0xdde0ee, darkOpacityHex: 0x2d)
+    static let controlsRaisedFillPrimary = DynamicColor(lightHex: 0xF7F8FC, darkHex: 0xdde0ee, darkOpacityHex: 0x2d)
+    static let controlsRaisedFillSecondary = DynamicColor(lightHex: 0xF7F8FC, darkHex: 0xdde0ee, darkOpacityHex: 0x2d)
+    static let controlsRaisedFillTertiary = DynamicColor(lightHex: 0xF7F8FC, darkHex: 0xdde0ee, darkOpacityHex: 0x2d)
     static let controlsSubtleBorderPrimary = DynamicColor(lightHex: 0x212d45, lightOpacityHex: 0x1e, darkHex: 0xc6d3f1, darkOpacityHex: 0x1e)
     static let controlsSubtleBorderSecondary = DynamicColor(lightHex: 0x212d45, lightOpacityHex: 0x2d, darkHex: 0xc6d3f1, darkOpacityHex: 0x2d)
     static let controlsSubtleBorderTertiary = DynamicColor(lightHex: 0x212d45, lightOpacityHex: 0x5b, darkHex: 0xc6d3f1, darkOpacityHex: 0x5b)
@@ -116,7 +116,9 @@ struct CoolGrayColorPalette: SharedColorPaletteDefinition {
     static let statusWarningContentPrimary = DynamicColor(lightHex: 0x191101, darkHex: 0x191101)
     static let statusWarningFillPrimary = DynamicColor(lightHex: 0xffe699, lightOpacityHex: 0x51, darkHex: 0xffcc00)
     static let statusWarningPrimary = DynamicColor(lightHex: 0xffcc00, darkHex: 0xffcc00)
-    static let statusYellow = DynamicColor(lightHex: 0xffcc00, darkHex: 0xffcc00)
+    static let statusYellowPrimary = DynamicColor(lightHex: 0xfab341, darkHex: 0xfab341)
+    static let statusYellowSecondary = DynamicColor(lightHex: 0xFFC95C, darkHex: 0xFFC95C)
+    static let statusYellowTertiary = DynamicColor(lightHex: 0xFFD885, darkHex: 0xFFD885)
     static let surfaceBackdrop = DynamicColor(lightHex: 0xa7aabd, darkHex: 0x070a16)
     static let surfaceCanvas = DynamicColor(lightHex: 0xe3e5ec, darkHex: 0x272a3e)
     static let surfaceContrast = DynamicColor(lightHex: 0x2a416f, lightOpacityHex: 0xf4, darkHex: 0xdde0ee, darkOpacityHex: 0xf4)
@@ -139,7 +141,7 @@ struct CoolGrayColorPalette: SharedColorPaletteDefinition {
 
     // MARK: - Not Specialized
 
-    static let alertGreen = DynamicColor(lightColor: .alertGreen, darkColor: .alertGreen)
+    static let alertGreen = DynamicColor(lightColor: RebrandingColor.Green.green40, darkColor: RebrandingColor.Green.green40)
     static let alertYellow = DynamicColor(lightColor: .alertYellow, darkColor: .alertYellow)
     static let shieldPrivacy = DynamicColor(lightColor: RebrandingColor.Lilypad.lilypad70, darkColor: RebrandingColor.Lilypad.lilypad50)
 

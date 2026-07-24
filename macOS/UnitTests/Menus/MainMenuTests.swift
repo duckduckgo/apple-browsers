@@ -751,6 +751,7 @@ private final class DummyAIChatHistoryCleaner: AIChatHistoryCleaning {
     var shouldDisplayCleanAIChatHistoryOption: Bool = false
     var shouldDisplayCleanAIChatHistoryOptionPublisher: AnyPublisher<Bool, Never> { Just(false).eraseToAnyPublisher() }
     @MainActor func cleanAIChatHistory() async -> Result<Void, Error> { .success(()) }
+    func allChats() -> [DuckAiChat] { [] }
 }
 
 class DummyAIChatConfig: AIChatMenuVisibilityConfigurable {

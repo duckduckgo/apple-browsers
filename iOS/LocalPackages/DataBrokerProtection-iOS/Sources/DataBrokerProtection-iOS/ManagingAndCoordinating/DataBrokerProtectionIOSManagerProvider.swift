@@ -178,12 +178,7 @@ public class DataBrokerProtectionIOSManagerProvider {
                                                         optOutRetryErrorFeatureFlagger: featureFlagger)
 
         let database = DataBrokerProtectionDatabase(fakeBrokerFlag: fakeBroker, pixelHandler: sharedPixelsHandler, vault: vault, localBrokerService: localBrokerService)
-        do {
-            profileStateManager.reconcileProfileState(hasSavedProfile: try database.fetchProfile() != nil)
-        } catch {
-            profileStateManager.recordProfileStateUnknown()
-            Logger.dataBrokerProtection.error("Error reconciling profile state, error: \(error.localizedDescription, privacy: .public)")
-        }
+        reconcileProfileState(from: database, using: profileStateManager)
 
         let operationQueue = OperationQueue()
         let jobProvider = BrokerProfileJobProvider()
@@ -245,5 +240,15 @@ public class DataBrokerProtectionIOSManagerProvider {
             },
             engagementPixelsRepository: DataBrokerProtectionEngagementPixelsUserDefaults(userDefaults: .dbp)
         )
+    }
+
+    /// Seeds/heals the cached profile state whenever vault resources are materialized.
+    private static func reconcileProfileState(from database: DataBrokerProtectionRepository, using profileStateManager: DBPProfileStateManaging) {
+        do {
+            profileStateManager.reconcileProfileState(hasSavedProfile: try database.fetchProfile() != nil)
+        } catch {
+            profileStateManager.recordProfileStateUnknown()
+            Logger.dataBrokerProtection.error("Error reconciling profile state, error: \(error.localizedDescription, privacy: .public)")
+        }
     }
 }

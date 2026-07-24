@@ -1,0 +1,26 @@
+<svg fill="none" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+  <g clip-path="url(#Bookmark-Import-Color-16_svg__a)">
+    <path fill="url(#Bookmark-Import-Color-16_svg__b)" d="M9.125.5A3.37 3.37 0 0 1 12 2.108c.357.58 0 .894-.13.894A5 5 0 0 0 12 13s.5.181.5.823c0 1.353-1.512 2.155-2.633 1.398l-1.922-1.3a1.689 1.689 0 0 0-1.89 0l-1.922 1.3c-1.12.757-2.633-.045-2.633-1.398V3.875A3.375 3.375 0 0 1 4.875.5h4.25Z"/>
+    <path fill="url(#Bookmark-Import-Color-16_svg__c)" d="M9.125 0c1.496 0 2.794.848 3.44 2.09.233.448-.195.9-.7.913A2.875 2.875 0 0 0 9.124 1h-4.25A2.875 2.875 0 0 0 2 3.875v9.948a1.187 1.187 0 0 0 1.853.984l1.922-1.3c.74-.5 1.71-.5 2.45 0l1.923 1.3A1.187 1.187 0 0 0 12 13.823V13h.083c.477-.009.917.346.917.823 0 1.753-1.96 2.794-3.412 1.813l-1.923-1.3a1.188 1.188 0 0 0-1.33 0l-1.923 1.3C2.96 16.617 1 15.576 1 13.823V3.875A3.875 3.875 0 0 1 4.875 0h4.25Z"/>
+    <path fill="#F5F5F5" d="M16 8a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z"/>
+    <path fill="url(#Bookmark-Import-Color-16_svg__d)" d="M15 8a3 3 0 1 0-3 3v1a4 4 0 1 1 0-8 4 4 0 0 1 0 8v-1a3 3 0 0 0 3-3Z"/>
+    <path fill="#2B55CA" d="M10.082 8.275a.5.5 0 0 1 .694-.693l.078.064.646.647V6.5l.01-.1a.5.5 0 0 1 .98 0l.01.1v1.793l.647-.647.078-.064a.5.5 0 0 1 .693.693l-.064.079-1.5 1.5a.5.5 0 0 1-.707 0l-1.5-1.5-.065-.079Z"/>
+  </g>
+  <defs>
+    <linearGradient id="Bookmark-Import-Color-16_svg__b" x1="7" x2="7" y1=".5" y2="17" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#8FABF9"/>
+      <stop offset="1" stop-color="#7295F6"/>
+    </linearGradient>
+    <linearGradient id="Bookmark-Import-Color-16_svg__c" x1="7" x2="7" y1=".5" y2="17" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#3969EF"/>
+      <stop offset="1" stop-color="#1E42A4"/>
+    </linearGradient>
+    <linearGradient id="Bookmark-Import-Color-16_svg__d" x1="12" x2="12" y1="4" y2="12" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#AAA"/>
+      <stop offset="1" stop-color="#666"/>
+    </linearGradient>
+    <clipPath id="Bookmark-Import-Color-16_svg__a">
+      <path fill="#fff" d="M0 0h16v16H0z"/>
+    </clipPath>
+  </defs>
+</svg>

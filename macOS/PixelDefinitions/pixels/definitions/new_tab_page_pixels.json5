@@ -28,6 +28,38 @@
         "suffixes": ["first_daily_count"],
         "parameters": ["appVersion", "pixelSource"]
     },
+    // The four pixels below intentionally use an "ntp_" prefix rather than this file's usual
+    // "new-tab-page_" prefix — the wire names are agreed cross-platform (iOS/Android/Windows) since
+    // the content-scope-scripts PR that adds these NTP delete buttons dropped its own telemetry
+    // schemas in favor of every platform firing them natively with the same names.
+    "m_mac_ntp_aichat_recent_chat_delete_button_clicked": {
+        "description": "Fires when the user clicks the delete button on a recent chat suggestion in the New Tab Page omnibar.",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_ntp_aichat_recent_chat_delete_confirmed": {
+        "description": "Fires when the user confirms deletion of a recent chat suggestion in the New Tab Page omnibar.",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_ntp_aichat_recent_chat_delete_cancelled": {
+        "description": "Fires when the user cancels deletion of a recent chat suggestion in the New Tab Page omnibar.",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_ntp_autocomplete_result_deleted": {
+        "description": "Fires when the user clicks the delete button on a history-entry suggestion in the New Tab Page omnibar.",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
     "m_mac_new-tab-page_search_submitted": {
         "description": "Fires when the user submits a search term via the New Tab Page search box. Used to monitor NTP search engagement.",
         "owners": ["tomasstrba"],

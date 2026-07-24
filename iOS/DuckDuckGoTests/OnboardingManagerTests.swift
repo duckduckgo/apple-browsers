@@ -549,17 +549,17 @@ struct OnboardingStepsForConfiguredFlow {
     @Test("Check countsTowardProgress excludes the intro dialog, interludes, and the Download Screen")
     func countsTowardProgressExcludesNonProgressSteps() {
         // Steps excluded regardless of flow.
-        #expect(OnboardingIntroStep.introDialog(isReturningUser: false).countsTowardProgress(flow: .default) == false)
-        #expect(OnboardingIntroStep.interlude(.duckAI).countsTowardProgress(flow: .default) == false)
-        #expect(OnboardingIntroStep.downloadReasonSelection.countsTowardProgress(flow: .default) == false)
+        #expect(!OnboardingIntroStep.introDialog(isReturningUser: false).countsTowardProgress(flow: .default))
+        #expect(!OnboardingIntroStep.interlude(.duckAI).countsTowardProgress(flow: .default))
+        #expect(!OnboardingIntroStep.downloadReasonSelection.countsTowardProgress(flow: .default))
 
         // Steps counted regardless of flow.
-        #expect(OnboardingIntroStep.setDefaultBrowser.countsTowardProgress(flow: .default) == true)
-        #expect(OnboardingIntroStep.aiIntro.countsTowardProgress(flow: .default) == true)
-        #expect(OnboardingIntroStep.addToDockPromo.countsTowardProgress(flow: .default) == true)
-        #expect(OnboardingIntroStep.appIconSelection.countsTowardProgress(flow: .default) == true)
-        #expect(OnboardingIntroStep.addressBarPositionSelection.countsTowardProgress(flow: .default) == true)
-        #expect(OnboardingIntroStep.searchExperienceSelection.countsTowardProgress(flow: .default) == true)
+        #expect(OnboardingIntroStep.setDefaultBrowser.countsTowardProgress(flow: .default))
+        #expect(OnboardingIntroStep.aiIntro.countsTowardProgress(flow: .default))
+        #expect(OnboardingIntroStep.addToDockPromo.countsTowardProgress(flow: .default))
+        #expect(OnboardingIntroStep.appIconSelection.countsTowardProgress(flow: .default))
+        #expect(OnboardingIntroStep.addressBarPositionSelection.countsTowardProgress(flow: .default))
+        #expect(OnboardingIntroStep.searchExperienceSelection.countsTowardProgress(flow: .default))
     }
 
     @Test("Check countsTowardProgress counts the Duck.ai query step only in the Duck.ai flow")
@@ -722,6 +722,41 @@ struct OnboardingDownloadReasonExperimentTests {
 
         // THEN
         #expect(result == expected)
+    }
+
+    // MARK: - currentDownloadReason
+
+    @Test("Download Reason is nil before a reason is chosen")
+    func currentDownloadReasonIsNilByDefault() {
+        // GIVEN
+        let sut = makeManager(cohort: .treatment)
+
+        // THEN
+        #expect(sut.currentDownloadReason == nil)
+    }
+
+    @Test("Download Reason reflects the persisted reason", arguments: OnboardingDownloadReason.allCases)
+    func currentDownloadReasonReflectsPersistedReason(_ reason: OnboardingDownloadReason) {
+        // GIVEN
+        let tutorialSettings = makeTutorialSettings()
+        tutorialSettings.onboardingDownloadReason = reason
+        let sut = makeManager(cohort: .treatment, tutorialSettings: tutorialSettings)
+
+        // THEN
+        #expect(sut.currentDownloadReason == reason)
+    }
+
+    @Test("Download Reason stores value", arguments: OnboardingDownloadReason.allCases)
+    func selectDownloadReasonUpdatesCurrentDownloadReason(_ reason: OnboardingDownloadReason) {
+        // GIVEN
+        let sut = makeManager(cohort: .treatment)
+        #expect(sut.currentDownloadReason == nil)
+
+        // WHEN
+        _ = sut.selectDownloadReason(reason)
+
+        // THEN
+        #expect(sut.currentDownloadReason == reason)
     }
 
     // MARK: - Eligibility (new installers, iPhone)

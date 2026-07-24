@@ -213,12 +213,24 @@ class MobileUserAttributeMatcherTests: XCTestCase {
                        .fail)
     }
 
+    func testWhenIsCurrentPIRUserIsUnknownThenTrueTargetReturnsFail() throws {
+        setUpUserAttributeMatcher(isCurrentPIRUser: nil)
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: PIRCurrentUserMatchingAttribute(value: true, fallback: nil)),
+                       .fail)
+    }
+
+    func testWhenIsCurrentPIRUserIsUnknownThenFalseTargetReturnsFail() throws {
+        setUpUserAttributeMatcher(isCurrentPIRUser: nil)
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: PIRCurrentUserMatchingAttribute(value: false, fallback: nil)),
+                       .fail)
+    }
+
     private func setUpUserAttributeMatcher(dismissedMessageIds: [String] = [],
                                            isSyncEnabled: Bool = false,
                                            isFreemiumPIREligible: Bool = false,
                                            isFreemiumPIRActivated: Bool = false,
                                            freemiumPIRFirstScanResult: String? = nil,
-                                           isCurrentPIRUser: Bool = false,
+                                           isCurrentPIRUser: Bool? = false,
                                            ntpAfterIdleState: String = "") {
         matcher = MobileUserAttributeMatcher(
             statisticsStore: mockStatisticsStore,

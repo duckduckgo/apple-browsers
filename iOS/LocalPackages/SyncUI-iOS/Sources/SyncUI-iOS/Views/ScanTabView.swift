@@ -34,10 +34,12 @@ struct ScanTabView: View {
 
     var body: some View {
         ZStack(alignment: .top) {
+            if shouldRenderCamera {
+                cameraContainer
+            }
+
             if showIntroAnimation {
                 introAnimation
-            } else {
-                cameraContainer
             }
 
             instructions
@@ -50,6 +52,14 @@ struct ScanTabView: View {
         .clipShape(RoundedRectangle(cornerRadius: 34))
         .ignoresSafeArea(.all, edges: .bottom)
         .onPreferenceChange(InstructionsHeightKey.self) { instructionsHeight = $0 }
+        .onAppear {
+            model.resetScanningGate()
+            model.prepareCameraForIntroIfAuthorized()
+        }
+    }
+
+    private var shouldRenderCamera: Bool {
+        !showIntroAnimation || model.videoPermission == .authorised
     }
 
     private var introAnimation: some View {
@@ -75,6 +85,8 @@ struct ScanTabView: View {
             .buttonStyle(SecondaryFillButtonStyle(compact: true, fullWidth: false))
             .padding(.bottom, 24)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(SimplifiedSyncStyle.screenBackground)
         .contentShape(Rectangle())
         .onTapGesture {
             dismissIntroAnimation()
@@ -99,7 +111,7 @@ struct ScanTabView: View {
                     CameraPermissionDeniedView(model: model)
                 } else if model.videoPermission == .authorised && !model.showCamera {
                     CameraUnavailableView()
-                } else if model.showCamera && isCameraActive {
+                } else if model.videoPermission == .authorised && model.showCamera && isCameraActive {
                     QRCodeScannerView {
                         return await model.codeScanned($0)
                     } onCameraUnavailable: {
@@ -111,8 +123,10 @@ struct ScanTabView: View {
             }
         }
         .overlay {
-            if isScanningActive {
-                QRScannerOverlay(topInset: instructionsHeight)
+            if isScanningActive && !showIntroAnimation {
+                QRScannerOverlay(topInset: instructionsHeight) {
+                    model.scanningCanBegin()
+                }
             } else {
                 Color(designSystemColor: .shadowSecondary).opacity(0.7)
                     .allowsHitTesting(false)
@@ -216,6 +230,7 @@ private struct InstructionsHeightKey: PreferenceKey {
 private struct QRScannerOverlay: View {
 
     let topInset: CGFloat
+    var onAnimationComplete: (() -> Void)?
 
     private let cornerRadius: CGFloat = 26
     private let armLength: CGFloat = 28
@@ -223,6 +238,7 @@ private struct QRScannerOverlay: View {
     private let sideRatio: CGFloat = 0.6
     private let initialScale: CGFloat = 0.5
     private let animationDelay: TimeInterval = 0.5
+    private let animationResponse: TimeInterval = 0.5
 
     @State private var isExpanded = false
 
@@ -252,9 +268,14 @@ private struct QRScannerOverlay: View {
                 .position(center)
         }
         .onAppear {
-            withAnimation(.spring(response: 0.5, dampingFraction: 0.6).delay(animationDelay)) {
+            withAnimation(.spring(response: animationResponse, dampingFraction: 0.6).delay(animationDelay)) {
                 isExpanded = true
             }
+        }
+        .task {
+            try? await Task.sleep(nanoseconds: UInt64((animationDelay + animationResponse) * 1_000_000_000))
+            guard !Task.isCancelled else { return }
+            onAnimationComplete?()
         }
     }
 }

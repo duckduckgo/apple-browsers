@@ -114,6 +114,58 @@ final class AIChatURLParametersTests: XCTestCase {
         XCTAssertEqual(settingsItems.first?.value, "open")
     }
 
+    // MARK: - feedbackURL
+
+    func testFeedbackURLAppendsPositiveFeedbackParam() {
+        let baseURL = URL(string: "https://duck.ai")!
+        let result = AIChatURLParameters.feedbackURL(from: baseURL, value: AIChatURLParameters.feedbackPositiveValue)
+        XCTAssertEqual(result.absoluteString, "https://duck.ai?feedback=positive")
+    }
+
+    func testFeedbackURLAppendsNegativeFeedbackParam() {
+        let baseURL = URL(string: "https://duck.ai")!
+        let result = AIChatURLParameters.feedbackURL(from: baseURL, value: AIChatURLParameters.feedbackNegativeValue)
+        XCTAssertEqual(result.absoluteString, "https://duck.ai?feedback=negative")
+    }
+
+    func testFeedbackURLPreservesExistingQueryItems() {
+        let baseURL = URL(string: "https://duck.ai?q=hello")!
+        let result = AIChatURLParameters.feedbackURL(from: baseURL, value: AIChatURLParameters.feedbackPositiveValue)
+
+        let components = URLComponents(url: result, resolvingAgainstBaseURL: false)!
+        let queryItems = components.queryItems ?? []
+        XCTAssertTrue(queryItems.contains(URLQueryItem(name: "q", value: "hello")))
+        XCTAssertTrue(queryItems.contains(URLQueryItem(name: "feedback", value: "positive")))
+    }
+
+    func testFeedbackURLReplacesExistingFeedbackParam() {
+        let baseURL = URL(string: "https://duck.ai?feedback=positive")!
+        let result = AIChatURLParameters.feedbackURL(from: baseURL, value: AIChatURLParameters.feedbackNegativeValue)
+
+        let components = URLComponents(url: result, resolvingAgainstBaseURL: false)!
+        let feedbackItems = (components.queryItems ?? []).filter { $0.name == "feedback" }
+        XCTAssertEqual(feedbackItems.count, 1)
+        XCTAssertEqual(feedbackItems.first?.value, "negative")
+    }
+
+    // MARK: - chatProtectionURL
+
+    func testChatProtectionURLAppendsParam() {
+        let baseURL = URL(string: "https://duck.ai")!
+        let result = AIChatURLParameters.chatProtectionURL(from: baseURL)
+        XCTAssertEqual(result.absoluteString, "https://duck.ai?chatProtection=open")
+    }
+
+    func testChatProtectionURLPreservesExistingQueryItems() {
+        let baseURL = URL(string: "https://duck.ai?q=hello")!
+        let result = AIChatURLParameters.chatProtectionURL(from: baseURL)
+
+        let components = URLComponents(url: result, resolvingAgainstBaseURL: false)!
+        let queryItems = components.queryItems ?? []
+        XCTAssertTrue(queryItems.contains(URLQueryItem(name: "q", value: "hello")))
+        XCTAssertTrue(queryItems.contains(URLQueryItem(name: "chatProtection", value: "open")))
+    }
+
     // MARK: - nativeCustomizeModalURL
 
     func testNativeCustomizeModalURLAppendsCustomizeResponsesParam() {

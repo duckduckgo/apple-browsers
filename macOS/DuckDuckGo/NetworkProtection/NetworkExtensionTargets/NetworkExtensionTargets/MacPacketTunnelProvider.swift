@@ -510,6 +510,7 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
 #else
         let defaults = UserDefaults.netP
 #endif
+        let loopDetector = ConnectionFailureLoopDetector(store: defaults)
 
         let osVersion = ProcessInfo.processInfo.operatingSystemVersion
         let trimmedOSVersion = "\(osVersion.majorVersion).\(osVersion.minorVersion)"
@@ -542,8 +543,12 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
         let tokenStore = NetworkProtectionKeychainTokenStore(keychainType: Bundle.keychainType,
                                                                  serviceName: Self.tokenContainerServiceName,
                                                                  errorEventsHandler: debugEvents)
-        let authV2RefreshInstrumentation = DefaultAuthV2TokenRefreshInstrumentation(wideEvent: self.wideEvent,
-                                                                                    isFeatureEnabled: { true })
+        let authV2RefreshInstrumentation = DefaultAuthV2TokenRefreshInstrumentation(
+            wideEvent: self.wideEvent,
+            isFeatureEnabled: { true },
+            shouldSuppressFailure: {
+                loopDetector.shouldSuppressCurrentAttemptTelemetry
+            })
         let authClient = DefaultOAuthClient(tokensStorage: tokenStore,
                                             authService: authService,
                                             refreshEventMapping: authV2RefreshInstrumentation.eventMapping)
@@ -578,7 +583,6 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
 
         // MARK: -
 
-        let loopDetector = ConnectionFailureLoopDetector(store: defaults)
         let heartbeatStore = TunnelHeartbeatStore(store: defaults)
 
         let tunnelHealthStore = NetworkProtectionTunnelHealthStore(notificationCenter: notificationCenter)

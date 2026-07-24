@@ -82,8 +82,8 @@ struct LatestColorPalette: SharedColorPaletteDefinition {
     static let controlsFillTertiary = DynamicColor(lightHex: 0x000000, lightOpacityHex: 0x1e, darkHex: 0xffffff, darkOpacityHex: 0x14)
     static let controlsRaisedBackdrop = DynamicColor(lightHex: 0x000000, lightOpacityHex: 0x16, darkHex: 0xffffff, darkOpacityHex: 0x1e)
     static let controlsRaisedFillPrimary = DynamicColor(lightHex: 0xffffff, darkHex: 0xffffff, darkOpacityHex: 0x2d)
-    static let controlsRaisedFillSecondary = DynamicColor(lightHex: 0xffffff, darkHex: 0xffffff, darkOpacityHex: 0x2d)
-    static let controlsRaisedFillTertiary = DynamicColor(lightHex: 0xffffff, darkHex: 0xffffff, darkOpacityHex: 0x2d)
+    static let controlsRaisedFillSecondary = DynamicColor(lightHex: 0xffffff, lightOpacityHex: 0xd6, darkHex: 0xffffff, darkOpacityHex: 0x2d)
+    static let controlsRaisedFillTertiary = DynamicColor(lightHex: 0xffffff, lightOpacityHex: 0xb7, darkHex: 0xffffff, darkOpacityHex: 0x2d)
     static let controlsSubtleBorderPrimary = DynamicColor(lightHex: 0x000000, lightOpacityHex: 0x1e, darkHex: 0xffffff, darkOpacityHex: 0x1e)
     static let controlsSubtleBorderSecondary = DynamicColor(lightHex: 0x000000, lightOpacityHex: 0x2d, darkHex: 0xffffff, darkOpacityHex: 0x2d)
     static let controlsSubtleBorderTertiary = DynamicColor(lightHex: 0x000000, lightOpacityHex: 0x5b, darkHex: 0xffffff, darkOpacityHex: 0x5b)
@@ -105,8 +105,8 @@ struct LatestColorPalette: SharedColorPaletteDefinition {
     static let iconsPrimary = DynamicColor(lightHex: 0x000000, lightOpacityHex: 0xd6, darkHex: 0xffffff, darkOpacityHex: 0xc6)
     static let iconsSecondary = DynamicColor(lightHex: 0x000000, lightOpacityHex: 0x99, darkHex: 0xffffff, darkOpacityHex: 0x7a)
     static let iconsTertiary = DynamicColor(lightHex: 0x000000, lightOpacityHex: 0x5b, darkHex: 0xffffff, darkOpacityHex: 0x3d)
-    static let inputActive = DynamicColor(lightHex: 0xffffff, darkHex: 0x3d3d3d)
-    static let inputResting = DynamicColor(lightHex: 0x000000, lightOpacityHex: 0x0c, darkHex: 0xffffff, darkOpacityHex: 0x14)
+    static let inputActive = DynamicColor(lightHex: 0xffffff, darkHex: 0x333333)
+    static let inputResting = DynamicColor(lightHex: 0xEBEBEB, darkHex: 0x333333)
     static let shadowPrimary = DynamicColor(lightHex: 0x000000, lightOpacityHex: 0x0c, darkHex: 0x000000, darkOpacityHex: 0x28)
     static let shadowSecondary = DynamicColor(lightHex: 0x000000, lightOpacityHex: 0x14, darkHex: 0x000000, darkOpacityHex: 0x3d)
     static let shadowTertiary = DynamicColor(lightHex: 0x000000, lightOpacityHex: 0x28, darkHex: 0x000000, darkOpacityHex: 0x51)
@@ -139,7 +139,7 @@ struct LatestColorPalette: SharedColorPaletteDefinition {
 
     static let destructiveGlow = DynamicColor(lightHex: 0xee1025, lightOpacityHex: 0x33, darkHex: 0xee1025, darkOpacityHex: 0x33)
 
-    static let alertGreen = DynamicColor(lightColor: .alertGreen, darkColor: .alertGreen)
+    static let alertGreen = DynamicColor(lightColor: RebrandingColor.Green.green40, darkColor: RebrandingColor.Green.green40)
     static let alertYellow = DynamicColor(lightColor: .alertYellow, darkColor: .alertYellow)
 
     static let shieldPrivacy = DynamicColor(lightColor: RebrandingColor.Lilypad.lilypad70, darkColor: RebrandingColor.Lilypad.lilypad50)

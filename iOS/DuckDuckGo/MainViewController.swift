@@ -371,6 +371,7 @@ class MainViewController: UIViewController {
     lazy var minimalChromeSettings: MinimalChromeSettingsProviding = MinimalChromeSettings()
     var unifiedToggleInputCoordinator: UnifiedToggleInputCoordinator?
     var unifiedInputStateStore: UnifiedInputStateStore?
+    var isPaidAIChatEnabledForSwipe = false
     var unifiedToggleInputCancellables = Set<AnyCancellable>()
     var unifiedToggleInputFloatingReturnKeyKeyboardBottomConstraint: NSLayoutConstraint?
     var unifiedToggleInputFloatingReturnKeyInputTopConstraint: NSLayoutConstraint?
@@ -418,6 +419,15 @@ class MainViewController: UIViewController {
                                   ttlProvider: { settings.tokenTTL },
                                   windowProvider: { settings.refreshWindow })
     }()
+
+    /// Whether the ad-blocking rollout's Duck Player default (disable) should be applied at onboarding
+    /// completion. It runs only when the rollout is active *and* the user didn't set Duck Player
+    /// themselves during onboarding — the download-reason Block Ads flow includes a Duck
+    /// Player step, and overriding it here would silently discard the user's choice.
+    private var shouldApplyAdBlockingRolloutDuckPlayerDefault: Bool {
+        adBlockingAvailability.areAdBlockingDefaultsActive
+            && onboardingManager.currentDownloadReason != .blockAds
+    }
 
     init(
         privacyConfigurationManager: PrivacyConfigurationManaging,
@@ -771,7 +781,7 @@ class MainViewController: UIViewController {
         // Automation bypass: a UI-test override can mark onboarding already-completed without ever
         // calling onboardingCompleted(controller:), so apply the rollout Duck Player defaults here too.
         if case .overridden(.uiTests(completed: true)) = onboardingStatus, ProcessInfo.isRunningUITests {
-            appSettings.applyAdBlockingRolloutDuckPlayerDefaultsIfNeeded(rolloutActive: adBlockingAvailability.areAdBlockingDefaultsActive)
+            appSettings.applyAdBlockingRolloutDuckPlayerDefaultsIfNeeded(rolloutActive: shouldApplyAdBlockingRolloutDuckPlayerDefault)
         }
 
         isStartupOnboardingPending = startupOnboardingDecision.shouldShowOnboarding
@@ -888,7 +898,16 @@ class MainViewController: UIViewController {
                                                     tabPreviewsSource: previewsSource,
                                                     appSettings: appSettings,
                                                     omnibarDependencies: omnibarDependencies,
-                                                    floatingUIManager: floatingUIManager) { [weak self] tab in
+                                                    floatingUIManager: floatingUIManager,
+                                                    liveTabControllerProvider: { [weak self] tab in
+                                                        self?.tabManager.controller(for: tab, createIfNeeded: true)
+                                                    },
+                                                    inputStateProvider: { [weak self] tab in
+                                                        self?.unifiedInputStateStore?.state(for: tab.uid) ?? TabInputState()
+                                                    },
+                                                    isPaidAIChatEnabledProvider: { [weak self] in
+                                                        self?.isPaidAIChatEnabledForSwipe ?? false
+                                                    }) { [weak self] tab in
 
             guard tab !== self?.tabManager.currentTabsModel.currentTab else {
                 return
@@ -903,11 +922,22 @@ class MainViewController: UIViewController {
             self?.currentTab?.aiChatContextualSheetCoordinator.dismissSheet()
             self?.newTab()
         } onSwipeStarted: { [weak self] in
-            self?.performCancel()
-            self?.hideKeyboard()
+            self?.performCancel(animated: false)
+            self?.hideKeyboard(animated: false)
             self?.updatePreviewForCurrentTab()
         }
 
+        swipeTabsCoordinator?.auxiliarySwipeViews = [
+            viewCoordinator.unifiedToggleInputContainer,
+            viewCoordinator.aiChatTabChatHeaderContainer,
+        ]
+        swipeTabsCoordinator?.liveSwipeChromeViews = [
+            viewCoordinator.unifiedToggleInputContainer,
+            viewCoordinator.aiChatTabChatHeaderContainer,
+            viewCoordinator.unifiedInputContentContainer,
+            viewCoordinator.navigationBarCollectionView,
+            viewCoordinator.toolbar,
+        ]
         installTabSwipeOverlay()
     }
 
@@ -2409,6 +2439,7 @@ class MainViewController: UIViewController {
         let tab = tabManager.add(url: url, inheritedAttribution: inheritedAttribution)
         tab.inferredOpenerContext = .external
         tab.isVoiceModeRequested = voiceMode
+        tab.isDuckAIDeepLinkSurfaceRequested = url?.isDuckAIFeedbackOpen == true || url?.isDuckAIChatProtectionOpen == true
 
         // Mark tab as external launch if opened from external URL or shortcut
         if fromExternalLink {
@@ -4099,8 +4130,8 @@ extension MainViewController: BrowserChromeDelegate {
         updateUnifiedInputContentVisibility(for: coordinator)
     }
 
-    private func hideKeyboard() {
-        dismissOmniBar()
+    private func hideKeyboard(animated: Bool = true) {
+        dismissOmniBar(animated: animated)
         _ = findInPageView?.resignFirstResponder()
     }
 
@@ -4365,6 +4396,11 @@ extension MainViewController: BrowserChromeDelegate {
         lastChromeVisibilityPercent
     }
 
+    func restoreCurrentBarsVisibilityAfterLayoutRefresh() {
+        applyBarsVisibilityState(lastChromeVisibilityPercent, postChromeVisibilityNotification: false)
+        view.layoutIfNeeded()
+    }
+
     // 1.0 - full size, 0.0 - hidden
     func updateToolbarConstant(_ ratio: CGFloat) {
         var bottomHeight = toolbarHeight
@@ -4435,6 +4471,7 @@ extension MainViewController: BrowserChromeDelegate {
             }
             loadUrlInNewTab(url, inheritedAttribution: nil, fromExternalLink: fromExternalLink)
         case .loadInPlace:
+            currentTab?.isDuckAIDeepLinkSurfaceRequested = url.isDuckAIFeedbackOpen || url.isDuckAIChatProtectionOpen
             loadUrl(url, fromExternalLink: fromExternalLink)
         }
     }
@@ -6054,7 +6091,17 @@ extension MainViewController: TabDelegate {
 
     func capturePreviewForTab(_ tab: TabViewController) {
         // Capture source tab preview now; otherwise its thumbnail stays stale once we switch to the new tab.
-        guard tab.link != nil, let image = tab.preparePreviewSync() else { return }
+        guard tab.link != nil else { return }
+
+        if floatingUIManager.isFloatingUIEnabled {
+            tab.preparePreview { [weak self, weak tab] image in
+                guard let self, let tab, let image else { return }
+                previewsSource.update(preview: image, forTab: tab.tabModel)
+            }
+            return
+        }
+
+        guard let image = tab.preparePreviewSync() else { return }
         previewsSource.update(preview: image, forTab: tab.tabModel)
     }
 
@@ -6137,6 +6184,41 @@ extension MainViewController: TabDelegate {
 
     func tabDidRequestAIChatHistory(tab: TabViewController, source: AIChatHistorySource) {
         openAIChatHistory(source: source)
+    }
+
+    func tabDidRequestAIChatFeedback(tab: TabViewController) {
+        let optionsView = DuckAIFeedbackOptionsView(
+            onSelect: { [weak self, weak tab] sentiment in
+                let positive: Bool
+                switch sentiment {
+                case .positive: positive = true
+                case .critical: positive = false
+                }
+                self?.dismiss(animated: true) {
+                    tab?.openAIChatFeedback(positive: positive)
+                }
+            }
+        )
+        let hostingController = UIHostingController(rootView: optionsView)
+        hostingController.title = UserText.aiChatFeedbackOptionsTitle
+        hostingController.navigationItem.rightBarButtonItem = UIBarButtonItem(
+            image: DesignSystemImages.Glyphs.Size24.close,
+            primaryAction: UIAction { [weak self] _ in self?.dismiss(animated: true) }
+        )
+        let navigationController = UINavigationController(rootViewController: hostingController)
+        navigationController.navigationBar.tintColor = UIColor(designSystemColor: .textPrimary)
+        if let sheet = navigationController.sheetPresentationController {
+            if #available(iOS 16.0, *) {
+                sheet.detents = [.custom(identifier: .init("duckAIFeedbackOptions")) { _ in 230 }]
+            } else {
+                sheet.detents = [.medium()]
+            }
+            sheet.prefersGrabberVisible = true
+            if #unavailable(iOS 26) {
+                sheet.preferredCornerRadius = 24
+            }
+        }
+        present(navigationController, animated: true)
     }
 
     func openAIChatHistory(source: AIChatHistorySource = .browserMenu) {
@@ -6437,6 +6519,11 @@ extension MainViewController: TabSwitcherDelegate {
     }
 
     func tabSwitcher(_ tabSwitcher: TabSwitcherViewController, willCloseTabs tabs: [Tab]) {
+        notifyTabsWillClose(tabs)
+    }
+
+    /// Per-tab close side effects `bulkRemoveTabs` skips: Duck.ai generation instrumentation + (18.4+) web-extension close events.
+    func notifyTabsWillClose(_ tabs: [Tab]) {
         for tab in tabs {
             reportDuckAITabClosedIfNeeded(tab)
         }
@@ -7127,8 +7214,7 @@ extension MainViewController: OnboardingDelegate {
         // enrol new users; enrollIfEligible function additionally excludes returning users (reinstallers).
         searchTokenExperiment.enrollIfEligible()
 
-        appSettings.applyAdBlockingRolloutDuckPlayerDefaultsIfNeeded(rolloutActive: adBlockingAvailability.areAdBlockingDefaultsActive)
-
+        appSettings.applyAdBlockingRolloutDuckPlayerDefaultsIfNeeded(rolloutActive: shouldApplyAdBlockingRolloutDuckPlayerDefault)
 
         // Now that linear onboarding has finished, run the unified-toggle-input
         // setup that was deferred at viewDidLoad.
@@ -7172,7 +7258,6 @@ extension MainViewController: OnboardingDelegate {
     }
 
 }
-
 
 extension MainViewController: OnboardingNavigationDelegate {
     func navigateFromOnboarding(to url: URL) {

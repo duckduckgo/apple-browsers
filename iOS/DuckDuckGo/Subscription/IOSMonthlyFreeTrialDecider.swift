@@ -30,9 +30,9 @@ struct IOSMonthlyFreeTrialDecider: MonthlyFreeTrialDeciding {
     }
 
     func shouldOfferMonthlyFreeTrial() -> Bool {
-        // Product filtering must not enroll users.
         let cohort = featureFlagger.assignedCohort(for: FeatureFlag.monthlyFreeTrialExperiment) as? FeatureFlag.MonthlyFreeTrialExperimentCohort
 
+        // Do not offer free monthly trial for users in the treatment group.
         switch cohort {
         case .treatment:
             return false

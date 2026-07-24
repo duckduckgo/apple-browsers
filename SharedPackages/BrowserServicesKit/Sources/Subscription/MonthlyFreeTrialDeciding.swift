@@ -40,7 +40,16 @@ extension MonthlyFreeTrialDeciding {
         return products.filter { allowedIdentifiers.contains($0.id) }
     }
 
-    /// Filters paired monthly SKUs; unpaired and non-monthly identifiers remain unchanged.
+    /// Filters paired monthly SKUs down to a single variant based on the trial preference.
+    ///
+    /// Two monthly identifiers are a "pair" when they're identical except for the `freetrial`
+    /// component, e.g. `ios.subscription.1month.freetrial.dev` and `ios.subscription.1month.dev`.
+    ///
+    /// For each such pair,
+    /// * it keeps the free-trial SKU when `shouldOfferMonthlyFreeTrial()` is `true`
+    /// * it keeps the 'no-trial' SKU otherwise
+    ///
+    /// Unpaired identifiers (yearly, weekly, …) pass through unchanged.
     func filteringMonthlyFreeTrialPreference(from identifiers: [String]) -> [String] {
         let offerMonthlyFreeTrial = shouldOfferMonthlyFreeTrial()
 

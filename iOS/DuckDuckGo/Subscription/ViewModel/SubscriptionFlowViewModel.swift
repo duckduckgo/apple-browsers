@@ -373,11 +373,11 @@ final class SubscriptionFlowViewModel: ObservableObject {
             self.resetState()
         }
 
-        // Only initial-purchase offer screens participate in the experiment.
         let isInitialPurchaseOfferScreen = flowType.impressionPixel != nil
             && initialURL.forComparison() != subscriptionManager.url(for: .welcome).forComparison()
 
         if webViewModel.url != subscriptionManager.url(for: currentSubscriptionURL).forComparison() {
+            // Only enroll users into experiment for initial purchase offer.
             let urlToLoad = isInitialPurchaseOfferScreen
                 ? MonthlyFreeTrialExperiment.appendingCohortParameter(to: initialURL, resolvedBy: featureFlagger)
                 : initialURL

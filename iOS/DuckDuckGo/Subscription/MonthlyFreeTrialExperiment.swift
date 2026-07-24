@@ -23,11 +23,8 @@ import Foundation
 import PrivacyConfig
 
 enum MonthlyFreeTrialExperiment {
-
-    /// iOS-specific cohort override; Android uses the unsuffixed parameter.
     static let cohortParameterName = "experiment_mobileannualtrials_ios"
 
-    /// Enrolls eligible users and appends the resulting frontend cohort override.
     static func appendingCohortParameter(to url: URL, resolvedBy featureFlagger: FeatureFlagger) -> URL {
         guard let cohort = featureFlagger.resolveCohort(for: FeatureFlag.monthlyFreeTrialExperiment)
             as? FeatureFlag.MonthlyFreeTrialExperimentCohort else {

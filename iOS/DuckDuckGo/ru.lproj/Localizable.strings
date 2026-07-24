@@ -212,7 +212,7 @@
 "action.title.vpn" = "VPN";
 
 /* Description of the Ad Blocking feature in settings */
-"ad.blocking.description" = "Блокирует навязчивые трекеры до их загрузки, устраняя рекламу с отслеживанием";
+"ad.blocking.description" = "Блокирует трекеры, следящие за вашей активностью, еще до их загрузки, фактически устраняя рекламу на основе отслеживания.";
 
 /* Section header for YouTube-specific ad blocking settings */
 "ad.blocking.youtube.section.header" = "Блокировка рекламы на YouTube";
@@ -3199,7 +3199,7 @@
 "omnibar.notification.trackers-blocked" = "%d Trackers";
 
 /* Text displayed on notification appearing in the address bar when YouTube ad blocking is active */
-"omnibar.notification.youtube-ad-block-on" = "Блокировка рекламы на YouTube включена";
+"omnibar.notification.youtube-ad-block-on" = "Блокировка рекламы";
 
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Понятно";
@@ -5317,10 +5317,10 @@
 "windows-waitlist.waitlist-download-screen.try-duckduckgo-for-windows" = "DuckDuckGo для Windows!";
 
 /* Body text of the bottom sheet asking the user to send an anonymous breakage report */
-"youtube.ad.blocking.breakage-report.message" = "Отправьте анонимное сообщение о проблеме в DuckDuckGo. Помогите улучшить блокировку рекламы для всех!";
+"youtube.ad.blocking.breakage-report.message" = "Отправьте анонимные сведения в DuckDuckGo и помогите улучшить блокировку рекламы для всех!";
 
 /* Primary action sending an anonymous YouTube ad-blocking breakage report */
-"youtube.ad.blocking.breakage-report.send" = "Сообщить о проблеме";
+"youtube.ad.blocking.breakage-report.send" = "Отправить анонимный отчет";
 
 /* Title of the bottom sheet asking the user to send an anonymous breakage report after disabling YouTube ad blocking */
 "youtube.ad.blocking.breakage-report.title" = "Блокировка рекламы на YouTube не работает?";

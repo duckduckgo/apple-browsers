@@ -1316,7 +1316,7 @@ public struct UserText {
         return String.localizedStringWithFormat(omnibarNotificationTrackersBlockedFormat, count)
     }
 
-    public static let omnibarNotificationYouTubeAdBlockOn = NSLocalizedString("omnibar.notification.youtube-ad-block-on", value: "YouTube Ad Block On", comment: "Text displayed on notification appearing in the address bar when YouTube ad blocking is active")
+    public static let omnibarNotificationYouTubeAdBlockOn = NSLocalizedString("omnibar.notification.youtube-ad-block-on", value: "Ad Blocking On", comment: "Text displayed on notification appearing in the address bar when YouTube ad blocking is active")
 
     // MARK: Sync
 
@@ -2160,7 +2160,7 @@ public struct UserText {
 
     // YouTube Ad Blocking
     public static let youTubeAdBlockingTitle = NSLocalizedString("youtube.ad.blocking.title", value: "Ad Blocking", comment: "Settings screen title for Ad Blocking")
-    public static let adBlockingDescription = NSLocalizedString("ad.blocking.description", value: "Blocks invasive trackers before they load, effectively eliminating ads that rely on tracking", comment: "Description of the Ad Blocking feature in settings")
+    public static let adBlockingDescription = NSLocalizedString("ad.blocking.description", value: "Blocks invasive trackers before they load, effectively eliminating ads that rely on tracking.", comment: "Description of the Ad Blocking feature in settings")
     public static let adBlockingYouTubeSectionHeader = NSLocalizedString("ad.blocking.youtube.section.header", value: "YouTube Ad Blocking", comment: "Section header for YouTube-specific ad blocking settings")
     public static let youTubeAdBlockingExplanation = NSLocalizedString("youtube.ad.blocking.explanation", value: "DuckDuckGo blocks video ads on YouTube, so you can watch videos without interruption.", comment: "Explanation text for YouTube Ad Blocking feature")
     public static let youTubeAdBlockingToggle = NSLocalizedString("youtube.ad.blocking.toggle", value: "Block ads on YouTube", comment: "Toggle label for enabling/disabling YouTube ad blocking")
@@ -2177,12 +2177,12 @@ public struct UserText {
 
     // YouTube Ad Blocking — breakage report prompt
     public static let youTubeAdBlockingBreakageReportTitle = NSLocalizedString("youtube.ad.blocking.breakage-report.title", value: "YouTube Ad Blocking not working?", comment: "Title of the bottom sheet asking the user to send an anonymous breakage report after disabling YouTube ad blocking")
-    public static let youTubeAdBlockingBreakageReportMessage = NSLocalizedString("youtube.ad.blocking.breakage-report.message", value: "Send an anonymous breakage report to DuckDuckGo. Help make ad blocking better for everyone!", comment: "Body text of the bottom sheet asking the user to send an anonymous breakage report")
-    public static let youTubeAdBlockingBreakageReportSend = NSLocalizedString("youtube.ad.blocking.breakage-report.send", value: "Send Breakage Report", comment: "Primary action sending an anonymous YouTube ad-blocking breakage report")
+    public static let youTubeAdBlockingBreakageReportMessage = NSLocalizedString("youtube.ad.blocking.breakage-report.message", value: "Send an anonymous report to DuckDuckGo and help make ad blocking better for everyone!", comment: "Body text of the bottom sheet asking the user to send an anonymous breakage report")
+    public static let youTubeAdBlockingBreakageReportSend = NSLocalizedString("youtube.ad.blocking.breakage-report.send", value: "Send Anonymous Report", comment: "Primary action sending an anonymous YouTube ad-blocking breakage report")
 
     // YouTube Ad Blocking — feature-unavailable notice
     public static let youTubeAdBlockingUnavailableTitle = NSLocalizedString("youtube.ad.blocking.unavailable.title", value: "YouTube Ad Blocking Unavailable", comment: "Title of the bottom sheet shown when YouTube ad blocking has been remotely disabled")
-    public static let youTubeAdBlockingUnavailableMessage = NSLocalizedString("youtube.ad.blocking.unavailable.message", value: "Ad Blocking has been affected by recent changes to YouTube. We're working to fix these issues and appreciate your understanding", comment: "Body text of the bottom sheet shown when YouTube ad blocking has been remotely disabled")
+    public static let youTubeAdBlockingUnavailableMessage = NSLocalizedString("youtube.ad.blocking.unavailable.message", value: "Ad Blocking has been affected by recent changes to YouTube. We're working to fix these issues and appreciate your understanding.", comment: "Body text of the bottom sheet shown when YouTube ad blocking has been remotely disabled")
     public static let youTubeAdBlockingUnavailableGotIt = NSLocalizedString("youtube.ad.blocking.unavailable.got-it", value: "Got It", comment: "Acknowledgement button on the YouTube ad-blocking unavailable bottom sheet")
 
     public static let youTubeAdBlockingDisabledUntilRelaunch = NSLocalizedString("youtube.ad.blocking.disabled-until-relaunch", value: "Disabled until relaunch", comment: "Settings cell subtitle indicating YouTube ad blocking will re-enable on next app launch")

@@ -51,16 +51,18 @@ defaults:
 jobs:
   chrome-lcp:
     name: Chrome LCP (live network)
-    # Larger Apple Silicon runner. This BILLS (larger runners always do), but
-    # the work is CPU-bound: ~20s of every 44s rep is Perfetto trace parsing,
-    # and a full 22-site run took ~170 min on the free 3-core macos-latest.
-    # Do NOT "upgrade" this to macos-*-large — those are Intel x86_64, which
-    # would make the numbers non-comparable to the arm64 Safari runs and would
-    # not represent any Mac currently sold. Only -xlarge is Apple Silicon.
-    runs-on: macos-26-xlarge
-    # 11 loads/site (1 warm-up + 10 measured); a full 22-site live-network run
-    # reached 21/22 sites at 160 min (Chrome also installs itself and traces
-    # every rep via Perfetto), so give it comfortable headroom.
+    # Free standard hosted runner (Apple Silicon, 3 cores). macos-26-xlarge was
+    # measured and made no difference — ~8.0 min/site on both — because the
+    # per-rep cost is a fixed ~20s inside the trace_processor stop phase, not
+    # something more cores can parallelize. So the larger runner billed without
+    # buying anything. If you revisit this, note macos-*-large is Intel x86_64
+    # and would break comparability with the arm64 Safari runs; only -xlarge is
+    # Apple Silicon.
+    runs-on: macos-latest
+    # 6 loads/site (1 warm-up + 5 measured). At ~8.0 min/site for 11 loads, a
+    # full 22-site run should land near ~100 min. The cap stays well above that
+    # on purpose — headroom costs nothing, and two earlier runs were lost to a
+    # timeout that fired mid-suite and skipped the ClickHouse upload.
     timeout-minutes: 200
 
     steps:

@@ -27,7 +27,7 @@
 set -euo pipefail
 
 # ---- config / args ---------------------------------------------------------
-MEASURED_REPS=10
+MEASURED_REPS=5
 SITES_OVERRIDE=""
 RESULTS_FILE=""
 CROSSBENCH_DIR="${CROSSBENCH_DIR:-$HOME/Developer/crossbench-upstream}"

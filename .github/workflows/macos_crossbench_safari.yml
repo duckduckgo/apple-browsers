@@ -43,6 +43,11 @@ on:
 
 permissions:
   contents: read
+  # actions: read lets the aggregate step read this run's metadata via
+  # `gh api .../actions/runs/{id}`. Not strictly needed while the repo is
+  # public (run metadata is world-readable), but required if it ever goes
+  # private, and it documents the dependency.
+  actions: read
 
 concurrency:
   group: ${{ github.workflow }}

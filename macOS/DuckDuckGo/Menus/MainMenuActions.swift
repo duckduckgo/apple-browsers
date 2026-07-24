@@ -1571,8 +1571,13 @@ extension MainViewController {
     @objc func moveTabToNewWindow(_ sender: Any?) {
         guard let (tab, index) = getActiveTabAndIndex() else { return }
 
-        tabCollectionViewModel.remove(at: index)
-        WindowsManager.openNewWindow(with: tab)
+        // The tab keeps its identity — it moves to a new window, it isn't closed and reopened.
+        // Suppress the close/reopen so the extension keeps it registered (the new window still
+        // reports didOpenWindow, and WebKit re-resolves the tab's window on demand).
+        TabCollectionViewModel.withWebExtensionTabLifecycleEventsSuppressed {
+            tabCollectionViewModel.remove(at: index)
+            WindowsManager.openNewWindow(with: tab)
+        }
     }
 
     @objc func newTabNextToActive(_ sender: Any?) {
@@ -1616,14 +1621,20 @@ extension MainViewController {
         let otherTabs = otherTabCollectionViewModels.flatMap { $0.tabCollection.tabs }
         let otherLocalHistoryOfRemovedTabs = Set(otherTabCollectionViewModels.flatMap { $0.tabCollection.localHistoryOfRemovedTabs })
 
-        WindowsManager.closeWindows(except: excludedWindowControllers.compactMap(\.window))
-
-        tabCollectionViewModel.append(tabs: otherTabs, andSelect: false)
+        // The merged tabs stay alive under the same identity — suppress the append's didOpenTab so
+        // the extension doesn't see them as newly opened.
+        TabCollectionViewModel.withWebExtensionTabLifecycleEventsSuppressed {
+            tabCollectionViewModel.append(tabs: otherTabs, andSelect: false)
+        }
         tabCollectionViewModel.tabCollection.localHistoryOfRemovedTabs += otherLocalHistoryOfRemovedTabs
 
         // Tabs from `otherTabCollectionViewModels` were moved to `tabCollectionViewModel`
         // clear the collection models so they are empty at `deinit` and no deinit checks assert.
         otherTabCollectionViewModels.forEach { $0.clearAfterMerge() }
+
+        // Close the now-empty source windows last. Closing them while they still held the tabs would
+        // let WebKit tear the (still-registered) moved tabs down together with their old window.
+        WindowsManager.closeWindows(except: excludedWindowControllers.compactMap(\.window))
     }
 
     // MARK: - Printing

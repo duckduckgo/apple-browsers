@@ -736,14 +736,19 @@ final class TabCollectionViewModel: NSObject {
         }
 
         let parentTab = movedTab.parentTab
-        guard sourceCollection.moveTab(at: fromIndex.item, to: targetCollection, at: toIndex.item) else {
-            return
+
+        // Moving a tab to another window keeps the same Tab; suppress the destination's didOpenTab so
+        // the extension keeps it registered under the same identity rather than seeing a new tab.
+        Self.withWebExtensionTabLifecycleEventsSuppressed {
+            guard sourceCollection.moveTab(at: fromIndex.item, to: targetCollection, at: toIndex.item) else {
+                return
+            }
+
+            didRemoveTab(movedTab, at: fromIndex, withParent: parentTab)
+
+            otherViewModel.selectWithoutResettingState(at: toIndex)
+            otherViewModel.delegate?.tabCollectionViewModelDidInsert(otherViewModel, at: toIndex, selected: true)
         }
-
-        didRemoveTab(movedTab, at: fromIndex, withParent: parentTab)
-
-        otherViewModel.selectWithoutResettingState(at: toIndex)
-        otherViewModel.delegate?.tabCollectionViewModelDidInsert(otherViewModel, at: toIndex, selected: true)
     }
 
     func removeAllTabs(except exceptionIndex: Int? = nil, forceChange: Bool = false) {
@@ -863,7 +868,7 @@ final class TabCollectionViewModel: NSObject {
 
         // Pinning moves the tab between collections; report it to the web extension as a
         // single `.pinned` property change rather than a close + reopen (see helper below).
-        withWebExtensionTabLifecycleEventsSuppressed {
+        Self.withWebExtensionTabLifecycleEventsSuppressed {
             pinnedTabsManager?.pin(tab)
             removeUnpinnedTab(at: index, published: false)
         }
@@ -877,7 +882,7 @@ final class TabCollectionViewModel: NSObject {
             shouldBlockPinnedTabsManagerUpdates = false
         }
 
-        withWebExtensionTabLifecycleEventsSuppressed {
+        Self.withWebExtensionTabLifecycleEventsSuppressed {
             guard let tab = pinnedTabsManager?.unpinTab(at: index, published: false) else {
                 Logger.tabLazyLoading.error("Unable to unpin a tab")
                 return
@@ -886,11 +891,12 @@ final class TabCollectionViewModel: NSObject {
         }
     }
 
-    /// Runs `body` while the web extension controller ignores tab open/close callbacks, so moving
-    /// a tab between the pinned and unpinned collections is reported to the extension as a single
-    /// `.pinned` property change instead of a spurious close + reopen — which would unregister the
-    /// tab and break its messaging. No-op when web extensions are unavailable.
-    private func withWebExtensionTabLifecycleEventsSuppressed(_ body: () -> Void) {
+    /// Runs `body` while the web extension controller ignores tab open/close callbacks, so a tab that
+    /// merely moves between collections or windows keeps its identity with the extension instead of
+    /// being reported as a spurious close + reopen — which would unregister the tab and break its
+    /// messaging. WebKit re-resolves the tab's current window lazily via `window(for:)`. No-op when
+    /// web extensions are unavailable.
+    static func withWebExtensionTabLifecycleEventsSuppressed(_ body: () -> Void) {
         guard #available(macOS 15.4, *),
               let eventsListener = NSApp.delegateTyped.webExtensionManager?.eventsListener else {
             body()

@@ -60,14 +60,16 @@ defaults:
 jobs:
   safari-lcp:
     name: Safari LCP (live network)
-    # Larger Apple Silicon runner, matching the Chrome workflow so both
-    # browsers are measured on identical hardware. This BILLS (larger runners
-    # always do). Do NOT "upgrade" this to macos-*-large — those are Intel
-    # x86_64, which would break comparability with the arm64 Chrome runs and
-    # would not represent any Mac currently sold. Only -xlarge is Apple Silicon.
-    runs-on: macos-26-xlarge
-    # 11 loads/site (1 warm-up + 10 measured); a full 22-site live-network run
-    # runs ~1.5-2h, so cap above that.
+    # Free standard hosted runner (Apple Silicon, 3 cores), matching the Chrome
+    # workflow so both browsers are measured on identical hardware. The larger
+    # macos-26-xlarge was measured on the Chrome side and made no difference, so
+    # it billed without buying anything. If you revisit this, note macos-*-large
+    # is Intel x86_64 and would break comparability; only -xlarge is Apple
+    # Silicon.
+    runs-on: macos-latest
+    # 6 loads/site (1 warm-up + 5 measured). Safari runs ~4 min/site at 11
+    # loads, so a full 22-site run should land near ~50 min. The cap stays well
+    # above that on purpose — headroom costs nothing.
     timeout-minutes: 160
 
     steps:

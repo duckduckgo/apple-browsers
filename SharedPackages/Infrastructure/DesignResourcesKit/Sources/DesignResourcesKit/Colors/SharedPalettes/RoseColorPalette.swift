@@ -81,9 +81,9 @@ struct RoseColorPalette: SharedColorPaletteDefinition {
     static let controlsFillSecondary = DynamicColor(lightHex: 0xa30075, lightOpacityHex: 0x1e, darkHex: 0xfc9ce6, darkOpacityHex: 0x2d)
     static let controlsFillTertiary = DynamicColor(lightHex: 0xa30075, lightOpacityHex: 0x2d, darkHex: 0xfc9ce6, darkOpacityHex: 0x3d)
     static let controlsRaisedBackdrop = DynamicColor(lightHex: 0x000000, lightOpacityHex: 0x16, darkHex: 0xffffff, darkOpacityHex: 0x1e)
-    static let controlsRaisedFillPrimary = DynamicColor(lightHex: 0xfffafe, darkHex: 0xfffafe, darkOpacityHex: 0x2d)
-    static let controlsRaisedFillSecondary = DynamicColor(lightHex: 0xffffff, darkHex: 0xfffafe, darkOpacityHex: 0x2d)
-    static let controlsRaisedFillTertiary = DynamicColor(lightHex: 0xffffff, darkHex: 0xfffafe, darkOpacityHex: 0x2d)
+    static let controlsRaisedFillPrimary = DynamicColor(lightHex: 0xFFFAFE, darkHex: 0xfffafe, darkOpacityHex: 0x2d)
+    static let controlsRaisedFillSecondary = DynamicColor(lightHex: 0xFFFAFE, darkHex: 0xfffafe, darkOpacityHex: 0x2d)
+    static let controlsRaisedFillTertiary = DynamicColor(lightHex: 0xFFFAFE, darkHex: 0xfffafe, darkOpacityHex: 0x2d)
     static let controlsSubtleBorderPrimary = DynamicColor(lightHex: 0xa30075, lightOpacityHex: 0x1e, darkHex: 0xfc9ce6, darkOpacityHex: 0x1e)
     static let controlsSubtleBorderSecondary = DynamicColor(lightHex: 0xa30075, lightOpacityHex: 0x2d, darkHex: 0xfc9ce6, darkOpacityHex: 0x2d)
     static let controlsSubtleBorderTertiary = DynamicColor(lightHex: 0xa30075, lightOpacityHex: 0x5b, darkHex: 0xfc9ce6, darkOpacityHex: 0x5b)
@@ -141,7 +141,7 @@ struct RoseColorPalette: SharedColorPaletteDefinition {
 
     // MARK: - Not Specialized
 
-    static let alertGreen = DynamicColor(lightColor: .alertGreen, darkColor: .alertGreen)
+    static let alertGreen = DynamicColor(lightColor: RebrandingColor.Green.green40, darkColor: RebrandingColor.Green.green40)
     static let alertYellow = DynamicColor(lightColor: .alertYellow, darkColor: .alertYellow)
     static let shieldPrivacy = DynamicColor(lightColor: RebrandingColor.Lilypad.lilypad70, darkColor: RebrandingColor.Lilypad.lilypad50)
 

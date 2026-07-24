@@ -848,13 +848,7 @@ final class AddressBarViewController: NSViewController {
         guard isBurner, themeManager.isAppRebranded else { return }
 
         let style = BurnerAppearanceStyle()
-
-        switch selectionState {
-        case .inactive, .inactiveWithAIChat:
-            style.disableDarkModeOverride(in: view)
-        default:
-            style.enableDarkModeOverride(in: view)
-        }
+        style.enableDarkModeOverride(in: view)
     }
 
     private func setupAddressBarPlaceHolder() {

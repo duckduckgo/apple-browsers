@@ -229,6 +229,7 @@ extension Pixel {
 
         case tabBarTabSelected
         case tabBarTabClosed
+        case tabBarCloseOtherTabs
         case tabBarNewTab
         case tabBarOverflowDaily
         case tabBarOpenTabCountDaily
@@ -1730,7 +1731,8 @@ extension Pixel {
         case aiChatSettingsMenuSidebarTapped
         case aiChatSettingsMenuAIChatSettingsTapped
         case aiChatSettingsMenuNewChatTabTapped
-        
+        case aiChatSettingsMenuFeedbackTapped
+
         case aiChatTabSwitcherOpened
         case aiChatFireButtonTapped
         case aiChatTabDidTerminate
@@ -2294,6 +2296,7 @@ extension Pixel.Event {
         case .tabBarTabSwitcherOpened: return "m_tab_manager_opened"
         case .tabBarTabSelected: return "m_tab_bar_tab_selected"
         case .tabBarTabClosed: return "m_tab_bar_tab_closed"
+        case .tabBarCloseOtherTabs: return "tab_bar_close_other_tabs"
         case .tabBarNewTab: return "m_tab_bar_new_tab"
         case .tabBarOverflowDaily: return "m_tab_bar_overflow_daily"
         case .tabBarOpenTabCountDaily: return "m_tab_bar_open_tab_count_daily"
@@ -3660,7 +3663,8 @@ extension Pixel.Event {
         case .aiChatSettingsMenuSidebarTapped: return "m_aichat_settings_menu_sidebar_tapped"
         case .aiChatSettingsMenuAIChatSettingsTapped: return "m_aichat_settings_menu_aichat_settings_tapped"
         case .aiChatSettingsMenuNewChatTabTapped: return "m_aichat_settings_menu_new_chat_tab_tapped"
-            
+        case .aiChatSettingsMenuFeedbackTapped: return "m_aichat_settings_menu_feedback_tapped"
+
         case .aiChatTabSwitcherOpened: return "m_aichat_tab_switcher_opened"
         case .aiChatFireButtonTapped: return "m_aichat_fire_button_tapped"
         case .aiChatTabDidTerminate: return "m_aichat_tab_did_terminate"

@@ -130,6 +130,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212843034975366
     case dbpOptOutRetryError96Hours
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216731632905182
+    case dbpDeferredSecureVaultInit
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866711635701
     case crashReportOptInStatusResetting
 
@@ -630,6 +633,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(DBPSubfeature.webViewUserAgent), supportsLocalOverriding: true)
         case .dbpOptOutRetryError96Hours:
             Config(source: .remoteReleasable(DBPSubfeature.optOutRetryError96Hours))
+        case .dbpDeferredSecureVaultInit:
+            Config(source: .remoteReleasable(DBPSubfeature.deferredSecureVaultInit), supportsLocalOverriding: true)
         case .crashReportOptInStatusResetting:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.crashReportOptInStatusResetting), supportsLocalOverriding: false)
         case .syncSeamlessAccountSwitching:

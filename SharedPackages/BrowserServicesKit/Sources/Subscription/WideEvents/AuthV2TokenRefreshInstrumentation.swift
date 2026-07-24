@@ -31,10 +31,14 @@ public final class DefaultAuthV2TokenRefreshInstrumentation: AuthV2TokenRefreshI
 
     private let wideEvent: WideEventManaging
     private let isFeatureEnabled: () -> Bool
+    private let shouldSuppressFailure: () -> Bool
 
-    public init(wideEvent: WideEventManaging, isFeatureEnabled: @escaping () -> Bool) {
+    public init(wideEvent: WideEventManaging,
+                isFeatureEnabled: @escaping () -> Bool,
+                shouldSuppressFailure: @escaping () -> Bool = { false }) {
         self.wideEvent = wideEvent
         self.isFeatureEnabled = isFeatureEnabled
+        self.shouldSuppressFailure = shouldSuppressFailure
     }
 
     public var eventMapping: EventMapping<OAuthClientRefreshEvent> {
@@ -66,14 +70,14 @@ public final class DefaultAuthV2TokenRefreshInstrumentation: AuthV2TokenRefreshI
             if let error {
                 data.errorData = WideEventErrorData(error: error)
             }
-            wideEvent.completeFlow(data, status: .failure, onComplete: { _, _ in })
+            completeFailure(data)
 
         case .notAttempted:
             // No restore ran (no handler, or the platform can't restore), so the recovery latency
             // measured from invalid-token detection would be meaningless - drop it. Keep the
             // original invalid-token error/failing step that the flow already carries.
             data.recoveryDuration = nil
-            wideEvent.completeFlow(data, status: .failure, onComplete: { _, _ in })
+            completeFailure(data)
         }
     }
 
@@ -148,7 +152,15 @@ public final class DefaultAuthV2TokenRefreshInstrumentation: AuthV2TokenRefreshI
         }
 
         wideEvent.updateFlow(data)
-        wideEvent.completeFlow(data, status: .failure, onComplete: { _, _ in })
+        completeFailure(data)
+    }
+
+    private func completeFailure(_ data: AuthV2TokenRefreshWideEventData) {
+        if shouldSuppressFailure() {
+            wideEvent.discardFlow(data)
+        } else {
+            wideEvent.completeFlow(data, status: .failure, onComplete: { _, _ in })
+        }
     }
 
     private func newestPendingRecoveryFlow() -> AuthV2TokenRefreshWideEventData? {

@@ -48,7 +48,7 @@ extension Preferences {
                     HStack {
                         VStack(alignment: .leading) {
                             TextAndImageMenuItemHeader(UserText.aiChatTitle,
-                                                       image: Image(nsImage: DesignSystemImages.Color.Size16.aiChat),
+                                                       image: Image(nsImage: DesignSystemImages.Color.Size16.duckAI),
                                                        bottomPadding: 2)
                             TextMenuItemCaption(UserText.aiChatDescription)
 

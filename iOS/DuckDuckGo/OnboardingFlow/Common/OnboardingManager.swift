@@ -281,6 +281,10 @@ protocol OnboardingStepsProvider: AnyObject {
 
 /// Handles the user's answer on the Download Screen for the `onboardingFlowByDownloadReasonExperiment` experiment.
 protocol OnboardingDownloadReasonHandling: AnyObject {
+    /// The reason the user selected on the Download Screen, or `nil` before they've answered
+    /// (and for flows outside the download-reason experiment). Used to tailor reason-specific content.
+    var currentDownloadReason: OnboardingDownloadReason? { get }
+
     /// Records the user's selected download reason and returns the steps that follow the Download Screen.
     ///
     /// Called by the view model when the user answers the Download Screen. The reason is persisted
@@ -297,6 +301,10 @@ extension OnboardingManager: OnboardingStepsProvider {
 }
 
 extension OnboardingManager: OnboardingDownloadReasonHandling {
+
+    var currentDownloadReason: OnboardingDownloadReason? {
+        tutorialSettings.onboardingDownloadReason
+    }
 
     func selectDownloadReason(_ reason: OnboardingDownloadReason) -> [OnboardingIntroStep] {
         tutorialSettings.onboardingDownloadReason = reason

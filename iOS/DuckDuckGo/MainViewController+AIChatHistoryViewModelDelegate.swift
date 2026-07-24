@@ -35,6 +35,18 @@ extension MainViewController: AIChatHistoryViewModelDelegate {
         }
     }
 
+    func viewModelDidRequestChatProtection() {
+        dismiss(animated: true) { [weak self] in
+            guard let self else { return }
+            if let tab = self.currentTab, tab.isAITab {
+                tab.submitOpenChatProtectionAction()
+            } else {
+                let url = AIChatURLParameters.chatProtectionURL(from: self.aiChatSettings.aiChatURL)
+                self.loadUrlRespectingAIBoundary(url)
+            }
+        }
+    }
+
     func viewModelDidExportChat(filename: String) {
         presentChatDownloadFinishedToast(DownloadActionMessageViewHelper.makeDownloadFinishedMessage(forFilename: filename))
     }

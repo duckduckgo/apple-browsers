@@ -115,6 +115,10 @@ final class OnboardingIntroViewModel: ObservableObject {
     private let onboardingResumeStepStore: any KeyedStoring<OnboardingStoringKeys>
     private let contentProvider: OnboardingIntroContentProviding
 
+    /// The facade for the personalization flow.  Exposed so the reason-tailored step views can be injected with the
+    /// slice they need.
+    let personalizationManager: OnboardingPersonalizationManaging
+
     private var pendingOnboardingIntroActions: (() -> Void)?
 
     convenience init(pixelReporter: LinearOnboardingPixelReporting,
@@ -122,6 +126,7 @@ final class OnboardingIntroViewModel: ObservableObject {
                      daxDialogsManager: ContextualDaxDialogDisabling,
                      restorePromptHandler: OnboardingRestorePromptHandling,
                      onboardingManager: OnboardingManaging,
+                     personalizationManager: OnboardingPersonalizationManaging,
                      onboardingResumeStepStore: (any KeyedStoring<OnboardingStoringKeys>)? = nil) {
         let defaultBrowserInfoStore = DefaultBrowserInfoStore()
         let defaultBrowserEventMapper = DefaultBrowserPromptManagerDebugPixelHandler()
@@ -147,6 +152,7 @@ final class OnboardingIntroViewModel: ObservableObject {
                 featureFlagger: featureFlagger,
                 downloadReasonProvider: { onboardingManager.currentDownloadReason }
             ),
+            personalizationManager: personalizationManager,
             onboardingResumeStepStore: onboardingResumeStepStore
         )
     }
@@ -165,6 +171,7 @@ final class OnboardingIntroViewModel: ObservableObject {
         restorePromptHandler: OnboardingRestorePromptHandling,
         tutorialSettings: TutorialSettings,
         contentProvider: OnboardingIntroContentProviding,
+        personalizationManager: OnboardingPersonalizationManaging,
         onboardingResumeStepStore: (any KeyedStoring<OnboardingStoringKeys>)? = nil
     ) {
         self.defaultBrowserManager = defaultBrowserManager
@@ -179,6 +186,7 @@ final class OnboardingIntroViewModel: ObservableObject {
         self.restorePromptHandler = restorePromptHandler
         self.tutorialSettings = tutorialSettings
         self.contentProvider = contentProvider
+        self.personalizationManager = personalizationManager
         self.onboardingResumeStepStore = if let onboardingResumeStepStore { onboardingResumeStepStore } else { UserDefaults.app.keyedStoring() }
 
         introSteps = onboardingManager.onboardingSteps
@@ -410,7 +418,11 @@ private extension OnboardingIntroViewModel {
                 )
             // NA Experiment: reason-tailored steps. View bodies/content are built in the UI task.
             case .searchPrivacySettingsSelection:
-                return .onboarding(.init(type: .searchPrivacySettingsDialog, step: stepInfo()))
+                return .onboarding(
+                    .init(
+                        type: .searchPrivacySettingsDialog(content: contentProvider.serpPersonalizationContent),
+                        step: stepInfo())
+                )
             case .aiSearchSettingsSelection:
                 return .onboarding(.init(type: .aiSearchSettingsDialog, step: stepInfo()))
             case .aiModelSelection:

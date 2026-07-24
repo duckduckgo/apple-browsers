@@ -18,6 +18,7 @@
 //
 
 import Core
+import Onboarding
 import Persistence
 import PersistenceTestingUtils
 import PrivacyConfig
@@ -1492,6 +1493,7 @@ extension OnboardingIntroViewModelTests {
         onboardingSearchExperienceProvider: OnboardingSearchExperienceProvider = MockOnboardingSearchExperienceProvider(),
         restorePromptHandler: OnboardingRestorePromptHandling = MockRestorePromptHandler(),
         featureFlagger: FeatureFlagger = MockFeatureFlagger(),
+        personalizationManager: OnboardingPersonalizationManaging = MockOnboardingPersonalizationManager(),
         resumeStepStore: MockKeyValueStore? = nil
     ) -> OnboardingIntroViewModel {
         OnboardingIntroViewModel(
@@ -1508,6 +1510,7 @@ extension OnboardingIntroViewModelTests {
             restorePromptHandler: restorePromptHandler,
             tutorialSettings: tutorialSettingsMock,
             contentProvider: contentProviderMock,
+            personalizationManager: personalizationManager,
             onboardingResumeStepStore: (resumeStepStore ?? MockKeyValueStore()).keyedStoring()
         )
     }

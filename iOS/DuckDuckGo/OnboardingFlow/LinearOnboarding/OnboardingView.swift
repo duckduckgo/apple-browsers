@@ -459,8 +459,8 @@ extension OnboardingView {
                 introView(content: content, dialogType: dialogType)
             case let .downloadReasonDialog(content):
                 downloadReasonView(content: content)
-            case .searchPrivacySettingsDialog:
-                placeholderView(title: "Search Privacy Settings", action: model.searchPrivacySettingsContinueAction)
+            case let .searchPrivacySettingsDialog(content):
+                serpSettingsPersonalizationView(content: content)
             case .aiSearchSettingsDialog:
                 placeholderView(title: "AI Search Settings", action: model.aiSearchSettingsContinueAction)
             case .aiModelDialog:
@@ -495,6 +495,18 @@ extension OnboardingView {
             ) { option in
                 animateContentTransition {
                     model.selectDownloadReasonAction(option.reason)
+                }
+            }
+        }
+
+        private func serpSettingsPersonalizationView(content: OnboardingSERPPersonalizationContent) -> some View {
+            SERPPersonalization(
+                content: content,
+                searchPersonalization: model.personalizationManager,
+                isVisible: $showBubbleContent
+            ) {
+                animateContentTransition {
+                    model.searchPrivacySettingsContinueAction()
                 }
             }
         }

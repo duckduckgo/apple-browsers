@@ -31,11 +31,19 @@ import PrivacyConfig
 @MainActor
 final class FireViewController: NSViewController {
 
-    enum Const {
-        static var animationName: String {
-            DesignSystemRebrand.isAppRebranded()
-                ? "02_Fire_rebranded"
-                : "01_Fire_really_small"
+    struct Settings {
+        let animationName: String
+        let animationSpeed: CGFloat
+        let animationBeginning: CGFloat
+        let animationEnd: CGFloat
+        let renderingEngine: Lottie.RenderingEngineOption
+
+        static var current: Settings {
+            guard DesignSystemRebrand.isAppRebranded() else {
+                return Settings(animationName: "01_Fire_really_small", animationSpeed: 1.2, animationBeginning: 0.1, animationEnd: 0.63, renderingEngine: .mainThread)
+            }
+
+            return Settings(animationName: "02_Fire_rebranded", animationSpeed: 1, animationBeginning: 0, animationEnd: 1, renderingEngine: .coreAnimation)
         }
     }
 
@@ -301,7 +309,8 @@ final class FireViewController: NSViewController {
         NSLayoutConstraint.activate(constraints)
         fireAnimationView = animationView
 
-        animationView.animationSpeed = fireAnimationSpeed
+        let settings = Settings.current
+        animationView.animationSpeed = settings.animationSpeed
 
         fakeFireButton.wantsLayer = true
         fakeFireButton.layer?.backgroundColor = NSColor.buttonMouseDown.cgColor
@@ -361,22 +370,6 @@ final class FireViewController: NSViewController {
         fakeFireButton.isHidden = true
     }
 
-    private var fireAnimationSpeed: CGFloat {
-        DesignSystemRebrand.isAppRebranded()
-            ? 1
-            : 1.2
-    }
-    private var fireAnimationBeginning: CGFloat {
-        DesignSystemRebrand.isAppRebranded()
-            ? 0
-            : 0.1
-    }
-    private var fireAnimationEnd: CGFloat {
-        DesignSystemRebrand.isAppRebranded()
-            ? 1
-            : 0.63
-    }
-
     @MainActor
     func animateFireWhenClosing() async {
         closeAllChildWindows()
@@ -396,7 +389,9 @@ final class FireViewController: NSViewController {
                 fireViewModel.setAnimationPlaying(false, isFireWindow: true)
                 continuation.resume()
             }
-            fireAnimationView?.play(fromProgress: fireAnimationBeginning, toProgress: fireAnimationEnd) { [weak self] _ in
+
+            let settings = Settings.current
+            fireAnimationView?.play(fromProgress: settings.animationBeginning, toProgress: settings.animationEnd) { [weak self] _ in
                 defer { completion() }
                 guard let self = self else { return }
 
@@ -429,7 +424,8 @@ final class FireViewController: NSViewController {
             fireAnimationView?.isHidden = false
             fireAnimationView?.currentProgress = 0
 
-            fireAnimationView?.play(fromProgress: fireAnimationBeginning, toProgress: fireAnimationEnd) { [weak self, fireViewModel] _ in
+            let settings = Settings.current
+            fireAnimationView?.play(fromProgress: settings.animationBeginning, toProgress: settings.animationEnd) { [weak self, fireViewModel] _ in
                 Logger.general.debug("Fire animation did finish")
                 fireViewModel.setAnimationPlaying(false, isFireWindow: false)
 
@@ -477,7 +473,8 @@ final class FireViewController: NSViewController {
  */
 private actor FireAnimationViewLoader {
 
-    static let shared: FireAnimationViewLoader = .init(animationName: FireViewController.Const.animationName)
+    static let settings = FireViewController.Settings.current
+    static let shared: FireAnimationViewLoader = .init(animationName: settings.animationName)
 
     @MainActor
     func createAnimationView() async -> LottieAnimationView? {
@@ -486,7 +483,7 @@ private actor FireAnimationViewLoader {
         }
         // The global default is .mainThread (see AppDelegate), but CPU-rasterizing this full-window 3840x2160 animation can't sustain 30fps.
         // Our fire animation needs the GPU-backed Core Animation engine.
-        let view = LottieAnimationView(animation: animation, configuration: LottieConfiguration(renderingEngine: .coreAnimation))
+        let view = LottieAnimationView(animation: animation, configuration: LottieConfiguration(renderingEngine: Self.settings.renderingEngine))
         view.identifier = .init(rawValue: animationName)
         return view
     }

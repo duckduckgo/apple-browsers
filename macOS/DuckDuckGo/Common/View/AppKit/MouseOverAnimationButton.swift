@@ -80,14 +80,11 @@ final class MouseOverAnimationButton: AddressBarButton {
         }
     }
 
-    /// When set, the animation view is laid out at this fixed size, centered on the button,
-    /// instead of being pinned to the button's edges.
-    var animationViewSize: CGSize? {
+    /// Allows us to override the Animation View Size, for precise layout adjustments
+    var overrideAnimationViewSize: CGSize? {
         didSet {
-            guard oldValue != animationViewSize else { return }
-            currentAnimationView?.removeFromSuperview()
-            currentAnimationView = nil
-            updateAnimationView()
+            guard oldValue != overrideAnimationViewSize else { return }
+            resetAnimationView()
         }
     }
 
@@ -150,22 +147,29 @@ final class MouseOverAnimationButton: AddressBarButton {
         newAnimationView.translatesAutoresizingMaskIntoConstraints = false
         addSubview(newAnimationView)
 
-        if let animationViewSize {
+        if let overrideAnimationViewSize {
             NSLayoutConstraint.activate([
                 newAnimationView.centerXAnchor.constraint(equalTo: centerXAnchor),
                 newAnimationView.centerYAnchor.constraint(equalTo: centerYAnchor),
-                newAnimationView.widthAnchor.constraint(equalToConstant: animationViewSize.width),
-                newAnimationView.heightAnchor.constraint(equalToConstant: animationViewSize.height)
+                newAnimationView.widthAnchor.constraint(equalToConstant: overrideAnimationViewSize.width),
+                newAnimationView.heightAnchor.constraint(equalToConstant: overrideAnimationViewSize.height)
             ])
-        } else {
-            // Inset and offset to align hover animation with static icon
-            NSLayoutConstraint.activate([
-                newAnimationView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 0.5),
-                newAnimationView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -1),
-                newAnimationView.topAnchor.constraint(equalTo: topAnchor, constant: 0.5),
-                newAnimationView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -1)
-            ])
+
+            return
         }
+
+        NSLayoutConstraint.activate([
+            newAnimationView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 0.5),
+            newAnimationView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -1),
+            newAnimationView.topAnchor.constraint(equalTo: topAnchor, constant: 0.5),
+            newAnimationView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -1)
+        ])
+    }
+
+    private func resetAnimationView() {
+        currentAnimationView?.removeFromSuperview()
+        currentAnimationView = nil
+        updateAnimationView()
     }
 
     // MARK: - Animating

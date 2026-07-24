@@ -52,7 +52,7 @@ extension PromptBarShortcut {
 
     /// A global shortcut needs ⌘, ⌥ or ⌃ — bare keys or shift-only combos would swallow typing.
     var hasRequiredModifiers: Bool {
-        !modifierFlags.intersection([.command, .option, .control]).isEmpty
+        !modifierFlags.isDisjoint(with: [.command, .option, .control])
     }
 
     /// Name of the system feature this combo is reserved for, or nil if it's free to use.

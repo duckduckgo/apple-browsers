@@ -229,7 +229,11 @@ public extension DesignSystemImages {
                     ? .init(resource: .shieldColor16)
                     : .init(resource: .shieldColor16Legacy)
             }
-            public static var shieldCheck: DesignSystemImage { .init(resource: .shieldCheckColor16) }
+            public static var shieldCheck: DesignSystemImage {
+                AppRebrand.isAppRebranded()
+                    ? .init(resource: .shieldCheckColor16)
+                    : .init(resource: .shieldCheckColor16Legacy)
+            }
             public static var shieldNeutral: DesignSystemImage {
                 AppRebrand.isAppRebranded()
                     ? .init(resource: .shieldNeutralColor16)

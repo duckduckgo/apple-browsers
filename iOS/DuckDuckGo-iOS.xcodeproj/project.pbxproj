@@ -18460,8 +18460,8 @@
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/scinfu/SwiftSoup";
 			requirement = {
-				kind = revision;
-				revision = 83336847e47b2f499330c15426ad2fb180e72d9b;
+				kind = exactVersion;
+				version = 2.13.6;
 			};
 		};
 		F1D43AF82B99C1D300BAB743 /* XCRemoteSwiftPackageReference "BareBonesBrowser" */ = {

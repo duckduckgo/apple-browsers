@@ -466,6 +466,7 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// Gates the macOS Prompt Bar: a system-wide Duck.ai entry point opened via a global
     /// keyboard shortcut or a menu bar icon, plus its rows on the AI Features settings screen.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216850216210288?focus=true
     case macosPromptBar
 
 }

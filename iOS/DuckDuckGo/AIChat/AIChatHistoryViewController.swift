@@ -642,24 +642,8 @@ extension AIChatHistoryViewController: UITableViewDelegate {
         let wasPinned = viewModel.isPinned(chatId: chatId)
 
         let action = UIContextualAction(style: .normal, title: nil) { [weak self] _, _, completion in
-            guard let self, let move = self.viewModel.togglePin(chatId: chatId) else {
-                completion(false); return
-            }
-            self.isApplyingLocalUpdate = true
-            // Refresh the icon while the cell is still at its source position — `moveRow`
-            // keeps the same instance, so it'd otherwise carry the pre-toggle icon.
-            if let cell = tableView.cellForRow(at: move.source) as? AIChatHistoryCell {
-                cell.iconImageView.image = self.viewModel.icon(forRowAt: move.destination)
-            }
-            tableView.performBatchUpdates({
-                tableView.moveRow(at: move.source, to: move.destination)
-            }, completion: { [weak self] _ in
-                self?.isApplyingLocalUpdate = false
-                // Catch up any reactive emission that fired (and got skipped) while the
-                // flag was set — e.g. an FE-driven add/delete that landed mid-animation.
-                self?.refreshContent()
-                completion(true)
-            })
+            self?.performPinToggle(chatId: chatId)
+            completion(true)
         }
         action.image = wasPinned ? DesignSystemImages.Glyphs.Size24.unpin : DesignSystemImages.Glyphs.Size24.pin
         action.accessibilityLabel = wasPinned
@@ -687,6 +671,60 @@ extension AIChatHistoryViewController: UITableViewDelegate {
         download.accessibilityLabel = UserText.aiChatHistoryDownloadSwipeAccessibilityLabel
 
         return UISwipeActionsConfiguration(actions: [delete, download])
+    }
+
+    func tableView(_ tableView: UITableView,
+                   contextMenuConfigurationForRowAt indexPath: IndexPath,
+                   point: CGPoint) -> UIContextMenuConfiguration? {
+        // Long-press actions target a single chat; suppress while multi-selecting.
+        guard !isEditingChats, let chatId = viewModel.chatId(forRowAt: indexPath) else { return nil }
+        let isPinned = viewModel.isPinned(chatId: chatId)
+
+        return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { [weak self] _ in
+            guard self != nil else { return nil }
+            let select = UIAction(title: UserText.aiChatHistoryRowMenuSelect,
+                                  image: DesignSystemImages.Glyphs.Size24.checkCircle) { [weak self] _ in
+                self?.enterSelectionMode()
+            }
+            let pin = UIAction(title: isPinned ? UserText.aiChatHistoryRowMenuUnpin : UserText.aiChatHistoryRowMenuPin,
+                               image: isPinned ? DesignSystemImages.Glyphs.Size24.unpin : DesignSystemImages.Glyphs.Size24.pin) { [weak self] _ in
+                self?.performPinToggle(chatId: chatId)
+            }
+            let download = UIAction(title: UserText.aiChatHistoryRowMenuDownload,
+                                    image: DesignSystemImages.Glyphs.Size24.downloads) { [weak self] _ in
+                self?.viewModel.downloadChat(chatId: chatId)
+            }
+            let delete = UIAction(title: UserText.aiChatHistoryRowMenuDelete,
+                                  image: DesignSystemImages.Glyphs.Size24.fire,
+                                  attributes: .destructive) { [weak self] _ in
+                self?.viewModel.deleteChat(chatId: chatId)
+            }
+            // Inline sections render separators between them: Select | Pin, Download | Delete.
+            return UIMenu(title: "", children: [
+                UIMenu(title: "", options: .displayInline, children: [select]),
+                UIMenu(title: "", options: .displayInline, children: [pin, download]),
+                UIMenu(title: "", options: .displayInline, children: [delete])
+            ])
+        }
+    }
+
+    /// Toggles pin state and animates the row between the Pinned and Recent sections.
+    /// Shared by the leading-swipe action and the long-press row menu.
+    private func performPinToggle(chatId: String) {
+        guard let move = viewModel.togglePin(chatId: chatId) else { return }
+        isApplyingLocalUpdate = true
+        // Refresh the icon while the cell is still at its source position — `moveRow` keeps the
+        // same instance, so it'd otherwise carry the pre-toggle icon.
+        if let cell = tableView.cellForRow(at: move.source) as? AIChatHistoryCell {
+            cell.iconImageView.image = viewModel.icon(forRowAt: move.destination)
+        }
+        tableView.performBatchUpdates({
+            self.tableView.moveRow(at: move.source, to: move.destination)
+        }, completion: { [weak self] _ in
+            self?.isApplyingLocalUpdate = false
+            // Catch up any reactive emission that fired (and got skipped) while the flag was set.
+            self?.refreshContent()
+        })
     }
 }
 

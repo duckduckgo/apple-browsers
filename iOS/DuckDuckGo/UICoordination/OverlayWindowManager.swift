@@ -163,6 +163,7 @@ final class OverlayWindowManager: OverlayWindowManaging {
         }
         newWindow.windowLevel = .alert
         newWindow.rootViewController = viewController
+        newWindow.isHidden = true
         return newWindow
     }
 
@@ -175,7 +176,9 @@ final class OverlayWindowManager: OverlayWindowManaging {
 
     private func obtainOverlayWindow() -> UIWindow? {
         UIApplication.shared.foregroundSceneWindows.first {
-            !$0.isHidden && $0.rootViewController is BlankSnapshotViewController
+            $0 !== preparedOverlayWindow
+                && !$0.isHidden
+                && $0.rootViewController is BlankSnapshotViewController
         }
     }
 

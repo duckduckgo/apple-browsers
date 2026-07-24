@@ -124,6 +124,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private(set) var autofillPixelReporter: AutofillPixelReporter?
     private var passwordsStatusBarMenu: PasswordsStatusBarMenu?
     private var passwordsMenuBarCancellable: AnyCancellable?
+    private var promptBarMenuBarController: PromptBarMenuBarController?
+    private var promptBarMenuBarCancellable: AnyCancellable?
 
     private(set) var syncDataProviders: SyncDataProvidersSource?
     private(set) var syncService: DDGSyncing?
@@ -1495,6 +1497,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         setUpAutofillPixelReporter()
         setUpPasswordsMenuBarVisibility()
+        setUpPromptBarMenuBarVisibility()
 
         remoteMessagingClient?.startRefreshingRemoteMessages()
 
@@ -2420,6 +2423,33 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                         self?.passwordsStatusBarMenu?.show()
                     } else {
                         self?.passwordsStatusBarMenu?.hide()
+                    }
+                }
+            }
+    }
+
+    @MainActor
+    private func setUpPromptBarMenuBarVisibility() {
+        guard featureFlagger.isFeatureOn(.macosPromptBar) else {
+            promptBarMenuBarController?.hide()
+            promptBarMenuBarController = nil
+            promptBarMenuBarCancellable = nil
+            return
+        }
+
+        if promptBarMenuBarController == nil {
+            promptBarMenuBarController = PromptBarMenuBarController()
+        }
+
+        // `@Published` replays the current value on subscription, so this both
+        // applies the initial visibility and reacts to later toggle changes.
+        promptBarMenuBarCancellable = promptBarPreferences.$isMenuBarIconVisible
+            .sink { [weak self] isVisible in
+                Task { @MainActor in
+                    if isVisible {
+                        self?.promptBarMenuBarController?.show()
+                    } else {
+                        self?.promptBarMenuBarController?.hide()
                     }
                 }
             }

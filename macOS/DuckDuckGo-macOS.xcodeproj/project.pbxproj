@@ -4654,6 +4654,10 @@
 		FB07BAD00000000000000025 /* PromptBarPreferencesPersistorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD00000000000000007 /* PromptBarPreferencesPersistorTests.swift */; };
 		FB07BAD00000000000000023 /* PromptBarPreferencesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD00000000000000008 /* PromptBarPreferencesTests.swift */; };
 		FB07BAD00000000000000026 /* PromptBarPreferencesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD00000000000000008 /* PromptBarPreferencesTests.swift */; };
+		FB07BAD00000000000000027 /* PromptBarMenuBarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD00000000000000009 /* PromptBarMenuBarController.swift */; };
+		FB07BAD00000000000000028 /* PromptBarMenuBarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD00000000000000009 /* PromptBarMenuBarController.swift */; };
+		FB07BAD00000000000000029 /* PromptBarMenuBarControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD00000000000000010 /* PromptBarMenuBarControllerTests.swift */; };
+		FB07BAD00000000000000034 /* PromptBarMenuBarControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD00000000000000010 /* PromptBarMenuBarControllerTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -7130,6 +7134,8 @@
 		FB07BAD00000000000000006 /* PromptBarShortcutTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptBarShortcutTests.swift; sourceTree = "<group>"; };
 		FB07BAD00000000000000007 /* PromptBarPreferencesPersistorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptBarPreferencesPersistorTests.swift; sourceTree = "<group>"; };
 		FB07BAD00000000000000008 /* PromptBarPreferencesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptBarPreferencesTests.swift; sourceTree = "<group>"; };
+		FB07BAD00000000000000009 /* PromptBarMenuBarController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptBarMenuBarController.swift; sourceTree = "<group>"; };
+		FB07BAD00000000000000010 /* PromptBarMenuBarControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptBarMenuBarControllerTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -13349,6 +13355,7 @@
 			children = (
 				FB07BAD00000000000000005 /* PromptBarPreferencesView.swift */,
 				FB07BAD00000000000000004 /* PromptBarShortcutRecorderView.swift */,
+				FB07BAD00000000000000009 /* PromptBarMenuBarController.swift */,
 			);
 			path = View;
 			sourceTree = "<group>";
@@ -13359,6 +13366,7 @@
 				FB07BAD00000000000000007 /* PromptBarPreferencesPersistorTests.swift */,
 				FB07BAD00000000000000008 /* PromptBarPreferencesTests.swift */,
 				FB07BAD00000000000000006 /* PromptBarShortcutTests.swift */,
+				FB07BAD00000000000000010 /* PromptBarMenuBarControllerTests.swift */,
 			);
 			path = PromptBar;
 			sourceTree = "<group>";
@@ -15606,6 +15614,7 @@
 				FB07BAD00000000000000018 /* PromptBarPreferences.swift in Sources */,
 				FB07BAD00000000000000019 /* PromptBarShortcutRecorderView.swift in Sources */,
 				FB07BAD00000000000000020 /* PromptBarPreferencesView.swift in Sources */,
+				FB07BAD00000000000000028 /* PromptBarMenuBarController.swift in Sources */,
 				84537A032C998C28008723BC /* FireWindowSession.swift in Sources */,
 				BB470EBC2C5A66D6002EE91D /* BookmarkManagementDetailViewModel.swift in Sources */,
 				3706FB65293F65D500E42796 /* PrivacyDashboardWebView.swift in Sources */,
@@ -16892,6 +16901,7 @@
 				FB07BAD00000000000000024 /* PromptBarShortcutTests.swift in Sources */,
 				FB07BAD00000000000000025 /* PromptBarPreferencesPersistorTests.swift in Sources */,
 				FB07BAD00000000000000026 /* PromptBarPreferencesTests.swift in Sources */,
+				FB07BAD00000000000000034 /* PromptBarMenuBarControllerTests.swift in Sources */,
 				3706FE7A293F661700E42796 /* FireDialogViewModelTests.swift in Sources */,
 				7B09CBAA2BA4BE8200CF245B /* NetworkProtectionPixelEventTests.swift in Sources */,
 				3706FE7B293F661700E42796 /* HistoryStoringMock.swift in Sources */,
@@ -17762,6 +17772,7 @@
 				FB07BAD00000000000000013 /* PromptBarPreferences.swift in Sources */,
 				FB07BAD00000000000000014 /* PromptBarShortcutRecorderView.swift in Sources */,
 				FB07BAD00000000000000015 /* PromptBarPreferencesView.swift in Sources */,
+				FB07BAD00000000000000027 /* PromptBarMenuBarController.swift in Sources */,
 				4B92928C26670D1700AD2C21 /* OutlineSeparatorViewCell.swift in Sources */,
 				8426108D2C9811F30070D5F9 /* KeyEquivalentView.swift in Sources */,
 				CC442CAD2F6C45B8002E8175 /* DockPreferencesModel.swift in Sources */,
@@ -19245,6 +19256,7 @@
 				FB07BAD00000000000000021 /* PromptBarShortcutTests.swift in Sources */,
 				FB07BAD00000000000000022 /* PromptBarPreferencesPersistorTests.swift in Sources */,
 				FB07BAD00000000000000023 /* PromptBarPreferencesTests.swift in Sources */,
+				FB07BAD00000000000000029 /* PromptBarMenuBarControllerTests.swift in Sources */,
 				EEF53E182950CED5002D78F4 /* JSAlertViewModelTests.swift in Sources */,
 				376C4DB928A1A48A00CC0F5B /* FireDialogViewModelTests.swift in Sources */,
 				AAEC74B62642CC6A00C2EFBC /* HistoryStoringMock.swift in Sources */,

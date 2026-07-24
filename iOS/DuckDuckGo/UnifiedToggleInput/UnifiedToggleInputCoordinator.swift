@@ -267,6 +267,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     var cachedOmnibarPlaceholderWindowX: CGFloat?
     private var keyboardMonitor: UTIKeyboardMonitor!
     private var pixelReporter: UTIPixelReporter!
+    private var wideEventReporter: UTIWideEventReporter!
     private var invalidAttachmentRecoveryTasks: [UUID: Task<Void, Never>] = [:]
     private var isContentOverlaySuppressed = false
     private var pendingGatedModelId: String?
@@ -352,7 +353,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         attachmentsChangeSubject.eraseToAnyPublisher()
     }
 
-    private let duckAIWideEventInstrumentation: DuckAIWideEventInstrumentation?
     private let duckAIWideEventFlowScope: DuckAIWideEventFlowScope?
 
     // MARK: - Initialization
@@ -408,7 +408,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             ?? duckAiNativeStorageHandler.map { DuckAiLastUsedModelProvider(storage: $0, pixelFiring: duckAiNativeStoragePixelFiring) }
         self.lastUsedReasoningModeProvider = lastUsedReasoningModeProvider
             ?? duckAiNativeStorageHandler.map { DuckAiLastUsedReasoningModeProvider(storage: $0, pixelFiring: duckAiNativeStoragePixelFiring) }
-        self.duckAIWideEventInstrumentation = duckAIWideEventInstrumentation
         self.duckAIWideEventFlowScope = duckAIWideEventFlowScope
         viewController = UnifiedToggleInputViewController(isToggleEnabled: isToggleEnabled, isFireTab: isFireTab)
         contentViewController = UnifiedInputContentContainerViewController(
@@ -447,6 +446,21 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                 defaultOmnibarMode: self.aiChatSettings.defaultOmnibarMode
             )
         })
+        wideEventReporter = UTIWideEventReporter(
+            instrumentation: duckAIWideEventInstrumentation,
+            flowScope: { [weak self] in self?.currentDuckAIWideEventFlowScope },
+            submissionInputs: { [weak self] in
+                guard let self else { return nil }
+                return UTIWideEventSubmissionInputs(
+                    modelId: self.persistedModelId,
+                    userTier: self.subscriptionState.userTier,
+                    persistedReasoningEffort: self.persistedReasoningEffort,
+                    fireMode: self.viewController.handler.isFireTab,
+                    hasSubmittedPrompt: self.hasSubmittedPrompt,
+                    entryPoint: self.duckAIEntryPoint
+                )
+            }
+        )
         attachmentPresenter.pixelSurfaceProvider = { [weak self] in
             self?.pixelSurface ?? .addressBar
         }
@@ -487,7 +501,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         subscribeToClearButtonTap()
         subscribeToAttachmentUsageChanges()
         subscribeToSubscriptionChanges()
-        subscribeToDuckAIWideEventSignals()
+        wideEventReporter.subscribe(
+            aiChatStatus: $aiChatStatus.eraseToAnyPublisher(),
+            stopGeneratingTapped: viewController.handler.stopGeneratingButtonTappedPublisher
+        )
         viewController.isToolsButtonHidden = true
 
         if let cachedLabel = modelStore.displayShortName {
@@ -623,7 +640,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             let snapshot = snapshotCurrentState()
             Logger.unifiedInputState.debug("activateForTab [\(uid)]: flushing previous tab [\(previous)] — \(snapshot.summary)")
             stateStore.update(snapshot, for: previous)
-            duckAIWideEventInstrumentation?.tabSwitchedAwayDuringGeneration(tabID: previous)
+            wideEventReporter.recordTabSwitchedAwayDuringGeneration(tabID: previous)
         } else {
             Logger.unifiedInputState.debug("activateForTab [\(uid)]: first activation, no flush")
         }
@@ -809,7 +826,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         // Fire the wide-event cancellation here too — `activateForTab` skips it once
         // currentTabUID is nil, so Duck.ai → non-AI transitions would otherwise orphan.
         if let previousTabUID = currentTabUID {
-            duckAIWideEventInstrumentation?.tabSwitchedAwayDuringGeneration(tabID: previousTabUID)
+            wideEventReporter.recordTabSwitchedAwayDuringGeneration(tabID: previousTabUID)
         }
         currentTabUID = nil
         resetToolsSelection()
@@ -2469,16 +2486,9 @@ extension UnifiedToggleInputCoordinator {
                                        hasPageContext: Bool,
                                        toolsSelected: Bool,
                                        attachmentsSelected: Bool) {
-        guard let scope = currentDuckAIWideEventFlowScope else { return }
-        duckAIWideEventInstrumentation?.submissionStarted(
-            scope: scope,
-            modelId: persistedModelId,
-            userTier: subscriptionState.userTier,
+        wideEventReporter.recordSubmissionStarted(
             reasoningEffort: reasoningEffort,
-            entryPoint: duckAIEntryPoint,
             inputMode: inputMode,
-            fireMode: viewController.handler.isFireTab,
-            isFirstPrompt: !hasSubmittedPrompt,
             frontendDeliveryPath: frontendDeliveryPath,
             hasPageContext: hasPageContext,
             toolsSelected: toolsSelected,
@@ -2487,54 +2497,25 @@ extension UnifiedToggleInputCoordinator {
     }
 
     func recordDuckAIPromptDelivered(wasQueued: Bool?, didSendBridgeMessage: Bool?) {
-        guard let scope = currentDuckAIWideEventFlowScope else { return }
-        duckAIWideEventInstrumentation?.promptDeliveryUpdated(scope: scope, wasQueued: wasQueued, didSendBridgeMessage: didSendBridgeMessage)
+        wideEventReporter.recordPromptDelivered(wasQueued: wasQueued, didSendBridgeMessage: didSendBridgeMessage)
     }
 
     func recordDuckAIPromptInterpretedAsURL() {
-        guard let scope = currentDuckAIWideEventFlowScope else { return }
-        duckAIWideEventInstrumentation?.promptInterpretedAsURL(scope: scope)
+        wideEventReporter.recordPromptInterpretedAsURL()
     }
 
     /// Called by the contextual sheet's native-input path, which submits its initial prompt
-    /// outside the UTI (no `userScript` bound yet). Opens the flow so the JS status updates
-    /// that follow have a flow to attach to.
+    /// outside the UTI (no `userScript` bound yet).
     func recordExternalPromptSubmitted(entryPoint: DuckAIPromptWideEventData.EntryPoint,
                                        inputMode: DuckAIPromptWideEventData.InputMode,
                                        isFirstPrompt: Bool,
                                        hasPageContext: Bool) {
-        guard let scope = currentDuckAIWideEventFlowScope else { return }
-        duckAIWideEventInstrumentation?.submissionStarted(
-            scope: scope,
-            modelId: persistedModelId,
-            userTier: subscriptionState.userTier,
-            reasoningEffort: persistedReasoningEffort,
+        wideEventReporter.recordExternalPromptSubmitted(
             entryPoint: entryPoint,
             inputMode: inputMode,
-            fireMode: viewController.handler.isFireTab,
             isFirstPrompt: isFirstPrompt,
-            frontendDeliveryPath: entryPoint == .contextualChat ? .contextualNativeInput : .urlAutoSubmit,
-            hasPageContext: hasPageContext,
-            toolsSelected: false,
-            attachmentsSelected: false
+            hasPageContext: hasPageContext
         )
-    }
-
-    func subscribeToDuckAIWideEventSignals() {
-        $aiChatStatus
-            .removeDuplicates()
-            .sink { [weak self] status in
-                guard let self, let scope = self.currentDuckAIWideEventFlowScope else { return }
-                self.duckAIWideEventInstrumentation?.chatStatusChanged(status, scope: scope)
-            }
-            .store(in: &cancellables)
-
-        viewController.handler.stopGeneratingButtonTappedPublisher
-            .sink { [weak self] in
-                guard let self, let scope = self.currentDuckAIWideEventFlowScope else { return }
-                self.duckAIWideEventInstrumentation?.stopGeneratingTapped(scope: scope)
-            }
-            .store(in: &cancellables)
     }
 }
 

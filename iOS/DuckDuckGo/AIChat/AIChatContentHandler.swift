@@ -51,6 +51,8 @@ protocol AIChatUserScriptProviding: AnyObject {
     func submitOpenSettingsAction()
     func submitPageContext(_ context: AIChatPageContextData?)
     func submitToggleSidebarAction()
+    func submitOpenFeedbackAction(sentiment: String)
+    func submitOpenChatProtectionAction()
 }
 
 extension AIChatUserScriptProviding {
@@ -126,6 +128,12 @@ protocol AIChatContentHandling: AnyObject {
 
     /// Submits a toggle sidebar action to open/close the sidebar.
     func submitToggleSidebarAction()
+
+    /// Submits a feedback action, opening the Duck.ai feedback form for the given sentiment.
+    func submitOpenFeedbackAction(sentiment: String)
+
+    /// Submits a chat-protection action, opening the "All chats are private" page.
+    func submitOpenChatProtectionAction()
 
     /// Pushes page context to the frontend (for context updates during navigation).
     func submitPageContext(_ context: AIChatPageContextData?)
@@ -313,6 +321,14 @@ final class AIChatContentHandler: AIChatContentHandling {
     /// Submits a toggle sidebar action to open/close the sidebar.
     func submitToggleSidebarAction() {
         userScript?.submitToggleSidebarAction()
+    }
+
+    func submitOpenFeedbackAction(sentiment: String) {
+        userScript?.submitOpenFeedbackAction(sentiment: sentiment)
+    }
+
+    func submitOpenChatProtectionAction() {
+        userScript?.submitOpenChatProtectionAction()
     }
 
     func submitPageContext(_ context: AIChatPageContextData?) {

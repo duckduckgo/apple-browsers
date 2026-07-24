@@ -49,6 +49,35 @@
         "suffixes": ["first_daily_count", "platform", "form_factor"],
         "parameters": ["appVersion"]
     },
+    "m_aichat_settings_menu_feedback_tapped": {
+        "description": "Fires when user taps the feedback option in the Duck.ai settings menu",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "aichat_feedback_option_selected": {
+        "description": "Fires when user picks a sentiment in the Duck.ai feedback sheet; the `sentiment` parameter records which option was chosen before the feedback form opens",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "sentiment",
+                "description": "Which feedback sentiment option the user selected",
+                "type": "string",
+                "enum": ["positive", "critical"]
+            }
+        ]
+    },
+    "aichat_new_image_tapped": {
+        "description": "Fires when user taps the New Image option in the Duck.ai tab header Plus (+) menu, starting a Duck.ai chat in image-generation mode",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
     "m_aichat_tab_switcher_opened": {
         "description": "Fires when user opens the tab switcher while in full Duck.ai mode",
         "owners": ["aataraxiaa"],

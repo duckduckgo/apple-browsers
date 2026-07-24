@@ -3864,9 +3864,6 @@
 /* Settings picker label for what to show when returning after inactivity */
 "settings.afterInactivity.v2.label" = "Μετά από αδράνεια";
 
-/* Footer under the AI picker, descriptive sentence without link */
-"settings.ai.new.picker.footer" = "Δοκιμάστε τη νέα επιλογή για εναλλαγή μεταξύ αναζήτησης και Duck.ai στη γραμμή διευθύνσεων.";
-
 /* Settings row that opens Duck.ai in a new tab */
 "settings.aichat.duckai.settings" = "Ρυθμίσεις Duck.ai";
 
@@ -3881,9 +3878,6 @@
 
 /* Settings screen footer text for showing AI Chat in the input box */
 "settings.aichat.shortcuts.input.footer" = "Κάντε αναζήτηση στο διαδίκτυο ή ρωτήστε το Duck.ai απευθείας από τη Γραμμή διευθύνσεων";
-
-/* Title of search assist settings link */
-"settings.aifeatures.assist" = "Ρυθμίσεις αναζήτησης Assist";
 
 /* Search Assist frequency option: never show AI-assisted answers */
 "settings.aifeatures.assist.never" = "Ποτέ";

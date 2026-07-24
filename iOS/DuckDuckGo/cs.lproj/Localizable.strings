@@ -3864,9 +3864,6 @@
 /* Settings picker label for what to show when returning after inactivity */
 "settings.afterInactivity.v2.label" = "Po nečinnosti";
 
-/* Footer under the AI picker, descriptive sentence without link */
-"settings.ai.new.picker.footer" = "Vyzkoušej novou možnost přepínání mezi vyhledáváním a Duck.ai v adresním řádku.";
-
 /* Settings row that opens Duck.ai in a new tab */
 "settings.aichat.duckai.settings" = "Nastavení Duck.ai";
 
@@ -3881,9 +3878,6 @@
 
 /* Settings screen footer text for showing AI Chat in the input box */
 "settings.aichat.shortcuts.input.footer" = "Hledej na webu nebo se zeptej Duck.ai přímo v adresním řádku.";
-
-/* Title of search assist settings link */
-"settings.aifeatures.assist" = "Nastavení vyhledávání s funkcí Assist";
 
 /* Search Assist frequency option: never show AI-assisted answers */
 "settings.aifeatures.assist.never" = "Nikdy";

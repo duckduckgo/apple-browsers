@@ -3864,9 +3864,6 @@
 /* Settings picker label for what to show when returning after inactivity */
 "settings.afterInactivity.v2.label" = "После бездействия";
 
-/* Footer under the AI picker, descriptive sentence without link */
-"settings.ai.new.picker.footer" = "Новая функция! Теперь в адресной строке можно переключаться между обычным поиском и Duck.ai.";
-
 /* Settings row that opens Duck.ai in a new tab */
 "settings.aichat.duckai.settings" = "Настройки Duck.ai";
 
@@ -3881,9 +3878,6 @@
 
 /* Settings screen footer text for showing AI Chat in the input box */
 "settings.aichat.shortcuts.input.footer" = "Выполнить поиск в интернете или задать вопрос ИИ-ассистенту Duck.ai можно прямо из адресной строки.";
-
-/* Title of search assist settings link */
-"settings.aifeatures.assist" = "Настройки Search Assist";
 
 /* Search Assist frequency option: never show AI-assisted answers */
 "settings.aifeatures.assist.never" = "Никогда";

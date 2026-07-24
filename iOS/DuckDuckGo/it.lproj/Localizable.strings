@@ -3864,9 +3864,6 @@
 /* Settings picker label for what to show when returning after inactivity */
 "settings.afterInactivity.v2.label" = "Dopo l'inattività";
 
-/* Footer under the AI picker, descriptive sentence without link */
-"settings.ai.new.picker.footer" = "Prova la nuova opzione per passare dalla ricerca a Duck.ai nella barra degli indirizzi.";
-
 /* Settings row that opens Duck.ai in a new tab */
 "settings.aichat.duckai.settings" = "Impostazioni di Duck.ai";
 
@@ -3881,9 +3878,6 @@
 
 /* Settings screen footer text for showing AI Chat in the input box */
 "settings.aichat.shortcuts.input.footer" = "Cerca sul web o chiedi a Duck.ai direttamente dalla barra degli indirizzi";
-
-/* Title of search assist settings link */
-"settings.aifeatures.assist" = "Impostazioni di Search Assist";
 
 /* Search Assist frequency option: never show AI-assisted answers */
 "settings.aifeatures.assist.never" = "Mai";

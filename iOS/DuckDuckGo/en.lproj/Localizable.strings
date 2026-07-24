@@ -3691,9 +3691,6 @@ Take back control of your personal information with the browser designed for dat
 /* Settings picker label for what to show when returning after inactivity */
 "settings.afterInactivity.v2.label" = "After Inactivity";
 
-/* Footer under the AI picker, descriptive sentence without link */
-"settings.ai.new.picker.footer" = "Try the new option to toggle between search and Duck.ai in the Address Bar.";
-
 /* Settings row that opens Duck.ai in a new tab */
 "settings.aichat.duckai.settings" = "Duck.ai Settings";
 
@@ -3708,9 +3705,6 @@ Take back control of your personal information with the browser designed for dat
 
 /* Settings screen footer text for showing AI Chat in the input box */
 "settings.aichat.shortcuts.input.footer" = "Search the web or ask Duck.ai directly from the Address Bar";
-
-/* Title of search assist settings link */
-"settings.aifeatures.assist" = "Search Assist Settings";
 
 /* Search Assist frequency option: never show AI-assisted answers */
 "settings.aifeatures.assist.never" = "Never";

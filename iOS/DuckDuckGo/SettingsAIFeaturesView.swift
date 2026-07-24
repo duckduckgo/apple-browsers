@@ -26,6 +26,7 @@ import Common
 import FoundationExtensions
 import Networking
 import AIChat
+import SERPSettings
 
 struct SettingsAIFeaturesView: View {
     @EnvironmentObject var viewModel: SettingsViewModel

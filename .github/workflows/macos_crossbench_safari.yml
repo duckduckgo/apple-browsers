@@ -15,8 +15,8 @@ name: macOS - crossbench Safari LCP (live network)
 #     below. GitHub-hosted macOS runners grant passwordless sudo, so this works
 #     there; a self-hosted runner must allow it (see the step's comment).
 #
-# workflow_dispatch ONLY on purpose: no pull_request/push/schedule trigger, so
-# fork PRs can't run it and it never fires unattended. Results are live-network
+# Triggered manually (workflow_dispatch) and on a daily off-peak schedule. No
+# pull_request/push trigger, so fork PRs can't run it. Results are live-network
 # noisy — this validates the pipeline, it is not a trustworthy cross-browser
 # comparison (that needs WPR + a dedicated runner, later).
 
@@ -32,6 +32,14 @@ on:
         type: boolean
         required: false
         default: false
+  schedule:
+    # 06:00 UTC = 2am US Eastern / 7am CET: deep US night, before the EU ramp,
+    # and the ~1.5h run finishes before either region gets busy — so both
+    # hosted and self-hosted runners are near their quietest. A scheduled run
+    # takes the input defaults (blank sites = full 22-site list) and forces the
+    # ClickHouse upload via the job gate below. NOTE: GitHub only fires schedule
+    # triggers from the repo's default branch (main).
+    - cron: "0 6 * * *"
 
 permissions:
   contents: read
@@ -138,9 +146,10 @@ jobs:
     needs: safari-lcp
     # Hosted runners can't reach the ClickHouse host, hence this separate
     # self-hosted job. The implicit success() applies on top of the input
-    # gate: this only runs when safari-lcp succeeded AND the dispatch asked
-    # for an upload.
-    if: inputs.upload-to-clickhouse
+    # gate: this only runs when safari-lcp succeeded AND either the dispatch
+    # asked for an upload or this is a scheduled run (inputs are empty on
+    # schedule, so scheduled runs always upload).
+    if: github.event_name == 'schedule' || inputs.upload-to-clickhouse
     runs-on: [ self-hosted, apple ]
 
     steps:

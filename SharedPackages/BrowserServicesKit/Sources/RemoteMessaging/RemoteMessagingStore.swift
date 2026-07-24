@@ -162,8 +162,8 @@ public final class RemoteMessagingStore: RemoteMessagingStoring {
     /// Awaits the saves the store issues on its own initiative, which callers get no handle on: an expired message
     /// dismissed during a fetch, or scheduled messages cleared when the feature flag goes off. Tearing the Core Data
     /// stack down with one in flight aborts the process, because the save raises an Objective-C exception that the
-    /// `catch` around it cannot intercept. Drains only what is in flight when called.
-    public func waitForPendingTasks() async {
+    /// `catch` around it cannot intercept. Writes a caller started itself are its own to await.
+    public func waitForStoreInitiatedTasks() async {
         let tasks = pendingTasksLock.withLock { Array(pendingTasks.values) }
 
         for task in tasks {

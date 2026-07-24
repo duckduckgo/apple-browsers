@@ -67,6 +67,7 @@ class TabSwitcherPageViewController: UIViewController {
     private weak var previewsSource: TabPreviewsSource?
     private let tabSwitcherSettings: TabSwitcherSettings
     private var isFireModeEnabled: Bool
+    private let isFloatingUIEnabled: Bool
     private var tabObserverCancellable: AnyCancellable?
     private var trackerCountViewModel: TabSwitcherTrackerCountViewModel?
     private var trackerCountCancellable: AnyCancellable?
@@ -89,6 +90,7 @@ class TabSwitcherPageViewController: UIViewController {
          tabSwitcherSettings: TabSwitcherSettings,
          trackerCountViewModel: TabSwitcherTrackerCountViewModel?,
          isFireModeEnabled: Bool,
+         isFloatingUIEnabled: Bool = false,
          duckAIGridContentProvider: DuckAIGridContentProviding?,
          duckAIVoiceSessionTracker: DuckAIVoiceSessionTracking?) {
         self.browsingMode = browsingMode
@@ -97,6 +99,7 @@ class TabSwitcherPageViewController: UIViewController {
         self.tabSwitcherSettings = tabSwitcherSettings
         self.trackerCountViewModel = trackerCountViewModel
         self.isFireModeEnabled = isFireModeEnabled
+        self.isFloatingUIEnabled = isFloatingUIEnabled
         self.currentSelection = tabsModel.currentIndex
         self.duckAIGridContentProvider = duckAIGridContentProvider
         self.duckAIVoiceSessionTracker = duckAIVoiceSessionTracker
@@ -198,14 +201,23 @@ class TabSwitcherPageViewController: UIViewController {
         view.addSubview(hostingController.view)
         hostingController.didMove(toParent: self)
 
+        let topConstraint = isFloatingUIEnabled
+            ? hostingController.view.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor,
+                                                          constant: FireModeEmptyStateMetrics.floatingNavigationBarClearance)
+            : hostingController.view.topAnchor.constraint(equalTo: view.topAnchor)
+
         NSLayoutConstraint.activate([
-            hostingController.view.topAnchor.constraint(equalTo: view.topAnchor),
+            topConstraint,
             hostingController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             hostingController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             hostingController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
         ])
 
         fireModeEmptyStateHostingController = hostingController
+    }
+
+    private enum FireModeEmptyStateMetrics {
+        static let floatingNavigationBarClearance: CGFloat = 60
     }
 
     func updateEmptyStateVisibility() {

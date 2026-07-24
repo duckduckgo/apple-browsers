@@ -2357,12 +2357,17 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     private func applyThemeToToggleControl(_ toggleControl: CustomToggleControl) {
-        let backgroundColor = themeManager.isAppRebranded ? NSColor(designSystemColor: .controlsSubtleFillSecondary) : NSColor(designSystemColor: .controlsRaisedBackdrop)
-        let selectionBorder = themeManager.isAppRebranded ? NSColor(designSystemColor: .shadowTertiary) : NSColor(designSystemColor: .shadowSecondary)
+        let isAppRebranded = themeManager.isAppRebranded
+        let backgroundColor = isAppRebranded ? NSColor(singleUseColor: .aiToggleBackground) : NSColor(designSystemColor: .controlsRaisedBackdrop)
+        let borderColor = isAppRebranded ? NSColor(singleUseColor: .aiToggleBorder) : nil
+        let selectionBorder = isAppRebranded ? NSColor(singleUseColor: .aiToggleSelectionBorder) : NSColor(designSystemColor: .shadowSecondary)
+        let selectionBackgroundColor = isAppRebranded ? NSColor(singleUseColor: .aiToggleSelectionBackground) : NSColor(designSystemColor: .controlsRaisedFillPrimary)
 
         toggleControl.backgroundColor = backgroundColor
-        toggleControl.focusedBackgroundColor = NSColor(designSystemColor: .controlsRaisedBackdrop)
-        toggleControl.selectionColor = NSColor(designSystemColor: .controlsRaisedFillPrimary)
+        toggleControl.borderColor = borderColor
+        toggleControl.focusedBackgroundColor = backgroundColor
+        toggleControl.selectionColor = selectionBackgroundColor
+        toggleControl.selectionInnerBorderColor = selectionBorder
 
         if tabCollectionViewModel.isBurner {
             toggleControl.focusBorderColor = NSColor.burnerAccent.withAlphaComponent(0.8)
@@ -2377,7 +2382,6 @@ final class AddressBarButtonsViewController: NSViewController {
         toggleControl.indicatorHorizontalInset = styleProvider.addressBarToggleIndicatorHorizontalInset
 
         toggleControl.outerBorderWidth = 2.0
-        toggleControl.selectionInnerBorderColor = selectionBorder
 
         toggleControl.leftImage = DesignSystemImages.Glyphs.Size16.findSearch.tinted(with: themeManager.theme.colorsProvider.iconsColor)
         toggleControl.rightImage = DesignSystemImages.Glyphs.Size16.aiChat.tinted(with: themeManager.theme.colorsProvider.iconsColor)

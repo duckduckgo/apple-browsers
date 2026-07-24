@@ -34,7 +34,7 @@ public enum OmniBarIcon {
         case .duckPlayer:
             return UIImage(resource: .duckPlayerURLIcon)
         case .duckAI:
-            return DesignSystemImages.Color.Size24.aiChatGradient
+            return DesignSystemImages.Color.Size24.duckAI
         case .specialError:
             return DesignSystemImages.Glyphs.Size24.globe
         }

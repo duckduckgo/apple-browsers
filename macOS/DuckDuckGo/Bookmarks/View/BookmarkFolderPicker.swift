@@ -41,7 +41,7 @@ struct BookmarkFolderPicker: View {
             PopupButtonItem.separator()
 
             for folder in folders {
-                PopupButtonItem(icon: .folder, title: folder.title, indentation: folder.level, selectionValue: folder.entity)
+                PopupButtonItem(icon: DesignSystemRebrand.isAppRebranded() ? DesignSystemImages.Color.Size16.folder : .folderLegacy, title: folder.title, indentation: folder.level, selectionValue: folder.entity)
             }
         }
 

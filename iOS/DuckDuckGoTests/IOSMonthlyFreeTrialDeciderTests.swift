@@ -25,6 +25,7 @@ import Testing
 @Suite("iOS Monthly Free Trial Decider")
 struct IOSMonthlyFreeTrialDeciderTests {
 
+    @available(iOS 16, *)
     @Test("Control cohort keeps the monthly free trial (current behavior)", .timeLimit(.minutes(1)))
     func controlCohortOffersMonthlyFreeTrial() {
         let sut = IOSMonthlyFreeTrialDecider(
@@ -34,6 +35,7 @@ struct IOSMonthlyFreeTrialDeciderTests {
         #expect(sut.shouldOfferMonthlyFreeTrial() == true)
     }
 
+    @available(iOS 16, *)
     @Test("Treatment cohort removes the monthly free trial", .timeLimit(.minutes(1)))
     func treatmentCohortDoesNotOfferMonthlyFreeTrial() {
         let sut = IOSMonthlyFreeTrialDecider(
@@ -43,6 +45,7 @@ struct IOSMonthlyFreeTrialDeciderTests {
         #expect(sut.shouldOfferMonthlyFreeTrial() == false)
     }
 
+    @available(iOS 16, *)
     @Test("A user not enrolled in the experiment keeps the monthly free trial", .timeLimit(.minutes(1)))
     func unenrolledUserOffersMonthlyFreeTrial() {
         let sut = IOSMonthlyFreeTrialDecider(

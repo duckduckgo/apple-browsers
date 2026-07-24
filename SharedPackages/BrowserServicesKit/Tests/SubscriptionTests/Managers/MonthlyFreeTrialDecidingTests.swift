@@ -28,6 +28,7 @@ struct MonthlyFreeTrialDecidingTests {
     private static let rowControl = "ios.subscription.1month.row.freetrial.dev"
     private static let rowTreatment = "ios.subscription.1month.row"
 
+    @available(iOS 16, macOS 13, *)
     @Test("Control cohort (offering the trial) keeps the control SKU and drops the treatment SKU", .timeLimit(.minutes(1)))
     func offeringTrialKeepsControlSKU() {
         let identifiers = [Self.usaControl, Self.usaTreatment, Self.rowControl, Self.rowTreatment]
@@ -38,6 +39,7 @@ struct MonthlyFreeTrialDecidingTests {
         #expect(result == [Self.usaControl, Self.rowControl])
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test("Treatment cohort (not offering the trial) keeps the treatment SKU and drops the control SKU", .timeLimit(.minutes(1)))
     func notOfferingTrialKeepsTreatmentSKU() {
         let identifiers = [Self.usaControl, Self.usaTreatment, Self.rowControl, Self.rowTreatment]
@@ -48,6 +50,7 @@ struct MonthlyFreeTrialDecidingTests {
         #expect(result == [Self.usaTreatment, Self.rowTreatment])
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test("A pair with only its control variant present is left untouched", .timeLimit(.minutes(1)))
     func loneControlSKUIsKept() {
         let identifiers = [Self.usaControl]
@@ -59,6 +62,7 @@ struct MonthlyFreeTrialDecidingTests {
                 "A control SKU whose treatment sibling is absent must never be hidden")
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test("A pair with only its treatment variant present is left untouched", .timeLimit(.minutes(1)))
     func loneTreatmentSKUIsKept() {
         let identifiers = [Self.usaTreatment]
@@ -70,6 +74,7 @@ struct MonthlyFreeTrialDecidingTests {
         #expect(Set(notOffering.filteringMonthlyFreeTrialPreference(from: identifiers)) == Set(identifiers))
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test("Identifiers not in any configured pair pass through untouched", .timeLimit(.minutes(1)))
     func unpairedIdentifiersPassThrough() {
         let identifiers = [
@@ -84,6 +89,7 @@ struct MonthlyFreeTrialDecidingTests {
         #expect(Set(notOffering.filteringMonthlyFreeTrialPreference(from: identifiers)) == Set(identifiers))
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test("Only the swapped variant is removed; unpaired identifiers in the same list are kept", .timeLimit(.minutes(1)))
     func onlyPairedVariantIsRemoved() {
         let yearly = "ios.subscription.1year.freetrial.dev"

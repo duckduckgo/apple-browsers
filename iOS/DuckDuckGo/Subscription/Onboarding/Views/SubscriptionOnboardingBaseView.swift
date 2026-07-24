@@ -103,17 +103,20 @@ struct SubscriptionOnboardingBaseView<Content: View>: View {
     private let navigationButton: SubscriptionOnboardingNavigationButton?
     private let header: SubscriptionOnboardingHeaderView?
     private let footer: SubscriptionOnboardingFooter?
+    private let scrollsContent: Bool
     private let content: Content
 
     init(title: String? = nil,
          navigationButton: SubscriptionOnboardingNavigationButton? = nil,
          header: SubscriptionOnboardingHeaderView? = nil,
          footer: SubscriptionOnboardingFooter? = nil,
+         scrollsContent: Bool = true,
          @ViewBuilder content: () -> Content) {
         self.title = title
         self.navigationButton = navigationButton
         self.header = header
         self.footer = footer
+        self.scrollsContent = scrollsContent
         self.content = content()
     }
 
@@ -122,20 +125,13 @@ struct SubscriptionOnboardingBaseView<Content: View>: View {
     }
 
     var body: some View {
-        let page = ScrollView(showsIndicators: false) {
-            VStack(spacing: Metrics.sectionSpacing) {
-                header
-                content
-            }
-            .padding(.vertical, Metrics.contentVerticalPadding)
-            .padding(.horizontal, Metrics.horizontalPadding)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(pageBackgroundColor.ignoresSafeArea())
-        .safeAreaInset(edge: .bottom) { footerView }
-        .navigationBarTitleDisplayMode(.inline)
-        .navigationBarBackButtonHidden(true)
-        .navigationBarBackground(pageBackgroundColor)
+        let page = pageContent
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(pageBackgroundColor.ignoresSafeArea())
+            .safeAreaInset(edge: .bottom) { footerView }
+            .navigationBarTitleDisplayMode(.inline)
+            .navigationBarBackButtonHidden(true)
+            .navigationBarBackground(pageBackgroundColor)
 
         // On iOS 26 the toolbar wraps its items in a shared Liquid Glass background (with a drop
         // shadow). Hide it so the leading button shows only its own circular fill.
@@ -144,6 +140,24 @@ struct SubscriptionOnboardingBaseView<Content: View>: View {
         } else {
             page.toolbar { toolbarContent }
         }
+    }
+
+    @ViewBuilder
+    private var pageContent: some View {
+        if scrollsContent {
+            ScrollView(showsIndicators: false) { contentStack }
+        } else {
+            contentStack
+        }
+    }
+
+    private var contentStack: some View {
+        VStack(spacing: Metrics.sectionSpacing) {
+            header
+            content
+        }
+        .padding(.vertical, Metrics.contentVerticalPadding)
+        .padding(.horizontal, Metrics.horizontalPadding)
     }
 }
 
@@ -202,7 +216,6 @@ private extension SubscriptionOnboardingBaseView {
 
     func footerContainer<Buttons: View>(@ViewBuilder _ buttons: () -> Buttons) -> some View {
         buttons()
-            .padding(.top, Metrics.footerSpacing)
             .padding(.horizontal, Metrics.horizontalPadding)
     }
 
@@ -332,6 +345,23 @@ private func onboardingPreviewLongBody() -> some View {
             footer: .double(primary: .init("Turn on VPN", action: {}),
                             secondary: .init("Maybe Later", action: {}))) {
             onboardingPreviewLongBody()
+        }
+        .subscriptionOnboardingNavigationContainer()
+    }
+}
+
+#Preview("Fixed header, scrolling content") {
+    RebrandedPreview {
+        SubscriptionOnboardingBaseView(
+            title: "Step 3 of 4",
+            navigationButton: .back({}),
+            header: onboardingPreviewHeader(),
+            footer: .double(primary: .init("Turn on VPN", action: {}),
+                            secondary: .init("Maybe Later", action: {})),
+            scrollsContent: false) {
+            ScrollView(showsIndicators: false) {
+                onboardingPreviewLongBody()
+            }
         }
         .subscriptionOnboardingNavigationContainer()
     }

@@ -51,7 +51,8 @@ struct SubscriptionOnboardingDuckAIView: View {
             title: title,
             navigationButton: .back({ viewModel.delegate?.sectionDidRequestGoBack() }),
             header: header,
-            footer: footer) {
+            footer: footer,
+            scrollsContent: false) {
             modelPicker
         }
         .onAppear { viewModel.onAppear() }
@@ -92,11 +93,13 @@ private extension SubscriptionOnboardingDuckAIView {
 /// Rows are non-interactive on iPad: model preselection has no way to reach a fresh iPad chat session.
 private extension SubscriptionOnboardingDuckAIView {
     var modelPicker: some View {
-        SubscriptionOnboardingCard(cardItems,
-                                   style: .borderless,
-                                   padding: 0,
-                                   contentInset: .init(horizontal: Metrics.contentInsetHorizontal, vertical: Metrics.contentInsetVertical),
-                                   onSelect: CardItemList.selectAction(over: viewModel.availableModels, where: { _ in isSelectable }) { viewModel.select($0.id) })
+        ScrollView(showsIndicators: false) {
+            SubscriptionOnboardingCard(cardItems,
+                                       style: .borderless,
+                                       padding: 0,
+                                       contentInset: .init(horizontal: Metrics.contentInsetHorizontal, vertical: Metrics.contentInsetVertical),
+                                       onSelect: CardItemList.selectAction(over: viewModel.availableModels, where: { _ in isSelectable }) { viewModel.select($0.id) })
+        }
     }
 
     /// Whether rows show/report a selection at all — false on iPad, where model preselection has no way

@@ -241,8 +241,9 @@ struct ShieldIconView: View {
         if isAppRebranded {
             Image(nsImage: DesignSystemImages.Color.Size16.shieldCheck)
                 .resizable()
-                .offset(x: 1)
                 .frame(width: 16, height: 16)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.leading, 8)
         } else {
             Image(nsImage: DesignSystemImages.Color.Size16.shieldCheck)
                 .resizable()

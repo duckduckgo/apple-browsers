@@ -2424,8 +2424,10 @@ final class AddressBarButtonsViewController: NSViewController {
                 newAnimationView.translatesAutoresizingMaskIntoConstraints = false
                 animationWrapperView.addSubview(newAnimationView)
 
+                let leadingConstant: CGFloat = themeManager.isAppRebranded ? 1 : 0.5
+
                 NSLayoutConstraint.activate([
-                    newAnimationView.leadingAnchor.constraint(equalTo: animationWrapperView.leadingAnchor, constant: 0.5),
+                    newAnimationView.leadingAnchor.constraint(equalTo: animationWrapperView.leadingAnchor, constant: leadingConstant),
                     newAnimationView.centerYAnchor.constraint(equalTo: animationWrapperView.centerYAnchor),
                     newAnimationView.widthAnchor.constraint(equalTo: animationWrapperView.heightAnchor, constant: 4),
                     newAnimationView.heightAnchor.constraint(equalTo: animationWrapperView.heightAnchor, constant: 4)

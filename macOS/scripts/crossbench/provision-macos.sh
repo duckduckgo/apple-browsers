@@ -58,6 +58,7 @@ if ! command -v brew >/dev/null 2>&1; then
     eval "$(/opt/homebrew/bin/brew shellenv)"
   else
     echo "ERROR: Homebrew not found. Bootstrap it once on the runner:" >&2
+    # shellcheck disable=SC2016  # literal install command for the operator to copy-paste
     echo '  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"' >&2
     exit 1
   fi

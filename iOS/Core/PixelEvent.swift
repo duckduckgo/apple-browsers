@@ -375,6 +375,8 @@ extension Pixel {
         case voiceSearchAIChatDone
         case openVoiceSearch
         case voiceSearchCancelled
+        case voiceSearchError
+        case voiceSearchNoSpeech
 
         case bookmarkLaunchList
         case bookmarkLaunchScored
@@ -1731,7 +1733,8 @@ extension Pixel {
         case aiChatSettingsMenuSidebarTapped
         case aiChatSettingsMenuAIChatSettingsTapped
         case aiChatSettingsMenuNewChatTabTapped
-        
+        case aiChatSettingsMenuFeedbackTapped
+
         case aiChatTabSwitcherOpened
         case aiChatFireButtonTapped
         case aiChatTabDidTerminate
@@ -2414,6 +2417,8 @@ extension Pixel.Event {
         case .voiceSearchAIChatDone: return "m_voice_search_aichat_done"
         case .openVoiceSearch: return "m_open_voice_search"
         case .voiceSearchCancelled: return "m_voice_search_cancelled"
+        case .voiceSearchError: return "voice_search_error"
+        case .voiceSearchNoSpeech: return "voice_search_no_speech"
             
         case .bookmarkImportSuccess: return "m_bi_s"
         case .bookmarkImportFailure: return "m_bi_e"
@@ -3662,7 +3667,8 @@ extension Pixel.Event {
         case .aiChatSettingsMenuSidebarTapped: return "m_aichat_settings_menu_sidebar_tapped"
         case .aiChatSettingsMenuAIChatSettingsTapped: return "m_aichat_settings_menu_aichat_settings_tapped"
         case .aiChatSettingsMenuNewChatTabTapped: return "m_aichat_settings_menu_new_chat_tab_tapped"
-            
+        case .aiChatSettingsMenuFeedbackTapped: return "m_aichat_settings_menu_feedback_tapped"
+
         case .aiChatTabSwitcherOpened: return "m_aichat_tab_switcher_opened"
         case .aiChatFireButtonTapped: return "m_aichat_fire_button_tapped"
         case .aiChatTabDidTerminate: return "m_aichat_tab_did_terminate"

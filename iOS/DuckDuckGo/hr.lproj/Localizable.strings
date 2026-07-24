@@ -212,7 +212,7 @@
 "action.title.vpn" = "VPN";
 
 /* Description of the Ad Blocking feature in settings */
-"ad.blocking.description" = "Blokira invazivne alate za praćenje prije nego što se učitaju, učinkovito eliminirajući oglase koji se oslanjaju na praćenje";
+"ad.blocking.description" = "Blokira invazivne alate za praćenje prije nego što se učitaju, učinkovito eliminirajući oglase koji se oslanjaju na praćenje.";
 
 /* Section header for YouTube-specific ad blocking settings */
 "ad.blocking.youtube.section.header" = "Blokiranje YouTube oglasa";
@@ -3199,7 +3199,7 @@
 "omnibar.notification.trackers-blocked" = "%d Trackers";
 
 /* Text displayed on notification appearing in the address bar when YouTube ad blocking is active */
-"omnibar.notification.youtube-ad-block-on" = "Blokiranje YouTube oglasa je uključeno";
+"omnibar.notification.youtube-ad-block-on" = "Oglasi blokirani";
 
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Shvatio/la sam";
@@ -5311,10 +5311,10 @@
 "windows-waitlist.waitlist-download-screen.try-duckduckgo-for-windows" = "Nabavi DuckDuckGo za Windows!";
 
 /* Body text of the bottom sheet asking the user to send an anonymous breakage report */
-"youtube.ad.blocking.breakage-report.message" = "Pošalji anonimnu prijavu kvara DuckDuckGou. Pomozi nam da poboljšamo blokiranje oglasa za sve!";
+"youtube.ad.blocking.breakage-report.message" = "Pošalji anonimnu prijavu DuckDuckGou i pomozi nam da poboljšamo blokiranje oglasa za sve!";
 
 /* Primary action sending an anonymous YouTube ad-blocking breakage report */
-"youtube.ad.blocking.breakage-report.send" = "Pošalji izvješće o problemu";
+"youtube.ad.blocking.breakage-report.send" = "Pošalji anonimnu prijavu";
 
 /* Title of the bottom sheet asking the user to send an anonymous breakage report after disabling YouTube ad blocking */
 "youtube.ad.blocking.breakage-report.title" = "Blokiranje oglasa na YouTubeu ne radi?";

@@ -3199,7 +3199,7 @@
 "omnibar.notification.trackers-blocked" = "%d Trackers";
 
 /* Text displayed on notification appearing in the address bar when YouTube ad blocking is active */
-"omnibar.notification.youtube-ad-block-on" = "Blokovanie reklám na YouTube je zapnuté";
+"omnibar.notification.youtube-ad-block-on" = "Blokovanie reklám je zapnuté";
 
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Rozumiem";
@@ -5311,10 +5311,10 @@
 "windows-waitlist.waitlist-download-screen.try-duckduckgo-for-windows" = "Získajte DuckDuckGo pre Windows!";
 
 /* Body text of the bottom sheet asking the user to send an anonymous breakage report */
-"youtube.ad.blocking.breakage-report.message" = "Odošlite anonymné hlásenie o poruche na DuckDuckGo. Pomôžte zlepšiť blokovanie reklám pre všetkých!";
+"youtube.ad.blocking.breakage-report.message" = "Odošli anonymné hlásenie na DuckDuckGo a pomôž zlepšiť blokovanie reklám pre všetkých!";
 
 /* Primary action sending an anonymous YouTube ad-blocking breakage report */
-"youtube.ad.blocking.breakage-report.send" = "Odoslať správu o nefunkčných aplikáciách";
+"youtube.ad.blocking.breakage-report.send" = "Odošli anonymné hlásenie";
 
 /* Title of the bottom sheet asking the user to send an anonymous breakage report after disabling YouTube ad blocking */
 "youtube.ad.blocking.breakage-report.title" = "Nefunguje blokovanie reklám na YouTube?";

@@ -212,7 +212,7 @@
 "action.title.vpn" = "VPN";
 
 /* Description of the Ad Blocking feature in settings */
-"ad.blocking.description" = "Blockerar invasiva spårare innan de läses in, vilket i stort sett eliminerar annonser som bygger på spårning";
+"ad.blocking.description" = "Blockerar invasiva spårare innan de läses in vilket effektivt eliminerar annonser som bygger på spårning.";
 
 /* Section header for YouTube-specific ad blocking settings */
 "ad.blocking.youtube.section.header" = "Annonsblockering på YouTube";
@@ -3199,7 +3199,7 @@
 "omnibar.notification.trackers-blocked" = "%d Trackers";
 
 /* Text displayed on notification appearing in the address bar when YouTube ad blocking is active */
-"omnibar.notification.youtube-ad-block-on" = "YouTube-annonsblockering på";
+"omnibar.notification.youtube-ad-block-on" = "Annonsblockering på";
 
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Jag fattar";
@@ -5311,10 +5311,10 @@
 "windows-waitlist.waitlist-download-screen.try-duckduckgo-for-windows" = "Skaffa DuckDuckGo för Windows!";
 
 /* Body text of the bottom sheet asking the user to send an anonymous breakage report */
-"youtube.ad.blocking.breakage-report.message" = "Skicka en anonym felrapport till DuckDuckGo. Hjälp till att göra annonsblockeringen bättre för alla!";
+"youtube.ad.blocking.breakage-report.message" = "Skicka en anonym rapport till DuckDuckGo och hjälp till att göra annonsblockeringen bättre för alla!";
 
 /* Primary action sending an anonymous YouTube ad-blocking breakage report */
-"youtube.ad.blocking.breakage-report.send" = "Skicka felrapport";
+"youtube.ad.blocking.breakage-report.send" = "Skicka anonym rapport";
 
 /* Title of the bottom sheet asking the user to send an anonymous breakage report after disabling YouTube ad blocking */
 "youtube.ad.blocking.breakage-report.title" = "Fungerar inte annonsblockering på YouTube?";

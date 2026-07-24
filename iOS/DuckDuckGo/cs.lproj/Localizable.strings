@@ -212,7 +212,7 @@
 "action.title.vpn" = "VPN";
 
 /* Description of the Ad Blocking feature in settings */
-"ad.blocking.description" = "Zablokuje invazivní trackery ještě před jejich načtením, čímž účinně eliminuje reklamy, které spoléhají na sledování.";
+"ad.blocking.description" = "Zablokuje invazivní trackery ještě před jejich načtením, čímž účinně eliminuje reklamy, které tě pronásledují.";
 
 /* Section header for YouTube-specific ad blocking settings */
 "ad.blocking.youtube.section.header" = "Blokování reklam na YouTube";
@@ -3199,7 +3199,7 @@
 "omnibar.notification.trackers-blocked" = "%d Trackers";
 
 /* Text displayed on notification appearing in the address bar when YouTube ad blocking is active */
-"omnibar.notification.youtube-ad-block-on" = "Blokování reklam na YouTube zapnuto";
+"omnibar.notification.youtube-ad-block-on" = "Blokování reklam zapnuto";
 
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Mám to";
@@ -5311,10 +5311,10 @@
 "windows-waitlist.waitlist-download-screen.try-duckduckgo-for-windows" = "Pořiď si DuckDuckGo pro Windows!";
 
 /* Body text of the bottom sheet asking the user to send an anonymous breakage report */
-"youtube.ad.blocking.breakage-report.message" = "Odeslat anonymní hlášení o chybě službě DuckDuckGo. Pomoz vylepšit blokování reklam pro všechny!";
+"youtube.ad.blocking.breakage-report.message" = "Odešli anonymní hlášení službě DuckDuckGo a pomoz vylepšit blokování reklam pro všechny!";
 
 /* Primary action sending an anonymous YouTube ad-blocking breakage report */
-"youtube.ad.blocking.breakage-report.send" = "Poslat zprávu o chybě";
+"youtube.ad.blocking.breakage-report.send" = "Odeslat anonymní hlášení";
 
 /* Title of the bottom sheet asking the user to send an anonymous breakage report after disabling YouTube ad blocking */
 "youtube.ad.blocking.breakage-report.title" = "Nefunguje blokování reklam na YouTube?";

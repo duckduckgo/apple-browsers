@@ -212,7 +212,7 @@
 "action.title.vpn" = "VPN";
 
 /* Description of the Ad Blocking feature in settings */
-"ad.blocking.description" = "Még betöltés előtt blokkolja az invazív nyomkövetőket, így hatékonyan kiküszöböljük a nyomkövetésre épülő hirdetéseket";
+"ad.blocking.description" = "Még betöltés előtt blokkolja az invazív nyomkövetőket, így hatékonyan kiküszöböljük a nyomkövetésre épülő hirdetéseket.";
 
 /* Section header for YouTube-specific ad blocking settings */
 "ad.blocking.youtube.section.header" = "YouTube-hirdetésblokkolás";
@@ -3199,7 +3199,7 @@
 "omnibar.notification.trackers-blocked" = "%d Trackers";
 
 /* Text displayed on notification appearing in the address bar when YouTube ad blocking is active */
-"omnibar.notification.youtube-ad-block-on" = "A YouTube-hirdetésblokkolás be van kapcsolva";
+"omnibar.notification.youtube-ad-block-on" = "Hirdetésblokkolás bekapcsolva";
 
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Megvan";
@@ -5311,10 +5311,10 @@
 "windows-waitlist.waitlist-download-screen.try-duckduckgo-for-windows" = "Töltsd le a DuckDuckGo Windows verzióját!";
 
 /* Body text of the bottom sheet asking the user to send an anonymous breakage report */
-"youtube.ad.blocking.breakage-report.message" = "Névtelen hibajelentés küldése a DuckDuckGo-nak. Segíts, hogy mindenkinek jobb legyen a hirdetésblokkolás.";
+"youtube.ad.blocking.breakage-report.message" = "Küldj névtelen jelentést a DuckDuckGo-nak, és segíts, hogy mindenkinek jobb legyen a hirdetésblokkolás!";
 
 /* Primary action sending an anonymous YouTube ad-blocking breakage report */
-"youtube.ad.blocking.breakage-report.send" = "Hibás működésre vonatkozó jelentés küldése";
+"youtube.ad.blocking.breakage-report.send" = "Névtelen jelentés küldése";
 
 /* Title of the bottom sheet asking the user to send an anonymous breakage report after disabling YouTube ad blocking */
 "youtube.ad.blocking.breakage-report.title" = "Nem működik a YouTube hirdetésblokkolója?";

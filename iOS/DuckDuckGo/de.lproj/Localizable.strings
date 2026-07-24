@@ -3199,7 +3199,7 @@
 "omnibar.notification.trackers-blocked" = "%d Trackers";
 
 /* Text displayed on notification appearing in the address bar when YouTube ad blocking is active */
-"omnibar.notification.youtube-ad-block-on" = "YouTube-Werbungsblocker aktiviert";
+"omnibar.notification.youtube-ad-block-on" = "Werbeblockierung an";
 
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Verstanden";
@@ -5311,10 +5311,10 @@
 "windows-waitlist.waitlist-download-screen.try-duckduckgo-for-windows" = "Hol dir DuckDuckGo für Windows!";
 
 /* Body text of the bottom sheet asking the user to send an anonymous breakage report */
-"youtube.ad.blocking.breakage-report.message" = "Sende einen anonymen Störungsbericht an DuckDuckGo. Hilf mit, den Werbeblocker für alle zu verbessern!";
+"youtube.ad.blocking.breakage-report.message" = "Sende einen anonymen Bericht an DuckDuckGo und hilf mit, den Werbeblocker für alle zu verbessern!";
 
 /* Primary action sending an anonymous YouTube ad-blocking breakage report */
-"youtube.ad.blocking.breakage-report.send" = "Störungsbericht senden";
+"youtube.ad.blocking.breakage-report.send" = "Anonymen Bericht senden";
 
 /* Title of the bottom sheet asking the user to send an anonymous breakage report after disabling YouTube ad blocking */
 "youtube.ad.blocking.breakage-report.title" = "YouTube-Werbeblockierung funktioniert nicht?";

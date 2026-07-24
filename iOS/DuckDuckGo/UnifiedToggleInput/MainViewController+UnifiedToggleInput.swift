@@ -362,6 +362,7 @@ struct UnifiedToggleInputRefreshActionInputs: Equatable {
     let tabURL: URL?
     let tabLinkURL: URL?
     let tabIsVoiceModeRequested: Bool
+    let tabRequestsDeepLinkSurface: Bool
     let coordinatorIsAITabState: Bool
     let coordinatorIsActive: Bool
     let coordinatorIsOmnibarSession: Bool
@@ -409,7 +410,7 @@ extension MainViewController {
         let hasExistingChat = resolvedURL?.duckAIChatID != nil
         let isSidebarOpen = resolvedURL?.isDuckAISidebarOpen == true
         let isSettingsOpen = resolvedURL?.isDuckAISettingsOpen == true
-        let shouldExpandAfterRefresh = !hasExistingChat && !inputs.coordinatorHasSubmittedPrompt && !isVoiceMode && !isSidebarOpen && !isSettingsOpen
+        let shouldExpandAfterRefresh = !hasExistingChat && !inputs.coordinatorHasSubmittedPrompt && !isVoiceMode && !isSidebarOpen && !isSettingsOpen && !inputs.tabRequestsDeepLinkSurface
         return .refreshAITab(.showCollapsed(expandAfterRefresh: shouldExpandAfterRefresh))
     }
 }
@@ -674,6 +675,7 @@ private extension MainViewController {
             tabURL: tab.url,
             tabLinkURL: tab.link?.url,
             tabIsVoiceModeRequested: tab.isVoiceModeRequested,
+            tabRequestsDeepLinkSurface: tab.isDuckAIDeepLinkSurfaceRequested,
             coordinatorIsAITabState: coordinator.isAITabState,
             coordinatorIsActive: coordinator.isActive,
             coordinatorIsOmnibarSession: coordinator.isOmnibarSession,
@@ -713,6 +715,7 @@ private extension MainViewController {
             coordinator.aiChatInputBoxVisibility = .hidden
         }
         tab.isVoiceModeRequested = false
+        tab.isDuckAIDeepLinkSurfaceRequested = false
         // Before the early-return so AI→AI tab transitions (`preserveCurrentPresentation`) also
         // override the `UIView`-default-visible borders on a freshly-bound tab.
         tab.borderView.isTopVisible = false

@@ -69737,55 +69737,55 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "YouTube-Werbungsblocker aktiviert"
+            "value" : "Werbeblockierung an"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "YouTube Ad Block On"
+            "value" : "Ad Blocking On"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Bloqueo de anuncios en YouTube activado"
+            "value" : "Bloqueo de anuncios"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Blocage des publicités sur YouTube activé"
+            "value" : "Blocage pubs activé"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Blocco degli annunci di YouTube attivato"
+            "value" : "Blocco annunci attivo"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Blokkering van YouTube-advertenties aan"
+            "value" : "Advertentieblokkering aan"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Blokowanie reklam YouTube włączone"
+            "value" : "Blokowanie reklam włączone"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Bloqueio de anúncios do YouTube ativo"
+            "value" : "Bloqueio de anúncios ativado"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Блокировка рекламы на YouTube включена"
+            "value" : "Блокировка рекламы"
           }
         }
       }
@@ -90141,49 +90141,49 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Blocks invasive trackers before they load, effectively eliminating ads that rely on tracking"
+            "value" : "Blocks invasive trackers before they load, effectively eliminating ads that rely on tracking."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Bloquea los rastreadores invasivos antes de que se carguen, eliminando de manera efectiva los anuncios que se basan en el rastreo"
+            "value" : "Bloquea los rastreadores invasivos antes de que se carguen, eliminando de manera efectiva los anuncios que se basan en el rastreo."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Bloque les traqueurs invasifs avant leur chargement, ce qui permet d'éliminer efficacement les publicités reposant sur le pistage"
+            "value" : "Bloque les traqueurs invasifs avant leur chargement, ce qui permet d'éliminer efficacement les publicités reposant sur le pistage."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Blocca i sistemi di tracciamento prima che vengano caricati, eliminando di fatto gli annunci che si basano sul tracciamento"
+            "value" : "Blocca i sistemi di tracciamento prima che vengano caricati, eliminando di fatto gli annunci che si basano sul tracciamento."
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Blokkeert invasieve trackers voordat ze worden geladen, waardoor advertenties die afhankelijk zijn van tracking effectief worden geëlimineerd"
+            "value" : "We blokkeren invasieve trackers voordat ze worden geladen. Zo elimineren we effectief advertenties die afhankelijk zijn van tracking."
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Blokuje inwazyjne mechanizmy śledzące przed ich załadowaniem, skutecznie eliminując reklamy, które opierają się na śledzeniu"
+            "value" : "Blokuje inwazyjne mechanizmy śledzące przed ich załadowaniem, skutecznie eliminując reklamy, które opierają się na śledzeniu."
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Bloqueia os rastreadores invasivos antes de serem carregados, eliminando eficazmente os anúncios que usam rastreio"
+            "value" : "Bloqueia os rastreadores invasivos antes de serem carregados, eliminando eficazmente os anúncios que dependem do rastreamento."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Блокирует навязчивые трекеры до их загрузки, устраняя рекламу с отслеживанием"
+            "value" : "Блокирует трекеры, следящие за вашей активностью, еще до их загрузки, фактически устраняя рекламу на основе отслеживания."
           }
         }
       }
@@ -95235,55 +95235,55 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sende einen anonymen Störungsbericht an DuckDuckGo. Hilf mit, den Werbeblocker für alle zu verbessern!"
+            "value" : "Sende einen anonymen Bericht an DuckDuckGo und hilf mit, den Werbeblocker für alle zu verbessern!"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Send an anonymous breakage report to DuckDuckGo. Help make Ad Blocking better for everyone!"
+            "value" : "Send an anonymous report to DuckDuckGo and help make ad blocking better for everyone!"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Envía un informe anónimo de fallos a DuckDuckGo. ¡Ayuda a que el bloqueo de anuncios sea mejor para todos!"
+            "value" : "Envía un informe anónimo a DuckDuckGo y ¡ayuda a que el bloqueo de anuncios sea mejor para todos!"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Envoyez un rapport anonyme de dysfonctionnement à DuckDuckGo. Contribuez à améliorer le blocage des publicités pour tous !"
+            "value" : "Envoyez un rapport anonyme à DuckDuckGo et contribuez à améliorer le blocage des publicités pour tous !"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Invia una segnalazione anonima di malfunzionamento a DuckDuckGo. Aiuta a migliorare il blocco degli annunci per tutti!"
+            "value" : "Invia una segnalazione anonima a DuckDuckGo e aiuta a migliorare il blocco degli annunci per tutti!"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Stuur een anoniem functioneringsrapport naar DuckDuckGo. Help mee om advertentieblokkering voor iedereen te verbeteren!"
+            "value" : "Stuur een anoniem rapport naar DuckDuckGo en help mee om advertentieblokkering voor iedereen te verbeteren!"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Wyślij anonimowy raport o awarii do DuckDuckGo. Pomóż usprawnić blokowanie reklam dla wszystkich!"
+            "value" : "Wyślij anonimowy raport do DuckDuckGo i pomóż usprawnić blokowanie reklam dla wszystkich!"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Envia um relatório anónimo de falha à DuckDuckGo. Ajuda a melhorar o bloqueio de anúncios para toda a gente!"
+            "value" : "Envia um relatório anónimo à DuckDuckGo e ajuda a melhorar o bloqueio de anúncios para toda a gente!"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Отправьте анонимное сообщение о проблеме в DuckDuckGo. Помогите улучшить блокировку рекламы для всех!"
+            "value" : "Отправьте анонимные сведения в DuckDuckGo и помогите улучшить блокировку рекламы для всех!"
           }
         }
       }
@@ -95721,13 +95721,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Ad Blocking has been affected by recent changes to YouTube. We're working to fix these issues and appreciate your understanding"
+            "value" : "Ad Blocking has been affected by recent changes to YouTube. We're working to fix these issues and appreciate your understanding."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "El bloqueo de anuncios se ha visto afectado por los cambios recientes en YouTube. Estamos trabajando para solucionar estos problemas y agradecemos tu comprensión"
+            "value" : "El bloqueo de anuncios se ha visto afectado por los cambios recientes en YouTube. Estamos trabajando para solucionar estos problemas y agradecemos tu comprensión."
           }
         },
         "fr" : {
@@ -95739,25 +95739,25 @@
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Il blocco degli annunci è stato influenzato dalle recenti modifiche a YouTube. Stiamo lavorando per risolvere questi problemi. Grazie per la comprensione"
+            "value" : "Il blocco degli annunci è stato influenzato dalle recenti modifiche a YouTube. Stiamo lavorando per risolvere questi problemi. Grazie per la comprensione."
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Door recente wijzigingen in YouTube werkt advertentieblokkering niet meer naar behoren. We werken aan een oplossing voor deze problemen. Bedankt voor je begrip."
+            "value" : "De blokkering van advertenties is beïnvloed door recente wijzigingen aan YouTube. We werken aan een oplossing voor deze problemen. Bedankt voor je begrip."
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ostatnie zmiany w serwisie YouTube wpłynęły na blokowanie reklam. Pracujemy nad rozwiązaniem tych problemów i dziękujemy za zrozumienie."
+            "value" : "Ostatnie zmiany w YouTube wpłynęły na blokowanie reklam. Pracujemy nad rozwiązaniem tych problemów i dziękujemy za zrozumienie."
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "O bloqueio de anúncios foi afetado por alterações recentes ao YouTube. Estamos a trabalhar para resolver estes problemas e agradecemos a tua compreensão."
+            "value" : "O bloqueio de anúncios foi afetado por alterações recentes no YouTube. Estamos a trabalhar para resolver estes problemas e agradecemos a tua compreensão."
           }
         },
         "ru" : {

@@ -25,9 +25,7 @@ import BrowserServicesKit
 import Common
 import FoundationExtensions
 import Networking
-import PixelKit
 import AIChat
-import SERPSettings
 
 struct SettingsAIFeaturesView: View {
     @EnvironmentObject var viewModel: SettingsViewModel
@@ -36,15 +34,10 @@ struct SettingsAIFeaturesView: View {
         List {
             header
 
-            if viewModel.isAIFeaturesNativeControlsEnabled {
-                SettingsAINativeFeaturesView()
-            } else {
-                SettingsAILegacyFeaturesView()
-            }
+            SettingsAINativeFeaturesView()
         }
         .safeAreaInset(edge: .bottom) {
-            if viewModel.isAIFeaturesNativeControlsEnabled,
-               UIDevice.current.userInterfaceIdiom == .pad {
+            if UIDevice.current.userInterfaceIdiom == .pad {
                 Color.clear.frame(height: 8)
             }
         }
@@ -95,7 +88,7 @@ struct SettingsAIFeaturesView: View {
     }
 }
 
-// MARK: - Native controls layout (aiFeaturesNativeControls ON)
+// MARK: - Native controls layout
 
 private struct SettingsAINativeFeaturesView: AIFeaturesSettingsRowProviding {
     @EnvironmentObject var viewModel: SettingsViewModel
@@ -157,71 +150,6 @@ private struct SettingsAINativeFeaturesView: AIFeaturesSettingsRowProviding {
             Text(viewModel.isAllAIDisabled ? UserText.settingsAiFeaturesDisableAllFooterDisabled : UserText.settingsAiFeaturesDisableAllFooter)
         }
         .listRowBackground(Color(designSystemColor: .surface))
-    }
-}
-
-// MARK: - Legacy layout (aiFeaturesNativeControls OFF)
-
-private struct SettingsAILegacyFeaturesView: AIFeaturesSettingsRowProviding {
-    @EnvironmentObject var viewModel: SettingsViewModel
-
-    var body: some View {
-        Section {
-            duckAIEnableToggleRow
-
-            if viewModel.isAiChatEnabledBinding.wrappedValue {
-                duckAISettingsRow
-            }
-        }
-
-        if viewModel.isAiChatEnabledBinding.wrappedValue {
-            if viewModel.experimentalAIChatManager.isExperimentalAIChatFeatureFlagEnabled {
-                Section {
-                    duckAISearchInputRows
-                } footer: {
-                    aiChatFeedbackFooter
-                }
-                .listRowBackground(Color(designSystemColor: .surface))
-            }
-
-            if viewModel.experimentalAIChatManager.isContextualDuckAIModeEnabled {
-                Section {
-                    autoSendContentRow
-                }
-            }
-
-            Section {
-                manageShortcutsRow
-            }
-            .listRowBackground(Color(designSystemColor: .surface))
-        }
-
-        if !viewModel.openedFromSERPSettingsButton {
-            Section {
-                NavigationLink(destination: SERPSettingsView(page: .searchAssist,
-                                                             contentBlockingAssetsPublisher: viewModel.contentBlockingAssetsPublisher,
-                                                             keyValueStore: viewModel.keyValueStore)) {
-                    SettingsCellView(label: UserText.settingsAiFeaturesSearchAssist,
-                                     subtitle: UserText.settingsAiFeaturesSearchAssistSubtitle,
-                                     image: Image(uiImage: DesignSystemImages.Glyphs.Size24.assist))
-                }
-                .listRowBackground(Color(designSystemColor: .surface))
-
-                NavigationLink(destination: SERPSettingsView(page: .hideAIGeneratedImages,
-                                                             contentBlockingAssetsPublisher: viewModel.contentBlockingAssetsPublisher,
-                                                             keyValueStore: viewModel.keyValueStore)
-                        .onAppear {
-                            PixelKit.fire(SERPSettingsPixel.hideAIGeneratedImagesButtonClicked, frequency: .dailyAndStandard)
-                        }
-                ) {
-                    SettingsCellView(label: UserText.settingsAiFeaturesHideAIGeneratedImages,
-                                     subtitle: UserText.settingsAiFeaturesHideAIGeneratedImagesSubtitle,
-                                     renderSubtitleAsMarkdown: true,
-                                     image: Image(uiImage: DesignSystemImages.Glyphs.Size24.imageAIHide))
-                }
-                .listRowBackground(Color(designSystemColor: .surface))
-            }
-        }
     }
 }
 
@@ -299,53 +227,6 @@ private extension AIFeaturesSettingsRowProviding {
                          )),
                          isButton: true)
         .accessibilityIdentifier("Settings.AIFeatures.DuckAISettings")
-    }
-
-    @ViewBuilder
-    var aiChatFeedbackFooter: some View {
-        Text(footerAttributedString)
-            .environment(\.openURL, OpenURLAction { url in
-                switch FooterAction.from(url) {
-                case .shareFeedback?:
-                    viewModel.presentLegacyView(.feedback)
-                    return .handled
-                case nil:
-                    return .systemAction
-                }
-            })
-    }
-
-    var footerAttributedString: AttributedString {
-        var base = AttributedString(UserText.settingsAIPickerFooterDescription + " ")
-        var link = AttributedString(UserText.subscriptionFeedback)
-        link.foregroundColor = Color(designSystemColor: .accentPrimary)
-        link.link = FooterAction.shareFeedback.url
-        base.append(link)
-        return base
-    }
-}
-
-private enum FooterAction {
-    static let scheme = "action"
-
-    case shareFeedback
-
-    var url: URL {
-        URL(string: "\(Self.scheme)://\(host)")!
-    }
-
-    private var host: String {
-        switch self {
-        case .shareFeedback: return "share-feedback"
-        }
-    }
-
-    static func from(_ url: URL) -> FooterAction? {
-        guard url.scheme == Self.scheme else { return nil }
-        switch url.host {
-        case "share-feedback": return .shareFeedback
-        default: return nil
-        }
     }
 }
 

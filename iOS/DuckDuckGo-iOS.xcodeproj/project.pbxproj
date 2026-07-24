@@ -1742,6 +1742,7 @@
 		9FD8A2F22F99B98D005772BC /* CustomProductPage+Onboarding.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FD8A2F12F99B982005772BC /* CustomProductPage+Onboarding.swift */; };
 		9FD8A2F52F99BA32005772BC /* CustomProductPageEvaluator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FD8A2F42F99BA30005772BC /* CustomProductPageEvaluator.swift */; };
 		9FD8A2F72F99C028005772BC /* CustomProductPageDeepLinkHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FD8A2F62F99C01C005772BC /* CustomProductPageDeepLinkHandler.swift */; };
+		9FDD65B73011E8C500CE8776 /* OnboardingView+SERPPersonalization.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FDD65B63011E8B000CE8776 /* OnboardingView+SERPPersonalization.swift */; };
 		9FDD72052D895D8C0016246B /* CombineSchedulers in Frameworks */ = {isa = PBXBuildFile; productRef = 9FDD72042D895D8C0016246B /* CombineSchedulers */; };
 		9FDEC7B42C8FD62F00C7A692 /* OnboardingAddressBarPositionPickerViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FDEC7B32C8FD62F00C7A692 /* OnboardingAddressBarPositionPickerViewModelTests.swift */; };
 		9FDEC7BC2C91204900C7A692 /* AppIconPickerViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FDEC7BB2C91204900C7A692 /* AppIconPickerViewModel.swift */; };
@@ -4548,6 +4549,7 @@
 		9FD8A2F12F99B982005772BC /* CustomProductPage+Onboarding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CustomProductPage+Onboarding.swift"; sourceTree = "<group>"; };
 		9FD8A2F42F99BA30005772BC /* CustomProductPageEvaluator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomProductPageEvaluator.swift; sourceTree = "<group>"; };
 		9FD8A2F62F99C01C005772BC /* CustomProductPageDeepLinkHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomProductPageDeepLinkHandler.swift; sourceTree = "<group>"; };
+		9FDD65B63011E8B000CE8776 /* OnboardingView+SERPPersonalization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OnboardingView+SERPPersonalization.swift"; sourceTree = "<group>"; };
 		9FDEC7B32C8FD62F00C7A692 /* OnboardingAddressBarPositionPickerViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingAddressBarPositionPickerViewModelTests.swift; sourceTree = "<group>"; };
 		9FDEC7BB2C91204900C7A692 /* AppIconPickerViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppIconPickerViewModel.swift; sourceTree = "<group>"; };
 		9FDEC7C02C9127F100C7A692 /* OnboardingAddressBarPositionPickerViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingAddressBarPositionPickerViewModel.swift; sourceTree = "<group>"; };
@@ -8784,6 +8786,7 @@
 				970C8DE9831CD77A979A1354 /* OnboardingView+SkipOnboardingContent.swift */,
 				9FADFC5F2F62384C00CA16F7 /* OnboardingView+RestorePromptDialogContent.swift */,
 				8693FFCAC02CE4A85D0BD62C /* OnboardingView+ComparisonContent.swift */,
+				9FDD65B63011E8B000CE8776 /* OnboardingView+SERPPersonalization.swift */,
 				4D434F523CEFF1B86C75ECC6 /* OnboardingView+AddToDockContent.swift */,
 				81E935251F047CE4825824A5 /* OnboardingView+AddressBarPositionContent.swift */,
 				EDB06E4C5FAE7E6BC7CDC6CC /* OnboardingView+AppIconPickerContent.swift */,
@@ -13661,6 +13664,7 @@
 				6F2331662DD4D046004D102D /* TabSwitcherStaticButton.swift in Sources */,
 				EE0153E12A6EABE0002A8B26 /* NetworkProtectionConvenienceInitialisers.swift in Sources */,
 				C17B595B2A03AAD30055F2D1 /* PasswordGenerationPromptView.swift in Sources */,
+				9FDD65B73011E8C500CE8776 /* OnboardingView+SERPPersonalization.swift in Sources */,
 				C1AAECBD2E699F740016B82E /* SessionStateMetrics.swift in Sources */,
 				9FB71CB52F395A95000AD042 /* ContextualOnboardingDialogs+TrySite.swift in Sources */,
 				98AA92B32456FBE100ED4B9E /* SearchFieldContainerView.swift in Sources */,

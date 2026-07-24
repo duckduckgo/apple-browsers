@@ -65,6 +65,17 @@ final class WebExtensionEventsCoordinator {
         webExtensionManager?.eventsListener.didCloseTab(tabViewController, windowIsClosing: windowIsClosing)
     }
 
+    /// Closes a tab identified by its model. Resolves the controller from the live cache, or — when
+    /// the tab's WebKit process was evicted — from the retained invalidated controller, so a tab
+    /// closed while evicted is reported to the extension right away instead of lingering in
+    /// `invalidatedControllersByTabUID` until an unrelated prune.
+    @available(iOS 18.4, *)
+    func didCloseTab(_ tab: Tab, windowIsClosing: Bool = false) {
+        guard let controller = mainViewController?.tabManager.controller(for: tab)
+                ?? invalidatedControllersByTabUID[tab.uid] else { return }
+        didCloseTab(controller, windowIsClosing: windowIsClosing)
+    }
+
     /// Call this when all extensions are unloaded (e.g. before clearing browser data).
     /// Clears the reported-tab tracking so that registerExistingTabsAndWindow() can
     /// re-register all tabs correctly after extensions are reloaded.

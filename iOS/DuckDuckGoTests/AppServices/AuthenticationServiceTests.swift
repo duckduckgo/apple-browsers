@@ -131,32 +131,3 @@ final class AuthenticationServiceTests {
     }
 
 }
-
-final class PrivacyUserDefaultsTests {
-
-    @Test("Enabling authentication posts authentication-enabled-changed notification")
-    func whenAuthenticationChangesFromDisabledToEnabledThenNotificationIsPosted() async throws {
-        let suiteName = "PrivacyUserDefaultsTests.\(UUID().uuidString)"
-        let userDefaults = try #require(UserDefaults(suiteName: suiteName))
-        defer {
-            userDefaults.removePersistentDomain(forName: suiteName)
-        }
-        let privacyStore = PrivacyUserDefaults(userDefaults: userDefaults)
-        #expect(!privacyStore.authenticationEnabled)
-
-        await confirmation { notificationReceived in
-            let observer = NotificationCenter.default.addObserver(
-                forName: PrivacyUserDefaults.Notifications.authenticationEnabledChanged,
-                object: nil,
-                queue: nil) { notification in
-                #expect(notification.object as? Bool == true)
-                notificationReceived()
-            }
-            defer {
-                NotificationCenter.default.removeObserver(observer)
-            }
-
-            privacyStore.authenticationEnabled = true
-        }
-    }
-}

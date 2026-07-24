@@ -16,12 +16,18 @@
 # Prereqs: run provision-macos.sh first (crossbench + extras + Chrome + poetry).
 #
 # Usage:
-#   ./test-chrome.sh [--reps N] [--sites a.com,b.com] [--out FILE]
+#   ./test-chrome.sh [--sites a.com,b.com] [--out FILE]
+#
+# Each site gets one discarded warm-up load followed by MEASURED_REPS measured
+# loads. The first load of a domain pays cold OS-DNS + cold CDN-edge latency the
+# later loads don't; a fresh Chrome profile per load means no browser-cache
+# carry-over, so only that DNS/edge warmth persists — and it persists across
+# crossbench invocations, so the throwaway warm-up primes it for the measured run.
 #
 set -euo pipefail
 
 # ---- config / args ---------------------------------------------------------
-REPS="10"
+MEASURED_REPS=10
 SITES_OVERRIDE=""
 RESULTS_FILE=""
 CROSSBENCH_DIR="${CROSSBENCH_DIR:-$HOME/Developer/crossbench-upstream}"
@@ -32,7 +38,6 @@ CHROME_BIN="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 
 while [ $# -gt 0 ]; do
   case "$1" in
-    --reps)  REPS="$2"; shift 2 ;;
     --sites) SITES_OVERRIDE="$2"; shift 2 ;;
     --out)   RESULTS_FILE="$2"; shift 2 ;;
     -h|--help) grep '^#' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
@@ -114,7 +119,7 @@ summarize_lcp() {
 
 # ---- run -------------------------------------------------------------------
 run_chrome() {
-  log "Chrome LCP run (LIVE network) — $SUITE, ${#SITES[@]} sites, $REPS reps, ${LOAD_WINDOW} window"
+  log "Chrome LCP run (LIVE network) — $SUITE, ${#SITES[@]} sites, 1 warm-up + $MEASURED_REPS reps, ${LOAD_WINDOW} window"
   echo "chrome:  $CHROME_VERSION"
   echo "results: $RESULTS_FILE"
   cd "$CROSSBENCH_DIR"
@@ -125,6 +130,17 @@ run_chrome() {
   local site out results_path
   for site in "${SITES[@]}"; do
     log "site: $site"
+    # Warm-up load (discarded): primes OS-DNS + CDN edge so the measured reps
+    # below don't carry first-load cold latency. Output is intentionally ignored.
+    poetry run python ./cb.py \
+      loading \
+      --browser=chrome-stable \
+      --probe-config="$PROBE_CONFIG" \
+      --repetitions=1 \
+      --url="$site,$LOAD_WINDOW" \
+      --about-blank-duration=2s \
+      --env-validation=skip >/dev/null 2>&1 || true
+
     out="$(mktemp)"
     # --about-blank-duration is REQUIRED: navigating to about:blank after each
     # page forces Chromium to finalize LCP; without it every value comes out -1.
@@ -133,7 +149,7 @@ run_chrome() {
       loading \
       --browser=chrome-stable \
       --probe-config="$PROBE_CONFIG" \
-      --repetitions="$REPS" \
+      --repetitions="$MEASURED_REPS" \
       --url="$site,$LOAD_WINDOW" \
       --about-blank-duration=2s \
       --debug \

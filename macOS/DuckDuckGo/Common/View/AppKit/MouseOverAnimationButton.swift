@@ -80,6 +80,17 @@ final class MouseOverAnimationButton: AddressBarButton {
         }
     }
 
+    /// When set, the animation view is laid out at this fixed size, centered on the button,
+    /// instead of being pinned to the button's edges.
+    var animationViewSize: CGSize? {
+        didSet {
+            guard oldValue != animationViewSize else { return }
+            currentAnimationView?.removeFromSuperview()
+            currentAnimationView = nil
+            updateAnimationView()
+        }
+    }
+
     struct AnimationViews {
         let aqua: LottieAnimationView
         let dark: LottieAnimationView
@@ -139,13 +150,22 @@ final class MouseOverAnimationButton: AddressBarButton {
         newAnimationView.translatesAutoresizingMaskIntoConstraints = false
         addSubview(newAnimationView)
 
-        // Inset and offset to align hover animation with static icon
-        NSLayoutConstraint.activate([
-            newAnimationView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 0.5),
-            newAnimationView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -1),
-            newAnimationView.topAnchor.constraint(equalTo: topAnchor, constant: 0.5),
-            newAnimationView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -1)
-        ])
+        if let animationViewSize {
+            NSLayoutConstraint.activate([
+                newAnimationView.centerXAnchor.constraint(equalTo: centerXAnchor),
+                newAnimationView.centerYAnchor.constraint(equalTo: centerYAnchor),
+                newAnimationView.widthAnchor.constraint(equalToConstant: animationViewSize.width),
+                newAnimationView.heightAnchor.constraint(equalToConstant: animationViewSize.height)
+            ])
+        } else {
+            // Inset and offset to align hover animation with static icon
+            NSLayoutConstraint.activate([
+                newAnimationView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 0.5),
+                newAnimationView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -1),
+                newAnimationView.topAnchor.constraint(equalTo: topAnchor, constant: 0.5),
+                newAnimationView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -1)
+            ])
+        }
     }
 
     // MARK: - Animating

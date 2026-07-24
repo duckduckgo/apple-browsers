@@ -1310,6 +1310,8 @@ final class AddressBarButtonsViewController: NSViewController {
         permissionCenterButtonHeightConstraint.constant = addressBarButtonSize
         youTubeAdBlockButtonWidthConstraint.constant = addressBarButtonSize
         youTubeAdBlockButtonHeightConstraint.constant = addressBarButtonSize
+
+        privacyDashboardButton.animationViewSize = theme.addressBarStyleProvider.addressBarPrivacyAnimationSize
     }
 
     private func setupButtonIcons() {

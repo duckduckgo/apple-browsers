@@ -460,6 +460,7 @@ class TabViewCell: UICollectionViewCell {
     func updateSelectionIndicator(_ image: UIImageView) {
         if !isSelected {
             image.image = DesignSystemImages.Glyphs.Size24.shapeCircle
+            image.tintColor = UIColor(designSystemColor: .iconsTertiary)
         } else {
             image.image = DesignSystemImages.Recolorable.Size24.check.applyPalleteColorsToSymbol(
                 foreground: UIColor(designSystemColor: .accentContentPrimary),

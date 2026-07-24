@@ -30,10 +30,6 @@ protocol PromptBarStatusItem: AnyObject {
 extension NSStatusItem: PromptBarStatusItem {}
 
 /// Manages the Prompt Bar's duck.ai icon in the macOS menu bar.
-///
-/// Visibility is driven by `PromptBarPreferences.isMenuBarIconVisible`: the owner
-/// (`AppDelegate`) creates the controller behind the `macosPromptBar` flag and
-/// calls `show()` / `hide()` as the setting changes.
 @MainActor
 final class PromptBarMenuBarController: NSObject {
 

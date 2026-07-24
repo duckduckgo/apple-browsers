@@ -2441,8 +2441,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             promptBarMenuBarController = PromptBarMenuBarController()
         }
 
-        // `@Published` replays the current value on subscription, so this both
-        // applies the initial visibility and reacts to later toggle changes.
         promptBarMenuBarCancellable = promptBarPreferences.$isMenuBarIconVisible
             .sink { [weak self] isVisible in
                 Task { @MainActor in

@@ -65,13 +65,9 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     /// consumed by a reload.
     private var unloadedExtensionsCache: [String: WKWebExtension] = [:]
 
-    /// Most recent successful load time per extension identifier. Drives `awaitDNRSettleWindow(for:)`.
-    @MainActor
-    private var lastLoadDates: [String: Date] = [:]
-
-    private let dnrSettleWindow: TimeInterval
-    private let now: () -> Date
-    private let sleeper: (TimeInterval) async -> Void
+    /// Guards unload/reload paths against a WebKit declarativeNetRequest crash — see
+    /// `WebExtensionUnloadGuard`. `var` only so tests can inject a guard with a controlled clock.
+    var unloadGuard: WebExtensionUnloadGuard
 
     /// Pixel firing for analytics.
     let pixelFiring: WebExtensionPixelFiring
@@ -97,10 +93,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
                 pixelFiring: WebExtensionPixelFiring = NoOpWebExtensionPixelFiring(),
                 messageRouter: WebExtensionMessageRouting? = nil,
                 handlerProvider: WebExtensionHandlerProviding? = nil,
-                scriptletConfiguration: ScriptletConfiguration? = nil,
-                dnrSettleWindow: TimeInterval = WebExtensionManager.defaultDNRSettleWindow,
-                now: @escaping () -> Date = Date.init,
-                sleeper: @escaping (TimeInterval) async -> Void = { try? await Task.sleep(nanoseconds: UInt64($0 * 1_000_000_000)) }) {
+                scriptletConfiguration: ScriptletConfiguration? = nil) {
         let controllerConfiguration = WKWebExtensionController.Configuration.default()
         controllerConfiguration.webViewConfiguration.applicationNameForUserAgent = configuration.applicationNameForUserAgent
         self.controller = WKWebExtensionController(configuration: controllerConfiguration)
@@ -116,9 +109,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         self.messageRouter = messageRouter ?? WebExtensionMessageRouter()
         self.handlerProvider = handlerProvider
         self.scriptletConfiguration = scriptletConfiguration
-        self.dnrSettleWindow = dnrSettleWindow
-        self.now = now
-        self.sleeper = sleeper
+        self.unloadGuard = WebExtensionUnloadGuard()
 
         super.init()
 
@@ -179,7 +170,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
 
         do {
             let loadResult = try await loader.loadWebExtension(identifier: identifier, into: controller)
-            await recordLoadDate(for: identifier)
+            await unloadGuard.recordLoad(of: identifier)
 
             let installedExtension = InstalledWebExtension(
                 uniqueIdentifier: identifier,
@@ -336,62 +327,16 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     public func reloadExtension(identifier: String) async throws {
         Logger.webExtensions.debug("🔄 Reloading extension '\(identifier)'")
 
-        await awaitDNRSettleWindow(for: identifier)
+        await unloadGuard.awaitSettled(context(for: identifier))
 
         try loader.unloadExtension(identifier: identifier, from: controller)
         unregisterHandlers(for: identifier)
 
         _ = try await loader.loadWebExtension(identifier: identifier, into: controller)
-        recordLoadDate(for: identifier)
+        unloadGuard.recordLoad(of: identifier)
 
         Logger.webExtensions.info("✅ Reloaded extension '\(identifier)'")
         notifyUpdate()
-    }
-
-    // MARK: - DNR Settle Window
-
-    /// Minimum time an extension that requests `declarativeNetRequest` must stay loaded before it
-    /// may be unloaded again. Works around a WebKit crash present up to WebKit 7624.x (macOS
-    /// 26.0–26.4): loading a context starts a fire-and-forget declarativeNetRequest rules load on a
-    /// background queue, and unloading the context destroys the SQLite stores that load reads from;
-    /// a store torn down with the read still queued delivers a null rules array that WebKit then
-    /// dereferences (https://bugs.webkit.org/show_bug.cgi?id=305585, fixed upstream in 305661@main).
-    /// Remove this workaround once the minimum supported macOS ships the fix.
-    ///
-    /// Value: maximum observed load-to-crash window was ~1.5s (perf-CI crash reports, Jul 2026),
-    /// doubled as a safety factor.
-    public static let defaultDNRSettleWindow: TimeInterval = 3
-
-    private static let dnrPermissions: Set<WKWebExtension.Permission> = [
-        WKWebExtension.Permission("declarativeNetRequest"),
-        WKWebExtension.Permission("declarativeNetRequestWithHostAccess"),
-    ]
-
-    /// Records a successful load of the extension so `awaitDNRSettleWindow(for:)` can measure
-    /// how long it has been loaded.
-    @MainActor
-    func recordLoadDate(for identifier: String) {
-        lastLoadDates[identifier] = now()
-    }
-
-    /// Suspends until the extension has been loaded for at least `dnrSettleWindow`. Only applies
-    /// to loaded extensions that request declarativeNetRequest — no other extension triggers the
-    /// WebKit rules load that makes unloading unsafe (see `defaultDNRSettleWindow`).
-    ///
-    /// Deliberately not applied to the synchronous unload paths (`unloadAllExtensions`,
-    /// user-initiated `uninstallExtension`): those cannot await, and in practice they run long
-    /// after the extension was loaded.
-    @MainActor
-    func awaitDNRSettleWindow(for identifier: String) async {
-        guard let context = context(for: identifier),
-              !Self.dnrPermissions.isDisjoint(with: context.webExtension.requestedPermissions),
-              let loadDate = lastLoadDates[identifier] else { return }
-
-        let remaining = dnrSettleWindow - now().timeIntervalSince(loadDate)
-        guard remaining > 0 else { return }
-
-        Logger.webExtensions.debug("⏸️ Delaying unload of '\(identifier)' by \(remaining)s for WebKit's in-flight declarativeNetRequest load")
-        await sleeper(remaining)
     }
 
     // MARK: - Loading
@@ -417,7 +362,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
             switch result {
             case .success:
                 Logger.webExtensions.debug("✅ Loaded extension `\(installedExtension.name ?? "")` v\(installedExtension.version ?? "unknown") | \(installedExtension.filename) | \(installedExtension.uniqueIdentifier)")
-                recordLoadDate(for: installedExtension.uniqueIdentifier)
+                unloadGuard.recordLoad(of: installedExtension.uniqueIdentifier)
                 successCount += 1
             case .failure(let failure):
                 Logger.webExtensions.error("❌ Failed to load web extension \(installedExtension.filename) (\(installedExtension.uniqueIdentifier)): \(failure.localizedDescription)")
@@ -495,7 +440,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
             await Task.yield()
             do {
                 try await loader.reloadWebExtension(webExtension, identifier: identifier, into: controller)
-                recordLoadDate(for: identifier)
+                unloadGuard.recordLoad(of: identifier)
                 successCount += 1
             } catch {
                 Logger.webExtensions.error("❌ Failed to reload web extension '\(identifier)': \(error.localizedDescription)")

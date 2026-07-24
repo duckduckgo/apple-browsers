@@ -70,17 +70,20 @@ final class WebExtensionManagerTests: XCTestCase {
 
     @MainActor
     private func makeManager() -> WebExtensionManager {
-        WebExtensionManager(
+        let manager = WebExtensionManager(
             configuration: configurationMock,
             windowTabProvider: windowTabProviderMock,
             storageProvider: storageProvidingMock,
             installationStore: installedExtensionStoringMock,
             loader: webExtensionLoadingMock,
             eventsListener: eventsListenerMock,
-            lifecycleDelegate: lifecycleDelegateMock,
+            lifecycleDelegate: lifecycleDelegateMock
+        )
+        manager.unloadGuard = WebExtensionUnloadGuard(
             now: { [unowned self] in currentDate },
             sleeper: { [unowned self] in recordedSleeps.append($0) }
         )
+        return manager
     }
 
     private func makeInstalledWebExtension(uniqueIdentifier: String,
@@ -386,7 +389,10 @@ final class WebExtensionManagerTests: XCTestCase {
         XCTAssertTrue(webExtensionLoadingMock.loadWebExtensionsCalled)
     }
 
-    // MARK: - DNR Settle Window Tests
+    // MARK: - Unload Guard Integration Tests
+
+    // The guard's windowing logic is covered in WebExtensionUnloadGuardTests; these prove the
+    // manager's unload/reload paths actually consult the guard and record loads with it.
 
     /// Loads a real DNR-permission context into the manager's controller and records its load
     /// date via `loadInstalledExtensions()`, so the settle window can be exercised.
@@ -412,28 +418,6 @@ final class WebExtensionManagerTests: XCTestCase {
 
         XCTAssertEqual(recordedSleeps.count, 1)
         XCTAssertEqual(recordedSleeps[0], 2.0, accuracy: 0.001)
-    }
-
-    @MainActor
-    func testWhenDNRExtensionIsReloadedAfterSettleWindow_ThenReloadDoesNotSleep() async throws {
-        let manager = try await makeManagerWithLoadedExtension(identifier: "dnr-extension",
-                                                               permissions: ["declarativeNetRequest"])
-
-        currentDate = currentDate.addingTimeInterval(3.5)
-        try await manager.reloadExtension(identifier: "dnr-extension")
-
-        XCTAssertTrue(recordedSleeps.isEmpty)
-    }
-
-    @MainActor
-    func testWhenNonDNRExtensionIsReloadedWithinSettleWindow_ThenReloadDoesNotSleep() async throws {
-        let manager = try await makeManagerWithLoadedExtension(identifier: "plain-extension",
-                                                               permissions: [])
-
-        currentDate = currentDate.addingTimeInterval(1)
-        try await manager.reloadExtension(identifier: "plain-extension")
-
-        XCTAssertTrue(recordedSleeps.isEmpty)
     }
 
     @MainActor

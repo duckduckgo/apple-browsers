@@ -51,8 +51,9 @@ jobs:
     # restricts standard runners, switch to macos-15-large / macos-26-xlarge
     # (those bill).
     runs-on: macos-latest
-    # 11 loads/site (1 warm-up + 10 measured); a full 22-site run is ~85 min.
-    timeout-minutes: 120
+    # 11 loads/site (1 warm-up + 10 measured); a full 22-site live-network run
+    # runs ~1.5-2h, so cap above that.
+    timeout-minutes: 160
 
     steps:
       - name: Check out the code

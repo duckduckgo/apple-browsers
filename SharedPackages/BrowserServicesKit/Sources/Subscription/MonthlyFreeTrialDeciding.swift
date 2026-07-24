@@ -64,9 +64,9 @@ extension MonthlyFreeTrialDeciding {
         return products.filter { allowedIdentifiers.contains($0.id) }
     }
 
-    /// For each configured SKU pair whose control and treatment variants are both present, keeps the
-    /// variant matching the cohort and drops the other. Identifiers not in a pair pass through
-    /// unchanged, and a pair with only one variant present is left untouched.
+    /// Filters the provided `identifiers` array:
+    /// * if `shouldOfferMonthlyFreeTrial`, it removes the 'no trial' monthly products
+    /// * otherwise it removes the 'free trial' monthly products.
     func filteringMonthlyFreeTrialPreference(from identifiers: [String]) -> [String] {
         let offerMonthlyFreeTrial = shouldOfferMonthlyFreeTrial()
         let present = Set(identifiers)

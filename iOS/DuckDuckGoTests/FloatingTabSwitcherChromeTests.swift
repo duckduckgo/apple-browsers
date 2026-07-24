@@ -108,7 +108,7 @@ final class FloatingTabSwitcherChromeTests: XCTestCase {
 
         let items = chrome.toolbar.items ?? []
         let doneIndex = items.firstIndex { $0.accessibilityLabel == UserText.navigationTitleDone }
-        let closeTabsIndex = items.firstIndex { $0.title == UserText.closeTabs(withCount: 2) }
+        let closeTabsIndex = items.firstIndex { $0.title == UserText.tabSwitcherCloseTabsButtonTitle(withCount: 2) }
         let menuIndex = items.firstIndex { $0.menu != nil }
 
         guard let doneIndex, let closeTabsIndex, let menuIndex else {
@@ -208,8 +208,22 @@ final class FloatingTabSwitcherChromeTests: XCTestCase {
                       canShowSelectionMenu: false,
                       isEditing: true)
 
-        let closeTabsItem = chrome.toolbar.items?.first { $0.title == UserText.closeTabs(withCount: 0) }
+        let closeTabsItem = chrome.toolbar.items?.first { $0.title == UserText.tabSwitcherCloseTabsButtonTitle(withCount: 0) }
         XCTAssertEqual(closeTabsItem?.isEnabled, false)
+    }
+
+    func testWhenOneTabSelectedWhileEditingThenCloseTabsTitleIncludesCount() {
+        let chrome = makeInstalledChrome()
+
+        chrome.update(state: .editingRegularSize(selectedCount: 1, totalCount: 4),
+                      tabsStyle: .grid,
+                      canShowSelectionMenu: true,
+                      isEditing: true)
+
+        let closeTabsItem = chrome.toolbar.items?.first {
+            $0.title == UserText.tabSwitcherCloseTabsButtonTitle(withCount: 1)
+        }
+        XCTAssertNotNil(closeTabsItem)
     }
 
     func testWhenTabsSelectedWhileEditingThenCloseTabsEnabled() {
@@ -220,7 +234,7 @@ final class FloatingTabSwitcherChromeTests: XCTestCase {
                       canShowSelectionMenu: true,
                       isEditing: true)
 
-        let closeTabsItem = chrome.toolbar.items?.first { $0.title == UserText.closeTabs(withCount: 2) }
+        let closeTabsItem = chrome.toolbar.items?.first { $0.title == UserText.tabSwitcherCloseTabsButtonTitle(withCount: 2) }
         XCTAssertEqual(closeTabsItem?.isEnabled, true)
     }
 

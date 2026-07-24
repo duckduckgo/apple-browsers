@@ -154,7 +154,7 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
         menu: nil)
 
     private lazy var closeTabsItem = UIBarButtonItem(
-        title: UserText.closeTabs(withCount: 0),
+        title: UserText.tabSwitcherCloseTabsButtonTitle(withCount: 0),
         image: nil,
         primaryAction: UIAction { [weak self] _ in self?.actions.onCloseTabsTapped?() },
         menu: nil)
@@ -341,7 +341,7 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
             navigationItem.leftBarButtonItems = [selectionTitleItem]
             navigationItem.rightBarButtonItems = [params.selectedCount == params.totalCount ? deselectAllItem : selectAllItem]
 
-            closeTabsItem.title = UserText.closeTabs(withCount: params.selectedCount)
+            closeTabsItem.title = UserText.tabSwitcherCloseTabsButtonTitle(withCount: params.selectedCount)
             closeTabsItem.isEnabled = params.selectedCount > 0
             setToolbarItems([doneItem, .flexibleSpace(), closeTabsItem, multiSelectMenuItem])
         } else {

@@ -396,6 +396,11 @@ public struct UserText {
         return String.localizedStringWithFormat(format, count)
     }
 
+    public static func tabSwitcherCloseTabsButtonTitle(withCount count: Int) -> String {
+        let format = Bundle.main.localizedString(forKey: "tab.switcher.close-tabs.button.withCount", value: nil, table: nil)
+        return String.localizedStringWithFormat(format, count)
+    }
+
     public static let closeAllTabs: String = NSLocalizedString("close.all.tabs", value: "Close All Tabs", comment: "Close All Tabs")
 
     public static func closeAllTabs(withCount count: Int) -> String {

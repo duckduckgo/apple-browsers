@@ -43,7 +43,7 @@ final class AIChatPreferences: ObservableObject {
          windowControllersManager: WindowControllersManagerProtocol = Application.appDelegate.windowControllersManager,
          featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger,
          duckAIChromeButtonsVisibilityManager: DuckAIChromeButtonsVisibilityManaging = LocalDuckAIChromeButtonsVisibilityManager(),
-         promptBarSettings: PromptBarSettings = PromptBarSettings()) {
+         promptBarSettings: PromptBarSettings = Application.appDelegate.promptBarSettings) {
         self.storage = storage
         self.aiChatMenuConfiguration = aiChatMenuConfiguration
         self.windowControllersManager = windowControllersManager

@@ -353,15 +353,14 @@ final class AIChatHistoryViewModel: ObservableObject {
 
     private static func icon(for chat: DuckAiChat) -> UIImage {
         let image: UIImage
-        // Switch on `chat.chatType` rather than `AIChatSuggestion.kind(forModel:)` so chats
-        // that produced images via a tool call (without the image-mode model id) still get
+        // Pinned rows show the standard pin regardless of chat type; non-pinned rows use their
+        // type glyph. Switch on `chat.chatType` rather than `AIChatSuggestion.kind(forModel:)` so
+        // chats that produced images via a tool call (without the image-mode model id) still get
         // the image glyph — same precedence the exporter uses.
         switch (chat.chatType, chat.pinned) {
-        case (.discussion, true): image = DesignSystemImages.Glyphs.Size24.chatPinned
+        case (_, true): image = DesignSystemImages.Glyphs.Size24.pin
         case (.discussion, false): image = DesignSystemImages.Glyphs.Size24.chat
-        case (.voice, true): image = DesignSystemImages.Glyphs.Size24.voicePinned
         case (.voice, false): image = DesignSystemImages.Glyphs.Size24.voice
-        case (.imageGeneration, true): image = DesignSystemImages.Glyphs.Size24.imagesPinned
         case (.imageGeneration, false): image = DesignSystemImages.Glyphs.Size24.images
         }
         // The chat-family glyph assets aren't marked `template-rendering-intent` in their

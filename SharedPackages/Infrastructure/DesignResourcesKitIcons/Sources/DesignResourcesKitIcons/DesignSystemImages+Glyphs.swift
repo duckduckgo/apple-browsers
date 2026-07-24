@@ -326,6 +326,7 @@ public extension DesignSystemImages {
             public static var shield: DesignSystemImage { .init(resource: .shield16) }
             public static var shieldAlertAlt: DesignSystemImage { .init(resource: .shieldAlertAlt16) }
             public static var shieldBlocked: DesignSystemImage { .init(resource: .shieldBlocked16) }
+            public static var shieldCheck: DesignSystemImage { .init(resource: .shieldCheck16) }
             public static var sidebar: DesignSystemImage { .init(resource: .sidebar16) }
             public static var sidebarSearch: DesignSystemImage { .init(resource: .sidebarSearch16) }
             public static var siteBreakage: DesignSystemImage { .init(resource: .siteBreakage16) }

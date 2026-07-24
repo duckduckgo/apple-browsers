@@ -241,7 +241,7 @@ final class AIChatHistoryViewController: UIViewController {
         }
         let chatProtection = UIAction(
             title: UserText.aiChatHistoryMenuChatProtection,
-            image: DesignSystemImages.Glyphs.Size16.shield
+            image: DesignSystemImages.Glyphs.Size16.shieldCheck
         ) { [weak self] _ in
             self?.viewModel.openChatProtection()
         }

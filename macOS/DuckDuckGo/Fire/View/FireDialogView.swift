@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import AppKit
 import Common
 import FoundationExtensions
@@ -42,7 +43,10 @@ struct FireDialogView: ModalView {
         static let toolbarHorizontalPadding: CGFloat = AppVersion.isLiquidGlassSupported ? 20 : 16
         static let horizontalPadding: CGFloat = AppVersion.isLiquidGlassSupported ? 24 : 16
         static let bottomPadding: CGFloat = AppVersion.isLiquidGlassSupported ? 24 : 16
-        static var sectionRowWidth: CGFloat { viewSize.width - 2 * horizontalPadding }
+        static let boxContentPadding: CGFloat = 16
+        static var sectionRowWidth: CGFloat { viewSize.width - 2 * horizontalPadding - 2 * boxContentPadding }
+        static let historyOverlayMaxVisibleItems = 100
+        static let overlayAnimationDuration: TimeInterval = 0.2
     }
 
     @State private var viewHeight: CGFloat = Constants.viewSize.height
@@ -60,27 +64,52 @@ struct FireDialogView: ModalView {
     @ObservedObject var viewModel: FireDialogViewModel
     @ObservedObject private var themeManager: ThemeManager = NSApp.delegateTyped.themeManager
     private let style = FireDialogStyle.current
-    private let showIndividualSitesLink: Bool
     private let onConfirm: ((FireDialogView.Response) -> Void)?
     @Environment(\.dismiss) private var dismiss
 
     @State private var isShowingSitesOverlay: Bool = false {
         didSet {
             isAnimatingSitesOverlay = true
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + Constants.overlayAnimationDuration) {
                 isAnimatingSitesOverlay = false
             }
         }
     }
     @State private var isAnimatingSitesOverlay: Bool = false
+    @State private var isShowingChatsOverlay: Bool = false {
+        didSet {
+            isAnimatingChatsOverlay = true
+            DispatchQueue.main.asyncAfter(deadline: .now() + Constants.overlayAnimationDuration) {
+                isAnimatingChatsOverlay = false
+            }
+        }
+    }
+    @State private var isAnimatingChatsOverlay: Bool = false
+    @State private var isShowingHistoryOverlay: Bool = false {
+        didSet {
+            isAnimatingHistoryOverlay = true
+            DispatchQueue.main.asyncAfter(deadline: .now() + Constants.overlayAnimationDuration) {
+                isAnimatingHistoryOverlay = false
+            }
+        }
+    }
+    @State private var isAnimatingHistoryOverlay: Bool = false
+
+    private let historyDateFormatter: HistoryViewDateFormatting = DefaultHistoryViewDateFormatter()
+
+    private var isShowingAnyOverlay: Bool {
+        isShowingSitesOverlay || isShowingChatsOverlay || isShowingHistoryOverlay
+    }
 
     init(viewModel: FireDialogViewModel,
          showSitesOverlay: Bool = false, // for Previews - @State flag to show "sites to be removed" overlay
-         showIndividualSitesLink: Bool,
+         showChatsOverlay: Bool = false, // for Previews - @State flag to show "chats to be removed" overlay
+         showHistoryOverlay: Bool = false, // for Previews - @State flag to show "history items to be removed" overlay
          onConfirm: ((FireDialogView.Response) -> Void)? = nil) {
         self.viewModel = viewModel
         self._isShowingSitesOverlay = State(initialValue: showSitesOverlay)
-        self.showIndividualSitesLink = showIndividualSitesLink
+        self._isShowingChatsOverlay = State(initialValue: showChatsOverlay)
+        self._isShowingHistoryOverlay = State(initialValue: showHistoryOverlay)
         self.onConfirm = onConfirm
     }
 
@@ -92,22 +121,23 @@ struct FireDialogView: ModalView {
         viewModel.cookiesSitesCountForCurrentScope > 0
     }
 
-    private var historySubtitle: String {
-        let count = viewModel.historyItemsCountForCurrentScope
-        guard count > 0 else { return UserText.none }
-        switch viewModel.clearingOption {
-        case .currentTab:
-            return UserText.fireDialogHistoryItemsSubtitleTab(count)
-        case .currentWindow:
-            return UserText.fireDialogHistoryItemsSubtitleWindow(count)
-        case .allData:
-            return UserText.fireDialogHistoryItemsSubtitle(count)
-        }
+    private var isIncludeChatHistoryEnabled: Bool {
+        viewModel.chatsCountForCurrentScope > 0
     }
 
-    private var cookiesSubtitle: String {
+    private var historyDetail: String {
+        let count = viewModel.historyItemsCountForCurrentScope
+        return count > 0 ? UserText.fireDialogHistoryItemsDetail(count) : UserText.none
+    }
+
+    private var cookiesDetail: String {
         let count = viewModel.cookiesSitesCountForCurrentScope
-        return count == 0 ? UserText.none : UserText.fireDialogCookiesCountSubtitle(count)
+        return count > 0 ? UserText.fireDialogCookiesSitesDetail(count) : UserText.none
+    }
+
+    private var chatsDetail: String {
+        let count = viewModel.chatsCountForCurrentScope
+        return count > 0 ? UserText.fireDialogChatsCountDetail(count) : UserText.none
     }
 
     private var isDeleteEnabled: Bool {
@@ -118,65 +148,99 @@ struct FireDialogView: ModalView {
     }
 
     var body: some View {
-        VStack(spacing: 16) {
-            ZStack {
+        ZStack {
+            VStack(spacing: 24) {
                 VStack(spacing: 24) {
                     headerView
                         .padding(.top, 14) // presenter sheet crops the padding 🤷‍♂️
-                        .accessibilityHidden(isShowingSitesOverlay)
-                    if viewModel.mode.shouldShowSegmentedControl {
-                        segmentedControlView
-                            .accessibilityHidden(isShowingSitesOverlay)
+                        .accessibilityHidden(isShowingAnyOverlay)
+
+                    VStack(spacing: 16) {
+                        if viewModel.mode.shouldShowSegmentedControl {
+                            segmentedControlView
+                                .accessibilityHidden(isShowingAnyOverlay)
+                        }
+                        VStack(spacing: 0) {
+                            detailsDisclosureView
+                                .accessibilityHidden(isShowingAnyOverlay)
+                            if viewModel.isSectionsExpanded {
+                                sectionsView
+                            }
+                        }
                     }
-                    sectionsView
-                    if showIndividualSitesLink {
-                        individualSitesLink
-                    }
+                    .padding(Constants.boxContentPadding)
+                    .cornerRadius(24)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 24)
+                            .inset(by: 0.5)
+                            .stroke(Color(designSystemColor: .containerBorderPrimary), lineWidth: 1)
+                    )
                 }
                 .padding(.horizontal, Constants.horizontalPadding)
-                .padding(.bottom, Constants.horizontalPadding)
+                .background(alignment: .topTrailing) {
+                    moreOptionsMenu
+                        .menuIndicator(.hidden)
+                        .fixedSize()
+                        .accessibilityLabel(UserText.fireDialogMoreOptions)
+                        .accessibilityIdentifier("FireDialogView.toolbarMoreButton")
+                        .padding(.top, 16)
+                        .padding(.trailing, Constants.toolbarHorizontalPadding)
 
-                // Sites Overlay
-                if isShowingSitesOverlay {
-                    // Scrim fades independently and stays above content
-                    Color.black.opacity(0.35)
-                        .zIndex(9)
-
-                    // Sliding sheet anchored above footer
-                    VStack(spacing: 0) {
-                        Spacer(minLength: 62)
-
-                        sitesOverlay
-
-                        // Separator above the footer
-                        Color(designSystemColor: .containerBorderPrimary)
-                            .frame(height: 1)
-                    }
-                    .zIndex(10)
-                    .transition(.move(edge: .bottom))
                 }
-            }
-            .background(alignment: .topTrailing) {
-                moreOptionsMenu
-                    .menuIndicator(.hidden)
-                    .fixedSize()
-                    .accessibilityLabel(UserText.fireDialogMoreOptions)
-                    .accessibilityIdentifier("FireDialogView.toolbarMoreButton")
-                    .padding(.top, 16)
-                    .padding(.trailing, Constants.toolbarHorizontalPadding)
 
+                footerView
+                    .zIndex(10)
+                    .background(Color(designSystemColor: .surfaceSecondary, palette: themeManager.designColorPalette))
             }
-            .animation(.easeOut(duration: NSAnimationContext.current.duration),
-                       value: isAnimatingSitesOverlay)
+            .readSize { size in
+                // Set exact content height to avoid content shifting and animation jumping when sheet resizes
+                viewHeight = size.height
+            }
 
-            footerView
+            // Sites Overlay — floats above the dimmed footer, leaving it visible (but hidden by the scrim) below
+            if isShowingSitesOverlay {
+                // Scrim fades independently and stays above content
+                Color.black.opacity(0.5)
+                    .zIndex(9)
+
+                VStack(spacing: 0) {
+                    Spacer(minLength: 167)
+                    sitesOverlay
+                }
                 .zIndex(11)
-                .background(Color(designSystemColor: .surfaceSecondary, palette: themeManager.designColorPalette))
+                .transition(.move(edge: .bottom))
+            }
+
+            // Chats Overlay — floats above the dimmed footer, leaving it visible (but hidden by the scrim) below
+            if isShowingChatsOverlay {
+                // Scrim fades independently and stays above content
+                Color.black.opacity(0.5)
+                    .zIndex(9)
+
+                VStack(spacing: 0) {
+                    Spacer(minLength: 167)
+                    chatsOverlay
+                }
+                .zIndex(11)
+                .transition(.move(edge: .bottom))
+            }
+
+            // History Overlay — floats above the dimmed footer, leaving it visible (but hidden by the scrim) below
+            if isShowingHistoryOverlay {
+                // Scrim fades independently and stays above content
+                Color.black.opacity(0.5)
+                    .zIndex(9)
+
+                VStack(spacing: 0) {
+                    Spacer(minLength: 167)
+                    historyOverlay
+                }
+                .zIndex(11)
+                .transition(.move(edge: .bottom))
+            }
         }
-        .readSize { size in
-            // Set exact content height to avoid content shifting and animation jumping when sheet resizes
-            viewHeight = size.height
-        }
+        .animation(.easeOut(duration: NSAnimationContext.current.duration),
+                   value: isAnimatingSitesOverlay || isAnimatingChatsOverlay || isAnimatingHistoryOverlay)
         .frame(width: Constants.viewSize.width, height: viewHeight, alignment: .top)
         .background(Color(designSystemColor: .surfaceSecondary))
         .accessibilityElement(children: .contain)
@@ -285,326 +349,552 @@ struct FireDialogView: ModalView {
                 .foregroundColor(Color(designSystemColor: .textPrimary))
                 .accessibilityIdentifier("FireDialogView.title")
         }
-        .padding(.vertical, 16)
+        .padding(.top, 16)
     }
 
     private var segmentedControlView: some View {
-        PillSegmentedControl(
+        FireDialogTabsContainer(
             selection: Binding(
                 get: { viewModel.clearingOption.rawValue },
                 set: { viewModel.clearingOption = FireDialogViewModel.ClearingOption(rawValue: $0) ?? .allData }
             ),
-            segments: [
-                .init(id: FireDialogViewModel.ClearingOption.currentTab.rawValue, title: UserText.fireDialogSegmentTab, image: Image(nsImage: DesignSystemImages.Glyphs.Size24.tabDesktop)),
-                .init(id: FireDialogViewModel.ClearingOption.allData.rawValue, title: UserText.fireDialogSegmentEverything, image: Image(nsImage: DesignSystemImages.Glyphs.Size24.windowsAndTabs))
-            ],
-            containerBackground: .clear,
-            containerBorder: .clear,
-            containerCornerRadius: style.segmentedControlCornerRadius,
-            segmentCornerRadius: style.segmentedControlItemCornerRadius,
-            selectedForeground: style.selectedForeground,
-            unselectedForeground: Color(designSystemColor: .buttonsSecondaryFillText),
-            selectedIconBackground: style.selectedIconBackground,
-            selectedSegmentFill: Color(designSystemColor: .surfaceTertiary),
-            selectedSegmentStroke: Color(designSystemColor: .containerBorderPrimary),
-            selectedSegmentShadowColor: Color(designSystemColor: .shadowTertiary),
-            selectedSegmentShadowRadius: 0,
-            selectedSegmentShadowY: 1,
-            selectedSegmentTopStroke: Color(designSystemColor: .highlightPrimary),
-            hoverSegmentBackground: Color(designSystemColor: .controlsFillPrimary),
-            pressedSegmentBackground: Color(designSystemColor: .controlsFillSecondary),
-            hoverOverlay: Color(designSystemColor: .toneTintPrimary)
+            tabs: [
+                FireDialogTabItem(id: FireDialogViewModel.ClearingOption.currentTab.rawValue, title: UserText.fireDialogModeFromThisTab, image: Image(nsImage: DesignSystemImages.Glyphs.Size16.tabDesktop)),
+                FireDialogTabItem(id: FireDialogViewModel.ClearingOption.allData.rawValue, title: UserText.fireDialogModeAllData, image: Image(nsImage: DesignSystemImages.Glyphs.Size16.browser))
+            ]
         )
-        .frame(height: 84)
         .accessibilityIdentifier("FireDialogView.segmentedControl")
+    }
+
+    private var detailsDisclosureView: some View {
+        HStack {
+            Text(UserText.fireDialogChooseWhatToDelete)
+                .font(.system(size: 11))
+                .foregroundColor(Color(designSystemColor: .textSecondary))
+
+            Spacer()
+
+            Button {
+                withAnimation(.easeOut(duration: 0.2)) {
+                    viewModel.isSectionsExpanded.toggle()
+                }
+            } label: {
+                Image(nsImage: (viewModel.isSectionsExpanded ? DesignSystemImages.Glyphs.Size24.chevronUpSmall : DesignSystemImages.Glyphs.Size24.chevronDownSmall))
+                    .resizable()
+                    .renderingMode(.template)
+                    .frame(width: 12, height: 12)
+                    .foregroundColor(Color(designSystemColor: .iconsSecondary))
+                    .padding(6)
+                    .background(Circle().fill(Color(designSystemColor: .controlsFillPrimary)))
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(UserText.fireDialogChooseWhatToDelete)
+            .accessibilityValue(viewModel.isSectionsExpanded ? UserText.fireDialogAccessibilityDetailsExpanded : UserText.fireDialogAccessibilityDetailsCollapsed)
+            .accessibilityAddTraits(.isButton)
+            .accessibilityIdentifier("FireDialogView.detailsDisclosureButton")
+        }
+        .padding(.horizontal, 4)
     }
 
     private var sectionsView: some View {
         VStack(alignment: .leading, spacing: 0) {
-            // Row 2: History
+            // Row 1: History
             sectionRow(
                 icon: DesignSystemImages.Glyphs.Size16.history,
                 title: UserText.fireDialogHistoryTitle,
-                subtitle: historySubtitle,
+                detail: historyDetail,
                 isOn: Binding {
                     viewModel.includeHistory && isIncludeHistoryEnabled
                 } set: {
                     viewModel.includeHistory = $0
                 },
+                // the history items list isn't supported for the (deprecated, pending removal) Window scope
+                detailAction: (isIncludeHistoryEnabled && viewModel.clearingOption != .currentWindow) ? { isShowingHistoryOverlay = true } : nil,
+                detailActionEnabled: viewModel.includeHistory,
+                detailAccessibilityIdentifier: "FireDialogView.historyDetailButton",
                 isEnabled: isIncludeHistoryEnabled,
                 roundedCorners: .top,
                 toggleId: "FireDialogView.historyToggle"
             )
-            .accessibilityHidden(isShowingSitesOverlay)
+            .accessibilityHidden(isShowingAnyOverlay)
             sectionDivider()
 
-            // Row 3: Cookies and Site Data
+            // Row 2: Cookies and Site Data
             sectionRow(
                 icon: DesignSystemImages.Glyphs.Size16.cookie,
-                title: UserText.cookiesAndSiteDataTitle,
-                subtitle: cookiesSubtitle,
+                title: UserText.fireDialogCookiesAndOtherData,
+                subtitle: UserText.fireDialogCookiesSignOutWarning,
+                detail: cookiesDetail,
                 isOn: Binding { viewModel.includeCookiesAndSiteData && isIncludeCookiesAndSiteDataEnabled } set: { viewModel.includeCookiesAndSiteData = $0 },
-                // don‘t show the ℹ button when there‘s no site data in scope
-                infoAction: isIncludeCookiesAndSiteDataEnabled ? { isShowingSitesOverlay = true } : nil,
-                // grey-out the ℹ button when the toggle is Off
-                infoEnabled: viewModel.includeCookiesAndSiteData,
+                // don‘t make the detail label clickable when there‘s no site data in scope
+                detailAction: isIncludeCookiesAndSiteDataEnabled ? { isShowingSitesOverlay = true } : nil,
+                // grey-out the detail label when the toggle is Off
+                detailActionEnabled: viewModel.includeCookiesAndSiteData,
                 isEnabled: isIncludeCookiesAndSiteDataEnabled,
                 roundedCorners: viewModel.mode.shouldShowFireproofSection ? .none : .bottom,
                 toggleId: "FireDialogView.cookiesToggle"
             )
             .disabled(!isIncludeCookiesAndSiteDataEnabled)
-            .accessibilityHidden(isShowingSitesOverlay)
+            .accessibilityHidden(isShowingAnyOverlay)
 
             if viewModel.shouldShowChatHistoryToggle {
                 sectionDivider()
 
-            // Row 4: Chat History
+            // Row 3: Chat History
                 sectionRow(
                     icon: DesignSystemImages.Glyphs.Size16.aiChat,
                     title: UserText.fireDialogChatHistoryTitle,
-                    subtitle: UserText.fireDialogChatHistorySubtitle,
+                    detail: chatsDetail,
                     isOn: $viewModel.includeChatHistorySetting,
+                    // don‘t make the detail label clickable when there‘s no chat history in scope
+                    detailAction: isIncludeChatHistoryEnabled ? { isShowingChatsOverlay = true } : nil,
+                    // grey-out the detail label when the toggle is Off
+                    detailActionEnabled: viewModel.includeChatHistorySetting,
+                    detailAccessibilityIdentifier: "FireDialogView.chatsDetailButton",
                     toggleId: "FireDialogView.chatsToggle"
                 )
-                .accessibilityHidden(isShowingSitesOverlay)
-            }
-            sectionDivider(padding: 0)
-
-            // Fireproof section
-            if viewModel.mode.shouldShowFireproofSection {
-                fireproofSectionView
-                    .accessibilityHidden(isShowingSitesOverlay)
+                .accessibilityHidden(isShowingAnyOverlay)
             }
         }
-        .background(
-            RoundedRectangle(cornerRadius: style.rowCornerRadius, style: .continuous)
-                .fill(Color(designSystemColor: .containerFillPrimary))
-                .overlay(
-                    RoundedRectangle(cornerRadius: style.rowCornerRadius, style: .continuous)
-                        .stroke(Color(designSystemColor: .containerBorderPrimary), lineWidth: 1)
-                )
-        )
         .padding(.top, 4)
-        .padding(.bottom, 8)
+        .padding(.bottom, -10)
         .fixedSize(horizontal: false, vertical: true)
     }
 
     // MARK: - Sites overlay
     private var sitesOverlay: some View {
         VStack(spacing: 0) {
-            // Header
-            ZStack(alignment: .center) {
-                HStack {
-                    Button(action: { isShowingSitesOverlay = false }) {
-                        Image(nsImage: DesignSystemImages.Glyphs.Size16.close)
-                            .resizable()
-                            .frame(width: 12, height: 12)
-                    }
-                    .buttonStyle(
-                        StandardButtonStyle(topPadding: 6,
-                                            bottomPadding: 6,
-                                            horizontalPadding: 6,
-                                            backgroundColor: Color(designSystemColor: .controlsFillPrimary),
-                                            backgroundPressedColor: Color(designSystemColor: .controlsFillPrimary))
-                    )
-                    .clipShape(Circle())
-                    .accessibilityLabel(UserText.close)
-                    .accessibilityIdentifier("FireDialogView.sitesOverlayCloseButton")
-                    .keyboardShortcut(.cancelAction)
-
-                    Spacer()
-                }
-
-                Text(UserText.fireDialogSitesOverlayTitle)
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundColor(Color(designSystemColor: .textPrimary))
-            }
-            .padding(16)
-
-            // Sites table
-            ScrollView {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(UserText.fireDialogSitesOverlaySubtitle)
-                        .font(.system(size: 11, weight: .semibold))
-                        .foregroundColor(Color(designSystemColor: .textSecondary))
-                        .frame(alignment: .leading)
-                        .padding(.bottom, 6)
-
-                    ForEach(viewModel.selectable, id: \.domain) { item in
-                        HStack(spacing: 6) {
-                            FaviconView(url: URL(string: "https://\(item.domain)"), size: 16)
-                            Text(item.domain)
-                                .font(.system(size: 13))
-                                .foregroundColor(Color(designSystemColor: .textPrimary))
-                                .lineLimit(1)
-                                .truncationMode(.middle)
-                                .help(item.domain)
-                        }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-                    .padding(.bottom, 2)
-
-                    // Fireproof sites
-                    if !viewModel.fireproofed.isEmpty {
-                        Text(UserText.fireproofCookiesAndSiteDataExplanation)
-                            .font(.system(size: 11, weight: .semibold))
-                            .foregroundColor(Color(designSystemColor: .textSecondary))
-                            .frame(alignment: .leading)
-                            .padding(.top, 8)
-                            .padding(.bottom, 6)
-
-                        ForEach(viewModel.fireproofed, id: \.domain) { item in
-                            HStack(spacing: 6) {
-                                FaviconView(url: URL(string: "https://\(item.domain)"), size: 16)
-                                Text(item.domain)
-                                    .font(.system(size: 13))
-                                    .foregroundColor(Color(designSystemColor: .textPrimary))
-                                    .lineLimit(1)
-                                    .truncationMode(.middle)
-                                    .help(item.domain)
-                            }
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                        }
-                        .padding(.bottom, 2)
-                    }
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.horizontal, 16)
-                .padding(.top, 14)
-            }
+            sitesOverlayHeader
+            sitesOverlayList
         }
         .background(
-            CustomRoundedCornersShape(tl: 8, tr: 8, bl: 0, br: 0)
-                .fill(Color(designSystemColor: .surfaceSecondary))
+            ZStack {
+                CustomRoundedCornersShape(tl: 24, tr: 24, bl: 0, br: 0)
+                    .fill(Color(designSystemColor: .surfaceSecondary))
+                CustomRoundedCornersShape(tl: 24, tr: 24, bl: 0, br: 0)
+                    .fill(Color(designSystemColor: .containerFillSecondary))
+            }
         )
+        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .shadow(color: Color.black.opacity(0.15), radius: 16, x: 0, y: 0)
     }
 
-    private func sectionRow(icon: NSImage, title: String, subtitle: String, isOn: Binding<Bool>, infoAction: (() -> Void)? = nil, infoEnabled: Bool = true, isEnabled: Bool = true, roundedCorners: RowCornerRadius = .none, toggleId: String) -> some View {
+    private var sitesOverlayHeader: some View {
+        HStack(alignment: .center, spacing: 12) {
+            VStack(alignment: .leading, spacing: 8) {
+                (Text(UserText.fireDialogSitesOverlayTitleBold(viewModel.selectable.count)).fontWeight(.semibold)
+                 + Text(" \(UserText.fireDialogSitesOverlayTitleRegular)"))
+                    .font(.system(size: 13))
+                    .foregroundColor(Color(designSystemColor: .textPrimary))
+                    .multilineTextAlignment(.leading)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("FireDialogView.sitesOverlayTitle")
+
+                Text(UserText.fireDialogCookiesSignOutWarning)
+                    .font(.system(size: 11))
+                    .foregroundColor(Color(designSystemColor: .textSecondary))
+            }
+
+            Spacer(minLength: 8)
+
+            Button(action: { isShowingSitesOverlay = false }) {
+                Image(nsImage: DesignSystemImages.Glyphs.Size16.close)
+                    .resizable()
+                    .frame(width: 12, height: 12)
+            }
+            .buttonStyle(
+                StandardButtonStyle(topPadding: 6,
+                                    bottomPadding: 6,
+                                    horizontalPadding: 6,
+                                    backgroundColor: Color(designSystemColor: .controlsFillPrimary),
+                                    backgroundPressedColor: Color(designSystemColor: .controlsFillPrimary))
+            )
+            .clipShape(Circle())
+            .accessibilityLabel(UserText.close)
+            .accessibilityIdentifier("FireDialogView.sitesOverlayCloseButton")
+            .keyboardShortcut(.cancelAction)
+        }
+        .padding(.top, 22)
+        .padding(.horizontal, Constants.horizontalPadding)
+        .padding(.bottom, 14)
+    }
+
+    private var sitesOverlayList: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 0) {
+                ForEach(viewModel.selectable, id: \.domain) { item in
+                    sitesOverlayRow(for: item)
+                }
+
+                if !viewModel.fireproofed.isEmpty {
+                    Text(UserText.fireproofCookiesAndSiteDataExplanation)
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundColor(Color(designSystemColor: .textSecondary))
+                        .multilineTextAlignment(.leading)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.top, 12)
+                        .padding(.bottom, 4)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+
+                    ForEach(viewModel.fireproofed, id: \.domain) { item in
+                        sitesOverlayRow(for: item)
+                    }
+                }
+            }
+            .padding(.leading, 24)
+            .padding(.trailing, 32)
+            .padding(.vertical, 4)
+        }
+        .padding(.top, 11)
+        .padding(.trailing, 8)
+        .background(
+            CustomRoundedCornersShape(tl: 16, tr: 16, bl: 0, br: 0)
+                .fill(Color(designSystemColor: .surfaceSecondary))
+                .overlay(
+                    CustomRoundedCornersShape(tl: 16, tr: 16, bl: 0, br: 0)
+                        .inset(by: 0.5)
+                        .stroke(Color(designSystemColor: .containerBorderPrimary), lineWidth: 1)
+                )
+        )
+        .padding(.horizontal, 8)
+    }
+
+    private func sitesOverlayRow(for item: FireDialogViewModel.Item) -> some View {
+        HStack(spacing: 12) {
+            FaviconView(url: URL(string: "https://\(item.domain)"), size: 16)
+            Text(item.domain)
+                .font(.system(size: 12, weight: .medium))
+                .foregroundColor(Color(designSystemColor: .textPrimary))
+                .lineLimit(1)
+                .truncationMode(.middle)
+                .help(item.domain)
+        }
+        .padding(.vertical, 12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    // MARK: - Chats overlay
+    private var chatsOverlay: some View {
+        VStack(spacing: 0) {
+            chatsOverlayHeader
+            chatsOverlayList
+        }
+        .background(
+            ZStack {
+                CustomRoundedCornersShape(tl: 24, tr: 24, bl: 0, br: 0)
+                    .fill(Color(designSystemColor: .surfaceSecondary))
+                CustomRoundedCornersShape(tl: 24, tr: 24, bl: 0, br: 0)
+                    .fill(Color(designSystemColor: .containerFillSecondary))
+            }
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .shadow(color: Color.black.opacity(0.15), radius: 16, x: 0, y: 0)
+    }
+
+    private var chatsOverlayHeader: some View {
+        HStack(alignment: .center, spacing: 12) {
+            (Text(UserText.fireDialogChatsOverlayTitleBold(viewModel.chats.count)).fontWeight(.semibold)
+             + Text(" \(UserText.fireDialogChatsOverlayTitleRegular)"))
+                .font(.system(size: 13))
+                .foregroundColor(Color(designSystemColor: .textPrimary))
+                .multilineTextAlignment(.leading)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityIdentifier("FireDialogView.chatsOverlayTitle")
+
+            Spacer(minLength: 8)
+
+            Button(action: { isShowingChatsOverlay = false }) {
+                Image(nsImage: DesignSystemImages.Glyphs.Size16.close)
+                    .resizable()
+                    .frame(width: 12, height: 12)
+            }
+            .buttonStyle(
+                StandardButtonStyle(topPadding: 6,
+                                    bottomPadding: 6,
+                                    horizontalPadding: 6,
+                                    backgroundColor: Color(designSystemColor: .controlsFillPrimary),
+                                    backgroundPressedColor: Color(designSystemColor: .controlsFillPrimary))
+            )
+            .clipShape(Circle())
+            .accessibilityLabel(UserText.close)
+            .accessibilityIdentifier("FireDialogView.chatsOverlayCloseButton")
+            .keyboardShortcut(.cancelAction)
+        }
+        .padding(.top, 22)
+        .padding(.horizontal, Constants.horizontalPadding)
+        .padding(.bottom, 14)
+    }
+
+    private var chatsOverlayList: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 0) {
+                ForEach(viewModel.chats, id: \.chatId) { chat in
+                    HStack(spacing: 12) {
+                        Image(nsImage: DesignSystemImages.Glyphs.Size16.aiChat)
+                            .resizable()
+                            .frame(width: 16, height: 16)
+                            .foregroundColor(Color(designSystemColor: .iconsSecondary))
+                        Text(chat.title)
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundColor(Color(designSystemColor: .textPrimary))
+                            .lineLimit(1)
+                            .truncationMode(.tail)
+                            .help(chat.title)
+                    }
+                    .padding(.vertical, 12)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+            }
+            .padding(.leading, 24)
+            .padding(.trailing, 32)
+            .padding(.vertical, 4)
+        }
+        .padding(.top, 11)
+        .padding(.trailing, 8)
+        .background(
+            CustomRoundedCornersShape(tl: 16, tr: 16, bl: 0, br: 0)
+                .fill(Color(designSystemColor: .surfaceSecondary))
+                .overlay(
+                    CustomRoundedCornersShape(tl: 16, tr: 16, bl: 0, br: 0)
+                        .inset(by: 0.5)
+                        .stroke(Color(designSystemColor: .containerBorderPrimary), lineWidth: 1)
+                )
+        )
+        .padding(.horizontal, 8)
+    }
+
+    // MARK: - History overlay
+    private var historyOverlay: some View {
+        VStack(spacing: 0) {
+            historyOverlayHeader
+            historyOverlayList
+        }
+        .background(
+            ZStack {
+                CustomRoundedCornersShape(tl: 24, tr: 24, bl: 0, br: 0)
+                    .fill(Color(designSystemColor: .surfaceSecondary))
+                CustomRoundedCornersShape(tl: 24, tr: 24, bl: 0, br: 0)
+                    .fill(Color(designSystemColor: .containerFillSecondary))
+            }
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .shadow(color: Color.black.opacity(0.15), radius: 16, x: 0, y: 0)
+    }
+
+    private var historyOverlayHeader: some View {
+        HStack(alignment: .center, spacing: 12) {
+            (Text(UserText.fireDialogHistoryOverlayTitleBold(viewModel.historyVisits.count)).fontWeight(.semibold)
+             + Text(" \(UserText.fireDialogHistoryOverlayTitleRegular)"))
+                .font(.system(size: 13))
+                .foregroundColor(Color(designSystemColor: .textPrimary))
+                .multilineTextAlignment(.leading)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityIdentifier("FireDialogView.historyOverlayTitle")
+
+            Spacer(minLength: 8)
+
+            Button(action: { isShowingHistoryOverlay = false }) {
+                Image(nsImage: DesignSystemImages.Glyphs.Size16.close)
+                    .resizable()
+                    .frame(width: 12, height: 12)
+            }
+            .buttonStyle(
+                StandardButtonStyle(topPadding: 6,
+                                    bottomPadding: 6,
+                                    horizontalPadding: 6,
+                                    backgroundColor: Color(designSystemColor: .controlsFillPrimary),
+                                    backgroundPressedColor: Color(designSystemColor: .controlsFillPrimary))
+            )
+            .clipShape(Circle())
+            .accessibilityLabel(UserText.close)
+            .accessibilityIdentifier("FireDialogView.historyOverlayCloseButton")
+            .keyboardShortcut(.cancelAction)
+        }
+        .padding(.top, 24)
+        .padding(.horizontal, Constants.horizontalPadding)
+        .padding(.bottom, 16)
+    }
+
+    private var historyOverlayList: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 0) {
+                ForEach(viewModel.historyVisits.sorted { $0.date > $1.date }.prefix(Constants.historyOverlayMaxVisibleItems), id: \.self) { visit in
+                    historyOverlayRow(for: visit)
+                }
+
+                if viewModel.historyVisits.count > Constants.historyOverlayMaxVisibleItems {
+                    seeFullHistoryButton
+                }
+            }
+            .padding(.leading, 24)
+            .padding(.trailing, 32)
+            .padding(.vertical, 4)
+        }
+        .padding(.top, 11)
+        .padding(.trailing, 8)
+        .background(
+            CustomRoundedCornersShape(tl: 16, tr: 16, bl: 0, br: 0)
+                .fill(Color(designSystemColor: .surfaceSecondary))
+                .overlay(
+                    CustomRoundedCornersShape(tl: 16, tr: 16, bl: 0, br: 0)
+                        .inset(by: 0.5)
+                        .stroke(Color(designSystemColor: .containerBorderPrimary), lineWidth: 1)
+                )
+        )
+        .padding(.horizontal, 8)
+    }
+
+    private var seeFullHistoryButton: some View {
+        Button {
+            viewModel.openFullHistory()
+        } label: {
+            Text(UserText.fireDialogSeeFullHistory)
+                .font(.system(size: 12, weight: .medium))
+                .foregroundColor(style.selectedForeground)
+                .frame(maxWidth: .infinity, alignment: .center)
+        }
+        .buttonStyle(.plain)
+        .cursor(.pointingHand)
+        .padding(.vertical, 12)
+        .accessibilityIdentifier("FireDialogView.seeFullHistoryButton")
+    }
+
+    private func historyOverlayRow(for visit: Visit) -> some View {
+        let visitViewModel = VisitViewModel(visit: visit)
+        let url = visit.historyEntry?.url
+        return HStack(alignment: .top, spacing: 12) {
+            FaviconView(url: url, size: 16)
+                .padding(.top, 4)
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text(visitViewModel.title)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(Color(designSystemColor: .textPrimary))
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                Text(url?.nakedString ?? "")
+                    .font(.system(size: 11))
+                    .foregroundColor(Color(designSystemColor: .textSecondary))
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .help(visitViewModel.title)
+
+            Text(historyDateFormatter.timeString(for: visit.date))
+                .font(.system(size: 11))
+                .foregroundColor(Color(designSystemColor: .textTertiary))
+                .fixedSize()
+                .padding(.top, 2)
+        }
+        .padding(.top, 8)
+        .padding(.bottom, 9)
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func sectionRow(icon: NSImage, title: String, subtitle: String? = nil, detail: String? = nil, isOn: Binding<Bool>, detailAction: (() -> Void)? = nil, detailActionEnabled: Bool = true, detailAccessibilityIdentifier: String = "FireDialogView.cookiesDetailButton", isEnabled: Bool = true, roundedCorners: RowCornerRadius = .none, toggleId: String) -> some View {
         RowWithPressEffect(roundedCorners: roundedCorners, rowCornerRadius: style.rowCornerRadius, isEnabled: isEnabled) {
             guard isEnabled else { return }
             isOn.wrappedValue.toggle()
         } content: {
-            HStack(spacing: 6) {
-                HStack(spacing: 6) {
+            HStack(spacing: 8) {
+                HStack(spacing: 12) {
                     Image(nsImage: icon)
-                        .padding(.trailing, 2)
 
-                    VStack(alignment: .leading, spacing: 2) {
+                    VStack(alignment: .leading, spacing: 4) {
                         Text(title)
                             .font(.system(size: 13))
                             .foregroundColor(Color(designSystemColor: .textPrimary))
-                        Text(subtitle)
-                            .font(.system(size: 11))
-                            .foregroundColor(Color(designSystemColor: .textSecondary))
-                            .multilineTextAlignment(.leading)
-                            .fixedSize(horizontal: false, vertical: true)
-                            .layoutPriority(3)
+                            .lineLimit(1)
+                        if let subtitle {
+                            Text(subtitle)
+                                .font(.system(size: 11))
+                                .foregroundColor(Color(designSystemColor: .textSecondary))
+                                .multilineTextAlignment(.leading)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .layoutPriority(3)
+                        }
                     }
                 }
                 .accessibilityElement(children: .combine)
                 .accessibilityLabel(title)
-                .accessibilityValue(subtitle)
+                .accessibilityValue(subtitle ?? detail ?? "")
                 .accessibilityAddTraits(.updatesFrequently)
 
                 Spacer()
 
-                if let infoAction {
-                    Button(action: infoAction) {
-                        Image(nsImage: DesignSystemImages.Glyphs.Size12.info)
-                            .padding(4)
+                HStack(spacing: 8) {
+                    if let detail {
+                        SectionRowDetailLabel(
+                            text: detail,
+                            action: detailAction,
+                            isEnabled: detailActionEnabled,
+                            accessibilityIdentifier: detailAccessibilityIdentifier
+                        )
                     }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel(UserText.fireDialogSitesOverlayTitle)
-                    .accessibilityIdentifier("FireDialogView.cookiesInfoButton")
-                    .disabled(!infoEnabled)
-                    .opacity(infoEnabled ? 1.0 : 0.4)
-                    .padding(.trailing, 4)
-                }
 
-                Group {
                     Toggle(isOn: isOn)
                         .toggleStyle(FireToggleStyle(onFill: style.knobFillColor, knobFill: Color(designSystemColor: .accentContentPrimary)))
                         .accessibilityLabel(title)
                         .accessibilityIdentifier(toggleId)
                 }
             }
-            .padding(.vertical, 12)
-            .padding(.horizontal, 16)
+            .padding(.vertical, 13)
+            .padding(.horizontal, 4)
             .frame(width: Constants.sectionRowWidth, alignment: .leading)
         }
     }
 
-    private func sectionDivider(padding: CGFloat = 16) -> some View {
+    private func sectionDivider(padding: CGFloat = 4) -> some View {
         HStack(spacing: 0) {
             Rectangle().fill(Color(designSystemColor: .containerBorderPrimary)).frame(height: 1)
                 .padding(.horizontal, padding)
         }
     }
 
-    private var fireproofSectionView: some View {
-        RowWithPressEffect(roundedCorners: .bottom, rowCornerRadius: style.rowCornerRadius, isEnabled: true) {
-            viewModel.showManageFireproofSites()
-        } content: {
-            HStack(alignment: .center, spacing: 0) {
-                HStack(spacing: 6) {
-                    Image(nsImage: DesignSystemImages.Glyphs.Size16.fireproof)
-                        .foregroundColor(Color(designSystemColor: .iconsSecondary))
+    /// A section row's trailing detail text (e.g. "6 sites"). When `action` is provided, it
+    /// becomes clickable: a pill-shaped background fades in on hover, with a pointing-hand cursor.
+    private struct SectionRowDetailLabel: View {
+        let text: String
+        let action: (() -> Void)?
+        var isEnabled: Bool = true
+        var accessibilityIdentifier: String?
 
-                    Text(UserText.fireproofCookiesAndSiteDataExplanation)
-                        .font(.system(size: 11))
-                        .foregroundColor(Color(designSystemColor: .textSecondary))
-                        .multilineTextAlignment(.leading)
-                        .fixedSize(horizontal: false, vertical: true)
+        @State private var isHovered = false
+
+        var body: some View {
+            if let action {
+                Button(action: action) {
+                    label
                 }
-                .accessibilityElement(children: .combine)
-                .accessibilityLabel(UserText.fireproofCookiesAndSiteDataExplanation)
-                .accessibilityAddTraits(.isStaticText)
-
-                Spacer(minLength: 4)
-
-                Button(UserText.fireDialogFireproofSitesManage) { viewModel.showManageFireproofSites() }
-                    .buttonStyle(
-                        StandardButtonStyle(
-                            fontSize: 11,
-                            topPadding: 3,
-                            bottomPadding: 3,
-                            horizontalPadding: 12,
-                            backgroundColor: Color(designSystemColor: .buttonsSecondaryFillDefault),
-                            backgroundPressedColor: Color(designSystemColor: .buttonsSecondaryFillPressed)
-                        )
-                    )
-                    .fixedSize(horizontal: true, vertical: true)
-                    .frame(alignment: .trailing)
-                    .accessibilityLabel(UserText.manageFireproofSites)
-                    .accessibilityIdentifier("FireDialogView.manageFireproofButton")
+                .buttonStyle(.plain)
+                .disabled(!isEnabled)
+                .onHover { isHovered = $0 }
+                .cursor(.pointingHand)
+                .accessibilityIdentifier(accessibilityIdentifier ?? "")
+            } else {
+                label
             }
-            .padding(.vertical, 12)
-            .padding(.horizontal, 16)
-            .frame(width: Constants.sectionRowWidth, alignment: .leading)
+        }
+
+        private var label: some View {
+            Text(text)
+                .font(.system(size: 11))
+                .foregroundColor(Color(designSystemColor: .textSecondary))
+                .lineLimit(1)
+                .fixedSize()
+                .padding(.horizontal, 8)
+                .frame(height: 24)
+                .background(
+                    Capsule(style: .continuous)
+                        .fill(isHovered && isEnabled ? Color(designSystemColor: .buttonsSecondaryFillDefault) : Color.clear)
+                )
+                .opacity(action != nil && !isEnabled ? 0.4 : 1.0)
         }
     }
 
     private var individualSitesColor: NSColor {
         style.individualSitesColor
-    }
-
-    private var individualSitesLink: some View {
-        HStack(spacing: 8) {
-            Image(nsImage: DesignSystemImages.Glyphs.Size16.globeBlocked
-                .tinted(with: individualSitesColor))
-                .accessibilityHidden(true)
-            TextButton(UserText.fireDialogManageIndividualSitesLink, textColor: Color(individualSitesColor), fontSize: 11) {
-                viewModel.deleteIndividualSites()
-            }
-            .accessibilityIdentifier("FireDialogView.individualSitesLink")
-            .accessibilityHidden(isShowingSitesOverlay)
-
-            Image(nsImage: DesignSystemImages.Glyphs.Size16.chevronRight
-                .resized(to: NSSize(width: 12, height: 12))
-                .tinted(with: individualSitesColor))
-                .accessibilityHidden(true)
-
-        }
     }
 
     private var deleteButtonBackground: LinearGradient {
@@ -639,7 +929,7 @@ struct FireDialogView: ModalView {
                     .tint(style.knobFillColor)
                     .accessibilityLabel(tabsSubtitle)
                     .accessibilityIdentifier("FireDialogView.tabsToggle")
-                    .accessibilityHidden(isShowingSitesOverlay)
+                    .accessibilityHidden(isShowingAnyOverlay)
                     .font(.system(size: 11))
             }
 
@@ -703,7 +993,7 @@ struct FireDialogView: ModalView {
                 .accessibilityLabel(viewModel.includeTabsAndWindows ? UserText.fireDialogDeleteAndClose : UserText.delete)
                 .keyboardShortcut(.defaultAction)
                 .accessibilityIdentifier("FireDialogView.burnButton")
-                .accessibilityHidden(isShowingSitesOverlay)
+                .accessibilityHidden(isShowingAnyOverlay)
             }
         }
         .padding(.horizontal, Constants.horizontalPadding)
@@ -742,6 +1032,72 @@ private struct FireDialogStyle {
 
     static var current: FireDialogStyle {
         DesignSystemRebrand.isAppRebranded() ? .rebranded : .default
+    }
+}
+
+// MARK: - Tabs container
+
+private struct FireDialogTabItem: Identifiable {
+    let id: Int
+    let title: String
+    let image: Image
+}
+
+private struct FireDialogTabsContainer: View {
+    @Binding var selection: Int
+    let tabs: [FireDialogTabItem]
+
+    var body: some View {
+        HStack(spacing: 8) {
+            ForEach(tabs) { tab in
+                FireDialogTabButton(tab: tab, isSelected: selection == tab.id) {
+                    selection = tab.id
+                }
+            }
+        }
+        .accessibilityElement(children: .contain)
+    }
+}
+
+private struct FireDialogTabButton: View {
+    let tab: FireDialogTabItem
+    let isSelected: Bool
+    let onTap: () -> Void
+
+    var body: some View {
+        Button(action: onTap) {
+            VStack(spacing: 6) {
+                ZStack {
+                    Circle()
+                        .fill(isSelected ? Color(designSystemColor: .accentFirePrimary).opacity(0.12) : Color.clear)
+                        .frame(width: 32, height: 32)
+                    tab.image
+                        .resizable()
+                        .renderingMode(.template)
+                        .frame(width: 16, height: 16)
+                        .foregroundColor(isSelected ? Color(designSystemColor: .accentFirePrimary) : Color(designSystemColor: .iconsSecondary))
+                }
+                .opacity(0.8)
+
+                Text(tab.title)
+                    .font(.system(size: 12, weight: isSelected ? .medium : .regular))
+                    .foregroundColor(isSelected ? Color(designSystemColor: .accentFirePrimary) : Color(designSystemColor: .textSecondary))
+                    .padding(.bottom, -3)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(20)
+            .background(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(isSelected ? Color(designSystemColor: .surfaceTertiary) : Color(designSystemColor: .containerFillSecondary))
+                    .shadow(color: isSelected ? Color(designSystemColor: .shadowPrimary) : .clear, radius: 4, x: 0, y: 1)
+                    .shadow(color: isSelected ? Color(designSystemColor: .shadowTertiary) : .clear, radius: 1, x: 0, y: 0.25)
+            )
+        }
+        .buttonStyle(.plain)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(tab.title)
+        .accessibilityValue(isSelected ? UserText.fireDialogAccessibilitySelected : "")
+        .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
     }
 }
 
@@ -876,8 +1232,15 @@ private class MockAIChatHistoryCleaner: AIChatHistoryCleaning {
     var shouldDisplayCleanAIChatHistoryOptionPublisher: AnyPublisher<Bool, Never> {
         Just(shouldDisplayCleanAIChatHistoryOption).eraseToAnyPublisher()
     }
+    private let chats: [DuckAiChat]
+    init(chats: [DuckAiChat] = []) {
+        self.chats = chats
+    }
     func cleanAIChatHistory() async -> Result<Void, Error> {
         return .success(())
+    }
+    func allChats() -> [DuckAiChat] {
+        chats
     }
 }
 @available(macOS 14.0, *)
@@ -898,7 +1261,7 @@ private class MockAIChatHistoryCleaner: AIChatHistoryCleaning {
     )
 
     PreviewView(showWindowTitle: false) {
-        FireDialogView(viewModel: vm, showIndividualSitesLink: true)
+        FireDialogView(viewModel: vm)
     }
 }
 
@@ -944,7 +1307,39 @@ private class MockAIChatHistoryCleaner: AIChatHistoryCleaning {
     )
 
     return PreviewView(showWindowTitle: false) {
-        FireDialogView(viewModel: vm, showSitesOverlay: true, showIndividualSitesLink: true)
+        FireDialogView(viewModel: vm, showSitesOverlay: true)
+    }
+}
+
+@available(macOS 14.0, *)
+#Preview("Chats Overlay", traits: FireDialogView.Constants.viewSize.fixedLayout) {
+    let tld = TLD()
+    let chats = [
+        DuckAiChat(chatId: "1", title: "How do I set up a React project with TypeScript?", model: "gpt-4o-mini", lastEdit: "2026-04-01T21:31:54.260Z", pinned: false),
+        DuckAiChat(chatId: "2", title: "Write a Python script to parse JSON files", model: "gpt-4o-mini", lastEdit: "2026-04-01T21:31:54.260Z", pinned: false),
+        DuckAiChat(chatId: "3", title: "Explain the difference between async and await", model: "gpt-4o-mini", lastEdit: "2026-04-01T21:31:54.260Z", pinned: false),
+        DuckAiChat(chatId: "4", title: "Help me design a REST API for a todo app", model: "gpt-4o-mini", lastEdit: "2026-04-01T21:31:54.260Z", pinned: false),
+        DuckAiChat(chatId: "5", title: "Debug my CSS flexbox layout issue that has been driving me crazy for the past three hours", model: "gpt-4o-mini", lastEdit: "2026-04-01T21:31:54.260Z", pinned: false)
+    ]
+
+    let vm = FireDialogViewModel(
+        fireViewModel: FireViewModel(tld: tld, visualizeFireAnimationDecider: NSApp.delegateTyped.visualizeFireSettingsDecider),
+        tabCollectionViewModel: TabCollectionViewModel(isPopup: false),
+        historyCoordinating: Application.appDelegate.historyCoordinator,
+        aiChatHistoryCleaner: MockAIChatHistoryCleaner(chats: chats),
+        fireproofDomains: Application.appDelegate.fireproofDomains,
+        faviconManagement: Application.appDelegate.faviconManager,
+        featureFlagger: Application.appDelegate.featureFlagger,
+        clearingOption: .allData,
+        includeChatHistory: true,
+        tld: tld,
+        windowControllersManager: Application.appDelegate.windowControllersManager,
+        dataClearingPreferences: Application.appDelegate.dataClearingPreferences,
+        pixelFiring: nil
+    )
+
+    PreviewView(showWindowTitle: false) {
+        FireDialogView(viewModel: vm, showChatsOverlay: true)
     }
 }
 #endif

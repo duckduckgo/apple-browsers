@@ -43,6 +43,9 @@ public struct RadioButtonConfiguration {
     public var selectedBorderColor: Color
     public var unselectedBorderColor: Color
     public var selectedCheckboxColor: Color?
+    /// Colour of the fill drawn behind the selected checkbox image.
+    /// Used when the checkbox image contains a knocked out transparent glyph, allowing the background to show through.
+    public var selectedCheckboxBackgroundColor: Color?
     public var unselectedCheckboxColor: Color?
     public var selectedCheckboxImage: Image
     public var unselectedCheckboxImage: Image
@@ -63,9 +66,10 @@ public struct RadioButtonConfiguration {
         unselectedBackgroundColor: Color = .clear,
         selectedBorderColor: Color = .init(designSystemColor: .accentPrimary),
         unselectedBorderColor: Color = .init(designSystemColor: .lines),
-        selectedCheckboxColor: Color? = nil,
+        selectedCheckboxColor: Color? = .init(designSystemColor: .accentPrimary),
+        selectedCheckboxBackgroundColor: Color? = .white,
         unselectedCheckboxColor: Color? = .gray.opacity(0.6),
-        selectedCheckboxImage: Image = Image(uiImage: DesignSystemImages.Glyphs.Size24.checkAccent),
+        selectedCheckboxImage: Image = Image(uiImage: DesignSystemImages.Glyphs.Size24.checkSolid),
         unselectedCheckboxImage: Image = Image(uiImage: DesignSystemImages.Glyphs.Size24.shapeCircle),
         borderWidth: CGFloat = 1,
         cornerRadius: CGFloat = 12,
@@ -84,6 +88,7 @@ public struct RadioButtonConfiguration {
         self.selectedBorderColor = selectedBorderColor
         self.unselectedBorderColor = unselectedBorderColor
         self.selectedCheckboxColor = selectedCheckboxColor
+        self.selectedCheckboxBackgroundColor = selectedCheckboxBackgroundColor
         self.unselectedCheckboxColor = unselectedCheckboxColor
         self.selectedCheckboxImage = selectedCheckboxImage
         self.unselectedCheckboxImage = unselectedCheckboxImage
@@ -244,6 +249,30 @@ private struct RadioButtonRow: View {
     }
 
     @ViewBuilder
+    private var checkbox: some View {
+        if isSelected, let backgroundColor = configuration.selectedCheckboxBackgroundColor {
+            ZStack {
+                // The fill shows through any knocked-out areas in the checkbox image, inset so it stays within the tinted disc.
+                Circle()
+                    .fill(backgroundColor)
+                    .padding(configuration.checkboxSize * 0.125)
+                configuration.selectedCheckboxImage
+                    .resizable()
+                    .conditionalTemplateMode(checkboxColor)
+                    .scaledToFit()
+            }
+            .frame(width: configuration.checkboxSize, height: configuration.checkboxSize)
+        } else {
+            (isSelected ? configuration.selectedCheckboxImage : configuration.unselectedCheckboxImage)
+                .resizable()
+                .conditionalTemplateMode(checkboxColor)
+                .font(.system(size: configuration.checkboxSize))
+                .frame(width: configuration.checkboxSize, height: configuration.checkboxSize)
+                .flexibleFrame(horizontal: false, vertical: false)
+        }
+    }
+
+    @ViewBuilder
     private var verticalRowContent: some View {
         Text(item.text)
             .font(configuration.font)
@@ -251,24 +280,14 @@ private struct RadioButtonRow: View {
             .multilineTextAlignment(.leading)
             .frame(maxWidth: .infinity, alignment: .leading)
 
-        (isSelected ? configuration.selectedCheckboxImage : configuration.unselectedCheckboxImage)
-            .resizable()
-            .conditionalTemplateMode(checkboxColor)
-            .font(.system(size: configuration.checkboxSize))
-            .frame(width: configuration.checkboxSize, height: configuration.checkboxSize)
-            .flexibleFrame(horizontal: false, vertical: false)
+        checkbox
     }
 
     @ViewBuilder
     private var horizontalRowContent: some View {
         Spacer()
 
-        (isSelected ? configuration.selectedCheckboxImage : configuration.unselectedCheckboxImage)
-            .resizable()
-            .conditionalTemplateMode(checkboxColor)
-            .font(.system(size: configuration.checkboxSize))
-            .frame(width: configuration.checkboxSize, height: configuration.checkboxSize)
-            .flexibleFrame(horizontal: false, vertical: false)
+        checkbox
 
         Text(item.text)
             .minimumScaleFactor(0.8)
@@ -463,6 +482,7 @@ private class CallbackRadioButtonViewModel: RadioButtonViewModel {
                 selectedBackgroundColor: .pink.opacity(0.1),
                 selectedBorderColor: .pink,
                 selectedCheckboxColor: .pink,
+                selectedCheckboxBackgroundColor: nil,
                 unselectedCheckboxColor: .gray.opacity(0.5),
                 selectedCheckboxImage: Image(systemName: "heart.fill"),
                 unselectedCheckboxImage: Image(systemName: "heart"),
@@ -519,6 +539,7 @@ private class CallbackRadioButtonViewModel: RadioButtonViewModel {
                         selectedBackgroundColor: .purple,
                         selectedBorderColor: .purple,
                         selectedCheckboxColor: .white,
+                        selectedCheckboxBackgroundColor: nil,
                         selectedCheckboxImage: Image(systemName: "star.fill"),
                         unselectedCheckboxImage: Image(systemName: "star"),
                         cornerRadius: 16

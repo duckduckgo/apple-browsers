@@ -75,4 +75,10 @@ public final class DefaultDBPProfileStateManager: DBPProfileStateManaging {
     private func setProfileState(_ state: DBPProfileState) {
         keyValueStore.set(state.rawValue, forKey: Keys.profileState)
     }
+
+#if DEBUG
+    public func setProfileStateForTesting(_ state: DBPProfileState) {
+        setProfileState(state)
+    }
+#endif
 }

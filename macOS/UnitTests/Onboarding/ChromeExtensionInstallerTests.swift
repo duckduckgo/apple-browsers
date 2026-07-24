@@ -16,11 +16,9 @@
 //  limitations under the License.
 //
 
-import FeatureFlags
 import Foundation
 import PixelKit
 import PixelKitTestingUtilities
-import PrivacyConfig
 import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
@@ -43,12 +41,6 @@ final class ChromeExtensionInstallerTests: XCTestCase {
         }
         applicationSupportURL = nil
         try super.tearDownWithError()
-    }
-
-    func testWhenFeatureFlagIsOffThenCanInstallIsFalse() {
-        let installer = makeSUT(enableOnboardingChromeExtensionFlag: false)
-
-        XCTAssertFalse(installer.canInstallDDGExtension)
     }
 
     func testWhenBuildIsNotSparkleThenCanInstallIsFalse() throws {
@@ -159,7 +151,6 @@ final class ChromeExtensionInstallerTests: XCTestCase {
     // MARK: - Helpers
 
     private func makeSUT(
-        enableOnboardingChromeExtensionFlag: Bool = true,
         buildType: ApplicationBuildTypeMock = {
             let buildType = ApplicationBuildTypeMock()
             buildType.isSparkleBuild = true
@@ -169,13 +160,7 @@ final class ChromeExtensionInstallerTests: XCTestCase {
         fileManager: FileManager = .default,
         pixelFiring: PixelFiring? = nil
     ) -> ChromeExtensionInstaller {
-        let featureFlagger = MockFeatureFlagger()
-        if enableOnboardingChromeExtensionFlag {
-            featureFlagger.enableFeatures([.onboardingChromeExtension])
-        }
-
-        return ChromeExtensionInstaller(
-            featureFlagger: featureFlagger,
+        ChromeExtensionInstaller(
             buildType: buildType,
             isChromeInstalled: isChromeInstalled,
             applicationSupportURL: applicationSupportURL,

@@ -16,14 +16,28 @@
 //  limitations under the License.
 //
 
+import DesignResourcesKit
 import XCTest
-@testable import DesignResourcesKit
 
 final class DesignResourcesKitTests: XCTestCase {
-    func testExample() throws {
-        // This is an example of a functional test case.
-        // Use XCTAssert and related functions to verify your tests produce the correct
-        // results.
-        XCTAssertEqual(DesignResourcesKit().text, "Hello, World!")
+    func testWhenCurrentPaletteIsChangedThenTheNewPaletteIsReturned() {
+        let originalPalette = DesignSystemPalette.current
+        defer {
+            DesignSystemPalette.current = originalPalette
+        }
+
+#if os(iOS)
+        DesignSystemPalette.current = .rebranded
+        guard case .rebranded = DesignSystemPalette.current else {
+            XCTFail("Expected the rebranded palette")
+            return
+        }
+#elseif os(macOS)
+        DesignSystemPalette.current = .green
+        guard case .green = DesignSystemPalette.current else {
+            XCTFail("Expected the green palette")
+            return
+        }
+#endif
     }
 }

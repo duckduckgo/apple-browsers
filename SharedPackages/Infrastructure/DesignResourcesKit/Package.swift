@@ -20,6 +20,10 @@
 
 import PackageDescription
 
+let strictConcurrencySettings: [SwiftSetting] = [
+    .enableExperimentalFeature("StrictConcurrency")
+]
+
 let package = Package(
     name: "DesignResourcesKit",
     platforms: [
@@ -41,11 +45,10 @@ let package = Package(
         .target(
             name: "DesignResourcesKit",
             dependencies: [],
-            swiftSettings: [
-                .enableExperimentalFeature("StrictConcurrency")
-            ]),
+            swiftSettings: strictConcurrencySettings),
         .testTarget(
             name: "DesignResourcesKitTests",
-            dependencies: ["DesignResourcesKit"]),
+            dependencies: ["DesignResourcesKit"],
+            swiftSettings: strictConcurrencySettings),
     ]
 )

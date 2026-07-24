@@ -2172,6 +2172,8 @@
 		C1FA13762ECFDB72001392FA /* AutofillExtensionEnableCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1FA13752ECFDB72001392FA /* AutofillExtensionEnableCoordinatorTests.swift */; };
 		C1FFBD462C761BE20073622B /* SyncPromoManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1FFBD452C761BE20073622B /* SyncPromoManagerTests.swift */; };
 		C1FFBD482C7749A90073622B /* SyncSettingsViewController+PlatformLinks.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1FFBD472C7749A90073622B /* SyncSettingsViewController+PlatformLinks.swift */; };
+		C2920E700F7D448614155BC5 /* FileLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = F16393FE1ECCB9CC00DDD653 /* FileLoader.swift */; };
+		C51DE2491C1278EF27899BB1 /* FileLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = F16393FE1ECCB9CC00DDD653 /* FileLoader.swift */; };
 		C256781EC700D62BEDE36B94 /* LaunchTimeMetricsSubscriberTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8FD41799FD12C35CD0E1600 /* LaunchTimeMetricsSubscriberTests.swift */; };
 		C2920E700F7D448614155BC5 /* FileLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = F16393FE1ECCB9CC00DDD653 /* FileLoader.swift */; };
 		C51DE2491C1278EF27899BB1 /* FileLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = F16393FE1ECCB9CC00DDD653 /* FileLoader.swift */; };
@@ -2247,6 +2249,8 @@
 		CB6EF04D2FDC357C000C75BA /* PopoverSuggestionsCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB6EF04C2FDC357C000C75BA /* PopoverSuggestionsCoordinator.swift */; };
 		CB6EF04F2FE0203B000C75BA /* IPadOmnibarFocusModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB6EF04E2FE0203B000C75BA /* IPadOmnibarFocusModel.swift */; };
 		CB6EF0512FE020D6000C75BA /* IPadOmnibarFocusModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB6EF0502FE020D6000C75BA /* IPadOmnibarFocusModelTests.swift */; };
+		CB781CCB3010E88B008DCD60 /* AutocompleteSuggestionsPixels.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB781CCA3010E88B008DCD60 /* AutocompleteSuggestionsPixels.swift */; };
+		CB781CCD3010E961008DCD60 /* AutocompleteSuggestionsPixelsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB781CCC3010E961008DCD60 /* AutocompleteSuggestionsPixelsTests.swift */; };
 		CB7CF9FA2F9A6C100051BEE9 /* CircularButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB7CF9F92F9A6C100051BEE9 /* CircularButton.swift */; };
 		CB7E0A212D5E1D96002A7C0C /* UIInteractionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB7E0A202D5E1D96002A7C0C /* UIInteractionManager.swift */; };
 		CB7E0A232D5E1E55002A7C0C /* LaunchActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB7E0A222D5E1E55002A7C0C /* LaunchActionHandler.swift */; };
@@ -4990,6 +4994,8 @@
 		CB6EF0502FE020D6000C75BA /* IPadOmnibarFocusModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPadOmnibarFocusModelTests.swift; sourceTree = "<group>"; };
 		CB7407BC2AF6D56D0090A41C /* pl */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = pl; path = pl.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		CB75AA132AF6D5AA00AED266 /* sl */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = sl; path = sl.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		CB781CCA3010E88B008DCD60 /* AutocompleteSuggestionsPixels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutocompleteSuggestionsPixels.swift; sourceTree = "<group>"; };
+		CB781CCC3010E961008DCD60 /* AutocompleteSuggestionsPixelsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutocompleteSuggestionsPixelsTests.swift; sourceTree = "<group>"; };
 		CB7CF9F92F9A6C100051BEE9 /* CircularButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CircularButton.swift; sourceTree = "<group>"; };
 		CB7E0A202D5E1D96002A7C0C /* UIInteractionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIInteractionManager.swift; sourceTree = "<group>"; };
 		CB7E0A222D5E1E55002A7C0C /* LaunchActionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchActionHandler.swift; sourceTree = "<group>"; };
@@ -7734,6 +7740,7 @@
 				7B059F0E2D0387E900371ED0 /* Widgets */,
 				BB77957A2E9D4B0B00CF58F4 /* WinBackOffer */,
 				CBB6055D30081648003607EA /* MinimalChromeModeDecision.swift */,
+				CB781CCA3010E88B008DCD60 /* AutocompleteSuggestionsPixels.swift */,
 			);
 			path = DuckDuckGo;
 			sourceTree = "<group>";
@@ -7795,6 +7802,7 @@
 				84EFBCC52D81796000706739 /* AutocompleteSuggestionsDataSourceTests.swift */,
 				84D678092D830E9F0030BC82 /* SuggestionJsonScenarioTests.swift */,
 				6F64461F2FDBEE2A00D699B9 /* SuggestionListKeyboardSelectionTests.swift */,
+				CB781CCC3010E961008DCD60 /* AutocompleteSuggestionsPixelsTests.swift */,
 			);
 			path = Autocomplete;
 			sourceTree = "<group>";
@@ -13538,6 +13546,7 @@
 				7B4F87E72D0734090010B18F /* ControlCenterWidget.swift in Sources */,
 				56D60AA52EE33EA600652ABB /* SubscriptionUserScriptFeatureFlagAdapter.swift in Sources */,
 				D68A21442B7EC08500BB372E /* SubscriptionExternalLinkView.swift in Sources */,
+				CB781CCB3010E88B008DCD60 /* AutocompleteSuggestionsPixels.swift in Sources */,
 				9FA8A60230086ACB000DF5DE /* OnboardingView+DownloadReasonContent.swift in Sources */,
 				65B4D5C22D68EE4B00FC677A /* DuckPlayerNativeUIPresenter.swift in Sources */,
 				31206F702D3804E800A95D76 /* AIChatDebugView.swift in Sources */,
@@ -14468,6 +14477,7 @@
 				98E564012DE8B32D00E6E75F /* MockBookmarksCoreDataStorage.swift in Sources */,
 				98E564032DE8B32D00E6E75F /* MockAIChatSettingsProvider.swift in Sources */,
 				98E564042DE8B32D00E6E75F /* MockDDGSyncing.swift in Sources */,
+				CB781CCD3010E961008DCD60 /* AutocompleteSuggestionsPixelsTests.swift in Sources */,
 				98E564052DE8B32D00E6E75F /* MockPersistentPixel.swift in Sources */,
 				BBC3AF632FF6954500280FC7 /* SettingsDeepLinkSectionTests.swift in Sources */,
 				98E564062DE8B32D00E6E75F /* MockTabDelegate.swift in Sources */,

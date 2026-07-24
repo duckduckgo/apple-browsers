@@ -3,9 +3,8 @@
   //
   // Safari/WebKit does NOT emit Chromium Perfetto traces, so the Chrome path's
   // perfetto + trace_processor LCP metric cannot work here. Instead we read LCP
-  // straight from the page via the standard `largest-contentful-paint`
-  // PerformanceObserver entries (the Web Vitals LCP API), using crossbench's
-  // browser-agnostic `js` probe.
+  // straight from the page via a `largest-contentful-paint` PerformanceObserver
+  // (the Web Vitals LCP API), using crossbench's browser-agnostic `js` probe.
   //
   // Timing note (important): the `js` probe's metric code runs in the probe's
   // stop() hook, i.e. AFTER the loading story's core workload has finished, with
@@ -14,14 +13,21 @@
   // --about-blank-duration: doing so would navigate away before this code runs
   // and clear the page's performance timeline, yielding no LCP. (Chrome needs
   // about:blank to *finalize* LCP into its trace; the JS reading below does not
-  // need finalization — the last/largest LCP candidate observed during the load
-  // window is the LCP.)
+  // need finalization — the largest LCP candidate observed during the load is
+  // the LCP.)
   //
-  // We read via performance.getEntriesByType("largest-contentful-paint"): per
-  // the LCP spec these entries are buffered on the performance timeline, so no
-  // pre-registered PerformanceObserver is required. A setup hook can't help here
-  // anyway — the `js` probe's setup runs pre-navigation (on about:blank) and any
-  // observer it registers is destroyed by the navigation to the target site.
+  // Why a PerformanceObserver and not getEntriesByType: LCP is NOT exposed via
+  // performance.getEntriesByType("largest-contentful-paint") on ANY browser —
+  // that call returns []. LCP is only reachable through a PerformanceObserver.
+  // We register one with { buffered: true }, which replays the entries that
+  // fired during the load (before the observer existed) from the performance
+  // entry buffer. Per the Performance Timeline spec, observe() with buffered
+  // queues those past entries into the observer buffer synchronously, and
+  // takeRecords() returns that buffer — so a single synchronous turn is enough.
+  // This matters because crossbench drives Safari via WebDriver execute_script,
+  // which does NOT await a returned Promise; an async read would never resolve.
+  // (setup can't help: the `js` probe's setup runs pre-navigation on about:blank
+  // and any observer it registers is destroyed by the navigation to the site.)
   //
   // Output: a flattened js.json per repetition containing:
   //   lcp_ms    - navigation -> LCP in milliseconds (or -1 if no LCP entry)
@@ -30,16 +36,23 @@
     "js": {
       "js":
         '''
-        const entries = performance.getEntriesByType("largest-contentful-paint");
-        if (!entries || entries.length === 0) {
-          return { lcp_ms: -1, lcp_count: 0 };
-        }
-        const last = entries[entries.length - 1];
+        const times = [];
         // Per spec startTime == renderTime (or loadTime when renderTime is
         // unavailable, e.g. a cross-origin image without Timing-Allow-Origin).
         // Fall back defensively so a 0/undefined field never masks a real LCP.
-        const ms = last.startTime || last.renderTime || last.loadTime || -1;
-        return { lcp_ms: ms, lcp_count: entries.length };
+        const record = (e) => times.push(e.startTime || e.renderTime || e.loadTime || 0);
+        const obs = new PerformanceObserver((list) => list.getEntries().forEach(record));
+        obs.observe({ type: "largest-contentful-paint", buffered: true });
+        // buffered:true fills the observer buffer synchronously; drain it here.
+        // (The callback above is belt-and-suspenders in case a UA dispatches it
+        // synchronously — execute_script won't run it on a later task.)
+        obs.takeRecords().forEach(record);
+        obs.disconnect();
+        if (times.length === 0) {
+          return { lcp_ms: -1, lcp_count: 0 };
+        }
+        // LCP is the largest/latest candidate.
+        return { lcp_ms: Math.max(...times), lcp_count: times.length };
         '''
     }
   }

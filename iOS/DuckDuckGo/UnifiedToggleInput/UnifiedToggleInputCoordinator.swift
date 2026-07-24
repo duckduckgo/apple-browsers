@@ -463,13 +463,16 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             view: .init(
                 setModelName: { [weak self] in self?.viewController.modelName = $0 },
                 setModelPickerMenu: { [weak self] in self?.viewController.modelPickerMenu = $0 },
+                setModelChipHidden: { [weak self] in self?.viewController.isModelChipHidden = $0 },
                 setSelectedReasoningMode: { [weak self] in self?.viewController.selectedReasoningMode = $0 },
                 setReasoningButtonHidden: { [weak self] in self?.viewController.isReasoningButtonHidden = $0 },
                 setReasoningPickerMenu: { [weak self] in self?.viewController.reasoningPickerMenu = $0 }
             ),
             environment: .init(
                 isDuckAISurfaceForAttribution: { [weak self] in self?.isDuckAISurfaceForAttribution ?? false },
-                hasSubmittedPrompt: { [weak self] in self?.hasSubmittedPrompt ?? false }
+                hasSubmittedPrompt: { [weak self] in self?.hasSubmittedPrompt ?? false },
+                host: { [weak self] in self?.host },
+                isModelPickerForcedVisible: { [weak self] in self?.isModelPickerForcedVisible ?? false }
             ),
             callbacks: .init(
                 onModelsUpdated: { [weak self] in self?.handleModelsUpdated() },
@@ -535,7 +538,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             displayState = .contextualChat
             hasSubmittedPrompt = !contextualStartsPreSubmit
             syncHasSubmittedPromptToHandler()
-            updateModelChipVisibility()
+            modelSelector.updateModelChipVisibility()
         }
 
         sessionMonitor.startObservingBackground()
@@ -874,7 +877,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         hasSubmittedPrompt = false
         viewController.handler.resetInteractionState()
         resetToolsSelection()
-        updateModelChipVisibility()
+        modelSelector.updateModelChipVisibility()
         syncHasSubmittedPromptToHandler()
 
         viewController.applyCardLayout(.collapsed, animated: false)
@@ -1316,7 +1319,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         isModelPickerForcedVisible = false
         isSubmitBlockedByRecoveryCard = false
         resetToolsSelection()
-        updateModelChipVisibility()
+        modelSelector.updateModelChipVisibility()
         syncHasSubmittedPromptToHandler()
         clearAttachments()
         setText("")
@@ -2047,21 +2050,8 @@ private extension UnifiedToggleInputCoordinator {
         // here would clobber a just-submitted prompt. Explicit resets cover the rest.
         guard hasExistingChat, !hasSubmittedPrompt else { return }
         hasSubmittedPrompt = true
-        updateModelChipVisibility()
+        modelSelector.updateModelChipVisibility()
         syncHasSubmittedPromptToHandler()
-    }
-
-    func updateModelChipVisibility() {
-        // Contextual chat only picks the model upstream after the first prompt reaches the web chat.
-        // Before that first submit, the sheet-level UTI owns prompt composition and should expose the picker.
-        // Image generation has no model picker either — when active, the chip is hidden until the tool is deselected.
-        let isImageGenActive = toolsController.selectedTool == .imageGeneration
-        let isContextualPostSubmit = host == .contextualChat && hasSubmittedPrompt
-        // `isModelPickerForcedVisible` only relaxes the generic `hasSubmittedPrompt` hide reason —
-        // contextual post-submit and image generation stay hidden regardless.
-        let shouldHideModelChip = isContextualPostSubmit || isImageGenActive || (hasSubmittedPrompt && !isModelPickerForcedVisible)
-        viewController.isModelChipHidden = shouldHideModelChip
-        modelSelector.updateReasoningPicker()
     }
 
     func syncHasSubmittedPromptToHandler() {
@@ -2077,7 +2067,7 @@ private extension UnifiedToggleInputCoordinator {
         hasSubmittedPrompt = true
         isModelPickerForcedVisible = false
         persistModelPickerPinClearedAfterHideIfNeeded()
-        updateModelChipVisibility()
+        modelSelector.updateModelChipVisibility()
         refreshToolsPresentation()
         syncHasSubmittedPromptToHandler()
         if wasInRecoveryPickerSession {
@@ -2100,7 +2090,7 @@ private extension UnifiedToggleInputCoordinator {
         // immediately after that restore when switching Duck.ai tabs, so resetting the pin
         // here would undo the value we just loaded for the incoming tab.
         isSubmitBlockedByRecoveryCard = false
-        updateModelChipVisibility()
+        modelSelector.updateModelChipVisibility()
         syncHasSubmittedPromptToHandler()
     }
 
@@ -2149,7 +2139,7 @@ private extension UnifiedToggleInputCoordinator {
         )
         // Tool selection toggles the model-chip + reasoning-picker visibility. Route through the
         // canonical updaters so we don't clobber the other signals (`hasSubmittedPrompt`, `host`).
-        updateModelChipVisibility()
+        modelSelector.updateModelChipVisibility()
         // Reflect the image-generation tool in the input placeholder ("Create images privately").
         viewController.handler.isImageGenerationSelected = toolsController.selectedTool == .imageGeneration
         viewController.refreshPlaceholderForCurrentMode()

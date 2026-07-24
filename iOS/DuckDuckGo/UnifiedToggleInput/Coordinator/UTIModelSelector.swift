@@ -37,15 +37,19 @@ final class UTIModelSelector {
     struct ViewSurface {
         let setModelName: (String) -> Void
         let setModelPickerMenu: (UIMenu?) -> Void
+        let setModelChipHidden: (Bool) -> Void
         let setSelectedReasoningMode: (AIChatReasoningMode?) -> Void
         let setReasoningButtonHidden: (Bool) -> Void
         let setReasoningPickerMenu: (UIMenu?) -> Void
     }
 
-    /// Cross-cutting coordinator state read live at decision time (never captured).
+    /// Cross-cutting coordinator state read live at decision time (never captured). `host` and
+    /// `isModelPickerForcedVisible` stay coordinator-owned (the pin is bound to per-tab persistence).
     struct Environment {
         let isDuckAISurfaceForAttribution: () -> Bool
         let hasSubmittedPrompt: () -> Bool
+        let host: () -> UnifiedToggleInputHost?
+        let isModelPickerForcedVisible: () -> Bool
     }
 
     /// Coordinator-owned effects a selection triggers. `onModelsUpdated` re-enters the coordinator's
@@ -227,6 +231,19 @@ final class UTIModelSelector {
     /// The reasoning mode to show as selected, resolved against the current model's supported modes.
     var resolvedSelectedReasoningMode: AIChatReasoningMode? {
         modelStore.selectedModel?.resolvedReasoningMode(from: modelStore.selectedReasoningMode)
+    }
+
+    func updateModelChipVisibility() {
+        // Contextual chat only picks the model upstream after the first prompt reaches the web chat.
+        // Before that first submit, the sheet-level UTI owns prompt composition and should expose the picker.
+        // Image generation has no model picker either — when active, the chip is hidden until the tool is deselected.
+        let isImageGenActive = toolsController.selectedTool == .imageGeneration
+        let isContextualPostSubmit = environment.host() == .contextualChat && environment.hasSubmittedPrompt()
+        // `isModelPickerForcedVisible` only relaxes the generic `hasSubmittedPrompt` hide reason —
+        // contextual post-submit and image generation stay hidden regardless.
+        let shouldHideModelChip = isContextualPostSubmit || isImageGenActive || (environment.hasSubmittedPrompt() && !environment.isModelPickerForcedVisible())
+        view.setModelChipHidden(shouldHideModelChip)
+        updateReasoningPicker()
     }
 
     func updateModelChipLabel() {

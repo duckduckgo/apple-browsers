@@ -83,7 +83,7 @@ public final class RemoteMessagingStore: RemoteMessagingStoring {
                 guard fetchScheduledRemoteMessage(surfaces: RemoteMessageSurfaceType.allCases, triggerFilter: .any) != nil else {
                     return
                 }
-                Task {
+                startTrackedTask {
                     await self.deleteScheduledMessages()
                 }
             }
@@ -150,6 +150,51 @@ public final class RemoteMessagingStore: RemoteMessagingStoring {
 
     private let errorEvents: EventMapping<RemoteMessagingStoreError>?
     private var featureFlagDisabledCancellable: AnyCancellable?
+
+    private let pendingTasksLock = NSLock()
+    private var pendingTasks: [UUID: Task<Void, Never>] = [:]
+
+    /// Awaits work the store started by itself, rather than on behalf of the current caller.
+    ///
+    /// Fetching a scheduled message can dismiss an expired one, and the feature flag being turned off can delete
+    /// scheduled messages. Both save on `context` from a task the caller never gets a handle to, so anything that
+    /// tears the Core Data stack down - clearing browsing data, test teardown - has to drain them first: a save
+    /// against a coordinator whose stores have been removed raises `NSInternalInconsistencyException`, and because
+    /// that is an Objective-C exception rather than a Swift error, the `do`/`catch` around each save cannot intercept
+    /// it and the process aborts.
+    public func waitForPendingTasks() async {
+        while true {
+            pendingTasksLock.lock()
+            let tasks = Array(pendingTasks.values)
+            pendingTasksLock.unlock()
+
+            guard !tasks.isEmpty else { return }
+
+            for task in tasks {
+                await task.value
+            }
+        }
+    }
+
+    /// Runs `operation` in a task that `waitForPendingTasks()` can await.
+    private func startTrackedTask(_ operation: @escaping () async -> Void) {
+        let id = UUID()
+
+        pendingTasksLock.lock()
+        defer { pendingTasksLock.unlock() }
+
+        // Created while the lock is held so the task cannot finish, and try to remove itself, before it is recorded.
+        pendingTasks[id] = Task { [weak self] in
+            await operation()
+            self?.forgetTask(withID: id)
+        }
+    }
+
+    private func forgetTask(withID id: UUID) {
+        pendingTasksLock.lock()
+        pendingTasks[id] = nil
+        pendingTasksLock.unlock()
+    }
 }
 
 // MARK: - RemoteMessagingConfigManagedObject Public Interface
@@ -461,8 +506,8 @@ extension RemoteMessagingStore {
     }
 
     private func dismissExpiredMessage(withID id: String) {
-        Task {
-            await dismissRemoteMessage(withID: id)
+        startTrackedTask {
+            await self.dismissRemoteMessage(withID: id)
         }
     }
 

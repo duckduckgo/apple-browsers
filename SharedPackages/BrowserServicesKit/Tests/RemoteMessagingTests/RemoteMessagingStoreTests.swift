@@ -59,14 +59,18 @@ class RemoteMessagingStoreTests: XCTestCase {
         defaults = MockKeyValueStore()
     }
 
-    override func tearDownWithError() throws {
+    override func tearDown() async throws {
+        // Fetching in the test body can leave a dismissal in flight. Drain it before the stores are removed,
+        // otherwise the save lands on a store-less coordinator and Core Data raises an Objective-C exception,
+        // which aborts the whole test process instead of failing this one test.
+        await store?.waitForPendingTasks()
         store = nil
 
         try? remoteMessagingDatabase.tearDown(deleteStores: true)
         remoteMessagingDatabase = nil
         try? FileManager.default.removeItem(at: location)
 
-        try super.tearDownWithError()
+        try await super.tearDown()
     }
 
     // Tests:
@@ -648,6 +652,31 @@ class RemoteMessagingStoreTests: XCTestCase {
 
         let result = store.fetchScheduledRemoteMessage(surfaces: .allCases)
         XCTAssertNil(result)
+    }
+
+    func testWhenExpiredMessageIsFetchedThenWaitingForPendingTasksCompletesTheDismissal() async throws {
+        let context = store.context
+        try context.performAndWait {
+            let message = RemoteMessageManagedObject(context: context)
+            message.id = "auto-dismiss-pending"
+            message.status = NSNumber(value: 0)
+            message.shown = true
+            message.firstShownDate = Calendar.current.date(byAdding: .day, value: -5, to: Date())
+            message.message = """
+              {"isMetricsEnabled":true,"content":{"small":{"titleText":"t","descriptionText":"d"}},"id":"auto-dismiss-pending","exclusionRules":[],"matchingRules":[],"displayConditions":{"dismissAfterDaysShown":2}}
+              """
+            context.insert(message)
+            try context.save()
+        }
+
+        XCTAssertNil(store.fetchScheduledRemoteMessage(surfaces: .allCases))
+
+        // The fetch dismisses the expired message in a task it never hands back, so this barrier is the only
+        // thing that can guarantee the write has landed. If it stops tracking that task the dismissal becomes
+        // observable only by luck, and the save can outlive the store it was made against.
+        await store.waitForPendingTasks()
+
+        XCTAssertEqual(store.fetchDismissedRemoteMessageIDs(), ["auto-dismiss-pending"])
     }
 
     func testWhenMessageHasNilFirstShownDateThenItIsReturned() async throws {

@@ -75,17 +75,25 @@ echo "poetry: $(poetry --version)"
 # 4. Google Chrome — latest stable. Deliberately NOT pinned: the baseline should
 #    track what users actually run, and crossbench stamps the exact version into
 #    each result so a step caused by a Chrome bump stays traceable.
-log "Google Chrome"
-# Explicit `brew update` first: HOMEBREW_NO_AUTO_UPDATE=1 freezes the cask index,
-# so without this an upgrade would never see a newer version.
-brew update
-if brew list --cask google-chrome >/dev/null 2>&1; then
-  # --greedy because Chrome's cask auto_updates and a plain upgrade skips it.
-  brew upgrade --cask --greedy google-chrome
+#    INSTALL_CHROME=0 skips this — the Safari harness reuses everything else this
+#    script sets up (python/poetry/crossbench/extras) but drives Safari, so it
+#    has no need for Chrome. Default is 1 to preserve the Chrome-job behavior.
+INSTALL_CHROME="${INSTALL_CHROME:-1}"
+if [ "$INSTALL_CHROME" = "1" ]; then
+  log "Google Chrome"
+  # Explicit `brew update` first: HOMEBREW_NO_AUTO_UPDATE=1 freezes the cask
+  # index, so without this an upgrade would never see a newer version.
+  brew update
+  if brew list --cask google-chrome >/dev/null 2>&1; then
+    # --greedy because Chrome's cask auto_updates and a plain upgrade skips it.
+    brew upgrade --cask --greedy google-chrome
+  else
+    brew install --cask --force google-chrome
+  fi
+  echo "chrome: $('/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' --version 2>/dev/null || echo 'version unavailable')"
 else
-  brew install --cask --force google-chrome
+  log "Google Chrome (skipped: INSTALL_CHROME=0)"
 fi
-echo "chrome: $('/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' --version 2>/dev/null || echo 'version unavailable')"
 
 # 5. crossbench checkout, pinned to CROSSBENCH_REV. Clone it if absent (keeps
 #    setup to a single command).

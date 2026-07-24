@@ -63,4 +63,35 @@ run), and the console summary shows in the job log. Aggregating these per-rep
 rows into percentiles and pushing them to ClickHouse is the next increment — not
 part of this slice.
 
+## Safari
+
+`test-safari.sh` is the Safari sibling of `test-chrome.sh` — same site list, same
+1 warm-up + 10 measured reps, same TSV columns (with `browser=safari`). It's run
+by `.github/workflows/macos_crossbench_safari.yml`, which mirrors the Chrome
+workflow but tags rows `--webview-type sfr` in the aggregation step.
+
+It differs from the Chrome path in how LCP is measured. WebKit does **not** emit
+Chromium Perfetto traces, so the `perfetto` + `trace_processor` probe can't work.
+Instead Safari LCP is read straight from the page via the standard
+`largest-contentful-paint` PerformanceObserver entries (the Web Vitals LCP API),
+through crossbench's browser-agnostic `js` probe
+(`crossbench-extras/config/probe/js/navToLCP.safari.config.hjson`). Two
+consequences:
+
+- **No `--about-blank-duration`.** The `js` probe reads LCP after the story's
+  core workload with the browser still on the page; navigating to about:blank
+  first would clear the performance timeline. (Chrome needs about:blank to
+  *finalize* LCP into its trace; the JS read does not.)
+- **safaridriver must be enabled.** crossbench drives Safari over WebDriver, which
+  refuses sessions until "Allow Remote Automation" is on (`sudo safaridriver
+  --enable` or Safari's Develop menu). The workflow runs `sudo safaridriver
+  --enable`; hosted runners grant passwordless sudo, self-hosted ones may not.
+
+Provisioning is shared: run `./provision-macos.sh` with `INSTALL_CHROME=0` to set
+up python/poetry/crossbench + the LCP extras without installing Chrome.
+
+> Whether Safari exposes `largest-contentful-paint` entries via
+> `getEntriesByType` is engine/version dependent; if a run reports "NO LCP VALUES
+> PARSED", that API path isn't available in the Safari under test.
+
 [crossbench]: https://chromium.googlesource.com/crossbench

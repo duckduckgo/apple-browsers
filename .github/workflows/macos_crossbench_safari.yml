@@ -1,0 +1,163 @@
+name: macOS - crossbench Safari LCP (live network)
+
+# Manual-only test harness: stands up crossbench on a GitHub-hosted macOS runner,
+# measures Safari navigation -> Largest Contentful Paint against the LIVE network,
+# and uploads the per-rep results as a downloadable artifact. Optionally
+# (opt-in dispatch input) a second, self-hosted job inserts per-domain
+# aggregates into ClickHouse (native_apps.macos_browser_health_nav_to_lcp).
+#
+# Safari sibling of macos_crossbench_chrome.yml. Two Safari-specific wrinkles:
+#   - LCP is read from the page via the standard `largest-contentful-paint`
+#     PerformanceObserver entries (Web Vitals LCP API), NOT a Perfetto trace,
+#     because WebKit doesn't emit Chromium traces. See test-safari.sh.
+#   - crossbench drives Safari via safaridriver (WebDriver), which requires
+#     "Allow Remote Automation". We enable it with `sudo safaridriver --enable`
+#     below. GitHub-hosted macOS runners grant passwordless sudo, so this works
+#     there; a self-hosted runner must allow it (see the step's comment).
+#
+# workflow_dispatch ONLY on purpose: no pull_request/push/schedule trigger, so
+# fork PRs can't run it and it never fires unattended. Results are live-network
+# noisy — this validates the pipeline, it is not a trustworthy cross-browser
+# comparison (that needs WPR + a dedicated runner, later).
+
+on:
+  workflow_dispatch:
+    inputs:
+      sites:
+        description: "Comma-separated sites (blank = full 22-site list)"
+        required: false
+        default: "apple.com,wikipedia.org,youtube.com"
+      upload-to-clickhouse:
+        description: "Upload aggregated per-domain results to ClickHouse"
+        type: boolean
+        required: false
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+defaults:
+  run:
+    working-directory: macOS/scripts/crossbench
+
+jobs:
+  safari-lcp:
+    name: Safari LCP (live network)
+    # Standard hosted macOS runner (arm64) — free on public repos. If the org
+    # restricts standard runners, switch to macos-15-large / macos-26-xlarge
+    # (those bill).
+    runs-on: macos-latest
+    # 11 loads/site (1 warm-up + 10 measured); a full 22-site run is ~85 min.
+    timeout-minutes: 120
+
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Provision crossbench (python, poetry, crossbench checkout; no Chrome)
+        # INSTALL_CHROME=0: the Safari harness needs python/poetry/crossbench +
+        # the LCP extras this script installs, but not Chrome.
+        env:
+          INSTALL_CHROME: "0"
+        run: ./provision-macos.sh
+
+      - name: Enable safaridriver Remote Automation
+        # REQUIRED: crossbench drives Safari through safaridriver (WebDriver),
+        # which refuses to create a session until "Allow Remote Automation" is
+        # enabled. `--enable` needs root; GitHub-hosted macOS runners provide
+        # passwordless sudo, so this succeeds there. RISK / UNKNOWN: on a locked-
+        # down self-hosted runner sudo may prompt or be denied, and the setting
+        # is per-user — if the runner's Safari user differs this must be enabled
+        # for that user. If this step fails, the run below cannot start Safari.
+        run: sudo safaridriver --enable
+
+      - name: Run Safari LCP suite
+        # Inputs passed via env, not interpolated into the script, to avoid shell injection.
+        env:
+          SITES: ${{ inputs.sites }}
+        run: |
+          args=()
+          if [ -n "$SITES" ]; then
+            args+=(--sites "$SITES")
+          fi
+          ./test-safari.sh "${args[@]}"
+
+      - name: Upload results TSV
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: safari-lcp-results
+          # Path is workspace-relative (not affected by defaults.working-directory).
+          path: macOS/scripts/crossbench/crossbench-results/*.tsv
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Aggregate results for ClickHouse
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # run_started_at is per-ATTEMPT (it becomes the ReplacingMergeTree
+          # version column, so a re-run supersedes the rows of the attempt it
+          # replaces); created_at is stable across attempts and keeps
+          # start_time — and the date partition derived from it — identical
+          # for every attempt of the run.
+          #
+          # --webview-type sfr marks these rows as Safari (the Chrome workflow
+          # relies on aggregate-lcp.py's default of 'chr'). webview-channel stays
+          # at the default 'stable' (Safari release channel).
+          run_json="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}")"
+          in_tsv=(crossbench-results/*.tsv)
+          ./aggregate-lcp.py \
+            --input "${in_tsv[0]}" \
+            --output clickhouse-rows.tsv \
+            --run-id "$GITHUB_RUN_ID" \
+            --start-time "$(jq -r '.created_at' <<< "$run_json")" \
+            --gh-run-started-at "$(jq -r '.run_started_at' <<< "$run_json")" \
+            --webview-type sfr
+          cat clickhouse-rows.tsv
+
+      - name: Upload ClickHouse rows TSV
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: safari-lcp-clickhouse-rows
+          path: macOS/scripts/crossbench/clickhouse-rows.tsv
+          if-no-files-found: warn
+          retention-days: 7
+
+  upload-to-clickhouse:
+    name: Upload to ClickHouse
+    needs: safari-lcp
+    # Hosted runners can't reach the ClickHouse host, hence this separate
+    # self-hosted job. The implicit success() applies on top of the input
+    # gate: this only runs when safari-lcp succeeded AND the dispatch asked
+    # for an upload.
+    if: inputs.upload-to-clickhouse
+    runs-on: [ self-hosted, apple ]
+
+    steps:
+      - name: Download ClickHouse rows TSV
+        uses: actions/download-artifact@v7
+        with:
+          name: safari-lcp-clickhouse-rows
+
+      - name: Insert rows into ClickHouse
+        # Workspace root: the repo isn't checked out in this job, so the
+        # workflow-level working-directory doesn't exist here, and
+        # download-artifact lands files at the root.
+        working-directory: .
+        env:
+          GH_RUN_CONCLUSION: ${{ needs.safari-lcp.result }}
+        run: |
+          # gh_run_conclusion is appended here rather than in the aggregation
+          # step: a job can't know its own conclusion while still running.
+          awk -v c="$GH_RUN_CONCLUSION" '{ print $0 "\t" c }' clickhouse-rows.tsv > clickhouse-rows-final.tsv
+          cat clickhouse-rows-final.tsv
+          clickhouse-client --no-warnings --user dev-rw -h clickhouse.duckduckgo.com --query "INSERT INTO native_apps.macos_browser_health_nav_to_lcp (run_id, start_time, domain, webview_type, webview_channel, webview_version, samples, min_ms, max_ms, mean_ms, p25_ms, p50_ms, p75_ms, p95_ms, gh_run_started_at, gh_run_conclusion) FORMAT TSV" < clickhouse-rows-final.tsv

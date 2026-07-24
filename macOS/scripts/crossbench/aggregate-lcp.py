@@ -14,6 +14,9 @@
 #   samples, min_ms, max_ms, mean_ms, p25_ms, p50_ms, p75_ms, p95_ms,
 #   gh_run_started_at
 #
+# start_time and gh_run_started_at are emitted as Unix epoch seconds (see
+# to_epoch) so ClickHouse stores the exact instant regardless of server zone.
+#
 # Percentiles use ClickHouse's quantileExact formula so CI-computed values
 # match what ClickHouse itself would compute:
 #   quantileExact(level) = sorted[min(floor(level * n), n - 1)]
@@ -21,16 +24,24 @@
 # stdlib only; runs on the system python3 of a hosted macOS runner.
 
 import argparse
+import calendar
 import math
 import sys
+import time
 
 
-def normalize_datetime(value: str) -> str:
-    """'2026-07-24T13:10:51Z' or '2026-07-24 13:10:51' -> 'YYYY-MM-DD hh:mm:ss' (UTC)."""
+def to_epoch(value: str) -> str:
+    """'2026-07-24T13:10:51Z' or '2026-07-24 13:10:51' (UTC) -> Unix epoch seconds.
+
+    GitHub timestamps are UTC. We insert the epoch rather than a wall-clock
+    string so ClickHouse stores the exact instant: the DateTime columns carry no
+    timezone, so a naive string would be parsed in the server's local zone and
+    land hours off, whereas an epoch is unambiguous.
+    """
     v = value.strip().replace("T", " ").removesuffix("Z")
     if len(v) != 19 or v[4] != "-" or v[7] != "-" or v[13] != ":" or v[16] != ":":
         sys.exit(f"ERROR: unrecognized datetime {value!r} (want YYYY-MM-DDThh:mm:ssZ)")
-    return v
+    return str(calendar.timegm(time.strptime(v, "%Y-%m-%d %H:%M:%S")))
 
 
 def quantile_exact(sorted_vals: list[float], level: float) -> float:
@@ -56,8 +67,8 @@ def main() -> None:
     p.add_argument("--webview-channel", default="stable")
     args = p.parse_args()
 
-    start_time = normalize_datetime(args.start_time)
-    gh_run_started_at = normalize_datetime(args.gh_run_started_at)
+    start_time = to_epoch(args.start_time)
+    gh_run_started_at = to_epoch(args.gh_run_started_at)
 
     # site -> (browser_version, [lcp_ms, ...])
     domains: dict[str, tuple[str, list[float]]] = {}

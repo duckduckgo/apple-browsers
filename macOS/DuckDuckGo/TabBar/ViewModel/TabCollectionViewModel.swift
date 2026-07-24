@@ -861,8 +861,12 @@ final class TabCollectionViewModel: NSObject {
         // Materialize if unloaded — pinned tabs must always be loaded
         guard let tab = materialize(at: .unpinned(index)) else { return }
 
-        pinnedTabsManager?.pin(tab)
-        removeUnpinnedTab(at: index, published: false)
+        // Pinning moves the tab between collections; report it to the web extension as a
+        // single `.pinned` property change rather than a close + reopen (see helper below).
+        withWebExtensionTabLifecycleEventsSuppressed {
+            pinnedTabsManager?.pin(tab)
+            removeUnpinnedTab(at: index, published: false)
+        }
         selectPinnedTab(at: pinnedTabsCollection.tabs.count - 1)
     }
 
@@ -873,12 +877,26 @@ final class TabCollectionViewModel: NSObject {
             shouldBlockPinnedTabsManagerUpdates = false
         }
 
-        guard let tab = pinnedTabsManager?.unpinTab(at: index, published: false) else {
-            Logger.tabLazyLoading.error("Unable to unpin a tab")
+        withWebExtensionTabLifecycleEventsSuppressed {
+            guard let tab = pinnedTabsManager?.unpinTab(at: index, published: false) else {
+                Logger.tabLazyLoading.error("Unable to unpin a tab")
+                return
+            }
+            insert(tab, at: .unpinned(0))
+        }
+    }
+
+    /// Runs `body` while the web extension controller ignores tab open/close callbacks, so moving
+    /// a tab between the pinned and unpinned collections is reported to the extension as a single
+    /// `.pinned` property change instead of a spurious close + reopen — which would unregister the
+    /// tab and break its messaging. No-op when web extensions are unavailable.
+    private func withWebExtensionTabLifecycleEventsSuppressed(_ body: () -> Void) {
+        guard #available(macOS 15.4, *),
+              let eventsListener = NSApp.delegateTyped.webExtensionManager?.eventsListener else {
+            body()
             return
         }
-
-        insert(tab, at: .unpinned(0))
+        eventsListener.withTabLifecycleEventsSuppressed(body)
     }
 
     @discardableResult

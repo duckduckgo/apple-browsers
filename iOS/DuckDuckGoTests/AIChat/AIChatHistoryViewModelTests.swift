@@ -133,6 +133,16 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         XCTAssertTrue(delegate.didRequestOpenNewChat)
     }
 
+    func testOpenChatProtection_notifiesDelegate() {
+        let sut = makeSUT(chats: [])
+        let delegate = MockDelegate()
+        sut.delegate = delegate
+
+        sut.openChatProtection()
+
+        XCTAssertTrue(delegate.didRequestChatProtection)
+    }
+
     func testChatId_forValidIndexPath_returnsChatId() {
         let sut = makeSUT(chats: [
             chat(id: "p1", pinned: true),
@@ -680,12 +690,14 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         private(set) var exportedFilenames: [String] = []
         private(set) var exportedChatCounts: [Int] = []
         private(set) var didFailExport = false
+        private(set) var didRequestChatProtection = false
 
         func viewModelDidRequestOpenNewChat() { didRequestOpenNewChat = true }
         func viewModelDidRequestOpenChat(chatId: String) { requestedChatId = chatId }
         func viewModelDidExportChat(filename: String) { exportedFilenames.append(filename) }
         func viewModelDidExportChats(count: Int) { exportedChatCounts.append(count) }
         func viewModelDidFailExport() { didFailExport = true }
+        func viewModelDidRequestChatProtection() { didRequestChatProtection = true }
     }
 
     private final class MockChatHistoryFireExecutor: FireExecuting {
@@ -759,6 +771,10 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         private(set) var pinAddedCount = 0
         private(set) var pinRemovedCount = 0
         private(set) var downloadStartedCount = 0
+        private(set) var downloadSucceededCount = 0
+        private(set) var selectionDeleteConfirmedCount = 0
+        private(set) var selectionDownloadStartedCount = 0
+        private(set) var chatProtectionTappedCount = 0
         private(set) var editModeEnteredCount = 0
         private(set) var newChatTappedCount = 0
         private(set) var loadFailedErrors: [Error] = []
@@ -775,6 +791,10 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         func pinAdded() { pinAddedCount += 1 }
         func pinRemoved() { pinRemovedCount += 1 }
         func downloadStarted() { downloadStartedCount += 1 }
+        func downloadSucceeded() { downloadSucceededCount += 1 }
+        func selectionDeleteConfirmed() { selectionDeleteConfirmedCount += 1 }
+        func selectionDownloadStarted() { selectionDownloadStartedCount += 1 }
+        func chatProtectionTapped() { chatProtectionTappedCount += 1 }
         func editModeEntered() { editModeEnteredCount += 1 }
         func newChatTapped() { newChatTappedCount += 1 }
         func loadFailed(error: Error) { loadFailedErrors.append(error) }

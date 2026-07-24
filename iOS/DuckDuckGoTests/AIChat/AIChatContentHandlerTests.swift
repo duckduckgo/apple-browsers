@@ -772,6 +772,7 @@ final class MockAIChatUserScript: AIChatUserScriptProviding {
     var submitStartChatActionCallCount = 0
     var submitOpenSettingsActionCallCount = 0
     var submitToggleSidebarActionCallCount = 0
+    var submitOpenChatProtectionActionCallCount = 0
     var submitPageContextCallCount = 0
     var lastSubmittedPageContextViaSubmit: AIChatPageContextData?
     var lastDisplayModeSet: AIChatDisplayMode?
@@ -829,6 +830,12 @@ final class MockAIChatUserScript: AIChatUserScriptProviding {
 
     func submitToggleSidebarAction() {
         submitToggleSidebarActionCallCount += 1
+    }
+
+    func submitOpenFeedbackAction(sentiment: String) {}
+
+    func submitOpenChatProtectionAction() {
+        submitOpenChatProtectionActionCallCount += 1
     }
 
     func submitPageContext(_ context: AIChatPageContextData?) {

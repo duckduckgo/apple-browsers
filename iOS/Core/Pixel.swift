@@ -24,6 +24,7 @@ import FoundationExtensions
 import Networking
 import os.log
 
+/// *** Deprecated.  Use PixelKit for new pixels. ***
 public struct PixelParameters {
     public static let url = "url"
     public static let duration = "dur"
@@ -90,6 +91,7 @@ public struct PixelParameters {
 
     public static let count = "count"
     public static let source = "source"
+    public static let sentiment = "sentiment"
     public static let cookiePopupPreference = "cookie_popup_preference"
     public static let autoconsentEnabled = "autoconsent_enabled"
     public static let timeSinceShown = "time_since_shown"
@@ -224,6 +226,7 @@ public struct PixelValues {
     static let test = "1"
 }
 
+/// *** Deprecated. Use PixelKit for new pixels. ***
 public class Pixel {
 
     private struct Constants {

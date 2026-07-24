@@ -19,6 +19,7 @@
 
 import UIKit
 import Foundation
+import FoundationExtensions
 import Testing
 import Persistence
 import PersistenceTestingUtils

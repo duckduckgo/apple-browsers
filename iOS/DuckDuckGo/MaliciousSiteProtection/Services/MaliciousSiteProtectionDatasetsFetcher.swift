@@ -18,6 +18,7 @@
 //
 
 import Foundation
+import FoundationExtensions
 import MaliciousSiteProtection
 import BackgroundTasks
 import Core

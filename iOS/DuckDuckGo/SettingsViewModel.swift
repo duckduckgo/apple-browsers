@@ -223,10 +223,6 @@ final class SettingsViewModel: ObservableObject {
         featureFlagger.isFeatureOn(.aiChatOmnibarDefaultPosition)
     }
 
-    var isAIFeaturesNativeControlsEnabled: Bool {
-        featureFlagger.isFeatureOn(.aiFeaturesNativeControls)
-    }
-
     var isTabSwitcherTrackerCountEnabled: Bool {
         featureFlagger.isFeatureOn(.tabSwitcherTrackerCount)
     }

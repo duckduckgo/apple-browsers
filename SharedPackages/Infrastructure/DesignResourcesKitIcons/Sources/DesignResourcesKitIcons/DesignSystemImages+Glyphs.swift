@@ -636,6 +636,8 @@ public extension DesignSystemImages {
             public static var tabNew: DesignSystemImage { .init(resource: .tabNew24) }
             public static var tag: DesignSystemImage { .init(resource: .tag24) }
             public static var thinking: DesignSystemImage { .init(resource: .thinking24) }
+            public static var thumbsDown: DesignSystemImage { .init(resource: .thumbsDown24) }
+            public static var thumbsUp: DesignSystemImage { .init(resource: .thumbsUp24) }
             public static var timer: DesignSystemImage { .init(resource: .timer24) }
             public static var trash: DesignSystemImage { .init(resource: .trash24) }
             public static var typeSize: DesignSystemImage { .init(resource: .typeSize24) }

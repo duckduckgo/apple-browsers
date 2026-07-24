@@ -34,6 +34,11 @@ on:
 
 permissions:
   contents: read
+  # actions: read lets the aggregate step read this run's metadata via
+  # `gh api .../actions/runs/{id}`. Not strictly needed while the repo is
+  # public (run metadata is world-readable), but required if it ever goes
+  # private, and it documents the dependency.
+  actions: read
 
 concurrency:
   group: ${{ github.workflow }}
@@ -51,8 +56,9 @@ jobs:
     # (those bill).
     runs-on: macos-latest
     # 11 loads/site (1 warm-up + 10 measured); a full 22-site live-network run
-    # runs ~2h (Chrome also installs itself first), so cap above that.
-    timeout-minutes: 160
+    # reached 21/22 sites at 160 min (Chrome also installs itself and traces
+    # every rep via Perfetto), so give it comfortable headroom.
+    timeout-minutes: 200
 
     steps:
       - name: Check out the code

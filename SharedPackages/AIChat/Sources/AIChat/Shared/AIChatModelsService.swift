@@ -87,6 +87,7 @@ public struct AIChatRemoteModel: Decodable, Equatable {
     public let accessTier: [String]
     public let supportedReasoningEffort: [AIChatReasoningEffort]
     public let reasoningEffortAccess: [AIChatReasoningEffortAccess]?
+    public let settingId: String?
 
     public init(
         id: String,
@@ -99,7 +100,8 @@ public struct AIChatRemoteModel: Decodable, Equatable {
         supportedTools: [String],
         accessTier: [String],
         supportedReasoningEffort: [AIChatReasoningEffort] = [],
-        reasoningEffortAccess: [AIChatReasoningEffortAccess]? = nil
+        reasoningEffortAccess: [AIChatReasoningEffortAccess]? = nil,
+        settingId: String? = nil
     ) {
         self.id = id
         self.name = name
@@ -112,10 +114,11 @@ public struct AIChatRemoteModel: Decodable, Equatable {
         self.accessTier = accessTier
         self.supportedReasoningEffort = supportedReasoningEffort
         self.reasoningEffortAccess = reasoningEffortAccess
+        self.settingId = settingId
     }
 
     private enum CodingKeys: String, CodingKey {
-        case id, name, modelShortName, provider, entityHasAccess, supportsImageUpload, supportedFileTypes, supportedTools, supportedReasoningEffort, accessTier, reasoningEffortAccess
+        case id, name, modelShortName, provider, entityHasAccess, supportsImageUpload, supportedFileTypes, supportedTools, supportedReasoningEffort, accessTier, reasoningEffortAccess, settingId
     }
 
     /// Raw wire shape of a single `reasoningEffortAccess` entry. Decoded as `String` for
@@ -139,6 +142,12 @@ public struct AIChatRemoteModel: Decodable, Equatable {
         self.supportedReasoningEffort = try container.decodeIfPresent([String].self, forKey: .supportedReasoningEffort)?
             .compactMap(AIChatReasoningEffort.init(rawValue:)) ?? []
         self.accessTier = try container.decode([String].self, forKey: .accessTier)
+
+        if let intSettingId = try? container.decodeIfPresent(Int.self, forKey: .settingId) {
+            self.settingId = String(intSettingId)
+        } else {
+            self.settingId = try? container.decodeIfPresent(String.self, forKey: .settingId)
+        }
 
         do {
             let rawEntries = try container.decodeIfPresent([RawReasoningEffortAccess].self, forKey: .reasoningEffortAccess)
@@ -254,7 +263,8 @@ extension AIChatModel {
             entityHasAccess: hasAccess,
             accessTier: remoteModel.accessTier,
             supportedReasoningEffort: remoteModel.supportedReasoningEffort,
-            reasoningEffortAccess: hasEffortAccess
+            reasoningEffortAccess: hasEffortAccess,
+            settingId: remoteModel.settingId
         )
     }
 }

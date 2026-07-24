@@ -103,17 +103,23 @@ struct SubscriptionOnboardingBaseView<Content: View>: View {
     private let navigationButton: SubscriptionOnboardingNavigationButton?
     private let header: SubscriptionOnboardingHeaderView?
     private let footer: SubscriptionOnboardingFooter?
+    private let scrollsContent: Bool
     private let content: Content
 
+    /// When `scrollsContent` is `false` the page (header + content) is laid out in a fixed, non-scrolling
+    /// container; the caller is then responsible for making any overflowing content (e.g. a long list) scroll
+    /// itself. Defaults to `true`, wrapping the whole page in a `ScrollView`.
     init(title: String? = nil,
          navigationButton: SubscriptionOnboardingNavigationButton? = nil,
          header: SubscriptionOnboardingHeaderView? = nil,
          footer: SubscriptionOnboardingFooter? = nil,
+         scrollsContent: Bool = true,
          @ViewBuilder content: () -> Content) {
         self.title = title
         self.navigationButton = navigationButton
         self.header = header
         self.footer = footer
+        self.scrollsContent = scrollsContent
         self.content = content()
     }
 
@@ -122,20 +128,13 @@ struct SubscriptionOnboardingBaseView<Content: View>: View {
     }
 
     var body: some View {
-        let page = ScrollView(showsIndicators: false) {
-            VStack(spacing: Metrics.sectionSpacing) {
-                header
-                content
-            }
-            .padding(.vertical, Metrics.contentVerticalPadding)
-            .padding(.horizontal, Metrics.horizontalPadding)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(pageBackgroundColor.ignoresSafeArea())
-        .safeAreaInset(edge: .bottom) { footerView }
-        .navigationBarTitleDisplayMode(.inline)
-        .navigationBarBackButtonHidden(true)
-        .navigationBarBackground(pageBackgroundColor)
+        let page = pageContent
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(pageBackgroundColor.ignoresSafeArea())
+            .safeAreaInset(edge: .bottom) { footerView }
+            .navigationBarTitleDisplayMode(.inline)
+            .navigationBarBackButtonHidden(true)
+            .navigationBarBackground(pageBackgroundColor)
 
         // On iOS 26 the toolbar wraps its items in a shared Liquid Glass background (with a drop
         // shadow). Hide it so the leading button shows only its own circular fill.
@@ -144,6 +143,24 @@ struct SubscriptionOnboardingBaseView<Content: View>: View {
         } else {
             page.toolbar { toolbarContent }
         }
+    }
+
+    @ViewBuilder
+    private var pageContent: some View {
+        if scrollsContent {
+            ScrollView(showsIndicators: false) { contentStack }
+        } else {
+            contentStack
+        }
+    }
+
+    private var contentStack: some View {
+        VStack(spacing: Metrics.sectionSpacing) {
+            header
+            content
+        }
+        .padding(.vertical, Metrics.contentVerticalPadding)
+        .padding(.horizontal, Metrics.horizontalPadding)
     }
 }
 

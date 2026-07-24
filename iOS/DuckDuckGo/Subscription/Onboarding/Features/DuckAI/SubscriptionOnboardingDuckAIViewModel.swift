@@ -89,6 +89,11 @@ final class SubscriptionOnboardingDuckAIViewModel: ObservableObject {
         return accessible.filter(\.isAdvanced) + accessible.filter { !$0.isAdvanced }
     }
 
+    /// The currently selected model, resolved from `selectedModelID`.
+    var selectedModel: AIChatModel? {
+        availableModels.first { $0.id == selectedModelID }
+    }
+
     init(prefetcher: SubscriptionOnboardingPrefetcher,
          delegate: SubscriptionOnboardingSectionDelegate? = nil) {
         self.prefetcher = prefetcher
@@ -136,6 +141,16 @@ final class SubscriptionOnboardingDuckAIViewModel: ObservableObject {
             prefetcher.updateSelectedModel(selectedModelID)
         }
         delegate?.sectionDidRequestDuckAIChat(modelID: selectedModelID)
+    }
+
+    /// Testing-only: persists the committed model (so it's reflected across the AI models store) and requests
+    /// the chat in a web view, passing the model's setting id so it can be injected into the page.
+    @MainActor
+    func startWebChat() {
+        if let selectedModelID {
+            prefetcher.updateSelectedModel(selectedModelID)
+        }
+        delegate?.sectionDidRequestDuckAIWebChat(modelSettingID: selectedModel?.settingId)
     }
 
     /// Skips this (currently last) section, finishing the flow.

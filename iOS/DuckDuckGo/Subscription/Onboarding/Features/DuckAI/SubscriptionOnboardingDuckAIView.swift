@@ -51,7 +51,8 @@ struct SubscriptionOnboardingDuckAIView: View {
             title: title,
             navigationButton: .back({ viewModel.delegate?.sectionDidRequestGoBack() }),
             header: header,
-            footer: footer) {
+            footer: footer,
+            scrollsContent: false) {
             modelPicker
         }
         .onAppear { viewModel.onAppear() }
@@ -72,12 +73,14 @@ private extension SubscriptionOnboardingDuckAIView {
     }
 
     var footer: SubscriptionOnboardingFooter {
+        // Testing-only: the secondary button launches the same chat in a web view instead of the
+        // production contextual sheet, so both launch paths can be compared side by side.
         .double(
             primary: .init(UserText.subscriptionOnboardingDuckAIActivationStartButton) {
                 viewModel.startChat()
             },
-            secondary: .init(UserText.subscriptionOnboardingDuckAIActivationSkipButton) {
-                viewModel.skip()
+            secondary: .init("Start Duck.ai Chat (Web)") {
+                viewModel.startWebChat()
             })
     }
 }
@@ -92,11 +95,15 @@ private extension SubscriptionOnboardingDuckAIView {
 /// Rows are non-interactive on iPad: model preselection has no way to reach a fresh iPad chat session.
 private extension SubscriptionOnboardingDuckAIView {
     var modelPicker: some View {
-        SubscriptionOnboardingCard(cardItems,
-                                   style: .borderless,
-                                   padding: 0,
-                                   contentInset: .init(horizontal: Metrics.contentInsetHorizontal, vertical: Metrics.contentInsetVertical),
-                                   onSelect: CardItemList.selectAction(over: viewModel.availableModels, where: { _ in isSelectable }) { viewModel.select($0.id) })
+        // The page itself is fixed (see `scrollsContent: false`); only the model list scrolls, keeping the
+        // header and footer pinned while the (potentially long) list of models scrolls between them.
+        ScrollView(showsIndicators: false) {
+            SubscriptionOnboardingCard(cardItems,
+                                       style: .borderless,
+                                       padding: 0,
+                                       contentInset: .init(horizontal: Metrics.contentInsetHorizontal, vertical: Metrics.contentInsetVertical),
+                                       onSelect: CardItemList.selectAction(over: viewModel.availableModels, where: { _ in isSelectable }) { viewModel.select($0.id) })
+        }
     }
 
     /// Whether rows show/report a selection at all — false on iPad, where model preselection has no way

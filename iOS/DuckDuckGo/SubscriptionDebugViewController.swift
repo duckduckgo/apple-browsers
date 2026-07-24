@@ -28,8 +28,6 @@ import StoreKit
 import PrivacyConfig
 import Networking
 import UserNotifications
-import UIComponents
-import Lottie
 
 final class SubscriptionDebugViewController: UITableViewController {
 
@@ -38,6 +36,8 @@ final class SubscriptionDebugViewController: UITableViewController {
     private let reporter: SubscriptionDataReporting
     /// Retained for the lifetime of an in-flight/presented onboarding Duck.ai chat sheet.
     private var duckAIChatLauncher: SubscriptionOnboardingDuckAIChatLauncher?
+    /// Retained for the lifetime of an in-flight/presented onboarding Duck.ai web chat surface.
+    private var duckAIWebChatLauncher: SubscriptionOnboardingDuckAIWebChatLauncher?
 
     private var subscriptionManager: SubscriptionManager {
         AppDependencyProvider.shared.subscriptionManager
@@ -133,10 +133,7 @@ final class SubscriptionDebugViewController: UITableViewController {
     }
 
     enum OnboardingRows: Int, CaseIterable {
-        case welcome
-        case vpn
         case duckAI
-        case tapAllowHint
     }
 
     private var notificationAuthStatusText: String = "Loading"
@@ -326,17 +323,8 @@ final class SubscriptionDebugViewController: UITableViewController {
 
         case .onboarding:
             switch OnboardingRows(rawValue: indexPath.row) {
-            case .welcome:
-                cell.textLabel?.text = "Welcome"
-                cell.accessoryType = .disclosureIndicator
-            case .vpn:
-                cell.textLabel?.text = "VPN"
-                cell.accessoryType = .disclosureIndicator
             case .duckAI:
                 cell.textLabel?.text = "Duck.ai"
-                cell.accessoryType = .disclosureIndicator
-            case .tapAllowHint:
-                cell.textLabel?.text = "Tap Allow Hint Overlay"
                 cell.accessoryType = .disclosureIndicator
             case .none:
                 break
@@ -411,10 +399,7 @@ final class SubscriptionDebugViewController: UITableViewController {
             }
         case .onboarding:
             switch OnboardingRows(rawValue: indexPath.row) {
-            case .welcome: showWelcomeOnboarding()
-            case .vpn: showVPNOnboarding()
             case .duckAI: showDuckAIOnboarding()
-            case .tapAllowHint: showTapAllowHintPlayground()
             default: break
             }
         case .none:
@@ -860,48 +845,12 @@ final class SubscriptionDebugViewController: UITableViewController {
         navigationController?.pushViewController(hostingController, animated: true)
     }
 
-    private func showWelcomeOnboarding() {
-        let hostingController = UIHostingController(
-            rootView: SubscriptionOnboardingWelcomeView(onClose: { [weak self] in self?.dismiss(animated: true) })
-                .subscriptionOnboardingNavigationContainer())
-        present(hostingController, animated: true)
-    }
-
-    private func showVPNOnboarding() {
-        let hostingController = UIHostingController(
-            rootView: SubscriptionOnboardingVPNActivationView(
-                viewModel: SubscriptionOnboardingVPNActivationViewModel(prefetcher: SubscriptionOnboardingPrefetcher(), delegate: self))
-                .subscriptionOnboardingNavigationContainer()
-                .graphicLottieRenderer(Self.onboardingLottieRenderer))
-        present(hostingController, animated: true)
-    }
-
     private func showDuckAIOnboarding() {
         let hostingController = UIHostingController(
             rootView: SubscriptionOnboardingDuckAIView(
                 viewModel: SubscriptionOnboardingDuckAIViewModel(prefetcher: SubscriptionOnboardingPrefetcher(), delegate: self))
                 .subscriptionOnboardingNavigationContainer())
         present(hostingController, animated: true)
-    }
-
-    private func showTapAllowHintPlayground() {
-        let hostingController = UIHostingController(
-            rootView: TapAllowHintOverlayPlaygroundView(onClose: { [weak self] in self?.dismiss(animated: true) }))
-        hostingController.modalPresentationStyle = .overFullScreen
-        hostingController.view.backgroundColor = .clear
-        present(hostingController, animated: true)
-    }
-
-    /// Draws `Graphic.lottie` for the onboarding preview from this debug host, since `UIComponents` has no
-    /// Lottie dependency and the production flow host (Stage 3) will inject its own renderer. Honors the
-    /// derived ``GraphicPlayback`` so Reduce Motion freezes on the final frame.
-    private static let onboardingLottieRenderer = GraphicLottieRenderer { name, playback in
-        AnyView(
-            Lottie.LottieView(animation: .named(name))
-                .playbackMode(playback == .playOnce
-                    ? .playing(.fromProgress(0, toProgress: 1, loopMode: .playOnce))
-                    : .paused(at: .progress(playback == .frozenAtEnd ? 1 : 0)))
-        )
     }
 }
 
@@ -916,6 +865,10 @@ extension SubscriptionDebugViewController: SubscriptionOnboardingSectionDelegate
 
     func sectionDidRequestDuckAIChat(modelID: String?) {
         launchDuckAIChat(modelID: modelID)
+    }
+
+    func sectionDidRequestDuckAIWebChat(modelSettingID: String?) {
+        launchDuckAIWebChat(modelSettingID: modelSettingID)
     }
 
     func sectionDidFinishDuckAIChat() {
@@ -936,6 +889,15 @@ extension SubscriptionDebugViewController: SubscriptionOnboardingSectionDelegate
         duckAIChatLauncher = launcher
         launcher.present(from: presentedViewController ?? self, modelID: modelID) { [weak self] in
             self?.sectionDidFinishDuckAIChat()
+        }
+    }
+
+    private func launchDuckAIWebChat(modelSettingID: String?) {
+        guard let contentBlockingAssetsPublisher = (view.window?.rootViewController as? MainViewController)?.contentBlockingAssetsPublisher else { return }
+        let launcher = SubscriptionOnboardingDuckAIWebChatLauncher(contentBlockingAssetsPublisher: contentBlockingAssetsPublisher)
+        duckAIWebChatLauncher = launcher
+        launcher.present(from: presentedViewController ?? self, modelSettingID: modelSettingID) { [weak self] in
+            self?.duckAIWebChatLauncher = nil
         }
     }
 }

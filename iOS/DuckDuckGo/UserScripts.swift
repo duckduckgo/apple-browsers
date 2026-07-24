@@ -71,6 +71,7 @@ final class UserScripts: UserScriptsProvider {
          keyValueStore: ThrowingKeyValueStoring,
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
          aiChatDebugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings(),
+         includeAIChatUserScript: Bool = true,
          adBlockingAvailability: AdBlockingAvailabilityProviding) {
 
         isAutoconsentExtensionAvailable = sourceProvider.webExtensionAvailability?.isAutoconsentExtensionAvailable ?? false
@@ -167,7 +168,9 @@ final class UserScripts: UserScriptsProvider {
 
         contentScopeUserScriptIsolated.registerSubfeature(delegate: faviconScript)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: webEventsSubfeature)
-        contentScopeUserScriptIsolated.registerSubfeature(delegate: aiChatUserScript)
+        if includeAIChatUserScript {
+            contentScopeUserScriptIsolated.registerSubfeature(delegate: aiChatUserScript)
+        }
         contentScopeUserScriptIsolated.registerSubfeature(delegate: subscriptionUserScript)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: serpSettingsUserScript)
         if let duckAiNativeStorageUserScript {

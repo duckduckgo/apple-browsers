@@ -97,6 +97,26 @@ final class FloatingTabSwitcherChromeTests: XCTestCase {
         XCTAssertEqual(chrome.navigationItem.rightBarButtonItems?.first?.title, UserText.selectAllTabs)
     }
 
+    func testWhenEditingTitleChangesThenLabelResizesToFitNewTitle() {
+        let chrome = makeInstalledChrome()
+        chrome.setTitle("2 Tabs")
+        chrome.update(state: .editingRegularSize(selectedCount: 0, totalCount: 2),
+                      tabsStyle: .grid,
+                      canShowSelectionMenu: true,
+                      isEditing: true)
+
+        guard let titleLabel = chrome.navigationItem.leftBarButtonItems?.first?.customView as? UILabel else {
+            XCTFail("Missing selection title label")
+            return
+        }
+        let initialWidth = titleLabel.frame.width
+
+        chrome.setTitle("5 Private Tabs")
+
+        XCTAssertGreaterThan(titleLabel.frame.width, initialWidth)
+        XCTAssertGreaterThanOrEqual(titleLabel.frame.width, titleLabel.intrinsicContentSize.width)
+    }
+
     func testWhenEditingThenBottomBarHasDoneCloseTabsAndMenu() {
         let chrome = makeInstalledChrome()
         chrome.actions.onMultiSelectMenuRequested = { UIMenu(children: []) }

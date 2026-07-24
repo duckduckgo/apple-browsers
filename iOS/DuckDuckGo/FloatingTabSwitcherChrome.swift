@@ -248,6 +248,8 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
 
     func setTitle(_ title: String?) {
         selectionTitleLabel.text = title
+        selectionTitleLabel.sizeToFit()
+        navigationBar.setNeedsLayout()
     }
 
     func configurePlusButtonLongPressMenu(isFireModeEnabled: Bool) {

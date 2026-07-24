@@ -2,7 +2,9 @@ name: macOS - crossbench Chrome LCP (live network)
 
 # Manual-only test harness: stands up crossbench on a GitHub-hosted macOS runner,
 # measures Chrome navigation -> Largest Contentful Paint against the LIVE network,
-# and uploads the per-rep results as a downloadable artifact.
+# and uploads the per-rep results as a downloadable artifact. Optionally
+# (opt-in dispatch input) a second, self-hosted job inserts per-domain
+# aggregates into ClickHouse (native_apps.macos_browser_health_nav_to_lcp).
 #
 # workflow_dispatch ONLY on purpose: no pull_request/push/schedule trigger, so
 # fork PRs can't run it and it never fires unattended. Results are live-network
@@ -20,6 +22,11 @@ on:
         description: "Repetitions per site"
         required: false
         default: "3"
+      upload-to-clickhouse:
+        description: "Upload aggregated per-domain results to ClickHouse"
+        type: boolean
+        required: false
+        default: false
 
 permissions:
   contents: read
@@ -71,3 +78,62 @@ jobs:
           path: macOS/scripts/crossbench/crossbench-results/*.tsv
           if-no-files-found: warn
           retention-days: 7
+
+      - name: Aggregate results for ClickHouse
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # run_started_at is per-ATTEMPT (it becomes the ReplacingMergeTree
+          # version column, so a re-run supersedes the rows of the attempt it
+          # replaces); created_at is stable across attempts and keeps
+          # start_time — and the date partition derived from it — identical
+          # for every attempt of the run.
+          run_json="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}")"
+          in_tsv=(crossbench-results/*.tsv)
+          ./aggregate-lcp.py \
+            --input "${in_tsv[0]}" \
+            --output clickhouse-rows.tsv \
+            --run-id "$GITHUB_RUN_ID" \
+            --start-time "$(jq -r '.created_at' <<< "$run_json")" \
+            --gh-run-started-at "$(jq -r '.run_started_at' <<< "$run_json")"
+          cat clickhouse-rows.tsv
+
+      - name: Upload ClickHouse rows TSV
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: chrome-lcp-clickhouse-rows
+          path: macOS/scripts/crossbench/clickhouse-rows.tsv
+          if-no-files-found: warn
+          retention-days: 7
+
+  upload-to-clickhouse:
+    name: Upload to ClickHouse
+    needs: chrome-lcp
+    # Hosted runners can't reach the ClickHouse host, hence this separate
+    # self-hosted job. The implicit success() applies on top of the input
+    # gate: this only runs when chrome-lcp succeeded AND the dispatch asked
+    # for an upload.
+    if: inputs.upload-to-clickhouse
+    runs-on: [ self-hosted, apple ]
+
+    steps:
+      - name: Download ClickHouse rows TSV
+        uses: actions/download-artifact@v7
+        with:
+          name: chrome-lcp-clickhouse-rows
+
+      - name: Insert rows into ClickHouse
+        # Workspace root: the repo isn't checked out in this job, so the
+        # workflow-level working-directory doesn't exist here, and
+        # download-artifact lands files at the root.
+        working-directory: .
+        env:
+          GH_RUN_CONCLUSION: ${{ needs.chrome-lcp.result }}
+        run: |
+          # gh_run_conclusion is appended here rather than in the aggregation
+          # step: a job can't know its own conclusion while still running.
+          awk -v c="$GH_RUN_CONCLUSION" '{ print $0 "\t" c }' clickhouse-rows.tsv > clickhouse-rows-final.tsv
+          cat clickhouse-rows-final.tsv
+          clickhouse-client --no-warnings --user dev-rw -h clickhouse.duckduckgo.com --query "INSERT INTO native_apps.macos_browser_health_nav_to_lcp (run_id, start_time, domain, webview_type, webview_channel, webview_version, samples, min_ms, max_ms, mean_ms, p25_ms, p50_ms, p75_ms, p95_ms, gh_run_started_at, gh_run_conclusion) FORMAT TSV" < clickhouse-rows-final.tsv

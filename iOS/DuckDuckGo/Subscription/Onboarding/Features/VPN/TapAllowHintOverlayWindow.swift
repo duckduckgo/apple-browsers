@@ -39,8 +39,8 @@ final class TapAllowHintOverlayWindow {
             return -77
         }
         static var hintOffsetY: CGFloat {
-            if #available(iOS 26, *) { return 143 }
-            return 125
+            if #available(iOS 26, *) { return 135 }
+            return 65
         }
     }
 
@@ -52,7 +52,12 @@ final class TapAllowHintOverlayWindow {
         let hostingController = UIHostingController(rootView: Self.hintView)
         hostingController.view.backgroundColor = .clear
         let window = UIWindow(windowScene: scene)
-        window.windowLevel = .alert + 1
+        // The system permission dialog dims the screen with a scrim that sits above `.alert`, so `.alert + 1`
+        // leaves the hint rendered underneath it (dimmed). Use the maximum window level so the hint sits above
+        // the scrim. (If the OS ever presents this prompt as an out-of-process SpringBoard alert, no app window
+        // level can exceed it — but on the supported path this dialog is in-process.)
+        window.windowLevel = UIWindow.Level(rawValue: .greatestFiniteMagnitude)
+        window.backgroundColor = .clear
         window.isUserInteractionEnabled = false
         window.rootViewController = hostingController
         window.isHidden = false

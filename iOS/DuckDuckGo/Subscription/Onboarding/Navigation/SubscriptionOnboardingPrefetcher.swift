@@ -96,3 +96,20 @@ final class SubscriptionOnboardingPrefetcher: ObservableObject {
 }
 
 extension SubscriptionOnboardingPrefetcher.FetchState: Equatable where Value: Equatable {}
+
+#if DEBUG
+extension SubscriptionOnboardingPrefetcher {
+    /// Builds a prefetcher pre-seeded with resolved fetch states for previews. Seeding here rather than on the
+    /// view model matters: the view model subscribes to `$connectionInfo`, and a live `@Published` re-emits its
+    /// current value on subscribe — which would otherwise immediately clobber a value seeded on the view model
+    /// with the prefetcher's `.idle`. A `.loaded` seed also makes `fetchConnectionInfoIfNeeded()` a no-op.
+    @MainActor
+    static func preview(connectionInfo: FetchState<SubscriptionOnboardingConnectionInfo> = .idle,
+                        models: FetchState<[AIChatModel]> = .idle) -> SubscriptionOnboardingPrefetcher {
+        let prefetcher = SubscriptionOnboardingPrefetcher(connectionInfoService: PreviewSubscriptionOnboardingConnectionInfoService())
+        prefetcher.connectionInfo = connectionInfo
+        prefetcher.models = models
+        return prefetcher
+    }
+}
+#endif

@@ -27,7 +27,7 @@ final class SubscriptionOnboardingDuckAIViewModelTests: XCTestCase {
 
     private var cancellables = Set<AnyCancellable>()
 
-    func testOnAppearFetchesAndPopulatesModels() async {
+    func testWhenOnAppearThenFetchesAndPopulatesModels() async {
         let provider = MockAIModelProvider(models: [model("a", tier: ["plus"]), model("b", tier: ["free"])])
         let (viewModel, _) = makeViewModel(provider: provider)
 
@@ -39,7 +39,7 @@ final class SubscriptionOnboardingDuckAIViewModelTests: XCTestCase {
         XCTAssertEqual(provider.fetchCallCount, 1)
     }
 
-    func testOnAppearCalledTwiceFetchesOnce() async {
+    func testWhenOnAppearIsCalledTwiceThenFetchesOnce() async {
         let provider = MockAIModelProvider(models: [model("a", tier: ["plus"])])
         let (viewModel, _) = makeViewModel(provider: provider)
 
@@ -51,7 +51,7 @@ final class SubscriptionOnboardingDuckAIViewModelTests: XCTestCase {
         XCTAssertEqual(provider.fetchCallCount, 1)
     }
 
-    func testAvailableModelsDropsInaccessibleAndOrdersPremiumFirst() async {
+    func testWhenModelsLoadThenAvailableModelsDropInaccessibleAndOrderPremiumFirst() async {
         let provider = MockAIModelProvider(models: [
             model("free1", tier: ["free"]),
             model("plus1", tier: ["plus"]),
@@ -67,18 +67,48 @@ final class SubscriptionOnboardingDuckAIViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.availableModels.map(\.id), ["plus1", "free1", "free2"])
     }
 
-    func testOnAppearSelectsPersistedModel() async {
-        let provider = MockAIModelProvider(models: [model("a", tier: ["plus"]), model("b", tier: ["free"])], persistedModelID: "b")
+    func testWhenOnAppearThenSelectsMostPremiumAvailableModel() async {
+        // "a" is advanced (non-free tier); "b" is a free-tier model. The default selection must be the most
+        // premium available model, and must not be swayed by whatever was previously persisted.
+        let provider = MockAIModelProvider(models: [model("b", tier: ["free"]), model("a", tier: ["plus"])], persistedModelID: "b")
         let (viewModel, _) = makeViewModel(provider: provider)
 
         await wait(viewModel.$selectedModelID, until: { $0 != nil }) {
             viewModel.onAppear()
         }
 
-        XCTAssertEqual(viewModel.selectedModelID, "b")
+        XCTAssertEqual(viewModel.selectedModelID, "a")
     }
 
-    func testOnAppearWithNoModelsLeavesSelectionNil() async {
+    func testWhenOnAppearWithMultiplePremiumModelsThenSelectsFirstInList() async {
+        // Two advanced models — the most premium default resolves to the first one in list order.
+        let provider = MockAIModelProvider(models: [
+            model("free1", tier: ["free"]),
+            model("premium1", tier: ["plus"]),
+            model("premium2", tier: ["pro"])
+        ])
+        let (viewModel, _) = makeViewModel(provider: provider)
+
+        await wait(viewModel.$selectedModelID, until: { $0 != nil }) {
+            viewModel.onAppear()
+        }
+
+        XCTAssertEqual(viewModel.selectedModelID, "premium1")
+    }
+
+    func testWhenOnAppearWithNoPremiumModelsThenSelectsFirstAvailable() async {
+        // No advanced models — the default falls back to the first accessible (free-tier) model in list order.
+        let provider = MockAIModelProvider(models: [model("free1", tier: ["free"]), model("free2", tier: ["free"])])
+        let (viewModel, _) = makeViewModel(provider: provider)
+
+        await wait(viewModel.$selectedModelID, until: { $0 != nil }) {
+            viewModel.onAppear()
+        }
+
+        XCTAssertEqual(viewModel.selectedModelID, "free1")
+    }
+
+    func testWhenOnAppearWithNoModelsThenSelectionRemainsNil() async {
         let provider = MockAIModelProvider(models: [])
         let (viewModel, prefetcher) = makeViewModel(provider: provider)
 
@@ -90,11 +120,11 @@ final class SubscriptionOnboardingDuckAIViewModelTests: XCTestCase {
         XCTAssertNil(viewModel.selectedModelID)
     }
 
-    func testUserSelectionSurvivesModelLoad() async {
+    func testWhenModelsLoadThenUserSelectionSurvives() async {
         let provider = MockAIModelProvider(models: [model("a", tier: ["plus"]), model("b", tier: ["free"])], persistedModelID: "a")
         let (viewModel, _) = makeViewModel(provider: provider)
 
-        // Select before the async fetch resolves; the load must not overwrite the user's choice with the persisted one.
+        // Select before the async fetch resolves; the load must not overwrite the user's choice with the default one.
         await wait(viewModel.$models, until: { !$0.isEmpty }) {
             viewModel.onAppear()
             viewModel.select("b")
@@ -103,7 +133,7 @@ final class SubscriptionOnboardingDuckAIViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.selectedModelID, "b")
     }
 
-    func testSelectUpdatesSelectionWithoutPersisting() async {
+    func testWhenSelectThenSelectionUpdatesWithoutPersisting() async {
         let provider = MockAIModelProvider(models: [model("a", tier: ["plus"]), model("b", tier: ["free"])])
         let (viewModel, _) = makeViewModel(provider: provider)
         await wait(viewModel.$models, until: { !$0.isEmpty }) {
@@ -116,7 +146,7 @@ final class SubscriptionOnboardingDuckAIViewModelTests: XCTestCase {
         XCTAssertNil(provider.updatedModelID)
     }
 
-    func testStartChatPersistsSelectedModel() async {
+    func testWhenStartChatThenSelectedModelIsPersisted() async {
         let provider = MockAIModelProvider(models: [model("a", tier: ["plus"])], persistedModelID: "a")
         let (viewModel, _) = makeViewModel(provider: provider)
         await wait(viewModel.$selectedModelID, until: { $0 != nil }) {
@@ -128,13 +158,19 @@ final class SubscriptionOnboardingDuckAIViewModelTests: XCTestCase {
         XCTAssertEqual(provider.updatedModelID, "a")
     }
 
-    func testStartChatReportsSectionComplete() {
+    func testWhenStartChatThenRequestsDuckAIChatWithoutCompletingSection() async {
         let delegate = SpySectionDelegate()
-        let (viewModel, _) = makeViewModel(provider: MockAIModelProvider(models: []), delegate: delegate)
+        let provider = MockAIModelProvider(models: [model("a", tier: ["plus"])], persistedModelID: "a")
+        let (viewModel, _) = makeViewModel(provider: provider, delegate: delegate)
+        await wait(viewModel.$selectedModelID, until: { $0 != nil }) {
+            viewModel.onAppear()
+        }
 
         viewModel.startChat()
 
-        XCTAssertEqual(delegate.completedSections, [.duckAI])
+        XCTAssertEqual(delegate.requestedChatModelIDs, ["a"])
+        // Completion is deferred until the chat is dismissed (sectionDidFinishDuckAIChat).
+        XCTAssertTrue(delegate.completedSections.isEmpty)
     }
 
     // MARK: - Helpers
@@ -197,10 +233,17 @@ private final class MockAIModelProvider: SubscriptionOnboardingAIModelProviding 
 
 private final class SpySectionDelegate: SubscriptionOnboardingSectionDelegate {
     private(set) var completedSections: [SubscriptionOnboardingSection] = []
+    private(set) var requestedChatModelIDs: [String?] = []
+    private(set) var finishedChatCount = 0
     func sectionDidComplete(_ section: SubscriptionOnboardingSection) {
         completedSections.append(section)
     }
-    func sectionDidRequestDuckAIChat(modelID: String?) {}
+    func sectionDidRequestDuckAIChat(modelID: String?) {
+        requestedChatModelIDs.append(modelID)
+    }
+    func sectionDidFinishDuckAIChat() {
+        finishedChatCount += 1
+    }
     func sectionDidRequestAdvance() {}
     func sectionDidRequestGoBack() {}
 }

@@ -19,29 +19,16 @@
 
 import UIKit
 import Combine
-import AIChat
-import BrowserServicesKit
-import Core
 
-/// No page to attach on this surface — collection/attachability are always empty/inert.
-private final class SubscriptionOnboardingNoOpPageContextHandler: AIChatPageContextHandling {
-    var contextPublisher: AnyPublisher<AIChatPageContext?, Never> { Empty().eraseToAnyPublisher() }
-    func triggerContextCollection(trigger: PageContextExtractionTrigger) -> Bool { false }
-    func isCurrentPageAttachable() -> Bool { false }
-    func reportAttachabilityMeasurement(trigger: PageContextExtractionTrigger) {}
-    func clear() {}
-    func resubscribe() {}
-    func clearAttachedContext() {}
-}
-
-/// There's no tab behind onboarding for `unifiedToggleInputDidRequestAIVoiceChat` to hand off to, so the voice shortcut is reported unavailable —
-/// it's disabled at the source instead of leaving the button tappable with nowhere to go.
-private struct SubscriptionOnboardingNoOpVoiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding {
-    var isAvailable: Bool { false }
-}
-
-/// No browser tab is behind this surface, so every browser-integration callback is a no-op.
+/// No browser tab is behind this surface, so every browser-integration callback is a no-op — except
+/// the sheet dismissal, which is forwarded so the onboarding flow can advance when the chat closes.
 private final class SubscriptionOnboardingNoOpSheetCoordinatorDelegate: AIChatContextualSheetCoordinatorDelegate {
+    var onDismiss: (() -> Void)?
+
+    func aiChatContextualSheetCoordinatorDidDismiss(_ coordinator: AIChatContextualSheetCoordinator) {
+        onDismiss?()
+    }
+
     func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator, didRequestToLoad url: URL) {}
     func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator, didRequestExpandWithURL url: URL) {}
     func aiChatContextualSheetCoordinatorDidRequestViewAllChats(_ coordinator: AIChatContextualSheetCoordinator) {}
@@ -54,9 +41,9 @@ private final class SubscriptionOnboardingNoOpSheetCoordinatorDelegate: AIChatCo
 }
 
 /// Launches the production Duck.ai contextual chat sheet from post-subscription onboarding by reusing
-/// `AIChatContextualSheetCoordinator` directly. There's no tab behind onboarding, so the tab-scoped dependencies
-/// (page context, tab URL publishers, browser-integration delegate) are all no-ops; everything else
-/// (settings, feature flags, content blocking) is sourced the same way production does.
+/// `AIChatContextualSheetCoordinator.makeStandalone(...)`. There's no tab behind onboarding, so the tab-scoped
+/// dependencies (page context, tab URL publishers, browser-integration delegate, voice shortcut) are inert;
+/// everything else (settings, feature flags, content blocking) is sourced the same way production does.
 @MainActor
 final class SubscriptionOnboardingDuckAIChatLauncher {
 
@@ -64,25 +51,19 @@ final class SubscriptionOnboardingDuckAIChatLauncher {
     private let delegate = SubscriptionOnboardingNoOpSheetCoordinatorDelegate()
 
     init(contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>) {
-        coordinator = AIChatContextualSheetCoordinator(
-            voiceSearchHelper: VoiceSearchHelper(),
-            aiChatSettings: AIChatSettings(),
-            privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager,
-            contentBlockingAssetsPublisher: contentBlockingAssetsPublisher,
-            featureDiscovery: DefaultFeatureDiscovery(),
-            featureFlagger: AppDependencyProvider.shared.featureFlagger,
-            pageContextHandler: SubscriptionOnboardingNoOpPageContextHandler(),
-            tabURLPublishers: AIChatTabURLPublishers(originating: Just<URL?>(nil).eraseToAnyPublisher(),
-                                                      didFinish: Just<URL?>(nil).eraseToAnyPublisher()),
-            presentStandaloneFullScreen: true,
-            voiceShortcutFeature: SubscriptionOnboardingNoOpVoiceShortcutFeature()
-        )
+        coordinator = .makeStandalone(contentBlockingAssetsPublisher: contentBlockingAssetsPublisher)
         coordinator.delegate = delegate
     }
 
     /// Presents the sheet from `presentingViewController`, then preselects `modelID` once the sheet's UTI
-    /// host exists (iPhone only).
-    func present(from presentingViewController: UIViewController, modelID: String?) {
+    /// host exists (iPhone only). `onFinished` fires once when the sheet is dismissed.
+    func present(from presentingViewController: UIViewController, modelID: String?, onFinished: (() -> Void)? = nil) {
+        var didFinish = false
+        delegate.onDismiss = {
+            guard !didFinish else { return }
+            didFinish = true
+            onFinished?()
+        }
         Task { @MainActor in
             await coordinator.presentSheet(from: presentingViewController)
             // There's no tab behind onboarding to expand into.

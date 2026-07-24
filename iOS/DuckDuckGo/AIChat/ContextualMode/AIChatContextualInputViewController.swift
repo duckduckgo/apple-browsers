@@ -80,7 +80,7 @@ final class AIChatContextualInputViewController: UIViewController {
     weak var delegate: AIChatContextualInputViewControllerDelegate?
 
     private let showsBasicNativeInput: Bool
-    private let presentStandaloneFullScreen: Bool
+    private let presentsStandaloneFullScreen: Bool
     private let voiceSearchHelper: VoiceSearchHelperProtocol
     private lazy var basicNativeInputViewController = AIChatBasicNativeInputViewController(voiceSearchHelper: voiceSearchHelper)
     private lazy var inputSurface: AIChatContextualInputSurface = {
@@ -116,15 +116,14 @@ final class AIChatContextualInputViewController: UIViewController {
 
     private var welcomeCenterYConstraint: NSLayoutConstraint?
     private var bottomConstraint: NSLayoutConstraint?
-    private var didPinWelcomeLabelToSurfaceCenter = false
 
     // MARK: - Initialization
 
     init(voiceSearchHelper: VoiceSearchHelperProtocol,
          showsBasicNativeInput: Bool = true,
-         presentStandaloneFullScreen: Bool = false) {
+         presentsStandaloneFullScreen: Bool = false) {
         self.showsBasicNativeInput = showsBasicNativeInput
-        self.presentStandaloneFullScreen = presentStandaloneFullScreen
+        self.presentsStandaloneFullScreen = presentsStandaloneFullScreen
         self.voiceSearchHelper = voiceSearchHelper
         super.init(nibName: nil, bundle: nil)
     }
@@ -269,7 +268,9 @@ private extension AIChatContextualInputViewController {
 
         bottomConstraint = basicNativeInputViewController.view.bottomAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor)
 
-        let centerY = welcomeLabel.centerYAnchor.constraint(equalTo: view.topAnchor)
+        let centerY = presentsStandaloneFullScreen
+            ? welcomeLabel.centerYAnchor.constraint(equalTo: view.centerYAnchor)
+            : welcomeLabel.centerYAnchor.constraint(equalTo: view.topAnchor)
         centerY.priority = .defaultHigh
         welcomeCenterYConstraint = centerY
 
@@ -305,7 +306,9 @@ private extension AIChatContextualInputViewController {
 
         configureWelcomeLabel()
 
-        let centerY = welcomeLabel.centerYAnchor.constraint(equalTo: view.topAnchor)
+        let centerY = presentsStandaloneFullScreen
+            ? welcomeLabel.centerYAnchor.constraint(equalTo: view.centerYAnchor)
+            : welcomeLabel.centerYAnchor.constraint(equalTo: view.topAnchor)
         centerY.priority = .defaultHigh
         welcomeCenterYConstraint = centerY
 
@@ -385,16 +388,9 @@ private extension AIChatContextualInputViewController {
     }
 
     func updateWelcomeLabelCentering() {
-        // Standalone full screen has an empty/near-empty quick-actions area, so pin the label to the surface
-        // centre once instead of tracking the (small, unstable) space above the quick actions scroll view.
-        if presentStandaloneFullScreen {
-            guard !didPinWelcomeLabelToSurfaceCenter else { return }
-            didPinWelcomeLabelToSurfaceCenter = true
-            welcomeCenterYConstraint?.isActive = false
-            welcomeCenterYConstraint = welcomeLabel.centerYAnchor.constraint(equalTo: view.centerYAnchor)
-            welcomeCenterYConstraint?.isActive = true
-            return
-        }
+        // Standalone full screen uses a static centre-aligned constraint set at load,
+        // so there's nothing to recompute per layout pass.
+        guard !presentsStandaloneFullScreen else { return }
         let scrollViewTop = quickActionsScrollView.frame.minY
         guard scrollViewTop > 0 else { return }
         welcomeCenterYConstraint?.constant = scrollViewTop / 2

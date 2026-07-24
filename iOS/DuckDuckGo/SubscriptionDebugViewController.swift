@@ -136,6 +136,7 @@ final class SubscriptionDebugViewController: UITableViewController {
         case welcome
         case vpn
         case duckAI
+        case tapAllowHint
     }
 
     private var notificationAuthStatusText: String = "Loading"
@@ -334,6 +335,9 @@ final class SubscriptionDebugViewController: UITableViewController {
             case .duckAI:
                 cell.textLabel?.text = "Duck.ai"
                 cell.accessoryType = .disclosureIndicator
+            case .tapAllowHint:
+                cell.textLabel?.text = "Tap Allow Hint Overlay"
+                cell.accessoryType = .disclosureIndicator
             case .none:
                 break
             }
@@ -410,6 +414,7 @@ final class SubscriptionDebugViewController: UITableViewController {
             case .welcome: showWelcomeOnboarding()
             case .vpn: showVPNOnboarding()
             case .duckAI: showDuckAIOnboarding()
+            case .tapAllowHint: showTapAllowHintPlayground()
             default: break
             }
         case .none:
@@ -879,6 +884,16 @@ final class SubscriptionDebugViewController: UITableViewController {
         present(hostingController, animated: true)
     }
 
+    private func showTapAllowHintPlayground() {
+        let hostingController = UIHostingController(
+            rootView: TapAllowHintOverlayPlaygroundView(onClose: { [weak self] in self?.dismiss(animated: true) }))
+        // Full screen with a clear host so the mock dialog's scrim covers everything, matching where the real
+        // (screen-centred) system dialog appears — so the hint offsets line up against the same reference.
+        hostingController.modalPresentationStyle = .overFullScreen
+        hostingController.view.backgroundColor = .clear
+        present(hostingController, animated: true)
+    }
+
     /// Draws `Graphic.lottie` for the onboarding preview from this debug host, since `UIComponents` has no
     /// Lottie dependency and the production flow host (Stage 3) will inject its own renderer. Honors the
     /// derived ``GraphicPlayback`` so Reduce Motion freezes on the final frame.
@@ -905,6 +920,10 @@ extension SubscriptionDebugViewController: SubscriptionOnboardingSectionDelegate
         launchDuckAIChat(modelID: modelID)
     }
 
+    func sectionDidFinishDuckAIChat() {
+        duckAIChatLauncher = nil
+    }
+
     func sectionDidRequestAdvance() {
         dismiss(animated: true)
     }
@@ -914,10 +933,11 @@ extension SubscriptionDebugViewController: SubscriptionOnboardingSectionDelegate
     }
 
     private func launchDuckAIChat(modelID: String?) {
-        // The contextual chat surface needs the app's content-blocking pipeline (which builds the UserScripts
-        // bundle carrying SubscriptionUserScript for the paid tier). MainViewController owns it.
         guard let contentBlockingAssetsPublisher = (view.window?.rootViewController as? MainViewController)?.contentBlockingAssetsPublisher else { return }
-        duckAIChatLauncher = SubscriptionOnboardingDuckAIChatLauncher(contentBlockingAssetsPublisher: contentBlockingAssetsPublisher)
-        duckAIChatLauncher?.present(from: presentedViewController ?? self, modelID: modelID)
+        let launcher = SubscriptionOnboardingDuckAIChatLauncher(contentBlockingAssetsPublisher: contentBlockingAssetsPublisher)
+        duckAIChatLauncher = launcher
+        launcher.present(from: presentedViewController ?? self, modelID: modelID) { [weak self] in
+            self?.sectionDidFinishDuckAIChat()
+        }
     }
 }

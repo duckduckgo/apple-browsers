@@ -127,7 +127,7 @@ final class AIChatContextualSheetViewController: UIViewController {
     /// A standalone full-screen surface with no browser tab behind it. Presents at
     /// `.large()` only with no grabber, and strips the header down to just a close button (moved to the leading side),
     /// since there's nothing to expand into or browse chat history for.
-    private let presentStandaloneFullScreen: Bool
+    private let presentsStandaloneFullScreen: Bool
     private var recentChatsPopup: AIChatRecentChatsPopupViewController?
     private var popupWindow: UIWindow?
     private var isFetchingRecentChats = false
@@ -135,7 +135,7 @@ final class AIChatContextualSheetViewController: UIViewController {
     private lazy var contextualInputViewController = AIChatContextualInputViewController(
         voiceSearchHelper: voiceSearchHelper,
         showsBasicNativeInput: persistentUTIHost == nil,
-        presentStandaloneFullScreen: presentStandaloneFullScreen
+        presentsStandaloneFullScreen: presentsStandaloneFullScreen
     )
     private var cancellables = Set<AnyCancellable>()
     private var contentContainerBottomConstraint: NSLayoutConstraint?
@@ -302,7 +302,7 @@ final class AIChatContextualSheetViewController: UIViewController {
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
          persistentUTIHost: AIChatContextualUTIHost? = nil,
          suggestionsReader: AIChatSuggestionsReading? = nil,
-         presentStandaloneFullScreen: Bool = false) {
+         presentsStandaloneFullScreen: Bool = false) {
         self.sessionState = sessionState
         self.aiChatSettings = aiChatSettings
         self.voiceSearchHelper = voiceSearchHelper
@@ -312,7 +312,7 @@ final class AIChatContextualSheetViewController: UIViewController {
         self.featureFlagger = featureFlagger
         self.persistentUTIHost = persistentUTIHost
         self.suggestionsReader = suggestionsReader
-        self.presentStandaloneFullScreen = presentStandaloneFullScreen
+        self.presentsStandaloneFullScreen = presentsStandaloneFullScreen
         super.init(nibName: nil, bundle: nil)
         configureModalPresentation()
     }
@@ -405,7 +405,7 @@ final class AIChatContextualSheetViewController: UIViewController {
 
         sheet.delegate = self
         presentationController?.delegate = self
-        if presentStandaloneFullScreen {
+        if presentsStandaloneFullScreen {
             sheet.detents = [.large()]
             sheet.selectedDetentIdentifier = .large
             sheet.largestUndimmedDetentIdentifier = .large
@@ -1113,7 +1113,7 @@ private extension AIChatContextualSheetViewController {
         headerView.addSubview(leftButtonContainer)
         leftButtonContainer.addSubview(leftButtonStack)
 
-        if presentStandaloneFullScreen {
+        if presentsStandaloneFullScreen {
             // No tab behind this surface: nothing to expand into and no chat history to browse.
             // Surface only the close button, on the leading side (where history normally sits).
             leftButtonStack.addArrangedSubview(closeButton)
@@ -1141,7 +1141,7 @@ private extension AIChatContextualSheetViewController {
                 fireButton.heightAnchor.constraint(equalToConstant: Constants.headerButtonSize),
             ])
         }
-        if !presentStandaloneFullScreen {
+        if !presentsStandaloneFullScreen {
             rightButtonStack.addArrangedSubview(closeButton)
         }
 

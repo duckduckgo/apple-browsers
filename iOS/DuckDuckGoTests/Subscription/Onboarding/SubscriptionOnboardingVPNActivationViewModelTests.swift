@@ -34,13 +34,13 @@ final class SubscriptionOnboardingVPNActivationViewModelTests: XCTestCase {
 
     // MARK: - Connection info model
 
-    func testConnectionInfoDecodesFromConnectionJSONShape() throws {
+    func testWhenConnectionInfoIsDecodedFromConnectionJSONShapeThenFieldsArePopulated() throws {
         let json = Data(#"{"ip":"31.120.130.50","city":"Madrid","country":"ES"}"#.utf8)
         let info = try JSONDecoder().decode(SubscriptionOnboardingConnectionInfo.self, from: json)
         XCTAssertEqual(info, madrid)
     }
 
-    func testDisplayLocationFormatsFlagCityAndLocalizedCountry() {
+    func testWhenDisplayLocationThenFormatsFlagCityAndLocalizedCountry() {
         XCTAssertEqual(madrid.displayLocation(locale: enUS), "🇪🇸 Madrid, Spain")
     }
 
@@ -104,7 +104,7 @@ final class SubscriptionOnboardingVPNActivationViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.connectionState, .on)
     }
 
-    func testTurnOnVPNStartsTheController() async {
+    func testWhenTurnOnVPNThenControllerStarts() async {
         let controller = MockVPNController(isConnected: false)
         let viewModel = makeViewModel(controller: controller)
 
@@ -117,6 +117,7 @@ final class SubscriptionOnboardingVPNActivationViewModelTests: XCTestCase {
         let controller = MockVPNController(isConnected: false)
         let delegate = SpySectionDelegate()
         let viewModel = makeViewModel(controller: controller, delegate: delegate)
+        viewModel.onAppear()
 
         XCTAssertEqual(viewModel.connectionState, .off)
 
@@ -134,10 +135,10 @@ final class SubscriptionOnboardingVPNActivationViewModelTests: XCTestCase {
         let viewModel = makeViewModel(service: service,
                                       controller: MockVPNController(isConnected: true),
                                       serverInfoObserver: observer)
+        viewModel.onAppear()
 
         await waitFor(viewModel.$vpnServerInfo, toEqual: serverInfo(for: valencia)) {
             observer.subject.send(serverInfo(for: valencia))
-            viewModel.onAppear()
         }
 
         XCTAssertEqual(service.fetchCallCount, 0)
@@ -169,6 +170,7 @@ final class SubscriptionOnboardingVPNActivationViewModelTests: XCTestCase {
         let controller = MockVPNController(isConnected: false)
         let observer = MockConnectionServerInfoObserver()
         let viewModel = makeViewModel(controller: controller, serverInfoObserver: observer)
+        viewModel.onAppear()
 
         await waitFor(viewModel.$vpnServerInfo, toEqual: serverInfo(for: valencia)) {
             controller.simulateConnected()
@@ -182,6 +184,7 @@ final class SubscriptionOnboardingVPNActivationViewModelTests: XCTestCase {
         let observer = MockConnectionServerInfoObserver()
         let viewModel = makeViewModel(controller: MockVPNController(isConnected: true), serverInfoObserver: observer)
         let addressOnly = NetworkProtectionStatusServerInfo(serverLocation: nil, serverAddress: "45.132.71.9")
+        viewModel.onAppear()
 
         await waitFor(viewModel.$vpnServerInfo, toEqual: addressOnly) {
             observer.subject.send(addressOnly)
@@ -218,10 +221,10 @@ final class SubscriptionOnboardingVPNActivationViewModelTests: XCTestCase {
         let viewModel = makeViewModel(controller: MockVPNController(isConnected: true),
                                       locationProvider: MockVPNLocationProvider(isNearestSelected: true),
                                       serverInfoObserver: observer)
+        viewModel.onAppear()
 
         await waitFor(viewModel.$vpnServerInfo, toEqual: serverInfo(for: valencia)) {
             observer.subject.send(serverInfo(for: valencia))
-            viewModel.onAppear()
         }
 
         XCTAssertEqual(viewModel.vpnLocationText, "🇪🇸 Valencia, Spain")
@@ -233,10 +236,10 @@ final class SubscriptionOnboardingVPNActivationViewModelTests: XCTestCase {
         let viewModel = makeViewModel(controller: MockVPNController(isConnected: true),
                                       locationProvider: MockVPNLocationProvider(isNearestSelected: false),
                                       serverInfoObserver: observer)
+        viewModel.onAppear()
 
         await waitFor(viewModel.$vpnServerInfo, toEqual: serverInfo(for: valencia)) {
             observer.subject.send(serverInfo(for: valencia))
-            viewModel.onAppear()
         }
 
         XCTAssertEqual(viewModel.vpnLocationText, "🇪🇸 Valencia, Spain")
@@ -248,6 +251,7 @@ final class SubscriptionOnboardingVPNActivationViewModelTests: XCTestCase {
     func testWhenConfigurationIsDeniedThenDidDenyVPNPermissionBecomesTrue() async {
         let controller = MockVPNController(isConnected: false)
         let viewModel = makeViewModel(controller: controller)
+        viewModel.onAppear()
 
         await waitFor(viewModel.$didDenyVPNPermission, toEqual: true) {
             controller.simulateConfigurationDenied()
@@ -259,6 +263,7 @@ final class SubscriptionOnboardingVPNActivationViewModelTests: XCTestCase {
     func testWhenRetryingAfterDenialThenDenialStatePersists() async {
         let controller = MockVPNController(isConnected: false)
         let viewModel = makeViewModel(controller: controller)
+        viewModel.onAppear()
 
         await waitFor(viewModel.$didDenyVPNPermission, toEqual: true) {
             controller.simulateConfigurationDenied()
@@ -272,6 +277,7 @@ final class SubscriptionOnboardingVPNActivationViewModelTests: XCTestCase {
     func testWhenTunnelConnectsAfterDenialThenDidDenyVPNPermissionIsCleared() async {
         let controller = MockVPNController(isConnected: false)
         let viewModel = makeViewModel(controller: controller)
+        viewModel.onAppear()
 
         await waitFor(viewModel.$didDenyVPNPermission, toEqual: true) {
             controller.simulateConfigurationDenied()
@@ -389,6 +395,7 @@ private final class SpySectionDelegate: SubscriptionOnboardingSectionDelegate {
     }
 
     func sectionDidRequestDuckAIChat(modelID: String?) {}
+    func sectionDidFinishDuckAIChat() {}
     func sectionDidRequestAdvance() {}
     func sectionDidRequestGoBack() {}
 }

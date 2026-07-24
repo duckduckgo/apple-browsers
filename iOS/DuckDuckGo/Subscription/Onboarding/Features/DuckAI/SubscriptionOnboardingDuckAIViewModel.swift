@@ -54,9 +54,6 @@ final class DefaultSubscriptionOnboardingAIModelProvider: SubscriptionOnboarding
     func fetchModels() async -> [AIChatModel] {
         let store = self.store
         return await withCheckedContinuation { continuation in
-            // The installed callback doubles as the "not yet resolved" flag: whichever of the store
-            // callback or the timeout runs first clears it and resumes; the other becomes a no-op. Both
-            // run on the main actor, so the check-clear-resume sequence is atomic.
             @MainActor
             func resolve() {
                 guard store.onModelsUpdated != nil else { return }
@@ -108,7 +105,7 @@ final class SubscriptionOnboardingDuckAIViewModel: ObservableObject {
                 guard let self, case .loaded(let models) = state else { return }
                 self.models = models
                 if self.selectedModelID == nil {
-                    self.selectedModelID = self.prefetcher.persistedModelID
+                    self.selectedModelID = self.availableModels.first?.id
                 }
             }
             .store(in: &cancellables)
@@ -131,13 +128,13 @@ final class SubscriptionOnboardingDuckAIViewModel: ObservableObject {
         selectedModelID = modelID
     }
 
-    /// Persists the committed model (default or tapped) so the launched chat opens with it
+    /// Persists the committed model (default or tapped) so the launched chat opens with it, then requests
+    /// the chat. 
     @MainActor
     func startChat() {
         if let selectedModelID {
             prefetcher.updateSelectedModel(selectedModelID)
         }
-        delegate?.sectionDidComplete(.duckAI)
         delegate?.sectionDidRequestDuckAIChat(modelID: selectedModelID)
     }
 

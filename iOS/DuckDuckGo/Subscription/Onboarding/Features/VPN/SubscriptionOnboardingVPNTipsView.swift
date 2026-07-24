@@ -25,7 +25,7 @@ import UIComponents
 /// button that finishes the VPN section and moves the flow to the next one.
 struct SubscriptionOnboardingVPNTipsView: View {
 
-    var title: String? = nil
+    var title: String?
     weak var delegate: SubscriptionOnboardingSectionDelegate?
 
     @Environment(\.dismiss) private var dismiss

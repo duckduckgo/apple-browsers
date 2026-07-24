@@ -25,7 +25,7 @@ import SwiftUI
 /// "Got it" button that continues to the VPN tips carousel.
 struct SubscriptionOnboardingVPNWidgetEducationView: View {
 
-    var title: String? = nil
+    var title: String?
     weak var delegate: SubscriptionOnboardingSectionDelegate?
 
     @Environment(\.dismiss) private var dismiss

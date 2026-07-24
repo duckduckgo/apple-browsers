@@ -128,7 +128,7 @@ private extension SubscriptionOnboardingDuckAIView {
     }
 
     /// The inline PLUS/PRO badge for a model, or `nil` when it needs none. Reads
-    /// ``AIChatModel/lowestPublicAccessTier`` so the badge matches how the model menu groups tiers.
+    /// ``AIChatModel/lowestPublicAccessTier``
     func tierMarker(for model: AIChatModel) -> String? {
         switch model.lowestPublicAccessTier {
         case .plus: return UserText.subscriptionOnboardingDuckAIPlusMarker

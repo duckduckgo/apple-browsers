@@ -37,7 +37,7 @@ final class SubscriptionOnboardingSectionTests: XCTestCase {
         XCTAssertEqual(SubscriptionOnboardingSection.duckAI.kind, .activation(.duckAI))
     }
 
-    func testSectionsAreExactlyWelcomeVPNAndDuckAI() {
+    func testWhenEnumeratingSectionsThenTheyAreExactlyWelcomeVPNAndDuckAI() {
         XCTAssertEqual(SubscriptionOnboardingSection.allCases, [.welcome, .vpn, .duckAI])
     }
 
@@ -53,7 +53,7 @@ final class SubscriptionOnboardingSectionTests: XCTestCase {
                        UserText.subscriptionOnboardingCloseButtonAccessibilityLabel)
     }
 
-    func testBackAndCloseNavigationButtonsHaveDistinctAccessibilityLabels() {
+    func testWhenComparingBackAndCloseNavigationButtonsThenAccessibilityLabelsAreDistinct() {
         XCTAssertNotEqual(SubscriptionOnboardingNavigationButton.back({}).accessibilityLabel,
                           SubscriptionOnboardingNavigationButton.close({}).accessibilityLabel)
     }

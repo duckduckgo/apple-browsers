@@ -776,7 +776,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         XCTAssertEqual(secondPresenter.presentCallCount, 0)
     }
 
-    // MARK: - presentStandaloneFullScreen Tests
+    // MARK: - presentsStandaloneFullScreen Tests
 
     @MainActor
     func testPresentSheetUsesMediumAndLargeDetentsByDefault() async {
@@ -809,7 +809,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
                 originating: originatingTabURLSubject.eraseToAnyPublisher(),
                 didFinish: didFinishTabURLSubject.eraseToAnyPublisher()
             ),
-            presentStandaloneFullScreen: true
+            presentsStandaloneFullScreen: true
         )
         let window = UIWindow()
         let rootVC = UIViewController()

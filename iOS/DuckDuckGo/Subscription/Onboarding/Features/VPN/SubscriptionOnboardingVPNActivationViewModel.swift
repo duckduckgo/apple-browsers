@@ -361,7 +361,7 @@ extension SubscriptionOnboardingVPNActivationViewModel {
                         didDenyVPNPermission: Bool = false) -> SubscriptionOnboardingVPNActivationViewModel {
         let serverInfo = NetworkProtectionStatusServerInfo.previewServerInfo(vpnConnectionInfo)
         let viewModel = SubscriptionOnboardingVPNActivationViewModel(
-            prefetcher: SubscriptionOnboardingPrefetcher(connectionInfoService: PreviewSubscriptionOnboardingConnectionInfoService()),
+            prefetcher: .preview(connectionInfo: originalConnectionInfo.map(ConnectionInfoState.loaded) ?? .loading),
             vpnController: PreviewSubscriptionOnboardingVPNController(isConnected: state == .on),
             vpnLocationProvider: PreviewSubscriptionOnboardingVPNLocationProvider(isNearestSelected: isNearestSelected),
             serverInfoObserver: PreviewConnectionServerInfoObserver(serverInfo),
@@ -380,7 +380,7 @@ extension SubscriptionOnboardingVPNActivationViewModel {
                               isNearestSelected: Bool = false) -> SubscriptionOnboardingVPNActivationViewModel {
         let serverInfo = NetworkProtectionStatusServerInfo.previewServerInfo(vpn)
         let viewModel = SubscriptionOnboardingVPNActivationViewModel(
-            prefetcher: SubscriptionOnboardingPrefetcher(connectionInfoService: PreviewSubscriptionOnboardingConnectionInfoService()),
+            prefetcher: .preview(connectionInfo: original.map(ConnectionInfoState.loaded) ?? .loading),
             vpnController: RevealPreviewSubscriptionOnboardingVPNController(),
             vpnLocationProvider: PreviewSubscriptionOnboardingVPNLocationProvider(isNearestSelected: isNearestSelected),
             serverInfoObserver: PreviewConnectionServerInfoObserver(serverInfo),

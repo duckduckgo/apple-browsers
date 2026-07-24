@@ -29,7 +29,7 @@ final class SubscriptionOnboardingPrefetcherTests: XCTestCase {
 
     // MARK: - Connection info
 
-    func testFetchConnectionInfoIfNeededOnSuccessSetsLoaded() async {
+    func testWhenFetchConnectionInfoIfNeededSucceedsThenStateIsLoaded() async {
         let info = SubscriptionOnboardingConnectionInfo(ip: "31.120.130.50", city: "Madrid", country: "ES")
         let service = MockConnectionInfoService(result: .success(info))
         let prefetcher = makePrefetcher(connectionInfoService: service)
@@ -41,7 +41,7 @@ final class SubscriptionOnboardingPrefetcherTests: XCTestCase {
         XCTAssertEqual(prefetcher.connectionInfo, .loaded(info))
     }
 
-    func testFetchConnectionInfoIfNeededOnFailureSetsFailed() async {
+    func testWhenFetchConnectionInfoIfNeededFailsThenStateIsFailed() async {
         let service = MockConnectionInfoService(result: .failure)
         let prefetcher = makePrefetcher(connectionInfoService: service)
 
@@ -52,7 +52,7 @@ final class SubscriptionOnboardingPrefetcherTests: XCTestCase {
         XCTAssertEqual(prefetcher.connectionInfo, .failed)
     }
 
-    func testFetchConnectionInfoIfNeededCalledTwiceFetchesOnce() async {
+    func testWhenFetchConnectionInfoIfNeededIsCalledTwiceThenFetchesOnce() async {
         let service = MockConnectionInfoService(result: .success(.init(ip: "1.2.3.4", city: "Paris", country: "FR")))
         let prefetcher = makePrefetcher(connectionInfoService: service)
 
@@ -64,7 +64,7 @@ final class SubscriptionOnboardingPrefetcherTests: XCTestCase {
         XCTAssertEqual(service.fetchCallCount, 1)
     }
 
-    func testFetchConnectionInfoIfNeededRetriesAfterFailure() async {
+    func testWhenFetchConnectionInfoIfNeededIsCalledAfterFailureThenRetries() async {
         let service = MockConnectionInfoService(result: .failure)
         let prefetcher = makePrefetcher(connectionInfoService: service)
 
@@ -80,7 +80,7 @@ final class SubscriptionOnboardingPrefetcherTests: XCTestCase {
 
     // MARK: - Models
 
-    func testFetchModelsIfNeededOnSuccessSetsLoaded() async {
+    func testWhenFetchModelsIfNeededSucceedsThenStateIsLoaded() async {
         let models = [model("a"), model("b")]
         let provider = MockAIModelProvider(models: models)
         let prefetcher = makePrefetcher(modelProvider: provider)
@@ -92,7 +92,7 @@ final class SubscriptionOnboardingPrefetcherTests: XCTestCase {
         XCTAssertEqual(loadedModelIDs(prefetcher.models), ["a", "b"])
     }
 
-    func testFetchModelsIfNeededOnEmptyModelsSetsFailed() async {
+    func testWhenFetchModelsIfNeededReturnsNoModelsThenStateIsFailed() async {
         let provider = MockAIModelProvider(models: [])
         let prefetcher = makePrefetcher(modelProvider: provider)
 
@@ -103,7 +103,7 @@ final class SubscriptionOnboardingPrefetcherTests: XCTestCase {
         assertFailed(prefetcher.models)
     }
 
-    func testFetchModelsIfNeededCalledTwiceFetchesOnce() async {
+    func testWhenFetchModelsIfNeededIsCalledTwiceThenFetchesOnce() async {
         let provider = MockAIModelProvider(models: [model("a")])
         let prefetcher = makePrefetcher(modelProvider: provider)
 
@@ -115,7 +115,7 @@ final class SubscriptionOnboardingPrefetcherTests: XCTestCase {
         XCTAssertEqual(provider.fetchCallCount, 1)
     }
 
-    func testFetchModelsIfNeededRetriesAfterFailure() async {
+    func testWhenFetchModelsIfNeededIsCalledAfterFailureThenRetries() async {
         let provider = MockAIModelProvider(models: [])
         let prefetcher = makePrefetcher(modelProvider: provider)
 
@@ -133,7 +133,7 @@ final class SubscriptionOnboardingPrefetcherTests: XCTestCase {
 
     // MARK: - prefetch()
 
-    func testPrefetchFetchesBothConnectionInfoAndModels() async {
+    func testWhenPrefetchThenBothConnectionInfoAndModelsAreFetched() async {
         let service = MockConnectionInfoService(result: .success(.init(ip: "1.2.3.4", city: "Paris", country: "FR")))
         let provider = MockAIModelProvider(models: [model("a")])
         let prefetcher = makePrefetcher(connectionInfoService: service, modelProvider: provider)
@@ -148,14 +148,14 @@ final class SubscriptionOnboardingPrefetcherTests: XCTestCase {
 
     // MARK: - Passthroughs
 
-    func testPersistedModelIDReadsFromProvider() {
+    func testWhenReadingPersistedModelIDThenValueComesFromProvider() {
         let provider = MockAIModelProvider(models: [], persistedModelID: "gpt-5.4")
         let prefetcher = makePrefetcher(modelProvider: provider)
 
         XCTAssertEqual(prefetcher.persistedModelID, "gpt-5.4")
     }
 
-    func testUpdateSelectedModelForwardsToProvider() {
+    func testWhenUpdatingSelectedModelThenValueIsForwardedToProvider() {
         let provider = MockAIModelProvider(models: [])
         let prefetcher = makePrefetcher(modelProvider: provider)
 

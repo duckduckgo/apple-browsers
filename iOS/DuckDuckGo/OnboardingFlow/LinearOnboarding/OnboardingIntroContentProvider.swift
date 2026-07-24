@@ -27,6 +27,7 @@ protocol OnboardingIntroContentProviding {
     var landingContent: OnboardingLandingContent { get }
     var introStepContent: OnboardingIntroStepContent { get }
     var downloadReasonContent: OnboardingDownloadReasonContent { get }
+    var serpPersonalizationContent: OnboardingSERPPersonalizationContent { get }
     var setDefaultBrowserContent: OnboardingComparisonContent { get }
     var aiIntroContent: OnboardingComparisonContent { get }
     var addToDockContent: OnboardingAddToDockContent { get }
@@ -174,6 +175,30 @@ extension OnboardingIntroContentProvider {
     }
 
 }
+
+// MARK: - SERP Personalization
+
+struct OnboardingSERPPersonalizationContent: Equatable {
+    let title: String
+    let message: String
+    let primaryCTA: String
+    let daxAnimation: DaxAnimation
+}
+
+extension OnboardingIntroContentProvider {
+
+    /// Content for the Download Reason Screen.
+    var serpPersonalizationContent: OnboardingSERPPersonalizationContent {
+        OnboardingSERPPersonalizationContent(
+            title: "Recently visited sites",
+            message: "Show when searching. Private, only on your device.",
+            primaryCTA: "Next",
+            daxAnimation: .wingLeft
+        )
+    }
+
+}
+
 
 // MARK: - Content Provider + Comparison Chart
 

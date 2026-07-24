@@ -22,6 +22,8 @@ import XCTest
 import Core
 import Combine
 @testable import DDGSync
+import OHHTTPStubs
+import OHHTTPStubsSwift
 import Persistence
 import Common
 import FoundationExtensions
@@ -235,6 +237,48 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
         syncAutoRestoreHandler.isEligibleForAutoRestoreValue = false
 
         XCTAssertFalse(vc.isPreservedAccountPromptNeeded())
+    }
+
+    @MainActor
+    func testWhenPairingV2PresenterStartFailsThenFiresFailureContextPixel() async {
+        featureFlagger.enabledFeatureFlags.append(.exchangeKeysToSyncWithAnotherDevice)
+        ddgSyncing.account = SyncAccount(
+            deviceId: "device-id",
+            deviceName: "iPhone",
+            deviceType: "iPhone",
+            userId: "user-id",
+            primaryKey: Data(),
+            secretKey: Data(),
+            token: "token",
+            state: .active
+        )
+        let context = PairingV2FailureContext(stage: .presenterOpenOwnChannel, kind: .httpError)
+        let connectionController = MockSyncConnectionControlling()
+        connectionController.startExchangeModeError = PairingV2OperationFailure(
+            context: context,
+            underlyingError: SyncError.unexpectedStatusCode(500)
+        )
+        vc.connectionController = connectionController
+        let pixelExpectation = expectation(description: "fires Pairing V2 presenter start failure pixel")
+        let wasDryRun = Pixel.isDryRun
+        Pixel.isDryRun = false
+        stub(condition: isHost("improving.duckduckgo.com")) { request in
+            let parameters = request.url?.queryParameters()
+            if request.url?.path.contains(Pixel.Event.syncSetupEndedFailed.name) == true,
+               parameters?[PixelParameters.reason] == SyncSetupFailureReason.relayChannelFailure,
+               parameters?["pairing_failure_stage"] == "presenter_open_own_channel",
+               parameters?["pairing_failure_kind"] == "http_error" {
+                pixelExpectation.fulfill()
+            }
+            return HTTPStubsResponse(data: Data(), statusCode: 200, headers: nil)
+        }
+        defer {
+            Pixel.isDryRun = wasDryRun
+            HTTPStubs.removeAllStubs()
+        }
+
+        vc.showSyncWithAnotherDevice()
+        await fulfillment(of: [pixelExpectation], timeout: 5)
     }
 
     @MainActor

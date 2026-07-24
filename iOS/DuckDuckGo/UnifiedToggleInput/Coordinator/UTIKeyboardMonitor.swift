@@ -52,18 +52,18 @@ final class UTIKeyboardMonitor {
         isAwaitingPresentation = awaiting
     }
 
-    /// Cancels the fallback and clears the latch — the default at every non-activation transition.
+    /// Cancels the fallback and clears `isAwaitingPresentation` — the default at every non-activation transition.
     func disarm() {
         arm(awaiting: false)
     }
 
-    /// Cancels only the pending fallback, leaving the latch untouched (hardware-keyboard in-use case).
+    /// Cancels only the pending fallback, leaving `isAwaitingPresentation` untouched (hardware-keyboard in-use case).
     func cancelFallback() {
         fallback?.cancel()
         fallback = nil
     }
 
-    /// Clears the latch without touching the fallback (after a transition already handled the timer).
+    /// Clears `isAwaitingPresentation` without touching the fallback (after a transition already handled the timer).
     func clearAwaiting() {
         isAwaitingPresentation = false
     }

@@ -21,7 +21,7 @@ import Combine
 import Foundation
 
 /// Owns the input's text together: `currentText` (persisted draft) and `textState` (what's visible)
-/// so they can't drift, plus the dismiss-cleanup latch that keeps the draft while the field is scrubbed.
+/// so they can't drift, plus the `isPerformingDismissCleanup` flag that keeps the draft while the field is scrubbed.
 @MainActor
 final class UTITextModel {
 

@@ -244,7 +244,7 @@ final class DefaultSubscriptionOnboardingVPNController: SubscriptionOnboardingVP
     }
 
     func isVPNConfigured() async -> Bool {
-        await tunnelController.isInstalled
+        await tunnelController.isConfigurationInstalled
     }
 }
 

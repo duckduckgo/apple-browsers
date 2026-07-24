@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import Combine
 import SwiftUI
 import UIKit
 import DesignResourcesKit
@@ -41,7 +42,7 @@ struct SubscriptionOnboardingVPNActivationView: View {
 
     @State private var isShowingInfoSheet = false
     @State private var tapAllowHint = TapAllowHintOverlayWindow()
-    @State private var awaitingPermissionPrompt = false
+    @State private var didTapStartVPN = false
 
     @MainActor
     init(viewModel: @autoclosure @escaping () -> SubscriptionOnboardingVPNActivationViewModel,
@@ -63,16 +64,32 @@ struct SubscriptionOnboardingVPNActivationView: View {
             viewModel.onDisappear()
             // Safety net
             tapAllowHint.hide()
-            awaitingPermissionPrompt = false
+            didTapStartVPN = false
         }
         .subscriptionOnboardingInfoSheet(.vpn, isPresented: $isShowingInfoSheet)
-        .onReceive(NotificationCenter.default.publisher(for: UIApplication.willResignActiveNotification)) { _ in
-            guard awaitingPermissionPrompt else { return }
-            tapAllowHint.show()
+        .onReceive(Publishers.Merge(NotificationCenter.default.publisher(for: UIApplication.willResignActiveNotification),
+                                    NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification))) { _ in
+            reevaluateTapAllowHint()
         }
-        .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
-            guard awaitingPermissionPrompt else { return }
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.didEnterBackgroundNotification)) { _ in
             tapAllowHint.hide()
+        }
+        .onReceive(viewModel.$didDenyVPNPermission) { didDeny in
+            guard didDeny else { return }
+            tapAllowHint.hide()
+            didTapStartVPN = false
+        }
+    }
+
+    /// Clears the hint, then re-shows it only if the user has tapped Turn On VPN and the config still isn't
+    /// installed.
+    private func reevaluateTapAllowHint() {
+        tapAllowHint.hide()
+        guard didTapStartVPN else { return }
+        Task {
+            let isInstalled = await viewModel.isVPNConfigured()
+            guard didTapStartVPN, !isInstalled else { return }
+            tapAllowHint.show()
         }
     }
 }
@@ -170,13 +187,10 @@ private extension SubscriptionOnboardingVPNActivationView {
         switch viewModel.connectionState {
         case .off:
             let startVPN: () -> Void = {
+                didTapStartVPN = true
                 Task {
-                    if !(await viewModel.isVPNConfigured()) {
-                        awaitingPermissionPrompt = true
-                    }
                     await viewModel.turnOnVPN()
-                    awaitingPermissionPrompt = false
-                    tapAllowHint.hide()
+                    didTapStartVPN = false
                 }
             }
             guard viewModel.didDenyVPNPermission else {

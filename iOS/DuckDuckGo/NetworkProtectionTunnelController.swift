@@ -334,6 +334,16 @@ final class NetworkProtectionTunnelController: VPNConnectionContextProvidingTunn
         }
     }
 
+    /// A fresh "is a VPN configuration installed?" check, read straight from preferences rather than the
+    /// cached `internalManager`. `isInstalled` can report a stale `true` after a config is removed from
+    /// system Settings, because `subscribeToConfigurationChanges` only clears the cache when the reload
+    /// throws or reports `.invalid`, which a Settings removal doesn't always surface.
+    var isConfigurationInstalled: Bool {
+        get async {
+            (try? await NETunnelProviderManager.loadAllFromPreferences())?.isEmpty == false
+        }
+    }
+
     /// Queries Network Protection to know if its VPN is connected.
     ///
     /// - Returns: `true` if the VPN is connected, connecting or reasserting, and `false` otherwise.

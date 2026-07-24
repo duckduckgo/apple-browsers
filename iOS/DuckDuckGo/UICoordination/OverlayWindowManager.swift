@@ -74,7 +74,7 @@ final class OverlayWindowManager: OverlayWindowManaging {
         self.mobileCustomization = mobileCustomization
         self.privacyStore = privacyStore
 
-        registerForAppearanceChangeNotifications()
+        registerForCacheInvalidationNotifications()
         // Seed the cache off the critical path so the first background doesn't build the chrome.
         DispatchQueue.main.async { [weak self] in
             self?.prepareBlankSnapshotWindow()
@@ -179,22 +179,30 @@ final class OverlayWindowManager: OverlayWindowManaging {
         }
     }
 
-    // MARK: - Cache invalidation on appearance changes
+    // MARK: - Cache invalidation
 
-    private func registerForAppearanceChangeNotifications() {
+    private func registerForCacheInvalidationNotifications() {
         NotificationCenter.default.addObserver(self,
-                                               selector: #selector(appearanceDidChange),
+                                               selector: #selector(authenticationEnabledDidChange),
+                                               name: PrivacyUserDefaults.Notifications.authenticationEnabledChanged,
+                                               object: nil)
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(cachedOverlayInputsDidChange),
                                                name: AppUserDefaults.Notifications.addressBarPositionChanged,
                                                object: nil)
         UIDevice.current.beginGeneratingDeviceOrientationNotifications()
         NotificationCenter.default.addObserver(self,
-                                               selector: #selector(appearanceDidChange),
+                                               selector: #selector(cachedOverlayInputsDidChange),
                                                name: UIDevice.orientationDidChangeNotification,
                                                object: nil)
     }
 
-    @objc private func appearanceDidChange() {
-        // Drop the stale cache and rebuild off the critical path with the new appearance.
+    @objc private func authenticationEnabledDidChange() {
+        preparedOverlayWindow = nil
+        prepareBlankSnapshotWindow()
+    }
+
+    @objc private func cachedOverlayInputsDidChange() {
         preparedOverlayWindow = nil
         DispatchQueue.main.async { [weak self] in
             self?.prepareBlankSnapshotWindow()

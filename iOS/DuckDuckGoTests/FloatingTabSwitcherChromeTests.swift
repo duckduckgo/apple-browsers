@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import DesignResourcesKit
 import XCTest
 import UIKit
 @testable import DuckDuckGo
@@ -44,9 +45,7 @@ final class FloatingTabSwitcherChromeTests: XCTestCase {
         XCTAssertEqual(chrome.navigationItem.rightBarButtonItems?.count, 1)
         XCTAssertNil(chrome.navigationItem.title)
         XCTAssertNotNil(chrome.navigationItem.leftBarButtonItems?.first?.menu)
-        if #unavailable(iOS 26.0) {
-            XCTAssertEqual(chrome.navigationItem.rightBarButtonItems?.first?.title, UserText.navigationTitleDone)
-        }
+        XCTAssertEqual(chrome.navigationItem.rightBarButtonItems?.first?.accessibilityLabel, UserText.navigationTitleDone)
     }
 
     func testWhenRegularSizeWithoutAIChatThenBottomBarHasNoDuckChat() {
@@ -189,5 +188,40 @@ final class FloatingTabSwitcherChromeTests: XCTestCase {
         XCTAssertEqual(secondContentConstraints.count, 4)
         XCTAssertTrue(firstContentConstraints.allSatisfy { !$0.isActive })
         XCTAssertTrue(secondContentConstraints.allSatisfy(\.isActive))
+    }
+
+    func testWhenLayoutIsAppliedThenFallbackTopBackgroundCoversContentBeforeIOS26() {
+        let chrome = FloatingTabSwitcherChrome()
+        let host = UIView()
+        let content = UIScrollView()
+        chrome.install(in: host, contentView: content)
+
+        chrome.layout(addressBarPosition: .top, interfaceMode: .regularSize)
+
+        if #available(iOS 26.0, *) {
+            XCTAssertNil(chrome.fallbackTopBackgroundView.superview)
+        } else {
+            XCTAssertTrue(chrome.fallbackTopBackgroundView.superview === host)
+            XCTAssertFalse(chrome.fallbackTopBackgroundView.isUserInteractionEnabled)
+            XCTAssertEqual(chrome.fallbackTopBackgroundView.backgroundColor?.resolvedColor(with: host.traitCollection),
+                           UIColor(designSystemColor: .background).resolvedColor(with: host.traitCollection))
+
+            let contentIndex = host.subviews.firstIndex(of: content)
+            let backgroundIndex = host.subviews.firstIndex(of: chrome.fallbackTopBackgroundView)
+            let toolbarIndex = host.subviews.firstIndex(of: chrome.toolbar)
+
+            guard let contentIndex, let backgroundIndex, let toolbarIndex else {
+                XCTFail("Missing tab switcher views")
+                return
+            }
+            XCTAssertLessThan(contentIndex, backgroundIndex)
+            XCTAssertLessThan(backgroundIndex, toolbarIndex)
+
+            let backgroundConstraints = host.constraints.filter {
+                $0.firstItem === chrome.fallbackTopBackgroundView || $0.secondItem === chrome.fallbackTopBackgroundView
+            }
+            XCTAssertEqual(backgroundConstraints.count, 4)
+            XCTAssertTrue(backgroundConstraints.allSatisfy(\.isActive))
+        }
     }
 }

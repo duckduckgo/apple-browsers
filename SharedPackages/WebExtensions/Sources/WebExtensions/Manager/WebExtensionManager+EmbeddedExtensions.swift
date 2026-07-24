@@ -85,6 +85,7 @@ extension WebExtensionManager {
                 if shouldUpgrade(installed: installed, bundledVersion: bundledMetadata.version) {
                     Logger.webExtensions.info("⬆️ Upgrading embedded extension \(descriptor.type.rawValue): \(installed.version ?? "?") → \(bundledMetadata.version ?? "?")")
                     let oldVersion = installed.version
+                    await awaitDNRSettleWindow(for: installed.uniqueIdentifier)
                     try uninstallExtension(identifier: installed.uniqueIdentifier)
                     try await installEmbeddedExtension(from: bundledURL, type: descriptor.type, requiresExtraction: bundledMetadata.requiresExtraction)
                     pixelFiring.fire(.embeddedUpgraded(type: descriptor.type, fromVersion: oldVersion, toVersion: bundledMetadata.version))
@@ -139,6 +140,7 @@ extension WebExtensionManager {
 
         do {
             let loadResult = try await loader.loadWebExtension(identifier: identifier, into: controller)
+            recordLoadDate(for: identifier)
 
             let installedExtension = InstalledWebExtension(
                 uniqueIdentifier: identifier,

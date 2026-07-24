@@ -67,7 +67,7 @@ class TabSwitcherPageViewController: UIViewController {
     private weak var previewsSource: TabPreviewsSource?
     private let tabSwitcherSettings: TabSwitcherSettings
     private var isFireModeEnabled: Bool
-    private let isFloatingUIEnabled: Bool
+    private let isTabSwitcherJuly2026Enabled: Bool
     private var tabObserverCancellable: AnyCancellable?
     private var trackerCountViewModel: TabSwitcherTrackerCountViewModel?
     private var trackerCountCancellable: AnyCancellable?
@@ -90,7 +90,7 @@ class TabSwitcherPageViewController: UIViewController {
          tabSwitcherSettings: TabSwitcherSettings,
          trackerCountViewModel: TabSwitcherTrackerCountViewModel?,
          isFireModeEnabled: Bool,
-         isFloatingUIEnabled: Bool = false,
+         isTabSwitcherJuly2026Enabled: Bool = false,
          duckAIGridContentProvider: DuckAIGridContentProviding?,
          duckAIVoiceSessionTracker: DuckAIVoiceSessionTracking?) {
         self.browsingMode = browsingMode
@@ -99,7 +99,7 @@ class TabSwitcherPageViewController: UIViewController {
         self.tabSwitcherSettings = tabSwitcherSettings
         self.trackerCountViewModel = trackerCountViewModel
         self.isFireModeEnabled = isFireModeEnabled
-        self.isFloatingUIEnabled = isFloatingUIEnabled
+        self.isTabSwitcherJuly2026Enabled = isTabSwitcherJuly2026Enabled
         self.currentSelection = tabsModel.currentIndex
         self.duckAIGridContentProvider = duckAIGridContentProvider
         self.duckAIVoiceSessionTracker = duckAIVoiceSessionTracker
@@ -201,7 +201,7 @@ class TabSwitcherPageViewController: UIViewController {
         view.addSubview(hostingController.view)
         hostingController.didMove(toParent: self)
 
-        let topConstraint = isFloatingUIEnabled
+        let topConstraint = isTabSwitcherJuly2026Enabled
             ? hostingController.view.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor,
                                                           constant: FireModeEmptyStateMetrics.floatingNavigationBarClearance)
             : hostingController.view.topAnchor.constraint(equalTo: view.topAnchor)

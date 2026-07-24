@@ -167,10 +167,6 @@ struct SubscriptionState {
 @MainActor
 final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
-    private enum Constants {
-        static let topOmnibarKeyboardPresentationTimeout: TimeInterval = 0.35
-    }
-
     private var attachmentPolicy: UTIAttachmentPolicy {
         UTIAttachmentPolicy(
             attachmentLimits: modelStore.attachmentLimits,
@@ -243,25 +239,25 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     /// Snapshot of `UnifiedToggleInputFeatureProviding.isToggleHiddenOnDuckAITab` at init.
     private let hidesToggleOnDuckAITab: Bool
     private(set) var isOnboardingLocked: Bool = false
-    private(set) var displayState: UnifiedToggleInputDisplayState = .hidden
-    private(set) var textState: InputTextState = .empty
-    /// Omnibar prefill (usually the page URL); lets the shortcut tell an untouched prefill from user text.
-    private var omnibarPrefilledText: String?
+    private let stateMachine: UTIStateMachine
+    var displayState: UnifiedToggleInputDisplayState {
+        get { stateMachine.displayState }
+        set { stateMachine.transition(to: newValue) }
+    }
+    var textState: InputTextState { textModel.textState }
+    private var omnibarPrefilledText: String? {
+        get { textModel.omnibarPrefilledText }
+        set { textModel.omnibarPrefilledText = newValue }
+    }
     private(set) var inputMode: TextEntryMode = .aiChat
     private let stateStore: UnifiedInputStateStoring
     private let switchBarSubmissionMetrics: SwitchBarSubmissionMetricsProviding
     private let aiChatSettings: AIChatSettingsProvider
-    private let sessionStateMetrics: SessionStateMetricsProviding
-    private static var hasUsedSearchInSession = false
-    private static var hasUsedAIChatInSession = false
-    private var backgroundObserver: NSObjectProtocol?
+    private let sessionMonitor: UTISessionMonitor
     private(set) var currentTabUID: TabUID?
     private var lastActivatedTabUID: TabUID?
     private var isApplyingState = false
-    /// True while a dismiss-time visible-text clear is in flight. The deferred
-    /// `clearText()` is a UI cleanup, not a user intent to delete their typed text;
-    /// per-tab persistence must keep the draft so re-activating the same tab restores it.
-    private var isPerformingDismissCleanup = false
+    private var isPerformingDismissCleanup: Bool { textModel.isPerformingDismissCleanup }
     private(set) var committedInputMode: TextEntryMode = .search
     private(set) var cardPosition: UnifiedToggleInputCardPosition = .bottom
     private(set) var isInputVisibleForKeyboard: Bool = true
@@ -269,8 +265,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     /// bottom floating omnibar is detached from the toolbar). Reused on dismiss to slide the UTI
     /// text back onto the omnibar's text leading edge — the omnibar can't be measured live then.
     var cachedOmnibarPlaceholderWindowX: CGFloat?
-    private var isAwaitingTopOmnibarKeyboardPresentation = false
-    private var topOmnibarKeyboardPresentationFallback: DispatchWorkItem?
+    private var keyboardMonitor: UTIKeyboardMonitor!
     private var invalidAttachmentRecoveryTasks: [UUID: Task<Void, Never>] = [:]
     private var isContentOverlaySuppressed = false
     private var pendingGatedModelId: String?
@@ -288,58 +283,21 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     /// (the per-tab pin must survive so `activateForTab` can restore the recovery chip).
     private var isClearingModelPickerPinWithoutPersist = false
 
-    private(set) var currentText: String = ""
+    private var textModel: UTITextModel!
+    var currentText: String { textModel.currentText }
     var hasActiveChat: Bool { boundUserScript != nil }
     var switchBarHandler: SwitchBarHandling { viewController.handler }
     var onAnimatedDismissToOmnibar: ((_ completion: (() -> Void)?) -> Void)?
 
-    var isOmnibarSession: Bool {
-        if case .omnibar = displayState { return true }
-        return false
-    }
-
-    var isAITabState: Bool {
-        if case .aiTab = displayState { return true }
-        return false
-    }
-
-    var isAITabExpanded: Bool {
-        displayState == .aiTab(.expanded)
-    }
-
-    var isContextualChatState: Bool {
-        displayState == .contextualChat
-    }
-
-    /// Folds contextual + Duck.ai tab into one "Duck.ai surface" bucket — used only for the funnel `origin`.
-    var isDuckAISurfaceForAttribution: Bool {
-        isAITabState || isContextualChatState
-    }
-
-    /// The hosting surface for the `surface` pixel parameter (the funnel `origin` uses `isDuckAISurfaceForAttribution`).
-    var pixelSurface: UnifiedToggleInputPixelSurface {
-        if isContextualChatState { return .contextualChat }
-        if isAITabState { return .duckAI }
-        return .addressBar
-    }
-
-    /// True when the current display state corresponds to the expanded card layout.
-    /// Synchronous (driven by `displayState`) so it's safe to read before the deferred
-    /// `applyCardLayout` runs from the intent handler.
-    var isInputPaneExpanded: Bool {
-        switch displayState {
-        case .contextualChat, .aiTab(.expanded), .omnibar(.active): return true
-        default: return false
-        }
-    }
-
-    var isInputEditing: Bool {
-        isOmnibarSession || isAITabExpanded || isContextualChatState
-    }
-
-    var isActive: Bool {
-        displayState != .hidden
-    }
+    var isOmnibarSession: Bool { stateMachine.isOmnibarSession }
+    var isAITabState: Bool { stateMachine.isAITabState }
+    var isAITabExpanded: Bool { stateMachine.isAITabExpanded }
+    var isContextualChatState: Bool { stateMachine.isContextualChatState }
+    var isDuckAISurfaceForAttribution: Bool { stateMachine.isDuckAISurfaceForAttribution }
+    var pixelSurface: UnifiedToggleInputPixelSurface { stateMachine.pixelSurface }
+    var isInputPaneExpanded: Bool { stateMachine.isInputPaneExpanded }
+    var isInputEditing: Bool { stateMachine.isInputEditing }
+    var isActive: Bool { stateMachine.isActive }
 
     private var isOmnibarNewAIChatPrompt: Bool {
         isOmnibarSession && inputMode == .aiChat && !hasSubmittedPrompt
@@ -381,10 +339,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         intentSubject.eraseToAnyPublisher()
     }
 
-    private let textChangeSubject = PassthroughSubject<String, Never>()
-    var textChangePublisher: AnyPublisher<String, Never> {
-        textChangeSubject.eraseToAnyPublisher()
-    }
+    var textChangePublisher: AnyPublisher<String, Never> { textModel.textChangePublisher }
 
     private let modeChangeSubject = PassthroughSubject<TextEntryMode, Never>()
     var modeChangePublisher: AnyPublisher<TextEntryMode, Never> {
@@ -430,7 +385,12 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         self.hidesToggleOnDuckAITab = hidesToggleOnDuckAITab
         self.switchBarSubmissionMetrics = switchBarSubmissionMetrics
         self.aiChatSettings = aiChatSettings
-        self.sessionStateMetrics = sessionStateMetrics
+        self.sessionMonitor = UTISessionMonitor(
+            isEnabled: host == .omnibar,
+            metrics: sessionStateMetrics,
+            fireBothModesPixel: { DailyPixel.fireDailyAndCount(pixel: .aiChatExperimentalOmnibarSessionBothModes) }
+        )
+        self.stateMachine = UTIStateMachine(host: host, hidesToggleOnDuckAITab: hidesToggleOnDuckAITab)
         self.stateStore = stateStore ?? UnifiedInputStateStore(
             preferences: preferences,
             toggleModeStorage: toggleModeStorage
@@ -459,6 +419,22 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         floatingReturnKeyViewController = UnifiedToggleInputFloatingReturnKeyViewController()
         super.init()
         viewController.delegate = self
+        textModel = UTITextModel(sideEffects: .init(
+            applyTextToView: { [weak self] in self?.viewController.text = $0 },
+            persistDraft: { [weak self] in self?.persistDraftToStore() },
+            updateFloatingReturnKey: { [weak self] in self?.updateFloatingReturnKeyState() },
+            clearAttachmentValidationErrorIfPossible: { [weak self] in self?.clearAttachmentValidationErrorIfPossible() }
+        ))
+        keyboardMonitor = UTIKeyboardMonitor(environment: .init(
+            isOmnibarActiveTopCard: { [weak self] in
+                guard let self else { return false }
+                if case .omnibar(.active) = self.displayState, self.cardPosition == .top { return true }
+                return false
+            },
+            isInputVisibleForKeyboard: { [weak self] in self?.isInputVisibleForKeyboard ?? false },
+            isInputFirstResponder: { [weak self] in self?.viewController.isInputFirstResponder ?? false }
+        ))
+        keyboardMonitor.onTimeoutRequiresInactive = { [weak self] in self?.transitionOmnibarToInactive() }
         attachmentPresenter.pixelSurfaceProvider = { [weak self] in
             self?.pixelSurface ?? .addressBar
         }
@@ -519,24 +495,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             updateModelChipVisibility()
         }
 
-        if host == .omnibar {
-            backgroundObserver = NotificationCenter.default.addObserver(
-                forName: UIApplication.didEnterBackgroundNotification,
-                object: nil,
-                queue: .main
-            ) { [weak self] _ in
-                MainActor.assumeIsolated {
-                    self?.sessionStateMetrics.finalizeSession()
-                    Self.resetSessionFlags()
-                }
-            }
-        }
-    }
-
-    deinit {
-        if let backgroundObserver {
-            NotificationCenter.default.removeObserver(backgroundObserver)
-        }
+        sessionMonitor.startObservingBackground()
     }
 
     // MARK: - Tab Binding
@@ -750,8 +709,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     private func clearStoreEntryAfterSubmission() {
-        currentText = ""
-        textState = .empty
+        textModel.resetToEmpty()
         guard let uid = currentTabUID else { return }
         var cleared = snapshotCurrentState()
         cleared.text = ""
@@ -768,8 +726,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     func showCollapsed() {
         // Contextual chat has no AI tab collapsed mode; the host always renders expanded.
         if host == .contextualChat { return }
-        cancelTopOmnibarKeyboardPresentationFallback()
-        isAwaitingTopOmnibarKeyboardPresentation = false
+        keyboardMonitor.disarm()
         let previousDisplayState = displayState
         displayState = .aiTab(.collapsed)
         setInitialInputMode(.aiChat)
@@ -783,8 +740,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     func showExpanded(prefilledText: String? = nil, inputMode: TextEntryMode = .aiChat, activatesInput: Bool = true) {
         guard !isOnboardingLocked else { return }
-        cancelTopOmnibarKeyboardPresentationFallback()
-        isAwaitingTopOmnibarKeyboardPresentation = false
+        keyboardMonitor.disarm()
         let previousDisplayState = displayState
         displayState = host == .contextualChat ? .contextualChat : .aiTab(.expanded)
         // Pixels fire only on a real transition into expanded — header re-entries (Plus → New Chat) call this too but don't actually show either UI.
@@ -801,8 +757,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         fetchModels()
 
         if let prefilledText, !prefilledText.isEmpty {
-            setText(prefilledText)
-            textState = .prefilledSelected
+            textModel.setText(prefilledText)
+            textModel.markPrefilledSelected()
         }
         updateFloatingReturnKeyState()
 
@@ -831,8 +787,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     func hide() {
-        cancelTopOmnibarKeyboardPresentationFallback()
-        isAwaitingTopOmnibarKeyboardPresentation = false
+        keyboardMonitor.disarm()
         displayState = .hidden
         isClearingModelPickerPinWithoutPersist = true
         isModelPickerForcedVisible = false
@@ -864,8 +819,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     // MARK: - Omnibar State
 
     func activateFromOmnibar(prefilledText: String? = nil, shouldSelectAllText: Bool = true, inputMode: TextEntryMode = .search, cardPosition: UnifiedToggleInputCardPosition = .top) {
-        cancelTopOmnibarKeyboardPresentationFallback()
-        isAwaitingTopOmnibarKeyboardPresentation = cardPosition == .top
+        keyboardMonitor.arm(awaiting: cardPosition == .top)
         displayState = .omnibar(.active)
         if host == .omnibar {
             DailyPixel.fireDailyAndCount(pixel: .aiChatInternalSwitchBarDisplayed)
@@ -889,8 +843,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         // it fires inside applyCardLayout — otherwise textRightInset starts at the no-button value.
         let selectsAllText: Bool
         if let text = prefilledText, !text.isEmpty {
-            setText(text)
-            textState = .prefilledSelected
+            textModel.setText(text)
+            textModel.markPrefilledSelected()
             omnibarPrefilledText = text
             selectsAllText = shouldSelectAllText
         } else {
@@ -911,7 +865,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         intentSubject.send(.showOmnibarEditing(expandedHeight: initialHeight, pendingExpandedHeight: expandedHeight))
 
         if cardPosition == .top {
-            scheduleTopOmnibarKeyboardPresentationFallback()
+            keyboardMonitor.scheduleFallback()
         }
 
         DispatchQueue.main.async { [weak self] in
@@ -932,8 +886,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     func deactivateToOmnibar(resetView: Bool = true, animateDismiss: Bool = true) {
         guard isOmnibarSession else { return }
         inputMode = committedInputMode
-        cancelTopOmnibarKeyboardPresentationFallback()
-        isAwaitingTopOmnibarKeyboardPresentation = false
+        keyboardMonitor.disarm()
         displayState = .hidden
         cardPosition = .bottom
         isInputVisibleForKeyboard = true
@@ -1002,11 +955,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     // MARK: - Text Management
 
     func setText(_ text: String) {
-        currentText = text
-        textState = text.isEmpty ? .empty : .userTyped
-        viewController.text = text
-        persistDraftToStore()
-        updateFloatingReturnKeyState()
+        textModel.setText(text)
     }
 
     // MARK: - Input Management
@@ -1092,19 +1041,18 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         let isAITabSearch = displayState == .aiTab(.expanded) && inputMode == .search
 
         switch (displayState, isInputVisible) {
-        case (.omnibar(.active), false) where isAwaitingTopOmnibarKeyboardPresentation:
+        case (.omnibar(.active), false) where keyboardMonitor.isAwaitingPresentation:
             return
         case (.omnibar(.active), false) where viewController.isInputFirstResponder:
             // A hardware keyboard is connected (or the keyboard frame went off-screen)
             // while the user is still actively editing. Treat the input as in-use and
             // skip the dismissal — otherwise the bar collapses on every keystroke.
-            cancelTopOmnibarKeyboardPresentationFallback()
+            keyboardMonitor.cancelFallback()
         case (.omnibar(.active), false):
-            cancelTopOmnibarKeyboardPresentationFallback()
+            keyboardMonitor.cancelFallback()
             transitionOmnibarToInactive()
         case (.omnibar(.inactive), true):
-            cancelTopOmnibarKeyboardPresentationFallback()
-            isAwaitingTopOmnibarKeyboardPresentation = false
+            keyboardMonitor.disarm()
             displayState = .omnibar(.active)
             syncInputBehaviorToHandler()
             updateFloatingReturnKeyState()
@@ -1112,8 +1060,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             viewController.apply(renderState.viewConfig, animated: false)
             intentSubject.send(.showOmnibarActive)
         case (.omnibar(.active), true):
-            cancelTopOmnibarKeyboardPresentationFallback()
-            isAwaitingTopOmnibarKeyboardPresentation = false
+            keyboardMonitor.disarm()
         case (.aiTab(.expanded), _) where isAITabSearch:
             let renderState = computeRenderState()
             viewController.apply(renderState.viewConfig, animated: false)
@@ -1169,34 +1116,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         contentViewController.refreshFireMode(fireMode: isFireTab)
     }
 
-    private func cancelTopOmnibarKeyboardPresentationFallback() {
-        topOmnibarKeyboardPresentationFallback?.cancel()
-        topOmnibarKeyboardPresentationFallback = nil
-    }
-
-    private func scheduleTopOmnibarKeyboardPresentationFallback() {
-        let workItem = DispatchWorkItem { [weak self] in
-            guard let self,
-                  case .omnibar(.active) = self.displayState,
-                  self.cardPosition == .top,
-                  self.isAwaitingTopOmnibarKeyboardPresentation else {
-                return
-            }
-
-            self.topOmnibarKeyboardPresentationFallback = nil
-            if !self.isInputVisibleForKeyboard, !self.viewController.isInputFirstResponder {
-                self.transitionOmnibarToInactive()
-            } else {
-                self.isAwaitingTopOmnibarKeyboardPresentation = false
-            }
-        }
-
-        topOmnibarKeyboardPresentationFallback = workItem
-        DispatchQueue.main.asyncAfter(deadline: .now() + Constants.topOmnibarKeyboardPresentationTimeout, execute: workItem)
-    }
-
     private func transitionOmnibarToInactive() {
-        isAwaitingTopOmnibarKeyboardPresentation = false
+        keyboardMonitor.clearAwaiting()
         displayState = .omnibar(.inactive)
         let renderState = computeRenderState()
         // Animated so a concurrent mode change doesn't get snapped to final layout non-animatedly.
@@ -1205,20 +1126,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     func clearText() {
-        // Dismiss-time clear: scrub the visible input but keep the per-tab draft.
-        // - Bypass setText() so coordinator.currentText (the source of truth for the
-        //   flush snapshot) isn't reset to "".
-        // - textState reflects what's visible, so reset it to .empty.
-        // - The handler's text publisher still emits "" downstream (because the
-        //   text view's text changes); the gate in unifiedToggleInputVC(_:didChangeText:)
-        //   covers the queued sink that fires next runloop tick.
-        isPerformingDismissCleanup = true
-        textState = .empty
-        omnibarPrefilledText = nil
-        viewController.text = ""
-        DispatchQueue.main.async { [weak self] in
-            self?.isPerformingDismissCleanup = false
-        }
+        textModel.clearForDismiss()
     }
 
     func stopGeneratingButtonTapped() {
@@ -1322,98 +1230,20 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     // MARK: - Render State
 
     func computeRenderState() -> UTIRenderState {
-        let isExpanded: Bool
-        let isInputVisible: Bool
-        let isContentVisible: Bool
-        let inactiveAppearance: Bool
-
-        switch displayState {
-        case .hidden:
-            isExpanded = false
-            isInputVisible = false
-            isContentVisible = false
-            inactiveAppearance = false
-
-        case .contextualChat:
-            isExpanded = true
-            isInputVisible = true
-            isContentVisible = false
-            inactiveAppearance = false
-
-        case .aiTab(.collapsed):
-            isExpanded = false
-            isInputVisible = true
-            isContentVisible = false
-            inactiveAppearance = false
-
-        case .aiTab(.expanded):
-            isExpanded = true
-            isInputVisible = true
-            let isAIChatOnAITab = isAITabState && inputMode == .aiChat
-            let isSearchOnAITab = isAITabState && inputMode == .search
-            // Toggling to Search on a chat tab without visible text is a mode switch — keep the
-            // chat web view; `textState` (not `currentText`) excludes preserved drafts from
-            // dismiss-cleanup.
-            let isSearchOnAITabWithoutText = isSearchOnAITab && textState == .empty
-            isContentVisible = !(isAIChatOnAITab || isSearchOnAITabWithoutText)
-            let isSearchKeyboardHidden = isSearchOnAITab && !isInputVisibleForKeyboard
-            inactiveAppearance = isSearchKeyboardHidden
-
-        case .omnibar(.active):
-            isExpanded = true
-            isInputVisible = true
-            isContentVisible = true
-            inactiveAppearance = false
-
-        case .omnibar(.inactive):
-            isExpanded = true
-            isInputVisible = true
-            isContentVisible = true
-            inactiveAppearance = (cardPosition == .bottom)
-        }
-
-        let floatingReturnKeyState = makeFloatingReturnKeyState()
-        let canShowFloatingReturnKey = floatingReturnKeyState.canInsertReturn
-        let shouldSuppressContentOverlay = isOmnibarSession && isContentOverlaySuppressed && textState != .userTyped
-        let effectiveContentVisible = isContentVisible && !shouldSuppressContentOverlay
-
-        return UTIRenderState(
-            isInputVisible: isInputVisible,
-            isContentVisible: effectiveContentVisible,
-            cardLayout: cardLayout(forIsExpanded: isExpanded),
-            cardPosition: cardPosition,
-            usesOmnibarMargins: cardPosition == .top && isOmnibarSession,
-            inactiveAppearance: inactiveAppearance,
-            isFloatingReturnKeyVisible: canShowFloatingReturnKey,
-            contentInputMode: inputMode,
+        stateMachine.computeRenderState(
             inputMode: inputMode,
-            isInlineDismissHidden: isAITabState || isContextualChatState,
-            isAITab: isAITabState
+            textState: textModel.textState,
+            cardPosition: cardPosition,
+            isInputVisibleForKeyboard: isInputVisibleForKeyboard,
+            isContentOverlaySuppressed: isContentOverlaySuppressed,
+            isToggleEnabled: isToggleEnabled,
+            floatingReturnKeyState: makeFloatingReturnKeyState()
         )
     }
 
     /// Whether the toggle row appears in the UTI and the swipe-between-modes gesture is active.
     /// Combines user setting + Duck.ai-tab hide flag; the kill-switch term drops out on non-AI tabs.
-    var isToggleVisible: Bool {
-        isToggleEnabled && !(hidesToggleOnDuckAITab && isAITabState)
-    }
-
-    /// Decides which card components are visible right now, based on host + display state +
-    /// toggle setting + input mode. Centralised here so the view layer just renders.
-    private func cardLayout(forIsExpanded isExpanded: Bool) -> UnifiedToggleInputCardLayout {
-        guard isExpanded else {
-            return isAITabState ? .flanked : .collapsed
-        }
-        switch host {
-        case .contextualChat:
-            return .expanded(showsToggle: false, showsToolbar: true)
-        case .omnibar:
-            // Keep the AI-chat toolbar on Duck.ai tabs even when the toggle is hidden,
-            // so the user retains the model selector / attachments / send affordances.
-            let showsToolbar = inputMode == .aiChat && (isToggleEnabled || isAITabState)
-            return .expanded(showsToggle: isToggleVisible, showsToolbar: showsToolbar)
-        }
-    }
+    var isToggleVisible: Bool { stateMachine.isToggleVisible(isToggleEnabled: isToggleEnabled) }
 
     // MARK: - Models
 
@@ -1796,14 +1626,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         updateAttachButtonPresentation()
     }
 
-    // MARK: - Session Management
-
-    @MainActor
-    private static func resetSessionFlags() {
-        hasUsedSearchInSession = false
-        hasUsedAIChatInSession = false
-    }
-
 }
 
 // MARK: - Tools Menu Selection
@@ -1871,7 +1693,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             if !URL.isValidAddressBarURLInput(text) {
                 switchBarSubmissionMetrics.process(text, for: .search)
             }
-            processSessionActivity(mode: .search)
+            sessionMonitor.recordActivity(mode: .search)
             clearStoreEntryAfterSubmission()
             if case .aiTab = displayState {
                 hide()
@@ -1892,7 +1714,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             }
 
             switchBarSubmissionMetrics.process(text, for: .aiChat)
-            processSessionActivity(mode: .aiChat)
+            sessionMonitor.recordActivity(mode: .aiChat)
             UnifiedToggleInputCoordinatorPixelHelper.fireUnifiedPromptSubmittedPixel(
                 hasText: !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
                 selectedTool: toolsController.selectedTool,
@@ -1970,13 +1792,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
     }
 
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didChangeText text: String) {
-        if UnifiedInputTextChangeGate.shouldIgnore(text: text, duringDismissCleanup: isPerformingDismissCleanup) { return }
-        currentText = text
-        textState = text.isEmpty ? .empty : .userTyped
-        persistDraftToStore()
-        clearAttachmentValidationErrorIfPossible()
-        updateFloatingReturnKeyState()
-        textChangeSubject.send(text)
+        textModel.handleUserTextChange(text)
     }
 
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didChangeMode mode: TextEntryMode) {
@@ -2615,26 +2431,6 @@ private extension UnifiedToggleInputCoordinator {
     }
 
     // MARK: - Pixels
-
-    private func processSessionActivity(mode: TextEntryMode) {
-        guard host == .omnibar else { return }
-
-        let previouslyUsedBothModes = Self.hasUsedSearchInSession && Self.hasUsedAIChatInSession
-
-        switch mode {
-        case .search:
-            Self.hasUsedSearchInSession = true
-            sessionStateMetrics.incrementActivity(.searchSubmitted)
-        case .aiChat:
-            Self.hasUsedAIChatInSession = true
-            sessionStateMetrics.incrementActivity(.promptSubmitted)
-        }
-
-        let nowUsesBothModes = Self.hasUsedSearchInSession && Self.hasUsedAIChatInSession
-        if nowUsesBothModes && !previouslyUsedBothModes {
-            DailyPixel.fireDailyAndCount(pixel: .aiChatExperimentalOmnibarSessionBothModes)
-        }
-    }
 
     private func fireModeSwitchedPixel(to mode: TextEntryMode) {
         let direction = mode == .search ? "to_search" : "to_duckai"

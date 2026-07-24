@@ -23,7 +23,8 @@ import Testing
 
 final class PrivacyUserDefaultsTests {
 
-    @Test("Enabling authentication posts authentication-enabled-changed notification")
+    @available(iOS 16.0, *)
+    @Test("Enabling authentication posts authentication-enabled-changed notification", .timeLimit(.minutes(1)))
     func whenAuthenticationChangesFromDisabledToEnabledThenNotificationIsPosted() async throws {
         let suiteName = "PrivacyUserDefaultsTests.\(UUID().uuidString)"
         let userDefaults = try #require(UserDefaults(suiteName: suiteName))

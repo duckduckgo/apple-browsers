@@ -94,7 +94,7 @@ struct AIChatDeleter: AIChatDeleting {
                 }
             }
         case .failure(let error):
-            DailyPixel.fireDailyAndCount(pixel: .aiChatHistoryDeleteFailed)
+            DailyPixel.fireDailyAndCount(pixel: .aiChatHistoryDeleteFailed, error: error)
             Logger.aiChat.debug("Failed to delete AI Chats: \(error.localizedDescription)")
             if let userScriptError = error as? UserScriptError {
                 userScriptError.fireLoadJSFailedPixelIfNeeded()
@@ -118,7 +118,7 @@ struct AIChatDeleter: AIChatDeleting {
                 await aiChatSyncCleaner.recordLocalClear(date: Date())
             }
         case .failure(let error):
-            DailyPixel.fireDailyAndCount(pixel: .aiChatHistoryDeleteFailed)
+            DailyPixel.fireDailyAndCount(pixel: .aiChatHistoryDeleteFailed, error: error)
             Logger.aiChat.debug("Failed to clear AI Chat history: \(error.localizedDescription)")
             if let userScriptError = error as? UserScriptError {
                 userScriptError.fireLoadJSFailedPixelIfNeeded()

@@ -57,9 +57,15 @@ final class AIChatUserScript: NSObject, Subfeature {
         case syncStatusChanged(AIChatSyncHandler.SyncStatus)
         case customizeResponsesAction
         case changeModelAction(modelId: String)
+        case openFeedbackAction(sentiment: String)
+        case openChatProtectionAction
 
         struct ChangeModelActionParams: Encodable {
             let modelId: String
+        }
+
+        struct FeedbackActionParams: Encodable {
+            let feedbackType: String
         }
 
         var methodName: String {
@@ -82,6 +88,10 @@ final class AIChatUserScript: NSObject, Subfeature {
                 return "submitCustomizeResponsesAction"
             case .changeModelAction:
                 return "submitChangeModelAction"
+            case .openFeedbackAction:
+                return "submitOpenFeedbackAction"
+            case .openChatProtectionAction:
+                return "submitOpenChatProtectionAction"
             }
         }
 
@@ -93,6 +103,8 @@ final class AIChatUserScript: NSObject, Subfeature {
                 return status
             case .changeModelAction(let modelId):
                 return ChangeModelActionParams(modelId: modelId)
+            case .openFeedbackAction(let sentiment):
+                return FeedbackActionParams(feedbackType: sentiment)
             default:
                 return nil
             }
@@ -382,6 +394,14 @@ final class AIChatUserScript: NSObject, Subfeature {
 
     func submitToggleSidebarAction() {
         push(.toggleSidebarAction)
+    }
+
+    func submitOpenFeedbackAction(sentiment: String) {
+        push(.openFeedbackAction(sentiment: sentiment))
+    }
+
+    func submitOpenChatProtectionAction() {
+        push(.openChatProtectionAction)
     }
 
     /// Pushes sync status change to the web content when sync state changes (login/logout, availability).

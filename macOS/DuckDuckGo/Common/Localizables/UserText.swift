@@ -38,6 +38,7 @@ struct UserText {
     static let fireDialogTabsAndWindows = NSLocalizedString("fire.dialog.tabs.and.windows", value: "Tabs and windows", comment: "Section title. Refers to the scope option that affects open tabs and/or browser windows; keep short and title-cased.")
     static let fireDialogHistoryTitle = NSLocalizedString("fire.dialog.history.title", value: "History", comment: "Section title. Toggle that controls whether browsing history entries are deleted.")
     static let cookiesAndSiteDataTitle = NSLocalizedString("fire.dialog.cookies.title", value: "Cookies and site data", comment: "Section title. Toggle that controls whether website cookies and storage (site data) are deleted.")
+    static let fireDialogCookiesAndOtherData = NotLocalizedString("fire.dialog.cookies.and.other.data.title", value: "Cookies & other data", comment: "Section title. Toggle that controls whether website cookies and storage (site data) are deleted.")
     static let fireDialogCloseThisTab = NSLocalizedString("fire.dialog.close.this.tab", value: "Close this tab.", comment: "Subtitle shown under the Tabs and windows row when scope is ‘Tab’. Means: the currently active tab will be closed.")
     static let fireDialogCloseThisWindow = NSLocalizedString("fire.dialog.close.this.window", value: "Close this window.", comment: "Subtitle shown under the Tabs and windows row when scope is ‘Window’. Means: the current browser window (all tabs inside it) will be closed.")
     static let fireDialogCloseAllTabsWindows = NSLocalizedString("fire.dialog.close.all.tabs.windows", value: "Close all tabs and windows.", comment: "Subtitle shown under the Tabs and windows row when scope is ‘Everything’. Means: all browser tabs and windows will be closed.")
@@ -451,7 +452,7 @@ struct UserText {
 
     static let fireDialogFireproofSites = NSLocalizedString("fire.dialog.fireproof.sites", value: "Fireproof sites won't be cleared", comment: "Category of domains in fire button dialog")
     static let fireDialogClearSites = NSLocalizedString("fire.dialog.clear.sites", value: "Selected sites will be cleared", comment: "Category of domains in fire button dialog")
-    static let fireDialogDelitingData = NSLocalizedString("fire.dialog.deliting.data", value: "Deleting browsing data…", comment: "Text shown in dialog while removing browsing data")
+    static let fireDialogDeletingData = NSLocalizedString("fire.dialog.deliting.data", value: "Deleting browsing data…", comment: "Text shown in dialog while removing browsing data")
     static let fireInfoDialogTitle = NSLocalizedString("fire.info.dialog.title", value: "Leave No Trace", comment: "Title of the dialog that explains the Fire feature.")
     static let fireInfoDialogDescription = NSLocalizedString("fire.info.dialog.description", value: "Data, browsing history, and cookies can build up in your browser over time. Use the Fire Button to clear it all away.", comment: "Description in the dialog that explains the Fire feature.")
     static let fireDialogFireWindowTitle = NSLocalizedString("fire.dialog.fire-window.title", value: "Open New Fire Window", comment: "Title of the part of the dialog where the user can open a fire window.")
@@ -522,6 +523,45 @@ struct UserText {
     static let fireDialogSitesOverlaySubtitle = NSLocalizedString("fire.dialog.sites.overlay.subtitle",
                                                                   value: "These sites will be deleted.",
                                                                   comment: "Subtitle above the list of domains in in-dialog overlay")
+
+    // MARK: - Simplified Fire dialog sites list sheet
+    /// Bold-weight portion of the sites overlay title, e.g. "Cookies & other data from 7 sites"; combined with
+    /// `fireDialogSitesOverlayTitleRegular` to read "Cookies & other data from 7 sites will be deleted:"
+    static func fireDialogSitesOverlayTitleBold(_ count: Int) -> String {
+        NotLocalizedString("fire.dialog.sites.overlay.title.bold",
+                            value: count == 1 ? "Cookies & other data from 1 site" : "Cookies & other data from \(count) sites",
+                            comment: "Bold portion of the simplified Fire dialog's sites overlay title, stating the number of sites affected.")
+    }
+    static let fireDialogSitesOverlayTitleRegular = NotLocalizedString("fire.dialog.sites.overlay.title.regular",
+                                                                        value: "will be deleted:",
+                                                                        comment: "Regular-weight portion of the simplified Fire dialog's sites overlay title, appended after fireDialogSitesOverlayTitleBold.")
+
+    // MARK: - Simplified Fire dialog chats list sheet
+    /// Bold-weight portion of the chats overlay title, e.g. "5 Duck.ai chats"; combined with
+    /// `fireDialogChatsOverlayTitleRegular` to read "5 Duck.ai chats will be deleted:"
+    static func fireDialogChatsOverlayTitleBold(_ count: Int) -> String {
+        NotLocalizedString("fire.dialog.chats.overlay.title.bold",
+                            value: count == 1 ? "1 Duck.ai chat" : "\(count) Duck.ai chats",
+                            comment: "Bold portion of the simplified Fire dialog's chats overlay title, stating the number of chats affected.")
+    }
+    static let fireDialogChatsOverlayTitleRegular = NotLocalizedString("fire.dialog.chats.overlay.title.regular",
+                                                                        value: "will be deleted:",
+                                                                        comment: "Regular-weight portion of the simplified Fire dialog's chats overlay title, appended after fireDialogChatsOverlayTitleBold.")
+
+    // MARK: - Simplified Fire dialog history list sheet
+    /// Bold-weight portion of the history overlay title, e.g. "461 history items"; combined with
+    /// `fireDialogHistoryOverlayTitleRegular` to read "461 history items will be deleted:"
+    static func fireDialogHistoryOverlayTitleBold(_ count: Int) -> String {
+        NotLocalizedString("fire.dialog.history.overlay.title.bold",
+                            value: count == 1 ? "1 history item" : "\(count) history items",
+                            comment: "Bold portion of the simplified Fire dialog's history overlay title, stating the number of history items affected.")
+    }
+    static let fireDialogHistoryOverlayTitleRegular = NotLocalizedString("fire.dialog.history.overlay.title.regular",
+                                                                          value: "will be deleted:",
+                                                                          comment: "Regular-weight portion of the simplified Fire dialog's history overlay title, appended after fireDialogHistoryOverlayTitleBold.")
+    static let fireDialogSeeFullHistory = NotLocalizedString("fire.dialog.history.overlay.see.full.history",
+                                                               value: "See full history",
+                                                               comment: "Link button shown below the (capped) history overlay list, opens the full History View.")
 
     // MARK: - Fire dialog single-entry contextual titles
     /// Title used when reusing the Fire dialog as a single entry point (from History, menu, etc.) with full-time range
@@ -670,10 +710,8 @@ struct UserText {
 
     static let searchAssistSettings = NSLocalizedString("duckai.search-assist-settings", value: "Search Assist Settings", comment: "The section name in preferences for Search Assist Settings")
     static let searchAssistSettingsDescription = NSLocalizedString("duckai.search-assist-settings.description", value: "Choose how often you want AI-Assisted answers to appear in your searches", comment: "Description of the section in Settings")
-    static let searchAssistSettingsLink = NSLocalizedString("duckai.search-assist-settings.link", value: "Open Search Assist Settings", comment: "Button to open the Search Assist Settings")
     static let hideAIGeneratedImagesSettings = NSLocalizedString("duckai.hide-ai-generated-images-settings", value: "Hide AI-Generated Images", comment: "The section name in preferences for Hide AI-Generated Images Settings")
     static let hideAIGeneratedImagesSettingsDescription = NSLocalizedString("duckai.hide-ai-generated-images-settings.description", value: "Filters out known AI spam sites from image search results.", comment: "Footnote for the Hide AI-Generated Images setting; a separate Learn More button links to the help page")
-    static let searchAIFeaturesSettingsLink = NSLocalizedString("duckai.search-ai-features-settings.link", value: "Open Search AI Features", comment: "Button to open the Search AI Features Settings")
     static let searchAssistNever = NSLocalizedString("duckai.search-assist.never", value: "Never", comment: "Search Assist frequency option: never show AI-assisted answers")
     static let searchAssistOnDemand = NSLocalizedString("duckai.search-assist.on-demand", value: "On demand", comment: "Search Assist frequency option: show AI-assisted answers on demand")
     static let searchAssistSometimes = NSLocalizedString("duckai.search-assist.sometimes", value: "Sometimes", comment: "Search Assist frequency option: sometimes show AI-assisted answers")
@@ -875,9 +913,6 @@ struct UserText {
     // Duck.ai Settings
     static let aiChatTitle = NSLocalizedString("duckai.title", value: "Duck.ai", comment: "Title for Duck.ai feature")
     static let aiChatDescription = NSLocalizedString("duckai.description", value: "Chat privately with popular 3rd-party AI models", comment: "Description of Duck.ai feature in settings")
-    static let aiChatEnableButton = NSLocalizedString("duckai.enable.button", value: "Enable Duck.ai", comment: "Button to enable Duck.ai feature")
-    static let aiChatDisableButton = NSLocalizedString("duckai.disable.button", value: "Disable Duck.ai...", comment: "Button to disable Duck.ai feature")
-    static let aiChatDisableButtonImmediate = NSLocalizedString("duckai.disable.button.immediate", value: "Disable Duck.ai", comment: "Button to disable Duck.ai feature directly, without a confirmation dialog")
     static let aiChatShortcutsSectionTitle = NSLocalizedString("duckai.shortcuts.section.title", value: "Duck.ai Shortcuts", comment: "Section title for Duck.ai shortcuts settings")
     static let aiChatShowInBrowserMenusToggle = NSLocalizedString("duckai.show-in-browser-menus.toggle", value: "Show in browser menus", comment: "Toggle for showing Duck.ai in browser menus")
     static let aiChatShowInAddressBarLabel = NSLocalizedString("duckai.show-in-address-bar.label", value: "Show in address bar", comment: "Label for showing Duck.ai in address bar")
@@ -889,11 +924,6 @@ struct UserText {
     static let aiChatOpenNewChatsSectionTitle = NSLocalizedString("duckai.open-new-chats.section.title", value: "Open New Chats", comment: "Section title for Duck.ai new chat location settings")
     static let aiChatOpenInSidebarOption = NSLocalizedString("duckai.open-in-sidebar.option", value: "Sidebar", comment: "Option to open Duck.ai chats in sidebar")
     static let aiChatOpenInFullPageOption = NSLocalizedString("duckai.open-in-full-page.option", value: "Full page", comment: "Option to open Duck.ai chats in full page")
-
-    // Duck.ai Disable Dialog
-    static let aiChatDisableDialogTitle = NSLocalizedString("duckai.disable.dialog.title", value: "Disable Duck.ai?", comment: "Title for dialog asking to disable Duck.ai")
-    static let aiChatDisableDialogMessage = NSLocalizedString("duckai.disable.dialog.message", value: "Duck.ai is private by design. Chats are anonymized by us and never used to train AI.\n\nDisabling Duck.ai will remove access from the New Tab Page, address bar, and browser menus.\n\nYou can re-enable it at any time.", comment: "Message explaining consequences of disabling Duck.ai")
-    static let aiChatDisableDialogConfirmButton = NSLocalizedString("duckai.disable.dialog.confirm", value: "Disable Duck.ai", comment: "Button to confirm disabling Duck.ai")
 
     // Duck Player Preferences
     static let duckPlayerSettingsTitle = NSLocalizedString("duck-player.title", value: "Duck Player", comment: "Private YouTube Player settings title")
@@ -1424,13 +1454,13 @@ struct UserText {
     static let subscriptionSettings = NSLocalizedString("preferences.subscriptionSettings", value: "Subscription Settings", comment: "Title of the option to show the Subscription Settings preferences")
     static let duckPlayer = NSLocalizedString("preferences.duck-player", value: "Duck Player", comment: "Title of the option to show the Duck Player browser preferences")
     static let youTubeAdBlocking = NSLocalizedString("preferences.youtube-ad-blocking", value: "Ad Blocking", comment: "Title of the option to show the Ad Blocking preferences")
-    static let adBlockingDescription = NSLocalizedString("preferences.ad-blocking.description", value: "Blocks invasive trackers before they load, effectively eliminating ads that rely on tracking", comment: "Description of the Ad Blocking feature in preferences")
+    static let adBlockingDescription = NSLocalizedString("preferences.ad-blocking.description", value: "Blocks invasive trackers before they load, effectively eliminating ads that rely on tracking.", comment: "Description of the Ad Blocking feature in preferences")
     static let adBlockingYouTubeSectionHeader = NSLocalizedString("preferences.ad-blocking.youtube-section-header", value: "YouTube Ad Blocking", comment: "Section header for YouTube-specific ad blocking settings")
     static let youTubeAdBlockingExplanation = NSLocalizedString("preferences.youtube-ad-blocking.explanation", value: "DuckDuckGo blocks video ads on YouTube, so you can watch videos without interruption.", comment: "Explanation of the YouTube Ad Blocking feature")
     static let youTubeAdBlockingToggle = NSLocalizedString("preferences.youtube-ad-blocking.toggle", value: "Block ads on YouTube", comment: "Toggle label for enabling YouTube ad blocking")
     static let youTubeAdBlockingDisabledUntilRelaunch = NSLocalizedString("preferences.youtube-ad-blocking.disabled-until-relaunch", value: "Disabled until relaunch.", comment: "Sub-line shown below the YouTube Ad Blocking toggle when the user has temporarily disabled ad blocking for the current app session")
     static let youTubeAdBlockUnavailableTitle = NSLocalizedString("preferences.youtube-ad-blocking.unavailable.title", value: "YouTube Ad Blocking Unavailable", comment: "Title of the message shown when YouTube Ad Blocking is currently unavailable due to remote changes")
-    static let youTubeAdBlockUnavailableMessage = NSLocalizedString("preferences.youtube-ad-blocking.unavailable.message", value: "Ad Blocking has been affected by recent changes to YouTube. We're working to fix these issues and appreciate your understanding", comment: "Body text of the message shown when YouTube Ad Blocking is currently unavailable due to remote changes")
+    static let youTubeAdBlockUnavailableMessage = NSLocalizedString("preferences.youtube-ad-blocking.unavailable.message", value: "Ad Blocking has been affected by recent changes to YouTube. We're working to fix these issues and appreciate your understanding.", comment: "Body text of the message shown when YouTube Ad Blocking is currently unavailable due to remote changes")
     static let youTubeAdBlockingPopoverAlwaysOn = NSLocalizedString("preferences.youtube-ad-blocking.popover.always-on", value: "Always On", comment: "YouTube Ad Block popover dropdown option that keeps ad blocking always on")
     static let youTubeAdBlockingPopoverDisableUntilRelaunch = NSLocalizedString("preferences.youtube-ad-blocking.popover.disable-until-relaunch", value: "Disable Until Relaunch", comment: "YouTube Ad Block popover dropdown option that disables ad blocking for the current app session only")
     static let youTubeAdBlockingPopoverAlwaysOff = NSLocalizedString("preferences.youtube-ad-blocking.popover.always-off", value: "Always Off", comment: "YouTube Ad Block popover dropdown option that keeps ad blocking always off")
@@ -1438,7 +1468,7 @@ struct UserText {
     static let youTubeAdBlockingPopoverRowDescription = NSLocalizedString("preferences.youtube-ad-blocking.popover.row-description", value: "If you encounter video playback issues, disabling Ad Blocking may fix the issue.", comment: "Description below the on/off dropdown in the YouTube Ad Blocking address bar popover")
     static let youTubeAdBlockingPopoverBreakageReportTitle = NSLocalizedString("preferences.youtube-ad-blocking.popover.breakage-report.title", value: "YouTube Ad Blocking not working?", comment: "Title of the breakage report card shown in the YouTube Ad Blocking popover after the user disables ad blocking")
     static let youTubeAdBlockingPopoverBreakageReportSendButton = NSLocalizedString("preferences.youtube-ad-blocking.popover.breakage-report.send-button", value: "Send Report", comment: "Button label that sends a breakage report from the YouTube Ad Blocking popover")
-    static let youTubeAdBlockingPopoverBreakageReportDescription = NSLocalizedString("preferences.youtube-ad-blocking.popover.breakage-report.description", value: "Send an anonymous breakage report to DuckDuckGo. Help make Ad Blocking better for everyone!", comment: "Description below the breakage report send button in the YouTube Ad Blocking popover")
+    static let youTubeAdBlockingPopoverBreakageReportDescription = NSLocalizedString("preferences.youtube-ad-blocking.popover.breakage-report.description", value: "Send an anonymous report to DuckDuckGo and help make ad blocking better for everyone!", comment: "Description below the breakage report send button in the YouTube Ad Blocking popover")
     static let youTubeAdBlockingToggleFooter = NSLocalizedString("preferences.youtube-ad-blocking.toggle.footer", value: "When on, DuckDuckGo will anonymously detect ad blocking interference or YouTube errors, to improve the experience for everyone. DuckDuckGo never sees which videos you view or any personally identifiable information.", comment: "Description shown below the YouTube ad blocking toggle")
     static let youTubeAdBlockingLearnMoreButton = NSLocalizedString("preferences.youtube-ad-blocking.learn-more", value: "Learn More", comment: "Learn more button shown below the YouTube ad blocking toggle description")
     static let youTubeAdBlockingTooltip = NSLocalizedString("tooltip.youtube-ad-blocking.show", value: "YouTube Ad Blocking", comment: "Tooltip for the YouTube Ad Blocking address bar button")
@@ -2535,7 +2565,7 @@ struct UserText {
     // MARK: - OmniBar Notifications
     static let omnibarNotificationCookiesManaged = NSLocalizedString("omnibar.notification.cookies.managed", value: "Cookies Managed", comment: "Text displayed when cookies are managed by DuckDuckGo")
     static let omnibarNotificationPopupHidden = NSLocalizedString("omnibar.notification.popup.hidden", value: "Pop-up Hidden", comment: "Text displayed when a pop-up is hidden by DuckDuckGo")
-    static let omnibarNotificationYouTubeAdBlockOn = NSLocalizedString("omnibar.notification.youtube-ad-block-on", value: "YouTube Ad Block On", comment: "Text displayed on notification appearing in the address bar when YouTube ad blocking is active")
+    static let omnibarNotificationYouTubeAdBlockOn = NSLocalizedString("omnibar.notification.youtube-ad-block-on", value: "Ad Blocking On", comment: "Text displayed on notification appearing in the address bar when YouTube ad blocking is active")
 
     static func omnibarNotificationTrackersBlocked(_ count: Int) -> String {
         let template = NSLocalizedString(

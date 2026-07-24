@@ -204,6 +204,11 @@ final class AIChatHistoryViewModel: ObservableObject {
         delegate?.viewModelDidRequestOpenChat(chatId: chatId)
     }
 
+    func openChatProtection() {
+        instrumentation.chatProtectionTapped()
+        delegate?.viewModelDidRequestChatProtection()
+    }
+
     func deleteChat(chatId: String) {
         // Sheet only surfaces persistent chats, so never fire-mode.
         guard let fireExecutor else { return }
@@ -229,6 +234,8 @@ final class AIChatHistoryViewModel: ObservableObject {
     /// Never fire-mode (sheet only surfaces persistent chats); one batch burn, sync flushed once.
     func burnSelectedChats(chatIds: [String]) async {
         guard let fireExecutor, !chatIds.isEmpty else { return }
+        // Reached only after the user confirms the multi-select delete action.
+        instrumentation.selectionDeleteConfirmed()
         let result = await fireExecutor.burnChats(chatIDs: chatIds, isFireMode: false)
         guard case .success = result else { return }
         fireExecutor.scheduleSync()
@@ -244,6 +251,8 @@ final class AIChatHistoryViewModel: ObservableObject {
     }
 
     func downloadSelectedChats(chatIds: [String]) {
+        guard downloader != nil, !chatIds.isEmpty else { return }
+        instrumentation.selectionDownloadStarted()
         exportChats(chatIds) { [weak self] urls in
             self?.delegate?.viewModelDidExportChats(count: urls.count)
         }
@@ -267,6 +276,7 @@ final class AIChatHistoryViewModel: ObservableObject {
                 if urls.isEmpty {
                     self?.delegate?.viewModelDidFailExport()
                 } else {
+                    instrumentation.downloadSucceeded()
                     onExported(urls)
                 }
             }
@@ -369,6 +379,9 @@ protocol AIChatHistoryViewModelDelegate: AnyObject {
 
     /// Dismiss the sheet and open `chatId` in Duck.ai.
     func viewModelDidRequestOpenChat(chatId: String)
+
+    /// Dismiss the sheet and open the Duck.ai chat protection page.
+    func viewModelDidRequestChatProtection()
 
     /// A chat export finished writing to disk. Present the "Download complete" toast for
     /// `filename` with a "Show" action that dismisses the sheet and opens the in-app

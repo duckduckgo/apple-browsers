@@ -17,10 +17,13 @@
 //
 
 import AIChat
+import Combine
 import FeatureFlags
 import Onboarding
 import Persistence
 import PersistenceTestingUtils
+import PixelExperimentKit
+import PixelKit
 import PrivacyConfig
 import PrivacyConfigTestsUtils
 import SharedTestUtilities
@@ -116,28 +119,16 @@ class OnboardingManagerTests: XCTestCase {
         XCTAssertEqual(manager.configuration, expectedConfig)
     }
 
-    func testReturnsExpectedOnboardingConfig_WhenChromeExtensionCanBeInstalled_AndFlagIsEnabled_IncludesChromeExtensionInstallOption() {
+    func testReturnsExpectedOnboardingConfig_WhenChromeExtensionCanBeInstalled_AndTreatmentCohortAssigned_IncludesChromeExtensionInstallOption() {
         // Given
-        chromeExtensionInstaller.canInstallDDGExtension = true
-        let featureFlagger = MockFeatureFlagger()
-        featureFlagger.enabledFeatureFlags = [.onboardingChromeExtension]
-        let managerWithFlagOn = OnboardingActionsManager(
-            navigationDelegate: navigationDelegate,
-            dockCustomization: dockCustomization,
-            defaultBrowserProvider: defaultBrowserProvider,
-            appearancePreferences: appearancePreferences,
-            startupPreferences: startupPreferences,
-            dataImportProvider: importProvider,
-            featureFlagger: featureFlagger,
-            onboardingSharedPixelHandler: onboardingSharedPixelHandler,
-            chromeExtensionInstaller: chromeExtensionInstaller
-        )
+        let featureFlagger = makeFeatureFlagger(cohort: .treatment)
+        let managerWithFlagOn = makeExperimentManager(featureFlagger: featureFlagger)
 
         // Then
         XCTAssertEqual(managerWithFlagOn.configuration.stepDefinitions.getStarted.options, ["chrome-extension-install"])
     }
 
-    func testReturnsExpectedOnboardingConfig_WhenChromeExtensionCanBeInstalled_AndFlagIsDisabled_DoesNotIncludeChromeExtensionInstallOption() {
+    func testReturnsExpectedOnboardingConfig_WhenNotEnrolledInExperiment_DoesNotIncludeChromeExtensionInstallOption() {
         // Given
         chromeExtensionInstaller.canInstallDDGExtension = true
 
@@ -147,23 +138,11 @@ class OnboardingManagerTests: XCTestCase {
 
     func testReturnsExpectedOnboardingConfig_WhenChromeExtensionCannotBeInstalled_DoesNotIncludeChromeExtensionInstallOption() {
         // Given
-        chromeExtensionInstaller.canInstallDDGExtension = false
-        let featureFlagger = MockFeatureFlagger()
-        featureFlagger.enabledFeatureFlags = [.onboardingChromeExtension]
-        let managerWithFlagOn = OnboardingActionsManager(
-            navigationDelegate: navigationDelegate,
-            dockCustomization: dockCustomization,
-            defaultBrowserProvider: defaultBrowserProvider,
-            appearancePreferences: appearancePreferences,
-            startupPreferences: startupPreferences,
-            dataImportProvider: importProvider,
-            featureFlagger: featureFlagger,
-            onboardingSharedPixelHandler: onboardingSharedPixelHandler,
-            chromeExtensionInstaller: chromeExtensionInstaller
-        )
+        let featureFlagger = makeFeatureFlagger(cohort: .treatment)
+        let managerWithTreatment = makeExperimentManager(featureFlagger: featureFlagger, canInstall: false)
 
         // Then
-        XCTAssertTrue(managerWithFlagOn.configuration.stepDefinitions.getStarted.options.isEmpty)
+        XCTAssertTrue(managerWithTreatment.configuration.stepDefinitions.getStarted.options.isEmpty)
     }
 
     func testReturnsExpectedOnboardingConfig_WhenDockCustomization_DoesNotSupportAddingToDock() {
@@ -458,26 +437,159 @@ class OnboardingManagerTests: XCTestCase {
 
     func testExpectedShownPixelsFired_WhenGetStartedStepShown_AndChromeOptionCanBeShown() {
         // Given
-        chromeExtensionInstaller.canInstallDDGExtension = true
-        let featureFlagger = MockFeatureFlagger()
-        featureFlagger.enabledFeatureFlags = [.onboardingChromeExtension]
-        let managerWithFlagOn = OnboardingActionsManager(
-            navigationDelegate: navigationDelegate,
-            dockCustomization: dockCustomization,
-            defaultBrowserProvider: defaultBrowserProvider,
-            appearancePreferences: appearancePreferences,
-            startupPreferences: startupPreferences,
-            dataImportProvider: importProvider,
-            featureFlagger: featureFlagger,
-            onboardingSharedPixelHandler: onboardingSharedPixelHandler,
-            chromeExtensionInstaller: chromeExtensionInstaller
-        )
+        let featureFlagger = makeFeatureFlagger(cohort: .treatment)
+        let managerWithTreatment = makeExperimentManager(featureFlagger: featureFlagger)
 
         // When
-        managerWithFlagOn.stepShown(step: .getStarted)
+        managerWithTreatment.stepShown(step: .getStarted)
 
         // Then
         XCTAssertEqual(onboardingSharedPixelHandler.eventsReceived, [.chromeExtensionInstall(.shown)])
+    }
+
+    func testChromeExtensionInstallShownPixelNotFired_WhenGetStartedStepShown_AndControlCohort() {
+        // Given
+        let featureFlagger = makeFeatureFlagger(cohort: .control)
+        let managerWithControl = makeExperimentManager(featureFlagger: featureFlagger)
+
+        // When
+        managerWithControl.stepShown(step: .getStarted)
+
+        // Then
+        XCTAssertTrue(onboardingSharedPixelHandler.eventsReceived.isEmpty)
+    }
+
+    func testWhenEligibleAndTreatmentCohortThenConfigIncludesChromeExtensionInstallOption() {
+        // Given
+        let featureFlagger = makeFeatureFlagger(cohort: .treatment)
+        let managerWithTreatment = makeExperimentManager(featureFlagger: featureFlagger)
+
+        // When
+        managerWithTreatment.onboardingStarted()
+
+        // Then
+        XCTAssertEqual(
+            managerWithTreatment.configuration.stepDefinitions.getStarted.options,
+            [OnboardingOption.chromeExtensionInstall.rawValue]
+        )
+        XCTAssertTrue(featureFlagger.didCallResolveCohort)
+    }
+
+    func testWhenEligibleAndControlCohortThenConfigDoesNotIncludeChromeExtensionInstallOption() {
+        // Given
+        let featureFlagger = makeFeatureFlagger(cohort: .control)
+        let managerWithControl = makeExperimentManager(featureFlagger: featureFlagger)
+
+        // When
+        managerWithControl.onboardingStarted()
+
+        // Then
+        XCTAssertTrue(managerWithControl.configuration.stepDefinitions.getStarted.options.isEmpty)
+        XCTAssertTrue(featureFlagger.didCallResolveCohort)
+    }
+
+    func testWhenNotV4ThenDoesNotResolveCohortOrIncludeChromeExtensionInstallOption() {
+        // Given
+        let featureFlagger = makeFeatureFlagger(cohort: .treatment, isOnboardingRebrandingEnabled: false)
+        chromeExtensionInstaller.canInstallDDGExtension = true
+        let managerWithTreatment = makeExperimentManager(featureFlagger: featureFlagger)
+
+        // When
+        managerWithTreatment.onboardingStarted()
+
+        // Then
+        XCTAssertTrue(managerWithTreatment.configuration.stepDefinitions.getStarted.options.isEmpty)
+        XCTAssertFalse(featureFlagger.didCallResolveCohort)
+    }
+
+    func testWhenChromeCannotBeInstalledThenDoesNotResolveCohortOrIncludeOption() {
+        // Given
+        let featureFlagger = makeFeatureFlagger(cohort: .treatment)
+        let managerWithTreatment = makeExperimentManager(featureFlagger: featureFlagger, canInstall: false)
+
+        // When
+        managerWithTreatment.onboardingStarted()
+
+        // Then
+        XCTAssertTrue(managerWithTreatment.configuration.stepDefinitions.getStarted.options.isEmpty)
+        XCTAssertFalse(featureFlagger.didCallResolveCohort)
+    }
+
+    func testWhenCohortResolutionReturnsNilThenDoesNotEnrollOrIncludeOption() {
+        // Given
+        let featureFlagger = makeFeatureFlagger(cohort: nil)
+        chromeExtensionInstaller.canInstallDDGExtension = true
+        let experimentManager = makeExperimentManager(featureFlagger: featureFlagger)
+
+        // When
+        experimentManager.onboardingStarted()
+
+        // Then
+        XCTAssertTrue(experimentManager.configuration.stepDefinitions.getStarted.options.isEmpty)
+        XCTAssertTrue(featureFlagger.didCallResolveCohort)
+    }
+
+    func testWhenEligibilityBecomesTrueOnSecondOnboardingStartThenResolvesCohort() {
+        // Given
+        let featureFlagger = makeFeatureFlagger(cohort: .treatment)
+        let experimentManager = makeExperimentManager(featureFlagger: featureFlagger, canInstall: false)
+
+        // First access: not install-eligible → must not enroll
+        experimentManager.onboardingStarted()
+        XCTAssertTrue(experimentManager.configuration.stepDefinitions.getStarted.options.isEmpty)
+        XCTAssertFalse(featureFlagger.didCallResolveCohort)
+
+        // Later access: now install-eligible → must enroll and show treatment option
+        chromeExtensionInstaller.canInstallDDGExtension = true
+        experimentManager.onboardingStarted()
+        XCTAssertEqual(
+            experimentManager.configuration.stepDefinitions.getStarted.options,
+            [OnboardingOption.chromeExtensionInstall.rawValue]
+        )
+        XCTAssertTrue(featureFlagger.didCallResolveCohort)
+    }
+
+    func testSetDefaultCompletedExperimentMetricFiredWhenEnrolled() {
+        // Given
+        var firedEvents: [PixelKitEvent] = []
+        let featureFlagger = makeFeatureFlagger(cohort: .control)
+        let subfeatureID = MacOSBrowserConfigSubfeature.onboardingChromeExtension.rawValue
+        featureFlagger.allActiveExperiments = [
+            subfeatureID: ExperimentData(
+                parentID: PrivacyFeature.macOSBrowserConfig.rawValue,
+                cohortID: FeatureFlag.OnboardingChromeExtensionCohort.control.rawValue,
+                enrollmentDate: Date()
+            )
+        ]
+        PixelKit.configureExperimentKit(
+            featureFlagger: featureFlagger,
+            eventTracker: ExperimentEventTracker(store: MockExperimentActionPixelStore()),
+            fire: { event, _, _ in firedEvents.append(event) }
+        )
+        let experimentManager = makeExperimentManager(featureFlagger: featureFlagger)
+        experimentManager.onboardingStarted()
+
+        // When
+        experimentManager.setAsDefault()
+
+        // Then
+        XCTAssertTrue(firedEvents.contains(where: { $0.parameters?["metric"] == "setAsDefault" }))
+    }
+
+    func testSetDefaultCompletedExperimentMetricNotFiredWhenNotEnrolled() {
+        // Given
+        var firedEvents: [PixelKitEvent] = []
+        PixelKit.configureExperimentKit(
+            featureFlagger: MockFeatureFlagger(),
+            eventTracker: ExperimentEventTracker(store: MockExperimentActionPixelStore()),
+            fire: { event, _, _ in firedEvents.append(event) }
+        )
+
+        // When
+        manager.setAsDefault()
+
+        // Then
+        XCTAssertTrue(firedEvents.isEmpty)
     }
 
     func testExpectedShownPixelsFired_WhenRowShownTelemetryEventReported() {
@@ -715,4 +827,38 @@ class OnboardingManagerTests: XCTestCase {
         )
     }
 
+}
+
+// MARK: - Chrome extension experiment test helpers
+
+private extension OnboardingManagerTests {
+
+    func makeExperimentManager(
+        featureFlagger: MockFeatureFlagger,
+        canInstall: Bool = true
+    ) -> OnboardingActionsManager {
+        chromeExtensionInstaller.canInstallDDGExtension = canInstall
+        return OnboardingActionsManager(
+            navigationDelegate: navigationDelegate,
+            dockCustomization: dockCustomization,
+            defaultBrowserProvider: defaultBrowserProvider,
+            appearancePreferences: appearancePreferences,
+            startupPreferences: startupPreferences,
+            dataImportProvider: importProvider,
+            featureFlagger: featureFlagger,
+            onboardingSharedPixelHandler: onboardingSharedPixelHandler,
+            chromeExtensionInstaller: chromeExtensionInstaller
+        )
+    }
+
+    func makeFeatureFlagger(
+        cohort: FeatureFlag.OnboardingChromeExtensionCohort?,
+        isOnboardingRebrandingEnabled: Bool = true
+    ) -> MockFeatureFlagger {
+        let featureFlagger = MockFeatureFlagger(resolveCohortStub: cohort)
+        if isOnboardingRebrandingEnabled {
+            featureFlagger.enabledFeatureFlags = [.onboardingRebranding]
+        }
+        return featureFlagger
+    }
 }

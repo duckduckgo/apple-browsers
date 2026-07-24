@@ -652,6 +652,17 @@ private extension NSAttributedString {
         }
     }
 
+    private static func singlePartTrustedIndicatorAttributedString(with icon: NSImage, title: String) -> NSAttributedString {
+        NSAttributedString {
+            // favicon
+            Component(image: icon, rect: CGRect(x: 0, y: iconBaselineOffset, width: icon.size.width, height: icon.size.height))
+            // spacing
+            Component(image: spacer, rect: CGRect(x: 0, y: 0, width: iconSpacing, height: 1))
+            // title
+            Component(string: title)
+        }
+    }
+
     static let onboardingTrustedIndicator = NSAttributedString(string: UserText.tabOnboardingTitle)
 
     static let settingsTrustedIndicator = trustedIndicatorAttributedString(with: DesignSystemRebrand.isAppRebranded() ? DesignSystemImages.Color.Size16.settings : .settingsMulticolor16Legacy,
@@ -672,7 +683,7 @@ private extension NSAttributedString {
                                                                                   title: UserText.emailProtectionPreferences)
     static let releaseNotesTrustedIndicator = trustedIndicatorAttributedString(with: .releaseNotesIndicator,
                                                                                title: UserText.releaseNotesTitle)
-    static let aiChatTrustedIndicator = trustedIndicatorAttributedString(with: DesignSystemRebrand.isAppRebranded() ? DesignSystemImages.Color.Size16.aiChat : .aiChatPreferencesLegacy,
-                                                                         title: UserText.aiChatAddressBarTrustedIndicator)
+    static let aiChatTrustedIndicator = singlePartTrustedIndicatorAttributedString(with: DesignSystemImages.Color.Size16.duckAI,
+                                                                                   title: UserText.aiChatAddressBarTrustedIndicator)
 
 }

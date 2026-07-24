@@ -776,7 +776,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         XCTAssertEqual(secondPresenter.presentCallCount, 0)
     }
 
-    // MARK: - presentsFullScreen Tests
+    // MARK: - presentStandaloneFullScreen Tests
 
     @MainActor
     func testPresentSheetUsesMediumAndLargeDetentsByDefault() async {
@@ -795,7 +795,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     }
 
     @MainActor
-    func testPresentSheetPresentsOverFullScreenWithoutSheetPresentationWhenPresentsFullScreenIsTrue() async {
+    func testPresentSheetUsesLargeOnlyDetentWithoutGrabberWhenPresentStandaloneFullScreenIsTrue() async {
         let fullScreenSUT = AIChatContextualSheetCoordinator(
             voiceSearchHelper: MockVoiceSearchHelper(),
             aiChatSettings: mockSettings,
@@ -809,7 +809,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
                 originating: originatingTabURLSubject.eraseToAnyPublisher(),
                 didFinish: didFinishTabURLSubject.eraseToAnyPublisher()
             ),
-            presentsFullScreen: true
+            presentStandaloneFullScreen: true
         )
         let window = UIWindow()
         let rootVC = UIViewController()
@@ -819,10 +819,13 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         await fullScreenSUT.presentSheet(from: rootVC)
 
         let sheetVC = fullScreenSUT.sheetViewController!
-        // Onboarding presents as a true full-screen cover, so UIKit provides no sheet presentation controller
-        // (hence no detents/grabber) — see AIChatContextualSheetViewController.configureModalPresentation().
-        XCTAssertEqual(sheetVC.modalPresentationStyle, .overFullScreen)
-        XCTAssertNil(sheetVC.sheetPresentationController)
+        // Onboarding presents as a page sheet locked to the large detent (covering ~90%, leaving the presenter
+        // visible behind) with no grabber — see AIChatContextualSheetViewController.configureSheetPresentation().
+        XCTAssertEqual(sheetVC.modalPresentationStyle, .pageSheet)
+        let sheet = sheetVC.sheetPresentationController!
+        XCTAssertEqual(sheet.detents, [.large()])
+        XCTAssertEqual(sheet.selectedDetentIdentifier, .large)
+        XCTAssertFalse(sheet.prefersGrabberVisible)
     }
 
     // MARK: - hideExpandButton Tests

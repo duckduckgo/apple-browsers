@@ -89,8 +89,9 @@ final class AIChatContextualSheetCoordinator {
     private let duckAiFireModeStorageHandler: DuckAiNativeStorageHandling?
     private let debugSettings: AIChatDebugSettingsHandling
     private let isFireTab: Bool
-    /// Presents at `.large()` only, with no grabber
-    private let presentsFullScreen: Bool
+    /// A standalone full-screen surface with no browser tab behind it (e.g. onboarding). Presents at `.large()` only
+    /// with no grabber, and strips the sheet header down to just a close button.
+    private let presentStandaloneFullScreen: Bool
     private let voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding
     static let contextualContextCollectionTimeout: TimeInterval = 5
 
@@ -156,7 +157,7 @@ final class AIChatContextualSheetCoordinator {
          duckAiFireModeStorageHandler: DuckAiNativeStorageHandling? = nil,
          debugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings(),
          pixelHandler: AIChatContextualModePixelFiring = AIChatContextualModePixelHandler(),
-         presentsFullScreen: Bool = false,
+         presentStandaloneFullScreen: Bool = false,
          voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding = DuckAIVoiceShortcutFeature()) {
         self.voiceShortcutFeature = voiceShortcutFeature
         self.voiceSearchHelper = voiceSearchHelper
@@ -173,7 +174,7 @@ final class AIChatContextualSheetCoordinator {
         self.duckAiFireModeStorageHandler = duckAiFireModeStorageHandler
         self.debugSettings = debugSettings
         self.pixelHandler = pixelHandler
-        self.presentsFullScreen = presentsFullScreen
+        self.presentStandaloneFullScreen = presentStandaloneFullScreen
         self.sessionState = AIChatContextualChatSessionState(
             aiChatSettings: aiChatSettings,
             pixelHandler: pixelHandler,
@@ -356,7 +357,7 @@ private extension AIChatContextualSheetCoordinator {
             featureFlagger: featureFlagger,
             persistentUTIHost: persistentUTIHost,
             suggestionsReader: suggestionsReader,
-            presentsFullScreen: presentsFullScreen
+            presentStandaloneFullScreen: presentStandaloneFullScreen
         )
         sheetVC.delegate = self
         sheetViewController = sheetVC

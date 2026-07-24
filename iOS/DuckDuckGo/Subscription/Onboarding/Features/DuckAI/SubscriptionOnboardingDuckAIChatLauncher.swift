@@ -74,7 +74,7 @@ final class SubscriptionOnboardingDuckAIChatLauncher {
             pageContextHandler: SubscriptionOnboardingNoOpPageContextHandler(),
             tabURLPublishers: AIChatTabURLPublishers(originating: Just<URL?>(nil).eraseToAnyPublisher(),
                                                       didFinish: Just<URL?>(nil).eraseToAnyPublisher()),
-            presentsFullScreen: true,
+            presentStandaloneFullScreen: true,
             voiceShortcutFeature: SubscriptionOnboardingNoOpVoiceShortcutFeature()
         )
         coordinator.delegate = delegate

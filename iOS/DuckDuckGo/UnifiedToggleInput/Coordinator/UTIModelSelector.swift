@@ -19,12 +19,17 @@
 
 import AIChat
 import Core
+import Subscription
 import UIKit
+import os.log
 
-/// Owns the omnibar UTI's model / reasoning selection: the picker menus, the chip/reasoning view
-/// presentation, and (added incrementally) the selection + subscription-gating decisions. It reads
-/// the model state off the shared `UTIModelStore` / `UTIToolsController` and pushes menu + label
-/// updates through a `ViewSurface` so the view layer just renders.
+/// Owns the omnibar UTI's model / reasoning selection: the picker menus + chip presentation, the
+/// selection handlers, and the subscription-gating decisions (including the transient "picked a
+/// gated model/mode, retry once it becomes accessible" latches). It owns its menu factories,
+/// reasoning-access resolver and upsell presenter; reads the model state off the shared
+/// `UTIModelStore` / `UTIToolsController`; and reaches the coordinator only through two live
+/// `Environment` reads and four `Callbacks` (the coordinator remains the owner of the shared state
+/// those touch — see the decomposition spec's behaviour-vs-state framing).
 @MainActor
 final class UTIModelSelector {
 
@@ -37,32 +42,187 @@ final class UTIModelSelector {
         let setReasoningPickerMenu: (UIMenu?) -> Void
     }
 
+    /// Cross-cutting coordinator state read live at decision time (never captured).
+    struct Environment {
+        let isDuckAISurfaceForAttribution: () -> Bool
+        let hasSubmittedPrompt: () -> Bool
+    }
+
+    /// Coordinator-owned effects a selection triggers. `onModelsUpdated` re-enters the coordinator's
+    /// reconcile hub (which calls `applyPendingGated*` back here); `onModelApplied` lets the
+    /// coordinator push the change to the active chat's frontend bridge.
+    struct Callbacks {
+        let onModelsUpdated: () -> Void
+        let onUserChoiceRecorded: () -> Void
+        let clearSubmitRecoveryBlock: () -> Void
+        let onModelApplied: (String) -> Void
+    }
+
     private let modelStore: UTIModelStore
     private let toolsController: UTIToolsController
-    private let modelMenuFactory: UnifiedToggleInputModelMenuFactory
-    private let reasoningMenuFactory: UnifiedToggleInputReasoningMenuFactory
+    private let pixelReporter: UTIPixelReporter
     private let view: ViewSurface
+    private let environment: Environment
+    private let callbacks: Callbacks
 
-    // Selection routing still lives in the coordinator at this step; the menu actions call back out
-    // through these. They are removed once the selection handlers move into this type.
-    private let onModelChosen: (String) -> Void
-    private let onReasoningChosen: (AIChatReasoningMode) -> Void
+    private let modelMenuFactory = UnifiedToggleInputModelMenuFactory()
+    private let reasoningMenuFactory = UnifiedToggleInputReasoningMenuFactory()
+    private let reasoningAccessResolver: ReasoningModeAccessResolving = ReasoningModeAccessResolver()
+    private let subscriptionUpsellPresenter: DuckAISubscriptionUpselling = DuckAISubscriptionUpsellPresenter()
+
+    private var pendingGatedModelId: String?
+    private var pendingGatedReasoningSelection: (modelId: String, mode: AIChatReasoningMode)?
 
     init(modelStore: UTIModelStore,
          toolsController: UTIToolsController,
-         modelMenuFactory: UnifiedToggleInputModelMenuFactory,
-         reasoningMenuFactory: UnifiedToggleInputReasoningMenuFactory,
+         pixelReporter: UTIPixelReporter,
          view: ViewSurface,
-         onModelChosen: @escaping (String) -> Void,
-         onReasoningChosen: @escaping (AIChatReasoningMode) -> Void) {
+         environment: Environment,
+         callbacks: Callbacks) {
         self.modelStore = modelStore
         self.toolsController = toolsController
-        self.modelMenuFactory = modelMenuFactory
-        self.reasoningMenuFactory = reasoningMenuFactory
+        self.pixelReporter = pixelReporter
         self.view = view
-        self.onModelChosen = onModelChosen
-        self.onReasoningChosen = onReasoningChosen
+        self.environment = environment
+        self.callbacks = callbacks
     }
+
+    // MARK: - Model selection
+
+    func handleModelSelection(_ modelId: String) {
+        guard let model = modelStore.models.first(where: { $0.id == modelId }) else {
+            return
+        }
+
+        if model.entityHasAccess {
+            let isNewSelection = modelId != modelStore.persistedModelId
+            pendingGatedModelId = nil
+            // Supported model picked in the native picker — the recovery card's reason to block
+            // submit is gone, so drop the block (no-op when it wasn't set).
+            callbacks.clearSubmitRecoveryBlock()
+            updateSelectedModel(modelId)
+            if isNewSelection {
+                pixelReporter.reportModelSelected(modelId: modelId)
+            }
+            callbacks.onModelApplied(modelId)
+        } else {
+            if routeGatedModelSelection(model) {
+                pendingGatedModelId = modelId
+            }
+            refreshModelPickerMenuAfterRejectedSelection()
+        }
+    }
+
+    func updateSelectedModel(_ modelId: String) {
+        modelStore.updateSelectedModel(modelId, isNewChatContext: !environment.hasSubmittedPrompt())
+        callbacks.onModelsUpdated()
+        callbacks.onUserChoiceRecorded()
+    }
+
+    @discardableResult
+    private func routeGatedModelSelection(_ model: AIChatModel) -> Bool {
+        guard let requiredPublicTier = model.lowestPublicAccessTier else {
+            Logger.unifiedInputState.debug("Gated model has no public access tier: \(model.id, privacy: .public)")
+            return false
+        }
+
+        return subscriptionUpsellPresenter.routeGatedSelection(
+            requiredTier: requiredPublicTier,
+            userTier: modelStore.subscriptionState.userTier,
+            source: .modelPicker,
+            isAITabState: environment.isDuckAISurfaceForAttribution()
+        )
+    }
+
+    /// Retries a previously-gated model selection once the model has become accessible (e.g. after
+    /// purchase); driven from the coordinator's models-updated reconcile hub.
+    @discardableResult
+    func applyPendingGatedModelSelectionIfPossible() -> Bool {
+        guard let modelId = pendingGatedModelId,
+              modelStore.models.first(where: { $0.id == modelId })?.entityHasAccess == true else {
+            return false
+        }
+
+        let isNewSelection = modelId != modelStore.persistedModelId
+        pendingGatedModelId = nil
+        // Mirror the direct-selection path: the gated model in the recovery-card
+        // is now accessible (post-purchase), so drop the recovery-card submit block.
+        callbacks.clearSubmitRecoveryBlock()
+        updateSelectedModel(modelId)
+        if isNewSelection {
+            pixelReporter.reportModelSelected(modelId: modelId)
+        }
+        callbacks.onModelApplied(modelId)
+        return true
+    }
+
+    // MARK: - Reasoning selection
+
+    func updateSelectedReasoningMode(_ mode: AIChatReasoningMode) {
+        modelStore.updateSelectedReasoningMode(mode)
+        updateReasoningPicker()
+        callbacks.onUserChoiceRecorded()
+    }
+
+    func handleReasoningModeSelection(_ mode: AIChatReasoningMode) {
+        guard let selectedModel = modelStore.selectedModel else { return }
+        guard let requiredPublicTier = requiredPublicTier(for: mode, model: selectedModel) else {
+            pendingGatedReasoningSelection = nil
+            updateSelectedReasoningMode(mode)
+            pixelReporter.reportReasoningEffortSelected(mode: mode)
+            return
+        }
+
+        if canSelectReasoningModeRequiringTier(requiredPublicTier) {
+            pendingGatedReasoningSelection = nil
+            updateSelectedReasoningMode(mode)
+            pixelReporter.reportReasoningEffortSelected(mode: mode)
+        } else {
+            if routeGatedReasoningModeSelection(requiredPublicTier: requiredPublicTier) {
+                pendingGatedReasoningSelection = (selectedModel.id, mode)
+            }
+            refreshReasoningPickerMenuAfterRejectedSelection()
+        }
+    }
+
+    /// Retries a previously-gated reasoning selection once it has become accessible; driven from the
+    /// coordinator's models-updated reconcile hub.
+    func applyPendingGatedReasoningSelectionIfPossible() {
+        guard let pendingSelection = pendingGatedReasoningSelection else { return }
+        guard let selectedModel = modelStore.selectedModel, selectedModel.id == pendingSelection.modelId else {
+            pendingGatedReasoningSelection = nil
+            return
+        }
+
+        if let requiredPublicTier = requiredPublicTier(for: pendingSelection.mode, model: selectedModel),
+           !canSelectReasoningModeRequiringTier(requiredPublicTier) {
+            return
+        }
+
+        pendingGatedReasoningSelection = nil
+        updateSelectedReasoningMode(pendingSelection.mode)
+        pixelReporter.reportReasoningEffortSelected(mode: pendingSelection.mode)
+    }
+
+    private func requiredPublicTier(for mode: AIChatReasoningMode, model: AIChatModel) -> AIChatModelPublicAccessTier? {
+        reasoningAccessResolver.requiredPublicTier(for: mode, model: model)
+    }
+
+    private func canSelectReasoningModeRequiringTier(_ requiredTier: AIChatModelPublicAccessTier) -> Bool {
+        reasoningAccessResolver.canSelect(modeRequiring: requiredTier, userTier: modelStore.subscriptionState.userTier)
+    }
+
+    @discardableResult
+    private func routeGatedReasoningModeSelection(requiredPublicTier: AIChatModelPublicAccessTier) -> Bool {
+        subscriptionUpsellPresenter.routeGatedSelection(
+            requiredTier: requiredPublicTier,
+            userTier: modelStore.subscriptionState.userTier,
+            source: .reasoningPicker,
+            isAITabState: environment.isDuckAISurfaceForAttribution()
+        )
+    }
+
+    // MARK: - Menus
 
     /// The reasoning mode to show as selected, resolved against the current model's supported modes.
     var resolvedSelectedReasoningMode: AIChatReasoningMode? {
@@ -81,7 +241,7 @@ final class UTIModelSelector {
             plusSectionTitle: UserText.aiChatPlusModelsSectionHeader,
             proSectionTitle: UserText.aiChatProModelsSectionHeader
         ) { [weak self] modelId in
-            self?.onModelChosen(modelId)
+            self?.handleModelSelection(modelId)
         })
     }
 
@@ -107,7 +267,19 @@ final class UTIModelSelector {
             model: selectedModel,
             selectedMode: resolvedSelectedReasoningMode
         ) { [weak self] mode in
-            self?.onReasoningChosen(mode)
+            self?.handleReasoningModeSelection(mode)
+        }
+    }
+
+    private func refreshModelPickerMenuAfterRejectedSelection() {
+        DispatchQueue.main.async { [weak self] in
+            self?.updateModelChipLabel()
+        }
+    }
+
+    private func refreshReasoningPickerMenuAfterRejectedSelection() {
+        DispatchQueue.main.async { [weak self] in
+            self?.updateReasoningPicker()
         }
     }
 }

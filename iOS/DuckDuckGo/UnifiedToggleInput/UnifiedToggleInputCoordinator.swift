@@ -271,8 +271,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private var modelSelector: UTIModelSelector!
     private var invalidAttachmentRecoveryTasks: [UUID: Task<Void, Never>] = [:]
     private var isContentOverlaySuppressed = false
-    private var pendingGatedModelId: String?
-    private var pendingGatedReasoningSelection: (modelId: String, mode: AIChatReasoningMode)?
     /// Forces the model chip visible mid-chat for the FE's `showModelPicker` flow; cleared on prompt
     /// submit or session reset.
     private var isModelPickerForcedVisible: Bool = false {
@@ -331,10 +329,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private var chatUpdatesCancellable: AnyCancellable?
     private let toolsController = UTIToolsController()
     private let toolsMenuFactory = UTIToolsMenuFactory()
-    private let modelMenuFactory = UnifiedToggleInputModelMenuFactory()
-    private let reasoningMenuFactory = UnifiedToggleInputReasoningMenuFactory()
-    private let reasoningAccessResolver: ReasoningModeAccessResolving = ReasoningModeAccessResolver()
-    private let subscriptionUpsellPresenter: DuckAISubscriptionUpselling = DuckAISubscriptionUpsellPresenter()
     private let attachmentPresenter = UnifiedToggleInputAttachmentPresenter()
 
     private let intentSubject = PassthroughSubject<UnifiedToggleInputIntent, Never>()
@@ -465,8 +459,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         modelSelector = UTIModelSelector(
             modelStore: modelStore,
             toolsController: toolsController,
-            modelMenuFactory: modelMenuFactory,
-            reasoningMenuFactory: reasoningMenuFactory,
+            pixelReporter: pixelReporter,
             view: .init(
                 setModelName: { [weak self] in self?.viewController.modelName = $0 },
                 setModelPickerMenu: { [weak self] in self?.viewController.modelPickerMenu = $0 },
@@ -474,8 +467,16 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                 setReasoningButtonHidden: { [weak self] in self?.viewController.isReasoningButtonHidden = $0 },
                 setReasoningPickerMenu: { [weak self] in self?.viewController.reasoningPickerMenu = $0 }
             ),
-            onModelChosen: { [weak self] in self?.handleModelSelection($0) },
-            onReasoningChosen: { [weak self] in self?.handleReasoningModeSelection($0) }
+            environment: .init(
+                isDuckAISurfaceForAttribution: { [weak self] in self?.isDuckAISurfaceForAttribution ?? false },
+                hasSubmittedPrompt: { [weak self] in self?.hasSubmittedPrompt ?? false }
+            ),
+            callbacks: .init(
+                onModelsUpdated: { [weak self] in self?.handleModelsUpdated() },
+                onUserChoiceRecorded: { [weak self] in self?.recordUserChoiceToStore() },
+                clearSubmitRecoveryBlock: { [weak self] in self?.isSubmitBlockedByRecoveryCard = false },
+                onModelApplied: { [weak self] in self?.notifyFrontendOfActiveChatModelChange($0) }
+            )
         )
         attachmentPresenter.pixelSurfaceProvider = { [weak self] in
             self?.pixelSurface ?? .addressBar
@@ -1325,9 +1326,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     func updateSelectedModel(_ modelId: String) {
-        modelStore.updateSelectedModel(modelId, isNewChatContext: isNewChatContext)
-        handleModelsUpdated()
-        recordUserChoiceToStore()
+        modelSelector.updateSelectedModel(modelId)
     }
 
     /// Tells the FE to switch the active chat's model via the `submitChangeModelAction` bridge push.
@@ -1369,126 +1368,15 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     func handleModelSelection(_ modelId: String) {
-        guard let model = modelStore.models.first(where: { $0.id == modelId }) else {
-            return
-        }
-
-        if model.entityHasAccess {
-            let isNewSelection = modelId != modelStore.persistedModelId
-            pendingGatedModelId = nil
-            // Supported model picked in the native picker — the recovery card's reason to block
-            // submit is gone, so drop the block (no-op when it wasn't set).
-            isSubmitBlockedByRecoveryCard = false
-            updateSelectedModel(modelId)
-            if isNewSelection {
-                fireModelSelectedPixel(modelId: modelId)
-            }
-            notifyFrontendOfActiveChatModelChange(modelId)
-        } else {
-            if routeGatedModelSelection(model) {
-                pendingGatedModelId = modelId
-            }
-            refreshModelPickerMenuAfterRejectedSelection()
-        }
-    }
-
-    @discardableResult
-    private func routeGatedModelSelection(_ model: AIChatModel) -> Bool {
-        guard let requiredPublicTier = model.lowestPublicAccessTier else {
-            Logger.unifiedInputState.debug("Gated model has no public access tier: \(model.id, privacy: .public)")
-            return false
-        }
-
-        return subscriptionUpsellPresenter.routeGatedSelection(
-            requiredTier: requiredPublicTier,
-            userTier: subscriptionState.userTier,
-            source: .modelPicker,
-            isAITabState: isDuckAISurfaceForAttribution
-        )
-    }
-
-    private func refreshModelPickerMenuAfterRejectedSelection() {
-        DispatchQueue.main.async { [weak self] in
-            self?.modelSelector.updateModelChipLabel()
-        }
-    }
-
-    private func refreshReasoningPickerMenuAfterRejectedSelection() {
-        DispatchQueue.main.async { [weak self] in
-            self?.modelSelector.updateReasoningPicker()
-        }
-    }
-
-    @discardableResult
-    private func applyPendingGatedModelSelectionIfPossible() -> Bool {
-        guard let modelId = pendingGatedModelId,
-              modelStore.models.first(where: { $0.id == modelId })?.entityHasAccess == true else {
-            return false
-        }
-
-        let isNewSelection = modelId != modelStore.persistedModelId
-        pendingGatedModelId = nil
-        // Mirror the direct-selection path: the gated model in the recovery-card
-        // is now accessible (post-purchase), so drop the recovery-card submit block.
-        isSubmitBlockedByRecoveryCard = false
-        updateSelectedModel(modelId)
-        if isNewSelection {
-            fireModelSelectedPixel(modelId: modelId)
-        }
-        notifyFrontendOfActiveChatModelChange(modelId)
-        return true
-    }
-
-    private func applyPendingGatedReasoningSelectionIfPossible() {
-        guard let pendingSelection = pendingGatedReasoningSelection else { return }
-        guard let selectedModel, selectedModel.id == pendingSelection.modelId else {
-            pendingGatedReasoningSelection = nil
-            return
-        }
-
-        if let requiredPublicTier = requiredPublicTier(for: pendingSelection.mode, model: selectedModel),
-           !canSelectReasoningModeRequiringTier(requiredPublicTier) {
-            return
-        }
-
-        pendingGatedReasoningSelection = nil
-        updateSelectedReasoningMode(pendingSelection.mode)
-        fireReasoningEffortSelectedPixel(mode: pendingSelection.mode)
+        modelSelector.handleModelSelection(modelId)
     }
 
     func updateSelectedReasoningMode(_ mode: AIChatReasoningMode) {
-        modelStore.updateSelectedReasoningMode(mode)
-        modelSelector.updateReasoningPicker()
-        recordUserChoiceToStore()
+        modelSelector.updateSelectedReasoningMode(mode)
     }
 
     func handleReasoningModeSelection(_ mode: AIChatReasoningMode) {
-        guard let selectedModel else { return }
-        guard let requiredPublicTier = requiredPublicTier(for: mode, model: selectedModel) else {
-            pendingGatedReasoningSelection = nil
-            updateSelectedReasoningMode(mode)
-            fireReasoningEffortSelectedPixel(mode: mode)
-            return
-        }
-
-        if canSelectReasoningModeRequiringTier(requiredPublicTier) {
-            pendingGatedReasoningSelection = nil
-            updateSelectedReasoningMode(mode)
-            fireReasoningEffortSelectedPixel(mode: mode)
-        } else {
-            if routeGatedReasoningModeSelection(requiredPublicTier: requiredPublicTier) {
-                pendingGatedReasoningSelection = (selectedModel.id, mode)
-            }
-            refreshReasoningPickerMenuAfterRejectedSelection()
-        }
-    }
-
-    private func fireModelSelectedPixel(modelId: String) {
-        pixelReporter.reportModelSelected(modelId: modelId)
-    }
-
-    private func fireReasoningEffortSelectedPixel(mode: AIChatReasoningMode) {
-        pixelReporter.reportReasoningEffortSelected(mode: mode)
+        modelSelector.handleReasoningModeSelection(mode)
     }
 
     private func fireModelPickerShown() {
@@ -1497,24 +1385,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     private func fireReasoningPickerShown() {
         pixelReporter.reportReasoningPickerShown()
-    }
-    
-    private func requiredPublicTier(for mode: AIChatReasoningMode, model: AIChatModel) -> AIChatModelPublicAccessTier? {
-        reasoningAccessResolver.requiredPublicTier(for: mode, model: model)
-    }
-
-    private func canSelectReasoningModeRequiringTier(_ requiredTier: AIChatModelPublicAccessTier) -> Bool {
-        reasoningAccessResolver.canSelect(modeRequiring: requiredTier, userTier: subscriptionState.userTier)
-    }
-
-    @discardableResult
-    private func routeGatedReasoningModeSelection(requiredPublicTier: AIChatModelPublicAccessTier) -> Bool {
-        return subscriptionUpsellPresenter.routeGatedSelection(
-            requiredTier: requiredPublicTier,
-            userTier: subscriptionState.userTier,
-            source: .reasoningPicker,
-            isAITabState: isDuckAISurfaceForAttribution
-        )
     }
 
     func selectTool(_ tool: AIChatRAGTool) {
@@ -2253,10 +2123,10 @@ private extension UnifiedToggleInputCoordinator {
         removeUnsupportedAttachmentsForSelectedModel()
         modelSelector.updateModelChipLabel()
         modelSelector.updateReasoningPicker()
-        if applyPendingGatedModelSelectionIfPossible() {
+        if modelSelector.applyPendingGatedModelSelectionIfPossible() {
             return
         }
-        applyPendingGatedReasoningSelectionIfPossible()
+        modelSelector.applyPendingGatedReasoningSelectionIfPossible()
         updateImageButtonVisibility()
         refreshToolsPresentation()
     }

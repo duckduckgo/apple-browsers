@@ -67,6 +67,52 @@ final class SERPSettingsProvidingTests: XCTestCase {
         XCTAssertEqual(provider.serpSettingValue(forKey: SERPSettingsConstants.hideAIGeneratedImagesKey), "1")
     }
 
+    // MARK: - Safe Search
+
+    func testSafeSearch_returnsDefault_whenKeyAbsent() {
+        XCTAssertEqual(provider.safeSearch, .moderate)
+        XCTAssertNil(provider.serpSettingValue(forKey: SERPSettingsConstants.safeSearch))
+    }
+
+    func testSettingSafeSearch_persistsRawEncoding() {
+        provider.safeSearch = .strict
+        XCTAssertEqual(provider.safeSearch, .strict)
+        XCTAssertEqual(provider.serpSettingValue(forKey: SERPSettingsConstants.safeSearch), "1")
+
+        provider.safeSearch = .off
+        XCTAssertEqual(provider.safeSearch, .off)
+        XCTAssertEqual(provider.serpSettingValue(forKey: SERPSettingsConstants.safeSearch), "-2")
+    }
+
+    func testSettingSafeSearchToDefault_removesKey() {
+        provider.safeSearch = .off
+        XCTAssertNotNil(provider.serpSettingValue(forKey: SERPSettingsConstants.safeSearch))
+
+        provider.safeSearch = .moderate // the default, which has no wire value (stored as key-absence)
+        XCTAssertNil(provider.serpSettingValue(forKey: SERPSettingsConstants.safeSearch))
+        XCTAssertEqual(provider.safeSearch, .moderate)
+    }
+
+    func testUnrecognizedSafeSearchRawValue_fallsBackToDefault() {
+        provider.setSERPSetting("99", forKey: SERPSettingsConstants.safeSearch)
+        XCTAssertEqual(provider.safeSearch, .moderate)
+    }
+
+    func testSafeSearch_recognizesModerateWireValue() {
+        provider.setSERPSetting("-1", forKey: SERPSettingsConstants.safeSearch)
+        XCTAssertEqual(provider.safeSearch, .moderate)
+    }
+
+    func testSafeSearchMergeWrite_preservesSiblingKeys() {
+        provider.searchAssistFrequency = .often   // kbe "3"
+        provider.safeSearch = .strict             // kp "1"
+
+        XCTAssertEqual(provider.serpSettingValue(forKey: SERPSettingsConstants.searchAssistKey), "3")
+        XCTAssertEqual(provider.serpSettingValue(forKey: SERPSettingsConstants.safeSearch), "1")
+        XCTAssertEqual(provider.searchAssistFrequency, .often)
+        XCTAssertEqual(provider.safeSearch, .strict)
+    }
+
     // MARK: - Merge does not clobber siblings
 
     func testMergeWrite_preservesSiblingKey() {
@@ -132,15 +178,29 @@ final class SERPSettingsProvidingTests: XCTestCase {
         let snapshot = provider.currentNativeSettingsSnapshot()
         XCTAssertEqual(snapshot[SERPSettingsConstants.searchAssistKey], "2")
         XCTAssertEqual(snapshot[SERPSettingsConstants.hideAIGeneratedImagesKey], "-1")
+        XCTAssertEqual(snapshot[SERPSettingsConstants.safeSearch], "-1")
     }
 
     func testSnapshot_reflectsStoredValues() {
         provider.searchAssistFrequency = .often
         provider.hideAIGeneratedImages = true
+        provider.safeSearch = .strict
 
         let snapshot = provider.currentNativeSettingsSnapshot()
         XCTAssertEqual(snapshot[SERPSettingsConstants.searchAssistKey], "3")
         XCTAssertEqual(snapshot[SERPSettingsConstants.hideAIGeneratedImagesKey], "1")
+        XCTAssertEqual(snapshot[SERPSettingsConstants.safeSearch], "1")
+    }
+
+    func testSnapshot_includesSafeSearch_atEachValue() {
+        provider.safeSearch = .off
+        XCTAssertEqual(provider.currentNativeSettingsSnapshot()[SERPSettingsConstants.safeSearch], "-2")
+
+        provider.safeSearch = .strict
+        XCTAssertEqual(provider.currentNativeSettingsSnapshot()[SERPSettingsConstants.safeSearch], "1")
+
+        provider.safeSearch = .moderate
+        XCTAssertEqual(provider.currentNativeSettingsSnapshot()[SERPSettingsConstants.safeSearch], "-1")
     }
 
     // MARK: - Change notification

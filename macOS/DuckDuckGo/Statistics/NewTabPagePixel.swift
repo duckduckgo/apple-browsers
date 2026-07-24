@@ -161,6 +161,11 @@ enum NewTabPagePixel: PixelKitEvent {
     case aiChatRecentChatSelectedMouse
     case aiChatRecentChatSelectedKeyboard
 
+    case ntpAiChatRecentChatDeleteButtonClicked
+    case ntpAiChatRecentChatDeleteConfirmed
+    case ntpAiChatRecentChatDeleteCancelled
+    case ntpAutocompleteResultDeleted
+
     // Parameter duration: Load time in **seconds** (will be converted to milliseconds in pixel).
     case newTabPageLoadingTime(duration: TimeInterval)
 
@@ -199,6 +204,10 @@ enum NewTabPagePixel: PixelKitEvent {
         case .aiChatRecentChatSelectedPinnedKeyboard: return "new-tab-page_aichat_recent_chat_selected_pinned_keyboard"
         case .aiChatRecentChatSelectedMouse: return "new-tab-page_aichat_recent_chat_selected_mouse"
         case .aiChatRecentChatSelectedKeyboard: return "new-tab-page_aichat_recent_chat_selected_keyboard"
+        case .ntpAiChatRecentChatDeleteButtonClicked: return "ntp_aichat_recent_chat_delete_button_clicked"
+        case .ntpAiChatRecentChatDeleteConfirmed: return "ntp_aichat_recent_chat_delete_confirmed"
+        case .ntpAiChatRecentChatDeleteCancelled: return "ntp_aichat_recent_chat_delete_cancelled"
+        case .ntpAutocompleteResultDeleted: return "ntp_autocomplete_result_deleted"
         case .newTabPageLoadingTime: return "new-tab-page_loading_time"
         case .nextStepsCardClicked(let card, _, _, _, _): return "new-tab-page_next-steps_\(card)_clicked"
         case .nextStepsCardDismissed(let card, _, _, _, _): return "new-tab-page_next-steps_\(card)_dismissed"
@@ -258,6 +267,10 @@ enum NewTabPagePixel: PixelKitEvent {
                 .aiChatRecentChatSelectedPinnedKeyboard,
                 .aiChatRecentChatSelectedMouse,
                 .aiChatRecentChatSelectedKeyboard,
+                .ntpAiChatRecentChatDeleteButtonClicked,
+                .ntpAiChatRecentChatDeleteConfirmed,
+                .ntpAiChatRecentChatDeleteCancelled,
+                .ntpAutocompleteResultDeleted,
                 .nextStepsCardShown:
             return nil
         }
@@ -336,6 +349,10 @@ enum NewTabPagePixel: PixelKitEvent {
                 .aiChatRecentChatSelectedPinnedKeyboard,
                 .aiChatRecentChatSelectedMouse,
                 .aiChatRecentChatSelectedKeyboard,
+                .ntpAiChatRecentChatDeleteButtonClicked,
+                .ntpAiChatRecentChatDeleteConfirmed,
+                .ntpAiChatRecentChatDeleteCancelled,
+                .ntpAutocompleteResultDeleted,
                 .newTabPageLoadingTime:
             return [.pixelSource]
         case .nextStepsCardClicked,

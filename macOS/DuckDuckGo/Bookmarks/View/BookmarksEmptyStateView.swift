@@ -58,11 +58,15 @@ public struct BookmarksEmptyStateView: View {
     let onImportClicked: () -> Void
     let onSyncClicked: () -> Void
 
+    private var isAppRebranded: Bool {
+        DesignSystemRebrand.isAppRebranded()
+    }
+
     public var body: some View {
         VStack(spacing: 16) {
             Spacer()
 
-            if let image = content.image(isAppRebranded: DesignSystemRebrand.isAppRebranded()) {
+            if let image = content.image(isAppRebranded: isAppRebranded) {
                 Image(nsImage: image)
                     .accessibilityIdentifier(BookmarksEmptyStateContent.imageAccessibilityIdentifier)
             }
@@ -101,9 +105,9 @@ public struct BookmarksEmptyStateView: View {
                     }
                     .buttonStyle(DynamicWidthButtonStyle(
                         maxWidth: maxButtonWidth > 0 ? maxButtonWidth : nil,
-                        defaultBackgroundColor: .buttonsPrimaryDefault,
-                        pressedBackgroundColor: .buttonsPrimaryPressed,
-                        textColor: .buttonsPrimaryText
+                        defaultBackgroundColor: isAppRebranded ? .accentPrimary : .buttonsPrimaryDefault,
+                        pressedBackgroundColor: isAppRebranded ? .accentSecondary : .buttonsPrimaryPressed,
+                        textColor: isAppRebranded ? .accentContentPrimary : .buttonsPrimaryText
                     ))
                 }
             }

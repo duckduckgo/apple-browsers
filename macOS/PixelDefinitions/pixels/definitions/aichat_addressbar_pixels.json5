@@ -305,6 +305,20 @@
         "suffixes": ["daily_count"],
         "parameters": ["appVersion", "pixelSource", "channel"]
     },
+    "m_mac_aichat_single_delete_successful": {
+        "description": "Fired when a single chat deletion (address bar or New Tab Page) completes successfully",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_aichat_single_delete_failed": {
+        "description": "Fired when a single chat deletion (address bar or New Tab Page) fails",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
     "m_mac_aichat_view_all_chats_clicked": {
         "description": "Fired when user taps 'View all chats' from the native address bar omnibar",
         "owners": ["jotaemepereira"],

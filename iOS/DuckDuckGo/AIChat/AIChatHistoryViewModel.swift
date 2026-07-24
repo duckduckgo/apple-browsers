@@ -204,6 +204,10 @@ final class AIChatHistoryViewModel: ObservableObject {
         delegate?.viewModelDidRequestOpenChat(chatId: chatId)
     }
 
+    func openChatProtection() {
+        delegate?.viewModelDidRequestChatProtection()
+    }
+
     func deleteChat(chatId: String) {
         // Sheet only surfaces persistent chats, so never fire-mode.
         guard let fireExecutor else { return }
@@ -369,6 +373,9 @@ protocol AIChatHistoryViewModelDelegate: AnyObject {
 
     /// Dismiss the sheet and open `chatId` in Duck.ai.
     func viewModelDidRequestOpenChat(chatId: String)
+
+    /// Dismiss the sheet and open the Duck.ai chat protection page.
+    func viewModelDidRequestChatProtection()
 
     /// A chat export finished writing to disk. Present the "Download complete" toast for
     /// `filename` with a "Show" action that dismisses the sheet and opens the in-app

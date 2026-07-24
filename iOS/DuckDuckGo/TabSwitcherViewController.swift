@@ -298,14 +298,14 @@ class TabSwitcherViewController: UIViewController {
     }
 
     private func makeChrome() -> TabSwitcherChrome {
-        let isFloating = floatingUIManaging.isFloatingUIEnabled
-        let chrome = TabSwitcherChromeFactory.makeChrome(isFloatingUIEnabled: isFloating,
+        let chrome = TabSwitcherChromeFactory.makeChrome(isFloatingTabSwitcherEnabled: floatingUIManaging.isFloatingTabSwitcherEnabled,
                                                          appSettings: appSettings)
         return chrome
     }
 
     private func setupPagingScrollView() {
         let isFireModeEnabled = fireModeCapability.isFireModeEnabled
+        let isFloatingUIEnabled = floatingUIManaging.isFloatingUIEnabled
 
         pagingScrollView = UIScrollView()
         pagingScrollView.isPagingEnabled = isFireModeEnabled
@@ -367,6 +367,7 @@ class TabSwitcherViewController: UIViewController {
                 tabSwitcherSettings: tabSwitcherSettings,
                 trackerCountViewModel: nil,
                 isFireModeEnabled: isFireModeEnabled,
+                isFloatingUIEnabled: isFloatingUIEnabled,
                 duckAIGridContentProvider: duckAIGridContentProvider,
                 duckAIVoiceSessionTracker: duckAIVoiceSessionTracker)
             firePageController?.pageDelegate = self

@@ -22,6 +22,7 @@ import Suggestions
 import Common
 import FoundationExtensions
 import AIChat
+import History
 import os.log
 import PixelKit
 
@@ -30,9 +31,14 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
     private let promptHandler: AIChatPromptHandler
     private let windowControllersManager: WindowControllersManagerProtocol & AIChatTabManaging
     private let tabsPreferences: TabsPreferences
+    private let historyCoordinator: HistoryCoordinating
+    private let aiChatDeleter: AIChatDeleting
     private let isShiftPressed: () -> Bool
     private let isCommandPressed: () -> Bool
     private let firePixel: (PixelKitEvent) -> Void
+    /// Deletion-flow pixels fire at `.dailyAndCount`, matching the address-bar delete pixels.
+    private let fireDailyCountPixel: (PixelKitEvent) -> Void
+    private let presentDeleteConfirmation: @MainActor (String, NSWindow?) async -> Bool
 
     /// Called after the Customize Responses modal closes or the toggle is set, so the NTP config
     /// (sub-label + toggle state) is re-pushed to open New Tab Pages.
@@ -44,15 +50,23 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
     init(promptHandler: AIChatPromptHandler = AIChatPromptHandler.shared,
          windowControllersManager: WindowControllersManagerProtocol & AIChatTabManaging,
          tabsPreferences: TabsPreferences,
+         historyCoordinator: HistoryCoordinating,
+         aiChatDeleter: AIChatDeleting,
          isShiftPressed: @escaping () -> Bool = { NSApp?.isShiftPressed ?? false },
          isCommandPressed: @escaping () -> Bool = { NSApp?.isCommandPressed ?? false },
-         firePixel: @escaping (PixelKitEvent) -> Void = { PixelKit.fire($0, frequency: .dailyAndStandard) }) {
+         firePixel: @escaping (PixelKitEvent) -> Void = { PixelKit.fire($0, frequency: .dailyAndStandard) },
+         fireDailyCountPixel: @escaping (PixelKitEvent) -> Void = { PixelKit.fire($0, frequency: .dailyAndCount, includeAppVersionParameter: true) },
+         presentDeleteConfirmation: @escaping @MainActor (String, NSWindow?) async -> Bool = NewTabPageOmnibarActionsHandler.presentNativeDeleteConfirmation) {
         self.promptHandler = promptHandler
         self.windowControllersManager = windowControllersManager
         self.tabsPreferences = tabsPreferences
+        self.historyCoordinator = historyCoordinator
+        self.aiChatDeleter = aiChatDeleter
         self.isShiftPressed = isShiftPressed
         self.isCommandPressed = isCommandPressed
         self.firePixel = firePixel
+        self.fireDailyCountPixel = fireDailyCountPixel
+        self.presentDeleteConfirmation = presentDeleteConfirmation
     }
 
     func submitSearch(_ term: String, target: NewTabPage.NewTabPageDataModel.OpenTarget) {
@@ -282,6 +296,47 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
         case .newWindow:
             return .newWindow(selected: tabsPreferences.switchToNewTabWhenOpened)
         }
+    }
+
+    @MainActor
+    func confirmDeleteAiChat(chatId: String, title: String, sourceWindow: NSWindow?) async -> Bool {
+        fireDailyCountPixel(NewTabPagePixel.ntpAiChatRecentChatDeleteButtonClicked)
+
+        guard await presentDeleteConfirmation(title, sourceWindow) else {
+            fireDailyCountPixel(NewTabPagePixel.ntpAiChatRecentChatDeleteCancelled)
+            return false
+        }
+
+        fireDailyCountPixel(NewTabPagePixel.ntpAiChatRecentChatDeleteConfirmed)
+        // No wait needed: the native delete is synchronous and the NTP re-fetches via omnibar_getAiChats.
+        aiChatDeleter.deleteChat(chatID: chatId)
+        return true
+    }
+
+    @MainActor
+    func removeSuggestion(_ url: String) {
+        guard let url = URL(string: url) else {
+            Logger.newTabPageOmnibar.error("removeSuggestion: invalid URL string")
+            return
+        }
+        fireDailyCountPixel(NewTabPagePixel.ntpAutocompleteResultDeleted)
+        historyCoordinator.removeUrlEntry(url, completion: nil)
+    }
+
+    /// Same dialog as the address-bar delete flow: a sheet on `sourceWindow`, or app-modal when nil.
+    @MainActor
+    static func presentNativeDeleteConfirmation(title: String, sourceWindow: NSWindow?) async -> Bool {
+        let alert = NSAlert.recentChatDeleteConfirmation(title: title)
+
+        let response: NSApplication.ModalResponse
+        if let sourceWindow {
+            response = await withCheckedContinuation { continuation in
+                alert.beginSheetModal(for: sourceWindow) { continuation.resume(returning: $0) }
+            }
+        } else {
+            response = await alert.runModal()
+        }
+        return response == .OK
     }
 
 }

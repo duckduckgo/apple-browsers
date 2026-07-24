@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import BrowserServicesKit
 import FeatureFlags
 import PixelKit
@@ -167,4 +168,8 @@ class DataClearingPreferencesTests: XCTestCase {
     }
 }
 
-extension MockAIChatHistoryCleaner: AIChatHistoryCleaning {}
+extension MockAIChatHistoryCleaner: @retroactive AIChatHistoryCleaning {
+    public func allChats() -> [DuckAiChat] {
+        allChatsStub.map { DuckAiChat(chatId: $0.chatId, title: $0.title, model: "", lastEdit: "", pinned: false) }
+    }
+}

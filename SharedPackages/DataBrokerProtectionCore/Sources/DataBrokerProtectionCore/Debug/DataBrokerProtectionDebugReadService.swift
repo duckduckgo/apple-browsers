@@ -19,6 +19,8 @@
 import Foundation
 
 public protocol DataBrokerProtectionDebugReadProviding {
+    var iOSRuntimeStatus: DBPDebugIOSRuntimeStatus? { get }
+
     var agentVersion: String { get }
     var schedulerStateString: String { get }
     var lastSchedulerTrigger: Date? { get }
@@ -30,6 +32,10 @@ public protocol DataBrokerProtectionDebugReadProviding {
     var lastBrokerJSONUpdateCheck: Date { get }
 
     func brokerProfileQueryData() throws -> [BrokerProfileQueryData]
+}
+
+public extension DataBrokerProtectionDebugReadProviding {
+    var iOSRuntimeStatus: DBPDebugIOSRuntimeStatus? { nil }
 }
 
 public struct DataBrokerProtectionDebugReadService {
@@ -50,12 +56,19 @@ public struct DataBrokerProtectionDebugReadService {
     }
 
     public func defaultEndpoints() -> [DebugAPIResponse.Endpoint] {
-        [
+        var endpoints: [DebugAPIResponse.Endpoint] = [
             .init(path: "/api/brokers/{broker}",
                   description: "Per-broker detail: scan & opt-out state with full history and extracted records. {broker} = broker url or name."),
             .init(path: "/api/events?since={iso8601}&limit={n}",
                   description: "History events across all brokers, oldest-first. 'since' tails new events; 'limit' defaults to \(Self.defaultLimit) and is capped at \(Self.maximumLimit).")
         ]
+
+        if provider.iOSRuntimeStatus != nil {
+            endpoints.insert(.init(path: "/api/runtime-status",
+                                   description: "iOS PIR profile state and Secure Vault readiness snapshot."), at: 0)
+        }
+
+        return endpoints
     }
 
     public static func clampedLimit(_ limit: Int?) -> Int {
@@ -64,6 +77,10 @@ public struct DataBrokerProtectionDebugReadService {
         }
 
         return min(limit, maximumLimit)
+    }
+
+    public func runtimeStatus() -> DBPDebugIOSRuntimeStatus? {
+        provider.iOSRuntimeStatus
     }
 
     public func snapshot() throws -> DebugSnapshot {

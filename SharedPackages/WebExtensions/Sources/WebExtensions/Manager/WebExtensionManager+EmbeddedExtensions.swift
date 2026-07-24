@@ -85,8 +85,27 @@ extension WebExtensionManager {
                 if shouldUpgrade(installed: installed, bundledVersion: bundledMetadata.version) {
                     Logger.webExtensions.info("⬆️ Upgrading embedded extension \(descriptor.type.rawValue): \(installed.version ?? "?") → \(bundledMetadata.version ?? "?")")
                     let oldVersion = installed.version
-                    try uninstallExtension(identifier: installed.uniqueIdentifier)
+                    let oldIdentifier = installed.uniqueIdentifier
+
+                    // Install the new version before removing the old one. The two versions have
+                    // distinct identifiers and can briefly coexist, so installing first means a
+                    // failed upgrade leaves the old version installed and working (installEmbeddedExtension
+                    // rolls back its own partial state on error), rather than uninstalling the old
+                    // version and being left with nothing when the new one fails to load.
                     try await installEmbeddedExtension(from: bundledURL, type: descriptor.type, requiresExtraction: bundledMetadata.requiresExtraction)
+
+                    // The new version is live. Remove the old one; a removal failure isn't fatal
+                    // (the new version is already installed) so log and continue instead of aborting.
+                    do {
+                        try uninstallExtension(identifier: oldIdentifier)
+                    } catch {
+                        Logger.webExtensions.error("⚠️ Upgraded \(descriptor.type.rawValue) but failed to remove old version '\(oldIdentifier)': \(error.localizedDescription)")
+                    }
+
+                    // Uninstalling the old version disabled scriptlet handling for the type (it's
+                    // keyed by type, not identifier), so re-enable it for the now-current version.
+                    await scriptletCoordinator?.onExtensionEnabled(for: descriptor.type)
+
                     pixelFiring.fire(.embeddedUpgraded(type: descriptor.type, fromVersion: oldVersion, toVersion: bundledMetadata.version))
                 } else {
                     Logger.webExtensions.debug("👌 Embedded extension \(descriptor.type.rawValue) is up to date (v\(installed.version ?? "?"))")

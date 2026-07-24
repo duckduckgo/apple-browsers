@@ -25,7 +25,7 @@ import Testing
 @Suite("iOS Monthly Free Trial Decider")
 struct IOSMonthlyFreeTrialDeciderTests {
 
-    @Test("Control cohort keeps the monthly free trial (current behavior)")
+    @Test("Control cohort keeps the monthly free trial (current behavior)", .timeLimit(.minutes(1)))
     func controlCohortOffersMonthlyFreeTrial() {
         let sut = IOSMonthlyFreeTrialDecider(
             featureFlagger: PrivacyConfig.MockFeatureFlagger(resolveCohortStub: FeatureFlag.MonthlyFreeTrialExperimentCohort.control)
@@ -34,7 +34,7 @@ struct IOSMonthlyFreeTrialDeciderTests {
         #expect(sut.shouldOfferMonthlyFreeTrial() == true)
     }
 
-    @Test("Treatment cohort removes the monthly free trial")
+    @Test("Treatment cohort removes the monthly free trial", .timeLimit(.minutes(1)))
     func treatmentCohortDoesNotOfferMonthlyFreeTrial() {
         let sut = IOSMonthlyFreeTrialDecider(
             featureFlagger: PrivacyConfig.MockFeatureFlagger(resolveCohortStub: FeatureFlag.MonthlyFreeTrialExperimentCohort.treatment)
@@ -43,7 +43,7 @@ struct IOSMonthlyFreeTrialDeciderTests {
         #expect(sut.shouldOfferMonthlyFreeTrial() == false)
     }
 
-    @Test("A user not enrolled in the experiment keeps the monthly free trial")
+    @Test("A user not enrolled in the experiment keeps the monthly free trial", .timeLimit(.minutes(1)))
     func unenrolledUserOffersMonthlyFreeTrial() {
         let sut = IOSMonthlyFreeTrialDecider(
             featureFlagger: PrivacyConfig.MockFeatureFlagger(resolveCohortStub: nil)

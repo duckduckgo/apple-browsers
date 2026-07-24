@@ -35,7 +35,7 @@ struct MonthlyFreeTrialExperimentTests {
             .value
     }
 
-    @Test("Control cohort is appended as experiment_mobileannualtrials_ios=control")
+    @Test("Control cohort is appended as experiment_mobileannualtrials_ios=control", .timeLimit(.minutes(1)))
     func controlCohortAppendedToURL() {
         let featureFlagger = PrivacyConfig.MockFeatureFlagger(resolveCohortStub: FeatureFlag.MonthlyFreeTrialExperimentCohort.control)
 
@@ -44,7 +44,7 @@ struct MonthlyFreeTrialExperimentTests {
         #expect(cohortValue(in: result) == "control")
     }
 
-    @Test("Treatment cohort is appended as experiment_mobileannualtrials_ios=treatment")
+    @Test("Treatment cohort is appended as experiment_mobileannualtrials_ios=treatment", .timeLimit(.minutes(1)))
     func treatmentCohortAppendedToURL() {
         let featureFlagger = PrivacyConfig.MockFeatureFlagger(resolveCohortStub: FeatureFlag.MonthlyFreeTrialExperimentCohort.treatment)
 
@@ -53,7 +53,7 @@ struct MonthlyFreeTrialExperimentTests {
         #expect(cohortValue(in: result) == "treatment")
     }
 
-    @Test("An unenrolled user gets no experiment parameter and the URL is unchanged")
+    @Test("An unenrolled user gets no experiment parameter and the URL is unchanged", .timeLimit(.minutes(1)))
     func unenrolledUserLeavesURLUnchanged() {
         let featureFlagger = PrivacyConfig.MockFeatureFlagger(resolveCohortStub: nil)
 

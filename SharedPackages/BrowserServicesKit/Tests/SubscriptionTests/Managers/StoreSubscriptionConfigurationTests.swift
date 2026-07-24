@@ -39,6 +39,7 @@ struct StoreSubscriptionConfigurationTests {
             "ios.subscription.1year.freetrial.dev",
             "ios.subscription.1month.freetrial.dev.pro",
             "ios.subscription.1month.dev.pro",
+            "ios.subscription.1month",
             "ios.subscription.1year.freetrial.dev.pro",
 
             // macOS Debug
@@ -83,6 +84,7 @@ struct StoreSubscriptionConfigurationTests {
             "ios.subscription.1year.row.freetrial.dev",
             "ios.subscription.1month.row.freetrial.dev.pro",
             "ios.subscription.1month.row.dev.pro",
+            "ios.subscription.1month.row",
             "ios.subscription.1year.row.freetrial.dev.pro",
 
             // macOS Debug

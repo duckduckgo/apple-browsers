@@ -18,8 +18,6 @@
 //
 
 import AIChat
-import Core
-import Subscription
 import UIKit
 import os.log
 
@@ -71,8 +69,8 @@ final class UTIModelSelector {
 
     private let modelMenuFactory = UnifiedToggleInputModelMenuFactory()
     private let reasoningMenuFactory = UnifiedToggleInputReasoningMenuFactory()
-    private let reasoningAccessResolver: ReasoningModeAccessResolving = ReasoningModeAccessResolver()
-    private let subscriptionUpsellPresenter: DuckAISubscriptionUpselling = DuckAISubscriptionUpsellPresenter()
+    private let reasoningAccessResolver: ReasoningModeAccessResolving
+    private let subscriptionUpsellPresenter: DuckAISubscriptionUpselling
 
     private var pendingGatedModelId: String?
     private var pendingGatedReasoningSelection: (modelId: String, mode: AIChatReasoningMode)?
@@ -82,13 +80,17 @@ final class UTIModelSelector {
          pixelReporter: UTIPixelReporter,
          view: ViewSurface,
          environment: Environment,
-         callbacks: Callbacks) {
+         callbacks: Callbacks,
+         reasoningAccessResolver: ReasoningModeAccessResolving = ReasoningModeAccessResolver(),
+         subscriptionUpsellPresenter: DuckAISubscriptionUpselling = DuckAISubscriptionUpsellPresenter()) {
         self.modelStore = modelStore
         self.toolsController = toolsController
         self.pixelReporter = pixelReporter
         self.view = view
         self.environment = environment
         self.callbacks = callbacks
+        self.reasoningAccessResolver = reasoningAccessResolver
+        self.subscriptionUpsellPresenter = subscriptionUpsellPresenter
     }
 
     // MARK: - Model selection
@@ -237,11 +239,12 @@ final class UTIModelSelector {
         // Contextual chat only picks the model upstream after the first prompt reaches the web chat.
         // Before that first submit, the sheet-level UTI owns prompt composition and should expose the picker.
         // Image generation has no model picker either — when active, the chip is hidden until the tool is deselected.
+        let hasSubmittedPrompt = environment.hasSubmittedPrompt()
         let isImageGenActive = toolsController.selectedTool == .imageGeneration
-        let isContextualPostSubmit = environment.host() == .contextualChat && environment.hasSubmittedPrompt()
+        let isContextualPostSubmit = environment.host() == .contextualChat && hasSubmittedPrompt
         // `isModelPickerForcedVisible` only relaxes the generic `hasSubmittedPrompt` hide reason —
         // contextual post-submit and image generation stay hidden regardless.
-        let shouldHideModelChip = isContextualPostSubmit || isImageGenActive || (environment.hasSubmittedPrompt() && !environment.isModelPickerForcedVisible())
+        let shouldHideModelChip = isContextualPostSubmit || isImageGenActive || (hasSubmittedPrompt && !environment.isModelPickerForcedVisible())
         view.setModelChipHidden(shouldHideModelChip)
         updateReasoningPicker()
     }

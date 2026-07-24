@@ -338,9 +338,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             return UTIPixelContext(
                 surface: self.pixelSurface,
                 isDuckAISurfaceForAttribution: self.isDuckAISurfaceForAttribution,
-                inputMode: self.inputMode,
-                currentText: self.currentText,
-                defaultOmnibarMode: self.aiChatSettings.defaultOmnibarMode
+                inputMode: self.inputMode
             )
         })
         wideEventReporter = UTIWideEventReporter(
@@ -918,7 +916,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         }
 
         if didModeChange && host == .omnibar {
-            pixelReporter.reportModeSwitched(to: effectiveMode)
+            pixelReporter.reportModeSwitched(to: effectiveMode, currentText: currentText, defaultOmnibarMode: aiChatSettings.defaultOmnibarMode)
         }
 
         inputMode = effectiveMode
@@ -1288,10 +1286,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         pixelReporter.reportModelPickerShown()
     }
 
-    private func fireReasoningPickerShown() {
-        pixelReporter.reportReasoningPickerShown()
-    }
-
     func selectTool(_ tool: AIChatRAGTool) {
         toolsController.select(tool, for: modelStore)
         refreshToolsPresentation()
@@ -1579,7 +1573,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
     }
 
     func unifiedToggleInputVCDidShowReasoningPicker(_ vc: UnifiedToggleInputViewController) {
-        fireReasoningPickerShown()
+        pixelReporter.reportReasoningPickerShown()
     }
 
     func unifiedToggleInputVCDidClearSelectedTool(_ vc: UnifiedToggleInputViewController) {

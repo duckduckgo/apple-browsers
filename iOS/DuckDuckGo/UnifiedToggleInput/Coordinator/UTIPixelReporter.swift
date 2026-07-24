@@ -40,13 +40,12 @@ struct UTIPixelFiring {
 }
 
 /// Live snapshot of the coordinator state a pixel needs, resolved at fire time (never captured) so a
-/// pixel always reports the surface/mode/text as they are the instant it fires.
+/// pixel always reports the surface/mode as they are the instant it fires. Kept to O(1) reads —
+/// per-call inputs (e.g. the mode-switch text/default) are passed to the reporting method instead.
 struct UTIPixelContext {
     let surface: UnifiedToggleInputPixelSurface
     let isDuckAISurfaceForAttribution: Bool
     let inputMode: TextEntryMode
-    let currentText: String
-    let defaultOmnibarMode: DefaultOmnibarMode
 }
 
 /// Owns the omnibar UTI's pixel firing. Resolves the surface (and the other live inputs) through a
@@ -80,16 +79,14 @@ final class UTIPixelReporter {
         firing.fire(.aiChatExperimentalOmnibarFloatingReturnPressed)
     }
 
-    func reportModeSwitched(to mode: TextEntryMode) {
-        withContext { context in
-            let direction = mode == .search ? "to_search" : "to_duckai"
-            let hadText = !context.currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-            firing.fire(.aiChatExperimentalOmnibarModeSwitched, [
-                "direction": direction,
-                "had_text": String(hadText),
-                "default_position": context.defaultOmnibarMode.rawValue
-            ])
-        }
+    func reportModeSwitched(to mode: TextEntryMode, currentText: String, defaultOmnibarMode: DefaultOmnibarMode) {
+        let direction = mode == .search ? "to_search" : "to_duckai"
+        let hadText = !currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        firing.fire(.aiChatExperimentalOmnibarModeSwitched, [
+            "direction": direction,
+            "had_text": String(hadText),
+            "default_position": defaultOmnibarMode.rawValue
+        ])
     }
 
     func reportStopGenerationTapped() {
@@ -148,15 +145,15 @@ final class UTIPixelReporter {
     }
 
     func reportShowModelPicker() {
-        withContext { UnifiedToggleInputCoordinatorPixelHelper.fireShowModelPickerPixel(surface: $0.surface, firing: firing) }
+        withContext { firing.fireDailyAndCount(.unifiedToggleInputShowModelPicker, ["surface": $0.surface.rawValue]) }
     }
 
     func reportSubmitChangeModel(modelId: String) {
-        withContext { UnifiedToggleInputCoordinatorPixelHelper.fireSubmitChangeModelPixel(modelId: modelId, surface: $0.surface, firing: firing) }
+        withContext { firing.fireDailyAndCount(.unifiedToggleInputSubmitChangeModel, ["model_id": modelId, "surface": $0.surface.rawValue]) }
     }
 
     func reportSubmitChangeModelPromptSent() {
-        withContext { UnifiedToggleInputCoordinatorPixelHelper.fireSubmitChangeModelPromptSentPixel(surface: $0.surface, firing: firing) }
+        withContext { firing.fireDailyAndCount(.unifiedToggleInputSubmitChangeModelPromptSent, ["surface": $0.surface.rawValue]) }
     }
 
     func reportToolSelected(_ tool: AIChatRAGTool) {
@@ -168,7 +165,7 @@ final class UTIPixelReporter {
     }
 
     func reportCustomizeResponsesSelected() {
-        withContext { UnifiedToggleInputCoordinatorPixelHelper.fireCustomizeResponsesSelectedPixel(surface: $0.surface, firing: firing) }
+        withContext { firing.fireDailyAndCount(.unifiedToggleInputCustomizeResponsesSelected, ["surface": $0.surface.rawValue]) }
     }
 
     // MARK: - Submission

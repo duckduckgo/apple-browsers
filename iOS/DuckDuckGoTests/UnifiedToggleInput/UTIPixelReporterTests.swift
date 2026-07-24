@@ -42,22 +42,18 @@ final class UTIPixelReporterTests: XCTestCase {
 
     private func context(surface: UnifiedToggleInputPixelSurface = .addressBar,
                          isDuckAISurfaceForAttribution: Bool = false,
-                         inputMode: TextEntryMode = .search,
-                         currentText: String = "",
-                         defaultOmnibarMode: DefaultOmnibarMode = .search) -> UTIPixelContext {
+                         inputMode: TextEntryMode = .search) -> UTIPixelContext {
         UTIPixelContext(surface: surface,
                         isDuckAISurfaceForAttribution: isDuckAISurfaceForAttribution,
-                        inputMode: inputMode,
-                        currentText: currentText,
-                        defaultOmnibarMode: defaultOmnibarMode)
+                        inputMode: inputMode)
     }
 
-    // MARK: - Mode switch (non-trivial params, resolved live)
+    // MARK: - Mode switch (non-trivial params, passed per call)
 
     func testReportModeSwitchedResolvesDirectionTextAndDefaultPositionLive() {
-        let reporter = makeReporter { self.context(currentText: "hello", defaultOmnibarMode: .duckAI) }
+        let reporter = makeReporter { self.context() }
 
-        reporter.reportModeSwitched(to: .aiChat)
+        reporter.reportModeSwitched(to: .aiChat, currentText: "hello", defaultOmnibarMode: .duckAI)
 
         XCTAssertEqual(PixelFiringMock.lastPixelInfo?.pixelName, Pixel.Event.aiChatExperimentalOmnibarModeSwitched.name)
         XCTAssertEqual(PixelFiringMock.lastPixelInfo?.params, [
@@ -68,9 +64,9 @@ final class UTIPixelReporterTests: XCTestCase {
     }
 
     func testReportModeSwitchedToSearchWithBlankTextReportsNoText() {
-        let reporter = makeReporter { self.context(currentText: "   ", defaultOmnibarMode: .search) }
+        let reporter = makeReporter { self.context() }
 
-        reporter.reportModeSwitched(to: .search)
+        reporter.reportModeSwitched(to: .search, currentText: "   ", defaultOmnibarMode: .search)
 
         XCTAssertEqual(PixelFiringMock.lastPixelInfo?.params, [
             "direction": "to_search",
@@ -161,7 +157,6 @@ final class UTIPixelReporterTests: XCTestCase {
 
         reporter.reportModelSelected(modelId: "m1")
         reporter.reportFileAttached()
-        reporter.reportModeSwitched(to: .aiChat)
 
         XCTAssertNil(PixelFiringMock.lastPixelInfo)
         XCTAssertNil(PixelFiringMock.lastDailyPixelInfo)

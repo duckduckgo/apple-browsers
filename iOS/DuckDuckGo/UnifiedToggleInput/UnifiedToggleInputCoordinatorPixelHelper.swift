@@ -151,10 +151,6 @@ final class UnifiedToggleInputCoordinatorPixelHelper {
         }
     }
 
-    static func fireCustomizeResponsesSelectedPixel(surface: UnifiedToggleInputPixelSurface, firing: UTIPixelFiring = .live) {
-        firing.fireDailyAndCount(.unifiedToggleInputCustomizeResponsesSelected, surfaceParameters(surface))
-    }
-
     static func fireUnifiedPromptSubmittedPixel(
         hasText: Bool,
         selectedTool: AIChatRAGTool?,
@@ -179,10 +175,6 @@ final class UnifiedToggleInputCoordinatorPixelHelper {
         ])
     }
 
-    static func fireShowModelPickerPixel(surface: UnifiedToggleInputPixelSurface, firing: UTIPixelFiring = .live) {
-        firing.fireDailyAndCount(.unifiedToggleInputShowModelPicker, surfaceParameters(surface))
-    }
-
     static func fireModelSelectedPixel(modelId: String, surface: UnifiedToggleInputPixelSurface, firing: UTIPixelFiring = .live) {
         firing.fire(.unifiedToggleInputModelSelected, ["model_id": modelId, "surface": surface.rawValue])
     }
@@ -197,14 +189,6 @@ final class UnifiedToggleInputCoordinatorPixelHelper {
         firing.fire(.unifiedToggleInputReasoningEffortPickerShown, [
             AttributionParameter.origin: measurementOrigin(for: .reasoningPicker, isAITabState: isAITabState).rawValue
         ])
-    }
-
-    static func fireSubmitChangeModelPixel(modelId: String, surface: UnifiedToggleInputPixelSurface, firing: UTIPixelFiring = .live) {
-        firing.fireDailyAndCount(.unifiedToggleInputSubmitChangeModel, ["model_id": modelId, "surface": surface.rawValue])
-    }
-
-    static func fireSubmitChangeModelPromptSentPixel(surface: UnifiedToggleInputPixelSurface, firing: UTIPixelFiring = .live) {
-        firing.fireDailyAndCount(.unifiedToggleInputSubmitChangeModelPromptSent, surfaceParameters(surface))
     }
 
     static func fireToolSubmittedPixelIfNeeded(selectedTool: AIChatRAGTool?, attachments: [UnifiedToggleInputAttachment], surface: UnifiedToggleInputPixelSurface, firing: UTIPixelFiring = .live) {

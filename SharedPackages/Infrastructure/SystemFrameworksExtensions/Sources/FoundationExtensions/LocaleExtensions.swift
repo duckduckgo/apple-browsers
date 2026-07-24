@@ -25,6 +25,6 @@ public extension Locale {
     }
 
     var isEnglishLanguage: Bool {
-        languageCode == "en"
+        Locale.preferredLanguages.first?.lowercased().hasPrefix("en") ?? false
     }
 }

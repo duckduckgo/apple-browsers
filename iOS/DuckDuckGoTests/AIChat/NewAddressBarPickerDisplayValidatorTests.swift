@@ -19,6 +19,7 @@
 
 import XCTest
 import Core
+import FoundationExtensions
 import Persistence
 import BrowserServicesKit
 import RemoteMessaging

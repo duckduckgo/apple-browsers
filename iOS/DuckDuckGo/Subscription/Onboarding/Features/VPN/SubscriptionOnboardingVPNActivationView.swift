@@ -187,6 +187,7 @@ private extension SubscriptionOnboardingVPNActivationView {
         switch viewModel.connectionState {
         case .off:
             let startVPN: () -> Void = {
+                tapAllowHint.hide()
                 didTapStartVPN = true
                 Task {
                     await viewModel.turnOnVPN()

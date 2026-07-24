@@ -320,6 +320,9 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216491579842691?focus=true
     case onboardingFlowByDownloadReasonExperiment
 
+    /// Caches the blank-snapshot overlay off the suspend path to avoid the background scene-update watchdog.
+    case blankSnapshotCaching
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216629730083154?focus=true
     case systemFindInPage
 }

@@ -90,7 +90,6 @@ final class BrowserTabViewController: NSViewController {
 
     private let onboardingDialogFactory: ContextualDaxDialogsFactory
     private let featureFlagger: FeatureFlagger
-    private let windowControllersManager: WindowControllersManagerProtocol
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let defaultBrowserPreferences: DefaultBrowserPreferences
     private let downloadsPreferences: DownloadsPreferences
@@ -110,13 +109,14 @@ final class BrowserTabViewController: NSViewController {
     private let adBlockingAvailability: AdBlockingAvailabilityProviding
 
     private let tld: TLD
+    private let onContentOverlayDismissalRequested: @MainActor () -> Void
 
     private var tabViewModelCancellables = Set<AnyCancellable>()
     private var activeUserDialogCancellable: Cancellable?
     private var duckPlayerConsentCancellable: AnyCancellable?
     private var pinnedTabsDelegatesCancellable: AnyCancellable?
     private var keyWindowSelectedTabCancellable: AnyCancellable?
-    private var contentOverlayDismissalCancellable: AnyCancellable?
+    private var contentOverlayWindowResizeCancellable: AnyCancellable?
     private var cancellables = Set<AnyCancellable>()
 
     private weak var previouslySelectedTab: Tab?
@@ -166,7 +166,6 @@ final class BrowserTabViewController: NSViewController {
          onboardingDialogTypeProvider: ContextualOnboardingDialogTypeProviding & ContextualOnboardingStateUpdater = Application.appDelegate.onboardingContextualDialogsManager,
          onboardingDialogFactory: ContextualDaxDialogsFactory = ContextualDaxDialogsProvider(featureFlagger: NSApp.delegateTyped.featureFlagger, fireCoordinator: NSApp.delegateTyped.fireCoordinator),
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
-         windowControllersManager: WindowControllersManagerProtocol = NSApp.delegateTyped.windowControllersManager,
          newTabPageActionsManager: @autoclosure @escaping @MainActor () -> NewTabPageActionsManager = NSApp.delegateTyped.newTabPageCoordinator.actionsManager,
          activeRemoteMessageModel: ActiveRemoteMessageModel = NSApp.delegateTyped.activeRemoteMessageModel,
          privacyConfigurationManager: PrivacyConfigurationManaging = NSApp.delegateTyped.privacyFeatures.contentBlocking.privacyConfigurationManager,
@@ -186,7 +185,8 @@ final class BrowserTabViewController: NSViewController {
          winBackOfferVisibilityManager: WinBackOfferVisibilityManaging = NSApp.delegateTyped.winBackOfferVisibilityManager,
          pinningManager: PinningManager,
          adBlockingAvailability: AdBlockingAvailabilityProviding = NSApp.delegateTyped.adBlockingAvailability,
-         tld: TLD = NSApp.delegateTyped.tld
+         tld: TLD = NSApp.delegateTyped.tld,
+         onContentOverlayDismissalRequested: @escaping @MainActor () -> Void = {}
     ) {
         self.tabCollectionViewModel = tabCollectionViewModel
         self.bookmarkManager = bookmarkManager
@@ -195,7 +195,6 @@ final class BrowserTabViewController: NSViewController {
         self.onboardingDialogTypeProvider = onboardingDialogTypeProvider
         self.onboardingDialogFactory = onboardingDialogFactory
         self.featureFlagger = featureFlagger
-        self.windowControllersManager = windowControllersManager
         self.newTabPageActionsManager = newTabPageActionsManager
         self.activeRemoteMessageModel = activeRemoteMessageModel
         self.privacyConfigurationManager = privacyConfigurationManager
@@ -217,6 +216,7 @@ final class BrowserTabViewController: NSViewController {
         self.adBlockingAvailability = adBlockingAvailability
 
         self.tld = tld
+        self.onContentOverlayDismissalRequested = onContentOverlayDismissalRequested
         containerStackView = NSStackView()
 
         super.init(nibName: nil, bundle: nil)
@@ -362,6 +362,7 @@ final class BrowserTabViewController: NSViewController {
 
     @objc
     private func windowWillClose(_ notification: NSNotification) {
+        closeContentOverlayPopover()
         self.removeWebViewFromHierarchy()
         _newTabPageWebViewModel?.removeUserScripts()
     }
@@ -469,7 +470,7 @@ final class BrowserTabViewController: NSViewController {
 
     @objc
     private func onAutofillScriptDebugSettingsDidChange(_ notification: Notification) {
-        contentOverlayPopover?.viewController.closeContentOverlayPopover()
+        closeContentOverlayPopover()
         contentOverlayPopover = nil
     }
 
@@ -477,6 +478,10 @@ final class BrowserTabViewController: NSViewController {
         tabCollectionViewModel.$selectedTabViewModel
             .sink { [weak self] selectedTabViewModel in
                 guard let self else { return }
+
+                if tabViewModel?.tab !== selectedTabViewModel?.tab {
+                    closeContentOverlayPopover()
+                }
 
                 tabViewModelCancellables.removeAll(keepingCapacity: true)
                 removeExistingDialog()
@@ -944,6 +949,9 @@ final class BrowserTabViewController: NSViewController {
     private func subscribeToTabContent(of tabViewModel: TabViewModel?) {
         tabViewModel?.tab.$content
             .dropFirst()
+            .handleEvents(receiveOutput: { [weak self] _ in
+                self?.closeContentOverlayPopover()
+            })
             .removeDuplicates(by: { old, new in
                 // no need to call showTabContent if webView stays in place and only its URL changes
                 if old.displaysContentInWebView && new.displaysContentInWebView {
@@ -1465,6 +1473,26 @@ final class BrowserTabViewController: NSViewController {
     }
 
     private var contentOverlayPopover: ContentOverlayPopover?
+
+    private func closeContentOverlayPopover() {
+        guard let contentOverlayPopover else { return }
+        onContentOverlayDismissalRequested()
+        contentOverlayPopover.viewController.closeContentOverlayPopover()
+    }
+
+    private func subscribeToContentOverlayWindowResize() {
+        guard contentOverlayWindowResizeCancellable == nil else { return }
+
+        contentOverlayWindowResizeCancellable = NotificationCenter.default.publisher(for: NSWindow.didResizeNotification)
+            .filter { [weak self] notification in
+                guard let resizedWindow = notification.object as? NSWindow else { return false }
+                return resizedWindow === self?.view.window
+            }
+            .sink { [weak self] _ in
+                self?.closeContentOverlayPopover()
+            }
+    }
+
     private func contentOverlayPopoverCreatingIfNeeded() -> ContentOverlayPopover {
         return contentOverlayPopover ?? {
             let overlayPopover = ContentOverlayPopover(
@@ -1476,10 +1504,7 @@ final class BrowserTabViewController: NSViewController {
                 pinningManager: pinningManager
             )
             self.contentOverlayPopover = overlayPopover
-            self.contentOverlayDismissalCancellable = windowControllersManager.stateChanged
-                .sink { [weak overlayPopover] _ in
-                    overlayPopover?.viewController.closeContentOverlayPopover()
-                }
+            self.subscribeToContentOverlayWindowResize()
             return overlayPopover
         }()
     }

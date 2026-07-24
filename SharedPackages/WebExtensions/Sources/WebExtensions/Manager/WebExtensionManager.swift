@@ -322,9 +322,19 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         Logger.webExtensions.debug("🔄 Reloading extension '\(identifier)'")
 
         try loader.unloadExtension(identifier: identifier, from: controller)
-        unregisterHandlers(for: identifier)
 
-        _ = try await loader.loadWebExtension(identifier: identifier, into: controller)
+        // Don't unregister the message handlers up front. loadWebExtension re-registers them via
+        // the willLoad delegate callback (the router replaces handlers per feature), so a pre-load
+        // unregister is redundant on success and — because the load is async — opens a window with
+        // no handlers; worse, if the reload throws the handlers are gone and the extension is left
+        // without messaging. Unregister only as cleanup when the reload actually fails, matching
+        // installExtension.
+        do {
+            _ = try await loader.loadWebExtension(identifier: identifier, into: controller)
+        } catch {
+            unregisterHandlers(for: identifier)
+            throw error
+        }
 
         Logger.webExtensions.info("✅ Reloaded extension '\(identifier)'")
         notifyUpdate()

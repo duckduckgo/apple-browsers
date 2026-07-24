@@ -1401,6 +1401,7 @@ extension MainViewController: AIChatTabChatHeaderViewDelegate {
     }
 
     func aiChatTabChatHeaderDidTapNewImage() {
+        DailyPixel.fireDailyAndCount(pixel: .aiChatNewImageTapped)
         unifiedToggleInputCoordinator?.startNewChat()
         unifiedToggleInputCoordinator?.selectTool(.imageGeneration)
         unifiedToggleInputCoordinator?.showExpanded(inputMode: .aiChat)

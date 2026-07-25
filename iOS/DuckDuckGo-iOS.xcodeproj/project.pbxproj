@@ -2029,6 +2029,8 @@
 		C18390D32F50A002001939B9 /* UnifiedToggleInputAttachmentThumbnailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C18390D22F50A002001939B9 /* UnifiedToggleInputAttachmentThumbnailView.swift */; };
 		C18390D52F50A003001939B9 /* UnifiedToggleInputAttachmentsStripView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C18390D42F50A003001939B9 /* UnifiedToggleInputAttachmentsStripView.swift */; };
 		C18390D72F50A004001939B9 /* UnifiedToggleInputImageEncoderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C18390D62F50A004001939B9 /* UnifiedToggleInputImageEncoderTests.swift */; };
+		FA57E0020002000200020002 /* PasteboardAttachmentReaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA57E0010001000100010001 /* PasteboardAttachmentReaderTests.swift */; };
+		FA57E0060006000600060006 /* UnifiedToggleInputPasteHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA57E0050005000500050005 /* UnifiedToggleInputPasteHandlerTests.swift */; };
 		C18578952EB7C0340049D2CE /* autofill-extension-dark.json in Resources */ = {isa = PBXBuildFile; fileRef = C18578932EB7C0340049D2CE /* autofill-extension-dark.json */; };
 		C18578A02EB7D0020049D2CE /* autofill-extension-light.json in Resources */ = {isa = PBXBuildFile; fileRef = C185789F2EB7D0020049D2CE /* autofill-extension-light.json */; };
 		C185ED612BD4329700BAE9DC /* ImportPasswordsViaSyncStatusHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = C185ED602BD4329700BAE9DC /* ImportPasswordsViaSyncStatusHandler.swift */; };
@@ -2605,6 +2607,7 @@
 		F1FDC9352BF51E41006B1435 /* VPNSettings+Environment.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1FDC9342BF51E41006B1435 /* VPNSettings+Environment.swift */; };
 		F1FDC9362BF51E41006B1435 /* VPNSettings+Environment.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1FDC9342BF51E41006B1435 /* VPNSettings+Environment.swift */; };
 		F2B8A10136AA100000C0DE01 /* UnifiedToggleInputAttachmentPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2B8A10436AA100000C0DE01 /* UnifiedToggleInputAttachmentPresenter.swift */; };
+		FA57E0030003000300030003 /* UnifiedToggleInputPasteHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA57E0040004000400040004 /* UnifiedToggleInputPasteHandler.swift */; };
 		F2B8A10236AA100000C0DE01 /* UnifiedToggleInputModelMenuFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2B8A10536AA100000C0DE01 /* UnifiedToggleInputModelMenuFactory.swift */; };
 		F2B8A10336AA100000C0DE01 /* MainViewController+UnifiedToggleInputIntentHandling.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2B8A10636AA100000C0DE01 /* MainViewController+UnifiedToggleInputIntentHandling.swift */; };
 		F2B8A10736AA100000C0DE01 /* UnifiedToggleInputAttachment.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2B8A10936AA100000C0DE01 /* UnifiedToggleInputAttachment.swift */; };
@@ -4764,6 +4767,8 @@
 		C18390D22F50A002001939B9 /* UnifiedToggleInputAttachmentThumbnailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedToggleInputAttachmentThumbnailView.swift; sourceTree = "<group>"; };
 		C18390D42F50A003001939B9 /* UnifiedToggleInputAttachmentsStripView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedToggleInputAttachmentsStripView.swift; sourceTree = "<group>"; };
 		C18390D62F50A004001939B9 /* UnifiedToggleInputImageEncoderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedToggleInputImageEncoderTests.swift; sourceTree = "<group>"; };
+		FA57E0010001000100010001 /* PasteboardAttachmentReaderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PasteboardAttachmentReaderTests.swift; sourceTree = "<group>"; };
+		FA57E0050005000500050005 /* UnifiedToggleInputPasteHandlerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedToggleInputPasteHandlerTests.swift; sourceTree = "<group>"; };
 		C18578932EB7C0340049D2CE /* autofill-extension-dark.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "autofill-extension-dark.json"; sourceTree = "<group>"; };
 		C185789F2EB7D0020049D2CE /* autofill-extension-light.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "autofill-extension-light.json"; sourceTree = "<group>"; };
 		C185ED602BD4329700BAE9DC /* ImportPasswordsViaSyncStatusHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportPasswordsViaSyncStatusHandler.swift; sourceTree = "<group>"; };
@@ -5408,6 +5413,7 @@
 		F1FDC92F2BF4E0B3006B1435 /* SubscriptionEnvironment+Default.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "SubscriptionEnvironment+Default.swift"; sourceTree = "<group>"; };
 		F1FDC9342BF51E41006B1435 /* VPNSettings+Environment.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "VPNSettings+Environment.swift"; sourceTree = "<group>"; };
 		F2B8A10436AA100000C0DE01 /* UnifiedToggleInputAttachmentPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedToggleInputAttachmentPresenter.swift; sourceTree = "<group>"; };
+		FA57E0040004000400040004 /* UnifiedToggleInputPasteHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedToggleInputPasteHandler.swift; sourceTree = "<group>"; };
 		F2B8A10536AA100000C0DE01 /* UnifiedToggleInputModelMenuFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedToggleInputModelMenuFactory.swift; sourceTree = "<group>"; };
 		F2B8A10636AA100000C0DE01 /* MainViewController+UnifiedToggleInputIntentHandling.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MainViewController+UnifiedToggleInputIntentHandling.swift"; sourceTree = "<group>"; };
 		F2B8A10936AA100000C0DE01 /* UnifiedToggleInputAttachment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedToggleInputAttachment.swift; sourceTree = "<group>"; };
@@ -9791,6 +9797,7 @@
 				87D22C154C1851EFAB573AAE /* TabSwipeOverlayView.swift */,
 				BBA0000000000000000F0001 /* UnifiedInputTabState.swift */,
 				F2B8A10436AA100000C0DE01 /* UnifiedToggleInputAttachmentPresenter.swift */,
+				FA57E0040004000400040004 /* UnifiedToggleInputPasteHandler.swift */,
 				F2B8A10936AA100000C0DE01 /* UnifiedToggleInputAttachment.swift */,
 				AABB00010001000100010008 /* UTIAttachmentPolicy.swift */,
 				AABB0001000100010001000C /* UTIModelStore.swift */,
@@ -9845,6 +9852,8 @@
 				33CC9145E578E99B3052757F /* UnifiedToggleInputModelMenuTests.swift */,
 				C18390CD2F5099D8001939B9 /* UnifiedToggleInputFeatureTests.swift */,
 				C18390D62F50A004001939B9 /* UnifiedToggleInputImageEncoderTests.swift */,
+				FA57E0010001000100010001 /* PasteboardAttachmentReaderTests.swift */,
+				FA57E0050005000500050005 /* UnifiedToggleInputPasteHandlerTests.swift */,
 				CB6D178A2FA2109C00ECD5AE /* DuckAIURLSuggestionsLoaderTests.swift */,
 				CB6D17B62FB000000ECD5AE /* AIChatSyncPromoViewModelTests.swift */,
 				CB6D179A2FA2524F00ECD5AE /* EmptySuggestionLoadingDataSource.swift */,
@@ -13623,6 +13632,7 @@
 				6EE9F7F9C41E3A100FBB7C5C /* TabSwipeOverlayView.swift in Sources */,
 				BBA0000000000000000F0002 /* UnifiedInputTabState.swift in Sources */,
 				F2B8A10136AA100000C0DE01 /* UnifiedToggleInputAttachmentPresenter.swift in Sources */,
+				FA57E0030003000300030003 /* UnifiedToggleInputPasteHandler.swift in Sources */,
 				F2B8A10736AA100000C0DE01 /* UnifiedToggleInputAttachment.swift in Sources */,
 				AABB00010001000100010007 /* UTIAttachmentPolicy.swift in Sources */,
 				CB27DAE72FFFE65200EEEADB /* WebViewTransitionGeometry.swift in Sources */,
@@ -14542,6 +14552,8 @@
 				C18390CE2F5099D8001939B9 /* UnifiedToggleInputFeatureTests.swift in Sources */,
 				CB15F6EE2FE4000300EDEB50 /* FocusedLogoModelTests.swift in Sources */,
 				C18390D72F50A004001939B9 /* UnifiedToggleInputImageEncoderTests.swift in Sources */,
+				FA57E0020002000200020002 /* PasteboardAttachmentReaderTests.swift in Sources */,
+				FA57E0060006000600060006 /* UnifiedToggleInputPasteHandlerTests.swift in Sources */,
 				314A3EFC293905EC00D3D4C8 /* BrokenSiteReportingTests.swift in Sources */,
 				851B1283221FE65E004781BC /* ImproveOnboardingExperiment1Tests.swift in Sources */,
 				316790E52C9352190090B0A2 /* MarketplaceAdPostbackManagerTests.swift in Sources */,

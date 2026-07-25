@@ -847,12 +847,37 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
         pairingV2PeerKind = nil
     }
 
-    func sendPairingV2PresenterStartFailurePixelIfNeeded(_ error: Error) {
+    private func sendSetupEndedFailedPixel(setupSource: SyncSetupSource,
+                                           myRole: String?,
+                                           reason: String?,
+                                           pairingV2FailureContext: PairingV2FailureContext) {
+        Pixel.fire(pixel: .syncSetupEndedFailed,
+                   withAdditionalParameters: syncSetupPixelParameters(setupSource: setupSource,
+                                                                      path: setupSource.syncSetupPath,
+                                                                      reason: reason,
+                                                                      peerKind: pairingV2PeerKind?.syncSetupPeerKind,
+                                                                      myRole: myRole,
+                                                                      pairingV2FailureContext: pairingV2FailureContext),
+                   includedParameters: [.appVersion])
+        pairingV2PeerKind = nil
+    }
+
+    func sendPairingV2PresenterStartFailurePixelIfNeeded(_ error: Error, setupSource: SyncSetupSource) {
         guard let operationFailure = error as? PairingV2OperationFailure else {
             return
         }
         let connectionError = SyncConnectionError.pairingV2OperationFailure(operationFailure.context)
-        sendSetupEndedFailedPixel(setupRole: .sharer,
+        let myRole: String?
+        switch setupSource {
+        case .exchange:
+            myRole = SyncSetupPixelValue.host
+        case .connect:
+            myRole = SyncSetupPixelValue.joiner
+        case .recovery, .unknown:
+            myRole = nil
+        }
+        sendSetupEndedFailedPixel(setupSource: setupSource,
+                                  myRole: myRole,
                                   reason: connectionError.syncSetupFailureReason,
                                   pairingV2FailureContext: operationFailure.context)
     }

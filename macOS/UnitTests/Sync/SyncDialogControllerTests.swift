@@ -538,14 +538,31 @@ final class SyncDialogControllerTests: XCTestCase {
         await fulfillment(of: [expectation], timeout: 5)
     }
 
-    func test_syncWithAnotherDevicePressed_whenPairingV2PresenterStartFails_firesFailureContextPixel() async {
+    func test_syncWithAnotherDevicePressed_whenPairingV2ExchangePresenterStartFails_firesFailureContextPixel() async {
         featureFlagger.isFeatureOn[FeatureFlag.exchangeKeysToSyncWithAnotherDevice.rawValue] = true
         ddgSyncing.account = .mock
+        await assertPairingV2PresenterStartFailurePixel(source: .exchange, myRole: "host") { failure in
+            connectionController.startExchangeModeError = failure
+        }
+    }
+
+    func test_syncWithAnotherDevicePressed_whenPairingV2ConnectPresenterStartFails_firesFailureContextPixel() async {
+        featureFlagger.isFeatureOn[FeatureFlag.exchangeKeysToSyncWithAnotherDevice.rawValue] = true
+        ddgSyncing.account = nil
+        await assertPairingV2PresenterStartFailurePixel(source: .connect, myRole: "joiner") { failure in
+            connectionController.startConnectModeError = failure
+        }
+    }
+
+    private func assertPairingV2PresenterStartFailurePixel(source: SyncSetupSource,
+                                                           myRole: String,
+                                                           configure: (PairingV2OperationFailure) -> Void) async {
         let context = PairingV2FailureContext(stage: .presenterOpenOwnChannel, kind: .httpError)
-        connectionController.startExchangeModeError = PairingV2OperationFailure(
+        let failure = PairingV2OperationFailure(
             context: context,
             underlyingError: SyncError.unexpectedStatusCode(500)
         )
+        configure(failure)
         let pixelExpectation = expectation(description: "fires Pairing V2 presenter start failure pixel")
         var firedParameters: [String: String]?
         PixelKit.setUp(
@@ -567,6 +584,8 @@ final class SyncDialogControllerTests: XCTestCase {
         await fulfillment(of: [pixelExpectation], timeout: 5)
 
         XCTAssertEqual(firedParameters?[SyncSetupPixelKitEvent.ParameterKey.reason], SyncSetupFailureReason.relayChannelFailure)
+        XCTAssertEqual(firedParameters?[SyncSetupPixelKitEvent.ParameterKey.source], source.rawValue)
+        XCTAssertEqual(firedParameters?[SyncSetupPixelKitEvent.ParameterKey.myRole], myRole)
         XCTAssertEqual(firedParameters?[SyncSetupPixelKitEvent.ParameterKey.pairingFailureStage], "presenter_open_own_channel")
         XCTAssertEqual(firedParameters?[SyncSetupPixelKitEvent.ParameterKey.pairingFailureKind], "http_error")
     }

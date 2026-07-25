@@ -212,8 +212,12 @@ final class MockSyncConnectionControlling: SyncConnectionControlling {
         return .init(base64Code: "", deviceName: "")
     }
 
+    var startConnectModeError: Error?
     func startConnectMode() async throws -> PairingInfo {
-        .init(base64Code: "", deviceName: "")
+        if let startConnectModeError {
+            throw startConnectModeError
+        }
+        return .init(base64Code: "", deviceName: "")
     }
 
     func startPairingMode(_ pairingInfo: PairingInfo) async -> Bool {

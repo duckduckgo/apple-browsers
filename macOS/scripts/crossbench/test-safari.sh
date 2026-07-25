@@ -19,13 +19,13 @@
 #   2. crossbench drives Safari via safaridriver (WebDriver), which requires
 #      "Allow Remote Automation" (`sudo safaridriver --enable` or Safari's
 #      Develop menu). Enable it before running — see provision / workflow.
-#   3. Repetitions whose navigation returned HTTP >= 400 are discarded here.
-#      Chrome gets this for free — PageLoadMetrics emits no LCP slice for an
-#      error navigation — but the JS LCP API times a bot-block page as readily
-#      as a real one, so without a filter a 403 shows up as a fast load.
-#      CAVEAT: Safari 26.4 does not expose responseStatus, so that filter is
-#      inert today and blocked sites still yield bogus fast values. See the
-#      http_status comment in summarize_lcp.
+#   3. Every site is pre-flighted with curl and skipped entirely if it is not
+#      actually serving us the page. Chrome gets error rejection for free —
+#      PageLoadMetrics emits no LCP slice for an error navigation — but the JS
+#      LCP API times a bot-block page as readily as a real one, so a 403 would
+#      be recorded as a very fast load (reddit's block page measured ~200ms and
+#      reached ClickHouse). The status has to come from outside the browser:
+#      WebKit implements no in-page API that exposes it. See preflight_site.
 #
 # NOTE: live network is NOISY — values vary run-to-run with network conditions
 # and are NOT comparable to recorded-network (WPR) numbers, nor directly to the
@@ -52,7 +52,14 @@ CROSSBENCH_DIR="${CROSSBENCH_DIR:-$HOME/Developer/crossbench-upstream}"
 PROBE_CONFIG="config/probe/js/navToLCP.safari.config.hjson"
 SUITE="navToLCP"
 LOAD_WINDOW="12s"         # matches test-chrome.sh (--url=<site>,12s)
+LOAD_WINDOW_MS=12000      # same value in ms, recorded so censoring counts from
+                          # different runs are only compared at equal windows
 SAFARI_APP="/Applications/Safari.app"
+
+# Sourced before the cd into CROSSBENCH_DIR below, so the path is relative to
+# this script rather than the working directory.
+# shellcheck source=preflight-lib.sh
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/preflight-lib.sh"
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -89,6 +96,15 @@ fi
 # marketing version; matches what users see in Safari > About.
 SAFARI_VERSION="$(defaults read "$SAFARI_APP/Contents/Info.plist" CFBundleShortVersionString 2>/dev/null || echo unknown)"
 
+# preflight-lib.sh contract.
+BROWSER_NAME=safari
+BROWSER_VERSION="$SAFARI_VERSION"
+# Sent on the pre-flight request so we're asking the question as the browser we
+# are about to measure with. The block we care about is IP-based (measured: the
+# runner gets 403 with a Safari UA, a Chrome UA, and no UA alike), but matching
+# the UA keeps the pre-flight as close to the real navigation as curl can get.
+PREFLIGHT_UA="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/${SAFARI_VERSION%%.*}.0 Safari/605.1.15"
+
 # ---- preflight -------------------------------------------------------------
 preflight() {
   if ! command -v poetry >/dev/null 2>&1; then
@@ -108,6 +124,16 @@ preflight() {
     exit 1
   fi
 }
+
+# The curl pre-flight, the disposition record and the per-site reporting live in
+# preflight-lib.sh, shared with test-chrome.sh. Safari is the browser that needs
+# it for CORRECTNESS rather than economy: WebKit implements no in-page API that
+# exposes the document's HTTP status (PerformanceNavigationTiming.responseStatus
+# is unimplemented — mdn/browser-compat-data records version_added:false, and it
+# measured undefined on Safari 26.4), safaridriver's WebDriver-classic protocol
+# has no network surface either, and the JS LCP API happily times a bot-block
+# page. curl also returns the redirect chain, which Safari withholds too: a
+# cross-origin redirect zeroes its navigation-timing internals.
 
 # Parse a crossbench RESULTS dir: for every per-repetition js.json the `js` probe
 # wrote, pull `lcp_ms`. Per-repetition files live at
@@ -130,6 +156,10 @@ rep_of_path() {
 
 summarize_lcp() {
   local results_path="$1" site="$2"
+  # The caller reads these back for the disposition record, so every early
+  # `return` below must leave them consistent — hence the reset here and the
+  # single assignment point after the loop.
+  reset_measurement_counters
   local -a vals=()
   local f info v http_status rep_idx unfinalized=0 blocked=0 no_metric=0 attempts=0 rep=0
   # Every status seen this site, reported in the summary below. Without this the
@@ -167,12 +197,15 @@ if isinstance(v, (int, float)):
     # worse than no value at all, because nothing downstream can tell it apart
     # from a genuinely fast page (a 403 Reddit block page measured ~200ms).
     #
-    # MEASURED 2026-07-25, Safari 26.4 (21624.1.16.11.4) on a hosted runner:
-    # PerformanceNavigationTiming.responseStatus is NOT exposed, so http_status
-    # is -1 for every repetition and this filter never fires. It is kept because
-    # it costs nothing and starts working the day WebKit ships the field — but
-    # do NOT treat it as protection against bot-block pages today. The
-    # http_status=[...] line in the summary is how you check.
+    # MEASURED 2026-07-25, Safari 26.4 (21624.1.16.11.4): WebKit does not
+    # implement PerformanceNavigationTiming.responseStatus at all — MDN's
+    # browser-compat-data records Safari as version_added:false, not merely
+    # undocumented — so http_status is -1 for every repetition and this filter
+    # never fires. Blocked sites are handled by preflight_site instead, which
+    # reads the real status from outside the browser and skips the site before it
+    # is ever measured. This filter is kept only because it costs nothing and
+    # starts working the day WebKit ships the field; it is NOT the protection.
+    # The http_status=[...] line in the summary is how you confirm it is inert.
     #
     # Deliberately >= 400 rather than "not 2xx": per spec responseStatus is the
     # status of the FINAL response, but a UA reporting the FIRST response would
@@ -196,6 +229,15 @@ if isinstance(v, (int, float)):
     printf 'safari\t%s\t%s\t%d\t%s\n' "$SAFARI_VERSION" "$site" "$rep" "$v" >> "$RESULTS_FILE"
   done < <(find "$results_path" -path '*/stories/*/*/*/js.json' 2>/dev/null | sort)
 
+  # Single assignment point for the disposition counters: everything after this
+  # only reports. observed counts repetitions that produced probe output at all,
+  # so observed < MEASURED_REPS means the browser or harness stopped early, while
+  # the dropped_* counters account for output that was unusable.
+  LAST_OBSERVED="$attempts"
+  LAST_RECORDED="${#vals[@]}"
+  LAST_UNFINALIZED="$unfinalized"
+  LAST_NO_METRIC="$no_metric"
+  LAST_HTTP_ERROR="$blocked"
   # Always print the tally, including the zero-attempt case — "expected 5, saw 0"
   # is a different failure from "saw 5, discarded 5" and the log should say which.
   echo "  $site: attempts=$attempts/$MEASURED_REPS recorded=${#vals[@]} unfinalized=$unfinalized http-error=$blocked no-metric=$no_metric"
@@ -237,9 +279,14 @@ run_safari() {
   # instead of our poetry venv; removal belongs here (run step), not provisioning.
   rm -f .vpython3
 
-  local site out results_path
+  local site out results_path outcome
   for site in "${SITES[@]}"; do
     log "site: $site"
+    reset_measurement_counters
+    # Pre-flight before spending any browser time on this site. Writes the
+    # disposition row itself when it says skip.
+    handle_preflight "$site" || continue
+
     echo "  plan: 1 warm-up load (discarded) + $MEASURED_REPS measured, ${LOAD_WINDOW} window"
     # Warm-up load (discarded): primes OS-DNS + CDN edge. Output ignored, but the
     # exit status is reported — a warm-up that always fails is a signal the site
@@ -274,8 +321,16 @@ run_safari() {
       # probe output on the runner.
       echo "  results dir: $results_path"
       summarize_lcp "$results_path" "$site"
+      outcome="$(classify_outcome)"
+      record_disposition "$site" "$outcome" "$PF_VERDICT" "$MEASURED_REPS"
     else
       echo "  $site: no RESULTS path in crossbench output"
+      # Distinct from "blocked": the site was reachable, the harness failed. The
+      # two must not be conflated or fail-open can't be audited. preflight_verdict
+      # is kept as-is so a fail-open pre-flight followed by a harness failure is
+      # still visible as two separate facts.
+      echo "::warning title=Harness failure::$site: crossbench produced no RESULTS path"
+      record_disposition "$site" infra_error "$PF_VERDICT" "$MEASURED_REPS"
     fi
     rm -f "$out"
   done
@@ -285,7 +340,10 @@ run_safari() {
 preflight
 # TSV header. Columns match test-chrome.sh: browser, browser_version, site, rep, lcp_ms.
 printf 'browser\tbrowser_version\tsite\trep\tlcp_ms\n' > "$RESULTS_FILE"
+init_dispositions_file
 run_safari
+report_dispositions
 log "Done"
-echo "results: $RESULTS_FILE"
-echo "rows:    $(($(wc -l < "$RESULTS_FILE") - 1))"
+echo "results:      $RESULTS_FILE"
+echo "rows:         $(($(wc -l < "$RESULTS_FILE") - 1))"
+echo "dispositions: $DISPOSITIONS_FILE"

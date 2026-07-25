@@ -86,7 +86,11 @@ preflight_site() {
       "https://$site" 2>/dev/null)"; then
     IFS=$'\t' read -r PF_FINAL_STATUS PF_REDIRECTS PF_BYTES PF_FINAL_URL <<< "$stats"
     PF_CHAIN="$(awk 'toupper($1) ~ /^HTTP\// { print $2 }' "$hdrs" | paste -sd, - || true)"
-    PF_MARKER="$(grep -m1 -ioE "$WALL_MARKERS" "$body" 2>/dev/null || true)"
+    # `head -1`, not grep's -m1: -m1 stops after the first matching LINE, and -o
+    # then prints every match ON that line. A minified Cloudflare wall carries
+    # cf_chl_opt seven times in one <script>, which yielded a seven-LINE marker
+    # and split the row into eight unparseable TSV lines.
+    PF_MARKER="$(grep -ioE "$WALL_MARKERS" "$body" 2>/dev/null | head -1 || true)"
     if ! [[ "$PF_FINAL_STATUS" =~ ^[0-9]+$ ]] || [ "$PF_FINAL_STATUS" -lt 100 ]; then
       # curl reports 000 when it never got a response at all.
       PF_VERDICT="preflight_error"
@@ -167,6 +171,17 @@ init_dispositions_file() {
   printf 'load_window_ms\trunner_image\n'                                   >> "$DISPOSITIONS_FILE"
 }
 
+# Collapse tab/CR/LF to a space so one value can never become two columns — or,
+# worse, two rows. status_chain, final_url and blocked_marker are all derived from
+# a network response and so are attacker-influenced; a single stray newline in one
+# of them corrupts the whole file, and the aggregator then rejects every row
+# rather than just the bad one. Belt to the marker fix's braces.
+tsv_clean() {
+  local v="$1"
+  v="${v//$'\t'/ }"; v="${v//$'\r'/ }"; v="${v//$'\n'/ }"
+  printf '%s' "$v"
+}
+
 # One row per site, whether or not it produced samples. Empty fields are written
 # as "-" so the column count is fixed and the file stays parseable by column/awk.
 #
@@ -177,9 +192,9 @@ record_disposition() {
   local site="$1" outcome="$2" verdict="$3" attempted="$4"
   printf '%s\t' \
     "$BROWSER_NAME" "$BROWSER_VERSION" "$site" "$outcome" \
-    "$verdict" "${PF_FINAL_STATUS:--}" "${PF_CHAIN:--}" "${PF_REDIRECTS:--}" \
-    "${PF_BYTES:--}" "${PF_FINAL_URL:--}" "$(landed_offsite "$site" "${PF_FINAL_URL:-}")" \
-    "${PF_MARKER:--}" \
+    "$verdict" "${PF_FINAL_STATUS:--}" "$(tsv_clean "${PF_CHAIN:--}")" "${PF_REDIRECTS:--}" \
+    "${PF_BYTES:--}" "$(tsv_clean "${PF_FINAL_URL:--}")" "$(landed_offsite "$site" "${PF_FINAL_URL:-}")" \
+    "$(tsv_clean "${PF_MARKER:--}")" \
     "$attempted" "$LAST_OBSERVED" "$LAST_RECORDED" "$LAST_UNFINALIZED" \
     "$LAST_NO_METRIC" "$LAST_HTTP_ERROR" \
     "$LOAD_WINDOW_MS" >> "$DISPOSITIONS_FILE"

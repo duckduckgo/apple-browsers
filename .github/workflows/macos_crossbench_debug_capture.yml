@@ -84,7 +84,6 @@ jobs:
 
       - name: Upload bodies
         if: always()
-        working-directory: .
         uses: actions/upload-artifact@v6
         with:
           name: debug-http-status-bodies

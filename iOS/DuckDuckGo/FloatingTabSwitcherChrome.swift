@@ -400,11 +400,11 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
         if #available(iOS 26, *), UIDevice.current.userInterfaceIdiom == .pad {
             topGuide = hostView.layoutGuide(for: .margins(cornerAdaptation: .vertical))
         } else {
-            topGuide = hostView.safeAreaLayoutGuide
+            topGuide = hostView.layoutMarginsGuide
         }
 
         var constraints = [
-            navigationBar.topAnchor.constraint(equalTo: topGuide.topAnchor),
+            navigationBar.topAnchor.constraint(equalTo: topGuide.topAnchor, constant: 8),
             navigationBar.leadingAnchor.constraint(equalTo: hostView.safeAreaLayoutGuide.leadingAnchor),
             navigationBar.trailingAnchor.constraint(equalTo: hostView.safeAreaLayoutGuide.trailingAnchor),
 

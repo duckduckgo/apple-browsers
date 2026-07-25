@@ -199,8 +199,11 @@ final class FloatingTabSwitcherChromeTests: XCTestCase {
     }
 
     func testWhenLargeSizeThenCollectionHasNoBottomInset() {
-        let chrome = makeInstalledChrome()
+        let chrome = FloatingTabSwitcherChrome()
+        let host = UIView()
+        let content = UIScrollView()
         let collectionView = UICollectionView(frame: .zero, collectionViewLayout: UICollectionViewFlowLayout())
+        chrome.install(in: host, contentView: content)
 
         chrome.layout(addressBarPosition: .top, interfaceMode: .largeSize)
         chrome.applyCollectionContentInset(to: collectionView)
@@ -292,6 +295,21 @@ final class FloatingTabSwitcherChromeTests: XCTestCase {
         XCTAssertEqual(secondContentConstraints.count, 4)
         XCTAssertTrue(firstContentConstraints.allSatisfy { !$0.isActive })
         XCTAssertTrue(secondContentConstraints.allSatisfy(\.isActive))
+    }
+
+    func testWhenLayoutIsAppliedThenNavigationBarUsesPlatformTopMargin() {
+        guard UIDevice.current.userInterfaceIdiom != .pad else { return }
+        let chrome = FloatingTabSwitcherChrome()
+        let host = UIView()
+        let content = UIScrollView()
+        chrome.install(in: host, contentView: content)
+
+        chrome.layout(addressBarPosition: .top, interfaceMode: .regularSize)
+
+        let topConstraint = host.constraints.first {
+            $0.firstItem is UINavigationBar && $0.firstAttribute == .top
+        }
+        XCTAssertTrue((topConstraint?.secondItem as? UILayoutGuide) === host.layoutMarginsGuide)
     }
 
     func testWhenLayoutIsAppliedThenFallbackTopBackgroundCoversContentBeforeIOS26() {

@@ -179,6 +179,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866719908836
     case newTabPageTabIDs
 
+    /// Enables deleting history-based search suggestions from the New Tab Page omnibar
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216469223737804
+    case ntpSearchSuggestionsDeletion
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866618846917
     /// Note: 'Failsafe' feature flag. See https://app.asana.com/1/137249556945/project/1202500774821704/task/1210572145398078?focus=true
     case supportsAlternateStripePaymentFlow
@@ -366,6 +370,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// Enables attaching content from multiple open tabs (and files) to the New Tab Page omnibar Duck.ai chat.
     case aiChatNtpAttachMoreTabs
 
+    /// Enables deleting recent AI chats from the New Tab Page omnibar
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216469223760067
+    case aiChatNtpSuggestionsDeletion
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213279513677422
     case aiChatSidebarFloating
 
@@ -431,12 +439,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1216299435808476
     case aiChatCustomizeResponses
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215798415697847
-    /// Replaces the web-link Search Assist and Hide AI-Generated Images rows on the AI Features
-    /// settings screen with native controls, regroups the main AI settings at the top, and adds the
-    /// "Disable All AI Options" / Reset button. Off keeps today's web-link rows.
-    case aiFeaturesNativeControls
-
     /// macOS only. Gates the native-driven Duck.ai voice-chat microphone permission flow
     /// (auto-grant at launch, locked Permission Center row, system-disabled warning UI,
     /// FE→native failure handler that surfaces the popover).
@@ -473,6 +475,12 @@ extension FeatureFlag: FeatureFlagDescribing {
     }
 
     public enum CookiePopupOptInDialogCohort: String, FeatureFlagCohortDescribing {
+        case control
+        case treatment
+    }
+
+    /// Cohorts for the onboarding Chrome extension install experiment
+    public enum OnboardingChromeExtensionCohort: String, FeatureFlagCohortDescribing {
         case control
         case treatment
     }
@@ -516,7 +524,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .newTabPageRebranding:
             Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.appRebranding))
         case .onboardingChromeExtension:
-            Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.onboardingChromeExtension))
+            Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.onboardingChromeExtension), cohortType: OnboardingChromeExtensionCohort.self)
         case .fireDialogSimplified:
             Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.fireDialogSimplified))
         case .unknownUsernameCategorization:
@@ -599,6 +607,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(HtmlNewTabPageSubfeature.omnibar))
         case .newTabPageTabIDs:
             Config(source: .remoteReleasable(HtmlNewTabPageSubfeature.newTabPageTabIDs))
+        case .ntpSearchSuggestionsDeletion:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(HtmlNewTabPageSubfeature.searchSuggestionsDeletion))
         case .supportsAlternateStripePaymentFlow:
             Config(defaultValue: .enabled, source: .remoteReleasable(PrivacyProSubfeature.supportsAlternateStripePaymentFlow), category: .subscription)
         case .refactorOfSyncPreferences:
@@ -707,6 +717,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.ntpWebSearch), category: .duckAI)
         case .aiChatNtpAttachMoreTabs:
             Config(source: .remoteReleasable(AIChatSubfeature.ntpAttachMoreTabs), category: .duckAI)
+        case .aiChatNtpSuggestionsDeletion:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.ntpSuggestionsDeletion), category: .duckAI)
         case .aiChatSidebarFloating:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.sidebarFloating), category: .duckAI)
         case .sidebarSuggestedPrompts:
@@ -745,8 +757,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(AIChatSubfeature.nativeDataAccess), category: .duckAI)
         case .aiChatCustomizeResponses:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.customizeResponses), category: .duckAI)
-        case .aiFeaturesNativeControls:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.aiFeaturesNativeControls), category: .duckAI)
         case .aiChatNativeVoicePermissionFlow:
             Config(defaultValue: .enabled,
                    source: .remoteReleasable(AIChatSubfeature.nativeVoicePermissionFlow),

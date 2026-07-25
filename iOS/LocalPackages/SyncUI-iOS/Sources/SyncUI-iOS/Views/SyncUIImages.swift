@@ -1,8 +1,8 @@
 //
-//  DateExtension.swift
-//  DuckDuckGo
+//  SyncUIImages.swift
+//  SyncUI-iOS
 //
-//  Copyright © 2020 DuckDuckGo. All rights reserved.
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -17,19 +17,12 @@
 //  limitations under the License.
 //
 
-import Foundation
+import DuckUI
+import SwiftUI
 
-extension Date {
-    public func isSameDay(_ otherDate: Date?) -> Bool {
-        guard let otherDate = otherDate else { return false }
-        return Calendar.current.isDate(self, inSameDayAs: otherDate)
-    }
+public enum SyncUIImages {
 
-    public func isLessThan48HoursAgo() -> Bool {
-        self > Date().addingTimeInterval(-48 * 60 * 60)
-    }
-
-    public func isLessThan(daysAgo days: Int) -> Bool {
-        self > Date().addingTimeInterval(Double(-days) * 24 * 60 * 60)
+    public static var recover: Image {
+        Image(rebrandable: "Sync-Recover-128", bundle: .module)
     }
 }

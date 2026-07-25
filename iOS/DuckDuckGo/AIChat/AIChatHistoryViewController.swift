@@ -239,12 +239,12 @@ final class AIChatHistoryViewController: UIViewController {
         ) { [weak self] _ in
             self?.enterSelectionMode()
         }
-        // Chat Protection: later subtask; shown disabled for now.
         let chatProtection = UIAction(
             title: UserText.aiChatHistoryMenuChatProtection,
-            image: DesignSystemImages.Glyphs.Size16.shield,
-            attributes: .disabled
-        ) { _ in }
+            image: DesignSystemImages.Glyphs.Size16.shield
+        ) { [weak self] _ in
+            self?.viewModel.openChatProtection()
+        }
         let item = UIBarButtonItem(
             image: DesignSystemImages.Glyphs.Size24.menuDotsHorizontal,
             menu: UIMenu(children: [selectChats, chatProtection])

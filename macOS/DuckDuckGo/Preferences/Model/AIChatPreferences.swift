@@ -147,10 +147,6 @@ final class AIChatPreferences: ObservableObject {
         return !showShortcutInAddressBar || !openAIChatInSidebar
     }
 
-    var shouldShowNativeAIControls: Bool {
-        featureFlagger.isFeatureOn(.aiFeaturesNativeControls)
-    }
-
     // Native SERP AI settings (Search Assist / Hide AI Images), backed by the shared SERP settings store.
 
     var searchAssistFrequencyBinding: Binding<SearchAssistFrequency> {
@@ -280,10 +276,6 @@ final class AIChatPreferences: ObservableObject {
 
     @MainActor func openAIChatLink() {
         NSApp.delegateTyped.aiChatTabOpener.openNewAIChat(in: .currentTab)
-    }
-
-    @MainActor func openSearchAssistSettings() {
-        windowControllersManager.show(url: URL.aiChatSettings, source: .ui, newTab: true, selected: true)
     }
 
     @MainActor func openHideAIGeneratedImagesLearnMore() {

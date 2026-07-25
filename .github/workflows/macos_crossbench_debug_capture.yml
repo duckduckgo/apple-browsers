@@ -1,0 +1,93 @@
+name: macOS - crossbench debug page capture
+
+# DIAGNOSTIC ONLY — throwaway tooling, not part of the LCP pipeline. Loads a
+# SINGLE page on a hosted macOS runner and uploads a screenshot plus the page's
+# final URL / HTTP status / source excerpt, so we can see what the runner is
+# actually served. Nothing is written to ClickHouse.
+#
+# Why: several sites in the navToLCP list yield no LCP on a hosted runner
+# (reddit.com, yelp.com, tripadvisor.com, indeed.com emit no PageLoadMetrics
+# slice; weather.com/yahoo.com emit an unfinalized -1). The benchmark only sees
+# the trace metric, so it cannot tell a slow page from a bot-block page. This
+# captures the page itself to settle that.
+#
+# The `push` trigger is scoped to this debug branch on purpose: it registers the
+# workflow and runs it without needing dispatch, which is all a throwaway
+# diagnostic needs. REMOVE both this comment and the push trigger if this ever
+# graduates to a real branch.
+
+on:
+  workflow_dispatch:
+    inputs:
+      site:
+        description: "Single site to load and capture"
+        required: false
+        default: "reddit.com"
+      wait-seconds:
+        description: "Seconds to settle after navigation before capturing"
+        required: false
+        default: "20"
+  push:
+    branches:
+      - diego/crossbench-debug
+    paths:
+      - ".github/workflows/macos_crossbench_debug_capture.yml"
+      - "macOS/scripts/crossbench/debug-capture-page.py"
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: macOS/scripts/crossbench
+
+jobs:
+  capture:
+    name: Capture page
+    runs-on: macos-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Provision crossbench (python, poetry, Chrome, checkout)
+        # Needed for Chrome itself and for the poetry env that provides selenium.
+        run: ./provision-macos.sh
+
+      - name: Capture the page
+        env:
+          # On a push trigger the inputs are empty, so fall back to the defaults.
+          SITE: ${{ inputs.site || 'reddit.com' }}
+          WAIT: ${{ inputs.wait-seconds || '20' }}
+        run: |
+          capture_dir="$PWD/debug-capture"
+          script="$PWD/debug-capture-page.py"
+          # Run from the crossbench checkout so `poetry run` resolves its venv
+          # (that's where selenium lives), same as test-chrome.sh does.
+          cd "${CROSSBENCH_DIR:-$HOME/Developer/crossbench-upstream}"
+          poetry run python "$script" \
+            --site "$SITE" \
+            --wait "$WAIT" \
+            --out-dir "$capture_dir"
+
+      - name: Fetch the same URL with curl for comparison
+        # A plain non-browser fetch is a cheap second signal: a 403/429 or a tiny
+        # body here is strong evidence of IP-based blocking rather than a slow page.
+        if: always()
+        env:
+          SITE: ${{ inputs.site || 'reddit.com' }}
+        run: |
+          echo "=== curl -sS -o /dev/null -D - https://$SITE ==="
+          curl -sS -o /dev/null -D - --max-time 30 "https://$SITE" 2>&1 | head -30 || true
+
+      - name: Upload capture
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: debug-page-capture
+          path: macOS/scripts/crossbench/debug-capture/*
+          if-no-files-found: warn
+          retention-days: 7

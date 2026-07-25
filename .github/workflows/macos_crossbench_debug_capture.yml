@@ -42,6 +42,56 @@ defaults:
     working-directory: macOS/scripts/crossbench
 
 jobs:
+  http-status:
+    name: HTTP status from the runner
+    # Deliberately provisions nothing, so this answers "what status does the
+    # runner get?" in seconds. The status varies by BOTH client IP and UA:
+    # a residential IP got 200 with a "Please wait for verification" wall while
+    # this runner's Chrome got 403 "blocked by network security", so the only
+    # answer that matters for the benchmark is the one measured from here.
+    runs-on: macos-latest
+    timeout-minutes: 10
+    steps:
+      - name: Fetch with Safari and Chrome user agents
+        working-directory: .
+        env:
+          SITE: ${{ inputs.site || 'reddit.com' }}
+        run: |
+          safari_ua='Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.4 Safari/605.1.15'
+          chrome_ua='Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36'
+          for label in safari chrome none; do
+            case "$label" in
+              safari) ua="$safari_ua" ;;
+              chrome) ua="$chrome_ua" ;;
+              none)   ua="curl/8" ;;
+            esac
+            echo "=== $label UA ==="
+            # -L: the final response is what the browser would render; without it
+            # you only ever see the apex -> www 301 and learn nothing.
+            curl -sS -o "body-$label.html" -L --max-time 30 -A "$ua" \
+              -w 'final_url=%{url_effective} http_code=%{http_code} redirects=%{num_redirects} bytes=%{size_download}\n' \
+              "https://$SITE" || { echo "curl failed"; continue; }
+            echo "--- status chain ---"
+            curl -sS -o /dev/null -L --max-time 30 -A "$ua" -D - "https://$SITE" 2>&1 \
+              | grep -iE '^HTTP/' || true
+            echo "--- title ---"
+            grep -oiE '<title>[^<]*</title>' "body-$label.html" | head -1 || echo "(no title)"
+            echo "--- wall markers ---"
+            grep -icE 'blocked by network security|wait for verification|whoa there|developer token|captcha' \
+              "body-$label.html" || true
+            echo
+          done
+
+      - name: Upload bodies
+        if: always()
+        working-directory: .
+        uses: actions/upload-artifact@v6
+        with:
+          name: debug-http-status-bodies
+          path: body-*.html
+          if-no-files-found: warn
+          retention-days: 7
+
   capture:
     name: Capture page
     runs-on: macos-latest

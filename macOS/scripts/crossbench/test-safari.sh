@@ -11,7 +11,7 @@
 # Web Vitals LCP API), through crossbench's browser-agnostic `js` probe. See
 # crossbench-extras/config/probe/js/navToLCP.safari.config.hjson for the probe.
 #
-# Two more Safari-specific differences from the Chrome flow:
+# Three more Safari-specific differences from the Chrome flow:
 #   1. NO --about-blank-duration. The `js` probe reads LCP AFTER the story's
 #      core workload, with the browser still on the page. about:blank would
 #      navigate away before the read and clear the performance timeline. Chrome
@@ -19,6 +19,10 @@
 #   2. crossbench drives Safari via safaridriver (WebDriver), which requires
 #      "Allow Remote Automation" (`sudo safaridriver --enable` or Safari's
 #      Develop menu). Enable it before running — see provision / workflow.
+#   3. Repetitions whose navigation returned HTTP >= 400 are discarded here.
+#      Chrome gets this for free — PageLoadMetrics emits no LCP slice for an
+#      error navigation — but the JS LCP API times a bot-block page as readily
+#      as a real one, so without this filter a 403 shows up as a fast load.
 #
 # NOTE: live network is NOISY — values vary run-to-run with network conditions
 # and are NOT comparable to recorded-network (WPR) numbers, nor directly to the
@@ -109,16 +113,18 @@ preflight() {
 # story-level / browser-level js.json that crossbench also writes (those would
 # inflate n). A repetition whose LCP never fired is emitted by the probe as
 # lcp_ms == -1; count those separately, matching test-chrome.sh's handling of
-# unfinalized (-1) Chrome iterations. Appends one TSV row per valid value to
-# RESULTS_FILE and prints a per-site summary.
+# unfinalized (-1) Chrome iterations. Repetitions whose navigation returned an
+# HTTP error are discarded too — see the http_status comment below. Appends
+# one TSV row per valid value to RESULTS_FILE and prints a per-site summary.
 summarize_lcp() {
   local results_path="$1" site="$2"
   local -a vals=()
-  local f v unfinalized=0 rep=0
+  local f info v http_status unfinalized=0 blocked=0 rep=0
   while IFS= read -r f; do
-    # stdlib python: read lcp_ms out of the flattened js.json. Prints nothing if
-    # the key is absent so the `-z` guard below skips it.
-    v="$(/usr/bin/python3 -c '
+    # stdlib python: read lcp_ms and http_status out of the flattened js.json as
+    # "<lcp_ms> <http_status>". Prints nothing if lcp_ms is absent so the `-z`
+    # guard below skips the file.
+    info="$(/usr/bin/python3 -c '
 import json, sys
 try:
     d = json.load(open(sys.argv[1]))
@@ -126,9 +132,28 @@ except Exception:
     sys.exit(0)
 v = d.get("lcp_ms")
 if isinstance(v, (int, float)):
-    print(f"{v:.1f}")
+    s = d.get("http_status")
+    print(f"{v:.1f}", int(s) if isinstance(s, (int, float)) else -1)
 ' "$f" || true)"
-    [ -z "$v" ] && continue
+    [ -z "$info" ] && continue
+    v="${info%% *}"
+    http_status="${info##* }"
+    # Discard error navigations. The LCP API measures whatever painted, so a
+    # bot-block or error page yields a small, plausible-looking value — which is
+    # worse than no value at all, because nothing downstream can tell it apart
+    # from a genuinely fast page (a 403 Reddit block page measured ~200ms).
+    #
+    # Deliberately >= 400 rather than "not 2xx": per spec responseStatus is the
+    # status of the FINAL response, but WebKit's support for the field is
+    # unverified, and a UA reporting the FIRST response would make a not-2xx
+    # test throw away every site that redirects (reddit.com -> www.reddit.com is
+    # a 301). Erring toward keeping data is right here — a stray 3xx costs one
+    # noisy sample, whereas over-filtering silently empties whole domains. The
+    # -1 "UA didn't expose it" case falls open through the same comparison.
+    if [ "$http_status" -ge 400 ]; then
+      blocked=$((blocked + 1))
+      continue
+    fi
     if awk -v v="$v" 'BEGIN{exit !(v < 0)}'; then
       unfinalized=$((unfinalized + 1))
       continue
@@ -141,8 +166,15 @@ if isinstance(v, (int, float)):
   if [ "$unfinalized" -gt 0 ]; then
     echo "  WARNING: $site: $unfinalized repetition(s) with no LCP entry (-1)." >&2
   fi
+  if [ "$blocked" -gt 0 ]; then
+    echo "  WARNING: $site: $blocked repetition(s) discarded — HTTP >= 400 (error or bot-block page)." >&2
+  fi
   if [ "${#vals[@]}" -eq 0 ]; then
-    echo "  $site: NO LCP VALUES PARSED (check that Safari exposes largest-contentful-paint entries)"
+    if [ "$blocked" -gt 0 ]; then
+      echo "  $site: NO VALID LCP — every repetition returned an HTTP error."
+    else
+      echo "  $site: NO LCP VALUES PARSED (check that Safari exposes largest-contentful-paint entries)"
+    fi
     return
   fi
   printf '  %s: lcp_ms=[%s] ' "$site" "$(IFS=,; echo "${vals[*]}")"

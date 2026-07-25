@@ -8,6 +8,14 @@
 # extracts LCP from a Perfetto trace (Chromium's
 # PageLoadMetrics.NavigationToLargestContentfulPaint) via the navToLCP probe.
 #
+# Every site is pre-flighted with curl and skipped if it is not actually serving
+# us the page, and every site gets a disposition row saying whether it was
+# measurable — see preflight-lib.sh. Chrome does not need this for correctness
+# the way Safari does (PageLoadMetrics emits no LCP slice for an error
+# navigation, so an error can't become a fast-looking sample here); it needs it
+# so the harness stops spending ~8 min per site to produce nothing, and so
+# Chrome's ambiguous "no metric emitted" carries a stated reason.
+#
 # NOTE: live network is NOISY — values vary run-to-run with network conditions
 # and are NOT comparable to recorded-network (WPR) numbers. This exists to stand
 # up the pipeline (measure -> parse -> results file), not for trustworthy
@@ -34,7 +42,14 @@ CROSSBENCH_DIR="${CROSSBENCH_DIR:-$HOME/Developer/crossbench-upstream}"
 PROBE_CONFIG="config/probe/perfetto/navToLCP.config.hjson"
 SUITE="navToLCP"          # LCP focus; navToFCP exists in the ps1 as a sibling
 LOAD_WINDOW="12s"         # matches runCrossbench.ps1 (--url=<site>,12s)
+LOAD_WINDOW_MS=12000      # same value in ms, recorded so censoring counts from
+                          # different runs are only compared at equal windows
 CHROME_BIN="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+
+# Sourced before the cd into CROSSBENCH_DIR below, so the path is relative to
+# this script rather than the working directory.
+# shellcheck source=preflight-lib.sh
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/preflight-lib.sh"
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -67,7 +82,20 @@ if [ -z "$RESULTS_FILE" ]; then
   RESULTS_FILE="$RESULTS_DIR/chrome-lcp-$(date -u +%Y%m%dT%H%M%SZ).tsv"
 fi
 
-CHROME_VERSION="$("$CHROME_BIN" --version 2>/dev/null | sed -E 's/^Google Chrome //' || echo unknown)"
+# `--version` prints "Google Chrome 150.0.7871.186 " — note the TRAILING SPACE,
+# which without the second substitution ends up inside webview_version in
+# ClickHouse and makes the column not compare equal to the same version typed by
+# hand.
+CHROME_VERSION="$("$CHROME_BIN" --version 2>/dev/null | sed -E 's/^Google Chrome //; s/[[:space:]]+$//' || echo unknown)"
+
+# preflight-lib.sh contract.
+BROWSER_NAME=chrome
+BROWSER_VERSION="$CHROME_VERSION"
+# Sent on the pre-flight request so we're asking the question as the browser we
+# are about to measure with. The block we care about is IP-based (measured: the
+# runner gets 403 with a Safari UA, a Chrome UA, and no UA alike), but matching
+# the UA keeps the pre-flight as close to the real navigation as curl can get.
+PREFLIGHT_UA="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${CHROME_VERSION%%.*}.0.0.0 Safari/537.36"
 
 # ---- preflight -------------------------------------------------------------
 preflight() {
@@ -102,6 +130,10 @@ rep_of_path() {
 # greppable inside crossbench's own --debug output.
 summarize_lcp() {
   local results_path="$1" site="$2"
+  # The caller reads these back for the disposition record, so every early
+  # `return` below must leave them consistent — hence the reset here and the
+  # single assignment point after the loop.
+  reset_measurement_counters
   local -a vals=()
   local f v ms rep_idx unfinalized=0 no_metric=0 attempts=0 rep=0
   while IFS= read -r f; do
@@ -111,9 +143,12 @@ summarize_lcp() {
     v="$(grep -Eo 'double_value: -?[0-9]+(\.[0-9]+)?' "$f" | head -1 | awk '{print $2}' || true)"
     if [ -z "$v" ]; then
       # No metric at all. Chrome's PageLoadMetrics emits no LCP slice for an
-      # error navigation, so this is what a bot-block or HTTP error looks like
-      # from here — indistinguishable, without a NetLog, from a probe failure.
-      echo "    attempt rep=$rep_idx: no double_value in metrics -> SKIPPED (no metric emitted; error navigation or probe failure)"
+      # error navigation, so this is also what a bot-block or HTTP error looks
+      # like from here — the two are indistinguishable in the trace. The
+      # pre-flight is what disambiguates them now: a site that reached
+      # measurement was serving a real page seconds earlier, so this is far more
+      # likely a probe/trace_processor failure than an error navigation.
+      echo "    attempt rep=$rep_idx: no double_value in metrics -> SKIPPED (no metric emitted; probe failure, or an error navigation the pre-flight didn't catch)"
       no_metric=$((no_metric + 1))
       continue
     fi
@@ -132,6 +167,15 @@ summarize_lcp() {
     # Sorted so attempts are logged in repetition order.
   done < <(find "$results_path" -path '*/trace_processor/v2_metrics.textproto' 2>/dev/null | sort)
 
+  # Single assignment point for the disposition counters: everything after this
+  # only reports. observed counts repetitions that produced probe output at all,
+  # so observed < MEASURED_REPS means the browser or harness stopped early, while
+  # the dropped_* counters account for output that was unusable. LAST_HTTP_ERROR
+  # stays 0 — the trace carries no HTTP status.
+  LAST_OBSERVED="$attempts"
+  LAST_RECORDED="${#vals[@]}"
+  LAST_UNFINALIZED="$unfinalized"
+  LAST_NO_METRIC="$no_metric"
   # Always print the tally, including the zero-attempt case — "expected 5, saw 0"
   # is a different failure from "saw 5, discarded 5" and the log should say which.
   echo "  $site: attempts=$attempts/$MEASURED_REPS recorded=${#vals[@]} unfinalized=$unfinalized no-metric=$no_metric"
@@ -160,9 +204,14 @@ run_chrome() {
   # instead of our poetry venv; removal belongs here (run step), not provisioning.
   rm -f .vpython3
 
-  local site out results_path
+  local site out results_path outcome
   for site in "${SITES[@]}"; do
     log "site: $site"
+    reset_measurement_counters
+    # Pre-flight before spending any browser time on this site. Writes the
+    # disposition row itself when it says skip.
+    handle_preflight "$site" || continue
+
     echo "  plan: 1 warm-up load (discarded) + $MEASURED_REPS measured, ${LOAD_WINDOW} window"
     # Warm-up load (discarded): primes OS-DNS + CDN edge so the measured reps
     # below don't carry first-load cold latency. Output is intentionally ignored,
@@ -202,8 +251,16 @@ run_chrome() {
       # trace and metrics on the runner.
       echo "  results dir: $results_path"
       summarize_lcp "$results_path" "$site"
+      outcome="$(classify_outcome)"
+      record_disposition "$site" "$outcome" "$PF_VERDICT" "$MEASURED_REPS"
     else
       echo "  $site: no RESULTS path in crossbench output"
+      # Distinct from "blocked": the site was reachable, the harness failed. The
+      # two must not be conflated or fail-open can't be audited. preflight_verdict
+      # is kept as-is so a fail-open pre-flight followed by a harness failure is
+      # still visible as two separate facts.
+      echo "::warning title=Harness failure::$site: crossbench produced no RESULTS path"
+      record_disposition "$site" infra_error "$PF_VERDICT" "$MEASURED_REPS"
     fi
     rm -f "$out"
   done
@@ -213,7 +270,10 @@ run_chrome() {
 preflight
 # TSV header. Columns: browser, browser_version, site, rep, lcp_ms.
 printf 'browser\tbrowser_version\tsite\trep\tlcp_ms\n' > "$RESULTS_FILE"
+init_dispositions_file
 run_chrome
+report_dispositions
 log "Done"
-echo "results: $RESULTS_FILE"
-echo "rows:    $(($(wc -l < "$RESULTS_FILE") - 1))"
+echo "results:      $RESULTS_FILE"
+echo "rows:         $(($(wc -l < "$RESULTS_FILE") - 1))"
+echo "dispositions: $DISPOSITIONS_FILE"

@@ -1,0 +1,26 @@
+{
+  // Diagnostic-only probe config: capture Chromium's NetLog for a page load.
+  //
+  // Purpose: the navToLCP Chrome path reports nothing at all for several sites
+  // (reddit.com, yelp.com, tripadvisor.com, indeed.com), because Chrome's
+  // PageLoadMetrics deliberately emits no LCP slice for an error navigation.
+  // That makes "the site is blocked" and "the LCP window was too short" look
+  // identical downstream — both are simply an absent metric.
+  //
+  // NetLog settles it with the actual HTTP status of the main document, which is
+  // the one signal the JS path cannot get (Safari doesn't implement
+  // PerformanceNavigationTiming.responseStatus, and reddit's wall is served with
+  // a 200 to some clients anyway, so status-from-the-page is a dead end).
+  //
+  // No perfetto/trace_processor here on purpose: this run is asking "what did
+  // the network return", not "how fast did it paint", and skipping the trace
+  // makes each repetition several times cheaper.
+  //
+  // capture_mode "default" excludes cookies and credentials but still records
+  // response headers, which is where the status line lives.
+  "probes": {
+    "netlog": {
+      "capture_mode": "default"
+    }
+  }
+}

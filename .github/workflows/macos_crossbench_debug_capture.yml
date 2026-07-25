@@ -91,6 +91,85 @@ jobs:
           if-no-files-found: warn
           retention-days: 7
 
+  chrome-netlog:
+    name: Chrome NetLog status per site
+    # Classifies every site the Chrome navToLCP path reports nothing for. An
+    # absent LCP metric is ambiguous by construction — Chrome emits no LCP slice
+    # for an error navigation, and it also emits none when LCP never finalized
+    # inside the load window. NetLog separates the two with the real HTTP status.
+    runs-on: macos-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Provision crossbench (python, poetry, Chrome, checkout)
+        run: ./provision-macos.sh
+
+      - name: Run Chrome with NetLog per site
+        env:
+          # The four sites Chrome reports no metric for, the two that report an
+          # unfinalized -1, and wikipedia.org as a known-good control — without
+          # a control a run of all-403s can't be distinguished from a broken
+          # probe config.
+          SITES: >-
+            reddit.com yelp.com tripadvisor.com indeed.com
+            weather.com yahoo.com wikipedia.org
+        run: |
+          set -uo pipefail
+          probe_config="$PWD/debug-netlog.config.hjson"
+          parser="$PWD/debug-parse-netlog.py"
+          out_dir="$PWD/debug-netlog"
+          mkdir -p "$out_dir"
+          cd "${CROSSBENCH_DIR:-$HOME/Developer/crossbench-upstream}"
+          rm -f .vpython3
+
+          summary="$out_dir/summary.txt"
+          : > "$summary"
+          for site in $SITES; do
+            echo "=== $site ==="
+            log="$(mktemp)"
+            poetry run python ./cb.py \
+              loading \
+              --browser=chrome \
+              --probe-config="$probe_config" \
+              --repetitions=1 \
+              --url="$site,12s" \
+              --env-validation=skip 2>&1 | tee "$log" || true
+            results_path="$(grep -E '^RESULTS: ' "$log" | tail -1 | sed -E 's/^RESULTS: //' || true)"
+            if [ -z "$results_path" ] || [ ! -d "$results_path" ]; then
+              echo "$site: no RESULTS path in crossbench output" | tee -a "$summary"
+              rm -f "$log"; continue
+            fi
+            netlog="$(find "$results_path" -name netlog.json 2>/dev/null | head -1)"
+            if [ -z "$netlog" ]; then
+              echo "$site: no netlog.json produced" | tee -a "$summary"
+              rm -f "$log"; continue
+            fi
+            # Keep the raw dump so a surprising verdict can be re-examined.
+            # Gzipped: a 12s default-mode NetLog runs tens of MB and this loop
+            # produces seven of them, which is a slow artifact upload uncompressed.
+            gzip -c "$netlog" > "$out_dir/netlog-$site.json.gz" || true
+            python3 "$parser" --netlog "$netlog" --host "$site" --label "$site" \
+              | tee -a "$summary" || true
+            rm -f "$log"
+          done
+          echo
+          echo "================ SUMMARY ================"
+          cat "$summary"
+
+      - name: Upload netlogs
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: debug-netlog
+          path: macOS/scripts/crossbench/debug-netlog/*
+          if-no-files-found: warn
+          retention-days: 7
+
   capture:
     name: Capture page
     runs-on: macos-latest

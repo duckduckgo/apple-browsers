@@ -81,33 +81,66 @@ preflight() {
   fi
 }
 
+# crossbench lays results out as
+#   .../stories/<story>/<repetition>/<temperature>/...
+# so the path itself carries the repetition index. Deriving it from the path
+# rather than from a counter keeps the logged repetition number meaningful when
+# some repetitions are discarded, and stable regardless of directory order.
+rep_of_path() {
+  awk -F/ '{for (i = 1; i <= NF; i++) if ($i == "stories") { print $(i + 2); exit }}' <<< "$1"
+}
+
 # Parse a crossbench RESULTS dir: for every per-iteration v2_metrics.textproto,
 # pull the first `double_value:` — the LCP metric, which trace_processor emits in
 # NANOSECONDS — and convert to ms. An iteration whose LCP never finalized is
 # emitted as `double_value: -1`; count those separately. Appends one TSV row per
 # valid value to RESULTS_FILE and prints a per-site summary to the console.
+#
+# Every individual attempt is logged with its disposition, so a site that lands
+# fewer samples than expected can be read straight from the CI log instead of
+# being inferred from a missing row. Attempt lines are prefixed `attempt` to be
+# greppable inside crossbench's own --debug output.
 summarize_lcp() {
   local results_path="$1" site="$2"
   local -a vals=()
-  local f v ms unfinalized=0 rep=0
+  local f v ms rep_idx unfinalized=0 no_metric=0 attempts=0 rep=0
   while IFS= read -r f; do
+    attempts=$((attempts + 1))
+    rep_idx="$(rep_of_path "$f")"
     # `|| true`: under set -e/pipefail a no-match grep would abort the script.
     v="$(grep -Eo 'double_value: -?[0-9]+(\.[0-9]+)?' "$f" | head -1 | awk '{print $2}' || true)"
-    [ -z "$v" ] && continue
+    if [ -z "$v" ]; then
+      # No metric at all. Chrome's PageLoadMetrics emits no LCP slice for an
+      # error navigation, so this is what a bot-block or HTTP error looks like
+      # from here — indistinguishable, without a NetLog, from a probe failure.
+      echo "    attempt rep=$rep_idx: no double_value in metrics -> SKIPPED (no metric emitted; error navigation or probe failure)"
+      no_metric=$((no_metric + 1))
+      continue
+    fi
     if awk -v v="$v" 'BEGIN{exit !(v < 0)}'; then
+      echo "    attempt rep=$rep_idx: lcp_raw=$v -> SKIPPED (LCP never finalized within ${LOAD_WINDOW} window)"
       unfinalized=$((unfinalized + 1))
       continue
     fi
     ms="$(awk -v ns="$v" 'BEGIN{printf "%.1f", ns / 1000000}')"   # ns -> ms
     vals+=("$ms")
     rep=$((rep + 1))
+    echo "    attempt rep=$rep_idx: lcp_ms=$ms -> recorded"
     printf 'chrome\t%s\t%s\t%d\t%s\n' "$CHROME_VERSION" "$site" "$rep" "$ms" >> "$RESULTS_FILE"
     # Only per-iteration files live under a trace_processor/ dir. crossbench also
     # writes story-level MERGED copies (identical dupes) which would inflate n.
-  done < <(find "$results_path" -path '*/trace_processor/v2_metrics.textproto' 2>/dev/null)
+    # Sorted so attempts are logged in repetition order.
+  done < <(find "$results_path" -path '*/trace_processor/v2_metrics.textproto' 2>/dev/null | sort)
 
+  # Always print the tally, including the zero-attempt case — "expected 5, saw 0"
+  # is a different failure from "saw 5, discarded 5" and the log should say which.
+  echo "  $site: attempts=$attempts/$MEASURED_REPS recorded=${#vals[@]} unfinalized=$unfinalized no-metric=$no_metric"
   if [ "$unfinalized" -gt 0 ]; then
     echo "  WARNING: $site: $unfinalized iteration(s) with unfinalized LCP (-1)." >&2
+  fi
+  if [ "$attempts" -eq 0 ]; then
+    echo "  $site: NO METRICS FILES FOUND under $results_path (probe or trace_processor did not run)"
+    return
   fi
   if [ "${#vals[@]}" -eq 0 ]; then
     echo "  $site: NO LCP VALUES PARSED (check trace / probe)"
@@ -130,16 +163,23 @@ run_chrome() {
   local site out results_path
   for site in "${SITES[@]}"; do
     log "site: $site"
+    echo "  plan: 1 warm-up load (discarded) + $MEASURED_REPS measured, ${LOAD_WINDOW} window"
     # Warm-up load (discarded): primes OS-DNS + CDN edge so the measured reps
-    # below don't carry first-load cold latency. Output is intentionally ignored.
-    poetry run python ./cb.py \
+    # below don't carry first-load cold latency. Output is intentionally ignored,
+    # but its exit status is reported — a warm-up that always fails is a signal
+    # the site is unreachable rather than slow.
+    if poetry run python ./cb.py \
       loading \
       --browser=chrome-stable \
       --probe-config="$PROBE_CONFIG" \
       --repetitions=1 \
       --url="$site,$LOAD_WINDOW" \
       --about-blank-duration=2s \
-      --env-validation=skip >/dev/null 2>&1 || true
+      --env-validation=skip >/dev/null 2>&1; then
+      echo "  warm-up: ok"
+    else
+      echo "  warm-up: crossbench exited non-zero (ignored, warm-up is discarded)"
+    fi
 
     out="$(mktemp)"
     # --about-blank-duration is REQUIRED: navigating to about:blank after each
@@ -158,6 +198,9 @@ run_chrome() {
     # `|| true`: under set -e/pipefail a no-match grep would abort the script.
     results_path="$(grep -E '^RESULTS: ' "$out" | tail -1 | sed -E 's/^RESULTS: //' || true)"
     if [ -n "$results_path" ] && [ -d "$results_path" ]; then
+      # Logged so a surprising per-attempt result can be traced back to the raw
+      # trace and metrics on the runner.
+      echo "  results dir: $results_path"
       summarize_lcp "$results_path" "$site"
     else
       echo "  $site: no RESULTS path in crossbench output"

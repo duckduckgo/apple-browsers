@@ -120,6 +120,11 @@ summarize_lcp() {
   local results_path="$1" site="$2"
   local -a vals=()
   local f info v http_status unfinalized=0 blocked=0 rep=0
+  # Every status seen this site, reported in the summary below. Without this the
+  # log can't distinguish "the UA doesn't expose responseStatus" (all -1, guard
+  # inert) from "the navigation really did return 2xx" (guard working, the page
+  # is just genuinely fast) — the two look identical in the lcp_ms line.
+  local -a statuses=()
   while IFS= read -r f; do
     # stdlib python: read lcp_ms and http_status out of the flattened js.json as
     # "<lcp_ms> <http_status>". Prints nothing if lcp_ms is absent so the `-z`
@@ -138,6 +143,7 @@ if isinstance(v, (int, float)):
     [ -z "$info" ] && continue
     v="${info%% *}"
     http_status="${info##* }"
+    statuses+=("$http_status")
     # Discard error navigations. The LCP API measures whatever painted, so a
     # bot-block or error page yields a small, plausible-looking value — which is
     # worse than no value at all, because nothing downstream can tell it apart
@@ -163,6 +169,12 @@ if isinstance(v, (int, float)):
     printf 'safari\t%s\t%s\t%d\t%s\n' "$SAFARI_VERSION" "$site" "$rep" "$v" >> "$RESULTS_FILE"
   done < <(find "$results_path" -path '*/stories/*/*/*/js.json' 2>/dev/null | sort)
 
+  # Distinct statuses, sorted. "http_status=[-1]" means this Safari doesn't
+  # expose responseStatus, so the HTTP >= 400 filter above is inert and cannot
+  # be relied on to reject bot-block pages.
+  if [ "${#statuses[@]}" -gt 0 ]; then
+    echo "  $site: http_status=[$(printf '%s\n' "${statuses[@]}" | sort -un | paste -sd, -)]"
+  fi
   if [ "$unfinalized" -gt 0 ]; then
     echo "  WARNING: $site: $unfinalized repetition(s) with no LCP entry (-1)." >&2
   fi

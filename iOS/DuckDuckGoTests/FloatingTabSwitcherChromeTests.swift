@@ -211,6 +211,15 @@ final class FloatingTabSwitcherChromeTests: XCTestCase {
         XCTAssertEqual(collectionView.contentInset.bottom, 0)
     }
 
+    func testWhenCollectionContentInsetIsAppliedThenTopIncludesFloatingMargin() {
+        let chrome = FloatingTabSwitcherChrome()
+        let collectionView = UICollectionView(frame: .zero, collectionViewLayout: UICollectionViewFlowLayout())
+
+        chrome.applyCollectionContentInset(to: collectionView)
+
+        XCTAssertEqual(collectionView.contentInset.top, 58)
+    }
+
     func testWhenLargeSizeHasSingleEmptyTabThenEditMenuIsDisabled() {
         let chrome = makeInstalledChrome()
         chrome.actions.onEditMenuRequested = { UIMenu(children: []) }

@@ -30,6 +30,7 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
     private enum Metrics {
         static let estimatedNavBarHeight: CGFloat = 50
         static let estimatedToolbarHeight: CGFloat = 49
+        static let topFloatingInset: CGFloat = 8
         static let bottomFloatingInset: CGFloat = 8
         static let fallbackToolbarHorizontalPadding: CGFloat = 20
         static let fallbackAIButtonSpacing: CGFloat = 12
@@ -368,7 +369,7 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
     func applyCollectionContentInset(to collectionView: UICollectionView) {
         let navHeight = navigationBar.frame.height > 0 ? navigationBar.frame.height : Metrics.estimatedNavBarHeight
         let toolbarHeight = toolbar.frame.height > 0 ? toolbar.frame.height : Metrics.estimatedToolbarHeight
-        collectionView.contentInset.top = navHeight
+        collectionView.contentInset.top = navHeight + Metrics.topFloatingInset
         collectionView.contentInset.bottom = interfaceMode.isLarge ? 0 : toolbarHeight + Metrics.bottomFloatingInset
     }
 
@@ -404,7 +405,7 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
         }
 
         var constraints = [
-            navigationBar.topAnchor.constraint(equalTo: topGuide.topAnchor, constant: 8),
+            navigationBar.topAnchor.constraint(equalTo: topGuide.topAnchor, constant: Metrics.topFloatingInset),
             navigationBar.leadingAnchor.constraint(equalTo: hostView.safeAreaLayoutGuide.leadingAnchor),
             navigationBar.trailingAnchor.constraint(equalTo: hostView.safeAreaLayoutGuide.trailingAnchor),
 

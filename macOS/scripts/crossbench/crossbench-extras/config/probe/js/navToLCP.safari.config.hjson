@@ -42,11 +42,12 @@
   //   lcp_ms      - navigation -> LCP in milliseconds (or -1 if no LCP entry)
   //   lcp_count   - number of LCP candidate entries observed (0 => -1 lcp_ms)
   //   http_status - final navigation response status, or -1 when the UA doesn't
-  //                 expose PerformanceNavigationTiming.responseStatus. WebKit's
-  //                 support for that field is UNVERIFIED here, so -1 means
-  //                 "unknown" and callers must fail open on it; read this field
-  //                 out of a run's artifact to find out whether the Safari on
-  //                 the runner actually populates it.
+  //                 expose PerformanceNavigationTiming.responseStatus.
+  //                 MEASURED 2026-07-25: Safari 26.4 does NOT expose it, so
+  //                 this is -1 in practice and the filter in test-safari.sh is
+  //                 currently inert. Reported anyway so the day WebKit ships
+  //                 the field the filter starts working, and so the summary can
+  //                 show which case a run is in.
   "probes": {
     "js": {
       "js":

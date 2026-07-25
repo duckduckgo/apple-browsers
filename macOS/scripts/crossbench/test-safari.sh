@@ -22,7 +22,10 @@
 #   3. Repetitions whose navigation returned HTTP >= 400 are discarded here.
 #      Chrome gets this for free — PageLoadMetrics emits no LCP slice for an
 #      error navigation — but the JS LCP API times a bot-block page as readily
-#      as a real one, so without this filter a 403 shows up as a fast load.
+#      as a real one, so without a filter a 403 shows up as a fast load.
+#      CAVEAT: Safari 26.4 does not expose responseStatus, so that filter is
+#      inert today and blocked sites still yield bogus fast values. See the
+#      http_status comment in summarize_lcp.
 #
 # NOTE: live network is NOISY — values vary run-to-run with network conditions
 # and are NOT comparable to recorded-network (WPR) numbers, nor directly to the
@@ -116,10 +119,19 @@ preflight() {
 # unfinalized (-1) Chrome iterations. Repetitions whose navigation returned an
 # HTTP error are discarded too — see the http_status comment below. Appends
 # one TSV row per valid value to RESULTS_FILE and prints a per-site summary.
+# crossbench lays results out as
+#   .../stories/<story>/<repetition>/<temperature>/...
+# so the path itself carries the repetition index. Deriving it from the path
+# rather than from a counter keeps the logged repetition number meaningful when
+# some repetitions are discarded, and stable regardless of directory order.
+rep_of_path() {
+  awk -F/ '{for (i = 1; i <= NF; i++) if ($i == "stories") { print $(i + 2); exit }}' <<< "$1"
+}
+
 summarize_lcp() {
   local results_path="$1" site="$2"
   local -a vals=()
-  local f info v http_status unfinalized=0 blocked=0 rep=0
+  local f info v http_status rep_idx unfinalized=0 blocked=0 no_metric=0 attempts=0 rep=0
   # Every status seen this site, reported in the summary below. Without this the
   # log can't distinguish "the UA doesn't expose responseStatus" (all -1, guard
   # inert) from "the navigation really did return 2xx" (guard working, the page
@@ -140,7 +152,13 @@ if isinstance(v, (int, float)):
     s = d.get("http_status")
     print(f"{v:.1f}", int(s) if isinstance(s, (int, float)) else -1)
 ' "$f" || true)"
-    [ -z "$info" ] && continue
+    attempts=$((attempts + 1))
+    rep_idx="$(rep_of_path "$f")"
+    if [ -z "$info" ]; then
+      echo "    attempt rep=$rep_idx: no lcp_ms in js.json -> SKIPPED (probe wrote no metric)"
+      no_metric=$((no_metric + 1))
+      continue
+    fi
     v="${info%% *}"
     http_status="${info##* }"
     statuses+=("$http_status")
@@ -149,31 +167,47 @@ if isinstance(v, (int, float)):
     # worse than no value at all, because nothing downstream can tell it apart
     # from a genuinely fast page (a 403 Reddit block page measured ~200ms).
     #
+    # MEASURED 2026-07-25, Safari 26.4 (21624.1.16.11.4) on a hosted runner:
+    # PerformanceNavigationTiming.responseStatus is NOT exposed, so http_status
+    # is -1 for every repetition and this filter never fires. It is kept because
+    # it costs nothing and starts working the day WebKit ships the field — but
+    # do NOT treat it as protection against bot-block pages today. The
+    # http_status=[...] line in the summary is how you check.
+    #
     # Deliberately >= 400 rather than "not 2xx": per spec responseStatus is the
-    # status of the FINAL response, but WebKit's support for the field is
-    # unverified, and a UA reporting the FIRST response would make a not-2xx
-    # test throw away every site that redirects (reddit.com -> www.reddit.com is
-    # a 301). Erring toward keeping data is right here — a stray 3xx costs one
-    # noisy sample, whereas over-filtering silently empties whole domains. The
-    # -1 "UA didn't expose it" case falls open through the same comparison.
+    # status of the FINAL response, but a UA reporting the FIRST response would
+    # make a not-2xx test throw away every site that redirects (reddit.com ->
+    # www.reddit.com is a 301). Erring toward keeping data is right here — a
+    # stray 3xx costs one noisy sample, whereas over-filtering silently empties
+    # whole domains. The -1 case falls open through the same comparison.
     if [ "$http_status" -ge 400 ]; then
+      echo "    attempt rep=$rep_idx: lcp_ms=$v http_status=$http_status -> SKIPPED (HTTP error / bot-block page)"
       blocked=$((blocked + 1))
       continue
     fi
     if awk -v v="$v" 'BEGIN{exit !(v < 0)}'; then
+      echo "    attempt rep=$rep_idx: lcp_ms=-1 http_status=$http_status -> SKIPPED (no LCP entry within ${LOAD_WINDOW} window)"
       unfinalized=$((unfinalized + 1))
       continue
     fi
     vals+=("$v")
     rep=$((rep + 1))
+    echo "    attempt rep=$rep_idx: lcp_ms=$v http_status=$http_status -> recorded"
     printf 'safari\t%s\t%s\t%d\t%s\n' "$SAFARI_VERSION" "$site" "$rep" "$v" >> "$RESULTS_FILE"
   done < <(find "$results_path" -path '*/stories/*/*/*/js.json' 2>/dev/null | sort)
 
+  # Always print the tally, including the zero-attempt case — "expected 5, saw 0"
+  # is a different failure from "saw 5, discarded 5" and the log should say which.
+  echo "  $site: attempts=$attempts/$MEASURED_REPS recorded=${#vals[@]} unfinalized=$unfinalized http-error=$blocked no-metric=$no_metric"
   # Distinct statuses, sorted. "http_status=[-1]" means this Safari doesn't
   # expose responseStatus, so the HTTP >= 400 filter above is inert and cannot
   # be relied on to reject bot-block pages.
   if [ "${#statuses[@]}" -gt 0 ]; then
     echo "  $site: http_status=[$(printf '%s\n' "${statuses[@]}" | sort -un | paste -sd, -)]"
+  fi
+  if [ "$attempts" -eq 0 ]; then
+    echo "  $site: NO js.json FILES FOUND under $results_path (probe did not run)"
+    return
   fi
   if [ "$unfinalized" -gt 0 ]; then
     echo "  WARNING: $site: $unfinalized repetition(s) with no LCP entry (-1)." >&2
@@ -206,14 +240,21 @@ run_safari() {
   local site out results_path
   for site in "${SITES[@]}"; do
     log "site: $site"
-    # Warm-up load (discarded): primes OS-DNS + CDN edge. Output ignored.
-    poetry run python ./cb.py \
+    echo "  plan: 1 warm-up load (discarded) + $MEASURED_REPS measured, ${LOAD_WINDOW} window"
+    # Warm-up load (discarded): primes OS-DNS + CDN edge. Output ignored, but the
+    # exit status is reported — a warm-up that always fails is a signal the site
+    # is unreachable rather than slow.
+    if poetry run python ./cb.py \
       loading \
       --browser=safari \
       --probe-config="$PROBE_CONFIG" \
       --repetitions=1 \
       --url="$site,$LOAD_WINDOW" \
-      --env-validation=skip >/dev/null 2>&1 || true
+      --env-validation=skip >/dev/null 2>&1; then
+      echo "  warm-up: ok"
+    else
+      echo "  warm-up: crossbench exited non-zero (ignored, warm-up is discarded)"
+    fi
 
     out="$(mktemp)"
     # NO --about-blank-duration on purpose (see header). No --network => live.
@@ -229,6 +270,9 @@ run_safari() {
     # `|| true`: under set -e/pipefail a no-match grep would abort the script.
     results_path="$(grep -E '^RESULTS: ' "$out" | tail -1 | sed -E 's/^RESULTS: //' || true)"
     if [ -n "$results_path" ] && [ -d "$results_path" ]; then
+      # Logged so a surprising per-attempt result can be traced back to the raw
+      # probe output on the runner.
+      echo "  results dir: $results_path"
       summarize_lcp "$results_path" "$site"
     else
       echo "  $site: no RESULTS path in crossbench output"

@@ -44,7 +44,7 @@ final class FloatingUIManager: FloatingUIManaging {
     }
 
     var isFloatingUIEnabled: Bool {
-        // iPhone-only, iOS 26+ (for obscuredContentInsets), and requires Unified Toggle Input.
+        // iPhone-only, iOS 26+, and requires Unified Toggle Input.
         guard featureFlagger.isFeatureOn(.floatingUI), !isPad(), isSupportedOS() else { return false }
         return unifiedToggleInputFeature.isAvailable
     }

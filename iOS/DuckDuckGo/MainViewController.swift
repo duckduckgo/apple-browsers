@@ -2980,6 +2980,14 @@ class MainViewController: UIViewController {
         viewCoordinator.omniBar.isExpandedPhone = enabled
         // Minimal chrome hides the toolbar capsule, so the single bar renders its own glass.
         viewCoordinator.omniBar.barView.setFloatingMinimalChromeBar(enabled && isFloatingUIEnabled)
+
+        if enabled {
+            let height = viewCoordinator.omniBar.barView.expectedHeight
+            let isBottom = appSettings.currentAddressBarPosition.isBottom
+            currentTab?.webView.scrollView.contentInset = .init(top: isBottom ? 0.0 : height, left: 0, bottom: isBottom ? height : 0.0, right: 0)
+        } else {
+            currentTab?.webView.scrollView.contentInset = .zero
+        }
     }
 
     private func applyLargeWidth() {
@@ -3042,7 +3050,7 @@ class MainViewController: UIViewController {
             swipeTabsCoordinator?.refresh(tabsModel: tabManager.currentTabsModel)
         }
 
-        // Refresh the obscured inset so moving the bar top/bottom in landscape updates it immediately.
+        // Refresh the web view frame after entering minimal chrome.
         currentTab?.updateWebViewBottomAnchor(for: currentBarsVisibility)
     }
 
@@ -3162,6 +3170,9 @@ class MainViewController: UIViewController {
         ViewHighlighter.updatePositions()
         omniBar.refreshCustomizableButton()
         reanchorAITabCollapsedFooterIfNeeded()
+        if isFloatingUIEnabled {
+            currentTab?.updateWebViewBottomAnchor(for: currentBarsVisibility)
+        }
     }
 
     /// The AI-tab collapsed footer is a bottom chat input that must sit above the keyboard/home
@@ -4217,7 +4228,9 @@ extension MainViewController: BrowserChromeDelegate {
         }
         updateToolbarConstant(percent)
         updateNavBarConstant(percent)
-        currentTab?.updateWebViewBottomAnchor(for: percent)
+        if !isFloatingUIEnabled {
+            currentTab?.updateWebViewBottomAnchor(for: percent)
+        }
         updateFloatingTopNewTabPageInset(for: percent)
 
         let chromeAlpha = chromeAlpha(for: percent)
@@ -4321,66 +4334,21 @@ extension MainViewController: BrowserChromeDelegate {
         return height
     }
 
-    /// Full toolbar slot height at the bottom, measured from the screen bottom: the toolbar height (its
-    /// bottom is pinned to the safe area) plus the safe area itself. In floating bottom-address-bar mode
-    /// the omnibar is hosted inside the toolbar (so `toolbarHeight` already includes it) and the nav bar
-    /// container is hidden, so it must not be added here. A footer resized against this lands exactly on
-    /// the toolbar's top edge.
+    /// Full toolbar slot height at the bottom, measured from the screen bottom.
     private var floatingToolbarSlotHeight: CGFloat {
         toolbarHeight + view.safeAreaInsets.bottom
     }
 
-    /// Height obscured by the resting floating domain capsule, measured from the screen bottom, with a
-    /// little extra clearance so a page-fixed footer doesn't sit flush against the pill. The capsule
-    /// only rests at the bottom in bottom-address-bar mode, and only when it is eligible to show for a
-    /// non-empty domain; otherwise a hidden footer should pin straight to the safe area.
-    private var floatingBottomCapsuleObscuredHeight: CGFloat {
-        guard appSettings.currentAddressBarPosition.isBottom,
-              isFloatingCapsuleActive,
-              let domain = currentFloatingDomainText(),
-              !domain.isEmpty else {
-            return 0
-        }
-        return view.safeAreaInsets.bottom
-            + floatingDomainCapsuleController.restObscuredHeightAboveSafeArea
-            + FloatingDomainCapsuleController.fixedElementClearance
-    }
-
-    func floatingWebViewBottomObscuredHeight(for barsVisibilityPercent: CGFloat) -> CGFloat {
-        // Minimal chrome hides the toolbar: reserve the single bar's height only for a bottom address
-        // bar (reclaimed as it scrolls away); a top address bar leaves just the safe area.
-        if isInMinimalChromeLayout {
-            guard viewCoordinator.addressBarPosition.isBottom else {
-                return view.safeAreaInsets.bottom
-            }
-            let clampedPercent = max(0, min(1, barsVisibilityPercent))
-            return max(barsMaxHeight * clampedPercent, view.safeAreaInsets.bottom)
-        }
-        return FloatingUILayoutPolicy.webViewBottomObscuredHeight(
-            barsVisibilityPercent: barsVisibilityPercent,
-            toolbarSlotHeight: floatingToolbarSlotHeight,
-            bottomCapsuleObscuredHeight: floatingBottomCapsuleObscuredHeight,
-            safeAreaBottom: view.safeAreaInsets.bottom
-        )
-    }
-
-    func floatingWebViewObscuredInsets(for barsVisibilityPercent: CGFloat) -> UIEdgeInsets {
-        UIEdgeInsets(top: floatingWebViewTopObscuredHeight(for: barsVisibilityPercent),
-                     left: 0,
-                     bottom: floatingWebViewBottomObscuredHeight(for: barsVisibilityPercent),
-                     right: 0)
-    }
-
-    /// Top region obscured by chrome: safe area, plus the omnibar for a top address bar. In minimal
-    /// chrome the top bar scrolls off, so its portion is reclaimed as it hides.
-    private func floatingWebViewTopObscuredHeight(for barsVisibilityPercent: CGFloat) -> CGFloat {
+    var floatingWebViewPortraitInsets: UIEdgeInsets {
         let safeAreaTop = view.safeAreaInsets.top
-        guard appSettings.currentAddressBarPosition == .top else { return safeAreaTop }
-        if isInMinimalChromeLayout {
-            let clampedPercent = max(0, min(1, barsVisibilityPercent))
-            return safeAreaTop + omniBar.barView.expectedHeight * clampedPercent
-        }
-        return safeAreaTop + omniBar.barView.expectedHeight
+        let topBarBottom = viewCoordinator.addressBarPosition == .top
+            ? safeAreaTop + omniBar.barView.expectedHeight
+            : safeAreaTop
+        return FloatingUILayoutPolicy.webViewPortraitInsets(
+            topBarBottom: topBarBottom,
+            safeAreaTop: safeAreaTop,
+            bottomBarTop: view.bounds.height - floatingToolbarSlotHeight,
+            containerHeight: view.bounds.height)
     }
 
     var minimalChromeBottomHeight: CGFloat {

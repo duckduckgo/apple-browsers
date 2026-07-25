@@ -80,13 +80,16 @@ extension TabViewController {
         containerStackView.axis = .vertical
         containerStackView.translatesAutoresizingMaskIntoConstraints = false
 
+        let isFloatingUIEnabled = FloatingUIManager(featureFlagger: featureFlagger).isFloatingUIEnabled
+
         final class OuterContainer: UIView { }
         outerContainer = OuterContainer()
-        outerContainer.clipsToBounds = true
+        outerContainer.clipsToBounds = !isFloatingUIEnabled
         outerContainer.translatesAutoresizingMaskIntoConstraints = false
 
         final class WebViewContainerView: UIView { }
         webViewContainer = WebViewContainerView()
+        webViewContainer.clipsToBounds = !isFloatingUIEnabled
         webViewContainer.translatesAutoresizingMaskIntoConstraints = false
 
         outerContainer.addSubview(webViewContainer)
@@ -101,9 +104,8 @@ extension TabViewController {
         rootView.addSubview(containerStackView)
 
         let safeArea = rootView.safeAreaLayoutGuide
-        let isFloatingUIEnabled = FloatingUIManager(featureFlagger: featureFlagger).isFloatingUIEnabled
         // Floating UI: top/bottom pin to the screen edges so content underflows the glass chrome (via
-        // WebKit obscured insets); leading/trailing pin to the safe area so landscape respects the notch.
+        // the unclipped web view); leading/trailing pin to the safe area so landscape respects the notch.
         let containerStackViewTop = isFloatingUIEnabled
             ? containerStackView.topAnchor.constraint(equalTo: rootView.topAnchor)
             : containerStackView.topAnchor.constraint(equalTo: safeArea.topAnchor)

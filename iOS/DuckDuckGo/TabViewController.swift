@@ -888,18 +888,13 @@ class TabViewController: UIViewController {
         updateWebViewBottomAnchor(for: 1.0)
     }
 
-    @discardableResult
-    private func setWebViewObscuredContentInsetsIfSupported(_ insets: UIEdgeInsets) -> Bool {
-        guard #available(iOS 26, *),
-              let webView,
-              webView.responds(to: #selector(setter: WKWebView.obscuredContentInsets)) else {
-            return false
-        }
-        webView.obscuredContentInsets = insets
-        return true
-    }
-
     func updateWebViewBottomAnchor(for barsVisibilityPercent: CGFloat) {
+        if FloatingUIManager(featureFlagger: featureFlagger).isFloatingUIEnabled {
+            updateBorderViewForFloatingUIIfNeeded()
+            layoutFloatingWebView()
+            return
+        }
+
         let isUnifiedToggleInputAffectingBottomLayout = isAITab && unifiedToggleInputFeature.isAvailable
         if appSettings.currentAddressBarPosition == .bottom && !isUnifiedToggleInputAffectingBottomLayout {
             if chromeDelegate?.isInMinimalChromeLayout == true {
@@ -928,73 +923,35 @@ class TabViewController: UIViewController {
         } else {
             webViewBottomAnchorConstraint?.constant = 0
         }
-        if FloatingUIManager(featureFlagger: featureFlagger).isFloatingUIEnabled {
-            borderView.bottomAlpha = 0
-            borderView.isHidden = true
-            borderView.isTopVisible = false
-            borderView.isBottomVisible = false
-
-            // AI tabs with the unified toggle input own their own bottom layout, so keep the web view
-            // full-bleed with no obscured region there.
-            let isUnifiedToggleInputAffectingLayout = isAITab && unifiedToggleInputFeature.isAvailable
-            let obscuredInsets: UIEdgeInsets = isUnifiedToggleInputAffectingLayout
-                ? .zero
-                : (chromeDelegate?.floatingWebViewObscuredInsets(for: barsVisibilityPercent) ?? .zero)
-            if setWebViewObscuredContentInsetsIfSupported(obscuredInsets) {
-                // Keep the web view full-bleed and reserve the chrome region via WebKit's public
-                // `obscuredContentInsets`, which positions page fixed/sticky elements and the layout
-                // viewport reliably (including on load) and lets content scroll behind the glass.
-                webViewBottomAnchorConstraint?.constant = 0
-                // `obscuredContentInsets` does not adjust the scroll view's content/indicator insets in
-                // UIKit, so scrollable content would rest behind the bars. Feed the chrome region
-                // (beyond the device safe area, which the scroll view already accounts for) into
-                // `additionalSafeAreaInsets` so at-rest content and scroll indicators clear the bars too.
-                let deviceSafeArea = view.window?.safeAreaInsets ?? .zero
-                additionalSafeAreaInsets = UIEdgeInsets(
-                    top: max(0, obscuredInsets.top - deviceSafeArea.top),
-                    left: 0,
-                    bottom: max(0, obscuredInsets.bottom - deviceSafeArea.bottom),
-                    right: 0
-                )
-            } else {
-                // iOS 18 fallback: physically resize the web view so its bottom edge sits at the top of
-                // the visible bottom chrome (toolbar -> capsule -> safe area), and inset the top via
-                // `additionalSafeAreaInsets`.
-                let bottomObscuredHeight = isUnifiedToggleInputAffectingLayout
-                    ? 0
-                    : (chromeDelegate?.floatingWebViewBottomObscuredHeight(for: barsVisibilityPercent) ?? 0)
-                webViewBottomAnchorConstraint?.constant = -bottomObscuredHeight
-                updateFloatingUISafeAreaInsets()
-            }
-        } else {
-            borderView.isHidden = false
-            borderView.bottomAlpha = AppWidthObserver.shared.isLargeWidth ? 0 : barsVisibilityPercent
-            // Defensive: clear any obscured insets left over if floating UI was toggled off at runtime.
-            setWebViewObscuredContentInsetsIfSupported(.zero)
-        }
+        borderView.isHidden = false
+        borderView.bottomAlpha = AppWidthObserver.shared.isLargeWidth ? 0 : barsVisibilityPercent
     }
 
-    /// In floating UI mode the web view underflows the top glass chrome, so communicate the top
-    /// omnibar-obscured region to WebKit via `additionalSafeAreaInsets` (top only). The bottom obscured
-    /// region is handled by resizing the web view instead (see `updateWebViewBottomAnchor`), which pins
-    /// bottom `position: fixed` elements reliably on load.
-    private func updateFloatingUISafeAreaInsets() {
-        // AI tabs with the unified toggle input manage their own top/bottom layout (the content
-        // container stays anchored to the chrome), so adding insets there would double-offset.
+    private func layoutFloatingWebView() {
+        guard let webView,
+              FloatingUIManager(featureFlagger: featureFlagger).isFloatingUIEnabled else {
+            return
+        }
+
         let isUnifiedToggleInputAffectingLayout = isAITab && unifiedToggleInputFeature.isAvailable
-        let insets = FloatingUILayoutPolicy.webViewAdditionalSafeAreaInsets(
-            addressBarPosition: appSettings.currentAddressBarPosition,
-            isUnifiedToggleInputAffectingLayout: isUnifiedToggleInputAffectingLayout,
-            omniBarHeight: chromeDelegate?.omniBar.barView.expectedHeight ?? 0
-        )
-        guard additionalSafeAreaInsets != insets else { return }
-        additionalSafeAreaInsets = insets
+        let usesFullHeight = isUnifiedToggleInputAffectingLayout || webViewContainer.bounds.width > webViewContainer.bounds.height
+        let frame = FloatingUILayoutPolicy.webViewFrame(
+            in: webViewContainer.bounds,
+            portraitInsets: isUnifiedToggleInputAffectingLayout ? .zero : (chromeDelegate?.floatingWebViewPortraitInsets ?? .zero),
+            usesFullHeight: usesFullHeight)
+        guard webView.frame != frame else { return }
+        webView.frame = frame
     }
 
     private func observeNetPConnectionStatusChanges() {
         netPConnectionObserverCancellable = netPConnectionObserver.publisher
             .receive(on: DispatchQueue.main)
             .assign(to: \.netPConnectionStatus, onWeaklyHeld: self)
+    }
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        layoutFloatingWebView()
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -1086,7 +1043,8 @@ class TabViewController: UIViewController {
         } else {
             webView = WebView(frame: view.bounds, configuration: configuration)
         }
-        if FloatingUIManager(featureFlagger: featureFlagger).isFloatingUIEnabled {
+        let isFloatingUIEnabled = FloatingUIManager(featureFlagger: featureFlagger).isFloatingUIEnabled
+        if isFloatingUIEnabled {
             webView.scrollView.clipsToBounds = false
             webView.clipsToBounds = false
             outerContainer.clipsToBounds = false
@@ -1105,14 +1063,19 @@ class TabViewController: UIViewController {
         webView.uiDelegate = self
 
         webViewContainer.addSubview(webView)
-        webView.translatesAutoresizingMaskIntoConstraints = false
-        webViewBottomAnchorConstraint = webView.bottomAnchor.constraint(equalTo: webViewContainer.bottomAnchor)
-        NSLayoutConstraint.activate([
-            webView.topAnchor.constraint(equalTo: webViewContainer.topAnchor),
-            webView.leadingAnchor.constraint(equalTo: webViewContainer.leadingAnchor),
-            webViewBottomAnchorConstraint!,
-            webView.trailingAnchor.constraint(equalTo: webViewContainer.trailingAnchor)
-        ])
+        if isFloatingUIEnabled {
+            webView.translatesAutoresizingMaskIntoConstraints = true
+            layoutFloatingWebView()
+        } else {
+            webView.translatesAutoresizingMaskIntoConstraints = false
+            webViewBottomAnchorConstraint = webView.bottomAnchor.constraint(equalTo: webViewContainer.bottomAnchor)
+            NSLayoutConstraint.activate([
+                webView.topAnchor.constraint(equalTo: webViewContainer.topAnchor),
+                webView.leadingAnchor.constraint(equalTo: webViewContainer.leadingAnchor),
+                webViewBottomAnchorConstraint!,
+                webView.trailingAnchor.constraint(equalTo: webViewContainer.trailingAnchor)
+            ])
+        }
 
         pullToRefreshViewAdapter = PullToRefreshViewAdapter(with: webView.scrollView,
                                                             pullableView: webViewContainer,

@@ -83,85 +83,52 @@ final class FloatingUIManagerTests: XCTestCase {
 
 final class FloatingUILayoutPolicyTests: XCTestCase {
 
-    func testWhenTopAddressBarThenAdditionalSafeAreaInsetsApplyOmniBarHeightToTopOnly() {
-        let insets = FloatingUILayoutPolicy.webViewAdditionalSafeAreaInsets(
-            addressBarPosition: .top,
-            isUnifiedToggleInputAffectingLayout: false,
-            omniBarHeight: 52
-        )
+    func testWhenTopBarIsBelowSafeAreaThenPortraitTopUsesSafeArea() {
+        let insets = FloatingUILayoutPolicy.webViewPortraitInsets(
+            topBarBottom: 20,
+            safeAreaTop: 59,
+            bottomBarTop: 760,
+            containerHeight: 844)
 
-        XCTAssertEqual(insets, UIEdgeInsets(top: 52, left: 0, bottom: 0, right: 0))
+        XCTAssertEqual(insets, UIEdgeInsets(top: 59, left: 0, bottom: 84, right: 0))
     }
 
-    func testWhenBottomAddressBarThenAdditionalSafeAreaInsetsAreZero() {
-        let insets = FloatingUILayoutPolicy.webViewAdditionalSafeAreaInsets(
-            addressBarPosition: .bottom,
-            isUnifiedToggleInputAffectingLayout: false,
-            omniBarHeight: 52
-        )
+    func testWhenTopBarExtendsBelowSafeAreaThenPortraitTopUsesBarBottom() {
+        let insets = FloatingUILayoutPolicy.webViewPortraitInsets(
+            topBarBottom: 111,
+            safeAreaTop: 59,
+            bottomBarTop: 760,
+            containerHeight: 844)
 
-        XCTAssertEqual(insets, .zero)
+        XCTAssertEqual(insets, UIEdgeInsets(top: 111, left: 0, bottom: 84, right: 0))
     }
 
-    func testWhenUnifiedToggleInputAffectsLayoutThenInsetsAreZero() {
-        let topInsets = FloatingUILayoutPolicy.webViewAdditionalSafeAreaInsets(
-            addressBarPosition: .top,
-            isUnifiedToggleInputAffectingLayout: true,
-            omniBarHeight: 52
-        )
-        XCTAssertEqual(topInsets, .zero)
+    func testWhenPortraitThenWebViewFrameRunsBetweenChrome() {
+        let frame = FloatingUILayoutPolicy.webViewFrame(
+            in: CGRect(x: 0, y: 0, width: 390, height: 844),
+            portraitInsets: UIEdgeInsets(top: 111, left: 0, bottom: 84, right: 0),
+            usesFullHeight: false)
 
-        let bottomInsets = FloatingUILayoutPolicy.webViewAdditionalSafeAreaInsets(
-            addressBarPosition: .bottom,
-            isUnifiedToggleInputAffectingLayout: true,
-            omniBarHeight: 52
-        )
-        XCTAssertEqual(bottomInsets, .zero)
+        XCTAssertEqual(frame, CGRect(x: 0, y: 111, width: 390, height: 649))
     }
 
-    func testWhenBarsVisibleThenBottomObscuredHeightIsToolbarSlot() {
-        let height = FloatingUILayoutPolicy.webViewBottomObscuredHeight(
-            barsVisibilityPercent: 1,
-            toolbarSlotHeight: 100,
-            bottomCapsuleObscuredHeight: 70,
-            safeAreaBottom: 34
-        )
+    func testWhenLandscapeThenWebViewUsesFullHeight() {
+        let bounds = CGRect(x: 0, y: 0, width: 844, height: 390)
+        let frame = FloatingUILayoutPolicy.webViewFrame(
+            in: bounds,
+            portraitInsets: UIEdgeInsets(top: 59, left: 0, bottom: 84, right: 0),
+            usesFullHeight: true)
 
-        XCTAssertEqual(height, 100, accuracy: 0.001)
+        XCTAssertEqual(frame, bounds)
     }
 
-    func testWhenBarsHiddenAndBottomCapsuleVisibleThenBottomObscuredHeightTracksCapsule() {
-        let height = FloatingUILayoutPolicy.webViewBottomObscuredHeight(
-            barsVisibilityPercent: 0,
-            toolbarSlotHeight: 100,
-            bottomCapsuleObscuredHeight: 70,
-            safeAreaBottom: 34
-        )
+    func testWhenPortraitInsetsExceedBoundsThenWebViewFrameIsClamped() {
+        let frame = FloatingUILayoutPolicy.webViewFrame(
+            in: CGRect(x: 0, y: 0, width: 100, height: 100),
+            portraitInsets: UIEdgeInsets(top: 120, left: 0, bottom: 80, right: 0),
+            usesFullHeight: false)
 
-        XCTAssertEqual(height, 70, accuracy: 0.001)
-    }
-
-    func testWhenBarsHiddenAndNoBottomCapsuleThenBottomObscuredHeightIsSafeArea() {
-        let height = FloatingUILayoutPolicy.webViewBottomObscuredHeight(
-            barsVisibilityPercent: 0,
-            toolbarSlotHeight: 100,
-            bottomCapsuleObscuredHeight: 0,
-            safeAreaBottom: 34
-        )
-
-        XCTAssertEqual(height, 34, accuracy: 0.001)
-    }
-
-    func testWhenPartiallyHiddenThenBottomObscuredHeightIsMaxOfShrinkingToolbarAndCapsule() {
-        // toolbar term = 100 * 0.5 = 50, capsule rest = 70 -> capsule wins the crossover.
-        let height = FloatingUILayoutPolicy.webViewBottomObscuredHeight(
-            barsVisibilityPercent: 0.5,
-            toolbarSlotHeight: 100,
-            bottomCapsuleObscuredHeight: 70,
-            safeAreaBottom: 34
-        )
-
-        XCTAssertEqual(height, 70, accuracy: 0.001)
+        XCTAssertEqual(frame, CGRect(x: 0, y: 100, width: 100, height: 0))
     }
 
     func testWhenFloatingBottomAddressBarAndNotMinimalChromeThenOmnibarIsHostedInToolbar() {

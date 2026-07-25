@@ -744,7 +744,7 @@ class MainViewCoordinator {
     }
 
     private func activateBaseContentContainerTopAnchor() {
-        // Floating UI spans content to the screen top for both bar positions; chrome is reserved via obscured insets.
+        // Floating UI spans its container to the screen top; the web view applies its own frame.
         let useFloatingTop = isFloatingUIEnabled
             && !isUnifiedToggleInputVisible
             && (aiChatTabChatHeaderContainer?.isHidden ?? true)

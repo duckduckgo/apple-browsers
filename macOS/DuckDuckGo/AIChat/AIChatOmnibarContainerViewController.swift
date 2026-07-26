@@ -1495,6 +1495,10 @@ final class AIChatOmnibarContainerViewController: NSViewController {
                     }
                     // The submenu stays open and never rebuilds, so refresh rows from the attachment list.
                     self.refreshAttachTabsRows(in: menu)
+                    // Going over the cap: close the menu so the over-limit error below the field is visible.
+                    if self.omnibarController.hasExcessTabAttachments {
+                        menu?.cancelTrackingWithoutAnimation()
+                    }
                 }
             )
             item.view = row

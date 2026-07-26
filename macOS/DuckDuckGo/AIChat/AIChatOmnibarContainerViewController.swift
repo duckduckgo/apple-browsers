@@ -1484,6 +1484,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
                     guard let self else { return }
                     // Only fire a pixel / count a mutation on a real change — the toggle no-ops at the cap.
                     let wasAttached = self.omnibarController.activeTabAttachments.contains(where: { $0.id == candidate.id })
+                    let wasOverCap = self.omnibarController.hasExcessTabAttachments
                     self.omnibarController.toggleTabAttachment(candidate)
                     let nowAttached = self.omnibarController.activeTabAttachments.contains(where: { $0.id == candidate.id })
                     if nowAttached != wasAttached {
@@ -1495,8 +1496,10 @@ final class AIChatOmnibarContainerViewController: NSViewController {
                     }
                     // The submenu stays open and never rebuilds, so refresh rows from the attachment list.
                     self.refreshAttachTabsRows(in: menu)
-                    // Going over the cap: close the menu so the over-limit error below the field is visible.
-                    if self.omnibarController.hasExcessTabAttachments {
+                    // The panel reflow (error label + height) is deferred while the menu is open, so
+                    // crossing the cap boundary either way would leave a stale error. Close the menu so
+                    // `menuDidClose` reflows and the over-limit error appears / clears correctly.
+                    if self.omnibarController.hasExcessTabAttachments != wasOverCap {
                         menu?.cancelTrackingWithoutAnimation()
                     }
                 }

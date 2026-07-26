@@ -278,7 +278,7 @@ final class AIChatPageContextHandlerTests: XCTestCase {
             .store(in: &cancellables)
 
         // When: Script publishes a context carrying every optional field
-        handler.triggerContextCollection()
+        handler.triggerContextCollection(trigger: .auto)
         mockScript.simulate(context: Self.makeFullyPopulatedContext())
 
         wait(for: [expectation], timeout: 1.0)
@@ -319,7 +319,7 @@ final class AIChatPageContextHandlerTests: XCTestCase {
             .store(in: &cancellables)
 
         let original = Self.makeFullyPopulatedContext()
-        handler.triggerContextCollection()
+        handler.triggerContextCollection(trigger: .auto)
         mockScript.simulate(context: original)
 
         wait(for: [expectation], timeout: 1.0)

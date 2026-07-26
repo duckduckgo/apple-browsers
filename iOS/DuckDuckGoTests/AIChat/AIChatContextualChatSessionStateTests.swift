@@ -1950,18 +1950,15 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         }
     }
 
-    func testBeginChatForUTISubmissionWithPlaceholderChipAndURL() {
-        // Given
-        let chatURL = URL(string: "https://duck.ai/?chat=123")!
-
+    func testBeginChatForUTISubmissionWithPlaceholderChip() {
         // When
-        sessionState.beginChatForUTISubmission(url: chatURL)
+        sessionState.beginChatForUTISubmission()
 
         // Then
         XCTAssertEqual(sessionState.frontendState, .chatWithoutInitialContext)
         XCTAssertTrue(mockPixelHandler.promptSubmittedWithoutContextFired)
         XCTAssertFalse(mockPixelHandler.promptSubmittedWithContextFired)
-        XCTAssertEqual(sessionState.contextualChatURL, chatURL)
+        XCTAssertNil(sessionState.contextualChatURL)
     }
 
     func testBeginChatForUTISubmissionIgnoredInRestoredState() {

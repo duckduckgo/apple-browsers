@@ -1013,8 +1013,7 @@ class TabViewController: UIViewController {
                                                     y: frame.maxY,
                                                     width: webViewContainer.bounds.width,
                                                     height: bottomEffectHeight)
-        floatingTopEdgeEffectView.isHidden = usesFullHeight || topEffectHeight == 0
-        floatingBottomEdgeEffectView.isHidden = usesFullHeight || bottomEffectHeight == 0
+        updateFloatingWebViewEdgeEffectVisibility()
     }
 
     private func updateFixedElementEdgeBleed(for edges: FixedElementEdges) {
@@ -1054,6 +1053,7 @@ class TabViewController: UIViewController {
 
         updateFixedElementEdgeBleedView(.top, frame: geometry.topFrame)
         updateFixedElementEdgeBleedView(.bottom, frame: geometry.bottomFrame)
+        updateFloatingWebViewEdgeEffectVisibility()
 
         if geometry.topSnapshotRect != nil || geometry.bottomSnapshotRect != nil {
             Logger.general.debug(
@@ -1226,6 +1226,7 @@ class TabViewController: UIViewController {
         imageView.image = image
         imageView.frame = frame
         imageView.isHidden = false
+        updateFloatingWebViewEdgeEffectVisibility()
         Logger.general.debug(
             """
             [FixedElementEdgeBleed] Bleed view displayed edge=\(edge.logName, privacy: .public) \
@@ -1287,11 +1288,23 @@ class TabViewController: UIViewController {
             Logger.general.debug(
                 "[FixedElementEdgeBleed] Cleared bleed state generation=\(self.fixedElementEdgeBleedGeneration, privacy: .public)")
         }
+        updateFloatingWebViewEdgeEffectVisibility()
     }
 
     private func configureFloatingWebViewEdgeEffects() {
         webViewContainer.addSubview(floatingTopEdgeEffectView)
         webViewContainer.addSubview(floatingBottomEdgeEffectView)
+    }
+
+    private func updateFloatingWebViewEdgeEffectVisibility() {
+        let usesFullHeight = isAITab && unifiedToggleInputFeature.isAvailable ||
+            webViewContainer.bounds.width > webViewContainer.bounds.height
+        floatingTopEdgeEffectView.isHidden = usesFullHeight ||
+            floatingTopEdgeEffectView.frame.height == 0 ||
+            topFixedElementBleedView?.image != nil
+        floatingBottomEdgeEffectView.isHidden = usesFullHeight ||
+            floatingBottomEdgeEffectView.frame.height == 0 ||
+            bottomFixedElementBleedView?.image != nil
     }
 
     private func observeNetPConnectionStatusChanges() {

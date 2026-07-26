@@ -38,6 +38,7 @@ struct AIChatTabURLPublishers {
 private struct ContextualUnifiedToggleInputFeature: UnifiedToggleInputFeatureProviding {
     let isAvailable: Bool
     let isToggleHiddenOnDuckAITab: Bool
+    let isAttachmentPasteEnabled: Bool
 }
 
 /// Delegate protocol for coordinating actions that require interaction with the browser.
@@ -512,7 +513,8 @@ private extension AIChatContextualSheetCoordinator {
 
         let contextualUTIFeature = ContextualUnifiedToggleInputFeature(
             isAvailable: isWebUTIEnabled,
-            isToggleHiddenOnDuckAITab: unifiedToggleInputFeature.isToggleHiddenOnDuckAITab
+            isToggleHiddenOnDuckAITab: unifiedToggleInputFeature.isToggleHiddenOnDuckAITab,
+            isAttachmentPasteEnabled: unifiedToggleInputFeature.isAttachmentPasteEnabled
         )
 
         let webVC = AIChatContextualWebViewController(

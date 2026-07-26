@@ -66,6 +66,28 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         super.tearDown()
     }
 
+    // MARK: - Paste handler wiring
+
+    func test_attachmentPasteHandlerWiredWhenEnabled() {
+        let coordinator = UnifiedToggleInputCoordinator(
+            host: .omnibar,
+            isToggleEnabled: true,
+            preferences: mockPreferences,
+            attachmentPasteEnabled: true
+        )
+        XCTAssertNotNil(coordinator.viewController.attachmentPasteHandler)
+    }
+
+    func test_attachmentPasteHandlerNotWiredWhenDisabled() {
+        let coordinator = UnifiedToggleInputCoordinator(
+            host: .omnibar,
+            isToggleEnabled: true,
+            preferences: mockPreferences,
+            attachmentPasteEnabled: false
+        )
+        XCTAssertNil(coordinator.viewController.attachmentPasteHandler)
+    }
+
     // MARK: - Initial State
 
     func test_initialState() {

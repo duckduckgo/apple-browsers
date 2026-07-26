@@ -806,6 +806,8 @@
 		85047C772A0D5D3D00D2FF3F /* SyncSettingsViewController+SyncDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85047C762A0D5D3D00D2FF3F /* SyncSettingsViewController+SyncDelegate.swift */; };
 		8504E9EA2D8883BA00FF1352 /* TabSwitcherBarsStateHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8504E9E92D8883AE00FF1352 /* TabSwitcherBarsStateHandlerTests.swift */; };
 		850559C923C61B5D0055C0D5 /* login-form-detection.js in Resources */ = {isa = PBXBuildFile; fileRef = 850559C823C61B5D0055C0D5 /* login-form-detection.js */; };
+		DDBF00012FF0000000000001 /* FixedElementDetectionUserScript.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDBF00022FF0000000000002 /* FixedElementDetectionUserScript.swift */; };
+		DDBF00032FF0000000000003 /* fixed-element-detection.js in Resources */ = {isa = PBXBuildFile; fileRef = DDBF00042FF0000000000004 /* fixed-element-detection.js */; };
 		850559D023CF647C0055C0D5 /* Fireproofing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 850559CF23CF647C0055C0D5 /* Fireproofing.swift */; };
 		85058366219AE9EA00ED4EDB /* HomePageConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85058365219AE9EA00ED4EDB /* HomePageConfiguration.swift */; };
 		85058369219F424500ED4EDB /* UIColorExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1B745211E549D550072547E /* UIColorExtension.swift */; };
@@ -3521,6 +3523,8 @@
 		85047C762A0D5D3D00D2FF3F /* SyncSettingsViewController+SyncDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SyncSettingsViewController+SyncDelegate.swift"; sourceTree = "<group>"; };
 		8504E9E92D8883AE00FF1352 /* TabSwitcherBarsStateHandlerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabSwitcherBarsStateHandlerTests.swift; sourceTree = "<group>"; };
 		850559C823C61B5D0055C0D5 /* login-form-detection.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = "login-form-detection.js"; sourceTree = "<group>"; };
+		DDBF00022FF0000000000002 /* FixedElementDetectionUserScript.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FixedElementDetectionUserScript.swift; sourceTree = "<group>"; };
+		DDBF00042FF0000000000004 /* fixed-element-detection.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = "fixed-element-detection.js"; sourceTree = "<group>"; };
 		850559CF23CF647C0055C0D5 /* Fireproofing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Fireproofing.swift; sourceTree = "<group>"; };
 		850559D123CF710C0055C0D5 /* WebCacheManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebCacheManagerTests.swift; sourceTree = "<group>"; };
 		85058365219AE9EA00ED4EDB /* HomePageConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomePageConfiguration.swift; sourceTree = "<group>"; };
@@ -7523,6 +7527,7 @@
 			children = (
 				8595BF491FE847EB00F692EC /* ios-js-support */,
 				850559C823C61B5D0055C0D5 /* login-form-detection.js */,
+				DDBF00042FF0000000000004 /* fixed-element-detection.js */,
 			);
 			name = contentblocking;
 			sourceTree = "<group>";
@@ -11274,6 +11279,7 @@
 				850559CF23CF647C0055C0D5 /* Fireproofing.swift */,
 				4B60ACA0252EC0B100E8D219 /* FullScreenVideoUserScript.swift */,
 				85BDC3182436161C0053DB07 /* LoginFormDetectionUserScript.swift */,
+				DDBF00022FF0000000000002 /* FixedElementDetectionUserScript.swift */,
 				85A1B3B120C6CD9900C18F15 /* MigratableCookieStorage.swift */,
 				85C503FA2CF0ADBD0075DF6F /* ObservationsDataCleaning.swift */,
 				836A941C247F23C600BF8EF5 /* UserAgentManaging.swift */,
@@ -12650,6 +12656,7 @@
 				02BA15B126A89ECA00472DD7 /* ios-config.json in Resources */,
 				4B52648B25F9613B00CB4C24 /* trackerData.json in Resources */,
 				850559C923C61B5D0055C0D5 /* login-form-detection.js in Resources */,
+				DDBF00032FF0000000000003 /* fixed-element-detection.js in Resources */,
 				83E2D2B3253CC16B005605F5 /* httpsMobileV2FalsePositives.json in Resources */,
 				4B60AC97252EC07B00E8D219 /* fullscreenvideo.js in Resources */,
 				83E2D2B2253CC16B005605F5 /* httpsMobileV2Bloom.bin in Resources */,
@@ -15220,6 +15227,7 @@
 				CBAA195A27BFE15600A4BD49 /* NSManagedObjectContextExtension.swift in Sources */,
 				F124B95A2F2CC20C00B29447 /* BuildFlags.swift in Sources */,
 				85BDC3192436161C0053DB07 /* LoginFormDetectionUserScript.swift in Sources */,
+				DDBF00012FF0000000000001 /* FixedElementDetectionUserScript.swift in Sources */,
 				F143C3291E4A9A0E00CFDE3A /* URLExtension.swift in Sources */,
 				C1C1FF4A2D085A4C0017ACCE /* AutofillInterfaceEmailTruncator.swift in Sources */,
 				C1C1FF4B2D085A4C0017ACCE /* TextMasker.swift in Sources */,

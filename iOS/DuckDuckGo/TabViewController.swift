@@ -63,6 +63,20 @@ enum WebViewPreviewSnapshotGeometry {
 
 class TabViewController: UIViewController {
 
+    private enum FixedElementEdge {
+        case top
+        case bottom
+
+        var logName: String {
+            switch self {
+            case .top:
+                return "top"
+            case .bottom:
+                return "bottom"
+            }
+        }
+    }
+
     private struct Constants {
         static let frameLoadInterruptedErrorCode = 102
         static let trackerNetworksAnimationDelay: TimeInterval = 0.7
@@ -188,6 +202,10 @@ class TabViewController: UIViewController {
     let progressWorker = WebProgressWorker()
 
     private(set) var webView: WKWebView!
+    private var fixedElementEdges: FixedElementEdges?
+    private var fixedElementEdgeBleedGeneration = 0
+    private var topFixedElementBleedView: UIImageView?
+    private var bottomFixedElementBleedView: UIImageView?
     private lazy var appRatingPrompt: AppRatingPrompt = AppRatingPrompt(featureFlagger: self.featureFlagger)
     let unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding
     public weak var privacyDashboard: PrivacyDashboardViewController?
@@ -939,8 +957,289 @@ class TabViewController: UIViewController {
             in: webViewContainer.bounds,
             portraitInsets: isUnifiedToggleInputAffectingLayout ? .zero : (chromeDelegate?.floatingWebViewPortraitInsets ?? .zero),
             usesFullHeight: usesFullHeight)
-        guard webView.frame != frame else { return }
-        webView.frame = frame
+        let didChangeFrame = webView.frame != frame
+        if didChangeFrame {
+            webView.frame = frame
+        }
+        if usesFullHeight {
+            clearFixedElementEdgeBleed()
+        } else if didChangeFrame, let fixedElementEdges {
+            updateFixedElementEdgeBleed(for: fixedElementEdges)
+        } else {
+            layoutFixedElementEdgeBleedViews()
+        }
+    }
+
+    private func updateFixedElementEdgeBleed(for edges: FixedElementEdges) {
+        fixedElementEdgeBleedGeneration += 1
+        fixedElementEdges = edges
+        let generation = fixedElementEdgeBleedGeneration
+        Logger.general.debug(
+            """
+            [FixedElementEdgeBleed] Native update generation=\(generation, privacy: .public) \
+            top=\(edges.top, privacy: .public) bottom=\(edges.bottom, privacy: .public)
+            """)
+        let isFloatingUIEnabled = FloatingUIManager(featureFlagger: featureFlagger).isFloatingUIEnabled
+        let isPortrait = webViewContainer.bounds.height >= webViewContainer.bounds.width
+        let isUnifiedToggleInputAffectingLayout = isAITab && unifiedToggleInputFeature.isAvailable
+        let containerBounds = webViewContainer.bounds
+        let currentWebViewFrame = webView?.frame
+        Logger.general.debug(
+            """
+            [FixedElementEdgeBleed] Eligibility floating=\(isFloatingUIEnabled, privacy: .public) \
+            portrait=\(isPortrait, privacy: .public) aiUTI=\(isUnifiedToggleInputAffectingLayout, privacy: .public) \
+            error=\(self.isError, privacy: .public) container=\(String(describing: containerBounds), privacy: .public) \
+            webViewFrame=\(String(describing: currentWebViewFrame), privacy: .public)
+            """)
+
+        guard let geometry = fixedElementEdgeBleedGeometry() else {
+            Logger.general.debug("[FixedElementEdgeBleed] No eligible bleed geometry; clearing")
+            clearFixedElementEdgeBleed()
+            return
+        }
+        Logger.general.debug(
+            """
+            [FixedElementEdgeBleed] Geometry topFrame=\(String(describing: geometry.topFrame), privacy: .public) \
+            bottomFrame=\(String(describing: geometry.bottomFrame), privacy: .public) \
+            topStrip=\(String(describing: geometry.topSnapshotRect), privacy: .public) \
+            bottomStrip=\(String(describing: geometry.bottomSnapshotRect), privacy: .public)
+            """)
+
+        updateFixedElementEdgeBleedView(.top, frame: geometry.topFrame)
+        updateFixedElementEdgeBleedView(.bottom, frame: geometry.bottomFrame)
+
+        if geometry.topSnapshotRect != nil || geometry.bottomSnapshotRect != nil {
+            Logger.general.debug(
+                "[FixedElementEdgeBleed] Snapshot scheduled generation=\(generation, privacy: .public)")
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { [weak self] in
+                guard let self,
+                      self.fixedElementEdgeBleedGeneration == generation,
+                      let currentGeometry = self.fixedElementEdgeBleedGeometry() else {
+                    return
+                }
+                self.captureFixedElementEdgeBleeds(geometry: currentGeometry, generation: generation)
+            }
+        }
+    }
+
+    private func scheduleFixedElementDetectionFallback(in webView: WKWebView) {
+        guard FloatingUIManager(featureFlagger: featureFlagger).isFloatingUIEnabled else { return }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self, weak webView] in
+            guard let self,
+                  let webView,
+                  self.webView === webView,
+                  self.fixedElementEdges == nil else {
+                return
+            }
+
+            let script = self.userScripts?.fixedElementDetectionScript ?? FixedElementDetectionUserScript()
+            let source = """
+            (() => {
+                if (!window.__ddgFixedElementEdgeDetection) {
+                    \(script.source);
+                }
+                return window.__ddgFixedElementEdgeDetection?.scan(false) ?? null;
+            })()
+            """
+            Logger.general.debug("[FixedElementEdgeBleed] Running post-load detection fallback")
+            webView.evaluateJavaScript(source, in: nil, in: .page) { [weak self, weak webView] result in
+                guard let self,
+                      let webView,
+                      self.webView === webView,
+                      self.fixedElementEdges == nil else {
+                    return
+                }
+                switch result {
+                case .failure(let error):
+                    Logger.general.error(
+                        "[FixedElementEdgeBleed] Post-load fallback failed: \(error.localizedDescription, privacy: .public)")
+                case .success(let value):
+                    guard let body = value as? [String: Any],
+                          let top = body["top"] as? Bool,
+                          let bottom = body["bottom"] as? Bool else {
+                        Logger.general.debug("[FixedElementEdgeBleed] Post-load fallback returned no detection result")
+                        return
+                    }
+                    Logger.general.debug(
+                        """
+                        [FixedElementEdgeBleed] Post-load fallback result top=\(top, privacy: .public) \
+                        bottom=\(bottom, privacy: .public)
+                        """)
+                    self.updateFixedElementEdgeBleed(for: FixedElementEdges(top: top, bottom: bottom))
+                }
+            }
+        }
+    }
+
+    func refreshFixedElementEdgeBleedAfterTabSwitch() {
+        guard let webView else { return }
+        Logger.general.debug("[FixedElementEdgeBleed] Refreshing after tab switch")
+        clearFixedElementEdgeBleed()
+        scheduleFixedElementDetectionFallback(in: webView)
+    }
+
+    private func fixedElementEdgeBleedGeometry() -> FloatingWebViewEdgeBleedGeometry? {
+        guard let webView,
+              let fixedElementEdges,
+              FloatingUIManager(featureFlagger: featureFlagger).isFloatingUIEnabled,
+              webViewContainer.bounds.height >= webViewContainer.bounds.width,
+              !(isAITab && unifiedToggleInputFeature.isAvailable),
+              !isError else {
+            return nil
+        }
+        return FloatingUILayoutPolicy.edgeBleedGeometry(
+            containerBounds: webViewContainer.bounds,
+            webViewFrame: webView.frame,
+            webViewBounds: webView.bounds,
+            hasTopFixedElement: fixedElementEdges.top,
+            hasBottomFixedElement: fixedElementEdges.bottom)
+    }
+
+    private func captureFixedElementEdgeBleeds(geometry: FloatingWebViewEdgeBleedGeometry, generation: Int) {
+        guard let webView else { return }
+        let configuration = WKSnapshotConfiguration()
+        configuration.rect = webView.bounds
+        configuration.afterScreenUpdates = true
+        Logger.general.debug(
+            """
+            [FixedElementEdgeBleed] Full snapshot requested generation=\(generation, privacy: .public) \
+            rect=\(String(describing: webView.bounds), privacy: .public)
+            """)
+        webView.takeSnapshot(with: configuration) { [weak self, weak webView] image, error in
+            guard let self, let webView else {
+                return
+            }
+            guard self.webView === webView,
+                  self.fixedElementEdgeBleedGeneration == generation else {
+                Logger.general.debug(
+                    "[FixedElementEdgeBleed] Discarded stale full snapshot generation=\(generation, privacy: .public)")
+                return
+            }
+            if let error {
+                Logger.general.error(
+                    "[FixedElementEdgeBleed] Full snapshot failed: \(error.localizedDescription, privacy: .public)")
+                return
+            }
+            guard let image else {
+                Logger.general.debug("[FixedElementEdgeBleed] Full snapshot returned no image")
+                return
+            }
+            Logger.general.debug(
+                """
+                [FixedElementEdgeBleed] Full snapshot completed \
+                generation=\(generation, privacy: .public) size=\(String(describing: image.size), privacy: .public)
+                """)
+            if let rect = geometry.topSnapshotRect,
+               let frame = geometry.topFrame,
+               let strip = self.cropFixedElementEdgeStrip(from: image, rect: rect, sourceBounds: webView.bounds) {
+                self.setFixedElementEdgeBleedImage(strip, edge: .top, frame: frame)
+            }
+            if let rect = geometry.bottomSnapshotRect,
+               let frame = geometry.bottomFrame,
+               let strip = self.cropFixedElementEdgeStrip(from: image, rect: rect, sourceBounds: webView.bounds) {
+                self.setFixedElementEdgeBleedImage(strip, edge: .bottom, frame: frame)
+            }
+        }
+    }
+
+    private func cropFixedElementEdgeStrip(from image: UIImage, rect: CGRect, sourceBounds: CGRect) -> UIImage? {
+        guard let cgImage = image.cgImage,
+              sourceBounds.width > 0,
+              sourceBounds.height > 0 else {
+            Logger.general.debug("[FixedElementEdgeBleed] Full snapshot could not be cropped")
+            return nil
+        }
+        let scaleX = CGFloat(cgImage.width) / sourceBounds.width
+        let scaleY = CGFloat(cgImage.height) / sourceBounds.height
+        let cropRect = CGRect(
+            x: (rect.minX - sourceBounds.minX) * scaleX,
+            y: (rect.minY - sourceBounds.minY) * scaleY,
+            width: rect.width * scaleX,
+            height: rect.height * scaleY).integral
+        guard let croppedImage = cgImage.cropping(to: cropRect) else {
+            Logger.general.debug(
+                "[FixedElementEdgeBleed] Edge crop failed rect=\(String(describing: cropRect), privacy: .public)")
+            return nil
+        }
+        Logger.general.debug(
+            "[FixedElementEdgeBleed] Edge strip cropped rect=\(String(describing: cropRect), privacy: .public)")
+        return UIImage(cgImage: croppedImage, scale: image.scale, orientation: image.imageOrientation)
+    }
+
+    private func setFixedElementEdgeBleedImage(_ image: UIImage, edge: FixedElementEdge, frame: CGRect) {
+        let imageView: UIImageView
+        switch edge {
+        case .top:
+            imageView = topFixedElementBleedView ?? makeFixedElementEdgeBleedView()
+            topFixedElementBleedView = imageView
+        case .bottom:
+            imageView = bottomFixedElementBleedView ?? makeFixedElementEdgeBleedView()
+            bottomFixedElementBleedView = imageView
+        }
+        imageView.image = image
+        imageView.frame = frame
+        imageView.isHidden = false
+        Logger.general.debug(
+            """
+            [FixedElementEdgeBleed] Bleed view displayed edge=\(edge.logName, privacy: .public) \
+            frame=\(String(describing: frame), privacy: .public)
+            """)
+    }
+
+    private func makeFixedElementEdgeBleedView() -> UIImageView {
+        let imageView = UIImageView()
+        imageView.contentMode = .scaleToFill
+        imageView.isUserInteractionEnabled = false
+        webViewContainer.insertSubview(imageView, aboveSubview: webView)
+        return imageView
+    }
+
+    private func updateFixedElementEdgeBleedView(_ edge: FixedElementEdge, frame: CGRect?) {
+        guard let frame else {
+            switch edge {
+            case .top:
+                topFixedElementBleedView?.removeFromSuperview()
+                topFixedElementBleedView = nil
+            case .bottom:
+                bottomFixedElementBleedView?.removeFromSuperview()
+                bottomFixedElementBleedView = nil
+            }
+            return
+        }
+
+        let imageView: UIImageView?
+        switch edge {
+        case .top:
+            imageView = topFixedElementBleedView
+        case .bottom:
+            imageView = bottomFixedElementBleedView
+        }
+        imageView?.frame = frame
+        imageView?.isHidden = false
+    }
+
+    private func layoutFixedElementEdgeBleedViews() {
+        guard fixedElementEdges != nil else { return }
+        guard let geometry = fixedElementEdgeBleedGeometry() else {
+            clearFixedElementEdgeBleed()
+            return
+        }
+        updateFixedElementEdgeBleedView(.top, frame: geometry.topFrame)
+        updateFixedElementEdgeBleedView(.bottom, frame: geometry.bottomFrame)
+    }
+
+    private func clearFixedElementEdgeBleed() {
+        let hadBleedState = fixedElementEdges != nil || topFixedElementBleedView != nil || bottomFixedElementBleedView != nil
+        fixedElementEdgeBleedGeneration += 1
+        fixedElementEdges = nil
+        topFixedElementBleedView?.removeFromSuperview()
+        bottomFixedElementBleedView?.removeFromSuperview()
+        topFixedElementBleedView = nil
+        bottomFixedElementBleedView = nil
+        if hadBleedState {
+            Logger.general.debug(
+                "[FixedElementEdgeBleed] Cleared bleed state generation=\(self.fixedElementEdgeBleedGeneration, privacy: .public)")
+        }
     }
 
     private func observeNetPConnectionStatusChanges() {
@@ -1930,6 +2229,21 @@ extension TabViewController: LoginFormDetectionDelegate {
     
 }
 
+// MARK: - FixedElementDetectionUserScriptDelegate
+extension TabViewController: FixedElementDetectionUserScriptDelegate {
+
+    func fixedElementDetectionUserScript(_ script: FixedElementDetectionUserScript,
+                                         didDetect edges: FixedElementEdges,
+                                         in webView: WKWebView?) {
+        guard webView === self.webView else {
+            Logger.general.debug("[FixedElementEdgeBleed] Ignored message for a different web view")
+            return
+        }
+        Logger.general.debug("[FixedElementEdgeBleed] Tab received detection message")
+        updateFixedElementEdgeBleed(for: edges)
+    }
+}
+
 // MARK: - WKNavigationDelegate
 extension TabViewController: WKNavigationDelegate {
 
@@ -2154,6 +2468,7 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
+        clearFixedElementEdgeBleed()
         navigationPixelResponder.didStart(navigation)
         lastError = nil
         lastRenderedURL = webView.url
@@ -2179,6 +2494,7 @@ extension TabViewController: WKNavigationDelegate {
         adClickAttributionLogic.onDidFinishNavigation(host: webView.url?.host)
         hideProgressIndicator()
         onWebpageDidFinishLoading()
+        scheduleFixedElementDetectionFallback(in: webView)
         adBlockingNavigationHandler.handleURLChange(previousURL: nil, newURL: webView.url)
         extractDaxEasterEggLogoIfDuckDuckGoSearch(webView)
         instrumentation.didLoadURL()
@@ -3868,6 +4184,9 @@ extension TabViewController: UserContentControllerDelegate {
         userScripts.faviconScript.delegate = faviconUpdater
         userScripts.printingSubfeature.delegate = self
         userScripts.loginFormDetectionScript?.delegate = self
+        userScripts.fixedElementDetectionScript?.delegate = self
+        Logger.general.debug(
+            "[FixedElementEdgeBleed] Native delegate connected=\(userScripts.fixedElementDetectionScript != nil, privacy: .public)")
         userScripts.autoconsentUserScript.delegate = self
         userScripts.autoconsentUserScript.management = autoconsentManagement
         userScripts.contentScopeUserScript.delegate = self

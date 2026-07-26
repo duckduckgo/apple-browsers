@@ -36,6 +36,7 @@ final class UserScripts: UserScriptsProvider {
 
     let autofillUserScript: AutofillUserScript
     let loginFormDetectionScript: LoginFormDetectionUserScript?
+    let fixedElementDetectionScript: FixedElementDetectionUserScript?
     let contentScopeUserScript: ContentScopeUserScript
     let contentScopeUserScriptIsolated: ContentScopeUserScript
     let autoconsentUserScript: AutoconsentUserScript
@@ -79,6 +80,11 @@ final class UserScripts: UserScriptsProvider {
         autofillUserScript.sessionKey = sourceProvider.contentScopeProperties.sessionKey
 
         loginFormDetectionScript = sourceProvider.loginDetectionEnabled ? LoginFormDetectionUserScript() : nil
+        fixedElementDetectionScript = FloatingUIManager(featureFlagger: featureFlagger).isFloatingUIEnabled
+            ? FixedElementDetectionUserScript()
+            : nil
+        Logger.general.debug(
+            "[FixedElementEdgeBleed] Detection script registered=\(self.fixedElementDetectionScript != nil, privacy: .public)")
         do {
             let configGenerator = ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: AppDependencyProvider.shared.featureFlagger,
                                                                                 privacyConfigurationManager: sourceProvider.privacyConfigurationManager,
@@ -193,6 +199,7 @@ final class UserScripts: UserScriptsProvider {
             fullScreenVideoScript,
             autofillUserScript,
             loginFormDetectionScript,
+            fixedElementDetectionScript,
             contentScopeUserScript,
             contentScopeUserScriptIsolated
         ]

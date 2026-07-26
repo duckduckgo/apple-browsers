@@ -18,7 +18,9 @@
 //
 
 import UIKit
+import WebKit
 import XCTest
+import BrowserServicesKitTestsUtils
 @testable import Core
 @testable import DuckDuckGo
 
@@ -81,6 +83,66 @@ final class FloatingUIManagerTests: XCTestCase {
 
 }
 
+final class FixedElementDetectionUserScriptTests: XCTestCase {
+
+    func testWhenMainFrameMessageContainsEdgesThenDelegateReceivesThem() {
+        let delegate = FixedElementDetectionDelegateMock()
+        let script = FixedElementDetectionUserScript()
+        script.delegate = delegate
+        let webView = WKWebView()
+        let message = WKScriptMessage.mock(
+            name: "fixedElementEdgesDetected",
+            body: ["top": true, "bottom": false],
+            webView: webView)
+
+        script.userContentController(WKUserContentController(), didReceive: message)
+
+        XCTAssertEqual(delegate.detectedEdges, FixedElementEdges(top: true, bottom: false))
+        XCTAssertTrue(delegate.webView === webView)
+    }
+
+    func testWhenMessageComesFromChildFrameThenDelegateIsNotCalled() {
+        let delegate = FixedElementDetectionDelegateMock()
+        let script = FixedElementDetectionUserScript()
+        script.delegate = delegate
+        let frameInfo = WKFrameInfo.mock(isMainFrame: false, securityOriginHost: "example.com")
+        let message = WKScriptMessage.mock(
+            webView: nil,
+            frameInfo: frameInfo,
+            name: "fixedElementEdgesDetected",
+            body: ["top": true, "bottom": true])
+
+        script.userContentController(WKUserContentController(), didReceive: message)
+
+        XCTAssertNil(delegate.detectedEdges)
+    }
+
+    func testWhenMessagePayloadIsInvalidThenDelegateIsNotCalled() {
+        let delegate = FixedElementDetectionDelegateMock()
+        let script = FixedElementDetectionUserScript()
+        script.delegate = delegate
+        let message = WKScriptMessage.mock(
+            name: "fixedElementEdgesDetected",
+            body: ["top": true])
+
+        script.userContentController(WKUserContentController(), didReceive: message)
+
+        XCTAssertNil(delegate.detectedEdges)
+    }
+}
+
+private final class FixedElementDetectionDelegateMock: NSObject, FixedElementDetectionUserScriptDelegate {
+    var detectedEdges: FixedElementEdges?
+    var webView: WKWebView?
+
+    func fixedElementDetectionUserScript(_ script: FixedElementDetectionUserScript,
+                                         didDetect edges: FixedElementEdges,
+                                         in webView: WKWebView?) {
+        detectedEdges = edges
+        self.webView = webView
+    }
+}
+
 final class FloatingUILayoutPolicyTests: XCTestCase {
 
     func testWhenTopBarIsBelowSafeAreaThenPortraitTopUsesSafeArea() {
@@ -129,6 +191,76 @@ final class FloatingUILayoutPolicyTests: XCTestCase {
             usesFullHeight: false)
 
         XCTAssertEqual(frame, CGRect(x: 0, y: 100, width: 100, height: 0))
+    }
+
+    func testWhenTopFixedElementDetectedThenGeometryContainsTopBleedOnly() {
+        let geometry = FloatingUILayoutPolicy.edgeBleedGeometry(
+            containerBounds: CGRect(x: 0, y: 0, width: 390, height: 844),
+            webViewFrame: CGRect(x: 0, y: 111, width: 390, height: 649),
+            webViewBounds: CGRect(x: 0, y: 0, width: 390, height: 649),
+            hasTopFixedElement: true,
+            hasBottomFixedElement: false)
+
+        XCTAssertEqual(geometry.topFrame, CGRect(x: 0, y: 0, width: 390, height: 111))
+        XCTAssertEqual(geometry.topSnapshotRect, CGRect(x: 0, y: 8, width: 390, height: 2))
+        XCTAssertNil(geometry.bottomFrame)
+        XCTAssertNil(geometry.bottomSnapshotRect)
+    }
+
+    func testWhenBottomFixedElementDetectedThenGeometryContainsBottomBleedOnly() {
+        let geometry = FloatingUILayoutPolicy.edgeBleedGeometry(
+            containerBounds: CGRect(x: 0, y: 0, width: 390, height: 844),
+            webViewFrame: CGRect(x: 0, y: 111, width: 390, height: 649),
+            webViewBounds: CGRect(x: 0, y: 0, width: 390, height: 649),
+            hasTopFixedElement: false,
+            hasBottomFixedElement: true)
+
+        XCTAssertNil(geometry.topFrame)
+        XCTAssertNil(geometry.topSnapshotRect)
+        XCTAssertEqual(geometry.bottomFrame, CGRect(x: 0, y: 760, width: 390, height: 84))
+        XCTAssertEqual(geometry.bottomSnapshotRect, CGRect(x: 0, y: 639, width: 390, height: 2))
+    }
+
+    func testWhenBothFixedElementsDetectedThenGeometryContainsBothBleeds() {
+        let geometry = FloatingUILayoutPolicy.edgeBleedGeometry(
+            containerBounds: CGRect(x: 0, y: 0, width: 390, height: 844),
+            webViewFrame: CGRect(x: 0, y: 111, width: 390, height: 649),
+            webViewBounds: CGRect(x: 0, y: 0, width: 390, height: 649),
+            hasTopFixedElement: true,
+            hasBottomFixedElement: true)
+
+        XCTAssertNotNil(geometry.topFrame)
+        XCTAssertNotNil(geometry.topSnapshotRect)
+        XCTAssertNotNil(geometry.bottomFrame)
+        XCTAssertNotNil(geometry.bottomSnapshotRect)
+    }
+
+    func testWhenWebViewUsesFullHeightThenGeometryContainsNoBleeds() {
+        let bounds = CGRect(x: 0, y: 0, width: 844, height: 390)
+        let geometry = FloatingUILayoutPolicy.edgeBleedGeometry(
+            containerBounds: bounds,
+            webViewFrame: bounds,
+            webViewBounds: bounds,
+            hasTopFixedElement: true,
+            hasBottomFixedElement: true)
+
+        XCTAssertNil(geometry.topFrame)
+        XCTAssertNil(geometry.topSnapshotRect)
+        XCTAssertNil(geometry.bottomFrame)
+        XCTAssertNil(geometry.bottomSnapshotRect)
+    }
+
+    func testWhenSnapshotStripExceedsWebViewThenStripIsClamped() {
+        let geometry = FloatingUILayoutPolicy.edgeBleedGeometry(
+            containerBounds: CGRect(x: 0, y: 0, width: 100, height: 3),
+            webViewFrame: CGRect(x: 0, y: 1, width: 100, height: 1),
+            webViewBounds: CGRect(x: 0, y: 0, width: 100, height: 1),
+            hasTopFixedElement: true,
+            hasBottomFixedElement: true,
+            snapshotStripHeight: 4)
+
+        XCTAssertEqual(geometry.topSnapshotRect, CGRect(x: 0, y: 0, width: 100, height: 1))
+        XCTAssertEqual(geometry.bottomSnapshotRect, CGRect(x: 0, y: 0, width: 100, height: 1))
     }
 
     func testWhenFloatingBottomAddressBarAndNotMinimalChromeThenOmnibarIsHostedInToolbar() {

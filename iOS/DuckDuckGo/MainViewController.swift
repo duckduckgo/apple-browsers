@@ -2524,6 +2524,7 @@ class MainViewController: UIViewController {
         themeColorManager.attach(to: tab)
         tab.chromeDelegate = self
         tab.updateWebViewBottomAnchor(for: currentBarsVisibility)
+        tab.refreshFixedElementEdgeBleedAfterTabSwitch()
 
         if isInMinimalChromeLayout {
             tab.borderView.isBottomVisible = appSettings.currentAddressBarPosition.isBottom
@@ -6444,6 +6445,10 @@ extension MainViewController: TabSwitcherDelegate {
             return
         }
         transitionTo(tab: newTab, from: previousTab)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { [weak self, weak newTab] in
+            guard let self, let newTab, self.currentTab === newTab else { return }
+            newTab.refreshFixedElementEdgeBleedAfterTabSwitch()
+        }
     }
 
     private func animateLogoAppearance() {

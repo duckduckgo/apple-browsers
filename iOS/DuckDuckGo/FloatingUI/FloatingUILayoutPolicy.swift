@@ -20,6 +20,13 @@
 import Core
 import UIKit
 
+struct FloatingWebViewEdgeBleedGeometry: Equatable {
+    let topFrame: CGRect?
+    let bottomFrame: CGRect?
+    let topSnapshotRect: CGRect?
+    let bottomSnapshotRect: CGRect?
+}
+
 enum FloatingUILayoutPolicy {
 
     static func shouldApplyFloatingTopContentInset(isFloatingUIEnabled: Bool,
@@ -47,6 +54,38 @@ enum FloatingUILayoutPolicy {
         let minY = min(max(bounds.minY + portraitInsets.top, bounds.minY), bounds.maxY)
         let maxY = max(min(bounds.maxY - portraitInsets.bottom, bounds.maxY), minY)
         return CGRect(x: bounds.minX, y: minY, width: bounds.width, height: maxY - minY)
+    }
+
+    static func edgeBleedGeometry(containerBounds: CGRect,
+                                  webViewFrame: CGRect,
+                                  webViewBounds: CGRect,
+                                  hasTopFixedElement: Bool,
+                                  hasBottomFixedElement: Bool,
+                                  snapshotStripHeight: CGFloat = 2,
+                                  snapshotEdgeInset: CGFloat = 8) -> FloatingWebViewEdgeBleedGeometry {
+        let stripHeight = min(max(0, snapshotStripHeight), webViewBounds.height)
+        let edgeInset = min(max(0, snapshotEdgeInset), max(0, webViewBounds.height - stripHeight))
+        let topHeight = max(0, webViewFrame.minY - containerBounds.minY)
+        let bottomHeight = max(0, containerBounds.maxY - webViewFrame.maxY)
+
+        let topFrame = hasTopFixedElement && topHeight > 0
+            ? CGRect(x: webViewFrame.minX, y: containerBounds.minY, width: webViewFrame.width, height: topHeight)
+            : nil
+        let bottomFrame = hasBottomFixedElement && bottomHeight > 0
+            ? CGRect(x: webViewFrame.minX, y: webViewFrame.maxY, width: webViewFrame.width, height: bottomHeight)
+            : nil
+        let topSnapshotRect = topFrame != nil && stripHeight > 0
+            ? CGRect(x: webViewBounds.minX, y: webViewBounds.minY + edgeInset, width: webViewBounds.width, height: stripHeight)
+            : nil
+        let bottomSnapshotRect = bottomFrame != nil && stripHeight > 0
+            ? CGRect(x: webViewBounds.minX, y: webViewBounds.maxY - stripHeight - edgeInset, width: webViewBounds.width, height: stripHeight)
+            : nil
+
+        return FloatingWebViewEdgeBleedGeometry(
+            topFrame: topFrame,
+            bottomFrame: bottomFrame,
+            topSnapshotRect: topSnapshotRect,
+            bottomSnapshotRect: bottomSnapshotRect)
     }
 
     static func shouldHostOmnibarInFloatingToolbar(isFloatingUIEnabled: Bool,

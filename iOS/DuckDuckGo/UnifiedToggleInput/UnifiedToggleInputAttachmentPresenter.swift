@@ -46,6 +46,26 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
         fileAttachment(from: metadata, id: id)
     }
 
+    /// Builds a file attachment from already-loaded bytes with PDF inspection; shared by the picker and paste flows.
+    nonisolated static func makeFileAttachment(
+        data: Data,
+        fileName: String,
+        mimeType: String,
+        fileSizeBytes: Int? = nil,
+        id: UUID = UUID()
+    ) -> AIChatFileAttachment {
+        let pdfInspection = AIChatPDFInspector.inspect(data: data, mimeType: mimeType)
+        return AIChatFileAttachment(
+            id: id,
+            data: data,
+            fileName: fileName,
+            mimeType: mimeType,
+            fileSizeBytes: fileSizeBytes ?? data.count,
+            pageCount: pdfInspection.pageCount,
+            isEncrypted: pdfInspection.isEncrypted
+        )
+    }
+
     func makeAttachmentMenu(
         presenterProvider: @escaping () -> UIViewController?,
         photoSelectionLimit: Int,
@@ -169,16 +189,12 @@ private extension UnifiedToggleInputAttachmentPresenter {
             let data = try Data(contentsOf: metadata.url)
             guard !Task.isCancelled else { return nil }
 
-            let pdfInspection = AIChatPDFInspector.inspect(data: data, mimeType: metadata.mimeType)
-
-            return AIChatFileAttachment(
-                id: id,
+            return makeFileAttachment(
                 data: data,
                 fileName: metadata.fileName,
                 mimeType: metadata.mimeType,
-                fileSizeBytes: metadata.fileSizeBytes ?? data.count,
-                pageCount: pdfInspection.pageCount,
-                isEncrypted: pdfInspection.isEncrypted
+                fileSizeBytes: metadata.fileSizeBytes,
+                id: id
             )
         } catch {
             return nil

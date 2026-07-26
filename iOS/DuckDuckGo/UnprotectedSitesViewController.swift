@@ -24,77 +24,122 @@ import PrivacyConfig
 import DesignResourcesKit
 import DesignResourcesKitIcons
 
-class UnprotectedSitesViewController: UITableViewController {
-    
-    @IBOutlet var infoText: UILabel!
-    @IBOutlet var backButton: UIButton!
-    
-    @IBOutlet var flexibleSpace: UIBarButtonItem!
-    @IBOutlet var doneButton: UIBarButtonItem!
-    @IBOutlet var editButton: UIBarButtonItem!
-    @IBOutlet var addButton: UIBarButtonItem!
+final class UnprotectedSitesViewController: UITableViewController {
 
-    private var hiddenNavBarItem: UIBarButtonItem?
+    private enum Strings {
+        static let info = NSLocalizedString(
+            "zvh-2e-Wmz.text",
+            tableName: "Settings",
+            bundle: .main,
+            value: "These sites will not be enhanced by Privacy Protection.",
+            comment: "Description shown above the list of unprotected sites")
+        static let allProtected = NSLocalizedString(
+            "Hu1-5i-vjL.text",
+            tableName: "Settings",
+            bundle: .main,
+            value: "Privacy Protection enabled for all sites",
+            comment: "Message shown when there are no unprotected sites")
+    }
+
+    private lazy var infoText: UILabel = {
+        let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.text = Strings.info
+        label.numberOfLines = 0
+        label.lineBreakMode = .byTruncatingTail
+        return label
+    }()
+
+    private lazy var backButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.accessibilityIdentifier = "backButton"
+        button.setImage(DesignSystemImages.Glyphs.Size24.arrowLeft, for: .normal)
+        button.addTarget(self, action: #selector(onBackPressed), for: .touchUpInside)
+        return button
+    }()
+
+    private let flexibleSpace = UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil)
+    private lazy var doneButton = UIBarButtonItem(barButtonSystemItem: .done, target: self, action: #selector(endEditing))
+    private lazy var editButton = UIBarButtonItem(barButtonSystemItem: .edit, target: self, action: #selector(startEditing))
+    private lazy var addButton = UIBarButtonItem(
+        image: DesignSystemImages.Glyphs.Size24.add,
+        style: .plain,
+        target: self,
+        action: #selector(onAddPressed))
+
     private var hiddenNavBarItems: [UIBarButtonItem]?
 
     private let privacyConfig: PrivacyConfiguration = ContentBlocking.shared.privacyConfigurationManager.privacyConfig
     private let rulesManager: ContentBlockerRulesManager = ContentBlocking.shared.contentBlockingManager
 
     var showBackButton = false
-    
+
+    init() {
+        super.init(style: .insetGrouped)
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
     override func viewDidLoad() {
         super.viewDidLoad()
+        configureTableView()
+        configureNavigationItems()
         decorate()
-
-        addButton.image = DesignSystemImages.Glyphs.Size24.add
 
         navigationController?.setToolbarHidden(false, animated: false)
         refreshToolbarItems(animated: false)
-        
+
         configureBackButton()
-        
+
         let fontSize = FontSettings.fontSizeForHeaderView
         let text = NSAttributedString(string: infoText.text ?? "", attributes: [
             NSAttributedString.Key.font: UIFont.systemFont(ofSize: fontSize)
         ])
         infoText.attributedText = text
     }
-    
+
     override func willMove(toParent parent: UIViewController?) {
         super.willMove(toParent: parent)
-        
+
         if parent == nil {
             navigationController?.setToolbarHidden(true, animated: true)
         }
     }
-    
+
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         navigationController?.setToolbarHidden(false, animated: true)
     }
-    
+
     private func refreshToolbarItems(animated: Bool) {
         if tableView.isEditing {
             setToolbarItems([flexibleSpace, doneButton], animated: animated)
         } else {
             setToolbarItems([flexibleSpace, editButton], animated: animated)
         }
-        
+
         editButton.isEnabled = privacyConfig.userUnprotectedDomains.count > 0
     }
-    
+
     private func configureBackButton() {
         backButton.isHidden = !showBackButton
     }
-    
+
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
-        
+
         guard let headerView = tableView.tableHeaderView else {
             return
         }
-        
-        let size = headerView.systemLayoutSizeFitting(UIView.layoutFittingCompressedSize)
+
+        let fittingSize = CGSize(width: tableView.bounds.width, height: UIView.layoutFittingCompressedSize.height)
+        let size = headerView.systemLayoutSizeFitting(
+            fittingSize,
+            withHorizontalFittingPriority: .required,
+            verticalFittingPriority: .fittingSizeLevel)
         if headerView.frame.size.height != size.height {
             headerView.frame.size.height = size.height
             tableView.tableHeaderView = headerView
@@ -105,11 +150,11 @@ class UnprotectedSitesViewController: UITableViewController {
     // MARK: UITableView data source
 
     private var unprotectedDomains: [String] {
-        return privacyConfig.userUnprotectedDomains.sorted()
+        privacyConfig.userUnprotectedDomains.sorted()
     }
 
     override func numberOfSections(in tableView: UITableView) -> Int {
-        return 1
+        1
     }
 
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
@@ -118,11 +163,11 @@ class UnprotectedSitesViewController: UITableViewController {
     }
 
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        return createCell(forRowAt: indexPath)
+        createCell(forRowAt: indexPath)
     }
 
     override func tableView(_ tableView: UITableView, canEditRowAt indexPath: IndexPath) -> Bool {
-        return unprotectedDomains.count > 0
+        unprotectedDomains.count > 0
     }
 
     override func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
@@ -141,7 +186,7 @@ class UnprotectedSitesViewController: UITableViewController {
             } else {
                 refreshToolbarItems(animated: true)
             }
-            
+
             tableView.reloadData()
         } else {
             tableView.deleteRows(at: [indexPath], with: .automatic)
@@ -154,8 +199,7 @@ class UnprotectedSitesViewController: UITableViewController {
         tableView.deselectRow(at: indexPath, animated: true)
     }
 
-    @IBAction func onAddPressed() {
-
+    @objc private func onAddPressed() {
         let title = UserText.alertDisableProtection
         let placeholder = UserText.alertDisableProtectionPlaceholder
         let confirm = UserText.actionAdd
@@ -169,37 +213,61 @@ class UnprotectedSitesViewController: UITableViewController {
         addSiteBox.addAction(UIAlertAction.init(title: confirm, style: .default, handler: { _ in self.addSite(from: addSiteBox) }))
         addSiteBox.addAction(UIAlertAction.init(title: cancel, style: .cancel, handler: nil))
         present(addSiteBox, animated: true, completion: nil)
-
     }
-    
-    @IBAction func onBackPressed() {
+
+    @objc private func onBackPressed() {
         navigationController?.popViewController(animated: true)
     }
-    
-    @IBAction func startEditing() {
+
+    @objc private func startEditing() {
         navigationItem.setHidesBackButton(true, animated: true)
         hiddenNavBarItems = navigationItem.rightBarButtonItems
         navigationItem.setRightBarButtonItems(nil, animated: true)
-        
+
         // Fix glitch happening when there's cell that is already in the editing state (swiped to reveal delete button) and user presses 'Edit'.
         tableView.setEditing(false, animated: true)
         tableView.setEditing(true, animated: true)
-        
+
         refreshToolbarItems(animated: true)
     }
-    
-    @IBAction func endEditing() {
+
+    @objc private func endEditing() {
         navigationItem.setHidesBackButton(false, animated: true)
         if let hiddenNavBarItems = hiddenNavBarItems {
             navigationItem.setRightBarButtonItems(hiddenNavBarItems, animated: true)
         }
-        
+
         tableView.setEditing(false, animated: true)
-        
+
         refreshToolbarItems(animated: true)
     }
 
     // MARK: private
+
+    private func configureTableView() {
+        tableView.alwaysBounceVertical = true
+        tableView.register(UnprotectedSitesItemCell.self, forCellReuseIdentifier: UnprotectedSitesItemCell.reuseIdentifier)
+        tableView.register(AllProtectedCell.self, forCellReuseIdentifier: AllProtectedCell.reuseIdentifier)
+
+        let headerView = UIView(frame: CGRect(x: 0, y: 0, width: tableView.bounds.width, height: 0))
+        headerView.addSubview(infoText)
+        headerView.addSubview(backButton)
+        NSLayoutConstraint.activate([
+            infoText.leadingAnchor.constraint(equalTo: headerView.leadingAnchor, constant: 32),
+            infoText.trailingAnchor.constraint(equalTo: headerView.trailingAnchor, constant: -32),
+            infoText.topAnchor.constraint(equalTo: headerView.topAnchor, constant: 16),
+            infoText.bottomAnchor.constraint(equalTo: headerView.bottomAnchor, constant: -16),
+            backButton.leadingAnchor.constraint(equalTo: headerView.leadingAnchor, constant: 20),
+            backButton.centerYAnchor.constraint(equalTo: infoText.centerYAnchor),
+            backButton.widthAnchor.constraint(equalToConstant: 30)
+        ])
+        tableView.tableHeaderView = headerView
+    }
+
+    private func configureNavigationItems() {
+        navigationItem.title = UserText.settingsUnprotectedSites
+        navigationItem.rightBarButtonItem = addButton
+    }
 
     private func addSite(from controller: UIAlertController) {
         guard let field = controller.textFields?[0] else { return }
@@ -223,65 +291,123 @@ class UnprotectedSitesViewController: UITableViewController {
         } else {
             cell = createAllProtectedCell(forRowAt: indexPath)
         }
-        
+
         let theme = ThemeManager.shared.currentTheme
         cell.backgroundColor = theme.tableCellBackgroundColor
-        
+
         return cell
     }
-    
+
     private func createAllProtectedCell(forRowAt indexPath: IndexPath) -> UITableViewCell {
-        guard let allProtectedCell = tableView.dequeueReusableCell(withIdentifier: "AllProtectedCell") as? AllProtectedCell else {
-            fatalError("Failed to dequeue AllProtectedCell using 'AllProtectedCell'")
+        guard let allProtectedCell = tableView.dequeueReusableCell(
+            withIdentifier: AllProtectedCell.reuseIdentifier,
+            for: indexPath) as? AllProtectedCell else {
+            fatalError("Failed to dequeue AllProtectedCell")
         }
-        
+
         let theme = ThemeManager.shared.currentTheme
+        allProtectedCell.label.text = Strings.allProtected
         allProtectedCell.label.textColor = theme.tableCellTextColor
-        
+
         return allProtectedCell
     }
-    
+
     private func createUnprotectedSiteCell(forRowAt indexPath: IndexPath) -> UITableViewCell {
-        guard let unprotectedItemCell = tableView.dequeueReusableCell(withIdentifier: "UnprotectedSitesItemCell") as? UnprotectedSitesItemCell else {
-            fatalError("Failed to dequeue cell as UnprotectedSitesItemCell")
+        guard let unprotectedItemCell = tableView.dequeueReusableCell(
+            withIdentifier: UnprotectedSitesItemCell.reuseIdentifier,
+            for: indexPath) as? UnprotectedSitesItemCell else {
+            fatalError("Failed to dequeue UnprotectedSitesItemCell")
         }
-        
+
         unprotectedItemCell.domain = unprotectedDomains[indexPath.row]
-        
+
         let theme = ThemeManager.shared.currentTheme
         unprotectedItemCell.domainLabel.textColor = theme.tableCellTextColor
-        
+
         return unprotectedItemCell
     }
-
 }
 
-class UnprotectedSitesItemCell: UITableViewCell {
+private final class UnprotectedSitesItemCell: UITableViewCell {
 
-    @IBOutlet weak var domainLabel: UILabel!
+    static let reuseIdentifier = "UnprotectedSitesItemCell"
+
+    let domainLabel: UILabel = {
+        let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.font = .daxBodyRegular()
+        label.lineBreakMode = .byTruncatingTail
+        return label
+    }()
 
     var domain: String? {
         get {
-            return domainLabel.text
+            domainLabel.text
         }
         set {
             domainLabel.text = newValue
         }
     }
 
+    override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
+        super.init(style: style, reuseIdentifier: reuseIdentifier)
+        contentView.addSubview(domainLabel)
+        NSLayoutConstraint.activate([
+            domainLabel.leadingAnchor.constraint(equalTo: contentView.layoutMarginsGuide.leadingAnchor, constant: 16),
+            domainLabel.trailingAnchor.constraint(equalTo: contentView.layoutMarginsGuide.trailingAnchor, constant: -16),
+            domainLabel.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 12),
+            domainLabel.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -12)
+        ])
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
 }
 
-extension UnprotectedSitesViewController {
-    
-    private func decorate() {
+private final class AllProtectedCell: UITableViewCell {
+
+    static let reuseIdentifier = "AllProtectedCell"
+
+    let label: UILabel = {
+        let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.font = .daxBodyRegular()
+        label.textAlignment = .center
+        label.numberOfLines = 0
+        label.lineBreakMode = .byTruncatingTail
+        return label
+    }()
+
+    override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
+        super.init(style: style, reuseIdentifier: reuseIdentifier)
+        selectionStyle = .none
+        isUserInteractionEnabled = false
+        contentView.addSubview(label)
+        NSLayoutConstraint.activate([
+            label.leadingAnchor.constraint(equalTo: contentView.layoutMarginsGuide.leadingAnchor, constant: 16),
+            label.trailingAnchor.constraint(equalTo: contentView.layoutMarginsGuide.trailingAnchor, constant: -16),
+            label.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 12),
+            label.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -12)
+        ])
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+}
+
+private extension UnprotectedSitesViewController {
+
+    func decorate() {
         let theme = ThemeManager.shared.currentTheme
         tableView.separatorColor = theme.tableCellSeparatorColor
         tableView.backgroundColor = theme.backgroundColor
-        
+
         infoText.textColor = theme.tableHeaderTextColor
-        
+
         tableView.reloadData()
-        
+
         navigationController?.toolbar.barTintColor = navigationController?.navigationBar.barTintColor
         navigationController?.toolbar.backgroundColor = navigationController?.navigationBar.backgroundColor
         navigationController?.toolbar.tintColor = navigationController?.navigationBar.tintColor

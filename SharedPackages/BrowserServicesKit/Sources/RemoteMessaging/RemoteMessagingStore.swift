@@ -159,10 +159,6 @@ public final class RemoteMessagingStore: RemoteMessagingStoring {
     private let pendingTasksLock = NSLock()
     private var pendingTasks: [PendingTask: Task<Void, Never>] = [:]
 
-    /// Awaits the saves the store issues on its own initiative, which callers get no handle on: an expired message
-    /// dismissed during a fetch, or scheduled messages cleared when the feature flag goes off. Tearing the Core Data
-    /// stack down with one in flight aborts the process, because the save raises an Objective-C exception that the
-    /// `catch` around it cannot intercept. Writes a caller started itself are its own to await.
     public func waitForStoreInitiatedTasks() async {
         let tasks = pendingTasksLock.withLock { Array(pendingTasks.values) }
 
@@ -173,10 +169,8 @@ public final class RemoteMessagingStore: RemoteMessagingStoring {
 
     private func startTrackedTask(_ key: PendingTask, operation: @escaping () async -> Void) {
         pendingTasksLock.withLock {
-            // These saves are idempotent, so a second task would only repeat a write that is already queued.
             guard pendingTasks[key] == nil else { return }
 
-            // Recorded under the lock so the task cannot finish, and remove itself, before it is in the dictionary.
             pendingTasks[key] = Task {
                 await operation()
                 self.pendingTasksLock.withLock { self.pendingTasks[key] = nil }

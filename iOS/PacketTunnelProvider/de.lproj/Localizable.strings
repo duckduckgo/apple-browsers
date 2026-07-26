@@ -22,3 +22,8 @@
 /* The body of the notification shown when VPN connects successfully after snooze with the city + state/country as formatted parameter */
 "network.protection.success.notification.subtitle.snooze.ended.including.serverLocation" = "Die VPN-Pause ist vorbei. Geräteverkehr wird über %@ geleitet.";
 
+/* The body of the notification reminding the user to turn the VPN Strict routing setting back on */
+"network.protection.strict.routing.reminder.notification.body" = "Ein Teil des Datenverkehrs könnte das VPN umgehen, während es deaktiviert ist. Striktes Routing wird für öffentliche Netzwerke empfohlen.";
+
+/* The title of the notification reminding the user to turn the VPN Strict routing setting back on */
+"network.protection.strict.routing.reminder.notification.title" = "Striktes Routing ist DEAKTIVIERT";

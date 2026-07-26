@@ -29,6 +29,9 @@
                   Identifier = "ContentBlockingRulesTests">
                </Test>
                <Test
+                  Identifier = "SubscriptionPromoUITests">
+               </Test>
+               <Test
                   Identifier = "TrackerRadarIntegrationTests">
                </Test>
             </SkippedTests>

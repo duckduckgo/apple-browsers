@@ -19,13 +19,16 @@
 import BrowserServicesKit
 import BrowserServicesKitTestsUtils
 import Common
+import FeatureFlags
 import FoundationExtensions
 import History
 import HistoryView
 import PersistenceTestingUtils
+import PixelKit
 import PrivacyConfig
 import PrivacyConfigTestsUtils
 import PrivacyDashboard
+import WebExtensions
 import WebKit
 import XCTest
 
@@ -108,6 +111,25 @@ class AutoconsentMessageProtocolTests: XCTestCase {
             message: message
         )
         waitForExpectations(timeout: 1.0)
+    }
+
+    @MainActor
+    func testWhenNativeAutoconsentPixelFiresThenHeuristicModeMatchesInitConfiguration() {
+        let cases: [(preference: CookiePopupPreference, preferenceSettingEnabled: Bool, heuristicEnabled: Bool, expectedMode: String)] = [
+            (.default, false, true, "reject"),
+            (.default, true, true, "tier1"),
+            (.max, true, true, "tier2"),
+            (.default, true, false, "off"),
+        ]
+
+        for testCase in cases {
+            assertHeuristicMode(
+                preference: testCase.preference,
+                preferenceSettingEnabled: testCase.preferenceSettingEnabled,
+                heuristicEnabled: testCase.heuristicEnabled,
+                expectedMode: testCase.expectedMode
+            )
+        }
     }
 
     @MainActor
@@ -311,6 +333,49 @@ class AutoconsentMessageProtocolTests: XCTestCase {
         )
         waitForExpectations(timeout: 1.0)
         return receivedReply
+    }
+
+    @MainActor
+    private func assertHeuristicMode(preference: CookiePopupPreference,
+                                     preferenceSettingEnabled: Bool,
+                                     heuristicEnabled: Bool,
+                                     expectedMode: String) {
+        config = MockPrivacyConfiguration()
+        config.isSubfeatureEnabledCheck = { subfeature, _ in
+            subfeature.rawValue == AutoconsentSubfeature.cookiePopupPreferenceSetting.rawValue && preferenceSettingEnabled
+        }
+        preferences = CookiePopupProtectionPreferences(
+            persistor: MockCookiePopupProtectionPreferencesPersistor(),
+            windowControllersManager: WindowControllersManagerMock()
+        )
+        preferences.cookiePopupPreference = preference
+
+        let cohort: FeatureFlag.HeuristicActionCohort = heuristicEnabled ? .treatment : .control
+        userScript = AutoconsentUserScript(
+            config: config,
+            management: AutoconsentManagement(),
+            preferences: preferences,
+            featureFlagger: MockFeatureFlagger(resolveCohortStub: cohort)
+        )
+
+        var firedParameters: [String: String]?
+        PixelKit.setUp(
+            dryRun: false,
+            appVersion: "1.0.0",
+            session: "test",
+            defaultHeaders: [:],
+            defaults: UserDefaults(suiteName: "test_\(UUID().uuidString)")!
+        ) { _, _, parameters, _, _, completion in
+            firedParameters = parameters
+            completion(true, nil)
+        }
+        defer { PixelKit.tearDown() }
+
+        let response = sendInit(url: "https://example.com")
+        let initConfig = response?["config"] as? [String: Any]
+
+        XCTAssertEqual(initConfig?["heuristicMode"] as? String, expectedMode)
+        XCTAssertEqual(firedParameters?["consentHeuristicEnabled"], expectedMode)
     }
 
     private func cookieConsentInfoDictionary(from cookieConsentInfo: CookieConsentInfo?) throws -> [String: Any] {

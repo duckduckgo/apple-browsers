@@ -59,7 +59,7 @@ struct BookmarkDialogButtonsView: View {
                 .frame(height: viewState.height)
                 .frame(maxWidth: viewState.maxWidth)
                 .padding(.horizontal, 12)
-                .padding(.vertical, 6)
+                .padding(.vertical, DesignSystemRebrand.isAppRebranded() ? 2 : 6)
                 .foregroundColor(Color(designSystemColor: foregroundColor))
                 .contentShape(Rectangle())
         }

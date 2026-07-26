@@ -50,7 +50,7 @@ final class OnboardingIntroViewModel: ObservableObject {
         var showContent = false
     }
 
-    struct BrowserComparisonState {
+    struct SetDefaultBrowserState {
         var showComparisonButton = false
         var animateComparisonText = false
     }
@@ -75,7 +75,7 @@ final class OnboardingIntroViewModel: ObservableObject {
         var isAnimating = true
     }
 
-    @Published private(set) var state: OnboardingView.ViewState {
+    @Published private(set) var state: OnboardingIntroViewState {
         didSet {
             measureScreenImpression()
         }
@@ -86,7 +86,7 @@ final class OnboardingIntroViewModel: ObservableObject {
     @Published var addressBarPositionContentState = AddressBarPositionContentState()
     @Published var searchExperienceContentState = SearchExperienceContentState()
     @Published var addToDockState = AddToDockState()
-    @Published var browserComparisonState = BrowserComparisonState()
+    @Published var setDefaultBrowserState = SetDefaultBrowserState()
     @Published var introState = IntroState()
     @Published var restorePromptState = RestorePromptState()
 
@@ -227,8 +227,8 @@ final class OnboardingIntroViewModel: ObservableObject {
         makeNextViewState()
     }
 
-    func aiComparisonAction() {
-        pixelReporter.measureAiComparisonCTAAction()
+    func aiIntroAction() {
+        pixelReporter.measureAiIntroCTAAction()
         makeNextViewState()
     }
 
@@ -263,6 +263,48 @@ final class OnboardingIntroViewModel: ObservableObject {
         } else {
             pixelReporter.measureChooseSearchOnly()
         }
+        makeNextViewState()
+    }
+
+    /// Handles the user's answer on the Download Screen: persists the reason, splices in the
+    /// resulting steps, and advances. Called from the Download Screen's primary CTA.
+    func selectDownloadReasonAction(_ reason: OnboardingDownloadReason) {
+        // Only valid on the Download Screen. A repeated tap is expected and benign (after the first
+        // tap we've already advanced past `.downloadReasonSelection`), so short-circuit the whole
+        // action — otherwise we'd advance a second time and skip a step.
+        guard currentIntroStep == .downloadReasonSelection else { return }
+
+        // TODO: pixel for the selected download reason. https://app.asana.com/1/137249556945/task/1216200647629938
+        let remainingSteps = onboardingManager.selectDownloadReason(reason)
+        if let currentStepIndex = introSteps.firstIndex(of: currentIntroStep) {
+            introSteps.insert(contentsOf: remainingSteps, at: currentStepIndex + 1)
+        }
+        makeNextViewState()
+    }
+
+    // NA Experiment: per-step actions for the reason-tailored screens. They only advance for now;
+    // the UI task adds each screen's real behaviour (persisting the setting, pixels, etc.).
+    func searchPrivacySettingsContinueAction() {
+        makeNextViewState()
+    }
+
+    func aiSearchSettingsContinueAction() {
+        makeNextViewState()
+    }
+
+    func aiModelContinueAction() {
+        makeNextViewState()
+    }
+
+    func toggleInputModeContinueAction() {
+        makeNextViewState()
+    }
+
+    func keepDuckAIContinueAction() {
+        makeNextViewState()
+    }
+
+    func duckPlayerContinueAction() {
         makeNextViewState()
     }
 
@@ -338,17 +380,18 @@ private extension OnboardingIntroViewModel {
     }
 
     func setViewState(introStep: OnboardingIntroStep) {
-        func stepInfo() -> OnboardingView.ViewState.Intro.StepInfo {
-            // Remove interlude steps from counting the total number of steps as they're not rendered
-            let stepsWithoutInterludes = introSteps.filter { !$0.isInterlude }
+        func stepInfo() -> OnboardingIntroViewState.Intro.StepInfo {
+            // Count only steps that appear in the progress indicator (excludes the intro dialog, interludes, and the Download Screen).
+            let flowType = onboardingManager.currentOnboardingFlow
+            let progressSteps = introSteps.filter { $0.countsTowardProgress(flow: flowType) }
 
-            guard let currentStepIndex = stepsWithoutInterludes.firstIndex(of: introStep) else { return .hidden }
+            guard let currentStepIndex = progressSteps.firstIndex(of: introStep) else { return .hidden }
 
-            // Remove startOnboardingDialog from the count of total steps since we don't show the progress for that step.
-            return OnboardingView.ViewState.Intro.StepInfo(currentStep: currentStepIndex, totalSteps: stepsWithoutInterludes.count - 1)
+            // currentStep is 1-based (the first counted step shows as 1 / total).
+            return OnboardingIntroViewState.Intro.StepInfo(currentStep: currentStepIndex + 1, totalSteps: progressSteps.count)
         }
 
-        func mapToViewState(renderableStep: OnboardingIntroStep.RenderableStep) -> OnboardingView.ViewState {
+        func mapToViewState(renderableStep: OnboardingIntroStep.RenderableStep) -> OnboardingIntroViewState {
             switch renderableStep {
             case .introDialog(let isReturningUser):
                 return .onboarding(
@@ -357,17 +400,37 @@ private extension OnboardingIntroViewModel {
                         step: .hidden
                     )
                 )
-            case .browserComparison:
+            case .downloadReasonSelection:
                 return .onboarding(
                     .init(
-                        type: .browsersComparisonDialog(content: contentProvider.browserComparisonContent),
+                        type: .downloadReasonDialog(content: contentProvider.downloadReasonContent),
+                        step: .hidden
+                    )
+                )
+            // NA Experiment: reason-tailored steps. View bodies/content are built in the UI task.
+            case .searchPrivacySettingsSelection:
+                return .onboarding(.init(type: .searchPrivacySettingsDialog, step: stepInfo()))
+            case .aiSearchSettingsSelection:
+                return .onboarding(.init(type: .aiSearchSettingsDialog, step: stepInfo()))
+            case .aiModelSelection:
+                return .onboarding(.init(type: .aiModelDialog, step: stepInfo()))
+            case .toggleInputModeSelection:
+                return .onboarding(.init(type: .toggleInputModeDialog, step: stepInfo()))
+            case .keepDuckAISelection:
+                return .onboarding(.init(type: .keepDuckAIDialog, step: stepInfo()))
+            case .duckPlayerSelection:
+                return .onboarding(.init(type: .duckPlayerDialog, step: stepInfo()))
+            case .setDefaultBrowser:
+                return .onboarding(
+                    .init(
+                        type: .setDefaultBrowserDialog(content: contentProvider.setDefaultBrowserContent),
                         step: stepInfo()
                     )
                 )
-            case .aiComparison:
+            case .aiIntro:
                 return .onboarding(
                     .init(
-                        type: .aiComparisonDialog(content: contentProvider.aiComparisonContent),
+                        type: .aiIntroDialog(content: contentProvider.aiIntroContent),
                         step: stepInfo()
                     )
                 )
@@ -404,7 +467,7 @@ private extension OnboardingIntroViewModel {
                 // Duck.ai Tailored flow pre-selects Duck.ai; the default flow always pre-selects Search.
                 let duckAIQueryMode: DuckAIQueryMode = isDuckAiTailoredFlow ? .duckAI : .search
                 // Duck.ai Tailored flow shows step counter; the default flow hides it.
-                let progressStep: OnboardingView.ViewState.Intro.StepInfo = isDuckAiTailoredFlow ? stepInfo() : .hidden
+                let progressStep: OnboardingIntroViewState.Intro.StepInfo = isDuckAiTailoredFlow ? stepInfo() : .hidden
                 return .onboarding(
                     .init(
                         type: .duckAIQueryDialog(content: contentProvider.duckAIQueryContent, defaultMode: duckAIQueryMode),
@@ -472,10 +535,12 @@ private extension OnboardingIntroViewModel {
             }
             currentIntroStep = .duckAIQuerySelection
 
-        case .browserComparison where introSteps.contains(.browserComparison):
-            currentIntroStep = .browserComparison
-        case .aiComparison where introSteps.contains(.aiComparison):
-            currentIntroStep = .aiComparison
+        case .downloadReasonSelection where introSteps.contains(.downloadReasonSelection):
+            currentIntroStep = .downloadReasonSelection
+        case .setDefaultBrowser where introSteps.contains(.setDefaultBrowser):
+            currentIntroStep = .setDefaultBrowser
+        case .aiIntro where introSteps.contains(.aiIntro):
+            currentIntroStep = .aiIntro
         case .addToDockPromo where introSteps.contains(.addToDockPromo):
             currentIntroStep = .addToDockPromo
         case .appIconSelection where introSteps.contains(.appIconSelection):
@@ -484,6 +549,19 @@ private extension OnboardingIntroViewModel {
             currentIntroStep = .addressBarPositionSelection
         case .searchExperienceSelection where introSteps.contains(.searchExperienceSelection):
             currentIntroStep = .searchExperienceSelection
+        // NA Experiment: reason-tailored steps.
+        case .searchPrivacySettingsSelection where introSteps.contains(.searchPrivacySettingsSelection):
+            currentIntroStep = .searchPrivacySettingsSelection
+        case .aiSearchSettingsSelection where introSteps.contains(.aiSearchSettingsSelection):
+            currentIntroStep = .aiSearchSettingsSelection
+        case .aiModelSelection where introSteps.contains(.aiModelSelection):
+            currentIntroStep = .aiModelSelection
+        case .toggleInputModeSelection where introSteps.contains(.toggleInputModeSelection):
+            currentIntroStep = .toggleInputModeSelection
+        case .keepDuckAISelection where introSteps.contains(.keepDuckAISelection):
+            currentIntroStep = .keepDuckAISelection
+        case .duckPlayerSelection where introSteps.contains(.duckPlayerSelection):
+            currentIntroStep = .duckPlayerSelection
         case .duckAIAnswerStep:
             break // handled separately by restorePendingDuckAIAnswerStepIfNeeded in MainViewController
         case .interludeDuckAI where introSteps.contains(.interlude(.duckAI)):
@@ -508,10 +586,10 @@ private extension OnboardingIntroViewModel {
         case .startOnboardingDialog(_, let dialogType):
             pixelReporter.measureOnboardingIntroImpression()
             measureAutoRestorePromptImpressionIfNeeded(dialogType: dialogType)
-        case .browsersComparisonDialog:
-            pixelReporter.measureBrowserComparisonImpression()
-        case .aiComparisonDialog:
-            pixelReporter.measureAiComparisonImpression()
+        case .setDefaultBrowserDialog:
+            pixelReporter.measureSetDefaultBrowserImpression()
+        case .aiIntroDialog:
+            pixelReporter.measureAiIntroImpression()
         case .addToDockPromoDialog:
             pixelReporter.measureAddToDockPromoImpression()
         case .chooseAppIconDialog:
@@ -522,6 +600,11 @@ private extension OnboardingIntroViewModel {
             pixelReporter.measureSearchExperienceSelectionImpression()
         case .duckAIQueryDialog:
             pixelReporter.measureDuckAIQuerySelectionImpression()
+        case .downloadReasonDialog:
+            break // TODO: Download Screen impression pixel. https://app.asana.com/1/137249556945/task/1216200647629938
+        case .searchPrivacySettingsDialog, .aiSearchSettingsDialog, .aiModelDialog,
+             .toggleInputModeDialog, .keepDuckAIDialog, .duckPlayerDialog:
+            break // TODO: impression pixels for the reason-tailored steps (UI task).
         }
     }
 
@@ -534,7 +617,7 @@ private extension OnboardingIntroViewModel {
         introSteps.insert(.duckAIQuerySelection, at: currentStepIndex + 1)
     }
 
-    func introDialogType(isReturningUser: Bool) -> OnboardingView.ViewState.Intro.IntroDialogType {
+    func introDialogType(isReturningUser: Bool) -> OnboardingIntroViewState.Intro.IntroDialogType {
         guard isReturningUser else {
             return .default
         }
@@ -550,7 +633,7 @@ private extension OnboardingIntroViewModel {
         return restorePromptHandler.isEligibleForRestorePrompt() ? .restoreData : .skipTutorial
     }
 
-    func measureAutoRestorePromptImpressionIfNeeded(dialogType: OnboardingView.ViewState.Intro.IntroDialogType) {
+    func measureAutoRestorePromptImpressionIfNeeded(dialogType: OnboardingIntroViewState.Intro.IntroDialogType) {
         guard dialogType == .restoreData else {
             return
         }

@@ -46,9 +46,16 @@ public enum AIChatURLParameters {
     public static let settingsName = "settings"
     public static let settingsOpenValue = "open"
 
-    /// Selects which Duck.ai shell the FE renders; `native-customize-modal` renders only the customize card.
-    public static let placementName = "placement"
-    public static let nativeCustomizeModalPlacementValue = "native-customize-modal"
+    public static let feedbackName = "feedback"
+    public static let feedbackPositiveValue = "positive"
+    public static let feedbackNegativeValue = "negative"
+
+    public static let chatProtectionName = "chatProtection"
+    public static let chatProtectionOpenValue = "open"
+
+    /// Tells the Duck.ai FE to render only the Customize Responses card.
+    public static let customizeResponsesName = "customize-responses"
+    public static let customizeResponsesValue = "full"
 
     /// Appends `?mode=voice` to the given base URL.
     public static func voiceModeURL(from baseURL: URL) -> URL {
@@ -70,9 +77,19 @@ public enum AIChatURLParameters {
         baseURL.addingOrReplacing(URLQueryItem(name: settingsName, value: settingsOpenValue))
     }
 
-    /// Appends `?placement=native-customize-modal` to the given base URL.
+    /// Appends `?feedback=positive` / `?feedback=negative` to the given base URL.
+    public static func feedbackURL(from baseURL: URL, value: String) -> URL {
+        baseURL.addingOrReplacing(URLQueryItem(name: feedbackName, value: value))
+    }
+
+    /// Appends `?chatProtection=open` to the given base URL.
+    public static func chatProtectionURL(from baseURL: URL) -> URL {
+        baseURL.addingOrReplacing(URLQueryItem(name: chatProtectionName, value: chatProtectionOpenValue))
+    }
+
+    /// Appends `?customize-responses=full` to the given base URL.
     public static func nativeCustomizeModalURL(from baseURL: URL) -> URL {
-        baseURL.addingOrReplacing(URLQueryItem(name: placementName, value: nativeCustomizeModalPlacementValue))
+        baseURL.addingOrReplacing(URLQueryItem(name: customizeResponsesName, value: customizeResponsesValue))
     }
 
     /// Appends `?native-input=true` to the given base URL.

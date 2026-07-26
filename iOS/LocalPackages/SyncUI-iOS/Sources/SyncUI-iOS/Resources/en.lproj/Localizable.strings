@@ -220,8 +220,8 @@
 /* Status text when connecting devices to sync */
 "sync.simplified.scan-or-view-code.connecting.status" = "Connecting...";
 
-/* Instruction shown during sync setup flow. The curly quotes around 'Sync & Backup' refer to the name of the settings section and should be preserved. */
-"sync.simplified.scan-or-view-code.connecting.title" = "Keep “Sync & Backup” open on both devices";
+/* Instruction shown during sync setup flow. */
+"sync.simplified.scan-or-view-code.connecting.title" = "End-to-end encrypted on all your devices.";
 
 /* Message of the reminder shown after the user copies the sync code. */
 "sync.simplified.scan-or-view-code.copy-confirmation.message" = "Come back to this device after pasting the code.";

@@ -212,7 +212,7 @@
 "action.title.vpn" = "VPN";
 
 /* Description of the Ad Blocking feature in settings */
-"ad.blocking.description" = "Bloqueia os rastreadores invasivos antes de serem carregados, eliminando eficazmente os anúncios que usam rastreio";
+"ad.blocking.description" = "Bloqueia os rastreadores invasivos antes de serem carregados, eliminando eficazmente os anúncios que dependem do rastreamento.";
 
 /* Section header for YouTube-specific ad blocking settings */
 "ad.blocking.youtube.section.header" = "Bloqueio de anúncios do YouTube";
@@ -401,10 +401,10 @@
 "alert.sync-already-paired-with-account-button" = "Entendido";
 
 /* Description for Sync error shown when both devices are already paired with the same account */
-"alert.sync-already-paired-with-account-description" = "Já estás emparelhado com esta conta em ambos os dispositivos.";
+"alert.sync-already-paired-with-account-description" = "Estes dispositivos já estão ligados ao Sync & Backup.";
 
 /* Title for Sync error shown when both devices are already paired with the same account */
-"alert.sync-already-paired-with-account-title" = "Já emparelhado";
+"alert.sync-already-paired-with-account-title" = "Já está sincronizado.";
 
 /* Description for alert shown when sync error occurs because of bad bookmarks data */
 "alert.sync-bookmarks-bad-data-error-description" = "Alguns marcadores estão formatados incorretamente ou são demasiado longos e não foram sincronizados.";
@@ -425,10 +425,10 @@
 "alert.sync-cancelled-from-other-device-title" = "A sincronização foi cancelada no teu outro dispositivo.";
 
 /* Description for Sync error shown when a third-party recovery code can only be used with Duck.ai */
-"alert.sync-code-only-compatible-with-duckai-description" = "No teu navegador, visita duck.ai, vai a Definições e, na secção \"Sync & Backup\", seleciona \"Ativar\" e, em seguida, \"Sincronizar com outro dispositivo\".";
+"alert.sync-code-only-compatible-with-duckai-description" = "No outro navegador, acede a Duck.ai, vai a Definições, depois em \"Sync & Backup\" seleciona \"ativar\" e depois \"sincronizar com outro dispositivo\".";
 
 /* Title for Sync error shown when a third-party recovery code can only be used with Duck.ai */
-"alert.sync-code-only-compatible-with-duckai-title" = "Lê este código nas definições do Duck.ai.";
+"alert.sync-code-only-compatible-with-duckai-title" = "Digitaliza este código usando um navegador diferente do DuckDuckGo.";
 
 /* Description for alert shown when sync error occurs because of bad credentials data */
 "alert.sync-credentials-bad-data-error-description" = "Algumas palavras-passe estão formatadas incorretamente ou são demasiado longas e não foram sincronizadas.";
@@ -454,6 +454,12 @@
 /* Sync error alert action button title, takes the user to the sync settings page. */
 "alert.sync-error-action" = "Definições de sincronização";
 
+/* Description for generic Sync setup failure alerts */
+"alert.sync-failed-description" = "Tenta novamente.";
+
+/* Title for generic Sync setup failure alerts */
+"alert.sync-failed-title" = "A sincronização falhou.";
+
 /* Description for Sync error shown when a third-party account already has a native DuckDuckGo Sync credential */
 "alert.sync-from-another-connected-device-description" = "Sincroniza este dispositivo a partir de um navegador DuckDuckGo já ligado noutro dispositivo.";
 
@@ -478,6 +484,9 @@
 /* Title for alert shown when sync paused for an error */
 "alert.sync-paused-title" = "A sincronização está em pausa";
 
+/* Button title for Sync setup error alerts */
+"alert.sync-setup-error-got-it-button" = "Entendido";
+
 /* Switch account button in alert */
 "alert.sync-switch-account-button" = "Mudar sincronização";
 
@@ -489,9 +498,6 @@
 
 /* Description for alert shown when sync error occurs because of too many requests */
 "alert.sync-too-many-requests-error-description" = "O Sync & Backup está temporariamente indisponível.";
-
-/* Description for Sync error shown when the app version does not support the scanned Sync code */
-"alert.sync-update-required-description" = "Este código não é suportado na versão atual da aplicação.";
 
 /* Title for Sync error shown when the app version does not support the scanned Sync code */
 "alert.sync-update-required-title" = "Atualiza o navegador DuckDuckGo e tenta novamente.";
@@ -527,13 +533,15 @@
 "alert.unable-to-remove-device-description" = "Não foi possível remover este dispositivo da sincronização e cópia de segurança.";
 
 /* Description for unable to scan qr code error */
-"alert.unable-to-scan-qr-code-description" = "Este código é inválido. Confirma que introduziste ou leste o código correto.";
+"alert.unable-to-scan-qr-code-description" = "Confirma que introduziste ou leste o código correto.";
+
+/* Title for unable to scan qr code error */
+"alert.unable-to-scan-qr-code-title" = "Este não é um código de sincronização válido.";
 
 /* Description for unable to sync to server error */
 "alert.unable-to-sync-to-server-description" = "Não foi possível ligar ao servidor.";
 
 /* Description for unable to sync with another device error */
-"alert.unable-to-sync-with-other-device-description" = "Não foi possível sincronizar com outro dispositivo.";
 
 /* Description for unable to turn sync off error */
 "alert.unable-to-turn-sync-off-description" = "Não foi possível desativar a Sincronização e cópia de segurança.";
@@ -1410,6 +1418,39 @@
 
 /* Third paragraph of the Control Center Widget Education screen */
 "control.center.widget.education.paragraph.3" = "Toca em **Adicionar um controlo** na parte inferior do ecrã";
+
+/* Small 'NEW' badge shown above the Cookie Pop-up Protection opt-in dialog header */
+"cookie-popup-protection.opt-in.badge" = "Novo";
+
+/* Confirm button in the Cookie Pop-up Protection opt-in dialog */
+"cookie-popup-protection.opt-in.confirm" = "Confirmar";
+
+/* Body of the opt-in dialog when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.body" = "Vamos tentar rejeitar o máximo de cookies possível. Se não houver opção de rejeição, vamos poupar-te um clique e aceitar estes cookies por ti.";
+
+/* Primary (recommended) option when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.primary-option" = "Rejeitar quando possível ou aceitar por mim";
+
+/* Secondary option when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.secondary-option" = "Prefiro continuar eu a geri-los";
+
+/* Title of the opt-in dialog when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.title" = "Cansado de pop-ups de cookies que não te deixam em paz?";
+
+/* Body of the opt-in dialog when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.body" = "Podemos poupar-te um clique e aceitar estes cookies por ti.";
+
+/* Primary (recommended) option when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.primary-option" = "Aceitar cookies que não podem ser rejeitados";
+
+/* Secondary option when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.secondary-option" = "Prefiro continuar eu a aceitá-los";
+
+/* Title of the opt-in dialog when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.title" = "Cansado de pop-ups de cookies sem opção de exclusão?";
+
+/* Footer text in the Cookie Pop-up Protection opt-in dialog. The text between ** ** is rendered bold. */
+"cookie-popup-protection.opt-in.footer" = "Podes sempre ajustar mais tarde em\n**Definições** > **Proteção contra pop-ups de cookies**.";
 
 /* Crash Report always send button title */
 "crash.report.dialog.always.send" = "Enviar sempre relatórios de falhas";
@@ -2996,7 +3037,7 @@
 "network.protection.vpn.data-volume" = "Volume de Dados";
 
 /* Footer text for the Exclude CGNAT setting item. */
-"network.protection.vpn.exclude.cgnat.setting.footer" = "Recomendamos desativá-la para que todo o teu tráfego passe pela VPN. Se tiveres problemas com funcionalidades como chamadas por Wi-Fi, mensagens ou correio de voz, experimenta ativá-la.";
+"network.protection.vpn.exclude.cgnat.setting.footer" = "Contornar a VPN para serviços de operador, tais como chamadas Wi-Fi e correio de voz.";
 
 /* Title for the Exclude CGNAT setting item. */
 "network.protection.vpn.exclude.cgnat.setting.title" = "Excluir serviços de operadoras";
@@ -3074,10 +3115,10 @@
 "network.protection.vpn.shortcuts.section.header" = "Atalhos";
 
 /* Footer text for the Strict Routing setting item. The 'Learn more' text is a Markdown link. */
-"network.protection.vpn.strict.routing.setting.footer" = "Recomendado em redes em que não confias, por ex. Wi-Fi público em hotéis, bares, etc. Se tiveres problemas com funcionalidades (como CarPlay, AirDrop, etc.) ou com a ligação a outros dispositivos, experimenta desligá-lo. [Sabe mais](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)";
+"network.protection.vpn.strict.routing.setting.footer" = "Impedir que as aplicações ignorem a VPN. Se tiveres problemas com funcionalidades de Wi-Fi (como AirDrop ou iPhone Mirroring), desativá-la pode ajudar. Fortemente recomendado em redes em que não confias, como Wi-Fi público. [Sabe mais](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack).";
 
 /* Title for the Strict Routing setting item. */
-"network.protection.vpn.strict.routing.setting.title" = "Encaminhamento estrito";
+"network.protection.vpn.strict.routing.setting.title" = "Forçar encaminhamento estrito (recomendado)";
 
 /* Confirm button for the new address bar picker */
 "new.address.bar.picker.confirm" = "Confirmar";
@@ -3158,7 +3199,7 @@
 "omnibar.notification.trackers-blocked" = "%d Trackers";
 
 /* Text displayed on notification appearing in the address bar when YouTube ad blocking is active */
-"omnibar.notification.youtube-ad-block-on" = "Bloqueio de anúncios do YouTube ativo";
+"omnibar.notification.youtube-ad-block-on" = "Bloqueio de anúncios ativado";
 
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Entendi";
@@ -3823,9 +3864,6 @@
 /* Settings picker label for what to show when returning after inactivity */
 "settings.afterInactivity.v2.label" = "Após inatividade";
 
-/* Footer under the AI picker, descriptive sentence without link */
-"settings.ai.new.picker.footer" = "Experimenta a nova opção para alternar entre a pesquisa e o Duck.ai na barra de endereço.";
-
 /* Settings row that opens Duck.ai in a new tab */
 "settings.aichat.duckai.settings" = "Definições do Duck.ai";
 
@@ -3840,9 +3878,6 @@
 
 /* Settings screen footer text for showing AI Chat in the input box */
 "settings.aichat.shortcuts.input.footer" = "Pesquise na web ou pergunte diretamente ao Duck.ai na barra de endereços";
-
-/* Title of search assist settings link */
-"settings.aifeatures.assist" = "Definições do Assist de pesquisa";
 
 /* Search Assist frequency option: never show AI-assisted answers */
 "settings.aifeatures.assist.never" = "Nunca";
@@ -4013,7 +4048,19 @@
 "settings.cookie.pop-up-protection.protection" = "Proteção contra pop-ups de cookies";
 
 /* Explanation in Settings how the cookie pop up protection feature works */
-"settings.cookie.pop.up.protection.explanation" = "O DuckDuckGo vai tentar selecionar as definições mais privadas disponíveis e ocultar pop-ups.\n[Sabe Mais](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
+"settings.cookie.pop.up.protection.explanation" = "O DuckDuckGo pode gerir automaticamente as tuas preferências de cookies para maximizar a privacidade, minimizar os cookies e fechar estes pop-ups.\n[Sabe mais](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
+
+/* Explanation below the auto-manage cookie pop-ups toggle in settings */
+"settings.cookie.auto-manage.explanation" = "Vamos tentar selecionar apenas as opções de cookies mais privadas disponíveis por ti e, em seguida, fechar estes pop-ups.";
+
+/* Title for the auto-manage cookie pop-ups toggle in settings */
+"settings.cookie.auto-manage.title" = "Gerir automaticamente pop-ups de cookies";
+
+/* Explanation below the pop-ups without opt-outs toggle in settings */
+"settings.cookie.popups-without-opt-outs.explanation" = "Permite também que o DuckDuckGo te poupe um clique, aceitando cookies em teu nome para fechar pop-ups sem opção de exclusão.";
+
+/* Title for the pop-ups without opt-outs toggle in settings */
+"settings.cookie.popups-without-opt-outs.title" = "Pop-ups sem opção de exclusão";
 
 /* Settings screen cell text for Cookie popups */
 "settings.cookie.popups" = "Gerir pop-ups de cookies";
@@ -4781,7 +4828,7 @@
 "sync.remove-device.title" = "Remover dispositivo?";
 
 /* Toast message shown after sync is enabled by connecting with another device */
-"sync.simplified.device-synced.toast" = "Dispositivo sincronizado com sucesso!";
+"sync.simplified.device-synced.toast" = "Novo dispositivo adicionado!";
 
 /* Toast message shown after sync is successfully enabled */
 "sync.simplified.enabled.toast" = "Sincronização e cópia de segurança ativada";
@@ -5264,10 +5311,10 @@
 "windows-waitlist.waitlist-download-screen.try-duckduckgo-for-windows" = "Obtém o DuckDuckGo para Windows!";
 
 /* Body text of the bottom sheet asking the user to send an anonymous breakage report */
-"youtube.ad.blocking.breakage-report.message" = "Envia um relatório anónimo de falha à DuckDuckGo. Ajuda a melhorar o bloqueio de anúncios para toda a gente!";
+"youtube.ad.blocking.breakage-report.message" = "Envia um relatório anónimo à DuckDuckGo e ajuda a melhorar o bloqueio de anúncios para toda a gente!";
 
 /* Primary action sending an anonymous YouTube ad-blocking breakage report */
-"youtube.ad.blocking.breakage-report.send" = "Enviar relatório de erros";
+"youtube.ad.blocking.breakage-report.send" = "Enviar relatório anónimo";
 
 /* Title of the bottom sheet asking the user to send an anonymous breakage report after disabling YouTube ad blocking */
 "youtube.ad.blocking.breakage-report.title" = "Bloqueio de anúncios do YouTube não funciona?";
@@ -5312,7 +5359,7 @@
 "youtube.ad.blocking.unavailable.got-it" = "Entendi";
 
 /* Body text of the bottom sheet shown when YouTube ad blocking has been remotely disabled */
-"youtube.ad.blocking.unavailable.message" = "O bloqueio de anúncios foi afetado por alterações recentes ao YouTube. Estamos a trabalhar para resolver estes problemas e agradecemos a tua compreensão.";
+"youtube.ad.blocking.unavailable.message" = "O bloqueio de anúncios foi afetado por alterações recentes no YouTube. Estamos a trabalhar para resolver estes problemas e agradecemos a tua compreensão.";
 
 /* Title of the bottom sheet shown when YouTube ad blocking has been remotely disabled */
 "youtube.ad.blocking.unavailable.title" = "Bloqueio de anúncios do YouTube indisponível";
@@ -5379,5 +5426,28 @@
 /* Button to delete all chats in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.chats.button" = "Eliminar conversas";
 
-/* Do not translate - stringsdict entry */
-"aiChat.history.deleteAll.confirmation.title" = "aiChat.history.deleteAll.confirmation.title";
+/* Top-level attachment menu option to attach the current page content to an AI chat message */
+"aichat.attachment.option.ask.about.page" = "Perguntar sobre a página";
+
+/* Status view message shown while the VPN is on but Strict routing is off */
+"network.protection.status.header.message.strict.routing.off" = "Algum tráfego pode contornar a VPN enquanto o encaminhamento estrito estiver desativado. O encaminhamento estrito é recomendado para redes públicas.";
+
+/* Label for the status pill shown while the VPN's Strict routing setting is off */
+"network.protection.status.view.strict.routing.pill.off" = "Encaminhamento estrito: desativado";
+
+/* Label for the status pill shown while the VPN's Strict routing setting is on */
+"network.protection.status.view.strict.routing.pill.on" = "Encaminhamento estrito: ativado";
+
+/* Tooltip shown for the status pill while the VPN's Strict routing setting is off */
+"network.protection.status.view.strict.routing.pill.tooltip.off" = "O encaminhamento estrito é recomendado para redes públicas.";
+
+/* Tooltip shown for the status pill while the VPN's Strict routing setting is on */
+"network.protection.status.view.strict.routing.pill.tooltip.on" = "Algumas aplicações podem não funcionar enquanto o encaminhamento estrito estiver ativado.";
+
+/* Title of the Troubleshooting section in the VPN status screen. */
+"network.protection.status.view.troubleshooting.section.title" = "Resolução de problemas";
+
+/* The body of the notification reminding the user to turn the VPN Strict routing setting back on */
+"network.protection.strict.routing.reminder.notification.body" = "Algum tráfego pode contornar a VPN enquanto estiver desativada. O encaminhamento estrito é recomendado para redes públicas.";
+/* The title of the notification reminding the user to turn the VPN Strict routing setting back on */
+"network.protection.strict.routing.reminder.notification.title" = "O encaminhamento estrito está desativado";

@@ -36,11 +36,7 @@ struct ReturnToTabCard: View {
 
     var body: some View {
         GeometryReader { proxy in
-            if model.isActionsEnabled {
-                bodyWithActions(width: proxy.size.width)
-            } else {
-                contentView
-            }
+            bodyWithActions(width: proxy.size.width)
         }
         .frame(height: Metrics.height)
     }
@@ -68,9 +64,7 @@ struct ReturnToTabCard: View {
     private var contentView: some View {
         HStack(spacing: Metrics.innerSpacing) {
             mainView
-            if model.isActionsEnabled {
-                actionButtonsView
-            }
+            actionButtonsView
         }
         .padding(contentPaddingEdges, Metrics.horizontalPadding)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -83,7 +77,7 @@ struct ReturnToTabCard: View {
 
     private var contentPaddingEdges: Edge.Set {
         /// Avoid trailing padding when the Menu is visible
-        model.isActionsEnabled ? .leading : .horizontal
+        .leading
     }
 
     private var mainView: some View {
@@ -116,9 +110,7 @@ struct ReturnToTabCard: View {
     /// Trailing controls: when enabled, the Fire (delete tab) button sits to the left of the three-dots menu.
     private var actionButtonsView: some View {
         HStack(spacing: 0) {
-            if model.isFireButtonEnabled {
-                fireButton
-            }
+            fireButton
             menuView
         }
     }
@@ -149,8 +141,8 @@ struct ReturnToTabCard: View {
         } label: {
             Image(uiImage: DesignSystemImages.Glyphs.Size24.menuDotsHorizontal)
                 .foregroundColor(Color(designSystemColor: .icons))
-                // Tighten the leading gap to the Fire button when it's present; otherwise keep the original padding.
-                .padding(.leading, model.isFireButtonEnabled ? Metrics.actionIconPadding : Metrics.horizontalPadding)
+                // Tighten the leading gap to the Fire button.
+                .padding(.leading, Metrics.actionIconPadding)
                 .padding(.trailing, Metrics.horizontalPadding)
                 .frame(maxHeight: .infinity)
                 .contentShape(Rectangle())
@@ -170,18 +162,14 @@ struct ReturnToTabCard: View {
                 action: model.returnToTabFromMenu
             )
             destructiveActionButtons
-            if model.isHideShortcutEnabled{
-                Section {
-                    afterInactivityPicker
-                    MenuActionButton(
-                        text: UserText.escapeHatchMenuHideTheseShortcuts,
-                        icon: DesignSystemImages.Glyphs.Size16.eyeClosed,
-                        role: .none,
-                        action: model.hideShortcut
-                    )
-                }
-            } else {
+            Section {
                 afterInactivityPicker
+                MenuActionButton(
+                    text: UserText.escapeHatchMenuHideTheseShortcuts,
+                    icon: DesignSystemImages.Glyphs.Size16.eyeClosed,
+                    role: .none,
+                    action: model.hideShortcut
+                )
             }
         }
         .onAppear { model.menuDidAppear() }
@@ -189,31 +177,14 @@ struct ReturnToTabCard: View {
 
     @ViewBuilder
     private var destructiveActionButtons: some View {
-        if model.isFireTab {
-            // When the Fire button is enabled, deleting is handled by that button instead of the menu.
-            if !model.isFireButtonEnabled {
-                MenuActionButton(
-                    text: UserText.escapeHatchMenuDeleteTab,
-                    icon: DesignSystemImages.Glyphs.Size16.fire,
-                    role: .destructive,
-                    action: model.burnImmediatelyFromMenu
-                )
-            }
-        } else {
+        // Deleting is handled by the dedicated Fire button on the card, not the menu.
+        if !model.isFireTab {
             MenuActionButton(
                 text: UserText.escapeHatchMenuCloseTab,
                 icon: DesignSystemImages.Glyphs.Size16.closeOutline,
                 role: .destructive,
                 action: model.closeTabFromMenu
             )
-            if !model.isFireButtonEnabled {
-                MenuActionButton(
-                    text: UserText.escapeHatchMenuDeleteTab,
-                    icon: DesignSystemImages.Glyphs.Size16.fire,
-                    role: .destructive,
-                    action: { model.burnWithConfirmationFromMenu(menuFrameInWindow) }
-                )
-            }
         }
     }
 
@@ -434,8 +405,7 @@ private enum Metrics {
                                     tabType: .regular,
                                     domain: "en.wikipedia.org",
                                     targetTab: target,
-                                    tabCount: 9,
-                                    isFireButtonEnabled: true))
+                                    tabCount: 9))
         .padding()
         .frame(width: 360)
 }

@@ -87,6 +87,7 @@ jobs:
     with:
       release-type: alpha
       create-dmg: true
+      include-x86-architecture: true
       build-number-override: ${{ needs.calculate-alpha-build-number.outputs.build-number }}
       skip-notify: true
     secrets: inherit

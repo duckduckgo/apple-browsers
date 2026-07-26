@@ -21,6 +21,7 @@ import Foundation
 import DDGSync
 import Combine
 import CombineExtensions
+import DesignResourcesKit
 import Common
 import FoundationExtensions
 import SystemConfiguration
@@ -118,6 +119,7 @@ final class SyncDialogController {
         self.connectionControllerFactory = connectionControllerFactory ?? SyncDialogController.defaultConnectionControllerFactory
         self.featureFlagger = featureFlagger ?? Application.appDelegate.featureFlagger
         self.managementDialogModel = managementDialogModel
+        self.managementDialogModel.isAppRebranded = DesignSystemRebrand.isAppRebranded()
 
         diagnosisHelper = SyncDiagnosisHelper(syncService: syncService)
 
@@ -335,7 +337,7 @@ final class SyncDialogController {
         guard authenticationResult.authenticated else {
             if authenticationResult == .noAuthAvailable {
                 presentDialog(for: .empty)
-                managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .unableToAuthenticateOnDevice, description: "")
+                managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .unableToAuthenticateOnDevice)
             }
             coordinationDelegate?.didEndFlow()
             return false
@@ -898,10 +900,10 @@ extension SyncDialogController: SyncConnectionControllerDelegate {
         let alert = NSAlert.syncPairingV2Confirmation(message: message)
 
         guard let parentWindow = Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.window else {
-            return await alert.runModal() == .alertSecondButtonReturn
+            return await alert.runModal() == .alertFirstButtonReturn
         }
 
         let presentationWindow = parentWindow.attachedSheet ?? parentWindow
-        return await alert.beginSheetModal(for: presentationWindow) == .alertSecondButtonReturn
+        return await alert.beginSheetModal(for: presentationWindow) == .alertFirstButtonReturn
     }
 }

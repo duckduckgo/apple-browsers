@@ -112,6 +112,14 @@ final class CookiePopupProtectionOptInModalPromptProvider: ModalPromptProvider {
 
     func provideModalPrompt() -> ModalPromptConfiguration? {
         guard isEligibleToShow else { return nil }
+
+        // A/B experiment: this is the last point both arms share before diverging, so enroll here.
+        // `resolveCohort` assigns + enrolls the user; `control` is held back (dialog suppressed), while
+        // `treatment`/unassigned fall through to the current presentation.
+        if featureFlagger.resolveCohort(for: FeatureFlag.cookiePopupOptInDialogExperiment) as? FeatureFlag.CookiePopupOptInDialogCohort == .control {
+            return nil
+        }
+
         // The feature state stays unchanged between presentation and confirmation, so capture it now.
         let autoconsentEnabledWhenShown = AppUserDefaults().autoconsentEnabled
         let store = store

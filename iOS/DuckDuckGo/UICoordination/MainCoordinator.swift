@@ -160,9 +160,10 @@ final class MainCoordinator {
         let tabsModelProvider = try Self.prepareTabsModel(previewsSource: previewsSource, tabsPersistence: tabsPersistence)
         let historyManager = try Self.makeHistoryManager(tabsModel: tabsModelProvider.aggregateTabsModel)
         reportingService.subscriptionDataReporter.injectTabsModel(tabsModelProvider.aggregateTabsModel)
-        let daxDialogsFactory = ContextualDaxDialogsProvider(featureFlagger: featureFlagger,
-                                                         contextualOnboardingLogic: daxDialogs,
-                                                         contextualOnboardingPixelReporter: reportingService.onboardingPixelReporter)
+        let daxDialogsFactory = ContextualDaxDialogFactory(
+            contextualOnboardingLogic: daxDialogs,
+            contextualOnboardingPixelReporter: reportingService.onboardingPixelReporter
+        )
         let contextualOnboardingPresenter = ContextualOnboardingPresenter(variantManager: variantManager, daxDialogsFactory: daxDialogsFactory)
         let textZoomCoordinatorProvider = Self.makeTextZoomCoordinatorProvider()
         let autoconsentManagementProvider = AutoconsentManagementProvider()
@@ -645,8 +646,8 @@ final class MainCoordinator {
         controller.segueToSubscriptionWelcome()
     }
 
-    func presentNetworkProtectionStatusSettingsModal(origin: SubscriptionFunnelOrigin) {
-        controller.presentNetworkProtectionStatusSettingsModal(origin: origin)
+    func presentNetworkProtectionStatusSettingsModal(entryPoint: VPNEntryPoint, scrollToStrictRouting: Bool = false) {
+        controller.presentNetworkProtectionStatusSettingsModal(entryPoint: entryPoint, scrollToStrictRouting: scrollToStrictRouting)
     }
 
     func presentDataBrokerProtectionDashboard() {
@@ -761,7 +762,7 @@ extension MainCoordinator: URLHandling {
         case .newEmail:
             controller.newEmailAddress()
         case .openVPN:
-            presentNetworkProtectionStatusSettingsModal(origin: .widgetVPN)
+            presentNetworkProtectionStatusSettingsModal(entryPoint: .widget)
         case .openPasswords:
             handleOpenPasswords(url: url)
         case .openAIChat:
@@ -830,7 +831,7 @@ extension MainCoordinator: ShortcutItemHandling {
         } else if item.type == ShortcutKey.passwords {
             handleSearchPassword()
         } else if item.type == ShortcutKey.openVPNSettings {
-            controller.presentNetworkProtectionStatusSettingsModal(origin: .shortcutVPN)
+            controller.presentNetworkProtectionStatusSettingsModal(entryPoint: .shortcut)
         } else if item.type == ShortcutKey.aiChat {
             handleAIChatAppIconShortuct()
         } else if item.type == ShortcutKey.voiceSearch {

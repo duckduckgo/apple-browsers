@@ -148,17 +148,6 @@ enum GeneralPixel: PixelKitEvent {
     case fireButton(option: FireButtonOption)
     case fireAnimationSetting(enabled: Bool)
 
-    /**
-     * Event Trigger: User opens the fire popover (fire button details view).
-     *
-     * > Note: This is a daily pixel.
-     *
-     * Anomaly Investigation:
-     * - May indicate changes in user awareness of privacy clearing features.
-     * - Increase could suggest browser cache is causing issues.
-     */
-    case fireButtonDetailsViewed
-
     // Duck Player
     case duckPlayerDailyUniqueView
     case duckPlayerWeeklyUniqueView
@@ -303,7 +292,6 @@ enum GeneralPixel: PixelKitEvent {
     case serpSettingsSerializationFailed
     case serpSettingsKeyValueStoreReadError
     case serpSettingsKeyValueStoreWriteError
-    case hideAIGeneratedImagesButtonClicked
     case openDuckAIButtonClick
 
     case duckAiNativeStorageMigrationDoneUnique(key: String)
@@ -842,8 +830,6 @@ enum GeneralPixel: PixelKitEvent {
             return "m_mac_fire_button_\(option)"
         case .fireAnimationSetting(let enabled):
             return "m_mac_fire_animation_\(enabled ? "on" : "off")"
-        case .fireButtonDetailsViewed:
-            return "m_mac_fire_button_details_viewed"
 
         case .duckPlayerWeeklyUniqueView:
             return "duckplayer_weekly-unique-view"
@@ -1048,7 +1034,6 @@ enum GeneralPixel: PixelKitEvent {
         case .serpSettingsSerializationFailed: return "m_mac_serp_settings_serialization_failed"
         case .serpSettingsKeyValueStoreReadError: return "m_mac_serp_settings_keyvalue_store_read_error"
         case .serpSettingsKeyValueStoreWriteError: return "m_mac_serp_settings_keyvalue_store_write_error"
-        case .hideAIGeneratedImagesButtonClicked: return "m_mac_aichat_hide_ai_generated_images_button_clicked"
         case .openDuckAIButtonClick: return "m_mac_serp_settings_open_duck_ai_button_click"
 
         case .duckAiNativeStorageMigrationDoneUnique(let key): return "m_mac_duck-ai_native-storage_migration_done_\(key)_u"
@@ -1660,7 +1645,6 @@ enum GeneralPixel: PixelKitEvent {
                 .fireButtonFirstBurn,
                 .fireButton,
                 .fireAnimationSetting,
-                .fireButtonDetailsViewed,
                 .duckPlayerDailyUniqueView,
                 .duckPlayerWeeklyUniqueView,
                 .duckPlayerViewFromYoutubeViaMainOverlay,
@@ -1781,7 +1765,6 @@ enum GeneralPixel: PixelKitEvent {
                 .serpSettingsSerializationFailed,
                 .serpSettingsKeyValueStoreReadError,
                 .serpSettingsKeyValueStoreWriteError,
-                .hideAIGeneratedImagesButtonClicked,
                 .openDuckAIButtonClick,
                 .duckAiNativeStorageMigrationDoneUnique,
                 .duckAiNativeStorageMigrationDoneCount,

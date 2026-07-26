@@ -27,6 +27,7 @@ public protocol ManagementViewModel: ObservableObject {
     var isAccountRecoveryAvailable: Bool { get }
     var isAppVersionNotSupported: Bool { get }
     var isAIChatSyncEnabled: Bool { get }
+    var isAppRebranded: Bool { get }
 
     var isSyncEnabled: Bool { get }
     var isSyncPaused: Bool { get }
@@ -104,12 +105,16 @@ public enum SyncErrorType {
         switch self {
         case .unableToAuthenticateOnDevice:
             return UserText.syncDeviceAuthenticationErrorAlertTitle
+        case .unableToSyncToOtherDevice:
+            return UserText.syncFailedTitle
         case .updateRequired:
             return UserText.syncUpdateRequiredTitle
         case .alreadyPairedWithAccount:
             return UserText.syncAlreadyPairedWithAccountTitle
         case .unsupportedThirdPartyRecoveryCode:
             return UserText.syncUnsupportedThirdPartyRecoveryCodeTitle
+        case .invalidCode, .unableToRecognizeCode:
+            return UserText.unableToRecognizeCodeTitle
         case .syncCancelledFromOtherDevice:
             return UserText.syncCancelledFromOtherDeviceTitle
         default:
@@ -117,12 +122,12 @@ public enum SyncErrorType {
         }
     }
 
-    var description: String {
+    var description: String? {
         switch self {
         case .unableToSyncToServer:
             return UserText.unableToSyncToServerDescription
         case .unableToSyncToOtherDevice:
-            return UserText.unableToSyncWithAnotherDeviceDescription
+            return UserText.syncFailedDescription
         case .unableToMergeTwoAccounts:
             return UserText.unableToMergeTwoAccountsDescription
         case .unableToUpdateDeviceName:
@@ -142,7 +147,7 @@ public enum SyncErrorType {
         case .unableToRecognizeCode:
             return UserText.unableToRecognizeCode
         case .updateRequired:
-            return UserText.syncUpdateRequiredDescription
+            return nil
         case .unsupportedThirdPartyRecoveryCode:
             return UserText.syncUnsupportedThirdPartyRecoveryCodeDescription
         case .thirdPartyAccountAlreadyUpgraded:
@@ -158,6 +163,8 @@ public enum SyncErrorType {
         switch self {
         case .unableToAuthenticateOnDevice:
             return UserText.syncDeviceAuthenticationErrorAlertButton
+        case .unableToSyncToOtherDevice, .invalidCode, .unableToRecognizeCode, .updateRequired, .unsupportedThirdPartyRecoveryCode:
+            return UserText.syncSetupErrorGotItButton
         case .alreadyPairedWithAccount:
             return UserText.syncAlreadyPairedWithAccountButton
         case .syncCancelledFromOtherDevice:
@@ -180,7 +187,7 @@ public enum SyncErrorType {
 
 public struct SyncErrorMessage {
     var type: SyncErrorType
-    var errorDescription: String
+    var errorDescription: String?
 
     public init(type: SyncErrorType, description: String? = nil) {
         self.type = type

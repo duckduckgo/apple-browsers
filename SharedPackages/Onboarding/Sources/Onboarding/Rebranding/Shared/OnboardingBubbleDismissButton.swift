@@ -33,6 +33,7 @@ struct OnboardingBubbleDismissButton: View {
             #endif
         }
         .buttonStyle(onboardingTheme.dismissButtonStyle.style)
+        .accessibilityIdentifier("onboardingDialogDismissButton")
     }
 }
 

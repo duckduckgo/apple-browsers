@@ -212,7 +212,7 @@
 "action.title.vpn" = "VPN";
 
 /* Description of the Ad Blocking feature in settings */
-"ad.blocking.description" = "Blokira invazivne sledilnike, še preden se naložijo, s čimer učinkovito odstrani oglase, ki temeljijo na sledenju";
+"ad.blocking.description" = "Blokira invazivne sledilnike, še preden se naložijo, s čimer učinkovito odstrani oglase, ki temeljijo na sledenju.";
 
 /* Section header for YouTube-specific ad blocking settings */
 "ad.blocking.youtube.section.header" = "Blokiranje oglasov na YouTube";
@@ -401,10 +401,10 @@
 "alert.sync-already-paired-with-account-button" = "Razumem";
 
 /* Description for Sync error shown when both devices are already paired with the same account */
-"alert.sync-already-paired-with-account-description" = "S tem računom ste že povezani na obeh napravah.";
+"alert.sync-already-paired-with-account-description" = "Te naprave so že povezane s Sync & Backup.";
 
 /* Title for Sync error shown when both devices are already paired with the same account */
-"alert.sync-already-paired-with-account-title" = "Že seznanjeno";
+"alert.sync-already-paired-with-account-title" = "Že sinhronizirano.";
 
 /* Description for alert shown when sync error occurs because of bad bookmarks data */
 "alert.sync-bookmarks-bad-data-error-description" = "Nekateri zaznamki so napačno oblikovani ali predolgi in niso bili sinhronizirani.";
@@ -425,10 +425,10 @@
 "alert.sync-cancelled-from-other-device-title" = "Sinhronizacija je bila preklicana iz vaše druge naprave.";
 
 /* Description for Sync error shown when a third-party recovery code can only be used with Duck.ai */
-"alert.sync-code-only-compatible-with-duckai-description" = "V brskalniku obiščite duck.ai, pojdite v Nastavitve, nato v razdelku »Sync & Backup« izberite »Vklopi« in nato »Sinhroniziraj z drugo napravo«.";
+"alert.sync-code-only-compatible-with-duckai-description" = "V drugem brskalniku obiščite Duck.ai, pojdite v Nastavitve, nato v razdelku »Sync & Backup« izberite »Vklopi« in nato »Sinhronizacija z drugo napravo«.";
 
 /* Title for Sync error shown when a third-party recovery code can only be used with Duck.ai */
-"alert.sync-code-only-compatible-with-duckai-title" = "Optično preberite to kodo iz nastavitev Duck.ai.";
+"alert.sync-code-only-compatible-with-duckai-title" = "Skenirajte to kodo z brskalnikom, ki ni DuckDuckGo.";
 
 /* Description for alert shown when sync error occurs because of bad credentials data */
 "alert.sync-credentials-bad-data-error-description" = "Nekatera gesla so napačno oblikovana ali predolga in niso bila sinhronizirana.";
@@ -454,6 +454,12 @@
 /* Sync error alert action button title, takes the user to the sync settings page. */
 "alert.sync-error-action" = "Nastavitve sinhronizacije";
 
+/* Description for generic Sync setup failure alerts */
+"alert.sync-failed-description" = "Poskusite znova.";
+
+/* Title for generic Sync setup failure alerts */
+"alert.sync-failed-title" = "Sinhronizacija ni uspela.";
+
 /* Description for Sync error shown when a third-party account already has a native DuckDuckGo Sync credential */
 "alert.sync-from-another-connected-device-description" = "Sinhronizirajte to napravo iz že povezanega brskalnika DuckDuckGo na drugi napravi.";
 
@@ -478,6 +484,9 @@
 /* Title for alert shown when sync paused for an error */
 "alert.sync-paused-title" = "Sinhronizacija je začasno zaustavljena";
 
+/* Button title for Sync setup error alerts */
+"alert.sync-setup-error-got-it-button" = "Razumem";
+
 /* Switch account button in alert */
 "alert.sync-switch-account-button" = "Preklop sinhronizacije";
 
@@ -489,9 +498,6 @@
 
 /* Description for alert shown when sync error occurs because of too many requests */
 "alert.sync-too-many-requests-error-description" = "Sinhronizacija in varnostno kopiranje sta začasno nedostopna.";
-
-/* Description for Sync error shown when the app version does not support the scanned Sync code */
-"alert.sync-update-required-description" = "Ta koda ni podprta v trenutni različici aplikacije.";
 
 /* Title for Sync error shown when the app version does not support the scanned Sync code */
 "alert.sync-update-required-title" = "Posodobite brskalnik DuckDuckGo in poskusite znova.";
@@ -527,13 +533,15 @@
 "alert.unable-to-remove-device-description" = "Te naprave ni bilo mogoče odstraniti iz sinhronizacije in varnostnega kopiranja.";
 
 /* Description for unable to scan qr code error */
-"alert.unable-to-scan-qr-code-description" = "Oprostite, ta koda je neveljavna. Prepričajte se, da je bila vnesena ali optično prebrana pravilna koda.";
+"alert.unable-to-scan-qr-code-description" = "Prepričajte se, da je bila vnesena ali optično prebrana pravilna koda.";
+
+/* Title for unable to scan qr code error */
+"alert.unable-to-scan-qr-code-title" = "To ni veljavna koda za sinhronizacijo.";
 
 /* Description for unable to sync to server error */
 "alert.unable-to-sync-to-server-description" = "Ni bilo mogoče vzpostaviti povezave s strežnikom.";
 
 /* Description for unable to sync with another device error */
-"alert.unable-to-sync-with-other-device-description" = "Ni bilo mogoče sinhronizirati z drugo napravo.";
 
 /* Description for unable to turn sync off error */
 "alert.unable-to-turn-sync-off-description" = "Sinhronizacije in varnostnega kopiranja ni bilo mogoče izklopiti.";
@@ -1410,6 +1418,39 @@
 
 /* Third paragraph of the Control Center Widget Education screen */
 "control.center.widget.education.paragraph.3" = "Tapnite **Dodaj kontrolnik** na dnu zaslona.";
+
+/* Small 'NEW' badge shown above the Cookie Pop-up Protection opt-in dialog header */
+"cookie-popup-protection.opt-in.badge" = "Novo";
+
+/* Confirm button in the Cookie Pop-up Protection opt-in dialog */
+"cookie-popup-protection.opt-in.confirm" = "Potrdi";
+
+/* Body of the opt-in dialog when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.body" = "Poskušali bomo zavrniti čim več piškotkov. Če možnost zavrnitve ne bo na voljo, vam bomo prihranili klik in te piškotke sprejeli namesto vas.";
+
+/* Primary (recommended) option when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.primary-option" = "Zavrni, ko je mogoče, ali sprejmi zame";
+
+/* Secondary option when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.secondary-option" = "Upravljanje bom še naprej urejal/-a sam/-a";
+
+/* Title of the opt-in dialog when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.title" = "Vas motijo pojavna okna za piškotke, ki vam ne dajo miru?";
+
+/* Body of the opt-in dialog when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.body" = "Prihranimo vam lahko klik in te piškotke sprejmemo namesto vas.";
+
+/* Primary (recommended) option when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.primary-option" = "Sprejmi piškotke, ki jih ni mogoče zavrniti";
+
+/* Secondary option when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.secondary-option" = "Sprejemanje bom še naprej urejal/-a sam/-a";
+
+/* Title of the opt-in dialog when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.title" = "Ste naveličani pojavnih oken s piškotki, ki vam ne omogočajo, da jih zavrnete?";
+
+/* Footer text in the Cookie Pop-up Protection opt-in dialog. The text between ** ** is rendered bold. */
+"cookie-popup-protection.opt-in.footer" = "To lahko pozneje kadar koli prilagodite v razdelku\n**Nastavitve** > **Zaščita pred pojavnimi okni piškotkov**.";
 
 /* Crash Report always send button title */
 "crash.report.dialog.always.send" = "Vedno pošlji poročila o zrušitvah";
@@ -2996,7 +3037,7 @@
 "network.protection.vpn.data-volume" = "Podatkovni nosilec";
 
 /* Footer text for the Exclude CGNAT setting item. */
-"network.protection.vpn.exclude.cgnat.setting.footer" = "Priporočamo izklop, da ves vaš promet poteka prek VPN. Če imate težave s funkcijami, kot so klicanje prek Wi-Fi, sporočanje ali glasovna pošta, poskusite to funkcijo vklopiti.";
+"network.protection.vpn.exclude.cgnat.setting.footer" = "Obhod VPN za storitve operaterja, kot sta klicanje prek Wi-Fi in glasovna pošta.";
 
 /* Title for the Exclude CGNAT setting item. */
 "network.protection.vpn.exclude.cgnat.setting.title" = "Izključi storitve operaterja";
@@ -3074,10 +3115,10 @@
 "network.protection.vpn.shortcuts.section.header" = "Bližnjice";
 
 /* Footer text for the Strict Routing setting item. The 'Learn more' text is a Markdown link. */
-"network.protection.vpn.strict.routing.setting.footer" = "Priporočeno v omrežjih, ki jim ne zaupate, npr. javni wifi v hotelih, barih itd. Če imate težave s funkcijami (kot so CarPlay, AirDrop itd.) ali povezovanjem z drugimi napravami, poskusite to izklopiti. [Več o tem](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)";
+"network.protection.vpn.strict.routing.setting.footer" = "Aplikacijam prepreči obhod VPN. Če imate težave s funkcijami Wi-Fi (kot sta AirDrop ali iPhone Mirroring), lahko delovanje izboljšate z izklopom te možnosti. Močno priporočeno v omrežjih, ki jim ne zaupate, na primer v javnih omrežjih Wi-Fi. [Več o tem](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack).";
 
 /* Title for the Strict Routing setting item. */
-"network.protection.vpn.strict.routing.setting.title" = "Strogo usmerjanje";
+"network.protection.vpn.strict.routing.setting.title" = "Uveljavi strogo usmerjanje (priporočeno)";
 
 /* Confirm button for the new address bar picker */
 "new.address.bar.picker.confirm" = "Potrdi";
@@ -3158,7 +3199,7 @@
 "omnibar.notification.trackers-blocked" = "%d Trackers";
 
 /* Text displayed on notification appearing in the address bar when YouTube ad blocking is active */
-"omnibar.notification.youtube-ad-block-on" = "Blokiranje oglasov na YouTubu je omogočeno";
+"omnibar.notification.youtube-ad-block-on" = "Blokiranje oglasov je vklopljeno";
 
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Razumem";
@@ -3823,9 +3864,6 @@
 /* Settings picker label for what to show when returning after inactivity */
 "settings.afterInactivity.v2.label" = "Po neaktivnosti";
 
-/* Footer under the AI picker, descriptive sentence without link */
-"settings.ai.new.picker.footer" = "Preizkusite novo možnost preklopa med iskanjem in Duck.ai v naslovni vrstici.";
-
 /* Settings row that opens Duck.ai in a new tab */
 "settings.aichat.duckai.settings" = "Nastavitve Duck.ai";
 
@@ -3840,9 +3878,6 @@
 
 /* Settings screen footer text for showing AI Chat in the input box */
 "settings.aichat.shortcuts.input.footer" = "Išči po spletu ali vprašaj Duck.ai neposredno iz naslovne vrstice";
-
-/* Title of search assist settings link */
-"settings.aifeatures.assist" = "Nastavitve modula Search Assist";
 
 /* Search Assist frequency option: never show AI-assisted answers */
 "settings.aifeatures.assist.never" = "Nikoli";
@@ -4013,7 +4048,19 @@
 "settings.cookie.pop-up-protection.protection" = "Zaščita pred pojavnimi okni piškotkov";
 
 /* Explanation in Settings how the cookie pop up protection feature works */
-"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo bo poskusil izbrati najbolj zasebne nastavitve, ki so na voljo, in skriti ta pojavna okna za vas.\n[Več o tem](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
+"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo lahko samodejno upravlja nastavitve piškotkov za povečanje zasebnosti, zmanjšanje števila piškotkov in zapiranje teh pojavnih oken.\n[Več o tem](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
+
+/* Explanation below the auto-manage cookie pop-ups toggle in settings */
+"settings.cookie.auto-manage.explanation" = "Poskušali bomo izbrati le najbolj zasebne možnosti piškotkov, ki so na voljo za vas, nato pa zapreti ta pojavna okna.";
+
+/* Title for the auto-manage cookie pop-ups toggle in settings */
+"settings.cookie.auto-manage.title" = "Samodejno upravljanje pojavnih oken za piškotke";
+
+/* Explanation below the pop-ups without opt-outs toggle in settings */
+"settings.cookie.popups-without-opt-outs.explanation" = "Prav tako vam DuckDuckGo prihrani klik tako, da namesto vas sprejme piškotke za zapiranje pojavnih oken, ki vam ne omogočajo zavrnitve.";
+
+/* Title for the pop-ups without opt-outs toggle in settings */
+"settings.cookie.popups-without-opt-outs.title" = "Pojavna okna brez možnosti zavrnitve";
 
 /* Settings screen cell text for Cookie popups */
 "settings.cookie.popups" = "Upravljanje pojavnih oken za piškotke";
@@ -4781,7 +4828,7 @@
 "sync.remove-device.title" = "Želite odstraniti napravo?";
 
 /* Toast message shown after sync is enabled by connecting with another device */
-"sync.simplified.device-synced.toast" = "Naprava je bila uspešno sinhronizirana";
+"sync.simplified.device-synced.toast" = "Nova naprava je bila dodana!";
 
 /* Toast message shown after sync is successfully enabled */
 "sync.simplified.enabled.toast" = "Funkcija Sync & Backup je omogočena";
@@ -5264,10 +5311,10 @@
 "windows-waitlist.waitlist-download-screen.try-duckduckgo-for-windows" = "Pridobite DuckDuckGo za Windows!";
 
 /* Body text of the bottom sheet asking the user to send an anonymous breakage report */
-"youtube.ad.blocking.breakage-report.message" = "Pošljite anonimno poročilo o prekinitvi delovanja v DuckDuckGo. Pomagajte izboljšati blokiranje oglasov za vse uporabnike.";
+"youtube.ad.blocking.breakage-report.message" = "Pošljite anonimno poročilo v DuckDuckGo in pomagajte izboljšati blokiranje oglasov za vse uporabnike.";
 
 /* Primary action sending an anonymous YouTube ad-blocking breakage report */
-"youtube.ad.blocking.breakage-report.send" = "Pošljite poročilo o prekinitvi delovanja";
+"youtube.ad.blocking.breakage-report.send" = "Pošlji anonimno poročilo";
 
 /* Title of the bottom sheet asking the user to send an anonymous breakage report after disabling YouTube ad blocking */
 "youtube.ad.blocking.breakage-report.title" = "Ali blokiranje oglasov na YouTubu ne deluje?";
@@ -5379,5 +5426,28 @@
 /* Button to delete all chats in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.chats.button" = "Izbriši klepete";
 
-/* Do not translate - stringsdict entry */
-"aiChat.history.deleteAll.confirmation.title" = "aiChat.history.deleteAll.confirmation.title";
+/* Top-level attachment menu option to attach the current page content to an AI chat message */
+"aichat.attachment.option.ask.about.page" = "Vprašajte o strani";
+
+/* Status view message shown while the VPN is on but Strict routing is off */
+"network.protection.status.header.message.strict.routing.off" = "Nekaj prometa lahko zaobide omrežje VPN, medtem ko je strogo usmerjanje izklopljeno. Strogo usmerjanje je priporočljivo za javna omrežja.";
+
+/* Label for the status pill shown while the VPN's Strict routing setting is off */
+"network.protection.status.view.strict.routing.pill.off" = "Strogo usmerjanje: Izklop";
+
+/* Label for the status pill shown while the VPN's Strict routing setting is on */
+"network.protection.status.view.strict.routing.pill.on" = "Strogo usmerjanje: Vklop";
+
+/* Tooltip shown for the status pill while the VPN's Strict routing setting is off */
+"network.protection.status.view.strict.routing.pill.tooltip.off" = "Strogo usmerjanje je priporočljivo za javna omrežja.";
+
+/* Tooltip shown for the status pill while the VPN's Strict routing setting is on */
+"network.protection.status.view.strict.routing.pill.tooltip.on" = "Nekatere aplikacije morda ne bodo delovale, ko je strogo usmerjanje vklopljeno.";
+
+/* Title of the Troubleshooting section in the VPN status screen. */
+"network.protection.status.view.troubleshooting.section.title" = "Odpravljanje težav";
+
+/* The body of the notification reminding the user to turn the VPN Strict routing setting back on */
+"network.protection.strict.routing.reminder.notification.body" = "Nekaj prometa lahko zaobide VPN, ko je ta možnost izklopljena. Strogo usmerjanje je priporočljivo za javna omrežja.";
+/* The title of the notification reminding the user to turn the VPN Strict routing setting back on */
+"network.protection.strict.routing.reminder.notification.title" = "Strogo usmerjanje je IZKLOPLJENO";

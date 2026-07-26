@@ -86,6 +86,7 @@ final class SettingsViewModel: ObservableObject {
     var dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?
     private let freemiumPIREligibilityChecker: FreemiumPIREligibilityChecking
     private let profileStateManager: DBPProfileStateManaging
+    private let freemiumDBPUserStateManager: FreemiumDBPUserStateManaging
     weak var autoClearActionDelegate: SettingsAutoClearActionDelegate?
     let mobileCustomization: MobileCustomization
     let userScriptsDependencies: DefaultScriptSourceProvider.Dependencies
@@ -211,12 +212,14 @@ final class SettingsViewModel: ObservableObject {
         }
     }
 
-    var isDefaultOmnibarModeEnabled: Bool {
-        featureFlagger.isFeatureOn(.aiChatOmnibarDefaultPosition)
+    /// True once the user's first freemium scan has finished (results exist, even if no
+    /// matches). Used to switch the entry-point CTA from "start scan" to "show results".
+    var hasCompletedFreemiumScan: Bool {
+        freemiumDBPUserStateManager.firstScanResult != nil
     }
 
-    var isAIFeaturesNativeControlsEnabled: Bool {
-        featureFlagger.isFeatureOn(.aiFeaturesNativeControls)
+    var isDefaultOmnibarModeEnabled: Bool {
+        featureFlagger.isFeatureOn(.aiChatOmnibarDefaultPosition)
     }
 
     var isTabSwitcherTrackerCountEnabled: Bool {
@@ -416,10 +419,6 @@ final class SettingsViewModel: ObservableObject {
 
     var shouldShowNTPAfterIdleSetting: Bool {
         featureFlagger.isFeatureOn(.showNTPAfterIdleReturn)
-    }
-
-    var shouldShowLastTabShortcutSetting: Bool {
-        featureFlagger.isFeatureOn(.escapeHatchHideShortcut)
     }
 
     var lastTabShortcutEnabledBinding: Binding<Bool> {
@@ -1036,6 +1035,7 @@ final class SettingsViewModel: ObservableObject {
          dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?,
          freemiumPIREligibilityChecker: FreemiumPIREligibilityChecking,
          profileStateManager: DBPProfileStateManaging,
+         freemiumDBPUserStateManager: FreemiumDBPUserStateManaging,
          winBackOfferVisibilityManager: WinBackOfferVisibilityManaging,
          mobileCustomization: MobileCustomization,
          userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
@@ -1080,6 +1080,7 @@ final class SettingsViewModel: ObservableObject {
         self.dataBrokerProtectionViewControllerProvider = dataBrokerProtectionViewControllerProvider
         self.freemiumPIREligibilityChecker = freemiumPIREligibilityChecker
         self.profileStateManager = profileStateManager
+        self.freemiumDBPUserStateManager = freemiumDBPUserStateManager
         self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
         self.mobileCustomization = mobileCustomization
         self.userScriptsDependencies = userScriptsDependencies
@@ -1644,7 +1645,8 @@ extension SettingsViewModel: DataImportViewControllerDelegate {
 extension SettingsViewModel {
 
     enum SettingsDeepLinkSection: Identifiable, Equatable {
-        case netP
+        case netP(source: VPNConnectionWideEventData.ScreenSource,
+                  scrollToStrictRouting: Bool = false)
         case dbp
         case itr
         case subscriptionFlow(redirectURLComponents: URLComponents? = nil)
@@ -1663,7 +1665,7 @@ extension SettingsViewModel {
 
         var id: String {
             switch self {
-            case .netP: return "netP"
+            case let .netP(source, _): return "netP-\(source.rawValue)"
             case .dbp: return "dbp"
             case .itr: return "itr"
             case .subscriptionFlow: return "subscriptionFlow"

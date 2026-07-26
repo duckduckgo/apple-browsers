@@ -67,8 +67,8 @@ final class IdleReturnEligibilityManager: IdleReturnEligibilityManaging {
         self.isStillOnboarding = isStillOnboarding
         let storage: any ThrowingKeyedStoring<AfterInactivitySettingKeys> = keyValueStore.throwingKeyedStoring()
         self.returnToTabCardEnabledProvider = {
-            // The card is only hideable when the hide-shortcut feature is on; otherwise it's always shown.
-            !featureFlagger.isFeatureOn(.escapeHatchHideShortcut) || ((try? storage.lastTabShortcutEnabled) ?? true)
+            // The card is hidden only when the user has turned the shortcut off.
+            (try? storage.lastTabShortcutEnabled) ?? true
         }
         self.effectiveOptionResolver = AfterInactivityEffectiveOptionResolver(storage: storage, featureFlagger: featureFlagger)
         self.thresholdResolver = IdleReturnThresholdResolver(

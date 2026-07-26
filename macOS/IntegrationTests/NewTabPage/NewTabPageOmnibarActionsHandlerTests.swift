@@ -46,6 +46,13 @@ final class NewTabPageOmnibarActionsHandlerTests: XCTestCase {
                 promptHandler: promptHandler,
                 windowControllersManager: windowControllersManager,
                 tabsPreferences: tabsPreferences,
+                historyCoordinator: Application.appDelegate.historyCoordinator,
+                aiChatDeleter: AIChatDeleter(historyCleaner: HistoryCleaner(
+                    featureFlagger: Application.appDelegate.featureFlagger,
+                    privacyConfig: Application.appDelegate.privacyFeatures.contentBlocking.privacyConfigurationManager,
+                    nativeStorageHandler: Application.appDelegate.duckAiNativeStorageHandler,
+                    featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: Application.appDelegate.featureFlagger)
+                )),
                 isShiftPressed: { false },
                 isCommandPressed: { false },
                 firePixel: { [weak self] event in self?.firedPixels.append(event.name) }

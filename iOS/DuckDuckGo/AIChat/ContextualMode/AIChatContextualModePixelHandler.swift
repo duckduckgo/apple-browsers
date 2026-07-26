@@ -31,6 +31,7 @@ protocol AIChatContextualModePixelFiring {
     func fireExpandButtonTapped()
     func fireNewChatButtonTapped()
     func fireQuickActionSummarizeSelected()
+    func fireQuickActionAskAboutPageShown()
     func fireQuickActionAskAboutPageSelected()
     func fireFireButtonTapped()
     func fireFireButtonConfirmed()
@@ -41,8 +42,6 @@ protocol AIChatContextualModePixelFiring {
     func fireViewAllChatsTapped()
 
     // MARK: - Page Context Attachment
-    func firePageContextPlaceholderShown()
-    func firePageContextPlaceholderTapped()
     func firePageContextAutoAttached()
     func firePageContextUpdatedOnNavigation(url: String)
     func firePageContextManuallyAttachedNative()
@@ -127,6 +126,10 @@ final class AIChatContextualModePixelHandler: AIChatContextualModePixelFiring {
         firePixel(.aiChatContextualQuickActionSummarizeSelected)
     }
 
+    func fireQuickActionAskAboutPageShown() {
+        firePixel(.aiChatContextualQuickActionAskAboutPageShown)
+    }
+
     func fireQuickActionAskAboutPageSelected() {
         firePixel(.aiChatContextualQuickActionAskAboutPageSelected)
     }
@@ -140,14 +143,6 @@ final class AIChatContextualModePixelHandler: AIChatContextualModePixelFiring {
     }
 
     // MARK: - Page Context Attachment
-
-    func firePageContextPlaceholderShown() {
-        firePixel(.aiChatContextualPageContextPlaceholderShown)
-    }
-
-    func firePageContextPlaceholderTapped() {
-        firePixel(.aiChatContextualPageContextPlaceholderTapped)
-    }
 
     func firePageContextAutoAttached() {
         firePixel(.aiChatContextualPageContextAutoAttached)

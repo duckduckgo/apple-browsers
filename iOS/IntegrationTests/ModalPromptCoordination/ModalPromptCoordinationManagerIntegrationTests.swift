@@ -19,6 +19,7 @@
 
 import UIKit
 import Foundation
+import FoundationExtensions
 import Testing
 import Persistence
 import PersistenceTestingUtils
@@ -61,6 +62,7 @@ final class ModalPromptCoordinationManagerIntegrationTests {
         sut = ModalPromptCoordinationManager(
             providers: [provider],
             cooldownManager: cooldownManager,
+            onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
             modalPromptScheduling: schedulerMock
         )
         #expect(!cooldownManager.isInCooldownPeriod)
@@ -83,6 +85,7 @@ final class ModalPromptCoordinationManagerIntegrationTests {
         sut = ModalPromptCoordinationManager(
             providers: [firstProvider],
             cooldownManager: cooldownManager,
+            onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
             modalPromptScheduling: schedulerMock
         )
         #expect(cooldownManager.isInCooldownPeriod)
@@ -109,6 +112,7 @@ final class ModalPromptCoordinationManagerIntegrationTests {
         sut = ModalPromptCoordinationManager(
             providers: [firstProvider],
             cooldownManager: cooldownManager,
+            onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
             modalPromptScheduling: schedulerMock
         )
         #expect(cooldownManager.isInCooldownPeriod)
@@ -138,6 +142,7 @@ final class ModalPromptCoordinationManagerIntegrationTests {
         sut = ModalPromptCoordinationManager(
             providers: [provider1, provider2, provider3],
             cooldownManager: cooldownManager,
+            onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
             modalPromptScheduling: schedulerMock
         )
 
@@ -195,6 +200,7 @@ final class ModalPromptCoordinationManagerIntegrationTests {
         sut = ModalPromptCoordinationManager(
             providers: [provider1, provider2],
             cooldownManager: cooldownManager,
+            onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
             modalPromptScheduling: schedulerMock
         )
 
@@ -234,6 +240,7 @@ final class ModalPromptCoordinationManagerIntegrationTests {
         sut = ModalPromptCoordinationManager(
             providers: [provider],
             cooldownManager: cooldownManager,
+            onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
             modalPromptScheduling: schedulerMock
         )
         let presentationTime = timeTraveller.getDate()
@@ -255,6 +262,7 @@ final class ModalPromptCoordinationManagerIntegrationTests {
         sut = ModalPromptCoordinationManager(
             providers: [provider],
             cooldownManager: cooldownManager,
+            onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
             modalPromptScheduling: schedulerMock
         )
         var lastPresentationTime = timeTraveller.getDate()
@@ -303,6 +311,7 @@ final class ModalPromptCoordinationManagerIntegrationTests {
         sut = ModalPromptCoordinationManager(
             providers: [provider],
             cooldownManager: cooldownManager,
+            onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
             modalPromptScheduling: schedulerMock
         )
         let presentationTime = timeTraveller.getDate()

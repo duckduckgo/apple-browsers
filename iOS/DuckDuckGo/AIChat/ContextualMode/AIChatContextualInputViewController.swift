@@ -275,6 +275,7 @@ private extension AIChatContextualInputViewController {
         bottomConstraint = basicNativeInputViewController.view.bottomAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor)
 
         let centerY = welcomeLabel.centerYAnchor.constraint(equalTo: view.topAnchor)
+        centerY.priority = .defaultHigh
         welcomeCenterYConstraint = centerY
 
         NSLayoutConstraint.activate([
@@ -310,6 +311,7 @@ private extension AIChatContextualInputViewController {
         configureWelcomeLabel()
 
         let centerY = welcomeLabel.centerYAnchor.constraint(equalTo: view.topAnchor)
+        centerY.priority = .defaultHigh
         welcomeCenterYConstraint = centerY
 
         NSLayoutConstraint.activate([
@@ -325,6 +327,7 @@ private extension AIChatContextualInputViewController {
             quickActionsScrollView.frameLayoutGuide.heightAnchor.constraint(equalTo: quickActionsScrollView.contentLayoutGuide.heightAnchor),
 
             centerY,
+            welcomeLabel.bottomAnchor.constraint(lessThanOrEqualTo: quickActionsScrollView.topAnchor, constant: -Constants.quickActionsBottomSpacing),
             welcomeLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             welcomeLabel.leadingAnchor.constraint(greaterThanOrEqualTo: view.leadingAnchor, constant: Constants.horizontalPadding),
             welcomeLabel.trailingAnchor.constraint(lessThanOrEqualTo: view.trailingAnchor, constant: -Constants.horizontalPadding),

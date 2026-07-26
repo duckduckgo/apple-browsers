@@ -39,6 +39,7 @@ public final class PixelKitMock: PixelFiring {
                      includeAppVersionParameter: Bool,
                      withAdditionalParameters parameters: [String: String]?,
                      withNamePrefix namePrefix: String?,
+                     doNotEnforcePrefix: Bool,
                      onComplete: @escaping PixelKit.CompletionBlock) {
         let fireCall = ExpectedFireCall(pixel: event,
                                         frequency: frequency,
@@ -59,17 +60,20 @@ public struct ExpectedFireCall: Equatable {
     public let frequency: PixelKit.Frequency
     public let additionalParameters: [String: String]?
     public let namePrefix: String?
+    public let doNotEnforcePrefix: Bool
     public let includeAppVersionParameter: Bool
 
     public init(pixel: PixelKitEvent,
                 frequency: PixelKit.Frequency,
                 additionalParameters: [String: String]? = nil,
                 namePrefix: String? = nil,
+                doNotEnforcePrefix: Bool = false,
                 includeAppVersionParameter: Bool = true) {
         self.pixel = pixel
         self.frequency = frequency
         self.additionalParameters = additionalParameters
         self.namePrefix = namePrefix
+        self.doNotEnforcePrefix = doNotEnforcePrefix
         self.includeAppVersionParameter = includeAppVersionParameter
     }
 

@@ -25,8 +25,18 @@ import PrivacyConfigTestsUtils
 
 final class AppURLsTests: XCTestCase {
 
+    func testSearchTokenURLRespectsDebugOverride() {
+        URL.searchTokenURLOverride = nil
+        let base = URL.searchToken.absoluteString // env/default, whatever it currently is
+        URL.searchTokenURLOverride = "https://example.test/tok"
+        XCTAssertEqual(URL.searchToken.absoluteString, "https://example.test/tok")
+        URL.searchTokenURLOverride = nil
+        XCTAssertEqual(URL.searchToken.absoluteString, base)
+    }
+
     var mockStatisticsStore: MockStatisticsStore!
     var appConfig: PrivacyConfiguration!
+    static var searchTokenURLOverride: String?
 
     override func setUp() {
         super.setUp()
@@ -49,6 +59,14 @@ final class AppURLsTests: XCTestCase {
                                             identifier: "",
                                             localProtection: localProtection,
                                             internalUserDecider: MockInternalUserDecider())
+    }
+    
+    override class func setUp() {
+        Self.searchTokenURLOverride = URL.searchTokenURLOverride
+    }
+    
+    override func tearDown() {
+        URL.searchTokenURLOverride = Self.searchTokenURLOverride
     }
 
     func testWhenRemoveInternalSearchParametersFromSearchUrlThenUrlIsChanged() throws {

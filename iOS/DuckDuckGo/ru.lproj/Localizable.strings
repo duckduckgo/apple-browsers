@@ -212,7 +212,7 @@
 "action.title.vpn" = "VPN";
 
 /* Description of the Ad Blocking feature in settings */
-"ad.blocking.description" = "Блокирует навязчивые трекеры до их загрузки, устраняя рекламу с отслеживанием";
+"ad.blocking.description" = "Блокирует трекеры, следящие за вашей активностью, еще до их загрузки, фактически устраняя рекламу на основе отслеживания.";
 
 /* Section header for YouTube-specific ad blocking settings */
 "ad.blocking.youtube.section.header" = "Блокировка рекламы на YouTube";
@@ -401,10 +401,10 @@
 "alert.sync-already-paired-with-account-button" = "Понятно";
 
 /* Description for Sync error shown when both devices are already paired with the same account */
-"alert.sync-already-paired-with-account-description" = "Вы уже подключены к этой учетной записи на обоих устройствах.";
+"alert.sync-already-paired-with-account-description" = "Эти устройства уже подключены к Sync & Backup.";
 
 /* Title for Sync error shown when both devices are already paired with the same account */
-"alert.sync-already-paired-with-account-title" = "Уже сопряжено";
+"alert.sync-already-paired-with-account-title" = "Уже синхронизировано.";
 
 /* Description for alert shown when sync error occurs because of bad bookmarks data */
 "alert.sync-bookmarks-bad-data-error-description" = "Некоторые закладки не синхронизируются из-за неверного формата или превышения ограничений по длине.";
@@ -425,10 +425,10 @@
 "alert.sync-cancelled-from-other-device-title" = "Синхронизация отменена с другого устройства.";
 
 /* Description for Sync error shown when a third-party recovery code can only be used with Duck.ai */
-"alert.sync-code-only-compatible-with-duckai-description" = "Откройте страницу duck.ai в вашем браузере, перейдите в «Настройки», затем в разделе «Sync & Backup» нажмите «Включить», а затем «Синхронизировать с другим устройством».";
+"alert.sync-code-only-compatible-with-duckai-description" = "Откройте страницу duck.ai в другом вашем браузере, перейдите в «Настройки», затем в разделе «Sync & Backup» нажмите «Включить», а затем «Синхронизировать с другим устройством».";
 
 /* Title for Sync error shown when a third-party recovery code can only be used with Duck.ai */
-"alert.sync-code-only-compatible-with-duckai-title" = "Отсканируйте этот код в настройках Duck.ai.";
+"alert.sync-code-only-compatible-with-duckai-title" = "Отсканируйте этот код с помощью другого браузера (не DuckDuckGo).";
 
 /* Description for alert shown when sync error occurs because of bad credentials data */
 "alert.sync-credentials-bad-data-error-description" = "Некоторые пароли не синхронизируются из-за неверного формата или превышения ограничений по длине.";
@@ -454,6 +454,12 @@
 /* Sync error alert action button title, takes the user to the sync settings page. */
 "alert.sync-error-action" = "Синхронизация настроек";
 
+/* Description for generic Sync setup failure alerts */
+"alert.sync-failed-description" = "Повторите попытку.";
+
+/* Title for generic Sync setup failure alerts */
+"alert.sync-failed-title" = "Ошибка синхронизации.";
+
 /* Description for Sync error shown when a third-party account already has a native DuckDuckGo Sync credential */
 "alert.sync-from-another-connected-device-description" = "Синхронизируйте это устройство с уже подключённым браузером DuckDuckGo на другом устройстве.";
 
@@ -478,6 +484,9 @@
 /* Title for alert shown when sync paused for an error */
 "alert.sync-paused-title" = "Синхронизация приостановлена";
 
+/* Button title for Sync setup error alerts */
+"alert.sync-setup-error-got-it-button" = "Понятно";
+
 /* Switch account button in alert */
 "alert.sync-switch-account-button" = "Переключить синхронизацию";
 
@@ -489,9 +498,6 @@
 
 /* Description for alert shown when sync error occurs because of too many requests */
 "alert.sync-too-many-requests-error-description" = "Функция «Синхронизация и резервное копирование» временно недоступна.";
-
-/* Description for Sync error shown when the app version does not support the scanned Sync code */
-"alert.sync-update-required-description" = "Этот код не поддерживается в текущей версии приложения.";
 
 /* Title for Sync error shown when the app version does not support the scanned Sync code */
 "alert.sync-update-required-title" = "Обновите браузер DuckDuckGo и повторите попытку.";
@@ -527,13 +533,15 @@
 "alert.unable-to-remove-device-description" = "Не удалось удалить устройство из списка синхронизации и резервного копирования.";
 
 /* Description for unable to scan qr code error */
-"alert.unable-to-scan-qr-code-description" = "К сожалению, этот код недействителен. Введите или отсканируйте правильный код.";
+"alert.unable-to-scan-qr-code-description" = "Введите или отсканируйте правильный код.";
+
+/* Title for unable to scan qr code error */
+"alert.unable-to-scan-qr-code-title" = "Недействительный код синхронизации.";
 
 /* Description for unable to sync to server error */
 "alert.unable-to-sync-to-server-description" = "Не удалось подключиться к серверу.";
 
 /* Description for unable to sync with another device error */
-"alert.unable-to-sync-with-other-device-description" = "Не удалось выполнить синхронизацию с другим устройством.";
 
 /* Description for unable to turn sync off error */
 "alert.unable-to-turn-sync-off-description" = "Не удалось отключить синхронизацию и резервное копирование.";
@@ -1410,6 +1418,39 @@
 
 /* Third paragraph of the Control Center Widget Education screen */
 "control.center.widget.education.paragraph.3" = "Внизу экрана нажмите **Добавить элемент управления**.";
+
+/* Small 'NEW' badge shown above the Cookie Pop-up Protection opt-in dialog header */
+"cookie-popup-protection.opt-in.badge" = "Новое";
+
+/* Confirm button in the Cookie Pop-up Protection opt-in dialog */
+"cookie-popup-protection.opt-in.confirm" = "Подтвердить";
+
+/* Body of the opt-in dialog when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.body" = "Мы постараемся отклонить как можно больше файлов cookie. Если возможности отказаться от отслеживания нет, мы сэкономим ваше время и примем эти файлы cookie за вас.";
+
+/* Primary (recommended) option when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.primary-option" = "Отклонять, когда это возможно, или принимать за меня";
+
+/* Secondary option when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.secondary-option" = "Я продолжу управлять файлами cookie самостоятельно";
+
+/* Title of the opt-in dialog when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.title" = "Устали от всплывающих окон с уведомлениями о файлах cookie, которые не дают вам покоя?";
+
+/* Body of the opt-in dialog when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.body" = "Мы можем сэкономить вам время и примем эти файлы cookie за вас.";
+
+/* Primary (recommended) option when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.primary-option" = "Принимать файлы cookie, от которых нельзя отказаться";
+
+/* Secondary option when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.secondary-option" = "Я продолжу принимать их самостоятельно";
+
+/* Title of the opt-in dialog when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.title" = "Устали от всплывающих окон с уведомлениями о файлах cookie, от которых вы не можете отказаться?";
+
+/* Footer text in the Cookie Pop-up Protection opt-in dialog. The text between ** ** is rendered bold. */
+"cookie-popup-protection.opt-in.footer" = "Эту настройку всегда можно изменить позже в разделе\n**«Настройки»** > **«Защита от всплывающих окон cookie»**.";
 
 /* Crash Report always send button title */
 "crash.report.dialog.always.send" = "Всегда отправлять отчеты о сбоях";
@@ -2996,7 +3037,7 @@
 "network.protection.vpn.data-volume" = "Объем трафика";
 
 /* Footer text for the Exclude CGNAT setting item. */
-"network.protection.vpn.exclude.cgnat.setting.footer" = "Рекомендуется выключить, чтобы весь ваш трафик проходил через VPN. Если у вас возникли проблемы с работоспособностью таких функций, как звонки по Wi-Fi, обмен сообщениями или голосовая почта, попробуйте включить эту опцию.";
+"network.protection.vpn.exclude.cgnat.setting.footer" = "Разрешите сервисам оператора связи, таким как звонки по Wi-Fi и голосовая почта, обходить VPN.";
 
 /* Title for the Exclude CGNAT setting item. */
 "network.protection.vpn.exclude.cgnat.setting.title" = "Исключить службы связи";
@@ -3074,10 +3115,10 @@
 "network.protection.vpn.shortcuts.section.header" = "Ярлыки";
 
 /* Footer text for the Strict Routing setting item. The 'Learn more' text is a Markdown link. */
-"network.protection.vpn.strict.routing.setting.footer" = "Рекомендуется для сетей, которым вы не доверяете — например, общественный Wi-Fi в отелях, барах и т. д. Если у вас возникли проблемы с работоспособностью некоторых функций (например, CarPlay, AirDrop и т. д.) или подключением к другим устройствам, попробуйте выключить эту опцию. [Подробнее](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)";
+"network.protection.vpn.strict.routing.setting.footer" = "Запретить приложениям обходить VPN. Если у вас возникли проблемы с работоспособностью функций Wi-Fi (например, AirDrop или iPhone Mirroring), попробуйте выключить эту опцию. Настоятельно рекомендуется использовать в сетях, которым вы не доверяете — например, в общественных сетях Wi-Fi. [Подробнее](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack).";
 
 /* Title for the Strict Routing setting item. */
-"network.protection.vpn.strict.routing.setting.title" = "Строгая маршрутизация";
+"network.protection.vpn.strict.routing.setting.title" = "Принудительно включить строгую маршрутизацию (рекомендуется)";
 
 /* Confirm button for the new address bar picker */
 "new.address.bar.picker.confirm" = "Подтвердить";
@@ -3158,7 +3199,7 @@
 "omnibar.notification.trackers-blocked" = "%d Trackers";
 
 /* Text displayed on notification appearing in the address bar when YouTube ad blocking is active */
-"omnibar.notification.youtube-ad-block-on" = "Блокировка рекламы на YouTube включена";
+"omnibar.notification.youtube-ad-block-on" = "Блокировка рекламы";
 
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Понятно";
@@ -3823,9 +3864,6 @@
 /* Settings picker label for what to show when returning after inactivity */
 "settings.afterInactivity.v2.label" = "После бездействия";
 
-/* Footer under the AI picker, descriptive sentence without link */
-"settings.ai.new.picker.footer" = "Новая функция! Теперь в адресной строке можно переключаться между обычным поиском и Duck.ai.";
-
 /* Settings row that opens Duck.ai in a new tab */
 "settings.aichat.duckai.settings" = "Настройки Duck.ai";
 
@@ -3840,9 +3878,6 @@
 
 /* Settings screen footer text for showing AI Chat in the input box */
 "settings.aichat.shortcuts.input.footer" = "Выполнить поиск в интернете или задать вопрос ИИ-ассистенту Duck.ai можно прямо из адресной строки.";
-
-/* Title of search assist settings link */
-"settings.aifeatures.assist" = "Настройки Search Assist";
 
 /* Search Assist frequency option: never show AI-assisted answers */
 "settings.aifeatures.assist.never" = "Никогда";
@@ -4013,7 +4048,19 @@
 "settings.cookie.pop-up-protection.protection" = "Защита от всплывающих окон куки";
 
 /* Explanation in Settings how the cookie pop up protection feature works */
-"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo по возможности откажется от куки-файлов и скроет подобные окна.\n[Подробнее...](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
+"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo может автоматически управлять настройками файлов cookie, чтобы обеспечить максимальную конфиденциальность, минимизировать использование cookie и закрывать соответствующие всплывающие окна.\n[Подробнее](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
+
+/* Explanation below the auto-manage cookie pop-ups toggle in settings */
+"settings.cookie.auto-manage.explanation" = "Мы постараемся выбрать для вас только максимально конфиденциальные настройки файлов cookie, а затем закроем эти окна.";
+
+/* Title for the auto-manage cookie pop-ups toggle in settings */
+"settings.cookie.auto-manage.title" = "Автоматическое управление окнами выбора файлов cookie";
+
+/* Explanation below the pop-ups without opt-outs toggle in settings */
+"settings.cookie.popups-without-opt-outs.explanation" = "Также разрешите DuckDuckGo экономить вам время, принимая файлы cookie за вас, чтобы закрывать всплывающие окна без возможности отказа.";
+
+/* Title for the pop-ups without opt-outs toggle in settings */
+"settings.cookie.popups-without-opt-outs.title" = "Всплывающие окна без возможности отказа";
 
 /* Settings screen cell text for Cookie popups */
 "settings.cookie.popups" = "Управление окнами выбора куки-файлов";
@@ -4781,7 +4828,7 @@
 "sync.remove-device.title" = "Удалить устройство?";
 
 /* Toast message shown after sync is enabled by connecting with another device */
-"sync.simplified.device-synced.toast" = "Устройство успешно синхронизировано!";
+"sync.simplified.device-synced.toast" = "Добавлено новое устройство!";
 
 /* Toast message shown after sync is successfully enabled */
 "sync.simplified.enabled.toast" = "Sync & Backup включено";
@@ -5264,10 +5311,10 @@
 "windows-waitlist.waitlist-download-screen.try-duckduckgo-for-windows" = "DuckDuckGo для Windows!";
 
 /* Body text of the bottom sheet asking the user to send an anonymous breakage report */
-"youtube.ad.blocking.breakage-report.message" = "Отправьте анонимное сообщение о проблеме в DuckDuckGo. Помогите улучшить блокировку рекламы для всех!";
+"youtube.ad.blocking.breakage-report.message" = "Отправьте анонимные сведения в DuckDuckGo и помогите улучшить блокировку рекламы для всех!";
 
 /* Primary action sending an anonymous YouTube ad-blocking breakage report */
-"youtube.ad.blocking.breakage-report.send" = "Сообщить о проблеме";
+"youtube.ad.blocking.breakage-report.send" = "Отправить анонимный отчет";
 
 /* Title of the bottom sheet asking the user to send an anonymous breakage report after disabling YouTube ad blocking */
 "youtube.ad.blocking.breakage-report.title" = "Блокировка рекламы на YouTube не работает?";
@@ -5379,5 +5426,28 @@
 /* Button to delete all chats in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.chats.button" = "Удалить чаты";
 
-/* Do not translate - stringsdict entry */
-"aiChat.history.deleteAll.confirmation.title" = "aiChat.history.deleteAll.confirmation.title";
+/* Top-level attachment menu option to attach the current page content to an AI chat message */
+"aichat.attachment.option.ask.about.page" = "Задать вопрос о странице";
+
+/* Status view message shown while the VPN is on but Strict routing is off */
+"network.protection.status.header.message.strict.routing.off" = "Часть трафика может идти в обход VPN, пока строгая маршрутизация отключена. Строгая маршрутизация рекомендуется для общедоступных сетей.";
+
+/* Label for the status pill shown while the VPN's Strict routing setting is off */
+"network.protection.status.view.strict.routing.pill.off" = "Строгая маршрутизация: выкл.";
+
+/* Label for the status pill shown while the VPN's Strict routing setting is on */
+"network.protection.status.view.strict.routing.pill.on" = "Строгая маршрутизация: вкл.";
+
+/* Tooltip shown for the status pill while the VPN's Strict routing setting is off */
+"network.protection.status.view.strict.routing.pill.tooltip.off" = "Строгая маршрутизация рекомендуется для общедоступных сетей.";
+
+/* Tooltip shown for the status pill while the VPN's Strict routing setting is on */
+"network.protection.status.view.strict.routing.pill.tooltip.on" = "При включенной строгой маршрутизации некоторые приложения могут не работать.";
+
+/* Title of the Troubleshooting section in the VPN status screen. */
+"network.protection.status.view.troubleshooting.section.title" = "Устранение неполадок";
+
+/* The body of the notification reminding the user to turn the VPN Strict routing setting back on */
+"network.protection.strict.routing.reminder.notification.body" = "Часть трафика может идти в обход VPN, пока строгая маршрутизация отключена. Строгая маршрутизация рекомендуется для общедоступных сетей.";
+/* The title of the notification reminding the user to turn the VPN Strict routing setting back on */
+"network.protection.strict.routing.reminder.notification.title" = "Строгая маршрутизация ВЫКЛЮЧЕНА";

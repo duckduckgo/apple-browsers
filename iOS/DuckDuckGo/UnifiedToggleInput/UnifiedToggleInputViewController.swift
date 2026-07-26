@@ -76,6 +76,10 @@ final class UnifiedToggleInputViewController: UIViewController {
         inputBarView.setOnboardingDimmed(dimmed)
     }
 
+    func setMenuAlertVisible(_ isVisible: Bool, animated: Bool) {
+        inputBarView.setMenuAlertVisible(isVisible, animated: animated)
+    }
+
     init(isToggleEnabled: Bool, isFireTab: Bool = false) {
         self.isToggleEnabled = isToggleEnabled
         self.handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false,
@@ -191,6 +195,11 @@ final class UnifiedToggleInputViewController: UIViewController {
         set { inputBarView.attachmentMenu = newValue }
     }
 
+    weak var attachmentPasteHandler: AttachmentPasteHandling? {
+        get { inputBarView.attachmentPasteHandler }
+        set { inputBarView.attachmentPasteHandler = newValue }
+    }
+
     var reasoningPickerMenu: UIMenu? {
         get { inputBarView.reasoningPickerMenu }
         set { inputBarView.reasoningPickerMenu = newValue }
@@ -285,7 +294,7 @@ final class UnifiedToggleInputViewController: UIViewController {
         usesOmnibarMargins = config.usesOmnibarMargins
         isTopBarPosition = config.isTopBarPosition
         // Set before `applyCardLayout` reads the flag.
-        inputBarView.isInlineDismissHidden = config.isAITab
+        inputBarView.isInlineDismissHidden = config.isInlineDismissHidden
         inputBarView.isAITab = config.isAITab
         setInputMode(config.inputMode, animated: animated)
         setInactiveCardAppearance(config.inactiveAppearance)
@@ -341,6 +350,10 @@ final class UnifiedToggleInputViewController: UIViewController {
 
     func selectAllText() {
         inputBarView.selectAllText()
+    }
+
+    func moveCaretToStart() {
+        inputBarView.moveCaretToStart()
     }
 
     var placeholderWindowX: CGFloat? { inputBarView.placeholderWindowX }

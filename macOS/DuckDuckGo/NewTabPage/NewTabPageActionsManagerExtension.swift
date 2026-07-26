@@ -116,15 +116,26 @@ extension NewTabPageActionsManager {
         )
         let omnibarActionHandler = NewTabPageOmnibarActionsHandler(
             windowControllersManager: windowControllersManager,
-            tabsPreferences: tabsPreferences
+            tabsPreferences: tabsPreferences,
+            historyCoordinator: historyCoordinator,
+            aiChatDeleter: AIChatDeleter(historyCleaner: HistoryCleaner(
+                featureFlagger: featureFlagger,
+                privacyConfig: contentBlocking.privacyConfigurationManager,
+                nativeStorageHandler: NSApp.delegateTyped.duckAiNativeStorageHandler,
+                featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: featureFlagger)
+            ))
         )
         let omnibarConfigProvider = NewTabPageOmnibarConfigProvider(
             keyValueStore: keyValueStore,
             aiChatShortcutSettingProvider: newTabPageAIChatShortcutSettingProvider,
             featureFlagger: featureFlagger,
             aiChatPreferencesPersistor: NSApp.delegateTyped.aiChatPreferencesPersistor,
-            searchPreferences: NSApp.delegateTyped.searchPreferences
+            searchPreferences: NSApp.delegateTyped.searchPreferences,
+            windowControllersManager: windowControllersManager
         )
+        omnibarActionHandler.onCustomizeResponsesChanged = { [weak omnibarConfigProvider] in
+            omnibarConfigProvider?.notifyCustomizeResponsesChanged()
+        }
         let aiChatsProvider = NewTabPageOmnibarAiChatsProvider(
             featureFlagger: featureFlagger,
             configProvider: omnibarConfigProvider,

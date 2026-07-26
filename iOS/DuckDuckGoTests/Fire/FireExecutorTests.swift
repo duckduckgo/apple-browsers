@@ -103,6 +103,14 @@ final class FireExecutorTests: XCTestCase {
             deleteAIChatCalls.append(chatID)
             return deleteAIChatResult
         }
+
+        var deleteAIChatsResult: Result<Void, Error> = .success(())
+        private(set) var deleteAIChatsCalls: [[String]] = []
+
+        func deleteAIChats(chatIDs: [String]) async -> Result<Void, Error> {
+            deleteAIChatsCalls.append(chatIDs)
+            return deleteAIChatsResult
+        }
     }
 
     class MockBookmarkDatabaseCleaner: BookmarkDatabaseCleaning {

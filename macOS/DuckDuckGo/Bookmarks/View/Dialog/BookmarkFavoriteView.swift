@@ -19,6 +19,7 @@
 import SwiftUI
 import SwiftUIExtensions
 import PreferencesUI_macOS
+import DesignResourcesKitIcons
 
 struct BookmarkFavoriteView: View {
     @Binding var isFavorite: Bool
@@ -26,7 +27,7 @@ struct BookmarkFavoriteView: View {
     var body: some View {
         Toggle(isOn: $isFavorite) {
             HStack(spacing: 6) {
-                Image(.favoriteFilledBorder)
+                Image(nsImage: DesignSystemImages.Color.Size16.favorite)
                 Text(UserText.addToFavorites)
                     .foregroundColor(Color(designSystemColor: .textPrimary))
             }

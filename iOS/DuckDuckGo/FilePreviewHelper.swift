@@ -24,24 +24,23 @@ import UIKit
 
 struct FilePreviewHelper {
 
-    static func fileHandlerForDownload(_ download: Download, viewController: UIViewController, featureFlagger: FeatureFlagger) -> FilePreview? {
+    static func fileHandlerForDownload(_ download: Download, viewController: UIViewController) -> FilePreview? {
         guard let filePath = download.location else { return nil }
         switch download.mimeType {
         case .passbook:
             return PassKitPreviewHelper(filePath, viewController: viewController)
         case .multipass:
             return ZippedPassKitPreviewHelper(filePath, viewController: viewController)
-        case .calendar where featureFlagger.isFeatureOn(.icsCalendarLinks):
+        case .calendar:
             return CalendarEventPreviewHelper(filePath, viewController: viewController)
-        case .contact where featureFlagger.isFeatureOn(.vcardContactLinks):
+        case .contact:
             return ContactPreviewHelper(filePath, viewController: viewController)
         default:
-            if featureFlagger.isFeatureOn(.icsCalendarLinks), filePath.pathExtension.lowercased() == "ics" {
+            if filePath.pathExtension.lowercased() == "ics" {
                 Pixel.fire(pixel: .icsCalendarRoutedByExtension)
                 return CalendarEventPreviewHelper(filePath, viewController: viewController)
             }
-            if featureFlagger.isFeatureOn(.vcardContactLinks),
-               hasVCardFileExtension(url: filePath, filename: nil) {
+            if hasVCardFileExtension(url: filePath, filename: nil) {
                 Pixel.fire(pixel: .vcardContactRoutedByExtension)
                 return ContactPreviewHelper(filePath, viewController: viewController)
             }
@@ -63,9 +62,7 @@ struct FilePreviewHelper {
 
     /// Auto-preview .ics by URL or filename extension when the MIME type is wrong.
     static func canAutoPreviewICSByExtension(url: URL?,
-                                             filename: String?,
-                                             featureFlagger: FeatureFlagger) -> Bool {
-        guard featureFlagger.isFeatureOn(.icsCalendarLinks) else { return false }
+                                             filename: String?) -> Bool {
         if url?.pathExtension.lowercased() == "ics" { return true }
         if filename?.lowercased().hasSuffix(".ics") == true { return true }
         return false
@@ -73,34 +70,30 @@ struct FilePreviewHelper {
 
     /// Auto-preview .vcf/.vcard by URL or filename extension when the MIME type is wrong.
     static func canAutoPreviewVCardByExtension(url: URL?,
-                                               filename: String?,
-                                               featureFlagger: FeatureFlagger) -> Bool {
-        guard featureFlagger.isFeatureOn(.vcardContactLinks) else { return false }
-        return hasVCardFileExtension(url: url, filename: filename)
+                                               filename: String?) -> Bool {
+        hasVCardFileExtension(url: url, filename: filename)
     }
 
     /// Whether a download can be handed to a native auto-preview handler — by MIME type, or by a
-    /// flagged .ics/.vcf extension when the MIME type is wrong. Single source of truth for the
+    /// recognized .ics/.vcf extension when the MIME type is wrong. Single source of truth for the
     /// decision so callers (NavigationResponseRouter, TabViewController) stay in sync and a new
     /// previewable type is wired up in one place.
     static func canAutoPreview(mimeType: MIMEType,
                                url: URL?,
-                               filename: String?,
-                               featureFlagger: FeatureFlagger) -> Bool {
+                               filename: String?) -> Bool {
         canAutoPreviewMIMEType(mimeType)
-            || canAutoPreviewICSByExtension(url: url, filename: filename, featureFlagger: featureFlagger)
-            || canAutoPreviewVCardByExtension(url: url, filename: filename, featureFlagger: featureFlagger)
+            || canAutoPreviewICSByExtension(url: url, filename: filename)
+            || canAutoPreviewVCardByExtension(url: url, filename: filename)
     }
 
     /// ICS and vCard files must persist so the user can retry from Downloads when auto-add fails.
     static func shouldPersistInDownloads(mimeType: MIMEType,
                                          url: URL?,
-                                         filename: String?,
-                                         featureFlagger: FeatureFlagger) -> Bool {
-        if featureFlagger.isFeatureOn(.icsCalendarLinks), isICS(mimeType: mimeType, url: url, filename: filename) {
+                                         filename: String?) -> Bool {
+        if isICS(mimeType: mimeType, url: url, filename: filename) {
             return true
         }
-        if featureFlagger.isFeatureOn(.vcardContactLinks), isVCard(mimeType: mimeType, url: url, filename: filename) {
+        if isVCard(mimeType: mimeType, url: url, filename: filename) {
             return true
         }
         return false
@@ -109,12 +102,11 @@ struct FilePreviewHelper {
     /// File types handed off to a native handler; download started/finished toasts are suppressed for these.
     static func handlesDownloadNatively(mimeType: MIMEType,
                                         url: URL?,
-                                        filename: String?,
-                                        featureFlagger: FeatureFlagger) -> Bool {
-        if featureFlagger.isFeatureOn(.icsCalendarLinks), isICS(mimeType: mimeType, url: url, filename: filename) {
+                                        filename: String?) -> Bool {
+        if isICS(mimeType: mimeType, url: url, filename: filename) {
             return true
         }
-        if featureFlagger.isFeatureOn(.vcardContactLinks), isVCard(mimeType: mimeType, url: url, filename: filename) {
+        if isVCard(mimeType: mimeType, url: url, filename: filename) {
             return true
         }
         return false

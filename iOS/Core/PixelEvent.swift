@@ -229,6 +229,7 @@ extension Pixel {
 
         case tabBarTabSelected
         case tabBarTabClosed
+        case tabBarCloseOtherTabs
         case tabBarNewTab
         case tabBarOverflowDaily
         case tabBarOpenTabCountDaily
@@ -374,6 +375,8 @@ extension Pixel {
         case voiceSearchAIChatDone
         case openVoiceSearch
         case voiceSearchCancelled
+        case voiceSearchError
+        case voiceSearchNoSpeech
 
         case bookmarkLaunchList
         case bookmarkLaunchScored
@@ -1359,6 +1362,31 @@ extension Pixel {
          */
         case subscriptionSkippedOnboardingPromotionDismiss
 
+        /**
+         * Event Trigger: The subscription promotion modal is shown to an existing user (7+ days since install)
+         * who has never seen a subscription offer
+         *
+         * Anomaly Investigation:
+         * - This should only be fired from `SubscriptionPromoExistingUserCoordinator`
+         */
+        case subscriptionExistingUserPromotionImpression
+
+        /**
+         * Event Trigger: The user tapped the CTA on the existing-user subscription promotion modal
+         *
+         * Anomaly Investigation:
+         * - This should only be fired from `SubscriptionPromoExistingUserCoordinator`
+         */
+        case subscriptionExistingUserPromotionTap
+
+        /**
+         * Event Trigger: The user dismissed the existing-user subscription promotion modal
+         *
+         * Anomaly Investigation:
+         * - This should only be fired from `SubscriptionPromoExistingUserCoordinator`
+         */
+        case subscriptionExistingUserPromotionDismiss
+
         // Win-back Offer
         case subscriptionWinBackOfferLaunchPromptShown
         case subscriptionWinBackOfferLaunchPromptCTAClicked
@@ -1705,7 +1733,10 @@ extension Pixel {
         case aiChatSettingsMenuSidebarTapped
         case aiChatSettingsMenuAIChatSettingsTapped
         case aiChatSettingsMenuNewChatTabTapped
-        
+        case aiChatSettingsMenuFeedbackTapped
+        case aiChatFeedbackOptionSelected
+        case aiChatNewImageTapped
+
         case aiChatTabSwitcherOpened
         case aiChatFireButtonTapped
         case aiChatTabDidTerminate
@@ -1782,6 +1813,10 @@ extension Pixel {
         case aiChatHistoryPinAdded
         case aiChatHistoryPinRemoved
         case aiChatHistoryDownloadStarted
+        case aiChatHistoryDownloadSuccessful
+        case aiChatHistorySelectionDeleteConfirmed
+        case aiChatHistorySelectionDownloadStarted
+        case aiChatHistoryChatProtectionTapped
         case aiChatHistoryEditModeEntered
         case aiChatHistoryNewChatTapped
         case aiChatHistoryLoadFailed
@@ -1801,8 +1836,6 @@ extension Pixel {
         case aiChatContextualExpandButtonTapped
         case aiChatContextualNewChatButtonTapped
         case aiChatContextualQuickActionSummarizeSelected
-        case aiChatContextualPageContextPlaceholderShown
-        case aiChatContextualPageContextPlaceholderTapped
         case aiChatContextualPageContextAutoAttached
         case aiChatContextualPageContextUpdatedOnNavigation
         case aiChatContextualPageContextManuallyAttachedNative
@@ -1816,6 +1849,13 @@ extension Pixel {
         case aiChatContextualFireButtonConfirmed
         case aiChatContextualPageContextCollectionEmpty
         case aiChatContextualPageContextCollectionUnavailable
+
+        // Page-context extraction measurement.
+        case aiChatPageContextExtractionSuccess
+        case aiChatPageContextExtractionFailed
+        case aiChatPageContextExtractionPrevented
+
+        case aiChatContextualQuickActionAskAboutPageShown
         case aiChatContextualQuickActionAskAboutPageSelected
         case aiChatContextualRecentChatsPopupDisplayed
         case aiChatContextualRecentChatSelected
@@ -1934,6 +1974,7 @@ extension Pixel {
         case subscriptionExpirationReminderSchedulingError
 
         // MARK: - Freemium Personal Information Removal
+        case freemiumPIRSettingsEntryPointImpression
         case freemiumPIRSettingsEntryPointClicked
 
         // MARK: - Data Broker Protection Notifications
@@ -2263,6 +2304,7 @@ extension Pixel.Event {
         case .tabBarTabSwitcherOpened: return "m_tab_manager_opened"
         case .tabBarTabSelected: return "m_tab_bar_tab_selected"
         case .tabBarTabClosed: return "m_tab_bar_tab_closed"
+        case .tabBarCloseOtherTabs: return "tab_bar_close_other_tabs"
         case .tabBarNewTab: return "m_tab_bar_new_tab"
         case .tabBarOverflowDaily: return "m_tab_bar_overflow_daily"
         case .tabBarOpenTabCountDaily: return "m_tab_bar_open_tab_count_daily"
@@ -2381,6 +2423,8 @@ extension Pixel.Event {
         case .voiceSearchAIChatDone: return "m_voice_search_aichat_done"
         case .openVoiceSearch: return "m_open_voice_search"
         case .voiceSearchCancelled: return "m_voice_search_cancelled"
+        case .voiceSearchError: return "voice_search_error"
+        case .voiceSearchNoSpeech: return "voice_search_no_speech"
             
         case .bookmarkImportSuccess: return "m_bi_s"
         case .bookmarkImportFailure: return "m_bi_e"
@@ -3289,6 +3333,10 @@ extension Pixel.Event {
         case .subscriptionSkippedOnboardingPromotionTap: return "m_privacy-pro_skipped_onboarding_promotion_tap"
         case .subscriptionSkippedOnboardingPromotionDismiss: return "m_privacy-pro_skipped_onboarding_promotion_dismiss"
 
+        case .subscriptionExistingUserPromotionImpression: return "m_privacy-pro_existing_user_promotion_impression"
+        case .subscriptionExistingUserPromotionTap: return "m_privacy-pro_existing_user_promotion_tap"
+        case .subscriptionExistingUserPromotionDismiss: return "m_privacy-pro_existing_user_promotion_dismiss"
+
         // Win-back Offer
         case .subscriptionWinBackOfferLaunchPromptShown: return "m_privacy-pro_winback_launch_prompt_shown"
         case .subscriptionWinBackOfferLaunchPromptCTAClicked: return "m_privacy-pro_winback_launch_prompt_clicked"
@@ -3625,7 +3673,10 @@ extension Pixel.Event {
         case .aiChatSettingsMenuSidebarTapped: return "m_aichat_settings_menu_sidebar_tapped"
         case .aiChatSettingsMenuAIChatSettingsTapped: return "m_aichat_settings_menu_aichat_settings_tapped"
         case .aiChatSettingsMenuNewChatTabTapped: return "m_aichat_settings_menu_new_chat_tab_tapped"
-            
+        case .aiChatSettingsMenuFeedbackTapped: return "m_aichat_settings_menu_feedback_tapped"
+        case .aiChatFeedbackOptionSelected: return "aichat_feedback_option_selected"
+        case .aiChatNewImageTapped: return "aichat_new_image_tapped"
+
         case .aiChatTabSwitcherOpened: return "m_aichat_tab_switcher_opened"
         case .aiChatFireButtonTapped: return "m_aichat_fire_button_tapped"
         case .aiChatTabDidTerminate: return "m_aichat_tab_did_terminate"
@@ -3693,6 +3744,10 @@ extension Pixel.Event {
         case .aiChatHistoryPinAdded: return "aichat_history_pin_added"
         case .aiChatHistoryPinRemoved: return "aichat_history_pin_removed"
         case .aiChatHistoryDownloadStarted: return "aichat_history_download_started"
+        case .aiChatHistoryDownloadSuccessful: return "aichat_history_download_successful"
+        case .aiChatHistorySelectionDeleteConfirmed: return "aichat_history_selection_delete_confirmed"
+        case .aiChatHistorySelectionDownloadStarted: return "aichat_history_selection_download_started"
+        case .aiChatHistoryChatProtectionTapped: return "aichat_history_chat_protection_tapped"
         case .aiChatHistoryEditModeEntered: return "aichat_history_edit_mode_entered"
         case .aiChatHistoryNewChatTapped: return "aichat_history_new_chat_tapped"
         case .aiChatHistoryLoadFailed: return "aichat_history_load_failed"
@@ -3712,8 +3767,6 @@ extension Pixel.Event {
         case .aiChatContextualExpandButtonTapped: return "m_aichat_contextual_expand_button_tapped"
         case .aiChatContextualNewChatButtonTapped: return "m_aichat_contextual_new_chat_button_tapped"
         case .aiChatContextualQuickActionSummarizeSelected: return "m_aichat_contextual_quick_action_summarize_selected"
-        case .aiChatContextualPageContextPlaceholderShown: return "m_aichat_contextual_page_context_placeholder_shown"
-        case .aiChatContextualPageContextPlaceholderTapped: return "m_aichat_contextual_page_context_placeholder_tapped"
         case .aiChatContextualPageContextAutoAttached: return "m_aichat_contextual_page_context_auto_attached"
         case .aiChatContextualPageContextUpdatedOnNavigation: return "m_aichat_contextual_page_context_updated_on_navigation"
         case .aiChatContextualPageContextManuallyAttachedNative: return "m_aichat_contextual_page_context_manually_attached_native"
@@ -3727,6 +3780,10 @@ extension Pixel.Event {
         case .aiChatContextualFireButtonConfirmed: return "m_aichat_contextual_fire_button_confirmed"
         case .aiChatContextualPageContextCollectionEmpty: return "m_aichat_contextual_page_context_collection_empty"
         case .aiChatContextualPageContextCollectionUnavailable: return "m_aichat_contextual_page_context_collection_unavailable"
+        case .aiChatPageContextExtractionSuccess: return "aichat_page_context_extraction_success"
+        case .aiChatPageContextExtractionFailed: return "aichat_page_context_extraction_failed"
+        case .aiChatPageContextExtractionPrevented: return "aichat_page_context_extraction_prevented"
+        case .aiChatContextualQuickActionAskAboutPageShown: return "m_aichat_contextual_quick_action_ask_about_page_shown"
         case .aiChatContextualQuickActionAskAboutPageSelected: return "m_aichat_contextual_quick_action_ask_about_page_selected"
         case .aiChatContextualRecentChatsPopupDisplayed: return "m_aichat_contextual_recent_chats_popup_displayed"
         case .aiChatContextualRecentChatSelected: return "m_aichat_contextual_recent_chat_selected"
@@ -3899,6 +3956,7 @@ extension Pixel.Event {
         case .subscriptionExpirationReminderSchedulingError: return "push-notification_subscription-expiration-reminder_scheduling-error"
 
         // MARK: Freemium Personal Information Removal
+        case .freemiumPIRSettingsEntryPointImpression: return "m_dbp_freemium_settings_entry_point_impression"
         case .freemiumPIRSettingsEntryPointClicked: return "m_dbp_freemium_settings_entry_point_clicked"
 
         // MARK: Data Broker Protection Notifications

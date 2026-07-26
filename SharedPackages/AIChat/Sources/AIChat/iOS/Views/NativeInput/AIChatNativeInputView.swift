@@ -270,10 +270,9 @@ public final class AIChatNativeInputView: UIView {
         chipView.configure(state: state)
     }
 
-    /// Sets the tap-to-attach callback on the current chip view (for placeholder taps).
+    /// Placeholder chips are no longer rendered; attach is handled by the attachment menu.
     public func setChipTapCallback(_ callback: @escaping () -> Void) {
-        guard let chipView = currentChipView as? AIChatContextChipView else { return }
-        chipView.onTapToAttach = callback
+        _ = callback
     }
 }
 

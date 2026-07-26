@@ -41,6 +41,7 @@ final class OnboardingNavigatingTests: XCTestCase {
                                           fireproofDomains: MockFireproofDomains(),
                                           faviconManagement: FaviconManagerMock(),
                                           windowControllersManager: WindowControllersManagerMock(),
+                                          dataClearingPreferences: Application.appDelegate.dataClearingPreferences,
                                           pixelFiring: nil,
                                           historyProvider: MockHistoryViewDataProvider())
         assert(Application.appDelegate.windowControllersManager.mainWindowControllers.isEmpty)

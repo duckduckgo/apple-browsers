@@ -55,6 +55,9 @@ final class DuckAISuggestionsSurfaceProvider {
     }
 
     var isAttached: Bool { hasContentReader != nil }
+    /// False once either toggle has changed since the surface was built, so the owner rebuilds it —
+    /// each sub-source samples its gate only at `attach`, so a stale gate keeps showing removed content.
+    var reflectsCurrentSettings: Bool { builtSettingsGate == currentSettingsGate }
     func hasContent() -> Bool { hasContentReader?() ?? false }
     func hasSettled(forQuery query: String) -> Bool { hasSettledReader?(query) ?? false }
     func refreshRecents() { refreshRecentsAction?() }
@@ -71,6 +74,17 @@ final class DuckAISuggestionsSurfaceProvider {
     private let featureFlagger: FeatureFlagger
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
+
+    private struct SettingsGate: Equatable {
+        let chatEnabled: Bool
+        let searchEnabled: Bool
+    }
+    /// The toggle combination sampled when the surface was built; nil while detached.
+    private var builtSettingsGate: SettingsGate?
+    private var currentSettingsGate: SettingsGate {
+        SettingsGate(chatEnabled: aiChatSettings.isChatSuggestionsEnabled,
+                     searchEnabled: dependencies.appSettings.autocomplete)
+    }
 
     private let stateSubject = CurrentValueSubject<UnifiedSuggestionsInputsMerger.DuckAIState?, Never>(nil)
     /// "Has any recent chats" — a stable, query-independent fact (mirrors search's favorites existence),
@@ -110,6 +124,7 @@ final class DuckAISuggestionsSurfaceProvider {
     /// and attaches it to the single host. No-op if already attached.
     func attach(to host: UnifiedSuggestionsHost, textPublisher: AnyPublisher<String, Never>) {
         guard hasContentReader == nil else { return }
+        builtSettingsGate = currentSettingsGate
 
         let (chatManager, chatViewModel) = AIChatHistoryManager.makeHistoryManager(
             isFireTab: switchBarHandler.isFireTab,
@@ -141,7 +156,8 @@ final class DuckAISuggestionsSurfaceProvider {
             viewAllChatsEnabled: { [featureFlagger] in
                 featureFlagger.isFeatureOn(.aiChatNativeChatHistory) && UIDevice.current.userInterfaceIdiom != .pad
             },
-            searchSuggestionsEnabled: { [weak self] in self?.dependencies.appSettings.autocomplete ?? true }
+            searchSuggestionsEnabled: { [weak self] in self?.dependencies.appSettings.autocomplete ?? true },
+            chatSuggestionsEnabled: { [weak self] in self?.aiChatSettings.isChatSuggestionsEnabled ?? true }
         )
         chatManager.onFetchCompleted = { [weak self] query, hasSuggestions in
             // Only an unfiltered (empty-query) fetch defines "has any recent chats". Filtered fetches
@@ -159,8 +175,7 @@ final class DuckAISuggestionsSurfaceProvider {
         )
         .map { [weak chatManager, weak urlLoader, weak self] hasRecents, _, _ -> UnifiedSuggestionsInputsMerger.DuckAIState in
             let query = self?.switchBarHandler.currentText ?? ""
-            let settled = chatManager?.lastCompletedFetchQuery == query
-                && urlLoader?.lastCompletedFetchQuery == query
+            let settled = self?.isSettled(forQuery: query, chatManager: chatManager, urlLoader: urlLoader) ?? false
             return .init(hasRecents: hasRecents, settled: settled)
         }
         .sink { [weak self] state in self?.stateSubject.send(state) }
@@ -181,12 +196,12 @@ final class DuckAISuggestionsSurfaceProvider {
                 || !(urlLoader?.topURLs.isEmpty ?? true)
                 || !(self?.switchBarHandler.currentText.isEmpty ?? true)
         }
-        hasSettledReader = { [weak chatManager, weak urlLoader] query in
-            chatManager?.lastCompletedFetchQuery == query
-                && urlLoader?.lastCompletedFetchQuery == query
+        hasSettledReader = { [weak chatManager, weak urlLoader, weak self] query in
+            self?.isSettled(forQuery: query, chatManager: chatManager, urlLoader: urlLoader) ?? false
         }
         refreshRecentsAction = { [weak chatManager, weak self] in
-            chatManager?.refreshSuggestions(query: self?.switchBarHandler.currentText ?? "")
+            guard let self, self.aiChatSettings.isChatSuggestionsEnabled else { return }
+            chatManager?.refreshSuggestions(query: self.switchBarHandler.currentText)
         }
         refreshURLSuggestionsAction = { [weak self] in
             guard let self, self.dependencies.appSettings.autocomplete else { return }
@@ -205,6 +220,7 @@ final class DuckAISuggestionsSurfaceProvider {
         cancellables.removeAll()
         host.detachDuckAISurface()
         stateSubject.send(nil)
+        builtSettingsGate = nil
         hasContentReader = nil
         hasSettledReader = nil
         refreshRecentsAction = nil
@@ -212,6 +228,17 @@ final class DuckAISuggestionsSurfaceProvider {
         refreshCachesAction = nil
         recentsCountReader = nil
         chatDeleteAction = nil
+    }
+
+    /// A sub-source gated off (its toggle disabled) never fetches, so it's trivially settled;
+    /// an active one is settled once its loader has caught up to `query`.
+    private func isSettled(forQuery query: String,
+                           chatManager: AIChatHistoryManager?,
+                           urlLoader: DuckAIURLSuggestionsLoader?) -> Bool {
+        let gate = builtSettingsGate ?? currentSettingsGate
+        let chatSettled = !gate.chatEnabled || chatManager?.lastCompletedFetchQuery == query
+        let urlSettled = !gate.searchEnabled || urlLoader?.lastCompletedFetchQuery == query
+        return chatSettled && urlSettled
     }
 
     private func select(rowID id: String, source: DuckAISuggestionsSource) {

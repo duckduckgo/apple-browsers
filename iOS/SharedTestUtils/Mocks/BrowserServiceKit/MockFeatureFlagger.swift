@@ -28,8 +28,14 @@ final class MockFeatureFlagger: FeatureFlagger {
 
     var enabledFeatureFlags: [FeatureFlag] = []
 
+    private let updatesSubject = PassthroughSubject<Void, Never>()
     var updatesPublisher: AnyPublisher<Void, Never> {
-        PassthroughSubject().eraseToAnyPublisher()
+        updatesSubject.eraseToAnyPublisher()
+    }
+
+    /// Call this method in tests to trigger the updates publisher
+    func triggerUpdate() {
+        updatesSubject.send()
     }
 
     public init(internalUserDecider: InternalUserDecider = DefaultInternalUserDecider(store: MockInternalUserStoring()),
@@ -56,6 +62,10 @@ final class MockFeatureFlagger: FeatureFlagger {
 
     func resolveCohort<Flag>(for featureFlag: Flag, allowOverride: Bool) -> (any FeatureFlagCohortDescribing)? where Flag: FeatureFlagDescribing {
         didCallResolveCohort = true
+        return nil
+    }
+
+    func assignedCohort<Flag: FeatureFlagDescribing>(for featureFlag: Flag, allowOverride: Bool) -> (any FeatureFlagCohortDescribing)? {
         return nil
     }
 

@@ -28,22 +28,18 @@ class CompleteDownloadRowViewModel: DownloadsListRowViewModel {
     var fileURL: URL
     var fileSize: String
 
-    private let featureFlagger: FeatureFlagger
     private let pixelFiring: PixelFiring.Type
 
     init(fileURL: URL,
-         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
          pixelFiring: PixelFiring.Type = Pixel.self) {
         self.fileURL = fileURL
         self.fileSize = DownloadsListRowViewModel.byteCountFormatter.string(fromByteCount: Int64(fileURL.fileSize))
-        self.featureFlagger = featureFlagger
         self.pixelFiring = pixelFiring
         super.init(filename: fileURL.filename)
     }
 
     func preparePreviewEvent() -> PreparedCalendarEvent? {
         guard #available(iOS 17, *),
-              featureFlagger.isFeatureOn(.icsCalendarLinks),
               fileURL.pathExtension.lowercased() == "ics",
               case .singleEvent(let icsEvent) = ICSFileReader.read(at: fileURL).outcome else {
             return nil
@@ -56,8 +52,7 @@ class CompleteDownloadRowViewModel: DownloadsListRowViewModel {
     func preparePreviewContact() -> CNContact? {
         // A persisted file on disk carries no MIME type, so this entry point keys off the filename only.
         // Shares FilePreviewHelper's matcher so "is this a vCard filename" stays defined in one place across both entry points.
-        guard featureFlagger.isFeatureOn(.vcardContactLinks),
-              FilePreviewHelper.hasVCardFileExtension(url: fileURL, filename: nil) else {
+        guard FilePreviewHelper.hasVCardFileExtension(url: fileURL, filename: nil) else {
             return nil
         }
         guard let result = VCardFileReader.read(at: fileURL) else {

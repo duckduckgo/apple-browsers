@@ -18,6 +18,7 @@
 
 import AIChat
 import AppKit
+import WebKit
 import Combine
 import FeatureFlags
 import NewTabPage
@@ -96,25 +97,46 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     private let firePixel: (PixelKitEvent) -> Void
     private var aiChatPreferencesPersistor: AIChatPreferencesPersisting
     private let searchPreferences: SearchPreferences
+    private let windowControllersManager: WindowControllersManagerProtocol?
     private let showCustomizePopoverSubject = PassthroughSubject<Bool, Never>()
     private let modeSubject = PassthroughSubject<NewTabPageDataModel.OmnibarMode, Never>()
+    private let customizeResponsesChangedSubject = PassthroughSubject<Void, Never>()
     @Published private var hasExcessChats = false
     private var aiChatsProviderCancellable: AnyCancellable?
+    private var customizeResponsesChangeObserver: NSObjectProtocol?
 
     init(keyValueStore: ThrowingKeyValueStoring,
          aiChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProviding,
          featureFlagger: FeatureFlagger,
          aiChatPreferencesPersistor: AIChatPreferencesPersisting = AIChatPreferencesPersistor(),
          searchPreferences: SearchPreferences,
+         windowControllersManager: WindowControllersManagerProtocol? = nil,
          firePixel: @escaping (PixelKitEvent) -> Void = { PixelKit.fire($0, frequency: .dailyAndStandard) }) {
         self.keyValueStore = keyValueStore
         self.aiChatShortcutSettingProvider = aiChatShortcutSettingProvider
         self.featureFlagger = featureFlagger
         self.aiChatPreferencesPersistor = aiChatPreferencesPersistor
         self.searchPreferences = searchPreferences
+        self.windowControllersManager = windowControllersManager
         self.firePixel = firePixel
 
         Self.migrateLegacySelectedModelIdIfNeeded(from: keyValueStore, into: &self.aiChatPreferencesPersistor)
+
+        // Address-bar Customize Responses changes (modal or toggle) post this; re-push config so open
+        // NTPs update without waiting for their own toggle. The NTP's own paths notify directly.
+        customizeResponsesChangeObserver = NotificationCenter.default.addObserver(
+            forName: .aiChatCustomizeResponsesDidChange,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.notifyCustomizeResponsesChanged()
+        }
+    }
+
+    deinit {
+        if let customizeResponsesChangeObserver {
+            NotificationCenter.default.removeObserver(customizeResponsesChangeObserver)
+        }
     }
 
     @MainActor
@@ -236,6 +258,28 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
         featureFlagger.isFeatureOn(.aiChatNtpWebSearch)
     }
 
+    var isCustomizeResponsesEnabled: Bool {
+        // Gated by the dedicated Customize Responses flag, matching the native omnibar entry point.
+        featureFlagger.isFeatureOn(.aiChatCustomizeResponses)
+    }
+
+    @MainActor
+    func customizeResponsesState(requestingWebView: WKWebView?) -> NewTabPageDataModel.OmnibarCustomizeResponsesState {
+        guard let windowControllersManager else { return .none }
+        let burnerMode = AIChatTabPickerSource.originTabCollectionViewModel(for: requestingWebView, in: windowControllersManager)?.burnerMode ?? .regular
+        let handler = NSApp.delegateTyped.burnerDuckAiStorageRegistry?.handler(for: burnerMode) ?? NSApp.delegateTyped.duckAiNativeStorageHandler
+        let state = CustomizeResponsesStore(storageHandler: handler).currentState()
+        return NewTabPageDataModel.OmnibarCustomizeResponsesState(subLabel: state.subLabel, hasCustomization: state.hasCustomization, active: state.isActive)
+    }
+
+    var customizeResponsesStatePublisher: AnyPublisher<Void, Never> {
+        customizeResponsesChangedSubject.eraseToAnyPublisher()
+    }
+
+    func notifyCustomizeResponsesChanged() {
+        customizeResponsesChangedSubject.send(())
+    }
+
     var isAttachTabsEnabled: Bool {
         featureFlagger.isFeatureOn(.aiChatNtpAttachMoreTabs)
     }
@@ -275,6 +319,32 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     var showAskAiSuggestionPublisher: AnyPublisher<Bool, Never> {
         searchPreferences.$showAutocompleteSuggestions
             .dropFirst()
+            .removeDuplicates()
+            .eraseToAnyPublisher()
+    }
+
+    var isAIChatDeletionEnabled: Bool {
+        featureFlagger.isFeatureOn(.aiChatNtpSuggestionsDeletion)
+    }
+
+    /// Re-emits on feature-flag change so the client can push `omnibar_onConfigUpdate` (no reload needed).
+    var isAIChatDeletionEnabledPublisher: AnyPublisher<Bool, Never> {
+        featureFlagger.updatesPublisher
+            .compactMap { [weak self] in self?.isAIChatDeletionEnabled }
+            .prepend(isAIChatDeletionEnabled)
+            .removeDuplicates()
+            .eraseToAnyPublisher()
+    }
+
+    var isSearchSuggestionDeletionEnabled: Bool {
+        featureFlagger.isFeatureOn(.ntpSearchSuggestionsDeletion)
+    }
+
+    /// Re-emits on feature-flag change so the client can push `omnibar_onConfigUpdate` (no reload needed).
+    var isSearchSuggestionDeletionEnabledPublisher: AnyPublisher<Bool, Never> {
+        featureFlagger.updatesPublisher
+            .compactMap { [weak self] in self?.isSearchSuggestionDeletionEnabled }
+            .prepend(isSearchSuggestionDeletionEnabled)
             .removeDuplicates()
             .eraseToAnyPublisher()
     }

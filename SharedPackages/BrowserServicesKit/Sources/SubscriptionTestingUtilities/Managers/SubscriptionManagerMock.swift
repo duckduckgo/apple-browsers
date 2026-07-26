@@ -113,7 +113,38 @@ public final class SubscriptionManagerMock: SubscriptionManager {
 
     public var resultTokenContainer: Networking.TokenContainer?
     public var resultCreateAccountTokenContainer: Networking.TokenContainer?
+    /// Guards the recorded calls and the queued results. `getTokenContainer(policy:)` is a nonisolated
+    /// `async` method, so it runs off whatever actor called it and concurrent callers would otherwise lose
+    /// appends or consume the same queued result twice.
+    private let getTokenContainerLock = NSLock()
+    private var _getTokenContainerCalls: [String] = []
+    private var _getTokenContainerResults: [Result<Networking.TokenContainer, Error>] = []
+
+    public var getTokenContainerCalls: [String] {
+        get { getTokenContainerLock.withLock { _getTokenContainerCalls } }
+        set { getTokenContainerLock.withLock { _getTokenContainerCalls = newValue } }
+    }
+
+    public var getTokenContainerResults: [Result<Networking.TokenContainer, Error>] {
+        get { getTokenContainerLock.withLock { _getTokenContainerResults } }
+        set { getTokenContainerLock.withLock { _getTokenContainerResults = newValue } }
+    }
+
     public func getTokenContainer(policy: Networking.AuthTokensCachePolicy) async throws -> Networking.TokenContainer {
+        // Recording the call and taking the next queued result has to be one atomic step.
+        let queuedResult: Result<Networking.TokenContainer, Error>? = getTokenContainerLock.withLock {
+            _getTokenContainerCalls.append(policy.description)
+
+            guard !_getTokenContainerResults.isEmpty else {
+                return nil
+            }
+            return _getTokenContainerResults.removeFirst()
+        }
+
+        if let queuedResult {
+            return try queuedResult.get()
+        }
+
         switch policy {
         case .local, .localValid, .localForceRefresh:
             guard let resultTokenContainer else {

@@ -436,7 +436,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         // only affects the next connection. If a tunnel is currently up, fully restart it so the
         // new value takes effect now rather than on the next manual connect.
         if await isConnected {
-            await restart()
+            await restart(trigger: .settingsChangeRestart)
         }
     }
 
@@ -763,12 +763,6 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
             }
         }
 
-        /// Maps an unattributed `CancellationError` to a `.cancelled(step: .unknown)` start error, so callers can
-        /// treat every cancellation as a `StartError.cancelled`. Any other error is returned unchanged.
-        static func normalizingCancellation(_ error: Error) -> Error {
-            error is CancellationError ? StartError.cancelled(step: .unknown) : error
-        }
-
         public var caseDescription: String {
             switch self {
             case .cancelled(let step):
@@ -787,72 +781,218 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         }
     }
 
+    /// What a single VPN enable attempt actually ended up doing.
+    ///
+    /// Distinct from ``StartError``: several situations that currently throw are not failures from the
+    /// user's point of view, and two that currently return normally are not successes. Naming them here
+    /// means the decision about how each is reported lives in exactly one place, ``report(_:trigger:)``.
+    enum StartOutcome {
+        /// The tunnel was started and the startup monitor confirmed a connection.
+        case connected
+
+        /// The tunnel connected, but its on-demand rule could not be saved afterwards.
+        case connectedWithoutOnDemand(Error)
+
+        /// Activation completed while the extension still awaits the user's approval, so the start was
+        /// paused and System Settings was opened. No tunnel was started.
+        case awaitingExtensionApproval
+
+        /// A start arrived while the tunnel was already connected, so it was stopped to allow recovery.
+        case stoppedBecauseAlreadyConnected
+
+        /// The token the extension needs was obtained, but the follow-up refresh that branches the app's
+        /// token from the extension's failed.
+        case tokenBranchRefreshFailed(Error)
+
+        /// The user was shown the system extension approval prompt and did not answer it in time.
+        case approvalPromptTimedOut(Error)
+
+        /// The start was cancelled at a known step.
+        case cancelled(step: CancellationStep)
+
+        /// Any other failure. The reported error's domain and code already separate auth failures,
+        /// tunnel start failures and unusable configurations, so they do not need their own cases.
+        case failed(Error)
+
+        /// Stable wire value for the `outcome` pixel parameter. These strings are duplicated in the
+        /// `vpnStartOutcome` enum in the pixel definitions, so treat them as an external contract.
+        var name: String {
+            switch self {
+            case .connected: return "connected"
+            case .connectedWithoutOnDemand: return "connected_without_on_demand"
+            case .awaitingExtensionApproval: return "awaiting_extension_approval"
+            case .stoppedBecauseAlreadyConnected: return "stopped_because_already_connected"
+            case .tokenBranchRefreshFailed: return "token_branch_refresh_failed"
+            case .approvalPromptTimedOut: return "approval_prompt_timed_out"
+            case .cancelled: return "cancelled"
+            case .failed: return "failed"
+            }
+        }
+    }
+
+    /// What caused a start attempt. Only ``userInitiated`` belongs in a "user enables the VPN" metric.
+    ///
+    /// A different axis from `VPNConnectionWideEventData.ScreenSource`, which records which in-app surface
+    /// a user came from. Neither replaces the other.
+    enum StartTrigger: String {
+        case userInitiated = "user_initiated"
+        case connectOnLogin = "connect_on_login"
+        case appUpdateRestart = "app_update_restart"
+        case settingsChangeRestart = "settings_change_restart"
+    }
+
+    /// `TunnelController` conformance. That protocol is shared with iOS, so it stays parameterless and
+    /// forwards the only trigger a protocol caller can represent.
+    @MainActor
+    func start() async {
+        await start(trigger: .userInitiated)
+    }
+
     /// Starts the VPN connection
     ///
     /// Handles all the top level error management logic.
     ///
     @MainActor
-    func start() async {
+    func start(trigger: StartTrigger) async {
         Logger.networkProtection.log("🚀 Start VPN")
         await refreshSystemState()
         setupAndStartConnectionWideEvent()
         VPNOperationErrorRecorder().beginRecordingControllerStart()
         PixelKit.fire(NetworkProtectionPixelEvent.networkProtectionControllerStartAttempt,
-                      frequency: .legacyDailyAndCount)
+                      frequency: .legacyDailyAndCount,
+                      withAdditionalParameters: [PixelKit.Parameters.vpnStartTrigger: trigger.rawValue])
 
         controllerErrorStore.lastErrorMessage = nil
 
+        let outcome: StartOutcome
+
         do {
-            try await start(isFirstAttempt: true)
-
-            // It's important to note that we've seen instances where the call to start() the VPN
-            // doesn't throw any errors, yet the tunnel fails to start.  In any case this pixel
-            // should be interpreted as "the controller successfully requested the tunnel to be
-            // started".  Meaning there's no error caught in this start attempt.  There are pixels
-            // in the packet tunnel provider side that can be used to debug additional logic.
-            //
-            PixelKit.fire(NetworkProtectionPixelEvent.networkProtectionControllerStartSuccess, frequency: .legacyDailyAndCount)
-            Logger.networkProtection.log("Controller start tunnel success")
-            if self.onboardingStatusRawValue == OnboardingStatus.completed.rawValue {
-                completeAndCleanupConnectionWideEvent(status: .success)
-            } else {
-                completeAndCleanupAtStepWithPartialSuccess()
-            }
+            outcome = try await start(isFirstAttempt: true)
         } catch {
-            // A cancellation that wasn't attributed to a specific start step becomes an unknown-step
-            // cancellation, so everything below works with a single StartError.cancelled.
-            let error = StartError.normalizingCancellation(error)
+            outcome = Self.outcome(from: error)
+        }
 
-            Logger.networkProtection.error("Controller start tunnel failure: \(error, privacy: .public)")
+        report(outcome, trigger: trigger)
+    }
 
-            VPNOperationErrorRecorder().recordControllerStartFailure(error)
-            knownFailureStore.lastKnownFailure = KnownFailure(error)
+    /// Maps a thrown error onto the outcome it represents. The only place errors become outcomes.
+    private static func outcome(from error: Error) -> StartOutcome {
+        switch error {
+        case is CancellationError:
+            return .cancelled(step: .unknown)
+        case StartError.cancelled(let step):
+            return .cancelled(step: step)
+        case let branchFailure as TokenBranchRefreshFailure:
+            return .tokenBranchRefreshFailed(branchFailure.underlyingError)
+        case SystemExtensionRequestError.requestTimedOut:
+            return .approvalPromptTimedOut(error)
+        default:
+            return .failed(error)
+        }
+    }
 
-            // A cancelled start reports to the cancelled pixel and a cancelled wide event; everything else
-            // is handled below as a failure.
-            if case StartError.cancelled(let step) = error {
-                PixelKit.fire(
-                    NetworkProtectionPixelEvent.networkProtectionControllerStartCancelled(step: step), frequency: .legacyDailyAndCount, includeAppVersionParameter: true
-                )
-                completeAndCleanupConnectionWideEvent(status: .cancelled, error: error, description: error.contextualizedDescription())
-                return
-            }
+    /// The single place an enable attempt's outcome becomes a signal.
+    ///
+    /// This mapping intentionally reproduces the reporting that existed before this function did, including
+    /// six outcomes reported as the wrong thing. Those are marked MISREPORTED. Correcting one is a change to
+    /// one branch here, plus the test that pins it.
+    @MainActor
+    private func report(_ outcome: StartOutcome, trigger: StartTrigger) {
+        let sharedParameters = [
+            PixelKit.Parameters.vpnStartOutcome: outcome.name,
+            PixelKit.Parameters.vpnStartTrigger: trigger.rawValue
+        ]
 
+        switch outcome {
+        case .connected:
+            fireStartSuccess(with: sharedParameters)
+            completeAndCleanupConnectionWideEvent(status: .success)
+
+        case .awaitingExtensionApproval:
+            // MISREPORTED: no tunnel was started, the user still has to approve the extension.
+            fireStartSuccess(with: sharedParameters)
+            completeAndCleanupAtStepWithPartialSuccess()
+
+        case .stoppedBecauseAlreadyConnected:
+            // MISREPORTED: the VPN was turned off, not on.
+            fireStartSuccess(with: sharedParameters)
+            completeAndCleanupConnectionWideEvent(status: .success)
+
+        case .connectedWithoutOnDemand(let error):
+            // MISREPORTED: the tunnel is up and confirmed; only its on-demand rule is missing.
+            let reportedError = StartError.startTunnelFailure(error)
+            recordOperationFailure(reportedError)
+            fireStartFailure(reportedError, with: sharedParameters)
+            completeAndCleanupConnectionWideEvent(status: .failure, error: reportedError, description: reportedError.caseDescription)
+
+        case .tokenBranchRefreshFailed(let error):
+            // MISREPORTED: the token the extension needs was already in hand.
+            // The original error is reported, so the domain and code stay SubscriptionManagerError / 12001.
+            recordOperationFailure(error)
+            fireStartFailure(error, with: sharedParameters)
+            completeAndCleanupConnectionWideEvent(status: .failure, error: error, description: error.contextualizedDescription())
+
+        case .approvalPromptTimedOut(let error):
+            // MISREPORTED: the user walked away from an approval prompt, which isn't a product failure.
+            recordOperationFailure(error)
+            fireStartFailure(error, with: sharedParameters)
+            completeAndCleanupConnectionWideEvent(status: .failure, error: error, description: error.contextualizedDescription())
+
+        case .cancelled(let step):
+            let reportedError = StartError.cancelled(step: step)
+            recordOperationFailure(reportedError)
             PixelKit.fire(
-                NetworkProtectionPixelEvent.networkProtectionControllerStartFailure(error), frequency: .legacyDailyAndCount, includeAppVersionParameter: true
+                NetworkProtectionPixelEvent.networkProtectionControllerStartCancelled(step: step),
+                frequency: .legacyDailyAndCount,
+                withAdditionalParameters: sharedParameters,
+                includeAppVersionParameter: true
             )
+            completeAndCleanupConnectionWideEvent(status: .cancelled, error: reportedError, description: reportedError.contextualizedDescription())
 
-            // Always keep the first error message shown, as it's the more actionable one.
-            if controllerErrorStore.lastErrorMessage == nil {
-                controllerErrorStore.lastErrorMessage = error.localizedDescription
-            }
-
+        case .failed(let error):
+            Logger.networkProtection.error("Controller start tunnel failure: \(error, privacy: .public)")
+            recordOperationFailure(error)
+            fireStartFailure(error, with: sharedParameters)
             completeAndCleanupConnectionWideEvent(status: .failure, error: error, description: error.contextualizedDescription())
         }
     }
 
+    /// Note this fires even for outcomes where no tunnel was started. It should be read as "the controller
+    /// completed a start attempt without raising an error", which is what it has always meant. The outcome
+    /// parameter is what distinguishes a confirmed connection from the rest.
+    private func fireStartSuccess(with parameters: [String: String]) {
+        PixelKit.fire(
+            NetworkProtectionPixelEvent.networkProtectionControllerStartSuccess,
+            frequency: .legacyDailyAndCount,
+            withAdditionalParameters: parameters
+        )
+        Logger.networkProtection.log("Controller start tunnel success")
+    }
+
+    private func fireStartFailure(_ error: Error, with parameters: [String: String]) {
+        PixelKit.fire(
+            NetworkProtectionPixelEvent.networkProtectionControllerStartFailure(error),
+            frequency: .legacyDailyAndCount,
+            withAdditionalParameters: parameters,
+            includeAppVersionParameter: true
+        )
+
+        // Always keep the first error message shown, as it's the more actionable one: system extension
+        // activation may already have written something the user can act on.
+        if controllerErrorStore.lastErrorMessage == nil {
+            controllerErrorStore.lastErrorMessage = error.localizedDescription
+        }
+    }
+
+    /// Written for every error-derived outcome, cancellations included, matching the behaviour this
+    /// replaced. Whether a cancellation should be remembered as a known failure is a separate question.
+    private func recordOperationFailure(_ error: Error) {
+        VPNOperationErrorRecorder().recordControllerStartFailure(error)
+        knownFailureStore.lastKnownFailure = KnownFailure(error)
+    }
+
     @MainActor
-    private func start(isFirstAttempt: Bool) async throws {
+    private func start(isFirstAttempt: Bool) async throws -> StartOutcome {
         self.connectionWideEventData?.controllerStartDuration = WideEvent.MeasuredInterval.startingNow()
         if await extensionResolver.isUsingSystemExtension {
             self.connectionWideEventData?.extensionType = .system
@@ -878,7 +1018,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
                       refreshedOnboardingStatus: \(refreshedStatus.rawValue, privacy: .public)
                     """)
                     networkExtensionController.openSystemExtensionSettings()
-                    return
+                    return .awaitingExtensionApproval
                 }
             }
         } else {
@@ -913,18 +1053,19 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
 
             clearInternalManager()
             resetControllerStartWideEventMeasurement()
-            try await start(isFirstAttempt: false)
+            return try await start(isFirstAttempt: false)
         case .connected:
             Logger.networkProtection.error("Start requested while already connected - stopping VPN to allow recovery")
             await stop()
+            return .stoppedBecauseAlreadyConnected
         default:
             self.connectionWideEventData?.controllerStartDuration?.complete()
-            try await start(tunnelManager)
+            return try await start(tunnelManager)
         }
     }
 
     @MainActor
-    private func start(_ tunnelManager: any VPNTunnelManaging) async throws {
+    private func start(_ tunnelManager: any VPNTunnelManaging) async throws -> StartOutcome {
         settings.updateExcludeCGNAT(isFeatureEnabled: featureFlagger.isFeatureOn(.vpnExcludeCGNATToggle))
 
         let options = try await prepareStartupOptions()
@@ -939,9 +1080,6 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
             self.connectionWideEventData?.tunnelStartDuration = WideEvent.MeasuredInterval.startingNow()
             try tunnelManager.startTunnel(options: options)
             try await tunnelManager.waitForStartSuccess()
-            try await self.enableOnDemand(tunnelManager: tunnelManager)
-
-            self.connectionWideEventData?.tunnelStartDuration?.complete()
         } catch is CancellationError {
             Logger.networkProtection.log("VPN tunnel start cancelled")
             throw StartError.cancelled(step: .tunnelConnection)
@@ -951,13 +1089,43 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
             throw StartError.startTunnelFailure(error)
         }
 
-        PixelKit.fire(
-            NetworkProtectionPixelEvent.networkProtectionNewUser,
-            frequency: .uniqueByName,
-            includeAppVersionParameter: true) { [weak self] fired, error in
-                guard let self, error == nil, fired else { return }
-                self.defaults.vpnFirstEnabled = try? PixelKit.pixelLastFireDate(event: NetworkProtectionPixelEvent.networkProtectionNewUser, frequency: .uniqueByName)
-            }
+        var outcome = StartOutcome.connected
+
+        // The tunnel is up and confirmed by this point. Failing to persist the on-demand rule leaves the
+        // user with a working VPN, so it gets its own outcome even though it's still reported as a tunnel
+        // start failure.
+        do {
+            try await self.enableOnDemand(tunnelManager: tunnelManager)
+            self.connectionWideEventData?.tunnelStartDuration?.complete()
+        } catch is CancellationError {
+            Logger.networkProtection.log("VPN tunnel start cancelled")
+            throw StartError.cancelled(step: .tunnelConnection)
+        } catch {
+            Logger.networkProtection.fault("🔴 Failed to enable VPN on-demand: \(error, privacy: .public)")
+            recordStepFailure(.tunnelStart, with: error, description: StartError.startTunnelFailure(error).caseDescription)
+            outcome = .connectedWithoutOnDemand(error)
+        }
+
+        // Gated on a confirmed connection so that an on-demand failure suppresses this exactly as the
+        // previous single-throw structure did, leaving first-enable attribution unchanged.
+        if case .connected = outcome {
+            PixelKit.fire(
+                NetworkProtectionPixelEvent.networkProtectionNewUser,
+                frequency: .uniqueByName,
+                includeAppVersionParameter: true) { [weak self] fired, error in
+                    guard let self, error == nil, fired else { return }
+                    self.defaults.vpnFirstEnabled = try? PixelKit.pixelLastFireDate(event: NetworkProtectionPixelEvent.networkProtectionNewUser, frequency: .uniqueByName)
+                }
+        }
+
+        return outcome
+    }
+
+    /// Marks a failure of the post-fetch token branching refresh, so the top-level handler doesn't have to
+    /// infer it from which layer happened to wrap the error. Carries the original error, which is what gets
+    /// reported, so the pixel's domain and code are unchanged.
+    struct TokenBranchRefreshFailure: Error {
+        let underlyingError: Error
     }
 
     func prepareStartupOptions() async throws -> [String: NSObject] {
@@ -971,7 +1139,11 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         // It’s important to force refresh the token here to immediately branch the token used by the main app
         // from the one sent to the system extension.
         // See discussion https://app.asana.com/0/1199230911884351/1208785842165508/f
-        try await subscriptionManager.getTokenContainer(policy: .localForceRefresh)
+        do {
+            try await subscriptionManager.getTokenContainer(policy: .localForceRefresh)
+        } catch {
+            throw TokenBranchRefreshFailure(underlyingError: error)
+        }
         self.connectionWideEventData?.oauthDuration?.complete()
 
         // Encode entire VPN settings as one unit
@@ -1031,7 +1203,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
     /// Restarts the tunnel.
     ///
     @MainActor
-    func restart() async {
+    func restart(trigger: StartTrigger) async {
         guard let internalManager else {
             // This is a temporary thing because we know this method works well
             // in case we need to roll back auth v2
@@ -1040,7 +1212,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         }
 
         await stop(disableOnDemand: true)
-        await start()
+        await start(trigger: trigger)
         try? await enableOnDemand(tunnelManager: internalManager)
     }
 

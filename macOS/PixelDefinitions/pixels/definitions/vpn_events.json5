@@ -41,6 +41,44 @@
         "suffixes": ["legacy_daily_count"],
         "parameters": ["appVersion", "pixelSource", "connectionAttemptSource", "channel"]
     },
+    "m_mac_netp_controller_start_attempt": {
+        "description": "Fired when the VPN tunnel controller begins a start attempt. Denominator of the macOS VPN enable rate. The trigger parameter distinguishes user-initiated enables from connect-on-login and restart-driven starts, which are the agent acting on the user's behalf and do not belong in a user-enable metric",
+        "owners": ["samsymons"],
+        "triggers": ["other"],
+        "suffixes": ["legacy_daily_count"],
+        "parameters": ["appVersion", "pixelSource", "vpnStartTrigger", "channel"]
+    },
+    "m_mac_netp_controller_start_success": {
+        "description": "Fired when a VPN tunnel controller start attempt completes without raising an error. Note this includes outcomes where no tunnel is running: read the outcome parameter, which distinguishes a confirmed connection from a start paused awaiting system extension approval, and from one that stopped an already-connected tunnel",
+        "owners": ["samsymons"],
+        "triggers": ["other"],
+        "suffixes": ["legacy_daily_count"],
+        "parameters": ["appVersion", "pixelSource", "vpnStartOutcome", "vpnStartTrigger", "channel"]
+    },
+    "m_mac_netp_controller_start_failure": {
+        "description": "Fired when a VPN tunnel controller start attempt fails. Numerator of the macOS VPN enable failure rate. The outcome parameter distinguishes genuine failures from ones that are not user-visible failures, such as a token branching refresh that failed after the tunnel token had already been obtained, or an on-demand rule that could not be saved after the tunnel was already connected",
+        "owners": ["samsymons"],
+        "triggers": ["other"],
+        "suffixes": ["legacy_daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "vpnStartOutcome",
+            "vpnStartTrigger",
+            "errorCode",
+            "errorDomain",
+            "underlyingErrorCode",
+            "underlyingErrorDomain",
+            "channel"
+        ]
+    },
+    "m_mac_netp_controller_start_cancelled": {
+        "description": "Fired when a VPN tunnel controller start attempt is cancelled, either by the user declining a system prompt or by an interrupted operation. Excluded from the enable rate. The step parameter identifies where the cancellation happened",
+        "owners": ["samsymons"],
+        "triggers": ["other"],
+        "suffixes": ["legacy_daily_count"],
+        "parameters": ["appVersion", "pixelSource", "vpnStartOutcome", "vpnStartTrigger", "vpnStartCancellationStep", "channel"]
+    },
     "m_mac_netp_tunnel_start_attempt_on_demand_without_access_token": {
         "description": "Fired when an on-demand VPN start attempt fails before reaching the actual tunnel start, due to a prerequisite failure such as a missing or unfetchable subscription token, missing settings, or other startup errors. Error parameters identify the underlying cause.",
         "owners": ["diegoreymendez", "samsymons"],

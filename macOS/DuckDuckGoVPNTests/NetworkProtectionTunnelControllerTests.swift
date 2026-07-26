@@ -173,7 +173,11 @@ final class NetworkProtectionTunnelControllerTests: XCTestCase {
         }
     }
 
-    func testPrepareStartupOptionsWhenForcedRefreshFailsThenPreservesItsTopLevelError() async {
+    /// The forced refresh's failure is wrapped so the top-level handler can name it without inferring it
+    /// from which layer happened to wrap the error. The original error is preserved inside, and it is the
+    /// original that gets reported: see
+    /// `testStartWhenTheTokenBranchingRefreshFailsThenReportsFailureEvenThoughTheTunnelTokenWasAvailable`.
+    func testPrepareStartupOptionsWhenForcedRefreshFailsThenWrapsItAsABranchRefreshFailure() async {
         let tunnelToken = OAuthTokensFactory.makeValidTokenContainer()
         let underlyingError = TestError.tokenRequestFailed
         let subscriptionManager = SubscriptionManagerMock()
@@ -186,7 +190,11 @@ final class NetworkProtectionTunnelControllerTests: XCTestCase {
         do {
             _ = try await controller.prepareStartupOptions()
             XCTFail("Expected startup option preparation to fail")
-        } catch SubscriptionManagerError.errorRetrievingTokenContainer(let error) {
+        } catch let failure as NetworkProtectionTunnelController.TokenBranchRefreshFailure {
+            guard case SubscriptionManagerError.errorRetrievingTokenContainer(let error) = failure.underlyingError else {
+                XCTFail("Unexpected underlying error: \(failure.underlyingError)")
+                return
+            }
             XCTAssertEqual(error as? TestError, underlyingError)
             XCTAssertEqual(subscriptionManager.getTokenContainerCalls, [
                 AuthTokensCachePolicy.localValid.description,
@@ -670,6 +678,103 @@ final class NetworkProtectionTunnelControllerTests: XCTestCase {
 
         try await assertPixelFired(PixelName.attempt)
         try await assertPixelFired(PixelName.failure)
+    }
+
+    // MARK: - Outcome and trigger parameters
+
+    func testStartWhenTheTunnelConnectsThenReportsTheConnectedOutcomeAndTheUserInitiatedTrigger() async throws {
+        let controller = makeController(subscriptionManager: makeSubscriptionManager())
+
+        await controller.start()
+
+        let pixel = try await assertPixelFired(PixelName.success)
+        XCTAssertEqual(pixel.parameters[PixelKit.Parameters.vpnStartOutcome], "connected")
+        XCTAssertEqual(pixel.parameters[PixelKit.Parameters.vpnStartTrigger], "user_initiated")
+    }
+
+    func testStartWhenTheExtensionIsStillAwaitingApprovalThenNamesThatOutcomeOnTheSuccessPixel() async throws {
+        let networkExtensionController = MockNetworkExtensionController()
+        networkExtensionController.reportsWaitingForUserApproval = true
+        networkExtensionController.activationState = .awaitingUserApproval
+
+        let controller = makeController(
+            subscriptionManager: makeSubscriptionManager(),
+            networkExtensionController: networkExtensionController)
+
+        await controller.start()
+
+        let pixel = try await assertPixelFired(PixelName.success)
+        XCTAssertEqual(pixel.parameters[PixelKit.Parameters.vpnStartOutcome], "awaiting_extension_approval")
+    }
+
+    func testStartWhenAlreadyConnectedThenNamesThatOutcomeOnTheSuccessPixel() async throws {
+        let tunnelManager = MockVPNTunnelManager(providerBundleID: Self.sysexBundleID)
+        tunnelManager.connectionStatus = .connected
+        let controller = makeController(
+            subscriptionManager: makeSubscriptionManager(),
+            tunnelManager: tunnelManager)
+
+        await controller.start()
+
+        let pixel = try await assertPixelFired(PixelName.success)
+        XCTAssertEqual(pixel.parameters[PixelKit.Parameters.vpnStartOutcome], "stopped_because_already_connected")
+    }
+
+    func testStartWhenTheTokenBranchingRefreshFailsThenNamesThatOutcomeOnTheFailurePixel() async throws {
+        let controller = makeController(
+            subscriptionManager: makeSubscriptionManager(results: [
+                .success(OAuthTokensFactory.makeValidTokenContainerWithEntitlements()),
+                .failure(SubscriptionManagerError.errorRetrievingTokenContainer(error: APIRequestV2Error.urlSession(URLError(.timedOut))))
+            ]))
+
+        await controller.start()
+
+        let pixel = try await assertPixelFired(PixelName.failure)
+        XCTAssertEqual(pixel.parameters[PixelKit.Parameters.vpnStartOutcome], "token_branch_refresh_failed")
+        // The reported error must still be the original, so the SLO's error breakdown doesn't move.
+        XCTAssertEqual(pixel.parameters[PixelKit.Parameters.errorDomain], SubscriptionManagerError.errorDomain)
+        XCTAssertEqual(pixel.parameters[PixelKit.Parameters.errorCode], "12001")
+    }
+
+    func testStartWhenTheOnDemandRuleCannotBeSavedThenNamesThatOutcomeOnTheFailurePixel() async throws {
+        let tunnelManager = MockVPNTunnelManager(providerBundleID: Self.sysexBundleID)
+        tunnelManager.saveErrorAfterTunnelStart = NEVPNError(.configurationReadWriteFailed)
+        let controller = makeController(
+            subscriptionManager: makeSubscriptionManager(),
+            tunnelManager: tunnelManager)
+
+        await controller.start()
+
+        let pixel = try await assertPixelFired(PixelName.failure)
+        XCTAssertEqual(pixel.parameters[PixelKit.Parameters.vpnStartOutcome], "connected_without_on_demand")
+        XCTAssertEqual(pixel.parameters[PixelKit.Parameters.errorCode], "100")
+    }
+
+    func testStartWhenTheApprovalPromptTimesOutThenNamesThatOutcomeOnTheFailurePixel() async throws {
+        let networkExtensionController = MockNetworkExtensionController()
+        networkExtensionController.reportsWaitingForUserApproval = true
+        networkExtensionController.activationError = SystemExtensionRequestError.requestTimedOut
+
+        let controller = makeController(
+            subscriptionManager: makeSubscriptionManager(),
+            networkExtensionController: networkExtensionController)
+
+        await controller.start()
+
+        let pixel = try await assertPixelFired(PixelName.failure)
+        XCTAssertEqual(pixel.parameters[PixelKit.Parameters.vpnStartOutcome], "approval_prompt_timed_out")
+    }
+
+    func testStartWithTheConnectOnLoginTriggerThenReportsThatTriggerOnBothTheAttemptAndTheOutcome() async throws {
+        let controller = makeController(subscriptionManager: makeSubscriptionManager())
+
+        await controller.start(trigger: .connectOnLogin)
+
+        let attempt = try await assertPixelFired(PixelName.attempt)
+        XCTAssertEqual(attempt.parameters[PixelKit.Parameters.vpnStartTrigger], "connect_on_login")
+
+        let success = try await assertPixelFired(PixelName.success)
+        XCTAssertEqual(success.parameters[PixelKit.Parameters.vpnStartTrigger], "connect_on_login")
     }
 
     // MARK: - Helpers

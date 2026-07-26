@@ -311,6 +311,33 @@
         "description": "The origin of a VPN connection attempt",
         "enum": ["start", "rekey", "serverChange", "locationChange", "adapterRestart", "failureRecovery", "serverMigration"]
     },
+    "vpnStartOutcome": {
+        "key": "outcome",
+        "type": "string",
+        "description": "What a VPN enable attempt actually ended up doing, independent of which pixel reported it. Several outcomes do not match the pixel they are reported on: awaiting_extension_approval and stopped_because_already_connected are reported as successes without a running tunnel, and connected_without_on_demand and token_branch_refresh_failed are reported as failures despite the user having, or being able to have, a working VPN",
+        "enum": [
+            "connected",
+            "connected_without_on_demand",
+            "awaiting_extension_approval",
+            "stopped_because_already_connected",
+            "token_branch_refresh_failed",
+            "approval_prompt_timed_out",
+            "cancelled",
+            "failed"
+        ]
+    },
+    "vpnStartTrigger": {
+        "key": "trigger",
+        "type": "string",
+        "description": "What caused a VPN start attempt. Only user_initiated belongs in a user-enable metric; the others are the agent starting the tunnel on the user's behalf",
+        "enum": ["user_initiated", "connect_on_login", "app_update_restart", "settings_change_restart"]
+    },
+    "vpnStartCancellationStep": {
+        "key": "step",
+        "type": "string",
+        "description": "The step at which a cancelled VPN start attempt was cancelled",
+        "enum": ["systemExtensionActivation", "tunnelManagerLoad", "tunnelConnection", "unknown"]
+    },
     "locale": {
         "key": "locale",
         "type": "string",

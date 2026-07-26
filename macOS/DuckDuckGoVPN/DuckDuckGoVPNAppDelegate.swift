@@ -536,7 +536,7 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
                     let isConnected = await tunnelController.isConnected
 
                     if !isConnected && tunnelSettings.connectOnLogin {
-                        await tunnelController.start()
+                        await tunnelController.start(trigger: .connectOnLogin)
                     }
                 }
             }

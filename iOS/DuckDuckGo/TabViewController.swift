@@ -61,6 +61,38 @@ enum WebViewPreviewSnapshotGeometry {
     }
 }
 
+private final class FloatingWebViewEdgeEffectView: UIVisualEffectView {
+
+    enum Edge {
+        case top
+        case bottom
+    }
+
+    private let edge: Edge
+    private let gradientMask = CAGradientLayer()
+
+    init(edge: Edge) {
+        self.edge = edge
+        super.init(effect: UIBlurEffect(style: .systemThinMaterial))
+        isUserInteractionEnabled = false
+        layer.mask = gradientMask
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        gradientMask.frame = bounds
+        gradientMask.startPoint = CGPoint(x: 0.5, y: 0)
+        gradientMask.endPoint = CGPoint(x: 0.5, y: 1)
+        gradientMask.colors = edge == .top
+            ? [UIColor.black.cgColor, UIColor.clear.cgColor]
+            : [UIColor.clear.cgColor, UIColor.black.cgColor]
+    }
+}
+
 class TabViewController: UIViewController {
 
     private enum FixedElementEdge {
@@ -91,6 +123,8 @@ class TabViewController: UIViewController {
     var isDuckAIDeepLinkSurfaceRequested = false
 
     lazy var borderView = StyledTopBottomBorderView()
+    private let floatingTopEdgeEffectView = FloatingWebViewEdgeEffectView(edge: .top)
+    private let floatingBottomEdgeEffectView = FloatingWebViewEdgeEffectView(edge: .bottom)
 
     var privacyDashboardAnchor: UIView!
     var error: UIView!
@@ -968,6 +1002,19 @@ class TabViewController: UIViewController {
         } else {
             layoutFixedElementEdgeBleedViews()
         }
+
+        let topEffectHeight = max(0, frame.minY - webViewContainer.bounds.minY)
+        let bottomEffectHeight = max(0, webViewContainer.bounds.maxY - frame.maxY)
+        floatingTopEdgeEffectView.frame = CGRect(x: webViewContainer.bounds.minX,
+                                                 y: webViewContainer.bounds.minY,
+                                                 width: webViewContainer.bounds.width,
+                                                 height: topEffectHeight)
+        floatingBottomEdgeEffectView.frame = CGRect(x: webViewContainer.bounds.minX,
+                                                    y: frame.maxY,
+                                                    width: webViewContainer.bounds.width,
+                                                    height: bottomEffectHeight)
+        floatingTopEdgeEffectView.isHidden = usesFullHeight || topEffectHeight == 0
+        floatingBottomEdgeEffectView.isHidden = usesFullHeight || bottomEffectHeight == 0
     }
 
     private func updateFixedElementEdgeBleed(for edges: FixedElementEdges) {
@@ -1242,6 +1289,11 @@ class TabViewController: UIViewController {
         }
     }
 
+    private func configureFloatingWebViewEdgeEffects() {
+        webViewContainer.addSubview(floatingTopEdgeEffectView)
+        webViewContainer.addSubview(floatingBottomEdgeEffectView)
+    }
+
     private func observeNetPConnectionStatusChanges() {
         netPConnectionObserverCancellable = netPConnectionObserver.publisher
             .receive(on: DispatchQueue.main)
@@ -1364,6 +1416,7 @@ class TabViewController: UIViewController {
         webViewContainer.addSubview(webView)
         if isFloatingUIEnabled {
             webView.translatesAutoresizingMaskIntoConstraints = true
+            configureFloatingWebViewEdgeEffects()
             layoutFloatingWebView()
         } else {
             webView.translatesAutoresizingMaskIntoConstraints = false

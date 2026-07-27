@@ -36,6 +36,10 @@ final class PromptBarMenuBarController: NSObject {
     private let makeStatusItem: @MainActor () -> PromptBarStatusItem
     private var statusItem: PromptBarStatusItem?
 
+    /// Called when the icon is clicked. Set by the owner so this controller stays unaware of what
+    /// the Prompt Bar is.
+    var onClick: (() -> Void)?
+
     /// - Parameter makeStatusItem: Injectable for testing; defaults to a real menu bar item.
     init(makeStatusItem: @escaping @MainActor () -> PromptBarStatusItem = { NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength) }) {
         self.makeStatusItem = makeStatusItem
@@ -54,8 +58,7 @@ final class PromptBarMenuBarController: NSObject {
 
     @objc
     private func statusBarButtonTapped() {
-        // No-op for now: this milestone only places the icon. Opening the floating
-        // Prompt Bar window is wired here in a later milestone.
+        onClick?()
     }
 
     /// The item is created on first show: `NSStatusBar` puts it on screen as soon

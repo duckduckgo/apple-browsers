@@ -126,6 +126,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var passwordsMenuBarCancellable: AnyCancellable?
     private var promptBarMenuBarController: PromptBarMenuBarController?
     private var promptBarMenuBarCancellable: AnyCancellable?
+    private var promptBarCoordinator: PromptBarCoordinator?
 
     private(set) var syncDataProviders: SyncDataProvidersSource?
     private(set) var syncService: DDGSyncing?
@@ -1498,6 +1499,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         setUpAutofillPixelReporter()
         setUpPasswordsMenuBarVisibility()
+        setUpPromptBar()
         setUpPromptBarMenuBarVisibility()
 
         remoteMessagingClient?.startRefreshingRemoteMessages()
@@ -2429,6 +2431,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
     }
 
+    /// Builds the Prompt Bar's window stack and registers its global shortcut. Must run before
+    /// `setUpPromptBarMenuBarVisibility()`, which hands the menu bar icon's click to the coordinator.
+    @MainActor
+    private func setUpPromptBar() {
+        guard featureFlagger.isFeatureOn(.macosPromptBar) else {
+            promptBarCoordinator = nil
+            return
+        }
+
+        let coordinator = PromptBarCoordinator(
+            featureFlagger: featureFlagger,
+            preferences: promptBarPreferences,
+            shortcutRegistrar: CarbonGlobalShortcutRegistrar(),
+            presenter: PromptBarPresenter(content: PromptBarViewController(aiChatTabOpener: aiChatTabOpener))
+        )
+        coordinator.start()
+        promptBarCoordinator = coordinator
+    }
+
     @MainActor
     private func setUpPromptBarMenuBarVisibility() {
         guard featureFlagger.isFeatureOn(.macosPromptBar) else {
@@ -2440,6 +2461,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         if promptBarMenuBarController == nil {
             promptBarMenuBarController = PromptBarMenuBarController()
+        }
+        promptBarMenuBarController?.onClick = { [weak self] in
+            self?.promptBarCoordinator?.togglePromptBar()
         }
 
         // Applied synchronously: a deferred first update lets the icon appear at

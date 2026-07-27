@@ -26,25 +26,10 @@ import DesignResourcesKitIcons
 
 final class UnprotectedSitesViewController: UITableViewController {
 
-    private enum Strings {
-        static let info = NSLocalizedString(
-            "zvh-2e-Wmz.text",
-            tableName: "Settings",
-            bundle: .main,
-            value: "These sites will not be enhanced by Privacy Protection.",
-            comment: "Description shown above the list of unprotected sites")
-        static let allProtected = NSLocalizedString(
-            "Hu1-5i-vjL.text",
-            tableName: "Settings",
-            bundle: .main,
-            value: "Privacy Protection enabled for all sites",
-            comment: "Message shown when there are no unprotected sites")
-    }
-
     private lazy var infoText: UILabel = {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
-        label.text = Strings.info
+        label.text = UserText.settingsUnprotectedSitesDescription
         label.numberOfLines = 0
         label.lineBreakMode = .byTruncatingTail
         return label
@@ -306,7 +291,7 @@ final class UnprotectedSitesViewController: UITableViewController {
         }
 
         let theme = ThemeManager.shared.currentTheme
-        allProtectedCell.label.text = Strings.allProtected
+        allProtectedCell.label.text = UserText.settingsUnprotectedSitesEmptyState
         allProtectedCell.label.textColor = theme.tableCellTextColor
 
         return allProtectedCell

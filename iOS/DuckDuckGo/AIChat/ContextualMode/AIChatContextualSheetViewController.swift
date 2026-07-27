@@ -823,6 +823,7 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
             guard let self else { return }
             await self.delegate?.aiChatContextualSheetViewControllerAttachContextForSuggestion(self)
             self.submitSuggestionPrompt(suggestion.prompt)
+            self.contextualInputViewController.setStartActionsDimmed(false)
         }
     }
 

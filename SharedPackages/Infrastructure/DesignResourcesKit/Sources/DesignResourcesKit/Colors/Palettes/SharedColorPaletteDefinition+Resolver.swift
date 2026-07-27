@@ -188,6 +188,29 @@ extension SharedColorPaletteDefinition {
         case .spinnerFinal: return ManualColorTokens.spinnerFinal
         case .textSuccess: return ManualColorTokens.textSuccess
         case .textLink: return ManualColorTokens.textLink
+        case .backgroundTertiary: return ManualColorTokens.backgroundTertiary
+        case .backgroundSheets: return ManualColorTokens.backgroundSheets
+        case .backgroundPromptMessage: return ManualColorTokens.backgroundPromptMessage
+        case .urlBar: return ManualColorTokens.urlBar
+        case .surfaceDecorationQuaternary: return ManualColorTokens.surfaceDecorationQuaternary
+        case .border: return ManualColorTokens.border
+        case .textSelectionFill: return ManualColorTokens.textSelectionFill
+        case .textPlaceholder: return ManualColorTokens.textPlaceholder
+        case .buttonsSecondaryWireDefault: return ManualColorTokens.buttonsSecondaryWireDefault
+        case .buttonsSecondaryWirePressedFill: return ManualColorTokens.buttonsSecondaryWirePressedFill
+        case .buttonsSecondaryWireDisabledStroke: return ManualColorTokens.buttonsSecondaryWireDisabledStroke
+        case .buttonsSecondaryWireText: return ManualColorTokens.buttonsSecondaryWireText
+        case .buttonsSecondaryWireTextPressed: return ManualColorTokens.buttonsSecondaryWireTextPressed
+        case .buttonsSecondaryWireTextDisabled: return ManualColorTokens.buttonsSecondaryWireTextDisabled
+        case .buttonsGhostPressedFill: return ManualColorTokens.buttonsGhostPressedFill
+        case .buttonsGhostText: return ManualColorTokens.buttonsGhostText
+        case .buttonsGhostTextPressed: return ManualColorTokens.buttonsGhostTextPressed
+        case .buttonsGhostTextDisabled: return ManualColorTokens.buttonsGhostTextDisabled
+        case .buttonsDeleteGhostPressedFill: return ManualColorTokens.buttonsDeleteGhostPressedFill
+        case .buttonsDeleteGhostText: return ManualColorTokens.buttonsDeleteGhostText
+        case .buttonsDeleteGhostTextPressed: return ManualColorTokens.buttonsDeleteGhostTextPressed
+        case .buttonsDeleteGhostTextDisabled: return ManualColorTokens.buttonsDeleteGhostTextDisabled
+        case .buttonsDestructivePrimaryPressed: return ManualColorTokens.buttonsDestructivePrimaryPressed
         case .permissionCenterBackground: return ManualColorTokens.permissionCenterBackground
         case .permissionCenterContainerBackground: return ManualColorTokens.permissionCenterContainerBackground
         case .permissionWarningBackground: return ManualColorTokens.permissionWarningBackground

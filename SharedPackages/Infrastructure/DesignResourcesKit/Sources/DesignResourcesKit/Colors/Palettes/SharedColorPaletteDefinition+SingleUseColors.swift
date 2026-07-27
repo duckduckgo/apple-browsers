@@ -21,8 +21,8 @@ import SwiftUI
 
 #if os(macOS)
 
-/// Single-use colours are hand-written by definition: each belongs to one feature and has no
-/// Figma token, so there is nothing to generate from.
+/// Single-use colours are hand-written and don't have matching Figma tokens
+/// so can't be automatically generated.
 extension SharedColorPaletteDefinition {
 
     static func dynamicColor(for singleUseColor: SingleUseColor) -> DynamicColor {

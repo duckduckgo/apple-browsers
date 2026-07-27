@@ -98,6 +98,64 @@ enum ManualColorTokens {
     static var textSuccess: DynamicColor { DynamicColor(lightColor: .green60, darkColor: .green30) }
     static var textLink: DynamicColor { DynamicColor(lightHex: 0x3969EF, darkHex: 0x7295F6) }
 
+    // MARK: - iOS Surfaces
+
+    static var backgroundTertiary: DynamicColor { DynamicColor(lightColor: .white, darkColor: Color(0x3D3D3D)) }
+    static var backgroundSheets: DynamicColor { DynamicColor(lightColor: Color(0xF9F9F9), darkColor: Color(0x373737)) }
+    static var backgroundPromptMessage: DynamicColor {
+        DynamicColor(lightColor: Color(0xF3F6FF), darkColor: Color(0xFFFFFF).opacity(0.09))
+    }
+    static var urlBar: DynamicColor { DynamicColor(lightColor: .white, darkColor: Color(0x474747)) }
+    static var surfaceDecorationQuaternary: DynamicColor {
+        DynamicColor(lightColor: Color(0x1F1F1F).opacity(0.03), darkColor: Color(0xF9F9F9).opacity(0.03))
+    }
+    static var border: DynamicColor { DynamicColor(lightColor: .gray30, darkColor: .gray40) }
+
+    // MARK: - iOS Text
+
+    static var textSelectionFill: DynamicColor {
+        DynamicColor(lightColor: .blue50.opacity(0.2), darkColor: .blue30.opacity(0.2))
+    }
+    static var textPlaceholder: DynamicColor {
+        DynamicColor(lightColor: Color(0x1F1F1F).opacity(0.4), darkColor: .tint(0.4))
+    }
+
+    // MARK: - iOS Buttons
+    // Button families Figma models as components rather than colour variables.
+
+    static var buttonsSecondaryWireDefault: DynamicColor { DynamicColor(lightColor: .blue50, darkColor: .blue30) }
+    static var buttonsSecondaryWirePressedFill: DynamicColor {
+        DynamicColor(lightColor: .blue50.opacity(0.2), darkColor: .blue30.opacity(0.2))
+    }
+    static var buttonsSecondaryWireDisabledStroke: DynamicColor {
+        DynamicColor(lightColor: .shade(0.12), darkColor: .tint(0.24))
+    }
+    static var buttonsSecondaryWireText: DynamicColor { DynamicColor(lightColor: .blue50, darkColor: .blue30) }
+    static var buttonsSecondaryWireTextPressed: DynamicColor { DynamicColor(lightColor: .blue70, darkColor: .blue20) }
+    static var buttonsSecondaryWireTextDisabled: DynamicColor {
+        DynamicColor(lightColor: .shade(0.36), darkColor: .tint(0.36))
+    }
+
+    static var buttonsGhostPressedFill: DynamicColor {
+        DynamicColor(lightColor: .blue50.opacity(0.2), darkColor: .blue30.opacity(0.2))
+    }
+    static var buttonsGhostText: DynamicColor { DynamicColor(lightColor: .blue50, darkColor: .blue30) }
+    static var buttonsGhostTextPressed: DynamicColor { DynamicColor(lightColor: .blue70, darkColor: .blue20) }
+    static var buttonsGhostTextDisabled: DynamicColor { DynamicColor(lightColor: .shade(0.36), darkColor: .tint(0.36)) }
+
+    static var buttonsDeleteGhostPressedFill: DynamicColor {
+        DynamicColor(lightColor: .alertRed50.opacity(0.12), darkColor: .alertRed20.opacity(0.18))
+    }
+    static var buttonsDeleteGhostText: DynamicColor { DynamicColor(lightColor: .alertRedOnLight, darkColor: .alertRedOnDark) }
+    static var buttonsDeleteGhostTextPressed: DynamicColor { DynamicColor(lightColor: .alertRed70, darkColor: .alertRed10) }
+    static var buttonsDeleteGhostTextDisabled: DynamicColor {
+        DynamicColor(lightColor: .shade(0.36), darkColor: .tint(0.36))
+    }
+
+    static var buttonsDestructivePrimaryPressed: DynamicColor {
+        DynamicColor(lightColor: .alertRed80, darkColor: .alertRed40)
+    }
+
     // MARK: - Permission Center
 
     static var permissionCenterBackground: DynamicColor {

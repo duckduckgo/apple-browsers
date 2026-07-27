@@ -221,6 +221,35 @@ public enum SharedDesignSystemColor: CaseIterable {
     case textSuccess
     case textLink
 
+    // iOS Surfaces
+    case backgroundTertiary
+    case backgroundSheets
+    case backgroundPromptMessage
+    case urlBar
+    case surfaceDecorationQuaternary
+    case border
+
+    // iOS Text
+    case textSelectionFill
+    case textPlaceholder
+
+    // iOS Buttons
+    case buttonsSecondaryWireDefault
+    case buttonsSecondaryWirePressedFill
+    case buttonsSecondaryWireDisabledStroke
+    case buttonsSecondaryWireText
+    case buttonsSecondaryWireTextPressed
+    case buttonsSecondaryWireTextDisabled
+    case buttonsGhostPressedFill
+    case buttonsGhostText
+    case buttonsGhostTextPressed
+    case buttonsGhostTextDisabled
+    case buttonsDeleteGhostPressedFill
+    case buttonsDeleteGhostText
+    case buttonsDeleteGhostTextPressed
+    case buttonsDeleteGhostTextDisabled
+    case buttonsDestructivePrimaryPressed
+
     // Permission Center
     case permissionCenterBackground
     case permissionCenterContainerBackground

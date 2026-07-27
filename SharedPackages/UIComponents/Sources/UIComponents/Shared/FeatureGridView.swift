@@ -205,44 +205,27 @@ struct FeatureCardView: View {
 
     @ViewBuilder
     private var iconPlaceholder: some View {
-        Circle()
-#if os(iOS)
-            .fill(Color(designSystemColor: .surface))
-#else
-            .fill(Color(designSystemColor: .surfacePrimary))
-#endif
-            .frame(width: LayoutConstants.iconContainerSize, height: LayoutConstants.iconContainerSize)
-            .overlay(
-                Circle()
-                    .stroke(Color(designSystemColor: .lines), lineWidth: borderWidth)
-            )
-            .overlay(iconImage)
+        IconBadge(
+            icon: resolvedIcon,
+            diameter: LayoutConstants.iconContainerSize,
+            iconSize: LayoutConstants.iconSize,
+            borderWidth: borderWidth)
     }
 
-    @ViewBuilder
-    private var iconImage: some View {
+    private var resolvedIcon: Image? {
         #if os(iOS)
         if let iconImage = feature.iconImage {
-            iconImageStyled(Image(uiImage: iconImage))
-        } else if let iconName = feature.iconName {
-            iconImageStyled(Image(iconName))
+            return Image(uiImage: iconImage)
         }
         #elseif os(macOS)
         if let iconImage = feature.iconImage {
-            iconImageStyled(Image(nsImage: iconImage))
-        } else if let iconName = feature.iconName {
-            iconImageStyled(Image(iconName))
+            return Image(nsImage: iconImage)
         }
         #endif
-    }
-
-    private func iconImageStyled(_ image: Image) -> some View {
-        image
-            .resizable()
-            .renderingMode(.template)
-            .aspectRatio(contentMode: .fit)
-            .frame(width: LayoutConstants.iconSize, height: LayoutConstants.iconSize)
-            .foregroundColor(Color(designSystemColor: .textPrimary))
+        if let iconName = feature.iconName {
+            return Image(iconName)
+        }
+        return nil
     }
 }
 

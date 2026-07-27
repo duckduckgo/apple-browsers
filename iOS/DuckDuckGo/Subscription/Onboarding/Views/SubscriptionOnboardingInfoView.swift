@@ -22,10 +22,7 @@ import DesignResourcesKit
 import DesignResourcesKitIcons
 import UIComponents
 
-/// A generic "Learn More" info sheet for a subscription protection: a hero header above a scrollable list
-/// of feature cards, with a close button that returns to the screen that presented it. The presenting
-/// screen supplies the matching ``SubscriptionOnboardingInfoContent`` (`.vpn`, `.idtr`, `.duckAI`, `.pir`),
-/// so the same view renders the VPN, IDTR, Duck.ai … info screens.
+/// A generic "Learn More" info sheet for a subscription protection: a hero header above a scrollable list of feature cards.
 struct SubscriptionOnboardingInfoView: View {
     let content: SubscriptionOnboardingInfoContent
     let onClose: () -> Void

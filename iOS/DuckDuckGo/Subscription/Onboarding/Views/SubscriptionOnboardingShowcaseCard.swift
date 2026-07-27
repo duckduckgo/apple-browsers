@@ -70,36 +70,6 @@ struct SubscriptionOnboardingShowcaseCard: View {
             footer: { footer.padding(.leading, Metrics.textBlockLeadingInset) })
         .accessibilityElement(children: .combine)
     }
-
-    /// A design-system glyph (16×16) centered in a 32×32 circle, mirroring ``FeatureGridView``'s icon
-    /// treatment: a `.surface` fill and a 1px `.lines` hairline border, with the glyph tinted `.textPrimary`.
-    /// Only used by ``SubscriptionOnboardingShowcaseCard``.
-    private struct IconBadge: View {
-        private enum Metrics {
-            static let diameter: CGFloat = 32
-            static let iconSize: CGFloat = 16
-            static let borderWidth: CGFloat = 1
-        }
-
-        let icon: Image
-
-        var body: some View {
-            Circle()
-                .fill(Color(designSystemColor: .surface))
-                .frame(width: Metrics.diameter, height: Metrics.diameter)
-                .overlay {
-                    icon
-                        .resizable()
-                        .renderingMode(.template)
-                        .scaledToFit()
-                        .frame(width: Metrics.iconSize, height: Metrics.iconSize)
-                        .foregroundColor(Color(designSystemColor: .textPrimary))
-                }
-                .overlay {
-                    Circle().strokeBorder(Color(designSystemColor: .lines), lineWidth: Metrics.borderWidth)
-                }
-        }
-    }
 }
 
 #if DEBUG

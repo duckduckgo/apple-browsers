@@ -91,12 +91,8 @@ enum SubscriptionOnboardingFooter {
     case double(primary: SubscriptionOnboardingFooterButton, secondary: SubscriptionOnboardingFooterButton)
 }
 
-/// A generic, high-level page for the post-subscription onboarding flow: toolbar chrome (an optional
-/// leading back/close button and an optional centered title), an optional ``SubscriptionOnboardingHeaderView``,
-/// a caller-supplied body, and an optional bottom-pinned footer of one or two buttons. It carries no
-/// `NavigationView` of its own — the toolbar/title render inside the shared navigation stack applied by
-/// ``subscriptionOnboardingNavigationContainer()``. Each concrete section (VPN, Duck.ai, …) supplies its
-/// own title, header, body and footer.
+/// A generic page for the post-subscription onboarding flow: an optional leading button and centered title,
+/// an optional header, a caller-supplied body, and an optional bottom-pinned footer.
 struct SubscriptionOnboardingBaseView<Content: View>: View {
 
     private let title: String?

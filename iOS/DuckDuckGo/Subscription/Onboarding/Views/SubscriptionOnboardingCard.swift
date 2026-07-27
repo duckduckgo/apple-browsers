@@ -106,6 +106,7 @@ extension SubscriptionOnboardingCard where Header == EmptyView, Items == CardIte
         self.init(style: style, padding: padding, header: { EmptyView() }, items: { item }, footer: footer)
     }
 }
+
 extension SubscriptionOnboardingCard where Items == CardItemList, Footer == EmptyView {
     /// Creates a card holding a single `CardItem`, with no header or footer. `contentInset` insets the
     /// item's content — the padding becomes part of the card. Defaults to `16` on all sides.

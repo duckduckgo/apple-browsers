@@ -21,11 +21,7 @@ import SwiftUI
 import DesignResourcesKit
 import UIComponents
 
-/// The centered header for a post-subscription onboarding section screen: an optional ``Graphic``
-/// above a required title and an optional explanation. The explanation is rendered as Markdown, so it can
-/// carry a tappable inline link; because every link leads to the current section's info screen, a tap
-/// simply fires `onInfoLinkTap` (the flow opens that screen). When `onInfoLinkTap` is nil, links defer to
-/// the system URL handler. 
+/// The centered header for an onboarding section screen: an optional graphic above a title and optional explanation.
 struct SubscriptionOnboardingHeaderView: View {
     private enum Metrics {
         static let graphicWidth: CGFloat = 128

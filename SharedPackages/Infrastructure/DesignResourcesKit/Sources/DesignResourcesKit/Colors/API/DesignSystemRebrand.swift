@@ -20,12 +20,8 @@ import Foundation
 
 /// Whether the app is displaying the 2026 rebrand.
 ///
-/// This used to be a separately-assigned flag, which meant the rebrand could be switched on for
-/// colours and off for everything else. It now reads from `DesignSystemPalette.current`, the single
-/// place the rebrand is selected — set that, and this follows.
-///
-/// Kept as a convenience for the many call sites that only need the boolean. It disappears with the
-/// rest of the rebrand machinery once the flag is removed.
+/// Kept as a convenience for the many call sites that need it.
+/// This will disappears with the rest of the rebrand machinery once the flag is removed.
 public enum DesignSystemRebrand {
 
     public static var isAppRebranded: () -> Bool {

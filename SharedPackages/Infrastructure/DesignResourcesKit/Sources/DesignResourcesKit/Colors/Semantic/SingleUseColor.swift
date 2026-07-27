@@ -136,11 +136,9 @@ public extension SingleUseColor {
 
 // MARK: - CaseIterable
 
-/// The `rebranding(Rebranding)` associated value prevents the compiler from synthesising
-/// `allCases`, so it is spelled out by hand. Keep the simple-case list below in sync with the
-/// cases declared above; the nested `Rebranding` cases are covered automatically.
 extension SingleUseColor: CaseIterable {
 
+    // The `rebranding(Rebranding)` associated value prevents the compiler from synthesising `allCases`
     public static var allCases: [SingleUseColor] {
         [
             .controlWidgetBackground,

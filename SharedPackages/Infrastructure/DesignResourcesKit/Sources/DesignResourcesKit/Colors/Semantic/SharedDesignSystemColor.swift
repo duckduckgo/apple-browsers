@@ -180,7 +180,7 @@ public enum SharedDesignSystemColor: CaseIterable {
     case statusWarningFillPrimary
 
     // MARK: - Manual tokens
-    // Not in Figma. Declared in ManualColorTokens.swift; see that file for the rationale.
+    // Not in Figma. Declared in ManualColorTokens.swift.
 
     // Alert
     case alertGreen

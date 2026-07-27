@@ -27,7 +27,10 @@ protocol OnboardingIntroContentProviding {
     var landingContent: OnboardingLandingContent { get }
     var introStepContent: OnboardingIntroStepContent { get }
     var downloadReasonContent: OnboardingDownloadReasonContent { get }
-    var serpPersonalizationContent: OnboardingSERPPersonalizationContent { get }
+    var serpPersonalizationContent: OnboardingPersonalizationContent { get }
+    var aiModelPersonalizationContent: OnboardingPersonalizationContent { get }
+    var aiSearchPersonalizationContent: OnboardingPersonalizationContent { get }
+    var youTubePersonalizationContent: OnboardingPersonalizationContent { get }
     var setDefaultBrowserContent: OnboardingComparisonContent { get }
     var aiIntroContent: OnboardingComparisonContent { get }
     var addToDockContent: OnboardingAddToDockContent { get }
@@ -176,22 +179,85 @@ extension OnboardingIntroContentProvider {
 
 }
 
-// MARK: - SERP Personalization
+// MARK: - Personalization
 
-struct OnboardingSERPPersonalizationContent: Equatable {
+struct OnboardingPersonalizationContent: Equatable {
     let title: String
-    let message: String
+    let message: String?
+    let items: [Item]
     let primaryCTA: String
     let daxAnimation: DaxAnimation
 }
 
+extension OnboardingPersonalizationContent {
+
+    struct Item: Hashable, Equatable {
+        let type: ItemType
+        let title: String
+        let subtitle: String?
+    }
+
+}
+
+extension OnboardingPersonalizationContent.Item {
+
+    enum ItemType: Equatable {
+        case recentlyVisitedSites
+        case safeSearch
+        case searchAssist
+        case aiGeneratedImages
+        case youTubeAdBlocking
+        case duckPlayer
+    }
+
+}
+
 extension OnboardingIntroContentProvider {
 
-    /// Content for the Download Reason Screen.
-    var serpPersonalizationContent: OnboardingSERPPersonalizationContent {
-        OnboardingSERPPersonalizationContent(
-            title: "Recently visited sites",
-            message: "Show when searching. Private, only on your device.",
+    var serpPersonalizationContent: OnboardingPersonalizationContent {
+        OnboardingPersonalizationContent(
+            title: "Your search, your way.",
+            message: nil,
+            items: [
+                OnboardingPersonalizationContent.Item(type: .recentlyVisitedSites, title: "Recently visited sites", subtitle: "Show when searching. Private, only on your device."),
+                OnboardingPersonalizationContent.Item(type: .safeSearch, title: "Safe search", subtitle: "Omit questionable (mostly adult) material in results.")
+            ],
+            primaryCTA: "Next",
+            daxAnimation: .wingLeft
+        )
+    }
+
+    var aiModelPersonalizationContent: OnboardingPersonalizationContent {
+        OnboardingPersonalizationContent(
+            title: "Your chats, your way.",
+            message: "Change your default AI now, or anytime during chat.",
+            items: [], // AI Models are fetched from an API
+            primaryCTA: "Next",
+            daxAnimation: .wingLeft
+        )
+    }
+
+    var aiSearchPersonalizationContent: OnboardingPersonalizationContent {
+        OnboardingPersonalizationContent(
+            title: "Search without AI",
+            message: nil,
+            items: [
+                OnboardingPersonalizationContent.Item(type: .searchAssist, title: "Search Assist", subtitle: "AI-generated answers within search results"),
+                OnboardingPersonalizationContent.Item(type: .aiGeneratedImages, title: "Hide AI-generated images", subtitle: "Filters out known AI spam sites from image search results")
+            ],
+            primaryCTA: "Next",
+            daxAnimation: .wingLeft
+        )
+    }
+
+    var youTubePersonalizationContent: OnboardingPersonalizationContent {
+        OnboardingPersonalizationContent(
+            title: "YouTube, without the noise.",
+            message: nil,
+            items: [
+                OnboardingPersonalizationContent.Item(type: .youTubeAdBlocking, title: "YouTube ad blocking", subtitle: nil),
+                OnboardingPersonalizationContent.Item(type: .duckPlayer, title: "Duck Player", subtitle: "Opens YouTube videos in theater mode")
+            ],
             primaryCTA: "Next",
             daxAnimation: .wingLeft
         )
@@ -217,7 +283,7 @@ struct OnboardingComparisonContent: Equatable {
     let primaryCTA: String
     /// When set, renders a secondary skip button below the primary CTA.
     let secondaryCTA: String?
-    let daxAnimation: DaxAnimation
+    let daxAnimation: DaxAnimation?
 }
 
 extension OnboardingIntroContentProvider {
@@ -266,7 +332,7 @@ extension OnboardingIntroContentProvider {
             features: RebrandedComparisonTableModel.browserFeatures(for: reason),
             primaryCTA: UserText.Onboarding.BrowsersComparison.cta,
             secondaryCTA: UserText.onboardingSkip,
-            daxAnimation: .wingBottom
+            daxAnimation: nil
         )
     }
 

@@ -460,17 +460,17 @@ extension OnboardingView {
             case let .downloadReasonDialog(content):
                 downloadReasonView(content: content)
             case let .searchPrivacySettingsDialog(content):
-                serpSettingsPersonalizationView(content: content)
-            case .aiSearchSettingsDialog:
-                placeholderView(title: "AI Search Settings", action: model.aiSearchSettingsContinueAction)
+                toggleSettingsPersonalizationView(content: content, action: model.searchPrivacySettingsContinueAction)
+            case let .aiSearchSettingsDialog(content):
+                toggleSettingsPersonalizationView(content: content, action: model.aiSearchSettingsContinueAction)
             case .aiModelDialog:
                 placeholderView(title: "AI Model Preference", action: model.aiModelContinueAction)
             case .toggleInputModeDialog:
                 placeholderView(title: "Toggle Input Default Mode", action: model.toggleInputModeContinueAction)
             case .keepDuckAIDialog:
                 placeholderView(title: "Keep Duck.ai Setting", action: model.keepDuckAIContinueAction)
-            case .duckPlayerDialog:
-                placeholderView(title: "Duck Player Settings", action: model.duckPlayerContinueAction)
+            case let .duckPlayerDialog(content):
+                toggleSettingsPersonalizationView(content: content, action: model.duckPlayerContinueAction)
             case let .setDefaultBrowserDialog(content):
                 setDefaultBrowserView(content: content)
             case let .aiIntroDialog(content):
@@ -499,14 +499,20 @@ extension OnboardingView {
             }
         }
 
-        private func serpSettingsPersonalizationView(content: OnboardingSERPPersonalizationContent) -> some View {
-            SERPPersonalization(
+        private func toggleSettingsPersonalizationView(content: OnboardingPersonalizationContent, action: @escaping () -> Void) -> some View {
+            let personalizationManager = model.personalizationManager
+
+            let items = content.items.map { item in
+                OnboardingPersonalizationToggleItem(item, isOn: item.type.uiBindingTo(manager: personalizationManager))
+            }
+
+            return PersonalizationToggleTemplate(
                 content: content,
-                searchPersonalization: model.personalizationManager,
+                items: items,
                 isVisible: $showBubbleContent
             ) {
                 animateContentTransition {
-                    model.searchPrivacySettingsContinueAction()
+                    action()
                 }
             }
         }
@@ -614,9 +620,10 @@ extension OnboardingView {
                 return scaledThumbUpAnimation(forBubbleHeight: lockedIntroBubbleHeight, base: content.daxAnimation)
             case .downloadReasonDialog(let content):
                 return content.daxAnimation
-            case .searchPrivacySettingsDialog, .aiSearchSettingsDialog, .aiModelDialog,
-                 .toggleInputModeDialog, .keepDuckAIDialog, .duckPlayerDialog:
-                return nil // TODO: dax animation for the reason-tailored steps (UI task).
+            case .searchPrivacySettingsDialog(let content), .aiSearchSettingsDialog(let content), .aiModelDialog(let content), .duckPlayerDialog(let content):
+                return content.daxAnimation
+            case .toggleInputModeDialog, .keepDuckAIDialog:
+                return nil
             case .setDefaultBrowserDialog(let content):
                 return content.daxAnimation
             case .aiIntroDialog(let content):

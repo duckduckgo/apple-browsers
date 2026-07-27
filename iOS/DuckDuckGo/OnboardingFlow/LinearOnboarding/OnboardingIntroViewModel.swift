@@ -424,15 +424,40 @@ private extension OnboardingIntroViewModel {
                         step: stepInfo())
                 )
             case .aiSearchSettingsSelection:
-                return .onboarding(.init(type: .aiSearchSettingsDialog, step: stepInfo()))
+                return .onboarding(
+                    .init(
+                        type: .aiSearchSettingsDialog(content: contentProvider.aiSearchPersonalizationContent),
+                        step: stepInfo()
+                    )
+                )
             case .aiModelSelection:
-                return .onboarding(.init(type: .aiModelDialog, step: stepInfo()))
+                return .onboarding(
+                    .init(
+                        type: .aiModelDialog(content: contentProvider.aiModelPersonalizationContent),
+                        step: stepInfo()
+                    )
+                )
             case .toggleInputModeSelection:
-                return .onboarding(.init(type: .toggleInputModeDialog, step: stepInfo()))
+                return .onboarding(
+                    .init(
+                        type: .toggleInputModeDialog,
+                        step: stepInfo()
+                    )
+                )
             case .keepDuckAISelection:
-                return .onboarding(.init(type: .keepDuckAIDialog, step: stepInfo()))
+                return .onboarding(
+                    .init(
+                        type: .keepDuckAIDialog,
+                        step: stepInfo()
+                    )
+                )
             case .duckPlayerSelection:
-                return .onboarding(.init(type: .duckPlayerDialog, step: stepInfo()))
+                return .onboarding(
+                    .init(
+                        type: .duckPlayerDialog(content: contentProvider.youTubePersonalizationContent),
+                        step: stepInfo()
+                    )
+                )
             case .setDefaultBrowser:
                 return .onboarding(
                     .init(

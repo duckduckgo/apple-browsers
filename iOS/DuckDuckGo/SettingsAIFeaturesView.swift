@@ -129,7 +129,7 @@ private struct SettingsAINativeFeaturesView: AIFeaturesSettingsRowProviding {
             } header: {
                 Text(UserText.settingsDuckAiSectionHeader)
             }
-            .listRowBackground(Color(designSystemColor: .surface))
+            .listRowBackground(Color(designSystemColor: .surfaceSecondary))
         }
 
         // Always shown: the button disables all AI while any is on, then greys out
@@ -150,7 +150,7 @@ private struct SettingsAINativeFeaturesView: AIFeaturesSettingsRowProviding {
         } footer: {
             Text(viewModel.isAllAIDisabled ? UserText.settingsAiFeaturesDisableAllFooterDisabled : UserText.settingsAiFeaturesDisableAllFooter)
         }
-        .listRowBackground(Color(designSystemColor: .surface))
+        .listRowBackground(Color(designSystemColor: .surfaceSecondary))
     }
 }
 

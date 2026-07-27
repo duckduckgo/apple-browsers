@@ -87,8 +87,8 @@ struct SubscriptionExternalLinkView: View {
     
     private func setUpAppearances() {
         let navAppearance = UINavigationBar.appearance()
-        navAppearance.backgroundColor = UIColor(designSystemColor: .surface)
-        navAppearance.barTintColor = UIColor(designSystemColor: .surface)
+        navAppearance.backgroundColor = UIColor(designSystemColor: .surfaceSecondary)
+        navAppearance.barTintColor = UIColor(designSystemColor: .surfaceSecondary)
         navAppearance.shadowImage = UIImage()
         navAppearance.tintColor = UIColor(designSystemColor: .textPrimary)
     }

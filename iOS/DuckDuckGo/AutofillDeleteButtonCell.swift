@@ -48,7 +48,7 @@ struct AutofillDeleteButtonCell: View {
             })
             .foregroundColor(Color.red)
         }
-        .listRowBackground(Color(designSystemColor: .surface))
+        .listRowBackground(Color(designSystemColor: .surfaceSecondary))
     }}
 
 #Preview {

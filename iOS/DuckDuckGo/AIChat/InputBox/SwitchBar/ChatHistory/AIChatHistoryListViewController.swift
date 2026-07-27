@@ -227,7 +227,7 @@ final class AIChatHistoryListViewController: UIViewController {
     }
 
     private func highlightBackgroundColor(isHighlighted: Bool) -> UIColor {
-        isHighlighted ? UIColor(designSystemColor: .accentPrimary) : UIColor(designSystemColor: .surface)
+        isHighlighted ? UIColor(designSystemColor: .accentPrimary) : UIColor(designSystemColor: .surfaceSecondary)
     }
 
     func setScrollableTitle(_ title: String?) {
@@ -366,7 +366,7 @@ final class AIChatHistoryListViewController: UIViewController {
         config.imageToTextPadding = Constants.iconTextSpacing
 
         cell.contentConfiguration = config
-        cell.backgroundColor = UIColor(designSystemColor: .surface)
+        cell.backgroundColor = UIColor(designSystemColor: .surfaceSecondary)
 
         configureDeleteActionIfNeeded(cell: cell, chat: chat)
     }
@@ -398,7 +398,7 @@ final class AIChatHistoryListViewController: UIViewController {
         config.imageToTextPadding = Constants.iconTextSpacing
 
         cell.contentConfiguration = config
-        cell.backgroundColor = UIColor(designSystemColor: .surface)
+        cell.backgroundColor = UIColor(designSystemColor: .surfaceSecondary)
 
         // The "View all chats" row never offers per-row deletion.
         if let cell = cell as? DuckAISuggestionTableViewCell {

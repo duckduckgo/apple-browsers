@@ -146,14 +146,14 @@ struct UnifiedFeedbackCategoryView<Category: FeedbackCategoryProviding, Destinat
                                 .foregroundColor(.init(designSystemColor: .textPrimary))
                         }
                         .tag(option.rawValue)
-                        .listRowBackground(Color(designSystemColor: .surface))
+                        .listRowBackground(Color(designSystemColor: .surfaceSecondary))
                     }
                 } header: {
                     Text(prompt)
                         .font(.caption)
                 }
             }
-            .listRowBackground(Color(designSystemColor: .surface))
+            .listRowBackground(Color(designSystemColor: .surfaceSecondary))
         }
         .applyInsetGroupedListStyle()
         .navigationTitle(title)

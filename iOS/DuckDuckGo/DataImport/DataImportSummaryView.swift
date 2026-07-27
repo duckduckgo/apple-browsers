@@ -368,7 +368,7 @@ struct DataImportSummaryView: View {
                     .foregroundStyle(Color(designSystemColor: .textSecondary))
             }
             .listRowBackground(
-                Color(designSystemColor: .surface)
+                Color(designSystemColor: .surfaceSecondary)
                     .background(GeometryReader { proxy -> Color in
                         DispatchQueue.main.async {
                             onFrameChange?(proxy.size.width)
@@ -415,7 +415,7 @@ struct DataImportSummaryView: View {
             .frame(maxWidth: .infinity)
             .background(
                 RoundedRectangle(cornerRadius: ContainerMetrics.cornerRadius)
-                    .fill(Color(designSystemColor: .surface))
+                    .fill(Color(designSystemColor: .surfaceSecondary))
             )
         }
 
@@ -459,7 +459,7 @@ struct DataImportSummaryView: View {
             .frame(maxWidth: .infinity)
             .background(
                 RoundedRectangle(cornerRadius: ContainerMetrics.cornerRadius)
-                    .fill(Color(designSystemColor: .surface))
+                    .fill(Color(designSystemColor: .surfaceSecondary))
             )
         }
 

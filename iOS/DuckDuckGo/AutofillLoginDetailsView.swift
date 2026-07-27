@@ -49,12 +49,12 @@ struct AutofillLoginDetailsView: View {
             switch viewModel.viewMode {
             case .edit:
                 editingContentView
-                    .listRowBackground(Color(designSystemColor: .surface))
+                    .listRowBackground(Color(designSystemColor: .surfaceSecondary))
             case .view:
                 viewingContentView
             case .new:
                 editingContentView
-                    .listRowBackground(Color(designSystemColor: .surface))
+                    .listRowBackground(Color(designSystemColor: .surfaceSecondary))
             }
         }
         .simultaneousGesture(

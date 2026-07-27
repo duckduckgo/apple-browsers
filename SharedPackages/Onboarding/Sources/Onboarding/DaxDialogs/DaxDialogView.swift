@@ -151,7 +151,7 @@ public struct DaxDialogView<Content: View>: View {
     @ViewBuilder
     private var wrappedContent: some View {
 #if os(iOS)
-        let backgroundColor = Color(designSystemColor: .surface)
+        let backgroundColor = Color(designSystemColor: .surfaceSecondary)
 #else
         let backgroundColor = Color(designSystemColor: .surfaceTertiary)
 #endif

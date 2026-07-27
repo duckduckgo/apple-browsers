@@ -58,7 +58,7 @@ struct YouTubeAdBlockPickerView: View {
         }
         .padding(.top, 24)
         .padding(.bottom, 8)
-        .background(Color(designSystemColor: .surface))
+        .background(Color(designSystemColor: .surfaceSecondary))
     }
 
     private var header: some View {

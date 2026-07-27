@@ -42,7 +42,7 @@ struct AutofillSettingsView: View {
                     }
                 }
             }
-            .listRowBackground(Color(designSystemColor: .surface))
+            .listRowBackground(Color(designSystemColor: .surfaceSecondary))
 
             if viewModel.showCreditCards {
                 Section(header: Text(UserText.autofillSettingsAskToSaveAndAutofill),
@@ -55,13 +55,13 @@ struct AutofillSettingsView: View {
                                       title: UserText.autofillCreditCardListTitle)
                     }
                 }
-                .listRowBackground(Color(designSystemColor: .surface))
+                .listRowBackground(Color(designSystemColor: .surfaceSecondary))
             } else {
                 Section(footer: PasswordFooterView(viewModel: viewModel)) {
                     ToggleRowView(toggleStatus: $viewModel.savePasswordsEnabled,
                                   title: UserText.autofillSettingsAskToSaveAndAutofill)
                 }
-                .listRowBackground(Color(designSystemColor: .surface))
+                .listRowBackground(Color(designSystemColor: .surfaceSecondary))
             }
             
             Section(header: Text(UserText.autofillSettingsImportPasswordsSectionHeader).foregroundColor(.secondary)) {
@@ -104,7 +104,7 @@ struct AutofillSettingsView: View {
                     }
                 }
             }
-            .listRowBackground(Color(designSystemColor: .surface))
+            .listRowBackground(Color(designSystemColor: .surfaceSecondary))
 
             if viewModel.showExtensionSettings || viewModel.shouldShowNeverPromptReset() {
                 Section(header: Text(UserText.autofillSettingsOptionsSectionHeader).foregroundColor(.secondary)) {
@@ -138,7 +138,7 @@ struct AutofillSettingsView: View {
                         }
                     }
                 }
-                .listRowBackground(Color(designSystemColor: .surface))
+                .listRowBackground(Color(designSystemColor: .surfaceSecondary))
             }
 
         }

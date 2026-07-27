@@ -40,7 +40,7 @@ struct DuckAIFeedbackOptionsView: View {
                           image: Self.criticalIcon,
                           sentiment: .critical)
             }
-            .listRowBackground(Color(designSystemColor: .surface))
+            .listRowBackground(Color(designSystemColor: .surfaceSecondary))
         }
         .listStyle(.insetGrouped)
         .hideScrollContentBackground()

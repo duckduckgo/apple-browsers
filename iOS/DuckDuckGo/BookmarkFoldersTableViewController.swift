@@ -141,7 +141,7 @@ class BookmarkFoldersViewController: UITableViewController {
 
     override func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
         
-        cell.backgroundColor = UIColor(designSystemColor: .surface)
+        cell.backgroundColor = UIColor(designSystemColor: .surfaceSecondary)
     }
 
     func folderSelectorCell(_ tableView: UITableView, forIndexPath indexPath: IndexPath) -> UITableViewCell {
@@ -287,7 +287,7 @@ class FavoriteCell: UITableViewCell {
 
     override func awakeFromNib() {
         super.awakeFromNib()
-        backgroundColor = UIColor(designSystemColor: .surface)
+        backgroundColor = UIColor(designSystemColor: .surfaceSecondary)
         iconImageView.image = DesignSystemImages.Color.Size24.favorite
         iconImageView.tintColor = UIColor(designSystemColor: .iconsPrimary)
         label.textColor = UIColor(designSystemColor: .textPrimary)
@@ -301,7 +301,7 @@ class BookmarksDeleteButtonCell: UITableViewCell {
 
     override func awakeFromNib() {
         super.awakeFromNib()
-        backgroundColor = UIColor(designSystemColor: .surface)
+        backgroundColor = UIColor(designSystemColor: .surfaceSecondary)
         deleteButton.textColor = UIColor(designSystemColor: .buttonsDeleteGhostText)
     }
 }
@@ -314,7 +314,7 @@ class AddFolderCell: UITableViewCell {
 
     override func awakeFromNib() {
         super.awakeFromNib()
-        backgroundColor = UIColor(designSystemColor: .surface)
+        backgroundColor = UIColor(designSystemColor: .surfaceSecondary)
         iconImageView.image = DesignSystemImages.Glyphs.Size24.folderAdd
         iconImageView.tintColor = UIColor(designSystemColor: .iconsPrimary)
         label.textColor = UIColor(designSystemColor: .textPrimary)

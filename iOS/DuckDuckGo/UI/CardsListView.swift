@@ -220,7 +220,7 @@ extension RemoteMessagingUI {
             }
             .padding(.vertical, Metrics.Card.TwoLines.contentVerticalPadding)
             .padding(.horizontal, Metrics.Card.TwoLines.contentHorizontalPadding)
-            .background(Color(designSystemColor: .surface))
+            .background(Color(designSystemColor: .surfaceSecondary))
             .cornerRadius(Metrics.Card.contentCornerRadius)
             .overlay {
                 RoundedRectangle(cornerRadius: Metrics.Card.contentCornerRadius)
@@ -267,7 +267,7 @@ extension RemoteMessagingUI {
             .frame(maxWidth: .infinity, alignment: .center)
             .padding(.vertical, Metrics.Card.FeaturedTwoLines.contentVerticalPadding)
             .padding(.horizontal, Metrics.Card.FeaturedTwoLines.contentHorizontalSpacing)
-            .background(Color(designSystemColor: .surface))
+            .background(Color(designSystemColor: .surfaceSecondary))
             .cornerRadius(Metrics.Card.contentCornerRadius)
             .overlay {
                 RoundedRectangle(cornerRadius: Metrics.Card.contentCornerRadius)

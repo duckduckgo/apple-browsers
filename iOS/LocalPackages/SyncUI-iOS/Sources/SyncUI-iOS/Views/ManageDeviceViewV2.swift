@@ -118,7 +118,7 @@ struct ManageDeviceViewV2: View {
                 }
                 .accessibility(identifier: "deviceName")
         }
-        .listRowBackground(Color(designSystemColor: .surface))
+        .listRowBackground(Color(designSystemColor: .surfaceSecondary))
     }
 
     private var syncToggleSection: some View {
@@ -134,7 +134,7 @@ struct ManageDeviceViewV2: View {
         } footer: {
             Text(UserText.simplifiedManageDeviceTurnOffFooter)
         }
-        .listRowBackground(Color(designSystemColor: .surface))
+        .listRowBackground(Color(designSystemColor: .surfaceSecondary))
     }
 
     private var syncToggleBinding: Binding<Bool> {
@@ -169,7 +169,7 @@ struct ManageDeviceViewV2: View {
         } footer: {
             Text(UserText.simplifiedManageDeviceRemoveFooter)
         }
-        .listRowBackground(Color(designSystemColor: .surface))
+        .listRowBackground(Color(designSystemColor: .surfaceSecondary))
         .alert(UserText.removeDeviceTitle, isPresented: $isShowingRemoveConfirmation) {
             Button(UserText.cancelButton, role: .cancel) {}
             Button(UserText.removeDeviceButton, role: .destructive) {

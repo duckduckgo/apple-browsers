@@ -116,7 +116,7 @@ public struct PlatformLinksView: View {
         .padding(.vertical, 24)
         .background(
             RoundedRectangle(cornerRadius: ContainerMetrics.cornerRadius)
-                .fill(Color(designSystemColor: .surface))
+                .fill(Color(designSystemColor: .surfaceSecondary))
         )
         .onAppear {
             model.fireOtherPlatformLinksPixel(for: .appear, source: source)

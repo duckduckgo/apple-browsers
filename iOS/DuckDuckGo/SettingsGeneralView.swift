@@ -153,7 +153,7 @@ struct SettingsGeneralView: View {
                     SettingsCellView(label: UserText.settingsAutoplayLabel,
                                      accessory: .rightDetail(viewModel.state.autoplayBlockingMode.description))
                 }
-                .listRowBackground(Color(designSystemColor: .surface))
+                .listRowBackground(Color(designSystemColor: .surfaceSecondary))
             }
 
         }

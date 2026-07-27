@@ -54,7 +54,7 @@ final class SubscriptionPromoPresenter: NSObject, SubscriptionPromoPresenting {
         )
 
         hostingController.rootView = AnyView(rootView)
-        hostingController.view.backgroundColor = UIColor(designSystemColor: .surface)
+        hostingController.view.backgroundColor = UIColor(designSystemColor: .surfaceSecondary)
         hostingController.modalPresentationStyle = .pageSheet
         hostingController.modalTransitionStyle = .coverVertical
 

@@ -69,7 +69,7 @@ struct SiriBubbleView: View {
             .padding(.bottom, SiriBubble.tipHeight)
             .frame(maxWidth: .infinity)
             .background(SiriBubble()
-                .fill(Color(designSystemColor: .surface))
+                .fill(Color(designSystemColor: .surfaceSecondary))
                 .shadow(color: .black.opacity(0.08), radius: 8, x: 0, y: 8)
                 .shadow(color: .black.opacity(0.1), radius: 3, x: 0, y: 2))
     }

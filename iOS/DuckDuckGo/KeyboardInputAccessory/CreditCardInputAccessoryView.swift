@@ -69,7 +69,7 @@ class CreditCardInputAccessoryView: UIView {
 
     private let containerView: UIView = {
         let view = UIView()
-        view.backgroundColor = UIColor(designSystemColor: .surface)
+        view.backgroundColor = UIColor(designSystemColor: .surfaceSecondary)
         return view
     }()
     
@@ -87,7 +87,7 @@ class CreditCardInputAccessoryView: UIView {
 
     private let gradientColorDark: UIColor = {
         let darkTraitCollection = UITraitCollection(userInterfaceStyle: .dark)
-        return UIColor(designSystemColor: .surface).resolvedColor(with: darkTraitCollection)
+        return UIColor(designSystemColor: .surfaceSecondary).resolvedColor(with: darkTraitCollection)
     }()
 
     private let gradientView: UIView = {

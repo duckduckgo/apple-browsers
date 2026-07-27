@@ -153,7 +153,7 @@ final class NetworkProtectionLogContentViewController: UIViewController {
         
         textView = UITextView()
         textView.translatesAutoresizingMaskIntoConstraints = false
-        textView.backgroundColor = UIColor(designSystemColor: .surface)
+        textView.backgroundColor = UIColor(designSystemColor: .surfaceSecondary)
         textView.textColor = UIColor(designSystemColor: .textPrimary)
         textView.font = .monospacedSystemFont(ofSize: 10, weight: .regular)
         textView.isEditable = false

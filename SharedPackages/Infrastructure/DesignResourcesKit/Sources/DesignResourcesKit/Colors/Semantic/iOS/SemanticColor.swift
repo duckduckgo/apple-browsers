@@ -28,7 +28,6 @@ public enum DesignSystemColor: CaseIterable {
     case backgroundPromptMessage
 
     // Surfaces
-    case surface // T-surface/secondary
     case surfaceSecondary
     case surfaceTertiary
     case surfaceCanvas

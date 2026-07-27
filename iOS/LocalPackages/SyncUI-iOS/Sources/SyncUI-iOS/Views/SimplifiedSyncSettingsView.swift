@@ -220,7 +220,7 @@ extension SimplifiedSyncSettingsView {
             .animation(.easeInOut(duration: 0.3), value: model.isBusy)
             .disabled(model.isBusy || (!model.isSyncEnabled && !model.isAccountCreationAvailable))
         }
-        .listRowBackground(Color(designSystemColor: .surface))
+        .listRowBackground(Color(designSystemColor: .surfaceSecondary))
     }
 
     @ViewBuilder
@@ -260,7 +260,7 @@ extension SimplifiedSyncSettingsView {
         } header: {
             Text(UserText.simplifiedAlreadySetUpSectionHeader)
         }
-        .listRowBackground(Color(designSystemColor: .surface))
+        .listRowBackground(Color(designSystemColor: .surfaceSecondary))
     }
 
     @ViewBuilder
@@ -282,7 +282,7 @@ extension SimplifiedSyncSettingsView {
             }
             .buttonStyle(.plain)
         }
-        .listRowBackground(Color(designSystemColor: .surface))
+        .listRowBackground(Color(designSystemColor: .surfaceSecondary))
     }
 }
 
@@ -424,7 +424,7 @@ extension SimplifiedSyncSettingsView {
                 model.delegate?.refreshDevices(clearDevices: false)
             }
         }
-        .listRowBackground(Color(designSystemColor: .surface))
+        .listRowBackground(Color(designSystemColor: .surfaceSecondary))
     }
 
     @ViewBuilder
@@ -506,7 +506,7 @@ extension SimplifiedSyncSettingsView {
         .onAppear {
             model.delegate?.updateOptions()
         }
-        .listRowBackground(Color(designSystemColor: .surface))
+        .listRowBackground(Color(designSystemColor: .surfaceSecondary))
     }
 
     // MARK: Recovery
@@ -548,7 +548,7 @@ extension SimplifiedSyncSettingsView {
             Text(LocalizedStringKey(String(format: UserText.simplifiedRecoverySectionFooterFormat, "ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting#does-my-sync--backup-data-ever-expire")))
                 .tint(Color(designSystemColor: .accentPrimary))
         }
-        .listRowBackground(Color(designSystemColor: .surface))
+        .listRowBackground(Color(designSystemColor: .surfaceSecondary))
     }
 
     // MARK: Delete
@@ -562,6 +562,6 @@ extension SimplifiedSyncSettingsView {
                 Text(UserText.simplifiedDeleteSyncDataButton)
             }
         }
-        .listRowBackground(Color(designSystemColor: .surface))
+        .listRowBackground(Color(designSystemColor: .surfaceSecondary))
     }
 }

@@ -46,7 +46,7 @@ struct WinBackOfferLaunchView: View {
                 .padding(.horizontal, horizontalPadding)
                 .padding(.vertical, Metrics.Footer.verticalPadding)
         }
-        .background(Color(designSystemColor: .surface))
+        .background(Color(designSystemColor: .surfaceSecondary))
     }
 }
 

@@ -59,7 +59,7 @@ class AutofillExtensionPromptViewController: UIViewController {
         presentationController?.delegate = self
         installChildViewController(controller)
 
-        self.view.backgroundColor = UIColor(designSystemColor: .surface)
+        self.view.backgroundColor = UIColor(designSystemColor: .surfaceSecondary)
     }
 }
 

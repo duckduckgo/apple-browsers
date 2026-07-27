@@ -35,9 +35,9 @@ struct PrivateSearchView: View {
     var body: some View {
         List {
             SettingsDescriptionView(content: description)
-                .listRowBackground(Color(designSystemColor: .surface))
+                .listRowBackground(Color(designSystemColor: .surfaceSecondary))
             PrivateSearchViewSettings()
-                .listRowBackground(Color(designSystemColor: .surface))
+                .listRowBackground(Color(designSystemColor: .surfaceSecondary))
         }
         .applySettingsListModifiers(title: UserText.privateSearch,
                                     displayMode: .inline,
@@ -74,7 +74,7 @@ struct PrivateSearchViewSettings: View {
                 SettingsCellView(label: UserText.moreSearchSettings,
                                  subtitle: UserText.moreSearchSettingsExplanation)
             }
-            .listRowBackground(Color(designSystemColor: .surface))
+            .listRowBackground(Color(designSystemColor: .surfaceSecondary))
         }
     }
 }

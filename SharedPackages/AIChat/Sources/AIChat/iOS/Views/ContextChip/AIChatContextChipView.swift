@@ -82,7 +82,7 @@ public final class AIChatContextChipView: UIView {
         let imageView = UIImageView()
         imageView.contentMode = .scaleAspectFit
         imageView.tintColor = UIColor(designSystemColor: .textSecondary)
-        imageView.backgroundColor = UIColor(designSystemColor: .surface)
+        imageView.backgroundColor = UIColor(designSystemColor: .surfaceSecondary)
         imageView.layer.cornerRadius = Constants.faviconCornerRadius
         imageView.layer.masksToBounds = true
         imageView.translatesAutoresizingMaskIntoConstraints = false

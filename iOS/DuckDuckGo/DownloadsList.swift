@@ -214,5 +214,5 @@ private extension Color {
     static let emptyState = Color(baseColor: .gray60)
     static let deleteAll = Color(designSystemColor: .buttonsDeleteGhostText)
     static let background = Color(designSystemColor: .surfacePrimary)
-    static let rowBackground = Color(designSystemColor: .surface)
+    static let rowBackground = Color(designSystemColor: .surfaceSecondary)
 }

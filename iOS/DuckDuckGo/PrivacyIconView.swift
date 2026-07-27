@@ -131,7 +131,7 @@ class PrivacyIconView: UIView {
 
         transitionPlaceholderView = UIView()
         transitionPlaceholderView.translatesAutoresizingMaskIntoConstraints = false
-        transitionPlaceholderView.backgroundColor = UIColor(designSystemColor: .surface)
+        transitionPlaceholderView.backgroundColor = UIColor(designSystemColor: .surfaceSecondary)
         transitionPlaceholderView.layer.cornerRadius = 12
         transitionPlaceholderView.isHidden = true
         addSubview(transitionPlaceholderView)

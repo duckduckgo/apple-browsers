@@ -28,9 +28,9 @@ extension Theme {
     var mainViewBackgroundColor: UIColor { UIColor(designSystemColor: .surfacePrimary) }
     var barBackgroundColor: UIColor { UIColor(designSystemColor: .surfacePrimary) }
     var barTintColor: UIColor { UIColor(designSystemColor: .iconsPrimary) }
-    var browsingMenuBackgroundColor: UIColor { UIColor(designSystemColor: .surface) }
-    var tableCellBackgroundColor: UIColor { UIColor(designSystemColor: .surface) }
-    var tabSwitcherCellBackgroundColor: UIColor { UIColor(designSystemColor: .surface) }
+    var browsingMenuBackgroundColor: UIColor { UIColor(designSystemColor: .surfaceSecondary) }
+    var tableCellBackgroundColor: UIColor { UIColor(designSystemColor: .surfaceSecondary) }
+    var tabSwitcherCellBackgroundColor: UIColor { UIColor(designSystemColor: .surfaceSecondary) }
     var searchBarTextPlaceholderColor: UIColor { UIColor(designSystemColor: .textSecondary) }
     
     // New:
@@ -50,14 +50,14 @@ extension Theme {
     var browsingMenuIconsColor: UIColor { UIColor(designSystemColor: .textPrimary) }
     var browsingMenuSeparatorColor: UIColor { UIColor(designSystemColor: .lines) }
     
-    var feedbackSentimentButtonBackgroundColor: UIColor { UIColor(designSystemColor: .surface) }
+    var feedbackSentimentButtonBackgroundColor: UIColor { UIColor(designSystemColor: .surfaceSecondary) }
     
     var aboutScreenButtonColor: UIColor { UIColor(designSystemColor: .accentPrimary) }
 
     var tabSwitcherCellTextColor: UIColor { UIColor(designSystemColor: .textPrimary) }
     
     var textFieldFontColor: UIColor { UIColor(designSystemColor: .textPrimary) }
-    var textFieldBackgroundColor: UIColor { UIColor(designSystemColor: .surface) }
+    var textFieldBackgroundColor: UIColor { UIColor(designSystemColor: .surfaceSecondary) }
     
     var buttonTintColor: UIColor { UIColor(designSystemColor: .accentPrimary) }
     
@@ -67,7 +67,7 @@ extension Theme {
     var progressBarGradientDarkColor: UIColor { UIColor(designSystemColor: .accentPrimary) }
     var progressBarGradientLightColor: UIColor { UIColor(designSystemColor: .accentPrimary) }
     
-    var daxDialogBackgroundColor: UIColor { UIColor(designSystemColor: .surface) }
+    var daxDialogBackgroundColor: UIColor { UIColor(designSystemColor: .surfaceSecondary) }
     var daxDialogTextColor: UIColor { UIColor(designSystemColor: .textPrimary) }
     
     var placeholderColor: UIColor { UIColor(designSystemColor: .textSecondary) }
@@ -76,7 +76,7 @@ extension Theme {
     var navigationBarTitleColor: UIColor { UIColor(designSystemColor: .textPrimary) }
     var tableHeaderTextColor: UIColor { UIColor(designSystemColor: .textSecondary) }
     
-    var faviconBackgroundColor: UIColor { UIColor(designSystemColor: .surface) }
+    var faviconBackgroundColor: UIColor { UIColor(designSystemColor: .surfaceSecondary) }
     
     var favoriteTextColor: UIColor { UIColor(designSystemColor: .textSecondary) }
     var aboutScreenTextColor: UIColor { UIColor(designSystemColor: .textPrimary) }
@@ -89,7 +89,7 @@ extension Theme {
     // No design system colour yet, so fall back to SDK colours
     var tableCellAccessoryTextColor: UIColor { .secondaryLabel }
     
-    var onboardingBackgroundColor: UIColor { UIColor(designSystemColor: .surface) }
+    var onboardingBackgroundColor: UIColor { UIColor(designSystemColor: .surfaceSecondary) }
     var onboardingHeaderColor: UIColor { UIColor(designSystemColor: .textPrimary) }
     var onboardingSubheaderColor: UIColor { UIColor(designSystemColor: .textSecondary) }
     

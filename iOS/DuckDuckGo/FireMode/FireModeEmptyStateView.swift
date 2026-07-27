@@ -108,7 +108,7 @@ struct FireModeEmptyStateView: View {
             newFireTabButton
         }
         .padding(Constants.cardPadding)
-        .background(Color(designSystemColor: .surface))
+        .background(Color(designSystemColor: .surfaceSecondary))
         .clipShape(RoundedRectangle(cornerRadius: ContainerMetrics.cornerRadius))
     }
 

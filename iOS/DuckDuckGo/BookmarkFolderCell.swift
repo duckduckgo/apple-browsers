@@ -34,7 +34,7 @@ class BookmarkFolderCell: UITableViewCell {
 
     override func awakeFromNib() {
         super.awakeFromNib()
-        backgroundColor = UIColor(designSystemColor: .surface)
+        backgroundColor = UIColor(designSystemColor: .surfaceSecondary)
         folderImageView.tintColor = UIColor(designSystemColor: .iconsPrimary)
         title.textColor = UIColor(designSystemColor: .textPrimary)
     }

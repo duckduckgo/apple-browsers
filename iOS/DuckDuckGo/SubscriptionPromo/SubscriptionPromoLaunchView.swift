@@ -47,7 +47,7 @@ struct SubscriptionPromoLaunchView: View {
                 .padding(.horizontal, horizontalPadding)
                 .padding(.vertical, Metrics.Footer.verticalPadding)
         }
-        .background(Color(designSystemColor: .surface))
+        .background(Color(designSystemColor: .surfaceSecondary))
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("subscriptionPromoSheet")
     }

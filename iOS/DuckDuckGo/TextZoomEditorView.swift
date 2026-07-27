@@ -84,7 +84,7 @@ struct TextZoomEditorView: View {
             .padding(.trailing, 8)
         }
         .background(RoundedRectangle(cornerRadius: 8)
-            .foregroundColor(Color(designSystemColor: .surface)))
+            .foregroundColor(Color(designSystemColor: .surfaceSecondary)))
         .frame(height: 64)
         .padding(.horizontal, 16)
 

@@ -66,7 +66,7 @@ struct DefaultBrowserPromptInactiveUserView: View {
             Footer(setDefaultBrowserAction: setAsDefaultAction, continueBrowsing: closeAction)
         }
         .padding(Metrics.Content.innerPadding)
-        .background(Color(designSystemColor: .surface))
+        .background(Color(designSystemColor: .surfaceSecondary))
         .frame(maxWidth: Metrics.Content.maxWidth, alignment: .bottom)
         .cornerRadius(Metrics.Content.cornerRadius)
         .padding(.horizontal, Metrics.Content.outerHorizontalPadding)

@@ -337,7 +337,7 @@ private struct CardItemSparseSamples: View {
 
                 CardItem(title: CardItemText("Title only", font: .headline))
             }
-            .background(Color(designSystemColor: .surface))
+            .background(Color(designSystemColor: .surfaceSecondary))
 
             Group {
                 CardItem(text: CardItemText("Body text only — no icon, no title.", font: .footnoteRegular))
@@ -352,7 +352,7 @@ private struct CardItemSparseSamples: View {
 
                 CardItem()
             }
-            .background(Color(designSystemColor: .surface))
+            .background(Color(designSystemColor: .surfaceSecondary))
         }
         .padding()
     }

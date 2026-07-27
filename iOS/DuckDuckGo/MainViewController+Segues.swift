@@ -568,7 +568,7 @@ extension MainViewController {
                 navController.navigationBar.tintColor = UIColor(designSystemColor: .textPrimary)
                 settingsController.modalPresentationStyle = UIModalPresentationStyle.automatic
                 // Opaque nav bar and matching view background so sheet top gap (if any) is visually continuous with the bar
-                let surfaceColor = UIColor(designSystemColor: .surface)
+                let surfaceColor = UIColor(designSystemColor: .surfaceSecondary)
                 navController.view.backgroundColor = surfaceColor
                 navController.navigationBar.isTranslucent = false
                 navController.navigationBar.barTintColor = surfaceColor
@@ -722,7 +722,7 @@ final class DataBrokerProtectionSubscriptionFlowNavigationController: UINavigati
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        let surfaceColor = UIColor(designSystemColor: .surface)
+        let surfaceColor = UIColor(designSystemColor: .surfaceSecondary)
         view.backgroundColor = surfaceColor
         navigationBar.tintColor = UIColor(designSystemColor: .textPrimary)
         navigationBar.isTranslucent = false

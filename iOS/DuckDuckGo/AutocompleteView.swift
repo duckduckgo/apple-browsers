@@ -148,7 +148,7 @@ private struct SuggestionsSection: View {
 
     let selectedColor = Color(designSystemColor: .accentPrimary)
 
-    let unselectedColor = Color(designSystemColor: .surface)
+    let unselectedColor = Color(designSystemColor: .surfaceSecondary)
 
     private struct Metrics {
         // Horizontal insets stay on the row to keep the separator's leading inset. Vertical insets

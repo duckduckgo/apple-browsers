@@ -46,7 +46,7 @@ class EmailAddressPromptViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        self.view.backgroundColor = UIColor(designSystemColor: .surface)
+        self.view.backgroundColor = UIColor(designSystemColor: .surfaceSecondary)
 
         setupEmailAddressPromptView()
 

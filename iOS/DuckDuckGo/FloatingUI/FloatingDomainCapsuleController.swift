@@ -222,7 +222,7 @@ final class FloatingDomainCapsuleController {
             backgroundView.effect = UIGlassEffect(style: .regular)
         } else {
             backgroundView.effect = UIBlurEffect(style: .systemThinMaterial)
-            backgroundView.contentView.backgroundColor = UIColor(designSystemColor: .surface).withAlphaComponent(0.2)
+            backgroundView.contentView.backgroundColor = UIColor(designSystemColor: .surfaceSecondary).withAlphaComponent(0.2)
         }
     }
 

@@ -45,7 +45,7 @@ struct ImportSourceDetailView: View {
                     .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
                     .listRowSeparator(.hidden)
             }
-            .listRowBackground(Color(designSystemColor: .surface))
+            .listRowBackground(Color(designSystemColor: .surfaceSecondary))
 
             if let bottomSection = source.bottomSection {
                 Section {
@@ -53,7 +53,7 @@ struct ImportSourceDetailView: View {
                 } header: {
                     Text(UserText.importDetailDoneExportingHeader)
                 }
-                .listRowBackground(Color(designSystemColor: .surface))
+                .listRowBackground(Color(designSystemColor: .surfaceSecondary))
             }
         }
         .applyInsetGroupedListStyle()

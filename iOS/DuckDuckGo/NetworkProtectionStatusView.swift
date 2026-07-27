@@ -139,7 +139,7 @@ struct NetworkProtectionStatusView: View {
             header()
         }
         .increaseHeaderProminence()
-        .listRowBackground(Color(designSystemColor: .surface))
+        .listRowBackground(Color(designSystemColor: .surfaceSecondary))
 
         Section {
             if #available(iOS 18.0, *) {
@@ -154,7 +154,7 @@ struct NetworkProtectionStatusView: View {
                     .padding(.horizontal, 3)
             }
         }
-        .listRowBackground(Color(designSystemColor: .surface))
+        .listRowBackground(Color(designSystemColor: .surfaceSecondary))
     }
 
     @ViewBuilder
@@ -254,7 +254,7 @@ struct NetworkProtectionStatusView: View {
             Text(statusModel.isNetPEnabled ? UserText.vpnLocationConnected : UserText.vpnLocationSelected)
                 .foregroundColor(.init(designSystemColor: .textSecondary))
         }
-        .listRowBackground(Color(designSystemColor: .surface))
+        .listRowBackground(Color(designSystemColor: .surfaceSecondary))
 
         Section {
             if #available(iOS 18.0, *) {
@@ -263,7 +263,7 @@ struct NetworkProtectionStatusView: View {
                     .padding(.horizontal, 3)
             }
         }
-        .listRowBackground(Color(designSystemColor: .surface))
+        .listRowBackground(Color(designSystemColor: .surfaceSecondary))
     }
 
     @ViewBuilder
@@ -318,7 +318,7 @@ struct NetworkProtectionStatusView: View {
         } header: {
             Text(UserText.netPStatusViewConnectionDetails).foregroundColor(.init(designSystemColor: .textSecondary))
         }
-        .listRowBackground(Color(designSystemColor: .surface))
+        .listRowBackground(Color(designSystemColor: .surfaceSecondary))
     }
 
     @ViewBuilder
@@ -335,7 +335,7 @@ struct NetworkProtectionStatusView: View {
         } header: {
             Text(UserText.netPStatusViewSettingsSectionTitle).foregroundColor(.init(designSystemColor: .textSecondary))
         }
-        .listRowBackground(Color(designSystemColor: .surface))
+        .listRowBackground(Color(designSystemColor: .surfaceSecondary))
     }
 
     @ViewBuilder
@@ -363,7 +363,7 @@ struct NetworkProtectionStatusView: View {
         } header: {
             Text(UserText.vpnAbout).foregroundColor(.init(designSystemColor: .textSecondary))
         }
-        .listRowBackground(Color(designSystemColor: .surface))
+        .listRowBackground(Color(designSystemColor: .surfaceSecondary))
     }
 
     @ViewBuilder
@@ -490,7 +490,7 @@ struct NetworkProtectionStatusView: View {
         TipView(tipsModel.geoswitchingTip)
             .removeGroupedListStyleInsets()
             .tipCornerRadius(0)
-            .tipBackground(Color(designSystemColor: .surface))
+            .tipBackground(Color(designSystemColor: .surfaceSecondary))
             .onAppear {
                 tipsModel.handleGeoswitchingTipShown()
             }
@@ -517,7 +517,7 @@ struct NetworkProtectionStatusView: View {
             TipView(tipsModel.snoozeTip, action: statusModel.snoozeActionHandler(action:))
                 .removeGroupedListStyleInsets()
                 .tipCornerRadius(0)
-                .tipBackground(Color(designSystemColor: .surface))
+                .tipBackground(Color(designSystemColor: .surfaceSecondary))
                 .tint(Color.init(designSystemColor: .accentPrimary))
                 .onAppear {
                     tipsModel.handleSnoozeTipShown()
@@ -546,7 +546,7 @@ struct NetworkProtectionStatusView: View {
             TipView(tipsModel.widgetTip, action: statusModel.widgetActionHandler(action:))
                 .removeGroupedListStyleInsets()
                 .tipCornerRadius(0)
-                .tipBackground(Color(designSystemColor: .surface))
+                .tipBackground(Color(designSystemColor: .surfaceSecondary))
                 .tint(Color.init(designSystemColor: .accentPrimary))
                 .onAppear {
                     tipsModel.handleWidgetTipShown()
@@ -606,7 +606,7 @@ private struct NetworkProtectionErrorView: View {
                     .foregroundColor(.primary)
             }
         }
-        .listRowBackground(Color(designSystemColor: .surface))
+        .listRowBackground(Color(designSystemColor: .surfaceSecondary))
     }
 }
 
@@ -623,7 +623,7 @@ private struct NetworkProtectionLocationItemView: View {
             Text(title)
                 .daxBodyRegular()
         }
-        .listRowBackground(Color(designSystemColor: .surface))
+        .listRowBackground(Color(designSystemColor: .surfaceSecondary))
     }
 }
 
@@ -641,7 +641,7 @@ private struct NetworkProtectionConnectionDetailView: View {
                 .daxBodyRegular()
                 .foregroundColor(.init(designSystemColor: .textSecondary))
         }
-        .listRowBackground(Color(designSystemColor: .surface))
+        .listRowBackground(Color(designSystemColor: .surfaceSecondary))
     }
 }
 
@@ -671,7 +671,7 @@ private struct NetworkProtectionThroughputItemView: View {
                 .daxBodyRegular()
                 .foregroundColor(.init(designSystemColor: .textSecondary))
         }
-        .listRowBackground(Color(designSystemColor: .surface))
+        .listRowBackground(Color(designSystemColor: .surfaceSecondary))
     }
 }
 

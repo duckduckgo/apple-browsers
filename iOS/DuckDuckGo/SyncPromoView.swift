@@ -81,7 +81,7 @@ struct SyncPromoView: View {
         }
         .background(
             RoundedRectangle(cornerRadius: ContainerMetrics.cornerRadius)
-                .foregroundColor(Color(designSystemColor: .surface))
+                .foregroundColor(Color(designSystemColor: .surfaceSecondary))
         )
         .padding(.horizontal, 20)
         .padding(.bottom, 12)

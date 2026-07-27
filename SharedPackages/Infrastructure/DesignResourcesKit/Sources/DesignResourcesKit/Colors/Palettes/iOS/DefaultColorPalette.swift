@@ -57,7 +57,6 @@ struct DefaultColorPalette: ColorPaletteDefinition {
     private static let urlBar = DynamicColor(lightColor: .white, darkColor: x474747)
 
     // Surfaces
-    private static let surface = DynamicColor(lightColor: xF9F9F9, darkColor: x373737)
     private static let surfaceSecondary = DynamicColor(lightColor: xF9F9F9, darkColor: x373737)
     private static let surfaceTertiary = DynamicColor(lightColor: .white, darkColor: x474747)
     private static let surfaceCanvas = DynamicColor(lightColor: xFAFAFA, darkColor: x1C1C1C)
@@ -225,8 +224,6 @@ struct DefaultColorPalette: ColorPaletteDefinition {
         case .highlightPrimary: return highlightPrimary
         case .accentContentPrimary: return accentContentPrimary
         case .accentTertiary: return accentTertiary
-
-        case .surface: return surface
         case .surfaceSecondary: return surfaceSecondary
         case .surfaceTertiary: return surfaceTertiary
         case .surfaceCanvas: return surfaceCanvas
@@ -320,9 +317,9 @@ struct DefaultColorPalette: ColorPaletteDefinition {
         case .controlWidgetBackground:
             return DynamicColor(staticColor: .x818387)
         case .unifiedFeedbackFieldBackground:
-            return DynamicColor(lightColor: surface.lightColor, darkColor: .x1C1C1E)
+            return DynamicColor(lightColor: surfaceSecondary.lightColor, darkColor: .x1C1C1E)
         case .privacyDashboardBackground:
-            return DynamicColor(lightColor: surface.lightColor, darkColor: surfacePrimary.darkColor)
+            return DynamicColor(lightColor: surfaceSecondary.lightColor, darkColor: surfacePrimary.darkColor)
         case .inputContentSeparator:
             return DynamicColor(lightColor: shadowTertiary.lightColor, darkColor: highlightPrimary.darkColor)
         case .whatsNewBackground:

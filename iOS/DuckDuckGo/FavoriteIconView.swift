@@ -59,7 +59,7 @@ struct FavoriteIconView: View {
     }
 
     private func bgFillColor() -> Color {
-        favicon.isFake ? Color(UIColor.forDomain(favorite.domain)) :  Color(designSystemColor: .surface)
+        favicon.isFake ? Color(UIColor.forDomain(favorite.domain)) :  Color(designSystemColor: .surfaceSecondary)
     }
 
     static func itemShape() -> RoundedRectangle {

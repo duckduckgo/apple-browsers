@@ -215,7 +215,7 @@ final class JSAlertView: UIView {
 
     private func decorate() {
         self.titleLabel.textColor = UIColor(designSystemColor: .textPrimary)
-        self.textField.backgroundColor = UIColor(designSystemColor: .surface)
+        self.textField.backgroundColor = UIColor(designSystemColor: .surfaceSecondary)
         self.messageLabel.textColor = UIColor(designSystemColor: .textPrimary)
         self.alertView.backgroundColor = UIColor(designSystemColor: .surfacePrimary)
         self.separatorViews.forEach { $0.backgroundColor = UIColor(designSystemColor: .lines) }

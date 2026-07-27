@@ -888,7 +888,7 @@ final class AutofillLoginListViewController: UIViewController {
         let cell = tableView.dequeueCell(ofType: AutofillListItemTableViewCell.self, for: indexPath)
         cell.item = item
         cell.accessoryType = .disclosureIndicator
-        cell.backgroundColor = UIColor(designSystemColor: .surface)
+        cell.backgroundColor = UIColor(designSystemColor: .surfaceSecondary)
         return cell
     }
 
@@ -905,7 +905,7 @@ final class AutofillLoginListViewController: UIViewController {
             Pixel.fire(pixel: .autofillLoginsReportConfirmationPromptDisplayed)
         })
         cell.embed(in: self, withView: contentView)
-        cell.backgroundColor = UIColor(designSystemColor: .surface)
+        cell.backgroundColor = UIColor(designSystemColor: .surfaceSecondary)
         cell.selectionStyle = .none
         return cell
     }

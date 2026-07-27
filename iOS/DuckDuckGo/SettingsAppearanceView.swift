@@ -162,7 +162,7 @@ struct SettingsAppearanceView: View {
             }
 
         }
-        .listRowBackground(Color(designSystemColor: .surface))
+        .listRowBackground(Color(designSystemColor: .surfaceSecondary))
 
     }
 
@@ -182,7 +182,7 @@ struct SettingsAppearanceView: View {
                 SettingsCellView(label: UserText.mobileCustomizationToolbarTitle, accessory: .rightDetail(UserText.mobileCustomizationNoneOptionShort))
             }
         }
-        .listRowBackground(Color(designSystemColor: .surface))
+        .listRowBackground(Color(designSystemColor: .surfaceSecondary))
 
     }
 

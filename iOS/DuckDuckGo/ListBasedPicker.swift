@@ -70,7 +70,7 @@ struct ListBasedPicker<T: Hashable, Footer: View>: View {
                                 .opacity(selectedOption == option ? 1 : 0)
                         }
                     }
-                    .listRowBackground(Color(designSystemColor: .surface))
+                    .listRowBackground(Color(designSystemColor: .surfaceSecondary))
                 }
             } header: {
                 if let sectionHeader {

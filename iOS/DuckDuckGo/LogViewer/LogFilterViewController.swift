@@ -193,7 +193,7 @@ extension LogFilterViewController: UITableViewDataSource {
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = UITableViewCell(style: .value1, reuseIdentifier: nil)
-        cell.backgroundColor = UIColor(designSystemColor: .surface)
+        cell.backgroundColor = UIColor(designSystemColor: .surfaceSecondary)
         cell.textLabel?.textColor = UIColor(designSystemColor: .textPrimary)
         cell.detailTextLabel?.textColor = UIColor(designSystemColor: .textSecondary)
         

@@ -109,7 +109,7 @@ struct SuggestionsListView: View {
     private func rowBackground(for row: SuggestionRow) -> Color {
         row.id == viewModel.selectedRowID
             ? Color(designSystemColor: .accentPrimary)
-            : Color(designSystemColor: .surface)
+            : Color(designSystemColor: .surfaceSecondary)
     }
 
     /// Vertical padding per Figma; horizontal inset (on top of the list's content margin) keeps

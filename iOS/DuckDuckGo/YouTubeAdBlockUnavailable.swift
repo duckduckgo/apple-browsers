@@ -45,7 +45,7 @@ struct YouTubeAdBlockUnavailableView: View {
             closeButton
                 .padding(16)
         }
-        .background(Color(designSystemColor: .surface))
+        .background(Color(designSystemColor: .surfaceSecondary))
     }
 
     private var content: some View {

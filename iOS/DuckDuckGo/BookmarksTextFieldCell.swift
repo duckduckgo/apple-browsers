@@ -26,7 +26,7 @@ class BookmarksTextFieldCell: UITableViewCell {
 
     override func awakeFromNib() {
         super.awakeFromNib()
-        backgroundColor = UIColor(designSystemColor: .surface)
+        backgroundColor = UIColor(designSystemColor: .surfaceSecondary)
     }
 
 

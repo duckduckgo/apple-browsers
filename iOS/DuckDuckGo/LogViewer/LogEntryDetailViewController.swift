@@ -110,10 +110,10 @@ final class LogEntryDetailViewController: UIViewController {
     
     private func createInfoSection(title: String, content: String, isExpandable: Bool = false) -> UIView {
         let containerView = UIView()
-        containerView.backgroundColor = UIColor(designSystemColor: .surface)
+        containerView.backgroundColor = UIColor(designSystemColor: .surfaceSecondary)
         containerView.layer.cornerRadius = 8
         containerView.layer.borderWidth = 1
-        containerView.layer.borderColor = UIColor(designSystemColor: .surface).cgColor
+        containerView.layer.borderColor = UIColor(designSystemColor: .surfaceSecondary).cgColor
         
         let stackView = UIStackView()
         stackView.translatesAutoresizingMaskIntoConstraints = false

@@ -102,7 +102,7 @@ struct DataImportView: View {
             .padding(.horizontal, 24)
             .background(
                 RoundedRectangle(cornerRadius: isiOS26 ? 26 : 10, style: .continuous)
-                    .fill(Color(designSystemColor: .surface))
+                    .fill(Color(designSystemColor: .surfaceSecondary))
             )
             .padding(.horizontal, 8)
         }
@@ -158,7 +158,7 @@ struct DataImportView: View {
                 ExportFromCell(viewModel: viewModel)
                     .background(
                         RoundedRectangle(cornerRadius: isiOS26 ? 26 : 10, style: .continuous)
-                            .fill(Color(designSystemColor: .surface))
+                            .fill(Color(designSystemColor: .surfaceSecondary))
                     )
                     .padding(.top, 5)
                     .padding(.horizontal, 8)

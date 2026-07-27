@@ -3548,7 +3548,7 @@ class MainViewController: UIViewController {
             wideEvent: AppDependencyProvider.shared.wideEvent,
             featureFlagger: featureFlagger
         ))
-        viewController.view.backgroundColor = UIColor(designSystemColor: .surface)
+        viewController.view.backgroundColor = UIColor(designSystemColor: .surfaceSecondary)
         return viewController
     }
 
@@ -5879,7 +5879,7 @@ extension MainViewController: TabDelegate {
             }
         }
         let controller = UIHostingController(rootView: view)
-        controller.view.backgroundColor = UIColor(designSystemColor: .surface)
+        controller.view.backgroundColor = UIColor(designSystemColor: .surfaceSecondary)
         presentYouTubeAdBlockSheet(controller, grabberVisible: true)
     }
 
@@ -5893,7 +5893,7 @@ extension MainViewController: TabDelegate {
             onClose: { [weak self] in self?.dismiss(animated: true) }
         )
         let controller = UIHostingController(rootView: view)
-        controller.view.backgroundColor = UIColor(designSystemColor: .surface)
+        controller.view.backgroundColor = UIColor(designSystemColor: .surfaceSecondary)
         presentYouTubeAdBlockSheet(controller)
     }
 

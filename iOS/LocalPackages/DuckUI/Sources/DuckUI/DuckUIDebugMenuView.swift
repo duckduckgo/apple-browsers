@@ -39,7 +39,7 @@ public struct DuckUIDebugMenuView: View {
                     IOSButtonsDebugView()
                 }
             }
-            .listRowBackground(Color(designSystemColor: .surface))
+            .listRowBackground(Color(designSystemColor: .surfaceSecondary))
 
             Section(header: Text(verbatim: "Typography")) {
                 row("Text Styles", title: "Text Styles") {
@@ -49,7 +49,7 @@ public struct DuckUIDebugMenuView: View {
                     AppFontGallery()
                 }
             }
-            .listRowBackground(Color(designSystemColor: .surface))
+            .listRowBackground(Color(designSystemColor: .surfaceSecondary))
         }
         .navigationTitle("DuckUI")
     }

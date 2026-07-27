@@ -94,7 +94,7 @@ final class NavigationActionBarView: UIView {
         rightStackView.alignment = .fill
         rightStackView.distribution = .fill
 
-        solidView.backgroundColor = UIColor(designSystemColor: .surface).withAlphaComponent(0.8)
+        solidView.backgroundColor = UIColor(designSystemColor: .surfaceSecondary).withAlphaComponent(0.8)
 
         setupMicrophoneButton()
         setupNewLineButton()
@@ -180,7 +180,7 @@ final class NavigationActionBarView: UIView {
             foreground: UIColor(designSystemColor: .iconsPrimary),
             background: UIColor(designSystemColor: .surfaceTertiary),
             pressedForeground: UIColor(designSystemColor: .iconsPrimary),
-            pressedBackground: UIColor(designSystemColor: .surface)
+            pressedBackground: UIColor(designSystemColor: .surfaceSecondary)
         )
         newLineButton.addTarget(self, action: #selector(newLineTapped), for: .touchUpInside)
     }
@@ -278,7 +278,7 @@ final class NavigationActionBarView: UIView {
             foreground: UIColor(designSystemColor: .iconsPrimary),
             background: UIColor(designSystemColor: .surfaceTertiary),
             pressedForeground: UIColor(designSystemColor: .iconsPrimary),
-            pressedBackground: UIColor(designSystemColor: .surface)
+            pressedBackground: UIColor(designSystemColor: .surfaceSecondary)
         )
     }
 
@@ -319,7 +319,7 @@ final class NavigationActionBarView: UIView {
             searchButton.setColors(foreground: UIColor(designSystemColor: .iconsPrimary),
                                    background: UIColor(designSystemColor: .surfaceTertiary),
                                    pressedForeground: UIColor(designSystemColor: .iconsPrimary),
-                                   pressedBackground: UIColor(designSystemColor: .surface))
+                                   pressedBackground: UIColor(designSystemColor: .surfaceSecondary))
         } else {
             let backgroundColor = viewModel.isFireTab ? UIColor(singleUseColor: .fireModeAccent) : UIColor(designSystemColor: .accentPrimary)
             let pressedBackgroundColor = viewModel.isFireTab ? UIColor(singleUseColor: .fireModeAccentTertiary) : UIColor(designSystemColor: .accentTertiary)
@@ -412,8 +412,8 @@ private class GradientBackgroundView: UIView {
     
     private func setupGradient() {
         gradientLayer.colors = [
-            UIColor(designSystemColor: .surface).withAlphaComponent(0.0).cgColor,
-            UIColor(designSystemColor: .surface).withAlphaComponent(0.8).cgColor
+            UIColor(designSystemColor: .surfaceSecondary).withAlphaComponent(0.0).cgColor,
+            UIColor(designSystemColor: .surfaceSecondary).withAlphaComponent(0.8).cgColor
         ]
         gradientLayer.locations = [0.0, 1.0]
         gradientLayer.startPoint = CGPoint(x: 0.5, y: 0.0)
@@ -433,8 +433,8 @@ private class GradientBackgroundView: UIView {
 
         if traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) {
             gradientLayer.colors = [
-                UIColor(designSystemColor: .surface).withAlphaComponent(0.0).cgColor,
-                UIColor(designSystemColor: .surface).withAlphaComponent(0.8).cgColor
+                UIColor(designSystemColor: .surfaceSecondary).withAlphaComponent(0.0).cgColor,
+                UIColor(designSystemColor: .surfaceSecondary).withAlphaComponent(0.8).cgColor
             ]
         }
     }

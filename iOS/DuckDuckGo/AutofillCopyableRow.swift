@@ -188,7 +188,7 @@ private struct ListRowSelectableBackground: ViewModifier {
         if isSelected {
             return colorScheme == .light ? Color(baseColor: .gray40) : Color(baseColor: .gray80)
         } else {
-            return Color(designSystemColor: .surface)
+            return Color(designSystemColor: .surfaceSecondary)
         }
     }
 }

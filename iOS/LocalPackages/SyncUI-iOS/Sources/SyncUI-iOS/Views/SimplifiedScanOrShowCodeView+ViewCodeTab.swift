@@ -153,7 +153,7 @@ extension SimplifiedScanOrShowCodeView {
             arrowEdge: .bottom,
             arrowOffset: 0,
             cornerRadius: Metrics.copyConfirmationCornerRadius,
-            fillColor: Color(designSystemColor: .surface),
+            fillColor: Color(designSystemColor: .surfaceSecondary),
             contentPadding: EdgeInsets(top: 16, leading: 20, bottom: 16, trailing: 20)
         ) {
             copyConfirmationContent

@@ -60,7 +60,7 @@ class AutofillLoginPromptViewController: UIViewController {
     }
     
     private func setupView() {
-        view.backgroundColor = UIColor(designSystemColor: .surface)
+        view.backgroundColor = UIColor(designSystemColor: .surfaceSecondary)
         
         let viewModel = AutofillLoginPromptViewModel(accounts: accounts, domain: domain, isExpanded: isExpanded)
         viewModel.delegate = self

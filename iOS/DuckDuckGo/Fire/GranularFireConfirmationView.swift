@@ -91,7 +91,7 @@ struct GranularFireConfirmationView: View {
                 .accessibilityIdentifier("Fire.Confirmation.Toggle.AIChats.\(viewModel.clearAIChats ? "on" : "off")")
             }
         }
-        .background(Color(designSystemColor: .surface))
+        .background(Color(designSystemColor: .surfaceSecondary))
         .cornerRadius(Constants.optionsListCornerRadius)
     }
     

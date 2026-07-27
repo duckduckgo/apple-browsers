@@ -224,7 +224,7 @@ struct SubscriptionRestoreView: View {
     private func setUpAppearances() {
         let navAppearance = UINavigationBar.appearance()
         navAppearance.backgroundColor = UIColor(designSystemColor: .surfacePrimary)
-        navAppearance.barTintColor = UIColor(designSystemColor: .surface)
+        navAppearance.barTintColor = UIColor(designSystemColor: .surfaceSecondary)
         navAppearance.shadowImage = UIImage()
         navAppearance.tintColor = UIColor(designSystemColor: .textPrimary)
     }
@@ -296,7 +296,7 @@ private struct RoundedCardView: View {
         }
         .padding(Constants.cardPadding)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(designSystemColor: .surface))
+        .background(Color(designSystemColor: .surfaceSecondary))
         .cornerRadius(ContainerMetrics.cornerRadius)
     }
 }

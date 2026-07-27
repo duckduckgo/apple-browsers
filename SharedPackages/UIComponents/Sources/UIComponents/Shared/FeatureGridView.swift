@@ -175,7 +175,7 @@ struct FeatureCardView: View {
         .padding(LayoutConstants.cardPadding)
         .frame(minHeight: minHeight, maxHeight: minHeight != nil ? .infinity : nil)
 #if os(iOS)
-        .background(Color(designSystemColor: .surface))
+        .background(Color(designSystemColor: .surfaceSecondary))
 #else
         .background(Color(designSystemColor: .surfacePrimary))
 #endif
@@ -207,7 +207,7 @@ struct FeatureCardView: View {
     private var iconPlaceholder: some View {
         Circle()
 #if os(iOS)
-            .fill(Color(designSystemColor: .surface))
+            .fill(Color(designSystemColor: .surfaceSecondary))
 #else
             .fill(Color(designSystemColor: .surfacePrimary))
 #endif

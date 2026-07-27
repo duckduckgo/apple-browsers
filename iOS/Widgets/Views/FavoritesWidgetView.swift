@@ -87,7 +87,7 @@ struct FavoriteView: View {
         ZStack {
             if isPreview {
                 RoundedRectangle(cornerRadius: cornerRadius)
-                    .renderAwareBackgroundFill(Color(designSystemColor: .surface))
+                    .renderAwareBackgroundFill(Color(designSystemColor: .surfaceSecondary))
             }
 
             if let favorite = favorite {
@@ -95,7 +95,7 @@ struct FavoriteView: View {
                 Link(destination: favorite.url) {
                     ZStack {
                         RoundedRectangle(cornerRadius: cornerRadius)
-                            .renderAwareBackgroundFill(favorite.needsColorBackground ? Color.forDomain(favorite.domain) : Color(designSystemColor: .surface))
+                            .renderAwareBackgroundFill(favorite.needsColorBackground ? Color.forDomain(favorite.domain) : Color(designSystemColor: .surfaceSecondary))
                             .makeAccentable()
                             .shadow(color: Color.black.opacity(0.08), radius: 8, x: 0, y: 2)
 

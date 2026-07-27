@@ -267,7 +267,7 @@ struct DuckAIQuerySearchContent: View {
     }
 
     private var queryFieldBackgroundColor: Color {
-        visualStyle == .rebranded ? onboardingTheme.colorPalette.background : Color(designSystemColor: .surface)
+        visualStyle == .rebranded ? onboardingTheme.colorPalette.background : Color(designSystemColor: .surfaceSecondary)
     }
 
     private var initialInputFocusDelayAfterAppear: TimeInterval {

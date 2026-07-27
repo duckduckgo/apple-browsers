@@ -167,7 +167,7 @@ private struct Header: View {
         .frame(minHeight: Constants.viewHeight)
         .frame(maxWidth: .infinity)
         .contentShape(Rectangle())
-        .listRowBackground(Color(designSystemColor: .surface))
+        .listRowBackground(Color(designSystemColor: .surfaceSecondary))
         .listRowInsets(Constants.insets)
     }
 }
@@ -345,7 +345,7 @@ private struct BackgroundColor {
         if isSelected {
             return Color("AutofillCellSelectedBackground")
         } else {
-            return Color(designSystemColor: .surface)
+            return Color(designSystemColor: .surfaceSecondary)
         }
     }
 }

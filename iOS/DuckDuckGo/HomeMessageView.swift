@@ -241,7 +241,7 @@ extension HomeMessageView: RemoteMessagingPresenter {
 }
 
 private extension Color {
-    static let background = Color(designSystemColor: .surface)
+    static let background = Color(designSystemColor: .surfaceSecondary)
     static let updatedShadow = Color(designSystemColor: .shadowPrimary)
 }
 

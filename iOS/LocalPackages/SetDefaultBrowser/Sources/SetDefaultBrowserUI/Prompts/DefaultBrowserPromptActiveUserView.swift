@@ -50,7 +50,7 @@ struct DefaultBrowserPromptActiveUserView: View {
                 .padding(.horizontal, horizontalPadding)
         }
         .padding(.bottom)
-        .background(Color(designSystemColor: .surface))
+        .background(Color(designSystemColor: .surfaceSecondary))
     }
 }
 

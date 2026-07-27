@@ -61,7 +61,7 @@ struct AIChatSyncPromoView: View {
         }
         .background(
             RoundedRectangle(cornerRadius: ContainerMetrics.cornerRadius)
-                .fill(Color(designSystemColor: .surface))
+                .fill(Color(designSystemColor: .surfaceSecondary))
         )
     }
 }

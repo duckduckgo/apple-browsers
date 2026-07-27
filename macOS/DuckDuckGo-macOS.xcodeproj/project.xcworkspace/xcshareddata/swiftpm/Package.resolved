@@ -33,8 +33,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/content-scope-scripts.git",
       "state" : {
-        "branch" : "pr-releases/moon0326/o-j/ui-update-for-model-and-reasoning-selector",
-        "revision" : "5ab857cdeeb7e5ddc2b6acf3a34253cdf96a1219"
+        "revision" : "b10fd8938e9afc6671b104b3339dcd101f4e7373",
+        "version" : "15.21.0"
       }
     },
     {

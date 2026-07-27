@@ -1,13 +1,13 @@
 {
-  "originHash" : "06738efbf166dd16d64e0358d62c0c99aec499f024d5c0318e3194c6945436f8",
+  "originHash" : "35ee59033c4a6d60561f516c94783541ada0b5fc5da826ef39f45ae917c45b6c",
   "pins" : [
     {
       "identity" : "content-scope-scripts",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/content-scope-scripts.git",
       "state" : {
-        "branch" : "pr-releases/moon0326/o-j/ui-update-for-model-and-reasoning-selector",
-        "revision" : "5ab857cdeeb7e5ddc2b6acf3a34253cdf96a1219"
+        "revision" : "b10fd8938e9afc6671b104b3339dcd101f4e7373",
+        "version" : "15.21.0"
       }
     },
     {

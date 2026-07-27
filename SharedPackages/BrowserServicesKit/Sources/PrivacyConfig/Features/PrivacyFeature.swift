@@ -478,6 +478,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables Unified Toggle Input inside the iOS contextual AI chat sheet.
     case contextualUnifiedToggleInput
 
+    /// Kill switch for routing native image/file paste into the unified input attachment strip.
+    case unifiedToggleInputAttachmentPaste
+
     /// Signals that the iOS app should display duck.ai chats in "contextual mode" when opened from specific entry points
     case contextualDuckAIMode
 
@@ -526,6 +529,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Enables attaching content from multiple open tabs to the New Tab Page omnibar Duck.ai chat.
     case ntpAttachMoreTabs
+
+    /// Enables the cap on how many open tabs can be attached (native omnibar and NTP). Kill switch.
+    case tabAttachmentLimit
 
     /// Enables deleting recent AI chats from the New Tab Page omnibar
     case ntpSuggestionsDeletion
@@ -618,6 +624,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Replaces Duck.ai's web-based chat sidebar with native UI.
     case nativeSidebar
+
+    /// macOS only. System-wide Duck.ai entry point: global keyboard shortcut and menu bar icon.
+    case macosPromptBar
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {
@@ -743,6 +752,7 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case subscriptionPromoForReinstallers
     case subscriptionExpirationReminderNotification
     case subscriptionPromoForExistingUsers
+    case monthlyFreeTrialExperiment
 }
 
 public enum DuckPlayerSubfeature: String, PrivacySubfeature {

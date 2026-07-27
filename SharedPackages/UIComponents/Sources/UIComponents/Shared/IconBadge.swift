@@ -43,6 +43,9 @@ public struct IconBadge: View {
             .fill(fillColor)
             .frame(width: diameter, height: diameter)
             .overlay {
+                Circle().stroke(Color(designSystemColor: .lines), lineWidth: borderWidth)
+            }
+            .overlay {
                 if let icon {
                     icon
                         .resizable()
@@ -51,9 +54,6 @@ public struct IconBadge: View {
                         .frame(width: iconSize, height: iconSize)
                         .foregroundColor(Color(designSystemColor: .textPrimary))
                 }
-            }
-            .overlay {
-                Circle().strokeBorder(Color(designSystemColor: .lines), lineWidth: borderWidth)
             }
     }
 

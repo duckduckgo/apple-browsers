@@ -672,6 +672,22 @@ struct UserText {
     static let aiChatPreferencesLearnMoreButton = NSLocalizedString("ai-chat.preferences.learn-more", value: "Learn More", comment: "AI Chat preferences button to learn more about it")
     static let newAIChatMenuItem = NSLocalizedString("duckai.menu.new", value: "New Duck.ai Chat", comment: "Menu item to launch AI Chat")
 
+    // Prompt Bar (Settings → AI Features)
+    static let promptBarKeyboardShortcutToggle = NotLocalizedString("duckai.prompt-bar.keyboard-shortcut.toggle", value: "Open Duck.ai from any app using keyboard shortcut", comment: "Checkbox in Settings → AI Features that enables the system-wide Duck.ai keyboard shortcut")
+    static let promptBarKeyboardShortcutCaption = NotLocalizedString("duckai.prompt-bar.keyboard-shortcut.caption", value: "Press it from any app to open Duck.ai, even when DuckDuckGo isn’t in front.", comment: "Caption under the system-wide Duck.ai keyboard shortcut checkbox")
+    static let promptBarMenuBarIconToggle = NotLocalizedString("duckai.prompt-bar.menu-bar-icon.toggle", value: "Show icon in the menu bar", comment: "Checkbox in Settings → AI Features that shows the Duck.ai icon in the macOS menu bar")
+    static let promptBarMenuBarIconCaption = NotLocalizedString("duckai.prompt-bar.menu-bar-icon.caption", value: "Appears at the top-right of your screen, next to Wi-Fi and the clock.", comment: "Caption under the 'Show icon in the menu bar' checkbox describing where the icon appears")
+    static let promptBarShortcutRecordingPlaceholder = NotLocalizedString("duckai.prompt-bar.shortcut.recording-placeholder", value: "Type shortcut", comment: "Placeholder shown in the shortcut recorder control while it waits for a key combination")
+    static let promptBarShortcutRecordingCancelHint = NotLocalizedString("duckai.prompt-bar.shortcut.recording-cancel-hint", value: "Press **Esc** to cancel", comment: "Hint under the shortcut recorder while recording. 'Esc' is the Escape key; the surrounding asterisks render it bold and must be kept")
+    static let promptBarShortcutResetToDefault = NotLocalizedString("duckai.prompt-bar.shortcut.reset-to-default", value: "Reset to default", comment: "Button that reverts the Duck.ai keyboard shortcut to the default combination")
+    static func promptBarShortcutReservedError(shortcut: String, ownerName: String) -> String {
+        let localized = NotLocalizedString("duckai.prompt-bar.shortcut.reserved-error",
+                                           value: "“%1$@” is already used by %2$@. Try a different combination.",
+                                           comment: "Error shown when a recorded keyboard shortcut is reserved by the system. %1$@ is the shortcut (e.g. ⌘Space), %2$@ is the feature using it (e.g. Spotlight)")
+        return String(format: localized, shortcut, ownerName)
+    }
+    static let promptBarShortcutSpaceKey = NotLocalizedString("duckai.prompt-bar.shortcut.space-key", value: "Space", comment: "Display name of the Space bar key shown in the keyboard shortcut recorder")
+
     // Duck.ai main menu
     static let aiChatMenuOpenDuckAI = NSLocalizedString("duckai.menu.open-duck-ai", value: "Open Duck.ai", comment: "Duck.ai menu item to open Duck.ai")
     static let aiChatMenuNewChat = NSLocalizedString("duckai.menu.new-chat", value: "New Chat", comment: "Duck.ai menu item to start a new chat")
@@ -862,6 +878,10 @@ struct UserText {
     static func aiChatAttachmentFileCountLimit(maxFilesPerConversation: Int) -> String {
         let message = NSLocalizedString("aichat.attachment.file.count.limit", value: "You can only attach %d files per conversation.", comment: "Error message displayed when the user has attached more files than are allowed in a conversation. Parameter is the backend-provided maximum number of files.")
         return String(format: message, maxFilesPerConversation)
+    }
+    static func aiChatAttachmentTabCountLimit(maxTabs: Int) -> String {
+        let message = NotLocalizedString("aichat.attachment.tab.count.limit", value: "You can only attach %d tabs at a time.", comment: "Error message displayed when the user has attached more open tabs than are allowed. Parameter is the maximum number of tabs.")
+        return String(format: message, maxTabs)
     }
     static let aiChatAttachmentPromptTooLong = NSLocalizedString("aichat.attachment.prompt.too.long", value: "That message is too long to send with attachments.", comment: "Error message shown when an AI chat message exceeds the allowed length while attachments are included")
 

@@ -513,6 +513,21 @@ final class AIChatOmnibarController {
     }
     var fileAttachmentsDisplayCap: Int { maxFileAttachments + 1 }
 
+    /// Hardcoded cap on tabs attached as page context (not backend-driven, unlike images/files).
+    static let maxTabAttachments: Int = 3
+    /// Kill switch (default on) for the whole tab-attachment cap. Off → no cap.
+    var isTabAttachmentLimitEnabled: Bool { featureFlagger.isFeatureOn(.aiChatTabAttachmentLimit) }
+    /// One over the cap, mirroring the image/file display cap; unbounded when the limit is disabled.
+    var tabAttachmentsDisplayCap: Int { isTabAttachmentLimitEnabled ? Self.maxTabAttachments + 1 : .max }
+
+    var isActiveTabAttachmentsFull: Bool {
+        isTabAttachmentLimitEnabled && activeTabAttachments.count >= Self.maxTabAttachments
+    }
+
+    var hasExcessTabAttachments: Bool {
+        isTabAttachmentLimitEnabled && activeTabAttachments.count > Self.maxTabAttachments
+    }
+
     /// Whether the currently selected model supports file (PDF etc.) upload.
     /// Returns `false` conservatively when models are unavailable — file upload is opt-in per model
     /// and the file picker should stay hidden until we know the model can accept it.
@@ -794,6 +809,8 @@ final class AIChatOmnibarController {
         if let index = current.firstIndex(where: { $0.id == attachment.id }) {
             current.remove(at: index)
         } else {
+            // Allow one over the cap (for the over-limit cue); block beyond.
+            guard current.count < tabAttachmentsDisplayCap else { return }
             current.append(attachment)
             prewarmAttachedTab(id: attachment.id)
         }
@@ -1089,6 +1106,11 @@ final class AIChatOmnibarController {
         // limit (`+1`) so the user gets a visible "you've gone over" cue; if they actually try to
         // submit while in that state, hold the submit until they remove the excess.
         if selectedModelSupportsFileUpload && activeFileAttachments.count > maxFileAttachments {
+            return
+        }
+
+        // Hold submit while over the tab cap — unconditional, since tab cards render regardless of the picker flag.
+        if hasExcessTabAttachments {
             return
         }
 

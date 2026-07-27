@@ -3681,6 +3681,18 @@
         }
       }
     },
+    "aichat.chrome.hide-ask-duckai-button" : {
+      "comment" : "Context menu item to hide the Ask Duck.ai menu button in the tab bar",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Hide Ask Duck.ai Button"
+          }
+        }
+      }
+    },
     "aichat.chrome.hide-duckai-button" : {
       "comment" : "Context menu item to hide the Duck.ai title button in the tab bar",
       "extractionState" : "extracted_with_value",
@@ -3857,6 +3869,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Открыть настройки ИИ"
+          }
+        }
+      }
+    },
+    "aichat.chrome.show-ask-duckai-button" : {
+      "comment" : "Context menu item to show the Ask Duck.ai menu button in the tab bar",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Show Ask Duck.ai Button"
           }
         }
       }
@@ -32972,6 +32996,18 @@
         }
       }
     },
+    "duckai.automatically-send-page-content-when-navigating.toggle-setting" : {
+      "comment" : "Settings option to automatically send page content to the sidebar when navigating (shown when the Ask Duck.ai menu button is enabled, to distinguish from the explicit Ask About Page action)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Automatically send page content to the sidebar when navigating"
+          }
+        }
+      }
+    },
     "duckai.automatically-send-page-content.toggle-setting" : {
       "comment" : "Settings option to automatically send page content to the sidebar",
       "extractionState" : "extracted_with_value",
@@ -33808,6 +33844,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Новый чат Duck.ai"
+          }
+        }
+      }
+    },
+    "duckai.menu.ask-about-page" : {
+      "comment" : "Duck.ai menu item to open the sidebar and attach the current page's content",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Ask About Page"
           }
         }
       }
@@ -34887,6 +34935,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ярлыки Duck.ai"
+          }
+        }
+      }
+    },
+    "duckai.show-ask-duckai-button-in-tab-bar.label" : {
+      "comment" : "Label for showing the Ask Duck.ai menu button shortcut in the tab bar (shown when the Ask Duck.ai menu button is enabled)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Show Ask Duck.ai shortcut in the tab bar"
           }
         }
       }

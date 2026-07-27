@@ -19,6 +19,8 @@
 import XCTest
 import AIChat
 import FeatureFlags
+import PrivacyConfig
+import SharedTestUtilities
 import NewTabPage
 @testable import Subscription
 import SubscriptionTestingUtilities

@@ -20,6 +20,7 @@ import AIChat
 import FeatureFlags
 import NewTabPage
 import os.log
+import PrivacyConfig
 import Subscription
 
 /// Fetches AI models from the duck.ai API and builds sectioned model lists

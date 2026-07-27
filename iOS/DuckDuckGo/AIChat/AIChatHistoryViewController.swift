@@ -505,13 +505,9 @@ final class AIChatHistoryViewController: UIViewController {
 
     // MARK: - Redesign: multi-select
 
-    private func enterSelectionMode(preselecting chatId: String? = nil) {
+    private func enterSelectionMode() {
         guard !isEditingChats else { return }
-        let wasSearching = tableView.tableHeaderView != nil
-        // `clearSearch()` restores the unfiltered rows synchronously and also publishes them,
-        // which would fire a reactive reload that drops the selection set up below. Suppress that
-        // reload and reload once here instead, so the table and selection stay consistent.
-        if wasSearching { isApplyingLocalUpdate = true }
+        // Search and multi-select are mutually exclusive: leave search first.
         hideSearchBarIfNeeded()
         isEditingChats = true
         viewModel.editModeEntered()
@@ -519,31 +515,6 @@ final class AIChatHistoryViewController: UIViewController {
         configureNavigationButtons()
         configureToolbar()
         tableView.setEditing(true, animated: true)
-        if wasSearching {
-            tableView.reloadData()
-            DispatchQueue.main.async { [weak self] in self?.isApplyingLocalUpdate = false }
-        }
-        if let chatId {
-            selectRow(forChatId: chatId)
-        }
-    }
-
-    /// Selects the row for `chatId` (if present) and refreshes the selection-dependent toolbar,
-    /// since programmatic selection doesn't trigger `didSelectRowAt`.
-    private func selectRow(forChatId chatId: String) {
-        guard let indexPath = indexPath(forChatId: chatId) else { return }
-        tableView.selectRow(at: indexPath, animated: false, scrollPosition: .none)
-        updateSelectionActionButtons()
-    }
-
-    private func indexPath(forChatId chatId: String) -> IndexPath? {
-        for section in 0..<viewModel.numberOfSections {
-            for row in 0..<viewModel.numberOfRows(in: section)
-            where viewModel.chatId(forRowAt: IndexPath(row: row, section: section)) == chatId {
-                return IndexPath(row: row, section: section)
-            }
-        }
-        return nil
     }
 
     private func hideSearchBarIfNeeded() {
@@ -551,7 +522,7 @@ final class AIChatHistoryViewController: UIViewController {
         searchBar.text = nil
         searchBar.setShowsCancelButton(false, animated: false)
         searchBar.resignFirstResponder()
-        viewModel.clearSearch()
+        viewModel.updateQuery("")
         removeSearchHeader()
     }
 
@@ -713,7 +684,7 @@ extension AIChatHistoryViewController: UITableViewDelegate {
             guard self != nil else { return nil }
             let select = UIAction(title: UserText.aiChatHistoryRowMenuSelect,
                                   image: DesignSystemImages.Glyphs.Size24.checkCircle) { [weak self] _ in
-                self?.enterSelectionMode(preselecting: chatId)
+                self?.enterSelectionMode()
             }
             let pin = UIAction(title: isPinned ? UserText.aiChatHistoryRowMenuUnpin : UserText.aiChatHistoryRowMenuPin,
                                image: isPinned ? DesignSystemImages.Glyphs.Size24.unpin : DesignSystemImages.Glyphs.Size24.pin) { [weak self] _ in

@@ -24,6 +24,18 @@ import PrivacyConfig
 import DesignResourcesKit
 import DesignResourcesKitIcons
 
+private enum Constants {
+    static let headerHorizontalPadding: CGFloat = 32
+    static let headerVerticalPadding: CGFloat = 16
+    static let backButtonLeadingPadding: CGFloat = 20
+    static let backButtonWidth: CGFloat = 30
+    static let cellHorizontalPadding: CGFloat = 16
+    static let cellVerticalPadding: CGFloat = 12
+    static let backButtonAccessibilityIdentifier = "backButton"
+    static let unprotectedSitesCellReuseIdentifier = "UnprotectedSitesItemCell"
+    static let allProtectedCellReuseIdentifier = "AllProtectedCell"
+}
+
 final class UnprotectedSitesViewController: UITableViewController {
 
     private lazy var infoText: UILabel = {
@@ -38,7 +50,7 @@ final class UnprotectedSitesViewController: UITableViewController {
     private lazy var backButton: UIButton = {
         let button = UIButton(type: .system)
         button.translatesAutoresizingMaskIntoConstraints = false
-        button.accessibilityIdentifier = "backButton"
+        button.accessibilityIdentifier = Constants.backButtonAccessibilityIdentifier
         button.setImage(DesignSystemImages.Glyphs.Size24.arrowLeft, for: .normal)
         button.addTarget(self, action: #selector(onBackPressed), for: .touchUpInside)
         return button
@@ -238,13 +250,13 @@ final class UnprotectedSitesViewController: UITableViewController {
         headerView.addSubview(infoText)
         headerView.addSubview(backButton)
         NSLayoutConstraint.activate([
-            infoText.leadingAnchor.constraint(equalTo: headerView.leadingAnchor, constant: 32),
-            infoText.trailingAnchor.constraint(equalTo: headerView.trailingAnchor, constant: -32),
-            infoText.topAnchor.constraint(equalTo: headerView.topAnchor, constant: 16),
-            infoText.bottomAnchor.constraint(equalTo: headerView.bottomAnchor, constant: -16),
-            backButton.leadingAnchor.constraint(equalTo: headerView.leadingAnchor, constant: 20),
+            infoText.leadingAnchor.constraint(equalTo: headerView.leadingAnchor, constant: Constants.headerHorizontalPadding),
+            infoText.trailingAnchor.constraint(equalTo: headerView.trailingAnchor, constant: -Constants.headerHorizontalPadding),
+            infoText.topAnchor.constraint(equalTo: headerView.topAnchor, constant: Constants.headerVerticalPadding),
+            infoText.bottomAnchor.constraint(equalTo: headerView.bottomAnchor, constant: -Constants.headerVerticalPadding),
+            backButton.leadingAnchor.constraint(equalTo: headerView.leadingAnchor, constant: Constants.backButtonLeadingPadding),
             backButton.centerYAnchor.constraint(equalTo: infoText.centerYAnchor),
-            backButton.widthAnchor.constraint(equalToConstant: 30)
+            backButton.widthAnchor.constraint(equalToConstant: Constants.backButtonWidth)
         ])
         tableView.tableHeaderView = headerView
     }
@@ -315,7 +327,7 @@ final class UnprotectedSitesViewController: UITableViewController {
 
 private final class UnprotectedSitesItemCell: UITableViewCell {
 
-    static let reuseIdentifier = "UnprotectedSitesItemCell"
+    static let reuseIdentifier = Constants.unprotectedSitesCellReuseIdentifier
 
     let domainLabel: UILabel = {
         let label = UILabel()
@@ -338,10 +350,10 @@ private final class UnprotectedSitesItemCell: UITableViewCell {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
         contentView.addSubview(domainLabel)
         NSLayoutConstraint.activate([
-            domainLabel.leadingAnchor.constraint(equalTo: contentView.layoutMarginsGuide.leadingAnchor, constant: 16),
-            domainLabel.trailingAnchor.constraint(equalTo: contentView.layoutMarginsGuide.trailingAnchor, constant: -16),
-            domainLabel.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 12),
-            domainLabel.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -12)
+            domainLabel.leadingAnchor.constraint(equalTo: contentView.layoutMarginsGuide.leadingAnchor, constant: Constants.cellHorizontalPadding),
+            domainLabel.trailingAnchor.constraint(equalTo: contentView.layoutMarginsGuide.trailingAnchor, constant: -Constants.cellHorizontalPadding),
+            domainLabel.topAnchor.constraint(equalTo: contentView.topAnchor, constant: Constants.cellVerticalPadding),
+            domainLabel.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -Constants.cellVerticalPadding)
         ])
     }
 
@@ -352,7 +364,7 @@ private final class UnprotectedSitesItemCell: UITableViewCell {
 
 private final class AllProtectedCell: UITableViewCell {
 
-    static let reuseIdentifier = "AllProtectedCell"
+    static let reuseIdentifier = Constants.allProtectedCellReuseIdentifier
 
     let label: UILabel = {
         let label = UILabel()
@@ -370,10 +382,10 @@ private final class AllProtectedCell: UITableViewCell {
         isUserInteractionEnabled = false
         contentView.addSubview(label)
         NSLayoutConstraint.activate([
-            label.leadingAnchor.constraint(equalTo: contentView.layoutMarginsGuide.leadingAnchor, constant: 16),
-            label.trailingAnchor.constraint(equalTo: contentView.layoutMarginsGuide.trailingAnchor, constant: -16),
-            label.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 12),
-            label.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -12)
+            label.leadingAnchor.constraint(equalTo: contentView.layoutMarginsGuide.leadingAnchor, constant: Constants.cellHorizontalPadding),
+            label.trailingAnchor.constraint(equalTo: contentView.layoutMarginsGuide.trailingAnchor, constant: -Constants.cellHorizontalPadding),
+            label.topAnchor.constraint(equalTo: contentView.topAnchor, constant: Constants.cellVerticalPadding),
+            label.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -Constants.cellVerticalPadding)
         ])
     }
 

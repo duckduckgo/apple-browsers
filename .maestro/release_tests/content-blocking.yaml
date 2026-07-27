@@ -40,8 +40,9 @@ tags:
 - assertVisible: "Don't Send"
 - tapOn: "Don't Send"
 
-- runFlow: ../shared/pull_to_refresh.yaml
-- extendedWaitUntil: 
+# Disabling protection makes the tab reload automatically (no manual refresh);
+# give that reload a moment to settle before checking the new state.
+- extendedWaitUntil:
     notVisible: "Nonsense text that won't exist"
     timeout: 2000
 
@@ -49,4 +50,70 @@ tags:
 
 - tapOn: "Privacy Icon"
 - assertVisible: "Protections are OFF for this site"
+- tapOn: "Done"
+
+# Toggling protection changes the unprotected-sites list, which makes the tab
+# reload automatically. We deliberately do NOT pull-to-refresh here: the
+# automatic reload is part of the behaviour under test, and the dashboard result
+# afterwards proves the new state was actually applied.
+
+# Re-enable protections from the browsing menu.
+# Protections are OFF, so the menu offers "Enable Privacy Protection".
+# Open the menu and scroll only until the item is visible (no centring, which
+# would keep scrolling an already-visible item).
+- tapOn: "Browsing menu"
+- scrollUntilVisible:
+    element:
+      text: "Enable Privacy Protection"
+- tapOn: "Enable Privacy Protection"
+# Confirmation toast with an Undo action
+- assertVisible: ".*Privacy Protection enabled for.*"
+- assertVisible: "Undo"
+# Wait for the toast to clear and the automatic reload to settle
+- extendedWaitUntil:
+    notVisible: "Undo"
+    timeout: 8000
+- tapOn: "Privacy Icon"
+- assertVisible: "Protections are ON for this site"
+# The page reloaded automatically, so the tracker is blocked again
+- assertVisible: "We blocked Google Ads (Google) from loading tracking requests on this page."
+- tapOn: "Done"
+
+# Disable protections from the browsing menu.
+# Protections are ON, so the menu offers "Disable Privacy Protection".
+# The "site not working?" report prompt was already shown and dismissed by the
+# dashboard toggle above (it is shown at most once per session), so no modal
+# appears here and the confirmation toast shows immediately after the tap.
+- tapOn: "Browsing menu"
+- scrollUntilVisible:
+    element:
+      text: "Disable Privacy Protection"
+- tapOn: "Disable Privacy Protection"
+- assertVisible: ".*Privacy Protection disabled for.*"
+- assertVisible: "Undo"
+- extendedWaitUntil:
+    notVisible: "Undo"
+    timeout: 8000
+- tapOn: "Privacy Icon"
+- assertVisible: "Protections are OFF for this site"
+# The page reloaded automatically, so nothing is blocked anymore
+- assertNotVisible: "We blocked Google Ads (Google) from loading tracking requests on this page."
+- tapOn: "Done"
+
+# Tapping Undo on the confirmation toast reverts the toggle.
+# Enable from the menu, then immediately tap Undo -> protections return to OFF.
+- tapOn: "Browsing menu"
+- scrollUntilVisible:
+    element:
+      text: "Enable Privacy Protection"
+- tapOn: "Enable Privacy Protection"
+- assertVisible: ".*Privacy Protection enabled for.*"
+- tapOn: "Undo"
+# Undo re-disables protection and the tab reloads again; confirm we are back OFF
+- extendedWaitUntil:
+    notVisible: "Undo"
+    timeout: 8000
+- tapOn: "Privacy Icon"
+- assertVisible: "Protections are OFF for this site"
+- assertNotVisible: "We blocked Google Ads (Google) from loading tracking requests on this page."
 

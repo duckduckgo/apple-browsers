@@ -68,12 +68,15 @@ final class NewTabPageOmnibarModelsProvider: NewTabPageOmnibarModelsProviding {
             let (accessible, gated) = AIChatModelSectionBuilder.groupByAccess(models: models)
             let ordered = AIChatModelSectionBuilder.orderedAccessibleModels(accessible, userTier: userTier)
 
-            var result = [
-                NewTabPageDataModel.AIModelSection(
-                    header: nil,
-                    items: ordered.map { mapToItem($0, requiredTier: nil, userTier: userTier) }
+            var result: [NewTabPageDataModel.AIModelSection] = []
+            if !ordered.isEmpty {
+                result.append(
+                    NewTabPageDataModel.AIModelSection(
+                        header: nil,
+                        items: ordered.map { mapToItem($0, requiredTier: nil, userTier: userTier) }
+                    )
                 )
-            ]
+            }
 
             if !gated.isEmpty {
                 // Mirrors the address bar: a free user's gated section mixes Plus+Pro models

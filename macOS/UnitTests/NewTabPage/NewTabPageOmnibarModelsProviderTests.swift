@@ -296,6 +296,20 @@ final class NewTabPageOmnibarModelsProviderTests: XCTestCase {
         XCTAssertNotNil(sections[1].header)
     }
 
+    /// A free user whose entire model list is gated must get a single gated section, not a stray
+    /// empty headerless section in front of it (Cursor Bugbot, PR #5793).
+    func testWhenFreeUserHasNoAccessibleModelsThenOnlyGatedSectionReturned() async {
+        mockModelsService.modelsToReturn = [
+            makeRemoteModel(id: "premium-model", accessTier: ["plus"]),
+        ]
+
+        let sections = await provider.fetchAIModelSections()
+
+        XCTAssertEqual(sections.count, 1)
+        XCTAssertNotNil(sections[0].header)
+        XCTAssertEqual(sections[0].items.map(\.id), ["premium-model"])
+    }
+
     /// A subscribed user with nothing gated gets one flat section — this is what regressed to two
     /// sections under the old Basic/Advanced split (Asana comment 1216793923923610).
     func testWhenSubscribedUserHasNothingGatedThenSingleSectionReturned() async {

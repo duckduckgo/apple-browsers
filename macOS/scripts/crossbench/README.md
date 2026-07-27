@@ -37,7 +37,7 @@ downloading the files again.
 | `wpr-sites.txt` | Single default site list shared by validation and the browser run. |
 | `test-chrome.sh` | Runs Chrome through the validated WPR archives and tsproxy, and writes per-repetition results and per-site dispositions. |
 | `aggregate-lcp.py` | Produces per-domain ClickHouse metric rows. |
-| `aggregate-dispositions.py` | Produces ClickHouse attempt rows, including skipped and failed sites. |
+| `aggregate-dispositions.py` | Produces ClickHouse eligibility and measurement-outcome rows for every requested site. |
 | `crossbench-extras/` | Supplies the `navToLCP` probe config and LCP SQL module missing from the upstream checkout. |
 | `patches/` | Contains the Apple Silicon `cpu_freq` compatibility fix. |
 

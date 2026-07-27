@@ -20,10 +20,10 @@
 # for the round trips and slow start that dominate a real cold load. SHAPE=0
 # replays unshaped for diagnosis.
 #
-# A site is measured only if its archive is available; otherwise it is recorded
-# as infra_error and skipped. There is no live-network fallback, because a live
-# number is indistinguishable from a replayed one at read time while carrying all
-# the variance replay exists to remove.
+# A site is measured only if its archive passes validation; otherwise it is
+# recorded as excluded and skipped. There is no live-network fallback, because
+# a live number is indistinguishable from a replayed one at read time while
+# carrying all the variance replay exists to remove.
 #
 # Each site gets MEASURED_REPS loads, matching the Windows runner's 10. Every
 # load is measured: replay makes the first load no colder than the rest, since
@@ -50,6 +50,7 @@ CROSSBENCH_DIR="${CROSSBENCH_DIR:-$HOME/Developer/crossbench-upstream}"
 WPR_DIR="${WPR_DIR:-$HOME/Developer/mac-perf-runner/wpr-archives}"
 # CI sets this when archives came from the shared validation workflow.
 WPR_ARCHIVES_PREPARED="${WPR_ARCHIVES_PREPARED:-0}"
+WPR_MANIFEST="$WPR_DIR/manifest.tsv"
 # Built by provision-macos.sh and handed to crossbench via --bin-override so
 # crossbench never runs its own webpagereplay build (which needs CIPD Go).
 WPR_BIN="${WPR_BIN:-$HOME/Developer/mac-perf-runner/bin/wpr}"
@@ -141,9 +142,6 @@ CHROME_VERSION="$("$CHROME_BIN" --version 2>/dev/null | sed -E 's/^Google Chrome
 # dispositions-lib.sh contract.
 BROWSER_NAME=chrome
 BROWSER_VERSION="$CHROME_VERSION"
-# The shared disposition schema retains its preflight columns. Replay does not
-# perform that live-network check, so its verdict is `not_run`.
-PF_VERDICT=not_run
 
 # ---- prerequisites ---------------------------------------------------------
 check_prerequisites() {
@@ -213,6 +211,66 @@ fetch_network_arg() {
     else
       printf ''
     fi
+  fi
+}
+
+# Populate the validation fields written beside this site's measurement
+# counters. Prepared CI archives carry the shared validator's manifest; local
+# replay without that handoff records only whether an archive was available.
+set_validation_result() {
+  local site="$1" archive_available="$2" verdict status_chain final_url failure reason
+
+  VALIDATION_STATUS=error
+  VALIDATION_REASON=archive_missing
+  VALIDATION_HTTP_STATUS=-
+  VALIDATION_DETAIL=-
+
+  if [ "$WPR_ARCHIVES_PREPARED" != "1" ]; then
+    if [ -n "$archive_available" ]; then
+      VALIDATION_STATUS=ok
+      VALIDATION_REASON=-
+    fi
+    return
+  fi
+  if [ ! -f "$WPR_MANIFEST" ]; then
+    VALIDATION_REASON=validation_manifest_missing
+    VALIDATION_DETAIL="validated archive handoff did not contain manifest.tsv"
+    return
+  fi
+
+  verdict="$(awk -F'\t' -v site="$site" 'NR > 1 && $1 == site { print $5; exit }' "$WPR_MANIFEST")"
+  if [ -z "$verdict" ]; then
+    VALIDATION_REASON=validation_result_missing
+    VALIDATION_DETAIL="site is absent from the WPR validation manifest"
+    return
+  fi
+
+  status_chain="$(awk -F'\t' -v site="$site" 'NR > 1 && $1 == site { print $6; exit }' "$WPR_MANIFEST")"
+  final_url="$(awk -F'\t' -v site="$site" 'NR > 1 && $1 == site { print $7; exit }' "$WPR_MANIFEST")"
+  failure="$(awk -F'\t' -v site="$site" 'NR > 1 && $1 == site { print $10; exit }' "$WPR_MANIFEST")"
+  if [ "$verdict" = "ok" ] && [ -n "$archive_available" ]; then
+    VALIDATION_STATUS=ok
+    VALIDATION_REASON=-
+    return
+  fi
+  if [ "$verdict" = "ok" ]; then
+    VALIDATION_REASON=validated_archive_missing
+    VALIDATION_DETAIL="validator marked the site eligible but its archive was not staged"
+    return
+  fi
+
+  reason="${failure%% | *}"
+  reason="${reason%%: *}"
+  VALIDATION_REASON="${reason:-unknown_validation_failure}"
+  if [[ "$VALIDATION_REASON" =~ ^http_([0-9]{3})$ ]]; then
+    VALIDATION_HTTP_STATUS="${BASH_REMATCH[1]}"
+  fi
+  VALIDATION_DETAIL="${failure:--}"
+  if [ -n "$status_chain" ]; then
+    VALIDATION_DETAIL="${VALIDATION_DETAIL}; status_chain=$status_chain"
+  fi
+  if [ -n "$final_url" ]; then
+    VALIDATION_DETAIL="${VALIDATION_DETAIL}; final_url=$final_url"
   fi
 }
 
@@ -316,6 +374,10 @@ run_chrome() {
     reset_measurement_counters
 
     network_arg="$(fetch_network_arg "$story")"
+    set_validation_result "$site" "$network_arg"
+    if [ "$VALIDATION_STATUS" != "ok" ]; then
+      network_arg=""
+    fi
     if [ -z "$network_arg" ]; then
       if [ "$WPR_ARCHIVES_PREPARED" = "1" ]; then
         echo "  $site: excluded by WPR archive validation; SKIPPING." >&2
@@ -324,9 +386,9 @@ run_chrome() {
         echo "  $site: no WPR archive available; SKIPPING (replay-only)." >&2
         echo "::warning title=Site skipped::$site: no WPR archive at $WPR_BASE_URL"
       fi
-      # attempted=0: the browser never ran, which is a different fact from "ran
+      # planned=0: the browser never ran, which is a different fact from "ran
       # $MEASURED_REPS times and recorded nothing".
-      record_disposition "$site" infra_error "$PF_VERDICT" 0
+      record_disposition "$site" excluded 0
       continue
     fi
 
@@ -355,13 +417,13 @@ run_chrome() {
       echo "  results dir: $results_path"
       summarize_lcp "$results_path" "$site"
       outcome="$(classify_outcome)"
-      record_disposition "$site" "$outcome" "$PF_VERDICT" "$MEASURED_REPS"
+      record_disposition "$site" "$outcome" "$MEASURED_REPS"
     else
       echo "  $site: no RESULTS path in crossbench output"
       # The archive was available, but the browser harness failed before it
       # produced a results directory.
       echo "::warning title=Harness failure::$site: crossbench produced no RESULTS path"
-      record_disposition "$site" infra_error "$PF_VERDICT" "$MEASURED_REPS"
+      record_disposition "$site" infra_error "$MEASURED_REPS"
     fi
     rm -f "$out"
   done

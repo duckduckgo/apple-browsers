@@ -5,14 +5,8 @@
 # native_apps.macos_browser_health_nav_to_lcp_attempts (see attempts-schema.sql).
 #
 # Input TSV (with header), one row per site the run considered. Columns are
-# grouped by concern, matching the table:
-#   identity   browser, browser_version, site
-#   overall    outcome
-#   landing    preflight_verdict, final_status, status_chain, redirects, bytes,
-#              final_url, landed_offsite, blocked_marker
-#   attempts   attempted, observed, recorded, dropped_unfinalized,
-#              dropped_no_metric, dropped_http_error
-#   context    load_window_ms, runner_image
+# grouped by identity, outcome, WPR validation, repetition accounting, and
+# runner context.
 # Absent values are written by the shell as "-".
 #
 # Output TSV (no header). Column order matches the INSERT column list minus
@@ -33,10 +27,10 @@ import time
 
 EXPECTED_HEADER = [
     "browser", "browser_version", "site", "outcome",
-    "preflight_verdict", "final_status", "status_chain", "redirects", "bytes",
-    "final_url", "landed_offsite", "blocked_marker",
-    "attempted", "observed", "recorded", "dropped_unfinalized",
-    "dropped_no_metric", "dropped_http_error",
+    "validation_status", "validation_reason", "validation_http_status",
+    "validation_detail",
+    "planned_repetitions", "observed_repetitions", "recorded_samples",
+    "dropped_unfinalized", "dropped_no_metric",
     "load_window_ms", "runner_image",
 ]
 
@@ -44,11 +38,9 @@ EXPECTED_HEADER = [
 # so a typo in the shell can't quietly create a new LowCardinality value that
 # then has to be cleaned out of the table.
 VALID_OUTCOMES = {
-    "measured", "partial", "no_samples", "skipped_blocked", "infra_error",
+    "measured", "partial", "no_samples", "excluded", "infra_error",
 }
-VALID_VERDICTS = {
-    "not_run", "ok", "blocked_status", "blocked_marker", "preflight_error",
-}
+VALID_VALIDATION_STATUSES = {"ok", "error"}
 
 
 def to_epoch(value: str) -> str:
@@ -77,12 +69,18 @@ def as_str(value: str) -> str:
     return "" if value == "-" else value
 
 
-def clean(value: str) -> str:
-    """Strip tab/newline so one field can never become two columns.
+def as_nullable_http_status(value: str) -> str:
+    """HTTP status for ClickHouse Nullable(UInt16), or TSV NULL."""
+    if value in {"", "-"}:
+        return r"\N"
+    status = as_int(value)
+    if not 100 <= status <= 599:
+        sys.exit(f"ERROR: invalid HTTP status {value!r}")
+    return str(status)
 
-    final_url and blocked_marker come from network responses, so they are
-    attacker-influenced: a URL containing a tab would shift every later column.
-    """
+
+def clean(value: str) -> str:
+    """Strip tab/newline so one diagnostic can never become two columns."""
     return value.replace("\t", " ").replace("\r", " ").replace("\n", " ")
 
 
@@ -116,17 +114,25 @@ def main() -> None:
                 sys.exit(f"ERROR: {args.input}:{lineno}: expected "
                          f"{len(EXPECTED_HEADER)} fields, got {len(fields)}")
             (_browser, version, site, outcome,
-             verdict, final_status, status_chain, redirects, pf_bytes,
-             final_url, offsite, marker,
-             attempted, observed, recorded, dropped_unfinalized,
-             dropped_no_metric, dropped_http_error,
+             validation_status, validation_reason, validation_http_status,
+             validation_detail,
+             planned, observed, recorded, dropped_unfinalized,
+             dropped_no_metric,
              load_window_ms, runner_image) = fields
             if outcome not in VALID_OUTCOMES:
                 sys.exit(f"ERROR: {args.input}:{lineno}: unknown outcome {outcome!r} "
                          f"(known: {sorted(VALID_OUTCOMES)})")
-            if verdict not in VALID_VERDICTS:
-                sys.exit(f"ERROR: {args.input}:{lineno}: unknown preflight_verdict "
-                         f"{verdict!r} (known: {sorted(VALID_VERDICTS)})")
+            if validation_status not in VALID_VALIDATION_STATUSES:
+                sys.exit(f"ERROR: {args.input}:{lineno}: unknown validation_status "
+                         f"{validation_status!r} "
+                         f"(known: {sorted(VALID_VALIDATION_STATUSES)})")
+            reason = as_str(validation_reason)
+            if validation_status == "ok" and reason:
+                sys.exit(f"ERROR: {args.input}:{lineno}: validation_status ok "
+                         "must not have validation_reason")
+            if validation_status == "error" and not reason:
+                sys.exit(f"ERROR: {args.input}:{lineno}: validation_status error "
+                         "requires validation_reason")
             rows.append([
                 args.run_id,
                 start_time,
@@ -135,20 +141,15 @@ def main() -> None:
                 args.webview_channel,
                 version,
                 outcome,
-                verdict,
-                str(as_int(final_status)),
-                clean(as_str(status_chain)),
-                str(as_int(redirects)),
-                clean(as_str(final_url)),
-                str(as_int(offsite, 0)),
-                str(as_int(pf_bytes)),
-                clean(as_str(marker)),
-                str(as_int(attempted, 0)),
+                validation_status,
+                clean(reason),
+                as_nullable_http_status(validation_http_status),
+                clean(as_str(validation_detail)),
+                str(as_int(planned, 0)),
                 str(as_int(observed, 0)),
                 str(as_int(recorded, 0)),
                 str(as_int(dropped_unfinalized, 0)),
                 str(as_int(dropped_no_metric, 0)),
-                str(as_int(dropped_http_error, 0)),
                 str(as_int(load_window_ms, 0)),
                 clean(as_str(runner_image)),
                 gh_run_started_at,

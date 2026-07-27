@@ -320,7 +320,6 @@ class MainViewController: UIViewController {
     private lazy var themeColorManager: SiteThemeColorManager = {
         SiteThemeColorManager(viewCoordinator: viewCoordinator,
                               currentTabViewController: { [weak self] in self?.currentTab }(),
-                              appSettings: appSettings,
                               themeManager: themeManager)
     }()
 

@@ -67,6 +67,7 @@ class MainViewCoordinator {
     let constraints = Constraints()
     var toolbarHandler: ToolbarStateHandling!
     private var standardStatusBackgroundColor: UIColor?
+    private var pageThemeColor: UIColor?
     private var statusBackgroundPresentation: StatusBackgroundPresentation = .standard
     private var statusBackgroundPresentationBeforeOmnibarEditing: StatusBackgroundPresentation?
     private(set) var isNavigationChromeHidden = false
@@ -144,6 +145,7 @@ class MainViewCoordinator {
         applyContentContainerTopAnchorForCurrentState()
         guard isFloatingUIEnabled else {
             updateToolbarMaterialBackgroundTop(for: position)
+            omniBar.barView.makeGlass()
             toolbar.setOmnibarView(nil, height: 0)
             constraints.toolbarHeight.constant = BrowserToolbarView.totalHeight(withOmnibarHeight: 0, isFloating: isFloatingUIEnabled)
             navigationBarContainer.isHidden = false
@@ -523,6 +525,11 @@ class MainViewCoordinator {
         applyResolvedStatusBackgroundColor()
     }
 
+    func setPageThemeColor(_ color: UIColor?) {
+        pageThemeColor = color
+        applyResolvedStatusBackgroundColor()
+    }
+
     func setStatusBackgroundPresentation(_ presentation: StatusBackgroundPresentation) {
         statusBackgroundPresentation = presentation
         applyResolvedStatusBackgroundColor()
@@ -658,7 +665,9 @@ class MainViewCoordinator {
     }
 
     private func applyResolvedStatusBackgroundColor() {
-        let usesMaterialBackground = !isFloatingUIEnabled && statusBackgroundPresentation == .standard
+        let usesMaterialBackground = !isFloatingUIEnabled
+            && statusBackgroundPresentation == .standard
+            && pageThemeColor == nil
         (statusBackground as? UIVisualEffectView)?.effect = usesMaterialBackground ? UIBlurEffect(style: .systemUltraThinMaterial) : nil
         statusBackground.backgroundColor = usesMaterialBackground ? .clear : resolvedStatusBackgroundColor()
     }
@@ -681,7 +690,7 @@ class MainViewCoordinator {
 
         switch statusBackgroundPresentation {
         case .standard:
-            return standardStatusBackgroundColor ?? UIColor(designSystemColor: .background)
+            return pageThemeColor ?? standardStatusBackgroundColor ?? UIColor(designSystemColor: .background)
         case .omnibarEditing, .aiTabSearchChromeHidden:
             return UIColor(designSystemColor: .panel)
         case .aiTabChatChromeHidden:

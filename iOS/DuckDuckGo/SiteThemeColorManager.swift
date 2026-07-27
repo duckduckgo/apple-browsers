@@ -23,7 +23,6 @@ final class SiteThemeColorManager {
 
     private let viewCoordinator: MainViewCoordinator
     private let themeManager: ThemeManaging
-    private let appSettings: AppSettings
     private let currentTabViewController: () -> TabViewController?
 
     private weak var tabViewController: TabViewController?
@@ -32,10 +31,8 @@ final class SiteThemeColorManager {
 
     init(viewCoordinator: MainViewCoordinator,
          currentTabViewController: @autoclosure @escaping () -> TabViewController?,
-         appSettings: AppSettings,
          themeManager: ThemeManaging) {
         self.viewCoordinator = viewCoordinator
-        self.appSettings = appSettings
         self.themeManager = themeManager
         self.currentTabViewController = currentTabViewController
     }
@@ -74,7 +71,8 @@ final class SiteThemeColorManager {
     }
 
     func resetThemeColor() {
-        applyThemeColor(UIColor(designSystemColor: .background))
+        viewCoordinator.setPageThemeColor(nil)
+        tabViewController?.setUnderPageBackgroundColor(UIColor(designSystemColor: .background))
     }
 
     // MARK: - Private Methods
@@ -106,9 +104,7 @@ final class SiteThemeColorManager {
     }
 
     private var shouldApplyColorToCurrentTab: Bool {
-        // We do not support top address bar position in this 1st iteration
-        appSettings.currentAddressBarPosition == .bottom
-        && !(isCurrentTabShowingError || isCurrentTabShowingDaxPlayer || isCurrentTabShowingAIChat)
+        !(isCurrentTabShowingError || isCurrentTabShowingDaxPlayer || isCurrentTabShowingAIChat)
     }
 
     private var isCurrentTabShowingError: Bool {
@@ -138,17 +134,9 @@ final class SiteThemeColorManager {
         return color.adjustBrightness(by: brightnessAdjustment)
     }
 
-    private func applyThemeColor(_ color: UIColor?) {
-        let newColor = color ?? UIColor(designSystemColor: .background)
-        let statusBackgroundColor: UIColor
-
-        if AppWidthObserver.shared.isPad && viewCoordinator.parentController?.traitCollection.horizontalSizeClass == .regular {
-            statusBackgroundColor = themeManager.currentTheme.tabsBarBackgroundColor
-        } else {
-            statusBackgroundColor = newColor
-        }
-        viewCoordinator.setStandardStatusBackgroundColor(statusBackgroundColor)
-        tabViewController?.setUnderPageBackgroundColor(newColor)
+    private func applyThemeColor(_ color: UIColor) {
+        viewCoordinator.setPageThemeColor(color)
+        tabViewController?.setUnderPageBackgroundColor(color)
     }
 
 }

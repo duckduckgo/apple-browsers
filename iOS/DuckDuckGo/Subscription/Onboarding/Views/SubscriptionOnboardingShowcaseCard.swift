@@ -43,7 +43,7 @@ struct SubscriptionOnboardingShowcaseCard: View {
 
     /// Creates a card whose `footer` renders below the title/body inside the same bordered card (via
     /// `SubscriptionOnboardingCard`'s footer slot) — e.g. the "Devices" card's platform grid. The type stays
-    /// non-generic (the init erases the footer to `AnyView`) so the nested `Metrics` static values remain valid.
+    /// non-generic so the nested `Metrics` static values remain valid.
     init<Footer: View>(icon: Image, title: String, text: String, @ViewBuilder footer: () -> Footer) {
         self.icon = icon
         self.title = title
@@ -65,8 +65,6 @@ struct SubscriptionOnboardingShowcaseCard: View {
                         textBlockLeadingInset: Metrics.textBlockLeadingInset)
                 }
             },
-            // The card shell already insets the footer by its content padding; add the text-block inset on
-            // top so the footer's leading lines up with the title/body text (card padding + text inset).
             footer: { footer.padding(.leading, Metrics.textBlockLeadingInset) })
         .accessibilityElement(children: .combine)
     }

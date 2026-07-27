@@ -29,16 +29,8 @@ final class SubscriptionOnboardingSectionTests: XCTestCase {
         XCTAssertEqual(SubscriptionOnboardingSection.welcome.kind, .overview)
     }
 
-    func testWhenSectionIsVPNThenKindIsVPNActivation() {
-        XCTAssertEqual(SubscriptionOnboardingSection.vpn.kind, .activation(.vpn))
-    }
-
-    func testWhenSectionIsDuckAIThenKindIsDuckAIActivation() {
-        XCTAssertEqual(SubscriptionOnboardingSection.duckAI.kind, .activation(.duckAI))
-    }
-
-    func testWhenEnumeratingSectionsThenTheyAreExactlyWelcomeVPNAndDuckAI() {
-        XCTAssertEqual(SubscriptionOnboardingSection.allCases, [.welcome, .vpn, .duckAI])
+    func testWhenEnumeratingSectionsThenTheyAreExactlyWelcome() {
+        XCTAssertEqual(SubscriptionOnboardingSection.allCases, [.welcome])
     }
 
     // MARK: - Navigation button accessibility

@@ -30,26 +30,47 @@ extension View {
     }
 }
 
+/// Re-enables the interactive pop (swipe-back) gesture, which UIKit disables whenever a screen hides
+/// the default back button (as the onboarding pages do in favour of a custom button).
 private struct InteractivePopGestureEnabler: UIViewControllerRepresentable {
     func makeCoordinator() -> Coordinator { Coordinator() }
 
     func makeUIViewController(context: Context) -> UIViewController {
-        let controller = UIViewController()
-        DispatchQueue.main.async {
-            guard let navigationController = controller.navigationController else { return }
-            context.coordinator.navigationController = navigationController
-            navigationController.interactivePopGestureRecognizer?.delegate = context.coordinator
-        }
-        return controller
+        Controller(coordinator: context.coordinator)
     }
 
     func updateUIViewController(_ uiViewController: UIViewController, context: Context) {}
+
+    final class Controller: UIViewController {
+        private let coordinator: Coordinator
+
+        init(coordinator: Coordinator) {
+            self.coordinator = coordinator
+            super.init(nibName: nil, bundle: nil)
+        }
+
+        @available(*, unavailable)
+        required init?(coder: NSCoder) {
+            fatalError("init(coder:) has not been implemented")
+        }
+
+        override func viewWillAppear(_ animated: Bool) {
+            super.viewWillAppear(animated)
+            guard let navigationController else { return }
+            coordinator.navigationController = navigationController
+            navigationController.interactivePopGestureRecognizer?.delegate = coordinator
+        }
+    }
 
     final class Coordinator: NSObject, UIGestureRecognizerDelegate {
         weak var navigationController: UINavigationController?
 
         func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
-            (navigationController?.viewControllers.count ?? 0) > 1
+            guard let navigationController else { return false }
+            // Allow the swipe only when there's a screen to pop back to, and never while another push/pop
+            // is still animating — starting a second transition mid-flight can corrupt the navigation stack.
+            return navigationController.viewControllers.count > 1
+                && navigationController.transitionCoordinator == nil
         }
     }
 }

@@ -63,7 +63,7 @@ enum SubscriptionOnboardingNavigationButton {
     }
 }
 
-/// A footer button: a title and either a tap action or a push destination (rendered as a `NavigationLink`).
+/// A footer button: a title and either a tap action or a push destination.
 struct SubscriptionOnboardingFooterButton {
     enum Action {
         case tap(() -> Void)
@@ -85,7 +85,6 @@ struct SubscriptionOnboardingFooterButton {
 }
 
 /// The page's bottom-pinned footer: a single primary button, or a primary button above a secondary one.
-/// Pass `nil` (the default) for no footer.
 enum SubscriptionOnboardingFooter {
     case single(SubscriptionOnboardingFooterButton)
     case double(primary: SubscriptionOnboardingFooterButton, secondary: SubscriptionOnboardingFooterButton)
@@ -169,7 +168,7 @@ private extension SubscriptionOnboardingBaseView {
                         .resizable()
                         .scaledToFit()
                         .frame(width: Metrics.navigationGlyphSize, height: Metrics.navigationGlyphSize)
-                        .foregroundColor(Color(designSystemColor: .iconsSecondary))
+                        .foregroundColor(Color(designSystemColor: .icons))
                         .frame(width: Metrics.navigationButtonSize, height: Metrics.navigationButtonSize)
                         .background(Color(designSystemColor: .controlsFillPrimary))
                         .clipShape(Circle())

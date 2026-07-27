@@ -66,4 +66,34 @@ public struct IconBadge: View {
     }
 }
 
+#if DEBUG
+private struct IconBadgePreview: View {
+    var body: some View {
+        HStack(spacing: 16) {
+            IconBadge(icon: Image(systemName: "lock.fill"))
+            IconBadge(icon: Image(systemName: "bolt.fill"))
+            IconBadge() // Circle only (no glyph)
+            IconBadge(icon: Image(systemName: "star.fill"), diameter: 48, iconSize: 24)
+        }
+        .padding()
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color(designSystemColor: .surfaceTertiary))
+    }
+}
+
+#Preview("Light") {
+    IconBadgePreview()
+}
+
+#Preview("Dark") {
+    IconBadgePreview()
+        .preferredColorScheme(.dark)
+}
+
+#Preview("Large Text") {
+    IconBadgePreview()
+        .dynamicTypeSize(.accessibility3)
+}
+#endif
+
 #endif

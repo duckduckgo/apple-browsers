@@ -61,7 +61,7 @@ final class PromptBarPreferences: ObservableObject {
         isKeyboardShortcutEnabled && aiChatMenuConfiguration.shouldDisplayAnyAIChatFeature
     }
 
-    /// The shortcut that should be registered with the OS, or `nil` for none.
+    /// `nil` when no shortcut should be registered.
     var effectiveKeyboardShortcutPublisher: AnyPublisher<PromptBarShortcut?, Never> {
         let aiChatMenuConfiguration = self.aiChatMenuConfiguration
         let aiChatFeatureChanges = aiChatMenuConfiguration.valuesChangedPublisher

@@ -23,7 +23,6 @@ protocol GlobalShortcutRegistering: AnyObject {
 
     var registeredShortcut: PromptBarShortcut? { get }
 
-    /// Replaces any shortcut this registrar already holds.
     /// - Returns: `false` when the OS refused the combination, typically because another app owns it.
     @discardableResult
     func register(_ shortcut: PromptBarShortcut, handler: @escaping () -> Void) -> Bool

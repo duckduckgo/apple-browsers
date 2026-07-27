@@ -20,7 +20,6 @@ import AppKit
 import DesignResourcesKit
 import DesignResourcesKitIcons
 
-/// Prompt Bar content: a single prompt field that hands what the user types to Duck.ai.
 /// Minimal until the address bar's Duck.ai controls are extracted into a shared component.
 @MainActor
 final class PromptBarViewController: NSViewController {
@@ -109,8 +108,7 @@ final class PromptBarViewController: NSViewController {
         // Read the screen before dismissal tears the window down.
         let screen = view.window?.screen
         promptField.stringValue = ""
-        // Dismiss before submitting: the bar is a floating panel and holds key, so raising a browser
-        // window underneath it while it is still up leaves the window behind whatever was in front.
+        // Dismiss first: raising a browser window under the still-key floating panel leaves it behind.
         onSubmit?()
         promptSubmitter.submit(prompt: prompt, preferringWindowOn: screen)
     }
@@ -122,7 +120,6 @@ extension PromptBarViewController: PromptBarContentHosting {
 
     var viewController: NSViewController { self }
 
-    /// No menus or pickers yet, so nothing suppresses dismissal.
     var isPresentingAuxiliaryUI: Bool { false }
 
     var preferredWindowContentSize: NSSize {

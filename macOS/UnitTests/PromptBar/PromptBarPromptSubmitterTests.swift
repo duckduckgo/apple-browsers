@@ -70,7 +70,6 @@ final class PromptBarPromptSubmitterTests: XCTestCase {
         XCTAssertFalse(PromptBarPromptSubmitter.canHostPrompt(window, submittedFromScreenFrame: screenOne))
     }
 
-    /// With no source screen there is nothing to match against, so reusing a window beats opening one.
     func testWhenSourceScreenIsUnknownThenAnyVisibleWindowCanHostThePrompt() {
         let window = StubHostWindow(screenFrame: screenTwo)
 
@@ -90,8 +89,6 @@ final class PromptBarPromptSubmitterTests: XCTestCase {
         XCTAssertEqual(droppingPoint.y, screenTwo.maxY)
     }
 
-    /// The dropping point is the window's top-center, so a window placed with it stays on the
-    /// screen it was placed on rather than cascading onto another display.
     func testWhenPlacingANewWindowThenTheResultingFrameStaysOnTheTargetScreen() {
         let droppingPoint = PromptBarPromptSubmitter.newWindowDroppingPoint(in: screenTwo)
         let windowSize = NSSize(width: 1024, height: 768)

@@ -18,12 +18,9 @@
 
 import AppKit
 
-/// The floating, borderless window hosting the Prompt Bar.
-///
 /// An `NSPanel` so it never becomes the app's main window and stays out of the Window menu.
 final class PromptBarWindow: NSPanel {
 
-    /// Called on Escape; the presenter decides what dismissal means.
     var onCancel: (() -> Void)?
 
     override var canBecomeKey: Bool { true }
@@ -43,7 +40,6 @@ final class PromptBarWindow: NSPanel {
         level = .floating
         animationBehavior = .utilityWindow
 
-        // The content view controller draws the panel.
         backgroundColor = .clear
         isOpaque = false
         hasShadow = true
@@ -51,7 +47,6 @@ final class PromptBarWindow: NSPanel {
         isExcludedFromWindowsMenu = true
         isMovableByWindowBackground = false
 
-        // Reachable over fullscreen apps and on whichever Space the shortcut fires from.
         collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .transient]
 
         // The presenter owns dismissal, so that it can suppress it.

@@ -36,7 +36,6 @@ final class PromptBarMenuBarController: NSObject {
     private let makeStatusItem: @MainActor () -> PromptBarStatusItem
     private var statusItem: PromptBarStatusItem?
 
-    /// Set by the owner, so this controller stays unaware of what the Prompt Bar is.
     var onClick: (() -> Void)?
 
     /// - Parameter makeStatusItem: Injectable for testing; defaults to a real menu bar item.

@@ -18,17 +18,13 @@
 
 import AppKit
 
-/// Hands a Prompt Bar prompt to Duck.ai.
 @MainActor
 protocol PromptBarPromptSubmitting {
 
-    /// - Parameter screen: Reuses a browser window there, so the chat never opens on a display the
-    ///   user isn't looking at.
     func submit(prompt: String, preferringWindowOn screen: NSScreen?)
 }
 
-/// The window properties deciding whether a browser window can host a submitted prompt.
-/// A protocol so the rule tests without real windows.
+/// A protocol so the eligibility rule tests without real windows.
 @MainActor
 protocol PromptBarHostWindow {
     var isVisible: Bool { get }
@@ -64,8 +60,7 @@ final class PromptBarPromptSubmitter: PromptBarPromptSubmitting {
             aiChatTabOpener.openAIChatTab(with: .query(prompt, shouldAutoSubmit: true), behavior: .newWindow(selected: true))
         }
 
-        // The bar opens without activating the app, so reused windows are only reordered within it,
-        // not raised above other apps. Submitting is the point at which the browser should come forward.
+        // The bar never activates the app, so submitting is what brings the browser forward.
         NSApp.activate(ignoringOtherApps: true)
     }
 
@@ -74,8 +69,6 @@ final class PromptBarPromptSubmitter: PromptBarPromptSubmitting {
         NSPoint(x: visibleFrame.midX, y: visibleFrame.maxY)
     }
 
-    /// Most recently focused first, so a screen with several windows reuses the last one worked in.
-    /// `lastKeyMainWindowController(where:)` already excludes popups.
     private func windowToReuse(on screen: NSScreen?) -> MainWindowController? {
         let targetScreenFrame = screen?.frame
         return windowControllersManager.lastKeyMainWindowController { windowController in
@@ -84,7 +77,6 @@ final class PromptBarPromptSubmitter: PromptBarPromptSubmitting {
         }
     }
 
-    /// With an unknown source display, any on-screen window qualifies — reusing beats opening one.
     static func canHostPrompt(_ window: PromptBarHostWindow, submittedFromScreenFrame screenFrame: NSRect?) -> Bool {
         guard window.isVisible, !window.isMiniaturized, window.isOnActiveSpace else { return false }
         guard let screenFrame else { return true }

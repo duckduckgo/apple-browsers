@@ -32,8 +32,7 @@ protocol PromptBarContentHosting: AnyObject {
 
     var onPreferredWindowContentSizeChanged: ((NSSize) -> Void)? { get set }
 
-    /// Fired just before the prompt is handed off, so the bar is out of the way when a browser
-    /// window is raised.
+    /// Fired just *before* the prompt is handed off, so the bar is out of the way.
     var onSubmit: (() -> Void)? { get set }
 
     func prepareForPresentation()

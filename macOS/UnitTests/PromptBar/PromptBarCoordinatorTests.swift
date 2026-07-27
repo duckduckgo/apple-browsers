@@ -47,7 +47,6 @@ private final class MockGlobalShortcutRegistrar: GlobalShortcutRegistering {
         handler = nil
     }
 
-    /// Stands in for the OS delivering the hot key.
     func simulateShortcutPressed() {
         handler?()
     }
@@ -69,8 +68,7 @@ private final class MockPromptBarPresenter: PromptBarPresenting {
 @MainActor
 final class PromptBarCoordinatorTests: XCTestCase {
 
-    /// The doubles are built here rather than passed as defaults: default parameter values are
-    /// evaluated in a nonisolated context, and `MockPromptBarPresenter` is main-actor isolated.
+    // Doubles are built here, not passed as defaults: defaults are evaluated nonisolated.
     private func makeCoordinator(
         isFeatureOn: Bool = true,
         persistor: MockPromptBarPreferencesPersistor = MockPromptBarPreferencesPersistor(),

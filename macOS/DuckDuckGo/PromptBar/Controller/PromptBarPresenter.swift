@@ -19,7 +19,6 @@
 import AppKit
 import Combine
 
-/// Shows and hides the floating Prompt Bar.
 @MainActor
 protocol PromptBarPresenting: AnyObject {
     var isVisible: Bool { get }
@@ -28,7 +27,6 @@ protocol PromptBarPresenting: AnyObject {
     func toggle()
 }
 
-/// Owns the Prompt Bar window and its dismissal policy.
 @MainActor
 final class PromptBarPresenter: PromptBarPresenting {
 
@@ -75,14 +73,12 @@ final class PromptBarPresenter: PromptBarPresenting {
                                                  in: screenProvider.targetVisibleFrame),
                         display: false)
 
-        // Deliberately no `NSApp.activate`: that raises the browser's own windows above whatever the
-        // user has in front. `orderFrontRegardless` + the panel's `.nonactivatingPanel` style show
-        // and focus the bar while the app stays inactive; submitting is what brings the browser forward.
+        // No `NSApp.activate`: it would raise the browser's windows above whatever the user has in front.
         window.orderFrontRegardless()
         window.makeKey()
         // First responder only sticks once the window is key.
         content.focusPromptEditor()
-        // Subscribed per presentation, not per window: `dismiss()` tears the subscription down.
+        // Per presentation, not per window: `dismiss()` tears this down.
         subscribeToResignKey(of: window)
     }
 
@@ -122,7 +118,6 @@ final class PromptBarPresenter: PromptBarPresenting {
     private func resizeWindow(toContentSize size: NSSize) {
         guard let window, window.isVisible else { return }
 
-        // Pin the top edge so the bar grows downwards.
         var frame = window.frame
         let top = frame.maxY
         frame.size.height = size.height

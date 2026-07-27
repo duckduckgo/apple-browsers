@@ -107,13 +107,11 @@ protocol AIChatTabOpening {
     @MainActor
     func openVoiceSession(inSourceCollection sourceCollection: TabCollectionViewModel?, behavior: LinkOpenBehavior)
 
-    /// Opens an auto-submitted query in a new tab of a specific window, for window-less entry points
-    /// that resolve their own target rather than taking `lastKeyMainWindowController`.
+    /// For window-less entry points that resolve their own target rather than taking `lastKeyMainWindowController`.
     @MainActor
     func openAIChatTab(withQuery query: String, inNewTabOf windowController: MainWindowController)
 
-    /// Opens an auto-submitted query in a new window placed by its top-center point. Without one a
-    /// new window cascades off the last key window, possibly onto another display.
+    /// Placed by top-center point; without one a new window cascades off the last key window.
     @MainActor
     func openAIChatTab(withQuery query: String, inNewWindowAt droppingPoint: NSPoint)
 }
@@ -221,11 +219,9 @@ protocol AIChatTabManaging {
     @MainActor
     func openAIChat(_ url: URL, with behavior: LinkOpenBehavior, hasPrompt: Bool)
 
-    /// Bypasses last-key-window resolution.
     @MainActor
     func openAIChat(_ url: URL, inNewTabOf windowController: MainWindowController, hasPrompt: Bool)
 
-    /// Positioned by its top-center point rather than cascaded off the last key window.
     @MainActor
     func openAIChat(_ url: URL, inNewWindowAt droppingPoint: NSPoint, hasPrompt: Bool)
 

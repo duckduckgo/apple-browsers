@@ -670,7 +670,7 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
             return
         }
         dismissPresentedViewController { [weak self] in
-            guard let self else { return }
+            guard let self, self.viewModel.connectingSheetPhase == nil else { return }
             self.viewModel.connectingSheetPhase = .connecting(isRecovery: self.codeCollectionIntent == .recoverData)
         }
     }

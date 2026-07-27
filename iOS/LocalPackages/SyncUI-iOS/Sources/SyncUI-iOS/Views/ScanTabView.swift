@@ -229,10 +229,10 @@ private struct QRScannerOverlay: View {
     var onAnimationComplete: (() -> Void)?
 
     private let cornerRadius: CGFloat = 26
-    private let armLength: CGFloat = 28
-    private let lineWidth: CGFloat = 6
-    private let sideRatio: CGFloat = 0.6
-    private let initialScale: CGFloat = 0.5
+    private let armLength: CGFloat = 60
+    private let lineWidth: CGFloat = 4
+    private let sideRatio: CGFloat = 0.8
+    private let initialScale: CGFloat = 0.8
     private let animationDelay: TimeInterval = 0.5
     private let animationResponse: TimeInterval = 0.5
 

@@ -150,7 +150,7 @@ final class FloatingTabSwitcherChromeTests: XCTestCase {
         XCTAssertEqual(chrome.navigationItem.rightBarButtonItems?.first?.title, UserText.deselectAllTabs)
     }
 
-    func testWhenLargeSizeThenMatchesProductionBarLayout() {
+    func testWhenLargeSizeThenMatchesIPhoneControlStyle() {
         let chrome = makeInstalledChrome()
         chrome.actions.onEditMenuRequested = { UIMenu(children: []) }
 
@@ -161,11 +161,17 @@ final class FloatingTabSwitcherChromeTests: XCTestCase {
 
         XCTAssertEqual(chrome.navigationItem.leftBarButtonItems?.count, 2)
         XCTAssertNotNil(chrome.navigationItem.leftBarButtonItems?.first?.menu)
-        XCTAssertNil(chrome.navigationItem.leftBarButtonItems?.last?.menu)
-        XCTAssertEqual(chrome.navigationItem.rightBarButtonItems?.first?.title, UserText.navigationTitleDone)
+        XCTAssertNotNil(chrome.navigationItem.leftBarButtonItems?.last?.menu)
+        XCTAssertEqual(chrome.navigationItem.rightBarButtonItems?.first?.accessibilityLabel, UserText.navigationTitleDone)
         XCTAssertEqual(chrome.navigationItem.rightBarButtonItems?.count, 3)
         XCTAssertTrue(chrome.toolbar.isHidden)
         XCTAssertTrue(chrome.toolbar.items?.isEmpty == true)
+
+        if #available(iOS 26.0, *) {
+            XCTAssertEqual(chrome.navigationItem.rightBarButtonItems?.first?.style, .prominent)
+            XCTAssertEqual(chrome.navigationItem.leftBarButtonItems?.map(\.sharesBackground), [false, false])
+            XCTAssertEqual(chrome.navigationItem.rightBarButtonItems?.map(\.sharesBackground), [false, false, true])
+        }
     }
 
     func testWhenLargeSizeWithAIChatThenDuckChatIsInTopBar() {
@@ -179,6 +185,10 @@ final class FloatingTabSwitcherChromeTests: XCTestCase {
         XCTAssertEqual(chrome.navigationItem.rightBarButtonItems?.count, 4)
         XCTAssertEqual(chrome.navigationItem.rightBarButtonItems?.last?.accessibilityIdentifier, "TabSwitcher.Button.DuckChat")
         XCTAssertTrue(chrome.toolbar.items?.isEmpty == true)
+
+        if #available(iOS 26.0, *) {
+            XCTAssertEqual(chrome.navigationItem.rightBarButtonItems?.map(\.sharesBackground), [false, false, true, true])
+        }
     }
 
     func testWhenEditingLargeSizeThenMatchesProductionBarLayout() {
@@ -191,11 +201,15 @@ final class FloatingTabSwitcherChromeTests: XCTestCase {
                       canShowSelectionMenu: true,
                       isEditing: true)
 
-        XCTAssertEqual(chrome.navigationItem.leftBarButtonItems?.first?.title, UserText.navigationTitleDone)
+        XCTAssertEqual(chrome.navigationItem.leftBarButtonItems?.first?.accessibilityLabel, UserText.navigationTitleDone)
         XCTAssertEqual((chrome.navigationItem.titleView as? UILabel)?.text, "2 Selected")
         XCTAssertNotNil(chrome.navigationItem.rightBarButtonItems?.first?.menu)
         XCTAssertTrue(chrome.toolbar.isHidden)
         XCTAssertTrue(chrome.toolbar.items?.isEmpty == true)
+
+        if #available(iOS 26.0, *) {
+            XCTAssertEqual(chrome.navigationItem.leftBarButtonItems?.first?.style, .prominent)
+        }
     }
 
     func testWhenLargeSizeThenCollectionHasNoBottomInset() {

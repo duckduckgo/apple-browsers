@@ -90,12 +90,6 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
         return item
     }()
 
-    private lazy var doneTextItem = UIBarButtonItem(
-        title: UserText.navigationTitleDone,
-        image: nil,
-        primaryAction: UIAction { [weak self] _ in self?.actions.onDoneTapped?() },
-        menu: nil)
-
     private lazy var selectionTitleLabel: UILabel = {
         let label = UILabel()
         label.font = UIFont.daxHeadline()
@@ -305,26 +299,21 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
         interfaceMode = params.interfaceMode
 
         tabsStyleItem.image = tabsStyle.image
-        if params.interfaceMode.isLarge {
-            tabsStyleItem.primaryAction = UIAction { [weak self] _ in self?.actions.onToggleTabsStyle?() }
-            tabsStyleItem.menu = nil
-        } else {
-            tabsStyleItem.primaryAction = nil
-            tabsStyleItem.menu = makeTabsStyleMenu(current: tabsStyle)
-        }
+        tabsStyleItem.primaryAction = nil
+        tabsStyleItem.menu = makeTabsStyleMenu(current: tabsStyle)
         editMenuItem.menu = actions.onEditMenuRequested?()
         multiSelectMenuItem.menu = actions.onMultiSelectMenuRequested?()
         multiSelectMenuItem.isEnabled = canShowSelectionMenu
         editMenuItem.isEnabled = params.totalCount > 1 || params.containsWebPages
+        configureBackgroundSharing(isLarge: params.interfaceMode.isLarge)
 
         let isDoneEnabled = params.canDismissOnEmpty || params.totalCount > 0
         doneItem.isEnabled = isDoneEnabled
-        doneTextItem.isEnabled = isDoneEnabled
 
         if params.interfaceMode == .editingLargeSize {
             navigationItem.title = nil
             navigationItem.titleView = selectionTitleLabel
-            navigationItem.leftBarButtonItems = [doneTextItem]
+            navigationItem.leftBarButtonItems = [doneItem]
             navigationItem.rightBarButtonItems = [multiSelectMenuItem]
             setToolbarItems([])
         } else if params.interfaceMode == .largeSize {
@@ -332,7 +321,7 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
             navigationItem.titleView = centerTitleView()
             navigationItem.leftBarButtonItems = [editMenuItem, tabsStyleItem]
 
-            var items = [doneTextItem, fireItem, plusItem]
+            var items = [doneItem, fireItem, plusItem]
             if params.showAIChat {
                 items.append(duckChatItem)
             }
@@ -466,6 +455,17 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
             self?.actions.onSelectTabsStyle?(.list)
         }
         return UIMenu(children: [grid, list])
+    }
+
+    private func configureBackgroundSharing(isLarge: Bool) {
+        guard #available(iOS 26.0, *) else { return }
+        let shouldShareBackground = !isLarge
+        editMenuItem.sharesBackground = shouldShareBackground
+        tabsStyleItem.sharesBackground = shouldShareBackground
+        fireItem.sharesBackground = shouldShareBackground
+        doneItem.sharesBackground = shouldShareBackground
+        plusItem.sharesBackground = true
+        duckChatItem.sharesBackground = true
     }
 
     private func configureBarMaterials() {

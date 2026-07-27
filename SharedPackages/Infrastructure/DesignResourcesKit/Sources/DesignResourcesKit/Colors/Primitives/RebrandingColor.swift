@@ -54,10 +54,10 @@ enum RebrandingColor {
     }
 
     enum Mandarin {
-        static let mandarin0 = Color(0xFFFAF9)
-        static let mandarin10 = Color(0xFFEBE5)
-        static let mandarin20 = Color(0xFFDACC)
-        static let mandarin30 = Color(0xFFB294)
+        static let mandarin0 = Color(0xFFF7F0)
+        static let mandarin10 = Color(0xFFECDB)
+        static let mandarin20 = Color(0xFFE4CC)
+        static let mandarin30 = Color(0xFFB694)
         static let mandarin40 = Color(0xFF8D5C)
         static let mandarin50 = Color(0xF05F2B)
         static let mandarin60 = Color(0xCC3B0A)

@@ -1,15 +1,14 @@
-name: macOS - crossbench Chrome LCP (live network)
+name: macOS - crossbench Chrome LCP (WPR)
 
-# Manual-only test harness: stands up crossbench on a GitHub-hosted macOS runner,
-# measures Chrome navigation -> Largest Contentful Paint against the LIVE network,
+# Test harness: stands up crossbench on a GitHub-hosted macOS runner,
+# measures Chrome navigation -> Largest Contentful Paint from WPR archives,
 # and uploads the per-rep results as a downloadable artifact. Optionally
 # (opt-in dispatch input) a second, self-hosted job inserts per-domain
 # aggregates into ClickHouse (native_apps.macos_browser_health_nav_to_lcp).
 #
 # Triggered manually (workflow_dispatch) and on a daily off-peak schedule. No
-# pull_request/push trigger, so fork PRs can't run it. Results are live-network
-# noisy — this validates the pipeline, it is not a trustworthy cross-browser
-# comparison (that needs WPR + a dedicated runner, later).
+# pull_request/push trigger, so fork PRs can't run it. WPR supplies fixed page
+# bytes and the US-broadband shaper matches the Windows harness.
 
 on:
   workflow_dispatch:
@@ -24,12 +23,8 @@ on:
         required: false
         default: false
   schedule:
-    # 06:00 UTC = 2am US Eastern / 7am CET: deep US night, before the EU ramp,
-    # and the ~2h run finishes (~08:00 UTC) before either region gets busy — so
-    # both hosted and self-hosted runners are near their quietest. A scheduled
-    # run takes the input defaults (blank sites = full 22-site list) and forces
-    # the ClickHouse upload via the job gate below. NOTE: GitHub only fires
-    # schedule triggers from the repo's default branch (main).
+    # A scheduled run uses the full 22-site list and uploads to ClickHouse.
+    # GitHub only fires schedules from the default branch.
     - cron: "0 6 * * *"
 
 permissions:
@@ -50,19 +45,11 @@ defaults:
 
 jobs:
   chrome-lcp:
-    name: Chrome LCP (live network)
-    # Free standard hosted runner (Apple Silicon, 3 cores). macos-26-xlarge was
-    # measured and made no difference — ~8.0 min/site on both — because the
-    # per-rep cost is a fixed ~20s inside the trace_processor stop phase, not
-    # something more cores can parallelize. So the larger runner billed without
-    # buying anything. If you revisit this, note macos-*-large is Intel x86_64
-    # and would break comparability with the arm64 Safari runs; only -xlarge is
-    # Apple Silicon.
+    name: Chrome LCP (WPR)
+    # Standard hosted Apple Silicon runner, matching the Safari architecture.
     runs-on: macos-latest
-    # 6 loads/site (1 warm-up + 5 measured). At ~8.0 min/site for 11 loads, a
-    # full 22-site run should land near ~100 min. The cap stays well above that
-    # on purpose — headroom costs nothing, and two earlier runs were lost to a
-    # timeout that fired mid-suite and skipped the ClickHouse upload.
+    # 10 measured loads/site, with no discarded live-network warm-up. The cap
+    # retains headroom for provisioning and trace-processor variance.
     timeout-minutes: 200
 
     steps:
@@ -71,7 +58,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Provision crossbench (python, poetry, Chrome, checkout)
+      - name: Provision crossbench, Chrome, and WPR
         run: ./provision-macos.sh
 
       - name: Run Chrome LCP suite
@@ -112,7 +99,8 @@ jobs:
             --output clickhouse-rows.tsv \
             --run-id "$GITHUB_RUN_ID" \
             --start-time "$(jq -r '.created_at' <<< "$run_json")" \
-            --gh-run-started-at "$(jq -r '.run_started_at' <<< "$run_json")"
+            --gh-run-started-at "$(jq -r '.run_started_at' <<< "$run_json")" \
+            --webview-type chr-wpr
           cat clickhouse-rows.tsv
 
       - name: Upload ClickHouse rows TSV
@@ -152,7 +140,7 @@ jobs:
             --run-id "$GITHUB_RUN_ID" \
             --start-time "$(jq -r '.created_at' <<< "$run_json")" \
             --gh-run-started-at "$(jq -r '.run_started_at' <<< "$run_json")" \
-            --webview-type chr
+            --webview-type chr-wpr
           cat clickhouse-attempts.tsv
 
       - name: Upload ClickHouse attempts TSV

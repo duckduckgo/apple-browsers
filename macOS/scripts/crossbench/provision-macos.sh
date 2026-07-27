@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
 #
 # provision-macos.sh — install the minimum crossbench needs to measure Chrome
-# page-load LCP against the LIVE network on a macOS runner.
+# page-load LCP from a Web Page Replay archive on a macOS runner.
 #
-# WPR-free variant: no Web Page Replay, no traffic shaping, no proxy. Chrome
-# loads real public sites over the live internet and crossbench extracts LCP
-# from the Perfetto trace. Recorded-network determinism and the DDG/Safari paths
-# are deliberately out of scope here.
+# Chrome replays each site from a WPR archive through a traffic shaper and
+# crossbench extracts LCP from the Perfetto trace. This script installs the
+# toolchain and builds the `wpr` binary; the archives and the shaper (tsproxy,
+# a single Python file) are fetched at run time by test-chrome.sh. The DDG and
+# Safari paths are deliberately out of scope here.
 #
 # Idempotent: safe to run on every CI job; installs only what's missing.
 #
@@ -33,6 +34,15 @@ PYTHON_VERSION="${PYTHON_VERSION:-3.11}"   # matches Windows (poetry env use 3.1
 # our extras + the cpu_freq patch target underneath us. Anchor to a known-good
 # rev so the extras and patch always line up with code that exists.
 CROSSBENCH_REV="${CROSSBENCH_REV:-be14dbfb884747ea577e2e65b6a4a77d7ecd807d}"
+
+# WPR (Web Page Replay) source, pinned to the revision crossbench's own DEPS
+# file names, so the binary we build is the one crossbench expects to drive.
+# Bump this and CROSSBENCH_REV together, from the same DEPS file.
+WEBPAGEREPLAY_GIT="https://chromium.googlesource.com/webpagereplay"
+WEBPAGEREPLAY_REV="b2b856131e36c99e9de9c419fe8ca02f857082ba"   # DEPS: webpagereplay_revision
+# Where the wpr binary is built to. test-chrome.sh passes this to crossbench via
+# --bin-override, which skips crossbench's own build machinery entirely.
+WPR_BIN="${WPR_BIN:-$HOME/Developer/mac-perf-runner/bin/wpr}"
 
 # Non-interactive: never prompt (Homebrew honors these).
 export NONINTERACTIVE=1
@@ -137,5 +147,35 @@ log "crossbench deps (poetry install)"
 cd "$CROSSBENCH_DIR"
 poetry env use "$PY_BIN"
 poetry install
+
+# 8. WPR — crossbench does NOT ship the `wpr` binary, only a DEPS pin of its Go
+#    source. A poetry-only setup never runs `gclient sync`, which is what would
+#    normally populate third_party/, so clone the pinned source and `go build`
+#    it here. test-chrome.sh hands the result to crossbench via --bin-override,
+#    keeping crossbench's own build machinery (scripts/build.py + a hermetic
+#    CIPD Go toolchain) out of the picture.
+#
+#    The checkout must stay at third_party/webpagereplay inside CROSSBENCH_DIR:
+#    crossbench also reads deterministic.js and the ECDSA key/cert from there at
+#    runtime. It is untracked as far as the crossbench repo is concerned, so the
+#    `checkout -f` in step 5 leaves it alone.
+log "Go toolchain (builds the wpr binary)"
+brew list go >/dev/null 2>&1 || brew install go
+echo "go: $(go version)"
+
+log "WebPageReplay source (pinned by crossbench DEPS) + wpr build"
+WPR_SRC="$CROSSBENCH_DIR/third_party/webpagereplay"
+if [ -d "$WPR_SRC/.git" ] && [ "$(git -C "$WPR_SRC" rev-parse HEAD 2>/dev/null)" = "$WEBPAGEREPLAY_REV" ]; then
+  echo "webpagereplay: already at $WEBPAGEREPLAY_REV"
+else
+  rm -rf "$WPR_SRC"
+  git clone --quiet "$WEBPAGEREPLAY_GIT" "$WPR_SRC"
+  git -C "$WPR_SRC" -c advice.detachedHead=false checkout --quiet --detach "$WEBPAGEREPLAY_REV"
+  echo "webpagereplay: checked out $WEBPAGEREPLAY_REV"
+fi
+mkdir -p "$(dirname "$WPR_BIN")"
+# The same flags crossbench's build.py would use; incremental, sub-second once warm.
+go build -C "$WPR_SRC/src" -trimpath -buildvcs=false -o "$WPR_BIN" wpr.go
+echo "wpr: $WPR_BIN"
 
 log "Provisioning complete"

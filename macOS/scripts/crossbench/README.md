@@ -1,66 +1,49 @@
-# macOS crossbench — Chrome LCP (live network)
+# macOS crossbench — Chrome LCP with WPR
 
-Measures Chrome page-load performance (navigation → Largest Contentful Paint)
-on macOS using [crossbench], over a fixed top-sites list, against the **live
-network**. This is the minimal first slice of the macOS crossbench harness: no
-Web Page Replay, no traffic shaping, no proxy, and Chrome only.
+Measures Chrome navigation-to-LCP on macOS using fixed Web Page Replay archives
+and the same US-broadband profile as the Windows harness:
 
-> Live-network results are noisy — they vary run-to-run with network conditions
-> and are **not** comparable to recorded-network (WPR) numbers or to the Windows
-> crossbench pipeline. This slice exists to stand up the measurement pipeline,
-> not to produce trustworthy cross-browser comparisons. Recorded network (WPR)
-> and a dedicated runner come in a later iteration.
+- 28 ms RTT
+- 50,000 Kbps downstream
+- 10,000 Kbps upstream
+- TCP window 10
+
+There is no live-network fallback or curl site pre-check. A site without an
+archive is recorded as an infrastructure error and skipped. Each available site
+gets 10 measured loads with no discarded warm-up.
 
 ## Layout
 
 | File | Purpose |
 |------|---------|
-| `provision-macos.sh` | Installs the minimum: Python 3.11 + Poetry, latest Chrome, a pinned crossbench checkout, the LCP extras, and the `cpu_freq` patch. Idempotent. |
-| `test-chrome.sh` | Runs the LCP suite against the live network and writes a results TSV. |
-| `crossbench-extras/` | Fork-only files crossbench needs but a plain clone doesn't ship: the `navToLCP` probe config and the LCP SQL module. Copied into the crossbench checkout by `provision-macos.sh`. |
-| `patches/` | `cpu_freq` AttributeError fix (crossbench crashes on Apple Silicon without it). |
+| `provision-macos.sh` | Installs Chrome, Python 3.11, Poetry, a pinned crossbench checkout, the LCP extras, and a pinned WPR binary. |
+| `test-chrome.sh` | Downloads each archive, runs Chrome through WPR and tsproxy, and writes per-repetition results and per-site dispositions. |
+| `aggregate-lcp.py` | Produces per-domain ClickHouse metric rows. |
+| `aggregate-dispositions.py` | Produces ClickHouse attempt rows, including skipped and failed sites. |
+| `crossbench-extras/` | Supplies the `navToLCP` probe config and LCP SQL module missing from the upstream checkout. |
+| `patches/` | Contains the Apple Silicon `cpu_freq` compatibility fix. |
 
-## Prerequisites (on the runner, once)
+## Prerequisites
 
-- Xcode Command Line Tools (`xcode-select --install`)
-- Homebrew (`/opt/homebrew`)
+- Xcode Command Line Tools
+- Homebrew at `/opt/homebrew`
 
 Everything else is installed by `provision-macos.sh`.
 
 ## Usage
 
 ```sh
-# 1. Install/refresh the toolchain (safe to re-run every job).
 ./provision-macos.sh
-
-# 2. Measure. Defaults: 22 sites, 10 reps each, 12 s load window.
 ./test-chrome.sh
-# Quick smoke run:
-./test-chrome.sh --sites apple.com,wikipedia.org --reps 3
+
+# Small validation run:
+./test-chrome.sh --sites apple.com --reps 1
 ```
 
-Both honor `CROSSBENCH_DIR` (default `~/Developer/crossbench-upstream`).
+The runner writes:
 
-## How you see results
+- `crossbench-results/chrome-lcp-<UTC>.tsv`
+- `crossbench-dispositions/chrome-dispositions-<UTC>.tsv`
 
-Two ways:
-
-1. **Console summary** — per site, as the run progresses:
-   ```
-   === site: apple.com ===
-     apple.com: lcp_ms=[812.4,799.1,835.0] mean=815.5 n=3
-   ```
-2. **Results file** — a TSV written to `./crossbench-results/chrome-lcp-<UTC>.tsv`
-   (override with `--out FILE`). One row per rep:
-   ```
-   browser  browser_version  site        rep  lcp_ms
-   chrome   150.0.7258.5     apple.com   1    812.4
-   chrome   150.0.7258.5     apple.com   2    799.1
-   ```
-
-In CI this TSV is uploaded as a workflow artifact (download it from the Actions
-run), and the console summary shows in the job log. Aggregating these per-rep
-rows into percentiles and pushing them to ClickHouse is the next increment — not
-part of this slice.
-
-[crossbench]: https://chromium.googlesource.com/crossbench
+CI uploads both artifacts and aggregates them with `webview_type=chr-wpr`, so
+replay results cannot be mixed with the earlier live-network `chr` rows.

@@ -861,9 +861,22 @@ final class TabCollectionViewModel: NSObject {
         // Materialize if unloaded — pinned tabs must always be loaded
         guard let tab = materialize(at: .unpinned(index)) else { return }
 
+        // 1. Add the tab to the pinned collection.
         pinnedTabsManager?.pin(tab)
-        removeUnpinnedTab(at: index, published: false)
+
+        // 2. Move the selection to the newly pinned tab BEFORE removing the
+        //    unpinned source. If the order is reversed, the unpinned
+        //    `tabCollection` is briefly empty while `selectionIndex` still
+        //    points at `.unpinned(<old index>)`. `BrowserTabViewController`
+        //    observes `selectedTabViewModel` and runs `closeWindowIfNeeded()`,
+        //    which can close the window when a user pins the only tab — for
+        //    example in shared-pinned-tabs mode. `didRemoveTab` would also
+        //    notify the tab bar to select unpinned slot 0 which no longer
+        //    exists. Selecting the pinned tab first avoids both problems.
         selectPinnedTab(at: pinnedTabsCollection.tabs.count - 1)
+
+        // 3. Remove the now-duplicated tab from the unpinned collection.
+        removeUnpinnedTab(at: index, published: false)
     }
 
     func unpinTab(at index: Int) {

@@ -1643,30 +1643,16 @@ xcrun xcresulttool get object --format json --legacy --path \
 2) Pull top-level failure summaries from ActionResult.issues.testFailureSummaries
 
 ```bash
-python3 - << 'PY'
-import json, re
-j=json.load(open('/tmp/xc_root.json'))
-vals = j.get('actions',{}).get('_values') or []
-if not vals:
-    raise SystemExit('no actions in xcresult json')
-act = vals[0]
-fails = ((act.get('actionResult',{})
-           .get('issues',{})
-           .get('testFailureSummaries',{})
-           .get('_values')) or [])
-
-def decode_url(url):
-    if not url: return ('','')
-    m = re.match(r'^file:\/\/(.*?)#.*StartingLineNumber=(\d+)', url)
-    return (m.group(1), m.group(2)) if m else (url,'')
-
-for f in fails:
-    name = (f.get('testCaseName') or {}).get('_value','')
-    msg  = (f.get('message') or {}).get('_value','')
-    url  = (f.get('documentLocationInCreatingWorkspace') or {}).get('url',{}).get('_value','')
-    filePath, line = decode_url(url)
-    print(f"{name}\t{' '.join(msg.split())}\t{filePath}\t{line}")
-PY
+jq -r '
+  .actions._values[0].actionResult.issues.testFailureSummaries._values[]? |
+  [
+    (.testCaseName._value // ""),
+    (.message._value // "" | gsub("\\s+"; " ")),
+    (.documentLocationInCreatingWorkspace.url._value // ""
+      | capture("file://(?<file>[^#]+)#.*StartingLineNumber=(?<line>[0-9]+)")
+      | "\(.file)\t\(.line)")
+  ] | @tsv
+' /tmp/xc_root.json
 ```
 
 Notes:

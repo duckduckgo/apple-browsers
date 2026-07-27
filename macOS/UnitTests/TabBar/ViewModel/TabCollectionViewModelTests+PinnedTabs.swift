@@ -373,6 +373,59 @@ extension TabCollectionViewModelTests {
         XCTAssertIdentical(events[0], tabCollectionViewModel.selectedTabViewModel)
     }
 
+    // MARK: - Pin
+
+    @MainActor
+    func test_WithPinnedTabs_WhenOnlyUnpinnedTabIsPinnedThenSelectionMovesToPinnedTabAndDelegateIsNotAskedToSelectMissingUnpinnedSlot() {
+        // GIVEN: a window with exactly one unpinned tab and no pinned tabs.
+        let tabCollectionViewModel = TabCollectionViewModel(
+            tabCollection: TabCollection(),
+            pinnedTabsManagerProvider: PinnedTabsManagerProvidingMock()
+        )
+        XCTAssertEqual(tabCollectionViewModel.tabs.count, 1)
+        XCTAssertEqual(tabCollectionViewModel.pinnedTabs.count, 0)
+        XCTAssertEqual(tabCollectionViewModel.selectionIndex, .unpinned(0))
+
+        let delegate = TabCollectionViewModelDelegateMock()
+        tabCollectionViewModel.delegate = delegate
+
+        // Capture transient publisher states. We expect the published
+        // `selectedTabViewModel` to never become `nil` between the unpinned
+        // tab being removed and the pinned tab being selected — that
+        // transient nil is what triggers `BrowserTabViewController.showTabContent`
+        // to call `closeWindowIfNeeded()` and close the window.
+        var observedSelectedTabViewModels: [TabViewModel?] = []
+        let cancellable = tabCollectionViewModel.$selectedTabViewModel
+            .sink { observedSelectedTabViewModels.append($0) }
+        defer { cancellable.cancel() }
+
+        // WHEN: the user pins the only tab.
+        tabCollectionViewModel.pinTab(at: 0)
+
+        // THEN: the model ends up with one pinned tab, no unpinned tabs,
+        //       and selection on the pinned tab.
+        XCTAssertEqual(tabCollectionViewModel.tabs.count, 0)
+        XCTAssertEqual(tabCollectionViewModel.pinnedTabs.count, 1)
+        XCTAssertEqual(tabCollectionViewModel.selectionIndex, .pinned(0))
+        XCTAssertNotNil(tabCollectionViewModel.selectedTabViewModel)
+
+        // AND: the delegate is told to remove the unpinned slot but NOT to
+        //      select an unpinned slot that no longer exists. Telling the
+        //      tab bar to select an empty unpinned slot is what produced the
+        //      window-closes-on-pin behaviour.
+        XCTAssertTrue(delegate.didRemoveCalled)
+        let lastCall = delegate.didRemoveLastCall
+        XCTAssertEqual(lastCall?.removalIndex, 0)
+        XCTAssertNil(lastCall?.selectionIndex,
+                     "Tab bar must not be asked to select unpinned index \(lastCall?.selectionIndex ?? -1) when no unpinned tabs remain")
+
+        // AND: at no point during the operation did `selectedTabViewModel`
+        //      become nil — there was always a selected tab visible to the
+        //      browser, so `closeWindowIfNeeded()` cannot fire.
+        XCTAssertFalse(observedSelectedTabViewModels.contains(where: { $0 == nil }),
+                       "selectedTabViewModel must stay non-nil while pinning the only tab")
+    }
+
     // MARK: - Unpin
 
     @MainActor

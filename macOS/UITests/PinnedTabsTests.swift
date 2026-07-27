@@ -133,6 +133,32 @@ class PinnedTabsTests: UITestCase {
         assertSingleWindowScenario()
     }
 
+    /// Pinning the only tab in a window must not close the window.
+    /// Regression test for "bug: pin an only tab in a window: window closes".
+    func testPinningOnlyTabInWindowKeepsWindowOpen() {
+        app.closeAllWindows()
+        app.openNewWindow()
+
+        // Single window with exactly one tab and no pinned tabs.
+        XCTAssertEqual(app.windows.count, 1, "Should start with exactly one window")
+        XCTAssertEqual(app.pinnedTabs.count, 0, "Should start with no pinned tabs")
+
+        pinCurrentPage()
+
+        // The current tab becomes pinned …
+        XCTAssertTrue(
+            app.wait(for: .keyPath(\.pinnedTabs.count, equalTo: 1), timeout: UITests.Timeouts.elementExistence),
+            "The current tab should become pinned"
+        )
+        // … and the window must stay open (the previous behaviour was for the window to close).
+        XCTAssertEqual(app.windows.count, 1, "Window must not close when the only tab is pinned")
+        // The pinned tab is still the active selection, so the Unpin Tab menu item should be available.
+        XCTAssertTrue(
+            app.menuItems["Unpin Tab"].waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "Unpin Tab menu item should be available, confirming the pinned tab is selected"
+        )
+    }
+
     // MARK: - Utilities
 
     private func openThreeSitesOnSameWindow() {

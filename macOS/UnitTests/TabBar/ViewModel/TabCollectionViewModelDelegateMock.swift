@@ -34,11 +34,18 @@ final class TabCollectionViewModelDelegateMock: TabCollectionViewModelDelegate {
     }
 
     var didRemoveCalled = false
+    /// Captured arguments of the last `didRemoveTabAt:andSelectTabAt:` call.
+    /// The outer optional is `nil` until the delegate is invoked, after
+    /// which it holds the last `(removalIndex, selectionIndex)` pair —
+    /// `selectionIndex == nil` means the tab bar is asked to delete the
+    /// row without selecting any other unpinned slot.
+    var didRemoveLastCall: (removalIndex: Int, selectionIndex: Int?)?
 
     func tabCollectionViewModel(_ tabCollectionViewModel: TabCollectionViewModel,
                                 didRemoveTabAt removalIndex: Int,
                                 andSelectTabAt selectionIndex: Int?) {
         didRemoveCalled = true
+        didRemoveLastCall = (removalIndex, selectionIndex)
     }
 
     var didReplaceCalled = false

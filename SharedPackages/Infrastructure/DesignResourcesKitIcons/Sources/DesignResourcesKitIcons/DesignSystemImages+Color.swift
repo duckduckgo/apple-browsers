@@ -319,6 +319,7 @@ public extension DesignSystemImages {
                     ? .init(resource: .aiGeneralColor24)
                     : .init(resource: .aiGeneralColor24Legacy)
             }
+            public static var aiImagesStriketrough: DesignSystemImage { .init(resource: .aiImagesStrikethroughColor24)}
             public static var announce: DesignSystemImage {
                 AppRebrand.isAppRebranded()
                     ? .init(resource: .announceColor24)
@@ -516,6 +517,7 @@ public extension DesignSystemImages {
             public static var privacyCheckGreyscale: DesignSystemImage { .init(resource: .privacyCheckGreyscaleColor24) }
             public static var profile: DesignSystemImage { .init(resource: .profileColor24) }
             public static var rocket: DesignSystemImage { .init(resource: .rocketColor24) }
+            public static var searchAssistStrikethrough: DesignSystemImage { .init(resource: .searchAssistStrikethroughColor24) }
             public static var sessionRestore: DesignSystemImage { .init(resource: .sessionRestoreColor24) }
             public static var settings: DesignSystemImage {
                 AppRebrand.isAppRebranded()

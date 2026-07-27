@@ -178,9 +178,16 @@ extension OnboardingIntroContentProvider {
 // MARK: - Content Provider + Comparison Chart
 
 struct OnboardingComparisonContent: Equatable {
+    enum Competitor {
+        case safari
+        case google
+        case ai
+    }
+
     let title: String
     /// When set, renders as a text-and-icons table header; absent for icon-only headers.
     let subHeader: String?
+    let competitor: Competitor
     let features: [RebrandedComparisonTableModel.Feature]
     let primaryCTA: String
     /// When set, renders a secondary skip button below the primary CTA.
@@ -200,6 +207,7 @@ extension OnboardingIntroContentProvider {
         return OnboardingComparisonContent(
             title: title,
             subHeader: nil,
+            competitor: .safari,
             features: RebrandedComparisonTableModel.defaultBrowserFeatures,
             primaryCTA: UserText.Onboarding.BrowsersComparison.cta,
             secondaryCTA: UserText.onboardingSkip,
@@ -217,9 +225,12 @@ extension OnboardingIntroContentProvider {
 
         let subHeader = reason == .privateAIChat ? UserText.Onboarding.DuckAICPP.AIComparison.subHeader : nil
 
+        let competitor: OnboardingComparisonContent.Competitor = reason == .noAI ? .google : .safari
+
         return OnboardingComparisonContent(
             title: UserText.Onboarding.BrowsersComparison.titleDownloadExperiment,
             subHeader: subHeader,
+            competitor: competitor,
             features: RebrandedComparisonTableModel.browserFeatures(for: reason),
             primaryCTA: UserText.Onboarding.BrowsersComparison.cta,
             secondaryCTA: UserText.onboardingSkip,
@@ -231,6 +242,7 @@ extension OnboardingIntroContentProvider {
         OnboardingComparisonContent(
             title: UserText.Onboarding.DuckAICPP.AIComparison.title,
             subHeader: UserText.Onboarding.DuckAICPP.AIComparison.subHeader,
+            competitor: .ai,
             features: RebrandedComparisonTableModel.defaultAIFeatures,
             primaryCTA: UserText.Onboarding.DuckAICPP.AIComparison.cta,
             secondaryCTA: nil,

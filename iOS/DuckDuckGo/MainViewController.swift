@@ -3170,9 +3170,9 @@ class MainViewController: UIViewController {
     /// exposed container the darker `backdrop` tone so the notch reads as a curve, not the bar's own fill.
     private func updateWindowedAddressBarCorners() {
         let barView = omniBar.barView
-        let isPad = UIDevice.current.userInterfaceIdiom == .pad
+        let isPadInterface = AppWidthObserver.shared.isLargeWidth
         let isTopPosition = !appSettings.currentAddressBarPosition.isBottom
-        let shouldRound = isPad && isTopPosition && !isFloatingUIEnabled && barView.isWindowedPresentation
+        let shouldRound = isPadInterface && isTopPosition && !isFloatingUIEnabled && barView.isWindowedPresentation
 
         barView.layer.cornerCurve = .continuous
         barView.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]

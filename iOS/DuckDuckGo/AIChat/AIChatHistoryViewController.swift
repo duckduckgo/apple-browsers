@@ -505,7 +505,7 @@ final class AIChatHistoryViewController: UIViewController {
 
     // MARK: - Redesign: multi-select
 
-    private func enterSelectionMode() {
+    private func enterSelectionMode(preselecting chatId: String? = nil) {
         guard !isEditingChats else { return }
         // Search and multi-select are mutually exclusive: leave search first.
         hideSearchBarIfNeeded()
@@ -515,6 +515,23 @@ final class AIChatHistoryViewController: UIViewController {
         configureNavigationButtons()
         configureToolbar()
         tableView.setEditing(true, animated: true)
+        // Entered from a chat's long-press menu: pre-select that chat and reflect it in the
+        // toolbar (programmatic selection doesn't trigger `didSelectRowAt`). Resolve the index
+        // path fresh since leaving search above can reorder the rows.
+        if let chatId, let indexPath = indexPath(forChatId: chatId) {
+            tableView.selectRow(at: indexPath, animated: false, scrollPosition: .none)
+            updateSelectionActionButtons()
+        }
+    }
+
+    private func indexPath(forChatId chatId: String) -> IndexPath? {
+        for section in 0..<viewModel.numberOfSections {
+            for row in 0..<viewModel.numberOfRows(in: section)
+            where viewModel.chatId(forRowAt: IndexPath(row: row, section: section)) == chatId {
+                return IndexPath(row: row, section: section)
+            }
+        }
+        return nil
     }
 
     private func hideSearchBarIfNeeded() {
@@ -684,7 +701,7 @@ extension AIChatHistoryViewController: UITableViewDelegate {
             guard self != nil else { return nil }
             let select = UIAction(title: UserText.aiChatHistoryRowMenuSelect,
                                   image: DesignSystemImages.Glyphs.Size24.checkCircle) { [weak self] _ in
-                self?.enterSelectionMode()
+                self?.enterSelectionMode(preselecting: chatId)
             }
             let pin = UIAction(title: isPinned ? UserText.aiChatHistoryRowMenuUnpin : UserText.aiChatHistoryRowMenuPin,
                                image: isPinned ? DesignSystemImages.Glyphs.Size24.unpin : DesignSystemImages.Glyphs.Size24.pin) { [weak self] _ in

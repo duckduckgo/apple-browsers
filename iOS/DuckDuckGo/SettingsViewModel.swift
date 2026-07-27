@@ -1483,7 +1483,8 @@ extension SettingsViewModel {
         let apply = {
             self.nextStepsSectionHidden = (try? self.keyValueStore.object(forKey: Constants.nextStepsSectionHiddenKey) as? Bool) ?? false
             self.shouldShowSetAddressBarPositionNextStep = !self.isPad && self.appSettings.currentAddressBarPosition == .top
-            self.shouldShowEnableVoiceSearchNextStep = !self.voiceSearchHelper.isVoiceSearchEnabled
+            self.shouldShowEnableVoiceSearchNextStep = self.voiceSearchHelper.isSpeechRecognizerAvailable
+                && !self.voiceSearchHelper.isVoiceSearchEnabled
             self.shouldShowAddToDockNextStep = !Self.hasTapDismissalElapsed(
                 tappedAt: try? self.keyValueStore.object(forKey: Constants.didTapAddToDockNextStepKey) as? Double,
                 interval: Constants.nextStepTapDismissalInterval)

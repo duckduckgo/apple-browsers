@@ -194,6 +194,11 @@ final class PermissionCenterViewModel: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
     private var removedPermissions = Set<PermissionType>()
     private(set) var hasTemporaryPopupAllowance: Bool
+    /// `true` when this view model belongs to a Fire Window (burner) tab. When set,
+    /// any decision change made through the Permission Center is *not* written to the
+    /// global permission store — Fire Windows must leave no persisted permission state
+    /// behind. The dropdown is also a no-op signal to defense-in-depth callers.
+    let isBurner: Bool
 
     /// Whether "Only allow pop-ups for this visit" option should be shown (based on feature flags)
     var showAllowPopupsForThisVisitOption: Bool {
@@ -229,7 +234,8 @@ final class PermissionCenterViewModel: ObservableObject {
         pageInitiatedPopupOpened: Bool = false,
         displaysAutoplayPolicy: Bool = false,
         permissionsNeedReload: Bool = false,
-        systemPermissionManager: SystemPermissionManagerProtocol = SystemPermissionManager()
+        systemPermissionManager: SystemPermissionManagerProtocol = SystemPermissionManager(),
+        isBurner: Bool = false
     ) {
         self.domain = domain
         self.usedPermissions = usedPermissions
@@ -252,6 +258,7 @@ final class PermissionCenterViewModel: ObservableObject {
         self.displaysAutoplayPolicy = displaysAutoplayPolicy
         self.systemPermissionManager = systemPermissionManager
         self.showReloadBanner = permissionsNeedReload
+        self.isBurner = isBurner
 
         loadPermissions()
         subscribeToPermissionChanges()
@@ -262,17 +269,22 @@ final class PermissionCenterViewModel: ObservableObject {
     /// Updates the decision for a permission type
     func setDecision(_ decision: PersistedPermissionDecision, for permissionType: PermissionType) {
         let previousDecision = permissionManager.permission(forDomain: domain, permissionType: permissionType)
-        permissionManager.setPermission(decision, forDomain: domain, permissionType: permissionType)
+        // Fire Windows must not write to the global permission store. We still allow the
+        // user-facing side effects (granting a pending in-tab request, reload banner) so
+        // their intent applies to *this session*, but the persisted decision is dropped.
+        if !isBurner {
+            permissionManager.setPermission(decision, forDomain: domain, permissionType: permissionType)
 
-        // Update the item's decision in the list
-        if let index = permissionItems.firstIndex(where: { $0.permissionType == permissionType }) {
-            permissionItems[index].decision = decision
-        }
+            // Update the item's decision in the list
+            if let index = permissionItems.firstIndex(where: { $0.permissionType == permissionType }) {
+                permissionItems[index].decision = decision
+            }
 
-        // Fire pixel for decision change
-        if previousDecision != decision {
-            PixelKit.fire(PermissionPixel.permissionCenterChanged(permissionType: permissionType, from: previousDecision, to: decision))
-            markReloadNeeded()
+            // Fire pixel for decision change
+            if previousDecision != decision {
+                PixelKit.fire(PermissionPixel.permissionCenterChanged(permissionType: permissionType, from: previousDecision, to: decision))
+                markReloadNeeded()
+            }
         }
 
         // If setting to "Always Allow" and there's a pending request, grant it
@@ -295,6 +307,10 @@ final class PermissionCenterViewModel: ObservableObject {
 
     /// Updates the decision for a specific external scheme
     func setExternalSchemeDecision(_ decision: PersistedPermissionDecision, for scheme: String) {
+        // Fire Windows must not persist external scheme decisions to the global store —
+        // doing so would let a user's choice leak past the window's lifetime.
+        guard !isBurner else { return }
+
         let permissionType = PermissionType.externalScheme(scheme: scheme)
         let previousDecision = permissionManager.permission(forDomain: domain, permissionType: permissionType)
         permissionManager.setPermission(decision, forDomain: domain, permissionType: permissionType)
@@ -336,6 +352,11 @@ final class PermissionCenterViewModel: ObservableObject {
 
     /// Updates the popup decision (special handling for popups)
     func setPopupDecision(_ decision: PopupDecision) {
+        // Fire Windows must not write any popup permission state — including the
+        // implicit `.ask` writes that the persistence dropdown otherwise makes —
+        // because that would leak the visited domain into the global permission
+        // store. The session-scoped pop-up affordances (open + temporary allowance)
+        // still apply for *this* tab.
         switch decision {
         case .allowForThisVisit:
             // Allow only the grouped empty/about URL popups (non-empty ones are opened via individual links)
@@ -346,11 +367,15 @@ final class PermissionCenterViewModel: ObservableObject {
             for query in emptyUrlQueries {
                 openPopup?(query)
             }
-            permissionManager.setPermission(.ask, forDomain: domain, permissionType: .popups)
+            if !isBurner {
+                permissionManager.setPermission(.ask, forDomain: domain, permissionType: .popups)
+            }
             setTemporaryPopupAllowance?()
             hasTemporaryPopupAllowance = true
         case .notify:
-            permissionManager.setPermission(.ask, forDomain: domain, permissionType: .popups)
+            if !isBurner {
+                permissionManager.setPermission(.ask, forDomain: domain, permissionType: .popups)
+            }
             resetTemporaryPopupAllowance?()
             hasTemporaryPopupAllowance = false
         case .alwaysAllow:
@@ -364,7 +389,9 @@ final class PermissionCenterViewModel: ObservableObject {
             if let index = permissionItems.firstIndex(where: { $0.permissionType == .popups }) {
                 permissionItems[index].blockedPopups = []
             }
-            permissionManager.setPermission(.allow, forDomain: domain, permissionType: .popups)
+            if !isBurner {
+                permissionManager.setPermission(.allow, forDomain: domain, permissionType: .popups)
+            }
             resetTemporaryPopupAllowance?()
             hasTemporaryPopupAllowance = false
         }
@@ -384,6 +411,9 @@ final class PermissionCenterViewModel: ObservableObject {
 
     /// Updates the autoplay decision for the current domain
     func setAutoplayDecision(_ autoplayDecision: AutoplayDecision) {
+        // Fire Windows must not persist autoplay decisions to the global store.
+        guard !isBurner else { return }
+
         let updatedDecision = autoplayDecision.permissionDecision
         let previousDecision = permissionManager.permission(forDomain: domain, permissionType: .autoplayPolicy)
         let wasAlreadyPersisted = permissionManager.hasPermissionPersisted(forDomain: domain, permissionType: .autoplayPolicy)

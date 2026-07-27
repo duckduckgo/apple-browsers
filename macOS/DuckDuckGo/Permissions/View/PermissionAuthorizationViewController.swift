@@ -156,7 +156,10 @@ final class PermissionAuthorizationViewController: NSViewController {
         fireAuthorizationPixel(decision: .allow)
         dismiss()
         // For duck.ai microphone, persist "always allow" so voice chat doesn't re-prompt on every session.
-        let alwaysRemember = query?.permissions.contains(.microphone) == true && query?.domain.isDuckAIHost == true
+        // Skip in Fire Windows — permissions there must not survive the window's lifetime.
+        let alwaysRemember = query?.isBurner != true
+            && query?.permissions.contains(.microphone) == true
+            && query?.domain.isDuckAIHost == true
         query?.handleDecision(grant: true, remember: alwaysRemember ? true : nil)
     }
 

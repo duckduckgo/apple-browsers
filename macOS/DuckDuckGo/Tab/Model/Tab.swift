@@ -328,7 +328,8 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
         webView.setAccessibilityIdentifier("WebView")
 
         permissions = PermissionModel(permissionManager: permissionManager,
-                                      geolocationService: geolocationService)
+                                      geolocationService: geolocationService,
+                                      isBurner: burnerMode.isBurner)
 
         let userContentControllerPromise = Future<UserContentController, Never>.promise()
         let userScriptsPublisher = userContentControllerPromise.future

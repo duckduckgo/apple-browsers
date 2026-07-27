@@ -46,6 +46,10 @@ final class PermissionModel {
     private let permissionManager: PermissionManagerProtocol
     private let geolocationService: GeolocationServiceProtocol
     private let systemPermissionManager: SystemPermissionManagerProtocol
+    /// `true` if this model belongs to a Fire Window (burner) tab. When set, permission
+    /// authorization decisions are never persisted to the global permission store —
+    /// preserving the privacy promise that Fire Windows leave no trace.
+    private let isBurner: Bool
 
     /// Holds the set of permissions the user manually removed (to avoid adding them back via updatePermissions)
     private var removedPermissions = Set<PermissionType>()
@@ -69,11 +73,13 @@ final class PermissionModel {
     init(webView: WKWebView? = nil,
          permissionManager: PermissionManagerProtocol,
          geolocationService: GeolocationServiceProtocol = GeolocationService.shared,
-         systemPermissionManager: SystemPermissionManagerProtocol = SystemPermissionManager()) {
+         systemPermissionManager: SystemPermissionManagerProtocol = SystemPermissionManager(),
+         isBurner: Bool = false) {
 
         self.permissionManager = permissionManager
         self.geolocationService = geolocationService
         self.systemPermissionManager = systemPermissionManager
+        self.isBurner = isBurner
         if let webView {
             self.webView = webView
             self.subscribe(to: webView)
@@ -179,7 +185,7 @@ final class PermissionModel {
                                     decisionHandler: @escaping (Bool) -> Void) {
 
         var queryPtr: UnsafeMutableRawPointer?
-        let query = PermissionAuthorizationQuery(domain: domain, url: url, permissions: permissions) { [weak self] result in
+        let query = PermissionAuthorizationQuery(domain: domain, url: url, permissions: permissions, isBurner: isBurner) { [weak self] result in
 
             let isGranted = (try? result.get())?.granted ?? false
 
@@ -202,14 +208,19 @@ final class PermissionModel {
                 self.authorizationQueries.remove(at: idx)
 
                 if case .success( (let granted, let remember) ) = result {
-                    for permission in permissions {
-                        // Preserve existing Always Allow/Deny decisions; don't downgrade to Ask
-                        let isPersisting = remember == true || persistsWhen(permission: permission, domain: domain)
-                        if isPersisting {
-                            self.permissionManager.setPermission(granted ? .allow : .deny, forDomain: domain, permissionType: permission)
-                        } else {
-                            // Other permissions: one-time decisions store .ask for permission center visibility
-                            self.permissionManager.setPermission(.ask, forDomain: domain, permissionType: permission)
+                    // Fire Windows must not write any permission state to the global persistence
+                    // store — including the implicit `.ask` write — otherwise visited domains
+                    // and their permission decisions would survive past the window's lifetime.
+                    if !self.isBurner {
+                        for permission in permissions {
+                            // Preserve existing Always Allow/Deny decisions; don't downgrade to Ask
+                            let isPersisting = remember == true || persistsWhen(permission: permission, domain: domain)
+                            if isPersisting {
+                                self.permissionManager.setPermission(granted ? .allow : .deny, forDomain: domain, permissionType: permission)
+                            } else {
+                                // Other permissions: one-time decisions store .ask for permission center visibility
+                                self.permissionManager.setPermission(.ask, forDomain: domain, permissionType: permission)
+                            }
                         }
                     }
                 }

@@ -236,6 +236,85 @@ final class PermissionModelTests: XCTestCase {
         XCTAssertEqual(permissionManagerMock.permission(forDomain: URL.duckDuckGo.host!, permissionType: .microphone), .allow)
     }
 
+    // MARK: - Fire Window (burner) persistence guard
+
+    /// In a Fire Window, granting a permission with `remember: true` (which would happen if a
+    /// regression in the dialog let the "Always allow" checkbox slip through) must NOT write
+    /// the decision to the global permission store. The session-scoped grant still applies.
+    func testWhenBurnerTabGrantsPermissionWithRememberTrueThenNothingIsPersisted() {
+        // Replace the default model with a burner one for this test.
+        model = PermissionModel(webView: webView,
+                                permissionManager: permissionManagerMock,
+                                geolocationService: geolocationServiceMock,
+                                systemPermissionManager: systemPermissionManagerMock,
+                                isBurner: true)
+
+        let c = model.$authorizationQuery.sink {
+            guard let query = $0 else { return }
+            // Even if a regression in the dialog leaves the checkbox visible and ticked
+            query.shouldShowAlwaysAllowCheckbox = true
+            query.handleDecision(grant: true, remember: true)
+        }
+
+        let e = expectation(description: "Burner permission granted")
+        self.webView(webView, requestUserMediaAuthorizationFor: [.microphone, .camera],
+                     url: .duckDuckGo,
+                     mainFrameURL: .duckDuckGo) { granted in
+            XCTAssertTrue(granted)
+            e.fulfill()
+            if #available(macOS 12, *) {
+                self.webView.cameraCaptureState = .active
+                self.webView.microphoneCaptureState = .active
+            } else {
+                self.webView.mediaCaptureState = [.activeCamera, .activeMicrophone]
+            }
+        }
+
+        withExtendedLifetime(c) {
+            waitForExpectations(timeout: 1)
+        }
+
+        // Session-scoped state still applies — the request was granted for this tab.
+        XCTAssertEqual(model.permissions, [.camera: .active,
+                                           .microphone: .active])
+        // But nothing was written to the permanent permission store.
+        XCTAssertTrue(permissionManagerMock.setPermissionCalls.isEmpty,
+                      "Fire Window must not call permissionManager.setPermission. Calls: \(permissionManagerMock.setPermissionCalls)")
+        XCTAssertEqual(permissionManagerMock.permission(forDomain: URL.duckDuckGo.host!, permissionType: .camera), .ask)
+        XCTAssertEqual(permissionManagerMock.permission(forDomain: URL.duckDuckGo.host!, permissionType: .microphone), .ask)
+    }
+
+    /// Fire Window: a one-time deny must not be persisted either. The Permission Center
+    /// flow writes an implicit `.ask` to the global store so the domain can be listed —
+    /// that's a leak we must suppress in burner tabs.
+    func testWhenBurnerTabDeniesPermissionThenNothingIsPersisted() {
+        model = PermissionModel(webView: webView,
+                                permissionManager: permissionManagerMock,
+                                geolocationService: geolocationServiceMock,
+                                systemPermissionManager: systemPermissionManagerMock,
+                                isBurner: true)
+
+        let c = model.$authorizationQuery.sink {
+            $0?.handleDecision(grant: false, remember: nil)
+        }
+
+        let e = expectation(description: "Burner permission denied")
+        self.webView(webView, requestUserMediaAuthorizationFor: [.microphone, .camera],
+                     url: .duckDuckGo,
+                     mainFrameURL: .duckDuckGo) { granted in
+            XCTAssertFalse(granted)
+            e.fulfill()
+        }
+
+        withExtendedLifetime(c) {
+            waitForExpectations(timeout: 1)
+        }
+
+        // No write of any kind — including the implicit `.ask` write — must reach the store.
+        XCTAssertTrue(permissionManagerMock.setPermissionCalls.isEmpty,
+                      "Fire Window deny must not write to the permanent store. Calls: \(permissionManagerMock.setPermissionCalls)")
+    }
+
     func testWhenPermissionIsDeniedAndStoredThenItIsStored() {
         let c = model.$authorizationQuery.sink {
             guard let query = $0 else { return }

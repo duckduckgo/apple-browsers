@@ -26,6 +26,9 @@ struct PermissionAuthorizationQueryInfo {
     var shouldShowAlwaysAllowCheckbox: Bool = false
     var shouldShowCancelInsteadOfDeny: Bool = false
     var isSystemPermissionDisabled: Bool = false
+    /// Set to `true` when the request originates from a Fire Window (burner tab).
+    /// The dialog must not offer or persist "Always allow / Always deny" decisions in that case.
+    var isBurner: Bool = false
 }
 typealias PermissionAuthorizationQueryOutput = (granted: Bool, remember: Bool?)
 
@@ -52,9 +55,16 @@ extension PermissionAuthorizationQuery {
         get { parameters.isSystemPermissionDisabled }
         set { parameters.isSystemPermissionDisabled = newValue }
     }
+    /// Whether this dialog request belongs to a Fire Window (burner tab).
+    /// Used by the dialog views to suppress the "Always allow" affordance and by
+    /// `PermissionModel` to skip persistence of the decision.
+    var isBurner: Bool {
+        get { parameters.isBurner }
+        set { parameters.isBurner = newValue }
+    }
 
-    convenience init(domain: String, url: URL?, permissions: [PermissionType], decisionHandler: @escaping (CallbackResult) -> Void) {
-        self.init(.init(url: url, domain: domain, permissions: permissions), callback: decisionHandler)
+    convenience init(domain: String, url: URL?, permissions: [PermissionType], isBurner: Bool = false, decisionHandler: @escaping (CallbackResult) -> Void) {
+        self.init(.init(url: url, domain: domain, permissions: permissions, isBurner: isBurner), callback: decisionHandler)
     }
 
     func handleDecision(grant: Bool, remember: Bool? = nil) {

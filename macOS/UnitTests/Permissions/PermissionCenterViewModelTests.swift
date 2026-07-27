@@ -47,6 +47,136 @@ final class PermissionCenterViewModelTests: XCTestCase {
         super.tearDown()
     }
 
+    // MARK: - Fire Window (burner) persistence guard
+
+    /// Permission Center is also reachable from a Fire Window. When the user changes a
+    /// dropdown there, the decision must NOT be written to the global permission store —
+    /// the model-level guard in `PermissionModel` only covers the dialog code path; the
+    /// Permission Center bypasses `PermissionModel` and writes to `permissionManager`
+    /// directly. Without this guard the visited domain leaks into permission storage.
+    func testWhenBurnerThenSetDecisionDoesNotPersistToPermissionStore() {
+        var usedPermissions = Permissions()
+        usedPermissions[.camera] = .active
+
+        let viewModel = PermissionCenterViewModel(
+            domain: "example.com",
+            usedPermissions: usedPermissions,
+            permissionManager: mockPermissionManager,
+            autoplayPreferences: autoplayPreferences,
+            featureFlagger: mockFeatureFlagger,
+            removePermission: { _ in },
+            dismissPopover: { },
+            systemPermissionManager: mockSystemPermissionManager,
+            isBurner: true
+        )
+
+        viewModel.setDecision(.allow, for: .camera)
+        viewModel.setDecision(.deny, for: .camera)
+        viewModel.setDecision(.ask, for: .camera)
+
+        XCTAssertTrue(mockPermissionManager.setPermissionCalls.isEmpty,
+                      "Fire Window must not call permissionManager.setPermission. Calls: \(mockPermissionManager.setPermissionCalls)")
+        XCTAssertEqual(mockPermissionManager.permission(forDomain: "example.com", permissionType: .camera), .ask,
+                       "No persisted decision must exist for the burner-tab domain.")
+    }
+
+    /// Sanity check: in a non-burner window the decision IS still persisted, so the burner
+    /// guard isn't accidentally over-broad.
+    func testWhenNotBurnerThenSetDecisionPersistsToPermissionStore() {
+        var usedPermissions = Permissions()
+        usedPermissions[.camera] = .active
+
+        let viewModel = PermissionCenterViewModel(
+            domain: "example.com",
+            usedPermissions: usedPermissions,
+            permissionManager: mockPermissionManager,
+            autoplayPreferences: autoplayPreferences,
+            featureFlagger: mockFeatureFlagger,
+            removePermission: { _ in },
+            dismissPopover: { },
+            systemPermissionManager: mockSystemPermissionManager,
+            isBurner: false
+        )
+
+        viewModel.setDecision(.allow, for: .camera)
+
+        XCTAssertEqual(mockPermissionManager.permission(forDomain: "example.com", permissionType: .camera), .allow)
+    }
+
+    /// External scheme decisions must also be ignored in Fire Windows — a persisted choice
+    /// to "always open" `mailto:` for a domain would otherwise leak past the window.
+    func testWhenBurnerThenSetExternalSchemeDecisionIsNoOp() {
+        var usedPermissions = Permissions()
+        usedPermissions[.externalScheme(scheme: "mailto")] = .active
+
+        let viewModel = PermissionCenterViewModel(
+            domain: "example.com",
+            usedPermissions: usedPermissions,
+            permissionManager: mockPermissionManager,
+            autoplayPreferences: autoplayPreferences,
+            featureFlagger: mockFeatureFlagger,
+            removePermission: { _ in },
+            dismissPopover: { },
+            systemPermissionManager: mockSystemPermissionManager,
+            isBurner: true
+        )
+
+        viewModel.setExternalSchemeDecision(.allow, for: "mailto")
+
+        XCTAssertTrue(mockPermissionManager.setPermissionCalls.isEmpty)
+    }
+
+    /// Pop-up persistence ("Always allow", and the implicit `.ask` writes that the
+    /// dropdown otherwise emits) must be skipped in Fire Windows.
+    func testWhenBurnerThenSetPopupDecisionDoesNotPersist() {
+        var usedPermissions = Permissions()
+        usedPermissions[.popups] = .active
+
+        let viewModel = PermissionCenterViewModel(
+            domain: "example.com",
+            usedPermissions: usedPermissions,
+            permissionManager: mockPermissionManager,
+            autoplayPreferences: autoplayPreferences,
+            featureFlagger: mockFeatureFlagger,
+            removePermission: { _ in },
+            dismissPopover: { },
+            systemPermissionManager: mockSystemPermissionManager,
+            isBurner: true
+        )
+
+        viewModel.setPopupDecision(.alwaysAllow)
+        viewModel.setPopupDecision(.notify)
+        viewModel.setPopupDecision(.allowForThisVisit)
+
+        XCTAssertTrue(mockPermissionManager.setPermissionCalls.isEmpty,
+                      "Pop-up decisions must not be persisted in Fire Windows. Calls: \(mockPermissionManager.setPermissionCalls)")
+    }
+
+    /// Autoplay decisions are likewise per-domain persisted state and must be skipped.
+    func testWhenBurnerThenSetAutoplayDecisionIsNoOp() {
+        var usedPermissions = Permissions()
+        usedPermissions[.autoplayPolicy] = .active
+
+        let viewModel = PermissionCenterViewModel(
+            domain: "example.com",
+            usedPermissions: usedPermissions,
+            permissionManager: mockPermissionManager,
+            autoplayPreferences: autoplayPreferences,
+            featureFlagger: mockFeatureFlagger,
+            removePermission: { _ in },
+            dismissPopover: { },
+            displaysAutoplayPolicy: true,
+            systemPermissionManager: mockSystemPermissionManager,
+            isBurner: true
+        )
+
+        viewModel.setAutoplayDecision(.blockAll)
+
+        XCTAssertTrue(mockPermissionManager.setPermissionCalls.isEmpty)
+    }
+
+    // MARK: - Existing tests
+
     /// Tests that notification permissions appear in the permission items list.
     func testNotificationPermissionsAppearInUI() {
         // Create permissions including notification

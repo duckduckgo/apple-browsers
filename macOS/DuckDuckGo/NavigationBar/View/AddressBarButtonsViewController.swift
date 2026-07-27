@@ -199,6 +199,14 @@ final class AddressBarButtonsViewController: NSViewController {
         }
     }
 
+    /// `true` when the currently selected tab belongs to a Fire Window. Used to suppress
+    /// "Always allow / Always deny" affordances and to short-circuit any persistence call
+    /// that the permission dialogs or context menus would otherwise make. Defaults to
+    /// `false` if no tab is selected.
+    private var isBurnerTab: Bool {
+        tabViewModel?.tab.burnerMode.isBurner ?? false
+    }
+
     private let popovers: NavigationBarPopovers?
     private let bookmarkManager: BookmarkManager
 
@@ -1825,6 +1833,14 @@ final class AddressBarButtonsViewController: NSViewController {
             query.shouldShowAlwaysAllowCheckbox = true
             query.shouldShowCancelInsteadOfDeny = true
         }
+
+        // Fire Window: never offer the "Always allow on …" checkbox, regardless of the
+        // permission type. The persistence path itself is also gated in PermissionModel,
+        // but suppressing the affordance here keeps the UI honest about what the dialog
+        // can actually do in a Fire Window.
+        if query.isBurner {
+            query.shouldShowAlwaysAllowCheckbox = false
+        }
         guard button.isVisible else { return }
 
         button.backgroundColor = .buttonMouseDown
@@ -2091,7 +2107,8 @@ final class AddressBarButtonsViewController: NSViewController {
             hasTemporaryPopupAllowance: tabViewModel.tab.popupHandling?.popupsTemporarilyAllowedForCurrentPage ?? false,
             pageInitiatedPopupOpened: tabViewModel.tab.popupHandling?.pageInitiatedPopupOpened ?? false,
             displaysAutoplayPolicy: tabViewModel.tab.mustDisplayAutoplayPolicy,
-            permissionsNeedReload: tabViewModel.permissionsNeedReload
+            permissionsNeedReload: tabViewModel.permissionsNeedReload,
+            isBurner: tabViewModel.tab.burnerMode.isBurner
         )
 
         let popover = PermissionCenterPopover(viewModel: viewModel)

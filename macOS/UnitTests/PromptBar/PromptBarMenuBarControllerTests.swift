@@ -28,36 +28,79 @@ private final class MockPromptBarStatusItem: PromptBarStatusItem {
     var isVisible: Bool = true
 }
 
+@MainActor
+private final class StatusItemFactory {
+    let item = MockPromptBarStatusItem()
+    private(set) var createdCount = 0
+
+    func make() -> PromptBarStatusItem {
+        createdCount += 1
+        return item
+    }
+}
+
 final class PromptBarMenuBarControllerTests: XCTestCase {
 
     @MainActor
-    func testWhenInitializedThenButtonShowsTemplateGlyph() {
-        let statusItem = MockPromptBarStatusItem()
+    func testWhenInitializedThenStatusItemIsNotCreated() {
+        let factory = StatusItemFactory()
 
-        _ = PromptBarMenuBarController(statusItem: statusItem)
+        _ = PromptBarMenuBarController(makeStatusItem: factory.make)
 
-        XCTAssertNotNil(statusItem.button?.image)
-        XCTAssertEqual(statusItem.button?.image?.isTemplate, true)
+        XCTAssertEqual(factory.createdCount, 0)
     }
 
     @MainActor
-    func testWhenHideThenStatusItemIsNotVisible() {
-        let statusItem = MockPromptBarStatusItem()
-        let controller = PromptBarMenuBarController(statusItem: statusItem)
+    func testWhenHiddenBeforeBeingShownThenStatusItemIsNotCreated() {
+        let factory = StatusItemFactory()
+        let controller = PromptBarMenuBarController(makeStatusItem: factory.make)
 
         controller.hide()
 
-        XCTAssertFalse(statusItem.isVisible)
+        XCTAssertEqual(factory.createdCount, 0)
     }
 
     @MainActor
-    func testWhenShowThenStatusItemIsVisible() {
-        let statusItem = MockPromptBarStatusItem()
-        let controller = PromptBarMenuBarController(statusItem: statusItem)
+    func testWhenShownThenButtonShowsTemplateGlyph() {
+        let factory = StatusItemFactory()
+        let controller = PromptBarMenuBarController(makeStatusItem: factory.make)
 
-        controller.hide()
         controller.show()
 
-        XCTAssertTrue(statusItem.isVisible)
+        XCTAssertNotNil(factory.item.button?.image)
+        XCTAssertEqual(factory.item.button?.image?.isTemplate, true)
+    }
+
+    @MainActor
+    func testWhenShownThenStatusItemIsVisible() {
+        let factory = StatusItemFactory()
+        let controller = PromptBarMenuBarController(makeStatusItem: factory.make)
+
+        controller.show()
+
+        XCTAssertEqual(factory.createdCount, 1)
+        XCTAssertTrue(factory.item.isVisible)
+    }
+
+    @MainActor
+    func testWhenHiddenAfterBeingShownThenStatusItemIsNotVisible() {
+        let factory = StatusItemFactory()
+        let controller = PromptBarMenuBarController(makeStatusItem: factory.make)
+
+        controller.show()
+        controller.hide()
+
+        XCTAssertFalse(factory.item.isVisible)
+    }
+
+    @MainActor
+    func testWhenShownTwiceThenStatusItemIsCreatedOnce() {
+        let factory = StatusItemFactory()
+        let controller = PromptBarMenuBarController(makeStatusItem: factory.make)
+
+        controller.show()
+        controller.show()
+
+        XCTAssertEqual(factory.createdCount, 1)
     }
 }

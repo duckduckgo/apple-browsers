@@ -36,6 +36,19 @@ final class PromptBarPreferences: ObservableObject {
         didSet { persistor.isMenuBarIconVisible = isMenuBarIconVisible }
     }
 
+    /// The icon is a shortcut entry point, so it stays hidden while the shortcut
+    /// is off. `isMenuBarIconVisible` keeps its stored value so it can be restored.
+    var isMenuBarIconEffectivelyVisible: Bool {
+        isMenuBarIconVisible && isKeyboardShortcutEnabled
+    }
+
+    var isMenuBarIconEffectivelyVisiblePublisher: AnyPublisher<Bool, Never> {
+        Publishers.CombineLatest($isMenuBarIconVisible, $isKeyboardShortcutEnabled)
+            .map { $0 && $1 }
+            .removeDuplicates()
+            .eraseToAnyPublisher()
+    }
+
     private var persistor: PromptBarPreferencesPersistor
 
     init(persistor: PromptBarPreferencesPersistor = PromptBarPreferencesUserDefaultsPersistor(keyValueStore: NSApp.delegateTyped.keyValueStore)) {

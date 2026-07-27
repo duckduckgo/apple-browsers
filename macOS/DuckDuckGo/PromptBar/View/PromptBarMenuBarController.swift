@@ -33,16 +33,16 @@ extension NSStatusItem: PromptBarStatusItem {}
 @MainActor
 final class PromptBarMenuBarController: NSObject {
 
-    private let statusItem: PromptBarStatusItem
+    private let makeStatusItem: @MainActor () -> PromptBarStatusItem
+    private var statusItem: PromptBarStatusItem?
 
-    /// - Parameter statusItem: Injectable for testing; defaults to a real menu bar item.
-    init(statusItem: PromptBarStatusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)) {
-        self.statusItem = statusItem
+    /// - Parameter makeStatusItem: Injectable for testing; defaults to a real menu bar item.
+    init(makeStatusItem: @escaping @MainActor () -> PromptBarStatusItem = { NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength) }) {
+        self.makeStatusItem = makeStatusItem
         super.init()
-        configureStatusItem()
     }
 
-    private func configureStatusItem() {
+    private func configureStatusItem(_ statusItem: PromptBarStatusItem) {
         guard let button = statusItem.button else { return }
 
         button.image = DesignSystemImages.Glyphs.Size16.duckAi
@@ -58,11 +58,18 @@ final class PromptBarMenuBarController: NSObject {
         // Prompt Bar window is wired here in a later milestone.
     }
 
+    /// The item is created on first show: `NSStatusBar` puts it on screen as soon
+    /// as it exists, so it must not be created while the icon should be hidden.
     func show() {
-        statusItem.isVisible = true
+        if statusItem == nil {
+            let statusItem = makeStatusItem()
+            self.statusItem = statusItem
+            configureStatusItem(statusItem)
+        }
+        statusItem?.isVisible = true
     }
 
     func hide() {
-        statusItem.isVisible = false
+        statusItem?.isVisible = false
     }
 }

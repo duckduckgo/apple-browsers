@@ -17,6 +17,7 @@
 //
 
 import Carbon.HIToolbox
+import Combine
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -64,5 +65,64 @@ final class PromptBarPreferencesTests: XCTestCase {
 
         XCTAssertEqual(preferences.keyboardShortcut, .defaultShortcut)
         XCTAssertEqual(persistor.keyboardShortcut, .defaultShortcut)
+    }
+
+    func testWhenKeyboardShortcutIsDisabledThenMenuBarIconIsNotEffectivelyVisible() {
+        let persistor = MockPromptBarPreferencesPersistor()
+        persistor.isMenuBarIconVisible = true
+        persistor.isKeyboardShortcutEnabled = false
+
+        let preferences = PromptBarPreferences(persistor: persistor)
+
+        XCTAssertFalse(preferences.isMenuBarIconEffectivelyVisible)
+    }
+
+    func testWhenKeyboardShortcutAndMenuBarIconAreEnabledThenIconIsEffectivelyVisible() {
+        let persistor = MockPromptBarPreferencesPersistor()
+        persistor.isMenuBarIconVisible = true
+        persistor.isKeyboardShortcutEnabled = true
+
+        let preferences = PromptBarPreferences(persistor: persistor)
+
+        XCTAssertTrue(preferences.isMenuBarIconEffectivelyVisible)
+    }
+
+    func testWhenKeyboardShortcutIsDisabledThenStoredMenuBarIconPreferenceIsUnchanged() {
+        let persistor = MockPromptBarPreferencesPersistor()
+        persistor.isMenuBarIconVisible = true
+        let preferences = PromptBarPreferences(persistor: persistor)
+
+        preferences.isKeyboardShortcutEnabled = false
+
+        XCTAssertTrue(preferences.isMenuBarIconVisible)
+        XCTAssertTrue(persistor.isMenuBarIconVisible)
+        XCTAssertFalse(preferences.isMenuBarIconEffectivelyVisible)
+    }
+
+    func testWhenKeyboardShortcutIsDisabledThenEffectiveVisibilityPublisherEmitsFalse() {
+        let persistor = MockPromptBarPreferencesPersistor()
+        persistor.isMenuBarIconVisible = true
+        persistor.isKeyboardShortcutEnabled = true
+        let preferences = PromptBarPreferences(persistor: persistor)
+        var received: [Bool] = []
+        let cancellable = preferences.isMenuBarIconEffectivelyVisiblePublisher.sink { received.append($0) }
+
+        preferences.isKeyboardShortcutEnabled = false
+
+        XCTAssertEqual(received, [true, false])
+        cancellable.cancel()
+    }
+
+    func testWhenSubscribedThenEffectiveVisibilityPublisherEmitsCurrentValueSynchronously() {
+        let persistor = MockPromptBarPreferencesPersistor()
+        persistor.isMenuBarIconVisible = true
+        persistor.isKeyboardShortcutEnabled = false
+        let preferences = PromptBarPreferences(persistor: persistor)
+        var received: [Bool] = []
+
+        let cancellable = preferences.isMenuBarIconEffectivelyVisiblePublisher.sink { received.append($0) }
+
+        XCTAssertEqual(received, [false])
+        cancellable.cancel()
     }
 }

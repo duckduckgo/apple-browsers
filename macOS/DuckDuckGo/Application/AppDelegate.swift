@@ -2441,14 +2441,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             promptBarMenuBarController = PromptBarMenuBarController()
         }
 
-        promptBarMenuBarCancellable = promptBarPreferences.$isMenuBarIconVisible
+        // Applied synchronously: a deferred first update lets the icon appear at
+        // launch before a hide lands.
+        promptBarMenuBarCancellable = promptBarPreferences.isMenuBarIconEffectivelyVisiblePublisher
             .sink { [weak self] isVisible in
-                Task { @MainActor in
-                    if isVisible {
-                        self?.promptBarMenuBarController?.show()
-                    } else {
-                        self?.promptBarMenuBarController?.hide()
-                    }
+                if isVisible {
+                    self?.promptBarMenuBarController?.show()
+                } else {
+                    self?.promptBarMenuBarController?.hide()
                 }
             }
     }

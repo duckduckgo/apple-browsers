@@ -823,7 +823,6 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
             guard let self else { return }
             await self.delegate?.aiChatContextualSheetViewControllerAttachContextForSuggestion(self)
             self.submitSuggestionPrompt(suggestion.prompt)
-            self.contextualInputViewController.setStartActionsDimmed(false)
         }
     }
 
@@ -969,6 +968,7 @@ private extension AIChatContextualSheetViewController {
             cancelWaitingForInitialPromptResponseState()
             // When returning to native input (new chat), reload the default URL on existing web VC
             if isWebViewVisible, let webVC = webViewController {
+                contextualInputViewController.setStartActionsDimmed(false)
                 webVC.loadDefaultChatURL()
                 isWebViewVisible = false
             }

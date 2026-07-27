@@ -49,6 +49,11 @@ final class AIChatHistoryViewModel: ObservableObject {
 
     var isEmpty: Bool { pinned.isEmpty && recent.isEmpty }
 
+    var isFilterApplied: Bool { !effectiveQuery.isEmpty }
+
+    /// Number of chats currently visible (respects the active filter).
+    var visibleChatCount: Int { pinned.count + recent.count }
+
     /// Count of ALL persistent chats, independent of the active search filter. `burnAllChats`
     /// clears every chat, so the confirmation must reflect the full scope — not just the matches
     /// currently shown in `pinned`/`recent`.
@@ -221,8 +226,7 @@ final class AIChatHistoryViewModel: ObservableObject {
         }
     }
 
-    /// Optimistically removes the chat from the in-memory lists and returns its index path so the
-    /// caller can animate the row out ahead of the async burn (mirrors `togglePin`'s optimism).
+    /// Optimistically removes the chat and returns its index path so the row can be animated out.
     @discardableResult
     func removeChatFromList(chatId: String) -> IndexPath? {
         if let row = pinned.firstIndex(where: { $0.chatId == chatId }) {

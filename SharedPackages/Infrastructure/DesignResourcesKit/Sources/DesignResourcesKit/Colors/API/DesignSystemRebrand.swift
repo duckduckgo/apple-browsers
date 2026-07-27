@@ -21,7 +21,7 @@ import Foundation
 /// Whether the app is displaying the 2026 rebrand.
 ///
 /// Kept as a convenience for the many call sites that need it.
-/// This will disappears with the rest of the rebrand machinery once the flag is removed.
+/// This will disappear with the rest of the rebrand machinery once the flag is removed.
 public enum DesignSystemRebrand {
 
     public static var isAppRebranded: () -> Bool {

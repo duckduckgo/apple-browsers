@@ -237,6 +237,10 @@ jobs:
         pixel-params: |
           runner: ${{ env.RUNS_ON }}
 
+    - name: Validate official release app
+      if: env.is-official-release == 'true'
+      run: ./scripts/validate_release_artifact.sh app "release/${{ env.app-name }}.app" "${{ env.app-version }}"
+
     - name: Set app name and version
       id: set-outputs
       run: |
@@ -368,6 +372,7 @@ jobs:
           macOS/Gemfile.lock
           macOS/fastlane
           macOS/scripts/assets
+          macOS/scripts/validate_release_artifact.sh
 
     - name: Start measuring duration
       id: start-duration
@@ -434,6 +439,10 @@ jobs:
             --app-drop-link 430 160 "${dmg}" \
             "dmg"
         echo "dmg=${dmg}" >> $GITHUB_OUTPUT
+
+    - name: Validate official release DMG
+      if: env.release-type == 'release' && env.upload-to == 's3'
+      run: ./scripts/validate_release_artifact.sh dmg "${{ steps.create-dmg.outputs.dmg }}" "${{ env.app-version }}"
 
     - name: Report job duration
       continue-on-error: true

@@ -1021,7 +1021,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
 
         let newChatItem = NSMenuItem(title: UserText.aiChatMenuNewChat, action: #selector(duckAIMenuNewChatAction), keyEquivalent: "")
         newChatItem.target = self
-        newChatItem.image = DesignSystemImages.Glyphs.Size16.compose
+        newChatItem.image = DesignSystemImages.Glyphs.Size12.compose
         menu.addItem(newChatItem)
 
         let askAboutPageItem = NSMenuItem(title: UserText.aiChatMenuAskAboutPage, action: #selector(duckAIMenuAskAboutPageAction), keyEquivalent: "")
@@ -1040,7 +1040,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
             ? (tabCollectionViewModel.selectedTabViewModel?.favicon ?? .web)
             : DesignSystemImages.Color.Size16.duckAI
         let image = (favicon.copy() as? NSImage) ?? favicon
-        image.size = NSSize(width: 16, height: 16)
+        image.size = NSSize(width: 12, height: 12)
         image.isTemplate = false
         return image
     }

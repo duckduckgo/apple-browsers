@@ -74,11 +74,6 @@ struct Launching: LaunchingHandling {
             featureFlagger.isFeatureOn(.appRebranding)
         }
 
-        // Temporary feature flag and wiring during rebrand rollout – used to enable color palette updates.
-        DesignSystemRebrand.isAppRebranded = { [featureFlagger] in
-            featureFlagger.isFeatureOn(.appRebranding)
-        }
-
         DesignSystemPalette.current = featureFlagger.isFeatureOn(.appRebranding) ? .default : .legacy
 
         favicons = Favicons(fireproofing: fireproofing)

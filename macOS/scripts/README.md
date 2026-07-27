@@ -3,6 +3,7 @@
 * [archive.sh](#archivesh-create-notarized-application-build)
 * [find-private-symbols.sh](#find-private-symbolssh-check-a-binary-for-private-api-usage)
 * [update-embedded.sh](#update-embeddedsh-update-embedded-tracker-data-set-and-privacy-config)
+* [fix_swift_webkit_previews.sh](#fix_swift_webkit_previewssh-repair-xcode-previews)
 
 ## `archive.sh`: Create notarized application build
 
@@ -125,3 +126,42 @@ Make sure that unit tests pass after updating files. These test cases verify
 embedded data correctness:
 * `EmbeddedTrackerDataTests.testWhenEmbeddedDataIsUpdatedThenUpdateSHAAndEtag`
 * `AppPrivacyConfigurationTests.testWhenEmbeddedDataIsUpdatedThenUpdateSHAAndEtag`
+
+## `fix_swift_webkit_previews.sh`: Repair Xcode Previews
+
+Works around an Xcode Previews bug that breaks **every** preview in the macOS
+app with:
+
+```
+CouldNotFindLibrary: Could not find library with name
+”/usr/lib/swift/libswiftWebKit.dylib“
+phase: output load commands, strong
+```
+
+The Swift WebKit overlay now ships only as a Cryptex-layout symlink to
+`WebKit.framework`, so in the macOS SDK the stub exists solely at
+`$SDKROOT/System/Cryptexes/OS/usr/lib/swift/libswiftWebKit.tbd`. `ld` resolves
+that layout implicitly — normal builds, tests and archives are unaffected — but
+Previews runs its own linker-parse that only searches the legacy
+`$SDKROOT/usr/lib/swift`, and bails before rendering.
+
+Adding the Cryptex path to `LIBRARY_SEARCH_PATHS` does not help: the dependency
+is an absolute path, and search paths only apply to `-lfoo` references. The
+script instead creates the missing symlink in the legacy location, mirroring
+WebKit's own simulator fix ([bug 293831](https://bugs.webkit.org/show_bug.cgi?id=293831),
+[PR #46146](https://github.com/WebKit/WebKit/pull/46146)).
+
+### Requirements
+
+Writing inside `Xcode.app` needs **App Management** permission, even though the
+SDK is owned by your user. Grant it to your terminal under *System Settings >
+Privacy & Security > App Management*, then quit and reopen the terminal.
+
+### Usage
+
+```
+./scripts/fix_swift_webkit_previews.sh
+```
+
+Xcode updates replace the SDK, so re-run it after upgrading Xcode. The script is
+idempotent and prints the symlink it creates; remove that symlink to undo.

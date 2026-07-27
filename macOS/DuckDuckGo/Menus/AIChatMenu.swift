@@ -94,7 +94,10 @@ final class AIChatMenu: NSMenu {
             item.keyEquivalentModifierMask = [.command, .shift]
         }
         item.target = self
-        item.image = DesignSystemImages.Glyphs.Size12.globe
+        // Duck.ai color duck, matching the tab-bar pill's Ask About Page; sized to 12 like the menu's other icons.
+        let icon = DesignSystemImages.Color.Size16.duckAI
+        icon.size = NSSize(width: 12, height: 12)
+        item.image = icon
         return item
     }()
 

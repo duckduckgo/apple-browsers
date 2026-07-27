@@ -1360,7 +1360,7 @@ extension MainViewController: AIChatTabChatHeaderViewDelegate {
         }
         NotificationCenter.default.post(
             name: .settingsDeepLinkNotification,
-            object: SettingsViewModel.SettingsDeepLinkSection.subscriptionFlow()
+            object: SettingsViewModel.SettingsDeepLinkSection.subscriptionFlow(redirectURLComponents: nil)
         )
     }
 

@@ -350,8 +350,8 @@ extension MainViewController {
                 }, deepLinkTarget: .dbp)
             } else {
                 launchSettings(completion: {
-                    $0.triggerDeepLinkNavigation(to: .subscriptionFlow())
-                }, deepLinkTarget: .subscriptionFlow())
+                    $0.triggerDeepLinkNavigation(to: .subscriptionFlow(redirectURLComponents: nil))
+                }, deepLinkTarget: .subscriptionFlow(redirectURLComponents: nil))
             }
         }
     }

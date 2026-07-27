@@ -3466,7 +3466,8 @@ class MainViewController: UIViewController {
                         deepLinkTarget = .subscriptionFlow(redirectURLComponents: redirectURLComponents)
                     }
                 } else {
-                    deepLinkTarget = .subscriptionFlow()
+                    Pixel.fire(pixel: .subscriptionWebSourcedOriginUnknown)
+                    deepLinkTarget = .subscriptionFlow(redirectURLComponents: nil)
                 }
                 self?.launchSettingsForSubscriptionInterception(deepLinkTarget)
 

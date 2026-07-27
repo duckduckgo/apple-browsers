@@ -288,6 +288,13 @@
         "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion"]
     },
+    "m_subscription_web_sourced_origin_unknown": {
+        "description": "Early-warning monitor: fired when a web-intercepted subscription entry arrives with no funnel origin attached. Used to surface silent None-origin entries coming from web URL interception.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
 
     // VPN Access-Revoked Alert Pixels
     "m_vpn_access_revoked_alert_shown": {

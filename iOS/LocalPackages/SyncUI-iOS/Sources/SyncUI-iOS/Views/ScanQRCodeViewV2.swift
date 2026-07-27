@@ -51,7 +51,12 @@ public struct ScanQRCodeViewV2: View {
         .background(SimplifiedSyncStyle.screenBackground)
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
-                Button(UserText.simplifiedScanCloseButton, action: model.cancel)
+                Button {
+                    model.cancel()
+                } label: {
+                    Image(uiImage: DesignSystemImages.Glyphs.Size24.close)
+                }
+                .accessibilityLabel(UserText.simplifiedScanCloseButton)
             }
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button {

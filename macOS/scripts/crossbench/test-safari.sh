@@ -145,6 +145,7 @@ HTTP_PROXY_WAS_SET=0
 HTTPS_PROXY_WAS_SET=0
 HTTP_PROXY_VALUE=""
 HTTPS_PROXY_VALUE=""
+DIAGNOSTICS_DIR="${DIAGNOSTICS_DIR:-$PWD/safari-diagnostics}"
 
 kill_pid() {
   local pid="$1"
@@ -192,6 +193,10 @@ restore_proxy_key() {
     defaults write "$SAFARI_DOMAIN" "$key" -string "$value"
   else
     defaults delete "$SAFARI_DOMAIN" "$key" 2>/dev/null || true
+    if defaults read "$SAFARI_DOMAIN" "$key" >/dev/null 2>&1; then
+      echo "ERROR: could not remove Safari proxy preference $key." >&2
+      return 1
+    fi
   fi
 }
 
@@ -207,25 +212,43 @@ apply_proxy_state() {
 }
 
 restore_proxy_state() {
+  local status=0
   [ -n "$PROXY_STATE_CAPTURED" ] || return 0
-  restore_proxy_key "$SAFARI_HTTP_PROXY_KEY" "$HTTP_PROXY_WAS_SET" "$HTTP_PROXY_VALUE"
-  restore_proxy_key "$SAFARI_HTTPS_PROXY_KEY" "$HTTPS_PROXY_WAS_SET" "$HTTPS_PROXY_VALUE"
-  PROXY_APPLIED=""
-  PROXY_STATE_CAPTURED=""
+  restore_proxy_key "$SAFARI_HTTP_PROXY_KEY" "$HTTP_PROXY_WAS_SET" "$HTTP_PROXY_VALUE" || status=1
+  restore_proxy_key "$SAFARI_HTTPS_PROXY_KEY" "$HTTPS_PROXY_WAS_SET" "$HTTPS_PROXY_VALUE" || status=1
+  if [ "$status" -eq 0 ]; then
+    PROXY_APPLIED=""
+    PROXY_STATE_CAPTURED=""
+  fi
+  return "$status"
+}
+
+preserve_diagnostic() {
+  local source="$1" name="$2"
+  [ -n "$source" ] && [ -f "$source" ] || return 0
+  mkdir -p "$DIAGNOSTICS_DIR"
+  cp "$source" "$DIAGNOSTICS_DIR/$name"
 }
 
 cleanup() {
   local exit_code=$?
   trap - EXIT HUP INT TERM
   kill_pid "$SAFARIDRIVER_PID"
+  # Keep the proxy chain alive until Safari's own preferences are restored.
+  # This avoids leaving Safari pointed at a dead local endpoint if restoration
+  # itself needs to communicate with its preferences service.
+  if [ -n "$PROXY_APPLIED" ] && ! restore_proxy_state; then
+    echo "ERROR: failed to restore Safari proxy preferences." >&2
+    exit_code=1
+  fi
   kill_pid "$HTTPPROXY_PID"
   kill_pid "$TSPROXY_PID"
   kill_pid "$WPR_PID"
-  if [ -n "$PROXY_APPLIED" ]; then
-    restore_proxy_state || {
-      echo "ERROR: failed to restore Safari proxy preferences." >&2
-      exit_code=1
-    }
+  if [ "$exit_code" -ne 0 ]; then
+    preserve_diagnostic "$SAFARIDRIVER_LOG" safaridriver.log
+    preserve_diagnostic "$HTTPPROXY_LOG" httpproxy.log
+    preserve_diagnostic "$TSPROXY_LOG" tsproxy.log
+    preserve_diagnostic "$WPR_LOG" wpr.log
   fi
   [ -z "$SAFARIDRIVER_LOG" ] || rm -f "$SAFARIDRIVER_LOG"
   [ -z "$HTTPPROXY_LOG" ] || rm -f "$HTTPPROXY_LOG"
@@ -239,6 +262,14 @@ trap 'exit 130' INT
 trap 'exit 143' TERM
 
 check_prerequisites() {
+  if [ "$WPR_ARCHIVES_PREPARED" != "1" ]; then
+    echo "ERROR: Safari requires validator-staged WPR archives (WPR_ARCHIVES_PREPARED=1)." >&2
+    exit 2
+  fi
+  if [ ! -f "$WPR_MANIFEST" ]; then
+    echo "ERROR: validated WPR manifest missing at $WPR_MANIFEST." >&2
+    exit 2
+  fi
   if [ -z "$PYTHON_BIN" ]; then
     command -v brew >/dev/null 2>&1 || {
       echo "ERROR: Homebrew not found. Run provision-macos.sh." >&2
@@ -327,18 +358,7 @@ fetch_archive() {
   local story="$1" normalized archive
   normalized="$(normalize "$story")"
   archive="$WPR_DIR/$normalized.wprgo"
-  mkdir -p "$WPR_DIR"
-  if [ "$WPR_ARCHIVES_PREPARED" = "1" ]; then
-    [ ! -f "$archive" ] || printf '%s' "$archive"
-    return
-  fi
-  if curl -fLSs -o "$archive.tmp" "$WPR_BASE_URL/$normalized.wprgo" 2>/dev/null; then
-    mv "$archive.tmp" "$archive"
-    printf '%s' "$archive"
-  else
-    rm -f "$archive.tmp"
-    [ ! -f "$archive" ] || printf '%s' "$archive"
-  fi
+  [ ! -f "$archive" ] || printf '%s' "$archive"
 }
 
 set_validation_result() {
@@ -351,14 +371,6 @@ set_validation_result() {
   VALIDATION_DETAIL=-
   ARCHIVE_SHA256=-
 
-  if [ "$WPR_ARCHIVES_PREPARED" != "1" ]; then
-    if [ -n "$archive_available" ]; then
-      VALIDATION_STATUS=ok
-      VALIDATION_REASON=-
-      ARCHIVE_SHA256="$(shasum -a 256 "$archive_available" | awk '{print $1}')"
-    fi
-    return
-  fi
   if [ ! -f "$WPR_MANIFEST" ]; then
     VALIDATION_REASON=validation_manifest_missing
     VALIDATION_DETAIL="validated archive handoff did not contain manifest.tsv"
@@ -492,8 +504,15 @@ start_safaridriver() {
   fi
 }
 
-proxy_line_count() {
+proxy_log_line_count() {
   wc -l < "$HTTPPROXY_LOG" 2>/dev/null || echo 0
+}
+
+proxy_saw_requested_connect() {
+  local line_before="$1" site="$2"
+  awk -v line_before="$line_before" -v expected="CONNECT $site:443" \
+    'NR > line_before && $0 == expected { found = 1 } END { exit !found }' \
+    "$HTTPPROXY_LOG"
 }
 
 measure_site() {
@@ -509,13 +528,8 @@ measure_site() {
     archive=""
   fi
   if [ -z "$archive" ]; then
-    if [ "$WPR_ARCHIVES_PREPARED" = "1" ]; then
-      echo "  $site: excluded by WPR archive validation; SKIPPING." >&2
-      echo "::warning title=Site excluded::$site did not pass WPR archive validation"
-    else
-      echo "  $site: no WPR archive available; SKIPPING (replay-only)." >&2
-      echo "::warning title=Site skipped::$site: no WPR archive at $WPR_BASE_URL"
-    fi
+    echo "  $site: excluded by WPR archive validation; SKIPPING." >&2
+    echo "::warning title=Site excluded::$site did not pass WPR archive validation"
     record_disposition "$site" excluded
     return
   fi
@@ -523,13 +537,15 @@ measure_site() {
 
   if ! start_wpr "$archive"; then
     echo "::warning title=Harness failure::$site: WPR could not start"
+    preserve_diagnostic "$WPR_LOG" "wpr-$site.log"
+    stop_wpr
     HARNESS_FAILURES=$((HARNESS_FAILURES + 1))
     record_disposition "$site" infra_error
     return
   fi
 
   for ((rep = 1; rep <= MEASURED_REPS; rep++)); do
-    before="$(proxy_line_count)"
+    before="$(proxy_log_line_count)"
     set +e
     output="$("$PYTHON_BIN" "$SAFARI_AUTOMATION_PY" \
       "$SAFARIDRIVER_PORT" measure "https://$site" \
@@ -540,14 +556,16 @@ measure_site() {
     if [ "$automation_status" -ne 0 ]; then
       echo "::warning title=Harness failure::$site: Safari automation exited $automation_status on repetition $rep"
       site_harness_failed=1
+      no_metric=$((no_metric + 1))
+      continue
     fi
     lcp="$(printf '%s\n' "$output" | sed -n 's/^lcp_ms=//p' | tail -1)"
     detail="$(printf '%s\n' "$output" | sed -n 's/^detail=//p' | tail -1)"
     landed_url="$(printf '%s\n' "$output" | sed -n 's/^landed_url=//p' | tail -1)"
     offsite="$(printf '%s\n' "$output" | sed -n 's/^landed_offsite=//p' | tail -1)"
 
-    if [ "$(proxy_line_count)" -le "$before" ]; then
-      echo "    attempt rep=$rep: no Safari proxy traffic -> SKIPPED" >&2
+    if ! proxy_saw_requested_connect "$before" "$site"; then
+      echo "    attempt rep=$rep: no proxy CONNECT for $site:443 -> SKIPPED" >&2
       no_metric=$((no_metric + 1))
       continue
     fi
@@ -583,11 +601,12 @@ measure_site() {
   if ! kill -0 "$WPR_PID" 2>/dev/null; then
     echo "  ERROR: WPR exited during $site replay. Log:" >&2
     cat "$WPR_LOG" >&2
-    stop_wpr
     site_harness_failed=1
-  else
-    stop_wpr
   fi
+  if [ "$site_harness_failed" -ne 0 ]; then
+    preserve_diagnostic "$WPR_LOG" "wpr-$site.log"
+  fi
+  stop_wpr
 
   echo "  $site: attempts=$MEASURED_REPS recorded=$recorded unfinalized=$unfinalized no-metric=$no_metric"
   if [ "$recorded" -gt 0 ]; then

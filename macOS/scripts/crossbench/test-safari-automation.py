@@ -2,8 +2,10 @@
 """Pure unit tests for Safari replay helper behavior."""
 
 import importlib.util
+import io
 import pathlib
 import unittest
+from contextlib import redirect_stderr, redirect_stdout
 from unittest import mock
 
 
@@ -57,6 +59,56 @@ class LandingTests(unittest.TestCase):
         self.assertIs(
             body["capabilities"]["alwaysMatch"]["acceptInsecureCerts"], True
         )
+
+    def test_measurement_transport_failure_is_nonzero_with_parseable_output(self):
+        stdout = io.StringIO()
+        with mock.patch.object(
+            SAFARI_AUTOMATION,
+            "new_session",
+            side_effect=OSError("driver unavailable"),
+        ), redirect_stdout(stdout), redirect_stderr(io.StringIO()):
+            status = SAFARI_AUTOMATION.measure(
+                "8790", "https://apple.com", 0, 0
+            )
+        self.assertEqual(status, 1)
+        self.assertIn("detail=", stdout.getvalue())
+        self.assertIn("lcp_ms=-1", stdout.getvalue())
+
+    def test_measurement_without_landing_url_is_nonzero(self):
+        stdout = io.StringIO()
+        response = {"value": {"ms": 25, "loc": ""}}
+        with mock.patch.object(
+            SAFARI_AUTOMATION, "new_session", return_value="session"
+        ), mock.patch.object(
+            SAFARI_AUTOMATION, "request", return_value=response
+        ), mock.patch.object(
+            SAFARI_AUTOMATION, "delete_session"), mock.patch.object(
+            SAFARI_AUTOMATION.time, "sleep"), redirect_stdout(stdout), redirect_stderr(io.StringIO()):
+            status = SAFARI_AUTOMATION.measure(
+                "8790", "https://apple.com", 0, 0
+            )
+        self.assertEqual(status, 1)
+        self.assertIn("landed_url=", stdout.getvalue())
+
+    def test_measurement_with_non_numeric_lcp_is_nonzero(self):
+        stdout = io.StringIO()
+        response = {
+            "value": {"ms": "not-a-number", "loc": "https://apple.com/"}
+        }
+        with mock.patch.object(
+            SAFARI_AUTOMATION, "new_session", return_value="session"
+        ), mock.patch.object(
+            SAFARI_AUTOMATION, "request", return_value=response
+        ), mock.patch.object(
+            SAFARI_AUTOMATION, "delete_session"
+        ), mock.patch.object(
+            SAFARI_AUTOMATION.time, "sleep"
+        ), redirect_stdout(stdout), redirect_stderr(io.StringIO()):
+            status = SAFARI_AUTOMATION.measure(
+                "8790", "https://apple.com", 0, 0
+            )
+        self.assertEqual(status, 1)
+        self.assertIn("lcp_ms=-1", stdout.getvalue())
 
 
 class ProxyParsingTests(unittest.TestCase):

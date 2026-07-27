@@ -106,6 +106,7 @@ def check(port):
 def measure(port, url, settle_ms, load_window_seconds):
     session_id = None
     detail = -1
+    failed = False
     try:
         session_id = new_session(port)
         request(
@@ -133,12 +134,27 @@ def measure(port, url, settle_ms, load_window_seconds):
         detail = response.get("value")
     except (urllib.error.URLError, OSError, urllib.error.HTTPError) as error:
         print("measurement failed for {}: {}".format(url, error), file=sys.stderr)
+        failed = True
+    except Exception as error:  # Surface malformed WebDriver responses as failures.
+        print("measurement failed for {}: {}".format(url, error), file=sys.stderr)
+        failed = True
     finally:
         if session_id:
             delete_session(port, session_id)
 
     lcp_ms = detail.get("ms", -1) if isinstance(detail, dict) else -1
     landed_url = detail.get("loc", "") if isinstance(detail, dict) else ""
+    if not failed and (
+        not isinstance(lcp_ms, (int, float)) or isinstance(lcp_ms, bool)
+    ):
+        print(
+            "measurement produced an invalid LCP value for {}: {!r}".format(
+                url, lcp_ms
+            ),
+            file=sys.stderr,
+        )
+        lcp_ms = -1
+        failed = True
     offsite = bool(landed_url) and not landed_on(url, landed_url)
     if offsite:
         lcp_ms = -1
@@ -147,11 +163,18 @@ def measure(port, url, settle_ms, load_window_seconds):
             file=sys.stderr,
         )
 
+    if not failed and not landed_url:
+        print(
+            "measurement produced no landing URL for {}".format(url),
+            file=sys.stderr,
+        )
+        failed = True
+
     print("detail={}".format(json.dumps(detail)))
     print("landed_url={}".format(landed_url))
     print("landed_offsite={}".format(1 if offsite else 0))
     print("lcp_ms={}".format(lcp_ms))
-    return 0
+    return 1 if failed else 0
 
 
 USAGE = (

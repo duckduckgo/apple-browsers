@@ -1,25 +1,16 @@
-name: macOS - crossbench Safari LCP (WPR)
+name: macOS - Safari LCP (WPR)
+run-name: macOS - Safari LCP (WPR)
 
-# Test harness on a GitHub-hosted macOS runner,
-# measures Safari navigation -> Largest Contentful Paint against WPR archives
-# through the US-broadband traffic-shaping profile,
-# and uploads the per-rep results as a downloadable artifact. Optionally
-# (opt-in dispatch input) a second, self-hosted job inserts per-domain
-# aggregates into ClickHouse (native_apps.macos_browser_health_nav_to_lcp).
+# Measures Safari navigation-to-LCP against validated WPR archives through the
+# US-broadband shaping profile. ClickHouse upload is scheduled or opt-in.
 #
-# Safari sibling of macos_crossbench_chrome.yml. Two Safari-specific wrinkles:
+# Safari-specific behavior:
 #   - Safari's per-app proxy preferences route it through a local HTTP proxy,
-#     pinned tsproxy and pinned WPR. The original preference state is restored
-#     on exit; no system proxy or keychain is changed.
+#     tsproxy and WPR. The original preferences are restored on exit.
 #   - LCP is read from the page via a buffered PerformanceObserver over
 #     WebDriver, with acceptInsecureCerts=true.
-#   - The Safari automation helper drives safaridriver (WebDriver), which requires
-#     "Allow Remote Automation". We enable it with `sudo safaridriver --enable`
-#     below. GitHub-hosted macOS runners grant passwordless sudo, so this works
-#     there; a self-hosted runner must allow it (see the step's comment).
 #
-# Triggered manually (workflow_dispatch) and on a daily off-peak schedule. No
-# pull_request/push trigger, so fork PRs can't run it.
+# Manual and daily only; pull requests and pushes do not trigger it.
 
 on:
   workflow_dispatch:
@@ -43,12 +34,8 @@ on:
         required: false
         default: true
   schedule:
-    # 06:00 UTC = 2am US Eastern / 7am CET: deep US night, before the EU ramp,
-    # and the ~1.5h run finishes before either region gets busy — so both
-    # hosted and self-hosted runners are near their quietest. A scheduled run
-    # takes the input defaults (blank sites = full 22-site list) and forces the
-    # ClickHouse upload via the job gate below. NOTE: GitHub only fires schedule
-    # triggers from the repo's default branch (main).
+    # Scheduled workflows run only from the default branch. Blank sites use the
+    # full list, and the upload job below sends scheduled results to ClickHouse.
     - cron: "0 6 * * *"
 
 permissions:
@@ -79,12 +66,7 @@ jobs:
   safari-lcp:
     name: Safari LCP (WPR)
     needs: validate-wpr
-    # Free standard hosted runner (Apple Silicon, 3 cores), matching the Chrome
-    # workflow so both browsers are measured on identical hardware. The larger
-    # macos-26-xlarge was measured on the Chrome side and made no difference, so
-    # it billed without buying anything. If you revisit this, note macos-*-large
-    # is Intel x86_64 and would break comparability; only -xlarge is Apple
-    # Silicon.
+    # Match the Chrome workflow's Apple Silicon runner for comparability.
     runs-on: macos-latest
     # Ten measured loads per site with no replay warm-up. The cap leaves room
     # for provisioning and slow/failing navigations.
@@ -110,13 +92,7 @@ jobs:
         run: ./provision-macos.sh
 
       - name: Enable safaridriver Remote Automation
-        # REQUIRED: crossbench drives Safari through safaridriver (WebDriver),
-        # which refuses to create a session until "Allow Remote Automation" is
-        # enabled. `--enable` needs root; GitHub-hosted macOS runners provide
-        # passwordless sudo, so this succeeds there. RISK / UNKNOWN: on a locked-
-        # down self-hosted runner sudo may prompt or be denied, and the setting
-        # is per-user — if the runner's Safari user differs this must be enabled
-        # for that user. If this step fails, the run below cannot start Safari.
+        # safaridriver refuses sessions until this per-user setting is enabled.
         run: sudo safaridriver --enable
 
       - name: Run Safari LCP suite
@@ -157,6 +133,15 @@ jobs:
           path: macOS/scripts/crossbench/crossbench-dispositions/*.tsv
           if-no-files-found: warn
           retention-days: 7
+
+      - name: Upload Safari diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v6
+        with:
+          name: safari-lcp-diagnostics
+          path: macOS/scripts/crossbench/safari-diagnostics/**
+          if-no-files-found: warn
+          retention-days: 3
 
       - name: Aggregate results for ClickHouse
         if: always()

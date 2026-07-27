@@ -1,4 +1,4 @@
-# macOS crossbench — Chrome and Safari LCP
+# macOS replay benchmarks — Chrome and Safari LCP
 
 The Chrome and Safari harnesses measure navigation-to-LCP using fixed Web Page
 Replay archives and the same US-broadband profile as the Windows harness:
@@ -60,7 +60,12 @@ Everything else is installed by `provision-macos.sh`.
 
 # Small validation run:
 ./test-chrome.sh --sites apple.com --reps 1
-./test-safari.sh --sites apple.com --reps 1
+
+# Safari consumes only the validator's staged archive set.
+WPR_DIR="$PWD/wpr-archives" WPR_REPLAY_DIR="$PWD/validated-wpr-archives" \
+  ./validate-wpr-archives.sh --sites apple.com
+WPR_DIR="$PWD/validated-wpr-archives" WPR_ARCHIVES_PREPARED=1 \
+  ./test-safari.sh --sites apple.com --reps 1
 ```
 
 The manual CI workflow also accepts a `reps` input. Scheduled runs retain the
@@ -130,3 +135,6 @@ run before the job exits nonzero.
 
 Safari results and disposition rows use `webview_type=sfr-wpr`, keeping them
 separate from historical live-network `sfr` data.
+
+On failure, Safari retains the WPR, proxy, tsproxy, and safaridriver logs in
+`safari-diagnostics/`; CI uploads that directory for three days.

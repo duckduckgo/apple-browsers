@@ -109,8 +109,10 @@ final class PromptBarViewController: NSViewController {
         // Read the screen before dismissal tears the window down.
         let screen = view.window?.screen
         promptField.stringValue = ""
-        promptSubmitter.submit(prompt: prompt, preferringWindowOn: screen)
+        // Dismiss before submitting: the bar is a floating panel and holds key, so raising a browser
+        // window underneath it while it is still up leaves the window behind whatever was in front.
         onSubmit?()
+        promptSubmitter.submit(prompt: prompt, preferringWindowOn: screen)
     }
 }
 

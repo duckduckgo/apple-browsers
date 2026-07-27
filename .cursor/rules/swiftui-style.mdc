@@ -43,7 +43,7 @@ ALWAYS use semantic colors from DesignResourcesKit instead of hardcoded or syste
 // ✅ CORRECT - DesignResourcesKit semantic colors
 Text("Title")
     .foregroundColor(Color(designSystemColor: .textPrimary))
-    .background(Color(designSystemColor: .surface))
+    .background(Color(designSystemColor: .surfaceSecondary))
 
 VStack {
     Rectangle()
@@ -97,7 +97,7 @@ Use appropriate semantic color categories:
 
 // Background colors
 .background(Color(designSystemColor: .surfacePrimary))
-.background(Color(designSystemColor: .surface))
+.background(Color(designSystemColor: .surfaceSecondary))
 .background(Color(designSystemColor: .surfacePrimary))
 
 // Control colors

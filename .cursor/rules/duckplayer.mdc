@@ -480,7 +480,7 @@ struct DuckPlayerToastView: View {
     var body: some View {
         Text(message)
             .padding()
-            .background(Color(designSystemColor: .surface))
+            .background(Color(designSystemColor: .surfaceSecondary))
             .cornerRadius(8)
             .scaleEffect(isVisible ? 1.0 : 0.8)
             .opacity(isVisible ? 1.0 : 0.0)

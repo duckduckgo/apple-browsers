@@ -150,7 +150,7 @@ struct FeatureView: View {
                 .foregroundColor(Color(designSystemColor: .textPrimary))
             
             Rectangle()
-                .fill(Color(designSystemColor: .surface))
+                .fill(Color(designSystemColor: .surfaceSecondary))
         }
         .background(Color(designSystemColor: .surfacePrimary))
     }

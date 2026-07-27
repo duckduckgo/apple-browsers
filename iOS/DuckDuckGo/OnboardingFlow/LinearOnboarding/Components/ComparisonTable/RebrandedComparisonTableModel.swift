@@ -149,7 +149,7 @@ extension RebrandedComparisonTableModel {
             ]
         case .privateAIChat:
             return [
-                Feature(icon: Image(""), title: AIText.anonymousChats, competitorAvailability: .unavailable, ddgAvailability: .available), // Placeholder icon to be replaced
+                Feature(icon: Image(uiImage: DesignSystemImages.Color.Size24.mask), title: AIText.anonymousChats, competitorAvailability: .unavailable, ddgAvailability: .available), // Placeholder icon to be replaced
                 Feature(icon: Icon.privateAIChatIcon, title: AIText.noAccountsNeeded, competitorAvailability: .unavailable, ddgAvailability: .available),
                 Feature(icon: Icon.lockIcon, title: AIText.noTrainingData, competitorAvailability: .unavailable, ddgAvailability: .available),
                 Feature(icon: Icon.aiIcon, title: AIText.onePlaceAccess, competitorAvailability: .unavailable, ddgAvailability: .available),

@@ -496,6 +496,7 @@ public extension DesignSystemImages {
                     ? .init(resource: .lockColor24)
                     : .init(resource: .lockColor24Legacy)
             }
+            public static var mask: DesignSystemImage { .init(resource: .maskColor24) }
             public static var microphone: DesignSystemImage {
                 AppRebrand.isAppRebranded()
                     ? .init(resource: .microphoneColor24)

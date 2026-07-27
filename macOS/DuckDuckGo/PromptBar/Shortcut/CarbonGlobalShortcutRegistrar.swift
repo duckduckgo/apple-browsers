@@ -20,11 +20,8 @@ import AppKit
 import Carbon.HIToolbox
 import os.log
 
-/// Global shortcut registration through Carbon's `RegisterEventHotKey`.
-///
-/// Carbon is the only route to a system-wide hotkey that needs no Accessibility permission —
-/// `NSEvent.addGlobalMonitorForEvents` silently delivers nothing for key events until the user
-/// grants trust.
+/// Global shortcut registration through Carbon's `RegisterEventHotKey` — the only route that needs
+/// no Accessibility permission; `NSEvent.addGlobalMonitorForEvents` drops key events until granted.
 final class CarbonGlobalShortcutRegistrar: GlobalShortcutRegistering {
 
     private enum Constants {
@@ -83,12 +80,11 @@ final class CarbonGlobalShortcutRegistrar: GlobalShortcutRegistering {
         registeredShortcut = nil
     }
 
-    /// Called from the Carbon event handler on the main thread.
     fileprivate func handleHotKeyPressed() {
         handler?()
     }
 
-    /// One handler serves every hot key this registrar owns, so it is installed once and left in place.
+    /// One handler serves every hot key this registrar owns, so it is installed once.
     private func installEventHandlerIfNeeded() -> Bool {
         guard eventHandlerRef == nil else { return true }
 

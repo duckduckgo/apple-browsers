@@ -107,19 +107,13 @@ protocol AIChatTabOpening {
     @MainActor
     func openVoiceSession(inSourceCollection sourceCollection: TabCollectionViewModel?, behavior: LinkOpenBehavior)
 
-    /// Opens a chat with a pre-filled, auto-submitted query in a new selected tab of a specific window.
-    ///
-    /// For entry points that own no window and so must resolve their own target — the Prompt Bar
-    /// picks the browser window on the screen and Space the user is actually looking at, which
-    /// `lastKeyMainWindowController` would not necessarily be.
+    /// Opens an auto-submitted query in a new tab of a specific window, for window-less entry points
+    /// that resolve their own target rather than taking `lastKeyMainWindowController`.
     @MainActor
     func openAIChatTab(withQuery query: String, inNewTabOf windowController: MainWindowController)
 
-    /// Opens a chat with a pre-filled, auto-submitted query in a new window whose top-center lands
-    /// at `droppingPoint`.
-    ///
-    /// Without an explicit point a new window cascades off the last key window, which for a
-    /// window-less entry point can be on a display the user isn't looking at.
+    /// Opens an auto-submitted query in a new window placed by its top-center point. Without one a
+    /// new window cascades off the last key window, possibly onto another display.
     @MainActor
     func openAIChatTab(withQuery query: String, inNewWindowAt droppingPoint: NSPoint)
 }
@@ -227,12 +221,11 @@ protocol AIChatTabManaging {
     @MainActor
     func openAIChat(_ url: URL, with behavior: LinkOpenBehavior, hasPrompt: Bool)
 
-    /// Opens the chat in a new selected tab of `windowController`, bypassing last-key-window resolution.
+    /// Bypasses last-key-window resolution.
     @MainActor
     func openAIChat(_ url: URL, inNewTabOf windowController: MainWindowController, hasPrompt: Bool)
 
-    /// Opens the chat in a new window positioned by its top-center point, rather than cascaded off
-    /// the last key window.
+    /// Positioned by its top-center point rather than cascaded off the last key window.
     @MainActor
     func openAIChat(_ url: URL, inNewWindowAt droppingPoint: NSPoint, hasPrompt: Bool)
 

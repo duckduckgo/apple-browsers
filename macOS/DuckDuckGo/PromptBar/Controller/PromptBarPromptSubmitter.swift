@@ -22,22 +22,19 @@ import AppKit
 @MainActor
 protocol PromptBarPromptSubmitting {
 
-    /// - Parameter screen: The screen the Prompt Bar is on. A browser window there is reused;
-    ///   otherwise a new window is opened, so the chat never appears on a display the user isn't looking at.
+    /// - Parameter screen: Reuses a browser window there, so the chat never opens on a display the
+    ///   user isn't looking at.
     func submit(prompt: String, preferringWindowOn screen: NSScreen?)
 }
 
-/// The window properties that decide whether a browser window can host a submitted prompt.
-/// A protocol so the rule can be tested without real windows.
+/// The window properties deciding whether a browser window can host a submitted prompt.
+/// A protocol so the rule tests without real windows.
 @MainActor
 protocol PromptBarHostWindow {
     var isVisible: Bool { get }
     var isMiniaturized: Bool { get }
-
-    /// Whether the window is on the Space the user is currently viewing.
     var isOnActiveSpace: Bool { get }
 
-    /// Frame of the display showing most of the window, or `nil` when the window is offscreen.
     /// Frames identify displays: two screens can never share one in global coordinates.
     var screenFrame: NSRect? { get }
 }
@@ -61,22 +58,20 @@ final class PromptBarPromptSubmitter: PromptBarPromptSubmitting {
         if let windowController = windowToReuse(on: screen) {
             aiChatTabOpener.openAIChatTab(withQuery: prompt, inNewTabOf: windowController)
         } else if let visibleFrame = screen?.visibleFrame {
-            // Placed explicitly: an unplaced new window cascades off the last key window, which is
-            // how it would end up back on the display the user just walked away from.
+            // Placed explicitly: an unplaced window cascades off the last key window, i.e. back onto its display.
             aiChatTabOpener.openAIChatTab(withQuery: prompt, inNewWindowAt: Self.newWindowDroppingPoint(in: visibleFrame))
         } else {
             aiChatTabOpener.openAIChatTab(with: .query(prompt, shouldAutoSubmit: true), behavior: .newWindow(selected: true))
         }
     }
 
-    /// Top-center point for a new window, which is what `droppingPoint` means: horizontally centered
-    /// on the target display and flush with the top of its visible area.
+    /// `droppingPoint` is a window's top-center: centered on the display, flush with its visible top.
     static func newWindowDroppingPoint(in visibleFrame: NSRect) -> NSPoint {
         NSPoint(x: visibleFrame.midX, y: visibleFrame.maxY)
     }
 
-    /// The most recently focused eligible window, so a screen showing several windows reuses the one
-    /// the user last worked in. `lastKeyMainWindowController(where:)` already excludes popups.
+    /// Most recently focused first, so a screen with several windows reuses the last one worked in.
+    /// `lastKeyMainWindowController(where:)` already excludes popups.
     private func windowToReuse(on screen: NSScreen?) -> MainWindowController? {
         let targetScreenFrame = screen?.frame
         return windowControllersManager.lastKeyMainWindowController { windowController in
@@ -85,9 +80,7 @@ final class PromptBarPromptSubmitter: PromptBarPromptSubmitting {
         }
     }
 
-    /// A window qualifies when it is actually on screen, on the Space being viewed, and on the
-    /// display the prompt came from. With an unknown source display, any on-screen window qualifies —
-    /// better to reuse a window than to open one the user may not have wanted.
+    /// With an unknown source display, any on-screen window qualifies — reusing beats opening one.
     static func canHostPrompt(_ window: PromptBarHostWindow, submittedFromScreenFrame screenFrame: NSRect?) -> Bool {
         guard window.isVisible, !window.isMiniaturized, window.isOnActiveSpace else { return false }
         guard let screenFrame else { return true }

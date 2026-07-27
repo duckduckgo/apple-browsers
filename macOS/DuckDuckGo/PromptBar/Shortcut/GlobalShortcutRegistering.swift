@@ -21,10 +21,9 @@ import AppKit
 /// Registers a system-wide keyboard shortcut that fires whether or not the app is active.
 protocol GlobalShortcutRegistering: AnyObject {
 
-    /// The shortcut currently held by the OS, or `nil` when none is registered.
     var registeredShortcut: PromptBarShortcut? { get }
 
-    /// Registers `shortcut`, replacing any shortcut this registrar already holds.
+    /// Replaces any shortcut this registrar already holds.
     /// - Returns: `false` when the OS refused the combination, typically because another app owns it.
     @discardableResult
     func register(_ shortcut: PromptBarShortcut, handler: @escaping () -> Void) -> Bool

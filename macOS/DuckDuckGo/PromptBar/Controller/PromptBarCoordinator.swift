@@ -22,9 +22,6 @@ import FeatureFlags
 import PrivacyConfig
 
 /// Owns the Prompt Bar's entry points: the global shortcut and the menu bar icon click.
-///
-/// Keeps the registered shortcut in step with the user's preference, and unregisters it when the
-/// preference or Duck.ai itself is switched off.
 @MainActor
 final class PromptBarCoordinator {
 
@@ -45,8 +42,6 @@ final class PromptBarCoordinator {
         self.presenter = presenter
     }
 
-    /// Begins observing the shortcut preference. A no-op while the feature flag is off, so nothing
-    /// is registered and the menu bar click stays inert.
     func start() {
         guard featureFlagger.isFeatureOn(.macosPromptBar) else { return }
 
@@ -56,8 +51,6 @@ final class PromptBarCoordinator {
             }
     }
 
-    /// Shows the bar, or hides it when it is already up. Called by the global shortcut and the
-    /// menu bar icon.
     func togglePromptBar() {
         guard featureFlagger.isFeatureOn(.macosPromptBar) else { return }
         presenter.toggle()
@@ -70,7 +63,7 @@ final class PromptBarCoordinator {
         }
 
         shortcutRegistrar.register(shortcut) { [weak self] in
-            // The Carbon handler is not isolated, so hop to the main actor before touching UI.
+            // The Carbon handler is nonisolated.
             Task { @MainActor in
                 self?.togglePromptBar()
             }

@@ -21,10 +21,7 @@ import DesignResourcesKit
 import DesignResourcesKitIcons
 
 /// Prompt Bar content: a single prompt field that hands what the user types to Duck.ai.
-///
-/// Intentionally minimal. The Duck.ai controls from the address bar panel (attach, tools, model and
-/// reasoning pickers, voice) replace this field's surroundings once they are extracted into a
-/// component both surfaces can share.
+/// Minimal until the address bar's Duck.ai controls are extracted into a shared component.
 @MainActor
 final class PromptBarViewController: NSViewController {
 
@@ -105,8 +102,6 @@ final class PromptBarViewController: NSViewController {
         ])
     }
 
-    /// Hands the prompt to Duck.ai. Blank input is ignored so Enter on an empty bar does nothing
-    /// rather than opening an empty chat. The window's screen decides where the chat lands.
     private func submitPrompt() {
         let prompt = promptField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !prompt.isEmpty else { return }
@@ -125,7 +120,7 @@ extension PromptBarViewController: PromptBarContentHosting {
 
     var viewController: NSViewController { self }
 
-    /// No menus or pickers in the MVP, so nothing ever suppresses dismissal.
+    /// No menus or pickers yet, so nothing suppresses dismissal.
     var isPresentingAuxiliaryUI: Bool { false }
 
     var preferredWindowContentSize: NSSize {
@@ -155,7 +150,7 @@ extension PromptBarViewController: NSTextFieldDelegate {
             submitPrompt()
             return true
         case #selector(NSResponder.cancelOperation(_:)):
-            // The field editor would otherwise swallow Escape to revert its own editing.
+            // The field editor would otherwise swallow Escape to revert its editing.
             view.window?.cancelOperation(nil)
             return true
         default:

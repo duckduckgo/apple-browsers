@@ -2431,8 +2431,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
     }
 
-    /// Builds the Prompt Bar's window stack and registers its global shortcut. Must run before
-    /// `setUpPromptBarMenuBarVisibility()`, which hands the menu bar icon's click to the coordinator.
+    /// Must run before `setUpPromptBarMenuBarVisibility()`, which hands the icon's click to the coordinator.
     @MainActor
     private func setUpPromptBar() {
         guard featureFlagger.isFeatureOn(.macosPromptBar) else {

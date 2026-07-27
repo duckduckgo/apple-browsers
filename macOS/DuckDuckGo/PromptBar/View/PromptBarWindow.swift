@@ -20,11 +20,10 @@ import AppKit
 
 /// The floating, borderless window hosting the Prompt Bar.
 ///
-/// An `NSPanel` rather than an `NSWindow` so it never becomes the app's main window and stays out
-/// of the Window menu; the rounded chrome is drawn by the content view controller.
+/// An `NSPanel` so it never becomes the app's main window and stays out of the Window menu.
 final class PromptBarWindow: NSPanel {
 
-    /// Called on Escape. The presenter owns what dismissal means.
+    /// Called on Escape; the presenter decides what dismissal means.
     var onCancel: (() -> Void)?
 
     override var canBecomeKey: Bool { true }
@@ -44,7 +43,7 @@ final class PromptBarWindow: NSPanel {
         level = .floating
         animationBehavior = .utilityWindow
 
-        // The content view controller draws the panel, so the window itself is fully transparent.
+        // The content view controller draws the panel.
         backgroundColor = .clear
         isOpaque = false
         hasShadow = true
@@ -52,10 +51,10 @@ final class PromptBarWindow: NSPanel {
         isExcludedFromWindowsMenu = true
         isMovableByWindowBackground = false
 
-        // Available over fullscreen apps and on whichever Space the user is on when the shortcut fires.
+        // Reachable over fullscreen apps and on whichever Space the shortcut fires from.
         collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .transient]
 
-        // Dismissal is driven by the presenter so a tool menu or file picker can suppress it.
+        // The presenter owns dismissal, so that it can suppress it.
         hidesOnDeactivate = false
     }
 

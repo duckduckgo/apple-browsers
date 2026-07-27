@@ -18,33 +18,25 @@
 
 import AppKit
 
-/// What `PromptBarPresenter` needs from the bar's content, so presentation and dismissal can be
-/// tested without building the Duck.ai prompt stack.
+/// What `PromptBarPresenter` needs from the bar's content.
 @MainActor
 protocol PromptBarContentHosting: AnyObject {
 
     var viewController: NSViewController { get }
 
-    /// True while a tool menu, file picker or modal is on screen. The presenter suppresses
-    /// dismiss-on-resign-key while it holds, otherwise opening the file picker would close the bar.
+    /// True while a menu, file picker or modal is up: those take key away, and must not dismiss the bar.
     var isPresentingAuxiliaryUI: Bool { get }
 
-    /// Window content size the current text and attachments need. Named to avoid colliding with
-    /// `NSViewController.preferredContentSize`, which conforming view controllers already inherit.
+    /// Not `preferredContentSize`, which would collide with the `NSViewController` property conformers inherit.
     var preferredWindowContentSize: NSSize { get }
 
-    /// Fires when `preferredWindowContentSize` changes, e.g. as the prompt wraps onto another line.
     var onPreferredWindowContentSizeChanged: ((NSSize) -> Void)? { get set }
-
-    /// Fires once the prompt has been handed off to Duck.ai; the presenter dismisses in response.
     var onSubmit: (() -> Void)? { get set }
 
-    /// Called before the window is shown, to refresh state that may have changed since last time.
     func prepareForPresentation()
 
-    /// Called once the window is key, when first responder assignment actually sticks.
+    /// Called once the window is key, when first responder assignment sticks.
     func focusPromptEditor()
 
-    /// Called after dismissal, to clear the draft so the next presentation starts clean.
     func resetAfterDismissal()
 }

@@ -28,8 +28,7 @@ protocol PromptBarPresenting: AnyObject {
     func toggle()
 }
 
-/// Owns the Prompt Bar window and the dismissal policy: Escape, submit, and losing key status —
-/// the last of which is suppressed while the content has a menu or file picker up.
+/// Owns the Prompt Bar window and its dismissal policy.
 @MainActor
 final class PromptBarPresenter: PromptBarPresenting {
 
@@ -44,8 +43,7 @@ final class PromptBarPresenter: PromptBarPresenting {
         window?.isVisible ?? false
     }
 
-    /// `screenProvider` is resolved in the body rather than as a default value: default parameter
-    /// values are evaluated in a nonisolated context, and the provider is main-actor isolated.
+    // `screenProvider` has no default value: defaults are evaluated nonisolated, and the provider is @MainActor.
     init(content: PromptBarContentHosting,
          screenProvider: PromptBarScreenProviding? = nil,
          makeWindow: @escaping (NSRect) -> PromptBarWindow = { PromptBarWindow(contentRect: $0) }) {
@@ -77,10 +75,9 @@ final class PromptBarPresenter: PromptBarPresenting {
                                                  in: screenProvider.targetVisibleFrame),
                         display: false)
 
-        // The bar is a keyboard-first surface, so the app has to come forward to receive typing.
         NSApp.activate(ignoringOtherApps: true)
         window.makeKeyAndOrderFront(nil)
-        // Only meaningful once the window is key, so it follows the ordering above.
+        // First responder only sticks once the window is key.
         content.focusPromptEditor()
     }
 
@@ -108,8 +105,7 @@ final class PromptBarPresenter: PromptBarPresenting {
         return window
     }
 
-    /// Clicking outside dismisses, but a tool menu or `NSOpenPanel` also takes key away — those
-    /// must not close the bar the user is still filling in.
+    /// Clicking outside dismisses — but a tool menu or `NSOpenPanel` also takes key away, and must not.
     private func subscribeToResignKey(of window: PromptBarWindow) {
         resignKeyCancellable = NotificationCenter.default
             .publisher(for: NSWindow.didResignKeyNotification, object: window)
@@ -122,7 +118,7 @@ final class PromptBarPresenter: PromptBarPresenting {
     private func resizeWindow(toContentSize size: NSSize) {
         guard let window, window.isVisible else { return }
 
-        // Keep the top edge pinned so the bar grows downwards as the prompt gets longer.
+        // Pin the top edge so the bar grows downwards.
         var frame = window.frame
         let top = frame.maxY
         frame.size.height = size.height

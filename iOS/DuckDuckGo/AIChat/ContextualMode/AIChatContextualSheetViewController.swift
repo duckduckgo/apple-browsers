@@ -92,6 +92,7 @@ final class AIChatContextualSheetViewController: UIViewController {
         static let headerButtonSize: CGFloat = 44
         static let headerHorizontalPadding: CGFloat = 16
         static let titleSpacing: CGFloat = 8
+        static let titleTapHorizontalPadding: CGFloat = 8
         static let contentTopPadding: CGFloat = 8
         static let dimmingAlpha: CGFloat = 0.3
         static let iPadPopoverWidth: CGFloat = 375
@@ -108,6 +109,16 @@ final class AIChatContextualSheetViewController: UIViewController {
             super.layoutSubviews()
             layer.cornerRadius = bounds.height / 2
             layer.cornerCurve = .continuous
+        }
+    }
+
+    private final class HighlightableControl: UIControl {
+        override var isHighlighted: Bool {
+            didSet {
+                UIView.animate(withDuration: 0.1) {
+                    self.alpha = self.isHighlighted ? 0.5 : 1.0
+                }
+            }
         }
     }
 
@@ -221,6 +232,12 @@ final class AIChatContextualSheetViewController: UIViewController {
         stack.translatesAutoresizingMaskIntoConstraints = false
         return stack
     }()
+
+    /// Wraps `titleContainer` so the header title acts as a tappable element.
+    private var titleTapControl: HighlightableControl?
+
+    /// The header subview holding the title, i.e. the tap control when present and the bare stack otherwise.
+    private var titleHostView: UIView { titleTapControl ?? titleContainer }
 
     private lazy var titleIconView: UIImageView = {
         let imageView = UIImageView(image: DesignSystemImages.Color.Size24.duckAI)
@@ -429,6 +446,14 @@ final class AIChatContextualSheetViewController: UIViewController {
 
     @objc private func expandButtonTapped() {
         pixelHandler.fireExpandButtonTapped()
+        requestExpand()
+    }
+
+    @objc private func titleTapped() {
+        requestExpand()
+    }
+
+    private func requestExpand() {
         let url = sessionState.contextualChatURL ?? aiChatSettings.aiChatURL
         Logger.aiChat.debug("[AIChatContextual] Expand tapped with URL: \(url.shortDescription)")
         delegate?.aiChatContextualSheetViewController(self, didRequestExpandWithURL: url)
@@ -967,6 +992,7 @@ private extension AIChatContextualSheetViewController {
 
     func apply(_ viewState: SheetViewState) {
         expandButton.isEnabled = viewState.isExpandButtonEnabled
+        titleTapControl?.isEnabled = viewState.isExpandButtonEnabled
         contextualInputViewController.updateStartActions(suggestions: viewState.suggestions, quickActions: viewState.quickActions)
         contextualInputViewController.updateSuggestionsLoading(viewState.suggestionsLoadState == .loading)
         fireAskAboutPageShownPixelIfNeeded(for: viewState)
@@ -1128,13 +1154,25 @@ private extension AIChatContextualSheetViewController {
                 recentChatsButton.heightAnchor.constraint(equalToConstant: Constants.headerButtonSize),
             ])
         }
-        headerView.addSubview(titleContainer)
         if featureFlagger.isFeatureOn(.contextualSuggestedPrompts) {
+            let tapControl = makeTitleTapControl()
+            titleTapControl = tapControl
+            headerView.addSubview(tapControl)
+            titleContainer.isUserInteractionEnabled = false
+            tapControl.addSubview(titleContainer)
+            NSLayoutConstraint.activate([
+                titleContainer.leadingAnchor.constraint(equalTo: tapControl.leadingAnchor, constant: Constants.titleTapHorizontalPadding),
+                titleContainer.trailingAnchor.constraint(equalTo: tapControl.trailingAnchor, constant: -Constants.titleTapHorizontalPadding),
+                titleContainer.centerYAnchor.constraint(equalTo: tapControl.centerYAnchor),
+                tapControl.heightAnchor.constraint(equalToConstant: Constants.headerButtonSize),
+            ])
             titleContainer.addArrangedSubview(titleIconView)
             NSLayoutConstraint.activate([
                 titleIconView.widthAnchor.constraint(equalToConstant: 24),
                 titleIconView.heightAnchor.constraint(equalToConstant: 24),
             ])
+        } else {
+            headerView.addSubview(titleContainer)
         }
         titleContainer.addArrangedSubview(titleLabel)
 
@@ -1153,6 +1191,17 @@ private extension AIChatContextualSheetViewController {
         view.addSubview(contentContainerView)
 
         setupConstraints()
+    }
+
+    private func makeTitleTapControl() -> HighlightableControl {
+        let control = HighlightableControl()
+        control.translatesAutoresizingMaskIntoConstraints = false
+        control.addTarget(self, action: #selector(titleTapped), for: .touchUpInside)
+        control.isAccessibilityElement = true
+        control.accessibilityLabel = UserText.duckAiFeatureName
+        control.accessibilityTraits = .button
+        control.accessibilityIdentifier = "AIChat.ContextualSheet.TitleButton"
+        return control
     }
 
     func setupConstraints() {
@@ -1182,8 +1231,8 @@ private extension AIChatContextualSheetViewController {
             expandButton.widthAnchor.constraint(equalToConstant: Constants.headerButtonSize),
             expandButton.heightAnchor.constraint(equalToConstant: Constants.headerButtonSize),
 
-            titleContainer.centerXAnchor.constraint(equalTo: headerView.centerXAnchor),
-            titleContainer.centerYAnchor.constraint(equalTo: headerView.centerYAnchor),
+            titleHostView.centerXAnchor.constraint(equalTo: headerView.centerXAnchor),
+            titleHostView.centerYAnchor.constraint(equalTo: headerView.centerYAnchor),
 
             rightButtonContainer.trailingAnchor.constraint(equalTo: headerView.trailingAnchor, constant: -Constants.headerHorizontalPadding),
             rightButtonContainer.centerYAnchor.constraint(equalTo: headerView.centerYAnchor),

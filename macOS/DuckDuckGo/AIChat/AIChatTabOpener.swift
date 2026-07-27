@@ -106,6 +106,22 @@ protocol AIChatTabOpening {
     ///   - behavior: The `LinkOpenBehavior` used when opening a fresh voice tab.
     @MainActor
     func openVoiceSession(inSourceCollection sourceCollection: TabCollectionViewModel?, behavior: LinkOpenBehavior)
+
+    /// Opens a chat with a pre-filled, auto-submitted query in a new selected tab of a specific window.
+    ///
+    /// For entry points that own no window and so must resolve their own target — the Prompt Bar
+    /// picks the browser window on the screen and Space the user is actually looking at, which
+    /// `lastKeyMainWindowController` would not necessarily be.
+    @MainActor
+    func openAIChatTab(withQuery query: String, inNewTabOf windowController: MainWindowController)
+
+    /// Opens a chat with a pre-filled, auto-submitted query in a new window whose top-center lands
+    /// at `droppingPoint`.
+    ///
+    /// Without an explicit point a new window cascades off the last key window, which for a
+    /// window-less entry point can be on a display the user isn't looking at.
+    @MainActor
+    func openAIChatTab(withQuery query: String, inNewWindowAt droppingPoint: NSPoint)
 }
 
 struct AIChatTabOpener: AIChatTabOpening {
@@ -169,6 +185,18 @@ struct AIChatTabOpener: AIChatTabOpening {
         openAIChatTab(with: .mode(AIChatNativePrompt.voiceMode), behavior: behavior)
     }
 
+    @MainActor
+    func openAIChatTab(withQuery query: String, inNewTabOf windowController: MainWindowController) {
+        promptHandler.setData(.queryPrompt(query, autoSubmit: true))
+        aiChatTabManaging.openAIChat(aiChatRemoteSettings.aiChatURL, inNewTabOf: windowController, hasPrompt: true)
+    }
+
+    @MainActor
+    func openAIChatTab(withQuery query: String, inNewWindowAt droppingPoint: NSPoint) {
+        promptHandler.setData(.queryPrompt(query, autoSubmit: true))
+        aiChatTabManaging.openAIChat(aiChatRemoteSettings.aiChatURL, inNewWindowAt: droppingPoint, hasPrompt: true)
+    }
+
     // MARK: - Private Helpers
 
     @MainActor
@@ -198,6 +226,15 @@ struct AIChatTabOpener: AIChatTabOpening {
 protocol AIChatTabManaging {
     @MainActor
     func openAIChat(_ url: URL, with behavior: LinkOpenBehavior, hasPrompt: Bool)
+
+    /// Opens the chat in a new selected tab of `windowController`, bypassing last-key-window resolution.
+    @MainActor
+    func openAIChat(_ url: URL, inNewTabOf windowController: MainWindowController, hasPrompt: Bool)
+
+    /// Opens the chat in a new window positioned by its top-center point, rather than cascaded off
+    /// the last key window.
+    @MainActor
+    func openAIChat(_ url: URL, inNewWindowAt droppingPoint: NSPoint, hasPrompt: Bool)
 
     @MainActor
     func insertAIChatTab(with url: URL, payload: AIChatPayload)
@@ -251,6 +288,14 @@ extension WindowControllersManager: AIChatTabManaging {
         default:
             open(url, with: linkOpenBehavior, source: .ui, target: nil)
         }
+    }
+
+    func openAIChat(_ url: URL, inNewTabOf windowController: MainWindowController, hasPrompt: Bool) {
+        open(url, with: .newTab(selected: true), source: .ui, target: windowController)
+    }
+
+    func openAIChat(_ url: URL, inNewWindowAt droppingPoint: NSPoint, hasPrompt: Bool) {
+        WindowsManager.openNewWindow(with: url, source: .ui, droppingPoint: droppingPoint)
     }
 
     func insertAIChatTab(with url: URL, payload: AIChat.AIChatPayload) {

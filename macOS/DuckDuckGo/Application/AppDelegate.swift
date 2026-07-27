@@ -2440,11 +2440,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             return
         }
 
+        let promptSubmitter = PromptBarPromptSubmitter(aiChatTabOpener: aiChatTabOpener,
+                                                       windowControllersManager: windowControllersManager)
         let coordinator = PromptBarCoordinator(
             featureFlagger: featureFlagger,
             preferences: promptBarPreferences,
             shortcutRegistrar: CarbonGlobalShortcutRegistrar(),
-            presenter: PromptBarPresenter(content: PromptBarViewController(aiChatTabOpener: aiChatTabOpener))
+            presenter: PromptBarPresenter(content: PromptBarViewController(promptSubmitter: promptSubmitter))
         )
         coordinator.start()
         promptBarCoordinator = coordinator

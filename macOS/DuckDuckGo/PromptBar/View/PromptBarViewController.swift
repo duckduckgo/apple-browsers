@@ -37,7 +37,7 @@ final class PromptBarViewController: NSViewController {
         static let promptFontSize: CGFloat = 16
     }
 
-    private let aiChatTabOpener: AIChatTabOpening
+    private let promptSubmitter: PromptBarPromptSubmitting
 
     private lazy var panelView = ColorView(frame: .zero,
                                            backgroundColor: NSColor(designSystemColor: .surfacePrimary),
@@ -51,8 +51,8 @@ final class PromptBarViewController: NSViewController {
     var onPreferredWindowContentSizeChanged: ((NSSize) -> Void)?
     var onSubmit: (() -> Void)?
 
-    init(aiChatTabOpener: AIChatTabOpening) {
-        self.aiChatTabOpener = aiChatTabOpener
+    init(promptSubmitter: PromptBarPromptSubmitting) {
+        self.promptSubmitter = promptSubmitter
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -105,14 +105,16 @@ final class PromptBarViewController: NSViewController {
         ])
     }
 
-    /// Opens the prompt in a new selected Duck.ai tab, matching the address bar's hand-off. Blank
-    /// input is ignored so Enter on an empty bar does nothing rather than opening an empty chat.
+    /// Hands the prompt to Duck.ai. Blank input is ignored so Enter on an empty bar does nothing
+    /// rather than opening an empty chat. The window's screen decides where the chat lands.
     private func submitPrompt() {
         let prompt = promptField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !prompt.isEmpty else { return }
 
+        // Read the screen before dismissal tears the window down.
+        let screen = view.window?.screen
         promptField.stringValue = ""
-        aiChatTabOpener.openAIChatTab(with: .query(prompt, shouldAutoSubmit: true), behavior: .newTab(selected: true))
+        promptSubmitter.submit(prompt: prompt, preferringWindowOn: screen)
         onSubmit?()
     }
 }

@@ -4678,6 +4678,10 @@
 				FB07BAD1000000000000001D /* PromptBarPlacementTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD1000000000000001B /* PromptBarPlacementTests.swift */; };
 				FB07BAD1000000000000001F /* PromptBarCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD1000000000000001E /* PromptBarCoordinatorTests.swift */; };
 				FB07BAD10000000000000020 /* PromptBarCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD1000000000000001E /* PromptBarCoordinatorTests.swift */; };
+				FB07BAD10000000000000022 /* PromptBarPromptSubmitter.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD10000000000000021 /* PromptBarPromptSubmitter.swift */; };
+				FB07BAD10000000000000023 /* PromptBarPromptSubmitter.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD10000000000000021 /* PromptBarPromptSubmitter.swift */; };
+				FB07BAD10000000000000025 /* PromptBarPromptSubmitterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD10000000000000024 /* PromptBarPromptSubmitterTests.swift */; };
+				FB07BAD10000000000000026 /* PromptBarPromptSubmitterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD10000000000000024 /* PromptBarPromptSubmitterTests.swift */; };
 		/* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -7166,6 +7170,8 @@
 				FB07BAD10000000000000018 /* CarbonGlobalShortcutRegistrar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarbonGlobalShortcutRegistrar.swift; sourceTree = "<group>"; };
 				FB07BAD1000000000000001B /* PromptBarPlacementTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptBarPlacementTests.swift; sourceTree = "<group>"; };
 				FB07BAD1000000000000001E /* PromptBarCoordinatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptBarCoordinatorTests.swift; sourceTree = "<group>"; };
+				FB07BAD10000000000000021 /* PromptBarPromptSubmitter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptBarPromptSubmitter.swift; sourceTree = "<group>"; };
+				FB07BAD10000000000000024 /* PromptBarPromptSubmitterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptBarPromptSubmitterTests.swift; sourceTree = "<group>"; };
 		/* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -13364,6 +13370,7 @@
 		FB07BAD1000000000000000D /* Controller */ = {
 			isa = PBXGroup;
 			children = (
+				FB07BAD10000000000000021 /* PromptBarPromptSubmitter.swift */,
 				FB07BAD10000000000000011 /* PromptBarCoordinator.swift */,
 				FB07BAD1000000000000000E /* PromptBarPresenter.swift */,
 			);
@@ -13417,6 +13424,7 @@
 		FB07BAD00000000000000033 /* PromptBar */ = {
 			isa = PBXGroup;
 			children = (
+				FB07BAD10000000000000024 /* PromptBarPromptSubmitterTests.swift */,
 				FB07BAD1000000000000001E /* PromptBarCoordinatorTests.swift */,
 				FB07BAD1000000000000001B /* PromptBarPlacementTests.swift */,
 				FB07BAD00000000000000007 /* PromptBarPreferencesPersistorTests.swift */,
@@ -15144,6 +15152,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				FB07BAD10000000000000023 /* PromptBarPromptSubmitter.swift in Sources */,
 				FB07BAD1000000000000001A /* CarbonGlobalShortcutRegistrar.swift in Sources */,
 				FB07BAD10000000000000017 /* GlobalShortcutRegistering.swift in Sources */,
 				FB07BAD10000000000000013 /* PromptBarCoordinator.swift in Sources */,
@@ -16511,6 +16520,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				FB07BAD10000000000000026 /* PromptBarPromptSubmitterTests.swift in Sources */,
 				FB07BAD10000000000000020 /* PromptBarCoordinatorTests.swift in Sources */,
 				FB07BAD1000000000000001D /* PromptBarPlacementTests.swift in Sources */,
 				20AC3AA2FB956B8B11BCA072 /* DarkReaderFeatureSettingsTests.swift in Sources */,
@@ -17487,6 +17497,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				FB07BAD10000000000000022 /* PromptBarPromptSubmitter.swift in Sources */,
 				FB07BAD10000000000000019 /* CarbonGlobalShortcutRegistrar.swift in Sources */,
 				FB07BAD10000000000000016 /* GlobalShortcutRegistering.swift in Sources */,
 				FB07BAD10000000000000012 /* PromptBarCoordinator.swift in Sources */,
@@ -18840,6 +18851,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				FB07BAD10000000000000025 /* PromptBarPromptSubmitterTests.swift in Sources */,
 				FB07BAD1000000000000001F /* PromptBarCoordinatorTests.swift in Sources */,
 				FB07BAD1000000000000001C /* PromptBarPlacementTests.swift in Sources */,
 				365B217A2F64460D00DE0CB0 /* DataClearingWideEventServiceTests.swift in Sources */,

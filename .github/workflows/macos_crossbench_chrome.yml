@@ -1,4 +1,5 @@
 name: macOS - crossbench Chrome LCP (WPR)
+run-name: macOS - crossbench Chrome LCP (WPR)
 
 # Test harness: stands up crossbench on a GitHub-hosted macOS runner,
 # measures Chrome navigation -> Largest Contentful Paint from WPR archives,

@@ -149,13 +149,15 @@ extension Preferences {
                     .accessibilityIdentifier("Preferences.AIChat.showSearchAndDuckAIToggleToggle")
 
                     if model.shouldShowTabBarButtonVisibilityOptions {
-                        ToggleMenuItem(UserText.aiChatShowDuckAIButtonInTabBarLabel,
+                        ToggleMenuItem(model.tabBarButtonVisibilityLabel,
                                        isOn: $model.showDuckAIButtonInTabBar)
                         .accessibilityIdentifier("Preferences.AIChat.showDuckAIButtonInTabBarToggle")
 
-                        ToggleMenuItem(UserText.aiChatShowSidebarButtonInTabBarLabel,
-                                       isOn: $model.showSidebarButtonInTabBar)
-                        .accessibilityIdentifier("Preferences.AIChat.showSidebarButtonInTabBarToggle")
+                        if model.shouldShowSidebarButtonVisibilityOption {
+                            ToggleMenuItem(UserText.aiChatShowSidebarButtonInTabBarLabel,
+                                           isOn: $model.showSidebarButtonInTabBar)
+                            .accessibilityIdentifier("Preferences.AIChat.showSidebarButtonInTabBarToggle")
+                        }
                     } else {
                         ToggleMenuItem(UserText.aiChatShowShortcutInAddressBarLabel,
                                        isOn: $model.showShortcutInAddressBar)
@@ -185,7 +187,7 @@ extension Preferences {
                     }
 
                     if model.shouldShowPageContextToggle {
-                        ToggleMenuItem(UserText.aiChatAutomaticallySendPageContentToggle,
+                        ToggleMenuItem(model.automaticallySendPageContentLabel,
                                        isOn: $model.shouldAutomaticallySendPageContext)
                         .accessibilityIdentifier("Preferences.AIChat.shouldAutomaticallySendPageContextToggle")
                         .disabled(model.isPageContextToggleDisabled)

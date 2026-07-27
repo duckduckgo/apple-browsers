@@ -140,6 +140,25 @@ final class AIChatPreferences: ObservableObject {
         featureFlagger.isFeatureOn(.aiChatChromeSidebar)
     }
 
+    /// When on, the tab-bar Duck.ai control is a single "Ask Duck.ai" menu pill: the separate
+    /// sidebar-button visibility option is hidden and a couple of labels are reworded.
+    var isMenuButtonLayout: Bool {
+        shouldShowTabBarButtonVisibilityOptions && featureFlagger.isFeatureOn(.aiChatChromeMenuButton)
+    }
+
+    /// The separate "Show sidebar button" option only applies to the two-part split control.
+    var shouldShowSidebarButtonVisibilityOption: Bool {
+        shouldShowTabBarButtonVisibilityOptions && !isMenuButtonLayout
+    }
+
+    var tabBarButtonVisibilityLabel: String {
+        isMenuButtonLayout ? UserText.aiChatShowAskDuckAIButtonInTabBarLabel : UserText.aiChatShowDuckAIButtonInTabBarLabel
+    }
+
+    var automaticallySendPageContentLabel: String {
+        isMenuButtonLayout ? UserText.aiChatAutomaticallySendPageContentWhenNavigatingToggle : UserText.aiChatAutomaticallySendPageContentToggle
+    }
+
     var isPageContextToggleDisabled: Bool {
         if shouldShowTabBarButtonVisibilityOptions {
             return false

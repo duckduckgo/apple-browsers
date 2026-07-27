@@ -887,15 +887,22 @@ final class MainMenu: NSMenu {
     private func updateDuckAIChromeButtonMenuItems() {
         let shouldShowDuckAIChromeItems = featureFlagger.isFeatureOn(.aiChatChromeSidebar)
             && aiChatMenuConfig.shouldDisplayAnyAIChatFeature
+        // Menu-button layout merges the split control into one pill, so the separate sidebar-button
+        // visibility item is meaningless and the Duck.ai item is reworded to "Ask Duck.ai".
+        let isMenuButtonLayout = shouldShowDuckAIChromeItems && featureFlagger.isFeatureOn(.aiChatChromeMenuButton)
         toggleDuckAISidebarMenuItem.isHidden = !shouldShowDuckAIChromeItems
         toggleDuckAISidebarSeparatorMenuItem.isHidden = !shouldShowDuckAIChromeItems
         toggleDuckAIChromeButtonMenuItem.isHidden = !shouldShowDuckAIChromeItems
-        toggleDuckAIChromeSidebarButtonMenuItem.isHidden = !shouldShowDuckAIChromeItems
+        toggleDuckAIChromeSidebarButtonMenuItem.isHidden = !shouldShowDuckAIChromeItems || isMenuButtonLayout
         duckAIChromeButtonsSeparatorMenuItem.isHidden = !shouldShowDuckAIChromeItems
 
         let isDuckAIButtonHidden = duckAIChromeButtonsVisibilityManager.isHidden(.duckAI)
         let isSidebarButtonHidden = duckAIChromeButtonsVisibilityManager.isHidden(.sidebar)
-        toggleDuckAIChromeButtonMenuItem.title = isDuckAIButtonHidden ? UserText.aiChatChromeShowDuckAIButton : UserText.aiChatChromeHideDuckAIButton
+        if isMenuButtonLayout {
+            toggleDuckAIChromeButtonMenuItem.title = isDuckAIButtonHidden ? UserText.aiChatChromeShowAskDuckAIButton : UserText.aiChatChromeHideAskDuckAIButton
+        } else {
+            toggleDuckAIChromeButtonMenuItem.title = isDuckAIButtonHidden ? UserText.aiChatChromeShowDuckAIButton : UserText.aiChatChromeHideDuckAIButton
+        }
         toggleDuckAIChromeSidebarButtonMenuItem.title = isSidebarButtonHidden ? UserText.aiChatChromeShowSidebarButton : UserText.aiChatChromeHideSidebarButton
     }
 

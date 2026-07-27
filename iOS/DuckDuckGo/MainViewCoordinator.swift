@@ -68,6 +68,7 @@ class MainViewCoordinator {
     private var standardStatusBackgroundColor: UIColor?
     private var statusBackgroundPresentation: StatusBackgroundPresentation = .standard
     private var statusBackgroundPresentationBeforeOmnibarEditing: StatusBackgroundPresentation?
+    private var voiceModeBackgroundColor: UIColor?
     private(set) var isNavigationChromeHidden = false
     private var isNavBarContainerBottomKeyboardBased = false
     private(set) var isOmnibarInToolbar = false
@@ -504,6 +505,14 @@ class MainViewCoordinator {
         applyResolvedStatusBackgroundColor()
     }
 
+    /// Repaints the status strip with the voice-mode background colour while the voice surface is on
+    /// screen (pass `nil` to restore the standard chrome), so the top strip matches the voice header.
+    func setVoiceMode(backgroundColor: UIColor?) {
+        guard voiceModeBackgroundColor != backgroundColor else { return }
+        voiceModeBackgroundColor = backgroundColor
+        applyResolvedStatusBackgroundColor()
+    }
+
     @MainActor
     func showUnifiedInputContent() {
         unifiedInputContentContainer.isHidden = false
@@ -640,7 +649,7 @@ class MainViewCoordinator {
             case .aiTabSearchChromeHidden:
                 return UIColor(designSystemColor: .panel)
             case .aiTabChatChromeHidden:
-                return UIColor(designSystemColor: .surfaceCanvas)
+                return chatChromeHiddenStatusBackgroundColor()
             }
         }
 
@@ -650,8 +659,14 @@ class MainViewCoordinator {
         case .omnibarEditing, .aiTabSearchChromeHidden:
             return UIColor(designSystemColor: .panel)
         case .aiTabChatChromeHidden:
-            return UIColor(designSystemColor: .surfaceCanvas)
+            return chatChromeHiddenStatusBackgroundColor()
         }
+    }
+
+    /// Voice sessions paint the top strip with the FE-provided voice colour; regular chat chrome-hidden
+    /// keeps the standard canvas tone.
+    private func chatChromeHiddenStatusBackgroundColor() -> UIColor {
+        voiceModeBackgroundColor ?? UIColor(designSystemColor: .surfaceCanvas)
     }
 
     private func showFocusedStateBackground() {

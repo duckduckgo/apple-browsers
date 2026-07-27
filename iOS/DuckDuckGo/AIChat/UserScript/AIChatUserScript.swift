@@ -243,6 +243,10 @@ final class AIChatUserScript: NSObject, Subfeature {
             return handler.voiceSessionStarted
         case .voiceSessionEnded:
             return handler.voiceSessionEnded
+        case .voiceModeOpened:
+            return handler.voiceModeOpened
+        case .voiceModeClosed:
+            return handler.voiceModeClosed
         case .newImageGenerationChatStarted:
             return handler.newImageGenerationChatStarted
         case .showModelPicker:

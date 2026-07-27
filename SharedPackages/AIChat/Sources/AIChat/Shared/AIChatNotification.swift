@@ -23,7 +23,15 @@ public extension NSNotification.Name {
     static let aiChatResponseReceived: NSNotification.Name = Notification.Name(rawValue: "com.duckduckgo.aiChat.responseReceived")
     static let aiChatVoiceSessionStarted: NSNotification.Name = Notification.Name(rawValue: "com.duckduckgo.aiChat.voiceSessionStarted")
     static let aiChatVoiceSessionEnded: NSNotification.Name = Notification.Name(rawValue: "com.duckduckgo.aiChat.voiceSessionEnded")
+    static let aiChatVoiceModeOpened: NSNotification.Name = Notification.Name(rawValue: "com.duckduckgo.aiChat.voiceModeOpened")
+    static let aiChatVoiceModeClosed: NSNotification.Name = Notification.Name(rawValue: "com.duckduckgo.aiChat.voiceModeClosed")
     static let aiChatNewImageGenerationChatStarted: NSNotification.Name = Notification.Name(rawValue: "com.duckduckgo.aiChat.newImageGenerationChatStarted")
     static let aiChatShowModelPicker: NSNotification.Name = Notification.Name(rawValue: "com.duckduckgo.aiChat.showModelPicker")
     static let aiChatCustomizeResponsesModalClosed: NSNotification.Name = Notification.Name(rawValue: "com.duckduckgo.aiChat.customizeResponsesModalClosed")
+}
+
+/// `userInfo` keys for AIChat notifications.
+public enum AIChatNotificationUserInfoKey {
+    /// Hex background colour (`#RRGGBB`) carried by `aiChatVoiceModeOpened`.
+    public static let voiceModeBackgroundColor = "backgroundColor"
 }

@@ -70,6 +70,9 @@ public enum SingleUseColor {
 
     // Duck.ai Grid Cell
     case duckAIVoiceCellBackground
+
+    /// Native voice-mode chrome (header + status strip) background, matching the web voice background.
+    case duckAIVoiceModeBackground
 }
 
 // MARK: - Onboarding Rebranding 2026

@@ -31,8 +31,9 @@ struct TabInputState: Equatable {
     /// Driven by FE `hideChatInput` / `showChatInput` user-script messages. Persisted per tab
     /// because FE does not re-emit when the user returns to a tab already in voice mode.
     var aiChatInputBoxVisibility: AIChatInputBoxVisibility
-    /// Driven by FE `voiceSessionStarted` / `voiceSessionEnded` user-script messages. Hides the
-    /// header chats/compose pill while voice is active; orthogonal to `aiChatInputBoxVisibility`.
+    /// True while the voice-mode background is on screen. Driven by FE `voiceModeOpened` /
+    /// `voiceModeClosed` (the background paint events, not the mic-session ones). Paints the immersive
+    /// voice chrome and hides the header chats/compose pill; orthogonal to `aiChatInputBoxVisibility`.
     var isVoiceSessionActive: Bool
     /// Recovery `showModelPicker` pin: keeps the model chip visible mid-chat until prompt submit.
     /// Used when the user has lost access to the selected model.

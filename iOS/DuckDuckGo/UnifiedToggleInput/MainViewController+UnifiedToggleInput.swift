@@ -145,9 +145,10 @@ extension MainViewController {
         return unifiedToggleInputCoordinator?.aiChatInputBoxVisibility == .hidden
     }
 
-    /// True when FE has signalled a voice session is in progress on the current AI tab via
-    /// `voiceSessionStarted`. Persisted per tab in `TabInputState`.
-    var isVoiceSessionActiveForCurrentTab: Bool {
+    /// True while the voice-mode background is on screen for the current AI tab. Driven by the FE's
+    /// `voiceModeOpened` / `voiceModeClosed` events, which fire at the exact paint/unpaint moment, so
+    /// native chrome syncs to the web surface on both transitions. Persisted per tab in `TabInputState`.
+    var isVoiceSurfaceVisibleForCurrentTab: Bool {
         guard currentTab?.isAITab == true else { return false }
         return unifiedToggleInputCoordinator?.isVoiceSessionActive == true
     }
@@ -160,9 +161,21 @@ extension MainViewController {
         viewCoordinator.setAITabBottomChromeHidden(isAIChatInputHiddenForCurrentTab)
     }
 
-    /// Hides the header chats/compose pill while a voice session is in progress. Idempotent.
+    /// Paints the header and status strip with the voice-mode background colour while the voice surface
+    /// is on screen (and hides the header chats/compose pill); restores the standard chrome otherwise.
+    /// Idempotent.
     func reconcileVoiceSessionChromeForCurrentTab() {
-        aiChatTabChatHeaderView?.setVoiceSessionActive(isVoiceSessionActiveForCurrentTab)
+        let backgroundColor = voiceModeBackgroundColorForCurrentTab
+        aiChatTabChatHeaderView?.setVoiceMode(backgroundColor: backgroundColor)
+        viewCoordinator.setVoiceMode(backgroundColor: backgroundColor)
+    }
+
+    /// The colour to paint the voice chrome with, or `nil` when the voice surface isn't on screen.
+    /// Uses the exact colour the FE sent via `voiceModeOpened`, falling back to the design-system token.
+    private var voiceModeBackgroundColorForCurrentTab: UIColor? {
+        guard isVoiceSurfaceVisibleForCurrentTab else { return nil }
+        let hex = unifiedToggleInputCoordinator?.voiceModeBackgroundColorHex
+        return hex.flatMap(UIColor.init(voiceModeHex:)) ?? UIColor(singleUseColor: .duckAIVoiceModeBackground)
     }
 
     /// Applies both AI-chrome reconciles together — call from every refresh path so adding a new
@@ -589,20 +602,23 @@ private extension MainViewController {
             }
             .store(in: &unifiedToggleInputCancellables)
 
+        // Drive the voice chrome off the FE's background-paint events (not the mic-session ones): they
+        // fire exactly when the navy surface is shown/removed, so native chrome syncs on both ends.
         // Per-tab so background voice tabs persist their state until re-activated.
-        NotificationCenter.default.publisher(for: .aiChatVoiceSessionStarted)
-            .compactMap { $0.object as? WKWebView }
+        NotificationCenter.default.publisher(for: .aiChatVoiceModeOpened)
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] webView in
-                self?.updateVoiceSessionActive(true, for: webView)
+            .sink { [weak self] notification in
+                guard let webView = notification.object as? WKWebView else { return }
+                let backgroundColorHex = notification.userInfo?[AIChatNotificationUserInfoKey.voiceModeBackgroundColor] as? String
+                self?.updateVoiceSessionActive(true, backgroundColorHex: backgroundColorHex, for: webView)
             }
             .store(in: &unifiedToggleInputCancellables)
 
-        NotificationCenter.default.publisher(for: .aiChatVoiceSessionEnded)
+        NotificationCenter.default.publisher(for: .aiChatVoiceModeClosed)
             .compactMap { $0.object as? WKWebView }
             .receive(on: DispatchQueue.main)
             .sink { [weak self] webView in
-                self?.updateVoiceSessionActive(false, for: webView)
+                self?.updateVoiceSessionActive(false, backgroundColorHex: nil, for: webView)
             }
             .store(in: &unifiedToggleInputCancellables)
 
@@ -655,9 +671,10 @@ private extension MainViewController {
         }
     }
 
-    private func updateVoiceSessionActive(_ active: Bool, for webView: WKWebView) {
+    private func updateVoiceSessionActive(_ active: Bool, backgroundColorHex: String?, for webView: WKWebView) {
         guard let controller = tabManager.controller(forWebView: webView) else { return }
         if controller === currentTab, let coordinator = unifiedToggleInputCoordinator {
+            coordinator.voiceModeBackgroundColorHex = backgroundColorHex
             coordinator.isVoiceSessionActive = active
             return
         }
@@ -721,7 +738,8 @@ private extension MainViewController {
         // Assert input-hidden synchronously for voice-mode tabs so the bottom chrome doesn't
         // flash visible during the FE's "Connecting…" window. One-shot intent — consume the
         // flag here so later refreshes (e.g. AI→AI navigation taking the preserve-current
-        // path) don't re-hide the UTI after the FE has shown it.
+        // path) don't re-hide the UTI after the FE has shown it. The navy chrome itself is
+        // driven by the FE's `voiceModeOpened`/`Closed` events, which fire at the paint moment.
         if tab.isVoiceModeRequested, coordinator.aiChatInputBoxVisibility != .hidden {
             coordinator.aiChatInputBoxVisibility = .hidden
         }
@@ -1418,4 +1436,20 @@ extension MainViewController: UnifiedToggleInputFloatingReturnKeyDelegate {
         coordinator.insertNewlineFromFloatingReturnKey()
     }
 
+}
+
+private extension UIColor {
+    /// Parses an FE-provided `#RRGGBB` / `RRGGBB` (optionally `#RRGGBBAA`) hex string. Returns `nil` on
+    /// malformed input so callers can fall back to a design-system token.
+    convenience init?(voiceModeHex hex: String) {
+        var string = hex.trimmingCharacters(in: .whitespacesAndNewlines)
+        if string.hasPrefix("#") { string.removeFirst() }
+        guard string.count == 6 || string.count == 8, let value = UInt64(string, radix: 16) else { return nil }
+        let hasAlpha = string.count == 8
+        let red = CGFloat((value >> (hasAlpha ? 24 : 16)) & 0xFF) / 255
+        let green = CGFloat((value >> (hasAlpha ? 16 : 8)) & 0xFF) / 255
+        let blue = CGFloat((value >> (hasAlpha ? 8 : 0)) & 0xFF) / 255
+        let alpha = hasAlpha ? CGFloat(value & 0xFF) / 255 : 1
+        self.init(red: red, green: green, blue: blue, alpha: alpha)
+    }
 }

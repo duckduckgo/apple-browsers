@@ -221,6 +221,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             persistDraftToStore()
         }
     }
+    /// Hex colour the FE sends with `voiceModeOpened` so native chrome matches the web surface exactly.
+    /// Not persisted per tab (the value is constant across sessions); consumers fall back to the token.
+    var voiceModeBackgroundColorHex: String?
     @Published var attachmentUsage: AIChatAttachmentUsage?
 
     var isSubmitBlockedByRecoveryCard: Bool = false {

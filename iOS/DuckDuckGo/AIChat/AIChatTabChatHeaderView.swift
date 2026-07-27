@@ -61,7 +61,8 @@ final class AIChatTabChatHeaderView: UIView {
         /// `nil` until the first subscription-state check resolves, so we can render a blank
         /// title slot rather than flashing "Free Plan" before flipping to "Duck.ai".
         var isSubscriptionActive: Bool?
-        var isVoiceSessionActive: Bool = false
+        /// Non-nil while the voice surface is on screen; the value is the colour to paint the header.
+        var voiceBackgroundColor: UIColor?
         /// Hides the free/upgrade title during the Duck.ai fire onboarding step.
         var isOnboardingLocked: Bool = false
     }
@@ -353,9 +354,10 @@ final class AIChatTabChatHeaderView: UIView {
         state.isSubscriptionActive = isSubscriptionActive
     }
 
-    /// Hide title, chat-list pill, and close button during voice — voice owns its own dismiss UI.
-    func setVoiceSessionActive(_ active: Bool) {
-        state.isVoiceSessionActive = active
+    /// Paints the header with the voice-mode `backgroundColor` (and hides the title, chat-list pill, and
+    /// close button — voice owns its own dismiss UI). Pass `nil` to restore the standard chrome.
+    func setVoiceMode(backgroundColor: UIColor?) {
+        state.voiceBackgroundColor = backgroundColor
     }
 
     /// Lock/unlock header controls during onboarding (close included — would otherwise let users escape via the NTP).
@@ -380,7 +382,8 @@ final class AIChatTabChatHeaderView: UIView {
         // During fire onboarding, hide the free/upgrade title to avoid distraction.
         titleContainer.isHidden = state.isOnboardingLocked || state.isSubscriptionActive != false
         paidTitleStack.isHidden = state.isSubscriptionActive != true
-        let voiceActive = state.isVoiceSessionActive
+        let voiceActive = state.voiceBackgroundColor != nil
+        applyVoiceSessionAppearance(state.voiceBackgroundColor)
         titleHolder.isHidden = voiceActive
         // Hide each pill (and its button inside it) together so the surrounding glass pill
         // background also disappears during voice sessions. Voice mode owns its own dismiss UI.
@@ -391,6 +394,15 @@ final class AIChatTabChatHeaderView: UIView {
         titleSpacingConstraints.forEach { $0.isActive = !titleHolder.isHidden }
     }
 
+    /// During voice, repaint with the voice `backgroundColor` (light-on-dark controls, no separator) so the
+    /// header reads as one surface with the voice background; restore standard canvas chrome when `nil`.
+    private func applyVoiceSessionAppearance(_ backgroundColor: UIColor?) {
+        let active = backgroundColor != nil
+        self.backgroundColor = backgroundColor ?? UIColor(designSystemColor: .surfaceCanvas)
+        overrideUserInterfaceStyle = active ? .dark : .unspecified
+        bottomSeparator.isHidden = active
+    }
+
     private lazy var bottomSeparator: UIView = {
         let view = UIView()
         view.translatesAutoresizingMaskIntoConstraints = false
@@ -399,7 +411,6 @@ final class AIChatTabChatHeaderView: UIView {
     }()
 
     private func setupUI() {
-        backgroundColor = UIColor(designSystemColor: .surfaceCanvas)
         addSubview(leftStack)
         addSubview(rightStack)
         addSubview(titleHolder)

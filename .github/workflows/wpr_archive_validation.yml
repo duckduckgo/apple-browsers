@@ -172,7 +172,6 @@ jobs:
         run: |
           fingerprint="$(sha256sum macOS/scripts/crossbench/wpr-validation/report.txt | awk '{print $1}')"
           echo "value=$fingerprint" >> "$GITHUB_OUTPUT"
-          echo "short=${fingerprint:0:12}" >> "$GITHUB_OUTPUT"
 
       - name: Check GitHub-side alert markers
         if: >-
@@ -211,8 +210,8 @@ jobs:
         working-directory: .
         env:
           ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
-          FAILURE_SHORT: ${{ steps.fingerprint.outputs.short }}
           PACKAGE_FAILED: ${{ steps.report.outputs.package-failed }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           if [ -z "$ASANA_ACCESS_TOKEN" ]; then
             echo "::warning title=Asana notification skipped::ASANA_ACCESS_TOKEN is not available."
@@ -233,12 +232,33 @@ jobs:
             echo
             cat "$report"
           } > "$notes_file"
+
+          run_started_at="$(
+            gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" \
+              --jq '.run_started_at'
+          )"
+          start_date="${run_started_at%%T*}"
+          due_date="$start_date"
+          working_days=0
+          while [ "$working_days" -lt 5 ]; do
+            due_date="$(date --utc --date "$due_date + 1 day" +%F)"
+            day_of_week="$(date --utc --date "$due_date" +%u)"
+            if [ "$day_of_week" -le 5 ]; then
+              working_days=$((working_days + 1))
+            fi
+          done
+
           if [ "$PACKAGE_FAILED" = "true" ]; then
-            task_name="IMPORTANT: WPR package validation failed [$FAILURE_SHORT]"
+            task_name="Crossbench WPR validation: package failure"
           else
-            task_name="WPR site validation errors [$FAILURE_SHORT]"
+            task_name="Crossbench WPR validation: site failures"
           fi
-          "$helper" 1216902374642227 "$task_name" "$notes_file"
+          "$helper" \
+            1216902374642227 \
+            "$task_name" \
+            "$notes_file" \
+            "$start_date" \
+            "$due_date"
           echo "created=true" >> "$GITHUB_OUTPUT"
           echo "reported by run $GITHUB_RUN_ID" > macOS/scripts/crossbench/wpr-validation/alert-marker.txt
 

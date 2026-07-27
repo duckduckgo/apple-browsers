@@ -1,78 +1,95 @@
 #!/usr/bin/env bash
 #
-# test-safari.sh — run the crossbench page-load / LCP test for Safari against the
-# LIVE network, and write a results file. Safari sibling of test-chrome.sh.
+# test-safari.sh — measure Safari navigation-to-LCP against Web Page Replay.
 #
-# WHY THIS DIFFERS FROM test-chrome.sh:
-# Safari/WebKit does NOT produce Chromium Perfetto traces, so the Chrome path's
-# perfetto + trace_processor LCP metric (PageLoadMetrics.NavigationToLargest-
-# ContentfulPaint) cannot work here. Instead we read LCP directly in the page
-# via the standard `largest-contentful-paint` PerformanceObserver entries (the
-# Web Vitals LCP API), through crossbench's browser-agnostic `js` probe. See
-# crossbench-extras/config/probe/js/navToLCP.safari.config.hjson for the probe.
+# Safari has no command-line host remapping, and safaridriver does not honor the
+# WebDriver proxy capability. During this run only, Safari's per-app HTTP and
+# HTTPS proxy preferences point to a local forward proxy:
 #
-# Three more Safari-specific differences from the Chrome flow:
-#   1. NO --about-blank-duration. The `js` probe reads LCP AFTER the story's
-#      core workload, with the browser still on the page. about:blank would
-#      navigate away before the read and clear the performance timeline. Chrome
-#      needs about:blank to finalize LCP into its trace; the JS read does not.
-#   2. crossbench drives Safari via safaridriver (WebDriver), which requires
-#      "Allow Remote Automation" (`sudo safaridriver --enable` or Safari's
-#      Develop menu). Enable it before running — see provision / workflow.
-#   3. Every site is pre-flighted with curl and skipped entirely if it is not
-#      actually serving us the page. Chrome gets error rejection for free —
-#      PageLoadMetrics emits no LCP slice for an error navigation — but the JS
-#      LCP API times a bot-block page as readily as a real one, so a 403 would
-#      be recorded as a very fast load (reddit's block page measured ~200ms and
-#      reached ClickHouse). The status has to come from outside the browser:
-#      WebKit implements no in-page API that exposes it. See preflight_site.
+#   Safari -> httpproxy.py -> tsproxy -> WPR
 #
-# NOTE: live network is NOISY — values vary run-to-run with network conditions
-# and are NOT comparable to recorded-network (WPR) numbers, nor directly to the
-# Chrome numbers (different engine + different LCP extraction path). This exists
-# to stand up the pipeline (measure -> parse -> results file), not for
-# trustworthy cross-browser comparison.
+# This does not modify the macOS system proxy. Any pre-existing values for both
+# Safari preference keys are captured before mutation and restored on normal
+# exit or a signal; absent keys are deleted again. Existing non-string values
+# are rejected before mutation because they cannot be restored losslessly with
+# the `defaults` command.
 #
-# Prereqs: run provision-macos.sh first (crossbench + extras + poetry), and
-# enable safaridriver Remote Automation.
+# WPR uses its P-256 ECDSA key pair and --no-archive-certificates. WebDriver
+# requests acceptInsecureCerts=true, so no WPR certificate is installed in or
+# trusted by any keychain.
+#
+# Traffic shaping defaults to the Windows/Chrome US-broadband profile: 28 ms
+# RTT, 50,000 Kbps down, 10,000 Kbps up, TCP window 10. Every load is measured;
+# replay needs no DNS/CDN warm-up. A missing archive is an infrastructure error,
+# never a reason to fall back to the live network.
+#
+# Prerequisites: run provision-macos.sh and enable Safari remote automation.
 #
 # Usage:
-#   ./test-safari.sh [--sites a.com,b.com] [--out FILE]
+#   ./test-safari.sh [--sites a.com,b.com] [--reps N] [--out FILE] [--yes]
 #
-# Each site gets one discarded warm-up load followed by MEASURED_REPS measured
-# loads (same shape as test-chrome.sh). The warm-up primes OS-DNS + CDN edge so
-# the measured reps don't carry first-load cold latency.
 set -euo pipefail
 
-# ---- config / args ---------------------------------------------------------
-MEASURED_REPS=5
+MEASURED_REPS="${MEASURED_REPS:-10}"
 SITES_OVERRIDE=""
 RESULTS_FILE=""
-CROSSBENCH_DIR="${CROSSBENCH_DIR:-$HOME/Developer/crossbench-upstream}"
-PROBE_CONFIG="config/probe/js/navToLCP.safari.config.hjson"
-SUITE="navToLCP"
-LOAD_WINDOW="12s"         # matches test-chrome.sh (--url=<site>,12s)
-LOAD_WINDOW_MS=12000      # same value in ms, recorded so censoring counts from
-                          # different runs are only compared at equal windows
-SAFARI_APP="/Applications/Safari.app"
+ASSUME_YES="${ASSUME_YES:-}"
 
-# Sourced before the cd into CROSSBENCH_DIR below, so the path is relative to
-# this script rather than the working directory.
-# shellcheck source=macOS/scripts/crossbench/preflight-lib.sh
-. "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/preflight-lib.sh"
+CROSSBENCH_DIR="${CROSSBENCH_DIR:-$HOME/Developer/crossbench-upstream}"
+WPR_DIR="${WPR_DIR:-$HOME/Developer/mac-perf-runner/wpr-archives}"
+WPR_BIN="${WPR_BIN:-$HOME/Developer/mac-perf-runner/bin/wpr}"
+WPR_BASE_URL="${WPR_BASE_URL:-https://staticcdn.duckduckgo.com/d5c04536-5379-4709-8d19-d13fdd456ff6/performance-tests}"
+WPR_HTTP_PORT="${WPR_HTTP_PORT:-18080}"
+WPR_HTTPS_PORT="${WPR_HTTPS_PORT:-18081}"
+WPR_CERT_FILE="${WPR_CERT_FILE:-$CROSSBENCH_DIR/third_party/webpagereplay/ecdsa_cert.pem}"
+WPR_KEY_FILE="${WPR_KEY_FILE:-$CROSSBENCH_DIR/third_party/webpagereplay/ecdsa_key.pem}"
+
+TSPROXY_PY="${TSPROXY_PY:-$HOME/Developer/mac-perf-runner/bin/tsproxy.py}"
+TSPROXY_PORT="${TSPROXY_PORT:-9997}"
+SHAPE="${SHAPE:-1}"
+SHAPE_RTT_MS="${SHAPE_RTT_MS:-28}"
+SHAPE_IN_KBPS="${SHAPE_IN_KBPS:-50000}"
+SHAPE_OUT_KBPS="${SHAPE_OUT_KBPS:-10000}"
+SHAPE_WINDOW="${SHAPE_WINDOW:-10}"
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+HTTPPROXY_PY="${HTTPPROXY_PY:-$SCRIPT_DIR/httpproxy.py}"
+HTTPPROXY_PORT="${HTTPPROXY_PORT:-9998}"
+SAFARI_AUTOMATION_PY="${SAFARI_AUTOMATION_PY:-$SCRIPT_DIR/safari-automation.py}"
+SAFARIDRIVER_PORT="${SAFARIDRIVER_PORT:-8790}"
+PYTHON_BIN="${PYTHON_BIN:-python3}"
+
+SAFARI_DOMAIN="com.apple.Safari"
+SAFARI_HTTP_PROXY_KEY="WebKit2HTTPProxy"
+SAFARI_HTTPS_PROXY_KEY="WebKit2HTTPSProxy"
+SAFARI_APP="/Applications/Safari.app"
+SUITE="navToLCP"
+LOAD_WINDOW="12s"
+LOAD_WINDOW_MS=12000
+LOAD_WINDOW_SECONDS=12
+LCP_SETTLE_MS="${LCP_SETTLE_MS:-600}"
+
+# shellcheck source=macOS/scripts/crossbench/dispositions-lib.sh
+. "$SCRIPT_DIR/dispositions-lib.sh"
 
 while [ $# -gt 0 ]; do
   case "$1" in
+    --reps)  MEASURED_REPS="$2"; shift 2 ;;
     --sites) SITES_OVERRIDE="$2"; shift 2 ;;
     --out)   RESULTS_FILE="$2"; shift 2 ;;
+    --yes|-y) ASSUME_YES="1"; shift ;;
     -h|--help) grep '^#' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *) echo "Unknown arg: $1" >&2; exit 2 ;;
   esac
 done
+if ! [[ "$MEASURED_REPS" =~ ^[1-9][0-9]*$ ]]; then
+  echo "ERROR: --reps must be a positive integer." >&2
+  exit 2
+fi
 
 log() { printf '\n=== %s ===\n' "$1"; }
+normalize() { printf '%s' "$1" | tr '+/' '__'; }
 
-# Site list, identical to test-chrome.sh.
 SITES=(
   youtube.com wikipedia.org reddit.com amazon.com yelp.com
   weather.com yahoo.com apple.com fandom.com tripadvisor.com
@@ -84,261 +101,423 @@ if [ -n "$SITES_OVERRIDE" ]; then
   IFS=',' read -r -a SITES <<< "$SITES_OVERRIDE"
 fi
 
-# Default results file: ./crossbench-results/safari-lcp-<utc-stamp>.tsv, relative
-# to the invocation dir (CI uploads this directory as an artifact).
 if [ -z "$RESULTS_FILE" ]; then
   RESULTS_DIR="${RESULTS_DIR:-$PWD/crossbench-results}"
   mkdir -p "$RESULTS_DIR"
   RESULTS_FILE="$RESULTS_DIR/safari-lcp-$(date -u +%Y%m%dT%H%M%SZ).tsv"
 fi
 
-# Safari's user-facing version (e.g. "26.5.2"). CFBundleShortVersionString is the
-# marketing version; matches what users see in Safari > About.
 SAFARI_VERSION="$(defaults read "$SAFARI_APP/Contents/Info.plist" CFBundleShortVersionString 2>/dev/null || echo unknown)"
-
-# preflight-lib.sh contract.
 BROWSER_NAME=safari
 BROWSER_VERSION="$SAFARI_VERSION"
-# Sent on the pre-flight request so we're asking the question as the browser we
-# are about to measure with. The block we care about is IP-based (measured: the
-# runner gets 403 with a Safari UA, a Chrome UA, and no UA alike), but matching
-# the UA keeps the pre-flight as close to the real navigation as curl can get.
-PREFLIGHT_UA="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/${SAFARI_VERSION%%.*}.0 Safari/605.1.15"
+PF_VERDICT=not_run
 
-# ---- preflight -------------------------------------------------------------
-preflight() {
-  if ! command -v poetry >/dev/null 2>&1; then
-    echo "ERROR: poetry not found. Run provision-macos.sh first." >&2
-    exit 1
+WPR_PID=""
+TSPROXY_PID=""
+HTTPPROXY_PID=""
+SAFARIDRIVER_PID=""
+WPR_LOG=""
+TSPROXY_LOG=""
+HTTPPROXY_LOG=""
+SAFARIDRIVER_LOG=""
+PROXY_STATE_CAPTURED=""
+PROXY_APPLIED=""
+HTTP_PROXY_WAS_SET=0
+HTTPS_PROXY_WAS_SET=0
+HTTP_PROXY_VALUE=""
+HTTPS_PROXY_VALUE=""
+
+kill_pid() {
+  local pid="$1"
+  [ -n "$pid" ] || return 0
+  if kill -0 "$pid" 2>/dev/null; then
+    kill "$pid" 2>/dev/null || true
+    for _ in 1 2 3 4 5 6; do
+      if ! kill -0 "$pid" 2>/dev/null; then
+        wait "$pid" 2>/dev/null || true
+        return 0
+      fi
+      sleep 0.5
+    done
+    kill -9 "$pid" 2>/dev/null || true
   fi
-  if [ ! -f "$CROSSBENCH_DIR/cb.py" ]; then
-    echo "ERROR: crossbench not found at $CROSSBENCH_DIR (cb.py missing). Run provision-macos.sh first." >&2
-    exit 1
+  wait "$pid" 2>/dev/null || true
+}
+
+capture_proxy_key() {
+  local key="$1" state_name="$2" value_name="$3" value type
+  if value="$(defaults read "$SAFARI_DOMAIN" "$key" 2>/dev/null)"; then
+    type="$(defaults read-type "$SAFARI_DOMAIN" "$key" 2>/dev/null || true)"
+    if [ "$type" != "Type is string" ]; then
+      echo "ERROR: $SAFARI_DOMAIN $key has unsupported pre-existing type: $type" >&2
+      echo "       Refusing to mutate it because exact restoration is not guaranteed." >&2
+      return 1
+    fi
+    printf -v "$state_name" '%s' 1
+    printf -v "$value_name" '%s' "$value"
+  else
+    printf -v "$state_name" '%s' 0
+    printf -v "$value_name" '%s' ""
   fi
-  if [ ! -f "$CROSSBENCH_DIR/$PROBE_CONFIG" ]; then
-    echo "ERROR: probe config missing at $CROSSBENCH_DIR/$PROBE_CONFIG. provision-macos.sh copies the extras in." >&2
-    exit 1
+}
+
+capture_proxy_state() {
+  capture_proxy_key "$SAFARI_HTTP_PROXY_KEY" HTTP_PROXY_WAS_SET HTTP_PROXY_VALUE
+  capture_proxy_key "$SAFARI_HTTPS_PROXY_KEY" HTTPS_PROXY_WAS_SET HTTPS_PROXY_VALUE
+  PROXY_STATE_CAPTURED=1
+}
+
+restore_proxy_key() {
+  local key="$1" was_set="$2" value="$3"
+  if [ "$was_set" = "1" ]; then
+    defaults write "$SAFARI_DOMAIN" "$key" -string "$value"
+  else
+    defaults delete "$SAFARI_DOMAIN" "$key" 2>/dev/null || true
   fi
-  if [ ! -d "$SAFARI_APP" ]; then
+}
+
+apply_proxy_state() {
+  capture_proxy_state
+  # Mark before the first write so a failure during either write still restores
+  # both keys from the snapshot.
+  PROXY_APPLIED=1
+  defaults write "$SAFARI_DOMAIN" "$SAFARI_HTTP_PROXY_KEY" \
+    -string "http://127.0.0.1:$HTTPPROXY_PORT"
+  defaults write "$SAFARI_DOMAIN" "$SAFARI_HTTPS_PROXY_KEY" \
+    -string "http://127.0.0.1:$HTTPPROXY_PORT"
+}
+
+restore_proxy_state() {
+  [ -n "$PROXY_STATE_CAPTURED" ] || return 0
+  restore_proxy_key "$SAFARI_HTTP_PROXY_KEY" "$HTTP_PROXY_WAS_SET" "$HTTP_PROXY_VALUE"
+  restore_proxy_key "$SAFARI_HTTPS_PROXY_KEY" "$HTTPS_PROXY_WAS_SET" "$HTTPS_PROXY_VALUE"
+  PROXY_APPLIED=""
+  PROXY_STATE_CAPTURED=""
+}
+
+cleanup() {
+  local exit_code=$?
+  trap - EXIT HUP INT TERM
+  kill_pid "$SAFARIDRIVER_PID"
+  kill_pid "$HTTPPROXY_PID"
+  kill_pid "$TSPROXY_PID"
+  kill_pid "$WPR_PID"
+  if [ -n "$PROXY_APPLIED" ]; then
+    restore_proxy_state || {
+      echo "ERROR: failed to restore Safari proxy preferences." >&2
+      exit_code=1
+    }
+  fi
+  [ -z "$SAFARIDRIVER_LOG" ] || rm -f "$SAFARIDRIVER_LOG"
+  [ -z "$HTTPPROXY_LOG" ] || rm -f "$HTTPPROXY_LOG"
+  [ -z "$TSPROXY_LOG" ] || rm -f "$TSPROXY_LOG"
+  [ -z "$WPR_LOG" ] || rm -f "$WPR_LOG"
+  exit "$exit_code"
+}
+trap cleanup EXIT
+trap 'exit 129' HUP
+trap 'exit 130' INT
+trap 'exit 143' TERM
+
+check_prerequisites() {
+  command -v "$PYTHON_BIN" >/dev/null 2>&1 || {
+    echo "ERROR: Python not found: $PYTHON_BIN" >&2
+    exit 1
+  }
+  command -v safaridriver >/dev/null 2>&1 || {
+    echo "ERROR: safaridriver not found." >&2
+    exit 1
+  }
+  command -v defaults >/dev/null 2>&1 || {
+    echo "ERROR: defaults not found." >&2
+    exit 1
+  }
+  [ -d "$SAFARI_APP" ] || {
     echo "ERROR: Safari not found at $SAFARI_APP." >&2
     exit 1
+  }
+  [ -x "$WPR_BIN" ] || {
+    echo "ERROR: WPR binary missing at $WPR_BIN. Run provision-macos.sh." >&2
+    exit 1
+  }
+  [ -f "$WPR_CERT_FILE" ] || {
+    echo "ERROR: WPR ECDSA certificate missing at $WPR_CERT_FILE." >&2
+    exit 1
+  }
+  [ -f "$WPR_KEY_FILE" ] || {
+    echo "ERROR: WPR ECDSA key missing at $WPR_KEY_FILE." >&2
+    exit 1
+  }
+  [ -f "$TSPROXY_PY" ] || {
+    echo "ERROR: pinned tsproxy missing at $TSPROXY_PY. Run provision-macos.sh." >&2
+    exit 1
+  }
+  [ -f "$HTTPPROXY_PY" ] || {
+    echo "ERROR: HTTP proxy helper missing at $HTTPPROXY_PY." >&2
+    exit 1
+  }
+  [ -f "$SAFARI_AUTOMATION_PY" ] || {
+    echo "ERROR: Safari automation helper missing at $SAFARI_AUTOMATION_PY." >&2
+    exit 1
+  }
+}
+
+confirm() {
+  [ -n "$ASSUME_YES" ] && return 0
+  cat >&2 <<EOF
+This run temporarily sets Safari's per-app HTTP and HTTPS proxy preferences to
+127.0.0.1:$HTTPPROXY_PORT. Their exact current string values (or absence) will
+be restored on exit. No system proxy or keychain is changed.
+EOF
+  read -r -p "Proceed? [y/N] " answer
+  case "$answer" in
+    y|Y|yes|YES) ;;
+    *) echo "Aborted." >&2; exit 1 ;;
+  esac
+}
+
+wait_for_port() {
+  local port="$1" timeout="$2" iteration
+  for ((iteration = 0; iteration < timeout * 2; iteration++)); do
+    if (exec 3<>"/dev/tcp/127.0.0.1/$port") 2>/dev/null; then
+      exec 3>&-
+      return 0
+    fi
+    sleep 0.5
+  done
+  return 1
+}
+
+assert_port_free() {
+  local port="$1" label="$2"
+  if (exec 3<>"/dev/tcp/127.0.0.1/$port") 2>/dev/null; then
+    exec 3>&-
+    echo "ERROR: port $port ($label) is already in use." >&2
+    return 1
   fi
 }
 
-# The curl pre-flight, the disposition record and the per-site reporting live in
-# preflight-lib.sh, shared with test-chrome.sh. Safari is the browser that needs
-# it for CORRECTNESS rather than economy: WebKit implements no in-page API that
-# exposes the document's HTTP status (PerformanceNavigationTiming.responseStatus
-# is unimplemented — mdn/browser-compat-data records version_added:false, and it
-# measured undefined on Safari 26.4), safaridriver's WebDriver-classic protocol
-# has no network surface either, and the JS LCP API happily times a bot-block
-# page. curl also returns the redirect chain, which Safari withholds too: a
-# cross-origin redirect zeroes its navigation-timing internals.
-
-# Parse a crossbench RESULTS dir: for every per-repetition js.json the `js` probe
-# wrote, pull `lcp_ms`. Per-repetition files live at
-#   .../stories/<story>/<rep>/<temperature>/js.json
-# so the 3-segment glob after /stories/ isolates them from the shallower MERGED
-# story-level / browser-level js.json that crossbench also writes (those would
-# inflate n). A repetition whose LCP never fired is emitted by the probe as
-# lcp_ms == -1; count those separately, matching test-chrome.sh's handling of
-# unfinalized (-1) Chrome iterations. Repetitions whose navigation returned an
-# HTTP error are discarded too — see the http_status comment below. Appends
-# one TSV row per valid value to RESULTS_FILE and prints a per-site summary.
-# crossbench lays results out as
-#   .../stories/<story>/<repetition>/<temperature>/...
-# so the path itself carries the repetition index. Deriving it from the path
-# rather than from a counter keeps the logged repetition number meaningful when
-# some repetitions are discarded, and stable regardless of directory order.
-rep_of_path() {
-  awk -F/ '{for (i = 1; i <= NF; i++) if ($i == "stories") { print $(i + 2); exit }}' <<< "$1"
+fetch_archive() {
+  local story="$1" normalized archive
+  normalized="$(normalize "$story")"
+  archive="$WPR_DIR/$normalized.wprgo"
+  mkdir -p "$WPR_DIR"
+  if curl -fLSs -o "$archive.tmp" "$WPR_BASE_URL/$normalized.wprgo" 2>/dev/null; then
+    mv "$archive.tmp" "$archive"
+    printf '%s' "$archive"
+  else
+    rm -f "$archive.tmp"
+    [ ! -f "$archive" ] || printf '%s' "$archive"
+  fi
 }
 
-summarize_lcp() {
-  local results_path="$1" site="$2"
-  # The caller reads these back for the disposition record, so every early
-  # `return` below must leave them consistent — hence the reset here and the
-  # single assignment point after the loop.
+start_wpr() {
+  local archive="$1"
+  assert_port_free "$WPR_HTTP_PORT" wpr-http || return 1
+  assert_port_free "$WPR_HTTPS_PORT" wpr-https || return 1
+  WPR_LOG="$(mktemp)"
+  "$WPR_BIN" replay \
+    --http-port="$WPR_HTTP_PORT" \
+    --https-port="$WPR_HTTPS_PORT" \
+    --https-cert-file="$WPR_CERT_FILE" \
+    --https-key-file="$WPR_KEY_FILE" \
+    --no-archive-certificates \
+    "$archive" >"$WPR_LOG" 2>&1 &
+  WPR_PID=$!
+  if ! wait_for_port "$WPR_HTTP_PORT" 15 ||
+      ! wait_for_port "$WPR_HTTPS_PORT" 15; then
+    echo "ERROR: WPR failed to start. Log:" >&2
+    cat "$WPR_LOG" >&2
+    kill_pid "$WPR_PID"
+    WPR_PID=""
+    return 1
+  fi
+}
+
+stop_wpr() {
+  kill_pid "$WPR_PID"
+  WPR_PID=""
+  [ -z "$WPR_LOG" ] || rm -f "$WPR_LOG"
+  WPR_LOG=""
+}
+
+start_tsproxy() {
+  local -a shaping=()
+  assert_port_free "$TSPROXY_PORT" tsproxy
+  if [ "$SHAPE" = "1" ]; then
+    shaping=(
+      --rtt "$SHAPE_RTT_MS"
+      --inkbps "$SHAPE_IN_KBPS"
+      --outkbps "$SHAPE_OUT_KBPS"
+      --window "$SHAPE_WINDOW"
+    )
+  fi
+  TSPROXY_LOG="$(mktemp)"
+  "$PYTHON_BIN" "$TSPROXY_PY" \
+    --port "$TSPROXY_PORT" \
+    --desthost 127.0.0.1 \
+    --mapports "443:$WPR_HTTPS_PORT,*:$WPR_HTTP_PORT" \
+    ${shaping[@]+"${shaping[@]}"} >"$TSPROXY_LOG" 2>&1 &
+  TSPROXY_PID=$!
+  if ! wait_for_port "$TSPROXY_PORT" 15; then
+    echo "ERROR: tsproxy failed to start. Log:" >&2
+    cat "$TSPROXY_LOG" >&2
+    exit 1
+  fi
+}
+
+start_http_proxy() {
+  assert_port_free "$HTTPPROXY_PORT" httpproxy
+  HTTPPROXY_LOG="$(mktemp)"
+  "$PYTHON_BIN" "$HTTPPROXY_PY" \
+    "$HTTPPROXY_PORT" "$TSPROXY_PORT" >"$HTTPPROXY_LOG" 2>&1 &
+  HTTPPROXY_PID=$!
+  if ! wait_for_port "$HTTPPROXY_PORT" 10; then
+    echo "ERROR: HTTP proxy failed to start. Log:" >&2
+    cat "$HTTPPROXY_LOG" >&2
+    exit 1
+  fi
+}
+
+start_safaridriver() {
+  assert_port_free "$SAFARIDRIVER_PORT" safaridriver
+  SAFARIDRIVER_LOG="$(mktemp)"
+  safaridriver -p "$SAFARIDRIVER_PORT" >"$SAFARIDRIVER_LOG" 2>&1 &
+  SAFARIDRIVER_PID=$!
+  if ! wait_for_port "$SAFARIDRIVER_PORT" 15; then
+    echo "ERROR: safaridriver failed to start. Log:" >&2
+    cat "$SAFARIDRIVER_LOG" >&2
+    exit 1
+  fi
+  if ! "$PYTHON_BIN" "$SAFARI_AUTOMATION_PY" "$SAFARIDRIVER_PORT" check; then
+    echo "ERROR: Safari WebDriver session creation failed." >&2
+    echo "       Ensure 'sudo safaridriver --enable' has run." >&2
+    exit 1
+  fi
+}
+
+proxy_line_count() {
+  wc -l < "$HTTPPROXY_LOG" 2>/dev/null || echo 0
+}
+
+reset_replay_disposition_fields() {
+  PF_FINAL_STATUS=""
+  PF_CHAIN=""
+  PF_REDIRECTS=""
+  PF_BYTES=""
+  PF_FINAL_URL=""
+  PF_MARKER=""
+}
+
+measure_site() {
+  local site="$1" archive rep before output lcp detail landed_url offsite
+  local unfinalized=0 no_metric=0 observed=0 recorded=0
+  local -a values=()
   reset_measurement_counters
-  local -a vals=()
-  local f info v http_status rep_idx unfinalized=0 blocked=0 no_metric=0 attempts=0 rep=0
-  # Every status seen this site, reported in the summary below. Without this the
-  # log can't distinguish "the UA doesn't expose responseStatus" (all -1, guard
-  # inert) from "the navigation really did return 2xx" (guard working, the page
-  # is just genuinely fast) — the two look identical in the lcp_ms line.
-  local -a statuses=()
-  while IFS= read -r f; do
-    # stdlib python: read lcp_ms and http_status out of the flattened js.json as
-    # "<lcp_ms> <http_status>". Prints nothing if lcp_ms is absent so the `-z`
-    # guard below skips the file.
-    info="$(/usr/bin/python3 -c '
-import json, sys
-try:
-    d = json.load(open(sys.argv[1]))
-except Exception:
-    sys.exit(0)
-v = d.get("lcp_ms")
-if isinstance(v, (int, float)):
-    s = d.get("http_status")
-    print(f"{v:.1f}", int(s) if isinstance(s, (int, float)) else -1)
-' "$f" || true)"
-    attempts=$((attempts + 1))
-    rep_idx="$(rep_of_path "$f")"
-    if [ -z "$info" ]; then
-      echo "    attempt rep=$rep_idx: no lcp_ms in js.json -> SKIPPED (probe wrote no metric)"
+  reset_replay_disposition_fields
+
+  archive="$(fetch_archive "$SUITE+$site")"
+  if [ -z "$archive" ]; then
+    echo "  $site: no WPR archive available; SKIPPING (replay-only)." >&2
+    echo "::warning title=Site skipped::$site: no WPR archive at $WPR_BASE_URL"
+    record_disposition "$site" infra_error "$PF_VERDICT" 0
+    return
+  fi
+  if ! start_wpr "$archive"; then
+    echo "::warning title=Harness failure::$site: WPR could not start"
+    record_disposition "$site" infra_error "$PF_VERDICT" "$MEASURED_REPS"
+    return
+  fi
+
+  for ((rep = 1; rep <= MEASURED_REPS; rep++)); do
+    before="$(proxy_line_count)"
+    output="$("$PYTHON_BIN" "$SAFARI_AUTOMATION_PY" \
+      "$SAFARIDRIVER_PORT" measure "https://$site" \
+      "$LCP_SETTLE_MS" "$LOAD_WINDOW_SECONDS" || true)"
+    lcp="$(printf '%s\n' "$output" | sed -n 's/^lcp_ms=//p' | tail -1)"
+    detail="$(printf '%s\n' "$output" | sed -n 's/^detail=//p' | tail -1)"
+    landed_url="$(printf '%s\n' "$output" | sed -n 's/^landed_url=//p' | tail -1)"
+    offsite="$(printf '%s\n' "$output" | sed -n 's/^landed_offsite=//p' | tail -1)"
+    [ -z "$landed_url" ] || PF_FINAL_URL="$landed_url"
+
+    if [ "$(proxy_line_count)" -le "$before" ]; then
+      echo "    attempt rep=$rep: no Safari proxy traffic -> SKIPPED" >&2
       no_metric=$((no_metric + 1))
       continue
     fi
-    v="${info%% *}"
-    http_status="${info##* }"
-    statuses+=("$http_status")
-    # Discard error navigations. The LCP API measures whatever painted, so a
-    # bot-block or error page yields a small, plausible-looking value — which is
-    # worse than no value at all, because nothing downstream can tell it apart
-    # from a genuinely fast page (a 403 Reddit block page measured ~200ms).
-    #
-    # MEASURED 2026-07-25, Safari 26.4 (21624.1.16.11.4): WebKit does not
-    # implement PerformanceNavigationTiming.responseStatus at all — MDN's
-    # browser-compat-data records Safari as version_added:false, not merely
-    # undocumented — so http_status is -1 for every repetition and this filter
-    # never fires. Blocked sites are handled by preflight_site instead, which
-    # reads the real status from outside the browser and skips the site before it
-    # is ever measured. This filter is kept only because it costs nothing and
-    # starts working the day WebKit ships the field; it is NOT the protection.
-    # The http_status=[...] line in the summary is how you confirm it is inert.
-    #
-    # Deliberately >= 400 rather than "not 2xx": per spec responseStatus is the
-    # status of the FINAL response, but a UA reporting the FIRST response would
-    # make a not-2xx test throw away every site that redirects (reddit.com ->
-    # www.reddit.com is a 301). Erring toward keeping data is right here — a
-    # stray 3xx costs one noisy sample, whereas over-filtering silently empties
-    # whole domains. The -1 case falls open through the same comparison.
-    if [ "$http_status" -ge 400 ]; then
-      echo "    attempt rep=$rep_idx: lcp_ms=$v http_status=$http_status -> SKIPPED (HTTP error / bot-block page)"
-      blocked=$((blocked + 1))
+    if [ -z "$lcp" ]; then
+      echo "    attempt rep=$rep: automation produced no metric -> SKIPPED" >&2
+      no_metric=$((no_metric + 1))
       continue
     fi
-    if awk -v v="$v" 'BEGIN{exit !(v < 0)}'; then
-      echo "    attempt rep=$rep_idx: lcp_ms=-1 http_status=$http_status -> SKIPPED (no LCP entry within ${LOAD_WINDOW} window)"
+    observed=$((observed + 1))
+    if [ "$offsite" = "1" ]; then
+      echo "    attempt rep=$rep: landed off-site at $landed_url -> SKIPPED" >&2
+      no_metric=$((no_metric + 1))
+      continue
+    fi
+    if awk -v value="$lcp" 'BEGIN { exit !(value <= 0) }'; then
+      echo "    attempt rep=$rep: LCP not finalized -> SKIPPED; detail=$detail" >&2
       unfinalized=$((unfinalized + 1))
       continue
     fi
-    vals+=("$v")
-    rep=$((rep + 1))
-    echo "    attempt rep=$rep_idx: lcp_ms=$v http_status=$http_status -> recorded"
-    printf 'safari\t%s\t%s\t%d\t%s\n' "$SAFARI_VERSION" "$site" "$rep" "$v" >> "$RESULTS_FILE"
-  done < <(find "$results_path" -path '*/stories/*/*/*/js.json' 2>/dev/null | sort)
 
-  # Single assignment point for the disposition counters: everything after this
-  # only reports. observed counts repetitions that produced probe output at all,
-  # so observed < MEASURED_REPS means the browser or harness stopped early, while
-  # the dropped_* counters account for output that was unusable.
-  LAST_OBSERVED="$attempts"
-  LAST_RECORDED="${#vals[@]}"
+    recorded=$((recorded + 1))
+    values+=("$lcp")
+    printf 'safari\t%s\t%s\t%d\t%s\n' \
+      "$SAFARI_VERSION" "$site" "$recorded" "$lcp" >> "$RESULTS_FILE"
+    echo "    attempt rep=$rep: lcp_ms=$lcp -> recorded; detail=$detail"
+  done
+
+  if ! kill -0 "$WPR_PID" 2>/dev/null; then
+    echo "  ERROR: WPR exited during $site replay. Log:" >&2
+    cat "$WPR_LOG" >&2
+    stop_wpr
+    LAST_OBSERVED="$observed"
+    LAST_RECORDED="$recorded"
+    LAST_UNFINALIZED="$unfinalized"
+    LAST_NO_METRIC="$no_metric"
+    record_disposition "$site" infra_error "$PF_VERDICT" "$MEASURED_REPS"
+    return
+  fi
+  stop_wpr
+
+  LAST_OBSERVED="$observed"
+  LAST_RECORDED="$recorded"
   LAST_UNFINALIZED="$unfinalized"
   LAST_NO_METRIC="$no_metric"
-  LAST_HTTP_ERROR="$blocked"
-  # Always print the tally, including the zero-attempt case — "expected 5, saw 0"
-  # is a different failure from "saw 5, discarded 5" and the log should say which.
-  echo "  $site: attempts=$attempts/$MEASURED_REPS recorded=${#vals[@]} unfinalized=$unfinalized http-error=$blocked no-metric=$no_metric"
-  # Distinct statuses, sorted. "http_status=[-1]" means this Safari doesn't
-  # expose responseStatus, so the HTTP >= 400 filter above is inert and cannot
-  # be relied on to reject bot-block pages.
-  if [ "${#statuses[@]}" -gt 0 ]; then
-    echo "  $site: http_status=[$(printf '%s\n' "${statuses[@]}" | sort -un | paste -sd, -)]"
+  echo "  $site: attempts=$MEASURED_REPS recorded=$recorded unfinalized=$unfinalized no-metric=$no_metric"
+  if [ "$recorded" -gt 0 ]; then
+    printf '  %s: lcp_ms=[%s] ' "$site" "$(IFS=,; echo "${values[*]}")"
+    printf '%s\n' "${values[@]}" |
+      awk '{ sum += $1; count++ } END { printf "mean=%.1f n=%d\n", sum/count, count }'
   fi
-  if [ "$attempts" -eq 0 ]; then
-    echo "  $site: NO js.json FILES FOUND under $results_path (probe did not run)"
-    return
-  fi
-  if [ "$unfinalized" -gt 0 ]; then
-    echo "  WARNING: $site: $unfinalized repetition(s) with no LCP entry (-1)." >&2
-  fi
-  if [ "$blocked" -gt 0 ]; then
-    echo "  WARNING: $site: $blocked repetition(s) discarded — HTTP >= 400 (error or bot-block page)." >&2
-  fi
-  if [ "${#vals[@]}" -eq 0 ]; then
-    if [ "$blocked" -gt 0 ]; then
-      echo "  $site: NO VALID LCP — every repetition returned an HTTP error."
-    else
-      echo "  $site: NO LCP VALUES PARSED (check that Safari exposes largest-contentful-paint entries)"
-    fi
-    return
-  fi
-  printf '  %s: lcp_ms=[%s] ' "$site" "$(IFS=,; echo "${vals[*]}")"
-  printf '%s\n' "${vals[@]}" | awk '{s+=$1; n++} END{printf "mean=%.1f n=%d\n", s/n, n}'
+  record_disposition "$site" "$(classify_outcome)" "$PF_VERDICT" "$MEASURED_REPS"
 }
 
-# ---- run -------------------------------------------------------------------
 run_safari() {
-  log "Safari LCP run (LIVE network) — $SUITE, ${#SITES[@]} sites, 1 warm-up + $MEASURED_REPS reps, ${LOAD_WINDOW} window"
+  local shape_description=unshaped site
+  if [ "$SHAPE" = "1" ]; then
+    shape_description="${SHAPE_RTT_MS}ms RTT, ${SHAPE_IN_KBPS}/${SHAPE_OUT_KBPS} Kbps, window ${SHAPE_WINDOW}"
+  fi
+  log "Safari LCP (WPR replay, $shape_description) — ${#SITES[@]} sites, $MEASURED_REPS reps"
   echo "safari:  $SAFARI_VERSION"
   echo "results: $RESULTS_FILE"
-  cd "$CROSSBENCH_DIR"
-  # .vpython3 is git-tracked and makes crossbench re-exec under Chromium vpython
-  # instead of our poetry venv; removal belongs here (run step), not provisioning.
-  rm -f .vpython3
+  echo "route:   Safari prefs -> httpproxy:$HTTPPROXY_PORT -> tsproxy:$TSPROXY_PORT -> WPR"
 
-  local site out results_path outcome
+  start_tsproxy
+  start_http_proxy
+  apply_proxy_state
+  start_safaridriver
+
   for site in "${SITES[@]}"; do
     log "site: $site"
-    reset_measurement_counters
-    # Pre-flight before spending any browser time on this site. Writes the
-    # disposition row itself when it says skip.
-    handle_preflight "$site" || continue
-
-    echo "  plan: 1 warm-up load (discarded) + $MEASURED_REPS measured, ${LOAD_WINDOW} window"
-    # Warm-up load (discarded): primes OS-DNS + CDN edge. Output ignored, but the
-    # exit status is reported — a warm-up that always fails is a signal the site
-    # is unreachable rather than slow.
-    if poetry run python ./cb.py \
-      loading \
-      --browser=safari \
-      --probe-config="$PROBE_CONFIG" \
-      --repetitions=1 \
-      --url="$site,$LOAD_WINDOW" \
-      --env-validation=skip >/dev/null 2>&1; then
-      echo "  warm-up: ok"
-    else
-      echo "  warm-up: crossbench exited non-zero (ignored, warm-up is discarded)"
-    fi
-
-    out="$(mktemp)"
-    # NO --about-blank-duration on purpose (see header). No --network => live.
-    poetry run python ./cb.py \
-      loading \
-      --browser=safari \
-      --probe-config="$PROBE_CONFIG" \
-      --repetitions="$MEASURED_REPS" \
-      --url="$site,$LOAD_WINDOW" \
-      --debug \
-      --env-validation=skip 2>&1 | tee "$out" || echo "WARN: crossbench exited non-zero for $site" >&2
-
-    # `|| true`: under set -e/pipefail a no-match grep would abort the script.
-    results_path="$(grep -E '^RESULTS: ' "$out" | tail -1 | sed -E 's/^RESULTS: //' || true)"
-    if [ -n "$results_path" ] && [ -d "$results_path" ]; then
-      # Logged so a surprising per-attempt result can be traced back to the raw
-      # probe output on the runner.
-      echo "  results dir: $results_path"
-      summarize_lcp "$results_path" "$site"
-      outcome="$(classify_outcome)"
-      record_disposition "$site" "$outcome" "$PF_VERDICT" "$MEASURED_REPS"
-    else
-      echo "  $site: no RESULTS path in crossbench output"
-      # Distinct from "blocked": the site was reachable, the harness failed. The
-      # two must not be conflated or fail-open can't be audited. preflight_verdict
-      # is kept as-is so a fail-open pre-flight followed by a harness failure is
-      # still visible as two separate facts.
-      echo "::warning title=Harness failure::$site: crossbench produced no RESULTS path"
-      record_disposition "$site" infra_error "$PF_VERDICT" "$MEASURED_REPS"
-    fi
-    rm -f "$out"
+    measure_site "$site"
   done
 }
 
-# ---- main ------------------------------------------------------------------
-preflight
-# TSV header. Columns match test-chrome.sh: browser, browser_version, site, rep, lcp_ms.
+check_prerequisites
+confirm
 printf 'browser\tbrowser_version\tsite\trep\tlcp_ms\n' > "$RESULTS_FILE"
 init_dispositions_file
 run_safari

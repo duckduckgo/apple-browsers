@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
 #
-# provision-macos.sh — install the minimum crossbench needs to measure Chrome
-# page-load LCP from a Web Page Replay archive on a macOS runner.
+# provision-macos.sh — install the replay toolchain used by Chrome and Safari
+# page-load LCP on a macOS runner.
 #
 # Chrome replays each site from a WPR archive through a traffic shaper and
 # crossbench extracts LCP from the Perfetto trace. This script installs the
 # toolchain, builds the `wpr` binary, and installs the pinned traffic shaper.
-# Archives are fetched per site by test-chrome.sh. The DDG and Safari paths are
-# deliberately out of scope here.
+# Archives are fetched per site by the browser harness. Safari also uses the
+# WPR checkout's ECDSA certificate and key directly with acceptInsecureCerts;
+# provisioning never adds them to a keychain.
 #
 # Idempotent: safe to run on every CI job; installs only what's missing.
 #
@@ -40,8 +41,8 @@ CROSSBENCH_REV="${CROSSBENCH_REV:-be14dbfb884747ea577e2e65b6a4a77d7ecd807d}"
 # Bump this and CROSSBENCH_REV together, from the same DEPS file.
 WEBPAGEREPLAY_GIT="https://chromium.googlesource.com/webpagereplay"
 WEBPAGEREPLAY_REV="b2b856131e36c99e9de9c419fe8ca02f857082ba"   # DEPS: webpagereplay_revision
-# Where the wpr binary is built to. test-chrome.sh passes this to crossbench via
-# --bin-override, which skips crossbench's own build machinery entirely.
+# Where the wpr binary is built to. The Chrome harness passes this to crossbench
+# via --bin-override; the Safari harness starts it directly.
 WPR_BIN="${WPR_BIN:-$HOME/Developer/mac-perf-runner/bin/wpr}"
 
 # The tsproxy revision in crossbench's DEPS is not Python-3-compatible. Use

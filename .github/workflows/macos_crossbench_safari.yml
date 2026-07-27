@@ -1,24 +1,25 @@
-name: macOS - crossbench Safari LCP (live network)
+name: macOS - crossbench Safari LCP (WPR)
 
 # Manual-only test harness: stands up crossbench on a GitHub-hosted macOS runner,
-# measures Safari navigation -> Largest Contentful Paint against the LIVE network,
+# measures Safari navigation -> Largest Contentful Paint against WPR archives
+# through the US-broadband traffic-shaping profile,
 # and uploads the per-rep results as a downloadable artifact. Optionally
 # (opt-in dispatch input) a second, self-hosted job inserts per-domain
 # aggregates into ClickHouse (native_apps.macos_browser_health_nav_to_lcp).
 #
 # Safari sibling of macos_crossbench_chrome.yml. Two Safari-specific wrinkles:
-#   - LCP is read from the page via the standard `largest-contentful-paint`
-#     PerformanceObserver entries (Web Vitals LCP API), NOT a Perfetto trace,
-#     because WebKit doesn't emit Chromium traces. See test-safari.sh.
+#   - Safari's per-app proxy preferences route it through a local HTTP proxy,
+#     pinned tsproxy and pinned WPR. The original preference state is restored
+#     on exit; no system proxy or keychain is changed.
+#   - LCP is read from the page via a buffered PerformanceObserver over
+#     WebDriver, with acceptInsecureCerts=true.
 #   - crossbench drives Safari via safaridriver (WebDriver), which requires
 #     "Allow Remote Automation". We enable it with `sudo safaridriver --enable`
 #     below. GitHub-hosted macOS runners grant passwordless sudo, so this works
 #     there; a self-hosted runner must allow it (see the step's comment).
 #
 # Triggered manually (workflow_dispatch) and on a daily off-peak schedule. No
-# pull_request/push trigger, so fork PRs can't run it. Results are live-network
-# noisy — this validates the pipeline, it is not a trustworthy cross-browser
-# comparison (that needs WPR + a dedicated runner, later).
+# pull_request/push trigger, so fork PRs can't run it.
 
 on:
   workflow_dispatch:
@@ -27,6 +28,10 @@ on:
         description: "Comma-separated sites (blank = full 22-site list)"
         required: false
         default: ""
+      reps:
+        description: "Measured loads per site"
+        required: false
+        default: "10"
       upload-to-clickhouse:
         description: "Upload aggregated per-domain results to ClickHouse"
         type: boolean
@@ -59,7 +64,7 @@ defaults:
 
 jobs:
   safari-lcp:
-    name: Safari LCP (live network)
+    name: Safari LCP (WPR)
     # Free standard hosted runner (Apple Silicon, 3 cores), matching the Chrome
     # workflow so both browsers are measured on identical hardware. The larger
     # macos-26-xlarge was measured on the Chrome side and made no difference, so
@@ -67,9 +72,8 @@ jobs:
     # is Intel x86_64 and would break comparability; only -xlarge is Apple
     # Silicon.
     runs-on: macos-latest
-    # 6 loads/site (1 warm-up + 5 measured). Safari runs ~4 min/site at 11
-    # loads, so a full 22-site run should land near ~50 min. The cap stays well
-    # above that on purpose — headroom costs nothing.
+    # Ten measured loads per site with no replay warm-up. The cap leaves room
+    # for archive downloads, provisioning and slow/failing navigations.
     timeout-minutes: 160
 
     steps:
@@ -78,9 +82,9 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Provision crossbench (python, poetry, crossbench checkout; no Chrome)
-        # INSTALL_CHROME=0: the Safari harness needs python/poetry/crossbench +
-        # the LCP extras this script installs, but not Chrome.
+      - name: Provision WPR and traffic shaping (no Chrome)
+        # INSTALL_CHROME=0 retains the pinned WPR build and checksum-verified
+        # tsproxy, while skipping the browser this job does not use.
         env:
           INSTALL_CHROME: "0"
         run: ./provision-macos.sh
@@ -99,10 +103,14 @@ jobs:
         # Inputs passed via env, not interpolated into the script, to avoid shell injection.
         env:
           SITES: ${{ inputs.sites }}
+          REPS: ${{ inputs.reps }}
         run: |
-          args=()
+          args=(--yes)
           if [ -n "$SITES" ]; then
             args+=(--sites "$SITES")
+          fi
+          if [ -n "$REPS" ]; then
+            args+=(--reps "$REPS")
           fi
           ./test-safari.sh "${args[@]}"
 
@@ -139,9 +147,8 @@ jobs:
           # start_time — and the date partition derived from it — identical
           # for every attempt of the run.
           #
-          # --webview-type sfr marks these rows as Safari (the Chrome workflow
-          # relies on aggregate-lcp.py's default of 'chr'). webview-channel stays
-          # at the default 'stable' (Safari release channel).
+          # Replay rows use sfr-wpr so they cannot mix with historical
+          # live-network sfr rows. webview-channel remains stable.
           run_json="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}")"
           in_tsv=(crossbench-results/*.tsv)
           ./aggregate-lcp.py \
@@ -150,7 +157,7 @@ jobs:
             --run-id "$GITHUB_RUN_ID" \
             --start-time "$(jq -r '.created_at' <<< "$run_json")" \
             --gh-run-started-at "$(jq -r '.run_started_at' <<< "$run_json")" \
-            --webview-type sfr
+            --webview-type sfr-wpr
           cat clickhouse-rows.tsv
 
       - name: Upload ClickHouse rows TSV
@@ -178,7 +185,7 @@ jobs:
             --run-id "$GITHUB_RUN_ID" \
             --start-time "$(jq -r '.created_at' <<< "$run_json")" \
             --gh-run-started-at "$(jq -r '.run_started_at' <<< "$run_json")" \
-            --webview-type sfr
+            --webview-type sfr-wpr
           cat clickhouse-attempts.tsv
 
       - name: Upload ClickHouse attempts TSV

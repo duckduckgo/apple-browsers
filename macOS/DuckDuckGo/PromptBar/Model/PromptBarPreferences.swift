@@ -36,23 +36,33 @@ final class PromptBarPreferences: ObservableObject {
         didSet { persistor.isMenuBarIconVisible = isMenuBarIconVisible }
     }
 
-    /// The icon is a shortcut entry point, so it stays hidden while the shortcut
-    /// is off. `isMenuBarIconVisible` keeps its stored value so it can be restored.
+    /// The icon is a Duck.ai entry point behind the shortcut, so it stays hidden
+    /// unless both are on. Stored values are kept so they can be restored.
     var isMenuBarIconEffectivelyVisible: Bool {
-        isMenuBarIconVisible && isKeyboardShortcutEnabled
+        isMenuBarIconVisible && isKeyboardShortcutEnabled && aiChatMenuConfiguration.shouldDisplayAnyAIChatFeature
     }
 
     var isMenuBarIconEffectivelyVisiblePublisher: AnyPublisher<Bool, Never> {
-        Publishers.CombineLatest($isMenuBarIconVisible, $isKeyboardShortcutEnabled)
-            .map { $0 && $1 }
+        let aiChatMenuConfiguration = self.aiChatMenuConfiguration
+        let aiChatFeatureChanges = aiChatMenuConfiguration.valuesChangedPublisher
+            .map { _ in () }
+            .prepend(())
+
+        return Publishers.CombineLatest3($isMenuBarIconVisible, $isKeyboardShortcutEnabled, aiChatFeatureChanges)
+            .map { isMenuBarIconVisible, isKeyboardShortcutEnabled, _ in
+                isMenuBarIconVisible && isKeyboardShortcutEnabled && aiChatMenuConfiguration.shouldDisplayAnyAIChatFeature
+            }
             .removeDuplicates()
             .eraseToAnyPublisher()
     }
 
     private var persistor: PromptBarPreferencesPersistor
+    private let aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable
 
-    init(persistor: PromptBarPreferencesPersistor = PromptBarPreferencesUserDefaultsPersistor(keyValueStore: NSApp.delegateTyped.keyValueStore)) {
+    init(persistor: PromptBarPreferencesPersistor = PromptBarPreferencesUserDefaultsPersistor(keyValueStore: NSApp.delegateTyped.keyValueStore),
+         aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable) {
         self.persistor = persistor
+        self.aiChatMenuConfiguration = aiChatMenuConfiguration
         isKeyboardShortcutEnabled = persistor.isKeyboardShortcutEnabled
         keyboardShortcut = persistor.keyboardShortcut
         isMenuBarIconVisible = persistor.isMenuBarIconVisible

@@ -75,10 +75,15 @@ final class PromptBarPresenter: PromptBarPresenting {
                                                  in: screenProvider.targetVisibleFrame),
                         display: false)
 
-        NSApp.activate(ignoringOtherApps: true)
-        window.makeKeyAndOrderFront(nil)
+        // Deliberately no `NSApp.activate`: that raises the browser's own windows above whatever the
+        // user has in front. `orderFrontRegardless` + the panel's `.nonactivatingPanel` style show
+        // and focus the bar while the app stays inactive; submitting is what brings the browser forward.
+        window.orderFrontRegardless()
+        window.makeKey()
         // First responder only sticks once the window is key.
         content.focusPromptEditor()
+        // Subscribed per presentation, not per window: `dismiss()` tears the subscription down.
+        subscribeToResignKey(of: window)
     }
 
     func dismiss() {
@@ -100,7 +105,6 @@ final class PromptBarPresenter: PromptBarPresenting {
         window.onCancel = { [weak self] in
             self?.dismiss()
         }
-        subscribeToResignKey(of: window)
         self.window = window
         return window
     }

@@ -1937,23 +1937,12 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     /// gated tap here rather than navigating directly (per design review). A SwiftUI `ModalView`
     /// rather than `NSAlert`, which can't center its icon/title.
     private func presentSubscriptionUpsellDialog(requiredTier: AIChatModelPublicAccessTier, origin: SubscriptionFunnelOrigin) {
-        var dialog = AIChatSubscriptionUpsellDialog()
+        var dialog: AIChatSubscriptionUpsellDialog
         switch omnibarController.userTier {
         case .free:
-            // Title/message stay generic. Only the primary button follows eligibility, matching
-            // the badge/tag text ("Try for Free" vs "Upgrade") — the native purchase flow presents
-            // the trial terms itself, so an ineligible user shouldn't be told "Subscribe" only to
-            // find no trial offered.
-            dialog.primaryButtonText = omnibarController.shouldOfferFreeTrial
-                ? UserText.aiChatSubscriptionUpsellDialogTryForFreeButton
-                : UserText.aiChatSubscriptionUpsellDialogUpgradeButton
+            dialog = .upsell(isEligibleForFreeTrial: omnibarController.shouldOfferFreeTrial)
         case .plus, .pro, .internal:
-            // An existing Plus subscriber is upgrading an active subscription, not discovering
-            // one — different copy, and no "I Have a Subscription" button since that doesn't apply.
-            dialog.title = UserText.aiChatSubscriptionUpsellDialogProTitle
-            dialog.message = UserText.aiChatSubscriptionUpsellDialogProMessage
-            dialog.primaryButtonText = UserText.aiChatSubscriptionUpsellDialogUpgradeButton
-            dialog.showsHaveSubscriptionButton = false
+            dialog = .proUpgrade()
         }
         dialog.onSubscribe = { [weak self] in
             self?.omnibarController.presentSubscriptionUpsell(requiredTier: requiredTier, origin: origin)

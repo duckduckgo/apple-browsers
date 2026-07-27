@@ -47,42 +47,26 @@ final class NewTabPageOmnibarSubscriptionDialogPresenter: NewTabPageOmnibarSubsc
     /// Checks `userTier == .free` before trusting StoreKit eligibility — trial eligibility is
     /// independent of subscription tier, so an existing subscriber could otherwise still read as eligible.
     func makeUpsellDialog(userTier: AIChatUserTier, source: NewTabPageDataModel.OmnibarSubscriptionUpsellSource) -> AIChatSubscriptionUpsellDialog {
-        let primaryButtonText = (userTier == .free && subscriptionManager.isUserEligibleForFreeTrial())
-            ? UserText.aiChatSubscriptionUpsellDialogTryForFreeButton
-            : UserText.aiChatSubscriptionUpsellDialogUpgradeButton
-        return makeDialog(primaryButtonText: primaryButtonText) { [coordinator] in
+        var dialog: AIChatSubscriptionUpsellDialog = .upsell(
+            isEligibleForFreeTrial: userTier == .free && subscriptionManager.isUserEligibleForFreeTrial()
+        )
+        dialog.onSubscribe = { [coordinator] in
             coordinator.navigateToSubscriptionPurchase(origin: SubscriptionFunnelOrigin.newTabPageOmnibar.rawValue, featurePage: Self.featurePage)
             Self.firePixel(flowType: "purchase", source: source)
         }
+        dialog.onHaveSubscription = { [coordinator] in
+            coordinator.navigateToSubscriptionActivation()
+        }
+        return dialog
     }
 
-    /// Fires only for an existing Plus subscriber gated to Pro — distinct title/message from the
-    /// free-tier dialog, and no "I Have a Subscription" button since that doesn't apply here.
+    /// Fires only for an existing Plus subscriber gated to Pro.
     func makeUpgradeDialog(source: NewTabPageDataModel.OmnibarSubscriptionUpsellSource) -> AIChatSubscriptionUpsellDialog {
-        makeDialog(
-            title: UserText.aiChatSubscriptionUpsellDialogProTitle,
-            message: UserText.aiChatSubscriptionUpsellDialogProMessage,
-            primaryButtonText: UserText.aiChatSubscriptionUpsellDialogUpgradeButton,
-            showsHaveSubscriptionButton: false
-        ) { [coordinator] in
+        var dialog: AIChatSubscriptionUpsellDialog = .proUpgrade()
+        dialog.onSubscribe = { [coordinator] in
             coordinator.navigateToSubscriptionPlans(origin: SubscriptionFunnelOrigin.newTabPageOmnibar.rawValue, featurePage: Self.featurePage)
             Self.firePixel(flowType: "upgrade", source: source)
         }
-    }
-
-    private func makeDialog(
-        title: String? = nil,
-        message: String? = nil,
-        primaryButtonText: String,
-        showsHaveSubscriptionButton: Bool = true,
-        onSubscribe: @escaping () -> Void
-    ) -> AIChatSubscriptionUpsellDialog {
-        var dialog = AIChatSubscriptionUpsellDialog()
-        if let title { dialog.title = title }
-        if let message { dialog.message = message }
-        dialog.primaryButtonText = primaryButtonText
-        dialog.showsHaveSubscriptionButton = showsHaveSubscriptionButton
-        dialog.onSubscribe = onSubscribe
         dialog.onHaveSubscription = { [coordinator] in
             coordinator.navigateToSubscriptionActivation()
         }

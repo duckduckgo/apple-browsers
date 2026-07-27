@@ -124,6 +124,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private(set) var autofillPixelReporter: AutofillPixelReporter?
     private var passwordsStatusBarMenu: PasswordsStatusBarMenu?
     private var passwordsMenuBarCancellable: AnyCancellable?
+    private var promptBarMenuBarController: PromptBarMenuBarController?
+    private var promptBarMenuBarCancellable: AnyCancellable?
 
     private(set) var syncDataProviders: SyncDataProvidersSource?
     private(set) var syncService: DDGSyncing?
@@ -835,7 +837,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         contentScopePreferences = ContentScopePreferences(windowControllersManager: windowControllersManager)
         webTrackingProtectionPreferences = WebTrackingProtectionPreferences(persistor: WebTrackingProtectionPreferencesUserDefaultsPersistor(), windowControllersManager: windowControllersManager)
         cookiePopupProtectionPreferences = CookiePopupProtectionPreferences(persistor: CookiePopupProtectionPreferencesUserDefaultsPersistor(), windowControllersManager: windowControllersManager)
-        promptBarPreferences = PromptBarPreferences(persistor: PromptBarPreferencesUserDefaultsPersistor(keyValueStore: keyValueStore))
+        promptBarPreferences = PromptBarPreferences(persistor: PromptBarPreferencesUserDefaultsPersistor(keyValueStore: keyValueStore),
+                                                    aiChatMenuConfiguration: aiChatMenuConfiguration)
         aiChatPreferences = AIChatPreferences(
             storage: DefaultAIChatPreferencesStorage(),
             aiChatMenuConfiguration: aiChatMenuConfiguration,
@@ -1495,6 +1498,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         setUpAutofillPixelReporter()
         setUpPasswordsMenuBarVisibility()
+        setUpPromptBarMenuBarVisibility()
 
         remoteMessagingClient?.startRefreshingRemoteMessages()
 
@@ -2421,6 +2425,31 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     } else {
                         self?.passwordsStatusBarMenu?.hide()
                     }
+                }
+            }
+    }
+
+    @MainActor
+    private func setUpPromptBarMenuBarVisibility() {
+        guard featureFlagger.isFeatureOn(.macosPromptBar) else {
+            promptBarMenuBarController?.hide()
+            promptBarMenuBarController = nil
+            promptBarMenuBarCancellable = nil
+            return
+        }
+
+        if promptBarMenuBarController == nil {
+            promptBarMenuBarController = PromptBarMenuBarController()
+        }
+
+        // Applied synchronously: a deferred first update lets the icon appear at
+        // launch before a hide lands.
+        promptBarMenuBarCancellable = promptBarPreferences.isMenuBarIconEffectivelyVisiblePublisher
+            .sink { [weak self] isVisible in
+                if isVisible {
+                    self?.promptBarMenuBarController?.show()
+                } else {
+                    self?.promptBarMenuBarController?.hide()
                 }
             }
     }

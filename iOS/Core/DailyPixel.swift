@@ -141,7 +141,7 @@ public final class DailyPixel {
     private static func hasBeenFiredToday(forKey key: String, dailyPixelStore: ThrowingKeyValueStoring) -> Bool {
         do {
             if let lastFireDate = try dailyPixelStore.object(forKey: key) as? Date {
-                return Date().isSameDay(lastFireDate)
+                return Calendar.current.isDateInToday(lastFireDate)
             }
             return false
         } catch {

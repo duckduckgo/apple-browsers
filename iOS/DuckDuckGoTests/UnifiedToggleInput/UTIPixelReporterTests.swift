@@ -114,10 +114,10 @@ final class UTIPixelReporterTests: XCTestCase {
     func testReportFileAttachedFiresDailyWithResolvedSurface() {
         let reporter = makeReporter { self.context(surface: .addressBar) }
 
-        reporter.reportFileAttached()
+        reporter.reportFileAttached(source: "file_picker")
 
         XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.pixelName, Pixel.Event.unifiedToggleInputFileAttached.name)
-        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.params, ["surface": "address_bar"])
+        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.params, ["surface": "address_bar", "source": "file_picker"])
     }
 
     // MARK: - Voice tap uses `source` (not `surface`) for its surface param
@@ -156,7 +156,7 @@ final class UTIPixelReporterTests: XCTestCase {
         let reporter = makeReporter { nil }
 
         reporter.reportModelSelected(modelId: "m1")
-        reporter.reportFileAttached()
+        reporter.reportFileAttached(source: "file_picker")
 
         XCTAssertNil(PixelFiringMock.lastPixelInfo)
         XCTAssertNil(PixelFiringMock.lastDailyPixelInfo)

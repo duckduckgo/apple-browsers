@@ -84,7 +84,8 @@ extension MainViewController {
             syncService: syncService,
             aiChatSyncCleaner: aiChatSyncCleaner,
             recentModalPromptStatusProvider: recentModalPromptStatusProvider,
-            duckAIWideEventInstrumentation: duckAIWideEventInstrumentation
+            duckAIWideEventInstrumentation: duckAIWideEventInstrumentation,
+            attachmentPasteEnabled: unifiedToggleInputFeature.isAttachmentPasteEnabled
         )
         coordinator.delegate = self
         coordinator.updateVoiceSearchAvailability(voiceSearchHelper.isVoiceSearchEnabled)

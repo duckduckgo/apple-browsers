@@ -172,6 +172,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private var wideEventReporter: UTIWideEventReporter!
     private var modelSelector: UTIModelSelector!
     private var invalidAttachmentRecoveryTasks: [UUID: Task<Void, Never>] = [:]
+    /// A limit/rejection banner not tied to a specific attachment (image-over-limit, paste rejection). Held so an async attachment/model re-sync can't clear it — `syncAttachmentValidationError` falls back to this.
+    private var transientAttachmentValidationMessage: String?
     private var isContentOverlaySuppressed = false
     /// Forces the model chip visible mid-chat for the FE's `showModelPicker` flow; cleared on prompt
     /// submit or session reset.
@@ -232,6 +234,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private let toolsController = UTIToolsController()
     private let toolsMenuFactory = UTIToolsMenuFactory()
     private let attachmentPresenter = UnifiedToggleInputAttachmentPresenter()
+    private let pasteHandler = UnifiedToggleInputPasteHandler()
+    /// Bumped on New Chat so an in-flight paste from the previous conversation is dropped even within the same tab.
+    private var pasteConversationToken = UUID()
 
     private let intentSubject = PassthroughSubject<UnifiedToggleInputIntent, Never>()
     var intentPublisher: AnyPublisher<UnifiedToggleInputIntent, Never> {
@@ -277,7 +282,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         duckAIWideEventInstrumentation: DuckAIWideEventInstrumentation? = nil,
         duckAIWideEventFlowScope: DuckAIWideEventFlowScope? = nil,
         pixelFiring: UTIPixelFiring = .live,
-        contextualStartsPreSubmit: Bool = false
+        contextualStartsPreSubmit: Bool = false,
+        attachmentPasteEnabled: Bool = false
     ) {
         self.host = host
         self.isToggleEnabled = isToggleEnabled
@@ -317,6 +323,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         floatingReturnKeyViewController = UnifiedToggleInputFloatingReturnKeyViewController()
         super.init()
         viewController.delegate = self
+        pasteHandler.delegate = self
+        viewController.attachmentPasteHandler = attachmentPasteEnabled ? pasteHandler : nil
         textModel = UTITextModel(sideEffects: .init(
             applyTextToView: { [weak self] in self?.viewController.text = $0 },
             persistDraft: { [weak self] in self?.persistDraftToStore() },
@@ -404,7 +412,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             } else {
                 reason = .other
             }
-            self.pixelReporter.reportFileValidationFailed(reason: reason)
+            self.pixelReporter.reportFileValidationFailed(reason: reason, source: "file_picker")
             self.addInvalidFileAttachment(metadata: metadata, validationMessage: message)
         }
         attachmentPresenter.fileMetadataValidationMessage = { [weak self] metadata in
@@ -588,6 +596,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         for attachment in state.attachments {
             viewController.addAttachment(attachment)
         }
+        // A transient paste banner belongs to the live paste on the previous tab; drop it so it can't re-show on the tab being loaded.
+        transientAttachmentValidationMessage = nil
         syncAttachmentValidationErrorForCurrentMode()
 
         // Always sync the live model store from per-tab state — including nil values —
@@ -1214,6 +1224,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     func startNewChat() {
+        pasteConversationToken = UUID()
         isNewChatPending = true
         hasSubmittedPrompt = false
         isModelPickerForcedVisible = false
@@ -1334,9 +1345,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         updateAttachButtonPresentation()
     }
 
-    func addFileAttachment(_ fileAttachment: AIChatFileAttachment, sourceURL: URL? = nil) {
+    func addFileAttachment(_ fileAttachment: AIChatFileAttachment, sourceURL: URL? = nil, source: String = "file_picker") {
         if let validationError = attachmentPolicy.fileValidationError(for: fileAttachment) {
-            pixelReporter.reportFileValidationFailed(reason: validationError.reason)
+            pixelReporter.reportFileValidationFailed(reason: validationError.reason, source: source)
             viewController.addAttachment(.invalidFile(
                 UnifiedToggleInputInvalidFileAttachment(
                     id: fileAttachment.id,
@@ -1353,7 +1364,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             return
         }
 
-        pixelReporter.reportFileAttached()
+        pixelReporter.reportFileAttached(source: source)
         viewController.addAttachment(.file(fileAttachment))
         persistDraftToStore()
         clearAttachmentValidationErrorIfPossible()
@@ -1364,12 +1375,14 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         invalidAttachmentRecoveryTasks[id]?.cancel()
         invalidAttachmentRecoveryTasks[id] = nil
         viewController.removeAttachment(id: id)
+        transientAttachmentValidationMessage = nil
         persistDraftToStore()
         syncAttachmentValidationErrorForCurrentMode()
         updateAttachButtonPresentation()
     }
 
     func clearAttachments() {
+        transientAttachmentValidationMessage = nil
         guard !viewController.currentAttachments.isEmpty else {
             viewController.clearAttachmentValidationError()
             updateAttachButtonPresentation()
@@ -1888,6 +1901,12 @@ private extension UnifiedToggleInputCoordinator {
         viewController.showAttachmentValidationError(message)
     }
 
+    /// Shows a limit/rejection banner that survives async re-syncs, unlike an attachment-derived one which `syncAttachmentValidationError` recomputes from `currentAttachments`.
+    func presentTransientAttachmentValidationError(_ message: String) {
+        transientAttachmentValidationMessage = message
+        viewController.showAttachmentValidationError(message)
+    }
+
     func attachmentSubmissionValidationMessage(for text: String, mode: TextEntryMode) -> String? {
         guard mode == .aiChat else { return nil }
 
@@ -1903,7 +1922,7 @@ private extension UnifiedToggleInputCoordinator {
     }
 
     func syncAttachmentValidationError() {
-        if let validationMessage = viewController.currentAttachments.compactMap(\.validationMessage).first {
+        if let validationMessage = viewController.currentAttachments.compactMap(\.validationMessage).first ?? transientAttachmentValidationMessage {
             viewController.showAttachmentValidationError(validationMessage)
         } else {
             viewController.clearAttachmentValidationError()
@@ -1912,6 +1931,7 @@ private extension UnifiedToggleInputCoordinator {
 
     func syncAttachmentValidationErrorForCurrentMode() {
         guard inputMode == .aiChat else {
+            transientAttachmentValidationMessage = nil
             viewController.clearAttachmentValidationError()
             return
         }
@@ -1921,6 +1941,7 @@ private extension UnifiedToggleInputCoordinator {
 
     func clearAttachmentValidationErrorIfPossible() {
         guard viewController.currentAttachments.contains(where: \.isInvalid) == false else { return }
+        transientAttachmentValidationMessage = nil
         viewController.clearAttachmentValidationError()
     }
 
@@ -2169,6 +2190,82 @@ private extension UnifiedToggleInputCoordinator {
             .store(in: &cancellables)
     }
 
+}
+
+// MARK: - Paste-to-Attach
+
+extension UnifiedToggleInputCoordinator: UnifiedToggleInputPasteDelegate {
+
+    /// Keys off model capability (not remaining room) so an over-limit paste is consumed and reported here rather than falling through to UIKit's inline-image insert. Text types are excluded so a copied string always pastes as text (text files remain picker-only); files are only offered when the model's attachment limits are known, so the loader can preflight sizes.
+    var pasteAttachmentSupport: UnifiedToggleInputPasteSupport {
+        let limits = modelStore.attachmentLimits
+        let fileTypes = limits == nil ? [] : allowedFileUTTypes.filter { !$0.conforms(to: .text) }
+        return UnifiedToggleInputPasteSupport(
+            isEnabled: inputMode == .aiChat && !viewController.isGenerating,
+            acceptsImages: selectedModelSupportsImageUpload,
+            fileTypes: fileTypes,
+            maxImageCount: selectedModelSupportsImageUpload ? attachmentPolicy.remainingImagesForPicker : nil,
+            maxFileSizeBytes: limits.map { $0.files.maxFileSizeMB * 1_048_576 },
+            remainingFileCount: fileTypes.isEmpty ? nil : attachmentPolicy.remainingFilesInConversation,
+            remainingTotalFileBytes: fileTypes.isEmpty ? nil : attachmentPolicy.remainingFileSizeBytes
+        )
+    }
+
+    /// Identifies the tab AND the conversation, so a paste in flight is dropped if the user starts a New Chat in the same tab (not just on a tab switch).
+    var pasteContextIdentity: String? {
+        "\(currentTabUID ?? "-"):\(pasteConversationToken.uuidString)"
+    }
+
+    func imageCapacityMessage() -> String? {
+        attachmentPolicy.imageCapacityValidationMessage()
+    }
+
+    func pasteWillBeginExpandingIfNeeded() {
+        expandIfOnExpandedInputHost()
+    }
+
+    @discardableResult
+    func addPastedImage(_ image: UIImage, fileName: String) -> Bool {
+        guard attachmentPolicy.canAttachImages else { return false }
+        addImageAttachment(image: image, fileName: fileName)
+        DailyPixel.fireDailyAndCount(
+            pixel: .unifiedToggleInputImageAttached,
+            withAdditionalParameters: ["surface": pixelSurface.rawValue, "source": "paste"]
+        )
+        return true
+    }
+
+    func addPastedFile(_ file: AIChatFileAttachment) {
+        addFileAttachment(file, source: "paste")
+    }
+
+    /// Reports a load-time-rejected paste as an error banner (no chip, no revalidation) using the reason the loader recorded, so the message and pixel reflect why it was actually rejected.
+    func reportRejectedPaste(reason: PasteRejectionReason) {
+        let files = modelStore.attachmentLimits?.files
+        let message: String
+        let pixelReason: String
+        switch reason {
+        case .fileTooLarge:
+            message = UserText.aiChatAttachmentFileTooLarge(maxFileSizeMB: files?.maxFileSizeMB ?? 0)
+            pixelReason = "size_exceeded"
+        case .filesExceedTotalSize:
+            let maxTotalMB = files.map { Int(ceil(Double($0.maxTotalFileSizeBytes) / 1_048_576)) } ?? 0
+            message = UserText.aiChatAttachmentFilesExceedTotalSizeLimit(maxTotalFileSizeMB: maxTotalMB)
+            pixelReason = "size_exceeded"
+        case .fileCountLimit:
+            message = UserText.aiChatAttachmentFileCountLimit(maxFilesPerConversation: files?.maxPerConversation ?? 0)
+            pixelReason = "count_exceeded"
+        }
+        DailyPixel.fireDailyAndCount(
+            pixel: .unifiedToggleInputFileValidationFailed,
+            withAdditionalParameters: ["reason": pixelReason, "surface": pixelSurface.rawValue, "source": "paste"]
+        )
+        presentTransientAttachmentValidationError(message)
+    }
+
+    func presentPasteError(_ message: String) {
+        presentTransientAttachmentValidationError(message)
+    }
 }
 
 private extension NSCache where KeyType == NSString, ObjectType == NSString {

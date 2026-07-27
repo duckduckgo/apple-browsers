@@ -46,9 +46,9 @@ public final class PersistentPixel: PersistentPixelFiring {
         static let lastProcessingDateKey = "com.duckduckgo.ios.persistent-pixel.last-processing-timestamp"
 
 #if DEBUG
-        static let minimumProcessingInterval: TimeInterval = .minutes(1)
+        static let minimumProcessingInterval: TimeInterval = 60
 #else
-        static let minimumProcessingInterval: TimeInterval = .hours(1)
+        static let minimumProcessingInterval: TimeInterval = 60 * 60
 #endif
     }
 

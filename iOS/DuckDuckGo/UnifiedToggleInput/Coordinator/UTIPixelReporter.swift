@@ -104,17 +104,18 @@ final class UTIPixelReporter {
 
     // MARK: - Attachments
 
-    func reportFileValidationFailed(reason: UTIAttachmentPolicy.FileValidationFailureReason) {
+    func reportFileValidationFailed(reason: UTIAttachmentPolicy.FileValidationFailureReason, source: String) {
         withContext {
             firing.fireDailyAndCount(.unifiedToggleInputFileValidationFailed, [
                 "reason": reason.rawValue,
-                "surface": $0.surface.rawValue
+                "surface": $0.surface.rawValue,
+                "source": source
             ])
         }
     }
 
-    func reportFileAttached() {
-        withContext { firing.fireDailyAndCount(.unifiedToggleInputFileAttached, ["surface": $0.surface.rawValue]) }
+    func reportFileAttached(source: String) {
+        withContext { firing.fireDailyAndCount(.unifiedToggleInputFileAttached, ["surface": $0.surface.rawValue, "source": source]) }
     }
 
     func reportAttachmentRemoved(_ attachment: UnifiedToggleInputAttachment) {

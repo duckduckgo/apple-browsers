@@ -118,6 +118,11 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate {
         coordinator.updateImageButtonVisibility()
     }
 
+    /// Whether the AI voice-chat shortcut is enabled on the toggle input, as set from `voiceShortcutFeature` at init.
+    var isAIVoiceChatEnabled: Bool {
+        coordinator.viewController.handler.isAIVoiceChatEnabled
+    }
+
     func setAttachedContext(_ context: AIChatPageContext, deliveryState: PageContextAttachmentDeliveryState = .pendingSubmit) {
         chipViewModel.setAttached(context, deliveryState: deliveryState)
     }
@@ -226,6 +231,12 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate {
 
     func deactivateInput() {
         coordinator.viewController.deactivateInput()
+    }
+
+    /// Preselects a model on the bound coordinator, so the first submitted
+    /// prompt — and every subsequent live-pushed one — carries it.
+    func preselectModel(_ modelId: String) {
+        coordinator.updateSelectedModel(modelId)
     }
 
     func submitQuickActionPrompt(_ prompt: String) {

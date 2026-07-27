@@ -98,6 +98,18 @@ protocol AIChatPageContextHandling: AnyObject {
     func clearAttachedContext()
 }
 
+/// No-op handler for browser-less surfaces: there's no page, so context
+/// collection is inert and nothing is attachable — which also suppresses the sheet's page-context quick actions.
+final class AIChatNoOpPageContextHandler: AIChatPageContextHandling {
+    var contextPublisher: AnyPublisher<AIChatPageContext?, Never> { Empty().eraseToAnyPublisher() }
+    func triggerContextCollection(trigger: PageContextExtractionTrigger) -> Bool { false }
+    func isCurrentPageAttachable() -> Bool { false }
+    func reportAttachabilityMeasurement(trigger: PageContextExtractionTrigger) {}
+    func clear() {}
+    func resubscribe() {}
+    func clearAttachedContext() {}
+}
+
 // MARK: - Implementation
 
 @MainActor

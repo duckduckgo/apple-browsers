@@ -28,12 +28,16 @@ import StoreKit
 import PrivacyConfig
 import Networking
 import UserNotifications
+import UIComponents
+import Lottie
 
 final class SubscriptionDebugViewController: UITableViewController {
 
     private let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
     private lazy var subscriptionUserDefaults = UserDefaults(suiteName: subscriptionAppGroup)!
     private let reporter: SubscriptionDataReporting
+    /// Retained for the lifetime of an in-flight/presented onboarding Duck.ai chat sheet.
+    private var duckAIChatLauncher: SubscriptionOnboardingDuckAIChatLauncher?
 
     private var subscriptionManager: SubscriptionManager {
         AppDependencyProvider.shared.subscriptionManager
@@ -45,8 +49,11 @@ final class SubscriptionDebugViewController: UITableViewController {
         AppDependencyProvider.shared.subscriptionManager.currentEnvironment
     }
 
-    init?(coder: NSCoder, subscriptionDataReporter: SubscriptionDataReporting) {
+    private let aiChatViewControllerManager: AIChatViewControllerManager?
+
+    init?(coder: NSCoder, subscriptionDataReporter: SubscriptionDataReporting, aiChatViewControllerManager: AIChatViewControllerManager?) {
         self.reporter = subscriptionDataReporter
+        self.aiChatViewControllerManager = aiChatViewControllerManager
         super.init(coder: coder)
     }
     
@@ -64,6 +71,7 @@ final class SubscriptionDebugViewController: UITableViewController {
         Sections.metadata: "StoreKit Metadata",
         Sections.regionOverride: "Region override for App Store Sandbox",
         Sections.expirationReminder: "Expiration Reminder Notification",
+        Sections.onboarding: "Onboarding",
     ]
 
     enum Sections: Int, CaseIterable {
@@ -76,6 +84,7 @@ final class SubscriptionDebugViewController: UITableViewController {
         case metadata
         case regionOverride
         case expirationReminder
+        case onboarding
     }
 
     enum AuthorizationRows: Int, CaseIterable {
@@ -121,6 +130,13 @@ final class SubscriptionDebugViewController: UITableViewController {
     enum ExpirationReminderRows: Int, CaseIterable {
         case currentStatus
         case triggerMockNotification
+    }
+
+    enum OnboardingRows: Int, CaseIterable {
+        case welcome
+        case vpn
+        case duckAI
+        case tapAllowHint
     }
 
     private var notificationAuthStatusText: String = "Loading"
@@ -308,6 +324,24 @@ final class SubscriptionDebugViewController: UITableViewController {
                 break
             }
 
+        case .onboarding:
+            switch OnboardingRows(rawValue: indexPath.row) {
+            case .welcome:
+                cell.textLabel?.text = "Welcome"
+                cell.accessoryType = .disclosureIndicator
+            case .vpn:
+                cell.textLabel?.text = "VPN"
+                cell.accessoryType = .disclosureIndicator
+            case .duckAI:
+                cell.textLabel?.text = "Duck.ai"
+                cell.accessoryType = .disclosureIndicator
+            case .tapAllowHint:
+                cell.textLabel?.text = "Tap Allow Hint Overlay"
+                cell.accessoryType = .disclosureIndicator
+            case .none:
+                break
+            }
+
         case .none:
             break
         }
@@ -326,6 +360,7 @@ final class SubscriptionDebugViewController: UITableViewController {
         case .metadata: return MetadataRows.allCases.count
         case .regionOverride: return RegionOverrideRows.allCases.count
         case .expirationReminder: return ExpirationReminderRows.allCases.count
+        case .onboarding: return OnboardingRows.allCases.count
         case .none: return 0
         }
     }
@@ -372,6 +407,14 @@ final class SubscriptionDebugViewController: UITableViewController {
         case .expirationReminder:
             switch ExpirationReminderRows(rawValue: indexPath.row) {
             case .triggerMockNotification: triggerMockExpirationReminder()
+            default: break
+            }
+        case .onboarding:
+            switch OnboardingRows(rawValue: indexPath.row) {
+            case .welcome: showWelcomeOnboarding()
+            case .vpn: showVPNOnboarding()
+            case .duckAI: showDuckAIOnboarding()
+            case .tapAllowHint: showTapAllowHintPlayground()
             default: break
             }
         case .none:
@@ -816,10 +859,83 @@ final class SubscriptionDebugViewController: UITableViewController {
         let hostingController = UIHostingController(rootView: ProductionSubscriptionPurchaseDebugView(subscriptionSelectionHandler: handler))
         navigationController?.pushViewController(hostingController, animated: true)
     }
+
+    private func showWelcomeOnboarding() {
+        let hostingController = UIHostingController(
+            rootView: SubscriptionOnboardingWelcomeView(onClose: { [weak self] in self?.dismiss(animated: true) })
+                .subscriptionOnboardingNavigationContainer())
+        present(hostingController, animated: true)
+    }
+
+    private func showVPNOnboarding() {
+        let hostingController = UIHostingController(
+            rootView: SubscriptionOnboardingVPNActivationView(
+                viewModel: SubscriptionOnboardingVPNActivationViewModel(prefetcher: SubscriptionOnboardingPrefetcher(), delegate: self))
+                .subscriptionOnboardingNavigationContainer()
+                .graphicLottieRenderer(Self.onboardingLottieRenderer))
+        present(hostingController, animated: true)
+    }
+
+    private func showDuckAIOnboarding() {
+        let hostingController = UIHostingController(
+            rootView: SubscriptionOnboardingDuckAIView(
+                viewModel: SubscriptionOnboardingDuckAIViewModel(prefetcher: SubscriptionOnboardingPrefetcher(), delegate: self))
+                .subscriptionOnboardingNavigationContainer())
+        present(hostingController, animated: true)
+    }
+
+    private func showTapAllowHintPlayground() {
+        let hostingController = UIHostingController(
+            rootView: TapAllowHintOverlayPlaygroundView(onClose: { [weak self] in self?.dismiss(animated: true) }))
+        hostingController.modalPresentationStyle = .overFullScreen
+        hostingController.view.backgroundColor = .clear
+        present(hostingController, animated: true)
+    }
+
+    /// Draws `Graphic.lottie` for the onboarding preview from this debug host, since `UIComponents` has no
+    /// Lottie dependency and the production flow host (Stage 3) will inject its own renderer. Honors the
+    /// derived ``GraphicPlayback`` so Reduce Motion freezes on the final frame.
+    private static let onboardingLottieRenderer = GraphicLottieRenderer { name, playback in
+        AnyView(
+            Lottie.LottieView(animation: .named(name))
+                .playbackMode(playback == .playOnce
+                    ? .playing(.fromProgress(0, toProgress: 1, loopMode: .playOnce))
+                    : .paused(at: .progress(playback == .frozenAtEnd ? 1 : 0)))
+        )
+    }
 }
 
 extension Bool {
     fileprivate var toString: String {
         String(self)
+    }
+}
+
+extension SubscriptionDebugViewController: SubscriptionOnboardingSectionDelegate {
+    func sectionDidComplete(_ section: SubscriptionOnboardingSection) {}
+
+    func sectionDidRequestDuckAIChat(modelID: String?) {
+        launchDuckAIChat(modelID: modelID)
+    }
+
+    func sectionDidFinishDuckAIChat() {
+        duckAIChatLauncher = nil
+    }
+
+    func sectionDidRequestAdvance() {
+        dismiss(animated: true)
+    }
+
+    func sectionDidRequestGoBack() {
+        dismiss(animated: true)
+    }
+
+    private func launchDuckAIChat(modelID: String?) {
+        guard let contentBlockingAssetsPublisher = (view.window?.rootViewController as? MainViewController)?.contentBlockingAssetsPublisher else { return }
+        let launcher = SubscriptionOnboardingDuckAIChatLauncher(contentBlockingAssetsPublisher: contentBlockingAssetsPublisher)
+        duckAIChatLauncher = launcher
+        launcher.present(from: presentedViewController ?? self, modelID: modelID) { [weak self] in
+            self?.sectionDidFinishDuckAIChat()
+        }
     }
 }

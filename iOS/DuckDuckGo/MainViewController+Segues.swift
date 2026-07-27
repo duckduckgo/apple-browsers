@@ -538,7 +538,8 @@ extension MainViewController {
                                                   userScriptsDependencies: userScriptsDependencies,
                                                   whatsNewCoordinator: whatsNewCoordinator,
                                                   darkReaderFeatureSettings: darkReaderFeatureSettings,
-                                                  adBlockingAvailability: adBlockingAvailability)
+                                                  adBlockingAvailability: adBlockingAvailability,
+                                                  aiChatViewControllerManager: self.aiChatViewControllerManager)
 
         settingsViewModel.autoClearActionDelegate = self
         settingsViewModel.onRequestOpenDuckAIChat = { [weak self] in
@@ -615,7 +616,8 @@ extension MainViewController {
             subscriptionDataReporter: self.subscriptionDataReporter,
             remoteMessagingDebugHandler: self.remoteMessagingDebugHandler,
             webExtensionManager: self.webExtensionManager,
-            duckAiNativeStorageHandler: self.duckAiNativeStorageHandler))
+            duckAiNativeStorageHandler: self.duckAiNativeStorageHandler,
+            aiChatViewControllerManager: self.aiChatViewControllerManager))
 
         debug.navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .close, target: debug, action: #selector(DebugScreensViewController.dismissSelf))
 

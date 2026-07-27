@@ -35,3 +35,8 @@ struct DuckAIVoiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding {
         featureFlagger.isFeatureOn(.duckAIVoiceShortcut)
     }
 }
+
+/// Always-unavailable shortcut for surfaces with no tab to hand a voice chat off to.
+struct DuckAIUnavailableVoiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding {
+    var isAvailable: Bool { false }
+}

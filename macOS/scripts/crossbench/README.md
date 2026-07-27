@@ -93,5 +93,10 @@ its identity.
 
 Crossbench errors and missing result directories are recorded as `infra_error`.
 The script continues through the site list so available artifacts and
-dispositions survive, then exits nonzero. CI uploads Perfetto diagnostics on
-failure; successful runs upload them only when `upload-diagnostics` is selected.
+dispositions survive, then exits nonzero. Each site uses a generated Crossbench
+directory that is removed after its TSV rows are extracted. CI retains the first
+failing site's Crossbench log and trace; selecting `upload-diagnostics` retains
+traces for every site. Diagnostic copies are capped at 256 MB by default.
+`KEEP_CROSSBENCH_OUTPUT=1` disables cleanup for a bounded diagnostic run.
+The harness stops launching sites below 2 GB of free disk instead of allowing
+later failures to degrade into ambiguous SQLite or renderer errors.

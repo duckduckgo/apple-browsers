@@ -36,11 +36,15 @@ class ChromeHarnessTests(unittest.TestCase):
         poetry.write_text(
             """#!/bin/bash
 site=
+out_dir=
 for arg in "$@"; do
-  case "$arg" in --url=*) site="${arg#--url=}"; site="${site%%,*}";; esac
+  case "$arg" in
+    --url=*) site="${arg#--url=}"; site="${site%%,*}";;
+    --out-dir=*) out_dir="${arg#--out-dir=}";;
+  esac
 done
 if [ "${FAKE_RESULTS:-0}" = 1 ]; then
-  result_root="$FAKE_RESULTS_ROOT/$site"
+  result_root="${out_dir:-$FAKE_RESULTS_ROOT/$site}"
   path="$result_root/stories/navToLCP+$site/0/cold/trace_processor"
   mkdir -p "$path"
   if [ "${FAKE_METRIC:-0}" = 1 ] && [ "$site" != "${FAKE_NO_METRIC_SITE:-}" ]; then
@@ -50,7 +54,14 @@ if [ "${FAKE_RESULTS:-0}" = 1 ]; then
       echo 'double_value: 1000000000' > "$path/v2_metrics.textproto"
     fi
   fi
-  echo "RESULTS: $result_root"
+  if [ "${FAKE_TRACE:-0}" = 1 ]; then
+    echo trace > "$path/perfetto.trace.pb.gz"
+  fi
+  if [ "${FAKE_INCOMPLETE_RESULTS:-0}" = 1 ]; then
+    echo "RESULTS (maybe incomplete/broken): $result_root"
+  else
+    echo "RESULTS: $result_root"
+  fi
 fi
 if [ "$site" = "${FAKE_FAIL_SITE:-}" ]; then
   exit 7
@@ -77,6 +88,7 @@ exit "${FAKE_EXIT:-0}"
             "WPR_ARCHIVES_PREPARED": "1",
             "SHAPE": "0",
             "FAKE_RESULTS_ROOT": str(self.results),
+            "RUN_WORK_BASE": str(self.root / "work"),
         }
 
     def tearDown(self) -> None:
@@ -121,6 +133,63 @@ exit "${FAKE_EXIT:-0}"
         self.assertEqual(row[9:14], ["1", "1", "1", "0", "0"])
         measurement = next((self.root / "crossbench-results").glob("*.tsv")).read_text()
         self.assertIn("1000.0", measurement)
+
+    def test_incomplete_results_keep_completed_sample(self) -> None:
+        result = self.run_harness(
+            FAKE_RESULTS="1",
+            FAKE_METRIC="1",
+            FAKE_EXIT="7",
+            FAKE_INCOMPLETE_RESULTS="1",
+        )
+        self.assertEqual(result.returncode, 1)
+        row = self.disposition()
+        self.assertEqual(row[3], "infra_error")
+        self.assertEqual(row[11], "1")
+
+    def test_generated_crossbench_output_is_removed(self) -> None:
+        result = self.run_harness(FAKE_RESULTS="1", FAKE_METRIC="1")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        work = self.root / "work"
+        self.assertEqual(list(work.glob("chrome-crossbench.*")), [])
+
+    def test_failure_keeps_diagnostics_before_removing_raw_output(self) -> None:
+        diagnostics = self.root / "diagnostics"
+        result = self.run_harness(
+            FAKE_RESULTS="1",
+            FAKE_METRIC="1",
+            FAKE_TRACE="1",
+            FAKE_EXIT="7",
+            DIAGNOSTICS_DIR=str(diagnostics),
+        )
+        self.assertEqual(result.returncode, 1)
+        self.assertEqual(
+            len(list(diagnostics.glob("apple.com/**/perfetto.trace.pb.gz"))), 1
+        )
+        self.assertTrue((diagnostics / "apple.com" / "crossbench.log").is_file())
+        self.assertEqual(
+            list((self.root / "work").glob("chrome-crossbench.*")), []
+        )
+
+    def test_cleanup_has_an_explicit_diagnostic_escape_hatch(self) -> None:
+        result = self.run_harness(
+            FAKE_RESULTS="1",
+            FAKE_METRIC="1",
+            KEEP_CROSSBENCH_OUTPUT="1",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(
+            len(list((self.root / "work").glob("chrome-crossbench.*"))), 1
+        )
+
+    def test_low_disk_guard_reports_infrastructure_failure(self) -> None:
+        result = self.run_harness(
+            FAKE_RESULTS="1",
+            FAKE_METRIC="1",
+            MIN_FREE_DISK_MB="999999999",
+        )
+        self.assertEqual(result.returncode, 1)
+        self.assertEqual(self.disposition()[3], "infra_error")
+        self.assertIn("minimum is 999999999 MB", result.stderr)
 
     def test_missing_results_is_infra_error(self) -> None:
         result = self.run_harness(FAKE_RESULTS="0", FAKE_EXIT="0")

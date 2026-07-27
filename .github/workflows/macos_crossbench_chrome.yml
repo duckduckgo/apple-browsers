@@ -27,7 +27,7 @@ on:
         required: false
         default: false
       upload-diagnostics:
-        description: "Upload raw Perfetto traces and metric files"
+        description: "Retain capped Perfetto diagnostics for every site"
         type: boolean
         required: false
         default: false
@@ -97,6 +97,8 @@ jobs:
           REPS: ${{ inputs.reps }}
           WPR_DIR: ${{ runner.temp }}/wpr-archives
           WPR_ARCHIVES_PREPARED: "1"
+          PRESERVE_DIAGNOSTICS: ${{ inputs.upload-diagnostics && '1' || '0' }}
+          DIAGNOSTICS_DIR: ${{ github.workspace }}/macOS/scripts/crossbench/chrome-diagnostics
         run: |
           args=()
           if [ -n "$SITES" ]; then
@@ -122,9 +124,7 @@ jobs:
         uses: actions/upload-artifact@v6
         with:
           name: chrome-lcp-perfetto-diagnostics
-          path: |
-            ~/Developer/crossbench-upstream/results/**/perfetto.trace.pb.gz
-            ~/Developer/crossbench-upstream/results/**/trace_processor/v2_metrics.textproto
+          path: macOS/scripts/crossbench/chrome-diagnostics/**
           if-no-files-found: warn
           retention-days: 3
 

@@ -45,6 +45,21 @@ MEASURED_REPS="${MEASURED_REPS:-10}"
 SITES_OVERRIDE=""
 RESULTS_FILE=""
 CROSSBENCH_DIR="${CROSSBENCH_DIR:-$HOME/Developer/crossbench-upstream}"
+INVOCATION_DIR="$PWD"
+
+# Crossbench's raw traces and SQLite files are bounded to one site at a time.
+# KEEP_CROSSBENCH_OUTPUT=1 is a diagnostic escape hatch for local/canary runs.
+RUN_WORK_BASE="${RUN_WORK_BASE:-${RUNNER_TEMP:-${TMPDIR:-/tmp}}}"
+RUN_WORK_ROOT=""
+ACTIVE_SITE_WORK_DIR=""
+KEEP_CROSSBENCH_OUTPUT="${KEEP_CROSSBENCH_OUTPUT:-0}"
+DIAGNOSTICS_DIR="${DIAGNOSTICS_DIR:-$INVOCATION_DIR/chrome-diagnostics}"
+PRESERVE_DIAGNOSTICS="${PRESERVE_DIAGNOSTICS:-0}"
+DIAGNOSTICS_MAX_MB="${DIAGNOSTICS_MAX_MB:-256}"
+MIN_FREE_DISK_MB="${MIN_FREE_DISK_MB:-2048}"
+DIAGNOSTICS_BYTES=0
+DIAGNOSTICS_LIMIT_REPORTED=0
+FAILURE_TRACE_RETAINED=0
 
 # ---- recorded network (WPR) + shaping --------------------------------------
 WPR_DIR="${WPR_DIR:-$HOME/Developer/mac-perf-runner/wpr-archives}"
@@ -93,8 +108,96 @@ if ! [[ "$MEASURED_REPS" =~ ^[1-9][0-9]*$ ]]; then
   echo "ERROR: --reps must be a positive integer." >&2
   exit 2
 fi
+if ! [[ "$DIAGNOSTICS_MAX_MB" =~ ^[1-9][0-9]*$ ]]; then
+  echo "ERROR: DIAGNOSTICS_MAX_MB must be a positive integer." >&2
+  exit 2
+fi
+if ! [[ "$MIN_FREE_DISK_MB" =~ ^[1-9][0-9]*$ ]]; then
+  echo "ERROR: MIN_FREE_DISK_MB must be a positive integer." >&2
+  exit 2
+fi
 
 log() { printf '\n=== %s ===\n' "$1"; }
+
+cleanup_generated_dir() {
+  local path="$1"
+  [ -n "$RUN_WORK_ROOT" ] && [ -n "$path" ] || return 0
+  case "$path" in
+    "$RUN_WORK_ROOT"|"$RUN_WORK_ROOT"/*)
+      if [ "$KEEP_CROSSBENCH_OUTPUT" != "1" ]; then
+        rm -rf -- "$path"
+      fi
+      ;;
+    *)
+      echo "ERROR: refusing to clean unexpected path: $path" >&2
+      return 1
+      ;;
+  esac
+}
+
+cleanup_work_root() {
+  local exit_code=$?
+  trap - EXIT HUP INT TERM
+  if [ -n "$RUN_WORK_ROOT" ] && ! cleanup_generated_dir "$RUN_WORK_ROOT"; then
+    exit_code=1
+  fi
+  exit "$exit_code"
+}
+trap cleanup_work_root EXIT
+trap 'exit 129' HUP
+trap 'exit 130' INT
+trap 'exit 143' TERM
+
+available_disk_mb() {
+  df -Pk "$1" 2>/dev/null | awk 'NR == 2 { print int($4 / 1024) }'
+}
+
+copy_diagnostic_file() {
+  local source="$1" destination="$2" size limit_bytes
+  [ -f "$source" ] || return 0
+  size="$(wc -c < "$source" | tr -d '[:space:]')"
+  limit_bytes=$((DIAGNOSTICS_MAX_MB * 1024 * 1024))
+  if [ $((DIAGNOSTICS_BYTES + size)) -gt "$limit_bytes" ]; then
+    if [ "$DIAGNOSTICS_LIMIT_REPORTED" -eq 0 ]; then
+      echo "::warning title=Diagnostics capped::Chrome diagnostics reached ${DIAGNOSTICS_MAX_MB} MB; additional files were omitted"
+      DIAGNOSTICS_LIMIT_REPORTED=1
+    fi
+    return 0
+  fi
+  if ! mkdir -p "$(dirname "$destination")" ||
+      ! cp "$source" "$destination"; then
+    echo "::warning title=Diagnostics copy failed::Could not retain $(basename "$source")"
+    return 0
+  fi
+  DIAGNOSTICS_BYTES=$((DIAGNOSTICS_BYTES + size))
+}
+
+preserve_site_diagnostics() {
+  local site="$1" results_path="$2" crossbench_log="$3" failed="$4"
+  local keep_traces=0 file relative
+
+  if [ "$failed" -eq 1 ]; then
+    copy_diagnostic_file "$crossbench_log" \
+      "$DIAGNOSTICS_DIR/$site/crossbench.log"
+    if [ "$FAILURE_TRACE_RETAINED" -eq 0 ] && [ -d "$results_path" ]; then
+      keep_traces=1
+      FAILURE_TRACE_RETAINED=1
+    fi
+  fi
+  if [ "$PRESERVE_DIAGNOSTICS" = "1" ]; then
+    keep_traces=1
+  fi
+  [ "$keep_traces" -eq 1 ] && [ -d "$results_path" ] || return 0
+
+  while IFS= read -r -d '' file; do
+    relative="${file#"$results_path"/}"
+    copy_diagnostic_file "$file" "$DIAGNOSTICS_DIR/$site/$relative"
+  done < <(
+    find "$results_path" -type f \
+      \( -name 'perfetto.trace.pb.gz' -o -name 'v2_metrics.textproto' \) \
+      -print0 2>/dev/null
+  )
+}
 
 # The default list is shared with archive validation.
 SITES=()
@@ -363,17 +466,21 @@ summarize_lcp() {
 
 # ---- run -------------------------------------------------------------------
 run_chrome() {
-  local shape_desc="unshaped"
+  local shape_desc="unshaped" disk_mb
   [ "$SHAPE" = "1" ] && shape_desc="${SHAPE_RTT_MS}ms RTT, ${SHAPE_IN_KBPS}/${SHAPE_OUT_KBPS} kbps"
   log "Chrome LCP run (WPR replay, $shape_desc) — $SUITE, ${#SITES[@]} sites, $MEASURED_REPS reps, ${LOAD_WINDOW} window"
   echo "chrome:  $CHROME_VERSION"
   echo "results: $RESULTS_FILE"
-  cd "$CROSSBENCH_DIR"
+  mkdir -p "$RUN_WORK_BASE" || return 1
+  RUN_WORK_ROOT="$(mktemp -d "$RUN_WORK_BASE/chrome-crossbench.XXXXXX")" ||
+    return 1
+  cd "$CROSSBENCH_DIR" || return 1
   # .vpython3 is git-tracked and makes crossbench re-exec under Chromium vpython
   # instead of our poetry venv; removal belongs here (run step), not provisioning.
   rm -f .vpython3
 
-  local site story network_arg out results_path outcome crossbench_status
+  local site story network_arg out results_path outcome
+  local crossbench_status site_failed resource_exhausted=0
   HARNESS_FAILURES=0
   ELIGIBLE_SITES=0
   TOTAL_RECORDED=0
@@ -400,8 +507,25 @@ run_chrome() {
     fi
     ELIGIBLE_SITES=$((ELIGIBLE_SITES + 1))
 
+    if [ "$resource_exhausted" -eq 1 ]; then
+      echo "::warning title=Runner resource exhausted::$site was not started because disk headroom was already exhausted"
+      HARNESS_FAILURES=$((HARNESS_FAILURES + 1))
+      record_disposition "$site" infra_error
+      continue
+    fi
+    disk_mb="$(available_disk_mb "$RUN_WORK_ROOT")"
+    if [[ "$disk_mb" =~ ^[0-9]+$ ]] && [ "$disk_mb" -lt "$MIN_FREE_DISK_MB" ]; then
+      echo "ERROR: only ${disk_mb} MB available before $site; minimum is ${MIN_FREE_DISK_MB} MB." >&2
+      echo "::warning title=Runner resource exhausted::$site was not started because only ${disk_mb} MB remained"
+      resource_exhausted=1
+      HARNESS_FAILURES=$((HARNESS_FAILURES + 1))
+      record_disposition "$site" infra_error
+      continue
+    fi
+
     echo "  plan: $MEASURED_REPS measured loads, ${LOAD_WINDOW} window"
-    out="$(mktemp)"
+    out="$(mktemp)" || return 1
+    ACTIVE_SITE_WORK_DIR="$RUN_WORK_ROOT/$site"
     # --about-blank-duration is REQUIRED: navigating to about:blank after each
     # page forces Chromium to finalize LCP; without it every value comes out -1.
     set +e
@@ -413,17 +537,22 @@ run_chrome() {
       --url="$site,$LOAD_WINDOW" \
       --about-blank-duration=2s \
       --bin-override "wpr=$WPR_BIN" \
+      --out-dir="$ACTIVE_SITE_WORK_DIR" \
       "$network_arg" \
       --debug \
       --env-validation=skip 2>&1 | tee "$out"
     crossbench_status="${PIPESTATUS[0]}"
     set -e
 
-    # `|| true`: under set -e/pipefail a no-match grep would abort the script.
-    results_path="$(grep -E '^RESULTS: ' "$out" | tail -1 | sed -E 's/^RESULTS: //' || true)"
+    results_path=""
+    if [ -d "$ACTIVE_SITE_WORK_DIR" ]; then
+      results_path="$ACTIVE_SITE_WORK_DIR"
+    fi
+    site_failed=0
     if [ "$crossbench_status" -ne 0 ]; then
       echo "::warning title=Harness failure::$site: crossbench exited $crossbench_status"
       HARNESS_FAILURES=$((HARNESS_FAILURES + 1))
+      site_failed=1
     fi
     if [ -n "$results_path" ] && [ -d "$results_path" ]; then
       # Logged so a surprising per-attempt result can be traced back to the raw
@@ -438,15 +567,20 @@ run_chrome() {
       fi
       record_disposition "$site" "$outcome"
     else
-      echo "  $site: no RESULTS path in crossbench output"
+      echo "  $site: Crossbench produced no output directory"
       # The archive was available, but the browser harness failed before it
       # produced a results directory.
-      echo "::warning title=Harness failure::$site: crossbench produced no RESULTS path"
+      echo "::warning title=Harness failure::$site: crossbench produced no output directory"
       if [ "$crossbench_status" -eq 0 ]; then
         HARNESS_FAILURES=$((HARNESS_FAILURES + 1))
       fi
+      site_failed=1
       record_disposition "$site" infra_error
     fi
+    preserve_site_diagnostics "$site" "$results_path" "$out" "$site_failed" ||
+      return 1
+    cleanup_generated_dir "$ACTIVE_SITE_WORK_DIR" || return 1
+    ACTIVE_SITE_WORK_DIR=""
     rm -f "$out"
   done
   if [ "$HARNESS_FAILURES" -gt 0 ]; then

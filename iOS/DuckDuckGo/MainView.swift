@@ -208,7 +208,6 @@ extension MainViewFactory {
 
         private var floatingMaterialConstraints: [NSLayoutConstraint] = []
         private var isFloatingStyleEnabled = false
-        private var isMaterialBackgroundEnabled = false
 
         /// Enables overflow hit testing for iPad expanded search area.
         var allowsOverflowHitTesting = false {
@@ -244,12 +243,6 @@ extension MainViewFactory {
             guard isFloatingStyleEnabled != enabled else { return }
             isFloatingStyleEnabled = enabled
             applyFloatingStyle(animated: true)
-        }
-
-        func setMaterialBackgroundEnabled(_ enabled: Bool) {
-            guard isMaterialBackgroundEnabled != enabled else { return }
-            isMaterialBackgroundEnabled = enabled
-            applyFloatingStyle(animated: false)
         }
 
         private lazy var overflowTapGesture: UITapGestureRecognizer = {
@@ -311,9 +304,8 @@ extension MainViewFactory {
                 self.floatingMaterialConstraints[3].constant = 0
                 self.floatingMaterialView.layer.cornerRadius = 0
 
-                let shouldShowMaterial = self.isMaterialBackgroundEnabled && !self.isFloatingStyleEnabled
-                self.floatingMaterialView.isHidden = !shouldShowMaterial
-                self.floatingMaterialView.effect = shouldShowMaterial ? UIBlurEffect(style: .systemUltraThinMaterial) : nil
+                self.floatingMaterialView.isHidden = self.isFloatingStyleEnabled
+                self.floatingMaterialView.effect = nil
                 self.layoutIfNeeded()
             }
 
@@ -574,8 +566,9 @@ extension MainViewFactory {
 
     private func constrainToolbarMaterialBackground() {
         let background = coordinator.toolbarMaterialBackground!
+        coordinator.constraints.toolbarMaterialBackgroundTop = background.topAnchor.constraint(equalTo: coordinator.toolbar.topAnchor)
         NSLayoutConstraint.activate([
-            background.topAnchor.constraint(equalTo: coordinator.toolbar.topAnchor),
+            coordinator.constraints.toolbarMaterialBackgroundTop,
             background.leadingAnchor.constraint(equalTo: superview.leadingAnchor),
             background.trailingAnchor.constraint(equalTo: superview.trailingAnchor),
             background.bottomAnchor.constraint(equalTo: superview.bottomAnchor)

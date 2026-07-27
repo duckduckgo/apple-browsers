@@ -117,6 +117,7 @@ class MainViewCoordinator {
         var navigationBarCollectionViewSafeAreaBottom: NSLayoutConstraint!
         var toolbarBottom: NSLayoutConstraint!
         var toolbarHeight: NSLayoutConstraint!
+        var toolbarMaterialBackgroundTop: NSLayoutConstraint!
         var contentContainerTop: NSLayoutConstraint!
         var tabBarContainerTop: NSLayoutConstraint!
         var progressBarTop: NSLayoutConstraint?
@@ -142,7 +143,7 @@ class MainViewCoordinator {
         addressBarPosition = position
         applyContentContainerTopAnchorForCurrentState()
         guard isFloatingUIEnabled else {
-            navigationBarContainer.setMaterialBackgroundEnabled(position.isBottom)
+            updateToolbarMaterialBackgroundTop(for: position)
             toolbar.setOmnibarView(nil, height: 0)
             constraints.toolbarHeight.constant = BrowserToolbarView.totalHeight(withOmnibarHeight: 0, isFloating: isFloatingUIEnabled)
             navigationBarContainer.isHidden = false
@@ -196,6 +197,13 @@ class MainViewCoordinator {
             setContentContainerBottomAnchorMode(requesting: preferredBottomContentAnchorModeForVisibleChrome())
             isOmnibarInToolbar = true
         }
+    }
+
+    private func updateToolbarMaterialBackgroundTop(for position: AddressBarPosition) {
+        constraints.toolbarMaterialBackgroundTop.isActive = false
+        let topAnchor = position.isBottom ? navigationBarContainer.topAnchor : toolbar.topAnchor
+        constraints.toolbarMaterialBackgroundTop = toolbarMaterialBackground.topAnchor.constraint(equalTo: topAnchor)
+        constraints.toolbarMaterialBackgroundTop.isActive = true
     }
 
     func ensureBottomOmnibarAttachedToToolbarIfNeeded() {
@@ -628,16 +636,25 @@ class MainViewCoordinator {
             statusBackgroundPresentationBeforeOmnibarEditing = statusBackgroundPresentation
         }
         setStatusBackgroundPresentation(.omnibarEditing)
+        setToolbarBackgroundForOmnibarEditing(true)
     }
 
     private func endOmnibarStatusBackgroundPresentation() {
         guard statusBackgroundPresentation == .omnibarEditing else {
             statusBackgroundPresentationBeforeOmnibarEditing = nil
+            setToolbarBackgroundForOmnibarEditing(false)
             return
         }
         let restoredPresentation = statusBackgroundPresentationBeforeOmnibarEditing ?? .standard
         statusBackgroundPresentationBeforeOmnibarEditing = nil
         setStatusBackgroundPresentation(restoredPresentation)
+        setToolbarBackgroundForOmnibarEditing(false)
+    }
+
+    private func setToolbarBackgroundForOmnibarEditing(_ isEditing: Bool) {
+        guard !isFloatingUIEnabled else { return }
+        toolbarMaterialBackground.effect = isEditing ? nil : UIBlurEffect(style: .systemUltraThinMaterial)
+        toolbarMaterialBackground.backgroundColor = isEditing ? UIColor(designSystemColor: .panel) : .clear
     }
 
     private func applyResolvedStatusBackgroundColor() {

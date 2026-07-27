@@ -509,6 +509,16 @@ final class PageContextTabExtension {
         Task { @MainActor [weak self] in self?.flushPendingSelectionContexts() }
     }
 
+    /// Forces collection of the current page's context and delivers it to the sidebar, regardless of the
+    /// user's auto-send-page-context preference. Mirrors the web app's "attach page content" request
+    /// (`session.pageContextRequestedPublisher`), so an explicit native "Ask About Page" action attaches
+    /// the page the same way.
+    @MainActor
+    func requestPageContextAttachment() {
+        shouldForceContextCollection = true
+        collectPageContextIfNeeded(trigger: .userRequest)
+    }
+
     /// Stamps the source page's base64-encoded favicon onto the selection (raw favicon URLs get
     /// CSP-blocked in the sidebar). Mirrors `replaceFaviconURLWithEncodedData`; returns the item
     /// unchanged when no favicon is cached.
@@ -738,6 +748,10 @@ protocol PageContextProtocol: AnyObject, NavigationResponder {
     /// Appends a user text selection to the sidebar's selection-context list. See the
     /// implementation in `PageContextTabExtension` for buffering/lifecycle semantics.
     @MainActor func appendSelectionContext(_ selection: AIChatSelectionContextData)
+
+    /// Force-collects and attaches the current page's context to the sidebar, bypassing the
+    /// auto-send preference (used by the tab-bar "Ask About Page" action).
+    @MainActor func requestPageContextAttachment()
 }
 
 extension PageContextTabExtension: PageContextProtocol, TabExtension {

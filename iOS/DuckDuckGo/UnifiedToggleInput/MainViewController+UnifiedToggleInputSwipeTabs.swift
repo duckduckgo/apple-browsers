@@ -59,7 +59,7 @@ extension MainViewController {
             return false
         }
 
-        if case .omnibar(.active) = coordinator.displayState {
+        if coordinator.isOmnibarEditing {
             return false
         }
         if coordinator.viewController.isInputFirstResponder {

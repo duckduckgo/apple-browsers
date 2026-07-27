@@ -35,6 +35,42 @@ struct AIChatTabURLPublishers {
     let didFinish: AnyPublisher<URL?, Never>
 }
 
+extension AIChatTabURLPublishers {
+    /// No underlying tab — both URL streams stay permanently nil. Used by browser-less standalone surfaces.
+    static var empty: AIChatTabURLPublishers {
+        AIChatTabURLPublishers(originating: Just<URL?>(nil).eraseToAnyPublisher(),
+                               didFinish: Just<URL?>(nil).eraseToAnyPublisher())
+    }
+}
+
+extension AIChatContextualSheetCoordinator {
+    /// Builds a coordinator for a browser-less "standalone" contextual chat.
+    /// With no tab behind it, page context is inert (which also suppresses the sheet's page-context quick actions),
+    /// there are no tab URL publishers, the voice shortcut is unavailable, and the sheet is presented full screen.
+    /// App-level dependencies default to production values but remain injectable for tests.
+    static func makeStandalone(
+        contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>,
+        aiChatSettings: AIChatSettingsProvider = AIChatSettings(),
+        privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
+        featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery(),
+        featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
+        voiceSearchHelper: VoiceSearchHelperProtocol = VoiceSearchHelper()
+    ) -> AIChatContextualSheetCoordinator {
+        AIChatContextualSheetCoordinator(
+            voiceSearchHelper: voiceSearchHelper,
+            aiChatSettings: aiChatSettings,
+            privacyConfigurationManager: privacyConfigurationManager,
+            contentBlockingAssetsPublisher: contentBlockingAssetsPublisher,
+            featureDiscovery: featureDiscovery,
+            featureFlagger: featureFlagger,
+            pageContextHandler: AIChatNoOpPageContextHandler(),
+            tabURLPublishers: .empty,
+            presentsStandaloneFullScreen: true,
+            voiceShortcutFeature: DuckAIUnavailableVoiceShortcutFeature()
+        )
+    }
+}
+
 private struct ContextualUnifiedToggleInputFeature: UnifiedToggleInputFeatureProviding {
     let isAvailable: Bool
     let isToggleHiddenOnDuckAITab: Bool
@@ -68,6 +104,14 @@ protocol AIChatContextualSheetCoordinatorDelegate: AnyObject {
 
     /// Called when the user requests a new Duck.ai voice chat.
     func aiChatContextualSheetCoordinatorDidRequestNewVoiceChat(_ coordinator: AIChatContextualSheetCoordinator)
+
+    /// Called after the contextual sheet is dismissed, so a host driving a flow can advance.
+    func aiChatContextualSheetCoordinatorDidDismiss(_ coordinator: AIChatContextualSheetCoordinator)
+}
+
+/// Default no-op so only hosts that care about dismissal need implement it.
+extension AIChatContextualSheetCoordinatorDelegate {
+    func aiChatContextualSheetCoordinatorDidDismiss(_ coordinator: AIChatContextualSheetCoordinator) {}
 }
 
 /// Coordinates the presentation and lifecycle of the contextual AI chat sheet.
@@ -89,6 +133,10 @@ final class AIChatContextualSheetCoordinator {
     private let duckAiFireModeStorageHandler: DuckAiNativeStorageHandling?
     private let debugSettings: AIChatDebugSettingsHandling
     private let isFireTab: Bool
+    /// A standalone full-screen surface with no browser tab behind it. Presents at `.large()` only
+    /// with no grabber, and strips the sheet header down to just a close button.
+    private let presentsStandaloneFullScreen: Bool
+    private let voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding
     static let contextualContextCollectionTimeout: TimeInterval = 5
 
     /// Handler for page context - single source of truth.
@@ -152,7 +200,10 @@ final class AIChatContextualSheetCoordinator {
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
          duckAiFireModeStorageHandler: DuckAiNativeStorageHandling? = nil,
          debugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings(),
-         pixelHandler: AIChatContextualModePixelFiring = AIChatContextualModePixelHandler()) {
+         pixelHandler: AIChatContextualModePixelFiring = AIChatContextualModePixelHandler(),
+         presentsStandaloneFullScreen: Bool = false,
+         voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding = DuckAIVoiceShortcutFeature()) {
+        self.voiceShortcutFeature = voiceShortcutFeature
         self.voiceSearchHelper = voiceSearchHelper
         self.aiChatSettings = aiChatSettings
         self.privacyConfigurationManager = privacyConfigurationManager
@@ -167,6 +218,7 @@ final class AIChatContextualSheetCoordinator {
         self.duckAiFireModeStorageHandler = duckAiFireModeStorageHandler
         self.debugSettings = debugSettings
         self.pixelHandler = pixelHandler
+        self.presentsStandaloneFullScreen = presentsStandaloneFullScreen
         self.sessionState = AIChatContextualChatSessionState(
             aiChatSettings: aiChatSettings,
             pixelHandler: pixelHandler,
@@ -244,6 +296,7 @@ final class AIChatContextualSheetCoordinator {
         stopObservingContextUpdates()
         sessionState.handleSheetDismissed()
         startSessionTimer()
+        delegate?.aiChatContextualSheetCoordinatorDidDismiss(self)
     }
 
     // Mirrors handleSheetDismissed but deliberately skips startSessionTimer — a fire-button
@@ -290,6 +343,13 @@ final class AIChatContextualSheetCoordinator {
             sessionState.clearProcessingNavigationFlag()
             pageContextHandler.reportAttachabilityMeasurement(trigger: .navigation)
         }
+    }
+
+
+    /// Preselect the starting model for the bound chat
+    func preselectModel(_ modelID: String) {
+        guard let persistentUTIHost else { return }
+        persistentUTIHost.preselectModel(modelID)
     }
 
     /// Returns true if the contextual sheet has been shown.
@@ -341,7 +401,8 @@ private extension AIChatContextualSheetCoordinator {
             pixelHandler: pixelHandler,
             featureFlagger: featureFlagger,
             persistentUTIHost: persistentUTIHost,
-            suggestionsReader: suggestionsReader
+            suggestionsReader: suggestionsReader,
+            presentsStandaloneFullScreen: presentsStandaloneFullScreen
         )
         sheetVC.delegate = self
         sheetViewController = sheetVC
@@ -375,6 +436,7 @@ private extension AIChatContextualSheetCoordinator {
             isCurrentPageAttachable: { [weak self] in self?.pageContextHandler.isCurrentPageAttachable() ?? true },
             isFireTab: isFireTab,
             lastUsedModelProvider: duckAiLastUsedModelProvider,
+            voiceShortcutFeature: voiceShortcutFeature,
             startsPreSubmit: startsPreSubmit
         )
         host.onAttachRequested = { [weak self] in
@@ -716,7 +778,10 @@ extension AIChatContextualSheetCoordinator: AIChatContextualSheetViewControllerD
     func aiChatContextualSheetViewControllerDidConfirmDeleteChat(_ viewController: AIChatContextualSheetViewController) {
         let chatURL = sessionState.contextualChatURL
         clearActiveChat()
-        viewController.dismiss(animated: true)
+        viewController.dismiss(animated: true) { [weak self] in
+            guard let self else { return }
+            self.delegate?.aiChatContextualSheetCoordinatorDidDismiss(self)
+        }
 
         if let chatID = chatURL?.duckAIChatID {
             delegate?.aiChatContextualSheetCoordinator(self, didRequestDeleteChatWithID: chatID)

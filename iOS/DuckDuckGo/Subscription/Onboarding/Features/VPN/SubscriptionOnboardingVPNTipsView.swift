@@ -1,5 +1,5 @@
 //
-//  SubscriptionOnboardingVPNTipsCarousel.swift
+//  SubscriptionOnboardingVPNTipsView.swift
 //  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
@@ -21,17 +21,38 @@ import SwiftUI
 import DesignResourcesKit
 import UIComponents
 
+/// The post-activation "What to know about using your VPN" screen: the tips carousel with a single
+/// button that finishes the VPN section and moves the flow to the next one.
+struct SubscriptionOnboardingVPNTipsView: View {
+
+    var title: String?
+    weak var delegate: SubscriptionOnboardingSectionDelegate?
+
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        SubscriptionOnboardingBaseView(
+            title: title,
+            navigationButton: .back({ dismiss() }),
+            header: SubscriptionOnboardingHeaderView(title: UserText.subscriptionOnboardingVPNTipsTitle),
+            footer: .single(.init(UserText.subscriptionOnboardingVPNTipsDoneButton) { delegate?.sectionDidRequestAdvance() })) {
+            VPNTipsCarousel()
+                .padding(.top, 24)
+        }
+    }
+}
+
+// MARK: - Tips carousel
+
 /// The "What to know about using your VPN" carousel: three horizontally-scrolling cards, each an icon +
 /// headline + body. Cards are a fixed width with the neighbours peeking at the edges; the row scrolls
-/// freely. Each card reuses
-/// `SubscriptionOnboardingCard` + `CardItem` for its surface and content.
-struct SubscriptionOnboardingVPNTipsCarousel: View {
+/// freely. Each card reuses `SubscriptionOnboardingCard` + `CardItem` for its surface and content.
+private struct VPNTipsCarousel: View {
     private enum Metrics {
         static let cardWidth: CGFloat = 217
         static let horizontalPadding: CGFloat = 28
         static let verticalPadding: CGFloat = 32
         static let cardSpacing: CGFloat = 16
-        static let horizontalInset: CGFloat = 24
         static let iconSpacing: CGFloat = 4
     }
 
@@ -42,8 +63,19 @@ struct SubscriptionOnboardingVPNTipsCarousel: View {
                     card(for: tip)
                 }
             }
-            .padding(.horizontal, Metrics.horizontalInset)
         }
+    }
+
+    private func card(for tip: Tip) -> some View {
+        SubscriptionOnboardingCard(
+            CardItem(
+                icon: CardItemIcon(position: .topLeading, visual: .image(tip.icon), size: .size56, spacing: Metrics.iconSpacing),
+                title: CardItemText(tip.title, font: .headline),
+                text: CardItemText(tip.bodyText, font: .subheadRegular)),
+            style: .borderless,
+            contentInset: .init(horizontal: Metrics.horizontalPadding, vertical: Metrics.verticalPadding))
+        .frame(width: Metrics.cardWidth)
+        .accessibilityElement(children: .combine)
     }
 
     private enum Tip: CaseIterable {
@@ -77,52 +109,14 @@ struct SubscriptionOnboardingVPNTipsCarousel: View {
     }
 }
 
-extension SubscriptionOnboardingVPNTipsCarousel {
-    private func card(for tip: Tip) -> some View {
-        SubscriptionOnboardingCard(
-            CardItem(
-                icon: CardItemIcon(position: .topLeading, visual: .image(tip.icon), size: .size56, spacing: Metrics.iconSpacing),
-                title: CardItemText(tip.title, font: .headline),
-                text: CardItemText(tip.bodyText, font: .subheadRegular)),
-            style: .borderless,
-            contentInset: .init(horizontal: Metrics.horizontalPadding, vertical: Metrics.verticalPadding))
-        .frame(width: Metrics.cardWidth)
-        .accessibilityElement(children: .combine)
-    }
-}
-
 #if DEBUG
 
-private struct SubscriptionOnboardingVPNTipsCarouselPreview: View {
-    var body: some View {
-        VStack {
-            Spacer()
-            SubscriptionOnboardingVPNTipsCarousel()
-            Spacer()
-        }
-        .frame(maxWidth: .infinity)
-        .background(Color(designSystemColor: .surfaceTertiary).ignoresSafeArea())
-    }
-}
-
-#Preview("Light") {
+#Preview("Tips") {
     RebrandedPreview {
-        SubscriptionOnboardingVPNTipsCarouselPreview()
+        SubscriptionOnboardingVPNTipsView(
+            title: String(format: UserText.subscriptionOnboardingStepIndicatorFormat, 1, 4))
+        .subscriptionOnboardingNavigationContainer()
     }
-}
-
-#Preview("Dark") {
-    RebrandedPreview {
-        SubscriptionOnboardingVPNTipsCarouselPreview()
-    }
-    .preferredColorScheme(.dark)
-}
-
-#Preview("Large Text") {
-    RebrandedPreview {
-        SubscriptionOnboardingVPNTipsCarouselPreview()
-    }
-    .dynamicTypeSize(.accessibility5)
 }
 
 #endif

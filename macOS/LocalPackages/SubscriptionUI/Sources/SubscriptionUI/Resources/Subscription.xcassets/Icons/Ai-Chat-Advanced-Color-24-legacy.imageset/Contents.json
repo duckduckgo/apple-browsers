@@ -1,19 +1,12 @@
 {
   "images" : [
     {
-<<<<<<<< HEAD:SharedPackages/Infrastructure/DesignResourcesKitIcons/Sources/DesignResourcesKitIcons/DesignSystemImages.xcassets/Glyphs/24px/Thumbs-Up-24.imageset/Contents.json
-      "filename" : "Thumbs-Up-24.svg",
-========
       "filename" : "Ai-Chat-Advanced-Color-24.svg",
->>>>>>>> e1744bb103 (Update additional icons):macOS/LocalPackages/SubscriptionUI/Sources/SubscriptionUI/Resources/Subscription.xcassets/Icons/Ai-Chat-Advanced-Color-24-legacy.imageset/Contents.json
       "idiom" : "universal"
     }
   ],
   "info" : {
     "author" : "xcode",
     "version" : 1
-  },
-  "properties" : {
-    "template-rendering-intent" : "template"
   }
 }

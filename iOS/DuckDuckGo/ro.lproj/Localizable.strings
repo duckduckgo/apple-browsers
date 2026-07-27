@@ -4197,6 +4197,9 @@
 /* The name of a settings category listing next steps */
 "settings.next.steps" = "Pașii următori";
 
+/* Accessibility label / title for the button that hides the Settings Next Steps section */
+"settings.next.steps.hide" = "Ascunde";
+
 /* Label describing a feature which is turned off */
 "settings.off" = "Dezactivat";
 

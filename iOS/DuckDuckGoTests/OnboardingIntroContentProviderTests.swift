@@ -25,6 +25,7 @@ import Testing
 @Suite("Onboarding - Content Provider")
 struct OnboardingIntroContentProviderTests {
 
+    @MainActor
     @Suite("Landing Content")
     struct LandingContent {
 
@@ -69,6 +70,7 @@ struct OnboardingIntroContentProviderTests {
 
     }
 
+    @MainActor
     @Suite("Intro Step Content")
     struct IntroStepContent {
 
@@ -135,6 +137,7 @@ struct OnboardingIntroContentProviderTests {
             #expect(result.secondaryCTA == UserText.Onboarding.Intro.skipCTA)
         }
 
+        @MainActor
         @Suite("Restore Prompt")
         struct RestorePrompt {
 
@@ -200,6 +203,7 @@ struct OnboardingIntroContentProviderTests {
 
         }
 
+        @MainActor
         @Suite("Skip Flow")
         struct SkipFlow {
 
@@ -297,6 +301,7 @@ struct OnboardingIntroContentProviderTests {
 
     }
 
+    @MainActor
     @Suite("Browser Comparison Content")
     struct BrowserComparisonContent {
 
@@ -380,6 +385,7 @@ struct OnboardingIntroContentProviderTests {
 
     }
 
+    @MainActor
     @Suite("Comparison Content For Download Reason")
     struct DownloadReasonComparisonContent {
 
@@ -451,8 +457,37 @@ struct OnboardingIntroContentProviderTests {
             #expect(result.subHeader == UserText.Onboarding.DuckAICPP.AIComparison.subHeader)
             #expect(result.features == RebrandedComparisonTableModel.browserFeatures(for: .privateAIChat))
         }
+
+        @Test(
+            "Only the no-AI reason shows Google as the competitor",
+            arguments: OnboardingDownloadReason.allCases
+        )
+        func competitorPerReason(reason: OnboardingDownloadReason) {
+            // GIVEN
+            let sut = makeSUT(reason: reason)
+
+            // WHEN
+            let result = sut.setDefaultBrowserContent
+
+            // THEN
+            let expectedCompetitor: OnboardingComparisonContent.Competitor = reason == .noAI ? .google : .safari
+            #expect(result.competitor == expectedCompetitor)
+        }
+
+        @Test("Nil Download Reason keeps Safari as the competitor")
+        func nilReasonUsesSafariCompetitor() {
+            // GIVEN
+            let sut = makeSUT(reason: nil)
+
+            // WHEN
+            let result = sut.setDefaultBrowserContent
+
+            // THEN
+            #expect(result.competitor == .safari)
+        }
     }
 
+    @MainActor
     @Suite("AI Comparison Content")
     struct AIIntroContent {
 
@@ -531,8 +566,24 @@ struct OnboardingIntroContentProviderTests {
             #expect(result.features == RebrandedComparisonTableModel.defaultAIFeatures)
         }
 
+        @Test(
+            "Check AI comparison shows popular AIs as the competitor",
+            arguments: [.default, .duckAI] as [OnboardingFlowType]
+        )
+        func checkAIComparisonCompetitor(flow: OnboardingFlowType) {
+            // GIVEN
+            let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
+
+            // WHEN
+            let result = sut.aiIntroContent
+
+            // THEN
+            #expect(result.competitor == .ai)
+        }
+
     }
 
+    @MainActor
     @Suite("Add to Dock Content")
     struct AddToDockContent {
 
@@ -599,6 +650,7 @@ struct OnboardingIntroContentProviderTests {
             #expect(result.secondaryCTA == UserText.AddToDockOnboarding.Buttons.skip)
         }
 
+        @MainActor
         @Suite("Tutorial")
         struct Tutorial {
 
@@ -651,6 +703,7 @@ struct OnboardingIntroContentProviderTests {
 
     }
 
+    @MainActor
     @Suite("App Icon Color Content")
     struct AppIconColorContent {
 
@@ -701,6 +754,7 @@ struct OnboardingIntroContentProviderTests {
 
     }
 
+    @MainActor
     @Suite("Address Bar Position Content")
     struct AddressBarPositionContent {
 
@@ -784,6 +838,7 @@ struct OnboardingIntroContentProviderTests {
 
         }
 
+        @MainActor
         @Suite("Bottom Option")
         struct BottomOption {
 
@@ -821,6 +876,7 @@ struct OnboardingIntroContentProviderTests {
 
     }
 
+    @MainActor
     @Suite("Search Experience Content")
     struct SearchExperienceContent {
 
@@ -871,6 +927,7 @@ struct OnboardingIntroContentProviderTests {
 
     }
 
+    @MainActor
     @Suite("Duck.ai Query Content")
     struct DuckAIQueryContent {
 
@@ -942,6 +999,7 @@ struct OnboardingIntroContentProviderTests {
 
     }
 
+    @MainActor
     @Suite("Download Reason Content")
     struct DownloadReasonContent {
 
@@ -1012,6 +1070,7 @@ struct OnboardingIntroContentProviderTests {
 
     }
 
+    @MainActor
     @Suite("Dax Animations")
     struct DaxAnimations {
 

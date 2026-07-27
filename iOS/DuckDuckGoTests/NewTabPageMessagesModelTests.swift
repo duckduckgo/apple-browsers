@@ -54,6 +54,28 @@ final class NewTabPageMessagesModelTests: XCTestCase {
         PixelFiringMock.tearDown()
     }
 
+    func testPromoQueuePixelReporterMapsBothEventsWithoutAdditionalParameters() {
+        let sut = PromoQueuePixelReporter(dailyPixelFiring: PixelFiringMock.self)
+
+        sut.fireModalAdmissionBlockedByRemoteMessage()
+
+        XCTAssertEqual(
+            PixelFiringMock.lastDailyPixelInfo?.pixelName,
+            Pixel.Event.promoQueueModalAdmissionBlockedByRemoteMessage.name
+        )
+        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.params, [:])
+        XCTAssertNil(PixelFiringMock.lastDailyPixelInfo?.error)
+
+        sut.fireRemoteMessageAdmissionBlockedByModal()
+
+        XCTAssertEqual(
+            PixelFiringMock.lastDailyPixelInfo?.pixelName,
+            Pixel.Event.promoQueueRemoteMessageAdmissionBlockedByModal.name
+        )
+        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.params, [:])
+        XCTAssertNil(PixelFiringMock.lastDailyPixelInfo?.error)
+    }
+
     func testUpdatesOnNotification() {
         let sut = createSUT()
 
@@ -153,6 +175,81 @@ final class NewTabPageMessagesModelTests: XCTestCase {
         XCTAssertNil(try remoteRenderSession(in: sut))
         XCTAssertEqual(promoCoordinator.arbiter.snapshot.visiblePromoCount, 0)
         XCTAssertNil(messagesConfiguration.lastAppearedHomeMessage)
+    }
+
+    func testEveryRenderReadyRemoteMessageAdmissionBlockedByModalIsReportedRegardlessOfRMFMetricsSetting() throws {
+        let promoCoordinator = ArbitratingNewTabPagePromoCoordinatorMock(featureState: .enabled)
+        promoCoordinator.acquireModalLease()
+        let promoQueuePixelReporter = MockPromoQueuePixelReporter()
+        messagesConfiguration.homeMessages = [
+            .mockRemote(
+                id: "message-a",
+                withType: .small(titleText: "Title", descriptionText: "Body"),
+                isMetricsEnabled: false
+            ),
+        ]
+        let sut = createRenderableSUT(
+            promoCoordinator: promoCoordinator,
+            promoQueuePixelReporter: promoQueuePixelReporter
+        )
+
+        XCTAssertEqual(promoQueuePixelReporter.remoteMessageAdmissionBlockedByModalCount, 0)
+        try appearRemoteMessageGate(in: sut, expectedMessageID: "message-a")
+        sut.retryVisiblePromoAdmission(using: promoCoordinator.admitVisiblePromo)
+        sut.retryVisiblePromoAdmission(using: promoCoordinator.admitVisiblePromo)
+
+        XCTAssertEqual(promoQueuePixelReporter.remoteMessageAdmissionBlockedByModalCount, 3)
+        XCTAssertEqual(promoQueuePixelReporter.modalAdmissionBlockedByRemoteMessageCount, 0)
+    }
+
+    func testOccupiedSurfaceDenialIsNotReportedAsModalBlockingRemoteMessage() throws {
+        let promoCoordinator = ArbitratingNewTabPagePromoCoordinatorMock(featureState: .enabled)
+        let promoQueuePixelReporter = MockPromoQueuePixelReporter()
+        messagesConfiguration.homeMessages = [
+            .mockRemote(
+                id: "message-a",
+                withType: .small(titleText: "Title", descriptionText: "Body")
+            ),
+        ]
+        let sut = createRenderableSUT(
+            promoCoordinator: promoCoordinator,
+            promoQueuePixelReporter: promoQueuePixelReporter
+        )
+        let occupiedIdentity = VisiblePromoIdentity(
+            surfaceID: sut.surfaceID,
+            promoType: .remoteMessage,
+            promoID: "existing-message"
+        )
+        guard case .acquired(let occupiedLease) = promoCoordinator.arbiter.acquireVisiblePromoLease(for: occupiedIdentity) else {
+            XCTFail("Expected visible promo lease acquisition")
+            return
+        }
+
+        try appearRemoteMessageGate(in: sut, expectedMessageID: "message-a")
+
+        XCTAssertEqual(promoQueuePixelReporter.remoteMessageAdmissionBlockedByModalCount, 0)
+        XCTAssertEqual(promoQueuePixelReporter.modalAdmissionBlockedByRemoteMessageCount, 0)
+        withExtendedLifetime(occupiedLease) {}
+    }
+
+    func testFeatureOffLegacyRemoteMessageDoesNotReportPromoQueueCollision() {
+        let promoCoordinator = ArbitratingNewTabPagePromoCoordinatorMock()
+        let promoQueuePixelReporter = MockPromoQueuePixelReporter()
+        messagesConfiguration.homeMessages = [
+            .mockRemote(
+                id: "message-a",
+                withType: .small(titleText: "Title", descriptionText: "Body")
+            ),
+        ]
+
+        let sut = createRenderableSUT(
+            promoCoordinator: promoCoordinator,
+            promoQueuePixelReporter: promoQueuePixelReporter
+        )
+
+        XCTAssertEqual(sut.homeMessageViewModels.map(\.messageId), ["message-a"])
+        XCTAssertEqual(promoQueuePixelReporter.remoteMessageAdmissionBlockedByModalCount, 0)
+        XCTAssertEqual(promoQueuePixelReporter.modalAdmissionBlockedByRemoteMessageCount, 0)
     }
 
     func testFeatureOnConstructsAndPublishesRemoteCardOnlyAfterLeaseAdmission() throws {
@@ -891,7 +988,8 @@ final class NewTabPageMessagesModelTests: XCTestCase {
     private func createSUT(
         isOpenedAfterIdle: Bool = false,
         homePageMessagesConfiguration: HomePageMessagesConfiguration? = nil,
-        promoCoordinator: ArbitratingNewTabPagePromoCoordinatorMock? = nil
+        promoCoordinator: ArbitratingNewTabPagePromoCoordinatorMock? = nil,
+        promoQueuePixelReporter: PromoQueuePixelReporting = MockPromoQueuePixelReporter()
     ) -> NewTabPageMessagesModel {
         // Built here rather than as a default argument: the mock is `@MainActor`, and default
         // argument expressions are evaluated in a nonisolated context.
@@ -905,16 +1003,19 @@ final class NewTabPageMessagesModelTests: XCTestCase {
                                 messageActionHandler: remoteMessageActionHandler,
                                 imageLoader: MockRemoteMessagingImageLoader(),
                                 promoCoordinator: promoCoordinator,
+                                promoQueuePixelReporter: promoQueuePixelReporter,
                                 isOpenedAfterIdle: { isOpenedAfterIdle })
     }
 
     private func createRenderableSUT(
         homePageMessagesConfiguration: HomePageMessagesConfiguration? = nil,
-        promoCoordinator: ArbitratingNewTabPagePromoCoordinatorMock
+        promoCoordinator: ArbitratingNewTabPagePromoCoordinatorMock,
+        promoQueuePixelReporter: PromoQueuePixelReporting = MockPromoQueuePixelReporter()
     ) -> NewTabPageMessagesModel {
         let sut = createSUT(
             homePageMessagesConfiguration: homePageMessagesConfiguration,
-            promoCoordinator: promoCoordinator
+            promoCoordinator: promoCoordinator,
+            promoQueuePixelReporter: promoQueuePixelReporter
         )
         sut.setSurfaceAttachmentProvider { true }
         sut.load()
@@ -1025,6 +1126,18 @@ private final class ArbitratingNewTabPagePromoCoordinatorMock: NewTabPagePromoCo
             deregistrationCount += 1
             retryTarget = nil
         }
+    }
+}
+private final class MockPromoQueuePixelReporter: PromoQueuePixelReporting {
+    private(set) var modalAdmissionBlockedByRemoteMessageCount = 0
+    private(set) var remoteMessageAdmissionBlockedByModalCount = 0
+
+    func fireModalAdmissionBlockedByRemoteMessage() {
+        modalAdmissionBlockedByRemoteMessageCount += 1
+    }
+
+    func fireRemoteMessageAdmissionBlockedByModal() {
+        remoteMessageAdmissionBlockedByModalCount += 1
     }
 }
 extension NewTabPageMessagesModelTests: MessageNavigationDelegate {

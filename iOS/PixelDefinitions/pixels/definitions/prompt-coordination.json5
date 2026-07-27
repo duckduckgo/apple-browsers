@@ -13,5 +13,19 @@
         "triggers": ["other"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],
         "parameters": ["appVersion", "errorCode", "errorDomain"]
+    },
+    "m_promo-queue_modal-admission-blocked-by-remote-message": {
+        "description": "Fires for every modal prompt admission attempt blocked by one or more active remote message leases while promo queue coordination is enabled.",
+        "owners": ["bkunat"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_promo-queue_remote-message-admission-blocked-by-modal": {
+        "description": "Fires for every render-ready remote message admission attempt blocked by an active modal lease while promo queue coordination is enabled.",
+        "owners": ["bkunat"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
     }
 }

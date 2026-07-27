@@ -249,9 +249,9 @@ jobs:
           done
 
           if [ "$PACKAGE_FAILED" = "true" ]; then
-            task_name="Crossbench WPR validation: package failure"
+            task_name="WPR Validation Failure: Package"
           else
-            task_name="Crossbench WPR validation: site failures"
+            task_name="WPR Validation Failure: Site Archives"
           fi
           "$helper" \
             1216902374642227 \

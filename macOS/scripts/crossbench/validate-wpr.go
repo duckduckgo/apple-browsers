@@ -455,7 +455,7 @@ func writeManifest(path string, results []siteResult) error {
 		return err
 	}
 	defer file.Close()
-	if _, err := fmt.Fprintln(file, "site\tarchive\tsha256\tarchive_bytes\tverdict\tstatus_chain\tfinal_url\tcontent_type\tblocked_marker\tfailure"); err != nil {
+	if _, err := fmt.Fprintln(file, "site\tarchive\tsha256\tarchive_bytes\tverdict\treason_code\thttp_status\tdetail\tstatus_chain\tfinal_url\tcontent_type\tblocked_marker"); err != nil {
 		return err
 	}
 	for _, result := range results {
@@ -465,11 +465,13 @@ func writeManifest(path string, results []siteResult) error {
 			result.sha256,
 			fmt.Sprintf("%d", result.archiveBytes),
 			result.verdict,
+			primaryReasonCode(result.reasons),
+			primaryHTTPStatus(result.reasons),
+			strings.Join(result.reasons, " | "),
 			strings.Join(result.statusChains, " | "),
 			strings.Join(result.finalURLs, " | "),
 			strings.Join(result.contentTypes, " | "),
 			strings.Join(result.markers, " | "),
-			strings.Join(result.reasons, " | "),
 		}
 		for index := range fields {
 			fields[index] = sanitizeTSV(fields[index])
@@ -479,6 +481,21 @@ func writeManifest(path string, results []siteResult) error {
 		}
 	}
 	return file.Close()
+}
+
+func primaryReasonCode(reasons []string) string {
+	if len(reasons) == 0 {
+		return ""
+	}
+	return strings.SplitN(reasons[0], ": ", 2)[0]
+}
+
+func primaryHTTPStatus(reasons []string) string {
+	code := primaryReasonCode(reasons)
+	if strings.HasPrefix(code, "http_") && len(code) == len("http_")+3 {
+		return strings.TrimPrefix(code, "http_")
+	}
+	return ""
 }
 
 func writeReport(path string, results []siteResult) error {

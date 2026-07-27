@@ -1,7 +1,12 @@
+-- DESTRUCTIVE schema cutover: run only while existing rows are disposable.
+DROP TABLE IF EXISTS native_apps.macos_browser_health_nav_to_lcp_attempts
+ON CLUSTER `ch-prod-cluster`
+SYNC;
+
 -- One row per workflow run, browser, and requested domain. This companion to
 -- native_apps.macos_browser_health_nav_to_lcp answers whether a site was
 -- eligible and measured, and why a requested site has no metrics row.
-CREATE TABLE IF NOT EXISTS native_apps.macos_browser_health_nav_to_lcp_attempts
+CREATE TABLE native_apps.macos_browser_health_nav_to_lcp_attempts
 ON CLUSTER `ch-prod-cluster`
 (
     run_id UInt64
@@ -21,7 +26,7 @@ ON CLUSTER `ch-prod-cluster`
         COMMENT 'Full browser version reported by the runner',
 
     outcome LowCardinality(String)
-        COMMENT 'Overall result: measured=all planned samples recorded; partial=some recorded; no_samples=measurement ran without a usable sample; excluded=WPR validation failed; infra_error=harness failed',
+        COMMENT 'Overall result: measured=all requested samples recorded; partial=some recorded; no_samples=measurement ran without a usable sample; excluded=WPR validation failed; infra_error=harness failed',
 
     validation_status LowCardinality(String)
         COMMENT 'WPR archive eligibility result: ok or error',
@@ -31,9 +36,11 @@ ON CLUSTER `ch-prod-cluster`
         COMMENT 'Recorded main-document HTTP error status when applicable; NULL otherwise',
     validation_detail String
         COMMENT 'Sanitized diagnostic detail for investigation; empty when unnecessary',
+    archive_sha256 Nullable(FixedString(64))
+        COMMENT 'SHA-256 of the WPR archive bytes; NULL when the archive was absent or its identity was unavailable',
 
-    planned_repetitions UInt32
-        COMMENT 'Repetitions requested for this site; zero when validation excluded it',
+    requested_repetitions UInt32
+        COMMENT 'Configured repetitions for this requested site, including sites excluded before browser launch',
     observed_repetitions UInt32
         COMMENT 'Repetitions that produced probe output',
     recorded_samples UInt32
@@ -66,7 +73,8 @@ SETTINGS index_granularity = 8192;
 -- Coverage and exclusions, most recent first:
 --
 -- SELECT date, domain, webview_type, outcome, validation_reason,
---        validation_http_status, recorded_samples, planned_repetitions
+--        validation_http_status, archive_sha256, recorded_samples,
+--        requested_repetitions
 -- FROM native_apps.macos_browser_health_nav_to_lcp_attempts
 -- WHERE outcome != 'measured'
 -- ORDER BY date DESC, domain;
@@ -74,9 +82,9 @@ SETTINGS index_granularity = 8192;
 -- Measurement coverage by browser:
 --
 -- SELECT date, webview_type, sum(recorded_samples) AS recorded,
---        sum(planned_repetitions) AS planned,
---        round(recorded / planned, 3) AS coverage
+--        sum(requested_repetitions) AS requested,
+--        round(recorded / requested, 3) AS end_to_end_coverage
 -- FROM native_apps.macos_browser_health_nav_to_lcp_attempts
--- WHERE planned_repetitions > 0
+-- WHERE requested_repetitions > 0
 -- GROUP BY date, webview_type
 -- ORDER BY date DESC, webview_type;

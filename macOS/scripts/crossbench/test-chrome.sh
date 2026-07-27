@@ -71,7 +71,7 @@ SUITE="navToLCP"          # LCP focus; navToFCP exists in the ps1 as a sibling
 LOAD_WINDOW="12s"         # matches runCrossbench.ps1 (--url=<site>,12s)
 LOAD_WINDOW_MS=12000      # same value in ms, recorded so censoring counts from
                           # different runs are only compared at equal windows
-CHROME_BIN="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+CHROME_BIN="${CHROME_BIN:-/Applications/Google Chrome.app/Contents/MacOS/Google Chrome}"
 
 # Sourced before the cd into CROSSBENCH_DIR below, so the path is relative to
 # this script rather than the working directory.
@@ -169,8 +169,7 @@ check_prerequisites() {
 normalize() { printf '%s' "$1" | tr '+/' '__'; }
 
 # crossbench --network arg for a WPR archive. Notes:
-# - No spaces: the arg is deliberately unquoted at the call site, so neither the
-#   archive path nor TSPROXY_PY may contain spaces.
+# - The archive path and tool path are encoded inside the single argument.
 # - crossbench's own third_party/tsproxy is Python-2-only at the DEPS-pinned
 #   revision: under a Python 3.11 venv its SOCKS handshake dies inside a bare
 #   `except: pass`, leaving the browser pointed at a black-hole proxy where
@@ -218,12 +217,13 @@ fetch_network_arg() {
 # counters. Prepared CI archives carry the shared validator's manifest; local
 # replay without that handoff records only whether an archive was available.
 set_validation_result() {
-  local site="$1" archive_available="$2" verdict status_chain final_url failure reason
+  local site="$1" archive_available="$2" verdict reason status_chain final_url detail header
 
   VALIDATION_STATUS=error
   VALIDATION_REASON=archive_missing
   VALIDATION_HTTP_STATUS=-
   VALIDATION_DETAIL=-
+  ARCHIVE_SHA256=-
 
   if [ "$WPR_ARCHIVES_PREPARED" != "1" ]; then
     if [ -n "$archive_available" ]; then
@@ -238,6 +238,12 @@ set_validation_result() {
     return
   fi
 
+  header="$(head -1 "$WPR_MANIFEST")"
+  if [ "$header" != $'site\tarchive\tsha256\tarchive_bytes\tverdict\treason_code\thttp_status\tdetail\tstatus_chain\tfinal_url\tcontent_type\tblocked_marker' ]; then
+    VALIDATION_REASON=validation_manifest_schema_mismatch
+    VALIDATION_DETAIL="validated archive manifest has an unsupported schema"
+    return
+  fi
   verdict="$(awk -F'\t' -v site="$site" 'NR > 1 && $1 == site { print $5; exit }' "$WPR_MANIFEST")"
   if [ -z "$verdict" ]; then
     VALIDATION_REASON=validation_result_missing
@@ -245,9 +251,14 @@ set_validation_result() {
     return
   fi
 
-  status_chain="$(awk -F'\t' -v site="$site" 'NR > 1 && $1 == site { print $6; exit }' "$WPR_MANIFEST")"
-  final_url="$(awk -F'\t' -v site="$site" 'NR > 1 && $1 == site { print $7; exit }' "$WPR_MANIFEST")"
-  failure="$(awk -F'\t' -v site="$site" 'NR > 1 && $1 == site { print $10; exit }' "$WPR_MANIFEST")"
+  ARCHIVE_SHA256="$(awk -F'\t' -v site="$site" 'NR > 1 && $1 == site { print $3; exit }' "$WPR_MANIFEST")"
+  ARCHIVE_SHA256="${ARCHIVE_SHA256:--}"
+  reason="$(awk -F'\t' -v site="$site" 'NR > 1 && $1 == site { print $6; exit }' "$WPR_MANIFEST")"
+  VALIDATION_HTTP_STATUS="$(awk -F'\t' -v site="$site" 'NR > 1 && $1 == site { print $7; exit }' "$WPR_MANIFEST")"
+  VALIDATION_HTTP_STATUS="${VALIDATION_HTTP_STATUS:--}"
+  detail="$(awk -F'\t' -v site="$site" 'NR > 1 && $1 == site { print $8; exit }' "$WPR_MANIFEST")"
+  status_chain="$(awk -F'\t' -v site="$site" 'NR > 1 && $1 == site { print $9; exit }' "$WPR_MANIFEST")"
+  final_url="$(awk -F'\t' -v site="$site" 'NR > 1 && $1 == site { print $10; exit }' "$WPR_MANIFEST")"
   if [ "$verdict" = "ok" ] && [ -n "$archive_available" ]; then
     VALIDATION_STATUS=ok
     VALIDATION_REASON=-
@@ -259,13 +270,8 @@ set_validation_result() {
     return
   fi
 
-  reason="${failure%% | *}"
-  reason="${reason%%: *}"
   VALIDATION_REASON="${reason:-unknown_validation_failure}"
-  if [[ "$VALIDATION_REASON" =~ ^http_([0-9]{3})$ ]]; then
-    VALIDATION_HTTP_STATUS="${BASH_REMATCH[1]}"
-  fi
-  VALIDATION_DETAIL="${failure:--}"
+  VALIDATION_DETAIL="${detail:--}"
   if [ -n "$status_chain" ]; then
     VALIDATION_DETAIL="${VALIDATION_DETAIL}; status_chain=$status_chain"
   fi
@@ -367,7 +373,10 @@ run_chrome() {
   # instead of our poetry venv; removal belongs here (run step), not provisioning.
   rm -f .vpython3
 
-  local site story network_arg out results_path outcome
+  local site story network_arg out results_path outcome crossbench_status
+  HARNESS_FAILURES=0
+  ELIGIBLE_SITES=0
+  TOTAL_RECORDED=0
   for site in "${SITES[@]}"; do
     story="${SUITE}+${site}"
     log "site: $site"
@@ -386,17 +395,16 @@ run_chrome() {
         echo "  $site: no WPR archive available; SKIPPING (replay-only)." >&2
         echo "::warning title=Site skipped::$site: no WPR archive at $WPR_BASE_URL"
       fi
-      # planned=0: the browser never ran, which is a different fact from "ran
-      # $MEASURED_REPS times and recorded nothing".
-      record_disposition "$site" excluded 0
+      record_disposition "$site" excluded
       continue
     fi
+    ELIGIBLE_SITES=$((ELIGIBLE_SITES + 1))
 
     echo "  plan: $MEASURED_REPS measured loads, ${LOAD_WINDOW} window"
     out="$(mktemp)"
     # --about-blank-duration is REQUIRED: navigating to about:blank after each
     # page forces Chromium to finalize LCP; without it every value comes out -1.
-    # shellcheck disable=SC2086  # network_arg must word-split into separate args
+    set +e
     poetry run python ./cb.py \
       loading \
       --browser=chrome-stable \
@@ -405,28 +413,50 @@ run_chrome() {
       --url="$site,$LOAD_WINDOW" \
       --about-blank-duration=2s \
       --bin-override "wpr=$WPR_BIN" \
-      $network_arg \
+      "$network_arg" \
       --debug \
-      --env-validation=skip 2>&1 | tee "$out" || echo "WARN: crossbench exited non-zero for $site" >&2
+      --env-validation=skip 2>&1 | tee "$out"
+    crossbench_status="${PIPESTATUS[0]}"
+    set -e
 
     # `|| true`: under set -e/pipefail a no-match grep would abort the script.
     results_path="$(grep -E '^RESULTS: ' "$out" | tail -1 | sed -E 's/^RESULTS: //' || true)"
+    if [ "$crossbench_status" -ne 0 ]; then
+      echo "::warning title=Harness failure::$site: crossbench exited $crossbench_status"
+      HARNESS_FAILURES=$((HARNESS_FAILURES + 1))
+    fi
     if [ -n "$results_path" ] && [ -d "$results_path" ]; then
       # Logged so a surprising per-attempt result can be traced back to the raw
       # trace and metrics on the runner.
       echo "  results dir: $results_path"
       summarize_lcp "$results_path" "$site"
-      outcome="$(classify_outcome)"
-      record_disposition "$site" "$outcome" "$MEASURED_REPS"
+      TOTAL_RECORDED=$((TOTAL_RECORDED + LAST_RECORDED))
+      if [ "$crossbench_status" -ne 0 ]; then
+        outcome=infra_error
+      else
+        outcome="$(classify_outcome)"
+      fi
+      record_disposition "$site" "$outcome"
     else
       echo "  $site: no RESULTS path in crossbench output"
       # The archive was available, but the browser harness failed before it
       # produced a results directory.
       echo "::warning title=Harness failure::$site: crossbench produced no RESULTS path"
-      record_disposition "$site" infra_error "$MEASURED_REPS"
+      if [ "$crossbench_status" -eq 0 ]; then
+        HARNESS_FAILURES=$((HARNESS_FAILURES + 1))
+      fi
+      record_disposition "$site" infra_error
     fi
     rm -f "$out"
   done
+  if [ "$HARNESS_FAILURES" -gt 0 ]; then
+    echo "ERROR: $HARNESS_FAILURES eligible site(s) had browser harness failures." >&2
+    return 1
+  fi
+  if [ "$ELIGIBLE_SITES" -gt 0 ] && [ "$TOTAL_RECORDED" -eq 0 ]; then
+    echo "ERROR: eligible sites produced no usable LCP samples." >&2
+    return 1
+  fi
 }
 
 # ---- main ------------------------------------------------------------------
@@ -434,9 +464,11 @@ check_prerequisites
 # TSV header. Columns: browser, browser_version, site, rep, lcp_ms.
 printf 'browser\tbrowser_version\tsite\trep\tlcp_ms\n' > "$RESULTS_FILE"
 init_dispositions_file
-run_chrome
+run_status=0
+run_chrome || run_status=$?
 report_dispositions
 log "Done"
 echo "results:      $RESULTS_FILE"
 echo "rows:         $(($(wc -l < "$RESULTS_FILE") - 1))"
 echo "dispositions: $DISPOSITIONS_FILE"
+exit "$run_status"

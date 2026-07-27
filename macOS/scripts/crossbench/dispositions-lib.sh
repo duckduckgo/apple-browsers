@@ -18,7 +18,7 @@
 # THE VALIDATION COLUMNS
 # The shared WPR validator decides whether a site's archive is eligible before
 # the browser starts. The caller sets VALIDATION_STATUS, VALIDATION_REASON,
-# VALIDATION_HTTP_STATUS, and VALIDATION_DETAIL for each site.
+# VALIDATION_HTTP_STATUS, VALIDATION_DETAIL, and ARCHIVE_SHA256 for each site.
 #
 # CONTRACT — the caller must set these before sourcing is useful:
 #   BROWSER_NAME      'chrome' | 'safari'
@@ -67,8 +67,8 @@ init_dispositions_file() {
   DISPOSITIONS_FILE="$DISPOSITIONS_DIR/${BROWSER_NAME}-dispositions-$(date -u +%Y%m%dT%H%M%SZ).tsv"
   {
     printf 'browser\tbrowser_version\tsite\toutcome\t'
-    printf 'validation_status\tvalidation_reason\tvalidation_http_status\tvalidation_detail\t'
-    printf 'planned_repetitions\tobserved_repetitions\trecorded_samples\t'
+    printf 'validation_status\tvalidation_reason\tvalidation_http_status\tvalidation_detail\tarchive_sha256\t'
+    printf 'requested_repetitions\tobserved_repetitions\trecorded_samples\t'
     printf 'dropped_unfinalized\tdropped_no_metric\t'
     printf 'load_window_ms\trunner_image\n'
   } > "$DISPOSITIONS_FILE"
@@ -88,12 +88,12 @@ tsv_clean() {
 # self-contained: when every site is excluded the results TSV has no data rows
 # at all, and the version would otherwise be unavailable to the attempts insert.
 record_disposition() {
-  local site="$1" outcome="$2" planned="$3"
+  local site="$1" outcome="$2"
   printf '%s\t' \
     "$BROWSER_NAME" "$BROWSER_VERSION" "$site" "$outcome" \
     "$VALIDATION_STATUS" "${VALIDATION_REASON:--}" "${VALIDATION_HTTP_STATUS:--}" \
-    "$(tsv_clean "${VALIDATION_DETAIL:--}")" \
-    "$planned" "$LAST_OBSERVED" "$LAST_RECORDED" \
+    "$(tsv_clean "${VALIDATION_DETAIL:--}")" "${ARCHIVE_SHA256:--}" \
+    "$MEASURED_REPS" "$LAST_OBSERVED" "$LAST_RECORDED" \
     "$LAST_UNFINALIZED" "$LAST_NO_METRIC" \
     "$LOAD_WINDOW_MS" >> "$DISPOSITIONS_FILE"
   printf '%s\n' "$RUNNER_IMAGE" >> "$DISPOSITIONS_FILE"
@@ -110,9 +110,9 @@ report_dispositions() {
     return
   fi
   # Columns: identity(1-3), outcome(4), validation(5-8),
-  # repetition accounting(9-13), context(14-15).
+  # archive identity(9), repetition accounting(10-14), context(15-16).
   awk -F'\t' 'BEGIN { OFS = "\t" }
-    { print $3, $4, $5, $6, $7, $11 "/" $9, $12 "/" $13 }' \
+    { print $3, $4, $5, $6, $7, $12 "/" $10, $13 "/" $14 }' \
     "$DISPOSITIONS_FILE" \
     | sed '1s/.*/site\toutcome\tvalidation\treason\thttp\trecorded\tu\/n/' \
     | { column -t -s "$(printf '\t')" 2>/dev/null || cat; }
@@ -128,8 +128,8 @@ report_dispositions() {
       printf '| site | outcome | validation | reason | HTTP | recorded | unfinalized | no-metric |\n'
       printf '|---|---|---|---|---|---|---|---|\n'
       awk -F'\t' 'NR > 1 {
-        printf "| %s | %s | %s | %s | %s/%s | %s | %s | %s |\n",
-          $3, $4, $5, $6, $7, $11, $9, $12, $13
+        printf "| %s | %s | %s | %s | %s | %s/%s | %s | %s |\n",
+          $3, $4, $5, $6, $7, $12, $10, $13, $14
       }' "$DISPOSITIONS_FILE"
     } >> "$GITHUB_STEP_SUMMARY"
   fi

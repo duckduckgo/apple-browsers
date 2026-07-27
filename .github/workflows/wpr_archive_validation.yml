@@ -114,44 +114,10 @@ jobs:
           VALIDATION_RESULT: ${{ needs.validate.result }}
         run: |
           report="macOS/scripts/crossbench/wpr-validation/report.txt"
-          mkdir -p "$(dirname "$report")"
-          if [ ! -s "$report" ]; then
-            {
-              echo "WPR archive validation: INFRASTRUCTURE FAILURE"
-              echo "Package status: FAILED"
-              echo "Eligible sites: 0/0"
-              echo "Site errors: 0"
-              echo "Detected issues: 1"
-              echo
-              echo "[PACKAGE ERROR] validation infrastructure"
-              echo "Failure: validation did not produce a report"
-              echo "Action: inspect the failed validation job"
-              echo
-              echo "Browser jobs were blocked because archive validation did not complete."
-            } > "$report"
-          elif [ "$VALIDATION_RESULT" != "success" ]; then
-            sed -i 's/^Package status: READY$/Package status: FAILED/' "$report"
-            {
-              echo
-              echo "[PACKAGE ERROR] validation handoff"
-              echo "Failure: validation job concluded $VALIDATION_RESULT"
-              echo "Action: inspect archive staging and artifact upload in the validation job"
-              echo
-              echo "Browser jobs were blocked because the validation package was not delivered."
-            } >> "$report"
-          fi
-
-          if grep -Eq '^Detected issues: [1-9][0-9]*$' "$report" ||
-              grep -q '^Package status: FAILED$' "$report"; then
-            echo "has-errors=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "has-errors=false" >> "$GITHUB_OUTPUT"
-          fi
-          if grep -q '^Package status: FAILED$' "$report"; then
-            echo "package-failed=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "package-failed=false" >> "$GITHUB_OUTPUT"
-          fi
+          python3 macOS/scripts/crossbench/finalize-validation-report.py \
+            --report "$report" \
+            --validation-result "$VALIDATION_RESULT" \
+            --github-output "$GITHUB_OUTPUT"
 
       - name: Upload final validation report
         if: always()

@@ -6,8 +6,8 @@
 # Chrome replays each site from a WPR archive through a traffic shaper and
 # crossbench extracts LCP from the Perfetto trace. This script installs the
 # toolchain, builds the `wpr` binary, and installs the pinned traffic shaper.
-# Archives are fetched per site by test-chrome.sh. The DDG and Safari paths are
-# deliberately out of scope here.
+# CI supplies archives staged by the shared validator. Local runs may download
+# archives directly. DDG and Safari integration is deliberately out of scope.
 #
 # Idempotent: safe to run on every CI job; installs only what's missing.
 #

@@ -114,12 +114,19 @@ final class OnboardingIntroViewModel: ObservableObject {
     private let tutorialSettings: TutorialSettings
     private let onboardingResumeStepStore: any KeyedStoring<OnboardingStoringKeys>
     private let contentProvider: OnboardingIntroContentProviding
-
     /// The facade for the personalization flow.  Exposed so the reason-tailored step views can be injected with the
     /// slice they need.
     let personalizationManager: OnboardingPersonalizationManaging
+    /// Fetches the AI models ahead of the model-picker step. Kicked off when the `.privateAIChat`
+    /// reason is chosen so the options are ready by the time that step appears.
+    private let aiModelsPrefetcher: OnboardingAIModelsPrefetching
 
     private var pendingOnboardingIntroActions: (() -> Void)?
+
+
+    var resolvedAIModels: (models: [OnboardingAIModelOption], defaultModelId: String?) {
+        aiModelsPrefetcher.resolvedModel
+    }
 
     convenience init(pixelReporter: LinearOnboardingPixelReporting,
                      systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging,
@@ -153,6 +160,7 @@ final class OnboardingIntroViewModel: ObservableObject {
                 downloadReasonProvider: { onboardingManager.currentDownloadReason }
             ),
             personalizationManager: personalizationManager,
+            aiModelsPrefetcher: OnboardingAIModelsPrefetcher(),
             onboardingResumeStepStore: onboardingResumeStepStore
         )
     }
@@ -172,6 +180,7 @@ final class OnboardingIntroViewModel: ObservableObject {
         tutorialSettings: TutorialSettings,
         contentProvider: OnboardingIntroContentProviding,
         personalizationManager: OnboardingPersonalizationManaging,
+        aiModelsPrefetcher: OnboardingAIModelsPrefetcher,
         onboardingResumeStepStore: (any KeyedStoring<OnboardingStoringKeys>)? = nil
     ) {
         self.defaultBrowserManager = defaultBrowserManager
@@ -187,6 +196,7 @@ final class OnboardingIntroViewModel: ObservableObject {
         self.tutorialSettings = tutorialSettings
         self.contentProvider = contentProvider
         self.personalizationManager = personalizationManager
+        self.aiModelsPrefetcher = aiModelsPrefetcher
         self.onboardingResumeStepStore = if let onboardingResumeStepStore { onboardingResumeStepStore } else { UserDefaults.app.keyedStoring() }
 
         introSteps = onboardingManager.onboardingSteps
@@ -283,11 +293,14 @@ final class OnboardingIntroViewModel: ObservableObject {
         // action — otherwise we'd advance a second time and skip a step.
         guard currentIntroStep == .downloadReasonSelection else { return }
 
+        postDownloadSelectionPersonalizationSetup(for: reason)
+
         // TODO: pixel for the selected download reason. https://app.asana.com/1/137249556945/task/1216200647629938
         let remainingSteps = onboardingManager.selectDownloadReason(reason)
         if let currentStepIndex = introSteps.firstIndex(of: currentIntroStep) {
             introSteps.insert(contentsOf: remainingSteps, at: currentStepIndex + 1)
         }
+
         makeNextViewState()
     }
 
@@ -676,6 +689,19 @@ private extension OnboardingIntroViewModel {
             return
         }
         pixelReporter.measureAutoRestoreOnboardingPromptShown()
+    }
+
+    func postDownloadSelectionPersonalizationSetup(for reason: OnboardingDownloadReason) {
+        switch reason {
+        case .browserPrivately:
+            break
+        case .privateAIChat:
+            aiModelsPrefetcher.prefetch()
+        case .noAI:
+            break
+        case .blockAds:
+            break
+        }
     }
 
 }

@@ -71,16 +71,23 @@ public struct CardItemIcon {
 public enum CardItemAccessory {
     case chevron(Color)
     case checkmark(Color)
+    /// A caller-supplied trailing view (e.g. a selection indicator).
+    case custom(AnyView)
     /// An interactive toggle with a caller-supplied "on" tint. Unlike the visual accessories, this
     /// stays a separate, focusable accessibility element so its on/off state is announced and
     /// actionable by VoiceOver.
     case toggle(Binding<Bool>, tint: Color)
 
+    /// Wraps any view as a ``custom(_:)`` accessory without the caller spelling out `AnyView`.
+    public static func custom(_ content: some View) -> CardItemAccessory {
+        .custom(AnyView(content))
+    }
+
     /// Whether the accessory is an interactive control rather than a purely decorative glyph. The row
     /// keeps an interactive accessory as its own focusable, announced accessibility element.
     var isInteractive: Bool {
         switch self {
-        case .chevron, .checkmark: false
+        case .chevron, .checkmark, .custom: false
         case .toggle: true
         }
     }
@@ -289,6 +296,8 @@ private extension CardItem {
         case .checkmark(let color):
             Image(systemName: "checkmark")
                 .foregroundColor(color)
+        case .custom(let view):
+            view
         case .toggle(let isOn, let tint):
             Toggle("", isOn: isOn)
                 .labelsHidden()
@@ -417,6 +426,25 @@ private struct CardItemToggleSamples: View {
     }
 }
 
+private struct CardItemCustomAccessorySamples: View {
+    var body: some View {
+        VStack(spacing: 16) {
+            CardItem(
+                icon: CardItemIcon(position: .leadingColumn, visual: .image(Image(systemName: "sparkles")), size: .size24),
+                title: CardItemText("ChatGPT", font: .bodyRegular),
+                trailing: .custom(Image(systemName: "checkmark.circle.fill")
+                    .foregroundColor(Color(designSystemColor: .accentPrimary))))
+
+            CardItem(
+                icon: CardItemIcon(position: .leadingColumn, visual: .image(Image(systemName: "sparkles")), size: .size24),
+                title: CardItemText("Claude", font: .bodyRegular),
+                trailing: .custom(Image(systemName: "circle")
+                    .foregroundColor(Color(designSystemColor: .decorationPrimary))))
+        }
+        .padding()
+    }
+}
+
 private struct PreviewBlur: ViewModifier {
     func body(content: Content) -> some View {
         content.blur(radius: 6)
@@ -498,6 +526,15 @@ private struct CardItemSecondaryTextSamples: View {
 
 #Preview("Toggle") {
     CardItemToggleSamples()
+}
+
+#Preview("Custom accessory") {
+    CardItemCustomAccessorySamples()
+}
+
+#Preview("Custom accessory Dark") {
+    CardItemCustomAccessorySamples()
+        .preferredColorScheme(.dark)
 }
 
 #endif

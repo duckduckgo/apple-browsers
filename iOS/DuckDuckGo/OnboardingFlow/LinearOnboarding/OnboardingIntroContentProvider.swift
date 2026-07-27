@@ -28,7 +28,7 @@ protocol OnboardingIntroContentProviding {
     var introStepContent: OnboardingIntroStepContent { get }
     var downloadReasonContent: OnboardingDownloadReasonContent { get }
     var serpPersonalizationContent: OnboardingPersonalizationContent { get }
-    var aiModelPersonalizationContent: OnboardingPersonalizationContent { get }
+    var aiModelPersonalizationContent: OnboardingAIModelContent { get }
     var aiSearchPersonalizationContent: OnboardingPersonalizationContent { get }
     var youTubePersonalizationContent: OnboardingPersonalizationContent { get }
     var setDefaultBrowserContent: OnboardingComparisonContent { get }
@@ -189,6 +189,13 @@ struct OnboardingPersonalizationContent: Equatable {
     let daxAnimation: DaxAnimation
 }
 
+struct OnboardingAIModelContent: Equatable {
+    let title: String
+    let message: String
+    let primaryCTA: String
+    let daxAnimation: DaxAnimation
+}
+
 extension OnboardingPersonalizationContent {
 
     struct Item: Hashable, Equatable {
@@ -227,11 +234,10 @@ extension OnboardingIntroContentProvider {
         )
     }
 
-    var aiModelPersonalizationContent: OnboardingPersonalizationContent {
-        OnboardingPersonalizationContent(
+    var aiModelPersonalizationContent: OnboardingAIModelContent {
+        OnboardingAIModelContent(
             title: "Your chats, your way.",
             message: "Change your default AI now, or anytime during chat.",
-            items: [], // AI Models are fetched from an API
             primaryCTA: "Next",
             daxAnimation: .wingLeft
         )

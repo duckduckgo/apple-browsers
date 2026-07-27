@@ -463,8 +463,8 @@ extension OnboardingView {
                 toggleSettingsPersonalizationView(content: content, action: model.searchPrivacySettingsContinueAction)
             case let .aiSearchSettingsDialog(content):
                 toggleSettingsPersonalizationView(content: content, action: model.aiSearchSettingsContinueAction)
-            case .aiModelDialog:
-                placeholderView(title: "AI Model Preference", action: model.aiModelContinueAction)
+            case let .aiModelDialog(content):
+                aiModelSelectionView(content: content, action: model.aiModelContinueAction)
             case .toggleInputModeDialog:
                 placeholderView(title: "Toggle Input Default Mode", action: model.toggleInputModeContinueAction)
             case .keepDuckAIDialog:
@@ -509,6 +509,21 @@ extension OnboardingView {
             return PersonalizationToggleTemplate(
                 content: content,
                 items: items,
+                isVisible: $showBubbleContent
+            ) {
+                animateContentTransition {
+                    action()
+                }
+            }
+        }
+
+        private func aiModelSelectionView(content: OnboardingAIModelContent, action: @escaping () -> Void) -> some View {
+            let resolved = model.resolvedAIModels
+            return AIModelSelection(
+                content: content,
+                options: resolved.models,
+                defaultID: resolved.defaultModelId,
+                modelPersonalization: model.personalizationManager,
                 isVisible: $showBubbleContent
             ) {
                 animateContentTransition {
@@ -620,7 +635,9 @@ extension OnboardingView {
                 return scaledThumbUpAnimation(forBubbleHeight: lockedIntroBubbleHeight, base: content.daxAnimation)
             case .downloadReasonDialog(let content):
                 return content.daxAnimation
-            case .searchPrivacySettingsDialog(let content), .aiSearchSettingsDialog(let content), .aiModelDialog(let content), .duckPlayerDialog(let content):
+            case .searchPrivacySettingsDialog(let content), .aiSearchSettingsDialog(let content), .duckPlayerDialog(let content):
+                return content.daxAnimation
+            case .aiModelDialog(let content):
                 return content.daxAnimation
             case .toggleInputModeDialog, .keepDuckAIDialog:
                 return nil

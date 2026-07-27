@@ -720,6 +720,7 @@ extension AIChatContextualSheetCoordinator: AIChatContextualSheetViewControllerD
         guard featureFlagger.isFeatureOn(.contextualSuggestedPrompts) else { return }
         if case .attached = sessionState.chipState { return }
         guard let context = await collectFreshContextAndWait(timeout: Self.contextualContextCollectionTimeout) else { return }
+        guard isSheetPresented else { return }
         sessionState.attachContextFromSuggestionTap(AIChatPageContext(contextData: context, favicon: nil))
     }
 

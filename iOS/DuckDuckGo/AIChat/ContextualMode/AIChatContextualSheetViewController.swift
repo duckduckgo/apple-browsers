@@ -162,6 +162,10 @@ final class AIChatContextualSheetViewController: UIViewController {
     /// pixel fires once per appearance rather than on every view-state update.
     private var isAskAboutPageQuickActionVisible = false
 
+    /// Mirrors the sheet's presented state. The sheet is retained across dismissals, so async work
+    /// that resumes afterwards must check this before acting on the user's behalf.
+    private var isSheetPresented = false
+
     // MARK: - UI Components
 
     private lazy var headerView: UIView = {
@@ -370,6 +374,7 @@ final class AIChatContextualSheetViewController: UIViewController {
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        isSheetPresented = true
         configureSheetPresentation()
         pixelHandler.fireSheetOpened()
         addKeyboardObserver()
@@ -389,6 +394,8 @@ final class AIChatContextualSheetViewController: UIViewController {
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
         if isBeingDismissed {
+            isSheetPresented = false
+            contextualInputViewController.setStartActionsDimmed(false)
             delegate?.aiChatContextualSheetViewControllerDidDismiss(self)
         }
     }
@@ -822,6 +829,7 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
         Task { [weak self] in
             guard let self else { return }
             await self.delegate?.aiChatContextualSheetViewControllerAttachContextForSuggestion(self)
+            guard self.isSheetPresented else { return }
             self.submitSuggestionPrompt(suggestion.prompt)
         }
     }

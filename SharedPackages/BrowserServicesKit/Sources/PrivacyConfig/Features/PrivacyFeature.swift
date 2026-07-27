@@ -409,6 +409,10 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Adds capability to load AI Chat in a sidebar
     case sidebar
 
+    /// Unifies the tab-bar Duck.ai control into a single "Ask Duck.ai" button that opens a menu
+    /// (New Chat / Ask About Page), replacing the two-part split button.
+    case chromeMenuButton
+
     /// Experimental address bar with duck.ai
     case experimentalAddressBar
 

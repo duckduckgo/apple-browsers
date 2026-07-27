@@ -383,6 +383,11 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213610208091978?focus=true
     case aiChatChromeSidebar
 
+    /// Unify the tab-bar Duck.ai control into a single "Ask Duck.ai" button that opens a menu
+    /// (New Chat / Ask About Page). Layered on top of `aiChatChromeSidebar`; when off, the existing
+    /// two-part split button is shown unchanged.
+    case aiChatChromeMenuButton
+
     /// Enable Look Up (three-finger click) while keeping link preview disabled
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213489080183740
     case webViewLookUpAction
@@ -725,6 +730,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.sidebarSuggestedPrompts), category: .duckAI)
         case .aiChatChromeSidebar:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.sidebar), category: .duckAI)
+        case .aiChatChromeMenuButton:
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.chromeMenuButton), category: .duckAI)
         case .webViewLookUpAction:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.webViewLookUpAction))
         case .promoQueue:

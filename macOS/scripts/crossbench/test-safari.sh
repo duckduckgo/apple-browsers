@@ -20,8 +20,8 @@
 #
 # Traffic shaping defaults to the Windows/Chrome US-broadband profile: 28 ms
 # RTT, 50,000 Kbps down, 10,000 Kbps up, TCP window 10. Every load is measured;
-# replay needs no DNS/CDN warm-up. A missing archive is an infrastructure error,
-# never a reason to fall back to the live network.
+# replay needs no DNS/CDN warm-up. An unavailable archive never causes a live
+# network fallback.
 #
 # Prerequisites: run provision-macos.sh and enable Safari remote automation.
 #
@@ -131,7 +131,12 @@ if [ -z "$RESULTS_FILE" ]; then
   RESULTS_FILE="$RESULTS_DIR/safari-lcp-$(date -u +%Y%m%dT%H%M%SZ).tsv"
 fi
 
-SAFARI_VERSION="$(defaults read "$SAFARI_APP/Contents/Info.plist" CFBundleShortVersionString 2>/dev/null || echo unknown)"
+SAFARI_MARKETING_VERSION="$(defaults read "$SAFARI_APP/Contents/Info.plist" CFBundleShortVersionString 2>/dev/null || echo unknown)"
+SAFARI_BUILD_VERSION="$(defaults read "$SAFARI_APP/Contents/Info.plist" CFBundleVersion 2>/dev/null || echo unknown)"
+SAFARI_VERSION="$SAFARI_MARKETING_VERSION"
+if [ "$SAFARI_BUILD_VERSION" != "unknown" ]; then
+  SAFARI_VERSION="$SAFARI_MARKETING_VERSION ($SAFARI_BUILD_VERSION)"
+fi
 BROWSER_NAME=safari
 BROWSER_VERSION="$SAFARI_VERSION"
 
@@ -151,18 +156,25 @@ HTTP_PROXY_VALUE=""
 HTTPS_PROXY_VALUE=""
 DIAGNOSTICS_DIR="${DIAGNOSTICS_DIR:-$PWD/safari-diagnostics}"
 
-kill_pid() {
+process_is_alive() {
   local pid="$1" state
+  [ -n "$pid" ] || return 1
+  kill -0 "$pid" 2>/dev/null || return 1
+  state="$(
+    ps -o stat= -p "$pid" 2>/dev/null |
+      tr -d '[:space:]' ||
+      true
+  )"
+  [ -n "$state" ] && [[ "$state" != Z* ]]
+}
+
+kill_pid() {
+  local pid="$1"
   [ -n "$pid" ] || return 0
-  if kill -0 "$pid" 2>/dev/null; then
+  if process_is_alive "$pid"; then
     kill "$pid" 2>/dev/null || true
     for _ in 1 2 3 4 5 6; do
-      state="$(
-        ps -o stat= -p "$pid" 2>/dev/null |
-          tr -d '[:space:]' ||
-          true
-      )"
-      if ! kill -0 "$pid" 2>/dev/null || [[ "$state" == Z* ]]; then
+      if ! process_is_alive "$pid"; then
         wait "$pid" 2>/dev/null || true
         return 0
       fi
@@ -386,6 +398,7 @@ set_validation_result() {
   local verdict reason status_chain final_url detail header row_count
   local archive_name expected_sha actual_sha
 
+  VALIDATION_HANDOFF_ERROR=0
   VALIDATION_STATUS=error
   VALIDATION_REASON=archive_missing
   VALIDATION_HTTP_STATUS=-
@@ -394,6 +407,7 @@ set_validation_result() {
   VALIDATED_ARCHIVE=""
 
   if [ ! -f "$WPR_MANIFEST" ]; then
+    VALIDATION_HANDOFF_ERROR=1
     VALIDATION_REASON=validation_manifest_missing
     VALIDATION_DETAIL="validated archive handoff did not contain manifest.tsv"
     return
@@ -401,17 +415,20 @@ set_validation_result() {
 
   header="$(head -1 "$WPR_MANIFEST")"
   if [ "$header" != $'site\tarchive\tsha256\tarchive_bytes\tverdict\treason_code\thttp_status\tdetail\tstatus_chain\tfinal_url\tcontent_type\tblocked_marker' ]; then
+    VALIDATION_HANDOFF_ERROR=1
     VALIDATION_REASON=validation_manifest_schema_mismatch
     VALIDATION_DETAIL="validated archive manifest has an unsupported schema"
     return
   fi
   row_count="$(awk -F'\t' -v site="$site" 'NR > 1 && $1 == site { count++ } END { print count + 0 }' "$WPR_MANIFEST")"
   if [ "$row_count" -eq 0 ]; then
+    VALIDATION_HANDOFF_ERROR=1
     VALIDATION_REASON=validation_result_missing
     VALIDATION_DETAIL="site is absent from the WPR validation manifest"
     return
   fi
   if [ "$row_count" -ne 1 ]; then
+    VALIDATION_HANDOFF_ERROR=1
     VALIDATION_REASON=validation_result_ambiguous
     VALIDATION_DETAIL="site has multiple rows in the WPR validation manifest"
     return
@@ -420,22 +437,43 @@ set_validation_result() {
   archive_name="$(awk -F'\t' -v site="$site" 'NR > 1 && $1 == site { print $2; exit }' "$WPR_MANIFEST")"
   expected_sha="$(awk -F'\t' -v site="$site" 'NR > 1 && $1 == site { print $3; exit }' "$WPR_MANIFEST")"
   verdict="$(awk -F'\t' -v site="$site" 'NR > 1 && $1 == site { print $5; exit }' "$WPR_MANIFEST")"
-  ARCHIVE_SHA256="$(awk -F'\t' -v site="$site" 'NR > 1 && $1 == site { print $3; exit }' "$WPR_MANIFEST")"
-  ARCHIVE_SHA256="${ARCHIVE_SHA256:--}"
+  if [ "$verdict" != "ok" ] && [ "$verdict" != "error" ]; then
+    VALIDATION_HANDOFF_ERROR=1
+    VALIDATION_REASON=validation_verdict_invalid
+    VALIDATION_DETAIL="validated archive manifest has an unsupported verdict"
+    return
+  fi
+  if [[ "$expected_sha" =~ ^[0-9a-f]{64}$ ]]; then
+    ARCHIVE_SHA256="$expected_sha"
+  elif [ "$verdict" = "ok" ]; then
+    VALIDATION_HANDOFF_ERROR=1
+    VALIDATION_REASON=validated_archive_hash_invalid
+    VALIDATION_DETAIL="validator marked the site eligible without a valid SHA-256"
+    return
+  fi
   reason="$(awk -F'\t' -v site="$site" 'NR > 1 && $1 == site { print $6; exit }' "$WPR_MANIFEST")"
   VALIDATION_HTTP_STATUS="$(awk -F'\t' -v site="$site" 'NR > 1 && $1 == site { print $7; exit }' "$WPR_MANIFEST")"
   VALIDATION_HTTP_STATUS="${VALIDATION_HTTP_STATUS:--}"
+  if [ "$VALIDATION_HTTP_STATUS" != "-" ] && ! [[ "$VALIDATION_HTTP_STATUS" =~ ^[1-5][0-9][0-9]$ ]]; then
+    VALIDATION_HANDOFF_ERROR=1
+    VALIDATION_HTTP_STATUS=-
+    VALIDATION_REASON=validation_http_status_invalid
+    VALIDATION_DETAIL="validated archive manifest has an invalid HTTP status"
+    return
+  fi
   detail="$(awk -F'\t' -v site="$site" 'NR > 1 && $1 == site { print $8; exit }' "$WPR_MANIFEST")"
   status_chain="$(awk -F'\t' -v site="$site" 'NR > 1 && $1 == site { print $9; exit }' "$WPR_MANIFEST")"
   final_url="$(awk -F'\t' -v site="$site" 'NR > 1 && $1 == site { print $10; exit }' "$WPR_MANIFEST")"
   if [ "$verdict" = "ok" ]; then
     if ! [[ "$archive_name" =~ ^[a-zA-Z0-9._-]+\.wprgo$ ]]; then
+      VALIDATION_HANDOFF_ERROR=1
       VALIDATION_REASON=validated_archive_name_invalid
       VALIDATION_DETAIL="validator returned an unsafe or unsupported archive filename"
       return
     fi
     VALIDATED_ARCHIVE="$WPR_DIR/$archive_name"
     if [ ! -f "$VALIDATED_ARCHIVE" ]; then
+      VALIDATION_HANDOFF_ERROR=1
       VALIDATION_REASON=validated_archive_missing
       VALIDATION_DETAIL="validator marked the site eligible but its archive was not staged"
       VALIDATED_ARCHIVE=""
@@ -443,8 +481,10 @@ set_validation_result() {
     fi
     actual_sha="$(shasum -a 256 "$VALIDATED_ARCHIVE" | awk '{ print $1 }')"
     if [ -z "$expected_sha" ] || [ "$actual_sha" != "$expected_sha" ]; then
+      VALIDATION_HANDOFF_ERROR=1
       VALIDATION_REASON=validated_archive_hash_mismatch
       VALIDATION_DETAIL="staged archive SHA-256 does not match the validation manifest"
+      ARCHIVE_SHA256=-
       VALIDATED_ARCHIVE=""
       return
     fi
@@ -568,7 +608,7 @@ replay_services_alive() {
       httpproxy) pid="$HTTPPROXY_PID" ;;
       safaridriver) pid="$SAFARIDRIVER_PID" ;;
     esac
-    if [ -z "$pid" ] || ! kill -0 "$pid" 2>/dev/null; then
+    if ! process_is_alive "$pid"; then
       echo "ERROR: $label exited unexpectedly." >&2
       return 1
     fi
@@ -586,6 +626,13 @@ measure_site() {
   set_validation_result "$site"
   archive="$VALIDATED_ARCHIVE"
   if [ -z "$archive" ]; then
+    if [ "$VALIDATION_HANDOFF_ERROR" -eq 1 ]; then
+      echo "  $site: validated WPR handoff is unusable; HARNESS FAILURE." >&2
+      echo "::warning title=Harness failure::$site: $VALIDATION_REASON"
+      HARNESS_FAILURES=$((HARNESS_FAILURES + 1))
+      record_disposition "$site" infra_error
+      return
+    fi
     echo "  $site: excluded by WPR archive validation; SKIPPING." >&2
     echo "::warning title=Site excluded::$site did not pass WPR archive validation"
     record_disposition "$site" excluded
@@ -608,25 +655,17 @@ measure_site() {
       break
     fi
     before="$(proxy_log_line_count)"
-    set +e
-    output="$("$PYTHON_BIN" "$SAFARI_AUTOMATION_PY" \
-      "$SAFARIDRIVER_PORT" measure "https://$site" \
-      "$LCP_SETTLE_MS" "$LOAD_WINDOW_SECONDS" 2>&1)"
-    automation_status=$?
-    set -e
-    observed=$((observed + 1))
+    if output="$("$PYTHON_BIN" "$SAFARI_AUTOMATION_PY" \
+        "$SAFARIDRIVER_PORT" measure "https://$site" \
+        "$LCP_SETTLE_MS" "$LOAD_WINDOW_SECONDS" 2>&1)"; then
+      automation_status=0
+    else
+      automation_status=$?
+    fi
     if ! replay_services_alive; then
       printf '%s\n' "$output" | tail -20 >&2
       site_harness_failed=1
-      no_metric=$((no_metric + 1))
       break
-    fi
-    if [ "$automation_status" -ne 0 ]; then
-      echo "::warning title=Harness failure::$site: Safari automation exited $automation_status on repetition $rep"
-      printf '%s\n' "$output" | tail -20 >&2
-      site_harness_failed=1
-      no_metric=$((no_metric + 1))
-      continue
     fi
     for field in detail landed_url landed_offsite lcp_ms; do
       field_count="$(printf '%s\n' "$output" | grep -c "^$field=" || true)"
@@ -644,9 +683,23 @@ measure_site() {
     detail="$(printf '%s\n' "$output" | sed -n 's/^detail=//p' | tail -1)"
     landed_url="$(printf '%s\n' "$output" | sed -n 's/^landed_url=//p' | tail -1)"
     offsite="$(printf '%s\n' "$output" | sed -n 's/^landed_offsite=//p' | tail -1)"
+    observed=$((observed + 1))
 
+    if [ "$automation_status" -ne 0 ]; then
+      echo "::warning title=Harness failure::$site: Safari automation exited $automation_status on repetition $rep"
+      printf '%s\n' "$output" | tail -20 >&2
+      site_harness_failed=1
+      no_metric=$((no_metric + 1))
+      continue
+    fi
     if ! proxy_saw_requested_connect "$before" "$site"; then
       echo "    attempt rep=$rep: no proxy CONNECT for $site:443 -> HARNESS FAILURE" >&2
+      site_harness_failed=1
+      no_metric=$((no_metric + 1))
+      continue
+    fi
+    if [ "$offsite" != "0" ] && [ "$offsite" != "1" ]; then
+      echo "    attempt rep=$rep: automation produced invalid landed_offsite=$offsite -> HARNESS FAILURE" >&2
       site_harness_failed=1
       no_metric=$((no_metric + 1))
       continue
@@ -658,7 +711,8 @@ measure_site() {
       continue
     fi
     if [ "$offsite" = "1" ]; then
-      echo "    attempt rep=$rep: landed off-site at $landed_url -> SKIPPED" >&2
+      echo "    attempt rep=$rep: landed off-site at $landed_url -> HARNESS FAILURE" >&2
+      site_harness_failed=1
       no_metric=$((no_metric + 1))
       continue
     fi
@@ -681,7 +735,7 @@ measure_site() {
   LAST_NO_METRIC="$no_metric"
   TOTAL_RECORDED=$((TOTAL_RECORDED + recorded))
 
-  if ! kill -0 "$WPR_PID" 2>/dev/null; then
+  if ! process_is_alive "$WPR_PID"; then
     echo "  ERROR: WPR exited during $site replay. Log:" >&2
     cat "$WPR_LOG" >&2
     site_harness_failed=1
@@ -728,7 +782,7 @@ run_safari() {
     measure_site "$site"
   done
   if [ "$HARNESS_FAILURES" -gt 0 ]; then
-    echo "ERROR: $HARNESS_FAILURES eligible site(s) had browser harness failures." >&2
+    echo "ERROR: $HARNESS_FAILURES site(s) had browser harness failures." >&2
     RUN_STATUS=1
   fi
   if [ "$ELIGIBLE_SITES" -gt 0 ] && [ "$TOTAL_RECORDED" -eq 0 ]; then

@@ -35,6 +35,7 @@ def new_session(port):
                 "alwaysMatch": {
                     "browserName": "safari",
                     "acceptInsecureCerts": True,
+                    "pageLoadStrategy": "none",
                 }
             }
         },
@@ -51,8 +52,13 @@ def new_session(port):
 def delete_session(port, session_id):
     try:
         request(port, "DELETE", "/session/{}".format(session_id), timeout=15)
-    except (urllib.error.URLError, OSError):
-        pass
+        return True
+    except (urllib.error.URLError, OSError, urllib.error.HTTPError) as error:
+        print(
+            "Safari session deletion failed: {}".format(error),
+            file=sys.stderr,
+        )
+        return False
 
 
 def lcp_probe(settle_ms, load_window_ms):
@@ -79,8 +85,15 @@ def landed_on(requested, landed):
     """Return whether the landed host is the requested host or its subdomain."""
     if not landed:
         return False
-    requested_host = urllib.parse.urlparse(requested).hostname or ""
-    landed_host = urllib.parse.urlparse(landed).hostname or ""
+    requested_url = urllib.parse.urlparse(requested)
+    landed_url = urllib.parse.urlparse(landed)
+    if (
+        requested_url.scheme not in {"http", "https"}
+        or landed_url.scheme not in {"http", "https"}
+    ):
+        return False
+    requested_host = requested_url.hostname or ""
+    landed_host = landed_url.hostname or ""
     if not requested_host or not landed_host:
         return False
     requested_host = requested_host.removeprefix("www.").lower()
@@ -93,18 +106,19 @@ def landed_on(requested, landed):
 
 def check(port):
     session_id = None
+    status = 0
     try:
         session_id = new_session(port)
-        return 0
     except (urllib.error.URLError, OSError, urllib.error.HTTPError) as error:
         print(
             "Safari session creation failed: {}".format(error),
             file=sys.stderr,
         )
-        return 1
+        status = 1
     finally:
-        if session_id:
-            delete_session(port, session_id)
+        if session_id and not delete_session(port, session_id):
+            status = 1
+    return status
 
 
 def measure(port, url, settle_ms, load_window_seconds):
@@ -148,8 +162,8 @@ def measure(port, url, settle_ms, load_window_seconds):
         print("measurement failed for {}: {}".format(url, error), file=sys.stderr)
         failed = True
     finally:
-        if session_id:
-            delete_session(port, session_id)
+        if session_id and not delete_session(port, session_id):
+            failed = True
 
     lcp_ms = detail.get("ms", -1) if isinstance(detail, dict) else -1
     landed_url = detail.get("loc", "") if isinstance(detail, dict) else ""
@@ -182,6 +196,7 @@ def measure(port, url, settle_ms, load_window_seconds):
             "measurement landed off-site for {}: {!r}".format(url, landed_url),
             file=sys.stderr,
         )
+        failed = True
 
     if not failed and not landed_url:
         print(

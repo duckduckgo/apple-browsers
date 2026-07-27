@@ -60,6 +60,9 @@ class LandingTests(unittest.TestCase):
         self.assertIs(
             body["capabilities"]["alwaysMatch"]["acceptInsecureCerts"], True
         )
+        self.assertEqual(
+            body["capabilities"]["alwaysMatch"]["pageLoadStrategy"], "none"
+        )
 
     def test_measurement_transport_failure_is_nonzero_with_parseable_output(self):
         stdout = io.StringIO()
@@ -153,6 +156,52 @@ class LandingTests(unittest.TestCase):
             )
         self.assertEqual(status, 1)
         self.assertIn("lcp_ms=-1", stdout.getvalue())
+
+    def test_offsite_measurement_is_nonzero(self):
+        stdout = io.StringIO()
+        response = {
+            "value": {"ms": 25, "loc": "https://certificate-error.test/"}
+        }
+        with mock.patch.object(
+            SAFARI_AUTOMATION, "new_session", return_value="session"
+        ), mock.patch.object(
+            SAFARI_AUTOMATION, "request", return_value=response
+        ), mock.patch.object(
+            SAFARI_AUTOMATION, "delete_session", return_value=True
+        ), mock.patch.object(
+            SAFARI_AUTOMATION.time, "sleep"
+        ), redirect_stdout(stdout), redirect_stderr(io.StringIO()):
+            status = SAFARI_AUTOMATION.measure(
+                "8790", "https://apple.com", 0, 12
+            )
+        self.assertEqual(status, 1)
+        self.assertIn("landed_offsite=1", stdout.getvalue())
+        self.assertIn("lcp_ms=-1", stdout.getvalue())
+
+    def test_session_deletion_failure_is_nonzero(self):
+        stdout = io.StringIO()
+        response = {"value": {"ms": 25, "loc": "https://apple.com/"}}
+        with mock.patch.object(
+            SAFARI_AUTOMATION, "new_session", return_value="session"
+        ), mock.patch.object(
+            SAFARI_AUTOMATION, "request", return_value=response
+        ), mock.patch.object(
+            SAFARI_AUTOMATION, "delete_session", return_value=False
+        ), mock.patch.object(
+            SAFARI_AUTOMATION.time, "sleep"
+        ), redirect_stdout(stdout), redirect_stderr(io.StringIO()):
+            status = SAFARI_AUTOMATION.measure(
+                "8790", "https://apple.com", 0, 12
+            )
+        self.assertEqual(status, 1)
+
+    def test_check_fails_when_session_cannot_be_deleted(self):
+        with mock.patch.object(
+            SAFARI_AUTOMATION, "new_session", return_value="session"
+        ), mock.patch.object(
+            SAFARI_AUTOMATION, "delete_session", return_value=False
+        ):
+            self.assertEqual(SAFARI_AUTOMATION.check("8790"), 1)
 
 
 class ProxyParsingTests(unittest.TestCase):

@@ -68,6 +68,22 @@ class AggregateDispositionsTests(unittest.TestCase):
             with self.subTest(row=row):
                 self.assertNotEqual(self.run_program(row).returncode, 0)
 
+    def test_accepts_validated_archive_handoff_failure(self) -> None:
+        row = (
+            "safari\t1\tbad.test\tinfra_error\terror\t"
+            "validated_archive_hash_mismatch\t-\tstaged archive changed\t-"
+            "\t2\t0\t0\t0\t0\t12000\tmacOS-15\n"
+        )
+        result = self.run_program(row)
+        self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_rejects_non_handoff_validation_error_as_infrastructure(self) -> None:
+        row = (
+            "safari\t1\tbad.test\tinfra_error\terror\thttp_403\t403\t-\t-"
+            "\t2\t0\t0\t0\t0\t12000\tmacOS-15\n"
+        )
+        self.assertNotEqual(self.run_program(row).returncode, 0)
+
     def test_rejects_empty_data(self) -> None:
         self.assertNotEqual(self.run_program("").returncode, 0)
 

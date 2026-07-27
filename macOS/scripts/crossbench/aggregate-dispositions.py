@@ -44,6 +44,18 @@ VALID_OUTCOMES = {
     "measured", "partial", "no_samples", "excluded", "infra_error",
 }
 VALID_VALIDATION_STATUSES = {"ok", "error"}
+VALID_HANDOFF_FAILURE_REASONS = {
+    "validation_manifest_missing",
+    "validation_manifest_schema_mismatch",
+    "validation_result_missing",
+    "validation_result_ambiguous",
+    "validation_verdict_invalid",
+    "validation_http_status_invalid",
+    "validated_archive_name_invalid",
+    "validated_archive_missing",
+    "validated_archive_hash_invalid",
+    "validated_archive_hash_mismatch",
+}
 
 
 def to_epoch(value: str) -> str:
@@ -190,8 +202,17 @@ def main() -> None:
                          "requires validation_reason")
             if validation_status == "ok" and (sha is None or http_status is not None or outcome == "excluded"):
                 sys.exit(f"ERROR: {location}: validated sites require a hash, no HTTP error, and a non-excluded outcome")
-            if validation_status == "error" and outcome != "excluded":
-                sys.exit(f"ERROR: {location}: validation errors must have outcome excluded")
+            if validation_status == "error":
+                valid_validation_outcome = outcome == "excluded"
+                valid_handoff_outcome = (
+                    outcome == "infra_error"
+                    and reason in VALID_HANDOFF_FAILURE_REASONS
+                )
+                if not (valid_validation_outcome or valid_handoff_outcome):
+                    sys.exit(
+                        f"ERROR: {location}: validation errors must be excluded; "
+                        "validated-archive handoff failures must be infra_error"
+                    )
             if outcome == "excluded" and (observed_n or recorded_n or dropped_n):
                 sys.exit(f"ERROR: {location}: excluded sites cannot have measurement counters")
             if outcome == "measured" and not (recorded_n == observed_n == requested_n):

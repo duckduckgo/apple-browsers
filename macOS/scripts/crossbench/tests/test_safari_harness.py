@@ -20,10 +20,17 @@ MANIFEST_HEADER = (
 )
 
 
-def free_port() -> int:
-    with socket.socket() as listener:
-        listener.bind(("127.0.0.1", 0))
-        return listener.getsockname()[1]
+def free_ports(count: int) -> list[int]:
+    listeners = []
+    try:
+        for _ in range(count):
+            listener = socket.socket()
+            listener.bind(("127.0.0.1", 0))
+            listeners.append(listener)
+        return [listener.getsockname()[1] for listener in listeners]
+    finally:
+        for listener in listeners:
+            listener.close()
 
 
 class SafariHarnessTests(unittest.TestCase):
@@ -40,11 +47,13 @@ class SafariHarnessTests(unittest.TestCase):
         self.defaults_state.write_text("{}")
         self._write_fakes()
 
-        self.wpr_http_port = free_port()
-        self.wpr_https_port = free_port()
-        self.tsproxy_port = free_port()
-        self.httpproxy_port = free_port()
-        self.safaridriver_port = free_port()
+        (
+            self.wpr_http_port,
+            self.wpr_https_port,
+            self.tsproxy_port,
+            self.httpproxy_port,
+            self.safaridriver_port,
+        ) = free_ports(5)
 
         cert = self.root / "cert.pem"
         key = self.root / "key.pem"
@@ -93,6 +102,7 @@ class SafariHarnessTests(unittest.TestCase):
             #!/usr/bin/env python3
             import json
             import os
+            import socket
             import sys
 
             state_path = os.environ["DEFAULTS_STATE"]
@@ -102,7 +112,7 @@ class SafariHarnessTests(unittest.TestCase):
             domain = sys.argv[2]
             key = sys.argv[3] if len(sys.argv) > 3 else ""
             if command == "read" and domain.endswith("Info.plist"):
-                print("99.1")
+                print("99.1" if key == "CFBundleShortVersionString" else "99A1")
                 raise SystemExit(0)
             if command == "read":
                 if key not in state:
@@ -111,16 +121,37 @@ class SafariHarnessTests(unittest.TestCase):
             elif command == "read-type":
                 if key not in state:
                     raise SystemExit(1)
-                print("Type is string")
+                if key == os.environ.get("DEFAULTS_NON_STRING_KEY"):
+                    print("Type is integer")
+                else:
+                    print("Type is string")
             elif command == "write":
                 value = sys.argv[-1]
+                if (
+                    key == os.environ.get("DEFAULTS_FAIL_APPLY_KEY")
+                    and value.startswith("http://127.0.0.1:")
+                ):
+                    raise SystemExit(8)
                 if (
                     key == os.environ.get("DEFAULTS_FAIL_RESTORE_KEY")
                     and not value.startswith("http://127.0.0.1:")
                 ):
                     raise SystemExit(9)
+                if (
+                    os.environ.get("DEFAULTS_REQUIRE_PROXY_ON_RESTORE") == "1"
+                    and not value.startswith("http://127.0.0.1:")
+                ):
+                    with socket.create_connection(
+                        ("127.0.0.1", int(os.environ["HTTPPROXY_PORT"]))
+                    ):
+                        pass
                 state[key] = value
             elif command == "delete":
+                if os.environ.get("DEFAULTS_REQUIRE_PROXY_ON_RESTORE") == "1":
+                    with socket.create_connection(
+                        ("127.0.0.1", int(os.environ["HTTPPROXY_PORT"]))
+                    ):
+                        pass
                 state.pop(key, None)
             else:
                 raise SystemExit(2)
@@ -220,9 +251,13 @@ class SafariHarnessTests(unittest.TestCase):
                     )
                 time.sleep(0.05)
             lcp = "-1" if mode == "unfinalized" else "1000"
-            print(f'detail={{"ms": {lcp}, "loc": "{url}/"}}')
-            print(f"landed_url={url}/")
-            print("landed_offsite=0")
+            landed_url = "https://offsite.test/" if mode == "offsite" else f"{url}/"
+            offsite = "garbage" if mode == "invalid_offsite" else (
+                "1" if mode == "offsite" else "0"
+            )
+            print(f'detail={{"ms": {lcp}, "loc": "{landed_url}"}}')
+            print(f"landed_url={landed_url}")
+            print(f"landed_offsite={offsite}")
             print(f"lcp_ms={lcp}")
             """,
         )
@@ -271,6 +306,7 @@ class SafariHarnessTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(len(self.measurement_rows()), 1)
         row = self.disposition_rows()[0]
+        self.assertEqual(row[1], "99.1 (99A1)")
         self.assertEqual(row[2:5], ["apple.com", "measured", "ok"])
         self.assertEqual(row[9:14], ["1", "1", "1", "0", "0"])
         self.assertEqual(json.loads(self.defaults_state.read_text()), {})
@@ -312,6 +348,33 @@ class SafariHarnessTests(unittest.TestCase):
         )
         self.assertIn("failed to restore Safari proxy preferences", result.stderr)
 
+    def test_partial_proxy_application_restores_both_original_values(self) -> None:
+        initial = {
+            "WebKit2HTTPProxy": "http://old-http.test:8080",
+            "WebKit2HTTPSProxy": "http://old-https.test:8443",
+        }
+        self.defaults_state.write_text(json.dumps(initial))
+        result = self.run_harness(
+            DEFAULTS_FAIL_APPLY_KEY="WebKit2HTTPSProxy"
+        )
+        self.assertEqual(result.returncode, 8)
+        self.assertEqual(json.loads(self.defaults_state.read_text()), initial)
+
+    def test_cleanup_restores_preferences_while_proxy_is_alive(self) -> None:
+        result = self.run_harness(DEFAULTS_REQUIRE_PROXY_ON_RESTORE="1")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(json.loads(self.defaults_state.read_text()), {})
+
+    def test_non_string_preference_is_not_mutated(self) -> None:
+        initial = {"WebKit2HTTPProxy": 42}
+        self.defaults_state.write_text(json.dumps(initial))
+        result = self.run_harness(
+            DEFAULTS_NON_STRING_KEY="WebKit2HTTPProxy"
+        )
+        self.assertEqual(result.returncode, 1)
+        self.assertEqual(json.loads(self.defaults_state.read_text()), initial)
+        self.assertIn("unsupported pre-existing type", result.stderr)
+
     def test_missing_connect_is_an_infrastructure_failure(self) -> None:
         result = self.run_harness(AUTOMATION_MODE="no_connect")
         self.assertEqual(result.returncode, 1)
@@ -341,12 +404,55 @@ class SafariHarnessTests(unittest.TestCase):
             (self.root / "diagnostics" / "wpr-apple.com.log").is_file()
         )
 
-    def test_archive_hash_mismatch_is_excluded(self) -> None:
+    def test_offsite_landing_is_an_infrastructure_failure(self) -> None:
+        result = self.run_harness(AUTOMATION_MODE="offsite")
+        self.assertEqual(result.returncode, 1)
+        self.assertEqual(self.disposition_rows()[0][3], "infra_error")
+
+    def test_invalid_offsite_protocol_is_an_infrastructure_failure(self) -> None:
+        result = self.run_harness(AUTOMATION_MODE="invalid_offsite")
+        self.assertEqual(result.returncode, 1)
+        self.assertEqual(self.disposition_rows()[0][3], "infra_error")
+        self.assertIn("invalid landed_offsite", result.stderr)
+
+    def test_archive_hash_mismatch_is_an_infrastructure_failure(self) -> None:
         (self.archives / "navToLCP_apple.com.wprgo").write_text("changed")
         result = self.run_harness()
-        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.returncode, 1)
         row = self.disposition_rows()[0]
-        self.assertEqual(row[3:6], ["excluded", "error", "validated_archive_hash_mismatch"])
+        self.assertEqual(
+            row[3:6],
+            ["infra_error", "error", "validated_archive_hash_mismatch"],
+        )
+        self.assertEqual(row[8], "-")
+
+    def test_invalid_manifest_hash_is_an_infrastructure_failure(self) -> None:
+        manifest = self.archives / "manifest.tsv"
+        fields = manifest.read_text().splitlines()[1].split("\t")
+        fields[2] = "not-a-sha256"
+        manifest.write_text(MANIFEST_HEADER + "\t".join(fields) + "\n")
+        result = self.run_harness()
+        self.assertEqual(result.returncode, 1)
+        row = self.disposition_rows()[0]
+        self.assertEqual(
+            row[3:6],
+            ["infra_error", "error", "validated_archive_hash_invalid"],
+        )
+        self.assertEqual(row[8], "-")
+
+    def test_validator_site_error_remains_an_exclusion(self) -> None:
+        manifest = self.archives / "manifest.tsv"
+        fields = manifest.read_text().splitlines()[1].split("\t")
+        fields[4] = "error"
+        fields[5] = "http_403"
+        fields[6] = "403"
+        manifest.write_text(MANIFEST_HEADER + "\t".join(fields) + "\n")
+        result = self.run_harness()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(
+            self.disposition_rows()[0][3:7],
+            ["excluded", "error", "http_403", "403"],
+        )
 
 
 if __name__ == "__main__":

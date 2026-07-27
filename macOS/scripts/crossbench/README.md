@@ -23,7 +23,8 @@ site is eligible, package validation fails and browser jobs do not start.
 The reusable validation workflow publishes an actionable report and the exact
 replayable archives. Browser workflows consume that artifact instead of
 downloading the files again. Safari verifies each staged archive's filename and
-SHA-256 against that manifest before starting WPR.
+SHA-256 against that manifest before starting WPR. Corruption between validation
+and the browser runner is an infrastructure failure, not a site exclusion.
 
 ## Layout
 
@@ -80,6 +81,8 @@ python3 -m unittest discover -s tests -p 'test_*.py'
 
 The Safari harness tests run the real shell runner against temporary loopback
 fake services and preferences; they do not start Safari or access the network.
+The pull-request replay workflow runs this suite independently of browser
+provisioning and WPR archive validation.
 
 CI creates at most one write-only Asana subtask per workflow run under task
 `1216902374642227` when its consolidated validation report has new errors. It
@@ -137,7 +140,10 @@ before Safari accepts automation sessions.
 
 WebKit does not emit Chromium Perfetto traces. `safari-automation.py` instead
 reads the buffered `largest-contentful-paint` PerformanceObserver entries over
-WebDriver and rejects certificate interstitials or other off-site landings.
+WebDriver. Its non-blocking page-load strategy observes a fixed 12-second window
+from navigation rather than waiting for the page `load` event. Certificate
+interstitials, other off-site landings, and failed session cleanup are
+infrastructure errors.
 Every eligible site gets 10 measured replay loads and no warm-up. Validation
 errors are recorded as exclusions, with no live-network fallback. WPR or
 automation failures are recorded as `infra_error`; the remaining sites still

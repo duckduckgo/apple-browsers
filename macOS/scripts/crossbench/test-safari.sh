@@ -67,8 +67,7 @@ PYTHON_BIN="${PYTHON_BIN:-}"
 SAFARI_DOMAIN="com.apple.Safari"
 SAFARI_HTTP_PROXY_KEY="WebKit2HTTPProxy"
 SAFARI_HTTPS_PROXY_KEY="WebKit2HTTPSProxy"
-SAFARI_APP="/Applications/Safari.app"
-SUITE="navToLCP"
+SAFARI_APP="${SAFARI_APP:-/Applications/Safari.app}"
 LOAD_WINDOW="12s"
 LOAD_WINDOW_MS=12000
 LOAD_WINDOW_SECONDS=12
@@ -93,7 +92,6 @@ if ! [[ "$MEASURED_REPS" =~ ^[1-9][0-9]*$ ]]; then
 fi
 
 log() { printf '\n=== %s ===\n' "$1"; }
-normalize() { printf '%s' "$1" | tr '+/' '__'; }
 
 SITES=()
 while IFS= read -r site; do
@@ -104,6 +102,10 @@ done < "$SCRIPT_DIR/wpr-sites.txt"
 if [ -n "$SITES_OVERRIDE" ]; then
   IFS=',' read -r -a SITES <<< "$SITES_OVERRIDE"
 fi
+if [ "${#SITES[@]}" -eq 0 ]; then
+  echo "ERROR: no sites selected." >&2
+  exit 2
+fi
 NORMALIZED_SITES=()
 for site in "${SITES[@]}"; do
   site="$(normalize_wpr_site "$site")"
@@ -111,12 +113,14 @@ for site in "${SITES[@]}"; do
     echo "ERROR: invalid site hostname: $site" >&2
     exit 2
   fi
-  for previous in "${NORMALIZED_SITES[@]}"; do
-    if [ "$site" = "$previous" ]; then
-      echo "ERROR: duplicate site hostname: $site" >&2
-      exit 2
-    fi
-  done
+  if [ "${#NORMALIZED_SITES[@]}" -gt 0 ]; then
+    for previous in "${NORMALIZED_SITES[@]}"; do
+      if [ "$site" = "$previous" ]; then
+        echo "ERROR: duplicate site hostname: $site" >&2
+        exit 2
+      fi
+    done
+  fi
   NORMALIZED_SITES+=("$site")
 done
 SITES=("${NORMALIZED_SITES[@]}")
@@ -148,12 +152,17 @@ HTTPS_PROXY_VALUE=""
 DIAGNOSTICS_DIR="${DIAGNOSTICS_DIR:-$PWD/safari-diagnostics}"
 
 kill_pid() {
-  local pid="$1"
+  local pid="$1" state
   [ -n "$pid" ] || return 0
   if kill -0 "$pid" 2>/dev/null; then
     kill "$pid" 2>/dev/null || true
     for _ in 1 2 3 4 5 6; do
-      if ! kill -0 "$pid" 2>/dev/null; then
+      state="$(
+        ps -o stat= -p "$pid" 2>/dev/null |
+          tr -d '[:space:]' ||
+          true
+      )"
+      if ! kill -0 "$pid" 2>/dev/null || [[ "$state" == Z* ]]; then
         wait "$pid" 2>/dev/null || true
         return 0
       fi
@@ -190,7 +199,8 @@ capture_proxy_state() {
 restore_proxy_key() {
   local key="$1" was_set="$2" value="$3"
   if [ "$was_set" = "1" ]; then
-    defaults write "$SAFARI_DOMAIN" "$key" -string "$value"
+    defaults write "$SAFARI_DOMAIN" "$key" -string "$value" || return 1
+    verify_proxy_string "$key" "$value"
   else
     defaults delete "$SAFARI_DOMAIN" "$key" 2>/dev/null || true
     if defaults read "$SAFARI_DOMAIN" "$key" >/dev/null 2>&1; then
@@ -200,15 +210,28 @@ restore_proxy_key() {
   fi
 }
 
+verify_proxy_string() {
+  local key="$1" expected="$2" actual type
+  actual="$(defaults read "$SAFARI_DOMAIN" "$key" 2>/dev/null)" || return 1
+  type="$(defaults read-type "$SAFARI_DOMAIN" "$key" 2>/dev/null)" || return 1
+  if [ "$type" != "Type is string" ] || [ "$actual" != "$expected" ]; then
+    echo "ERROR: Safari proxy preference $key did not retain the expected string value." >&2
+    return 1
+  fi
+}
+
 apply_proxy_state() {
+  local proxy_url="http://127.0.0.1:$HTTPPROXY_PORT"
   capture_proxy_state
   # Mark before the first write so a failure during either write still restores
   # both keys from the snapshot.
   PROXY_APPLIED=1
   defaults write "$SAFARI_DOMAIN" "$SAFARI_HTTP_PROXY_KEY" \
-    -string "http://127.0.0.1:$HTTPPROXY_PORT"
+    -string "$proxy_url"
   defaults write "$SAFARI_DOMAIN" "$SAFARI_HTTPS_PROXY_KEY" \
-    -string "http://127.0.0.1:$HTTPPROXY_PORT"
+    -string "$proxy_url"
+  verify_proxy_string "$SAFARI_HTTP_PROXY_KEY" "$proxy_url"
+  verify_proxy_string "$SAFARI_HTTPS_PROXY_KEY" "$proxy_url"
 }
 
 restore_proxy_state() {
@@ -289,6 +312,10 @@ check_prerequisites() {
     echo "ERROR: defaults not found." >&2
     exit 1
   }
+  command -v shasum >/dev/null 2>&1 || {
+    echo "ERROR: shasum not found." >&2
+    exit 1
+  }
   [ -d "$SAFARI_APP" ] || {
     echo "ERROR: Safari not found at $SAFARI_APP." >&2
     exit 1
@@ -354,22 +381,17 @@ assert_port_free() {
   fi
 }
 
-fetch_archive() {
-  local story="$1" normalized archive
-  normalized="$(normalize "$story")"
-  archive="$WPR_DIR/$normalized.wprgo"
-  [ ! -f "$archive" ] || printf '%s' "$archive"
-}
-
 set_validation_result() {
-  local site="$1" archive_available="$2"
-  local verdict reason status_chain final_url detail header
+  local site="$1"
+  local verdict reason status_chain final_url detail header row_count
+  local archive_name expected_sha actual_sha
 
   VALIDATION_STATUS=error
   VALIDATION_REASON=archive_missing
   VALIDATION_HTTP_STATUS=-
   VALIDATION_DETAIL=-
   ARCHIVE_SHA256=-
+  VALIDATED_ARCHIVE=""
 
   if [ ! -f "$WPR_MANIFEST" ]; then
     VALIDATION_REASON=validation_manifest_missing
@@ -383,13 +405,21 @@ set_validation_result() {
     VALIDATION_DETAIL="validated archive manifest has an unsupported schema"
     return
   fi
-  verdict="$(awk -F'\t' -v site="$site" 'NR > 1 && $1 == site { print $5; exit }' "$WPR_MANIFEST")"
-  if [ -z "$verdict" ]; then
+  row_count="$(awk -F'\t' -v site="$site" 'NR > 1 && $1 == site { count++ } END { print count + 0 }' "$WPR_MANIFEST")"
+  if [ "$row_count" -eq 0 ]; then
     VALIDATION_REASON=validation_result_missing
     VALIDATION_DETAIL="site is absent from the WPR validation manifest"
     return
   fi
+  if [ "$row_count" -ne 1 ]; then
+    VALIDATION_REASON=validation_result_ambiguous
+    VALIDATION_DETAIL="site has multiple rows in the WPR validation manifest"
+    return
+  fi
 
+  archive_name="$(awk -F'\t' -v site="$site" 'NR > 1 && $1 == site { print $2; exit }' "$WPR_MANIFEST")"
+  expected_sha="$(awk -F'\t' -v site="$site" 'NR > 1 && $1 == site { print $3; exit }' "$WPR_MANIFEST")"
+  verdict="$(awk -F'\t' -v site="$site" 'NR > 1 && $1 == site { print $5; exit }' "$WPR_MANIFEST")"
   ARCHIVE_SHA256="$(awk -F'\t' -v site="$site" 'NR > 1 && $1 == site { print $3; exit }' "$WPR_MANIFEST")"
   ARCHIVE_SHA256="${ARCHIVE_SHA256:--}"
   reason="$(awk -F'\t' -v site="$site" 'NR > 1 && $1 == site { print $6; exit }' "$WPR_MANIFEST")"
@@ -398,14 +428,28 @@ set_validation_result() {
   detail="$(awk -F'\t' -v site="$site" 'NR > 1 && $1 == site { print $8; exit }' "$WPR_MANIFEST")"
   status_chain="$(awk -F'\t' -v site="$site" 'NR > 1 && $1 == site { print $9; exit }' "$WPR_MANIFEST")"
   final_url="$(awk -F'\t' -v site="$site" 'NR > 1 && $1 == site { print $10; exit }' "$WPR_MANIFEST")"
-  if [ "$verdict" = "ok" ] && [ -n "$archive_available" ]; then
+  if [ "$verdict" = "ok" ]; then
+    if ! [[ "$archive_name" =~ ^[a-zA-Z0-9._-]+\.wprgo$ ]]; then
+      VALIDATION_REASON=validated_archive_name_invalid
+      VALIDATION_DETAIL="validator returned an unsafe or unsupported archive filename"
+      return
+    fi
+    VALIDATED_ARCHIVE="$WPR_DIR/$archive_name"
+    if [ ! -f "$VALIDATED_ARCHIVE" ]; then
+      VALIDATION_REASON=validated_archive_missing
+      VALIDATION_DETAIL="validator marked the site eligible but its archive was not staged"
+      VALIDATED_ARCHIVE=""
+      return
+    fi
+    actual_sha="$(shasum -a 256 "$VALIDATED_ARCHIVE" | awk '{ print $1 }')"
+    if [ -z "$expected_sha" ] || [ "$actual_sha" != "$expected_sha" ]; then
+      VALIDATION_REASON=validated_archive_hash_mismatch
+      VALIDATION_DETAIL="staged archive SHA-256 does not match the validation manifest"
+      VALIDATED_ARCHIVE=""
+      return
+    fi
     VALIDATION_STATUS=ok
     VALIDATION_REASON=-
-    return
-  fi
-  if [ "$verdict" = "ok" ]; then
-    VALIDATION_REASON=validated_archive_missing
-    VALIDATION_DETAIL="validator marked the site eligible but its archive was not staged"
     return
   fi
 
@@ -515,18 +559,32 @@ proxy_saw_requested_connect() {
     "$HTTPPROXY_LOG"
 }
 
+replay_services_alive() {
+  local label pid
+  for label in WPR tsproxy httpproxy safaridriver; do
+    case "$label" in
+      WPR) pid="$WPR_PID" ;;
+      tsproxy) pid="$TSPROXY_PID" ;;
+      httpproxy) pid="$HTTPPROXY_PID" ;;
+      safaridriver) pid="$SAFARIDRIVER_PID" ;;
+    esac
+    if [ -z "$pid" ] || ! kill -0 "$pid" 2>/dev/null; then
+      echo "ERROR: $label exited unexpectedly." >&2
+      return 1
+    fi
+  done
+}
+
 measure_site() {
-  local site="$1" archive rep before output lcp detail landed_url offsite
+  local site="$1" archive rep before output lcp detail landed_url offsite field
+  local field_count
   local automation_status site_harness_failed=0
   local unfinalized=0 no_metric=0 observed=0 recorded=0
   local -a values=()
   reset_measurement_counters
 
-  archive="$(fetch_archive "$SUITE+$site")"
-  set_validation_result "$site" "$archive"
-  if [ "$VALIDATION_STATUS" != "ok" ]; then
-    archive=""
-  fi
+  set_validation_result "$site"
+  archive="$VALIDATED_ARCHIVE"
   if [ -z "$archive" ]; then
     echo "  $site: excluded by WPR archive validation; SKIPPING." >&2
     echo "::warning title=Site excluded::$site did not pass WPR archive validation"
@@ -545,6 +603,10 @@ measure_site() {
   fi
 
   for ((rep = 1; rep <= MEASURED_REPS; rep++)); do
+    if ! replay_services_alive; then
+      site_harness_failed=1
+      break
+    fi
     before="$(proxy_log_line_count)"
     set +e
     output="$("$PYTHON_BIN" "$SAFARI_AUTOMATION_PY" \
@@ -553,10 +615,29 @@ measure_site() {
     automation_status=$?
     set -e
     observed=$((observed + 1))
-    if [ "$automation_status" -ne 0 ]; then
-      echo "::warning title=Harness failure::$site: Safari automation exited $automation_status on repetition $rep"
+    if ! replay_services_alive; then
+      printf '%s\n' "$output" | tail -20 >&2
       site_harness_failed=1
       no_metric=$((no_metric + 1))
+      break
+    fi
+    if [ "$automation_status" -ne 0 ]; then
+      echo "::warning title=Harness failure::$site: Safari automation exited $automation_status on repetition $rep"
+      printf '%s\n' "$output" | tail -20 >&2
+      site_harness_failed=1
+      no_metric=$((no_metric + 1))
+      continue
+    fi
+    for field in detail landed_url landed_offsite lcp_ms; do
+      field_count="$(printf '%s\n' "$output" | grep -c "^$field=" || true)"
+      if [ "$field_count" -ne 1 ]; then
+        echo "    attempt rep=$rep: automation emitted $field_count $field field(s) -> HARNESS FAILURE" >&2
+        site_harness_failed=1
+        no_metric=$((no_metric + 1))
+        break
+      fi
+    done
+    if [ "$field_count" -ne 1 ]; then
       continue
     fi
     lcp="$(printf '%s\n' "$output" | sed -n 's/^lcp_ms=//p' | tail -1)"
@@ -565,12 +646,14 @@ measure_site() {
     offsite="$(printf '%s\n' "$output" | sed -n 's/^landed_offsite=//p' | tail -1)"
 
     if ! proxy_saw_requested_connect "$before" "$site"; then
-      echo "    attempt rep=$rep: no proxy CONNECT for $site:443 -> SKIPPED" >&2
+      echo "    attempt rep=$rep: no proxy CONNECT for $site:443 -> HARNESS FAILURE" >&2
+      site_harness_failed=1
       no_metric=$((no_metric + 1))
       continue
     fi
-    if [ -z "$lcp" ]; then
-      echo "    attempt rep=$rep: automation produced no metric -> SKIPPED" >&2
+    if ! [[ "$lcp" =~ ^-?[0-9]+([.][0-9]+)?$ ]]; then
+      echo "    attempt rep=$rep: automation produced invalid lcp_ms=$lcp -> HARNESS FAILURE" >&2
+      site_harness_failed=1
       no_metric=$((no_metric + 1))
       continue
     fi

@@ -9,12 +9,13 @@ from contextlib import redirect_stderr, redirect_stdout
 from unittest import mock
 
 
-MODULE_PATH = pathlib.Path(__file__).with_name("safari-automation.py")
+ROOT = pathlib.Path(__file__).parents[1]
+MODULE_PATH = ROOT / "safari-automation.py"
 SPEC = importlib.util.spec_from_file_location("safari_automation", MODULE_PATH)
 SAFARI_AUTOMATION = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(SAFARI_AUTOMATION)
 
-PROXY_PATH = pathlib.Path(__file__).with_name("httpproxy.py")
+PROXY_PATH = ROOT / "httpproxy.py"
 PROXY_SPEC = importlib.util.spec_from_file_location("httpproxy", PROXY_PATH)
 HTTP_PROXY = importlib.util.module_from_spec(PROXY_SPEC)
 PROXY_SPEC.loader.exec_module(HTTP_PROXY)
@@ -106,6 +107,49 @@ class LandingTests(unittest.TestCase):
         ), redirect_stdout(stdout), redirect_stderr(io.StringIO()):
             status = SAFARI_AUTOMATION.measure(
                 "8790", "https://apple.com", 0, 0
+            )
+        self.assertEqual(status, 1)
+        self.assertIn("lcp_ms=-1", stdout.getvalue())
+
+    def test_measurement_without_finalized_lcp_is_successful(self):
+        stdout = io.StringIO()
+        response = {"value": {"ms": -1, "loc": "https://apple.com/"}}
+        with mock.patch.object(
+            SAFARI_AUTOMATION, "new_session", return_value="session"
+        ), mock.patch.object(
+            SAFARI_AUTOMATION, "request", return_value=response
+        ), mock.patch.object(
+            SAFARI_AUTOMATION, "delete_session"
+        ), mock.patch.object(
+            SAFARI_AUTOMATION.time, "sleep"
+        ), redirect_stdout(stdout), redirect_stderr(io.StringIO()):
+            status = SAFARI_AUTOMATION.measure(
+                "8790", "https://apple.com", 0, 12
+            )
+        self.assertEqual(status, 0)
+        self.assertIn("lcp_ms=-1", stdout.getvalue())
+        self.assertIn("landed_url=https://apple.com/", stdout.getvalue())
+
+    def test_probe_enforces_load_window(self):
+        probe = SAFARI_AUTOMATION.lcp_probe(600, 12000)
+        self.assertIn("maxMs=12000", probe)
+        self.assertIn("e.startTime<=maxMs", probe)
+        self.assertIn("done({ms:v,", probe)
+
+    def test_measurement_with_non_finite_lcp_is_nonzero(self):
+        stdout = io.StringIO()
+        response = {"value": {"ms": float("inf"), "loc": "https://apple.com/"}}
+        with mock.patch.object(
+            SAFARI_AUTOMATION, "new_session", return_value="session"
+        ), mock.patch.object(
+            SAFARI_AUTOMATION, "request", return_value=response
+        ), mock.patch.object(
+            SAFARI_AUTOMATION, "delete_session"
+        ), mock.patch.object(
+            SAFARI_AUTOMATION.time, "sleep"
+        ), redirect_stdout(stdout), redirect_stderr(io.StringIO()):
+            status = SAFARI_AUTOMATION.measure(
+                "8790", "https://apple.com", 0, 12
             )
         self.assertEqual(status, 1)
         self.assertIn("lcp_ms=-1", stdout.getvalue())

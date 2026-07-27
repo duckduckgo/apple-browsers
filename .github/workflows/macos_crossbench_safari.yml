@@ -78,6 +78,9 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Run replay harness tests
+        run: python3 -m unittest discover -s tests -p 'test_*.py'
+
       - name: Download validated WPR archives
         uses: actions/download-artifact@v7
         with:
@@ -156,8 +159,17 @@ jobs:
           #
           # Replay rows use sfr-wpr so they cannot mix with historical
           # live-network sfr rows. webview-channel remains stable.
-          run_json="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}")"
+          shopt -s nullglob
           in_tsv=(crossbench-results/*.tsv)
+          if [ "${#in_tsv[@]}" -eq 0 ]; then
+            echo "no metrics TSV to aggregate"
+            exit 0
+          fi
+          if [ "${#in_tsv[@]}" -ne 1 ]; then
+            echo "ERROR: expected one metrics TSV, found ${#in_tsv[@]}" >&2
+            exit 1
+          fi
+          run_json="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}")"
           ./aggregate-lcp.py \
             --input "${in_tsv[0]}" \
             --output clickhouse-rows.tsv \
@@ -184,8 +196,21 @@ jobs:
           # Same run metadata as the metrics aggregation above, so a domain's
           # metrics row and its attempts row share run_id, start_time and the
           # ReplacingMergeTree version.
-          run_json="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}")"
+          shopt -s nullglob
           in_tsv=(crossbench-dispositions/*.tsv)
+          if [ "${#in_tsv[@]}" -eq 0 ]; then
+            echo "no dispositions TSV to aggregate"
+            exit 0
+          fi
+          if [ "${#in_tsv[@]}" -ne 1 ]; then
+            echo "ERROR: expected one dispositions TSV, found ${#in_tsv[@]}" >&2
+            exit 1
+          fi
+          if [ "$(wc -l < "${in_tsv[0]}")" -le 1 ]; then
+            echo "no disposition rows to aggregate"
+            exit 0
+          fi
+          run_json="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}")"
           ./aggregate-dispositions.py \
             --input "${in_tsv[0]}" \
             --output clickhouse-attempts.tsv \

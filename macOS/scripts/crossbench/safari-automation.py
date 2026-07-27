@@ -2,6 +2,7 @@
 """Minimal Safari WebDriver client for replayed LCP measurement."""
 
 import json
+import math
 import sys
 import time
 import urllib.error
@@ -54,16 +55,19 @@ def delete_session(port, session_id):
         pass
 
 
-def lcp_probe(settle_ms):
+def lcp_probe(settle_ms, load_window_ms):
     return (
         "var done=arguments[arguments.length-1];"
-        "var v=-1,el=null,url=null,size=0;"
+        "var v=-1,el=null,url=null,size=0,maxMs="
+        + str(int(load_window_ms))
+        + ";"
         "try{new PerformanceObserver(function(list){"
         "list.getEntries().forEach(function(e){"
-        "if(e.startTime>v){v=e.startTime;el=e.element;url=e.url;size=e.size;}"
+        "if(e.startTime<=maxMs&&e.startTime>v){"
+        "v=e.startTime;el=e.element;url=e.url;size=e.size;}"
         "});}).observe({type:'largest-contentful-paint',buffered:true});}"
-        "catch(err){done(-1);return;}"
-        "setTimeout(function(){done(v<0?-1:{ms:v,"
+        "catch(err){done({error:String(err),ms:-1,loc:location.href});return;}"
+        "setTimeout(function(){done({ms:v,"
         "element:el?el.tagName:null,id:el?el.id:null,url:url,size:size,"
         "loc:location.href,title:document.title});},"
         + str(int(settle_ms))
@@ -128,7 +132,12 @@ def measure(port, url, settle_ms, load_window_seconds):
             port,
             "POST",
             "/session/{}/execute/async".format(session_id),
-            {"script": lcp_probe(settle_ms), "args": []},
+            {
+                "script": lcp_probe(
+                    settle_ms, float(load_window_seconds) * 1000
+                ),
+                "args": [],
+            },
             timeout=60,
         )
         detail = response.get("value")
@@ -144,8 +153,19 @@ def measure(port, url, settle_ms, load_window_seconds):
 
     lcp_ms = detail.get("ms", -1) if isinstance(detail, dict) else -1
     landed_url = detail.get("loc", "") if isinstance(detail, dict) else ""
+    if not failed and isinstance(detail, dict) and detail.get("error"):
+        print(
+            "measurement probe failed for {}: {}".format(
+                url, detail["error"]
+            ),
+            file=sys.stderr,
+        )
+        failed = True
     if not failed and (
-        not isinstance(lcp_ms, (int, float)) or isinstance(lcp_ms, bool)
+        not isinstance(lcp_ms, (int, float))
+        or isinstance(lcp_ms, bool)
+        or not math.isfinite(lcp_ms)
+        or lcp_ms < -1
     ):
         print(
             "measurement produced an invalid LCP value for {}: {!r}".format(

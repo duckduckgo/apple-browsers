@@ -22,7 +22,8 @@ site is eligible, package validation fails and browser jobs do not start.
 
 The reusable validation workflow publishes an actionable report and the exact
 replayable archives. Browser workflows consume that artifact instead of
-downloading the files again.
+downloading the files again. Safari verifies each staged archive's filename and
+SHA-256 against that manifest before starting WPR.
 
 ## Layout
 
@@ -70,6 +71,15 @@ WPR_DIR="$PWD/validated-wpr-archives" WPR_ARCHIVES_PREPARED=1 \
 
 The manual CI workflow also accepts a `reps` input. Scheduled runs retain the
 10-load default; use a smaller value for validation runs.
+
+## Tests
+
+```sh
+python3 -m unittest discover -s tests -p 'test_*.py'
+```
+
+The Safari harness tests run the real shell runner against temporary loopback
+fake services and preferences; they do not start Safari or access the network.
 
 CI creates at most one write-only Asana subtask per workflow run under task
 `1216902374642227` when its consolidated validation report has new errors. It

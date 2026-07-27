@@ -26,6 +26,11 @@ on:
         type: boolean
         required: false
         default: false
+      upload-diagnostics:
+        description: "Upload raw Perfetto traces and metric files"
+        type: boolean
+        required: false
+        default: false
   schedule:
     # A scheduled run uses the full 22-site list and uploads to ClickHouse.
     # GitHub only fires schedules from the default branch.
@@ -89,6 +94,17 @@ jobs:
           path: macOS/scripts/crossbench/crossbench-results/*.tsv
           if-no-files-found: warn
           retention-days: 7
+
+      - name: Upload Perfetto diagnostics
+        if: always() && inputs.upload-diagnostics
+        uses: actions/upload-artifact@v6
+        with:
+          name: chrome-lcp-perfetto-diagnostics
+          path: |
+            ~/Developer/crossbench-upstream/results/**/perfetto.trace.pb.gz
+            ~/Developer/crossbench-upstream/results/**/trace_processor/v2_metrics.textproto
+          if-no-files-found: warn
+          retention-days: 3
 
       - name: Aggregate results for ClickHouse
         if: always()

@@ -30,12 +30,8 @@ public enum AIChatMetricName: String, Codable {
     case userDidViewSuggestions
 
     // MARK: - Subscription funnel metrics
-    // Duck.ai subscription-funnel surfaces reported by the web frontend when running inside a native
-    // app (the website pixel is suppressed in-app). Each maps to a subscription-funnel impression or
-    // click pixel with a funnel origin on the native side.
+    // Reported by the frontend only inside a native app, where its own website pixel is suppressed.
     // https://app.asana.com/1/137249556945/task/1216395339071571
-
-    // Impressions (surface shown)
     case userDidViewAiSidebarUpgradeButton
     case userDidViewActivateSubscriptionBanner
     case userDidViewFreePlanBadge
@@ -48,7 +44,6 @@ public enum AIChatMetricName: String, Codable {
     case userDidViewVoiceChatLimitModal
     case userDidViewVoiceChatDurationLimitModal
 
-    // Clicks (CTA tapped)
     case userDidClickAiSidebarUpgradeButton
     case userDidClickActivateSubscriptionButton
     case userDidClickFreePlanUpgradeButton

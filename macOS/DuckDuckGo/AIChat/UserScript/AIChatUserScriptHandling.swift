@@ -961,11 +961,8 @@ extension AIChatUserScriptHandler {
 
 extension AIChatUserScriptHandler: AIChatMetricReportingHandling {
 
-    /// Maps each Duck.ai subscription-funnel metric the web frontend reports (native-metrics.tsx /
-    /// use-duckai-funnel-pixels.ts) to its funnel origin and whether it's a click. Surfaces without a
-    /// native equivalent (model/reasoning pickers, sidebar "get the app", browser upsell) are
-    /// instrumented natively elsewhere and are intentionally absent.
-    /// https://app.asana.com/1/137249556945/task/1216395339071571
+    /// Maps each frontend-reported funnel metric to its origin and click flag. Picker/sidebar/browser-upsell
+    /// surfaces are intentionally absent — instrumented natively elsewhere, not via `reportMetric`.
     private static let funnelMetrics: [AIChatMetricName: (origin: SubscriptionFunnelOrigin, isClick: Bool)] = [
         .userDidViewAiSidebarUpgradeButton: (.duckAIAiSidebar, false),
         .userDidClickAiSidebarUpgradeButton: (.duckAIAiSidebar, true),

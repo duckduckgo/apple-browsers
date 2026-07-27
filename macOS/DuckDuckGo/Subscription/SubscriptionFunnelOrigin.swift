@@ -90,42 +90,19 @@ enum SubscriptionFunnelOrigin: String {
 
     // MARK: - Duck.ai Funnel Origins (frontend-reported)
 
-    /// Subscription entry points shown inside the duck.ai web frontend. The website pixel is
-    /// suppressed in-app, so the frontend reports each surface over the `reportMetric` bridge and
-    /// the native layer fires the aichat subscription-funnel impression/click pixel with this origin.
+    /// Entry points shown in the duck.ai web frontend; reported over the `reportMetric` bridge because
+    /// the frontend suppresses its own website pixel in-app. Native then fires the funnel pixel.
     /// https://app.asana.com/1/137249556945/task/1216395339071571
-
-    /// The "upgrade" button shown in the duck.ai AI sidebar.
     case duckAIAiSidebar = "funnel_duckai_macos__aisidebar"
-
-    /// The "activate subscription" banner.
     case duckAIActivateSubscription = "funnel_duckai_macos__activatesubscription"
-
-    /// The free-plan badge.
     case duckAIFreeLabel = "funnel_duckai_macos__freelabel"
-
-    /// The free-tier usage-limit message.
     case duckAIFreeLimit = "funnel_duckai_macos__freelimit"
-
-    /// The image-generation limit message.
     case duckAIImageGenerationLimit = "funnel_duckai_macos__imagegenerationlimit"
-
-    /// The plus-tier usage-limit message.
     case duckAIPlusLimit = "funnel_duckai_macos__pluslimit"
-
-    /// The subscription promo card.
     case duckAIPromotionCard = "funnel_duckai_macos__promotioncard"
-
-    /// The subscribe section in duck.ai settings.
     case duckAISettings = "funnel_duckai_macos__settings"
-
-    /// The pro-upgrade disclaimer banner.
     case duckAIDisclaimerBanner = "funnel_duckai_macos__disclaimerbanner"
-
-    /// The voice-chat usage-limit modal.
     case duckAIVoiceChatLimit = "funnel_duckai_macos__voicechatlimit"
-
-    /// The voice-chat duration-limit modal.
     case duckAIVoiceChatDurationLimit = "funnel_duckai_macos__voicechatdurationlimit"
 }
 

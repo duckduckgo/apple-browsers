@@ -297,15 +297,10 @@ enum AIChatPixel: PixelKitEvent {
 
     // MARK: - Duck.ai Subscription Funnel (frontend-reported)
 
-    /// Event Trigger: A Duck.ai subscription-funnel entry point (e.g. free-plan badge, promo card,
-    /// usage-limit message) is shown to the user in the web frontend. Reported natively over the
-    /// `reportMetric` bridge; `origin` identifies the entry point (`funnel_duckai_macos__<slug>`).
-    /// https://app.asana.com/1/137249556945/task/1216395339071571
+    /// Event Trigger: A Duck.ai subscription-funnel entry point is shown in the web frontend, reported over the `reportMetric` bridge. `origin` is the entry point.
     case aiChatSubscriptionFunnelImpression(origin: String)
 
-    /// Event Trigger: The user clicks the CTA on a Duck.ai subscription-funnel entry point.
-    /// Reported natively over the `reportMetric` bridge; `origin` identifies the entry point.
-    /// https://app.asana.com/1/137249556945/task/1216395339071571
+    /// Event Trigger: The CTA on a Duck.ai subscription-funnel entry point is clicked, reported over the `reportMetric` bridge.
     case aiChatSubscriptionFunnelClick(origin: String)
 
     /// Event Trigger: User opens a new voice Duck.ai chat from the native omnibar

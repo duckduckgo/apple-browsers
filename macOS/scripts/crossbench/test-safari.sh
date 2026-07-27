@@ -57,7 +57,8 @@ HTTPPROXY_PY="${HTTPPROXY_PY:-$SCRIPT_DIR/httpproxy.py}"
 HTTPPROXY_PORT="${HTTPPROXY_PORT:-9998}"
 SAFARI_AUTOMATION_PY="${SAFARI_AUTOMATION_PY:-$SCRIPT_DIR/safari-automation.py}"
 SAFARIDRIVER_PORT="${SAFARIDRIVER_PORT:-8790}"
-PYTHON_BIN="${PYTHON_BIN:-python3}"
+PYTHON_VERSION="${PYTHON_VERSION:-3.11}"
+PYTHON_BIN="${PYTHON_BIN:-}"
 
 SAFARI_DOMAIN="com.apple.Safari"
 SAFARI_HTTP_PROXY_KEY="WebKit2HTTPProxy"
@@ -220,8 +221,15 @@ trap 'exit 130' INT
 trap 'exit 143' TERM
 
 check_prerequisites() {
+  if [ -z "$PYTHON_BIN" ]; then
+    command -v brew >/dev/null 2>&1 || {
+      echo "ERROR: Homebrew not found. Run provision-macos.sh." >&2
+      exit 1
+    }
+    PYTHON_BIN="$(brew --prefix "python@$PYTHON_VERSION")/bin/python$PYTHON_VERSION"
+  fi
   command -v "$PYTHON_BIN" >/dev/null 2>&1 || {
-    echo "ERROR: Python not found: $PYTHON_BIN" >&2
+    echo "ERROR: Python $PYTHON_VERSION not found at $PYTHON_BIN. Run provision-macos.sh." >&2
     exit 1
   }
   command -v safaridriver >/dev/null 2>&1 || {

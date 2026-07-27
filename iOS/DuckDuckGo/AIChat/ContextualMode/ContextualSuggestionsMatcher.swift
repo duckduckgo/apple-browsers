@@ -152,9 +152,17 @@ struct ContextualSuggestionsMatcher {
         }
     }
 
+    /// Localized copy carries `%@` (the loc-pipeline placeholder format); the bundled catalog keeps
+    /// the FE's `{language}` token so it stays byte-comparable with the FE catalog. Both guards must
+    /// stay `contains`-based so copy without a placeholder never goes through `String(format:)`.
     private static func applyTemplate(_ prompt: String, input: ResolvePageSuggestionsInput) -> String {
-        guard prompt.contains("{language}") else { return prompt }
-        return prompt.replacingOccurrences(of: "{language}", with: languageDisplayName(input.uiLocale))
+        if prompt.contains("{language}") {
+            return prompt.replacingOccurrences(of: "{language}", with: languageDisplayName(input.uiLocale))
+        }
+        if prompt.contains("%@") {
+            return String(format: prompt, languageDisplayName(input.uiLocale))
+        }
+        return prompt
     }
 
     // MARK: Localization

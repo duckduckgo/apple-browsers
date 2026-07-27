@@ -139,6 +139,7 @@ public class SyncSettingsViewModel: ObservableObject {
     public enum SyncSetupEntryPoint: Equatable {
         case pairing
         case simplifiedToggle
+        case simplifiedToggleV2
     }
 
     public enum PreservedAccountContinuation: Equatable {
@@ -179,10 +180,9 @@ public class SyncSettingsViewModel: ObservableObject {
     @Published public var isSyncWithAnotherDevicePromptVisible: Bool = false
 
     public enum ConnectingSheetPhase: Equatable, Identifiable {
-        case connecting
-        case syncAnotherDevice
-        case recoverYourData
-        case deviceConnected
+        case connecting(isRecovery: Bool, isFinishing: Bool = false)
+        case syncAnotherDevice(isConnecting: Bool)
+        case success(isRecovery: Bool)
 
         // Constant on purpose: `.sheet(item:)` re-presents whenever the item's identity changes, so a
         // per-case id would dismiss and re-present the sheet on every phase change. A stable id keeps
@@ -191,6 +191,10 @@ public class SyncSettingsViewModel: ObservableObject {
     }
 
     @Published public var connectingSheetPhase: ConnectingSheetPhase?
+
+    public var isConnectingThisDeviceOnly: Bool {
+        connectingSheetPhase == .syncAnotherDevice(isConnecting: true)
+    }
 
     @Published var shouldShowPasscodeRequiredAlert: Bool = false
 
@@ -353,6 +357,9 @@ public class SyncSettingsViewModel: ObservableObject {
                 delegate?.showSyncWithAnotherDevice()
             case .simplifiedToggle:
                 beginSimplifiedSyncSetup()
+            case .simplifiedToggleV2:
+                isBusy = false
+                connectingSheetPhase = .syncAnotherDevice(isConnecting: false)
             }
         case .recover:
             isRecoverSyncedDataSheetVisible = true
@@ -383,6 +390,15 @@ public class SyncSettingsViewModel: ObservableObject {
         isBusy = true
         Task { @MainActor in
             await beginFlow(for: .setup(.simplifiedToggle))
+        }
+    }
+
+    public func showSyncAnotherDevicePromptFromToggleV2() {
+        guard !isBusy else { return }
+        guard isAccountCreationAvailable else { return }
+        isBusy = true
+        Task { @MainActor in
+            await beginFlow(for: .setup(.simplifiedToggleV2))
         }
     }
 
@@ -424,29 +440,38 @@ public class SyncSettingsViewModel: ObservableObject {
         return true
     }
 
-    public func showSyncWithAnotherDeviceInConnectingSheet() {
-        connectingSheetPhase = .syncAnotherDevice
-    }
-
     public func syncAnotherDeviceFromConnectingSheet() {
-        postConnectingSheetDismissAction = { [weak self] in self?.scanQRCode() }
+        postConnectingSheetDismissAction = { [weak self] in
+            guard let self else { return }
+            guard isConnectingDevicesAvailable else { return }
+            guard isSyncEnabled || isAccountCreationAvailable else { return }
+            delegate?.showSyncWithAnotherDevice()
+        }
         connectingSheetPhase = nil
     }
 
-    public func notNowFromConnectingSheet() {
-        connectingSheetPhase = .recoverYourData
+    @MainActor
+    public func syncThisDeviceOnlyFromConnectingSheet() {
+        guard !isBusy else { return }
+        connectingSheetPhase = .syncAnotherDevice(isConnecting: true)
+        beginSimplifiedSyncSetup()
     }
 
-    public func recoverYourDataDoneFromConnectingSheet() {
-        connectingSheetPhase = nil
-    }
-
-    public func showDeviceConnectedInConnectingSheet(recoveryCode: String) {
+    public func showSuccess(recoveryCode: String, isRecovery: Bool) {
         self.recoveryCode = recoveryCode
-        connectingSheetPhase = .deviceConnected
+        if case .connecting = connectingSheetPhase {
+            connectingSheetPhase = .connecting(isRecovery: isRecovery, isFinishing: true)
+        } else {
+            connectingSheetPhase = .success(isRecovery: isRecovery)
+        }
     }
 
-    public func deviceConnectedDoneFromConnectingSheet() {
+    public func connectingAnimationDidFinish() {
+        guard case .connecting(let isRecovery, true) = connectingSheetPhase else { return }
+        connectingSheetPhase = .success(isRecovery: isRecovery)
+    }
+
+    public func doneFromConnectingSheet() {
         connectingSheetPhase = nil
     }
 

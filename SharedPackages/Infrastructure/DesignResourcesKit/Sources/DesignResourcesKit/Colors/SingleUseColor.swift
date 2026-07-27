@@ -75,6 +75,11 @@ public enum SingleUseColor {
 
 #elseif os(macOS)
 
+    case aiToggleBorder
+    case aiToggleBackground
+    case aiToggleSelectionBackground
+    case aiToggleSelectionBorder
+
     case fireButtonGradientStart
     case fireButtonGradientEnd
     case fireButtonPressedGradientStart

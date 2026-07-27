@@ -22,12 +22,17 @@ import UIKit
 
 final class MockOverlayWindowManager: OverlayWindowManaging {
 
+    var prepareBlankSnapshotWindowCalled = false
     var displayBlankSnapshotWindowCalled = false
     var displayOverlayCalled = false
     var removeOverlayCalled = false
     var removeNonAuthenticationOverlayCalled = false
 
     var lastDisplayedViewController: UIViewController?
+
+    func prepareBlankSnapshotWindow() {
+        prepareBlankSnapshotWindowCalled = true
+    }
 
     func displayBlankSnapshotWindow(for reason: DuckDuckGo.BlankSnapshotOverlayReason) {
         displayBlankSnapshotWindowCalled = true

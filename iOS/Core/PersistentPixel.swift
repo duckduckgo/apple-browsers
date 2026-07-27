@@ -39,15 +39,16 @@ public protocol PersistentPixelFiring {
     func sendQueuedPixels(completion: @escaping (PersistentPixelStorageError?) -> Void)
 }
 
+/// *** Deprecated. Use PixelKit (which also has retry support) for new pixels. ***
 public final class PersistentPixel: PersistentPixelFiring {
 
     enum Constants {
         static let lastProcessingDateKey = "com.duckduckgo.ios.persistent-pixel.last-processing-timestamp"
 
 #if DEBUG
-        static let minimumProcessingInterval: TimeInterval = .minutes(1)
+        static let minimumProcessingInterval: TimeInterval = 60
 #else
-        static let minimumProcessingInterval: TimeInterval = .hours(1)
+        static let minimumProcessingInterval: TimeInterval = 60 * 60
 #endif
     }
 

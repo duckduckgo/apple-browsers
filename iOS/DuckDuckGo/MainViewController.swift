@@ -420,6 +420,15 @@ class MainViewController: UIViewController {
                                   windowProvider: { settings.refreshWindow })
     }()
 
+    /// Whether the ad-blocking rollout's Duck Player default (disable) should be applied at onboarding
+    /// completion. It runs only when the rollout is active *and* the user didn't set Duck Player
+    /// themselves during onboarding — the download-reason Block Ads flow includes a Duck
+    /// Player step, and overriding it here would silently discard the user's choice.
+    private var shouldApplyAdBlockingRolloutDuckPlayerDefault: Bool {
+        adBlockingAvailability.areAdBlockingDefaultsActive
+            && onboardingManager.currentDownloadReason != .blockAds
+    }
+
     init(
         privacyConfigurationManager: PrivacyConfigurationManaging,
         bookmarksDatabase: CoreDataDatabase,
@@ -772,7 +781,7 @@ class MainViewController: UIViewController {
         // Automation bypass: a UI-test override can mark onboarding already-completed without ever
         // calling onboardingCompleted(controller:), so apply the rollout Duck Player defaults here too.
         if case .overridden(.uiTests(completed: true)) = onboardingStatus, ProcessInfo.isRunningUITests {
-            appSettings.applyAdBlockingRolloutDuckPlayerDefaultsIfNeeded(rolloutActive: adBlockingAvailability.areAdBlockingDefaultsActive)
+            appSettings.applyAdBlockingRolloutDuckPlayerDefaultsIfNeeded(rolloutActive: shouldApplyAdBlockingRolloutDuckPlayerDefault)
         }
 
         isStartupOnboardingPending = startupOnboardingDecision.shouldShowOnboarding
@@ -2430,6 +2439,7 @@ class MainViewController: UIViewController {
         let tab = tabManager.add(url: url, inheritedAttribution: inheritedAttribution)
         tab.inferredOpenerContext = .external
         tab.isVoiceModeRequested = voiceMode
+        tab.isDuckAIDeepLinkSurfaceRequested = url?.isDuckAIFeedbackOpen == true || url?.isDuckAIChatProtectionOpen == true
 
         // Mark tab as external launch if opened from external URL or shortcut
         if fromExternalLink {
@@ -4461,6 +4471,7 @@ extension MainViewController: BrowserChromeDelegate {
             }
             loadUrlInNewTab(url, inheritedAttribution: nil, fromExternalLink: fromExternalLink)
         case .loadInPlace:
+            currentTab?.isDuckAIDeepLinkSurfaceRequested = url.isDuckAIFeedbackOpen || url.isDuckAIChatProtectionOpen
             loadUrl(url, fromExternalLink: fromExternalLink)
         }
     }
@@ -6175,6 +6186,43 @@ extension MainViewController: TabDelegate {
         openAIChatHistory(source: source)
     }
 
+    func tabDidRequestAIChatFeedback(tab: TabViewController) {
+        let optionsView = DuckAIFeedbackOptionsView(
+            onSelect: { [weak self, weak tab] sentiment in
+                let positive: Bool
+                switch sentiment {
+                case .positive: positive = true
+                case .critical: positive = false
+                }
+                DailyPixel.fireDailyAndCount(pixel: .aiChatFeedbackOptionSelected,
+                                             withAdditionalParameters: [PixelParameters.sentiment: positive ? "positive" : "critical"])
+                self?.dismiss(animated: true) {
+                    tab?.openAIChatFeedback(positive: positive)
+                }
+            }
+        )
+        let hostingController = UIHostingController(rootView: optionsView)
+        hostingController.title = UserText.aiChatFeedbackOptionsTitle
+        hostingController.navigationItem.rightBarButtonItem = UIBarButtonItem(
+            image: DesignSystemImages.Glyphs.Size24.close,
+            primaryAction: UIAction { [weak self] _ in self?.dismiss(animated: true) }
+        )
+        let navigationController = UINavigationController(rootViewController: hostingController)
+        navigationController.navigationBar.tintColor = UIColor(designSystemColor: .textPrimary)
+        if let sheet = navigationController.sheetPresentationController {
+            if #available(iOS 16.0, *) {
+                sheet.detents = [.custom(identifier: .init("duckAIFeedbackOptions")) { _ in 230 }]
+            } else {
+                sheet.detents = [.medium()]
+            }
+            sheet.prefersGrabberVisible = true
+            if #unavailable(iOS 26) {
+                sheet.preferredCornerRadius = 24
+            }
+        }
+        present(navigationController, animated: true)
+    }
+
     func openAIChatHistory(source: AIChatHistorySource = .browserMenu) {
         // The native chat history sheet is an iPhone-only experience; entrypoints are hidden on iPad,
         // and this guard ensures the sheet can never be presented there.
@@ -7168,8 +7216,7 @@ extension MainViewController: OnboardingDelegate {
         // enrol new users; enrollIfEligible function additionally excludes returning users (reinstallers).
         searchTokenExperiment.enrollIfEligible()
 
-        appSettings.applyAdBlockingRolloutDuckPlayerDefaultsIfNeeded(rolloutActive: adBlockingAvailability.areAdBlockingDefaultsActive)
-
+        appSettings.applyAdBlockingRolloutDuckPlayerDefaultsIfNeeded(rolloutActive: shouldApplyAdBlockingRolloutDuckPlayerDefault)
 
         // Now that linear onboarding has finished, run the unified-toggle-input
         // setup that was deferred at viewDidLoad.
@@ -7213,7 +7260,6 @@ extension MainViewController: OnboardingDelegate {
     }
 
 }
-
 
 extension MainViewController: OnboardingNavigationDelegate {
     func navigateFromOnboarding(to url: URL) {

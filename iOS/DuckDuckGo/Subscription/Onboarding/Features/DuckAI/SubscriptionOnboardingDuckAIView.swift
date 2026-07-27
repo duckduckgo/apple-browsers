@@ -73,14 +73,14 @@ private extension SubscriptionOnboardingDuckAIView {
     }
 
     var footer: SubscriptionOnboardingFooter {
-        // Testing-only: the secondary button launches the same chat in a web view instead of the
-        // production contextual sheet, so both launch paths can be compared side by side.
+        // Testing-only: the secondary button dismisses onboarding and launches the same chat from the main
+        // view controller instead of stacking the contextual sheet, so both launch paths can be compared.
         .double(
             primary: .init(UserText.subscriptionOnboardingDuckAIActivationStartButton) {
                 viewModel.startChat()
             },
-            secondary: .init("Start Duck.ai Chat (Web)") {
-                viewModel.startWebChat()
+            secondary: .init("Start Duck.ai Chat (Main VC)") {
+                viewModel.startChatViaMainViewController()
             })
     }
 }

@@ -36,8 +36,6 @@ final class SubscriptionDebugViewController: UITableViewController {
     private let reporter: SubscriptionDataReporting
     /// Retained for the lifetime of an in-flight/presented onboarding Duck.ai chat sheet.
     private var duckAIChatLauncher: SubscriptionOnboardingDuckAIChatLauncher?
-    /// Retained for the lifetime of an in-flight/presented onboarding Duck.ai web chat surface.
-    private var duckAIWebChatLauncher: SubscriptionOnboardingDuckAIWebChatLauncher?
 
     private var subscriptionManager: SubscriptionManager {
         AppDependencyProvider.shared.subscriptionManager
@@ -867,8 +865,8 @@ extension SubscriptionDebugViewController: SubscriptionOnboardingSectionDelegate
         launchDuckAIChat(modelID: modelID)
     }
 
-    func sectionDidRequestDuckAIWebChat(modelSettingID: String?) {
-        launchDuckAIWebChat(modelSettingID: modelSettingID)
+    func sectionDidRequestDuckAIChatViaMainViewController(modelID: String?) {
+        launchDuckAIChatViaMainViewController(modelID: modelID)
     }
 
     func sectionDidFinishDuckAIChat() {
@@ -892,12 +890,21 @@ extension SubscriptionDebugViewController: SubscriptionOnboardingSectionDelegate
         }
     }
 
-    private func launchDuckAIWebChat(modelSettingID: String?) {
-        guard let contentBlockingAssetsPublisher = (view.window?.rootViewController as? MainViewController)?.contentBlockingAssetsPublisher else { return }
-        let launcher = SubscriptionOnboardingDuckAIWebChatLauncher(contentBlockingAssetsPublisher: contentBlockingAssetsPublisher)
-        duckAIWebChatLauncher = launcher
-        launcher.present(from: presentedViewController ?? self, modelSettingID: modelSettingID) { [weak self] in
-            self?.duckAIWebChatLauncher = nil
+    /// Dismisses the covering onboarding/debug sheets, then opens the current tab's contextual Duck.ai chat sheet
+    /// from the main view controller with no query, preselecting the chosen model. Passes `isFullScreen: true` so
+    /// the sheet opens maximized at the large detent (with centered welcome label) while keeping the complete,
+    /// non-standalone chrome.
+    private func launchDuckAIChatViaMainViewController(modelID: String?) {
+        guard let mainViewController = view.window?.rootViewController as? MainViewController else { return }
+        mainViewController.dismiss(animated: true) {
+            guard let tab = mainViewController.currentTab else { return }
+            let coordinator = tab.aiChatContextualSheetCoordinator
+            Task { @MainActor in
+                await coordinator.presentSheet(from: mainViewController, isFullScreen: true)
+                if let modelID {
+                    coordinator.preselectModel(modelID)
+                }
+            }
         }
     }
 }

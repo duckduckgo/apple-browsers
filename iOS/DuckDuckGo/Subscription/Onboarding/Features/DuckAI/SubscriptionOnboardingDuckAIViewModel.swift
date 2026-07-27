@@ -143,14 +143,14 @@ final class SubscriptionOnboardingDuckAIViewModel: ObservableObject {
         delegate?.sectionDidRequestDuckAIChat(modelID: selectedModelID)
     }
 
-    /// Testing-only: persists the committed model (so it's reflected across the AI models store) and requests
-    /// the chat in a web view, passing the model's setting id so it can be injected into the page.
+    /// Testing-only: persists the committed model, then asks the flow to dismiss the onboarding sheets and
+    /// launch the chat from the main view controller, preselecting the same model.
     @MainActor
-    func startWebChat() {
+    func startChatViaMainViewController() {
         if let selectedModelID {
             prefetcher.updateSelectedModel(selectedModelID)
         }
-        delegate?.sectionDidRequestDuckAIWebChat(modelSettingID: selectedModel?.settingId)
+        delegate?.sectionDidRequestDuckAIChatViaMainViewController(modelID: selectedModelID)
     }
 
     /// Skips this (currently last) section, finishing the flow.

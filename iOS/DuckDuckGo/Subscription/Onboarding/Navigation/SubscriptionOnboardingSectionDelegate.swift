@@ -25,9 +25,9 @@
 protocol SubscriptionOnboardingSectionDelegate: AnyObject {
     func sectionDidComplete(_ section: SubscriptionOnboardingSection)
     func sectionDidRequestDuckAIChat(modelID: String?)
-    /// Testing-only: launches the Duck.ai chat in a web view instead of the production contextual sheet,
-    /// seeding `modelSettingID` (the model's `/models` setting identifier) into the page's localStorage.
-    func sectionDidRequestDuckAIWebChat(modelSettingID: String?)
+    /// Testing-only: dismisses the onboarding sheets covering the browser and launches Duck.ai from the
+    /// main view controller itself, preselecting `modelID`.
+    func sectionDidRequestDuckAIChatViaMainViewController(modelID: String?)
     func sectionDidFinishDuckAIChat()
     func sectionDidRequestAdvance()
     func sectionDidRequestGoBack()

@@ -81,6 +81,7 @@ final class AIChatContextualInputViewController: UIViewController {
 
     private let showsBasicNativeInput: Bool
     private let presentsStandaloneFullScreen: Bool
+    private let isFullScreen: Bool
     private let voiceSearchHelper: VoiceSearchHelperProtocol
     private lazy var basicNativeInputViewController = AIChatBasicNativeInputViewController(voiceSearchHelper: voiceSearchHelper)
     private lazy var inputSurface: AIChatContextualInputSurface = {
@@ -121,9 +122,11 @@ final class AIChatContextualInputViewController: UIViewController {
 
     init(voiceSearchHelper: VoiceSearchHelperProtocol,
          showsBasicNativeInput: Bool = true,
-         presentsStandaloneFullScreen: Bool = false) {
+         presentsStandaloneFullScreen: Bool = false,
+         isFullScreen: Bool = false) {
         self.showsBasicNativeInput = showsBasicNativeInput
         self.presentsStandaloneFullScreen = presentsStandaloneFullScreen
+        self.isFullScreen = isFullScreen
         self.voiceSearchHelper = voiceSearchHelper
         super.init(nibName: nil, bundle: nil)
     }
@@ -268,7 +271,7 @@ private extension AIChatContextualInputViewController {
 
         bottomConstraint = basicNativeInputViewController.view.bottomAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor)
 
-        let centerY = presentsStandaloneFullScreen
+        let centerY = presentsStandaloneFullScreen || isFullScreen
             ? welcomeLabel.centerYAnchor.constraint(equalTo: view.centerYAnchor)
             : welcomeLabel.centerYAnchor.constraint(equalTo: view.topAnchor)
         centerY.priority = .defaultHigh
@@ -306,7 +309,7 @@ private extension AIChatContextualInputViewController {
 
         configureWelcomeLabel()
 
-        let centerY = presentsStandaloneFullScreen
+        let centerY = presentsStandaloneFullScreen || isFullScreen
             ? welcomeLabel.centerYAnchor.constraint(equalTo: view.centerYAnchor)
             : welcomeLabel.centerYAnchor.constraint(equalTo: view.topAnchor)
         centerY.priority = .defaultHigh
@@ -388,9 +391,9 @@ private extension AIChatContextualInputViewController {
     }
 
     func updateWelcomeLabelCentering() {
-        // Standalone full screen uses a static centre-aligned constraint set at load,
+        // Standalone/full-screen use a static centre-aligned constraint set at load,
         // so there's nothing to recompute per layout pass.
-        guard !presentsStandaloneFullScreen else { return }
+        guard !presentsStandaloneFullScreen, !isFullScreen else { return }
         let scrollViewTop = quickActionsScrollView.frame.minY
         guard scrollViewTop > 0 else { return }
         welcomeCenterYConstraint?.constant = scrollViewTop / 2

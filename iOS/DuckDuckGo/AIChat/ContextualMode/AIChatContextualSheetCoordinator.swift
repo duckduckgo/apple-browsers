@@ -254,8 +254,12 @@ final class AIChatContextualSheetCoordinator {
     // MARK: - Public Methods
 
     /// Presents the contextual AI chat sheet.
+    ///
+    /// - Parameter isFullScreen: Opens the sheet maximized at the `.large` detent (and centers the welcome label)
+    ///   while keeping the complete, non-standalone chrome.
     func presentSheet(from presentingViewController: UIViewController,
-                      restoreURL: URL? = nil) async {
+                      restoreURL: URL? = nil,
+                      isFullScreen: Bool = false) async {
         sessionState.refreshAutoAttachSetting()
         sessionState.updateUnifiedToggleInputActive(isWebUTIEnabled, isImmediateContextual: isImmediateContextualUTIEnabled)
         clearStaleManualContextIfNeeded()
@@ -280,7 +284,7 @@ final class AIChatContextualSheetCoordinator {
         if let sheetViewController {
             presentExistingSheet(sheetViewController, from: presentingViewController)
         } else {
-            presentNewSheet(from: presentingViewController, restoreURL: restoreURL)
+            presentNewSheet(from: presentingViewController, restoreURL: restoreURL, isFullScreen: isFullScreen)
         }
     }
 
@@ -378,7 +382,7 @@ private extension AIChatContextualSheetCoordinator {
         isSheetPresented = true
     }
 
-    func presentNewSheet(from presentingVC: UIViewController, restoreURL: URL?) {
+    func presentNewSheet(from presentingVC: UIViewController, restoreURL: URL?, isFullScreen: Bool = false) {
         guard presentingVC.presentedViewController == nil else { return }
 
         if let restoreURL {
@@ -402,7 +406,8 @@ private extension AIChatContextualSheetCoordinator {
             featureFlagger: featureFlagger,
             persistentUTIHost: persistentUTIHost,
             suggestionsReader: suggestionsReader,
-            presentsStandaloneFullScreen: presentsStandaloneFullScreen
+            presentsStandaloneFullScreen: presentsStandaloneFullScreen,
+            isFullScreen: isFullScreen
         )
         sheetVC.delegate = self
         sheetViewController = sheetVC

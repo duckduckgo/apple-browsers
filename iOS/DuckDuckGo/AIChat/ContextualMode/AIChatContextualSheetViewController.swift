@@ -128,6 +128,9 @@ final class AIChatContextualSheetViewController: UIViewController {
     /// `.large()` only with no grabber, and strips the header down to just a close button (moved to the leading side),
     /// since there's nothing to expand into or browse chat history for.
     private let presentsStandaloneFullScreen: Bool
+    /// Opens the sheet maximized at the `.large` detent (and centers the welcome label) while keeping the complete,
+    /// non-standalone chrome. Independent of `presentsStandaloneFullScreen`.
+    private let isFullScreen: Bool
     private var recentChatsPopup: AIChatRecentChatsPopupViewController?
     private var popupWindow: UIWindow?
     private var isFetchingRecentChats = false
@@ -135,7 +138,8 @@ final class AIChatContextualSheetViewController: UIViewController {
     private lazy var contextualInputViewController = AIChatContextualInputViewController(
         voiceSearchHelper: voiceSearchHelper,
         showsBasicNativeInput: persistentUTIHost == nil,
-        presentsStandaloneFullScreen: presentsStandaloneFullScreen
+        presentsStandaloneFullScreen: presentsStandaloneFullScreen,
+        isFullScreen: isFullScreen
     )
     private var cancellables = Set<AnyCancellable>()
     private var contentContainerBottomConstraint: NSLayoutConstraint?
@@ -302,7 +306,8 @@ final class AIChatContextualSheetViewController: UIViewController {
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
          persistentUTIHost: AIChatContextualUTIHost? = nil,
          suggestionsReader: AIChatSuggestionsReading? = nil,
-         presentsStandaloneFullScreen: Bool = false) {
+         presentsStandaloneFullScreen: Bool = false,
+         isFullScreen: Bool = false) {
         self.sessionState = sessionState
         self.aiChatSettings = aiChatSettings
         self.voiceSearchHelper = voiceSearchHelper
@@ -313,6 +318,7 @@ final class AIChatContextualSheetViewController: UIViewController {
         self.persistentUTIHost = persistentUTIHost
         self.suggestionsReader = suggestionsReader
         self.presentsStandaloneFullScreen = presentsStandaloneFullScreen
+        self.isFullScreen = isFullScreen
         super.init(nibName: nil, bundle: nil)
         configureModalPresentation()
     }
@@ -412,8 +418,8 @@ final class AIChatContextualSheetViewController: UIViewController {
             sheet.prefersGrabberVisible = false
         } else {
             sheet.detents = [.medium(), .large()]
-            sheet.selectedDetentIdentifier = .medium
-            sheet.largestUndimmedDetentIdentifier = .medium
+            sheet.selectedDetentIdentifier = isFullScreen ? .large : .medium
+            sheet.largestUndimmedDetentIdentifier = isFullScreen ? .large : .medium
             sheet.prefersGrabberVisible = true
         }
         sheet.prefersScrollingExpandsWhenScrolledToEdge = false

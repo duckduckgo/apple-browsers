@@ -233,7 +233,7 @@ private final class MockAIModelProvider: SubscriptionOnboardingAIModelProviding 
 private final class SpySectionDelegate: SubscriptionOnboardingSectionDelegate {
     private(set) var completedSections: [SubscriptionOnboardingSection] = []
     private(set) var requestedChatModelIDs: [String?] = []
-    private(set) var requestedWebChatModelSettingIDs: [String?] = []
+    private(set) var requestedMainViewControllerChatModelIDs: [String?] = []
     private(set) var finishedChatCount = 0
     func sectionDidComplete(_ section: SubscriptionOnboardingSection) {
         completedSections.append(section)
@@ -241,8 +241,8 @@ private final class SpySectionDelegate: SubscriptionOnboardingSectionDelegate {
     func sectionDidRequestDuckAIChat(modelID: String?) {
         requestedChatModelIDs.append(modelID)
     }
-    func sectionDidRequestDuckAIWebChat(modelSettingID: String?) {
-        requestedWebChatModelSettingIDs.append(modelSettingID)
+    func sectionDidRequestDuckAIChatViaMainViewController(modelID: String?) {
+        requestedMainViewControllerChatModelIDs.append(modelID)
     }
     func sectionDidFinishDuckAIChat() {
         finishedChatCount += 1

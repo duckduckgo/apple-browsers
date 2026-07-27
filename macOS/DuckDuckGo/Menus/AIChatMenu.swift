@@ -41,6 +41,7 @@ final class AIChatMenu: NSMenu {
         var openNewImageChat: @MainActor () -> Void
         var openChat: @MainActor (AIChatSuggestion) -> Void
         var deleteAllChats: () async -> Void
+        var askAboutPage: @MainActor () -> Void
     }
 
     // MARK: - Static items
@@ -85,6 +86,18 @@ final class AIChatMenu: NSMenu {
         return item
     }()
 
+    private lazy var askAboutPageItem: NSMenuItem = {
+        // ⌘⇧L on the main menu only — More Options popups don't bind global keys. Pairs with the
+        // View menu's ⌥⌘L "Show Duck.ai Sidebar" (this one also attaches the current page).
+        let item = NSMenuItem(title: UserText.aiChatMenuAskAboutPage, action: #selector(askAboutPageTapped), keyEquivalent: origin == .mainMenu ? "l" : "")
+        if origin == .mainMenu {
+            item.keyEquivalentModifierMask = [.command, .shift]
+        }
+        item.target = self
+        item.image = DesignSystemImages.Glyphs.Size12.globe
+        return item
+    }()
+
     private lazy var recentChatsLabel: NSMenuItem = {
         let item = NSMenuItem(title: UserText.aiChatMenuRecentChats)
         item.isEnabled = false
@@ -110,17 +123,21 @@ final class AIChatMenu: NSMenu {
     /// When set, limits the number of chat items shown in the menu.
     private let maxChatItems: Int?
     private let origin: Origin
+    /// Whether to include the "Ask About Page" item (menu-button layout only).
+    private let showAskAboutPage: Bool
 
     // MARK: - Init
 
     init(suggestionsReader: AIChatSuggestionsReading,
          actions: Actions,
          maxChatItems: Int? = nil,
-         origin: Origin = .mainMenu) {
+         origin: Origin = .mainMenu,
+         showAskAboutPage: Bool = false) {
         self.suggestionsReader = suggestionsReader
         self.actions = actions
         self.maxChatItems = maxChatItems
         self.origin = origin
+        self.showAskAboutPage = showAskAboutPage
         super.init(title: "Duck.ai")
         buildMenu()
     }
@@ -137,6 +154,9 @@ final class AIChatMenu: NSMenu {
         addItem(newChatItem)
         addItem(newVoiceChatItem)
         addItem(newImageChatItem)
+        if showAskAboutPage {
+            addItem(askAboutPageItem)
+        }
         addItem(.separator())
         addItem(recentChatsLabel)
         // Dynamic chat items are inserted after recentChatsLabel by insertChatItems(_:)
@@ -224,6 +244,10 @@ final class AIChatMenu: NSMenu {
         PixelKit.fire(pixel, frequency: .dailyAndStandard)
     }
 
+    @objc private func askAboutPageTapped() {
+        actions.askAboutPage()
+    }
+
     @objc private func chatItemTapped(_ sender: NSMenuItem) {
         guard let chat = sender.representedObject as? AIChatSuggestion else { return }
         actions.openChat(chat)
@@ -294,6 +318,9 @@ extension AIChatMenu.Actions {
                         tab.reload()
                     }
                 }
+            },
+            askAboutPage: {
+                windowControllersManager.lastKeyMainWindowController?.mainViewController.triggerAskAboutPage()
             }
         )
     }

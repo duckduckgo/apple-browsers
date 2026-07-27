@@ -464,6 +464,11 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215597855114765?focus=true
     case syncCanShowV2ConnectCode
 
+    /// Gates the macOS Prompt Bar: a system-wide Duck.ai entry point opened via a global
+    /// keyboard shortcut or a menu bar icon, plus its rows on the AI Features settings screen.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216850216210288?focus=true
+    case macosPromptBar
+
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -774,6 +779,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(SyncSubfeature.canUseV2ConnectFlow), category: .sync)
         case .syncCanShowV2ConnectCode:
             Config(source: .remoteReleasable(SyncSubfeature.canShowV2ConnectCode), category: .sync)
+        case .macosPromptBar:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.macosPromptBar), category: .duckAI)
         }
     }
 

@@ -44,7 +44,8 @@ struct NewTabPageOmnibarSubscriptionDialogPresenterTests {
 
     // MARK: - Upsell (subscribe) dialog
 
-    @Test("Upsell dialog offers a free trial when the user is free-tier and still eligible")
+    @available(iOS 16, macOS 13, *)
+    @Test("Upsell dialog offers a free trial when the user is free-tier and still eligible", .timeLimit(.minutes(1)))
     func upsellDialogOffersFreeTrialWhenEligible() async throws {
         let (presenter, _, _) = createPresenter(isEligibleForFreeTrial: true)
         let dialog = presenter.makeUpsellDialog(userTier: .free, source: .model)
@@ -52,7 +53,8 @@ struct NewTabPageOmnibarSubscriptionDialogPresenterTests {
         #expect(dialog.primaryButtonText == UserText.aiChatSubscriptionUpsellDialogTryForFreeButton)
     }
 
-    @Test("Upsell dialog reads Upgrade once the user isn't free-trial eligible, and routes to the purchase flow")
+    @available(iOS 16, macOS 13, *)
+    @Test("Upsell dialog reads Upgrade once the user isn't free-trial eligible, and routes to the purchase flow", .timeLimit(.minutes(1)))
     func upsellDialogRoutesToPurchase() async throws {
         let (presenter, mockTabShower, _) = createPresenter(isEligibleForFreeTrial: false)
         let dialog = presenter.makeUpsellDialog(userTier: .free, source: .model)
@@ -69,7 +71,8 @@ struct NewTabPageOmnibarSubscriptionDialogPresenterTests {
         #expect(url.absoluteString.contains("origin=funnel_newtab_macos__omnibar"))
     }
 
-    @Test("Upsell dialog reads Upgrade for a non-free tier even when StoreKit reports free-trial eligibility")
+    @available(iOS 16, macOS 13, *)
+    @Test("Upsell dialog reads Upgrade for a non-free tier even when StoreKit reports free-trial eligibility", .timeLimit(.minutes(1)))
     func upsellDialogIgnoresFreeTrialEligibilityForNonFreeTier() async throws {
         let (presenter, _, _) = createPresenter(isEligibleForFreeTrial: true)
         let dialog = presenter.makeUpsellDialog(userTier: .plus, source: .model)
@@ -77,7 +80,8 @@ struct NewTabPageOmnibarSubscriptionDialogPresenterTests {
         #expect(dialog.primaryButtonText == UserText.aiChatSubscriptionUpsellDialogUpgradeButton)
     }
 
-    @Test("Upsell dialog's 'I Have a Subscription' button routes to activation")
+    @available(iOS 16, macOS 13, *)
+    @Test("Upsell dialog's 'I Have a Subscription' button routes to activation", .timeLimit(.minutes(1)))
     func upsellDialogHaveSubscriptionRoutesToActivation() async throws {
         let (presenter, mockTabShower, _) = createPresenter()
         let dialog = presenter.makeUpsellDialog(userTier: .free, source: .model)
@@ -94,7 +98,8 @@ struct NewTabPageOmnibarSubscriptionDialogPresenterTests {
 
     // MARK: - Upgrade dialog
 
-    @Test("Upgrade dialog uses the Pro title/message, hides the Have-Subscription button, and routes to the plans flow")
+    @available(iOS 16, macOS 13, *)
+    @Test("Upgrade dialog uses the Pro title/message, hides the Have-Subscription button, and routes to the plans flow", .timeLimit(.minutes(1)))
     func upgradeDialogRoutesToPlans() async throws {
         let (presenter, mockTabShower, _) = createPresenter()
         let dialog = presenter.makeUpgradeDialog(source: .model)
@@ -114,7 +119,8 @@ struct NewTabPageOmnibarSubscriptionDialogPresenterTests {
         #expect(url.absoluteString.contains("origin=funnel_newtab_macos__omnibar"))
     }
 
-    @Test("Upgrade dialog's 'I Have a Subscription' button routes to activation")
+    @available(iOS 16, macOS 13, *)
+    @Test("Upgrade dialog's 'I Have a Subscription' button routes to activation", .timeLimit(.minutes(1)))
     func upgradeDialogHaveSubscriptionRoutesToActivation() async throws {
         let (presenter, mockTabShower, _) = createPresenter()
         let dialog = presenter.makeUpgradeDialog(source: .model)

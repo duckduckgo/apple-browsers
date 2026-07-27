@@ -357,11 +357,17 @@ final class AIChatHistoryViewModel: ObservableObject {
         // type glyph. Switch on `chat.chatType` rather than `AIChatSuggestion.kind(forModel:)` so
         // chats that produced images via a tool call (without the image-mode model id) still get
         // the image glyph — same precedence the exporter uses.
-        switch (chat.chatType, chat.pinned) {
-        case (_, true): image = DesignSystemImages.Glyphs.Size24.pin
-        case (.discussion, false): image = DesignSystemImages.Glyphs.Size24.chat
-        case (.voice, false): image = DesignSystemImages.Glyphs.Size24.voice
-        case (.imageGeneration, false): image = DesignSystemImages.Glyphs.Size24.images
+        if chat.pinned {
+            image = DesignSystemImages.Glyphs.Size24.pin
+        } else {
+            switch chat.chatType {
+            case .discussion:
+                image = DesignSystemImages.Glyphs.Size24.chat
+            case .voice:
+                image = DesignSystemImages.Glyphs.Size24.voice
+            case .imageGeneration:
+                image = DesignSystemImages.Glyphs.Size24.images
+            }
         }
         // The chat-family glyph assets aren't marked `template-rendering-intent` in their
         // Contents.json, so without forcing template mode they render in their own

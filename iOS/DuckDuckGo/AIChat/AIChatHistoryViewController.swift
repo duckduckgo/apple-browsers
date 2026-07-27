@@ -515,9 +515,6 @@ final class AIChatHistoryViewController: UIViewController {
         configureNavigationButtons()
         configureToolbar()
         tableView.setEditing(true, animated: true)
-        // Entered from a chat's long-press menu: pre-select that chat and reflect it in the
-        // toolbar (programmatic selection doesn't trigger `didSelectRowAt`). Resolve the index
-        // path fresh since leaving search above can reorder the rows.
         if let chatId, let indexPath = indexPath(forChatId: chatId) {
             tableView.selectRow(at: indexPath, animated: false, scrollPosition: .none)
             updateSelectionActionButtons()

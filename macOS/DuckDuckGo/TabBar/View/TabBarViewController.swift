@@ -1058,9 +1058,9 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         openDuckAISidebarWithPageAttachment()
     }
 
-    /// Opens the sidebar and force-attaches the current page regardless of the auto-send preference.
-    /// Shared by the pill's "Ask About Page" item and the ⌘⌥L shortcut in menu-button layout.
-    func openDuckAISidebarWithPageAttachment() {
+    /// Opens the sidebar and force-attaches the current page regardless of the auto-send preference
+    /// (the pill's "Ask About Page" action).
+    private func openDuckAISidebarWithPageAttachment() {
         guard let tab = tabCollectionViewModel.selectedTabViewModel?.tab else { return }
         let tabID = tab.uuid
 

@@ -62,7 +62,9 @@ final class TabsBarView: UIView {
         addSubview(buttonsStack)
 
         NSLayoutConstraint.activate([
-            collectionView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: TabsBarViewController.Constants.leadingInset),
+            // Pulled in one ramp width so the first tab's leading fillet has room and isn't clipped.
+            collectionView.leadingAnchor.constraint(equalTo: leadingAnchor,
+                                                    constant: TabsBarViewController.Constants.firstTabLeadingMargin - TabsBarViewController.Constants.tabRampSize.width),
             collectionView.topAnchor.constraint(equalTo: topAnchor),
             collectionView.bottomAnchor.constraint(equalTo: bottomAnchor),
 

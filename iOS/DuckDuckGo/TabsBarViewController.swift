@@ -59,6 +59,11 @@ class TabsBarViewController: UIViewController {
         static let maxItemWidthFraction: CGFloat = 0.33
         static let narrowMaxItemWidthFraction: CGFloat = 0.5
         static let leadingInset: CGFloat = 16
+        /// Wider than `leadingInset` so the active tab's leading flare clears the address bar's
+        /// rounded top-left corner below it.
+        static let firstTabLeadingMargin: CGFloat = 24
+        /// Outward concave fillet at the bottom of each side of the active tab (matches the Figma spec).
+        static let tabRampSize = CGSize(width: 10, height: 10)
     }
     
     enum NewTabType {
@@ -78,6 +83,10 @@ class TabsBarViewController: UIViewController {
 
     // Opaque backdrop so tabs scrolling under the sticky button don't show through it.
     private let addTabButtonBackground = UIView()
+
+    // Active-tab background (rounded top, flaring bottom fillets). In the collection content beneath
+    // the cells so it scrolls with the tabs and is clipped to the strip.
+    private let flaredTabBackgroundView = TabFlaredBackgroundView()
 
     lazy var fireButton: UIButton = {
         createButton(image: DesignSystemImages.Glyphs.Size24.fireSolid)
@@ -169,6 +178,13 @@ class TabsBarViewController: UIViewController {
         // (a gap). Prefetching gains are marginal here and on top of that we're not handling it properly (no willDisplay).
         collectionView.isPrefetchingEnabled = false
         collectionView.register(TabsBarCell.self, forCellWithReuseIdentifier: TabsBarCell.reuseIdentifier)
+
+        flaredTabBackgroundView.topCornerRadius = TabsBarCell.cornerRadius
+        flaredTabBackgroundView.rampSize = Constants.tabRampSize
+        flaredTabBackgroundView.isHidden = true
+        collectionView.insertSubview(flaredTabBackgroundView, at: 0)
+        // Room for the leftmost tab's leading fillet (collection leading is pulled in by the same amount).
+        collectionView.contentInset.left = Constants.tabRampSize.width
 
         addTabButton.setImage(DesignSystemImages.Glyphs.Size24.add, for: .normal)
         fireButton.setImage(DesignSystemImages.Glyphs.Size24.fireSolid, for: .normal)
@@ -383,7 +399,9 @@ class TabsBarViewController: UIViewController {
         if let flowLayout = collectionView.collectionViewLayout as? UICollectionViewFlowLayout, tabsCount > 0 {
             flowLayout.itemSize = CGSize(width: layout.itemWidth, height: view.frame.size.height)
         }
+        // Leading content inset shifts the tabs' start, so add it back to the offset (unless floored).
         addTabButtonLeadingConstraint?.constant = layout.addTabButtonLeadingOffset
+            + (layout.isFloored ? 0 : collectionView.contentInset.left)
         collectionView.contentInset.right = layout.addTabButtonContentInsetRight
     }
 
@@ -426,6 +444,26 @@ class TabsBarViewController: UIViewController {
         tabSwitcherButton.tabCount = tabsCount
         tabSwitcherButton.isFireMode = (tabManager?.currentBrowsingMode ?? .normal) == .fire
         tabSwitcherButton.hasUnread = hasUnread
+        updateFlaredTabBackground()
+    }
+
+    /// Positions the flared background over the current tab, inflated by the ramp width each side.
+    /// Hidden until the tab's layout resolves (a later layout pass calls this again).
+    private func updateFlaredTabBackground() {
+        guard let currentIndex,
+              let attributes = collectionView.layoutAttributesForItem(at: IndexPath(item: currentIndex, section: 0)) else {
+            flaredTabBackgroundView.isHidden = true
+            return
+        }
+        let rampWidth = Constants.tabRampSize.width
+        let cellFrame = attributes.frame
+        flaredTabBackgroundView.frame = CGRect(x: cellFrame.minX - rampWidth,
+                                               y: cellFrame.minY,
+                                               width: cellFrame.width + rampWidth * 2,
+                                               height: cellFrame.height)
+        flaredTabBackgroundView.fillColor = ThemeManager.shared.currentTheme.omniBarBackgroundColor
+        flaredTabBackgroundView.isHidden = false
+        collectionView.sendSubviewToBack(flaredTabBackgroundView)
     }
 
     func backgroundTabAdded() {
@@ -551,6 +589,7 @@ class TabsBarViewController: UIViewController {
         super.viewDidLayoutSubviews()
         // Catches layout passes (e.g. the first one) that land before refresh()/backgroundTabAdded().
         recomputeItemSize()
+        updateFlaredTabBackground()
         NotificationCenter.default.post(name: TabsBarViewController.viewDidLayoutNotification, object: self)
     }
 }
@@ -712,6 +751,7 @@ extension TabsBarViewController: UICollectionViewDropDelegate {
                                    hidesInactiveCloseButton: hidesInactiveCloseButton,
                                    withTheme: theme)
         }
+        updateFlaredTabBackground()
     }
 
 }
@@ -802,11 +842,13 @@ extension TabsBarViewController {
         let theme = ThemeManager.shared.currentTheme
         view.backgroundColor = theme.tabsBarBackgroundColor
         view.tintColor = theme.barTintColor
-        collectionView.backgroundColor = theme.tabsBarBackgroundColor
+        // Clear so the flared active-tab background behind the cells shows through.
+        collectionView.backgroundColor = .clear
         buttonsBackground.backgroundColor = theme.tabsBarBackgroundColor
         addTabButtonBackground.backgroundColor = theme.tabsBarBackgroundColor
-        
+
         collectionView.reloadData()
+        updateFlaredTabBackground()
     }
 
 }

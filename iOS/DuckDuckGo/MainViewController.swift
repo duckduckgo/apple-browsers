@@ -3162,6 +3162,24 @@ class MainViewController: UIViewController {
         ViewHighlighter.updatePositions()
         omniBar.refreshCustomizableButton()
         reanchorAITabCollapsedFooterIfNeeded()
+        updateWindowedAddressBarCorners()
+    }
+
+    /// Rounds the top address bar's top corners on iPad when windowed, matching the active tab. Uses
+    /// `cornerRadius` without clipping so the pill shadow and the below-bar overflow survive; paints the
+    /// exposed container the darker `backdrop` tone so the notch reads as a curve, not the bar's own fill.
+    private func updateWindowedAddressBarCorners() {
+        let barView = omniBar.barView
+        let isPad = UIDevice.current.userInterfaceIdiom == .pad
+        let isTopPosition = !appSettings.currentAddressBarPosition.isBottom
+        let shouldRound = isPad && isTopPosition && !isFloatingUIEnabled && barView.isWindowedPresentation
+
+        barView.layer.cornerCurve = .continuous
+        barView.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
+        barView.layer.cornerRadius = shouldRound ? TabsBarCell.cornerRadius : 0
+
+        let theme = ThemeManager.shared.currentTheme
+        viewCoordinator.navigationBarContainer.backgroundColor = shouldRound ? theme.tabsBarBackgroundColor : theme.barBackgroundColor
     }
 
     /// The AI-tab collapsed footer is a bottom chat input that must sit above the keyboard/home
@@ -7160,6 +7178,8 @@ extension MainViewController {
 
         viewCoordinator.navigationBarContainer.backgroundColor = theme.barBackgroundColor
         viewCoordinator.navigationBarContainer.tintColor = theme.barTintColor
+
+        updateWindowedAddressBarCorners()
 
         viewCoordinator.toolbar.tintColor = UIColor(singleUseColor: .toolbarButton)
 

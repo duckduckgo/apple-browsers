@@ -58,6 +58,7 @@ final class UTIStateMachine {
         displayState == .aiTab(.expanded)
     }
 
+    /// A Duck.ai tab showing the collapsed chat-input footer rather than the expanded input pane.
     var isAITabCollapsed: Bool {
         displayState == .aiTab(.collapsed)
     }
@@ -114,9 +115,8 @@ final class UTIStateMachine {
         isToggleEnabled && !(hidesToggleOnDuckAITab && isAITabState)
     }
 
-    /// Search mode on an expanded Duck.ai tab — the state where the toggle has been flipped to Search
-    /// but the chat web view is still the tab's content. Requires `.aiTab(.expanded)`, not any AI-tab
-    /// state: on a collapsed AI tab there is no input pane for a mode to apply to.
+    /// Search mode on an expanded Duck.ai tab — requires `.aiTab(.expanded)`, not any AI-tab state.
+    /// Not reachable with default behaviour: the mode toggle isn't shown on Duck.ai tabs today.
     func isSearchOnAITab(inputMode: TextEntryMode) -> Bool {
         isAITabExpanded && inputMode == .search
     }

@@ -851,9 +851,8 @@ extension MainViewController {
         updateUnifiedInputContentVisibility(for: coordinator, renderState: coordinator.computeRenderState())
     }
 
-    /// The collapsed-AI-tab pose reads the coordinator's live display state, so a caller passing an
-    /// already-stale snapshot can't drive a pose the coordinator has moved past. Everything below it
-    /// still trusts `renderState` — every current caller computes that fresh from this same coordinator.
+    /// The collapsed-footer pose — how the Duck.ai chat input and its separator sit at the bottom of the
+    /// screen — reads the coordinator's live display state; the chrome below it still trusts `renderState`.
     func updateUnifiedInputContentVisibility(for coordinator: UnifiedToggleInputCoordinator, renderState: UTIRenderState) {
         let isOnAITab = currentTab?.isAITab == true
         coordinator.contentViewController.forceBottomBarLayout = coordinator.isAITabState

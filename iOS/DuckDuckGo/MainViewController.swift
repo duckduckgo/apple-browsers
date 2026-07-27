@@ -1896,9 +1896,7 @@ class MainViewController: UIViewController {
         configureUnifiedInputEscapeHatch(model)
     }
 
-    /// True when the address bar owns editing focus. Reads the persistent omnibar-session state, which
-    /// survives a card tap that dismisses the keyboard. Narrower than `isKeyboardOwnedByOmnibar`, which
-    /// also treats a first responder anywhere inside the omnibar view hierarchy as omnibar-owned.
+    /// True when the address bar owns editing focus; survives a card tap that dismisses the keyboard.
     private var isAddressBarFocused: Bool {
         omniBar.isTextFieldEditing || unifiedToggleInputCoordinator?.isOmnibarSession == true
     }

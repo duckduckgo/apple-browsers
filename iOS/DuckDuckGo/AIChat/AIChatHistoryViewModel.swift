@@ -221,6 +221,21 @@ final class AIChatHistoryViewModel: ObservableObject {
         }
     }
 
+    /// Optimistically removes the chat from the in-memory lists and returns its index path so the
+    /// caller can animate the row out ahead of the async burn (mirrors `togglePin`'s optimism).
+    @discardableResult
+    func removeChatFromList(chatId: String) -> IndexPath? {
+        if let row = pinned.firstIndex(where: { $0.chatId == chatId }) {
+            pinned.remove(at: row)
+            return IndexPath(row: row, section: Section.pinned.rawValue)
+        }
+        if let row = recent.firstIndex(where: { $0.chatId == chatId }) {
+            recent.remove(at: row)
+            return IndexPath(row: row, section: Section.recent.rawValue)
+        }
+        return nil
+    }
+
     func burnAllChats() async {
         guard let fireExecutor else { return }
         // Reached only after the user confirms the delete-all action.

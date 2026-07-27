@@ -46,10 +46,11 @@ final class AIChatHistoryViewController: UIViewController {
         !isEditingChats && viewModel.effectiveQuery.isEmpty
     }
 
-    /// True while the search UI is up. Multi-select is not offered in this state (search and
-    /// multi-select are mutually exclusive), which avoids clearing the filter on the way in.
-    private var isSearchActive: Bool {
-        tableView.tableHeaderView != nil
+    /// True while a search filter is applied. Multi-select isn't offered then — selecting a
+    /// filtered subset is ambiguous and entering it would need to clear the filter. An open but
+    /// empty search bar (no filter) still allows it.
+    private var isFilterApplied: Bool {
+        !viewModel.effectiveQuery.isEmpty
     }
 
     private lazy var tableView: UITableView = {
@@ -245,21 +246,18 @@ final class AIChatHistoryViewController: UIViewController {
         ) { [weak self] _ in
             self?.viewModel.openChatProtection()
         }
-        // Rebuilt each time the menu opens so "Select Chats" reflects the current search state:
-        // multi-select is omitted while searching (mutually exclusive with the filter).
+        // Rebuilt each time the menu opens so "Select Chats" reflects the current filter state:
+        // it's disabled (but kept in place) while a filter is applied.
         let content = UIDeferredMenuElement.uncached { [weak self] completion in
             guard let self else { completion([chatProtection]); return }
-            var elements: [UIMenuElement] = []
-            if !self.isSearchActive {
-                elements.append(UIAction(
-                    title: UserText.aiChatHistoryMenuSelectChats,
-                    image: DesignSystemImages.Glyphs.Size16.checkCircle
-                ) { [weak self] _ in
-                    self?.enterSelectionMode()
-                })
+            let selectChats = UIAction(
+                title: UserText.aiChatHistoryMenuSelectChats,
+                image: DesignSystemImages.Glyphs.Size16.checkCircle,
+                attributes: self.isFilterApplied ? .disabled : []
+            ) { [weak self] _ in
+                self?.enterSelectionMode()
             }
-            elements.append(chatProtection)
-            completion(elements)
+            completion([selectChats, chatProtection])
         }
         let item = UIBarButtonItem(
             image: DesignSystemImages.Glyphs.Size24.menuDotsHorizontal,
@@ -523,8 +521,10 @@ final class AIChatHistoryViewController: UIViewController {
 
     private func enterSelectionMode(preselecting chatId: String? = nil) {
         guard !isEditingChats else { return }
-        // Multi-select isn't offered while searching (see `isSearchActive`), so there's no active
-        // filter to clear here — the pre-selection below resolves against the full list.
+        // Select is disabled while a filter is applied (see `isFilterApplied`), so this only
+        // dismisses an open, empty search bar — there's no filter to clear, so the pre-selection
+        // below resolves against the full list without a reload dropping it.
+        hideSearchBarIfNeeded()
         isEditingChats = true
         viewModel.editModeEntered()
         // Configure the bars before the edit animation so the Done tint is set up front.
@@ -723,22 +723,21 @@ extension AIChatHistoryViewController: UITableViewDelegate {
             let delete = UIAction(title: UserText.aiChatHistoryRowMenuDelete,
                                   image: DesignSystemImages.Glyphs.Size24.fire,
                                   attributes: .destructive) { [weak self] _ in
-                self?.viewModel.deleteChat(chatId: chatId)
+                self?.performDelete(chatId: chatId)
+            }
+            // Select (multi-select) is disabled while a filter is applied — selecting a filtered
+            // subset is ambiguous — but kept in place rather than removed so the menu is stable.
+            let select = UIAction(title: UserText.aiChatHistoryRowMenuSelect,
+                                  image: DesignSystemImages.Glyphs.Size24.checkCircle,
+                                  attributes: self.isFilterApplied ? .disabled : []) { [weak self] _ in
+                self?.enterSelectionMode(preselecting: chatId)
             }
             // Inline sections render separators between them: Select | Pin, Download | Delete.
-            // Select (multi-select) is omitted while searching — search and multi-select are
-            // mutually exclusive, so it's not offered rather than forcing a search-clear.
-            var sections: [UIMenuElement] = []
-            if !self.isSearchActive {
-                let select = UIAction(title: UserText.aiChatHistoryRowMenuSelect,
-                                      image: DesignSystemImages.Glyphs.Size24.checkCircle) { [weak self] _ in
-                    self?.enterSelectionMode(preselecting: chatId)
-                }
-                sections.append(UIMenu(title: "", options: .displayInline, children: [select]))
-            }
-            sections.append(UIMenu(title: "", options: .displayInline, children: [pin, download]))
-            sections.append(UIMenu(title: "", options: .displayInline, children: [delete]))
-            return UIMenu(title: "", children: sections)
+            return UIMenu(title: "", children: [
+                UIMenu(title: "", options: .displayInline, children: [select]),
+                UIMenu(title: "", options: .displayInline, children: [pin, download]),
+                UIMenu(title: "", options: .displayInline, children: [delete])
+            ])
         }
     }
 
@@ -767,6 +766,27 @@ extension AIChatHistoryViewController: UITableViewDelegate {
             if self.viewModel.pinned != expectedPinned || self.viewModel.recent != expectedRecent {
                 self.refreshContent()
             }
+        })
+    }
+
+    /// Deletes a single chat from the long-press menu, animating the row out the way the swipe
+    /// action does (which gets that animation for free from its destructive `UIContextualAction`).
+    /// Optimistically removes the row and animates it, suppressing the reactive reload; the burn
+    /// runs async and the completion reconciles empty sections / empty state.
+    private func performDelete(chatId: String) {
+        viewModel.deleteChat(chatId: chatId)
+        isApplyingLocalUpdate = true
+        guard let indexPath = viewModel.removeChatFromList(chatId: chatId) else {
+            isApplyingLocalUpdate = false
+            return
+        }
+        tableView.performBatchUpdates({
+            self.tableView.deleteRows(at: [indexPath], with: .automatic)
+        }, completion: { [weak self] _ in
+            self?.isApplyingLocalUpdate = false
+            // Row is already gone, so this reload is masked; it just reconciles the section
+            // header / empty-state transition.
+            self?.refreshContent()
         })
     }
 }

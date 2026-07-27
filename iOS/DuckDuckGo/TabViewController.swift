@@ -1086,12 +1086,10 @@ class TabViewController: UIViewController {
         } else {
             webView = WebView(frame: view.bounds, configuration: configuration)
         }
-        if FloatingUIManager(featureFlagger: featureFlagger).isFloatingUIEnabled {
-            webView.scrollView.clipsToBounds = false
-            webView.clipsToBounds = false
-            outerContainer.clipsToBounds = false
-            webViewContainer.clipsToBounds = false
-        }
+        webView.scrollView.clipsToBounds = false
+        webView.clipsToBounds = false
+        outerContainer.clipsToBounds = false
+        webViewContainer.clipsToBounds = false
         textZoomCoordinator.onWebViewCreated(applyToWebView: webView)
         specialErrorPageNavigationHandler.attachWebView(webView)
 
@@ -1119,6 +1117,7 @@ class TabViewController: UIViewController {
                                                             onRefresh: { [weak self] in
             self?.handlePullToRefresh()
         })
+        setUnderPageBackgroundColor(webView.underPageBackgroundColor)
 
         if isAITab {
             pullToRefreshViewAdapter?.setRefreshControlEnabled(false)

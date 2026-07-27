@@ -115,6 +115,7 @@ extension MainViewFactory {
         createStatusBackground()
         createTabBarContainer()
         createOmniBar()
+        createToolbarMaterialBackground()
         createToolbar()
         createNavigationBarContainer()
         createNavigationBarCollectionView()
@@ -183,6 +184,7 @@ extension MainViewFactory {
     private func createNavigationBarCollectionView() {
         // Layout is replaced elsewhere, but required to construct the view.
         coordinator.navigationBarCollectionView = NavigationBarCollectionView(frame: .zero, collectionViewLayout: UICollectionViewFlowLayout())
+        coordinator.navigationBarCollectionView.backgroundColor = .clear
         
         // scrollview subclasses change the default to true, but we need this for the separator on the omnibar
         coordinator.navigationBarCollectionView.clipsToBounds = false
@@ -206,6 +208,7 @@ extension MainViewFactory {
 
         private var floatingMaterialConstraints: [NSLayoutConstraint] = []
         private var isFloatingStyleEnabled = false
+        private var isMaterialBackgroundEnabled = false
 
         /// Enables overflow hit testing for iPad expanded search area.
         var allowsOverflowHitTesting = false {
@@ -241,6 +244,12 @@ extension MainViewFactory {
             guard isFloatingStyleEnabled != enabled else { return }
             isFloatingStyleEnabled = enabled
             applyFloatingStyle(animated: true)
+        }
+
+        func setMaterialBackgroundEnabled(_ enabled: Bool) {
+            guard isMaterialBackgroundEnabled != enabled else { return }
+            isMaterialBackgroundEnabled = enabled
+            applyFloatingStyle(animated: false)
         }
 
         private lazy var overflowTapGesture: UITapGestureRecognizer = {
@@ -301,13 +310,10 @@ extension MainViewFactory {
                 self.floatingMaterialConstraints[2].constant = 0
                 self.floatingMaterialConstraints[3].constant = 0
                 self.floatingMaterialView.layer.cornerRadius = 0
-                self.floatingMaterialView.effect = nil
 
-                if self.isFloatingStyleEnabled {
-                    self.floatingMaterialView.isHidden = true
-                } else {
-                    self.floatingMaterialView.isHidden = false
-                }
+                let shouldShowMaterial = self.isMaterialBackgroundEnabled && !self.isFloatingStyleEnabled
+                self.floatingMaterialView.isHidden = !shouldShowMaterial
+                self.floatingMaterialView.effect = shouldShowMaterial ? UIBlurEffect(style: .systemUltraThinMaterial) : nil
                 self.layoutIfNeeded()
             }
 
@@ -332,12 +338,9 @@ extension MainViewFactory {
 
     final class StatusBackgroundView: UIVisualEffectView { }
     private func createStatusBackground() {
-        let view = StatusBackgroundView(effect: nil)
-        if floatingUIManager.isFloatingUIEnabled {
-            view.backgroundColor = .clear
-        } else {
-            view.backgroundColor = UIColor(designSystemColor: .background)
-        }
+        let effect = floatingUIManager.isFloatingUIEnabled ? nil : UIBlurEffect(style: .systemUltraThinMaterial)
+        let view = StatusBackgroundView(effect: effect)
+        view.backgroundColor = .clear
         coordinator.statusBackground = view
         superview.addSubview(coordinator.statusBackground)
     }
@@ -379,6 +382,14 @@ extension MainViewFactory {
         superview.addSubview(coordinator.toolbar)
         coordinator.toolbarHandler = ToolbarHandler(toolbar: coordinator.toolbar)
         coordinator.updateToolbarWithState(.newTab)
+    }
+
+    private func createToolbarMaterialBackground() {
+        let effect = floatingUIManager.isFloatingUIEnabled ? nil : UIBlurEffect(style: .systemUltraThinMaterial)
+        coordinator.toolbarMaterialBackground = UIVisualEffectView(effect: effect)
+        coordinator.toolbarMaterialBackground.isHidden = floatingUIManager.isFloatingUIEnabled
+        coordinator.toolbarMaterialBackground.isUserInteractionEnabled = false
+        superview.addSubview(coordinator.toolbarMaterialBackground)
     }
 
     final class LogoBackgroundView: UIView { }
@@ -449,6 +460,7 @@ extension MainViewFactory {
         constrainTabBarContainer()
         constrainNavigationBarContainer()
         constrainToolbar()
+        constrainToolbarMaterialBackground()
         constrainUnifiedToggleInputContainer()
         constrainAITabCollapsedTopSeparator()
         constrainAIChatTabChatHeaderContainer()
@@ -557,6 +569,16 @@ extension MainViewFactory {
             toolbar.constrainView(superview, by: .centerX),
             coordinator.constraints.toolbarHeight,
             coordinator.constraints.toolbarBottom,
+        ])
+    }
+
+    private func constrainToolbarMaterialBackground() {
+        let background = coordinator.toolbarMaterialBackground!
+        NSLayoutConstraint.activate([
+            background.topAnchor.constraint(equalTo: coordinator.toolbar.topAnchor),
+            background.leadingAnchor.constraint(equalTo: superview.leadingAnchor),
+            background.trailingAnchor.constraint(equalTo: superview.trailingAnchor),
+            background.bottomAnchor.constraint(equalTo: superview.bottomAnchor)
         ])
     }
 

@@ -198,9 +198,6 @@ final class BrowserToolbarView: UIView {
     /// floats near the device bottom (see `floatingBottomMargin`). Kept in sync with the host's
     /// safe-area inset in `layoutSubviews`; also widens the hit-test region.
     private var floatingBottomOffset: CGFloat = 0
-    /// The tab switcher reuses this bar purely for button-position parity with the browser, but
-    /// paints its own backdrop — so in the non-floating style its own background must stay clear.
-    private var isLegacyBackgroundTransparent = false
     private static var barOuterInsets: UIEdgeInsets {
         floatingBarOuterInsets
     }
@@ -282,14 +279,6 @@ final class BrowserToolbarView: UIView {
         guard isFloatingStyleEnabled != enabled else { return }
         isFloatingStyleEnabled = enabled
         applyCurrentStyle(animated: animated)
-    }
-
-    /// Keeps the bar's own background clear in the non-floating style (used by the tab switcher,
-    /// which provides its own backdrop). No-op for the floating style, which is always clear.
-    func setLegacyBackgroundTransparent(_ transparent: Bool) {
-        guard isLegacyBackgroundTransparent != transparent else { return }
-        isLegacyBackgroundTransparent = transparent
-        applyCurrentStyle(animated: false)
     }
 
     func setToolbarButtons(_ views: [UIView]) {
@@ -613,16 +602,19 @@ final class BrowserToolbarView: UIView {
 
     private func applyCurrentStyle(animated: Bool) {
         let insets = isFloatingStyleEnabled ? Self.floatingBarOuterInsets : Self.legacyBarOuterInsets
-        let legacyBackgroundColor: UIColor = isLegacyBackgroundTransparent ? .clear : ThemeManager.shared.currentTheme.barBackgroundColor
         let updates = {
             self.materialBackgroundLeadingConstraint.constant = insets.left
             self.materialBackgroundTrailingConstraint.constant = -insets.right
             self.materialBackgroundTopConstraint.constant = insets.top
             self.materialBackgroundBottomConstraint.constant = -insets.bottom
             self.materialBackgroundView.layer.shadowOpacity = self.isFloatingStyleEnabled ? 0.12 : 0
-            self.materialBackgroundView.effect = self.isFloatingStyleEnabled ? self.materialEffect() : nil
-            self.materialBackgroundView.backgroundColor = self.isFloatingStyleEnabled ? .clear : legacyBackgroundColor
-            self.materialBackgroundView.contentView.backgroundColor = self.isFloatingStyleEnabled ? .clear : legacyBackgroundColor
+            if self.isFloatingStyleEnabled {
+                self.materialBackgroundView.effect = self.materialEffect()
+            } else {
+                self.materialBackgroundView.effect = nil
+            }
+            self.materialBackgroundView.backgroundColor = .clear
+            self.materialBackgroundView.contentView.backgroundColor = .clear
             let buttonRowPadding = self.isFloatingStyleEnabled ? Self.floatingButtonRowHorizontalPadding : Self.legacyButtonRowHorizontalPadding
             self.buttonStack.layoutMargins = UIEdgeInsets(top: 0, left: buttonRowPadding, bottom: 0, right: buttonRowPadding)
             // Keep the buttons-only height in sync with the style (49 legacy / 56 floating). The

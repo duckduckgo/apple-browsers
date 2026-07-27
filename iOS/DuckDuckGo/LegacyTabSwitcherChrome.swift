@@ -73,7 +73,6 @@ final class LegacyTabSwitcherChrome: TabSwitcherChrome {
 
     func decorate(theme: Theme) {
         titleBarView.tintColor = theme.barTintColor
-        bottomToolbar.setLegacyBackgroundTransparent(true)
         bottomToolbar.tintColor = UIColor(singleUseColor: .toolbarButton)
     }
 
@@ -121,7 +120,6 @@ final class LegacyTabSwitcherChrome: TabSwitcherChrome {
         // Keep the bar transparent (the tab switcher provides its own backdrop) and matched to
         // the browser's button layout.
         bottomToolbar.setFloatingStyleEnabled(false)
-        bottomToolbar.setLegacyBackgroundTransparent(true)
         borderView.updateForAddressBarPosition(addressBarPosition)
         titleBarView.updateForAddressBarPosition(isBottom: addressBarPosition.isBottom)
         // On large ipad view don't show the bottom divider

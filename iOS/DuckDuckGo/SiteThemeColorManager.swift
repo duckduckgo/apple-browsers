@@ -148,9 +148,7 @@ final class SiteThemeColorManager {
             statusBackgroundColor = newColor
         }
         viewCoordinator.setStandardStatusBackgroundColor(statusBackgroundColor)
-        tabViewController?.pullToRefreshViewAdapter?.backgroundColor = newColor
-        tabViewController?.webView?.underPageBackgroundColor = newColor
-        tabViewController?.webView?.scrollView.backgroundColor = newColor
+        tabViewController?.setUnderPageBackgroundColor(newColor)
     }
 
 }

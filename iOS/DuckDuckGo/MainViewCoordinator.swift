@@ -54,6 +54,7 @@ class MainViewCoordinator {
     /// Owned so a subsequent show can cancel an in-flight dismiss and skip the stale completion.
     private var omnibarDismissAnimator: UIViewPropertyAnimator?
     var toolbar: BrowserToolbarView!
+    var toolbarMaterialBackground: UIVisualEffectView!
     var toolbarSpacer: UIView!
     var toolbarBackButton: BrowserChromeButton { toolbarHandler.backButton }
     var toolbarFireButton: BrowserChromeButton { toolbarHandler.fireButton }
@@ -141,6 +142,7 @@ class MainViewCoordinator {
         addressBarPosition = position
         applyContentContainerTopAnchorForCurrentState()
         guard isFloatingUIEnabled else {
+            navigationBarContainer.setMaterialBackgroundEnabled(position.isBottom)
             toolbar.setOmnibarView(nil, height: 0)
             constraints.toolbarHeight.constant = BrowserToolbarView.totalHeight(withOmnibarHeight: 0, isFloating: isFloatingUIEnabled)
             navigationBarContainer.isHidden = false
@@ -639,7 +641,9 @@ class MainViewCoordinator {
     }
 
     private func applyResolvedStatusBackgroundColor() {
-        statusBackground.backgroundColor = resolvedStatusBackgroundColor()
+        let usesMaterialBackground = !isFloatingUIEnabled && statusBackgroundPresentation == .standard
+        (statusBackground as? UIVisualEffectView)?.effect = usesMaterialBackground ? UIBlurEffect(style: .systemUltraThinMaterial) : nil
+        statusBackground.backgroundColor = usesMaterialBackground ? .clear : resolvedStatusBackgroundColor()
     }
 
     private func resolvedStatusBackgroundColor() -> UIColor {

@@ -17,6 +17,10 @@ on:
         description: "Comma-separated sites (blank = full 22-site list)"
         required: false
         default: ""
+      reps:
+        description: "Measured loads per site"
+        required: false
+        default: "10"
       upload-to-clickhouse:
         description: "Upload aggregated per-domain results to ClickHouse"
         type: boolean
@@ -65,10 +69,14 @@ jobs:
         # Inputs passed via env, not interpolated into the script, to avoid shell injection.
         env:
           SITES: ${{ inputs.sites }}
+          REPS: ${{ inputs.reps }}
         run: |
           args=()
           if [ -n "$SITES" ]; then
             args+=(--sites "$SITES")
+          fi
+          if [ -n "$REPS" ]; then
+            args+=(--reps "$REPS")
           fi
           ./test-chrome.sh "${args[@]}"
 

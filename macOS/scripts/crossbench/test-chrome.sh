@@ -55,7 +55,6 @@ WPR_BASE_URL="${WPR_BASE_URL:-https://staticcdn.duckduckgo.com/d5c04536-5379-470
 # Standalone Python-3 tsproxy, handed to crossbench via speed:{ts_proxy:...}.
 # See wpr_network_arg for why crossbench's own DEPS-pinned copy cannot be used.
 TSPROXY_PY="${TSPROXY_PY:-$HOME/Developer/mac-perf-runner/bin/tsproxy.py}"
-TSPROXY_URL="${TSPROXY_URL:-https://chromium.googlesource.com/catapult/+/refs/heads/main/third_party/tsproxy/tsproxy.py?format=TEXT}"
 # US-broadband, byte-for-byte the Windows runner's profile. Passed as explicit
 # values rather than speed:"US-broadband" because that preset name exists only in
 # the DDG crossbench fork, and we pin upstream.
@@ -140,29 +139,16 @@ check_prerequisites() {
     echo "ERROR: wpr binary not found at $WPR_BIN. Run provision-macos.sh first." >&2
     exit 1
   fi
-  ensure_tsproxy
+  if [ "$SHAPE" = "1" ] && [ ! -f "$TSPROXY_PY" ]; then
+    echo "ERROR: tsproxy not found at $TSPROXY_PY. Run provision-macos.sh first." >&2
+    exit 1
+  fi
 }
 
 # ---- recorded network ------------------------------------------------------
 # normalized story filename: 'navToLCP+youtube.com' -> 'navToLCP_youtube.com'
 # ('+' -> '_', '/' -> '_'), matching Get-Normalized-Filename in the ps1.
 normalize() { printf '%s' "$1" | tr '+/' '__'; }
-
-# Fetch the standalone Python-3 tsproxy if absent.
-ensure_tsproxy() {
-  [ "$SHAPE" = "1" ] || return 0
-  [ -f "$TSPROXY_PY" ] && return 0
-  echo "tsproxy not found at $TSPROXY_PY; fetching from catapult..." >&2
-  mkdir -p "$(dirname "$TSPROXY_PY")"
-  # googlesource serves base64 with ?format=TEXT.
-  if curl -fLSs "$TSPROXY_URL" | python3 -c 'import base64,sys; sys.stdout.buffer.write(base64.b64decode(sys.stdin.read()))' > "$TSPROXY_PY.tmp" 2>/dev/null && [ -s "$TSPROXY_PY.tmp" ]; then
-    mv "$TSPROXY_PY.tmp" "$TSPROXY_PY"
-  else
-    rm -f "$TSPROXY_PY.tmp"
-    echo "ERROR: could not fetch tsproxy. Set TSPROXY_PY to a local copy." >&2
-    exit 1
-  fi
-}
 
 # crossbench --network arg for a WPR archive. Notes:
 # - No spaces: the arg is deliberately unquoted at the call site, so neither the

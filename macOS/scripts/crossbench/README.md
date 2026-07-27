@@ -16,7 +16,7 @@ gets 10 measured loads with no discarded warm-up.
 
 | File | Purpose |
 |------|---------|
-| `provision-macos.sh` | Installs Chrome, Python 3.11, Poetry, a pinned crossbench checkout, the LCP extras, and a pinned WPR binary. |
+| `provision-macos.sh` | Installs Chrome, Python 3.11, Poetry, a pinned crossbench checkout, the LCP extras, a pinned WPR binary, and a checksum-verified tsproxy. |
 | `test-chrome.sh` | Downloads each archive, runs Chrome through WPR and tsproxy, and writes per-repetition results and per-site dispositions. |
 | `aggregate-lcp.py` | Produces per-domain ClickHouse metric rows. |
 | `aggregate-dispositions.py` | Produces ClickHouse attempt rows, including skipped and failed sites. |
@@ -39,6 +39,9 @@ Everything else is installed by `provision-macos.sh`.
 # Small validation run:
 ./test-chrome.sh --sites apple.com --reps 1
 ```
+
+The manual CI workflow also accepts a `reps` input. Scheduled runs retain the
+10-load default; use a smaller value for validation runs.
 
 The runner writes:
 

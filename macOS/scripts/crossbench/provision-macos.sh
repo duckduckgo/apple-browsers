@@ -5,9 +5,9 @@
 #
 # Chrome replays each site from a WPR archive through a traffic shaper and
 # crossbench extracts LCP from the Perfetto trace. This script installs the
-# toolchain and builds the `wpr` binary; the archives and the shaper (tsproxy,
-# a single Python file) are fetched at run time by test-chrome.sh. The DDG and
-# Safari paths are deliberately out of scope here.
+# toolchain, builds the `wpr` binary, and installs the pinned traffic shaper.
+# Archives are fetched per site by test-chrome.sh. The DDG and Safari paths are
+# deliberately out of scope here.
 #
 # Idempotent: safe to run on every CI job; installs only what's missing.
 #
@@ -43,6 +43,14 @@ WEBPAGEREPLAY_REV="b2b856131e36c99e9de9c419fe8ca02f857082ba"   # DEPS: webpagere
 # Where the wpr binary is built to. test-chrome.sh passes this to crossbench via
 # --bin-override, which skips crossbench's own build machinery entirely.
 WPR_BIN="${WPR_BIN:-$HOME/Developer/mac-perf-runner/bin/wpr}"
+
+# The tsproxy revision in crossbench's DEPS is not Python-3-compatible. Use
+# Catapult's fixed copy instead, pinned to immutable source and verified by
+# content hash so scheduled runs cannot silently pick up tip-of-tree changes.
+TSPROXY_REV="d810008022eeaefcbea50393ea5baa0930b27047"
+TSPROXY_SHA256="8380fa81c3b632aa9b83a34728b31046c53855adbf071c18a7afc2945c523c67"
+TSPROXY_URL="https://chromium.googlesource.com/catapult/+/$TSPROXY_REV/third_party/tsproxy/tsproxy.py?format=TEXT"
+TSPROXY_PY="${TSPROXY_PY:-$HOME/Developer/mac-perf-runner/bin/tsproxy.py}"
 
 # Non-interactive: never prompt (Homebrew honors these).
 export NONINTERACTIVE=1
@@ -177,5 +185,41 @@ mkdir -p "$(dirname "$WPR_BIN")"
 # The same flags crossbench's build.py would use; incremental, sub-second once warm.
 go build -C "$WPR_SRC/src" -trimpath -buildvcs=false -o "$WPR_BIN" wpr.go
 echo "wpr: $WPR_BIN"
+
+# 9. tsproxy — fetch one immutable Python-3-compatible source file rather than
+#    cloning Catapult. Verify both new downloads and cached copies: persistent
+#    runners must not silently retain an older shaper at the same path.
+log "tsproxy @ $TSPROXY_REV"
+TSPROXY_ACTUAL_SHA256=""
+if [ -f "$TSPROXY_PY" ]; then
+  TSPROXY_ACTUAL_SHA256="$(shasum -a 256 "$TSPROXY_PY" | awk '{print $1}')"
+fi
+if [ "$TSPROXY_ACTUAL_SHA256" = "$TSPROXY_SHA256" ]; then
+  echo "tsproxy: verified cached copy"
+else
+  TSPROXY_TMP="${TSPROXY_PY}.tmp"
+  mkdir -p "$(dirname "$TSPROXY_PY")"
+  rm -f "$TSPROXY_TMP"
+  # Gitiles serves raw file content as base64 with ?format=TEXT.
+  if ! curl -fLSs "$TSPROXY_URL" \
+      | "$PY_BIN" -c 'import base64,sys; sys.stdout.buffer.write(base64.b64decode(sys.stdin.read()))' \
+      > "$TSPROXY_TMP"; then
+    rm -f "$TSPROXY_TMP"
+    echo "ERROR: could not fetch pinned tsproxy revision $TSPROXY_REV." >&2
+    exit 1
+  fi
+  TSPROXY_ACTUAL_SHA256="$(shasum -a 256 "$TSPROXY_TMP" | awk '{print $1}')"
+  if [ "$TSPROXY_ACTUAL_SHA256" != "$TSPROXY_SHA256" ]; then
+    rm -f "$TSPROXY_TMP"
+    echo "ERROR: tsproxy checksum mismatch." >&2
+    echo "       expected: $TSPROXY_SHA256" >&2
+    echo "       actual:   $TSPROXY_ACTUAL_SHA256" >&2
+    exit 1
+  fi
+  mv "$TSPROXY_TMP" "$TSPROXY_PY"
+  echo "tsproxy: downloaded and verified"
+fi
+"$PY_BIN" "$TSPROXY_PY" --help >/dev/null
+echo "tsproxy: $TSPROXY_PY"
 
 log "Provisioning complete"

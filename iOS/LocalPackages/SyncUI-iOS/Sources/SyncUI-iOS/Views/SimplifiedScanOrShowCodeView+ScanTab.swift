@@ -98,7 +98,7 @@ extension SimplifiedScanOrShowCodeView {
         VStack(spacing: 0) {
             Spacer()
 
-            Image(rebrandable: "SyncCameraPermission")
+            Image(rebrandable: "SyncCameraPermission", bundle: .module)
                 .padding(.bottom, 20)
 
             Text(UserText.cameraPermissionRequired)
@@ -120,7 +120,7 @@ extension SimplifiedScanOrShowCodeView {
                 model.gotoSettings()
             } label: {
                 HStack {
-                    Image("SyncGotoButton")
+                    Image("SyncGotoButton", bundle: .module)
                     Text(UserText.cameraGoToSettingsButton)
                 }
             }
@@ -138,7 +138,7 @@ extension SimplifiedScanOrShowCodeView {
         VStack(spacing: 0) {
             Spacer()
 
-            Image(rebrandable: "SyncCameraUnavailable")
+            Image(rebrandable: "SyncCameraUnavailable", bundle: .module)
                 .padding(.bottom, 20)
 
             Text(UserText.cameraIsUnavailableTitle)

@@ -95,6 +95,7 @@ jobs:
       create-dmg: false
       branch: ${{ inputs.branch || github.sha }}
       skip-notify: true
+      include-x86-architecture: false
     secrets: inherit
 
   # This job sets up the matrix strategy arguments for the ui-tests jobs
@@ -280,14 +281,14 @@ jobs:
         ref: ${{ inputs.branch || github.sha }}
 
     - name: Download test reports
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v7
       if: always()
       with:
         pattern: "testreport-*"
         merge-multiple: true
 
     - name: Publish tests report
-      uses: mikepenz/action-junit-report@v5
+      uses: mikepenz/action-junit-report@v6
       if: always()
       with:
         check_name: Tests Report
@@ -338,7 +339,7 @@ jobs:
 
     - name: Create Asana task for production-mode failure
       if: steps.detect.outputs.has_production == 'true'
-      uses: duckduckgo/native-github-asana-sync@v1.1
+      uses: duckduckgo/native-github-asana-sync@v2.5.1
       with:
         action: create-asana-task
         asana-pat: ${{ secrets.ASANA_ACCESS_TOKEN }}
@@ -348,7 +349,7 @@ jobs:
 
     - name: Create Asana task for internal-mode failure
       if: steps.detect.outputs.has_internal == 'true'
-      uses: duckduckgo/native-github-asana-sync@v1.1
+      uses: duckduckgo/native-github-asana-sync@v2.5.1
       with:
         action: create-asana-task
         asana-pat: ${{ secrets.ASANA_ACCESS_TOKEN }}

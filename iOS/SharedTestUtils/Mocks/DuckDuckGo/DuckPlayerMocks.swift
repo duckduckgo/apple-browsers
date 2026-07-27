@@ -418,6 +418,10 @@ final class MockDuckPlayerFeatureFlagger: FeatureFlagger {
         return nil
     }
 
+    func assignedCohort<Flag: FeatureFlagDescribing>(for featureFlag: Flag, allowOverride: Bool) -> (any FeatureFlagCohortDescribing)? {
+        return nil
+    }
+
     var allActiveExperiments: Experiments = [:]
 }
 
@@ -616,6 +620,8 @@ final class DuckPlayerBrowserChromeDelegateMock: BrowserChromeDelegate {
 
     var canHideBars: Bool = false
 
+    var isChromeScrollInteractionDisabled: Bool = false
+
     var isToolbarHidden: Bool = false
 
     var toolbarHeight: CGFloat = 0.0
@@ -623,6 +629,10 @@ final class DuckPlayerBrowserChromeDelegateMock: BrowserChromeDelegate {
     var barsMaxHeight: CGFloat = 30
 
     var isInMinimalChromeLayout: Bool = false
+
+    func floatingWebViewBottomObscuredHeight(for barsVisibilityPercent: CGFloat) -> CGFloat { 0 }
+
+    func floatingWebViewObscuredInsets(for barsVisibilityPercent: CGFloat) -> UIEdgeInsets { .zero }
 
     var omniBar: OmniBar = DefaultOmniBarViewController(
         dependencies: MockOmnibarDependency(

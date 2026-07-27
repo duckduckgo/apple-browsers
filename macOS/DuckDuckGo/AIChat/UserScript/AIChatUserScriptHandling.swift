@@ -155,6 +155,9 @@ protocol AIChatUserScriptHandling: AnyObject {
     /// Posted by Duck.ai when `getUserMedia()` rejects while starting dictation. Mirrors
     /// `voiceChatStartFailed` but surfaces dictation-specific remediation copy.
     @MainActor func dictationStartFailed(params: Any, message: UserScriptMessage) async -> Encodable?
+
+    /// Posted by the Customize Responses card placement when the user dismisses it.
+    @MainActor func customizeResponsesModalClosed(params: Any, message: UserScriptMessage) async -> Encodable?
 }
 
 final class AIChatUserScriptHandler: AIChatUserScriptHandling {
@@ -886,6 +889,12 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         return nil
     }
 
+    @MainActor
+    func customizeResponsesModalClosed(params: Any, message: UserScriptMessage) async -> Encodable? {
+        notificationCenter.post(name: .aiChatCustomizeResponsesModalClosed, object: message.messageWebView)
+        return nil
+    }
+
     private static func failureReason(from params: Any) -> String {
         guard let dict = params as? [String: Any], let value = dict["reason"] as? String else {
             return ""
@@ -980,6 +989,15 @@ extension AIChatUserScriptHandler: AIChatMetricReportingHandling {
             pixelFiring?.fire(
                 AIChatPixel.aiChatSuggestionSelected(
                     suggestionId: metric.suggestionId ?? "",
+                    pageType: metric.pageType ?? "none"
+                ),
+                frequency: .dailyAndStandard
+            )
+            completion?()
+        case .userDidViewSuggestions:
+            pixelFiring?.fire(
+                AIChatPixel.aiChatSuggestionsViewed(
+                    isSmart: metric.isSmart ?? false,
                     pageType: metric.pageType ?? "none"
                 ),
                 frequency: .dailyAndStandard

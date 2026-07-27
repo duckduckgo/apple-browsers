@@ -179,6 +179,7 @@ final class AddressBarButtonsViewController: NSViewController {
     @IBOutlet weak var privacyShieldButtonWidthConstraint: NSLayoutConstraint!
     @IBOutlet weak var privacyShieldButtonHeightConstraint: NSLayoutConstraint!
     @IBOutlet weak var imageButtonLeadingConstraint: NSLayoutConstraint!
+    @IBOutlet weak var zoomButtonWidthConstraint: NSLayoutConstraint!
     @IBOutlet weak var zoomButtonHeightConstraint: NSLayoutConstraint!
 
     /// Width of the left buttons container (Privacy Dashboard button, Permissions buttons…)
@@ -861,13 +862,13 @@ final class AddressBarButtonsViewController: NSViewController {
 
         let isPermissionCenterPopoverShown = permissionCenterPopover?.isShown == true
 
-        if isDuckAiVoiceChatSystemMicDenied(forDomain: domain) {
+        if isDuckAiVoiceChatSystemMicDenied(forDomain: domain) && !isAIChatPanelActive {
             // While the OS denies mic access on duck.ai under the voice-chat flag, keep the
-            // shield as an anchor for `systemDisabledInfoPopover` regardless of the current
-            // address-bar state (focused text field, AI chat omnibar suppression). The check
-            // is derived from current OS state, so the shield stays available for the user to
-            // re-open the warning after dismissing it and clears as soon as the OS state
-            // changes or they navigate away.
+            // shield as an anchor for `systemDisabledInfoPopover` — but only while the omnibar
+            // is NOT in chat mode. In chat mode the user is prompting, not managing mic access,
+            // so parking the shield in the address bar is noise; suppress it and fall through.
+            // The voice-chat failure handler still surfaces the remediation popover (force-showing
+            // the shield transiently) when mic use is actually attempted and fails.
             permissionCenterButton.isShown = true
         } else if shouldSuppressShieldOnDuckAi(forDomain: domain, tabViewModel: tabViewModel) {
             // On duck.ai, the mic permission is auto-granted by migration and the voice chat
@@ -1148,8 +1149,8 @@ final class AddressBarButtonsViewController: NSViewController {
                 privacyDashboardButton.setAccessibilityValue("shieldDot")
 
                 let animationNames = MouseOverAnimationButton.AnimationNames(
-                    aqua: privacyShieldStyle.hoverAnimationWithDot(forLightMode: true),
-                    dark: privacyShieldStyle.hoverAnimationWithDot(forLightMode: false)
+                    aqua: privacyShieldStyle.hoverAnimationWithDot,
+                    dark: privacyShieldStyle.hoverAnimationWithDot
                 )
                 privacyDashboardButton.animationNames = animationNames
             } else {
@@ -1165,8 +1166,8 @@ final class AddressBarButtonsViewController: NSViewController {
                 }
 
                 let animationNames = MouseOverAnimationButton.AnimationNames(
-                    aqua: privacyShieldStyle.hoverAnimation(forLightMode: true),
-                    dark: privacyShieldStyle.hoverAnimation(forLightMode: false)
+                    aqua: privacyShieldStyle.hoverAnimation,
+                    dark: privacyShieldStyle.hoverAnimation
                 )
                 privacyDashboardButton.animationNames = animationNames
             }
@@ -1304,6 +1305,7 @@ final class AddressBarButtonsViewController: NSViewController {
         privacyShieldButtonWidthConstraint.constant = addressBarButtonSize
         privacyShieldButtonHeightConstraint.constant = addressBarButtonSize
         zoomButtonHeightConstraint.constant = addressBarButtonSize
+        zoomButtonWidthConstraint.constant = addressBarButtonSize
         permissionCenterButtonWidthConstraint.constant = addressBarButtonSize
         permissionCenterButtonHeightConstraint.constant = addressBarButtonSize
         youTubeAdBlockButtonWidthConstraint.constant = addressBarButtonSize
@@ -2355,12 +2357,17 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     private func applyThemeToToggleControl(_ toggleControl: CustomToggleControl) {
-        let backgroundColor = themeManager.isAppRebranded ? NSColor(designSystemColor: .controlsSubtleFillSecondary) : NSColor(designSystemColor: .controlsRaisedBackdrop)
-        let selectionBorder = themeManager.isAppRebranded ? NSColor(designSystemColor: .shadowPrimary) : NSColor(designSystemColor: .shadowSecondary)
+        let isAppRebranded = themeManager.isAppRebranded
+        let backgroundColor = isAppRebranded ? NSColor(singleUseColor: .aiToggleBackground) : NSColor(designSystemColor: .controlsRaisedBackdrop)
+        let borderColor = isAppRebranded ? NSColor(singleUseColor: .aiToggleBorder) : nil
+        let selectionBorder = isAppRebranded ? NSColor(singleUseColor: .aiToggleSelectionBorder) : NSColor(designSystemColor: .shadowSecondary)
+        let selectionBackgroundColor = isAppRebranded ? NSColor(singleUseColor: .aiToggleSelectionBackground) : NSColor(designSystemColor: .controlsRaisedFillPrimary)
 
         toggleControl.backgroundColor = backgroundColor
-        toggleControl.focusedBackgroundColor = NSColor(designSystemColor: .controlsRaisedBackdrop)
-        toggleControl.selectionColor = NSColor(designSystemColor: .controlsRaisedFillPrimary)
+        toggleControl.borderColor = borderColor
+        toggleControl.focusedBackgroundColor = backgroundColor
+        toggleControl.selectionColor = selectionBackgroundColor
+        toggleControl.selectionInnerBorderColor = selectionBorder
 
         if tabCollectionViewModel.isBurner {
             toggleControl.focusBorderColor = NSColor.burnerAccent.withAlphaComponent(0.8)
@@ -2375,7 +2382,6 @@ final class AddressBarButtonsViewController: NSViewController {
         toggleControl.indicatorHorizontalInset = styleProvider.addressBarToggleIndicatorHorizontalInset
 
         toggleControl.outerBorderWidth = 2.0
-        toggleControl.selectionInnerBorderColor = selectionBorder
 
         toggleControl.leftImage = DesignSystemImages.Glyphs.Size16.findSearch.tinted(with: themeManager.theme.colorsProvider.iconsColor)
         toggleControl.rightImage = DesignSystemImages.Glyphs.Size16.aiChat.tinted(with: themeManager.theme.colorsProvider.iconsColor)
@@ -2429,14 +2435,13 @@ final class AddressBarButtonsViewController: NSViewController {
             return newAnimationView
         }
 
-        let isAquaMode = NSApp.effectiveAppearance.name == .aqua
         let style = theme.addressBarStyleProvider.privacyShieldStyleProvider
 
         shieldAnimationView = addAndLayoutAnimationViewIfNeeded(animationView: shieldAnimationView,
-                                                                animationName: style.animationForShield(forLightMode: isAquaMode),
+                                                                animationName: style.animationForShield,
                                                                 alignLeft: true)
         shieldDotAnimationView = addAndLayoutAnimationViewIfNeeded(animationView: shieldDotAnimationView,
-                                                                   animationName: style.animationForShieldWithDot(forLightMode: isAquaMode),
+                                                                   animationName: style.animationForShieldWithDot,
                                                                    alignLeft: true)
 
         // Initialize shield animations as hidden - updatePrivacyEntryPointIcon() will show the correct one

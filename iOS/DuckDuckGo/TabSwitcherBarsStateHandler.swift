@@ -109,10 +109,9 @@ class DefaultTabSwitcherBarsStateHandler: TabSwitcherBarsStateHandling {
     }()
 
     lazy var doneTextButton: UIBarButtonItem = {
-        let item = BrowserChromeButton.createToolbarButtonItem(title: UserText.navigationTitleDone, image: nil) { [weak self] in
+        let item = BrowserChromeButton.createToolbarButtonItem(title: UserText.navigationTitleDone, image: nil, fixedWidth: nil) { [weak self] in
             self?.onDoneButtonTapped?()
         }
-        (item.customView as? BrowserChromeButton)?.setTitle(UserText.navigationTitleDone, for: .normal)
         Self.applyTextConstraints(to: item)
         return item
     }()
@@ -143,7 +142,7 @@ class DefaultTabSwitcherBarsStateHandler: TabSwitcherBarsStateHandling {
     }()
 
     lazy var selectAllButton: UIBarButtonItem = {
-        let item = BrowserChromeButton.createToolbarButtonItem(title: UserText.selectAllTabs, image: nil) { [weak self] in
+        let item = BrowserChromeButton.createToolbarButtonItem(title: UserText.selectAllTabs, image: nil, fixedWidth: nil) { [weak self] in
             self?.onSelectAllTapped?()
         }
         Self.applyTextConstraints(to: item)
@@ -151,7 +150,7 @@ class DefaultTabSwitcherBarsStateHandler: TabSwitcherBarsStateHandling {
     }()
 
     lazy var deselectAllButton: UIBarButtonItem = {
-        let item = BrowserChromeButton.createToolbarButtonItem(title: UserText.deselectAllTabs, image: nil) { [weak self] in
+        let item = BrowserChromeButton.createToolbarButtonItem(title: UserText.deselectAllTabs, image: nil, fixedWidth: nil) { [weak self] in
             self?.onDeselectAllTapped?()
         }
         Self.applyTextConstraints(to: item)

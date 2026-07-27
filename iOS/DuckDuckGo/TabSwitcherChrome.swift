@@ -88,16 +88,15 @@ extension TabSwitcherChrome {
     func trackScrollEdge(of scrollView: UIScrollView) {}
 }
 
-/// Selects the chrome implementation based on whether floating UI is enabled.
+/// Selects the chrome implementation for the current tab switcher experience.
 enum TabSwitcherChromeFactory {
 
     @MainActor
-    static func makeChrome(isFloatingUIEnabled: Bool,
-                           toolbar: UIToolbar,
+    static func makeChrome(isTabSwitcherJuly2026Enabled: Bool,
                            appSettings: AppSettings) -> TabSwitcherChrome {
-        if isFloatingUIEnabled {
+        if isTabSwitcherJuly2026Enabled {
             return FloatingTabSwitcherChrome()
         }
-        return LegacyTabSwitcherChrome(toolbar: toolbar, appSettings: appSettings)
+        return LegacyTabSwitcherChrome(appSettings: appSettings)
     }
 }

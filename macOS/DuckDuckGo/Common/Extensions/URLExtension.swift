@@ -610,10 +610,6 @@ extension URL {
         return URL(string: "\(base)/duckduckgo-help-pages/duckai/approach-to-ai")!
     }
 
-    static var aiChatSettings: URL {
-        return URL(string: "\(base)/settings?return=aiFeatures#aifeatures")!
-    }
-
     static var aiChatAccessSubscriberModels: URL {
         return URL(string: "\(base)/duckduckgo-help-pages/duckai/access-subscriber-AI-models")!
     }

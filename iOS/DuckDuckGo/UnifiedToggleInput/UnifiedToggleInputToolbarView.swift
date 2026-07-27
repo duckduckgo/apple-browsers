@@ -206,11 +206,17 @@ final class UnifiedToggleInputToolbarView: UIView {
         action: nil
     )
 
-    private(set) lazy var imageButton: UIButton = makeToolButton(
-        image: DesignSystemImages.Glyphs.Size24.attach,
-        accessibilityLabel: UserText.aiChatToolbarAttachButtonAccessibilityLabel,
-        action: nil
-    )
+    private(set) lazy var imageButton: UIButton = {
+        let button = makeToolButton(
+            image: DesignSystemImages.Glyphs.Size24.attach,
+            accessibilityLabel: UserText.aiChatToolbarAttachButtonAccessibilityLabel,
+            action: nil
+        )
+        if #available(iOS 16.0, *) {
+            button.preferredMenuElementOrder = .fixed
+        }
+        return button
+    }()
 
     private lazy var reasoningButton: UIButton = {
         let button = makeToolButton(
@@ -547,31 +553,4 @@ private extension UnifiedToggleInputToolbarView {
         }
     }
     @objc private func stopGeneratingTapped() { onStopGeneratingTapped?() }
-}
-
-private extension AIChatRAGTool {
-
-    var toolbarChipIcon: DesignSystemImage? {
-        switch self {
-        case .webSearch:
-            return DesignSystemImages.Glyphs.Size24.globe
-        case .imageGeneration:
-            return DesignSystemImages.Glyphs.Size24.images
-        case .newsSearch, .videosSearch, .localSearch, .relatedSearchTerms, .weatherForecast:
-            // Not surfaced in the unified-input tools menu — defensive fallback only.
-            return nil
-        }
-    }
-
-    var toolbarChipAccessibilityLabel: String? {
-        switch self {
-        case .webSearch:
-            return UserText.aiChatToolbarWebSearchToolTitle
-        case .imageGeneration:
-            return UserText.aiChatToolbarImageGenerationToolTitle
-        case .newsSearch, .videosSearch, .localSearch, .relatedSearchTerms, .weatherForecast:
-            // Not surfaced in the unified-input tools menu — defensive fallback only.
-            return nil
-        }
-    }
 }

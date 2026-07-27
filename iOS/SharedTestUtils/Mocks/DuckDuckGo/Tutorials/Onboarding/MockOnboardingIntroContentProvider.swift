@@ -23,8 +23,9 @@ import Foundation
 class MockOnboardingIntroContentProvider: OnboardingIntroContentProviding {
     var landingContent: OnboardingLandingContent = .mock
     var introStepContent: OnboardingIntroStepContent = .mock
-    var browserComparisonContent: OnboardingBrowserComparisonContent = .mock
-    var aiComparisonContent: OnboardingAIComparisonContent = .mock
+    var downloadReasonContent: OnboardingDownloadReasonContent = .mock
+    var setDefaultBrowserContent: OnboardingComparisonContent = .mockBrowser
+    var aiIntroContent: OnboardingComparisonContent = .mockAI
     var addToDockContent: OnboardingAddToDockContent = .mock
     var appIconColorContent: OnboardingAppIconColorContent = .mock
     var addressBarPositionContent: OnboardingAddressBarPositionContent = .mock
@@ -38,6 +39,21 @@ extension OnboardingLandingContent {
     static let mock = OnboardingLandingContent(
         title: "Landing",
         shouldShowDuckAIAnimation: false
+    )
+}
+
+extension OnboardingDownloadReasonContent {
+    static let mock = OnboardingDownloadReasonContent(
+        title: "Download Reason Title",
+        message: "Download Reason Message",
+        options: [
+            .init(reason: .browserPrivately, icon: .init(name: "", bundle: .main), title: "Search and browse privately"),
+            .init(reason: .privateAIChat, icon: .init(name: "", bundle: .main), title: "Chat with AI privately"),
+            .init(reason: .noAI, icon: .init(name: "", bundle: .main), title: "Remove AI from search results"),
+            .init(reason: .blockAds, icon: .init(name: "", bundle: .main), title: "Block ads and pop-ups")
+        ],
+        primaryCTA: "Download Reason Primary",
+        daxAnimation: .wingBottom
     )
 }
 
@@ -58,29 +74,32 @@ extension OnboardingIntroStepContent {
             message: "Skip Message",
             primaryCTA: "Skip Primary",
             secondaryCTA: "Skip Secondary"
-        )
+        ),
+        daxAnimation: .thumbUp
     )
 }
 
-extension OnboardingBrowserComparisonContent {
-    static let mock = OnboardingBrowserComparisonContent(
+extension OnboardingComparisonContent {
+    static let mockBrowser = OnboardingComparisonContent(
         title: "Browser Comparison Title",
+        subHeader: nil,
         features: [
             .init(type: RebrandedComparisonTableModel.Feature.BrowserFeatureType.privateSearch, competitorAvailability: .unavailable, ddgAvailability: .available)
         ],
         primaryCTA: "Browser Comparison Primary",
-        secondaryCTA: "Browser Comparison Secondary"
+        secondaryCTA: "Browser Comparison Secondary",
+        daxAnimation: .wingBottom
     )
-}
 
-extension OnboardingAIComparisonContent {
-    static let mock = OnboardingAIComparisonContent(
+    static let mockAI = OnboardingComparisonContent(
         title: "AI Comparison Title",
         subHeader: "AI Comparison SubHeader",
         features: [
             .init(type: RebrandedComparisonTableModel.Feature.AIFeatureType.anonymousChats, competitorAvailability: .unavailable, ddgAvailability: .available)
         ],
-        primaryCTA: "AI Comparison Primary"
+        primaryCTA: "AI Comparison Primary",
+        secondaryCTA: nil,
+        daxAnimation: .wingBottom
     )
 }
 
@@ -94,7 +113,8 @@ extension OnboardingAddToDockContent {
             title: "Tutorial Title",
             message: "Tutorial Message",
             primaryCTA: "Tutorial Primary"
-        )
+        ),
+        daxAnimation: .wingRight
     )
 }
 
@@ -102,7 +122,8 @@ extension OnboardingAppIconColorContent {
     static let mock = OnboardingAppIconColorContent(
         title: "App Icon Title",
         message: "App Icon Message",
-        primaryCTA: "App Icon Primary"
+        primaryCTA: "App Icon Primary",
+        daxAnimation: .wingBottom
     )
 }
 
@@ -112,7 +133,8 @@ extension OnboardingAddressBarPositionContent {
         topOption: .init(title: "Top Title", message: "Top Message"),
         bottomOption: .init(title: "Bottom Title", message: "Bottom Message"),
         defaultIndicator: "(default)",
-        primaryCTA: "Address Bar Primary"
+        primaryCTA: "Address Bar Primary",
+        daxAnimation: nil
     )
 }
 
@@ -120,7 +142,8 @@ extension OnboardingSearchExperienceContent {
     static let mock = OnboardingSearchExperienceContent(
         title: "Search Experience Title",
         footer: AttributedString("Search Experience Footer"),
-        primaryCTA: "Search Experience Primary"
+        primaryCTA: "Search Experience Primary",
+        daxAnimation: .wingRight
     )
 }
 
@@ -129,6 +152,7 @@ extension OnboardingDuckAIQueryContent {
         title: "Duck.ai Query Title",
         searchPlaceholder: "Search Placeholder",
         aiPlaceholder: "AI Placeholder",
-        isToggleVisible: true
+        isToggleVisible: true,
+        daxAnimation: nil
     )
 }

@@ -105,18 +105,23 @@ struct DuckPlayerWelcomePillView: View {
         .accessibilityIdentifier("duckPlayerWelcomeCloseButton")
     }
 
+    @ViewBuilder
     private var phoneView: some View {
-        LottieView(
-            lottieFile: Constants.primingImageName,
-            loopMode: .mode(.playOnce),
-            isAnimating: $isAnimating
-        )
-        .frame(width: Constants.phoneViewWidth, height: Constants.phoneViewHeight)
-        .background(Color.clear)
-        .scaleEffect(Constants.phoneViewScaleEffect)
-        .padding(.top, Constants.phoneViewTopPadding)
-        .accessibilityLabel("DuckPlayer animation")
-        .accessibilityHint("Animated illustration showing DuckPlayer functionality")
+        if AppRebrand.isAppRebranded() {
+            Image(uiImage: DesignSystemImages.Color.Size96.youtubeClean)
+        } else {
+            LottieView(
+                lottieFile: Constants.primingImageName,
+                loopMode: .mode(.playOnce),
+                isAnimating: $isAnimating
+            )
+            .frame(width: Constants.phoneViewWidth, height: Constants.phoneViewHeight)
+            .background(Color.clear)
+            .scaleEffect(Constants.phoneViewScaleEffect)
+            .padding(.top, Constants.phoneViewTopPadding)
+            .accessibilityLabel("DuckPlayer animation")
+            .accessibilityHint("Animated illustration showing DuckPlayer functionality")
+        }
     }
 
     // MARK: - Body
@@ -177,4 +182,11 @@ struct DuckPlayerWelcomePillView: View {
             }
         }
     }
+}
+
+#Preview {
+    DuckPlayerWelcomePillView(
+        viewModel: DuckPlayerWelcomePillViewModel(onOpen: {}, onClose: {})
+    )
+    .padding()
 }

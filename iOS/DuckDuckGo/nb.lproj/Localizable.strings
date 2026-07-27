@@ -212,7 +212,7 @@
 "action.title.vpn" = "VPN";
 
 /* Description of the Ad Blocking feature in settings */
-"ad.blocking.description" = "Blokkerer invaderende sporere før de blir lastet inn, og dette eliminerer også annonser som er basert på sporing";
+"ad.blocking.description" = "Blokkerer invaderende sporere før de blir lastet inn, og dette eliminerer også annonser som er basert på sporing.";
 
 /* Section header for YouTube-specific ad blocking settings */
 "ad.blocking.youtube.section.header" = "Annonseblokkering på YouTube";
@@ -401,10 +401,10 @@
 "alert.sync-already-paired-with-account-button" = "Den er grei";
 
 /* Description for Sync error shown when both devices are already paired with the same account */
-"alert.sync-already-paired-with-account-description" = "Kontoen din er allerede paret med begge enhetene.";
+"alert.sync-already-paired-with-account-description" = "Disse enhetene er allerede koblet til Sync & Backup.";
 
 /* Title for Sync error shown when both devices are already paired with the same account */
-"alert.sync-already-paired-with-account-title" = "Allerede paret";
+"alert.sync-already-paired-with-account-title" = "Allerede synkronisert.";
 
 /* Description for alert shown when sync error occurs because of bad bookmarks data */
 "alert.sync-bookmarks-bad-data-error-description" = "Noen bokmerker er formatert feil eller for lange og ble ikke synkronisert.";
@@ -425,10 +425,10 @@
 "alert.sync-cancelled-from-other-device-title" = "Synkronisering er avbrutt fra den andre enheten.";
 
 /* Description for Sync error shown when a third-party recovery code can only be used with Duck.ai */
-"alert.sync-code-only-compatible-with-duckai-description" = "Gå til duck.ai på nettleseren din, gå til Innstillinger, og under «Sync & Backup» velger du «Slå på» og deretter «Synkroniser med en annen enhet».";
+"alert.sync-code-only-compatible-with-duckai-description" = "Gå inn på Duck.ai i den andre nettleseren, gå til «Innstillinger», og velg deretter «Slå på» under «Sync & Backup», før du velger «Synkroniser med en annen enhet».";
 
 /* Title for Sync error shown when a third-party recovery code can only be used with Duck.ai */
-"alert.sync-code-only-compatible-with-duckai-title" = "Skann denne koden fra Duck.ai-innstillingene.";
+"alert.sync-code-only-compatible-with-duckai-title" = "Skann denne koden med en annen nettleser enn DuckDuckGo.";
 
 /* Description for alert shown when sync error occurs because of bad credentials data */
 "alert.sync-credentials-bad-data-error-description" = "Noen passord er formatert feil eller for lange og ble ikke synkronisert.";
@@ -454,6 +454,12 @@
 /* Sync error alert action button title, takes the user to the sync settings page. */
 "alert.sync-error-action" = "Synkroniser innstillinger";
 
+/* Description for generic Sync setup failure alerts */
+"alert.sync-failed-description" = "Prøv igjen.";
+
+/* Title for generic Sync setup failure alerts */
+"alert.sync-failed-title" = "Synkroniseringen mislyktes.";
+
 /* Description for Sync error shown when a third-party account already has a native DuckDuckGo Sync credential */
 "alert.sync-from-another-connected-device-description" = "Synkroniser denne enheten fra en allerede tilkoblet DuckDuckGo-nettleser på en annen enhet.";
 
@@ -478,6 +484,9 @@
 /* Title for alert shown when sync paused for an error */
 "alert.sync-paused-title" = "Synkronisering er satt på pause";
 
+/* Button title for Sync setup error alerts */
+"alert.sync-setup-error-got-it-button" = "Den er grei";
+
 /* Switch account button in alert */
 "alert.sync-switch-account-button" = "Bytt synkronisering";
 
@@ -489,9 +498,6 @@
 
 /* Description for alert shown when sync error occurs because of too many requests */
 "alert.sync-too-many-requests-error-description" = "Sync & Backup er midlertidig utilgjengelig.";
-
-/* Description for Sync error shown when the app version does not support the scanned Sync code */
-"alert.sync-update-required-description" = "Denne koden støttes ikke i den nåværende appversjonen.";
 
 /* Title for Sync error shown when the app version does not support the scanned Sync code */
 "alert.sync-update-required-title" = "Oppdater DuckDuckGo-nettleseren og prøv igjen.";
@@ -527,13 +533,15 @@
 "alert.unable-to-remove-device-description" = "Kan ikke fjerne denne enheten fra Synkronisering og sikkerhetskopiering.";
 
 /* Description for unable to scan qr code error */
-"alert.unable-to-scan-qr-code-description" = "Beklager, denne koden er ugyldig. Kontroller at riktig kode ble tastet inn eller skannet.";
+"alert.unable-to-scan-qr-code-description" = "Kontroller at riktig kode ble tastet inn eller skannet.";
+
+/* Title for unable to scan qr code error */
+"alert.unable-to-scan-qr-code-title" = "Dette er ikke en gyldig Sync-kode.";
 
 /* Description for unable to sync to server error */
 "alert.unable-to-sync-to-server-description" = "Kan ikke koble til serveren.";
 
 /* Description for unable to sync with another device error */
-"alert.unable-to-sync-with-other-device-description" = "Kan ikke synkronisere med en annen enhet.";
 
 /* Description for unable to turn sync off error */
 "alert.unable-to-turn-sync-off-description" = "Kan ikke slå av Synkronisering og sikkerhetskopiering.";
@@ -1410,6 +1418,39 @@
 
 /* Third paragraph of the Control Center Widget Education screen */
 "control.center.widget.education.paragraph.3" = "Trykk på **Legg til en kontroll** nederst på skjermen";
+
+/* Small 'NEW' badge shown above the Cookie Pop-up Protection opt-in dialog header */
+"cookie-popup-protection.opt-in.badge" = "Ny";
+
+/* Confirm button in the Cookie Pop-up Protection opt-in dialog */
+"cookie-popup-protection.opt-in.confirm" = "Bekreft";
+
+/* Body of the opt-in dialog when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.body" = "Vi prøver å avvise så mange informasjonskapsler som mulig. Hvis det ikke finnes noe alternativ for å avvise dem, sparer vi deg for et klikk ved å godta dem for deg.";
+
+/* Primary (recommended) option when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.primary-option" = "Avvis når det er mulig, eller godta for meg";
+
+/* Secondary option when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.secondary-option" = "Jeg vil fortsette å håndtere dem selv";
+
+/* Title of the opt-in dialog when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.title" = "Er du lei av popup-vinduer om informasjonskapsler?";
+
+/* Body of the opt-in dialog when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.body" = "Vi kan spare deg for et klikk og godta disse kapslene for deg.";
+
+/* Primary (recommended) option when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.primary-option" = "Godta informasjonskapsler som ikke kan avvises";
+
+/* Secondary option when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.secondary-option" = "Jeg vil fortsette å godta dem selv";
+
+/* Title of the opt-in dialog when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.title" = "Lei av popup-vinduer om informasjonskapsler som ikke gir deg muligheten til å reservere deg mot dem?";
+
+/* Footer text in the Cookie Pop-up Protection opt-in dialog. The text between ** ** is rendered bold. */
+"cookie-popup-protection.opt-in.footer" = "Du kan når som helst gjøre endringer senere i\n**Innstillinger** > **Beskyttelse mot popup-vinduer om informasjonskapsler**.";
 
 /* Crash Report always send button title */
 "crash.report.dialog.always.send" = "Send alltid krasjrapporter";
@@ -2996,7 +3037,7 @@
 "network.protection.vpn.data-volume" = "Datavolum";
 
 /* Footer text for the Exclude CGNAT setting item. */
-"network.protection.vpn.exclude.cgnat.setting.footer" = "Anbefales å slå av, slik at all trafikken din går gjennom VPN. Hvis du har problemer med funksjoner som Wi-Fi-anrop, meldinger eller talepost, kan du prøve å slå det på.";
+"network.protection.vpn.exclude.cgnat.setting.footer" = "Omgå VPN for operatørtjenester, som wifi-anrop og telefonsvarer.";
 
 /* Title for the Exclude CGNAT setting item. */
 "network.protection.vpn.exclude.cgnat.setting.title" = "Ekskluder operatørtjenester";
@@ -3074,10 +3115,10 @@
 "network.protection.vpn.shortcuts.section.header" = "Snarveier";
 
 /* Footer text for the Strict Routing setting item. The 'Learn more' text is a Markdown link. */
-"network.protection.vpn.strict.routing.setting.footer" = "Anbefales på nettverk du ikke stoler på, f.eks. offentlig wifi på hoteller, barer osv. Hvis du har problemer med funksjoner (som CarPlay, AirDrop osv.) eller med å koble til andre enheter, kan du prøve å slå det av. [Finn ut mer](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)";
+"network.protection.vpn.strict.routing.setting.footer" = "Blokker apper fra å omgå VPN. Hvis du har problemer med wifi-funksjoner (som AirDrop eller iPhone-speiling), kan det hjelpe å slå det av. Sterkt anbefalt på nettverk du ikke stoler på, som offentlig wifi. [Finn ut mer](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack).";
 
 /* Title for the Strict Routing setting item. */
-"network.protection.vpn.strict.routing.setting.title" = "Streng ruting";
+"network.protection.vpn.strict.routing.setting.title" = "Håndhev streng ruting (anbefales)";
 
 /* Confirm button for the new address bar picker */
 "new.address.bar.picker.confirm" = "Bekreft";
@@ -3158,7 +3199,7 @@
 "omnibar.notification.trackers-blocked" = "%d Trackers";
 
 /* Text displayed on notification appearing in the address bar when YouTube ad blocking is active */
-"omnibar.notification.youtube-ad-block-on" = "Annonseblokkering på YouTube er på";
+"omnibar.notification.youtube-ad-block-on" = "Annonseblokkering på";
 
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Den er grei";
@@ -3823,9 +3864,6 @@
 /* Settings picker label for what to show when returning after inactivity */
 "settings.afterInactivity.v2.label" = "Etter inaktivitet";
 
-/* Footer under the AI picker, descriptive sentence without link */
-"settings.ai.new.picker.footer" = "Prøv det nye alternativet der du kan veksle mellom søk og Duck.ai i adressefeltet.";
-
 /* Settings row that opens Duck.ai in a new tab */
 "settings.aichat.duckai.settings" = "Innstillinger for Duck.ai";
 
@@ -3840,9 +3878,6 @@
 
 /* Settings screen footer text for showing AI Chat in the input box */
 "settings.aichat.shortcuts.input.footer" = "Søk på nettet eller spør Duck.ai direkte fra adressefeltet";
-
-/* Title of search assist settings link */
-"settings.aifeatures.assist" = "Innstillinger for Search Assist";
 
 /* Search Assist frequency option: never show AI-assisted answers */
 "settings.aifeatures.assist.never" = "Aldri";
@@ -4013,7 +4048,19 @@
 "settings.cookie.pop-up-protection.protection" = "Beskyttelse mot popup-vinduer om informasjonskapsler";
 
 /* Explanation in Settings how the cookie pop up protection feature works */
-"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo prøver å velge de mest private innstillingene som er tilgjengelige, og skjule disse popup-vinduene for deg.\n[Finn ut mer](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
+"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo kan administrere innstillinger for informasjonskapsler automatisk for å maksimere personvernet, minimere informasjonskapsler og lukke disse popup-vinduene.\n[Finn ut mer](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
+
+/* Explanation below the auto-manage cookie pop-ups toggle in settings */
+"settings.cookie.auto-manage.explanation" = "Vi prøver å velge de mest private alternativene for informasjonskapsler som er tilgjengelige, og så lukker vi disse popup-vinduene.";
+
+/* Title for the auto-manage cookie pop-ups toggle in settings */
+"settings.cookie.auto-manage.title" = "Administrer popup-vinduer om informasjonskapsler automatisk";
+
+/* Explanation below the pop-ups without opt-outs toggle in settings */
+"settings.cookie.popups-without-opt-outs.explanation" = "Du kan også la DuckDuckGo spare deg for et klikk ved å godta informasjonskapsler på dine vegne, og dermed lukke popup-vinduer som ikke gir deg muligheten til å reservere deg.";
+
+/* Title for the pop-ups without opt-outs toggle in settings */
+"settings.cookie.popups-without-opt-outs.title" = "Popup-vinduer uten mulighet til å reservere seg";
 
 /* Settings screen cell text for Cookie popups */
 "settings.cookie.popups" = "Administrer vinduer om informasjonskapsler";
@@ -4781,7 +4828,7 @@
 "sync.remove-device.title" = "Vil du fjerne enheten?";
 
 /* Toast message shown after sync is enabled by connecting with another device */
-"sync.simplified.device-synced.toast" = "Enheten er synkronisert!";
+"sync.simplified.device-synced.toast" = "En ny enhet er lagt til!";
 
 /* Toast message shown after sync is successfully enabled */
 "sync.simplified.enabled.toast" = "Sync & Backup er aktivert";
@@ -5264,10 +5311,10 @@
 "windows-waitlist.waitlist-download-screen.try-duckduckgo-for-windows" = "Skaff deg DuckDuckGo for Windows!";
 
 /* Body text of the bottom sheet asking the user to send an anonymous breakage report */
-"youtube.ad.blocking.breakage-report.message" = "Send en anonym funksjonssviktrapport til DuckDuckGo. Bidra til å gjøre annonseblokkering bedre for alle!";
+"youtube.ad.blocking.breakage-report.message" = "Send en anonym rapport til DuckDuckGo og bidra til å gjøre annonseblokkering bedre for alle!";
 
 /* Primary action sending an anonymous YouTube ad-blocking breakage report */
-"youtube.ad.blocking.breakage-report.send" = "Send funksjonssviktrapport";
+"youtube.ad.blocking.breakage-report.send" = "Send en anonym rapport";
 
 /* Title of the bottom sheet asking the user to send an anonymous breakage report after disabling YouTube ad blocking */
 "youtube.ad.blocking.breakage-report.title" = "Fungerer ikke annonseblokkering for YouTube?";
@@ -5312,7 +5359,7 @@
 "youtube.ad.blocking.unavailable.got-it" = "Den er grei";
 
 /* Body text of the bottom sheet shown when YouTube ad blocking has been remotely disabled */
-"youtube.ad.blocking.unavailable.message" = "Annonseblokkering har blitt påvirket av nylige endringer på YouTube. Vi jobber med å løse disse problemene og setter pris på forståelsen din";
+"youtube.ad.blocking.unavailable.message" = "Annonseblokkering har blitt påvirket av nylige endringer på YouTube. Vi jobber med å løse disse problemene og takker for tålmodigheten.";
 
 /* Title of the bottom sheet shown when YouTube ad blocking has been remotely disabled */
 "youtube.ad.blocking.unavailable.title" = "Annonseblokkering på YouTube er ikke tilgjengelig";
@@ -5379,5 +5426,28 @@
 /* Button to delete all chats in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.chats.button" = "Slett chatter";
 
-/* Do not translate - stringsdict entry */
-"aiChat.history.deleteAll.confirmation.title" = "aiChat.history.deleteAll.confirmation.title";
+/* Top-level attachment menu option to attach the current page content to an AI chat message */
+"aichat.attachment.option.ask.about.page" = "Spør om siden";
+
+/* Status view message shown while the VPN is on but Strict routing is off */
+"network.protection.status.header.message.strict.routing.off" = "Noe trafikk kan omgå VPN når streng ruting er av. Streng ruting anbefales for offentlige nettverk.";
+
+/* Label for the status pill shown while the VPN's Strict routing setting is off */
+"network.protection.status.view.strict.routing.pill.off" = "Streng ruting: Av";
+
+/* Label for the status pill shown while the VPN's Strict routing setting is on */
+"network.protection.status.view.strict.routing.pill.on" = "Streng ruting: På";
+
+/* Tooltip shown for the status pill while the VPN's Strict routing setting is off */
+"network.protection.status.view.strict.routing.pill.tooltip.off" = "Streng ruting anbefales for offentlige nettverk.";
+
+/* Tooltip shown for the status pill while the VPN's Strict routing setting is on */
+"network.protection.status.view.strict.routing.pill.tooltip.on" = "Noen apper fungerer kanskje ikke når streng ruting er på.";
+
+/* Title of the Troubleshooting section in the VPN status screen. */
+"network.protection.status.view.troubleshooting.section.title" = "Feilsøking";
+
+/* The body of the notification reminding the user to turn the VPN Strict routing setting back on */
+"network.protection.strict.routing.reminder.notification.body" = "Noe trafikk kan omgå VPN når det er av. Streng ruting anbefales for offentlige nettverk.";
+/* The title of the notification reminding the user to turn the VPN Strict routing setting back on */
+"network.protection.strict.routing.reminder.notification.title" = "Streng ruting er AV";

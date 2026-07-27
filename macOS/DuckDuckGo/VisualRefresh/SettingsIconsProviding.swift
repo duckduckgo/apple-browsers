@@ -52,8 +52,8 @@ final class LegacySettingsIconProvider: SettingsIconsProviding {
     var webTrackingProtectionIcon: NSImage = .webTrackingProtectionIcon
     var threatProtectionIcon: NSImage = .radarColor16
     var cookiePopUpProtectionIcon: NSImage = .cookieProtectionIcon
-    var emailProtectionIcon: NSImage = .emailProtectionIcon
-    var subscriptionIcon: NSImage = .privacyPro
+    var emailProtectionIcon: NSImage = .emailProtectionIconLegacy
+    var subscriptionIcon: NSImage = .privacyProLegacy
     var vpnIcon: NSImage = .VPN
     var personalInformationRemovalIcon: NSImage = .personalInformationRemovalMulticolor16
     var identityTheftRestorationIcon: NSImage = .identityTheftRestorationMulticolor16
@@ -65,7 +65,7 @@ final class LegacySettingsIconProvider: SettingsIconsProviding {
     var dataClearingIcon: NSImage = .fireSettings
     var duckPlayerIcon: NSImage = .duckPlayerSettings
     var youTubeAdBlockingIcon: NSImage = .duckPlayerSettings
-    var duckAIIcon: NSImage = .aiChatPreferences
+    var duckAIIcon: NSImage = .aiChatPreferencesLegacy
     var paidAIChatIcon: NSImage = .duckAiPaidColor16
     var aboutIcon: NSImage = .about
     var otherPlatformsIcon: NSImage = .otherPlatformsPreferences
@@ -75,7 +75,7 @@ final class CurrentSettingsIconProvider: SettingsIconsProviding {
     var aiGeneralIcon: NSImage = DesignSystemImages.Color.Size16.aiGeneral
     var defaultBrowserIcon: NSImage = DesignSystemImages.Color.Size16.defaultBrowser
     var privateSearchIcon: NSImage = DesignSystemImages.Color.Size16.findSearch
-    var webTrackingProtectionIcon: NSImage = DesignSystemImages.Color.Size16.shieldCheck
+    var webTrackingProtectionIcon: NSImage = DesignSystemImages.Color.Size16.shield
     var threatProtectionIcon: NSImage = DesignSystemImages.Color.Size16.radar
     var cookiePopUpProtectionIcon: NSImage = DesignSystemImages.Color.Size16.cookie
     var emailProtectionIcon: NSImage = DesignSystemImages.Color.Size16.emailProtection

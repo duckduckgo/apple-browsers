@@ -71,7 +71,7 @@ jobs:
 
     steps:
     - name: Register SSH keys for private repos
-      uses: webfactory/ssh-agent@v0.9.1
+      uses: webfactory/ssh-agent@v0.10.0
       with:
         ssh-private-key: |
           ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
@@ -179,7 +179,7 @@ jobs:
 
     - name: Cache SPM
       if: env.cache_key_hash
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: macOS/DerivedData/SourcePackages
         key: ${{ runner.os }}-macos-${{ env.cache_key_hash }}
@@ -228,7 +228,7 @@ jobs:
         exit 1
 
     - name: Restore Xcode Compilation Cache
-      uses: actions/cache/restore@v4
+      uses: actions/cache/restore@v5
       with:
         path: macOS/DerivedData/CompilationCache.noindex
         key: xcode-compilation-cache-ui-tests
@@ -262,7 +262,7 @@ jobs:
 
     - name: Save Xcode Compilation Cache
       if: github.ref == 'refs/heads/main' && steps.compilation-cache-hash.outputs.hash
-      uses: actions/cache/save@v4
+      uses: actions/cache/save@v5
       with:
         path: macOS/DerivedData/CompilationCache.noindex
         key: xcode-compilation-cache-ui-tests-${{ steps.compilation-cache-hash.outputs.hash }}
@@ -338,7 +338,7 @@ jobs:
     # Upload test report as artifact for the test-report job
     # that publishes a combined report for all test cases
     - name: Upload test report
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       if: always() && steps.run-ui-tests.outcome != 'skipped'
       with:
         name: "testreport-${{ inputs.test }}-macos${{ inputs.os-version }}-${{ inputs.user-mode }}"
@@ -346,7 +346,7 @@ jobs:
         retention-days: 1
 
     - name: Upload xcresult files (passed on retry)
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       if: always() && steps.check-failures.outputs.had_failures == 'true' && steps.run-ui-tests.outcome == 'success'
       with:
         name: "xcresult-${{ inputs.test }}-macos${{ inputs.os-version }}-${{ inputs.user-mode }}"
@@ -354,7 +354,7 @@ jobs:
         retention-days: 1
 
     - name: Upload app console log (passed on retry)
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       if: always() && steps.check-failures.outputs.had_failures == 'true' && steps.run-ui-tests.outcome == 'success'
       with:
         name: "app-console-${{ inputs.test }}-macos${{ inputs.os-version }}-${{ inputs.user-mode }}"
@@ -370,7 +370,7 @@ jobs:
         echo "macos-ui:${{ inputs.user-mode }}:${{ inputs.test }}:${{ inputs.os-version }}" > failure-marker/marker.txt
     - name: Upload failure marker
       if: failure() || cancelled()
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: failure-marker-macos-ui-${{ inputs.user-mode }}-${{ inputs.test }}-${{ inputs.os-version }}
         path: failure-marker/
@@ -398,7 +398,7 @@ jobs:
         echo "ARCHIVE_NAME=$archive_name" >> $GITHUB_ENV
 
     - name: Upload logs when workflow failed
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       if: failure() || cancelled()
       with:
         name: "${{ env.ARCHIVE_NAME }}"

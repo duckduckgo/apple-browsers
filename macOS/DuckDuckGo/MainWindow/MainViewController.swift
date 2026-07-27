@@ -304,13 +304,12 @@ final class MainViewController: NSViewController {
                                                                          pinningManager: pinningManager,
                                                                          memoryUsageMonitor: memoryUsageMonitor)
 
-        fireViewController = FireViewController.create(tabCollectionViewModel: tabCollectionViewModel, fireViewModel: fireCoordinator.fireViewModel, visualizeFireAnimationDecider: visualizeFireAnimationDecider)
+        fireViewController = FireViewController.create(tabCollectionViewModel: tabCollectionViewModel, fireViewModel: fireCoordinator.fireViewModel, visualizeFireAnimationDecider: visualizeFireAnimationDecider, featureFlagger: featureFlagger)
         bookmarksBarViewController = BookmarksBarViewController.create(
             tabCollectionViewModel: tabCollectionViewModel,
             bookmarkManager: bookmarkManager,
             dragDropManager: bookmarkDragDropManager,
-            pinningManager: pinningManager,
-            featureFlagger: featureFlagger
+            pinningManager: pinningManager
         )
 
         // Create the shared AI Chat omnibar controller
@@ -334,11 +333,13 @@ final class MainViewController: NSViewController {
             themeManager: themeManager,
             omnibarController: aiChatOmnibarController,
             duckAiNativeStorageHandler: NSApp.delegateTyped.burnerDuckAiStorageRegistry?.handler(for: tabCollectionViewModel.burnerMode)
-                ?? NSApp.delegateTyped.duckAiNativeStorageHandler
+                ?? NSApp.delegateTyped.duckAiNativeStorageHandler,
+            burnerMode: tabCollectionViewModel.burnerMode
         )
         aiChatOmnibarTextContainerViewController = AIChatOmnibarTextContainerViewController(
             omnibarController: aiChatOmnibarController,
-            themeManager: themeManager
+            themeManager: themeManager,
+            isBurner: tabCollectionViewModel.isBurner
         )
         self.vpnUpsellPopoverPresenter = vpnUpsellPopoverPresenter
         self.startupProfiler = startupProfiler

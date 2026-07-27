@@ -114,6 +114,8 @@ struct FigmaColorPalette: SharedColorPaletteDefinition {
     static let statusWarningFillPrimary = DynamicColor(lightHex: 0xffe699, lightOpacityHex: 0x51, darkHex: 0xffb200, darkOpacityHex: 0x1e)
     static let statusWarningPrimary = DynamicColor(lightHex: 0xffc95c, darkHex: 0xffd885)
     static let statusYellowPrimary = DynamicColor(lightHex: 0xfab341, darkHex: 0xfab341)
+    static let statusYellowSecondary = DynamicColor(lightHex: 0xFFC95C, darkHex: 0xFFC95C)
+    static let statusYellowTertiary = DynamicColor(lightHex: 0xFFD885, darkHex: 0xFFD885)
     static let surfaceBackdrop = DynamicColor(lightHex: 0xe0e0e0, darkHex: 0x050505)
     static let surfaceCanvas = DynamicColor(lightHex: 0xfafafa, darkHex: 0x1c1c1c)
     static let surfaceContrast = DynamicColor(lightHex: 0x000000, lightOpacityHex: 0xf4, darkHex: 0xffffff, darkOpacityHex: 0xf4)
@@ -143,10 +145,6 @@ struct FigmaColorPalette: SharedColorPaletteDefinition {
     // MARK: - Added by Figma (not yet used by any call site)
     static let controlSubtleFillPrimary = DynamicColor(lightHex: 0x000000, lightOpacity: 0.02, darkHex: 0xFFFFFF, darkOpacity: 0.03)
     static let controlSubtleFillTertiary = DynamicColor(lightHex: 0x000000, lightOpacity: 0.08, darkHex: 0xFFFFFF, darkOpacity: 0.12)
-    static let statusYellowSecondary = DynamicColor(lightHex: 0xFFCC00, darkHex: 0xFFCC00)
-    static let statusYellowTertiary = DynamicColor(lightHex: 0xFFCC00, darkHex: 0xFFCC00)
-
-    // MARK: - Added by Figma (not yet used by any call site)
     static let unifiedInputFillPrimary = DynamicColor(lightHex: 0xFFFFFF, darkHex: 0xFFFFFF)  // light-only in Figma; dark mirrors light
 }
 

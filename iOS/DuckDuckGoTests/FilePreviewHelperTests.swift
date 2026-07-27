@@ -31,72 +31,50 @@ struct FilePreviewHelperTests {
     @available(iOS 16, *)
     @Test("Returns true for text/calendar MIME regardless of URL/filename", .timeLimit(.minutes(1)))
     func handlesDownloadNativelyMatchesByMIME() {
-        let flagger = MockFeatureFlagger(enabledFeatureFlags: [.icsCalendarLinks])
         #expect(FilePreviewHelper.handlesDownloadNatively(
             mimeType: .calendar,
             url: URL(string: "https://example.com/calendar?id=abc"),
-            filename: "download.bin",
-            featureFlagger: flagger
+            filename: "download.bin"
         ))
     }
 
     @available(iOS 16, *)
     @Test("Returns true when URL ends in .ics", .timeLimit(.minutes(1)))
     func handlesDownloadNativelyMatchesByURLExtension() {
-        let flagger = MockFeatureFlagger(enabledFeatureFlags: [.icsCalendarLinks])
         #expect(FilePreviewHelper.handlesDownloadNatively(
             mimeType: .unknown,
             url: URL(string: "https://example.com/event.ics"),
-            filename: nil,
-            featureFlagger: flagger
+            filename: nil
         ))
     }
 
     @available(iOS 16, *)
     @Test("Returns true when filename ends in .ics (dynamic URL via Content-Disposition)", .timeLimit(.minutes(1)))
     func handlesDownloadNativelyMatchesByFilenameExtension() {
-        let flagger = MockFeatureFlagger(enabledFeatureFlags: [.icsCalendarLinks])
         #expect(FilePreviewHelper.handlesDownloadNatively(
             mimeType: .unknown,
             url: URL(string: "https://example.com/calendar?id=abc"),
-            filename: "event.ics",
-            featureFlagger: flagger
+            filename: "event.ics"
         ))
     }
 
     @available(iOS 16, *)
     @Test("Returns false when no signal indicates ICS", .timeLimit(.minutes(1)))
     func handlesDownloadNativelyRejectsUnrelatedDownloads() {
-        let flagger = MockFeatureFlagger(enabledFeatureFlags: [.icsCalendarLinks])
         #expect(!FilePreviewHelper.handlesDownloadNatively(
             mimeType: .unknown,
             url: URL(string: "https://example.com/file.pdf"),
-            filename: "file.pdf",
-            featureFlagger: flagger
-        ))
-    }
-
-    @available(iOS 16, *)
-    @Test("Returns false when feature flag is off, even with all positive signals", .timeLimit(.minutes(1)))
-    func handlesDownloadNativelyRespectsFeatureFlag() {
-        let flagger = MockFeatureFlagger(enabledFeatureFlags: [])
-        #expect(!FilePreviewHelper.handlesDownloadNatively(
-            mimeType: .calendar,
-            url: URL(string: "https://example.com/event.ics"),
-            filename: "event.ics",
-            featureFlagger: flagger
+            filename: "file.pdf"
         ))
     }
 
     @available(iOS 16, *)
     @Test("Matches URL extension case-insensitively", .timeLimit(.minutes(1)))
     func handlesDownloadNativelyMatchesUppercaseExtension() {
-        let flagger = MockFeatureFlagger(enabledFeatureFlags: [.icsCalendarLinks])
         #expect(FilePreviewHelper.handlesDownloadNatively(
             mimeType: .unknown,
             url: URL(string: "https://example.com/EVENT.ICS"),
-            filename: nil,
-            featureFlagger: flagger
+            filename: nil
         ))
     }
 
@@ -105,86 +83,52 @@ struct FilePreviewHelperTests {
     @available(iOS 16, *)
     @Test("Persists when MIME is text/calendar", .timeLimit(.minutes(1)))
     func shouldPersistMatchesByMIME() {
-        let flagger = MockFeatureFlagger(enabledFeatureFlags: [.icsCalendarLinks])
         #expect(FilePreviewHelper.shouldPersistInDownloads(
             mimeType: .calendar,
             url: URL(string: "https://example.com/calendar?id=abc"),
-            filename: nil,
-            featureFlagger: flagger
+            filename: nil
         ))
     }
 
     @available(iOS 16, *)
     @Test("Persists when filename ends in .ics even if URL doesn't", .timeLimit(.minutes(1)))
     func shouldPersistMatchesByFilenameExtension() {
-        let flagger = MockFeatureFlagger(enabledFeatureFlags: [.icsCalendarLinks])
         #expect(FilePreviewHelper.shouldPersistInDownloads(
             mimeType: .unknown,
             url: URL(string: "https://example.com/calendar?id=abc"),
-            filename: "event.ics",
-            featureFlagger: flagger
-        ))
-    }
-
-    @available(iOS 16, *)
-    @Test("Does not persist when feature flag is off", .timeLimit(.minutes(1)))
-    func shouldPersistRespectsFeatureFlag() {
-        let flagger = MockFeatureFlagger(enabledFeatureFlags: [])
-        #expect(!FilePreviewHelper.shouldPersistInDownloads(
-            mimeType: .calendar,
-            url: URL(string: "https://example.com/event.ics"),
-            filename: "event.ics",
-            featureFlagger: flagger
+            filename: "event.ics"
         ))
     }
 
     // MARK: - vCard handlesDownloadNatively
 
     @available(iOS 16, *)
-    @Test("Returns true for text/vcard MIME when vcardContactLinks on", .timeLimit(.minutes(1)))
+    @Test("Returns true for text/vcard MIME", .timeLimit(.minutes(1)))
     func handlesDownloadNativelyMatchesByVCardMIME() {
-        let flagger = MockFeatureFlagger(enabledFeatureFlags: [.vcardContactLinks])
         #expect(FilePreviewHelper.handlesDownloadNatively(
             mimeType: .contact,
             url: URL(string: "https://example.com/contact?id=abc"),
-            filename: "download.bin",
-            featureFlagger: flagger
+            filename: "download.bin"
         ))
     }
 
     @available(iOS 16, *)
     @Test("Returns true when URL ends in .vcf", .timeLimit(.minutes(1)))
     func handlesDownloadNativelyMatchesByVCFURLExtension() {
-        let flagger = MockFeatureFlagger(enabledFeatureFlags: [.vcardContactLinks])
         #expect(FilePreviewHelper.handlesDownloadNatively(
             mimeType: .unknown,
             url: URL(string: "https://example.com/contact.vcf"),
-            filename: nil,
-            featureFlagger: flagger
+            filename: nil
         ))
     }
 
     @available(iOS 16, *)
     @Test("Returns true when filename ends in .vcard (dynamic URL via Content-Disposition)", .timeLimit(.minutes(1)))
     func handlesDownloadNativelyMatchesByVCardFilenameExtension() {
-        let flagger = MockFeatureFlagger(enabledFeatureFlags: [.vcardContactLinks])
         #expect(FilePreviewHelper.handlesDownloadNatively(
             mimeType: .unknown,
             url: URL(string: "https://example.com/contact?id=abc"),
-            filename: "contact.vcard",
-            featureFlagger: flagger
-        ))
-    }
-
-    @available(iOS 16, *)
-    @Test("Returns false for vCard signals when vcardContactLinks is off", .timeLimit(.minutes(1)))
-    func handlesDownloadNativelyRespectsVCardFlag() {
-        let flagger = MockFeatureFlagger(enabledFeatureFlags: [])
-        #expect(!FilePreviewHelper.handlesDownloadNatively(
-            mimeType: .contact,
-            url: URL(string: "https://example.com/contact.vcf"),
-            filename: "contact.vcf",
-            featureFlagger: flagger
+            filename: "contact.vcard"
         ))
     }
 
@@ -193,71 +137,40 @@ struct FilePreviewHelperTests {
     @available(iOS 16, *)
     @Test("Persists when MIME is text/vcard", .timeLimit(.minutes(1)))
     func shouldPersistMatchesByVCardMIME() {
-        let flagger = MockFeatureFlagger(enabledFeatureFlags: [.vcardContactLinks])
         #expect(FilePreviewHelper.shouldPersistInDownloads(
             mimeType: .contact,
             url: URL(string: "https://example.com/contact?id=abc"),
-            filename: nil,
-            featureFlagger: flagger
+            filename: nil
         ))
     }
 
     @available(iOS 16, *)
     @Test("Persists when filename ends in .vcf even if URL doesn't", .timeLimit(.minutes(1)))
     func shouldPersistMatchesByVCFFilenameExtension() {
-        let flagger = MockFeatureFlagger(enabledFeatureFlags: [.vcardContactLinks])
         #expect(FilePreviewHelper.shouldPersistInDownloads(
             mimeType: .unknown,
             url: URL(string: "https://example.com/contact?id=abc"),
-            filename: "contact.vcf",
-            featureFlagger: flagger
-        ))
-    }
-
-    @available(iOS 16, *)
-    @Test("Does not persist vCard when feature flag is off", .timeLimit(.minutes(1)))
-    func shouldPersistRespectsVCardFlag() {
-        let flagger = MockFeatureFlagger(enabledFeatureFlags: [])
-        #expect(!FilePreviewHelper.shouldPersistInDownloads(
-            mimeType: .contact,
-            url: URL(string: "https://example.com/contact.vcf"),
-            filename: "contact.vcf",
-            featureFlagger: flagger
+            filename: "contact.vcf"
         ))
     }
 
     // MARK: - canAutoPreviewVCardByExtension
 
     @available(iOS 16, *)
-    @Test("Auto-previews .vcf by URL extension when vcardContactLinks on", .timeLimit(.minutes(1)))
+    @Test("Auto-previews .vcf by URL extension", .timeLimit(.minutes(1)))
     func canAutoPreviewVCardByURLExtension() {
-        let flagger = MockFeatureFlagger(enabledFeatureFlags: [.vcardContactLinks])
         #expect(FilePreviewHelper.canAutoPreviewVCardByExtension(
             url: URL(string: "https://example.com/contact.VCF"),
-            filename: nil,
-            featureFlagger: flagger
+            filename: nil
         ))
     }
 
     @available(iOS 16, *)
-    @Test("Auto-previews .vcard by filename when vcardContactLinks on", .timeLimit(.minutes(1)))
+    @Test("Auto-previews .vcard by filename", .timeLimit(.minutes(1)))
     func canAutoPreviewVCardByFilenameExtension() {
-        let flagger = MockFeatureFlagger(enabledFeatureFlags: [.vcardContactLinks])
         #expect(FilePreviewHelper.canAutoPreviewVCardByExtension(
             url: URL(string: "https://example.com/contact?id=abc"),
-            filename: "contact.vcard",
-            featureFlagger: flagger
-        ))
-    }
-
-    @available(iOS 16, *)
-    @Test("Does not auto-preview vCard by extension when feature flag is off", .timeLimit(.minutes(1)))
-    func canAutoPreviewVCardByExtensionRespectsFlag() {
-        let flagger = MockFeatureFlagger(enabledFeatureFlags: [])
-        #expect(!FilePreviewHelper.canAutoPreviewVCardByExtension(
-            url: URL(string: "https://example.com/contact.vcf"),
-            filename: "contact.vcf",
-            featureFlagger: flagger
+            filename: "contact.vcard"
         ))
     }
 }

@@ -21,19 +21,24 @@ import SwiftUI
 import VPN
 import Subscription
 import Core
-import Networking
 
 struct NetworkProtectionRootView: View {
 
     @StateObject var statusViewModel: NetworkProtectionStatusViewModel
     @StateObject var feedbackFormModel: UnifiedFeedbackFormViewModel
 
-    init() {
+    init(source: VPNConnectionWideEventData.ScreenSource) {
         let subscriptionManager = AppDependencyProvider.shared.subscriptionManager
         let locationListRepository = NetworkProtectionLocationListCompositeRepository()
         let tunnelController = AppDependencyProvider.shared.networkProtectionTunnelController
         _statusViewModel = StateObject(wrappedValue: NetworkProtectionStatusViewModel(
             tunnelController: tunnelController,
+            entryContextProvider: {
+                VPNConnectionWideEventData.EntryContext(
+                    source: source,
+                    localTokenState: subscriptionManager.localTokenState()
+                )
+            },
             settings: AppDependencyProvider.shared.vpnSettings,
             statusObserver: AppDependencyProvider.shared.connectionObserver,
             serverInfoObserver: AppDependencyProvider.shared.serverInfoObserver,
@@ -54,7 +59,30 @@ struct NetworkProtectionRootView: View {
         NetworkProtectionStatusView(statusModel: statusViewModel, feedbackFormModel: feedbackFormModel)
             .navigationTitle(UserText.netPNavTitle)
             .onFirstAppear {
-                Pixel.fire(pixel: .subscriptionVPNSettings, withAdditionalParameters: self.statusViewModel.featureDiscovery.addToParams([:], forFeature: .vpn))
+                Pixel.fire(
+                    pixel: .subscriptionVPNSettings,
+                    withAdditionalParameters: self.statusViewModel.featureDiscovery.addToParams([:], forFeature: .vpn))
             }
+    }
+}
+
+private extension VPNConnectionWideEventData.EntryContext {
+
+    init(source: VPNConnectionWideEventData.ScreenSource,
+         localTokenState: LocalSubscriptionTokenState) {
+        let tokenState: VPNConnectionWideEventData.TokenState
+        switch localTokenState {
+        case .present:
+            tokenState = .present
+        case .missing:
+            tokenState = .missing
+        case .readError:
+            tokenState = .readError
+        }
+
+        self.init(
+            source: source,
+            tokenState: tokenState
+        )
     }
 }

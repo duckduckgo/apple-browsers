@@ -92,8 +92,6 @@ class TabSwitcherViewController: UIViewController {
 
     }
 
-    @IBOutlet weak var toolbar: UIToolbar!
-
     private(set) var chrome: TabSwitcherChrome!
 
     private(set) var pagingScrollView: UIScrollView!
@@ -146,8 +144,6 @@ class TabSwitcherViewController: UIViewController {
     var canShowSelectionMenu = false
     var menuBuilder: TabSwitcherMenuBuilding = DefaultTabSwitcherMenuBuilder()
 
-    private let floatingUIManaging: FloatingUIManaging
-
     let featureFlagger: FeatureFlagger
     let tabManager: TabManager
     let historyManager: HistoryManaging
@@ -183,30 +179,27 @@ class TabSwitcherViewController: UIViewController {
         FireModeCapability.create()
     }
 
-    required init?(coder: NSCoder,
-                   bookmarksDatabase: CoreDataDatabase,
-                   syncService: DDGSyncing,
-                   featureFlagger: FeatureFlagger,
-                   favicons: FaviconManaging,
-                   tabManager: TabManager,
-                   aiChatSettings: AIChatSettingsProvider,
-                   appSettings: AppSettings,
-                   aichatFullModeFeature: AIChatFullModeFeatureProviding = AIChatFullModeFeature(),
-                   privacyStats: PrivacyStatsProviding,
-                   productSurfaceTelemetry: ProductSurfaceTelemetry,
-                   historyManager: HistoryManaging,
-                   fireproofing: Fireproofing,
-                   keyValueStore: ThrowingKeyValueStoring,
-                   tabSwitcherSettings: TabSwitcherSettings = DefaultTabSwitcherSettings(),
-                   daxDialogsManager: DaxDialogsManaging,
-                   initialTrackerCountState: TabSwitcherTrackerCountViewModel.State,
-                   duckAIGridContentProvider: DuckAIGridContentProviding?,
-                   duckAIVoiceSessionTracker: DuckAIVoiceSessionTracking?,
-                   floatingUIManaging: FloatingUIManaging? = nil) {
+    init(bookmarksDatabase: CoreDataDatabase,
+         syncService: DDGSyncing,
+         featureFlagger: FeatureFlagger,
+         favicons: FaviconManaging,
+         tabManager: TabManager,
+         aiChatSettings: AIChatSettingsProvider,
+         appSettings: AppSettings,
+         aichatFullModeFeature: AIChatFullModeFeatureProviding = AIChatFullModeFeature(),
+         privacyStats: PrivacyStatsProviding,
+         productSurfaceTelemetry: ProductSurfaceTelemetry,
+         historyManager: HistoryManaging,
+         fireproofing: Fireproofing,
+         keyValueStore: ThrowingKeyValueStoring,
+         tabSwitcherSettings: TabSwitcherSettings = DefaultTabSwitcherSettings(),
+         daxDialogsManager: DaxDialogsManaging,
+         initialTrackerCountState: TabSwitcherTrackerCountViewModel.State,
+         duckAIGridContentProvider: DuckAIGridContentProviding?,
+         duckAIVoiceSessionTracker: DuckAIVoiceSessionTracking?) {
         self.bookmarksDatabase = bookmarksDatabase
         self.syncService = syncService
         self.featureFlagger = featureFlagger
-        self.floatingUIManaging = floatingUIManaging ?? FloatingUIManager(featureFlagger: featureFlagger)
         self.keyValueStore = keyValueStore
         self.favicons = favicons
         self.tabManager = tabManager
@@ -234,11 +227,12 @@ class TabSwitcherViewController: UIViewController {
                                                                  innerHorizontalPadding: 2),
                 scrollProgress: nil,
                 isScrollProgressDriven: true)
-        super.init(coder: coder)
+        super.init(nibName: nil, bundle: nil)
     }
 
+    @available(*, unavailable)
     required init?(coder: NSCoder) {
-        fatalError("Not implemented")
+        fatalError("init(coder:) has not been implemented")
     }
     
     private func setupModeToggle() {
@@ -300,19 +294,14 @@ class TabSwitcherViewController: UIViewController {
     }
 
     private func makeChrome() -> TabSwitcherChrome {
-        let isFloating = floatingUIManaging.isFloatingUIEnabled
-        let chrome = TabSwitcherChromeFactory.makeChrome(isFloatingUIEnabled: isFloating,
-                                                         toolbar: toolbar,
-                                                         appSettings: appSettings)
-        if isFloating {
-            // The storyboard toolbar is unused in floating mode; the chrome provides its own bars.
-            toolbar?.removeFromSuperview()
-        }
-        return chrome
+        TabSwitcherChromeFactory.makeChrome(
+            isTabSwitcherJuly2026Enabled: featureFlagger.isFeatureOn(.tabSwitcherJuly2026),
+            appSettings: appSettings)
     }
 
     private func setupPagingScrollView() {
         let isFireModeEnabled = fireModeCapability.isFireModeEnabled
+        let isTabSwitcherJuly2026Enabled = featureFlagger.isFeatureOn(.tabSwitcherJuly2026)
 
         pagingScrollView = UIScrollView()
         pagingScrollView.isPagingEnabled = isFireModeEnabled
@@ -374,6 +363,7 @@ class TabSwitcherViewController: UIViewController {
                 tabSwitcherSettings: tabSwitcherSettings,
                 trackerCountViewModel: nil,
                 isFireModeEnabled: isFireModeEnabled,
+                isTabSwitcherJuly2026Enabled: isTabSwitcherJuly2026Enabled,
                 duckAIGridContentProvider: duckAIGridContentProvider,
                 duckAIVoiceSessionTracker: duckAIVoiceSessionTracker)
             firePageController?.pageDelegate = self
@@ -651,24 +641,12 @@ class TabSwitcherViewController: UIViewController {
         return .init(newCount: newCount, existingCount: tabs.count - newCount, urls: urls)
     }
 
-    @IBAction func onAddPressed(_ sender: UIBarButtonItem) {
-        addNewTab()
-    }
-
-    @IBAction func onDonePressed(_ sender: UIBarButtonItem) {
-        doneAction()
-    }
-
     func doneAction() {
         if isEditing {
             transitionFromMultiSelect()
         } else {
             dismissIfPossible()
         }
-    }
-
-    @IBAction func onFirePressed(sender: AnyObject) {
-        burn(sender: sender)
     }
 
     func forgetAll(_ fireRequest: FireRequest) {

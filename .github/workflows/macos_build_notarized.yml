@@ -24,6 +24,10 @@ on:
         description: "Asana release task URL"
         required: false
         type: string
+      include-x86-architecture:
+        description: "Include x86_64 architecture in the build"
+        default: false
+        type: boolean
   workflow_call:
     inputs:
       release-type:
@@ -52,6 +56,10 @@ on:
         type: string
       skip-notify:
         description: "Skip Mattermost notification"
+        default: false
+        type: boolean
+      include-x86-architecture:
+        description: "Include x86_64 architecture in the build"
         default: false
         type: boolean
     secrets:
@@ -100,10 +108,11 @@ jobs:
       release-type: ${{ github.event.inputs.release-type || inputs.release-type }}
       asana-task-url: ${{ github.event.inputs.asana-task-url || inputs.asana-task-url }}
       branch: ${{ inputs.branch || github.ref_name }}
+      EXCLUDED_ARCHS: ${{ inputs.include-x86-architecture && '' || 'x86_64' }}
 
     steps:
     - name: Register SSH keys for private repos
-      uses: webfactory/ssh-agent@v0.9.1
+      uses: webfactory/ssh-agent@v0.10.0
       with:
         ssh-private-key: |
           ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
@@ -252,13 +261,13 @@ jobs:
         echo "dsym-name=${dsym_name}" >> $GITHUB_OUTPUT
 
     - name: Upload app artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: DuckDuckGo-${{ env.release-type }}-${{ env.app-version }}.app.tar.xz
         path: ${{ github.workspace }}/macOS/release/DuckDuckGo-${{ env.app-version }}.app.tar.xz
 
     - name: Upload dSYMs artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: DuckDuckGo-${{ env.release-type }}-dSYM-${{ env.app-version }}
         path: ${{ github.workspace }}/macOS/release/${{ steps.set-outputs.outputs.dsym-name }}
@@ -382,7 +391,7 @@ jobs:
         cache-key-prefix: macos-ruby
 
     - name: Fetch app bundle
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v7
       with:
         name: DuckDuckGo-${{ env.release-type }}-${{ env.app-version }}.app.tar.xz
         path: ${{ github.workspace }}/macOS/dmg
@@ -446,7 +455,7 @@ jobs:
           runner: ${{ env.RUNS_ON }}
 
     - name: Upload DMG artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: DuckDuckGo-${{ env.release-type }}-${{ env.app-version }}.dmg
         path: ${{ github.workspace }}/macOS/${{ steps.create-dmg.outputs.dmg }}
@@ -485,7 +494,7 @@ jobs:
 
     - name: Upload DMG URL artifact
       if: ${{ env.release-type == 'alpha' }}
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: dmg_url
         path: ${{ github.workspace }}/macOS/dmg_url.txt

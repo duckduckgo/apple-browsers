@@ -18,6 +18,7 @@
 
 import Foundation
 import Cocoa
+import DesignResourcesKit
 
 extension NSAlert {
 
@@ -30,6 +31,18 @@ extension NSAlert {
             button.keyEquivalentModifierMask = keyEquivalent.modifierMask
         }
         return button
+    }
+
+    /// Confirmation for deleting a single recent Duck.ai chat, shared by the address-bar omnibar
+    /// and the New Tab Page so the two dialogs stay identical. `title` is the chat's title.
+    static func recentChatDeleteConfirmation(title: String) -> NSAlert {
+        let alert = NSAlert()
+        alert.messageText = UserText.removeRecentChatConfirmationTitle
+        alert.informativeText = String(format: UserText.removeRecentChatConfirmationMessage, title)
+        alert.addButton(withTitle: UserText.removeRecentChatConfirmationButton, response: .OK)
+        alert.buttons.first?.hasDestructiveAction = true
+        alert.addButton(withTitle: UserText.cancel, response: .cancel, keyEquivalent: .escape)
+        return alert
     }
 
     static func fireproofAlert(with domain: String) -> NSAlert {
@@ -168,8 +181,8 @@ extension NSAlert {
         alert.messageText = UserText.syncPairingV2ConfirmationTitle
         alert.informativeText = message
         alert.alertStyle = .informational
-        alert.addButton(withTitle: UserText.cancel)
         alert.addButton(withTitle: UserText.syncPairingV2ConfirmationAction)
+        alert.addButton(withTitle: UserText.cancel)
         return alert
     }
 
@@ -204,7 +217,7 @@ extension NSAlert {
         let alert = NSAlert()
         alert.messageText = UserText.warnBeforeQuitDialogHeader(clearChats)
         alert.alertStyle = .warning
-        alert.icon = .burnAlert
+        alert.icon = DesignSystemRebrand.isAppRebranded() ? .burnAlert : .burnAlertLegacy
         alert.addButton(withTitle: UserText.clearAndQuit)
         alert.addButton(withTitle: UserText.quitWithoutClearing)
         alert.addButton(withTitle: UserText.cancel)

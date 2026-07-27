@@ -163,6 +163,14 @@ extension SharedColorPaletteDefinition {
         // Manual tokens
         case .alertGreen: return ManualColorTokens.alertGreen
         case .alertYellow: return ManualColorTokens.alertYellow
+        case .vpnGreen: return ManualColorTokens.vpnGreen
+        case .vpnGreenPressed: return ManualColorTokens.vpnGreenPressed
+        case .vpnGreenForeground: return ManualColorTokens.vpnGreenForeground
+        case .vpnGreenForegroundPressed: return ManualColorTokens.vpnGreenForegroundPressed
+        case .vpnYellow: return ManualColorTokens.vpnYellow
+        case .vpnYellowPressed: return ManualColorTokens.vpnYellowPressed
+        case .vpnYellowForeground: return ManualColorTokens.vpnYellowForeground
+        case .vpnYellowForegroundPressed: return ManualColorTokens.vpnYellowForegroundPressed
         case .shieldPrivacy: return ManualColorTokens.shieldPrivacy
         case .buttonsWhite: return ManualColorTokens.buttonsWhite
         case .buttonsPrimaryDefault: return ManualColorTokens.buttonsPrimaryDefault

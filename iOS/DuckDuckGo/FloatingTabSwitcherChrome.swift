@@ -22,14 +22,8 @@ import Core
 import DesignResourcesKit
 import DesignResourcesKitIcons
 
-/// The floating ("liquid glass") tab switcher chrome. Uses out-of-the-box UIKit components
-/// (a `UINavigationBar` for the top bar and a `UIToolbar` for the bottom bar) so the system
-/// renders liquid glass automatically on iOS 26+. Below iOS 26 the same layout is used with a
-/// solid bar background as a fallback.
-///
-/// Floating UI is iPhone-only and does not support the bottom address bar position, so this
-/// chrome only ever handles the `regularSize` / `editingRegularSize` interface modes and always
-/// pins the top bar to the top and the bottom bar to the bottom.
+/// The floating ("liquid glass") tab switcher chrome. It uses system bars to render liquid glass
+/// on iOS 26+ and falls back to solid bar backgrounds on earlier versions.
 @MainActor
 final class FloatingTabSwitcherChrome: TabSwitcherChrome {
 
@@ -37,11 +31,20 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
         static let estimatedNavBarHeight: CGFloat = 50
         static let estimatedToolbarHeight: CGFloat = 49
         static let bottomFloatingInset: CGFloat = 8
+        static let fallbackToolbarHorizontalPadding: CGFloat = 20
+        static let fallbackAIButtonSpacing: CGFloat = 12
     }
 
     private let navigationBar = UINavigationBar()
     let navigationItem = UINavigationItem()
     let toolbar = UIToolbar()
+    let fallbackTopBackgroundView: UIView = {
+        let view = UIView()
+        view.backgroundColor = UIColor(designSystemColor: .surfacePrimary)
+        view.isUserInteractionEnabled = false
+        view.translatesAutoresizingMaskIntoConstraints = false
+        return view
+    }()
 
     private weak var hostView: UIView?
     private weak var contentView: UIScrollView?
@@ -51,7 +54,6 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
     private weak var centerView: UIView?
     private var glassCenterContainer: UIVisualEffectView?
     private var layoutConstraints: [NSLayoutConstraint] = []
-    private var title: String?
     private var isFireModeEnabled = false
 
     var actions = TabSwitcherChromeActions()
@@ -69,24 +71,38 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
         menu: UIMenu(children: []))
 
     private lazy var doneItem: UIBarButtonItem = {
-        let item = UIBarButtonItem(title: nil,
-                                   image: UIImage(systemName: "checkmark"),
-                                   primaryAction: UIAction { [weak self] _ in self?.actions.onDoneTapped?() },
-                                   menu: nil)
-        item.accessibilityLabel = UserText.navigationTitleDone
-        // Prominent style gives an accent-filled glass capsule (with a contrasting white
-        // checkmark) sized like the other glass bar buttons. The fill colour comes from
-        // `tintColor`, set in `decorate(theme:)`.
+        let action = UIAction { [weak self] _ in self?.actions.onDoneTapped?() }
+        let item: UIBarButtonItem
         if #available(iOS 26.0, *) {
+            item = UIBarButtonItem(title: nil,
+                                   image: UIImage(systemName: "checkmark"),
+                                   primaryAction: action,
+                                   menu: nil)
             item.style = .prominent
+        } else {
+            item = UIBarButtonItem(systemItem: .done,
+                                   primaryAction: action,
+                                   menu: nil)
         }
+        item.accessibilityLabel = UserText.navigationTitleDone
         return item
     }()
 
-    private lazy var closeItem = UIBarButtonItem(
-        systemItem: .close,
-        primaryAction: UIAction { [weak self] _ in self?.actions.onDoneTapped?() },
-        menu: nil)
+    private lazy var selectionTitleLabel: UILabel = {
+        let label = UILabel()
+        label.font = UIFont.daxHeadline()
+        label.textColor = UIColor(designSystemColor: .textPrimary)
+        return label
+    }()
+
+    private lazy var selectionTitleItem: UIBarButtonItem = {
+        let item = UIBarButtonItem(customView: selectionTitleLabel)
+        if #available(iOS 26.0, *) {
+            item.sharesBackground = false
+            item.hidesSharedBackground = true
+        }
+        return item
+    }()
 
     private lazy var selectAllItem = UIBarButtonItem(
         title: UserText.selectAllTabs,
@@ -102,13 +118,13 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
 
     private lazy var editMenuItem = UIBarButtonItem(
         title: nil,
-        image: DesignSystemImages.Glyphs.Size24.menuDotsHorizontal,
+        image: menuImage,
         primaryAction: nil,
         menu: UIMenu(children: []))
 
     private lazy var multiSelectMenuItem = UIBarButtonItem(
         title: nil,
-        image: DesignSystemImages.Glyphs.Size24.menuDotsHorizontal,
+        image: menuImage,
         primaryAction: nil,
         menu: UIMenu(children: []))
 
@@ -224,7 +240,7 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
     }
 
     func setTitle(_ title: String?) {
-        self.title = title
+        selectionTitleLabel.text = title
     }
 
     func configurePlusButtonLongPressMenu(isFireModeEnabled: Bool) {
@@ -263,7 +279,11 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
         let tint = UIColor(singleUseColor: .toolbarButton)
         navigationBar.tintColor = tint
         toolbar.tintColor = tint
-        doneItem.tintColor = UIColor(designSystemColor: .accentPrimary)
+        if #available(iOS 26.0, *) {
+            doneItem.tintColor = UIColor(designSystemColor: .accentPrimary)
+        } else {
+            doneItem.tintColor = theme.navigationBarTintColor
+        }
         configureBarMaterials()
     }
 
@@ -283,13 +303,13 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
 
         if isEditing {
             navigationItem.titleView = nil
-            navigationItem.title = title
-            navigationItem.leftBarButtonItems = [closeItem]
+            navigationItem.title = nil
+            navigationItem.leftBarButtonItems = [selectionTitleItem]
             navigationItem.rightBarButtonItems = [params.selectedCount == params.totalCount ? deselectAllItem : selectAllItem]
 
             closeTabsItem.title = UserText.closeTabs(withCount: params.selectedCount)
             closeTabsItem.isEnabled = params.selectedCount > 0
-            toolbar.setItems([multiSelectMenuItem, .flexibleSpace(), closeTabsItem], animated: false)
+            setToolbarItems([doneItem, .flexibleSpace(), closeTabsItem, multiSelectMenuItem])
         } else {
             navigationItem.title = nil
             navigationItem.titleView = centerTitleView()
@@ -298,9 +318,12 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
 
             var items: [UIBarButtonItem] = [editMenuItem, .flexibleSpace(), fireItem, .flexibleSpace(), plusItem]
             if params.showAIChat {
+                if #unavailable(iOS 26.0) {
+                    items.append(.fixedSpace(Metrics.fallbackAIButtonSpacing))
+                }
                 items.append(duckChatItem)
             }
-            toolbar.setItems(items, animated: false)
+            setToolbarItems(items)
         }
     }
 
@@ -323,14 +346,17 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
         NSLayoutConstraint.deactivate(layoutConstraints)
         layoutConstraints = []
 
-        [navigationBar, toolbar, contentView].forEach { $0.removeFromSuperview() }
+        [navigationBar, toolbar, fallbackTopBackgroundView, contentView].forEach { $0.removeFromSuperview() }
 
         // Content sits behind the glass bars so it scrolls under them.
         hostView.addSubview(contentView)
+        if #unavailable(iOS 26.0) {
+            hostView.addSubview(fallbackTopBackgroundView)
+        }
         hostView.addSubview(toolbar)
         hostView.addSubview(navigationBar)
 
-        let constraints = [
+        var constraints = [
             navigationBar.topAnchor.constraint(equalTo: hostView.safeAreaLayoutGuide.topAnchor),
             navigationBar.leadingAnchor.constraint(equalTo: hostView.safeAreaLayoutGuide.leadingAnchor),
             navigationBar.trailingAnchor.constraint(equalTo: hostView.safeAreaLayoutGuide.trailingAnchor),
@@ -344,11 +370,36 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
             toolbar.trailingAnchor.constraint(equalTo: hostView.safeAreaLayoutGuide.trailingAnchor),
             toolbar.bottomAnchor.constraint(equalTo: hostView.safeAreaLayoutGuide.bottomAnchor),
         ]
+        if #unavailable(iOS 26.0) {
+            constraints.append(contentsOf: [
+                fallbackTopBackgroundView.topAnchor.constraint(equalTo: hostView.topAnchor),
+                fallbackTopBackgroundView.leadingAnchor.constraint(equalTo: hostView.leadingAnchor),
+                fallbackTopBackgroundView.trailingAnchor.constraint(equalTo: hostView.trailingAnchor),
+                fallbackTopBackgroundView.bottomAnchor.constraint(equalTo: navigationBar.bottomAnchor),
+            ])
+        }
         NSLayoutConstraint.activate(constraints)
         layoutConstraints = constraints
     }
 
     // MARK: - Private
+
+    private var menuImage: UIImage {
+        if #available(iOS 26.0, *) {
+            return DesignSystemImages.Glyphs.Size24.menuDotsHorizontal
+        }
+        return DesignSystemImages.Glyphs.Size24.moreApple
+    }
+
+    private func setToolbarItems(_ items: [UIBarButtonItem]) {
+        if #available(iOS 26.0, *) {
+            toolbar.setItems(items, animated: false)
+        } else {
+            toolbar.setItems([.fixedSpace(Metrics.fallbackToolbarHorizontalPadding)] + items
+                             + [.fixedSpace(Metrics.fallbackToolbarHorizontalPadding)],
+                             animated: false)
+        }
+    }
 
     private func makeTabsStyleMenu(current: TabSwitcherViewController.TabsStyle) -> UIMenu {
         let grid = UIAction(title: UserText.tabSwitcherGridViewMenuTitle,

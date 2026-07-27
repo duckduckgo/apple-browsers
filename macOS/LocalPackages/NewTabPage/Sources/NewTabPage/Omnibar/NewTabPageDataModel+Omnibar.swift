@@ -64,10 +64,7 @@ public extension NewTabPageDataModel {
         }
     }
 
-    /// Attachment limits sourced from the Duck.ai backend (`/duckchat/v1/models`, field
-    /// `attachmentLimits`), already resolved for the user's tier. Forwarded to the web so the NTP
-    /// omnibar can enforce them instead of hardcoding defaults. Mirrors the resolved shape of
-    /// `AIChat.AIChatAttachmentTierLimits`.
+    /// Attachment limits forwarded to the web. All optional: `files`/`images` are backend-sourced; `tabs` is a hardcoded native cap, omitted when the limit is disabled (web then applies no tab limit).
     struct AttachmentLimits: Codable, Equatable {
         public struct FileLimits: Codable, Equatable {
             let maxPerConversation: Int
@@ -95,12 +92,22 @@ public extension NewTabPageDataModel {
             }
         }
 
-        let files: FileLimits
-        let images: ImageLimits
+        public struct TabLimits: Codable, Equatable {
+            let maxAttached: Int
 
-        public init(files: FileLimits, images: ImageLimits) {
+            public init(maxAttached: Int) {
+                self.maxAttached = maxAttached
+            }
+        }
+
+        let files: FileLimits?
+        let images: ImageLimits?
+        let tabs: TabLimits?
+
+        public init(files: FileLimits?, images: ImageLimits?, tabs: TabLimits?) {
             self.files = files
             self.images = images
+            self.tabs = tabs
         }
     }
 
@@ -114,6 +121,16 @@ public extension NewTabPageDataModel {
         let enableAiChatTools: Bool?
         let enableImageGeneration: Bool?
         let enableWebSearch: Bool?
+        /// When true, the omnibar shows the "Customize Responses" tool in the Tools menu. Selecting
+        /// it sends `omnibar_openCustomizeResponses` so native opens the Customize Responses modal.
+        let enableCustomizeResponses: Bool?
+        /// Summary of the user's current customization (e.g. "Professional, Concise"), shown under
+        /// the Customize Responses row. Omitted when responses haven't been customized.
+        let customizeSubLabel: String?
+        /// True once the user has customized responses; gates the row's on/off toggle.
+        let hasCustomization: Bool?
+        /// Whether the stored customization is currently applied; drives the toggle's checked state.
+        let customizationActive: Bool?
         /// When true, the omnibar shows a 1-click voice-chat button. Driven by the native
         /// `aiChatOmnibarVoiceChatAccess` feature flag and reactive over `omnibar_onConfigUpdate`
         /// so the affordance appears/disappears without a page reload when the flag flips.
@@ -138,6 +155,10 @@ public extension NewTabPageDataModel {
         /// Backend-provided attachment limits, already tier-resolved. `nil` on older native builds
         /// or when the backend omits them, in which case the web falls back to its built-in defaults.
         let attachmentLimits: AttachmentLimits?
+        /// When true, recent-chat suggestions show a delete button that sends `omnibar_confirmDeleteAiChat`.
+        let enableAiChatDeletion: Bool?
+        /// When true, history-entry suggestions show a delete button that sends `omnibar_removeSuggestion`.
+        let enableSearchSuggestionDeletion: Bool?
     }
 
     // MARK: - omnibar_getSuggestions
@@ -420,6 +441,25 @@ public extension NewTabPageDataModel {
         let target: OpenTarget
     }
 
+    struct SetCustomizeResponsesActiveAction: Codable, Equatable {
+        let active: Bool
+    }
+
+    /// Customize Responses row state resolved for a specific window (sub-label + toggle).
+    struct OmnibarCustomizeResponsesState: Equatable {
+        let subLabel: String?
+        let hasCustomization: Bool
+        let active: Bool
+
+        public init(subLabel: String?, hasCustomization: Bool, active: Bool) {
+            self.subLabel = subLabel
+            self.hasCustomization = hasCustomization
+            self.active = active
+        }
+
+        public static let none = OmnibarCustomizeResponsesState(subLabel: nil, hasCustomization: false, active: false)
+    }
+
     // MARK: - omnibar_getAiChats
 
     struct OmnibarGetAiChatsRequest: Codable, Equatable {
@@ -452,6 +492,27 @@ public extension NewTabPageDataModel {
         }
 
         public static let empty = Self(chats: [])
+    }
+
+    // MARK: - omnibar_confirmDeleteAiChat
+
+    struct ConfirmDeleteAiChatAction: Codable, Equatable {
+        let chatId: String
+        let title: String
+    }
+
+    struct ConfirmDeleteAiChatResponse: Codable, Equatable {
+        enum Action: String, Codable {
+            case delete
+            case none
+        }
+        let action: Action
+    }
+
+    // MARK: - omnibar_removeSuggestion
+
+    struct RemoveSuggestionAction: Codable, Equatable {
+        let url: String
     }
 
 }

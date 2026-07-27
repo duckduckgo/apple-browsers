@@ -212,7 +212,7 @@
 "action.title.vpn" = "VPN";
 
 /* Description of the Ad Blocking feature in settings */
-"ad.blocking.description" = "Még betöltés előtt blokkolja az invazív nyomkövetőket, így hatékonyan kiküszöböljük a nyomkövetésre épülő hirdetéseket";
+"ad.blocking.description" = "Még betöltés előtt blokkolja az invazív nyomkövetőket, így hatékonyan kiküszöböljük a nyomkövetésre épülő hirdetéseket.";
 
 /* Section header for YouTube-specific ad blocking settings */
 "ad.blocking.youtube.section.header" = "YouTube-hirdetésblokkolás";
@@ -401,10 +401,10 @@
 "alert.sync-already-paired-with-account-button" = "Megvan";
 
 /* Description for Sync error shown when both devices are already paired with the same account */
-"alert.sync-already-paired-with-account-description" = "Már mindkét eszközön hozzá vagy rendelve ehhez a fiókhoz.";
+"alert.sync-already-paired-with-account-description" = "Ezek az eszközök már csatlakoztatva vannak a Sync & Backup funkcióhoz.";
 
 /* Title for Sync error shown when both devices are already paired with the same account */
-"alert.sync-already-paired-with-account-title" = "Már párosítva";
+"alert.sync-already-paired-with-account-title" = "Már szinkronizálva.";
 
 /* Description for alert shown when sync error occurs because of bad bookmarks data */
 "alert.sync-bookmarks-bad-data-error-description" = "Egyes könyvjelzők helytelen formátumúak vagy túl hosszúak, és nem lettek szinkronizálva.";
@@ -425,10 +425,10 @@
 "alert.sync-cancelled-from-other-device-title" = "A szinkronizálás megszakítva a másik eszközödről.";
 
 /* Description for Sync error shown when a third-party recovery code can only be used with Duck.ai */
-"alert.sync-code-only-compatible-with-duckai-description" = "Nyisd meg a böngésződben a duck.ai oldalt, menj a Beállításokba, majd a „Sync & Backup” alatt válaszd a „Bekapcsolás” lehetőséget, és válaszd a „Szinkronizálás másik eszközzel” opciót.";
+"alert.sync-code-only-compatible-with-duckai-description" = "A másik böngésződben nyisd meg a Duck.ai-t, lépj a Beállításokba, majd a „Sync & Backup” menüpontban válaszd a „Bekapcsolás”, majd a „Szinkronizálás másik eszközzel” lehetőséget.";
 
 /* Title for Sync error shown when a third-party recovery code can only be used with Duck.ai */
-"alert.sync-code-only-compatible-with-duckai-title" = "Olvasd be ezt a kódot a Duck.ai beállításaiból.";
+"alert.sync-code-only-compatible-with-duckai-title" = "Olvasd be ezt a kódot egy nem DuckDuckGo-böngészővel.";
 
 /* Description for alert shown when sync error occurs because of bad credentials data */
 "alert.sync-credentials-bad-data-error-description" = "Egyes jelszavak helytelen formátumúak vagy túl hosszúak, és nem lettek szinkronizálva.";
@@ -454,6 +454,12 @@
 /* Sync error alert action button title, takes the user to the sync settings page. */
 "alert.sync-error-action" = "Beállítások szinkronizálása";
 
+/* Description for generic Sync setup failure alerts */
+"alert.sync-failed-description" = "Kérjük, próbáld újra.";
+
+/* Title for generic Sync setup failure alerts */
+"alert.sync-failed-title" = "A szinkronizálás sikertelen.";
+
 /* Description for Sync error shown when a third-party account already has a native DuckDuckGo Sync credential */
 "alert.sync-from-another-connected-device-description" = "Kérjük, szinkronizáld ezt az eszközt egy másik eszközön már csatlakoztatott DuckDuckGo böngészőből.";
 
@@ -478,6 +484,9 @@
 /* Title for alert shown when sync paused for an error */
 "alert.sync-paused-title" = "A szinkronizálás szünetel";
 
+/* Button title for Sync setup error alerts */
+"alert.sync-setup-error-got-it-button" = "Értem";
+
 /* Switch account button in alert */
 "alert.sync-switch-account-button" = "Váltás másik szinkronizálási lehetőségre";
 
@@ -489,9 +498,6 @@
 
 /* Description for alert shown when sync error occurs because of too many requests */
 "alert.sync-too-many-requests-error-description" = "A szinkronizálás és biztonsági mentés átmenetileg nem érhető el.";
-
-/* Description for Sync error shown when the app version does not support the scanned Sync code */
-"alert.sync-update-required-description" = "Ez a kód az alkalmazás jelenlegi verziójában nem támogatott.";
 
 /* Title for Sync error shown when the app version does not support the scanned Sync code */
 "alert.sync-update-required-title" = "Frissítsd a DuckDuckGo böngészőt, és próbáld újra.";
@@ -527,13 +533,15 @@
 "alert.unable-to-remove-device-description" = "Az eszközt nem sikerült eltávolítani a Szinkronizálás és biztonsági mentés funkcióból.";
 
 /* Description for unable to scan qr code error */
-"alert.unable-to-scan-qr-code-description" = "Ez a kód sajnos érvénytelen. Győződj meg róla, hogy a helyes kódot adtad meg vagy olvastad be.";
+"alert.unable-to-scan-qr-code-description" = "Győződj meg róla, hogy a megfelelő kódot adtad meg vagy olvastad be.";
+
+/* Title for unable to scan qr code error */
+"alert.unable-to-scan-qr-code-title" = "Ez nem érvényes szinkronizálási kód.";
 
 /* Description for unable to sync to server error */
 "alert.unable-to-sync-to-server-description" = "Nem sikerült csatlakozni a szerverhez.";
 
 /* Description for unable to sync with another device error */
-"alert.unable-to-sync-with-other-device-description" = "Nem sikerült a másik eszközzel szinkronizálni.";
 
 /* Description for unable to turn sync off error */
 "alert.unable-to-turn-sync-off-description" = "Nem sikerült kikapcsolni a Szinkronizálás és biztonsági mentés funkciót.";
@@ -1410,6 +1418,39 @@
 
 /* Third paragraph of the Control Center Widget Education screen */
 "control.center.widget.education.paragraph.3" = "Koppints a képernyő alján található **Vezérlő hozzáadása** gombra";
+
+/* Small 'NEW' badge shown above the Cookie Pop-up Protection opt-in dialog header */
+"cookie-popup-protection.opt-in.badge" = "Új";
+
+/* Confirm button in the Cookie Pop-up Protection opt-in dialog */
+"cookie-popup-protection.opt-in.confirm" = "Megerősítés";
+
+/* Body of the opt-in dialog when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.body" = "Igyekszünk a lehető legtöbb sütit elutasítani. Ha nincs lehetőség az elutasításra, megspórolunk neked egy kattintást, és elfogadjuk helyetted ezeket a sütiket.";
+
+/* Primary (recommended) option when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.primary-option" = "Elutasítás, ha lehetséges; egyébként elfogadás helyettem";
+
+/* Secondary option when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.secondary-option" = "Továbbra is magam kezelem őket";
+
+/* Title of the opt-in dialog when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.title" = "Eleged van már a folyton felugró sütiablakokból?";
+
+/* Body of the opt-in dialog when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.body" = "Egy kattintást megspórolva elfogadhatjuk helyetted ezeket a sütiket.";
+
+/* Primary (recommended) option when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.primary-option" = "Nem letiltható sütik elfogadása";
+
+/* Secondary option when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.secondary-option" = "Továbbra is én fogadom el őket";
+
+/* Title of the opt-in dialog when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.title" = "Eleged van már a folyton felugró sütiablakokból, amelyek nem tilthatók le?";
+
+/* Footer text in the Cookie Pop-up Protection opt-in dialog. The text between ** ** is rendered bold. */
+"cookie-popup-protection.opt-in.footer" = "Ezt később bármikor módosíthatod\na **Beállítások** > **Felugró sütiablak elleni védelem** alatt.";
 
 /* Crash Report always send button title */
 "crash.report.dialog.always.send" = "Mindig küldjön hibajelentést";
@@ -2996,7 +3037,7 @@
 "network.protection.vpn.data-volume" = "Adatmennyiség";
 
 /* Footer text for the Exclude CGNAT setting item. */
-"network.protection.vpn.exclude.cgnat.setting.footer" = "Ajánlott kikapcsolni, hogy az összes forgalmad a VPN-en keresztül menjen. Ha problémáid vannak olyan funkciókkal, mint a Wi-Fi-hívás, az üzenetküldés vagy a hangposta, próbáld meg bekapcsolni.";
+"network.protection.vpn.exclude.cgnat.setting.footer" = "Kerüld meg a VPN-t a szolgáltatói funkciók, például a Wi-Fi-hívás és a hangposta esetén.";
 
 /* Title for the Exclude CGNAT setting item. */
 "network.protection.vpn.exclude.cgnat.setting.title" = "Szolgáltatói szolgáltatások kizárása";
@@ -3074,10 +3115,10 @@
 "network.protection.vpn.shortcuts.section.header" = "Gyorsparancsok";
 
 /* Footer text for the Strict Routing setting item. The 'Learn more' text is a Markdown link. */
-"network.protection.vpn.strict.routing.setting.footer" = "Nem megbízható hálózatokon ajánlott, pl. nyilvános wifi szállodákban, bárokban stb. Ha problémákat tapasztalsz a funkciókkal (például a CarPlay, az AirDrop stb.) vagy más eszközökhöz való csatlakozással, próbáld meg kikapcsolni. [További információk](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)";
+"network.protection.vpn.strict.routing.setting.footer" = "Akadályozd meg, hogy az alkalmazások megkerüljék a VPN-t. Ha problémákat tapasztalsz a Wi-Fi-funkciókkal (például AirDrop vagy iPhone-tükrözés), a kikapcsolás segíthet. Kifejezetten ajánlott a nem megbízható hálózatokon, például nyilvános Wi-Fi esetén. [További információk](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack).";
 
 /* Title for the Strict Routing setting item. */
-"network.protection.vpn.strict.routing.setting.title" = "Szigorú útvonalvezetés";
+"network.protection.vpn.strict.routing.setting.title" = "Szigorú útvonalválasztás kényszerítése (ajánlott)";
 
 /* Confirm button for the new address bar picker */
 "new.address.bar.picker.confirm" = "Megerősítés";
@@ -3158,7 +3199,7 @@
 "omnibar.notification.trackers-blocked" = "%d Trackers";
 
 /* Text displayed on notification appearing in the address bar when YouTube ad blocking is active */
-"omnibar.notification.youtube-ad-block-on" = "A YouTube-hirdetésblokkolás be van kapcsolva";
+"omnibar.notification.youtube-ad-block-on" = "Hirdetésblokkolás bekapcsolva";
 
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Megvan";
@@ -3823,9 +3864,6 @@
 /* Settings picker label for what to show when returning after inactivity */
 "settings.afterInactivity.v2.label" = "Inaktivitás után";
 
-/* Footer under the AI picker, descriptive sentence without link */
-"settings.ai.new.picker.footer" = "Próbáld ki az új funkciót, amellyel a címsorban váltogathatsz a keresés és a Duck.ai között.";
-
 /* Settings row that opens Duck.ai in a new tab */
 "settings.aichat.duckai.settings" = "A Duck.ai beállításai";
 
@@ -3840,9 +3878,6 @@
 
 /* Settings screen footer text for showing AI Chat in the input box */
 "settings.aichat.shortcuts.input.footer" = "Keresés a weben vagy a Duck.ai megkérdezése közvetlenül a címsorból";
-
-/* Title of search assist settings link */
-"settings.aifeatures.assist" = "Keresési asszisztens beállításai";
 
 /* Search Assist frequency option: never show AI-assisted answers */
 "settings.aifeatures.assist.never" = "Soha";
@@ -4013,7 +4048,19 @@
 "settings.cookie.pop-up-protection.protection" = "Felugró sütiablak elleni védelem";
 
 /* Explanation in Settings how the cookie pop up protection feature works */
-"settings.cookie.pop.up.protection.explanation" = "A DuckDuckGo megpróbálja kiválasztani a rendelkezésre álló leginkább privát beállításokat, és elrejteni az ilyen felugró ablakokat.\n[További részletek](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
+"settings.cookie.pop.up.protection.explanation" = "A DuckDuckGo az adatvédelem maximalizálása, a sütik minimalizálása és a felugró ablakok bezárása érdekében képes a sütikre vonatkozó beállítások automatikus kezelésére.\n[További részletek](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
+
+/* Explanation below the auto-manage cookie pop-ups toggle in settings */
+"settings.cookie.auto-manage.explanation" = "Igyekszünk kiválasztani az elérhető legdiszkrétebb sütibeállításokat, és bezárni ezeket a felugró ablakokat.";
+
+/* Title for the auto-manage cookie pop-ups toggle in settings */
+"settings.cookie.auto-manage.title" = "Felugró sütiablakok automatikus kezelése";
+
+/* Explanation below the pop-ups without opt-outs toggle in settings */
+"settings.cookie.popups-without-opt-outs.explanation" = "Engedd, hogy a DuckDuckGo egy kattintást megspórolva elfogadja helyetted a sütiket, és bezárja a le nem tiltható felugró ablakokat.";
+
+/* Title for the pop-ups without opt-outs toggle in settings */
+"settings.cookie.popups-without-opt-outs.title" = "Le nem tiltható felugró ablakok";
 
 /* Settings screen cell text for Cookie popups */
 "settings.cookie.popups" = "Felugró sütiablakok kezelése";
@@ -4781,7 +4828,7 @@
 "sync.remove-device.title" = "Eszköz eltávolítása?";
 
 /* Toast message shown after sync is enabled by connecting with another device */
-"sync.simplified.device-synced.toast" = "Az eszköz szinkronizálása sikeresen megtörtént!";
+"sync.simplified.device-synced.toast" = "Új eszköz hozzáadva!";
 
 /* Toast message shown after sync is successfully enabled */
 "sync.simplified.enabled.toast" = "Sync & Backup engedélyezve";
@@ -5264,10 +5311,10 @@
 "windows-waitlist.waitlist-download-screen.try-duckduckgo-for-windows" = "Töltsd le a DuckDuckGo Windows verzióját!";
 
 /* Body text of the bottom sheet asking the user to send an anonymous breakage report */
-"youtube.ad.blocking.breakage-report.message" = "Névtelen hibajelentés küldése a DuckDuckGo-nak. Segíts, hogy mindenkinek jobb legyen a hirdetésblokkolás.";
+"youtube.ad.blocking.breakage-report.message" = "Küldj névtelen jelentést a DuckDuckGo-nak, és segíts, hogy mindenkinek jobb legyen a hirdetésblokkolás!";
 
 /* Primary action sending an anonymous YouTube ad-blocking breakage report */
-"youtube.ad.blocking.breakage-report.send" = "Hibás működésre vonatkozó jelentés küldése";
+"youtube.ad.blocking.breakage-report.send" = "Névtelen jelentés küldése";
 
 /* Title of the bottom sheet asking the user to send an anonymous breakage report after disabling YouTube ad blocking */
 "youtube.ad.blocking.breakage-report.title" = "Nem működik a YouTube hirdetésblokkolója?";
@@ -5379,5 +5426,28 @@
 /* Button to delete all chats in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.chats.button" = "Beszélgetések törlése";
 
-/* Do not translate - stringsdict entry */
-"aiChat.history.deleteAll.confirmation.title" = "aiChat.history.deleteAll.confirmation.title";
+/* Top-level attachment menu option to attach the current page content to an AI chat message */
+"aichat.attachment.option.ask.about.page" = "Kérdezz az oldalról";
+
+/* Status view message shown while the VPN is on but Strict routing is off */
+"network.protection.status.header.message.strict.routing.off" = "Kikapcsolt szigorú útvonalválasztás esetén egyes forgalmak megkerülhetik a VPN-t. A szigorú útvonalválasztás a nyilvános hálózatok esetén ajánlott.";
+
+/* Label for the status pill shown while the VPN's Strict routing setting is off */
+"network.protection.status.view.strict.routing.pill.off" = "Szigorú útvonalválasztás: Ki";
+
+/* Label for the status pill shown while the VPN's Strict routing setting is on */
+"network.protection.status.view.strict.routing.pill.on" = "Szigorú útvonalválasztás: Be";
+
+/* Tooltip shown for the status pill while the VPN's Strict routing setting is off */
+"network.protection.status.view.strict.routing.pill.tooltip.off" = "Nyilvános hálózatok esetén ajánlott a szigorú útvonalválasztás.";
+
+/* Tooltip shown for the status pill while the VPN's Strict routing setting is on */
+"network.protection.status.view.strict.routing.pill.tooltip.on" = "Egyes alkalmazások nem működhetnek, amíg a szigorú útvonalválasztás be van kapcsolva.";
+
+/* Title of the Troubleshooting section in the VPN status screen. */
+"network.protection.status.view.troubleshooting.section.title" = "Hibaelhárítás";
+
+/* The body of the notification reminding the user to turn the VPN Strict routing setting back on */
+"network.protection.strict.routing.reminder.notification.body" = "Kikapcsolt állapotában bizonyos forgalmak megkerülhetik a VPN-t. Nyilvános hálózatok esetén ajánlott a szigorú útvonalválasztás.";
+/* The title of the notification reminding the user to turn the VPN Strict routing setting back on */
+"network.protection.strict.routing.reminder.notification.title" = "A szigorú útvonalválasztás KI van kapcsolva";

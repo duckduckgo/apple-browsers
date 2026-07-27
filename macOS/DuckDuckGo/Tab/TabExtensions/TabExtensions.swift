@@ -321,6 +321,8 @@ extension TabExtensionsBuilder {
                                     contentPublisher: args.contentPublisher,
                                     tabID: args.tabID,
                                     featureFlagger: dependencies.featureFlagger,
+                                    privacyConfigurationManager: dependencies.privacyFeatures.contentBlocking.privacyConfigurationManager,
+                                    extractionPixelHandler: PageContextExtractionPixelHandler(),
                                     aiChatSessionStore: dependencies.aiChatSessionStore,
                                     aiChatMenuConfiguration: dependencies.aiChatMenuConfiguration,
                                     isLoadedInSidebar: args.isTabLoadedInSidebar,

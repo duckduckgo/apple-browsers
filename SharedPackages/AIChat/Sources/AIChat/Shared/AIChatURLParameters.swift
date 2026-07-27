@@ -46,6 +46,17 @@ public enum AIChatURLParameters {
     public static let settingsName = "settings"
     public static let settingsOpenValue = "open"
 
+    public static let feedbackName = "feedback"
+    public static let feedbackPositiveValue = "positive"
+    public static let feedbackNegativeValue = "negative"
+
+    public static let chatProtectionName = "chatProtection"
+    public static let chatProtectionOpenValue = "open"
+
+    /// Tells the Duck.ai FE to render only the Customize Responses card.
+    public static let customizeResponsesName = "customize-responses"
+    public static let customizeResponsesValue = "full"
+
     /// Appends `?mode=voice` to the given base URL.
     public static func voiceModeURL(from baseURL: URL) -> URL {
         modeURL(from: baseURL, mode: voiceModeValue)
@@ -64,6 +75,21 @@ public enum AIChatURLParameters {
     /// Appends `?settings=open` to the given base URL.
     public static func settingsOpenURL(from baseURL: URL) -> URL {
         baseURL.addingOrReplacing(URLQueryItem(name: settingsName, value: settingsOpenValue))
+    }
+
+    /// Appends `?feedback=positive` / `?feedback=negative` to the given base URL.
+    public static func feedbackURL(from baseURL: URL, value: String) -> URL {
+        baseURL.addingOrReplacing(URLQueryItem(name: feedbackName, value: value))
+    }
+
+    /// Appends `?chatProtection=open` to the given base URL.
+    public static func chatProtectionURL(from baseURL: URL) -> URL {
+        baseURL.addingOrReplacing(URLQueryItem(name: chatProtectionName, value: chatProtectionOpenValue))
+    }
+
+    /// Appends `?customize-responses=full` to the given base URL.
+    public static func nativeCustomizeModalURL(from baseURL: URL) -> URL {
+        baseURL.addingOrReplacing(URLQueryItem(name: customizeResponsesName, value: customizeResponsesValue))
     }
 
     /// Appends `?native-input=true` to the given base URL.

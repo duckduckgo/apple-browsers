@@ -44,6 +44,11 @@ final class IPadOmnibarToolPickerController {
         toolsController.selectedTool != nil
     }
 
+    /// The currently selected tool, or `nil` when none is active. Drives the iPad selected-tool badge.
+    var selectedTool: AIChatRAGTool? {
+        toolsController.selectedTool
+    }
+
     var selectedToolHidesReasoningPicker: Bool {
         guard let tool = toolsController.selectedTool,
               let identifier = UTIToolsMenu.Item.Identifier(tool: tool) else { return false }
@@ -83,25 +88,32 @@ final class IPadOmnibarToolPickerController {
         onToolsUpdated?()
     }
 
-    func resetSelection() {
-        guard toolsController.selectedTool != nil else { return }
+    func resetSelection(isUserInitiated: Bool = false) {
+        guard let previousTool = toolsController.selectedTool else { return }
         toolsController.clearSelection()
+        if isUserInitiated {
+            UnifiedToggleInputCoordinatorPixelHelper.fireToolDeselectedPixel(for: previousTool, surface: .addressBar)
+        }
         onToolsUpdated?()
     }
 
     // MARK: - Private
 
     private var presentation: UTIToolsController.Presentation {
-        toolsController.presentation(displayState: displayState, modelStore: store)
+        toolsController.presentation(
+            displayState: displayState,
+            modelStore: store,
+            canShowCustomizeResponses: false
+        )
     }
 
     private func fireToggleTransitionPixel(previous: AIChatRAGTool?, current: AIChatRAGTool?) {
         guard previous != current else { return }
         if let previous, current == nil || current != previous {
-            UnifiedToggleInputCoordinatorPixelHelper.fireToolDeselectedPixel(for: previous)
+            UnifiedToggleInputCoordinatorPixelHelper.fireToolDeselectedPixel(for: previous, surface: .addressBar)
         }
         if let current {
-            UnifiedToggleInputCoordinatorPixelHelper.fireToolSelectedPixel(for: current)
+            UnifiedToggleInputCoordinatorPixelHelper.fireToolSelectedPixel(for: current, surface: .addressBar)
         }
     }
 }

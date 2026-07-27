@@ -396,6 +396,32 @@ final class AuthV2WideEventTests: XCTestCase {
         }
     }
 
+    func testRefreshEventMapping_otherError_discardsFailureWhenSuppressed() {
+        let mock = WideEventMock()
+        let instrumentation = makeRefreshInstrumentation(wideEvent: mock, shouldSuppressFailure: { true })
+        let refreshID = "refresh-suppressed"
+
+        instrumentation.eventMapping.fire(.tokenRefreshStarted(refreshID: refreshID, trigger: .client))
+        instrumentation.eventMapping.fire(.tokenRefreshFailed(refreshID: refreshID, error: OAuthClientError.unknownAccount))
+
+        XCTAssertTrue(mock.completions.isEmpty)
+        XCTAssertEqual(mock.discarded.count, 1)
+        XCTAssertTrue(mock.getAllFlowData(AuthV2TokenRefreshWideEventData.self).isEmpty)
+    }
+
+    func testRefreshEventMapping_successCompletesWhenFailureSuppressionIsActive() {
+        let mock = WideEventMock()
+        let instrumentation = makeRefreshInstrumentation(wideEvent: mock, shouldSuppressFailure: { true })
+        let refreshID = "refresh-success"
+
+        instrumentation.eventMapping.fire(.tokenRefreshStarted(refreshID: refreshID, trigger: .client))
+        instrumentation.eventMapping.fire(.tokenRefreshSucceeded(refreshID: refreshID))
+
+        XCTAssertEqual(mock.completions.count, 1)
+        XCTAssertEqual(mock.completions.first?.1, .success(reason: nil))
+        XCTAssertTrue(mock.discarded.isEmpty)
+    }
+
     func testRefreshInstrumentation_recoverySuccessCompletesNewestFlowWithoutError() throws {
         let mock = WideEventMock()
         let instrumentation = makeRefreshInstrumentation(wideEvent: mock)
@@ -445,6 +471,21 @@ final class AuthV2WideEventTests: XCTestCase {
         XCTAssertNotNil(refreshData.recoveryDuration?.end)
     }
 
+    func testRefreshInstrumentation_recoveryFailureDiscardsWhenSuppressed() {
+        let mock = WideEventMock()
+        let instrumentation = makeRefreshInstrumentation(wideEvent: mock, shouldSuppressFailure: { true })
+        let pendingFlow = AuthV2TokenRefreshWideEventData(failingStep: .recoverInvalidToken,
+                                                          globalData: WideEventGlobalData(id: "refresh-suppressed"))
+        pendingFlow.recoveryDuration = .startingNow()
+        mock.startFlow(pendingFlow)
+
+        instrumentation.completeInvalidTokenRecovery(outcome: .failed, error: SubscriptionManagerError.noTokenAvailable)
+
+        XCTAssertTrue(mock.completions.isEmpty)
+        XCTAssertEqual(mock.discarded.count, 1)
+        XCTAssertTrue(mock.getAllFlowData(AuthV2TokenRefreshWideEventData.self).isEmpty)
+    }
+
     func testRefreshInstrumentation_recoveryNotAttempted_dropsLatencyAndKeepsOriginalError() throws {
         let mock = WideEventMock()
         let instrumentation = makeRefreshInstrumentation(wideEvent: mock)
@@ -469,6 +510,21 @@ final class AuthV2WideEventTests: XCTestCase {
         XCTAssertEqual(refreshData.failingStep, .recoverInvalidToken)
     }
 
+    func testRefreshInstrumentation_recoveryNotAttemptedDiscardsWhenSuppressed() {
+        let mock = WideEventMock()
+        let instrumentation = makeRefreshInstrumentation(wideEvent: mock, shouldSuppressFailure: { true })
+        let pendingFlow = AuthV2TokenRefreshWideEventData(failingStep: .recoverInvalidToken,
+                                                          globalData: WideEventGlobalData(id: "refresh-suppressed"))
+        pendingFlow.recoveryDuration = .startingNow()
+        mock.startFlow(pendingFlow)
+
+        instrumentation.completeInvalidTokenRecovery(outcome: .notAttempted, error: nil)
+
+        XCTAssertTrue(mock.completions.isEmpty)
+        XCTAssertEqual(mock.discarded.count, 1)
+        XCTAssertTrue(mock.getAllFlowData(AuthV2TokenRefreshWideEventData.self).isEmpty)
+    }
+
     // MARK: - Token adoption source
 
     func testAdoptionPixelParameters_adoptionSource_absentWhenUnset() {
@@ -488,7 +544,10 @@ final class AuthV2WideEventTests: XCTestCase {
     }
 
     private func makeRefreshInstrumentation(wideEvent: WideEventManaging,
-                                            isFeatureEnabled: @escaping () -> Bool = { true }) -> AuthV2TokenRefreshInstrumenting {
-        DefaultAuthV2TokenRefreshInstrumentation(wideEvent: wideEvent, isFeatureEnabled: isFeatureEnabled)
+                                            isFeatureEnabled: @escaping () -> Bool = { true },
+                                            shouldSuppressFailure: @escaping () -> Bool = { false }) -> AuthV2TokenRefreshInstrumenting {
+        DefaultAuthV2TokenRefreshInstrumentation(wideEvent: wideEvent,
+                                                 isFeatureEnabled: isFeatureEnabled,
+                                                 shouldSuppressFailure: shouldSuppressFailure)
     }
 }

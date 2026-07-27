@@ -27,32 +27,6 @@ class WebViewTransition: TabSwitcherTransition {
         return self.tabSwitcherViewController.collectionView.convert(attributes.frame,
                                                                      to: self.tabSwitcherViewController.view)
     }
-    
-    fileprivate func previewFrame(for cellBounds: CGSize, preview: UIImage) -> CGRect {
-        guard tabSwitcherSettings.isGridViewEnabled else {
-            return CGRect(origin: .zero, size: cellBounds)
-        }
-        
-        let previewAspectRatio = preview.size.height / preview.size.width
-        let containerAspectRatio = (cellBounds.height - TabViewCell.Constants.cellHeaderHeight) / cellBounds.width
-        let strechedVerically = containerAspectRatio < previewAspectRatio
-        
-        var targetSize = CGSize.zero
-        if strechedVerically {
-            targetSize.width = cellBounds.width
-            targetSize.height = cellBounds.width * previewAspectRatio
-        } else {
-            targetSize.height = cellBounds.height - TabViewCell.Constants.cellHeaderHeight
-            targetSize.width = targetSize.height / previewAspectRatio
-        }
-        
-        let targetFrame = CGRect(x: 0,
-                                 y: TabViewCell.Constants.cellHeaderHeight,
-                                 width: targetSize.width,
-                                 height: targetSize.height - 8)
-            .insetBy(dx: 4, dy: 4)
-        return targetFrame
-    }
 }
 
 class FromWebViewTransition: WebViewTransition {
@@ -138,7 +112,9 @@ class FromWebViewTransition: WebViewTransition {
                 let containerFrame = self.tabSwitcherCellFrame(for: layoutAttr)
                 self.imageContainer.frame = containerFrame
                 self.imageContainer.layer.cornerRadius = TabViewCell.Constants.cellCornerRadius
-                self.imageView.frame = self.previewFrame(for: containerFrame.size, preview: preview)
+                self.imageView.frame = WebViewTransitionGeometry.previewFrame(for: containerFrame.size,
+                                                                              previewSize: preview.size,
+                                                                              isGridViewEnabled: self.tabSwitcherSettings.isGridViewEnabled)
             }
             
             UIView.addKeyframe(withRelativeStartTime: 0.3, relativeDuration: 0.7) {
@@ -205,8 +181,9 @@ class ToWebViewTransition: WebViewTransition {
         
         let preview = tabSwitcherViewController.previewsSource.preview(for: tab)
         if let preview = preview {
-            imageView.frame = previewFrame(for: imageContainer.bounds.size,
-                                           preview: preview)
+            imageView.frame = WebViewTransitionGeometry.previewFrame(for: imageContainer.bounds.size,
+                                                                     previewSize: preview.size,
+                                                                     isGridViewEnabled: tabSwitcherSettings.isGridViewEnabled)
         } else {
             imageView.frame = CGRect(origin: .zero, size: imageContainer.bounds.size)
         }
@@ -222,8 +199,8 @@ class ToWebViewTransition: WebViewTransition {
             self.imageContainer.frame = mainViewController.viewCoordinator.contentContainer.frame
             self.imageContainer.layer.cornerRadius = 0
 
-            self.imageView.frame = self.destinationImageFrame(for: webViewFrame.size,
-                                                              preview: preview)
+            self.imageView.frame = WebViewTransitionGeometry.destinationImageFrame(for: webViewFrame.size,
+                                                                                   previewSize: preview?.size)
             self.imageView.alpha = 1
             
             self.solidBackground.alpha = 1
@@ -233,19 +210,6 @@ class ToWebViewTransition: WebViewTransition {
             self.imageContainer.removeFromSuperview()
             transitionContext.completeTransition(true)
         })
-    }
-    
-    private func destinationImageFrame(for containerSize: CGSize,
-                                       preview: UIImage?) -> CGRect {
-        guard let preview = preview else {
-            return CGRect(origin: .zero, size: containerSize)
-        }
-        
-        let targetFrame = CGRect(x: 0,
-                                 y: 0,
-                                 width: containerSize.width,
-                                 height: containerSize.width * (preview.size.height / preview.size.width))
-        return targetFrame
     }
 
 }

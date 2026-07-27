@@ -149,6 +149,7 @@ final class WireGuardAdapterEventHandlerTests: XCTestCase {
         var shownMessages: [String] = []
 
         func showConnectedNotification(serverLocation: String?, snoozeEnded: Bool) {}
+        func showStrictRoutingReminderNotification() {}
         func showReconnectingNotification() {}
         func showConnectionFailureNotification() {}
         func showSnoozingNotification(duration: TimeInterval) {}

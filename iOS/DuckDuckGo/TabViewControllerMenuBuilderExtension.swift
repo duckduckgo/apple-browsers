@@ -111,7 +111,7 @@ extension TabViewController {
             entries.append(printEntry)
         }
 
-        if let domain = self.privacyInfo?.domain {
+        if let domain = Self.privacyProtectionToggleDomain(for: privacyInfo) {
             entries.append(self.buildToggleProtectionEntry(forDomain: domain))
         }
 
@@ -165,6 +165,7 @@ extension TabViewController {
             } else {
                 entries.append(buildAIChatsEntry(useSmallIcon: useSmallIcon))
             }
+            entries.append(buildAIChatFeedbackEntry(useSmallIcon: useSmallIcon))
             entries.append(buildAIChatSettingsEntry(useSmallIcon: useSmallIcon, useAIGlyph: true))
 
             entries.append(.separator)
@@ -245,10 +246,12 @@ extension TabViewController {
     }
 
     private func buildDownloadsEntry(useSmallIcon: Bool = true) -> BrowsingMenuEntry {
-        .regular(name: UserText.actionDownloads,
-                 image: useSmallIcon ? DesignSystemImages.Glyphs.Size16.downloads : DesignSystemImages.Glyphs.Size24.downloads,
-                 showNotificationDot: AppDependencyProvider.shared.downloadManager.unseenDownloadsAvailable,
-                 action: { [weak self] in
+        let downloadManager = AppDependencyProvider.shared.downloadManager
+
+        return .regular(name: UserText.actionDownloads,
+                        image: useSmallIcon ? DesignSystemImages.Glyphs.Size16.downloads : DesignSystemImages.Glyphs.Size24.downloads,
+                        showNotificationDot: downloadManager.hasDownloadsNeedingAttention,
+                        action: { [weak self] in
             self?.onOpenDownloadsAction()
         })
     }
@@ -422,6 +425,17 @@ extension TabViewController {
         })
     }
 
+    private func buildCopyLinkEntry(for url: URL) -> BrowsingMenuEntry {
+        let title = UserText.copyLinkTitle(for: url, isPrivacyProtectionEnabled: privacyConfigurationManager.privacyConfig.isProtected(domain: url.host))
+        return BrowsingMenuEntry.regular(name: title,
+                                         image: DesignSystemImages.Glyphs.Size24.link,
+                                         action: { [weak self] in
+            guard let self else { return }
+            self.onCopyAction(forUrl: url)
+            Pixel.fire(pixel: .browsingMenuCopy)
+        })
+    }
+
     private func onNewTabAction() {
         Pixel.fire(pixel: .browsingMenuNewTab, withAdditionalParameters: [
             PixelParameters.browsingMode: BrowsingMode.normal.pixelParamValue
@@ -571,7 +585,17 @@ extension TabViewController {
             self?.openAIChatHistory()
         })
     }
-    
+
+    private func buildAIChatFeedbackEntry(useSmallIcon: Bool = true) -> BrowsingMenuEntry {
+        .regular(name: UserText.actionAIChatFeedback,
+                 accessibilityLabel: UserText.actionAIChatFeedback,
+                 image: useSmallIcon ? DesignSystemImages.Glyphs.Size16.feedback : DesignSystemImages.Glyphs.Size24.feedback,
+                 action: { [weak self] in
+            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsMenuFeedbackTapped)
+            self?.openAIChatFeedback()
+        })
+    }
+
     /// Mirrors the Plus-menu "New Voice Chat": starts a Duck.ai voice session.
     private func buildAINewVoiceChatEntry(useSmallIcon: Bool = true) -> BrowsingMenuEntry {
         .regular(name: UserText.aiChatHeaderNewVoiceChatTitle,
@@ -851,6 +875,23 @@ extension TabViewController {
         delegate?.tabDidRequestAIChatHistory(tab: self, source: .browserMenu)
     }
 
+    private func openAIChatFeedback() {
+        delegate?.tabDidRequestAIChatFeedback(tab: self)
+    }
+
+    /// The domain the "Disable/Enable Privacy Protection" browsing-menu toggle applies to,
+    /// or `nil` when the toggle should not be offered.
+    ///
+    /// The toggle is suppressed on the DuckDuckGo SERP to match the Privacy Dashboard, which is
+    /// also unavailable there (see `MainViewController.onPrivacyIconPressed` and
+    /// `PrivacyIconLogic.privacyIcon(for:)`, which shows the Dax logo instead of a shield on the
+    /// SERP). Offering a way to disable protection with no dashboard to re-enable it from is
+    /// confusing, and DuckDuckGo Search does not track the user regardless.
+    static func privacyProtectionToggleDomain(for privacyInfo: PrivacyInfo?) -> String? {
+        guard let privacyInfo, !privacyInfo.url.isDuckDuckGoSearch else { return nil }
+        return privacyInfo.domain
+    }
+
     private func buildToggleProtectionEntry(forDomain domain: String, useSmallIcon: Bool = true) -> BrowsingMenuEntry {
         let config = ContentBlocking.shared.privacyConfigurationManager.privacyConfig
         let isProtected = !config.isUserUnprotected(domain: domain)
@@ -1063,6 +1104,7 @@ extension TabViewController: BrowsingMenuEntryBuilding {
             buildNewAIChatEntry(withSmallIcon: false),
             buildAINewVoiceChatEntry(useSmallIcon: false),
             chatsEntry,
+            buildAIChatFeedbackEntry(useSmallIcon: false),
             buildOpenSettingsEntry(useSmallIcon: false)
         ]
     }
@@ -1073,6 +1115,11 @@ extension TabViewController: BrowsingMenuEntryBuilding {
     
     func makeShareEntry() -> BrowsingMenuEntry {
         buildShareEntry(useSmallIcon: false)
+    }
+
+    func makeCopyLinkEntry() -> BrowsingMenuEntry? {
+        guard let link = validLink else { return nil }
+        return buildCopyLinkEntry(for: link.url)
     }
     
     func makePrintEntry() -> BrowsingMenuEntry {
@@ -1132,7 +1179,7 @@ extension TabViewController: BrowsingMenuEntryBuilding {
     }
     
     func makeToggleProtectionEntry() -> BrowsingMenuEntry? {
-        guard let domain = privacyInfo?.domain else { return nil }
+        guard let domain = Self.privacyProtectionToggleDomain(for: privacyInfo) else { return nil }
         return buildToggleProtectionEntry(forDomain: domain, useSmallIcon: false)
     }
     
@@ -1173,5 +1220,15 @@ extension TabViewController: BrowsingMenuEntryBuilding {
                 self.delegate?.tabDidRequestSetYouTubeAdBlockingEnabled(true, tab: self)
             }
         })
+    }
+}
+
+extension URL {
+
+    var urlForCopyLinkAction: URL {
+        guard isDuckPlayer, let (videoID, timestamp) = youtubeVideoParams else {
+            return self
+        }
+        return .youtube(videoID, timestamp: timestamp)
     }
 }

@@ -70,7 +70,7 @@ struct PlayerView_Previews: PreviewProvider {
 
     @MainActor
     struct PlayerPreview: View {
-        static let videoURL = Bundle.main.url(forResource: "add-to-dock-demo", withExtension: "mp4")!
+        static let videoURL = Bundle.main.url(forResource: "Rebranded-AddToDock-tutorial", withExtension: "mp4")!
         @State var model = VideoPlayerCoordinator(configuration: VideoPlayerConfiguration())
 
         var body: some View {

@@ -21,6 +21,7 @@ import UIKit
 import SwiftUI
 import DesignResourcesKit
 import Combine
+import BrowserServicesKit
 import PrivacyConfig
 import Bookmarks
 import Persistence
@@ -84,6 +85,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
 
     let appSettings: AppSettings
     private let featureFlagger: FeatureFlagger
+    private let isFloatingUIEnabled: Bool
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let aiChatSettings: AIChatSettingsProvider
     private let aiChatSyncCleaner: AIChatSyncCleaning?
@@ -92,6 +94,8 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     private let syncPromoManager: SyncPromoManaging?
     private let aiChatSyncIntroSheetPresenter: AIChatSyncIntroSheetPresenting
     private let recentModalPromptStatusProvider: RecentModalPromptStatusProviding?
+    private let featureDiscovery: FeatureDiscovery
+    private let autocompletePixels = AutocompleteSuggestionsPixels()
 
     // MARK: - Manager Components
 
@@ -158,10 +162,12 @@ final class UnifiedInputContentContainerViewController: UIViewController {
          syncService: DDGSyncing? = nil,
          aiChatSyncCleaner: AIChatSyncCleaning? = nil,
          recentModalPromptStatusProvider: RecentModalPromptStatusProviding? = nil,
-         aiChatSyncIntroSheetPresenter: AIChatSyncIntroSheetPresenting = AIChatSyncIntroSheetPresenter()) {
+         aiChatSyncIntroSheetPresenter: AIChatSyncIntroSheetPresenting = AIChatSyncIntroSheetPresenter(),
+         featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery()) {
         self.switchBarHandler = switchBarHandler
         self.appSettings = appSettings
         self.featureFlagger = featureFlagger
+        self.isFloatingUIEnabled = FloatingUIManager(featureFlagger: featureFlagger).isFloatingUIEnabled
         self.privacyConfigurationManager = privacyConfigurationManager
         self.aiChatSettings = aiChatSettings
         self.aiChatSyncCleaner = aiChatSyncCleaner
@@ -172,6 +178,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
                                                                   privacyConfigurationManager: privacyConfigurationManager) }
         self.aiChatSyncIntroSheetPresenter = aiChatSyncIntroSheetPresenter
         self.recentModalPromptStatusProvider = recentModalPromptStatusProvider
+        self.featureDiscovery = featureDiscovery
         self.isUsingTopBarPosition = appSettings.currentAddressBarPosition == .top
         self.isAdjustedForTopBar = self.isUsingTopBarPosition
 
@@ -262,18 +269,39 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             activationResolveTrigger.send(())
             syncDuckAISurfaceWithSettings()
             duckAISurface?.refreshRecents()
+        } else {
+            fireSearchSuggestionsDisplayPixels()
         }
+    }
+
+    /// Fires the local-suggestion display pixels over the results shown this session. The `setActive`
+    /// guard dedups the repeated dismiss calls, so a normal editing session fires these once.
+    private func fireSearchSuggestionsDisplayPixels() {
+        autocompletePixels.fireDisplayPixels(for: searchLoader?.result.all ?? [])
     }
 
     /// Re-checks the Chat Suggestions gate on every focus: this VC is built once per browser session
     /// (`viewWillAppear` only fires once), so without this, toggling the setting wouldn't take effect
     /// until the app restarts.
     private func syncDuckAISurfaceWithSettings() {
-        if featureFlagger.isFeatureOn(.aiChatSuggestions) && aiChatSettings.isChatSuggestionsEnabled {
-            attachDuckAISurfaceIfNeeded()
-        } else {
+        guard shouldAttachDuckAISurface else {
             detachDuckAISurfaceFromSingleHost()
+            return
         }
+        // Rebuild a stale surface so each sub-source's gate re-evaluates and content from a
+        // now-disabled sub-source is cleared; otherwise attach on first focus.
+        if let duckAISurface, !duckAISurface.reflectsCurrentSettings {
+            rebuildDuckAISuggestionsCoordinator()
+        } else {
+            attachDuckAISurfaceIfNeeded()
+        }
+    }
+
+    /// The surface hosts both Duck.ai sub-sources (chat recents + URL/search hits), so it attaches
+    /// when *either* toggle is on; each sub-source then gates itself independently.
+    private var shouldAttachDuckAISurface: Bool {
+        featureFlagger.isFeatureOn(.aiChatSuggestions)
+            && (aiChatSettings.isChatSuggestionsEnabled || appSettings.autocomplete)
     }
 
     /// The host's current content state, so the dismiss path can pick the right NTP handoff.
@@ -354,7 +382,9 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         hostingController.view.translatesAutoresizingMaskIntoConstraints = false
         addChild(hostingController)
         contentContainerView.addSubview(hostingController.view)
-        let top = hostingController.view.topAnchor.constraint(equalTo: contentContainerView.topAnchor, constant: pinnedChromeTopConstant)
+        // In floating UI, pin chrome to the safe-area guide for the top inset; otherwise it adds no inset.
+        let chromeTopAnchor = isFloatingUIEnabled ? contentContainerView.safeAreaLayoutGuide.topAnchor : contentContainerView.topAnchor
+        let top = hostingController.view.topAnchor.constraint(equalTo: chromeTopAnchor, constant: pinnedChromeTopConstant)
         chromeTopConstraint = top
         let height = hostingController.view.heightAnchor.constraint(equalToConstant: currentChromeReservedHeight)
         chromeHeightConstraint = height
@@ -480,7 +510,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     private func setUpContentContainer() {
         view.addSubview(contentContainerView)
         contentContainerView.translatesAutoresizingMaskIntoConstraints = false
-        let topAnchor: NSLayoutYAxisAnchor = FloatingUIManager(featureFlagger: featureFlagger).isFloatingUIEnabled
+        let topAnchor: NSLayoutYAxisAnchor = isFloatingUIEnabled
             ? view.topAnchor
             : view.safeAreaLayoutGuide.topAnchor
 
@@ -573,8 +603,9 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             isAddressBarAtBottom: !isUsingTopBarPosition,
             favoritesProvider: { [weak self] in self?.makeSearchFavoritesController() },
             onSelectRow: { [weak self] id in
-                guard let suggestion = source.suggestion(forRowID: id) else { return }
-                self?.delegate?.unifiedInputEditingStateDidSelectSuggestion(suggestion)
+                guard let self, let suggestion = source.suggestion(forRowID: id) else { return }
+                self.fireSearchSuggestionClickPixel(for: suggestion)
+                self.delegate?.unifiedInputEditingStateDidSelectSuggestion(suggestion)
             },
             onDeleteRow: { [weak self, weak loader] id in
                 guard let self,
@@ -689,8 +720,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     private func attachDuckAISurfaceIfNeeded() {
         guard duckAISurface == nil,
               let host = unifiedSuggestionsHost,
-              featureFlagger.isFeatureOn(.aiChatSuggestions),
-              aiChatSettings.isChatSuggestionsEnabled,
+              shouldAttachDuckAISurface,
               let dependencies = suggestionTrayDependencies else { return }
 
         let surface = DuckAISuggestionsSurfaceProvider(
@@ -1023,6 +1053,16 @@ extension UnifiedInputContentContainerViewController {
         aiChatSyncIntroSheetPresenter.present(from: self) { [weak self] in
             self?.delegate?.unifiedInputEditingStateDidRequestSyncSetup()
         }
+    }
+
+    /// Fires the click pixel for a tapped Search-surface suggestion. `.askAIChat` gets its own daily
+    /// pixel (needs feature-discovery params), so it's fired here after the standard mapping.
+    private func fireSearchSuggestionClickPixel(for suggestion: Suggestion) {
+        autocompletePixels.fireClickPixel(for: suggestion)
+        guard case .askAIChat = suggestion else { return }
+        autocompletePixels.fireAskAIChatClickPixel(
+            isExperimentalExperience: aiChatSettings.isAIChatSearchInputUserSettingsEnabled,
+            additionalParameters: featureDiscovery.addToParams([:], forFeature: .aiChat))
     }
 
     private func fireDuckAISuggestionClickPixel(for suggestion: Suggestion) {

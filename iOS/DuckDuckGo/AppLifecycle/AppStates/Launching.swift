@@ -172,6 +172,7 @@ struct Launching: LaunchingHandling {
                                     freemiumPIRDebugSettings: freemiumPIRDebugSettings)
         let configurationService = RemoteConfigurationService()
         let crashCollectionService = CrashCollectionService(featureFlagger: featureFlagger)
+        let launchTimeMetricsService = LaunchTimeMetricsService(featureFlagger: featureFlagger)
         let statisticsService = StatisticsService()
 
         let productSurfaceTelemetry = PixelProductSurfaceTelemetry(featureFlagger: featureFlagger, dailyPixelFiring: DailyPixel.self)
@@ -218,6 +219,7 @@ struct Launching: LaunchingHandling {
                                                             winBackOfferService: winBackOfferService,
                                                             freemiumPIREligibilityChecker: freemiumPIREligibilityChecker,
                                                             freemiumDBPUserStateManager: dbpService.freemiumDBPUserStateManager,
+                                                            profileStateManager: dbpService.profileStateManager,
                                                             subscriptionDataReporter: reportingService.subscriptionDataReporter,
                                                             remoteMessagingImageLoader: remoteMessagingImageLoader,
                                                             idleReturnEligibilityManager: idleReturnEligibilityManager,
@@ -255,6 +257,14 @@ struct Launching: LaunchingHandling {
         )
         let subscriptionPromoPresenter = SubscriptionPromoPresenter(coordinator: subscriptionPromoCoordinator)
 
+        // Subscription promo for existing users (7+ days since install) who have never seen a subscription offer
+        let subscriptionPromoExistingUserCoordinator = SubscriptionPromoExistingUserCoordinator(
+            daxDialogs: daxDialogs,
+            featureFlagger: featureFlagger,
+            subscriptionManager: AppDependencyProvider.shared.subscriptionManager
+        )
+        let subscriptionPromoExistingUserPresenter = SubscriptionPromoPresenter(coordinator: subscriptionPromoExistingUserCoordinator)
+
         // Initialise modal prompts coordination
         let omniBarFocuser = OmniBarFocuserProvider()
         let modalPromptCoordinationService = ModalPromptCoordinationFactory.makeService(
@@ -276,6 +286,8 @@ struct Launching: LaunchingHandling {
                 winBackOfferCoordinator: winBackOfferService.coordinator,
                 subscriptionPromoPresenter: subscriptionPromoPresenter,
                 subscriptionPromoCoordinator: subscriptionPromoCoordinator,
+                subscriptionPromoExistingUserPresenter: subscriptionPromoExistingUserPresenter,
+                subscriptionPromoExistingUserCoordinator: subscriptionPromoExistingUserCoordinator,
                 userScriptsDependencies: contentBlockingService.userScriptsDependencies,
                 omniBarFocuser: omniBarFocuser
             )
@@ -314,6 +326,7 @@ struct Launching: LaunchingHandling {
                                               freemiumPIREligibilityChecker: freemiumPIREligibilityChecker,
                                               freemiumPIRDebugSettings: freemiumPIRDebugSettings,
                                               freemiumDBPUserStateManager: dbpService.freemiumDBPUserStateManager,
+                                              profileStateManager: dbpService.profileStateManager,
                                               modalPromptCoordinationService: modalPromptCoordinationService,
                                               mobileCustomization: mobileCustomization,
                                               productSurfaceTelemetry: productSurfaceTelemetry,
@@ -359,6 +372,7 @@ struct Launching: LaunchingHandling {
                                reportingService: reportingService,
                                subscriptionService: subscriptionService,
                                crashCollectionService: crashCollectionService,
+                               launchTimeMetricsService: launchTimeMetricsService,
                                maliciousSiteProtectionService: maliciousSiteProtectionService,
                                statisticsService: statisticsService,
                                keyValueFileStoreService: appKeyValueFileStoreService,
@@ -372,6 +386,12 @@ struct Launching: LaunchingHandling {
 
         // Clean up wide event data at launch
         launchTaskManager.register(task: WideEventLaunchCleanupTask(wideEventService: wideEventService))
+        launchTaskManager.register(task: BlockLaunchTask(name: "Initialize PIR Secure Vault") { taskContext in
+            Task {
+                await dbpService.prepareSecureVaultResourcesAtLaunch()
+                taskContext.finish()
+            }
+        })
 
         // MARK: - Final Configuration
         // Complete the configuration process and set up the main window
@@ -391,6 +411,15 @@ struct Launching: LaunchingHandling {
 #endif
 
         logAppLaunchTime()
+
+#if DEBUG
+        if LaunchOptionsHandler().shouldOpenPIRDashboardForTesting {
+            let mainCoordinator = mainCoordinator
+            Task { @MainActor in
+                mainCoordinator.presentDataBrokerProtectionDashboard()
+            }
+        }
+#endif
         // Keep this init method minimal and think twice before adding anything here.
         // - Use AppConfiguration for one-time setup.
         // - Use a service for functionality that persists throughout the app's lifecycle.

@@ -112,7 +112,7 @@ private struct PickerCard: View {
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
 
-                RebrandedOnboardingView.OnboardingSearchExperiencePicker(isDuckAISelected: $viewModel.isDuckAISelected)
+                OnboardingView.OnboardingSearchExperiencePicker(isDuckAISelected: $viewModel.isDuckAISelected)
 
                 Text(UserText.newAddressBarPickerRefreshFooter)
                     .daxFootnoteRegular()

@@ -70,6 +70,19 @@ protocol DownloadManaging {
     func stopMonitoringDownloadsDirectoryChanges()
 }
 
+extension DownloadManaging {
+    var hasUnseenActiveDownloads: Bool {
+        // `.downloadStarted` is posted just before the session flips to running.
+        downloadList.contains { !$0.temporary && !$0.hasBeenSeenInDownloads }
+    }
+}
+
+extension DownloadManager {
+    var hasDownloadsNeedingAttention: Bool {
+        hasUnseenActiveDownloads || unseenDownloadsAvailable
+    }
+}
+
 class DownloadManager: DownloadManaging {
 
     struct UserInfoKeys {
@@ -159,7 +172,14 @@ class DownloadManager: DownloadManaging {
     }
 
     func markAllDownloadsSeen() {
+        let hadDownloadsNeedingAttention = hasDownloadsNeedingAttention
+        downloadList
+            .filter { !$0.temporary }
+            .forEach { $0.hasBeenSeenInDownloads = true }
         unseenDownloadsAvailable = false
+        if hadDownloadsNeedingAttention {
+            notificationCenter.post(name: .downloadsSeen, object: nil, userInfo: nil)
+        }
     }
     
     private func move(_ download: Download, toPath path: URL) {
@@ -256,7 +276,7 @@ extension DownloadManager: DownloadDelegate {
         var userInfo: [AnyHashable: Any] = [UserInfoKeys.download: download]
         if let error = error {
             userInfo[UserInfoKeys.error] = error
-        } else if !download.temporary {
+        } else if !download.temporary && !download.hasBeenSeenInDownloads {
             unseenDownloadsAvailable = true
         }
 
@@ -276,6 +296,7 @@ extension NSNotification.Name {
     static let downloadStarted: NSNotification.Name = Notification.Name(rawValue: "com.duckduckgo.notification.downloadStarted")
     static let downloadFinished: NSNotification.Name = Notification.Name(rawValue: "com.duckduckgo.notification.downloadFinished")
     static let downloadsDirectoryChanged: NSNotification.Name = Notification.Name(rawValue: "com.duckduckgo.notification.downloadsDirectoryChanged")
+    static let downloadsSeen: NSNotification.Name = Notification.Name(rawValue: "com.duckduckgo.notification.downloadsSeen")
 }
 
 

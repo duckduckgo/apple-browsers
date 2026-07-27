@@ -1,4 +1,20 @@
 {
+    "m_ios_dbp_secure-vault_deferred-init-succeeded": {
+        "description": "Fired daily and count when deferred secure vault initialization completes successfully.",
+        "owners": ["quanganhdo"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "trigger",
+                "description": "The app lifecycle entry point that triggered deferred secure vault initialization",
+                "type": "string",
+                "enum": ["launch", "appActive", "dashboard", "backgroundTask"]
+            }
+        ]
+    },
     "m_ios_dbp_optout_stage_start": {
         "description": "Fired at the start stage of an opt-out attempt.",
         "owners": ["quanganhdo", "THISISDINOSAUR"],
@@ -1160,6 +1176,13 @@
         "owners": ["quanganhdo"],
         "triggers": ["other"],
         "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_dbp_freemium_settings_entry_point_impression": {
+        "description": "Fires when the freemium Personal Information Removal entry point is shown to an eligible user in Settings. Used to count entry-point exposure for the freemium funnel dashboard.",
+        "owners": ["jozsef-vesza"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion", "pixelSource"]
     },
     "m_dbp_freemium_settings_entry_point_clicked": {

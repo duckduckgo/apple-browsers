@@ -137,6 +137,14 @@ final class CookiePopupProtectionOptInPromoDelegate: InternalPromoDelegate {
             return .noChange
         }
 
+        // A/B experiment: this is the last point both arms share before diverging, so enroll here.
+        // `resolveCohort` assigns + enrolls the user; `control` is held back (dialog suppressed), while
+        // `treatment`/unassigned fall through to the current presentation. Skipped for debug force-shows.
+        if !force,
+           featureFlagger.resolveCohort(for: FeatureFlag.cookiePopupOptInDialogExperiment) as? FeatureFlag.CookiePopupOptInDialogCohort == .control {
+            return .noChange
+        }
+
         // Feature state when shown — unchanged until the user confirms, so reuse it for the confirmation pixel too.
         let autoconsentEnabled = browserTabViewController.cookiePopupProtectionPreferences.isAutoconsentEnabled
 

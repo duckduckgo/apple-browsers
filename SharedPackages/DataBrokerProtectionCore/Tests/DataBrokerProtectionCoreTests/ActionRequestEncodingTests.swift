@@ -214,6 +214,87 @@ final class ActionRequestEncodingTests: XCTestCase {
         XCTAssertNil(data["emailData"])
     }
 
+    func testWhenActionElementsContainBooleans_thenTheyEncodeAsJSONBooleansNotNumbers() throws {
+        // Regression: booleans decoded from JSON bridge to NSNumber. When the custom encoder
+        // (CodableExtension) matched `Int` before `Bool`, `NSNumber(true) as? Int` succeeded and
+        // `true`/`false` were re-encoded as `1`/`0`. That broke content-scope-scripts' strict
+        // `element.multiple === true` check, so only the first element was ever clicked.
+        // This exercises the nested-in-array encoder path (elements[]).
+        let stepJSON = """
+            {
+                "stepType": "scan",
+                "actions": [
+                    {
+                        "actionType": "click",
+                        "id": "click-1",
+                        "elements": [
+                            {
+                                "type": "button",
+                                "selector": ".see-more",
+                                "multiple": true,
+                                "failSilently": false,
+                                "passthroughCount": 3
+                            }
+                        ]
+                    }
+                ]
+            }
+            """
+        let step = try JSONDecoder().decode(Step.self, from: Data(stepJSON.utf8))
+        let action = try XCTUnwrap(step.actions.first)
+
+        let params = Params(state: ActionRequest(action: action, data: .userData(makeProfileQuery(), nil, nil, [:])))
+        let rawAction = try XCTUnwrap((try params.toDictionary()["state"] as? [String: Any])?["action"] as? [String: Any])
+        let element = try XCTUnwrap((rawAction["elements"] as? [[String: Any]])?.first)
+
+        // Booleans must stay JSON booleans, both true and false.
+        XCTAssertTrue(isJSONBoolean(element["multiple"]), "`multiple` must encode as a JSON boolean, not a number")
+        XCTAssertEqual(element["multiple"] as? Bool, true)
+        XCTAssertTrue(isJSONBoolean(element["failSilently"]), "`failSilently` must encode as a JSON boolean, not a number")
+        XCTAssertEqual(element["failSilently"] as? Bool, false)
+
+        // And genuine integers must NOT be misclassified as booleans by the fix.
+        XCTAssertFalse(isJSONBoolean(element["passthroughCount"]), "integers must not be coerced to booleans")
+        XCTAssertEqual(element["passthroughCount"] as? Int, 3)
+
+        // Sanity: string fields still pass through.
+        XCTAssertEqual(element["selector"] as? String, ".see-more")
+    }
+
+    func testWhenActionContainsTopLevelBoolean_thenItEncodesAsJSONBooleanNotNumber() throws {
+        // Same corruption, but via the top-level object encoder path (keyed container).
+        let stepJSON = """
+            {
+                "stepType": "scan",
+                "actions": [
+                    {
+                        "actionType": "click",
+                        "id": "click-1",
+                        "elements": [ { "type": "button", "selector": ".x" } ],
+                        "topLevelFlag": true
+                    }
+                ]
+            }
+            """
+        let step = try JSONDecoder().decode(Step.self, from: Data(stepJSON.utf8))
+        let action = try XCTUnwrap(step.actions.first)
+
+        let params = Params(state: ActionRequest(action: action, data: .userData(makeProfileQuery(), nil, nil, [:])))
+        let rawAction = try XCTUnwrap((try params.toDictionary()["state"] as? [String: Any])?["action"] as? [String: Any])
+
+        XCTAssertTrue(isJSONBoolean(rawAction["topLevelFlag"]), "top-level booleans must encode as JSON booleans, not numbers")
+        XCTAssertEqual(rawAction["topLevelFlag"] as? Bool, true)
+    }
+
+    /// True only for genuine JSON booleans. `JSONSerialization` decodes JSON `true`/`false` into a
+    /// `CFBoolean`-backed `NSNumber`, whereas JSON numbers decode into a `CFNumber`-backed one. A plain
+    /// `as? Bool` cannot distinguish them (`NSNumber(1) as? Bool == true`), so we check the CoreFoundation
+    /// type id directly — the only reliable way to assert "this stayed a boolean, not a 1".
+    private func isJSONBoolean(_ value: Any?) -> Bool {
+        guard let number = value as? NSNumber else { return false }
+        return CFGetTypeID(number) == CFBooleanGetTypeID()
+    }
+
     private func makeProfileQuery() -> ProfileQuery {
         ProfileQuery(firstName: "John", lastName: "Doe", city: "Miami", state: "FL", birthYear: 1985)
     }

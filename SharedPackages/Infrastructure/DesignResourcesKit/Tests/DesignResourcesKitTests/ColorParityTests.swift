@@ -203,7 +203,7 @@ private extension ColorParityTests {
             for color in SharedDesignSystemColor.allCases {
                 record(&colors, "designSystem.\(color).\(scenario.name)", NSColor(designSystemColor: color, palette: scenario.palette))
             }
-            for color in SharedSingleUseColor.allCases {
+            for color in SingleUseColor.allCases {
                 record(&colors, "singleUse.\(color).\(scenario.name)", NSColor(singleUseColor: color, palette: scenario.palette))
             }
             for color in BaseColor.allCases {

@@ -61,9 +61,11 @@ struct StartupOnboardingDecision {
          resumeStepStore: (any KeyedStoring<OnboardingStoringKeys>)? = nil) {
         let resumeStepStore: any KeyedStoring<OnboardingStoringKeys> = if let resumeStepStore { resumeStepStore } else { UserDefaults.app.keyedStoring() }
         switch resumeStepStore.resumeStep {
-        case .browserComparison, .aiComparison, .addToDockPromo, .appIconSelection,
+        case .downloadReasonSelection, .setDefaultBrowser, .aiIntro, .addToDockPromo, .appIconSelection,
              .addressBarPositionSelection, .searchExperienceSelection,
-             .duckAIQuerySelection, .interludeDuckAI:
+             .duckAIQuerySelection, .interludeDuckAI,
+             .searchPrivacySettingsSelection, .aiSearchSettingsSelection, .aiModelSelection,
+             .toggleInputModeSelection, .keepDuckAISelection, .duckPlayerSelection:
             shouldShowOnboarding = true
             return
         case .duckAIAnswerStep:
@@ -101,6 +103,10 @@ class MainViewController: UIViewController {
     }
 
     weak var findInPageView: FindInPageView?
+
+    private var isFindInPageChromeLockActive = false
+    private var didFindInPageHideChrome = false
+    private var findInPageDismissalTimer: Timer?
 
     weak var notificationView: UIView?
 
@@ -151,6 +157,7 @@ class MainViewController: UIViewController {
     let toggleModeStorage: ToggleModeStoring
     var fireExecutor: FireExecuting
     private var launchTabObserver: LaunchTabNotification.Observer?
+    private var isDownloadMenuAlertVisible: Bool?
     var isNewTabPageVisible: Bool {
         newTabPageViewController != nil
     }
@@ -221,6 +228,13 @@ class MainViewController: UIViewController {
     private lazy var floatingDomainCapsuleController = FloatingDomainCapsuleController { [weak self] in
         self?.setBarsHidden(false, animated: true, customAnimationDuration: nil)
     }
+    /// Drives the floating-UI capsule morph frame-by-frame during animated bar reveal/hide so the
+    /// pill physically morphs into/out of the bars, matching the scroll transition.
+    private let chromeMorphAnimator = ChromeMorphAnimator()
+    /// The last true chrome-visibility fraction requested (1 = fully shown, 0 = hidden). Tracked
+    /// separately from container alpha because the floating capsule morph drives chrome alpha with a
+    /// non-linear handoff ramp, so alpha is no longer a reliable source for the real percent.
+    private var lastChromeVisibilityPercent: CGFloat = 1
     private var lastForegroundEntryDate = Date.distantPast
     private var syncRecoveryPromptService: SyncRecoveryPromptService?
     private var currentNTPEscapeHatch: EscapeHatchModel?
@@ -298,6 +312,7 @@ class MainViewController: UIViewController {
     let freemiumPIREligibilityChecker: FreemiumPIREligibilityChecking
     let freemiumPIRDebugSettings: FreemiumPIRDebugSettings
     let freemiumDBPUserStateManager: FreemiumDBPUserStateManaging
+    let profileStateManager: DBPProfileStateManaging
     let remoteMessagingDebugHandler: RemoteMessagingDebugHandling
 
     var appDidFinishLaunchingStartTime: CFAbsoluteTime?
@@ -356,6 +371,7 @@ class MainViewController: UIViewController {
     lazy var minimalChromeSettings: MinimalChromeSettingsProviding = MinimalChromeSettings()
     var unifiedToggleInputCoordinator: UnifiedToggleInputCoordinator?
     var unifiedInputStateStore: UnifiedInputStateStore?
+    var isPaidAIChatEnabledForSwipe = false
     var unifiedToggleInputCancellables = Set<AnyCancellable>()
     var unifiedToggleInputFloatingReturnKeyKeyboardBottomConstraint: NSLayoutConstraint?
     var unifiedToggleInputFloatingReturnKeyInputTopConstraint: NSLayoutConstraint?
@@ -392,6 +408,26 @@ class MainViewController: UIViewController {
     private(set) var darkReaderFeatureSettings: DarkReaderFeatureSettings
 
     let onboardingManager: OnboardingManaging
+    
+    private var searchTokenExperiment: SearchTokenExperiment {
+        SearchTokenExperiment(featureFlagger: featureFlagger, statisticsStore: statisticsStore)
+    }
+
+    private lazy var searchTokenFetcher: SearchTokenFetcher = {
+        let settings = SearchTokenExperimentSettings(privacyConfigurationManager: privacyConfigurationManager)
+        return SearchTokenFetcher(requester: SearchTokenRequest(tokenURL: .searchToken),
+                                  ttlProvider: { settings.tokenTTL },
+                                  windowProvider: { settings.refreshWindow })
+    }()
+
+    /// Whether the ad-blocking rollout's Duck Player default (disable) should be applied at onboarding
+    /// completion. It runs only when the rollout is active *and* the user didn't set Duck Player
+    /// themselves during onboarding — the download-reason Block Ads flow includes a Duck
+    /// Player step, and overriding it here would silently discard the user's choice.
+    private var shouldApplyAdBlockingRolloutDuckPlayerDefault: Bool {
+        adBlockingAvailability.areAdBlockingDefaultsActive
+            && onboardingManager.currentDownloadReason != .blockAds
+    }
 
     init(
         privacyConfigurationManager: PrivacyConfigurationManaging,
@@ -445,6 +481,7 @@ class MainViewController: UIViewController {
         freemiumPIREligibilityChecker: FreemiumPIREligibilityChecking,
         freemiumPIRDebugSettings: FreemiumPIRDebugSettings,
         freemiumDBPUserStateManager: FreemiumDBPUserStateManaging,
+        profileStateManager: DBPProfileStateManaging,
         launchSourceManager: LaunchSourceManaging,
         winBackOfferVisibilityManager: WinBackOfferVisibilityManaging,
         aichatFullModeFeature: AIChatFullModeFeatureProviding = AIChatFullModeFeature(),
@@ -533,6 +570,7 @@ class MainViewController: UIViewController {
         self.freemiumPIREligibilityChecker = freemiumPIREligibilityChecker
         self.freemiumPIRDebugSettings = freemiumPIRDebugSettings
         self.freemiumDBPUserStateManager = freemiumDBPUserStateManager
+        self.profileStateManager = profileStateManager
         self.launchSourceManager = launchSourceManager
         self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
         self.mobileCustomization = mobileCustomization
@@ -556,6 +594,11 @@ class MainViewController: UIViewController {
         tabManager.fireModeDelegate = self
         self.fireExecutor.delegate = self
         bindSyncService()
+    }
+
+    deinit {
+        chromeMorphAnimator.cancel()
+        findInPageDismissalTimer?.invalidate()
     }
 
     func loadFindInPage() {
@@ -595,12 +638,12 @@ class MainViewController: UIViewController {
 
     private var expandedOmniBarDismissTapGesture: UITapGestureRecognizer?
 
-    lazy var newTabDaxDialogFactory: NewTabDaxDialogsProvider = {
-        NewTabDaxDialogsProvider(
-            featureFlagger: featureFlagger,
+    lazy var newTabDaxDialogFactory: NewTabDaxDialogFactory = {
+        NewTabDaxDialogFactory(
             delegate: self,
             daxDialogsFlowCoordinator: daxDialogsManager,
-            onboardingPixelReporter: contextualOnboardingPixelReporter)
+            onboardingPixelReporter: contextualOnboardingPixelReporter
+        )
     }()
 
     lazy var newTabPageDependencies: SuggestionTrayViewController.NewTabPageDependencies = {
@@ -702,8 +745,10 @@ class MainViewController: UIViewController {
         registerForPageRefreshPatterns()
         registerForSyncFeatureFlagsUpdates()
         registerForAppBackgroundNotification()
+        registerForDownloadMenuAlertNotifications()
 
         decorate()
+        refreshDownloadMenuAlertState(animated: false)
 
         swipeTabsCoordinator?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
 
@@ -735,8 +780,8 @@ class MainViewController: UIViewController {
 
         // Automation bypass: a UI-test override can mark onboarding already-completed without ever
         // calling onboardingCompleted(controller:), so apply the rollout Duck Player defaults here too.
-        if case .overridden(.uiTests(completed: true)) = onboardingStatus {
-            appSettings.applyAdBlockingRolloutDuckPlayerDefaultsIfNeeded(rolloutActive: adBlockingAvailability.areAdBlockingDefaultsActive)
+        if case .overridden(.uiTests(completed: true)) = onboardingStatus, ProcessInfo.isRunningUITests {
+            appSettings.applyAdBlockingRolloutDuckPlayerDefaultsIfNeeded(rolloutActive: shouldApplyAdBlockingRolloutDuckPlayerDefault)
         }
 
         isStartupOnboardingPending = startupOnboardingDecision.shouldShowOnboarding
@@ -853,7 +898,16 @@ class MainViewController: UIViewController {
                                                     tabPreviewsSource: previewsSource,
                                                     appSettings: appSettings,
                                                     omnibarDependencies: omnibarDependencies,
-                                                    floatingUIManager: floatingUIManager) { [weak self] tab in
+                                                    floatingUIManager: floatingUIManager,
+                                                    liveTabControllerProvider: { [weak self] tab in
+                                                        self?.tabManager.controller(for: tab, createIfNeeded: true)
+                                                    },
+                                                    inputStateProvider: { [weak self] tab in
+                                                        self?.unifiedInputStateStore?.state(for: tab.uid) ?? TabInputState()
+                                                    },
+                                                    isPaidAIChatEnabledProvider: { [weak self] in
+                                                        self?.isPaidAIChatEnabledForSwipe ?? false
+                                                    }) { [weak self] tab in
 
             guard tab !== self?.tabManager.currentTabsModel.currentTab else {
                 return
@@ -868,11 +922,22 @@ class MainViewController: UIViewController {
             self?.currentTab?.aiChatContextualSheetCoordinator.dismissSheet()
             self?.newTab()
         } onSwipeStarted: { [weak self] in
-            self?.performCancel()
-            self?.hideKeyboard()
+            self?.performCancel(animated: false)
+            self?.hideKeyboard(animated: false)
             self?.updatePreviewForCurrentTab()
         }
 
+        swipeTabsCoordinator?.auxiliarySwipeViews = [
+            viewCoordinator.unifiedToggleInputContainer,
+            viewCoordinator.aiChatTabChatHeaderContainer,
+        ]
+        swipeTabsCoordinator?.liveSwipeChromeViews = [
+            viewCoordinator.unifiedToggleInputContainer,
+            viewCoordinator.aiChatTabChatHeaderContainer,
+            viewCoordinator.unifiedInputContentContainer,
+            viewCoordinator.navigationBarCollectionView,
+            viewCoordinator.toolbar,
+        ]
         installTabSwipeOverlay()
     }
 
@@ -893,26 +958,27 @@ class MainViewController: UIViewController {
         if !viewCoordinator.logoContainer.isHidden,
            self.tabManager.current()?.link == nil,
            let tab = self.tabManager.currentTabsModel.currentTab {
-            // Home screen with logo
+            // Preview is optional; run completion even if the snapshot fails so the switcher opens on the first tap.
             if let image = viewCoordinator.logoContainer.createImageSnapshot(inBounds: viewCoordinator.contentContainer.frame) {
                 previewsSource.update(preview: image, forTab: tab)
-                completion?()
             }
+            completion?()
 
         } else if let currentTab = self.tabManager.current(), currentTab.link != nil {
             // Web view
             currentTab.preparePreview(completion: { image in
-                guard let image else { return }
-                self.previewsSource.update(preview: image,
-                                           forTab: currentTab.tabModel)
+                if let image {
+                    self.previewsSource.update(preview: image,
+                                               forTab: currentTab.tabModel)
+                }
                 completion?()
             })
         } else if let tab = self.tabManager.currentTabsModel.currentTab {
             // Favorites, etc
             if let image = viewCoordinator.contentContainer.createImageSnapshot() {
                 previewsSource.update(preview: image, forTab: tab)
-                completion?()
             }
+            completion?()
         } else {
             completion?()
         }
@@ -961,10 +1027,9 @@ class MainViewController: UIViewController {
     func loadTabsBarIfNeeded() {
         guard isPad else { return }
 
-        let controller = TabsBarViewController.createFromXib()
+        let controller = TabsBarViewController.create()
 
         addChild(controller)
-        controller.view.frame = viewCoordinator.tabBarContainer.bounds
         controller.delegate = self
         controller.historyManager = historyManager
         controller.fireproofing = fireproofing
@@ -974,7 +1039,14 @@ class MainViewController: UIViewController {
         controller.tabManager = tabManager
         controller.daxDialogsManager = daxDialogsManager
         controller.fireModeCapability = fireModeCapability
+        controller.view.translatesAutoresizingMaskIntoConstraints = false
         viewCoordinator.tabBarContainer.addSubview(controller.view)
+        NSLayoutConstraint.activate([
+            controller.view.leadingAnchor.constraint(equalTo: viewCoordinator.tabBarContainer.leadingAnchor),
+            controller.view.trailingAnchor.constraint(equalTo: viewCoordinator.tabBarContainer.trailingAnchor),
+            controller.view.topAnchor.constraint(equalTo: viewCoordinator.tabBarContainer.topAnchor),
+            controller.view.bottomAnchor.constraint(equalTo: viewCoordinator.tabBarContainer.bottomAnchor),
+        ])
         tabsBarController = controller
         controller.didMove(toParent: self)
         bindAIChatChromeChipToCurrentTab()
@@ -999,8 +1071,12 @@ class MainViewController: UIViewController {
     }
 
     private func refreshAIChatChromeChip() {
-        guard let tabsBarController else { return }
         let isSheetPresented = currentTab?.aiChatContextualSheetCoordinator.isSheetPresented ?? false
+        // iPhone-only: iPad's tabs-bar chip already indicates sheet state, so avoid a duplicate.
+        if UIDevice.current.userInterfaceIdiom == .phone {
+            omniBar.barView.updateAIChatButtonForContextualSheet(isPresented: isSheetPresented)
+        }
+        guard let tabsBarController else { return }
         tabsBarController.updateAIChatChipState(isContextualSheetPresented: isSheetPresented)
     }
 
@@ -1036,13 +1112,13 @@ class MainViewController: UIViewController {
         )
     }
 
-    func presentNetworkProtectionStatusSettingsModal(origin: SubscriptionFunnelOrigin) {
+    func presentNetworkProtectionStatusSettingsModal(entryPoint: VPNEntryPoint, scrollToStrictRouting: Bool = false) {
         Task {
             if let canShowVPNInUI = try? await subscriptionManager.isFeatureIncludedInSubscription(.networkProtection),
                canShowVPNInUI {
-                segueToVPN()
+                segueToVPN(source: entryPoint.screenSource, scrollToStrictRouting: scrollToStrictRouting)
             } else {
-                segueToDuckDuckGoSubscription(origin: origin.rawValue)
+                segueToDuckDuckGoSubscription(origin: entryPoint.subscriptionFunnelOrigin.rawValue)
             }
         }
     }
@@ -1067,6 +1143,9 @@ class MainViewController: UIViewController {
 
 
     var keyboardShowing = false
+    // Set at keyboardWillChangeFrame time (before keyboardDidShow) so the web-keyboard scroll guard
+    // engages during the show animation, not just after it.
+    private var isKeyboardOverlappingContent = false
     private var didSendGestureDismissPixel: Bool = false
     var latestKeyboardFrame: CGRect = .zero
 
@@ -1075,6 +1154,8 @@ class MainViewController: UIViewController {
         keyboardShowing = true
         productSurfaceTelemetry.keyboardActive()
         dismissContextualSheetIfKeyboardIsForBackgroundContent()
+        // Keyboard up. Fix minimal chrome bar spot.
+        refreshMinimalChromeBottomAnchor()
     }
 
     private func dismissContextualSheetIfKeyboardIsForBackgroundContent() {
@@ -1129,6 +1210,12 @@ class MainViewController: UIViewController {
             latestKeyboardFrame = .zero
             adjustUI(withKeyboardFrame: .zero)
         }
+
+        // Checked here (not `keyboardWillHide`) so the find navigator's visibility has settled: it stays visible when a
+        // search is confirmed, but is gone when the user dismisses find — which also hides the keyboard.
+        if #available(iOS 16.0, *) {
+            hideChromeForConfirmedFindInPage()
+        }
     }
 
     private var isAnyAITabUTIState: Bool {
@@ -1144,6 +1231,57 @@ class MainViewController: UIViewController {
         return isAnyAITabUTIState
     }
 
+    /// Keyboard came from omnibar, not web page.
+    private var isKeyboardOwnedByOmnibar: Bool {
+        if omniBar.isTextFieldEditing { return true }
+        if unifiedToggleInputCoordinator?.isOmnibarSession == true { return true }
+        if let firstResponder = UIResponder.currentFirstResponder(),
+           firstResponder.isInViewHierarchy(of: viewCoordinator.omniBar.barView) {
+            return true
+        }
+        return false
+    }
+
+    /// Plain bottom bar. No AI, no UTI, no floating toolbar.
+    private var isStandardBottomOmnibar: Bool {
+        appSettings.currentAddressBarPosition.isBottom
+            && !isAnyAITabUTIState
+            && unifiedToggleInputCoordinator?.isOmnibarSession != true
+            && !viewCoordinator.isOmnibarInToolbar
+    }
+
+    /// Bottom bar hidden behind web keyboard.
+    var isBottomAddressBarHiddenForWebKeyboard: Bool {
+        isStandardBottomOmnibar && (keyboardShowing || isKeyboardOverlappingContent) && !isKeyboardOwnedByOmnibar
+    }
+
+    /// Minimal chrome bar: stick to bottom behind keyboard. Lift above keyboard only when omnibar has
+    /// focus. Returns true when pinned to bottom. Safe to call any time.
+    @discardableResult
+    func refreshMinimalChromeBottomAnchor(duration: TimeInterval = 0.2,
+                                          curve: UIView.AnimationOptions = .curveEaseInOut) -> Bool {
+        guard isInMinimalChromeLayout, isStandardBottomOmnibar else { return false }
+        let pinToBottom = !isKeyboardOwnedByOmnibar
+        // Already right? Skip work.
+        guard viewCoordinator.isNavigationBarContainerBottomKeyboardBased == pinToBottom else { return pinToBottom }
+        viewCoordinator.updateMinimalChromeBottomAnchor(pinnedToScreenBottom: pinToBottom)
+        if pinToBottom {
+            // Bar dropped to the screen bottom: clear the keyboard-driven layout left from omnibar editing.
+            currentTab?.webView.scrollView.contentInset.bottom = 0
+            currentTab?.borderView.bottomOffset = 0
+            if appSettings.currentAddressBarPosition.isBottom,
+               let ntp = newTabPageViewController,
+               !ntp.isShowingLogo {
+                ntp.additionalSafeAreaInsets.bottom = viewCoordinator.omniBar.barView.expectedHeight
+            }
+        }
+        UIView.animate(withDuration: duration, delay: 0, options: curve) {
+            self.viewCoordinator.navigationBarContainer.superview?.layoutIfNeeded()
+            self.currentTab?.borderView.layoutIfNeeded()
+        }
+        return pinToBottom
+    }
+
     private func setUpToolbarButtonsActions() {
 
         viewCoordinator.toolbarBackButton.addTarget(self, action: #selector(onBackPressed), for: .touchUpInside)
@@ -1155,6 +1293,35 @@ class MainViewController: UIViewController {
         viewCoordinator.toolbarFireButton.addTarget(self, action: #selector(performCustomizationActionForToolbar), for: .touchUpInside)
 
         viewCoordinator.menuToolbarButton.addGestureRecognizer(UILongPressGestureRecognizer(target: self, action: #selector(onMenuToolbarLongPressed)))
+    }
+
+    private func registerForDownloadMenuAlertNotifications() {
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(downloadMenuAlertStateDidChange),
+                                               name: .downloadStarted,
+                                               object: nil)
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(downloadMenuAlertStateDidChange),
+                                               name: .downloadFinished,
+                                               object: nil)
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(downloadMenuAlertStateDidChange),
+                                               name: .downloadsSeen,
+                                               object: nil)
+    }
+
+    @objc private func downloadMenuAlertStateDidChange() {
+        refreshDownloadMenuAlertState(animated: true)
+    }
+
+    private func refreshDownloadMenuAlertState(animated: Bool) {
+        let isVisible = AppDependencyProvider.shared.downloadManager.hasDownloadsNeedingAttention
+        let shouldAnimate = animated && isDownloadMenuAlertVisible != isVisible
+        isDownloadMenuAlertVisible = isVisible
+
+        viewCoordinator.menuToolbarButton.setMenuAlertVisible(isVisible, animated: shouldAnimate)
+        viewCoordinator.omniBar.barView.menuButton.setMenuAlertVisible(isVisible, animated: shouldAnimate)
+        unifiedToggleInputCoordinator?.viewController.setMenuAlertVisible(isVisible, animated: shouldAnimate)
     }
 
     private func registerForPageRefreshPatterns() {
@@ -1275,7 +1442,10 @@ class MainViewController: UIViewController {
     @objc func refreshViewsBasedOnDuckPlayerPresentation(notification: Notification) {
         guard let isVisible = notification.userInfo?[DuckPlayerNativeUIPresenter.NotificationKeys.isVisible] as? Bool else { return }
         duckPlayerEntryPointVisible = isVisible
-        refreshViewsBasedOnAddressBarPosition(appSettings.currentAddressBarPosition)
+        // Pill visibility only drives the omnibar separator. A full address-bar refresh here would
+        // clobber scroll-hidden chrome (the bar reappears over the floating capsule) and disrupt an
+        // active UTI / the NTP.
+        updateChromeForDuckPlayer()
     }
 
     func refreshViewsBasedOnAddressBarPosition(_ position: AddressBarPosition) {
@@ -1298,7 +1468,7 @@ class MainViewController: UIViewController {
         omniBar.adjust(for: position)
         adjustNewTabPageSafeAreaInsets(for: position)
         updateChromeForDuckPlayer()
-        updateFloatingDomainCapsuleVisibility(for: currentBarsVisibility)
+        updateFloatingDomainCapsuleVisibility(for: lastChromeVisibilityPercent)
     }
 
     private func currentFloatingDomainText() -> String? {
@@ -1317,7 +1487,55 @@ class MainViewController: UIViewController {
                                                isMinimalChromeLayout: isInMinimalChromeLayout,
                                                domain: currentFloatingDomainText(),
                                                barsVisibilityPercent: barsVisibilityPercent,
+                                               expandedFrame: floatingBarExpandedFrame(),
+                                               reduceMotion: UIAccessibility.isReduceMotionEnabled,
                                                in: view)
+    }
+
+    /// True when the floating domain capsule morph is driving the chrome transition (floating UI on,
+    /// not minimal chrome / unified toggle input / AI tab).
+    private var isFloatingCapsuleActive: Bool {
+        FloatingUILayoutPolicy.shouldShowFloatingDomainCapsule(
+            isFloatingUIEnabled: isFloatingUIEnabled,
+            isUnifiedToggleInputActive: unifiedToggleInputCoordinator?.isActive == true,
+            isAITab: currentTab?.isAITab == true,
+            isMinimalChromeLayout: isInMinimalChromeLayout
+        )
+    }
+
+    /// The bar's stable resting rect (in `view` coordinates) that the floating domain capsule morphs
+    /// from/to. Computed from layout metrics rather than the live bar frame so it stays fixed while
+    /// the bar slides off-screen during the transition.
+    private func floatingBarExpandedFrame() -> CGRect {
+        // Match the correct size for the capsule.
+        if appSettings.currentAddressBarPosition.isBottom, viewCoordinator.isOmnibarInToolbar {
+            let capsuleFrame = viewCoordinator.toolbar.restingCapsuleFrame(in: view)
+            if !capsuleFrame.isEmpty {
+                return capsuleFrame
+            }
+        }
+
+        let expectedHeight = viewCoordinator.omniBar.barView.expectedHeight
+        let width = viewCoordinator.omniBar.barView.frame.width
+        let centerX = view.bounds.midX
+        let centerY: CGFloat
+        switch appSettings.currentAddressBarPosition {
+        case .top:
+            centerY = view.safeAreaInsets.top + expectedHeight / 2
+        case .bottom:
+            centerY = view.bounds.maxY - view.safeAreaInsets.bottom - expectedHeight / 2
+        }
+        return CGRect(x: centerX - width / 2, y: centerY - expectedHeight / 2, width: width, height: expectedHeight)
+    }
+
+    /// Alpha for the real chrome (nav bar / tabs / toolbar) during a bars transition. In the floating
+    /// capsule morph the chrome stays hidden through the resize band and only fades in over
+    /// `[handoffStart, 1]`, so the morph pill owns the visible transition. Everywhere else it tracks
+    /// `percent` linearly (unchanged behaviour).
+    private func chromeAlpha(for percent: CGFloat) -> CGFloat {
+        guard isFloatingCapsuleActive, !UIAccessibility.isReduceMotionEnabled else { return percent }
+        let handoffStart = FloatingDomainCapsuleController.handoffStart
+        return max(0, min(1, (percent - handoffStart) / (1 - handoffStart)))
     }
 
     private func shouldResetNavBarContainerBottomForTopPosition() -> Bool {
@@ -1330,6 +1548,11 @@ class MainViewController: UIViewController {
         switch position {
         case .top: break // no-op
         case .bottom:
+            // Re-assert bottom-bar spacing so the field isn't stuck in the top-glass (clear) state.
+            // A Duck Player round-trip can leave `isUsingSmallTopSpacing` stale, dropping the field's
+            // opaque fill (and its contrast) until restart.
+            viewCoordinator.omniBar.adjust(for: .bottom)
+            viewCoordinator.omniBar.barView.restoreFloatingFieldAppearance()
             // Use higher delays then refreshViewsBasedOnAddressBarPosition
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.31) {
                 if self.duckPlayerEntryPointVisible {
@@ -1398,6 +1621,7 @@ class MainViewController: UIViewController {
         adjustUI(withKeyboardFrame: keyboardFrame, in: duration, animationCurve: animationCurve)
     }
 
+    // swiftlint:disable:next cyclomatic_complexity
     func adjustUI(withKeyboardFrame keyboardFrame: CGRect, in duration: TimeInterval = 0.2, animationCurve: UIView.AnimationOptions = .curveEaseInOut) {
         var keyboardHeight = keyboardFrame.size.height
 
@@ -1406,6 +1630,7 @@ class MainViewController: UIViewController {
         let safeAreaFrame = view.safeAreaLayoutGuide.layoutFrame.insetBy(dx: 0, dy: -additionalSafeAreaInsets.bottom)
         let intersection = safeAreaFrame.intersection(keyboardFrameInView)
         let keyboardVisible = intersection.height > 0
+        isKeyboardOverlappingContent = keyboardVisible
         keyboardHeight = keyboardFrameInView.height
         updateUnifiedToggleInputKeyboardVisibility(keyboardVisible)
 
@@ -1430,6 +1655,27 @@ class MainViewController: UIViewController {
         if !isNavigationBarEffectivelyAtBottom {
             if !isAITabCollapsed, let coordinator, coordinator.isOmnibarSession {
                 self.viewCoordinator.constraints.navigationBarContainerHeight.constant = baseInputHeight
+            }
+            return
+        }
+
+        // Minimal chrome: bar sticks to bottom. Pinned = done. Editing = fall through.
+        if isInMinimalChromeLayout, isStandardBottomOmnibar {
+            if refreshMinimalChromeBottomAnchor(duration: duration, curve: animationCurve) {
+                return
+            }
+        }
+
+        if isStandardBottomOmnibar, keyboardVisible, !isKeyboardOwnedByOmnibar {
+            // Web keyboard. Leave bar at rest so keyboard hides it.
+            viewCoordinator.constraints.navigationBarContainerHeight.constant = omniBarHeight
+            if let currentTab {
+                currentTab.webView.scrollView.contentInset.bottom = 0
+                currentTab.borderView.bottomOffset = 0
+            }
+            UIView.animate(withDuration: duration, delay: 0, options: animationCurve) {
+                self.viewCoordinator.navigationBarContainer.superview?.layoutIfNeeded()
+                self.currentTab?.borderView.layoutIfNeeded()
             }
             return
         }
@@ -1632,16 +1878,14 @@ class MainViewController: UIViewController {
         tabManager: tabManager,
         lastActiveTabStore: lastActiveTabStore,
         idleReturnEligibilityManager: idleReturnEligibilityManager,
-        featureFlagger: featureFlagger,
         afterInactivityOptionAdapter: afterInactivityOptionAdapter,
         lastTabShortcutAdapter: lastTabShortcutAdapter,
         instrumentation: ntpAfterIdleInstrumentation
     )
 
-    /// Re-presents the tab switcher after a burn. No-op when the feature is off or the user has left the NTP.
+    /// Re-presents the tab switcher after a burn. No-op when the NTP isn't showing.
     private func restoreTabSwitcherOnlyHatchAfterBurn() {
-        guard featureFlagger.isFeatureOn(.escapeHatchHideShortcut),
-              let controller = newTabPageViewController,
+        guard let controller = newTabPageViewController,
               let currentTab = tabManager.currentTabsModel.currentTab,
               currentTab.fireTab == false else {
             return
@@ -1669,11 +1913,10 @@ class MainViewController: UIViewController {
         }
     }
 
-    /// True for escape-hatch burns while the hide feature is on — these handle focus themselves in
-    /// `restoreFocusModeAfterBurnIfNeeded`, so the generic post-fire keyboard fallback is skipped for them.
-    /// With the feature off, escape-hatch burns keep the original fire behaviour.
-    private func isEscapeHatchHideBurn(_ request: FireRequest) -> Bool {
-        request.source == .escapeHatch && featureFlagger.isFeatureOn(.escapeHatchHideShortcut)
+    /// True for escape-hatch burns — these handle focus themselves in `restoreFocusModeAfterBurnIfNeeded`,
+    /// so the generic post-fire keyboard fallback is skipped for them.
+    private func isEscapeHatchBurn(_ request: FireRequest) -> Bool {
+        request.source == .escapeHatch
     }
 
     private func buildEscapeHatch(openedAfterIdle: Bool) -> EscapeHatchModel? {
@@ -1702,7 +1945,7 @@ class MainViewController: UIViewController {
         viewCoordinator.logoContainer.isHidden = false
         findInPageView?.isHidden = true
         chromeManager.detach()
-        
+
         currentTab?.dismiss()
         removeHomeScreen()
 
@@ -1724,7 +1967,7 @@ class MainViewController: UIViewController {
             tabManager.save()
         }
 
-        let newTabDaxDialogFactory = NewTabDaxDialogsProvider(featureFlagger: featureFlagger, delegate: self, daxDialogsFlowCoordinator: daxDialogsManager, onboardingPixelReporter: contextualOnboardingPixelReporter)
+        let newTabDaxDialogFactory = NewTabDaxDialogFactory(delegate: self, daxDialogsFlowCoordinator: daxDialogsManager, onboardingPixelReporter: contextualOnboardingPixelReporter)
         let narrowLayoutInLandscape = aiChatSettings.isAIChatSearchInputUserSettingsEnabled
 
         let controller = NewTabPageViewController(isFocussedState: false,
@@ -1780,6 +2023,7 @@ class MainViewController: UIViewController {
         // ie remove back/forward and show bookmarks/passwords
         // but also before any other UI updates so that data from the old tab doesn't find its way into the new one
         refreshControls()
+        updateScrollInteractionIfNeeded()
         presentContextualOnboardingDialogIfNeeded()
 
         // It's possible for this to be called when in the background of the
@@ -1857,6 +2101,7 @@ class MainViewController: UIViewController {
                 tabViewModel: tabManager.viewModelForCurrentTab(),
                 pixelSource: .browsing,
                 fireContext: .default(daxDialogsManager: daxDialogsManager),
+                isSingleTab: tabManager.currentTabsModel.count == 1,
                 browsingMode: tabManager.currentBrowsingMode,
                 onConfirm: { [weak self] fireRequest in
                     guard let self else { return }
@@ -2194,6 +2439,7 @@ class MainViewController: UIViewController {
         let tab = tabManager.add(url: url, inheritedAttribution: inheritedAttribution)
         tab.inferredOpenerContext = .external
         tab.isVoiceModeRequested = voiceMode
+        tab.isDuckAIDeepLinkSurfaceRequested = url?.isDuckAIFeedbackOpen == true || url?.isDuckAIChatProtectionOpen == true
 
         // Mark tab as external launch if opened from external URL or shortcut
         if fromExternalLink {
@@ -2222,6 +2468,7 @@ class MainViewController: UIViewController {
         guard let tab else { return }
         previousTab?.aiChatContextualSheetCoordinator.dismissSheet()
         previousTab?.tabModel.openedAfterIdle = false
+        dismissSystemFindNavigator(for: previousTab)
         previousTab?.dismiss()
         hideNotificationBarIfBrokenSitePromptShown()
 
@@ -2283,7 +2530,12 @@ class MainViewController: UIViewController {
         }
 
         refreshControls()
+        updateScrollInteractionIfNeeded()
     }
+
+    /// iOS 26 scroll-edge chrome interactions, tracked together so they can be torn down and
+    /// reattached as a unit whenever the visible page changes (see `updateScrollInteractionIfNeeded`).
+    private var scrollEdgeInteractions: [UIInteraction] = []
 
     private func addToContentContainer(controller: UIViewController) {
         viewCoordinator.contentContainer.isHidden = false
@@ -2405,7 +2657,7 @@ class MainViewController: UIViewController {
                 viewCoordinator.hideAITabChrome()
                 applyUnifiedInputChromeBackground(.standardChrome)
             }
-            updateFloatingDomainCapsuleVisibility(for: currentBarsVisibility)
+            updateFloatingDomainCapsuleVisibility(for: lastChromeVisibilityPercent)
             return
         }
 
@@ -2439,7 +2691,7 @@ class MainViewController: UIViewController {
         }
 
         updateBrowsingMenuHeaderDataSource()
-        updateFloatingDomainCapsuleVisibility(for: currentBarsVisibility)
+        updateFloatingDomainCapsuleVisibility(for: lastChromeVisibilityPercent)
     }
 
     private func updateBrowsingMenuHeaderDataSource() {
@@ -2471,11 +2723,12 @@ class MainViewController: UIViewController {
         }
     }
 
-    func dismissOmniBar() {
+    /// - Parameter animated: animate the UTI collapse; pass `false` when a full-screen surface (tab switcher / new tab) immediately follows.
+    func dismissOmniBar(animated: Bool = true) {
         hideSuggestionTray()
         teardownPopoverSuggestions()
         viewCoordinator.omniBar.endEditing()
-        deactivateUnifiedToggleInputOmnibarSession()
+        deactivateUnifiedToggleInputOmnibarSession(animated: animated)
         refreshOmniBar()
     }
 
@@ -2500,9 +2753,21 @@ class MainViewController: UIViewController {
   
     var orientationPixelWorker: DispatchWorkItem?
 
+    /// A chrome hide/show morph left in flight by a fling just before rotating would keep scrubbing
+    /// the omnibar/capsule layout each frame against mid-rotation geometry, causing a flicker.
+    /// Settle it to its committed state now; the completion block resets the bars as usual.
+    func cancelMorphAnimatorIfNeedded() {
+        if chromeMorphAnimator.isAnimating {
+            chromeMorphAnimator.cancel()
+            applyBarsVisibilityState(lastChromeVisibilityPercent, postChromeVisibilityNotification: false)
+        }
+    }
+    
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
         super.viewWillTransition(to: size, with: coordinator)
         isUTIRotating = true
+
+        cancelMorphAnimatorIfNeedded()
 
         let isKeyboardShowing = omniBar.isTextFieldEditing
         if isKeyboardShowing && !AppWidthObserver.shared.isPad {
@@ -2546,38 +2811,63 @@ class MainViewController: UIViewController {
             }
             self.swipeTabsCoordinator?.invalidateLayout()
             self.deferredFireOrientationPixel()
-        } completion: { _ in
-            toolbarSnapshot?.removeFromSuperview()
-
-            self.resetBarsAfterTransitionAnimationIfNeeded(wasKeyboardShowing: isKeyboardShowing)
-
-            self.omniBar.barView.textField.suppressResignFirstResponder = false
-            if isKeyboardShowing {
-                self.omniBar.beginEditing(animated: false)
+        } completion: { [weak self] _ in
+            guard let self else {
+                assertionFailure()
+                return
             }
-
-            if self.isInMinimalChromeLayout {
-                self.viewCoordinator.constraints.toolbarBottom.constant = self.minimalChromeBottomHeight
-                if self.viewCoordinator.addressBarPosition.isBottom {
-                    self.currentTab?.updateWebViewBottomAnchor(for: self.currentBarsVisibility)
-                }
-            }
-
-            ViewHighlighter.updatePositions()
-            // iOS reframes the keyboard post-rotation with no animation, so the UTI height can only
-            // be corrected now; ease it so it settles into place instead of hard-snapping.
-            UIView.animate(withDuration: 0.25, delay: 0, options: .curveEaseInOut) {
-                self.recomputeNavigationBarContainerHeightIfNeeded()
-            } completion: { _ in
-                self.isUTIRotating = false
-            }
-            self.updateFloatingReturnKeyVisibility()
+            self.viewWillTransitionAnimationComplete(
+                toolbarSnapshot: toolbarSnapshot,
+                isKeyboardShowing: isKeyboardShowing,
+                isShowingToolbar: isShowingToolbar)
         }
 
         hideNotificationBarIfBrokenSitePromptShown()
     }
 
+    private func viewWillTransitionAnimationComplete(toolbarSnapshot: UIView?,
+                                                     isKeyboardShowing: Bool,
+                                                     isShowingToolbar: Bool) {
+        toolbarSnapshot?.removeFromSuperview()
+
+        resetBarsAfterTransitionAnimationIfNeeded(wasKeyboardShowing: isKeyboardShowing)
+
+        omniBar.barView.textField.suppressResignFirstResponder = false
+        if isKeyboardShowing {
+            omniBar.beginEditing(animated: false)
+        }
+
+        if isInMinimalChromeLayout {
+            viewCoordinator.constraints.toolbarBottom.constant = minimalChromeBottomHeight
+            if viewCoordinator.addressBarPosition.isBottom {
+                currentTab?.updateWebViewBottomAnchor(for: currentBarsVisibility)
+            }
+        }
+
+        // Re-assert the bottom floating layout now rotation has settled (the mid-transition rebuild used stale geometry).
+        if isShowingToolbar, isFloatingUIEnabled, viewCoordinator.addressBarPosition.isBottom {
+            viewCoordinator.updateToolbarLayoutForAddressBarPosition(.bottom)
+            currentTab?.updateWebViewBottomAnchor(for: currentBarsVisibility)
+            view.layoutIfNeeded()
+        }
+
+        ViewHighlighter.updatePositions()
+        // iOS reframes the keyboard post-rotation with no animation, so the UTI height can only
+        // be corrected now; ease it so it settles into place instead of hard-snapping.
+        UIView.animate(withDuration: 0.25, delay: 0, options: .curveEaseInOut) {
+            self.recomputeNavigationBarContainerHeightIfNeeded()
+        } completion: { _ in
+            self.isUTIRotating = false
+        }
+        updateFloatingReturnKeyVisibility()
+    }
+
     private func resetBarsAfterTransitionAnimationIfNeeded(wasKeyboardShowing: Bool) {
+        if shouldKeepChromeHiddenForFindInPage {
+            setBarsHidden(true, animated: false, customAnimationDuration: nil)
+            return
+        }
+
         // Rotation changes the bar geometry, so the scroll-hide state can't carry across it.
         // Reset to revealed (editing and AI chrome manage their own layout).
         if !self.isCurrentTabUsingUnifiedInputAIChrome, !wasKeyboardShowing {
@@ -2599,10 +2889,12 @@ class MainViewController: UIViewController {
     }
 
     private func isMinimalChromeMode(for size: CGSize? = nil) -> Bool {
-        guard minimalChromeSettings.shouldApplyMinimalChrome(isCurrentTabAITab: currentTab?.isAITab ?? false) else { return false }
         let size = size ?? view.bounds.size
-        return !AppWidthObserver.shared.isPad
-            && (size.width > size.height)
+        return MinimalChromeModeDecision.isActive(
+            minimalChromeEnabled: minimalChromeSettings.shouldApplyMinimalChrome(isCurrentTabAITab: currentTab?.isAITab ?? false),
+            isPad: AppWidthObserver.shared.isPad,
+            isLandscape: size.width > size.height
+        )
     }
 
     private var isApplyingWidth = false
@@ -2628,7 +2920,8 @@ class MainViewController: UIViewController {
             // Do this async otherwise the toolbar buttons skew to the right
             if self.viewCoordinator.constraints.navigationBarContainerTop.constant >= 0,
                !self.isInMinimalChromeLayout,
-               !self.isCurrentTabUsingUnifiedInputAIChrome {
+               !self.isCurrentTabUsingUnifiedInputAIChrome,
+               !self.shouldKeepChromeHiddenForFindInPage {
                 self.showBars()
             }
             // If tabs have been udpated, do this async to make sure size calcs are current
@@ -2673,15 +2966,20 @@ class MainViewController: UIViewController {
         newTabPageViewController?.widthChanged()
     }
     
-    private(set) var isInMinimalChromeLayout: Bool = false
+    /// Single source of truth lives on the coordinator; mutated via `setMinimalChromeMode(_:)`.
+    var isInMinimalChromeLayout: Bool {
+        viewCoordinator.isInMinimalChromeLayout
+    }
 
     var isUsingSingleBar: Bool {
         AppWidthObserver.shared.isLargeWidth || isInMinimalChromeLayout
     }
 
     private func setMinimalChromeMode(_ enabled: Bool) {
-        isInMinimalChromeLayout = enabled
+        viewCoordinator.setMinimalChromeLayout(enabled)
         viewCoordinator.omniBar.isExpandedPhone = enabled
+        // Minimal chrome hides the toolbar capsule, so the single bar renders its own glass.
+        viewCoordinator.omniBar.barView.setFloatingMinimalChromeBar(enabled && isFloatingUIEnabled)
     }
 
     private func applyLargeWidth() {
@@ -2708,6 +3006,11 @@ class MainViewController: UIViewController {
         viewCoordinator.navigationBarContainer.transform = .identity
         viewCoordinator.omniBar.barView.setLayoutMode(.compact, animated: false)
         viewCoordinator.resetMinimalChromeLayout()
+        // Minimal chrome detached the bottom omnibar from the toolbar; fully rebuild the bottom layout
+        // so it returns to the toolbar capsule correctly hosted (top is never toolbar-hosted).
+        if isFloatingUIEnabled, appSettings.currentAddressBarPosition.isBottom {
+            viewCoordinator.updateToolbarLayoutForAddressBarPosition(.bottom)
+        }
         currentTab?.borderView.isBottomVisible = true
     }
 
@@ -2716,17 +3019,31 @@ class MainViewController: UIViewController {
         viewCoordinator.toolbar.isHidden = true
         viewCoordinator.constraints.toolbarBottom.constant = minimalChromeBottomHeight
         setMinimalChromeMode(true)
+        // The toolbar is now hidden, so move a toolbar-hosted bottom omnibar back to the nav container.
+        let didDetachOmnibarFromToolbar = viewCoordinator.isOmnibarInToolbar
+        viewCoordinator.returnOmnibarToNavigationContainerIfNeeded()
         viewCoordinator.omniBar.enterPhoneState()
         viewCoordinator.moveAddressBarToPosition(appSettings.currentAddressBarPosition)
 
         if appSettings.currentAddressBarPosition.isBottom {
-            viewCoordinator.applyMinimalChromeBottomLayout()
+            // Bar sits at bottom. Lift it only when omnibar has focus.
+            viewCoordinator.applyMinimalChromeBottomLayout(pinnedToScreenBottom: !isKeyboardOwnedByOmnibar)
         } else {
             viewCoordinator.resetMinimalChromeLayout()
         }
         currentTab?.borderView.isBottomVisible = appSettings.currentAddressBarPosition.isBottom
 
         swipeTabsCoordinator?.isEnabled = true
+
+        // Detaching the shared bar view from the toolbar leaves it orphaned; the navigation `OmniBarCell`
+        // only re-adds it via its `omniBar` didSet, so reload the swipe tabs now to re-host it rather
+        // than relying on the deferred refresh (which can leave the address bar missing after rotation).
+        if didDetachOmnibarFromToolbar {
+            swipeTabsCoordinator?.refresh(tabsModel: tabManager.currentTabsModel)
+        }
+
+        // Refresh the obscured inset so moving the bar top/bottom in landscape updates it immediately.
+        currentTab?.updateWebViewBottomAnchor(for: currentBarsVisibility)
     }
 
     @discardableResult
@@ -2987,13 +3304,14 @@ class MainViewController: UIViewController {
             ViewHighlighter.hideAll()
         }
         daxDialogsManager.fireButtonPulseCancelled()
-        // Reset omnibar editing state before creating a new tab.
-        dismissOmniBar()
+        // Tear down active editing before building the new tab; non-animated so its collapse doesn't race the new tab's focus animation.
+        dismissOmniBar(animated: false)
         hideNotificationBarIfBrokenSitePromptShown()
         currentTab?.aiChatContextualSheetCoordinator.dismissSheet()
-        currentTab?.dismiss()
 
         let previousTab = tabManager.current()
+        dismissSystemFindNavigator(for: previousTab)
+        currentTab?.dismiss()
 
         if reuseExisting, let existing = tabManager.firstHomeTab() {
             tabManager.select(existing, dismissCurrent: false)
@@ -3027,6 +3345,63 @@ class MainViewController: UIViewController {
         currentTab?.findInPage?.delegate = self
         findInPageView?.update(with: currentTab?.findInPage, updateTextField: true)
         findInPageView?.updateConstraints()
+    }
+
+    func dismissSystemFindNavigator(for tab: TabViewController?) {
+        guard #available(iOS 16.0, *), featureFlagger.isFeatureOn(.systemFindInPage) else { return }
+        rememberFindInPageQuery(for: tab)
+        tab?.webView.findInteraction?.dismissFindNavigator()
+        restoreChromeIfHiddenByFindInPage()
+    }
+
+    @available(iOS 16.0, *)
+    private func hideChromeForConfirmedFindInPage() {
+        guard featureFlagger.isFeatureOn(.systemFindInPage),
+              currentTab?.webView.findInteraction?.isFindNavigatorVisible == true,
+              !AppWidthObserver.shared.isPad || !AppWidthObserver.shared.isLargeWidth,
+              !isFindInPageChromeLockActive else { return }
+
+        isFindInPageChromeLockActive = true
+        didFindInPageHideChrome = lastChromeVisibilityPercent > 0
+        if didFindInPageHideChrome {
+            setBarsHidden(true, animated: true, customAnimationDuration: nil)
+        }
+
+        findInPageDismissalTimer = Timer.scheduledTimer(withTimeInterval: 0.2, repeats: true) { [weak self] timer in
+            guard let self else {
+                timer.invalidate()
+                return
+            }
+            guard self.currentTab?.webView.findInteraction?.isFindNavigatorVisible != true else { return }
+            self.restoreChromeIfHiddenByFindInPage()
+        }
+    }
+
+    private func restoreChromeIfHiddenByFindInPage() {
+        findInPageDismissalTimer?.invalidate()
+        findInPageDismissalTimer = nil
+
+        isFindInPageChromeLockActive = false
+        let shouldRestoreChrome = didFindInPageHideChrome
+        didFindInPageHideChrome = false
+        guard shouldRestoreChrome else { return }
+        setBarsHidden(false, animated: true, customAnimationDuration: nil)
+    }
+
+    private var shouldKeepChromeHiddenForFindInPage: Bool {
+        guard isFindInPageChromeLockActive,
+              !AppWidthObserver.shared.isPad || !AppWidthObserver.shared.isLargeWidth else { return false }
+        if #available(iOS 16.0, *) {
+            return currentTab?.webView.findInteraction?.isFindNavigatorVisible == true
+        }
+        return false
+    }
+
+    // Persist the current query so the find navigator can be prepopulated when reopened on this tab.
+    @available(iOS 16.0, *)
+    private func rememberFindInPageQuery(for tab: TabViewController?) {
+        // Store the current query as-is (including when cleared) so a deliberate clear isn't overwritten by a stale term.
+        (tab?.webView as? WebView)?.lastFindInPageQuery = tab?.webView.findInteraction?.searchText
     }
 
     func handleVoiceSearchOpenRequest(preferredTarget: VoiceSearchTarget? = nil) {
@@ -3098,6 +3473,16 @@ class MainViewController: UIViewController {
             }
             .store(in: &urlInterceptorCancellables)
 
+        NotificationCenter.default.publisher(for: .dataBrokerProtectionOpenSubscriptionFlow)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] notification in
+                let redirectURLComponents = notification.userInfo?[
+                    DataBrokerProtectionSubscriptionFlowParameter.redirectURLComponents
+                ] as? URLComponents
+                self?.presentDataBrokerProtectionSubscriptionFlow(redirectURLComponents: redirectURLComponents)
+            }
+            .store(in: &urlInterceptorCancellables)
+
         NotificationCenter.default.publisher(for: .urlInterceptAIChat)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] notification in
@@ -3126,6 +3511,45 @@ class MainViewController: UIViewController {
         launchSettings(completion: {
             $0.triggerDeepLinkNavigation(to: deepLinkTarget)
         }, deepLinkTarget: deepLinkTarget)
+    }
+
+    private func presentDataBrokerProtectionSubscriptionFlow(redirectURLComponents: URLComponents?) {
+        let subscriptionFlowViewController = makeDataBrokerProtectionSubscriptionFlowViewController(
+            redirectURLComponents: redirectURLComponents
+        )
+
+        if let settingsNavigationController = presentedViewController as? SettingsUINavigationController {
+            settingsNavigationController.pushViewController(subscriptionFlowViewController, animated: true)
+            return
+        }
+
+        let navigationController = DataBrokerProtectionSubscriptionFlowNavigationController(
+            rootViewController: subscriptionFlowViewController
+        )
+        var presenter: UIViewController = self
+        while let presentedViewController = presenter.presentedViewController {
+            presenter = presentedViewController
+        }
+        presenter.present(navigationController, animated: true)
+    }
+
+    private func makeDataBrokerProtectionSubscriptionFlowViewController(redirectURLComponents: URLComponents?) -> UIViewController {
+        let subscriptionNavigationCoordinator = SubscriptionNavigationCoordinator()
+        let viewController = UIHostingController(rootView: SubscriptionContainerViewFactory.makePurchaseFlowV2(
+            redirectURLComponents: redirectURLComponents,
+            navigationCoordinator: subscriptionNavigationCoordinator,
+            subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
+            subscriptionFeatureAvailability: subscriptionFeatureAvailability,
+            subscriptionDataReporter: subscriptionDataReporter,
+            userScriptsDependencies: userScriptsDependencies,
+            tld: AppDependencyProvider.shared.storageCache.tld,
+            internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
+            dataBrokerProtectionViewControllerProvider: dbpIOSPublicInterface,
+            wideEvent: AppDependencyProvider.shared.wideEvent,
+            featureFlagger: featureFlagger
+        ))
+        viewController.view.backgroundColor = UIColor(designSystemColor: .surface)
+        return viewController
     }
 
     private func subscribeToSettingsDeeplinkNotifications() {
@@ -3687,6 +4111,9 @@ extension MainViewController: BrowserChromeDelegate {
 
     struct ChromeAnimationConstants {
         static let duration = 0.1
+        /// Longer than `duration` so the floating capsule morph is legible; the pill grows/moves into
+        /// the bars (and back) rather than snapping across the short legacy cross-fade.
+        static let morphDuration = 0.33
     }
 
     var tabBarContainer: UIView {
@@ -3703,8 +4130,8 @@ extension MainViewController: BrowserChromeDelegate {
         updateUnifiedInputContentVisibility(for: coordinator)
     }
 
-    private func hideKeyboard() {
-        dismissOmniBar()
+    private func hideKeyboard(animated: Bool = true) {
+        dismissOmniBar(animated: animated)
         _ = findInPageView?.resignFirstResponder()
     }
 
@@ -3719,6 +4146,13 @@ extension MainViewController: BrowserChromeDelegate {
     }
     
     func setBarsVisibility(_ percent: CGFloat, animated: Bool, animationDuration: CGFloat?) {
+        // Start any morph scrub from where the chrome visually is (a scrub already in flight, or the
+        // last committed fraction) so an interruption resumes smoothly rather than snapping.
+        let fromPercent = chromeMorphAnimator.isAnimating ? chromeMorphAnimator.currentValue : lastChromeVisibilityPercent
+        lastChromeVisibilityPercent = percent
+        // Any prior scrub is superseded by this command; the new state is applied below.
+        chromeMorphAnimator.cancel()
+
         if percent < 1 {
             if omniBar.isTextFieldEditing || unifiedToggleInputCoordinator?.isOmnibarSession == true {
                 dismissOmniBar()
@@ -3729,38 +4163,40 @@ extension MainViewController: BrowserChromeDelegate {
             showMenuHighlighterIfNeeded()
         }
 
-        let updateBlock = {
-            if self.isFloatingUIEnabled {
-                self.viewCoordinator.ensureBottomOmnibarAttachedToToolbarIfNeeded()
-            }
-            self.updateToolbarConstant(percent)
-            self.updateNavBarConstant(percent)
-            self.currentTab?.updateWebViewBottomAnchor(for: percent)
-            self.updateFloatingTopNewTabPageInset(for: percent)
+        let postNotification = percent == 0 || percent == 1
 
-            self.viewCoordinator.navigationBarContainer.alpha = percent
-            self.viewCoordinator.tabBarContainer.alpha = percent
-            self.viewCoordinator.toolbar.alpha = percent
-            self.updateFloatingDomainCapsuleVisibility(for: percent)
-            
-            // Post notification only when bars are fully shown or hidden
-            if percent == 0 || percent == 1 {
-                NotificationCenter.default.post(
-                    name: .browserChromeVisibilityChanged,
-                    object: nil,
-                    userInfo: ["isHidden": percent == 0]
-                )
-            }
-        }
-           
-        if animated {
+        // The floating capsule morph geometry and its chrome-alpha handoff are non-linear in
+        // `percent`, so a single `UIView.animate` (which only interpolates the endpoints) skips the
+        // morph and the bars pop/slide in. Replay the exact per-frame state the scroll path applies
+        // by scrubbing `percent` with a display link instead.
+        let useMorphScrub = animated
+            && isFloatingCapsuleActive
+            && !UIAccessibility.isReduceMotionEnabled
+            && abs(fromPercent - percent) > 0.001
+
+        if useMorphScrub {
+            chromeMorphAnimator.animate(
+                from: fromPercent,
+                to: percent,
+                duration: animationDuration ?? ChromeAnimationConstants.morphDuration,
+                onProgress: { [weak self] progress in
+                    guard let self else { return }
+                    self.applyBarsVisibilityState(progress, postChromeVisibilityNotification: false)
+                    self.view.layoutIfNeeded()
+                },
+                onComplete: { [weak self] in
+                    guard let self else { return }
+                    self.applyBarsVisibilityState(percent, postChromeVisibilityNotification: postNotification)
+                    self.view.layoutIfNeeded()
+                })
+        } else if animated {
             self.view.layoutIfNeeded()
             UIView.animate(withDuration: animationDuration ?? ChromeAnimationConstants.duration) {
-                updateBlock()
+                self.applyBarsVisibilityState(percent, postChromeVisibilityNotification: postNotification)
                 self.view.layoutIfNeeded()
             }
         } else {
-            updateBlock()
+            applyBarsVisibilityState(percent, postChromeVisibilityNotification: postNotification)
 
             // Calling this here is important as it causes the layout to run immediately inside current run loop,
             // instead of deferring it until next update block.
@@ -3771,7 +4207,37 @@ extension MainViewController: BrowserChromeDelegate {
         }
     }
 
+    /// Applies the chrome layout/alpha/capsule state for a given visibility `percent`. Extracted so
+    /// it can be applied as a single step (legacy `UIView.animate` / non-animated) or per frame by
+    /// the floating capsule morph scrub. `.browserChromeVisibilityChanged` is posted only when
+    /// requested (the settled 0/1 endpoints), so intermediate scrub frames don't emit it.
+    private func applyBarsVisibilityState(_ percent: CGFloat, postChromeVisibilityNotification: Bool) {
+        if isFloatingUIEnabled {
+            viewCoordinator.ensureBottomOmnibarAttachedToToolbarIfNeeded()
+        }
+        updateToolbarConstant(percent)
+        updateNavBarConstant(percent)
+        currentTab?.updateWebViewBottomAnchor(for: percent)
+        updateFloatingTopNewTabPageInset(for: percent)
+
+        let chromeAlpha = chromeAlpha(for: percent)
+        viewCoordinator.navigationBarContainer.alpha = chromeAlpha
+        viewCoordinator.tabBarContainer.alpha = chromeAlpha
+        viewCoordinator.toolbar.alpha = chromeAlpha
+        updateFloatingDomainCapsuleVisibility(for: percent)
+
+        if postChromeVisibilityNotification {
+            NotificationCenter.default.post(
+                name: .browserChromeVisibilityChanged,
+                object: nil,
+                userInfo: ["isHidden": percent == 0]
+            )
+        }
+    }
+
     func setNavigationBarHidden(_ hidden: Bool) {
+        lastChromeVisibilityPercent = hidden ? 0 : 1
+        chromeMorphAnimator.cancel()
         if hidden { hideKeyboard() }
         if isFloatingUIEnabled {
             viewCoordinator.ensureBottomOmnibarAttachedToToolbarIfNeeded()
@@ -3807,9 +4273,21 @@ extension MainViewController: BrowserChromeDelegate {
     }
 
     var canHideBars: Bool {
+        if currentTab?.isLoading == true { return false }
         // Keep bars shown on the error page: the webView is hidden, so scroll can't self-heal a stuck-hidden bar.
         if currentTab?.isError == true { return false }
         return !shouldPinChrome && !daxDialogsManager.shouldShowFireButtonPulse
+    }
+
+    /// No hide/show bars on scroll. On when bar hides behind web keyboard (else page jerks), and while the system
+    /// find-in-page navigator is visible so swipes can't reveal the chrome — the user must dismiss find first.
+    var isChromeScrollInteractionDisabled: Bool {
+        if isBottomAddressBarHiddenForWebKeyboard { return true }
+        if #available(iOS 16.0, *), featureFlagger.isFeatureOn(.systemFindInPage),
+           currentTab?.webView.findInteraction?.isFindNavigatorVisible == true {
+            return true
+        }
+        return false
     }
 
     /// When `true`, the omni bar and toolbar are never hidden on scroll.
@@ -3843,20 +4321,88 @@ extension MainViewController: BrowserChromeDelegate {
         return height
     }
 
+    /// Full toolbar slot height at the bottom, measured from the screen bottom: the toolbar height (its
+    /// bottom is pinned to the safe area) plus the safe area itself. In floating bottom-address-bar mode
+    /// the omnibar is hosted inside the toolbar (so `toolbarHeight` already includes it) and the nav bar
+    /// container is hidden, so it must not be added here. A footer resized against this lands exactly on
+    /// the toolbar's top edge.
+    private var floatingToolbarSlotHeight: CGFloat {
+        toolbarHeight + view.safeAreaInsets.bottom
+    }
+
+    /// Height obscured by the resting floating domain capsule, measured from the screen bottom, with a
+    /// little extra clearance so a page-fixed footer doesn't sit flush against the pill. The capsule
+    /// only rests at the bottom in bottom-address-bar mode, and only when it is eligible to show for a
+    /// non-empty domain; otherwise a hidden footer should pin straight to the safe area.
+    private var floatingBottomCapsuleObscuredHeight: CGFloat {
+        guard appSettings.currentAddressBarPosition.isBottom,
+              isFloatingCapsuleActive,
+              let domain = currentFloatingDomainText(),
+              !domain.isEmpty else {
+            return 0
+        }
+        return view.safeAreaInsets.bottom
+            + floatingDomainCapsuleController.restObscuredHeightAboveSafeArea
+            + FloatingDomainCapsuleController.fixedElementClearance
+    }
+
+    func floatingWebViewBottomObscuredHeight(for barsVisibilityPercent: CGFloat) -> CGFloat {
+        // Minimal chrome hides the toolbar: reserve the single bar's height only for a bottom address
+        // bar (reclaimed as it scrolls away); a top address bar leaves just the safe area.
+        if isInMinimalChromeLayout {
+            guard viewCoordinator.addressBarPosition.isBottom else {
+                return view.safeAreaInsets.bottom
+            }
+            let clampedPercent = max(0, min(1, barsVisibilityPercent))
+            return max(barsMaxHeight * clampedPercent, view.safeAreaInsets.bottom)
+        }
+        return FloatingUILayoutPolicy.webViewBottomObscuredHeight(
+            barsVisibilityPercent: barsVisibilityPercent,
+            toolbarSlotHeight: floatingToolbarSlotHeight,
+            bottomCapsuleObscuredHeight: floatingBottomCapsuleObscuredHeight,
+            safeAreaBottom: view.safeAreaInsets.bottom
+        )
+    }
+
+    func floatingWebViewObscuredInsets(for barsVisibilityPercent: CGFloat) -> UIEdgeInsets {
+        UIEdgeInsets(top: floatingWebViewTopObscuredHeight(for: barsVisibilityPercent),
+                     left: 0,
+                     bottom: floatingWebViewBottomObscuredHeight(for: barsVisibilityPercent),
+                     right: 0)
+    }
+
+    /// Top region obscured by chrome: safe area, plus the omnibar for a top address bar. In minimal
+    /// chrome the top bar scrolls off, so its portion is reclaimed as it hides.
+    private func floatingWebViewTopObscuredHeight(for barsVisibilityPercent: CGFloat) -> CGFloat {
+        let safeAreaTop = view.safeAreaInsets.top
+        guard appSettings.currentAddressBarPosition == .top else { return safeAreaTop }
+        if isInMinimalChromeLayout {
+            let clampedPercent = max(0, min(1, barsVisibilityPercent))
+            return safeAreaTop + omniBar.barView.expectedHeight * clampedPercent
+        }
+        return safeAreaTop + omniBar.barView.expectedHeight
+    }
+
     var minimalChromeBottomHeight: CGFloat {
         toolbarHeight + view.safeAreaInsets.bottom
     }
 
     /// Current visibility fraction of the chrome bars (1.0 = fully visible, 0.0 = hidden).
-    /// In minimal chrome the toolbar is hidden so we read the navigation bar container alpha instead.
+    /// We track the driven fraction directly rather than reading a container's alpha: with the
+    /// floating capsule morph, `chromeAlpha(for:)` keeps the chrome alpha at 0 through the resize
+    /// band and only fades it in over `[handoffStart, 1]`, so container alpha no longer reflects the
+    /// real fraction mid-transition. Call sites that reapply visibility need the true fraction.
     var currentBarsVisibility: CGFloat {
-        viewCoordinator.toolbar.isHidden
-            ? viewCoordinator.navigationBarContainer.alpha
-            : viewCoordinator.toolbar.alpha
+        lastChromeVisibilityPercent
+    }
+
+    func restoreCurrentBarsVisibilityAfterLayoutRefresh() {
+        applyBarsVisibilityState(lastChromeVisibilityPercent, postChromeVisibilityNotification: false)
+        view.layoutIfNeeded()
     }
 
     // 1.0 - full size, 0.0 - hidden
-    private func updateToolbarConstant(_ ratio: CGFloat) {
+    func updateToolbarConstant(_ ratio: CGFloat) {
         var bottomHeight = toolbarHeight
         if viewCoordinator.addressBarPosition.isBottom && !isInMinimalChromeLayout {
             // When position is set to bottom, contentContainer is pinned to top
@@ -3925,6 +4471,7 @@ extension MainViewController: BrowserChromeDelegate {
             }
             loadUrlInNewTab(url, inheritedAttribution: nil, fromExternalLink: fromExternalLink)
         case .loadInPlace:
+            currentTab?.isDuckAIDeepLinkSurfaceRequested = url.isDuckAIFeedbackOpen || url.isDuckAIChatProtectionOpen
             loadUrl(url, fromExternalLink: fromExternalLink)
         }
     }
@@ -4457,7 +5004,41 @@ extension MainViewController: OmniBarDelegate {
     private func toggleAddressBarLocation() {
         let current = appSettings.currentAddressBarPosition
         appSettings.currentAddressBarPosition = current == .top ? .bottom : .top
+        updateScrollInteractionIfNeeded()
         self.view.layoutIfNeeded()
+    }
+
+    // Refreshes the iOS 26 scroll-edge chrome interactions so they track the currently visible
+    // page. Must be called on every content change (tab switch, address bar move, NTP attach),
+    // otherwise the interactions keep pointing at a dismissed tab's scroll view.
+    private func updateScrollInteractionIfNeeded() {
+        guard #available(iOS 26, *) else { return }
+        guard floatingUIManager.isFloatingUIEnabled else { return }
+
+        // Detach any existing interactions from whatever views they're currently installed in.
+        scrollEdgeInteractions.forEach { $0.view?.removeInteraction($0) }
+        scrollEdgeInteractions.removeAll()
+
+        // The scroll-edge chrome must track the currently visible scroll view. On the NTP (or any
+        // tab without a web view) there's no scroll view to track, so we leave the interactions
+        // detached rather than pointing them at a dismissed tab's scroll view.
+        guard let scrollView = currentTab?.webView?.scrollView else { return }
+
+        func attach(to view: UIView, onEdge edge: UIRectEdge) {
+            let interaction = UIScrollEdgeElementContainerInteraction()
+            interaction.scrollView = scrollView
+            interaction.edge = edge
+            view.addInteraction(interaction)
+            scrollEdgeInteractions.append(interaction)
+        }
+
+        if appSettings.currentAddressBarPosition == .top {
+            attach(to: omniBar.barView, onEdge: .top)
+            attach(to: floatingDomainCapsuleController.button, onEdge: .top)
+        } else {
+            attach(to: floatingDomainCapsuleController.button, onEdge: .bottom)
+        }
+        attach(to: viewCoordinator.toolbar, onEdge: .bottom)
     }
 
     override func motionEnded(_ motion: UIEvent.EventSubtype, with event: UIEvent?) {
@@ -4477,8 +5058,8 @@ extension MainViewController: OmniBarDelegate {
         }
     }
 
-    func performCancel() {
-        dismissOmniBar()
+    func performCancel(animated: Bool = true) {
+        dismissOmniBar(animated: animated)
         omniBar.cancel()
         hideSuggestionTray()
         themeColorManager.updateThemeColor()
@@ -4522,21 +5103,18 @@ extension MainViewController: OmniBarDelegate {
         ])
         guard !duckAIFireOnboardingFlow.controlsLocked else { return }
         postIdleSessionInstrumentation.sessionEnded(reason: .tabSwitcherSelected)
-        performCancel()
         newTab()
     }
 
     private func newFireTabLongPressMenuAction() {
         postIdleSessionInstrumentation.sessionEnded(reason: .tabSwitcherSelected)
         tabManager.setBrowsingMode(.fire, source: .longPressTabsIcon)
-        performCancel()
         newTab()
     }
 
     private func newNormalTabLongPressMenuAction() {
         postIdleSessionInstrumentation.sessionEnded(reason: .tabSwitcherSelected)
         tabManager.setBrowsingMode(.normal, source: .longPressTabsIcon)
-        performCancel()
         newTab()
     }
 
@@ -4643,7 +5221,11 @@ extension MainViewController: OmniBarDelegate {
         ViewHighlighter.hideAll()
         hideSuggestionTray()
 
-        if let currentTab, aiChatContextualModeFeature.isAvailable, newTabPageViewController == nil {
+        let shouldPresentContextualSheet = currentTab?.tabModel.isHomeTab == false
+            && aiChatContextualModeFeature.isAvailable
+            && prefilledText == nil
+
+        if let currentTab, shouldPresentContextualSheet {
             omniBar.endEditing()
             currentTab.presentContextualAIChatSheet(from: self)
         } else {
@@ -4708,7 +5290,24 @@ extension MainViewController: OmniBarDelegate {
         handleVoiceSearchOpenRequest(preferredTarget: preferredTarget)
     }
 
-    func onDidBeginEditing() { }
+    func onDidBeginEditing() {
+        // Omnibar got focus. Lift minimal chrome bar above keyboard.
+        refreshMinimalChromeBottomAnchor()
+        warmSearchTokenIfEligible()
+    }
+
+    /// Proactively warms the search token for enrolled treatment users when the search input begins editing.
+    /// Called from every "editing began" entry point. Safe to over-call:
+    /// the fetcher's refresh-ahead window coalesces redundant triggers.
+    func warmSearchTokenIfEligible() {
+        guard searchTokenExperiment.cohort == .treatment else { return }
+        // Match the SERP navigation's UA exactly (the token is UA-bound): the tab's desktop state + a
+        // duckduckgo.com URL, resolved through the same `agent(forUrl:isDesktop:)` the WebView uses.
+        let isDesktop = currentTab?.tabModel.isDesktop ?? false
+        let userAgent = DefaultUserAgentManager.shared.userAgent(isDesktop: isDesktop, url: .ddg)
+        Task { await searchTokenFetcher.fetchIfNeeded(userAgent: userAgent) }
+    }
+
     func onDidEndEditing() {
         // Restore the tab's committed mode — the user may have toggled without submitting.
         // Safe on iPhone: the experimental editing state prevents textFieldDidEndEditing from
@@ -4716,6 +5315,8 @@ extension MainViewController: OmniBarDelegate {
         if let tab = tabManager.currentTabsModel.currentTab {
             viewCoordinator.omniBar.setSelectedTextEntryMode(initialOmnibarToggleMode(for: tab))
         }
+        // Omnibar lost focus. Drop minimal chrome bar back to bottom.
+        refreshMinimalChromeBottomAnchor()
     }
 
     // MARK: - iPad Expanded Omnibar
@@ -5115,13 +5716,6 @@ extension MainViewController: EscapeHatchActionRouter {
 
         // Keep the hatch (and the current focus state) so the card collapses to the expanded pill,
         // consistent with the delete flow which also preserves focus.
-        if featureFlagger.isFeatureOn(.escapeHatchHideShortcut) {
-            return
-        }
-
-        /// # TODO: Invoking `closeTab` removes the Escape Hatch from screen
-        clearEscapeHatch()
-        dismissOmniBar()
     }
 
     func escapeHatchDidRequestBurnWithConfirmation(_ tab: Tab, sourceRect: CGRect) {
@@ -5143,14 +5737,9 @@ extension MainViewController: EscapeHatchActionRouter {
             fireContext: .singleTab,
             browsingMode: tab.mode,
             onConfirm: { [weak self] fireRequest in
-                if self?.featureFlagger.isFeatureOn(.escapeHatchHideShortcut) == true {
-                    self?.forgetAllWithAnimation(request: fireRequest) { [weak self] in
-                        self?.restoreTabSwitcherOnlyHatchAfterBurn()
-                        self?.restoreFocusModeAfterBurnIfNeeded(wasInFocusMode: wasInFocusMode)
-                    }
-                } else {
-                    self?.forgetAllWithAnimation(request: fireRequest) {}
-                    self?.clearEscapeHatch()
+                self?.forgetAllWithAnimation(request: fireRequest) { [weak self] in
+                    self?.restoreTabSwitcherOnlyHatchAfterBurn()
+                    self?.restoreFocusModeAfterBurnIfNeeded(wasInFocusMode: wasInFocusMode)
                 }
                 self?.postIdleSessionInstrumentation.burnTabTapped()
             },
@@ -5176,14 +5765,9 @@ extension MainViewController: EscapeHatchActionRouter {
             source: .escapeHatch
         )
 
-        if featureFlagger.isFeatureOn(.escapeHatchHideShortcut) {
-            forgetAllWithAnimation(request: request) { [weak self] in
-                self?.restoreTabSwitcherOnlyHatchAfterBurn()
-                self?.restoreFocusModeAfterBurnIfNeeded(wasInFocusMode: wasInFocusMode)
-            }
-        } else {
-            forgetAllWithAnimation(request: request) {}
-            clearEscapeHatch()
+        forgetAllWithAnimation(request: request) { [weak self] in
+            self?.restoreTabSwitcherOnlyHatchAfterBurn()
+            self?.restoreFocusModeAfterBurnIfNeeded(wasInFocusMode: wasInFocusMode)
         }
         ntpAfterIdleInstrumentation.escapeHatchBurnTapped(requiredConfirmation: false)
         postIdleSessionInstrumentation.burnTabTapped()
@@ -5245,6 +5829,10 @@ extension MainViewController: NewTabPageControllerDelegate {
 }
 
 extension MainViewController: TabDelegate {
+
+    func searchToken(for tab: TabViewController) -> String? {
+        searchTokenFetcher.retrieveToken()
+    }
 
     var isEmailProtectionSignedIn: Bool {
         emailManager.isSignedIn
@@ -5379,6 +5967,7 @@ extension MainViewController: TabDelegate {
              didRequestNewWebViewWithConfiguration configuration: WKWebViewConfiguration,
              for navigationAction: WKNavigationAction,
              inheritingAttribution: AdClickAttributionLogic.State?) -> WKWebView? {
+        capturePreviewForTab(tab)
         hideNotificationBarIfBrokenSitePromptShown()
         showBars()
         currentTab?.dismiss()
@@ -5500,6 +6089,22 @@ extension MainViewController: TabDelegate {
         loadUrlInNewTab(url, inheritedAttribution: attribution)
     }
 
+    func capturePreviewForTab(_ tab: TabViewController) {
+        // Capture source tab preview now; otherwise its thumbnail stays stale once we switch to the new tab.
+        guard tab.link != nil else { return }
+
+        if floatingUIManager.isFloatingUIEnabled {
+            tab.preparePreview { [weak self, weak tab] image in
+                guard let self, let tab, let image else { return }
+                previewsSource.update(preview: image, forTab: tab.tabModel)
+            }
+            return
+        }
+
+        guard let image = tab.preparePreviewSync() else { return }
+        previewsSource.update(preview: image, forTab: tab.tabModel)
+    }
+
     func tab(_ tab: TabViewController,
              didRequestNewTabForUrl url: URL,
              openedByPage: Bool,
@@ -5508,6 +6113,7 @@ extension MainViewController: TabDelegate {
         hideNotificationBarIfBrokenSitePromptShown()
         tab.aiChatContextualSheetCoordinator.dismissSheet()
         if openedByPage {
+            capturePreviewForTab(tab)
             showBars()
             newTabAnimation {
                 self.loadUrlInNewTab(url, inheritedAttribution: attribution)
@@ -5526,6 +6132,10 @@ extension MainViewController: TabDelegate {
             self.currentTab?.openingTab = tab
         }
 
+    }
+
+    func tab(_ tab: TabViewController, didRequestReopenClosedTabAt url: URL) {
+        self.tab(tab, didRequestNewTabForUrl: url, openedByPage: true, inheritingAttribution: nil)
     }
 
     func tab(_ tab: TabViewController, didChangePrivacyInfo privacyInfo: PrivacyInfo?) {
@@ -5576,6 +6186,43 @@ extension MainViewController: TabDelegate {
         openAIChatHistory(source: source)
     }
 
+    func tabDidRequestAIChatFeedback(tab: TabViewController) {
+        let optionsView = DuckAIFeedbackOptionsView(
+            onSelect: { [weak self, weak tab] sentiment in
+                let positive: Bool
+                switch sentiment {
+                case .positive: positive = true
+                case .critical: positive = false
+                }
+                DailyPixel.fireDailyAndCount(pixel: .aiChatFeedbackOptionSelected,
+                                             withAdditionalParameters: [PixelParameters.sentiment: positive ? "positive" : "critical"])
+                self?.dismiss(animated: true) {
+                    tab?.openAIChatFeedback(positive: positive)
+                }
+            }
+        )
+        let hostingController = UIHostingController(rootView: optionsView)
+        hostingController.title = UserText.aiChatFeedbackOptionsTitle
+        hostingController.navigationItem.rightBarButtonItem = UIBarButtonItem(
+            image: DesignSystemImages.Glyphs.Size24.close,
+            primaryAction: UIAction { [weak self] _ in self?.dismiss(animated: true) }
+        )
+        let navigationController = UINavigationController(rootViewController: hostingController)
+        navigationController.navigationBar.tintColor = UIColor(designSystemColor: .textPrimary)
+        if let sheet = navigationController.sheetPresentationController {
+            if #available(iOS 16.0, *) {
+                sheet.detents = [.custom(identifier: .init("duckAIFeedbackOptions")) { _ in 230 }]
+            } else {
+                sheet.detents = [.medium()]
+            }
+            sheet.prefersGrabberVisible = true
+            if #unavailable(iOS 26) {
+                sheet.preferredCornerRadius = 24
+            }
+        }
+        present(navigationController, animated: true)
+    }
+
     func openAIChatHistory(source: AIChatHistorySource = .browserMenu) {
         // The native chat history sheet is an iPhone-only experience; entrypoints are hidden on iPad,
         // and this guard ensures the sheet can never be presented there.
@@ -5602,6 +6249,7 @@ extension MainViewController: TabDelegate {
         }
         let viewModel = AIChatHistoryViewModel(
             reader: reader,
+            featureFlagger: featureFlagger,
             fireExecutor: fireExecutor,
             downloader: downloader,
             pinner: pinner,
@@ -5658,7 +6306,7 @@ extension MainViewController: TabDelegate {
     }
 
     func tabDidRequestSettingsToVPN(_ tab: TabViewController) {
-        segueToVPN()
+        segueToVPN(source: .browserMenu)
     }
 
     func tabDidRequestSettingsToAIChat(_ tab: TabViewController) {
@@ -5686,6 +6334,11 @@ extension MainViewController: TabDelegate {
     }
 
     func closeFindInPage(tab: TabViewController) {
+        if #available(iOS 16.0, *), featureFlagger.isFeatureOn(.systemFindInPage) {
+            dismissSystemFindNavigator(for: tab)
+            return
+        }
+
         if tab === currentTab {
             findInPageView?.done()
         } else {
@@ -5797,40 +6450,6 @@ extension MainViewController: TabDelegate {
 
 }
 
-// MARK: - AIChatHistoryViewModelDelegate
-
-extension MainViewController: AIChatHistoryViewModelDelegate {
-
-    func viewModelDidRequestOpenNewChat() {
-        dismiss(animated: true) { [weak self] in
-            self?.openAIChat()
-        }
-    }
-
-    func viewModelDidRequestOpenChat(chatId: String) {
-        let url = aiChatSettings.aiChatURL.withChatID(chatId)
-        dismiss(animated: true) { [weak self] in
-            self?.onChatHistorySelected(url: url)
-        }
-    }
-
-    func viewModelDidExportChat(filename: String) {
-        let message = DownloadActionMessageViewHelper.makeDownloadFinishedMessage(forFilename: filename)
-        let addressBarBottom = appSettings.currentAddressBarPosition.isBottom
-        ActionMessageView.present(
-            message: message,
-            numberOfLines: 2,
-            actionTitle: UserText.actionGenericShow,
-            presentationLocation: .withBottomBar(andAddressBarBottom: addressBarBottom),
-            onAction: { [weak self] in
-                self?.dismiss(animated: true) { [weak self] in
-                    self?.segueToDownloads()
-                }
-            }
-        )
-    }
-}
-
 extension MainViewController: TabSwitcherDelegate {
 
     func tabSwitcher(_ tabSwitcher: TabSwitcherViewController, didFinishWithSelectedTab tab: Tab?) {
@@ -5902,6 +6521,11 @@ extension MainViewController: TabSwitcherDelegate {
     }
 
     func tabSwitcher(_ tabSwitcher: TabSwitcherViewController, willCloseTabs tabs: [Tab]) {
+        notifyTabsWillClose(tabs)
+    }
+
+    /// Per-tab close side effects `bulkRemoveTabs` skips: Duck.ai generation instrumentation + (18.4+) web-extension close events.
+    func notifyTabsWillClose(_ tabs: [Tab]) {
         for tab in tabs {
             reportDuckAITabClosedIfNeeded(tab)
         }
@@ -6058,7 +6682,8 @@ extension MainViewController: TabSwitcherButtonDelegate {
 
         performActionIfAITab { DailyPixel.fireDailyAndCount(pixel: .aiChatTabSwitcherOpened) }
 
-        performCancel()
+        // Snap the UTI away so its collapse doesn't overlap the tab switcher segue (non-animated dismiss restores resting layout synchronously).
+        performCancel(animated: false)
         showTabSwitcher()
     }
 
@@ -6151,9 +6776,11 @@ extension MainViewController {
             // Ideally this should happen once data clearing has finished AND the animation is finished
             if showNextDaxDialog {
                 self.newTabPageViewController?.showNextDaxDialog()
-            } else if request.options.contains(.tabs) && KeyboardSettings().onNewTab && !self.isEscapeHatchHideBurn(request) {
-                // With the hide feature on, escape-hatch burns restore focus in `restoreFocusModeAfterBurnIfNeeded`.
+            } else if request.options.contains(.tabs) && KeyboardSettings().onNewTab && !self.isEscapeHatchBurn(request) {
+                // Escape-hatch burns restore focus in `restoreFocusModeAfterBurnIfNeeded`.
                 let showKeyboardAfterFireButton = DispatchWorkItem {
+                    // A burned Duck.ai chat reopens as a new chat that owns its input; don't focus search over it.
+                    guard self.currentTab?.isAITab != true else { return }
                     if !self.aiChatSettings.isAIChatSearchInputUserSettingsEnabled {
                         self.enterSearch()
                     }
@@ -6162,7 +6789,17 @@ extension MainViewController {
                 self.showKeyboardAfterFireButton = showKeyboardAfterFireButton
             }
 
-            self.daxDialogsManager.clearedBrowserData()
+            // The NTP's viewDidAppear may have fired during the fire animation and already called
+            // nextHomeScreenMessageNew(), setting currentHomeSpec (e.g. to .final for the "High five!"
+            // dialog). Calling clearedBrowserData() unconditionally would reset currentHomeSpec to nil,
+            // making isShowingContextualOnboardingDialog return false and allowing the subscription promo
+            // to appear on top of the pending dialog when the user backgrounds and foregrounds.
+            //
+            // When a home spec is already set, the browsing context was already cleared inside
+            // nextHomeScreenMessageNew(); skip the redundant call here.
+            if !self.daxDialogsManager.isShowingContextualOnboardingDialog {
+                self.daxDialogsManager.clearedBrowserData()
+            }
         }
     }
     
@@ -6183,7 +6820,7 @@ extension MainViewController {
     private func presentPostBurnMessage(tabsCount: Int, request: FireRequest) {
         let message = UserText.scopedFireConfirmationTabsDeletedToast(tabCount: tabsCount)
         // Escape-hatch-hide burns restore the keyboard, which would cover a bottom toast — show it at the top.
-        let location: ActionMessageView.PresentationLocation = isEscapeHatchHideBurn(request)
+        let location: ActionMessageView.PresentationLocation = isEscapeHatchBurn(request)
             ? .top
             : .withBottomBar(andAddressBarBottom: self.appSettings.currentAddressBarPosition.isBottom)
         ActionMessageView.present(message: message, presentationLocation: location)
@@ -6563,7 +7200,6 @@ extension MainViewController: OnboardingDelegate {
         viewModel.resumeOnboardingFromInterlude()
         let controller = OnboardingIntroFactory.makeController(
             viewModel: viewModel,
-            isRebranded: featureFlagger.isFeatureOn(.onboardingRebranding),
             delegate: self
         )
         linearOnboardingContext?.onboardingViewController = controller
@@ -6576,8 +7212,11 @@ extension MainViewController: OnboardingDelegate {
     func onboardingCompleted(controller: UIViewController) {
         markOnboardingSeen()
 
-        appSettings.applyAdBlockingRolloutDuckPlayerDefaultsIfNeeded(rolloutActive: adBlockingAvailability.areAdBlockingDefaultsActive)
+        // Enrol new users into the Search Token experiment. Must run here (post-onboarding) so we only
+        // enrol new users; enrollIfEligible function additionally excludes returning users (reinstallers).
+        searchTokenExperiment.enrollIfEligible()
 
+        appSettings.applyAdBlockingRolloutDuckPlayerDefaultsIfNeeded(rolloutActive: shouldApplyAdBlockingRolloutDuckPlayerDefault)
 
         // Now that linear onboarding has finished, run the unified-toggle-input
         // setup that was deferred at viewDidLoad.
@@ -6621,7 +7260,6 @@ extension MainViewController: OnboardingDelegate {
     }
 
 }
-
 
 extension MainViewController: OnboardingNavigationDelegate {
     func navigateFromOnboarding(to url: URL) {
@@ -7065,7 +7703,7 @@ extension MainViewController {
             self.launchAutofillLogins(with: currentTab?.url, currentTabUid: currentTab?.tabModel.uid, source: .customizedToolbarButton, selectedAccount: nil)
 
         case .vpn:
-            self.presentNetworkProtectionStatusSettingsModal(origin: .toolbarVPN)
+            self.presentNetworkProtectionStatusSettingsModal(entryPoint: .toolbar)
 
         case .share:
             self.shareCurrentURLFromToolbar()
@@ -7124,7 +7762,7 @@ extension MainViewController {
             onFirePressed()
 
         case .vpn:
-            presentNetworkProtectionStatusSettingsModal(origin: .addressBarVPN)
+            presentNetworkProtectionStatusSettingsModal(entryPoint: .addressBar)
 
         case .zoom:
             showTextZoomEditorIfPossible()

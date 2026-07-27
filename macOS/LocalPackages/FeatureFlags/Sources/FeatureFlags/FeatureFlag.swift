@@ -45,6 +45,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216010708822357
     case onboardingChromeExtension
 
+    /// Simplified Fire dialog
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216512684334175
+    case fireDialogSimplified
+
     // https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866715698981
     case unknownUsernameCategorization
 
@@ -64,14 +68,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214946884020610?focus=true
     case vpnExcludeCGNATToggle
 
-    /// Kill switch: enable remotely to disable orphaned-proxy detection (tunnel heartbeat + proxy detection loop + pixel).
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215509351454304
-    case vpnOrphanProxyDetectionKillSwitch
-
-    /// Kill switch: enable remotely to disable the orphaned-proxy full-bypass behavior.
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215509351454309
-    case vpnOrphanProxyBypassKillSwitch
-
     /// Toggle for the Copy VPN Diagnostics button in VPN settings.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215794369750045
     case vpnShowCopyDiagnosticsButton
@@ -84,6 +80,12 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866715515023
     case autofillPartialFormSaves
+
+    /// Kill switch for the riskier parts of the hardened Bitwarden integration. On by default;
+    /// disable remotely to restore the fixed 1s reconnect interval and EOF-tolerant pipe
+    /// monitoring. Teardown/lifecycle bug fixes stay active.
+    /// https://app.asana.com/1/137249556945/project/1204912272578138/task/1216409281175249
+    case bitwardenConnectionHardening
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866474376005
     case webExtensions
@@ -176,6 +178,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// Managing state of New Tab Page using tab IDs in frontend
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866719908836
     case newTabPageTabIDs
+
+    /// Enables deleting history-based search suggestions from the New Tab Page omnibar
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216469223737804
+    case ntpSearchSuggestionsDeletion
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866618846917
     /// Note: 'Failsafe' feature flag. See https://app.asana.com/1/137249556945/project/1202500774821704/task/1210572145398078?focus=true
@@ -296,6 +302,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216209826654872?focus=true
     case cookiePopupOptInDialog
 
+    /// A/B experiment cohorts for the Cookie Pop-up Protection opt-in dialog
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216573422000546?focus=true
+    case cookiePopupOptInDialogExperiment
+
     /// Enables advanced card ordering for the Next Steps List widget
     /// This flag is disabled by default to allow testing the new widget design with current ordering logic
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213076052926663?focus=true
@@ -322,6 +332,12 @@ public enum FeatureFlag: String, CaseIterable {
     /// Enables the reasoning effort picker in the Duck.ai omnibar
     case aiChatOmnibarReasoningEffort
 
+    /// Gates the "Try for free"/"Upgrade" subscription-upsell tags and confirmation dialog on
+    /// gated models/reasoning efforts in the Duck.ai omnibar — a kill switch independent of the
+    /// underlying tier gating, which stays in effect (gated rows just become inert) if disabled.
+    /// https://app.asana.com/1/137249556945/project/1208671677432066/task/1215275657171787
+    case aiChatOmnibarSubscriptionUpsell
+
     /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1214283076614743?focus=true
     case aiChatOmnibarVoiceChatAccess
 
@@ -332,6 +348,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// Enables attaching content from multiple open tabs to the Duck.ai omnibar (address bar) chat.
     /// https://app.asana.com/1/137249556945/task/1214804748957575?focus=true
     case aiChatOmnibarAttachMoreTabs
+
+    /// Kill switch for the tab-attachment limit (native omnibar and NTP). Default on.
+    /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1216831900874433?focus=true
+    case aiChatTabAttachmentLimit
 
     /// https://app.asana.com/1/137249556945/task/1213316822018797
     case aiChatSidebarResizable
@@ -353,6 +373,10 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// Enables attaching content from multiple open tabs (and files) to the New Tab Page omnibar Duck.ai chat.
     case aiChatNtpAttachMoreTabs
+
+    /// Enables deleting recent AI chats from the New Tab Page omnibar
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216469223760067
+    case aiChatNtpSuggestionsDeletion
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213279513677422
     case aiChatSidebarFloating
@@ -419,21 +443,11 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1216299435808476
     case aiChatCustomizeResponses
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215798415697847
-    /// Replaces the web-link Search Assist and Hide AI-Generated Images rows on the AI Features
-    /// settings screen with native controls, regroups the main AI settings at the top, and adds the
-    /// "Disable All AI Options" / Reset button. Off keeps today's web-link rows.
-    case aiFeaturesNativeControls
-
     /// macOS only. Gates the native-driven Duck.ai voice-chat microphone permission flow
     /// (auto-grant at launch, locked Permission Center row, system-disabled warning UI,
     /// FE→native failure handler that surfaces the popover).
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214713654448759
     case aiChatNativeVoicePermissionFlow
-
-    /// Enables the custom NSPanel-based bookmarks bar menu (replacing NSPopover) with NSGlassEffectView on macOS 26
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214684208036378
-    case bookmarksBarMenusCustomWindow
 
     /// Routes reload-after-error through `_evaluateJavaScriptWithoutUserGesture` instead of the
     /// legacy `javascript:` URL trampoline. Kill switch — disable remotely to fall back to the
@@ -454,12 +468,28 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215597855114765?focus=true
     case syncCanShowV2ConnectCode
 
+    /// Gates the macOS Prompt Bar: a system-wide Duck.ai entry point opened via a global
+    /// keyboard shortcut or a menu bar icon, plus its rows on the AI Features settings screen.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216850216210288?focus=true
+    case macosPromptBar
+
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
 
     /// Cohorts for the autoconsent heuristic action experiment
     public enum HeuristicActionCohort: String, FeatureFlagCohortDescribing {
+        case control
+        case treatment
+    }
+
+    public enum CookiePopupOptInDialogCohort: String, FeatureFlagCohortDescribing {
+        case control
+        case treatment
+    }
+
+    /// Cohorts for the onboarding Chrome extension install experiment
+    public enum OnboardingChromeExtensionCohort: String, FeatureFlagCohortDescribing {
         case control
         case treatment
     }
@@ -503,7 +533,9 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .newTabPageRebranding:
             Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.appRebranding))
         case .onboardingChromeExtension:
-            Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.onboardingChromeExtension))
+            Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.onboardingChromeExtension), cohortType: OnboardingChromeExtensionCohort.self)
+        case .fireDialogSimplified:
+            Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.fireDialogSimplified))
         case .unknownUsernameCategorization:
             Config(source: .remoteReleasable(AutofillSubfeature.unknownUsernameCategorization), supportsLocalOverriding: false)
         case .credentialsImportPromotionForExistingUsers:
@@ -516,10 +548,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .internalOnly, source: .remoteReleasable(NetworkProtectionSubfeature.strictRoutingToggle), category: .vpn)
         case .vpnExcludeCGNATToggle:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(NetworkProtectionSubfeature.excludeCGNAT), category: .vpn)
-        case .vpnOrphanProxyDetectionKillSwitch:
-            Config(source: .remoteReleasable(NetworkProtectionSubfeature.orphanProxyDetectionKillSwitch), category: .vpn)
-        case .vpnOrphanProxyBypassKillSwitch:
-            Config(source: .remoteReleasable(NetworkProtectionSubfeature.orphanProxyBypassKillSwitch), category: .vpn)
         case .vpnShowCopyDiagnosticsButton:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(NetworkProtectionSubfeature.showCopyDiagnosticsButton), category: .vpn)
         case .autoUpdateInDEBUG:
@@ -528,6 +556,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .disabled, category: .updates)
         case .autofillPartialFormSaves:
             Config(source: .remoteReleasable(AutofillSubfeature.partialFormSaves))
+        case .bitwardenConnectionHardening:
+            Config(defaultValue: .enabled, source: .remoteReleasable(AutofillSubfeature.bitwardenConnectionHardening))
         case .webExtensions:
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.featureEnabled), category: .webExtensions)
         case .webExtensionLightweightReload:
@@ -586,6 +616,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(HtmlNewTabPageSubfeature.omnibar))
         case .newTabPageTabIDs:
             Config(source: .remoteReleasable(HtmlNewTabPageSubfeature.newTabPageTabIDs))
+        case .ntpSearchSuggestionsDeletion:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(HtmlNewTabPageSubfeature.searchSuggestionsDeletion))
         case .supportsAlternateStripePaymentFlow:
             Config(defaultValue: .enabled, source: .remoteReleasable(PrivacyProSubfeature.supportsAlternateStripePaymentFlow), category: .subscription)
         case .refactorOfSyncPreferences:
@@ -654,6 +686,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(AutoconsentSubfeature.cookiePopupPreferenceSetting), category: .popupBlocking)
         case .cookiePopupOptInDialog:
             Config(source: .remoteReleasable(AutoconsentSubfeature.cookiePopupOptInDialog), category: .popupBlocking)
+        case .cookiePopupOptInDialogExperiment:
+            Config(source: .remoteReleasable(AutoconsentSubfeature.cookiePopupOptInDialogExperiment), cohortType: CookiePopupOptInDialogCohort.self, category: .popupBlocking)
         case .nextStepsListAdvancedCardOrdering:
             Config(defaultValue: .enabled, source: .remoteReleasable(HtmlNewTabPageSubfeature.nextStepsListAdvancedCardOrdering))
         case .crashCollectionLimitCallStackTreeDepth:
@@ -670,12 +704,16 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.omnibarWebSearch), category: .duckAI)
         case .aiChatOmnibarReasoningEffort:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.omnibarReasoningEffort), category: .duckAI)
+        case .aiChatOmnibarSubscriptionUpsell:
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.omnibarSubscriptionUpsell), category: .duckAI)
         case .aiChatOmnibarVoiceChatAccess:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.omnibarVoiceChatAccess), category: .duckAI)
         case .aiChatSidebarAttachMoreTabs:
             Config(source: .remoteReleasable(AIChatSubfeature.sidebarAttachMoreTabs), category: .duckAI)
         case .aiChatOmnibarAttachMoreTabs:
             Config(source: .remoteReleasable(AIChatSubfeature.omnibarAttachMoreTabs), category: .duckAI)
+        case .aiChatTabAttachmentLimit:
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.tabAttachmentLimit), category: .duckAI)
         case .aiChatSidebarResizable:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.sidebarResizable), category: .duckAI)
         case .aiChatNtpRecentChats:
@@ -690,6 +728,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.ntpWebSearch), category: .duckAI)
         case .aiChatNtpAttachMoreTabs:
             Config(source: .remoteReleasable(AIChatSubfeature.ntpAttachMoreTabs), category: .duckAI)
+        case .aiChatNtpSuggestionsDeletion:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.ntpSuggestionsDeletion), category: .duckAI)
         case .aiChatSidebarFloating:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.sidebarFloating), category: .duckAI)
         case .sidebarSuggestedPrompts:
@@ -727,9 +767,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .aiChatNativeDataAccess:
             Config(source: .remoteReleasable(AIChatSubfeature.nativeDataAccess), category: .duckAI)
         case .aiChatCustomizeResponses:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.customizeResponses), category: .duckAI)
-        case .aiFeaturesNativeControls:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.aiFeaturesNativeControls), category: .duckAI)
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.customizeResponses), category: .duckAI)
         case .aiChatNativeVoicePermissionFlow:
             Config(defaultValue: .enabled,
                    source: .remoteReleasable(AIChatSubfeature.nativeVoicePermissionFlow),
@@ -737,8 +775,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                    category: .duckAI)
         case .autoplayPolicy:
             Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.autoplayPolicy), supportsLocalOverriding: true)
-        case .bookmarksBarMenusCustomWindow:
-            Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.bookmarksBarMenusCustomWindow))
         case .newErrorPageReload:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.newErrorPageReload))
         case .aiChatSettingsLinkInAiFeatures:
@@ -749,6 +785,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(SyncSubfeature.canUseV2ConnectFlow), category: .sync)
         case .syncCanShowV2ConnectCode:
             Config(source: .remoteReleasable(SyncSubfeature.canShowV2ConnectCode), category: .sync)
+        case .macosPromptBar:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.macosPromptBar), category: .duckAI)
         }
     }
 

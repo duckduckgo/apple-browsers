@@ -186,6 +186,16 @@ public enum SharedDesignSystemColor: CaseIterable {
     case alertGreen
     case alertYellow
 
+    // VPN
+    case vpnGreen
+    case vpnGreenPressed
+    case vpnGreenForeground
+    case vpnGreenForegroundPressed
+    case vpnYellow
+    case vpnYellowPressed
+    case vpnYellowForeground
+    case vpnYellowForegroundPressed
+
     // Shield
     case shieldPrivacy
 

@@ -21,6 +21,7 @@ import Foundation
 import DDGSync
 import Combine
 import CombineExtensions
+import DesignResourcesKit
 import Common
 import FoundationExtensions
 import SystemConfiguration
@@ -185,6 +186,7 @@ final class LegacySyncPreferences: ObservableObject, SyncUI_macOS.ManagementView
     @Published var isAccountRecoveryAvailable: Bool = true
     @Published var isAppVersionNotSupported: Bool = true
     @Published var isAIChatSyncEnabled: Bool = false
+    @Published var isAppRebranded: Bool = false
 
     private let syncPausedStateManager: any SyncPausedStateManaging
 
@@ -241,6 +243,9 @@ final class LegacySyncPreferences: ObservableObject, SyncUI_macOS.ManagementView
         self.managementDialogModel = managementDialogModel
         diagnosisHelper = SyncDiagnosisHelper(syncService: syncService)
         self.managementDialogModel.delegate = self
+
+        self.isAppRebranded = DesignSystemRebrand.isAppRebranded()
+        self.managementDialogModel.isAppRebranded = self.isAppRebranded
 
         updateSyncFeatureFlags(self.syncFeatureFlags)
         setUpObservables()
@@ -721,7 +726,7 @@ extension LegacySyncPreferences: ManagementDialogModelDelegate {
             guard authenticationResult.authenticated else {
                 if authenticationResult == .noAuthAvailable {
                     presentDialog(for: .empty)
-                    managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .unableToAuthenticateOnDevice, description: "")
+                    managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .unableToAuthenticateOnDevice)
                 }
                 return
             }
@@ -772,7 +777,7 @@ extension LegacySyncPreferences: ManagementDialogModelDelegate {
         guard authenticationResult.authenticated else {
             if authenticationResult == .noAuthAvailable {
                 presentDialog(for: .empty)
-                managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .unableToAuthenticateOnDevice, description: "")
+                managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .unableToAuthenticateOnDevice)
             }
             return
         }
@@ -789,7 +794,7 @@ extension LegacySyncPreferences: ManagementDialogModelDelegate {
         guard authenticationResult.authenticated else {
             if authenticationResult == .noAuthAvailable {
                 presentDialog(for: .empty)
-                managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .unableToAuthenticateOnDevice, description: "")
+                managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .unableToAuthenticateOnDevice)
             }
             return
         }
@@ -802,7 +807,7 @@ extension LegacySyncPreferences: ManagementDialogModelDelegate {
         guard authenticationResult.authenticated else {
             if authenticationResult == .noAuthAvailable {
                 presentDialog(for: .empty)
-                managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .unableToAuthenticateOnDevice, description: "")
+                managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .unableToAuthenticateOnDevice)
             }
             return
         }
@@ -1251,10 +1256,10 @@ extension LegacySyncPreferences: SyncConnectionControllerDelegate {
         let alert = NSAlert.syncPairingV2Confirmation(message: message)
 
         guard let parentWindow = Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.window else {
-            return await alert.runModal() == .alertSecondButtonReturn
+            return await alert.runModal() == .alertFirstButtonReturn
         }
 
         let presentationWindow = parentWindow.attachedSheet ?? parentWindow
-        return await alert.beginSheetModal(for: presentationWindow) == .alertSecondButtonReturn
+        return await alert.beginSheetModal(for: presentationWindow) == .alertFirstButtonReturn
     }
 }

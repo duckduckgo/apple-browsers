@@ -99,7 +99,11 @@ final class IPadOmnibarModelPickerController {
 
         if model.entityHasAccess {
             pendingGatedModelId = nil
+            let isNewSelection = modelId != store.persistedModelId
             store.updateSelectedModel(modelId, isNewChatContext: true)
+            if isNewSelection {
+                UnifiedToggleInputCoordinatorPixelHelper.fireModelSelectedPixel(modelId: modelId, surface: .addressBar)
+            }
         } else if routeGatedModelSelection(model) {
             // Remember the gated model so a post-purchase `/models` refresh can apply it.
             pendingGatedModelId = modelId
@@ -131,6 +135,10 @@ final class IPadOmnibarModelPickerController {
             return
         }
         pendingGatedModelId = nil
+        let isNewSelection = modelId != store.persistedModelId
         store.updateSelectedModel(modelId, isNewChatContext: true)
+        if isNewSelection {
+            UnifiedToggleInputCoordinatorPixelHelper.fireModelSelectedPixel(modelId: modelId, surface: .addressBar)
+        }
     }
 }

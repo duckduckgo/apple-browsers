@@ -82,7 +82,9 @@ extension Preferences {
                                     .padding(.trailing, 8)
                                 } else {
                                     HStack {
-                                        Image(.warning).foregroundColor(Color(.linkBlue))
+                                        Image(nsImage: DesignSystemImages.Glyphs.Size16.exclamation)
+                                            .rebrandableLinkForeground()
+
                                         Text(UserText.isNotAddedToDock)
                                     }
                                     .padding(.trailing, 8)
@@ -146,6 +148,9 @@ extension Preferences {
                                     .disabled(startupModel.restorePreviousSession)
                                 }
                             }
+                            // Reset the tint so only the radio button (from rebrandedControlTint below)
+                            // is tinted, not the StartupWindowType picker/text in the label.
+                            .tint(nil)
                             .tag(false)
                             .padding(.bottom, 4)
 
@@ -153,6 +158,7 @@ extension Preferences {
                                 .accessibilityIdentifier("PreferencesGeneralView.stateRestorePicker.reopenAllWindowsFromLastSession")
                         }, label: {})
                         .pickerStyle(.radioGroup)
+                        .rebrandedControlTint()
                         .offset(x: PreferencesUI_macOS.Const.pickerHorizontalOffset)
                         .accessibilityIdentifier("PreferencesGeneralView.stateRestorePicker")
 
@@ -244,7 +250,9 @@ extension Preferences {
                                         .accessibilityIdentifier("PreferencesGeneralView.homePage.specificPage")
                                     Button(UserText.setPage) {
                                         showingCustomHomePageSheet.toggle()
-                                    }.disabled(!startupModel.launchToCustomHomePage)
+                                    }
+                                    .disabled(!startupModel.launchToCustomHomePage)
+                                    .tint(nil)
                                 }
                                 TextMenuItemCaption(startupModel.friendlyURL)
                                     .padding(.top, 0)
@@ -253,6 +261,7 @@ extension Preferences {
                             }.tag(true)
                         }
                         .pickerStyle(.radioGroup)
+                        .rebrandedControlTint()
                         .offset(x: PreferencesUI_macOS.Const.pickerHorizontalOffset)
                     }
 
@@ -373,10 +382,7 @@ struct CustomHomePageSheet: View {
                 }
                 .padding(8)
             }
-            .roundedBorder()
             .padding(EdgeInsets(top: 10, leading: 15, bottom: 10, trailing: 15))
-
-            Divider()
 
             HStack(alignment: .center) {
                 Spacer()

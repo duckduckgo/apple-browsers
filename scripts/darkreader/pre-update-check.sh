@@ -97,6 +97,9 @@ unzip -q "$BUILD_ZIP" -d "$NEW_DIR"
 
 NEW_MANIFEST="$(find "$NEW_DIR" -maxdepth 2 -name manifest.json | head -1)"
 NEW_BG_JS="$(find "$NEW_DIR" -maxdepth 3 -path "*/background/index.js" | head -1)"
+NEW_INJECT_JS="$(find "$NEW_DIR" -maxdepth 3 -path "*/inject/index.js" | head -1)"
+NEW_FALLBACK_JS="$(find "$NEW_DIR" -maxdepth 3 -path "*/inject/fallback.js" | head -1)"
+NEW_DETECTOR_HINTS="$(find "$NEW_DIR" -maxdepth 3 -path "*/config/detector-hints.config" | head -1)"
 
 echo ""
 
@@ -187,8 +190,115 @@ else
     check_pattern "onInstalled + setUninstallURL patch target" \
         'chrome.tabs.create({url: getHelpURL()});'
 
+    GET_CONNECTION_MESSAGE_TARGET='static async getConnectionMessage(
+            tabURL,
+            url,
+            isTopFrame,
+            topFrameHasDarkTheme
+        ) {
+            await Extension.loadData();
+            return Extension.getTabMessage(
+                tabURL,
+                url,
+                isTopFrame,
+                topFrameHasDarkTheme
+            );
+        }'
+
     check_pattern "getConnectionMessage patch target" \
-        'static async getConnectionMessage('
+        "$GET_CONNECTION_MESSAGE_TARGET"
+fi
+
+WIKIPEDIA_FALLBACK_TARGET='        matchMedia("(prefers-color-scheme: dark)").matches &&
+        wasEnabledForHost() !== false &&
+        !document.querySelector(".darkreader--fallback") &&'
+
+if [[ -z "$NEW_FALLBACK_JS" ]]; then
+    fail "inject/fallback.js not found in new version"
+elif grep -qF "$WIKIPEDIA_FALLBACK_TARGET" "$NEW_FALLBACK_JS"; then
+    pass "Wikipedia temporary fallback patch target"
+else
+    fail "Wikipedia temporary fallback patch target — expected condition not found in inject/fallback.js"
+fi
+
+CONTENT_SCRIPT_SEND_MESSAGE_TARGET='    function sendMessage(message) {'
+CONTENT_SCRIPT_CONNECTION_TARGET='    function sendConnectionOrResumeMessage(type) {'
+
+if [[ -z "$NEW_INJECT_JS" ]]; then
+    fail "inject/index.js not found in new version"
+elif grep -qF "$CONTENT_SCRIPT_SEND_MESSAGE_TARGET" "$NEW_INJECT_JS" && grep -qF "$CONTENT_SCRIPT_CONNECTION_TARGET" "$NEW_INJECT_JS"; then
+    pass "cold background document connection retry patch targets"
+else
+    fail "cold background document connection retry patch targets — expected functions not found in inject/index.js"
+fi
+
+WIKIPEDIA_FALLBACK_CSS_TARGET='        const css = [
+            "html, body, body :not(iframe) {"'
+
+if [[ -n "$NEW_FALLBACK_JS" ]] && grep -qF "$WIKIPEDIA_FALLBACK_CSS_TARGET" "$NEW_FALLBACK_JS"; then
+    pass "restrained Wikipedia fallback CSS patch target"
+else
+    fail "restrained Wikipedia fallback CSS patch target — expected fallback CSS not found in inject/fallback.js"
+fi
+
+WIKIPEDIA_FALLBACK_OBSERVER_TARGET='        fallback.media = "screen";
+        fallback.textContent = css;
+        if (document.head) {'
+
+if [[ -n "$NEW_FALLBACK_JS" ]] && grep -qF "$WIKIPEDIA_FALLBACK_OBSERVER_TARGET" "$NEW_FALLBACK_JS"; then
+    pass "Wikipedia native dark fallback observer patch target"
+else
+    fail "Wikipedia native dark fallback observer patch target — expected insertion point not found in inject/fallback.js"
+fi
+
+WIKIPEDIA_FALLBACK_CONTEXT_TARGET='        return null;
+    }
+
+    if ('
+
+if [[ -n "$NEW_FALLBACK_JS" ]] && grep -qF "$WIKIPEDIA_FALLBACK_CONTEXT_TARGET" "$NEW_FALLBACK_JS"; then
+    pass "Wikipedia fallback hostname context patch target"
+else
+    fail "Wikipedia fallback hostname context patch target — expected insertion point not found in inject/fallback.js"
+fi
+
+WIKIMEDIA_DETECTOR_HINT='*.mediawiki.org
+*.wikibooks.org
+*.wikidata.org
+*.wikifunctions.org
+*.wikimedia.org
+*.wikipedia.org
+*.wikiquote.org
+*.wikisource.org
+wikisource.org
+*.wiktionary.org
+*.wikiversity.org
+*.wikivoyage.org
+
+TARGET
+html
+
+MATCH
+.skin-theme-clientpref-night'
+
+if [[ -z "$NEW_DETECTOR_HINTS" ]]; then
+    fail "config/detector-hints.config not found in new version"
+elif grep -qF "$WIKIMEDIA_DETECTOR_HINT" "$NEW_DETECTOR_HINTS"; then
+    pass "Wikipedia automatic theme detector patch target"
+else
+    fail "Wikipedia automatic theme detector patch target — Wikimedia block not found in config/detector-hints.config"
+fi
+
+if [[ -n "$NEW_MANIFEST" ]] && python3 -c "import json,sys; v=json.load(open(sys.argv[1])).get('version', '').split('.'); assert len(v) == 3 and all(p.isdigit() for p in v)" "$NEW_MANIFEST" 2>/dev/null; then
+    pass "manifest version patch target"
+else
+    fail "manifest version patch target — expected three numeric components"
+fi
+
+if [[ -n "$NEW_MANIFEST" ]] && python3 -c "import json,sys; m=json.load(open(sys.argv[1])); assert m.get('background') == {'service_worker': 'background/index.js'}" "$NEW_MANIFEST" 2>/dev/null; then
+    pass "nonpersistent background page patch target"
+else
+    fail "nonpersistent background page patch target — expected background/index.js service worker"
 fi
 
 echo ""

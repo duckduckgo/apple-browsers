@@ -192,19 +192,27 @@ class TabViewCell: UICollectionViewCell {
         let imageAspectRatio = image.size.width > 0 ? image.size.height / image.size.width : 1.0
         let containerAspectRatio = background.bounds.width > 0 ? (background.bounds.height - TabViewCell.Constants.cellHeaderHeight) / background.bounds.width : 1.0
 
-        let strechContainerVerically = containerAspectRatio < imageAspectRatio
-
         if let constraint = previewAspectRatio {
             preview?.removeConstraint(constraint)
+            previewAspectRatio = nil
         }
 
-        previewBottomConstraint?.isActive = !strechContainerVerically
-        previewBottomConstraint?.constant = 0
-        previewTrailingConstraint?.isActive = strechContainerVerically
-
-        if let preview {
-            previewAspectRatio = preview.heightAnchor.constraint(equalTo: preview.widthAnchor, multiplier: imageAspectRatio)
-            previewAspectRatio?.isActive = true
+        if imageAspectRatio <= containerAspectRatio {
+            // Wide (landscape) capture is flatter than the cell: pin all edges and let
+            // scaleAspectFill centre-crop the horizontal overflow, so the cell is filled with
+            // no empty space and the page stays centred.
+            previewBottomConstraint?.isActive = true
+            previewBottomConstraint?.constant = 0
+            previewTrailingConstraint?.isActive = true
+        } else {
+            // Tall (portrait) capture: pin full width from the top and crop the excess height.
+            previewBottomConstraint?.isActive = false
+            previewBottomConstraint?.constant = 0
+            previewTrailingConstraint?.isActive = true
+            if let preview {
+                previewAspectRatio = preview.heightAnchor.constraint(equalTo: preview.widthAnchor, multiplier: imageAspectRatio)
+                previewAspectRatio?.isActive = true
+            }
         }
     }
 

@@ -56,7 +56,9 @@ extension Preferences {
                                 Text(UserText.isDefaultBrowser)
                             } else {
                                 HStack {
-                                    Image(.warning).foregroundColor(Color(.linkBlue))
+                                    Image(nsImage: DesignSystemImages.Glyphs.Size16.exclamation)
+                                        .rebrandableLinkForeground()
+
                                     Text(UserText.isNotDefaultBrowser)
                                 }
                                 .padding(.trailing, 8)
@@ -87,7 +89,9 @@ extension Preferences {
                                         .padding(.trailing, 8)
                                     } else {
                                         HStack {
-                                            Image(.warning).foregroundColor(Color(.linkBlue))
+                                            Image(nsImage: DesignSystemImages.Glyphs.Size16.exclamation)
+                                                .rebrandableLinkForeground()
+
                                             Text(UserText.isNotAddedToDock)
                                         }
                                         .padding(.trailing, 8)

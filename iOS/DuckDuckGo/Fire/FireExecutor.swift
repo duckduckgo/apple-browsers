@@ -101,6 +101,12 @@ protocol FireExecuting {
     @MainActor
     func burnChat(chatID: String, isFireMode: Bool) async -> Result<Void, Error>
 
+    /// Burn a specific set of Duck.ai chats in one batch. Peer to `burnChat`; reuses a single
+    /// clearing session instead of paying the per-chat web view cost for each.
+    @discardableResult
+    @MainActor
+    func burnChats(chatIDs: [String], isFireMode: Bool) async -> Result<Void, Error>
+
     /// Burn all persistent Duck.ai chats. Peer to `burnChat` so the chat-history sheet's
     /// "Delete All" stays off `burn(request:)` (no tab/data orchestration, no delegate).
     @discardableResult
@@ -335,6 +341,12 @@ class FireExecutor: FireExecuting {
 
     @discardableResult
     @MainActor
+    func burnChats(chatIDs: [String], isFireMode: Bool) async -> Result<Void, Error> {
+        await aiChatDeleter.deleteChats(chatIDs: chatIDs, isFireMode: isFireMode)
+    }
+
+    @discardableResult
+    @MainActor
     func burnAllChats(isFireMode: Bool) async -> Result<Void, Error> {
         await aiChatDeleter.deleteAllChats(isFireMode: isFireMode)
     }
@@ -562,7 +574,7 @@ class FireExecutor: FireExecuting {
             DailyPixel.fireDailyAndCount(pixel: .aiChatHistoryDeleteSuccessful)
         case .failure(let error):
             Logger.aiChat.debug("Failed to clear Duck.ai chat history: \(error.localizedDescription)")
-            DailyPixel.fireDailyAndCount(pixel: .aiChatHistoryDeleteFailed)
+            DailyPixel.fireDailyAndCount(pixel: .aiChatHistoryDeleteFailed, error: error)
 
             if let userScriptError = error as? UserScriptError {
                 userScriptError.fireLoadJSFailedPixelIfNeeded()
@@ -588,7 +600,7 @@ class FireExecutor: FireExecuting {
             DailyPixel.fireDailyAndCount(pixel: .aiChatHistoryDeleteSuccessful)
         case .failure(let error):
             Logger.aiChat.debug("Failed to clear fire mode Duck.ai chat history: \(error.localizedDescription)")
-            DailyPixel.fireDailyAndCount(pixel: .aiChatHistoryDeleteFailed)
+            DailyPixel.fireDailyAndCount(pixel: .aiChatHistoryDeleteFailed, error: error)
 
             if let userScriptError = error as? UserScriptError {
                 userScriptError.fireLoadJSFailedPixelIfNeeded()

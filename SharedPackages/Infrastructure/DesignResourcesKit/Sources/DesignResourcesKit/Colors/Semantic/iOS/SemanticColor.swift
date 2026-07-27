@@ -89,6 +89,16 @@ public enum DesignSystemColor: CaseIterable {
     // Shield
     case shieldPrivacy
 
+    // VPN
+    case vpnGreen
+    case vpnGreenPressed
+    case vpnGreenForeground
+    case vpnGreenForegroundPressed
+    case vpnYellow
+    case vpnYellowPressed
+    case vpnYellowForeground
+    case vpnYellowForegroundPressed
+
     // Icons
     case iconsPrimary
     case iconsSecondary

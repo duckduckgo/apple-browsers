@@ -19,6 +19,7 @@
 import Common
 import SwiftUI
 import SwiftUIExtensions
+import DesignResourcesKit
 
 @MainActor
 struct WinBackOfferPromptView: ModalView {
@@ -45,7 +46,7 @@ struct WinBackOfferPromptView: ModalView {
 
     var body: some View {
         VStack(spacing: 8) {
-            Image("subscription-clock")
+            Image(DesignSystemRebrand.isAppRebranded() ? .subscriptionClock : .subscriptionClockLegacy)
                 .resizable()
                 .scaledToFit()
                 .frame(width: Constants.imageWidth, height: Constants.imageHeight)

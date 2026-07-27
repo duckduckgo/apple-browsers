@@ -99,7 +99,7 @@ final class IPadOmnibarReasoningPickerController {
 
     private func select(_ mode: AIChatReasoningMode) {
         store.updateSelectedReasoningMode(mode)
-        Pixel.fire(pixel: .unifiedToggleInputReasoningEffortSelected, withAdditionalParameters: ["effort_level": mode.rawValue])
+        Pixel.fire(pixel: .unifiedToggleInputReasoningEffortSelected, withAdditionalParameters: ["effort_level": mode.rawValue, "surface": UnifiedToggleInputPixelSurface.addressBar.rawValue])
         onReasoningUpdated?()
     }
 

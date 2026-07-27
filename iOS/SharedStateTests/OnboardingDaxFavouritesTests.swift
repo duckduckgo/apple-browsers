@@ -37,8 +37,6 @@ import Combine
 import PrivacyConfig
 import AIChatTestingUtilities
 
-// swiftlint:disable force_try
-
 private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibilityManaging {
     func isFeatureAvailable() -> Bool { false }
     func isEligibleForNTPAfterIdle() -> Bool { false }
@@ -54,7 +52,7 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
     private var contextualOnboardingLogicMock: ContextualOnboardingLogicMock!
 
     let mockWebsiteDataManager = MockWebsiteDataManager()
-    let keyValueStore: ThrowingKeyValueStoring = try! MockKeyValueFileStore()
+    let keyValueStore: ThrowingKeyValueStoring = MockKeyValueFileStore()
 
     override func setUpWithError() throws {
         try super.setUpWithError()
@@ -96,7 +94,7 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
         let onboardingPixelReporter = OnboardingPixelReporterMock()
         let tabsPersistence = TabsModelPersistence(normalStore: keyValueStore, fireStore: MockKeyValueFileStore(), legacyStore: MockKeyValueStore())
         let variantManager = MockVariantManager()
-        let daxDialogsFactory = DefaultContextualDaxDialogsFactory(contextualOnboardingLogic: contextualOnboardingLogicMock,
+        let daxDialogsFactory = ContextualDaxDialogFactory(contextualOnboardingLogic: contextualOnboardingLogicMock,
                                                                       contextualOnboardingPixelReporter: onboardingPixelReporter)
         let contextualOnboardingPresenter = ContextualOnboardingPresenter(variantManager: variantManager, daxDialogsFactory: daxDialogsFactory)
         let mockConfigManager = MockPrivacyConfigurationManager()
@@ -209,6 +207,7 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
             ),
             freemiumPIRDebugSettings: freemiumPIRDebugSettings,
             freemiumDBPUserStateManager: freemiumDBPUserStateManager,
+            profileStateManager: DefaultDBPProfileStateManager(keyValueStore: freemiumDBPUserDefaults),
             launchSourceManager: LaunchSourceManager(),
             winBackOfferVisibilityManager: MockWinBackOfferVisibilityManager(),
             mobileCustomization: MobileCustomization(keyValueStore: MockThrowingKeyValueStore()),
@@ -280,5 +279,3 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
     }
 
 }
-
-// swiftlint:enable force_try

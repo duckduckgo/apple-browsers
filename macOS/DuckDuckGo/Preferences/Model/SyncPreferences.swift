@@ -20,6 +20,7 @@ import Foundation
 import DDGSync
 import Combine
 import CombineExtensions
+import DesignResourcesKit
 import Common
 import FoundationExtensions
 import SystemConfiguration
@@ -198,6 +199,7 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
     @Published var isAccountRecoveryAvailable: Bool = true
     @Published var isAppVersionNotSupported: Bool = true
     @Published var isAIChatSyncEnabled: Bool = false
+    @Published var isAppRebranded: Bool = false
 
     private let syncPausedStateManager: any SyncPausedStateManaging
     let syncSettingsHandler: SyncSettingsViewHandling
@@ -242,6 +244,7 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
         self.syncFeatureFlags = syncService.featureFlags
         self.syncPausedStateManager = syncPausedStateManager
         self.featureFlagger = featureFlagger
+        self.isAppRebranded = DesignSystemRebrand.isAppRebranded()
 
         self.isFaviconsFetchingEnabled = syncBookmarksAdapter.isFaviconsFetchingEnabled
         self.isUnifiedFavoritesEnabled = appearancePreferences.favoritesDisplayMode.isDisplayUnified

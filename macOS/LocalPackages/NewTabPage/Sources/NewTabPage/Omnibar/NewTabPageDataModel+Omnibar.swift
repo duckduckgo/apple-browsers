@@ -64,7 +64,7 @@ public extension NewTabPageDataModel {
         }
     }
 
-    /// Attachment limits forwarded to the web. `files`/`images` are backend-sourced + optional; `tabs` is a hardcoded native constant.
+    /// Attachment limits forwarded to the web. All optional: `files`/`images` are backend-sourced; `tabs` is a hardcoded native cap, omitted when the limit is disabled (web then applies no tab limit).
     struct AttachmentLimits: Codable, Equatable {
         public struct FileLimits: Codable, Equatable {
             let maxPerConversation: Int
@@ -102,9 +102,9 @@ public extension NewTabPageDataModel {
 
         let files: FileLimits?
         let images: ImageLimits?
-        let tabs: TabLimits
+        let tabs: TabLimits?
 
-        public init(files: FileLimits?, images: ImageLimits?, tabs: TabLimits) {
+        public init(files: FileLimits?, images: ImageLimits?, tabs: TabLimits?) {
             self.files = files
             self.images = images
             self.tabs = tabs

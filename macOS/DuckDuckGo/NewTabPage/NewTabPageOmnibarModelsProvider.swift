@@ -17,6 +17,7 @@
 //
 
 import AIChat
+import FeatureFlags
 import NewTabPage
 import os.log
 import Subscription
@@ -30,13 +31,16 @@ final class NewTabPageOmnibarModelsProvider: NewTabPageOmnibarModelsProviding {
     private(set) var attachmentLimits: NewTabPageDataModel.AttachmentLimits?
     private let modelsService: AIChatModelsProviding
     private let subscriptionManager: any SubscriptionManager
+    private let featureFlagger: FeatureFlagger
 
     init(
         modelsService: AIChatModelsProviding = AIChatModelsService(),
-        subscriptionManager: any SubscriptionManager = Application.appDelegate.subscriptionManager
+        subscriptionManager: any SubscriptionManager = Application.appDelegate.subscriptionManager,
+        featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger
     ) {
         self.modelsService = modelsService
         self.subscriptionManager = subscriptionManager
+        self.featureFlagger = featureFlagger
     }
 
     func fetchAIModelSections() async -> [NewTabPageDataModel.AIModelSection] {
@@ -79,7 +83,7 @@ final class NewTabPageOmnibarModelsProvider: NewTabPageOmnibarModelsProviding {
         }
     }
 
-    /// `files`/`images` come from the backend when present; `tabs` always carries the hardcoded cap.
+    /// `files`/`images` come from the backend when present; `tabs` carries the hardcoded cap, omitted when the limit kill switch is off (web then applies no tab limit).
     private func mapAttachmentLimits(_ limits: AIChatAttachmentTierLimits?) -> NewTabPageDataModel.AttachmentLimits {
         NewTabPageDataModel.AttachmentLimits(
             files: limits.map {
@@ -97,7 +101,9 @@ final class NewTabPageOmnibarModelsProvider: NewTabPageOmnibarModelsProviding {
                     maxInputCharsWithAttachments: $0.images.maxInputCharsWithAttachments
                 )
             },
-            tabs: .init(maxAttached: AIChatOmnibarController.maxTabAttachments)
+            tabs: featureFlagger.isFeatureOn(.aiChatTabAttachmentLimit)
+                ? .init(maxAttached: AIChatOmnibarController.maxTabAttachments)
+                : nil
         )
     }
 

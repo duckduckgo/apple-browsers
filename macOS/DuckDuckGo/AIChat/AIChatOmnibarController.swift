@@ -515,15 +515,17 @@ final class AIChatOmnibarController {
 
     /// Hardcoded cap on tabs attached as page context (not backend-driven, unlike images/files).
     static let maxTabAttachments: Int = 3
-    /// One over the cap, mirroring the image/file display cap.
-    var tabAttachmentsDisplayCap: Int { Self.maxTabAttachments + 1 }
+    /// Kill switch (default on) for the whole tab-attachment cap. Off → no cap.
+    var isTabAttachmentLimitEnabled: Bool { featureFlagger.isFeatureOn(.aiChatTabAttachmentLimit) }
+    /// One over the cap, mirroring the image/file display cap; unbounded when the limit is disabled.
+    var tabAttachmentsDisplayCap: Int { isTabAttachmentLimitEnabled ? Self.maxTabAttachments + 1 : .max }
 
     var isActiveTabAttachmentsFull: Bool {
-        activeTabAttachments.count >= Self.maxTabAttachments
+        isTabAttachmentLimitEnabled && activeTabAttachments.count >= Self.maxTabAttachments
     }
 
     var hasExcessTabAttachments: Bool {
-        activeTabAttachments.count > Self.maxTabAttachments
+        isTabAttachmentLimitEnabled && activeTabAttachments.count > Self.maxTabAttachments
     }
 
     /// Whether the currently selected model supports file (PDF etc.) upload.

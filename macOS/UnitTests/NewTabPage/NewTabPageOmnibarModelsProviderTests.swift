@@ -28,15 +28,20 @@ final class NewTabPageOmnibarModelsProviderTests: XCTestCase {
 
     private var mockModelsService: MockModelsService!
     private var mockSubscriptionManager: SubscriptionManagerMock!
+    private var mockFeatureFlagger: MockFeatureFlagger!
     private var provider: NewTabPageOmnibarModelsProvider!
 
     override func setUp() {
         super.setUp()
         mockModelsService = MockModelsService()
         mockSubscriptionManager = SubscriptionManagerMock()
+        // The tab-attachment limit defaults on, so enable it here; the off case has its own test.
+        mockFeatureFlagger = MockFeatureFlagger()
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatTabAttachmentLimit]
         provider = NewTabPageOmnibarModelsProvider(
             modelsService: mockModelsService,
-            subscriptionManager: mockSubscriptionManager
+            subscriptionManager: mockSubscriptionManager,
+            featureFlagger: mockFeatureFlagger
         )
     }
 
@@ -44,6 +49,7 @@ final class NewTabPageOmnibarModelsProviderTests: XCTestCase {
         provider = nil
         mockModelsService = nil
         mockSubscriptionManager = nil
+        mockFeatureFlagger = nil
         super.tearDown()
     }
 
@@ -126,6 +132,17 @@ final class NewTabPageOmnibarModelsProviderTests: XCTestCase {
             tabs: .init(maxAttached: AIChatOmnibarController.maxTabAttachments)
         )
         XCTAssertEqual(provider.attachmentLimits, expected)
+    }
+
+    func testWhenTabAttachmentLimitFlagOffThenTabsLimitIsOmitted() async {
+        mockFeatureFlagger.enabledFeatureFlags = []
+        mockModelsService.modelsToReturn = [makeRemoteModel(id: "free-model", accessTier: ["free"])]
+        mockModelsService.attachmentLimitsToReturn = makeAttachmentLimits()
+
+        _ = await provider.fetchAIModelSections()
+
+        // Kill switch off: files/images still mapped, but no tab cap is forwarded to the web.
+        XCTAssertEqual(provider.attachmentLimits, expectedAttachmentLimits(base: freeBase, tabsMaxAttached: nil))
     }
 
     func testWhenResponseHasAttachmentLimitsThenTheyAreMappedForFreeTier() async {
@@ -357,7 +374,7 @@ final class NewTabPageOmnibarModelsProviderTests: XCTestCase {
         )
     }
 
-    private func expectedAttachmentLimits(base: Int) -> NewTabPageDataModel.AttachmentLimits {
+    private func expectedAttachmentLimits(base: Int, tabsMaxAttached: Int? = AIChatOmnibarController.maxTabAttachments) -> NewTabPageDataModel.AttachmentLimits {
         NewTabPageDataModel.AttachmentLimits(
             files: .init(
                 maxPerConversation: base + 1,
@@ -370,7 +387,7 @@ final class NewTabPageOmnibarModelsProviderTests: XCTestCase {
                 maxPerConversation: base + 6,
                 maxInputCharsWithAttachments: base + 7
             ),
-            tabs: .init(maxAttached: AIChatOmnibarController.maxTabAttachments)
+            tabs: tabsMaxAttached.map { .init(maxAttached: $0) }
         )
     }
 

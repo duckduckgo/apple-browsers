@@ -507,7 +507,11 @@ final class AIChatHistoryViewController: UIViewController {
 
     private func enterSelectionMode(preselecting chatId: String? = nil) {
         guard !isEditingChats else { return }
-        // Search and multi-select are mutually exclusive: leave search first.
+        let wasSearching = tableView.tableHeaderView != nil
+        // `clearSearch()` restores the unfiltered rows synchronously and also publishes them,
+        // which would fire a reactive reload that drops the selection set up below. Suppress that
+        // reload and reload once here instead, so the table and selection stay consistent.
+        if wasSearching { isApplyingLocalUpdate = true }
         hideSearchBarIfNeeded()
         isEditingChats = true
         viewModel.editModeEntered()
@@ -515,10 +519,21 @@ final class AIChatHistoryViewController: UIViewController {
         configureNavigationButtons()
         configureToolbar()
         tableView.setEditing(true, animated: true)
-        if let chatId, let indexPath = indexPath(forChatId: chatId) {
-            tableView.selectRow(at: indexPath, animated: false, scrollPosition: .none)
-            updateSelectionActionButtons()
+        if wasSearching {
+            tableView.reloadData()
+            DispatchQueue.main.async { [weak self] in self?.isApplyingLocalUpdate = false }
         }
+        if let chatId {
+            selectRow(forChatId: chatId)
+        }
+    }
+
+    /// Selects the row for `chatId` (if present) and refreshes the selection-dependent toolbar,
+    /// since programmatic selection doesn't trigger `didSelectRowAt`.
+    private func selectRow(forChatId chatId: String) {
+        guard let indexPath = indexPath(forChatId: chatId) else { return }
+        tableView.selectRow(at: indexPath, animated: false, scrollPosition: .none)
+        updateSelectionActionButtons()
     }
 
     private func indexPath(forChatId chatId: String) -> IndexPath? {
@@ -536,7 +551,7 @@ final class AIChatHistoryViewController: UIViewController {
         searchBar.text = nil
         searchBar.setShowsCancelButton(false, animated: false)
         searchBar.resignFirstResponder()
-        viewModel.updateQuery("")
+        viewModel.clearSearch()
         removeSearchHeader()
     }
 

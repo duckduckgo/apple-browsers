@@ -54,6 +54,10 @@ final class AIChatHistoryViewModel: ObservableObject {
     /// currently shown in `pinned`/`recent`.
     private(set) var totalChatCount: Int = 0
 
+    /// The full unfiltered chat list from the last load, retained so `clearSearch()` can restore
+    /// the unfiltered rows synchronously without waiting for the debounced query pipeline.
+    private var loadedChats: [DuckAiChat] = []
+
     private let reader: ChatHistoryReading
     private let fireExecutor: FireExecuting?
     private let downloader: ChatHistoryDownloading?
@@ -120,6 +124,7 @@ final class AIChatHistoryViewModel: ObservableObject {
                 : allChats.filter { $0.title.localizedCaseInsensitiveContains(trimmed) }
             loadFailed = false
             totalChatCount = allChats.count
+            loadedChats = allChats
             pinned = filtered.filter(\.pinned)
             recent = filtered.filter { !$0.pinned }
         case .failure(let error):
@@ -128,6 +133,7 @@ final class AIChatHistoryViewModel: ObservableObject {
             }
             loadFailed = true
             totalChatCount = 0
+            loadedChats = []
             pinned = []
             recent = []
         }
@@ -333,6 +339,18 @@ final class AIChatHistoryViewModel: ObservableObject {
 
     func updateQuery(_ newValue: String) {
         query = newValue
+    }
+
+    /// Clears the search filter and restores the unfiltered rows synchronously. The `query`
+    /// pipeline is debounced, so callers that need the full list immediately (e.g. entering
+    /// multi-select from a filtered result) use this instead of `updateQuery("")` to avoid a
+    /// ~150ms lag before the rows reappear.
+    func clearSearch() {
+        query = ""
+        guard !effectiveQuery.isEmpty else { return }
+        effectiveQuery = ""
+        pinned = loadedChats.filter(\.pinned)
+        recent = loadedChats.filter { !$0.pinned }
     }
 
     // MARK: - Helpers

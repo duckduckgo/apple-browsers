@@ -239,7 +239,7 @@ extension NewTabPageActionsManager {
             NewTabPageOmnibarClient(configProvider: omnibarConfigProvider,
                                     suggestionsProvider: suggestionsProvider,
                                     aiChatsProvider: aiChatsProvider,
-                                    modelsProvider: NewTabPageOmnibarModelsProvider(),
+                                    modelsProvider: NewTabPageOmnibarModelsProvider(featureFlagger: featureFlagger),
                                     actionHandler: omnibarActionHandler,
                                     tabsProvider: NewTabPageOmnibarTabsProvider(windowControllersManager: windowControllersManager)),
             NewTabPageWinBackOfferClient(provider: winBackOfferBannerProvider)

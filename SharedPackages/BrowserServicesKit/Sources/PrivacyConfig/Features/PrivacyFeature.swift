@@ -530,6 +530,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables attaching content from multiple open tabs to the New Tab Page omnibar Duck.ai chat.
     case ntpAttachMoreTabs
 
+    /// Enables the cap on how many open tabs can be attached (native omnibar and NTP). Kill switch.
+    case tabAttachmentLimit
+
     /// Enables deleting recent AI chats from the New Tab Page omnibar
     case ntpSuggestionsDeletion
 

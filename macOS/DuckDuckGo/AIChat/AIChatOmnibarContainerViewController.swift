@@ -268,7 +268,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     /// Whether the attachments error label should be visible — either a sticky pick-time rejection
     /// or a live count-excess cue (one over the cap).
     private var shouldShowAttachmentError: Bool {
-        lastAttachmentError != nil || hasVisibleImageExcess || hasVisibleFileExcess
+        lastAttachmentError != nil || hasVisibleImageExcess || hasVisibleFileExcess || hasVisibleTabExcess
     }
 
     /// Extra height needed beyond text and suggestions for dynamic content like attachments.
@@ -304,6 +304,11 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     /// File-side analogue of `hasVisibleImageExcess`.
     private var hasVisibleFileExcess: Bool {
         omnibarController.selectedModelSupportsFileUpload && hasExcessFileAttachments
+    }
+
+    /// Tab-side analogue of `hasVisibleImageExcess`. Not picker-flag-gated: tab cards always render.
+    private var hasVisibleTabExcess: Bool {
+        omnibarController.hasExcessTabAttachments
     }
 
     required init?(coder: NSCoder) {
@@ -417,7 +422,8 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         let canSendImages = omnibarController.isImageGenerationMode || omnibarController.selectedModelSupportsImageUpload
         let imageBlockingExcess = canSendImages && omnibarController.hasExcessActiveTabImageAttachments
         let fileBlockingExcess = omnibarController.selectedModelSupportsFileUpload && hasExcessFileAttachments
-        let hasBlockingExcess = imageBlockingExcess || fileBlockingExcess
+        let tabBlockingExcess = omnibarController.hasExcessTabAttachments
+        let hasBlockingExcess = imageBlockingExcess || fileBlockingExcess || tabBlockingExcess
 
         // Voice-chat mode only kicks in when the input is empty, the feature flag is on, and we
         // aren't in image-generation mode (where the button must keep its image-flow semantics).
@@ -1461,25 +1467,41 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         header.isEnabled = false
         menu.addItem(header)
 
+        // Disable unattached rows once at the display cap; attached rows stay interactive.
+        let atCap = attachedIds.count >= omnibarController.tabAttachmentsDisplayCap
+
         // `openTabsForOmnibarPicker()` returns the current tab first, so the menu shows
         // "(Current Tab)" pinned on top.
         for candidate in candidates {
+            let isAttached = attachedIds.contains(candidate.id)
             let item = NSMenuItem()
             let row = AIChatTabPickerMenuRowView(
                 attachment: candidate,
-                isAttached: attachedIds.contains(candidate.id),
+                isAttached: isAttached,
                 isCurrentTab: candidate.id == currentTabId,
-                onToggle: { [weak omnibarController, weak observer] in
-                    guard let omnibarController else { return }
-                    // Read state BEFORE toggle so we know which pixel to fire — the toggle
-                    // flips it, so post-toggle we'd see the opposite of "what just happened".
-                    let wasAttached = omnibarController.activeTabAttachments.contains(where: { $0.id == candidate.id })
-                    omnibarController.toggleTabAttachment(candidate)
-                    let pixel: AIChatPixel = wasAttached
-                        ? .aiChatAddressBarAttachTabRemoved
-                        : .aiChatAddressBarAttachTabChosen
-                    PixelKit.fire(pixel, frequency: .dailyAndCount, includeAppVersionParameter: true)
-                    observer?.markDidMutate()
+                isDisabled: !isAttached && atCap,
+                onToggle: { [weak self, weak observer, weak menu] in
+                    guard let self else { return }
+                    // Only fire a pixel / count a mutation on a real change — the toggle no-ops at the cap.
+                    let wasAttached = self.omnibarController.activeTabAttachments.contains(where: { $0.id == candidate.id })
+                    let wasOverCap = self.omnibarController.hasExcessTabAttachments
+                    self.omnibarController.toggleTabAttachment(candidate)
+                    let nowAttached = self.omnibarController.activeTabAttachments.contains(where: { $0.id == candidate.id })
+                    if nowAttached != wasAttached {
+                        let pixel: AIChatPixel = wasAttached
+                            ? .aiChatAddressBarAttachTabRemoved
+                            : .aiChatAddressBarAttachTabChosen
+                        PixelKit.fire(pixel, frequency: .dailyAndCount, includeAppVersionParameter: true)
+                        observer?.markDidMutate()
+                    }
+                    // The submenu stays open and never rebuilds, so refresh rows from the attachment list.
+                    self.refreshAttachTabsRows(in: menu)
+                    // The panel reflow (error label + height) is deferred while the menu is open, so
+                    // crossing the cap boundary either way would leave a stale error. Close the menu so
+                    // `menuDidClose` reflows and the over-limit error appears / clears correctly.
+                    if self.omnibarController.hasExcessTabAttachments != wasOverCap {
+                        menu?.cancelTrackingWithoutAnimation()
+                    }
                 }
             )
             item.view = row
@@ -1487,6 +1509,18 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         }
 
         return menu
+    }
+
+    /// Re-applies every row's checkmark + disabled state from the attachment list after a toggle.
+    private func refreshAttachTabsRows(in menu: NSMenu?) {
+        guard let menu else { return }
+        let attachedIds = Set(omnibarController.activeTabAttachments.map(\.id))
+        let atCap = attachedIds.count >= omnibarController.tabAttachmentsDisplayCap
+        for item in menu.items {
+            guard let row = item.view as? AIChatTabPickerMenuRowView else { continue }
+            let isAttached = attachedIds.contains(row.tabId)
+            row.applyState(isAttached: isAttached, isDisabled: !isAttached && atCap)
+        }
     }
 
     @objc private func attachMenuImageOrFileClicked() {
@@ -1611,10 +1645,11 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         // overlap the tools row below. Keeping the two decisions in sync prevents that.
         let visibleImageExcess = hasVisibleImageExcess
         let visibleFileExcess = hasVisibleFileExcess
+        let visibleTabExcess = hasVisibleTabExcess
         // A sticky pick-time rejection (size / pages / unsupported / count) takes priority — it
         // names the precise reason the file the user just chose wasn't added. Otherwise fall back
         // to the live count-excess copy; file excess wins over image excess as it's the more
-        // recently introduced and likely thing the user has just done.
+        // recently introduced and likely thing the user has just done, and tab excess falls last.
         attachmentsErrorLabel.isHidden = !shouldShowAttachmentError
         if let lastAttachmentError {
             attachmentsErrorLabel.stringValue = lastAttachmentError
@@ -1624,9 +1659,13 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             attachmentsErrorLabel.stringValue = UserText.aiChatAttachmentFileCountLimit(
                 maxFilesPerConversation: omnibarController.maxFileAttachments
             )
-        } else {
+        } else if visibleImageExcess {
             attachmentsErrorLabel.stringValue = UserText.aiChatAttachmentImageTurnLimit(
                 maxImagesPerTurn: omnibarController.maxImageAttachments
+            )
+        } else if visibleTabExcess {
+            attachmentsErrorLabel.stringValue = UserText.aiChatAttachmentTabCountLimit(
+                maxTabs: AIChatOmnibarController.maxTabAttachments
             )
         }
 

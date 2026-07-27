@@ -19,7 +19,6 @@
 import Foundation
 import SwiftUI
 
-#if os(macOS)
 extension SharedColorPaletteDefinition {
 
     /// Proxy for retrieving base colors.
@@ -104,4 +103,3 @@ extension SharedColorPaletteDefinition {
         }
     }
 }
-#endif

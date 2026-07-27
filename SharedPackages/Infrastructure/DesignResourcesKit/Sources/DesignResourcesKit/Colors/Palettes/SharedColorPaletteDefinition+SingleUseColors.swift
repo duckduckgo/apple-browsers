@@ -19,14 +19,63 @@
 import Foundation
 import SwiftUI
 
-#if os(macOS)
-
 /// Single-use colours are hand-written and don't have matching Figma tokens
 /// so can't be automatically generated.
 extension SharedColorPaletteDefinition {
 
     static func dynamicColor(for singleUseColor: SingleUseColor) -> DynamicColor {
         switch singleUseColor {
+        case .fireModeAccent:
+            return DynamicColor(lightColor: RebrandingColor.Mandarin.mandarin50, darkColor: RebrandingColor.Mandarin.mandarin40)
+
+#if os(iOS)
+        case .controlWidgetBackground:
+            return DynamicColor(staticColor: .x818387)
+        case .unifiedFeedbackFieldBackground:
+            return DynamicColor(lightColor: surfaceSecondary.lightColor, darkColor: .x1C1C1E)
+        case .privacyDashboardBackground:
+            return DynamicColor(lightColor: surfaceSecondary.lightColor, darkColor: surfacePrimary.darkColor)
+        case .inputContentSeparator:
+            return DynamicColor(lightColor: shadowTertiary.lightColor, darkColor: highlightPrimary.darkColor)
+        case .whatsNewBackground:
+            return DynamicColor(lightColor: .white, darkColor: surfacePrimary.darkColor)
+        case .duckAIContextualSheetBackground:
+            return DynamicColor(lightColor: .white, darkColor: .x161616)
+        case .duckAIWebViewBackground:
+            return DynamicColor(lightColor: .white, darkColor: .x111111)
+        case .unifiedToggleInputCardBackground:
+            return DynamicColor(lightColor: .white, darkColor: Color(0x3D3D3D))
+        case .unifiedToggleInputStopButtonBackground:
+            return DynamicColor(lightColor: .shade(0.06), darkColor: .tint(0.12))
+        case .floatingAddressBarBackground:
+            return DynamicColor(lightColor: .shade(0.05), darkColor: .tint(0.08))
+        case .unifiedToggleInputAttachmentErrorBannerBackground:
+            return DynamicColor(lightColor: Color(0xF6CDD1), darkColor: Color(0x5A2A2A))
+        case .unifiedToggleInputAttachmentErrorText:
+            return DynamicColor(lightColor: .black.opacity(0.84), darkColor: .white.opacity(0.88))
+        case .unifiedToggleInputAttachmentErrorIcon:
+            return DynamicColor(staticColor: Color(0xD4452F))
+        case .tabSwitcherTrackerCountBackground:
+            return DynamicColor(lightColor: .green0, darkColor: .x2C3A2A)
+        case .toolbarButton:
+            return DynamicColor(lightColor: Color(0x1F1F1F).opacity(0.918), darkColor: .tint(0.905))
+
+        case .fireModeAccentDark:
+            return DynamicColor(staticColor: RebrandingColor.Mandarin.mandarin40)
+        case .fireModeAccentTertiary:
+            return DynamicColor(lightColor: RebrandingColor.Mandarin.mandarin70, darkColor: RebrandingColor.Mandarin.mandarin60)
+        case .fireModeBackground:
+            return DynamicColor(lightColor: Color(0x3D3D3D), darkColor: Color(0x080808))
+        case .fireModeCardBackground:
+            return DynamicColor(lightColor: Color(0x3D3D3D), darkColor: Color(0x1C1C1C))
+
+        case .duckAIVoiceCellBackground:
+            return DynamicColor(staticColor: RebrandingColor.Pondwater.pondwater90)
+
+        case let .rebranding(rebrandingColor):
+            return dynamicColor(for: rebrandingColor)
+
+#elseif os(macOS)
         case .aiToggleBorder:
             return DynamicColor(staticColor: .clear)
         case .aiToggleBackground:
@@ -36,8 +85,6 @@ extension SharedColorPaletteDefinition {
         case .aiToggleSelectionBorder:
             return shadowTertiary
 
-        case .fireModeAccent:
-            return DynamicColor(lightColor: RebrandingColor.Mandarin.mandarin50, darkColor: RebrandingColor.Mandarin.mandarin40)
         case .fireButtonGradientStart:
             return DynamicColor(staticColor: RebrandingColor.Mandarin.mandarin50)
         case .fireButtonGradientEnd:
@@ -46,6 +93,73 @@ extension SharedColorPaletteDefinition {
             return DynamicColor(staticColor: RebrandingColor.Mandarin.mandarin60)
         case .fireButtonPressedGradientEnd:
             return DynamicColor(staticColor: RebrandingColor.Red.red70)
+#endif
+        }
+    }
+}
+
+#if os(iOS)
+
+// MARK: - Onboarding Rebranding 2026
+
+/// Temporary. To be removed once the rebranded palette is rolled out across the whole app;
+/// these are palette-independent so onboarding renders rebranded even with the flag off.
+private extension SharedColorPaletteDefinition {
+
+    static func dynamicColor(for rebrandingColor: SingleUseColor.Rebranding) -> DynamicColor {
+        switch rebrandingColor {
+        case .textPrimary:
+            return DynamicColor(lightColor: RebrandingColor.Eggshell.eggshell90, darkColor: RebrandingColor.GrayScale.white)
+        case .textSecondary:
+            return DynamicColor(lightColor: RebrandingColor.Eggshell.eggshell70, darkColor: RebrandingColor.Eggshell.eggshell30)
+        case .textLink:
+            return DynamicColor(lightColor: RebrandingColor.Pondwater.pondwater60, darkColor: RebrandingColor.Pondwater.pondwater40)
+        case .accentPrimary:
+            return DynamicColor(lightColor: RebrandingColor.Pondwater.pondwater60, darkColor: RebrandingColor.Pondwater.pondwater40)
+        case .accentPrimaryPressed:
+            return DynamicColor(lightColor: RebrandingColor.Pondwater.pondwater80, darkColor: RebrandingColor.Pondwater.pondwater60)
+        case .accentPrimaryText:
+            return DynamicColor(lightColor: RebrandingColor.GrayScale.white, darkColor: RebrandingColor.Pollen.pollen100)
+        case .accentGlowPrimary:
+            return DynamicColor(lightColor: RebrandingColor.Pondwater.pondwater60.opacity(0.2), darkColor: RebrandingColor.Pondwater.pondwater40.opacity(0.2))
+        case .backdrop:
+            return DynamicColor(lightColor: RebrandingColor.GrayScale.white, darkColor: .blue80)
+        case .buttonsPrimaryDefault:
+            return DynamicColor(lightColor: RebrandingColor.Mandarin.mandarin50, darkColor: RebrandingColor.Pollen.pollen40)
+        case .buttonsPrimaryPressed:
+            return DynamicColor(lightColor: RebrandingColor.Mandarin.mandarin70, darkColor: RebrandingColor.Pollen.pollen60)
+        case .buttonsPrimaryText:
+            return DynamicColor(lightColor: RebrandingColor.GrayScale.white, darkColor: RebrandingColor.Pollen.pollen100)
+        case .buttonsContentDisabled:
+            return DynamicColor(lightColor: Color(0xF5F4F6), darkColor: Color(0x212020))
+        case .buttonsSecondaryDefault:
+            return DynamicColor(lightColor: RebrandingColor.GrayScale.black.opacity(0.06), darkColor: RebrandingColor.GrayScale.white.opacity(0.04))
+        case .buttonsSecondaryPressed:
+            return DynamicColor(lightColor: RebrandingColor.GrayScale.black.opacity(0.12), darkColor: RebrandingColor.GrayScale.white.opacity(0.08))
+        case .buttonsSecondaryText:
+            return DynamicColor(lightColor: RebrandingColor.Eggshell.eggshell90, darkColor: RebrandingColor.GrayScale.white)
+        case .buttonsSecondaryDisabledBackground:
+            return DynamicColor(lightColor: RebrandingColor.GrayScale.black.opacity(0.06), darkColor: .clear)
+        case .buttonsSecondaryDisabledText:
+            return DynamicColor(lightColor: RebrandingColor.GrayScale.black.opacity(0.36), darkColor: Color(0x707070))
+        case .destructivePrimary:
+            return DynamicColor(lightColor: RebrandingColor.Red.red50, darkColor: RebrandingColor.Red.red40)
+        case .destructivePrimaryPressed:
+            return DynamicColor(lightColor: RebrandingColor.Red.red70, darkColor: RebrandingColor.Red.red60)
+        case .destructivePrimaryText:
+            return DynamicColor(lightColor: RebrandingColor.GrayScale.white, darkColor: RebrandingColor.Pollen.pollen100)
+        case .destructiveGlowPrimary:
+            return DynamicColor(lightColor: Color(0xE5244B).opacity(0.2), darkColor: Color(0xE5244B).opacity(0.2))
+        case .controlsFillPrimary:
+            return DynamicColor(lightColor: RebrandingColor.GrayScale.black.opacity(0.06), darkColor: RebrandingColor.GrayScale.white.opacity(0.12))
+        case .decorationPrimary:
+            return DynamicColor(lightColor: RebrandingColor.Eggshell.eggshell90.opacity(0.09), darkColor: RebrandingColor.GrayScale.white.opacity(0.06))
+        case .decorationSecondary:
+            return DynamicColor(lightColor: RebrandingColor.Eggshell.eggshell90.opacity(0.16), darkColor: RebrandingColor.GrayScale.white.opacity(0.09))
+        case .alertGreen:
+            return DynamicColor(staticColor: RebrandingColor.Green.green40)
+        case .calendarStripYellow:
+            return DynamicColor(staticColor: RebrandingColor.Pollen.pollen20)
         }
     }
 }

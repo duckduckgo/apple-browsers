@@ -113,9 +113,6 @@ enum ManualColorTokens {
 
     // MARK: - iOS Text
 
-    static var textSelectionFill: DynamicColor {
-        DynamicColor(lightColor: .blue50.opacity(0.2), darkColor: .blue30.opacity(0.2))
-    }
     static var textPlaceholder: DynamicColor {
         DynamicColor(lightColor: Color(0x1F1F1F).opacity(0.4), darkColor: .tint(0.4))
     }

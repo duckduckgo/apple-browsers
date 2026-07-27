@@ -59,13 +59,15 @@ public enum ColorPalette {
     case rose
     case slateBlue
     case violet
+#endif
 
     var paletteDefinition: SharedColorPaletteDefinition.Type {
         switch self {
         case .default:
-            return LatestColorPalette.self
+            return DefaultColorPalette.self
         case .legacy:
-            return FigmaColorPalette.self
+            return LegacyColorPalette.self
+#if os(macOS)
         case .coolGray:
             return CoolGrayColorPalette.self
         case .desert:
@@ -80,20 +82,9 @@ public enum ColorPalette {
             return SlateBlueColorPalette.self
         case .violet:
             return VioletColorPalette.self
+#endif
         }
     }
-#endif
-
-#if os(iOS)
-    var paletteDefinition: ColorPaletteDefinition.Type {
-        switch self {
-        case .default:
-            RebrandedColorPalette.self
-        case .legacy:
-            DefaultColorPalette.self
-        }
-    }
-#endif
 
     public var isRebranded: Bool { self != .legacy }
 }

@@ -26,6 +26,10 @@ import Persistence
 import History
 import Core
 
+enum BrowserChromeMaterial {
+    static let blurStyle: UIBlurEffect.Style = .systemChromeMaterial
+}
+
 class MainViewFactory {
 
     private let coordinator: MainViewCoordinator
@@ -330,7 +334,7 @@ extension MainViewFactory {
 
     final class StatusBackgroundView: UIVisualEffectView { }
     private func createStatusBackground() {
-        let effect = floatingUIManager.isFloatingUIEnabled ? nil : UIBlurEffect(style: .systemUltraThinMaterial)
+        let effect = floatingUIManager.isFloatingUIEnabled ? nil : UIBlurEffect(style: BrowserChromeMaterial.blurStyle)
         let view = StatusBackgroundView(effect: effect)
         view.backgroundColor = .clear
         coordinator.statusBackground = view
@@ -377,7 +381,7 @@ extension MainViewFactory {
     }
 
     private func createToolbarMaterialBackground() {
-        let effect = floatingUIManager.isFloatingUIEnabled ? nil : UIBlurEffect(style: .systemUltraThinMaterial)
+        let effect = floatingUIManager.isFloatingUIEnabled ? nil : UIBlurEffect(style: BrowserChromeMaterial.blurStyle)
         coordinator.toolbarMaterialBackground = UIVisualEffectView(effect: effect)
         coordinator.toolbarMaterialBackground.isHidden = floatingUIManager.isFloatingUIEnabled
         coordinator.toolbarMaterialBackground.isUserInteractionEnabled = false

@@ -660,7 +660,7 @@ class MainViewCoordinator {
 
     private func setToolbarBackgroundForOmnibarEditing(_ isEditing: Bool) {
         guard !isFloatingUIEnabled else { return }
-        toolbarMaterialBackground.effect = isEditing ? nil : UIBlurEffect(style: .systemUltraThinMaterial)
+        toolbarMaterialBackground.effect = isEditing ? nil : UIBlurEffect(style: BrowserChromeMaterial.blurStyle)
         toolbarMaterialBackground.backgroundColor = isEditing ? UIColor(designSystemColor: .panel) : .clear
     }
 
@@ -668,7 +668,7 @@ class MainViewCoordinator {
         let usesMaterialBackground = !isFloatingUIEnabled
             && statusBackgroundPresentation == .standard
             && pageThemeColor == nil
-        (statusBackground as? UIVisualEffectView)?.effect = usesMaterialBackground ? UIBlurEffect(style: .systemUltraThinMaterial) : nil
+        (statusBackground as? UIVisualEffectView)?.effect = usesMaterialBackground ? UIBlurEffect(style: BrowserChromeMaterial.blurStyle) : nil
         statusBackground.backgroundColor = usesMaterialBackground ? .clear : resolvedStatusBackgroundColor()
     }
 

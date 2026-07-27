@@ -724,7 +724,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
             view = UIVisualEffectView(effect: effect)
             view.cornerConfiguration = .capsule()
         } else {
-            view = UIVisualEffectView(effect: UIBlurEffect(style: .systemUltraThinMaterial))
+            view = UIVisualEffectView(effect: UIBlurEffect(style: BrowserChromeMaterial.blurStyle))
             view.layer.cornerRadius = Metrics.cornerRadius
             view.layer.cornerCurve = .continuous
             view.clipsToBounds = true

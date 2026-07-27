@@ -1037,12 +1037,14 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     }
 
     /// 16×16 favicon of the current page for the "Ask About Page" item. On non-web pages (new-tab
-    /// page, settings, etc.) there's no page to attach, so we show the neutral default website
-    /// favicon rather than the page's own icon (e.g. the DuckDuckGo logo on the new-tab page), which
-    /// would otherwise imply that specific page will be attached.
+    /// page, settings, etc.) there's no page to attach, so we show the Duck.ai icon (matching the
+    /// pill button) rather than the page's own icon (e.g. the DuckDuckGo logo on the new-tab page),
+    /// which would otherwise imply that specific page will be attached.
     private func askAboutPageMenuFavicon() -> NSImage {
         let isWebPage = tabCollectionViewModel.selectedTabViewModel?.tab.content.urlForWebView?.isHttpOrHttps == true
-        let favicon: NSImage = isWebPage ? (tabCollectionViewModel.selectedTabViewModel?.favicon ?? .web) : .web
+        let favicon: NSImage = isWebPage
+            ? (tabCollectionViewModel.selectedTabViewModel?.favicon ?? .web)
+            : DesignSystemImages.Color.Size16.duckAI
         let image = (favicon.copy() as? NSImage) ?? favicon
         image.size = NSSize(width: 16, height: 16)
         image.isTemplate = false

@@ -115,6 +115,9 @@ enum AIChatPixel: PixelKitEvent {
     /// Event Trigger: User clicks the Duck.ai button in the tab bar to open a new chat tab.
     case aiChatTabbarButtonClicked
 
+    /// Event Trigger: User picks "New Chat" from the tab-bar Duck.ai menu button (or middle-clicks the pill).
+    case aiChatNewChatTitleBarMenu
+
     // MARK: - Summarization
 
     /// Event Trigger: User triggers summarize action (either via keyboard shortcut or a context menu action)
@@ -526,6 +529,8 @@ enum AIChatPixel: PixelKitEvent {
             return "aichat_sidebar_floating_tab_activated"
         case .aiChatTabbarButtonClicked:
             return "aichat_tabbar_button_clicked"
+        case .aiChatNewChatTitleBarMenu:
+            return "aichat_new_chat_title_bar_menu"
         case .aiChatSummarizeText:
             return "aichat_summarize_text"
         case .aiChatSummarizeSourceLinkClicked:
@@ -779,6 +784,7 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatSidebarFloatingClosed,
                 .aiChatSidebarFloatingTabActivated,
                 .aiChatTabbarButtonClicked,
+                .aiChatNewChatTitleBarMenu,
                 .aiChatSummarizeSourceLinkClicked,
                 .aiChatTranslateText,
                 .aiChatTranslationSourceLinkClicked,
@@ -961,6 +967,7 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatSidebarFloatingClosed,
                 .aiChatSidebarFloatingTabActivated,
                 .aiChatTabbarButtonClicked,
+                .aiChatNewChatTitleBarMenu,
                 .aiChatSummarizeText,
                 .aiChatSummarizeSourceLinkClicked,
                 .aiChatTranslateText,
@@ -1093,6 +1100,7 @@ enum AIChatSidebarOpenSource: String, CaseIterable {
     case translation = "translation"
     case attachSelection = "attach-selection"
     case tabbarButton = "tabbar-button"
+    case askAboutPage = "ask-about-page"
 }
 
 /// Source of AI Chat sidebar close action

@@ -135,15 +135,6 @@ final class PopoverMessageViewController: NSHostingController<PopoverMessageView
 
     }
 
-    override func viewDidLoad() {
-        super.viewDidLoad()
-
-        if #available(macOS 26.0, *),
-           viewModel.configuration.usesCompactLayout {
-            view.prefersCompactControlSizeMetrics = true
-        }
-    }
-
     override func viewDidAppear() {
         super.viewDidAppear()
         createTrackingArea()

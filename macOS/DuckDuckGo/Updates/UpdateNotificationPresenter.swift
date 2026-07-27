@@ -119,6 +119,9 @@ final class UpdateNotificationPresenter: UpdateNotificationPresenting {
                 self?.currentPopover = nil
             })
 
+            if #available(macOS 26.0, *) {
+                viewController.view.prefersCompactControlSizeMetrics = true
+            }
             viewController.identifier = .updateNotificationPopover
 
             if self.showNotificationPopover(viewController) {

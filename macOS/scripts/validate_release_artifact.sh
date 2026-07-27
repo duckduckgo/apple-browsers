@@ -106,7 +106,7 @@ validate_mach_o_architectures() {
 validate_code_signing() {
 	local app_path=$1
 
-	codesign --verify --deep --strict --verbose=2 "${app_path}" \
+	codesign --verify --strict --verbose=2 "${app_path}" \
 		|| die "Code signature validation failed for ${app_path}"
 
 	spctl --assess --type execute --verbose=4 "${app_path}" \

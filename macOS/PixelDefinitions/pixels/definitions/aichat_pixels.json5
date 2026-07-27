@@ -12,7 +12,16 @@
                 "key": "source",
                 "description": "What triggered the sidebar to open",
                 "type": "string",
-                "enum": ["address-bar-button", "summarization", "serp", "context-menu", "translation", "attach-selection", "tabbar-button", "ask-about-page"]
+                "enum": [
+                    "address-bar-button",
+                    "summarization",
+                    "serp",
+                    "context-menu",
+                    "translation",
+                    "attach-selection",
+                    "tabbar-button",
+                    "ask-about-page"
+                ]
             },
             {
                 "key": "automaticPageContext",

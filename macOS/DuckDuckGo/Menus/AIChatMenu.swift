@@ -94,10 +94,14 @@ final class AIChatMenu: NSMenu {
             item.keyEquivalentModifierMask = [.command, .shift]
         }
         item.target = self
-        // Duck.ai color duck, matching the tab-bar pill's Ask About Page; sized to 12 like the menu's other icons.
-        let icon = DesignSystemImages.Color.Size16.duckAI
-        icon.size = NSSize(width: 12, height: 12)
-        item.image = icon
+        // Duck.ai color duck, matching the tab-bar pill's Ask About Page; copied before resizing so we
+        // don't mutate the shared asset instance, then sized to 12 like the menu's other icons.
+        if let icon = DesignSystemImages.Color.Size16.duckAI.copy() as? NSImage {
+            icon.size = NSSize(width: 12, height: 12)
+            item.image = icon
+        } else {
+            item.image = DesignSystemImages.Color.Size16.duckAI
+        }
         return item
     }()
 
@@ -126,8 +130,9 @@ final class AIChatMenu: NSMenu {
     /// When set, limits the number of chat items shown in the menu.
     private let maxChatItems: Int?
     private let origin: Origin
-    /// Whether to include the "Ask About Page" item (menu-button layout only).
-    private let showAskAboutPage: Bool
+    /// Whether the "Ask About Page" item should currently be shown (menu-button layout only).
+    /// Evaluated live so a feature-flag toggle is reflected next time the menu opens.
+    private let shouldShowAskAboutPage: () -> Bool
 
     // MARK: - Init
 
@@ -135,12 +140,12 @@ final class AIChatMenu: NSMenu {
          actions: Actions,
          maxChatItems: Int? = nil,
          origin: Origin = .mainMenu,
-         showAskAboutPage: Bool = false) {
+         shouldShowAskAboutPage: @escaping () -> Bool = { false }) {
         self.suggestionsReader = suggestionsReader
         self.actions = actions
         self.maxChatItems = maxChatItems
         self.origin = origin
-        self.showAskAboutPage = showAskAboutPage
+        self.shouldShowAskAboutPage = shouldShowAskAboutPage
         super.init(title: "Duck.ai")
         buildMenu()
     }
@@ -157,8 +162,10 @@ final class AIChatMenu: NSMenu {
         addItem(newChatItem)
         addItem(newVoiceChatItem)
         addItem(newImageChatItem)
-        if showAskAboutPage {
+        // Main menu only: added once, its visibility is refreshed live in update().
+        if origin == .mainMenu {
             addItem(askAboutPageItem)
+            askAboutPageItem.isHidden = !shouldShowAskAboutPage()
         }
         addItem(.separator())
         addItem(recentChatsLabel)
@@ -171,6 +178,9 @@ final class AIChatMenu: NSMenu {
 
     override func update() {
         super.update()
+        if origin == .mainMenu {
+            askAboutPageItem.isHidden = !shouldShowAskAboutPage()
+        }
         fetchTask?.cancel()
         fetchTask = Task { @MainActor [weak self] in
             guard let self else { return }

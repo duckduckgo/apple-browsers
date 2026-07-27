@@ -1290,8 +1290,10 @@ final class MainMenu: NSMenu {
             windowControllersManager: Application.appDelegate.windowControllersManager,
             aiChatSyncCleaner: { Application.appDelegate.aiChatSyncCleaner }
         )
-        let showAskAboutPage = featureFlagger.isFeatureOn(.aiChatChromeSidebar) && featureFlagger.isFeatureOn(.aiChatChromeMenuButton)
-        return AIChatMenu(suggestionsReader: aiChatSuggestionsReader, actions: actions, maxChatItems: 8, showAskAboutPage: showAskAboutPage)
+        let featureFlagger = self.featureFlagger
+        return AIChatMenu(suggestionsReader: aiChatSuggestionsReader, actions: actions, maxChatItems: 8, shouldShowAskAboutPage: {
+            featureFlagger.isFeatureOn(.aiChatChromeSidebar) && featureFlagger.isFeatureOn(.aiChatChromeMenuButton)
+        })
     }
 
     private func setupAIChatMenu() {

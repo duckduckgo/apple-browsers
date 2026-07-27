@@ -712,6 +712,10 @@ extension AIChatHistoryViewController: UITableViewDelegate {
     /// Shared by the leading-swipe action and the long-press row menu.
     private func performPinToggle(chatId: String) {
         guard let move = viewModel.togglePin(chatId: chatId) else { return }
+        // Snapshot the optimistic state so the completion can tell whether a concurrent
+        // (FE-driven) emission changed anything while updates were suppressed.
+        let expectedPinned = viewModel.pinned
+        let expectedRecent = viewModel.recent
         isApplyingLocalUpdate = true
         // Refresh the icon while the cell is still at its source position — `moveRow` keeps the
         // same instance, so it'd otherwise carry the pre-toggle icon.
@@ -721,9 +725,14 @@ extension AIChatHistoryViewController: UITableViewDelegate {
         tableView.performBatchUpdates({
             self.tableView.moveRow(at: move.source, to: move.destination)
         }, completion: { [weak self] _ in
-            self?.isApplyingLocalUpdate = false
-            // Catch up any reactive emission that fired (and got skipped) while the flag was set.
-            self?.refreshContent()
+            guard let self else { return }
+            self.isApplyingLocalUpdate = false
+            // The animated move already reflects the final state; only reconcile (a full
+            // reloadData) if a concurrent change landed while updates were suppressed —
+            // otherwise the reload flickers the row that just animated.
+            if self.viewModel.pinned != expectedPinned || self.viewModel.recent != expectedRecent {
+                self.refreshContent()
+            }
         })
     }
 }

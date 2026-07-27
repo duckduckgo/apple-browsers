@@ -477,6 +477,7 @@ public final class DataBrokerProtectionIOSManager {
                 do {
                     let resources = try await loadVaultResources()
                     publishVaultResources(resources)
+                    iOSPixelsHandler.fire(.deferredSecureVaultInitSucceeded(trigger: reason.rawValue))
                     return resources
                 } catch {
                     clearVaultResourcesInitAttempt()

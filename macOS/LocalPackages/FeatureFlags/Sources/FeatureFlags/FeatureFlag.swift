@@ -350,6 +350,7 @@ public enum FeatureFlag: String, CaseIterable {
     case aiChatOmnibarAttachMoreTabs
 
     /// Kill switch for the tab-attachment limit (native omnibar and NTP). Default on.
+    /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1216831900874433?focus=true
     case aiChatTabAttachmentLimit
 
     /// https://app.asana.com/1/137249556945/task/1213316822018797

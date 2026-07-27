@@ -50,6 +50,8 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         mockDelegate = MockAIChatOmnibarControllerDelegate()
         mockTabOpener = MockAIChatTabOpener()
         featureFlagger = MockFeatureFlagger()
+        // The tab-attachment limit defaults on in production; reflect that baseline in the tests.
+        featureFlagger.enabledFeatureFlags = [.aiChatTabAttachmentLimit]
         searchPreferencesPersistor = AIChatMockSearchPreferencesPersistor()
         mockPreferences = MockAIChatPreferencesPersisting()
         mockModelsService = MockAIChatModelsProviding()
@@ -666,7 +668,7 @@ final class AIChatOmnibarControllerTests: XCTestCase {
 
     func testWhenSubmitWithTabAttachmentsAtCap_ThenSubmitProceeds() async {
         // At exactly the cap (3, not over), submit must proceed even with the picker enabled.
-        featureFlagger.enabledFeatureFlags = [.aiChatPageContext, .aiChatOmnibarAttachMoreTabs]
+        featureFlagger.enabledFeatureFlags = [.aiChatPageContext, .aiChatOmnibarAttachMoreTabs, .aiChatTabAttachmentLimit]
         controller.toggleTabAttachment(makeTabAttachment(id: "tab-1"))
         controller.toggleTabAttachment(makeTabAttachment(id: "tab-2"))
         controller.toggleTabAttachment(makeTabAttachment(id: "tab-3"))

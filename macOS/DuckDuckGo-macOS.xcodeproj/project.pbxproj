@@ -4640,18 +4640,18 @@
 		FB07BAD00000000000000016 /* PromptBarShortcut.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD00000000000000001 /* PromptBarShortcut.swift */; };
 		FB07BAD00000000000000012 /* PromptBarPreferencesPersistor.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD00000000000000002 /* PromptBarPreferencesPersistor.swift */; };
 		FB07BAD00000000000000017 /* PromptBarPreferencesPersistor.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD00000000000000002 /* PromptBarPreferencesPersistor.swift */; };
-		FB07BAD00000000000000013 /* PromptBarSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD00000000000000003 /* PromptBarSettings.swift */; };
-		FB07BAD00000000000000018 /* PromptBarSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD00000000000000003 /* PromptBarSettings.swift */; };
+		FB07BAD00000000000000013 /* PromptBarPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD00000000000000003 /* PromptBarPreferences.swift */; };
+		FB07BAD00000000000000018 /* PromptBarPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD00000000000000003 /* PromptBarPreferences.swift */; };
 		FB07BAD00000000000000014 /* PromptBarShortcutRecorderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD00000000000000004 /* PromptBarShortcutRecorderView.swift */; };
 		FB07BAD00000000000000019 /* PromptBarShortcutRecorderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD00000000000000004 /* PromptBarShortcutRecorderView.swift */; };
-		FB07BAD00000000000000015 /* PromptBarSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD00000000000000005 /* PromptBarSettingsView.swift */; };
-		FB07BAD00000000000000020 /* PromptBarSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD00000000000000005 /* PromptBarSettingsView.swift */; };
+		FB07BAD00000000000000015 /* PromptBarPreferencesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD00000000000000005 /* PromptBarPreferencesView.swift */; };
+		FB07BAD00000000000000020 /* PromptBarPreferencesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD00000000000000005 /* PromptBarPreferencesView.swift */; };
 		FB07BAD00000000000000021 /* PromptBarShortcutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD00000000000000006 /* PromptBarShortcutTests.swift */; };
 		FB07BAD00000000000000024 /* PromptBarShortcutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD00000000000000006 /* PromptBarShortcutTests.swift */; };
 		FB07BAD00000000000000022 /* PromptBarPreferencesPersistorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD00000000000000007 /* PromptBarPreferencesPersistorTests.swift */; };
 		FB07BAD00000000000000025 /* PromptBarPreferencesPersistorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD00000000000000007 /* PromptBarPreferencesPersistorTests.swift */; };
-		FB07BAD00000000000000023 /* PromptBarSettingsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD00000000000000008 /* PromptBarSettingsTests.swift */; };
-		FB07BAD00000000000000026 /* PromptBarSettingsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD00000000000000008 /* PromptBarSettingsTests.swift */; };
+		FB07BAD00000000000000023 /* PromptBarPreferencesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD00000000000000008 /* PromptBarPreferencesTests.swift */; };
+		FB07BAD00000000000000026 /* PromptBarPreferencesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD00000000000000008 /* PromptBarPreferencesTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -7121,12 +7121,12 @@
 		FEE12B412E520E4D00AD9808 /* PromoHistoryRecordTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromoHistoryRecordTests.swift; sourceTree = "<group>"; };
 		FB07BAD00000000000000001 /* PromptBarShortcut.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptBarShortcut.swift; sourceTree = "<group>"; };
 		FB07BAD00000000000000002 /* PromptBarPreferencesPersistor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptBarPreferencesPersistor.swift; sourceTree = "<group>"; };
-		FB07BAD00000000000000003 /* PromptBarSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptBarSettings.swift; sourceTree = "<group>"; };
+		FB07BAD00000000000000003 /* PromptBarPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptBarPreferences.swift; sourceTree = "<group>"; };
 		FB07BAD00000000000000004 /* PromptBarShortcutRecorderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptBarShortcutRecorderView.swift; sourceTree = "<group>"; };
-		FB07BAD00000000000000005 /* PromptBarSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptBarSettingsView.swift; sourceTree = "<group>"; };
+		FB07BAD00000000000000005 /* PromptBarPreferencesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptBarPreferencesView.swift; sourceTree = "<group>"; };
 		FB07BAD00000000000000006 /* PromptBarShortcutTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptBarShortcutTests.swift; sourceTree = "<group>"; };
 		FB07BAD00000000000000007 /* PromptBarPreferencesPersistorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptBarPreferencesPersistorTests.swift; sourceTree = "<group>"; };
-		FB07BAD00000000000000008 /* PromptBarSettingsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptBarSettingsTests.swift; sourceTree = "<group>"; };
+		FB07BAD00000000000000008 /* PromptBarPreferencesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptBarPreferencesTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -13334,7 +13334,7 @@
 			isa = PBXGroup;
 			children = (
 				FB07BAD00000000000000002 /* PromptBarPreferencesPersistor.swift */,
-				FB07BAD00000000000000003 /* PromptBarSettings.swift */,
+				FB07BAD00000000000000003 /* PromptBarPreferences.swift */,
 				FB07BAD00000000000000001 /* PromptBarShortcut.swift */,
 			);
 			path = Model;
@@ -13343,7 +13343,7 @@
 		FB07BAD00000000000000032 /* View */ = {
 			isa = PBXGroup;
 			children = (
-				FB07BAD00000000000000005 /* PromptBarSettingsView.swift */,
+				FB07BAD00000000000000005 /* PromptBarPreferencesView.swift */,
 				FB07BAD00000000000000004 /* PromptBarShortcutRecorderView.swift */,
 			);
 			path = View;
@@ -13353,7 +13353,7 @@
 			isa = PBXGroup;
 			children = (
 				FB07BAD00000000000000007 /* PromptBarPreferencesPersistorTests.swift */,
-				FB07BAD00000000000000008 /* PromptBarSettingsTests.swift */,
+				FB07BAD00000000000000008 /* PromptBarPreferencesTests.swift */,
 				FB07BAD00000000000000006 /* PromptBarShortcutTests.swift */,
 			);
 			path = PromptBar;
@@ -15599,9 +15599,9 @@
 				31C26A0E2CBE9DFE00FFF462 /* AIChatPreferences.swift in Sources */,
 				FB07BAD00000000000000016 /* PromptBarShortcut.swift in Sources */,
 				FB07BAD00000000000000017 /* PromptBarPreferencesPersistor.swift in Sources */,
-				FB07BAD00000000000000018 /* PromptBarSettings.swift in Sources */,
+				FB07BAD00000000000000018 /* PromptBarPreferences.swift in Sources */,
 				FB07BAD00000000000000019 /* PromptBarShortcutRecorderView.swift in Sources */,
-				FB07BAD00000000000000020 /* PromptBarSettingsView.swift in Sources */,
+				FB07BAD00000000000000020 /* PromptBarPreferencesView.swift in Sources */,
 				84537A032C998C28008723BC /* FireWindowSession.swift in Sources */,
 				BB470EBC2C5A66D6002EE91D /* BookmarkManagementDetailViewModel.swift in Sources */,
 				3706FB65293F65D500E42796 /* PrivacyDashboardWebView.swift in Sources */,
@@ -16887,7 +16887,7 @@
 				3706FE79293F661700E42796 /* AppearancePreferencesTests.swift in Sources */,
 				FB07BAD00000000000000024 /* PromptBarShortcutTests.swift in Sources */,
 				FB07BAD00000000000000025 /* PromptBarPreferencesPersistorTests.swift in Sources */,
-				FB07BAD00000000000000026 /* PromptBarSettingsTests.swift in Sources */,
+				FB07BAD00000000000000026 /* PromptBarPreferencesTests.swift in Sources */,
 				3706FE7A293F661700E42796 /* FireDialogViewModelTests.swift in Sources */,
 				7B09CBAA2BA4BE8200CF245B /* NetworkProtectionPixelEventTests.swift in Sources */,
 				3706FE7B293F661700E42796 /* HistoryStoringMock.swift in Sources */,
@@ -17753,9 +17753,9 @@
 				31C26A0D2CBE9DFE00FFF462 /* AIChatPreferences.swift in Sources */,
 				FB07BAD00000000000000011 /* PromptBarShortcut.swift in Sources */,
 				FB07BAD00000000000000012 /* PromptBarPreferencesPersistor.swift in Sources */,
-				FB07BAD00000000000000013 /* PromptBarSettings.swift in Sources */,
+				FB07BAD00000000000000013 /* PromptBarPreferences.swift in Sources */,
 				FB07BAD00000000000000014 /* PromptBarShortcutRecorderView.swift in Sources */,
-				FB07BAD00000000000000015 /* PromptBarSettingsView.swift in Sources */,
+				FB07BAD00000000000000015 /* PromptBarPreferencesView.swift in Sources */,
 				4B92928C26670D1700AD2C21 /* OutlineSeparatorViewCell.swift in Sources */,
 				8426108D2C9811F30070D5F9 /* KeyEquivalentView.swift in Sources */,
 				CC442CAD2F6C45B8002E8175 /* DockPreferencesModel.swift in Sources */,
@@ -19238,7 +19238,7 @@
 				37CD54B927F1F8AC00F1F7B9 /* AppearancePreferencesTests.swift in Sources */,
 				FB07BAD00000000000000021 /* PromptBarShortcutTests.swift in Sources */,
 				FB07BAD00000000000000022 /* PromptBarPreferencesPersistorTests.swift in Sources */,
-				FB07BAD00000000000000023 /* PromptBarSettingsTests.swift in Sources */,
+				FB07BAD00000000000000023 /* PromptBarPreferencesTests.swift in Sources */,
 				EEF53E182950CED5002D78F4 /* JSAlertViewModelTests.swift in Sources */,
 				376C4DB928A1A48A00CC0F5B /* FireDialogViewModelTests.swift in Sources */,
 				AAEC74B62642CC6A00C2EFBC /* HistoryStoringMock.swift in Sources */,

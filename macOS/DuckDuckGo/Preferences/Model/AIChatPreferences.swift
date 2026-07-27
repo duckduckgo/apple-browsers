@@ -34,7 +34,7 @@ final class AIChatPreferences: ObservableObject {
     private var windowControllersManager: WindowControllersManagerProtocol
     private let featureFlagger: FeatureFlagger
     private let duckAIChromeButtonsVisibilityManager: DuckAIChromeButtonsVisibilityManaging
-    let promptBarSettings: PromptBarSettings
+    let promptBarPreferences: PromptBarPreferences
     // Lazy: built on first use, not during early/transient inits when the store isn't ready yet.
     private lazy var serpSettings: SERPSettingsProviding = SERPSettingsProvider()
 
@@ -43,13 +43,13 @@ final class AIChatPreferences: ObservableObject {
          windowControllersManager: WindowControllersManagerProtocol = Application.appDelegate.windowControllersManager,
          featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger,
          duckAIChromeButtonsVisibilityManager: DuckAIChromeButtonsVisibilityManaging = LocalDuckAIChromeButtonsVisibilityManager(),
-         promptBarSettings: PromptBarSettings = Application.appDelegate.promptBarSettings) {
+         promptBarPreferences: PromptBarPreferences = Application.appDelegate.promptBarPreferences) {
         self.storage = storage
         self.aiChatMenuConfiguration = aiChatMenuConfiguration
         self.windowControllersManager = windowControllersManager
         self.featureFlagger = featureFlagger
         self.duckAIChromeButtonsVisibilityManager = duckAIChromeButtonsVisibilityManager
-        self.promptBarSettings = promptBarSettings
+        self.promptBarPreferences = promptBarPreferences
 
         isAIFeaturesEnabled = storage.isAIFeaturesEnabled
         showShortcutOnNewTabPage = storage.showShortcutOnNewTabPage
@@ -150,7 +150,7 @@ final class AIChatPreferences: ObservableObject {
         return !showShortcutInAddressBar || !openAIChatInSidebar
     }
 
-    var shouldShowPromptBarSettings: Bool {
+    var shouldShowPromptBarPreferences: Bool {
         featureFlagger.isFeatureOn(.macosPromptBar)
     }
 

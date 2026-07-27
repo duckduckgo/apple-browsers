@@ -1,5 +1,5 @@
 //
-//  PromptBarSettingsView.swift
+//  PromptBarPreferencesView.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -19,28 +19,31 @@
 import PreferencesUI_macOS
 import SwiftUI
 
-/// The Prompt Bar rows on the AI Features settings screen: the system-wide
+/// The Prompt Bar rows on the AI Features preferences screen: the system-wide
 /// keyboard shortcut (with its recorder) and the menu bar icon visibility.
-struct PromptBarSettingsView: View {
+struct PromptBarPreferencesView: View {
 
-    @ObservedObject var settings: PromptBarSettings
+    @ObservedObject var preferences: PromptBarPreferences
 
     var body: some View {
         ToggleMenuItemWithDescription(UserText.promptBarKeyboardShortcutToggle,
                                       UserText.promptBarKeyboardShortcutCaption,
-                                      isOn: $settings.isKeyboardShortcutEnabled,
+                                      isOn: $preferences.isKeyboardShortcutEnabled,
                                       spacing: 4)
         .accessibilityIdentifier("Preferences.AIChat.promptBarKeyboardShortcutToggle")
+        .padding(.top, Const.Spacing.groupedCheckboxesSeparation)
 
-        PromptBarShortcutRecorderView(shortcut: $settings.keyboardShortcut)
-            .disabled(!settings.isKeyboardShortcutEnabled)
+        PromptBarShortcutRecorderView(shortcut: $preferences.keyboardShortcut)
+            .disabled(!preferences.isKeyboardShortcutEnabled)
             .padding(.leading, 19)
             .padding(.bottom, 4)
 
         ToggleMenuItemWithDescription(UserText.promptBarMenuBarIconToggle,
                                       UserText.promptBarMenuBarIconCaption,
-                                      isOn: $settings.isMenuBarIconVisible,
+                                      isOn: $preferences.isMenuBarIconVisible,
                                       spacing: 4)
         .accessibilityIdentifier("Preferences.AIChat.promptBarMenuBarIconToggle")
+        .disabled(!preferences.isKeyboardShortcutEnabled)
+        .padding(.leading, 19)
     }
 }

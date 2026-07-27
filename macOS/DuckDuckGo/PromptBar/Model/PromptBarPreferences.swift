@@ -1,5 +1,5 @@
 //
-//  PromptBarSettings.swift
+//  PromptBarPreferences.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -19,10 +19,10 @@
 import AppKit
 import Combine
 
-/// User-facing Prompt Bar settings. A single instance is shared between the
+/// User-facing Prompt Bar preferences. A single instance is shared between the
 /// preferences UI and the controllers that act on these values (menu bar icon,
 /// global shortcut registration), so all consumers observe the same object.
-final class PromptBarSettings: ObservableObject {
+final class PromptBarPreferences: ObservableObject {
 
     @Published var isKeyboardShortcutEnabled: Bool {
         didSet { persistor.isKeyboardShortcutEnabled = isKeyboardShortcutEnabled }

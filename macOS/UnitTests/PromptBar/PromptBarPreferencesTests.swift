@@ -1,5 +1,5 @@
 //
-//  PromptBarSettingsTests.swift
+//  PromptBarPreferencesTests.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -26,7 +26,7 @@ private final class MockPromptBarPreferencesPersistor: PromptBarPreferencesPersi
     var isMenuBarIconVisible: Bool = true
 }
 
-final class PromptBarSettingsTests: XCTestCase {
+final class PromptBarPreferencesTests: XCTestCase {
 
     func testWhenInitializedThenValuesAreSeededFromPersistor() {
         let persistor = MockPromptBarPreferencesPersistor()
@@ -34,21 +34,21 @@ final class PromptBarSettingsTests: XCTestCase {
         persistor.isMenuBarIconVisible = false
         persistor.keyboardShortcut = PromptBarShortcut(keyCode: UInt16(kVK_ANSI_D), modifierFlags: [.control, .option])
 
-        let settings = PromptBarSettings(persistor: persistor)
+        let preferences = PromptBarPreferences(persistor: persistor)
 
-        XCTAssertFalse(settings.isKeyboardShortcutEnabled)
-        XCTAssertFalse(settings.isMenuBarIconVisible)
-        XCTAssertEqual(settings.keyboardShortcut, persistor.keyboardShortcut)
+        XCTAssertFalse(preferences.isKeyboardShortcutEnabled)
+        XCTAssertFalse(preferences.isMenuBarIconVisible)
+        XCTAssertEqual(preferences.keyboardShortcut, persistor.keyboardShortcut)
     }
 
     func testWhenValuesChangeThenTheyAreWrittenToPersistor() {
         let persistor = MockPromptBarPreferencesPersistor()
-        let settings = PromptBarSettings(persistor: persistor)
+        let preferences = PromptBarPreferences(persistor: persistor)
         let customShortcut = PromptBarShortcut(keyCode: UInt16(kVK_ANSI_D), modifierFlags: [.control, .option])
 
-        settings.isKeyboardShortcutEnabled = false
-        settings.isMenuBarIconVisible = false
-        settings.keyboardShortcut = customShortcut
+        preferences.isKeyboardShortcutEnabled = false
+        preferences.isMenuBarIconVisible = false
+        preferences.keyboardShortcut = customShortcut
 
         XCTAssertFalse(persistor.isKeyboardShortcutEnabled)
         XCTAssertFalse(persistor.isMenuBarIconVisible)
@@ -58,11 +58,11 @@ final class PromptBarSettingsTests: XCTestCase {
     func testWhenResetKeyboardShortcutToDefaultThenDefaultShortcutIsAppliedAndPersisted() {
         let persistor = MockPromptBarPreferencesPersistor()
         persistor.keyboardShortcut = PromptBarShortcut(keyCode: UInt16(kVK_ANSI_D), modifierFlags: [.control, .option])
-        let settings = PromptBarSettings(persistor: persistor)
+        let preferences = PromptBarPreferences(persistor: persistor)
 
-        settings.resetKeyboardShortcutToDefault()
+        preferences.resetKeyboardShortcutToDefault()
 
-        XCTAssertEqual(settings.keyboardShortcut, .defaultShortcut)
+        XCTAssertEqual(preferences.keyboardShortcut, .defaultShortcut)
         XCTAssertEqual(persistor.keyboardShortcut, .defaultShortcut)
     }
 }

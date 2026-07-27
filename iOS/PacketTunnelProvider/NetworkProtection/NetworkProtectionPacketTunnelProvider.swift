@@ -609,9 +609,7 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
 
         let subscriptionEndpointService = DefaultSubscriptionEndpointService(apiService: APIServiceFactory.makeAPIServiceForSubscription(withUserAgent: DefaultUserAgentManager.duckDuckGoUserAgent),
                                                                              baseURL: subscriptionEnvironment.serviceEnvironment.url)
-        // The tunnel never presents subscription offers.
-        let storePurchaseManager = DefaultStorePurchaseManager(subscriptionFeatureMappingCache: subscriptionEndpointService,
-                                                               monthlyFreeTrialDecider: DefaultMonthlyFreeTrialDecider())
+        let storePurchaseManager = DefaultStorePurchaseManager(subscriptionFeatureMappingCache: subscriptionEndpointService)
         let subscriptionManager = DefaultSubscriptionManager(storePurchaseManager: storePurchaseManager,
                                                              oAuthClient: authClient,
                                                              userDefaults: UserDefaults.standard,

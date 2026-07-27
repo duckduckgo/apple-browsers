@@ -25,7 +25,7 @@ import os.log
 /// selection handlers, and the subscription-gating decisions (including the transient "picked a
 /// gated model/mode, retry once it becomes accessible" latches). It owns its menu factories,
 /// reasoning-access resolver and upsell presenter; reads the model state off the shared
-/// `UTIModelStore` / `UTIToolsController`; and reaches the coordinator only through two live
+/// `UTIModelStore` / `UTIToolsController`; and reaches the coordinator only through four live
 /// `Environment` reads and four `Callbacks` (the coordinator remains the owner of the shared state
 /// those touch — see the decomposition spec's behaviour-vs-state framing).
 @MainActor

@@ -22,6 +22,10 @@ import UIKit
 
 class MainViewCoordinator {
 
+    enum Constants {
+        static let tabBarContainerHeight: CGFloat = 40
+    }
+
     enum StatusBackgroundPresentation: Equatable {
         case standard
         case omnibarEditing
@@ -118,6 +122,7 @@ class MainViewCoordinator {
         var toolbarHeight: NSLayoutConstraint!
         var contentContainerTop: NSLayoutConstraint!
         var tabBarContainerTop: NSLayoutConstraint!
+        var tabBarContainerHeight: NSLayoutConstraint!
         var progressBarTop: NSLayoutConstraint?
         var progressBarBottom: NSLayoutConstraint?
         var statusBackgroundToNavigationBarContainerBottom: NSLayoutConstraint!

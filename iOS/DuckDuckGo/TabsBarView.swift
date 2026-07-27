@@ -25,6 +25,23 @@ final class TabsBarView: UIView {
     let buttonsStack = UIStackView()
     let buttonsBackground = UIView()
 
+    private var collectionViewLeading: NSLayoutConstraint?
+
+    /// Distance from the leading edge of the bar to the first tab. Grows to clear the system window
+    /// controls when the tabs bar shares their row.
+    var firstTabLeadingMargin: CGFloat = TabsBarViewController.Constants.firstTabLeadingMargin {
+        didSet {
+            collectionViewLeading?.constant = Self.collectionViewLeadingConstant(for: firstTabLeadingMargin)
+        }
+    }
+
+    /// The collection view starts one ramp width earlier than the tabs do, so the first tab's leading
+    /// fillet has room and isn't clipped. `collectionView.contentInset.left` puts the tabs back where
+    /// the margin says, see `TabsBarViewController.setUpSubviews()`.
+    private static func collectionViewLeadingConstant(for firstTabLeadingMargin: CGFloat) -> CGFloat {
+        firstTabLeadingMargin - TabsBarViewController.Constants.tabRampSize.width
+    }
+
     override init(frame: CGRect) {
         let layout = UICollectionViewFlowLayout()
         layout.scrollDirection = .horizontal
@@ -61,10 +78,13 @@ final class TabsBarView: UIView {
         addSubview(buttonsBackground)
         addSubview(buttonsStack)
 
+        let collectionViewLeading = collectionView.leadingAnchor.constraint(
+            equalTo: leadingAnchor,
+            constant: Self.collectionViewLeadingConstant(for: firstTabLeadingMargin))
+        self.collectionViewLeading = collectionViewLeading
+
         NSLayoutConstraint.activate([
-            // Pulled in one ramp width so the first tab's fillet isn't clipped.
-            collectionView.leadingAnchor.constraint(equalTo: leadingAnchor,
-                                                    constant: TabsBarViewController.Constants.firstTabLeadingMargin - TabsBarViewController.Constants.tabRampSize.width),
+            collectionViewLeading,
             collectionView.topAnchor.constraint(equalTo: topAnchor),
             collectionView.bottomAnchor.constraint(equalTo: bottomAnchor),
 

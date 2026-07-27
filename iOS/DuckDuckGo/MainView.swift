@@ -48,6 +48,10 @@ class MainViewFactory {
         return false
     }
 
+    var isWindowControlsRowEnabled: Bool {
+        WindowControlsRowLayout.isEnabled(featureFlagger: featureFlagger)
+    }
+
     private init(parentController: UIViewController,
                  omnibarDependencies: OmnibarDependencyProvider,
                  featureFlagger: FeatureFlagger,
@@ -98,6 +102,44 @@ class MainViewFactory {
         view.subviews.forEach {
             $0.translatesAutoresizingMaskIntoConstraints = false
         }
+    }
+
+}
+
+/// iOS 26 draws system window controls in the top leading corner of a resizable iPad window.
+/// UIKit doesn't publish their frame; the only supported way to reserve room for them is a
+/// corner adapted layout region. `.vertical` adaptation reserves a strip *above* the content,
+/// which is what the browser chrome uses by default, so the tabs bar ends up in its own row
+/// underneath the controls. `.horizontal` adaptation reserves room *beside* them instead,
+/// which lets the tabs bar share the controls' row.
+enum WindowControlsRowLayout {
+
+    static func isEnabled(featureFlagger: FeatureFlagger) -> Bool {
+        guard #available(iOS 26, *), UIDevice.current.userInterfaceIdiom == .pad else { return false }
+        return featureFlagger.isFeatureOn(.iPadTabsBarInWindowControlsRow)
+    }
+
+    /// Corner adaptation to use for the top of the browser chrome.
+    @available(iOS 26.0, *)
+    static func topAdaptation(isEnabled: Bool) -> UIView.LayoutRegion.AdaptivityAxis {
+        isEnabled ? .horizontal : .vertical
+    }
+
+    /// Room the window controls need on the leading edge of the shared row. Zero when the window
+    /// isn't resizable or the controls are hidden (full screen).
+    static func leadingInset(in view: UIView) -> CGFloat {
+        guard #available(iOS 26, *) else { return 0 }
+        return view.directionalEdgeInsets(for: .margins(cornerAdaptation: .horizontal)).leading
+    }
+
+    /// Height of the strip the controls would occupy if the chrome were pushed below them. Used to
+    /// keep the shared row tall enough for the controls, and to offset the omni bar when the tabs
+    /// bar isn't there to fill the row.
+    static func rowHeight(in view: UIView) -> CGFloat {
+        guard #available(iOS 26, *) else { return 0 }
+        let pushedBelow = view.directionalEdgeInsets(for: .margins(cornerAdaptation: .vertical)).top
+        let pushedAside = view.directionalEdgeInsets(for: .margins(cornerAdaptation: .horizontal)).top
+        return max(0, pushedBelow - pushedAside)
     }
 
 }
@@ -461,7 +503,8 @@ extension MainViewFactory {
         let horizontalInset: CGFloat = 0
 
         if #available(iOS 26, *), isPad {
-            let guide = superview.layoutGuide(for: .margins(cornerAdaptation: .vertical))
+            let adaptation = WindowControlsRowLayout.topAdaptation(isEnabled: isWindowControlsRowEnabled)
+            let guide = superview.layoutGuide(for: .margins(cornerAdaptation: adaptation))
             coordinator.constraints.navigationBarContainerTop = container.topAnchor.constraint(equalTo: guide.topAnchor)
         } else {
             coordinator.constraints.navigationBarContainerTop = container.constrainView(superview.safeAreaLayoutGuide, by: .top)
@@ -489,18 +532,27 @@ extension MainViewFactory {
         let tabBarContainer = coordinator.tabBarContainer!
 
         if #available(iOS 26, *), isPad {
-            let guide = superview.layoutGuide(for: .margins(cornerAdaptation: .vertical))
+            let adaptation = WindowControlsRowLayout.topAdaptation(isEnabled: isWindowControlsRowEnabled)
+            let guide = superview.layoutGuide(for: .margins(cornerAdaptation: adaptation))
             coordinator.constraints.tabBarContainerTop = tabBarContainer.topAnchor.constraint(equalTo: guide.topAnchor)
         } else {
             coordinator.constraints.tabBarContainerTop = tabBarContainer.constrainView(superview.safeAreaLayoutGuide, by: .top)
         }
 
+        coordinator.constraints.tabBarContainerHeight = tabBarContainer.constrainAttribute(.height, to: MainViewCoordinator.Constants.tabBarContainerHeight)
+
         NSLayoutConstraint.activate([
             tabBarContainer.constrainView(superview, by: .leading),
             tabBarContainer.constrainView(superview, by: .trailing),
-            tabBarContainer.constrainAttribute(.height, to: 40),
+            coordinator.constraints.tabBarContainerHeight,
             coordinator.constraints.tabBarContainerTop,
         ])
+
+        // Sharing the row means the omni bar tucks up behind the tabs bar when the chrome hides,
+        // and it's created after the tabs bar, so it would otherwise draw on top of it.
+        if isWindowControlsRowEnabled {
+            superview.bringSubviewToFront(tabBarContainer)
+        }
     }
 
     private func constrainStatusBackground() {

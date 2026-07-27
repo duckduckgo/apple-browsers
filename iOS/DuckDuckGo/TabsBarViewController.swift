@@ -63,6 +63,9 @@ class TabsBarViewController: UIViewController {
         static let firstTabLeadingMargin: CGFloat = 24
         /// Active-tab bottom fillet size (Figma spec).
         static let tabRampSize = CGSize(width: 10, height: 10)
+        /// Breathing room between the system window controls and the first tab when they share a row.
+        /// The layout region already reserves the controls themselves plus a standard margin.
+        static let windowControlsTabGap: CGFloat = 16
     }
     
     enum NewTabType {
@@ -573,10 +576,25 @@ class TabsBarViewController: UIViewController {
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
+        updateWindowControlsInsetIfNeeded()
         // Catches layout passes (e.g. the first one) that land before refresh()/backgroundTabAdded().
         recomputeItemSize()
         flareBackground.update()
         NotificationCenter.default.post(name: TabsBarViewController.viewDidLayoutNotification, object: self)
+    }
+
+    /// When the tabs bar shares the system window controls' row, the first tab has to start after
+    /// them. The reserved width changes as the window is resized or goes full screen, so it's read
+    /// back on every layout pass; the equality guard keeps that from looping.
+    private func updateWindowControlsInsetIfNeeded() {
+        guard let featureFlagger, WindowControlsRowLayout.isEnabled(featureFlagger: featureFlagger) else { return }
+
+        let clearsWindowControls = WindowControlsRowLayout.leadingInset(in: view) + Constants.windowControlsTabGap
+        let margin = max(Constants.firstTabLeadingMargin, clearsWindowControls)
+        guard tabsBarView.firstTabLeadingMargin != margin else { return }
+
+        tabsBarView.firstTabLeadingMargin = margin
+        view.layoutIfNeeded()
     }
 }
 

@@ -47,6 +47,30 @@ final class TabsBarViewControllerSizingTests: XCTestCase {
         XCTAssertIdentical(controller.addTabButton.superview, controller.view)
     }
 
+    /// The collection view starts one ramp width before the tabs so the first tab's leading fillet
+    /// isn't clipped, so both cases check the margin minus that ramp.
+    @MainActor
+    func testTabStripStartsAtDefaultFirstTabLeadingMargin() {
+        let view = TabsBarView()
+        view.frame = CGRect(x: 0, y: 0, width: 1024, height: 40)
+
+        view.layoutIfNeeded()
+
+        let expected = TabsBarViewController.Constants.firstTabLeadingMargin - TabsBarViewController.Constants.tabRampSize.width
+        XCTAssertEqual(view.collectionView.frame.minX, expected)
+    }
+
+    @MainActor
+    func testTabStripStartsAfterWindowControlsWhenMarginGrows() {
+        let view = TabsBarView()
+        view.frame = CGRect(x: 0, y: 0, width: 1024, height: 40)
+
+        view.firstTabLeadingMargin = 96
+        view.layoutIfNeeded()
+
+        XCTAssertEqual(view.collectionView.frame.minX, 96 - TabsBarViewController.Constants.tabRampSize.width)
+    }
+
     @MainActor
     func testCollectionViewRegistersTabsBarCell() {
         let controller = TabsBarViewController.create()

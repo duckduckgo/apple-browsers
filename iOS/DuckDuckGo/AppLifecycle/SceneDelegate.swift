@@ -18,6 +18,7 @@
 //
 
 import UIKit
+import Core
 
 final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
@@ -100,6 +101,14 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     func windowScene(_ windowScene: UIWindowScene, performActionFor shortcutItem: UIApplicationShortcutItem) async -> Bool {
         appStateMachine.handle(.handleShortcutItem(shortcutItem))
         return true
+    }
+
+    /// The unified style draws the window controls as part of the scene's content, which is what
+    /// lets the iPad tabs bar share their row. Anything else keeps the controls in a strip of their
+    /// own above the browser chrome.
+    @available(iOS 26.0, *)
+    func preferredWindowingControlStyle(for windowScene: UIWindowScene) -> UIWindowScene.WindowingControlStyle {
+        WindowControlsRowLayout.isEnabled(featureFlagger: AppDependencyProvider.shared.featureFlagger) ? .unified : .automatic
     }
 
 }

@@ -63,6 +63,10 @@ final class PromptBarPromptSubmitter: PromptBarPromptSubmitting {
         } else {
             aiChatTabOpener.openAIChatTab(with: .query(prompt, shouldAutoSubmit: true), behavior: .newWindow(selected: true))
         }
+
+        // The bar opens without activating the app, so reused windows are only reordered within it,
+        // not raised above other apps. Submitting is the point at which the browser should come forward.
+        NSApp.activate(ignoringOtherApps: true)
     }
 
     /// `droppingPoint` is a window's top-center: centered on the display, flush with its visible top.

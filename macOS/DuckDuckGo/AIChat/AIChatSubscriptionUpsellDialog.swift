@@ -49,6 +49,7 @@ struct AIChatSubscriptionUpsellDialog: ModalView {
                 Text(title)
                     .font(.system(size: 15).weight(.semibold))
                     .multilineTextAlignment(.center)
+                    .frame(maxWidth: 250)
                     .fixMultilineScrollableText()
                 Text(message)
                     .font(.system(size: 13))
@@ -93,6 +94,6 @@ struct AIChatSubscriptionUpsellDialog: ModalView {
             }
         }
         .padding(20)
-        .frame(width: 330)
+        .frame(width: 310)
     }
 }

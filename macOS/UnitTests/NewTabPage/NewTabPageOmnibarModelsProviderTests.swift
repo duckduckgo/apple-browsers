@@ -18,6 +18,7 @@
 
 import XCTest
 import AIChat
+import FeatureFlags
 import NewTabPage
 @testable import Subscription
 import SubscriptionTestingUtilities

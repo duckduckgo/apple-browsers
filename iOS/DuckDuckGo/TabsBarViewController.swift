@@ -385,12 +385,14 @@ class TabsBarViewController: UIViewController {
     private func recomputeItemSize() {
         let stripWidth = collectionView.frame.size.width
         guard stripWidth > 0 else { return }
+        let leadingContentInset = collectionView.contentInset.left
+        let availableStripWidth = max(0, stripWidth - leadingContentInset)
 
         let layout = TabsBarLayout(
-            stripWidth: stripWidth,
+            stripWidth: availableStripWidth,
             tabsCount: tabsCount,
             minItemWidth: Constants.minItemWidth,
-            maxItemWidth: maxItemWidth(forStripWidth: stripWidth),
+            maxItemWidth: maxItemWidth(forStripWidth: availableStripWidth),
             buttonWidth: Constants.buttonWidth,
             buttonGap: Constants.addTabButtonGap
         )
@@ -399,9 +401,8 @@ class TabsBarViewController: UIViewController {
         if let flowLayout = collectionView.collectionViewLayout as? UICollectionViewFlowLayout, tabsCount > 0 {
             flowLayout.itemSize = CGSize(width: layout.itemWidth, height: view.frame.size.height)
         }
-        // Leading content inset shifts the tabs' start, so add it back to the offset (unless floored).
-        addTabButtonLeadingConstraint?.constant = layout.addTabButtonLeadingOffset
-            + (layout.isFloored ? 0 : collectionView.contentInset.left)
+        // Layout excludes the leading content inset; add it back to position the button in view coordinates.
+        addTabButtonLeadingConstraint?.constant = layout.addTabButtonLeadingOffset + leadingContentInset
         collectionView.contentInset.right = layout.addTabButtonContentInsetRight
     }
 

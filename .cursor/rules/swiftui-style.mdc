@@ -50,9 +50,9 @@ VStack {
         .fill(Color(designSystemColor: .accent))
     
     Button("Action") { }
-        .foregroundColor(Color(designSystemColor: .controlsFillPrimary))
+        .foregroundColor(Color(designSystemColor: .controlFillPrimary))
 }
-.background(Color(designSystemColor: .background))
+.background(Color(designSystemColor: .surfacePrimary))
 
 // ❌ INCORRECT - Hardcoded or system colors
 Text("Title")
@@ -96,13 +96,13 @@ Use appropriate semantic color categories:
 .foregroundColor(Color(designSystemColor: .textLink))
 
 // Background colors
-.background(Color(designSystemColor: .background))
+.background(Color(designSystemColor: .surfacePrimary))
 .background(Color(designSystemColor: .surface))
-.background(Color(designSystemColor: .panel))
+.background(Color(designSystemColor: .surfacePrimary))
 
 // Control colors
-.foregroundColor(Color(designSystemColor: .controlsFillPrimary))
-.foregroundColor(Color(designSystemColor: .controlsFillSecondary))
+.foregroundColor(Color(designSystemColor: .controlFillPrimary))
+.foregroundColor(Color(designSystemColor: .controlFillSecondary))
 
 // Button colors (use specific button color tokens)
 .foregroundColor(Color(designSystemColor: .buttonPrimaryText))
@@ -156,7 +156,7 @@ struct SimpleView: View {
     var body: some View {
         Text("Content")
             .foregroundColor(Color(designSystemColor: .textPrimary))
-            .background(Color(designSystemColor: .background))
+            .background(Color(designSystemColor: .surfacePrimary))
     }
 }
 ```

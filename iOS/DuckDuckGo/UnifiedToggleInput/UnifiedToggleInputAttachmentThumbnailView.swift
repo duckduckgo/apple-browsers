@@ -125,7 +125,7 @@ private extension UnifiedToggleInputAttachmentThumbnailView {
     var chipBackgroundColor: UIColor {
         attachment.isInvalid
             ? UIColor(designSystemColor: .destructivePrimary).withAlphaComponent(traitCollection.userInterfaceStyle == .dark ? 0.24 : 0.18)
-            : UIColor(designSystemColor: .controlsFillPrimary)
+            : UIColor(designSystemColor: .controlFillPrimary)
     }
 
     func setupUI() {

@@ -31,7 +31,7 @@ extension Color {
 extension View {
 
     @ViewBuilder func widgetContainerBackground() -> some View {
-        let color = Color(designSystemColor: .background)
+        let color = Color(designSystemColor: .surfacePrimary)
         if #available(iOSApplicationExtension 26.0, *) {
             containerBackground(for: .widget) {
             }

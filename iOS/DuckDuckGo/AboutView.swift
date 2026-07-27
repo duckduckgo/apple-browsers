@@ -76,7 +76,7 @@ struct AboutViewText: View {
             Spacer()
         }
         .listRowInsets(EdgeInsets(top: -12, leading: -12, bottom: -12, trailing: -12))
-        .listRowBackground(Color(designSystemColor: .background).edgesIgnoringSafeArea(.all))
+        .listRowBackground(Color(designSystemColor: .surfacePrimary).edgesIgnoringSafeArea(.all))
         .frame(maxWidth: .infinity)
     }
 }

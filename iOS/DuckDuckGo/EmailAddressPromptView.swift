@@ -130,7 +130,7 @@ private struct EmailAddressRow: View {
             }
 
         }
-        .background(Color(designSystemColor: .controlsFillPrimary))
+        .background(Color(designSystemColor: .controlFillPrimary))
         .cornerRadius(Const.Size.cornerRadius)
         .frame(maxWidth: Const.Size.maxWidth)
     }

@@ -114,13 +114,13 @@ Our color system uses **semantic naming** rather than literal colors (e.g., "pri
 #### Control Colors
 ```swift
 // UIKit
-button.backgroundColor = UIColor(designSystemColor: .controlsFillPrimary)
-button.backgroundColor = UIColor(designSystemColor: .controlsFillSecondary)
+button.backgroundColor = UIColor(designSystemColor: .controlFillPrimary)
+button.backgroundColor = UIColor(designSystemColor: .controlFillSecondary)
 
 // SwiftUI
 Button("Action") { }
-    .foregroundColor(Color(designSystemColor: .controlsFillPrimary))
-    .background(Color(designSystemColor: .controlsFillSecondary))
+    .foregroundColor(Color(designSystemColor: .controlFillPrimary))
+    .background(Color(designSystemColor: .controlFillSecondary))
 ```
 
 #### Button-Specific Colors

@@ -74,7 +74,7 @@ final class SiteThemeColorManager {
     }
 
     func resetThemeColor() {
-        applyThemeColor(UIColor(designSystemColor: .background))
+        applyThemeColor(UIColor(designSystemColor: .surfacePrimary))
     }
 
     // MARK: - Private Methods
@@ -139,7 +139,7 @@ final class SiteThemeColorManager {
     }
 
     private func applyThemeColor(_ color: UIColor?) {
-        let newColor = color ?? UIColor(designSystemColor: .background)
+        let newColor = color ?? UIColor(designSystemColor: .surfacePrimary)
         let statusBackgroundColor: UIColor
 
         if AppWidthObserver.shared.isPad && viewCoordinator.parentController?.traitCollection.horizontalSizeClass == .regular {

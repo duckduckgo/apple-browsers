@@ -51,7 +51,7 @@ struct UnifiedSuggestionsView: View {
             let showsFire = !isTypingList
             FireModeEmptyStateView(type: .tab)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(Color(designSystemColor: .background))
+                .background(Color(designSystemColor: .surfacePrimary))
                 .opacity(showsFire ? 1 : 0)
                 .allowsHitTesting(showsFire)
         }

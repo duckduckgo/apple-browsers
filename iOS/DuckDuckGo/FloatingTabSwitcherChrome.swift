@@ -372,7 +372,7 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
 
         let navAppearance = UINavigationBarAppearance()
         navAppearance.configureWithOpaqueBackground()
-        navAppearance.backgroundColor = UIColor(designSystemColor: .background)
+        navAppearance.backgroundColor = UIColor(designSystemColor: .surfacePrimary)
         navAppearance.shadowColor = .clear
         navigationBar.standardAppearance = navAppearance
         navigationBar.scrollEdgeAppearance = navAppearance
@@ -380,7 +380,7 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
 
         let toolbarAppearance = UIToolbarAppearance()
         toolbarAppearance.configureWithOpaqueBackground()
-        toolbarAppearance.backgroundColor = UIColor(designSystemColor: .background)
+        toolbarAppearance.backgroundColor = UIColor(designSystemColor: .surfacePrimary)
         toolbarAppearance.shadowColor = .clear
         toolbar.standardAppearance = toolbarAppearance
         toolbar.compactAppearance = toolbarAppearance

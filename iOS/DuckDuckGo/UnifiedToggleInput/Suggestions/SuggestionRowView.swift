@@ -39,7 +39,7 @@ struct SuggestionRowView: View {
 
     private var titleColor: Color { Color(designSystemColor: isSelected ? .accentContentPrimary : .textPrimary) }
     private var subtitleColor: Color { Color(designSystemColor: isSelected ? .accentContentPrimary : .textSecondary) }
-    private var iconColor: Color { Color(designSystemColor: isSelected ? .accentContentPrimary : .icons) }
+    private var iconColor: Color { Color(designSystemColor: isSelected ? .accentContentPrimary : .iconsPrimary) }
     private var accessoryColor: Color { Color(designSystemColor: isSelected ? .accentContentPrimary : .iconsSecondary) }
 
     private enum Metrics {

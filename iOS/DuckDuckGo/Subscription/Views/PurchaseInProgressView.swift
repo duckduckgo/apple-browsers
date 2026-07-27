@@ -39,14 +39,14 @@ struct PurchaseInProgressView: View {
 
     var body: some View {
         ZStack {
-            Color(designSystemColor: .background)
+            Color(designSystemColor: .surfacePrimary)
                 .opacity(Self.DesignConstants.coverOpacity)
                 .edgesIgnoringSafeArea(.all)
                 .disabled(true)
                         
             ZStack {
                 RoundedRectangle(cornerRadius: DesignConstants.cornerRadius)
-                    .fill(Color(designSystemColor: .background))
+                    .fill(Color(designSystemColor: .surfacePrimary))
                     .frame(width: DesignConstants.internalZStackWidth, height: viewHeight) // Use the dynamic height
                     .shadow(color: colorScheme == .dark ? DesignConstants.darkShadowColor : DesignConstants.lightShadowColor,
                             radius: DesignConstants.shadowRadius)
@@ -54,7 +54,7 @@ struct PurchaseInProgressView: View {
                 VStack {
                     SwiftUI.ProgressView()
                         .scaleEffect(DesignConstants.spinnerScale)
-                        .progressViewStyle(CircularProgressViewStyle(tint: Color(designSystemColor: DesignSystemColor.icons)))
+                        .progressViewStyle(CircularProgressViewStyle(tint: Color(designSystemColor: DesignSystemColor.iconsPrimary)))
                         .padding(.bottom, 18)
                         .padding(.top, 10)
                     

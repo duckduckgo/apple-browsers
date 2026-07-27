@@ -34,7 +34,7 @@ final class LogFilterViewController: UIViewController {
         tableView.translatesAutoresizingMaskIntoConstraints = false
         tableView.delegate = self
         tableView.dataSource = self
-        tableView.backgroundColor = UIColor(designSystemColor: .background)
+        tableView.backgroundColor = UIColor(designSystemColor: .surfacePrimary)
         return tableView
     }()
     
@@ -54,7 +54,7 @@ final class LogFilterViewController: UIViewController {
     
     private func setupUI() {
         title = "Log Filters"
-        view.backgroundColor = UIColor(designSystemColor: .background)
+        view.backgroundColor = UIColor(designSystemColor: .surfacePrimary)
         
         navigationItem.leftBarButtonItem = UIBarButtonItem(
             barButtonSystemItem: .cancel,

@@ -68,7 +68,7 @@ struct OngoingDownloadRow: View {
         }
         .accessibilityLabel(UserText.cancelDownloadAlertCancelAction)
         .buttonStyle(.plain)
-        .foregroundStyle(Color(designSystemColor: .icons))
+        .foregroundStyle(Color(designSystemColor: .iconsPrimary))
     }
 }
 

@@ -119,7 +119,7 @@ extension SimplifiedScanOrShowCodeView {
                     .frame(width: 40, height: 40)
                     .background(
                         RoundedRectangle(cornerRadius: 12)
-                            .fill(Color(designSystemColor: .controlsFillPrimary))
+                            .fill(Color(designSystemColor: .controlFillPrimary))
                     )
             }
             .buttonStyle(.plain)

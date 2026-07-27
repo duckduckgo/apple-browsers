@@ -48,7 +48,7 @@ struct ImportPasswordsViaSyncView: View {
 
         }
         .background(Rectangle()
-            .foregroundColor(Color(designSystemColor: .background))
+            .foregroundColor(Color(designSystemColor: .surfacePrimary))
             .ignoresSafeArea())
 
     }

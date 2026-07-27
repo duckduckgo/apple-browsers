@@ -116,7 +116,7 @@ struct BrowsingMenuSheetView: View {
         .bounceBasedOnSizeIfAvailable()
         .padding(.top, -Metrics.listTopPaddingAdjustment)
         .background(.thickMaterial)
-        .background(Color(designSystemColor: .background).opacity(0.1))
+        .background(Color(designSystemColor: .surfacePrimary).opacity(0.1))
         .onDisappear(perform: {
             actionToPerform?()
             onDismiss(actionToPerform != nil)
@@ -380,7 +380,7 @@ private struct MenuHeaderButton: View {
                 Image(uiImage: entryData.image)
                     .resizable()
                     .frame(width: Metrics.headerButtonIconSize, height: Metrics.headerButtonIconSize)
-                    .tint(Color(designSystemColor: .icons))
+                    .tint(Color(designSystemColor: .iconsPrimary))
                 Text(entryData.name)
                     .daxCaption()
                     .foregroundStyle(Color(designSystemColor: .textPrimary))
@@ -454,7 +454,7 @@ private struct BrowsingMenuHeaderView: View {
                     .aspectRatio(contentMode: .fit)
             case .globe:
                 Image(uiImage: DesignSystemImages.Glyphs.Size24.globe)
-                    .foregroundStyle(Color(designSystemColor: .icons))
+                    .foregroundStyle(Color(designSystemColor: .iconsPrimary))
             }
         }
         .frame(width: MenuHeaderConstant.faviconSize, height: MenuHeaderConstant.faviconSize)

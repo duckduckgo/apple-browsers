@@ -192,7 +192,7 @@ private struct CompactIssueDescriptionFormView: View {
                                                    scrollViewProxy: scrollView)
                     }
                     .foregroundColor(.secondary)
-                    .background(Color(designSystemColor: .background))
+                    .background(Color(designSystemColor: .surfacePrimary))
                     .padding(16)
                     .daxFootnoteRegular()
                     submitButton()
@@ -265,7 +265,7 @@ private struct IssueDescriptionFormView: View {
                             .padding(.vertical, 10)
                     }
                     .foregroundColor(.secondary)
-                    .background(Color(designSystemColor: .background))
+                    .background(Color(designSystemColor: .surfacePrimary))
                     .padding(16)
                     .daxFootnoteRegular()
                     submitButton()

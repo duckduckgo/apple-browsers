@@ -163,7 +163,7 @@ extension SimplifiedSyncSettingsViewV2 {
             devEnvironmentIndicator
         }
         .listRowInsets(EdgeInsets())
-        .listRowBackground(Color(designSystemColor: .background))
+        .listRowBackground(Color(designSystemColor: .surfacePrimary))
     }
 
     var headerTitle: String {
@@ -565,7 +565,7 @@ extension SimplifiedSyncSettingsViewV2 {
                         .foregroundColor(Color(designSystemColor: .textPrimary))
                         .frame(maxWidth: .infinity, alignment: .leading)
                     Image(uiImage: DesignSystemImages.Glyphs.Size24.downloads)
-                        .foregroundColor(Color(designSystemColor: .icons))
+                        .foregroundColor(Color(designSystemColor: .iconsPrimary))
                 }
             }
 
@@ -578,7 +578,7 @@ extension SimplifiedSyncSettingsViewV2 {
                         .foregroundColor(Color(designSystemColor: .textPrimary))
                         .frame(maxWidth: .infinity, alignment: .leading)
                     Image(uiImage: DesignSystemImages.Glyphs.Size24.copy)
-                        .foregroundColor(Color(designSystemColor: .icons))
+                        .foregroundColor(Color(designSystemColor: .iconsPrimary))
                 }
             }
         } header: {

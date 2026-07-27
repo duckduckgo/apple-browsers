@@ -97,7 +97,7 @@ struct RecoverYourDataView: View {
             .padding(.bottom, 8)
         }
         .listRowInsets(EdgeInsets())
-        .listRowBackground(Color(designSystemColor: .background))
+        .listRowBackground(Color(designSystemColor: .surfacePrimary))
     }
 
     private var recoveryCodeSection: some View {
@@ -118,7 +118,7 @@ struct RecoverYourDataView: View {
                     model.simplifiedCopyRecoveryCode()
                 } label: {
                     Image(uiImage: DesignSystemImages.Glyphs.Size24.copy)
-                        .foregroundColor(Color(designSystemColor: .icons))
+                        .foregroundColor(Color(designSystemColor: .iconsPrimary))
                 }
                 .buttonStyle(.borderless)
                 .accessibilityLabel(UserText.simplifiedCopyRecoveryCodeButton)

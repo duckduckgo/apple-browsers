@@ -132,7 +132,7 @@ struct FireModeEmptyStateView: View {
         HStack(alignment: .top, spacing: Constants.iconTextSpacing) {
             Image(uiImage: icon)
                 .padding(.top, Constants.iconTopPadding)
-                .foregroundColor(Color(designSystemColor: .icons))
+                .foregroundColor(Color(designSystemColor: .iconsPrimary))
             Text(text)
                 .daxSubheadRegular()
                 .foregroundColor(Color(designSystemColor: .textPrimary))

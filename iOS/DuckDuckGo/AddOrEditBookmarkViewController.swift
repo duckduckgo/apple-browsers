@@ -95,7 +95,7 @@ class AddOrEditBookmarkViewController: UIViewController {
 
         decorateNavigationBar()
         decorateToolbar()
-        self.view.backgroundColor = UIColor(designSystemColor: .background)
+        self.view.backgroundColor = UIColor(designSystemColor: .surfacePrimary)
 
         viewModelCancellable = viewModel.externalUpdates.sink { [weak self] _ in
             self?.foldersViewController?.refresh()

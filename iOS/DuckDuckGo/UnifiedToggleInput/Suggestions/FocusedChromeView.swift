@@ -61,7 +61,7 @@ struct FocusedChromeView: View {
             .frame(maxWidth: .infinity)
             // Opaque page background directly behind the hatch so scroll-behind content hides under it
             // — but only here, so content still visibly scrolls behind the bar itself.
-            .background(Color(designSystemColor: .background))
+            .background(Color(designSystemColor: .surfacePrimary))
         } else {
             Color.clear.frame(height: 0)
         }

@@ -67,7 +67,7 @@ public struct AppFontGallery: View {
             .padding(.horizontal, 16)
             .padding(.vertical, 24)
         }
-        .background(Color(designSystemColor: .background))
+        .background(Color(designSystemColor: .surfacePrimary))
     }
 
     @ViewBuilder

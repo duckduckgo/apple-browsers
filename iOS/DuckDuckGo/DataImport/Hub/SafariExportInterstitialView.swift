@@ -73,7 +73,7 @@ struct SafariExportInterstitialView: View {
             }
             return Color.clear
         })
-        .background(Color(designSystemColor: .background))
+        .background(Color(designSystemColor: .surfacePrimary))
     }
 
     private var shouldUseExpandedButtonLayout: Bool {

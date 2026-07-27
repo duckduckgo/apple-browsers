@@ -139,7 +139,7 @@ struct DesktopDownloadView: View {
             }
             .navigationTitle(viewModel.browserDetails.viewTitle)
             .background(Rectangle()
-                .foregroundColor(Color(designSystemColor: .background))
+                .foregroundColor(Color(designSystemColor: .surfacePrimary))
                 .ignoresSafeArea())
 
         }

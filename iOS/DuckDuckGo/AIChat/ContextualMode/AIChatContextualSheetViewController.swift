@@ -165,7 +165,7 @@ final class AIChatContextualSheetViewController: UIViewController {
 
     private lazy var leftButtonContainer: UIView = {
         let view = PillView()
-        view.backgroundColor = UIColor(designSystemColor: .controlsFillPrimary)
+        view.backgroundColor = UIColor(designSystemColor: .controlFillPrimary)
         view.clipsToBounds = true
         view.translatesAutoresizingMaskIntoConstraints = false
         return view
@@ -221,7 +221,7 @@ final class AIChatContextualSheetViewController: UIViewController {
 
     private lazy var rightButtonContainer: UIView = {
         let view = PillView()
-        view.backgroundColor = UIColor(designSystemColor: .controlsFillPrimary)
+        view.backgroundColor = UIColor(designSystemColor: .controlFillPrimary)
         view.clipsToBounds = true
         view.translatesAutoresizingMaskIntoConstraints = false
         return view

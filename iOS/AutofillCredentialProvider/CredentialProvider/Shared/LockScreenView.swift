@@ -32,7 +32,7 @@ struct LockScreenView: View {
                               y: shouldCenterVerticallyInLandscape(on: geometry) ? geometry.size.height / 2 : geometry.size.height * 0.8)
             }
         }
-        .background(Color(designSystemColor: .background))
+        .background(Color(designSystemColor: .surfacePrimary))
     }
     
     private func shouldCenterVerticallyInLandscape(on geometry: GeometryProxy) -> Bool {

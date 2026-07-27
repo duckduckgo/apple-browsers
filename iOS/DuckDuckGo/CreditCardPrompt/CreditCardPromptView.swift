@@ -62,7 +62,7 @@ struct CreditCardPromptView: View {
                     } label: {
                         CreditCardRow(card: card, showDisclosure: false)
                             .padding(EdgeInsets(top: Const.Size.cardVerticalPadding, leading: Const.Size.cardHorizontalPadding, bottom: Const.Size.cardVerticalPadding, trailing: Const.Size.cardHorizontalPadding))
-                            .background(Color(designSystemColor: .controlsFillPrimary))
+                            .background(Color(designSystemColor: .controlFillPrimary))
                             .cornerRadius(Const.Size.cornerRadius)
                             .frame(maxWidth: Const.Size.maxWidth)
                     }

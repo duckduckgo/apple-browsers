@@ -125,11 +125,11 @@ public extension OnboardingStyles {
             }
 #else
             if isPressed {
-                return Color(designSystemColor: .controlsFillSecondary)
+                return Color(designSystemColor: .controlFillSecondary)
             }
 
             if isHovered {
-                return Color(designSystemColor: .controlsFillPrimary)
+                return Color(designSystemColor: .controlFillPrimary)
             }
 
             return .clear

@@ -38,7 +38,7 @@ final class TabSwipeOverlayView: UIView {
 
     private func setupUI() {
         isUserInteractionEnabled = false
-        let chromeColor = UIColor(designSystemColor: .panel)
+        let chromeColor = UIColor(designSystemColor: .surfacePrimary)
         backgroundColor = chromeColor
 
         scrollView.isPagingEnabled = false       // native paging would fight our offset writes
@@ -74,7 +74,7 @@ final class TabSwipeOverlayView: UIView {
         let width = bounds.width
         let height = bounds.height
 
-        let chromeColor = UIColor(designSystemColor: .panel)
+        let chromeColor = UIColor(designSystemColor: .surfacePrimary)
         for (idx, snapshot) in snapshots.enumerated() {
             // Skip non-adjacent pages: a single swipe can't reach them
             guard let snapshot else { continue }

@@ -234,7 +234,7 @@ private extension AIChatRecentChatsPopupViewController {
         let iconView = UIImageView()
         iconView.translatesAutoresizingMaskIntoConstraints = false
         iconView.contentMode = .scaleAspectFit
-        iconView.tintColor = UIColor(designSystemColor: .icons)
+        iconView.tintColor = UIColor(designSystemColor: .iconsPrimary)
         iconView.image = (suggestion.isPinned
             ? DesignSystemImages.Glyphs.Size16.pin
             : DesignSystemImages.Glyphs.Size16.chat).withRenderingMode(.alwaysTemplate)
@@ -297,7 +297,7 @@ private extension AIChatRecentChatsPopupViewController {
         let iconView = UIImageView()
         iconView.translatesAutoresizingMaskIntoConstraints = false
         iconView.contentMode = .scaleAspectFit
-        iconView.tintColor = UIColor(designSystemColor: .icons)
+        iconView.tintColor = UIColor(designSystemColor: .iconsPrimary)
         // No `chats` glyph at 16px; fall back to `aiChatHistory` (same as the app menu).
         iconView.image = DesignSystemImages.Glyphs.Size16.aiChatHistory.withRenderingMode(.alwaysTemplate)
 
@@ -338,7 +338,7 @@ private extension AIChatRecentChatsPopupViewController {
         let iconView = UIImageView()
         iconView.translatesAutoresizingMaskIntoConstraints = false
         iconView.contentMode = .scaleAspectFit
-        iconView.tintColor = UIColor(designSystemColor: .icons)
+        iconView.tintColor = UIColor(designSystemColor: .iconsPrimary)
         iconView.image = DesignSystemImages.Glyphs.Size16.compose.withRenderingMode(.alwaysTemplate)
 
         let titleLabel = UILabel()

@@ -78,7 +78,7 @@ final class DuckAIChromeChipView: UIView {
 
     private lazy var divider: UIView = {
         let view = UIView()
-        view.backgroundColor = UIColor(designSystemColor: .decorationSecondary)
+        view.backgroundColor = UIColor(designSystemColor: .surfaceDecorationSecondary)
         view.translatesAutoresizingMaskIntoConstraints = false
         view.accessibilityIdentifier = AccessibilityIdentifiers.divider
         return view
@@ -112,7 +112,7 @@ final class DuckAIChromeChipView: UIView {
 
     private func configure() {
         accessibilityIdentifier = AccessibilityIdentifiers.chip
-        backgroundColor = UIColor(designSystemColor: .controlsFillPrimary)
+        backgroundColor = UIColor(designSystemColor: .controlFillPrimary)
         layer.cornerRadius = Constants.cornerRadius
         layer.masksToBounds = true
 

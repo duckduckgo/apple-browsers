@@ -147,7 +147,7 @@ final class NetworkProtectionLogContentViewController: UIViewController {
     
     private func setupUI() {
         title = logFile.lastPathComponent
-        view.backgroundColor = UIColor(designSystemColor: .background)
+        view.backgroundColor = UIColor(designSystemColor: .surfacePrimary)
         
         navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .action, target: self, action: #selector(shareLogFile))
         

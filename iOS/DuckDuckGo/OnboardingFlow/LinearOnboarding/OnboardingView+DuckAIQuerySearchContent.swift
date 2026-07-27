@@ -348,7 +348,7 @@ extension OnboardingView {
                         : DesignSystemImages.Glyphs.Size24.findSearchSmall
                     )
                     .renderingMode(.template)
-                    .foregroundColor(visualStyle == .rebranded ? accentColor : Color(designSystemColor: .icons))
+                    .foregroundColor(visualStyle == .rebranded ? accentColor : Color(designSystemColor: .iconsPrimary))
                     .opacity(isPrimaryActionEnabled ? 1 : Metrics.disabledPrimaryActionOpacity)
                     .frame(width: Metrics.queryFieldActionButtonSize, height: Metrics.queryFieldActionButtonSize)
                     .offset(x: Metrics.queryFieldActionOffsetX, y: Metrics.queryFieldActionOffsetY)

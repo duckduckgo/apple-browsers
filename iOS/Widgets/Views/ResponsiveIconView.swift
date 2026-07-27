@@ -42,7 +42,7 @@ struct ResponsiveIconView: View {
                 .resizable()
                 .scaledToFit()
                 .frame(width: 24, height: 24)
-                .foregroundStyle(Color(designSystemColor: .icons))
+                .foregroundStyle(Color(designSystemColor: .iconsPrimary))
         }
         .makeAccentable()
         // .frame(width: frameSize, height: frameSize)

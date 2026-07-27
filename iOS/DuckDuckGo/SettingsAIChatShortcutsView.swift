@@ -208,6 +208,6 @@ private struct DuckAIWidgetEducationView: View {
             .padding(.top, 24)
         }
         .navigationBarTitle("")
-        .background(Color(designSystemColor: .background))
+        .background(Color(designSystemColor: .surfacePrimary))
     }
 }

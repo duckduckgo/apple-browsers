@@ -65,7 +65,7 @@ struct DuckPlayerDebugSettingsView: View {
                     DuckPlayerWelcomePillView(viewModel: DuckPlayerWelcomePillViewModel(onOpen: {}, onClose: {}))
                         .padding()
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .background(Color(designSystemColor: .background))
+                        .background(Color(designSystemColor: .surfacePrimary))
                         .navigationTitle("Welcome Pill")
                         .navigationBarTitleDisplayMode(.inline)
                 }

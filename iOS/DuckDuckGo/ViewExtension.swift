@@ -72,7 +72,7 @@ extension View {
     func applyBackground() -> some View {
         hideScrollContentBackground()
         .background(
-            Rectangle().ignoresSafeArea().foregroundColor(Color(designSystemColor: .background))
+            Rectangle().ignoresSafeArea().foregroundColor(Color(designSystemColor: .surfacePrimary))
         )
     }
 

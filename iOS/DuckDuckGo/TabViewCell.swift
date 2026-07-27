@@ -465,7 +465,7 @@ class TabViewCell: UICollectionViewCell {
             if isFireTab {
                 return UIColor(singleUseColor: .fireModeAccent)
             }
-            return isSelectionModeEnabled ? UIColor(designSystemColor: .accentPrimary) : UIColor(designSystemColor: .decorationTertiary)
+            return isSelectionModeEnabled ? UIColor(designSystemColor: .accentPrimary) : UIColor(designSystemColor: .surfaceDecorationTertiary)
         }
         let showBorder = isSelectionModeEnabled ? isSelected : isCurrent
         border.layer.borderColor = borderColor.cgColor
@@ -681,7 +681,7 @@ class TabViewCell: UICollectionViewCell {
     private func decorate() {
         border.layer.borderColor = UIColor(designSystemColor: .textPrimary).cgColor
         unread.image = Self.unreadImageAsset(accentColor: accentColor).image(with: .current)
-        removeButton.tintColor = UIColor(designSystemColor: .icons)
+        removeButton.tintColor = UIColor(designSystemColor: .iconsPrimary)
 
         background.backgroundColor = UIColor(designSystemColor: .surfaceTertiary)
         title.primaryColor = UIColor(designSystemColor: .textPrimary)

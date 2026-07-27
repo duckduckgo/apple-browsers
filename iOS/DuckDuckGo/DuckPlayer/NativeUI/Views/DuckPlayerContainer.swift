@@ -277,7 +277,7 @@ private struct SheetView<Content: View>: View {
             sheetWidth = newWidth
         }
         .padding(.bottom, 20)
-        .background(Color(designSystemColor: .panel))
+        .background(Color(designSystemColor: .surfacePrimary))
         .overlay(
             Rectangle()
                 .fill(Color(uiColor: UIColor { traitCollection in

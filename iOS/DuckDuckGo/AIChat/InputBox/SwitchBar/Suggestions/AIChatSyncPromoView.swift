@@ -53,7 +53,7 @@ struct AIChatSyncPromoView: View {
 
             Button(action: onCloseTap) {
                 Image(uiImage: DesignSystemImages.Glyphs.Size24.close)
-                    .foregroundColor(Color(designSystemColor: .icons))
+                    .foregroundColor(Color(designSystemColor: .iconsPrimary))
             }
             .frame(width: 36, height: 36)
             .padding(4)

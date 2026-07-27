@@ -21,12 +21,11 @@
 public enum DesignSystemColor: CaseIterable {
 
     // Backgrounds
-    case background
+    case surfacePrimary
 
     case backgroundTertiary
     case backgroundSheets
     case backgroundPromptMessage
-    case panel
 
     // Surfaces
     case surface // T-surface/secondary
@@ -37,13 +36,13 @@ public enum DesignSystemColor: CaseIterable {
     case urlBar
 
     // Various
-    case backdrop
+    case surfaceBackdrop
 
     // Shadows
     case shadowPrimary
     case shadowSecondary
     case shadowTertiary
-    case highlightDecoration
+    case highlightPrimary
 
     // Text
     case textPrimary
@@ -54,11 +53,11 @@ public enum DesignSystemColor: CaseIterable {
     case textPlaceholder
 
     // Controls
-    case controlsFillPrimary
-    case controlsFillSecondary
-    case controlsFillTertiary
-    case controlsRaisedBackdrop
-    case controlsRaisedFillPrimary
+    case controlFillPrimary
+    case controlFillSecondary
+    case controlFillTertiary
+    case controlRaisedBackdrop
+    case controlRaisedFillPrimary
 
     // Brand
     case accentPrimary
@@ -91,7 +90,7 @@ public enum DesignSystemColor: CaseIterable {
     case shieldPrivacy
 
     // Icons
-    case icons
+    case iconsPrimary
     case iconsSecondary
     case iconsTertiary
 
@@ -142,10 +141,10 @@ public enum DesignSystemColor: CaseIterable {
     case buttonsDestructivePrimaryPressed
 
     // Decorations
-    case decorationPrimary
-    case decorationSecondary
-    case decorationTertiary
-    case decorationQuaternary
+    case surfaceDecorationPrimary
+    case surfaceDecorationSecondary
+    case surfaceDecorationTertiary
+    case surfaceDecorationQuaternary
 
 }
 #endif

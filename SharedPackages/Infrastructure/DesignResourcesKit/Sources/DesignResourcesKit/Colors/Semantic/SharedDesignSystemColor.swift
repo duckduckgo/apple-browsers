@@ -136,8 +136,6 @@ public enum SharedDesignSystemColor: CaseIterable {
     case controlRaisedBackdrop
 
     // MARK: - Unified-Input
-    /// - Warning: Figma defines this in light mode only. The dark value currently mirrors light;
-    ///   do not use it until design supplies a real dark value.
     case unifiedInputFillPrimary
     case unifiedInputFieldFillActive
     case unifiedInputFieldFillResting

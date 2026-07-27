@@ -200,7 +200,7 @@ final class DefaultOmniBarSearchView: UIView {
     private func setUpProperties() {
         backgroundColor = .clear
         clipsToBounds = true
-        tintColor = UIColor(designSystemColor: .icons)
+        tintColor = UIColor(designSystemColor: .iconsPrimary)
 
         textField.textAlignment = .left
         textField.contentVerticalAlignment = .center
@@ -218,7 +218,7 @@ final class DefaultOmniBarSearchView: UIView {
         isModeToggleHidden = true
 
         if UnifiedToggleInputFeature().isAvailable {
-            separatorView.lineColor = UIColor(designSystemColor: .decorationPrimary)
+            separatorView.lineColor = UIColor(designSystemColor: .surfaceDecorationPrimary)
         }
 
         reloadButton.setImage(DesignSystemImages.Glyphs.Size24.reload)

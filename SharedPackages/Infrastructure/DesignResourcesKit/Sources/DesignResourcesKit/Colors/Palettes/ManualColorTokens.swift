@@ -67,9 +67,6 @@ enum ManualColorTokens {
     // MARK: - Text
 
     static var textSuccess: DynamicColor { DynamicColor(lightColor: .green60, darkColor: .green30) }
-
-    /// Temporary: maps to `accentTextPrimary` (D3), which changes its value, so the switch rides
-    /// with the reviewed colour changes rather than the restructuring.
     static var textLink: DynamicColor { DynamicColor(lightHex: 0x3969EF, darkHex: 0x7295F6) }
 
     // MARK: - Permission Center

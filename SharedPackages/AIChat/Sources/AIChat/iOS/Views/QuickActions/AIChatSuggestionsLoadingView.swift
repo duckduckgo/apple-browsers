@@ -79,17 +79,17 @@ public final class AIChatSuggestionsLoadingView: UIView {
         super.traitCollectionDidChange(previousTraitCollection)
 
         if traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) {
-            layer.borderColor = UIColor(designSystemColor: .decorationQuaternary).cgColor
+            layer.borderColor = UIColor(designSystemColor: .surfaceDecorationQuaternary).cgColor
         }
     }
 
     // MARK: - Private
 
     private func setupUI() {
-        backgroundColor = UIColor(designSystemColor: .controlsFillPrimary)
+        backgroundColor = UIColor(designSystemColor: .controlFillPrimary)
         layer.cornerRadius = Constants.cornerRadius
         layer.borderWidth = Constants.borderWidth
-        layer.borderColor = UIColor(designSystemColor: .decorationQuaternary).cgColor
+        layer.borderColor = UIColor(designSystemColor: .surfaceDecorationQuaternary).cgColor
 
         dots.forEach { dotStack.addArrangedSubview($0) }
         addSubview(dotStack)

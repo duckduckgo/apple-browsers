@@ -1307,8 +1307,8 @@ private extension UnifiedToggleInputView {
     static func makeInlineDismissButton() -> UIButton {
         let button = UIButton(type: .system)
         button.setImage(DesignSystemImages.Glyphs.Size24.chevronLeft, for: .normal)
-        button.tintColor = UIColor(designSystemColor: .icons)
-        button.backgroundColor = UIColor(designSystemColor: .controlsFillPrimary)
+        button.tintColor = UIColor(designSystemColor: .iconsPrimary)
+        button.backgroundColor = UIColor(designSystemColor: .controlFillPrimary)
         button.layer.cornerRadius = Constants.inlineDismissSize / 2
         button.translatesAutoresizingMaskIntoConstraints = false
         button.accessibilityLabel = UserText.backButtonTitle
@@ -1359,7 +1359,7 @@ private extension UnifiedToggleInputView {
 
     private static func configureAITabAccessoryButton(_ button: UIButton) {
         button.translatesAutoresizingMaskIntoConstraints = false
-        button.tintColor = UIColor(designSystemColor: .icons)
+        button.tintColor = UIColor(designSystemColor: .iconsPrimary)
         button.clipsToBounds = false
     }
 

@@ -151,7 +151,7 @@ class SwitchBarButtonsView: UIView {
     private let aiChatShortcutBackdrop: UIView = {
         let view = UIView()
         view.translatesAutoresizingMaskIntoConstraints = false
-        view.backgroundColor = UIColor(designSystemColor: .controlsFillPrimary)
+        view.backgroundColor = UIColor(designSystemColor: .controlFillPrimary)
         view.layer.cornerRadius = Constants.aiChatShortcutChipSize / 2
         view.clipsToBounds = true
         view.isUserInteractionEnabled = false
@@ -241,7 +241,7 @@ class SwitchBarButtonsView: UIView {
         aiChatShortcutButton.setImage(DesignSystemImages.Glyphs.Size24.aiChat)
         aiChatShortcutButton.addAction(UIAction { [weak self] _ in self?.onAIChatShortcutTapped?() }, for: .touchUpInside)
 
-        separatorView.backgroundColor = UIColor(designSystemColor: .decorationPrimary)
+        separatorView.backgroundColor = UIColor(designSystemColor: .surfaceDecorationPrimary)
     }
 
     private func setUpAccessibility() {

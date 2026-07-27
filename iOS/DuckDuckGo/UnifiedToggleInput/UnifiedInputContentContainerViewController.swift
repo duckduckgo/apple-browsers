@@ -906,7 +906,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
 
     private enum Metrics {
         static let horizontalMarginForCompactLayout: CGFloat = 108
-        static let backgroundColor = UIColor(designSystemColor: .panel)
+        static let backgroundColor = UIColor(designSystemColor: .surfacePrimary)
         /// Brings the card's 8pt bottom margin up to the design's 12pt UTI bottom margin on the top bar
         /// (content then adds its own 6pt top → 18pt UTI→content, per Figma).
         static let topBarContentClearance: CGFloat = 4

@@ -625,7 +625,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     private let floatingGlassContentHostView = FloatingGlassContentHostView()
 
     private var omniBarLongPressInteraction: UIContextMenuInteraction?
-    private let defaultBackgroundColor = UIColor(designSystemColor: .background)
+    private let defaultBackgroundColor = UIColor(designSystemColor: .surfacePrimary)
     private let isFloatingUIEnabled: Bool
     fileprivate var savedBarChromeBackgroundColor: UIColor?
     fileprivate var savedBarViewBackgroundColor: UIColor?
@@ -2059,7 +2059,7 @@ extension DefaultOmniBarView {
         } else {
             aiChatSendButton.setImage(DesignSystemImages.Glyphs.Size24.arrowRightSmall, for: .normal)
             aiChatSendButton.backgroundColor = .clear
-            aiChatSendButton.tintColor = UIColor(designSystemColor: .icons)
+            aiChatSendButton.tintColor = UIColor(designSystemColor: .iconsPrimary)
             aiChatSendButton.isEnabled = false
         }
     }

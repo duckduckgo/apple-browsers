@@ -150,7 +150,7 @@ struct DuckPlayerWelcomePillView: View {
                      : Constants.horizontalPadding)
             .padding(.vertical, Constants.verticalPadding)
             .background(
-                Color(designSystemColor: colorScheme == .dark ? .controlsFillPrimary  : .backgroundSheets)
+                Color(designSystemColor: colorScheme == .dark ? .controlFillPrimary  : .backgroundSheets)
             )
             .cornerRadius(AppRebrand.isAppRebranded() ?
                           ContainerMetrics.cornerRadius

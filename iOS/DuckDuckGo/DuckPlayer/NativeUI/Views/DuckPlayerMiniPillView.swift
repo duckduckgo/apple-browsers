@@ -135,7 +135,7 @@ struct DuckPlayerMiniPillView: View {
                     }
                     .padding(Constants.regularPadding)
                     .background(
-                        Color(designSystemColor: colorScheme == .dark ? .controlsFillPrimary : .backgroundSheets)
+                        Color(designSystemColor: colorScheme == .dark ? .controlFillPrimary : .backgroundSheets)
                     )
 
                 }
@@ -151,7 +151,7 @@ struct DuckPlayerMiniPillView: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            Color(designSystemColor: .panel)
+            Color(designSystemColor: .surfacePrimary)
             sheetContent
         }
     }

@@ -41,7 +41,7 @@ final class SafariExportInterstitialViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        view.backgroundColor = UIColor(designSystemColor: .background)
+        view.backgroundColor = UIColor(designSystemColor: .surfacePrimary)
         presentationController?.delegate = self
         setupView()
         Pixel.fire(pixel: .importHubSafariInterstitialDisplayed, withAdditionalParameters: entryPoint.importHubEntryPointParameters)
@@ -71,7 +71,7 @@ final class SafariExportInterstitialViewController: UIViewController {
             }
         )
         let hostingController = UIHostingController(rootView: interstitialView)
-        hostingController.view.backgroundColor = UIColor(designSystemColor: .background)
+        hostingController.view.backgroundColor = UIColor(designSystemColor: .surfacePrimary)
         hostingController.view.isOpaque = true
         installChildViewController(hostingController)
     }

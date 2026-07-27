@@ -73,7 +73,7 @@ struct ResponsiveSearchFieldView: View {
                                 .resizable()
                                 .makeAccentable()
                                 .frame(width: 24, height: 24, alignment: .leading)
-                                .foregroundStyle(Color(designSystemColor: .icons))
+                                .foregroundStyle(Color(designSystemColor: .iconsPrimary))
                                 .padding(.trailing, 12)
                         }
                     }
@@ -86,7 +86,7 @@ struct ResponsiveSearchFieldView: View {
                             .resizable()
                             .makeAccentable()
                             .frame(width: 24, height: 24, alignment: .leading)
-                            .foregroundStyle(Color(designSystemColor: .icons))
+                            .foregroundStyle(Color(designSystemColor: .iconsPrimary))
                             .padding(.horizontal, 12)
                             .frame(maxHeight: .infinity)
                             .contentShape(Rectangle())

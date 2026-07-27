@@ -101,11 +101,11 @@ final class PadOmnibarToggleView: UIView {
     }
 
     private func setUpProperties() {
-        backgroundColor = UIColor(designSystemColor: .controlsRaisedBackdrop)
+        backgroundColor = UIColor(designSystemColor: .controlRaisedBackdrop)
         layer.cornerRadius = Metrics.outerHeight / 2
         layer.cornerCurve = .continuous
 
-        selectedBackgroundView.backgroundColor = UIColor(designSystemColor: .controlsRaisedFillPrimary)
+        selectedBackgroundView.backgroundColor = UIColor(designSystemColor: .controlRaisedFillPrimary)
         selectedBackgroundView.layer.cornerRadius = Metrics.innerHeight / 2
         selectedBackgroundView.layer.cornerCurve = .continuous
         selectedBackgroundView.layer.shadowColor = UIColor(designSystemColor: .shadowSecondary).cgColor

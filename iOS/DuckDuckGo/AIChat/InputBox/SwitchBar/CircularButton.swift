@@ -119,7 +119,7 @@ final class CircularButton: UIButton {
     func applySubmitStyle(isActive: Bool, isFireTab: Bool, activeForeground: UIColor) {
         guard isActive else {
             setColors(foreground: UIColor(designSystemColor: .iconsSecondary),
-                      background: UIColor(designSystemColor: .controlsFillPrimary))
+                      background: UIColor(designSystemColor: .controlFillPrimary))
             return
         }
         let background = isFireTab

@@ -71,7 +71,7 @@ final class PopoverSuggestionsController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        view.backgroundColor = UIColor(designSystemColor: .background)
+        view.backgroundColor = UIColor(designSystemColor: .surfacePrimary)
 
         wireListCallbacks()
         installHostingController()

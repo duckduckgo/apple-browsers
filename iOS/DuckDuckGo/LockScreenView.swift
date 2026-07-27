@@ -30,7 +30,7 @@ struct LockScreenView: View {
                               y: geometry.size.height / 2)
             }
         }
-        .background(Color(designSystemColor: .background))
+        .background(Color(designSystemColor: .surfacePrimary))
     }
 }
 

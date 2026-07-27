@@ -119,7 +119,7 @@ struct NewTabPageShadowScrollView<Content: View>: UIViewControllerRepresentable 
         let bottomShadowView = makeShadowView(isTop: false)
         
         [topShadowView, bottomShadowView].forEach {
-            $0.backgroundColor = UIColor(designSystemColor: .background)
+            $0.backgroundColor = UIColor(designSystemColor: .surfacePrimary)
             $0.translatesAutoresizingMaskIntoConstraints = false
             parentView.addSubview($0)
         }

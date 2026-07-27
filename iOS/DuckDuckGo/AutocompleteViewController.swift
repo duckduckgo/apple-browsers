@@ -135,7 +135,7 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        view.backgroundColor = UIColor(designSystemColor: .background)
+        view.backgroundColor = UIColor(designSystemColor: .surfacePrimary)
 
         queryDebounceCancellable = $query
             .debounce(for: .milliseconds(Self.debounceDelayMS), scheduler: RunLoop.main)

@@ -28,7 +28,7 @@ private enum RadioIndicatorMetrics {
     static let strokeWidth: CGFloat = 1.5
     static let borderLightColor = Color.black.opacity(0.18)
     static let borderDarkColor = Color.white.opacity(0.18)
-    static let unselectedForegroundColor = Color(designSystemColor: .controlsFillPrimary)
+    static let unselectedForegroundColor = Color(designSystemColor: .controlFillPrimary)
 }
 
 extension OnboardingRebranding {

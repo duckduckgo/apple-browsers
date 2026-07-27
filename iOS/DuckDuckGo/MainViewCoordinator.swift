@@ -350,7 +350,7 @@ class MainViewCoordinator {
         unifiedToggleInputContainer.backgroundColor = .clear
 
         beginOmnibarStatusBackgroundPresentation()
-        let inlineBackground = UIColor(designSystemColor: .panel)
+        let inlineBackground = UIColor(designSystemColor: .surfacePrimary)
         suggestionTrayContainer.backgroundColor = inlineBackground
         showFocusedStateBackground()
 
@@ -635,7 +635,7 @@ class MainViewCoordinator {
             case .standard, .omnibarEditing:
                 return .clear
             case .aiTabSearchChromeHidden:
-                return UIColor(designSystemColor: .panel)
+                return UIColor(designSystemColor: .surfacePrimary)
             case .aiTabChatChromeHidden:
                 return UIColor(designSystemColor: .surfaceCanvas)
             }
@@ -643,9 +643,9 @@ class MainViewCoordinator {
 
         switch statusBackgroundPresentation {
         case .standard:
-            return standardStatusBackgroundColor ?? UIColor(designSystemColor: .background)
+            return standardStatusBackgroundColor ?? UIColor(designSystemColor: .surfacePrimary)
         case .omnibarEditing, .aiTabSearchChromeHidden:
-            return UIColor(designSystemColor: .panel)
+            return UIColor(designSystemColor: .surfacePrimary)
         case .aiTabChatChromeHidden:
             return UIColor(designSystemColor: .surfaceCanvas)
         }

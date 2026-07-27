@@ -210,9 +210,9 @@ private enum Const {
 }
 
 private extension Color {
-    static let barButton = Color(designSystemColor: .icons)
+    static let barButton = Color(designSystemColor: .iconsPrimary)
     static let emptyState = Color(baseColor: .gray60)
     static let deleteAll = Color(designSystemColor: .buttonsDeleteGhostText)
-    static let background = Color(designSystemColor: .background)
+    static let background = Color(designSystemColor: .surfacePrimary)
     static let rowBackground = Color(designSystemColor: .surface)
 }

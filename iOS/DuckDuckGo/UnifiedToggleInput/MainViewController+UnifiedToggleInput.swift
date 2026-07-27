@@ -271,7 +271,7 @@ extension MainViewController {
             // WKWebView's out-of-process renderer catches up) shows the same colour rather
             // than the parent flashing through.
             statusBackgroundPresentation = .aiTabSearchChromeHidden
-            rootBackgroundColor = UIColor(designSystemColor: .panel)
+            rootBackgroundColor = UIColor(designSystemColor: .surfacePrimary)
             navigationBarContainerColor = rootBackgroundColor
             inputContentContainerColor = .clear
             unifiedToggleInputContainerColor = .clear

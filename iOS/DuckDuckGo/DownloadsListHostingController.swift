@@ -41,7 +41,7 @@ class DownloadsListHostingController: UIHostingController<DownloadsList> {
     private func setUpAppearances() {
         // Required due to lack of SwiftUI APIs for changing the background color of List and nav bars
         let appearance = UITableView.appearance(whenContainedInInstancesOf: [DownloadsListHostingController.self])
-        appearance.backgroundColor = UIColor(designSystemColor: .background)
+        appearance.backgroundColor = UIColor(designSystemColor: .surfacePrimary)
         
         let navAppearance = UINavigationBar.appearance(whenContainedInInstancesOf: [DownloadsListHostingController.self])
         decorateNavigationBar(navAppearance)

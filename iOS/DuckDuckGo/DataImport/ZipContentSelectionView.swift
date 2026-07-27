@@ -118,7 +118,7 @@ private struct DataTypesContainer: View {
                 DataTypeRow(viewModel: viewModel, importPreview: importPreview)
             }
         }
-        .background(Color(designSystemColor: .panel))
+        .background(Color(designSystemColor: .surfacePrimary))
         .cornerRadius(10)
     }
 }

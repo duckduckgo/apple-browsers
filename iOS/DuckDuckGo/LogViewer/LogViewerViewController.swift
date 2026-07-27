@@ -28,7 +28,7 @@ final class LogViewerViewController: UIViewController {
         tableView.translatesAutoresizingMaskIntoConstraints = false
         tableView.delegate = self
         tableView.dataSource = self
-        tableView.backgroundColor = UIColor(designSystemColor: .background)
+        tableView.backgroundColor = UIColor(designSystemColor: .surfacePrimary)
         tableView.separatorStyle = .singleLine
         tableView.separatorColor = UIColor(designSystemColor: .textSecondary).withAlphaComponent(0.2)
         tableView.separatorInset = UIEdgeInsets(top: 0, left: 16, bottom: 0, right: 16)
@@ -107,7 +107,7 @@ final class LogViewerViewController: UIViewController {
     
     private func setupUI() {
         title = "Log Viewer"
-        view.backgroundColor = UIColor(designSystemColor: .background)
+        view.backgroundColor = UIColor(designSystemColor: .surfacePrimary)
         navigationItem.searchController = searchController
         navigationItem.hidesSearchBarWhenScrolling = false
         definesPresentationContext = true

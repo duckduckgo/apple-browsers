@@ -77,7 +77,7 @@ struct ReturnToTabCard: View {
         .frame(height: Metrics.height)
         .background(
             Capsule()
-                .fill(Color(designSystemColor: .controlsFillSecondary))
+                .fill(Color(designSystemColor: .controlFillSecondary))
         )
     }
 
@@ -128,7 +128,7 @@ struct ReturnToTabCard: View {
     private var fireButton: some View {
         Button(action: deleteTab) {
             Image(uiImage: DesignSystemImages.Glyphs.Size24.fire)
-                .foregroundColor(Color(designSystemColor: .icons))
+                .foregroundColor(Color(designSystemColor: .iconsPrimary))
                 .padding(.horizontal, Metrics.actionIconPadding)
                 .frame(maxHeight: .infinity)
                 .contentShape(Rectangle())
@@ -148,7 +148,7 @@ struct ReturnToTabCard: View {
             menuContentView
         } label: {
             Image(uiImage: DesignSystemImages.Glyphs.Size24.menuDotsHorizontal)
-                .foregroundColor(Color(designSystemColor: .icons))
+                .foregroundColor(Color(designSystemColor: .iconsPrimary))
                 // Tighten the leading gap to the Fire button when it's present; otherwise keep the original padding.
                 .padding(.leading, model.isFireButtonEnabled ? Metrics.actionIconPadding : Metrics.horizontalPadding)
                 .padding(.trailing, Metrics.horizontalPadding)
@@ -230,7 +230,7 @@ struct ReturnToTabCard: View {
                 .font(.subheadline)
 
             Image(uiImage: DesignSystemImages.Glyphs.Size16.settings)
-                .foregroundColor(Color(designSystemColor: .icons))
+                .foregroundColor(Color(designSystemColor: .iconsPrimary))
         }
         .pickerStyle(.menu)
     }
@@ -289,7 +289,7 @@ struct ReturnToTabCard: View {
                     .id(domain)
             } else {
                 RoundedRectangle(cornerRadius: Metrics.iconCornerRadius)
-                    .fill(Color(designSystemColor: .controlsFillPrimary))
+                    .fill(Color(designSystemColor: .controlFillPrimary))
             }
         }
     }
@@ -339,7 +339,7 @@ private struct MenuActionButton: View {
                 Text(text)
             } icon: {
                 Image(uiImage: icon)
-                    .foregroundColor(role == nil ? Color(designSystemColor: .icons) : nil)
+                    .foregroundColor(role == nil ? Color(designSystemColor: .iconsPrimary) : nil)
             }
         }
     }

@@ -47,13 +47,13 @@ class BookmarkFoldersViewController: UITableViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        self.tableView.sectionIndexBackgroundColor = UIColor(designSystemColor: .background)
+        self.tableView.sectionIndexBackgroundColor = UIColor(designSystemColor: .surfacePrimary)
         self.tableView.separatorColor = ThemeManager.shared.currentTheme.tableCellSeparatorColor
     }
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        tableView.backgroundColor = UIColor(designSystemColor: .background)
+        tableView.backgroundColor = UIColor(designSystemColor: .surfacePrimary)
     }
 
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
@@ -289,7 +289,7 @@ class FavoriteCell: UITableViewCell {
         super.awakeFromNib()
         backgroundColor = UIColor(designSystemColor: .surface)
         iconImageView.image = DesignSystemImages.Color.Size24.favorite
-        iconImageView.tintColor = UIColor(designSystemColor: .icons)
+        iconImageView.tintColor = UIColor(designSystemColor: .iconsPrimary)
         label.textColor = UIColor(designSystemColor: .textPrimary)
     }
 }
@@ -316,7 +316,7 @@ class AddFolderCell: UITableViewCell {
         super.awakeFromNib()
         backgroundColor = UIColor(designSystemColor: .surface)
         iconImageView.image = DesignSystemImages.Glyphs.Size24.folderAdd
-        iconImageView.tintColor = UIColor(designSystemColor: .icons)
+        iconImageView.tintColor = UIColor(designSystemColor: .iconsPrimary)
         label.textColor = UIColor(designSystemColor: .textPrimary)
     }
 }

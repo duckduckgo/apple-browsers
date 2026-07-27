@@ -336,7 +336,7 @@ extension MainViewFactory {
         if floatingUIManager.isFloatingUIEnabled {
             view.backgroundColor = .clear
         } else {
-            view.backgroundColor = UIColor(designSystemColor: .background)
+            view.backgroundColor = UIColor(designSystemColor: .surfacePrimary)
         }
         coordinator.statusBackground = view
         superview.addSubview(coordinator.statusBackground)
@@ -368,7 +368,7 @@ extension MainViewFactory {
     private func createFocusedStateBackground() {
         coordinator.focusedStateBackground = FocusedStateBackgroundView()
         coordinator.focusedStateBackground.isHidden = true
-        coordinator.focusedStateBackground.backgroundColor = UIColor(designSystemColor: .panel)
+        coordinator.focusedStateBackground.backgroundColor = UIColor(designSystemColor: .surfacePrimary)
         superview.addSubview(coordinator.focusedStateBackground)
     }
 

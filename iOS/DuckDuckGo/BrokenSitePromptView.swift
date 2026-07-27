@@ -47,7 +47,7 @@ struct BrokenSitePromptView: View {
             .padding(EdgeInsets(top: 12, leading: 16, bottom: 4, trailing: 16))
             Color(designSystemColor: .lines).frame(height: 1 / UIScreen.main.scale)
         }
-        .background(Color(designSystemColor: .panel))
+        .background(Color(designSystemColor: .surfacePrimary))
     }
 
 }

@@ -35,10 +35,10 @@ struct CredentialProviderListDetailsView: View {
         if #available(iOS 16.0, *) {
             list
                 .scrollContentBackground(.hidden)
-                .background(Color(designSystemColor: .background))
+                .background(Color(designSystemColor: .surfacePrimary))
         } else {
             list
-                .background(Color(designSystemColor: .background))
+                .background(Color(designSystemColor: .surfacePrimary))
         }
     }
 

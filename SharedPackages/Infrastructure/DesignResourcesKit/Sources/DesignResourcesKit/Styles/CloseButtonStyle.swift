@@ -35,7 +35,7 @@ public struct CloseButtonStyle: ButtonStyle {
     }
 
     private func backgroundColor(_ isPressed: Bool) -> Color {
-        isPressed ? Color(designSystemColor: .controlsFillTertiary) : Color(designSystemColor: .controlsFillPrimary)
+        isPressed ? Color(designSystemColor: .controlFillTertiary) : Color(designSystemColor: .controlFillPrimary)
     }
 
     public struct Constant {

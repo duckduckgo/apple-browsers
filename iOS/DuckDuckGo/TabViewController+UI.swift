@@ -73,7 +73,7 @@ extension TabViewController {
     func configureRootView() {
         class RootView: UIView { }
         let rootView = RootView()
-        rootView.backgroundColor = UIColor(designSystemColor: .background)
+        rootView.backgroundColor = UIColor(designSystemColor: .surfacePrimary)
         view = rootView
 
         containerStackView = UIStackView()

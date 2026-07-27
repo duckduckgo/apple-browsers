@@ -50,7 +50,7 @@ public struct IOSButtonsDebugView: View {
             }
             .padding(48)
         }
-        .background(Color(designSystemColor: .background))
+        .background(Color(designSystemColor: .surfacePrimary))
     }
 
     // MARK: Reusable column pieces

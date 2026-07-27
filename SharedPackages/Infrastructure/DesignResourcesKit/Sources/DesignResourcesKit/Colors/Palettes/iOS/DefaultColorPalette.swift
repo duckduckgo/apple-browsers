@@ -63,8 +63,8 @@ struct DefaultColorPalette: ColorPaletteDefinition {
     private static let surfaceCanvas = DynamicColor(lightColor: xFAFAFA, darkColor: x1C1C1C)
 
     // Backgrounds
-    private static let backdrop = DynamicColor(lightColor: xE0E0E0, darkColor: x080808)
-    private static let background = DynamicColor(lightColor: xF2F2F2, darkColor: x282828)
+    private static let surfaceBackdrop = DynamicColor(lightColor: xE0E0E0, darkColor: x080808)
+    private static let surfacePrimary = DynamicColor(lightColor: xF2F2F2, darkColor: x282828)
     private static let backgroundTertiary = DynamicColor(lightColor: .white, darkColor: x3D3D3D)
     private static let backgroundSheets = DynamicColor(lightColor: xF9F9F9, darkColor: x373737)
     private static let backgroundPromptMessage = DynamicColor(lightColor: xF3F6FF, darkColor: xFFFFFF.opacity(0.09))
@@ -75,15 +75,15 @@ struct DefaultColorPalette: ColorPaletteDefinition {
     private static let shadowTertiary = DynamicColor(lightColor: x1F1F1F.opacity(0.16), darkColor: .shade(0.32))
 
     // Controls
-    private static let controlsFillPrimary = DynamicColor(lightColor: x1F1F1F.opacity(0.09), darkColor: xF9F9F9.opacity(0.12))
-    private static let controlsFillSecondary = DynamicColor(lightColor: x1F1F1F.opacity(0.12), darkColor: xF9F9F9.opacity(0.18))
-    private static let controlsFillTertiary = DynamicColor(lightColor: x1F1F1F.opacity(0.18), darkColor: xF9F9F9.opacity(0.24))
-    private static let controlsRaisedBackdrop = DynamicColor(lightColor: x000000.opacity(0.09), darkColor: xFFFFFF.opacity(0.12))
+    private static let controlFillPrimary = DynamicColor(lightColor: x1F1F1F.opacity(0.09), darkColor: xF9F9F9.opacity(0.12))
+    private static let controlFillSecondary = DynamicColor(lightColor: x1F1F1F.opacity(0.12), darkColor: xF9F9F9.opacity(0.18))
+    private static let controlFillTertiary = DynamicColor(lightColor: x1F1F1F.opacity(0.18), darkColor: xF9F9F9.opacity(0.24))
+    private static let controlRaisedBackdrop = DynamicColor(lightColor: x000000.opacity(0.09), darkColor: xFFFFFF.opacity(0.12))
 
-    private static let controlsRaisedFillPrimary = DynamicColor(lightColor: .white, darkColor: xFFFFFF.opacity(0.18))
+    private static let controlRaisedFillPrimary = DynamicColor(lightColor: .white, darkColor: xFFFFFF.opacity(0.18))
 
     // Icons
-    private static let icons = DynamicColor(lightColor: x1F1F1F.opacity(0.84), darkColor: .tint(0.78))
+    private static let iconsPrimary = DynamicColor(lightColor: x1F1F1F.opacity(0.84), darkColor: .tint(0.78))
     private static let iconsSecondary = DynamicColor(lightColor: x1F1F1F.opacity(0.6), darkColor: .tint(0.48))
     private static let iconsTertiary = DynamicColor(lightColor: x000000.opacity(0.36), darkColor: xFFFFFF.opacity(0.24))
 
@@ -100,10 +100,10 @@ struct DefaultColorPalette: ColorPaletteDefinition {
     private static let lines = DynamicColor(lightColor: x1F1F1F.opacity(0.09), darkColor: xF9F9F9.opacity(0.12))
 
     // Decorations
-    private static let decorationPrimary = DynamicColor(lightColor: x1F1F1F.opacity(0.3), darkColor: xF9F9F9.opacity(0.36))
-    private static let decorationSecondary = DynamicColor(lightColor: x1F1F1F.opacity(0.48), darkColor: xF9F9F9.opacity(0.64))
-    private static let decorationTertiary = DynamicColor(lightColor: x1F1F1F.opacity(0.60), darkColor: xF9F9F9.opacity(0.74))
-    private static let decorationQuaternary = DynamicColor(lightColor: x1F1F1F.opacity(0.03), darkColor: xF9F9F9.opacity(0.03))
+    private static let surfaceDecorationPrimary = DynamicColor(lightColor: x1F1F1F.opacity(0.3), darkColor: xF9F9F9.opacity(0.36))
+    private static let surfaceDecorationSecondary = DynamicColor(lightColor: x1F1F1F.opacity(0.48), darkColor: xF9F9F9.opacity(0.64))
+    private static let surfaceDecorationTertiary = DynamicColor(lightColor: x1F1F1F.opacity(0.60), darkColor: xF9F9F9.opacity(0.74))
+    private static let surfaceDecorationQuaternary = DynamicColor(lightColor: x1F1F1F.opacity(0.03), darkColor: xF9F9F9.opacity(0.03))
 
     // Fire Tabs
     private static let fireModeAccent = DynamicColor(lightColor: RebrandingColor.Mandarin.mandarin50, darkColor: RebrandingColor.Mandarin.mandarin40)
@@ -116,7 +116,7 @@ struct DefaultColorPalette: ColorPaletteDefinition {
     private static let duckAIVoiceCellBackground = DynamicColor(staticColor: RebrandingColor.Pondwater.pondwater90)
 
     // Highlight
-    private static let highlightDecoration = DynamicColor(lightColor: .tint(0.24), darkColor: xF9F9F9.opacity(0.12))
+    private static let highlightPrimary = DynamicColor(lightColor: .tint(0.24), darkColor: xF9F9F9.opacity(0.12))
 
     // Accents
     private static let accentContentPrimary = DynamicColor(lightColor: .white, darkColor: .black)
@@ -199,13 +199,12 @@ struct DefaultColorPalette: ColorPaletteDefinition {
         switch designSystemColor {
 
         case .urlBar: return urlBar
-        case .background: return background
+        case .surfacePrimary: return surfacePrimary
         case .backgroundTertiary: return backgroundTertiary
         case .backgroundSheets: return backgroundSheets
         case .backgroundPromptMessage: return backgroundPromptMessage
-        case .backdrop: return backdrop
-        case .panel: return background
-        case .icons: return icons
+        case .surfaceBackdrop: return surfaceBackdrop
+        case .iconsPrimary: return iconsPrimary
         case .iconsSecondary: return iconsSecondary
         case .iconsTertiary: return iconsTertiary
         case .textPrimary: return textPrimary
@@ -214,16 +213,16 @@ struct DefaultColorPalette: ColorPaletteDefinition {
         case .shadowPrimary: return shadowPrimary
         case .shadowSecondary: return shadowSecondary
         case .shadowTertiary: return shadowTertiary
-        case .controlsFillPrimary: return controlsFillPrimary
-        case .controlsFillSecondary: return controlsFillSecondary
-        case .controlsFillTertiary: return controlsFillTertiary
-        case .controlsRaisedBackdrop: return controlsRaisedBackdrop
-        case .controlsRaisedFillPrimary: return controlsRaisedFillPrimary
-        case .decorationPrimary: return decorationPrimary
-        case .decorationSecondary: return decorationSecondary
-        case .decorationTertiary: return decorationTertiary
-        case .decorationQuaternary: return decorationQuaternary
-        case .highlightDecoration: return highlightDecoration
+        case .controlFillPrimary: return controlFillPrimary
+        case .controlFillSecondary: return controlFillSecondary
+        case .controlFillTertiary: return controlFillTertiary
+        case .controlRaisedBackdrop: return controlRaisedBackdrop
+        case .controlRaisedFillPrimary: return controlRaisedFillPrimary
+        case .surfaceDecorationPrimary: return surfaceDecorationPrimary
+        case .surfaceDecorationSecondary: return surfaceDecorationSecondary
+        case .surfaceDecorationTertiary: return surfaceDecorationTertiary
+        case .surfaceDecorationQuaternary: return surfaceDecorationQuaternary
+        case .highlightPrimary: return highlightPrimary
         case .accentContentPrimary: return accentContentPrimary
         case .accentTertiary: return accentTertiary
 
@@ -305,11 +304,11 @@ struct DefaultColorPalette: ColorPaletteDefinition {
         case .unifiedFeedbackFieldBackground:
             return DynamicColor(lightColor: surface.lightColor, darkColor: .x1C1C1E)
         case .privacyDashboardBackground:
-            return DynamicColor(lightColor: surface.lightColor, darkColor: background.darkColor)
+            return DynamicColor(lightColor: surface.lightColor, darkColor: surfacePrimary.darkColor)
         case .inputContentSeparator:
-            return DynamicColor(lightColor: shadowTertiary.lightColor, darkColor: highlightDecoration.darkColor)
+            return DynamicColor(lightColor: shadowTertiary.lightColor, darkColor: highlightPrimary.darkColor)
         case .whatsNewBackground:
-            return DynamicColor(lightColor: .white, darkColor: background.darkColor)
+            return DynamicColor(lightColor: .white, darkColor: surfacePrimary.darkColor)
         case .duckAIContextualSheetBackground:
             return DynamicColor(lightColor: .white, darkColor: .x161616)
         case .duckAIWebViewBackground:

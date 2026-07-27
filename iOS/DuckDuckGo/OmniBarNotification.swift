@@ -142,7 +142,7 @@ private enum Constants {
     
     enum Colors {
         static let text = Color(UIColor(designSystemColor: .textPrimary))
-        static let background = Color(UIColor(designSystemColor: .panel))
+        static let background = Color(UIColor(designSystemColor: .surfacePrimary))
     }
 
     enum Spacing {

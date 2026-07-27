@@ -296,7 +296,7 @@ final class UnifiedToggleInputToolbarView: UIView {
     private lazy var selectedToolChipView: UIView = {
         let view = UIView()
         view.translatesAutoresizingMaskIntoConstraints = false
-        view.backgroundColor = UIColor(designSystemColor: .controlsFillPrimary)
+        view.backgroundColor = UIColor(designSystemColor: .controlFillPrimary)
         view.layer.cornerRadius = Constants.chipCornerRadius
         view.isHidden = true
 

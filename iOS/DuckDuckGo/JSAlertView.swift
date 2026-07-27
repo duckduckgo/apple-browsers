@@ -217,7 +217,7 @@ final class JSAlertView: UIView {
         self.titleLabel.textColor = UIColor(designSystemColor: .textPrimary)
         self.textField.backgroundColor = UIColor(designSystemColor: .surface)
         self.messageLabel.textColor = UIColor(designSystemColor: .textPrimary)
-        self.alertView.backgroundColor = UIColor(designSystemColor: .background)
+        self.alertView.backgroundColor = UIColor(designSystemColor: .surfacePrimary)
         self.separatorViews.forEach { $0.backgroundColor = UIColor(designSystemColor: .lines) }
         self.okButton.setTitleColor(UIColor(designSystemColor: .buttonsSecondaryWireText), for: .normal)
         self.cancelButton.setTitleColor(UIColor(designSystemColor: .buttonsSecondaryWireText), for: .normal)

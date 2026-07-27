@@ -162,7 +162,7 @@ extension SimplifiedSyncSettingsView {
             devEnvironmentIndicator
         }
         .listRowInsets(EdgeInsets())
-        .listRowBackground(Color(designSystemColor: .background))
+        .listRowBackground(Color(designSystemColor: .surfacePrimary))
     }
 
     @ViewBuilder

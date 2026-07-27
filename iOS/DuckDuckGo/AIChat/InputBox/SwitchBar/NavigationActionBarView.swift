@@ -177,9 +177,9 @@ final class NavigationActionBarView: UIView {
         newLineButton.isShadowHidden = !isFloating
         newLineButton.setIcon(DesignSystemImages.Glyphs.Size24.enter)
         newLineButton.setColors(
-            foreground: UIColor(designSystemColor: .icons),
+            foreground: UIColor(designSystemColor: .iconsPrimary),
             background: UIColor(designSystemColor: .surfaceTertiary),
-            pressedForeground: UIColor(designSystemColor: .icons),
+            pressedForeground: UIColor(designSystemColor: .iconsPrimary),
             pressedBackground: UIColor(designSystemColor: .surface)
         )
         newLineButton.addTarget(self, action: #selector(newLineTapped), for: .touchUpInside)
@@ -275,9 +275,9 @@ final class NavigationActionBarView: UIView {
         microphoneButton.alpha = isEnabled ? 1.0 : 0.5
         microphoneButton.isEnabled = isEnabled
         microphoneButton.setColors(
-            foreground: UIColor(designSystemColor: .icons),
+            foreground: UIColor(designSystemColor: .iconsPrimary),
             background: UIColor(designSystemColor: .surfaceTertiary),
-            pressedForeground: UIColor(designSystemColor: .icons),
+            pressedForeground: UIColor(designSystemColor: .iconsPrimary),
             pressedBackground: UIColor(designSystemColor: .surface)
         )
     }
@@ -316,9 +316,9 @@ final class NavigationActionBarView: UIView {
 
         let useInactiveStyle = isUsingFadeOutAnimation && !hasText
         if useInactiveStyle {
-            searchButton.setColors(foreground: UIColor(designSystemColor: .icons),
+            searchButton.setColors(foreground: UIColor(designSystemColor: .iconsPrimary),
                                    background: UIColor(designSystemColor: .surfaceTertiary),
-                                   pressedForeground: UIColor(designSystemColor: .icons),
+                                   pressedForeground: UIColor(designSystemColor: .iconsPrimary),
                                    pressedBackground: UIColor(designSystemColor: .surface))
         } else {
             let backgroundColor = viewModel.isFireTab ? UIColor(singleUseColor: .fireModeAccent) : UIColor(designSystemColor: .accentPrimary)

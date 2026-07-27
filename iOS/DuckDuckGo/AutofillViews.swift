@@ -262,5 +262,5 @@ private extension Image {
         }
         .padding()
     }
-    .background(Color(designSystemColor: .background))
+    .background(Color(designSystemColor: .surfacePrimary))
 }

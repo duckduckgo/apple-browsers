@@ -173,7 +173,7 @@ private extension BrowserChromeButton.ButtonType {
 
         switch state {
         case .highlighted:
-            return UIColor(designSystemColor: .controlsFillPrimary)
+            return UIColor(designSystemColor: .controlFillPrimary)
         default:
             return .clear
         }
@@ -185,9 +185,9 @@ private extension BrowserChromeButton.ButtonType {
         case .primary:
             switch state {
             case .disabled:
-                return UIColor(designSystemColor: .icons).withAlphaComponent(0.5)
+                return UIColor(designSystemColor: .iconsPrimary).withAlphaComponent(0.5)
             default:
-                return UIColor(designSystemColor: .icons)
+                return UIColor(designSystemColor: .iconsPrimary)
             }
         case .secondary, .tabSwitcher:
             switch state {

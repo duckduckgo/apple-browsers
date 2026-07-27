@@ -921,7 +921,7 @@ private extension OmniBarEditingStateViewController {
     struct Constants {
         // Adjusts for two buttons in the action bar
         static let horizontalMarginForCompactLayout: CGFloat = 108
-        static let backgroundColor = UIColor(designSystemColor: .background)
+        static let backgroundColor = UIColor(designSystemColor: .surfacePrimary)
         static let animationDuration: TimeInterval = 0.15
         static let escapeHatchLogoZoneHeight: CGFloat = 70
     }

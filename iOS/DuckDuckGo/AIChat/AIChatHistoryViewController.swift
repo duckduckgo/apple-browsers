@@ -94,7 +94,7 @@ final class AIChatHistoryViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        let backgroundColor = UIColor(designSystemColor: .background)
+        let backgroundColor = UIColor(designSystemColor: .surfacePrimary)
         view.backgroundColor = backgroundColor
         navigationController?.view.backgroundColor = backgroundColor
         tableView.backgroundColor = backgroundColor

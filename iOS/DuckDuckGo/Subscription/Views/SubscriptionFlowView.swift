@@ -198,8 +198,8 @@ struct SubscriptionFlowView: View {
 
     private func setUpAppearances() {
         let navAppearance = UINavigationBar.appearance()
-        navAppearance.backgroundColor = UIColor(designSystemColor: .background)
-        navAppearance.barTintColor = UIColor(designSystemColor: .controlsFillPrimary)
+        navAppearance.backgroundColor = UIColor(designSystemColor: .surfacePrimary)
+        navAppearance.barTintColor = UIColor(designSystemColor: .controlFillPrimary)
         navAppearance.shadowImage = UIImage()
         navAppearance.tintColor = UIColor(designSystemColor: .textPrimary)
     }

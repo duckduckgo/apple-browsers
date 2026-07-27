@@ -114,7 +114,7 @@ final class AIChatTabChatHeaderView: UIView {
     private lazy var tabSwitcherButton: UIButton = {
         let button = UIButton(type: .custom)
         button.translatesAutoresizingMaskIntoConstraints = false
-        button.tintColor = UIColor(designSystemColor: .icons)
+        button.tintColor = UIColor(designSystemColor: .iconsPrimary)
         button.accessibilityLabel = UserText.tabSwitcherAccessibilityLabel
         button.addTarget(self, action: #selector(tabSwitcherTapped), for: .touchUpInside)
         button.addSubview(tabSwitcherView)
@@ -521,7 +521,7 @@ final class AIChatTabChatHeaderView: UIView {
             button.configurationUpdateHandler = nil
         }
         button.translatesAutoresizingMaskIntoConstraints = false
-        button.tintColor = UIColor(designSystemColor: .icons)
+        button.tintColor = UIColor(designSystemColor: .iconsPrimary)
         button.imageView?.contentMode = .scaleAspectFit
         button.accessibilityLabel = accessibilityLabel
         button.addTarget(self, action: action, for: .touchUpInside)
@@ -534,7 +534,7 @@ final class AIChatTabChatHeaderView: UIView {
     private func makeIconButtonLegacy(image: DesignSystemImage) -> UIButton {
         let button = UIButton(type: .system)
         button.setImage(image, for: .normal)
-        button.backgroundColor = UIColor(designSystemColor: .controlsRaisedFillPrimary)
+        button.backgroundColor = UIColor(designSystemColor: .controlRaisedFillPrimary)
         button.layer.cornerRadius = Constants.buttonSize / 2
         return button
     }
@@ -581,7 +581,7 @@ final class AIChatTabChatHeaderView: UIView {
                 effectView.bottomAnchor.constraint(equalTo: clipHost.bottomAnchor),
             ])
         } else {
-            clipHost.backgroundColor = UIColor(designSystemColor: .controlsRaisedFillPrimary)
+            clipHost.backgroundColor = UIColor(designSystemColor: .controlRaisedFillPrimary)
         }
 
         // Shadow on the outer host so it renders outside the capsule bounds. Corner radius is

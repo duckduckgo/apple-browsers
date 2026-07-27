@@ -65,7 +65,7 @@ struct AutocompleteView: View {
         .padding(.bottom, -20)
         .padding(.top, model.isPad ? 10 : 0)
         .modifier(HideScrollContentBackground())
-        .background(Color(designSystemColor: .background))
+        .background(Color(designSystemColor: .surfacePrimary))
         .onHover { isHovering in
             if !isHovering {
                 model.clearSelection()
@@ -309,7 +309,7 @@ private struct SuggestionListItem: View {
             icon
                 .resizable()
                 .frame(width: Metrics.iconSize, height: Metrics.iconSize)
-                .tintIfAvailable(contentColor(.icons))
+                .tintIfAvailable(contentColor(.iconsPrimary))
 
             VStack(alignment: .leading, spacing: 0) {
 

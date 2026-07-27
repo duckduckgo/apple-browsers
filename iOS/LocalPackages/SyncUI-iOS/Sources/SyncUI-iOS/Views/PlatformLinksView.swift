@@ -49,7 +49,7 @@ public struct PlatformLinksView: View {
             .padding(16)
             .frame(maxWidth: .infinity)
         }
-        .background(Color(designSystemColor: .background))
+        .background(Color(designSystemColor: .surfacePrimary))
         .ignoresSafeArea()
         .navigationTitle(UserText.syncGetOtherDevicesScreenTitle)
     }

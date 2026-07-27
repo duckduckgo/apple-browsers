@@ -60,7 +60,7 @@ struct NewTabPageView: View {
     var body: some View {
         if !viewModel.isOnboarding {
             mainView
-                .background(Color(designSystemColor: .background))
+                .background(Color(designSystemColor: .surfacePrimary))
                 .simultaneousGesture(
                     DragGesture()
                         .onChanged({ value in
@@ -140,7 +140,7 @@ private extension NewTabPageView {
                 .padding(.top, contentTopInset(in: proxy))
                 .padding(.bottom, sectionsViewPadding(in: proxy))
                 .padding(.horizontal, sectionsViewHorizontalPadding(in: proxy))
-                .background(Color(designSystemColor: .background))
+                .background(Color(designSystemColor: .surfacePrimary))
             }
             .if(dismissKeyboardOnScroll, transform: {
                 $0.withScrollKeyboardDismiss()

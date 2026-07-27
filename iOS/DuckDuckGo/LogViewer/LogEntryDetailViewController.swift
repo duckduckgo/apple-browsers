@@ -56,7 +56,7 @@ final class LogEntryDetailViewController: UIViewController {
     
     private func setupUI() {
         title = "Log Entry Details"
-        view.backgroundColor = UIColor(designSystemColor: .background)
+        view.backgroundColor = UIColor(designSystemColor: .surfacePrimary)
         
         navigationItem.rightBarButtonItem = UIBarButtonItem(
             barButtonSystemItem: .action,

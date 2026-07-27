@@ -81,8 +81,8 @@ struct SubscriptionRestoreView: View {
             }
             .frame(maxWidth: Constants.maxWidth, alignment: .center)
             .padding(Constants.viewPadding)
-            .background(Color(designSystemColor: .background))
-            .tint(Color(designSystemColor: .icons))
+            .background(Color(designSystemColor: .surfacePrimary))
+            .tint(Color(designSystemColor: .iconsPrimary))
             
             .navigationTitle(viewModel.state.viewTitle)
             .navigationBarBackButtonHidden(viewModel.state.transactionStatus != .idle)
@@ -223,7 +223,7 @@ struct SubscriptionRestoreView: View {
     
     private func setUpAppearances() {
         let navAppearance = UINavigationBar.appearance()
-        navAppearance.backgroundColor = UIColor(designSystemColor: .background)
+        navAppearance.backgroundColor = UIColor(designSystemColor: .surfacePrimary)
         navAppearance.barTintColor = UIColor(designSystemColor: .surface)
         navAppearance.shadowImage = UIImage()
         navAppearance.tintColor = UIColor(designSystemColor: .textPrimary)

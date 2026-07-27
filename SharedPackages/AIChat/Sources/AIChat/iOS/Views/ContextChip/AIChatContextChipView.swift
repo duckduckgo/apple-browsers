@@ -230,10 +230,10 @@ private extension AIChatContextChipView {
         clipsToBounds = true
 
         let borderLayer = makeOrReuseBorderLayer()
-        borderLayer.strokeColor = UIColor(designSystemColor: dashed ? .decorationPrimary : .decorationQuaternary).cgColor
+        borderLayer.strokeColor = UIColor(designSystemColor: dashed ? .surfaceDecorationPrimary : .surfaceDecorationQuaternary).cgColor
         borderLayer.lineWidth = Constants.borderWidth
         borderLayer.lineDashPattern = dashed ? [NSNumber(value: Constants.dashLength), NSNumber(value: Constants.dashSpacing)] : nil
-        borderLayer.fillColor = dashed ? nil : UIColor(designSystemColor: .controlsFillPrimary).cgColor
+        borderLayer.fillColor = dashed ? nil : UIColor(designSystemColor: .controlFillPrimary).cgColor
 
         setNeedsLayout()
     }
@@ -342,12 +342,12 @@ extension AIChatContextChipView {
 
         if traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) {
             if let borderLayer = borderLayer {
-                borderLayer.strokeColor = UIColor(designSystemColor: isDashedBorder ? .decorationPrimary : .decorationQuaternary).cgColor
-                borderLayer.fillColor = isDashedBorder ? nil : UIColor(designSystemColor: .controlsFillPrimary).cgColor
+                borderLayer.strokeColor = UIColor(designSystemColor: isDashedBorder ? .surfaceDecorationPrimary : .surfaceDecorationQuaternary).cgColor
+                borderLayer.fillColor = isDashedBorder ? nil : UIColor(designSystemColor: .controlFillPrimary).cgColor
             }
             // Update favicon border color for dark mode (placeholder state only)
             if faviconView.layer.borderWidth > 0 {
-                faviconView.layer.borderColor = UIColor(designSystemColor: .decorationQuaternary).cgColor
+                faviconView.layer.borderColor = UIColor(designSystemColor: .surfaceDecorationQuaternary).cgColor
             }
         }
     }

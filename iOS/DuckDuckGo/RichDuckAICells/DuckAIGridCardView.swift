@@ -212,7 +212,7 @@ final class DuckAIGridCardView: UIView {
         // Leading status glyph for the live-voice card; shown only by `configureVoiceUIIfNeeded`.
         statusIconImageView.translatesAutoresizingMaskIntoConstraints = false
         statusIconImageView.image = DesignSystemImages.Glyphs.Size16.permissionMicrophone.withRenderingMode(.alwaysTemplate)
-        statusIconImageView.tintColor = UIColor(designSystemColor: .icons)
+        statusIconImageView.tintColor = UIColor(designSystemColor: .iconsPrimary)
         statusIconImageView.contentMode = .scaleAspectFit
         statusIconImageView.isHidden = true
         statusIconImageView.setContentHuggingPriority(.required, for: .horizontal)
@@ -382,7 +382,7 @@ private final class ChipView: UIView {
 
         iconView.translatesAutoresizingMaskIntoConstraints = false
         iconView.contentMode = .scaleAspectFit
-        iconView.tintColor = UIColor(designSystemColor: .icons)
+        iconView.tintColor = UIColor(designSystemColor: .iconsPrimary)
         addSubview(iconView)
 
         label.translatesAutoresizingMaskIntoConstraints = false

@@ -64,7 +64,7 @@ struct SuggestionsListView: View {
                                                  bottom: isFloatingPopover ? Metrics.popoverVerticalInset : nil,
                                                  horizontal: Metrics.listHorizontalContentMargin))
             .hideScrollContentBackground()
-            .background(Color(designSystemColor: .background))
+            .background(Color(designSystemColor: .surfacePrimary))
             .scrollDismissesKeyboardIfAvailable()
             // Pointer (trackpad/mouse) leaving the list clears the hover highlight. Touch never fires onHover.
             .onHover { isHovering in

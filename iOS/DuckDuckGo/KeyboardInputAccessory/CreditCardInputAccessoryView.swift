@@ -82,7 +82,7 @@ class CreditCardInputAccessoryView: UIView {
 
     private let gradientColorLight: UIColor = {
         let lightTraitCollection = UITraitCollection(userInterfaceStyle: .light)
-        return UIColor(designSystemColor: .background).resolvedColor(with: lightTraitCollection)
+        return UIColor(designSystemColor: .surfacePrimary).resolvedColor(with: lightTraitCollection)
     }()
 
     private let gradientColorDark: UIColor = {
@@ -161,7 +161,7 @@ class CreditCardInputAccessoryView: UIView {
     // MARK: - Private Methods
 
     private func setupViews() {
-        backgroundColor = UIColor(designSystemColor: .background)
+        backgroundColor = UIColor(designSystemColor: .surfacePrimary)
 
         containerView.translatesAutoresizingMaskIntoConstraints = false
         containerView.frame = bounds.isEmpty ? CGRect(x: 0, y: 0, width: 390, height: 48) : bounds
@@ -271,7 +271,7 @@ class CreditCardInputAccessoryView: UIView {
     private func createCardView(for card: CreditCardRowViewModel) -> UIView {
         let containerView = UIView()
         containerView.translatesAutoresizingMaskIntoConstraints = false
-        containerView.backgroundColor = UIColor(designSystemColor: .controlsFillPrimary)
+        containerView.backgroundColor = UIColor(designSystemColor: .controlFillPrimary)
         containerView.layer.cornerRadius = 16
         
         let tapGesture = UITapGestureRecognizer(target: self, action: #selector(cardTapped(_:)))

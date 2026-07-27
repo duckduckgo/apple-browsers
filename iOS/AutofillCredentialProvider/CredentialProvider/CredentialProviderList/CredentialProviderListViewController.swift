@@ -162,12 +162,12 @@ final class CredentialProviderListViewController: UIViewController {
     }
 
     private func decorate() {
-        view.backgroundColor = UIColor(designSystemColor: .background)
-        tableView.backgroundColor = UIColor(designSystemColor: .background)
+        view.backgroundColor = UIColor(designSystemColor: .surfacePrimary)
+        tableView.backgroundColor = UIColor(designSystemColor: .surfacePrimary)
         tableView.separatorColor = UIColor(designSystemColor: .lines)
         tableView.sectionIndexColor = UIColor(designSystemColor: .accentPrimary)
 
-        navigationController?.navigationBar.barTintColor = UIColor(designSystemColor: .panel)
+        navigationController?.navigationBar.barTintColor = UIColor(designSystemColor: .surfacePrimary)
         navigationController?.navigationBar.tintColor = UIColor(designSystemColor: .textPrimary)
 
         var titleAttrs = navigationController?.navigationBar.titleTextAttributes ?? [:]
@@ -176,7 +176,7 @@ final class CredentialProviderListViewController: UIViewController {
 
         let appearance = UINavigationBarAppearance()
         appearance.shadowColor = .clear
-        appearance.backgroundColor = UIColor(designSystemColor: .background)
+        appearance.backgroundColor = UIColor(designSystemColor: .surfacePrimary)
 
         navigationController?.navigationBar.standardAppearance = appearance
         navigationController?.navigationBar.scrollEdgeAppearance = appearance

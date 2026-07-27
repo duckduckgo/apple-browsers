@@ -30,7 +30,7 @@ struct SubscriptionGoogleView: View {
     
     var body: some View {
         ZStack {
-            Color(designSystemColor: .background)
+            Color(designSystemColor: .surfacePrimary)
                            .edgesIgnoringSafeArea(.all)
             VStack(alignment: .center) {
                 Image(.googlePlay).padding(.top, Constants.padding)

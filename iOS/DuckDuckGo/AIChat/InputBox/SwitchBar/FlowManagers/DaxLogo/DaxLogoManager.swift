@@ -302,7 +302,7 @@ final class DaxLogoManager {
         let hostingController = UIHostingController(rootView: rootView)
 
         // Opaque NTP background so the fire empty state fully covers any favorites/suggestion tray content layered beneath.
-        hostingController.view.backgroundColor = UIColor(designSystemColor: .background)
+        hostingController.view.backgroundColor = UIColor(designSystemColor: .surfacePrimary)
         hostingController.view.translatesAutoresizingMaskIntoConstraints = false
 
         parentController.addChild(hostingController)

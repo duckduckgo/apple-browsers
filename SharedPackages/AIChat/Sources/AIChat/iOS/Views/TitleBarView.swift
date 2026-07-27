@@ -56,7 +56,7 @@ final class TitleBarView: UIView {
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
 
         closeButton.setImage(DesignSystemImages.Glyphs.Size24.close, for: .normal)
-        closeButton.tintColor = UIColor(designSystemColor: .icons)
+        closeButton.tintColor = UIColor(designSystemColor: .iconsPrimary)
         closeButton.translatesAutoresizingMaskIntoConstraints = false
         closeButton.addTarget(self, action: #selector(closeButtonTapped), for: .touchUpInside)
 

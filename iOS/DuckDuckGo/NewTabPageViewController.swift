@@ -181,7 +181,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
 
-        view.backgroundColor = UIColor(designSystemColor: .background)
+        view.backgroundColor = UIColor(designSystemColor: .surfacePrimary)
 
         // If there's no tab switcher then this will be true, if there is a tabswitcher then only allow the
         // stuff below to happen if it's being dismissed

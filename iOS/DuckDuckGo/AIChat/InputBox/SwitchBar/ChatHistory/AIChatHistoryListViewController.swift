@@ -97,7 +97,7 @@ final class AIChatHistoryListViewController: UIViewController {
         tableView.alwaysBounceVertical = true
         tableView.keyboardDismissMode = .onDrag
         tableView.register(DuckAISuggestionTableViewCell.self, forCellReuseIdentifier: Constants.cellIdentifier)
-        tableView.backgroundColor = UIColor(designSystemColor: .background)
+        tableView.backgroundColor = UIColor(designSystemColor: .surfacePrimary)
         tableView.separatorInset = UIEdgeInsets(top: 0, left: Constants.horizontalInset + Constants.iconSize + Constants.iconTextSpacing, bottom: 0, right: 0)
         tableView.sectionFooterHeight = 0
         tableView.contentInset = UIEdgeInsets(top: Constants.topContentInset, left: 0, bottom: 0, right: 0)
@@ -176,7 +176,7 @@ final class AIChatHistoryListViewController: UIViewController {
     // MARK: - Private Methods
 
     private func setupView() {
-        view.backgroundColor = UIColor(designSystemColor: .background)
+        view.backgroundColor = UIColor(designSystemColor: .surfacePrimary)
         view.addSubview(tableView)
 
         NSLayoutConstraint.activate([
@@ -247,7 +247,7 @@ final class AIChatHistoryListViewController: UIViewController {
         }
 
         let container = UIView()
-        container.backgroundColor = UIColor(designSystemColor: .background)
+        container.backgroundColor = UIColor(designSystemColor: .surfacePrimary)
         var totalHeight: CGFloat = additionalTopInset
 
         if hasEscapeHatch, let hosting = escapeHatchHostingController {
@@ -354,7 +354,7 @@ final class AIChatHistoryListViewController: UIViewController {
 
         let icon = chat.isPinned ? DesignSystemImages.Glyphs.Size24.pin : DesignSystemImages.Glyphs.Size24.chat
         config.image = icon.withRenderingMode(.alwaysTemplate)
-        config.imageProperties.tintColor = UIColor(designSystemColor: .icons)
+        config.imageProperties.tintColor = UIColor(designSystemColor: .iconsPrimary)
         config.imageProperties.maximumSize = CGSize(width: Constants.iconSize, height: Constants.iconSize)
 
         config.directionalLayoutMargins = NSDirectionalEdgeInsets(
@@ -386,7 +386,7 @@ final class AIChatHistoryListViewController: UIViewController {
         config.textProperties.numberOfLines = 1
 
         config.image = DesignSystemImages.Glyphs.Size24.chats.withRenderingMode(.alwaysTemplate)
-        config.imageProperties.tintColor = UIColor(designSystemColor: .icons)
+        config.imageProperties.tintColor = UIColor(designSystemColor: .iconsPrimary)
         config.imageProperties.maximumSize = CGSize(width: Constants.iconSize, height: Constants.iconSize)
 
         config.directionalLayoutMargins = NSDirectionalEdgeInsets(

@@ -99,7 +99,7 @@ private struct EmptyStateView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
         .background(
-            Rectangle().ignoresSafeArea().foregroundColor(Color(designSystemColor: .background))
+            Rectangle().ignoresSafeArea().foregroundColor(Color(designSystemColor: .surfacePrimary))
         )
     }
 }

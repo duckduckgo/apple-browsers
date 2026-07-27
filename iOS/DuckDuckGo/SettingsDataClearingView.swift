@@ -95,7 +95,7 @@ struct SettingsDataClearingView: View {
         .applySettingsListModifiers(title: UserText.dataClearing,
                                     displayMode: .inline,
                                     viewModel: settingsViewModel)
-        .background(Color(designSystemColor: .background))
+        .background(Color(designSystemColor: .surfacePrimary))
         .modifier(ScrollBounceBehaviorModifier())
         .onAppear {
             viewModel.refreshFireproofedSitesCount()
@@ -109,7 +109,7 @@ struct SettingsDataClearingView: View {
         AnyView(
             HStack(alignment: .center) {
                 Image(uiImage: DesignSystemImages.Glyphs.Size24.fireSolid)
-                    .tintIfAvailable(Color(designSystemColor: .icons))
+                    .tintIfAvailable(Color(designSystemColor: .iconsPrimary))
                 Text(viewModel.clearDataButtonTitle)
                     .foregroundStyle(Color(designSystemColor: .accentPrimary))
                 Spacer()

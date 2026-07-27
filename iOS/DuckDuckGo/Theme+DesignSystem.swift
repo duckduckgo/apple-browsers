@@ -23,18 +23,18 @@ import DesignResourcesKit
 // Once all colours are from the design system we can consider removing having multiple themes.
 extension Theme {
     
-    var omniBarBackgroundColor: UIColor { UIColor(designSystemColor: .panel) }
-    var backgroundColor: UIColor { UIColor(designSystemColor: .background) }
-    var mainViewBackgroundColor: UIColor { UIColor(designSystemColor: .background) }
-    var barBackgroundColor: UIColor { UIColor(designSystemColor: .panel) }
-    var barTintColor: UIColor { UIColor(designSystemColor: .icons) }
+    var omniBarBackgroundColor: UIColor { UIColor(designSystemColor: .surfacePrimary) }
+    var backgroundColor: UIColor { UIColor(designSystemColor: .surfacePrimary) }
+    var mainViewBackgroundColor: UIColor { UIColor(designSystemColor: .surfacePrimary) }
+    var barBackgroundColor: UIColor { UIColor(designSystemColor: .surfacePrimary) }
+    var barTintColor: UIColor { UIColor(designSystemColor: .iconsPrimary) }
     var browsingMenuBackgroundColor: UIColor { UIColor(designSystemColor: .surface) }
     var tableCellBackgroundColor: UIColor { UIColor(designSystemColor: .surface) }
     var tabSwitcherCellBackgroundColor: UIColor { UIColor(designSystemColor: .surface) }
     var searchBarTextPlaceholderColor: UIColor { UIColor(designSystemColor: .textSecondary) }
     
     // New:
-    var autocompleteCellAccessoryColor: UIColor { UIColor(designSystemColor: .icons) }
+    var autocompleteCellAccessoryColor: UIColor { UIColor(designSystemColor: .iconsPrimary) }
     var autocompleteCellPlusButtonColor: UIColor { UIColor(designSystemColor: .iconsSecondary) }
     
     var autofillDefaultTitleTextColor: UIColor { UIColor(designSystemColor: .textPrimary) }
@@ -44,7 +44,7 @@ extension Theme {
     
     var ddgTextTintColor: UIColor { UIColor(designSystemColor: .textPrimary) }
     
-    var iconCellBorderColor: UIColor { UIColor(designSystemColor: .icons) }
+    var iconCellBorderColor: UIColor { UIColor(designSystemColor: .iconsPrimary) }
     
     var browsingMenuTextColor: UIColor { UIColor(designSystemColor: .textPrimary) }
     var browsingMenuIconsColor: UIColor { UIColor(designSystemColor: .textPrimary) }
@@ -95,7 +95,7 @@ extension Theme {
     
     var browsingMenuHighlightColor: UIColor { UIColor(designSystemColor: .urlBar) }
     var searchBarBackgroundColor: UIColor { UIColor(designSystemColor: .urlBar) }
-    var tabsBarBackgroundColor: UIColor { UIColor(designSystemColor: .backdrop) }
+    var tabsBarBackgroundColor: UIColor { UIColor(designSystemColor: .surfaceBackdrop) }
     var tabsBarSeparatorColor: UIColor { UIColor(designSystemColor: .lines) }
     var navigationBarTintColor: UIColor { UIColor(designSystemColor: .textPrimary) }
     var searchBarTextDeemphasisColor: UIColor { UIColor(designSystemColor: .textSecondary) }

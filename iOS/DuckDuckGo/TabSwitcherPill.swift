@@ -53,7 +53,7 @@ struct TabSwitcherPill: View {
                     // Capsule degenerates to a circle when width == height,
                     // so it covers both the compact and expanded shapes.
                     Capsule()
-                        .fill(Color(designSystemColor: .controlsFillSecondary))
+                        .fill(Color(designSystemColor: .controlFillSecondary))
                 )
         }
         .buttonStyle(.plain)
@@ -66,7 +66,7 @@ struct TabSwitcherPill: View {
     private var content: some View {
         HStack(spacing: isExpanded ? Metrics.contentSpacing : Metrics.contentSpacingCompact) {
             TabCountBadge(model: tabCountModel)
-                .foregroundColor(Color(designSystemColor: .icons))
+                .foregroundColor(Color(designSystemColor: .iconsPrimary))
 
             if isExpanded {
                 expandedContent
@@ -86,7 +86,7 @@ struct TabSwitcherPill: View {
 
         if showsEndArrow {
             Image(uiImage: DesignSystemImages.Glyphs.Size24.arrowRight)
-                .foregroundColor(Color(designSystemColor: .icons))
+                .foregroundColor(Color(designSystemColor: .iconsPrimary))
                 .transition(.move(edge: .trailing).combined(with: .opacity))
         }
     }

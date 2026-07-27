@@ -384,7 +384,7 @@ class SuggestionTrayViewController: UIViewController {
         containerView.layer.masksToBounds = true
 
         backgroundView.layer.cornerRadius = cornerRadius
-        backgroundView.backgroundColor = UIColor(designSystemColor: .background)
+        backgroundView.backgroundColor = UIColor(designSystemColor: .surfacePrimary)
         backgroundView.clipsToBounds = false
         backgroundView.applyActiveShadow()
 

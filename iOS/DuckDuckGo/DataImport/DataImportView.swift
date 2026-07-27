@@ -54,7 +54,7 @@ struct DataImportView: View {
             .padding(.horizontal, 8)
         }
         .background(Rectangle()
-            .foregroundColor(Color(designSystemColor: .background))
+            .foregroundColor(Color(designSystemColor: .surfacePrimary))
             .ignoresSafeArea())
     }
 

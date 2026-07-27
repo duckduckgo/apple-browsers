@@ -91,7 +91,7 @@ struct SiriEducationView: View {
 }
 
 private extension Color {
-    static let background = Color(designSystemColor: .background)
+    static let background = Color(designSystemColor: .surfacePrimary)
     static let font = Color(designSystemColor: .textPrimary)
 }
 

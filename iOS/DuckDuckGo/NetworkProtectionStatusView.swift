@@ -196,7 +196,7 @@ struct NetworkProtectionStatusView: View {
             .padding(.bottom, 4)
             // Pads beyond the default header inset
             .padding(.horizontal, -16)
-            .background(Color(designSystemColor: .background))
+            .background(Color(designSystemColor: .surfacePrimary))
             Spacer(minLength: 0)
         }
     }

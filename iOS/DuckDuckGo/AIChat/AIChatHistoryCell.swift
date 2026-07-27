@@ -27,7 +27,7 @@ final class AIChatHistoryCell: UITableViewCell {
     let iconImageView: UIImageView = {
         let view = UIImageView()
         view.contentMode = .scaleAspectFit
-        view.tintColor = UIColor(designSystemColor: .icons)
+        view.tintColor = UIColor(designSystemColor: .iconsPrimary)
         view.translatesAutoresizingMaskIntoConstraints = false
         return view
     }()

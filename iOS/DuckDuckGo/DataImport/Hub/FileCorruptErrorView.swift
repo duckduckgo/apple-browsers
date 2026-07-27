@@ -59,7 +59,7 @@ struct FileCorruptErrorView: View {
             .padding(.horizontal, 24)
             .padding(.bottom, 24)
         }
-        .background(Color(designSystemColor: .background))
+        .background(Color(designSystemColor: .surfacePrimary))
     }
 }
 

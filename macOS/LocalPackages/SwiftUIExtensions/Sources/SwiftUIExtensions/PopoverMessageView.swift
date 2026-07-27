@@ -42,19 +42,22 @@ public struct PopoverConfiguration {
     public var imageSize: CGSize?
     public var buttonStyle: PopoverButtonStyle
     public var accentColor: Color?
+    public var usesCompactLayout: Bool
 
     public init(
         style: PopoverStyle = .basic,
         buttonLayout: PopoverButtonLayout = .horizontal,
         imageSize: CGSize? = nil,
         buttonStyle: PopoverButtonStyle = .standard,
-        accentColor: Color? = nil
+        accentColor: Color? = nil,
+        usesCompactLayout: Bool = false
     ) {
         self.style = style
         self.buttonLayout = buttonLayout
         self.imageSize = imageSize
         self.buttonStyle = buttonStyle
         self.accentColor = accentColor
+        self.usesCompactLayout = usesCompactLayout
     }
 
     /// Default configuration matching current behavior
@@ -64,6 +67,11 @@ public struct PopoverConfiguration {
         imageSize: nil,
         buttonStyle: .standard,
         accentColor: nil
+    )
+
+    /// Update notification style with compact control metrics
+    public static let updateNotification = PopoverConfiguration(
+        usesCompactLayout: true
     )
 
     /// Feature discovery style with 24x24 image
@@ -209,10 +217,10 @@ public struct PopoverMessageView: View {
 
     @ViewBuilder
     private var messageBody: some View {
-        HStack(alignment: viewModel.shouldPresentMultiline ? .top : .center) {
+        HStack(alignment: shouldCenterContentVertically ? .center : .top) {
             if let image = viewModel.image {
                 Image(nsImage: image)
-                    .padding(.top, viewModel.shouldPresentMultiline ? 3 : 0)
+                    .padding(.top, shouldCenterContentVertically ? 0 : 3)
             }
 
             Text(viewModel.message)
@@ -231,7 +239,7 @@ public struct PopoverMessageView: View {
                     action()
                     viewModel.dismissAction?()
                 })
-                .padding(.top, viewModel.shouldPresentMultiline ? 2 : 0)
+                .padding(.top, shouldCenterContentVertically ? 0 : 2)
                 .padding(.leading, 4)
             }
 
@@ -244,10 +252,14 @@ public struct PopoverMessageView: View {
                         .frame(width: 16, height: 16)
                 }
                 .buttonStyle(PlainButtonStyle())
-                .padding(.top, viewModel.shouldPresentMultiline && viewModel.buttonText != nil ? 4 : 0)
+                .padding(.top, shouldCenterContentVertically || viewModel.buttonText == nil ? 0 : 4)
             }
         }
         .padding()
+    }
+
+    private var shouldCenterContentVertically: Bool {
+        viewModel.configuration.usesCompactLayout && !viewModel.shouldPresentMultiline
     }
 
     @ViewBuilder

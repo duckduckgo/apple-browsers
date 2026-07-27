@@ -104,6 +104,7 @@ final class UpdateNotificationPresenter: UpdateNotificationPresenting {
 
             let viewController = PopoverMessageViewController(message: text,
                                                               image: icon,
+                                                              configuration: .updateNotification,
                                                               autoDismissDuration: Self.presentationTimeInterval,
                                                               shouldShowCloseButton: true,
                                                               presentMultiline: presentMultiline,

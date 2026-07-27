@@ -28,29 +28,77 @@ struct SubscriptionOnboardingShowcaseCard: View {
     private enum Metrics {
         static let iconSpacing: CGFloat = 8
         static let titleTextSpacing: CGFloat = 4
-        static let textBlockLeadingInset: CGFloat = 2
+        static let textBlockLeadingInset: CGFloat = 4
     }
 
-    private let visual: Graphic
+    private let icon: Image
     private let title: String
     private let text: String
+    private let footer: AnyView
 
-    init(visual: Graphic, title: String, text: String) {
-        self.visual = visual
+    /// Creates a card with no footer.
+    init(icon: Image, title: String, text: String) {
+        self.init(icon: icon, title: title, text: text, footer: { EmptyView() })
+    }
+
+    /// Creates a card whose `footer` renders below the title/body inside the same bordered card (via
+    /// `SubscriptionOnboardingCard`'s footer slot) — e.g. the "Devices" card's platform grid. The type stays
+    /// non-generic (the init erases the footer to `AnyView`) so the nested `Metrics` static values remain valid.
+    init<Footer: View>(icon: Image, title: String, text: String, @ViewBuilder footer: () -> Footer) {
+        self.icon = icon
         self.title = title
         self.text = text
+        self.footer = AnyView(footer())
     }
 
     var body: some View {
         SubscriptionOnboardingCard(
-            CardItem(
-                icon: CardItemIcon(position: .topLeading, visual: visual, size: .size32, spacing: Metrics.iconSpacing),
-                title: CardItemText(title, font: .footnoteSemibold),
-                text: CardItemText(text, font: .footnoteRegular),
-                titleTextSpacing: Metrics.titleTextSpacing,
-                textBlockLeadingInset: Metrics.textBlockLeadingInset),
-            style: .bordered)
+            style: .bordered,
+            header: { EmptyView() },
+            items: {
+                VStack(alignment: .leading, spacing: Metrics.iconSpacing) {
+                    IconBadge(icon: icon)
+                    CardItem(
+                        title: CardItemText(title, font: .footnoteSemibold),
+                        text: CardItemText(text, font: .footnoteRegular),
+                        titleTextSpacing: Metrics.titleTextSpacing,
+                        textBlockLeadingInset: Metrics.textBlockLeadingInset)
+                }
+            },
+            // The card shell already insets the footer by its content padding; add the text-block inset on
+            // top so the footer's leading lines up with the title/body text (card padding + text inset).
+            footer: { footer.padding(.leading, Metrics.textBlockLeadingInset) })
         .accessibilityElement(children: .combine)
+    }
+
+    /// A design-system glyph (16×16) centered in a 32×32 circle, mirroring ``FeatureGridView``'s icon
+    /// treatment: a `.surface` fill and a 1px `.lines` hairline border, with the glyph tinted `.textPrimary`.
+    /// Only used by ``SubscriptionOnboardingShowcaseCard``.
+    private struct IconBadge: View {
+        private enum Metrics {
+            static let diameter: CGFloat = 32
+            static let iconSize: CGFloat = 16
+            static let borderWidth: CGFloat = 1
+        }
+
+        let icon: Image
+
+        var body: some View {
+            Circle()
+                .fill(Color(designSystemColor: .surface))
+                .frame(width: Metrics.diameter, height: Metrics.diameter)
+                .overlay {
+                    icon
+                        .resizable()
+                        .renderingMode(.template)
+                        .scaledToFit()
+                        .frame(width: Metrics.iconSize, height: Metrics.iconSize)
+                        .foregroundColor(Color(designSystemColor: .textPrimary))
+                }
+                .overlay {
+                    Circle().strokeBorder(Color(designSystemColor: .lines), lineWidth: Metrics.borderWidth)
+                }
+        }
     }
 }
 
@@ -61,7 +109,7 @@ private struct SubscriptionOnboardingShowcaseCardPreview: View {
         ScrollView {
             VStack(spacing: 16) {
                 SubscriptionOnboardingShowcaseCard(
-                    visual: .image(Image(systemName: "creditcard.fill")),
+                    icon: Image(systemName: "creditcard.fill"),
                     title: "Recover financial losses",
                     text: """
                         We'll work with financial institutions to help reverse any fraudulent \
@@ -70,7 +118,7 @@ private struct SubscriptionOnboardingShowcaseCardPreview: View {
                         """)
 
                 SubscriptionOnboardingShowcaseCard(
-                    visual: .image(Image(systemName: "doc.text.magnifyingglass")),
+                    icon: Image(systemName: "doc.text.magnifyingglass"),
                     title: "Fix your credit report",
                     text: "We'll help fix errors in your credit report that result from fraudulent activity.")
             }
@@ -98,6 +146,21 @@ private struct SubscriptionOnboardingShowcaseCardPreview: View {
         SubscriptionOnboardingShowcaseCardPreview()
     }
     .dynamicTypeSize(.accessibility5)
+}
+
+#Preview("With footer") {
+    RebrandedPreview {
+        ScrollView {
+            SubscriptionOnboardingShowcaseCard(
+                icon: Image(systemName: "laptopcomputer.and.iphone"),
+                title: "Devices",
+                text: "Full-device coverage on up to 5 devices at once.") {
+                SubscriptionOnboardingPlatformGrid()
+            }
+            .padding()
+        }
+        .background(Color(designSystemColor: .surfaceTertiary).ignoresSafeArea())
+    }
 }
 
 #endif

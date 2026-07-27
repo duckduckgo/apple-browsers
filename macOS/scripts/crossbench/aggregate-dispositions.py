@@ -5,12 +5,12 @@
 # native_apps.macos_browser_health_nav_to_lcp_attempts (see attempts-schema.sql).
 #
 # Input TSV (with header), one row per site the run considered. Columns are
-# grouped by stage, matching the table:
+# grouped by concern, matching the table:
 #   identity   browser, browser_version, site
 #   overall    outcome
-#   stage 1    preflight_verdict, final_status, status_chain, redirects, bytes,
+#   landing    preflight_verdict, final_status, status_chain, redirects, bytes,
 #              final_url, landed_offsite, blocked_marker
-#   stage 2    attempted, observed, recorded, dropped_unfinalized,
+#   attempts   attempted, observed, recorded, dropped_unfinalized,
 #              dropped_no_metric, dropped_http_error
 #   context    load_window_ms, runner_image
 # Absent values are written by the shell as "-".
@@ -47,7 +47,7 @@ VALID_OUTCOMES = {
     "measured", "partial", "no_samples", "skipped_blocked", "infra_error",
 }
 VALID_VERDICTS = {
-    "ok", "blocked_status", "blocked_marker", "preflight_error",
+    "not_run", "ok", "blocked_status", "blocked_marker", "preflight_error",
 }
 
 

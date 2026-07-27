@@ -63,10 +63,10 @@ CREATE TABLE IF NOT EXISTS native_apps.macos_browser_health_nav_to_lcp_attempts 
     `outcome` LowCardinality(String) COMMENT 'measured / partial / no_samples / skipped_blocked / infra_error',
 
     -- ---- Stage 1: out-of-browser pre-flight (curl) -------------------------
-    -- Describes ONLY the pre-flight request. preflight_verdict = 'ok' says the
-    -- site was reachable and served us a real page; it says nothing about
-    -- whether measurement then succeeded — that is `outcome`.
-    `preflight_verdict` LowCardinality(String) COMMENT 'ok / blocked_status / blocked_marker / preflight_error',
+    -- Describes ONLY the pre-flight request. Replay runners do not make that
+    -- live-network request and write `not_run`. Whether measurement succeeded
+    -- is recorded separately in `outcome`.
+    `preflight_verdict` LowCardinality(String) COMMENT 'not_run / ok / blocked_status / blocked_marker / preflight_error',
     `http_status` Int32 COMMENT 'Final HTTP status seen by the pre-flight; -1 when unknown',
     `status_chain` String COMMENT 'Comma-separated status chain incl. redirects, e.g. "301,403"',
     `redirect_count` Int32 COMMENT 'Redirects followed by the pre-flight; -1 when unknown',

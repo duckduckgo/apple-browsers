@@ -1,49 +1,94 @@
 #!/usr/bin/env bash
 #
-# test-chrome.sh — run the crossbench page-load / LCP test for Chrome against the
-# LIVE network, and write a results file.
+# test-chrome.sh — run the crossbench page-load / LCP test for Chrome against
+# RECORDED network (Web Page Replay), and write a results file.
 #
-# WPR-free variant: no recorded network, no traffic shaping, no proxy. Chrome
-# loads real public sites over the live internet; crossbench drives it and
-# extracts LCP from a Perfetto trace (Chromium's
+# Chrome loads each site from a WPR archive through a traffic shaper; crossbench
+# drives it and extracts LCP from a Perfetto trace (Chromium's
 # PageLoadMetrics.NavigationToLargestContentfulPaint) via the navToLCP probe.
+# Every site gets a disposition row saying whether it was measurable — see
+# dispositions-lib.sh.
 #
-# NOTE: live network is NOISY — values vary run-to-run with network conditions
-# and are NOT comparable to recorded-network (WPR) numbers. This exists to stand
-# up the pipeline (measure -> parse -> results file), not for trustworthy
-# cross-browser comparison. That needs WPR + a dedicated runner (later).
+# WHY REPLAY: identical bytes on every load. On a live network the same page
+# varies with CDN, geo and A/B changes, and several of these sites bot-block a
+# CI runner outright, so a regression cannot be distinguished from weather.
 #
-# Prereqs: run provision-macos.sh first (crossbench + extras + Chrome + poetry).
+# TRAFFIC SHAPING: US-broadband (28ms RTT, 50/10 Mbps), the same profile the
+# Windows runner uses, so the two harnesses' numbers are comparable. Shaping is
+# not optional decoration: replayed over unshaped loopback, apple.com measures
+# ~204ms against ~745ms shaped on this runner, because loopback charges nothing
+# for the round trips and slow start that dominate a real cold load. SHAPE=0
+# replays unshaped for diagnosis.
+#
+# A site is measured only if its archive is available; otherwise it is recorded
+# as infra_error and skipped. There is no live-network fallback, because a live
+# number is indistinguishable from a replayed one at read time while carrying all
+# the variance replay exists to remove.
+#
+# Each site gets MEASURED_REPS loads, matching the Windows runner's 10. Every
+# load is measured: replay makes the first load no colder than the rest, since
+# there is no DNS or CDN edge to warm and a fresh Chrome profile per load leaves
+# no cache to carry over.
+#
+# Prereqs: run provision-macos.sh first (crossbench + extras + Chrome + poetry +
+# the wpr binary + tsproxy).
 #
 # Usage:
-#   ./test-chrome.sh [--sites a.com,b.com] [--out FILE]
-#
-# Each site gets one discarded warm-up load followed by MEASURED_REPS measured
-# loads. The first load of a domain pays cold OS-DNS + cold CDN-edge latency the
-# later loads don't; a fresh Chrome profile per load means no browser-cache
-# carry-over, so only that DNS/edge warmth persists — and it persists across
-# crossbench invocations, so the throwaway warm-up primes it for the measured run.
+#   ./test-chrome.sh [--sites a.com,b.com] [--reps N] [--out FILE]
 #
 set -euo pipefail
 
 # ---- config / args ---------------------------------------------------------
-MEASURED_REPS=10
+# The CI default matches the Windows runner's repetition count. --reps exists
+# for a small local validation without changing the production default.
+MEASURED_REPS="${MEASURED_REPS:-10}"
 SITES_OVERRIDE=""
 RESULTS_FILE=""
 CROSSBENCH_DIR="${CROSSBENCH_DIR:-$HOME/Developer/crossbench-upstream}"
+
+# ---- recorded network (WPR) + shaping --------------------------------------
+WPR_DIR="${WPR_DIR:-$HOME/Developer/mac-perf-runner/wpr-archives}"
+# Built by provision-macos.sh and handed to crossbench via --bin-override so
+# crossbench never runs its own webpagereplay build (which needs CIPD Go).
+WPR_BIN="${WPR_BIN:-$HOME/Developer/mac-perf-runner/bin/wpr}"
+WPR_BASE_URL="${WPR_BASE_URL:-https://staticcdn.duckduckgo.com/d5c04536-5379-4709-8d19-d13fdd456ff6/performance-tests}"
+# Standalone Python-3 tsproxy, handed to crossbench via speed:{ts_proxy:...}.
+# See wpr_network_arg for why crossbench's own DEPS-pinned copy cannot be used.
+TSPROXY_PY="${TSPROXY_PY:-$HOME/Developer/mac-perf-runner/bin/tsproxy.py}"
+# US-broadband, byte-for-byte the Windows runner's profile. Passed as explicit
+# values rather than speed:"US-broadband" because that preset name exists only in
+# the DDG crossbench fork, and we pin upstream.
+SHAPE="${SHAPE:-1}"
+SHAPE_RTT_MS="${SHAPE_RTT_MS:-28}"
+SHAPE_IN_KBPS="${SHAPE_IN_KBPS:-50000}"
+SHAPE_OUT_KBPS="${SHAPE_OUT_KBPS:-10000}"
+SHAPE_WINDOW="${SHAPE_WINDOW:-10}"
+
 PROBE_CONFIG="config/probe/perfetto/navToLCP.config.hjson"
 SUITE="navToLCP"          # LCP focus; navToFCP exists in the ps1 as a sibling
 LOAD_WINDOW="12s"         # matches runCrossbench.ps1 (--url=<site>,12s)
+LOAD_WINDOW_MS=12000      # same value in ms, recorded so censoring counts from
+                          # different runs are only compared at equal windows
 CHROME_BIN="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+
+# Sourced before the cd into CROSSBENCH_DIR below, so the path is relative to
+# this script rather than the working directory.
+# shellcheck source=macOS/scripts/crossbench/dispositions-lib.sh
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/dispositions-lib.sh"
 
 while [ $# -gt 0 ]; do
   case "$1" in
+    --reps)  MEASURED_REPS="$2"; shift 2 ;;
     --sites) SITES_OVERRIDE="$2"; shift 2 ;;
     --out)   RESULTS_FILE="$2"; shift 2 ;;
     -h|--help) grep '^#' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *) echo "Unknown arg: $1" >&2; exit 2 ;;
   esac
 done
+if ! [[ "$MEASURED_REPS" =~ ^[1-9][0-9]*$ ]]; then
+  echo "ERROR: --reps must be a positive integer." >&2
+  exit 2
+fi
 
 log() { printf '\n=== %s ===\n' "$1"; }
 
@@ -67,10 +112,21 @@ if [ -z "$RESULTS_FILE" ]; then
   RESULTS_FILE="$RESULTS_DIR/chrome-lcp-$(date -u +%Y%m%dT%H%M%SZ).tsv"
 fi
 
-CHROME_VERSION="$("$CHROME_BIN" --version 2>/dev/null | sed -E 's/^Google Chrome //' || echo unknown)"
+# `--version` prints "Google Chrome 150.0.7871.186 " — note the TRAILING SPACE,
+# which without the second substitution ends up inside webview_version in
+# ClickHouse and makes the column not compare equal to the same version typed by
+# hand.
+CHROME_VERSION="$("$CHROME_BIN" --version 2>/dev/null | sed -E 's/^Google Chrome //; s/[[:space:]]+$//' || echo unknown)"
 
-# ---- preflight -------------------------------------------------------------
-preflight() {
+# dispositions-lib.sh contract.
+BROWSER_NAME=chrome
+BROWSER_VERSION="$CHROME_VERSION"
+# The shared disposition schema retains its preflight columns. Replay does not
+# perform that live-network check, so its verdict is `not_run`.
+PF_VERDICT=not_run
+
+# ---- prerequisites ---------------------------------------------------------
+check_prerequisites() {
   if ! command -v poetry >/dev/null 2>&1; then
     echo "ERROR: poetry not found. Run provision-macos.sh first." >&2
     exit 1
@@ -79,6 +135,66 @@ preflight() {
     echo "ERROR: crossbench not found at $CROSSBENCH_DIR (cb.py missing). Run provision-macos.sh first." >&2
     exit 1
   fi
+  if [ ! -x "$WPR_BIN" ]; then
+    echo "ERROR: wpr binary not found at $WPR_BIN. Run provision-macos.sh first." >&2
+    exit 1
+  fi
+  if [ "$SHAPE" = "1" ] && [ ! -f "$TSPROXY_PY" ]; then
+    echo "ERROR: tsproxy not found at $TSPROXY_PY. Run provision-macos.sh first." >&2
+    exit 1
+  fi
+}
+
+# ---- recorded network ------------------------------------------------------
+# normalized story filename: 'navToLCP+youtube.com' -> 'navToLCP_youtube.com'
+# ('+' -> '_', '/' -> '_'), matching Get-Normalized-Filename in the ps1.
+normalize() { printf '%s' "$1" | tr '+/' '__'; }
+
+# crossbench --network arg for a WPR archive. Notes:
+# - No spaces: the arg is deliberately unquoted at the call site, so neither the
+#   archive path nor TSPROXY_PY may contain spaces.
+# - crossbench's own third_party/tsproxy is Python-2-only at the DEPS-pinned
+#   revision: under a Python 3.11 venv its SOCKS handshake dies inside a bare
+#   `except: pass`, leaving the browser pointed at a black-hole proxy where
+#   nothing loads. speed:{ts_proxy:...} overrides the tool path with the
+#   standalone Python-3 copy, which is also what the Safari and DDG runners use —
+#   one shaper, one set of values, every browser.
+wpr_network_arg() {
+  local archive="$1" speed=""
+  if [ "$SHAPE" = "1" ]; then
+    speed=",speed:{ts_proxy:\"$TSPROXY_PY\",rtt_ms:$SHAPE_RTT_MS,in_kbps:$SHAPE_IN_KBPS,out_kbps:$SHAPE_OUT_KBPS,window:$SHAPE_WINDOW}"
+  fi
+  printf -- '--network={type:"wpr",path:"%s"%s}' "$archive" "$speed"
+}
+
+# Echo the crossbench --network arg for a story's archive, or nothing when no
+# archive is available — the caller then skips the site.
+fetch_network_arg() {
+  local story="$1" normalized archive
+  normalized="$(normalize "$story")"
+  archive="$WPR_DIR/$normalized.wprgo"
+  mkdir -p "$WPR_DIR"
+  if curl -fLSs -o "$archive.tmp" "$WPR_BASE_URL/$normalized.wprgo" 2>/dev/null; then
+    mv "$archive.tmp" "$archive"
+    wpr_network_arg "$archive"
+  else
+    rm -f "$archive.tmp"
+    # Reuse an already-downloaded archive when the fetch fails (offline runner).
+    if [ -f "$archive" ]; then
+      wpr_network_arg "$archive"
+    else
+      printf ''
+    fi
+  fi
+}
+
+# crossbench lays results out as
+#   .../stories/<story>/<repetition>/<temperature>/...
+# so the path itself carries the repetition index. Deriving it from the path
+# rather than from a counter keeps the logged repetition number meaningful when
+# some repetitions are discarded, and stable regardless of directory order.
+rep_of_path() {
+  awk -F/ '{for (i = 1; i <= NF; i++) if ($i == "stories") { print $(i + 2); exit }}' <<< "$1"
 }
 
 # Parse a crossbench RESULTS dir: for every per-iteration v2_metrics.textproto,
@@ -86,28 +202,64 @@ preflight() {
 # NANOSECONDS — and convert to ms. An iteration whose LCP never finalized is
 # emitted as `double_value: -1`; count those separately. Appends one TSV row per
 # valid value to RESULTS_FILE and prints a per-site summary to the console.
+#
+# Every individual attempt is logged with its disposition, so a site that lands
+# fewer samples than expected can be read straight from the CI log instead of
+# being inferred from a missing row. Attempt lines are prefixed `attempt` to be
+# greppable inside crossbench's own --debug output.
 summarize_lcp() {
   local results_path="$1" site="$2"
+  # The caller reads these back for the disposition record, so every early
+  # `return` below must leave them consistent — hence the reset here and the
+  # single assignment point after the loop.
+  reset_measurement_counters
   local -a vals=()
-  local f v ms unfinalized=0 rep=0
+  local f v ms rep_idx unfinalized=0 no_metric=0 attempts=0 rep=0
   while IFS= read -r f; do
+    attempts=$((attempts + 1))
+    rep_idx="$(rep_of_path "$f")"
     # `|| true`: under set -e/pipefail a no-match grep would abort the script.
     v="$(grep -Eo 'double_value: -?[0-9]+(\.[0-9]+)?' "$f" | head -1 | awk '{print $2}' || true)"
-    [ -z "$v" ] && continue
+    if [ -z "$v" ]; then
+      # No metric at all. Because the page bytes come from the archive, this is
+      # a browser/probe/trace_processor failure rather than a live-site block.
+      echo "    attempt rep=$rep_idx: no double_value in metrics -> SKIPPED (no metric emitted)"
+      no_metric=$((no_metric + 1))
+      continue
+    fi
     if awk -v v="$v" 'BEGIN{exit !(v < 0)}'; then
+      echo "    attempt rep=$rep_idx: lcp_raw=$v -> SKIPPED (LCP never finalized within ${LOAD_WINDOW} window)"
       unfinalized=$((unfinalized + 1))
       continue
     fi
     ms="$(awk -v ns="$v" 'BEGIN{printf "%.1f", ns / 1000000}')"   # ns -> ms
     vals+=("$ms")
     rep=$((rep + 1))
+    echo "    attempt rep=$rep_idx: lcp_ms=$ms -> recorded"
     printf 'chrome\t%s\t%s\t%d\t%s\n' "$CHROME_VERSION" "$site" "$rep" "$ms" >> "$RESULTS_FILE"
     # Only per-iteration files live under a trace_processor/ dir. crossbench also
     # writes story-level MERGED copies (identical dupes) which would inflate n.
-  done < <(find "$results_path" -path '*/trace_processor/v2_metrics.textproto' 2>/dev/null)
+    # Sorted so attempts are logged in repetition order.
+  done < <(find "$results_path" -path '*/trace_processor/v2_metrics.textproto' 2>/dev/null | sort)
 
+  # Single assignment point for the disposition counters: everything after this
+  # only reports. observed counts repetitions that produced probe output at all,
+  # so observed < MEASURED_REPS means the browser or harness stopped early, while
+  # the dropped_* counters account for output that was unusable. LAST_HTTP_ERROR
+  # stays 0 — the trace carries no HTTP status.
+  LAST_OBSERVED="$attempts"
+  LAST_RECORDED="${#vals[@]}"
+  LAST_UNFINALIZED="$unfinalized"
+  LAST_NO_METRIC="$no_metric"
+  # Always print the tally, including the zero-attempt case — "expected 5, saw 0"
+  # is a different failure from "saw 5, discarded 5" and the log should say which.
+  echo "  $site: attempts=$attempts/$MEASURED_REPS recorded=${#vals[@]} unfinalized=$unfinalized no-metric=$no_metric"
   if [ "$unfinalized" -gt 0 ]; then
     echo "  WARNING: $site: $unfinalized iteration(s) with unfinalized LCP (-1)." >&2
+  fi
+  if [ "$attempts" -eq 0 ]; then
+    echo "  $site: NO METRICS FILES FOUND under $results_path (probe or trace_processor did not run)"
+    return
   fi
   if [ "${#vals[@]}" -eq 0 ]; then
     echo "  $site: NO LCP VALUES PARSED (check trace / probe)"
@@ -119,7 +271,9 @@ summarize_lcp() {
 
 # ---- run -------------------------------------------------------------------
 run_chrome() {
-  log "Chrome LCP run (LIVE network) — $SUITE, ${#SITES[@]} sites, 1 warm-up + $MEASURED_REPS reps, ${LOAD_WINDOW} window"
+  local shape_desc="unshaped"
+  [ "$SHAPE" = "1" ] && shape_desc="${SHAPE_RTT_MS}ms RTT, ${SHAPE_IN_KBPS}/${SHAPE_OUT_KBPS} kbps"
+  log "Chrome LCP run (WPR replay, $shape_desc) — $SUITE, ${#SITES[@]} sites, $MEASURED_REPS reps, ${LOAD_WINDOW} window"
   echo "chrome:  $CHROME_VERSION"
   echo "results: $RESULTS_FILE"
   cd "$CROSSBENCH_DIR"
@@ -127,24 +281,27 @@ run_chrome() {
   # instead of our poetry venv; removal belongs here (run step), not provisioning.
   rm -f .vpython3
 
-  local site out results_path
+  local site story network_arg out results_path outcome
   for site in "${SITES[@]}"; do
+    story="${SUITE}+${site}"
     log "site: $site"
-    # Warm-up load (discarded): primes OS-DNS + CDN edge so the measured reps
-    # below don't carry first-load cold latency. Output is intentionally ignored.
-    poetry run python ./cb.py \
-      loading \
-      --browser=chrome-stable \
-      --probe-config="$PROBE_CONFIG" \
-      --repetitions=1 \
-      --url="$site,$LOAD_WINDOW" \
-      --about-blank-duration=2s \
-      --env-validation=skip >/dev/null 2>&1 || true
+    reset_measurement_counters
 
+    network_arg="$(fetch_network_arg "$story")"
+    if [ -z "$network_arg" ]; then
+      echo "  $site: no WPR archive available; SKIPPING (replay-only)." >&2
+      echo "::warning title=Site skipped::$site: no WPR archive at $WPR_BASE_URL"
+      # attempted=0: the browser never ran, which is a different fact from "ran
+      # $MEASURED_REPS times and recorded nothing".
+      record_disposition "$site" infra_error "$PF_VERDICT" 0
+      continue
+    fi
+
+    echo "  plan: $MEASURED_REPS measured loads, ${LOAD_WINDOW} window"
     out="$(mktemp)"
     # --about-blank-duration is REQUIRED: navigating to about:blank after each
     # page forces Chromium to finalize LCP; without it every value comes out -1.
-    # No --network arg => live network.
+    # shellcheck disable=SC2086  # network_arg must word-split into separate args
     poetry run python ./cb.py \
       loading \
       --browser=chrome-stable \
@@ -152,25 +309,39 @@ run_chrome() {
       --repetitions="$MEASURED_REPS" \
       --url="$site,$LOAD_WINDOW" \
       --about-blank-duration=2s \
+      --bin-override "wpr=$WPR_BIN" \
+      $network_arg \
       --debug \
       --env-validation=skip 2>&1 | tee "$out" || echo "WARN: crossbench exited non-zero for $site" >&2
 
     # `|| true`: under set -e/pipefail a no-match grep would abort the script.
     results_path="$(grep -E '^RESULTS: ' "$out" | tail -1 | sed -E 's/^RESULTS: //' || true)"
     if [ -n "$results_path" ] && [ -d "$results_path" ]; then
+      # Logged so a surprising per-attempt result can be traced back to the raw
+      # trace and metrics on the runner.
+      echo "  results dir: $results_path"
       summarize_lcp "$results_path" "$site"
+      outcome="$(classify_outcome)"
+      record_disposition "$site" "$outcome" "$PF_VERDICT" "$MEASURED_REPS"
     else
       echo "  $site: no RESULTS path in crossbench output"
+      # The archive was available, but the browser harness failed before it
+      # produced a results directory.
+      echo "::warning title=Harness failure::$site: crossbench produced no RESULTS path"
+      record_disposition "$site" infra_error "$PF_VERDICT" "$MEASURED_REPS"
     fi
     rm -f "$out"
   done
 }
 
 # ---- main ------------------------------------------------------------------
-preflight
+check_prerequisites
 # TSV header. Columns: browser, browser_version, site, rep, lcp_ms.
 printf 'browser\tbrowser_version\tsite\trep\tlcp_ms\n' > "$RESULTS_FILE"
+init_dispositions_file
 run_chrome
+report_dispositions
 log "Done"
-echo "results: $RESULTS_FILE"
-echo "rows:    $(($(wc -l < "$RESULTS_FILE") - 1))"
+echo "results:      $RESULTS_FILE"
+echo "rows:         $(($(wc -l < "$RESULTS_FILE") - 1))"
+echo "dispositions: $DISPOSITIONS_FILE"

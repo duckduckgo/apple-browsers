@@ -165,10 +165,12 @@ init_dispositions_file() {
   DISPOSITIONS_DIR="${DISPOSITIONS_DIR:-$PWD/crossbench-dispositions}"
   mkdir -p "$DISPOSITIONS_DIR"
   DISPOSITIONS_FILE="$DISPOSITIONS_DIR/${BROWSER_NAME}-dispositions-$(date -u +%Y%m%dT%H%M%SZ).tsv"
-  printf 'browser\tbrowser_version\tsite\toutcome\t'                        > "$DISPOSITIONS_FILE"
-  printf 'preflight_verdict\tfinal_status\tstatus_chain\tredirects\tbytes\tfinal_url\tlanded_offsite\tblocked_marker\t' >> "$DISPOSITIONS_FILE"
-  printf 'attempted\tobserved\trecorded\tdropped_unfinalized\tdropped_no_metric\tdropped_http_error\t' >> "$DISPOSITIONS_FILE"
-  printf 'load_window_ms\trunner_image\n'                                   >> "$DISPOSITIONS_FILE"
+  {
+    printf 'browser\tbrowser_version\tsite\toutcome\t'
+    printf 'preflight_verdict\tfinal_status\tstatus_chain\tredirects\tbytes\tfinal_url\tlanded_offsite\tblocked_marker\t'
+    printf 'attempted\tobserved\trecorded\tdropped_unfinalized\tdropped_no_metric\tdropped_http_error\t'
+    printf 'load_window_ms\trunner_image\n'
+  } > "$DISPOSITIONS_FILE"
 }
 
 # Collapse tab/CR/LF to a space so one value can never become two columns — or,

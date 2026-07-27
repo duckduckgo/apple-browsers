@@ -58,7 +58,7 @@ SAFARI_APP="/Applications/Safari.app"
 
 # Sourced before the cd into CROSSBENCH_DIR below, so the path is relative to
 # this script rather than the working directory.
-# shellcheck source=preflight-lib.sh
+# shellcheck source=macOS/scripts/crossbench/preflight-lib.sh
 . "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/preflight-lib.sh"
 
 while [ $# -gt 0 ]; do

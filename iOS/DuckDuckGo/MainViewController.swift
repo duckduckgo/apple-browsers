@@ -236,7 +236,7 @@ class MainViewController: UIViewController {
     /// non-linear handoff ramp, so alpha is no longer a reliable source for the real percent.
     private var lastChromeVisibilityPercent: CGFloat = 1
     /// Last applied window-controls-row geometry, so the layout pass only reacts to real changes.
-    private var lastWindowControlsRowState: (height: CGFloat, tabsBarHidden: Bool) = (0, false)
+    private var lastWindowControlsRowState: (sharesRow: Bool, tabsBarHidden: Bool) = (false, false)
     private var lastForegroundEntryDate = Date.distantPast
     private var syncRecoveryPromptService: SyncRecoveryPromptService?
     private var currentNTPEscapeHatch: EscapeHatchModel?
@@ -4249,7 +4249,7 @@ extension MainViewController: BrowserChromeDelegate {
         let chromeAlpha = chromeAlpha(for: percent)
         viewCoordinator.navigationBarContainer.alpha = chromeAlpha
         // Fading out the shared row would leave the window controls sitting on the web page.
-        viewCoordinator.tabBarContainer.alpha = hasVisibleWindowControls ? 1 : chromeAlpha
+        viewCoordinator.tabBarContainer.alpha = sharesWindowControlsRow ? 1 : chromeAlpha
         viewCoordinator.toolbar.alpha = chromeAlpha
         updateFloatingDomainCapsuleVisibility(for: percent)
 
@@ -4290,7 +4290,7 @@ extension MainViewController: BrowserChromeDelegate {
             // let toolbar offset/alpha animations own chrome visibility to avoid blank "missing" bars.
             viewCoordinator.omniBar.barView.alpha = 1
         }
-        viewCoordinator.tabBarContainer.alpha = (hidden && !hasVisibleWindowControls) ? 0 : 1
+        viewCoordinator.tabBarContainer.alpha = (hidden && !sharesWindowControlsRow) ? 0 : 1
         viewCoordinator.statusBackground.alpha = hidden ? 0 : 1
         updateFloatingDomainCapsuleVisibility(for: hidden ? 0 : 1)
     }
@@ -4462,7 +4462,7 @@ extension MainViewController: BrowserChromeDelegate {
             // The controls stay put when the chrome hides, so the row that holds them has to stay
             // too, otherwise they end up floating over the web page. Only the omni bar slides away,
             // tucking up behind the tabs bar.
-            let topBarsConstant = hasVisibleWindowControls ? 0 : -browserTabsOffset * (1.0 - ratio)
+            let topBarsConstant = sharesWindowControlsRow ? 0 : -browserTabsOffset * (1.0 - ratio)
             viewCoordinator.constraints.tabBarContainerTop.constant = topBarsConstant
         }
         viewCoordinator.constraints.navigationBarContainerTop.constant = windowControlsOffset + browserTabsOffset + -navBarTopOffset * (1.0 - ratio)
@@ -4472,27 +4472,26 @@ extension MainViewController: BrowserChromeDelegate {
         WindowControlsRowLayout.isEnabled(featureFlagger: featureFlagger)
     }
 
-    /// Zero in full screen, where the system hides the controls and the chrome behaves as it always has.
+    /// False in full screen, where there are no window controls to share the row with.
+    private var sharesWindowControlsRow: Bool {
+        WindowControlsRowLayout.sharesRow(in: view, featureFlagger: featureFlagger)
+    }
+
     private var windowControlsRowHeight: CGFloat {
-        isWindowControlsRowEnabled ? WindowControlsRowLayout.rowHeight(in: view) : 0
+        sharesWindowControlsRow ? WindowControlsRowLayout.rowHeight(in: view) : 0
     }
 
-    private var hasVisibleWindowControls: Bool {
-        windowControlsRowHeight > 0
-    }
-
-    /// The window controls' row is as tall as the system decides, and that changes with window size
-    /// and full screen state, so the tabs bar row tracks it rather than sticking to its fixed height.
-    /// Whether the tabs bar is there at all decides who has to clear the controls, so it's part of
-    /// the same state; the equality guard keeps this from looping through `viewDidLayoutSubviews`.
+    /// Full screen and windowed need different corner adaptations, and whether the tabs bar is there
+    /// decides who clears the controls, so both are tracked. The equality guard keeps this from
+    /// looping through `viewDidLayoutSubviews`.
     private func updateWindowControlsRowMetricsIfNeeded() {
         guard isWindowControlsRowEnabled else { return }
 
-        let state = (height: windowControlsRowHeight, tabsBarHidden: viewCoordinator.tabBarContainer.isHidden)
+        let state = (sharesRow: sharesWindowControlsRow, tabsBarHidden: viewCoordinator.tabBarContainer.isHidden)
         guard state != lastWindowControlsRowState else { return }
 
         lastWindowControlsRowState = state
-        viewCoordinator.constraints.tabBarContainerHeight.constant = max(MainViewCoordinator.Constants.tabBarContainerHeight, state.height)
+        viewCoordinator.setChromeSharesWindowControlsRow(state.sharesRow)
         updateNavBarConstant(lastChromeVisibilityPercent)
         view.layoutIfNeeded()
     }

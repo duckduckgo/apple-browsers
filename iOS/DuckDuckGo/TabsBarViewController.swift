@@ -587,10 +587,15 @@ class TabsBarViewController: UIViewController {
     /// them. The reserved width changes as the window is resized or goes full screen, so it's read
     /// back on every layout pass; the equality guard keeps that from looping.
     private func updateWindowControlsInsetIfNeeded() {
-        guard let featureFlagger, WindowControlsRowLayout.isEnabled(featureFlagger: featureFlagger) else { return }
-
-        let clearsWindowControls = WindowControlsRowLayout.leadingInset(in: view) + Constants.windowControlsTabGap
-        let margin = max(Constants.firstTabLeadingMargin, clearsWindowControls)
+        let margin: CGFloat
+        if WindowControlsRowLayout.sharesRow(in: view, featureFlagger: featureFlagger) {
+            let clearsWindowControls = WindowControlsRowLayout.leadingInset(in: view) + Constants.windowControlsTabGap
+            margin = max(Constants.firstTabLeadingMargin, clearsWindowControls)
+        } else {
+            // Full screen has no controls to clear, and the horizontal region's inset there is the
+            // display's rounded corner, which is far wider than the tabs bar wants.
+            margin = Constants.firstTabLeadingMargin
+        }
         guard tabsBarView.firstTabLeadingMargin != margin else { return }
 
         tabsBarView.firstTabLeadingMargin = margin

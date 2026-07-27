@@ -122,7 +122,13 @@ class MainViewCoordinator {
         var toolbarHeight: NSLayoutConstraint!
         var contentContainerTop: NSLayoutConstraint!
         var tabBarContainerTop: NSLayoutConstraint!
-        var tabBarContainerHeight: NSLayoutConstraint!
+        /// The two top anchors the chrome can hang off: beside the system window controls, or below
+        /// them. `tabBarContainerTop` / `navigationBarContainerTop` always point at the active one.
+        /// Nil unless the feature is on, see `MainViewFactory.constrainTabBarContainer()`.
+        var tabBarContainerTopInWindowControlsRow: NSLayoutConstraint?
+        var tabBarContainerTopBelowWindowControls: NSLayoutConstraint?
+        var navigationBarContainerTopInWindowControlsRow: NSLayoutConstraint?
+        var navigationBarContainerTopBelowWindowControls: NSLayoutConstraint?
         var progressBarTop: NSLayoutConstraint?
         var progressBarBottom: NSLayoutConstraint?
         var statusBackgroundToNavigationBarContainerBottom: NSLayoutConstraint!
@@ -140,6 +146,33 @@ class MainViewCoordinator {
         var contentContainerTopToSuperview: NSLayoutConstraint!
         var contentContainerTopToAIChatHeader: NSLayoutConstraint!
 
+    }
+
+    /// Hangs the chrome off the horizontally corner adapted guide (beside the window controls) or the
+    /// vertically adapted one (below them). Returns true when it actually changed something.
+    @discardableResult
+    func setChromeSharesWindowControlsRow(_ sharesRow: Bool) -> Bool {
+        guard let tabBarBesideControls = constraints.tabBarContainerTopInWindowControlsRow,
+              let navigationBarBesideControls = constraints.navigationBarContainerTopInWindowControlsRow,
+              let tabBarBelowControls = constraints.tabBarContainerTopBelowWindowControls,
+              let navigationBarBelowControls = constraints.navigationBarContainerTopBelowWindowControls,
+              tabBarBesideControls.isActive != sharesRow else { return false }
+
+        constraints.tabBarContainerTop = sharesRow
+            ? activate(tabBarBesideControls, replacing: tabBarBelowControls)
+            : activate(tabBarBelowControls, replacing: tabBarBesideControls)
+        constraints.navigationBarContainerTop = sharesRow
+            ? activate(navigationBarBesideControls, replacing: navigationBarBelowControls)
+            : activate(navigationBarBelowControls, replacing: navigationBarBesideControls)
+        return true
+    }
+
+    /// The constants carry the chrome-hide offsets, so they move across with the swap.
+    private func activate(_ activating: NSLayoutConstraint, replacing deactivating: NSLayoutConstraint) -> NSLayoutConstraint {
+        deactivating.isActive = false
+        activating.constant = deactivating.constant
+        activating.isActive = true
+        return activating
     }
 
     func updateToolbarLayoutForAddressBarPosition(_ position: AddressBarPosition) {

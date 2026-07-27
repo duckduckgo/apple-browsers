@@ -209,10 +209,10 @@ public struct PopoverMessageView: View {
 
     @ViewBuilder
     private var messageBody: some View {
-        HStack(alignment: .top) {
+        HStack(alignment: viewModel.shouldPresentMultiline ? .top : .center) {
             if let image = viewModel.image {
                 Image(nsImage: image)
-                    .padding(.top, 3)
+                    .padding(.top, viewModel.shouldPresentMultiline ? 3 : 0)
             }
 
             Text(viewModel.message)
@@ -231,7 +231,7 @@ public struct PopoverMessageView: View {
                     action()
                     viewModel.dismissAction?()
                 })
-                .padding(.top, 2)
+                .padding(.top, viewModel.shouldPresentMultiline ? 2 : 0)
                 .padding(.leading, 4)
             }
 
@@ -244,7 +244,7 @@ public struct PopoverMessageView: View {
                         .frame(width: 16, height: 16)
                 }
                 .buttonStyle(PlainButtonStyle())
-                .padding(.top, viewModel.buttonText != nil ? 4 : 0)
+                .padding(.top, viewModel.shouldPresentMultiline && viewModel.buttonText != nil ? 4 : 0)
             }
         }
         .padding()

@@ -135,6 +135,14 @@ final class PopoverMessageViewController: NSHostingController<PopoverMessageView
 
     }
 
+    override func viewDidLoad() {
+        super.viewDidLoad()
+
+        if #available(macOS 26.0, *) {
+            view.prefersCompactControlSizeMetrics = true
+        }
+    }
+
     override func viewDidAppear() {
         super.viewDidAppear()
         createTrackingArea()
@@ -174,7 +182,7 @@ final class PopoverMessageViewController: NSHostingController<PopoverMessageView
         self.preferredContentSize.width = self.view.fittingSize.width
 
         parent.present(self,
-                       asPopoverRelativeTo: self.view.bounds,
+                       asPopoverRelativeTo: view.bounds,
                        of: view,
                        preferredEdge: preferredEdge,
                        behavior: behavior)

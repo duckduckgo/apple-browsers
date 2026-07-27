@@ -514,7 +514,7 @@ extension SyncSettingsViewController: ScanOrPasteCodeViewModelDelegate {
                    withAdditionalParameters: sourcePixelParameters,
                    includedParameters: [.appVersion],
                    onComplete: { _ in })
-        if isPresentingV2ConnectingSheet {
+        if useSimplifiedLayoutV2 {
             presentSuccessScreen(isRecovery: codeCollectionIntent == .recoverData)
         } else {
             presentSyncCompletionAfterDelay()
@@ -625,7 +625,11 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
     
     func controllerWillBeginTransmittingRecoveryKey() async {
         await dismissPresentedViewController()
-        await showPreparingSync()
+        if useSimplifiedLayoutV2 {
+            viewModel.connectingSheetPhase = .connecting(isRecovery: codeCollectionIntent == .recoverData)
+        } else {
+            await showPreparingSync()
+        }
     }
     
     private func waitForDevicesToChange(then action: @escaping (SyncSettingsViewController) -> Void) {
@@ -659,8 +663,15 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
     }
     
     func controllerDidReceiveRecoveryKey() {
+        guard useSimplifiedLayoutV2 else {
+            dismissPresentedViewController { [weak self] in
+                self?.showPreparingSync(nil)
+            }
+            return
+        }
         dismissPresentedViewController { [weak self] in
-            self?.showPreparingSync(nil)
+            guard let self else { return }
+            self.viewModel.connectingSheetPhase = .connecting(isRecovery: self.codeCollectionIntent == .recoverData)
         }
     }
     
@@ -696,7 +707,7 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
                 await connectionController.cancel()
             }
         }
-        if isPresentingV2ConnectingSheet {
+        if useSimplifiedLayoutV2 {
             presentSuccessScreen(isRecovery: codeCollectionIntent == .recoverData)
         } else {
             presentSyncCompletionAfterDelay()

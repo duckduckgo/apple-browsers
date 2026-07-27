@@ -1,0 +1,263 @@
+name: WPR archive validation
+
+on:
+  workflow_call:
+    inputs:
+      sites:
+        description: "Comma-separated sites (blank = default site list)"
+        type: string
+        required: false
+        default: ""
+      alert-asana:
+        description: "Create an Asana subtask for new validation errors"
+        type: boolean
+        required: false
+        default: true
+    secrets:
+      ASANA_ACCESS_TOKEN:
+        required: false
+
+permissions:
+  contents: read
+  actions: read
+
+defaults:
+  run:
+    working-directory: macOS/scripts/crossbench
+
+jobs:
+  validate:
+    name: Validate WPR archives
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: "1.23.0"
+          cache: false
+
+      - name: Build pinned WPR archive validator
+        env:
+          WPR_SRC: ${{ runner.temp }}/webpagereplay
+          WPR_VALIDATOR_BIN: ${{ runner.temp }}/bin/validate-wpr
+        run: ./provision-wpr-tools.sh
+
+      - name: Validate configured archives
+        env:
+          SITES: ${{ inputs.sites }}
+          WPR_DIR: ${{ runner.temp }}/wpr-archives
+          WPR_REPLAY_DIR: ${{ runner.temp }}/validated-wpr-archives
+          WPR_VALIDATOR_BIN: ${{ runner.temp }}/bin/validate-wpr
+          MANIFEST_FILE: ${{ github.workspace }}/macOS/scripts/crossbench/wpr-validation/manifest.tsv
+          REPORT_FILE: ${{ github.workspace }}/macOS/scripts/crossbench/wpr-validation/report.txt
+        run: |
+          args=()
+          if [ -n "$SITES" ]; then
+            args+=(--sites "$SITES")
+          fi
+          ./validate-wpr-archives.sh "${args[@]}"
+
+      - name: Upload validation report
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: wpr-validation-report
+          path: macOS/scripts/crossbench/wpr-validation/
+          if-no-files-found: warn
+          overwrite: true
+          retention-days: 30
+
+      - name: Upload validated archives
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: validated-wpr-archives
+          path: ${{ runner.temp }}/validated-wpr-archives/
+          if-no-files-found: error
+          compression-level: 0
+          overwrite: true
+          retention-days: 1
+
+  notify:
+    name: Report WPR validation errors
+    needs: validate
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out notification helper
+        continue-on-error: true
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Download validation report
+        continue-on-error: true
+        uses: actions/download-artifact@v7
+        with:
+          name: wpr-validation-report
+          path: macOS/scripts/crossbench/wpr-validation
+
+      - name: Finalize validation report
+        id: report
+        continue-on-error: true
+        working-directory: .
+        env:
+          VALIDATION_RESULT: ${{ needs.validate.result }}
+        run: |
+          report="macOS/scripts/crossbench/wpr-validation/report.txt"
+          mkdir -p "$(dirname "$report")"
+          if [ ! -s "$report" ]; then
+            {
+              echo "WPR archive validation: INFRASTRUCTURE FAILURE"
+              echo "Package status: FAILED"
+              echo "Eligible sites: 0/0"
+              echo "Site errors: 0"
+              echo "Detected issues: 1"
+              echo
+              echo "[PACKAGE ERROR] validation infrastructure"
+              echo "Failure: validation did not produce a report"
+              echo "Action: inspect the failed validation job"
+              echo
+              echo "Browser jobs were blocked because archive validation did not complete."
+            } > "$report"
+          elif [ "$VALIDATION_RESULT" != "success" ]; then
+            sed -i 's/^Package status: READY$/Package status: FAILED/' "$report"
+            {
+              echo
+              echo "[PACKAGE ERROR] validation handoff"
+              echo "Failure: validation job concluded $VALIDATION_RESULT"
+              echo "Action: inspect archive staging and artifact upload in the validation job"
+              echo
+              echo "Browser jobs were blocked because the validation package was not delivered."
+            } >> "$report"
+          fi
+
+          if grep -Eq '^Detected issues: [1-9][0-9]*$' "$report" ||
+              grep -q '^Package status: FAILED$' "$report"; then
+            echo "has-errors=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has-errors=false" >> "$GITHUB_OUTPUT"
+          fi
+          if grep -q '^Package status: FAILED$' "$report"; then
+            echo "package-failed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "package-failed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Upload final validation report
+        if: always()
+        continue-on-error: true
+        uses: actions/upload-artifact@v6
+        with:
+          name: wpr-validation-report
+          path: macOS/scripts/crossbench/wpr-validation/
+          if-no-files-found: warn
+          overwrite: true
+          retention-days: 30
+
+      - name: Fingerprint validation errors
+        if: always() && steps.report.outputs.has-errors == 'true'
+        id: fingerprint
+        continue-on-error: true
+        working-directory: .
+        run: |
+          fingerprint="$(sha256sum macOS/scripts/crossbench/wpr-validation/report.txt | awk '{print $1}')"
+          echo "value=$fingerprint" >> "$GITHUB_OUTPUT"
+          echo "short=${fingerprint:0:12}" >> "$GITHUB_OUTPUT"
+
+      - name: Check GitHub-side alert markers
+        if: >-
+          always() && steps.report.outputs.has-errors == 'true' &&
+          inputs.alert-asana &&
+          vars.CROSSBENCH_WPR_ASANA_ALERTS_ENABLED != 'false'
+        id: alert-marker
+        continue-on-error: true
+        working-directory: .
+        env:
+          GH_TOKEN: ${{ github.token }}
+          FINGERPRINT: ${{ steps.fingerprint.outputs.value }}
+        run: |
+          fingerprint_count="$(
+            gh api "repos/$GITHUB_REPOSITORY/actions/artifacts?name=wpr-validation-failure-$FINGERPRINT&per_page=100" \
+              --jq '[.artifacts[] | select(.expired == false)] | length'
+          )"
+          run_count="$(
+            gh api "repos/$GITHUB_REPOSITORY/actions/artifacts?name=wpr-validation-run-$GITHUB_RUN_ID&per_page=100" \
+              --jq '[.artifacts[] | select(.expired == false)] | length'
+          )"
+          if [ "$fingerprint_count" -gt 0 ] || [ "$run_count" -gt 0 ]; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create Asana subtask
+        if: >-
+          always() && steps.report.outputs.has-errors == 'true' &&
+          inputs.alert-asana &&
+          vars.CROSSBENCH_WPR_ASANA_ALERTS_ENABLED != 'false' &&
+          steps.alert-marker.outputs.exists == 'false'
+        id: asana
+        continue-on-error: true
+        working-directory: .
+        env:
+          ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
+          FAILURE_SHORT: ${{ steps.fingerprint.outputs.short }}
+          PACKAGE_FAILED: ${{ steps.report.outputs.package-failed }}
+        run: |
+          if [ -z "$ASANA_ACCESS_TOKEN" ]; then
+            echo "::warning title=Asana notification skipped::ASANA_ACCESS_TOKEN is not available."
+            echo "created=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          report="macOS/scripts/crossbench/wpr-validation/report.txt"
+          helper="macOS/scripts/crossbench/create-asana-subtask.sh"
+          if [ ! -x "$helper" ]; then
+            echo "::warning title=Asana notification skipped::Notification helper is unavailable."
+            echo "created=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          notes_file="$RUNNER_TEMP/asana-wpr-validation-notes.txt"
+          {
+            echo "Workflow: https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+            echo "Commit: $GITHUB_SHA"
+            echo
+            cat "$report"
+          } > "$notes_file"
+          if [ "$PACKAGE_FAILED" = "true" ]; then
+            task_name="IMPORTANT: WPR package validation failed [$FAILURE_SHORT]"
+          else
+            task_name="WPR site validation errors [$FAILURE_SHORT]"
+          fi
+          "$helper" 1216902374642227 "$task_name" "$notes_file"
+          echo "created=true" >> "$GITHUB_OUTPUT"
+          echo "reported by run $GITHUB_RUN_ID" > macOS/scripts/crossbench/wpr-validation/alert-marker.txt
+
+      - name: Save fingerprint alert marker
+        if: always() && steps.asana.outputs.created == 'true'
+        continue-on-error: true
+        uses: actions/upload-artifact@v6
+        with:
+          name: wpr-validation-failure-${{ steps.fingerprint.outputs.value }}
+          path: macOS/scripts/crossbench/wpr-validation/alert-marker.txt
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Save run alert marker
+        if: always() && steps.asana.outputs.created == 'true'
+        continue-on-error: true
+        uses: actions/upload-artifact@v6
+        with:
+          name: wpr-validation-run-${{ github.run_id }}
+          path: macOS/scripts/crossbench/wpr-validation/alert-marker.txt
+          if-no-files-found: error
+          retention-days: 90

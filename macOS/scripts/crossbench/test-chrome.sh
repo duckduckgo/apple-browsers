@@ -48,10 +48,11 @@ CROSSBENCH_DIR="${CROSSBENCH_DIR:-$HOME/Developer/crossbench-upstream}"
 
 # ---- recorded network (WPR) + shaping --------------------------------------
 WPR_DIR="${WPR_DIR:-$HOME/Developer/mac-perf-runner/wpr-archives}"
+# CI sets this when archives came from the shared validation workflow.
+WPR_ARCHIVES_PREPARED="${WPR_ARCHIVES_PREPARED:-0}"
 # Built by provision-macos.sh and handed to crossbench via --bin-override so
 # crossbench never runs its own webpagereplay build (which needs CIPD Go).
 WPR_BIN="${WPR_BIN:-$HOME/Developer/mac-perf-runner/bin/wpr}"
-WPR_BASE_URL="${WPR_BASE_URL:-https://staticcdn.duckduckgo.com/d5c04536-5379-4709-8d19-d13fdd456ff6/performance-tests}"
 # Standalone Python-3 tsproxy, handed to crossbench via speed:{ts_proxy:...}.
 # See wpr_network_arg for why crossbench's own DEPS-pinned copy cannot be used.
 TSPROXY_PY="${TSPROXY_PY:-$HOME/Developer/mac-perf-runner/bin/tsproxy.py}"
@@ -75,6 +76,8 @@ CHROME_BIN="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 # this script rather than the working directory.
 # shellcheck source=macOS/scripts/crossbench/dispositions-lib.sh
 . "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/dispositions-lib.sh"
+# shellcheck source=macOS/scripts/crossbench/wpr-config.sh
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/wpr-config.sh"
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -92,17 +95,34 @@ fi
 
 log() { printf '\n=== %s ===\n' "$1"; }
 
-# Site list, copied verbatim from runCrossbench.ps1 $navToSites.
-SITES=(
-  youtube.com wikipedia.org reddit.com amazon.com yelp.com
-  weather.com yahoo.com apple.com fandom.com tripadvisor.com
-  tiktok.com indeed.com spotify.com nih.gov espn.com
-  walmart.com nytimes.com clevelandclinic.org ny.gov quora.com
-  zillow.com mayoclinic.org
-)
+# The default list is shared with archive validation.
+SITES=()
+while IFS= read -r site; do
+  [ -z "$site" ] && continue
+  [[ "$site" == \#* ]] && continue
+  SITES+=("$site")
+done < "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/wpr-sites.txt"
 if [ -n "$SITES_OVERRIDE" ]; then
   IFS=',' read -r -a SITES <<< "$SITES_OVERRIDE"
 fi
+NORMALIZED_SITES=()
+for site in "${SITES[@]}"; do
+  site="$(normalize_wpr_site "$site")"
+  if ! [[ "$site" =~ ^[a-z0-9.-]+$ ]]; then
+    echo "ERROR: invalid site hostname: $site" >&2
+    exit 2
+  fi
+  if [ "${#NORMALIZED_SITES[@]}" -gt 0 ]; then
+    for previous in "${NORMALIZED_SITES[@]}"; do
+      if [ "$site" = "$previous" ]; then
+        echo "ERROR: duplicate site hostname: $site" >&2
+        exit 2
+      fi
+    done
+  fi
+  NORMALIZED_SITES+=("$site")
+done
+SITES=("${NORMALIZED_SITES[@]}")
 
 # Default results file: ./crossbench-results/chrome-lcp-<utc-stamp>.tsv, relative
 # to the invocation dir (CI uploads this directory as an artifact).
@@ -174,6 +194,14 @@ fetch_network_arg() {
   normalized="$(normalize "$story")"
   archive="$WPR_DIR/$normalized.wprgo"
   mkdir -p "$WPR_DIR"
+  if [ "$WPR_ARCHIVES_PREPARED" = "1" ]; then
+    if [ -f "$archive" ]; then
+      wpr_network_arg "$archive"
+    else
+      printf ''
+    fi
+    return
+  fi
   if curl -fLSs -o "$archive.tmp" "$WPR_BASE_URL/$normalized.wprgo" 2>/dev/null; then
     mv "$archive.tmp" "$archive"
     wpr_network_arg "$archive"
@@ -289,8 +317,13 @@ run_chrome() {
 
     network_arg="$(fetch_network_arg "$story")"
     if [ -z "$network_arg" ]; then
-      echo "  $site: no WPR archive available; SKIPPING (replay-only)." >&2
-      echo "::warning title=Site skipped::$site: no WPR archive at $WPR_BASE_URL"
+      if [ "$WPR_ARCHIVES_PREPARED" = "1" ]; then
+        echo "  $site: excluded by WPR archive validation; SKIPPING." >&2
+        echo "::warning title=Site excluded::$site did not pass WPR archive validation"
+      else
+        echo "  $site: no WPR archive available; SKIPPING (replay-only)." >&2
+        echo "::warning title=Site skipped::$site: no WPR archive at $WPR_BASE_URL"
+      fi
       # attempted=0: the browser never ran, which is a different fact from "ran
       # $MEASURED_REPS times and recorded nothing".
       record_disposition "$site" infra_error "$PF_VERDICT" 0

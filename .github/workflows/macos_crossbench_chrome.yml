@@ -31,6 +31,11 @@ on:
         type: boolean
         required: false
         default: false
+      alert-asana:
+        description: "Create an Asana subtask for new WPR archive validation errors"
+        type: boolean
+        required: false
+        default: true
   schedule:
     # A scheduled run uses the full 22-site list and uploads to ClickHouse.
     # GitHub only fires schedules from the default branch.
@@ -53,8 +58,17 @@ defaults:
     working-directory: macOS/scripts/crossbench
 
 jobs:
+  validate-wpr:
+    uses: ./.github/workflows/wpr_archive_validation.yml
+    with:
+      sites: ${{ inputs.sites || '' }}
+      alert-asana: ${{ github.event_name != 'workflow_dispatch' || inputs.alert-asana }}
+    secrets:
+      ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
+
   chrome-lcp:
     name: Chrome LCP (WPR)
+    needs: validate-wpr
     # Standard hosted Apple Silicon runner, matching the Safari architecture.
     runs-on: macos-latest
     # 10 measured loads/site, with no discarded live-network warm-up. The cap
@@ -67,6 +81,12 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Download validated WPR archives
+        uses: actions/download-artifact@v7
+        with:
+          name: validated-wpr-archives
+          path: ${{ runner.temp }}/wpr-archives
+
       - name: Provision crossbench, Chrome, and WPR
         run: ./provision-macos.sh
 
@@ -75,6 +95,8 @@ jobs:
         env:
           SITES: ${{ inputs.sites }}
           REPS: ${{ inputs.reps }}
+          WPR_DIR: ${{ runner.temp }}/wpr-archives
+          WPR_ARCHIVES_PREPARED: "1"
         run: |
           args=()
           if [ -n "$SITES" ]; then

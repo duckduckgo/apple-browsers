@@ -73,25 +73,24 @@ struct RoseColorPalette: SharedColorPaletteDefinition {
     static let containerFillPrimary = DynamicColor(lightHex: 0x2b081c, lightOpacityHex: 0x05, darkHex: 0xfffafe, darkOpacityHex: 0x07)
     static let containerFillSecondary = DynamicColor(lightHex: 0x2b081c, lightOpacityHex: 0x0a, darkHex: 0xfffafe, darkOpacityHex: 0x0f)
     static let containerFillTertiary = DynamicColor(lightHex: 0x2b081c, lightOpacityHex: 0x0f, darkHex: 0xfffafe, darkOpacityHex: 0x16)
-    static let controlsBorderPrimary = DynamicColor(lightHex: 0xa30075, lightOpacityHex: 0x51, darkHex: 0xfc9ce6, darkOpacityHex: 0x7a)
-    static let controlsBorderQuaternary = DynamicColor(lightHex: 0xa30075, lightOpacityHex: 0xb7, darkHex: 0xfc9ce6, darkOpacityHex: 0xcc)
-    static let controlsBorderSecondary = DynamicColor(lightHex: 0xa30075, lightOpacityHex: 0x8e, darkHex: 0xfc9ce6, darkOpacityHex: 0xa3)
-    static let controlsBorderTertiary = DynamicColor(lightHex: 0xa30075, lightOpacityHex: 0xa3, darkHex: 0xfc9ce6, darkOpacityHex: 0xb7)
-    static let controlsFillPrimary = DynamicColor(lightHex: 0xa30075, lightOpacityHex: 0x16, darkHex: 0xfc9ce6, darkOpacityHex: 0x1e)
-    static let controlsFillSecondary = DynamicColor(lightHex: 0xa30075, lightOpacityHex: 0x1e, darkHex: 0xfc9ce6, darkOpacityHex: 0x2d)
-    static let controlsFillTertiary = DynamicColor(lightHex: 0xa30075, lightOpacityHex: 0x2d, darkHex: 0xfc9ce6, darkOpacityHex: 0x3d)
-    static let controlsRaisedBackdrop = DynamicColor(lightHex: 0x000000, lightOpacityHex: 0x16, darkHex: 0xffffff, darkOpacityHex: 0x1e)
-    static let controlsRaisedFillPrimary = DynamicColor(lightHex: 0xffffff, darkHex: 0xfffafe, darkOpacityHex: 0x2d)
-    static let controlsRaisedFillSecondary = DynamicColor(lightHex: 0xffffff, darkHex: 0xfffafe, darkOpacityHex: 0x2d)
-    static let controlsRaisedFillTertiary = DynamicColor(lightHex: 0xffffff, darkHex: 0xfffafe, darkOpacityHex: 0x2d)
-    static let controlsSubtleBorderPrimary = DynamicColor(lightHex: 0xa30075, lightOpacityHex: 0x1e, darkHex: 0xfc9ce6, darkOpacityHex: 0x1e)
-    static let controlsSubtleBorderSecondary = DynamicColor(lightHex: 0xa30075, lightOpacityHex: 0x2d, darkHex: 0xfc9ce6, darkOpacityHex: 0x2d)
-    static let controlsSubtleBorderTertiary = DynamicColor(lightHex: 0xa30075, lightOpacityHex: 0x5b, darkHex: 0xfc9ce6, darkOpacityHex: 0x5b)
-    static let controlsSubtleFillSecondary = DynamicColor(lightHex: 0xA30075, lightOpacity: 0.06, darkHex: 0xFC9CE6, darkOpacity: 0.18)
+    static let controlBorderPrimary = DynamicColor(lightHex: 0xa30075, lightOpacityHex: 0x51, darkHex: 0xfc9ce6, darkOpacityHex: 0x7a)
+    static let controlBorderQuaternary = DynamicColor(lightHex: 0xa30075, lightOpacityHex: 0xb7, darkHex: 0xfc9ce6, darkOpacityHex: 0xcc)
+    static let controlBorderSecondary = DynamicColor(lightHex: 0xa30075, lightOpacityHex: 0x8e, darkHex: 0xfc9ce6, darkOpacityHex: 0xa3)
+    static let controlBorderTertiary = DynamicColor(lightHex: 0xa30075, lightOpacityHex: 0xa3, darkHex: 0xfc9ce6, darkOpacityHex: 0xb7)
+    static let controlFillPrimary = DynamicColor(lightHex: 0xa30075, lightOpacityHex: 0x16, darkHex: 0xfc9ce6, darkOpacityHex: 0x1e)
+    static let controlFillSecondary = DynamicColor(lightHex: 0xa30075, lightOpacityHex: 0x1e, darkHex: 0xfc9ce6, darkOpacityHex: 0x2d)
+    static let controlFillTertiary = DynamicColor(lightHex: 0xa30075, lightOpacityHex: 0x2d, darkHex: 0xfc9ce6, darkOpacityHex: 0x3d)
+    static let controlRaisedBackdrop = DynamicColor(lightHex: 0x000000, lightOpacityHex: 0x16, darkHex: 0xffffff, darkOpacityHex: 0x1e)
+    static let controlRaisedFillPrimary = DynamicColor(lightHex: 0xffffff, darkHex: 0xfffafe, darkOpacityHex: 0x2d)
+    static let controlRaisedFillSecondary = DynamicColor(lightHex: 0xffffff, darkHex: 0xfffafe, darkOpacityHex: 0x2d)
+    static let controlRaisedFillTertiary = DynamicColor(lightHex: 0xffffff, darkHex: 0xfffafe, darkOpacityHex: 0x2d)
+    static let controlSubtleBorderPrimary = DynamicColor(lightHex: 0xa30075, lightOpacityHex: 0x1e, darkHex: 0xfc9ce6, darkOpacityHex: 0x1e)
+    static let controlSubtleBorderSecondary = DynamicColor(lightHex: 0xa30075, lightOpacityHex: 0x2d, darkHex: 0xfc9ce6, darkOpacityHex: 0x2d)
+    static let controlSubtleBorderTertiary = DynamicColor(lightHex: 0xa30075, lightOpacityHex: 0x5b, darkHex: 0xfc9ce6, darkOpacityHex: 0x5b)
+    static let controlSubtleFillSecondary = DynamicColor(lightHex: 0xA30075, lightOpacity: 0.06, darkHex: 0xFC9CE6, darkOpacity: 0.18)
     static let destructiveContentPrimary = DynamicColor(lightHex: 0xffffff, darkHex: 0x000000)
     static let destructiveContentSecondary = DynamicColor(lightHex: 0xffffff, lightOpacityHex: 0xe5, darkHex: 0x000000, darkOpacityHex: 0xe5)
     static let destructiveContentTertiary = DynamicColor(lightHex: 0xffffff, lightOpacityHex: 0x99, darkHex: 0x000000, darkOpacityHex: 0x99)
-    static let destructiveGlowPrimary = DynamicColor(lightHex: 0xee1025, lightOpacityHex: 0x33, darkHex: 0xee1025, darkOpacityHex: 0x33)
     static let destructiveGlowSecondary = DynamicColor(lightHex: 0xee1025, lightOpacityHex: 0x33, darkHex: 0xee1025, darkOpacityHex: 0x1e)
     static let destructivePrimary = DynamicColor(lightHex: 0xee1025, darkHex: 0xee1025)
     static let destructiveSecondary = DynamicColor(lightHex: 0xd11527, darkHex: 0xd11527)
@@ -103,8 +102,8 @@ struct RoseColorPalette: SharedColorPaletteDefinition {
     static let iconsPrimary = DynamicColor(lightHex: 0x30021e, lightOpacityHex: 0xd6, darkHex: 0xfffafe, darkOpacityHex: 0xc6)
     static let iconsSecondary = DynamicColor(lightHex: 0x30031e, lightOpacityHex: 0xa8, darkHex: 0xfffafe, darkOpacityHex: 0xa8)
     static let iconsTertiary = DynamicColor(lightHex: 0x30031e, lightOpacityHex: 0x5b, darkHex: 0xfffafe, darkOpacityHex: 0x5b)
-    static let inputActive = DynamicColor(lightHex: 0xfffafe, darkHex: 0x72265e)
-    static let inputResting = DynamicColor(lightHex: 0xfffafe, darkHex: 0x72265e)
+    static let unifiedInputFieldFillActive = DynamicColor(lightHex: 0xfffafe, darkHex: 0x72265e)
+    static let unifiedInputFieldFillResting = DynamicColor(lightHex: 0xfffafe, darkHex: 0x72265e)
     static let shadowPrimary = DynamicColor(lightHex: 0x000000, lightOpacityHex: 0x0c, darkHex: 0x000000, darkOpacityHex: 0x28)
     static let shadowSecondary = DynamicColor(lightHex: 0x000000, lightOpacityHex: 0x14, darkHex: 0x000000, darkOpacityHex: 0x3d)
     static let shadowTertiary = DynamicColor(lightHex: 0x000000, lightOpacityHex: 0x28, darkHex: 0x000000, darkOpacityHex: 0x51)
@@ -114,7 +113,7 @@ struct RoseColorPalette: SharedColorPaletteDefinition {
     static let statusWarningContentPrimary = DynamicColor(lightHex: 0x191101, darkHex: 0x191101)
     static let statusWarningFillPrimary = DynamicColor(lightHex: 0xffe699, lightOpacityHex: 0x51, darkHex: 0xffb200, darkOpacityHex: 0x1e)
     static let statusWarningPrimary = DynamicColor(lightHex: 0xffcc00, darkHex: 0xffcc00)
-    static let statusYellow = DynamicColor(lightHex: 0xffcc00, darkHex: 0xffcc00)
+    static let statusYellowPrimary = DynamicColor(lightHex: 0xffcc00, darkHex: 0xffcc00)
     static let surfaceBackdrop = DynamicColor(lightHex: 0xee9fd9, darkHex: 0x2d0525)
     static let surfaceCanvas = DynamicColor(lightHex: 0xfcf3fa, darkHex: 0x511442)
     static let surfaceContrast = DynamicColor(lightHex: 0xa30075, lightOpacityHex: 0xf4, darkHex: 0xfa7ddd, darkOpacityHex: 0xf4)
@@ -133,29 +132,23 @@ struct RoseColorPalette: SharedColorPaletteDefinition {
 
     // MARK: - Inherited from FigmaColorPalette
 
-    static let destructiveGlow = DynamicColor(lightHex: 0xee1025, lightOpacityHex: 0x33, darkHex: 0xee1025, darkOpacityHex: 0x33)
+    static let destructiveGlowPrimary = DynamicColor(lightHex: 0xee1025, lightOpacityHex: 0x33, darkHex: 0xee1025, darkOpacityHex: 0x33)
 
     // MARK: - Not Specialized
 
-    static let alertGreen = DynamicColor(lightColor: .alertGreen, darkColor: .alertGreen)
-    static let alertYellow = DynamicColor(lightColor: .alertYellow, darkColor: .alertYellow)
-    static let shieldPrivacy = DynamicColor(lightColor: RebrandingColor.Lilypad.lilypad70, darkColor: RebrandingColor.Lilypad.lilypad50)
 
-    static let buttonsWhite = DynamicColor(lightColor: .white, darkColor: .black)
 
-    static let buttonsPrimaryDefault = DynamicColor(lightColor: .blue50, darkColor: .blue30)
-    static let buttonsPrimaryPressed = DynamicColor(lightColor: .blue70, darkColor: .blue50)
-    static let buttonsPrimaryDisabled = DynamicColor(lightColor: .shade(0.06), darkColor: .tint(0.18))
-    static let buttonsPrimaryText = DynamicColor(lightColor: .white, darkColor: .shade(0.84))
-    static let buttonsPrimaryTextDisabled = DynamicColor(lightColor: .shade(0.36), darkColor: .tint(0.36))
 
-    static let buttonsSecondaryFillDefault = DynamicColor(lightColor: .shade(0.06), darkColor: .tint(0.18))
-    static let buttonsSecondaryFillPressed = DynamicColor(lightColor: .shade(0.18), darkColor: .tint(0.3))
-    static let buttonsSecondaryFillDisabled = DynamicColor(lightColor: .shade(0.06), darkColor: .tint(0.18))
-    static let buttonsSecondaryFillText = DynamicColor(lightColor: .shade(0.84), darkColor: .white)
-    static let buttonsSecondaryFillTextDisabled = DynamicColor(lightColor: .shade(0.36), darkColor: .tint(0.36))
 
-    static let lines = DynamicColor(lightHex: 0x1F1F1F, lightOpacity: 0.09, darkHex: 0xF9F9F9, darkOpacity: 0.12)
+
+    // MARK: - Added by Figma (not yet used by any call site)
+    static let controlSubtleFillPrimary = DynamicColor(lightHex: 0xA30075, lightOpacity: 0.03, darkHex: 0xFC9CE6, darkOpacity: 0.12)
+    static let controlSubtleFillTertiary = DynamicColor(lightHex: 0xA30075, lightOpacity: 0.1, darkHex: 0xFC9CE6, darkOpacity: 0.24)
+    static let statusYellowSecondary = DynamicColor(lightHex: 0xFFC95C, darkHex: 0xFFC95C)  // not in this theme; value from the Default theme
+    static let statusYellowTertiary = DynamicColor(lightHex: 0xFFCC00, darkHex: 0xFFCC00)
+
+    // MARK: - Added by Figma (not yet used by any call site)
+    static let unifiedInputFillPrimary = DynamicColor(lightHex: 0xFFFAFE, darkHex: 0xFFFAFE)  // light-only in Figma; dark mirrors light
 }
 
 #endif

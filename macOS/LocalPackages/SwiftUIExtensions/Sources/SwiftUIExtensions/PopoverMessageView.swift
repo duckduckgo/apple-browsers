@@ -217,10 +217,10 @@ public struct PopoverMessageView: View {
 
     @ViewBuilder
     private var messageBody: some View {
-        HStack(alignment: shouldCenterContentVertically ? .center : .top) {
+        HStack(alignment: viewModel.configuration.usesCompactLayout ? .center : .top) {
             if let image = viewModel.image {
                 Image(nsImage: image)
-                    .padding(.top, shouldCenterContentVertically ? 0 : 3)
+                    .padding(.top, viewModel.configuration.usesCompactLayout ? 0 : 3)
             }
 
             Text(viewModel.message)
@@ -239,7 +239,7 @@ public struct PopoverMessageView: View {
                     action()
                     viewModel.dismissAction?()
                 })
-                .padding(.top, shouldCenterContentVertically ? 0 : 2)
+                .padding(.top, viewModel.configuration.usesCompactLayout ? 0 : 2)
                 .padding(.leading, 4)
             }
 
@@ -252,14 +252,10 @@ public struct PopoverMessageView: View {
                         .frame(width: 16, height: 16)
                 }
                 .buttonStyle(PlainButtonStyle())
-                .padding(.top, shouldCenterContentVertically || viewModel.buttonText == nil ? 0 : 4)
+                .padding(.top, viewModel.configuration.usesCompactLayout || viewModel.buttonText == nil ? 0 : 4)
             }
         }
         .padding()
-    }
-
-    private var shouldCenterContentVertically: Bool {
-        viewModel.configuration.usesCompactLayout && !viewModel.shouldPresentMultiline
     }
 
     @ViewBuilder

@@ -46,6 +46,12 @@ final class AIChatHistoryViewController: UIViewController {
         !isEditingChats && viewModel.effectiveQuery.isEmpty
     }
 
+    /// True while the search UI is up. Multi-select is not offered in this state (search and
+    /// multi-select are mutually exclusive), which avoids clearing the filter on the way in.
+    private var isSearchActive: Bool {
+        tableView.tableHeaderView != nil
+    }
+
     private lazy var tableView: UITableView = {
         let table = UITableView(frame: .zero, style: .insetGrouped)
         table.dataSource = self
@@ -233,21 +239,31 @@ final class AIChatHistoryViewController: UIViewController {
     }
 
     private func makeOverflowMenuItem() -> UIBarButtonItem {
-        let selectChats = UIAction(
-            title: UserText.aiChatHistoryMenuSelectChats,
-            image: DesignSystemImages.Glyphs.Size16.checkCircle
-        ) { [weak self] _ in
-            self?.enterSelectionMode()
-        }
         let chatProtection = UIAction(
             title: UserText.aiChatHistoryMenuChatProtection,
             image: DesignSystemImages.Glyphs.Size16.shieldCheck
         ) { [weak self] _ in
             self?.viewModel.openChatProtection()
         }
+        // Rebuilt each time the menu opens so "Select Chats" reflects the current search state:
+        // multi-select is omitted while searching (mutually exclusive with the filter).
+        let content = UIDeferredMenuElement.uncached { [weak self] completion in
+            guard let self else { completion([chatProtection]); return }
+            var elements: [UIMenuElement] = []
+            if !self.isSearchActive {
+                elements.append(UIAction(
+                    title: UserText.aiChatHistoryMenuSelectChats,
+                    image: DesignSystemImages.Glyphs.Size16.checkCircle
+                ) { [weak self] _ in
+                    self?.enterSelectionMode()
+                })
+            }
+            elements.append(chatProtection)
+            completion(elements)
+        }
         let item = UIBarButtonItem(
             image: DesignSystemImages.Glyphs.Size24.menuDotsHorizontal,
-            menu: UIMenu(children: [selectChats, chatProtection])
+            menu: UIMenu(children: [content])
         )
         item.accessibilityLabel = UserText.aiChatHistoryMenuAccessibilityLabel
         return item
@@ -507,8 +523,8 @@ final class AIChatHistoryViewController: UIViewController {
 
     private func enterSelectionMode(preselecting chatId: String? = nil) {
         guard !isEditingChats else { return }
-        // Search and multi-select are mutually exclusive: leave search first.
-        hideSearchBarIfNeeded()
+        // Multi-select isn't offered while searching (see `isSearchActive`), so there's no active
+        // filter to clear here — the pre-selection below resolves against the full list.
         isEditingChats = true
         viewModel.editModeEntered()
         // Configure the bars before the edit animation so the Done tint is set up front.
@@ -695,11 +711,7 @@ extension AIChatHistoryViewController: UITableViewDelegate {
         let isPinned = viewModel.isPinned(chatId: chatId)
 
         return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { [weak self] _ in
-            guard self != nil else { return nil }
-            let select = UIAction(title: UserText.aiChatHistoryRowMenuSelect,
-                                  image: DesignSystemImages.Glyphs.Size24.checkCircle) { [weak self] _ in
-                self?.enterSelectionMode(preselecting: chatId)
-            }
+            guard let self else { return nil }
             let pin = UIAction(title: isPinned ? UserText.aiChatHistoryRowMenuUnpin : UserText.aiChatHistoryRowMenuPin,
                                image: isPinned ? DesignSystemImages.Glyphs.Size24.unpin : DesignSystemImages.Glyphs.Size24.pin) { [weak self] _ in
                 self?.performPinToggle(chatId: chatId)
@@ -714,11 +726,19 @@ extension AIChatHistoryViewController: UITableViewDelegate {
                 self?.viewModel.deleteChat(chatId: chatId)
             }
             // Inline sections render separators between them: Select | Pin, Download | Delete.
-            return UIMenu(title: "", children: [
-                UIMenu(title: "", options: .displayInline, children: [select]),
-                UIMenu(title: "", options: .displayInline, children: [pin, download]),
-                UIMenu(title: "", options: .displayInline, children: [delete])
-            ])
+            // Select (multi-select) is omitted while searching — search and multi-select are
+            // mutually exclusive, so it's not offered rather than forcing a search-clear.
+            var sections: [UIMenuElement] = []
+            if !self.isSearchActive {
+                let select = UIAction(title: UserText.aiChatHistoryRowMenuSelect,
+                                      image: DesignSystemImages.Glyphs.Size24.checkCircle) { [weak self] _ in
+                    self?.enterSelectionMode(preselecting: chatId)
+                }
+                sections.append(UIMenu(title: "", options: .displayInline, children: [select]))
+            }
+            sections.append(UIMenu(title: "", options: .displayInline, children: [pin, download]))
+            sections.append(UIMenu(title: "", options: .displayInline, children: [delete]))
+            return UIMenu(title: "", children: sections)
         }
     }
 

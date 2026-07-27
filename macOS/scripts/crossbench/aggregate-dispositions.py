@@ -5,14 +5,8 @@
 # native_apps.macos_browser_health_nav_to_lcp_attempts (see attempts-schema.sql).
 #
 # Input TSV (with header), one row per site the run considered. Columns are
-# grouped by concern, matching the table:
-#   identity   browser, browser_version, site
-#   overall    outcome
-#   landing    preflight_verdict, final_status, status_chain, redirects, bytes,
-#              final_url, landed_offsite, blocked_marker
-#   attempts   attempted, observed, recorded, dropped_unfinalized,
-#              dropped_no_metric, dropped_http_error
-#   context    load_window_ms, runner_image
+# grouped by identity, outcome, WPR validation, repetition accounting, and
+# runner context.
 # Absent values are written by the shell as "-".
 #
 # Output TSV (no header). Column order matches the INSERT column list minus
@@ -28,15 +22,18 @@
 
 import argparse
 import calendar
+import csv
+import re
 import sys
 import time
+from typing import List, Optional
 
 EXPECTED_HEADER = [
     "browser", "browser_version", "site", "outcome",
-    "preflight_verdict", "final_status", "status_chain", "redirects", "bytes",
-    "final_url", "landed_offsite", "blocked_marker",
-    "attempted", "observed", "recorded", "dropped_unfinalized",
-    "dropped_no_metric", "dropped_http_error",
+    "validation_status", "validation_reason", "validation_http_status",
+    "validation_detail", "archive_sha256",
+    "requested_repetitions", "observed_repetitions", "recorded_samples",
+    "dropped_unfinalized", "dropped_no_metric",
     "load_window_ms", "runner_image",
 ]
 
@@ -44,11 +41,9 @@ EXPECTED_HEADER = [
 # so a typo in the shell can't quietly create a new LowCardinality value that
 # then has to be cleaned out of the table.
 VALID_OUTCOMES = {
-    "measured", "partial", "no_samples", "skipped_blocked", "infra_error",
+    "measured", "partial", "no_samples", "excluded", "infra_error",
 }
-VALID_VERDICTS = {
-    "not_run", "ok", "blocked_status", "blocked_marker", "preflight_error",
-}
+VALID_VALIDATION_STATUSES = {"ok", "error"}
 
 
 def to_epoch(value: str) -> str:
@@ -64,12 +59,30 @@ def to_epoch(value: str) -> str:
     return str(calendar.timegm(time.strptime(v, "%Y-%m-%d %H:%M:%S")))
 
 
-def as_int(value: str, default: int = -1) -> int:
-    """Numeric field, tolerating the shell's '-' placeholder."""
+UINT32_MAX = 2**32 - 1
+UINT64_MAX = 2**64 - 1
+SHA256_PATTERN = re.compile(r"^[0-9a-f]{64}$")
+
+
+def as_uint32(value: str, field: str, location: str) -> int:
+    """Parse a required ClickHouse UInt32 without silently repairing bad data."""
     try:
-        return int(value)
+        parsed = int(value)
     except ValueError:
-        return default
+        sys.exit(f"ERROR: {location}: {field} must be an integer, got {value!r}")
+    if not 0 <= parsed <= UINT32_MAX:
+        sys.exit(f"ERROR: {location}: {field} must be in 0..{UINT32_MAX}, got {value!r}")
+    return parsed
+
+
+def as_uint64(value: str, field: str, location: str) -> int:
+    try:
+        parsed = int(value)
+    except ValueError:
+        sys.exit(f"ERROR: {location}: {field} must be an integer, got {value!r}")
+    if not 0 <= parsed <= UINT64_MAX:
+        sys.exit(f"ERROR: {location}: {field} must be in 0..{UINT64_MAX}, got {value!r}")
+    return parsed
 
 
 def as_str(value: str) -> str:
@@ -77,13 +90,24 @@ def as_str(value: str) -> str:
     return "" if value == "-" else value
 
 
-def clean(value: str) -> str:
-    """Strip tab/newline so one field can never become two columns.
+def as_nullable_http_status(value: str, location: str) -> Optional[str]:
+    """HTTP status for ClickHouse Nullable(UInt16), or TSV NULL."""
+    if value in {"", "-"}:
+        return None
+    status = as_uint32(value, "validation_http_status", location)
+    if not 100 <= status <= 599:
+        sys.exit(f"ERROR: invalid HTTP status {value!r}")
+    return str(status)
 
-    final_url and blocked_marker come from network responses, so they are
-    attacker-influenced: a URL containing a tab would shift every later column.
-    """
-    return value.replace("\t", " ").replace("\r", " ").replace("\n", " ")
+
+def encode_tsv(value: Optional[str]) -> str:
+    """Encode ClickHouse TSV text; only None becomes the SQL NULL token."""
+    if value is None:
+        return r"\N"
+    return (value.replace("\\", r"\\")
+                 .replace("\t", r"\t")
+                 .replace("\n", r"\n")
+                 .replace("\r", r"\r"))
 
 
 def main() -> None:
@@ -99,64 +123,111 @@ def main() -> None:
     p.add_argument("--webview-channel", default="stable")
     args = p.parse_args()
 
+    run_id = str(as_uint64(args.run_id, "run_id", "arguments"))
     start_time = to_epoch(args.start_time)
     gh_run_started_at = to_epoch(args.gh_run_started_at)
 
-    rows = []
-    with open(args.input, encoding="utf-8") as f:
-        header = f.readline().rstrip("\n").split("\t")
+    rows: List[List[Optional[str]]] = []
+    with open(args.input, encoding="utf-8", newline="") as f:
+        # The producer emits plain TSV, not CSV-style quoted fields. Disable
+        # quote handling so diagnostics beginning with `"` remain unchanged.
+        reader = csv.reader(f, delimiter="\t", quoting=csv.QUOTE_NONE, strict=True)
+        header = next(reader, [])
         if header != EXPECTED_HEADER:
             sys.exit(f"ERROR: unexpected header {header!r} (want {EXPECTED_HEADER!r})")
-        for lineno, line in enumerate(f, start=2):
-            line = line.rstrip("\n")
-            if not line:
-                continue
-            fields = line.split("\t")
+        for lineno, fields in enumerate(reader, start=2):
+            location = f"{args.input}:{lineno}"
+            if not fields or all(not field for field in fields):
+                sys.exit(f"ERROR: {location}: empty disposition row")
             if len(fields) != len(EXPECTED_HEADER):
-                sys.exit(f"ERROR: {args.input}:{lineno}: expected "
+                sys.exit(f"ERROR: {location}: expected "
                          f"{len(EXPECTED_HEADER)} fields, got {len(fields)}")
             (_browser, version, site, outcome,
-             verdict, final_status, status_chain, redirects, pf_bytes,
-             final_url, offsite, marker,
-             attempted, observed, recorded, dropped_unfinalized,
-             dropped_no_metric, dropped_http_error,
+             validation_status, validation_reason, validation_http_status,
+             validation_detail, archive_sha256,
+             requested, observed, recorded, dropped_unfinalized,
+             dropped_no_metric,
              load_window_ms, runner_image) = fields
+            if not site or not version:
+                sys.exit(f"ERROR: {location}: site and browser_version are required")
             if outcome not in VALID_OUTCOMES:
-                sys.exit(f"ERROR: {args.input}:{lineno}: unknown outcome {outcome!r} "
+                sys.exit(f"ERROR: {location}: unknown outcome {outcome!r} "
                          f"(known: {sorted(VALID_OUTCOMES)})")
-            if verdict not in VALID_VERDICTS:
-                sys.exit(f"ERROR: {args.input}:{lineno}: unknown preflight_verdict "
-                         f"{verdict!r} (known: {sorted(VALID_VERDICTS)})")
+            if validation_status not in VALID_VALIDATION_STATUSES:
+                sys.exit(f"ERROR: {location}: unknown validation_status "
+                         f"{validation_status!r} "
+                         f"(known: {sorted(VALID_VALIDATION_STATUSES)})")
+            reason = as_str(validation_reason)
+            detail = as_str(validation_detail)
+            sha = None if archive_sha256 in {"", "-"} else archive_sha256
+            if sha is not None and not SHA256_PATTERN.fullmatch(sha):
+                sys.exit(f"ERROR: {location}: archive_sha256 must be 64 lowercase hex characters")
+            http_status = as_nullable_http_status(validation_http_status, location)
+            counters = {
+                name: as_uint32(value, name, location)
+                for name, value in (
+                    ("requested_repetitions", requested),
+                    ("observed_repetitions", observed),
+                    ("recorded_samples", recorded),
+                    ("dropped_unfinalized", dropped_unfinalized),
+                    ("dropped_no_metric", dropped_no_metric),
+                    ("load_window_ms", load_window_ms),
+                )
+            }
+            requested_n = counters["requested_repetitions"]
+            observed_n = counters["observed_repetitions"]
+            recorded_n = counters["recorded_samples"]
+            dropped_n = counters["dropped_unfinalized"] + counters["dropped_no_metric"]
+            if requested_n == 0 or counters["load_window_ms"] == 0:
+                sys.exit(f"ERROR: {location}: requested_repetitions and load_window_ms must be positive")
+            if observed_n > requested_n or recorded_n + dropped_n != observed_n:
+                sys.exit(f"ERROR: {location}: repetition counters are inconsistent")
+            if validation_status == "ok" and reason:
+                sys.exit(f"ERROR: {location}: validation_status ok "
+                         "must not have validation_reason")
+            if validation_status == "error" and not reason:
+                sys.exit(f"ERROR: {location}: validation_status error "
+                         "requires validation_reason")
+            if validation_status == "ok" and (sha is None or http_status is not None or outcome == "excluded"):
+                sys.exit(f"ERROR: {location}: validated sites require a hash, no HTTP error, and a non-excluded outcome")
+            if validation_status == "error" and outcome != "excluded":
+                sys.exit(f"ERROR: {location}: validation errors must have outcome excluded")
+            if outcome == "excluded" and (observed_n or recorded_n or dropped_n):
+                sys.exit(f"ERROR: {location}: excluded sites cannot have measurement counters")
+            if outcome == "measured" and not (recorded_n == observed_n == requested_n):
+                sys.exit(f"ERROR: {location}: measured requires every requested repetition to be recorded")
+            if outcome == "partial" and not (0 < recorded_n < requested_n):
+                sys.exit(f"ERROR: {location}: partial requires some but not all requested samples")
+            if outcome == "no_samples" and recorded_n != 0:
+                sys.exit(f"ERROR: {location}: no_samples requires recorded_samples=0")
             rows.append([
-                args.run_id,
+                run_id,
                 start_time,
                 site,
                 args.webview_type,
                 args.webview_channel,
                 version,
                 outcome,
-                verdict,
-                str(as_int(final_status)),
-                clean(as_str(status_chain)),
-                str(as_int(redirects)),
-                clean(as_str(final_url)),
-                str(as_int(offsite, 0)),
-                str(as_int(pf_bytes)),
-                clean(as_str(marker)),
-                str(as_int(attempted, 0)),
-                str(as_int(observed, 0)),
-                str(as_int(recorded, 0)),
-                str(as_int(dropped_unfinalized, 0)),
-                str(as_int(dropped_no_metric, 0)),
-                str(as_int(dropped_http_error, 0)),
-                str(as_int(load_window_ms, 0)),
-                clean(as_str(runner_image)),
+                validation_status,
+                reason,
+                http_status,
+                detail,
+                sha,
+                str(requested_n),
+                str(observed_n),
+                str(recorded_n),
+                str(counters["dropped_unfinalized"]),
+                str(counters["dropped_no_metric"]),
+                str(counters["load_window_ms"]),
+                as_str(runner_image),
                 gh_run_started_at,
             ])
+    if not rows:
+        sys.exit(f"ERROR: {args.input}: no disposition rows")
 
     with open(args.output, "w", encoding="utf-8") as out:
         for row in rows:
-            out.write("\t".join(row) + "\n")
+            out.write("\t".join(encode_tsv(value) for value in row) + "\n")
 
     # Counted by outcome, so the step log states the shape of the run without
     # anyone having to open the artifact. Index 6 is `outcome` in the emitted row

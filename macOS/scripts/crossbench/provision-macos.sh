@@ -6,9 +6,9 @@
 # Chrome replays each site from a WPR archive through a traffic shaper and
 # crossbench extracts LCP from the Perfetto trace. This script installs the
 # toolchain, builds the `wpr` binary, and installs the pinned traffic shaper.
-# Archives are fetched per site by the browser harness. Safari also uses the
-# WPR checkout's ECDSA certificate and key directly with acceptInsecureCerts;
-# provisioning never adds them to a keychain.
+# CI supplies archives staged by the shared validator. Local runs may download
+# archives directly. Safari also uses the WPR checkout's ECDSA certificate and
+# key with acceptInsecureCerts; provisioning never adds them to a keychain.
 #
 # Idempotent: safe to run on every CI job; installs only what's missing.
 #
@@ -24,6 +24,8 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 EXTRAS_DIR="$SCRIPT_DIR/crossbench-extras"
+# shellcheck source=macOS/scripts/crossbench/wpr-config.sh
+. "$SCRIPT_DIR/wpr-config.sh"
 
 # Canonical crossbench checkout. The fork-only files the LCP run needs
 # (navToLCP probe config + LCP SQL module) are copied in as untracked files.
@@ -36,13 +38,8 @@ PYTHON_VERSION="${PYTHON_VERSION:-3.11}"   # matches Windows (poetry env use 3.1
 # rev so the extras and patch always line up with code that exists.
 CROSSBENCH_REV="${CROSSBENCH_REV:-be14dbfb884747ea577e2e65b6a4a77d7ecd807d}"
 
-# WPR (Web Page Replay) source, pinned to the revision crossbench's own DEPS
-# file names, so the binary we build is the one crossbench expects to drive.
-# Bump this and CROSSBENCH_REV together, from the same DEPS file.
-WEBPAGEREPLAY_GIT="https://chromium.googlesource.com/webpagereplay"
-WEBPAGEREPLAY_REV="b2b856131e36c99e9de9c419fe8ca02f857082ba"   # DEPS: webpagereplay_revision
-# Where the wpr binary is built to. The Chrome harness passes this to crossbench
-# via --bin-override; the Safari harness starts it directly.
+# Where the wpr binary is built to. test-chrome.sh passes this to crossbench via
+# --bin-override; test-safari.sh starts it directly.
 WPR_BIN="${WPR_BIN:-$HOME/Developer/mac-perf-runner/bin/wpr}"
 
 # The tsproxy revision in crossbench's DEPS is not Python-3-compatible. Use
@@ -180,20 +177,11 @@ log "Go toolchain (builds the wpr binary)"
 brew list go >/dev/null 2>&1 || brew install go
 echo "go: $(go version)"
 
-log "WebPageReplay source (pinned by crossbench DEPS) + wpr build"
+log "WebPageReplay source (pinned by crossbench DEPS) + tool build"
 WPR_SRC="$CROSSBENCH_DIR/third_party/webpagereplay"
-if [ -d "$WPR_SRC/.git" ] && [ "$(git -C "$WPR_SRC" rev-parse HEAD 2>/dev/null)" = "$WEBPAGEREPLAY_REV" ]; then
-  echo "webpagereplay: already at $WEBPAGEREPLAY_REV"
-else
-  rm -rf "$WPR_SRC"
-  git clone --quiet "$WEBPAGEREPLAY_GIT" "$WPR_SRC"
-  git -C "$WPR_SRC" -c advice.detachedHead=false checkout --quiet --detach "$WEBPAGEREPLAY_REV"
-  echo "webpagereplay: checked out $WEBPAGEREPLAY_REV"
-fi
-mkdir -p "$(dirname "$WPR_BIN")"
-# The same flags crossbench's build.py would use; incremental, sub-second once warm.
-go build -C "$WPR_SRC/src" -trimpath -buildvcs=false -o "$WPR_BIN" wpr.go
-echo "wpr: $WPR_BIN"
+WPR_SRC="$WPR_SRC" \
+WPR_BIN="$WPR_BIN" \
+  "$SCRIPT_DIR/provision-wpr-tools.sh"
 
 # 9. tsproxy — fetch one immutable Python-3-compatible source file rather than
 #    cloning Catapult. Verify both new downloads and cached copies: persistent

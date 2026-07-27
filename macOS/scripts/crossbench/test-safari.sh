@@ -30,6 +30,10 @@
 #
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=macOS/scripts/crossbench/wpr-config.sh
+. "$SCRIPT_DIR/wpr-config.sh"
+
 MEASURED_REPS="${MEASURED_REPS:-10}"
 SITES_OVERRIDE=""
 RESULTS_FILE=""
@@ -37,8 +41,9 @@ ASSUME_YES="${ASSUME_YES:-}"
 
 CROSSBENCH_DIR="${CROSSBENCH_DIR:-$HOME/Developer/crossbench-upstream}"
 WPR_DIR="${WPR_DIR:-$HOME/Developer/mac-perf-runner/wpr-archives}"
+WPR_ARCHIVES_PREPARED="${WPR_ARCHIVES_PREPARED:-0}"
+WPR_MANIFEST="$WPR_DIR/manifest.tsv"
 WPR_BIN="${WPR_BIN:-$HOME/Developer/mac-perf-runner/bin/wpr}"
-WPR_BASE_URL="${WPR_BASE_URL:-https://staticcdn.duckduckgo.com/d5c04536-5379-4709-8d19-d13fdd456ff6/performance-tests}"
 WPR_HTTP_PORT="${WPR_HTTP_PORT:-18080}"
 WPR_HTTPS_PORT="${WPR_HTTPS_PORT:-18081}"
 WPR_CERT_FILE="${WPR_CERT_FILE:-$CROSSBENCH_DIR/third_party/webpagereplay/ecdsa_cert.pem}"
@@ -47,12 +52,11 @@ WPR_KEY_FILE="${WPR_KEY_FILE:-$CROSSBENCH_DIR/third_party/webpagereplay/ecdsa_ke
 TSPROXY_PY="${TSPROXY_PY:-$HOME/Developer/mac-perf-runner/bin/tsproxy.py}"
 TSPROXY_PORT="${TSPROXY_PORT:-9997}"
 SHAPE="${SHAPE:-1}"
-SHAPE_RTT_MS="${SHAPE_RTT_MS:-28}"
-SHAPE_IN_KBPS="${SHAPE_IN_KBPS:-50000}"
-SHAPE_OUT_KBPS="${SHAPE_OUT_KBPS:-10000}"
-SHAPE_WINDOW="${SHAPE_WINDOW:-10}"
+SHAPE_RTT_MS="${SHAPE_RTT_MS:-$WPR_US_BROADBAND_RTT_MS}"
+SHAPE_IN_KBPS="${SHAPE_IN_KBPS:-$WPR_US_BROADBAND_IN_KBPS}"
+SHAPE_OUT_KBPS="${SHAPE_OUT_KBPS:-$WPR_US_BROADBAND_OUT_KBPS}"
+SHAPE_WINDOW="${SHAPE_WINDOW:-$WPR_US_BROADBAND_WINDOW}"
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 HTTPPROXY_PY="${HTTPPROXY_PY:-$SCRIPT_DIR/httpproxy.py}"
 HTTPPROXY_PORT="${HTTPPROXY_PORT:-9998}"
 SAFARI_AUTOMATION_PY="${SAFARI_AUTOMATION_PY:-$SCRIPT_DIR/safari-automation.py}"
@@ -91,16 +95,31 @@ fi
 log() { printf '\n=== %s ===\n' "$1"; }
 normalize() { printf '%s' "$1" | tr '+/' '__'; }
 
-SITES=(
-  youtube.com wikipedia.org reddit.com amazon.com yelp.com
-  weather.com yahoo.com apple.com fandom.com tripadvisor.com
-  tiktok.com indeed.com spotify.com nih.gov espn.com
-  walmart.com nytimes.com clevelandclinic.org ny.gov quora.com
-  zillow.com mayoclinic.org
-)
+SITES=()
+while IFS= read -r site; do
+  [ -z "$site" ] && continue
+  [[ "$site" == \#* ]] && continue
+  SITES+=("$site")
+done < "$SCRIPT_DIR/wpr-sites.txt"
 if [ -n "$SITES_OVERRIDE" ]; then
   IFS=',' read -r -a SITES <<< "$SITES_OVERRIDE"
 fi
+NORMALIZED_SITES=()
+for site in "${SITES[@]}"; do
+  site="$(normalize_wpr_site "$site")"
+  if ! [[ "$site" =~ ^[a-z0-9.-]+$ ]]; then
+    echo "ERROR: invalid site hostname: $site" >&2
+    exit 2
+  fi
+  for previous in "${NORMALIZED_SITES[@]}"; do
+    if [ "$site" = "$previous" ]; then
+      echo "ERROR: duplicate site hostname: $site" >&2
+      exit 2
+    fi
+  done
+  NORMALIZED_SITES+=("$site")
+done
+SITES=("${NORMALIZED_SITES[@]}")
 
 if [ -z "$RESULTS_FILE" ]; then
   RESULTS_DIR="${RESULTS_DIR:-$PWD/crossbench-results}"
@@ -111,7 +130,6 @@ fi
 SAFARI_VERSION="$(defaults read "$SAFARI_APP/Contents/Info.plist" CFBundleShortVersionString 2>/dev/null || echo unknown)"
 BROWSER_NAME=safari
 BROWSER_VERSION="$SAFARI_VERSION"
-PF_VERDICT=not_run
 
 WPR_PID=""
 TSPROXY_PID=""
@@ -310,12 +328,82 @@ fetch_archive() {
   normalized="$(normalize "$story")"
   archive="$WPR_DIR/$normalized.wprgo"
   mkdir -p "$WPR_DIR"
+  if [ "$WPR_ARCHIVES_PREPARED" = "1" ]; then
+    [ ! -f "$archive" ] || printf '%s' "$archive"
+    return
+  fi
   if curl -fLSs -o "$archive.tmp" "$WPR_BASE_URL/$normalized.wprgo" 2>/dev/null; then
     mv "$archive.tmp" "$archive"
     printf '%s' "$archive"
   else
     rm -f "$archive.tmp"
     [ ! -f "$archive" ] || printf '%s' "$archive"
+  fi
+}
+
+set_validation_result() {
+  local site="$1" archive_available="$2"
+  local verdict reason status_chain final_url detail header
+
+  VALIDATION_STATUS=error
+  VALIDATION_REASON=archive_missing
+  VALIDATION_HTTP_STATUS=-
+  VALIDATION_DETAIL=-
+  ARCHIVE_SHA256=-
+
+  if [ "$WPR_ARCHIVES_PREPARED" != "1" ]; then
+    if [ -n "$archive_available" ]; then
+      VALIDATION_STATUS=ok
+      VALIDATION_REASON=-
+      ARCHIVE_SHA256="$(shasum -a 256 "$archive_available" | awk '{print $1}')"
+    fi
+    return
+  fi
+  if [ ! -f "$WPR_MANIFEST" ]; then
+    VALIDATION_REASON=validation_manifest_missing
+    VALIDATION_DETAIL="validated archive handoff did not contain manifest.tsv"
+    return
+  fi
+
+  header="$(head -1 "$WPR_MANIFEST")"
+  if [ "$header" != $'site\tarchive\tsha256\tarchive_bytes\tverdict\treason_code\thttp_status\tdetail\tstatus_chain\tfinal_url\tcontent_type\tblocked_marker' ]; then
+    VALIDATION_REASON=validation_manifest_schema_mismatch
+    VALIDATION_DETAIL="validated archive manifest has an unsupported schema"
+    return
+  fi
+  verdict="$(awk -F'\t' -v site="$site" 'NR > 1 && $1 == site { print $5; exit }' "$WPR_MANIFEST")"
+  if [ -z "$verdict" ]; then
+    VALIDATION_REASON=validation_result_missing
+    VALIDATION_DETAIL="site is absent from the WPR validation manifest"
+    return
+  fi
+
+  ARCHIVE_SHA256="$(awk -F'\t' -v site="$site" 'NR > 1 && $1 == site { print $3; exit }' "$WPR_MANIFEST")"
+  ARCHIVE_SHA256="${ARCHIVE_SHA256:--}"
+  reason="$(awk -F'\t' -v site="$site" 'NR > 1 && $1 == site { print $6; exit }' "$WPR_MANIFEST")"
+  VALIDATION_HTTP_STATUS="$(awk -F'\t' -v site="$site" 'NR > 1 && $1 == site { print $7; exit }' "$WPR_MANIFEST")"
+  VALIDATION_HTTP_STATUS="${VALIDATION_HTTP_STATUS:--}"
+  detail="$(awk -F'\t' -v site="$site" 'NR > 1 && $1 == site { print $8; exit }' "$WPR_MANIFEST")"
+  status_chain="$(awk -F'\t' -v site="$site" 'NR > 1 && $1 == site { print $9; exit }' "$WPR_MANIFEST")"
+  final_url="$(awk -F'\t' -v site="$site" 'NR > 1 && $1 == site { print $10; exit }' "$WPR_MANIFEST")"
+  if [ "$verdict" = "ok" ] && [ -n "$archive_available" ]; then
+    VALIDATION_STATUS=ok
+    VALIDATION_REASON=-
+    return
+  fi
+  if [ "$verdict" = "ok" ]; then
+    VALIDATION_REASON=validated_archive_missing
+    VALIDATION_DETAIL="validator marked the site eligible but its archive was not staged"
+    return
+  fi
+
+  VALIDATION_REASON="${reason:-unknown_validation_failure}"
+  VALIDATION_DETAIL="${detail:--}"
+  if [ -n "$status_chain" ]; then
+    VALIDATION_DETAIL="${VALIDATION_DETAIL}; status_chain=$status_chain"
+  fi
+  if [ -n "$final_url" ]; then
+    VALIDATION_DETAIL="${VALIDATION_DETAIL}; final_url=$final_url"
   fi
 }
 
@@ -408,45 +496,55 @@ proxy_line_count() {
   wc -l < "$HTTPPROXY_LOG" 2>/dev/null || echo 0
 }
 
-reset_replay_disposition_fields() {
-  PF_FINAL_STATUS=""
-  PF_CHAIN=""
-  PF_REDIRECTS=""
-  PF_BYTES=""
-  PF_FINAL_URL=""
-  PF_MARKER=""
-}
-
 measure_site() {
   local site="$1" archive rep before output lcp detail landed_url offsite
+  local automation_status site_harness_failed=0
   local unfinalized=0 no_metric=0 observed=0 recorded=0
   local -a values=()
   reset_measurement_counters
-  reset_replay_disposition_fields
 
   archive="$(fetch_archive "$SUITE+$site")"
+  set_validation_result "$site" "$archive"
+  if [ "$VALIDATION_STATUS" != "ok" ]; then
+    archive=""
+  fi
   if [ -z "$archive" ]; then
-    echo "  $site: no WPR archive available; SKIPPING (replay-only)." >&2
-    echo "::warning title=Site skipped::$site: no WPR archive at $WPR_BASE_URL"
-    record_disposition "$site" infra_error "$PF_VERDICT" 0
+    if [ "$WPR_ARCHIVES_PREPARED" = "1" ]; then
+      echo "  $site: excluded by WPR archive validation; SKIPPING." >&2
+      echo "::warning title=Site excluded::$site did not pass WPR archive validation"
+    else
+      echo "  $site: no WPR archive available; SKIPPING (replay-only)." >&2
+      echo "::warning title=Site skipped::$site: no WPR archive at $WPR_BASE_URL"
+    fi
+    record_disposition "$site" excluded
     return
   fi
+  ELIGIBLE_SITES=$((ELIGIBLE_SITES + 1))
+
   if ! start_wpr "$archive"; then
     echo "::warning title=Harness failure::$site: WPR could not start"
-    record_disposition "$site" infra_error "$PF_VERDICT" "$MEASURED_REPS"
+    HARNESS_FAILURES=$((HARNESS_FAILURES + 1))
+    record_disposition "$site" infra_error
     return
   fi
 
   for ((rep = 1; rep <= MEASURED_REPS; rep++)); do
     before="$(proxy_line_count)"
+    set +e
     output="$("$PYTHON_BIN" "$SAFARI_AUTOMATION_PY" \
       "$SAFARIDRIVER_PORT" measure "https://$site" \
-      "$LCP_SETTLE_MS" "$LOAD_WINDOW_SECONDS" || true)"
+      "$LCP_SETTLE_MS" "$LOAD_WINDOW_SECONDS" 2>&1)"
+    automation_status=$?
+    set -e
+    observed=$((observed + 1))
+    if [ "$automation_status" -ne 0 ]; then
+      echo "::warning title=Harness failure::$site: Safari automation exited $automation_status on repetition $rep"
+      site_harness_failed=1
+    fi
     lcp="$(printf '%s\n' "$output" | sed -n 's/^lcp_ms=//p' | tail -1)"
     detail="$(printf '%s\n' "$output" | sed -n 's/^detail=//p' | tail -1)"
     landed_url="$(printf '%s\n' "$output" | sed -n 's/^landed_url=//p' | tail -1)"
     offsite="$(printf '%s\n' "$output" | sed -n 's/^landed_offsite=//p' | tail -1)"
-    [ -z "$landed_url" ] || PF_FINAL_URL="$landed_url"
 
     if [ "$(proxy_line_count)" -le "$before" ]; then
       echo "    attempt rep=$rep: no Safari proxy traffic -> SKIPPED" >&2
@@ -458,7 +556,6 @@ measure_site() {
       no_metric=$((no_metric + 1))
       continue
     fi
-    observed=$((observed + 1))
     if [ "$offsite" = "1" ]; then
       echo "    attempt rep=$rep: landed off-site at $landed_url -> SKIPPED" >&2
       no_metric=$((no_metric + 1))
@@ -477,34 +574,40 @@ measure_site() {
     echo "    attempt rep=$rep: lcp_ms=$lcp -> recorded; detail=$detail"
   done
 
-  if ! kill -0 "$WPR_PID" 2>/dev/null; then
-    echo "  ERROR: WPR exited during $site replay. Log:" >&2
-    cat "$WPR_LOG" >&2
-    stop_wpr
-    LAST_OBSERVED="$observed"
-    LAST_RECORDED="$recorded"
-    LAST_UNFINALIZED="$unfinalized"
-    LAST_NO_METRIC="$no_metric"
-    record_disposition "$site" infra_error "$PF_VERDICT" "$MEASURED_REPS"
-    return
-  fi
-  stop_wpr
-
   LAST_OBSERVED="$observed"
   LAST_RECORDED="$recorded"
   LAST_UNFINALIZED="$unfinalized"
   LAST_NO_METRIC="$no_metric"
+  TOTAL_RECORDED=$((TOTAL_RECORDED + recorded))
+
+  if ! kill -0 "$WPR_PID" 2>/dev/null; then
+    echo "  ERROR: WPR exited during $site replay. Log:" >&2
+    cat "$WPR_LOG" >&2
+    stop_wpr
+    site_harness_failed=1
+  else
+    stop_wpr
+  fi
+
   echo "  $site: attempts=$MEASURED_REPS recorded=$recorded unfinalized=$unfinalized no-metric=$no_metric"
   if [ "$recorded" -gt 0 ]; then
     printf '  %s: lcp_ms=[%s] ' "$site" "$(IFS=,; echo "${values[*]}")"
     printf '%s\n' "${values[@]}" |
       awk '{ sum += $1; count++ } END { printf "mean=%.1f n=%d\n", sum/count, count }'
   fi
-  record_disposition "$site" "$(classify_outcome)" "$PF_VERDICT" "$MEASURED_REPS"
+  if [ "$site_harness_failed" -ne 0 ]; then
+    HARNESS_FAILURES=$((HARNESS_FAILURES + 1))
+    record_disposition "$site" infra_error
+  else
+    record_disposition "$site" "$(classify_outcome)"
+  fi
 }
 
 run_safari() {
   local shape_description=unshaped site
+  HARNESS_FAILURES=0
+  ELIGIBLE_SITES=0
+  TOTAL_RECORDED=0
   if [ "$SHAPE" = "1" ]; then
     shape_description="${SHAPE_RTT_MS}ms RTT, ${SHAPE_IN_KBPS}/${SHAPE_OUT_KBPS} Kbps, window ${SHAPE_WINDOW}"
   fi
@@ -522,15 +625,25 @@ run_safari() {
     log "site: $site"
     measure_site "$site"
   done
+  if [ "$HARNESS_FAILURES" -gt 0 ]; then
+    echo "ERROR: $HARNESS_FAILURES eligible site(s) had browser harness failures." >&2
+    RUN_STATUS=1
+  fi
+  if [ "$ELIGIBLE_SITES" -gt 0 ] && [ "$TOTAL_RECORDED" -eq 0 ]; then
+    echo "ERROR: eligible sites produced no usable LCP samples." >&2
+    RUN_STATUS=1
+  fi
 }
 
 check_prerequisites
 confirm
 printf 'browser\tbrowser_version\tsite\trep\tlcp_ms\n' > "$RESULTS_FILE"
 init_dispositions_file
+RUN_STATUS=0
 run_safari
 report_dispositions
 log "Done"
 echo "results:      $RESULTS_FILE"
 echo "rows:         $(($(wc -l < "$RESULTS_FILE") - 1))"
 echo "dispositions: $DISPOSITIONS_FILE"
+exit "$RUN_STATUS"

@@ -1359,8 +1359,7 @@ extension MainViewController {
     @objc func toggleDuckAISidebar(_ sender: Any?) {
         guard featureFlagger.isFeatureOn(.aiChatChromeSidebar),
               aiChatMenuConfig.shouldDisplayAnyAIChatFeature else { return }
-        // Menu-button layout: opening the sidebar via ⌘⌥L also attaches the current page, matching the
-        // pill's "Ask About Page" action. Closing (when already open) stays a plain toggle.
+        // Menu-button layout: ⌘⌥L opening the sidebar also attaches the page (like Ask About Page); closing is unchanged.
         if featureFlagger.isFeatureOn(.aiChatChromeMenuButton) {
             if aiChatCoordinator.isSidebarOpenForCurrentTab() {
                 aiChatCoordinator.toggleSidebar()

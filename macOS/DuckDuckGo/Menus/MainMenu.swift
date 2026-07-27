@@ -887,8 +887,7 @@ final class MainMenu: NSMenu {
     private func updateDuckAIChromeButtonMenuItems() {
         let shouldShowDuckAIChromeItems = featureFlagger.isFeatureOn(.aiChatChromeSidebar)
             && aiChatMenuConfig.shouldDisplayAnyAIChatFeature
-        // Menu-button layout merges the split control into one pill, so the separate sidebar-button
-        // visibility item is meaningless and the Duck.ai item is reworded to "Ask Duck.ai".
+        // Menu-button layout: no separate sidebar button, and the Duck.ai item is reworded to "Ask Duck.ai".
         let isMenuButtonLayout = shouldShowDuckAIChromeItems && featureFlagger.isFeatureOn(.aiChatChromeMenuButton)
         toggleDuckAISidebarMenuItem.isHidden = !shouldShowDuckAIChromeItems
         toggleDuckAISidebarSeparatorMenuItem.isHidden = !shouldShowDuckAIChromeItems

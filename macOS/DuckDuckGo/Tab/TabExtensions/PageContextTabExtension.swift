@@ -509,10 +509,8 @@ final class PageContextTabExtension {
         Task { @MainActor [weak self] in self?.flushPendingSelectionContexts() }
     }
 
-    /// Forces collection of the current page's context and delivers it to the sidebar, regardless of the
-    /// user's auto-send-page-context preference. Mirrors the web app's "attach page content" request
-    /// (`session.pageContextRequestedPublisher`), so an explicit native "Ask About Page" action attaches
-    /// the page the same way.
+    /// Forces page-context collection into the sidebar regardless of the auto-send preference — the
+    /// native equivalent of the web app's "attach page content" request. Used by "Ask About Page".
     @MainActor
     func requestPageContextAttachment() {
         shouldForceContextCollection = true

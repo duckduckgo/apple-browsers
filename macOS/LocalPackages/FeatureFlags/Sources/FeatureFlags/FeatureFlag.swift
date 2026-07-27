@@ -383,9 +383,7 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213610208091978?focus=true
     case aiChatChromeSidebar
 
-    /// Unify the tab-bar Duck.ai control into a single "Ask Duck.ai" button that opens a menu
-    /// (New Chat / Ask About Page). Layered on top of `aiChatChromeSidebar`; when off, the existing
-    /// two-part split button is shown unchanged.
+    /// https://app.asana.com/1/137249556945/project/1148564399326804/task/1215556915315562?focus=true
     case aiChatChromeMenuButton
 
     /// Enable Look Up (three-finger click) while keeping link preview disabled

@@ -199,8 +199,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         featureFlagger.isFeatureOn(.aiChatChromeSidebar)
     }
 
-    /// When on, the tab-bar Duck.ai control renders as a single "Ask Duck.ai" pill that opens a menu
-    /// (New Chat / Ask About Page) instead of the two-part split button. Layered on the sidebar flag.
+    /// Single "Ask Duck.ai" menu pill instead of the two-part split button. Layered on the sidebar flag.
     var isMenuButtonLayout: Bool {
         isChromeSidebarFeatureEnabled && featureFlagger.isFeatureOn(.aiChatChromeMenuButton)
     }
@@ -842,10 +841,8 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
             }
     }
 
-    /// Re-applies the Duck.ai control layout whenever a feature-flag override changes, so toggling
-    /// `aiChatChromeMenuButton` in Debug → Feature Flag Overrides switches between the pill and the
-    /// split button live, without relaunching. The sidebar-flag subscription above only fires when
-    /// that specific flag changes, so the menu-button flag needs its own re-apply hook.
+    /// Re-applies the layout on any feature-flag change so toggling `aiChatChromeMenuButton` switches
+    /// between the pill and the split button live.
     private func subscribeToDuckAIChromeLayoutChanges() {
         duckAIChromeLayoutCancellable = featureFlagger.updatesPublisher
             .receive(on: DispatchQueue.main)
@@ -1018,8 +1015,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         menu.popUp(positioning: nil, at: NSPoint(x: 0, y: sender.bounds.height + 4), in: sender)
     }
 
-    /// The two-item dropdown for the "Ask Duck.ai" pill: New Chat and Ask About Page (with the
-    /// current page favicon). Built fresh per press so the favicon reflects the selected tab.
+    /// The pill's two-item dropdown (New Chat / Ask About Page), rebuilt per press so the favicon is current.
     private func makeDuckAIMenuButtonMenu() -> NSMenu {
         let menu = NSMenu()
 
@@ -1036,10 +1032,8 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         return menu
     }
 
-    /// 16×16 favicon of the current page for the "Ask About Page" item. On non-web pages (new-tab
-    /// page, settings, etc.) there's no page to attach, so we show the Duck.ai icon (matching the
-    /// pill button) rather than the page's own icon (e.g. the DuckDuckGo logo on the new-tab page),
-    /// which would otherwise imply that specific page will be attached.
+    /// Page favicon for the "Ask About Page" item; on non-web pages (nothing to attach) the Duck.ai
+    /// icon instead of the page's own (e.g. the DuckDuckGo logo on the new-tab page).
     private func askAboutPageMenuFavicon() -> NSImage {
         let isWebPage = tabCollectionViewModel.selectedTabViewModel?.tab.content.urlForWebView?.isHttpOrHttps == true
         let favicon: NSImage = isWebPage
@@ -1064,9 +1058,8 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         openDuckAISidebarWithPageAttachment()
     }
 
-    /// Opens the Duck.ai sidebar and force-attaches the current page's content regardless of the
-    /// auto-send-page-context preference. Shared by the pill's "Ask About Page" item and the ⌘⌥L
-    /// shortcut when the menu-button layout is active.
+    /// Opens the sidebar and force-attaches the current page regardless of the auto-send preference.
+    /// Shared by the pill's "Ask About Page" item and the ⌘⌥L shortcut in menu-button layout.
     func openDuckAISidebarWithPageAttachment() {
         guard let tab = tabCollectionViewModel.selectedTabViewModel?.tab else { return }
         let tabID = tab.uuid

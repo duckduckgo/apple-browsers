@@ -18,6 +18,7 @@
 //
 
 import Foundation
+import FoundationExtensions
 import os.log
 import BrowserServicesKit
 import Core

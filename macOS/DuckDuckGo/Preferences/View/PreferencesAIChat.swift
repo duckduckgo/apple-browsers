@@ -27,7 +27,6 @@ extension Preferences {
 
     struct AIChatView: View {
         @ObservedObject var model: AIChatPreferences
-        @State private var isShowingDisableAIChatDialog = false
 
         var body: some View {
             PreferencePane {
@@ -48,7 +47,7 @@ extension Preferences {
                     HStack {
                         VStack(alignment: .leading) {
                             TextAndImageMenuItemHeader(UserText.aiChatTitle,
-                                                       image: Image(nsImage: DesignSystemImages.Color.Size16.aiChat),
+                                                       image: Image(nsImage: DesignSystemImages.Color.Size16.duckAI),
                                                        bottomPadding: 2)
                             TextMenuItemCaption(UserText.aiChatDescription)
 
@@ -70,75 +69,59 @@ extension Preferences {
                             }
                         }
 
-                        if model.shouldShowNativeAIControls {
-                            // Redesign: Duck.ai is an On/Off dropdown grouped with the pickers below.
-                            Spacer()
-                            Picker("", selection: model.duckAIEnabledBinding) {
-                                Text(UserText.aiChatEnabledOn).tag(true)
-                                Text(UserText.aiChatEnabledOff).tag(false)
-                            }
-                            .pickerStyle(.menu)
-                            .fixedSize()
-                            .accessibilityIdentifier("Preferences.AIChat.aiFeaturesToggle")
-                        } else {
-                            Button(aiFeaturesButtonTitle) {
-                                if model.isAIFeaturesEnabled {
-                                    isShowingDisableAIChatDialog = true
-                                } else {
-                                    model.isAIFeaturesEnabled = true
-                                    PixelKit.fire(AIChatPixel.aiChatSettingsGlobalToggleTurnedOn,
-                                                  frequency: .dailyAndCount,
-                                                  includeAppVersionParameter: true)
-                                }
-                            }
-                            .accessibilityIdentifier("Preferences.AIChat.aiFeaturesToggle")
+                        // Redesign: Duck.ai is an On/Off dropdown grouped with the pickers below.
+                        Spacer()
+                        Picker("", selection: model.duckAIEnabledBinding) {
+                            Text(UserText.aiChatEnabledOn).tag(true)
+                            Text(UserText.aiChatEnabledOff).tag(false)
                         }
+                        .pickerStyle(.menu)
+                        .fixedSize()
+                        .accessibilityIdentifier("Preferences.AIChat.aiFeaturesToggle")
                     }
                 }
 
                 // Native Search Assist / Hide AI Images controls, grouped with Duck.ai at the top.
-                if model.shouldShowNativeAIControls {
-                    PreferencePaneSection {
-                        HStack {
-                            VStack(alignment: .leading) {
-                                TextAndImageMenuItemHeader(UserText.searchAssistSettings,
-                                                           image: Image(nsImage: DesignSystemImages.Color.Size16.assist),
-                                                           bottomPadding: 2)
-                                TextMenuItemCaption(UserText.searchAssistSettingsDescription)
-                            }
-                            Spacer()
-                            Picker("", selection: model.searchAssistFrequencyBinding) {
-                                ForEach(SearchAssistFrequency.allCases, id: \.self) { frequency in
-                                    Text(frequency.displayName).tag(frequency)
-                                }
-                            }
-                            .pickerStyle(.menu)
-                            .fixedSize()
-                            .accessibilityIdentifier("Preferences.AIChat.searchAssistPicker")
+                PreferencePaneSection {
+                    HStack {
+                        VStack(alignment: .leading) {
+                            TextAndImageMenuItemHeader(UserText.searchAssistSettings,
+                                                       image: Image(nsImage: DesignSystemImages.Color.Size16.assist),
+                                                       bottomPadding: 2)
+                            TextMenuItemCaption(UserText.searchAssistSettingsDescription)
                         }
+                        Spacer()
+                        Picker("", selection: model.searchAssistFrequencyBinding) {
+                            ForEach(SearchAssistFrequency.allCases, id: \.self) { frequency in
+                                Text(frequency.displayName).tag(frequency)
+                            }
+                        }
+                        .pickerStyle(.menu)
+                        .fixedSize()
+                        .accessibilityIdentifier("Preferences.AIChat.searchAssistPicker")
                     }
+                }
 
-                    PreferencePaneSection {
-                        HStack {
-                            VStack(alignment: .leading) {
-                                TextAndImageMenuItemHeader(UserText.hideAIGeneratedImagesSettings,
-                                                           image: Image(nsImage: DesignSystemImages.Color.Size16.hideAIGeneratedImages),
-                                                           bottomPadding: 2)
-                                TextMenuItemCaption(UserText.hideAIGeneratedImagesSettingsDescription)
-                                TextButton(UserText.learnMore) {
-                                    model.openHideAIGeneratedImagesLearnMore()
-                                }
+                PreferencePaneSection {
+                    HStack {
+                        VStack(alignment: .leading) {
+                            TextAndImageMenuItemHeader(UserText.hideAIGeneratedImagesSettings,
+                                                       image: Image(nsImage: DesignSystemImages.Color.Size16.hideAIGeneratedImages),
+                                                       bottomPadding: 2)
+                            TextMenuItemCaption(UserText.hideAIGeneratedImagesSettingsDescription)
+                            TextButton(UserText.learnMore) {
+                                model.openHideAIGeneratedImagesLearnMore()
                             }
-                            Spacer()
-                            Picker("", selection: model.hideAIImagesBinding) {
-                                ForEach(HideAIImagesOption.allCases, id: \.self) { option in
-                                    Text(option.displayName).tag(option)
-                                }
-                            }
-                            .pickerStyle(.menu)
-                            .fixedSize()
-                            .accessibilityIdentifier("Preferences.AIChat.hideAIGeneratedImagesPicker")
                         }
+                        Spacer()
+                        Picker("", selection: model.hideAIImagesBinding) {
+                            ForEach(HideAIImagesOption.allCases, id: \.self) { option in
+                                Text(option.displayName).tag(option)
+                            }
+                        }
+                        .pickerStyle(.menu)
+                        .fixedSize()
+                        .accessibilityIdentifier("Preferences.AIChat.hideAIGeneratedImagesPicker")
                     }
                 }
 
@@ -208,117 +191,29 @@ extension Preferences {
                         .disabled(model.isPageContextToggleDisabled)
                         .padding(.leading, 19)
                     }
+
+                    if model.shouldShowPromptBarPreferences {
+                        PromptBarPreferencesView(preferences: model.promptBarPreferences)
+                    }
                 }
                                       .visibility(model.shouldShowAIFeatures ? .visible : .gone)
 
-                if model.shouldShowNativeAIControls {
-                    // Always shown: the button disables all AI while any is on, then greys out
-                    // once everything is disabled, with the caption reinforcing the no-AI state.
-                    Divider()
-                        .padding(.bottom, 8)
+                // Always shown: the button disables all AI while any is on, then greys out
+                // once everything is disabled, with the caption reinforcing the no-AI state.
+                Divider()
+                    .padding(.bottom, 8)
 
-                    PreferencePaneSection {
-                        VStack(alignment: .leading) {
-                            Button(UserText.aiFeaturesDisableAllButton) {
-                                model.disableAllAI()
-                            }
-                            .disabled(model.isAllAIDisabled)
-                            .accessibilityIdentifier("Preferences.AIChat.disableAllAIButton")
-                            TextMenuItemCaption(model.isAllAIDisabled ? UserText.aiFeaturesDisableAllFooterDisabled : UserText.aiFeaturesDisableAllFooter)
+                PreferencePaneSection {
+                    VStack(alignment: .leading) {
+                        Button(UserText.aiFeaturesDisableAllButton) {
+                            model.disableAllAI()
                         }
-                    }
-                } else {
-                    Divider()
-                        .padding(.bottom, 8)
-
-                    PreferencePaneSection {
-                        VStack(alignment: .leading) {
-                            TextAndImageMenuItemHeader(UserText.searchAssistSettings,
-                                                       image: Image(nsImage: DesignSystemImages.Color.Size16.assist),
-                                                       bottomPadding: 2)
-
-                            TextMenuItemCaption(UserText.searchAssistSettingsDescription)
-                                .padding(.bottom, 6)
-                            Button {
-                                model.openSearchAssistSettings()
-                            } label: {
-                                HStack {
-                                    Text(UserText.searchAssistSettingsLink)
-                                    Image(.externalAppScheme)
-                                }
-                                .rebrandableLinkForeground()
-                                .cursor(.pointingHand)
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    }
-
-                    PreferencePaneSection {
-                        VStack(alignment: .leading) {
-                            TextAndImageMenuItemHeader(UserText.hideAIGeneratedImagesSettings,
-                                                       image: Image(nsImage: DesignSystemImages.Color.Size16.hideAIGeneratedImages),
-                                                       bottomPadding: 2)
-
-                            TextMenuItemCaption(UserText.hideAIGeneratedImagesSettingsDescription)
-                                .padding(.bottom, 6)
-                            Button {
-                                PixelKit.fire(GeneralPixel.hideAIGeneratedImagesButtonClicked, frequency: .dailyAndStandard)
-                                model.openSearchAssistSettings()
-                            } label: {
-                                HStack {
-                                    Text(UserText.searchAIFeaturesSettingsLink)
-                                    Image(.externalAppScheme)
-                                }
-                                .rebrandableLinkForeground()
-                                .cursor(.pointingHand)
-                            }
-                            .buttonStyle(.plain)
-                        }
+                        .disabled(model.isAllAIDisabled)
+                        .accessibilityIdentifier("Preferences.AIChat.disableAllAIButton")
+                        TextMenuItemCaption(model.isAllAIDisabled ? UserText.aiFeaturesDisableAllFooterDisabled : UserText.aiFeaturesDisableAllFooter)
                     }
                 }
             }
-            .sheet(isPresented: $isShowingDisableAIChatDialog) {
-                removeConfirmationDialog
-            }
-        }
-
-        // Flag ON disables Duck.ai directly (no "..."); flag OFF keeps the confirmation flow.
-        private var aiFeaturesButtonTitle: String {
-            guard model.isAIFeaturesEnabled else { return UserText.aiChatEnableButton }
-            return model.shouldShowNativeAIControls ? UserText.aiChatDisableButtonImmediate : UserText.aiChatDisableButton
-        }
-
-        @ViewBuilder
-        private var removeConfirmationDialog: some View {
-            Dialog {
-                Image("DaxAIChat")
-                    .frame(width: 96, height: 72)
-
-                Text(UserText.aiChatDisableDialogTitle)
-                    .font(.title2)
-                    .bold()
-                    .foregroundColor(Color(.textPrimary))
-
-                Text(UserText.aiChatDisableDialogMessage)
-                    .font(.body)
-                    .multilineTextAlignment(.center)
-                    .fixMultilineScrollableText()
-                    .foregroundColor(Color(.textPrimary))
-            } buttons: {
-                Spacer()
-                Button(UserText.cancel) { isShowingDisableAIChatDialog = false }
-                Button(action: {
-                    isShowingDisableAIChatDialog = false
-                    model.isAIFeaturesEnabled = false
-                    PixelKit.fire(AIChatPixel.aiChatSettingsGlobalToggleTurnedOff,
-                                  frequency: .dailyAndCount,
-                                  includeAppVersionParameter: true)
-                }, label: {
-                    Text(UserText.aiChatDisableDialogConfirmButton)
-                })
-                .buttonStyle(DefaultActionButtonStyle(enabled: true))
-            }
-            .frame(width: 360)
         }
     }
 }

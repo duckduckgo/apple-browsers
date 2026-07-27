@@ -22,12 +22,8 @@ import Core
 import DesignResourcesKit
 import DesignResourcesKitIcons
 
-/// The floating ("liquid glass") tab switcher chrome. Uses out-of-the-box UIKit components
-/// (a `UINavigationBar` for the top bar and a `UIToolbar` for the bottom bar) so the system
-/// renders liquid glass automatically on iOS 26+. Below iOS 26 the same layout is used with a
-/// solid bar background as a fallback.
-///
-/// The floating tab switcher is iPhone-only and pins its bars to the top and bottom.
+/// The floating ("liquid glass") tab switcher chrome. It uses system bars to render liquid glass
+/// on iOS 26+ and falls back to solid bar backgrounds on earlier versions.
 @MainActor
 final class FloatingTabSwitcherChrome: TabSwitcherChrome {
 
@@ -42,6 +38,13 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
     private let navigationBar = UINavigationBar()
     let navigationItem = UINavigationItem()
     let toolbar = UIToolbar()
+    let fallbackTopBackgroundView: UIView = {
+        let view = UIView()
+        view.backgroundColor = UIColor(designSystemColor: .background)
+        view.isUserInteractionEnabled = false
+        view.translatesAutoresizingMaskIntoConstraints = false
+        return view
+    }()
 
     private weak var hostView: UIView?
     private weak var contentView: UIScrollView?
@@ -343,14 +346,17 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
         NSLayoutConstraint.deactivate(layoutConstraints)
         layoutConstraints = []
 
-        [navigationBar, toolbar, contentView].forEach { $0.removeFromSuperview() }
+        [navigationBar, toolbar, fallbackTopBackgroundView, contentView].forEach { $0.removeFromSuperview() }
 
         // Content sits behind the glass bars so it scrolls under them.
         hostView.addSubview(contentView)
+        if #unavailable(iOS 26.0) {
+            hostView.addSubview(fallbackTopBackgroundView)
+        }
         hostView.addSubview(toolbar)
         hostView.addSubview(navigationBar)
 
-        let constraints = [
+        var constraints = [
             navigationBar.topAnchor.constraint(equalTo: hostView.safeAreaLayoutGuide.topAnchor),
             navigationBar.leadingAnchor.constraint(equalTo: hostView.safeAreaLayoutGuide.leadingAnchor),
             navigationBar.trailingAnchor.constraint(equalTo: hostView.safeAreaLayoutGuide.trailingAnchor),
@@ -364,6 +370,14 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
             toolbar.trailingAnchor.constraint(equalTo: hostView.safeAreaLayoutGuide.trailingAnchor),
             toolbar.bottomAnchor.constraint(equalTo: hostView.safeAreaLayoutGuide.bottomAnchor),
         ]
+        if #unavailable(iOS 26.0) {
+            constraints.append(contentsOf: [
+                fallbackTopBackgroundView.topAnchor.constraint(equalTo: hostView.topAnchor),
+                fallbackTopBackgroundView.leadingAnchor.constraint(equalTo: hostView.leadingAnchor),
+                fallbackTopBackgroundView.trailingAnchor.constraint(equalTo: hostView.trailingAnchor),
+                fallbackTopBackgroundView.bottomAnchor.constraint(equalTo: navigationBar.bottomAnchor),
+            ])
+        }
         NSLayoutConstraint.activate(constraints)
         layoutConstraints = constraints
     }

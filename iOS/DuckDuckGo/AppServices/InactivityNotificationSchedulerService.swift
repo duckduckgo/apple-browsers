@@ -19,6 +19,7 @@
 
 import UIKit
 import UserNotifications
+import FoundationExtensions
 import Core
 import PrivacyConfig
 

@@ -18,6 +18,7 @@
 //
 
 import Foundation
+import FoundationExtensions
 import PrivacyConfig
 import MaliciousSiteProtection
 import Core

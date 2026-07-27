@@ -2439,6 +2439,7 @@ class MainViewController: UIViewController {
         let tab = tabManager.add(url: url, inheritedAttribution: inheritedAttribution)
         tab.inferredOpenerContext = .external
         tab.isVoiceModeRequested = voiceMode
+        tab.isDuckAIDeepLinkSurfaceRequested = url?.isDuckAIFeedbackOpen == true || url?.isDuckAIChatProtectionOpen == true
 
         // Mark tab as external launch if opened from external URL or shortcut
         if fromExternalLink {
@@ -4470,6 +4471,7 @@ extension MainViewController: BrowserChromeDelegate {
             }
             loadUrlInNewTab(url, inheritedAttribution: nil, fromExternalLink: fromExternalLink)
         case .loadInPlace:
+            currentTab?.isDuckAIDeepLinkSurfaceRequested = url.isDuckAIFeedbackOpen || url.isDuckAIChatProtectionOpen
             loadUrl(url, fromExternalLink: fromExternalLink)
         }
     }
@@ -6182,6 +6184,43 @@ extension MainViewController: TabDelegate {
 
     func tabDidRequestAIChatHistory(tab: TabViewController, source: AIChatHistorySource) {
         openAIChatHistory(source: source)
+    }
+
+    func tabDidRequestAIChatFeedback(tab: TabViewController) {
+        let optionsView = DuckAIFeedbackOptionsView(
+            onSelect: { [weak self, weak tab] sentiment in
+                let positive: Bool
+                switch sentiment {
+                case .positive: positive = true
+                case .critical: positive = false
+                }
+                DailyPixel.fireDailyAndCount(pixel: .aiChatFeedbackOptionSelected,
+                                             withAdditionalParameters: [PixelParameters.sentiment: positive ? "positive" : "critical"])
+                self?.dismiss(animated: true) {
+                    tab?.openAIChatFeedback(positive: positive)
+                }
+            }
+        )
+        let hostingController = UIHostingController(rootView: optionsView)
+        hostingController.title = UserText.aiChatFeedbackOptionsTitle
+        hostingController.navigationItem.rightBarButtonItem = UIBarButtonItem(
+            image: DesignSystemImages.Glyphs.Size24.close,
+            primaryAction: UIAction { [weak self] _ in self?.dismiss(animated: true) }
+        )
+        let navigationController = UINavigationController(rootViewController: hostingController)
+        navigationController.navigationBar.tintColor = UIColor(designSystemColor: .textPrimary)
+        if let sheet = navigationController.sheetPresentationController {
+            if #available(iOS 16.0, *) {
+                sheet.detents = [.custom(identifier: .init("duckAIFeedbackOptions")) { _ in 230 }]
+            } else {
+                sheet.detents = [.medium()]
+            }
+            sheet.prefersGrabberVisible = true
+            if #unavailable(iOS 26) {
+                sheet.preferredCornerRadius = 24
+            }
+        }
+        present(navigationController, animated: true)
     }
 
     func openAIChatHistory(source: AIChatHistorySource = .browserMenu) {

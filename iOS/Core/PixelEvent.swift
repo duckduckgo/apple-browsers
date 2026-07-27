@@ -375,6 +375,8 @@ extension Pixel {
         case voiceSearchAIChatDone
         case openVoiceSearch
         case voiceSearchCancelled
+        case voiceSearchError
+        case voiceSearchNoSpeech
 
         case bookmarkLaunchList
         case bookmarkLaunchScored
@@ -1731,7 +1733,10 @@ extension Pixel {
         case aiChatSettingsMenuSidebarTapped
         case aiChatSettingsMenuAIChatSettingsTapped
         case aiChatSettingsMenuNewChatTabTapped
-        
+        case aiChatSettingsMenuFeedbackTapped
+        case aiChatFeedbackOptionSelected
+        case aiChatNewImageTapped
+
         case aiChatTabSwitcherOpened
         case aiChatFireButtonTapped
         case aiChatTabDidTerminate
@@ -1808,6 +1813,10 @@ extension Pixel {
         case aiChatHistoryPinAdded
         case aiChatHistoryPinRemoved
         case aiChatHistoryDownloadStarted
+        case aiChatHistoryDownloadSuccessful
+        case aiChatHistorySelectionDeleteConfirmed
+        case aiChatHistorySelectionDownloadStarted
+        case aiChatHistoryChatProtectionTapped
         case aiChatHistoryEditModeEntered
         case aiChatHistoryNewChatTapped
         case aiChatHistoryLoadFailed
@@ -2414,6 +2423,8 @@ extension Pixel.Event {
         case .voiceSearchAIChatDone: return "m_voice_search_aichat_done"
         case .openVoiceSearch: return "m_open_voice_search"
         case .voiceSearchCancelled: return "m_voice_search_cancelled"
+        case .voiceSearchError: return "voice_search_error"
+        case .voiceSearchNoSpeech: return "voice_search_no_speech"
             
         case .bookmarkImportSuccess: return "m_bi_s"
         case .bookmarkImportFailure: return "m_bi_e"
@@ -3662,7 +3673,10 @@ extension Pixel.Event {
         case .aiChatSettingsMenuSidebarTapped: return "m_aichat_settings_menu_sidebar_tapped"
         case .aiChatSettingsMenuAIChatSettingsTapped: return "m_aichat_settings_menu_aichat_settings_tapped"
         case .aiChatSettingsMenuNewChatTabTapped: return "m_aichat_settings_menu_new_chat_tab_tapped"
-            
+        case .aiChatSettingsMenuFeedbackTapped: return "m_aichat_settings_menu_feedback_tapped"
+        case .aiChatFeedbackOptionSelected: return "aichat_feedback_option_selected"
+        case .aiChatNewImageTapped: return "aichat_new_image_tapped"
+
         case .aiChatTabSwitcherOpened: return "m_aichat_tab_switcher_opened"
         case .aiChatFireButtonTapped: return "m_aichat_fire_button_tapped"
         case .aiChatTabDidTerminate: return "m_aichat_tab_did_terminate"
@@ -3730,6 +3744,10 @@ extension Pixel.Event {
         case .aiChatHistoryPinAdded: return "aichat_history_pin_added"
         case .aiChatHistoryPinRemoved: return "aichat_history_pin_removed"
         case .aiChatHistoryDownloadStarted: return "aichat_history_download_started"
+        case .aiChatHistoryDownloadSuccessful: return "aichat_history_download_successful"
+        case .aiChatHistorySelectionDeleteConfirmed: return "aichat_history_selection_delete_confirmed"
+        case .aiChatHistorySelectionDownloadStarted: return "aichat_history_selection_download_started"
+        case .aiChatHistoryChatProtectionTapped: return "aichat_history_chat_protection_tapped"
         case .aiChatHistoryEditModeEntered: return "aichat_history_edit_mode_entered"
         case .aiChatHistoryNewChatTapped: return "aichat_history_new_chat_tapped"
         case .aiChatHistoryLoadFailed: return "aichat_history_load_failed"

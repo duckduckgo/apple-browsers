@@ -164,8 +164,6 @@ private struct CameraPermissionDeniedView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            Spacer()
-
             Image(rebrandable: "SyncCameraPermission", bundle: .module)
                 .padding(.bottom, 20)
 
@@ -182,18 +180,16 @@ private struct CameraPermissionDeniedView: View {
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
 
-            Spacer()
-
             Button {
                 model.gotoSettings()
             } label: {
                 HStack {
-                    Image("SyncGotoButton", bundle: .module)
+                    Image(uiImage: DesignSystemImages.Glyphs.Size16.openIn)
                     Text(UserText.cameraGoToSettingsButton)
                 }
             }
-            .buttonStyle(SyncLabelButtonStyle())
-            .padding(.bottom, 24)
+            .buttonStyle(PrimaryButtonStyle(compact: true, fullWidth: false))
+            .padding(.vertical, 24)
         }
         .padding(.horizontal, 40)
         .frame(maxWidth: .infinity, maxHeight: .infinity)

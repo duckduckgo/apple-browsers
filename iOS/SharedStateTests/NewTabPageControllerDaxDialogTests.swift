@@ -38,6 +38,7 @@ private class MockURLBasedDebugCommands: URLBasedDebugCommands {
     }
 }
 
+@MainActor
 final class NewTabPageControllerDaxDialogTests: XCTestCase {
 
     var variantManager: CapturingVariantManager!

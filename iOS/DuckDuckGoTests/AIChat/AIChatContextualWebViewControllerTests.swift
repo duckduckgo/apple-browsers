@@ -31,6 +31,74 @@ final class AIChatContextualWebViewControllerTests: XCTestCase {
     // MARK: - Tests
 
     @MainActor
+    func testWhenFrontendReadinessIsMarkedThenWaitingSucceeds() async {
+        let readinessGate = AIChatFrontendReadinessGate()
+        let resultTask = await makePendingReadinessTask(for: readinessGate)
+
+        readinessGate.markReady()
+
+        let result = await resultTask.value
+        XCTAssertTrue(result)
+    }
+
+    @MainActor
+    func testWhenFrontendIsAlreadyReadyThenWaitingSucceedsImmediately() async {
+        let readinessGate = AIChatFrontendReadinessGate()
+        readinessGate.markReady()
+
+        let result = await readinessGate.waitUntilReady(timeout: 0)
+
+        XCTAssertTrue(result)
+    }
+
+    @MainActor
+    func testWhenFrontendReadinessIsResetThenPendingWaitFails() async {
+        let readinessGate = AIChatFrontendReadinessGate()
+        let resultTask = await makePendingReadinessTask(for: readinessGate)
+
+        readinessGate.reset()
+
+        let result = await resultTask.value
+        XCTAssertFalse(result)
+    }
+
+    @MainActor
+    func testWhenFrontendReadinessWaitIsCancelledThenReplacementCanSucceed() async {
+        let readinessGate = AIChatFrontendReadinessGate()
+        let cancelledTask = await makePendingReadinessTask(for: readinessGate)
+
+        cancelledTask.cancel()
+        let replacementTask = await makePendingReadinessTask(for: readinessGate)
+        readinessGate.markReady()
+
+        let cancelledResult = await cancelledTask.value
+        let replacementResult = await replacementTask.value
+        XCTAssertFalse(cancelledResult)
+        XCTAssertTrue(replacementResult)
+    }
+
+    @MainActor
+    func testWhenFrontendReadinessTimesOutThenWaitingFails() async {
+        let readinessGate = AIChatFrontendReadinessGate()
+
+        let result = await readinessGate.waitUntilReady(timeout: 0)
+
+        XCTAssertFalse(result)
+    }
+
+    @MainActor
+    private func makePendingReadinessTask(for readinessGate: AIChatFrontendReadinessGate) async -> Task<Bool, Never> {
+        let readinessWaitStarted = expectation(description: "Frontend readiness wait started")
+        let resultTask = Task { @MainActor in
+            await readinessGate.waitUntilReady(timeout: 1) {
+                readinessWaitStarted.fulfill()
+            }
+        }
+        await fulfillment(of: [readinessWaitStarted], timeout: 1)
+        return resultTask
+    }
+
+    @MainActor
     func testWebViewUsesCustomUserAgent() {
         let expectedURL = URL(string: "https://duck.ai/chat")!
         let stubUserAgent = StubUserAgentManager(stubbedUserAgent: "ddg_ios/7.100.0 (com.duckduckgo; iOS 17.0)")

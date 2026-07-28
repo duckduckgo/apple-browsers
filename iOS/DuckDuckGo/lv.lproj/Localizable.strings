@@ -4392,6 +4392,12 @@
 /* Settings screen cell text for Unprotected Sites */
 "settings.unprotected.sites" = "Neaizsargātas vietnes";
 
+/* Description shown above the list of unprotected sites */
+"settings.unprotected.sites.description" = "Šīm vietnēm netiks izmantota privātuma aizsardzība.";
+
+/* Message shown when there are no unprotected sites */
+"settings.unprotected.sites.empty.state" = "Privātuma aizsardzība ir iespējota visām vietnēm";
+
 /* Settings cell for Version */
 "settings.version" = "Versija";
 

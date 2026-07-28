@@ -4392,6 +4392,12 @@
 /* Settings screen cell text for Unprotected Sites */
 "settings.unprotected.sites" = "Nezabezpečené webové stránky";
 
+/* Description shown above the list of unprotected sites */
+"settings.unprotected.sites.description" = "Tieto webové stránky nebudú rozšírené o ochranu súkromia.";
+
+/* Message shown when there are no unprotected sites */
+"settings.unprotected.sites.empty.state" = "Ochrana súkromia je zapnutá pre všetky webové stránky";
+
 /* Settings cell for Version */
 "settings.version" = "Verzia";
 

@@ -4392,6 +4392,12 @@
 /* Settings screen cell text for Unprotected Sites */
 "settings.unprotected.sites" = "Onbeschermde sites";
 
+/* Description shown above the list of unprotected sites */
+"settings.unprotected.sites.description" = "Deze sites worden niet beschermd met privacybescherming.";
+
+/* Message shown when there are no unprotected sites */
+"settings.unprotected.sites.empty.state" = "Privacybescherming ingeschakeld voor alle sites";
+
 /* Settings cell for Version */
 "settings.version" = "Versie";
 

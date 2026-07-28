@@ -4392,6 +4392,12 @@
 /* Settings screen cell text for Unprotected Sites */
 "settings.unprotected.sites" = "保護されていないサイト";
 
+/* Description shown above the list of unprotected sites */
+"settings.unprotected.sites.description" = "以下のサイトはプライバシー保護によって強化されません。";
+
+/* Message shown when there are no unprotected sites */
+"settings.unprotected.sites.empty.state" = "すべてのサイトでプライバシー保護が有効になっています";
+
 /* Settings cell for Version */
 "settings.version" = "バージョン";
 

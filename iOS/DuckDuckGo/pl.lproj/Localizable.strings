@@ -4392,6 +4392,12 @@
 /* Settings screen cell text for Unprotected Sites */
 "settings.unprotected.sites" = "Niezabezpieczone witryny";
 
+/* Description shown above the list of unprotected sites */
+"settings.unprotected.sites.description" = "Te witryny nie będą ulepszane przez ochronę prywatności.";
+
+/* Message shown when there are no unprotected sites */
+"settings.unprotected.sites.empty.state" = "Ochrona prywatności włączona dla wszystkich witryn";
+
 /* Settings cell for Version */
 "settings.version" = "Wersja";
 

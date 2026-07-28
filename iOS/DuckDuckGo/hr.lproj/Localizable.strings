@@ -4392,6 +4392,12 @@
 /* Settings screen cell text for Unprotected Sites */
 "settings.unprotected.sites" = "Nezaštićena web-mjesta";
 
+/* Description shown above the list of unprotected sites */
+"settings.unprotected.sites.description" = "Ova web-mjesta neće biti unaprijeđena zaštitom privatnosti.";
+
+/* Message shown when there are no unprotected sites */
+"settings.unprotected.sites.empty.state" = "Zaštita privatnosti omogućena je za sva web-mjesta";
+
 /* Settings cell for Version */
 "settings.version" = "Verzija";
 

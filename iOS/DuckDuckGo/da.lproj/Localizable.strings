@@ -4392,6 +4392,12 @@
 /* Settings screen cell text for Unprotected Sites */
 "settings.unprotected.sites" = "Ubeskyttede websteder";
 
+/* Description shown above the list of unprotected sites */
+"settings.unprotected.sites.description" = "Disse websteder vil ikke blive forbedret ved Beskyttelse af privatlivet.";
+
+/* Message shown when there are no unprotected sites */
+"settings.unprotected.sites.empty.state" = "Databeskyttelse aktiveret for alle websteder";
+
 /* Settings cell for Version */
 "settings.version" = "Version";
 

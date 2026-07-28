@@ -531,7 +531,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         sut.aiIntroAction()
 
         // THEN
-        XCTAssertEqual(sut.state, .onboarding(.init(type: .duckAIQueryDialog(content: .mock, defaultMode: .duckAI), step: .init(currentStep: 2, totalSteps: 5))))
+        XCTAssertEqual(sut.state, .onboarding(.init(type: .duckAIQueryDialog(content: .mock), step: .init(currentStep: 2, totalSteps: 5))))
     }
 
     func testWhenSelectDuckAIQueryActionIsCalled_AndIsDuckAIFlow_ThenFiresInterludeCallbackAndDoesNotMutateState() {
@@ -626,25 +626,6 @@ final class OnboardingIntroViewModelTests: XCTestCase {
 
         // THEN
         XCTAssertTrue(didCallOnCompletingOnboardingIntro)
-    }
-
-    func testWhenIsDuckAIFlow_AndReachingDuckAIQueryDialog_ThenModeIsDuckAI() {
-        // In the Duck.ai tailored flow the mode is always .duckAI — no experiment involved.
-        // GIVEN
-        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedDuckAISteps(isReturningUser: false)
-        onboardingManagerMock.currentOnboardingFlow = .duckAI
-        let sut = makeSUT(currentOnboardingStep: .aiIntro)
-
-        // WHEN
-        sut.aiIntroAction()
-
-        // THEN
-        if case .onboarding(let intro) = sut.state,
-           case .duckAIQueryDialog(_, let mode) = intro.type {
-            XCTAssertEqual(mode, .duckAI)
-        } else {
-            XCTFail("Expected duckAIQueryDialog with .duckAI mode, got \(sut.state)")
-        }
     }
 
     // MARK: - Pixels
@@ -1062,12 +1043,11 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         sut.onAppear()
         sut.selectSearchExperienceAction()
 
-        // THEN: step inserted with .search default
-        if case .onboarding(let intro) = sut.state,
-           case .duckAIQueryDialog(_, let mode) = intro.type {
-            XCTAssertEqual(mode, .search)
+        // THEN: the query selection step is inserted (its mode/toggle are covered in OnboardingIntroContentProviderTests).
+        if case .duckAIQueryDialog = sut.state.intro?.type {
+            // OK
         } else {
-            XCTFail("Expected duckAIQueryDialog state with .search default mode, got \(sut.state)")
+            XCTFail("Expected duckAIQueryDialog, got \(String(describing: sut.state.intro?.type))")
         }
     }
 
@@ -1485,7 +1465,7 @@ extension OnboardingIntroViewModelTests {
         sut.onAppear()
 
         // THEN
-        XCTAssertEqual(sut.state, .onboarding(.init(type: .aiModelDialog, step: .init(currentStep: 1, totalSteps: 2))))
+        XCTAssertEqual(sut.state, .onboarding(.init(type: .aiModelDialog(content: contentProviderMock.aiModelPersonalizationContent), step: .init(currentStep: 1, totalSteps: 2))))
     }
 
     func makeSUT(
@@ -1494,6 +1474,7 @@ extension OnboardingIntroViewModelTests {
         restorePromptHandler: OnboardingRestorePromptHandling = MockRestorePromptHandler(),
         featureFlagger: FeatureFlagger = MockFeatureFlagger(),
         personalizationManager: OnboardingPersonalizationManaging = MockOnboardingPersonalizationManager(),
+        aiModelsPrefetcher: OnboardingAIModelsPrefetching = MockOnboardingAIModelsPrefetcher(),
         resumeStepStore: MockKeyValueStore? = nil
     ) -> OnboardingIntroViewModel {
         OnboardingIntroViewModel(
@@ -1511,6 +1492,7 @@ extension OnboardingIntroViewModelTests {
             tutorialSettings: tutorialSettingsMock,
             contentProvider: contentProviderMock,
             personalizationManager: personalizationManager,
+            aiModelsPrefetcher: aiModelsPrefetcher,
             onboardingResumeStepStore: (resumeStepStore ?? MockKeyValueStore()).keyedStoring()
         )
     }

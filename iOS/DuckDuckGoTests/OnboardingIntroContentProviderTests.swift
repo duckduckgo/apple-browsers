@@ -1001,6 +1001,88 @@ struct OnboardingIntroContentProviderTests {
             #expect(result.isToggleVisible == expectedVisibility)
         }
 
+        // MARK: Screen selection (title + toggle + default mode)
+
+        @Test(
+            "Check Default flow, search-oriented reasons and toggle ON show Toggle on preselected on search",
+            arguments: [OnboardingDownloadReason.browserPrivately, .noAI, .blockAds]
+        )
+        func searchReasonWithToggleOnShowsCombinedScreen(reason: OnboardingDownloadReason) {
+            // WHEN
+            let result = makeProvider(reason: reason, didEnableAIChatSearchInput: true).duckAIQueryContent
+
+            // THEN
+            #expect(result.title == UserText.Onboarding.DuckAIQuery.title)
+            #expect(result.isToggleVisible == true)
+            #expect(result.defaultMode == .search)
+        }
+
+        @Test(
+            "Check Default flow, search-oriented reasons and toggle OFF do not show Toggle and preselected on search",
+            arguments: [OnboardingDownloadReason.browserPrivately, .noAI, .blockAds]
+        )
+        func searchReasonWithToggleOffShowsPrivateSearchScreen(reason: OnboardingDownloadReason) {
+            // WHEN
+            let result = makeProvider(reason: reason, didEnableAIChatSearchInput: false).duckAIQueryContent
+
+            // THEN
+            #expect(result.title == "Now, try a private search!")
+            #expect(result.isToggleVisible == false)
+            #expect(result.defaultMode == .search)
+        }
+
+        @Test(
+            "Check Default flow, the AI-chat reason → show Toggle preselected on Duck.ai and independent of the search input toggle",
+            arguments: [true, false]
+        )
+        func aiChatReasonShowsPrivateAIChatScreen(didEnableAIChatSearchInput: Bool) {
+            // WHEN
+            let result = makeProvider(reason: .privateAIChat, didEnableAIChatSearchInput: didEnableAIChatSearchInput).duckAIQueryContent
+
+            // THEN
+            #expect(result.title == UserText.Onboarding.DuckAICPP.DuckAIQuery.title)
+            #expect(result.isToggleVisible == false)
+            #expect(result.defaultMode == .duckAI)
+        }
+
+        @Test("Check Default flow without a download reason show Toggle preselected on search")
+        func defaultFlowWithoutReasonShowsCombinedScreen() {
+            // WHEN
+            let result = makeProvider(reason: nil).duckAIQueryContent
+
+            // THEN
+            #expect(result.title == UserText.Onboarding.DuckAIQuery.title)
+            #expect(result.isToggleVisible == true)
+            #expect(result.defaultMode == .search)
+        }
+
+        @Test("Check Duck.ai tailored flow does not show toggle and it's preselected on Duck.ai")
+        func duckAIFlowShowsPrivateAIChatScreen() {
+            // WHEN
+            let result = makeProvider(flow: .duckAI).duckAIQueryContent
+
+            // THEN
+            #expect(result.title == UserText.Onboarding.DuckAICPP.DuckAIQuery.title)
+            #expect(result.isToggleVisible == false)
+            #expect(result.defaultMode == .duckAI)
+        }
+
+        /// Builds a provider with an injected download reason and AI-chat-search-input state.
+        private func makeProvider(
+            flow: OnboardingFlowType = .default,
+            reason: OnboardingDownloadReason? = nil,
+            didEnableAIChatSearchInput: Bool = false
+        ) -> OnboardingIntroContentProvider {
+            let searchExperienceProvider = MockOnboardingSearchExperienceProvider()
+            searchExperienceProvider.didEnableAIChatSearchInputDuringOnboarding = didEnableAIChatSearchInput
+            return OnboardingIntroContentProvider(
+                flowType: flow,
+                featureFlagger: MockFeatureFlagger(),
+                searchExperienceProvider: searchExperienceProvider,
+                downloadReasonProvider: { reason }
+            )
+        }
+
     }
 
     @MainActor

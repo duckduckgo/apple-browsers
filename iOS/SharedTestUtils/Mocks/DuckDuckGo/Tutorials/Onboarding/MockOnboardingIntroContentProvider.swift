@@ -155,6 +155,7 @@ extension OnboardingDuckAIQueryContent {
         searchPlaceholder: "Search Placeholder",
         aiPlaceholder: "AI Placeholder",
         isToggleVisible: true,
+        defaultMode: .search,
         daxAnimation: nil
     )
 }

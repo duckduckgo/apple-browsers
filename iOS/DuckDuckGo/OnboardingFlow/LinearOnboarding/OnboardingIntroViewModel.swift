@@ -180,7 +180,7 @@ final class OnboardingIntroViewModel: ObservableObject {
         tutorialSettings: TutorialSettings,
         contentProvider: OnboardingIntroContentProviding,
         personalizationManager: OnboardingPersonalizationManaging,
-        aiModelsPrefetcher: OnboardingAIModelsPrefetcher,
+        aiModelsPrefetcher: OnboardingAIModelsPrefetching,
         onboardingResumeStepStore: (any KeyedStoring<OnboardingStoringKeys>)? = nil
     ) {
         self.defaultBrowserManager = defaultBrowserManager
@@ -517,14 +517,11 @@ private extension OnboardingIntroViewModel {
                     )
                 )
             case .duckAIQuerySelection:
-                let isDuckAiTailoredFlow = onboardingManager.currentOnboardingFlow == .duckAI
-                // Duck.ai Tailored flow pre-selects Duck.ai; the default flow always pre-selects Search.
-                let duckAIQueryMode: DuckAIQueryMode = isDuckAiTailoredFlow ? .duckAI : .search
-                // Duck.ai Tailored flow shows step counter; the default flow hides it.
-                let progressStep: OnboardingIntroViewState.Intro.StepInfo = isDuckAiTailoredFlow ? stepInfo() : .hidden
+                // Duck.ai Tailored flow shows the step counter; the default flow hides it.
+                let progressStep: OnboardingIntroViewState.Intro.StepInfo = onboardingManager.currentOnboardingFlow == .duckAI ? stepInfo() : .hidden
                 return .onboarding(
                     .init(
-                        type: .duckAIQueryDialog(content: contentProvider.duckAIQueryContent, defaultMode: duckAIQueryMode),
+                        type: .duckAIQueryDialog(content: contentProvider.duckAIQueryContent),
                         step: progressStep
                     )
                 )

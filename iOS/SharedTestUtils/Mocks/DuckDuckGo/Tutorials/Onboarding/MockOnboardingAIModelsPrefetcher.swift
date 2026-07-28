@@ -1,5 +1,5 @@
 //
-//  DuckAIQueryMode.swift
+//  MockOnboardingAIModelsPrefetcher.swift
 //  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
@@ -17,8 +17,14 @@
 //  limitations under the License.
 //
 
-/// The search mode selected by the user in the Duck.ai query selection onboarding step.
-enum DuckAIQueryMode: Equatable {
-    case search
-    case duckAI
+import Foundation
+@testable import DuckDuckGo
+
+final class MockOnboardingAIModelsPrefetcher: OnboardingAIModelsPrefetching {
+    var resolvedModel: (models: [OnboardingAIModelOption], defaultModelId: String?) = ([], nil)
+
+    private(set) var prefetchCallCount = 0
+    func prefetch() {
+        prefetchCallCount += 1
+    }
 }

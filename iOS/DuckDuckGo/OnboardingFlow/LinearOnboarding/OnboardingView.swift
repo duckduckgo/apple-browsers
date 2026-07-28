@@ -483,8 +483,8 @@ extension OnboardingView {
                 addressBarPositionView(content: content)
             case let .chooseSearchExperienceDialog(content):
                 searchExperienceSelectionView(content: content)
-            case let .duckAIQueryDialog(content, defaultMode):
-                duckAIQuerySelectionView(content: content, defaultMode: defaultMode)
+            case let .duckAIQueryDialog(content):
+                duckAIQuerySelectionView(content: content)
             }
         }
 
@@ -684,7 +684,7 @@ extension OnboardingView {
                 return content.daxAnimation
             case .chooseSearchExperienceDialog(let content):
                 return content.daxAnimation
-            case .duckAIQueryDialog(let content, _):
+            case .duckAIQueryDialog(let content):
                 return content.daxAnimation
             }
         }
@@ -721,10 +721,9 @@ extension OnboardingView {
         }
 
         /// Hide → action → show sequence prevents cross-fading between steps.
-        private func duckAIQuerySelectionView(content: OnboardingDuckAIQueryContent, defaultMode: DuckAIQueryMode) -> some View {
+        private func duckAIQuerySelectionView(content: OnboardingDuckAIQueryContent) -> some View {
             DuckAIQuerySearchContent(
                 content: content,
-                defaultMode: defaultMode,
                 visualStyle: .rebranded,
                 onModeConfirmed: model.selectDuckAIQueryAction(selection:),
                 openAIChatAction: model.openAIChatFromOnboarding,

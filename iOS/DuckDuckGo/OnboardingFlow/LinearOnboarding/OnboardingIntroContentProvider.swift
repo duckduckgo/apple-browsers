@@ -53,10 +53,12 @@ struct OnboardingIntroContentProvider: OnboardingIntroContentProviding {
     init(
         flowType: OnboardingFlowType,
         featureFlagger: FeatureFlagger,
+        searchExperienceProvider: OnboardingSearchExperienceProvider = OnboardingSearchExperience(),
         downloadReasonProvider: @escaping () -> OnboardingDownloadReason? = { nil }
     ) {
         self.flowType = flowType
         self.featureFlagger = featureFlagger
+        self.searchExperienceProvider = searchExperienceProvider
         self.downloadReasonProvider = downloadReasonProvider
     }
 }
@@ -529,27 +531,83 @@ struct OnboardingDuckAIQueryContent: Equatable {
     let title: String
     let searchPlaceholder: String
     let aiPlaceholder: String
+    /// Whether the Search / Duck.ai picker is shown.
     let isToggleVisible: Bool
+    /// The pre-selected input when the picker is visible, or the only input when it's hidden.
+    let defaultMode: DuckAIQueryMode
     let daxAnimation: DaxAnimation?
 }
 
 extension OnboardingIntroContentProvider {
 
     var duckAIQueryContent: OnboardingDuckAIQueryContent {
-        let (title, isToggleVisible) = switch flowType {
-        case .default:
-            (UserText.Onboarding.DuckAIQuery.title, true)
-        case .duckAI:
-            (UserText.Onboarding.DuckAICPP.DuckAIQuery.title, false)
-        }
-
+        let screen = duckAIQueryScreen
         return OnboardingDuckAIQueryContent(
-            title: title,
+            title: screen.title,
             searchPlaceholder: UserText.Onboarding.DuckAIQuery.searchPlaceholder,
             aiPlaceholder: UserText.Onboarding.DuckAIQuery.aiPlaceholder,
-            isToggleVisible: isToggleVisible,
+            isToggleVisible: screen.isToggleVisible,
+            defaultMode: screen.defaultMode,
             daxAnimation: nil
         )
     }
 
+    /// The Duck.ai query screen to present.
+    /// The Duck.ai flow from CPP is fixed.
+    /// The default flow branches on the download reason (see `defaultFlowDuckAIQueryScreen`).
+    private var duckAIQueryScreen: DuckAIQueryScreen {
+        switch flowType {
+        case .default: defaultFlowDuckAIQueryScreen
+        case .duckAI: .privateAIChat
+        }
+    }
+
+    /// Default-flow branching:
+    /// - `.privateAIChat` → the AI chat prompt (no picker visible).
+    /// - `.browserPrivately, .noAI, .blockAds` show the AI toggle only if the user
+    ///   turned the AI-chat search input on in the search experience screen, otherwise a search-only prompt.
+    /// - not enrolled (`.none`) → the default combined prompt.
+    private var defaultFlowDuckAIQueryScreen: DuckAIQueryScreen {
+        switch downloadReasonProvider() {
+        case .privateAIChat:
+            return .privateAIChat
+        case .browserPrivately, .noAI, .blockAds:
+            return searchExperienceProvider.didEnableAIChatSearchInputDuringOnboarding ? .searchOrAIChat : .privateSearch
+        case .none:
+            return .searchOrAIChat
+        }
+    }
+
+}
+
+/// A concrete Duck.ai query screen, owning its title and picker presentation.
+private enum DuckAIQueryScreen {
+    /// Search input only, no picker.
+    case privateSearch
+    /// Picker shown, pre-selecting Search.
+    case searchOrAIChat
+    /// AI input only, no picker.
+    case privateAIChat
+
+    var title: String {
+        switch self {
+        case .privateSearch: "Now, try a private search!"
+        case .searchOrAIChat: UserText.Onboarding.DuckAIQuery.title
+        case .privateAIChat: UserText.Onboarding.DuckAICPP.DuckAIQuery.title
+        }
+    }
+
+    var isToggleVisible: Bool {
+        switch self {
+        case .searchOrAIChat: true
+        case .privateSearch, .privateAIChat: false
+        }
+    }
+
+    var defaultMode: DuckAIQueryMode {
+        switch self {
+        case .privateSearch, .searchOrAIChat: .search
+        case .privateAIChat: .duckAI
+        }
+    }
 }

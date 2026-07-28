@@ -59,7 +59,7 @@ extension OnboardingIntroViewState.Intro {
         case chooseAppIconDialog(content: OnboardingAppIconColorContent)
         case chooseAddressBarPositionDialog(content: OnboardingAddressBarPositionContent)
         case chooseSearchExperienceDialog(content: OnboardingSearchExperienceContent)
-        case duckAIQueryDialog(content: OnboardingDuckAIQueryContent, defaultMode: DuckAIQueryMode)
+        case duckAIQueryDialog(content: OnboardingDuckAIQueryContent)
         // NA Experiment: reason-tailored steps. Content-less for now; their content and views are
         // built in the UI task (add the associated `content:` then).
         case searchPrivacySettingsDialog(content: OnboardingPersonalizationContent)

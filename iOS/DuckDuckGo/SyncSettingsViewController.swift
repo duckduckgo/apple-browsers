@@ -604,14 +604,18 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
     func controllerDidCompleteAccountConnection(shouldShowSyncEnabled: Bool, setupSource: SyncSetupSource, codeSource: SyncCodeSource) {
         sendSetupEndedSuccessfullyPixel(setupSource: setupSource, codeSource: codeSource)
         guard shouldShowSyncEnabled else { return }
-        self.viewModel.$devices
-            .removeDuplicates()
-            .dropFirst()
-            .prefix(1)
-            .sink { [weak self] _ in
-                guard let self else { return }
-                self.dismissVCAndShowDeviceSyncedToast()
-            }.store(in: &cancellables)
+        if useSimplifiedLayoutV2 {
+            presentSuccessScreen(isRecovery: false)
+        } else {
+            self.viewModel.$devices
+                .removeDuplicates()
+                .dropFirst()
+                .prefix(1)
+                .sink { [weak self] _ in
+                    guard let self else { return }
+                    self.dismissVCAndShowDeviceSyncedToast()
+                }.store(in: &cancellables)
+        }
     }
 
     func controllerDidCreateSyncAccount(shouldShowSyncEnabled: Bool) {

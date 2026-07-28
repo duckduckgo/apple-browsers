@@ -832,8 +832,6 @@ final class MockAIChatUserScript: AIChatUserScriptProviding {
         submitToggleSidebarActionCallCount += 1
     }
 
-    func submitOpenFeedbackAction(sentiment: String) {}
-
     func submitOpenChatProtectionAction() {
         submitOpenChatProtectionActionCallCount += 1
     }

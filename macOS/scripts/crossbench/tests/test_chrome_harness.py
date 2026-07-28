@@ -32,6 +32,9 @@ class ChromeHarnessTests(unittest.TestCase):
         wpr = self.bin / "wpr"
         wpr.write_text("#!/bin/sh\nexit 0\n")
         wpr.chmod(0o755)
+        tracebox = self.bin / "tracebox"
+        tracebox.write_text("#!/bin/sh\nexit 0\n")
+        tracebox.chmod(0o755)
         poetry = self.bin / "poetry"
         poetry.write_text(
             """#!/bin/bash
@@ -84,6 +87,7 @@ exit "${FAKE_EXIT:-0}"
             "CROSSBENCH_DIR": str(self.crossbench),
             "CHROME_BIN": str(chrome),
             "WPR_BIN": str(wpr),
+            "TRACEBOX_BIN": str(tracebox),
             "WPR_DIR": str(self.archives),
             "WPR_ARCHIVES_PREPARED": "1",
             "SHAPE": "0",

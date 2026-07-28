@@ -41,6 +41,13 @@ CROSSBENCH_REV="${CROSSBENCH_REV:-be14dbfb884747ea577e2e65b6a4a77d7ecd807d}"
 # --bin-override, which skips crossbench's own build machinery entirely.
 WPR_BIN="${WPR_BIN:-$HOME/Developer/mac-perf-runner/bin/wpr}"
 
+# Crossbench currently defaults to tracebox v53.0. Use v56.0 explicitly: it
+# contains a fix for an intermittent tracing-service crash on desktop.
+TRACEBOX_VERSION="v56.0"
+TRACEBOX_SHA256="bc2d8adbc2d4b6b2c063a0b80025a387297b395fdd706b92b57dd9ae3301e693"
+TRACEBOX_URL="https://storage.googleapis.com/perfetto-luci-artifacts/$TRACEBOX_VERSION/mac-arm64/tracebox"
+TRACEBOX_BIN="${TRACEBOX_BIN:-$HOME/Developer/mac-perf-runner/bin/tracebox-$TRACEBOX_VERSION}"
+
 # The tsproxy revision in crossbench's DEPS is not Python-3-compatible. Use
 # Catapult's fixed copy instead, pinned to immutable source and verified by
 # content hash so scheduled runs cannot silently pick up tip-of-tree changes.
@@ -119,6 +126,33 @@ fi
 # touch untracked files, so the copied-in extras survive — do not add git clean.
 git -C "$CROSSBENCH_DIR" -c advice.detachedHead=false checkout --quiet -f "$CROSSBENCH_REV"
 echo "crossbench: $(git -C "$CROSSBENCH_DIR" rev-parse HEAD)"
+
+# Use a checksum-verified Perfetto binary instead of Crossbench's older
+# auto-downloaded default.
+log "Perfetto tracebox $TRACEBOX_VERSION"
+TRACEBOX_ACTUAL_SHA256=""
+if [ -f "$TRACEBOX_BIN" ]; then
+  TRACEBOX_ACTUAL_SHA256="$(shasum -a 256 "$TRACEBOX_BIN" | awk '{print $1}')"
+fi
+if [ "$TRACEBOX_ACTUAL_SHA256" != "$TRACEBOX_SHA256" ]; then
+  TRACEBOX_TMP="${TRACEBOX_BIN}.tmp"
+  mkdir -p "$(dirname "$TRACEBOX_BIN")"
+  rm -f "$TRACEBOX_TMP"
+  if ! curl -fLSs "$TRACEBOX_URL" -o "$TRACEBOX_TMP"; then
+    rm -f "$TRACEBOX_TMP"
+    echo "ERROR: could not fetch Perfetto $TRACEBOX_VERSION." >&2
+    exit 1
+  fi
+  TRACEBOX_ACTUAL_SHA256="$(shasum -a 256 "$TRACEBOX_TMP" | awk '{print $1}')"
+  if [ "$TRACEBOX_ACTUAL_SHA256" != "$TRACEBOX_SHA256" ]; then
+    rm -f "$TRACEBOX_TMP"
+    echo "ERROR: Perfetto tracebox checksum mismatch." >&2
+    exit 1
+  fi
+  mv "$TRACEBOX_TMP" "$TRACEBOX_BIN"
+fi
+chmod +x "$TRACEBOX_BIN"
+"$TRACEBOX_BIN" --version
 
 # 6. Self-heal the fork-only extras + cpu_freq patch. REQUIRED: without the
 #    extras LCP silently returns no rows, and without the patch crossbench

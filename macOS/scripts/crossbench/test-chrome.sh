@@ -69,6 +69,9 @@ WPR_MANIFEST="$WPR_DIR/manifest.tsv"
 # Built by provision-macos.sh and handed to crossbench via --bin-override so
 # crossbench never runs its own webpagereplay build (which needs CIPD Go).
 WPR_BIN="${WPR_BIN:-$HOME/Developer/mac-perf-runner/bin/wpr}"
+# Explicitly provisioned by provision-macos.sh; avoids Crossbench's older
+# auto-downloaded tracebox.
+TRACEBOX_BIN="${TRACEBOX_BIN:-$HOME/Developer/mac-perf-runner/bin/tracebox-v56.0}"
 # Standalone Python-3 tsproxy, handed to crossbench via speed:{ts_proxy:...}.
 # See wpr_network_arg for why crossbench's own DEPS-pinned copy cannot be used.
 TSPROXY_PY="${TSPROXY_PY:-$HOME/Developer/mac-perf-runner/bin/tsproxy.py}"
@@ -258,6 +261,10 @@ check_prerequisites() {
   fi
   if [ ! -x "$WPR_BIN" ]; then
     echo "ERROR: wpr binary not found at $WPR_BIN. Run provision-macos.sh first." >&2
+    exit 1
+  fi
+  if [ ! -x "$TRACEBOX_BIN" ]; then
+    echo "ERROR: tracebox binary not found at $TRACEBOX_BIN. Run provision-macos.sh first." >&2
     exit 1
   fi
   if [ "$SHAPE" = "1" ] && [ ! -f "$TSPROXY_PY" ]; then
@@ -537,6 +544,7 @@ run_chrome() {
       --url="$site,$LOAD_WINDOW" \
       --about-blank-duration=2s \
       --bin-override "wpr=$WPR_BIN" \
+      --bin-override "tracebox=$TRACEBOX_BIN" \
       --out-dir="$ACTIVE_SITE_WORK_DIR" \
       "$network_arg" \
       --debug \

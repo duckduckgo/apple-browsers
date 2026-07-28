@@ -868,26 +868,19 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
                 if self.suggestionSubmissionID == submissionID {
                     self.suggestionSubmissionTask = nil
                     self.suggestionSubmissionID = nil
+                    if self.isSheetPresented, case .nativeInput = self.sessionState.viewState.content {
+                        self.contextualInputViewController.setStartActionsDimmed(false)
+                    }
                 }
             }
 
             await self.delegate?.aiChatContextualSheetViewControllerAttachContextForSuggestion(self)
             guard !Task.isCancelled, self.isSheetPresented else { return }
 
-            guard let webViewController = self.webViewController else {
-                if self.suggestionSubmissionID == submissionID, self.isSheetPresented {
-                    self.contextualInputViewController.setStartActionsDimmed(false)
-                }
-                return
-            }
+            guard let webViewController = self.webViewController else { return }
 
             let isFrontendReady = await webViewController.waitUntilFrontendReady(timeout: Constants.suggestedPromptFrontendReadinessTimeout)
-            guard isFrontendReady else {
-                if self.suggestionSubmissionID == submissionID, self.isSheetPresented {
-                    self.contextualInputViewController.setStartActionsDimmed(false)
-                }
-                return
-            }
+            guard isFrontendReady else { return }
             guard !Task.isCancelled, self.isSheetPresented else { return }
             self.submitSuggestionPrompt(suggestion.prompt)
         }

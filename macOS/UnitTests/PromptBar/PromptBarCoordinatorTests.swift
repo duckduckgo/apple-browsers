@@ -22,10 +22,22 @@ import PrivacyConfig
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
+/// Both flags start off, mirroring the opt-in product default.
 private final class MockPromptBarPreferencesPersistor: PromptBarPreferencesPersistor {
-    var isKeyboardShortcutEnabled: Bool = true
+    var isKeyboardShortcutEnabled: Bool = false
     var keyboardShortcut: PromptBarShortcut = .defaultShortcut
-    var isMenuBarIconVisible: Bool = true
+    var isMenuBarIconVisible: Bool = false
+}
+
+private extension MockPromptBarPreferencesPersistor {
+    /// Opted in, so a test asserting nothing is registered isolates the gate it exercises
+    /// instead of passing on the off-by-default preference.
+    static var optedIn: MockPromptBarPreferencesPersistor {
+        let persistor = MockPromptBarPreferencesPersistor()
+        persistor.isKeyboardShortcutEnabled = true
+        persistor.isMenuBarIconVisible = true
+        return persistor
+    }
 }
 
 private final class MockGlobalShortcutRegistrar: GlobalShortcutRegistering {
@@ -90,7 +102,16 @@ final class PromptBarCoordinatorTests: XCTestCase {
     }
 
     func testWhenFeatureFlagIsOffThenNoShortcutIsRegistered() {
-        let (coordinator, _, registrar, _) = makeCoordinator(isFeatureOn: false)
+        let (coordinator, _, registrar, _) = makeCoordinator(isFeatureOn: false, persistor: .optedIn)
+
+        coordinator.start()
+
+        XCTAssertEqual(registrar.registerCallCount, 0)
+        XCTAssertNil(registrar.registeredShortcut)
+    }
+
+    func testWhenPreferencesAreAtTheirDefaultsThenNoShortcutIsRegistered() {
+        let (coordinator, _, registrar, _) = makeCoordinator()
 
         coordinator.start()
 
@@ -99,7 +120,7 @@ final class PromptBarCoordinatorTests: XCTestCase {
     }
 
     func testWhenStartedThenStoredShortcutIsRegistered() {
-        let persistor = MockPromptBarPreferencesPersistor()
+        let persistor = MockPromptBarPreferencesPersistor.optedIn
         persistor.keyboardShortcut = PromptBarShortcut(keyCode: UInt16(kVK_ANSI_D), modifierFlags: [.control, .option])
         let (coordinator, _, registrar, _) = makeCoordinator(persistor: persistor)
 
@@ -109,7 +130,7 @@ final class PromptBarCoordinatorTests: XCTestCase {
     }
 
     func testWhenShortcutSettingIsOffThenNothingIsRegistered() {
-        let persistor = MockPromptBarPreferencesPersistor()
+        let persistor = MockPromptBarPreferencesPersistor.optedIn
         persistor.isKeyboardShortcutEnabled = false
         let (coordinator, _, registrar, _) = makeCoordinator(persistor: persistor)
 
@@ -120,7 +141,7 @@ final class PromptBarCoordinatorTests: XCTestCase {
     }
 
     func testWhenDuckAIIsUnavailableThenNothingIsRegistered() {
-        let (coordinator, _, registrar, _) = makeCoordinator(isDuckAIAvailable: false)
+        let (coordinator, _, registrar, _) = makeCoordinator(persistor: .optedIn, isDuckAIAvailable: false)
 
         coordinator.start()
 
@@ -128,7 +149,7 @@ final class PromptBarCoordinatorTests: XCTestCase {
     }
 
     func testWhenShortcutChangesThenItIsReRegistered() {
-        let (coordinator, preferences, registrar, _) = makeCoordinator()
+        let (coordinator, preferences, registrar, _) = makeCoordinator(persistor: .optedIn)
         coordinator.start()
 
         let updated = PromptBarShortcut(keyCode: UInt16(kVK_ANSI_K), modifierFlags: [.command, .shift])
@@ -138,8 +159,18 @@ final class PromptBarCoordinatorTests: XCTestCase {
         XCTAssertEqual(registrar.registerCallCount, 2)
     }
 
-    func testWhenShortcutIsDisabledAfterStartThenItIsUnregistered() {
+    func testWhenShortcutIsEnabledAfterStartThenItIsRegistered() {
         let (coordinator, preferences, registrar, _) = makeCoordinator()
+        coordinator.start()
+
+        preferences.isKeyboardShortcutEnabled = true
+
+        XCTAssertEqual(registrar.registeredShortcut, preferences.keyboardShortcut)
+        XCTAssertEqual(registrar.registerCallCount, 1)
+    }
+
+    func testWhenShortcutIsDisabledAfterStartThenItIsUnregistered() {
+        let (coordinator, preferences, registrar, _) = makeCoordinator(persistor: .optedIn)
         coordinator.start()
 
         preferences.isKeyboardShortcutEnabled = false

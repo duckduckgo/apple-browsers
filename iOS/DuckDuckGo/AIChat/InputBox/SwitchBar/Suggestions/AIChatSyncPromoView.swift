@@ -23,6 +23,10 @@ import DuckUI
 import MetricBuilder
 import SwiftUI
 
+#if DEBUG
+import PreviewSnapshots
+#endif
+
 struct AIChatSyncPromoView: View {
 
     let onCTATap: () -> Void
@@ -66,11 +70,20 @@ struct AIChatSyncPromoView: View {
     }
 }
 
-#Preview {
-    AIChatSyncPromoView(onCTATap: {}, onCloseTap: {})
-}
+#if DEBUG
+struct AIChatSyncPromoView_Previews: PreviewProvider {
 
-#Preview {
-    AIChatSyncPromoView(onCTATap: {}, onCloseTap: {})
-        .colorScheme(.dark)
+    static var previews: some View {
+        snapshots.previews
+    }
+
+    static let snapshots = PreviewSnapshots(
+        configurations: [
+            .init(name: "", state: "")
+        ],
+        configure: { _ in
+            AIChatSyncPromoView(onCTATap: {}, onCloseTap: {})
+        }
+    )
 }
+#endif

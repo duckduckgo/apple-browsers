@@ -59,6 +59,17 @@ final class AIChatHistoryViewModel: ObservableObject {
     /// currently shown in `pinned`/`recent`.
     private(set) var totalChatCount: Int = 0
 
+    /// Maximum number of chats the user can keep pinned at once.
+    static let maxPinnedChats = 5
+
+    /// Count of ALL pinned chats, independent of the active search filter. The limit check must
+    /// use this rather than `pinned.count`, which only reflects the pinned chats matching the
+    /// current search query.
+    private(set) var totalPinnedCount: Int = 0
+
+    /// `true` once the user has as many pinned chats as `maxPinnedChats` allows.
+    var isPinLimitReached: Bool { totalPinnedCount >= Self.maxPinnedChats }
+
     private let reader: ChatHistoryReading
     private let fireExecutor: FireExecuting?
     private let downloader: ChatHistoryDownloading?
@@ -125,6 +136,7 @@ final class AIChatHistoryViewModel: ObservableObject {
                 : allChats.filter { $0.title.localizedCaseInsensitiveContains(trimmed) }
             loadFailed = false
             totalChatCount = allChats.count
+            totalPinnedCount = allChats.lazy.filter(\.pinned).count
             pinned = filtered.filter(\.pinned)
             recent = filtered.filter { !$0.pinned }
         case .failure(let error):
@@ -133,6 +145,7 @@ final class AIChatHistoryViewModel: ObservableObject {
             }
             loadFailed = true
             totalChatCount = 0
+            totalPinnedCount = 0
             pinned = []
             recent = []
         }
@@ -306,13 +319,30 @@ final class AIChatHistoryViewModel: ObservableObject {
         pinned.contains(where: { $0.chatId == chatId })
     }
 
+    /// `true` when pinning `chatId` is allowed: unpinning is always allowed; pinning a new chat
+    /// is blocked once `maxPinnedChats` is reached.
+    func canPin(chatId: String) -> Bool {
+        isPinned(chatId: chatId) || !isPinLimitReached
+    }
+
+    /// The user attempted to pin a chat while already at `maxPinnedChats`. Asks the delegate to
+    /// surface the limit message (the swipe path — the long-press menu shows a disabled item).
+    func pinRejectedAtLimit() {
+        delegate?.viewModelDidReachPinLimit(limit: Self.maxPinnedChats)
+    }
+
     /// Optimistically moves the chat between sections and dispatches the storage write.
     /// Returns the source + destination index paths for the table animation, or `nil` when
-    /// no move is possible (chat absent or pinner not wired).
+    /// no move is possible (chat absent, pinner not wired, or the pin limit is reached).
     @discardableResult
     func togglePin(chatId: String) -> (source: IndexPath, destination: IndexPath)? {
-        guard let pinner, let move = applyOptimisticPinToggle(chatId: chatId) else { return nil }
+        // Guard the limit here too so the model can never exceed it, even if a caller skips the
+        // pre-check that drives the toast / disabled menu item.
+        guard let pinner, canPin(chatId: chatId), let move = applyOptimisticPinToggle(chatId: chatId) else { return nil }
         let newPinned = move.destination.section == Section.pinned.rawValue
+        // Keep the unfiltered count in step with the optimistic move so a follow-up limit check
+        // is correct before the reader re-emits.
+        totalPinnedCount += newPinned ? 1 : -1
         if newPinned {
             instrumentation.pinAdded()
         } else {
@@ -420,4 +450,8 @@ protocol AIChatHistoryViewModelDelegate: AnyObject {
     /// An export produced no files — a single download failed, or every selected chat failed.
     /// Present a "download failed" error toast. (Not called when nothing was selected.)
     func viewModelDidFailExport()
+
+    /// The user swiped to pin a chat while already at the `limit` of pinned chats. Present a toast
+    /// explaining the pin didn't happen. (The long-press menu handles this with a disabled item.)
+    func viewModelDidReachPinLimit(limit: Int)
 }

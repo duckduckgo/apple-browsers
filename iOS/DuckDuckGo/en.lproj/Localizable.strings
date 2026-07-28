@@ -325,6 +325,9 @@
 /* Shown inside the Duck.ai chat history list when the user's search query returns no matching chats. */
 "aiChat.history.noSearchResults.title" = "No matches found";
 
+/* Toast shown when the user swipes to pin a Duck.ai chat but has already reached the maximum number of pinned chats. %d is the limit (e.g. 5). */
+"aiChat.history.pin.limitReached.message" = "You can only pin up to %d chats.";
+
 /* Long-press row menu item that deletes a Duck.ai chat. */
 "aiChat.history.rowMenu.delete" = "Delete";
 
@@ -333,6 +336,9 @@
 
 /* Long-press row menu item that pins a Duck.ai chat. */
 "aiChat.history.rowMenu.pin" = "Pin";
+
+/* Disabled long-press row menu item shown in place of Pin when the user has reached the maximum number of pinned Duck.ai chats. */
+"aiChat.history.rowMenu.pinLimitReached" = "Max Pins Reached";
 
 /* Long-press row menu item that starts multi-selecting chats in the Duck.ai chat history list. */
 "aiChat.history.rowMenu.select" = "Select";

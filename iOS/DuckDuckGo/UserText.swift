@@ -140,6 +140,7 @@ public struct UserText {
     public static let aiChatHistoryRowMenuSelect = NSLocalizedString("aiChat.history.rowMenu.select", value: "Select", comment: "Long-press row menu item that starts multi-selecting chats in the Duck.ai chat history list.")
     public static let aiChatHistoryRowMenuPin = NSLocalizedString("aiChat.history.rowMenu.pin", value: "Pin", comment: "Long-press row menu item that pins a Duck.ai chat.")
     public static let aiChatHistoryRowMenuUnpin = NSLocalizedString("aiChat.history.rowMenu.unpin", value: "Unpin", comment: "Long-press row menu item that unpins a Duck.ai chat.")
+    public static let aiChatHistoryRowMenuPinLimitReached = NSLocalizedString("aiChat.history.rowMenu.pinLimitReached", value: "Max Pins Reached", comment: "Disabled long-press row menu item shown in place of Pin when the user has reached the maximum number of pinned Duck.ai chats.")
     public static let aiChatHistoryRowMenuDownload = NSLocalizedString("aiChat.history.rowMenu.download", value: "Download", comment: "Long-press row menu item that downloads a Duck.ai chat.")
     public static let aiChatHistoryRowMenuDelete = NSLocalizedString("aiChat.history.rowMenu.delete", value: "Delete", comment: "Long-press row menu item that deletes a Duck.ai chat.")
     public static let aiChatHistoryDeleteAll = NSLocalizedString("aiChat.history.selection.deleteAll", value: "Delete All", comment: "Multi-select toolbar button that deletes all chats when none are individually selected.")
@@ -155,6 +156,10 @@ public struct UserText {
         return String.localizedStringWithFormat(format, count)
     }
     public static let aiChatHistoryDownloadFailedMessage = NSLocalizedString("aiChat.history.download.failed.message", value: "Couldn't download. Please try again.", comment: "Error toast shown when a Duck.ai chat download fails and nothing was saved.")
+    public static func aiChatHistoryPinLimitReachedMessage(limit: Int) -> String {
+        let format = NSLocalizedString("aiChat.history.pin.limitReached.message", value: "You can only pin up to %d chats.", comment: "Toast shown when the user swipes to pin a Duck.ai chat but has already reached the maximum number of pinned chats. %d is the limit (e.g. 5).")
+        return String(format: format, limit)
+    }
     public static let actionAIChatSettings = NSLocalizedString("action.title.aiChat.settings", value: "Duck.ai Settings", comment: "Open AI Chat settings action in the menu list")
     public static let sectionTitleSuggestions = NotLocalizedString("section.title.suggestions", value: "Suggestions", comment: "Section header title above search suggestions")
     public static let aiChatSuggestedChatsTitle = NotLocalizedString("aiChat.suggestedChats.title", value: "Chats", comment: "Section header title above suggested Duck.ai chats")

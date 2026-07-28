@@ -458,6 +458,83 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         XCTAssertEqual(pinner.requestedChatIds, ["r1"])
     }
 
+    // MARK: - Pin limit
+
+    func testTotalPinnedCount_reflectsUnfilteredPinnedChats() {
+        let sut = makeSUT(chats: [
+            chat(id: "p1", pinned: true),
+            chat(id: "p2", pinned: true),
+            chat(id: "r1", pinned: false)
+        ])
+
+        XCTAssertEqual(sut.totalPinnedCount, 2)
+        XCTAssertFalse(sut.isPinLimitReached)
+    }
+
+    func testIsPinLimitReached_trueOnceMaxPinnedChatsArePinned() {
+        let pinnedChats = (0..<AIChatHistoryViewModel.maxPinnedChats).map { chat(id: "p\($0)", pinned: true) }
+        let sut = makeSUT(chats: pinnedChats + [chat(id: "r1", pinned: false)])
+
+        XCTAssertEqual(sut.totalPinnedCount, AIChatHistoryViewModel.maxPinnedChats)
+        XCTAssertTrue(sut.isPinLimitReached)
+    }
+
+    func testCanPin_atLimit_blocksNewPinButAllowsUnpin() {
+        let pinnedChats = (0..<AIChatHistoryViewModel.maxPinnedChats).map { chat(id: "p\($0)", pinned: true) }
+        let sut = makeSUT(chats: pinnedChats + [chat(id: "r1", pinned: false)], pinner: StubPinner())
+
+        XCTAssertFalse(sut.canPin(chatId: "r1"), "Pinning a new chat should be blocked at the limit")
+        XCTAssertTrue(sut.canPin(chatId: "p0"), "Unpinning an already-pinned chat should still be allowed")
+    }
+
+    func testTogglePin_atLimit_returnsNilAndDoesNotPin() {
+        let pinner = StubPinner()
+        let pinnedChats = (0..<AIChatHistoryViewModel.maxPinnedChats).map { chat(id: "p\($0)", pinned: true) }
+        let sut = makeSUT(chats: pinnedChats + [chat(id: "r1", pinned: false)], pinner: pinner)
+
+        let move = sut.togglePin(chatId: "r1")
+
+        XCTAssertNil(move)
+        XCTAssertFalse(sut.isPinned(chatId: "r1"))
+        XCTAssertEqual(sut.totalPinnedCount, AIChatHistoryViewModel.maxPinnedChats)
+        processMainQueue()
+        XCTAssertEqual(pinner.requestedChatIds, [], "The storage write must not fire when the pin is blocked")
+    }
+
+    func testTogglePin_atLimit_stillAllowsUnpinning() {
+        let pinner = StubPinner()
+        let pinnedChats = (0..<AIChatHistoryViewModel.maxPinnedChats).map { chat(id: "p\($0)", pinned: true) }
+        let sut = makeSUT(chats: pinnedChats, pinner: pinner)
+
+        let move = sut.togglePin(chatId: "p0")
+
+        XCTAssertNotNil(move)
+        XCTAssertFalse(sut.isPinned(chatId: "p0"))
+        XCTAssertEqual(sut.totalPinnedCount, AIChatHistoryViewModel.maxPinnedChats - 1)
+    }
+
+    func testTogglePin_updatesTotalPinnedCountOptimistically() {
+        let pinner = StubPinner()
+        let sut = makeSUT(chats: [chat(id: "p1", pinned: true), chat(id: "r1", pinned: false)], pinner: pinner)
+        XCTAssertEqual(sut.totalPinnedCount, 1)
+
+        sut.togglePin(chatId: "r1")
+        XCTAssertEqual(sut.totalPinnedCount, 2)
+
+        sut.togglePin(chatId: "p1")
+        XCTAssertEqual(sut.totalPinnedCount, 1)
+    }
+
+    func testPinRejectedAtLimit_notifiesDelegateWithLimit() {
+        let sut = makeSUT(chats: [chat(id: "r1", pinned: false)])
+        let delegate = MockDelegate()
+        sut.delegate = delegate
+
+        sut.pinRejectedAtLimit()
+
+        XCTAssertEqual(delegate.reachedPinLimits, [AIChatHistoryViewModel.maxPinnedChats])
+    }
+
     // MARK: - Search
 
     func testUpdateQuery_filtersChatsByTitleCaseInsensitive() {
@@ -691,6 +768,7 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         private(set) var exportedChatCounts: [Int] = []
         private(set) var didFailExport = false
         private(set) var didRequestChatProtection = false
+        private(set) var reachedPinLimits: [Int] = []
 
         func viewModelDidRequestOpenNewChat() { didRequestOpenNewChat = true }
         func viewModelDidRequestOpenChat(chatId: String) { requestedChatId = chatId }
@@ -698,6 +776,7 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         func viewModelDidExportChats(count: Int) { exportedChatCounts.append(count) }
         func viewModelDidFailExport() { didFailExport = true }
         func viewModelDidRequestChatProtection() { didRequestChatProtection = true }
+        func viewModelDidReachPinLimit(limit: Int) { reachedPinLimits.append(limit) }
     }
 
     private final class MockChatHistoryFireExecutor: FireExecuting {

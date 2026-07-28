@@ -699,11 +699,17 @@ extension AIChatHistoryViewController: UITableViewDelegate {
         // Long-press actions target a single chat; suppress while multi-selecting.
         guard !isEditingChats, let chatId = viewModel.chatId(forRowAt: indexPath) else { return nil }
         let isPinned = viewModel.isPinned(chatId: chatId)
+        // Config is rebuilt on every long-press, so the limit state is current for this row.
+        let pinBlockedByLimit = !isPinned && viewModel.isPinLimitReached
 
         return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { [weak self] _ in
             guard let self else { return nil }
-            let pin = UIAction(title: isPinned ? UserText.aiChatHistoryRowMenuUnpin : UserText.aiChatHistoryRowMenuPin,
-                               image: isPinned ? DesignSystemImages.Glyphs.Size24.unpin : DesignSystemImages.Glyphs.Size24.pin) { [weak self] _ in
+            // At the limit, the pin item stays visible but disabled and relabelled to explain why.
+            // At the limit the slashed-pin glyph reinforces that pinning isn't available.
+            let pin = UIAction(title: pinBlockedByLimit ? UserText.aiChatHistoryRowMenuPinLimitReached
+                                        : (isPinned ? UserText.aiChatHistoryRowMenuUnpin : UserText.aiChatHistoryRowMenuPin),
+                               image: (isPinned || pinBlockedByLimit) ? DesignSystemImages.Glyphs.Size24.unpin : DesignSystemImages.Glyphs.Size24.pin,
+                               attributes: pinBlockedByLimit ? .disabled : []) { [weak self] _ in
                 self?.performPinToggle(chatId: chatId)
             }
             let download = UIAction(title: UserText.aiChatHistoryRowMenuDownload,
@@ -734,6 +740,12 @@ extension AIChatHistoryViewController: UITableViewDelegate {
     /// Toggles pin state and animates the row between the Pinned and Recent sections.
     /// Shared by the leading-swipe action and the long-press row menu.
     private func performPinToggle(chatId: String) {
+        // Pinning past the limit isn't allowed; unpinning always is. On the swipe path we surface a
+        // toast (the long-press menu instead shows a disabled "Max Pins Reached" item).
+        guard viewModel.canPin(chatId: chatId) else {
+            viewModel.pinRejectedAtLimit()
+            return
+        }
         guard let move = viewModel.togglePin(chatId: chatId) else { return }
         // Snapshot the optimistic state so the completion can tell whether a concurrent
         // (FE-driven) emission changed anything while updates were suppressed.

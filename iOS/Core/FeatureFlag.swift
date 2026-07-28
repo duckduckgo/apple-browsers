@@ -519,6 +519,10 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216629730083154?focus=true
     case systemFindInPage
+
+    /// Experiment for removing monthly free trials
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216851336490252
+    case monthlyFreeTrialExperiment
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -541,6 +545,11 @@ extension FeatureFlag: FeatureFlagDescribing {
 
     /// Cohorts for the onboarding-flow-by-download-reason experiment.
     public enum OnboardingFlowByDownloadReasonExperimentCohort: String, FeatureFlagCohortDescribing {
+        case control
+        case treatment
+    }
+
+    public enum MonthlyFreeTrialExperimentCohort: String, FeatureFlagCohortDescribing {
         case control
         case treatment
     }
@@ -798,6 +807,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.searchTokenExperiment), cohortType: SearchTokenExperimentCohort.self)
         case .onboardingFlowByDownloadReasonExperiment:
             Config(source: .disabled, cohortType: OnboardingFlowByDownloadReasonExperimentCohort.self)
+        case .monthlyFreeTrialExperiment:
+            Config(source: .remoteReleasable(PrivacyProSubfeature.monthlyFreeTrialExperiment), cohortType: MonthlyFreeTrialExperimentCohort.self)
         case .genericBackgroundTask:
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.genericBackgroundTask))
         case .crashCollectionLimitCallStackTreeDepth:

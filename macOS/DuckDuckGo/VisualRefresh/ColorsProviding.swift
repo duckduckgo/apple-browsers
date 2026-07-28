@@ -104,13 +104,13 @@ final class LegacyColorsProviding: ColorsProviding {
 
     var settingsBackgroundColor: NSColor { palette.surfaceCanvas }
     var iconsColor: NSColor { palette.iconsPrimary }
-    var buttonMouseOverColor: NSColor { palette.controlsFillPrimary }
-    var buttonMouseDownColor: NSColor { palette.controlsFillSecondary }
-    var buttonMouseDownPressedColor: NSColor { palette.controlsFillTertiary }
+    var buttonMouseOverColor: NSColor { palette.controlFillPrimary }
+    var buttonMouseDownColor: NSColor { palette.controlFillSecondary }
+    var buttonMouseDownPressedColor: NSColor { palette.controlFillTertiary }
     var separatorColor: NSColor { palette.surfaceDecorationPrimary }
     var separatorActiveColor: NSColor { palette.surfaceDecorationSecondary }
-    var fillButtonBackgroundColor: NSColor { palette.controlsFillPrimary }
-    var fillButtonMouseOverColor: NSColor { palette.controlsFillSecondary }
+    var fillButtonBackgroundColor: NSColor { palette.controlFillPrimary }
+    var fillButtonMouseOverColor: NSColor { palette.controlFillSecondary }
     var bookmarksManagerBackgroundColor: NSColor { palette.surfaceCanvas }
     var bookmarksPanelBackgroundColor: NSColor { palette.surfaceSecondary }
     var downloadsPanelBackgroundColor: NSColor { palette.surfaceSecondary }
@@ -143,8 +143,8 @@ final class CurrentColorsProviding: ColorsProviding {
     var addressBarShadowColor: NSColor { palette.shadowTertiary }
     var addressBarSuffixTextColor: NSColor { palette.textSecondary }
     var addressBarTextFieldColor: NSColor { palette.textPrimary }
-    var activeAddressBarBackgroundColor: NSColor { palette.inputActive }
-    var inactiveAddressBarBackgroundColor: NSColor { palette.inputResting }
+    var activeAddressBarBackgroundColor: NSColor { palette.unifiedInputFieldFillActive }
+    var inactiveAddressBarBackgroundColor: NSColor { palette.unifiedInputFieldFillResting }
 
     // MARK: - Bookmarks
     var bookmarksManagerBackgroundColor: NSColor { palette.surfaceCanvas }
@@ -164,22 +164,22 @@ final class CurrentColorsProviding: ColorsProviding {
     var settingsBackgroundColor: NSColor { palette.surfaceCanvas }
 
     // MARK: - Suggestions
-    var suggestionsBackgroundColor: NSColor { palette.inputActive }
+    var suggestionsBackgroundColor: NSColor { palette.unifiedInputFieldFillActive }
     var suggestionsTextColor: NSColor { palette.textPrimary }
     var suggestionsSuffixColor: NSColor { palette.accentTextPrimary }
     var suggestionsHighlightSuffixColor: NSColor { palette.accentTextPrimary }
-    var suggestionsHighlightBackgroundColor: NSColor { palette.controlsFillPrimary }
+    var suggestionsHighlightBackgroundColor: NSColor { palette.controlFillPrimary }
     var suggestionsHighlightTextColor: NSColor { palette.textPrimary }
 
     // MARK: - Semantic
     var accentPrimaryColor: NSColor { palette.accentPrimary }
     var baseBackgroundColor: NSColor { palette.surfaceBackdrop }
     var bannerBackgroundColor: NSColor { palette.surfacePrimary }
-    var buttonMouseOverColor: NSColor { palette.controlsFillPrimary }
-    var buttonMouseDownColor: NSColor { palette.controlsFillSecondary }
-    var buttonMouseDownPressedColor: NSColor { palette.controlsFillTertiary }
-    var fillButtonBackgroundColor: NSColor { palette.controlsFillPrimary }
-    var fillButtonMouseOverColor: NSColor { palette.controlsFillSecondary }
+    var buttonMouseOverColor: NSColor { palette.controlFillPrimary }
+    var buttonMouseDownColor: NSColor { palette.controlFillSecondary }
+    var buttonMouseDownPressedColor: NSColor { palette.controlFillTertiary }
+    var fillButtonBackgroundColor: NSColor { palette.controlFillPrimary }
+    var fillButtonMouseOverColor: NSColor { palette.controlFillSecondary }
     var iconsColor: NSColor { palette.iconsPrimary }
     var popoverBackgroundColor: NSColor { palette.surfaceSecondary }
     var separatorColor: NSColor { palette.surfaceDecorationPrimary }

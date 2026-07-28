@@ -118,6 +118,6 @@ final class BookmarkTableRowView: NSTableRowView {
     }
 
     private var highlightBackgroundColor: NSColor {
-        palette.controlsFillPrimary
+        palette.controlFillPrimary
     }
 }

@@ -1323,7 +1323,7 @@ extension PasswordManagementViewController: ThemeUpdateListening {
         backgroundView.backgroundColor = colorsProvider.passwordManagerLockScreenBackgroundColor
 
         let palette = theme.palette
-        searchField.borderColor = palette.controlsBorderPrimary
+        searchField.borderColor = palette.controlBorderPrimary
         searchField.borderHighlightColor = palette.accentPrimary
         searchField.innerBackgroundColor = palette.surfaceTertiary
 
@@ -1339,7 +1339,7 @@ extension PasswordManagementViewController: ThemeUpdateListening {
             emptyStateSyncButton.contentTintColor = palette.textPrimary
 
             emptyStateImportButton.layer?.backgroundColor = palette.accentPrimary.cgColor
-            emptyStateSyncButton.layer?.backgroundColor = palette.controlsFillPrimary.cgColor
+            emptyStateSyncButton.layer?.backgroundColor = palette.controlFillPrimary.cgColor
         }
     }
 }

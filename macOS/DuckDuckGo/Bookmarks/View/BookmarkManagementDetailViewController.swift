@@ -585,7 +585,7 @@ extension BookmarkManagementDetailViewController: ThemeUpdateListening {
 
         let palette = theme.palette
         contentView.backgroundColor = palette.surfaceCanvas
-        searchBar.borderColor = palette.controlsBorderPrimary
+        searchBar.borderColor = palette.controlBorderPrimary
         searchBar.borderHighlightColor = palette.accentPrimary
         searchBar.innerBackgroundColor = palette.surfaceTertiary
     }

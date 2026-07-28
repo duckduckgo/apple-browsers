@@ -42,17 +42,17 @@ struct ThemeColors {
     let accentTextPrimary: NSColor
     let accentTextSecondary: NSColor
     let accentTextTertiary: NSColor
-    let controlsBorderPrimary: NSColor
-    let controlsBorderSecondary: NSColor
-    let controlsBorderTertiary: NSColor
-    let controlsBorderQuaternary: NSColor
-    let controlsFillPrimary: NSColor
-    let controlsFillSecondary: NSColor
-    let controlsFillTertiary: NSColor
+    let controlBorderPrimary: NSColor
+    let controlBorderSecondary: NSColor
+    let controlBorderTertiary: NSColor
+    let controlBorderQuaternary: NSColor
+    let controlFillPrimary: NSColor
+    let controlFillSecondary: NSColor
+    let controlFillTertiary: NSColor
     let destructiveContentPrimary: NSColor
     let destructiveContentSecondary: NSColor
     let destructiveContentTertiary: NSColor
-    let destructiveGlow: NSColor
+    let destructiveGlowPrimary: NSColor
     let destructivePrimary: NSColor
     let destructiveSecondary: NSColor
     let destructiveTertiary: NSColor
@@ -63,8 +63,8 @@ struct ThemeColors {
     let iconsPrimary: NSColor
     let iconsSecondary: NSColor
     let iconsTertiary: NSColor
-    let inputActive: NSColor
-    let inputResting: NSColor
+    let unifiedInputFieldFillActive: NSColor
+    let unifiedInputFieldFillResting: NSColor
     let shadowPrimary: NSColor
     let shadowSecondary: NSColor
     let shadowTertiary: NSColor
@@ -108,17 +108,17 @@ extension ThemeColors {
         accentTextPrimary = NSColor(designSystemColor: .accentTextPrimary, palette: palette)
         accentTextSecondary = NSColor(designSystemColor: .accentTextSecondary, palette: palette)
         accentTextTertiary = NSColor(designSystemColor: .accentTextTertiary, palette: palette)
-        controlsBorderPrimary = NSColor(designSystemColor: .controlBorderPrimary, palette: palette)
-        controlsBorderSecondary = NSColor(designSystemColor: .controlBorderSecondary, palette: palette)
-        controlsBorderTertiary = NSColor(designSystemColor: .controlBorderTertiary, palette: palette)
-        controlsBorderQuaternary = NSColor(designSystemColor: .controlBorderQuaternary, palette: palette)
-        controlsFillPrimary = NSColor(designSystemColor: .controlFillPrimary, palette: palette)
-        controlsFillSecondary = NSColor(designSystemColor: .controlFillSecondary, palette: palette)
-        controlsFillTertiary = NSColor(designSystemColor: .controlFillTertiary, palette: palette)
+        controlBorderPrimary = NSColor(designSystemColor: .controlBorderPrimary, palette: palette)
+        controlBorderSecondary = NSColor(designSystemColor: .controlBorderSecondary, palette: palette)
+        controlBorderTertiary = NSColor(designSystemColor: .controlBorderTertiary, palette: palette)
+        controlBorderQuaternary = NSColor(designSystemColor: .controlBorderQuaternary, palette: palette)
+        controlFillPrimary = NSColor(designSystemColor: .controlFillPrimary, palette: palette)
+        controlFillSecondary = NSColor(designSystemColor: .controlFillSecondary, palette: palette)
+        controlFillTertiary = NSColor(designSystemColor: .controlFillTertiary, palette: palette)
         destructiveContentPrimary = NSColor(designSystemColor: .destructiveContentPrimary, palette: palette)
         destructiveContentSecondary = NSColor(designSystemColor: .destructiveContentSecondary, palette: palette)
         destructiveContentTertiary = NSColor(designSystemColor: .destructiveContentTertiary, palette: palette)
-        destructiveGlow = NSColor(designSystemColor: .destructiveGlowPrimary, palette: palette)
+        destructiveGlowPrimary = NSColor(designSystemColor: .destructiveGlowPrimary, palette: palette)
         destructivePrimary = NSColor(designSystemColor: .destructivePrimary, palette: palette)
         destructiveSecondary = NSColor(designSystemColor: .destructiveSecondary, palette: palette)
         destructiveTertiary = NSColor(designSystemColor: .destructiveTertiary, palette: palette)
@@ -129,8 +129,8 @@ extension ThemeColors {
         iconsPrimary = NSColor(designSystemColor: .iconsPrimary, palette: palette)
         iconsSecondary = NSColor(designSystemColor: .iconsSecondary, palette: palette)
         iconsTertiary = NSColor(designSystemColor: .iconsTertiary, palette: palette)
-        inputActive = NSColor(designSystemColor: .unifiedInputFieldFillActive, palette: palette)
-        inputResting = NSColor(designSystemColor: .unifiedInputFieldFillResting, palette: palette)
+        unifiedInputFieldFillActive = NSColor(designSystemColor: .unifiedInputFieldFillActive, palette: palette)
+        unifiedInputFieldFillResting = NSColor(designSystemColor: .unifiedInputFieldFillResting, palette: palette)
         shadowPrimary = NSColor(designSystemColor: .shadowPrimary, palette: palette)
         shadowSecondary = NSColor(designSystemColor: .shadowSecondary, palette: palette)
         shadowTertiary = NSColor(designSystemColor: .shadowTertiary, palette: palette)

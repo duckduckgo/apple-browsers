@@ -93,7 +93,7 @@ final class KeyboardShortcutView: NSView {
         let textColor: NSColor
 
         if themeManager.isAppRebranded {
-            bgColor = isHighlighted ? palette.controlsFillSecondary : palette.controlsFillPrimary
+            bgColor = isHighlighted ? palette.controlFillSecondary : palette.controlFillPrimary
             textColor = isHighlighted ? palette.accentTextPrimary : palette.textPrimary
         } else {
             bgColor = isHighlighted ? Constants.selectedBackgroundColor : Constants.normalBackgroundColor

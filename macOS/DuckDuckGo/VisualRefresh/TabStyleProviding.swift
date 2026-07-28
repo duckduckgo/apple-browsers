@@ -47,7 +47,7 @@ final class LegacyTabAnimationsStyleProvider: TabStyleProviding {
 
     var separatorColor: NSColor { palette.surfaceDecorationTertiary }
     var selectedTabColor: NSColor { palette.surfacePrimary }
-    var hoverTabColor: NSColor { palette.controlsFillPrimary }
+    var hoverTabColor: NSColor { palette.controlFillPrimary }
 
     let separatorHeight: CGFloat = 16
     let tabsScrollViewHeight: CGFloat = 38

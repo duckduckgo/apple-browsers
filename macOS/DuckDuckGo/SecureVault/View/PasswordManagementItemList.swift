@@ -604,7 +604,7 @@ struct PasswordManagementStyle {
                                            selectedTextColor: .white)
         }
 
-        let selectedBackgroundColor = Color(theme.palette.controlsFillTertiary)
+        let selectedBackgroundColor = Color(theme.palette.controlFillTertiary)
         return PasswordManagementStyle(headerImageName: .syncCheck56,
                                        backgroundColor: clearBackgroundColor,
                                        backgroundCornerRadius: 5,

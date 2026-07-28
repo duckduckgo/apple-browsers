@@ -715,13 +715,10 @@ private extension AIChatContextualChatSessionState {
 
         suggestionsTimeoutTask?.cancel()
 
-        // Reserve a slot for the `Ask about page` quick action.
-        let reservedSlots = shouldAutoCollectContext ? 0 : 1
         let input = ResolvePageSuggestionsInput(
             pageTypeSignals: context?.contextData.pageTypeSignals,
             url: context?.contextData.url,
-            uiLocale: Locale.current.identifier,
-            reservedSlots: reservedSlots
+            uiLocale: Locale.current.identifier
         )
 
         suggestionsResolveTask?.cancel()
@@ -745,15 +742,28 @@ private extension AIChatContextualChatSessionState {
             content = .webView(restoreURL: contextualChatURL)
         }
 
+        let quickActions = resolveQuickActions()
         viewState = SheetViewState(
             content: content,
             isExpandButtonEnabled: frontendState == .noChat || contextualChatURL != nil,
             shouldShowNewChatButton: frontendState != .noChat,
             chipState: chipState,
-            quickActions: resolveQuickActions(),
-            suggestions: suggestions,
+            quickActions: quickActions,
+            suggestions: visibleSuggestions(reserving: quickActions.count),
             suggestionsLoadState: suggestionsLoadState
         )
+    }
+
+    func visibleSuggestions(reserving slots: Int) -> [ContextualSuggestedPrompt] {
+        let cap = max(0, suggestedPromptsProvider.maxSuggestedPrompts - slots)
+        guard suggestions.count > cap else { return suggestions }
+
+        let prioritySuggestionIDs = suggestedPromptsProvider.prioritySuggestionIDs
+        let prioritySuggestions = suggestions.filter { prioritySuggestionIDs.contains($0.id) }
+        let regularSuggestions = suggestions.filter { !prioritySuggestionIDs.contains($0.id) }
+        let priorityCount = min(prioritySuggestions.count, cap)
+
+        return Array(regularSuggestions.prefix(cap - priorityCount)) + Array(prioritySuggestions.prefix(priorityCount))
     }
 
     func emit(_ effect: SheetEffect) {

@@ -24,29 +24,19 @@ struct ResolvePageSuggestionsInput {
     let pageTypeSignals: AIChatPageTypeSignals?
     let url: String?
     let uiLocale: String
-    // Slots resolved for predefined quick actions.
-    let reservedSlots: Int
 
-    init(pageTypeSignals: AIChatPageTypeSignals?, url: String?, uiLocale: String, reservedSlots: Int = 0) {
+    init(pageTypeSignals: AIChatPageTypeSignals?, url: String?, uiLocale: String) {
         self.pageTypeSignals = pageTypeSignals
         self.url = url
         self.uiLocale = uiLocale
-        self.reservedSlots = reservedSlots
     }
 }
 
 protocol ContextualSuggestedPromptsProviding {
+    /// Catalog-owned chip budget shared by suggestions and quick actions.
+    var maxSuggestedPrompts: Int { get }
+    /// Suggestions that must displace a regular suggestion rather than be trimmed from the end.
+    var prioritySuggestionIDs: Set<String> { get }
+
     func resolveSuggestions(_ input: ResolvePageSuggestionsInput) async -> [ContextualSuggestedPrompt]
-}
-
-struct StubContextualSuggestedPromptsProvider: ContextualSuggestedPromptsProviding {
-    func resolveSuggestions(_ input: ResolvePageSuggestionsInput) async -> [ContextualSuggestedPrompt] {
-        Self.cannedSuggestions
-    }
-
-    private static let cannedSuggestions: [ContextualSuggestedPrompt] = [
-        ContextualSuggestedPrompt(id: "summarize-page", label: "Summarize this page", prompt: "Summarize this page.", icon: "summary"),
-        ContextualSuggestedPrompt(id: "translate-page", label: "Translate this page", prompt: "Translate this page.", icon: "translate"),
-        ContextualSuggestedPrompt(id: "key-takeaways", label: "Key takeaways", prompt: "What are the key takeaways from this page?", icon: "note"),
-    ]
 }

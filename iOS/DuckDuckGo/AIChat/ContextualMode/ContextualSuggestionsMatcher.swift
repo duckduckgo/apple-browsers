@@ -65,7 +65,7 @@ struct ContextualSuggestionsMatcher {
     private init() {}
 
     static func resolve(_ input: ResolvePageSuggestionsInput, catalog: SuggestionCatalog) -> [ContextualSuggestedPrompt] {
-        let cap = max(1, catalog.maxSuggestedPrompts - input.reservedSlots)
+        let cap = max(1, catalog.maxSuggestedPrompts)
         let candidateIds = collectCandidateIds(input, catalog: catalog, cap: cap)
         var seen = Set<String>()
         var resolved: [ContextualSuggestedPrompt] = []
@@ -249,6 +249,15 @@ struct ContextualSuggestionsMatcher {
 
 struct DefaultContextualSuggestedPromptsProvider: ContextualSuggestedPromptsProviding {
     private let catalog: SuggestionCatalog?
+
+    var maxSuggestedPrompts: Int {
+        catalog?.maxSuggestedPrompts ?? Self.decodeFailureFallback.count
+    }
+
+    var prioritySuggestionIDs: Set<String> {
+        guard let catalog else { return [] }
+        return Set(catalog.defaults.filter { catalog.catalog[$0]?.condition != nil })
+    }
 
     init(catalog: SuggestionCatalog? = SuggestionCatalog.bundled) {
         self.catalog = catalog

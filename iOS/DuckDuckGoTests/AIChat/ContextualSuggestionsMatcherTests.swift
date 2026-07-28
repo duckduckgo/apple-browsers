@@ -52,7 +52,7 @@ final class ContextualSuggestionsMatcherTests: XCTestCase {
     """
 
     /// A catalog whose contextual match fills the whole budget (4 ids), used to exercise the priority
-    /// default and the reserved-slot cap under capacity pressure. See ADR 0007.
+    /// default under capacity pressure. See ADR 0007.
     private let fourContextualCatalogJSON = """
     {
       "maxSuggestedPrompts": 4,
@@ -85,8 +85,8 @@ final class ContextualSuggestionsMatcherTests: XCTestCase {
         AIChatPageTypeSignals(jsonLdType: jsonLd, ogType: ogType, lang: lang)
     }
 
-    private func input(_ signals: AIChatPageTypeSignals?, url: String? = nil, uiLocale: String = "en_US", reservedSlots: Int = 0) -> ResolvePageSuggestionsInput {
-        ResolvePageSuggestionsInput(pageTypeSignals: signals, url: url, uiLocale: uiLocale, reservedSlots: reservedSlots)
+    private func input(_ signals: AIChatPageTypeSignals?, url: String? = nil, uiLocale: String = "en_US") -> ResolvePageSuggestionsInput {
+        ResolvePageSuggestionsInput(pageTypeSignals: signals, url: url, uiLocale: uiLocale)
     }
 
     private func resolvedIDs(_ input: ResolvePageSuggestionsInput, _ catalog: SuggestionCatalog) -> [String] {
@@ -229,7 +229,7 @@ final class ContextualSuggestionsMatcherTests: XCTestCase {
         XCTAssertTrue(ids.contains("translate-page"))
     }
 
-    // MARK: - Chip budget & priority defaults (ADR 0007)
+    // MARK: - Priority defaults (ADR 0007)
 
     func testPriorityDefaultDisplacesLowestContextualWhenCapIsFull() throws {
         // Foreign-language page with a full 4-id contextual match: translate-page is guaranteed and
@@ -242,31 +242,6 @@ final class ContextualSuggestionsMatcherTests: XCTestCase {
         // Same page, same language: translate-page's condition fails, so all four contextual stay.
         let ids = resolvedIDs(input(signals(jsonLd: ["Article"], lang: "en"), uiLocale: "en_US"), try catalog(fourContextualCatalogJSON))
         XCTAssertEqual(ids, ["c-a", "c-b", "c-c", "c-d"])
-    }
-
-    func testReservedSlotReducesCap() throws {
-        // reservedSlots: 1 (e.g. `Ask about page` shares the row) ⇒ cap 4-1=3.
-        let ids = resolvedIDs(input(signals(jsonLd: ["Article"], lang: "en"), uiLocale: "en_US", reservedSlots: 1), try catalog(fourContextualCatalogJSON))
-        XCTAssertEqual(ids, ["c-a", "c-b", "c-c"])
-    }
-
-    func testReservedSlotAndPriorityTranslateCombine() throws {
-        // reservedSlots: 1 ⇒ cap 3; translate-page still guaranteed ⇒ two contextual + translate.
-        let ids = resolvedIDs(input(signals(jsonLd: ["Article"], lang: "es"), uiLocale: "en_US", reservedSlots: 1), try catalog(fourContextualCatalogJSON))
-        XCTAssertEqual(ids, ["c-a", "c-b", "translate-page"])
-    }
-
-    func testDefaultStateKeepsFloorAndPriorityUnderReservedSlot() throws {
-        // No contextual match, foreign language, one reserved slot: the summarize-page floor and the
-        // translate-page priority default both fit within the reduced cap.
-        let ids = resolvedIDs(input(signals(lang: "es"), uiLocale: "en_US", reservedSlots: 1), try standardCatalog())
-        XCTAssertEqual(ids, ["summarize-page", "translate-page"])
-    }
-
-    func testCapNeverStarvesBelowOneSuggestion() throws {
-        // Defensive: even if reservedSlots meets or exceeds the catalog cap, at least one resolves.
-        let ids = resolvedIDs(input(signals(jsonLd: ["Recipe"], lang: "en"), reservedSlots: 99), try standardCatalog())
-        XCTAssertEqual(ids, ["recipe-a"])
     }
 
     // MARK: - Templating

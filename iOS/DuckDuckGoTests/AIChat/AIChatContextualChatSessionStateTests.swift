@@ -1659,6 +1659,121 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         XCTAssertEqual(mockProvider.lastInput?.uiLocale, Locale.current.identifier)
     }
 
+    func testWhenAttachedChipIsRemovedThenAskAboutPageReplacesLastSuggestionUntilContextIsAttachedAgain() {
+        // Given
+        let expected = makeSuggestedPrompts(ids: ["one", "two", "three", "four"])
+        let mockProvider = MockContextualSuggestedPromptsProvider(suggestions: expected)
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+        mockFeatureFlagger.enabledFeatureFlags = [.contextualSuggestedPrompts]
+        sessionState = AIChatContextualChatSessionState(
+            aiChatSettings: mockSettings,
+            pixelHandler: mockPixelHandler,
+            featureFlagger: mockFeatureFlagger,
+            suggestedPromptsProvider: mockProvider
+        )
+
+        let loaded = expectation(description: "suggestions loaded")
+        sessionState.$viewState
+            .dropFirst()
+            .filter { state in
+                state.suggestionsLoadState == .loaded && state.suggestions == expected
+            }
+            .first()
+            .sink { _ in
+                loaded.fulfill()
+            }
+            .store(in: &cancellables)
+
+        sessionState.beginLoadingSuggestions()
+        let context = makeTestContext()
+        sessionState.updateContext(context)
+        wait(for: [loaded], timeout: 1.0)
+
+        // When - removing the attached chip introduces the quick action.
+        sessionState.downgradeToPlaceholder()
+
+        // Then - the full resolved set is retained, while only the first three render.
+        XCTAssertEqual(sessionState.suggestions, expected)
+        XCTAssertEqual(sessionState.viewState.suggestions, Array(expected.prefix(3)))
+        XCTAssertEqual(sessionState.viewState.quickActions, [.askAboutPage])
+
+        // When - attaching context removes the quick action.
+        sessionState.attachContextFromSuggestionTap(context)
+
+        // Then - the fourth suggestion returns without another resolve.
+        XCTAssertEqual(sessionState.viewState.suggestions, expected)
+        XCTAssertEqual(sessionState.viewState.quickActions, [])
+    }
+
+    func testWhenTranslateWouldBeTrimmedThenItReplacesThirdSuggestion() {
+        // Given
+        let expected = makeSuggestedPrompts(ids: ["one", "two", "three", "translate-page"])
+        let mockProvider = MockContextualSuggestedPromptsProvider(
+            suggestions: expected,
+            prioritySuggestionIDs: ["translate-page"]
+        )
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+        mockFeatureFlagger.enabledFeatureFlags = [.contextualSuggestedPrompts]
+        sessionState = AIChatContextualChatSessionState(
+            aiChatSettings: mockSettings,
+            pixelHandler: mockPixelHandler,
+            featureFlagger: mockFeatureFlagger,
+            suggestedPromptsProvider: mockProvider
+        )
+
+        let loaded = expectation(description: "suggestions loaded")
+        sessionState.$viewState
+            .dropFirst()
+            .sink { state in
+                if state.suggestionsLoadState == .loaded, state.suggestions == expected {
+                    loaded.fulfill()
+                }
+            }
+            .store(in: &cancellables)
+
+        sessionState.beginLoadingSuggestions()
+        sessionState.updateContext(makeTestContext())
+        wait(for: [loaded], timeout: 1.0)
+
+        // When
+        sessionState.downgradeToPlaceholder()
+
+        // Then
+        XCTAssertEqual(sessionState.viewState.suggestions.map(\.id), ["one", "two", "translate-page"])
+        XCTAssertEqual(sessionState.viewState.quickActions, [.askAboutPage])
+    }
+
+    func testWhenPageIsNotAttachableThenAllFourSuggestionsRemainVisible() {
+        // Given
+        let expected = makeSuggestedPrompts(ids: ["one", "two", "three", "four"])
+        mockFeatureFlagger.enabledFeatureFlags = [.contextualSuggestedPrompts]
+        sessionState = AIChatContextualChatSessionState(
+            aiChatSettings: mockSettings,
+            pixelHandler: mockPixelHandler,
+            featureFlagger: mockFeatureFlagger,
+            suggestedPromptsProvider: MockContextualSuggestedPromptsProvider(suggestions: expected),
+            isCurrentPageAttachable: { false }
+        )
+
+        let loaded = expectation(description: "suggestions loaded")
+        sessionState.$viewState
+            .dropFirst()
+            .sink { state in
+                if state.suggestionsLoadState == .loaded, state.suggestions == expected {
+                    loaded.fulfill()
+                }
+            }
+            .store(in: &cancellables)
+
+        // When
+        sessionState.markPendingSignalsOnlyCollection()
+        sessionState.updateContext(makeTestContext())
+
+        // Then
+        wait(for: [loaded], timeout: 1.0)
+        XCTAssertEqual(sessionState.viewState.quickActions, [])
+    }
+
     func testSuggestionsResolveOnAutoAttachOnPath() {
         // Given - auto-attach ON: the spinner is started by the coordinator via beginLoadingSuggestions,
         // not markPendingSignalsOnlyCollection. The resolve is keyed on `.loading`, so it must still fire.
@@ -1992,6 +2107,12 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         }
     }
 
+    private func makeSuggestedPrompts(ids: [String]) -> [ContextualSuggestedPrompt] {
+        ids.map { id in
+            ContextualSuggestedPrompt(id: id, label: id, prompt: "\(id).", icon: nil)
+        }
+    }
+
     private func makeTestContext(title: String = "Test Page",
                                  url: String = "https://example.com",
                                  content: String = "Test content",
@@ -2087,10 +2208,16 @@ private final class MockContextualModePixelHandler: AIChatContextualModePixelFir
 
 private final class MockContextualSuggestedPromptsProvider: ContextualSuggestedPromptsProviding {
     let suggestions: [ContextualSuggestedPrompt]
+    let maxSuggestedPrompts: Int
+    let prioritySuggestionIDs: Set<String>
     private(set) var lastInput: ResolvePageSuggestionsInput?
 
-    init(suggestions: [ContextualSuggestedPrompt]) {
+    init(suggestions: [ContextualSuggestedPrompt],
+         maxSuggestedPrompts: Int = 4,
+         prioritySuggestionIDs: Set<String> = []) {
         self.suggestions = suggestions
+        self.maxSuggestedPrompts = maxSuggestedPrompts
+        self.prioritySuggestionIDs = prioritySuggestionIDs
     }
 
     func resolveSuggestions(_ input: ResolvePageSuggestionsInput) async -> [ContextualSuggestedPrompt] {
@@ -2104,6 +2231,8 @@ private final class MockContextualSuggestedPromptsProvider: ContextualSuggestedP
 /// Provider whose resolves hang until the test resumes them, for exercising in-flight races.
 @MainActor
 private final class GatedContextualSuggestedPromptsProvider: ContextualSuggestedPromptsProviding {
+    let maxSuggestedPrompts = 4
+    let prioritySuggestionIDs: Set<String> = []
     private(set) var startedCount = 0
     private var continuations: [CheckedContinuation<[ContextualSuggestedPrompt], Never>] = []
 

@@ -2256,6 +2256,7 @@
 		CB781CE23013AB54008DCD60 /* UTIModelSelector.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB781CE13013AB54008DCD60 /* UTIModelSelector.swift */; };
 		CB781CE43013BA7A008DCD60 /* UnifiedToggleInputDisplayState.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB781CE33013BA7A008DCD60 /* UnifiedToggleInputDisplayState.swift */; };
 		CB781CE63017C87F008DCD60 /* UTIAttachmentController.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB781CE53017C87F008DCD60 /* UTIAttachmentController.swift */; };
+		CB781CE83019069B008DCD60 /* UTIAttachmentControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB781CE73019069B008DCD60 /* UTIAttachmentControllerTests.swift */; };
 		CB7CF9FA2F9A6C100051BEE9 /* CircularButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB7CF9F92F9A6C100051BEE9 /* CircularButton.swift */; };
 		CB7E0A212D5E1D96002A7C0C /* UIInteractionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB7E0A202D5E1D96002A7C0C /* UIInteractionManager.swift */; };
 		CB7E0A232D5E1E55002A7C0C /* LaunchActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB7E0A222D5E1E55002A7C0C /* LaunchActionHandler.swift */; };
@@ -5011,6 +5012,7 @@
 		CB781CE13013AB54008DCD60 /* UTIModelSelector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UTIModelSelector.swift; sourceTree = "<group>"; };
 		CB781CE33013BA7A008DCD60 /* UnifiedToggleInputDisplayState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedToggleInputDisplayState.swift; sourceTree = "<group>"; };
 		CB781CE53017C87F008DCD60 /* UTIAttachmentController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UTIAttachmentController.swift; sourceTree = "<group>"; };
+		CB781CE73019069B008DCD60 /* UTIAttachmentControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UTIAttachmentControllerTests.swift; sourceTree = "<group>"; };
 		CB7CF9F92F9A6C100051BEE9 /* CircularButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CircularButton.swift; sourceTree = "<group>"; };
 		CB7E0A202D5E1D96002A7C0C /* UIInteractionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIInteractionManager.swift; sourceTree = "<group>"; };
 		CB7E0A222D5E1E55002A7C0C /* LaunchActionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchActionHandler.swift; sourceTree = "<group>"; };
@@ -9878,6 +9880,7 @@
 				CB781CCE30112EC9008DCD60 /* UTISessionMonitorTests.swift */,
 				CB781CD3301135BE008DCD60 /* UTITextModelTests.swift */,
 				CB781CDD30138F52008DCD60 /* UTIPixelReporterTests.swift */,
+				CB781CE73019069B008DCD60 /* UTIAttachmentControllerTests.swift */,
 			);
 			path = UnifiedToggleInput;
 			sourceTree = "<group>";
@@ -14349,6 +14352,7 @@
 				C13A463D2EB39C9200BF7762 /* UniversalOmniBarStateTests.swift in Sources */,
 				85C11E4120904BBE00BFFEB4 /* VariantManagerTests.swift in Sources */,
 				563A3D032D37C363001966FD /* AppConfigurationURLProviderTests.swift in Sources */,
+				CB781CE83019069B008DCD60 /* UTIAttachmentControllerTests.swift in Sources */,
 				9F254AD52CF5E5B10063B308 /* MockMaliciousSiteProtectionNavigationHandler.swift in Sources */,
 				F1134ECE1F40EA9C00B73467 /* AtbParserTests.swift in Sources */,
 				F189AEE41F18FDAF001EBAE1 /* LinkTests.swift in Sources */,

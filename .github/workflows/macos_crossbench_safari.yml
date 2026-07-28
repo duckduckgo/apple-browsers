@@ -112,7 +112,19 @@ jobs:
           if [ -n "$REPS" ]; then
             args+=(--reps "$REPS")
           fi
-          ./test-safari.sh "${args[@]}"
+          status_file="$RUNNER_TEMP/safari-harness-watchdog.tsv"
+          set +e
+          python3 ./run-with-watchdog.py \
+            --timeout-seconds 9600 \
+            --term-grace-seconds 30 \
+            --status-file "$status_file" \
+            -- ./test-safari.sh "${args[@]}"
+          harness_status=$?
+          set -e
+          if [ -f "$status_file" ]; then
+            cat "$status_file"
+          fi
+          exit "$harness_status"
 
       - name: Upload results TSV
         if: always()
@@ -378,10 +390,14 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          marker_count="$(
-            gh api "repos/$GITHUB_REPOSITORY/actions/artifacts?name=safari-runtime-failure-run-$GITHUB_RUN_ID&per_page=100" \
-              --jq '[.artifacts[] | select(.expired == false)] | length'
-          )"
+          if ! marker_count="$(
+              gh api "repos/$GITHUB_REPOSITORY/actions/artifacts?name=safari-runtime-failure-run-$GITHUB_RUN_ID&per_page=100" \
+                --jq '[.artifacts[] | select(.expired == false)] | length'
+            )"; then
+            echo "::warning title=Asana notification skipped::Could not check the run alert marker; skipping task creation to avoid duplicates."
+            echo "exists=unknown" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
           if [ "$marker_count" -gt 0 ]; then
             echo "exists=true" >> "$GITHUB_OUTPUT"
           else

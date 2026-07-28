@@ -37,6 +37,11 @@ def build_report(
             )
         issues = [row for row in reader if row["outcome"] in REPORTABLE_OUTCOMES]
 
+    for row in issues:
+        for field in ("failure_stage", "failure_reason", "failure_detail"):
+            if row[field] == "-":
+                row[field] = ""
+
     if not issues and job_result not in {"success", "skipped"}:
         return (
             f"[RUN ERROR] {browser_label} LCP job did not complete successfully\n"

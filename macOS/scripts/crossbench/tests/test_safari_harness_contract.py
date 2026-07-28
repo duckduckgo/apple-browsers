@@ -17,6 +17,12 @@ WORKFLOW = (
     / "workflows"
     / "macos_crossbench_safari.yml"
 ).read_text(encoding="utf-8")
+CHROME_WORKFLOW = (
+    pathlib.Path(__file__).parents[4]
+    / ".github"
+    / "workflows"
+    / "macos_crossbench_chrome.yml"
+).read_text(encoding="utf-8")
 
 
 class SafariHarnessContractTests(unittest.TestCase):
@@ -62,6 +68,17 @@ class SafariHarnessContractTests(unittest.TestCase):
             WORKFLOW,
         )
         self.assertIn('--job-result "$BENCHMARK_RESULT"', WORKFLOW)
+
+    def test_whole_harness_watchdog_leaves_reporting_time(self):
+        self.assertIn("run-with-watchdog.py", WORKFLOW)
+        self.assertIn("python3 ./run-with-watchdog.py", WORKFLOW)
+        self.assertIn("--timeout-seconds 9600", WORKFLOW)
+        self.assertIn('exit "$harness_status"', WORKFLOW)
+
+    def test_marker_lookup_failure_skips_task_creation(self):
+        for workflow in (WORKFLOW, CHROME_WORKFLOW):
+            self.assertIn('echo "exists=unknown" >> "$GITHUB_OUTPUT"', workflow)
+            self.assertIn("skipping task creation to avoid duplicates", workflow)
 
 
 if __name__ == "__main__":

@@ -642,6 +642,14 @@ shared_services_alive() {
   done
 }
 
+mark_runtime_failure() {
+  if [ "$FAILURE_STAGE" = "-" ]; then
+    FAILURE_STAGE="$1"
+    FAILURE_REASON="$2"
+    FAILURE_DETAIL="$3"
+  fi
+}
+
 measure_site() {
   local site="$1" archive rep before output lcp detail landed_url offsite field
   local field_count
@@ -657,6 +665,7 @@ measure_site() {
       echo "  $site: validated WPR handoff is unusable; RUN FAILURE." >&2
       echo "::warning title=Validation handoff failure::$site: $VALIDATION_REASON"
       HANDOFF_FAILURES=$((HANDOFF_FAILURES + 1))
+      mark_runtime_failure validation invalid_handoff "$VALIDATION_REASON"
       record_disposition "$site" infra_error
       return
     fi
@@ -671,6 +680,7 @@ measure_site() {
     echo "::warning title=Site replay failure::$site: WPR could not start"
     preserve_site_diagnostics "$site"
     stop_wpr
+    mark_runtime_failure replay wpr_start_failed "WPR did not become ready"
     record_disposition "$site" infra_error
     return
   fi
@@ -679,11 +689,14 @@ measure_site() {
     if ! shared_services_alive; then
       site_harness_failed=1
       SHARED_SERVICE_FAILURE=1
+      mark_runtime_failure runner shared_service_stopped \
+        "a shared Safari replay service exited"
       break
     fi
     if ! process_is_alive "$WPR_PID"; then
       echo "ERROR: WPR exited unexpectedly during $site replay." >&2
       site_harness_failed=1
+      mark_runtime_failure replay wpr_exited "repetition=$rep"
       break
     fi
     before="$(proxy_log_line_count)"
@@ -698,12 +711,15 @@ measure_site() {
       printf '%s\n' "$output" | tail -20 >&2
       site_harness_failed=1
       SHARED_SERVICE_FAILURE=1
+      mark_runtime_failure runner shared_service_stopped \
+        "a shared Safari replay service exited; repetition=$rep"
       break
     fi
     if ! process_is_alive "$WPR_PID"; then
       printf '%s\n' "$output" | tail -20 >&2
       echo "ERROR: WPR exited unexpectedly during $site replay." >&2
       site_harness_failed=1
+      mark_runtime_failure replay wpr_exited "repetition=$rep"
       break
     fi
     for field in detail landed_url landed_offsite lcp_ms; do
@@ -711,7 +727,8 @@ measure_site() {
       if [ "$field_count" -ne 1 ]; then
         echo "    attempt rep=$rep: automation emitted $field_count $field field(s) -> HARNESS FAILURE" >&2
         site_harness_failed=1
-        no_metric=$((no_metric + 1))
+        mark_runtime_failure automation malformed_output \
+          "repetition=$rep; field=$field; count=$field_count"
         break
       fi
     done
@@ -729,30 +746,39 @@ measure_site() {
       printf '%s\n' "$output" | tail -20 >&2
       site_harness_failed=1
       no_metric=$((no_metric + 1))
+      mark_runtime_failure automation command_failed \
+        "repetition=$rep; exit_status=$automation_status"
       continue
     fi
     if ! proxy_saw_requested_connect "$before" "$site"; then
       echo "    attempt rep=$rep: no proxy CONNECT for $site:443 -> HARNESS FAILURE" >&2
       site_harness_failed=1
       no_metric=$((no_metric + 1))
+      mark_runtime_failure replay missing_proxy_connect "repetition=$rep"
       continue
     fi
     if [ "$offsite" != "0" ] && [ "$offsite" != "1" ]; then
       echo "    attempt rep=$rep: automation produced invalid landed_offsite=$offsite -> HARNESS FAILURE" >&2
       site_harness_failed=1
       no_metric=$((no_metric + 1))
+      mark_runtime_failure automation invalid_offsite_flag \
+        "repetition=$rep; landed_offsite=$offsite"
       continue
     fi
     if ! [[ "$lcp" =~ ^-?[0-9]+([.][0-9]+)?$ ]]; then
       echo "    attempt rep=$rep: automation produced invalid lcp_ms=$lcp -> HARNESS FAILURE" >&2
       site_harness_failed=1
       no_metric=$((no_metric + 1))
+      mark_runtime_failure automation invalid_lcp \
+        "repetition=$rep; lcp_ms=$lcp"
       continue
     fi
     if [ "$offsite" = "1" ]; then
       echo "    attempt rep=$rep: landed off-site at $landed_url -> HARNESS FAILURE" >&2
       site_harness_failed=1
       no_metric=$((no_metric + 1))
+      mark_runtime_failure replay offsite_landing \
+        "repetition=$rep; landed_url=$landed_url"
       continue
     fi
     if awk -v value="$lcp" 'BEGIN { exit !(value <= 0) }'; then
@@ -778,6 +804,7 @@ measure_site() {
     echo "  ERROR: WPR exited during $site replay. Log:" >&2
     cat "$WPR_LOG" >&2
     site_harness_failed=1
+    mark_runtime_failure replay wpr_exited "WPR exited before site completion"
   fi
   if [ "$site_harness_failed" -ne 0 ] || [ "$recorded" -lt "$MEASURED_REPS" ]; then
     preserve_site_diagnostics "$site"
@@ -803,11 +830,14 @@ record_site_after_shared_failure() {
   set_validation_result "$site"
   if [ "$VALIDATION_HANDOFF_ERROR" -eq 1 ]; then
     HANDOFF_FAILURES=$((HANDOFF_FAILURES + 1))
+    mark_runtime_failure validation invalid_handoff "$VALIDATION_REASON"
     record_disposition "$site" infra_error
   elif [ -z "$VALIDATED_ARCHIVE" ]; then
     record_disposition "$site" excluded
   else
     ELIGIBLE_SITES=$((ELIGIBLE_SITES + 1))
+    mark_runtime_failure runner shared_service_stopped \
+      "not measured because a shared Safari replay service stopped"
     record_disposition "$site" infra_error
   fi
 }

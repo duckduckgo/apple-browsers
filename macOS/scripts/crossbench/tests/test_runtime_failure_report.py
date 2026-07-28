@@ -192,6 +192,31 @@ class RuntimeFailureReportTests(unittest.TestCase):
         self.assertIn("[SITE ERROR] timed-out.test", report)
         self.assertNotIn("[RUN ERROR]", report)
 
+    def test_placeholder_failure_fields_are_omitted(self) -> None:
+        path = self.write_rows(
+            [
+                {
+                    "browser": "safari",
+                    "site": "partial.test",
+                    "outcome": "partial",
+                    "failure_stage": "-",
+                    "failure_reason": "-",
+                    "failure_detail": "-",
+                    "requested_repetitions": "2",
+                    "observed_repetitions": "2",
+                    "recorded_samples": "1",
+                    "dropped_unfinalized": "1",
+                    "dropped_no_metric": "0",
+                },
+            ]
+        )
+
+        report, count = MODULE.build_report(path)
+
+        self.assertEqual(count, 1)
+        self.assertNotIn("Failure:", report)
+        self.assertNotIn("Detail:", report)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -346,8 +346,10 @@ fetch_network_arg() {
 # counters. Prepared CI archives carry the shared validator's manifest; local
 # replay without that handoff records only whether an archive was available.
 set_validation_result() {
-  local site="$1" archive_available="$2" verdict reason status_chain final_url detail header
+  local site="$1" archive_available="$2" verdict reason status_chain final_url detail header row_count
+  local archive_name expected_archive_name expected_sha actual_sha validated_archive
 
+  VALIDATION_HANDOFF_ERROR=0
   VALIDATION_STATUS=error
   VALIDATION_REASON=archive_missing
   VALIDATION_HTTP_STATUS=-
@@ -362,6 +364,7 @@ set_validation_result() {
     return
   fi
   if [ ! -f "$WPR_MANIFEST" ]; then
+    VALIDATION_HANDOFF_ERROR=1
     VALIDATION_REASON=validation_manifest_missing
     VALIDATION_DETAIL="validated archive handoff did not contain manifest.tsv"
     return
@@ -369,33 +372,86 @@ set_validation_result() {
 
   header="$(head -1 "$WPR_MANIFEST")"
   if [ "$header" != $'site\tarchive\tsha256\tarchive_bytes\tverdict\treason_code\thttp_status\tdetail\tstatus_chain\tfinal_url\tcontent_type\tblocked_marker' ]; then
+    VALIDATION_HANDOFF_ERROR=1
     VALIDATION_REASON=validation_manifest_schema_mismatch
     VALIDATION_DETAIL="validated archive manifest has an unsupported schema"
     return
   fi
-  verdict="$(awk -F'\t' -v site="$site" 'NR > 1 && $1 == site { print $5; exit }' "$WPR_MANIFEST")"
-  if [ -z "$verdict" ]; then
+  row_count="$(awk -F'\t' -v site="$site" 'NR > 1 && $1 == site { count++ } END { print count + 0 }' "$WPR_MANIFEST")"
+  if [ "$row_count" -eq 0 ]; then
+    VALIDATION_HANDOFF_ERROR=1
     VALIDATION_REASON=validation_result_missing
     VALIDATION_DETAIL="site is absent from the WPR validation manifest"
     return
   fi
+  if [ "$row_count" -ne 1 ]; then
+    VALIDATION_HANDOFF_ERROR=1
+    VALIDATION_REASON=validation_result_ambiguous
+    VALIDATION_DETAIL="site has multiple rows in the WPR validation manifest"
+    return
+  fi
 
-  ARCHIVE_SHA256="$(awk -F'\t' -v site="$site" 'NR > 1 && $1 == site { print $3; exit }' "$WPR_MANIFEST")"
-  ARCHIVE_SHA256="${ARCHIVE_SHA256:--}"
+  archive_name="$(awk -F'\t' -v site="$site" 'NR > 1 && $1 == site { print $2; exit }' "$WPR_MANIFEST")"
+  expected_sha="$(awk -F'\t' -v site="$site" 'NR > 1 && $1 == site { print $3; exit }' "$WPR_MANIFEST")"
+  verdict="$(awk -F'\t' -v site="$site" 'NR > 1 && $1 == site { print $5; exit }' "$WPR_MANIFEST")"
+  if [ "$verdict" != "ok" ] && [ "$verdict" != "error" ]; then
+    VALIDATION_HANDOFF_ERROR=1
+    VALIDATION_REASON=validation_verdict_invalid
+    VALIDATION_DETAIL="validated archive manifest has an unsupported verdict"
+    return
+  fi
+  if [[ "$expected_sha" =~ ^[0-9a-f]{64}$ ]]; then
+    ARCHIVE_SHA256="$expected_sha"
+  elif [ "$verdict" = "ok" ]; then
+    VALIDATION_HANDOFF_ERROR=1
+    VALIDATION_REASON=validated_archive_hash_invalid
+    VALIDATION_DETAIL="validator marked the site eligible without a valid SHA-256"
+    return
+  fi
   reason="$(awk -F'\t' -v site="$site" 'NR > 1 && $1 == site { print $6; exit }' "$WPR_MANIFEST")"
   VALIDATION_HTTP_STATUS="$(awk -F'\t' -v site="$site" 'NR > 1 && $1 == site { print $7; exit }' "$WPR_MANIFEST")"
   VALIDATION_HTTP_STATUS="${VALIDATION_HTTP_STATUS:--}"
+  if [ "$VALIDATION_HTTP_STATUS" != "-" ] && ! [[ "$VALIDATION_HTTP_STATUS" =~ ^[1-5][0-9][0-9]$ ]]; then
+    VALIDATION_HANDOFF_ERROR=1
+    VALIDATION_HTTP_STATUS=-
+    VALIDATION_REASON=validation_http_status_invalid
+    VALIDATION_DETAIL="validated archive manifest has an invalid HTTP status"
+    return
+  fi
   detail="$(awk -F'\t' -v site="$site" 'NR > 1 && $1 == site { print $8; exit }' "$WPR_MANIFEST")"
   status_chain="$(awk -F'\t' -v site="$site" 'NR > 1 && $1 == site { print $9; exit }' "$WPR_MANIFEST")"
   final_url="$(awk -F'\t' -v site="$site" 'NR > 1 && $1 == site { print $10; exit }' "$WPR_MANIFEST")"
-  if [ "$verdict" = "ok" ] && [ -n "$archive_available" ]; then
+  if [ "$verdict" = "ok" ]; then
+    if ! [[ "$archive_name" =~ ^[a-zA-Z0-9._-]+\.wprgo$ ]]; then
+      VALIDATION_HANDOFF_ERROR=1
+      VALIDATION_REASON=validated_archive_name_invalid
+      VALIDATION_DETAIL="validator returned an unsafe or unsupported archive filename"
+      return
+    fi
+    expected_archive_name="$(normalize "$SUITE+$site").wprgo"
+    if [ "$archive_name" != "$expected_archive_name" ]; then
+      VALIDATION_HANDOFF_ERROR=1
+      VALIDATION_REASON=validated_archive_name_mismatch
+      VALIDATION_DETAIL="validated archive filename does not match the requested story"
+      return
+    fi
+    validated_archive="$WPR_DIR/$archive_name"
+    if [ ! -f "$validated_archive" ]; then
+      VALIDATION_HANDOFF_ERROR=1
+      VALIDATION_REASON=validated_archive_missing
+      VALIDATION_DETAIL="validator marked the site eligible but its archive was not staged"
+      return
+    fi
+    actual_sha="$(shasum -a 256 "$validated_archive" | awk '{ print $1 }')"
+    if [ "$actual_sha" != "$expected_sha" ]; then
+      VALIDATION_HANDOFF_ERROR=1
+      ARCHIVE_SHA256=-
+      VALIDATION_REASON=validated_archive_hash_mismatch
+      VALIDATION_DETAIL="staged archive SHA-256 does not match the validation manifest"
+      return
+    fi
     VALIDATION_STATUS=ok
     VALIDATION_REASON=-
-    return
-  fi
-  if [ "$verdict" = "ok" ]; then
-    VALIDATION_REASON=validated_archive_missing
-    VALIDATION_DETAIL="validator marked the site eligible but its archive was not staged"
     return
   fi
 
@@ -509,6 +565,7 @@ run_chrome() {
   local crossbench_status site_failed resource_exhausted=0
   local watchdog_status_file watchdog_state watchdog_code watchdog_cleanup
   SITE_FAILURES=0
+  HANDOFF_FAILURES=0
   ELIGIBLE_SITES=0
   TOTAL_RECORDED=0
   for site in "${SITES[@]}"; do
@@ -522,14 +579,23 @@ run_chrome() {
       network_arg=""
     fi
     if [ -z "$network_arg" ]; then
-      if [ "$WPR_ARCHIVES_PREPARED" = "1" ]; then
+      if [ "$VALIDATION_HANDOFF_ERROR" -eq 1 ]; then
+        echo "  $site: validated WPR handoff is unusable; RUN FAILURE." >&2
+        echo "::warning title=Validation handoff failure::$site: $VALIDATION_REASON"
+        HANDOFF_FAILURES=$((HANDOFF_FAILURES + 1))
+        FAILURE_STAGE=validation
+        FAILURE_REASON=invalid_handoff
+        FAILURE_DETAIL="$VALIDATION_REASON"
+        record_disposition "$site" infra_error
+      elif [ "$WPR_ARCHIVES_PREPARED" = "1" ]; then
         echo "  $site: excluded by WPR archive validation; SKIPPING." >&2
         echo "::warning title=Site excluded::$site did not pass WPR archive validation"
+        record_disposition "$site" excluded
       else
         echo "  $site: no WPR archive available; SKIPPING (replay-only)." >&2
         echo "::warning title=Site skipped::$site: no WPR archive at $WPR_BASE_URL"
+        record_disposition "$site" excluded
       fi
-      record_disposition "$site" excluded
       continue
     fi
     ELIGIBLE_SITES=$((ELIGIBLE_SITES + 1))
@@ -656,6 +722,10 @@ run_chrome() {
   done
   if [ "$resource_exhausted" -eq 1 ]; then
     echo "ERROR: runner disk headroom was exhausted; the measurement run is incomplete." >&2
+    return 1
+  fi
+  if [ "$HANDOFF_FAILURES" -gt 0 ]; then
+    echo "ERROR: $HANDOFF_FAILURES site(s) had an unusable validated WPR handoff." >&2
     return 1
   fi
   if [ "$ELIGIBLE_SITES" -gt 0 ] && [ "$TOTAL_RECORDED" -eq 0 ]; then

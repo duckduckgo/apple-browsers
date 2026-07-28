@@ -143,8 +143,17 @@ jobs:
           # replaces); created_at is stable across attempts and keeps
           # start_time — and the date partition derived from it — identical
           # for every attempt of the run.
-          run_json="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}")"
+          shopt -s nullglob
           in_tsv=(crossbench-results/*.tsv)
+          if [ "${#in_tsv[@]}" -eq 0 ]; then
+            echo "no metrics TSV to aggregate"
+            exit 0
+          fi
+          if [ "${#in_tsv[@]}" -ne 1 ]; then
+            echo "ERROR: expected one metrics TSV, found ${#in_tsv[@]}" >&2
+            exit 1
+          fi
+          run_json="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}")"
           ./aggregate-lcp.py \
             --input "${in_tsv[0]}" \
             --output clickhouse-rows.tsv \
@@ -183,8 +192,21 @@ jobs:
           # Same run metadata as the metrics aggregation above, so a domain's
           # metrics row and its attempts row share run_id, start_time and the
           # ReplacingMergeTree version.
-          run_json="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}")"
+          shopt -s nullglob
           in_tsv=(crossbench-dispositions/*.tsv)
+          if [ "${#in_tsv[@]}" -eq 0 ]; then
+            echo "no dispositions TSV to aggregate"
+            exit 0
+          fi
+          if [ "${#in_tsv[@]}" -ne 1 ]; then
+            echo "ERROR: expected one dispositions TSV, found ${#in_tsv[@]}" >&2
+            exit 1
+          fi
+          if [ "$(wc -l < "${in_tsv[0]}")" -le 1 ]; then
+            echo "dispositions TSV has no data rows"
+            exit 0
+          fi
+          run_json="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}")"
           ./aggregate-dispositions.py \
             --input "${in_tsv[0]}" \
             --output clickhouse-attempts.tsv \
@@ -352,10 +374,14 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          marker_count="$(
-            gh api "repos/$GITHUB_REPOSITORY/actions/artifacts?name=chrome-runtime-failure-run-$GITHUB_RUN_ID&per_page=100" \
-              --jq '[.artifacts[] | select(.expired == false)] | length'
-          )"
+          if ! marker_count="$(
+              gh api "repos/$GITHUB_REPOSITORY/actions/artifacts?name=chrome-runtime-failure-run-$GITHUB_RUN_ID&per_page=100" \
+                --jq '[.artifacts[] | select(.expired == false)] | length'
+            )"; then
+            echo "::warning title=Asana notification skipped::Could not check the run alert marker; skipping task creation to avoid duplicates."
+            echo "exists=unknown" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
           if [ "$marker_count" -gt 0 ]; then
             echo "exists=true" >> "$GITHUB_OUTPUT"
           else

@@ -255,6 +255,9 @@ class SafariHarnessTests(unittest.TestCase):
             if site == fail_site or mode == "failure":
                 print("simulated automation failure", file=sys.stderr)
                 raise SystemExit(7)
+            if mode == "malformed":
+                print("detail=missing required fields")
+                raise SystemExit(0)
             if mode != "no_connect":
                 with socket.create_connection(
                     ("127.0.0.1", int(os.environ["HTTPPROXY_PORT"]))
@@ -272,6 +275,8 @@ class SafariHarnessTests(unittest.TestCase):
             print(f"landed_url={landed_url}")
             print(f"landed_offsite={offsite}")
             print(f"lcp_ms={lcp}")
+            if mode == "structured_failure":
+                raise SystemExit(7)
             """,
         )
 
@@ -391,8 +396,29 @@ class SafariHarnessTests(unittest.TestCase):
     def test_missing_connect_is_an_infrastructure_failure(self) -> None:
         result = self.run_harness(AUTOMATION_MODE="no_connect")
         self.assertEqual(result.returncode, 1)
-        self.assertEqual(self.disposition_rows()[0][3], "infra_error")
+        row = self.disposition_rows()[0]
+        self.assertEqual(row[3], "infra_error")
+        self.assertEqual(row[9:12], ["replay", "missing_proxy_connect", "repetition=1"])
         self.assertIn("no proxy CONNECT", result.stderr)
+
+    def test_malformed_output_is_not_counted_as_observed(self) -> None:
+        result = self.run_harness(AUTOMATION_MODE="malformed")
+        self.assertEqual(result.returncode, 1)
+        row = self.disposition_rows()[0]
+        self.assertEqual(row[3], "infra_error")
+        self.assertEqual(row[9:11], ["automation", "malformed_output"])
+        self.assertEqual(row[12:17], ["1", "0", "0", "0", "0"])
+
+    def test_structured_automation_failure_records_durable_reason(self) -> None:
+        result = self.run_harness(AUTOMATION_MODE="structured_failure")
+        self.assertEqual(result.returncode, 1)
+        row = self.disposition_rows()[0]
+        self.assertEqual(row[3], "infra_error")
+        self.assertEqual(
+            row[9:12],
+            ["automation", "command_failed", "repetition=1; exit_status=7"],
+        )
+        self.assertEqual(row[12:17], ["1", "1", "0", "0", "1"])
 
     def test_dead_shared_proxy_is_an_infrastructure_failure(self) -> None:
         self.add_valid_site("example.com")
@@ -404,6 +430,12 @@ class SafariHarnessTests(unittest.TestCase):
         self.assertEqual(
             [(row[2], row[3]) for row in self.disposition_rows()],
             [("apple.com", "infra_error"), ("example.com", "infra_error")],
+        )
+        self.assertTrue(
+            all(
+                row[9:11] == ["runner", "shared_service_stopped"]
+                for row in self.disposition_rows()
+            )
         )
         self.assertIn("httpproxy exited unexpectedly", result.stderr)
         self.assertIn("not measured because a shared replay service stopped", result.stderr)
@@ -419,6 +451,10 @@ class SafariHarnessTests(unittest.TestCase):
         self.assertEqual(
             [(row[2], row[3]) for row in self.disposition_rows()],
             [("apple.com", "infra_error"), ("example.com", "measured")],
+        )
+        self.assertEqual(
+            self.disposition_rows()[0][9:12],
+            ["replay", "wpr_exited", "repetition=1"],
         )
         self.assertNotIn("shared replay service died", result.stderr)
 

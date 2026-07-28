@@ -378,6 +378,75 @@ exit "${FAKE_EXIT:-0}"
         self.assertEqual(missing[8], "-")
         self.assertEqual(missing[12:17], ["1", "0", "0", "0", "0"])
 
+    def test_duplicate_manifest_row_is_a_handoff_failure(self) -> None:
+        manifest = self.archives / "manifest.tsv"
+        manifest.write_text(manifest.read_text() + manifest.read_text().splitlines()[1] + "\n")
+        result = self.run_harness()
+        self.assertEqual(result.returncode, 1, result.stderr)
+        self.assertEqual(self.disposition()[3:6], [
+            "infra_error", "error", "validation_result_ambiguous",
+        ])
+
+    def test_unsafe_manifest_archive_name_is_a_handoff_failure(self) -> None:
+        manifest = self.archives / "manifest.tsv"
+        fields = manifest.read_text().splitlines()[1].split("\t")
+        fields[1] = "../outside.wprgo"
+        manifest.write_text(MANIFEST_HEADER + "\t".join(fields) + "\n")
+        result = self.run_harness()
+        self.assertEqual(result.returncode, 1, result.stderr)
+        self.assertEqual(self.disposition()[3:6], [
+            "infra_error", "error", "validated_archive_name_invalid",
+        ])
+
+    def test_mismatched_manifest_archive_name_is_a_handoff_failure(self) -> None:
+        other_archive = self.archives / "other.wprgo"
+        other_archive.write_bytes(b"other")
+        fields = (self.archives / "manifest.tsv").read_text().splitlines()[1].split("\t")
+        fields[1] = other_archive.name
+        fields[2] = hashlib.sha256(b"other").hexdigest()
+        (self.archives / "manifest.tsv").write_text(
+            MANIFEST_HEADER + "\t".join(fields) + "\n"
+        )
+
+        result = self.run_harness()
+
+        self.assertEqual(result.returncode, 1, result.stderr)
+        row = self.disposition()
+        self.assertEqual(row[3:6], [
+            "infra_error", "error", "validated_archive_name_mismatch",
+        ])
+        self.assertEqual(row[9:11], ["validation", "invalid_handoff"])
+
+    def test_invalid_manifest_verdict_is_a_handoff_failure(self) -> None:
+        manifest = self.archives / "manifest.tsv"
+        fields = manifest.read_text().splitlines()[1].split("\t")
+        fields[4] = "maybe"
+        manifest.write_text(MANIFEST_HEADER + "\t".join(fields) + "\n")
+        result = self.run_harness()
+        self.assertEqual(result.returncode, 1, result.stderr)
+        self.assertEqual(self.disposition()[3:6], [
+            "infra_error", "error", "validation_verdict_invalid",
+        ])
+
+    def test_invalid_manifest_http_status_is_a_handoff_failure(self) -> None:
+        manifest = self.archives / "manifest.tsv"
+        fields = manifest.read_text().splitlines()[1].split("\t")
+        fields[6] = "two-hundred"
+        manifest.write_text(MANIFEST_HEADER + "\t".join(fields) + "\n")
+        result = self.run_harness()
+        self.assertEqual(result.returncode, 1, result.stderr)
+        self.assertEqual(self.disposition()[3:6], [
+            "infra_error", "error", "validation_http_status_invalid",
+        ])
+
+    def test_manifest_hash_mismatch_is_a_handoff_failure(self) -> None:
+        (self.archives / "navToLCP_apple.com.wprgo").write_bytes(b"modified")
+        result = self.run_harness()
+        self.assertEqual(result.returncode, 1, result.stderr)
+        self.assertEqual(self.disposition()[3:6], [
+            "infra_error", "error", "validated_archive_hash_mismatch",
+        ])
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -225,7 +225,14 @@ extension OnboardingIntroContentProvider {
 
         let subHeader = reason == .privateAIChat ? UserText.Onboarding.DuckAICPP.AIComparison.subHeader : nil
 
-        let competitor: OnboardingComparisonContent.Competitor = reason == .noAI ? .google : .safari
+        let competitor: OnboardingComparisonContent.Competitor = switch reason {
+        case .browserPrivately, .blockAds:
+                .safari
+        case .privateAIChat:
+                .ai
+        case .noAI:
+                .google
+        }
 
         return OnboardingComparisonContent(
             title: UserText.Onboarding.BrowsersComparison.titleDownloadExperiment,

@@ -459,10 +459,15 @@ struct OnboardingIntroContentProviderTests {
         }
 
         @Test(
-            "Only the no-AI reason shows Google as the competitor",
-            arguments: OnboardingDownloadReason.allCases
+            "Each reason maps to the expected competitor",
+            arguments: [
+                (.browserPrivately, .safari),
+                (.blockAds, .safari),
+                (.privateAIChat, .ai),
+                (.noAI, .google),
+            ] as [(OnboardingDownloadReason, OnboardingComparisonContent.Competitor)]
         )
-        func competitorPerReason(reason: OnboardingDownloadReason) {
+        func competitorPerReason(reason: OnboardingDownloadReason, expectedCompetitor: OnboardingComparisonContent.Competitor) {
             // GIVEN
             let sut = makeSUT(reason: reason)
 
@@ -470,7 +475,6 @@ struct OnboardingIntroContentProviderTests {
             let result = sut.setDefaultBrowserContent
 
             // THEN
-            let expectedCompetitor: OnboardingComparisonContent.Competitor = reason == .noAI ? .google : .safari
             #expect(result.competitor == expectedCompetitor)
         }
 

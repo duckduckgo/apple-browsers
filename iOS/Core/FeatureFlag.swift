@@ -769,9 +769,9 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .aiChatNativeChatHistory:
             Config(defaultValue: .enabled, source: .remoteReleasable(DuckAiChatHistorySubfeature.nativeChatHistory))
         case .aiChatHistoryMultiselect:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.historyMultiselect))
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.historyMultiselect))
         case .aiChatNativeSidebar:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.nativeSidebar))
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.nativeSidebar))
         case .contextualSuggestedPrompts:
             Config(source: .remoteReleasable(AIChatSubfeature.contextualSuggestedPrompts))
         case .showWhatsNewPromptOnDemand:

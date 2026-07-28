@@ -26,9 +26,8 @@ import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 @testable import Subscription
 
-/// Lays the real prompt stack out and measures it, rather than restating the height formula. The
-/// Prompt Bar composes views whose vertical anchors live in `AIChatOmnibarContainerViewController`,
-/// so the only trustworthy check is what the frames actually come out as.
+/// Lays the real prompt stack out and measures the resulting frames, rather than restating the
+/// height formula: the vertical anchors live in `AIChatOmnibarContainerViewController`.
 @MainActor
 final class PromptBarOmnibarContentLayoutTests: XCTestCase {
 
@@ -59,7 +58,6 @@ final class PromptBarOmnibarContentLayoutTests: XCTestCase {
         let twoLines = layOutAndMeasureGap(prompt: String(repeating: "what is a duck ", count: 8))
         let fourLines = layOutAndMeasureGap(prompt: String(repeating: "what is a duck ", count: 20))
 
-        // A gap that moves with the line count is what reads as the panel "jumping" while typing.
         XCTAssertEqual(twoLines, oneLine, accuracy: 1)
         XCTAssertEqual(fourLines, oneLine, accuracy: 1)
     }
@@ -71,10 +69,8 @@ final class PromptBarOmnibarContentLayoutTests: XCTestCase {
         XCTAssertGreaterThan(fourLineHeight, oneLineHeight)
     }
 
-    /// The height a caller gets on its first read has to be the height the layout settles on. When it
-    /// isn't — because the prompt was measured before its width was known, so it wrapped short and
-    /// over-reported — the panel resizes a line at a time as layout catches up, which is what reads
-    /// as the bar jumping while you type.
+    /// A first read that doesn't match the settled height means the panel resizes a line at a time as
+    /// layout catches up — the bar visibly jumping while you type.
     func testWhenTheHeightIsReadBeforeLayoutHasSettledThenItAlreadyMatchesTheSettledHeight() {
         let view = content.view
         guard let textView = firstDescendant(of: view, ofType: NSTextView.self) else {
@@ -95,7 +91,7 @@ final class PromptBarOmnibarContentLayoutTests: XCTestCase {
 
     // MARK: - Measurement
 
-    /// Vertical distance between the bottom of the laid-out text and the top of the controls row.
+    /// Distance between the bottom of the laid-out text and the top of the controls row.
     private func layOutAndMeasureGap(prompt: String) -> CGFloat {
         layOutAndMeasure(prompt: prompt).gap
     }
@@ -113,14 +109,12 @@ final class PromptBarOmnibarContentLayoutTests: XCTestCase {
             XCTFail("No prompt text view in the hierarchy")
             return (0, 0)
         }
-        // Set the string on the text view directly. Going through the controller depends on its
-        // publisher plumbing, which isn't what's under test here — and if that binding is idle the
-        // measurements come out identical and every assertion passes for the wrong reason.
+        // Directly, not via the controller: if its publisher plumbing is idle here, every measurement
+        // comes out identical and the assertions pass for the wrong reason.
         textView.string = prompt
         omnibarController.updateText(prompt)
 
-        // Two passes: the first resolves the text container's width, which is what the prompt wraps
-        // against and therefore what its height depends on.
+        // The first pass resolves the width the prompt wraps against.
         for _ in 0..<2 {
             let size = content.preferredWindowContentSize
             view.frame = NSRect(origin: .zero, size: size)
@@ -138,7 +132,6 @@ final class PromptBarOmnibarContentLayoutTests: XCTestCase {
         return (controlsTop - textBottom, view.frame.height)
     }
 
-    /// In the panel's coordinates (top-left origin), the y just below the last line of text.
     private func bottomOfText(in textView: NSTextView, convertedTo host: NSView) -> CGFloat {
         guard let layoutManager = textView.layoutManager, let textContainer = textView.textContainer else {
             return 0
@@ -152,7 +145,7 @@ final class PromptBarOmnibarContentLayoutTests: XCTestCase {
         return distanceFromTop(of: host, toPointIn: textView, point: inTextView.origin)
     }
 
-    /// Topmost edge of the controls row, taken from the real button frames rather than a constant.
+    /// From the real button frames rather than a constant.
     private func topOfControlsRow(in host: NSView) -> CGFloat? {
         let buttons = descendants(of: host).filter { $0 is AIChatOmnibarToolButton || $0 is AIChatModelPickerButton }
         let tops = buttons.filter { !$0.isHiddenOrHasHiddenAncestor }.map { button in
@@ -161,8 +154,7 @@ final class PromptBarOmnibarContentLayoutTests: XCTestCase {
         return tops.min()
     }
 
-    /// Normalises to a top-left origin so the two measurements are comparable regardless of which
-    /// views in the chain are flipped.
+    /// Normalised to a top-left origin, so measurements compare regardless of which views are flipped.
     private func distanceFromTop(of host: NSView, toPointIn view: NSView, point: NSPoint) -> CGFloat {
         let converted = host.convert(point, from: view)
         return host.isFlipped ? converted.y : host.bounds.maxY - converted.y

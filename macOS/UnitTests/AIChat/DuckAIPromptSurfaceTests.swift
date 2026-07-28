@@ -19,8 +19,8 @@
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
-/// Pins the capability matrix. These aren't testing logic — they're here so switching a Prompt Bar
-/// capability on has to be a deliberate edit to a test, not a silent side effect of another change.
+/// Pins the capability matrix, so switching a Prompt Bar capability on has to be a deliberate edit
+/// to a test rather than a side effect of another change.
 final class DuckAIPromptSurfaceTests: XCTestCase {
 
     func testWhenSurfaceIsAddressBarThenEveryCapabilityIsAvailable() {

@@ -20,8 +20,7 @@ import AIChat
 import AppKit
 
 /// Assembles the Prompt Bar's content from the shared Duck.ai prompt stack. The address-bar
-/// equivalent lives in `MainViewController.init`; the only differences are the three seams and the
-/// `.promptBar` surface.
+/// equivalent lives in `MainViewController.init`.
 @MainActor
 enum PromptBarContentFactory {
 
@@ -38,10 +37,7 @@ enum PromptBarContentFactory {
             draftSource: StaticPromptDraftSource(store: draftStore),
             // No browser window behind the bar, so nothing scopes page context or voice reuse.
             origin: nil,
-            // Deliberately silent: reporting Prompt Bar activity under the address bar's pixel names
-            // would make the address bar's own numbers unreadable.
             pixelHandler: PromptBarPixelHandler(),
-            // Suggestions are off for this surface, so there's no reader to supply.
             suggestionsReader: nil,
             preferences: preferences
         )
@@ -50,7 +46,7 @@ enum PromptBarContentFactory {
             themeManager: themeManager,
             omnibarController: omnibarController,
             duckAiNativeStorageHandler: duckAiNativeStorageHandler,
-            // The bar is never a Fire Window surface — it has no window to inherit burner mode from.
+            // No window to inherit burner mode from.
             burnerMode: .regular
         )
         let textViewController = AIChatOmnibarTextContainerViewController(

@@ -2310,9 +2310,6 @@ final class AIChatOmnibarControllerTests: XCTestCase {
 
     // MARK: - Prompt Bar surface
 
-    /// The Prompt Bar drives the same controller with no browser window behind it. These cover the
-    /// two things that follow from that: capabilities needing a window are off, and the submit and
-    /// voice hand-offs go to the host instead of opening a tab directly.
     private func makePromptBarController(draftStore: EphemeralPromptDraftStore) -> AIChatOmnibarController {
         AIChatOmnibarController(
             aiChatTabOpener: mockTabOpener,

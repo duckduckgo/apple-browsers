@@ -18,19 +18,17 @@
 
 import Foundation
 
-/// The browser window a prompt surface is anchored to. Scopes the page-content tab picker and
-/// voice-session reuse; `nil` throughout for surfaces with no originating window.
+/// The browser window a prompt surface is anchored to; `nil` for surfaces without one.
 @MainActor
 protocol DuckAIPromptOriginProviding: AnyObject {
 
     var originTabCollectionViewModel: TabCollectionViewModel? { get }
 
-    /// UUID of the tab the prompt is "about". Its page-context payload entry is the one whose
-    /// `tabId` gets stripped, marking it as the page being discussed.
+    /// The tab the prompt is "about". Its page-context entry is the one whose `tabId` is stripped,
+    /// marking it as the page being discussed.
     var activeTabUUID: String? { get }
 }
 
-/// Address-bar origin: the window hosting the omnibar.
 @MainActor
 final class WindowPromptOrigin: DuckAIPromptOriginProviding {
 

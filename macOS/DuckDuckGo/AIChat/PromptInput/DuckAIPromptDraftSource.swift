@@ -25,12 +25,10 @@ protocol DuckAIPromptDraftSource: AnyObject {
 
     var currentDraftStore: DuckAIPromptDraftStoring? { get }
 
-    /// Emits the effective store on subscription and whenever it changes — a browser tab switch
-    /// for the address bar, never for the Prompt Bar.
+    /// Emits on subscription, then on every change.
     var currentDraftStorePublisher: AnyPublisher<DuckAIPromptDraftStoring?, Never> { get }
 }
 
-/// Address-bar source: the draft belongs to the window's selected tab, so it survives tab switches.
 @MainActor
 final class TabPromptDraftSource: DuckAIPromptDraftSource {
 
@@ -53,7 +51,6 @@ final class TabPromptDraftSource: DuckAIPromptDraftSource {
     }
 }
 
-/// Prompt Bar source: one store for the life of the surface, cleared on dismissal.
 @MainActor
 final class StaticPromptDraftSource: DuckAIPromptDraftSource {
 

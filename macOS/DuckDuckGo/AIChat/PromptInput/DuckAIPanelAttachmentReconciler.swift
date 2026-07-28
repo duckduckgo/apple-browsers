@@ -20,8 +20,6 @@ import AIChat
 import Foundation
 
 /// Keeps the unified panel attachment list in insertion order when one attachment kind changes.
-/// Shared by every `DuckAIPromptDraftStoring` implementation so the carousel's ordering rules
-/// can't drift between surfaces.
 enum DuckAIPanelAttachmentReconciler {
 
     static func reconciled(_ current: [AIChatPanelAttachment], replacingImagesWith images: [AIChatImageAttachment]) -> [AIChatPanelAttachment] {
@@ -74,7 +72,6 @@ enum DuckAIPanelAttachmentReconciler {
 
 extension NSRange {
 
-    /// Clamps a selection range so it never points past the end of the text it describes.
     func clamped(toTextLength length: Int) -> NSRange {
         if location > length {
             return NSRange(location: length, length: 0)

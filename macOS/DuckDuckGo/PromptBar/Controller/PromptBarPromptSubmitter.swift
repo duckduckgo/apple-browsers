@@ -19,20 +19,17 @@
 import AIChat
 import AppKit
 
-/// Routes what the Prompt Bar produces into a browser window. The Prompt Bar has no window of its
-/// own, so every route resolves one first — preferring the display the bar was opened on.
+/// Routes what the Prompt Bar produces into a browser window, preferring the display it opened on.
 @MainActor
 protocol PromptBarPromptSubmitting {
 
-    /// `query` seeds the tab; `payload` carries the attachments, model, tool mode and reasoning
-    /// effort, and is re-applied once the tab is open — the same two-step the address bar uses.
+    /// `query` seeds the tab; `payload` is re-applied once it's open — the address bar's two-step.
     func submit(query: String, payload: AIChatNativePrompt?, preferringWindowOn screen: NSScreen?)
 
-    /// Resolves the same window a prompt would go to, so an active voice session there is focused
-    /// rather than a second one opened.
+    /// Resolves the same window a prompt would, so an active session there is focused rather than
+    /// a second one opened.
     func openVoiceSession(preferringWindowOn screen: NSScreen?)
 
-    /// A prompt the omnibar classified as a URL: it belongs in the browser, not in Duck.ai.
     func open(url: URL, preferringWindowOn screen: NSScreen?)
 }
 
@@ -76,8 +73,7 @@ final class PromptBarPromptSubmitter: PromptBarPromptSubmitting {
             aiChatTabOpener.openAIChatTab(with: .query(query, shouldAutoSubmit: true), behavior: .newWindow(selected: true))
         }
 
-        // Every opener above seeds a plain query, so the rich payload has to land after them or it
-        // would be overwritten — same ordering as the address bar's submit.
+        // Every opener above seeds a plain query, so the payload has to land after them.
         if let payload {
             promptHandler.setData(payload)
         }

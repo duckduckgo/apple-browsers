@@ -644,8 +644,6 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         updateSuggestionsHeight(suppress ? 0 : lastKnownSuggestionsHeight)
     }
 
-    /// The Prompt Bar panel supplies its own vibrancy backdrop and window-level shadow, so the
-    /// address-bar fill, border, top clip mask and external shadow view are all skipped there.
     private var hostDrawsChrome: Bool {
         omnibarController.surface.drawsOwnChrome
     }
@@ -2036,9 +2034,8 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         let colorsProvider = theme.colorsProvider
         let isAppRebranding = themeManager.isAppRebranded
 
-        // A host that draws its own chrome needs its backdrop to show through, so the address-bar
-        // fill and border are painted transparent rather than skipped — `applyTheme` re-runs on
-        // appearance changes and would otherwise restore whatever was set at `setupUI` time.
+        // Painted transparent rather than skipped: `applyTheme` re-runs on appearance changes and
+        // would otherwise restore what `setupUI` set.
         backgroundView.backgroundColor = hostDrawsChrome ? .clear : colorsProvider.activeAddressBarBackgroundColor
         backgroundView.cornerRadius = barStyleProvider.addressBarActiveBackgroundViewRadiusWithSuggestions
 

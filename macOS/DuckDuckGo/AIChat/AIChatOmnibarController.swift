@@ -32,19 +32,16 @@ protocol AIChatOmnibarControllerDelegate: AnyObject {
     func aiChatOmnibarController(_ controller: AIChatOmnibarController, didRequestNavigationToURL url: URL)
     func aiChatOmnibarController(_ controller: AIChatOmnibarController, didSelectSuggestion suggestion: AIChatSuggestion)
 
-    /// Called instead of opening a tab directly, for surfaces whose `routesSubmissionThroughHost` is
-    /// `true`. `query` is the plain text the tab opener needs; `payload` carries the attachments,
-    /// model, tool mode and reasoning effort the host must re-apply after the tab is open.
+    /// For surfaces whose `routesSubmissionThroughHost` is set. `query` is the plain text the tab
+    /// opener needs; `payload` carries what the host re-applies once the tab is open.
     func aiChatOmnibarController(_ controller: AIChatOmnibarController,
                                  requestsSubmissionOf query: String,
                                  payload: AIChatNativePrompt)
 
-    /// Voice counterpart of the above: the host resolves the window the session opens in.
     func aiChatOmnibarControllerRequestsVoiceSession(_ controller: AIChatOmnibarController)
 }
 
-/// Both hand-off methods only fire for surfaces that opt into host routing, so address-bar
-/// conformers never see them.
+/// Both hand-offs only fire for surfaces that opt into host routing.
 extension AIChatOmnibarControllerDelegate {
 
     func aiChatOmnibarController(_ controller: AIChatOmnibarController,
@@ -1275,8 +1272,6 @@ final class AIChatOmnibarController {
             )
 
             if surface.routesSubmissionThroughHost {
-                // The host has no tab to open into until it resolves a window, so it owns both halves
-                // of the hand-off — including the payload re-set below.
                 delegate?.aiChatOmnibarController(self, requestsSubmissionOf: trimmedText, payload: prompt)
             } else {
                 aiChatTabOpener.openAIChatTab(

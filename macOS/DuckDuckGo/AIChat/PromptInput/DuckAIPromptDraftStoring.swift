@@ -21,16 +21,13 @@ import Combine
 import Foundation
 
 /// Storage for one in-progress Duck.ai prompt: text, selection, tool selection and attachments.
-///
-/// The address bar backs this per browser tab (`AddressBarSharedTextState`) so drafts survive tab
-/// switches; the Prompt Bar backs it with a single in-memory store cleared on each dismissal.
+/// Per browser tab in the address bar, one in-memory store in the Prompt Bar.
 protocol DuckAIPromptDraftStoring: AnyObject {
 
     var text: String { get }
     var textPublisher: AnyPublisher<String, Never> { get }
 
-    /// Whether the user has typed anything. Guards restore paths from overwriting live input
-    /// with an empty draft.
+    /// Guards restore paths from overwriting live input with an empty draft.
     var hasUserInteractedWithText: Bool { get }
 
     var selectionRange: NSRange { get }

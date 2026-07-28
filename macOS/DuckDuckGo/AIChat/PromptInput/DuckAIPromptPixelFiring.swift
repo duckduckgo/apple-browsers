@@ -19,8 +19,7 @@
 import Foundation
 import PixelKit
 
-/// A user action in a Duck.ai prompt input, named after the action rather than the pixel it maps to
-/// so each surface can report it under its own name.
+/// Named after the action rather than the pixel, so each surface can report it under its own name.
 enum DuckAIPromptPixelEvent: Equatable {
     case promptSubmitted
     case urlSubmitted
@@ -49,13 +48,10 @@ enum DuckAIPromptPixelEvent: Equatable {
     case voiceChatOpened
 }
 
-/// Reports prompt-input events for one surface. Shared prompt code fires through this so it never
-/// hardcodes a surface's pixel names.
 protocol DuckAIPromptPixelFiring {
     func fire(_ event: DuckAIPromptPixelEvent)
 }
 
-/// Maps prompt events onto the shipping `aiChatAddressBar*` pixels.
 struct AddressBarPromptPixelHandler: DuckAIPromptPixelFiring {
 
     func fire(_ event: DuckAIPromptPixelEvent) {

@@ -18,11 +18,8 @@
 
 import Foundation
 
-/// Reporting for prompt actions taken in the Prompt Bar.
-///
-/// Deliberately inert: the Prompt Bar has no pixel definitions yet, and reusing the
-/// `aiChatAddressBar*` names would fold its numbers into the address bar's. Adding the real
-/// pixels later is a change to this one type.
+/// Deliberately inert: reusing the `aiChatAddressBar*` names would fold the Prompt Bar's numbers
+/// into the address bar's, and the Prompt Bar has no definitions of its own yet.
 struct PromptBarPixelHandler: DuckAIPromptPixelFiring {
 
     func fire(_ event: DuckAIPromptPixelEvent) {}

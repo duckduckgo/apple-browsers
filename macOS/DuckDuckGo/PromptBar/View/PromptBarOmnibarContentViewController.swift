@@ -20,31 +20,21 @@ import AIChat
 import AppKit
 
 /// The Prompt Bar's content: the address bar's own Duck.ai prompt views, hosted over a vibrancy
-/// backdrop instead of inside a browser window. Both view controllers are used unmodified — what
-/// differs between the two surfaces is declared in `DuckAIPromptSurface`.
+/// backdrop instead of inside a browser window.
 @MainActor
 final class PromptBarOmnibarContentViewController: NSViewController {
 
     private enum Constants {
         static let cornerRadius: CGFloat = 16
-        /// Spotlight-like surfaces read better with a little air above the first line. The address bar
-        /// gets this from the navigation bar's own padding; the panel has no chrome above the text.
         static let promptTopInset: CGFloat = 8
-        /// Mirrors `AddressBarStyleProviding.aiChatOmnibarTextContainerLeadingPadding`.
+        /// Mirrors `MainView`'s text container insets.
         static let promptLeadingInset: CGFloat = 10
-        /// Room for the submit and voice buttons the container draws at the trailing edge, matching
-        /// `MainView`'s text container inset.
         static let promptTrailingInset: CGFloat = 78
-        /// Clear air between the last line of the prompt and the controls row. Has to be explicit:
-        /// the container pins the controls to its own bottom edge, so nothing else separates them.
-        /// The container's `additionalContentHeight` contributes a further 5pt of top padding.
         static let promptToControlsSpacing: CGFloat = 8
-        /// The controls row as the container lays it out. Its buttons hang off the suggestions view's
-        /// top edge, which itself sits 4pt above the container's bottom — so the strip is the 28pt
-        /// button plus an 8pt tool inset plus that 4pt, and the suggestions view's own height is
-        /// accounted for separately.
+        /// The controls row's buttons hang off the suggestions view's top edge, which sits 4pt above
+        /// the container's bottom: 28pt button + 8pt tool inset + that 4pt.
         static let controlsRowHeight: CGFloat = 40
-        /// Placeholder height for the initial frame, replaced by the first real measurement.
+        /// Placeholder for the initial frame, replaced by the first real measurement.
         static let nominalCollapsedHeight: CGFloat = 80
         static let backdropMaterial: NSVisualEffectView.Material = .hudWindow
     }
@@ -55,9 +45,8 @@ final class PromptBarOmnibarContentViewController: NSViewController {
     private let draftStore: EphemeralPromptDraftStore
     private let promptSubmitter: PromptBarPromptSubmitting
 
-    /// Wraps the text view controller so clicks in the bottom strip reach the tool buttons behind it.
-    /// The text controller's own view is a `MouseOverView`, which swallows them. `MainView` solves this
-    /// the same way, except there the passthrough view is the container the text VC is added into.
+    /// The text controller's own view is a `MouseOverView` and swallows clicks, so wrap it to let the
+    /// bottom strip through to the tool buttons behind. `MainView` does the same.
     private let promptPassthroughView = PassthroughView()
 
     private var isMenuTracking = false
@@ -88,16 +77,13 @@ final class PromptBarOmnibarContentViewController: NSViewController {
     }
 
     override func loadView() {
-        // The final width from the outset: the prompt's line wrapping — and so every height we
-        // measure — is a function of it. Measuring before Auto Layout has established the real width
-        // makes the text wrap short, over-reporting its height, and the panel then shrinks a line at
-        // a time as layout catches up. Height is nominal; the first measurement replaces it.
+        // Final width from the outset: measuring before Auto Layout has established it makes the
+        // prompt wrap short and over-report its height, and the panel then shrinks a line at a time
+        // as layout catches up.
         view = NSView(frame: NSRect(x: 0, y: 0,
                                     width: PromptBarPlacement.preferredWidth,
                                     height: Constants.nominalCollapsedHeight))
         view.wantsLayer = true
-        // Clips the vibrancy and both child views to the panel's rounded shape; the window's own
-        // shadow wraps the result.
         view.layer?.cornerRadius = Constants.cornerRadius
         view.layer?.masksToBounds = true
 
@@ -180,8 +166,6 @@ final class PromptBarOmnibarContentViewController: NSViewController {
         onPreferredWindowContentSizeChanged?(size)
     }
 
-    /// Tells the prompt view to let clicks through in the bottom strip the container's tool row,
-    /// attachments and suggestions occupy. Same plumbing as `MainViewController`.
     private func applyPassthroughHeight() {
         let passthroughHeight = containerViewController.totalPassthroughHeight
         promptPassthroughView.passthroughBottomHeight = passthroughHeight
@@ -190,8 +174,8 @@ final class PromptBarOmnibarContentViewController: NSViewController {
 
     // MARK: - Auxiliary UI
 
-    /// A tool menu or the attachment picker taking key away must not dismiss the bar. Menus track on a
-    /// nested run loop, so the notification arrives before the panel's own `didResignKey`.
+    /// A tool menu or the attachment picker taking key away must not dismiss the bar. Menus track on
+    /// a nested run loop, so these arrive before the panel's own `didResignKey`.
     private func subscribeToMenuTracking() {
         NotificationCenter.default.addObserver(self,
                                               selector: #selector(menuDidBeginTracking),
@@ -209,8 +193,8 @@ final class PromptBarOmnibarContentViewController: NSViewController {
 
     @objc private func menuDidEndTracking() {
         isMenuTracking = false
-        // AppKit doesn't hand key back to a non-activating panel on its own, and without key there's
-        // no later `didResignKey` to dismiss on — so the bar would be stuck open.
+        // AppKit won't hand key back to a non-activating panel, and without key there's no later
+        // `didResignKey` to dismiss on — the bar would be stuck open.
         reclaimKeyIfStillVisible()
     }
 
@@ -232,16 +216,13 @@ extension PromptBarOmnibarContentViewController: PromptBarContentHosting {
     }
 
     var preferredWindowContentSize: NSSize {
-        // Resolve pending layout first: the prompt's line wrapping depends on its final width, and
-        // measuring before that width is established over-reports the height.
+        // Wrapping depends on the final width, so resolve pending layout before measuring.
         if isViewLoaded {
             view.layoutSubtreeIfNeeded()
         }
 
-        // Stacked top to bottom: top inset, the prompt text, clear air, the controls row. Using the
-        // text's *content* height (not `calculateDesiredPanelHeight()`, which folds in a bottom band
-        // for a host that overlaps its controls into it, as the address bar does) keeps the spacing
-        // below the prompt constant no matter how many lines it grows to.
+        // `promptContentHeight`, not `calculateDesiredPanelHeight()`: the latter folds in a bottom
+        // band for hosts that overlap their controls into it, which this one doesn't.
         let height = Constants.promptTopInset
             + textViewController.promptContentHeight
             + Constants.promptToControlsSpacing
@@ -253,8 +234,7 @@ extension PromptBarOmnibarContentViewController: PromptBarContentHosting {
     }
 
     func prepareForPresentation() {
-        // Loading the view up front means the presenter's own read of `preferredWindowContentSize`
-        // measures a laid-out prompt rather than one that hasn't been sized yet.
+        // So the presenter's own read of `preferredWindowContentSize` measures a laid-out prompt.
         _ = view
         omnibarController.onOmnibarActivated()
         textViewController.startEventMonitoring()
@@ -269,8 +249,6 @@ extension PromptBarOmnibarContentViewController: PromptBarContentHosting {
         textViewController.stopEventMonitoring()
         containerViewController.cleanup()
         draftStore.reset()
-        // The next presentation starts from an empty prompt, so the height it publishes will differ
-        // from the one the dismissed bar ended on.
         lastPublishedContentHeight = nil
     }
 }
@@ -286,9 +264,9 @@ extension PromptBarOmnibarContentViewController: AIChatOmnibarControllerDelegate
     func aiChatOmnibarController(_ controller: AIChatOmnibarController,
                                  requestsSubmissionOf query: String,
                                  payload: AIChatNativePrompt) {
-        // Read the screen before dismissal tears the window down.
+        // Read the screen before dismissal tears the window down, and dismiss before handing off: a
+        // browser window raised under the still-key panel stays behind it.
         let screen = view.window?.screen
-        // Dismiss first: a browser window raised under the still-key panel stays behind it.
         onSubmit?()
         promptSubmitter.submit(query: query, payload: payload, preferringWindowOn: screen)
     }
@@ -306,8 +284,7 @@ extension PromptBarOmnibarContentViewController: AIChatOmnibarControllerDelegate
     }
 
     func aiChatOmnibarController(_ controller: AIChatOmnibarController, didSelectSuggestion suggestion: AIChatSuggestion) {
-        // Unreachable: `.promptBar` doesn't support suggestions. Dismiss rather than sit open if it
-        // ever does.
+        // Unreachable while `.promptBar` has no suggestions; dismiss rather than sit open if it gains them.
         onSubmit?()
     }
 }

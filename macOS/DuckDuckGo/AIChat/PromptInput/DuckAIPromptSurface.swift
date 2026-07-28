@@ -21,18 +21,13 @@ import Foundation
 /// The surface a Duck.ai prompt input is presented on. Shared prompt components branch on this
 /// so every address-bar/Prompt-Bar difference lives in one table.
 enum DuckAIPromptSurface: Equatable, CaseIterable {
-
-    /// The Duck.ai panel that drops out of a browser window's address bar.
     case addressBar
-
-    /// The system-wide floating Prompt Bar, opened by global shortcut or menu bar icon.
     case promptBar
 }
 
 extension DuckAIPromptSurface {
 
-    /// "Add Page Content" in the attach menu and `@`-mention tab attach. The Prompt Bar has no
-    /// originating tab to scope the picker to, nor an active tab for the payload's discriminator.
+    /// "Add Page Content" and `@`-mention tab attach, both of which need an originating tab.
     var supportsPageContext: Bool {
         switch self {
         case .addressBar: true
@@ -40,8 +35,7 @@ extension DuckAIPromptSurface {
         }
     }
 
-    /// The Customize Responses row in the tools menu. Its modal fights the Prompt Bar's
-    /// dismiss-on-resign-key policy.
+    /// Its modal fights the Prompt Bar's dismiss-on-resign-key policy.
     var supportsCustomizeResponses: Bool {
         switch self {
         case .addressBar: true
@@ -49,7 +43,6 @@ extension DuckAIPromptSurface {
         }
     }
 
-    /// The autocomplete/history suggestions list below the prompt editor.
     var supportsSuggestions: Bool {
         switch self {
         case .addressBar: true
@@ -57,9 +50,7 @@ extension DuckAIPromptSurface {
         }
     }
 
-    /// The "Try for free"/"Upgrade" tag and confirmation dialog on tier-gated model and reasoning
-    /// rows. Gated rows stay dimmed and non-interactive either way — the Prompt Bar is a system
-    /// utility, so it doesn't sell subscriptions.
+    /// Only the tag and dialog: gated rows stay dimmed and non-interactive either way.
     var supportsSubscriptionUpsell: Bool {
         switch self {
         case .addressBar: true
@@ -67,9 +58,8 @@ extension DuckAIPromptSurface {
         }
     }
 
-    /// Whether the host paints its own background and shadow. The address bar's prompt panel draws
-    /// an address-bar-shaped fill, border, top clip mask and external shadow view; the Prompt Bar
-    /// panel supplies a vibrancy backdrop instead, so the shared views must not paint over it.
+    /// When set, the shared views skip their address-bar fill, border, clip mask and shadow so the
+    /// host's own backdrop shows through.
     var drawsOwnChrome: Bool {
         switch self {
         case .addressBar: false
@@ -77,9 +67,8 @@ extension DuckAIPromptSurface {
         }
     }
 
-    /// Whether submitting is routed by the host rather than opened directly. The address bar has the
-    /// tab the user typed in and reuses it; the Prompt Bar has no window at all, so its host resolves
-    /// one first. Also covers the voice button, which needs the same window.
+    /// Set for surfaces with no window of their own, whose host has to resolve one first. Covers the
+    /// voice button too.
     var routesSubmissionThroughHost: Bool {
         switch self {
         case .addressBar: false

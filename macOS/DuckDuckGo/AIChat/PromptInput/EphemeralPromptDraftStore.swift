@@ -20,8 +20,7 @@ import AIChat
 import Combine
 import Foundation
 
-/// In-memory prompt draft with no tab to persist against. Used by the Prompt Bar, which starts
-/// from a clean slate on every presentation — `reset()` is called when the bar is dismissed.
+/// In-memory prompt draft with no tab to persist against; `reset()` on dismissal.
 final class EphemeralPromptDraftStore: DuckAIPromptDraftStoring {
 
     @Published private(set) var text: String = ""
@@ -77,8 +76,8 @@ final class EphemeralPromptDraftStore: DuckAIPromptDraftStoring {
         aiChatPanelAttachments = DuckAIPanelAttachmentReconciler.reconciled(aiChatPanelAttachments, replacingFilesWith: attachments)
     }
 
-    /// Clears the draft. Emits on both publishers only when something actually changed, so a
-    /// reset of an already-empty store doesn't churn the carousel.
+    /// Emits only when something actually changed, so resetting an empty store doesn't churn the
+    /// carousel.
     func reset() {
         hasUserInteractedWithText = false
         selectionRange = NSRange(location: 0, length: 0)

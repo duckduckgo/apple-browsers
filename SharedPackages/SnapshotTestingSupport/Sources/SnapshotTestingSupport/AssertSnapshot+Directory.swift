@@ -37,10 +37,17 @@ func assertSnapshot<Value, Format>(
     line: UInt = #line,
     column: UInt = #column
 ) {
+    let resolvedName: String?
+    if let name, let suffix = SnapshotEnvironment.currentReferenceEnvironmentSuffix() {
+        resolvedName = "\(name)_\(suffix)"
+    } else {
+        resolvedName = name
+    }
+
     let failure = verifySnapshot(
         of: try value(),
         as: snapshotting,
-        named: name,
+        named: resolvedName,
         record: record,
         snapshotDirectory: snapshotDirectory,
         timeout: timeout,

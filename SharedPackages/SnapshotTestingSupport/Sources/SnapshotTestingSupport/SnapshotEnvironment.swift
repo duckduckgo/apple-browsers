@@ -37,8 +37,8 @@ public enum SnapshotPlatform: Equatable {
 }
 
 public enum SnapshotEnvironment {
-    public static let expectedMajorVersion = 26
-    public static let expectedMinorVersion = 4
+    public static let expectedIOSVersion = OperatingSystemVersion(majorVersion: 26, minorVersion: 4, patchVersion: 0)
+    public static let expectedMacOSVersion = OperatingSystemVersion(majorVersion: 26, minorVersion: 5, patchVersion: 2)
     public static let expectedIOSDisplayScale = 3.0
 
     public static func currentValidationMessage() -> String? {
@@ -63,28 +63,57 @@ public enum SnapshotEnvironment {
         operatingSystemVersion: OperatingSystemVersion,
         displayScale: Double? = nil
     ) -> String? {
-        guard operatingSystemVersion.majorVersion == expectedMajorVersion else {
-            let currentVersion = versionString(operatingSystemVersion)
-            return "UI snapshots must run on \(platform.displayName) \(expectedVersionString(for: platform)). Current OS is \(currentVersion)."
-        }
-
-        if platform == .iOS {
-            guard operatingSystemVersion.minorVersion == expectedMinorVersion else {
-                let currentVersion = versionString(operatingSystemVersion)
-                return "UI snapshots must run on \(platform.displayName) \(expectedVersionString(for: platform)). Current OS is \(currentVersion)."
+        switch platform {
+        case .iOS:
+            guard operatingSystemVersion.majorVersion == expectedIOSVersion.majorVersion,
+                  operatingSystemVersion.minorVersion == expectedIOSVersion.minorVersion else {
+                return "UI snapshots must run on iOS \(expectedVersionString(for: .iOS)). Current OS is \(versionString(operatingSystemVersion))."
             }
-        }
 
-        if platform == .iOS {
             guard let displayScale else {
                 return "iOS UI snapshots must run at @\(Int(expectedIOSDisplayScale))x scale. Current scale is unknown."
             }
             guard displayScale == expectedIOSDisplayScale else {
                 return "iOS UI snapshots must run at @\(Int(expectedIOSDisplayScale))x scale. Current scale is \(displayScale)."
             }
-        }
+            return nil
 
+        case .macOS:
+            guard operatingSystemVersion.majorVersion == expectedMacOSVersion.majorVersion,
+                  operatingSystemVersion.minorVersion == expectedMacOSVersion.minorVersion,
+                  operatingSystemVersion.patchVersion == expectedMacOSVersion.patchVersion else {
+                return "UI snapshots must run on macOS \(expectedVersionString(for: .macOS)). Current OS is \(versionString(operatingSystemVersion))."
+            }
+            return nil
+        }
+    }
+
+    public static func referenceEnvironmentSuffix(
+        platform: SnapshotPlatform,
+        operatingSystemVersion version: OperatingSystemVersion
+    ) -> String {
+        switch platform {
+        case .iOS:
+            return "\(platform.displayName)-\(version.majorVersion)-\(version.minorVersion)"
+        case .macOS:
+            return "\(platform.displayName)-\(version.majorVersion)-\(version.minorVersion)-\(version.patchVersion)"
+        }
+    }
+
+    static func currentReferenceEnvironmentSuffix() -> String? {
+        #if os(iOS)
+        return referenceEnvironmentSuffix(
+            platform: .iOS,
+            operatingSystemVersion: ProcessInfo.processInfo.operatingSystemVersion
+        )
+        #elseif os(macOS)
+        return referenceEnvironmentSuffix(
+            platform: .macOS,
+            operatingSystemVersion: ProcessInfo.processInfo.operatingSystemVersion
+        )
+        #else
         return nil
+        #endif
     }
 
     private static func versionString(_ version: OperatingSystemVersion) -> String {
@@ -94,9 +123,9 @@ public enum SnapshotEnvironment {
     private static func expectedVersionString(for platform: SnapshotPlatform) -> String {
         switch platform {
         case .iOS:
-            return "\(expectedMajorVersion).\(expectedMinorVersion)"
+            return "\(expectedIOSVersion.majorVersion).\(expectedIOSVersion.minorVersion)"
         case .macOS:
-            return "\(expectedMajorVersion).x"
+            return "\(expectedMacOSVersion.majorVersion).\(expectedMacOSVersion.minorVersion).\(expectedMacOSVersion.patchVersion)"
         }
     }
 

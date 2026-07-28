@@ -16,12 +16,24 @@
 //  limitations under the License.
 //
 
+import AIChat
 import AppKit
 
+/// Routes what the Prompt Bar produces into a browser window. The Prompt Bar has no window of its
+/// own, so every route resolves one first — preferring the display the bar was opened on.
 @MainActor
 protocol PromptBarPromptSubmitting {
 
-    func submit(prompt: String, preferringWindowOn screen: NSScreen?)
+    /// `query` seeds the tab; `payload` carries the attachments, model, tool mode and reasoning
+    /// effort, and is re-applied once the tab is open — the same two-step the address bar uses.
+    func submit(query: String, payload: AIChatNativePrompt?, preferringWindowOn screen: NSScreen?)
+
+    /// Resolves the same window a prompt would go to, so an active voice session there is focused
+    /// rather than a second one opened.
+    func openVoiceSession(preferringWindowOn screen: NSScreen?)
+
+    /// A prompt the omnibar classified as a URL: it belongs in the browser, not in Duck.ai.
+    func open(url: URL, preferringWindowOn screen: NSScreen?)
 }
 
 /// A protocol so the eligibility rule tests without real windows.
@@ -44,23 +56,49 @@ final class PromptBarPromptSubmitter: PromptBarPromptSubmitting {
 
     private let aiChatTabOpener: AIChatTabOpening
     private let windowControllersManager: WindowControllersManagerProtocol
+    private let promptHandler: AIChatPromptHandler
 
-    init(aiChatTabOpener: AIChatTabOpening, windowControllersManager: WindowControllersManagerProtocol) {
+    init(aiChatTabOpener: AIChatTabOpening,
+         windowControllersManager: WindowControllersManagerProtocol,
+         promptHandler: AIChatPromptHandler = .shared) {
         self.aiChatTabOpener = aiChatTabOpener
         self.windowControllersManager = windowControllersManager
+        self.promptHandler = promptHandler
     }
 
-    func submit(prompt: String, preferringWindowOn screen: NSScreen?) {
+    func submit(query: String, payload: AIChatNativePrompt?, preferringWindowOn screen: NSScreen?) {
         if let windowController = windowToReuse(on: screen) {
-            aiChatTabOpener.openAIChatTab(withQuery: prompt, inNewTabOf: windowController)
+            aiChatTabOpener.openAIChatTab(withQuery: query, inNewTabOf: windowController)
         } else if let visibleFrame = screen?.visibleFrame {
             // Placed explicitly: an unplaced window cascades off the last key window, i.e. back onto its display.
-            aiChatTabOpener.openAIChatTab(withQuery: prompt, inNewWindowAt: Self.newWindowDroppingPoint(in: visibleFrame))
+            aiChatTabOpener.openAIChatTab(withQuery: query, inNewWindowAt: Self.newWindowDroppingPoint(in: visibleFrame))
         } else {
-            aiChatTabOpener.openAIChatTab(with: .query(prompt, shouldAutoSubmit: true), behavior: .newWindow(selected: true))
+            aiChatTabOpener.openAIChatTab(with: .query(query, shouldAutoSubmit: true), behavior: .newWindow(selected: true))
+        }
+
+        // Every opener above seeds a plain query, so the rich payload has to land after them or it
+        // would be overwritten — same ordering as the address bar's submit.
+        if let payload {
+            promptHandler.setData(payload)
         }
 
         // The bar never activates the app, so submitting is what brings the browser forward.
+        NSApp.activate(ignoringOtherApps: true)
+    }
+
+    func openVoiceSession(preferringWindowOn screen: NSScreen?) {
+        let sourceCollection = windowToReuse(on: screen)?.mainViewController.tabCollectionViewModel
+        aiChatTabOpener.openVoiceSession(inSourceCollection: sourceCollection, behavior: .newTab(selected: true))
+        NSApp.activate(ignoringOtherApps: true)
+    }
+
+    func open(url: URL, preferringWindowOn screen: NSScreen?) {
+        // `show(url:)` targets the last key window, so promote the screen-scoped one before asking.
+        windowToReuse(on: screen)?.window?.makeKeyAndOrderFront(nil)
+        windowControllersManager.show(url: url,
+                                      source: .userEntered(url.absoluteString),
+                                      newTab: true,
+                                      selected: true)
         NSApp.activate(ignoringOtherApps: true)
     }
 

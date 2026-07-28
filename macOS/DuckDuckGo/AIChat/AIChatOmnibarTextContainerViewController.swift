@@ -397,6 +397,13 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
         heightDidChange?(desiredHeight)
     }
 
+    /// Height of the prompt text itself, without the bottom band `calculateDesiredPanelHeight()`
+    /// reserves for the host's controls row. Hosts that lay the controls out below the text (rather
+    /// than overlapping into that band, as the address bar does) need this instead.
+    var promptContentHeight: CGFloat {
+        calculateDesiredPanelHeight() - Constants.bottomPadding
+    }
+
     func calculateDesiredPanelHeight() -> CGFloat {
         guard let layoutManager = textView.layoutManager,
               let textContainer = textView.textContainer else {

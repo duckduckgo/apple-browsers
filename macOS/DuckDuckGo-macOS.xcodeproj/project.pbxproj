@@ -4668,8 +4668,8 @@
 				FB07BAD10000000000000006 /* PromptBarPlacement.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD10000000000000004 /* PromptBarPlacement.swift */; };
 				FB07BAD10000000000000008 /* PromptBarContentHosting.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD10000000000000007 /* PromptBarContentHosting.swift */; };
 				FB07BAD10000000000000009 /* PromptBarContentHosting.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD10000000000000007 /* PromptBarContentHosting.swift */; };
-				FB07BAD1000000000000000B /* PromptBarViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD1000000000000000A /* PromptBarViewController.swift */; };
-				FB07BAD1000000000000000C /* PromptBarViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD1000000000000000A /* PromptBarViewController.swift */; };
+				FB07BAD1000000000000000B /* PromptBarOmnibarContentViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD1000000000000000A /* PromptBarOmnibarContentViewController.swift */; };
+				FB07BAD1000000000000000C /* PromptBarOmnibarContentViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD1000000000000000A /* PromptBarOmnibarContentViewController.swift */; };
 				FB07BAD1000000000000000F /* PromptBarPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD1000000000000000E /* PromptBarPresenter.swift */; };
 				FB07BAD10000000000000010 /* PromptBarPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD1000000000000000E /* PromptBarPresenter.swift */; };
 				FB07BAD10000000000000012 /* PromptBarCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD10000000000000011 /* PromptBarCoordinator.swift */; };
@@ -4686,7 +4686,31 @@
 				FB07BAD10000000000000023 /* PromptBarPromptSubmitter.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD10000000000000021 /* PromptBarPromptSubmitter.swift */; };
 				FB07BAD10000000000000025 /* PromptBarPromptSubmitterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD10000000000000024 /* PromptBarPromptSubmitterTests.swift */; };
 				FB07BAD10000000000000026 /* PromptBarPromptSubmitterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD10000000000000024 /* PromptBarPromptSubmitterTests.swift */; };
-		/* End PBXBuildFile section */
+				FB07BAD20000000000000201 /* DuckAIPromptSurface.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD20000000000000001 /* DuckAIPromptSurface.swift */; };
+		FB07BAD20000000000000301 /* DuckAIPromptSurface.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD20000000000000001 /* DuckAIPromptSurface.swift */; };
+		FB07BAD20000000000000202 /* DuckAIPromptDraftStoring.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD20000000000000002 /* DuckAIPromptDraftStoring.swift */; };
+		FB07BAD20000000000000302 /* DuckAIPromptDraftStoring.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD20000000000000002 /* DuckAIPromptDraftStoring.swift */; };
+		FB07BAD20000000000000203 /* DuckAIPromptDraftSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD20000000000000003 /* DuckAIPromptDraftSource.swift */; };
+		FB07BAD20000000000000303 /* DuckAIPromptDraftSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD20000000000000003 /* DuckAIPromptDraftSource.swift */; };
+		FB07BAD20000000000000204 /* DuckAIPromptOriginProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD20000000000000004 /* DuckAIPromptOriginProviding.swift */; };
+		FB07BAD20000000000000304 /* DuckAIPromptOriginProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD20000000000000004 /* DuckAIPromptOriginProviding.swift */; };
+		FB07BAD20000000000000205 /* DuckAIPromptPixelFiring.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD20000000000000005 /* DuckAIPromptPixelFiring.swift */; };
+		FB07BAD20000000000000305 /* DuckAIPromptPixelFiring.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD20000000000000005 /* DuckAIPromptPixelFiring.swift */; };
+		FB07BAD20000000000000206 /* DuckAIPanelAttachmentReconciler.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD20000000000000006 /* DuckAIPanelAttachmentReconciler.swift */; };
+		FB07BAD20000000000000306 /* DuckAIPanelAttachmentReconciler.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD20000000000000006 /* DuckAIPanelAttachmentReconciler.swift */; };
+		FB07BAD20000000000000207 /* EphemeralPromptDraftStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD20000000000000007 /* EphemeralPromptDraftStore.swift */; };
+		FB07BAD20000000000000307 /* EphemeralPromptDraftStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD20000000000000007 /* EphemeralPromptDraftStore.swift */; };
+		FB07BAD20000000000000208 /* PromptBarPixelHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD20000000000000008 /* PromptBarPixelHandler.swift */; };
+		FB07BAD20000000000000308 /* PromptBarPixelHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD20000000000000008 /* PromptBarPixelHandler.swift */; };
+		FB07BAD20000000000000209 /* PromptBarContentFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD20000000000000009 /* PromptBarContentFactory.swift */; };
+		FB07BAD20000000000000309 /* PromptBarContentFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD20000000000000009 /* PromptBarContentFactory.swift */; };
+		FB07BAD20000000000000501 /* DuckAIPromptSurfaceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD20000000000000401 /* DuckAIPromptSurfaceTests.swift */; };
+		FB07BAD20000000000000601 /* DuckAIPromptSurfaceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD20000000000000401 /* DuckAIPromptSurfaceTests.swift */; };
+		FB07BAD20000000000000502 /* EphemeralPromptDraftStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD20000000000000402 /* EphemeralPromptDraftStoreTests.swift */; };
+		FB07BAD20000000000000602 /* EphemeralPromptDraftStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD20000000000000402 /* EphemeralPromptDraftStoreTests.swift */; };
+		FB07BAD20000000000000503 /* PromptBarOmnibarContentLayoutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD20000000000000403 /* PromptBarOmnibarContentLayoutTests.swift */; };
+		FB07BAD20000000000000603 /* PromptBarOmnibarContentLayoutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD20000000000000403 /* PromptBarOmnibarContentLayoutTests.swift */; };
+/* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
 		31C6E9AC2B0C07BA0086DC30 /* PBXContainerItemProxy */ = {
@@ -7169,7 +7193,7 @@
 		FB07BAD10000000000000001 /* PromptBarWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptBarWindow.swift; sourceTree = "<group>"; };
 				FB07BAD10000000000000004 /* PromptBarPlacement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptBarPlacement.swift; sourceTree = "<group>"; };
 				FB07BAD10000000000000007 /* PromptBarContentHosting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptBarContentHosting.swift; sourceTree = "<group>"; };
-				FB07BAD1000000000000000A /* PromptBarViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptBarViewController.swift; sourceTree = "<group>"; };
+				FB07BAD1000000000000000A /* PromptBarOmnibarContentViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptBarOmnibarContentViewController.swift; sourceTree = "<group>"; };
 				FB07BAD1000000000000000E /* PromptBarPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptBarPresenter.swift; sourceTree = "<group>"; };
 				FB07BAD10000000000000011 /* PromptBarCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptBarCoordinator.swift; sourceTree = "<group>"; };
 				FB07BAD10000000000000015 /* GlobalShortcutRegistering.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlobalShortcutRegistering.swift; sourceTree = "<group>"; };
@@ -7178,7 +7202,19 @@
 				FB07BAD1000000000000001E /* PromptBarCoordinatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptBarCoordinatorTests.swift; sourceTree = "<group>"; };
 				FB07BAD10000000000000021 /* PromptBarPromptSubmitter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptBarPromptSubmitter.swift; sourceTree = "<group>"; };
 				FB07BAD10000000000000024 /* PromptBarPromptSubmitterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptBarPromptSubmitterTests.swift; sourceTree = "<group>"; };
-		/* End PBXFileReference section */
+				FB07BAD20000000000000008 /* PromptBarPixelHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptBarPixelHandler.swift; sourceTree = "<group>"; };
+		FB07BAD20000000000000009 /* PromptBarContentFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptBarContentFactory.swift; sourceTree = "<group>"; };
+		FB07BAD20000000000000001 /* DuckAIPromptSurface.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAIPromptSurface.swift; sourceTree = "<group>"; };
+		FB07BAD20000000000000002 /* DuckAIPromptDraftStoring.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAIPromptDraftStoring.swift; sourceTree = "<group>"; };
+		FB07BAD20000000000000003 /* DuckAIPromptDraftSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAIPromptDraftSource.swift; sourceTree = "<group>"; };
+		FB07BAD20000000000000004 /* DuckAIPromptOriginProviding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAIPromptOriginProviding.swift; sourceTree = "<group>"; };
+		FB07BAD20000000000000005 /* DuckAIPromptPixelFiring.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAIPromptPixelFiring.swift; sourceTree = "<group>"; };
+		FB07BAD20000000000000006 /* DuckAIPanelAttachmentReconciler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAIPanelAttachmentReconciler.swift; sourceTree = "<group>"; };
+		FB07BAD20000000000000007 /* EphemeralPromptDraftStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EphemeralPromptDraftStore.swift; sourceTree = "<group>"; };
+		FB07BAD20000000000000401 /* DuckAIPromptSurfaceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAIPromptSurfaceTests.swift; sourceTree = "<group>"; };
+		FB07BAD20000000000000402 /* EphemeralPromptDraftStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EphemeralPromptDraftStoreTests.swift; sourceTree = "<group>"; };
+		FB07BAD20000000000000403 /* PromptBarOmnibarContentLayoutTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptBarOmnibarContentLayoutTests.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		3706FCA6293F65D500E42796 /* Frameworks */ = {
@@ -7956,6 +7992,7 @@
 		31521ABE2CC0139C00248E6F /* AIChat */ = {
 			isa = PBXGroup;
 			children = (
+				FB07BAD20000000000000100 /* PromptInput */,
 				BB027E882FBB4D30009B4FE4 /* DuckAiVoiceChatShieldScope.swift */,
 				BBC2778D2FB22DAD00756A85 /* DuckAiVoiceChatFailureHandler.swift */,
 				BBC277872FAE18A600756A85 /* DuckAiVoiceChatPermissionOverride.swift */,
@@ -8122,6 +8159,8 @@
 		31F25EFD2CC3C9F9002F9084 /* AIChat */ = {
 			isa = PBXGroup;
 			children = (
+				FB07BAD20000000000000402 /* EphemeralPromptDraftStoreTests.swift */,
+				FB07BAD20000000000000401 /* DuckAIPromptSurfaceTests.swift */,
 				BB027E8B2FBB4D3A009B4FE4 /* DuckAiVoiceChatShieldScopeTests.swift */,
 				BBC277902FB2367300756A85 /* DuckAiVoiceChatFailureHandlerTests.swift */,
 				BBC2779D2FBF000200756A85 /* DuckAiVoiceChatPermissionOverrideTests.swift */,
@@ -13378,6 +13417,7 @@
 		FB07BAD1000000000000000D /* Controller */ = {
 			isa = PBXGroup;
 			children = (
+				FB07BAD20000000000000009 /* PromptBarContentFactory.swift */,
 				FB07BAD10000000000000021 /* PromptBarPromptSubmitter.swift */,
 				FB07BAD10000000000000011 /* PromptBarCoordinator.swift */,
 				FB07BAD1000000000000000E /* PromptBarPresenter.swift */,
@@ -13408,6 +13448,7 @@
 		FB07BAD00000000000000031 /* Model */ = {
 			isa = PBXGroup;
 			children = (
+				FB07BAD20000000000000008 /* PromptBarPixelHandler.swift */,
 				FB07BAD00000000000000002 /* PromptBarPreferencesPersistor.swift */,
 				FB07BAD00000000000000003 /* PromptBarPreferences.swift */,
 				FB07BAD00000000000000001 /* PromptBarShortcut.swift */,
@@ -13418,7 +13459,7 @@
 		FB07BAD00000000000000032 /* View */ = {
 			isa = PBXGroup;
 			children = (
-				FB07BAD1000000000000000A /* PromptBarViewController.swift */,
+				FB07BAD1000000000000000A /* PromptBarOmnibarContentViewController.swift */,
 				FB07BAD10000000000000007 /* PromptBarContentHosting.swift */,
 				FB07BAD10000000000000004 /* PromptBarPlacement.swift */,
 				FB07BAD10000000000000001 /* PromptBarWindow.swift */,
@@ -13432,6 +13473,7 @@
 		FB07BAD00000000000000033 /* PromptBar */ = {
 			isa = PBXGroup;
 			children = (
+				FB07BAD20000000000000403 /* PromptBarOmnibarContentLayoutTests.swift */,
 				FB07BAD10000000000000024 /* PromptBarPromptSubmitterTests.swift */,
 				FB07BAD1000000000000001E /* PromptBarCoordinatorTests.swift */,
 				FB07BAD1000000000000001B /* PromptBarPlacementTests.swift */,
@@ -13441,6 +13483,20 @@
 				FB07BAD00000000000000010 /* PromptBarMenuBarControllerTests.swift */,
 			);
 			path = PromptBar;
+			sourceTree = "<group>";
+		};
+		FB07BAD20000000000000100 /* PromptInput */ = {
+			isa = PBXGroup;
+			children = (
+				FB07BAD20000000000000001 /* DuckAIPromptSurface.swift */,
+				FB07BAD20000000000000002 /* DuckAIPromptDraftStoring.swift */,
+				FB07BAD20000000000000003 /* DuckAIPromptDraftSource.swift */,
+				FB07BAD20000000000000004 /* DuckAIPromptOriginProviding.swift */,
+				FB07BAD20000000000000005 /* DuckAIPromptPixelFiring.swift */,
+				FB07BAD20000000000000006 /* DuckAIPanelAttachmentReconciler.swift */,
+				FB07BAD20000000000000007 /* EphemeralPromptDraftStore.swift */,
+			);
+			path = PromptInput;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -15164,12 +15220,21 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				FB07BAD20000000000000209 /* PromptBarContentFactory.swift in Sources */,
+				FB07BAD20000000000000208 /* PromptBarPixelHandler.swift in Sources */,
+				FB07BAD20000000000000207 /* EphemeralPromptDraftStore.swift in Sources */,
+				FB07BAD20000000000000206 /* DuckAIPanelAttachmentReconciler.swift in Sources */,
+				FB07BAD20000000000000205 /* DuckAIPromptPixelFiring.swift in Sources */,
+				FB07BAD20000000000000204 /* DuckAIPromptOriginProviding.swift in Sources */,
+				FB07BAD20000000000000203 /* DuckAIPromptDraftSource.swift in Sources */,
+				FB07BAD20000000000000202 /* DuckAIPromptDraftStoring.swift in Sources */,
+				FB07BAD20000000000000201 /* DuckAIPromptSurface.swift in Sources */,
 				FB07BAD10000000000000023 /* PromptBarPromptSubmitter.swift in Sources */,
 				FB07BAD1000000000000001A /* CarbonGlobalShortcutRegistrar.swift in Sources */,
 				FB07BAD10000000000000017 /* GlobalShortcutRegistering.swift in Sources */,
 				FB07BAD10000000000000013 /* PromptBarCoordinator.swift in Sources */,
 				FB07BAD10000000000000010 /* PromptBarPresenter.swift in Sources */,
-				FB07BAD1000000000000000C /* PromptBarViewController.swift in Sources */,
+				FB07BAD1000000000000000C /* PromptBarOmnibarContentViewController.swift in Sources */,
 				FB07BAD10000000000000009 /* PromptBarContentHosting.swift in Sources */,
 				FB07BAD10000000000000006 /* PromptBarPlacement.swift in Sources */,
 				FB07BAD10000000000000003 /* PromptBarWindow.swift in Sources */,
@@ -16532,6 +16597,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				FB07BAD20000000000000503 /* PromptBarOmnibarContentLayoutTests.swift in Sources */,
+				FB07BAD20000000000000502 /* EphemeralPromptDraftStoreTests.swift in Sources */,
+				FB07BAD20000000000000501 /* DuckAIPromptSurfaceTests.swift in Sources */,
 				FB07BAD10000000000000026 /* PromptBarPromptSubmitterTests.swift in Sources */,
 				FB07BAD10000000000000020 /* PromptBarCoordinatorTests.swift in Sources */,
 				FB07BAD1000000000000001D /* PromptBarPlacementTests.swift in Sources */,
@@ -17509,12 +17577,21 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				FB07BAD20000000000000309 /* PromptBarContentFactory.swift in Sources */,
+				FB07BAD20000000000000308 /* PromptBarPixelHandler.swift in Sources */,
+				FB07BAD20000000000000307 /* EphemeralPromptDraftStore.swift in Sources */,
+				FB07BAD20000000000000306 /* DuckAIPanelAttachmentReconciler.swift in Sources */,
+				FB07BAD20000000000000305 /* DuckAIPromptPixelFiring.swift in Sources */,
+				FB07BAD20000000000000304 /* DuckAIPromptOriginProviding.swift in Sources */,
+				FB07BAD20000000000000303 /* DuckAIPromptDraftSource.swift in Sources */,
+				FB07BAD20000000000000302 /* DuckAIPromptDraftStoring.swift in Sources */,
+				FB07BAD20000000000000301 /* DuckAIPromptSurface.swift in Sources */,
 				FB07BAD10000000000000022 /* PromptBarPromptSubmitter.swift in Sources */,
 				FB07BAD10000000000000019 /* CarbonGlobalShortcutRegistrar.swift in Sources */,
 				FB07BAD10000000000000016 /* GlobalShortcutRegistering.swift in Sources */,
 				FB07BAD10000000000000012 /* PromptBarCoordinator.swift in Sources */,
 				FB07BAD1000000000000000F /* PromptBarPresenter.swift in Sources */,
-				FB07BAD1000000000000000B /* PromptBarViewController.swift in Sources */,
+				FB07BAD1000000000000000B /* PromptBarOmnibarContentViewController.swift in Sources */,
 				FB07BAD10000000000000008 /* PromptBarContentHosting.swift in Sources */,
 				FB07BAD10000000000000005 /* PromptBarPlacement.swift in Sources */,
 				FB07BAD10000000000000002 /* PromptBarWindow.swift in Sources */,
@@ -18863,6 +18940,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				FB07BAD20000000000000603 /* PromptBarOmnibarContentLayoutTests.swift in Sources */,
+				FB07BAD20000000000000602 /* EphemeralPromptDraftStoreTests.swift in Sources */,
+				FB07BAD20000000000000601 /* DuckAIPromptSurfaceTests.swift in Sources */,
 				FB07BAD10000000000000025 /* PromptBarPromptSubmitterTests.swift in Sources */,
 				FB07BAD1000000000000001F /* PromptBarCoordinatorTests.swift in Sources */,
 				FB07BAD1000000000000001C /* PromptBarPlacementTests.swift in Sources */,

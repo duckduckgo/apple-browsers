@@ -33860,6 +33860,18 @@
         }
       }
     },
+    "duckai.menu.open-sidebar" : {
+      "comment" : "Duck.ai menu item to open the sidebar when the current page's content can't be attached (e.g. the new tab page)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Open Sidebar"
+          }
+        }
+      }
+    },
     "duckai.menu.new-chat" : {
       "comment" : "Duck.ai menu item to start a new chat",
       "extractionState" : "extracted_with_value",

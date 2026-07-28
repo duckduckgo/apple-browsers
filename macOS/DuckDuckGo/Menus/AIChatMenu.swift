@@ -41,7 +41,6 @@ final class AIChatMenu: NSMenu {
         var openNewImageChat: @MainActor () -> Void
         var openChat: @MainActor (AIChatSuggestion) -> Void
         var deleteAllChats: () async -> Void
-        var askAboutPage: @MainActor () -> Void
     }
 
     // MARK: - Static items
@@ -87,21 +86,14 @@ final class AIChatMenu: NSMenu {
     }()
 
     private lazy var askAboutPageItem: NSMenuItem = {
-        // ⌘⇧L on the main menu only — More Options popups don't bind global keys. Pairs with the
-        // View menu's ⌥⌘L "Show Duck.ai Sidebar" (this one also attaches the current page).
-        let item = NSMenuItem(title: UserText.aiChatMenuAskAboutPage, action: #selector(askAboutPageTapped), keyEquivalent: origin == .mainMenu ? "l" : "")
+        // ⌥⌘L on the main menu only — More Options popups don't bind global keys. Reuses the shortcut
+        // previously bound to "Show Duck.ai Sidebar", which the menu-button layout removes. Dispatched
+        // via the responder chain (no explicit target) so it reliably reaches the key window.
+        let item = NSMenuItem(title: UserText.aiChatMenuAskAboutPage, action: #selector(MainViewController.askAboutPage(_:)), keyEquivalent: origin == .mainMenu ? "l" : "")
         if origin == .mainMenu {
-            item.keyEquivalentModifierMask = [.command, .shift]
+            item.keyEquivalentModifierMask = [.command, .option]
         }
-        item.target = self
-        // Duck.ai color duck, matching the tab-bar pill's Ask About Page; copied before resizing so we
-        // don't mutate the shared asset instance, then sized to 12 like the menu's other icons.
-        if let icon = DesignSystemImages.Color.Size16.duckAI.copy() as? NSImage {
-            icon.size = NSSize(width: 12, height: 12)
-            item.image = icon
-        } else {
-            item.image = DesignSystemImages.Color.Size16.duckAI
-        }
+        item.image = DesignSystemImages.Glyphs.Size12.aiChat
         return item
     }()
 
@@ -133,6 +125,9 @@ final class AIChatMenu: NSMenu {
     /// Whether the "Ask About Page" item should currently be shown (menu-button layout only).
     /// Evaluated live so a feature-flag toggle is reflected next time the menu opens.
     private let shouldShowAskAboutPage: () -> Bool
+    /// Whether the current page's content can be attached. When false the item reads "Open Sidebar"
+    /// instead of "Ask About Page". Evaluated live each time the menu opens.
+    private let isCurrentPageAttachable: () -> Bool
 
     // MARK: - Init
 
@@ -140,12 +135,14 @@ final class AIChatMenu: NSMenu {
          actions: Actions,
          maxChatItems: Int? = nil,
          origin: Origin = .mainMenu,
-         shouldShowAskAboutPage: @escaping () -> Bool = { false }) {
+         shouldShowAskAboutPage: @escaping () -> Bool = { false },
+         isCurrentPageAttachable: @escaping () -> Bool = { true }) {
         self.suggestionsReader = suggestionsReader
         self.actions = actions
         self.maxChatItems = maxChatItems
         self.origin = origin
         self.shouldShowAskAboutPage = shouldShowAskAboutPage
+        self.isCurrentPageAttachable = isCurrentPageAttachable
         super.init(title: "Duck.ai")
         buildMenu()
     }
@@ -162,10 +159,10 @@ final class AIChatMenu: NSMenu {
         addItem(newChatItem)
         addItem(newVoiceChatItem)
         addItem(newImageChatItem)
-        // Main menu only: added once, its visibility is refreshed live in update().
+        // Main menu only: added once, its visibility and title are refreshed live in update().
         if origin == .mainMenu {
             addItem(askAboutPageItem)
-            askAboutPageItem.isHidden = !shouldShowAskAboutPage()
+            refreshAskAboutPageItem()
         }
         addItem(.separator())
         addItem(recentChatsLabel)
@@ -179,7 +176,7 @@ final class AIChatMenu: NSMenu {
     override func update() {
         super.update()
         if origin == .mainMenu {
-            askAboutPageItem.isHidden = !shouldShowAskAboutPage()
+            refreshAskAboutPageItem()
         }
         fetchTask?.cancel()
         fetchTask = Task { @MainActor [weak self] in
@@ -257,8 +254,11 @@ final class AIChatMenu: NSMenu {
         PixelKit.fire(pixel, frequency: .dailyAndStandard)
     }
 
-    @objc private func askAboutPageTapped() {
-        actions.askAboutPage()
+    /// Refreshes the Ask About Page item's visibility (flag) and title (attachable → "Ask About Page",
+    /// otherwise "Open Sidebar") from the live closures.
+    private func refreshAskAboutPageItem() {
+        askAboutPageItem.isHidden = !shouldShowAskAboutPage()
+        askAboutPageItem.title = isCurrentPageAttachable() ? UserText.aiChatMenuAskAboutPage : UserText.aiChatMenuOpenSidebar
     }
 
     @objc private func chatItemTapped(_ sender: NSMenuItem) {
@@ -331,9 +331,6 @@ extension AIChatMenu.Actions {
                         tab.reload()
                     }
                 }
-            },
-            askAboutPage: {
-                windowControllersManager.lastKeyMainWindowController?.mainViewController.triggerAskAboutPage()
             }
         )
     }

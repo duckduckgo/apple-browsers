@@ -887,10 +887,15 @@ final class MainMenu: NSMenu {
     private func updateDuckAIChromeButtonMenuItems() {
         let shouldShowDuckAIChromeItems = featureFlagger.isFeatureOn(.aiChatChromeSidebar)
             && aiChatMenuConfig.shouldDisplayAnyAIChatFeature
-        // Menu-button layout: no separate sidebar button, and the Duck.ai item is reworded to "Ask Duck.ai".
+        // Menu-button layout: no separate sidebar button, the Duck.ai item is reworded to "Ask Duck.ai",
+        // and "Show Duck.ai Sidebar" is dropped — its ⌘⌥L shortcut is reused by Duck.ai → Ask About Page.
         let isMenuButtonLayout = shouldShowDuckAIChromeItems && featureFlagger.isFeatureOn(.aiChatChromeMenuButton)
-        toggleDuckAISidebarMenuItem.isHidden = !shouldShowDuckAIChromeItems
-        toggleDuckAISidebarSeparatorMenuItem.isHidden = !shouldShowDuckAIChromeItems
+        toggleDuckAISidebarMenuItem.isHidden = !shouldShowDuckAIChromeItems || isMenuButtonLayout
+        toggleDuckAISidebarSeparatorMenuItem.isHidden = !shouldShowDuckAIChromeItems || isMenuButtonLayout
+        // ⌥⌘L moves to Ask About Page in menu-button layout; drop it here so the duplicate doesn't
+        // suppress the shortcut's display / capture the key event on this hidden item.
+        toggleDuckAISidebarMenuItem.keyEquivalent = isMenuButtonLayout ? "" : "l"
+        toggleDuckAISidebarMenuItem.keyEquivalentModifierMask = isMenuButtonLayout ? [] : [.option, .command]
         toggleDuckAIChromeButtonMenuItem.isHidden = !shouldShowDuckAIChromeItems
         toggleDuckAIChromeSidebarButtonMenuItem.isHidden = !shouldShowDuckAIChromeItems || isMenuButtonLayout
         duckAIChromeButtonsSeparatorMenuItem.isHidden = !shouldShowDuckAIChromeItems
@@ -1293,6 +1298,8 @@ final class MainMenu: NSMenu {
         let featureFlagger = self.featureFlagger
         return AIChatMenu(suggestionsReader: aiChatSuggestionsReader, actions: actions, maxChatItems: 8, shouldShowAskAboutPage: {
             featureFlagger.isFeatureOn(.aiChatChromeSidebar) && featureFlagger.isFeatureOn(.aiChatChromeMenuButton)
+        }, isCurrentPageAttachable: {
+            Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.mainViewController.tabBarViewController.isCurrentPageAttachableForAIChat ?? false
         })
     }
 

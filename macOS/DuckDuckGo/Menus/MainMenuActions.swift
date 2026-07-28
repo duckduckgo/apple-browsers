@@ -1364,6 +1364,15 @@ extension MainViewController {
         aiChatCoordinator.toggleSidebar()
     }
 
+    /// Duck.ai → Ask About Page (⌥⌘L in menu-button layout): opens the sidebar and attaches the
+    /// current page. Routed through the responder chain so it targets the key window reliably.
+    @objc func askAboutPage(_ sender: Any?) {
+        guard featureFlagger.isFeatureOn(.aiChatChromeSidebar),
+              featureFlagger.isFeatureOn(.aiChatChromeMenuButton),
+              aiChatMenuConfig.shouldDisplayAnyAIChatFeature else { return }
+        tabBarViewController.openDuckAISidebarWithPageAttachment()
+    }
+
     @objc func toggleAutofillShortcut(_ sender: Any) {
         pinningManager.togglePinning(for: .autofill)
     }

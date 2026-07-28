@@ -33,7 +33,6 @@ final class AIChatMenuTests: XCTestCase {
     private var openNewImageChatCalled = false
     private var openedChat: AIChatSuggestion?
     private var deleteAllChatsCalled = false
-    private var askAboutPageCalled = false
 
     override func setUp() {
         super.setUp()
@@ -43,8 +42,7 @@ final class AIChatMenuTests: XCTestCase {
             openNewVoiceChat: { [weak self] in self?.openNewVoiceChatCalled = true },
             openNewImageChat: { [weak self] in self?.openNewImageChatCalled = true },
             openChat: { [weak self] suggestion in self?.openedChat = suggestion },
-            deleteAllChats: { [weak self] in self?.deleteAllChatsCalled = true },
-            askAboutPage: { [weak self] in self?.askAboutPageCalled = true }
+            deleteAllChats: { [weak self] in self?.deleteAllChatsCalled = true }
         )
     }
 

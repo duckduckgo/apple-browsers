@@ -204,6 +204,12 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         isChromeSidebarFeatureEnabled && featureFlagger.isFeatureOn(.aiChatChromeMenuButton)
     }
 
+    /// Whether the current tab is a real web page whose content can be attached to Duck.ai. When false
+    /// (e.g. the new-tab page) the "Ask About Page" affordance becomes a plain "Open Sidebar".
+    var isCurrentPageAttachableForAIChat: Bool {
+        tabCollectionViewModel.selectedTabViewModel?.tab.content.urlForWebView?.isHttpOrHttps == true
+    }
+
     var footerCurrentWidthDimension: CGFloat {
         if tabMode == .overflow {
             return 0.0
@@ -671,8 +677,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         guard let duckAIChromeControlContainer, let duckAIChromeTitleButton, let duckAIChromeSidebarButton else { return }
 
         let colorsProvider = theme.colorsProvider
-        // Menu-button layout renders a fully-rounded pill; the split button keeps toolbar corner radius.
-        let cornerRadius = isMenuButtonLayout ? theme.tabBarButtonSize / 2 : theme.toolbarButtonsCornerRadius
+        let cornerRadius = theme.toolbarButtonsCornerRadius
         duckAIChromeControlContainer.backgroundColor = isFireWindow ? .clear : colorsProvider.buttonMouseOverColor
         duckAIChromeControlContainer.cornerRadius = cornerRadius
         duckAIChromeControlContainer.borderColor = nil
@@ -682,10 +687,15 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
 
         let titleFont = NSFont.systemFont(ofSize: 13)
         if isMenuButtonLayout {
-            // Branded "Ask Duck.ai" pill with the duck-with-sparkle color glyph; click opens the menu.
-            duckAIChromeTitleButton.image = DesignSystemImages.Color.Size16.duckAI
+            // "Ask Duck.ai" button with the AI-Chat glyph, tinted to match the title text; click opens the menu.
+            let icon = DesignSystemImages.Glyphs.Size16.aiChat
+            icon.isTemplate = true
+            duckAIChromeTitleButton.image = icon
             duckAIChromeTitleButton.imagePosition = .imageLeading
             duckAIChromeTitleButton.imageHugsTitle = true
+            duckAIChromeTitleButton.normalTintColor = colorsProvider.textPrimaryColor
+            duckAIChromeTitleButton.mouseOverTintColor = colorsProvider.textPrimaryColor
+            duckAIChromeTitleButton.mouseDownTintColor = colorsProvider.textPrimaryColor
             // Leading space widens the icon↔label gap (imageHugsTitle otherwise sits them flush).
             duckAIChromeTitleButton.attributedTitle = NSAttributedString(string: " " + UserText.askAIChatButtonTitle, attributes: [
                 .foregroundColor: colorsProvider.textPrimaryColor,
@@ -1015,7 +1025,8 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         menu.popUp(positioning: nil, at: NSPoint(x: 0, y: sender.bounds.height + 4), in: sender)
     }
 
-    /// The pill's two-item dropdown (New Chat / Ask About Page), rebuilt per press so the favicon is current.
+    /// The pill's two-item dropdown (New Chat / Ask About Page), rebuilt per press so the title and
+    /// favicon reflect the current tab.
     private func makeDuckAIMenuButtonMenu() -> NSMenu {
         let menu = NSMenu()
 
@@ -1024,7 +1035,9 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         newChatItem.image = DesignSystemImages.Glyphs.Size12.compose
         menu.addItem(newChatItem)
 
-        let askAboutPageItem = NSMenuItem(title: UserText.aiChatMenuAskAboutPage, action: #selector(duckAIMenuAskAboutPageAction), keyEquivalent: "")
+        // "Ask About Page" on an attachable web page; "Open Sidebar" when there's nothing to attach.
+        let askAboutPageTitle = isCurrentPageAttachableForAIChat ? UserText.aiChatMenuAskAboutPage : UserText.aiChatMenuOpenSidebar
+        let askAboutPageItem = NSMenuItem(title: askAboutPageTitle, action: #selector(duckAIMenuAskAboutPageAction), keyEquivalent: "")
         askAboutPageItem.target = self
         askAboutPageItem.image = askAboutPageMenuFavicon()
         menu.addItem(askAboutPageItem)
@@ -1032,13 +1045,12 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         return menu
     }
 
-    /// Page favicon for the "Ask About Page" item; on non-web pages (nothing to attach) the Duck.ai
-    /// icon instead of the page's own (e.g. the DuckDuckGo logo on the new-tab page).
+    /// Favicon for the "Ask About Page" item: the current page's favicon on a real web page, otherwise
+    /// the default AI-Chat icon (matching the main-menu item).
     private func askAboutPageMenuFavicon() -> NSImage {
-        let isWebPage = tabCollectionViewModel.selectedTabViewModel?.tab.content.urlForWebView?.isHttpOrHttps == true
-        let favicon: NSImage = isWebPage
-            ? (tabCollectionViewModel.selectedTabViewModel?.favicon ?? .web)
-            : DesignSystemImages.Color.Size16.duckAI
+        guard isCurrentPageAttachableForAIChat, let favicon = tabCollectionViewModel.selectedTabViewModel?.favicon else {
+            return DesignSystemImages.Glyphs.Size12.aiChat
+        }
         let image = (favicon.copy() as? NSImage) ?? favicon
         image.size = NSSize(width: 12, height: 12)
         image.isTemplate = false

@@ -612,10 +612,6 @@ final class MainViewController: NSViewController {
         NSApp.delegateTyped.aiChatTabOpener.openNewAIChat(in: behavior)
     }
 
-    /// Opens the Duck.ai sidebar and attaches the current page (the Duck.ai menu's Ask About Page action).
-    func triggerAskAboutPage() {
-        tabBarViewController.openDuckAISidebarWithPageAttachment()
-    }
 
     private func wireToggleReferenceToAIChatTextContainer() {
         if let searchModeToggleControl = navigationBarViewController.addressBarViewController?.addressBarButtonsViewController?.searchModeToggleControl {

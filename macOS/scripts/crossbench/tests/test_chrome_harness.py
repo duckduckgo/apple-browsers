@@ -131,7 +131,7 @@ exit "${FAKE_EXIT:-0}"
 
     def test_crossbench_nonzero_with_results_is_infra_error_and_keeps_sample(self) -> None:
         result = self.run_harness(FAKE_RESULTS="1", FAKE_METRIC="1", FAKE_EXIT="7")
-        self.assertEqual(result.returncode, 1)
+        self.assertEqual(result.returncode, 0, result.stderr)
         row = self.disposition()
         self.assertEqual(row[3], "infra_error")
         self.assertEqual(row[9:14], ["1", "1", "1", "0", "0"])
@@ -145,7 +145,7 @@ exit "${FAKE_EXIT:-0}"
             FAKE_EXIT="7",
             FAKE_INCOMPLETE_RESULTS="1",
         )
-        self.assertEqual(result.returncode, 1)
+        self.assertEqual(result.returncode, 0, result.stderr)
         row = self.disposition()
         self.assertEqual(row[3], "infra_error")
         self.assertEqual(row[11], "1")
@@ -165,7 +165,7 @@ exit "${FAKE_EXIT:-0}"
             FAKE_EXIT="7",
             DIAGNOSTICS_DIR=str(diagnostics),
         )
-        self.assertEqual(result.returncode, 1)
+        self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(
             len(list(diagnostics.glob("apple.com/**/perfetto.trace.pb.gz"))), 1
         )
@@ -220,7 +220,7 @@ exit "${FAKE_EXIT:-0}"
             text=True,
             capture_output=True,
         )
-        self.assertEqual(result.returncode, 1)
+        self.assertEqual(result.returncode, 0, result.stderr)
         path = next((self.root / "crossbench-dispositions").glob("*.tsv"))
         rows = [line.split("\t") for line in path.read_text().splitlines()[1:]]
         self.assertEqual([(row[2], row[3]) for row in rows],

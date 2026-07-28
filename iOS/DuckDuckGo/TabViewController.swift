@@ -1002,7 +1002,7 @@ class TabViewController: UIViewController {
         } else {
             webView = WebView(frame: view.bounds, configuration: configuration)
         }
-        if featureFlagger.isFeatureOn(.browserChromeUpdateJuly2026) {
+        if BrowserChromeUpdate.isEnabled(featureFlagger: featureFlagger) {
             webView.scrollView.clipsToBounds = false
             webView.clipsToBounds = false
             outerContainer.clipsToBounds = false
@@ -1035,7 +1035,7 @@ class TabViewController: UIViewController {
                                                             onRefresh: { [weak self] in
             self?.handlePullToRefresh()
         })
-        if featureFlagger.isFeatureOn(.browserChromeUpdateJuly2026) {
+        if BrowserChromeUpdate.isEnabled(featureFlagger: featureFlagger) {
             setUnderPageBackgroundColor(webView.underPageBackgroundColor)
         }
 

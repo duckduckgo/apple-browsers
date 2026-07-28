@@ -32,7 +32,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
     }
 
     private lazy var omniBarView = DefaultOmniBarView.create(
-        isBrowserChromeUpdateEnabled: dependencies.featureFlagger.isFeatureOn(.browserChromeUpdateJuly2026))
+        isBrowserChromeUpdateEnabled: BrowserChromeUpdate.isEnabled(featureFlagger: dependencies.featureFlagger))
     private weak var editingStateViewController: OmniBarEditingStateViewController?
     private var cancellables = Set<AnyCancellable>()
     private let sessionStateMetrics = SessionStateMetrics(storage: UserDefaults.standard)

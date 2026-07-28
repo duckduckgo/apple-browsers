@@ -92,9 +92,7 @@ extension DebugScreensViewModel {
             .view(title: "Ad Blocking", { d in
                 AdBlockingDebugView(keyValueStore: d.keyValueStore)
             }),
-            .view(title: "Browser Chrome Blur", { d in
-                BrowserChromeBlurDebugView(keyValueStore: d.keyValueStore)
-            }),
+            browserChromeBlurDebugScreen,
             .view(title: "AI Chat", { dependencies in
                 AIChatDebugView(duckAiNativeStorageHandler: dependencies.duckAiNativeStorageHandler)
             }),
@@ -323,6 +321,14 @@ extension DebugScreensViewModel {
             } else {
                 Text("Web Extensions not available")
             }
+        }
+    }
+
+    private var browserChromeBlurDebugScreen: DebugScreen? {
+        guard UIDevice.current.userInterfaceIdiom != .pad else { return nil }
+
+        return .view(title: "Browser Chrome Blur") { dependencies in
+            BrowserChromeBlurDebugView(keyValueStore: dependencies.keyValueStore)
         }
     }
 

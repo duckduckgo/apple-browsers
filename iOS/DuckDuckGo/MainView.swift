@@ -34,6 +34,13 @@ enum BrowserChromeMaterial {
     }
 }
 
+enum BrowserChromeUpdate {
+    static func isEnabled(featureFlagger: FeatureFlagger) -> Bool {
+        UIDevice.current.userInterfaceIdiom != .pad
+            && featureFlagger.isFeatureOn(.browserChromeUpdateJuly2026)
+    }
+}
+
 enum BrowserChromeBlurStyle: String, CaseIterable, Identifiable {
     case regular
     case prominent
@@ -119,7 +126,7 @@ class MainViewFactory {
     private let omnibarDependencies: OmnibarDependencyProvider
 
     private var isBrowserChromeUpdateEnabled: Bool {
-        featureFlagger.isFeatureOn(.browserChromeUpdateJuly2026)
+        BrowserChromeUpdate.isEnabled(featureFlagger: featureFlagger)
     }
     
     var superview: UIView {
@@ -142,7 +149,7 @@ class MainViewFactory {
                  featureFlagger: FeatureFlagger) {
         coordinator = MainViewCoordinator(
             parentController: parentController,
-            isBrowserChromeUpdateEnabled: featureFlagger.isFeatureOn(.browserChromeUpdateJuly2026))
+            isBrowserChromeUpdateEnabled: BrowserChromeUpdate.isEnabled(featureFlagger: featureFlagger))
         self.featureFlagger = featureFlagger
         self.omnibarDependencies = omnibarDependencies
     }

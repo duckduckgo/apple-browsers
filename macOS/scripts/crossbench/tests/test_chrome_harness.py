@@ -185,6 +185,26 @@ exit "${FAKE_EXIT:-0}"
             len(list((self.root / "work").glob("chrome-crossbench.*"))), 1
         )
 
+    def test_tracebox_default_uses_shared_version(self) -> None:
+        home = self.root / "home"
+        tracebox = home / "Developer/mac-perf-runner/bin/tracebox-v-test"
+        tracebox.parent.mkdir(parents=True)
+        tracebox.write_text("#!/bin/sh\nexit 0\n")
+        tracebox.chmod(0o755)
+        env = {
+            **self.env,
+            "HOME": str(home),
+            "TRACEBOX_VERSION": "v-test",
+            "FAKE_RESULTS": "1",
+            "FAKE_METRIC": "1",
+        }
+        env.pop("TRACEBOX_BIN")
+        result = subprocess.run(
+            [str(SCRIPT), "--sites", "apple.com", "--reps", "1"],
+            cwd=self.root, env=env, text=True, capture_output=True,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+
     def test_low_disk_guard_reports_infrastructure_failure(self) -> None:
         result = self.run_harness(
             FAKE_RESULTS="1",

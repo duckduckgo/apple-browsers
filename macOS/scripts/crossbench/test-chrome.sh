@@ -38,6 +38,10 @@
 #
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=macOS/scripts/crossbench/wpr-config.sh
+. "$SCRIPT_DIR/wpr-config.sh"
+
 # ---- config / args ---------------------------------------------------------
 # The CI default matches the Windows runner's repetition count. --reps exists
 # for a small local validation without changing the production default.
@@ -71,7 +75,7 @@ WPR_MANIFEST="$WPR_DIR/manifest.tsv"
 WPR_BIN="${WPR_BIN:-$HOME/Developer/mac-perf-runner/bin/wpr}"
 # Explicitly provisioned by provision-macos.sh; avoids Crossbench's older
 # auto-downloaded tracebox.
-TRACEBOX_BIN="${TRACEBOX_BIN:-$HOME/Developer/mac-perf-runner/bin/tracebox-v56.0}"
+TRACEBOX_BIN="${TRACEBOX_BIN:-$HOME/Developer/mac-perf-runner/bin/tracebox-$TRACEBOX_VERSION}"
 # Standalone Python-3 tsproxy, handed to crossbench via speed:{ts_proxy:...}.
 # See wpr_network_arg for why crossbench's own DEPS-pinned copy cannot be used.
 TSPROXY_PY="${TSPROXY_PY:-$HOME/Developer/mac-perf-runner/bin/tsproxy.py}"
@@ -94,9 +98,7 @@ CHROME_BIN="${CHROME_BIN:-/Applications/Google Chrome.app/Contents/MacOS/Google 
 # Sourced before the cd into CROSSBENCH_DIR below, so the path is relative to
 # this script rather than the working directory.
 # shellcheck source=macOS/scripts/crossbench/dispositions-lib.sh
-. "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/dispositions-lib.sh"
-# shellcheck source=macOS/scripts/crossbench/wpr-config.sh
-. "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/wpr-config.sh"
+. "$SCRIPT_DIR/dispositions-lib.sh"
 
 while [ $# -gt 0 ]; do
   case "$1" in

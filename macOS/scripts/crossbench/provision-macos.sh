@@ -41,11 +41,8 @@ CROSSBENCH_REV="${CROSSBENCH_REV:-be14dbfb884747ea577e2e65b6a4a77d7ecd807d}"
 # --bin-override, which skips crossbench's own build machinery entirely.
 WPR_BIN="${WPR_BIN:-$HOME/Developer/mac-perf-runner/bin/wpr}"
 
-# Crossbench currently defaults to tracebox v53.0. Use v56.0 explicitly: it
-# contains a fix for an intermittent tracing-service crash on desktop.
-TRACEBOX_VERSION="v56.0"
-TRACEBOX_SHA256="bc2d8adbc2d4b6b2c063a0b80025a387297b395fdd706b92b57dd9ae3301e693"
-TRACEBOX_URL="https://storage.googleapis.com/perfetto-luci-artifacts/$TRACEBOX_VERSION/mac-arm64/tracebox"
+# The version, checksum, and URL come from wpr-config.sh so the runner uses the
+# same binary that this provisioner installs.
 TRACEBOX_BIN="${TRACEBOX_BIN:-$HOME/Developer/mac-perf-runner/bin/tracebox-$TRACEBOX_VERSION}"
 
 # The tsproxy revision in crossbench's DEPS is not Python-3-compatible. Use

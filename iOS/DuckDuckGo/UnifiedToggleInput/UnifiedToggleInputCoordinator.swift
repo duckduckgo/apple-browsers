@@ -171,9 +171,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private var pixelReporter: UTIPixelReporter!
     private var wideEventReporter: UTIWideEventReporter!
     private var modelSelector: UTIModelSelector!
-    private var invalidAttachmentRecoveryTasks: [UUID: Task<Void, Never>] = [:]
-    /// A limit/rejection banner not tied to a specific attachment (image-over-limit, paste rejection). Held so an async attachment/model re-sync can't clear it — `syncAttachmentValidationError` falls back to this.
-    private var transientAttachmentValidationMessage: String?
+    private var attachmentController: UTIAttachmentController!
     private var isContentOverlaySuppressed = false
     /// Forces the model chip visible mid-chat for the FE's `showModelPicker` flow; cleared on prompt
     /// submit or session reset.
@@ -233,10 +231,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private var chatUpdatesCancellable: AnyCancellable?
     private let toolsController = UTIToolsController()
     private let toolsMenuFactory = UTIToolsMenuFactory()
-    private let attachmentPresenter = UnifiedToggleInputAttachmentPresenter()
-    private let pasteHandler = UnifiedToggleInputPasteHandler()
-    /// Bumped on New Chat so an in-flight paste from the previous conversation is dropped even within the same tab.
-    private var pasteConversationToken = UUID()
 
     private let intentSubject = PassthroughSubject<UnifiedToggleInputIntent, Never>()
     var intentPublisher: AnyPublisher<UnifiedToggleInputIntent, Never> {
@@ -323,13 +317,11 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         floatingReturnKeyViewController = UnifiedToggleInputFloatingReturnKeyViewController()
         super.init()
         viewController.delegate = self
-        pasteHandler.delegate = self
-        viewController.attachmentPasteHandler = attachmentPasteEnabled ? pasteHandler : nil
         textModel = UTITextModel(sideEffects: .init(
             applyTextToView: { [weak self] in self?.viewController.text = $0 },
             persistDraft: { [weak self] in self?.persistDraftToStore() },
             updateFloatingReturnKey: { [weak self] in self?.updateFloatingReturnKeyState() },
-            clearAttachmentValidationErrorIfPossible: { [weak self] in self?.clearAttachmentValidationErrorIfPossible() }
+            clearAttachmentValidationErrorIfPossible: { [weak self] in self?.attachmentController.clearValidationErrorIfPossible() }
         ))
         keyboardMonitor = UTIKeyboardMonitor(environment: .init(
             isOmnibarActiveTopCard: { [weak self] in
@@ -389,35 +381,44 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                 onModelApplied: { [weak self] in self?.notifyFrontendOfActiveChatModelChange($0) }
             )
         )
-        attachmentPresenter.pixelSurfaceProvider = { [weak self] in
-            self?.pixelSurface ?? .addressBar
-        }
-        attachmentPresenter.onExpandIfNeeded = { [weak self] in
-            self?.expandIfOnExpandedInputHost()
-        }
-        attachmentPresenter.onImagePicked = { [weak self] image, fileName in
-            self?.addImageAttachment(image: image, fileName: fileName)
-        }
-        attachmentPresenter.onFilePicked = { [weak self] attachment, metadata in
-            self?.addFileAttachment(attachment, sourceURL: metadata.url)
-        }
-        attachmentPresenter.onFileValidationFailed = { [weak self] message, metadata in
-            guard let self else { return }
-            let reason: UTIAttachmentPolicy.FileValidationFailureReason
-            if let metadataError = self.attachmentPolicy
-                .fileMetadataValidationError(mimeType: metadata.mimeType, fileSizeBytes: metadata.fileSizeBytes) {
-                reason = metadataError.reason
-            } else if message == UserText.aiChatAttachmentFileUnreadable {
-                reason = .unreadable
-            } else {
-                reason = .other
-            }
-            self.pixelReporter.reportFileValidationFailed(reason: reason, source: "file_picker")
-            self.addInvalidFileAttachment(metadata: metadata, validationMessage: message)
-        }
-        attachmentPresenter.fileMetadataValidationMessage = { [weak self] metadata in
-            self?.attachmentPolicy.fileMetadataValidationError(mimeType: metadata.mimeType, fileSizeBytes: metadata.fileSizeBytes)?.message
-        }
+        attachmentController = UTIAttachmentController(
+            pixelReporter: pixelReporter,
+            view: .init(
+                currentAttachments: { [weak self] in self?.viewController.currentAttachments ?? [] },
+                isGenerating: { [weak self] in self?.viewController.isGenerating ?? false },
+                presenterViewController: { [weak self] in self?.attachmentPresenterViewController },
+                addAttachment: { [weak self] in self?.viewController.addAttachment($0) },
+                removeAttachment: { [weak self] in self?.viewController.removeAttachment(id: $0) },
+                removeAllAttachments: { [weak self] in self?.viewController.removeAllAttachments() },
+                replaceAttachment: { [weak self] id, attachment in self?.viewController.replaceAttachment(id: id, with: attachment) },
+                showValidationError: { [weak self] in self?.viewController.showAttachmentValidationError($0) },
+                clearValidationError: { [weak self] in self?.viewController.clearAttachmentValidationError() },
+                setImageButtonHidden: { [weak self] in self?.viewController.isImageButtonHidden = $0 },
+                setImageButtonEnabled: { [weak self] in self?.viewController.isImageButtonEnabled = $0 },
+                setAttachmentMenu: { [weak self] in self?.viewController.attachmentMenu = $0 }
+            ),
+            environment: .init(
+                policy: { [weak self] in
+                    self?.attachmentPolicy ?? UTIAttachmentPolicy(attachmentLimits: nil, attachmentUsage: nil, pendingAttachments: [], model: nil)
+                },
+                inputMode: { [weak self] in self?.inputMode ?? .aiChat },
+                pixelSurface: { [weak self] in self?.pixelSurface ?? .addressBar },
+                isContextualChatState: { [weak self] in self?.isContextualChatState ?? false },
+                supportsImageUpload: { [weak self] in self?.selectedModelSupportsImageUpload ?? false },
+                supportedFileTypes: { [weak self] in self?.selectedModelSupportedFileTypes ?? [] },
+                hasSelectedModel: { [weak self] in self?.selectedModel != nil },
+                attachmentLimits: { [weak self] in self?.modelStore.attachmentLimits },
+                currentTabUID: { [weak self] in self?.currentTabUID },
+                isPageContextAttachable: { [weak self] in self?.isPageContextAttachable?() },
+                pageContextAttachHandler: { [weak self] in self?.onPageContextAttachRequested }
+            ),
+            callbacks: .init(
+                onDraftChanged: { [weak self] in self?.persistDraftToStore() },
+                onExpandIfNeeded: { [weak self] in self?.expandIfOnExpandedInputHost() },
+                updateFloatingReturnKey: { [weak self] in self?.updateFloatingReturnKeyState() }
+            )
+        )
+        viewController.attachmentPasteHandler = attachmentPasteEnabled ? attachmentController.pasteHandler : nil
         modelStore.onModelsUpdated = { [weak self] in
             self?.handleModelsUpdated()
         }
@@ -591,14 +592,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         setText(state.text)
         syncInputModeFromExternalSource(state.toggleMode)
 
-        cancelInvalidAttachmentRecoveryTasks()
-        viewController.removeAllAttachments()
-        for attachment in state.attachments {
-            viewController.addAttachment(attachment)
-        }
-        // A transient paste banner belongs to the live paste on the previous tab; drop it so it can't re-show on the tab being loaded.
-        transientAttachmentValidationMessage = nil
-        syncAttachmentValidationErrorForCurrentMode()
+        attachmentController.replaceAllAttachments(with: state.attachments)
 
         // Always sync the live model store from per-tab state — including nil values —
         // so the previous tab's selections don't leak through preferences. With the
@@ -881,7 +875,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         if inputModeChanged {
             refreshToolsPresentation()
             modeChangeSubject.send(effective)
-            syncAttachmentValidationErrorForCurrentMode()
+            attachmentController.syncValidationErrorForCurrentMode()
         }
         updateFloatingReturnKeyState()
     }
@@ -958,7 +952,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
         applyToolbarPresentation()
         if didModeChange {
-            syncAttachmentValidationErrorForCurrentMode()
+            attachmentController.syncValidationErrorForCurrentMode()
             recordUserChoiceToStore()
         }
     }
@@ -1224,7 +1218,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     func startNewChat() {
-        pasteConversationToken = UUID()
+        attachmentController.resetPasteConversation()
         isNewChatPending = true
         hasSubmittedPrompt = false
         isModelPickerForcedVisible = false
@@ -1332,75 +1326,28 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     /// Reports whether page context is attached but not yet submitted, for the voice-tap pixel. Host-injected; nil off the contextual sheet.
     var hasPendingPageContextProvider: (() -> Bool)?
 
-    var allowedFileUTTypes: [UTType] {
-        selectedModelSupportedFileTypes.compactMap(Self.contentType(for:))
-    }
-
     func addImageAttachment(image: UIImage, fileName: String) {
-        guard attachmentPolicy.canAttachImages else { return }
-        let attachment = UnifiedToggleInputAttachment.image(AIChatImageAttachment(image: image, fileName: fileName))
-        viewController.addAttachment(attachment)
-        persistDraftToStore()
-        clearAttachmentValidationErrorIfPossible()
-        updateAttachButtonPresentation()
+        attachmentController.addImageAttachment(image: image, fileName: fileName)
     }
 
     func addFileAttachment(_ fileAttachment: AIChatFileAttachment, sourceURL: URL? = nil, source: String = "file_picker") {
-        if let validationError = attachmentPolicy.fileValidationError(for: fileAttachment) {
-            pixelReporter.reportFileValidationFailed(reason: validationError.reason, source: source)
-            viewController.addAttachment(.invalidFile(
-                UnifiedToggleInputInvalidFileAttachment(
-                    id: fileAttachment.id,
-                    fileName: fileAttachment.fileName,
-                    mimeType: fileAttachment.mimeType,
-                    fileSizeBytes: fileAttachment.fileSizeBytes,
-                    validationMessage: validationError.message,
-                    sourceURL: sourceURL
-                )
-            ))
-            presentAttachmentValidationError(validationError.message)
-            persistDraftToStore()
-            updateAttachButtonPresentation()
-            return
-        }
-
-        pixelReporter.reportFileAttached(source: source)
-        viewController.addAttachment(.file(fileAttachment))
-        persistDraftToStore()
-        clearAttachmentValidationErrorIfPossible()
-        updateAttachButtonPresentation()
+        attachmentController.addFileAttachment(fileAttachment, sourceURL: sourceURL, source: source)
     }
 
     func removeAttachment(id: UUID) {
-        invalidAttachmentRecoveryTasks[id]?.cancel()
-        invalidAttachmentRecoveryTasks[id] = nil
-        viewController.removeAttachment(id: id)
-        transientAttachmentValidationMessage = nil
-        persistDraftToStore()
-        syncAttachmentValidationErrorForCurrentMode()
-        updateAttachButtonPresentation()
+        attachmentController.removeAttachment(id: id)
     }
 
     func clearAttachments() {
-        transientAttachmentValidationMessage = nil
-        guard !viewController.currentAttachments.isEmpty else {
-            viewController.clearAttachmentValidationError()
-            updateAttachButtonPresentation()
-            return
-        }
-        cancelInvalidAttachmentRecoveryTasks()
-        viewController.removeAllAttachments()
-        viewController.clearAttachmentValidationError()
-        persistDraftToStore()
-        updateAttachButtonPresentation()
+        attachmentController.clearAttachments()
+    }
+
+    func presentPasteError(_ message: String) {
+        attachmentController.presentPasteError(message)
     }
 
     func updateImageButtonVisibility() {
-        updateAttachButtonVisibility()
-    }
-
-    func updateAttachButtonVisibility() {
-        updateAttachButtonPresentation()
+        attachmentController.updateAttachButtonPresentation()
     }
 
 }
@@ -1485,8 +1432,8 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             let userScript = boundUserScript
             let tools = toolsController.selectedToolsForSubmission()
 
-            if let validationMessage = attachmentSubmissionValidationMessage(for: text, mode: mode) {
-                presentAttachmentValidationError(validationMessage)
+            if let validationMessage = attachmentController.submissionValidationMessage(for: text, mode: mode) {
+                attachmentController.presentValidationError(validationMessage)
                 return
             }
 
@@ -1667,13 +1614,13 @@ private extension UnifiedToggleInputCoordinator {
 
         guard !hasInvalidAttachment && (hasText || hasValidAttachment) else {
             if hasInvalidAttachment {
-                syncAttachmentValidationErrorForCurrentMode()
+                attachmentController.syncValidationErrorForCurrentMode()
             }
             return
         }
 
-        if let validationMessage = attachmentSubmissionValidationMessage(for: currentText, mode: inputMode) {
-            presentAttachmentValidationError(validationMessage)
+        if let validationMessage = attachmentController.submissionValidationMessage(for: currentText, mode: inputMode) {
+            attachmentController.presentValidationError(validationMessage)
             return
         }
 
@@ -1685,10 +1632,6 @@ private extension UnifiedToggleInputCoordinator {
     }
 
     // MARK: Attachments
-
-    var canPresentFilePicker: Bool {
-        attachmentPolicy.canAttachFiles && !allowedFileUTTypes.isEmpty
-    }
 
     func expandIfOnExpandedInputHost() {
         if case .aiTab = displayState {
@@ -1704,245 +1647,6 @@ private extension UnifiedToggleInputCoordinator {
         }
         guard let scene = viewController.view.window?.windowScene else { return nil }
         return scene.keyWindow?.rootViewController
-    }
-
-    static func contentType(for mimeType: String) -> UTType? {
-        UTType(mimeType: mimeType)
-    }
-
-    func addInvalidFileAttachment(
-        metadata: UnifiedToggleInputAttachmentPresenter.FileMetadata,
-        validationMessage: String
-    ) {
-        viewController.addAttachment(.invalidFile(
-            UnifiedToggleInputInvalidFileAttachment(
-                fileName: metadata.fileName,
-                mimeType: metadata.mimeType,
-                fileSizeBytes: metadata.fileSizeBytes ?? 0,
-                validationMessage: validationMessage,
-                sourceURL: metadata.url
-            )
-        ))
-        persistDraftToStore()
-        updateAttachButtonPresentation()
-        presentAttachmentValidationError(validationMessage)
-    }
-
-    func revalidateInvalidAttachmentsForSelectedModel() {
-        var didChange = false
-
-        for attachment in viewController.currentAttachments {
-            guard case .invalidFile(let invalidAttachment) = attachment else { continue }
-            didChange = revalidateInvalidAttachment(invalidAttachment) || didChange
-        }
-
-        guard didChange else { return }
-        finishAttachmentRevalidation()
-    }
-
-    @discardableResult
-    func revalidateInvalidAttachment(_ attachment: UnifiedToggleInputInvalidFileAttachment) -> Bool {
-        if let validationMessage = metadataValidationMessage(for: attachment) {
-            invalidAttachmentRecoveryTasks[attachment.id]?.cancel()
-            invalidAttachmentRecoveryTasks[attachment.id] = nil
-            return replaceInvalidAttachment(attachment, validationMessage: validationMessage)
-        }
-
-        guard attachment.sourceURL != nil else {
-            return false
-        }
-
-        recoverInvalidAttachmentFromSourceURL(attachment)
-        return false
-    }
-
-    func recoverInvalidAttachmentFromSourceURL(_ attachment: UnifiedToggleInputInvalidFileAttachment) {
-        guard invalidAttachmentRecoveryTasks[attachment.id] == nil,
-              let metadata = fileMetadata(for: attachment) else { return }
-
-        let attachmentID = attachment.id
-        invalidAttachmentRecoveryTasks[attachmentID] = Task.detached(priority: .userInitiated) { [weak self] in
-            let fileAttachment = UnifiedToggleInputAttachmentPresenter.recoverFileAttachment(from: metadata, id: attachmentID)
-            guard !Task.isCancelled else { return }
-            await self?.completeInvalidAttachmentRecovery(id: attachmentID, fileAttachment: fileAttachment)
-        }
-    }
-
-    func completeInvalidAttachmentRecovery(id: UUID, fileAttachment: AIChatFileAttachment?) {
-        invalidAttachmentRecoveryTasks[id] = nil
-        guard let attachment = viewController.currentAttachments.first(where: { $0.id == id }),
-              case .invalidFile(let invalidAttachment) = attachment else { return }
-
-        let didChange: Bool
-        if let validationMessage = metadataValidationMessage(for: invalidAttachment) {
-            didChange = replaceInvalidAttachment(invalidAttachment, validationMessage: validationMessage)
-        } else if let fileAttachment {
-            didChange = applyRecoveredFileAttachment(fileAttachment, for: invalidAttachment)
-        } else {
-            didChange = replaceInvalidAttachment(invalidAttachment, validationMessage: UserText.aiChatAttachmentFileUnreadable)
-        }
-
-        guard didChange else { return }
-        finishAttachmentRevalidation()
-    }
-
-    @discardableResult
-    func applyRecoveredFileAttachment(
-        _ fileAttachment: AIChatFileAttachment,
-        for attachment: UnifiedToggleInputInvalidFileAttachment
-    ) -> Bool {
-        if let validationMessage = attachmentPolicy.fileValidationMessage(for: fileAttachment) {
-            return replaceInvalidAttachment(attachment, validationMessage: validationMessage)
-        }
-
-        viewController.replaceAttachment(id: attachment.id, with: .file(fileAttachment))
-        return true
-    }
-
-    @discardableResult
-    func replaceInvalidAttachment(
-        _ attachment: UnifiedToggleInputInvalidFileAttachment,
-        validationMessage: String
-    ) -> Bool {
-        guard validationMessage != attachment.validationMessage else { return false }
-        viewController.replaceAttachment(
-            id: attachment.id,
-            with: invalidFileAttachment(from: attachment, validationMessage: validationMessage)
-        )
-        return true
-    }
-
-    func finishAttachmentRevalidation() {
-        persistDraftToStore()
-        updateAttachButtonPresentation()
-        updateFloatingReturnKeyState()
-        syncAttachmentValidationErrorForCurrentMode()
-    }
-
-    func invalidFileAttachment(
-        from attachment: UnifiedToggleInputInvalidFileAttachment,
-        validationMessage: String
-    ) -> UnifiedToggleInputAttachment {
-        .invalidFile(
-            UnifiedToggleInputInvalidFileAttachment(
-                id: attachment.id,
-                fileName: attachment.fileName,
-                mimeType: attachment.mimeType,
-                fileSizeBytes: attachment.fileSizeBytes,
-                validationMessage: validationMessage,
-                sourceURL: attachment.sourceURL
-            )
-        )
-    }
-
-    func metadataValidationMessage(for attachment: UnifiedToggleInputInvalidFileAttachment) -> String? {
-        attachmentPolicy.fileMetadataValidationError(
-            mimeType: attachment.mimeType,
-            fileSizeBytes: attachment.fileSizeBytes > 0 ? attachment.fileSizeBytes : nil
-        )?.message
-    }
-
-    func fileMetadata(for attachment: UnifiedToggleInputInvalidFileAttachment) -> UnifiedToggleInputAttachmentPresenter.FileMetadata? {
-        guard let sourceURL = attachment.sourceURL else { return nil }
-        return UnifiedToggleInputAttachmentPresenter.FileMetadata(
-            fileName: attachment.fileName,
-            mimeType: attachment.mimeType,
-            fileSizeBytes: attachment.fileSizeBytes > 0 ? attachment.fileSizeBytes : nil,
-            url: sourceURL
-        )
-    }
-
-    func cancelInvalidAttachmentRecoveryTasks() {
-        invalidAttachmentRecoveryTasks.values.forEach { $0.cancel() }
-        invalidAttachmentRecoveryTasks.removeAll()
-    }
-
-    func removeUnsupportedAttachmentsForSelectedModel() {
-        guard selectedModel != nil else { return }
-        let unsupportedAttachments = viewController.currentAttachments.filter { attachment in
-            attachmentPolicy.isAttachmentSupported(attachment) == false
-        }
-        unsupportedAttachments.forEach { attachment in
-            invalidAttachmentRecoveryTasks[attachment.id]?.cancel()
-            invalidAttachmentRecoveryTasks[attachment.id] = nil
-            viewController.removeAttachment(id: attachment.id)
-        }
-        revalidateInvalidAttachmentsForSelectedModel()
-        syncAttachmentValidationErrorForCurrentMode()
-    }
-
-    func makeAttachmentMenu() -> UIMenu? {
-        // Disable "Ask about page" for non-attachable pages (blocklisted media / special page).
-        let canAttachPageContext = isContextualChatState && (isPageContextAttachable?() ?? true)
-        let pageContextActionHandler = canAttachPageContext ? onPageContextAttachRequested : nil
-        return attachmentPresenter.makeAttachmentMenu(
-            presenterProvider: { [weak self] in
-                self?.attachmentPresenterViewController
-            },
-            photoSelectionLimit: attachmentPolicy.canAttachImages ? remainingImagesForPicker : 0,
-            canAttachFile: canPresentFilePicker,
-            allowedFileTypes: allowedFileUTTypes,
-            showsPageContextAction: isContextualChatState,
-            pageContextActionHandler: pageContextActionHandler
-        )
-    }
-
-    func updateAttachButtonPresentation() {
-        let supportsPageContextAttachment = isContextualChatState && onPageContextAttachRequested != nil && (isPageContextAttachable?() ?? true)
-        let supportsAttachments = selectedModelSupportsImageUpload || !allowedFileUTTypes.isEmpty || supportsPageContextAttachment
-        let hasAvailableAttachmentAction = attachmentPolicy.canAttachImages || canPresentFilePicker || supportsPageContextAttachment
-        let canAttachMore = hasAvailableAttachmentAction && !viewController.isGenerating
-        viewController.isImageButtonHidden = !supportsAttachments
-        viewController.isImageButtonEnabled = canAttachMore
-        viewController.attachmentMenu = supportsAttachments && canAttachMore ? makeAttachmentMenu() : nil
-    }
-
-    func presentAttachmentValidationError(_ message: String) {
-        viewController.showAttachmentValidationError(message)
-    }
-
-    /// Shows a limit/rejection banner that survives async re-syncs, unlike an attachment-derived one which `syncAttachmentValidationError` recomputes from `currentAttachments`.
-    func presentTransientAttachmentValidationError(_ message: String) {
-        transientAttachmentValidationMessage = message
-        viewController.showAttachmentValidationError(message)
-    }
-
-    func attachmentSubmissionValidationMessage(for text: String, mode: TextEntryMode) -> String? {
-        guard mode == .aiChat else { return nil }
-
-        if let validationMessage = attachmentPolicy.imageSubmissionValidationMessage() {
-            return validationMessage
-        }
-
-        if let validationMessage = attachmentPolicy.fileSubmissionValidationMessage() {
-            return validationMessage
-        }
-
-        return attachmentPolicy.promptValidationMessage(for: text)
-    }
-
-    func syncAttachmentValidationError() {
-        if let validationMessage = viewController.currentAttachments.compactMap(\.validationMessage).first ?? transientAttachmentValidationMessage {
-            viewController.showAttachmentValidationError(validationMessage)
-        } else {
-            viewController.clearAttachmentValidationError()
-        }
-    }
-
-    func syncAttachmentValidationErrorForCurrentMode() {
-        guard inputMode == .aiChat else {
-            transientAttachmentValidationMessage = nil
-            viewController.clearAttachmentValidationError()
-            return
-        }
-
-        syncAttachmentValidationError()
-    }
-
-    func clearAttachmentValidationErrorIfPossible() {
-        guard viewController.currentAttachments.contains(where: \.isInvalid) == false else { return }
-        transientAttachmentValidationMessage = nil
-        viewController.clearAttachmentValidationError()
     }
 
     func makeFloatingReturnKeyState() -> UnifiedToggleInputFloatingReturnKeyState {
@@ -2027,7 +1731,7 @@ private extension UnifiedToggleInputCoordinator {
 
     func handleModelsUpdated() {
         toolsController.clearSelectionIfUnsupported(for: modelStore)
-        removeUnsupportedAttachmentsForSelectedModel()
+        attachmentController.removeUnsupportedAttachmentsForSelectedModel()
         modelSelector.updateModelChipLabel()
         modelSelector.updateReasoningPicker()
         if modelSelector.applyPendingGatedModelSelectionIfPossible() {
@@ -2079,7 +1783,7 @@ private extension UnifiedToggleInputCoordinator {
     }
 
     func updateImageButtonEnabledState() {
-        updateAttachButtonPresentation()
+        attachmentController.updateAttachButtonPresentation()
     }
 
     /// Reasoning mode to report in submit-time pixels.
@@ -2190,82 +1894,6 @@ private extension UnifiedToggleInputCoordinator {
             .store(in: &cancellables)
     }
 
-}
-
-// MARK: - Paste-to-Attach
-
-extension UnifiedToggleInputCoordinator: UnifiedToggleInputPasteDelegate {
-
-    /// Keys off model capability (not remaining room) so an over-limit paste is consumed and reported here rather than falling through to UIKit's inline-image insert. Text types are excluded so a copied string always pastes as text (text files remain picker-only); files are only offered when the model's attachment limits are known, so the loader can preflight sizes.
-    var pasteAttachmentSupport: UnifiedToggleInputPasteSupport {
-        let limits = modelStore.attachmentLimits
-        let fileTypes = limits == nil ? [] : allowedFileUTTypes.filter { !$0.conforms(to: .text) }
-        return UnifiedToggleInputPasteSupport(
-            isEnabled: inputMode == .aiChat && !viewController.isGenerating,
-            acceptsImages: selectedModelSupportsImageUpload,
-            fileTypes: fileTypes,
-            maxImageCount: selectedModelSupportsImageUpload ? attachmentPolicy.remainingImagesForPicker : nil,
-            maxFileSizeBytes: limits.map { $0.files.maxFileSizeMB * 1_048_576 },
-            remainingFileCount: fileTypes.isEmpty ? nil : attachmentPolicy.remainingFilesInConversation,
-            remainingTotalFileBytes: fileTypes.isEmpty ? nil : attachmentPolicy.remainingFileSizeBytes
-        )
-    }
-
-    /// Identifies the tab AND the conversation, so a paste in flight is dropped if the user starts a New Chat in the same tab (not just on a tab switch).
-    var pasteContextIdentity: String? {
-        "\(currentTabUID ?? "-"):\(pasteConversationToken.uuidString)"
-    }
-
-    func imageCapacityMessage() -> String? {
-        attachmentPolicy.imageCapacityValidationMessage()
-    }
-
-    func pasteWillBeginExpandingIfNeeded() {
-        expandIfOnExpandedInputHost()
-    }
-
-    @discardableResult
-    func addPastedImage(_ image: UIImage, fileName: String) -> Bool {
-        guard attachmentPolicy.canAttachImages else { return false }
-        addImageAttachment(image: image, fileName: fileName)
-        DailyPixel.fireDailyAndCount(
-            pixel: .unifiedToggleInputImageAttached,
-            withAdditionalParameters: ["surface": pixelSurface.rawValue, "source": "paste"]
-        )
-        return true
-    }
-
-    func addPastedFile(_ file: AIChatFileAttachment) {
-        addFileAttachment(file, source: "paste")
-    }
-
-    /// Reports a load-time-rejected paste as an error banner (no chip, no revalidation) using the reason the loader recorded, so the message and pixel reflect why it was actually rejected.
-    func reportRejectedPaste(reason: PasteRejectionReason) {
-        let files = modelStore.attachmentLimits?.files
-        let message: String
-        let pixelReason: String
-        switch reason {
-        case .fileTooLarge:
-            message = UserText.aiChatAttachmentFileTooLarge(maxFileSizeMB: files?.maxFileSizeMB ?? 0)
-            pixelReason = "size_exceeded"
-        case .filesExceedTotalSize:
-            let maxTotalMB = files.map { Int(ceil(Double($0.maxTotalFileSizeBytes) / 1_048_576)) } ?? 0
-            message = UserText.aiChatAttachmentFilesExceedTotalSizeLimit(maxTotalFileSizeMB: maxTotalMB)
-            pixelReason = "size_exceeded"
-        case .fileCountLimit:
-            message = UserText.aiChatAttachmentFileCountLimit(maxFilesPerConversation: files?.maxPerConversation ?? 0)
-            pixelReason = "count_exceeded"
-        }
-        DailyPixel.fireDailyAndCount(
-            pixel: .unifiedToggleInputFileValidationFailed,
-            withAdditionalParameters: ["reason": pixelReason, "surface": pixelSurface.rawValue, "source": "paste"]
-        )
-        presentTransientAttachmentValidationError(message)
-    }
-
-    func presentPasteError(_ message: String) {
-        presentTransientAttachmentValidationError(message)
-    }
 }
 
 private extension NSCache where KeyType == NSString, ObjectType == NSString {

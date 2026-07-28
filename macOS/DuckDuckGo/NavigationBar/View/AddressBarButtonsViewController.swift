@@ -2668,6 +2668,7 @@ extension AddressBarButtonsViewController: ThemeUpdateListening {
         updateZoomButtonVisibility()
         refreshAskAIChatButtonStyle()
         refreshButtonsThemeStyle(theme: theme)
+        refreshNotificationsColor(theme: theme)
 
         // Update toggle control theme
         if let toggleControl = searchModeToggleControl {
@@ -2679,6 +2680,12 @@ extension AddressBarButtonsViewController: ThemeUpdateListening {
         let colorsProvider = theme.colorsProvider
 
         bookmarkButton.normalTintColor = colorsProvider.iconsColor
+    }
+
+    private func refreshNotificationsColor(theme: ThemeStyleProviding) {
+        let notificationColor = theme.colorsProvider.accentPrimaryColor
+        aiChatButton.notificationColor = notificationColor
+        askAIChatButton.notificationColor = notificationColor
     }
 }
 

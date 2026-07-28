@@ -57,7 +57,11 @@ class SafariHarnessContractTests(unittest.TestCase):
     def test_failed_job_without_dispositions_still_reports_runtime_failure(self):
         self.assertIn("BENCHMARK_RESULT: ${{ needs.safari-lcp.result }}", WORKFLOW)
         self.assertIn("write_run_failure_report()", WORKFLOW)
-        self.assertIn('write_run_failure_report "Safari LCP job failed"', WORKFLOW)
+        self.assertIn(
+            'write_run_failure_report "Safari disposition artifact was unavailable"',
+            WORKFLOW,
+        )
+        self.assertIn('--job-result "$BENCHMARK_RESULT"', WORKFLOW)
 
 
 if __name__ == "__main__":

@@ -321,7 +321,7 @@ class SafariHarnessTests(unittest.TestCase):
         row = self.disposition_rows()[0]
         self.assertEqual(row[1], "99.1 (99A1)")
         self.assertEqual(row[2:5], ["apple.com", "measured", "ok"])
-        self.assertEqual(row[9:14], ["1", "1", "1", "0", "0"])
+        self.assertEqual(row[12:17], ["1", "1", "1", "0", "0"])
         self.assertEqual(json.loads(self.defaults_state.read_text()), {})
 
     def test_unfinalized_lcp_is_not_an_infrastructure_failure(self) -> None:
@@ -329,7 +329,7 @@ class SafariHarnessTests(unittest.TestCase):
         self.assertEqual(result.returncode, 1)
         row = self.disposition_rows()[0]
         self.assertEqual(row[3], "no_samples")
-        self.assertEqual(row[9:14], ["1", "1", "0", "1", "0"])
+        self.assertEqual(row[12:17], ["1", "1", "0", "1", "0"])
         self.assertNotIn("browser harness failures", result.stderr)
 
     def test_preexisting_preferences_are_restored_exactly(self) -> None:

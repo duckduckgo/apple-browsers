@@ -160,12 +160,12 @@ fi
 chmod +x "$TRACEBOX_BIN"
 "$TRACEBOX_BIN" --version
 
-# 6. Self-heal the fork-only extras + cpu_freq patch. REQUIRED: without the
-#    extras LCP silently returns no rows, and without the patch crossbench
-#    crashes on Apple Silicon (psutil.cpu_freq raises AttributeError).
+# 6. Self-heal the fork-only extras and macOS patches. REQUIRED: without the
+#    extras LCP silently returns no rows, and the patches keep Crossbench stable
+#    and avoid its slow Selenium shutdown path on hosted macOS runners.
 #      - config/probe/perfetto/navToLCP.config.hjson              (probe config)
 #      - crossbench/probes/trace_processor/modules/ext/largestcontentfulpaint.sql
-log "crossbench extras + cpu_freq patch (self-heal)"
+log "crossbench extras + macOS patches (self-heal)"
 if [ ! -f "$CROSSBENCH_DIR/cb.py" ]; then
   echo "ERROR: crossbench checkout looks wrong at $CROSSBENCH_DIR (cb.py missing)." >&2
   exit 1
@@ -187,6 +187,19 @@ elif grep -q 'except (FileNotFoundError, SystemError, RuntimeError) as e:' "$MAC
 else
   echo "WARNING: cpu_freq patch target not found in $MACOS_PY; crossbench may have changed upstream." >&2
   echo "         Reconcile patches/cpu_freq-attributeerror.patch against the new source." >&2
+fi
+
+FAST_QUIT_PATCH="$SCRIPT_DIR/patches/chromium-macos-fast-quit.patch"
+CHROMIUM_WEBDRIVER_PY="$CROSSBENCH_DIR/crossbench/browsers/chromium_based/webdriver.py"
+if grep -q 'Terminating the macOS Chromium driver process tree' "$CHROMIUM_WEBDRIVER_PY"; then
+  echo "macOS Chromium fast-quit patch: already applied"
+elif git -C "$CROSSBENCH_DIR" apply --check "$FAST_QUIT_PATCH"; then
+  git -C "$CROSSBENCH_DIR" apply "$FAST_QUIT_PATCH"
+  echo "macOS Chromium fast-quit patch: applied"
+else
+  echo "ERROR: macOS Chromium fast-quit patch no longer applies to pinned Crossbench." >&2
+  echo "       Reconcile $FAST_QUIT_PATCH before changing CROSSBENCH_REV." >&2
+  exit 1
 fi
 
 # 7. crossbench Python deps. --no-root is intentionally omitted: the crossbench

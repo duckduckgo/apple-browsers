@@ -37,9 +37,14 @@ RUNNER_IMAGE="${ImageOS:-$(uname -s)-$(uname -r)}${ImageVersion:+/$ImageVersion}
 # The caller's summarize_lcp owns these; reset before every site so a site that
 # never reaches measurement reports zeros rather than inheriting the previous
 # site's numbers.
-reset_measurement_counters() {
+reset_repetition_counters() {
   LAST_OBSERVED=0; LAST_RECORDED=0
   LAST_UNFINALIZED=0; LAST_NO_METRIC=0
+}
+
+reset_measurement_counters() {
+  reset_repetition_counters
+  FAILURE_STAGE=-; FAILURE_REASON=-; FAILURE_DETAIL=-
 }
 
 # The overall verdict, from the counters above. Skips and harness failures are
@@ -68,6 +73,7 @@ init_dispositions_file() {
   {
     printf 'browser\tbrowser_version\tsite\toutcome\t'
     printf 'validation_status\tvalidation_reason\tvalidation_http_status\tvalidation_detail\tarchive_sha256\t'
+    printf 'failure_stage\tfailure_reason\tfailure_detail\t'
     printf 'requested_repetitions\tobserved_repetitions\trecorded_samples\t'
     printf 'dropped_unfinalized\tdropped_no_metric\t'
     printf 'load_window_ms\trunner_image\n'
@@ -78,7 +84,7 @@ init_dispositions_file() {
 tsv_clean() {
   local v="$1"
   v="${v//$'\t'/ }"; v="${v//$'\r'/ }"; v="${v//$'\n'/ }"
-  printf '%s' "$v"
+  printf '%.1000s' "$v"
 }
 
 # One row per site, whether or not it produced samples. Empty fields are written
@@ -93,6 +99,8 @@ record_disposition() {
     "$BROWSER_NAME" "$BROWSER_VERSION" "$site" "$outcome" \
     "$VALIDATION_STATUS" "${VALIDATION_REASON:--}" "${VALIDATION_HTTP_STATUS:--}" \
     "$(tsv_clean "${VALIDATION_DETAIL:--}")" "${ARCHIVE_SHA256:--}" \
+    "${FAILURE_STAGE:--}" "${FAILURE_REASON:--}" \
+    "$(tsv_clean "${FAILURE_DETAIL:--}")" \
     "$MEASURED_REPS" "$LAST_OBSERVED" "$LAST_RECORDED" \
     "$LAST_UNFINALIZED" "$LAST_NO_METRIC" \
     "$LOAD_WINDOW_MS" >> "$DISPOSITIONS_FILE"
@@ -110,11 +118,12 @@ report_dispositions() {
     return
   fi
   # Columns: identity(1-3), outcome(4), validation(5-8),
-  # archive identity(9), repetition accounting(10-14), context(15-16).
+  # archive identity(9), runtime failure(10-12), repetition accounting(13-17),
+  # context(18-19).
   awk -F'\t' 'BEGIN { OFS = "\t" }
-    { print $3, $4, $5, $6, $7, $12 "/" $10, $13 "/" $14 }' \
+    { print $3, $4, $5, $6, $11, $15 "/" $13, $16 "/" $17 }' \
     "$DISPOSITIONS_FILE" \
-    | sed '1s/.*/site\toutcome\tvalidation\treason\thttp\trecorded\tu\/n/' \
+    | sed '1s/.*/site\toutcome\tvalidation\tvalidation_reason\tfailure_reason\trecorded\tu\/n/' \
     | { column -t -s "$(printf '\t')" 2>/dev/null || cat; }
   echo
   awk -F'\t' 'NR > 1 { n[$4]++ } END { for (v in n) printf "  %s: %d site(s)\n", v, n[v] }' \
@@ -125,11 +134,11 @@ report_dispositions() {
       printf '### %s LCP — per-site outcomes\n\n' "$BROWSER_NAME"
       printf 'Dropped repetitions: unfinalized = no LCP within the %s window ' "$LOAD_WINDOW"
       printf '(page slower than the window), no-metric = probe wrote nothing.\n\n'
-      printf '| site | outcome | validation | reason | HTTP | recorded | unfinalized | no-metric |\n'
+      printf '| site | outcome | validation | validation reason | failure reason | recorded | unfinalized | no-metric |\n'
       printf '|---|---|---|---|---|---|---|---|\n'
       awk -F'\t' 'NR > 1 {
         printf "| %s | %s | %s | %s | %s | %s/%s | %s | %s |\n",
-          $3, $4, $5, $6, $7, $12, $10, $13, $14
+          $3, $4, $5, $6, $11, $15, $13, $16, $17
       }' "$DISPOSITIONS_FILE"
     } >> "$GITHUB_STEP_SUMMARY"
   fi

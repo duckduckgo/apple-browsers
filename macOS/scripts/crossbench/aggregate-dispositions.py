@@ -5,8 +5,8 @@
 # native_apps.macos_browser_health_nav_to_lcp_attempts (see attempts-schema.sql).
 #
 # Input TSV (with header), one row per site the run considered. Columns are
-# grouped by identity, outcome, WPR validation, repetition accounting, and
-# runner context.
+# grouped by identity, outcome, WPR validation, runtime failure, repetition
+# accounting, and runner context.
 # Absent values are written by the shell as "-".
 #
 # Output TSV (no header). Column order matches the INSERT column list minus
@@ -32,6 +32,7 @@ EXPECTED_HEADER = [
     "browser", "browser_version", "site", "outcome",
     "validation_status", "validation_reason", "validation_http_status",
     "validation_detail", "archive_sha256",
+    "failure_stage", "failure_reason", "failure_detail",
     "requested_repetitions", "observed_repetitions", "recorded_samples",
     "dropped_unfinalized", "dropped_no_metric",
     "load_window_ms", "runner_image",
@@ -157,6 +158,7 @@ def main() -> None:
             (_browser, version, site, outcome,
              validation_status, validation_reason, validation_http_status,
              validation_detail, archive_sha256,
+             failure_stage, failure_reason, failure_detail,
              requested, observed, recorded, dropped_unfinalized,
              dropped_no_metric,
              load_window_ms, runner_image) = fields
@@ -171,6 +173,9 @@ def main() -> None:
                          f"(known: {sorted(VALID_VALIDATION_STATUSES)})")
             reason = as_str(validation_reason)
             detail = as_str(validation_detail)
+            runtime_stage = as_str(failure_stage)
+            runtime_reason = as_str(failure_reason)
+            runtime_detail = as_str(failure_detail)
             sha = None if archive_sha256 in {"", "-"} else archive_sha256
             if sha is not None and not SHA256_PATTERN.fullmatch(sha):
                 sys.exit(f"ERROR: {location}: archive_sha256 must be 64 lowercase hex characters")
@@ -200,6 +205,16 @@ def main() -> None:
             if validation_status == "error" and not reason:
                 sys.exit(f"ERROR: {location}: validation_status error "
                          "requires validation_reason")
+            if bool(runtime_stage) != bool(runtime_reason):
+                sys.exit(
+                    f"ERROR: {location}: failure_stage and failure_reason "
+                    "must either both be set or both be absent"
+                )
+            if outcome != "infra_error" and (runtime_stage or runtime_reason):
+                sys.exit(
+                    f"ERROR: {location}: runtime failure fields require "
+                    "outcome infra_error"
+                )
             if validation_status == "ok" and (sha is None or http_status is not None or outcome == "excluded"):
                 sys.exit(f"ERROR: {location}: validated sites require a hash, no HTTP error, and a non-excluded outcome")
             if validation_status == "error":
@@ -234,6 +249,9 @@ def main() -> None:
                 http_status,
                 detail,
                 sha,
+                runtime_stage,
+                runtime_reason,
+                runtime_detail,
                 str(requested_n),
                 str(observed_n),
                 str(recorded_n),

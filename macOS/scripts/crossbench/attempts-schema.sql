@@ -39,6 +39,13 @@ ON CLUSTER `ch-prod-cluster`
     archive_sha256 Nullable(FixedString(64))
         COMMENT 'SHA-256 of the WPR archive bytes; NULL when the archive was absent or its identity was unavailable',
 
+    failure_stage LowCardinality(String)
+        COMMENT 'Stable harness stage that failed after validation, such as crossbench; empty when no runtime infrastructure failure was identified',
+    failure_reason LowCardinality(String)
+        COMMENT 'Stable machine-readable runtime failure code, such as site_timeout; empty when no runtime infrastructure failure was identified',
+    failure_detail String
+        COMMENT 'Bounded sanitized runtime diagnostic detail for investigation; empty when unnecessary',
+
     requested_repetitions UInt32
         COMMENT 'Configured repetitions for this requested site, including sites excluded before browser launch',
     observed_repetitions UInt32
@@ -72,7 +79,7 @@ SETTINGS index_granularity = 8192;
 
 -- Coverage and exclusions, most recent first:
 --
--- SELECT date, domain, webview_type, outcome, validation_reason,
+-- SELECT date, domain, webview_type, outcome, validation_reason, failure_reason,
 --        validation_http_status, archive_sha256, recorded_samples,
 --        requested_repetitions
 -- FROM native_apps.macos_browser_health_nav_to_lcp_attempts

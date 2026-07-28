@@ -286,7 +286,7 @@ jobs:
           if [ -s clickhouse-attempts.tsv ]; then
             awk -v c="$GH_RUN_CONCLUSION" '{ print $0 "\t" c }' clickhouse-attempts.tsv > clickhouse-attempts-final.tsv
             cat clickhouse-attempts-final.tsv
-            clickhouse-client --no-warnings --user dev-rw -h clickhouse.duckduckgo.com --query "INSERT INTO native_apps.macos_browser_health_nav_to_lcp_attempts (run_id, start_time, domain, webview_type, webview_channel, webview_version, outcome, validation_status, validation_reason, validation_http_status, validation_detail, archive_sha256, requested_repetitions, observed_repetitions, recorded_samples, dropped_unfinalized, dropped_no_metric, load_window_ms, runner_image, gh_run_started_at, gh_run_conclusion) FORMAT TSV" < clickhouse-attempts-final.tsv
+            clickhouse-client --no-warnings --user dev-rw -h clickhouse.duckduckgo.com --query "INSERT INTO native_apps.macos_browser_health_nav_to_lcp_attempts (run_id, start_time, domain, webview_type, webview_channel, webview_version, outcome, validation_status, validation_reason, validation_http_status, validation_detail, archive_sha256, failure_stage, failure_reason, failure_detail, requested_repetitions, observed_repetitions, recorded_samples, dropped_unfinalized, dropped_no_metric, load_window_ms, runner_image, gh_run_started_at, gh_run_conclusion) FORMAT TSV" < clickhouse-attempts-final.tsv
             inserted=$((inserted + 1))
           else
             echo "no attempts rows to insert"
@@ -353,13 +353,11 @@ jobs:
           if ! python3 macOS/scripts/crossbench/runtime-failure-report.py \
               --input "${in_tsv[0]}" \
               --report runtime-report/report.txt \
-              --github-output "$GITHUB_OUTPUT"; then
+              --github-output "$GITHUB_OUTPUT" \
+              --job-result "$BENCHMARK_RESULT" \
+              --browser-label Safari; then
             write_run_failure_report "Safari disposition report could not be prepared"
             exit 0
-          fi
-          if [ "$BENCHMARK_RESULT" != "success" ] &&
-              [ ! -s runtime-report/report.txt ]; then
-            write_run_failure_report "Safari LCP job failed"
           fi
 
       - name: Upload runtime failure report

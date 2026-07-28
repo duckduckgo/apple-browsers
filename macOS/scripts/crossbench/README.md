@@ -35,6 +35,7 @@ downloading the files again.
 | `validate-wpr.go` | Parses stored WPR requests and responses without starting a replay server. |
 | `wpr-sites.txt` | Single default site list shared by validation and the browser run. |
 | `test-chrome.sh` | Runs Chrome through the validated WPR archives and tsproxy, and writes per-repetition results and per-site dispositions. |
+| `run-with-watchdog.py` | Bounds one Crossbench site process group and terminates it on timeout. |
 | `aggregate-lcp.py` | Produces per-domain ClickHouse metric rows. |
 | `aggregate-dispositions.py` | Validates and encodes ClickHouse eligibility and measurement-outcome rows for every requested site. |
 | `attempts-schema.sql` | Destructive recreation SQL for the attempts-table schema cutover. |
@@ -98,6 +99,12 @@ that is removed after its TSV rows are extracted. CI retains the first failing
 site's Crossbench log and trace; selecting `upload-diagnostics` retains traces
 for every site. Diagnostic copies are capped at 256 MB by default.
 `KEEP_CROSSBENCH_OUTPUT=1` disables cleanup for a bounded diagnostic run.
+Each Crossbench site invocation also has a 20-minute wall-clock watchdog. A
+timeout terminates only that invocation's process group, records
+`crossbench/site_timeout`, preserves any completed samples and bounded
+diagnostics, and continues with later sites. Set
+`CROSSBENCH_SITE_TIMEOUT_SECONDS` to a positive value no greater than 86400 for
+a diagnostic run.
 
 ## Safari
 

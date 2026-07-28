@@ -61,6 +61,8 @@ DIAGNOSTICS_DIR="${DIAGNOSTICS_DIR:-$INVOCATION_DIR/chrome-diagnostics}"
 PRESERVE_DIAGNOSTICS="${PRESERVE_DIAGNOSTICS:-0}"
 DIAGNOSTICS_MAX_MB="${DIAGNOSTICS_MAX_MB:-256}"
 MIN_FREE_DISK_MB="${MIN_FREE_DISK_MB:-2048}"
+CROSSBENCH_SITE_TIMEOUT_SECONDS="${CROSSBENCH_SITE_TIMEOUT_SECONDS:-1200}"
+CROSSBENCH_TERM_GRACE_SECONDS="${CROSSBENCH_TERM_GRACE_SECONDS:-10}"
 DIAGNOSTICS_BYTES=0
 DIAGNOSTICS_LIMIT_REPORTED=0
 FAILURE_TRACE_RETAINED=0
@@ -119,6 +121,16 @@ if ! [[ "$DIAGNOSTICS_MAX_MB" =~ ^[1-9][0-9]*$ ]]; then
 fi
 if ! [[ "$MIN_FREE_DISK_MB" =~ ^[1-9][0-9]*$ ]]; then
   echo "ERROR: MIN_FREE_DISK_MB must be a positive integer." >&2
+  exit 2
+fi
+if ! [[ "$CROSSBENCH_SITE_TIMEOUT_SECONDS" =~ ^[1-9][0-9]*$ ]] ||
+    [ "$CROSSBENCH_SITE_TIMEOUT_SECONDS" -gt 86400 ]; then
+  echo "ERROR: CROSSBENCH_SITE_TIMEOUT_SECONDS must be an integer in 1..86400." >&2
+  exit 2
+fi
+if ! [[ "$CROSSBENCH_TERM_GRACE_SECONDS" =~ ^[1-9][0-9]*$ ]] ||
+    [ "$CROSSBENCH_TERM_GRACE_SECONDS" -gt 60 ]; then
+  echo "ERROR: CROSSBENCH_TERM_GRACE_SECONDS must be an integer in 1..60." >&2
   exit 2
 fi
 
@@ -256,6 +268,10 @@ BROWSER_VERSION="$CHROME_VERSION"
 check_prerequisites() {
   if ! command -v poetry >/dev/null 2>&1; then
     echo "ERROR: poetry not found. Run provision-macos.sh first." >&2
+    exit 1
+  fi
+  if ! command -v python3 >/dev/null 2>&1; then
+    echo "ERROR: python3 not found." >&2
     exit 1
   fi
   if [ ! -f "$CROSSBENCH_DIR/cb.py" ]; then
@@ -417,7 +433,7 @@ summarize_lcp() {
   # The caller reads these back for the disposition record, so every early
   # `return` below must leave them consistent — hence the reset here and the
   # single assignment point after the loop.
-  reset_measurement_counters
+  reset_repetition_counters
   local -a vals=()
   local f v ms rep_idx unfinalized=0 no_metric=0 attempts=0 rep=0
   while IFS= read -r f; do
@@ -491,6 +507,7 @@ run_chrome() {
 
   local site story network_arg out results_path outcome
   local crossbench_status site_failed resource_exhausted=0
+  local watchdog_status_file watchdog_state watchdog_code watchdog_cleanup
   SITE_FAILURES=0
   ELIGIBLE_SITES=0
   TOTAL_RECORDED=0
@@ -519,6 +536,9 @@ run_chrome() {
 
     if [ "$resource_exhausted" -eq 1 ]; then
       echo "::warning title=Runner resource exhausted::$site was not started because disk headroom was already exhausted"
+      FAILURE_STAGE=runner
+      FAILURE_REASON=disk_headroom_exhausted
+      FAILURE_DETAIL="site was not started after the runner crossed its disk headroom threshold"
       record_disposition "$site" infra_error
       continue
     fi
@@ -527,6 +547,9 @@ run_chrome() {
       echo "ERROR: only ${disk_mb} MB available before $site; minimum is ${MIN_FREE_DISK_MB} MB." >&2
       echo "::warning title=Runner resource exhausted::$site was not started because only ${disk_mb} MB remained"
       resource_exhausted=1
+      FAILURE_STAGE=runner
+      FAILURE_REASON=disk_headroom_exhausted
+      FAILURE_DETAIL="available_mb=$disk_mb minimum_mb=$MIN_FREE_DISK_MB"
       record_disposition "$site" infra_error
       continue
     fi
@@ -534,23 +557,51 @@ run_chrome() {
     echo "  plan: $MEASURED_REPS measured loads, ${LOAD_WINDOW} window"
     out="$(mktemp)" || return 1
     ACTIVE_SITE_WORK_DIR="$RUN_WORK_ROOT/$site"
+    watchdog_status_file="$RUN_WORK_ROOT/.watchdog-$site.tsv"
+    rm -f "$watchdog_status_file"
     # --about-blank-duration is REQUIRED: navigating to about:blank after each
     # page forces Chromium to finalize LCP; without it every value comes out -1.
     set +e
-    poetry run python ./cb.py \
-      loading \
-      --browser=chrome-stable \
-      --probe-config="$PROBE_CONFIG" \
-      --repetitions="$MEASURED_REPS" \
-      --url="$site,$LOAD_WINDOW" \
-      --about-blank-duration=2s \
-      --bin-override "wpr=$WPR_BIN" \
-      --out-dir="$ACTIVE_SITE_WORK_DIR" \
-      "$network_arg" \
-      --debug \
-      --env-validation=skip 2>&1 | tee "$out"
+    python3 "$SCRIPT_DIR/run-with-watchdog.py" \
+      --timeout-seconds "$CROSSBENCH_SITE_TIMEOUT_SECONDS" \
+      --term-grace-seconds "$CROSSBENCH_TERM_GRACE_SECONDS" \
+      --status-file "$watchdog_status_file" \
+      -- \
+      poetry run python ./cb.py \
+        loading \
+        --browser=chrome-stable \
+        --probe-config="$PROBE_CONFIG" \
+        --repetitions="$MEASURED_REPS" \
+        --url="$site,$LOAD_WINDOW" \
+        --about-blank-duration=2s \
+        --bin-override "wpr=$WPR_BIN" \
+        --out-dir="$ACTIVE_SITE_WORK_DIR" \
+        "$network_arg" \
+        --debug \
+        --env-validation=skip 2>&1 | tee "$out"
     crossbench_status="${PIPESTATUS[0]}"
     set -e
+    watchdog_state=""
+    watchdog_code=""
+    watchdog_cleanup=""
+    if [ -f "$watchdog_status_file" ]; then
+      IFS=$'\t' read -r watchdog_state watchdog_code watchdog_cleanup \
+        < "$watchdog_status_file" || true
+    fi
+    if [ "$watchdog_state" = "timed_out" ]; then
+      FAILURE_STAGE=crossbench
+      FAILURE_REASON=site_timeout
+      FAILURE_DETAIL="timeout_seconds=$CROSSBENCH_SITE_TIMEOUT_SECONDS process_group_cleanup=$watchdog_cleanup"
+      echo "::warning title=Harness timeout::$site: Crossbench exceeded ${CROSSBENCH_SITE_TIMEOUT_SECONDS}s; process group cleanup=$watchdog_cleanup"
+    elif [ -z "$watchdog_state" ]; then
+      FAILURE_STAGE=crossbench
+      FAILURE_REASON=watchdog_failed
+      FAILURE_DETAIL="watchdog exited $crossbench_status without a status record"
+    elif [ "$watchdog_state" != "completed" ]; then
+      FAILURE_STAGE=crossbench
+      FAILURE_REASON=watchdog_interrupted
+      FAILURE_DETAIL="state=$watchdog_state exit_code=$watchdog_code process_group_cleanup=$watchdog_cleanup"
+    fi
 
     results_path=""
     if [ -d "$ACTIVE_SITE_WORK_DIR" ]; then
@@ -558,6 +609,11 @@ run_chrome() {
     fi
     site_failed=0
     if [ "$crossbench_status" -ne 0 ]; then
+      if [ "$FAILURE_REASON" = "-" ]; then
+        FAILURE_STAGE=crossbench
+        FAILURE_REASON=nonzero_exit
+        FAILURE_DETAIL="exit_code=$crossbench_status"
+      fi
       echo "::warning title=Harness failure::$site: crossbench exited $crossbench_status"
       SITE_FAILURES=$((SITE_FAILURES + 1))
       site_failed=1
@@ -584,6 +640,9 @@ run_chrome() {
       echo "::warning title=Harness failure::$site: crossbench produced no output directory"
       if [ "$crossbench_status" -eq 0 ]; then
         SITE_FAILURES=$((SITE_FAILURES + 1))
+        FAILURE_STAGE=crossbench
+        FAILURE_REASON=missing_output
+        FAILURE_DETAIL="Crossbench exited successfully without creating its output directory"
       fi
       site_failed=1
       record_disposition "$site" infra_error
@@ -593,6 +652,7 @@ run_chrome() {
     cleanup_generated_dir "$ACTIVE_SITE_WORK_DIR" || return 1
     ACTIVE_SITE_WORK_DIR=""
     rm -f "$out"
+    rm -f "$watchdog_status_file"
   done
   if [ "$resource_exhausted" -eq 1 ]; then
     echo "ERROR: runner disk headroom was exhausted; the measurement run is incomplete." >&2

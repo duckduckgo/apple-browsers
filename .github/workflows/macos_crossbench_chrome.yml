@@ -260,7 +260,7 @@ jobs:
           if [ -s clickhouse-attempts.tsv ]; then
             awk -v c="$GH_RUN_CONCLUSION" '{ print $0 "\t" c }' clickhouse-attempts.tsv > clickhouse-attempts-final.tsv
             cat clickhouse-attempts-final.tsv
-            clickhouse-client --no-warnings --user dev-rw -h clickhouse.duckduckgo.com --query "INSERT INTO native_apps.macos_browser_health_nav_to_lcp_attempts (run_id, start_time, domain, webview_type, webview_channel, webview_version, outcome, validation_status, validation_reason, validation_http_status, validation_detail, archive_sha256, requested_repetitions, observed_repetitions, recorded_samples, dropped_unfinalized, dropped_no_metric, load_window_ms, runner_image, gh_run_started_at, gh_run_conclusion) FORMAT TSV" < clickhouse-attempts-final.tsv
+            clickhouse-client --no-warnings --user dev-rw -h clickhouse.duckduckgo.com --query "INSERT INTO native_apps.macos_browser_health_nav_to_lcp_attempts (run_id, start_time, domain, webview_type, webview_channel, webview_version, outcome, validation_status, validation_reason, validation_http_status, validation_detail, archive_sha256, failure_stage, failure_reason, failure_detail, requested_repetitions, observed_repetitions, recorded_samples, dropped_unfinalized, dropped_no_metric, load_window_ms, runner_image, gh_run_started_at, gh_run_conclusion) FORMAT TSV" < clickhouse-attempts-final.tsv
             inserted=$((inserted + 1))
           else
             echo "no attempts rows to insert"
@@ -299,17 +299,40 @@ jobs:
         id: report
         continue-on-error: true
         working-directory: .
+        env:
+          BENCHMARK_RESULT: ${{ needs.chrome-lcp.result }}
         run: |
+          write_run_failure_report() {
+            local summary="$1"
+            mkdir -p runtime-report
+            cat > runtime-report/report.txt <<EOF
+          [RUN ERROR] $summary
+          Result: $BENCHMARK_RESULT
+          Action: inspect the failed workflow step and preserved diagnostics
+          EOF
+            echo "has-errors=true" >> "$GITHUB_OUTPUT"
+            echo "issue-count=1" >> "$GITHUB_OUTPUT"
+          }
+
+          shopt -s nullglob
           in_tsv=(runtime-dispositions/*.tsv)
-          if [ ! -f "${in_tsv[0]}" ]; then
-            echo "::warning title=Runtime notification skipped::No disposition artifact was available."
-            echo "has-errors=false" >> "$GITHUB_OUTPUT"
+          if [ "${#in_tsv[@]}" -ne 1 ]; then
+            if [ "$BENCHMARK_RESULT" = "skipped" ]; then
+              echo "has-errors=false" >> "$GITHUB_OUTPUT"
+            else
+              write_run_failure_report "Chrome disposition artifact was unavailable"
+            fi
             exit 0
           fi
-          python3 macOS/scripts/crossbench/runtime-failure-report.py \
+          if ! python3 macOS/scripts/crossbench/runtime-failure-report.py \
             --input "${in_tsv[0]}" \
             --report runtime-report/report.txt \
-            --github-output "$GITHUB_OUTPUT"
+            --github-output "$GITHUB_OUTPUT" \
+            --job-result "$BENCHMARK_RESULT" \
+            --browser-label Chrome; then
+            write_run_failure_report "Chrome disposition report could not be prepared"
+            exit 0
+          fi
 
       - name: Upload runtime failure report
         if: always()

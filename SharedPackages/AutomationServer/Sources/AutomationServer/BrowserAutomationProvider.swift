@@ -68,3 +68,9 @@ public protocol BrowserAutomationProvider: AnyObject {
     /// - Returns: PNG image data, or nil if screenshot failed
     func takeScreenshot(rect: CGRect?) async -> Data?
 }
+
+public extension BrowserAutomationProvider {
+    func clearWebsiteData() async -> Bool {
+        false
+    }
+}

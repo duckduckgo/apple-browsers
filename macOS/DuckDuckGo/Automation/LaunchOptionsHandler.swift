@@ -106,7 +106,7 @@ public final class LaunchOptionsHandler {
         }
 
         // If developer override via Scheme Environment variable temporarily it means we want to show the onboarding.
-        if let developerOnboardingOverride = ProcessInfo.processInfo.environment["ONBOARDING"] {
+        if let developerOnboardingOverride = environment["ONBOARDING"] {
             return .overridden(.developer(completed: developerOnboardingOverride == "false"))
         }
 

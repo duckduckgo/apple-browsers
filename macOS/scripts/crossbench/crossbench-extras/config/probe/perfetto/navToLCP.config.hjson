@@ -1,6 +1,7 @@
 {
   "probes": {
     "perfetto": {
+      "tracebox_bin": "__TRACEBOX_BIN__",
       "textproto":
         '''
           buffers: {

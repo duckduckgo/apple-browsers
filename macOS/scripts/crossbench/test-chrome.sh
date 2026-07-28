@@ -544,7 +544,6 @@ run_chrome() {
       --url="$site,$LOAD_WINDOW" \
       --about-blank-duration=2s \
       --bin-override "wpr=$WPR_BIN" \
-      --bin-override "tracebox=$TRACEBOX_BIN" \
       --out-dir="$ACTIVE_SITE_WORK_DIR" \
       "$network_arg" \
       --debug \

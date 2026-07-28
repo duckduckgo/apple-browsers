@@ -166,6 +166,9 @@ if [ ! -f "$CROSSBENCH_DIR/cb.py" ]; then
 fi
 # `cp -R <dir>/.` merges into the destination tree without clobbering unrelated files.
 cp -R "$EXTRAS_DIR/." "$CROSSBENCH_DIR/"
+TRACEBOX_BIN="$TRACEBOX_BIN" perl -0pi -e \
+  's{__TRACEBOX_BIN__}{$ENV{TRACEBOX_BIN}}g' \
+  "$CROSSBENCH_DIR/config/probe/perfetto/navToLCP.config.hjson"
 echo "extras: installed navToLCP.config.hjson + largestcontentfulpaint.sql"
 # Apply the cpu_freq patch idempotently, guarding on the patched text (the change
 # is line-number independent between upstream and the fork).

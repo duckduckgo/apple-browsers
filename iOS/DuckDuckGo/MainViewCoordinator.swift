@@ -24,6 +24,9 @@ class MainViewCoordinator {
 
     enum Constants {
         static let tabBarContainerHeight: CGFloat = 40
+        /// Drop applied to the whole top chrome while the tabs bar shares the system window controls'
+        /// row, so the tabs line up with the controls instead of hugging the top of the window.
+        static let windowControlsRowTopSpacing: CGFloat = 4
     }
 
     enum StatusBackgroundPresentation: Equatable {

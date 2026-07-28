@@ -557,6 +557,12 @@ extension MainViewFactory {
             tabBarContainer.constrainAttribute(.height, to: MainViewCoordinator.Constants.tabBarContainerHeight),
             coordinator.constraints.tabBarContainerTop,
         ])
+
+        // Sharing the row means the tabs bar stays put while the omni bar slides up across it, and the
+        // omni bar is created later, so without this it would drag over the tabs on the way out.
+        if isWindowControlsRowEnabled {
+            superview.bringSubviewToFront(tabBarContainer)
+        }
     }
 
     private func constrainStatusBackground() {

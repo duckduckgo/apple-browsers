@@ -63,6 +63,9 @@ class TabsBarViewController: UIViewController {
         static let firstTabLeadingMargin: CGFloat = 24
         /// Active-tab bottom fillet size (Figma spec).
         static let tabRampSize = CGSize(width: 10, height: 10)
+        /// Gap around the active tab while it's a detached pill (chrome hidden), so it doesn't sit
+        /// flush against the edges of the strip.
+        static let detachedTabVerticalInset: CGFloat = 4
         /// Breathing room between the system window controls and the first tab when they share a row.
         /// The layout region already reserves the controls themselves plus a standard margin.
         static let windowControlsTabGap: CGFloat = 16
@@ -90,10 +93,30 @@ class TabsBarViewController: UIViewController {
     private lazy var flareBackground = TabFlareBackgroundController(
         collectionView: collectionView,
         topCornerRadius: TabsBarCell.cornerRadius,
+        bottomCornerRadius: TabsBarCell.cornerRadius,
         rampSize: Constants.tabRampSize,
+        detachedVerticalInset: Constants.detachedTabVerticalInset,
         currentIndex: { [weak self] in self?.currentIndex },
         fillColor: { ThemeManager.shared.currentTheme.omniBarBackgroundColor }
     )
+
+    /// The flared skirt merges the active tab into the address bar below it. Once the bar starts
+    /// sliding out from under the tabs bar the skirt has nothing to merge into, so the tab becomes a
+    /// detached rounded rectangle for as long as the chrome is away.
+    var isBrowserChromeFullyVisible = true {
+        didSet {
+            guard isBrowserChromeFullyVisible != oldValue else { return }
+            flareBackground.setShape(detachedTabShape, animated: true)
+        }
+    }
+
+    /// Only the shared window controls row keeps the tabs bar on screen while the chrome hides, so
+    /// it's the only case where the tab is left without a bar to merge into. Everywhere else the
+    /// whole strip leaves with the chrome and the tab keeps its usual shape.
+    private var detachedTabShape: TabFlaredBackgroundView.Shape {
+        let sharesWindowControlsRow = WindowControlsRowLayout.sharesRow(in: view, featureFlagger: featureFlagger)
+        return (sharesWindowControlsRow && !isBrowserChromeFullyVisible) ? .roundedRectangle : .flared
+    }
 
     lazy var fireButton: UIButton = {
         createButton(image: DesignSystemImages.Glyphs.Size24.fireSolid)

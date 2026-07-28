@@ -2852,6 +2852,11 @@ class MainViewController: UIViewController {
             view.layoutIfNeeded()
         }
 
+        // Same stale geometry: the window only measures as full screen once the resize settles, so a
+        // shared-row decision taken mid-transition can leave the chrome holding room for controls
+        // that have gone (or butted against ones that have arrived).
+        updateWindowControlsRowMetricsIfNeeded()
+
         ViewHighlighter.updatePositions()
         // iOS reframes the keyboard post-rotation with no animation, so the UTI height can only
         // be corrected now; ease it so it settles into place instead of hard-snapping.
@@ -4246,6 +4251,9 @@ extension MainViewController: BrowserChromeDelegate {
         currentTab?.updateWebViewBottomAnchor(for: percent)
         updateFloatingTopNewTabPageInset(for: percent)
 
+        // The active tab's flare merges into the omni bar, so it goes the moment the bar starts leaving.
+        tabsBarController?.isBrowserChromeFullyVisible = percent >= 1
+
         let chromeAlpha = chromeAlpha(for: percent)
         viewCoordinator.navigationBarContainer.alpha = chromeAlpha
         // Fading out the shared row would leave the window controls sitting on the web page.
@@ -4290,6 +4298,7 @@ extension MainViewController: BrowserChromeDelegate {
             // let toolbar offset/alpha animations own chrome visibility to avoid blank "missing" bars.
             viewCoordinator.omniBar.barView.alpha = 1
         }
+        tabsBarController?.isBrowserChromeFullyVisible = !hidden
         viewCoordinator.tabBarContainer.alpha = (hidden && !sharesWindowControlsRow) ? 0 : 1
         viewCoordinator.statusBackground.alpha = hidden ? 0 : 1
         updateFloatingDomainCapsuleVisibility(for: hidden ? 0 : 1)
@@ -4458,14 +4467,18 @@ extension MainViewController: BrowserChromeDelegate {
         // The chrome hangs off the horizontally adapted guide when the tabs bar shares the window
         // controls' row, so with the tabs bar gone the omni bar has to clear the controls itself.
         let windowControlsOffset = viewCoordinator.tabBarContainer.isHidden ? windowControlsRowHeight : 0
+        // The layout region stops the chrome overlapping the controls but butts it right against the
+        // top of the window; this drops the whole stack so the tabs sit level with the controls.
+        let sharedRowTopSpacing = sharesWindowControlsRow ? MainViewCoordinator.Constants.windowControlsRowTopSpacing : 0
         if !viewCoordinator.tabBarContainer.isHidden {
             // The controls stay put when the chrome hides, so the row that holds them has to stay
             // too, otherwise they end up floating over the web page. Only the omni bar slides away,
             // tucking up behind the tabs bar.
-            let topBarsConstant = sharesWindowControlsRow ? 0 : -browserTabsOffset * (1.0 - ratio)
+            let topBarsConstant = sharesWindowControlsRow ? sharedRowTopSpacing : -browserTabsOffset * (1.0 - ratio)
             viewCoordinator.constraints.tabBarContainerTop.constant = topBarsConstant
         }
-        viewCoordinator.constraints.navigationBarContainerTop.constant = windowControlsOffset + browserTabsOffset + -navBarTopOffset * (1.0 - ratio)
+        viewCoordinator.constraints.navigationBarContainerTop.constant =
+            sharedRowTopSpacing + windowControlsOffset + browserTabsOffset + -navBarTopOffset * (1.0 - ratio)
     }
 
     var isWindowControlsRowEnabled: Bool {

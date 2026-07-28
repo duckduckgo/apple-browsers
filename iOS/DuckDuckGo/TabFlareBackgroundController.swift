@@ -49,7 +49,9 @@ final class TabFlareBackgroundController {
 
     init(collectionView: UICollectionView,
          topCornerRadius: CGFloat,
+         bottomCornerRadius: CGFloat,
          rampSize: CGSize,
+         detachedVerticalInset: CGFloat,
          currentIndex: @escaping () -> Int?,
          fillColor: @escaping () -> UIColor) {
         self.collectionView = collectionView
@@ -57,9 +59,18 @@ final class TabFlareBackgroundController {
         self.fillColor = fillColor
         self.rampWidth = rampSize.width
         view.topCornerRadius = topCornerRadius
+        view.bottomCornerRadius = bottomCornerRadius
         view.rampSize = rampSize
+        view.detachedVerticalInset = detachedVerticalInset
         view.isHidden = true
         collectionView.insertSubview(view, at: 0)
+    }
+
+    /// Switches the active tab between the flared silhouette and the detached rounded rectangle.
+    /// Lays out first so the morph interpolates towards a path built for the view's current bounds.
+    func setShape(_ shape: TabFlaredBackgroundView.Shape, animated: Bool) {
+        view.layoutIfNeeded()
+        view.setShape(shape, animated: animated)
     }
 
     deinit {

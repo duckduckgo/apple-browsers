@@ -29,8 +29,9 @@ final class UTIStateMachineTests: XCTestCase {
         UTIStateMachine(displayState: displayState, host: host, hidesToggleOnDuckAITab: hidesToggleOnDuckAITab)
     }
 
-    /// One row per display state, asserting the whole predicate vector. Adding a display state
-    /// should fail to compile here (the switch is exhaustive) and force a new row — that's the point.
+    /// One row per display state, asserting the whole predicate vector. Adding a top-level display
+    /// state fails to compile here (the switch is exhaustive) and forces a new row; adding an
+    /// `AITabState` / `OmnibarState` sub-case grows `allDisplayStates` on its own. That's the point.
     private struct Expectation {
         let isOmnibarSession: Bool
         let isAITabState: Bool
@@ -81,9 +82,12 @@ final class UTIStateMachineTests: XCTestCase {
         }
     }
 
-    private static let allDisplayStates: [UnifiedToggleInputDisplayState] = [
-        .hidden, .contextualChat, .aiTab(.collapsed), .aiTab(.expanded), .omnibar(.active), .omnibar(.inactive)
-    ]
+    /// Derived rather than hand-listed so a new `AITabState` / `OmnibarState` case can't be silently
+    /// skipped by every test below.
+    private static let allDisplayStates: [UnifiedToggleInputDisplayState] =
+        [.hidden, .contextualChat]
+        + UnifiedToggleInputDisplayState.AITabState.allCases.map { .aiTab($0) }
+        + UnifiedToggleInputDisplayState.OmnibarState.allCases.map { .omnibar($0) }
 
     // MARK: - Full predicate vector
 
@@ -142,17 +146,91 @@ final class UTIStateMachineTests: XCTestCase {
         XCTAssertFalse(sut.isSearchOnAITab(inputMode: .search))
     }
 
+    // MARK: - isInputEditing
+
+    /// One assertion per composed term, each labelled with the term it covers, so dropping a term
+    /// fails a named test here rather than only shifting a row of the predicate vector.
+    func test_isInputEditing_isTrueForEveryEditableState() {
+        XCTAssertTrue(makeSUT(.omnibar(.active)).isInputEditing, "isOmnibarSession term")
+        XCTAssertTrue(makeSUT(.omnibar(.inactive)).isInputEditing, "isOmnibarSession term — inactive still counts as editing")
+        XCTAssertTrue(makeSUT(.aiTab(.expanded)).isInputEditing, "isAITabExpanded term")
+        XCTAssertTrue(makeSUT(.contextualChat).isInputEditing, "isContextualChatState term")
+    }
+
+    func test_isInputEditing_isFalseWhenHiddenOrOnACollapsedAITab() {
+        XCTAssertFalse(makeSUT(.hidden).isInputEditing)
+        XCTAssertFalse(makeSUT(.aiTab(.collapsed)).isInputEditing, "collapsed is the discriminating half of the isAITabExpanded term")
+    }
+
+    /// `.omnibar(.inactive)` is editing but not expanded — the one state that separates the two,
+    /// so it's what keeps them from being folded together.
+    func test_isInputEditing_andIsInputPaneExpanded_divergeOnInactiveOmnibar() {
+        let sut = makeSUT(.omnibar(.inactive))
+
+        XCTAssertTrue(sut.isInputEditing)
+        XCTAssertFalse(sut.isInputPaneExpanded)
+    }
+
+    // MARK: - isDuckAISurfaceForAttribution
+
+    func test_isDuckAISurfaceForAttribution_coversBothAITabSubStatesAndContextualChat() {
+        XCTAssertTrue(makeSUT(.aiTab(.collapsed)).isDuckAISurfaceForAttribution, "isAITabState term")
+        XCTAssertTrue(makeSUT(.aiTab(.expanded)).isDuckAISurfaceForAttribution, "isAITabState term — expansion is irrelevant to attribution")
+        XCTAssertTrue(makeSUT(.contextualChat).isDuckAISurfaceForAttribution, "isContextualChatState term")
+    }
+
+    func test_isDuckAISurfaceForAttribution_isFalseForAddressBarStates() {
+        XCTAssertFalse(makeSUT(.hidden).isDuckAISurfaceForAttribution)
+        XCTAssertFalse(makeSUT(.omnibar(.active)).isDuckAISurfaceForAttribution)
+        XCTAssertFalse(makeSUT(.omnibar(.inactive)).isDuckAISurfaceForAttribution)
+    }
+
+    // MARK: - pixelSurface
+
+    /// The precedence isn't observable from the predicate vector — no display state hits two
+    /// branches — so pin the ordering and the fallback here.
+    func test_pixelSurface_prefersContextualChatThenDuckAIThenAddressBar() {
+        XCTAssertEqual(makeSUT(.contextualChat).pixelSurface, .contextualChat, "contextual chat is checked first")
+        XCTAssertEqual(makeSUT(.aiTab(.collapsed)).pixelSurface, .duckAI)
+        XCTAssertEqual(makeSUT(.aiTab(.expanded)).pixelSurface, .duckAI)
+    }
+
+    func test_pixelSurface_fallsBackToAddressBarForOmnibarAndHidden() {
+        XCTAssertEqual(makeSUT(.omnibar(.active)).pixelSurface, .addressBar)
+        XCTAssertEqual(makeSUT(.omnibar(.inactive)).pixelSurface, .addressBar)
+        XCTAssertEqual(makeSUT(.hidden).pixelSurface, .addressBar, "hidden has no surface of its own")
+    }
+
+    // MARK: - isAITabCollapsed
+
+    func test_isAITabCollapsed_isTrueOnlyForTheCollapsedAITab() {
+        XCTAssertTrue(makeSUT(.aiTab(.collapsed)).isAITabCollapsed)
+        XCTAssertFalse(makeSUT(.aiTab(.expanded)).isAITabCollapsed, "differs only in the AI-tab sub-state")
+        XCTAssertFalse(makeSUT(.hidden).isAITabCollapsed, "hidden is not a collapsed Duck.ai tab")
+    }
+
     // MARK: - isToggleVisible
 
+    /// Full `hidesToggleOnDuckAITab` × `isToggleEnabled` cross on an AI-tab state and on the two
+    /// non-AI surfaces. Expectations are literals, not a restatement of the implementation's formula.
     func test_isToggleVisible_matrix() {
         let cases: [(displayState: UnifiedToggleInputDisplayState, hidesOnDuckAITab: Bool, isToggleEnabled: Bool, expected: Bool)] = [
+            (.omnibar(.active), false, false, false),
             (.omnibar(.active), false, true, true),
-            (.omnibar(.active), true, true, true),
             (.omnibar(.active), true, false, false),
+            (.omnibar(.active), true, true, true),
+            (.contextualChat, false, false, false),
+            (.contextualChat, false, true, true),
+            (.contextualChat, true, false, false),
+            (.contextualChat, true, true, true),
+            (.aiTab(.expanded), false, false, false),
             (.aiTab(.expanded), false, true, true),
+            (.aiTab(.expanded), true, false, false),
             (.aiTab(.expanded), true, true, false),
-            (.aiTab(.collapsed), true, true, false),
-            (.contextualChat, true, true, true)
+            (.aiTab(.collapsed), false, false, false),
+            (.aiTab(.collapsed), false, true, true),
+            (.aiTab(.collapsed), true, false, false),
+            (.aiTab(.collapsed), true, true, false)
         ]
 
         for testCase in cases {

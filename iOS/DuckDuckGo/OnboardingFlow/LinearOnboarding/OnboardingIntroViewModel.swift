@@ -453,7 +453,7 @@ private extension OnboardingIntroViewModel {
             case .toggleInputModeSelection:
                 return .onboarding(
                     .init(
-                        type: .toggleInputModeDialog,
+                        type: .toggleInputModeDialog(content: contentProvider.addressBarToggleModePersonalizationContent),
                         step: stepInfo()
                     )
                 )
@@ -696,6 +696,7 @@ private extension OnboardingIntroViewModel {
         case .browserPrivately:
             break
         case .privateAIChat:
+            onboardingSearchExperienceProvider.storeAIChatSearchInputDuringOnboardingChoice(enable: true)
             aiModelsPrefetcher.prefetch()
         case .noAI:
             break

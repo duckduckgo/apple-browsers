@@ -29,6 +29,7 @@ protocol OnboardingIntroContentProviding {
     var downloadReasonContent: OnboardingDownloadReasonContent { get }
     var serpPersonalizationContent: OnboardingPersonalizationContent { get }
     var aiModelPersonalizationContent: OnboardingAIModelContent { get }
+    var addressBarToggleModePersonalizationContent: OnboardingAddressBarToggleModeContent { get }
     var aiSearchPersonalizationContent: OnboardingPersonalizationContent { get }
     var youTubePersonalizationContent: OnboardingPersonalizationContent { get }
     var setDefaultBrowserContent: OnboardingComparisonContent { get }
@@ -189,13 +190,6 @@ struct OnboardingPersonalizationContent: Equatable {
     let daxAnimation: DaxAnimation
 }
 
-struct OnboardingAIModelContent: Equatable {
-    let title: String
-    let message: String
-    let primaryCTA: String
-    let daxAnimation: DaxAnimation
-}
-
 extension OnboardingPersonalizationContent {
 
     struct Item: Hashable, Equatable {
@@ -219,6 +213,22 @@ extension OnboardingPersonalizationContent.Item {
 
 }
 
+struct OnboardingAIModelContent: Equatable {
+    let title: String
+    let message: String
+    let primaryCTA: String
+    let daxAnimation: DaxAnimation
+}
+
+struct OnboardingAddressBarToggleModeContent: Equatable {
+    let title: String
+    let icon: OnboardingImageResource
+    let footer: String
+    let primaryCTA: String
+    let secondaryCTA: String
+    let daxAnimation: DaxAnimation?
+}
+
 extension OnboardingIntroContentProvider {
 
     var serpPersonalizationContent: OnboardingPersonalizationContent {
@@ -240,6 +250,17 @@ extension OnboardingIntroContentProvider {
             message: "Change your default AI now, or anytime during chat.",
             primaryCTA: "Next",
             daxAnimation: .wingLeft
+        )
+    }
+
+    var addressBarToggleModePersonalizationContent: OnboardingAddressBarToggleModeContent {
+        OnboardingAddressBarToggleModeContent(
+            title: "Want new tabs to open with AI chat?",
+            icon: OnboardingImageResources.Personalization.addressBarToggleMode,
+            footer: "You can switch to Search with one tap",
+            primaryCTA: "Open tabs with AI chat",
+            secondaryCTA: "Not Now",
+            daxAnimation: nil
         )
     }
 

@@ -465,8 +465,8 @@ extension OnboardingView {
                 toggleSettingsPersonalizationView(content: content, action: model.aiSearchSettingsContinueAction)
             case let .aiModelDialog(content):
                 aiModelSelectionView(content: content, action: model.aiModelContinueAction)
-            case .toggleInputModeDialog:
-                placeholderView(title: "Toggle Input Default Mode", action: model.toggleInputModeContinueAction)
+            case let .toggleInputModeDialog(content):
+                addressBarToggleModeView(content: content)
             case .keepDuckAIDialog:
                 placeholderView(title: "Keep Duck.ai Setting", action: model.keepDuckAIContinueAction)
             case let .duckPlayerDialog(content):
@@ -530,6 +530,27 @@ extension OnboardingView {
                     action()
                 }
             }
+        }
+
+        private func addressBarToggleModeView(content: OnboardingAddressBarToggleModeContent) -> some View {
+            let personalizationManager = model.personalizationManager
+
+            return AddressBarToggleModeContent(
+                content: content,
+                isVisible: $showBubbleContent,
+                primaryAction: {
+                    personalizationManager.setNewTabOpensWithAIChat(true)
+                    animateContentTransition {
+                        model.toggleInputModeContinueAction()
+                    }
+                },
+                secondaryAction: {
+                    personalizationManager.setNewTabOpensWithAIChat(false)
+                    animateContentTransition {
+                        model.toggleInputModeContinueAction()
+                    }
+                }
+            )
         }
 
         // TODO: Shared placeholder for the reason-tailored steps until each screen is built (UI task).
@@ -639,7 +660,9 @@ extension OnboardingView {
                 return content.daxAnimation
             case .aiModelDialog(let content):
                 return content.daxAnimation
-            case .toggleInputModeDialog, .keepDuckAIDialog:
+            case let .toggleInputModeDialog(content):
+                return content.daxAnimation
+            case .keepDuckAIDialog:
                 return nil
             case .setDefaultBrowserDialog(let content):
                 return content.daxAnimation

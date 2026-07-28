@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
 #
-# provision-macos.sh — install the minimum crossbench needs to measure Chrome
-# page-load LCP from a Web Page Replay archive on a macOS runner.
+# provision-macos.sh — install the replay toolchain used by Chrome and Safari
+# page-load LCP on a macOS runner.
 #
 # Chrome replays each site from a WPR archive through a traffic shaper and
 # crossbench extracts LCP from the Perfetto trace. This script installs the
 # toolchain, builds the `wpr` binary, and installs the pinned traffic shaper.
 # CI supplies archives staged by the shared validator. Local runs may download
-# archives directly. DDG and Safari integration is deliberately out of scope.
+# archives directly. Safari also uses the WPR checkout's ECDSA certificate and
+# key with acceptInsecureCerts; provisioning never adds them to a keychain.
 #
 # Idempotent: safe to run on every CI job; installs only what's missing.
 #
@@ -38,7 +39,7 @@ PYTHON_VERSION="${PYTHON_VERSION:-3.11}"   # matches Windows (poetry env use 3.1
 CROSSBENCH_REV="${CROSSBENCH_REV:-be14dbfb884747ea577e2e65b6a4a77d7ecd807d}"
 
 # Where the wpr binary is built to. test-chrome.sh passes this to crossbench via
-# --bin-override, which skips crossbench's own build machinery entirely.
+# --bin-override; test-safari.sh starts it directly.
 WPR_BIN="${WPR_BIN:-$HOME/Developer/mac-perf-runner/bin/wpr}"
 
 # The version, checksum, and URL come from wpr-config.sh so the runner uses the
@@ -95,17 +96,25 @@ echo "poetry: $(poetry --version)"
 # 4. Google Chrome — latest stable. Deliberately NOT pinned: the baseline should
 #    track what users actually run, and crossbench stamps the exact version into
 #    each result so a step caused by a Chrome bump stays traceable.
-log "Google Chrome"
-# Explicit `brew update` first: HOMEBREW_NO_AUTO_UPDATE=1 freezes the cask index,
-# so without this an upgrade would never see a newer version.
-brew update
-if brew list --cask google-chrome >/dev/null 2>&1; then
-  # --greedy because Chrome's cask auto_updates and a plain upgrade skips it.
-  brew upgrade --cask --greedy google-chrome
+#    INSTALL_CHROME=0 skips this — the Safari harness reuses everything else this
+#    script sets up (python/poetry/crossbench/extras) but drives Safari, so it
+#    has no need for Chrome. Default is 1 to preserve the Chrome-job behavior.
+INSTALL_CHROME="${INSTALL_CHROME:-1}"
+if [ "$INSTALL_CHROME" = "1" ]; then
+  log "Google Chrome"
+  # Explicit `brew update` first: HOMEBREW_NO_AUTO_UPDATE=1 freezes the cask
+  # index, so without this an upgrade would never see a newer version.
+  brew update
+  if brew list --cask google-chrome >/dev/null 2>&1; then
+    # --greedy because Chrome's cask auto_updates and a plain upgrade skips it.
+    brew upgrade --cask --greedy google-chrome
+  else
+    brew install --cask --force google-chrome
+  fi
+  echo "chrome: $('/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' --version 2>/dev/null || echo 'version unavailable')"
 else
-  brew install --cask --force google-chrome
+  log "Google Chrome (skipped: INSTALL_CHROME=0)"
 fi
-echo "chrome: $('/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' --version 2>/dev/null || echo 'version unavailable')"
 
 # 5. crossbench checkout, pinned to CROSSBENCH_REV. Clone it if absent (keeps
 #    setup to a single command).
@@ -151,12 +160,12 @@ fi
 chmod +x "$TRACEBOX_BIN"
 "$TRACEBOX_BIN" --version
 
-# 6. Self-heal the fork-only extras + cpu_freq patch. REQUIRED: without the
-#    extras LCP silently returns no rows, and without the patch crossbench
-#    crashes on Apple Silicon (psutil.cpu_freq raises AttributeError).
+# 6. Self-heal the fork-only extras and macOS patches. REQUIRED: without the
+#    extras LCP silently returns no rows, and the patches keep Crossbench stable
+#    and avoid its slow Selenium shutdown path on hosted macOS runners.
 #      - config/probe/perfetto/navToLCP.config.hjson              (probe config)
 #      - crossbench/probes/trace_processor/modules/ext/largestcontentfulpaint.sql
-log "crossbench extras + cpu_freq patch (self-heal)"
+log "crossbench extras + macOS patches (self-heal)"
 if [ ! -f "$CROSSBENCH_DIR/cb.py" ]; then
   echo "ERROR: crossbench checkout looks wrong at $CROSSBENCH_DIR (cb.py missing)." >&2
   exit 1
@@ -178,6 +187,19 @@ elif grep -q 'except (FileNotFoundError, SystemError, RuntimeError) as e:' "$MAC
 else
   echo "WARNING: cpu_freq patch target not found in $MACOS_PY; crossbench may have changed upstream." >&2
   echo "         Reconcile patches/cpu_freq-attributeerror.patch against the new source." >&2
+fi
+
+FAST_QUIT_PATCH="$SCRIPT_DIR/patches/chromium-macos-fast-quit.patch"
+CHROMIUM_WEBDRIVER_PY="$CROSSBENCH_DIR/crossbench/browsers/chromium_based/webdriver.py"
+if grep -q 'Terminating the macOS Chromium driver process tree' "$CHROMIUM_WEBDRIVER_PY"; then
+  echo "macOS Chromium fast-quit patch: already applied"
+elif git -C "$CROSSBENCH_DIR" apply --check "$FAST_QUIT_PATCH"; then
+  git -C "$CROSSBENCH_DIR" apply "$FAST_QUIT_PATCH"
+  echo "macOS Chromium fast-quit patch: applied"
+else
+  echo "ERROR: macOS Chromium fast-quit patch no longer applies to pinned Crossbench." >&2
+  echo "       Reconcile $FAST_QUIT_PATCH before changing CROSSBENCH_REV." >&2
+  exit 1
 fi
 
 # 7. crossbench Python deps. --no-root is intentionally omitted: the crossbench

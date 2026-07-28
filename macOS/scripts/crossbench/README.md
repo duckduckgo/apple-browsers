@@ -35,6 +35,7 @@ downloading the files again.
 | `validate-wpr.go` | Parses stored WPR requests and responses without starting a replay server. |
 | `wpr-sites.txt` | Single default site list shared by validation and the browser run. |
 | `test-chrome.sh` | Runs Chrome through the validated WPR archives and tsproxy, and writes per-repetition results and per-site dispositions. |
+| `run-with-watchdog.py` | Bounds one Crossbench site process group and terminates it on timeout. |
 | `aggregate-lcp.py` | Produces per-domain ClickHouse metric rows. |
 | `aggregate-dispositions.py` | Validates and encodes ClickHouse eligibility and measurement-outcome rows for every requested site. |
 | `attempts-schema.sql` | Destructive recreation SQL for the attempts-table schema cutover. |
@@ -61,17 +62,14 @@ Everything else is installed by `provision-macos.sh`.
 The manual CI workflow also accepts a `reps` input. Scheduled runs retain the
 10-load default; use a smaller value for validation runs.
 
-CI creates at most one write-only Asana subtask per workflow run under task
-`1216902374642227` when its consolidated validation report has new errors. It
-uses `ASANA_ACCESS_TOKEN` only with
-Asana's create-subtask endpoint and never lists or reads Asana tasks. A
-pair of 90-day GitHub artifacts keyed by workflow run and deterministic report
-fingerprint provide best-effort suppression of duplicate reports without
-querying Asana; concurrent runs or artifact failures can still create duplicates.
-Alerting defaults on and can be disabled for
-a manual run with the `alert-asana` input. Setting the repository variable
-`CROSSBENCH_WPR_ASANA_ALERTS_ENABLED` to `false` disables it globally, including
-scheduled runs; an absent variable means enabled.
+CI can create one write-only Asana subtask for archive-validation errors and one
+for browser-measurement errors per workflow run under task `1216902374642227`.
+It uses `ASANA_ACCESS_TOKEN` only to create subtasks and never reads Asana.
+GitHub artifacts provide best-effort deduplication without querying Asana.
+Alerting defaults on and can be disabled for a manual run with `alert-asana`;
+repository variables `CROSSBENCH_WPR_ASANA_ALERTS_ENABLED` and
+`CROSSBENCH_RUNTIME_ASANA_ALERTS_ENABLED` independently disable the two alert
+categories for all runs.
 
 The runner writes:
 
@@ -101,3 +99,28 @@ that is removed after its TSV rows are extracted. CI retains the first failing
 site's Crossbench log and trace; selecting `upload-diagnostics` retains traces
 for every site. Diagnostic copies are capped at 256 MB by default.
 `KEEP_CROSSBENCH_OUTPUT=1` disables cleanup for a bounded diagnostic run.
+Each Crossbench site invocation also has a 20-minute wall-clock watchdog. A
+timeout terminates only that invocation's process group, records
+`crossbench/site_timeout`, preserves any completed samples and bounded
+diagnostics, and continues with later sites. Set
+`CROSSBENCH_SITE_TIMEOUT_SECONDS` to a positive value no greater than 86400 for
+a diagnostic run.
+
+## Safari
+
+Safari uses `test-safari.sh`, which temporarily routes Safari through
+`httpproxy.py -> tsproxy -> WPR` and restores its per-browser proxy preferences
+on exit. It uses WebDriver LCP observations rather than Chromium Perfetto
+traces, with `acceptInsecureCerts=true` for WPR's ECDSA certificate; neither the
+certificate nor a system proxy is installed or changed.
+
+Safari runs ten replay loads per eligible site with no live-network fallback.
+Validation errors are exclusions. A per-site WPR or automation failure is
+`infra_error` and does not stop later sites; failure of the shared proxy,
+shaping, or SafariDriver service stops measurement and records the remaining
+eligible sites as `infra_error`. Its rows use `webview_type=sfr-wpr`. CI retains
+bounded Safari, proxy, shaping, and per-site WPR logs in `safari-diagnostics/`.
+
+A new WebDriver session does not by itself prove a cold Safari HTTP cache.
+Before comparing absolute Safari values with Chrome cold-profile values, verify
+per-repetition WPR subresource traffic or add a reliable cache reset.

@@ -61,6 +61,8 @@ DIAGNOSTICS_DIR="${DIAGNOSTICS_DIR:-$INVOCATION_DIR/chrome-diagnostics}"
 PRESERVE_DIAGNOSTICS="${PRESERVE_DIAGNOSTICS:-0}"
 DIAGNOSTICS_MAX_MB="${DIAGNOSTICS_MAX_MB:-256}"
 MIN_FREE_DISK_MB="${MIN_FREE_DISK_MB:-2048}"
+CROSSBENCH_SITE_TIMEOUT_SECONDS="${CROSSBENCH_SITE_TIMEOUT_SECONDS:-1200}"
+CROSSBENCH_TERM_GRACE_SECONDS="${CROSSBENCH_TERM_GRACE_SECONDS:-10}"
 DIAGNOSTICS_BYTES=0
 DIAGNOSTICS_LIMIT_REPORTED=0
 FAILURE_TRACE_RETAINED=0
@@ -119,6 +121,16 @@ if ! [[ "$DIAGNOSTICS_MAX_MB" =~ ^[1-9][0-9]*$ ]]; then
 fi
 if ! [[ "$MIN_FREE_DISK_MB" =~ ^[1-9][0-9]*$ ]]; then
   echo "ERROR: MIN_FREE_DISK_MB must be a positive integer." >&2
+  exit 2
+fi
+if ! [[ "$CROSSBENCH_SITE_TIMEOUT_SECONDS" =~ ^[1-9][0-9]*$ ]] ||
+    [ "$CROSSBENCH_SITE_TIMEOUT_SECONDS" -gt 86400 ]; then
+  echo "ERROR: CROSSBENCH_SITE_TIMEOUT_SECONDS must be an integer in 1..86400." >&2
+  exit 2
+fi
+if ! [[ "$CROSSBENCH_TERM_GRACE_SECONDS" =~ ^[1-9][0-9]*$ ]] ||
+    [ "$CROSSBENCH_TERM_GRACE_SECONDS" -gt 60 ]; then
+  echo "ERROR: CROSSBENCH_TERM_GRACE_SECONDS must be an integer in 1..60." >&2
   exit 2
 fi
 
@@ -258,6 +270,10 @@ check_prerequisites() {
     echo "ERROR: poetry not found. Run provision-macos.sh first." >&2
     exit 1
   fi
+  if ! command -v python3 >/dev/null 2>&1; then
+    echo "ERROR: python3 not found." >&2
+    exit 1
+  fi
   if [ ! -f "$CROSSBENCH_DIR/cb.py" ]; then
     echo "ERROR: crossbench not found at $CROSSBENCH_DIR (cb.py missing). Run provision-macos.sh first." >&2
     exit 1
@@ -330,8 +346,10 @@ fetch_network_arg() {
 # counters. Prepared CI archives carry the shared validator's manifest; local
 # replay without that handoff records only whether an archive was available.
 set_validation_result() {
-  local site="$1" archive_available="$2" verdict reason status_chain final_url detail header
+  local site="$1" archive_available="$2" verdict reason status_chain final_url detail header row_count
+  local archive_name expected_archive_name expected_sha actual_sha validated_archive
 
+  VALIDATION_HANDOFF_ERROR=0
   VALIDATION_STATUS=error
   VALIDATION_REASON=archive_missing
   VALIDATION_HTTP_STATUS=-
@@ -346,6 +364,7 @@ set_validation_result() {
     return
   fi
   if [ ! -f "$WPR_MANIFEST" ]; then
+    VALIDATION_HANDOFF_ERROR=1
     VALIDATION_REASON=validation_manifest_missing
     VALIDATION_DETAIL="validated archive handoff did not contain manifest.tsv"
     return
@@ -353,33 +372,86 @@ set_validation_result() {
 
   header="$(head -1 "$WPR_MANIFEST")"
   if [ "$header" != $'site\tarchive\tsha256\tarchive_bytes\tverdict\treason_code\thttp_status\tdetail\tstatus_chain\tfinal_url\tcontent_type\tblocked_marker' ]; then
+    VALIDATION_HANDOFF_ERROR=1
     VALIDATION_REASON=validation_manifest_schema_mismatch
     VALIDATION_DETAIL="validated archive manifest has an unsupported schema"
     return
   fi
-  verdict="$(awk -F'\t' -v site="$site" 'NR > 1 && $1 == site { print $5; exit }' "$WPR_MANIFEST")"
-  if [ -z "$verdict" ]; then
+  row_count="$(awk -F'\t' -v site="$site" 'NR > 1 && $1 == site { count++ } END { print count + 0 }' "$WPR_MANIFEST")"
+  if [ "$row_count" -eq 0 ]; then
+    VALIDATION_HANDOFF_ERROR=1
     VALIDATION_REASON=validation_result_missing
     VALIDATION_DETAIL="site is absent from the WPR validation manifest"
     return
   fi
+  if [ "$row_count" -ne 1 ]; then
+    VALIDATION_HANDOFF_ERROR=1
+    VALIDATION_REASON=validation_result_ambiguous
+    VALIDATION_DETAIL="site has multiple rows in the WPR validation manifest"
+    return
+  fi
 
-  ARCHIVE_SHA256="$(awk -F'\t' -v site="$site" 'NR > 1 && $1 == site { print $3; exit }' "$WPR_MANIFEST")"
-  ARCHIVE_SHA256="${ARCHIVE_SHA256:--}"
+  archive_name="$(awk -F'\t' -v site="$site" 'NR > 1 && $1 == site { print $2; exit }' "$WPR_MANIFEST")"
+  expected_sha="$(awk -F'\t' -v site="$site" 'NR > 1 && $1 == site { print $3; exit }' "$WPR_MANIFEST")"
+  verdict="$(awk -F'\t' -v site="$site" 'NR > 1 && $1 == site { print $5; exit }' "$WPR_MANIFEST")"
+  if [ "$verdict" != "ok" ] && [ "$verdict" != "error" ]; then
+    VALIDATION_HANDOFF_ERROR=1
+    VALIDATION_REASON=validation_verdict_invalid
+    VALIDATION_DETAIL="validated archive manifest has an unsupported verdict"
+    return
+  fi
+  if [[ "$expected_sha" =~ ^[0-9a-f]{64}$ ]]; then
+    ARCHIVE_SHA256="$expected_sha"
+  elif [ "$verdict" = "ok" ]; then
+    VALIDATION_HANDOFF_ERROR=1
+    VALIDATION_REASON=validated_archive_hash_invalid
+    VALIDATION_DETAIL="validator marked the site eligible without a valid SHA-256"
+    return
+  fi
   reason="$(awk -F'\t' -v site="$site" 'NR > 1 && $1 == site { print $6; exit }' "$WPR_MANIFEST")"
   VALIDATION_HTTP_STATUS="$(awk -F'\t' -v site="$site" 'NR > 1 && $1 == site { print $7; exit }' "$WPR_MANIFEST")"
   VALIDATION_HTTP_STATUS="${VALIDATION_HTTP_STATUS:--}"
+  if [ "$VALIDATION_HTTP_STATUS" != "-" ] && ! [[ "$VALIDATION_HTTP_STATUS" =~ ^[1-5][0-9][0-9]$ ]]; then
+    VALIDATION_HANDOFF_ERROR=1
+    VALIDATION_HTTP_STATUS=-
+    VALIDATION_REASON=validation_http_status_invalid
+    VALIDATION_DETAIL="validated archive manifest has an invalid HTTP status"
+    return
+  fi
   detail="$(awk -F'\t' -v site="$site" 'NR > 1 && $1 == site { print $8; exit }' "$WPR_MANIFEST")"
   status_chain="$(awk -F'\t' -v site="$site" 'NR > 1 && $1 == site { print $9; exit }' "$WPR_MANIFEST")"
   final_url="$(awk -F'\t' -v site="$site" 'NR > 1 && $1 == site { print $10; exit }' "$WPR_MANIFEST")"
-  if [ "$verdict" = "ok" ] && [ -n "$archive_available" ]; then
+  if [ "$verdict" = "ok" ]; then
+    if ! [[ "$archive_name" =~ ^[a-zA-Z0-9._-]+\.wprgo$ ]]; then
+      VALIDATION_HANDOFF_ERROR=1
+      VALIDATION_REASON=validated_archive_name_invalid
+      VALIDATION_DETAIL="validator returned an unsafe or unsupported archive filename"
+      return
+    fi
+    expected_archive_name="$(normalize "$SUITE+$site").wprgo"
+    if [ "$archive_name" != "$expected_archive_name" ]; then
+      VALIDATION_HANDOFF_ERROR=1
+      VALIDATION_REASON=validated_archive_name_mismatch
+      VALIDATION_DETAIL="validated archive filename does not match the requested story"
+      return
+    fi
+    validated_archive="$WPR_DIR/$archive_name"
+    if [ ! -f "$validated_archive" ]; then
+      VALIDATION_HANDOFF_ERROR=1
+      VALIDATION_REASON=validated_archive_missing
+      VALIDATION_DETAIL="validator marked the site eligible but its archive was not staged"
+      return
+    fi
+    actual_sha="$(shasum -a 256 "$validated_archive" | awk '{ print $1 }')"
+    if [ "$actual_sha" != "$expected_sha" ]; then
+      VALIDATION_HANDOFF_ERROR=1
+      ARCHIVE_SHA256=-
+      VALIDATION_REASON=validated_archive_hash_mismatch
+      VALIDATION_DETAIL="staged archive SHA-256 does not match the validation manifest"
+      return
+    fi
     VALIDATION_STATUS=ok
     VALIDATION_REASON=-
-    return
-  fi
-  if [ "$verdict" = "ok" ]; then
-    VALIDATION_REASON=validated_archive_missing
-    VALIDATION_DETAIL="validator marked the site eligible but its archive was not staged"
     return
   fi
 
@@ -417,7 +489,7 @@ summarize_lcp() {
   # The caller reads these back for the disposition record, so every early
   # `return` below must leave them consistent — hence the reset here and the
   # single assignment point after the loop.
-  reset_measurement_counters
+  reset_repetition_counters
   local -a vals=()
   local f v ms rep_idx unfinalized=0 no_metric=0 attempts=0 rep=0
   while IFS= read -r f; do
@@ -491,7 +563,9 @@ run_chrome() {
 
   local site story network_arg out results_path outcome
   local crossbench_status site_failed resource_exhausted=0
+  local watchdog_status_file watchdog_state watchdog_code watchdog_cleanup
   SITE_FAILURES=0
+  HANDOFF_FAILURES=0
   ELIGIBLE_SITES=0
   TOTAL_RECORDED=0
   for site in "${SITES[@]}"; do
@@ -505,20 +579,32 @@ run_chrome() {
       network_arg=""
     fi
     if [ -z "$network_arg" ]; then
-      if [ "$WPR_ARCHIVES_PREPARED" = "1" ]; then
+      if [ "$VALIDATION_HANDOFF_ERROR" -eq 1 ]; then
+        echo "  $site: validated WPR handoff is unusable; RUN FAILURE." >&2
+        echo "::warning title=Validation handoff failure::$site: $VALIDATION_REASON"
+        HANDOFF_FAILURES=$((HANDOFF_FAILURES + 1))
+        FAILURE_STAGE=validation
+        FAILURE_REASON=invalid_handoff
+        FAILURE_DETAIL="$VALIDATION_REASON"
+        record_disposition "$site" infra_error
+      elif [ "$WPR_ARCHIVES_PREPARED" = "1" ]; then
         echo "  $site: excluded by WPR archive validation; SKIPPING." >&2
         echo "::warning title=Site excluded::$site did not pass WPR archive validation"
+        record_disposition "$site" excluded
       else
         echo "  $site: no WPR archive available; SKIPPING (replay-only)." >&2
         echo "::warning title=Site skipped::$site: no WPR archive at $WPR_BASE_URL"
+        record_disposition "$site" excluded
       fi
-      record_disposition "$site" excluded
       continue
     fi
     ELIGIBLE_SITES=$((ELIGIBLE_SITES + 1))
 
     if [ "$resource_exhausted" -eq 1 ]; then
       echo "::warning title=Runner resource exhausted::$site was not started because disk headroom was already exhausted"
+      FAILURE_STAGE=runner
+      FAILURE_REASON=disk_headroom_exhausted
+      FAILURE_DETAIL="site was not started after the runner crossed its disk headroom threshold"
       record_disposition "$site" infra_error
       continue
     fi
@@ -527,6 +613,9 @@ run_chrome() {
       echo "ERROR: only ${disk_mb} MB available before $site; minimum is ${MIN_FREE_DISK_MB} MB." >&2
       echo "::warning title=Runner resource exhausted::$site was not started because only ${disk_mb} MB remained"
       resource_exhausted=1
+      FAILURE_STAGE=runner
+      FAILURE_REASON=disk_headroom_exhausted
+      FAILURE_DETAIL="available_mb=$disk_mb minimum_mb=$MIN_FREE_DISK_MB"
       record_disposition "$site" infra_error
       continue
     fi
@@ -534,23 +623,51 @@ run_chrome() {
     echo "  plan: $MEASURED_REPS measured loads, ${LOAD_WINDOW} window"
     out="$(mktemp)" || return 1
     ACTIVE_SITE_WORK_DIR="$RUN_WORK_ROOT/$site"
+    watchdog_status_file="$RUN_WORK_ROOT/.watchdog-$site.tsv"
+    rm -f "$watchdog_status_file"
     # --about-blank-duration is REQUIRED: navigating to about:blank after each
     # page forces Chromium to finalize LCP; without it every value comes out -1.
     set +e
-    poetry run python ./cb.py \
-      loading \
-      --browser=chrome-stable \
-      --probe-config="$PROBE_CONFIG" \
-      --repetitions="$MEASURED_REPS" \
-      --url="$site,$LOAD_WINDOW" \
-      --about-blank-duration=2s \
-      --bin-override "wpr=$WPR_BIN" \
-      --out-dir="$ACTIVE_SITE_WORK_DIR" \
-      "$network_arg" \
-      --debug \
-      --env-validation=skip 2>&1 | tee "$out"
+    python3 "$SCRIPT_DIR/run-with-watchdog.py" \
+      --timeout-seconds "$CROSSBENCH_SITE_TIMEOUT_SECONDS" \
+      --term-grace-seconds "$CROSSBENCH_TERM_GRACE_SECONDS" \
+      --status-file "$watchdog_status_file" \
+      -- \
+      poetry run python ./cb.py \
+        loading \
+        --browser=chrome-stable \
+        --probe-config="$PROBE_CONFIG" \
+        --repetitions="$MEASURED_REPS" \
+        --url="$site,$LOAD_WINDOW" \
+        --about-blank-duration=2s \
+        --bin-override "wpr=$WPR_BIN" \
+        --out-dir="$ACTIVE_SITE_WORK_DIR" \
+        "$network_arg" \
+        --debug \
+        --env-validation=skip 2>&1 | tee "$out"
     crossbench_status="${PIPESTATUS[0]}"
     set -e
+    watchdog_state=""
+    watchdog_code=""
+    watchdog_cleanup=""
+    if [ -f "$watchdog_status_file" ]; then
+      IFS=$'\t' read -r watchdog_state watchdog_code watchdog_cleanup \
+        < "$watchdog_status_file" || true
+    fi
+    if [ "$watchdog_state" = "timed_out" ]; then
+      FAILURE_STAGE=crossbench
+      FAILURE_REASON=site_timeout
+      FAILURE_DETAIL="timeout_seconds=$CROSSBENCH_SITE_TIMEOUT_SECONDS process_group_cleanup=$watchdog_cleanup"
+      echo "::warning title=Harness timeout::$site: Crossbench exceeded ${CROSSBENCH_SITE_TIMEOUT_SECONDS}s; process group cleanup=$watchdog_cleanup"
+    elif [ -z "$watchdog_state" ]; then
+      FAILURE_STAGE=crossbench
+      FAILURE_REASON=watchdog_failed
+      FAILURE_DETAIL="watchdog exited $crossbench_status without a status record"
+    elif [ "$watchdog_state" != "completed" ]; then
+      FAILURE_STAGE=crossbench
+      FAILURE_REASON=watchdog_interrupted
+      FAILURE_DETAIL="state=$watchdog_state exit_code=$watchdog_code process_group_cleanup=$watchdog_cleanup"
+    fi
 
     results_path=""
     if [ -d "$ACTIVE_SITE_WORK_DIR" ]; then
@@ -558,6 +675,11 @@ run_chrome() {
     fi
     site_failed=0
     if [ "$crossbench_status" -ne 0 ]; then
+      if [ "$FAILURE_REASON" = "-" ]; then
+        FAILURE_STAGE=crossbench
+        FAILURE_REASON=nonzero_exit
+        FAILURE_DETAIL="exit_code=$crossbench_status"
+      fi
       echo "::warning title=Harness failure::$site: crossbench exited $crossbench_status"
       SITE_FAILURES=$((SITE_FAILURES + 1))
       site_failed=1
@@ -584,6 +706,9 @@ run_chrome() {
       echo "::warning title=Harness failure::$site: crossbench produced no output directory"
       if [ "$crossbench_status" -eq 0 ]; then
         SITE_FAILURES=$((SITE_FAILURES + 1))
+        FAILURE_STAGE=crossbench
+        FAILURE_REASON=missing_output
+        FAILURE_DETAIL="Crossbench exited successfully without creating its output directory"
       fi
       site_failed=1
       record_disposition "$site" infra_error
@@ -593,9 +718,14 @@ run_chrome() {
     cleanup_generated_dir "$ACTIVE_SITE_WORK_DIR" || return 1
     ACTIVE_SITE_WORK_DIR=""
     rm -f "$out"
+    rm -f "$watchdog_status_file"
   done
   if [ "$resource_exhausted" -eq 1 ]; then
     echo "ERROR: runner disk headroom was exhausted; the measurement run is incomplete." >&2
+    return 1
+  fi
+  if [ "$HANDOFF_FAILURES" -gt 0 ]; then
+    echo "ERROR: $HANDOFF_FAILURES site(s) had an unusable validated WPR handoff." >&2
     return 1
   fi
   if [ "$ELIGIBLE_SITES" -gt 0 ] && [ "$TOTAL_RECORDED" -eq 0 ]; then

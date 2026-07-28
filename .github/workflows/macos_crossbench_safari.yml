@@ -1,15 +1,16 @@
-name: macOS - crossbench Chrome LCP (WPR)
-run-name: macOS - crossbench Chrome LCP (WPR)
+name: macOS - Safari LCP (WPR)
+run-name: macOS - Safari LCP (WPR)
 
-# Test harness: stands up crossbench on a GitHub-hosted macOS runner,
-# measures Chrome navigation -> Largest Contentful Paint from WPR archives,
-# and uploads the per-rep results as a downloadable artifact. Optionally
-# (opt-in dispatch input) a second, self-hosted job inserts per-domain
-# aggregates into ClickHouse (native_apps.macos_browser_health_nav_to_lcp).
+# Measures Safari navigation-to-LCP against validated WPR archives through the
+# US-broadband shaping profile. ClickHouse upload is scheduled or opt-in.
 #
-# Triggered manually (workflow_dispatch) and on a daily off-peak schedule. No
-# pull_request/push trigger, so fork PRs can't run it. WPR supplies fixed page
-# bytes and the US-broadband shaper matches the Windows harness.
+# Safari-specific behavior:
+#   - Safari's per-app proxy preferences route it through a local HTTP proxy,
+#     tsproxy and WPR. The original preferences are restored on exit.
+#   - LCP is read from the page via a buffered PerformanceObserver over
+#     WebDriver, with acceptInsecureCerts=true.
+#
+# Manual and daily only; pull requests and pushes do not trigger it.
 
 on:
   workflow_dispatch:
@@ -27,22 +28,17 @@ on:
         type: boolean
         required: false
         default: false
-      upload-diagnostics:
-        description: "Retain capped Perfetto diagnostics for every site"
-        type: boolean
-        required: false
-        default: false
       alert-asana:
-        description: "Create Asana subtasks for WPR validation and browser measurement errors"
+        description: "Create Asana subtasks for WPR validation or Safari measurement errors"
         type: boolean
         required: false
         default: true
   schedule:
-    # A scheduled run uses the full 22-site list and uploads to ClickHouse.
-    # GitHub only fires schedules from the default branch.
-    # 00:17 UTC avoids the repository's busiest scheduled CI window and the
-    # top-of-hour load common to GitHub-hosted runners.
-    - cron: "17 0 * * *"
+    # Scheduled workflows run only from the default branch. Blank sites use the
+    # full list, and the upload job below sends scheduled results to ClickHouse.
+    # 01:47 UTC avoids the repository's busiest scheduled CI window, starts
+    # away from the top of the hour, and follows Chrome by 90 minutes.
+    - cron: "47 1 * * *"
 
 permissions:
   contents: read
@@ -69,13 +65,13 @@ jobs:
     secrets:
       ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
 
-  chrome-lcp:
-    name: Chrome LCP (WPR)
+  safari-lcp:
+    name: Safari LCP (WPR)
     needs: validate-wpr
-    # Standard hosted Apple Silicon runner, matching the Safari architecture.
+    # Match the Chrome workflow's Apple Silicon runner for comparability.
     runs-on: macos-latest
-    # 10 measured loads/site, with no discarded live-network warm-up. The cap
-    # retains headroom for provisioning and trace-processor variance.
+    # Ten measured loads per site with no replay warm-up. The cap leaves room
+    # for provisioning and slow/failing navigations.
     timeout-minutes: 200
 
     steps:
@@ -90,46 +86,76 @@ jobs:
           name: validated-wpr-archives
           path: ${{ runner.temp }}/wpr-archives
 
-      - name: Provision crossbench, Chrome, and WPR
+      - name: Provision WPR and traffic shaping (no Chrome)
+        # INSTALL_CHROME=0 retains the pinned WPR build and checksum-verified
+        # tsproxy, while skipping the browser this job does not use.
+        env:
+          INSTALL_CHROME: "0"
         run: ./provision-macos.sh
 
-      - name: Run Chrome LCP suite
+      - name: Enable safaridriver Remote Automation
+        # safaridriver refuses sessions until this per-user setting is enabled.
+        run: sudo safaridriver --enable
+
+      - name: Run Safari LCP suite
         # Inputs passed via env, not interpolated into the script, to avoid shell injection.
         env:
           SITES: ${{ inputs.sites }}
           REPS: ${{ inputs.reps }}
           WPR_DIR: ${{ runner.temp }}/wpr-archives
           WPR_ARCHIVES_PREPARED: "1"
-          PRESERVE_DIAGNOSTICS: ${{ inputs.upload-diagnostics && '1' || '0' }}
-          DIAGNOSTICS_DIR: ${{ github.workspace }}/macOS/scripts/crossbench/chrome-diagnostics
         run: |
-          args=()
+          args=(--yes)
           if [ -n "$SITES" ]; then
             args+=(--sites "$SITES")
           fi
           if [ -n "$REPS" ]; then
             args+=(--reps "$REPS")
           fi
-          ./test-chrome.sh "${args[@]}"
+          status_file="$RUNNER_TEMP/safari-harness-watchdog.tsv"
+          set +e
+          python3 ./run-with-watchdog.py \
+            --timeout-seconds 9600 \
+            --term-grace-seconds 30 \
+            --status-file "$status_file" \
+            -- ./test-safari.sh "${args[@]}"
+          harness_status=$?
+          set -e
+          if [ -f "$status_file" ]; then
+            cat "$status_file"
+          fi
+          exit "$harness_status"
 
       - name: Upload results TSV
         if: always()
         uses: actions/upload-artifact@v6
         with:
-          name: chrome-lcp-results
+          name: safari-lcp-results
           # Path is workspace-relative (not affected by defaults.working-directory).
           path: macOS/scripts/crossbench/crossbench-results/*.tsv
           if-no-files-found: warn
           retention-days: 7
 
-      - name: Upload Perfetto diagnostics
-        # Site-level failures no longer fail the job, but their capped
-        # diagnostics must still be uploaded when present.
+      - name: Upload per-site dispositions TSV
         if: always()
         uses: actions/upload-artifact@v6
         with:
-          name: chrome-lcp-perfetto-diagnostics
-          path: macOS/scripts/crossbench/chrome-diagnostics/**
+          name: safari-lcp-dispositions
+          # Separate directory from crossbench-results/ on purpose: the aggregate
+          # step below globs that directory for *.tsv and feeds the first match to
+          # aggregate-lcp.py, so a second TSV there would be read as measurements.
+          path: macOS/scripts/crossbench/crossbench-dispositions/*.tsv
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Upload Safari diagnostics
+        # Site-level failures are reported without failing the job, so upload
+        # the bounded diagnostics regardless of the job conclusion.
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: safari-lcp-diagnostics
+          path: macOS/scripts/crossbench/safari-diagnostics/**
           if-no-files-found: ignore
           retention-days: 3
 
@@ -143,6 +169,9 @@ jobs:
           # replaces); created_at is stable across attempts and keeps
           # start_time — and the date partition derived from it — identical
           # for every attempt of the run.
+          #
+          # Replay rows use sfr-wpr so they cannot mix with historical
+          # live-network sfr rows. webview-channel remains stable.
           shopt -s nullglob
           in_tsv=(crossbench-results/*.tsv)
           if [ "${#in_tsv[@]}" -eq 0 ]; then
@@ -160,27 +189,15 @@ jobs:
             --run-id "$GITHUB_RUN_ID" \
             --start-time "$(jq -r '.created_at' <<< "$run_json")" \
             --gh-run-started-at "$(jq -r '.run_started_at' <<< "$run_json")" \
-            --webview-type chr-wpr
+            --webview-type sfr-wpr
           cat clickhouse-rows.tsv
 
       - name: Upload ClickHouse rows TSV
         if: always()
         uses: actions/upload-artifact@v6
         with:
-          name: chrome-lcp-clickhouse-rows
+          name: safari-lcp-clickhouse-rows
           path: macOS/scripts/crossbench/clickhouse-rows.tsv
-          if-no-files-found: warn
-          retention-days: 7
-
-      - name: Upload per-site dispositions TSV
-        if: always()
-        uses: actions/upload-artifact@v6
-        with:
-          name: chrome-lcp-dispositions
-          # Separate directory from crossbench-results/ on purpose: the aggregate
-          # step above globs that directory for *.tsv and feeds the first match to
-          # aggregate-lcp.py, so a second TSV there would be read as measurements.
-          path: macOS/scripts/crossbench/crossbench-dispositions/*.tsv
           if-no-files-found: warn
           retention-days: 7
 
@@ -203,7 +220,7 @@ jobs:
             exit 1
           fi
           if [ "$(wc -l < "${in_tsv[0]}")" -le 1 ]; then
-            echo "dispositions TSV has no data rows"
+            echo "no disposition rows to aggregate"
             exit 0
           fi
           run_json="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}")"
@@ -213,21 +230,21 @@ jobs:
             --run-id "$GITHUB_RUN_ID" \
             --start-time "$(jq -r '.created_at' <<< "$run_json")" \
             --gh-run-started-at "$(jq -r '.run_started_at' <<< "$run_json")" \
-            --webview-type chr-wpr
+            --webview-type sfr-wpr
           cat clickhouse-attempts.tsv
 
       - name: Upload ClickHouse attempts TSV
         if: always()
         uses: actions/upload-artifact@v6
         with:
-          name: chrome-lcp-attempts-rows
+          name: safari-lcp-attempts-rows
           path: macOS/scripts/crossbench/clickhouse-attempts.tsv
           if-no-files-found: warn
           retention-days: 7
 
   upload-to-clickhouse:
     name: Upload to ClickHouse
-    needs: [validate-wpr, chrome-lcp]
+    needs: [validate-wpr, safari-lcp]
     # Hosted runners can't reach the ClickHouse host, hence this separate
     # self-hosted job.
     #
@@ -235,8 +252,7 @@ jobs:
     # job that fails or times out uploads NOTHING — including the disposition
     # record, which is exactly what you need for the runs that went wrong. Each
     # insert below is guarded on its file existing instead, so a partial run
-    # uploads whatever it did produce. (A timeout reports as "cancelled", which
-    # skips downstream needs: jobs without this.)
+    # uploads whatever it did produce.
     if: >-
       always() &&
       needs.validate-wpr.result == 'success' &&
@@ -250,13 +266,13 @@ jobs:
         continue-on-error: true
         uses: actions/download-artifact@v7
         with:
-          name: chrome-lcp-clickhouse-rows
+          name: safari-lcp-clickhouse-rows
 
       - name: Download ClickHouse attempts TSV
         continue-on-error: true
         uses: actions/download-artifact@v7
         with:
-          name: chrome-lcp-attempts-rows
+          name: safari-lcp-attempts-rows
 
       - name: Insert rows into ClickHouse
         # Workspace root: the repo isn't checked out in this job, so the
@@ -264,7 +280,7 @@ jobs:
         # download-artifact lands files at the root.
         working-directory: .
         env:
-          GH_RUN_CONCLUSION: ${{ needs.chrome-lcp.result }}
+          GH_RUN_CONCLUSION: ${{ needs.safari-lcp.result }}
         run: |
           inserted=0
           failed=0
@@ -306,8 +322,8 @@ jobs:
           fi
 
   notify-runtime-failures:
-    name: Report Chrome measurement errors
-    needs: chrome-lcp
+    name: Report Safari measurement errors
+    needs: safari-lcp
     if: >-
       always() &&
       (github.event_name != 'workflow_dispatch' || inputs.alert-asana) &&
@@ -326,7 +342,7 @@ jobs:
         continue-on-error: true
         uses: actions/download-artifact@v7
         with:
-          name: chrome-lcp-dispositions
+          name: safari-lcp-dispositions
           path: runtime-dispositions
 
       - name: Prepare runtime failure report
@@ -334,7 +350,7 @@ jobs:
         continue-on-error: true
         working-directory: .
         env:
-          BENCHMARK_RESULT: ${{ needs.chrome-lcp.result }}
+          BENCHMARK_RESULT: ${{ needs.safari-lcp.result }}
         run: |
           write_run_failure_report() {
             local summary="$1"
@@ -354,17 +370,17 @@ jobs:
             if [ "$BENCHMARK_RESULT" = "skipped" ]; then
               echo "has-errors=false" >> "$GITHUB_OUTPUT"
             else
-              write_run_failure_report "Chrome disposition artifact was unavailable"
+              write_run_failure_report "Safari disposition artifact was unavailable"
             fi
             exit 0
           fi
           if ! python3 macOS/scripts/crossbench/runtime-failure-report.py \
-            --input "${in_tsv[0]}" \
-            --report runtime-report/report.txt \
-            --github-output "$GITHUB_OUTPUT" \
-            --job-result "$BENCHMARK_RESULT" \
-            --browser-label Chrome; then
-            write_run_failure_report "Chrome disposition report could not be prepared"
+              --input "${in_tsv[0]}" \
+              --report runtime-report/report.txt \
+              --github-output "$GITHUB_OUTPUT" \
+              --job-result "$BENCHMARK_RESULT" \
+              --browser-label Safari; then
+            write_run_failure_report "Safari disposition report could not be prepared"
             exit 0
           fi
 
@@ -373,7 +389,7 @@ jobs:
         continue-on-error: true
         uses: actions/upload-artifact@v6
         with:
-          name: chrome-runtime-failure-report
+          name: safari-runtime-failure-report
           path: runtime-report/
           if-no-files-found: ignore
           retention-days: 30
@@ -387,7 +403,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           if ! marker_count="$(
-              gh api "repos/$GITHUB_REPOSITORY/actions/artifacts?name=chrome-runtime-failure-run-$GITHUB_RUN_ID&per_page=100" \
+              gh api "repos/$GITHUB_REPOSITORY/actions/artifacts?name=safari-runtime-failure-run-$GITHUB_RUN_ID&per_page=100" \
                 --jq '[.artifacts[] | select(.expired == false)] | length'
             )"; then
             echo "::warning title=Asana notification skipped::Could not check the run alert marker; skipping task creation to avoid duplicates."
@@ -423,7 +439,6 @@ jobs:
             echo "created=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-
           notes_file="$RUNNER_TEMP/asana-browser-measurement-notes.txt"
           {
             echo "Workflow: https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
@@ -431,7 +446,6 @@ jobs:
             echo
             cat "$report"
           } > "$notes_file"
-
           run_started_at="$(
             gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" \
               --jq '.run_started_at'
@@ -449,7 +463,7 @@ jobs:
 
           "$helper" \
             1216902374642227 \
-            "Browser Measurement Failure: Chrome LCP" \
+            "Browser Measurement Failure: Safari LCP" \
             "$notes_file" \
             "$start_date" \
             "$due_date"
@@ -462,7 +476,7 @@ jobs:
         continue-on-error: true
         uses: actions/upload-artifact@v6
         with:
-          name: chrome-runtime-failure-run-${{ github.run_id }}
+          name: safari-runtime-failure-run-${{ github.run_id }}
           path: runtime-report/alert-marker.txt
           if-no-files-found: error
           retention-days: 90

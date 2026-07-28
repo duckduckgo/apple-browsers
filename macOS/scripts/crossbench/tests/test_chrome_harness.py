@@ -66,6 +66,11 @@ if [ "${FAKE_RESULTS:-0}" = 1 ]; then
     echo "RESULTS: $result_root"
   fi
 fi
+if [ "$site" = "${FAKE_HANG_SITE:-}" ]; then
+  echo "$$" > "${FAKE_HANG_PID_FILE:?}"
+  trap '' TERM
+  while :; do sleep 1; done
+fi
 if [ "$site" = "${FAKE_FAIL_SITE:-}" ]; then
   exit 7
 fi
@@ -109,6 +114,13 @@ exit "${FAKE_EXIT:-0}"
         path = next((self.root / "crossbench-dispositions").glob("*.tsv"))
         return path.read_text().splitlines()[1].split("\t")
 
+    def disposition_rows(self) -> list[list[str]]:
+        path = next((self.root / "crossbench-dispositions").glob("*.tsv"))
+        return [
+            line.split("\t")
+            for line in path.read_text().splitlines()[1:]
+        ]
+
     def add_valid_site(self, site: str) -> None:
         archive = self.archives / f"navToLCP_{site}.wprgo"
         archive.write_bytes(site.encode())
@@ -134,7 +146,7 @@ exit "${FAKE_EXIT:-0}"
         self.assertEqual(result.returncode, 0, result.stderr)
         row = self.disposition()
         self.assertEqual(row[3], "infra_error")
-        self.assertEqual(row[9:14], ["1", "1", "1", "0", "0"])
+        self.assertEqual(row[12:17], ["1", "1", "1", "0", "0"])
         measurement = next((self.root / "crossbench-results").glob("*.tsv")).read_text()
         self.assertIn("1000.0", measurement)
 
@@ -148,7 +160,7 @@ exit "${FAKE_EXIT:-0}"
         self.assertEqual(result.returncode, 0, result.stderr)
         row = self.disposition()
         self.assertEqual(row[3], "infra_error")
-        self.assertEqual(row[11], "1")
+        self.assertEqual(row[14], "1")
 
     def test_generated_crossbench_output_is_removed(self) -> None:
         result = self.run_harness(FAKE_RESULTS="1", FAKE_METRIC="1")
@@ -215,6 +227,18 @@ exit "${FAKE_EXIT:-0}"
         self.assertEqual(self.disposition()[3], "infra_error")
         self.assertIn("minimum is 999999999 MB", result.stderr)
 
+    def test_rejects_invalid_site_timeout_before_measurement(self) -> None:
+        for value in ("0", "1.5", "86401"):
+            with self.subTest(value=value):
+                result = self.run_harness(
+                    CROSSBENCH_SITE_TIMEOUT_SECONDS=value,
+                )
+                self.assertEqual(result.returncode, 2)
+                self.assertIn(
+                    "CROSSBENCH_SITE_TIMEOUT_SECONDS must be an integer",
+                    result.stderr,
+                )
+
     def test_missing_results_is_infra_error(self) -> None:
         result = self.run_harness(FAKE_RESULTS="0", FAKE_EXIT="0")
         self.assertEqual(result.returncode, 1)
@@ -263,6 +287,46 @@ exit "${FAKE_EXIT:-0}"
         self.assertEqual([(row[2], row[3]) for row in rows],
                          [("apple.com", "infra_error"), ("example.com", "measured")])
 
+    def test_timeout_cleans_process_and_continues_to_later_site(self) -> None:
+        self.add_valid_site("example.com")
+        pid_file = self.root / "hung-process.pid"
+        result = subprocess.run(
+            [str(SCRIPT), "--sites", "apple.com,example.com", "--reps", "1"],
+            cwd=self.root,
+            env={
+                **self.env,
+                "FAKE_RESULTS": "1",
+                "FAKE_METRIC": "1",
+                "FAKE_HANG_SITE": "apple.com",
+                "FAKE_HANG_PID_FILE": str(pid_file),
+                "CROSSBENCH_SITE_TIMEOUT_SECONDS": "1",
+                "CROSSBENCH_TERM_GRACE_SECONDS": "1",
+            },
+            text=True,
+            capture_output=True,
+            timeout=15,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        rows = self.disposition_rows()
+        self.assertEqual(
+            [(row[2], row[3]) for row in rows],
+            [("apple.com", "infra_error"), ("example.com", "measured")],
+        )
+        self.assertEqual(rows[0][9:11], ["crossbench", "site_timeout"])
+        self.assertRegex(
+            rows[0][11],
+            r"process_group_cleanup=(terminated|killed)",
+        )
+        self.assertEqual(rows[0][12:17], ["1", "1", "1", "0", "0"])
+        self.assertNotIn("site_timeout", rows[1])
+        measurements = next(
+            (self.root / "crossbench-results").glob("*.tsv")
+        ).read_text()
+        self.assertEqual(measurements.count("1000.0"), 2)
+        pid = int(pid_file.read_text())
+        with self.assertRaises(ProcessLookupError):
+            os.kill(pid, 0)
+
     def test_censored_site_does_not_fail_when_another_site_has_data(self) -> None:
         self.add_valid_site("example.com")
         result = subprocess.run(
@@ -307,10 +371,81 @@ exit "${FAKE_EXIT:-0}"
         }
         blocked = rows["blocked.test"]
         self.assertEqual(blocked[3:7], ["excluded", "error", "http_403", "403"])
-        self.assertEqual(blocked[8:14], [blocked_sha, "1", "0", "0", "0", "0"])
+        self.assertEqual(blocked[8], blocked_sha)
+        self.assertEqual(blocked[12:17], ["1", "0", "0", "0", "0"])
         missing = rows["missing.test"]
         self.assertEqual(missing[3:7], ["excluded", "error", "archive_missing", "-"])
-        self.assertEqual(missing[8:14], ["-", "1", "0", "0", "0", "0"])
+        self.assertEqual(missing[8], "-")
+        self.assertEqual(missing[12:17], ["1", "0", "0", "0", "0"])
+
+    def test_duplicate_manifest_row_is_a_handoff_failure(self) -> None:
+        manifest = self.archives / "manifest.tsv"
+        manifest.write_text(manifest.read_text() + manifest.read_text().splitlines()[1] + "\n")
+        result = self.run_harness()
+        self.assertEqual(result.returncode, 1, result.stderr)
+        self.assertEqual(self.disposition()[3:6], [
+            "infra_error", "error", "validation_result_ambiguous",
+        ])
+
+    def test_unsafe_manifest_archive_name_is_a_handoff_failure(self) -> None:
+        manifest = self.archives / "manifest.tsv"
+        fields = manifest.read_text().splitlines()[1].split("\t")
+        fields[1] = "../outside.wprgo"
+        manifest.write_text(MANIFEST_HEADER + "\t".join(fields) + "\n")
+        result = self.run_harness()
+        self.assertEqual(result.returncode, 1, result.stderr)
+        self.assertEqual(self.disposition()[3:6], [
+            "infra_error", "error", "validated_archive_name_invalid",
+        ])
+
+    def test_mismatched_manifest_archive_name_is_a_handoff_failure(self) -> None:
+        other_archive = self.archives / "other.wprgo"
+        other_archive.write_bytes(b"other")
+        fields = (self.archives / "manifest.tsv").read_text().splitlines()[1].split("\t")
+        fields[1] = other_archive.name
+        fields[2] = hashlib.sha256(b"other").hexdigest()
+        (self.archives / "manifest.tsv").write_text(
+            MANIFEST_HEADER + "\t".join(fields) + "\n"
+        )
+
+        result = self.run_harness()
+
+        self.assertEqual(result.returncode, 1, result.stderr)
+        row = self.disposition()
+        self.assertEqual(row[3:6], [
+            "infra_error", "error", "validated_archive_name_mismatch",
+        ])
+        self.assertEqual(row[9:11], ["validation", "invalid_handoff"])
+
+    def test_invalid_manifest_verdict_is_a_handoff_failure(self) -> None:
+        manifest = self.archives / "manifest.tsv"
+        fields = manifest.read_text().splitlines()[1].split("\t")
+        fields[4] = "maybe"
+        manifest.write_text(MANIFEST_HEADER + "\t".join(fields) + "\n")
+        result = self.run_harness()
+        self.assertEqual(result.returncode, 1, result.stderr)
+        self.assertEqual(self.disposition()[3:6], [
+            "infra_error", "error", "validation_verdict_invalid",
+        ])
+
+    def test_invalid_manifest_http_status_is_a_handoff_failure(self) -> None:
+        manifest = self.archives / "manifest.tsv"
+        fields = manifest.read_text().splitlines()[1].split("\t")
+        fields[6] = "two-hundred"
+        manifest.write_text(MANIFEST_HEADER + "\t".join(fields) + "\n")
+        result = self.run_harness()
+        self.assertEqual(result.returncode, 1, result.stderr)
+        self.assertEqual(self.disposition()[3:6], [
+            "infra_error", "error", "validation_http_status_invalid",
+        ])
+
+    def test_manifest_hash_mismatch_is_a_handoff_failure(self) -> None:
+        (self.archives / "navToLCP_apple.com.wprgo").write_bytes(b"modified")
+        result = self.run_harness()
+        self.assertEqual(result.returncode, 1, result.stderr)
+        self.assertEqual(self.disposition()[3:6], [
+            "infra_error", "error", "validated_archive_hash_mismatch",
+        ])
 
 
 if __name__ == "__main__":

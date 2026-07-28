@@ -247,6 +247,22 @@ public final class DataBrokerProtectionIOSManager {
         return isAuthenticated
     }
 
+    private func reconcileProfileState() {
+        let hasSavedProfile: Bool
+        do {
+            hasSavedProfile = try database.fetchProfile() != nil
+        } catch {
+            Logger.dataBrokerProtection.error("Profile state read failed, keeping cached state: \(error.localizedDescription, privacy: .public)")
+            return
+        }
+
+        let currentState: DBPProfileState = hasSavedProfile ? .hasProfile : .noProfile
+
+        guard profileStateManager.profileState != currentState else { return }
+
+        profileStateManager.reconcileProfileState(hasSavedProfile: hasSavedProfile)
+    }
+
     private lazy var brokerUpdater: BrokerJSONServiceProvider? = {
         let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(
             directoryName: DatabaseConstants.directoryName,
@@ -353,6 +369,7 @@ public final class DataBrokerProtectionIOSManager {
 extension DataBrokerProtectionIOSManager: DBPIOSInterface.AppLifecycleEventsDelegate {
 
     public func appDidEnterBackground() {
+        reconcileProfileState()
         scheduleBGProcessingTask()
     }
 
@@ -514,6 +531,8 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.DatabaseDelegate {
 
 extension DataBrokerProtectionIOSManager: JobQueueManagerDelegate {
     public func queueManagerWillEnqueueOperations(_ queueManager: JobQueueManaging) {
+        reconcileProfileState()
+
         Task {
             do {
                 try await brokerUpdater?.checkForUpdates()

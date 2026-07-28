@@ -95,7 +95,7 @@ class ViewHighlighter {
 private extension ViewHighlighter {
 
     private static func makeColorProvider(featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) -> ColorValueProvider? {
-        let lottieColor = UIColor(singleUseColor: .rebranding(.accentPrimary)).lottieColorValue
+        let lottieColor = UIColor(designSystemColor: .accentPrimary, palette: .default).lottieColorValue
         return ColorValueProvider(lottieColor)
     }
     

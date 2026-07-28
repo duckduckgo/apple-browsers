@@ -63,7 +63,7 @@ public struct StatusIndicatorView: View {
         switch status {
         case .on, .alwaysOn:
             return DesignSystemPalette.current.isRebranded
-                ? Color(singleUseColor: .rebranding(.alertGreen))
+                ? Color(designSystemColor: .alertGreen, palette: .default)
                 : Color(designSystemColor: .alertGreen)
         case .off:
             return Color(designSystemColor: .textSecondary).opacity(0.33)

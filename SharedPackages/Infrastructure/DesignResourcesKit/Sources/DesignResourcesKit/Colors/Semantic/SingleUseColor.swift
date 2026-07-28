@@ -98,19 +98,8 @@ public extension SingleUseColor {
     enum Rebranding: CaseIterable {
         case textPrimary
         case textSecondary
-        case textLink
-
-        case accentPrimary
-        case accentPrimaryPressed
-        case accentPrimaryText
-        case accentGlowPrimary
 
         case backdrop
-
-        case buttonsPrimaryDefault
-        case buttonsPrimaryPressed
-        case buttonsPrimaryText
-        case buttonsContentDisabled
 
         case buttonsSecondaryDefault
         case buttonsSecondaryPressed
@@ -118,17 +107,11 @@ public extension SingleUseColor {
         case buttonsSecondaryDisabledBackground
         case buttonsSecondaryDisabledText
 
-        case destructivePrimary
-        case destructivePrimaryPressed
-        case destructivePrimaryText
-        case destructiveGlowPrimary
-
         case controlsFillPrimary
 
         case decorationPrimary
         case decorationSecondary
 
-        case alertGreen
         case calendarStripYellow
     }
 

@@ -259,7 +259,7 @@ struct DuckAIQuerySearchContent: View {
 
     // MARK: Style
     private var accentColor: Color {
-        visualStyle == .rebranded ? Color(singleUseColor: .rebranding(.accentPrimary)) : Color(designSystemColor: .accentPrimary)
+        visualStyle == .rebranded ? Color(designSystemColor: .accentPrimary, palette: .default) : Color(designSystemColor: .accentPrimary)
     }
 
     private var titleToPickerTopPadding: CGFloat {

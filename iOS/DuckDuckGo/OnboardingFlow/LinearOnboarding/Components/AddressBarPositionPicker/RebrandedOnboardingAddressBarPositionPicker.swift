@@ -78,7 +78,7 @@ private enum AddressBarPositionPickerMetrics {
     static let borderLightColor = Color.black.opacity(0.18)
     static let borderDarkColor = Color.white.opacity(0.18)
 
-    static let accentColor = Color(singleUseColor: .rebranding(.accentPrimary))
+    static let accentColor = Color(designSystemColor: .accentPrimary, palette: .default)
 }
 
 extension OnboardingView.OnboardingAddressBarPositionPicker {

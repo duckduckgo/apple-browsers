@@ -119,7 +119,7 @@ public extension OnboardingStepProgressTheme {
         colors: .init(
             background: OnboardingRebrandColor.surfaceTertiary,
             border: OnboardingRebrandColor.accentAltPrimary,
-            selectedDot: Color(singleUseColor: .rebranding(.accentPrimary)),
+            selectedDot: Color(designSystemColor: .accentPrimary, palette: .default),
             unselectedDot: OnboardingRebrandColor.accentAltPrimary,
             text: Color(singleUseColor: .rebranding(.textPrimary))
         ),

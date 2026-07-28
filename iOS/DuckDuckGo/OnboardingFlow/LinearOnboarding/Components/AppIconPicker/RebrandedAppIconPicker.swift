@@ -70,7 +70,7 @@ extension OnboardingView {
                 .overlay( // Selected marker
                     Circle()
                         .inset(by: -Metrics.selectionRingInset)
-                        .stroke(Color(singleUseColor: .rebranding(.accentPrimary)), lineWidth: Metrics.selectionRingWidth)
+                        .stroke(Color(designSystemColor: .accentPrimary, palette: .default), lineWidth: Metrics.selectionRingWidth)
                         .opacity(isSelected ? 1 : 0))
         }
     }

@@ -112,26 +112,8 @@ private extension SharedColorPaletteDefinition {
             return DynamicColor(lightColor: RebrandingColor.Eggshell.eggshell90, darkColor: RebrandingColor.GrayScale.white)
         case .textSecondary:
             return DynamicColor(lightColor: RebrandingColor.Eggshell.eggshell70, darkColor: RebrandingColor.Eggshell.eggshell30)
-        case .textLink:
-            return DynamicColor(lightColor: RebrandingColor.Pondwater.pondwater60, darkColor: RebrandingColor.Pondwater.pondwater40)
-        case .accentPrimary:
-            return DynamicColor(lightColor: RebrandingColor.Pondwater.pondwater60, darkColor: RebrandingColor.Pondwater.pondwater40)
-        case .accentPrimaryPressed:
-            return DynamicColor(lightColor: RebrandingColor.Pondwater.pondwater80, darkColor: RebrandingColor.Pondwater.pondwater60)
-        case .accentPrimaryText:
-            return DynamicColor(lightColor: RebrandingColor.GrayScale.white, darkColor: RebrandingColor.Pollen.pollen100)
-        case .accentGlowPrimary:
-            return DynamicColor(lightColor: RebrandingColor.Pondwater.pondwater60.opacity(0.2), darkColor: RebrandingColor.Pondwater.pondwater40.opacity(0.2))
         case .backdrop:
             return DynamicColor(lightColor: RebrandingColor.GrayScale.white, darkColor: .blue80)
-        case .buttonsPrimaryDefault:
-            return DynamicColor(lightColor: RebrandingColor.Mandarin.mandarin50, darkColor: RebrandingColor.Pollen.pollen40)
-        case .buttonsPrimaryPressed:
-            return DynamicColor(lightColor: RebrandingColor.Mandarin.mandarin70, darkColor: RebrandingColor.Pollen.pollen60)
-        case .buttonsPrimaryText:
-            return DynamicColor(lightColor: RebrandingColor.GrayScale.white, darkColor: RebrandingColor.Pollen.pollen100)
-        case .buttonsContentDisabled:
-            return DynamicColor(lightColor: Color(0xF5F4F6), darkColor: Color(0x212020))
         case .buttonsSecondaryDefault:
             return DynamicColor(lightColor: RebrandingColor.GrayScale.black.opacity(0.06), darkColor: RebrandingColor.GrayScale.white.opacity(0.04))
         case .buttonsSecondaryPressed:
@@ -142,22 +124,12 @@ private extension SharedColorPaletteDefinition {
             return DynamicColor(lightColor: RebrandingColor.GrayScale.black.opacity(0.06), darkColor: .clear)
         case .buttonsSecondaryDisabledText:
             return DynamicColor(lightColor: RebrandingColor.GrayScale.black.opacity(0.36), darkColor: Color(0x707070))
-        case .destructivePrimary:
-            return DynamicColor(lightColor: RebrandingColor.Red.red50, darkColor: RebrandingColor.Red.red40)
-        case .destructivePrimaryPressed:
-            return DynamicColor(lightColor: RebrandingColor.Red.red70, darkColor: RebrandingColor.Red.red60)
-        case .destructivePrimaryText:
-            return DynamicColor(lightColor: RebrandingColor.GrayScale.white, darkColor: RebrandingColor.Pollen.pollen100)
-        case .destructiveGlowPrimary:
-            return DynamicColor(lightColor: Color(0xE5244B).opacity(0.2), darkColor: Color(0xE5244B).opacity(0.2))
         case .controlsFillPrimary:
             return DynamicColor(lightColor: RebrandingColor.GrayScale.black.opacity(0.06), darkColor: RebrandingColor.GrayScale.white.opacity(0.12))
         case .decorationPrimary:
             return DynamicColor(lightColor: RebrandingColor.Eggshell.eggshell90.opacity(0.09), darkColor: RebrandingColor.GrayScale.white.opacity(0.06))
         case .decorationSecondary:
             return DynamicColor(lightColor: RebrandingColor.Eggshell.eggshell90.opacity(0.16), darkColor: RebrandingColor.GrayScale.white.opacity(0.09))
-        case .alertGreen:
-            return DynamicColor(staticColor: RebrandingColor.Green.green40)
         case .calendarStripYellow:
             return DynamicColor(staticColor: RebrandingColor.Pollen.pollen20)
         }

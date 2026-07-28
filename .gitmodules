@@ -3,4 +3,4 @@
 	url = https://github.com/duckduckgo/privacy-reference-tests
 [submodule "SnapshotReferences"]
 	path = SnapshotReferences
-	url = git@github.com:pballart/snapshots-test.git
+	url = https://github.com/duckduckgo/apple-browsers-snapshots.git

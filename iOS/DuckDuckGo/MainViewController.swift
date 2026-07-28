@@ -225,6 +225,10 @@ class MainViewController: UIViewController {
     private var aiChatChromeChipCancellables = Set<AnyCancellable>()
     private var settingsCancellables = Set<AnyCancellable>()
     private var webViewViewportRefreshCancellable: AnyCancellable?
+    private lazy var floatingDomainCapsuleController = FloatingDomainCapsuleController { [weak self] in
+        self?.setBarsHidden(false, animated: true, customAnimationDuration: nil)
+    }
+    private var floatingDomainCapsuleExpandedFrame = CGRect.zero
     private var lastChromeVisibilityPercent: CGFloat = 1
     private var lastForegroundEntryDate = Date.distantPast
     private var syncRecoveryPromptService: SyncRecoveryPromptService?
@@ -690,6 +694,9 @@ class MainViewController: UIViewController {
         viewCoordinator.navigationBarCollectionView.allowsOverflowHitTesting = true
 
         viewCoordinator.moveAddressBarToPosition(appSettings.currentAddressBarPosition)
+        if viewCoordinator.isBrowserChromeUpdateEnabled {
+            floatingDomainCapsuleController.install(in: view)
+        }
 
         setUpToolbarButtonsActions()
         installSwipeTabs()
@@ -1429,6 +1436,61 @@ class MainViewController: UIViewController {
         omniBar.adjust(for: position)
         adjustNewTabPageSafeAreaInsets(for: position)
         updateChromeForDuckPlayer()
+        updateFloatingDomainCapsuleVisibility(for: lastChromeVisibilityPercent)
+    }
+
+    private func currentFloatingDomainText() -> String? {
+        guard let host = currentTab?.url?.host?.lowercased(), !host.isEmpty else { return nil }
+        return host.hasPrefix("www.") ? String(host.dropFirst(4)) : host
+    }
+
+    private var isFloatingDomainCapsuleActive: Bool {
+        viewCoordinator.isBrowserChromeUpdateEnabled
+            && unifiedToggleInputCoordinator?.isActive != true
+            && currentTab?.isAITab != true
+            && !isInMinimalChromeLayout
+            && currentFloatingDomainText() != nil
+    }
+
+    private func updateFloatingDomainCapsuleVisibility(for barsVisibilityPercent: CGFloat) {
+        guard viewCoordinator.isBrowserChromeUpdateEnabled else { return }
+
+        floatingDomainCapsuleController.update(
+            addressBarPosition: appSettings.currentAddressBarPosition,
+            isEnabled: viewCoordinator.isBrowserChromeUpdateEnabled,
+            isUnifiedToggleInputActive: unifiedToggleInputCoordinator?.isActive == true,
+            isAITab: currentTab?.isAITab == true,
+            isMinimalChromeLayout: isInMinimalChromeLayout,
+            domain: currentFloatingDomainText(),
+            barsVisibilityPercent: barsVisibilityPercent,
+            expandedFrame: floatingBarExpandedFrame(),
+            reduceMotion: UIAccessibility.isReduceMotionEnabled,
+            in: view)
+    }
+
+    private func floatingBarExpandedFrame() -> CGRect {
+        let barView = viewCoordinator.omniBar.barView
+        guard barView.superview != nil else { return floatingDomainCapsuleExpandedFrame }
+
+        let currentFrame = barView.convert(barView.bounds, to: view)
+        return floatingDomainCapsuleExpandedFrame.isEmpty ? currentFrame : floatingDomainCapsuleExpandedFrame
+    }
+
+    private func captureFloatingDomainCapsuleExpandedFrame() {
+        guard viewCoordinator.isBrowserChromeUpdateEnabled,
+              lastChromeVisibilityPercent >= 0.99 else { return }
+
+        floatingDomainCapsuleExpandedFrame = viewCoordinator.omniBar.barView.convert(
+            viewCoordinator.omniBar.barView.bounds,
+            to: view)
+    }
+
+    private func chromeAlpha(for barsVisibilityPercent: CGFloat) -> CGFloat {
+        guard isFloatingDomainCapsuleActive, !UIAccessibility.isReduceMotionEnabled else {
+            return barsVisibilityPercent
+        }
+        let handoffStart = FloatingDomainCapsuleController.handoffStart
+        return max(0, min(1, (barsVisibilityPercent - handoffStart) / (1 - handoffStart)))
     }
 
     private func shouldResetNavBarContainerBottomForTopPosition() -> Bool {
@@ -2516,6 +2578,7 @@ class MainViewController: UIViewController {
                 viewCoordinator.hideAITabChrome()
                 applyUnifiedInputChromeBackground(.standardChrome)
             }
+            updateFloatingDomainCapsuleVisibility(for: lastChromeVisibilityPercent)
             return
         }
 
@@ -2549,6 +2612,7 @@ class MainViewController: UIViewController {
         }
 
         updateBrowsingMenuHeaderDataSource()
+        updateFloatingDomainCapsuleVisibility(for: lastChromeVisibilityPercent)
     }
 
     private func updateBrowsingMenuHeaderDataSource() {
@@ -2978,6 +3042,8 @@ class MainViewController: UIViewController {
         ViewHighlighter.updatePositions()
         omniBar.refreshCustomizableButton()
         reanchorAITabCollapsedFooterIfNeeded()
+        captureFloatingDomainCapsuleExpandedFrame()
+        updateFloatingDomainCapsuleVisibility(for: lastChromeVisibilityPercent)
     }
 
     /// The AI-tab collapsed footer is a bottom chat input that must sit above the keyboard/home
@@ -3996,9 +4062,11 @@ extension MainViewController: BrowserChromeDelegate {
         updateNavBarConstant(percent)
         currentTab?.updateWebViewBottomAnchor(for: percent)
 
-        viewCoordinator.navigationBarContainer.alpha = percent
-        viewCoordinator.tabBarContainer.alpha = percent
-        viewCoordinator.toolbar.alpha = percent
+        let chromeAlpha = chromeAlpha(for: percent)
+        viewCoordinator.navigationBarContainer.alpha = chromeAlpha
+        viewCoordinator.tabBarContainer.alpha = chromeAlpha
+        viewCoordinator.toolbar.alpha = chromeAlpha
+        updateFloatingDomainCapsuleVisibility(for: percent)
 
         if postChromeVisibilityNotification {
             NotificationCenter.default.post(
@@ -4030,6 +4098,7 @@ extension MainViewController: BrowserChromeDelegate {
         }
         viewCoordinator.tabBarContainer.alpha = hidden ? 0 : 1
         viewCoordinator.statusBackground.alpha = hidden ? 0 : 1
+        updateFloatingDomainCapsuleVisibility(for: hidden ? 0 : 1)
     }
 
     func setRefreshControlEnabled(_ isEnabled: Bool) {

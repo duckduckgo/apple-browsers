@@ -468,6 +468,36 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         XCTAssertTrue(mockPixelHandler.manualAttachEnded)
     }
 
+    func testSuggestionsRefreshSuspensionTracksPinnedContextWhenAutoAttachIsOff() {
+        // Given
+        mockSettings.isAutomaticContextAttachmentEnabled = false
+        XCTAssertFalse(sessionState.shouldSuspendSuggestionsRefresh)
+
+        // When
+        sessionState.beginManualAttach()
+        sessionState.updateContext(makeTestContext(title: "Page A"))
+
+        // Then
+        XCTAssertTrue(sessionState.shouldSuspendSuggestionsRefresh)
+
+        // When
+        sessionState.downgradeToPlaceholder()
+
+        // Then
+        XCTAssertFalse(sessionState.shouldSuspendSuggestionsRefresh)
+    }
+
+    func testSuggestionsRefreshIsNotSuspendedForAttachedContextWhenAutoAttachIsOn() {
+        // Given
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+
+        // When
+        sessionState.updateContext(makeTestContext(title: "Page A"))
+
+        // Then
+        XCTAssertFalse(sessionState.shouldSuspendSuggestionsRefresh)
+    }
+
     func testManualAttachWithAutoAttachOffStaysStickyAcrossNavigationWhileSheetIsOpen() {
         mockSettings.isAutomaticContextAttachmentEnabled = false
         sessionState.beginManualAttach()

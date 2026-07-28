@@ -216,6 +216,12 @@ final class AIChatContextualChatSessionState {
         featureFlagger.isFeatureOn(.contextualSuggestedPrompts)
     }
 
+    /// A pinned context remains tied to its original page while auto-attach is disabled, so page
+    /// suggestions must remain tied to that same context until the chip is removed.
+    var shouldSuspendSuggestionsRefresh: Bool {
+        !shouldAutoCollectContext && intendedAttachedContext != nil
+    }
+
     private var hasUserOptedOutOfContext: Bool {
         userDowngradedToPlaceholder
     }

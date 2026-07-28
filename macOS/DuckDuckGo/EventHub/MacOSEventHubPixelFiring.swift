@@ -34,6 +34,9 @@ struct MacOSEventHubPixelFiring: EventHubPixelFiring {
     func enqueueFirePixel(named name: String, parameters: [String: String]) {
         let pixelName = "\(name)_macos"
         Logger.eventHub.info("PixelKit fire: \(pixelName, privacy: .public) \(parameters, privacy: .public)")
-        PixelKit.fire(Event(name: pixelName, parameters: parameters))
+        // `doNotEnforcePrefix` is required: these names already carry the `_macos` platform suffix, and
+        // without it PixelKit prepends `m_mac_` to any macOS name that lacks that prefix — which would
+        // both double the platform marker and diverge from the names declared in event_hub.json5.
+        PixelKit.fire(Event(name: pixelName, parameters: parameters), doNotEnforcePrefix: true)
     }
 }

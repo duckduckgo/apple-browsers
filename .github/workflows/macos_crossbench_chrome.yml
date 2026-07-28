@@ -1,0 +1,405 @@
+name: macOS - crossbench Chrome LCP (WPR)
+run-name: macOS - crossbench Chrome LCP (WPR)
+
+# Test harness: stands up crossbench on a GitHub-hosted macOS runner,
+# measures Chrome navigation -> Largest Contentful Paint from WPR archives,
+# and uploads the per-rep results as a downloadable artifact. Optionally
+# (opt-in dispatch input) a second, self-hosted job inserts per-domain
+# aggregates into ClickHouse (native_apps.macos_browser_health_nav_to_lcp).
+#
+# Triggered manually (workflow_dispatch) and on a daily off-peak schedule. No
+# pull_request/push trigger, so fork PRs can't run it. WPR supplies fixed page
+# bytes and the US-broadband shaper matches the Windows harness.
+
+on:
+  workflow_dispatch:
+    inputs:
+      sites:
+        description: "Comma-separated sites (blank = full 22-site list)"
+        required: false
+        default: ""
+      reps:
+        description: "Measured loads per site"
+        required: false
+        default: "10"
+      upload-to-clickhouse:
+        description: "Upload aggregated per-domain results to ClickHouse"
+        type: boolean
+        required: false
+        default: false
+      upload-diagnostics:
+        description: "Retain capped Perfetto diagnostics for every site"
+        type: boolean
+        required: false
+        default: false
+      alert-asana:
+        description: "Create Asana subtasks for WPR validation and browser measurement errors"
+        type: boolean
+        required: false
+        default: true
+  schedule:
+    # A scheduled run uses the full 22-site list and uploads to ClickHouse.
+    # GitHub only fires schedules from the default branch.
+    - cron: "0 6 * * *"
+
+permissions:
+  contents: read
+  # actions: read lets the aggregate step read this run's metadata via
+  # `gh api .../actions/runs/{id}`. Not strictly needed while the repo is
+  # public (run metadata is world-readable), but required if it ever goes
+  # private, and it documents the dependency.
+  actions: read
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+defaults:
+  run:
+    working-directory: macOS/scripts/crossbench
+
+jobs:
+  validate-wpr:
+    uses: ./.github/workflows/wpr_archive_validation.yml
+    with:
+      sites: ${{ inputs.sites || '' }}
+      alert-asana: ${{ github.event_name != 'workflow_dispatch' || inputs.alert-asana }}
+    secrets:
+      ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
+
+  chrome-lcp:
+    name: Chrome LCP (WPR)
+    needs: validate-wpr
+    # Standard hosted Apple Silicon runner, matching the Safari architecture.
+    runs-on: macos-latest
+    # 10 measured loads/site, with no discarded live-network warm-up. The cap
+    # retains headroom for provisioning and trace-processor variance.
+    timeout-minutes: 200
+
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Download validated WPR archives
+        uses: actions/download-artifact@v7
+        with:
+          name: validated-wpr-archives
+          path: ${{ runner.temp }}/wpr-archives
+
+      - name: Provision crossbench, Chrome, and WPR
+        run: ./provision-macos.sh
+
+      - name: Run Chrome LCP suite
+        # Inputs passed via env, not interpolated into the script, to avoid shell injection.
+        env:
+          SITES: ${{ inputs.sites }}
+          REPS: ${{ inputs.reps }}
+          WPR_DIR: ${{ runner.temp }}/wpr-archives
+          WPR_ARCHIVES_PREPARED: "1"
+          PRESERVE_DIAGNOSTICS: ${{ inputs.upload-diagnostics && '1' || '0' }}
+          DIAGNOSTICS_DIR: ${{ github.workspace }}/macOS/scripts/crossbench/chrome-diagnostics
+        run: |
+          args=()
+          if [ -n "$SITES" ]; then
+            args+=(--sites "$SITES")
+          fi
+          if [ -n "$REPS" ]; then
+            args+=(--reps "$REPS")
+          fi
+          ./test-chrome.sh "${args[@]}"
+
+      - name: Upload results TSV
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: chrome-lcp-results
+          # Path is workspace-relative (not affected by defaults.working-directory).
+          path: macOS/scripts/crossbench/crossbench-results/*.tsv
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Upload Perfetto diagnostics
+        # Site-level failures no longer fail the job, but their capped
+        # diagnostics must still be uploaded when present.
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: chrome-lcp-perfetto-diagnostics
+          path: macOS/scripts/crossbench/chrome-diagnostics/**
+          if-no-files-found: ignore
+          retention-days: 3
+
+      - name: Aggregate results for ClickHouse
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # run_started_at is per-ATTEMPT (it becomes the ReplacingMergeTree
+          # version column, so a re-run supersedes the rows of the attempt it
+          # replaces); created_at is stable across attempts and keeps
+          # start_time — and the date partition derived from it — identical
+          # for every attempt of the run.
+          run_json="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}")"
+          in_tsv=(crossbench-results/*.tsv)
+          ./aggregate-lcp.py \
+            --input "${in_tsv[0]}" \
+            --output clickhouse-rows.tsv \
+            --run-id "$GITHUB_RUN_ID" \
+            --start-time "$(jq -r '.created_at' <<< "$run_json")" \
+            --gh-run-started-at "$(jq -r '.run_started_at' <<< "$run_json")" \
+            --webview-type chr-wpr
+          cat clickhouse-rows.tsv
+
+      - name: Upload ClickHouse rows TSV
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: chrome-lcp-clickhouse-rows
+          path: macOS/scripts/crossbench/clickhouse-rows.tsv
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Upload per-site dispositions TSV
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: chrome-lcp-dispositions
+          # Separate directory from crossbench-results/ on purpose: the aggregate
+          # step above globs that directory for *.tsv and feeds the first match to
+          # aggregate-lcp.py, so a second TSV there would be read as measurements.
+          path: macOS/scripts/crossbench/crossbench-dispositions/*.tsv
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Aggregate dispositions for ClickHouse
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Same run metadata as the metrics aggregation above, so a domain's
+          # metrics row and its attempts row share run_id, start_time and the
+          # ReplacingMergeTree version.
+          run_json="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}")"
+          in_tsv=(crossbench-dispositions/*.tsv)
+          ./aggregate-dispositions.py \
+            --input "${in_tsv[0]}" \
+            --output clickhouse-attempts.tsv \
+            --run-id "$GITHUB_RUN_ID" \
+            --start-time "$(jq -r '.created_at' <<< "$run_json")" \
+            --gh-run-started-at "$(jq -r '.run_started_at' <<< "$run_json")" \
+            --webview-type chr-wpr
+          cat clickhouse-attempts.tsv
+
+      - name: Upload ClickHouse attempts TSV
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: chrome-lcp-attempts-rows
+          path: macOS/scripts/crossbench/clickhouse-attempts.tsv
+          if-no-files-found: warn
+          retention-days: 7
+
+  upload-to-clickhouse:
+    name: Upload to ClickHouse
+    needs: [validate-wpr, chrome-lcp]
+    # Hosted runners can't reach the ClickHouse host, hence this separate
+    # self-hosted job.
+    #
+    # always() on purpose: without it the implicit success() means a benchmark
+    # job that fails or times out uploads NOTHING — including the disposition
+    # record, which is exactly what you need for the runs that went wrong. Each
+    # insert below is guarded on its file existing instead, so a partial run
+    # uploads whatever it did produce. (A timeout reports as "cancelled", which
+    # skips downstream needs: jobs without this.)
+    if: >-
+      always() &&
+      needs.validate-wpr.result == 'success' &&
+      (github.event_name == 'schedule' || inputs.upload-to-clickhouse)
+    runs-on: [ self-hosted, apple ]
+
+    steps:
+      - name: Download ClickHouse rows TSV
+        # A cancelled or early-failed benchmark job may never have uploaded this;
+        # that is not a reason to skip the attempts insert below.
+        continue-on-error: true
+        uses: actions/download-artifact@v7
+        with:
+          name: chrome-lcp-clickhouse-rows
+
+      - name: Download ClickHouse attempts TSV
+        continue-on-error: true
+        uses: actions/download-artifact@v7
+        with:
+          name: chrome-lcp-attempts-rows
+
+      - name: Insert rows into ClickHouse
+        # Workspace root: the repo isn't checked out in this job, so the
+        # workflow-level working-directory doesn't exist here, and
+        # download-artifact lands files at the root.
+        working-directory: .
+        env:
+          GH_RUN_CONCLUSION: ${{ needs.chrome-lcp.result }}
+        run: |
+          inserted=0
+
+          # gh_run_conclusion is appended here rather than in the aggregation
+          # step: a job can't know its own conclusion while still running.
+          if [ -s clickhouse-rows.tsv ]; then
+            awk -v c="$GH_RUN_CONCLUSION" '{ print $0 "\t" c }' clickhouse-rows.tsv > clickhouse-rows-final.tsv
+            cat clickhouse-rows-final.tsv
+            clickhouse-client --no-warnings --user dev-rw -h clickhouse.duckduckgo.com --query "INSERT INTO native_apps.macos_browser_health_nav_to_lcp (run_id, start_time, domain, webview_type, webview_channel, webview_version, samples, min_ms, max_ms, mean_ms, p25_ms, p50_ms, p75_ms, p95_ms, gh_run_started_at, gh_run_conclusion) FORMAT TSV" < clickhouse-rows-final.tsv
+            inserted=$((inserted + 1))
+          else
+            echo "no metrics rows to insert (benchmark job produced none)"
+          fi
+
+          if [ -s clickhouse-attempts.tsv ]; then
+            awk -v c="$GH_RUN_CONCLUSION" '{ print $0 "\t" c }' clickhouse-attempts.tsv > clickhouse-attempts-final.tsv
+            cat clickhouse-attempts-final.tsv
+            clickhouse-client --no-warnings --user dev-rw -h clickhouse.duckduckgo.com --query "INSERT INTO native_apps.macos_browser_health_nav_to_lcp_attempts (run_id, start_time, domain, webview_type, webview_channel, webview_version, outcome, validation_status, validation_reason, validation_http_status, validation_detail, archive_sha256, requested_repetitions, observed_repetitions, recorded_samples, dropped_unfinalized, dropped_no_metric, load_window_ms, runner_image, gh_run_started_at, gh_run_conclusion) FORMAT TSV" < clickhouse-attempts-final.tsv
+            inserted=$((inserted + 1))
+          else
+            echo "no attempts rows to insert"
+          fi
+
+          if [ "$inserted" -eq 0 ]; then
+            echo "ERROR: neither artifact was present — nothing was uploaded." >&2
+            exit 1
+          fi
+
+  notify-runtime-failures:
+    name: Report Chrome measurement errors
+    needs: chrome-lcp
+    if: >-
+      always() &&
+      (github.event_name != 'workflow_dispatch' || inputs.alert-asana) &&
+      vars.CROSSBENCH_RUNTIME_ASANA_ALERTS_ENABLED != 'false'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out notification helper
+        continue-on-error: true
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Download per-site dispositions
+        continue-on-error: true
+        uses: actions/download-artifact@v7
+        with:
+          name: chrome-lcp-dispositions
+          path: runtime-dispositions
+
+      - name: Prepare runtime failure report
+        id: report
+        continue-on-error: true
+        working-directory: .
+        run: |
+          in_tsv=(runtime-dispositions/*.tsv)
+          if [ ! -f "${in_tsv[0]}" ]; then
+            echo "::warning title=Runtime notification skipped::No disposition artifact was available."
+            echo "has-errors=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          python3 macOS/scripts/crossbench/runtime-failure-report.py \
+            --input "${in_tsv[0]}" \
+            --report runtime-report/report.txt \
+            --github-output "$GITHUB_OUTPUT"
+
+      - name: Upload runtime failure report
+        if: always()
+        continue-on-error: true
+        uses: actions/upload-artifact@v6
+        with:
+          name: chrome-runtime-failure-report
+          path: runtime-report/
+          if-no-files-found: ignore
+          retention-days: 30
+
+      - name: Check run alert marker
+        if: always() && steps.report.outputs.has-errors == 'true'
+        id: alert-marker
+        continue-on-error: true
+        working-directory: .
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          marker_count="$(
+            gh api "repos/$GITHUB_REPOSITORY/actions/artifacts?name=chrome-runtime-failure-run-$GITHUB_RUN_ID&per_page=100" \
+              --jq '[.artifacts[] | select(.expired == false)] | length'
+          )"
+          if [ "$marker_count" -gt 0 ]; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create Asana subtask
+        if: >-
+          always() && steps.report.outputs.has-errors == 'true' &&
+          steps.alert-marker.outputs.exists == 'false'
+        id: asana
+        continue-on-error: true
+        working-directory: .
+        env:
+          ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ -z "$ASANA_ACCESS_TOKEN" ]; then
+            echo "::warning title=Asana notification skipped::ASANA_ACCESS_TOKEN is not available."
+            echo "created=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          helper="macOS/scripts/crossbench/create-asana-subtask.sh"
+          report="runtime-report/report.txt"
+          if [ ! -x "$helper" ] || [ ! -s "$report" ]; then
+            echo "::warning title=Asana notification skipped::Runtime report or notification helper is unavailable."
+            echo "created=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          notes_file="$RUNNER_TEMP/asana-browser-measurement-notes.txt"
+          {
+            echo "Workflow: https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+            echo "Commit: $GITHUB_SHA"
+            echo
+            cat "$report"
+          } > "$notes_file"
+
+          run_started_at="$(
+            gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" \
+              --jq '.run_started_at'
+          )"
+          start_date="${run_started_at%%T*}"
+          due_date="$start_date"
+          working_days=0
+          while [ "$working_days" -lt 5 ]; do
+            due_date="$(date --utc --date "$due_date + 1 day" +%F)"
+            day_of_week="$(date --utc --date "$due_date" +%u)"
+            if [ "$day_of_week" -le 5 ]; then
+              working_days=$((working_days + 1))
+            fi
+          done
+
+          "$helper" \
+            1216902374642227 \
+            "Browser Measurement Failure: Chrome LCP" \
+            "$notes_file" \
+            "$start_date" \
+            "$due_date"
+          echo "created=true" >> "$GITHUB_OUTPUT"
+          mkdir -p runtime-report
+          echo "reported by run $GITHUB_RUN_ID" > runtime-report/alert-marker.txt
+
+      - name: Save run alert marker
+        if: always() && steps.asana.outputs.created == 'true'
+        continue-on-error: true
+        uses: actions/upload-artifact@v6
+        with:
+          name: chrome-runtime-failure-run-${{ github.run_id }}
+          path: runtime-report/alert-marker.txt
+          if-no-files-found: error
+          retention-days: 90

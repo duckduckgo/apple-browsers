@@ -17,8 +17,10 @@
 //
 
 import AIChat
+import FeatureFlags
 import NewTabPage
 import os.log
+import PrivacyConfig
 import Subscription
 
 /// Fetches AI models from the duck.ai API and builds sectioned model lists
@@ -30,13 +32,16 @@ final class NewTabPageOmnibarModelsProvider: NewTabPageOmnibarModelsProviding {
     private(set) var attachmentLimits: NewTabPageDataModel.AttachmentLimits?
     private let modelsService: AIChatModelsProviding
     private let subscriptionManager: any SubscriptionManager
+    private let featureFlagger: FeatureFlagger
 
     init(
         modelsService: AIChatModelsProviding = AIChatModelsService(),
-        subscriptionManager: any SubscriptionManager = Application.appDelegate.subscriptionManager
+        subscriptionManager: any SubscriptionManager = Application.appDelegate.subscriptionManager,
+        featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger
     ) {
         self.modelsService = modelsService
         self.subscriptionManager = subscriptionManager
+        self.featureFlagger = featureFlagger
     }
 
     func fetchAIModelSections() async -> [NewTabPageDataModel.AIModelSection] {
@@ -79,20 +84,27 @@ final class NewTabPageOmnibarModelsProvider: NewTabPageOmnibarModelsProviding {
         }
     }
 
-    private func mapAttachmentLimits(_ limits: AIChatAttachmentTierLimits?) -> NewTabPageDataModel.AttachmentLimits? {
-        guard let limits else { return nil }
-        return NewTabPageDataModel.AttachmentLimits(
-            files: .init(
-                maxPerConversation: limits.files.maxPerConversation,
-                maxFileSizeMB: limits.files.maxFileSizeMB,
-                maxTotalFileSizeBytes: limits.files.maxTotalFileSizeBytes,
-                maxPagesPerFile: limits.files.maxPagesPerFile
-            ),
-            images: .init(
-                maxPerTurn: limits.images.maxPerTurn,
-                maxPerConversation: limits.images.maxPerConversation,
-                maxInputCharsWithAttachments: limits.images.maxInputCharsWithAttachments
-            )
+    /// `files`/`images` come from the backend when present; `tabs` carries the hardcoded cap, omitted when the limit kill switch is off (web then applies no tab limit).
+    private func mapAttachmentLimits(_ limits: AIChatAttachmentTierLimits?) -> NewTabPageDataModel.AttachmentLimits {
+        NewTabPageDataModel.AttachmentLimits(
+            files: limits.map {
+                .init(
+                    maxPerConversation: $0.files.maxPerConversation,
+                    maxFileSizeMB: $0.files.maxFileSizeMB,
+                    maxTotalFileSizeBytes: $0.files.maxTotalFileSizeBytes,
+                    maxPagesPerFile: $0.files.maxPagesPerFile
+                )
+            },
+            images: limits.map {
+                .init(
+                    maxPerTurn: $0.images.maxPerTurn,
+                    maxPerConversation: $0.images.maxPerConversation,
+                    maxInputCharsWithAttachments: $0.images.maxInputCharsWithAttachments
+                )
+            },
+            tabs: featureFlagger.isFeatureOn(.aiChatTabAttachmentLimit)
+                ? .init(maxAttached: AIChatOmnibarController.maxTabAttachments)
+                : nil
         )
     }
 

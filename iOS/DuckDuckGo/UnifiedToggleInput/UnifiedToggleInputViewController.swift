@@ -195,6 +195,11 @@ final class UnifiedToggleInputViewController: UIViewController {
         set { inputBarView.attachmentMenu = newValue }
     }
 
+    weak var attachmentPasteHandler: AttachmentPasteHandling? {
+        get { inputBarView.attachmentPasteHandler }
+        set { inputBarView.attachmentPasteHandler = newValue }
+    }
+
     var reasoningPickerMenu: UIMenu? {
         get { inputBarView.reasoningPickerMenu }
         set { inputBarView.reasoningPickerMenu = newValue }

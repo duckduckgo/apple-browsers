@@ -155,6 +155,18 @@ HTTPS_PROXY_WAS_SET=0
 HTTP_PROXY_VALUE=""
 HTTPS_PROXY_VALUE=""
 DIAGNOSTICS_DIR="${DIAGNOSTICS_DIR:-$PWD/safari-diagnostics}"
+MAX_SITE_DIAGNOSTICS="${MAX_SITE_DIAGNOSTICS:-5}"
+MAX_DIAGNOSTIC_BYTES="${MAX_DIAGNOSTIC_BYTES:-5242880}"
+SITE_DIAGNOSTICS=0
+
+if ! [[ "$MAX_SITE_DIAGNOSTICS" =~ ^[0-9]+$ ]]; then
+  echo "ERROR: MAX_SITE_DIAGNOSTICS must be a non-negative integer." >&2
+  exit 2
+fi
+if ! [[ "$MAX_DIAGNOSTIC_BYTES" =~ ^[1-9][0-9]*$ ]]; then
+  echo "ERROR: MAX_DIAGNOSTIC_BYTES must be a positive integer." >&2
+  exit 2
+fi
 
 process_is_alive() {
   local pid="$1" state
@@ -262,7 +274,23 @@ preserve_diagnostic() {
   local source="$1" name="$2"
   [ -n "$source" ] && [ -f "$source" ] || return 0
   mkdir -p "$DIAGNOSTICS_DIR"
-  cp "$source" "$DIAGNOSTICS_DIR/$name"
+  tail -c "$MAX_DIAGNOSTIC_BYTES" "$source" > "$DIAGNOSTICS_DIR/$name"
+}
+
+preserve_shared_diagnostics() {
+  preserve_diagnostic "$SAFARIDRIVER_LOG" safaridriver.log
+  preserve_diagnostic "$HTTPPROXY_LOG" httpproxy.log
+  preserve_diagnostic "$TSPROXY_LOG" tsproxy.log
+}
+
+preserve_site_diagnostics() {
+  local site="$1"
+  if [ "$SITE_DIAGNOSTICS" -lt "$MAX_SITE_DIAGNOSTICS" ] &&
+      [ -n "$WPR_LOG" ] && [ -f "$WPR_LOG" ]; then
+    preserve_diagnostic "$WPR_LOG" "wpr-$site.log"
+    SITE_DIAGNOSTICS=$((SITE_DIAGNOSTICS + 1))
+  fi
+  preserve_shared_diagnostics
 }
 
 cleanup() {
@@ -599,11 +627,10 @@ proxy_saw_requested_connect() {
     "$HTTPPROXY_LOG"
 }
 
-replay_services_alive() {
+shared_services_alive() {
   local label pid
-  for label in WPR tsproxy httpproxy safaridriver; do
+  for label in tsproxy httpproxy safaridriver; do
     case "$label" in
-      WPR) pid="$WPR_PID" ;;
       tsproxy) pid="$TSPROXY_PID" ;;
       httpproxy) pid="$HTTPPROXY_PID" ;;
       safaridriver) pid="$SAFARIDRIVER_PID" ;;
@@ -627,9 +654,9 @@ measure_site() {
   archive="$VALIDATED_ARCHIVE"
   if [ -z "$archive" ]; then
     if [ "$VALIDATION_HANDOFF_ERROR" -eq 1 ]; then
-      echo "  $site: validated WPR handoff is unusable; HARNESS FAILURE." >&2
-      echo "::warning title=Harness failure::$site: $VALIDATION_REASON"
-      HARNESS_FAILURES=$((HARNESS_FAILURES + 1))
+      echo "  $site: validated WPR handoff is unusable; RUN FAILURE." >&2
+      echo "::warning title=Validation handoff failure::$site: $VALIDATION_REASON"
+      HANDOFF_FAILURES=$((HANDOFF_FAILURES + 1))
       record_disposition "$site" infra_error
       return
     fi
@@ -641,16 +668,21 @@ measure_site() {
   ELIGIBLE_SITES=$((ELIGIBLE_SITES + 1))
 
   if ! start_wpr "$archive"; then
-    echo "::warning title=Harness failure::$site: WPR could not start"
-    preserve_diagnostic "$WPR_LOG" "wpr-$site.log"
+    echo "::warning title=Site replay failure::$site: WPR could not start"
+    preserve_site_diagnostics "$site"
     stop_wpr
-    HARNESS_FAILURES=$((HARNESS_FAILURES + 1))
     record_disposition "$site" infra_error
     return
   fi
 
   for ((rep = 1; rep <= MEASURED_REPS; rep++)); do
-    if ! replay_services_alive; then
+    if ! shared_services_alive; then
+      site_harness_failed=1
+      SHARED_SERVICE_FAILURE=1
+      break
+    fi
+    if ! process_is_alive "$WPR_PID"; then
+      echo "ERROR: WPR exited unexpectedly during $site replay." >&2
       site_harness_failed=1
       break
     fi
@@ -662,8 +694,15 @@ measure_site() {
     else
       automation_status=$?
     fi
-    if ! replay_services_alive; then
+    if ! shared_services_alive; then
       printf '%s\n' "$output" | tail -20 >&2
+      site_harness_failed=1
+      SHARED_SERVICE_FAILURE=1
+      break
+    fi
+    if ! process_is_alive "$WPR_PID"; then
+      printf '%s\n' "$output" | tail -20 >&2
+      echo "ERROR: WPR exited unexpectedly during $site replay." >&2
       site_harness_failed=1
       break
     fi
@@ -740,8 +779,8 @@ measure_site() {
     cat "$WPR_LOG" >&2
     site_harness_failed=1
   fi
-  if [ "$site_harness_failed" -ne 0 ]; then
-    preserve_diagnostic "$WPR_LOG" "wpr-$site.log"
+  if [ "$site_harness_failed" -ne 0 ] || [ "$recorded" -lt "$MEASURED_REPS" ]; then
+    preserve_site_diagnostics "$site"
   fi
   stop_wpr
 
@@ -752,16 +791,31 @@ measure_site() {
       awk '{ sum += $1; count++ } END { printf "mean=%.1f n=%d\n", sum/count, count }'
   fi
   if [ "$site_harness_failed" -ne 0 ]; then
-    HARNESS_FAILURES=$((HARNESS_FAILURES + 1))
     record_disposition "$site" infra_error
   else
     record_disposition "$site" "$(classify_outcome)"
   fi
 }
 
+record_site_after_shared_failure() {
+  local site="$1"
+  reset_measurement_counters
+  set_validation_result "$site"
+  if [ "$VALIDATION_HANDOFF_ERROR" -eq 1 ]; then
+    HANDOFF_FAILURES=$((HANDOFF_FAILURES + 1))
+    record_disposition "$site" infra_error
+  elif [ -z "$VALIDATED_ARCHIVE" ]; then
+    record_disposition "$site" excluded
+  else
+    ELIGIBLE_SITES=$((ELIGIBLE_SITES + 1))
+    record_disposition "$site" infra_error
+  fi
+}
+
 run_safari() {
   local shape_description=unshaped site
-  HARNESS_FAILURES=0
+  HANDOFF_FAILURES=0
+  SHARED_SERVICE_FAILURE=0
   ELIGIBLE_SITES=0
   TOTAL_RECORDED=0
   if [ "$SHAPE" = "1" ]; then
@@ -779,10 +833,19 @@ run_safari() {
 
   for site in "${SITES[@]}"; do
     log "site: $site"
+    if [ "$SHARED_SERVICE_FAILURE" -ne 0 ]; then
+      echo "  $site: not measured because a shared replay service stopped." >&2
+      record_site_after_shared_failure "$site"
+      continue
+    fi
     measure_site "$site"
   done
-  if [ "$HARNESS_FAILURES" -gt 0 ]; then
-    echo "ERROR: $HARNESS_FAILURES site(s) had browser harness failures." >&2
+  if [ "$SHARED_SERVICE_FAILURE" -ne 0 ]; then
+    echo "ERROR: a shared replay service died; remaining eligible sites were not measured." >&2
+    RUN_STATUS=1
+  fi
+  if [ "$HANDOFF_FAILURES" -gt 0 ]; then
+    echo "ERROR: $HANDOFF_FAILURES site(s) had invalid validated-WPR handoff data." >&2
     RUN_STATUS=1
   fi
   if [ "$ELIGIBLE_SITES" -gt 0 ] && [ "$TOTAL_RECORDED" -eq 0 ]; then

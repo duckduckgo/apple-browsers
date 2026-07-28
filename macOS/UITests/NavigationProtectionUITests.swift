@@ -79,6 +79,8 @@ class NavigationProtectionUITests: UITestCase {
             let label = allLabelsInOrder[index]
             // not working: handled in testNavigationProtection_AMPLinks_GuardianDotAmp_RedirectsToCanonical
             if label == "amp. link" { continue }
+            // Destination bot protection can interrupt canonical URL redirect; handled in testNavigationProtection_AMPLinks_NonStandardTLD_RedirectsToCanonical
+            if label == "*Non Standard TLD (Google Domain)" { continue }
 
             let expectedURL = expectedTexts[index]
             let link = webView.links[label].firstMatch
@@ -132,6 +134,39 @@ class NavigationProtectionUITests: UITestCase {
 
         // Should be redirected to the exact expected canonical URL from the test page
         XCTAssertEqual(finalURL, expectedURL, "Should be redirected to exact canonical URL specified in test page")
+    }
+
+    func testNavigationProtection_AMPLinks_NonStandardTLD_RedirectsToCanonical() throws {
+        // Navigate to AMP protection test page
+        let ampTestURL = URL(string: "https://privacy-test-pages.site/privacy-protections/amp/")!
+        addressBarTextField.pasteURL(ampTestURL, pressingEnter: true)
+
+        // Find the Non Standard TLD test link
+        let nonStandardTLDAmpLink = webView.links["*Non Standard TLD (Google Domain)"].firstMatch
+        XCTAssertTrue(nonStandardTLDAmpLink.waitForExistence(timeout: UITests.Timeouts.elementExistence), "*Non Standard TLD (Google Domain) test link should be available")
+
+        // Get the expected URL from the test page instead of hardcoding
+        let expectedURLElement = webView.staticTexts.containing(\.value, containing: "Expected: https://www.brookings.edu").firstMatch
+        XCTAssertTrue(expectedURLElement.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Expected URL element should be found on the test page")
+
+        let expectedURLText = expectedURLElement.value as? String ?? ""
+        let expectedURL = expectedURLText.replacingOccurrences(of: "Expected: ", with: "")
+
+        // Click the AMP link to test protection
+        nonStandardTLDAmpLink.click()
+
+        // Wait for navigation to complete
+        let newPageContent = webView.staticTexts.firstMatch
+        XCTAssertTrue(newPageContent.waitForExistence(timeout: UITests.Timeouts.navigation), "Navigation should complete after AMP link click")
+
+        // Verify AMP protection redirected to the expected canonical URL.
+        // Skip test if bot protection is triggered, as the canonical URL cannot be verified in that case.
+        let finalURL = app.addressBarValueActivatingIfNeeded() ?? ""
+        guard finalURL == expectedURL else {
+            XCTAssertTrue(app.staticTexts["Performing security verification"].exists,
+                          "Should be redirected to exact canonical URL \(expectedURL) or bot detection page; actual: \(finalURL)")
+            throw XCTSkip("Bot detection prevented redirect to canonical URL")
+        }
     }
 
     // MARK: - Click-to-Load Social Media Tests

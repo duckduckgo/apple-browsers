@@ -32,6 +32,9 @@ class ChromeHarnessTests(unittest.TestCase):
         wpr = self.bin / "wpr"
         wpr.write_text("#!/bin/sh\nexit 0\n")
         wpr.chmod(0o755)
+        tracebox = self.bin / "tracebox"
+        tracebox.write_text("#!/bin/sh\nexit 0\n")
+        tracebox.chmod(0o755)
         poetry = self.bin / "poetry"
         poetry.write_text(
             """#!/bin/bash
@@ -84,6 +87,7 @@ exit "${FAKE_EXIT:-0}"
             "CROSSBENCH_DIR": str(self.crossbench),
             "CHROME_BIN": str(chrome),
             "WPR_BIN": str(wpr),
+            "TRACEBOX_BIN": str(tracebox),
             "WPR_DIR": str(self.archives),
             "WPR_ARCHIVES_PREPARED": "1",
             "SHAPE": "0",
@@ -127,7 +131,7 @@ exit "${FAKE_EXIT:-0}"
 
     def test_crossbench_nonzero_with_results_is_infra_error_and_keeps_sample(self) -> None:
         result = self.run_harness(FAKE_RESULTS="1", FAKE_METRIC="1", FAKE_EXIT="7")
-        self.assertEqual(result.returncode, 1)
+        self.assertEqual(result.returncode, 0, result.stderr)
         row = self.disposition()
         self.assertEqual(row[3], "infra_error")
         self.assertEqual(row[9:14], ["1", "1", "1", "0", "0"])
@@ -141,7 +145,7 @@ exit "${FAKE_EXIT:-0}"
             FAKE_EXIT="7",
             FAKE_INCOMPLETE_RESULTS="1",
         )
-        self.assertEqual(result.returncode, 1)
+        self.assertEqual(result.returncode, 0, result.stderr)
         row = self.disposition()
         self.assertEqual(row[3], "infra_error")
         self.assertEqual(row[11], "1")
@@ -161,7 +165,7 @@ exit "${FAKE_EXIT:-0}"
             FAKE_EXIT="7",
             DIAGNOSTICS_DIR=str(diagnostics),
         )
-        self.assertEqual(result.returncode, 1)
+        self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(
             len(list(diagnostics.glob("apple.com/**/perfetto.trace.pb.gz"))), 1
         )
@@ -180,6 +184,26 @@ exit "${FAKE_EXIT:-0}"
         self.assertEqual(
             len(list((self.root / "work").glob("chrome-crossbench.*"))), 1
         )
+
+    def test_tracebox_default_uses_shared_version(self) -> None:
+        home = self.root / "home"
+        tracebox = home / "Developer/mac-perf-runner/bin/tracebox-v-test"
+        tracebox.parent.mkdir(parents=True)
+        tracebox.write_text("#!/bin/sh\nexit 0\n")
+        tracebox.chmod(0o755)
+        env = {
+            **self.env,
+            "HOME": str(home),
+            "TRACEBOX_VERSION": "v-test",
+            "FAKE_RESULTS": "1",
+            "FAKE_METRIC": "1",
+        }
+        env.pop("TRACEBOX_BIN")
+        result = subprocess.run(
+            [str(SCRIPT), "--sites", "apple.com", "--reps", "1"],
+            cwd=self.root, env=env, text=True, capture_output=True,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
 
     def test_low_disk_guard_reports_infrastructure_failure(self) -> None:
         result = self.run_harness(
@@ -202,6 +226,23 @@ exit "${FAKE_EXIT:-0}"
         self.assertEqual(self.disposition()[3], "no_samples")
         self.assertIn("eligible sites produced no usable LCP", result.stderr)
 
+    def test_no_samples_keeps_diagnostics_before_removing_raw_output(self) -> None:
+        diagnostics = self.root / "diagnostics"
+        result = self.run_harness(
+            FAKE_RESULTS="1",
+            FAKE_METRIC="0",
+            FAKE_TRACE="1",
+            DIAGNOSTICS_DIR=str(diagnostics),
+        )
+        self.assertEqual(result.returncode, 1)
+        self.assertEqual(
+            len(list(diagnostics.glob("apple.com/**/perfetto.trace.pb.gz"))), 1
+        )
+        self.assertTrue((diagnostics / "apple.com" / "crossbench.log").is_file())
+        self.assertEqual(
+            list((self.root / "work").glob("chrome-crossbench.*")), []
+        )
+
     def test_harness_failure_does_not_stop_later_sites(self) -> None:
         self.add_valid_site("example.com")
         result = subprocess.run(
@@ -216,7 +257,7 @@ exit "${FAKE_EXIT:-0}"
             text=True,
             capture_output=True,
         )
-        self.assertEqual(result.returncode, 1)
+        self.assertEqual(result.returncode, 0, result.stderr)
         path = next((self.root / "crossbench-dispositions").glob("*.tsv"))
         rows = [line.split("\t") for line in path.read_text().splitlines()[1:]]
         self.assertEqual([(row[2], row[3]) for row in rows],

@@ -163,8 +163,10 @@ class SafariHarnessTests(unittest.TestCase):
             "fake-listener.py",
             r"""
             #!/usr/bin/env python3
+            import os
             import socket
             import sys
+            import time
 
             args = sys.argv[1:]
             ports = []
@@ -175,6 +177,12 @@ class SafariHarnessTests(unittest.TestCase):
                     ports.append(int(args[index + 1]))
                 elif arg.startswith("--http-port=") or arg.startswith("--https-port="):
                     ports.append(int(arg.split("=", 1)[1]))
+            exit_at = None
+            if any(arg.startswith("--http-port=") for arg in args):
+                marker = os.environ.get("FAKE_WPR_FIRST_EXIT_MARKER")
+                if marker and not os.path.exists(marker):
+                    open(marker, "w", encoding="utf-8").close()
+                    exit_at = time.monotonic() + 0.8
             listeners = []
             for port in ports:
                 sock = socket.socket()
@@ -183,6 +191,8 @@ class SafariHarnessTests(unittest.TestCase):
                 sock.listen()
                 listeners.append(sock)
             while True:
+                if exit_at is not None and time.monotonic() >= exit_at:
+                    raise SystemExit(0)
                 for sock in listeners:
                     sock.settimeout(0.1)
                     try:
@@ -239,6 +249,9 @@ class SafariHarnessTests(unittest.TestCase):
             site = urllib.parse.urlparse(url).hostname
             mode = os.environ.get("AUTOMATION_MODE", "success")
             fail_site = os.environ.get("AUTOMATION_FAIL_SITE", "")
+            delay_site = os.environ.get("AUTOMATION_DELAY_SITE", "")
+            if site == delay_site:
+                time.sleep(1)
             if site == fail_site or mode == "failure":
                 print("simulated automation failure", file=sys.stderr)
                 raise SystemExit(7)
@@ -382,10 +395,32 @@ class SafariHarnessTests(unittest.TestCase):
         self.assertIn("no proxy CONNECT", result.stderr)
 
     def test_dead_shared_proxy_is_an_infrastructure_failure(self) -> None:
-        result = self.run_harness(FAKE_HTTPPROXY_EXIT_AFTER_ACCEPT="1")
+        self.add_valid_site("example.com")
+        result = self.run_harness(
+            sites="apple.com,example.com",
+            FAKE_HTTPPROXY_EXIT_AFTER_ACCEPT="1",
+        )
         self.assertEqual(result.returncode, 1)
-        self.assertEqual(self.disposition_rows()[0][3], "infra_error")
+        self.assertEqual(
+            [(row[2], row[3]) for row in self.disposition_rows()],
+            [("apple.com", "infra_error"), ("example.com", "infra_error")],
+        )
         self.assertIn("httpproxy exited unexpectedly", result.stderr)
+        self.assertIn("not measured because a shared replay service stopped", result.stderr)
+
+    def test_dead_site_wpr_does_not_stop_later_site(self) -> None:
+        self.add_valid_site("example.com")
+        result = self.run_harness(
+            sites="apple.com,example.com",
+            FAKE_WPR_FIRST_EXIT_MARKER=str(self.root / "first-wpr"),
+            AUTOMATION_DELAY_SITE="apple.com",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(
+            [(row[2], row[3]) for row in self.disposition_rows()],
+            [("apple.com", "infra_error"), ("example.com", "measured")],
+        )
+        self.assertNotIn("shared replay service died", result.stderr)
 
     def test_automation_failure_continues_to_later_site(self) -> None:
         self.add_valid_site("example.com")
@@ -393,7 +428,7 @@ class SafariHarnessTests(unittest.TestCase):
             sites="apple.com,example.com",
             AUTOMATION_FAIL_SITE="apple.com",
         )
-        self.assertEqual(result.returncode, 1)
+        self.assertEqual(result.returncode, 0, result.stderr)
         rows = self.disposition_rows()
         self.assertEqual(
             [(row[2], row[3]) for row in rows],
@@ -403,6 +438,37 @@ class SafariHarnessTests(unittest.TestCase):
         self.assertTrue(
             (self.root / "diagnostics" / "wpr-apple.com.log").is_file()
         )
+
+    def test_corrupt_handoff_fails_even_when_another_site_measures(self) -> None:
+        self.add_valid_site("example.com")
+        manifest = self.archives / "manifest.tsv"
+        fields = manifest.read_text().splitlines()[1].split("\t")
+        fields[2] = "not-a-sha256"
+        lines = manifest.read_text().splitlines()
+        lines[1] = "\t".join(fields)
+        manifest.write_text("\n".join(lines) + "\n")
+        result = self.run_harness(sites="apple.com,example.com")
+        self.assertEqual(result.returncode, 1)
+        self.assertEqual(
+            [(row[2], row[3]) for row in self.disposition_rows()],
+            [("apple.com", "infra_error"), ("example.com", "measured")],
+        )
+
+    def test_site_failure_preserves_size_bounded_diagnostics(self) -> None:
+        result = self.run_harness(
+            AUTOMATION_MODE="offsite",
+            MAX_DIAGNOSTIC_BYTES="4",
+        )
+        self.assertEqual(result.returncode, 1)
+        diagnostics = list((self.root / "diagnostics").iterdir())
+        self.assertTrue(diagnostics)
+        self.assertTrue(all(path.stat().st_size <= 4 for path in diagnostics))
+        self.assertTrue(any(path.name == "httpproxy.log" for path in diagnostics))
+
+    def test_invalid_diagnostic_limits_fail_before_measurement(self) -> None:
+        result = self.run_harness(MAX_SITE_DIAGNOSTICS="invalid")
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("MAX_SITE_DIAGNOSTICS", result.stderr)
 
     def test_offsite_landing_is_an_infrastructure_failure(self) -> None:
         result = self.run_harness(AUTOMATION_MODE="offsite")

@@ -36,7 +36,8 @@ final class StorePurchaseManagerTests: XCTestCase {
         mockFeatureFlagger = MockFeatureFlagger()
         sut = DefaultStorePurchaseManager(subscriptionFeatureMappingCache: mockCache,
                                           subscriptionFeatureFlagger: mockFeatureFlagger,
-                                          productFetcher: mockProductFetcher)
+                                          productFetcher: mockProductFetcher,
+                                          monthlyFreeTrialDecider: MockMonthlyFreeTrialDecider())
     }
 
     func testUpdateAvailableProductsSuccessfully() async {
@@ -872,5 +873,13 @@ private class MockStoreSubscriptionConfiguration: StoreSubscriptionConfiguration
         default:
             return rowIdentifiers
         }
+    }
+}
+
+private struct MockMonthlyFreeTrialDecider: MonthlyFreeTrialDeciding {
+    var shouldOffer: Bool = true
+
+    func shouldOfferMonthlyFreeTrial() -> Bool {
+        shouldOffer
     }
 }

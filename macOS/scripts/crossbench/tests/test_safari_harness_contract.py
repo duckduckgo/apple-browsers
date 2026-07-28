@@ -11,6 +11,12 @@ import unittest
 HARNESS = (
     pathlib.Path(__file__).parents[1] / "test-safari.sh"
 ).read_text(encoding="utf-8")
+WORKFLOW = (
+    pathlib.Path(__file__).parents[4]
+    / ".github"
+    / "workflows"
+    / "macos_crossbench_safari.yml"
+).read_text(encoding="utf-8")
 
 
 class SafariHarnessContractTests(unittest.TestCase):
@@ -34,8 +40,24 @@ class SafariHarnessContractTests(unittest.TestCase):
 
     def test_failed_runs_retain_diagnostics(self):
         self.assertIn("preserve_diagnostic()", HARNESS)
+        self.assertIn("preserve_site_diagnostics()", HARNESS)
         self.assertIn('preserve_diagnostic "$WPR_LOG" "wpr-$site.log"', HARNESS)
         self.assertIn('preserve_diagnostic "$SAFARIDRIVER_LOG" safaridriver.log', HARNESS)
+
+    def test_shared_services_reject_zombies_and_account_for_remaining_sites(self):
+        self.assertIn('[[ "$state" != Z* ]]', HARNESS)
+        shared_check = HARNESS[
+            HARNESS.index("shared_services_alive() {") :
+            HARNESS.index("measure_site() {")
+        ]
+        self.assertNotIn("WPR", shared_check)
+        self.assertIn("SHARED_SERVICE_FAILURE=1", HARNESS)
+        self.assertIn("record_site_after_shared_failure", HARNESS)
+
+    def test_failed_job_without_dispositions_still_reports_runtime_failure(self):
+        self.assertIn("BENCHMARK_RESULT: ${{ needs.safari-lcp.result }}", WORKFLOW)
+        self.assertIn("write_run_failure_report()", WORKFLOW)
+        self.assertIn('write_run_failure_report "Safari LCP job failed"', WORKFLOW)
 
 
 if __name__ == "__main__":

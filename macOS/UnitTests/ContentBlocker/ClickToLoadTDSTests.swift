@@ -29,6 +29,12 @@ private extension KnownTracker {
 
 }
 
+private extension TrackerData {
+
+    var containsCTLActions: Bool { trackers.values.contains { $0.countCTLActions > 0 } }
+
+}
+
 class ClickToLoadTDSTests: XCTestCase {
 
     func testEnsureClickToLoadTDSCompiles() throws {
@@ -40,22 +46,23 @@ class ClickToLoadTDSTests: XCTestCase {
                                          data: trackerData,
                                          embeddedDataProvider: provider)
 
+        try skipUnlessTDSContainsCTLRules(trackerManager)
+
         let cbrLists = ContentBlockerRulesLists(trackerDataManager: trackerManager, adClickAttribution: MockAttributing())
         let ruleSets = cbrLists.contentBlockerRulesLists
         let tdsName = DefaultContentBlockerRulesListsSource.Constants.clickToLoadRulesListName
 
-        let ctlRules = ruleSets.first(where: { $0.name == tdsName })
-        let ctlTrackerData = ctlRules?.trackerData
-        let ctlTds = ctlTrackerData?.tds
+        let ctlRules = try XCTUnwrap(ruleSets.first(where: { $0.name == tdsName }), "The TDS carries CTL rules, so a '\(tdsName)' rule list should have been split out")
+        let ctlTds = try XCTUnwrap(ctlRules.trackerData?.tds, "'\(tdsName)' rule list is missing its tracker data")
 
-        let builder = ContentBlockerRulesBuilder(trackerData: ctlTds!)
+        let builder = ContentBlockerRulesBuilder(trackerData: ctlTds)
 
         let rules = builder.buildRules(withExceptions: [],
                                        andTemporaryUnprotectedDomains: [],
                                        andTrackerAllowlist: [])
 
         let data = try JSONEncoder().encode(rules)
-        let ruleList = String(data: data, encoding: .utf8)!
+        let ruleList = try XCTUnwrap(String(data: data, encoding: .utf8))
 
         let identifier = UUID().uuidString
 
@@ -89,6 +96,8 @@ class ClickToLoadTDSTests: XCTestCase {
                                     embeddedDataProvider: provider
         )
 
+        try skipUnlessTDSContainsCTLRules(trackerManager)
+
         let cbrLists = ContentBlockerRulesLists(trackerDataManager: trackerManager, adClickAttribution: MockAttributing())
         let ruleSets = cbrLists.contentBlockerRulesLists
 
@@ -98,8 +107,8 @@ class ClickToLoadTDSTests: XCTestCase {
         let (fbMainRules, mainCTLRuleCount) = getFBTrackerRules(for: mainTdsName, ruleSets: ruleSets)
         let (fbCTLRules, ctlCTLRuleCount) = getFBTrackerRules(for: ctlTdsName, ruleSets: ruleSets)
 
-        let fbMainRuleCount = fbMainRules!.count
-        let fbCTLRuleCount = fbCTLRules!.count
+        let fbMainRuleCount = try XCTUnwrap(fbMainRules, "'\(mainTdsName)' rule list is missing facebook.net rules").count
+        let fbCTLRuleCount = try XCTUnwrap(fbCTLRules, "'\(ctlTdsName)' rule list is missing facebook.net rules").count
 
         // ensure both rulesets contains facebook.net rules
         XCTAssert(fbMainRuleCount > 0)
@@ -112,6 +121,11 @@ class ClickToLoadTDSTests: XCTestCase {
         // ensure FB CTL rules are the sum of the main rules + CTL custom action rules
         XCTAssert(fbMainRuleCount + ctlCTLRuleCount == fbCTLRuleCount)
 
+    }
+
+    private func skipUnlessTDSContainsCTLRules(_ trackerDataManager: TrackerDataManager) throws {
+        try XCTSkipUnless(trackerDataManager.trackerData.containsCTLActions,
+                          "Embedded TDS carries no block-ctl-fb rules - Click to Load is disabled upstream")
     }
 }
 

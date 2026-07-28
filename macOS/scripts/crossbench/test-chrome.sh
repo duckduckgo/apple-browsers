@@ -73,6 +73,9 @@ WPR_MANIFEST="$WPR_DIR/manifest.tsv"
 # Built by provision-macos.sh and handed to crossbench via --bin-override so
 # crossbench never runs its own webpagereplay build (which needs CIPD Go).
 WPR_BIN="${WPR_BIN:-$HOME/Developer/mac-perf-runner/bin/wpr}"
+# Explicitly provisioned by provision-macos.sh; avoids Crossbench's older
+# auto-downloaded tracebox.
+TRACEBOX_BIN="${TRACEBOX_BIN:-$HOME/Developer/mac-perf-runner/bin/tracebox-$TRACEBOX_VERSION}"
 # Standalone Python-3 tsproxy, handed to crossbench via speed:{ts_proxy:...}.
 # See wpr_network_arg for why crossbench's own DEPS-pinned copy cannot be used.
 TSPROXY_PY="${TSPROXY_PY:-$HOME/Developer/mac-perf-runner/bin/tsproxy.py}"
@@ -80,10 +83,10 @@ TSPROXY_PY="${TSPROXY_PY:-$HOME/Developer/mac-perf-runner/bin/tsproxy.py}"
 # values rather than speed:"US-broadband" because that preset name exists only in
 # the DDG crossbench fork, and we pin upstream.
 SHAPE="${SHAPE:-1}"
-SHAPE_RTT_MS="${SHAPE_RTT_MS:-$WPR_US_BROADBAND_RTT_MS}"
-SHAPE_IN_KBPS="${SHAPE_IN_KBPS:-$WPR_US_BROADBAND_IN_KBPS}"
-SHAPE_OUT_KBPS="${SHAPE_OUT_KBPS:-$WPR_US_BROADBAND_OUT_KBPS}"
-SHAPE_WINDOW="${SHAPE_WINDOW:-$WPR_US_BROADBAND_WINDOW}"
+SHAPE_RTT_MS="${SHAPE_RTT_MS:-28}"
+SHAPE_IN_KBPS="${SHAPE_IN_KBPS:-50000}"
+SHAPE_OUT_KBPS="${SHAPE_OUT_KBPS:-10000}"
+SHAPE_WINDOW="${SHAPE_WINDOW:-10}"
 
 PROBE_CONFIG="config/probe/perfetto/navToLCP.config.hjson"
 SUITE="navToLCP"          # LCP focus; navToFCP exists in the ps1 as a sibling
@@ -137,6 +140,7 @@ cleanup_generated_dir() {
   esac
 }
 
+# shellcheck disable=SC2329  # Invoked indirectly by the EXIT trap below.
 cleanup_work_root() {
   local exit_code=$?
   trap - EXIT HUP INT TERM
@@ -260,6 +264,10 @@ check_prerequisites() {
   fi
   if [ ! -x "$WPR_BIN" ]; then
     echo "ERROR: wpr binary not found at $WPR_BIN. Run provision-macos.sh first." >&2
+    exit 1
+  fi
+  if [ ! -x "$TRACEBOX_BIN" ]; then
+    echo "ERROR: tracebox binary not found at $TRACEBOX_BIN. Run provision-macos.sh first." >&2
     exit 1
   fi
   if [ "$SHAPE" = "1" ] && [ ! -f "$TSPROXY_PY" ]; then
@@ -483,7 +491,7 @@ run_chrome() {
 
   local site story network_arg out results_path outcome
   local crossbench_status site_failed resource_exhausted=0
-  HARNESS_FAILURES=0
+  SITE_FAILURES=0
   ELIGIBLE_SITES=0
   TOTAL_RECORDED=0
   for site in "${SITES[@]}"; do
@@ -511,7 +519,6 @@ run_chrome() {
 
     if [ "$resource_exhausted" -eq 1 ]; then
       echo "::warning title=Runner resource exhausted::$site was not started because disk headroom was already exhausted"
-      HARNESS_FAILURES=$((HARNESS_FAILURES + 1))
       record_disposition "$site" infra_error
       continue
     fi
@@ -520,7 +527,6 @@ run_chrome() {
       echo "ERROR: only ${disk_mb} MB available before $site; minimum is ${MIN_FREE_DISK_MB} MB." >&2
       echo "::warning title=Runner resource exhausted::$site was not started because only ${disk_mb} MB remained"
       resource_exhausted=1
-      HARNESS_FAILURES=$((HARNESS_FAILURES + 1))
       record_disposition "$site" infra_error
       continue
     fi
@@ -553,7 +559,7 @@ run_chrome() {
     site_failed=0
     if [ "$crossbench_status" -ne 0 ]; then
       echo "::warning title=Harness failure::$site: crossbench exited $crossbench_status"
-      HARNESS_FAILURES=$((HARNESS_FAILURES + 1))
+      SITE_FAILURES=$((SITE_FAILURES + 1))
       site_failed=1
     fi
     if [ -n "$results_path" ] && [ -d "$results_path" ]; then
@@ -568,13 +574,16 @@ run_chrome() {
         outcome="$(classify_outcome)"
       fi
       record_disposition "$site" "$outcome"
+      if [ "$outcome" = "partial" ] || [ "$outcome" = "no_samples" ]; then
+        site_failed=1
+      fi
     else
       echo "  $site: Crossbench produced no output directory"
       # The archive was available, but the browser harness failed before it
       # produced a results directory.
       echo "::warning title=Harness failure::$site: crossbench produced no output directory"
       if [ "$crossbench_status" -eq 0 ]; then
-        HARNESS_FAILURES=$((HARNESS_FAILURES + 1))
+        SITE_FAILURES=$((SITE_FAILURES + 1))
       fi
       site_failed=1
       record_disposition "$site" infra_error
@@ -585,13 +594,16 @@ run_chrome() {
     ACTIVE_SITE_WORK_DIR=""
     rm -f "$out"
   done
-  if [ "$HARNESS_FAILURES" -gt 0 ]; then
-    echo "ERROR: $HARNESS_FAILURES eligible site(s) had browser harness failures." >&2
-    RUN_STATUS=1
+  if [ "$resource_exhausted" -eq 1 ]; then
+    echo "ERROR: runner disk headroom was exhausted; the measurement run is incomplete." >&2
+    return 1
   fi
   if [ "$ELIGIBLE_SITES" -gt 0 ] && [ "$TOTAL_RECORDED" -eq 0 ]; then
     echo "ERROR: eligible sites produced no usable LCP samples." >&2
-    RUN_STATUS=1
+    return 1
+  fi
+  if [ "$SITE_FAILURES" -gt 0 ]; then
+    echo "WARNING: $SITE_FAILURES eligible site(s) had browser harness failures; successful sites remain usable." >&2
   fi
 }
 
@@ -600,11 +612,11 @@ check_prerequisites
 # TSV header. Columns: browser, browser_version, site, rep, lcp_ms.
 printf 'browser\tbrowser_version\tsite\trep\tlcp_ms\n' > "$RESULTS_FILE"
 init_dispositions_file
-RUN_STATUS=0
-run_chrome
+run_status=0
+run_chrome || run_status=$?
 report_dispositions
 log "Done"
 echo "results:      $RESULTS_FILE"
 echo "rows:         $(($(wc -l < "$RESULTS_FILE") - 1))"
 echo "dispositions: $DISPOSITIONS_FILE"
-exit "$RUN_STATUS"
+exit "$run_status"

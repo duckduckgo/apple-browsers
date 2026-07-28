@@ -6194,6 +6194,8 @@ extension MainViewController: TabDelegate {
                 case .positive: positive = true
                 case .critical: positive = false
                 }
+                DailyPixel.fireDailyAndCount(pixel: .aiChatFeedbackOptionSelected,
+                                             withAdditionalParameters: [PixelParameters.sentiment: positive ? "positive" : "critical"])
                 self?.dismiss(animated: true) {
                     tab?.openAIChatFeedback(positive: positive)
                 }

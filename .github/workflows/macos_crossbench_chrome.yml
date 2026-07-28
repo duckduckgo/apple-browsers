@@ -33,7 +33,7 @@ on:
         required: false
         default: false
       alert-asana:
-        description: "Create an Asana subtask for new WPR archive validation errors"
+        description: "Create Asana subtasks for WPR validation and browser measurement errors"
         type: boolean
         required: false
         default: true
@@ -121,12 +121,14 @@ jobs:
           retention-days: 7
 
       - name: Upload Perfetto diagnostics
-        if: failure() || inputs.upload-diagnostics
+        # Site-level failures no longer fail the job, but their capped
+        # diagnostics must still be uploaded when present.
+        if: always()
         uses: actions/upload-artifact@v6
         with:
           name: chrome-lcp-perfetto-diagnostics
           path: macOS/scripts/crossbench/chrome-diagnostics/**
-          if-no-files-found: warn
+          if-no-files-found: ignore
           retention-days: 3
 
       - name: Aggregate results for ClickHouse
@@ -201,7 +203,7 @@ jobs:
 
   upload-to-clickhouse:
     name: Upload to ClickHouse
-    needs: chrome-lcp
+    needs: [validate-wpr, chrome-lcp]
     # Hosted runners can't reach the ClickHouse host, hence this separate
     # self-hosted job.
     #
@@ -211,7 +213,10 @@ jobs:
     # insert below is guarded on its file existing instead, so a partial run
     # uploads whatever it did produce. (A timeout reports as "cancelled", which
     # skips downstream needs: jobs without this.)
-    if: always() && (github.event_name == 'schedule' || inputs.upload-to-clickhouse)
+    if: >-
+      always() &&
+      needs.validate-wpr.result == 'success' &&
+      (github.event_name == 'schedule' || inputs.upload-to-clickhouse)
     runs-on: [ self-hosted, apple ]
 
     steps:
@@ -263,3 +268,138 @@ jobs:
             echo "ERROR: neither artifact was present — nothing was uploaded." >&2
             exit 1
           fi
+
+  notify-runtime-failures:
+    name: Report Chrome measurement errors
+    needs: chrome-lcp
+    if: >-
+      always() &&
+      (github.event_name != 'workflow_dispatch' || inputs.alert-asana) &&
+      vars.CROSSBENCH_RUNTIME_ASANA_ALERTS_ENABLED != 'false'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out notification helper
+        continue-on-error: true
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Download per-site dispositions
+        continue-on-error: true
+        uses: actions/download-artifact@v7
+        with:
+          name: chrome-lcp-dispositions
+          path: runtime-dispositions
+
+      - name: Prepare runtime failure report
+        id: report
+        continue-on-error: true
+        working-directory: .
+        run: |
+          in_tsv=(runtime-dispositions/*.tsv)
+          if [ ! -f "${in_tsv[0]}" ]; then
+            echo "::warning title=Runtime notification skipped::No disposition artifact was available."
+            echo "has-errors=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          python3 macOS/scripts/crossbench/runtime-failure-report.py \
+            --input "${in_tsv[0]}" \
+            --report runtime-report/report.txt \
+            --github-output "$GITHUB_OUTPUT"
+
+      - name: Upload runtime failure report
+        if: always()
+        continue-on-error: true
+        uses: actions/upload-artifact@v6
+        with:
+          name: chrome-runtime-failure-report
+          path: runtime-report/
+          if-no-files-found: ignore
+          retention-days: 30
+
+      - name: Check run alert marker
+        if: always() && steps.report.outputs.has-errors == 'true'
+        id: alert-marker
+        continue-on-error: true
+        working-directory: .
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          marker_count="$(
+            gh api "repos/$GITHUB_REPOSITORY/actions/artifacts?name=chrome-runtime-failure-run-$GITHUB_RUN_ID&per_page=100" \
+              --jq '[.artifacts[] | select(.expired == false)] | length'
+          )"
+          if [ "$marker_count" -gt 0 ]; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create Asana subtask
+        if: >-
+          always() && steps.report.outputs.has-errors == 'true' &&
+          steps.alert-marker.outputs.exists == 'false'
+        id: asana
+        continue-on-error: true
+        working-directory: .
+        env:
+          ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ -z "$ASANA_ACCESS_TOKEN" ]; then
+            echo "::warning title=Asana notification skipped::ASANA_ACCESS_TOKEN is not available."
+            echo "created=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          helper="macOS/scripts/crossbench/create-asana-subtask.sh"
+          report="runtime-report/report.txt"
+          if [ ! -x "$helper" ] || [ ! -s "$report" ]; then
+            echo "::warning title=Asana notification skipped::Runtime report or notification helper is unavailable."
+            echo "created=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          notes_file="$RUNNER_TEMP/asana-browser-measurement-notes.txt"
+          {
+            echo "Workflow: https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+            echo "Commit: $GITHUB_SHA"
+            echo
+            cat "$report"
+          } > "$notes_file"
+
+          run_started_at="$(
+            gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" \
+              --jq '.run_started_at'
+          )"
+          start_date="${run_started_at%%T*}"
+          due_date="$start_date"
+          working_days=0
+          while [ "$working_days" -lt 5 ]; do
+            due_date="$(date --utc --date "$due_date + 1 day" +%F)"
+            day_of_week="$(date --utc --date "$due_date" +%u)"
+            if [ "$day_of_week" -le 5 ]; then
+              working_days=$((working_days + 1))
+            fi
+          done
+
+          "$helper" \
+            1216902374642227 \
+            "Browser Measurement Failure: Chrome LCP" \
+            "$notes_file" \
+            "$start_date" \
+            "$due_date"
+          echo "created=true" >> "$GITHUB_OUTPUT"
+          mkdir -p runtime-report
+          echo "reported by run $GITHUB_RUN_ID" > runtime-report/alert-marker.txt
+
+      - name: Save run alert marker
+        if: always() && steps.asana.outputs.created == 'true'
+        continue-on-error: true
+        uses: actions/upload-artifact@v6
+        with:
+          name: chrome-runtime-failure-run-${{ github.run_id }}
+          path: runtime-report/alert-marker.txt
+          if-no-files-found: error
+          retention-days: 90

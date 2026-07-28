@@ -42,6 +42,10 @@ CROSSBENCH_REV="${CROSSBENCH_REV:-be14dbfb884747ea577e2e65b6a4a77d7ecd807d}"
 # --bin-override; test-safari.sh starts it directly.
 WPR_BIN="${WPR_BIN:-$HOME/Developer/mac-perf-runner/bin/wpr}"
 
+# The version, checksum, and URL come from wpr-config.sh so the runner uses the
+# same binary that this provisioner installs.
+TRACEBOX_BIN="${TRACEBOX_BIN:-$HOME/Developer/mac-perf-runner/bin/tracebox-$TRACEBOX_VERSION}"
+
 # The tsproxy revision in crossbench's DEPS is not Python-3-compatible. Use
 # Catapult's fixed copy instead, pinned to immutable source and verified by
 # content hash so scheduled runs cannot silently pick up tip-of-tree changes.
@@ -129,6 +133,33 @@ fi
 git -C "$CROSSBENCH_DIR" -c advice.detachedHead=false checkout --quiet -f "$CROSSBENCH_REV"
 echo "crossbench: $(git -C "$CROSSBENCH_DIR" rev-parse HEAD)"
 
+# Use a checksum-verified Perfetto binary instead of Crossbench's older
+# auto-downloaded default.
+log "Perfetto tracebox $TRACEBOX_VERSION"
+TRACEBOX_ACTUAL_SHA256=""
+if [ -f "$TRACEBOX_BIN" ]; then
+  TRACEBOX_ACTUAL_SHA256="$(shasum -a 256 "$TRACEBOX_BIN" | awk '{print $1}')"
+fi
+if [ "$TRACEBOX_ACTUAL_SHA256" != "$TRACEBOX_SHA256" ]; then
+  TRACEBOX_TMP="${TRACEBOX_BIN}.tmp"
+  mkdir -p "$(dirname "$TRACEBOX_BIN")"
+  rm -f "$TRACEBOX_TMP"
+  if ! curl -fLSs "$TRACEBOX_URL" -o "$TRACEBOX_TMP"; then
+    rm -f "$TRACEBOX_TMP"
+    echo "ERROR: could not fetch Perfetto $TRACEBOX_VERSION." >&2
+    exit 1
+  fi
+  TRACEBOX_ACTUAL_SHA256="$(shasum -a 256 "$TRACEBOX_TMP" | awk '{print $1}')"
+  if [ "$TRACEBOX_ACTUAL_SHA256" != "$TRACEBOX_SHA256" ]; then
+    rm -f "$TRACEBOX_TMP"
+    echo "ERROR: Perfetto tracebox checksum mismatch." >&2
+    exit 1
+  fi
+  mv "$TRACEBOX_TMP" "$TRACEBOX_BIN"
+fi
+chmod +x "$TRACEBOX_BIN"
+"$TRACEBOX_BIN" --version
+
 # 6. Self-heal the fork-only extras + cpu_freq patch. REQUIRED: without the
 #    extras LCP silently returns no rows, and without the patch crossbench
 #    crashes on Apple Silicon (psutil.cpu_freq raises AttributeError).
@@ -141,6 +172,9 @@ if [ ! -f "$CROSSBENCH_DIR/cb.py" ]; then
 fi
 # `cp -R <dir>/.` merges into the destination tree without clobbering unrelated files.
 cp -R "$EXTRAS_DIR/." "$CROSSBENCH_DIR/"
+TRACEBOX_BIN="$TRACEBOX_BIN" perl -0pi -e \
+  's{__TRACEBOX_BIN__}{$ENV{TRACEBOX_BIN}}g' \
+  "$CROSSBENCH_DIR/config/probe/perfetto/navToLCP.config.hjson"
 echo "extras: installed navToLCP.config.hjson + largestcontentfulpaint.sql"
 # Apply the cpu_freq patch idempotently, guarding on the patched text (the change
 # is line-number independent between upstream and the fork).

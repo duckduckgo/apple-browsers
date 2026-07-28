@@ -105,9 +105,14 @@ final class UTIPixelReporter {
     // MARK: - Attachments
 
     func reportFileValidationFailed(reason: UTIAttachmentPolicy.FileValidationFailureReason, source: String) {
+        reportFileValidationFailed(reason: reason.rawValue, source: source)
+    }
+
+    /// Raw-reason variant for the paste-rejection path, which derives its reason outside the policy's `FileValidationFailureReason`.
+    func reportFileValidationFailed(reason: String, source: String) {
         withContext {
             firing.fireDailyAndCount(.unifiedToggleInputFileValidationFailed, [
-                "reason": reason.rawValue,
+                "reason": reason,
                 "surface": $0.surface.rawValue,
                 "source": source
             ])
@@ -116,6 +121,10 @@ final class UTIPixelReporter {
 
     func reportFileAttached(source: String) {
         withContext { firing.fireDailyAndCount(.unifiedToggleInputFileAttached, ["surface": $0.surface.rawValue, "source": source]) }
+    }
+
+    func reportImageAttached(source: String) {
+        withContext { firing.fireDailyAndCount(.unifiedToggleInputImageAttached, ["surface": $0.surface.rawValue, "source": source]) }
     }
 
     func reportAttachmentRemoved(_ attachment: UnifiedToggleInputAttachment) {

@@ -176,9 +176,8 @@ final class AIChatContextualSheetViewController: UIViewController {
     /// pixel fires once per appearance rather than on every view-state update.
     private var isAskAboutPageQuickActionVisible = false
 
-    /// Mirrors the sheet's presented state. The sheet is retained across dismissals, so async work
-    /// that resumes afterwards must check this before acting on the user's behalf.
-    private var isSheetPresented = false
+    /// Stops async suggestion work as soon as the sheet starts dismissing.
+    private var canProcessSuggestionSubmission = false
 
     // MARK: - UI Components
 
@@ -394,7 +393,7 @@ final class AIChatContextualSheetViewController: UIViewController {
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        isSheetPresented = true
+        canProcessSuggestionSubmission = true
         configureSheetPresentation()
         pixelHandler.fireSheetOpened()
         addKeyboardObserver()
@@ -868,20 +867,20 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
                 if self.suggestionSubmissionID == submissionID {
                     self.suggestionSubmissionTask = nil
                     self.suggestionSubmissionID = nil
-                    if self.isSheetPresented, case .nativeInput = self.sessionState.viewState.content {
+                    if self.canProcessSuggestionSubmission, case .nativeInput = self.sessionState.viewState.content {
                         self.contextualInputViewController.setStartActionsDimmed(false)
                     }
                 }
             }
 
             await self.delegate?.aiChatContextualSheetViewControllerAttachContextForSuggestion(self)
-            guard !Task.isCancelled, self.isSheetPresented else { return }
+            guard !Task.isCancelled, self.canProcessSuggestionSubmission else { return }
 
             guard let webViewController = self.webViewController else { return }
 
             let isFrontendReady = await webViewController.waitUntilFrontendReady(timeout: Constants.suggestedPromptFrontendReadinessTimeout)
             guard isFrontendReady else { return }
-            guard !Task.isCancelled, self.isSheetPresented else { return }
+            guard !Task.isCancelled, self.canProcessSuggestionSubmission else { return }
             self.submitSuggestionPrompt(suggestion.prompt)
         }
     }
@@ -1086,8 +1085,8 @@ private extension AIChatContextualSheetViewController {
 private extension AIChatContextualSheetViewController {
 
     func prepareForDismissal() {
-        guard isSheetPresented else { return }
-        isSheetPresented = false
+        guard canProcessSuggestionSubmission else { return }
+        canProcessSuggestionSubmission = false
         cancelSuggestionSubmission()
         contextualInputViewController.setStartActionsDimmed(false)
     }

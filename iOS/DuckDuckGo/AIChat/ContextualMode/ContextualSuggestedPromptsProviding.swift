@@ -24,12 +24,6 @@ struct ResolvePageSuggestionsInput {
     let pageTypeSignals: AIChatPageTypeSignals?
     let url: String?
     let uiLocale: String
-
-    init(pageTypeSignals: AIChatPageTypeSignals?, url: String?, uiLocale: String) {
-        self.pageTypeSignals = pageTypeSignals
-        self.url = url
-        self.uiLocale = uiLocale
-    }
 }
 
 protocol ContextualSuggestedPromptsProviding {

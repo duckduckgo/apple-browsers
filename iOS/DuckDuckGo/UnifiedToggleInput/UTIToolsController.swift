@@ -65,7 +65,7 @@ final class UTIToolsController {
     }
 
     func presentation(
-        displayState: UnifiedToggleInputDisplayState,
+        isActive: Bool,
         modelStore: UTIModelStore,
         canShowCustomizeResponses: Bool
     ) -> Presentation {
@@ -73,7 +73,7 @@ final class UTIToolsController {
             modelStore: modelStore,
             canShowCustomizeResponses: canShowCustomizeResponses
         )
-        guard canShowTools(displayState: displayState),
+        guard canShowTools(isActive: isActive),
               hasActionableMenuItem(modelStore: modelStore, toolsMenu: toolsMenu) else {
             return .hidden
         }
@@ -99,8 +99,8 @@ final class UTIToolsController {
 private extension UTIToolsController {
 
     // Mode-gating lives at the toolbar-container level; toggling `isHidden` per-button would step-vanish before the toolbar's alpha fade completes.
-    func canShowTools(displayState: UnifiedToggleInputDisplayState) -> Bool {
-        return displayState != .hidden
+    func canShowTools(isActive: Bool) -> Bool {
+        return isActive
     }
 
     func buildToolsMenu(modelStore: UTIModelStore, canShowCustomizeResponses: Bool) -> UTIToolsMenu {

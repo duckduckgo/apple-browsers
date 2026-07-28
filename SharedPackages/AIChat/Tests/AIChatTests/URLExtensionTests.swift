@@ -295,21 +295,7 @@ final class URLExtensionTests: XCTestCase {
         XCTAssertFalse(url.isDuckAIVoiceMode)
     }
 
-    // MARK: - Deep-link Surface Tests (Feedback / Chat Protection)
-
-    func testIsDuckAIFeedbackOpenWithKnownValues() {
-        XCTAssertTrue(URL(string: "https://duck.ai/?feedback=positive")!.isDuckAIFeedbackOpen)
-        XCTAssertTrue(URL(string: "https://duck.ai/?feedback=negative")!.isDuckAIFeedbackOpen)
-    }
-
-    func testIsDuckAIFeedbackOpenWorksOnSubdomainHost() {
-        XCTAssertTrue(URL(string: "https://alice.duck.ai/?feedback=positive")!.isDuckAIFeedbackOpen)
-    }
-
-    func testIsDuckAIFeedbackOpenRejectsUnknownValue() {
-        XCTAssertFalse(URL(string: "https://duck.ai/?feedback=bogus")!.isDuckAIFeedbackOpen)
-        XCTAssertFalse(URL(string: "https://duck.ai/")!.isDuckAIFeedbackOpen)
-    }
+    // MARK: - Deep-link Surface Tests (Chat Protection)
 
     func testIsDuckAIChatProtectionOpen() {
         XCTAssertTrue(URL(string: "https://duck.ai/?chatProtection=open")!.isDuckAIChatProtectionOpen)

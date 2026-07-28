@@ -80,6 +80,12 @@ class SafariHarnessContractTests(unittest.TestCase):
             self.assertIn('echo "exists=unknown" >> "$GITHUB_OUTPUT"', workflow)
             self.assertIn("skipping task creation to avoid duplicates", workflow)
 
+    def test_clickhouse_inserts_are_attempted_independently(self):
+        for workflow in (WORKFLOW, CHROME_WORKFLOW):
+            self.assertIn("failed=0", workflow)
+            self.assertEqual(workflow.count("failed=$((failed + 1))"), 2)
+            self.assertIn('if [ "$failed" -gt 0 ]; then', workflow)
+
 
 if __name__ == "__main__":
     unittest.main()

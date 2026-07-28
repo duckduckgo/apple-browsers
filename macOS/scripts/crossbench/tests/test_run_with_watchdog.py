@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import importlib.util
 import os
 import subprocess
 import tempfile
@@ -10,9 +11,38 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PROGRAM = ROOT / "run-with-watchdog.py"
+SPEC = importlib.util.spec_from_file_location("run_with_watchdog", PROGRAM)
+MODULE = importlib.util.module_from_spec(SPEC)
+assert SPEC.loader
+SPEC.loader.exec_module(MODULE)
 
 
 class RunWithWatchdogTests(unittest.TestCase):
+    def test_sigterm_race_is_treated_as_already_exited(self) -> None:
+        class Process:
+            pid = 123
+
+            @staticmethod
+            def poll() -> None:
+                return None
+
+        original_exists = MODULE.process_group_exists
+        original_killpg = MODULE.os.killpg
+        try:
+            MODULE.process_group_exists = lambda _pid: True
+
+            def process_gone(_pid: int, _signal: int) -> None:
+                raise ProcessLookupError
+
+            MODULE.os.killpg = process_gone
+            self.assertEqual(
+                MODULE.terminate_process_group(Process(), 1),
+                "already_exited",
+            )
+        finally:
+            MODULE.process_group_exists = original_exists
+            MODULE.os.killpg = original_killpg
+
     def test_non_timeout_preserves_exit_status_and_output(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             status = Path(directory) / "status.tsv"

@@ -40,7 +40,10 @@ def terminate_process_group(process: subprocess.Popen[bytes], grace: int) -> str
     process.poll()
     if not process_group_exists(process.pid):
         return "already_exited"
-    os.killpg(process.pid, signal.SIGTERM)
+    try:
+        os.killpg(process.pid, signal.SIGTERM)
+    except ProcessLookupError:
+        return "already_exited"
     deadline = time.monotonic() + grace
     while time.monotonic() < deadline:
         process.poll()

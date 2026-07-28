@@ -178,11 +178,13 @@ public class DataBrokerProtectionIOSManagerProvider {
                                                         optOutRetryErrorFeatureFlagger: featureFlagger)
 
         let database = DataBrokerProtectionDatabase(fakeBrokerFlag: fakeBroker, pixelHandler: sharedPixelsHandler, vault: vault, localBrokerService: localBrokerService)
-        do {
-            profileStateManager.reconcileProfileState(hasSavedProfile: try database.fetchProfile() != nil)
-        } catch {
-            profileStateManager.recordProfileStateUnknown()
-            Logger.dataBrokerProtection.error("Error reconciling profile state, error: \(error.localizedDescription, privacy: .public)")
+
+        if profileStateManager.profileState == .unknown {
+            do {
+                profileStateManager.reconcileProfileState(hasSavedProfile: try database.fetchProfile() != nil)
+            } catch {
+                Logger.dataBrokerProtection.error("Error reconciling profile state, error: \(error.localizedDescription, privacy: .public)")
+            }
         }
 
         let operationQueue = OperationQueue()

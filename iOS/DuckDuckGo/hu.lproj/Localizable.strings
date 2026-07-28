@@ -212,7 +212,7 @@
 "action.title.vpn" = "VPN";
 
 /* Description of the Ad Blocking feature in settings */
-"ad.blocking.description" = "Még betöltés előtt blokkolja az invazív nyomkövetőket, így hatékonyan kiküszöböljük a nyomkövetésre épülő hirdetéseket";
+"ad.blocking.description" = "Még betöltés előtt blokkolja az invazív nyomkövetőket, így hatékonyan kiküszöböljük a nyomkövetésre épülő hirdetéseket.";
 
 /* Section header for YouTube-specific ad blocking settings */
 "ad.blocking.youtube.section.header" = "YouTube-hirdetésblokkolás";
@@ -3199,7 +3199,7 @@
 "omnibar.notification.trackers-blocked" = "%d Trackers";
 
 /* Text displayed on notification appearing in the address bar when YouTube ad blocking is active */
-"omnibar.notification.youtube-ad-block-on" = "A YouTube-hirdetésblokkolás be van kapcsolva";
+"omnibar.notification.youtube-ad-block-on" = "Hirdetésblokkolás bekapcsolva";
 
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Megvan";
@@ -3864,9 +3864,6 @@
 /* Settings picker label for what to show when returning after inactivity */
 "settings.afterInactivity.v2.label" = "Inaktivitás után";
 
-/* Footer under the AI picker, descriptive sentence without link */
-"settings.ai.new.picker.footer" = "Próbáld ki az új funkciót, amellyel a címsorban váltogathatsz a keresés és a Duck.ai között.";
-
 /* Settings row that opens Duck.ai in a new tab */
 "settings.aichat.duckai.settings" = "A Duck.ai beállításai";
 
@@ -3881,9 +3878,6 @@
 
 /* Settings screen footer text for showing AI Chat in the input box */
 "settings.aichat.shortcuts.input.footer" = "Keresés a weben vagy a Duck.ai megkérdezése közvetlenül a címsorból";
-
-/* Title of search assist settings link */
-"settings.aifeatures.assist" = "Keresési asszisztens beállításai";
 
 /* Search Assist frequency option: never show AI-assisted answers */
 "settings.aifeatures.assist.never" = "Soha";
@@ -4202,6 +4196,9 @@
 
 /* The name of a settings category listing next steps */
 "settings.next.steps" = "Következő lépések";
+
+/* Accessibility label / title for the button that hides the Settings Next Steps section */
+"settings.next.steps.hide" = "Elrejtés";
 
 /* Label describing a feature which is turned off */
 "settings.off" = "Ki";
@@ -5317,10 +5314,10 @@
 "windows-waitlist.waitlist-download-screen.try-duckduckgo-for-windows" = "Töltsd le a DuckDuckGo Windows verzióját!";
 
 /* Body text of the bottom sheet asking the user to send an anonymous breakage report */
-"youtube.ad.blocking.breakage-report.message" = "Névtelen hibajelentés küldése a DuckDuckGo-nak. Segíts, hogy mindenkinek jobb legyen a hirdetésblokkolás.";
+"youtube.ad.blocking.breakage-report.message" = "Küldj névtelen jelentést a DuckDuckGo-nak, és segíts, hogy mindenkinek jobb legyen a hirdetésblokkolás!";
 
 /* Primary action sending an anonymous YouTube ad-blocking breakage report */
-"youtube.ad.blocking.breakage-report.send" = "Hibás működésre vonatkozó jelentés küldése";
+"youtube.ad.blocking.breakage-report.send" = "Névtelen jelentés küldése";
 
 /* Title of the bottom sheet asking the user to send an anonymous breakage report after disabling YouTube ad blocking */
 "youtube.ad.blocking.breakage-report.title" = "Nem működik a YouTube hirdetésblokkolója?";

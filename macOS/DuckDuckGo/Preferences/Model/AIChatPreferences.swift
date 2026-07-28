@@ -34,6 +34,7 @@ final class AIChatPreferences: ObservableObject {
     private var windowControllersManager: WindowControllersManagerProtocol
     private let featureFlagger: FeatureFlagger
     private let duckAIChromeButtonsVisibilityManager: DuckAIChromeButtonsVisibilityManaging
+    let promptBarPreferences: PromptBarPreferences
     // Lazy: built on first use, not during early/transient inits when the store isn't ready yet.
     private lazy var serpSettings: SERPSettingsProviding = SERPSettingsProvider()
 
@@ -41,12 +42,14 @@ final class AIChatPreferences: ObservableObject {
          aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable = Application.appDelegate.aiChatMenuConfiguration,
          windowControllersManager: WindowControllersManagerProtocol = Application.appDelegate.windowControllersManager,
          featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger,
-         duckAIChromeButtonsVisibilityManager: DuckAIChromeButtonsVisibilityManaging = LocalDuckAIChromeButtonsVisibilityManager()) {
+         duckAIChromeButtonsVisibilityManager: DuckAIChromeButtonsVisibilityManaging = LocalDuckAIChromeButtonsVisibilityManager(),
+         promptBarPreferences: PromptBarPreferences = Application.appDelegate.promptBarPreferences) {
         self.storage = storage
         self.aiChatMenuConfiguration = aiChatMenuConfiguration
         self.windowControllersManager = windowControllersManager
         self.featureFlagger = featureFlagger
         self.duckAIChromeButtonsVisibilityManager = duckAIChromeButtonsVisibilityManager
+        self.promptBarPreferences = promptBarPreferences
 
         isAIFeaturesEnabled = storage.isAIFeaturesEnabled
         showShortcutOnNewTabPage = storage.showShortcutOnNewTabPage
@@ -147,8 +150,8 @@ final class AIChatPreferences: ObservableObject {
         return !showShortcutInAddressBar || !openAIChatInSidebar
     }
 
-    var shouldShowNativeAIControls: Bool {
-        featureFlagger.isFeatureOn(.aiFeaturesNativeControls)
+    var shouldShowPromptBarPreferences: Bool {
+        featureFlagger.isFeatureOn(.macosPromptBar)
     }
 
     // Native SERP AI settings (Search Assist / Hide AI Images), backed by the shared SERP settings store.
@@ -280,10 +283,6 @@ final class AIChatPreferences: ObservableObject {
 
     @MainActor func openAIChatLink() {
         NSApp.delegateTyped.aiChatTabOpener.openNewAIChat(in: .currentTab)
-    }
-
-    @MainActor func openSearchAssistSettings() {
-        windowControllersManager.show(url: URL.aiChatSettings, source: .ui, newTab: true, selected: true)
     }
 
     @MainActor func openHideAIGeneratedImagesLearnMore() {

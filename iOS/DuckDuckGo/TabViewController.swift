@@ -2346,7 +2346,8 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     private func showDuckPlayerToastIfNeeded() {
-        guard let url = webView.url,
+        guard UIDevice.current.userInterfaceIdiom == .pad,
+              let url = webView.url,
               url.isYoutube,
               webView?.canGoBack == false else { return }
 

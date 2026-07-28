@@ -403,9 +403,11 @@ class TabsBarViewController: UIViewController {
         if let flowLayout = collectionView.collectionViewLayout as? UICollectionViewFlowLayout, tabsCount > 0 {
             flowLayout.itemSize = CGSize(width: layout.itemWidth, height: view.frame.size.height)
         }
-        // Add back the leading content inset the layout offset omits.
-        addTabButtonLeadingConstraint?.constant = layout.addTabButtonLeadingOffset + leadingContentInset
-        collectionView.contentInset.right = layout.addTabButtonContentInsetRight
+        // Room before the add button so the last tab's trailing fillet clears its opaque backdrop.
+        let rampWidth = Constants.tabRampSize.width
+        let trailingFilletRoom = layout.isFloored ? 0 : max(0, rampWidth - Constants.addTabButtonGap)
+        addTabButtonLeadingConstraint?.constant = layout.addTabButtonLeadingOffset + leadingContentInset + trailingFilletRoom
+        collectionView.contentInset.right = layout.addTabButtonContentInsetRight + (layout.isFloored ? rampWidth : 0)
     }
 
     /// Half the strip, but in landscape also capped at a third of the full-screen strip so a resize

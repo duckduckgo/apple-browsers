@@ -23,7 +23,7 @@ def positive_integer(value: str) -> int:
 
 
 def copy_output(source: BinaryIO) -> None:
-    while chunk := source.read(64 * 1024):
+    while chunk := os.read(source.fileno(), 64 * 1024):
         sys.stdout.buffer.write(chunk)
         sys.stdout.buffer.flush()
 

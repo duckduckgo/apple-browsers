@@ -220,6 +220,7 @@ capture_proxy_state() {
   PROXY_STATE_CAPTURED=1
 }
 
+# shellcheck disable=SC2329  # Invoked indirectly by the EXIT trap below.
 restore_proxy_key() {
   local key="$1" was_set="$2" value="$3"
   if [ "$was_set" = "1" ]; then
@@ -258,6 +259,7 @@ apply_proxy_state() {
   verify_proxy_string "$SAFARI_HTTPS_PROXY_KEY" "$proxy_url"
 }
 
+# shellcheck disable=SC2329  # Invoked indirectly by the EXIT trap below.
 restore_proxy_state() {
   local status=0
   [ -n "$PROXY_STATE_CAPTURED" ] || return 0
@@ -293,6 +295,7 @@ preserve_site_diagnostics() {
   preserve_shared_diagnostics
 }
 
+# shellcheck disable=SC2329  # Invoked indirectly by the EXIT trap below.
 cleanup() {
   local exit_code=$?
   trap - EXIT HUP INT TERM

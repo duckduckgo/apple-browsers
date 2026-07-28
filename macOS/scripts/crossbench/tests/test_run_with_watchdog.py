@@ -2,7 +2,9 @@
 
 import importlib.util
 import os
+import select
 import subprocess
+import sys
 import tempfile
 import time
 import unittest
@@ -62,6 +64,39 @@ class RunWithWatchdogTests(unittest.TestCase):
             self.assertEqual(result.returncode, 7)
             self.assertEqual(result.stdout, "retained\n")
             self.assertEqual(status.read_text(), "completed\t7\tnot_needed\n")
+
+    def test_flushed_output_is_streamed_before_process_exits(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            status = Path(directory) / "status.tsv"
+            process = subprocess.Popen(
+                [
+                    sys.executable, str(PROGRAM),
+                    "--timeout-seconds", "15",
+                    "--term-grace-seconds", "1",
+                    "--status-file", str(status),
+                    "--", sys.executable, "-c",
+                    (
+                        "import time; "
+                        "print('ready', flush=True); "
+                        "time.sleep(10)"
+                    ),
+                ],
+                text=True,
+                stdout=subprocess.PIPE,
+            )
+            assert process.stdout is not None
+            try:
+                readable, _, _ = select.select([process.stdout], [], [], 3)
+                self.assertTrue(
+                    readable,
+                    "flushed output was buffered until the child exited",
+                )
+                self.assertEqual(process.stdout.readline(), "ready\n")
+                self.assertIsNone(process.poll())
+            finally:
+                process.terminate()
+                process.wait(timeout=5)
+                process.stdout.close()
 
     def test_timeout_kills_only_launched_process_group(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

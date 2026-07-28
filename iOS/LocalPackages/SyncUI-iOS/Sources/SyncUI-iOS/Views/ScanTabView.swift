@@ -241,7 +241,7 @@ private struct QRScannerOverlay: View {
 
     var body: some View {
         GeometryReader { proxy in
-            let side = proxy.size.width * sideRatio
+            let side = min(proxy.size.width, proxy.size.height - topInset) * sideRatio
             let scale = isExpanded ? 1 : initialScale
             let center = CGPoint(x: proxy.size.width / 2, y: topInset + (proxy.size.height - topInset) / 2)
 

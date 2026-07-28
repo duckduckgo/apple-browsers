@@ -88,6 +88,16 @@ class TabsBarViewController: UIViewController {
     // the cells so it scrolls with the tabs and is clipped to the strip.
     private let flaredTabBackgroundView = TabFlaredBackgroundView()
 
+    // Index of the tab currently lifted for its context-menu preview, or nil. Keeps the flare faded
+    // out across any layout pass that repositions it; comparing against the live current index also
+    // self-heals if the preview ends without a callback (switching tabs no longer matches, so it shows).
+    private var previewedTabIndex: Int?
+
+    // True while a reorder drag is in progress. During it, `reorderTrackingDisplayLink` drives the flare
+    // to follow the current tab cell's live (presentation-layer) frame so the selection stays visible.
+    private var isReorderingTabs = false
+    private var reorderTrackingDisplayLink: CADisplayLink?
+
     lazy var fireButton: UIButton = {
         createButton(image: DesignSystemImages.Glyphs.Size24.fireSolid)
     }()
@@ -451,19 +461,17 @@ class TabsBarViewController: UIViewController {
     /// Positions the flared background over the current tab, inflated by the ramp width each side.
     /// Hidden until the tab's layout resolves (a later layout pass calls this again).
     private func updateFlaredTabBackground() {
+        // The display link owns the flare's frame during a reorder; don't fight it here.
+        guard !isReorderingTabs else { return }
         guard let currentIndex,
               let attributes = collectionView.layoutAttributesForItem(at: IndexPath(item: currentIndex, section: 0)) else {
             flaredTabBackgroundView.isHidden = true
             return
         }
-        let rampWidth = Constants.tabRampSize.width
-        let cellFrame = attributes.frame
-        flaredTabBackgroundView.frame = CGRect(x: cellFrame.minX - rampWidth,
-                                               y: cellFrame.minY,
-                                               width: cellFrame.width + rampWidth * 2,
-                                               height: cellFrame.height)
+        flaredTabBackgroundView.frame = attributes.frame.insetBy(dx: -Constants.tabRampSize.width, dy: 0)
         flaredTabBackgroundView.fillColor = ThemeManager.shared.currentTheme.omniBarBackgroundColor
         flaredTabBackgroundView.isHidden = false
+        flaredTabBackgroundView.alpha = (previewedTabIndex == currentIndex) ? 0 : 1
         collectionView.sendSubviewToBack(flaredTabBackgroundView)
     }
 
@@ -654,7 +662,42 @@ extension TabsBarViewController: UICollectionViewDelegate {
 
     func collectionView(_ collectionView: UICollectionView,
                         previewForDismissingContextMenuWithConfiguration configuration: UIContextMenuConfiguration) -> UITargetedPreview? {
+        // `willEndContextMenu` is unreliable on iPad (often never fires), so this is the restore
+        // signal when the preview is dismissed.
+        restoreFlaredTabBackground()
         return tabMenuPreview(for: configuration)
+    }
+
+    private func restoreFlaredTabBackground() {
+        // No-op unless a preview actually faded the flare (dismissing a non-current tab must not start
+        // a competing animation during UIKit's dismiss transition, which looked janky).
+        guard previewedTabIndex != nil else { return }
+        previewedTabIndex = nil
+        flaredTabBackgroundView.alpha = 1
+    }
+
+    func collectionView(_ collectionView: UICollectionView,
+                        willDisplayContextMenu configuration: UIContextMenuConfiguration,
+                        animator: UIContextMenuInteractionAnimating?) {
+        // The flared background sits behind the cells, so lifting the current tab for its preview
+        // would leave the flare orphaned in the strip. Fade it out alongside the lift.
+        guard (configuration.identifier as? NSNumber)?.intValue == currentIndex else { return }
+        previewedTabIndex = currentIndex
+        animator?.addAnimations { self.flaredTabBackgroundView.alpha = 0 }
+    }
+
+    func collectionView(_ collectionView: UICollectionView,
+                        willEndContextMenu configuration: UIContextMenuConfiguration,
+                        animator: UIContextMenuInteractionAnimating?) {
+        // Fallback restore for iOS versions that do fire this; `previewForDismissing` handles the rest.
+        restoreFlaredTabBackground()
+    }
+
+    func collectionView(_ collectionView: UICollectionView,
+                        willPerformPreviewActionForMenuWith configuration: UIContextMenuConfiguration,
+                        animator: UIContextMenuInteractionCommitAnimating) {
+        // Committing the preview (tapping it) also ends the menu without `willEndContextMenu`.
+        restoreFlaredTabBackground()
     }
 
     private func tabMenuPreview(for configuration: UIContextMenuConfiguration) -> UITargetedPreview? {
@@ -698,6 +741,44 @@ extension TabsBarViewController: UICollectionViewDragDelegate {
 
     func collectionView(_ collectionView: UICollectionView, dragPreviewParametersForItemAt indexPath: IndexPath) -> UIDragPreviewParameters? {
         return tabDragPreviewParameters(at: indexPath, backgroundColor: tabLiftBackgroundColor)
+    }
+
+    func collectionView(_ collectionView: UICollectionView, dragSessionWillBegin session: UIDragSession) {
+        // A long-press first shows a context-menu preview (setting previewedTabIndex) and only then
+        // converts to a drag, so the preview's dismiss callbacks never fire. Void that state here or
+        // the flare would stay hidden after the drop.
+        previewedTabIndex = nil
+        isReorderingTabs = true
+        flaredTabBackgroundView.alpha = 1
+        startReorderTracking()
+    }
+
+    func collectionView(_ collectionView: UICollectionView, dragSessionDidEnd session: UIDragSession) {
+        stopReorderTracking()
+        isReorderingTabs = false
+        updateFlaredTabBackground()
+    }
+
+    private func startReorderTracking() {
+        stopReorderTracking()
+        let link = CADisplayLink(target: self, selector: #selector(trackFlareToCurrentTabCell))
+        link.add(to: .main, forMode: .common)
+        reorderTrackingDisplayLink = link
+    }
+
+    private func stopReorderTracking() {
+        reorderTrackingDisplayLink?.invalidate()
+        reorderTrackingDisplayLink = nil
+    }
+
+    /// Follows the current tab cell's live (presentation-layer) frame while tabs reorder, so the flare
+    /// stays under the selection instead of jumping only on drop. Skips frames where the cell isn't
+    /// available (e.g. the current tab is the one being dragged), leaving the flare at its last spot.
+    @objc private func trackFlareToCurrentTabCell() {
+        guard let currentIndex,
+              let cell = collectionView.cellForItem(at: IndexPath(item: currentIndex, section: 0)) else { return }
+        let cellFrame = cell.layer.presentation()?.frame ?? cell.frame
+        flaredTabBackgroundView.frame = cellFrame.insetBy(dx: -Constants.tabRampSize.width, dy: 0)
     }
 
     private func tabDragPreviewParameters(at indexPath: IndexPath, backgroundColor: UIColor) -> UIDragPreviewParameters? {

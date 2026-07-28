@@ -483,7 +483,7 @@ private struct PasswordManagementAddButton: View {
                 .padding(.vertical, 4)
                 .background(
                     RoundedRectangle(cornerRadius: style.buttonCornerRadius)
-                        .fill(Color(designSystemColor: .controlsFillPrimary))
+                        .fill(Color(designSystemColor: .controlFillPrimary))
                 )
                 .overlay {
                     Menu {
@@ -526,7 +526,7 @@ private struct PasswordManagementAddButton: View {
                 Text(text)
             }
         }
-        .background(Color(designSystemColor: .controlsFillPrimary))
+        .background(Color(designSystemColor: .controlFillPrimary))
     }
 
     private func createButton(text: String, category: SecureVaultSorting.Category) -> some View {
@@ -538,7 +538,7 @@ private struct PasswordManagementAddButton: View {
                 .padding(.vertical, 4)
                 .background(
                     RoundedRectangle(cornerRadius: style.buttonCornerRadius)
-                        .fill(Color(designSystemColor: .controlsFillPrimary))
+                        .fill(Color(designSystemColor: .controlFillPrimary))
                 )
         }
         .buttonStyle(.plain)

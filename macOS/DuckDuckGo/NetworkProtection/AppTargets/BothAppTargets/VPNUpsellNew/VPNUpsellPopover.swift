@@ -186,7 +186,7 @@ struct VPNUpsellPopoverView: View {
         Rectangle()
             .foregroundColor(.clear)
             .frame(maxWidth: .infinity, minHeight: Constants.horizontalLineHeight, maxHeight: Constants.horizontalLineHeight)
-            .background(Color(designSystemColor: .controlsFillPrimary))
+            .background(Color(designSystemColor: .controlFillPrimary))
             .cornerRadius(Constants.horizontalLineCornerRadius)
     }
 

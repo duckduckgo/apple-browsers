@@ -270,7 +270,7 @@ struct FireDialogView: ModalView {
                                     bottomPadding: 4,
                                     horizontalPadding: 4,
                                     backgroundColor: .clear,
-                                    backgroundPressedColor: Color(designSystemColor: .controlsFillSecondary))
+                                    backgroundPressedColor: Color(designSystemColor: .controlFillSecondary))
             )
             .clipShape(Circle())
         } else {
@@ -385,7 +385,7 @@ struct FireDialogView: ModalView {
                     .frame(width: 12, height: 12)
                     .foregroundColor(Color(designSystemColor: .iconsSecondary))
                     .padding(6)
-                    .background(Circle().fill(Color(designSystemColor: .controlsFillPrimary)))
+                    .background(Circle().fill(Color(designSystemColor: .controlFillPrimary)))
             }
             .buttonStyle(.plain)
             .accessibilityLabel(UserText.fireDialogChooseWhatToDelete)
@@ -506,8 +506,8 @@ struct FireDialogView: ModalView {
                 StandardButtonStyle(topPadding: 6,
                                     bottomPadding: 6,
                                     horizontalPadding: 6,
-                                    backgroundColor: Color(designSystemColor: .controlsFillPrimary),
-                                    backgroundPressedColor: Color(designSystemColor: .controlsFillPrimary))
+                                    backgroundColor: Color(designSystemColor: .controlFillPrimary),
+                                    backgroundPressedColor: Color(designSystemColor: .controlFillPrimary))
             )
             .clipShape(Circle())
             .accessibilityLabel(UserText.close)
@@ -612,8 +612,8 @@ struct FireDialogView: ModalView {
                 StandardButtonStyle(topPadding: 6,
                                     bottomPadding: 6,
                                     horizontalPadding: 6,
-                                    backgroundColor: Color(designSystemColor: .controlsFillPrimary),
-                                    backgroundPressedColor: Color(designSystemColor: .controlsFillPrimary))
+                                    backgroundColor: Color(designSystemColor: .controlFillPrimary),
+                                    backgroundPressedColor: Color(designSystemColor: .controlFillPrimary))
             )
             .clipShape(Circle())
             .accessibilityLabel(UserText.close)
@@ -702,8 +702,8 @@ struct FireDialogView: ModalView {
                 StandardButtonStyle(topPadding: 6,
                                     bottomPadding: 6,
                                     horizontalPadding: 6,
-                                    backgroundColor: Color(designSystemColor: .controlsFillPrimary),
-                                    backgroundPressedColor: Color(designSystemColor: .controlsFillPrimary))
+                                    backgroundColor: Color(designSystemColor: .controlFillPrimary),
+                                    backgroundPressedColor: Color(designSystemColor: .controlFillPrimary))
             )
             .clipShape(Circle())
             .accessibilityLabel(UserText.close)

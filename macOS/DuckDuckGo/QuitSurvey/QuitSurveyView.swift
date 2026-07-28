@@ -206,7 +206,7 @@ private struct QuitSurveyOptionRow: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .background(isHovered ? Color(designSystemColor: .controlsFillPrimary) : Color.clear)
+        .background(isHovered ? Color(designSystemColor: .controlFillPrimary) : Color.clear)
         .if(isTopRow) { view in
             view.cornerRadius(6, corners: [.topLeft, .topRight])
         }

@@ -527,7 +527,7 @@ struct NewFileImportView: View {
     }
 
     private var fileDropStrokeColor: Color {
-        isTargeted ? Color(designSystemColor: .accentPrimary) : Color(designSystemColor: .controlsFillTertiary)
+        isTargeted ? Color(designSystemColor: .accentPrimary) : Color(designSystemColor: .controlFillTertiary)
     }
 
     private var fileDropBackgroundColor: Color {

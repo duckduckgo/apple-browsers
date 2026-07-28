@@ -482,11 +482,11 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             designSystemColor = nil
         } else if submitButtonMode == .voice {
             if submitButton.isMouseDown {
-                designSystemColor = .controlsFillTertiary
+                designSystemColor = .controlFillTertiary
             } else if submitButton.isMouseOver {
-                designSystemColor = .controlsFillSecondary
+                designSystemColor = .controlFillSecondary
             } else {
-                designSystemColor = .controlsFillPrimary
+                designSystemColor = .controlFillPrimary
             }
         } else {
             if submitButton.isMouseDown {
@@ -617,24 +617,24 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
         // Active pill styling for image gen
         imageGenActiveButton.activeBackgroundColor = isImageGenMode
-            ? NSColor(designSystemColor: .controlsFillPrimary)
+            ? NSColor(designSystemColor: .controlFillPrimary)
             : nil
         imageGenActiveButton.activeHoverBackgroundColor = isImageGenMode
-            ? NSColor(designSystemColor: .controlsFillSecondary)
+            ? NSColor(designSystemColor: .controlFillSecondary)
             : nil
         imageGenActiveButton.activePressedBackgroundColor = isImageGenMode
-            ? NSColor(designSystemColor: .controlsFillTertiary)
+            ? NSColor(designSystemColor: .controlFillTertiary)
             : nil
 
         // Active pill styling for web search
         webSearchActiveButton.activeBackgroundColor = isWebSearchMode
-            ? NSColor(designSystemColor: .controlsFillPrimary)
+            ? NSColor(designSystemColor: .controlFillPrimary)
             : nil
         webSearchActiveButton.activeHoverBackgroundColor = isWebSearchMode
-            ? NSColor(designSystemColor: .controlsFillSecondary)
+            ? NSColor(designSystemColor: .controlFillSecondary)
             : nil
         webSearchActiveButton.activePressedBackgroundColor = isWebSearchMode
-            ? NSColor(designSystemColor: .controlsFillTertiary)
+            ? NSColor(designSystemColor: .controlFillTertiary)
             : nil
 
         // Hide suggestions in image gen mode or when attachments are present

@@ -338,10 +338,10 @@ public struct ButtonStateColors {
     }
 
     public static var themedDismissButton: ButtonStateColors {
-        .init(backgroundColor: Color(designSystemColor: .controlsFillPrimary),
+        .init(backgroundColor: Color(designSystemColor: .controlFillPrimary),
               textColor: Color(designSystemColor: .textPrimary),
-              hoveredBackgroundColor: Color(designSystemColor: .controlsFillSecondary),
-              pressedBackgroundColor: Color(designSystemColor: .controlsFillTertiary),
+              hoveredBackgroundColor: Color(designSystemColor: .controlFillSecondary),
+              pressedBackgroundColor: Color(designSystemColor: .controlFillTertiary),
               pressedTextColor: Color(designSystemColor: .textSecondary))
     }
 

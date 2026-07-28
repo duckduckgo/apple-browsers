@@ -215,7 +215,7 @@ struct WarnBeforeQuitView: View {
 
                 // Background circle - drawn THIRD (on top of mask)
                 Circle()
-                    .fill(Color(designSystemColor: .controlsFillPrimary))
+                    .fill(Color(designSystemColor: .controlFillPrimary))
                     .frame(width: circleSize, height: circleSize)
 
                 // Shortcut text - drawn LAST (on top)
@@ -251,8 +251,8 @@ struct WarnBeforeQuitView: View {
                     .background(
                         RoundedRectangle(cornerRadius: 12, style: .continuous)
                             .fill(isButtonHovered ?
-                                    Color(designSystemColor: .controlsFillSecondary) :
-                                    Color(designSystemColor: .controlsFillPrimary))
+                                    Color(designSystemColor: .controlFillSecondary) :
+                                    Color(designSystemColor: .controlFillPrimary))
                     )
                     .fixedSize()
                     .animation(.easeInOut(duration: 0.15), value: isButtonHovered)

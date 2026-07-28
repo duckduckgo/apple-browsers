@@ -42,7 +42,7 @@ struct BookmarkDialogButtonsView: View {
                 Spacer()
             }
 
-            actionButton(action: otherButtonAction, viewState: viewState, foregroundColor: .textPrimary, backgroundColor: .controlsFillPrimary)
+            actionButton(action: otherButtonAction, viewState: viewState, foregroundColor: .textPrimary, backgroundColor: .controlFillPrimary)
                 .accessibilityIdentifier("BookmarkDialogButtonsView.otherButton")
 
             actionButton(action: defaultButtonAction, viewState: viewState, foregroundColor: .accentContentPrimary, backgroundColor: .accentPrimary)

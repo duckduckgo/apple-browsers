@@ -196,7 +196,7 @@ struct BadgeView: View {
     private var badgeBackground: some View {
         if hasUniformCorners {
             RoundedRectangle(cornerRadius: MenuItemWithBadgeConstants.cornerRadius)
-                .fill(isMuted ? Color(designSystemColor: .controlsFillSecondary) : Self.tryForFreeBadgeColor)
+                .fill(isMuted ? Color(designSystemColor: .controlFillSecondary) : Self.tryForFreeBadgeColor)
         } else {
             Self.badgeShape.fill(Color(baseColor: .yellow60))
         }

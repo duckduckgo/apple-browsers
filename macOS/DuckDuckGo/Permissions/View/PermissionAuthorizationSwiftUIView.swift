@@ -425,7 +425,7 @@ struct PermissionAuthorizationSwiftUIView: View {
                     .foregroundColor(Color(designSystemColor: .textSecondary))
                     .frame(maxWidth: .infinity)
                     .frame(height: 36)
-                    .background(Color(designSystemColor: .controlsFillSecondary))
+                    .background(Color(designSystemColor: .controlFillSecondary))
                     .cornerRadius(8)
 
             case .authorized:
@@ -472,7 +472,7 @@ struct PermissionAuthorizationSwiftUIView: View {
                         .foregroundColor(Color(designSystemColor: .textPrimary))
                         .frame(maxWidth: .infinity)
                         .frame(height: 36)
-                        .background(Color(designSystemColor: .controlsFillPrimary))
+                        .background(Color(designSystemColor: .controlFillPrimary))
                         .cornerRadius(8)
                 }
                 .buttonStyle(PlainButtonStyle())
@@ -484,7 +484,7 @@ struct PermissionAuthorizationSwiftUIView: View {
                         .foregroundColor(isAllowButtonEnabled ? Color(designSystemColor: .textPrimary) : Color(designSystemColor: .textSecondary))
                         .frame(maxWidth: .infinity)
                         .frame(height: 36)
-                        .background(isAllowButtonEnabled ? Color(designSystemColor: .controlsFillPrimary) : Color(designSystemColor: .controlsFillSecondary))
+                        .background(isAllowButtonEnabled ? Color(designSystemColor: .controlFillPrimary) : Color(designSystemColor: .controlFillSecondary))
                         .cornerRadius(8)
                 }
                 .buttonStyle(PlainButtonStyle())
@@ -614,7 +614,7 @@ struct PermissionAuthorizationSwiftUIView: View {
                         .foregroundColor(Color(designSystemColor: .textPrimary))
                         .frame(maxWidth: .infinity)
                         .frame(height: 32)
-                        .background(Color(designSystemColor: .controlsFillPrimary))
+                        .background(Color(designSystemColor: .controlFillPrimary))
                         .cornerRadius(8)
                 }
                 .buttonStyle(PlainButtonStyle())
@@ -626,7 +626,7 @@ struct PermissionAuthorizationSwiftUIView: View {
                         .foregroundColor(Color(designSystemColor: .textPrimary))
                         .frame(maxWidth: .infinity)
                         .frame(height: 32)
-                        .background(Color(designSystemColor: .controlsFillPrimary))
+                        .background(Color(designSystemColor: .controlFillPrimary))
                         .cornerRadius(8)
                 }
                 .buttonStyle(PlainButtonStyle())

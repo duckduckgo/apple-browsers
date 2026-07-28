@@ -115,7 +115,7 @@ struct AddEditBookmarkView: View {
             DismissableButton(
                 title: UserText.Bookmarks.Dialog.Action.syncBookmarks,
                 dismissButtonImage: DesignSystemImages.Glyphs.Size16.close,
-                backgroundColor: Color(designSystemColor: .controlsFillPrimary),
+                backgroundColor: Color(designSystemColor: .controlFillPrimary),
                 mainAction: syncButtonAction,
                 dismissAction: dismissSyncButtonAction
             )

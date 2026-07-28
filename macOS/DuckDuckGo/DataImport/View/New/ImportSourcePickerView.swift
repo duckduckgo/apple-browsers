@@ -262,7 +262,7 @@ private struct RadioCard: View {
         .frame(maxWidth: .infinity, minHeight: 74, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(isHovering ? Color(designSystemColor: .controlsFillSecondary) : Color(designSystemColor: .controlsFillPrimary))
+                .fill(isHovering ? Color(designSystemColor: .controlFillSecondary) : Color(designSystemColor: .controlFillPrimary))
         )
         .overlay(
             RoundedRectangle(cornerRadius: 14, style: .continuous)

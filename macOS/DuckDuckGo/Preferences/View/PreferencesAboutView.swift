@@ -501,7 +501,7 @@ struct UpdateButtonStyle: ButtonStyle {
 
         if DesignSystemRebrand.isAppRebranded() {
             enabledBackgroundColor = configuration.isPressed ? Color(designSystemColor: .accentSecondary) : Color(designSystemColor: .accentPrimary)
-            disabledBackgroundColor = Color(designSystemColor: .controlsFillTertiary)
+            disabledBackgroundColor = Color(designSystemColor: .controlFillTertiary)
             labelColor = enabled ? Color(designSystemColor: .accentContentPrimary) : Color(designSystemColor: .textTertiary)
             cornerRadius = 14
         } else {

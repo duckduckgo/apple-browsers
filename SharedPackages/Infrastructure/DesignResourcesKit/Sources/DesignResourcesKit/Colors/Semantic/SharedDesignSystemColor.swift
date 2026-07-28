@@ -261,30 +261,3 @@ public enum SharedDesignSystemColor: CaseIterable {
 }
 
 public typealias DesignSystemColor = SharedDesignSystemColor
-
-// MARK: - Compatibility aliases
-
-/// Temporary. Figma renamed these tokens; the aliases keep existing call sites
-/// compiling until the scripted rename sweep, which deletes them.
-public extension SharedDesignSystemColor {
-
-    static var controlsBorderPrimary: Self { .controlBorderPrimary }
-    static var controlsBorderQuaternary: Self { .controlBorderQuaternary }
-    static var controlsBorderSecondary: Self { .controlBorderSecondary }
-    static var controlsBorderTertiary: Self { .controlBorderTertiary }
-    static var controlsFillPrimary: Self { .controlFillPrimary }
-    static var controlsFillSecondary: Self { .controlFillSecondary }
-    static var controlsFillTertiary: Self { .controlFillTertiary }
-    static var controlsRaisedBackdrop: Self { .controlRaisedBackdrop }
-    static var controlsRaisedFillPrimary: Self { .controlRaisedFillPrimary }
-    static var controlsRaisedFillSecondary: Self { .controlRaisedFillSecondary }
-    static var controlsRaisedFillTertiary: Self { .controlRaisedFillTertiary }
-    static var controlsSubtleBorderPrimary: Self { .controlSubtleBorderPrimary }
-    static var controlsSubtleBorderSecondary: Self { .controlSubtleBorderSecondary }
-    static var controlsSubtleBorderTertiary: Self { .controlSubtleBorderTertiary }
-    static var controlsSubtleFillSecondary: Self { .controlSubtleFillSecondary }
-    static var destructiveGlow: Self { .destructiveGlowPrimary }
-    static var inputActive: Self { .unifiedInputFieldFillActive }
-    static var inputResting: Self { .unifiedInputFieldFillResting }
-    static var statusYellow: Self { .statusYellowPrimary }
-}

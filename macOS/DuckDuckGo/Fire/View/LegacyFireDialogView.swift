@@ -221,8 +221,8 @@ struct LegacyFireDialogView: ModalView {
             selectedSegmentShadowRadius: 0,
             selectedSegmentShadowY: 1,
             selectedSegmentTopStroke: Color(designSystemColor: .highlightPrimary),
-            hoverSegmentBackground: Color(designSystemColor: .controlsFillPrimary),
-            pressedSegmentBackground: Color(designSystemColor: .controlsFillSecondary),
+            hoverSegmentBackground: Color(designSystemColor: .controlFillPrimary),
+            pressedSegmentBackground: Color(designSystemColor: .controlFillSecondary),
             hoverOverlay: Color(designSystemColor: .toneTintPrimary)
         )
         .frame(height: 84)
@@ -327,8 +327,8 @@ struct LegacyFireDialogView: ModalView {
                         StandardButtonStyle(topPadding: 6,
                                             bottomPadding: 6,
                                             horizontalPadding: 6,
-                                            backgroundColor: Color(designSystemColor: .controlsFillPrimary),
-                                            backgroundPressedColor: Color(designSystemColor: .controlsFillPrimary))
+                                            backgroundColor: Color(designSystemColor: .controlFillPrimary),
+                                            backgroundPressedColor: Color(designSystemColor: .controlFillPrimary))
                     )
                     .clipShape(Circle())
                     .accessibilityLabel(UserText.close)

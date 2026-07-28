@@ -113,7 +113,7 @@ private struct SyncWithAnotherDeviceButtonStyle: ButtonStyle {
 
         if isAppRebranded {
             enabledBackgroundColor = configuration.isPressed ? Color(designSystemColor: .accentSecondary) : Color(designSystemColor: .accentPrimary)
-            disabledBackgroundColor = Color(designSystemColor: .controlsFillTertiary)
+            disabledBackgroundColor = Color(designSystemColor: .controlFillTertiary)
             labelColor = enabled ? Color(designSystemColor: .accentContentPrimary) : Color(designSystemColor: .textTertiary)
         } else {
             enabledBackgroundColor = configuration.isPressed ? Color(NSColor.controlAccentColor).opacity(0.5) : Color(NSColor.controlAccentColor)

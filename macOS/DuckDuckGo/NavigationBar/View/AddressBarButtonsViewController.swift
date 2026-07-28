@@ -2358,10 +2358,10 @@ final class AddressBarButtonsViewController: NSViewController {
 
     private func applyThemeToToggleControl(_ toggleControl: CustomToggleControl) {
         let isAppRebranded = themeManager.isAppRebranded
-        let backgroundColor = isAppRebranded ? NSColor(singleUseColor: .aiToggleBackground) : NSColor(designSystemColor: .controlsRaisedBackdrop)
+        let backgroundColor = isAppRebranded ? NSColor(singleUseColor: .aiToggleBackground) : NSColor(designSystemColor: .controlRaisedBackdrop)
         let borderColor = isAppRebranded ? NSColor(singleUseColor: .aiToggleBorder) : nil
         let selectionBorder = isAppRebranded ? NSColor(singleUseColor: .aiToggleSelectionBorder) : NSColor(designSystemColor: .shadowSecondary)
-        let selectionBackgroundColor = isAppRebranded ? NSColor(singleUseColor: .aiToggleSelectionBackground) : NSColor(designSystemColor: .controlsRaisedFillPrimary)
+        let selectionBackgroundColor = isAppRebranded ? NSColor(singleUseColor: .aiToggleSelectionBackground) : NSColor(designSystemColor: .controlRaisedFillPrimary)
 
         toggleControl.backgroundColor = backgroundColor
         toggleControl.borderColor = borderColor
@@ -2374,7 +2374,7 @@ final class AddressBarButtonsViewController: NSViewController {
             toggleControl.outerBorderColor = NSColor.burnerAccent.withAlphaComponent(0.2)
         } else {
             toggleControl.focusBorderColor = theme.colorsProvider.accentPrimaryColor
-            toggleControl.outerBorderColor = NSColor(designSystemColor: .controlsRaisedBackdrop)
+            toggleControl.outerBorderColor = NSColor(designSystemColor: .controlRaisedBackdrop)
         }
 
         let styleProvider = themeManager.theme.addressBarStyleProvider

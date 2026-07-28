@@ -55,7 +55,7 @@ struct SecureVaultSorting: Equatable {
             if AppRebrand.isAppRebranded() {
                 switch self {
                 case .allItems:
-                    return NSColor(designSystemColor: .controlsFillPrimary)
+                    return NSColor(designSystemColor: .controlFillPrimary)
                 default:
                     return NSColor(designSystemColor: .accentAltPrimary)
                 }

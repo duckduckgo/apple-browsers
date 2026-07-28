@@ -43,7 +43,7 @@ struct SubscriptionPromoView: View {
                 .padding(.leading, 8)
                 .padding(.trailing, 32)
 
-            CloseButton(icon: .close, size: 16, backgroundColorOnHover: Color(designSystemColor: .controlsFillSecondary)) {
+            CloseButton(icon: .close, size: 16, backgroundColorOnHover: Color(designSystemColor: .controlFillSecondary)) {
                 onClose()
             }
             .padding(6)

@@ -70,6 +70,15 @@ extension TabViewController {
         }
     }
 
+    func setUnderPageBackgroundColor(_ color: UIColor?) {
+        webView.underPageBackgroundColor = color
+        let underPageBackgroundColor = webView.underPageBackgroundColor
+        webView.scrollView.backgroundColor = underPageBackgroundColor
+        outerContainer.backgroundColor = underPageBackgroundColor
+        webViewContainer.backgroundColor = underPageBackgroundColor
+        pullToRefreshViewAdapter?.backgroundColor = underPageBackgroundColor
+    }
+
     func configureRootView() {
         class RootView: UIView { }
         let rootView = RootView()

@@ -6773,7 +6773,7 @@ extension MainViewController {
 
         view.backgroundColor = theme.mainViewBackgroundColor
 
-        viewCoordinator.navigationBarContainer.backgroundColor = theme.barBackgroundColor
+        viewCoordinator.navigationBarContainer.backgroundColor = viewCoordinator.isBrowserChromeUpdateEnabled ? .clear : theme.barBackgroundColor
         viewCoordinator.navigationBarContainer.tintColor = theme.barTintColor
 
         viewCoordinator.toolbar.tintColor = UIColor(singleUseColor: .toolbarButton)

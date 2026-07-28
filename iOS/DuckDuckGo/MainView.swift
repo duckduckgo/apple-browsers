@@ -26,11 +26,19 @@ import Persistence
 import History
 import Core
 
+enum BrowserChromeMaterial {
+    static let blurStyle: UIBlurEffect.Style = .systemChromeMaterial
+}
+
 class MainViewFactory {
 
     private let coordinator: MainViewCoordinator
     private let featureFlagger: FeatureFlagger
     private let omnibarDependencies: OmnibarDependencyProvider
+
+    private var isBrowserChromeUpdateEnabled: Bool {
+        featureFlagger.isFeatureOn(.browserChromeUpdateJuly2026)
+    }
     
     var superview: UIView {
         coordinator.superview
@@ -50,7 +58,9 @@ class MainViewFactory {
     private init(parentController: UIViewController,
                  omnibarDependencies: OmnibarDependencyProvider,
                  featureFlagger: FeatureFlagger) {
-        coordinator = MainViewCoordinator(parentController: parentController)
+        coordinator = MainViewCoordinator(
+            parentController: parentController,
+            isBrowserChromeUpdateEnabled: featureFlagger.isFeatureOn(.browserChromeUpdateJuly2026))
         self.featureFlagger = featureFlagger
         self.omnibarDependencies = omnibarDependencies
     }
@@ -109,6 +119,7 @@ extension MainViewFactory {
         createStatusBackground()
         createTabBarContainer()
         createOmniBar()
+        createToolbarMaterialBackground()
         createToolbar()
         createNavigationBarContainer()
         createNavigationBarCollectionView()
@@ -174,6 +185,9 @@ extension MainViewFactory {
     private func createNavigationBarCollectionView() {
         // Layout is replaced elsewhere, but required to construct the view.
         coordinator.navigationBarCollectionView = NavigationBarCollectionView(frame: .zero, collectionViewLayout: UICollectionViewFlowLayout())
+        if isBrowserChromeUpdateEnabled {
+            coordinator.navigationBarCollectionView.backgroundColor = .clear
+        }
         
         // scrollview subclasses change the default to true, but we need this for the separator on the omnibar
         coordinator.navigationBarCollectionView.clipsToBounds = false
@@ -258,10 +272,11 @@ extension MainViewFactory {
         superview.addSubview(coordinator.contentContainer)
     }
 
-    final class StatusBackgroundView: UIView { }
+    final class StatusBackgroundView: UIVisualEffectView { }
     private func createStatusBackground() {
-        let view = StatusBackgroundView()
-        view.backgroundColor = UIColor(designSystemColor: .background)
+        let effect = isBrowserChromeUpdateEnabled ? UIBlurEffect(style: BrowserChromeMaterial.blurStyle) : nil
+        let view = StatusBackgroundView(effect: effect)
+        view.backgroundColor = isBrowserChromeUpdateEnabled ? .clear : UIColor(designSystemColor: .background)
         coordinator.statusBackground = view
         superview.addSubview(coordinator.statusBackground)
     }
@@ -290,10 +305,19 @@ extension MainViewFactory {
 
     private func createToolbar() {
         coordinator.toolbar = BrowserToolbarView()
+        coordinator.toolbar.setLegacyBackgroundTransparent(isBrowserChromeUpdateEnabled)
         coordinator.toolbar.backgroundColor = .clear
         superview.addSubview(coordinator.toolbar)
         coordinator.toolbarHandler = ToolbarHandler(toolbar: coordinator.toolbar)
         coordinator.updateToolbarWithState(.newTab)
+    }
+
+    private func createToolbarMaterialBackground() {
+        let effect = isBrowserChromeUpdateEnabled ? UIBlurEffect(style: BrowserChromeMaterial.blurStyle) : nil
+        coordinator.toolbarMaterialBackground = UIVisualEffectView(effect: effect)
+        coordinator.toolbarMaterialBackground.isHidden = !isBrowserChromeUpdateEnabled
+        coordinator.toolbarMaterialBackground.isUserInteractionEnabled = false
+        superview.addSubview(coordinator.toolbarMaterialBackground)
     }
 
     final class LogoBackgroundView: UIView { }
@@ -363,6 +387,7 @@ extension MainViewFactory {
         constrainTabBarContainer()
         constrainNavigationBarContainer()
         constrainToolbar()
+        constrainToolbarMaterialBackground()
         constrainUnifiedToggleInputContainer()
         constrainAITabCollapsedTopSeparator()
         constrainAIChatTabChatHeaderContainer()
@@ -466,6 +491,17 @@ extension MainViewFactory {
             toolbar.constrainView(superview, by: .centerX),
             coordinator.constraints.toolbarHeight,
             coordinator.constraints.toolbarBottom,
+        ])
+    }
+
+    private func constrainToolbarMaterialBackground() {
+        let background = coordinator.toolbarMaterialBackground!
+        coordinator.constraints.toolbarMaterialBackgroundTop = background.topAnchor.constraint(equalTo: coordinator.toolbar.topAnchor)
+        NSLayoutConstraint.activate([
+            coordinator.constraints.toolbarMaterialBackgroundTop,
+            background.leadingAnchor.constraint(equalTo: superview.leadingAnchor),
+            background.trailingAnchor.constraint(equalTo: superview.trailingAnchor),
+            background.bottomAnchor.constraint(equalTo: superview.bottomAnchor)
         ])
     }
 

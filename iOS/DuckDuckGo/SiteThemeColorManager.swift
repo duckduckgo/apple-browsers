@@ -74,7 +74,13 @@ final class SiteThemeColorManager {
     }
 
     func resetThemeColor() {
-        applyThemeColor(UIColor(designSystemColor: .background))
+        let defaultColor = UIColor(designSystemColor: .background)
+        if viewCoordinator.isBrowserChromeUpdateEnabled {
+            viewCoordinator.setPageThemeColor(nil)
+            tabViewController?.setUnderPageBackgroundColor(defaultColor)
+        } else {
+            applyThemeColor(defaultColor)
+        }
     }
 
     // MARK: - Private Methods
@@ -106,9 +112,10 @@ final class SiteThemeColorManager {
     }
 
     private var shouldApplyColorToCurrentTab: Bool {
-        // We do not support top address bar position in this 1st iteration
-        appSettings.currentAddressBarPosition == .bottom
-        && !(isCurrentTabShowingError || isCurrentTabShowingDaxPlayer || isCurrentTabShowingAIChat)
+        let isSupportedAddressBarPosition = viewCoordinator.isBrowserChromeUpdateEnabled
+            || appSettings.currentAddressBarPosition == .bottom
+        return isSupportedAddressBarPosition
+            && !(isCurrentTabShowingError || isCurrentTabShowingDaxPlayer || isCurrentTabShowingAIChat)
     }
 
     private var isCurrentTabShowingError: Bool {
@@ -140,6 +147,12 @@ final class SiteThemeColorManager {
 
     private func applyThemeColor(_ color: UIColor?) {
         let newColor = color ?? UIColor(designSystemColor: .background)
+        if viewCoordinator.isBrowserChromeUpdateEnabled {
+            viewCoordinator.setPageThemeColor(newColor)
+            tabViewController?.setUnderPageBackgroundColor(newColor)
+            return
+        }
+
         let statusBackgroundColor: UIColor
 
         if AppWidthObserver.shared.isPad && viewCoordinator.parentController?.traitCollection.horizontalSizeClass == .regular {

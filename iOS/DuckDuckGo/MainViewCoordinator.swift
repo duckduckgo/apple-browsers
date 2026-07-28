@@ -31,6 +31,7 @@ class MainViewCoordinator {
 
     weak var parentController: UIViewController?
     let superview: UIView
+    let isBrowserChromeUpdateEnabled: Bool
 
     var contentContainer: UIView!
     var logo: UIImageView!
@@ -53,6 +54,7 @@ class MainViewCoordinator {
     /// Owned so a subsequent show can cancel an in-flight dismiss and skip the stale completion.
     private var omnibarDismissAnimator: UIViewPropertyAnimator?
     var toolbar: BrowserToolbarView!
+    var toolbarMaterialBackground: UIVisualEffectView!
     var toolbarSpacer: UIView!
     var toolbarBackButton: BrowserChromeButton { toolbarHandler.backButton }
     var toolbarFireButton: BrowserChromeButton { toolbarHandler.fireButton }
@@ -65,6 +67,7 @@ class MainViewCoordinator {
     let constraints = Constraints()
     var toolbarHandler: ToolbarStateHandling!
     private var standardStatusBackgroundColor: UIColor?
+    private var pageThemeColor: UIColor?
     private var statusBackgroundPresentation: StatusBackgroundPresentation = .standard
     private var statusBackgroundPresentationBeforeOmnibarEditing: StatusBackgroundPresentation?
     private(set) var isNavigationChromeHidden = false
@@ -90,9 +93,10 @@ class MainViewCoordinator {
         omniBar.barView.expectedHeight
     }
 
-    init(parentController: UIViewController) {
+    init(parentController: UIViewController, isBrowserChromeUpdateEnabled: Bool) {
         self.parentController = parentController
         self.superview = parentController.view
+        self.isBrowserChromeUpdateEnabled = isBrowserChromeUpdateEnabled
     }
 
     func hideToolbarSeparator() {
@@ -109,6 +113,7 @@ class MainViewCoordinator {
         var navigationBarCollectionViewSafeAreaBottom: NSLayoutConstraint!
         var toolbarBottom: NSLayoutConstraint!
         var toolbarHeight: NSLayoutConstraint!
+        var toolbarMaterialBackgroundTop: NSLayoutConstraint!
         var contentContainerTop: NSLayoutConstraint!
         var tabBarContainerTop: NSLayoutConstraint!
         var progressBarTop: NSLayoutConstraint?
@@ -132,6 +137,7 @@ class MainViewCoordinator {
     func updateToolbarLayoutForAddressBarPosition(_ position: AddressBarPosition) {
         addressBarPosition = position
         applyContentContainerTopAnchorForCurrentState()
+        updateToolbarMaterialBackgroundTop(for: position)
         constraints.toolbarHeight.constant = BrowserToolbarView.legacyButtonsHeight
         navigationBarContainer.isHidden = false
         navigationBarContainer.alpha = 1
@@ -176,6 +182,7 @@ class MainViewCoordinator {
 
         addressBarPosition = position
         applyContentContainerTopAnchorForCurrentState()
+        updateToolbarMaterialBackgroundTop(for: position)
     }
 
     func hideNavigationBarWithBottomPosition() {
@@ -403,6 +410,11 @@ class MainViewCoordinator {
         applyResolvedStatusBackgroundColor()
     }
 
+    func setPageThemeColor(_ color: UIColor?) {
+        pageThemeColor = color
+        applyResolvedStatusBackgroundColor()
+    }
+
     func setStatusBackgroundPresentation(_ presentation: StatusBackgroundPresentation) {
         statusBackgroundPresentation = presentation
         applyResolvedStatusBackgroundColor()
@@ -515,31 +527,55 @@ class MainViewCoordinator {
             statusBackgroundPresentationBeforeOmnibarEditing = statusBackgroundPresentation
         }
         setStatusBackgroundPresentation(.omnibarEditing)
+        setToolbarBackgroundForOmnibarEditing(true)
     }
 
     private func endOmnibarStatusBackgroundPresentation() {
         guard statusBackgroundPresentation == .omnibarEditing else {
             statusBackgroundPresentationBeforeOmnibarEditing = nil
+            setToolbarBackgroundForOmnibarEditing(false)
             return
         }
         let restoredPresentation = statusBackgroundPresentationBeforeOmnibarEditing ?? .standard
         statusBackgroundPresentationBeforeOmnibarEditing = nil
         setStatusBackgroundPresentation(restoredPresentation)
+        setToolbarBackgroundForOmnibarEditing(false)
+    }
+
+    private func setToolbarBackgroundForOmnibarEditing(_ isEditing: Bool) {
+        guard isBrowserChromeUpdateEnabled else { return }
+        toolbarMaterialBackground.effect = isEditing ? nil : UIBlurEffect(style: BrowserChromeMaterial.blurStyle)
+        toolbarMaterialBackground.backgroundColor = isEditing ? UIColor(designSystemColor: .panel) : .clear
     }
 
     private func applyResolvedStatusBackgroundColor() {
-        statusBackground.backgroundColor = resolvedStatusBackgroundColor()
+        guard isBrowserChromeUpdateEnabled else {
+            statusBackground.backgroundColor = resolvedStatusBackgroundColor()
+            return
+        }
+
+        let usesMaterialBackground = statusBackgroundPresentation == .standard && pageThemeColor == nil
+        (statusBackground as? UIVisualEffectView)?.effect = usesMaterialBackground ? UIBlurEffect(style: BrowserChromeMaterial.blurStyle) : nil
+        statusBackground.backgroundColor = usesMaterialBackground ? .clear : resolvedStatusBackgroundColor()
     }
 
     private func resolvedStatusBackgroundColor() -> UIColor {
         switch statusBackgroundPresentation {
         case .standard:
-            return standardStatusBackgroundColor ?? UIColor(designSystemColor: .background)
+            return pageThemeColor ?? standardStatusBackgroundColor ?? UIColor(designSystemColor: .background)
         case .omnibarEditing, .aiTabSearchChromeHidden:
             return UIColor(designSystemColor: .panel)
         case .aiTabChatChromeHidden:
             return UIColor(designSystemColor: .surfaceCanvas)
         }
+    }
+
+    private func updateToolbarMaterialBackgroundTop(for position: AddressBarPosition) {
+        guard isBrowserChromeUpdateEnabled else { return }
+        constraints.toolbarMaterialBackgroundTop.isActive = false
+        let topAnchor = position.isBottom ? navigationBarContainer.topAnchor : toolbar.topAnchor
+        constraints.toolbarMaterialBackgroundTop = toolbarMaterialBackground.topAnchor.constraint(equalTo: topAnchor)
+        constraints.toolbarMaterialBackgroundTop.isActive = true
     }
 
     func setNavBarContainerBottomToKeyboard(floorAnchor: NSLayoutYAxisAnchor? = nil) {

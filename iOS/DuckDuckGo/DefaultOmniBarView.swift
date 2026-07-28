@@ -695,7 +695,8 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     final class SearchAreaContainerView: UIView { }
 
     private let searchAreaContainerView: UIView
-    private let searchAreaShadowView: CompositeShadowView
+    private let searchAreaShadowView: CompositeShadowView?
+    private let isBrowserChromeUpdateEnabled: Bool
     private var chromeContentContainerView: UIView {
         searchAreaContainerView
     }
@@ -715,14 +716,43 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     final class TopLevelStackView: UIStackView { }
     private let stackView = TopLevelStackView()
 
+    private lazy var glassEffect = makeGlassEffectView()
+
     static func create() -> Self {
-        Self.init()
+        Self.init(isBrowserChromeUpdateEnabled: false)
     }
 
-    init() {
-        let shadowView = CompositeShadowView.defaultShadowView()
-        searchAreaContainerView = shadowView
-        searchAreaShadowView = shadowView
+    static func create(isBrowserChromeUpdateEnabled: Bool) -> Self {
+        Self.init(isBrowserChromeUpdateEnabled: isBrowserChromeUpdateEnabled)
+    }
+
+    private func makeGlassEffectView() -> UIVisualEffectView {
+        let view: UIVisualEffectView
+        if #available(iOS 26.0, *) {
+            let effect = UIGlassEffect()
+            effect.tintColor = fireMode ? UIColor(singleUseColor: .fireModeBackground) : nil
+            view = UIVisualEffectView(effect: effect)
+            view.cornerConfiguration = .capsule()
+        } else {
+            view = UIVisualEffectView(effect: UIBlurEffect(style: BrowserChromeMaterial.blurStyle))
+            view.layer.cornerRadius = Metrics.cornerRadius
+            view.layer.cornerCurve = .continuous
+            view.clipsToBounds = true
+        }
+        view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        return view
+    }
+
+    init(isBrowserChromeUpdateEnabled: Bool) {
+        self.isBrowserChromeUpdateEnabled = isBrowserChromeUpdateEnabled
+        if isBrowserChromeUpdateEnabled {
+            searchAreaContainerView = SearchAreaContainerView()
+            searchAreaShadowView = nil
+        } else {
+            let shadowView = CompositeShadowView.defaultShadowView()
+            searchAreaContainerView = shadowView
+            searchAreaShadowView = shadowView
+        }
         super.init(frame: CGRect(x: 0, y: 0, width: 300, height: Metrics.height))
 
         setUpSubviews()
@@ -734,6 +764,10 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         setUpInitialState()
         updateActiveState()
         updateVerticalSpacing()
+    }
+
+    convenience init() {
+        self.init(isBrowserChromeUpdateEnabled: false)
     }
 
     @available(*, unavailable)
@@ -896,7 +930,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
         setContentHuggingPriority(.defaultLow, for: .horizontal)
 
-        backgroundColor = defaultBackgroundColor
+        backgroundColor = isBrowserChromeUpdateEnabled ? .clear : defaultBackgroundColor
 
         searchAreaAlignmentView.setContentHuggingPriority(.defaultLow, for: .horizontal)
         searchAreaAlignmentView.setContentCompressionResistancePriority(.required, for: .horizontal)
@@ -1021,9 +1055,17 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     }
 
     private func updateFireModeAppearance() {
-        searchAreaContainerView.backgroundColor = fireMode
-            ? UIColor(singleUseColor: .fireModeCardBackground)
-            : UIColor(designSystemColor: .backgroundTertiary)
+        if isBrowserChromeUpdateEnabled {
+            glassEffect.removeFromSuperview()
+            glassEffect = makeGlassEffectView()
+            glassEffect.frame = searchAreaContainerView.bounds
+            searchAreaContainerView.insertSubview(glassEffect, at: 0)
+            searchAreaContainerView.backgroundColor = .clear
+        } else {
+            searchAreaContainerView.backgroundColor = fireMode
+                ? UIColor(singleUseColor: .fireModeCardBackground)
+                : UIColor(designSystemColor: .backgroundTertiary)
+        }
         activeOutlineView.layer.borderColor = fireMode
             ? UIColor(singleUseColor: .fireModeAccent).cgColor
             : UIColor(designSystemColor: .accentPrimary).cgColor
@@ -1033,6 +1075,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     }
 
     private func updateShadows() {
+        guard let searchAreaShadowView else { return }
         if isActiveState {
             searchAreaShadowView.applyActiveShadow()
         } else {
@@ -1149,7 +1192,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     }
 
     func moveTransitionCompleted() {
-        backgroundColor = defaultBackgroundColor
+        backgroundColor = isBrowserChromeUpdateEnabled ? .clear : defaultBackgroundColor
         updateFireModeAppearance()
     }
 
@@ -1510,7 +1553,7 @@ extension DefaultOmniBarView {
             savedBarViewBackgroundColor = backgroundColor
         }
         searchAreaContainerView.backgroundColor = .clear
-        searchAreaShadowView.applyShadowOpacityMultiplier(0)
+        searchAreaShadowView?.applyShadowOpacityMultiplier(0)
         backgroundColor = .clear
         textField.alpha = 0
     }
@@ -1524,7 +1567,7 @@ extension DefaultOmniBarView {
             backgroundColor = saved
             savedBarViewBackgroundColor = nil
         }
-        searchAreaShadowView.applyShadowOpacityMultiplier(1)
+        searchAreaShadowView?.applyShadowOpacityMultiplier(1)
         textField.alpha = 1
     }
 
@@ -1714,7 +1757,7 @@ extension DefaultOmniBarView {
         applyTextViewVisibility()
 
         guard animated else {
-            searchAreaShadowView.applyShadowOpacityMultiplier(1)
+            searchAreaShadowView?.applyShadowOpacityMultiplier(1)
             aiChatSendButton.alpha = isSearchAreaExpanded ? 1 : 0
             modelPickerButton.alpha = (isSearchAreaExpanded && canShowModelPicker) ? 1 : 0
             reasoningPickerButton.alpha = (isSearchAreaExpanded && canShowReasoningPicker) ? 1 : 0
@@ -1755,7 +1798,7 @@ extension DefaultOmniBarView {
         layoutIfNeeded()
 
         if isSearchAreaExpanded {
-            searchAreaShadowView.applyShadowOpacityMultiplier(0)
+            searchAreaShadowView?.applyShadowOpacityMultiplier(0)
             applyExpansionClipping()
         }
 
@@ -1764,7 +1807,7 @@ extension DefaultOmniBarView {
 
         UIView.animate(withDuration: Metrics.expansionAnimationDuration, delay: 0, options: [.curveEaseInOut, .beginFromCurrentState]) {
             if self.isSearchAreaExpanded {
-                self.searchAreaShadowView.applyShadowOpacityMultiplier(1)
+                self.searchAreaShadowView?.applyShadowOpacityMultiplier(1)
                 self.aiChatSendButton.alpha = 1
                 self.modelPickerButton.alpha = self.canShowModelPicker ? 1 : 0
                 self.reasoningPickerButton.alpha = self.canShowReasoningPicker ? 1 : 0
@@ -1772,7 +1815,7 @@ extension DefaultOmniBarView {
                 self.selectedToolChipView.alpha = self.canShowSelectedToolBadge ? 1 : 0
                 self.attachButton.alpha = self.canShowAttachButton ? 1 : 0
             } else {
-                self.searchAreaShadowView.applyShadowOpacityMultiplier(0)
+                self.searchAreaShadowView?.applyShadowOpacityMultiplier(0)
                 self.aiChatSendButton.alpha = 0
                 self.modelPickerButton.alpha = 0
                 self.reasoningPickerButton.alpha = 0
@@ -1788,7 +1831,7 @@ extension DefaultOmniBarView {
             }
             if !self.isSearchAreaExpanded {
                 self.applyExpansionClipping()
-                self.searchAreaShadowView.applyShadowOpacityMultiplier(1)
+                self.searchAreaShadowView?.applyShadowOpacityMultiplier(1)
                 self.aiChatSendButton.isHidden = true
                 self.modelPickerButton.isHidden = true
                 self.reasoningPickerButton.isHidden = true
@@ -1798,7 +1841,7 @@ extension DefaultOmniBarView {
                 self.onCollapseAnimationCompleted?()
                 self.onCollapseAnimationCompleted = nil
             } else {
-                self.searchAreaShadowView.applyShadowOpacityMultiplier(1)
+                self.searchAreaShadowView?.applyShadowOpacityMultiplier(1)
                 self.onSearchAreaExpandedStateChanged?(true)
             }
             if self.isSearchAreaExpanded {

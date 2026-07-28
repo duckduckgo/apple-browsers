@@ -138,7 +138,8 @@ private extension ColorParityTests {
 
         let palettes: [(name: String, palette: ColorPalette)] = [
             ("legacy", .legacy),
-            ("default", .default)
+            ("default", .default),
+            ("onboarding", .onboarding)
         ]
 
         for (name, palette) in palettes {
@@ -186,6 +187,7 @@ private extension ColorParityTests {
         [
             ("default", .default),
             ("legacy", .legacy),
+            ("onboarding", .onboarding),
             ("coolGray", .coolGray),
             ("desert", .desert),
             ("green", .green),

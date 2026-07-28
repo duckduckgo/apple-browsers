@@ -66,7 +66,7 @@ extension OnboardingView {
                 .overlay( // Darker border
                     Circle()
                         .inset(by: Metrics.borderWidth / 2.0)
-                        .stroke(Color(singleUseColor: .rebranding(.decorationSecondary)), lineWidth: Metrics.borderWidth))
+                        .stroke(Color(designSystemColor: .surfaceDecorationSecondary, palette: .onboarding), lineWidth: Metrics.borderWidth))
                 .overlay( // Selected marker
                     Circle()
                         .inset(by: -Metrics.selectionRingInset)

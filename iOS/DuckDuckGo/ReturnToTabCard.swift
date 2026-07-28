@@ -273,7 +273,7 @@ struct ReturnToTabCard: View {
             .frame(width: Metrics.overlayContainerSize, height: Metrics.overlayContainerSize)
             .overlay(
                 Circle()
-                    .strokeBorder(Color(singleUseColor: .rebranding(.decorationPrimary)),
+                    .strokeBorder(Color(designSystemColor: .surfaceDecorationPrimary, palette: .onboarding),
                                   lineWidth: Metrics.overlayStrokeWidth)
             )
     }

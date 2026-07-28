@@ -42,7 +42,7 @@ private enum ComparisonTableMetrics {
     static let circleCheckViewSize: CGFloat = 20
 
     // Separator
-    static let separatorColor = Color(singleUseColor: .rebranding(.decorationPrimary))
+    static let separatorColor = Color(designSystemColor: .surfaceDecorationPrimary, palette: .onboarding)
     static let separatorWidth: CGFloat = 1
 }
 

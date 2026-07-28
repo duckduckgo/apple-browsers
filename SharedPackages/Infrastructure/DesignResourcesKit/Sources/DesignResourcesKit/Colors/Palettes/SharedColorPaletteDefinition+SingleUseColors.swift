@@ -112,12 +112,6 @@ private extension SharedColorPaletteDefinition {
             return DynamicColor(lightColor: PrimitiveColor.GrayScale.black.opacity(0.06), darkColor: .clear)
         case .buttonsSecondaryDisabledText:
             return DynamicColor(lightColor: PrimitiveColor.GrayScale.black.opacity(0.36), darkColor: Color(0x707070))
-        case .controlsFillPrimary:
-            return DynamicColor(lightColor: PrimitiveColor.GrayScale.black.opacity(0.06), darkColor: PrimitiveColor.GrayScale.white.opacity(0.12))
-        case .decorationPrimary:
-            return DynamicColor(lightColor: PrimitiveColor.Eggshell.eggshell90.opacity(0.09), darkColor: PrimitiveColor.GrayScale.white.opacity(0.06))
-        case .decorationSecondary:
-            return DynamicColor(lightColor: PrimitiveColor.Eggshell.eggshell90.opacity(0.16), darkColor: PrimitiveColor.GrayScale.white.opacity(0.09))
         case .calendarStripYellow:
             return DynamicColor(staticColor: PrimitiveColor.Pollen.pollen20)
         }

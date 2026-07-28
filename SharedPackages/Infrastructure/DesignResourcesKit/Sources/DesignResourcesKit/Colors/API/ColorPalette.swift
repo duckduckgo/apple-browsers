@@ -46,6 +46,8 @@ public enum ColorPalette {
     case legacy
     case `default`
 
+    case onboarding
+
 #if os(iOS)
     @available(*, deprecated, message: "Use .default — the rebranded palette is now the default.")
     public static var rebranded: ColorPalette { .default }
@@ -67,6 +69,8 @@ public enum ColorPalette {
             return DefaultColorPalette.self
         case .legacy:
             return LegacyColorPalette.self
+        case .onboarding:
+            return OnboardingColorPalette.self
 #if os(macOS)
         case .coolGray:
             return CoolGrayColorPalette.self

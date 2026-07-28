@@ -99,11 +99,6 @@ public extension SingleUseColor {
         case buttonsSecondaryDisabledBackground
         case buttonsSecondaryDisabledText
 
-        case controlsFillPrimary
-
-        case decorationPrimary
-        case decorationSecondary
-
         case calendarStripYellow
     }
 

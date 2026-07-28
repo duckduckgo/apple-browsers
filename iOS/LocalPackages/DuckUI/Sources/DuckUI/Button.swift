@@ -786,7 +786,7 @@ public struct GhostAltButtonStyle: ButtonStyle {
     }
 
     private func backgroundColor(_ isPressed: Bool) -> Color {
-        isPressed ? Color(singleUseColor: .rebranding(.controlsFillPrimary)) : .clear
+        isPressed ? Color(designSystemColor: .controlFillPrimary, palette: .onboarding) : .clear
     }
 }
 

@@ -80,6 +80,16 @@ class AggregateDispositionsTests(unittest.TestCase):
         result = self.run_program(row)
         self.assertEqual(result.returncode, 0, result.stderr)
 
+    def test_accepts_validated_archive_name_mismatch(self) -> None:
+        row = (
+            "chrome\t1\tbad.test\tinfra_error\terror\t"
+            "validated_archive_name_mismatch\t-\tarchive name mismatch\t-"
+            "\tvalidation\tinvalid_handoff\tvalidated_archive_name_mismatch"
+            "\t2\t0\t0\t0\t0\t12000\tmacOS-15\n"
+        )
+        result = self.run_program(row)
+        self.assertEqual(result.returncode, 0, result.stderr)
+
     def test_rejects_non_handoff_validation_error_as_infrastructure(self) -> None:
         row = (
             "safari\t1\tbad.test\tinfra_error\terror\thttp_403\t403\t-\t-"

@@ -53,6 +53,7 @@ VALID_HANDOFF_FAILURE_REASONS = {
     "validation_verdict_invalid",
     "validation_http_status_invalid",
     "validated_archive_name_invalid",
+    "validated_archive_name_mismatch",
     "validated_archive_missing",
     "validated_archive_hash_invalid",
     "validated_archive_hash_mismatch",

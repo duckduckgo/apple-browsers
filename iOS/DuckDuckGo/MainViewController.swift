@@ -1951,6 +1951,7 @@ class MainViewController: UIViewController {
         viewCoordinator.logoContainer.isHidden = false
         findInPageView?.isHidden = true
         chromeManager.detach()
+        chromeManager.reset(animated: false)
 
         currentTab?.dismiss()
         removeHomeScreen()

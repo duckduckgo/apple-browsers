@@ -132,14 +132,32 @@ final class FloatingDomainCapsuleController {
                            in: view)
 
         let alpha = capsuleAlpha(for: progress, reduceMotion: reduceMotion)
-        button.isHidden = false
         button.alpha = alpha
         domainLabel.alpha = reduceMotion ? 1 : max(0, min(1, 1 - progress))
         guard alpha > 0.01 else {
+            button.isAccessibilityElement = false
+            button.isUserInteractionEnabled = false
+            hideButtonAfterInheritedAnimation()
             return
         }
 
+        button.isHidden = false
+        button.isAccessibilityElement = true
+        button.isUserInteractionEnabled = true
         view.bringSubviewToFront(button)
+    }
+
+    private func hideButtonAfterInheritedAnimation() {
+        let animationDuration = UIView.inheritedAnimationDuration
+        guard animationDuration > 0 else {
+            button.isHidden = true
+            return
+        }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + animationDuration) { [weak self] in
+            guard let self, button.alpha <= 0.01 else { return }
+            button.isHidden = true
+        }
     }
 
     private func capsuleAlpha(for progress: CGFloat, reduceMotion: Bool) -> CGFloat {

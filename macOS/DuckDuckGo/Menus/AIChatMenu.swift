@@ -128,6 +128,9 @@ final class AIChatMenu: NSMenu {
     /// Whether the current page's content can be attached. When false the item reads "Open Sidebar"
     /// instead of "Ask About Page". Evaluated live each time the menu opens.
     private let isCurrentPageAttachable: () -> Bool
+    /// Whether a Duck.ai chat is already presented (sidebar or floating). When true the item reads
+    /// "Close Sidebar" and closes the chat. Evaluated live each time the menu opens.
+    private let isChatPresented: () -> Bool
 
     // MARK: - Init
 
@@ -136,13 +139,15 @@ final class AIChatMenu: NSMenu {
          maxChatItems: Int? = nil,
          origin: Origin = .mainMenu,
          shouldShowAskAboutPage: @escaping () -> Bool = { false },
-         isCurrentPageAttachable: @escaping () -> Bool = { true }) {
+         isCurrentPageAttachable: @escaping () -> Bool = { true },
+         isChatPresented: @escaping () -> Bool = { false }) {
         self.suggestionsReader = suggestionsReader
         self.actions = actions
         self.maxChatItems = maxChatItems
         self.origin = origin
         self.shouldShowAskAboutPage = shouldShowAskAboutPage
         self.isCurrentPageAttachable = isCurrentPageAttachable
+        self.isChatPresented = isChatPresented
         super.init(title: "Duck.ai")
         buildMenu()
     }
@@ -259,7 +264,11 @@ final class AIChatMenu: NSMenu {
     private func refreshAskAboutPageItem() {
         let isShown = shouldShowAskAboutPage()
         askAboutPageItem.isHidden = !isShown
-        if isCurrentPageAttachable() {
+        if isChatPresented() {
+            // A chat is already open → close it (sidebar or floating) with the sidebar-close icon.
+            askAboutPageItem.title = UserText.aiChatMenuCloseSidebar
+            askAboutPageItem.image = TabBarViewController.closeSidebarMenuIcon()
+        } else if isCurrentPageAttachable() {
             askAboutPageItem.title = UserText.aiChatMenuAskAboutPage
             askAboutPageItem.image = DesignSystemImages.Glyphs.Size12.aiChat
         } else {

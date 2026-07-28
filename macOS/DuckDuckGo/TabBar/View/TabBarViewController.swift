@@ -1025,8 +1025,8 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         menu.popUp(positioning: nil, at: NSPoint(x: 0, y: sender.bounds.height + 4), in: sender)
     }
 
-    /// The pill's two-item dropdown (New Chat / Ask About Page), rebuilt per press so the title and
-    /// favicon reflect the current tab.
+    /// The pill's two-item dropdown (New Chat + a state-dependent sidebar item), rebuilt per press so
+    /// its title/icon reflect the current tab and chat state.
     private func makeDuckAIMenuButtonMenu() -> NSMenu {
         let menu = NSMenu()
 
@@ -1035,21 +1035,29 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         newChatItem.image = DesignSystemImages.Glyphs.Size12.compose
         menu.addItem(newChatItem)
 
-        // "Ask About Page" on an attachable web page; "Open Sidebar" when there's nothing to attach.
-        let askAboutPageTitle = isCurrentPageAttachableForAIChat ? UserText.aiChatMenuAskAboutPage : UserText.aiChatMenuOpenSidebar
-        let askAboutPageItem = NSMenuItem(title: askAboutPageTitle, action: #selector(duckAIMenuAskAboutPageAction), keyEquivalent: "")
-        askAboutPageItem.target = self
-        askAboutPageItem.image = askAboutPageMenuImage()
-        menu.addItem(askAboutPageItem)
+        // Chat presented → "Close Sidebar"; otherwise "Ask About Page" (attachable page) or
+        // "Open Sidebar" (nothing to attach).
+        let sidebarItem = NSMenuItem(title: "", action: #selector(duckAIMenuSidebarAction), keyEquivalent: "")
+        sidebarItem.target = self
+        if isDuckAIChatPresented {
+            sidebarItem.title = UserText.aiChatMenuCloseSidebar
+            sidebarItem.image = Self.closeSidebarMenuIcon()
+        } else if isCurrentPageAttachableForAIChat {
+            sidebarItem.title = UserText.aiChatMenuAskAboutPage
+            sidebarItem.image = currentPageFaviconMenuImage()
+        } else {
+            sidebarItem.title = UserText.aiChatMenuOpenSidebar
+            sidebarItem.image = Self.openSidebarMenuIcon()
+        }
+        menu.addItem(sidebarItem)
 
         return menu
     }
 
-    /// Image for the second menu item: the current page's favicon for "Ask About Page" on a real web
-    /// page, otherwise the split button's sidebar-open icon for "Open Sidebar".
-    private func askAboutPageMenuImage() -> NSImage {
-        guard isCurrentPageAttachableForAIChat, let favicon = tabCollectionViewModel.selectedTabViewModel?.favicon else {
-            return Self.openSidebarMenuIcon()
+    /// The current page's favicon, copied and sized for the "Ask About Page" menu item.
+    private func currentPageFaviconMenuImage() -> NSImage {
+        guard let favicon = tabCollectionViewModel.selectedTabViewModel?.favicon else {
+            return DesignSystemImages.Glyphs.Size12.aiChat
         }
         let image = (favicon.copy() as? NSImage) ?? favicon
         image.size = NSSize(width: 12, height: 12)
@@ -1060,10 +1068,25 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     /// The two-part control's "open sidebar" icon, copied and sized for a menu item. Copying avoids
     /// mutating the shared asset instance still used by the split button when the menu-button flag is off.
     static func openSidebarMenuIcon() -> NSImage {
-        let named = NSImage(named: Constants.duckAISidebarOpenImageName)
+        menuIcon(named: Constants.duckAISidebarOpenImageName)
+    }
+
+    /// The two-part control's "close sidebar" icon, copied and sized for a menu item.
+    static func closeSidebarMenuIcon() -> NSImage {
+        menuIcon(named: Constants.duckAISidebarCloseImageName)
+    }
+
+    private static func menuIcon(named name: NSImage.Name) -> NSImage {
+        let named = NSImage(named: name)
         guard let icon = named?.copy() as? NSImage else { return named ?? NSImage() }
         icon.size = NSSize(width: 12, height: 12)
         return icon
+    }
+
+    /// Whether a Duck.ai chat is currently presented for the selected tab (docked sidebar or floating).
+    var isDuckAIChatPresented: Bool {
+        guard let tab = tabCollectionViewModel.selectedTabViewModel?.tab else { return false }
+        return aiChatCoordinator?.isSidebarOpen(for: tab.uuid) == true || aiChatCoordinator?.isChatFloating(for: tab.uuid) == true
     }
 
     @objc private func duckAIMenuNewChatAction() {
@@ -1075,8 +1098,21 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         mainViewController.openNewDuckAIChatTab()
     }
 
-    @objc private func duckAIMenuAskAboutPageAction() {
-        openDuckAISidebarWithPageAttachment()
+    /// Toggles the sidebar: closes an open chat (sidebar or floating), otherwise opens it with the
+    /// current page attached.
+    @objc private func duckAIMenuSidebarAction() {
+        if isDuckAIChatPresented {
+            closeDuckAIChat()
+        } else {
+            openDuckAISidebarWithPageAttachment()
+        }
+    }
+
+    /// Closes the current tab's Duck.ai chat, whether docked in the sidebar or in a floating window.
+    func closeDuckAIChat() {
+        guard let tab = tabCollectionViewModel.selectedTabViewModel?.tab else { return }
+        aiChatCoordinator?.closeChat(for: tab.uuid, withAnimation: true)
+        updateDuckAIChromeSegmentedControlState()
     }
 
     /// Opens the sidebar and force-attaches the current page regardless of the auto-send preference.

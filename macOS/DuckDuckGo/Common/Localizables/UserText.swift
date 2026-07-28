@@ -678,6 +678,7 @@ struct UserText {
     static let aiChatMenuNewChat = NSLocalizedString("duckai.menu.new-chat", value: "New Chat", comment: "Duck.ai menu item to start a new chat")
     static let aiChatMenuAskAboutPage = NSLocalizedString("duckai.menu.ask-about-page", value: "Ask About Page", comment: "Duck.ai menu item to open the sidebar and attach the current page's content")
     static let aiChatMenuOpenSidebar = NSLocalizedString("duckai.menu.open-sidebar", value: "Open Sidebar", comment: "Duck.ai menu item to open the sidebar when the current page's content can't be attached (e.g. the new tab page)")
+    static let aiChatMenuCloseSidebar = NSLocalizedString("duckai.menu.close-sidebar", value: "Close Sidebar", comment: "Duck.ai menu item to close the sidebar (or detached window) when a chat is already open")
     static let aiChatMenuNewVoiceChat = NSLocalizedString("duckai.menu.new-voice-chat", value: "New Voice Chat", comment: "Duck.ai main menu item to start a new voice chat")
     static let aiChatMenuNewImageChat = NSLocalizedString("duckai.menu.new-image-chat", value: "New Image Chat", comment: "Duck.ai main menu item to start a new image chat")
     static let aiChatMenuRecentChats = NSLocalizedString("duckai.menu.recent-chats", value: "Recent Chats", comment: "Duck.ai main menu section label for recent chat history")

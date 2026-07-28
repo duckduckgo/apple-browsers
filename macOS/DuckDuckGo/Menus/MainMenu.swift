@@ -1300,6 +1300,8 @@ final class MainMenu: NSMenu {
             featureFlagger.isFeatureOn(.aiChatChromeSidebar) && featureFlagger.isFeatureOn(.aiChatChromeMenuButton)
         }, isCurrentPageAttachable: {
             Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.mainViewController.tabBarViewController.isCurrentPageAttachableForAIChat ?? false
+        }, isChatPresented: {
+            Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.mainViewController.tabBarViewController.isDuckAIChatPresented ?? false
         })
     }
 

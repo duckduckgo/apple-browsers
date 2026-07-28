@@ -33860,6 +33860,18 @@
         }
       }
     },
+    "duckai.menu.close-sidebar" : {
+      "comment" : "Duck.ai menu item to close the sidebar (or detached window) when a chat is already open",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Close Sidebar"
+          }
+        }
+      }
+    },
     "duckai.menu.open-sidebar" : {
       "comment" : "Duck.ai menu item to open the sidebar when the current page's content can't be attached (e.g. the new tab page)",
       "extractionState" : "extracted_with_value",

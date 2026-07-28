@@ -4395,6 +4395,12 @@
 /* Settings screen cell text for Unprotected Sites */
 "settings.unprotected.sites" = "Ubeskyttede nettsteder";
 
+/* Description shown above the list of unprotected sites */
+"settings.unprotected.sites.description" = "Disse nettstedene blir ikke dekket av personvernbeskyttelse.";
+
+/* Message shown when there are no unprotected sites */
+"settings.unprotected.sites.empty.state" = "Personvernbeskyttelse er aktivert for alle nettsteder";
+
 /* Settings cell for Version */
 "settings.version" = "Versjon";
 

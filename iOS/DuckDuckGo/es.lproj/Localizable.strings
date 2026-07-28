@@ -4395,6 +4395,12 @@
 /* Settings screen cell text for Unprotected Sites */
 "settings.unprotected.sites" = "Sitios no protegidos";
 
+/* Description shown above the list of unprotected sites */
+"settings.unprotected.sites.description" = "La protección de privacidad está deshabilitada para estos sitios.";
+
+/* Message shown when there are no unprotected sites */
+"settings.unprotected.sites.empty.state" = "Protección de privacidad habilitada para todos los sitios";
+
 /* Settings cell for Version */
 "settings.version" = "Versión";
 

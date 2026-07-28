@@ -1680,6 +1680,8 @@ public struct UserText {
     public static let settingsGPC = NSLocalizedString("settings.gpc", value: "Global Privacy Control (GPC)", comment: "Settings screen cell text for GPC")
     public static let settingsCookiePopups = NSLocalizedString("settings.cookie.popups", value: "Manage Cookie Pop-ups", comment: "Settings screen cell text for Cookie popups")
     public static let settingsUnprotectedSites = NSLocalizedString("settings.unprotected.sites", value: "Unprotected Sites", comment: "Settings screen cell text for Unprotected Sites")
+    public static let settingsUnprotectedSitesDescription = NSLocalizedString("settings.unprotected.sites.description", value: "These sites will not be enhanced by Privacy Protection.", comment: "Description shown above the list of unprotected sites")
+    public static let settingsUnprotectedSitesEmptyState = NSLocalizedString("settings.unprotected.sites.empty.state", value: "Privacy Protection enabled for all sites", comment: "Message shown when there are no unprotected sites")
     public static let settingsFireproofedSites = NSLocalizedString("settings.fireproofed.sites", value: "Fireproofed Sites", comment: "Settings screen cell text for Fireproofed Sites")
     public static func settingsFireproofedSitesSubtitle(withCount count: Int) -> String {
         let format = Bundle.main.localizedString(forKey: "settings.fireproofed.sites.subtitle", value: nil, table: nil)

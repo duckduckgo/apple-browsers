@@ -4395,6 +4395,12 @@
 /* Settings screen cell text for Unprotected Sites */
 "settings.unprotected.sites" = "Suojaamattomat sivustot";
 
+/* Description shown above the list of unprotected sites */
+"settings.unprotected.sites.description" = "Yksityisyyden suoja ei paranna näitä sivustoja.";
+
+/* Message shown when there are no unprotected sites */
+"settings.unprotected.sites.empty.state" = "Yksityisyyden suoja on käytössä kaikilla sivustoilla";
+
 /* Settings cell for Version */
 "settings.version" = "Versio";
 

@@ -4395,6 +4395,12 @@
 /* Settings screen cell text for Unprotected Sites */
 "settings.unprotected.sites" = "Незащитени сайтове";
 
+/* Description shown above the list of unprotected sites */
+"settings.unprotected.sites.description" = "Към тези сайтове няма да бъде приложена защита на поверителността.";
+
+/* Message shown when there are no unprotected sites */
+"settings.unprotected.sites.empty.state" = "Защитата на поверителността е активирана за всички сайтове";
+
 /* Settings cell for Version */
 "settings.version" = "Версия";
 

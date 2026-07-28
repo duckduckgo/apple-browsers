@@ -4395,6 +4395,12 @@
 /* Settings screen cell text for Unprotected Sites */
 "settings.unprotected.sites" = "Ungeschützte Websites";
 
+/* Description shown above the list of unprotected sites */
+"settings.unprotected.sites.description" = "Für diese Websites ist der Datenschutz nicht aktiviert.";
+
+/* Message shown when there are no unprotected sites */
+"settings.unprotected.sites.empty.state" = "Datenschutz für alle Websites aktiviert";
+
 /* Settings cell for Version */
 "settings.version" = "Version";
 

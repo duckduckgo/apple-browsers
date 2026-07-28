@@ -4395,6 +4395,12 @@
 /* Settings screen cell text for Unprotected Sites */
 "settings.unprotected.sites" = "Neapsaugotos svetainės";
 
+/* Description shown above the list of unprotected sites */
+"settings.unprotected.sites.description" = "Šių svetainių nepatobulins privatumo apsauga.";
+
+/* Message shown when there are no unprotected sites */
+"settings.unprotected.sites.empty.state" = "Privatumo apsauga įjungta visose svetainėse";
+
 /* Settings cell for Version */
 "settings.version" = "Versija";
 

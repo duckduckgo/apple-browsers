@@ -4210,6 +4210,12 @@ Take back control of your personal information with the browser designed for dat
 /* Settings screen cell text for Unprotected Sites */
 "settings.unprotected.sites" = "Unprotected Sites";
 
+/* Description shown above the list of unprotected sites */
+"settings.unprotected.sites.description" = "These sites will not be enhanced by Privacy Protection.";
+
+/* Message shown when there are no unprotected sites */
+"settings.unprotected.sites.empty.state" = "Privacy Protection enabled for all sites";
+
 /* Settings cell for Version */
 "settings.version" = "Version";
 

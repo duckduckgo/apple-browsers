@@ -268,12 +268,10 @@ final class AIChatMenu: NSMenu {
             // A chat is already open → close it (sidebar or floating) with the sidebar-close icon.
             askAboutPageItem.title = UserText.aiChatMenuCloseSidebar
             askAboutPageItem.image = TabBarViewController.closeSidebarMenuIcon()
-        } else if isCurrentPageAttachable() {
-            askAboutPageItem.title = UserText.aiChatMenuAskAboutPage
-            askAboutPageItem.image = DesignSystemImages.Glyphs.Size12.aiChat
         } else {
-            // Nothing to attach → "Open Sidebar" with the split button's sidebar-open icon.
-            askAboutPageItem.title = UserText.aiChatMenuOpenSidebar
+            // "Ask About Page" (attachable) or "Open Sidebar" (nothing to attach), both with the
+            // split button's sidebar-open icon.
+            askAboutPageItem.title = isCurrentPageAttachable() ? UserText.aiChatMenuAskAboutPage : UserText.aiChatMenuOpenSidebar
             askAboutPageItem.image = TabBarViewController.openSidebarMenuIcon()
         }
         // Hold ⌥⌘L only while shown: a hidden item can still register its key equivalent in AppKit and

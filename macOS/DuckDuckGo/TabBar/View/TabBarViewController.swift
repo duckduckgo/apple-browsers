@@ -1035,34 +1035,20 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         newChatItem.image = DesignSystemImages.Glyphs.Size12.compose
         menu.addItem(newChatItem)
 
-        // Chat presented → "Close Sidebar"; otherwise "Ask About Page" (attachable page) or
-        // "Open Sidebar" (nothing to attach).
+        // Chat presented → "Close Sidebar" (close icon); otherwise "Ask About Page" (attachable page)
+        // or "Open Sidebar" (nothing to attach), both with the sidebar-open icon.
         let sidebarItem = NSMenuItem(title: "", action: #selector(duckAIMenuSidebarAction), keyEquivalent: "")
         sidebarItem.target = self
         if isDuckAIChatPresented {
             sidebarItem.title = UserText.aiChatMenuCloseSidebar
             sidebarItem.image = Self.closeSidebarMenuIcon()
-        } else if isCurrentPageAttachableForAIChat {
-            sidebarItem.title = UserText.aiChatMenuAskAboutPage
-            sidebarItem.image = currentPageFaviconMenuImage()
         } else {
-            sidebarItem.title = UserText.aiChatMenuOpenSidebar
+            sidebarItem.title = isCurrentPageAttachableForAIChat ? UserText.aiChatMenuAskAboutPage : UserText.aiChatMenuOpenSidebar
             sidebarItem.image = Self.openSidebarMenuIcon()
         }
         menu.addItem(sidebarItem)
 
         return menu
-    }
-
-    /// The current page's favicon, copied and sized for the "Ask About Page" menu item.
-    private func currentPageFaviconMenuImage() -> NSImage {
-        guard let favicon = tabCollectionViewModel.selectedTabViewModel?.favicon else {
-            return DesignSystemImages.Glyphs.Size12.aiChat
-        }
-        let image = (favicon.copy() as? NSImage) ?? favicon
-        image.size = NSSize(width: 12, height: 12)
-        image.isTemplate = false
-        return image
     }
 
     /// The two-part control's "open sidebar" icon, copied and sized for a menu item. Copying avoids

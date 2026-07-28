@@ -186,7 +186,15 @@ final class AppDependencyProvider: DependencyProvider {
             }(),
             featureFlagProvider: WideEventFeatureFlagAdapter(featureFlagger: featureFlagger)
         )
-        configurationURLProvider = ConfigurationURLProvider(defaultProvider: AppConfigurationURLProvider(featureFlagger: featureFlagger), internalUserDecider: internalUserDecider, store: CustomConfigurationURLStorage(defaults: UserDefaults(suiteName: Global.appConfigurationGroupName) ?? UserDefaults()))
+        let customConfigurationURLStorage = CustomConfigurationURLStorage(defaults: UserDefaults(suiteName: Global.appConfigurationGroupName) ?? UserDefaults())
+        if customConfigurationURLStorage.customPrivacyConfigurationURL == nil {
+            customConfigurationURLStorage.customPrivacyConfigurationURL = URL.privacyConfig
+        }
+        configurationURLProvider = ConfigurationURLProvider(
+            defaultProvider: AppConfigurationURLProvider(featureFlagger: featureFlagger),
+            internalUserDecider: internalUserDecider,
+            store: customConfigurationURLStorage
+        )
         configurationManager = ConfigurationManager(fetcher: ConfigurationFetcher(store: configurationStore, configurationURLProvider: configurationURLProvider, eventMapping: ConfigurationManager.configurationDebugEvents), store: configurationStore)
 
         // Configure Subscription

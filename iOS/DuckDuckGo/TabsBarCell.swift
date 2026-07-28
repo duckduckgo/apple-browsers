@@ -224,7 +224,7 @@ class TabsBarCell: UICollectionViewCell {
     }
 
     func applyCurrentStyle(isCurrent: Bool, isNextCurrent: Bool, hidesInactiveCloseButton: Bool, withTheme theme: Theme) {
-        // Active tab background is drawn behind the cells by the tabs bar, so the cell stays clear.
+        // Active-tab background is drawn behind the cells, so the cell stays clear.
         topBackgroundView.backgroundColor = .clear
         bottomBackgroundView.backgroundColor = .clear
         if !isCurrent {

@@ -19,22 +19,18 @@
 
 import UIKit
 
-/// Draws the active iPad tab background: rounded top corners plus concave "ramp" fillets at the
-/// bottom that flare outward so the tab merges into the toolbar below (the classic browser-tab
-/// silhouette). Mirrors the macOS tab shape (`TabBackgroundShapeView`) but authored in UIKit
-/// coordinates (y increases downward).
+/// Draws the active iPad tab background: rounded top corners and concave bottom fillets that flare
+/// outward so the tab merges into the toolbar below. Mirrors the macOS tab shape in UIKit coordinates.
 ///
-/// The tab body occupies the view's bounds inset horizontally by `rampSize.width` on each side; the
-/// ramps flare out to the bounds' edges, so the caller sizes this view `2 * rampSize.width` wider
-/// than the tab itself and centers it over the tab.
+/// The tab body is the bounds inset by `rampSize.width` on each side; the ramps flare to the edges, so
+/// the caller sizes this view `2 * rampSize.width` wider than the tab and centers it over it.
 final class TabFlaredBackgroundView: UIView {
 
     var topCornerRadius: CGFloat = 12 {
         didSet { setNeedsLayout() }
     }
 
-    /// Width/height of the outward concave fillet at the bottom of each side. Width is how far the
-    /// foot spreads past the tab body; height is how far up the side the fillet reaches.
+    /// Bottom-side concave fillet: width spreads past the tab body, height reaches up the side.
     var rampSize: CGSize = CGSize(width: 10, height: 10) {
         didSet { setNeedsLayout() }
     }
@@ -66,15 +62,16 @@ final class TabFlaredBackgroundView: UIView {
         shapeLayer.path = Self.path(in: bounds, topCornerRadius: topCornerRadius, rampSize: rampSize)
     }
 
-    /// Bézier control-point ratio for approximating a quarter circle with a cubic curve.
+    /// Kappa: the cubic control-point offset (as a fraction of radius) that best approximates a
+    /// quarter circle. kappa = 4/3 · (√2 − 1) ≈ 0.5523.
     private static let quarterCircleControl: CGFloat = 0.5522847498307936
 
-    /// Builds the flared-tab outline. `rect` is the full drawing rect (tab body plus both ramps).
+    /// Builds the flared-tab outline (`rect` is the tab body plus both ramps). The bottom fillets are
+    /// cubic Béziers matching the Figma export (`C14.4772 23 10 18.5228 10 13`), whose control points
+    /// are the kappa offsets below.
     ///
-    /// The two bottom fillets are drawn as cubic Béziers rather than `addArc(center:…clockwise:)`
-    /// because that arc's winding is evaluated in the path's (y-up) space while a `CAShapeLayer`
-    /// renders y-down, which flips a concave fillet into a convex bump. The cubic control points are
-    /// unambiguous in either space and mirror the Figma curve exactly.
+    /// They are cubics, not `addArc(center:…clockwise:)`: that arc's winding is evaluated y-up while
+    /// `CAShapeLayer` renders y-down, which flips the concave fillet into a bump.
     static func path(in rect: CGRect, topCornerRadius: CGFloat, rampSize: CGSize) -> CGPath {
         let path = CGMutablePath()
         guard rect.width > 0, rect.height > 0 else { return path }
@@ -89,11 +86,11 @@ final class TabFlaredBackgroundView: UIView {
         let top = rect.minY
         let bottom = rect.maxY
 
-        // Bottom edge, widened by the ramps: left foot -> right foot.
+        // Bottom edge, foot to foot.
         path.move(to: CGPoint(x: rect.minX, y: bottom))
         path.addLine(to: CGPoint(x: rect.maxX, y: bottom))
 
-        // Trailing (right) ramp: concave quarter-fillet from the right foot up-and-in to the body wall.
+        // Right ramp fillet.
         path.addCurve(to: CGPoint(x: bodyRight, y: bottom - rampHeight),
                       control1: CGPoint(x: rect.maxX - rampWidth * control, y: bottom),
                       control2: CGPoint(x: bodyRight, y: bottom - rampHeight * (1 - control)))
@@ -110,7 +107,7 @@ final class TabFlaredBackgroundView: UIView {
 
         path.addLine(to: CGPoint(x: bodyLeft, y: bottom - rampHeight))
 
-        // Leading (left) ramp: concave quarter-fillet from the body wall down-and-out to the left foot.
+        // Left ramp fillet.
         path.addCurve(to: CGPoint(x: rect.minX, y: bottom),
                       control1: CGPoint(x: bodyLeft, y: bottom - rampHeight * (1 - control)),
                       control2: CGPoint(x: rect.minX + rampWidth * control, y: bottom))

@@ -3165,14 +3165,20 @@ class MainViewController: UIViewController {
         updateWindowedAddressBarCorners()
     }
 
-    /// Rounds the top address bar's top corners on iPad when windowed, matching the active tab. Uses
-    /// `cornerRadius` without clipping so the pill shadow and the below-bar overflow survive; paints the
-    /// exposed container the darker `backdrop` tone so the notch reads as a curve, not the bar's own fill.
+    // True while the address-bar move animation runs; it owns the container background. See `onMoveAddressBar`.
+    private var isAddressBarMoveInProgress = false
+
+    /// Rounds the top address bar's top corners on iPad when windowed. Uses `cornerRadius` without
+    /// clipping (keeps the pill shadow and below-bar overflow) and tints the exposed container darker
+    /// so the notch shows.
     private func updateWindowedAddressBarCorners() {
+        // Floating UI and the move animation own the container background; don't fight them. Both
+        // re-run this via decorate().
+        guard !isFloatingUIEnabled, !isAddressBarMoveInProgress else { return }
+
         let barView = omniBar.barView
-        let isPadInterface = AppWidthObserver.shared.isLargeWidth
         let isTopPosition = !appSettings.currentAddressBarPosition.isBottom
-        let shouldRound = isPadInterface && isTopPosition && !isFloatingUIEnabled && barView.isWindowedPresentation
+        let shouldRound = AppWidthObserver.shared.isLargeWidth && isTopPosition && barView.isWindowedPresentation
 
         barView.layer.cornerCurve = .continuous
         barView.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
@@ -4994,11 +5000,13 @@ extension MainViewController: OmniBarDelegate {
                 //  which doesn't appear to work properly on iOS 26.4,
                 if #available(iOS 18.0, *) {
 
+                    self?.isAddressBarMoveInProgress = true
                     self?.viewCoordinator.navigationBarContainer.backgroundColor = .clear
                     self?.omniBar.prepareForMoveTransition()
                     UIView.animate(.smooth) {
                         self?.toggleAddressBarLocation()
                     } completion: {
+                        self?.isAddressBarMoveInProgress = false
                         self?.omniBar.moveTransitionCompleted()
                         self?.decorate()
                     }

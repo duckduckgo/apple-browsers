@@ -18,6 +18,7 @@
 
 import ArgumentParser
 import Foundation
+import PIRDebugKit
 
 /// Runtime knobs shared by the commands that drive the engine.
 struct RuntimeOptions: ParsableArguments {
@@ -33,6 +34,24 @@ struct RuntimeOptions: ParsableArguments {
 
     @Flag(name: .long, help: "Verbose progress logging on stderr.")
     var verbose = false
+
+    @Option(name: .long, help: """
+        Web view applicationNameForUserAgent. Default \"safari\" matches the app's Safari-shaped value; \
+        brokers behind bot management challenge tool-shaped names. \"tool\" sends \"pir-debug\"; anything \
+        else is sent verbatim.
+        """)
+    var userAgent: String = "safari"
+
+    /// Resolves `--user-agent` to the value handed to the engine. `@MainActor` because the Safari-like
+    /// name reads the WebKit version from a `WKWebView`.
+    @MainActor
+    func resolvedUserAgentApplicationName() -> String {
+        switch userAgent {
+        case "safari": return PIRDebugUserAgent.safariLike()
+        case "tool": return PIRDebugUserAgent.toolLike
+        default: return userAgent
+        }
+    }
 
     /// Validates the numeric knobs so bad input becomes a clean usage error (exit 2) instead of
     /// trapping later (e.g. `UInt64(negative)` in the watchdog / await-time conversions).

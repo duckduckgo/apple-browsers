@@ -139,6 +139,7 @@ explicit source):
 | `--await-time <seconds>` | Seconds awaited around every action. Fractional allowed, must be `>= 0`. Default `1`. |
 | `--timeout <seconds>` | Watchdog; the process exits `3` if exceeded. Default `600`. (`serve` disables the watchdog.) |
 | `--verbose` | Verbose progress logging on stderr. |
+| `--user-agent <safari\|tool\|verbatim>` | The web view's `applicationNameForUserAgent`. Default `safari` reproduces the app's `Version/<safari> Safari/<webkit>`; `tool` sends `pir-debug`; anything else is sent as-is. See [bot management](#bot-management). |
 
 **Output** (`OutputOptions`): `--output`, `--events` (see [I/O contract](#io-contract)).
 
@@ -536,6 +537,38 @@ To fetch rules from a running fake-broker HTTP endpoint use `--dbp-api-url http:
 Do **not** run automated loops against real broker sites.
 
 ---
+
+## Bot management
+
+`applicationNameForUserAgent` is appended to the web view's User-Agent, and a tool-shaped value is
+enough for a broker behind bot management to serve an interstitial instead of the page. So the
+default is `--user-agent safari`, which reproduces the macOS app's
+`Version/<safari> Safari/<webkit>` (`PIRDebugUserAgent.safariLike`, mirroring the app's
+`WebViewUserAgentProvider`). Use `--user-agent tool` to be identifiable against your own fixtures.
+
+**The UA is not sufficient for every broker.** Some clusters — cyberbackgroundchecks.com among them —
+sit behind Cloudflare bot management that this tool does not get past regardless of UA: the web view
+sits on `Performing security verification` indefinitely (verified over a ~2 minute wait), and there is
+no interactive widget to solve, so `--show-webview` doesn't help either. Fingerprinting beyond the UA
+(the unsigned executable, an ephemeral `WKWebsiteDataStore` with no `cf_clearance`, TLS/IP signals) is
+the likely cause.
+
+To tell a challenge apart from a broken selector, scrape the page text into
+[`extras`](#result-json-schemas) — any profile key the extractors don't recognise falls through to a
+generic text extraction, and the `extract` action's debug event carries the scraped data:
+
+```jsonc
+{ "actionType": "extract", "selector": "body", "noResultsSelector": "body",
+  "profile": { "zzBodyText": { "selector": "body" } } }
+```
+
+```bash
+pir-debug scan --broker-file probe.json --broker probe --profile p.json --events events.jsonl
+jq -r 'select(.actionType=="extract" and .kind=="actionResponse") | .details' events.jsonl
+```
+
+When a broker is unreachable this way, validate the rule against local fixtures that reproduce its
+markup and form field IDs instead, and treat live markup drift as unverified.
 
 ## SPM-repoint fallback (native ↔ JS contract changes)
 

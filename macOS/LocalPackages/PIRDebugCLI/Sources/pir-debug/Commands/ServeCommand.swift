@@ -84,7 +84,7 @@ struct ServeCommand: CLIRunnable {
                 showWebView: runtime.showWebview,
                 operationAwaitTime: runtime.awaitTime,
                 servicesEndpoint: rules.resolvedServicesEndpoint,
-                userAgentApplicationName: "pir-debug")
+                userAgentApplicationName: await MainActor.run { runtime.resolvedUserAgentApplicationName() })
             let session = try PIRDebugSession(configuration: configuration)
             let state = ServeState(session: session, brokers: brokers)
 

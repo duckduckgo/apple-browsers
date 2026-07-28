@@ -56,6 +56,8 @@ public struct PIRDebugSessionConfiguration {
     /// Await time (seconds) applied around every action. Fractional and zero allowed; negatives rejected.
     public let operationAwaitTime: TimeInterval
     public let servicesEndpoint: PIRServicesEndpoint
+    /// Web view `applicationNameForUserAgent`. The runners drop this unless
+    /// `featureFlagger.isWebViewUserAgentOn`, so the default flagger below follows it.
     public let userAgentApplicationName: String?
 
     // Runner dependencies with PIRDebugKit-provided defaults.
@@ -72,8 +74,8 @@ public struct PIRDebugSessionConfiguration {
                 showWebView: Bool = false,
                 operationAwaitTime: TimeInterval = 1,
                 servicesEndpoint: PIRServicesEndpoint = .production,
-                userAgentApplicationName: String? = "pir-debug",
-                featureFlagger: DBPFeatureFlagging = PIRDebugFeatureFlagger(),
+                userAgentApplicationName: String? = PIRDebugUserAgent.toolLike,
+                featureFlagger: DBPFeatureFlagging? = nil,
                 pixelHandler: EventMapping<DataBrokerProtectionSharedPixels> = PIRDebugPixels.stderrLoggingPixelHandler(),
                 executionConfig: BrokerJobExecutionConfig = BrokerJobExecutionConfig(),
                 privacyConfigData: Data? = nil) throws {
@@ -87,7 +89,10 @@ public struct PIRDebugSessionConfiguration {
         self.operationAwaitTime = operationAwaitTime
         self.servicesEndpoint = servicesEndpoint
         self.userAgentApplicationName = userAgentApplicationName
+        // Without an explicit flagger, enable the UA flag whenever a name was supplied — otherwise the
+        // name is silently discarded and the web view goes out with the bare WKWebView User-Agent.
         self.featureFlagger = featureFlagger
+            ?? PIRDebugFeatureFlagger(isWebViewUserAgentOn: userAgentApplicationName != nil)
         self.pixelHandler = pixelHandler
         self.executionConfig = executionConfig
         self.privacyConfigData = privacyConfigData

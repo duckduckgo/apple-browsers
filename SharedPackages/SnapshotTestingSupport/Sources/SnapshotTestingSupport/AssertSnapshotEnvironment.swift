@@ -36,6 +36,25 @@ func assertSnapshotEnvironment(
     return false
 }
 
+func assertSnapshotConfigurations(
+    _ configurations: [SnapshotImageConfiguration],
+    fileID: StaticString,
+    file: StaticString,
+    line: UInt,
+    column: UInt
+) -> Bool {
+    guard configurations.isEmpty else { return true }
+
+    recordSnapshotIssue(
+        "Snapshot strategy produced no configurations, so nothing was verified.",
+        fileID: fileID,
+        file: file,
+        line: line,
+        column: column
+    )
+    return false
+}
+
 func recordSnapshotIssue(
     _ message: String,
     fileID: StaticString,

@@ -34,9 +34,11 @@ public func assertImageSnapshot(
     line: UInt = #line,
     column: UInt = #column
 ) {
+    let configurations = strategy.configurations(for: .iOS, size: size)
+    guard assertSnapshotConfigurations(configurations, fileID: fileID, file: file, line: line, column: column) else { return }
     guard assertSnapshotEnvironment(fileID: fileID, file: file, line: line, column: column) else { return }
 
-    for configuration in strategy.configurations(for: .iOS, size: size) {
+    for configuration in configurations {
         view.overrideUserInterfaceStyle = configuration.appearance.userInterfaceStyle
         let snapshotSize = resolvedSize(for: view, configuration: configuration, size: size)
 
@@ -72,9 +74,11 @@ public func assertImageSnapshot(
     line: UInt = #line,
     column: UInt = #column
 ) {
+    let configurations = strategy.configurations(for: .iOS, size: size)
+    guard assertSnapshotConfigurations(configurations, fileID: fileID, file: file, line: line, column: column) else { return }
     guard assertSnapshotEnvironment(fileID: fileID, file: file, line: line, column: column) else { return }
 
-    for configuration in strategy.configurations(for: .iOS, size: size) {
+    for configuration in configurations {
         viewController.overrideUserInterfaceStyle = configuration.appearance.userInterfaceStyle
         let snapshotSize = resolvedSize(for: viewController, configuration: configuration, size: size)
 
@@ -110,9 +114,11 @@ public func assertImageSnapshot<Value: SwiftUI.View>(
     line: UInt = #line,
     column: UInt = #column
 ) {
+    let configurations = strategy.configurations(for: .iOS, size: size)
+    guard assertSnapshotConfigurations(configurations, fileID: fileID, file: file, line: line, column: column) else { return }
     guard assertSnapshotEnvironment(fileID: fileID, file: file, line: line, column: column) else { return }
 
-    for configuration in strategy.configurations(for: .iOS, size: size) {
+    for configuration in configurations {
         let rootView = view.environment(\.colorScheme, configuration.appearance.colorScheme)
         assertSwiftUIImageSnapshot(
             of: rootView,

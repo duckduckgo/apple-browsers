@@ -61,6 +61,7 @@ class DDGHarnessTests(unittest.TestCase):
         )
         self.app_launches = self.root / "app-launches.jsonl"
         self.tsproxy_args = self.root / "tsproxy-args.json"
+        self.tsproxy_launches = self.root / "tsproxy-launches.jsonl"
         self._write_fakes()
         cert = self.root / "cert.pem"
         key = self.root / "key.pem"
@@ -83,6 +84,7 @@ class DDGHarnessTests(unittest.TestCase):
             "AUTOMATION_PORT": str(self.automation),
             "APP_LAUNCHES_FILE": str(self.app_launches),
             "TSPROXY_ARGS_FILE": str(self.tsproxy_args),
+            "TSPROXY_LAUNCHES_FILE": str(self.tsproxy_launches),
             "LOAD_WINDOW_SECONDS": "0",
             "ALLOW_TEST_OVERRIDES": "1",
             "LCP_SETTLE_MS": "0",
@@ -161,21 +163,28 @@ class DDGHarnessTests(unittest.TestCase):
             args = sys.argv[1:]
             with open(os.environ["TSPROXY_ARGS_FILE"], "w", encoding="utf-8") as out:
                 json.dump(args, out)
+            with open(
+                os.environ["TSPROXY_LAUNCHES_FILE"], "a", encoding="utf-8"
+            ) as out:
+                out.write(json.dumps({"args": args, "pid": os.getpid()}) + "\n")
             port = int(args[args.index("--port") + 1])
             listener = socket.socket()
             listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             listener.bind(("127.0.0.1", port))
             listener.listen()
+            resolved = set()
             while True:
                 client, _ = listener.accept()
                 data = client.recv(1024).decode(errors="replace").strip()
                 client.close()
                 if data:
-                    print(
-                        "12:00:00.000 - [1] Resolving b'{}':443".format(data),
-                        file=sys.stderr,
-                        flush=True,
-                    )
+                    if data not in resolved:
+                        resolved.add(data)
+                        print(
+                            "12:00:00.000 - [1] Resolving b'{}':443".format(data),
+                            file=sys.stderr,
+                            flush=True,
+                        )
                     if os.environ.get("FAKE_TSPROXY_EXIT_AFTER_ROUTE") == "1":
                         raise SystemExit(0)
             """,
@@ -230,6 +239,7 @@ class DDGHarnessTests(unittest.TestCase):
             self.bin / "fake-automation.py",
             r"""
             #!/usr/bin/env python3
+            import json
             import os
             import socket
             import sys
@@ -238,6 +248,12 @@ class DDGHarnessTests(unittest.TestCase):
 
             port = int(sys.argv[1])
             command = sys.argv[2]
+            with open(
+                os.environ["APP_LAUNCHES_FILE"], encoding="utf-8"
+            ) as launches:
+                expected_token = json.loads(launches.readlines()[-1])["token"]
+            if os.environ.get("AUTOMATION_TOKEN") != expected_token:
+                raise SystemExit(8)
             if command == "check":
                 raise SystemExit(0)
             if command == "shutdown":
@@ -271,13 +287,22 @@ class DDGHarnessTests(unittest.TestCase):
                 if mode == "offsite"
                 else "https://{}/".format(site)
             )
-            lcp = -1 if mode == "unfinalized" else 1000
+            lcp = (
+                -1
+                if mode == "unfinalized"
+                else -2
+                if mode == "invalid_negative"
+                else 1000
+            )
             offsite = 1 if mode == "offsite" else 0
             print('detail={{"ms":{},"loc":"{}"}}'.format(lcp, landed))
             print("landed_url={}".format(landed))
             print("landed_offsite={}".format(offsite))
             print("lcp_ms={}".format(lcp))
-            if site == fail_site or mode == "failure":
+            if (
+                site == fail_site
+                or mode in ("failure", "offsite", "invalid_negative")
+            ):
                 raise SystemExit(7)
             """,
         )
@@ -327,12 +352,20 @@ class DDGHarnessTests(unittest.TestCase):
             json.loads(line) for line in self.app_launches.read_text().splitlines()
         ]
 
+    def shaping_launches(self):
+        return [
+            json.loads(line)
+            for line in self.tsproxy_launches.read_text().splitlines()
+        ]
+
     def test_success_uses_fresh_authenticated_app_per_repetition(self):
         result = self.run_harness(reps="2")
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(len(self.measurement_rows()), 2)
         launches = self.launches()
         self.assertEqual(len(launches), 2)
+        shaping_launches = self.shaping_launches()
+        self.assertEqual(len(shaping_launches), 2)
         self.assertEqual(len({item["token"] for item in launches}), 2)
         for launch in launches:
             self.assertTrue(launch["token"])
@@ -362,12 +395,9 @@ class DDGHarnessTests(unittest.TestCase):
         self.assertIn('stop_exact_pid "$DDG_PID"', harness)
         self.assertIn('stop_exact_pid "$WPR_PID"', harness)
         self.assertIn('stop_exact_pid "$TSPROXY_PID"', harness)
-        self.assertLess(
-            harness.rindex("finalize_shared_proxy || true"),
-            harness.rindex("report_dispositions"),
-        )
+        self.assertNotIn("finalize_shared_proxy", harness)
 
-    def test_tsproxy_uses_shared_wpr_preset_and_no_http_proxy(self):
+    def test_tsproxy_uses_wpr_preset_and_no_http_proxy(self):
         result = self.run_harness()
         self.assertEqual(result.returncode, 0, result.stderr)
         args = json.loads(self.tsproxy_args.read_text())
@@ -413,6 +443,18 @@ class DDGHarnessTests(unittest.TestCase):
         self.assertEqual(row[9:11], ["replay", "archive_miss"])
         self.assertEqual(len(self.measurement_rows()), 0)
 
+    def test_offsite_landing_keeps_specific_failure_reason(self):
+        result = self.run_harness(AUTOMATION_MODE="offsite")
+        self.assertEqual(result.returncode, 1)
+        row = self.disposition_rows()[0]
+        self.assertEqual(row[9:11], ["replay", "offsite_landing"])
+
+    def test_invalid_negative_lcp_is_not_unfinalized(self):
+        result = self.run_harness(AUTOMATION_MODE="invalid_negative")
+        self.assertEqual(result.returncode, 1)
+        row = self.disposition_rows()[0]
+        self.assertEqual(row[9:11], ["automation", "invalid_lcp"])
+
     def test_live_app_log_is_bounded_before_preservation(self):
         result = self.run_harness(
             AUTOMATION_MODE="failure",
@@ -451,7 +493,7 @@ class DDGHarnessTests(unittest.TestCase):
         )
         self.assertFalse(self.app_launches.exists())
 
-    def test_shared_tsproxy_failure_marks_remaining_sites_and_fails_run(self):
+    def test_tsproxy_death_isolated_but_zero_samples_fails_run(self):
         self.add_valid_site("example.com")
         result = self.run_harness(
             sites="apple.com,example.com",
@@ -466,8 +508,9 @@ class DDGHarnessTests(unittest.TestCase):
             self.disposition_rows()[1][9:11],
             ["shaping", "tsproxy_exited"],
         )
+        self.assertEqual(len(self.shaping_launches()), 2)
 
-    def test_shared_death_overrides_nonzero_automation_result(self):
+    def test_tsproxy_death_overrides_nonzero_automation_result(self):
         result = self.run_harness(
             FAKE_TSPROXY_EXIT_AFTER_ROUTE="1",
             AUTOMATION_MODE="failure",

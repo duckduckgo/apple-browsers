@@ -37,6 +37,14 @@ def decode_json_message(message):
     return message
 
 
+def request_expect(port, method, path, expected, params=None, timeout=60):
+    value = request(port, method, path, params, timeout)
+    if value != expected:
+        raise RuntimeError(
+            "{} returned an unexpected acknowledgement".format(path)
+        )
+
+
 def landed_on(requested, landed):
     if not landed:
         return False
@@ -82,12 +90,11 @@ def lcp_probe(settle_ms, load_window_ms):
 
 def check(port):
     try:
-        value = request(port, "GET", "/contentBlockerReady", timeout=15)
+        request_expect(
+            port, "GET", "/contentBlockerReady", "true", timeout=15
+        )
     except Exception as error:  # noqa: BLE001 - command-line boundary
         print("automation check failed: {}".format(error), file=sys.stderr)
-        return 1
-    if value not in ("true", True):
-        print("content blocker is not ready", file=sys.stderr)
         return 1
     return 0
 
@@ -119,8 +126,12 @@ def measure(port, url, settle_ms, load_window_seconds):
     try:
         # Each app process is fresh, but clearing the active WKWebsiteDataStore
         # also covers persistent state that survives process restarts.
-        request(port, "POST", "/clearWebsiteData", timeout=30)
-        request(port, "POST", "/navigate", {"url": url}, timeout=30)
+        request_expect(
+            port, "POST", "/clearWebsiteData", "done", timeout=30
+        )
+        request_expect(
+            port, "POST", "/navigate", "done", {"url": url}, timeout=30
+        )
         time.sleep(load_window_seconds)
         message = request(
             port,
@@ -155,7 +166,10 @@ def measure(port, url, settle_ms, load_window_seconds):
         or not isinstance(lcp, (int, float))
         or not math.isfinite(lcp)
     ):
-        emit_measurement(detail)
+        emit_measurement(detail, -2, int(offsite))
+        return 1
+    if lcp < -1:
+        emit_measurement(detail, lcp, int(offsite))
         return 1
     if offsite:
         emit_measurement(detail, -1, 1)

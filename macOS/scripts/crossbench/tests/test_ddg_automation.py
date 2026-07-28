@@ -79,6 +79,24 @@ class DDGAutomationTests(unittest.TestCase):
         self.assertIn("e.startTime<=maxMs", probe)
         self.assertIn("buffered:true", probe)
 
+    def test_measure_requires_successful_setup_acknowledgements(self):
+        for failed_path in ("/clearWebsiteData", "/navigate"):
+            with self.subTest(failed_path=failed_path):
+                def request(_port, _method, path, params=None, timeout=60):
+                    if path == failed_path:
+                        return "false"
+                    return "done"
+
+                stdout = io.StringIO()
+                with mock.patch.object(
+                    DDG_AUTOMATION, "request", side_effect=request
+                ), redirect_stdout(stdout), redirect_stderr(io.StringIO()):
+                    status = DDG_AUTOMATION.measure(
+                        "8788", "https://apple.com", 0, 12
+                    )
+                self.assertEqual(status, 1)
+                self.assertIn("lcp_ms=-1", stdout.getvalue())
+
     def test_landing_requires_http_or_https(self):
         self.assertFalse(
             DDG_AUTOMATION.landed_on(
@@ -156,6 +174,25 @@ class DDGAutomationTests(unittest.TestCase):
             )
         self.assertEqual(status, 0)
         self.assertIn("lcp_ms=-1", stdout.getvalue())
+
+    def test_lcp_below_unfinalized_sentinel_fails(self):
+        stdout = io.StringIO()
+        with mock.patch.object(
+            DDG_AUTOMATION,
+            "request",
+            side_effect=[
+                "done",
+                "done",
+                '{"ms":-2,"loc":"https://apple.com/"}',
+            ],
+        ), mock.patch.object(
+            DDG_AUTOMATION.time, "sleep"
+        ), redirect_stdout(stdout):
+            status = DDG_AUTOMATION.measure(
+                "8788", "https://apple.com", 0, 12
+            )
+        self.assertEqual(status, 1)
+        self.assertIn("lcp_ms=-2", stdout.getvalue())
 
 
 if __name__ == "__main__":

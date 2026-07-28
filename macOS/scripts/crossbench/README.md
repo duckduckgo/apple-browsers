@@ -1,7 +1,7 @@
-# macOS crossbench — Chrome LCP with WPR
+# macOS browser LCP with WPR
 
-Measures Chrome navigation-to-LCP on macOS using fixed Web Page Replay archives
-and the same US-broadband profile as the Windows harness:
+Measures browser navigation-to-LCP on macOS using fixed Web Page Replay
+archives and the same US-broadband profile as the Windows harness:
 
 - 28 ms RTT
 - 50,000 Kbps downstream
@@ -35,6 +35,8 @@ downloading the files again.
 | `validate-wpr.go` | Parses stored WPR requests and responses without starting a replay server. |
 | `wpr-sites.txt` | Single default site list shared by validation and the browser run. |
 | `test-chrome.sh` | Runs Chrome through the validated WPR archives and tsproxy, and writes per-repetition results and per-site dispositions. |
+| `test-ddg.sh` | Runs a DuckDuckGo Review build through validated WPR archives and tsproxy. |
+| `ddg-automation.py` | Authenticated local automation client used by the DDG harness. |
 | `run-with-watchdog.py` | Bounds one Crossbench site process group and terminates it on timeout. |
 | `aggregate-lcp.py` | Produces per-domain ClickHouse metric rows. |
 | `aggregate-dispositions.py` | Validates and encodes ClickHouse eligibility and measurement-outcome rows for every requested site. |
@@ -124,3 +126,19 @@ bounded Safari, proxy, shaping, and per-site WPR logs in `safari-diagnostics/`.
 A new WebDriver session does not by itself prove a cold Safari HTTP cache.
 Before comparing absolute Safari values with Chrome cold-profile values, verify
 per-repetition WPR subresource traffic or add a reliable cache reset.
+
+## DuckDuckGo
+
+DuckDuckGo uses `test-ddg.sh` with a Review or Debug app build that exposes the
+authenticated local automation server. Each repetition launches a fresh app,
+clears website data, and uses a fresh tsproxy instance to route its WKWebView
+to WPR. There is no live-network fallback or system proxy change.
+
+The harness consumes validator-staged archives and writes the same result and
+disposition formats as the other browser runners. Replay misses, failed
+automation acknowledgements, incomplete cleanup, and invalid measurements are
+recorded as infrastructure errors, and affected samples are discarded.
+
+The repository currently provides the local harness and tests. A GitHub
+measurement workflow supplies the Review build and validated archives
+separately.

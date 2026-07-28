@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 #
 # Measure DuckDuckGo Review/debug navigation-to-LCP against validated WPR
-# archives. Every repetition launches a fresh app process and routes its
-# WKWebView directly through the shared SOCKS5 tsproxy:
+# archives. Every repetition launches a fresh app and SOCKS5 tsproxy:
 #
 #   DuckDuckGo WKWebView -> tsproxy -> WPR
 #
@@ -43,8 +42,6 @@ DDG_APP="${DDG_APP:-/Applications/DuckDuckGo Review.app}"
 DDG_EXECUTABLE="${DDG_EXECUTABLE:-}"
 AUTOMATION_PORT="${AUTOMATION_PORT:-8788}"
 
-LOAD_WINDOW="12s"
-LOAD_WINDOW_MS=12000
 LOAD_WINDOW_SECONDS="${LOAD_WINDOW_SECONDS:-12}"
 ALLOW_TEST_OVERRIDES="${ALLOW_TEST_OVERRIDES:-0}"
 LCP_SETTLE_MS="${LCP_SETTLE_MS:-600}"
@@ -155,7 +152,6 @@ DDG_MARKETING_VERSION="${DDG_MARKETING_VERSION:-unknown}"
 DDG_BUILD_VERSION="${DDG_BUILD_VERSION:-unknown}"
 DDG_BUNDLE_ID="${DDG_BUNDLE_ID:-unknown}"
 BROWSER_NAME=ddg
-BROWSER_VERSION="$DDG_MARKETING_VERSION"
 
 WPR_PID=""
 TSPROXY_PID=""
@@ -163,9 +159,8 @@ DDG_PID=""
 WPR_LOG=""
 TSPROXY_LOG=""
 DDG_LOG=""
-WPR_REPLAY_MISS_FILE=""
-WPR_LOG_MONITOR_PID=""
-TSPROXY_LOG_MONITOR_PID=""
+# Replay checks consume the WPR and tsproxy logs, so only the app diagnostic
+# log may be trimmed while its producer is running.
 DDG_LOG_MONITOR_PID=""
 AUTOMATION_TOKEN_VALUE=""
 RUN_FATAL=0
@@ -176,7 +171,7 @@ TOTAL_RECORDED=0
 FAILURE_PRIORITY=0
 SHARED_FAILURE_STAGE=shaping
 SHARED_FAILURE_REASON=tsproxy_unavailable
-SHARED_FAILURE_DETAIL="shared tsproxy was unavailable"
+SHARED_FAILURE_DETAIL="replay service was unavailable"
 
 process_is_alive() {
   local pid="$1" state
@@ -187,14 +182,10 @@ process_is_alive() {
 }
 
 cap_live_log() {
-  local path="$1" marker_file="${2:-}" size keep temp
+  local path="$1" size keep temp
   [ -n "$path" ] && [ -f "$path" ] || return 0
   size="$(stat -f %z "$path" 2>/dev/null || wc -c < "$path" 2>/dev/null || echo 0)"
   [ "$size" -gt "$MAX_LIVE_LOG_BYTES" ] || return 0
-  if [ -n "$marker_file" ] &&
-      grep -q "Proxy: FAILED to find request" "$path"; then
-    : > "$marker_file"
-  fi
   keep=$((MAX_LIVE_LOG_BYTES / 2))
   temp="$path.trim.$$"
   tail -c "$keep" "$path" > "$temp"
@@ -203,20 +194,20 @@ cap_live_log() {
 }
 
 monitor_live_log() {
-  local path="$1" marker_file="${2:-}"
+  local path="$1"
   while true; do
-    cap_live_log "$path" "$marker_file"
+    cap_live_log "$path"
     sleep 1
   done
 }
 
 stop_log_monitor() {
-  local monitor_pid="$1" path="$2" marker_file="${3:-}"
+  local monitor_pid="$1" path="$2"
   if [ -n "$monitor_pid" ]; then
     kill "$monitor_pid" 2>/dev/null || true
     wait "$monitor_pid" 2>/dev/null || true
   fi
-  cap_live_log "$path" "$marker_file"
+  cap_live_log "$path"
 }
 
 stop_exact_pid() {
@@ -261,10 +252,8 @@ preserve_site_diagnostics() {
   local site="$1"
   if [ "$SITE_DIAGNOSTICS" -lt "$MAX_SITE_DIAGNOSTICS" ]; then
     preserve_diagnostic "$WPR_LOG" "wpr-$site.log"
-    preserve_diagnostic "$DDG_LOG" "ddg-$site.log"
     SITE_DIAGNOSTICS=$((SITE_DIAGNOSTICS + 1))
   fi
-  preserve_diagnostic "$TSPROXY_LOG" tsproxy.log
 }
 
 finish_app_log() {
@@ -274,8 +263,28 @@ finish_app_log() {
     preserve_diagnostic "$DDG_LOG" "ddg-$site-rep-$rep.log"
     SITE_DIAGNOSTICS=$((SITE_DIAGNOSTICS + 1))
   fi
+  # Keep the path and monitor available for the EXIT cleanup retry if the
+  # owned app process could not be stopped.
+  [ -z "$DDG_PID" ] || return 0
   [ -z "$DDG_LOG" ] || rm -f "$DDG_LOG"
   DDG_LOG=""
+}
+
+finish_tsproxy_log() {
+  local site="$1" rep="$2" preserve="$3"
+  if [ "$preserve" = 1 ] &&
+      [ "$SITE_DIAGNOSTICS" -lt "$MAX_SITE_DIAGNOSTICS" ]; then
+    preserve_diagnostic "$TSPROXY_LOG" "tsproxy-$site-rep-$rep.log"
+    SITE_DIAGNOSTICS=$((SITE_DIAGNOSTICS + 1))
+  fi
+  [ -z "$TSPROXY_PID" ] || return 0
+  [ -z "$TSPROXY_LOG" ] || rm -f "$TSPROXY_LOG"
+  TSPROXY_LOG=""
+}
+
+finish_repetition_logs() {
+  finish_app_log "$@"
+  finish_tsproxy_log "$@"
 }
 
 stop_app() {
@@ -284,11 +293,14 @@ stop_app() {
     if ! stop_exact_pid "$DDG_PID"; then
       echo "ERROR: could not safely stop DuckDuckGo PID $DDG_PID." >&2
       status=1
+    else
+      DDG_PID=""
     fi
   fi
-  stop_log_monitor "$DDG_LOG_MONITOR_PID" "$DDG_LOG"
-  DDG_PID=""
-  DDG_LOG_MONITOR_PID=""
+  if [ "$status" -eq 0 ]; then
+    stop_log_monitor "$DDG_LOG_MONITOR_PID" "$DDG_LOG"
+    DDG_LOG_MONITOR_PID=""
+  fi
   AUTOMATION_TOKEN_VALUE=""
   return "$status"
 }
@@ -300,23 +312,24 @@ cleanup() {
   if ! stop_app; then
     exit_code=1
   fi
-  if ! stop_exact_pid "$WPR_PID"; then
+  if stop_exact_pid "$WPR_PID"; then
+    WPR_PID=""
+  else
     exit_code=1
   fi
-  stop_log_monitor "$WPR_LOG_MONITOR_PID" "$WPR_LOG" "$WPR_REPLAY_MISS_FILE"
-  if ! stop_exact_pid "$TSPROXY_PID"; then
+  if stop_exact_pid "$TSPROXY_PID"; then
+    TSPROXY_PID=""
+  else
     exit_code=1
   fi
-  stop_log_monitor "$TSPROXY_LOG_MONITOR_PID" "$TSPROXY_LOG"
   if [ "$exit_code" -ne 0 ]; then
     preserve_diagnostic "$DDG_LOG" ddg.log
     preserve_diagnostic "$WPR_LOG" wpr.log
     preserve_diagnostic "$TSPROXY_LOG" tsproxy.log
   fi
-  [ -z "$DDG_LOG" ] || rm -f "$DDG_LOG"
-  [ -z "$WPR_LOG" ] || rm -f "$WPR_LOG"
-  [ -z "$WPR_REPLAY_MISS_FILE" ] || rm -f "$WPR_REPLAY_MISS_FILE"
-  [ -z "$TSPROXY_LOG" ] || rm -f "$TSPROXY_LOG"
+  [ -n "$DDG_PID" ] || [ -z "$DDG_LOG" ] || rm -f "$DDG_LOG"
+  [ -n "$WPR_PID" ] || [ -z "$WPR_LOG" ] || rm -f "$WPR_LOG"
+  [ -n "$TSPROXY_PID" ] || [ -z "$TSPROXY_LOG" ] || rm -f "$TSPROXY_LOG"
   exit "$exit_code"
 }
 trap cleanup EXIT
@@ -392,7 +405,6 @@ read_app_metadata() {
     fi
     DDG_EXECUTABLE="$DDG_APP/Contents/MacOS/$executable_name"
   fi
-  BROWSER_VERSION="$DDG_MARKETING_VERSION"
   BROWSER_VERSION="$DDG_MARKETING_VERSION ($DDG_BUILD_VERSION)"
 }
 
@@ -551,7 +563,6 @@ start_wpr() {
   assert_port_free "$WPR_HTTP_PORT" wpr-http || return 1
   assert_port_free "$WPR_HTTPS_PORT" wpr-https || return 1
   WPR_LOG="$(mktemp)"
-  WPR_REPLAY_MISS_FILE="$WPR_LOG.replay-miss"
   "$WPR_BIN" replay \
     --http-port="$WPR_HTTP_PORT" \
     --https-port="$WPR_HTTPS_PORT" \
@@ -560,32 +571,26 @@ start_wpr() {
     --no-archive-certificates \
     "$archive" >>"$WPR_LOG" 2>&1 &
   WPR_PID=$!
-  monitor_live_log "$WPR_LOG" "$WPR_REPLAY_MISS_FILE" &
-  WPR_LOG_MONITOR_PID=$!
   if ! wait_for_port "$WPR_HTTP_PORT" "$SERVICE_START_TIMEOUT_SECONDS" ||
       ! wait_for_port "$WPR_HTTPS_PORT" "$SERVICE_START_TIMEOUT_SECONDS"; then
     if ! stop_exact_pid "$WPR_PID"; then
       set_shared_failure cleanup unsafe_wpr_cleanup \
         "WPR failed to stop after startup failure"
+    else
+      WPR_PID=""
     fi
-    stop_log_monitor "$WPR_LOG_MONITOR_PID" "$WPR_LOG" "$WPR_REPLAY_MISS_FILE"
-    WPR_PID=""
-    WPR_LOG_MONITOR_PID=""
     return 1
   fi
 }
 
 stop_wpr() {
-  local status=0
-  stop_exact_pid "$WPR_PID" || status=1
-  stop_log_monitor "$WPR_LOG_MONITOR_PID" "$WPR_LOG" "$WPR_REPLAY_MISS_FILE"
+  if ! stop_exact_pid "$WPR_PID"; then
+    return 1
+  fi
   WPR_PID=""
-  WPR_LOG_MONITOR_PID=""
   [ -z "$WPR_LOG" ] || rm -f "$WPR_LOG"
-  [ -z "$WPR_REPLAY_MISS_FILE" ] || rm -f "$WPR_REPLAY_MISS_FILE"
   WPR_LOG=""
-  WPR_REPLAY_MISS_FILE=""
-  return "$status"
+  return 0
 }
 
 start_tsproxy() {
@@ -601,20 +606,40 @@ start_tsproxy() {
     --window "$WPR_US_BROADBAND_WINDOW" \
     -vvv >>"$TSPROXY_LOG" 2>&1 &
   TSPROXY_PID=$!
-  monitor_live_log "$TSPROXY_LOG" &
-  TSPROXY_LOG_MONITOR_PID=$!
   if ! process_is_alive "$TSPROXY_PID" ||
       ! wait_for_port "$TSPROXY_PORT" "$SERVICE_START_TIMEOUT_SECONDS" ||
       ! process_is_alive "$TSPROXY_PID"; then
-    echo "ERROR: shared tsproxy failed to start." >&2
-    preserve_diagnostic "$TSPROXY_LOG" tsproxy.log
-    stop_exact_pid "$TSPROXY_PID" || true
-    stop_log_monitor "$TSPROXY_LOG_MONITOR_PID" "$TSPROXY_LOG"
-    TSPROXY_PID=""
-    TSPROXY_LOG_MONITOR_PID=""
+    echo "ERROR: tsproxy failed to start." >&2
+    if stop_exact_pid "$TSPROXY_PID"; then
+      TSPROXY_PID=""
+    else
+      set_shared_failure cleanup unsafe_tsproxy_cleanup \
+        "tsproxy failed to stop after startup failure"
+    fi
     return 1
   fi
   return 0
+}
+
+stop_tsproxy() {
+  if ! stop_exact_pid "$TSPROXY_PID"; then
+    return 1
+  fi
+  TSPROXY_PID=""
+  return 0
+}
+
+stop_repetition_tsproxy() {
+  local rep="$1" status=0
+  if ! process_is_alive "$TSPROXY_PID"; then
+    set_runtime_failure 60 shaping tsproxy_exited "repetition=$rep"
+    status=1
+  fi
+  if ! stop_tsproxy; then
+    set_shared_failure cleanup unsafe_tsproxy_cleanup "repetition=$rep"
+    status=1
+  fi
+  return "$status"
 }
 
 tsproxy_line_count() {
@@ -629,8 +654,7 @@ tsproxy_saw_site() {
 }
 
 wpr_had_replay_miss() {
-  [ -f "$WPR_REPLAY_MISS_FILE" ] ||
-    grep -q "Proxy: FAILED to find request" "$WPR_LOG"
+  grep -q "Proxy: FAILED to find request" "$WPR_LOG"
 }
 
 start_app() {
@@ -683,7 +707,7 @@ shutdown_app() {
 
 set_runtime_failure() {
   local priority="$1" stage="$2" reason="$3" detail="$4"
-  if [ "$priority" -ge "$FAILURE_PRIORITY" ]; then
+  if [ "$priority" -gt "$FAILURE_PRIORITY" ]; then
     FAILURE_PRIORITY="$priority"
     FAILURE_STAGE="$stage"
     FAILURE_REASON="$reason"
@@ -709,10 +733,9 @@ reset_site_counters() {
 measure_site() {
   local site="$1" rep before output command_status status_file
   local watchdog_state watchdog_code watchdog_cleanup watchdog_extra
-  local watchdog_lines cleanup_failed
+  local watchdog_lines cleanup_failed tsproxy_failed
   local lcp detail landed_url offsite field field_count
   local site_failed=0 observed=0 recorded=0 unfinalized=0 no_metric=0
-  local -a values=()
   reset_site_counters
   set_validation_result "$site"
 
@@ -740,15 +763,17 @@ measure_site() {
   fi
 
   for ((rep = 1; rep <= MEASURED_REPS; rep++)); do
-    if ! process_is_alive "$TSPROXY_PID"; then
-      site_failed=1
-      set_shared_failure shaping tsproxy_exited "repetition=$rep"
-      break
-    fi
     if ! process_is_alive "$WPR_PID"; then
       site_failed=1
       set_runtime_failure 80 replay wpr_exited "repetition=$rep"
       break
+    fi
+    if ! start_tsproxy; then
+      site_failed=1
+      set_runtime_failure 40 shaping tsproxy_start_failed "repetition=$rep"
+      finish_tsproxy_log "$site" "$rep" 1
+      [ "$SHARED_SERVICE_FAILURE" -eq 0 ] || break
+      continue
     fi
     if ! start_app; then
       site_failed=1
@@ -757,15 +782,14 @@ measure_site() {
       if ! shutdown_app; then
         cleanup_failed=1
       fi
-      if ! process_is_alive "$TSPROXY_PID"; then
-        set_shared_failure shaping tsproxy_exited "repetition=$rep; after app start failure"
-      elif ! process_is_alive "$WPR_PID"; then
+      stop_repetition_tsproxy "$rep" || true
+      if ! process_is_alive "$WPR_PID"; then
         set_runtime_failure 80 replay wpr_exited "repetition=$rep; after app start failure"
       fi
       if [ "$cleanup_failed" -ne 0 ]; then
         set_shared_failure cleanup unsafe_app_cleanup "repetition=$rep"
       fi
-      finish_app_log "$site" "$rep" 1
+      finish_repetition_logs "$site" "$rep" 1
       [ "$SHARED_SERVICE_FAILURE" -eq 0 ] || break
       continue
     fi
@@ -790,11 +814,13 @@ measure_site() {
       cleanup_failed=1
     fi
 
-    # Shared and replay liveness outrank the automation result. Check them
-    # before parsing either the watchdog status or the helper output.
-    if ! process_is_alive "$TSPROXY_PID"; then
+    # Stop the per-repetition shaper before accepting its route evidence.
+    # This also guarantees that the next repetition starts with empty queues
+    # and a fresh DNS cache.
+    tsproxy_failed=0
+    if ! stop_repetition_tsproxy "$rep"; then
+      tsproxy_failed=1
       site_failed=1
-      set_shared_failure shaping tsproxy_exited "repetition=$rep"
     fi
     if ! process_is_alive "$WPR_PID"; then
       site_failed=1
@@ -807,15 +833,20 @@ measure_site() {
     if [ "$SHARED_SERVICE_FAILURE" -ne 0 ] ||
         [ "$FAILURE_REASON" = wpr_exited ]; then
       rm -f "$status_file"
-      finish_app_log "$site" "$rep" 1
+      finish_repetition_logs "$site" "$rep" 1
       break
+    fi
+    if [ "$tsproxy_failed" -ne 0 ]; then
+      rm -f "$status_file"
+      finish_repetition_logs "$site" "$rep" 1
+      continue
     fi
     if wpr_had_replay_miss; then
       site_failed=1
       set_runtime_failure 70 replay archive_miss \
         "WPR could not serve at least one requested resource; repetition=$rep"
       rm -f "$status_file"
-      finish_app_log "$site" "$rep" 1
+      finish_repetition_logs "$site" "$rep" 1
       break
     fi
 
@@ -829,16 +860,11 @@ measure_site() {
         [ "$watchdog_code" -ne "$command_status" ]; then
       site_failed=1
       set_shared_failure control watchdog_status_invalid "repetition=$rep"
-      finish_app_log "$site" "$rep" 1
+      finish_repetition_logs "$site" "$rep" 1
       break
     fi
     case "$watchdog_state:$watchdog_cleanup" in
-      completed:not_needed)
-        if [ "$watchdog_code" -ne 0 ]; then
-          set_runtime_failure 30 automation command_failed \
-            "repetition=$rep; exit_status=$watchdog_code"
-        fi
-        ;;
+      completed:not_needed) ;;
       timed_out:terminated|timed_out:killed|timed_out:already_exited)
         site_failed=1
         set_runtime_failure 40 automation watchdog_timeout "repetition=$rep"
@@ -847,14 +873,14 @@ measure_site() {
         site_failed=1
         set_shared_failure control watchdog_interrupted \
           "repetition=$rep; exit_status=$watchdog_code"
-        finish_app_log "$site" "$rep" 1
+        finish_repetition_logs "$site" "$rep" 1
         break
         ;;
       *)
         site_failed=1
         set_shared_failure control watchdog_cleanup_invalid \
           "repetition=$rep; state=$watchdog_state; cleanup=$watchdog_cleanup"
-        finish_app_log "$site" "$rep" 1
+        finish_repetition_logs "$site" "$rep" 1
         break
         ;;
     esac
@@ -870,7 +896,7 @@ measure_site() {
       fi
     done
     if [ "$field_count" -ne 1 ]; then
-      finish_app_log "$site" "$rep" 1
+      finish_repetition_logs "$site" "$rep" 1
       continue
     fi
 
@@ -880,52 +906,61 @@ measure_site() {
     lcp="$(printf '%s\n' "$output" | sed -n 's/^lcp_ms=//p')"
     observed=$((observed + 1))
 
-    if [ "$watchdog_code" -ne 0 ]; then
-      site_failed=1
-      no_metric=$((no_metric + 1))
-      finish_app_log "$site" "$rep" 1
-      continue
-    fi
-    if ! tsproxy_saw_site "$before" "$site"; then
-      site_failed=1
-      no_metric=$((no_metric + 1))
-      set_runtime_failure 30 replay missing_proxy_route "repetition=$rep"
-      finish_app_log "$site" "$rep" 1
-      continue
-    fi
     if [ "$offsite" != 0 ] && [ "$offsite" != 1 ]; then
       site_failed=1
       no_metric=$((no_metric + 1))
       set_runtime_failure 30 automation invalid_offsite_flag "repetition=$rep"
-      finish_app_log "$site" "$rep" 1
+      finish_repetition_logs "$site" "$rep" 1
       continue
     fi
     if ! [[ "$lcp" =~ ^-?[0-9]+([.][0-9]+)?$ ]]; then
       site_failed=1
       no_metric=$((no_metric + 1))
       set_runtime_failure 30 automation invalid_lcp "repetition=$rep"
-      finish_app_log "$site" "$rep" 1
+      finish_repetition_logs "$site" "$rep" 1
       continue
     fi
-    if [ "$offsite" = 1 ]; then
+    if awk -v value="$lcp" 'BEGIN { exit !(value < -1) }'; then
+      site_failed=1
+      no_metric=$((no_metric + 1))
+      set_runtime_failure 30 automation invalid_lcp \
+        "repetition=$rep; lcp_ms=$lcp"
+      finish_repetition_logs "$site" "$rep" 1
+      continue
+    fi
+    if [ "$offsite" = 1 ] && [ -n "$landed_url" ]; then
       site_failed=1
       no_metric=$((no_metric + 1))
       set_runtime_failure 30 replay offsite_landing \
         "repetition=$rep; landed_url=$landed_url"
-      finish_app_log "$site" "$rep" 1
+      finish_repetition_logs "$site" "$rep" 1
+      continue
+    fi
+    if [ "$watchdog_code" -ne 0 ]; then
+      site_failed=1
+      no_metric=$((no_metric + 1))
+      set_runtime_failure 30 automation command_failed \
+        "repetition=$rep; exit_status=$watchdog_code"
+      finish_repetition_logs "$site" "$rep" 1
+      continue
+    fi
+    if ! tsproxy_saw_site "$before" "$site"; then
+      site_failed=1
+      no_metric=$((no_metric + 1))
+      set_runtime_failure 30 replay missing_proxy_route "repetition=$rep"
+      finish_repetition_logs "$site" "$rep" 1
       continue
     fi
     if awk -v value="$lcp" 'BEGIN { exit !(value <= 0) }'; then
       unfinalized=$((unfinalized + 1))
-      finish_app_log "$site" "$rep" 0
+      finish_repetition_logs "$site" "$rep" 0
       continue
     fi
     recorded=$((recorded + 1))
-    values+=("$lcp")
     printf 'ddg\t%s\t%s\t%d\t%s\n' \
       "$BROWSER_VERSION" "$site" "$recorded" "$lcp" >> "$RESULTS_FILE"
     echo "  $site rep $rep: lcp_ms=$lcp; detail=$detail"
-    finish_app_log "$site" "$rep" 0
+    finish_repetition_logs "$site" "$rep" 0
   done
 
   if [ "$observed" -ne $((recorded + unfinalized + no_metric)) ]; then
@@ -970,47 +1005,6 @@ record_after_shared_failure() {
   fi
 }
 
-rewrite_dispositions_for_global_cleanup_failure() {
-  local temp detail
-  temp="$(mktemp)"
-  detail="$(tsv_clean "$SHARED_FAILURE_DETAIL")"
-  awk -F'\t' -v OFS='\t' \
-    -v stage="$SHARED_FAILURE_STAGE" \
-    -v reason="$SHARED_FAILURE_REASON" \
-    -v detail="$detail" '
-      NR == 1 { print; next }
-      $4 != "excluded" {
-        $4 = "infra_error"
-        $10 = stage
-        $11 = reason
-        $12 = detail
-      }
-      { print }
-    ' "$DISPOSITIONS_FILE" > "$temp"
-  mv "$temp" "$DISPOSITIONS_FILE"
-}
-
-finalize_shared_proxy() {
-  if ! stop_exact_pid "$TSPROXY_PID"; then
-    set_shared_failure cleanup unsafe_tsproxy_cleanup \
-      "shared tsproxy could not be stopped by exact PID"
-    rewrite_dispositions_for_global_cleanup_failure
-    preserve_diagnostic "$TSPROXY_LOG" tsproxy.log
-    stop_log_monitor "$TSPROXY_LOG_MONITOR_PID" "$TSPROXY_LOG"
-    TSPROXY_LOG_MONITOR_PID=""
-    return 1
-  fi
-  stop_log_monitor "$TSPROXY_LOG_MONITOR_PID" "$TSPROXY_LOG"
-  TSPROXY_PID=""
-  TSPROXY_LOG_MONITOR_PID=""
-  if [ "$RUN_FATAL" -ne 0 ]; then
-    preserve_diagnostic "$TSPROXY_LOG" tsproxy.log
-  fi
-  [ -z "$TSPROXY_LOG" ] || rm -f "$TSPROXY_LOG"
-  TSPROXY_LOG=""
-  return 0
-}
-
 run_ddg() {
   local site
   log "DuckDuckGo LCP (mandatory WPR, ${WPR_US_BROADBAND_RTT_MS}ms RTT, ${WPR_US_BROADBAND_IN_KBPS}/${WPR_US_BROADBAND_OUT_KBPS} Kbps, window ${WPR_US_BROADBAND_WINDOW})"
@@ -1018,10 +1012,6 @@ run_ddg() {
   echo "route:   DDG WKWebView -> tsproxy:$TSPROXY_PORT -> per-site WPR"
   echo "results: $RESULTS_FILE"
 
-  if ! start_tsproxy; then
-    set_shared_failure shaping tsproxy_start_failed \
-      "shared tsproxy did not become ready"
-  fi
   for site in "${SITES[@]}"; do
     log "site: $site"
     if [ "$SHARED_SERVICE_FAILURE" -ne 0 ]; then
@@ -1043,7 +1033,6 @@ check_prerequisites
 printf 'browser\tbrowser_version\tsite\trep\tlcp_ms\n' > "$RESULTS_FILE"
 init_dispositions_file
 run_ddg
-finalize_shared_proxy || true
 report_dispositions
 log "Done"
 echo "results:      $RESULTS_FILE"

@@ -28,9 +28,11 @@ appId: com.duckduckgo.mobile.ios
     commands:
         - tapOn: "Allow"
 - tapOn: Paste Sync Code
-# Device-added success screen confirms the connection. Its title is device-name-prefixed,
-# so anchor on the stable, exact "Copy Recovery Code" button label (Maestro full-matches text).
+# Device-added success screen confirms the connection (title carries the device name, so
+# match by id).
 - extendedWaitUntil:
-    visible: Copy Recovery Code
+    visible:
+      id: "SyncSuccessTitle"
     timeout: 60000
-- tapOn: Done
+- tapOn:
+    id: "SyncSuccessDoneButton"

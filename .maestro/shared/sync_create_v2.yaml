@@ -17,14 +17,14 @@ appId: com.duckduckgo.mobile.ios
     visible: Sync This Device Only
     timeout: 30000
 - tapOn: Sync This Device Only
-# Success screen for the new account. Its title is "<device name> has been added to Sync
-# & Backup" — since Maestro matches the full element text, anchor on the stable, exact
-# "Copy Recovery Code" button label instead of the device-name-prefixed title.
+# Success screen for the new account (title carries the device name, so match by id).
 - extendedWaitUntil:
-    visible: Copy Recovery Code
+    visible:
+      id: "SyncSuccessTitle"
     timeout: 60000
 # Copy the recovery code so recover/login flows can paste it later.
-- tapOn: Copy Recovery Code
+- tapOn:
+    id: "SyncSuccessCopyRecoveryCodeButton"
 # Re-authenticate only if the auth session has expired since enabling sync.
 - runFlow:
     when:
@@ -33,5 +33,6 @@ appId: com.duckduckgo.mobile.ios
       - tapOn: Passcode field
       - inputText: "0000"
       - pressKey: Enter
-- tapOn: Done
+- tapOn:
+    id: "SyncSuccessDoneButton"
 - assertVisible: Sync & Backup

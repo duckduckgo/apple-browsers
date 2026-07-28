@@ -115,11 +115,11 @@ class DDGHarnessTests(unittest.TestCase):
             if start_failure and not os.path.exists(start_failure):
                 open(start_failure, "w", encoding="utf-8").close()
                 raise SystemExit(9)
-            exit_deadline = None
+            die_on_request = False
             death_marker = os.environ.get("FAKE_WPR_FIRST_DEATH_MARKER")
             if death_marker and not os.path.exists(death_marker):
                 open(death_marker, "w", encoding="utf-8").close()
-                exit_deadline = time.monotonic() + 0.3
+                die_on_request = True
             ports = []
             for arg in sys.argv[1:]:
                 if arg.startswith("--http-port=") or arg.startswith("--https-port="):
@@ -133,13 +133,13 @@ class DDGHarnessTests(unittest.TestCase):
                 sock.settimeout(0.1)
                 listeners.append(sock)
             while True:
-                if exit_deadline and time.monotonic() >= exit_deadline:
-                    raise SystemExit(8)
                 for sock in listeners:
                     try:
                         client, _ = sock.accept()
                         data = client.recv(1024)
                         client.close()
+                        if data == b"die" and die_on_request:
+                            raise SystemExit(8)
                         if data == b"replay-miss":
                             print(
                                 'level=WARN msg="Proxy: FAILED to find request"',
@@ -276,6 +276,21 @@ class DDGHarnessTests(unittest.TestCase):
                     ("127.0.0.1", int(os.environ["TSPROXY_PORT"]))
                 ) as proxy:
                     proxy.sendall(site.encode())
+            if site == os.environ.get("AUTOMATION_KILL_WPR_SITE"):
+                with socket.create_connection(
+                    ("127.0.0.1", int(os.environ["WPR_HTTP_PORT"]))
+                ) as wpr:
+                    wpr.sendall(b"die")
+                deadline = time.monotonic() + 2
+                while time.monotonic() < deadline:
+                    try:
+                        with socket.create_connection(
+                            ("127.0.0.1", int(os.environ["WPR_HTTP_PORT"]))
+                        ):
+                            pass
+                    except OSError:
+                        break
+                    time.sleep(0.01)
             if mode == "replay_miss":
                 with socket.create_connection(
                     ("127.0.0.1", int(os.environ["WPR_HTTP_PORT"]))
@@ -542,7 +557,7 @@ class DDGHarnessTests(unittest.TestCase):
     def test_watchdog_timeout_has_stable_reason(self):
         result = self.run_harness(
             AUTOMATION_MODE="hang",
-            REPETITION_TIMEOUT_SECONDS="1",
+            REPETITION_TIMEOUT_SECONDS="3",
         )
         self.assertEqual(result.returncode, 1)
         row = self.disposition_rows()[0]
@@ -572,7 +587,7 @@ class DDGHarnessTests(unittest.TestCase):
         result = self.run_harness(
             sites="apple.com,example.com",
             AUTOMATION_FAIL_SITE="apple.com",
-            AUTOMATION_DELAY_SECONDS="0.6",
+            AUTOMATION_KILL_WPR_SITE="apple.com",
             FAKE_WPR_FIRST_DEATH_MARKER=str(self.root / "wpr-died"),
         )
         self.assertEqual(result.returncode, 0, result.stderr)

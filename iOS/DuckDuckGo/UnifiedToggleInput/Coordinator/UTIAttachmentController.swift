@@ -36,7 +36,6 @@ final class UTIAttachmentController {
     struct ViewSurface {
         let currentAttachments: () -> [UnifiedToggleInputAttachment]
         let isGenerating: () -> Bool
-        let presenterViewController: () -> UIViewController?
         let addAttachment: (UnifiedToggleInputAttachment) -> Void
         let removeAttachment: (UUID) -> Void
         let removeAllAttachments: () -> Void
@@ -62,6 +61,7 @@ final class UTIAttachmentController {
         let currentTabUID: () -> TabUID?
         let isPageContextAttachable: () -> Bool?
         let pageContextAttachHandler: () -> (() -> Void)?
+        let presenterViewController: () -> UIViewController?
     }
 
     /// Coordinator-owned effects an attachment mutation triggers.
@@ -130,10 +130,6 @@ final class UTIAttachmentController {
     }
 
     // MARK: - Image / file limits
-
-    var remainingImagesForPicker: Int {
-        environment.policy().remainingImagesForPicker
-    }
 
     var allowedFileUTTypes: [UTType] {
         environment.supportedFileTypes().compactMap(Self.contentType(for:))
@@ -391,7 +387,7 @@ final class UTIAttachmentController {
         let policy = environment.policy()
         return presenter.makeAttachmentMenu(
             presenterProvider: { [weak self] in
-                self?.view.presenterViewController()
+                self?.environment.presenterViewController()
             },
             photoSelectionLimit: policy.canAttachImages ? policy.remainingImagesForPicker : 0,
             canAttachFile: canPresentFilePicker,

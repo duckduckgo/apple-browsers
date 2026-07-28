@@ -386,7 +386,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             view: .init(
                 currentAttachments: { [weak self] in self?.viewController.currentAttachments ?? [] },
                 isGenerating: { [weak self] in self?.viewController.isGenerating ?? false },
-                presenterViewController: { [weak self] in self?.attachmentPresenterViewController },
                 addAttachment: { [weak self] in self?.viewController.addAttachment($0) },
                 removeAttachment: { [weak self] in self?.viewController.removeAttachment(id: $0) },
                 removeAllAttachments: { [weak self] in self?.viewController.removeAllAttachments() },
@@ -410,7 +409,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                 attachmentLimits: { [weak self] in self?.modelStore.attachmentLimits },
                 currentTabUID: { [weak self] in self?.currentTabUID },
                 isPageContextAttachable: { [weak self] in self?.isPageContextAttachable?() },
-                pageContextAttachHandler: { [weak self] in self?.onPageContextAttachRequested }
+                pageContextAttachHandler: { [weak self] in self?.onPageContextAttachRequested },
+                presenterViewController: { [weak self] in self?.attachmentPresenterViewController }
             ),
             callbacks: .init(
                 onDraftChanged: { [weak self] in self?.persistDraftToStore() },

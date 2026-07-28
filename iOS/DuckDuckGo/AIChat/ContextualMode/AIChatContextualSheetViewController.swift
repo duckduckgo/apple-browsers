@@ -99,6 +99,7 @@ final class AIChatContextualSheetViewController: UIViewController {
         static let iPadPopoverDefaultHeight: CGFloat = 520
         static let maxHeightRatio: CGFloat = 0.9
         static let initialPromptRevealFallbackDelay: TimeInterval = 1
+        static let suggestedPromptFrontendReadinessTimeout: TimeInterval = 5
     }
 
     // MARK: - Types
@@ -168,6 +169,8 @@ final class AIChatContextualSheetViewController: UIViewController {
     /// Prevents showing the preloaded Duck.ai start surface before the frontend switches into a response state.
     private var isWaitingForInitialPromptResponseState = false
     private var initialPromptRevealFallbackWorkItem: DispatchWorkItem?
+    private var suggestionSubmissionTask: Task<Void, Never>?
+    private var suggestionSubmissionID: UUID?
 
     /// Tracks whether the "Ask about page" quick action chip is currently on screen, so the impression
     /// pixel fires once per appearance rather than on every view-state update.
@@ -401,6 +404,9 @@ final class AIChatContextualSheetViewController: UIViewController {
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
+        if isBeingDismissed {
+            prepareForDismissal()
+        }
         dismissRecentChatsPopup()
         view.endEditing(true)
         removeKeyboardObserver()
@@ -411,8 +417,7 @@ final class AIChatContextualSheetViewController: UIViewController {
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
         if isBeingDismissed {
-            isSheetPresented = false
-            contextualInputViewController.setStartActionsDimmed(false)
+            prepareForDismissal()
             delegate?.aiChatContextualSheetViewControllerDidDismiss(self)
         }
     }
@@ -495,6 +500,7 @@ final class AIChatContextualSheetViewController: UIViewController {
     }
 
     func handleFirstUTISubmission() {
+        cancelSuggestionSubmission()
         if beginWaitingForInitialPromptResponseStateIfNeeded() {
             return
         }
@@ -820,6 +826,7 @@ extension AIChatContextualSheetViewController: UIGestureRecognizerDelegate {
 extension AIChatContextualSheetViewController: AIChatContextualInputViewControllerDelegate {
 
     func contextualInputViewController(_ viewController: AIChatContextualInputViewController, didSubmitPrompt prompt: String) {
+        cancelSuggestionSubmission()
         submitPromptFromNativeInput(prompt)
     }
 
@@ -850,11 +857,38 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
     }
 
     func contextualInputViewController(_ viewController: AIChatContextualInputViewController, didSelectSuggestion suggestion: ContextualSuggestedPrompt) {
+        guard featureFlagger.isFeatureOn(.contextualSuggestedPrompts) else { return }
+        cancelSuggestionSubmission()
         contextualInputViewController.setStartActionsDimmed(true)
-        Task { [weak self] in
+        let submissionID = UUID()
+        suggestionSubmissionID = submissionID
+        suggestionSubmissionTask = Task { [weak self] in
             guard let self else { return }
+            defer {
+                if self.suggestionSubmissionID == submissionID {
+                    self.suggestionSubmissionTask = nil
+                    self.suggestionSubmissionID = nil
+                }
+            }
+
             await self.delegate?.aiChatContextualSheetViewControllerAttachContextForSuggestion(self)
-            guard self.isSheetPresented else { return }
+            guard !Task.isCancelled, self.isSheetPresented else { return }
+
+            guard let webViewController = self.webViewController else {
+                if self.suggestionSubmissionID == submissionID, self.isSheetPresented {
+                    self.contextualInputViewController.setStartActionsDimmed(false)
+                }
+                return
+            }
+
+            let isFrontendReady = await webViewController.waitUntilFrontendReady(timeout: Constants.suggestedPromptFrontendReadinessTimeout)
+            guard isFrontendReady else {
+                if self.suggestionSubmissionID == submissionID, self.isSheetPresented {
+                    self.contextualInputViewController.setStartActionsDimmed(false)
+                }
+                return
+            }
+            guard !Task.isCancelled, self.isSheetPresented else { return }
             self.submitSuggestionPrompt(suggestion.prompt)
         }
     }
@@ -1057,6 +1091,19 @@ private extension AIChatContextualSheetViewController {
 // MARK: - Initial Prompt Transition
 
 private extension AIChatContextualSheetViewController {
+
+    func prepareForDismissal() {
+        guard isSheetPresented else { return }
+        isSheetPresented = false
+        cancelSuggestionSubmission()
+        contextualInputViewController.setStartActionsDimmed(false)
+    }
+
+    func cancelSuggestionSubmission() {
+        suggestionSubmissionTask?.cancel()
+        suggestionSubmissionTask = nil
+        suggestionSubmissionID = nil
+    }
 
     func submitPromptFromNativeInput(_ prompt: String) {
         beginWaitingForInitialPromptResponseStateIfNeeded()
@@ -1341,6 +1388,10 @@ private extension AIChatContextualSheetViewController {
 // MARK: - UISheetPresentationControllerDelegate
 
 extension AIChatContextualSheetViewController: UISheetPresentationControllerDelegate {
+
+    func presentationControllerWillDismiss(_ presentationController: UIPresentationController) {
+        prepareForDismissal()
+    }
 
     func sheetPresentationControllerDidChangeSelectedDetentIdentifier(_ sheetPresentationController: UISheetPresentationController) {
         isCurrentlyMediumDetent = sheetPresentationController.selectedDetentIdentifier == .medium

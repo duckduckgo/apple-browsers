@@ -1847,10 +1847,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 stateRestorationManager?.applicationWillTerminate()
             },
 
-            // 6. Auto-clear (burn on quit)
+            // 6. EventHub pending telemetry flush
+            .perform { [eventHubIntegration] in
+                eventHubIntegration.applicationWillTerminate()
+            },
+
+            // 7. Auto-clear (burn on quit)
             autoClearHandler,
 
-            // 7. Privacy stats cleanup
+            // 8. Privacy stats cleanup
             .terminationDecider { [privacyStats] _ in
                 .async(Task {
                     await privacyStats.handleAppTermination()
@@ -1858,7 +1863,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 })
             },
 
-            // 8. Close windows before quitting while waiting for ⌘Q release
+            // 9. Close windows before quitting while waiting for ⌘Q release
             .perform {
                 NSApp.visibleWindows.forEach { $0.close() }
             }

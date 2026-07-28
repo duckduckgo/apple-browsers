@@ -90,4 +90,10 @@ final class MacOSEventHubIntegration {
     func applicationDidResignActive() {
         eventHub.onAppBackgrounded()
     }
+
+    /// Backgrounding is EventHub's flush boundary, so it doubles as the final persist on quit
+    /// (`applicationDidResignActive` is not reliably delivered before termination).
+    func applicationWillTerminate() {
+        eventHub.onAppBackgrounded()
+    }
 }

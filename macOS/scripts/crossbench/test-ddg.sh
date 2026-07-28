@@ -55,6 +55,7 @@ DIAGNOSTICS_DIR="${DIAGNOSTICS_DIR:-$PWD/ddg-diagnostics}"
 MAX_SITE_DIAGNOSTICS="${MAX_SITE_DIAGNOSTICS:-5}"
 MAX_DIAGNOSTIC_BYTES="${MAX_DIAGNOSTIC_BYTES:-5242880}"
 MAX_TOTAL_DIAGNOSTIC_BYTES="${MAX_TOTAL_DIAGNOSTIC_BYTES:-26214400}"
+MAX_LIVE_LOG_BYTES="${MAX_LIVE_LOG_BYTES:-10485760}"
 SITE_DIAGNOSTICS=0
 DIAGNOSTIC_BYTES_WRITTEN=0
 
@@ -86,6 +87,7 @@ bounded_integer LCP_SETTLE_MS 0 5000
 bounded_integer MAX_SITE_DIAGNOSTICS 0 22
 bounded_integer MAX_DIAGNOSTIC_BYTES 1 10485760
 bounded_integer MAX_TOTAL_DIAGNOSTIC_BYTES 1 104857600
+bounded_integer MAX_LIVE_LOG_BYTES 1024 104857600
 bounded_integer LOAD_WINDOW_SECONDS 0 120
 if [ "$ALLOW_TEST_OVERRIDES" != 1 ] && [ "$LOAD_WINDOW_SECONDS" != 12 ]; then
   echo "ERROR: LOAD_WINDOW_SECONDS is fixed at 12 outside test fakes." >&2
@@ -161,6 +163,10 @@ DDG_PID=""
 WPR_LOG=""
 TSPROXY_LOG=""
 DDG_LOG=""
+WPR_REPLAY_MISS_FILE=""
+WPR_LOG_MONITOR_PID=""
+TSPROXY_LOG_MONITOR_PID=""
+DDG_LOG_MONITOR_PID=""
 AUTOMATION_TOKEN_VALUE=""
 RUN_FATAL=0
 SHARED_SERVICE_FAILURE=0
@@ -178,6 +184,39 @@ process_is_alive() {
   kill -0 "$pid" 2>/dev/null || return 1
   state="$(ps -o stat= -p "$pid" 2>/dev/null | tr -d '[:space:]' || true)"
   [ -n "$state" ] && [[ "$state" != Z* ]]
+}
+
+cap_live_log() {
+  local path="$1" marker_file="${2:-}" size keep temp
+  [ -n "$path" ] && [ -f "$path" ] || return 0
+  size="$(stat -f %z "$path" 2>/dev/null || wc -c < "$path" 2>/dev/null || echo 0)"
+  [ "$size" -gt "$MAX_LIVE_LOG_BYTES" ] || return 0
+  if [ -n "$marker_file" ] &&
+      grep -q "Proxy: FAILED to find request" "$path"; then
+    : > "$marker_file"
+  fi
+  keep=$((MAX_LIVE_LOG_BYTES / 2))
+  temp="$path.trim.$$"
+  tail -c "$keep" "$path" > "$temp"
+  cat "$temp" > "$path"
+  rm -f "$temp"
+}
+
+monitor_live_log() {
+  local path="$1" marker_file="${2:-}"
+  while true; do
+    cap_live_log "$path" "$marker_file"
+    sleep 1
+  done
+}
+
+stop_log_monitor() {
+  local monitor_pid="$1" path="$2" marker_file="${3:-}"
+  if [ -n "$monitor_pid" ]; then
+    kill "$monitor_pid" 2>/dev/null || true
+    wait "$monitor_pid" 2>/dev/null || true
+  fi
+  cap_live_log "$path" "$marker_file"
 }
 
 stop_exact_pid() {
@@ -247,7 +286,9 @@ stop_app() {
       status=1
     fi
   fi
+  stop_log_monitor "$DDG_LOG_MONITOR_PID" "$DDG_LOG"
   DDG_PID=""
+  DDG_LOG_MONITOR_PID=""
   AUTOMATION_TOKEN_VALUE=""
   return "$status"
 }
@@ -262,9 +303,11 @@ cleanup() {
   if ! stop_exact_pid "$WPR_PID"; then
     exit_code=1
   fi
+  stop_log_monitor "$WPR_LOG_MONITOR_PID" "$WPR_LOG" "$WPR_REPLAY_MISS_FILE"
   if ! stop_exact_pid "$TSPROXY_PID"; then
     exit_code=1
   fi
+  stop_log_monitor "$TSPROXY_LOG_MONITOR_PID" "$TSPROXY_LOG"
   if [ "$exit_code" -ne 0 ]; then
     preserve_diagnostic "$DDG_LOG" ddg.log
     preserve_diagnostic "$WPR_LOG" wpr.log
@@ -272,6 +315,7 @@ cleanup() {
   fi
   [ -z "$DDG_LOG" ] || rm -f "$DDG_LOG"
   [ -z "$WPR_LOG" ] || rm -f "$WPR_LOG"
+  [ -z "$WPR_REPLAY_MISS_FILE" ] || rm -f "$WPR_REPLAY_MISS_FILE"
   [ -z "$TSPROXY_LOG" ] || rm -f "$TSPROXY_LOG"
   exit "$exit_code"
 }
@@ -292,6 +336,18 @@ wait_for_port() {
   return 1
 }
 
+wait_for_port_free() {
+  local port="$1" timeout="$2" iteration
+  for ((iteration = 0; iteration < timeout * 4; iteration++)); do
+    if ! (exec 3<>"/dev/tcp/127.0.0.1/$port") 2>/dev/null; then
+      return 0
+    fi
+    exec 3>&-
+    sleep 0.25
+  done
+  return 1
+}
+
 assert_port_free() {
   local port="$1" label="$2"
   if (exec 3<>"/dev/tcp/127.0.0.1/$port") 2>/dev/null; then
@@ -303,23 +359,41 @@ assert_port_free() {
 
 read_app_metadata() {
   local plist="$DDG_APP/Contents/Info.plist"
-  if [ "$DDG_MARKETING_VERSION" = unknown ]; then
-    DDG_MARKETING_VERSION="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$plist" 2>/dev/null || echo unknown)"
+  local marketing_version build_version bundle_id executable_name
+  [ -f "$plist" ] || {
+    echo "ERROR: DuckDuckGo Info.plist missing at $plist." >&2
+    return 1
+  }
+  marketing_version="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$plist" 2>/dev/null || true)"
+  build_version="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$plist" 2>/dev/null || true)"
+  bundle_id="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$plist" 2>/dev/null || true)"
+  executable_name="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$plist" 2>/dev/null || true)"
+  if [ "$ALLOW_TEST_OVERRIDES" = 1 ]; then
+    [ "$DDG_MARKETING_VERSION" != unknown ] || DDG_MARKETING_VERSION="$marketing_version"
+    [ "$DDG_BUILD_VERSION" != unknown ] || DDG_BUILD_VERSION="$build_version"
+    [ "$DDG_BUNDLE_ID" != unknown ] || DDG_BUNDLE_ID="$bundle_id"
+  else
+    DDG_MARKETING_VERSION="$marketing_version"
+    DDG_BUILD_VERSION="$build_version"
+    DDG_BUNDLE_ID="$bundle_id"
+    DDG_EXECUTABLE=""
   fi
-  if [ "$DDG_BUILD_VERSION" = unknown ]; then
-    DDG_BUILD_VERSION="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$plist" 2>/dev/null || echo unknown)"
-  fi
-  if [ "$DDG_BUNDLE_ID" = unknown ]; then
-    DDG_BUNDLE_ID="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$plist" 2>/dev/null || echo unknown)"
-  fi
+  for value in "$DDG_MARKETING_VERSION" "$DDG_BUILD_VERSION" "$DDG_BUNDLE_ID"; do
+    if [ -z "$value" ] || [[ "$value" == *$'\t'* ]] ||
+        [[ "$value" == *$'\n'* ]] || [[ "$value" == *$'\r'* ]]; then
+      echo "ERROR: DuckDuckGo Info.plist metadata is missing or malformed." >&2
+      return 1
+    fi
+  done
   if [ -z "$DDG_EXECUTABLE" ]; then
-    executable_name="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$plist" 2>/dev/null || true)"
+    if [ -z "$executable_name" ] || [[ "$executable_name" == */* ]]; then
+      echo "ERROR: DuckDuckGo executable name is missing or unsafe." >&2
+      return 1
+    fi
     DDG_EXECUTABLE="$DDG_APP/Contents/MacOS/$executable_name"
   fi
   BROWSER_VERSION="$DDG_MARKETING_VERSION"
-  if [ "$DDG_BUILD_VERSION" != unknown ]; then
-    BROWSER_VERSION="$DDG_MARKETING_VERSION ($DDG_BUILD_VERSION)"
-  fi
+  BROWSER_VERSION="$DDG_MARKETING_VERSION ($DDG_BUILD_VERSION)"
 }
 
 check_prerequisites() {
@@ -341,7 +415,7 @@ check_prerequisites() {
     echo "ERROR: DuckDuckGo app not found at $DDG_APP." >&2
     exit 1
   }
-  read_app_metadata
+  read_app_metadata || exit 1
   case "$DDG_BUNDLE_ID" in
     *.review|*.debug) ;;
     *)
@@ -477,21 +551,26 @@ start_wpr() {
   assert_port_free "$WPR_HTTP_PORT" wpr-http || return 1
   assert_port_free "$WPR_HTTPS_PORT" wpr-https || return 1
   WPR_LOG="$(mktemp)"
+  WPR_REPLAY_MISS_FILE="$WPR_LOG.replay-miss"
   "$WPR_BIN" replay \
     --http-port="$WPR_HTTP_PORT" \
     --https-port="$WPR_HTTPS_PORT" \
     --https-cert-file="$WPR_CERT_FILE" \
     --https-key-file="$WPR_KEY_FILE" \
     --no-archive-certificates \
-    "$archive" >"$WPR_LOG" 2>&1 &
+    "$archive" >>"$WPR_LOG" 2>&1 &
   WPR_PID=$!
+  monitor_live_log "$WPR_LOG" "$WPR_REPLAY_MISS_FILE" &
+  WPR_LOG_MONITOR_PID=$!
   if ! wait_for_port "$WPR_HTTP_PORT" "$SERVICE_START_TIMEOUT_SECONDS" ||
       ! wait_for_port "$WPR_HTTPS_PORT" "$SERVICE_START_TIMEOUT_SECONDS"; then
     if ! stop_exact_pid "$WPR_PID"; then
       set_shared_failure cleanup unsafe_wpr_cleanup \
         "WPR failed to stop after startup failure"
     fi
+    stop_log_monitor "$WPR_LOG_MONITOR_PID" "$WPR_LOG" "$WPR_REPLAY_MISS_FILE"
     WPR_PID=""
+    WPR_LOG_MONITOR_PID=""
     return 1
   fi
 }
@@ -499,9 +578,13 @@ start_wpr() {
 stop_wpr() {
   local status=0
   stop_exact_pid "$WPR_PID" || status=1
+  stop_log_monitor "$WPR_LOG_MONITOR_PID" "$WPR_LOG" "$WPR_REPLAY_MISS_FILE"
   WPR_PID=""
+  WPR_LOG_MONITOR_PID=""
   [ -z "$WPR_LOG" ] || rm -f "$WPR_LOG"
+  [ -z "$WPR_REPLAY_MISS_FILE" ] || rm -f "$WPR_REPLAY_MISS_FILE"
   WPR_LOG=""
+  WPR_REPLAY_MISS_FILE=""
   return "$status"
 }
 
@@ -516,15 +599,19 @@ start_tsproxy() {
     --inkbps "$WPR_US_BROADBAND_IN_KBPS" \
     --outkbps "$WPR_US_BROADBAND_OUT_KBPS" \
     --window "$WPR_US_BROADBAND_WINDOW" \
-    -vvv >"$TSPROXY_LOG" 2>&1 &
+    -vvv >>"$TSPROXY_LOG" 2>&1 &
   TSPROXY_PID=$!
+  monitor_live_log "$TSPROXY_LOG" &
+  TSPROXY_LOG_MONITOR_PID=$!
   if ! process_is_alive "$TSPROXY_PID" ||
       ! wait_for_port "$TSPROXY_PORT" "$SERVICE_START_TIMEOUT_SECONDS" ||
       ! process_is_alive "$TSPROXY_PID"; then
     echo "ERROR: shared tsproxy failed to start." >&2
     preserve_diagnostic "$TSPROXY_LOG" tsproxy.log
     stop_exact_pid "$TSPROXY_PID" || true
+    stop_log_monitor "$TSPROXY_LOG_MONITOR_PID" "$TSPROXY_LOG"
     TSPROXY_PID=""
+    TSPROXY_LOG_MONITOR_PID=""
     return 1
   fi
   return 0
@@ -541,6 +628,11 @@ tsproxy_saw_site() {
     "$TSPROXY_LOG"
 }
 
+wpr_had_replay_miss() {
+  [ -f "$WPR_REPLAY_MISS_FILE" ] ||
+    grep -q "Proxy: FAILED to find request" "$WPR_LOG"
+}
+
 start_app() {
   assert_port_free "$AUTOMATION_PORT" automation || return 1
   AUTOMATION_TOKEN_VALUE="$("$PYTHON_BIN" -c 'import secrets; print(secrets.token_hex(32))')"
@@ -550,8 +642,10 @@ start_app() {
       -automationPort "$AUTOMATION_PORT" \
       -isOnboardingCompleted true \
       -webViewProxy "socks5://127.0.0.1:$TSPROXY_PORT" \
-      -acceptInsecureCerts true >"$DDG_LOG" 2>&1 &
+      -acceptInsecureCerts true >>"$DDG_LOG" 2>&1 &
   DDG_PID=$!
+  monitor_live_log "$DDG_LOG" &
+  DDG_LOG_MONITOR_PID=$!
   if ! wait_for_port "$AUTOMATION_PORT" 20; then
     echo "ERROR: DuckDuckGo automation server did not become ready." >&2
     return 1
@@ -569,6 +663,7 @@ start_app() {
 }
 
 shutdown_app() {
+  local status=0
   if process_is_alive "$DDG_PID"; then
     AUTOMATION_TOKEN="$AUTOMATION_TOKEN_VALUE" \
       "$PYTHON_BIN" "$DDG_AUTOMATION_PY" "$AUTOMATION_PORT" shutdown \
@@ -578,7 +673,12 @@ shutdown_app() {
       sleep 0.5
     done
   fi
-  stop_app
+  stop_app || status=1
+  if ! wait_for_port_free "$AUTOMATION_PORT" 3; then
+    echo "ERROR: automation port $AUTOMATION_PORT remained in use after shutdown." >&2
+    status=1
+  fi
+  return "$status"
 }
 
 set_runtime_failure() {
@@ -633,6 +733,8 @@ measure_site() {
   if ! start_wpr "$VALIDATED_ARCHIVE"; then
     set_runtime_failure 30 replay wpr_start_failed "WPR did not become ready"
     preserve_site_diagnostics "$site"
+    stop_wpr || set_shared_failure cleanup unsafe_wpr_cleanup \
+      "WPR failed to clean up after startup failure"
     record_disposition "$site" infra_error
     return
   fi
@@ -704,6 +806,14 @@ measure_site() {
     fi
     if [ "$SHARED_SERVICE_FAILURE" -ne 0 ] ||
         [ "$FAILURE_REASON" = wpr_exited ]; then
+      rm -f "$status_file"
+      finish_app_log "$site" "$rep" 1
+      break
+    fi
+    if wpr_had_replay_miss; then
+      site_failed=1
+      set_runtime_failure 70 replay archive_miss \
+        "WPR could not serve at least one requested resource; repetition=$rep"
       rm -f "$status_file"
       finish_app_log "$site" "$rep" 1
       break
@@ -886,9 +996,13 @@ finalize_shared_proxy() {
       "shared tsproxy could not be stopped by exact PID"
     rewrite_dispositions_for_global_cleanup_failure
     preserve_diagnostic "$TSPROXY_LOG" tsproxy.log
+    stop_log_monitor "$TSPROXY_LOG_MONITOR_PID" "$TSPROXY_LOG"
+    TSPROXY_LOG_MONITOR_PID=""
     return 1
   fi
+  stop_log_monitor "$TSPROXY_LOG_MONITOR_PID" "$TSPROXY_LOG"
   TSPROXY_PID=""
+  TSPROXY_LOG_MONITOR_PID=""
   if [ "$RUN_FATAL" -ne 0 ]; then
     preserve_diagnostic "$TSPROXY_LOG" tsproxy.log
   fi

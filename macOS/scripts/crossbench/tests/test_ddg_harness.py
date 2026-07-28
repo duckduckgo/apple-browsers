@@ -4,6 +4,7 @@
 import hashlib
 import json
 import os
+import plistlib
 import socket
 import subprocess
 import sys
@@ -45,6 +46,16 @@ class DDGHarnessTests(unittest.TestCase):
         self.bin.mkdir()
         self.archives.mkdir()
         self.executable.parent.mkdir(parents=True)
+        with (self.app / "Contents" / "Info.plist").open("wb") as output:
+            plistlib.dump(
+                {
+                    "CFBundleShortVersionString": "99.1",
+                    "CFBundleVersion": "99A1",
+                    "CFBundleIdentifier": "com.duckduckgo.macos.browser.review",
+                    "CFBundleExecutable": self.executable.name,
+                },
+                output,
+            )
         self.wpr_http, self.wpr_https, self.tsproxy, self.automation = (
             free_ports(4)
         )
@@ -68,10 +79,6 @@ class DDGHarnessTests(unittest.TestCase):
             "TSPROXY_PY": str(self.bin / "fake-tsproxy.py"),
             "TSPROXY_PORT": str(self.tsproxy),
             "DDG_APP": str(self.app),
-            "DDG_EXECUTABLE": str(self.executable),
-            "DDG_MARKETING_VERSION": "99.1",
-            "DDG_BUILD_VERSION": "99A1",
-            "DDG_BUNDLE_ID": "com.duckduckgo.macos.browser.review",
             "DDG_AUTOMATION_PY": str(self.bin / "fake-automation.py"),
             "AUTOMATION_PORT": str(self.automation),
             "APP_LAUNCHES_FILE": str(self.app_launches),
@@ -129,7 +136,14 @@ class DDGHarnessTests(unittest.TestCase):
                 for sock in listeners:
                     try:
                         client, _ = sock.accept()
+                        data = client.recv(1024)
                         client.close()
+                        if data == b"replay-miss":
+                            print(
+                                'level=WARN msg="Proxy: FAILED to find request"',
+                                file=sys.stderr,
+                                flush=True,
+                            )
                     except socket.timeout:
                         pass
                 time.sleep(0.01)
@@ -174,6 +188,7 @@ class DDGHarnessTests(unittest.TestCase):
             import os
             import socket
             import sys
+            import time
 
             args = sys.argv[1:]
             port = int(args[args.index("-automationPort") + 1])
@@ -189,6 +204,9 @@ class DDGHarnessTests(unittest.TestCase):
                 raise SystemExit(9)
             if os.environ.get("FAKE_APP_START_FAILURE") == "1":
                 raise SystemExit(9)
+            log_bytes = int(os.environ.get("FAKE_APP_LOG_BYTES", "0"))
+            if log_bytes:
+                print("x" * log_bytes, file=sys.stderr, flush=True)
             listener = socket.socket()
             listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             listener.bind(("127.0.0.1", port))
@@ -198,6 +216,13 @@ class DDGHarnessTests(unittest.TestCase):
                 data = client.recv(1024)
                 client.close()
                 if data == b"shutdown":
+                    time.sleep(
+                        float(
+                            os.environ.get(
+                                "FAKE_APP_SHUTDOWN_DELAY_SECONDS", "0"
+                            )
+                        )
+                    )
                     break
             """,
         )
@@ -235,6 +260,12 @@ class DDGHarnessTests(unittest.TestCase):
                     ("127.0.0.1", int(os.environ["TSPROXY_PORT"]))
                 ) as proxy:
                     proxy.sendall(site.encode())
+            if mode == "replay_miss":
+                with socket.create_connection(
+                    ("127.0.0.1", int(os.environ["WPR_HTTP_PORT"]))
+                ) as wpr:
+                    wpr.sendall(b"replay-miss")
+                time.sleep(0.1)
             landed = (
                 "https://offsite.test/"
                 if mode == "offsite"
@@ -316,6 +347,14 @@ class DDGHarnessTests(unittest.TestCase):
             with self.assertRaises(ProcessLookupError):
                 os.kill(launch["pid"], 0)
 
+    def test_delayed_shutdown_releases_port_before_next_launch(self):
+        result = self.run_harness(
+            reps="2",
+            FAKE_APP_SHUTDOWN_DELAY_SECONDS="0.5",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(len(self.launches()), 2)
+
     def test_cleanup_uses_owned_pids_and_precedes_reporting(self):
         harness = SCRIPT.read_text()
         self.assertNotIn("pkill", harness)
@@ -365,6 +404,39 @@ class DDGHarnessTests(unittest.TestCase):
         row = self.disposition_rows()[0]
         self.assertEqual(row[3], "infra_error")
         self.assertEqual(row[9:11], ["replay", "missing_proxy_route"])
+
+    def test_wpr_replay_miss_rejects_measurement(self):
+        result = self.run_harness(AUTOMATION_MODE="replay_miss")
+        self.assertEqual(result.returncode, 1)
+        row = self.disposition_rows()[0]
+        self.assertEqual(row[3], "infra_error")
+        self.assertEqual(row[9:11], ["replay", "archive_miss"])
+        self.assertEqual(len(self.measurement_rows()), 0)
+
+    def test_live_app_log_is_bounded_before_preservation(self):
+        result = self.run_harness(
+            AUTOMATION_MODE="failure",
+            FAKE_APP_LOG_BYTES="16384",
+            MAX_LIVE_LOG_BYTES="1024",
+            MAX_DIAGNOSTIC_BYTES="4096",
+        )
+        self.assertEqual(result.returncode, 1)
+        logs = list((self.root / "diagnostics").glob("ddg-*.log"))
+        self.assertTrue(logs)
+        self.assertTrue(all(path.stat().st_size <= 1024 for path in logs))
+
+    def test_app_metadata_and_executable_are_derived_from_bundle(self):
+        result = self.run_harness(
+            DDG_EXECUTABLE="/tmp/not-the-app",
+            DDG_MARKETING_VERSION="forged",
+            DDG_BUILD_VERSION="forged",
+            DDG_BUNDLE_ID="com.example.production",
+            ALLOW_TEST_OVERRIDES="0",
+            LOAD_WINDOW_SECONDS="12",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(self.measurement_rows()[0][1], "99.1 (99A1)")
+        self.assertGreater(self.launches()[0]["pid"], 0)
 
     def test_validator_error_excludes_site_without_live_fallback(self):
         manifest = self.archives / "manifest.tsv"

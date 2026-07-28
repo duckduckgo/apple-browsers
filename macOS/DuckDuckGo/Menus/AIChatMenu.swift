@@ -257,8 +257,15 @@ final class AIChatMenu: NSMenu {
     /// Refreshes the Ask About Page item's visibility (flag) and title (attachable → "Ask About Page",
     /// otherwise "Open Sidebar") from the live closures.
     private func refreshAskAboutPageItem() {
-        askAboutPageItem.isHidden = !shouldShowAskAboutPage()
+        let isShown = shouldShowAskAboutPage()
+        askAboutPageItem.isHidden = !isShown
         askAboutPageItem.title = isCurrentPageAttachable() ? UserText.aiChatMenuAskAboutPage : UserText.aiChatMenuOpenSidebar
+        // Hold ⌥⌘L only while shown: a hidden item can still register its key equivalent in AppKit and
+        // would then shadow the segmented layout's "Show Duck.ai Sidebar" ⌥⌘L, silently no-opping it.
+        if origin == .mainMenu {
+            askAboutPageItem.keyEquivalent = isShown ? "l" : ""
+            askAboutPageItem.keyEquivalentModifierMask = isShown ? [.command, .option] : []
+        }
     }
 
     @objc private func chatItemTapped(_ sender: NSMenuItem) {

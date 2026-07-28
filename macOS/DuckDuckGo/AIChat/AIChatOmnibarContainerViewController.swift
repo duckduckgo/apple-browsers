@@ -891,6 +891,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     // MARK: - Suggestions Setup
 
     private func setupSuggestionsView() {
+        suggestionsView.isBurner = burnerMode.isBurner
         suggestionsView.translatesAutoresizingMaskIntoConstraints = false
         containerView.addSubview(suggestionsView)
 

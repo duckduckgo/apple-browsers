@@ -7,7 +7,7 @@ run-name: macOS - crossbench Chrome LCP (WPR)
 # (opt-in dispatch input) a second, self-hosted job inserts per-domain
 # aggregates into ClickHouse (native_apps.macos_browser_health_nav_to_lcp).
 #
-# Triggered manually (workflow_dispatch) and on a daily off-peak schedule. No
+# Triggered manually (workflow_dispatch) and monthly on the first day. No
 # pull_request/push trigger, so fork PRs can't run it. WPR supplies fixed page
 # bytes and the US-broadband shaper matches the Windows harness.
 
@@ -42,7 +42,7 @@ on:
     # GitHub only fires schedules from the default branch.
     # 00:17 UTC avoids the repository's busiest scheduled CI window and the
     # top-of-hour load common to GitHub-hosted runners.
-    - cron: "17 0 * * *"
+    - cron: "17 0 1 * *"
 
 permissions:
   contents: read

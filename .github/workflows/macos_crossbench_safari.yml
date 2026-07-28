@@ -10,7 +10,7 @@ run-name: macOS - Safari LCP (WPR)
 #   - LCP is read from the page via a buffered PerformanceObserver over
 #     WebDriver, with acceptInsecureCerts=true.
 #
-# Manual and daily only; pull requests and pushes do not trigger it.
+# Manual and monthly only; pull requests and pushes do not trigger it.
 
 on:
   workflow_dispatch:
@@ -38,7 +38,7 @@ on:
     # full list, and the upload job below sends scheduled results to ClickHouse.
     # 01:47 UTC avoids the repository's busiest scheduled CI window, starts
     # away from the top of the hour, and follows Chrome by 90 minutes.
-    - cron: "47 1 * * *"
+    - cron: "47 1 1 * *"
 
 permissions:
   contents: read

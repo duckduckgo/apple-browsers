@@ -4197,6 +4197,9 @@
 /* The name of a settings category listing next steps */
 "settings.next.steps" = "Következő lépések";
 
+/* Accessibility label / title for the button that hides the Settings Next Steps section */
+"settings.next.steps.hide" = "Elrejtés";
+
 /* Label describing a feature which is turned off */
 "settings.off" = "Ki";
 
@@ -4391,6 +4394,12 @@
 
 /* Settings screen cell text for Unprotected Sites */
 "settings.unprotected.sites" = "Védelem nélküli weboldalak";
+
+/* Description shown above the list of unprotected sites */
+"settings.unprotected.sites.description" = "Ezeket a webhelyeket nem erősíti adatvédelem.";
+
+/* Message shown when there are no unprotected sites */
+"settings.unprotected.sites.empty.state" = "Adatvédelem engedélyezve minden webhelyhez";
 
 /* Settings cell for Version */
 "settings.version" = "Változat";

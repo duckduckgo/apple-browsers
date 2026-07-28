@@ -104,8 +104,6 @@ protocol TabDelegate: AnyObject {
 
     func tabDidRequestAIChatHistory(tab: TabViewController, source: AIChatHistorySource)
 
-    func tabDidRequestAIChatFeedback(tab: TabViewController)
-
     func tab(_ tab: TabViewController,
              didRequestAutofillLogins account: SecureVaultModels.WebsiteAccount?,
              source: AutofillSettingsSource,

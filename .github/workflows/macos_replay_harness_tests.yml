@@ -1,0 +1,26 @@
+name: macOS - replay harness tests
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/macos_replay_harness_tests.yml"
+      - "macOS/scripts/crossbench/**"
+
+permissions:
+  contents: read
+
+jobs:
+  replay-harness-tests:
+    name: Replay harness tests
+    runs-on: macos-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Run replay harness tests
+        working-directory: macOS/scripts/crossbench
+        run: python3 -m unittest discover -s tests -p 'test_*.py'

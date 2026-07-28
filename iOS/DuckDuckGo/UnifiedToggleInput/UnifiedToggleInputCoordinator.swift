@@ -195,7 +195,11 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     var isOmnibarSession: Bool { stateMachine.isOmnibarSession }
     var isAITabState: Bool { stateMachine.isAITabState }
     var isAITabExpanded: Bool { stateMachine.isAITabExpanded }
+    var isAITabCollapsed: Bool { stateMachine.isAITabCollapsed }
     var isContextualChatState: Bool { stateMachine.isContextualChatState }
+    var isOmnibarEditing: Bool { stateMachine.isOmnibarEditing }
+    var omnibarState: UnifiedToggleInputDisplayState.OmnibarState? { stateMachine.omnibarState }
+    var isSearchOnAITab: Bool { stateMachine.isSearchOnAITab(inputMode: inputMode) }
     var isDuckAISurfaceForAttribution: Bool { stateMachine.isDuckAISurfaceForAttribution }
     var pixelSurface: UnifiedToggleInputPixelSurface { stateMachine.pixelSurface }
     var isInputPaneExpanded: Bool { stateMachine.isInputPaneExpanded }
@@ -215,7 +219,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     private var usesFloatingReturnKey: Bool {
-        displayState == .omnibar(.active) && isInputVisibleForKeyboard && isOmnibarNewAIChatPrompt
+        isOmnibarEditing && isInputVisibleForKeyboard && isOmnibarNewAIChatPrompt
     }
 
     private var cancellables = Set<AnyCancellable>()
@@ -817,11 +821,11 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         }
 
         DispatchQueue.main.async { [weak self] in
-            guard let self, case .omnibar(.active) = displayState else { return }
+            guard let self, isOmnibarEditing else { return }
             viewController.activateInput()
             guard omnibarPrefilledText != nil else { return }
             DispatchQueue.main.async { [weak self] in
-                guard let self, case .omnibar(.active) = displayState else { return }
+                guard let self, isOmnibarEditing else { return }
                 if selectsAllText {
                     viewController.selectAllText()
                 } else {
@@ -986,7 +990,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         isInputVisibleForKeyboard = isInputVisible
         syncInputBehaviorToHandler()
         updateFloatingReturnKeyState()
-        let isAITabSearch = displayState == .aiTab(.expanded) && inputMode == .search
+        let isAITabSearch = isSearchOnAITab
 
         switch (displayState, isInputVisible) {
         case (.omnibar(.active), false) where keyboardMonitor.isAwaitingPresentation:
@@ -1033,12 +1037,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     func dismissOmnibarKeyboard() {
-        switch displayState {
-        case .contextualChat, .omnibar(.active), .aiTab(.expanded):
-            viewController.deactivateInput()
-        default:
-            return
-        }
+        guard isInputPaneExpanded else { return }
+        viewController.deactivateInput()
     }
 
     func setEscapeHatch(_ model: EscapeHatchModel) {
@@ -1419,7 +1419,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             }
             sessionMonitor.recordActivity(mode: .search)
             clearStoreEntryAfterSubmission()
-            if case .aiTab = displayState {
+            if isAITabState {
                 hide()
             } else if isContextualChatState {
                 hide()
@@ -1634,7 +1634,7 @@ private extension UnifiedToggleInputCoordinator {
     // MARK: Attachments
 
     func expandIfOnExpandedInputHost() {
-        if case .aiTab = displayState {
+        if isAITabState {
             showExpanded()
         } else if isContextualChatState {
             showExpanded()
@@ -1744,7 +1744,7 @@ private extension UnifiedToggleInputCoordinator {
 
     func refreshToolsPresentation() {
         let presentation = toolsController.presentation(
-            displayState: displayState,
+            isActive: isActive,
             modelStore: modelStore,
             canShowCustomizeResponses: canShowCustomizeResponsesMenuItem
         )

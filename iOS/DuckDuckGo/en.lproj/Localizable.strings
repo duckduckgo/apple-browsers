@@ -349,18 +349,6 @@
 /* Title for the reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.reasoning.title" = "Reasoning";
 
-/* Body of the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. ** markers indicate bold text and should be preserved around the translated equivalents of the menu options Settings, Sync & Backup, and Sync With Another Device. */
-"aiChat.syncIntroSheet.body" = "Find the QR Code on the DuckDuckGo app on your other device by going to **Settings** › **Sync & Backup** › **Sync With Another Device**.";
-
-/* Secondary button on the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. */
-"aiChat.syncIntroSheet.notNow" = "Not Now";
-
-/* Primary button on the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. */
-"aiChat.syncIntroSheet.scan.button" = "Scan QR Code";
-
-/* Title of the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. */
-"aiChat.syncIntroSheet.title" = "Let’s sync your chats across your devices!";
-
 /* Primary button of the sync promo card shown above the Duck.ai recent chats list. */
 "aiChat.syncPromo.button" = "Sync With Another Device";
 
@@ -4024,6 +4012,9 @@ Take back control of your personal information with the browser designed for dat
 /* The name of a settings category listing next steps */
 "settings.next.steps" = "Next Steps";
 
+/* Accessibility label / title for the button that hides the Settings Next Steps section */
+"settings.next.steps.hide" = "Hide";
+
 /* Label describing a feature which is turned off */
 "settings.off" = "Off";
 
@@ -4218,6 +4209,12 @@ Take back control of your personal information with the browser designed for dat
 
 /* Settings screen cell text for Unprotected Sites */
 "settings.unprotected.sites" = "Unprotected Sites";
+
+/* Description shown above the list of unprotected sites */
+"settings.unprotected.sites.description" = "These sites will not be enhanced by Privacy Protection.";
+
+/* Message shown when there are no unprotected sites */
+"settings.unprotected.sites.empty.state" = "Privacy Protection enabled for all sites";
 
 /* Settings cell for Version */
 "settings.version" = "Version";

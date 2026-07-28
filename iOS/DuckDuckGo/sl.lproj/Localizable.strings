@@ -4197,6 +4197,9 @@
 /* The name of a settings category listing next steps */
 "settings.next.steps" = "Naslednji koraki";
 
+/* Accessibility label / title for the button that hides the Settings Next Steps section */
+"settings.next.steps.hide" = "Skrij";
+
 /* Label describing a feature which is turned off */
 "settings.off" = "Izklopljeno";
 
@@ -4391,6 +4394,12 @@
 
 /* Settings screen cell text for Unprotected Sites */
 "settings.unprotected.sites" = "Nezaščitene strani";
+
+/* Description shown above the list of unprotected sites */
+"settings.unprotected.sites.description" = "Te spletne strani ne bodo zaščitene s funkcijo zaščite zasebnosti.";
+
+/* Message shown when there are no unprotected sites */
+"settings.unprotected.sites.empty.state" = "Zaščita zasebnosti je omogočena za vsa spletna mesta";
 
 /* Settings cell for Version */
 "settings.version" = "Različica";

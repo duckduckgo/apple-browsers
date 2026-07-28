@@ -13,23 +13,14 @@
 /* Class = "UILabel"; text = "Global Privacy Control (GPC)"; ObjectID = "cW7-OM-2oW"; */
 "cW7-OM-2oW.text" = "Visuotinė privatumo kontrolė (VPK)";
 
-/* Class = "UIBarButtonItem"; title = "Add"; ObjectID = "CxT-QK-iVn"; */
-"CxT-QK-iVn.title" = "Papildyti";
-
 /* Class = "UILabel"; text = "Label"; ObjectID = "dud-qo-Ces"; */
 "dud-qo-Ces.text" = "Etiketė";
-
-/* Class = "UILabel"; text = "Label"; ObjectID = "EIq-Ev-nfj"; */
-"EIq-Ev-nfj.text" = "Etiketė";
 
 /* Class = "UINavigationItem"; title = "App Icon"; ObjectID = "eMH-uv-Kms"; */
 "eMH-uv-Kms.title" = "Programėlės piktograma";
 
 /* Class = "UITableViewController"; title = "Global Privacy Control (GPC)"; ObjectID = "fV3-86-QQj"; */
 "fV3-86-QQj.title" = "Visuotinė privatumo kontrolė (VPK)";
-
-/* Class = "UILabel"; text = "Privacy Protection enabled for all sites"; ObjectID = "Hu1-5i-vjL"; */
-"Hu1-5i-vjL.text" = "Privatumo apsauga įjungta visose svetainėse";
 
 /* Class = "UICollectionViewController"; title = "Icon"; ObjectID = "jbD-Oy-Cmw"; */
 "jbD-Oy-Cmw.title" = "Piktograma";
@@ -39,9 +30,6 @@
 
 /* Class = "UILabel"; text = "No Fireproof sites yet"; ObjectID = "OfP-Kw-IOk"; */
 "OfP-Kw-IOk.text" = "Apsaugotų svetainių dar nėra";
-
-/* Class = "UINavigationItem"; title = "Unprotected Sites"; ObjectID = "OHV-qC-tL9"; */
-"OHV-qC-tL9.title" = "Neapsaugotos svetainės";
 
 /* Class = "UITableViewSection"; headerTitle = "Show keyboard on"; ObjectID = "tGh-di-rfq"; */
 "tGh-di-rfq.headerTitle" = "Rodyti klaviatūrą";
@@ -57,9 +45,6 @@
 
 /* Class = "UILabel"; text = "New Tab"; ObjectID = "Zpg-h0-rYv"; */
 "Zpg-h0-rYv.text" = "Nauja kortelė";
-
-/* Class = "UILabel"; text = "These sites will not be enhanced by Privacy Protection."; ObjectID = "zvh-2e-Wmz"; */
-"zvh-2e-Wmz.text" = "Šių svetainių nepatobulins privatumo apsauga.";
 
 /* Class = "UITableViewController"; title = "Home Screen"; ObjectID = "zWP-d3-nVc"; */
 "zWP-d3-nVc.title" = "Pagrindinis ekranas";

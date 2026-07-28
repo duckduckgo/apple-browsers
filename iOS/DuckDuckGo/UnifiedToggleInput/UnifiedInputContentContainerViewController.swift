@@ -92,7 +92,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     private let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
     private let syncService: DDGSyncing?
     private let syncPromoManager: SyncPromoManaging?
-    private let aiChatSyncIntroSheetPresenter: AIChatSyncIntroSheetPresenting
     private let recentModalPromptStatusProvider: RecentModalPromptStatusProviding?
     private let featureDiscovery: FeatureDiscovery
     private let autocompletePixels = AutocompleteSuggestionsPixels()
@@ -162,7 +161,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
          syncService: DDGSyncing? = nil,
          aiChatSyncCleaner: AIChatSyncCleaning? = nil,
          recentModalPromptStatusProvider: RecentModalPromptStatusProviding? = nil,
-         aiChatSyncIntroSheetPresenter: AIChatSyncIntroSheetPresenting = AIChatSyncIntroSheetPresenter(),
          featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery()) {
         self.switchBarHandler = switchBarHandler
         self.appSettings = appSettings
@@ -176,7 +174,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         self.syncPromoManager = syncService.map { SyncPromoManager(syncService: $0,
                                                                   featureFlagger: featureFlagger,
                                                                   privacyConfigurationManager: privacyConfigurationManager) }
-        self.aiChatSyncIntroSheetPresenter = aiChatSyncIntroSheetPresenter
         self.recentModalPromptStatusProvider = recentModalPromptStatusProvider
         self.featureDiscovery = featureDiscovery
         self.isUsingTopBarPosition = appSettings.currentAddressBarPosition == .top
@@ -1050,9 +1047,7 @@ extension UnifiedInputContentContainerViewController {
     }
 
     func duckAISuggestionsDidRequestSyncSetup() {
-        aiChatSyncIntroSheetPresenter.present(from: self) { [weak self] in
-            self?.delegate?.unifiedInputEditingStateDidRequestSyncSetup()
-        }
+        delegate?.unifiedInputEditingStateDidRequestSyncSetup()
     }
 
     /// Fires the click pixel for a tapped Search-surface suggestion. `.askAIChat` gets its own daily

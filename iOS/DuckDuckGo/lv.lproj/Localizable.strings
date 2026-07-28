@@ -4197,6 +4197,9 @@
 /* The name of a settings category listing next steps */
 "settings.next.steps" = "Nākamie soļi";
 
+/* Accessibility label / title for the button that hides the Settings Next Steps section */
+"settings.next.steps.hide" = "Paslēpt";
+
 /* Label describing a feature which is turned off */
 "settings.off" = "Izslēgts";
 
@@ -4391,6 +4394,12 @@
 
 /* Settings screen cell text for Unprotected Sites */
 "settings.unprotected.sites" = "Neaizsargātas vietnes";
+
+/* Description shown above the list of unprotected sites */
+"settings.unprotected.sites.description" = "Šīm vietnēm netiks izmantota privātuma aizsardzība.";
+
+/* Message shown when there are no unprotected sites */
+"settings.unprotected.sites.empty.state" = "Privātuma aizsardzība ir iespējota visām vietnēm";
 
 /* Settings cell for Version */
 "settings.version" = "Versija";

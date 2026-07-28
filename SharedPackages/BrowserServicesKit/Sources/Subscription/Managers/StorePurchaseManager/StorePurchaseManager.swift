@@ -186,6 +186,7 @@ public final class DefaultStorePurchaseManager: ObservableObject, StorePurchaseM
     private let subscriptionFeatureMappingCache: any SubscriptionFeatureMappingCache
     private let subscriptionFeatureFlagger: FeatureFlaggerMapping<SubscriptionFeatureFlags>?
     private let pendingTransactionHandler: PendingTransactionHandling?
+    private let monthlyFreeTrialDecider: any MonthlyFreeTrialDeciding
 
     @Published public private(set) var availableProducts: [any SubscriptionProduct] = []
     @Published public private(set) var purchasedProductIDs: [String] = []
@@ -211,8 +212,10 @@ public final class DefaultStorePurchaseManager: ObservableObject, StorePurchaseM
     public init(subscriptionFeatureMappingCache: any SubscriptionFeatureMappingCache,
                 subscriptionFeatureFlagger: FeatureFlaggerMapping<SubscriptionFeatureFlags>? = nil,
                 productFetcher: ProductFetching = DefaultProductFetcher(),
-                pendingTransactionHandler: PendingTransactionHandling? = nil) {
+                pendingTransactionHandler: PendingTransactionHandling? = nil,
+                monthlyFreeTrialDecider: any MonthlyFreeTrialDeciding = DefaultMonthlyFreeTrialDecider()) {
         self.storeSubscriptionConfiguration = DefaultStoreSubscriptionConfiguration()
+        self.monthlyFreeTrialDecider = monthlyFreeTrialDecider
         self.subscriptionFeatureMappingCache = subscriptionFeatureMappingCache
         self.subscriptionFeatureFlagger = subscriptionFeatureFlagger
         self.productFetcher = productFetcher
@@ -265,13 +268,16 @@ public final class DefaultStorePurchaseManager: ObservableObject, StorePurchaseM
 
     public func subscriptionTierOptions(includeProTier: Bool) async -> Result<SubscriptionTierOptions, StoreError> {
         let tierProducts = await getAvailableProducts(includeProTier: includeProTier)
-        guard !tierProducts.isEmpty else {
+
+        let filteredProducts = monthlyFreeTrialDecider.filteringMonthlyFreeTrialPreference(from: tierProducts)
+
+        guard !filteredProducts.isEmpty else {
             Logger.subscriptionStorePurchaseManager.error("[Store Purchase Manager] No products available")
             return .failure(.tieredProductsNoProductsAvailable)
         }
-        let ids = tierProducts.map(\.self.id)
+        let ids = filteredProducts.map(\.self.id)
         Logger.subscriptionStorePurchaseManager.debug("[Store Purchase Manager] Returning SubscriptionTierOptions for products: \(ids)")
-        return await subscriptionTierOptions(for: tierProducts)
+        return await subscriptionTierOptions(for: filteredProducts)
     }
 
     @MainActor

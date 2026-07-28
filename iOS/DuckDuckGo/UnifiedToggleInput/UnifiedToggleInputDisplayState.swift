@@ -27,12 +27,12 @@ enum UnifiedToggleInputDisplayState: Equatable {
     case aiTab(AITabState)
     case omnibar(OmnibarState)
 
-    enum AITabState: Equatable {
+    enum AITabState: Equatable, CaseIterable {
         case collapsed
         case expanded
     }
 
-    enum OmnibarState: Equatable {
+    enum OmnibarState: Equatable, CaseIterable {
         case active
         case inactive
     }

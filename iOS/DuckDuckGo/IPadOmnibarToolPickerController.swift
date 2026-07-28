@@ -29,7 +29,6 @@ final class IPadOmnibarToolPickerController {
     private let store: UTIModelStore
     private let toolsController = UTIToolsController()
     private let menuFactory = UTIToolsMenuFactory()
-    private let displayState: UnifiedToggleInputDisplayState = .omnibar(.active)
     var onToolsUpdated: (() -> Void)?
 
     init(store: UTIModelStore) {
@@ -101,7 +100,7 @@ final class IPadOmnibarToolPickerController {
 
     private var presentation: UTIToolsController.Presentation {
         toolsController.presentation(
-            displayState: displayState,
+            isActive: true,
             modelStore: store,
             canShowCustomizeResponses: false
         )

@@ -1,7 +1,7 @@
 {
   "images" : [
     {
-      "filename" : "Thumbs-Down-24.svg",
+      "filename" : "Mask-Color-24.svg",
       "idiom" : "universal"
     }
   ],
@@ -10,6 +10,6 @@
     "version" : 1
   },
   "properties" : {
-    "template-rendering-intent" : "template"
+    "preserves-vector-representation" : true
   }
 }

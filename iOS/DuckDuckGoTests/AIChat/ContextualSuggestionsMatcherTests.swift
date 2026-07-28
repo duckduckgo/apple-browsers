@@ -51,6 +51,26 @@ final class ContextualSuggestionsMatcherTests: XCTestCase {
     }
     """
 
+    /// A catalog whose contextual match fills the whole budget (4 ids), used to exercise the priority
+    /// default under capacity pressure. See ADR 0007.
+    private let fourContextualCatalogJSON = """
+    {
+      "maxSuggestedPrompts": 4,
+      "defaults": ["summarize-page", "translate-page"],
+      "catalog": {
+        "summarize-page": { "label": "Summarize", "icon": "summary", "prompt": "Summarize this page." },
+        "translate-page": { "label": "Translate", "icon": "translate", "prompt": "Translate into {language}.", "condition": "differentLanguage" },
+        "c-a": { "label": "A", "prompt": "A." },
+        "c-b": { "label": "B", "prompt": "B." },
+        "c-c": { "label": "C", "prompt": "C." },
+        "c-d": { "label": "D", "prompt": "D." }
+      },
+      "byJsonLdType": [ { "type": "Article", "ids": ["c-a", "c-b", "c-c", "c-d"] } ],
+      "byOgType": {},
+      "byDomain": {}
+    }
+    """
+
     // MARK: - Helpers
 
     private func catalog(_ json: String) throws -> SuggestionCatalog {
@@ -207,6 +227,21 @@ final class ContextualSuggestionsMatcherTests: XCTestCase {
     func testDifferentLanguageDetectedAcrossPrimarySubtags() throws {
         let ids = resolvedIDs(input(signals(lang: "fr"), uiLocale: "en_US"), try standardCatalog())
         XCTAssertTrue(ids.contains("translate-page"))
+    }
+
+    // MARK: - Priority defaults (ADR 0007)
+
+    func testPriorityDefaultDisplacesLowestContextualWhenCapIsFull() throws {
+        // Foreign-language page with a full 4-id contextual match: translate-page is guaranteed and
+        // takes the last slot, displacing the lowest-priority contextual (c-d) instead of being cut.
+        let ids = resolvedIDs(input(signals(jsonLd: ["Article"], lang: "es"), uiLocale: "en_US"), try catalog(fourContextualCatalogJSON))
+        XCTAssertEqual(ids, ["c-a", "c-b", "c-c", "translate-page"])
+    }
+
+    func testFullContextualKeptWhenSameLanguageLeavesNoPriority() throws {
+        // Same page, same language: translate-page's condition fails, so all four contextual stay.
+        let ids = resolvedIDs(input(signals(jsonLd: ["Article"], lang: "en"), uiLocale: "en_US"), try catalog(fourContextualCatalogJSON))
+        XCTAssertEqual(ids, ["c-a", "c-b", "c-c", "c-d"])
     }
 
     // MARK: - Templating

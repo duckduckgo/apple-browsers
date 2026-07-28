@@ -4197,6 +4197,9 @@
 /* The name of a settings category listing next steps */
 "settings.next.steps" = "Pașii următori";
 
+/* Accessibility label / title for the button that hides the Settings Next Steps section */
+"settings.next.steps.hide" = "Ascunde";
+
 /* Label describing a feature which is turned off */
 "settings.off" = "Dezactivat";
 
@@ -4391,6 +4394,12 @@
 
 /* Settings screen cell text for Unprotected Sites */
 "settings.unprotected.sites" = "Site-uri neprotejate";
+
+/* Description shown above the list of unprotected sites */
+"settings.unprotected.sites.description" = "Aceste site-uri nu vor fi îmbunătățite de Protecția confidențialității.";
+
+/* Message shown when there are no unprotected sites */
+"settings.unprotected.sites.empty.state" = "Protecția confidențialității este activată pentru toate site-urile";
 
 /* Settings cell for Version */
 "settings.version" = "Versiune";

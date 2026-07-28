@@ -46,17 +46,18 @@ final class AIChatMenu: NSMenu {
     // MARK: - Static items
 
     private lazy var openDuckAIItem: NSMenuItem = {
-        let item = NSMenuItem(title: UserText.aiChatMenuOpenDuckAI, action: #selector(openDuckAITapped), keyEquivalent: origin == .mainMenu ? "n" : "")
-        if origin == .mainMenu {
-            item.keyEquivalentModifierMask = [.option, .command]
-        }
+        let item = NSMenuItem(title: UserText.aiChatMenuOpenDuckAI, action: #selector(openDuckAITapped), keyEquivalent: "")
         item.target = self
         item.image = DesignSystemImages.Glyphs.Size12.duckAi
         return item
     }()
 
     private lazy var newChatItem: NSMenuItem = {
-        let item = NSMenuItem(title: UserText.aiChatMenuNewChat, action: #selector(newChatTapped), keyEquivalent: "")
+        // ⌥⌘N on the main menu (moved here from "Open Duck.ai"; both open a new Duck.ai chat).
+        let item = NSMenuItem(title: UserText.aiChatMenuNewChat, action: #selector(newChatTapped), keyEquivalent: origin == .mainMenu ? "n" : "")
+        if origin == .mainMenu {
+            item.keyEquivalentModifierMask = [.option, .command]
+        }
         item.target = self
         item.image = DesignSystemImages.Glyphs.Size12.compose
         return item

@@ -1033,6 +1033,9 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         let newChatItem = NSMenuItem(title: UserText.aiChatMenuNewChat, action: #selector(duckAIMenuNewChatAction), keyEquivalent: "")
         newChatItem.target = self
         newChatItem.image = DesignSystemImages.Glyphs.Size12.compose
+        // Display-only: mirror the main menu's ⌥⌘N (handling lives on the main-menu item).
+        newChatItem.keyEquivalent = "n"
+        newChatItem.keyEquivalentModifierMask = [.command, .option]
         menu.addItem(newChatItem)
 
         // Chat presented → "Close Sidebar" (close icon); otherwise "Ask About Page" (attachable page)
@@ -1046,6 +1049,10 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
             sidebarItem.title = isCurrentPageAttachableForAIChat ? UserText.aiChatMenuAskAboutPage : UserText.aiChatMenuOpenSidebar
             sidebarItem.image = Self.openSidebarMenuIcon()
         }
+        // Display-only: mirror the main menu's ⌥⌘L. This transient popup doesn't register the shortcut
+        // globally (the main-menu item owns handling); it just shows the glyph for discoverability.
+        sidebarItem.keyEquivalent = "l"
+        sidebarItem.keyEquivalentModifierMask = [.command, .option]
         menu.addItem(sidebarItem)
 
         return menu

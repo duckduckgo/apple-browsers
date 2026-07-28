@@ -1039,22 +1039,31 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         let askAboutPageTitle = isCurrentPageAttachableForAIChat ? UserText.aiChatMenuAskAboutPage : UserText.aiChatMenuOpenSidebar
         let askAboutPageItem = NSMenuItem(title: askAboutPageTitle, action: #selector(duckAIMenuAskAboutPageAction), keyEquivalent: "")
         askAboutPageItem.target = self
-        askAboutPageItem.image = askAboutPageMenuFavicon()
+        askAboutPageItem.image = askAboutPageMenuImage()
         menu.addItem(askAboutPageItem)
 
         return menu
     }
 
-    /// Favicon for the "Ask About Page" item: the current page's favicon on a real web page, otherwise
-    /// the default AI-Chat icon (matching the main-menu item).
-    private func askAboutPageMenuFavicon() -> NSImage {
+    /// Image for the second menu item: the current page's favicon for "Ask About Page" on a real web
+    /// page, otherwise the split button's sidebar-open icon for "Open Sidebar".
+    private func askAboutPageMenuImage() -> NSImage {
         guard isCurrentPageAttachableForAIChat, let favicon = tabCollectionViewModel.selectedTabViewModel?.favicon else {
-            return DesignSystemImages.Glyphs.Size12.aiChat
+            return Self.openSidebarMenuIcon()
         }
         let image = (favicon.copy() as? NSImage) ?? favicon
         image.size = NSSize(width: 12, height: 12)
         image.isTemplate = false
         return image
+    }
+
+    /// The two-part control's "open sidebar" icon, copied and sized for a menu item. Copying avoids
+    /// mutating the shared asset instance still used by the split button when the menu-button flag is off.
+    static func openSidebarMenuIcon() -> NSImage {
+        let named = NSImage(named: Constants.duckAISidebarOpenImageName)
+        guard let icon = named?.copy() as? NSImage else { return named ?? NSImage() }
+        icon.size = NSSize(width: 12, height: 12)
+        return icon
     }
 
     @objc private func duckAIMenuNewChatAction() {

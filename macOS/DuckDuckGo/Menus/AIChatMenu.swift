@@ -259,7 +259,14 @@ final class AIChatMenu: NSMenu {
     private func refreshAskAboutPageItem() {
         let isShown = shouldShowAskAboutPage()
         askAboutPageItem.isHidden = !isShown
-        askAboutPageItem.title = isCurrentPageAttachable() ? UserText.aiChatMenuAskAboutPage : UserText.aiChatMenuOpenSidebar
+        if isCurrentPageAttachable() {
+            askAboutPageItem.title = UserText.aiChatMenuAskAboutPage
+            askAboutPageItem.image = DesignSystemImages.Glyphs.Size12.aiChat
+        } else {
+            // Nothing to attach → "Open Sidebar" with the split button's sidebar-open icon.
+            askAboutPageItem.title = UserText.aiChatMenuOpenSidebar
+            askAboutPageItem.image = TabBarViewController.openSidebarMenuIcon()
+        }
         // Hold ⌥⌘L only while shown: a hidden item can still register its key equivalent in AppKit and
         // would then shadow the segmented layout's "Show Duck.ai Sidebar" ⌥⌘L, silently no-opping it.
         if origin == .mainMenu {

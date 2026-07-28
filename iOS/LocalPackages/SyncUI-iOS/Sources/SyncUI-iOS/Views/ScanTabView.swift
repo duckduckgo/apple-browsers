@@ -49,6 +49,7 @@ struct ScanTabView: View {
                     }
                 )
         }
+        .background(Color(designSystemColor: .surfaceSecondary))
         .clipShape(RoundedRectangle(cornerRadius: 34))
         .ignoresSafeArea(.all, edges: .bottom)
         .onPreferenceChange(InstructionsHeightKey.self) { instructionsHeight = $0 }
@@ -86,7 +87,7 @@ struct ScanTabView: View {
             .padding(.bottom, 24)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(SimplifiedSyncStyle.screenBackground)
+        .background(Color(designSystemColor: .surfaceSecondary))
         .contentShape(Rectangle())
         .onTapGesture {
             dismissIntroAnimation()
@@ -333,7 +334,6 @@ private struct ScanTabPreview: View {
             NavigationView {
                 ScanTabView(model: model, showIntroAnimation: $showIntroAnimation)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(SimplifiedSyncStyle.screenBackground)
                     .environment(\.colorScheme, .dark)
             }
         }
@@ -342,20 +342,21 @@ private struct ScanTabPreview: View {
 
 #Preview("Camera") {
     ScanTabPreview(model: scanTabPreviewModel(permission: .authorised, showCamera: true))
+        .environment(\.colorScheme, .dark)
 }
 
 #Preview("Permission Denied") {
     ScanTabPreview(model: scanTabPreviewModel(permission: .denied, showCamera: false))
+        .environment(\.colorScheme, .dark)
 }
 
 #Preview("Intro Animation") {
     ScanTabPreview(model: scanTabPreviewModel(permission: .authorised, showCamera: true), showIntroAnimation: true)
+        .environment(\.colorScheme, .dark)
 }
 
 #Preview("Scanner Overlay") {
     QRScannerOverlay(topInset: 0)
-        .background(SimplifiedSyncStyle.screenBackground)
         .ignoresSafeArea()
-        .environment(\.colorScheme, .dark)
 }
 #endif

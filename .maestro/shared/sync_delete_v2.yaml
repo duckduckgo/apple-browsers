@@ -1,0 +1,20 @@
+appId: com.duckduckgo.mobile.ios
+# Turns off Sync and deletes server data in the V2 UI via the
+# "Turn Off Sync and Delete Server Data" action. In V2 this action authenticates first,
+# then shows the delete confirmation alert. Ends on the logged-out Sync settings screen.
+---
+
+- assertVisible: Sync & Backup
+- scrollUntilVisible:
+    element:
+      text: Turn Off Sync and Delete Server Data
+    direction: DOWN
+- tapOn: Turn Off Sync and Delete Server Data
+- tapOn: Passcode field
+- inputText: "0000"
+- pressKey: Enter
+- assertVisible: Turn Off Sync & Backup and Delete Server Data?
+- tapOn: Delete Server Data
+- extendedWaitUntil:
+    visible: I Have a Recovery Code
+    timeout: 30000

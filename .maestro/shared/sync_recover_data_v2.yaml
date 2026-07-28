@@ -1,0 +1,36 @@
+appId: com.duckduckgo.mobile.ios
+# Recovers a Sync account from a recovery code in the V2 UI:
+# "I Have a Recovery Code" -> authenticate -> "Recover your synced data" sheet ->
+# "Enter Code" tab -> paste the code. Starts on the logged-out Sync settings screen.
+# On success the recovery-complete screen is shown, which this flow dismisses with Done.
+---
+
+- assertVisible: I Have a Recovery Code
+- tapOn: I Have a Recovery Code
+- tapOn: Passcode field
+- inputText: "0000"
+- pressKey: Enter
+- assertVisible: Recover your synced data
+- tapOn: Recover Synced Data
+- runFlow:
+    when:
+      visible: Allows you to upload photographs and videos
+    commands:
+        - tapOn: "Allow"
+- extendedWaitUntil:
+    visible: Enter Code
+    timeout: 30000
+- tapOn: Enter Code
+# The scan tab requests camera permission when its intro animation ends; dismiss the
+# prompt if it raced in before we switched tabs.
+- runFlow:
+    when:
+      visible: Allows you to upload photographs and videos
+    commands:
+        - tapOn: "Allow"
+- tapOn: Paste Sync Code
+# Recovery-complete success screen.
+- extendedWaitUntil:
+    visible: Sync & Backup enabled
+    timeout: 30000
+- tapOn: Done

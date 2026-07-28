@@ -1,0 +1,55 @@
+appId: com.duckduckgo.mobile.ios
+tags:
+    - iphone
+    - sync_v2
+name: 06_delete_account_v2
+---
+
+# Set up
+- runFlow:
+    file: ../shared/sync_setup_v2.yaml
+
+# Set Internal User
+- tapOn: Browsing menu
+- tapOn: Settings
+- runFlow:
+    file: ../shared/set_internal_user_from_settings.yaml
+
+    # Set Dev environment
+- runFlow:
+    file: ../shared/set_sync_dev_environment.yaml
+
+# Create account
+- runFlow:
+    file: ../shared/sync_create_v2.yaml
+
+# Remove account
+- runFlow:
+    file: ../shared/sync_delete_v2.yaml
+
+# Try to login with the now-deleted account's recovery code and check for error
+- assertVisible: Sync With Another Device
+- tapOn: Sync With Another Device
+- tapOn: Passcode field
+- inputText: "0000"
+- pressKey: Enter
+- runFlow:
+    when:
+      visible: Allows you to upload photographs and videos
+    commands:
+        - tapOn: "Allow"
+- extendedWaitUntil:
+    visible: Enter Code
+    timeout: 30000
+- tapOn: Enter Code
+# The scan tab requests camera permission when its intro animation ends; dismiss the
+# prompt if it raced in before we switched tabs.
+- runFlow:
+    when:
+      visible: Allows you to upload photographs and videos
+    commands:
+        - tapOn: "Allow"
+- tapOn: Paste Sync Code
+- assertVisible: Sync failed.
+- assertVisible: Please try again.
+- tapOn: Got It

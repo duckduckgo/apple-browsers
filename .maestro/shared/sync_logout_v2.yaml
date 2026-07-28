@@ -1,0 +1,25 @@
+appId: com.duckduckgo.mobile.ios
+# Turns off Sync (without deleting server data) in the V2 UI. When Sync is enabled there
+# is no top-level toggle: turn-off lives on the per-device screen. This opens "This Device"
+# from the My Devices list, toggles "Sync This Device" off and confirms the alert. Ends on
+# the logged-out Sync settings screen.
+---
+
+- assertVisible: Sync & Backup
+# Open this device's management screen (tapping the row triggers authentication).
+- tapOn: This Device
+- tapOn: Passcode field
+- inputText: "0000"
+- pressKey: Enter
+- extendedWaitUntil:
+    visible:
+      id: "SyncThisDeviceToggle"
+    timeout: 30000
+- tapOn:
+    id: "SyncThisDeviceToggle"
+- assertVisible: Turn Off Sync & Backup?
+- tapOn: Turn Off
+# Back on the logged-out Sync settings screen.
+- extendedWaitUntil:
+    visible: I Have a Recovery Code
+    timeout: 30000

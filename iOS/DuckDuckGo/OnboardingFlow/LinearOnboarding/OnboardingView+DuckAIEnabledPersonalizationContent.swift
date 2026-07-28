@@ -1,5 +1,5 @@
 //
-//  OnboardingView+ToggleModePersonalizationContent.swift
+//  OnboardingView+DuckAIEnabledPersonalizationContent.swift
 //  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
@@ -19,23 +19,24 @@
 
 import Onboarding
 import SwiftUI
+import DesignResourcesKitIcons
 
 extension OnboardingView {
-    
-    struct AddressBarToggleModeContent: View {
+
+    struct DuckAIEnabledPersonalizationContent: View {
         @Environment(\.onboardingTheme) private var onboardingTheme
         @Environment(\.accessibilityReduceMotion) private var reduceMotion
-        
+
         @State private var shouldStartTyping = false
         @State private var showContent = false
         @Binding private var isVisible: Bool
-        
-        private let content: OnboardingAddressBarToggleModeContent
+
+        private let content: OnboardingDuckAIEnabledPersonalizationContent
         private let primaryAction: () -> Void
         private let secondaryAction: () -> Void
 
         init(
-            content: OnboardingAddressBarToggleModeContent,
+            content: OnboardingDuckAIEnabledPersonalizationContent,
             isVisible: Binding<Bool>,
             primaryAction: @escaping () -> Void,
             secondaryAction: @escaping () -> Void
@@ -45,7 +46,7 @@ extension OnboardingView {
             self.primaryAction = primaryAction
             self.secondaryAction = secondaryAction
         }
-        
+
         var body: some View {
             LinearDialogContentContainer(
                 metrics: .init(
@@ -54,39 +55,42 @@ extension OnboardingView {
                     contentSpacing: onboardingTheme.linearOnboardingMetrics.buttonSpacing,
                     actionsSpacing: onboardingTheme.linearOnboardingMetrics.actionsSpacing
                 ),
-                content: AnyView(
-                    VStack(spacing: 28.0) {
-                        Image(content.icon)
-
-                        Text(content.footer)
-                            .font(onboardingTheme.typography.rowDetails)
-                            .multilineTextAlignment(.center)
-                            .foregroundStyle(.secondary)
-                            .frame(maxWidth: .infinity, alignment: .top)
-                    }
+                message: AnyView(
+                    Text(content.message)
+                        .foregroundColor(onboardingTheme.colorPalette.textPrimary)
+                        .font(onboardingTheme.typography.body)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
                 ),
                 showContent: $showContent,
                 title: {
-                    TypingText(
-                        content.title,
-                        startAnimating: $shouldStartTyping,
-                        onTypingFinished: { [reduceMotion] in
-                            if reduceMotion {
-                                showContent = true
-                            } else {
-                                withAnimation { showContent = true }
-                            }
-                        })
-                    .foregroundColor(onboardingTheme.colorPalette.textPrimary)
-                    .font(onboardingTheme.typography.title)
-                    .multilineTextAlignment(.center)
+                    VStack(alignment: .center, spacing: 16.0) {
+                        Image(uiImage: DesignSystemImages.Color.Size96.duckAI)
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 96, height: 96)
+
+                        TypingText(
+                            content.title,
+                            startAnimating: $shouldStartTyping,
+                            onTypingFinished: { [reduceMotion] in
+                                if reduceMotion {
+                                    showContent = true
+                                } else {
+                                    withAnimation { showContent = true }
+                                }
+                            })
+                        .foregroundColor(onboardingTheme.colorPalette.textPrimary)
+                        .font(onboardingTheme.typography.title)
+                        .multilineTextAlignment(.center)
+                    }
                 },
                 actions: {
                     VStack(spacing: 8) {
                         Button(action: primaryAction) {
                             Text(content.primaryCTA)
                         }
-                        .buttonStyle(onboardingTheme.primaryButtonStyle.style)
+                        .buttonStyle(onboardingTheme.secondaryButtonStyle.style)
 
                         Button(action: secondaryAction) {
                             Text(content.secondaryCTA)
@@ -97,6 +101,6 @@ extension OnboardingView {
             )
             .onBubbleVisibilityChanged(isVisible: $isVisible, shouldStartTyping: $shouldStartTyping, showContent: $showContent)
         }
-        
+
     }
 }

@@ -322,7 +322,10 @@ final class OnboardingIntroViewModel: ObservableObject {
         makeNextViewState()
     }
 
-    func keepDuckAIContinueAction() {
+    func keepDuckAIContinueAction(isEnabled: Bool) {
+        if isEnabled {
+            onboardingSearchExperienceProvider.storeAIChatSearchInputDuringOnboardingChoice(enable: true)
+        }
         makeNextViewState()
     }
 
@@ -460,7 +463,7 @@ private extension OnboardingIntroViewModel {
             case .keepDuckAISelection:
                 return .onboarding(
                     .init(
-                        type: .keepDuckAIDialog,
+                        type: .keepDuckAIDialog(content: contentProvider.aiChatEnabledPersonalizationContent),
                         step: stepInfo()
                     )
                 )

@@ -31,6 +31,7 @@ protocol OnboardingIntroContentProviding {
     var aiModelPersonalizationContent: OnboardingAIModelContent { get }
     var addressBarToggleModePersonalizationContent: OnboardingAddressBarToggleModeContent { get }
     var aiSearchPersonalizationContent: OnboardingPersonalizationContent { get }
+    var aiChatEnabledPersonalizationContent: OnboardingDuckAIEnabledPersonalizationContent { get }
     var youTubePersonalizationContent: OnboardingPersonalizationContent { get }
     var setDefaultBrowserContent: OnboardingComparisonContent { get }
     var aiIntroContent: OnboardingComparisonContent { get }
@@ -44,6 +45,7 @@ protocol OnboardingIntroContentProviding {
 struct OnboardingIntroContentProvider: OnboardingIntroContentProviding {
     private let flowType: OnboardingFlowType
     private let featureFlagger: FeatureFlagger
+    private let searchExperienceProvider: OnboardingSearchExperienceProvider
     /// Resolves the user's selected download reason lazily. The reason is chosen mid-flow — after this provider is built — so it's read on demand.
     /// Defaults to `nil` (control arm and Duck.ai CPP flow).
     private let downloadReasonProvider: () -> OnboardingDownloadReason?
@@ -229,6 +231,15 @@ struct OnboardingAddressBarToggleModeContent: Equatable {
     let daxAnimation: DaxAnimation?
 }
 
+struct OnboardingDuckAIEnabledPersonalizationContent: Equatable {
+    let icon: OnboardingImageResource
+    let title: String
+    let message: String
+    let primaryCTA: String
+    let secondaryCTA: String
+    let daxAnimation: DaxAnimation?
+}
+
 extension OnboardingIntroContentProvider {
 
     var serpPersonalizationContent: OnboardingPersonalizationContent {
@@ -274,6 +285,17 @@ extension OnboardingIntroContentProvider {
             ],
             primaryCTA: "Next",
             daxAnimation: .wingLeft
+        )
+    }
+
+    var aiChatEnabledPersonalizationContent: OnboardingDuckAIEnabledPersonalizationContent {
+        OnboardingDuckAIEnabledPersonalizationContent(
+            icon: OnboardingImageResources.Personalization.addressBarToggleMode,
+            title: "Want the option to chat privately with popular AIs?",
+            message: "In Duck.ai, your chats are anonymized by us and never used to train AI.",
+            primaryCTA: "Keep Duck.ai On",
+            secondaryCTA: "Turn Duck.ai Off",
+            daxAnimation: nil
         )
     }
 

@@ -464,11 +464,11 @@ extension OnboardingView {
             case let .aiSearchSettingsDialog(content):
                 toggleSettingsPersonalizationView(content: content, action: model.aiSearchSettingsContinueAction)
             case let .aiModelDialog(content):
-                aiModelSelectionView(content: content, action: model.aiModelContinueAction)
+                aiModelSelectionView(content: content)
             case let .toggleInputModeDialog(content):
                 addressBarToggleModeView(content: content)
-            case .keepDuckAIDialog:
-                placeholderView(title: "Keep Duck.ai Setting", action: model.keepDuckAIContinueAction)
+            case let .keepDuckAIDialog(content):
+                aiChatEnabledSelectionView(content: content)
             case let .duckPlayerDialog(content):
                 toggleSettingsPersonalizationView(content: content, action: model.duckPlayerContinueAction)
             case let .setDefaultBrowserDialog(content):
@@ -517,7 +517,7 @@ extension OnboardingView {
             }
         }
 
-        private func aiModelSelectionView(content: OnboardingAIModelContent, action: @escaping () -> Void) -> some View {
+        private func aiModelSelectionView(content: OnboardingAIModelContent) -> some View {
             let resolved = model.resolvedAIModels
             return AIModelSelection(
                 content: content,
@@ -527,7 +527,7 @@ extension OnboardingView {
                 isVisible: $showBubbleContent
             ) {
                 animateContentTransition {
-                    action()
+                    model.aiModelContinueAction()
                 }
             }
         }
@@ -553,17 +553,25 @@ extension OnboardingView {
             )
         }
 
-        // TODO: Shared placeholder for the reason-tailored steps until each screen is built (UI task).
-        // Tapping Next runs the step's own action (just advances for now) so the flow is walkable.
-        private func placeholderView(title: String, action: @escaping () -> Void) -> some View {
-            VStack(spacing: 16) {
-                Text(title)
-                Button("Next") {
+        private func aiChatEnabledSelectionView(content: OnboardingDuckAIEnabledPersonalizationContent) -> some View {
+            let personalizationManager = model.personalizationManager
+
+            return DuckAIEnabledPersonalizationContent(
+                content: content,
+                isVisible: $showBubbleContent,
+                primaryAction: {
+                    personalizationManager.setDuckAIEnabled(true)
                     animateContentTransition {
-                        action()
+                        model.keepDuckAIContinueAction(isEnabled: true)
+                    }
+                },
+                secondaryAction: {
+                    personalizationManager.setDuckAIEnabled(false)
+                    animateContentTransition {
+                        model.keepDuckAIContinueAction(isEnabled: false)
                     }
                 }
-            }
+            )
         }
 
         private func addToDockPromoView(content: OnboardingAddToDockContent) -> some View {
@@ -662,8 +670,8 @@ extension OnboardingView {
                 return content.daxAnimation
             case let .toggleInputModeDialog(content):
                 return content.daxAnimation
-            case .keepDuckAIDialog:
-                return nil
+            case let .keepDuckAIDialog(content):
+                return content.daxAnimation
             case .setDefaultBrowserDialog(let content):
                 return content.daxAnimation
             case .aiIntroDialog(let content):

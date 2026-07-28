@@ -66,7 +66,7 @@ extension OnboardingIntroViewState.Intro {
         case aiSearchSettingsDialog(content: OnboardingPersonalizationContent)
         case aiModelDialog(content: OnboardingAIModelContent)
         case toggleInputModeDialog(content: OnboardingAddressBarToggleModeContent)
-        case keepDuckAIDialog
+        case keepDuckAIDialog(content: OnboardingDuckAIEnabledPersonalizationContent)
         case duckPlayerDialog(content: OnboardingPersonalizationContent)
     }
 

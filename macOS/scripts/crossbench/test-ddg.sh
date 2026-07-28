@@ -1,0 +1,938 @@
+#!/usr/bin/env bash
+#
+# Measure DuckDuckGo Review/debug navigation-to-LCP against validated WPR
+# archives. Every repetition launches a fresh app process and routes its
+# WKWebView directly through the shared SOCKS5 tsproxy:
+#
+#   DuckDuckGo WKWebView -> tsproxy -> WPR
+#
+# There is no live-network fallback, forward HTTP proxy, Safari preference
+# mutation, or keychain mutation.
+#
+# Usage:
+#   ./test-ddg.sh [--sites a.com,b.com] [--reps N] [--out FILE]
+#
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=macOS/scripts/crossbench/wpr-config.sh
+. "$SCRIPT_DIR/wpr-config.sh"
+# shellcheck source=macOS/scripts/crossbench/dispositions-lib.sh
+. "$SCRIPT_DIR/dispositions-lib.sh"
+
+MEASURED_REPS="${MEASURED_REPS:-10}"
+SITES_OVERRIDE=""
+RESULTS_FILE=""
+
+CROSSBENCH_DIR="${CROSSBENCH_DIR:-$HOME/Developer/crossbench-upstream}"
+WPR_DIR="${WPR_DIR:-$HOME/Developer/mac-perf-runner/wpr-archives}"
+WPR_ARCHIVES_PREPARED="${WPR_ARCHIVES_PREPARED:-0}"
+WPR_MANIFEST="$WPR_DIR/manifest.tsv"
+WPR_BIN="${WPR_BIN:-$HOME/Developer/mac-perf-runner/bin/wpr}"
+WPR_HTTP_PORT="${WPR_HTTP_PORT:-18080}"
+WPR_HTTPS_PORT="${WPR_HTTPS_PORT:-18081}"
+WPR_CERT_FILE="${WPR_CERT_FILE:-$CROSSBENCH_DIR/third_party/webpagereplay/ecdsa_cert.pem}"
+WPR_KEY_FILE="${WPR_KEY_FILE:-$CROSSBENCH_DIR/third_party/webpagereplay/ecdsa_key.pem}"
+
+TSPROXY_PY="${TSPROXY_PY:-$HOME/Developer/mac-perf-runner/bin/tsproxy.py}"
+TSPROXY_PORT="${TSPROXY_PORT:-9997}"
+PYTHON_BIN="${PYTHON_BIN:-python3}"
+DDG_AUTOMATION_PY="${DDG_AUTOMATION_PY:-$SCRIPT_DIR/ddg-automation.py}"
+WATCHDOG_PY="${WATCHDOG_PY:-$SCRIPT_DIR/run-with-watchdog.py}"
+DDG_APP="${DDG_APP:-/Applications/DuckDuckGo Review.app}"
+DDG_EXECUTABLE="${DDG_EXECUTABLE:-}"
+AUTOMATION_PORT="${AUTOMATION_PORT:-8788}"
+
+LOAD_WINDOW="12s"
+LOAD_WINDOW_MS=12000
+LOAD_WINDOW_SECONDS="${LOAD_WINDOW_SECONDS:-12}"
+ALLOW_TEST_OVERRIDES="${ALLOW_TEST_OVERRIDES:-0}"
+LCP_SETTLE_MS="${LCP_SETTLE_MS:-600}"
+REPETITION_TIMEOUT_SECONDS="${REPETITION_TIMEOUT_SECONDS:-60}"
+SERVICE_START_TIMEOUT_SECONDS="${SERVICE_START_TIMEOUT_SECONDS:-15}"
+
+DIAGNOSTICS_DIR="${DIAGNOSTICS_DIR:-$PWD/ddg-diagnostics}"
+MAX_SITE_DIAGNOSTICS="${MAX_SITE_DIAGNOSTICS:-5}"
+MAX_DIAGNOSTIC_BYTES="${MAX_DIAGNOSTIC_BYTES:-5242880}"
+MAX_TOTAL_DIAGNOSTIC_BYTES="${MAX_TOTAL_DIAGNOSTIC_BYTES:-26214400}"
+SITE_DIAGNOSTICS=0
+DIAGNOSTIC_BYTES_WRITTEN=0
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --reps) MEASURED_REPS="$2"; shift 2 ;;
+    --sites) SITES_OVERRIDE="$2"; shift 2 ;;
+    --out) RESULTS_FILE="$2"; shift 2 ;;
+    -h|--help) grep '^#' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    *) echo "Unknown arg: $1" >&2; exit 2 ;;
+  esac
+done
+
+bounded_integer() {
+  local name="$1" minimum="$2" maximum="$3" value
+  value="${!name}"
+  if ! [[ "$value" =~ ^[0-9]+$ ]] ||
+      [ "$value" -lt "$minimum" ] ||
+      [ "$value" -gt "$maximum" ]; then
+    echo "ERROR: $name must be an integer in $minimum..$maximum." >&2
+    exit 2
+  fi
+}
+
+bounded_integer MEASURED_REPS 1 20
+bounded_integer REPETITION_TIMEOUT_SECONDS 1 300
+bounded_integer SERVICE_START_TIMEOUT_SECONDS 1 30
+bounded_integer LCP_SETTLE_MS 0 5000
+bounded_integer MAX_SITE_DIAGNOSTICS 0 22
+bounded_integer MAX_DIAGNOSTIC_BYTES 1 10485760
+bounded_integer MAX_TOTAL_DIAGNOSTIC_BYTES 1 104857600
+bounded_integer LOAD_WINDOW_SECONDS 0 120
+if [ "$ALLOW_TEST_OVERRIDES" != 1 ] && [ "$LOAD_WINDOW_SECONDS" != 12 ]; then
+  echo "ERROR: LOAD_WINDOW_SECONDS is fixed at 12 outside test fakes." >&2
+  exit 2
+fi
+LOAD_WINDOW="${LOAD_WINDOW_SECONDS}s"
+LOAD_WINDOW_MS=$((LOAD_WINDOW_SECONDS * 1000))
+
+log() { printf '\n=== %s ===\n' "$1"; }
+
+SITES=()
+while IFS= read -r site; do
+  [ -z "$site" ] && continue
+  [[ "$site" == \#* ]] && continue
+  SITES+=("$site")
+done < "$SCRIPT_DIR/wpr-sites.txt"
+if [ -n "$SITES_OVERRIDE" ]; then
+  IFS=',' read -r -a SITES <<< "$SITES_OVERRIDE"
+fi
+if [ "${#SITES[@]}" -eq 0 ]; then
+  echo "ERROR: no sites selected." >&2
+  exit 2
+fi
+NORMALIZED_SITES=()
+for site in "${SITES[@]}"; do
+  site="$(normalize_wpr_site "$site")"
+  if ! [[ "$site" =~ ^[a-z0-9.-]+$ ]]; then
+    echo "ERROR: invalid site hostname: $site" >&2
+    exit 2
+  fi
+  for previous in ${NORMALIZED_SITES[@]+"${NORMALIZED_SITES[@]}"}; do
+    if [ "$site" = "$previous" ]; then
+      echo "ERROR: duplicate site hostname: $site" >&2
+      exit 2
+    fi
+  done
+  NORMALIZED_SITES+=("$site")
+done
+SITES=("${NORMALIZED_SITES[@]}")
+if [ "${#SITES[@]}" -gt 22 ]; then
+  echo "ERROR: at most 22 sites may be measured in one run." >&2
+  exit 2
+fi
+
+for port_name in WPR_HTTP_PORT WPR_HTTPS_PORT TSPROXY_PORT AUTOMATION_PORT; do
+  bounded_integer "$port_name" 1 65535
+done
+PORT_VALUES=("$WPR_HTTP_PORT" "$WPR_HTTPS_PORT" "$TSPROXY_PORT" "$AUTOMATION_PORT")
+for ((left = 0; left < ${#PORT_VALUES[@]}; left++)); do
+  for ((right = left + 1; right < ${#PORT_VALUES[@]}; right++)); do
+    if [ "${PORT_VALUES[$left]}" = "${PORT_VALUES[$right]}" ]; then
+      echo "ERROR: replay and automation ports must be distinct." >&2
+      exit 2
+    fi
+  done
+done
+
+if [ -z "$RESULTS_FILE" ]; then
+  RESULTS_DIR="${RESULTS_DIR:-$PWD/crossbench-results}"
+  mkdir -p "$RESULTS_DIR"
+  RESULTS_FILE="$RESULTS_DIR/ddg-lcp-$(date -u +%Y%m%dT%H%M%SZ).tsv"
+fi
+
+DDG_MARKETING_VERSION="${DDG_MARKETING_VERSION:-unknown}"
+DDG_BUILD_VERSION="${DDG_BUILD_VERSION:-unknown}"
+DDG_BUNDLE_ID="${DDG_BUNDLE_ID:-unknown}"
+BROWSER_NAME=ddg
+BROWSER_VERSION="$DDG_MARKETING_VERSION"
+
+WPR_PID=""
+TSPROXY_PID=""
+DDG_PID=""
+WPR_LOG=""
+TSPROXY_LOG=""
+DDG_LOG=""
+AUTOMATION_TOKEN_VALUE=""
+RUN_FATAL=0
+SHARED_SERVICE_FAILURE=0
+HANDOFF_FAILURES=0
+ELIGIBLE_SITES=0
+TOTAL_RECORDED=0
+FAILURE_PRIORITY=0
+SHARED_FAILURE_STAGE=shaping
+SHARED_FAILURE_REASON=tsproxy_unavailable
+SHARED_FAILURE_DETAIL="shared tsproxy was unavailable"
+
+process_is_alive() {
+  local pid="$1" state
+  [ -n "$pid" ] || return 1
+  kill -0 "$pid" 2>/dev/null || return 1
+  state="$(ps -o stat= -p "$pid" 2>/dev/null | tr -d '[:space:]' || true)"
+  [ -n "$state" ] && [[ "$state" != Z* ]]
+}
+
+stop_exact_pid() {
+  local pid="$1"
+  [ -n "$pid" ] || return 0
+  if process_is_alive "$pid"; then
+    kill "$pid" 2>/dev/null || return 1
+    for _ in 1 2 3 4 5 6; do
+      if ! process_is_alive "$pid"; then
+        wait "$pid" 2>/dev/null || true
+        return 0
+      fi
+      sleep 0.5
+    done
+    kill -9 "$pid" 2>/dev/null || return 1
+    for _ in 1 2 3 4; do
+      process_is_alive "$pid" || {
+        wait "$pid" 2>/dev/null || true
+        return 0
+      }
+      sleep 0.25
+    done
+    return 1
+  fi
+  wait "$pid" 2>/dev/null || true
+}
+
+preserve_diagnostic() {
+  local source="$1" name="$2" remaining bytes
+  [ -n "$source" ] && [ -f "$source" ] || return 0
+  remaining=$((MAX_TOTAL_DIAGNOSTIC_BYTES - DIAGNOSTIC_BYTES_WRITTEN))
+  [ "$remaining" -gt 0 ] || return 0
+  bytes="$MAX_DIAGNOSTIC_BYTES"
+  [ "$bytes" -le "$remaining" ] || bytes="$remaining"
+  mkdir -p "$DIAGNOSTICS_DIR"
+  tail -c "$bytes" "$source" > "$DIAGNOSTICS_DIR/$name"
+  bytes="$(wc -c < "$DIAGNOSTICS_DIR/$name")"
+  DIAGNOSTIC_BYTES_WRITTEN=$((DIAGNOSTIC_BYTES_WRITTEN + bytes))
+}
+
+preserve_site_diagnostics() {
+  local site="$1"
+  if [ "$SITE_DIAGNOSTICS" -lt "$MAX_SITE_DIAGNOSTICS" ]; then
+    preserve_diagnostic "$WPR_LOG" "wpr-$site.log"
+    preserve_diagnostic "$DDG_LOG" "ddg-$site.log"
+    SITE_DIAGNOSTICS=$((SITE_DIAGNOSTICS + 1))
+  fi
+  preserve_diagnostic "$TSPROXY_LOG" tsproxy.log
+}
+
+finish_app_log() {
+  local site="$1" rep="$2" preserve="$3"
+  if [ "$preserve" = 1 ] &&
+      [ "$SITE_DIAGNOSTICS" -lt "$MAX_SITE_DIAGNOSTICS" ]; then
+    preserve_diagnostic "$DDG_LOG" "ddg-$site-rep-$rep.log"
+    SITE_DIAGNOSTICS=$((SITE_DIAGNOSTICS + 1))
+  fi
+  [ -z "$DDG_LOG" ] || rm -f "$DDG_LOG"
+  DDG_LOG=""
+}
+
+stop_app() {
+  local status=0
+  if [ -n "$DDG_PID" ]; then
+    if ! stop_exact_pid "$DDG_PID"; then
+      echo "ERROR: could not safely stop DuckDuckGo PID $DDG_PID." >&2
+      status=1
+    fi
+  fi
+  DDG_PID=""
+  AUTOMATION_TOKEN_VALUE=""
+  return "$status"
+}
+
+# shellcheck disable=SC2329  # Invoked indirectly by the EXIT trap below.
+cleanup() {
+  local exit_code=$?
+  trap - EXIT HUP INT TERM
+  if ! stop_app; then
+    exit_code=1
+  fi
+  if ! stop_exact_pid "$WPR_PID"; then
+    exit_code=1
+  fi
+  if ! stop_exact_pid "$TSPROXY_PID"; then
+    exit_code=1
+  fi
+  if [ "$exit_code" -ne 0 ]; then
+    preserve_diagnostic "$DDG_LOG" ddg.log
+    preserve_diagnostic "$WPR_LOG" wpr.log
+    preserve_diagnostic "$TSPROXY_LOG" tsproxy.log
+  fi
+  [ -z "$DDG_LOG" ] || rm -f "$DDG_LOG"
+  [ -z "$WPR_LOG" ] || rm -f "$WPR_LOG"
+  [ -z "$TSPROXY_LOG" ] || rm -f "$TSPROXY_LOG"
+  exit "$exit_code"
+}
+trap cleanup EXIT
+trap 'exit 129' HUP
+trap 'exit 130' INT
+trap 'exit 143' TERM
+
+wait_for_port() {
+  local port="$1" timeout="$2" iteration
+  for ((iteration = 0; iteration < timeout * 2; iteration++)); do
+    if (exec 3<>"/dev/tcp/127.0.0.1/$port") 2>/dev/null; then
+      exec 3>&-
+      return 0
+    fi
+    sleep 0.5
+  done
+  return 1
+}
+
+assert_port_free() {
+  local port="$1" label="$2"
+  if (exec 3<>"/dev/tcp/127.0.0.1/$port") 2>/dev/null; then
+    exec 3>&-
+    echo "ERROR: port $port ($label) is already in use." >&2
+    return 1
+  fi
+}
+
+read_app_metadata() {
+  local plist="$DDG_APP/Contents/Info.plist"
+  if [ "$DDG_MARKETING_VERSION" = unknown ]; then
+    DDG_MARKETING_VERSION="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$plist" 2>/dev/null || echo unknown)"
+  fi
+  if [ "$DDG_BUILD_VERSION" = unknown ]; then
+    DDG_BUILD_VERSION="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$plist" 2>/dev/null || echo unknown)"
+  fi
+  if [ "$DDG_BUNDLE_ID" = unknown ]; then
+    DDG_BUNDLE_ID="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$plist" 2>/dev/null || echo unknown)"
+  fi
+  if [ -z "$DDG_EXECUTABLE" ]; then
+    executable_name="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$plist" 2>/dev/null || true)"
+    DDG_EXECUTABLE="$DDG_APP/Contents/MacOS/$executable_name"
+  fi
+  BROWSER_VERSION="$DDG_MARKETING_VERSION"
+  if [ "$DDG_BUILD_VERSION" != unknown ]; then
+    BROWSER_VERSION="$DDG_MARKETING_VERSION ($DDG_BUILD_VERSION)"
+  fi
+}
+
+check_prerequisites() {
+  if [ "$WPR_ARCHIVES_PREPARED" != "1" ]; then
+    echo "ERROR: DDG requires validator-staged WPR archives (WPR_ARCHIVES_PREPARED=1)." >&2
+    exit 2
+  fi
+  [ -f "$WPR_MANIFEST" ] || {
+    echo "ERROR: validated WPR manifest missing at $WPR_MANIFEST." >&2
+    exit 2
+  }
+  for command in "$PYTHON_BIN" shasum ps; do
+    command -v "$command" >/dev/null 2>&1 || {
+      echo "ERROR: required command unavailable: $command" >&2
+      exit 1
+    }
+  done
+  [ -d "$DDG_APP" ] || {
+    echo "ERROR: DuckDuckGo app not found at $DDG_APP." >&2
+    exit 1
+  }
+  read_app_metadata
+  case "$DDG_BUNDLE_ID" in
+    *.review|*.debug) ;;
+    *)
+      echo "ERROR: DDG replay automation requires a Review or debug build; got $DDG_BUNDLE_ID." >&2
+      exit 1
+      ;;
+  esac
+  [ -x "$DDG_EXECUTABLE" ] || {
+    echo "ERROR: DuckDuckGo executable missing at $DDG_EXECUTABLE." >&2
+    exit 1
+  }
+  [ -x "$WPR_BIN" ] || {
+    echo "ERROR: WPR binary missing at $WPR_BIN. Run provision-macos.sh." >&2
+    exit 1
+  }
+  [ -f "$WPR_CERT_FILE" ] && [ -f "$WPR_KEY_FILE" ] || {
+    echo "ERROR: WPR ECDSA key pair is unavailable." >&2
+    exit 1
+  }
+  [ -f "$TSPROXY_PY" ] || {
+    echo "ERROR: pinned tsproxy missing at $TSPROXY_PY." >&2
+    exit 1
+  }
+  [ -f "$DDG_AUTOMATION_PY" ] && [ -f "$WATCHDOG_PY" ] || {
+    echo "ERROR: DDG automation helpers are unavailable." >&2
+    exit 1
+  }
+}
+
+set_validation_result() {
+  local site="$1"
+  local verdict reason status_chain final_url detail header row_count
+  local archive_name expected_sha actual_sha
+
+  VALIDATION_HANDOFF_ERROR=0
+  VALIDATION_STATUS=error
+  VALIDATION_REASON=archive_missing
+  VALIDATION_HTTP_STATUS=-
+  VALIDATION_DETAIL=-
+  ARCHIVE_SHA256=-
+  VALIDATED_ARCHIVE=""
+
+  header="$(head -1 "$WPR_MANIFEST")"
+  if [ "$header" != $'site\tarchive\tsha256\tarchive_bytes\tverdict\treason_code\thttp_status\tdetail\tstatus_chain\tfinal_url\tcontent_type\tblocked_marker' ]; then
+    VALIDATION_HANDOFF_ERROR=1
+    VALIDATION_REASON=validation_manifest_schema_mismatch
+    VALIDATION_DETAIL="validated archive manifest has an unsupported schema"
+    return
+  fi
+  row_count="$(awk -F'\t' -v site="$site" 'NR > 1 && $1 == site { count++ } END { print count + 0 }' "$WPR_MANIFEST")"
+  if [ "$row_count" -eq 0 ]; then
+    VALIDATION_HANDOFF_ERROR=1
+    VALIDATION_REASON=validation_result_missing
+    VALIDATION_DETAIL="site is absent from the WPR validation manifest"
+    return
+  fi
+  if [ "$row_count" -ne 1 ]; then
+    VALIDATION_HANDOFF_ERROR=1
+    VALIDATION_REASON=validation_result_ambiguous
+    VALIDATION_DETAIL="site has multiple validation rows"
+    return
+  fi
+
+  archive_name="$(awk -F'\t' -v site="$site" 'NR > 1 && $1 == site { print $2; exit }' "$WPR_MANIFEST")"
+  expected_sha="$(awk -F'\t' -v site="$site" 'NR > 1 && $1 == site { print $3; exit }' "$WPR_MANIFEST")"
+  verdict="$(awk -F'\t' -v site="$site" 'NR > 1 && $1 == site { print $5; exit }' "$WPR_MANIFEST")"
+  if [ "$verdict" != ok ] && [ "$verdict" != error ]; then
+    VALIDATION_HANDOFF_ERROR=1
+    VALIDATION_REASON=validation_verdict_invalid
+    VALIDATION_DETAIL="validated archive manifest has an unsupported verdict"
+    return
+  fi
+  if [[ "$expected_sha" =~ ^[0-9a-f]{64}$ ]]; then
+    ARCHIVE_SHA256="$expected_sha"
+  elif [ "$verdict" = ok ]; then
+    VALIDATION_HANDOFF_ERROR=1
+    VALIDATION_REASON=validated_archive_hash_invalid
+    VALIDATION_DETAIL="eligible archive has no valid SHA-256"
+    return
+  fi
+  reason="$(awk -F'\t' -v site="$site" 'NR > 1 && $1 == site { print $6; exit }' "$WPR_MANIFEST")"
+  VALIDATION_HTTP_STATUS="$(awk -F'\t' -v site="$site" 'NR > 1 && $1 == site { print $7; exit }' "$WPR_MANIFEST")"
+  VALIDATION_HTTP_STATUS="${VALIDATION_HTTP_STATUS:--}"
+  if [ "$VALIDATION_HTTP_STATUS" != - ] &&
+      ! [[ "$VALIDATION_HTTP_STATUS" =~ ^[1-5][0-9][0-9]$ ]]; then
+    VALIDATION_HANDOFF_ERROR=1
+    VALIDATION_HTTP_STATUS=-
+    VALIDATION_REASON=validation_http_status_invalid
+    VALIDATION_DETAIL="validated archive manifest has an invalid HTTP status"
+    return
+  fi
+  detail="$(awk -F'\t' -v site="$site" 'NR > 1 && $1 == site { print $8; exit }' "$WPR_MANIFEST")"
+  status_chain="$(awk -F'\t' -v site="$site" 'NR > 1 && $1 == site { print $9; exit }' "$WPR_MANIFEST")"
+  final_url="$(awk -F'\t' -v site="$site" 'NR > 1 && $1 == site { print $10; exit }' "$WPR_MANIFEST")"
+
+  if [ "$verdict" = ok ]; then
+    if ! [[ "$archive_name" =~ ^[a-zA-Z0-9._-]+\.wprgo$ ]]; then
+      VALIDATION_HANDOFF_ERROR=1
+      VALIDATION_REASON=validated_archive_name_invalid
+      VALIDATION_DETAIL="validator returned an unsafe archive filename"
+      return
+    fi
+    VALIDATED_ARCHIVE="$WPR_DIR/$archive_name"
+    if [ ! -f "$VALIDATED_ARCHIVE" ]; then
+      VALIDATION_HANDOFF_ERROR=1
+      VALIDATION_REASON=validated_archive_missing
+      VALIDATION_DETAIL="eligible archive was not staged"
+      VALIDATED_ARCHIVE=""
+      return
+    fi
+    actual_sha="$(shasum -a 256 "$VALIDATED_ARCHIVE" | awk '{print $1}')"
+    if [ "$actual_sha" != "$expected_sha" ]; then
+      VALIDATION_HANDOFF_ERROR=1
+      VALIDATION_REASON=validated_archive_hash_mismatch
+      VALIDATION_DETAIL="staged archive SHA-256 does not match manifest"
+      ARCHIVE_SHA256=-
+      VALIDATED_ARCHIVE=""
+      return
+    fi
+    VALIDATION_STATUS=ok
+    VALIDATION_REASON=-
+    return
+  fi
+
+  VALIDATION_REASON="${reason:-unknown_validation_failure}"
+  VALIDATION_DETAIL="${detail:--}"
+  [ -z "$status_chain" ] || VALIDATION_DETAIL="$VALIDATION_DETAIL; status_chain=$status_chain"
+  [ -z "$final_url" ] || VALIDATION_DETAIL="$VALIDATION_DETAIL; final_url=$final_url"
+}
+
+start_wpr() {
+  local archive="$1"
+  assert_port_free "$WPR_HTTP_PORT" wpr-http || return 1
+  assert_port_free "$WPR_HTTPS_PORT" wpr-https || return 1
+  WPR_LOG="$(mktemp)"
+  "$WPR_BIN" replay \
+    --http-port="$WPR_HTTP_PORT" \
+    --https-port="$WPR_HTTPS_PORT" \
+    --https-cert-file="$WPR_CERT_FILE" \
+    --https-key-file="$WPR_KEY_FILE" \
+    --no-archive-certificates \
+    "$archive" >"$WPR_LOG" 2>&1 &
+  WPR_PID=$!
+  if ! wait_for_port "$WPR_HTTP_PORT" "$SERVICE_START_TIMEOUT_SECONDS" ||
+      ! wait_for_port "$WPR_HTTPS_PORT" "$SERVICE_START_TIMEOUT_SECONDS"; then
+    if ! stop_exact_pid "$WPR_PID"; then
+      set_shared_failure cleanup unsafe_wpr_cleanup \
+        "WPR failed to stop after startup failure"
+    fi
+    WPR_PID=""
+    return 1
+  fi
+}
+
+stop_wpr() {
+  local status=0
+  stop_exact_pid "$WPR_PID" || status=1
+  WPR_PID=""
+  [ -z "$WPR_LOG" ] || rm -f "$WPR_LOG"
+  WPR_LOG=""
+  return "$status"
+}
+
+start_tsproxy() {
+  assert_port_free "$TSPROXY_PORT" tsproxy || return 1
+  TSPROXY_LOG="$(mktemp)"
+  "$PYTHON_BIN" "$TSPROXY_PY" \
+    --port "$TSPROXY_PORT" \
+    --desthost 127.0.0.1 \
+    --mapports "443:$WPR_HTTPS_PORT,*:$WPR_HTTP_PORT" \
+    --rtt "$WPR_US_BROADBAND_RTT_MS" \
+    --inkbps "$WPR_US_BROADBAND_IN_KBPS" \
+    --outkbps "$WPR_US_BROADBAND_OUT_KBPS" \
+    --window "$WPR_US_BROADBAND_WINDOW" \
+    -vvv >"$TSPROXY_LOG" 2>&1 &
+  TSPROXY_PID=$!
+  if ! process_is_alive "$TSPROXY_PID" ||
+      ! wait_for_port "$TSPROXY_PORT" "$SERVICE_START_TIMEOUT_SECONDS" ||
+      ! process_is_alive "$TSPROXY_PID"; then
+    echo "ERROR: shared tsproxy failed to start." >&2
+    preserve_diagnostic "$TSPROXY_LOG" tsproxy.log
+    stop_exact_pid "$TSPROXY_PID" || true
+    TSPROXY_PID=""
+    return 1
+  fi
+  return 0
+}
+
+tsproxy_line_count() {
+  wc -l < "$TSPROXY_LOG" 2>/dev/null || echo 0
+}
+
+tsproxy_saw_site() {
+  local line_before="$1" site="$2"
+  awk -v first="$line_before" -v expected="Resolving b'$site':443" \
+    'NR > first && index($0, expected) { found=1 } END { exit !found }' \
+    "$TSPROXY_LOG"
+}
+
+start_app() {
+  assert_port_free "$AUTOMATION_PORT" automation || return 1
+  AUTOMATION_TOKEN_VALUE="$("$PYTHON_BIN" -c 'import secrets; print(secrets.token_hex(32))')"
+  DDG_LOG="$(mktemp)"
+  AUTOMATION_TOKEN="$AUTOMATION_TOKEN_VALUE" \
+    "$DDG_EXECUTABLE" \
+      -automationPort "$AUTOMATION_PORT" \
+      -isOnboardingCompleted true \
+      -webViewProxy "socks5://127.0.0.1:$TSPROXY_PORT" \
+      -acceptInsecureCerts true >"$DDG_LOG" 2>&1 &
+  DDG_PID=$!
+  if ! wait_for_port "$AUTOMATION_PORT" 20; then
+    echo "ERROR: DuckDuckGo automation server did not become ready." >&2
+    return 1
+  fi
+  for _ in 1 2 3 4 5 6 7 8 9 10; do
+    if AUTOMATION_TOKEN="$AUTOMATION_TOKEN_VALUE" \
+        "$PYTHON_BIN" "$DDG_AUTOMATION_PY" "$AUTOMATION_PORT" check; then
+      return 0
+    fi
+    process_is_alive "$DDG_PID" || return 1
+    sleep 0.5
+  done
+  echo "ERROR: DuckDuckGo content blocker did not become ready." >&2
+  return 1
+}
+
+shutdown_app() {
+  if process_is_alive "$DDG_PID"; then
+    AUTOMATION_TOKEN="$AUTOMATION_TOKEN_VALUE" \
+      "$PYTHON_BIN" "$DDG_AUTOMATION_PY" "$AUTOMATION_PORT" shutdown \
+      >/dev/null 2>&1 || true
+    for _ in 1 2 3 4 5 6; do
+      process_is_alive "$DDG_PID" || break
+      sleep 0.5
+    done
+  fi
+  stop_app
+}
+
+set_runtime_failure() {
+  local priority="$1" stage="$2" reason="$3" detail="$4"
+  if [ "$priority" -ge "$FAILURE_PRIORITY" ]; then
+    FAILURE_PRIORITY="$priority"
+    FAILURE_STAGE="$stage"
+    FAILURE_REASON="$reason"
+    FAILURE_DETAIL="$detail"
+  fi
+}
+
+set_shared_failure() {
+  local stage="$1" reason="$2" detail="$3"
+  RUN_FATAL=1
+  SHARED_SERVICE_FAILURE=1
+  SHARED_FAILURE_STAGE="$stage"
+  SHARED_FAILURE_REASON="$reason"
+  SHARED_FAILURE_DETAIL="$detail"
+  set_runtime_failure 100 "$stage" "$reason" "$detail"
+}
+
+reset_site_counters() {
+  reset_measurement_counters
+  FAILURE_PRIORITY=0
+}
+
+measure_site() {
+  local site="$1" rep before output command_status status_file
+  local watchdog_state watchdog_code watchdog_cleanup watchdog_extra
+  local watchdog_lines cleanup_failed
+  local lcp detail landed_url offsite field field_count
+  local site_failed=0 observed=0 recorded=0 unfinalized=0 no_metric=0
+  local -a values=()
+  reset_site_counters
+  set_validation_result "$site"
+
+  if [ "$VALIDATION_HANDOFF_ERROR" -eq 1 ]; then
+    HANDOFF_FAILURES=$((HANDOFF_FAILURES + 1))
+    RUN_FATAL=1
+    set_runtime_failure 80 validation invalid_handoff "$VALIDATION_REASON"
+    record_disposition "$site" infra_error
+    return
+  fi
+  if [ -z "$VALIDATED_ARCHIVE" ]; then
+    echo "  $site: excluded by WPR validation."
+    record_disposition "$site" excluded
+    return
+  fi
+  ELIGIBLE_SITES=$((ELIGIBLE_SITES + 1))
+
+  if ! start_wpr "$VALIDATED_ARCHIVE"; then
+    set_runtime_failure 30 replay wpr_start_failed "WPR did not become ready"
+    preserve_site_diagnostics "$site"
+    record_disposition "$site" infra_error
+    return
+  fi
+
+  for ((rep = 1; rep <= MEASURED_REPS; rep++)); do
+    if ! process_is_alive "$TSPROXY_PID"; then
+      site_failed=1
+      set_shared_failure shaping tsproxy_exited "repetition=$rep"
+      break
+    fi
+    if ! process_is_alive "$WPR_PID"; then
+      site_failed=1
+      set_runtime_failure 80 replay wpr_exited "repetition=$rep"
+      break
+    fi
+    if ! start_app; then
+      site_failed=1
+      set_runtime_failure 20 automation app_start_failed "repetition=$rep"
+      cleanup_failed=0
+      if ! shutdown_app; then
+        cleanup_failed=1
+      fi
+      if ! process_is_alive "$TSPROXY_PID"; then
+        set_shared_failure shaping tsproxy_exited "repetition=$rep; after app start failure"
+      elif ! process_is_alive "$WPR_PID"; then
+        set_runtime_failure 80 replay wpr_exited "repetition=$rep; after app start failure"
+      fi
+      if [ "$cleanup_failed" -ne 0 ]; then
+        set_shared_failure cleanup unsafe_app_cleanup "repetition=$rep"
+      fi
+      finish_app_log "$site" "$rep" 1
+      [ "$SHARED_SERVICE_FAILURE" -eq 0 ] || break
+      continue
+    fi
+
+    before="$(tsproxy_line_count)"
+    status_file="$(mktemp)"
+    set +e
+    output="$(
+      AUTOMATION_TOKEN="$AUTOMATION_TOKEN_VALUE" \
+        "$PYTHON_BIN" "$WATCHDOG_PY" \
+          --timeout-seconds "$REPETITION_TIMEOUT_SECONDS" \
+          --term-grace-seconds 2 \
+          --status-file "$status_file" \
+          -- "$PYTHON_BIN" "$DDG_AUTOMATION_PY" \
+            "$AUTOMATION_PORT" measure "https://$site" \
+            "$LCP_SETTLE_MS" "$LOAD_WINDOW_SECONDS" 2>&1
+    )"
+    command_status=$?
+    set -e
+    cleanup_failed=0
+    if ! shutdown_app; then
+      cleanup_failed=1
+    fi
+
+    # Shared and replay liveness outrank the automation result. Check them
+    # before parsing either the watchdog status or the helper output.
+    if ! process_is_alive "$TSPROXY_PID"; then
+      site_failed=1
+      set_shared_failure shaping tsproxy_exited "repetition=$rep"
+    fi
+    if ! process_is_alive "$WPR_PID"; then
+      site_failed=1
+      set_runtime_failure 80 replay wpr_exited "repetition=$rep"
+    fi
+    if [ "$cleanup_failed" -ne 0 ]; then
+      site_failed=1
+      set_shared_failure cleanup unsafe_app_cleanup "repetition=$rep"
+    fi
+    if [ "$SHARED_SERVICE_FAILURE" -ne 0 ] ||
+        [ "$FAILURE_REASON" = wpr_exited ]; then
+      rm -f "$status_file"
+      finish_app_log "$site" "$rep" 1
+      break
+    fi
+
+    watchdog_lines="$(wc -l < "$status_file" 2>/dev/null || echo 0)"
+    IFS=$'\t' read -r watchdog_state watchdog_code watchdog_cleanup watchdog_extra \
+      < "$status_file" || true
+    rm -f "$status_file"
+    if [ "$watchdog_lines" -ne 1 ] ||
+        [ -n "${watchdog_extra:-}" ] ||
+        ! [[ "${watchdog_code:-}" =~ ^[0-9]+$ ]] ||
+        [ "$watchdog_code" -ne "$command_status" ]; then
+      site_failed=1
+      set_shared_failure control watchdog_status_invalid "repetition=$rep"
+      finish_app_log "$site" "$rep" 1
+      break
+    fi
+    case "$watchdog_state:$watchdog_cleanup" in
+      completed:not_needed)
+        if [ "$watchdog_code" -ne 0 ]; then
+          set_runtime_failure 30 automation command_failed \
+            "repetition=$rep; exit_status=$watchdog_code"
+        fi
+        ;;
+      timed_out:terminated|timed_out:killed|timed_out:already_exited)
+        site_failed=1
+        set_runtime_failure 40 automation watchdog_timeout "repetition=$rep"
+        ;;
+      interrupted:terminated|interrupted:killed|interrupted:already_exited)
+        site_failed=1
+        set_shared_failure control watchdog_interrupted \
+          "repetition=$rep; exit_status=$watchdog_code"
+        finish_app_log "$site" "$rep" 1
+        break
+        ;;
+      *)
+        site_failed=1
+        set_shared_failure control watchdog_cleanup_invalid \
+          "repetition=$rep; state=$watchdog_state; cleanup=$watchdog_cleanup"
+        finish_app_log "$site" "$rep" 1
+        break
+        ;;
+    esac
+
+    field_count=0
+    for field in detail landed_url landed_offsite lcp_ms; do
+      field_count="$(printf '%s\n' "$output" | grep -c "^$field=" || true)"
+      if [ "$field_count" -ne 1 ]; then
+        site_failed=1
+        set_runtime_failure 20 automation malformed_output \
+          "repetition=$rep; field=$field; count=$field_count"
+        break
+      fi
+    done
+    if [ "$field_count" -ne 1 ]; then
+      finish_app_log "$site" "$rep" 1
+      continue
+    fi
+
+    detail="$(printf '%s\n' "$output" | sed -n 's/^detail=//p')"
+    landed_url="$(printf '%s\n' "$output" | sed -n 's/^landed_url=//p')"
+    offsite="$(printf '%s\n' "$output" | sed -n 's/^landed_offsite=//p')"
+    lcp="$(printf '%s\n' "$output" | sed -n 's/^lcp_ms=//p')"
+    observed=$((observed + 1))
+
+    if [ "$watchdog_code" -ne 0 ]; then
+      site_failed=1
+      no_metric=$((no_metric + 1))
+      finish_app_log "$site" "$rep" 1
+      continue
+    fi
+    if ! tsproxy_saw_site "$before" "$site"; then
+      site_failed=1
+      no_metric=$((no_metric + 1))
+      set_runtime_failure 30 replay missing_proxy_route "repetition=$rep"
+      finish_app_log "$site" "$rep" 1
+      continue
+    fi
+    if [ "$offsite" != 0 ] && [ "$offsite" != 1 ]; then
+      site_failed=1
+      no_metric=$((no_metric + 1))
+      set_runtime_failure 30 automation invalid_offsite_flag "repetition=$rep"
+      finish_app_log "$site" "$rep" 1
+      continue
+    fi
+    if ! [[ "$lcp" =~ ^-?[0-9]+([.][0-9]+)?$ ]]; then
+      site_failed=1
+      no_metric=$((no_metric + 1))
+      set_runtime_failure 30 automation invalid_lcp "repetition=$rep"
+      finish_app_log "$site" "$rep" 1
+      continue
+    fi
+    if [ "$offsite" = 1 ]; then
+      site_failed=1
+      no_metric=$((no_metric + 1))
+      set_runtime_failure 30 replay offsite_landing \
+        "repetition=$rep; landed_url=$landed_url"
+      finish_app_log "$site" "$rep" 1
+      continue
+    fi
+    if awk -v value="$lcp" 'BEGIN { exit !(value <= 0) }'; then
+      unfinalized=$((unfinalized + 1))
+      finish_app_log "$site" "$rep" 0
+      continue
+    fi
+    recorded=$((recorded + 1))
+    values+=("$lcp")
+    printf 'ddg\t%s\t%s\t%d\t%s\n' \
+      "$BROWSER_VERSION" "$site" "$recorded" "$lcp" >> "$RESULTS_FILE"
+    echo "  $site rep $rep: lcp_ms=$lcp; detail=$detail"
+    finish_app_log "$site" "$rep" 0
+  done
+
+  if [ "$observed" -ne $((recorded + unfinalized + no_metric)) ]; then
+    site_failed=1
+    set_shared_failure control repetition_accounting_invalid \
+      "site=$site; observed=$observed; recorded=$recorded; unfinalized=$unfinalized; no_metric=$no_metric"
+  fi
+  LAST_OBSERVED="$observed"
+  LAST_RECORDED="$recorded"
+  LAST_UNFINALIZED="$unfinalized"
+  LAST_NO_METRIC="$no_metric"
+  TOTAL_RECORDED=$((TOTAL_RECORDED + recorded))
+  if [ "$site_failed" -ne 0 ] || [ "$recorded" -lt "$MEASURED_REPS" ]; then
+    preserve_site_diagnostics "$site"
+  fi
+  if ! stop_wpr; then
+    site_failed=1
+    set_shared_failure cleanup unsafe_wpr_cleanup "site=$site"
+  fi
+  if [ "$site_failed" -ne 0 ]; then
+    record_disposition "$site" infra_error
+  else
+    record_disposition "$site" "$(classify_outcome)"
+  fi
+}
+
+record_after_shared_failure() {
+  local site="$1"
+  reset_site_counters
+  set_validation_result "$site"
+  if [ "$VALIDATION_HANDOFF_ERROR" -eq 1 ]; then
+    HANDOFF_FAILURES=$((HANDOFF_FAILURES + 1))
+    set_runtime_failure 80 validation invalid_handoff "$VALIDATION_REASON"
+    record_disposition "$site" infra_error
+  elif [ -z "$VALIDATED_ARCHIVE" ]; then
+    record_disposition "$site" excluded
+  else
+    ELIGIBLE_SITES=$((ELIGIBLE_SITES + 1))
+    set_runtime_failure 100 "$SHARED_FAILURE_STAGE" \
+      "$SHARED_FAILURE_REASON" "$SHARED_FAILURE_DETAIL"
+    record_disposition "$site" infra_error
+  fi
+}
+
+rewrite_dispositions_for_global_cleanup_failure() {
+  local temp detail
+  temp="$(mktemp)"
+  detail="$(tsv_clean "$SHARED_FAILURE_DETAIL")"
+  awk -F'\t' -v OFS='\t' \
+    -v stage="$SHARED_FAILURE_STAGE" \
+    -v reason="$SHARED_FAILURE_REASON" \
+    -v detail="$detail" '
+      NR == 1 { print; next }
+      $4 != "excluded" {
+        $4 = "infra_error"
+        $10 = stage
+        $11 = reason
+        $12 = detail
+      }
+      { print }
+    ' "$DISPOSITIONS_FILE" > "$temp"
+  mv "$temp" "$DISPOSITIONS_FILE"
+}
+
+finalize_shared_proxy() {
+  if ! stop_exact_pid "$TSPROXY_PID"; then
+    set_shared_failure cleanup unsafe_tsproxy_cleanup \
+      "shared tsproxy could not be stopped by exact PID"
+    rewrite_dispositions_for_global_cleanup_failure
+    preserve_diagnostic "$TSPROXY_LOG" tsproxy.log
+    return 1
+  fi
+  TSPROXY_PID=""
+  if [ "$RUN_FATAL" -ne 0 ]; then
+    preserve_diagnostic "$TSPROXY_LOG" tsproxy.log
+  fi
+  [ -z "$TSPROXY_LOG" ] || rm -f "$TSPROXY_LOG"
+  TSPROXY_LOG=""
+  return 0
+}
+
+run_ddg() {
+  local site
+  log "DuckDuckGo LCP (mandatory WPR, ${WPR_US_BROADBAND_RTT_MS}ms RTT, ${WPR_US_BROADBAND_IN_KBPS}/${WPR_US_BROADBAND_OUT_KBPS} Kbps, window ${WPR_US_BROADBAND_WINDOW})"
+  echo "ddg:     $BROWSER_VERSION"
+  echo "route:   DDG WKWebView -> tsproxy:$TSPROXY_PORT -> per-site WPR"
+  echo "results: $RESULTS_FILE"
+
+  if ! start_tsproxy; then
+    set_shared_failure shaping tsproxy_start_failed \
+      "shared tsproxy did not become ready"
+  fi
+  for site in "${SITES[@]}"; do
+    log "site: $site"
+    if [ "$SHARED_SERVICE_FAILURE" -ne 0 ]; then
+      record_after_shared_failure "$site"
+    else
+      measure_site "$site"
+    fi
+  done
+  if [ "$HANDOFF_FAILURES" -gt 0 ]; then
+    RUN_FATAL=1
+  fi
+  if [ "$ELIGIBLE_SITES" -gt 0 ] && [ "$TOTAL_RECORDED" -eq 0 ]; then
+    echo "ERROR: eligible sites produced no usable LCP samples." >&2
+    RUN_FATAL=1
+  fi
+}
+
+check_prerequisites
+printf 'browser\tbrowser_version\tsite\trep\tlcp_ms\n' > "$RESULTS_FILE"
+init_dispositions_file
+run_ddg
+finalize_shared_proxy || true
+report_dispositions
+log "Done"
+echo "results:      $RESULTS_FILE"
+echo "rows:         $(($(wc -l < "$RESULTS_FILE") - 1))"
+echo "dispositions: $DISPOSITIONS_FILE"
+exit "$RUN_FATAL"

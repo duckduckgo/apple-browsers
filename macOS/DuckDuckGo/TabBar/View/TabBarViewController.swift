@@ -1097,7 +1097,13 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     /// Closes the current tab's Duck.ai chat, whether docked in the sidebar or in a floating window.
     func closeDuckAIChat() {
         guard let tab = tabCollectionViewModel.selectedTabViewModel?.tab else { return }
-        aiChatCoordinator?.closeChat(for: tab.uuid, withAnimation: true)
+        let tabID = tab.uuid
+        // Mirror the split button and the open path: report the docked-sidebar close. Floating-window
+        // closes are reported separately by the coordinator (aiChatSidebarFloatingClosed).
+        if aiChatCoordinator?.isSidebarOpen(for: tabID) == true {
+            PixelKit.fire(AIChatPixel.aiChatSidebarClosed(source: .tabbarButton), frequency: .dailyAndStandard)
+        }
+        aiChatCoordinator?.closeChat(for: tabID, withAnimation: true)
         updateDuckAIChromeSegmentedControlState()
     }
 

@@ -121,12 +121,14 @@ jobs:
           retention-days: 7
 
       - name: Upload Perfetto diagnostics
-        if: failure() || inputs.upload-diagnostics
+        # Site-level failures no longer fail the job, but their capped
+        # diagnostics must still be uploaded when present.
+        if: always()
         uses: actions/upload-artifact@v6
         with:
           name: chrome-lcp-perfetto-diagnostics
           path: macOS/scripts/crossbench/chrome-diagnostics/**
-          if-no-files-found: warn
+          if-no-files-found: ignore
           retention-days: 3
 
       - name: Aggregate results for ClickHouse

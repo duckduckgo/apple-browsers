@@ -447,6 +447,27 @@ public final class DataBrokerProtectionIOSManager {
         }
     }
 
+    private func reconcileProfileState() {
+        guard let resources = try? vaultResources() else {
+            Logger.dataBrokerProtection.log("Skipping profile state reconciliation: vault not initialized")
+            return
+        }
+
+        let hasSavedProfile: Bool
+        do {
+            hasSavedProfile = try resources.database.fetchProfile() != nil
+        } catch {
+            Logger.dataBrokerProtection.error("Profile state read failed, keeping cached state: \(error.localizedDescription, privacy: .public)")
+            return
+        }
+
+        let currentState: DBPProfileState = hasSavedProfile ? .hasProfile : .noProfile
+
+        guard profileStateManager.profileState != currentState else { return }
+
+        profileStateManager.reconcileProfileState(hasSavedProfile: hasSavedProfile)
+    }
+
     /// Central gate for Secure Vault-backed resources. Every caller either starts initialization
     /// or joins one already in progress; the gate ensures a single initialization even when
     /// multiple entry points (launch, app-active, background task) arrive concurrently.
@@ -534,6 +555,7 @@ public final class DataBrokerProtectionIOSManager {
 extension DataBrokerProtectionIOSManager: DBPIOSInterface.AppLifecycleEventsDelegate {
 
     public func appDidEnterBackground() {
+        reconcileProfileState()
         scheduleBGProcessingTask()
     }
 
@@ -725,6 +747,8 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.DatabaseDelegate {
 
 extension DataBrokerProtectionIOSManager: JobQueueManagerDelegate {
     public func queueManagerWillEnqueueOperations(_ queueManager: JobQueueManaging) {
+        reconcileProfileState()
+
         Task {
             do {
                 try await vaultResources().brokerUpdater?.checkForUpdates()

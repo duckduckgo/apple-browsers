@@ -92,6 +92,9 @@ extension DebugScreensViewModel {
             .view(title: "Ad Blocking", { d in
                 AdBlockingDebugView(keyValueStore: d.keyValueStore)
             }),
+            .view(title: "Browser Chrome Blur", { d in
+                BrowserChromeBlurDebugView(keyValueStore: d.keyValueStore)
+            }),
             .view(title: "AI Chat", { dependencies in
                 AIChatDebugView(duckAiNativeStorageHandler: dependencies.duckAiNativeStorageHandler)
             }),
@@ -323,6 +326,37 @@ extension DebugScreensViewModel {
         }
     }
 
+}
+
+private struct BrowserChromeBlurDebugView: View {
+
+    let keyValueStore: ThrowingKeyValueStoring
+    @State private var selectedStyle: BrowserChromeBlurStyle
+
+    init(keyValueStore: ThrowingKeyValueStoring) {
+        self.keyValueStore = keyValueStore
+        _selectedStyle = State(initialValue: BrowserChromeBlurStylePersistor(keyValueStore: keyValueStore).selectedStyle)
+    }
+
+    var body: some View {
+        List {
+            Section {
+                Picker("Blur Style", selection: $selectedStyle) {
+                    ForEach(BrowserChromeBlurStyle.allCases) { style in
+                        Text(verbatim: style.displayName)
+                            .tag(style)
+                    }
+                }
+            } footer: {
+                Text(verbatim: "Restart the app to apply the selected style.")
+            }
+        }
+        .navigationTitle("Browser Chrome Blur")
+        .onChange(of: selectedStyle) { newValue in
+            var persistor = BrowserChromeBlurStylePersistor(keyValueStore: keyValueStore)
+            persistor.selectedStyle = newValue
+        }
+    }
 }
 
 /// Sub-screen grouping the CPM (Cookie Pop-up Protection) debug actions.

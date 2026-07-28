@@ -27,7 +27,89 @@ import History
 import Core
 
 enum BrowserChromeMaterial {
-    static let blurStyle: UIBlurEffect.Style = .systemChromeMaterial
+    static private(set) var blurStyle: UIBlurEffect.Style = BrowserChromeBlurStyle.defaultValue.uiBlurEffectStyle
+
+    static func configure(with keyValueStore: ThrowingKeyValueStoring) {
+        blurStyle = BrowserChromeBlurStylePersistor(keyValueStore: keyValueStore).selectedStyle.uiBlurEffectStyle
+    }
+}
+
+enum BrowserChromeBlurStyle: String, CaseIterable, Identifiable {
+    case regular
+    case prominent
+    case systemUltraThinMaterial
+    case systemThinMaterial
+    case systemMaterial
+    case systemThickMaterial
+    case systemChromeMaterial
+
+    static let defaultValue = BrowserChromeBlurStyle.systemChromeMaterial
+
+    var id: String {
+        rawValue
+    }
+
+    var displayName: String {
+        switch self {
+        case .regular:
+            "Regular"
+        case .prominent:
+            "Prominent"
+        case .systemUltraThinMaterial:
+            "System Ultra Thin Material"
+        case .systemThinMaterial:
+            "System Thin Material"
+        case .systemMaterial:
+            "System Material"
+        case .systemThickMaterial:
+            "System Thick Material"
+        case .systemChromeMaterial:
+            "System Chrome Material"
+        }
+    }
+
+    var uiBlurEffectStyle: UIBlurEffect.Style {
+        switch self {
+        case .regular:
+            .regular
+        case .prominent:
+            .prominent
+        case .systemUltraThinMaterial:
+            .systemUltraThinMaterial
+        case .systemThinMaterial:
+            .systemThinMaterial
+        case .systemMaterial:
+            .systemMaterial
+        case .systemThickMaterial:
+            .systemThickMaterial
+        case .systemChromeMaterial:
+            .systemChromeMaterial
+        }
+    }
+}
+
+struct BrowserChromeBlurStylePersistor {
+    private enum Key: String {
+        case selectedStyle = "debug.browser-chrome.blur-style"
+    }
+
+    private let keyValueStore: ThrowingKeyValueStoring
+
+    init(keyValueStore: ThrowingKeyValueStoring) {
+        self.keyValueStore = keyValueStore
+    }
+
+    var selectedStyle: BrowserChromeBlurStyle {
+        get {
+            guard let rawValue = try? keyValueStore.object(forKey: Key.selectedStyle.rawValue) as? String else {
+                return .defaultValue
+            }
+            return BrowserChromeBlurStyle(rawValue: rawValue) ?? .defaultValue
+        }
+        set {
+            try? keyValueStore.set(newValue.rawValue, forKey: Key.selectedStyle.rawValue)
+        }
+    }
 }
 
 class MainViewFactory {

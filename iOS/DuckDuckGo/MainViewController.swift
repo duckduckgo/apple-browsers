@@ -674,6 +674,7 @@ class MainViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
+        BrowserChromeMaterial.configure(with: keyValueStore)
         viewCoordinator = MainViewFactory.createViewHierarchy(self,
                                                               aiChatSettings: aiChatSettings,
                                                               aiChatSyncCleaner: aiChatSyncCleaner,

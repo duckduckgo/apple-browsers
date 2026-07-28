@@ -105,12 +105,18 @@ Default appearance strategy is `.allAppearances` (light + dark). Use `.single(.l
 
 Snapshots are pixel-strict, so the test environment is validated before each assertion:
 
-- **iOS**: must run on **iOS 26.4** at **@3x**.
-- **macOS**: must run on **macOS 26.x**.
+- **iOS**: must run on **iOS 26.4** at **@3x** (simulator runtime).
+- **macOS**: must run on the exact host version, **macOS 26.5.2** (major.minor.patch).
 
-Wrong OS or scale → the helper calls `XCTFail` with an explanatory message and skips the comparison. Make sure your simulator / runner matches before recording.
+macOS pins the exact version because macOS snapshots render on the uncontrolled host, whereas iOS renders in a pinnable simulator runtime. A mismatch → the helper records a failure (`XCTFail` / `Issue.record`) with an explanatory message and skips the comparison — the same in CI and locally; a developer on a different OS opts out by not running the snapshot suite.
 
-When the OS rolls forward, bump `SnapshotEnvironment.expectedMajorVersion` and `expectedMinorVersion` and re-record affected references.
+When the OS rolls forward, bump `SnapshotEnvironment.expectedIOSVersion` / `expectedMacOSVersion` and re-record affected references.
+
+## Reference storage
+
+Reference images live in the `SnapshotReferences` git submodule at the repo root, mirroring each test's repo-relative path (`<platform>/…/__Snapshots__/<TestClass>/`). The wrapper redirects the library's `snapshotDirectory` there automatically, so references stay out of the app trees.
+
+Each image name carries the recording environment as a suffix so references are unambiguous across OSes: iOS uses `…_iOS-26-4` (major.minor), macOS uses `…_macOS-26-5-2` (exact version).
 
 ## Recording
 
@@ -134,12 +140,8 @@ Real test sites you can crib from:
 ### iOS — preview-backed compact view (`.constrainedWidth`)
 - View: `iOS/DuckDuckGo/AIChat/InputBox/SwitchBar/Suggestions/AIChatSyncPromoView.swift`
 - Test: `iOS/DuckDuckGoTests/AIChat/InputBox/SwitchBar/Suggestions/AIChatSyncPromoViewTests.swift`
-- Snapshots: same folder under `__Snapshots__/AIChatSyncPromoViewTests`
+- References: `SnapshotReferences` submodule, mirroring the test path (`iOS/DuckDuckGoTests/AIChat/InputBox/SwitchBar/Suggestions/__Snapshots__/AIChatSyncPromoViewTests/`)
 - Shows a small SwiftUI view whose `PreviewProvider` lives in the same file as the view and is reused directly by the test.
-
-### iOS — direct SwiftUI sheet (`.sheet`)
-- Test: `iOS/DuckDuckGoTests/AIChat/InputBox/SwitchBar/Suggestions/AIChatSyncIntroSheetViewTests.swift`
-- Shows `assertImageSnapshot(matching:size:)` against a constructed view (no `PreviewProvider`), exercising iPhone + iPad sheet sizing automatically.
 
 ### iOS — preview-backed screen with mocks (`.screen`)
 - View: `iOS/DuckDuckGo/VoiceSearchFeedbackView.swift`

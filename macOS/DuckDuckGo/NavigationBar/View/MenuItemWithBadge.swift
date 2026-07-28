@@ -202,9 +202,9 @@ struct BadgeView: View {
         }
     }
 
-    /// Figma's "Pollen 300" — `RebrandingColor.Pollen.pollen30` on this palette's 0-100 (rather
+    /// Figma's "Pollen 300" — `PrimitiveColor.Pollen.pollen30` on this palette's 0-100 (rather
     /// than Figma's 50-900) step convention.
-    private static let tryForFreeBadgeColor = RebrandingColor.Pollen.pollen30
+    private static let tryForFreeBadgeColor = PrimitiveColor.Pollen.pollen30
 }
 
 // MARK: - Menu Item with Badge

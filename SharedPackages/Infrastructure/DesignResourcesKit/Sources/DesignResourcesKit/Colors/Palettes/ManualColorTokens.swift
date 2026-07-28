@@ -28,41 +28,41 @@ enum ManualColorTokens {
     // MARK: - Alert
 
     static var alertGreen: DynamicColor {
-        DynamicColor(lightColor: RebrandingColor.Green.green40, darkColor: RebrandingColor.Green.green40)
+        DynamicColor(lightColor: PrimitiveColor.Green.green40, darkColor: PrimitiveColor.Green.green40)
     }
     static var alertYellow: DynamicColor { DynamicColor(lightColor: .alertYellow, darkColor: .alertYellow) }
 
     // MARK: - VPN
 
     static var vpnGreen: DynamicColor {
-        DynamicColor(lightColor: RebrandingColor.Green.green20, darkColor: RebrandingColor.Green.green70)
+        DynamicColor(lightColor: PrimitiveColor.Green.green20, darkColor: PrimitiveColor.Green.green70)
     }
     static var vpnGreenPressed: DynamicColor {
-        DynamicColor(lightColor: RebrandingColor.Green.green30, darkColor: RebrandingColor.Green.green80)
+        DynamicColor(lightColor: PrimitiveColor.Green.green30, darkColor: PrimitiveColor.Green.green80)
     }
     static var vpnGreenForeground: DynamicColor {
-        DynamicColor(lightColor: RebrandingColor.Lilypad.lilypad90, darkColor: RebrandingColor.Lilypad.lilypad10)
+        DynamicColor(lightColor: PrimitiveColor.Lilypad.lilypad90, darkColor: PrimitiveColor.Lilypad.lilypad10)
     }
     static var vpnGreenForegroundPressed: DynamicColor {
-        DynamicColor(lightColor: RebrandingColor.Lilypad.lilypad100, darkColor: RebrandingColor.Lilypad.lilypad0)
+        DynamicColor(lightColor: PrimitiveColor.Lilypad.lilypad100, darkColor: PrimitiveColor.Lilypad.lilypad0)
     }
     static var vpnYellow: DynamicColor {
-        DynamicColor(lightColor: RebrandingColor.Pollen.pollen30, darkColor: RebrandingColor.Pollen.pollen70)
+        DynamicColor(lightColor: PrimitiveColor.Pollen.pollen30, darkColor: PrimitiveColor.Pollen.pollen70)
     }
     static var vpnYellowPressed: DynamicColor {
-        DynamicColor(lightColor: RebrandingColor.Pollen.pollen40, darkColor: RebrandingColor.Pollen.pollen80)
+        DynamicColor(lightColor: PrimitiveColor.Pollen.pollen40, darkColor: PrimitiveColor.Pollen.pollen80)
     }
     static var vpnYellowForeground: DynamicColor {
-        DynamicColor(lightColor: RebrandingColor.Pollen.pollen80, darkColor: RebrandingColor.Pollen.pollen20)
+        DynamicColor(lightColor: PrimitiveColor.Pollen.pollen80, darkColor: PrimitiveColor.Pollen.pollen20)
     }
     static var vpnYellowForegroundPressed: DynamicColor {
-        DynamicColor(lightColor: RebrandingColor.Pollen.pollen90, darkColor: RebrandingColor.Pollen.pollen10)
+        DynamicColor(lightColor: PrimitiveColor.Pollen.pollen90, darkColor: PrimitiveColor.Pollen.pollen10)
     }
 
     // MARK: - Shield
 
     static var shieldPrivacy: DynamicColor {
-        DynamicColor(lightColor: RebrandingColor.Lilypad.lilypad70, darkColor: RebrandingColor.Lilypad.lilypad50)
+        DynamicColor(lightColor: PrimitiveColor.Lilypad.lilypad70, darkColor: PrimitiveColor.Lilypad.lilypad50)
     }
 
     // MARK: - Buttons

@@ -1,5 +1,5 @@
 //
-//  RebrandingColor.swift
+//  PrimitiveColor.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -18,12 +18,20 @@
 
 import SwiftUI
 
-/// Rebranding colors sourced from Figma: https://www.figma.com/design/3W4vi0zX8hrpQc7zInQQB6/%F0%9F%8E%A8-Global-Colors---Styles?node-id=11-1&m=dev&vars=1&var-set-id=7943-516.
-/// These are currently scoped for limited use and will be promoted to a ColorPalette when approved for app-wide use.
+/// The colour ramps the palettes are built from, synced from
+/// [Figma](https://www.figma.com/design/3W4vi0zX8hrpQc7zInQQB6/%F0%9F%8E%A8-Global-Colors---Styles?node-id=11-1&m=dev&vars=1&var-set-id=7943-516).
+///
+/// The generated palettes reference these by name wherever Figma says a semantic token aliases one,
+/// so such a value changes here and nowhere else. Keep in sync with
+/// `scripts/color-sync.py primitives`.
+///
+/// The other files in this folder are the older ramps, still hand-written: they back the public
+/// `BaseColor` API and a shrinking tail of `ManualColorTokens`. Nothing generated refers to them.
+///
 /// `Pollen` and `pollen30` are `public` because the Duck.ai omnibar's "Try for free"/"Upgrade"
 /// tag was explicitly reviewed against this exact token (Figma's "Pollen 300") — everything else
-/// here stays internal until it goes through the same process.
-public enum RebrandingColor {
+/// stays internal until it goes through the same process.
+public enum PrimitiveColor {
 
     enum GrayScale {
         static let white = Color(0xFFFFFF)

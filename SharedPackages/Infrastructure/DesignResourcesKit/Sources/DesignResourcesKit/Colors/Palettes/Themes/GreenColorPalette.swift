@@ -101,22 +101,22 @@ struct GreenColorPalette: SharedColorPaletteDefinition {
                                                        darkHex: 0xE6F2EA, darkOpacity: 0.5)
 
     // MARK: - Accent-Fire
-    static let accentFirePrimary = DynamicColor(lightColor: RebrandingColor.Mandarin.mandarin50,
-                                                darkColor: RebrandingColor.Mandarin.mandarin40)
-    static let accentFireSecondary = DynamicColor(lightColor: RebrandingColor.Mandarin.mandarin60,
-                                                  darkColor: RebrandingColor.Mandarin.mandarin50)
-    static let accentFireTertiary = DynamicColor(lightColor: RebrandingColor.Mandarin.mandarin70,
-                                                 darkColor: RebrandingColor.Mandarin.mandarin60)
+    static let accentFirePrimary = DynamicColor(lightColor: PrimitiveColor.Mandarin.mandarin50,
+                                                darkColor: PrimitiveColor.Mandarin.mandarin40)
+    static let accentFireSecondary = DynamicColor(lightColor: PrimitiveColor.Mandarin.mandarin60,
+                                                  darkColor: PrimitiveColor.Mandarin.mandarin50)
+    static let accentFireTertiary = DynamicColor(lightColor: PrimitiveColor.Mandarin.mandarin70,
+                                                 darkColor: PrimitiveColor.Mandarin.mandarin60)
     static let accentFireGlowPrimary = DynamicColor(lightHex: 0xF05F2B, lightOpacity: 0.2,
                                                     darkHex: 0xFF8D5C, darkOpacity: 0.2)
     static let accentFireGlowSecondary = DynamicColor(lightHex: 0xF05F2B, lightOpacity: 0.12,
                                                       darkHex: 0xFF8D5C, darkOpacity: 0.12)
-    static let accentFireTextPrimary = DynamicColor(lightColor: RebrandingColor.Mandarin.mandarin50,
-                                                    darkColor: RebrandingColor.Mandarin.mandarin40)
-    static let accentFireTextSecondary = DynamicColor(lightColor: RebrandingColor.Mandarin.mandarin60,
-                                                      darkColor: RebrandingColor.Mandarin.mandarin50)
-    static let accentFireTextTertiary = DynamicColor(lightColor: RebrandingColor.Mandarin.mandarin70,
-                                                     darkColor: RebrandingColor.Mandarin.mandarin60)
+    static let accentFireTextPrimary = DynamicColor(lightColor: PrimitiveColor.Mandarin.mandarin50,
+                                                    darkColor: PrimitiveColor.Mandarin.mandarin40)
+    static let accentFireTextSecondary = DynamicColor(lightColor: PrimitiveColor.Mandarin.mandarin60,
+                                                      darkColor: PrimitiveColor.Mandarin.mandarin50)
+    static let accentFireTextTertiary = DynamicColor(lightColor: PrimitiveColor.Mandarin.mandarin70,
+                                                     darkColor: PrimitiveColor.Mandarin.mandarin60)
     static let accentFireContentPrimary = DynamicColor(lightHex: 0xFFFFFF, darkHex: 0xFFFFFF)
     static let accentFireContentSecondary = DynamicColor(lightHex: 0xFFFFFF, lightOpacity: 0.7,
                                                          darkHex: 0xFFFFFF, darkOpacity: 0.7)
@@ -224,11 +224,11 @@ struct GreenColorPalette: SharedColorPaletteDefinition {
                                                          darkHex: 0x000000, darkOpacity: 0.6)
 
     // MARK: - Status
-    static let statusGreen = DynamicColor(lightColor: RebrandingColor.Green.green50, darkColor: Color(0x21C000))
+    static let statusGreen = DynamicColor(lightColor: PrimitiveColor.Green.green50, darkColor: Color(0x21C000))
     static let statusYellowPrimary = DynamicColor(lightColor: Color(0xFFCC00), darkColor: Color(0xFFCC00))
     static let statusYellowSecondary = DynamicColor(lightColor: Color(0xFFCC00), darkColor: Color(0xFFCC00))
     static let statusYellowTertiary = DynamicColor(lightColor: Color(0xFFCC00), darkColor: Color(0xFFCC00))
-    static let statusRed = DynamicColor(lightColor: RebrandingColor.Red.red50, darkColor: Color(0xEB102D))
+    static let statusRed = DynamicColor(lightColor: PrimitiveColor.Red.red50, darkColor: Color(0xEB102D))
     static let statusGray = DynamicColor(lightColor: Color(0xAAAAAA), darkColor: Color(0xAAAAAA))
 
     // MARK: - Status-Warning

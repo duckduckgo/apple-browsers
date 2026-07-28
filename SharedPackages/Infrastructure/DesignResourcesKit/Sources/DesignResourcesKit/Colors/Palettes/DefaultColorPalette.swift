@@ -64,26 +64,26 @@ struct DefaultColorPalette: SharedColorPaletteDefinition {
                                             darkHex: 0xFFFFFF, darkOpacity: 0.24)
 
     // MARK: - Accent
-    static let accentPrimary = DynamicColor(lightColor: RebrandingColor.Pondwater.pondwater60,
-                                            darkColor: RebrandingColor.Pondwater.pondwater40)
-    static let accentSecondary = DynamicColor(lightColor: RebrandingColor.Pondwater.pondwater70,
-                                              darkColor: RebrandingColor.Pondwater.pondwater50)
-    static let accentTertiary = DynamicColor(lightColor: RebrandingColor.Pondwater.pondwater80,
-                                             darkColor: RebrandingColor.Pondwater.pondwater60)
-    static let accentQuaternary = DynamicColor(lightColor: RebrandingColor.Pondwater.pondwater90,
-                                               darkColor: RebrandingColor.Pondwater.pondwater70)
+    static let accentPrimary = DynamicColor(lightColor: PrimitiveColor.Pondwater.pondwater60,
+                                            darkColor: PrimitiveColor.Pondwater.pondwater40)
+    static let accentSecondary = DynamicColor(lightColor: PrimitiveColor.Pondwater.pondwater70,
+                                              darkColor: PrimitiveColor.Pondwater.pondwater50)
+    static let accentTertiary = DynamicColor(lightColor: PrimitiveColor.Pondwater.pondwater80,
+                                             darkColor: PrimitiveColor.Pondwater.pondwater60)
+    static let accentQuaternary = DynamicColor(lightColor: PrimitiveColor.Pondwater.pondwater90,
+                                               darkColor: PrimitiveColor.Pondwater.pondwater70)
     static let accentGlowPrimary = DynamicColor(lightHex: 0x1074CC, lightOpacity: 0.2,
                                                 darkHex: 0x75B6EB, darkOpacity: 0.2)
     static let accentGlowSecondary = DynamicColor(lightHex: 0x1074CC, lightOpacity: 0.12,
                                                   darkHex: 0x75B6EB, darkOpacity: 0.12)
-    static let accentTextPrimary = DynamicColor(lightColor: RebrandingColor.Pondwater.pondwater60,
-                                                darkColor: RebrandingColor.Pondwater.pondwater40)
-    static let accentTextSecondary = DynamicColor(lightColor: RebrandingColor.Pondwater.pondwater70,
-                                                  darkColor: RebrandingColor.Pondwater.pondwater50)
-    static let accentTextTertiary = DynamicColor(lightColor: RebrandingColor.Pondwater.pondwater80,
-                                                 darkColor: RebrandingColor.Pondwater.pondwater60)
+    static let accentTextPrimary = DynamicColor(lightColor: PrimitiveColor.Pondwater.pondwater60,
+                                                darkColor: PrimitiveColor.Pondwater.pondwater40)
+    static let accentTextSecondary = DynamicColor(lightColor: PrimitiveColor.Pondwater.pondwater70,
+                                                  darkColor: PrimitiveColor.Pondwater.pondwater50)
+    static let accentTextTertiary = DynamicColor(lightColor: PrimitiveColor.Pondwater.pondwater80,
+                                                 darkColor: PrimitiveColor.Pondwater.pondwater60)
     static let accentContentPrimary = DynamicColor(lightColor: Color(0xFFFFFF),
-                                                   darkColor: RebrandingColor.Eggshell.eggshell90)
+                                                   darkColor: PrimitiveColor.Eggshell.eggshell90)
     static let accentContentSecondary = DynamicColor(lightHex: 0xFFFFFF, lightOpacity: 0.7,
                                                      darkHex: 0x111111, darkOpacity: 0.7)
     static let accentContentTertiary = DynamicColor(lightHex: 0xFFFFFF, lightOpacity: 0.5,
@@ -97,36 +97,36 @@ struct DefaultColorPalette: SharedColorPaletteDefinition {
                                                    darkHex: 0xA1CFF7, darkOpacity: 0.12)
     static let accentAltGlowSecondary = DynamicColor(lightHex: 0xA1CFF7, lightOpacity: 0.08,
                                                      darkHex: 0xA1CFF7, darkOpacity: 0.08)
-    static let accentAltTextPrimary = DynamicColor(lightColor: RebrandingColor.Pondwater.pondwater70,
-                                                   darkColor: RebrandingColor.Pondwater.pondwater0)
-    static let accentAltTextSecondary = DynamicColor(lightColor: RebrandingColor.Pondwater.pondwater80,
-                                                     darkColor: RebrandingColor.Pondwater.pondwater10)
-    static let accentAltTextTertiary = DynamicColor(lightColor: RebrandingColor.Pondwater.pondwater90,
-                                                    darkColor: RebrandingColor.Pondwater.pondwater20)
-    static let accentAltContentPrimary = DynamicColor(lightColor: RebrandingColor.Pondwater.pondwater90,
-                                                      darkColor: RebrandingColor.Pondwater.pondwater0)
+    static let accentAltTextPrimary = DynamicColor(lightColor: PrimitiveColor.Pondwater.pondwater70,
+                                                   darkColor: PrimitiveColor.Pondwater.pondwater0)
+    static let accentAltTextSecondary = DynamicColor(lightColor: PrimitiveColor.Pondwater.pondwater80,
+                                                     darkColor: PrimitiveColor.Pondwater.pondwater10)
+    static let accentAltTextTertiary = DynamicColor(lightColor: PrimitiveColor.Pondwater.pondwater90,
+                                                    darkColor: PrimitiveColor.Pondwater.pondwater20)
+    static let accentAltContentPrimary = DynamicColor(lightColor: PrimitiveColor.Pondwater.pondwater90,
+                                                      darkColor: PrimitiveColor.Pondwater.pondwater0)
     static let accentAltContentSecondary = DynamicColor(lightColor: Color(0x02254D).opacity(0.72),
-                                                        darkColor: RebrandingColor.Pondwater.pondwater0)
+                                                        darkColor: PrimitiveColor.Pondwater.pondwater0)
     static let accentAltContentTertiary = DynamicColor(lightColor: Color(0x02254D).opacity(0.48),
-                                                       darkColor: RebrandingColor.GrayScale.white)
+                                                       darkColor: PrimitiveColor.GrayScale.white)
 
     // MARK: - Accent-Fire
-    static let accentFirePrimary = DynamicColor(lightColor: RebrandingColor.Mandarin.mandarin50,
-                                                darkColor: RebrandingColor.Mandarin.mandarin40)
-    static let accentFireSecondary = DynamicColor(lightColor: RebrandingColor.Mandarin.mandarin60,
-                                                  darkColor: RebrandingColor.Mandarin.mandarin50)
-    static let accentFireTertiary = DynamicColor(lightColor: RebrandingColor.Mandarin.mandarin70,
-                                                 darkColor: RebrandingColor.Mandarin.mandarin60)
+    static let accentFirePrimary = DynamicColor(lightColor: PrimitiveColor.Mandarin.mandarin50,
+                                                darkColor: PrimitiveColor.Mandarin.mandarin40)
+    static let accentFireSecondary = DynamicColor(lightColor: PrimitiveColor.Mandarin.mandarin60,
+                                                  darkColor: PrimitiveColor.Mandarin.mandarin50)
+    static let accentFireTertiary = DynamicColor(lightColor: PrimitiveColor.Mandarin.mandarin70,
+                                                 darkColor: PrimitiveColor.Mandarin.mandarin60)
     static let accentFireGlowPrimary = DynamicColor(lightHex: 0xF05F2B, lightOpacity: 0.2,
                                                     darkHex: 0xFF8D5C, darkOpacity: 0.2)
     static let accentFireGlowSecondary = DynamicColor(lightHex: 0xF05F2B, lightOpacity: 0.12,
                                                       darkHex: 0xFF8D5C, darkOpacity: 0.12)
-    static let accentFireTextPrimary = DynamicColor(lightColor: RebrandingColor.Mandarin.mandarin50,
-                                                    darkColor: RebrandingColor.Mandarin.mandarin40)
-    static let accentFireTextSecondary = DynamicColor(lightColor: RebrandingColor.Mandarin.mandarin60,
-                                                      darkColor: RebrandingColor.Mandarin.mandarin50)
-    static let accentFireTextTertiary = DynamicColor(lightColor: RebrandingColor.Mandarin.mandarin70,
-                                                     darkColor: RebrandingColor.Mandarin.mandarin60)
+    static let accentFireTextPrimary = DynamicColor(lightColor: PrimitiveColor.Mandarin.mandarin50,
+                                                    darkColor: PrimitiveColor.Mandarin.mandarin40)
+    static let accentFireTextSecondary = DynamicColor(lightColor: PrimitiveColor.Mandarin.mandarin60,
+                                                      darkColor: PrimitiveColor.Mandarin.mandarin50)
+    static let accentFireTextTertiary = DynamicColor(lightColor: PrimitiveColor.Mandarin.mandarin70,
+                                                     darkColor: PrimitiveColor.Mandarin.mandarin60)
     static let accentFireContentPrimary = DynamicColor(lightHex: 0xFFFFFF, darkHex: 0xFFFFFF)
     static let accentFireContentSecondary = DynamicColor(lightHex: 0xFFFFFF, lightOpacity: 0.7,
                                                          darkHex: 0xFFFFFF, darkOpacity: 0.7)
@@ -134,24 +134,24 @@ struct DefaultColorPalette: SharedColorPaletteDefinition {
                                                         darkHex: 0xFFFFFF, darkOpacity: 0.5)
 
     // MARK: - Accent-Brand
-    static let accentBrandPrimary = DynamicColor(lightColor: RebrandingColor.Mandarin.mandarin50,
-                                                 darkColor: RebrandingColor.Pollen.pollen40)
-    static let accentBrandSecondary = DynamicColor(lightColor: RebrandingColor.Mandarin.mandarin60,
-                                                   darkColor: RebrandingColor.Pollen.pollen50)
-    static let accentBrandTertiary = DynamicColor(lightColor: RebrandingColor.Mandarin.mandarin70,
-                                                  darkColor: RebrandingColor.Pollen.pollen60)
+    static let accentBrandPrimary = DynamicColor(lightColor: PrimitiveColor.Mandarin.mandarin50,
+                                                 darkColor: PrimitiveColor.Pollen.pollen40)
+    static let accentBrandSecondary = DynamicColor(lightColor: PrimitiveColor.Mandarin.mandarin60,
+                                                   darkColor: PrimitiveColor.Pollen.pollen50)
+    static let accentBrandTertiary = DynamicColor(lightColor: PrimitiveColor.Mandarin.mandarin70,
+                                                  darkColor: PrimitiveColor.Pollen.pollen60)
     static let accentBrandGlowPrimary = DynamicColor(lightHex: 0xF05F2B, lightOpacity: 0.2,
                                                      darkHex: 0xFFC95C, darkOpacity: 0.2)
     static let accentBrandGlowSecondary = DynamicColor(lightHex: 0xF05F2B, lightOpacity: 0.12,
                                                        darkHex: 0xFFC95C, darkOpacity: 0.12)
-    static let accentBrandTextPrimary = DynamicColor(lightColor: RebrandingColor.Mandarin.mandarin50,
-                                                     darkColor: RebrandingColor.Pollen.pollen30)
-    static let accentBrandTextSecondary = DynamicColor(lightColor: RebrandingColor.Mandarin.mandarin60,
-                                                       darkColor: RebrandingColor.Pollen.pollen40)
-    static let accentBrandTextTertiary = DynamicColor(lightColor: RebrandingColor.Mandarin.mandarin70,
-                                                      darkColor: RebrandingColor.Pollen.pollen50)
-    static let accentBrandContentPrimary = DynamicColor(lightColor: RebrandingColor.GrayScale.white,
-                                                        darkColor: RebrandingColor.Pollen.pollen100)
+    static let accentBrandTextPrimary = DynamicColor(lightColor: PrimitiveColor.Mandarin.mandarin50,
+                                                     darkColor: PrimitiveColor.Pollen.pollen30)
+    static let accentBrandTextSecondary = DynamicColor(lightColor: PrimitiveColor.Mandarin.mandarin60,
+                                                       darkColor: PrimitiveColor.Pollen.pollen40)
+    static let accentBrandTextTertiary = DynamicColor(lightColor: PrimitiveColor.Mandarin.mandarin70,
+                                                      darkColor: PrimitiveColor.Pollen.pollen50)
+    static let accentBrandContentPrimary = DynamicColor(lightColor: PrimitiveColor.GrayScale.white,
+                                                        darkColor: PrimitiveColor.Pollen.pollen100)
     static let accentBrandContentSecondary = DynamicColor(lightHex: 0xFFFFFF, lightOpacity: 0.7,
                                                           darkHex: 0x1A0B03, darkOpacity: 0.72)
     static let accentBrandContentTertiary = DynamicColor(lightHex: 0xFFFFFF, lightOpacity: 0.5,
@@ -224,23 +224,23 @@ struct DefaultColorPalette: SharedColorPaletteDefinition {
                                              darkHex: 0x000000, darkOpacity: 0.32)
 
     // MARK: - Destructive
-    static let destructivePrimary = DynamicColor(lightColor: RebrandingColor.Red.red50,
-                                                 darkColor: RebrandingColor.Red.red40)
-    static let destructiveSecondary = DynamicColor(lightColor: RebrandingColor.Red.red60,
-                                                   darkColor: RebrandingColor.Red.red50)
-    static let destructiveTertiary = DynamicColor(lightColor: RebrandingColor.Red.red70,
-                                                  darkColor: RebrandingColor.Red.red60)
+    static let destructivePrimary = DynamicColor(lightColor: PrimitiveColor.Red.red50,
+                                                 darkColor: PrimitiveColor.Red.red40)
+    static let destructiveSecondary = DynamicColor(lightColor: PrimitiveColor.Red.red60,
+                                                   darkColor: PrimitiveColor.Red.red50)
+    static let destructiveTertiary = DynamicColor(lightColor: PrimitiveColor.Red.red70,
+                                                  darkColor: PrimitiveColor.Red.red60)
     static let destructiveGlowPrimary = DynamicColor(lightHex: 0xE5244B, lightOpacity: 0.2,
                                                      darkHex: 0xEE6D87, darkOpacity: 0.2)
     static let destructiveGlowSecondary = DynamicColor(lightHex: 0xE5244B, lightOpacity: 0.2,
                                                        darkHex: 0xEE6D87, darkOpacity: 0.12)
-    static let destructiveTextPrimary = DynamicColor(lightColor: RebrandingColor.Red.red60,
-                                                     darkColor: RebrandingColor.Red.red30)
-    static let destructiveTextSecondary = DynamicColor(lightColor: RebrandingColor.Red.red70,
-                                                       darkColor: RebrandingColor.Red.red40)
-    static let destructiveTextTertiary = DynamicColor(lightColor: RebrandingColor.Red.red80,
-                                                      darkColor: RebrandingColor.Red.red50)
-    static let destructiveContentPrimary = DynamicColor(lightColor: RebrandingColor.GrayScale.white,
+    static let destructiveTextPrimary = DynamicColor(lightColor: PrimitiveColor.Red.red60,
+                                                     darkColor: PrimitiveColor.Red.red30)
+    static let destructiveTextSecondary = DynamicColor(lightColor: PrimitiveColor.Red.red70,
+                                                       darkColor: PrimitiveColor.Red.red40)
+    static let destructiveTextTertiary = DynamicColor(lightColor: PrimitiveColor.Red.red80,
+                                                      darkColor: PrimitiveColor.Red.red50)
+    static let destructiveContentPrimary = DynamicColor(lightColor: PrimitiveColor.GrayScale.white,
                                                         darkColor: Color(0x000000))
     static let destructiveContentSecondary = DynamicColor(lightHex: 0xFFFFFF, lightOpacity: 0.9,
                                                           darkHex: 0x000000, darkOpacity: 0.9)
@@ -248,20 +248,20 @@ struct DefaultColorPalette: SharedColorPaletteDefinition {
                                                          darkHex: 0x000000, darkOpacity: 0.6)
 
     // MARK: - Status
-    static let statusGreen = DynamicColor(lightColor: RebrandingColor.Green.green40,
-                                          darkColor: RebrandingColor.Green.green40)
-    static let statusYellowPrimary = DynamicColor(lightColor: RebrandingColor.Pollen.pollen50,
-                                                  darkColor: RebrandingColor.Pollen.pollen50)
-    static let statusYellowSecondary = DynamicColor(lightColor: RebrandingColor.Pollen.pollen40,
-                                                    darkColor: RebrandingColor.Pollen.pollen40)
-    static let statusYellowTertiary = DynamicColor(lightColor: RebrandingColor.Pollen.pollen30,
-                                                   darkColor: RebrandingColor.Pollen.pollen30)
-    static let statusRed = DynamicColor(lightColor: RebrandingColor.Red.red50, darkColor: Color(0xFF545A))
-    static let statusGray = DynamicColor(lightColor: RebrandingColor.GrayScale.gray40, darkColor: Color(0xAAAAAA))
+    static let statusGreen = DynamicColor(lightColor: PrimitiveColor.Green.green40,
+                                          darkColor: PrimitiveColor.Green.green40)
+    static let statusYellowPrimary = DynamicColor(lightColor: PrimitiveColor.Pollen.pollen50,
+                                                  darkColor: PrimitiveColor.Pollen.pollen50)
+    static let statusYellowSecondary = DynamicColor(lightColor: PrimitiveColor.Pollen.pollen40,
+                                                    darkColor: PrimitiveColor.Pollen.pollen40)
+    static let statusYellowTertiary = DynamicColor(lightColor: PrimitiveColor.Pollen.pollen30,
+                                                   darkColor: PrimitiveColor.Pollen.pollen30)
+    static let statusRed = DynamicColor(lightColor: PrimitiveColor.Red.red50, darkColor: Color(0xFF545A))
+    static let statusGray = DynamicColor(lightColor: PrimitiveColor.GrayScale.gray40, darkColor: Color(0xAAAAAA))
 
     // MARK: - Status-Warning
-    static let statusWarningPrimary = DynamicColor(lightColor: RebrandingColor.Pollen.pollen40,
-                                                   darkColor: RebrandingColor.Pollen.pollen30)
+    static let statusWarningPrimary = DynamicColor(lightColor: PrimitiveColor.Pollen.pollen40,
+                                                   darkColor: PrimitiveColor.Pollen.pollen30)
     static let statusWarningContentPrimary = DynamicColor(lightColor: Color(0x191101), darkColor: Color(0x191101))
     static let statusWarningFillPrimary = DynamicColor(lightColor: Color(0xFFE699).opacity(0.32),
                                                        darkColor: Color(0xFFB200).opacity(0.12))

@@ -23,7 +23,7 @@ import DesignResourcesKit
 
 /// The production tab switcher chrome: a custom top title bar plus a `BrowserToolbarView` bottom
 /// bar, driven by `DefaultTabSwitcherBarsStateHandler`. This preserves the existing behaviour;
-/// it is the path used whenever floating UI is disabled.
+/// it is the path used whenever the July 2026 tab switcher is disabled.
 ///
 /// The bottom bar reuses the browser's `BrowserToolbarView` so the button positions line up
 /// exactly with the browser/NTP toolbar during the tab-switcher transition.
@@ -120,7 +120,6 @@ final class LegacyTabSwitcherChrome: TabSwitcherChrome {
 
         // Keep the bar transparent (the tab switcher provides its own backdrop) and matched to
         // the browser's button layout.
-        bottomToolbar.setFloatingStyleEnabled(false)
         bottomToolbar.setLegacyBackgroundTransparent(true)
         borderView.updateForAddressBarPosition(addressBarPosition)
         titleBarView.updateForAddressBarPosition(isBottom: addressBarPosition.isBottom)

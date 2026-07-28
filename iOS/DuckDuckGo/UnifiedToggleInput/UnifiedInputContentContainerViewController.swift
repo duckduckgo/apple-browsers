@@ -85,7 +85,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
 
     let appSettings: AppSettings
     private let featureFlagger: FeatureFlagger
-    private let isFloatingUIEnabled: Bool
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let aiChatSettings: AIChatSettingsProvider
     private let aiChatSyncCleaner: AIChatSyncCleaning?
@@ -165,7 +164,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         self.switchBarHandler = switchBarHandler
         self.appSettings = appSettings
         self.featureFlagger = featureFlagger
-        self.isFloatingUIEnabled = FloatingUIManager(featureFlagger: featureFlagger).isFloatingUIEnabled
         self.privacyConfigurationManager = privacyConfigurationManager
         self.aiChatSettings = aiChatSettings
         self.aiChatSyncCleaner = aiChatSyncCleaner
@@ -379,9 +377,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         hostingController.view.translatesAutoresizingMaskIntoConstraints = false
         addChild(hostingController)
         contentContainerView.addSubview(hostingController.view)
-        // In floating UI, pin chrome to the safe-area guide for the top inset; otherwise it adds no inset.
-        let chromeTopAnchor = isFloatingUIEnabled ? contentContainerView.safeAreaLayoutGuide.topAnchor : contentContainerView.topAnchor
-        let top = hostingController.view.topAnchor.constraint(equalTo: chromeTopAnchor, constant: pinnedChromeTopConstant)
+        let top = hostingController.view.topAnchor.constraint(equalTo: contentContainerView.topAnchor, constant: pinnedChromeTopConstant)
         chromeTopConstraint = top
         let height = hostingController.view.heightAnchor.constraint(equalToConstant: currentChromeReservedHeight)
         chromeHeightConstraint = height
@@ -507,15 +503,12 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     private func setUpContentContainer() {
         view.addSubview(contentContainerView)
         contentContainerView.translatesAutoresizingMaskIntoConstraints = false
-        let topAnchor: NSLayoutYAxisAnchor = isFloatingUIEnabled
-            ? view.topAnchor
-            : view.safeAreaLayoutGuide.topAnchor
 
         contentContainerViewLeadingConstraint = contentContainerView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor)
         contentContainerViewLeadingConstraint?.isActive = true
         contentContainerViewTrailingConstraint = contentContainerView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor)
         contentContainerViewTrailingConstraint?.isActive = true
-        contentContainerView.topAnchor.constraint(equalTo: topAnchor).isActive = true
+        contentContainerView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor).isActive = true
 
         NSLayoutConstraint.activate([
             contentContainerView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)

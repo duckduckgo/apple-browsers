@@ -721,7 +721,6 @@ private extension MainViewController {
         // override the `UIView`-default-visible borders on a freshly-bound tab.
         tab.borderView.isTopVisible = false
         tab.borderView.isBottomVisible = false
-        viewCoordinator.ensureNavContainerOwnershipForUnifiedToggleInputIfNeeded()
         reconcileToolbarVisibilityForCurrentTab()
         reconcileAIChromeForCurrentTab()
 
@@ -839,7 +838,6 @@ private extension MainViewController {
     func refreshAIChatTabChatHeaderSubscriptionState() {
         Task { @MainActor [weak self] in
             let isActive = (try? await AppDependencyProvider.shared.subscriptionManager.isFeatureEnabled(.paidAIChat)) ?? false
-            self?.isPaidAIChatEnabledForSwipe = isActive
             self?.aiChatTabChatHeaderView?.configure(isSubscriptionActive: isActive)
         }
     }
@@ -1061,7 +1059,6 @@ extension MainViewController {
                 // Reconcile against the *current* tab — idempotent and AI-tab paths re-hide
                 // the toolbar on their own.
                 self.reconcileToolbarVisibilityForCurrentTab()
-                self.reconcileFloatingLayoutAfterUTIExit()
                 completion?()
             }
         )
@@ -1104,7 +1101,6 @@ extension MainViewController {
     /// `.preserveCurrentPresentation` and skips the auto-expand.
     func dismissFocusedOmnibarToAITabChrome(coordinator: UnifiedToggleInputCoordinator,
                                             completion: (() -> Void)? = nil) {
-        viewCoordinator.ensureNavContainerOwnershipForUnifiedToggleInputIfNeeded()
         viewCoordinator.unifiedInputContentContainer.isHidden = true
         viewCoordinator.showAIChatTabChatHeader()
         viewCoordinator.animateUnifiedToggleInputOmnibarDismissLayout()

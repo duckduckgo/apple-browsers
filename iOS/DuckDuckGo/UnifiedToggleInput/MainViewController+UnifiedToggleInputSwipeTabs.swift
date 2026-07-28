@@ -31,13 +31,6 @@ extension MainViewController {
             viewCoordinator.unifiedToggleInputContainer,
             viewCoordinator.aiChatTabChatHeaderContainer,
         ]
-        swipeTabsCoordinator?.liveSwipeChromeViews = [
-            viewCoordinator.unifiedToggleInputContainer,
-            viewCoordinator.aiChatTabChatHeaderContainer,
-            viewCoordinator.unifiedInputContentContainer,
-            viewCoordinator.navigationBarCollectionView,
-            viewCoordinator.toolbar,
-        ]
     }
 
     private func makeSwipeTabsPanGesture() -> UnifiedInputSwipeTabsPanGestureRecognizer {

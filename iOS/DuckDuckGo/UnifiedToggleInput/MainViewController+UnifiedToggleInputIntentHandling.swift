@@ -58,8 +58,7 @@ extension MainViewController {
         return textField.convert(placeholderRect.origin, to: nil).x
     }
 
-    /// Window-space frame of the resting omnibar pill (the visible search-area container). Used by
-    /// the bottom-position UTI to disguise its collapsed pose as the floating omnibar at hand-off.
+    /// Window-space frame of the resting omnibar pill (the visible search-area container).
     func currentOmnibarPillWindowFrame() -> CGRect? {
         guard let pill = viewCoordinator.omniBar.barView.searchContainer,
               omnibarChromeIsOnScreenForHandoff(pill) else { return nil }
@@ -79,18 +78,6 @@ extension MainViewController {
         return attributed.attribute(.foregroundColor, at: 0, effectiveRange: nil) as? UIColor
     }
 
-    func reconcileFloatingLayoutAfterUTIExit() {
-        guard FloatingUILayoutPolicy.shouldHostOmnibarInFloatingToolbar(
-            isFloatingUIEnabled: isFloatingUIEnabled,
-            addressBarPosition: appSettings.currentAddressBarPosition,
-            isUnifiedToggleInputVisible: false,
-            isMinimalChromeLayout: isInMinimalChromeLayout
-        ),
-              currentTab?.isAITab != true else {
-            return
-        }
-        refreshViewsBasedOnAddressBarPosition(appSettings.currentAddressBarPosition)
-    }
 }
 
 private extension MainViewController {
@@ -110,7 +97,6 @@ private extension MainViewController {
             applyUnifiedInputChromeBackground(.aiTabChatChromeHidden)
             viewCoordinator.anchorContentContainerToInputTop()
         }
-        viewCoordinator.ensureNavContainerOwnershipForUnifiedToggleInputIfNeeded()
         viewCoordinator.showUnifiedToggleInput()
         if let coordinator = unifiedToggleInputCoordinator,
            coordinator.isAITabState,
@@ -181,7 +167,6 @@ private extension MainViewController {
     /// updated. Whether this snaps or animates is decided by the caller (which wraps this in
     /// `UTIAnimationStyle.perform`).
     private func applyAITabExpandedPose() {
-        viewCoordinator.ensureNavContainerOwnershipForUnifiedToggleInputIfNeeded()
         viewCoordinator.showUnifiedToggleInput()
         guard let coordinator = unifiedToggleInputCoordinator else { return }
         let renderState = coordinator.computeRenderState()
@@ -202,17 +187,12 @@ private extension MainViewController {
 
         coordinator.contentViewController.refreshSuggestionsCaches()
 
-        // Measure the resting omnibar pill + placeholder text before ownership transfer detaches the
-        // omnibar from the toolbar (bottom floating), so the collapsed UTI pose and its text can
-        // align to them with no hand-off snap. Measured live first; once detached it reads `nil`.
+        // Measure before the transition so the collapsed UTI pose can align without snapping.
         let omnibarPillWindowFrame = coordinator.cardPosition.isBottom ? currentOmnibarPillWindowFrame() : nil
         coordinator.viewController.omnibarPillWindowFrame = omnibarPillWindowFrame
         let omnibarPlaceholderWindowX = currentOmnibarPlaceholderWindowX()
-        // Cached so the symmetric dismiss can slide the text back onto the omnibar even though the
-        // omnibar is no longer in the toolbar by then.
+        // Cached so the symmetric dismiss can slide the text back onto the omnibar.
         coordinator.cachedOmnibarPlaceholderWindowX = omnibarPlaceholderWindowX
-
-        viewCoordinator.ensureNavContainerOwnershipForUnifiedToggleInputIfNeeded()
 
         let omnibarPlaceholderColor = currentOmnibarPlaceholderColor()
         let utiPlaceholderColor = coordinator.viewController.defaultPlaceholderColor
@@ -293,8 +273,7 @@ private extension MainViewController {
             coordinator?.clearText()
         }
         if animated {
-            // Bottom floating: the omnibar is detached from the toolbar by now, so fall back to the
-            // placeholder X captured at focus (live read is nil).
+            // Fall back to the placeholder position captured at focus if the live view is detached.
             let omnibarPlaceholderWindowX = currentOmnibarPlaceholderWindowX() ?? coordinator?.cachedOmnibarPlaceholderWindowX
             let omnibarPlaceholderColor = currentOmnibarPlaceholderColor()
             let utiPlaceholderColor = coordinator?.viewController.defaultPlaceholderColor
@@ -327,7 +306,6 @@ private extension MainViewController {
         resetUnifiedInputContentAfterHide()
         // Avoid leaking text into the next input session.
         unifiedToggleInputCoordinator?.clearText()
-        reconcileFloatingLayoutAfterUTIExit()
     }
 
     /// Shared intent teardown; restores the NTP logo/favorites hidden at focus, mirroring the animated back-button dismiss (idempotent).
@@ -347,7 +325,6 @@ private extension MainViewController {
             recomputeNavigationBarContainerHeightIfNeeded()
             return
         }
-        viewCoordinator.ensureNavContainerOwnershipForUnifiedToggleInputIfNeeded()
         applyBottomOmnibarAnchor(state)
         viewCoordinator.navigationBarContainer.superview?.layoutIfNeeded()
         recomputeNavigationBarContainerHeightIfNeeded()

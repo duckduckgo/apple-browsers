@@ -694,20 +694,14 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
 
     final class SearchAreaContainerView: UIView { }
 
-    // Leaving this as UIView because it could be SearchAreaContainerView or CompositeShadowView
     private let searchAreaContainerView: UIView
-
-    /// Non-nil only when floating UI is disabled; owns the resting pill's composite drop shadow.
-    /// When floating UI is enabled the pill background/shadow is provided by the glass (top) or
-    /// toolbar capsule (bottom), so no `CompositeShadowView` is added to the hierarchy.
-    private let searchAreaShadowView: CompositeShadowView?
-
-    final class FloatingGlassContentHostView: UIView { }
-    private let floatingGlassContentHostView = FloatingGlassContentHostView()
+    private let searchAreaShadowView: CompositeShadowView
+    private var chromeContentContainerView: UIView {
+        searchAreaContainerView
+    }
 
     private var omniBarLongPressInteraction: UIContextMenuInteraction?
     private let defaultBackgroundColor = UIColor(designSystemColor: .background)
-    private let isFloatingUIEnabled: Bool
     fileprivate var savedBarChromeBackgroundColor: UIColor?
     fileprivate var savedBarViewBackgroundColor: UIColor?
 
@@ -721,68 +715,14 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     final class TopLevelStackView: UIStackView { }
     private let stackView = TopLevelStackView()
 
-    private lazy var glassEffect: UIVisualEffectView = makeGlassEffectView()
-
-    private func makeGlassEffectView() -> UIVisualEffectView {
-        let view: UIVisualEffectView
-        if #available(iOS 26.0, *) {
-            let effect = UIGlassEffect()
-            effect.tintColor = fireMode ? UIColor(singleUseColor: .fireModeBackground) : nil
-            view = UIVisualEffectView(effect: effect)
-            view.cornerConfiguration = .capsule()
-        } else {
-            view = UIVisualEffectView()
-        }
-        view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-        return view
-    }
-    private var floatingHostToContainerConstraints: [NSLayoutConstraint] = []
-    private var floatingHostToGlassContentConstraints: [NSLayoutConstraint] = []
-    private var chromeContentContainerView: UIView {
-        isFloatingUIEnabled ? floatingGlassContentHostView : searchAreaContainerView
-    }
-
-    /// Glass capsules behind the leading/trailing button groups in floating UI minimal chrome (the
-    /// field keeps its own glass); rebuilt on the fly since `UIGlassEffect`'s tint is fixed at init.
-    private var leadingButtonsGlassView: UIVisualEffectView?
-    private var trailingButtonsGlassView: UIVisualEffectView?
-    private var isFloatingMinimalChromeBar = false
-    /// Fire-mode state the capsules were built with, so their fixed tint is only rebuilt on change.
-    private var minimalChromeGlassFireMode = false
-
-    private let opaqueEffect: UIVisualEffectView = {
-        let view: UIVisualEffectView
-        if #available(iOS 26.0, *) {
-            view = UIVisualEffectView(effect: UIBlurEffect(style: .systemUltraThinMaterial))
-            view.cornerConfiguration = .capsule()
-        } else {
-            view = UIVisualEffectView()
-        }
-        view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-        return view
-    }()
-
-    static func create(isFloatingUIEnabled: Bool) -> Self {
-        Self.init(isFloatingUIEnabled: isFloatingUIEnabled)
-    }
-
     static func create() -> Self {
-        Self.init(isFloatingUIEnabled: false)
+        Self.init()
     }
 
-    init(isFloatingUIEnabled: Bool) {
-        self.isFloatingUIEnabled = isFloatingUIEnabled
-        if isFloatingUIEnabled {
-            // Floating UI supplies its own background and shadow (top: glass capsule, bottom:
-            // toolbar capsule), so the pill must not carry a CompositeShadowView.
-            self.searchAreaContainerView = SearchAreaContainerView()
-            self.searchAreaContainerView.backgroundColor = .clear
-            self.searchAreaShadowView = nil
-        } else {
-            let shadowView = CompositeShadowView.defaultShadowView()
-            self.searchAreaContainerView = shadowView
-            self.searchAreaShadowView = shadowView
-        }
+    init() {
+        let shadowView = CompositeShadowView.defaultShadowView()
+        searchAreaContainerView = shadowView
+        searchAreaShadowView = shadowView
         super.init(frame: CGRect(x: 0, y: 0, width: 300, height: Metrics.height))
 
         setUpSubviews()
@@ -801,174 +741,6 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         fatalError("init(coder:) has not been implemented")
     }
 
-    func makeGlass() {
-        guard isFloatingUIEnabled else {
-            makeOpaque()
-            return
-        }
-        opaqueEffect.removeFromSuperview()
-
-        // `UIGlassEffect`'s tint is fixed at construction time, so the glass view is rebuilt on the
-        // fly to reflect the current fire-mode tint.
-        floatingHostToGlassContentConstraints.forEach { $0.isActive = false }
-        floatingHostToContainerConstraints.forEach { $0.isActive = false }
-        floatingGlassContentHostView.removeFromSuperview()
-        glassEffect.removeFromSuperview()
-
-        glassEffect = makeGlassEffectView()
-        glassEffect.frame = searchAreaContainerView.bounds
-        searchAreaContainerView.insertSubview(glassEffect, at: 0)
-
-        if fireMode {
-            // We don't want the text field to adapt to content behind the omnibar, so making it a
-            // sibling of the glass (pinned to the container) prevents that.
-            searchAreaContainerView.addSubview(floatingGlassContentHostView)
-            floatingHostToContainerConstraints.forEach { $0.isActive = true }
-        } else {
-            // As a child of the glass the text color will automatically adapt to the content behind
-            // the omnibar.
-            glassEffect.contentView.addSubview(floatingGlassContentHostView)
-            floatingHostToGlassContentConstraints = [
-                floatingGlassContentHostView.topAnchor.constraint(equalTo: glassEffect.contentView.topAnchor),
-                floatingGlassContentHostView.leadingAnchor.constraint(equalTo: glassEffect.contentView.leadingAnchor),
-                floatingGlassContentHostView.trailingAnchor.constraint(equalTo: glassEffect.contentView.trailingAnchor),
-                floatingGlassContentHostView.bottomAnchor.constraint(equalTo: glassEffect.contentView.bottomAnchor)
-            ]
-            NSLayoutConstraint.activate(floatingHostToGlassContentConstraints)
-        }
-
-        // Clear any opaque fill left by a prior `makeOpaque()` so the glass shows through.
-        setFieldBackgroundColor(.clear)
-    }
-
-    func makeOpaque() {
-        if isFloatingUIEnabled {
-            floatingHostToGlassContentConstraints.forEach { $0.isActive = false }
-            if floatingGlassContentHostView.superview !== searchAreaContainerView {
-                floatingGlassContentHostView.removeFromSuperview()
-                searchAreaContainerView.addSubview(floatingGlassContentHostView)
-            }
-            floatingHostToContainerConstraints.forEach { $0.isActive = true }
-        }
-        glassEffect.removeFromSuperview()
-        opaqueEffect.removeFromSuperview()
-
-        setFieldBackgroundColor(isFloatingUIEnabled
-            ? opaqueFieldBackgroundColor
-            : UIColor(designSystemColor: .urlBar))
-    }
-
-    func restoreFloatingFieldAppearance() {
-        // The bottom floating field can lose its opaque fill after an omnibar notification animation
-        // ends, dropping contrast with the toolbar. Re-assert the resting opaque appearance. Top glass
-        // and non-floating are unaffected.
-        guard isFloatingUIEnabled, !shouldUseFloatingTopGlass else { return }
-        makeOpaque()
-    }
-
-    func setFloatingMinimalChromeBar(_ enabled: Bool) {
-        guard isFloatingUIEnabled, isFloatingMinimalChromeBar != enabled else { return }
-        isFloatingMinimalChromeBar = enabled
-
-        if enabled {
-            installMinimalChromeButtonGlass()
-            // The field is its own glass group, so use top-position glass regardless of position.
-            makeGlass()
-        } else {
-            removeMinimalChromeButtonGlass()
-            // Restore the standard per-position field appearance.
-            if shouldUseFloatingTopGlass {
-                makeGlass()
-            } else {
-                makeOpaque()
-            }
-        }
-        setNeedsLayout()
-    }
-
-    private func installMinimalChromeButtonGlass() {
-        removeMinimalChromeButtonGlass()
-        leadingButtonsGlassView = wrapButtonContainerInGlass(leadingButtonsContainer)
-        trailingButtonsGlassView = wrapButtonContainerInGlass(trailingButtonsContainer)
-        minimalChromeGlassFireMode = fireMode
-    }
-
-    private func removeMinimalChromeButtonGlass() {
-        if let leadingButtonsGlassView {
-            unwrapButtonContainer(leadingButtonsContainer, from: leadingButtonsGlassView)
-        }
-        if let trailingButtonsGlassView {
-            unwrapButtonContainer(trailingButtonsContainer, from: trailingButtonsGlassView)
-        }
-        leadingButtonsGlassView = nil
-        trailingButtonsGlassView = nil
-    }
-
-    /// Reparents a button container into a glass `contentView` so its buttons adapt to the glass.
-    private func wrapButtonContainerInGlass(_ container: UIStackView) -> UIVisualEffectView? {
-        guard let index = stackView.arrangedSubviews.firstIndex(of: container) else { return nil }
-
-        let glass = makeMinimalChromeGlassView()
-        glass.translatesAutoresizingMaskIntoConstraints = false
-
-        stackView.removeArrangedSubview(container)
-        container.removeFromSuperview()
-        stackView.insertArrangedSubview(glass, at: index)
-
-        glass.contentView.addSubview(container)
-        NSLayoutConstraint.activate([
-            container.topAnchor.constraint(equalTo: glass.contentView.topAnchor),
-            container.leadingAnchor.constraint(equalTo: glass.contentView.leadingAnchor),
-            container.trailingAnchor.constraint(equalTo: glass.contentView.trailingAnchor),
-            container.bottomAnchor.constraint(equalTo: glass.contentView.bottomAnchor)
-        ])
-        return glass
-    }
-
-    /// Restores a button container back into the stack in place of its glass wrapper.
-    private func unwrapButtonContainer(_ container: UIStackView, from glass: UIVisualEffectView) {
-        let index = stackView.arrangedSubviews.firstIndex(of: glass)
-        container.removeFromSuperview()
-        glass.removeFromSuperview()
-        if let index {
-            stackView.insertArrangedSubview(container, at: index)
-        } else {
-            stackView.addArrangedSubview(container)
-        }
-    }
-
-    private func makeMinimalChromeGlassView() -> UIVisualEffectView {
-        let view: UIVisualEffectView
-        if #available(iOS 26.0, *) {
-            let effect = UIGlassEffect(style: .regular)
-            effect.tintColor = fireMode ? UIColor(singleUseColor: .fireModeBackground) : nil
-            view = UIVisualEffectView(effect: effect)
-            view.cornerConfiguration = .capsule()
-        } else {
-            view = UIVisualEffectView(effect: UIBlurEffect(style: .systemThinMaterial))
-            view.layer.cornerCurve = .continuous
-            view.clipsToBounds = true
-        }
-        return view
-    }
-
-    /// Rebuilds the button glass when fire mode changes, since `UIGlassEffect`'s tint is fixed at init.
-    private func refreshMinimalChromeGlassTint() {
-        guard isFloatingMinimalChromeBar,
-              leadingButtonsGlassView != nil,
-              minimalChromeGlassFireMode != fireMode else { return }
-        installMinimalChromeButtonGlass()
-    }
-
-    /// Applies the field fill without animation. The address-bar move animation only animates the
-    /// bar's position; the fill must snap so it never cross-fades through an intermediate colour
-    /// (e.g. the stale-position fill computed before `isUsingSmallTopSpacing` is updated).
-    private func setFieldBackgroundColor(_ color: UIColor?) {
-        UIView.performWithoutAnimation {
-            searchAreaContainerView.backgroundColor = color
-        }
-    }
-
     private func setUpSubviews() {
         addSubview(stackView)
 
@@ -984,12 +756,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
 
         searchAreaAlignmentView.addSubview(searchAreaContainerView)
 
-        if isFloatingUIEnabled {
-            floatingGlassContentHostView.translatesAutoresizingMaskIntoConstraints = false
-            searchAreaContainerView.addSubview(floatingGlassContentHostView)
-        }
-
-        let chromeContentContainerView = self.chromeContentContainerView
+        let chromeContentContainerView = searchAreaContainerView
         chromeContentContainerView.addSubview(searchAreaView)
         chromeContentContainerView.addSubview(omniBarProgressView)
 
@@ -1051,22 +818,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         let trailingConstraint = stackView.trailingAnchor.constraint(equalTo: safeAreaLayoutGuide.trailingAnchor, constant: -Metrics.textAreaHorizontalPadding)
         stackViewLeadingConstraint = leadingConstraint
         stackViewTrailingConstraint = trailingConstraint
-        if isFloatingUIEnabled {
-            floatingHostToContainerConstraints = [
-                floatingGlassContentHostView.topAnchor.constraint(equalTo: searchAreaContainerView.topAnchor),
-                floatingGlassContentHostView.leadingAnchor.constraint(equalTo: searchAreaContainerView.leadingAnchor),
-                floatingGlassContentHostView.trailingAnchor.constraint(equalTo: searchAreaContainerView.trailingAnchor),
-                floatingGlassContentHostView.bottomAnchor.constraint(equalTo: searchAreaContainerView.bottomAnchor)
-            ]
-            // `floatingHostToGlassContentConstraints` are (re)built in `makeGlass()` against the
-            // freshly-created glass view's `contentView`, since the glass view is recreated on the fly.
-            floatingHostToGlassContentConstraints = []
-            NSLayoutConstraint.activate(floatingHostToContainerConstraints)
-        } else {
-            floatingHostToContainerConstraints = []
-            floatingHostToGlassContentConstraints = []
-        }
-        let chromeContentContainerView = self.chromeContentContainerView
+        let chromeContentContainerView = searchAreaContainerView
 
         NSLayoutConstraint.activate([
             leadingConstraint,
@@ -1144,7 +896,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
         setContentHuggingPriority(.defaultLow, for: .horizontal)
 
-        backgroundColor = isFloatingUIEnabled ? .clear : defaultBackgroundColor
+        backgroundColor = defaultBackgroundColor
 
         searchAreaAlignmentView.setContentHuggingPriority(.defaultLow, for: .horizontal)
         searchAreaAlignmentView.setContentCompressionResistancePriority(.required, for: .horizontal)
@@ -1269,41 +1021,18 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     }
 
     private func updateFireModeAppearance() {
-        if shouldUseFloatingTopGlass {
-            makeGlass()
-            activeOutlineView.layer.borderColor = fireMode
-                ? UIColor(singleUseColor: .fireModeAccent).cgColor
-                : UIColor(designSystemColor: .accentPrimary).cgColor
-        } else if isFloatingUIEnabled {
-            setFieldBackgroundColor(opaqueFieldBackgroundColor)
-            activeOutlineView.layer.borderColor = fireMode
-                ? UIColor(singleUseColor: .fireModeAccent).cgColor
-                : UIColor(designSystemColor: .accentPrimary).cgColor
-        } else {
-            // Floating UI off (production): preserve the original fire-mode fill so the
-            // fire-mode omnibar colour is unchanged from `main`.
-            setFieldBackgroundColor(fireMode
-                ? UIColor(singleUseColor: .fireModeCardBackground)
-                : restingFieldBackgroundColor)
-            activeOutlineView.layer.borderColor = fireMode
-                ? UIColor(singleUseColor: .fireModeAccent).cgColor
-                : UIColor(designSystemColor: .accentPrimary).cgColor
-        }
+        searchAreaContainerView.backgroundColor = fireMode
+            ? UIColor(singleUseColor: .fireModeCardBackground)
+            : UIColor(designSystemColor: .backgroundTertiary)
+        activeOutlineView.layer.borderColor = fireMode
+            ? UIColor(singleUseColor: .fireModeAccent).cgColor
+            : UIColor(designSystemColor: .accentPrimary).cgColor
         let style: UIUserInterfaceStyle = fireMode ? .dark : .unspecified
         searchAreaContainerView.subviews.forEach { $0.overrideUserInterfaceStyle = style }
-        // When floating, the chrome (and the address text) lives inside `floatingGlassContentHostView`,
-        // which in non-fire mode is reparented into `glassEffect.contentView` and so isn't reached by
-        // the loop above. Apply the style directly so it resets to `.unspecified` in non-fire mode and
-        // the text can adapt to the glass, rather than staying forced-dark from a prior fire session.
-        if isFloatingUIEnabled {
-            floatingGlassContentHostView.overrideUserInterfaceStyle = style
-        }
-        refreshMinimalChromeGlassTint()
         progressView?.updateFireModeAppearance(fireMode: fireMode)
     }
 
     private func updateShadows() {
-        guard let searchAreaShadowView else { return }
         if isActiveState {
             searchAreaShadowView.applyActiveShadow()
         } else {
@@ -1420,7 +1149,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     }
 
     func moveTransitionCompleted() {
-        backgroundColor = isFloatingUIEnabled ? .clear : defaultBackgroundColor
+        backgroundColor = defaultBackgroundColor
         updateFireModeAppearance()
     }
 
@@ -1458,12 +1187,6 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         if let target = overflowTarget(at: point, with: event) {
             let localPoint = target.convert(point, from: self)
             return target.hitTest(localPoint, with: event) ?? target
-        }
-        if shouldUseFloatingTopGlass {
-            let localPoint = floatingGlassContentHostView.convert(point, from: self)
-            if let target = floatingGlassContentHostView.hitTest(localPoint, with: event) {
-                return target
-            }
         }
         return super.hitTest(point, with: event)
     }
@@ -1652,54 +1375,11 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     }
 
     private func applyOmnibarCornerStyle() {
-        let cornerRadius: CGFloat
-        if isFloatingUIEnabled && isUsingSmallTopSpacing {
-            cornerRadius = searchAreaContainerView.bounds.height / 2
-        } else {
-            cornerRadius = Metrics.cornerRadius
-        }
-
+        let cornerRadius = Metrics.cornerRadius
         omniBarProgressView.layer.cornerRadius = cornerRadius
         searchAreaContainerView.layer.cornerRadius = cornerRadius
         searchAreaView.layer.cornerRadius = cornerRadius
         activeOutlineView.layer.cornerRadius = cornerRadius + Metrics.activeBorderWidth
-
-        // The pre-iOS 26 blur fallback needs an explicit capsule radius (iOS 26 uses `.capsule()`).
-        if #unavailable(iOS 26.0) {
-            for glass in [leadingButtonsGlassView, trailingButtonsGlassView].compactMap({ $0 }) {
-                glass.layer.cornerRadius = glass.bounds.height / 2
-            }
-        }
-    }
-}
-
-private extension DefaultOmniBarView {
-    /// True when the field itself is a glass surface: top position, or any position in minimal chrome.
-    var shouldUseFloatingTopGlass: Bool {
-        isFloatingUIEnabled && (isFloatingMinimalChromeBar || !isUsingSmallTopSpacing)
-    }
-
-    /// The floating omnibar field when hosted at the bottom (embedded in the toolbar's glass
-    /// capsule). Unlike the top position it isn't a glass surface itself, so it takes an explicit
-    /// resting fill rather than `.backgroundTertiary`.
-    var isBottomFloatingField: Bool {
-        isFloatingUIEnabled && isUsingSmallTopSpacing
-    }
-
-    /// Resting field fill: the bottom floating field is `T-Input/Resting` so it reads clearly
-    /// against the toolbar's Liquid Glass capsule (no shadow needed); otherwise the default fill.
-    var restingFieldBackgroundColor: UIColor {
-        isBottomFloatingField
-            ? UIColor(singleUseColor: .floatingAddressBarBackground)
-            : UIColor(designSystemColor: .backgroundTertiary)
-    }
-
-    /// The opaque field fill used when the field isn't a glass surface (e.g. the bottom floating
-    /// field). In fire mode it takes the fire background so it matches the tinted top glass.
-    var opaqueFieldBackgroundColor: UIColor {
-        fireMode
-            ? UIColor(singleUseColor: .fireModeBackground)
-            : restingFieldBackgroundColor
     }
 }
 
@@ -1830,7 +1510,7 @@ extension DefaultOmniBarView {
             savedBarViewBackgroundColor = backgroundColor
         }
         searchAreaContainerView.backgroundColor = .clear
-        searchAreaShadowView?.applyShadowOpacityMultiplier(0)
+        searchAreaShadowView.applyShadowOpacityMultiplier(0)
         backgroundColor = .clear
         textField.alpha = 0
     }
@@ -1844,7 +1524,7 @@ extension DefaultOmniBarView {
             backgroundColor = saved
             savedBarViewBackgroundColor = nil
         }
-        searchAreaShadowView?.applyShadowOpacityMultiplier(1)
+        searchAreaShadowView.applyShadowOpacityMultiplier(1)
         textField.alpha = 1
     }
 
@@ -2034,7 +1714,7 @@ extension DefaultOmniBarView {
         applyTextViewVisibility()
 
         guard animated else {
-            searchAreaShadowView?.applyShadowOpacityMultiplier(1)
+            searchAreaShadowView.applyShadowOpacityMultiplier(1)
             aiChatSendButton.alpha = isSearchAreaExpanded ? 1 : 0
             modelPickerButton.alpha = (isSearchAreaExpanded && canShowModelPicker) ? 1 : 0
             reasoningPickerButton.alpha = (isSearchAreaExpanded && canShowReasoningPicker) ? 1 : 0
@@ -2075,7 +1755,7 @@ extension DefaultOmniBarView {
         layoutIfNeeded()
 
         if isSearchAreaExpanded {
-            searchAreaShadowView?.applyShadowOpacityMultiplier(0)
+            searchAreaShadowView.applyShadowOpacityMultiplier(0)
             applyExpansionClipping()
         }
 
@@ -2084,7 +1764,7 @@ extension DefaultOmniBarView {
 
         UIView.animate(withDuration: Metrics.expansionAnimationDuration, delay: 0, options: [.curveEaseInOut, .beginFromCurrentState]) {
             if self.isSearchAreaExpanded {
-                self.searchAreaShadowView?.applyShadowOpacityMultiplier(1)
+                self.searchAreaShadowView.applyShadowOpacityMultiplier(1)
                 self.aiChatSendButton.alpha = 1
                 self.modelPickerButton.alpha = self.canShowModelPicker ? 1 : 0
                 self.reasoningPickerButton.alpha = self.canShowReasoningPicker ? 1 : 0
@@ -2092,7 +1772,7 @@ extension DefaultOmniBarView {
                 self.selectedToolChipView.alpha = self.canShowSelectedToolBadge ? 1 : 0
                 self.attachButton.alpha = self.canShowAttachButton ? 1 : 0
             } else {
-                self.searchAreaShadowView?.applyShadowOpacityMultiplier(0)
+                self.searchAreaShadowView.applyShadowOpacityMultiplier(0)
                 self.aiChatSendButton.alpha = 0
                 self.modelPickerButton.alpha = 0
                 self.reasoningPickerButton.alpha = 0
@@ -2108,7 +1788,7 @@ extension DefaultOmniBarView {
             }
             if !self.isSearchAreaExpanded {
                 self.applyExpansionClipping()
-                self.searchAreaShadowView?.applyShadowOpacityMultiplier(1)
+                self.searchAreaShadowView.applyShadowOpacityMultiplier(1)
                 self.aiChatSendButton.isHidden = true
                 self.modelPickerButton.isHidden = true
                 self.reasoningPickerButton.isHidden = true
@@ -2118,7 +1798,7 @@ extension DefaultOmniBarView {
                 self.onCollapseAnimationCompleted?()
                 self.onCollapseAnimationCompleted = nil
             } else {
-                self.searchAreaShadowView?.applyShadowOpacityMultiplier(1)
+                self.searchAreaShadowView.applyShadowOpacityMultiplier(1)
                 self.onSearchAreaExpandedStateChanged?(true)
             }
             if self.isSearchAreaExpanded {
@@ -2457,7 +2137,7 @@ private struct DefaultOmniBarViewGallery: View {
 
     var body: some View {
         rebrandOverride.apply()
-        return DefaultOmniBarViewRepresentable(omniBarView: DefaultOmniBarView(isFloatingUIEnabled: false))
+        return DefaultOmniBarViewRepresentable(omniBarView: DefaultOmniBarView())
             .frame(width: 360, height: 60)
             .padding()
     }

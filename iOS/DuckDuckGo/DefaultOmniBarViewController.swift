@@ -31,8 +31,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         omniDelegate?.isSuggestionTrayVisible() == true
     }
 
-    private let isFloatingUIEnabled: Bool
-    private lazy var omniBarView = DefaultOmniBarView.create(isFloatingUIEnabled: isFloatingUIEnabled)
+    private lazy var omniBarView = DefaultOmniBarView.create()
     private weak var editingStateViewController: OmniBarEditingStateViewController?
     private var cancellables = Set<AnyCancellable>()
     private let sessionStateMetrics = SessionStateMetrics(storage: UserDefaults.standard)
@@ -62,8 +61,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         )
     }
 
-    init(dependencies: OmnibarDependencyProvider, isFloatingUIEnabled: Bool) {
-        self.isFloatingUIEnabled = isFloatingUIEnabled
+    override init(dependencies: OmnibarDependencyProvider) {
         super.init(dependencies: dependencies)
     }
 

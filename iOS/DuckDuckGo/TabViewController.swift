@@ -53,14 +53,6 @@ import PrivacyConfig
 import WebExtensions
 import DesignResourcesKitIcons
 
-enum WebViewPreviewSnapshotGeometry {
-
-    static func visibleRect(webViewBounds: CGRect) -> CGRect? {
-        guard webViewBounds.width > 0, webViewBounds.height > 0 else { return nil }
-        return webViewBounds
-    }
-}
-
 class TabViewController: UIViewController {
 
     private struct Constants {
@@ -873,30 +865,13 @@ class TabViewController: UIViewController {
 
     @objc
     private func onAddressBarPositionChanged() {
-        if FloatingUIManager(featureFlagger: featureFlagger).isFloatingUIEnabled {
-            borderView.isHidden = true
-            borderView.isTopVisible = false
-            borderView.isBottomVisible = false
-        } else {
-            borderView.isHidden = false
-            borderView.updateForAddressBarPosition(appSettings.currentAddressBarPosition)
-        }
+        borderView.isHidden = false
+        borderView.updateForAddressBarPosition(appSettings.currentAddressBarPosition)
         updateWebViewBottomAnchor()
     }
 
     private func updateWebViewBottomAnchor() {
         updateWebViewBottomAnchor(for: 1.0)
-    }
-
-    @discardableResult
-    private func setWebViewObscuredContentInsetsIfSupported(_ insets: UIEdgeInsets) -> Bool {
-        guard #available(iOS 26, *),
-              let webView,
-              webView.responds(to: #selector(setter: WKWebView.obscuredContentInsets)) else {
-            return false
-        }
-        webView.obscuredContentInsets = insets
-        return true
     }
 
     func updateWebViewBottomAnchor(for barsVisibilityPercent: CGFloat) {
@@ -928,67 +903,8 @@ class TabViewController: UIViewController {
         } else {
             webViewBottomAnchorConstraint?.constant = 0
         }
-        if FloatingUIManager(featureFlagger: featureFlagger).isFloatingUIEnabled {
-            borderView.bottomAlpha = 0
-            borderView.isHidden = true
-            borderView.isTopVisible = false
-            borderView.isBottomVisible = false
-
-            // AI tabs with the unified toggle input own their own bottom layout, so keep the web view
-            // full-bleed with no obscured region there.
-            let isUnifiedToggleInputAffectingLayout = isAITab && unifiedToggleInputFeature.isAvailable
-            let obscuredInsets: UIEdgeInsets = isUnifiedToggleInputAffectingLayout
-                ? .zero
-                : (chromeDelegate?.floatingWebViewObscuredInsets(for: barsVisibilityPercent) ?? .zero)
-            if setWebViewObscuredContentInsetsIfSupported(obscuredInsets) {
-                // Keep the web view full-bleed and reserve the chrome region via WebKit's public
-                // `obscuredContentInsets`, which positions page fixed/sticky elements and the layout
-                // viewport reliably (including on load) and lets content scroll behind the glass.
-                webViewBottomAnchorConstraint?.constant = 0
-                // `obscuredContentInsets` does not adjust the scroll view's content/indicator insets in
-                // UIKit, so scrollable content would rest behind the bars. Feed the chrome region
-                // (beyond the device safe area, which the scroll view already accounts for) into
-                // `additionalSafeAreaInsets` so at-rest content and scroll indicators clear the bars too.
-                let deviceSafeArea = view.window?.safeAreaInsets ?? .zero
-                additionalSafeAreaInsets = UIEdgeInsets(
-                    top: max(0, obscuredInsets.top - deviceSafeArea.top),
-                    left: 0,
-                    bottom: max(0, obscuredInsets.bottom - deviceSafeArea.bottom),
-                    right: 0
-                )
-            } else {
-                // iOS 18 fallback: physically resize the web view so its bottom edge sits at the top of
-                // the visible bottom chrome (toolbar -> capsule -> safe area), and inset the top via
-                // `additionalSafeAreaInsets`.
-                let bottomObscuredHeight = isUnifiedToggleInputAffectingLayout
-                    ? 0
-                    : (chromeDelegate?.floatingWebViewBottomObscuredHeight(for: barsVisibilityPercent) ?? 0)
-                webViewBottomAnchorConstraint?.constant = -bottomObscuredHeight
-                updateFloatingUISafeAreaInsets()
-            }
-        } else {
-            borderView.isHidden = false
-            borderView.bottomAlpha = AppWidthObserver.shared.isLargeWidth ? 0 : barsVisibilityPercent
-            // Defensive: clear any obscured insets left over if floating UI was toggled off at runtime.
-            setWebViewObscuredContentInsetsIfSupported(.zero)
-        }
-    }
-
-    /// In floating UI mode the web view underflows the top glass chrome, so communicate the top
-    /// omnibar-obscured region to WebKit via `additionalSafeAreaInsets` (top only). The bottom obscured
-    /// region is handled by resizing the web view instead (see `updateWebViewBottomAnchor`), which pins
-    /// bottom `position: fixed` elements reliably on load.
-    private func updateFloatingUISafeAreaInsets() {
-        // AI tabs with the unified toggle input manage their own top/bottom layout (the content
-        // container stays anchored to the chrome), so adding insets there would double-offset.
-        let isUnifiedToggleInputAffectingLayout = isAITab && unifiedToggleInputFeature.isAvailable
-        let insets = FloatingUILayoutPolicy.webViewAdditionalSafeAreaInsets(
-            addressBarPosition: appSettings.currentAddressBarPosition,
-            isUnifiedToggleInputAffectingLayout: isUnifiedToggleInputAffectingLayout,
-            omniBarHeight: chromeDelegate?.omniBar.barView.expectedHeight ?? 0
-        )
-        guard additionalSafeAreaInsets != insets else { return }
-        additionalSafeAreaInsets = insets
+        borderView.isHidden = false
+        borderView.bottomAlpha = AppWidthObserver.shared.isLargeWidth ? 0 : barsVisibilityPercent
     }
 
     private func observeNetPConnectionStatusChanges() {
@@ -1086,12 +1002,6 @@ class TabViewController: UIViewController {
         } else {
             webView = WebView(frame: view.bounds, configuration: configuration)
         }
-        if FloatingUIManager(featureFlagger: featureFlagger).isFloatingUIEnabled {
-            webView.scrollView.clipsToBounds = false
-            webView.clipsToBounds = false
-            outerContainer.clipsToBounds = false
-            webViewContainer.clipsToBounds = false
-        }
         textZoomCoordinator.onWebViewCreated(applyToWebView: webView)
         specialErrorPageNavigationHandler.attachWebView(webView)
 
@@ -1176,19 +1086,12 @@ class TabViewController: UIViewController {
 #endif
 
         borderView.insertSelf(into: webView)
-        updateBorderViewForFloatingUIIfNeeded()
+        updateBorderView()
     }
 
-    private func updateBorderViewForFloatingUIIfNeeded() {
-        if FloatingUIManager(featureFlagger: featureFlagger).isFloatingUIEnabled {
-            borderView.isHidden = true
-            borderView.isTopVisible = false
-            borderView.isBottomVisible = false
-            borderView.bottomAlpha = 0
-        } else {
-            borderView.isHidden = false
-            borderView.updateForAddressBarPosition(appSettings.currentAddressBarPosition)
-        }
+    private func updateBorderView() {
+        borderView.isHidden = false
+        borderView.updateForAddressBarPosition(appSettings.currentAddressBarPosition)
     }
 
     private func addObservers() {
@@ -2261,29 +2164,8 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     func preparePreview(completion: @escaping (UIImage?) -> Void) {
-        guard FloatingUIManager(featureFlagger: featureFlagger).isFloatingUIEnabled else {
-            DispatchQueue.main.async { [weak self] in
-                completion(self?.preparePreviewSync(afterScreenUpdates: true))
-            }
-            return
-        }
-
         DispatchQueue.main.async { [weak self] in
-            guard let self,
-                  let webView,
-                  let rect = WebViewPreviewSnapshotGeometry.visibleRect(
-                    webViewBounds: webView.bounds
-                  ) else {
-                completion(nil)
-                return
-            }
-
-            let configuration = WKSnapshotConfiguration()
-            configuration.rect = rect
-            configuration.afterScreenUpdates = true
-            webView.takeSnapshot(with: configuration) { image, _ in
-                completion(image)
-            }
+            completion(self?.preparePreviewSync(afterScreenUpdates: true))
         }
     }
 

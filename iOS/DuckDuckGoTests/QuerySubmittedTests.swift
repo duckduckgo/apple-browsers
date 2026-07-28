@@ -32,8 +32,7 @@ class QuerySubmittedTests: XCTestCase {
             voiceSearchHelper: MockVoiceSearchHelper(
                 isSpeechRecognizerAvailable: true,
                 voiceSearchEnabled: true)
-        ),
-        isFloatingUIEnabled: false
+        )
     )
 
     override func setUp() {

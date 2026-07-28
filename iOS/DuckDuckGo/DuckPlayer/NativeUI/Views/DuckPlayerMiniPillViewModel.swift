@@ -20,7 +20,6 @@
 import Foundation
 import Combine
 import SwiftUI
-import UIKit
 import WebKit
 
 final class DuckPlayerMiniPillViewModel: ObservableObject {
@@ -30,19 +29,15 @@ final class DuckPlayerMiniPillViewModel: ObservableObject {
     @Published var isVisible: Bool = false
     @Published var title: String = ""
     @Published var thumbnailURL: URL?
-    /// Downloaded thumbnail. Floating pill waits for this so it slides in as one unit.
-    @Published var thumbnailImage: UIImage?
     @Published var authorName: String?
 
     private(set) var shouldAnimate: Bool = true
     private var titleUpdateTask: Task<Void, Error>?
     private var oEmbedService: YoutubeOembedService
-    private let loadsThumbnailImage: Bool
 
-   init(onOpen: @escaping () -> Void, videoID: String, loadsThumbnailImage: Bool = false, oEmbedService: YoutubeOembedService = DefaultYoutubeOembedService()) {
+   init(onOpen: @escaping () -> Void, videoID: String, oEmbedService: YoutubeOembedService = DefaultYoutubeOembedService()) {
     self.onOpen = onOpen
     self.videoID = videoID
-    self.loadsThumbnailImage = loadsThumbnailImage
     self.oEmbedService = oEmbedService
     Task { try await updateMetadata() }
 
@@ -71,13 +66,7 @@ final class DuckPlayerMiniPillViewModel: ObservableObject {
         guard let response = await oEmbedService.fetchMetadata(for: videoID) else { return }
         self.title = response.title
         self.authorName = response.authorName
-        let url = URL(string: response.thumbnailUrl)
-        self.thumbnailURL = url
-
-        // Only the floating pill needs the downloaded image; legacy pill uses AnimatedAsyncImage.
-        if loadsThumbnailImage, let url {
-            self.thumbnailImage = await DuckPlayerThumbnailLoader.loadImage(from: url)
-        }
+        self.thumbnailURL = URL(string: response.thumbnailUrl)
     }
 
 }

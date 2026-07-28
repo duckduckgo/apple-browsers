@@ -2358,10 +2358,11 @@ final class AddressBarButtonsViewController: NSViewController {
 
     private func applyThemeToToggleControl(_ toggleControl: CustomToggleControl) {
         let isAppRebranded = themeManager.isAppRebranded
-        let backgroundColor = isAppRebranded ? NSColor(singleUseColor: .aiToggleBackground) : NSColor(designSystemColor: .controlRaisedBackdrop)
-        let borderColor = isAppRebranded ? NSColor(singleUseColor: .aiToggleBorder) : nil
-        let selectionBorder = isAppRebranded ? NSColor(singleUseColor: .aiToggleSelectionBorder) : NSColor(designSystemColor: .shadowSecondary)
-        let selectionBackgroundColor = isAppRebranded ? NSColor(singleUseColor: .aiToggleSelectionBackground) : NSColor(designSystemColor: .controlRaisedFillPrimary)
+        let backgroundColor = isAppRebranded ? NSColor(designSystemColor: .controlSubtleFillSecondary) : NSColor(designSystemColor: .controlRaisedBackdrop)
+        // The rebranded toggle deliberately has no visible border.
+        let borderColor: NSColor? = isAppRebranded ? .clear : nil
+        let selectionBorder = isAppRebranded ? NSColor(designSystemColor: .shadowTertiary) : NSColor(designSystemColor: .shadowSecondary)
+        let selectionBackgroundColor = NSColor(designSystemColor: .controlRaisedFillPrimary)
 
         toggleControl.backgroundColor = backgroundColor
         toggleControl.borderColor = borderColor

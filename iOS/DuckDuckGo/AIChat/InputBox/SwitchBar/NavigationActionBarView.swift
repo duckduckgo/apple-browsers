@@ -293,7 +293,7 @@ final class NavigationActionBarView: UIView {
             searchButton.isShadowHidden = !isFloating
             searchButton.setIcon(DesignSystemImages.Glyphs.Size24.voice)
             let backgroundColor = viewModel.isFireTab ? UIColor(singleUseColor: .fireModeAccent) : UIColor(designSystemColor: .accentPrimary)
-            let pressedBackgroundColor = viewModel.isFireTab ? UIColor(singleUseColor: .fireModeAccentTertiary) : UIColor(designSystemColor: .accentTertiary)
+            let pressedBackgroundColor = viewModel.isFireTab ? UIColor(designSystemColor: .accentFireTertiary) : UIColor(designSystemColor: .accentTertiary)
             searchButton.setColors(foreground: UIColor(designSystemColor: .accentContentPrimary),
                                    background: backgroundColor,
                                    pressedForeground: UIColor(designSystemColor: .accentContentPrimary),
@@ -322,7 +322,7 @@ final class NavigationActionBarView: UIView {
                                    pressedBackground: UIColor(designSystemColor: .surfaceSecondary))
         } else {
             let backgroundColor = viewModel.isFireTab ? UIColor(singleUseColor: .fireModeAccent) : UIColor(designSystemColor: .accentPrimary)
-            let pressedBackgroundColor = viewModel.isFireTab ? UIColor(singleUseColor: .fireModeAccentTertiary) : UIColor(designSystemColor: .accentTertiary)
+            let pressedBackgroundColor = viewModel.isFireTab ? UIColor(designSystemColor: .accentFireTertiary) : UIColor(designSystemColor: .accentTertiary)
             searchButton.setColors(foreground: UIColor(designSystemColor: .accentContentPrimary),
                                    background: backgroundColor,
                                    pressedForeground: UIColor(designSystemColor: .accentContentPrimary),

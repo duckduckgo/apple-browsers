@@ -126,7 +126,7 @@ final class CircularButton: UIButton {
             ? UIColor(singleUseColor: .fireModeAccent)
             : UIColor(designSystemColor: .accentPrimary)
         let pressedBackground = isFireTab
-            ? UIColor(singleUseColor: .fireModeAccentTertiary)
+            ? UIColor(designSystemColor: .accentFireTertiary)
             : UIColor(designSystemColor: .accentTertiary)
         setColors(foreground: activeForeground,
                   background: background,

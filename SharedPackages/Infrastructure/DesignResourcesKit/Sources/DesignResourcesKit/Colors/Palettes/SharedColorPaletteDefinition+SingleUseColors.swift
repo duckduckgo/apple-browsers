@@ -43,8 +43,6 @@ extension SharedColorPaletteDefinition {
             return DynamicColor(lightColor: .white, darkColor: .x161616)
         case .duckAIWebViewBackground:
             return DynamicColor(lightColor: .white, darkColor: .x111111)
-        case .unifiedToggleInputCardBackground:
-            return DynamicColor(lightColor: .white, darkColor: Color(0x3D3D3D))
         case .unifiedToggleInputStopButtonBackground:
             return DynamicColor(lightColor: .shade(0.06), darkColor: .tint(0.12))
         case .floatingAddressBarBackground:
@@ -62,8 +60,6 @@ extension SharedColorPaletteDefinition {
 
         case .fireModeAccentDark:
             return DynamicColor(staticColor: RebrandingColor.Mandarin.mandarin40)
-        case .fireModeAccentTertiary:
-            return DynamicColor(lightColor: RebrandingColor.Mandarin.mandarin70, darkColor: RebrandingColor.Mandarin.mandarin60)
         case .fireModeBackground:
             return DynamicColor(lightColor: Color(0x3D3D3D), darkColor: Color(0x080808))
         case .fireModeCardBackground:
@@ -76,14 +72,6 @@ extension SharedColorPaletteDefinition {
             return dynamicColor(for: rebrandingColor)
 
 #elseif os(macOS)
-        case .aiToggleBorder:
-            return DynamicColor(staticColor: .clear)
-        case .aiToggleBackground:
-            return controlSubtleFillSecondary
-        case .aiToggleSelectionBackground:
-            return controlRaisedFillPrimary
-        case .aiToggleSelectionBorder:
-            return shadowTertiary
 
         case .fireButtonGradientStart:
             return DynamicColor(staticColor: RebrandingColor.Mandarin.mandarin50)

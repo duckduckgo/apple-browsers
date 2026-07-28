@@ -44,8 +44,6 @@ public enum SingleUseColor {
     /// Duck.ai web view background color (#FFFFFF light / #111111 dark)
     case duckAIWebViewBackground
 
-    /// Card background for the unified toggle input bar (white in light, #3D3D3D in dark)
-    case unifiedToggleInputCardBackground
     case unifiedToggleInputAttachmentErrorBannerBackground
     case unifiedToggleInputAttachmentErrorText
     case unifiedToggleInputAttachmentErrorIcon
@@ -66,7 +64,6 @@ public enum SingleUseColor {
 
     // Fire Mode
     case fireModeAccentDark
-    case fireModeAccentTertiary
     case fireModeBackground
     case fireModeCardBackground
 
@@ -74,11 +71,6 @@ public enum SingleUseColor {
     case duckAIVoiceCellBackground
 
 #elseif os(macOS)
-
-    case aiToggleBorder
-    case aiToggleBackground
-    case aiToggleSelectionBackground
-    case aiToggleSelectionBorder
 
     case fireButtonGradientStart
     case fireButtonGradientEnd
@@ -132,7 +124,6 @@ extension SingleUseColor: CaseIterable {
             .whatsNewBackground,
             .duckAIContextualSheetBackground,
             .duckAIWebViewBackground,
-            .unifiedToggleInputCardBackground,
             .unifiedToggleInputAttachmentErrorBannerBackground,
             .unifiedToggleInputAttachmentErrorText,
             .unifiedToggleInputAttachmentErrorIcon,
@@ -141,7 +132,6 @@ extension SingleUseColor: CaseIterable {
             .toolbarButton,
             .fireModeAccent,
             .fireModeAccentDark,
-            .fireModeAccentTertiary,
             .fireModeBackground,
             .fireModeCardBackground,
             .duckAIVoiceCellBackground

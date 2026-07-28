@@ -524,7 +524,9 @@ final class UnifiedToggleInputView: UIView {
     }
 
     private func cardBackgroundColor(isFireTab: Bool) -> UIColor {
-        UIColor(singleUseColor: isFireTab ? .fireModeCardBackground : .unifiedToggleInputCardBackground)
+        isFireTab
+        ? UIColor(singleUseColor: .fireModeCardBackground)
+        : UIColor(designSystemColor: .backgroundTertiary)
     }
 
     // MARK: - Constraints
@@ -1348,7 +1350,7 @@ private extension UnifiedToggleInputView {
     private static func makeLegacyAITabAccessoryButton(image: UIImage?) -> UIButton {
         let button = UIButton(type: .system)
         button.setImage(image, for: .normal)
-        button.backgroundColor = UIColor(singleUseColor: .unifiedToggleInputCardBackground)
+        button.backgroundColor = UIColor(designSystemColor: .backgroundTertiary)
         button.layer.cornerRadius = Constants.aiTabCollapsedAccessorySize / 2
         configureAITabAccessoryButton(button)
         return button

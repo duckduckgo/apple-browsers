@@ -452,6 +452,12 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
             Pixel.fire(pixel: .settingsSyncRecoverSyncedDataTapped, includedParameters: [.appVersion])
         case .recoveryConfirmedTapped:
             Pixel.fire(pixel: .settingsSyncRecoveryConfirmedTapped, includedParameters: [.appVersion])
+        case .anotherDevicePromptShown:
+            Pixel.fire(pixel: .settingsSyncAnotherDevicePromptShown, includedParameters: [.appVersion])
+        case .anotherDevicePromptOptionTapped(let option):
+            Pixel.fire(pixel: .settingsSyncAnotherDevicePromptOptionTapped,
+                       withAdditionalParameters: [PixelParameters.syncPromptOption: option.rawValue],
+                       includedParameters: [.appVersion])
         }
     }
 

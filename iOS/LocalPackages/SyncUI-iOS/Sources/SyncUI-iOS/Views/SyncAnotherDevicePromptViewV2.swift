@@ -78,6 +78,9 @@ struct SyncAnotherDevicePromptViewV2: View {
             }
             .padding(.horizontal, 24)
             .navigationBarTitleDisplayMode(.inline)
+            .onAppear {
+                model.anotherDevicePromptAppeared()
+            }
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button {

@@ -189,6 +189,7 @@ public struct PixelParameters {
 
     // Sync
     public static let connectedDevices = "connected_devices"
+    public static let syncPromptOption = "option"
 
     // Persistent pixel
     public static let originalPixelTimestamp = "originalPixelTimestamp"

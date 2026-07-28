@@ -26,5 +26,27 @@
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion"]
+    },
+    "m_settings_sync_another_device_prompt_shown": {
+        "description": "Fired when the 'Sync another device / set up this device only' prompt (simplifiedSyncSetupV2) is shown after the user turns on the sync toggle.",
+        "owners": ["frosty"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_settings_sync_another_device_prompt_option_tapped": {
+        "description": "Fired when the user chooses an option on the Sync Another Device prompt (simplifiedSyncSetupV2).",
+        "owners": ["frosty"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "option",
+                "type": "string",
+                "description": "Which option the user tapped on the prompt.",
+                "enum": ["this_device_only", "sync_another_device"]
+            }
+        ]
     }
 }

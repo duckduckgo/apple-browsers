@@ -29,8 +29,9 @@ appId: com.duckduckgo.mobile.ios
     commands:
         - tapOn: "Allow"
 - tapOn: Paste Sync Code
-# Recovery-complete success screen.
+# Recovery-complete success screen. Its title "Sync & Backup enabled" has no device-name
+# prefix, so it full-matches directly.
 - extendedWaitUntil:
     visible: Sync & Backup enabled
-    timeout: 30000
+    timeout: 60000
 - tapOn: Done

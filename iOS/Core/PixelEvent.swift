@@ -1855,6 +1855,11 @@ extension Pixel {
 
         case aiChatContextualQuickActionAskAboutPageShown
         case aiChatContextualQuickActionAskAboutPageSelected
+        case aiChatContextualSuggestionSelected
+        case aiChatContextualSuggestionsViewed
+        case aiChatContextualHeaderTitleTapped
+        case aiChatContextualSuggestionsCatalogLoadFailed
+        case aiChatContextualSuggestionsContextCollectionTimedOut
         case aiChatContextualRecentChatsPopupDisplayed
         case aiChatContextualRecentChatSelected
         case aiChatContextualViewAllChatsTapped
@@ -3781,6 +3786,12 @@ extension Pixel.Event {
         case .aiChatPageContextExtractionPrevented: return "aichat_page_context_extraction_prevented"
         case .aiChatContextualQuickActionAskAboutPageShown: return "m_aichat_contextual_quick_action_ask_about_page_shown"
         case .aiChatContextualQuickActionAskAboutPageSelected: return "m_aichat_contextual_quick_action_ask_about_page_selected"
+        case .aiChatContextualSuggestionSelected: return "aichat_contextual_suggestion_selected"
+        case .aiChatContextualSuggestionsViewed: return "aichat_contextual_suggestions_viewed"
+        case .aiChatContextualHeaderTitleTapped: return "aichat_contextual_header_title_tapped"
+        case .aiChatContextualSuggestionsCatalogLoadFailed: return "debug_aichat_contextual_suggestions_catalog_load_failed"
+        case .aiChatContextualSuggestionsContextCollectionTimedOut:
+            return "debug_aichat_contextual_suggestions_context_collection_timed_out"
         case .aiChatContextualRecentChatsPopupDisplayed: return "m_aichat_contextual_recent_chats_popup_displayed"
         case .aiChatContextualRecentChatSelected: return "m_aichat_contextual_recent_chat_selected"
         case .aiChatContextualViewAllChatsTapped: return "m_aichat_contextual_view_all_chats_tapped"

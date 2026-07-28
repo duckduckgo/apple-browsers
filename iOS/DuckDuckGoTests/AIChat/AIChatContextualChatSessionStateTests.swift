@@ -2188,10 +2188,15 @@ private final class MockContextualModePixelHandler: AIChatContextualModePixelFir
     func fireSheetDismissed() { sheetDismissedFired = true }
     func fireSessionRestored() { sessionRestoredFired = true }
     func fireExpandButtonTapped() { expandButtonTappedFired = true }
+    func fireHeaderTitleTapped() {}
     func fireNewChatButtonTapped() { newChatButtonTappedFired = true }
     func fireQuickActionSummarizeSelected() { quickActionSummarizeSelectedFired = true }
     func fireQuickActionAskAboutPageShown() { quickActionAskAboutPageShownCount += 1 }
     func fireQuickActionAskAboutPageSelected() {}
+    func fireAskAboutPageSuggestionSelected(pageType: SuggestionsPageType) {}
+    func fireSuggestionSelected(suggestionId: String, pageType: SuggestionsPageType) {}
+    func fireSuggestionsViewed(isSmart: Bool, pageType: SuggestionsPageType) {}
+    func fireSuggestionsContextCollectionTimedOut() {}
     func fireRecentChatsPopupDisplayed() {}
     func fireRecentChatSelected() {}
     func fireViewAllChatsTapped() {}
@@ -2250,9 +2255,9 @@ private final class MockContextualSuggestedPromptsProvider: ContextualSuggestedP
         self.prioritySuggestionIDs = prioritySuggestionIDs
     }
 
-    func resolveSuggestions(_ input: ResolvePageSuggestionsInput) async -> [ContextualSuggestedPrompt] {
+    func resolveSuggestions(_ input: ResolvePageSuggestionsInput) async -> ResolvedPageSuggestions {
         lastInput = input
-        return suggestions
+        return ResolvedPageSuggestions(suggestions: suggestions, isSmart: false, pageType: .none)
     }
 }
 
@@ -2264,15 +2269,15 @@ private final class GatedContextualSuggestedPromptsProvider: ContextualSuggested
     let maxSuggestedPrompts = 4
     let prioritySuggestionIDs: Set<String> = []
     private(set) var startedCount = 0
-    private var continuations: [CheckedContinuation<[ContextualSuggestedPrompt], Never>] = []
+    private var continuations: [CheckedContinuation<ResolvedPageSuggestions, Never>] = []
 
-    func resolveSuggestions(_ input: ResolvePageSuggestionsInput) async -> [ContextualSuggestedPrompt] {
+    func resolveSuggestions(_ input: ResolvePageSuggestionsInput) async -> ResolvedPageSuggestions {
         startedCount += 1
         return await withCheckedContinuation { continuations.append($0) }
     }
 
     /// Resumes the resolve started as the `index`-th call (0-based), in any order the test needs.
     func resume(at index: Int, returning suggestions: [ContextualSuggestedPrompt]) {
-        continuations[index].resume(returning: suggestions)
+        continuations[index].resume(returning: ResolvedPageSuggestions(suggestions: suggestions, isSmart: false, pageType: .none))
     }
 }

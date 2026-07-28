@@ -246,10 +246,15 @@ private final class StubContextualModePixelHandler: AIChatContextualModePixelFir
     func fireSheetDismissed() {}
     func fireSessionRestored() {}
     func fireExpandButtonTapped() {}
+    func fireHeaderTitleTapped() {}
     func fireNewChatButtonTapped() {}
     func fireQuickActionSummarizeSelected() {}
     func fireQuickActionAskAboutPageShown() {}
     func fireQuickActionAskAboutPageSelected() {}
+    func fireAskAboutPageSuggestionSelected(pageType: SuggestionsPageType) {}
+    func fireSuggestionSelected(suggestionId: String, pageType: SuggestionsPageType) {}
+    func fireSuggestionsViewed(isSmart: Bool, pageType: SuggestionsPageType) {}
+    func fireSuggestionsContextCollectionTimedOut() {}
     func fireRecentChatsPopupDisplayed() {}
     func fireRecentChatSelected() {}
     func fireViewAllChatsTapped() {}

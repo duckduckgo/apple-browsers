@@ -781,7 +781,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         // of truth for the order; the carousel itself never mutates its own state.
         attachmentsCarouselView.onImageAttachmentRemoveRequested = { [weak self] id in
             guard let self else { return }
-            PixelKit.fire(AIChatPixel.aiChatAddressBarImageRemoved, frequency: .dailyAndCount, includeAppVersionParameter: true)
+            omnibarController.pixelHandler.fire(.imageRemoved)
             self.lastAttachmentError = nil
             self.resizeTasks[id]?.cancel()
             self.resizeTasks.removeValue(forKey: id)
@@ -794,11 +794,11 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             // mention-specific `mention_tab_removed` continues to fire only when the user
             // deselects through the @-picker UI, which keeps it as a clean signal of
             // @-picker engagement).
-            PixelKit.fire(AIChatPixel.aiChatAddressBarAttachTabRemoved, frequency: .dailyAndCount, includeAppVersionParameter: true)
+            self?.omnibarController.pixelHandler.fire(.tabAttachmentRemoved)
             self?.omnibarController.removeTabAttachmentFromActiveTab(id: id)
         }
         attachmentsCarouselView.onFileAttachmentRemoveRequested = { [weak self] id in
-            PixelKit.fire(AIChatPixel.aiChatAddressBarFileRemoved, frequency: .dailyAndCount, includeAppVersionParameter: true)
+            self?.omnibarController.pixelHandler.fire(.fileRemoved)
             self?.lastAttachmentError = nil
             self?.omnibarController.removeFileAttachmentFromActiveTab(id: id)
         }
@@ -1118,12 +1118,12 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     }
 
     @objc private func imageGenActiveButtonClicked() {
-        PixelKit.fire(AIChatPixel.aiChatAddressBarImageGenerationDeactivated, frequency: .dailyAndCount, includeAppVersionParameter: true)
+        omnibarController.pixelHandler.fire(.imageGenerationDeactivated)
         omnibarController.toggleImageGenerationMode()
     }
 
     @objc private func webSearchActiveButtonClicked() {
-        PixelKit.fire(AIChatPixel.aiChatAddressBarWebSearchDeactivated, frequency: .dailyAndCount, includeAppVersionParameter: true)
+        omnibarController.pixelHandler.fire(.webSearchDeactivated)
         omnibarController.toggleWebSearchMode()
     }
 
@@ -1206,21 +1206,21 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
     @objc private func toolsMenuCreateImageClicked() {
         if !omnibarController.isImageGenerationMode {
-            PixelKit.fire(AIChatPixel.aiChatAddressBarImageGenerationActivated, frequency: .dailyAndCount, includeAppVersionParameter: true)
+            omnibarController.pixelHandler.fire(.imageGenerationActivated)
         }
         omnibarController.toggleImageGenerationMode()
     }
 
     @objc private func toolsMenuWebSearchClicked() {
         if !omnibarController.isWebSearchMode {
-            PixelKit.fire(AIChatPixel.aiChatAddressBarWebSearchActivated, frequency: .dailyAndCount, includeAppVersionParameter: true)
+            omnibarController.pixelHandler.fire(.webSearchActivated)
         }
         omnibarController.toggleWebSearchMode()
     }
 
     private func presentCustomizeResponsesModal() {
         guard customizeResponsesModal == nil else { return }
-        PixelKit.fire(AIChatPixel.aiChatAddressBarCustomizeResponsesOpened, frequency: .dailyAndCount, includeAppVersionParameter: true)
+        omnibarController.pixelHandler.fire(.customizeResponsesOpened)
         guard let parentWindow = view.window else {
             omnibarController.openCustomizeResponses()
             return
@@ -1308,11 +1308,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
                             pendingFiles: pendingFiles
                         )
                         if let error = validator.fileValidationError(for: descriptor, enforceCount: false) {
-                            PixelKit.fire(
-                                AIChatPixel.aiChatAddressBarFileValidationFailed(reason: error.reason.rawValue),
-                                frequency: .dailyAndCount,
-                                includeAppVersionParameter: true
-                            )
+                            self.omnibarController.pixelHandler.fire(.fileValidationFailed(reason: error.reason.rawValue))
                             if firstFileError == nil { firstFileError = error.message }
                             continue
                         }
@@ -1323,7 +1319,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
                     guard pendingFiles.count < self.omnibarController.fileAttachmentsDisplayCap else { continue }
 
                     self.omnibarController.addFileAttachmentToActiveTab(attachment)
-                    PixelKit.fire(AIChatPixel.aiChatAddressBarFileAttached, frequency: .dailyAndCount, includeAppVersionParameter: true)
+                    self.omnibarController.pixelHandler.fire(.fileAttached)
                     pendingFiles.append(descriptor)
                 }
             }
@@ -1457,7 +1453,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         // Observer fires the picker-shown pixel on willOpen and the picker-canceled pixel on
         // didClose when no row was toggled in between. Stored on the VC so its lifetime
         // covers the menu's lifetime (NSMenu's delegate ref is weak).
-        let observer = AttachTabsSubmenuObserver()
+        let observer = AttachTabsSubmenuObserver(pixelHandler: omnibarController.pixelHandler)
         attachTabsSubmenuObserver = observer
         menu.delegate = observer
 
@@ -1497,10 +1493,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
                     self.omnibarController.toggleTabAttachment(candidate)
                     let nowAttached = self.omnibarController.activeTabAttachments.contains(where: { $0.id == candidate.id })
                     if nowAttached != wasAttached {
-                        let pixel: AIChatPixel = wasAttached
-                            ? .aiChatAddressBarAttachTabRemoved
-                            : .aiChatAddressBarAttachTabChosen
-                        PixelKit.fire(pixel, frequency: .dailyAndCount, includeAppVersionParameter: true)
+                        self.omnibarController.pixelHandler.fire(wasAttached ? .tabAttachmentRemoved : .tabChosen)
                         observer?.markDidMutate()
                     }
                     // The submenu stays open and never rebuilds, so refresh rows from the attachment list.
@@ -1578,7 +1571,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             skipResize: true
         )
         omnibarController.addImageAttachmentToActiveTab(placeholder)
-        PixelKit.fire(AIChatPixel.aiChatAddressBarImageAttached, frequency: .dailyAndCount, includeAppVersionParameter: true)
+        omnibarController.pixelHandler.fire(.imageAttached)
 
         resizeTasks[placeholderId] = makeResizeTask(for: url, placeholderId: placeholderId)
     }
@@ -1873,7 +1866,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         // the newly selected model doesn't support it — the button would otherwise pop an empty menu).
         updateToolButtonsVisibility(isEnabled: omnibarController.isOmnibarToolsEnabled)
         updateReasoningPickerVisibility()
-        PixelKit.fire(AIChatPixel.aiChatAddressBarModelSelected, frequency: .dailyAndCount, includeAppVersionParameter: true)
+        omnibarController.pixelHandler.fire(.modelSelected)
     }
 
     // MARK: - Reasoning Picker
@@ -1934,7 +1927,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         switch omnibarController.handleReasoningEffortSelection(effort) {
         case .selected(let effort):
             updateReasoningPickerAppearance(effort)
-            PixelKit.fire(AIChatPixel.aiChatAddressBarReasoningEffortSelected, frequency: .dailyAndCount, includeAppVersionParameter: true)
+            omnibarController.pixelHandler.fire(.reasoningEffortSelected)
         case .gated(let requiredTier):
             // Explains the upsell via a sheet rather than navigating immediately, and leaves the
             // current selection unchanged.
@@ -2198,22 +2191,21 @@ private final class AttachTabsSubmenuObserver: NSObject, NSMenuDelegate {
     /// next `menuWillOpen` so each open/close pair is evaluated independently.
     private var didMutateDuringSession = false
 
+    private let pixelHandler: DuckAIPromptPixelFiring
+
+    init(pixelHandler: DuckAIPromptPixelFiring) {
+        self.pixelHandler = pixelHandler
+        super.init()
+    }
+
     func menuWillOpen(_ menu: NSMenu) {
         didMutateDuringSession = false
-        PixelKit.fire(
-            AIChatPixel.aiChatAddressBarAttachTabsPickerShown,
-            frequency: .dailyAndCount,
-            includeAppVersionParameter: true
-        )
+        pixelHandler.fire(.tabPickerShown)
     }
 
     func menuDidClose(_ menu: NSMenu) {
         guard !didMutateDuringSession else { return }
-        PixelKit.fire(
-            AIChatPixel.aiChatAddressBarAttachPickerCanceled,
-            frequency: .dailyAndCount,
-            includeAppVersionParameter: true
-        )
+        pixelHandler.fire(.tabPickerCanceled)
     }
 
     /// Called from the row's `onToggle` closure so the cancel pixel is suppressed when the

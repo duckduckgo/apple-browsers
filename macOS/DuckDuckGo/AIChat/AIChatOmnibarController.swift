@@ -85,7 +85,9 @@ final class AIChatOmnibarController {
     private let draftSource: DuckAIPromptDraftSource
     /// The browser window backing page-context and voice-session scoping. `nil` for window-less surfaces.
     private let origin: DuckAIPromptOriginProviding?
-    private let pixelHandler: DuckAIPromptPixelFiring
+    /// Not private: the container view controller reports its own prompt events through the same
+    /// handler, so neither of them hardcodes a surface's pixel names.
+    let pixelHandler: DuckAIPromptPixelFiring
     private let featureFlagger: FeatureFlagger
     private let searchPreferencesPersistor: SearchPreferencesPersistor
     private let suggestionsReader: AIChatSuggestionsReading?

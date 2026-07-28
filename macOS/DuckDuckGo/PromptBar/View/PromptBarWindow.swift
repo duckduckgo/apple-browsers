@@ -19,7 +19,9 @@
 import AppKit
 
 /// An `NSPanel` so it never becomes the app's main window and stays out of the Window menu.
-final class PromptBarWindow: NSPanel {
+/// Not `final`: the unit test target refuses to put real windows on screen, so presenter tests
+/// substitute a subclass that stubs ordering — the same trick `MockWindow` plays on `NSWindow`.
+internal class PromptBarWindow: NSPanel {
 
     var onCancel: (() -> Void)?
 

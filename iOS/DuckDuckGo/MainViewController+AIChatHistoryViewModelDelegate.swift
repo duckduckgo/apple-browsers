@@ -70,6 +70,13 @@ extension MainViewController: AIChatHistoryViewModelDelegate {
         )
     }
 
+    func viewModelDidReachPinLimit(limit: Int) {
+        ActionMessageView.present(
+            message: UserText.aiChatHistoryPinLimitReachedMessage(limit: limit),
+            presentationLocation: .withBottomBar(andAddressBarBottom: appSettings.currentAddressBarPosition.isBottom)
+        )
+    }
+
     private func presentChatDownloadFinishedToast(_ message: NSAttributedString) {
         ActionMessageView.present(
             message: message,

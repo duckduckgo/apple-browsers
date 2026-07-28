@@ -40,7 +40,9 @@ on:
   schedule:
     # A scheduled run uses the full 22-site list and uploads to ClickHouse.
     # GitHub only fires schedules from the default branch.
-    - cron: "0 6 * * *"
+    # 00:17 UTC avoids the repository's busiest scheduled CI window and the
+    # top-of-hour load common to GitHub-hosted runners.
+    - cron: "17 0 * * *"
 
 permissions:
   contents: read

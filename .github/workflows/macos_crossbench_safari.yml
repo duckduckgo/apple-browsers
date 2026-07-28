@@ -36,7 +36,9 @@ on:
   schedule:
     # Scheduled workflows run only from the default branch. Blank sites use the
     # full list, and the upload job below sends scheduled results to ClickHouse.
-    - cron: "0 6 * * *"
+    # 01:47 UTC avoids the repository's busiest scheduled CI window, starts
+    # away from the top of the hour, and follows Chrome by 90 minutes.
+    - cron: "47 1 * * *"
 
 permissions:
   contents: read

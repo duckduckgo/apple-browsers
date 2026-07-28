@@ -18510,7 +18510,7 @@
 			repositoryURL = "https://github.com/airbnb/lottie-spm.git";
 			requirement = {
 				kind = exactVersion;
-				version = 4.5.2;
+				version = 4.6.1;
 			};
 		};
 		9FADFC482F5FC56400CA16F7 /* XCRemoteSwiftPackageReference "native-apps-ducksans" */ = {

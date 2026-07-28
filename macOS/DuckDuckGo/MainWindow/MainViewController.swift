@@ -612,7 +612,6 @@ final class MainViewController: NSViewController {
         NSApp.delegateTyped.aiChatTabOpener.openNewAIChat(in: behavior)
     }
 
-
     private func wireToggleReferenceToAIChatTextContainer() {
         if let searchModeToggleControl = navigationBarViewController.addressBarViewController?.addressBarButtonsViewController?.searchModeToggleControl {
             aiChatOmnibarTextContainerViewController.customToggleControl = searchModeToggleControl

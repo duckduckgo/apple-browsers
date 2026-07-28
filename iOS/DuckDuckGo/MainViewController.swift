@@ -1540,6 +1540,11 @@ class MainViewController: UIViewController {
         return max(0, min(1, (percent - handoffStart) / (1 - handoffStart)))
     }
 
+    private func sharedRowNavigationBarAlpha(for percent: CGFloat) -> CGFloat {
+        let fadeCompletePercent: CGFloat = 0.8
+        return max(0, min(1, (percent - fadeCompletePercent) / (1 - fadeCompletePercent)))
+    }
+
     private func shouldResetNavBarContainerBottomForTopPosition() -> Bool {
         return unifiedToggleInputCoordinator?.isActive != true
     }
@@ -4255,7 +4260,9 @@ extension MainViewController: BrowserChromeDelegate {
         tabsBarController?.isBrowserChromeFullyVisible = percent >= 1
 
         let chromeAlpha = chromeAlpha(for: percent)
-        viewCoordinator.navigationBarContainer.alpha = chromeAlpha
+        viewCoordinator.navigationBarContainer.alpha = sharesWindowControlsRow
+            ? min(chromeAlpha, sharedRowNavigationBarAlpha(for: percent))
+            : chromeAlpha
         // Fading out the shared row would leave the window controls sitting on the web page.
         viewCoordinator.tabBarContainer.alpha = sharesWindowControlsRow ? 1 : chromeAlpha
         viewCoordinator.toolbar.alpha = chromeAlpha

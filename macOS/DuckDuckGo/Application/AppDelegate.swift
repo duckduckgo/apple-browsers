@@ -1525,6 +1525,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         startAutomationServerIfNeeded()
 
+        // This is also called in applicationDidBecomeActive, but we're also calling it here, since
+        // applicationDidBecomeActive returns early on `didFinishLaunching` when it's delivered during
+        // startup (e.g. if a modal alert is shown first). EventHub cannot start any measurement period
+        // until it has been foregrounded at least once, so missing that first activation would leave it
+        // silently inert. Calling it twice is harmless — it re-checks already-settled state.
+        eventHubIntegration.applicationDidBecomeActive()
+
         PixelKit.fire(GeneralPixel.launch, doNotEnforcePrefix: true)
         profilerToken.stop()
     }

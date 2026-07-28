@@ -68,18 +68,17 @@ final class MacOSEventHubIntegration {
         )
         self.eventHub = eventHub
 
-        // `EventHub`'s own subscriptions (set up in its init, fed by `settings` above) update its
-        // internal state synchronously on `.send()`. Pushing the new values here before calling
-        // `onConfigChanged()` — in the same closure, no dispatch hop in between — is what guarantees
-        // `onConfigChanged()` observes fresh state; `EventHub` never calls it on its own.
+        // Pushing the new values is all that is needed: `EventHub` subscribes to both publishers and
+        // re-applies its config whenever either emits, so there is no explicit `onConfigChanged()` call
+        // to keep in sync here. The same holds for consent changes, which reach `EventHub` through
+        // `EventHubSettings`' settings publisher rather than through this subscription.
         privacyConfigurationManager.updatesPublisher
-            .sink { [weak privacyConfigurationManager, weak eventHub] in
+            .sink { [weak privacyConfigurationManager] in
                 guard let privacyConfigurationManager else { return }
                 let enabled = privacyConfigurationManager.privacyConfig.isEnabled(featureKey: .eventHub)
                 Logger.eventHub.debug("Remote config updated — pushing to EventHub (enabled=\(enabled, privacy: .public))")
                 enabledSubject.send(enabled)
                 settingsSubject.send(privacyConfigurationManager.privacyConfig.settings(for: PrivacyFeature.eventHub))
-                eventHub?.onConfigChanged()
             }
             .store(in: &cancellables)
     }

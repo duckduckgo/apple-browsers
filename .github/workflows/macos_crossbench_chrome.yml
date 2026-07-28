@@ -203,7 +203,7 @@ jobs:
 
   upload-to-clickhouse:
     name: Upload to ClickHouse
-    needs: chrome-lcp
+    needs: [validate-wpr, chrome-lcp]
     # Hosted runners can't reach the ClickHouse host, hence this separate
     # self-hosted job.
     #
@@ -213,7 +213,10 @@ jobs:
     # insert below is guarded on its file existing instead, so a partial run
     # uploads whatever it did produce. (A timeout reports as "cancelled", which
     # skips downstream needs: jobs without this.)
-    if: always() && (github.event_name == 'schedule' || inputs.upload-to-clickhouse)
+    if: >-
+      always() &&
+      needs.validate-wpr.result == 'success' &&
+      (github.event_name == 'schedule' || inputs.upload-to-clickhouse)
     runs-on: [ self-hosted, apple ]
 
     steps:

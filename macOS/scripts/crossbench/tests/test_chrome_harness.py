@@ -206,6 +206,23 @@ exit "${FAKE_EXIT:-0}"
         self.assertEqual(self.disposition()[3], "no_samples")
         self.assertIn("eligible sites produced no usable LCP", result.stderr)
 
+    def test_no_samples_keeps_diagnostics_before_removing_raw_output(self) -> None:
+        diagnostics = self.root / "diagnostics"
+        result = self.run_harness(
+            FAKE_RESULTS="1",
+            FAKE_METRIC="0",
+            FAKE_TRACE="1",
+            DIAGNOSTICS_DIR=str(diagnostics),
+        )
+        self.assertEqual(result.returncode, 1)
+        self.assertEqual(
+            len(list(diagnostics.glob("apple.com/**/perfetto.trace.pb.gz"))), 1
+        )
+        self.assertTrue((diagnostics / "apple.com" / "crossbench.log").is_file())
+        self.assertEqual(
+            list((self.root / "work").glob("chrome-crossbench.*")), []
+        )
+
     def test_harness_failure_does_not_stop_later_sites(self) -> None:
         self.add_valid_site("example.com")
         result = subprocess.run(

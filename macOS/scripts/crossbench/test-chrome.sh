@@ -138,6 +138,7 @@ cleanup_generated_dir() {
   esac
 }
 
+# shellcheck disable=SC2329  # Invoked indirectly by the EXIT trap below.
 cleanup_work_root() {
   local exit_code=$?
   trap - EXIT HUP INT TERM
@@ -571,6 +572,9 @@ run_chrome() {
         outcome="$(classify_outcome)"
       fi
       record_disposition "$site" "$outcome"
+      if [ "$outcome" = "partial" ] || [ "$outcome" = "no_samples" ]; then
+        site_failed=1
+      fi
     else
       echo "  $site: Crossbench produced no output directory"
       # The archive was available, but the browser harness failed before it

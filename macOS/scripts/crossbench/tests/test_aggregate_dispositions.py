@@ -71,6 +71,15 @@ class AggregateDispositionsTests(unittest.TestCase):
     def test_rejects_empty_data(self) -> None:
         self.assertNotEqual(self.run_program("").returncode, 0)
 
+    def test_requires_webview_type(self) -> None:
+        result = subprocess.run(
+            ["python3", str(PROGRAM), "--help"],
+            text=True, capture_output=True,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("--webview-type WEBVIEW_TYPE", result.stdout)
+        self.assertNotIn("[--webview-type WEBVIEW_TYPE]", result.stdout)
+
 
 if __name__ == "__main__":
     unittest.main()

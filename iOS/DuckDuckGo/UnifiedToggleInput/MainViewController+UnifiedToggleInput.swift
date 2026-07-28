@@ -477,7 +477,7 @@ private extension MainViewController {
             .removeDuplicates()
             .sink { [weak self] _ in
                 guard let self, let coordinator = self.unifiedToggleInputCoordinator,
-                      coordinator.isAITabExpanded, coordinator.inputMode == .search else { return }
+                      coordinator.isSearchOnAITab else { return }
                 self.updateUnifiedInputContentVisibility(for: coordinator)
             }
             .store(in: &unifiedToggleInputCancellables)
@@ -851,11 +851,13 @@ extension MainViewController {
         updateUnifiedInputContentVisibility(for: coordinator, renderState: coordinator.computeRenderState())
     }
 
+    /// The collapsed-footer pose — how the Duck.ai chat input and its separator sit at the bottom of the
+    /// screen — reads the coordinator's live display state; the chrome below it still trusts `renderState`.
     func updateUnifiedInputContentVisibility(for coordinator: UnifiedToggleInputCoordinator, renderState: UTIRenderState) {
         let isOnAITab = currentTab?.isAITab == true
         coordinator.contentViewController.forceBottomBarLayout = coordinator.isAITabState
 
-        let isAITabCollapsed = coordinator.isAITabState && !renderState.isExpanded
+        let isAITabCollapsed = coordinator.isAITabCollapsed
         coordinator.viewController.setAITabCollapsedFooterPoseActive(isAITabCollapsed)
         viewCoordinator.setAITabCollapsedTopSeparatorVisible(isAITabCollapsed)
 

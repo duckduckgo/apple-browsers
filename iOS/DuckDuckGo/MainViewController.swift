@@ -1635,7 +1635,7 @@ class MainViewController: UIViewController {
         updateUnifiedToggleInputKeyboardVisibility(keyboardVisible)
 
         let coordinator = unifiedToggleInputCoordinator
-        let isAITabCollapsed = coordinator?.displayState == .aiTab(.collapsed)
+        let isAITabCollapsed = coordinator?.isAITabCollapsed == true
         let isBottomExpandedUTIKeyboardAnchored = coordinator?.isInputEditing == true
             && coordinator?.cardPosition == .bottom
             && viewCoordinator.isNavigationBarContainerBottomKeyboardBased
@@ -1896,9 +1896,8 @@ class MainViewController: UIViewController {
         configureUnifiedInputEscapeHatch(model)
     }
 
-    /// True when an escape hatch action runs in focus mode (reads the persistent omnibar-session state, which
-    /// survives the card tap that dismisses the keyboard).
-    private var isEscapeHatchInFocusMode: Bool {
+    /// True when the address bar owns editing focus; survives a card tap that dismisses the keyboard.
+    private var isAddressBarFocused: Bool {
         omniBar.isTextFieldEditing || unifiedToggleInputCoordinator?.isOmnibarSession == true
     }
 
@@ -3172,7 +3171,7 @@ class MainViewController: UIViewController {
     /// no-op once correct — no loop, no per-frame work beyond the bool check.
     private func reanchorAITabCollapsedFooterIfNeeded() {
         guard let coordinator = unifiedToggleInputCoordinator,
-              coordinator.displayState == .aiTab(.collapsed),
+              coordinator.isAITabCollapsed,
               coordinator.cardPosition == .bottom,
               !viewCoordinator.isNavigationBarContainerBottomKeyboardBased else { return }
         viewCoordinator.setNavBarContainerBottomToKeyboard()
@@ -4154,7 +4153,7 @@ extension MainViewController: BrowserChromeDelegate {
         chromeMorphAnimator.cancel()
 
         if percent < 1 {
-            if omniBar.isTextFieldEditing || unifiedToggleInputCoordinator?.isOmnibarSession == true {
+            if isAddressBarFocused {
                 dismissOmniBar()
             }
             _ = findInPageView?.resignFirstResponder()
@@ -5726,7 +5725,7 @@ extension MainViewController: EscapeHatchActionRouter {
         }
 
         // Captured before the confirmation dialog steals focus, so we can restore the keyboard afterwards.
-        let wasInFocusMode = isEscapeHatchInFocusMode
+        let wasInFocusMode = isAddressBarFocused
         let tabViewModel = tabManager.viewModel(for: tab)
         let presenter = FireConfirmationPresenter()
         presenter.presentFireConfirmation(
@@ -5756,7 +5755,7 @@ extension MainViewController: EscapeHatchActionRouter {
             return
         }
 
-        let wasInFocusMode = isEscapeHatchInFocusMode
+        let wasInFocusMode = isAddressBarFocused
         let tabViewModel = tabManager.viewModel(for: tab)
         let request = FireRequest(
             options: .all,

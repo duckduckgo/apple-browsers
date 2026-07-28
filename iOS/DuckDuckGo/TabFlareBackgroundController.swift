@@ -23,6 +23,18 @@ import UIKit
 /// context-menu preview and reorder drag.
 final class TabFlareBackgroundController {
 
+    private final class WeakDisplayLinkProxy {
+        weak var target: TabFlareBackgroundController?
+
+        init(target: TabFlareBackgroundController) {
+            self.target = target
+        }
+
+        @objc func tick() {
+            target?.trackToCurrentTabCell()
+        }
+    }
+
     private let view = TabFlaredBackgroundView()
     private weak var collectionView: UICollectionView?
     private let currentIndex: () -> Int?
@@ -101,7 +113,7 @@ final class TabFlareBackgroundController {
 
     private func startReorderTracking() {
         stopReorderTracking()
-        let link = CADisplayLink(target: self, selector: #selector(trackToCurrentTabCell))
+        let link = CADisplayLink(target: WeakDisplayLinkProxy(target: self), selector: #selector(WeakDisplayLinkProxy.tick))
         link.add(to: .main, forMode: .common)
         reorderTrackingDisplayLink = link
     }
@@ -112,7 +124,7 @@ final class TabFlareBackgroundController {
     }
 
     /// Follows the current tab cell's live frame during a reorder.
-    @objc private func trackToCurrentTabCell() {
+    private func trackToCurrentTabCell() {
         guard let collectionView else {
             endReorder()
             return

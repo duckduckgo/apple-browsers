@@ -39,6 +39,7 @@ import DataBrokerProtection_macOS
 import DataBrokerProtectionCore
 import DDGSync
 import DuckAiDataStore
+import EventHub
 import FeatureFlags
 import FoundationExtensions
 import Freemium
@@ -288,6 +289,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let remoteMessagingClient: RemoteMessagingClient!
     let onboardingContextualDialogsManager: ContextualOnboardingDialogTypeProviding & ContextualOnboardingStateUpdater
     let defaultBrowserAndDockPromptService: DefaultBrowserAndDockPromptService
+    let eventHubIntegration: MacOSEventHubIntegration
     private lazy var webNotificationClickHandler = WebNotificationClickHandler(tabFinder: windowControllersManager)
     let userChurnScheduler: UserChurnBackgroundActivityScheduler
     lazy var vpnUpsellPopoverPresenter = DefaultVPNUpsellPopoverPresenter(
@@ -1047,6 +1049,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                                                 uiHosting: { windowControllersManager.activeViewController },
                                                                                 isOnboardingCompletedProvider: { onboardingManager.state == .onboardingCompleted },
                                                                                 dockCustomization: dockCustomization)
+        eventHubIntegration = MacOSEventHubIntegration(privacyConfigurationManager: privacyConfigurationManager,
+                                                        keyValueStore: keyValueStore)
 
         if AppVersion.runType.requiresEnvironment {
             remoteMessagingClient = RemoteMessagingClient(
@@ -1527,6 +1531,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidResignActive(_ notification: Notification) {
         cleanScreenTimeDataOnMacOS26()
+        eventHubIntegration.applicationDidResignActive()
     }
 
     private func cleanScreenTimeDataOnMacOS26() {
@@ -1591,6 +1596,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         defaultBrowserAndDockPromptService.applicationDidBecomeActive()
+        eventHubIntegration.applicationDidBecomeActive()
 
         Task { @MainActor in
             await autoconsentStatsPopoverCoordinator.checkAndShowDialogIfNeeded()

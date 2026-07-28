@@ -23,6 +23,7 @@ import Combine
 import Common
 import FoundationExtensions
 import ContentBlocking
+import EventHub
 import Foundation
 import History
 import MaliciousSiteProtection
@@ -92,6 +93,7 @@ protocol TabExtensionDependencies {
     var autoplayPreferences: AutoplayPreferences { get }
     var permissionManager: PermissionManagerProtocol { get }
     var webTrackingProtectionPreferences: WebTrackingProtectionPreferences { get }
+    var eventHub: EventHubManaging { get }
 }
 
 // swiftlint:disable:next large_tuple
@@ -373,6 +375,14 @@ extension TabExtensionsBuilder {
                 privacyConfigurationManager: dependencies.privacyFeatures.contentBlocking.privacyConfigurationManager,
                 tld: dependencies.privacyFeatures.contentBlocking.tld,
                 isTabPinned: args.isTabPinned
+            )
+        }
+
+        add {
+            EventHubTabExtension(
+                tabID: args.tabID,
+                eventHub: dependencies.eventHub,
+                contentScopeUserScriptPublisher: userScripts.compactMap(\.?.contentScopeUserScriptIsolated)
             )
         }
     }

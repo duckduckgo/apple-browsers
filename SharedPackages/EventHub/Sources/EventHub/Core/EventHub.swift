@@ -291,6 +291,11 @@ public final class EventHub: EventHubManaging {
             if let periodSeconds = telemetry.config.trigger.period?.periodSeconds {
                 params["attributionPeriod"] = String(EventHubAttribution.startOfIntervalSeconds(
                     periodStartMillis: telemetry.periodStartMillis, periodSeconds: periodSeconds))
+                let rawCounts = telemetry.rawCounterValues
+                    .sorted { $0.key < $1.key }
+                    .map { "\($0.key)=\($0.value)" }
+                    .joined(separator: ", ")
+                Logger.eventHub.info("firing period pixel \(name, privacy: .public), raw counts [\(rawCounts, privacy: .public)]")
                 pixelFiring.enqueueFirePixel(named: name, parameters: params)
             } else {
                 Logger.eventHub.error("pixel \(name, privacy: .public) not fired, its period trigger has no period to attribute to")

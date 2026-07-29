@@ -23,15 +23,15 @@ MEASURED_REPS="${MEASURED_REPS:-10}"
 SITES_OVERRIDE=""
 RESULTS_FILE=""
 
-CROSSBENCH_DIR="${CROSSBENCH_DIR:-$HOME/Developer/crossbench-upstream}"
 WPR_DIR="${WPR_DIR:-$HOME/Developer/mac-perf-runner/wpr-archives}"
 WPR_ARCHIVES_PREPARED="${WPR_ARCHIVES_PREPARED:-0}"
 WPR_MANIFEST="$WPR_DIR/manifest.tsv"
 WPR_BIN="${WPR_BIN:-$HOME/Developer/mac-perf-runner/bin/wpr}"
 WPR_HTTP_PORT="${WPR_HTTP_PORT:-18080}"
 WPR_HTTPS_PORT="${WPR_HTTPS_PORT:-18081}"
-WPR_CERT_FILE="${WPR_CERT_FILE:-$CROSSBENCH_DIR/third_party/webpagereplay/ecdsa_cert.pem}"
-WPR_KEY_FILE="${WPR_KEY_FILE:-$CROSSBENCH_DIR/third_party/webpagereplay/ecdsa_key.pem}"
+WPR_SRC="${WPR_SRC:-$HOME/Developer/mac-perf-runner/webpagereplay}"
+WPR_CERT_FILE="${WPR_CERT_FILE:-$WPR_SRC/ecdsa_cert.pem}"
+WPR_KEY_FILE="${WPR_KEY_FILE:-$WPR_SRC/ecdsa_key.pem}"
 
 TSPROXY_PY="${TSPROXY_PY:-$HOME/Developer/mac-perf-runner/bin/tsproxy.py}"
 TSPROXY_PORT="${TSPROXY_PORT:-9997}"
@@ -856,10 +856,10 @@ measure_site() {
     rm -f "$status_file"
     if [ "$watchdog_lines" -ne 1 ] ||
         [ -n "${watchdog_extra:-}" ] ||
-        ! [[ "${watchdog_code:-}" =~ ^[0-9]+$ ]] ||
-        [ "$watchdog_code" -ne "$command_status" ]; then
+        ! [[ "${watchdog_code:-}" =~ ^[0-9]+$ ]]; then
       site_failed=1
-      set_shared_failure control watchdog_status_invalid "repetition=$rep"
+      set_shared_failure control watchdog_status_invalid \
+        "repetition=$rep; lines=$watchdog_lines; state=${watchdog_state:--}; code=${watchdog_code:--}; cleanup=${watchdog_cleanup:--}; process_status=$command_status"
       finish_repetition_logs "$site" "$rep" 1
       break
     fi

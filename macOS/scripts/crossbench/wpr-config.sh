@@ -8,6 +8,12 @@ WEBPAGEREPLAY_GIT="${WEBPAGEREPLAY_GIT:-https://chromium.googlesource.com/webpag
 WEBPAGEREPLAY_REV="${WEBPAGEREPLAY_REV:-b2b856131e36c99e9de9c419fe8ca02f857082ba}"
 WPR_BASE_URL="${WPR_BASE_URL:-https://staticcdn.duckduckgo.com/d5c04536-5379-4709-8d19-d13fdd456ff6/performance-tests}"
 
+# Catapult's Python-3-compatible tsproxy, pinned to immutable source and
+# verified by content hash by every macOS replay provisioner.
+TSPROXY_REV="${TSPROXY_REV:-d810008022eeaefcbea50393ea5baa0930b27047}"
+TSPROXY_SHA256="${TSPROXY_SHA256:-8380fa81c3b632aa9b83a34728b31046c53855adbf071c18a7afc2945c523c67}"
+TSPROXY_URL="${TSPROXY_URL:-https://chromium.googlesource.com/catapult/+/$TSPROXY_REV/third_party/tsproxy/tsproxy.py?format=TEXT}"
+
 # Crossbench defaults to an older tracebox. Keep the selected version and its
 # checksum here so provisioning and execution cannot drift apart.
 TRACEBOX_VERSION="${TRACEBOX_VERSION:-v56.0}"

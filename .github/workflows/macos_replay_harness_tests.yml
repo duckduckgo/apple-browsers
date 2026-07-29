@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - ".github/workflows/macos_replay_harness_tests.yml"
+      - ".github/workflows/macos_ddg_lcp.yml"
       - "macOS/scripts/crossbench/**"
 
 permissions:

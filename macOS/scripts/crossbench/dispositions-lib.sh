@@ -31,7 +31,7 @@
 # Runner identity, recorded per row. GitHub sets ImageOS/ImageVersion on hosted
 # runners; the run log that would otherwise tell you which image ran is deleted
 # after 90 days, while these rows live for a year.
-RUNNER_IMAGE="${ImageOS:-$(uname -s)-$(uname -r)}${ImageVersion:+/$ImageVersion}"
+RUNNER_IMAGE="${RUNNER_IMAGE:-${ImageOS:-$(uname -s)-$(uname -r)}${ImageVersion:+/$ImageVersion}}"
 
 # ---- per-repetition counters ------------------------------------------------
 # The caller's summarize_lcp owns these; reset before every site so a site that

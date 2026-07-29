@@ -30,6 +30,7 @@ downloading the files again.
 |------|---------|
 | `.github/workflows/wpr_archive_validation.yml` | Reusable validation and consolidated alerting for every browser workflow. |
 | `provision-macos.sh` | Installs Chrome, Python 3.11, Poetry, a pinned crossbench checkout, the LCP extras, a pinned WPR binary, and a checksum-verified tsproxy. |
+| `provision-ddg-runtime.sh` | Installs only DDG's pinned WPR, Python, and tsproxy runtime under the runner user. |
 | `provision-wpr-tools.sh` | Builds requested WPR tools from the crossbench-pinned WPR revision. |
 | `validate-wpr-archives.sh` | Downloads the complete selected archive set and produces its validation report and manifest. |
 | `validate-wpr.go` | Parses stored WPR requests and responses without starting a replay server. |
@@ -37,6 +38,7 @@ downloading the files again.
 | `test-chrome.sh` | Runs Chrome through the validated WPR archives and tsproxy, and writes per-repetition results and per-site dispositions. |
 | `test-ddg.sh` | Runs a DuckDuckGo Review build through validated WPR archives and tsproxy. |
 | `ddg-automation.py` | Authenticated local automation client used by the DDG harness. |
+| `prepare-ddg-review.py` | Downloads or consumes, verifies, and normalizes the signed Review app used by DDG CI. |
 | `run-with-watchdog.py` | Bounds one Crossbench site process group and terminates it on timeout. |
 | `aggregate-lcp.py` | Produces per-domain ClickHouse metric rows. |
 | `aggregate-dispositions.py` | Validates and encodes ClickHouse eligibility and measurement-outcome rows for every requested site. |
@@ -139,6 +141,15 @@ disposition formats as the other browser runners. Replay misses, failed
 automation acknowledgements, incomplete cleanup, and invalid measurements are
 recorded as infrastructure errors, and affected samples are discarded.
 
-The repository currently provides the local harness and tests. A GitHub
-measurement workflow supplies the Review build and validated archives
-separately.
+The manual `macos_ddg_lcp.yml` workflow runs only from the default branch on a
+runner labeled `self-hosted`, `macOS`, `ARM64`, and `performance`, behind the
+`macos-performance` environment. A supplied Review URL is downloaded without
+placing it on a process command line. With a blank URL, CI builds the exact
+workflow commit using the existing notarized Review workflow. Before execution,
+the app is checked for its Review bundle identifier, DuckDuckGo signing team,
+valid deep signature, and Gatekeeper assessment. Validation failures are
+included in the consolidated runtime report.
+
+DDG scheduling remains disabled until two dedicated-runner full runs complete
+with understood variance. The optional ClickHouse rows use
+`webview_type=ddg-wpr` and `webview_channel=review`.

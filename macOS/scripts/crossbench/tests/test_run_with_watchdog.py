@@ -20,6 +20,20 @@ SPEC.loader.exec_module(MODULE)
 
 
 class RunWithWatchdogTests(unittest.TestCase):
+    def test_status_atomically_replaces_existing_file(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            status = root / "status.tsv"
+            status.write_text("stale")
+
+            MODULE.write_status(status, "timed_out", 124, "terminated")
+
+            self.assertEqual(
+                status.read_text(),
+                "timed_out\t124\tterminated\n",
+            )
+            self.assertEqual(list(root.iterdir()), [status])
+
     def test_sigterm_race_is_treated_as_already_exited(self) -> None:
         class Process:
             pid = 123

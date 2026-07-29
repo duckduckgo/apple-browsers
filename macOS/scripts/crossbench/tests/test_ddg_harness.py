@@ -81,6 +81,8 @@ class DDGHarnessTests(unittest.TestCase):
             "TSPROXY_PORT": str(self.tsproxy),
             "DDG_APP": str(self.app),
             "DDG_AUTOMATION_PY": str(self.bin / "fake-automation.py"),
+            "DDG_LAUNCHER": str(self.bin / "fake-launcher"),
+            "DDG_AUTOMATION_HOST": "127.0.0.1",
             "AUTOMATION_PORT": str(self.automation),
             "APP_LAUNCHES_FILE": str(self.app_launches),
             "TSPROXY_ARGS_FILE": str(self.tsproxy_args),
@@ -233,6 +235,22 @@ class DDGHarnessTests(unittest.TestCase):
                         )
                     )
                     break
+            """,
+        )
+        self._write_executable(
+            self.bin / "fake-launcher",
+            r"""
+            #!/usr/bin/env bash
+            set -euo pipefail
+            app="$1"
+            executable="$2"
+            log_file="$3"
+            shift 3
+            [ "$1" = -- ]
+            shift
+            [ -d "$app" ]
+            "$executable" "$@" >>"$log_file" 2>&1 &
+            printf '%s\n' "$!"
             """,
         )
         self._write_executable(

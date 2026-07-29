@@ -157,7 +157,14 @@ jobs:
             echo "ERROR: prepared Review artifact did not contain exactly one app." >&2
             exit 1
           fi
-          printf 'DDG_APP=%s\n' "${apps[0]}" >> "$GITHUB_ENV"
+          installed_app="/Applications/DuckDuckGo Performance Review-${GITHUB_RUN_ID}.app"
+          if [ -e "$installed_app" ]; then
+            echo "ERROR: dedicated Review app path already exists." >&2
+            exit 1
+          fi
+          printf 'DDG_APP=%s\n' "$installed_app" >> "$GITHUB_ENV"
+          /usr/bin/ditto "${apps[0]}" "$installed_app"
+          codesign --verify --deep --strict "$installed_app"
 
       - name: Upload Review validation report
         if: always()
@@ -197,6 +204,26 @@ jobs:
             args+=(--reps "$REPS")
           fi
           ./test-ddg.sh "${args[@]}"
+
+      - name: Remove dedicated Review app
+        if: always()
+        run: |
+          expected="/Applications/DuckDuckGo Performance Review-${GITHUB_RUN_ID}.app"
+          if [ -z "${DDG_APP:-}" ]; then
+            exit 0
+          fi
+          if [ "$DDG_APP" != "$expected" ]; then
+            echo "ERROR: refusing to remove an unexpected app path." >&2
+            exit 1
+          fi
+          if [ -e "$DDG_APP" ]; then
+            bundle_id="$(defaults read "$DDG_APP/Contents/Info" CFBundleIdentifier)"
+            if [ "$bundle_id" != "com.duckduckgo.macos.browser.review" ]; then
+              echo "ERROR: refusing to remove an unexpected app bundle." >&2
+              exit 1
+            fi
+            rm -rf -- "$DDG_APP"
+          fi
 
       - name: Upload results TSV
         if: always()

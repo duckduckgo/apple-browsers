@@ -12,7 +12,10 @@ import urllib.request
 
 
 def base_url(port):
-    return "http://127.0.0.1:{}".format(port)
+    host = os.environ.get("DDG_AUTOMATION_HOST", "::1")
+    if ":" in host and not host.startswith("["):
+        host = "[{}]".format(host)
+    return "http://{}:{}".format(host, port)
 
 
 def request(port, method, path, params=None, timeout=60):

@@ -37,10 +37,12 @@ TSPROXY_PY="${TSPROXY_PY:-$HOME/Developer/mac-perf-runner/bin/tsproxy.py}"
 TSPROXY_PORT="${TSPROXY_PORT:-9997}"
 PYTHON_BIN="${PYTHON_BIN:-python3}"
 DDG_AUTOMATION_PY="${DDG_AUTOMATION_PY:-$SCRIPT_DIR/ddg-automation.py}"
+DDG_LAUNCHER="${DDG_LAUNCHER:-$SCRIPT_DIR/launch-ddg-app.sh}"
 WATCHDOG_PY="${WATCHDOG_PY:-$SCRIPT_DIR/run-with-watchdog.py}"
 DDG_APP="${DDG_APP:-/Applications/DuckDuckGo Review.app}"
 DDG_EXECUTABLE="${DDG_EXECUTABLE:-}"
 AUTOMATION_PORT="${AUTOMATION_PORT:-8788}"
+DDG_AUTOMATION_HOST="${DDG_AUTOMATION_HOST:-::1}"
 
 LOAD_WINDOW_SECONDS="${LOAD_WINDOW_SECONDS:-12}"
 ALLOW_TEST_OVERRIDES="${ALLOW_TEST_OVERRIDES:-0}"
@@ -338,9 +340,9 @@ trap 'exit 130' INT
 trap 'exit 143' TERM
 
 wait_for_port() {
-  local port="$1" timeout="$2" iteration
+  local port="$1" timeout="$2" host="${3:-127.0.0.1}" iteration
   for ((iteration = 0; iteration < timeout * 2; iteration++)); do
-    if (exec 3<>"/dev/tcp/127.0.0.1/$port") 2>/dev/null; then
+    if (exec 3<>"/dev/tcp/$host/$port") 2>/dev/null; then
       exec 3>&-
       return 0
     fi
@@ -350,9 +352,9 @@ wait_for_port() {
 }
 
 wait_for_port_free() {
-  local port="$1" timeout="$2" iteration
+  local port="$1" timeout="$2" host="${3:-127.0.0.1}" iteration
   for ((iteration = 0; iteration < timeout * 4; iteration++)); do
-    if ! (exec 3<>"/dev/tcp/127.0.0.1/$port") 2>/dev/null; then
+    if ! (exec 3<>"/dev/tcp/$host/$port") 2>/dev/null; then
       return 0
     fi
     exec 3>&-
@@ -451,7 +453,8 @@ check_prerequisites() {
     echo "ERROR: pinned tsproxy missing at $TSPROXY_PY." >&2
     exit 1
   }
-  [ -f "$DDG_AUTOMATION_PY" ] && [ -f "$WATCHDOG_PY" ] || {
+  [ -f "$DDG_AUTOMATION_PY" ] && [ -x "$DDG_LAUNCHER" ] &&
+      [ -f "$WATCHDOG_PY" ] || {
     echo "ERROR: DDG automation helpers are unavailable." >&2
     exit 1
   }
@@ -661,21 +664,26 @@ start_app() {
   assert_port_free "$AUTOMATION_PORT" automation || return 1
   AUTOMATION_TOKEN_VALUE="$("$PYTHON_BIN" -c 'import secrets; print(secrets.token_hex(32))')"
   DDG_LOG="$(mktemp)"
-  AUTOMATION_TOKEN="$AUTOMATION_TOKEN_VALUE" \
-    "$DDG_EXECUTABLE" \
+  if ! DDG_PID="$(
+    AUTOMATION_TOKEN="$AUTOMATION_TOKEN_VALUE" \
+      "$DDG_LAUNCHER" "$DDG_APP" "$DDG_EXECUTABLE" "$DDG_LOG" -- \
       -automationPort "$AUTOMATION_PORT" \
       -isOnboardingCompleted true \
       -webViewProxy "socks5://127.0.0.1:$TSPROXY_PORT" \
-      -acceptInsecureCerts true >>"$DDG_LOG" 2>&1 &
-  DDG_PID=$!
+      -acceptInsecureCerts true
+  )"; then
+    echo "ERROR: DuckDuckGo could not be launched through LaunchServices." >&2
+    return 1
+  fi
   monitor_live_log "$DDG_LOG" &
   DDG_LOG_MONITOR_PID=$!
-  if ! wait_for_port "$AUTOMATION_PORT" 20; then
+  if ! wait_for_port "$AUTOMATION_PORT" 20 "$DDG_AUTOMATION_HOST"; then
     echo "ERROR: DuckDuckGo automation server did not become ready." >&2
     return 1
   fi
   for _ in 1 2 3 4 5 6 7 8 9 10; do
     if AUTOMATION_TOKEN="$AUTOMATION_TOKEN_VALUE" \
+        DDG_AUTOMATION_HOST="$DDG_AUTOMATION_HOST" \
         "$PYTHON_BIN" "$DDG_AUTOMATION_PY" "$AUTOMATION_PORT" check; then
       return 0
     fi
@@ -690,6 +698,7 @@ shutdown_app() {
   local status=0
   if process_is_alive "$DDG_PID"; then
     AUTOMATION_TOKEN="$AUTOMATION_TOKEN_VALUE" \
+      DDG_AUTOMATION_HOST="$DDG_AUTOMATION_HOST" \
       "$PYTHON_BIN" "$DDG_AUTOMATION_PY" "$AUTOMATION_PORT" shutdown \
       >/dev/null 2>&1 || true
     for _ in 1 2 3 4 5 6; do
@@ -698,7 +707,7 @@ shutdown_app() {
     done
   fi
   stop_app || status=1
-  if ! wait_for_port_free "$AUTOMATION_PORT" 3; then
+  if ! wait_for_port_free "$AUTOMATION_PORT" 3 "$DDG_AUTOMATION_HOST"; then
     echo "ERROR: automation port $AUTOMATION_PORT remained in use after shutdown." >&2
     status=1
   fi

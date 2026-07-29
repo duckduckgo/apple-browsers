@@ -10,6 +10,9 @@ WORKFLOW = (
     / "workflows"
     / "macos_ddg_lcp.yml"
 ).read_text(encoding="utf-8")
+LAUNCHER = (
+    Path(__file__).parents[1] / "launch-ddg-app.sh"
+).read_text(encoding="utf-8")
 
 
 class DDGWorkflowContractTests(unittest.TestCase):
@@ -34,6 +37,11 @@ class DDGWorkflowContractTests(unittest.TestCase):
         )
         self.assertIn("environment: macos-performance", measurement)
         self.assertNotIn("sudo ", measurement)
+        self.assertIn(
+            'installed_app="/Applications/DuckDuckGo Performance Review-',
+            measurement,
+        )
+        self.assertIn("Remove dedicated Review app", measurement)
 
     def test_url_or_exact_commit_build_feeds_review_validation(self) -> None:
         self.assertIn("review-build-url:", WORKFLOW)
@@ -61,6 +69,12 @@ class DDGWorkflowContractTests(unittest.TestCase):
     def test_ddg_provisioning_does_not_install_crossbench(self) -> None:
         self.assertIn("./provision-ddg-runtime.sh", WORKFLOW)
         self.assertNotIn("./provision-macos.sh", WORKFLOW)
+
+    def test_review_app_uses_launch_services_without_token_logging(self) -> None:
+        self.assertIn("/usr/bin/open -n", LAUNCHER)
+        self.assertIn('--env "AUTOMATION_TOKEN=$AUTOMATION_TOKEN"', LAUNCHER)
+        self.assertNotIn("set -x", LAUNCHER)
+        self.assertNotIn("echo \"$AUTOMATION_TOKEN\"", LAUNCHER)
 
 
 if __name__ == "__main__":

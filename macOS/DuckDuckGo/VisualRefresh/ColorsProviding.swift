@@ -26,10 +26,9 @@ protocol ColorsProviding {
     var addressBarShadowColor: NSColor { get }
     var addressBarSuffixTextColor: NSColor { get }
     var addressBarTextFieldColor: NSColor { get }
-    var addressBarActiveBorderColor: NSColor { get }
-    var addressBarFireBorderColor: NSColor { get }
-    var activeAddressBarBackgroundColor: NSColor { get }
-    var inactiveAddressBarBackgroundColor: NSColor { get }
+    func addressBarActiveBorderColor(isBurner: Bool) -> NSColor
+    func activeAddressBarBackgroundColor(isBurner: Bool) -> NSColor
+    func inactiveAddressBarBackgroundColor(isBurner: Bool) -> NSColor
 
     // MARK: - Bookmarks
     var bookmarksManagerBackgroundColor: NSColor { get }
@@ -49,16 +48,12 @@ protocol ColorsProviding {
     var settingsBackgroundColor: NSColor { get }
 
     // MARK: - Suggestions
-    var suggestionsBackgroundColor: NSColor { get }
     var suggestionsTextColor: NSColor { get }
-    var suggestionsSuffixColor: NSColor { get }
-    var suggestionsHighlightSuffixColor: NSColor { get }
     var suggestionsHighlightBackgroundColor: NSColor { get }
     var suggestionsHighlightTextColor: NSColor { get }
-
-    // MARK: - Suggestions + Fire
-    var suggestionsFireSuffixColor: NSColor { get }
-    var suggestionsFireHighlightSuffixColor: NSColor { get }
+    func suggestionsBackgroundColor(isBurner: Bool) -> NSColor
+    func suggestionsSuffixColor(isBurner: Bool) -> NSColor
+    func suggestionsHighlightSuffixColor(isBurner: Bool) -> NSColor
 
     // MARK: - Semantic
     var accentPrimaryColor: NSColor { get }
@@ -78,9 +73,9 @@ protocol ColorsProviding {
     var textTertiaryColor: NSColor { get }
 
     // MARK: - Unified Input
-    var unifiedInputToggleBackground: NSColor { get }
-    var unifiedInputToggleSelectionBackground: NSColor { get }
-    var unifiedInputToggleSelectionBorder: NSColor { get }
+    func unifiedInputToggleBackground(isBurner: Bool) -> NSColor
+    func unifiedInputToggleSelectionBackground(isBurner: Bool) -> NSColor
+    func unifiedInputToggleSelectionBorder(isBurner: Bool) -> NSColor
 }
 
 struct ColorsProvidingFactory {
@@ -108,8 +103,6 @@ final class LegacyColorsProviding: ColorsProviding {
     var addressBarShadowColor: NSColor { palette.shadowTertiary }
     var addressBarSuffixTextColor: NSColor { palette.textSecondary }
     var addressBarTextFieldColor: NSColor { palette.textPrimary }
-    var addressBarActiveBorderColor: NSColor { palette.accentPrimary }
-    var addressBarFireBorderColor: NSColor { NSColor.burnerAccent.withAlphaComponent(0.8) }
 
     var settingsBackgroundColor: NSColor { palette.surfaceCanvas }
     var iconsColor: NSColor { palette.iconsPrimary }
@@ -125,21 +118,21 @@ final class LegacyColorsProviding: ColorsProviding {
     var downloadsPanelBackgroundColor: NSColor { palette.surfaceSecondary }
     var passwordManagerBackgroundColor: NSColor { palette.surfaceSecondary }
     var passwordManagerLockScreenBackgroundColor: NSColor { palette.surfaceSecondary }
-    var activeAddressBarBackgroundColor: NSColor { palette.surfaceTertiary }
-    var inactiveAddressBarBackgroundColor: NSColor { palette.surfaceTertiary }
-    var suggestionsBackgroundColor: NSColor { palette.surfaceTertiary }
     var suggestionsTextColor: NSColor { addressBarTextFieldColor }
-    var suggestionsSuffixColor: NSColor { palette.accentPrimary }
-    var suggestionsHighlightSuffixColor: NSColor { palette.accentContentSecondary }
     var suggestionsHighlightBackgroundColor: NSColor { palette.accentPrimary }
     var suggestionsHighlightTextColor: NSColor { palette.accentContentPrimary }
-    var suggestionsFireSuffixColor: NSColor { palette.accentPrimary }
-    var suggestionsFireHighlightSuffixColor: NSColor { palette.accentContentSecondary }
     var bannerBackgroundColor: NSColor { palette.surfacePrimary }
     var popoverBackgroundColor: NSColor { palette.surfaceSecondary }
-    var unifiedInputToggleBackground: NSColor { palette.controlsRaisedBackdrop }
-    var unifiedInputToggleSelectionBackground: NSColor { palette.controlsRaisedFillPrimary }
-    var unifiedInputToggleSelectionBorder: NSColor { palette.shadowSecondary }
+
+    func addressBarActiveBorderColor(isBurner: Bool) -> NSColor { isBurner ? NSColor.burnerAccent.withAlphaComponent(0.8) : palette.accentPrimary }
+    func activeAddressBarBackgroundColor(isBurner: Bool) -> NSColor { palette.surfaceTertiary }
+    func inactiveAddressBarBackgroundColor(isBurner: Bool) -> NSColor { palette.surfaceTertiary }
+    func suggestionsBackgroundColor(isBurner: Bool) -> NSColor { palette.surfaceTertiary }
+    func suggestionsSuffixColor(isBurner: Bool) -> NSColor { palette.accentPrimary }
+    func suggestionsHighlightSuffixColor(isBurner: Bool) -> NSColor { palette.accentContentSecondary }
+    func unifiedInputToggleBackground(isBurner: Bool) -> NSColor { palette.controlsRaisedBackdrop }
+    func unifiedInputToggleSelectionBackground(isBurner: Bool) -> NSColor { palette.controlsRaisedFillPrimary }
+    func unifiedInputToggleSelectionBorder(isBurner: Bool) -> NSColor { palette.shadowSecondary }
 
     init(palette: ThemeColors) {
         self.palette = palette
@@ -151,14 +144,22 @@ final class CurrentColorsProviding: ColorsProviding {
     private let palette: ThemeColors
 
     // MARK: - Address Bar
-    var addressBarActiveBorderColor: NSColor { palette.accentPrimary }
-    var addressBarFireBorderColor: NSColor { palette.accentFirePrimary }
     var addressBarOutlineShadow: NSColor { palette.accentAltGlowPrimary }
     var addressBarShadowColor: NSColor { palette.shadowTertiary }
     var addressBarSuffixTextColor: NSColor { palette.textSecondary }
     var addressBarTextFieldColor: NSColor { palette.textPrimary }
-    var activeAddressBarBackgroundColor: NSColor { palette.unifiedInputFieldFillPrimary }
-    var inactiveAddressBarBackgroundColor: NSColor { palette.unifiedInputFieldFillSecondary }
+
+    func addressBarActiveBorderColor(isBurner: Bool) -> NSColor {
+        isBurner ? palette.accentFirePrimary : palette.accentPrimary
+    }
+
+    func activeAddressBarBackgroundColor(isBurner: Bool) -> NSColor {
+        isBurner ? palette.unifiedInputFireFieldFillPrimary : palette.unifiedInputFieldFillPrimary
+    }
+
+    func inactiveAddressBarBackgroundColor(isBurner: Bool) -> NSColor {
+        isBurner ? palette.unifiedInputFireFieldFillSecondary : palette.unifiedInputFieldFillSecondary
+    }
 
     // MARK: - Bookmarks
     var bookmarksManagerBackgroundColor: NSColor { palette.surfaceCanvas }
@@ -178,16 +179,21 @@ final class CurrentColorsProviding: ColorsProviding {
     var settingsBackgroundColor: NSColor { palette.surfaceCanvas }
 
     // MARK: - Suggestions
-    var suggestionsBackgroundColor: NSColor { activeAddressBarBackgroundColor }
     var suggestionsTextColor: NSColor { palette.textPrimary }
-    var suggestionsSuffixColor: NSColor { palette.accentTextPrimary }
-    var suggestionsHighlightSuffixColor: NSColor { palette.accentTextPrimary }
     var suggestionsHighlightBackgroundColor: NSColor { palette.controlsFillPrimary }
     var suggestionsHighlightTextColor: NSColor { palette.textPrimary }
 
-    // MARK: - Suggestions + Fire
-    var suggestionsFireSuffixColor: NSColor { palette.accentFirePrimary }
-    var suggestionsFireHighlightSuffixColor: NSColor { palette.accentFirePrimary }
+    func suggestionsBackgroundColor(isBurner: Bool) -> NSColor {
+        activeAddressBarBackgroundColor(isBurner: isBurner)
+    }
+
+    func suggestionsSuffixColor(isBurner: Bool) -> NSColor {
+        isBurner ? palette.accentFirePrimary : palette.accentTextPrimary
+    }
+
+    func suggestionsHighlightSuffixColor(isBurner: Bool) -> NSColor {
+        isBurner ? palette.accentFirePrimary : palette.accentTextPrimary
+    }
 
     // MARK: - Semantic
     var accentPrimaryColor: NSColor { palette.accentPrimary }
@@ -207,9 +213,18 @@ final class CurrentColorsProviding: ColorsProviding {
     var textTertiaryColor: NSColor { palette.textTertiary }
 
     // MARK: - Unified Input
-    var unifiedInputToggleBackground: NSColor { palette.unifiedInputControlFillSecondary }
-    var unifiedInputToggleSelectionBackground: NSColor { palette.unifiedInputControlFillPrimary }
-    var unifiedInputToggleSelectionBorder: NSColor { palette.unifiedInputControlShadowPrimary }
+    func unifiedInputToggleBackground(isBurner: Bool) -> NSColor {
+        isBurner ? palette.unifiedInputFireControlFillSecondary : palette.unifiedInputControlFillSecondary
+    }
+
+    func unifiedInputToggleSelectionBackground(isBurner: Bool) -> NSColor {
+        isBurner ? palette.unifiedInputFireControlFillPrimary : palette.unifiedInputControlFillPrimary
+    }
+
+    /// Fire shares the standard shadow token — there is no Fire-specific variant in the palette.
+    func unifiedInputToggleSelectionBorder(isBurner: Bool) -> NSColor {
+        palette.unifiedInputControlShadowPrimary
+    }
 
     init(palette: ThemeColors) {
         self.palette = palette

@@ -2366,9 +2366,10 @@ final class AddressBarButtonsViewController: NSViewController {
 
     private func applyThemeToToggleControl(_ toggleControl: CustomToggleControl) {
         let colorsProvider = themeManager.theme.colorsProvider
-        let backgroundColor = colorsProvider.unifiedInputToggleBackground
-        let selectionBorder = colorsProvider.unifiedInputToggleSelectionBorder
-        let selectionBackgroundColor = colorsProvider.unifiedInputToggleSelectionBackground
+        let isBurner = tabCollectionViewModel.isBurner
+        let backgroundColor = colorsProvider.unifiedInputToggleBackground(isBurner: isBurner)
+        let selectionBorder = colorsProvider.unifiedInputToggleSelectionBorder(isBurner: isBurner)
+        let selectionBackgroundColor = colorsProvider.unifiedInputToggleSelectionBackground(isBurner: isBurner)
 
         toggleControl.backgroundColor = backgroundColor
         toggleControl.borderColor = nil
@@ -2376,7 +2377,7 @@ final class AddressBarButtonsViewController: NSViewController {
         toggleControl.selectionColor = selectionBackgroundColor
         toggleControl.selectionInnerBorderColor = selectionBorder
 
-        if tabCollectionViewModel.isBurner {
+        if isBurner {
             toggleControl.focusBorderColor = NSColor.burnerAccent.withAlphaComponent(0.8)
             toggleControl.outerBorderColor = NSColor.burnerAccent.withAlphaComponent(0.2)
         } else {

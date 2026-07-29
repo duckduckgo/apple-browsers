@@ -2026,7 +2026,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         let colorsProvider = theme.colorsProvider
         let isAppRebranding = themeManager.isAppRebranded
 
-        backgroundView.backgroundColor = colorsProvider.activeAddressBarBackgroundColor
+        backgroundView.backgroundColor = colorsProvider.activeAddressBarBackgroundColor(isBurner: burnerMode.isBurner)
         backgroundView.cornerRadius = barStyleProvider.addressBarActiveBackgroundViewRadiusWithSuggestions
 
         if isAppRebranding {

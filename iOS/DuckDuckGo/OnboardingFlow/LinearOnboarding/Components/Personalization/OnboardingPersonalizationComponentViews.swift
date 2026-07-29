@@ -44,19 +44,25 @@ extension OnboardingPersonalizationContent.Item.ItemType {
 
 }
 
+// MARK: - Toggle Item
 
 struct OnboardingPersonalizationToggleItemsList: View {
+    private enum Metrics {
+        static let contentSpacing: CGFloat = 16.0
+        static let dividerHeight: CGFloat = 1.0
+    }
+
     @Environment(\.onboardingTheme) private var onboardingTheme
 
     let items: [OnboardingPersonalizationToggleItem]
 
     var body: some View {
-        VStack(spacing: onboardingTheme.linearOnboardingMetrics.buttonSpacing) {
+        VStack(spacing: Metrics.contentSpacing) {
             ForEach(items) { item in
                 OnboardingPersonalizationToggleItemView(icon: item.item.type.icon, title: item.item.title, subtitle: item.item.subtitle, toggleBinding: item.isOn)
+
                 Divider()
-                    .frame(height: 1.0)
-                    .padding(.top, 16.0)
+                    .frame(height: Metrics.dividerHeight)
             }
         }
     }
@@ -66,7 +72,7 @@ struct OnboardingPersonalizationToggleItemsList: View {
 struct OnboardingPersonalizationToggleItemView: View {
     private enum Metrics {
         static let iconTextHorizontalSpacing: CGFloat = 10.0
-        static let copyVerticalSpacing: CGFloat = 8.0
+        static let copyVerticalSpacing: CGFloat = 0
     }
 
     @Environment(\.onboardingTheme) private var onboardingTheme

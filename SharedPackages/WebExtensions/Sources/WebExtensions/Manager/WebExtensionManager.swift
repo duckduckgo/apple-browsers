@@ -323,12 +323,8 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
 
         try loader.unloadExtension(identifier: identifier, from: controller)
 
-        // Don't unregister the message handlers up front. loadWebExtension re-registers them via
-        // the willLoad delegate callback (the router replaces handlers per feature), so a pre-load
-        // unregister is redundant on success and — because the load is async — opens a window with
-        // no handlers; worse, if the reload throws the handlers are gone and the extension is left
-        // without messaging. Unregister only as cleanup when the reload actually fails, matching
-        // installExtension.
+        // loadWebExtension re-registers the handlers itself, so unregistering up front only opens a
+        // window with no handlers — and leaves none at all if the reload throws. Clean up on failure.
         do {
             _ = try await loader.loadWebExtension(identifier: identifier, into: controller)
         } catch {

@@ -87,15 +87,11 @@ extension WebExtensionManager {
                     let oldVersion = installed.version
                     let oldIdentifier = installed.uniqueIdentifier
 
-                    // Install the new version before removing the old one. The two versions have
-                    // distinct identifiers and can briefly coexist, so installing first means a
-                    // failed upgrade leaves the old version installed and working (installEmbeddedExtension
-                    // rolls back its own partial state on error), rather than uninstalling the old
-                    // version and being left with nothing when the new one fails to load.
+                    // Install before uninstalling: the versions have distinct identifiers and can
+                    // coexist, so a failed upgrade leaves the old version installed and working.
                     try await installEmbeddedExtension(from: bundledURL, type: descriptor.type, requiresExtraction: bundledMetadata.requiresExtraction)
 
-                    // The new version is live. Remove the old one; a removal failure isn't fatal
-                    // (the new version is already installed) so log and continue instead of aborting.
+                    // Removal failure isn't fatal — the new version is already installed.
                     do {
                         try uninstallExtension(identifier: oldIdentifier)
                     } catch {

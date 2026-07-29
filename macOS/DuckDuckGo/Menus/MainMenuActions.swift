@@ -1571,9 +1571,7 @@ extension MainViewController {
     @objc func moveTabToNewWindow(_ sender: Any?) {
         guard let (tab, index) = getActiveTabAndIndex() else { return }
 
-        // The tab keeps its identity — it moves to a new window, it isn't closed and reopened.
-        // Suppress the close/reopen so the extension keeps it registered (the new window still
-        // reports didOpenWindow, and WebKit re-resolves the tab's window on demand).
+        // The tab moves to a new window; it isn't closed and reopened.
         TabCollectionViewModel.withWebExtensionTabLifecycleEventsSuppressed {
             tabCollectionViewModel.remove(at: index)
             WindowsManager.openNewWindow(with: tab)
@@ -1621,8 +1619,7 @@ extension MainViewController {
         let otherTabs = otherTabCollectionViewModels.flatMap { $0.tabCollection.tabs }
         let otherLocalHistoryOfRemovedTabs = Set(otherTabCollectionViewModels.flatMap { $0.tabCollection.localHistoryOfRemovedTabs })
 
-        // The merged tabs stay alive under the same identity — suppress the append's didOpenTab so
-        // the extension doesn't see them as newly opened.
+        // The merged tabs stay alive under the same identity; they aren't newly opened.
         TabCollectionViewModel.withWebExtensionTabLifecycleEventsSuppressed {
             tabCollectionViewModel.append(tabs: otherTabs, andSelect: false)
         }

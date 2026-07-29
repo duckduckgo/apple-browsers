@@ -31,16 +31,10 @@ final class WebExtensionEventsCoordinator {
     /// preventing duplicate notifications when a controller is lazily recreated.
     private var reportedTabUIDs = Set<String>()
 
-    /// Old `WKWebExtensionTab` objects for tabs whose WebKit content process was terminated and
-    /// whose controller was evicted, retained (keyed by `tabModel.uid`) until the tab's
-    /// replacement controller is created. On recreation the swap is reported as didReplaceTab so
-    /// the extension keeps the tab's id, message ports and per-tab state — a didOpenTab would
-    /// assign a new tab id and orphan everything keyed on the old one. Pruned (and closed) if the
-    /// tab is removed while still evicted.
-    ///
-    /// ponytail: holds the (process-less, lightweight) controller shell until reactivation; the
-    /// heavy content-process memory is already reclaimed by the OS. Add an LRU cap if retention
-    /// of many never-reactivated evicted tabs ever measurably matters.
+    /// Controllers of tabs whose WebKit process was terminated and whose controller was evicted,
+    /// kept (keyed by `tabModel.uid`) until a replacement controller is created, so the swap can be
+    /// reported as didReplaceTab and the tab keeps its extension identity rather than getting a new
+    /// tab id. Closed instead if the tab is removed while still evicted.
     private var invalidatedControllersByTabUID = [String: TabViewController]()
 
     @available(iOS 18.4, *)
@@ -65,10 +59,8 @@ final class WebExtensionEventsCoordinator {
         webExtensionManager?.eventsListener.didCloseTab(tabViewController, windowIsClosing: windowIsClosing)
     }
 
-    /// Closes a tab identified by its model. Resolves the controller from the live cache, or — when
-    /// the tab's WebKit process was evicted — from the retained invalidated controller, so a tab
-    /// closed while evicted is reported to the extension right away instead of lingering in
-    /// `invalidatedControllersByTabUID` until an unrelated prune.
+    /// Closes a tab identified by its model, resolving the controller from the live cache or — when
+    /// the tab's WebKit process was evicted — from the retained one, so it's reported right away.
     @available(iOS 18.4, *)
     func didCloseTab(_ tab: Tab, windowIsClosing: Bool = false) {
         guard let controller = mainViewController?.tabManager.controller(for: tab)
@@ -169,10 +161,8 @@ extension WebExtensionEventsCoordinator: TabControllerCacheDelegate {
 
         let uid = controller.tabModel.uid
 
-        // If this controller replaces one that was evicted after its WebKit process was
-        // terminated, report a replacement rather than a new open. This preserves the tab's
-        // extension identity (id, message ports, per-tab state); a didOpenTab would assign a
-        // new tab id and orphan everything keyed on the old one.
+        // Replacing an evicted controller: report a replacement, not a new open, so the tab keeps
+        // its extension identity.
         if let oldController = invalidatedControllersByTabUID.removeValue(forKey: uid), oldController !== controller {
             reportedTabUIDs.insert(uid)
             webExtensionManager?.eventsListener.didReplaceTab(oldController, with: controller)
@@ -183,21 +173,16 @@ extension WebExtensionEventsCoordinator: TabControllerCacheDelegate {
         didOpenTab(controller)
     }
 
-    // When a background tab's WebKit process terminates, its controller is evicted from the
-    // cache while the tab stays in the model. We must not call didCloseTab (extensions would
-    // drop the tab entirely). Instead we retain the old controller — WebKit still has it
-    // registered — and report didReplaceTab once the replacement controller is created (see
-    // above), so the tab keeps its identity. If the tab is closed before then,
-    // pruneInvalidatedControllers closes it.
+    // The tab stays in the model, so we must not call didCloseTab — extensions would drop it
+    // entirely. Retain the controller instead and report didReplaceTab on recreation (see above).
     func tabManager(_ tabManager: TabManager, didInvalidateController controller: TabViewController) {
         guard #available(iOS 18.4, *) else { return }
         pruneInvalidatedControllers()
         invalidatedControllersByTabUID[controller.tabModel.uid] = controller
     }
 
-    /// Releases retained old controllers whose tab no longer exists in the model — i.e. the tab
-    /// was closed while its WebKit process was terminated, so no didCloseTab was ever fired for
-    /// it. Reports the close so the extension stops tracking the now-stale tab.
+    /// Reports retained controllers whose tab is gone from the model as closed, so the extension
+    /// stops tracking tabs that were removed while evicted.
     @available(iOS 18.4, *)
     private func pruneInvalidatedControllers() {
         guard !invalidatedControllersByTabUID.isEmpty, let tabManager = mainViewController?.tabManager else { return }

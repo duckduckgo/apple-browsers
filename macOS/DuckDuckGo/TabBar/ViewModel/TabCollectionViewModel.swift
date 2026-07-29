@@ -737,8 +737,7 @@ final class TabCollectionViewModel: NSObject {
 
         let parentTab = movedTab.parentTab
 
-        // Moving a tab to another window keeps the same Tab; suppress the destination's didOpenTab so
-        // the extension keeps it registered under the same identity rather than seeing a new tab.
+        // Same Tab, new window — suppress the destination's open so its identity is preserved.
         Self.withWebExtensionTabLifecycleEventsSuppressed {
             guard sourceCollection.moveTab(at: fromIndex.item, to: targetCollection, at: toIndex.item) else {
                 return
@@ -866,8 +865,7 @@ final class TabCollectionViewModel: NSObject {
         // Materialize if unloaded — pinned tabs must always be loaded
         guard let tab = materialize(at: .unpinned(index)) else { return }
 
-        // Pinning moves the tab between collections; report it to the web extension as a
-        // single `.pinned` property change rather than a close + reopen (see helper below).
+        // Report the move as a single `.pinned` change (emitted by `pin`) rather than a close + reopen.
         Self.withWebExtensionTabLifecycleEventsSuppressed {
             pinnedTabsManager?.pin(tab)
             removeUnpinnedTab(at: index, published: false)
@@ -891,11 +889,9 @@ final class TabCollectionViewModel: NSObject {
         }
     }
 
-    /// Runs `body` while the web extension controller ignores tab open/close callbacks, so a tab that
-    /// merely moves between collections or windows keeps its identity with the extension instead of
-    /// being reported as a spurious close + reopen — which would unregister the tab and break its
-    /// messaging. WebKit re-resolves the tab's current window lazily via `window(for:)`. No-op when
-    /// web extensions are unavailable.
+    /// Runs `body` with web extension tab open/close events suppressed, so a tab that merely moves
+    /// between collections or windows keeps its identity instead of being unregistered and
+    /// re-registered. WebKit re-resolves the tab's window lazily via `window(for:)`.
     static func withWebExtensionTabLifecycleEventsSuppressed(_ body: () -> Void) {
         guard #available(macOS 15.4, *),
               let eventsListener = NSApp.delegateTyped.webExtensionManager?.eventsListener else {

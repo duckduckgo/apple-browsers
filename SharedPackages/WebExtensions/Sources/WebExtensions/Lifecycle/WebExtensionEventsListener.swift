@@ -37,12 +37,9 @@ public protocol WebExtensionEventsListening {
     func didReplaceTab(_ oldTab: WKWebExtensionTab, with tab: WKWebExtensionTab)
     func didChangeTabProperties(_ properties: WKWebExtension.TabChangedProperties, for tab: WKWebExtensionTab)
 
-    /// Runs `body` with `didOpenTab`/`didCloseTab` callbacks suppressed.
-    ///
-    /// Use when a tab moves between the app's internal tab collections (e.g. pin/unpin):
-    /// the move surfaces as a remove + insert of the same tab, which would tell WebKit to
-    /// drop and re-register it — losing its messaging. The move should instead be reported
-    /// as a single `.pinned` property change, which the caller emits inside `body`.
+    /// Runs `body` with `didOpenTab`/`didCloseTab` suppressed. Use when a tab moves between the
+    /// app's tab collections or windows: the move surfaces as a remove + insert of the same tab,
+    /// which would make WebKit drop and re-register it, losing its messaging.
     func withTabLifecycleEventsSuppressed(_ body: () -> Void)
 }
 
@@ -52,7 +49,6 @@ public final class WebExtensionEventsListener: WebExtensionEventsListening {
     public weak var controller: WKWebExtensionController?
     public private(set) var droppedCallbacksCount = 0
 
-    /// While set, `didOpenTab`/`didCloseTab` are dropped — see `withTabLifecycleEventsSuppressed(_:)`.
     private var isSuppressingTabLifecycleEvents = false
 
     public init() {}

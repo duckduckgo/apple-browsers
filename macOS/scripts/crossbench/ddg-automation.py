@@ -22,7 +22,9 @@ def request(port, method, path, params=None, timeout=60):
     token = os.environ.get("AUTOMATION_TOKEN", "")
     if not token:
         raise RuntimeError("AUTOMATION_TOKEN is required")
-    query = urllib.parse.urlencode(params or {})
+    query = urllib.parse.urlencode(
+        params or {}, quote_via=urllib.parse.quote
+    )
     url = base_url(port) + path + (("?" + query) if query else "")
     data = b"" if method == "POST" else None
     req = urllib.request.Request(url, data=data, method=method)

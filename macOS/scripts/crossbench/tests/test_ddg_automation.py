@@ -42,6 +42,29 @@ class DDGAutomationTests(unittest.TestCase):
         )
         self.assertNotIn("private-token", request.full_url)
 
+    def test_request_percent_encodes_script_spaces(self):
+        response = mock.MagicMock()
+        response.__enter__.return_value = io.BytesIO(
+            b'{"message":"null","requestPath":"/execute"}'
+        )
+        with mock.patch.dict(
+            os.environ, {"AUTOMATION_TOKEN": "private-token"}
+        ), mock.patch.object(
+            DDG_AUTOMATION.urllib.request,
+            "urlopen",
+            return_value=response,
+        ) as urlopen:
+            DDG_AUTOMATION.request(
+                "8788",
+                "POST",
+                "/execute",
+                {"script": "return 1 + 1"},
+            )
+
+        request = urlopen.call_args.args[0]
+        self.assertIn("script=return%201%20%2B%201", request.full_url)
+        self.assertNotIn("script=return+1", request.full_url)
+
     def test_measure_clears_state_before_navigation(self):
         calls = []
 

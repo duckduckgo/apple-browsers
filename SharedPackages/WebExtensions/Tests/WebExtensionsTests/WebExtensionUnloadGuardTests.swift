@@ -156,14 +156,15 @@ final class WebExtensionUnloadGuardTests: XCTestCase {
         let context = try await makeContext(identifier: "dnr-extension", permissions: ["declarativeNetRequest"])
         unloadGuard.recordLoad(of: "dnr-extension")
 
-        let task = Task { @MainActor in
+        let task = Task { @MainActor () -> (elapsed: TimeInterval, wasCancelled: Bool) in
             let start = Date()
             await unloadGuard.awaitSettled(context)
-            return Date().timeIntervalSince(start)
+            return (Date().timeIntervalSince(start), Task.isCancelled)
         }
         task.cancel()
 
-        let elapsed = await task.value
-        XCTAssertGreaterThan(elapsed, settleWindow * 0.8)
+        let result = await task.value
+        XCTAssertTrue(result.wasCancelled, "the task must really be cancelled, or this proves nothing")
+        XCTAssertGreaterThan(result.elapsed, settleWindow * 0.8)
     }
 }

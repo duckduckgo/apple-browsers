@@ -66,7 +66,7 @@ enum BrowserChromeBackgroundStyle: String, CaseIterable, Identifiable {
     case systemThickMaterial
     case systemChromeMaterial
 
-    static let defaultValue = BrowserChromeBackgroundStyle.systemChromeMaterial
+    static let defaultValue = BrowserChromeBackgroundStyle.glass
 
     var id: String {
         rawValue

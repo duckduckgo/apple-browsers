@@ -212,7 +212,7 @@
 "action.title.vpn" = "VPN";
 
 /* Description of the Ad Blocking feature in settings */
-"ad.blocking.description" = "Blokira invazivne alate za praćenje prije nego što se učitaju, učinkovito eliminirajući oglase koji se oslanjaju na praćenje";
+"ad.blocking.description" = "Blokira invazivne alate za praćenje prije nego što se učitaju, učinkovito eliminirajući oglase koji se oslanjaju na praćenje.";
 
 /* Section header for YouTube-specific ad blocking settings */
 "ad.blocking.youtube.section.header" = "Blokiranje YouTube oglasa";
@@ -3199,7 +3199,7 @@
 "omnibar.notification.trackers-blocked" = "%d Trackers";
 
 /* Text displayed on notification appearing in the address bar when YouTube ad blocking is active */
-"omnibar.notification.youtube-ad-block-on" = "Blokiranje YouTube oglasa je uključeno";
+"omnibar.notification.youtube-ad-block-on" = "Oglasi blokirani";
 
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Shvatio/la sam";
@@ -3864,9 +3864,6 @@
 /* Settings picker label for what to show when returning after inactivity */
 "settings.afterInactivity.v2.label" = "Nakon neaktivnosti";
 
-/* Footer under the AI picker, descriptive sentence without link */
-"settings.ai.new.picker.footer" = "Isprobaj novu opciju za prebacivanje između pretraživanja i Duck.ai u adresnoj traci.";
-
 /* Settings row that opens Duck.ai in a new tab */
 "settings.aichat.duckai.settings" = "Duck.ai postavke";
 
@@ -3881,9 +3878,6 @@
 
 /* Settings screen footer text for showing AI Chat in the input box */
 "settings.aichat.shortcuts.input.footer" = "Pretraži mrežu ili pitaj Duck.ai izravno iz adresne trake";
-
-/* Title of search assist settings link */
-"settings.aifeatures.assist" = "Pretraži postavke Assista";
 
 /* Search Assist frequency option: never show AI-assisted answers */
 "settings.aifeatures.assist.never" = "Nikad";
@@ -4203,6 +4197,9 @@
 /* The name of a settings category listing next steps */
 "settings.next.steps" = "Sljedeći koraci";
 
+/* Accessibility label / title for the button that hides the Settings Next Steps section */
+"settings.next.steps.hide" = "Sakrij";
+
 /* Label describing a feature which is turned off */
 "settings.off" = "Isključeno";
 
@@ -4397,6 +4394,12 @@
 
 /* Settings screen cell text for Unprotected Sites */
 "settings.unprotected.sites" = "Nezaštićena web-mjesta";
+
+/* Description shown above the list of unprotected sites */
+"settings.unprotected.sites.description" = "Ova web-mjesta neće biti unaprijeđena zaštitom privatnosti.";
+
+/* Message shown when there are no unprotected sites */
+"settings.unprotected.sites.empty.state" = "Zaštita privatnosti omogućena je za sva web-mjesta";
 
 /* Settings cell for Version */
 "settings.version" = "Verzija";
@@ -5317,10 +5320,10 @@
 "windows-waitlist.waitlist-download-screen.try-duckduckgo-for-windows" = "Nabavi DuckDuckGo za Windows!";
 
 /* Body text of the bottom sheet asking the user to send an anonymous breakage report */
-"youtube.ad.blocking.breakage-report.message" = "Pošalji anonimnu prijavu kvara DuckDuckGou. Pomozi nam da poboljšamo blokiranje oglasa za sve!";
+"youtube.ad.blocking.breakage-report.message" = "Pošalji anonimnu prijavu DuckDuckGou i pomozi nam da poboljšamo blokiranje oglasa za sve!";
 
 /* Primary action sending an anonymous YouTube ad-blocking breakage report */
-"youtube.ad.blocking.breakage-report.send" = "Pošalji izvješće o problemu";
+"youtube.ad.blocking.breakage-report.send" = "Pošalji anonimnu prijavu";
 
 /* Title of the bottom sheet asking the user to send an anonymous breakage report after disabling YouTube ad blocking */
 "youtube.ad.blocking.breakage-report.title" = "Blokiranje oglasa na YouTubeu ne radi?";
@@ -5457,3 +5460,39 @@
 "network.protection.strict.routing.reminder.notification.body" = "Dio prometa može zaobići VPN dok je isključen. Strogo usmjeravanje preporučuje se za javne mreže.";
 /* The title of the notification reminding the user to turn the VPN Strict routing setting back on */
 "network.protection.strict.routing.reminder.notification.title" = "Strogo usmjeravanje je ISKLJUČENO";
+
+/* Title for the New Image row in the Duck.ai tab header Plus (+) menu — opens Duck.ai in image generation mode */
+"aichat.header.plusMenu.newImage" = "Nova slika";
+
+/* Error toast shown when a Duck.ai chat download fails and nothing was saved. */
+"aiChat.history.download.failed.message" = "Preuzimanje nije uspjelo. Pokušaj ponovno.";
+
+/* Accessibility label for the overflow (three dots) menu button in the Duck.ai chat history navigation bar. */
+"aiChat.history.menu.a11y" = "Više";
+
+/* Menu item opening Duck.ai Chat Protection settings from the Duck.ai chat history list. */
+"aiChat.history.menu.chatProtection" = "Zaštita čavrljanja";
+
+/* Menu item that starts multi-selecting chats in the Duck.ai chat history list. */
+"aiChat.history.menu.selectChats" = "Odaberi čavrljanja";
+
+/* Long-press row menu item that deletes a Duck.ai chat. */
+"aiChat.history.rowMenu.delete" = "Izbriši";
+
+/* Long-press row menu item that downloads a Duck.ai chat. */
+"aiChat.history.rowMenu.download" = "Preuzimanje";
+
+/* Long-press row menu item that pins a Duck.ai chat. */
+"aiChat.history.rowMenu.pin" = "Prikvači";
+
+/* Long-press row menu item that starts multi-selecting chats in the Duck.ai chat history list. */
+"aiChat.history.rowMenu.select" = "Odabir";
+
+/* Long-press row menu item that unpins a Duck.ai chat. */
+"aiChat.history.rowMenu.unpin" = "Otkvači";
+
+/* Accessibility label for the search button in the Duck.ai chat history navigation bar. */
+"aiChat.history.search.a11y" = "Traži";
+
+/* Multi-select toolbar button that deletes all chats when none are individually selected. */
+"aiChat.history.selection.deleteAll" = "Izbriši sve";

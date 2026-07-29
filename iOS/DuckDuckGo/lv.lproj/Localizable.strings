@@ -3199,7 +3199,7 @@
 "omnibar.notification.trackers-blocked" = "%d Trackers";
 
 /* Text displayed on notification appearing in the address bar when YouTube ad blocking is active */
-"omnibar.notification.youtube-ad-block-on" = "YouTube reklāmu bloķēšana ieslēgta";
+"omnibar.notification.youtube-ad-block-on" = "Reklāmu bloķēšana ieslēgta";
 
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Sapratu";
@@ -3864,9 +3864,6 @@
 /* Settings picker label for what to show when returning after inactivity */
 "settings.afterInactivity.v2.label" = "Pēc neaktivitātes perioda";
 
-/* Footer under the AI picker, descriptive sentence without link */
-"settings.ai.new.picker.footer" = "Izmēģini jauno iespēju pārslēgties starp meklēšanu un Duck.ai adrešu joslā.";
-
 /* Settings row that opens Duck.ai in a new tab */
 "settings.aichat.duckai.settings" = "Duck.ai iestatījumi";
 
@@ -3881,9 +3878,6 @@
 
 /* Settings screen footer text for showing AI Chat in the input box */
 "settings.aichat.shortcuts.input.footer" = "Meklē tīmeklī vai jautā Duck.ai tieši adrešu joslā";
-
-/* Title of search assist settings link */
-"settings.aifeatures.assist" = "Meklēšanas Assist iestatījumi";
 
 /* Search Assist frequency option: never show AI-assisted answers */
 "settings.aifeatures.assist.never" = "Nekad";
@@ -4203,6 +4197,9 @@
 /* The name of a settings category listing next steps */
 "settings.next.steps" = "Nākamie soļi";
 
+/* Accessibility label / title for the button that hides the Settings Next Steps section */
+"settings.next.steps.hide" = "Paslēpt";
+
 /* Label describing a feature which is turned off */
 "settings.off" = "Izslēgts";
 
@@ -4397,6 +4394,12 @@
 
 /* Settings screen cell text for Unprotected Sites */
 "settings.unprotected.sites" = "Neaizsargātas vietnes";
+
+/* Description shown above the list of unprotected sites */
+"settings.unprotected.sites.description" = "Šīm vietnēm netiks izmantota privātuma aizsardzība.";
+
+/* Message shown when there are no unprotected sites */
+"settings.unprotected.sites.empty.state" = "Privātuma aizsardzība ir iespējota visām vietnēm";
 
 /* Settings cell for Version */
 "settings.version" = "Versija";
@@ -5317,10 +5320,10 @@
 "windows-waitlist.waitlist-download-screen.try-duckduckgo-for-windows" = "Iegūsti DuckDuckGo operētājsistēmai Windows!";
 
 /* Body text of the bottom sheet asking the user to send an anonymous breakage report */
-"youtube.ad.blocking.breakage-report.message" = "Nosūti anonīmu ziņojumu par traucējumiem pakalpojumam DuckDuckGo. Palīdzi uzlabot reklāmu bloķēšanu visiem!";
+"youtube.ad.blocking.breakage-report.message" = "Nosūti DuckDuckGo anonīmu ziņojumu un palīdzi uzlabot reklāmu bloķēšanu visiem!";
 
 /* Primary action sending an anonymous YouTube ad-blocking breakage report */
-"youtube.ad.blocking.breakage-report.send" = "Nosūtīt ziņojumu par traucējumiem";
+"youtube.ad.blocking.breakage-report.send" = "Sūtīt anonīmu ziņojumu";
 
 /* Title of the bottom sheet asking the user to send an anonymous breakage report after disabling YouTube ad blocking */
 "youtube.ad.blocking.breakage-report.title" = "YouTube reklāmu bloķēšana nedarbojas?";
@@ -5457,3 +5460,39 @@
 "network.protection.strict.routing.reminder.notification.body" = "Daļa datplūsmas var apiet VPN, kamēr tā ir izslēgta. Publiskajos tīklos ieteicams izmantot stingro maršrutēšanu.";
 /* The title of the notification reminding the user to turn the VPN Strict routing setting back on */
 "network.protection.strict.routing.reminder.notification.title" = "Stingrā maršrutēšana ir IZSLĒGTA";
+
+/* Title for the New Image row in the Duck.ai tab header Plus (+) menu — opens Duck.ai in image generation mode */
+"aichat.header.plusMenu.newImage" = "Jauns attēls";
+
+/* Error toast shown when a Duck.ai chat download fails and nothing was saved. */
+"aiChat.history.download.failed.message" = "Neizdevās lejupielādēt. Lūdzu, mēģini vēlreiz.";
+
+/* Accessibility label for the overflow (three dots) menu button in the Duck.ai chat history navigation bar. */
+"aiChat.history.menu.a11y" = "Vairāk";
+
+/* Menu item opening Duck.ai Chat Protection settings from the Duck.ai chat history list. */
+"aiChat.history.menu.chatProtection" = "Tērzēšanas aizsardzība";
+
+/* Menu item that starts multi-selecting chats in the Duck.ai chat history list. */
+"aiChat.history.menu.selectChats" = "Izvēlies tērzēšanas";
+
+/* Long-press row menu item that deletes a Duck.ai chat. */
+"aiChat.history.rowMenu.delete" = "Dzēst";
+
+/* Long-press row menu item that downloads a Duck.ai chat. */
+"aiChat.history.rowMenu.download" = "Lejupielādēt";
+
+/* Long-press row menu item that pins a Duck.ai chat. */
+"aiChat.history.rowMenu.pin" = "Piespraust";
+
+/* Long-press row menu item that starts multi-selecting chats in the Duck.ai chat history list. */
+"aiChat.history.rowMenu.select" = "Atlasīt";
+
+/* Long-press row menu item that unpins a Duck.ai chat. */
+"aiChat.history.rowMenu.unpin" = "Noņemt piespraudi";
+
+/* Accessibility label for the search button in the Duck.ai chat history navigation bar. */
+"aiChat.history.search.a11y" = "Meklēt";
+
+/* Multi-select toolbar button that deletes all chats when none are individually selected. */
+"aiChat.history.selection.deleteAll" = "Dzēst visus";

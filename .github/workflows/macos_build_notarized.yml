@@ -24,10 +24,6 @@ on:
         description: "Asana release task URL"
         required: false
         type: string
-      include-x86-architecture:
-        description: "Include x86_64 architecture in the build"
-        default: false
-        type: boolean
   workflow_call:
     inputs:
       release-type:
@@ -56,10 +52,6 @@ on:
         type: string
       skip-notify:
         description: "Skip Mattermost notification"
-        default: false
-        type: boolean
-      include-x86-architecture:
-        description: "Include x86_64 architecture in the build"
         default: false
         type: boolean
     secrets:
@@ -108,7 +100,6 @@ jobs:
       release-type: ${{ github.event.inputs.release-type || inputs.release-type }}
       asana-task-url: ${{ github.event.inputs.asana-task-url || inputs.asana-task-url }}
       branch: ${{ inputs.branch || github.ref_name }}
-      EXCLUDED_ARCHS: ${{ inputs.include-x86-architecture && '' || 'x86_64' }}
 
     steps:
     - name: Register SSH keys for private repos
@@ -246,6 +237,10 @@ jobs:
         pixel-params: |
           runner: ${{ env.RUNS_ON }}
 
+    - name: Validate release build
+      if: env.is-official-release == 'true'
+      run: ./scripts/validate_release_artifact.sh app "release/${{ env.app-name }}.app" "${{ env.app-version }}"
+
     - name: Set app name and version
       id: set-outputs
       run: |
@@ -377,6 +372,7 @@ jobs:
           macOS/Gemfile.lock
           macOS/fastlane
           macOS/scripts/assets
+          macOS/scripts/validate_release_artifact.sh
 
     - name: Start measuring duration
       id: start-duration
@@ -443,6 +439,10 @@ jobs:
             --app-drop-link 430 160 "${dmg}" \
             "dmg"
         echo "dmg=${dmg}" >> $GITHUB_OUTPUT
+
+    - name: Validate release DMG
+      if: env.release-type == 'release' && env.upload-to == 's3'
+      run: ./scripts/validate_release_artifact.sh dmg "${{ steps.create-dmg.outputs.dmg }}" "${{ env.app-version }}"
 
     - name: Report job duration
       continue-on-error: true

@@ -43,6 +43,12 @@ extension WebExtensionManager {
             if enabledTypes.contains(descriptor.type) {
                 await syncEmbeddedExtension(descriptor)
             } else {
+                // A launch loads every installed extension before this sync runs, so a type that is
+                // disabled gets unloaded seconds after loading — the same window the upgrade branch
+                // above waits out.
+                if let installed = installedEmbeddedExtension(for: descriptor.type) {
+                    await unloadGuard.awaitSettled(context(for: installed.uniqueIdentifier))
+                }
                 uninstallEmbeddedExtension(type: descriptor.type)
             }
         }
@@ -90,6 +96,9 @@ extension WebExtensionManager {
                     // Install before uninstalling: the versions have distinct identifiers and can
                     // coexist, so a failed upgrade leaves the old version installed and working.
                     try await installEmbeddedExtension(from: bundledURL, type: descriptor.type, requiresExtraction: bundledMetadata.requiresExtraction)
+
+                    // Only unload the old version once its own load has settled.
+                    await unloadGuard.awaitSettled(context(for: oldIdentifier))
 
                     // Removal failure isn't fatal — the new version is already installed.
                     do {
@@ -154,6 +163,7 @@ extension WebExtensionManager {
 
         do {
             let loadResult = try await loader.loadWebExtension(identifier: identifier, into: controller)
+            unloadGuard.recordLoad(of: identifier)
 
             let installedExtension = InstalledWebExtension(
                 uniqueIdentifier: identifier,

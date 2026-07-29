@@ -3199,7 +3199,7 @@
 "omnibar.notification.trackers-blocked" = "%d Trackers";
 
 /* Text displayed on notification appearing in the address bar when YouTube ad blocking is active */
-"omnibar.notification.youtube-ad-block-on" = "Blokovanie reklám na YouTube je zapnuté";
+"omnibar.notification.youtube-ad-block-on" = "Blokovanie reklám je zapnuté";
 
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Rozumiem";
@@ -3864,9 +3864,6 @@
 /* Settings picker label for what to show when returning after inactivity */
 "settings.afterInactivity.v2.label" = "Po nečinnosti";
 
-/* Footer under the AI picker, descriptive sentence without link */
-"settings.ai.new.picker.footer" = "Skús novú možnosť prepínania medzi vyhľadávaním a Duck.ai v adresnom riadku.";
-
 /* Settings row that opens Duck.ai in a new tab */
 "settings.aichat.duckai.settings" = "Nastavenia Duck.ai";
 
@@ -3881,9 +3878,6 @@
 
 /* Settings screen footer text for showing AI Chat in the input box */
 "settings.aichat.shortcuts.input.footer" = "Vyhľadaj na webe alebo sa opýtaj Duck.ai priamo z riadku pre adresu";
-
-/* Title of search assist settings link */
-"settings.aifeatures.assist" = "Nastavenia Assist vyhľadávania";
 
 /* Search Assist frequency option: never show AI-assisted answers */
 "settings.aifeatures.assist.never" = "Nikdy";
@@ -4203,6 +4197,9 @@
 /* The name of a settings category listing next steps */
 "settings.next.steps" = "Ďalšie kroky";
 
+/* Accessibility label / title for the button that hides the Settings Next Steps section */
+"settings.next.steps.hide" = "Skryť";
+
 /* Label describing a feature which is turned off */
 "settings.off" = "Vypnuté";
 
@@ -4397,6 +4394,12 @@
 
 /* Settings screen cell text for Unprotected Sites */
 "settings.unprotected.sites" = "Nezabezpečené webové stránky";
+
+/* Description shown above the list of unprotected sites */
+"settings.unprotected.sites.description" = "Tieto webové stránky nebudú rozšírené o ochranu súkromia.";
+
+/* Message shown when there are no unprotected sites */
+"settings.unprotected.sites.empty.state" = "Ochrana súkromia je zapnutá pre všetky webové stránky";
 
 /* Settings cell for Version */
 "settings.version" = "Verzia";
@@ -5317,10 +5320,10 @@
 "windows-waitlist.waitlist-download-screen.try-duckduckgo-for-windows" = "Získajte DuckDuckGo pre Windows!";
 
 /* Body text of the bottom sheet asking the user to send an anonymous breakage report */
-"youtube.ad.blocking.breakage-report.message" = "Odošlite anonymné hlásenie o poruche na DuckDuckGo. Pomôžte zlepšiť blokovanie reklám pre všetkých!";
+"youtube.ad.blocking.breakage-report.message" = "Odošli anonymné hlásenie na DuckDuckGo a pomôž zlepšiť blokovanie reklám pre všetkých!";
 
 /* Primary action sending an anonymous YouTube ad-blocking breakage report */
-"youtube.ad.blocking.breakage-report.send" = "Odoslať správu o nefunkčných aplikáciách";
+"youtube.ad.blocking.breakage-report.send" = "Odošli anonymné hlásenie";
 
 /* Title of the bottom sheet asking the user to send an anonymous breakage report after disabling YouTube ad blocking */
 "youtube.ad.blocking.breakage-report.title" = "Nefunguje blokovanie reklám na YouTube?";
@@ -5457,3 +5460,39 @@
 "network.protection.strict.routing.reminder.notification.body" = "Niektorá prevádzka môže obísť VPN, kým je vypnutá. Prísne smerovanie sa odporúča pre verejné siete.";
 /* The title of the notification reminding the user to turn the VPN Strict routing setting back on */
 "network.protection.strict.routing.reminder.notification.title" = "Prísne smerovanie je VYPNUTÉ";
+
+/* Title for the New Image row in the Duck.ai tab header Plus (+) menu — opens Duck.ai in image generation mode */
+"aichat.header.plusMenu.newImage" = "Nový obrázok";
+
+/* Error toast shown when a Duck.ai chat download fails and nothing was saved. */
+"aiChat.history.download.failed.message" = "Nepodarilo sa stiahnuť. Skús to znova.";
+
+/* Accessibility label for the overflow (three dots) menu button in the Duck.ai chat history navigation bar. */
+"aiChat.history.menu.a11y" = "Viac na";
+
+/* Menu item opening Duck.ai Chat Protection settings from the Duck.ai chat history list. */
+"aiChat.history.menu.chatProtection" = "Ochrana četu";
+
+/* Menu item that starts multi-selecting chats in the Duck.ai chat history list. */
+"aiChat.history.menu.selectChats" = "Vyber čety";
+
+/* Long-press row menu item that deletes a Duck.ai chat. */
+"aiChat.history.rowMenu.delete" = "Zmazať";
+
+/* Long-press row menu item that downloads a Duck.ai chat. */
+"aiChat.history.rowMenu.download" = "Stiahnuť";
+
+/* Long-press row menu item that pins a Duck.ai chat. */
+"aiChat.history.rowMenu.pin" = "Pripnúť";
+
+/* Long-press row menu item that starts multi-selecting chats in the Duck.ai chat history list. */
+"aiChat.history.rowMenu.select" = "Vybrať";
+
+/* Long-press row menu item that unpins a Duck.ai chat. */
+"aiChat.history.rowMenu.unpin" = "Rozpnúť";
+
+/* Accessibility label for the search button in the Duck.ai chat history navigation bar. */
+"aiChat.history.search.a11y" = "Vyhľadávať";
+
+/* Multi-select toolbar button that deletes all chats when none are individually selected. */
+"aiChat.history.selection.deleteAll" = "Odstrániť všetko";

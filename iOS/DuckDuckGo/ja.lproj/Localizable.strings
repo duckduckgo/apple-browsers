@@ -3199,7 +3199,7 @@
 "omnibar.notification.trackers-blocked" = "%d Trackers";
 
 /* Text displayed on notification appearing in the address bar when YouTube ad blocking is active */
-"omnibar.notification.youtube-ad-block-on" = "YouTube広告ブロックオン";
+"omnibar.notification.youtube-ad-block-on" = "広告ブロックオン";
 
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "了解";
@@ -3864,9 +3864,6 @@
 /* Settings picker label for what to show when returning after inactivity */
 "settings.afterInactivity.v2.label" = "操作がない状態が続いた後";
 
-/* Footer under the AI picker, descriptive sentence without link */
-"settings.ai.new.picker.footer" = "アドレスバーで検索とDuck.aiを切り替える新しいオプションを試してください。";
-
 /* Settings row that opens Duck.ai in a new tab */
 "settings.aichat.duckai.settings" = "Duck.ai 設定";
 
@@ -3881,9 +3878,6 @@
 
 /* Settings screen footer text for showing AI Chat in the input box */
 "settings.aichat.shortcuts.input.footer" = "アドレスバーからウェブを検索するか、Duck.aiに直接質問できます";
-
-/* Title of search assist settings link */
-"settings.aifeatures.assist" = "Search Assist設定";
 
 /* Search Assist frequency option: never show AI-assisted answers */
 "settings.aifeatures.assist.never" = "なし";
@@ -4203,6 +4197,9 @@
 /* The name of a settings category listing next steps */
 "settings.next.steps" = "次のステップ";
 
+/* Accessibility label / title for the button that hides the Settings Next Steps section */
+"settings.next.steps.hide" = "非表示";
+
 /* Label describing a feature which is turned off */
 "settings.off" = "無効";
 
@@ -4397,6 +4394,12 @@
 
 /* Settings screen cell text for Unprotected Sites */
 "settings.unprotected.sites" = "保護されていないサイト";
+
+/* Description shown above the list of unprotected sites */
+"settings.unprotected.sites.description" = "以下のサイトはプライバシー保護によって強化されません。";
+
+/* Message shown when there are no unprotected sites */
+"settings.unprotected.sites.empty.state" = "すべてのサイトでプライバシー保護が有効になっています";
 
 /* Settings cell for Version */
 "settings.version" = "バージョン";
@@ -5317,10 +5320,10 @@
 "windows-waitlist.waitlist-download-screen.try-duckduckgo-for-windows" = "DuckDuckGo for Windowsを入手！";
 
 /* Body text of the bottom sheet asking the user to send an anonymous breakage report */
-"youtube.ad.blocking.breakage-report.message" = "DuckDuckGoに匿名の破損レポートを送信して、広告ブロックの改善に協力しましょう。";
+"youtube.ad.blocking.breakage-report.message" = "DuckDuckGoに匿名のレポートを送信して、広告ブロックの改善に協力しましょう！";
 
 /* Primary action sending an anonymous YouTube ad-blocking breakage report */
-"youtube.ad.blocking.breakage-report.send" = "破損レポートを送信";
+"youtube.ad.blocking.breakage-report.send" = "匿名のレポートを送信";
 
 /* Title of the bottom sheet asking the user to send an anonymous breakage report after disabling YouTube ad blocking */
 "youtube.ad.blocking.breakage-report.title" = "YouTube広告ブロックが機能していませんか？";
@@ -5457,3 +5460,39 @@
 "network.protection.strict.routing.reminder.notification.body" = "オフの間、一部のトラフィックがVPNをバイパスする可能性があります。公共ネットワークでは、厳格なルーティングが推奨されます。";
 /* The title of the notification reminding the user to turn the VPN Strict routing setting back on */
 "network.protection.strict.routing.reminder.notification.title" = "厳格なルーティングは無効です";
+
+/* Title for the New Image row in the Duck.ai tab header Plus (+) menu — opens Duck.ai in image generation mode */
+"aichat.header.plusMenu.newImage" = "新しい画像";
+
+/* Error toast shown when a Duck.ai chat download fails and nothing was saved. */
+"aiChat.history.download.failed.message" = "ダウンロードできませんでした。 もう一度お試しください。";
+
+/* Accessibility label for the overflow (three dots) menu button in the Duck.ai chat history navigation bar. */
+"aiChat.history.menu.a11y" = "その他";
+
+/* Menu item opening Duck.ai Chat Protection settings from the Duck.ai chat history list. */
+"aiChat.history.menu.chatProtection" = "チャットの保護";
+
+/* Menu item that starts multi-selecting chats in the Duck.ai chat history list. */
+"aiChat.history.menu.selectChats" = "チャットを選択";
+
+/* Long-press row menu item that deletes a Duck.ai chat. */
+"aiChat.history.rowMenu.delete" = "削除";
+
+/* Long-press row menu item that downloads a Duck.ai chat. */
+"aiChat.history.rowMenu.download" = "ダウンロード";
+
+/* Long-press row menu item that pins a Duck.ai chat. */
+"aiChat.history.rowMenu.pin" = "ピン留め";
+
+/* Long-press row menu item that starts multi-selecting chats in the Duck.ai chat history list. */
+"aiChat.history.rowMenu.select" = "選択";
+
+/* Long-press row menu item that unpins a Duck.ai chat. */
+"aiChat.history.rowMenu.unpin" = "ピン留めを解除";
+
+/* Accessibility label for the search button in the Duck.ai chat history navigation bar. */
+"aiChat.history.search.a11y" = "検索";
+
+/* Multi-select toolbar button that deletes all chats when none are individually selected. */
+"aiChat.history.selection.deleteAll" = "すべて削除";

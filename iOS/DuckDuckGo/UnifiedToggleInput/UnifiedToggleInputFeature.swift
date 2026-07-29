@@ -31,12 +31,16 @@ protocol UnifiedToggleInputFeatureProviding {
     /// No protocol-extension default: every conformer (including test mocks) must declare an
     /// explicit value so test coverage isn't silently masked by a convenient fallback.
     var isToggleHiddenOnDuckAITab: Bool { get }
+
+    /// When true, a native image/file paste is routed into the attachment strip. Backed by `FeatureFlag.unifiedToggleInputAttachmentPaste`.
+    var isAttachmentPasteEnabled: Bool { get }
 }
 
 struct UnifiedToggleInputFeature: UnifiedToggleInputFeatureProviding {
 
     private static let isEligibleKey = "com.duckduckgo.unifiedToggleInput.eligible"
     private static let isToggleHiddenOnDuckAITabKey = "com.duckduckgo.unifiedToggleInput.aiChatTabHideToggle.session.enabled"
+    private static let isAttachmentPasteEnabledKey = "com.duckduckgo.unifiedToggleInput.attachmentPaste.session.enabled"
 
     /// Forward-only "this device has had UTI" bit. Persists across launches and flag flips and is
     /// cleared only by uninstall. Lets the new-user cutoff (`unifiedToggleInputIncludeNewUsers`)
@@ -55,6 +59,7 @@ struct UnifiedToggleInputFeature: UnifiedToggleInputFeatureProviding {
         let isEligible = featureOn && (hasGranted || includeNewUsers)
         UserDefaults.app.set(isEligible, forKey: isEligibleKey)
         UserDefaults.app.set(featureFlagger.isFeatureOn(.aiChatTabHideToggle), forKey: isToggleHiddenOnDuckAITabKey)
+        UserDefaults.app.set(featureFlagger.isFeatureOn(.unifiedToggleInputAttachmentPaste), forKey: isAttachmentPasteEnabledKey)
 
         // Lock in the grant the first launch UTI is actually available on this device, so a later
         // new-user cutoff never revokes it. Device-gated so a device that never showed UTI is not
@@ -80,6 +85,10 @@ struct UnifiedToggleInputFeature: UnifiedToggleInputFeatureProviding {
 
     var isToggleHiddenOnDuckAITab: Bool {
         UserDefaults.app.bool(forKey: Self.isToggleHiddenOnDuckAITabKey)
+    }
+
+    var isAttachmentPasteEnabled: Bool {
+        UserDefaults.app.bool(forKey: Self.isAttachmentPasteEnabledKey)
     }
 
 #if DEBUG

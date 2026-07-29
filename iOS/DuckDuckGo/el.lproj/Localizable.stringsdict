@@ -692,5 +692,21 @@
 			<string>%2$@ Ιχνηλάτης</string>
 		</dict>
 	</dict>
+	<key>aiChat.history.download.complete.message</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@chats@</string>
+		<key>chats</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Λήφθηκε %1$d συνομιλία</string>
+			<key>other</key>
+			<string>Λήφθηκαν %1$d συνομιλίες</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

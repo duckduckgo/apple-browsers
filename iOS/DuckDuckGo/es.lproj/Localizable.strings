@@ -212,7 +212,7 @@
 "action.title.vpn" = "VPN";
 
 /* Description of the Ad Blocking feature in settings */
-"ad.blocking.description" = "Bloquea los rastreadores invasivos antes de que se carguen, eliminando de manera efectiva los anuncios que se basan en el rastreo";
+"ad.blocking.description" = "Bloquea los rastreadores invasivos antes de que se carguen, eliminando de manera efectiva los anuncios que se basan en el rastreo.";
 
 /* Section header for YouTube-specific ad blocking settings */
 "ad.blocking.youtube.section.header" = "Bloqueo de anuncios en YouTube";
@@ -3199,7 +3199,7 @@
 "omnibar.notification.trackers-blocked" = "%d Trackers";
 
 /* Text displayed on notification appearing in the address bar when YouTube ad blocking is active */
-"omnibar.notification.youtube-ad-block-on" = "Bloqueo de anuncios en YouTube activado";
+"omnibar.notification.youtube-ad-block-on" = "Bloqueo de anuncios";
 
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Entendido";
@@ -3864,9 +3864,6 @@
 /* Settings picker label for what to show when returning after inactivity */
 "settings.afterInactivity.v2.label" = "Después de inactividad";
 
-/* Footer under the AI picker, descriptive sentence without link */
-"settings.ai.new.picker.footer" = "Prueba la nueva opción para alternar entre la búsqueda y Duck.ai en la barra de direcciones.";
-
 /* Settings row that opens Duck.ai in a new tab */
 "settings.aichat.duckai.settings" = "Configuración de Duck.ai";
 
@@ -3881,9 +3878,6 @@
 
 /* Settings screen footer text for showing AI Chat in the input box */
 "settings.aichat.shortcuts.input.footer" = "Busca en la web o pregúntale a Duck.ai directamente desde la barra de direcciones";
-
-/* Title of search assist settings link */
-"settings.aifeatures.assist" = "Configuración de Asistente de búsqueda";
 
 /* Search Assist frequency option: never show AI-assisted answers */
 "settings.aifeatures.assist.never" = "Nunca";
@@ -4203,6 +4197,9 @@
 /* The name of a settings category listing next steps */
 "settings.next.steps" = "Próximos pasos";
 
+/* Accessibility label / title for the button that hides the Settings Next Steps section */
+"settings.next.steps.hide" = "Ocultar";
+
 /* Label describing a feature which is turned off */
 "settings.off" = "Desactivado";
 
@@ -4397,6 +4394,12 @@
 
 /* Settings screen cell text for Unprotected Sites */
 "settings.unprotected.sites" = "Sitios no protegidos";
+
+/* Description shown above the list of unprotected sites */
+"settings.unprotected.sites.description" = "La protección de privacidad está deshabilitada para estos sitios.";
+
+/* Message shown when there are no unprotected sites */
+"settings.unprotected.sites.empty.state" = "Protección de privacidad habilitada para todos los sitios";
 
 /* Settings cell for Version */
 "settings.version" = "Versión";
@@ -5317,10 +5320,10 @@
 "windows-waitlist.waitlist-download-screen.try-duckduckgo-for-windows" = "¡Consigue DuckDuckGo para Windows!";
 
 /* Body text of the bottom sheet asking the user to send an anonymous breakage report */
-"youtube.ad.blocking.breakage-report.message" = "Envía un informe anónimo de fallos a DuckDuckGo. ¡Ayuda a que el bloqueo de anuncios sea mejor para todos!";
+"youtube.ad.blocking.breakage-report.message" = "Envía un informe anónimo a DuckDuckGo y ¡ayuda a que el bloqueo de anuncios sea mejor para todos!";
 
 /* Primary action sending an anonymous YouTube ad-blocking breakage report */
-"youtube.ad.blocking.breakage-report.send" = "Enviar informe de averías";
+"youtube.ad.blocking.breakage-report.send" = "Enviar informe anónimo";
 
 /* Title of the bottom sheet asking the user to send an anonymous breakage report after disabling YouTube ad blocking */
 "youtube.ad.blocking.breakage-report.title" = "¿El bloqueo de anuncios de YouTube no funciona?";
@@ -5365,7 +5368,7 @@
 "youtube.ad.blocking.unavailable.got-it" = "Entendido";
 
 /* Body text of the bottom sheet shown when YouTube ad blocking has been remotely disabled */
-"youtube.ad.blocking.unavailable.message" = "El bloqueo de anuncios se ha visto afectado por los cambios recientes en YouTube. Estamos trabajando para solucionar estos problemas y agradecemos tu comprensión";
+"youtube.ad.blocking.unavailable.message" = "El bloqueo de anuncios se ha visto afectado por los cambios recientes en YouTube. Estamos trabajando para solucionar estos problemas y agradecemos tu comprensión.";
 
 /* Title of the bottom sheet shown when YouTube ad blocking has been remotely disabled */
 "youtube.ad.blocking.unavailable.title" = "El bloqueo de anuncios en YouTube no está disponible";
@@ -5457,3 +5460,39 @@
 "network.protection.strict.routing.reminder.notification.body" = "Parte del tráfico podría sortear la VPN mientras esté desactivada. Se recomienda el enrutamiento estricto para redes públicas.";
 /* The title of the notification reminding the user to turn the VPN Strict routing setting back on */
 "network.protection.strict.routing.reminder.notification.title" = "El enrutamiento estricto está DESACTIVADO";
+
+/* Title for the New Image row in the Duck.ai tab header Plus (+) menu — opens Duck.ai in image generation mode */
+"aichat.header.plusMenu.newImage" = "Nueva imagen";
+
+/* Error toast shown when a Duck.ai chat download fails and nothing was saved. */
+"aiChat.history.download.failed.message" = "No se pudo descargar. Inténtalo de nuevo.";
+
+/* Accessibility label for the overflow (three dots) menu button in the Duck.ai chat history navigation bar. */
+"aiChat.history.menu.a11y" = "Más";
+
+/* Menu item opening Duck.ai Chat Protection settings from the Duck.ai chat history list. */
+"aiChat.history.menu.chatProtection" = "Protección del chat";
+
+/* Menu item that starts multi-selecting chats in the Duck.ai chat history list. */
+"aiChat.history.menu.selectChats" = "Seleccionar chats";
+
+/* Long-press row menu item that deletes a Duck.ai chat. */
+"aiChat.history.rowMenu.delete" = "Eliminar";
+
+/* Long-press row menu item that downloads a Duck.ai chat. */
+"aiChat.history.rowMenu.download" = "Descargar";
+
+/* Long-press row menu item that pins a Duck.ai chat. */
+"aiChat.history.rowMenu.pin" = "Anclar";
+
+/* Long-press row menu item that starts multi-selecting chats in the Duck.ai chat history list. */
+"aiChat.history.rowMenu.select" = "Seleccionar";
+
+/* Long-press row menu item that unpins a Duck.ai chat. */
+"aiChat.history.rowMenu.unpin" = "Desanclar";
+
+/* Accessibility label for the search button in the Duck.ai chat history navigation bar. */
+"aiChat.history.search.a11y" = "Buscar";
+
+/* Multi-select toolbar button that deletes all chats when none are individually selected. */
+"aiChat.history.selection.deleteAll" = "Eliminar todo";

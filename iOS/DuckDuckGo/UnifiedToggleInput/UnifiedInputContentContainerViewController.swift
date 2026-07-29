@@ -21,6 +21,7 @@ import UIKit
 import SwiftUI
 import DesignResourcesKit
 import Combine
+import BrowserServicesKit
 import PrivacyConfig
 import Bookmarks
 import Persistence
@@ -91,8 +92,9 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     private let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
     private let syncService: DDGSyncing?
     private let syncPromoManager: SyncPromoManaging?
-    private let aiChatSyncIntroSheetPresenter: AIChatSyncIntroSheetPresenting
     private let recentModalPromptStatusProvider: RecentModalPromptStatusProviding?
+    private let featureDiscovery: FeatureDiscovery
+    private let autocompletePixels = AutocompleteSuggestionsPixels()
 
     // MARK: - Manager Components
 
@@ -159,7 +161,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
          syncService: DDGSyncing? = nil,
          aiChatSyncCleaner: AIChatSyncCleaning? = nil,
          recentModalPromptStatusProvider: RecentModalPromptStatusProviding? = nil,
-         aiChatSyncIntroSheetPresenter: AIChatSyncIntroSheetPresenting = AIChatSyncIntroSheetPresenter()) {
+         featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery()) {
         self.switchBarHandler = switchBarHandler
         self.appSettings = appSettings
         self.featureFlagger = featureFlagger
@@ -172,8 +174,8 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         self.syncPromoManager = syncService.map { SyncPromoManager(syncService: $0,
                                                                   featureFlagger: featureFlagger,
                                                                   privacyConfigurationManager: privacyConfigurationManager) }
-        self.aiChatSyncIntroSheetPresenter = aiChatSyncIntroSheetPresenter
         self.recentModalPromptStatusProvider = recentModalPromptStatusProvider
+        self.featureDiscovery = featureDiscovery
         self.isUsingTopBarPosition = appSettings.currentAddressBarPosition == .top
         self.isAdjustedForTopBar = self.isUsingTopBarPosition
 
@@ -264,7 +266,15 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             activationResolveTrigger.send(())
             syncDuckAISurfaceWithSettings()
             duckAISurface?.refreshRecents()
+        } else {
+            fireSearchSuggestionsDisplayPixels()
         }
+    }
+
+    /// Fires the local-suggestion display pixels over the results shown this session. The `setActive`
+    /// guard dedups the repeated dismiss calls, so a normal editing session fires these once.
+    private func fireSearchSuggestionsDisplayPixels() {
+        autocompletePixels.fireDisplayPixels(for: searchLoader?.result.all ?? [])
     }
 
     /// Re-checks the Chat Suggestions gate on every focus: this VC is built once per browser session
@@ -590,8 +600,9 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             isAddressBarAtBottom: !isUsingTopBarPosition,
             favoritesProvider: { [weak self] in self?.makeSearchFavoritesController() },
             onSelectRow: { [weak self] id in
-                guard let suggestion = source.suggestion(forRowID: id) else { return }
-                self?.delegate?.unifiedInputEditingStateDidSelectSuggestion(suggestion)
+                guard let self, let suggestion = source.suggestion(forRowID: id) else { return }
+                self.fireSearchSuggestionClickPixel(for: suggestion)
+                self.delegate?.unifiedInputEditingStateDidSelectSuggestion(suggestion)
             },
             onDeleteRow: { [weak self, weak loader] id in
                 guard let self,
@@ -1036,9 +1047,17 @@ extension UnifiedInputContentContainerViewController {
     }
 
     func duckAISuggestionsDidRequestSyncSetup() {
-        aiChatSyncIntroSheetPresenter.present(from: self) { [weak self] in
-            self?.delegate?.unifiedInputEditingStateDidRequestSyncSetup()
-        }
+        delegate?.unifiedInputEditingStateDidRequestSyncSetup()
+    }
+
+    /// Fires the click pixel for a tapped Search-surface suggestion. `.askAIChat` gets its own daily
+    /// pixel (needs feature-discovery params), so it's fired here after the standard mapping.
+    private func fireSearchSuggestionClickPixel(for suggestion: Suggestion) {
+        autocompletePixels.fireClickPixel(for: suggestion)
+        guard case .askAIChat = suggestion else { return }
+        autocompletePixels.fireAskAIChatClickPixel(
+            isExperimentalExperience: aiChatSettings.isAIChatSearchInputUserSettingsEnabled,
+            additionalParameters: featureDiscovery.addToParams([:], forFeature: .aiChat))
     }
 
     private func fireDuckAISuggestionClickPixel(for suggestion: Suggestion) {

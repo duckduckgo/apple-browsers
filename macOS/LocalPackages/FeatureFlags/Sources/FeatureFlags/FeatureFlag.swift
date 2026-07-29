@@ -349,6 +349,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/task/1214804748957575?focus=true
     case aiChatOmnibarAttachMoreTabs
 
+    /// Kill switch for the tab-attachment limit (native omnibar and NTP). Default on.
+    /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1216831900874433?focus=true
+    case aiChatTabAttachmentLimit
+
     /// https://app.asana.com/1/137249556945/task/1213316822018797
     case aiChatSidebarResizable
 
@@ -439,12 +443,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1216299435808476
     case aiChatCustomizeResponses
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215798415697847
-    /// Replaces the web-link Search Assist and Hide AI-Generated Images rows on the AI Features
-    /// settings screen with native controls, regroups the main AI settings at the top, and adds the
-    /// "Disable All AI Options" / Reset button. Off keeps today's web-link rows.
-    case aiFeaturesNativeControls
-
     /// macOS only. Gates the native-driven Duck.ai voice-chat microphone permission flow
     /// (auto-grant at launch, locked Permission Center row, system-disabled warning UI,
     /// FE→native failure handler that surfaces the popover).
@@ -469,6 +467,11 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215597855114765?focus=true
     case syncCanShowV2ConnectCode
+
+    /// Gates the macOS Prompt Bar: a system-wide Duck.ai entry point opened via a global
+    /// keyboard shortcut or a menu bar icon, plus its rows on the AI Features settings screen.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216850216210288?focus=true
+    case macosPromptBar
 
 }
 
@@ -709,6 +712,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(AIChatSubfeature.sidebarAttachMoreTabs), category: .duckAI)
         case .aiChatOmnibarAttachMoreTabs:
             Config(source: .remoteReleasable(AIChatSubfeature.omnibarAttachMoreTabs), category: .duckAI)
+        case .aiChatTabAttachmentLimit:
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.tabAttachmentLimit), category: .duckAI)
         case .aiChatSidebarResizable:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.sidebarResizable), category: .duckAI)
         case .aiChatNtpRecentChats:
@@ -763,8 +768,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(AIChatSubfeature.nativeDataAccess), category: .duckAI)
         case .aiChatCustomizeResponses:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.customizeResponses), category: .duckAI)
-        case .aiFeaturesNativeControls:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.aiFeaturesNativeControls), category: .duckAI)
         case .aiChatNativeVoicePermissionFlow:
             Config(defaultValue: .enabled,
                    source: .remoteReleasable(AIChatSubfeature.nativeVoicePermissionFlow),
@@ -782,6 +785,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(SyncSubfeature.canUseV2ConnectFlow), category: .sync)
         case .syncCanShowV2ConnectCode:
             Config(source: .remoteReleasable(SyncSubfeature.canShowV2ConnectCode), category: .sync)
+        case .macosPromptBar:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.macosPromptBar), category: .duckAI)
         }
     }
 

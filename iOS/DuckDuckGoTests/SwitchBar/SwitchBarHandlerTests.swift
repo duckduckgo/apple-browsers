@@ -37,6 +37,7 @@ final class SwitchBarHandlerTests: XCTestCase {
     private final class MockUnifiedToggleInputFeature: UnifiedToggleInputFeatureProviding {
         var isAvailable: Bool = false
         var isToggleHiddenOnDuckAITab: Bool = false
+        var isAttachmentPasteEnabled: Bool = false
     }
 
     private var sut: SwitchBarHandler!

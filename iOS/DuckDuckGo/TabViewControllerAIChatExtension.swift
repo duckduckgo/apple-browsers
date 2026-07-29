@@ -130,16 +130,6 @@ extension TabViewController: AITabController {
         delegate?.tab(self, didRequestNewTabForUrl: url, openedByPage: false, inheritingAttribution: nil)
     }
 
-    func openAIChatFeedback(positive: Bool) {
-        let value = positive ? AIChatURLParameters.feedbackPositiveValue : AIChatURLParameters.feedbackNegativeValue
-        if isAITab {
-            aiChatContentHandler.submitOpenFeedbackAction(sentiment: value)
-        } else {
-            let url = AIChatURLParameters.feedbackURL(from: aiChatSettings.aiChatURL, value: value)
-            delegate?.tab(self, didRequestNewTabForUrl: url, openedByPage: false, inheritingAttribution: nil)
-        }
-    }
-
     func submitOpenChatProtectionAction() {
         aiChatContentHandler.submitOpenChatProtectionAction()
     }

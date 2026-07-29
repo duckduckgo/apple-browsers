@@ -259,6 +259,11 @@ final class UnifiedToggleInputView: UIView {
         set { toolsToolbar.attachmentMenu = newValue }
     }
 
+    weak var attachmentPasteHandler: AttachmentPasteHandling? {
+        get { textEntryView.attachmentPasteHandler }
+        set { textEntryView.attachmentPasteHandler = newValue }
+    }
+
     var reasoningPickerMenu: UIMenu? {
         get { toolsToolbar.reasoningPickerMenu }
         set { toolsToolbar.reasoningPickerMenu = newValue }

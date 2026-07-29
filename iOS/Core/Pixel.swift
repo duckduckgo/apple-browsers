@@ -24,6 +24,7 @@ import FoundationExtensions
 import Networking
 import os.log
 
+/// *** Deprecated.  Use PixelKit for new pixels. ***
 public struct PixelParameters {
     public static let url = "url"
     public static let duration = "dur"
@@ -224,6 +225,7 @@ public struct PixelValues {
     static let test = "1"
 }
 
+/// *** Deprecated. Use PixelKit for new pixels. ***
 public class Pixel {
 
     private struct Constants {

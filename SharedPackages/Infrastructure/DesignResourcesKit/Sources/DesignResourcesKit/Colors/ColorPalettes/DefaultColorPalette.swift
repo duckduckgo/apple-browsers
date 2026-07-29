@@ -318,6 +318,8 @@ struct DefaultColorPalette: ColorPaletteDefinition {
 
     static func dynamicColor(for singleUseColor: SingleUseColor) -> DynamicColor {
         switch singleUseColor {
+        case .groupedListContentBackground:
+            return dynamicColor(for: DesignSystemColor.surface)
         case .controlWidgetBackground:
             return DynamicColor(staticColor: .x818387)
         case .unifiedFeedbackFieldBackground:

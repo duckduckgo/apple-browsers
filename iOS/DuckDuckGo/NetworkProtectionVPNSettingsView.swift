@@ -149,7 +149,7 @@ struct NetworkProtectionVPNSettingsView: View {
                     .foregroundColor(.init(designSystemColor: .textSecondary))
             }
         }
-        .listRowBackground(Color(designSystemColor: .surface))
+        .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
     }
 
     @ViewBuilder
@@ -180,7 +180,7 @@ struct NetworkProtectionVPNSettingsView: View {
                 .daxFootnoteRegular()
                 .foregroundColor(.init(designSystemColor: .textSecondary))
         }
-        .listRowBackground(Color(designSystemColor: .surface))
+        .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
     }
 
     private var copySupportInfoIcon: Image {
@@ -273,7 +273,7 @@ struct NetworkProtectionVPNSettingsView: View {
                 .daxFootnoteRegular()
                 .padding(.top, 6)
         }
-        .listRowBackground(Color(designSystemColor: .surface))
+        .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
     }
 
     @ViewBuilder
@@ -289,7 +289,7 @@ struct NetworkProtectionVPNSettingsView: View {
                 .daxFootnoteRegular()
                 .padding(.top, 6)
         }
-        .listRowBackground(Color(designSystemColor: .surface))
+        .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
     }
 
     @ViewBuilder
@@ -311,7 +311,7 @@ struct NetworkProtectionVPNSettingsView: View {
                 .daxFootnoteRegular()
                 .padding(.top, 6)
         }
-        .listRowBackground(Color(designSystemColor: .surface))
+        .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
     }
 
     @ViewBuilder
@@ -357,7 +357,7 @@ struct NetworkProtectionVPNSettingsView: View {
             } header: {
                 Text(UserText.netPVPNShortcutsSectionHeader)
             }
-            .listRowBackground(Color(designSystemColor: .surface))
+            .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
         }
     }
 }

@@ -366,7 +366,7 @@ final class AIChatHistoryListViewController: UIViewController {
         config.imageToTextPadding = Constants.iconTextSpacing
 
         cell.contentConfiguration = config
-        cell.backgroundColor = UIColor(designSystemColor: .surface)
+        cell.backgroundColor = UIColor(singleUseColor: .groupedListContentBackground)
 
         configureDeleteActionIfNeeded(cell: cell, chat: chat)
     }
@@ -398,7 +398,7 @@ final class AIChatHistoryListViewController: UIViewController {
         config.imageToTextPadding = Constants.iconTextSpacing
 
         cell.contentConfiguration = config
-        cell.backgroundColor = UIColor(designSystemColor: .surface)
+        cell.backgroundColor = UIColor(singleUseColor: .groupedListContentBackground)
 
         // The "View all chats" row never offers per-row deletion.
         if let cell = cell as? DuckAISuggestionTableViewCell {

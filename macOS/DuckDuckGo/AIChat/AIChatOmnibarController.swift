@@ -364,9 +364,8 @@ final class AIChatOmnibarController {
                 activeToolMode = draftStore.aiChatToolMode
                 isUpdatingFromSharedState = false
             }
-            // Image, file, and tab restoration on activation now flows through the
-            // `$aiChatPanelAttachments` publisher subscription set up in
-            // `subscribeToSelectedTabViewModel()` — no separate restore callback needed.
+            // Image, file, and tab restoration on activation flows through the
+            // `panelAttachmentsPublisher` subscription set up in `subscribeToDraftSource()`.
         }
 
         fetchModels()

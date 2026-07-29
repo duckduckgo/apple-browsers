@@ -1935,6 +1935,246 @@
 /* Title for the Duck.ai Siri education screen */
 "duckai.siri.education.screen.title" = "Συνομιλήστε με το Duck.ai χρησιμοποιώντας το Siri!";
 
+/* Suggested prompt chip: cast and crew */
+"duckai.suggestion.cast-crew.label" = "Ηθοποιοί και συντελεστές";
+
+/* Suggested prompt submitted text: cast and crew */
+"duckai.suggestion.cast-crew.prompt" = "Ποιοι είναι οι βασικοί ηθοποιοί και οι συντελεστές, και για τι άλλο είναι γνωστοί;";
+
+/* Suggested prompt chip: counterarguments */
+"duckai.suggestion.counterarguments.label" = "Ποια είναι τα αντεπιχειρήματα;";
+
+/* Suggested prompt submitted text: counterarguments */
+"duckai.suggestion.counterarguments.prompt" = "Ποια είναι τα κύρια αντεπιχειρήματα ή οι επικρίσεις γι' αυτό;";
+
+/* Suggested prompt chip: course learning outcomes */
+"duckai.suggestion.course-learn.label" = "Τι θα μάθω;";
+
+/* Suggested prompt submitted text: course learning outcomes */
+"duckai.suggestion.course-learn.prompt" = "Ποια είναι τα βασικά πράγματα που θα μάθω από αυτή τη σειρά μαθημάτων;";
+
+/* Suggested prompt chip: is a course worth taking */
+"duckai.suggestion.course-worth.label" = "Αξίζει να την παρακολουθήσω;";
+
+/* Suggested prompt submitted text: is a course worth taking */
+"duckai.suggestion.course-worth.prompt" = "Με βάση αυτήν τη σελίδα, αξίζει να παρακολουθήσω αυτήν τη σειρά μαθημάτων;";
+
+/* Suggested prompt chip: draft a cover letter */
+"duckai.suggestion.cover-letter.label" = "Σύνταξε μια συνοδευτική επιστολή";
+
+/* Suggested prompt submitted text: draft a cover letter */
+"duckai.suggestion.cover-letter.prompt" = "Σύνταξε μια συνοδευτική επιστολή γι' αυτήν την εργασία.";
+
+/* Suggested prompt chip: event details */
+"duckai.suggestion.event-details.label" = "Ποιες είναι οι βασικές λεπτομέρειες;";
+
+/* Suggested prompt submitted text: event details */
+"duckai.suggestion.event-details.prompt" = "Συνόψισε τις βασικές λεπτομέρειες αυτού του γεγονότος.";
+
+/* Suggested prompt chip: explain the top answer */
+"duckai.suggestion.explain-answer.label" = "Εξήγησε την κορυφαία απάντηση";
+
+/* Suggested prompt submitted text: explain the top answer */
+"duckai.suggestion.explain-answer.prompt" = "Εξήγησε την αποδεκτή απάντηση με απλά λόγια.";
+
+/* Suggested prompt chip: explain a research paper */
+"duckai.suggestion.explain-paper.label" = "Εξήγησε αυτή την εργασία";
+
+/* Suggested prompt submitted text: explain a research paper */
+"duckai.suggestion.explain-paper.prompt" = "Εξήγησε αυτή την ερευνητική εργασία με απλά λόγια.";
+
+/* Suggested prompt chip: explain a code repository */
+"duckai.suggestion.explain-repo.label" = "Εξήγησε αυτό το αποθετήριο";
+
+/* Suggested prompt submitted text: explain a code repository */
+"duckai.suggestion.explain-repo.prompt" = "Εξήγησε τι κάνει αυτό το αποθετήριο και πώς χρησιμοποιείται.";
+
+/* Suggested prompt chip: explain the content simply */
+"duckai.suggestion.explain-simply.label" = "Εξήγησέ το αυτό απλά";
+
+/* Suggested prompt submitted text: explain the content simply */
+"duckai.suggestion.explain-simply.prompt" = "Εξήγησέ το αυτό με απλά, κατανοητά λόγια.";
+
+/* Suggested prompt chip: what an FAQ page answers */
+"duckai.suggestion.faq-answer.label" = "Σε τι απαντά αυτό;";
+
+/* Suggested prompt submitted text: what an FAQ page answers */
+"duckai.suggestion.faq-answer.prompt" = "Ποιες είναι οι κύριες ερωτήσεις που απαντά αυτή η σελίδα;";
+
+/* Suggested prompt chip: summarize FAQ Q&As */
+"duckai.suggestion.faq-summary.label" = "Συνόψισε τις ερωταπαντήσεις";
+
+/* Suggested prompt submitted text: summarize FAQ Q&As */
+"duckai.suggestion.faq-summary.prompt" = "Συνόψισε τις ερωτήσεις και τις απαντήσεις σε αυτήν τη σελίδα.";
+
+/* Suggested prompt chip: product alternatives */
+"duckai.suggestion.find-alternatives.label" = "Βρες μου εναλλακτικές λύσεις";
+
+/* Suggested prompt submitted text: product alternatives */
+"duckai.suggestion.find-alternatives.prompt" = "Πρότεινε μερικές εναλλακτικές γι' αυτό το προϊόν.";
+
+/* Suggested prompt chip: how-to materials */
+"duckai.suggestion.howto-materials.label" = "Τι θα χρειαστώ;";
+
+/* Suggested prompt submitted text: how-to materials */
+"duckai.suggestion.howto-materials.prompt" = "Απαρίθμησε εργαλεία, υλικά ή προϋποθέσεις που χρειάζομαι γι' αυτό.";
+
+/* Suggested prompt chip: how-to steps */
+"duckai.suggestion.howto-steps.label" = "Καθοδήγησέ με στα βήματα";
+
+/* Suggested prompt submitted text: how-to steps */
+"duckai.suggestion.howto-steps.prompt" = "Χώρισέ το σε σαφή, αριθμημένα βήματα.";
+
+/* Suggested prompt chip: interview prep */
+"duckai.suggestion.interview-prep.label" = "Βοήθησέ με να προετοιμαστώ για τη συνέντευξη";
+
+/* Suggested prompt submitted text: interview prep */
+"duckai.suggestion.interview-prep.prompt" = "Ποιες ερωτήσεις συνέντευξης μπορεί να προκύψουν για αυτόν τον ρόλο;";
+
+/* Suggested prompt chip: key takeaways of an article */
+"duckai.suggestion.key-takeaways.label" = "Ποια είναι τα βασικά σημεία;";
+
+/* Suggested prompt submitted text: key takeaways of an article */
+"duckai.suggestion.key-takeaways.prompt" = "Ποια είναι τα βασικά σημεία αυτού του άρθρου;";
+
+/* Suggested prompt chip: restaurant menu highlights */
+"duckai.suggestion.menu-highlights.label" = "Τι να παραγγείλω;";
+
+/* Suggested prompt submitted text: restaurant menu highlights */
+"duckai.suggestion.menu-highlights.prompt" = "Ποια πιάτα πρέπει οπωσδήποτε να δοκιμάσω εδώ;";
+
+/* Suggested prompt chip: paper contributions */
+"duckai.suggestion.paper-contributions.label" = "Ποιες είναι οι βασικές συνεισφορές;";
+
+/* Suggested prompt submitted text: paper contributions */
+"duckai.suggestion.paper-contributions.prompt" = "Ποιες είναι οι βασικές συνεισφορές αυτής της εργασίας;";
+
+/* Suggested prompt chip: summarize a person's background */
+"duckai.suggestion.person-background.label" = "Συνόψισε το ιστορικό τους";
+
+/* Suggested prompt submitted text: summarize a person's background */
+"duckai.suggestion.person-background.prompt" = "Συνόψισε το ιστορικό αυτού του ατόμου και το σημαντικό του έργο.";
+
+/* Suggested prompt chip: place hours and location */
+"duckai.suggestion.place-hours.label" = "Ποιες είναι οι ώρες και η τοποθεσία;";
+
+/* Suggested prompt submitted text: place hours and location */
+"duckai.suggestion.place-hours.prompt" = "Ποιες είναι οι ώρες λειτουργίας, η τοποθεσία και τα στοιχεία επικοινωνίας γι' αυτό το μέρος;";
+
+/* Suggested prompt chip: place reputation */
+"duckai.suggestion.place-reviews.label" = "Είναι καλό αυτό το μέρος;";
+
+/* Suggested prompt submitted text: place reputation */
+"duckai.suggestion.place-reviews.prompt" = "Είναι καλό αυτό το μέρος; Συνόψισε τη φήμη του με βάση κριτικές και αξιολογήσεις.";
+
+/* Suggested prompt chip: product pros and cons */
+"duckai.suggestion.product-pros-cons.label" = "Ποια είναι τα πλεονεκτήματα και τα μειονεκτήματα;";
+
+/* Suggested prompt submitted text: product pros and cons */
+"duckai.suggestion.product-pros-cons.prompt" = "Ποια είναι τα πλεονεκτήματα και τα μειονεκτήματα αυτού του προϊόντος;";
+
+/* Suggested prompt chip: recipe nutrition */
+"duckai.suggestion.recipe-nutrition.label" = "Υπολόγισε τη διατροφή";
+
+/* Suggested prompt submitted text: recipe nutrition */
+"duckai.suggestion.recipe-nutrition.prompt" = "Υπολόγισε τις διατροφικές πληροφορίες γι' αυτήν τη συνταγή.";
+
+/* Suggested prompt chip: related articles */
+"duckai.suggestion.related-articles.label" = "Πρότεινε σχετικά άρθρα για εξερεύνηση";
+
+/* Suggested prompt submitted text: related articles */
+"duckai.suggestion.related-articles.prompt" = "Πρότεινε σχετικά άρθρα ή θέματα που αξίζουν εξερεύνηση στη συνέχεια.";
+
+/* Suggested prompt chip: summarize reviews */
+"duckai.suggestion.review-summary.label" = "Συνόψισε τις κριτικές";
+
+/* Suggested prompt submitted text: summarize reviews */
+"duckai.suggestion.review-summary.prompt" = "Συνόψισε τι λένε οι κριτικές.";
+
+/* Suggested prompt chip: review verdict */
+"duckai.suggestion.review-verdict.label" = "Ποιο είναι η ετυμηγορία;";
+
+/* Suggested prompt submitted text: review verdict */
+"duckai.suggestion.review-verdict.prompt" = "Ποια είναι η συνολική ετυμηγορία και η βαθμολογία γι' αυτό;";
+
+/* Suggested prompt chip: scale a recipe */
+"duckai.suggestion.scale-recipe.label" = "Προσάρμοσε τις μερίδες";
+
+/* Suggested prompt submitted text: scale a recipe */
+"duckai.suggestion.scale-recipe.prompt" = "Ξαναγράψε αυτή τη συνταγή προσαρμοσμένη για διαφορετικό αριθμό μερίδων.";
+
+/* Suggested prompt chip: shopping list from a recipe */
+"duckai.suggestion.shopping-list.label" = "Δημιούργησε μια λίστα αγορών";
+
+/* Suggested prompt submitted text: shopping list from a recipe */
+"duckai.suggestion.shopping-list.prompt" = "Δημιούργησε μια λίστα αγορών με τις ποσότητες από αυτήν τη συνταγή.";
+
+/* Suggested prompt chip: similar books */
+"duckai.suggestion.similar-books.label" = "Πρότεινε παρόμοια βιβλία";
+
+/* Suggested prompt submitted text: similar books */
+"duckai.suggestion.similar-books.prompt" = "Πρότεινε παρόμοια βιβλία.";
+
+/* Suggested prompt chip: similar movies or shows */
+"duckai.suggestion.similar-titles.label" = "Πρότεινε παρόμοιους τίτλους";
+
+/* Suggested prompt submitted text: similar movies or shows */
+"duckai.suggestion.similar-titles.prompt" = "Πρότεινε παρόμοιες ταινίες ή εκπομπές.";
+
+/* Suggested prompt chip: summarize a book */
+"duckai.suggestion.summarize-book.label" = "Συνόψισε αυτό το βιβλίο";
+
+/* Suggested prompt submitted text: summarize a book */
+"duckai.suggestion.summarize-book.prompt" = "Συνόψισε αυτό το βιβλίο.";
+
+/* Suggested prompt chip: summarize the current page */
+"duckai.suggestion.summarize-page.label" = "Συνόψισε αυτήν τη σελίδα";
+
+/* Suggested prompt submitted text: summarize the current page */
+"duckai.suggestion.summarize-page.prompt" = "Συνόψισε αυτήν τη σελίδα.";
+
+/* Suggested prompt chip: summarize a discussion thread */
+"duckai.suggestion.summarize-thread.label" = "Συνόψισε αυτήν τη συζήτηση";
+
+/* Suggested prompt submitted text: summarize a discussion thread */
+"duckai.suggestion.summarize-thread.prompt" = "Συνόψισε αυτό το νήμα συζήτησης.";
+
+/* Suggested prompt chip: summarize a video */
+"duckai.suggestion.summarize-video.label" = "Συνόψισε αυτό το βίντεο";
+
+/* Suggested prompt submitted text: summarize a video */
+"duckai.suggestion.summarize-video.prompt" = "Συνόψισε αυτό το βίντεο.";
+
+/* Suggested prompt chip: tailor a resume to a job */
+"duckai.suggestion.tailor-resume.label" = "Προσάρμοσε το βιογραφικό μου";
+
+/* Suggested prompt submitted text: tailor a resume to a job */
+"duckai.suggestion.tailor-resume.prompt" = "Βοήθησέ με να προσαρμόσω το βιογραφικό μου γι' αυτήν τη θέση εργασίας.";
+
+/* Suggested prompt chip: translate the current page */
+"duckai.suggestion.translate-page.label" = "Μετάφρασε αυτή τη σελίδα";
+
+/* Suggested prompt submitted text: translate the page. %@ is replaced with the name of the user's language. */
+"duckai.suggestion.translate-page.prompt" = "Μετάφρασε αυτή τη σελίδα στα %@.";
+
+/* Suggested prompt chip: video key points */
+"duckai.suggestion.video-key-points.label" = "Ποια είναι τα βασικά σημεία;";
+
+/* Suggested prompt submitted text: video key points */
+"duckai.suggestion.video-key-points.prompt" = "Ποια είναι τα βασικά σημεία που καλύπτονται σε αυτό το βίντεο;";
+
+/* Suggested prompt chip: person background */
+"duckai.suggestion.who-is-this.label" = "Ποιο είναι αυτό το άτομο;";
+
+/* Suggested prompt submitted text: person background */
+"duckai.suggestion.who-is-this.prompt" = "Δώσε μου ένα σύντομο ιστορικό γι' αυτό το άτομο.";
+
+/* Suggested prompt chip: is a movie/show worth watching */
+"duckai.suggestion.worth-watching.label" = "Αξίζει να το παρακολουθήσω;";
+
+/* Suggested prompt submitted text: is a movie/show worth watching */
+"duckai.suggestion.worth-watching.prompt" = "Αξίζει να το παρακολουθήσω; Δώσε μου μια ιδέα χωρίς spoiler.";
+
 /* Welcome message in Duck.ai contextual sheet. %@ is replaced by a shield icon. */
 "duckai.welcome.message" = "Όλες οι συνομιλίες είναι %@ ιδιωτικές";
 

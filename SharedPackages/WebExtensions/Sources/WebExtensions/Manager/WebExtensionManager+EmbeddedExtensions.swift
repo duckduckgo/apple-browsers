@@ -43,6 +43,12 @@ extension WebExtensionManager {
             if enabledTypes.contains(descriptor.type) {
                 await syncEmbeddedExtension(descriptor)
             } else {
+                // A launch loads every installed extension before this sync runs, so a type that is
+                // disabled gets unloaded seconds after loading — the same window the upgrade branch
+                // above waits out.
+                if let installed = installedEmbeddedExtension(for: descriptor.type) {
+                    await unloadGuard.awaitSettled(context(for: installed.uniqueIdentifier))
+                }
                 uninstallEmbeddedExtension(type: descriptor.type)
             }
         }

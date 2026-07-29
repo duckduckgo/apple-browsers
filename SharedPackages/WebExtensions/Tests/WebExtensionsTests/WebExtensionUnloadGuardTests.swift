@@ -146,4 +146,24 @@ final class WebExtensionUnloadGuardTests: XCTestCase {
 
         XCTAssertTrue(recordedSleeps.isEmpty)
     }
+
+    /// Uses the real sleeper rather than the recording one: teardown cancels the tasks that unload,
+    /// so a cancellable wait would skip the window exactly when it is needed.
+    @MainActor
+    func testWhenTaskIsCancelled_ThenAwaitSettledStillWaitsOutTheWindow() async throws {
+        let settleWindow: TimeInterval = 0.3
+        let unloadGuard = WebExtensionUnloadGuard(settleWindow: settleWindow)
+        let context = try await makeContext(identifier: "dnr-extension", permissions: ["declarativeNetRequest"])
+        unloadGuard.recordLoad(of: "dnr-extension")
+
+        let task = Task { @MainActor in
+            let start = Date()
+            await unloadGuard.awaitSettled(context)
+            return Date().timeIntervalSince(start)
+        }
+        task.cancel()
+
+        let elapsed = await task.value
+        XCTAssertGreaterThan(elapsed, settleWindow * 0.8)
+    }
 }

@@ -420,8 +420,10 @@ final class WebExtensionManagerTests: XCTestCase {
         XCTAssertEqual(recordedSleeps[0], 2.0, accuracy: 0.001)
     }
 
+    /// Loads a real DNR context for the embedded ad blocker and records its load date, so the
+    /// settle window can be exercised through `syncEmbeddedExtensions()`.
     @MainActor
-    func testWhenEmbeddedDNRExtensionIsUpgradedWithinSettleWindow_ThenSyncSleepsBeforeUninstall() async throws {
+    private func makeManagerWithLoadedAdBlocker() async throws -> WebExtensionManager {
         installedExtensionStoringMock.installedExtensions = [
             InstalledWebExtension(uniqueIdentifier: "old-adblock",
                                   filename: "content-blocker-extension-apple.zip",
@@ -435,6 +437,28 @@ final class WebExtensionManagerTests: XCTestCase {
         let manager = makeManager()
         try await loadRealContext(identifier: "old-adblock", into: manager.controller, permissions: ["declarativeNetRequest"])
         await manager.loadInstalledExtensions()
+        return manager
+    }
+
+    @MainActor
+    func testWhenDisabledDNRExtensionIsUninstalledWithinSettleWindow_ThenSyncSleepsFirst() async throws {
+        let manager = try await makeManagerWithLoadedAdBlocker()
+
+        currentDate = currentDate.addingTimeInterval(1)
+        await manager.syncEmbeddedExtensions(enabledTypes: [])
+
+        XCTAssertEqual(recordedSleeps.count, 1)
+        XCTAssertEqual(recordedSleeps[0], 2.0, accuracy: 0.001)
+        XCTAssertFalse(installedExtensionStoringMock.installedExtensions.contains { $0.uniqueIdentifier == "old-adblock" },
+                       "disabling should have uninstalled the extension after the settle window")
+    }
+
+    // The upgrade branch resolves the bundled extension through `Bundle.module`, which traps on iOS.
+    // Gated for the same reason as DarkReaderBundlePatchTests.
+#if os(macOS)
+    @MainActor
+    func testWhenEmbeddedDNRExtensionIsUpgradedWithinSettleWindow_ThenSyncSleepsBeforeUninstall() async throws {
+        let manager = try await makeManagerWithLoadedAdBlocker()
 
         currentDate = currentDate.addingTimeInterval(1)
         await manager.syncEmbeddedExtensions(enabledTypes: [.adBlockingExtension])
@@ -444,6 +468,7 @@ final class WebExtensionManagerTests: XCTestCase {
         XCTAssertFalse(installedExtensionStoringMock.installedExtensions.contains { $0.uniqueIdentifier == "old-adblock" },
                        "upgrade should have uninstalled the old extension after the settle window")
     }
+#endif
 
     // MARK: - Computed Properties Tests
 

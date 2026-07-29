@@ -49,9 +49,19 @@ final class WebExtensionUnloadGuard {
     /// Most recent successful load time per extension identifier.
     private var lastLoadDates: [String: Date] = [:]
 
+    /// Deliberately not `Task.sleep`: cancellation would skip the wait and unload inside the danger
+    /// window, and teardown — the very thing that cancels — is when unloads happen.
+    private static func sleep(for seconds: TimeInterval) async {
+        await withCheckedContinuation { continuation in
+            DispatchQueue.main.asyncAfter(deadline: .now() + seconds) {
+                continuation.resume()
+            }
+        }
+    }
+
     init(settleWindow: TimeInterval = WebExtensionUnloadGuard.defaultSettleWindow,
          now: @escaping () -> Date = Date.init,
-         sleeper: @escaping (TimeInterval) async -> Void = { try? await Task.sleep(nanoseconds: UInt64($0 * 1_000_000_000)) }) {
+         sleeper: @escaping (TimeInterval) async -> Void = { await WebExtensionUnloadGuard.sleep(for: $0) }) {
         self.settleWindow = settleWindow
         self.now = now
         self.sleeper = sleeper

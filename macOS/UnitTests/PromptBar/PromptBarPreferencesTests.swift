@@ -18,13 +18,15 @@
 
 import Carbon.HIToolbox
 import Combine
+import PersistenceTestingUtils
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
+/// Both flags start off, mirroring the opt-in product default.
 private final class MockPromptBarPreferencesPersistor: PromptBarPreferencesPersistor {
-    var isKeyboardShortcutEnabled: Bool = true
+    var isKeyboardShortcutEnabled: Bool = false
     var keyboardShortcut: PromptBarShortcut = .defaultShortcut
-    var isMenuBarIconVisible: Bool = true
+    var isMenuBarIconVisible: Bool = false
 }
 
 private extension MockAIChatConfig {
@@ -42,16 +44,38 @@ final class PromptBarPreferencesTests: XCTestCase {
         PromptBarPreferences(persistor: persistor, aiChatMenuConfiguration: configuration)
     }
 
-    func testWhenInitializedThenValuesAreSeededFromPersistor() {
-        let persistor = MockPromptBarPreferencesPersistor()
-        persistor.isKeyboardShortcutEnabled = false
-        persistor.isMenuBarIconVisible = false
-        persistor.keyboardShortcut = PromptBarShortcut(keyCode: UInt16(kVK_ANSI_D), modifierFlags: [.control, .option])
+    func testWhenNothingIsPersistedThenBothEntryPointsAreOff() {
+        let persistor = PromptBarPreferencesUserDefaultsPersistor(keyValueStore: MockKeyValueFileStore())
 
         let preferences = makePreferences(persistor: persistor)
 
         XCTAssertFalse(preferences.isKeyboardShortcutEnabled)
         XCTAssertFalse(preferences.isMenuBarIconVisible)
+        XCTAssertFalse(preferences.isKeyboardShortcutEffectivelyEnabled)
+        XCTAssertFalse(preferences.isMenuBarIconEffectivelyVisible)
+    }
+
+    func testWhenNothingIsPersistedThenNoShortcutIsPublished() {
+        let persistor = PromptBarPreferencesUserDefaultsPersistor(keyValueStore: MockKeyValueFileStore())
+        let preferences = makePreferences(persistor: persistor)
+        var received: [PromptBarShortcut?] = []
+
+        let cancellable = preferences.effectiveKeyboardShortcutPublisher.sink { received.append($0) }
+
+        XCTAssertEqual(received, [nil])
+        cancellable.cancel()
+    }
+
+    func testWhenInitializedThenValuesAreSeededFromPersistor() {
+        let persistor = MockPromptBarPreferencesPersistor()
+        persistor.isKeyboardShortcutEnabled = true
+        persistor.isMenuBarIconVisible = true
+        persistor.keyboardShortcut = PromptBarShortcut(keyCode: UInt16(kVK_ANSI_D), modifierFlags: [.control, .option])
+
+        let preferences = makePreferences(persistor: persistor)
+
+        XCTAssertTrue(preferences.isKeyboardShortcutEnabled)
+        XCTAssertTrue(preferences.isMenuBarIconVisible)
         XCTAssertEqual(preferences.keyboardShortcut, persistor.keyboardShortcut)
     }
 
@@ -60,12 +84,12 @@ final class PromptBarPreferencesTests: XCTestCase {
         let preferences = makePreferences(persistor: persistor)
         let customShortcut = PromptBarShortcut(keyCode: UInt16(kVK_ANSI_D), modifierFlags: [.control, .option])
 
-        preferences.isKeyboardShortcutEnabled = false
-        preferences.isMenuBarIconVisible = false
+        preferences.isKeyboardShortcutEnabled = true
+        preferences.isMenuBarIconVisible = true
         preferences.keyboardShortcut = customShortcut
 
-        XCTAssertFalse(persistor.isKeyboardShortcutEnabled)
-        XCTAssertFalse(persistor.isMenuBarIconVisible)
+        XCTAssertTrue(persistor.isKeyboardShortcutEnabled)
+        XCTAssertTrue(persistor.isMenuBarIconVisible)
         XCTAssertEqual(persistor.keyboardShortcut, customShortcut)
     }
 
@@ -103,6 +127,7 @@ final class PromptBarPreferencesTests: XCTestCase {
     func testWhenKeyboardShortcutIsDisabledThenStoredMenuBarIconPreferenceIsUnchanged() {
         let persistor = MockPromptBarPreferencesPersistor()
         persistor.isMenuBarIconVisible = true
+        persistor.isKeyboardShortcutEnabled = true
         let preferences = makePreferences(persistor: persistor)
 
         preferences.isKeyboardShortcutEnabled = false
@@ -170,6 +195,7 @@ final class PromptBarPreferencesTests: XCTestCase {
     func testWhenAIFeaturesAreDisabledThenStoredMenuBarIconPreferenceIsUnchanged() {
         let persistor = MockPromptBarPreferencesPersistor()
         persistor.isMenuBarIconVisible = true
+        persistor.isKeyboardShortcutEnabled = true
         let configuration = MockAIChatConfig()
         configuration.shouldDisplayAnyAIChatFeature = false
 

@@ -56,6 +56,27 @@ final class PromptBarPreferences: ObservableObject {
             .eraseToAnyPublisher()
     }
 
+    /// The shortcut opens Duck.ai, so it stays unregistered while Duck.ai is off.
+    var isKeyboardShortcutEffectivelyEnabled: Bool {
+        isKeyboardShortcutEnabled && aiChatMenuConfiguration.shouldDisplayAnyAIChatFeature
+    }
+
+    /// `nil` when no shortcut should be registered.
+    var effectiveKeyboardShortcutPublisher: AnyPublisher<PromptBarShortcut?, Never> {
+        let aiChatMenuConfiguration = self.aiChatMenuConfiguration
+        let aiChatFeatureChanges = aiChatMenuConfiguration.valuesChangedPublisher
+            .map { _ in () }
+            .prepend(())
+
+        return Publishers.CombineLatest3($isKeyboardShortcutEnabled, $keyboardShortcut, aiChatFeatureChanges)
+            .map { isEnabled, shortcut, _ -> PromptBarShortcut? in
+                guard isEnabled, aiChatMenuConfiguration.shouldDisplayAnyAIChatFeature else { return nil }
+                return shortcut
+            }
+            .removeDuplicates()
+            .eraseToAnyPublisher()
+    }
+
     private var persistor: PromptBarPreferencesPersistor
     private let aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable
 

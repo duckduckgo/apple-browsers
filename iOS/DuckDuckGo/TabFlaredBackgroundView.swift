@@ -36,7 +36,7 @@ final class TabFlaredBackgroundView: UIView {
     }
 
     var fillColor: UIColor = .clear {
-        didSet { shapeLayer.fillColor = fillColor.cgColor }
+        didSet { applyFillColor() }
     }
 
     private var shapeLayer: CAShapeLayer {
@@ -49,7 +49,7 @@ final class TabFlaredBackgroundView: UIView {
     override init(frame: CGRect) {
         super.init(frame: frame)
         isUserInteractionEnabled = false
-        shapeLayer.fillColor = fillColor.cgColor
+        applyFillColor()
     }
 
     @available(*, unavailable)
@@ -60,6 +60,17 @@ final class TabFlaredBackgroundView: UIView {
     override func layoutSubviews() {
         super.layoutSubviews()
         shapeLayer.path = Self.path(in: bounds, topCornerRadius: topCornerRadius, rampSize: rampSize)
+    }
+
+    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+        if traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) {
+            applyFillColor()
+        }
+    }
+
+    private func applyFillColor() {
+        shapeLayer.fillColor = fillColor.resolvedColor(with: traitCollection).cgColor
     }
 
     /// Kappa: the cubic control-point offset (as a fraction of radius) that best approximates a

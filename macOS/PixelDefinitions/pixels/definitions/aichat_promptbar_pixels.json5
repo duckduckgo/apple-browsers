@@ -188,8 +188,7 @@
             {
                 "key": "had_text",
                 "description": "Whether the prompt field held non-whitespace text at dismissal, separating an abandoned prompt from an exploratory open. Attachments alone do not set it.",
-                "type": "string",
-                "enum": ["true", "false"]
+                "type": "boolean"
             }
         ]
     },
@@ -240,14 +239,12 @@
             {
                 "key": "shortcut_enabled",
                 "description": "Whether the global keyboard shortcut setting is currently on",
-                "type": "string",
-                "enum": ["true", "false"]
+                "type": "boolean"
             },
             {
                 "key": "menu_bar_icon_enabled",
                 "description": "Whether the menu bar icon setting is currently on",
-                "type": "string",
-                "enum": ["true", "false"]
+                "type": "boolean"
             }
         ]
     }

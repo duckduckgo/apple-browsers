@@ -2365,10 +2365,10 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     private func applyThemeToToggleControl(_ toggleControl: CustomToggleControl) {
-        let isAppRebranded = themeManager.isAppRebranded
-        let backgroundColor = isAppRebranded ? NSColor(designSystemColor: .unifiedInputControlFillSecondary) : NSColor(designSystemColor: .controlsRaisedBackdrop)
-        let selectionBorder = isAppRebranded ? NSColor(designSystemColor: .unifiedInputControlShadowPrimary) : NSColor(designSystemColor: .shadowSecondary)
-        let selectionBackgroundColor = isAppRebranded ? NSColor(designSystemColor: .unifiedInputControlFillPrimary) : NSColor(designSystemColor: .controlsRaisedFillPrimary)
+        let colorsProvider = themeManager.theme.colorsProvider
+        let backgroundColor = colorsProvider.unifiedInputToggleBackground
+        let selectionBorder = colorsProvider.unifiedInputToggleSelectionBorder
+        let selectionBackgroundColor = colorsProvider.unifiedInputToggleSelectionBackground
 
         toggleControl.backgroundColor = backgroundColor
         toggleControl.borderColor = nil

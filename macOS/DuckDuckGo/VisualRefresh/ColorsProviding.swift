@@ -76,6 +76,11 @@ protocol ColorsProviding {
     var textPrimaryColor: NSColor { get }
     var textSecondaryColor: NSColor { get }
     var textTertiaryColor: NSColor { get }
+
+    // MARK: - Unified Input
+    var unifiedInputToggleBackground: NSColor { get }
+    var unifiedInputToggleSelectionBackground: NSColor { get }
+    var unifiedInputToggleSelectionBorder: NSColor { get }
 }
 
 struct ColorsProvidingFactory {
@@ -132,6 +137,9 @@ final class LegacyColorsProviding: ColorsProviding {
     var suggestionsFireHighlightSuffixColor: NSColor { palette.accentContentSecondary }
     var bannerBackgroundColor: NSColor { palette.surfacePrimary }
     var popoverBackgroundColor: NSColor { palette.surfaceSecondary }
+    var unifiedInputToggleBackground: NSColor { palette.controlsRaisedBackdrop }
+    var unifiedInputToggleSelectionBackground: NSColor { palette.controlsRaisedFillPrimary }
+    var unifiedInputToggleSelectionBorder: NSColor { palette.shadowSecondary }
 
     init(palette: ThemeColors) {
         self.palette = palette
@@ -149,8 +157,8 @@ final class CurrentColorsProviding: ColorsProviding {
     var addressBarShadowColor: NSColor { palette.shadowTertiary }
     var addressBarSuffixTextColor: NSColor { palette.textSecondary }
     var addressBarTextFieldColor: NSColor { palette.textPrimary }
-    var activeAddressBarBackgroundColor: NSColor { palette.inputActive }
-    var inactiveAddressBarBackgroundColor: NSColor { palette.inputResting }
+    var activeAddressBarBackgroundColor: NSColor { palette.unifiedInputFieldFillPrimary }
+    var inactiveAddressBarBackgroundColor: NSColor { palette.unifiedInputFieldFillSecondary }
 
     // MARK: - Bookmarks
     var bookmarksManagerBackgroundColor: NSColor { palette.surfaceCanvas }
@@ -170,7 +178,7 @@ final class CurrentColorsProviding: ColorsProviding {
     var settingsBackgroundColor: NSColor { palette.surfaceCanvas }
 
     // MARK: - Suggestions
-    var suggestionsBackgroundColor: NSColor { palette.inputActive }
+    var suggestionsBackgroundColor: NSColor { activeAddressBarBackgroundColor }
     var suggestionsTextColor: NSColor { palette.textPrimary }
     var suggestionsSuffixColor: NSColor { palette.accentTextPrimary }
     var suggestionsHighlightSuffixColor: NSColor { palette.accentTextPrimary }
@@ -197,6 +205,11 @@ final class CurrentColorsProviding: ColorsProviding {
     var textPrimaryColor: NSColor { palette.textPrimary }
     var textSecondaryColor: NSColor { palette.textSecondary }
     var textTertiaryColor: NSColor { palette.textTertiary }
+
+    // MARK: - Unified Input
+    var unifiedInputToggleBackground: NSColor { palette.unifiedInputControlFillSecondary }
+    var unifiedInputToggleSelectionBackground: NSColor { palette.unifiedInputControlFillPrimary }
+    var unifiedInputToggleSelectionBorder: NSColor { palette.unifiedInputControlShadowPrimary }
 
     init(palette: ThemeColors) {
         self.palette = palette

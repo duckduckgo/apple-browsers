@@ -17,11 +17,7 @@
 //  limitations under the License.
 //
 
-/// Receives events from an onboarding section. The flow view model conforms to this to track progress when a
-/// section finishes — e.g. the VPN reaches `.connected`, or a Duck.ai model is chosen — to launch the Duck.ai
-/// chat when the Duck.ai section requests it, to move to the next section when a section's terminal screen
-/// (e.g. the VPN tips carousel's "Done") signals it's done, and to move to the previous section when a
-/// section's root screen's back button is tapped.
+/// Receives events from an onboarding section.
 protocol SubscriptionOnboardingSectionDelegate: AnyObject {
     func sectionDidComplete(_ section: SubscriptionOnboardingSection)
     func sectionDidRequestDuckAIChat(modelID: String?)

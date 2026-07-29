@@ -24,7 +24,7 @@ import VPN
 /// Drives the VPN activation screen. It reads the original
 /// connection info from the shared ``SubscriptionOnboardingPrefetcher`` while off, retrying the fetch on appearance if it hasn't resolved yet;
 /// starts the VPN through the injected controller; and describes the new (egress) IP and location
-/// from the shared server-info observer (the same source the VPN settings screen reads) and reports
+/// from the shared server-info observer and reports
 /// completion up to the flow via ``SubscriptionOnboardingSectionDelegate``.
 final class SubscriptionOnboardingVPNActivationViewModel: ObservableObject {
 
@@ -34,13 +34,10 @@ final class SubscriptionOnboardingVPNActivationViewModel: ObservableObject {
         case on
     }
 
-    /// The lifecycle of one connection-info fetch, kept as its own axis separate from ``ConnectionState`` so
-    /// the two orthogonal concerns — what the user/tunnel is doing vs. whether the IP lookup has resolved —
-    /// are never squeezed into one combined state.
+    /// The lifecycle of one connection-info fetch
     typealias ConnectionInfoState = SubscriptionOnboardingPrefetcher.FetchState<SubscriptionOnboardingConnectionInfo>
 
-    /// Shown in the IP row of an info card until the corresponding fetch resolves (or when it has no value,
-    /// e.g. entering with the VPN already on, which never fetches the original IP).
+    /// Shown in the IP row of an info card until the corresponding fetch resolves (or when it has no value.
     static let ipPlaceholder = "-.-.-"
     /// Shown in the location row of an info card until the corresponding fetch resolves.
     static let locationPlaceholder = "-,-"
@@ -116,7 +113,7 @@ final class SubscriptionOnboardingVPNActivationViewModel: ObservableObject {
     // MARK: - Actions
 
     /// Sets up the connection and prefetcher observers, then kicks off the appropriate fetch for the current
-    /// state when the view appears, and returns immediately (fire-and-forget).
+    /// state when the view appears, and returns immediately
     @MainActor
     func onAppear() {
         observeConnection()
@@ -148,7 +145,6 @@ final class SubscriptionOnboardingVPNActivationViewModel: ObservableObject {
 
     @MainActor
     private func observeConnection() {
-        // onAppear can fire more than once without an intervening onDisappear; safety net to avoid stacking duplicate sinks.
         guard cancellables.isEmpty else { return }
         vpnController.isConnectedPublisher
             .removeDuplicates()

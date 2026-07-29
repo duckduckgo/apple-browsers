@@ -20,14 +20,14 @@
 import UIKit
 
 /// Hands the user off from the subscription onboarding flow into a Duck.ai chat.
-///
-/// Onboarding is presented modally over the browser, so this dismisses onboarding and opens Duck.ai,
-/// optionally preselecting a model in the input before the user sends a prompt.
 @MainActor
 struct SubscriptionOnboardingDuckAIChatLauncher {
 
     func launch(from presentingViewController: UIViewController, modelID: String?) {
-        guard let mainViewController = presentingViewController.view.window?.rootViewController as? MainViewController else { return }
+        guard let mainViewController = presentingViewController.view.window?.rootViewController as? MainViewController else {
+            assertionFailure("Expected MainViewController as rootViewController when launching Duck.ai from onboarding")
+            return
+        }
         mainViewController.dismiss(animated: true) {
             mainViewController.openAIChat(flowType: .mobileAppOnboarding, modelId: modelID)
         }

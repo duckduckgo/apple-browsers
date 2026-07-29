@@ -25,8 +25,7 @@ import UIComponents
 
 /// The VPN activation screen. It owns the activation view
 /// model and renders the activation screen. The header, body and footer all switch on
-/// the view model's `connectionState`. As the section's root screen, the back button asks the flow (via
-/// ``SubscriptionOnboardingSectionDelegate/sectionDidRequestGoBack()``) to move to the previous section.
+/// the view model's `connectionState`.
 struct SubscriptionOnboardingVPNActivationView: View {
     private enum Metrics {
         static let offContentSpacing: CGFloat = 33
@@ -81,8 +80,7 @@ struct SubscriptionOnboardingVPNActivationView: View {
         }
     }
 
-    /// Clears the hint, then re-shows it only if the user has tapped Turn On VPN and the config still isn't
-    /// installed.
+    /// Clears the hint, then re-shows it only if the user has tapped Turn On VPN and the config still isn't installed.
     private func reevaluateTapAllowHint() {
         tapAllowHint.hide()
         guard didTapStartVPN else { return }

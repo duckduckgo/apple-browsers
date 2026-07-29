@@ -63,10 +63,8 @@ final class NetworkProtectionTunnelController: VPNConnectionContextProvidingTunn
 
     /// Signals that the customer declined the system prompt to add the VPN configuration.
     ///
-    /// Kept separate from `controllerErrorPublisher` because a denial is an intentional user action: it must
-    /// not raise an error banner or fire a failure pixel (see `start()`). It fires only so screens that need
-    /// to react to a denial — e.g. subscription onboarding activation — can observe it precisely instead of
-    /// inferring it from a still-disconnected state after a start attempt.
+    /// Kept separate from `controllerErrorPublisher` because a denial is an intentional user action. It fires only so screens that need
+    /// to react to a denial can observe it.
     private let configurationDeniedSubject = PassthroughSubject<Void, Never>()
     var configurationDeniedPublisher: AnyPublisher<Void, Never> {
         configurationDeniedSubject.eraseToAnyPublisher()
@@ -334,8 +332,8 @@ final class NetworkProtectionTunnelController: VPNConnectionContextProvidingTunn
         }
     }
 
-    /// A fresh "is a VPN configuration installed?" check, read straight from preferences rather than the
-    /// cached `internalManager`. `isInstalled` can report a stale `true` after a config is removed from
+    /// A fresh "is a VPN configuration installed?" check.
+    /// `isInstalled` can report a stale `true` after a config is removed from
     /// system Settings, because `subscribeToConfigurationChanges` only clears the cache when the reload
     /// throws or reports `.invalid`, which a Settings removal doesn't always surface.
     var isConfigurationInstalled: Bool {

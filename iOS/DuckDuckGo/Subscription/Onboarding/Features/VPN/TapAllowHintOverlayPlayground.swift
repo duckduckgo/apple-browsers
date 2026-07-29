@@ -25,15 +25,10 @@ import UIComponents
 /// both the iOS 26 and iOS 18 visual styles, with ``FloatingPointerBubble`` laid on top using the same
 /// screen-centre-relative offsets as `TapAllowHintOverlayWindow`. The real dialog can't be summoned or styled
 /// on demand, so this lets us eyeball and tune the hint alignment without triggering the real permission
-/// prompt. The sliders start at the production values and the read-out shows the numbers to copy back into
-/// `TapAllowHintOverlayWindow.Metrics`. Reached from the Subscription debug menu's Onboarding section.
+/// prompt. Reached from the Subscription debug menu's Onboarding section.
 struct TapAllowHintOverlayPlaygroundView: View {
 
-    /// Mirrors the production `TapAllowHintOverlayWindow.Metrics`. Kept local so this debug-only harness doesn't
-    /// force that type to widen its access; copy any tuned values back into `Metrics` by hand.
     enum Metrics {
-        // `FloatingPointerBubble` geometry: a 33pt arrow sits above the pill, and the pill is the 17pt
-        // "Tap allow" label plus 12pt vertical padding top & bottom (~44pt).
         static let bubbleArrowHeight: CGFloat = 33
         static let bubblePillHeight: CGFloat = 44
         static let bubbleHeight: CGFloat = bubbleArrowHeight + bubblePillHeight
@@ -80,8 +75,6 @@ struct TapAllowHintOverlayPlaygroundView: View {
             GeometryReader { proxy in
                 let centre = CGPoint(x: proxy.size.width / 2, y: proxy.size.height / 2)
 
-                // Centre the mock alert by filling the space (default .center alignment) rather than `.position`,
-                // which would collapse the alert's width and force the copy to wrap into a tall, narrow column.
                 MockVPNPermissionAlert(style: style)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
 
@@ -122,8 +115,6 @@ struct TapAllowHintOverlayPlaygroundView: View {
         }
     }
 
-    // Resets the offsets to the production defaults whenever the style changes, so each style shows its
-    // shipped positioning until the developer starts tuning.
     private var styleBinding: Binding<AlertStyle> {
         Binding(get: { style }, set: { newStyle in
             style = newStyle
@@ -146,14 +137,8 @@ struct TapAllowHintOverlayPlaygroundView: View {
     }
 }
 
-/// Visual approximation of the system "Add VPN Configurations" dialog. Deliberately uses system fonts/colours
-/// (not the app design system) so it mirrors the OS chrome the hint has to line up with. The two styles differ
-/// structurally: iOS 26 adds an app icon on top and uses filled capsule buttons, while iOS 18 and earlier use
-/// the classic hairline-divided text buttons — which is why the "Allow" target sits at a different offset.
+/// Visual approximation of the system "Add VPN Configurations" dialog.
 private struct MockVPNPermissionAlert: View {
-    /// Verbatim copy of the real system "Add VPN Configurations" dialog, identical across both mock styles.
-    /// This is OS-owned text, not app copy — iOS renders it in the user's system language itself, so it's
-    /// intentionally not routed through `UserText`/localization here.
     private enum Verbatim {
         static let title = "“DuckDuckGo” Would Like to Add VPN Configurations"
         static let description = "All network activity on this iPhone may be filtered or monitored when using VPN."
@@ -178,9 +163,9 @@ private struct MockVPNPermissionAlert: View {
                 .frame(width: 74, height: 77)
 
             VStack(alignment: .leading, spacing: 10) {
-                Text(Verbatim.title)
+                Text(verbatim: Verbatim.title)
                     .font(.system(size: 17, weight: .semibold))
-                Text(Verbatim.description)
+                Text(verbatim: Verbatim.description)
                     .font(.system(size: 17, weight: .regular))
             }
             .multilineTextAlignment(.leading)
@@ -202,9 +187,9 @@ private struct MockVPNPermissionAlert: View {
     private var legacyAlert: some View {
         VStack(spacing: 0) {
             VStack(spacing: 9) {
-                Text(Verbatim.title)
+                Text(verbatim: Verbatim.title)
                     .font(.system(size: 17, weight: .semibold))
-                Text(Verbatim.description)
+                Text(verbatim: Verbatim.description)
                     .font(.system(size: 13))
             }
             .foregroundColor(.black)
@@ -217,7 +202,7 @@ private struct MockVPNPermissionAlert: View {
                 .frame(height: 0.5)
 
             HStack(spacing: 0) {
-                Text(Verbatim.allow)
+                Text(verbatim: Verbatim.allow)
                     .fontWeight(.regular)
                     .frame(maxWidth: .infinity, minHeight: 44)
 
@@ -225,7 +210,7 @@ private struct MockVPNPermissionAlert: View {
                     .fill(Color.black.opacity(0.24))
                     .frame(width: 0.5, height: 44)
 
-                Text(Verbatim.dontAllow)
+                Text(verbatim: Verbatim.dontAllow)
                     .fontWeight(.semibold)
                     .frame(maxWidth: .infinity, minHeight: 44)
             }
@@ -237,11 +222,8 @@ private struct MockVPNPermissionAlert: View {
         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
     }
 
-    // Design spec: equal-width capsule (border-radius 100) filling the row, 48pt tall, 17pt Medium copy.
-    // "Allow" uses the system secondary-fill gray (rgba(120,120,128,0.16)); "Don't Allow" uses the design's
-    // accent blue (#0088FF).
     private func capsuleButton(_ title: String, emphasised: Bool) -> some View {
-        Text(title)
+        Text(verbatim: title)
             .font(.system(size: 17, weight: .medium))
             .tracking(-0.43)
             .foregroundColor(emphasised ? .white : Color.black.opacity(0.84))

@@ -324,7 +324,7 @@ class MainViewController: UIViewController {
                               themeManager: themeManager)
     }()
 
-    lazy var aiChatViewControllerManager: AIChatViewControllerManager = {
+    private lazy var aiChatViewControllerManager: AIChatViewControllerManager = {
         let manager = AIChatViewControllerManager(privacyConfigurationManager: privacyConfigurationManager,
                                                   contentBlockingAssetsPublisher: contentBlockingAssetsPublisher,
                                                   experimentalAIChatManager: .init(featureFlagger: featureFlagger),
@@ -4081,6 +4081,9 @@ class MainViewController: UIViewController {
         }
 
         load(query, autoSend: autoSend, payload: payload, flowType: flowType, tools: tools, modelId: modelId, reasoningEffort: reasoningEffort, images: images, files: files)
+        if let modelId {
+            unifiedToggleInputCoordinator?.updateSelectedModel(modelId)
+        }
     }
 
     /// Executes the closure if the current tab is an AI tab

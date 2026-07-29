@@ -32,15 +32,13 @@ struct SubscriptionOnboardingConnectionInfo: Decodable, Equatable {
 }
 
 extension SubscriptionOnboardingConnectionInfo {
-    /// A display location for the VPN info card, e.g. `"🇪🇸 Madrid, Spain"`: the country's flag emoji (via
-    /// the shared ``NetworkProtectionVPNCountryLabelsModel``), the city, and the localized country name.
-    /// `locale` is injectable so the country name is deterministic under test.
+    /// A display location for the VPN info card, e.g. `"🇪🇸 Madrid, Spain"`: the country's flag emoji, the city, and the localized country name.
     func displayLocation(locale: Locale = .current) -> String {
         Self.displayLocation(city: city, country: country, locale: locale)
     }
 
     /// Formats a `city` + `country` (ISO region code) as `"🇪🇸 Madrid, Spain"`. Shared with the VPN egress
-    /// card, whose location comes from the VPN server info rather than a ``SubscriptionOnboardingConnectionInfo``.
+    /// card.
     static func displayLocation(city: String, country: String, locale: Locale = .current) -> String {
         let flag = NetworkProtectionVPNCountryLabelsModel(country: country).emoji
         let countryName = locale.localizedString(forRegionCode: country) ?? country
@@ -48,14 +46,12 @@ extension SubscriptionOnboardingConnectionInfo {
     }
 }
 
-/// Fetches the current connection's public IP + geolocation. A protocol so the VPN activation view model
-/// can be previewed and unit-tested without touching the network.
+/// Fetches the current connection's public IP + geolocation.
 protocol SubscriptionOnboardingConnectionInfoService {
     func fetchConnectionInfo() async throws -> SubscriptionOnboardingConnectionInfo
 }
 
-/// Reads `https://duckduckgo.com/connection.json`, following the app's lightweight-GET convention
-/// (`URLSession.shared.data(from:)` + `JSONDecoder`; see `YoutubeOembedService`).
+/// Reads `https://duckduckgo.com/connection.json`
 struct DefaultSubscriptionOnboardingConnectionInfoService: SubscriptionOnboardingConnectionInfoService {
     private static let connectionInfoURL = URL(string: "https://duckduckgo.com/connection.json")!
     private static let requestTimeout: TimeInterval = 10

@@ -17,18 +17,13 @@
 //  limitations under the License.
 //
 
-/// A section of the post-subscription onboarding flow. A section can span several screens internally —
-/// e.g. `.vpn` walks through its activation, post-activation, home-screen-widget and VPN-tips screens —
-/// but each is a single unit the flow navigates between. The flow view model (next PR) builds a section's
-/// view via ``SubscriptionOnboardingViewFactory`` and reacts to its completion via
-/// ``SubscriptionOnboardingSectionDelegate``.
+/// A section of the post-subscription onboarding flow; a section may span several screens internally.
 enum SubscriptionOnboardingSection: CaseIterable {
     case welcome
     case vpn
     case duckAI
 
-    /// How a section counts toward the flow's progress. Consumed by the flow view model (Stage 3); the
-    /// mapping itself is a pure model label and lives here.
+    /// How a section counts toward the flow's progress. 
     enum Kind: Equatable {
         /// Activates a specific premium protection; contributes to the completion percentage.
         case activation(SubscriptionOnboardingChecklistItem)

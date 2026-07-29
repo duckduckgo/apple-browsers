@@ -887,9 +887,6 @@ final class SubscriptionDebugViewController: UITableViewController {
         present(hostingController, animated: true)
     }
 
-    /// Draws `Graphic.lottie` for the onboarding preview from this debug host, since `UIComponents` has no
-    /// Lottie dependency and the production flow host (Stage 3) will inject its own renderer. Honors the
-    /// derived ``GraphicPlayback`` so Reduce Motion freezes on the final frame.
     private static let onboardingLottieRenderer = GraphicLottieRenderer { name, playback in
         AnyView(
             Lottie.LottieView(animation: .named(name))

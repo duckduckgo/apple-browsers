@@ -27,8 +27,6 @@ import UIComponents
 @MainActor
 final class TapAllowHintOverlayWindow {
     private enum Metrics {
-        // `FloatingPointerBubble` geometry: a 33pt arrow sits above the pill,
-        // and the pill is the 17pt "Tap allow" label plus 12pt vertical padding top & bottom (~44pt).
         static let bubbleArrowHeight: CGFloat = 33
         static let bubblePillHeight: CGFloat = 44
         static let bubbleHeight: CGFloat = bubbleArrowHeight + bubblePillHeight
@@ -46,23 +44,21 @@ final class TapAllowHintOverlayWindow {
 
     private var window: UIWindow?
 
-    /// Layers the hint over the frontmost scene. No-op if already shown or no foreground scene is found.
+    /// Layers the hint over the frontmost scene.
     func show() {
         guard window == nil, let scene = Self.foregroundWindowScene else { return }
         let hostingController = UIHostingController(rootView: Self.hintView)
         hostingController.view.backgroundColor = .clear
         let window = UIWindow(windowScene: scene)
         // The system permission dialog dims the screen with a scrim that sits above `.alert`, so `.alert + 1`
-        // leaves the hint rendered underneath it (dimmed). Use the maximum window level so the hint sits above
-        // the scrim. (If the OS ever presents this prompt as an out-of-process SpringBoard alert, no app window
-        // level can exceed it — but on the supported path this dialog is in-process.)
+        // leaves the hint rendered underneath it (dimmed).
         window.windowLevel = UIWindow.Level(rawValue: .greatestFiniteMagnitude)
         window.backgroundColor = .clear
         window.isUserInteractionEnabled = false
         window.rootViewController = hostingController
         window.isHidden = false
         self.window = window
-        // The window is non-interactive (VoiceOver can't reach it), so announce the hint for VO users.
+        // The window is non-interactive (VoiceOver can't reach it)
         UIAccessibility.post(notification: .announcement,
                              argument: UserText.subscriptionOnboardingVPNActivationTapAllowHint)
     }
@@ -73,8 +69,8 @@ final class TapAllowHintOverlayWindow {
     }
 
     // The system dialog is screen-centered, so position from the live screen centre (the window-sized
-    // `GeometryReader`) — device-adaptive without a per-model size table. `.position` centres the bubble, so
-    // add half its height on the y axis so the arrow *tip* (its top), not the centre, lands on the target.
+    // `GeometryReader`). `.position` centres the bubble, so
+    // add half its height on the y axis so the arrow *tip* (its top) lands on the target.
     private static var hintView: some View {
         GeometryReader { proxy in
             FloatingPointerBubble(text: UserText.subscriptionOnboardingVPNActivationTapAllowHint,

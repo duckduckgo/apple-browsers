@@ -22,9 +22,7 @@ import AIChat
 
 /// Prefetches the data the flow's sections need before the customer reaches them: the current (pre-VPN) connection
 /// info and the available Duck.ai models. Fetched once at flow start, so the result is cached here and simply read
-/// by the VPN and Duck.ai screens rather than refetched on every visit. A screen that finds its fetch still
-/// unresolved (or failed) calls the matching `fetchIfNeeded` method from its own `onAppear`, which is a no-op
-/// unless that fetch is `.idle` or `.failed`.
+/// by the VPN and Duck.ai screens rather than refetched on every visit.
 ///
 // TODO: will be owned by SubscriptionOnboardingFlowViewModel.swift calling `prefetch()` once at flow start
 @MainActor
@@ -52,6 +50,9 @@ final class SubscriptionOnboardingPrefetcher: ObservableObject {
     private let connectionInfoService: SubscriptionOnboardingConnectionInfoService
     private let modelProvider: SubscriptionOnboardingAIModelProviding
 
+    private var connectionInfoTask: Task<Void, Never>?
+    private var modelsTask: Task<Void, Never>?
+
     init(connectionInfoService: SubscriptionOnboardingConnectionInfoService = DefaultSubscriptionOnboardingConnectionInfoService(),
          modelProvider: SubscriptionOnboardingAIModelProviding = DefaultSubscriptionOnboardingAIModelProvider()) {
         self.connectionInfoService = connectionInfoService
@@ -67,12 +68,16 @@ final class SubscriptionOnboardingPrefetcher: ObservableObject {
 
     func fetchConnectionInfoIfNeeded() {
         guard connectionInfo.shouldStartFetch else { return }
+        connectionInfoTask?.cancel()
         connectionInfo = .loading
-        Task { @MainActor [weak self] in
+        connectionInfoTask = Task { @MainActor [weak self] in
             guard let self else { return }
             do {
-                self.connectionInfo = .loaded(try await self.connectionInfoService.fetchConnectionInfo())
+                let info = try await self.connectionInfoService.fetchConnectionInfo()
+                guard !Task.isCancelled else { return }
+                self.connectionInfo = .loaded(info)
             } catch {
+                guard !Task.isCancelled else { return }
                 self.connectionInfo = .failed
             }
         }
@@ -80,10 +85,12 @@ final class SubscriptionOnboardingPrefetcher: ObservableObject {
 
     func fetchModelsIfNeeded() {
         guard models.shouldStartFetch else { return }
+        modelsTask?.cancel()
         models = .loading
-        Task { @MainActor [weak self] in
+        modelsTask = Task { @MainActor [weak self] in
             guard let self else { return }
             let fetched = await self.modelProvider.fetchModels()
+            guard !Task.isCancelled else { return }
             self.models = fetched.isEmpty ? .failed : .loaded(fetched)
         }
     }

@@ -25,9 +25,8 @@ import UIComponents
 /// An IP-address info card for the post-subscription onboarding VPN step: a leading icon beside a labelled
 /// IP address and its geolocation. The `state` selects the overline label and icon — the grayscale VPN icon
 /// for the customer's real IP (`visibleIP` / `hiddenIP`) and the colour VPN icon for the new egress IP
-/// (`newIP`) — while `ipAddress`, `location` and the optional `nearestIndicator` carry the runtime values.
-/// Built from `SubscriptionOnboardingCard` + a single `CardItem`; the optional `nearestIndicator` renders as
-/// a `.textSecondary` suffix on the location via `CardItemText`'s inline secondary run.
+/// (`newIP`) — while `ipAddress` and `location` carry the runtime values. Built from
+/// `SubscriptionOnboardingCard` + a single `CardItem`.
 struct SubscriptionOnboardingVPNInfoCard: View {
 
     /// Which IP the card describes; drives the overline label and the leading icon.

@@ -195,6 +195,9 @@ final class ModalPromptCoordinationServiceTests {
 
     // MARK: - Promo Queue Admission
 
+    // The arbiter reclaims a lease whose token has deallocated, so a test that needs a lease to keep holding its slot
+    // must bind the token and keep it alive for as long as the assertions depend on it. Discarding it is not inert.
+
     @available(iOS 16, *)
     @Test("Enabled Modal Evaluation Acquires Lease Before Calling Manager", .timeLimit(.minutes(1)))
     func whenPromoQueueIsEnabledThenManagerReceivesAcquiredLease() {
@@ -225,7 +228,7 @@ final class ModalPromptCoordinationServiceTests {
             promoType: .remoteMessage,
             promoID: "rmf"
         )
-        guard case .acquired = promoQueueLeaseArbiter.acquireVisiblePromoLease(for: visibleIdentity) else {
+        guard case .acquired(let visibleLease) = promoQueueLeaseArbiter.acquireVisiblePromoLease(for: visibleIdentity) else {
             Issue.record("Expected visible promo lease acquisition")
             return
         }
@@ -240,6 +243,7 @@ final class ModalPromptCoordinationServiceTests {
 
         #expect(!managerMock.didCallPresentModalPromptIfNeeded)
         #expect(promoQueueLeaseArbiter.snapshot.visiblePromoIdentities == [visibleIdentity])
+        _ = visibleLease
     }
 
     @available(iOS 16, *)
@@ -263,7 +267,7 @@ final class ModalPromptCoordinationServiceTests {
             promoType: .remoteMessage,
             promoID: "rmf"
         )
-        guard case .acquired = promoQueueLeaseArbiter.acquireVisiblePromoLease(for: visibleIdentity) else {
+        guard case .acquired(let visibleLease) = promoQueueLeaseArbiter.acquireVisiblePromoLease(for: visibleIdentity) else {
             Issue.record("Expected visible promo lease acquisition")
             return
         }
@@ -281,6 +285,7 @@ final class ModalPromptCoordinationServiceTests {
 
         #expect(!provider.didCallProvideModalPrompt)
         #expect(!presenterMock.didCallPresent)
+        _ = visibleLease
     }
 
     @available(iOS 16, *)
@@ -304,7 +309,7 @@ final class ModalPromptCoordinationServiceTests {
     }
 
     @available(iOS 16, *)
-    @Test("Released Modal Lease Retries Two Active Registrations Once Without Recursion", .timeLimit(.minutes(1)))
+    @Test("Released Modal Lease Does Not Retry Active Registrations A Second Time", .timeLimit(.minutes(1)))
     func whenManagerReleasesModalLeaseThenActiveRegistrationsRetryOnce() {
         featureFlaggerMock.enabledFeatureFlags = [.promoQueue]
         launchSourceManagerMock.source = .standard
@@ -316,38 +321,22 @@ final class ModalPromptCoordinationServiceTests {
             featureFlagger: featureFlaggerMock,
             promoQueueLeaseArbiter: promoQueueLeaseArbiter
         )
-        let firstSurfaceID = UUID()
-        let secondSurfaceID = UUID()
+        // Both surfaces are genuinely active but have nothing left to admit, which is what lets the evaluation reach the
+        // manager at all: a surface that claimed the slot in the pre-gate pass would block the modal lease instead.
         let firstTarget = MockNewTabPagePromoRetryTarget()
         let secondTarget = MockNewTabPagePromoRetryTarget()
-        firstTarget.isActiveForPromoRetry = false
-        secondTarget.isActiveForPromoRetry = false
-        managerMock.onPresentCoordinated = {
-            firstTarget.isActiveForPromoRetry = true
-            secondTarget.isActiveForPromoRetry = true
-        }
-        firstTarget.onRetry = { [weak self] in
-            guard let self else { return }
-            _ = sut.admitVisiblePromo(
-                VisiblePromoIdentity(surfaceID: firstSurfaceID, promoType: .remoteMessage, promoID: "first")
-            )
-        }
-        secondTarget.onRetry = { [weak self] in
-            guard let self else { return }
-            _ = sut.admitVisiblePromo(
-                VisiblePromoIdentity(surfaceID: secondSurfaceID, promoType: .remoteMessage, promoID: "second")
-            )
-        }
-        let firstRegistration = sut.registerVisiblePromoRetry(for: firstSurfaceID, target: firstTarget)
-        let secondRegistration = sut.registerVisiblePromoRetry(for: secondSurfaceID, target: secondTarget)
-        _ = (firstRegistration, secondRegistration)
+        let firstRegistration = sut.registerVisiblePromoRetry(for: UUID(), target: firstTarget)
+        let secondRegistration = sut.registerVisiblePromoRetry(for: UUID(), target: secondTarget)
 
         sut.presentModalPromptIfNeeded(from: presenterMock)
 
+        // The pre-gate pass is the only pass. A synchronous `.released` decision sees exactly the arbiter state that
+        // pass already saw, so retrying on it would refresh RMF selection from the store twice on one foreground.
         #expect(firstTarget.retryCount == 1)
         #expect(secondTarget.retryCount == 1)
-        #expect(promoQueueLeaseArbiter.snapshot.visiblePromoCount == 2)
         #expect(managerMock.didCallPresentModalPromptIfNeeded)
+        #expect(!promoQueueLeaseArbiter.snapshot.hasModalLease)
+        _ = (firstRegistration, secondRegistration)
     }
 
     @available(iOS 16, *)
@@ -372,11 +361,17 @@ final class ModalPromptCoordinationServiceTests {
         let otherSurfaceID = UUID()
         let triggeringTarget = MockNewTabPagePromoRetryTarget()
         let otherTarget = MockNewTabPagePromoRetryTarget()
+        // A real NTP surface keeps the token it was admitted with, and the arbiter reclaims a slot whose token has
+        // deallocated, so the retried surface has to keep its token for the slot to stay taken.
+        var otherSurfaceLease: PromoQueueVisiblePromoLease?
         otherTarget.onRetry = { [weak self] in
             guard let self else { return }
-            _ = sut.admitVisiblePromo(
+            let admission = sut.admitVisiblePromo(
                 VisiblePromoIdentity(surfaceID: otherSurfaceID, promoType: .remoteMessage, promoID: "other")
             )
+            if case .acquired(let lease) = admission {
+                otherSurfaceLease = lease
+            }
         }
         let triggeringRegistration = sut.registerVisiblePromoRetry(
             for: triggeringSurfaceID,
@@ -398,6 +393,7 @@ final class ModalPromptCoordinationServiceTests {
         }
         #expect(triggeringTarget.retryCount == 0)
         #expect(otherTarget.retryCount == 1)
+        #expect(otherSurfaceLease != nil)
         #expect(promoQueueLeaseArbiter.snapshot.visiblePromoCount == 2)
     }
 
@@ -425,6 +421,128 @@ final class ModalPromptCoordinationServiceTests {
 
         #expect(firstTarget.retryCount == 0)
         #expect(replacementTarget.retryCount == 1)
+    }
+
+    // MARK: - Visible Promo Admission Results
+
+    @available(iOS 16, *)
+    @Test("Disabled Feature Refuses Visible Promo Admission Without Arbitrating", .timeLimit(.minutes(1)))
+    func whenPromoQueueIsDisabledThenVisibleAdmissionIsRefusedWithoutTakingALease() {
+        sut = ModalPromptCoordinationService(
+            launchSourceManager: launchSourceManagerMock,
+            modalPromptCoordinationManager: managerMock,
+            featureFlagger: featureFlaggerMock,
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter
+        )
+
+        let result = sut.admitVisiblePromo(
+            VisiblePromoIdentity(surfaceID: UUID(), promoType: .remoteMessage, promoID: "rmf")
+        )
+
+        guard case .featureDisabled = result else {
+            Issue.record("Expected admission to be refused while the promo queue flag is off")
+            return
+        }
+        // The refusal has to come before arbitration, not through it. An NTP holding a coordination lease with the flag
+        // off would make `acquireModalLease` answer `.blockedByVisiblePromos` and silently suppress every launch modal
+        // for flag-off users, so the modal slot must still be free afterwards.
+        #expect(managerMock.reconcilePresentedModalCallCount == 0)
+        #expect(promoQueueLeaseArbiter.snapshot.visiblePromoIdentities.isEmpty)
+        guard case .acquired(let modalLease) = promoQueueLeaseArbiter.acquireModalLease() else {
+            Issue.record("Expected the modal slot to stay free for the legacy launch modal path")
+            return
+        }
+        _ = modalLease
+    }
+
+    @available(iOS 16, *)
+    @Test("Coordinated Modal Attempt Blocks Visible Promo Admission", .timeLimit(.minutes(1)))
+    func whenModalAttemptOwnsSlotThenVisibleAdmissionIsBlockedByModal() {
+        featureFlaggerMock.enabledFeatureFlags = [.promoQueue]
+        sut = ModalPromptCoordinationService(
+            launchSourceManager: launchSourceManagerMock,
+            modalPromptCoordinationManager: managerMock,
+            featureFlagger: featureFlaggerMock,
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter
+        )
+        guard case .acquired(let modalLease) = promoQueueLeaseArbiter.acquireModalLease() else {
+            Issue.record("Expected modal lease acquisition")
+            return
+        }
+
+        let result = sut.admitVisiblePromo(
+            VisiblePromoIdentity(surfaceID: UUID(), promoType: .remoteMessage, promoID: "rmf")
+        )
+
+        guard case .blockedByModal = result else {
+            Issue.record("Expected a coordinated modal attempt to block visible promo admission")
+            return
+        }
+        // Admission reconciles the exact modal root before asking the arbiter, so a modal that has already gone away
+        // cannot keep blocking; here it has not, so the refusal stands and no visible lease is taken.
+        #expect(managerMock.reconcilePresentedModalCallCount == 1)
+        #expect(promoQueueLeaseArbiter.snapshot.visiblePromoIdentities.isEmpty)
+        _ = modalLease
+    }
+
+    @available(iOS 16, *)
+    @Test("Occupied Surface Slot Refuses A Second Promo And Names Its Occupant", .timeLimit(.minutes(1)))
+    func whenSurfaceSlotIsOccupiedThenVisibleAdmissionCarriesTheOccupyingIdentity() {
+        featureFlaggerMock.enabledFeatureFlags = [.promoQueue]
+        sut = ModalPromptCoordinationService(
+            launchSourceManager: launchSourceManagerMock,
+            modalPromptCoordinationManager: managerMock,
+            featureFlagger: featureFlaggerMock,
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter
+        )
+        let surfaceID = UUID()
+        let occupyingIdentity = VisiblePromoIdentity(surfaceID: surfaceID, promoType: .remoteMessage, promoID: "first")
+        guard case .acquired(let occupyingLease) = sut.admitVisiblePromo(occupyingIdentity) else {
+            Issue.record("Expected the first visible promo to be admitted")
+            return
+        }
+
+        let result = sut.admitVisiblePromo(
+            VisiblePromoIdentity(surfaceID: surfaceID, promoType: .remoteMessage, promoID: "second")
+        )
+
+        guard case .occupiedSurfaceSlot(let reportedIdentity) = result else {
+            Issue.record("Expected the occupied surface slot to refuse a second promo")
+            return
+        }
+        // The refusal names the promo that actually holds the slot, not the one that asked for it.
+        #expect(reportedIdentity == occupyingIdentity)
+        #expect(promoQueueLeaseArbiter.snapshot.visiblePromoIdentities == [occupyingIdentity])
+        _ = occupyingLease
+    }
+
+    @available(iOS 16, *)
+    @Test("Releasing A Visible Promo Lease Frees Its Surface Slot", .timeLimit(.minutes(1)))
+    func whenVisiblePromoLeaseIsReleasedThenTheSurfaceSlotIsReacquirable() {
+        featureFlaggerMock.enabledFeatureFlags = [.promoQueue]
+        sut = ModalPromptCoordinationService(
+            launchSourceManager: launchSourceManagerMock,
+            modalPromptCoordinationManager: managerMock,
+            featureFlagger: featureFlaggerMock,
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter
+        )
+        let identity = VisiblePromoIdentity(surfaceID: UUID(), promoType: .remoteMessage, promoID: "rmf")
+        guard case .acquired(let lease) = sut.admitVisiblePromo(identity) else {
+            Issue.record("Expected the visible promo to be admitted")
+            return
+        }
+        #expect(promoQueueLeaseArbiter.snapshot.visiblePromoIdentities == [identity])
+
+        sut.releaseVisiblePromoLease(lease)
+
+        // Withdrawing a promo has to hand the slot back, so the same surface can admit the next message for it.
+        #expect(promoQueueLeaseArbiter.snapshot.visiblePromoIdentities.isEmpty)
+        guard case .acquired(let reacquiredLease) = sut.admitVisiblePromo(identity) else {
+            Issue.record("Expected the freed surface slot to be re-acquirable")
+            return
+        }
+        #expect(promoQueueLeaseArbiter.snapshot.visiblePromoIdentities == [identity])
+        _ = reacquiredLease
     }
 
     // MARK: - Promo Queue Feature State
@@ -455,17 +573,31 @@ final class ModalPromptCoordinationServiceTests {
             featureFlagger: featureFlaggerMock,
             promoQueueLeaseArbiter: promoQueueLeaseArbiter
         )
-        let initialGeneration = promoQueueLeaseArbiter.snapshot.generation
+        let outstandingIdentity = VisiblePromoIdentity(
+            surfaceID: UUID(),
+            promoType: .remoteMessage,
+            promoID: "rmf"
+        )
+        guard case .acquired(let outstandingLease) = promoQueueLeaseArbiter.acquireVisiblePromoLease(for: outstandingIdentity) else {
+            Issue.record("Expected visible promo lease acquisition")
+            return
+        }
 
         featureFlaggerMock.triggerUpdate()
         await waitForFeatureFlagUpdateDelivery()
         #expect(managerMock.promoQueueWillTransitionTargets.isEmpty)
-        #expect(promoQueueLeaseArbiter.snapshot.generation == initialGeneration)
+        // A deduplicated update never reaches the arbiter, so the outstanding lease survives it.
+        #expect(promoQueueLeaseArbiter.snapshot.visiblePromoIdentities == [outstandingIdentity])
 
         featureFlaggerMock.enabledFeatureFlags = [.promoQueue]
         featureFlaggerMock.triggerUpdate()
         await waitForFeatureFlagUpdateDelivery()
-        let enabledGeneration = promoQueueLeaseArbiter.snapshot.generation
+        // The one effective change transitions, and a transition invalidates every lease.
+        #expect(promoQueueLeaseArbiter.snapshot.visiblePromoIdentities.isEmpty)
+        guard case .acquired(let reacquiredLease) = promoQueueLeaseArbiter.acquireVisiblePromoLease(for: outstandingIdentity) else {
+            Issue.record("Expected visible promo lease acquisition after the transition")
+            return
+        }
         featureFlaggerMock.triggerUpdate()
         await waitForFeatureFlagUpdateDelivery()
 
@@ -473,8 +605,8 @@ final class ModalPromptCoordinationServiceTests {
         #expect(managerMock.promoQueueDidTransitionTargets == [.enabled])
         #expect(sut.promoQueueFeatureState == .enabled)
         #expect(featureFlaggerMock.updatesPublisherSubscriptionCount == 1)
-        #expect(enabledGeneration != initialGeneration)
-        #expect(promoQueueLeaseArbiter.snapshot.generation == enabledGeneration)
+        #expect(promoQueueLeaseArbiter.snapshot.visiblePromoIdentities == [outstandingIdentity])
+        _ = (outstandingLease, reacquiredLease)
     }
 
     @available(iOS 16, *)
@@ -539,6 +671,47 @@ final class ModalPromptCoordinationServiceTests {
                 .transitioning(to: .disabled),
             ]
         )
+        #expect(sut.promoQueueFeatureState == .disabled)
+    }
+
+    @available(iOS 16, *)
+    @Test("Promo Queue Transition Barrier Rejects Visible Promo Admission In Both Directions", .timeLimit(.minutes(1)))
+    func whenTransitionCallbacksAdmitVisiblePromoThenAdmissionWaitsForBarrier() async {
+        sut = ModalPromptCoordinationService(
+            launchSourceManager: launchSourceManagerMock,
+            modalPromptCoordinationManager: managerMock,
+            featureFlagger: featureFlaggerMock,
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter
+        )
+
+        var admissionAttemptsDuringCallbacks = 0
+        var refusalsDuringCallbacks = 0
+        let admitDuringTransition: @MainActor (PromoQueueFeatureTargetState) -> Void = { [weak self] _ in
+            guard let self else { return }
+            admissionAttemptsDuringCallbacks += 1
+            let result = sut.admitVisiblePromo(
+                VisiblePromoIdentity(surfaceID: UUID(), promoType: .remoteMessage, promoID: "rmf")
+            )
+            if case .unavailableDuringTransition = result {
+                refusalsDuringCallbacks += 1
+            }
+        }
+        managerMock.onPromoQueueWillTransition = admitDuringTransition
+        managerMock.onPromoQueueDidTransition = admitDuringTransition
+
+        featureFlaggerMock.enabledFeatureFlags = [.promoQueue]
+        featureFlaggerMock.triggerUpdate()
+        await waitForFeatureFlagUpdateDelivery()
+        featureFlaggerMock.enabledFeatureFlags = []
+        featureFlaggerMock.triggerUpdate()
+        await waitForFeatureFlagUpdateDelivery()
+
+        // Both callbacks of both transitions re-enter admission, and every one of the four must be refused: only the
+        // transition routine's own re-adoption and retry steps may mutate arbiter state while the barrier is up.
+        #expect(admissionAttemptsDuringCallbacks == 4)
+        #expect(refusalsDuringCallbacks == 4)
+        #expect(managerMock.reconcilePresentedModalCallCount == 0)
+        #expect(promoQueueLeaseArbiter.snapshot.visiblePromoIdentities.isEmpty)
         #expect(sut.promoQueueFeatureState == .disabled)
     }
 

@@ -51,8 +51,17 @@ protocol ModalPromptRootAttachmentChecking {
 }
 
 struct ModalPromptRootAttachmentChecker: ModalPromptRootAttachmentChecking {
+
+    /// A root in the middle of its dismissal transition counts as detached.
+    ///
+    /// UIKit keeps both `presentingViewController` and the view's window non-nil for the whole dismissal animation, so
+    /// every other attachment term still fires while the modal is on its way out. Calling such a root attached would
+    /// retain the modal lease for one more checkpoint and defer a waiting promo by that checkpoint for nothing. The rest
+    /// of the subsystem already treats a dismissing controller as gone, so the dismissal flag wins over every disjunct.
     func isAttached(_ root: UIViewController) -> Bool {
-        root.isBeingPresented || root.presentingViewController != nil || root.viewIfLoaded?.window != nil
+        guard !root.isBeingDismissed else { return false }
+
+        return root.isBeingPresented || root.presentingViewController != nil || root.viewIfLoaded?.window != nil
     }
 }
 
@@ -81,11 +90,24 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
         let provider: any ModalPromptProvider
     }
 
+    /// Weak holder for a presented modal root, since an enum payload cannot itself be `weak`.
+    ///
+    /// Checkpoints are sparse — foreground and NTP promo admission — so a strong payload would leave the manager the
+    /// sole owner of a dismissed modal's whole view hierarchy for as long as the user keeps browsing. The providers that
+    /// keep the presented controller keep it weakly for the same reason.
+    private final class PresentedModalRoot {
+        weak var viewController: UIViewController?
+
+        init(_ viewController: UIViewController) {
+            self.viewController = viewController
+        }
+    }
+
     private enum AttemptState {
         case idle
         case evaluating(CoordinatedAttempt)
         case committed(CommittedAttempt)
-        case presentationActive(CoordinatedAttempt, exactRoot: UIViewController)
+        case presentationActive(CoordinatedAttempt, exactRoot: PresentedModalRoot)
     }
 
     private let providers: [any ModalPromptProvider]
@@ -97,7 +119,12 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
 
     private var attemptState = AttemptState.idle
     private var legacyActiveAttemptIDs = Set<UUID>()
-    private weak var lastSelectedExactRoot: UIViewController?
+
+    /// The exact root of the most recent modal the manager actually handed to UIKit, on either path.
+    ///
+    /// Recorded at presentation time rather than selection time: its only reader re-adopts a modal that is genuinely on
+    /// screen when the feature turns on, and a root that was merely selected has nothing on screen to re-adopt.
+    private weak var lastPresentedExactRoot: UIViewController?
 
     private(set) var didActuallyPresentModalPromptThisSession = false
 
@@ -145,14 +172,14 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
     /// the target state by design.
     func promoQueueWillTransition(to targetState: PromoQueueFeatureTargetState) {
         legacyActiveAttemptIDs.removeAll()
-        latchActualPresentationHistoryIfPresentationActive()
+        latchActualPresentationHistoryIfModalIsAttached()
         releaseCoordinationAttempt()
     }
 
     func promoQueueDidTransition(to targetState: PromoQueueFeatureTargetState) {
         guard targetState == .enabled,
-              let lastSelectedExactRoot,
-              rootAttachmentChecker.isAttached(lastSelectedExactRoot) else {
+              let lastPresentedExactRoot,
+              rootAttachmentChecker.isAttached(lastPresentedExactRoot) else {
             return
         }
 
@@ -161,7 +188,7 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
         }
 
         let attempt = CoordinatedAttempt(lease: lease)
-        attemptState = .presentationActive(attempt, exactRoot: lastSelectedExactRoot)
+        attemptState = .presentationActive(attempt, exactRoot: PresentedModalRoot(lastPresentedExactRoot))
     }
 
     /// Attempts to present a modal prompt if one is eligible.
@@ -178,7 +205,6 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
         guard let selectedPrompt = selectModalPrompt() else { return }
 
         let scheduledAttemptID = UUID()
-        lastSelectedExactRoot = selectedPrompt.configuration.viewController
         legacyActiveAttemptIDs.insert(scheduledAttemptID)
         Logger.modalPrompt.debug("[Modal Prompt Coordination] - Presenting modal from \(type(of: selectedPrompt.provider))")
         presentLegacyModalPrompt(
@@ -186,10 +212,12 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
             from: presenter,
             scheduledAttemptID: scheduledAttemptID
         ) { [weak self] in
-            guard let self else { return }
-            self.legacyActiveAttemptIDs.remove(scheduledAttemptID)
-            self.didActuallyPresentModalPromptThisSession = true
-            self.saveModalPromptLastPresentationDate()
+            // Each manager-side statement is individually optional so a deallocated manager cannot swallow the
+            // provider's own "mark as shown" hook — without it a provider such as win-back would offer the same prompt
+            // again. This mirrors the coordinated completion below.
+            self?.legacyActiveAttemptIDs.remove(scheduledAttemptID)
+            self?.didActuallyPresentModalPromptThisSession = true
+            self?.saveModalPromptLastPresentationDate()
             selectedPrompt.provider.didPresentModal()
         }
     }
@@ -212,7 +240,6 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
             return .released
         }
 
-        lastSelectedExactRoot = selectedPrompt.configuration.viewController
         let committedAttempt = CommittedAttempt(
             attempt: attempt,
             configuration: selectedPrompt.configuration,
@@ -227,10 +254,12 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
     /// Releases a coordinated modal only after the exact selected root is no longer attached.
     ///
     /// A child presented by that root does not affect this check because attachment is evaluated
-    /// against the retained root itself rather than the topmost view controller.
+    /// against the observed root itself rather than the topmost view controller. A root that has already been
+    /// deallocated counts as not attached, so a lease can never outlive the modal it was taken for.
     func reconcilePresentedModal() -> Bool {
-        guard case .presentationActive(let attempt, let exactRoot) = attemptState,
-              !rootAttachmentChecker.isAttached(exactRoot) else {
+        guard case .presentationActive(let attempt, let exactRoot) = attemptState else { return false }
+
+        if let root = exactRoot.viewController, rootAttachmentChecker.isAttached(root) {
             return false
         }
 
@@ -244,7 +273,7 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
 
 private extension ModalPromptCoordinationManager {
 
-    func selectModalPrompt() -> SelectedPrompt? {
+    private func selectModalPrompt() -> SelectedPrompt? {
         guard !cooldownManager.isInCooldownPeriod else {
             let cooldownInfo = cooldownManager.cooldownInfo
             let lastPresentationDate = cooldownInfo.lastPresentationDate.flatMap(String.init) ?? "-"
@@ -287,7 +316,7 @@ private extension ModalPromptCoordinationManager {
 
             self.attemptState = .presentationActive(
                 committedAttempt.attempt,
-                exactRoot: committedAttempt.configuration.viewController
+                exactRoot: PresentedModalRoot(committedAttempt.configuration.viewController)
             )
             self.performPresentation(
                 modalPromptConfiguration: committedAttempt.configuration,
@@ -320,11 +349,17 @@ private extension ModalPromptCoordinationManager {
         }
     }
 
+    /// Hands the selected root to UIKit, and records it as the last root the manager presented.
+    ///
+    /// Both the legacy and the coordinated path funnel through here, so the recording covers the flag-off legacy path
+    /// too, which is what a later disabled-to-enabled transition needs in order to re-adopt an already visible modal.
     func performPresentation(
         modalPromptConfiguration: ModalPromptConfiguration,
         from presenter: ModalPromptPresenter,
         completion: @escaping (() -> Void)
     ) {
+        lastPresentedExactRoot = modalPromptConfiguration.viewController
+
         if let presented = presenter.presentedViewController, presented is OmniBarEditingStateViewController, !presented.isBeingDismissed {
             Logger.modalPrompt.debug("[Modal Prompt Coordination] - Presenting modal on top of OmniBarEditingStateViewController")
             presented.present(modalPromptConfiguration.viewController, animated: modalPromptConfiguration.animated, completion: completion)
@@ -333,19 +368,26 @@ private extension ModalPromptCoordinationManager {
         }
     }
 
-    /// Records an attempt that is already presenting as actual session history before a feature transition tears it down.
+    /// Records an attempt whose modal is genuinely on screen as actual session history before a feature transition tears
+    /// it down.
     ///
-    /// The manager only enters `.presentationActive` after `present(_:animated:completion:)` has been called, so the modal
-    /// is on screen — or animating in — even when UIKit has not run the presentation completion yet. That makes it a
-    /// presented attempt, not a pre-presentation cancellation: only `.evaluating` and `.committed` are pre-presentation
-    /// cancellations, and those must keep clearing suppression. Latching here keeps `didPresentModalPromptThisSession`
-    /// true across the transition so no other promo can slip in underneath a visible modal.
+    /// `.presentationActive` is entered *before* `present(_:animated:completion:)` is called, so the state alone does not
+    /// prove the modal ever appeared: UIKit can silently refuse the call and never run the presentation completion.
+    /// Attachment of the exact selected root is the only evidence available here, so the latch is gated on the same
+    /// predicate the rest of the class uses. An attached root makes this a presented attempt, and keeping
+    /// `didPresentModalPromptThisSession` true across the transition stops another promo slipping in underneath a visible
+    /// modal. Everything else is a pre-presentation cancellation — `.evaluating`, `.committed`, and a refused presentation
+    /// alike — and must keep clearing suppression so the session is not falsely marked as having shown a modal.
     ///
-    /// This must not be shared with `reconcilePresentedModal()`, which also clears a `.presentationActive` attempt: there,
-    /// a real presentation has already latched the flag from its completion, and a presentation UIKit refused genuinely
-    /// never appeared.
-    func latchActualPresentationHistoryIfPresentationActive() {
-        guard case .presentationActive = attemptState else { return }
+    /// This must not be shared with `reconcilePresentedModal()`, which clears a `.presentationActive` attempt on the
+    /// opposite answer: there a real presentation has already latched the flag from its completion.
+    func latchActualPresentationHistoryIfModalIsAttached() {
+        guard case .presentationActive(_, let exactRoot) = attemptState,
+              let root = exactRoot.viewController,
+              rootAttachmentChecker.isAttached(root) else {
+            return
+        }
+
         didActuallyPresentModalPromptThisSession = true
     }
 

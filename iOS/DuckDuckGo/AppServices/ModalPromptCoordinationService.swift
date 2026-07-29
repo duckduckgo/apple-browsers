@@ -28,14 +28,11 @@ import UIKit
 @MainActor
 protocol ModalPromptPresenter: AnyObject {
     var presentedViewController: UIViewController? { get }
-    var modalPromptPresentationViewController: UIViewController? { get }
 
     func present(_ viewControllerToPresent: UIViewController, animated flag: Bool, completion: (() -> Void)?)
 }
 
-extension MainViewController: ModalPromptPresenter {
-    var modalPromptPresentationViewController: UIViewController? { self }
-}
+extension MainViewController: ModalPromptPresenter {}
 
 // MARK: - Promo Queue Feature State
 
@@ -266,12 +263,16 @@ final class ModalPromptCoordinationService {
 
         switch promoQueueLeaseArbiter.acquireModalLease() {
         case .acquired(let lease):
-            let disposition = modalPromptCoordinationManager.presentModalPromptIfNeeded(
-                from: viewController,
-                with: lease
-            )
-            if disposition == .released {
-                retryActiveVisiblePromoRegistrations()
+            switch modalPromptCoordinationManager.presentModalPromptIfNeeded(from: viewController, with: lease) {
+            case .retained:
+                Logger.modalPrompt.debug("[Modal Prompt Coordination] - The coordinated modal attempt holds the slot.")
+            case .released:
+                // Deliberately no retry pass here. The manager only answers `.released` synchronously — cooldown or no
+                // eligible provider — microseconds after the pre-gate pass above ran against identical arbiter state,
+                // so every active registration has already been asked once on this foreground. Step 5 adds the
+                // asynchronous release sites (a committed attempt failing preflight, or refused by UIKit); those
+                // release after arbiter state has moved on, so they must trigger the registry-wide retry themselves.
+                Logger.modalPrompt.debug("[Modal Prompt Coordination] - The coordinated modal attempt released the slot without presenting.")
             }
         case .blockedByModal:
             Logger.modalPrompt.debug("[Modal Prompt Coordination] - Skipping modal prompt - A coordinated modal attempt already owns the slot.")
@@ -297,11 +298,13 @@ final class ModalPromptCoordinationService {
             result = .acquired(lease)
         case .blockedByModal:
             result = .blockedByModal
-        case .occupiedSurfaceSlot(let identity):
-            result = .occupiedSurfaceSlot(identity)
+        case .occupiedSurfaceSlot(let occupyingIdentity):
+            result = .occupiedSurfaceSlot(occupyingIdentity)
         }
 
         if didReleaseModalLease {
+            // Excludes the *requesting* surface, whose admission this call has just completed, rather than any identity
+            // carried back by the arbiter's answer.
             retryActiveVisiblePromoRegistrations(excluding: identity.surfaceID)
         }
         return result

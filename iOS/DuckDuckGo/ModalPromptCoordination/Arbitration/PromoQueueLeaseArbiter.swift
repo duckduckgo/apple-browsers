@@ -29,14 +29,6 @@ struct VisiblePromoIdentity: Hashable {
     let promoID: String
 }
 
-struct PromoQueueLeaseGeneration: Hashable {
-    fileprivate let id: UUID
-
-    fileprivate init() {
-        id = UUID()
-    }
-}
-
 /// Opaque per-acquisition identity that travels with its modal lease through the evaluating, committed, and presentation-active phases, so a callback for an older attempt can be recognised and ignored.
 struct PromoQueueModalAttemptIdentity: Hashable {
     fileprivate let id: UUID
@@ -47,7 +39,6 @@ struct PromoQueueModalAttemptIdentity: Hashable {
 }
 
 struct PromoQueueLeaseSnapshot: Equatable {
-    let generation: PromoQueueLeaseGeneration
     let modalAttemptIdentity: PromoQueueModalAttemptIdentity?
     let visiblePromoIdentities: Set<VisiblePromoIdentity>
 
@@ -88,7 +79,7 @@ protocol PromoQueueLeaseArbitrating: AnyObject {
     func acquireModalLease() -> PromoQueueModalLeaseAcquisitionResult
     /// Acquires a visible-promo lease, which succeeds only when there is no modal lease and the identity's `(surfaceID, promoType)` slot is free, so several surfaces may hold leases concurrently but one slot may not hold two.
     func acquireVisiblePromoLease(for identity: VisiblePromoIdentity) -> PromoQueueVisiblePromoLeaseAcquisitionResult
-    /// Advances the generation and clears every lease, so outstanding tokens become no-ops. Used on a live feature-flag transition.
+    /// Clears every lease, so outstanding tokens become no-ops. Used on a live feature-flag transition.
     func invalidateAllLeases()
 }
 
@@ -130,9 +121,11 @@ final class PromoQueueVisiblePromoLease {
 
 @MainActor
 final class PromoQueueLeaseArbiter: PromoQueueLeaseArbitrating {
+    /// `token` is weak so that a lease whose owner dropped it without calling `release()` can be reclaimed. It cannot
+    /// retain the token: the acquirer owns the lease, and a strong reference here would keep every lease alive forever.
     private struct ModalLeaseRecord {
-        let id: UUID
         let attemptIdentity: PromoQueueModalAttemptIdentity
+        weak var token: PromoQueueModalLease?
     }
 
     private struct VisiblePromoSlot: Hashable {
@@ -145,24 +138,31 @@ final class PromoQueueLeaseArbiter: PromoQueueLeaseArbitrating {
         }
     }
 
+    /// `id` is minted per acquisition but `identity` is not: the same `(surfaceID, promoType, promoID)` may hold the
+    /// slot again while an earlier token is still armed, so release has to be keyed on `id` rather than on `identity`.
+    ///
+    /// `token` is weak for the same reason as `ModalLeaseRecord.token`.
     private struct VisiblePromoLeaseRecord {
         let id: UUID
         let identity: VisiblePromoIdentity
+        weak var token: PromoQueueVisiblePromoLease?
     }
 
-    private var generation = PromoQueueLeaseGeneration()
     private var modalLease: ModalLeaseRecord?
     private var visiblePromoLeases = [VisiblePromoSlot: VisiblePromoLeaseRecord]()
 
+    /// Prunes before reading so neither the debug screen nor a caller can observe a lease whose token is already gone.
     var snapshot: PromoQueueLeaseSnapshot {
-        PromoQueueLeaseSnapshot(
-            generation: generation,
+        pruneLeasesWithDeallocatedTokens()
+        return PromoQueueLeaseSnapshot(
             modalAttemptIdentity: modalLease?.attemptIdentity,
             visiblePromoIdentities: Set(visiblePromoLeases.values.map(\.identity))
         )
     }
 
     func acquireModalLease() -> PromoQueueModalLeaseAcquisitionResult {
+        pruneLeasesWithDeallocatedTokens()
+
         guard modalLease == nil else {
             return .blockedByModal
         }
@@ -171,24 +171,23 @@ final class PromoQueueLeaseArbiter: PromoQueueLeaseArbitrating {
             return .blockedByVisiblePromos(Set(visiblePromoLeases.values.map(\.identity)))
         }
 
-        let leaseID = UUID()
-        let leaseGeneration = generation
         let attemptIdentity = PromoQueueModalAttemptIdentity()
-        modalLease = ModalLeaseRecord(
-            id: leaseID,
-            attemptIdentity: attemptIdentity
-        )
-
         let lease = PromoQueueModalLease(
             attemptIdentity: attemptIdentity,
             releaseHandler: { [weak self] in
-                self?.releaseModalLease(id: leaseID, generation: leaseGeneration)
+                self?.releaseModalLease(attemptIdentity: attemptIdentity)
             }
+        )
+        modalLease = ModalLeaseRecord(
+            attemptIdentity: attemptIdentity,
+            token: lease
         )
         return .acquired(lease)
     }
 
     func acquireVisiblePromoLease(for identity: VisiblePromoIdentity) -> PromoQueueVisiblePromoLeaseAcquisitionResult {
+        pruneLeasesWithDeallocatedTokens()
+
         guard modalLease == nil else {
             return .blockedByModal
         }
@@ -199,48 +198,53 @@ final class PromoQueueLeaseArbiter: PromoQueueLeaseArbitrating {
         }
 
         let leaseID = UUID()
-        let leaseGeneration = generation
+        let lease = PromoQueueVisiblePromoLease { [weak self] in
+            self?.releaseVisiblePromoLease(for: slot, id: leaseID)
+        }
         visiblePromoLeases[slot] = VisiblePromoLeaseRecord(
             id: leaseID,
-            identity: identity
+            identity: identity,
+            token: lease
         )
-
-        let lease = PromoQueueVisiblePromoLease { [weak self] in
-            self?.releaseVisiblePromoLease(
-                for: slot,
-                id: leaseID,
-                generation: leaseGeneration
-            )
-        }
         return .acquired(lease)
     }
 
     func invalidateAllLeases() {
-        generation = PromoQueueLeaseGeneration()
         modalLease = nil
         visiblePromoLeases.removeAll()
     }
 
-    private func releaseModalLease(id: UUID, generation: PromoQueueLeaseGeneration) {
-        // `id` proves the stored record is this token's; `generation` rejects a token minted before an invalidation.
+    /// Reclaims leases whose token deallocated without `release()`, so a dropped token cannot wedge the arbiter for the
+    /// rest of the session: one leaked visible-promo token would otherwise block every launch modal, and a leaked modal
+    /// token would block every visible promo, with no timeout and no recovery.
+    ///
+    /// A `deinit` on the token would be the obvious alternative, but the token is `@MainActor` and `deinit` is
+    /// implicitly nonisolated, so it cannot call `release()` synchronously; hopping to the main actor instead would make
+    /// release asynchronous and its ordering nondeterministic. Pruning is plain synchronous main-actor code, and every
+    /// caller reaches the arbiter through an entry point that prunes first.
+    private func pruneLeasesWithDeallocatedTokens() {
+        if let modalLease, modalLease.token == nil {
+            self.modalLease = nil
+        }
+
+        visiblePromoLeases = visiblePromoLeases.filter { $0.value.token != nil }
+    }
+
+    private func releaseModalLease(attemptIdentity: PromoQueueModalAttemptIdentity) {
+        // `attemptIdentity` is minted per acquisition, so matching it proves the stored record is this token's. A token
+        // whose record was cleared, by release or by an invalidation, cannot match whatever replaced it.
         guard let modalLease,
-              modalLease.id == id,
-              generation == self.generation else {
+              modalLease.attemptIdentity == attemptIdentity else {
             return
         }
 
         self.modalLease = nil
     }
 
-    private func releaseVisiblePromoLease(
-        for slot: VisiblePromoSlot,
-        id: UUID,
-        generation: PromoQueueLeaseGeneration
-    ) {
-        // `id` proves the record in this slot is this token's; `generation` rejects a token minted before an invalidation.
+    private func releaseVisiblePromoLease(for slot: VisiblePromoSlot, id: UUID) {
+        // `id` proves the record in this slot is this token's, so a token for message A cannot release message B.
         guard let visiblePromoLease = visiblePromoLeases[slot],
-              visiblePromoLease.id == id,
-              generation == self.generation else {
+              visiblePromoLease.id == id else {
             return
         }
 

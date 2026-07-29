@@ -56,5 +56,6 @@ final class MockModalPromptProvider: ModalPromptProvider {
         didCallProvideModalPrompt = false
         didCallDidPresentModal = false
         capturedIsOnboardingComplete = nil
+        isEligibleToPresentResult = nil
     }
 }

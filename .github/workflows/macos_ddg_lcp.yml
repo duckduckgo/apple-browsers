@@ -1,13 +1,10 @@
 name: macOS - DuckDuckGo LCP (WPR)
 run-name: macOS - DuckDuckGo LCP (WPR)
 
-# Temporary branch trigger used to validate the workflow on the dedicated
-# runner before enabling it from the default branch.
+# Real measurements are manual until two dedicated-runner full runs have been
+# completed and understood. The workflow only accepts the default branch.
 
 on:
-  push:
-    branches:
-      - diego/crossbench-ddg-ci
   workflow_dispatch:
     inputs:
       review-build-url:
@@ -57,21 +54,18 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Require a trusted measurement branch
+      - name: Require the current default branch
         working-directory: .
         env:
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
-          TEMPORARY_TEST_BRANCH: diego/crossbench-ddg-ci
         run: |
-          branch="${GITHUB_REF#refs/heads/}"
-          if [ "$branch" != "$DEFAULT_BRANCH" ] &&
-              [ "$branch" != "$TEMPORARY_TEST_BRANCH" ]; then
-            echo "ERROR: DDG measurements may only run from a trusted branch." >&2
+          if [ "$GITHUB_REF" != "refs/heads/$DEFAULT_BRANCH" ]; then
+            echo "ERROR: DDG measurements may only run from the current default branch." >&2
             exit 1
           fi
           if ! git merge-base --is-ancestor \
-              "$GITHUB_SHA" "origin/$branch"; then
-            echo "ERROR: workflow commit is not reachable from its trusted branch." >&2
+              "$GITHUB_SHA" "origin/$DEFAULT_BRANCH"; then
+            echo "ERROR: workflow commit is not reachable from the current default branch." >&2
             exit 1
           fi
 

@@ -47,8 +47,7 @@ enum DuckAIPanelAttachmentReconciler {
         replacingKindWith updatedOfKind: [AIChatPanelAttachment],
         matchesKind: (AIChatPanelAttachment) -> Bool
     ) -> [AIChatPanelAttachment] {
-        // Last-wins rather than `uniqueKeysWithValues:`, which traps on a duplicate id. Callers
-        // dedup today, but this is the one reconcile path the address bar and Prompt Bar share.
+        // Last-wins: `uniqueKeysWithValues:` traps on a duplicate id, and this path is shared.
         let updatedById: [String: AIChatPanelAttachment] = Dictionary(
             updatedOfKind.map { ($0.attachmentId, $0) },
             uniquingKeysWith: { _, latest in latest }

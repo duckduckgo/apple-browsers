@@ -1115,8 +1115,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         popUp(menu, at: NSPoint(x: 0, y: -5), in: toolsButton)
     }
 
-    /// `popUp` runs a modal tracking loop and doesn't move first responder, so a control that
-    /// already has keyboard focus would keep its ring lit underneath its own open menu.
+    /// `popUp` tracks modally without moving first responder, so the ring would stay lit under it.
     private func popUp<Button: NSView & FocusRingControlling>(_ menu: NSMenu, at point: NSPoint, in button: Button) {
         button.isFocusRingSuppressed = true
         menu.popUp(positioning: nil, at: point, in: button)

@@ -1134,8 +1134,7 @@ final class AIChatOmnibarController {
         isImageGenerationMode || selectedModelSupportsImageUpload
     }
 
-    /// Each picker allows one pick past its limit so the user gets a visible "you've gone over"
-    /// cue; submitting from that state is held until they remove the excess.
+    /// Each picker allows one pick past its limit as a visible cue, so submitting stays held there.
     private var hasSubmitBlockingAttachmentExcess: Bool {
         if canSendImages && activeImageAttachments.count > maxImageAttachments {
             return true

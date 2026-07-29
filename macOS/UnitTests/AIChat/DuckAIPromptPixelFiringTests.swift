@@ -22,9 +22,8 @@ import XCTest
 
 final class DuckAIPromptPixelFiringTests: XCTestCase {
 
-    /// Every case of `DuckAIPromptPixelEvent` paired with the `aiChatAddressBar*` pixel it fired
-    /// directly before the handler existed. Add a row whenever a case is added — the enum carries
-    /// associated values, so it can't be `CaseIterable` and the compiler won't flag a gap here.
+    /// Add a row whenever a case is added: associated values rule out `CaseIterable`, so nothing
+    /// makes a gap here fail to compile.
     private static let addressBarMapping: [(event: DuckAIPromptPixelEvent, pixel: AIChatPixel?)] = [
         (.promptSubmitted, .aiChatAddressBarAIChatSubmitPrompt),
         (.urlSubmitted, .aiChatAddressBarAIChatSubmitURL),
@@ -51,7 +50,6 @@ final class DuckAIPromptPixelFiringTests: XCTestCase {
         (.reasoningEffortSelected, .aiChatAddressBarReasoningEffortSelected),
         (.subscriptionUpsellTriggered(currentTier: "free", requiredTier: "plus", flowType: "modal"),
          .aiChatAddressBarSubscriptionUpsellTriggered(currentTier: "free", requiredTier: "plus", flowType: "modal")),
-        // Fired under a surface-neutral name, so it has no `aiChatAddressBar*` counterpart.
         (.voiceChatOpened, nil)
     ]
 

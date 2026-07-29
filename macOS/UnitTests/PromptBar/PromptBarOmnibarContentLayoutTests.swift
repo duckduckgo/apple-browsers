@@ -91,8 +91,6 @@ final class PromptBarOmnibarContentLayoutTests: XCTestCase {
         XCTAssertEqual(firstRead, settled, accuracy: 1)
     }
 
-    /// `controlsRowHeight` is hand-derived as "28pt button + 8pt tool inset + 4pt". Nothing else
-    /// checks that against the shared row, so drift there would silently mis-size the panel.
     func testWhenTheControlsRowIsLaidOutThenItMatchesTheHeightThePanelBudgetsForIt() {
         let view = content.view
         _ = layOutAndMeasureGap(prompt: "what is a duck")

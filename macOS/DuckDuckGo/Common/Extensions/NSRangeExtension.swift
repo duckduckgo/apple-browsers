@@ -20,8 +20,6 @@ import Foundation
 
 extension NSRange {
 
-    /// Keeps a stored selection valid against text that shrank under it: a start past the end
-    /// collapses to a caret there, an overhanging end truncates.
     func clamped(toTextLength length: Int) -> NSRange {
         if location > length {
             return NSRange(location: length, length: 0)

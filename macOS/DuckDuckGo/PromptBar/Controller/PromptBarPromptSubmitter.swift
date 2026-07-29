@@ -94,8 +94,7 @@ final class PromptBarPromptSubmitter: PromptBarPromptSubmitting {
             windowController.window?.makeKeyAndOrderFront(nil)
             showInLastKeyWindow(url)
         } else if let visibleFrame = screen?.visibleFrame {
-            // Placed explicitly for the same reason as `submit(query:)`: `show(url:)`'s own
-            // new-window fallback cascades off the last key window, i.e. onto its display.
+            // As in `submit(query:)`: `show(url:)`'s own fallback cascades onto the last key window.
             WindowsManager.openNewWindow(with: url,
                                          source: .userEntered(url.absoluteString),
                                          droppingPoint: Self.newWindowDroppingPoint(in: visibleFrame))

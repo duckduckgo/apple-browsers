@@ -164,8 +164,7 @@ final class AIChatModelPickerButton: NSView {
         didSet { applyFocusRingVisibility() }
     }
 
-    /// AppKit promotes any clicked view that accepts first responder, so focus alone can't gate
-    /// the ring — it's a keyboard affordance, opted into by `takeKeyboardFocus()`.
+    /// AppKit promotes any clicked view that accepts first responder, so focus can't gate the ring.
     private var wantsFocusRing = false {
         didSet { applyFocusRingVisibility() }
     }
@@ -303,7 +302,6 @@ final class AIChatModelPickerButton: NSView {
     }
 
     override func mouseDown(with event: NSEvent) {
-        // Covers clicking a control that already holds keyboard focus, so no click ever rings it.
         wantsFocusRing = false
         isMouseDown = true
     }

@@ -824,11 +824,13 @@ struct AIChatUserScriptHandlerTests {
 
     private func makeFeatureFlagger(aiChatSyncEnabled: Bool = false,
                                     aiChatNativeStorageEnabled: Bool = false,
-                                    aiChatNativeVoicePermissionFlowEnabled: Bool = false) -> MockFeatureFlagger {
+                                    aiChatNativeVoicePermissionFlowEnabled: Bool = false,
+                                    aiChatTabAttachmentLimitEnabled: Bool = false) -> MockFeatureFlagger {
         let featureFlagger = MockFeatureFlagger()
         featureFlagger.featuresStub["aiChatSync"] = aiChatSyncEnabled
         featureFlagger.featuresStub["aiChatNativeStorage"] = aiChatNativeStorageEnabled
         featureFlagger.featuresStub["aiChatNativeVoicePermissionFlow"] = aiChatNativeVoicePermissionFlowEnabled
+        featureFlagger.featuresStub["aiChatTabAttachmentLimit"] = aiChatTabAttachmentLimitEnabled
         return featureFlagger
     }
 
@@ -1045,6 +1047,32 @@ struct AIChatUserScriptHandlerTests {
                                            installTypeProvider: { .new })
 
         #expect(handler.getNativeConfigValues(isFireWindow: false).supportsNativeVoicePermissionHandler == false)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("When aiChatTabAttachmentLimit is enabled, attachmentLimits.tabs carries the native cap", .timeLimit(.minutes(1)))
+    func testWhenTabAttachmentLimitEnabledThenAttachmentLimitsCarriesTabCap() {
+        let featureFlagger = makeFeatureFlagger(aiChatTabAttachmentLimitEnabled: true)
+        let handler = AIChatMessageHandler(featureFlagger: featureFlagger,
+                                           promptHandler: AIChatPromptHandler.shared,
+                                           installDateProvider: { nil },
+                                           installTypeProvider: { .new })
+
+        let config = handler.getNativeConfigValues(isFireWindow: false)
+
+        #expect(config.attachmentLimits?.tabs?.maxAttached == AIChatOmnibarController.maxTabAttachments)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("When aiChatTabAttachmentLimit is disabled, attachmentLimits is omitted", .timeLimit(.minutes(1)))
+    func testWhenTabAttachmentLimitDisabledThenAttachmentLimitsIsNil() {
+        let featureFlagger = makeFeatureFlagger(aiChatTabAttachmentLimitEnabled: false)
+        let handler = AIChatMessageHandler(featureFlagger: featureFlagger,
+                                           promptHandler: AIChatPromptHandler.shared,
+                                           installDateProvider: { nil },
+                                           installTypeProvider: { .new })
+
+        #expect(handler.getNativeConfigValues(isFireWindow: false).attachmentLimits == nil)
     }
 
     // MARK: - voiceChatStartFailed flag gating

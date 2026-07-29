@@ -132,6 +132,7 @@ struct ManageDeviceViewV2: View {
                     .labelsHidden()
                     .tint(Color(designSystemColor: .accentPrimary))
                     .disabled(model.isBusy)
+                    .accessibilityLabel(UserText.simplifiedSyncToggleTitleThisDevice)
                     .accessibility(identifier: "SyncThisDeviceToggle")
             }
         } footer: {

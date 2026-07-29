@@ -1284,8 +1284,11 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
             return
         }
 
-        tabCollectionViewModel.remove(at: sourceTab, published: false)
-        WindowsManager.openNewWindow(with: tab, droppingPoint: droppingPoint)
+        // The tab moves to a new window; it isn't closed and reopened.
+        TabCollectionViewModel.withWebExtensionTabLifecycleEventsSuppressed {
+            tabCollectionViewModel.remove(at: sourceTab, published: false)
+            WindowsManager.openNewWindow(with: tab, droppingPoint: droppingPoint)
+        }
     }
 
     // MARK: - Mouse Monitor

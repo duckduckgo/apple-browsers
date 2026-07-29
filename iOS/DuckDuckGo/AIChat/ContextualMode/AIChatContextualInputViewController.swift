@@ -73,6 +73,7 @@ final class AIChatContextualInputViewController: UIViewController {
         static let quickActionsBottomSpacing: CGFloat = 12
         static let keyboardSpacing: CGFloat = 20
         static let iPadBottomPadding: CGFloat = 16
+        static let dimmedStartActionsAlpha: CGFloat = 0.4
     }
 
     // MARK: - Properties
@@ -81,6 +82,7 @@ final class AIChatContextualInputViewController: UIViewController {
 
     private let showsBasicNativeInput: Bool
     private let presentsStandaloneFullScreen: Bool
+    private let showsWelcomeMessage: Bool
     private let voiceSearchHelper: VoiceSearchHelperProtocol
     private lazy var basicNativeInputViewController = AIChatBasicNativeInputViewController(voiceSearchHelper: voiceSearchHelper)
     private lazy var inputSurface: AIChatContextualInputSurface = {
@@ -121,9 +123,11 @@ final class AIChatContextualInputViewController: UIViewController {
 
     init(voiceSearchHelper: VoiceSearchHelperProtocol,
          showsBasicNativeInput: Bool = true,
-         presentsStandaloneFullScreen: Bool = false) {
+         presentsStandaloneFullScreen: Bool = false,
+         showsWelcomeMessage: Bool = true) {
         self.showsBasicNativeInput = showsBasicNativeInput
         self.presentsStandaloneFullScreen = presentsStandaloneFullScreen
+        self.showsWelcomeMessage = showsWelcomeMessage
         self.voiceSearchHelper = voiceSearchHelper
         super.init(nibName: nil, bundle: nil)
     }
@@ -213,6 +217,11 @@ final class AIChatContextualInputViewController: UIViewController {
 
     func updateSuggestionsLoading(_ isLoading: Bool) {
         quickActionsView.setLoading(isLoading)
+    }
+
+    func setStartActionsDimmed(_ dimmed: Bool) {
+        quickActionsView.alpha = dimmed ? Constants.dimmedStartActionsAlpha : 1
+        quickActionsView.isUserInteractionEnabled = !dimmed
     }
 
 }
@@ -357,6 +366,8 @@ private extension AIChatContextualInputViewController {
     }
 
     func configureWelcomeLabel() {
+        welcomeLabel.isHidden = !showsWelcomeMessage
+
         let font = UIFont(name: "DuckSansDisplay-Medium", size: 25) ?? UIFont.daxTitle2()
 
         let paragraphStyle = NSMutableParagraphStyle()

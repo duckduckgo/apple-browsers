@@ -24,31 +24,25 @@ import UIComponents
 /// A showcase card for the post-subscription onboarding flow: a bordered card presenting a single feature
 /// or benefit as a top-leading icon above a title and a paragraph of body text (e.g. an Identity Theft
 /// Restoration benefit). Built from `SubscriptionOnboardingCard` + `CardItem`.
-struct SubscriptionOnboardingShowcaseCard: View {
-    private enum Metrics {
-        static let iconSpacing: CGFloat = 8
-        static let titleTextSpacing: CGFloat = 4
-        static let textBlockLeadingInset: CGFloat = 4
-    }
+private enum ShowcaseCardMetrics {
+    static let iconSpacing: CGFloat = 8
+    static let titleTextSpacing: CGFloat = 4
+    static let textBlockLeadingInset: CGFloat = 4
+}
 
+struct SubscriptionOnboardingShowcaseCard<Footer: View>: View {
     private let icon: Image
     private let title: String
     private let text: String
-    private let footer: AnyView
-
-    /// Creates a card with no footer.
-    init(icon: Image, title: String, text: String) {
-        self.init(icon: icon, title: title, text: text, footer: { EmptyView() })
-    }
+    private let footer: Footer
 
     /// Creates a card whose `footer` renders below the title/body inside the same bordered card (via
-    /// `SubscriptionOnboardingCard`'s footer slot) — e.g. the "Devices" card's platform grid. The type stays
-    /// non-generic (the init erases the footer to `AnyView`) so the nested `Metrics` static values remain valid.
-    init<Footer: View>(icon: Image, title: String, text: String, @ViewBuilder footer: () -> Footer) {
+    /// `SubscriptionOnboardingCard`'s footer slot) — e.g. the "Devices" card's platform grid.
+    init(icon: Image, title: String, text: String, @ViewBuilder footer: () -> Footer) {
         self.icon = icon
         self.title = title
         self.text = text
-        self.footer = AnyView(footer())
+        self.footer = footer()
     }
 
     var body: some View {
@@ -56,49 +50,24 @@ struct SubscriptionOnboardingShowcaseCard: View {
             style: .bordered,
             header: { EmptyView() },
             items: {
-                VStack(alignment: .leading, spacing: Metrics.iconSpacing) {
+                VStack(alignment: .leading, spacing: ShowcaseCardMetrics.iconSpacing) {
                     IconBadge(icon: icon)
                     CardItem(
                         title: CardItemText(title, font: .footnoteSemibold),
                         text: CardItemText(text, font: .footnoteRegular),
-                        titleTextSpacing: Metrics.titleTextSpacing,
-                        textBlockLeadingInset: Metrics.textBlockLeadingInset)
+                        titleTextSpacing: ShowcaseCardMetrics.titleTextSpacing,
+                        textBlockLeadingInset: ShowcaseCardMetrics.textBlockLeadingInset)
                 }
             },
-            // The card shell already insets the footer by its content padding; add the text-block inset on
-            // top so the footer's leading lines up with the title/body text (card padding + text inset).
-            footer: { footer.padding(.leading, Metrics.textBlockLeadingInset) })
+            footer: { footer.padding(.leading, ShowcaseCardMetrics.textBlockLeadingInset) })
         .accessibilityElement(children: .combine)
     }
+}
 
-    /// A design-system glyph (16×16) centered in a 32×32 circle, mirroring ``FeatureGridView``'s icon
-    /// treatment: a `.surface` fill and a 1px `.lines` hairline border, with the glyph tinted `.textPrimary`.
-    /// Only used by ``SubscriptionOnboardingShowcaseCard``.
-    private struct IconBadge: View {
-        private enum Metrics {
-            static let diameter: CGFloat = 32
-            static let iconSize: CGFloat = 16
-            static let borderWidth: CGFloat = 1
-        }
-
-        let icon: Image
-
-        var body: some View {
-            Circle()
-                .fill(Color(designSystemColor: .surface))
-                .frame(width: Metrics.diameter, height: Metrics.diameter)
-                .overlay {
-                    icon
-                        .resizable()
-                        .renderingMode(.template)
-                        .scaledToFit()
-                        .frame(width: Metrics.iconSize, height: Metrics.iconSize)
-                        .foregroundColor(Color(designSystemColor: .textPrimary))
-                }
-                .overlay {
-                    Circle().strokeBorder(Color(designSystemColor: .lines), lineWidth: Metrics.borderWidth)
-                }
-        }
+extension SubscriptionOnboardingShowcaseCard where Footer == EmptyView {
+    /// Creates a card with no footer.
+    init(icon: Image, title: String, text: String) {
+        self.init(icon: icon, title: title, text: text) { EmptyView() }
     }
 }
 

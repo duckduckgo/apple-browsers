@@ -1310,6 +1310,8 @@ final class AddressBarButtonsViewController: NSViewController {
         permissionCenterButtonHeightConstraint.constant = addressBarButtonSize
         youTubeAdBlockButtonWidthConstraint.constant = addressBarButtonSize
         youTubeAdBlockButtonHeightConstraint.constant = addressBarButtonSize
+
+        privacyDashboardButton.overrideAnimationViewSize = theme.addressBarStyleProvider.addressBarPrivacyAnimationSize
     }
 
     private func setupButtonIcons() {
@@ -2422,8 +2424,10 @@ final class AddressBarButtonsViewController: NSViewController {
                 newAnimationView.translatesAutoresizingMaskIntoConstraints = false
                 animationWrapperView.addSubview(newAnimationView)
 
+                let leadingConstant: CGFloat = themeManager.isAppRebranded ? 1 : 0.5
+
                 NSLayoutConstraint.activate([
-                    newAnimationView.leadingAnchor.constraint(equalTo: animationWrapperView.leadingAnchor, constant: 0.5),
+                    newAnimationView.leadingAnchor.constraint(equalTo: animationWrapperView.leadingAnchor, constant: leadingConstant),
                     newAnimationView.centerYAnchor.constraint(equalTo: animationWrapperView.centerYAnchor),
                     newAnimationView.widthAnchor.constraint(equalTo: animationWrapperView.heightAnchor, constant: 4),
                     newAnimationView.heightAnchor.constraint(equalTo: animationWrapperView.heightAnchor, constant: 4)
@@ -2668,6 +2672,7 @@ extension AddressBarButtonsViewController: ThemeUpdateListening {
         updateZoomButtonVisibility()
         refreshAskAIChatButtonStyle()
         refreshButtonsThemeStyle(theme: theme)
+        refreshNotificationsColor(theme: theme)
 
         // Update toggle control theme
         if let toggleControl = searchModeToggleControl {
@@ -2679,6 +2684,12 @@ extension AddressBarButtonsViewController: ThemeUpdateListening {
         let colorsProvider = theme.colorsProvider
 
         bookmarkButton.normalTintColor = colorsProvider.iconsColor
+    }
+
+    private func refreshNotificationsColor(theme: ThemeStyleProviding) {
+        let notificationColor = theme.colorsProvider.accentPrimaryColor
+        aiChatButton.notificationColor = notificationColor
+        askAIChatButton.notificationColor = notificationColor
     }
 }
 

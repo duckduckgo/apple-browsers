@@ -793,6 +793,13 @@ final class SubscriptionDebugViewController: UITableViewController {
         }
     }
 
+    private func showWelcomeOnboarding() {
+        let hostingController = UIHostingController(
+            rootView: SubscriptionOnboardingWelcomeView(onClose: { [weak self] in self?.dismiss(animated: true) })
+                .subscriptionOnboardingNavigationContainer())
+        present(hostingController, animated: true)
+    }
+
     private func showBuyProductionSubscriptions() {
         // Create the subscription selection handler that routes to the appropriate feature method
         let handler: SubscriptionSelectionHandler = { productId, changeType in

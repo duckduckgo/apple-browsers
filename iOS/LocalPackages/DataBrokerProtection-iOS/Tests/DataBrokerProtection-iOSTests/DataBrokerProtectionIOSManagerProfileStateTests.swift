@@ -52,12 +52,13 @@ final class DataBrokerProtectionIOSManagerProfileStateTests: XCTestCase {
         XCTAssertEqual(dependencies.profileStateManager.profileState, .noProfile)
     }
 
-    func test_recordProfileStateUnknown_clearsStaleProfileState() {
-        let (_, dependencies) = DBPIOSManagerTestUtils.makeTestIOSManager()
+    func test_appDidEnterBackground_keepsCachedState_whenProfileReadFails() {
+        let (manager, dependencies) = DBPIOSManagerTestUtils.makeTestIOSManager()
         dependencies.profileStateManager.recordProfileSaved()
+        dependencies.database.fetchProfileError = MockDatabase.MockError.fetchFailed
 
-        dependencies.profileStateManager.recordProfileStateUnknown()
+        manager.appDidEnterBackground()
 
-        XCTAssertEqual(dependencies.profileStateManager.profileState, .unknown)
+        XCTAssertEqual(dependencies.profileStateManager.profileState, .hasProfile)
     }
 }

@@ -194,6 +194,7 @@ public extension DesignSystemImages {
             public static var browser: DesignSystemImage { .init(resource: .browser16) }
             public static var camera: DesignSystemImage { .init(resource: .camera16) }
             public static var calendarWeek: DesignSystemImage { .init(resource: .calendarWeek16) }
+            public static var chatPinned: DesignSystemImage { .init(resource: .chatPinned16) }
             public static var check: DesignSystemImage { .init(resource: .check16) }
             public static var checkCircle: DesignSystemImage { .init(resource: .checkCircle16) }
             public static var chat: DesignSystemImage { .init(resource: .chat16) }
@@ -337,6 +338,7 @@ public extension DesignSystemImages {
             public static var shield: DesignSystemImage { .init(resource: .shield16) }
             public static var shieldAlertAlt: DesignSystemImage { .init(resource: .shieldAlertAlt16) }
             public static var shieldBlocked: DesignSystemImage { .init(resource: .shieldBlocked16) }
+            public static var shieldCheck: DesignSystemImage { .init(resource: .shieldCheck16) }
             public static var sidebar: DesignSystemImage { .init(resource: .sidebar16) }
             public static var sidebarSearch: DesignSystemImage { .init(resource: .sidebarSearch16) }
             public static var siteBreakage: DesignSystemImage { .init(resource: .siteBreakage16) }
@@ -636,8 +638,6 @@ public extension DesignSystemImages {
             public static var tabNew: DesignSystemImage { .init(resource: .tabNew24) }
             public static var tag: DesignSystemImage { .init(resource: .tag24) }
             public static var thinking: DesignSystemImage { .init(resource: .thinking24) }
-            public static var thumbsDown: DesignSystemImage { .init(resource: .thumbsDown24) }
-            public static var thumbsUp: DesignSystemImage { .init(resource: .thumbsUp24) }
             public static var timer: DesignSystemImage { .init(resource: .timer24) }
             public static var trash: DesignSystemImage { .init(resource: .trash24) }
             public static var typeSize: DesignSystemImage { .init(resource: .typeSize24) }

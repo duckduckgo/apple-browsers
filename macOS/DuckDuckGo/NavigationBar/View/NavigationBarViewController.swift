@@ -53,7 +53,7 @@ final class NavigationBarViewController: NSViewController {
     @IBOutlet private var goBackButton: MouseOverButton!
     @IBOutlet private var goForwardButton: MouseOverButton!
     @IBOutlet private var refreshOrStopButton: MouseOverButton!
-    @IBOutlet private(set) var optionsButton: MouseOverButton!
+    @IBOutlet private(set) var optionsButton: MoreOptionsMenuButton!
     @IBOutlet private var overflowButton: MouseOverButton!
     @IBOutlet private var bookmarkListButton: MouseOverButton!
     @IBOutlet private var passwordManagementButton: MouseOverButton!
@@ -1947,6 +1947,14 @@ extension NavigationBarViewController: ThemeUpdateListening {
         setupNavigationButtons()
         setupBackgroundViewsAndColors()
         setupAsBurnerWindowIfNeeded(theme: theme)
+        refreshNotificationsColor(theme: theme)
+    }
+
+    private func refreshNotificationsColor(theme: ThemeStyleProviding) {
+        let notificationColor = theme.colorsProvider.accentPrimaryColor
+
+        optionsButton.notificationColor = notificationColor
+        networkProtectionButton.notificationColor = notificationColor
     }
 }
 

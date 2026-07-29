@@ -300,11 +300,13 @@ extension TabSwitcherViewController {
     func createMultiSelectionMenu() -> UIMenu {
         let selectedIndexPaths = selectedTabs
         let selectedTabObjects = selectedIndexPaths.map { tabsModel.get(tabAt: $0.row) }.compactMap { $0 }
+        let shouldShowSelectionToggleActions = !featureFlagger.isFeatureOn(.tabSwitcherJuly2026) || UIDevice.current.userInterfaceIdiom != .phone
         let state = TabSwitcherMultiSelectMenuState(
             selectedCount: selectedTabObjects.count,
             totalCount: tabsModel.count,
             selectedContainsWebPages: selectedTabObjects.contains(where: { $0.link != nil }),
-            allContainsWebPages: tabsModel.tabs.contains(where: { $0.link != nil })
+            allContainsWebPages: tabsModel.tabs.contains(where: { $0.link != nil }),
+            shouldShowSelectionToggleActions: shouldShowSelectionToggleActions
         )
         canShowSelectionMenu = state.canShowSelectionMenu
         return menuBuilder.multiSelectionMenu(state: state, actions: TabSwitcherMultiSelectMenuActions(

@@ -24,14 +24,6 @@ import RemoteMessaging
 
 struct HomeMessageViewModelBuilder {
 
-    private enum Images {
-        static let announcement = "RemoteMessageAnnouncement"
-        static let ddgAnnouncement = "RemoteMessageDDGAnnouncement"
-        static let appUpdate = "RemoteMessageAppUpdate"
-        static let criticalAppUpdate = "RemoteMessageCriticalAppUpdate"
-        static let macComputer = "RemoteMessageMacComputer"
-    }
-
     static func build(for remoteMessage: RemoteMessageModel,
                       with subscriptionDataReporter: SubscriptionDataReporting?,
                       messageActionHandler: RemoteMessagingActionHandling,

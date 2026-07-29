@@ -677,6 +677,33 @@ final class SyncSettingsViewModelTests: XCTestCase {
         XCTAssertEqual(sut.connectingSheetPhase, .success(isRecovery: false))
     }
 
+    func testWhenAnotherDevicePromptAppearedThenFiresPromptShownPixel() {
+        let delegate = MockSyncSettingsViewModelDelegate()
+        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: delegate)
+
+        sut.anotherDevicePromptAppeared()
+
+        XCTAssertEqual(delegate.firedSyncSetupPixelEvents, [.anotherDevicePromptShown])
+    }
+
+    func testWhenSyncAnotherDeviceFromConnectingSheetThenFiresOptionTappedPixelForSyncAnotherDevice() {
+        let delegate = MockSyncSettingsViewModelDelegate()
+        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: delegate)
+
+        sut.syncAnotherDeviceFromConnectingSheet()
+
+        XCTAssertEqual(delegate.firedSyncSetupPixelEvents, [.anotherDevicePromptOptionTapped(.syncAnotherDevice)])
+    }
+
+    func testWhenSyncThisDeviceOnlyFromConnectingSheetThenFiresOptionTappedPixelForThisDeviceOnly() {
+        let delegate = MockSyncSettingsViewModelDelegate()
+        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: delegate)
+
+        sut.syncThisDeviceOnlyFromConnectingSheet()
+
+        XCTAssertEqual(delegate.firedSyncSetupPixelEvents, [.anotherDevicePromptOptionTapped(.thisDeviceOnly)])
+    }
+
     private func makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler,
                          delegate: MockSyncSettingsViewModelDelegate? = nil) -> SyncSettingsViewModel {
         let model = SyncSettingsViewModel(
@@ -707,6 +734,7 @@ private final class MockSyncSettingsViewModelDelegate: SyncManagementViewModelDe
     var onShowRecoveryCodeEntry: (() -> Void)?
     var onAuthenticateUserFinished: (() -> Void)?
     var hasShownSimplifiedSyncAnotherDevicePrompt: Bool = false
+    var firedSyncSetupPixelEvents: [SyncSettingsViewModel.SyncSetupPixelEvent] = []
 
     var syncBookmarksPausedTitle: String?
     var syncCredentialsPausedTitle: String?
@@ -770,6 +798,9 @@ private final class MockSyncSettingsViewModelDelegate: SyncManagementViewModelDe
     func showOtherPlatformLinks() {}
     func fireOtherPlatformLinksPixel(event: SyncSettingsViewModel.PlatformLinksPixelEvent, with source: SyncSettingsViewModel.PlatformLinksPixelSource) {}
     func shareLink(for url: URL, with message: String, from rect: CGRect) {}
+    func fireSyncSetupPixel(event: SyncSettingsViewModel.SyncSetupPixelEvent) {
+        firedSyncSetupPixelEvents.append(event)
+    }
 }
 
 private enum SyncSettingsViewModelTestsError: Error {

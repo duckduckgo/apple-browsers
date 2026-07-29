@@ -343,4 +343,5 @@ private final class RecordingEventsListener: WebExtensionEventsListening {
     func didMoveTab(_ tab: WKWebExtensionTab, from oldIndex: Int, in oldWindow: WKWebExtensionWindow) {}
     func didReplaceTab(_ oldTab: WKWebExtensionTab, with tab: WKWebExtensionTab) {}
     func didChangeTabProperties(_ properties: WKWebExtension.TabChangedProperties, for tab: WKWebExtensionTab) {}
+    func withTabLifecycleEventsSuppressed(_ body: () -> Void) { body() }
 }

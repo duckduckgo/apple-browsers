@@ -233,21 +233,27 @@ final class AIChatHistoryViewController: UIViewController {
     }
 
     private func makeOverflowMenuItem() -> UIBarButtonItem {
-        let selectChats = UIAction(
-            title: UserText.aiChatHistoryMenuSelectChats,
-            image: DesignSystemImages.Glyphs.Size16.checkCircle
-        ) { [weak self] _ in
-            self?.enterSelectionMode()
-        }
         let chatProtection = UIAction(
             title: UserText.aiChatHistoryMenuChatProtection,
-            image: DesignSystemImages.Glyphs.Size16.shield
+            image: DesignSystemImages.Glyphs.Size16.shieldCheck
         ) { [weak self] _ in
             self?.viewModel.openChatProtection()
         }
+        // Deferred so Select Chats' disabled state re-evaluates each time the menu opens.
+        let content = UIDeferredMenuElement.uncached { [weak self] completion in
+            guard let self else { completion([chatProtection]); return }
+            let selectChats = UIAction(
+                title: UserText.aiChatHistoryMenuSelectChats,
+                image: DesignSystemImages.Glyphs.Size16.checkCircle,
+                attributes: self.viewModel.isFilterApplied ? .disabled : []
+            ) { [weak self] _ in
+                self?.enterSelectionMode()
+            }
+            completion([selectChats, chatProtection])
+        }
         let item = UIBarButtonItem(
             image: DesignSystemImages.Glyphs.Size24.menuDotsHorizontal,
-            menu: UIMenu(children: [selectChats, chatProtection])
+            menu: UIMenu(children: [content])
         )
         item.accessibilityLabel = UserText.aiChatHistoryMenuAccessibilityLabel
         return item
@@ -505,9 +511,9 @@ final class AIChatHistoryViewController: UIViewController {
 
     // MARK: - Redesign: multi-select
 
-    private func enterSelectionMode() {
+    private func enterSelectionMode(preselecting chatId: String? = nil) {
         guard !isEditingChats else { return }
-        // Search and multi-select are mutually exclusive: leave search first.
+        // Select is disabled while filtering, so this only dismisses an empty search bar.
         hideSearchBarIfNeeded()
         isEditingChats = true
         viewModel.editModeEntered()
@@ -515,6 +521,20 @@ final class AIChatHistoryViewController: UIViewController {
         configureNavigationButtons()
         configureToolbar()
         tableView.setEditing(true, animated: true)
+        if let chatId, let indexPath = indexPath(forChatId: chatId) {
+            tableView.selectRow(at: indexPath, animated: false, scrollPosition: .none)
+            updateSelectionActionButtons()
+        }
+    }
+
+    private func indexPath(forChatId chatId: String) -> IndexPath? {
+        for section in 0..<viewModel.numberOfSections {
+            for row in 0..<viewModel.numberOfRows(in: section)
+            where viewModel.chatId(forRowAt: IndexPath(row: row, section: section)) == chatId {
+                return IndexPath(row: row, section: section)
+            }
+        }
+        return nil
     }
 
     private func hideSearchBarIfNeeded() {
@@ -642,24 +662,8 @@ extension AIChatHistoryViewController: UITableViewDelegate {
         let wasPinned = viewModel.isPinned(chatId: chatId)
 
         let action = UIContextualAction(style: .normal, title: nil) { [weak self] _, _, completion in
-            guard let self, let move = self.viewModel.togglePin(chatId: chatId) else {
-                completion(false); return
-            }
-            self.isApplyingLocalUpdate = true
-            // Refresh the icon while the cell is still at its source position — `moveRow`
-            // keeps the same instance, so it'd otherwise carry the pre-toggle icon.
-            if let cell = tableView.cellForRow(at: move.source) as? AIChatHistoryCell {
-                cell.iconImageView.image = self.viewModel.icon(forRowAt: move.destination)
-            }
-            tableView.performBatchUpdates({
-                tableView.moveRow(at: move.source, to: move.destination)
-            }, completion: { [weak self] _ in
-                self?.isApplyingLocalUpdate = false
-                // Catch up any reactive emission that fired (and got skipped) while the
-                // flag was set — e.g. an FE-driven add/delete that landed mid-animation.
-                self?.refreshContent()
-                completion(true)
-            })
+            self?.performPinToggle(chatId: chatId)
+            completion(true)
         }
         action.image = wasPinned ? DesignSystemImages.Glyphs.Size24.unpin : DesignSystemImages.Glyphs.Size24.pin
         action.accessibilityLabel = wasPinned
@@ -687,6 +691,92 @@ extension AIChatHistoryViewController: UITableViewDelegate {
         download.accessibilityLabel = UserText.aiChatHistoryDownloadSwipeAccessibilityLabel
 
         return UISwipeActionsConfiguration(actions: [delete, download])
+    }
+
+    func tableView(_ tableView: UITableView,
+                   contextMenuConfigurationForRowAt indexPath: IndexPath,
+                   point: CGPoint) -> UIContextMenuConfiguration? {
+        // Long-press actions target a single chat; suppress while multi-selecting.
+        guard !isEditingChats, let chatId = viewModel.chatId(forRowAt: indexPath) else { return nil }
+        let isPinned = viewModel.isPinned(chatId: chatId)
+
+        return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { [weak self] _ in
+            guard let self else { return nil }
+            let pin = UIAction(title: isPinned ? UserText.aiChatHistoryRowMenuUnpin : UserText.aiChatHistoryRowMenuPin,
+                               image: isPinned ? DesignSystemImages.Glyphs.Size24.unpin : DesignSystemImages.Glyphs.Size24.pin) { [weak self] _ in
+                self?.performPinToggle(chatId: chatId)
+            }
+            let download = UIAction(title: UserText.aiChatHistoryRowMenuDownload,
+                                    image: DesignSystemImages.Glyphs.Size24.downloads) { [weak self] _ in
+                self?.viewModel.downloadChat(chatId: chatId)
+            }
+            let delete = UIAction(title: UserText.aiChatHistoryRowMenuDelete,
+                                  image: DesignSystemImages.Glyphs.Size24.fire,
+                                  attributes: .destructive) { [weak self] _ in
+                self?.performDelete(chatId: chatId)
+            }
+            // Select is disabled (not removed) while filtering: multi-selecting a filtered subset
+            // is ambiguous.
+            let select = UIAction(title: UserText.aiChatHistoryRowMenuSelect,
+                                  image: DesignSystemImages.Glyphs.Size24.checkCircle,
+                                  attributes: self.viewModel.isFilterApplied ? .disabled : []) { [weak self] _ in
+                self?.enterSelectionMode(preselecting: chatId)
+            }
+            // Inline sections give separators: Select | Pin, Download | Delete.
+            return UIMenu(title: "", children: [
+                UIMenu(title: "", options: .displayInline, children: [select]),
+                UIMenu(title: "", options: .displayInline, children: [pin, download]),
+                UIMenu(title: "", options: .displayInline, children: [delete])
+            ])
+        }
+    }
+
+    /// Toggles pin state and animates the row between the Pinned and Recent sections.
+    /// Shared by the leading-swipe action and the long-press row menu.
+    private func performPinToggle(chatId: String) {
+        guard let move = viewModel.togglePin(chatId: chatId) else { return }
+        // Snapshot the optimistic state so the completion can tell whether a concurrent
+        // (FE-driven) emission changed anything while updates were suppressed.
+        let expectedPinned = viewModel.pinned
+        let expectedRecent = viewModel.recent
+        isApplyingLocalUpdate = true
+        // Refresh the icon while the cell is still at its source position — `moveRow` keeps the
+        // same instance, so it'd otherwise carry the pre-toggle icon.
+        if let cell = tableView.cellForRow(at: move.source) as? AIChatHistoryCell {
+            cell.iconImageView.image = viewModel.icon(forRowAt: move.destination)
+        }
+        tableView.performBatchUpdates({
+            self.tableView.moveRow(at: move.source, to: move.destination)
+        }, completion: { [weak self] _ in
+            guard let self else { return }
+            self.isApplyingLocalUpdate = false
+            // The animated move already reflects the final state; only reconcile (a full
+            // reloadData) if a concurrent change landed while updates were suppressed —
+            // otherwise the reload flickers the row that just animated.
+            if self.viewModel.pinned != expectedPinned || self.viewModel.recent != expectedRecent {
+                self.refreshContent()
+            }
+        })
+    }
+
+    /// Deletes a single chat from the long-press menu, animating the row out like the swipe action.
+    private func performDelete(chatId: String) {
+        viewModel.deleteChat(chatId: chatId)
+        // Animate only when a row remains afterwards. Removing the last visible chat flips the
+        // table to the empty-state / no-search-results layout (different section+row structure),
+        // which `deleteRows` can't express — let the reactive reload handle that case.
+        guard viewModel.visibleChatCount > 1 else { return }
+        isApplyingLocalUpdate = true
+        guard let indexPath = viewModel.removeChatFromList(chatId: chatId) else {
+            isApplyingLocalUpdate = false
+            return
+        }
+        tableView.performBatchUpdates({
+            self.tableView.deleteRows(at: [indexPath], with: .automatic)
+        }, completion: { [weak self] _ in
+            self?.isApplyingLocalUpdate = false
+            self?.refreshContent()
+        })
     }
 }
 

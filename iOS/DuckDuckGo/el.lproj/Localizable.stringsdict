@@ -372,6 +372,22 @@
 			<string>Κλείσιμο καρτελών</string>
 		</dict>
 	</dict>
+	<key>tab.switcher.close-tabs.button.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Κλείσιμο %1$d καρτέλας</string>
+			<key>other</key>
+			<string>Κλείσιμο %1$d καρτελών</string>
+		</dict>
+	</dict>
 	<key>closeAllTabs.withCount</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
@@ -690,6 +706,22 @@
 			<string>%2$@ Ιχνηλάτης</string>
 			<key>other</key>
 			<string>%2$@ Ιχνηλάτης</string>
+		</dict>
+	</dict>
+	<key>aiChat.history.download.complete.message</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@chats@</string>
+		<key>chats</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Λήφθηκε %1$d συνομιλία</string>
+			<key>other</key>
+			<string>Λήφθηκαν %1$d συνομιλίες</string>
 		</dict>
 	</dict>
 </dict>

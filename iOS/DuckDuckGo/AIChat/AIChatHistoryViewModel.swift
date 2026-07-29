@@ -49,6 +49,11 @@ final class AIChatHistoryViewModel: ObservableObject {
 
     var isEmpty: Bool { pinned.isEmpty && recent.isEmpty }
 
+    var isFilterApplied: Bool { !effectiveQuery.isEmpty }
+
+    /// Number of chats currently visible (respects the active filter).
+    var visibleChatCount: Int { pinned.count + recent.count }
+
     /// Count of ALL persistent chats, independent of the active search filter. `burnAllChats`
     /// clears every chat, so the confirmation must reflect the full scope — not just the matches
     /// currently shown in `pinned`/`recent`.
@@ -221,6 +226,20 @@ final class AIChatHistoryViewModel: ObservableObject {
         }
     }
 
+    /// Optimistically removes the chat and returns its index path so the row can be animated out.
+    @discardableResult
+    func removeChatFromList(chatId: String) -> IndexPath? {
+        if let row = pinned.firstIndex(where: { $0.chatId == chatId }) {
+            pinned.remove(at: row)
+            return IndexPath(row: row, section: Section.pinned.rawValue)
+        }
+        if let row = recent.firstIndex(where: { $0.chatId == chatId }) {
+            recent.remove(at: row)
+            return IndexPath(row: row, section: Section.recent.rawValue)
+        }
+        return nil
+    }
+
     func burnAllChats() async {
         guard let fireExecutor else { return }
         // Reached only after the user confirms the delete-all action.
@@ -353,16 +372,21 @@ final class AIChatHistoryViewModel: ObservableObject {
 
     private static func icon(for chat: DuckAiChat) -> UIImage {
         let image: UIImage
-        // Switch on `chat.chatType` rather than `AIChatSuggestion.kind(forModel:)` so chats
-        // that produced images via a tool call (without the image-mode model id) still get
+        // Pinned rows show the standard pin regardless of chat type; non-pinned rows use their
+        // type glyph. Switch on `chat.chatType` rather than `AIChatSuggestion.kind(forModel:)` so
+        // chats that produced images via a tool call (without the image-mode model id) still get
         // the image glyph — same precedence the exporter uses.
-        switch (chat.chatType, chat.pinned) {
-        case (.discussion, true): image = DesignSystemImages.Glyphs.Size24.chatPinned
-        case (.discussion, false): image = DesignSystemImages.Glyphs.Size24.chat
-        case (.voice, true): image = DesignSystemImages.Glyphs.Size24.voicePinned
-        case (.voice, false): image = DesignSystemImages.Glyphs.Size24.voice
-        case (.imageGeneration, true): image = DesignSystemImages.Glyphs.Size24.imagesPinned
-        case (.imageGeneration, false): image = DesignSystemImages.Glyphs.Size24.images
+        if chat.pinned {
+            image = DesignSystemImages.Glyphs.Size24.pin
+        } else {
+            switch chat.chatType {
+            case .discussion:
+                image = DesignSystemImages.Glyphs.Size24.chat
+            case .voice:
+                image = DesignSystemImages.Glyphs.Size24.voice
+            case .imageGeneration:
+                image = DesignSystemImages.Glyphs.Size24.images
+            }
         }
         // The chat-family glyph assets aren't marked `template-rendering-intent` in their
         // Contents.json, so without forcing template mode they render in their own

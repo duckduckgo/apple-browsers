@@ -4197,6 +4197,9 @@
 /* The name of a settings category listing next steps */
 "settings.next.steps" = "次のステップ";
 
+/* Accessibility label / title for the button that hides the Settings Next Steps section */
+"settings.next.steps.hide" = "非表示";
+
 /* Label describing a feature which is turned off */
 "settings.off" = "無効";
 
@@ -4391,6 +4394,12 @@
 
 /* Settings screen cell text for Unprotected Sites */
 "settings.unprotected.sites" = "保護されていないサイト";
+
+/* Description shown above the list of unprotected sites */
+"settings.unprotected.sites.description" = "以下のサイトはプライバシー保護によって強化されません。";
+
+/* Message shown when there are no unprotected sites */
+"settings.unprotected.sites.empty.state" = "すべてのサイトでプライバシー保護が有効になっています";
 
 /* Settings cell for Version */
 "settings.version" = "バージョン";
@@ -5451,3 +5460,39 @@
 "network.protection.strict.routing.reminder.notification.body" = "オフの間、一部のトラフィックがVPNをバイパスする可能性があります。公共ネットワークでは、厳格なルーティングが推奨されます。";
 /* The title of the notification reminding the user to turn the VPN Strict routing setting back on */
 "network.protection.strict.routing.reminder.notification.title" = "厳格なルーティングは無効です";
+
+/* Title for the New Image row in the Duck.ai tab header Plus (+) menu — opens Duck.ai in image generation mode */
+"aichat.header.plusMenu.newImage" = "新しい画像";
+
+/* Error toast shown when a Duck.ai chat download fails and nothing was saved. */
+"aiChat.history.download.failed.message" = "ダウンロードできませんでした。 もう一度お試しください。";
+
+/* Accessibility label for the overflow (three dots) menu button in the Duck.ai chat history navigation bar. */
+"aiChat.history.menu.a11y" = "その他";
+
+/* Menu item opening Duck.ai Chat Protection settings from the Duck.ai chat history list. */
+"aiChat.history.menu.chatProtection" = "チャットの保護";
+
+/* Menu item that starts multi-selecting chats in the Duck.ai chat history list. */
+"aiChat.history.menu.selectChats" = "チャットを選択";
+
+/* Long-press row menu item that deletes a Duck.ai chat. */
+"aiChat.history.rowMenu.delete" = "削除";
+
+/* Long-press row menu item that downloads a Duck.ai chat. */
+"aiChat.history.rowMenu.download" = "ダウンロード";
+
+/* Long-press row menu item that pins a Duck.ai chat. */
+"aiChat.history.rowMenu.pin" = "ピン留め";
+
+/* Long-press row menu item that starts multi-selecting chats in the Duck.ai chat history list. */
+"aiChat.history.rowMenu.select" = "選択";
+
+/* Long-press row menu item that unpins a Duck.ai chat. */
+"aiChat.history.rowMenu.unpin" = "ピン留めを解除";
+
+/* Accessibility label for the search button in the Duck.ai chat history navigation bar. */
+"aiChat.history.search.a11y" = "検索";
+
+/* Multi-select toolbar button that deletes all chats when none are individually selected. */
+"aiChat.history.selection.deleteAll" = "すべて削除";

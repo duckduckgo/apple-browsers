@@ -356,6 +356,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216049537026986
     case aiChatContextualUnifiedToggleInput
 
+    /// https://app.asana.com/1/137249556945/project/1206488453854252/task/1216575765851990
+    case unifiedToggleInputAttachmentPaste
+
     /// Failsafe flag for whether the free trial conversion wide event is enabled
     case freeTrialConversionWideEvent
 
@@ -463,11 +466,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1204186595873227/task/1214830562427843
     case defaultExistingIPhoneUsersToNewTabAfterIdle
 
-    /// Coalesces tabManager.save into a debounced/max-wait window and moves the disk write off-main.
-    /// Kill switch in case the new path regresses persistence reliability or hang counts.
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215099690878849
-    case tabsSaveOptimization
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215169783702336
     case walletPassDownload
 
@@ -516,6 +514,10 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216629730083154?focus=true
     case systemFindInPage
+
+    /// Experiment for removing monthly free trials
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216851336490252
+    case monthlyFreeTrialExperiment
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -538,6 +540,11 @@ extension FeatureFlag: FeatureFlagDescribing {
 
     /// Cohorts for the onboarding-flow-by-download-reason experiment.
     public enum OnboardingFlowByDownloadReasonExperimentCohort: String, FeatureFlagCohortDescribing {
+        case control
+        case treatment
+    }
+
+    public enum MonthlyFreeTrialExperimentCohort: String, FeatureFlagCohortDescribing {
         case control
         case treatment
     }
@@ -762,9 +769,9 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .aiChatNativeChatHistory:
             Config(defaultValue: .enabled, source: .remoteReleasable(DuckAiChatHistorySubfeature.nativeChatHistory))
         case .aiChatHistoryMultiselect:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.historyMultiselect))
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.historyMultiselect))
         case .aiChatNativeSidebar:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.nativeSidebar))
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.nativeSidebar))
         case .contextualSuggestedPrompts:
             Config(source: .remoteReleasable(AIChatSubfeature.contextualSuggestedPrompts))
         case .showWhatsNewPromptOnDemand:
@@ -779,6 +786,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.aiChatTabHideToggle))
         case .aiChatContextualUnifiedToggleInput:
             Config(source: .remoteReleasable(AIChatSubfeature.contextualUnifiedToggleInput))
+        case .unifiedToggleInputAttachmentPaste:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.unifiedToggleInputAttachmentPaste))
         case .freeTrialConversionWideEvent:
             Config(defaultValue: .enabled, source: .remoteReleasable(PrivacyProSubfeature.freeTrialConversionWideEvent))
         case .tabSwitcherTrackerCount:
@@ -793,6 +802,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.searchTokenExperiment), cohortType: SearchTokenExperimentCohort.self)
         case .onboardingFlowByDownloadReasonExperiment:
             Config(source: .disabled, cohortType: OnboardingFlowByDownloadReasonExperimentCohort.self)
+        case .monthlyFreeTrialExperiment:
+            Config(source: .remoteReleasable(PrivacyProSubfeature.monthlyFreeTrialExperiment), cohortType: MonthlyFreeTrialExperimentCohort.self)
         case .genericBackgroundTask:
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.genericBackgroundTask))
         case .crashCollectionLimitCallStackTreeDepth:
@@ -850,8 +861,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.customProductPageDuckAiChat), supportsLocalOverriding: true)
         case .defaultExistingIPhoneUsersToNewTabAfterIdle:
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.defaultExistingIPhoneUsersToNewTabAfterIdle))
-        case .tabsSaveOptimization:
-            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.tabsSaveOptimization))
         case .walletPassDownload:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.walletPassDownload))
         case .aiChatChromeShortcutIPad:

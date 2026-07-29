@@ -47,6 +47,11 @@ class DDGWorkflowContractTests(unittest.TestCase):
 
     def test_replay_identity_and_reporting_are_explicit(self) -> None:
         self.assertIn("uses: ./.github/workflows/wpr_archive_validation.yml", WORKFLOW)
+        self.assertIn(
+            "alert-asana: ${{ github.event_name != 'workflow_dispatch' || "
+            "inputs.alert-asana }}",
+            WORKFLOW,
+        )
         self.assertEqual(WORKFLOW.count("--webview-type ddg-wpr"), 2)
         self.assertEqual(WORKFLOW.count("--webview-channel review"), 2)
         self.assertIn("Browser Measurement Failure: DuckDuckGo LCP", WORKFLOW)

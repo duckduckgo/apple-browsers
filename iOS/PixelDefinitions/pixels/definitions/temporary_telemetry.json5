@@ -57,8 +57,8 @@
         "parameters": ["appVersion"],
         "expires": "2026-07-31"
     },
-    "m_temporary-telemetry_settings_customized-address-bar-button_voiceSearch": {
-        "description": "Fires daily when user has Voice Search customized as their address bar button",
+    "m_temporary-telemetry_settings_customized-address-bar-button_duckAIVoice": {
+        "description": "Fires daily when user has Duck.ai Voice customized as their address bar button",
         "owners": ["brindy"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
@@ -161,8 +161,8 @@
         "parameters": ["appVersion"],
         "expires": "2026-07-31"
     },
-    "m_temporary-telemetry_settings_customized-toolbar-button_voiceSearch": {
-        "description": "Fires daily when user has Voice Search customized as their toolbar button",
+    "m_temporary-telemetry_settings_customized-toolbar-button_duckAIVoice": {
+        "description": "Fires daily when user has Duck.ai Voice customized as their toolbar button",
         "owners": ["brindy"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],

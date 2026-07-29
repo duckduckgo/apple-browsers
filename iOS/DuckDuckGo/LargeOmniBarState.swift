@@ -122,7 +122,9 @@ struct LargeOmniBarState {
         let showClear = false
         let showAbort = false
         let showRefresh = false
-        let showCustomizableButton = false
+        var showCustomizableButton: Bool {
+            dependencies.featureFlagger.isFeatureOn(.customizeNTPIcons)
+        }
         let showMenu = true
         let showSettings = false
         let showCancel = false

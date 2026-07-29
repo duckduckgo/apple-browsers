@@ -7591,8 +7591,23 @@ extension MainViewController: MobileCustomization.Delegate {
 
 extension MainViewController {
 
+    private var hasWebPageContext: Bool {
+        currentTab?.link != nil
+    }
+
+    private var shouldApplyToolbarCustomization: Bool {
+        !isNewTabPageVisible || featureFlagger.isFeatureOn(.customizeNTPIcons)
+    }
+
     private func subscribeToCustomizationSettingsEvents() {
         NotificationCenter.default.publisher(for: AppUserDefaults.Notifications.customizationSettingsChanged)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.applyCustomizationState()
+            }
+            .store(in: &settingsCancellables)
+
+        mobileCustomization.connectionStatusPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.applyCustomizationState()
@@ -7628,19 +7643,18 @@ extension MainViewController {
     }
 
     @objc private func performCustomizationActionForToolbar() {
-        // On NTP the default is fire button
-        if isNewTabPageVisible {
-            self.onFirePressed()
+        guard shouldApplyToolbarCustomization else {
+            onFirePressed()
             return
         }
 
-        // Will be removed when feature flag is removed
         guard mobileCustomization.state.isEnabled else {
             self.onFirePressed()
             return
         }
 
         let button = mobileCustomization.state.currentToolbarButton
+        guard !button.requiresWebPage || hasWebPageContext else { return }
         switch button {
         case .home:
             guard let tab = self.currentTab?.tabModel else { return }
@@ -7667,6 +7681,17 @@ extension MainViewController {
         case .downloads:
             self.segueToDownloads()
 
+        case .addEditBookmark:
+            addOrEditBookmarkForCurrentTab()
+            omniBar.refreshCustomizableButton()
+
+        case .addEditFavorite:
+            addOrEditFavoriteForCurrentTab()
+            omniBar.refreshCustomizableButton()
+
+        case .zoom:
+            showTextZoomEditorIfPossible()
+
         case .duckAIVoice:
             Pixel.fire(pixel: .voiceEntryPointTapped, withAdditionalParameters: [PixelParameters.source: VoiceEntryPointSource.toolbar.rawValue])
             self.openAIChatInVoiceMode()
@@ -7687,8 +7712,9 @@ extension MainViewController {
     }
 
     private func customizeFireButton(_ button: BrowserChromeButton, state: MobileCustomization.State) {
-        if !isNewTabPageVisible && state.isEnabled {
-            button.setImage(state.currentToolbarButton.largeIcon)
+        if state.isEnabled && shouldApplyToolbarCustomization {
+            button.setImage(mobileCustomization.largeIconForButton(state.currentToolbarButton))
+            button.isEnabled = !state.currentToolbarButton.requiresWebPage || hasWebPageContext
             button.menu = UIMenu(children: [
                 UIAction(title: "Customize", image: DesignSystemImages.Glyphs.Size16.options) { [weak self] _ in
                     self?.segueToCustomizeToolbarSettings()
@@ -7696,12 +7722,14 @@ extension MainViewController {
             ])
         } else {
             button.setImage(DesignSystemImages.Glyphs.Size24.fireSolid)
+            button.isEnabled = true
             button.menu = nil
         }
     }
 
     private func handleCustomizableAddressBarButtonPressed() {
         let button = mobileCustomization.state.currentAddressBarButton
+        guard !button.requiresWebPage || hasWebPageContext else { return }
         switch button {
         case .share:
             shareCurrentURLFromAddressBar()
@@ -7722,6 +7750,25 @@ extension MainViewController {
 
         case .zoom:
             showTextZoomEditorIfPossible()
+
+        case .home:
+            guard let tab = currentTab?.tabModel else { return }
+            closeTab(tab, behavior: .createEmptyTabAtSamePosition)
+
+        case .newTab:
+            newTab()
+
+        case .bookmarks:
+            segueToBookmarks()
+
+        case .passwords:
+            launchAutofillLogins(with: currentTab?.url,
+                                 currentTabUid: currentTab?.tabModel.uid,
+                                 source: .customizedAddressBarButton,
+                                 selectedAccount: nil)
+
+        case .downloads:
+            segueToDownloads()
 
         case .duckAIVoice:
             Pixel.fire(pixel: .voiceEntryPointTapped, withAdditionalParameters: [PixelParameters.source: VoiceEntryPointSource.addressBar.rawValue])

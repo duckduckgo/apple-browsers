@@ -269,6 +269,7 @@ class LargeOmniBarStateTests: XCTestCase {
         XCTAssertTrue(testee.showVoiceSearch)
         XCTAssertFalse(testee.showAbort)
         XCTAssertFalse(testee.showRefresh)
+        XCTAssertFalse(testee.showCustomizableButton)
 
         XCTAssertTrue(testee.hasLargeWidth)
         XCTAssertTrue(testee.showBackButton)
@@ -289,6 +290,7 @@ class LargeOmniBarStateTests: XCTestCase {
         XCTAssertFalse(testee.showVoiceSearch)
         XCTAssertFalse(testee.showAbort)
         XCTAssertFalse(testee.showRefresh)
+        XCTAssertFalse(testee.showCustomizableButton)
 
         XCTAssertTrue(testee.hasLargeWidth)
         XCTAssertTrue(testee.showBackButton)
@@ -300,6 +302,15 @@ class LargeOmniBarStateTests: XCTestCase {
     func testWhenEnteringHomeNonEditingStateThenTextIsCleared() {
         let testee = LargeOmniBarState.HomeNonEditingState(dependencies: MockOmnibarDependency(voiceSearchHelper: enabledVoiceSearchHelper, featureFlagger: mockFeatureFlagger), isLoading: false)
         XCTAssertTrue(testee.clearTextOnStart)
+    }
+
+    func testWhenCustomizeNTPIconsIsEnabledThenHomeNonEditingStateShowsCustomizableButton() {
+        mockFeatureFlagger.enabledFeatureFlags = [.customizeNTPIcons]
+        let testee = LargeOmniBarState.HomeNonEditingState(
+            dependencies: MockOmnibarDependency(voiceSearchHelper: enabledVoiceSearchHelper, featureFlagger: mockFeatureFlagger),
+            isLoading: false)
+
+        XCTAssertTrue(testee.showCustomizableButton)
     }
 
     func testWhenInHomeNonEditingStateThenEditingStartedTransitionsToEmptyEditingState() {

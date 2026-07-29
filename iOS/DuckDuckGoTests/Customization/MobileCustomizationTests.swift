@@ -21,7 +21,10 @@ import Foundation
 import Testing
 @testable import DuckDuckGo
 @testable import Core
+import DesignResourcesKitIcons
 import PersistenceTestingUtils
+import VPN
+import VPNTestUtils
 
 @Suite("Mobile Customization Tests", .serialized)
 final class MobileCustomizationTests {
@@ -50,13 +53,18 @@ final class MobileCustomizationTests {
         customization.fireToolbarCustomizationSelectedPixel(oldValue: MobileCustomization.toolbarDefault)
         #expect(PixelFiringMock.allPixelsFired.count == 2)
 
-        customization.fireToolbarCustomizationSelectedPixel(oldValue: MobileCustomization.Button.home)
-        #expect(PixelFiringMock.lastPixelInfo?.pixelName == Pixel.Event.customizationToolbarSelected.name)
-        #expect(PixelFiringMock.lastPixelInfo?.params?["selected"] == MobileCustomization.toolbarDefault.rawValue)
+        var state = customization.state
+        state.currentToolbarButton = .zoom
+        state.currentAddressBarButton = .passwords
+        customization.persist(state)
 
-        customization.fireAddressBarCustomizationSelectedPixel(oldValue: MobileCustomization.Button.home)
+        customization.fireToolbarCustomizationSelectedPixel(oldValue: MobileCustomization.toolbarDefault)
+        #expect(PixelFiringMock.lastPixelInfo?.pixelName == Pixel.Event.customizationToolbarSelected.name)
+        #expect(PixelFiringMock.lastPixelInfo?.params?["selected"] == MobileCustomization.Button.zoom.rawValue)
+
+        customization.fireAddressBarCustomizationSelectedPixel(oldValue: MobileCustomization.addressBarDefault)
         #expect(PixelFiringMock.lastPixelInfo?.pixelName == Pixel.Event.customizationAddressBarSelected.name)
-        #expect(PixelFiringMock.lastPixelInfo?.params?["selected"] == MobileCustomization.addressBarDefault.rawValue)
+        #expect(PixelFiringMock.lastPixelInfo?.params?["selected"] == MobileCustomization.Button.passwords.rawValue)
         #expect(PixelFiringMock.allPixelsFired.count == 4)
 
     }
@@ -114,8 +122,8 @@ final class MobileCustomizationTests {
                                                 isPad: false) { _ in }
 
         var state = customization.state
-        state.currentAddressBarButton = .addEditBookmark
-        state.currentToolbarButton = .home
+        state.currentAddressBarButton = .passwords
+        state.currentToolbarButton = .zoom
         customization.persist(state)
 
 
@@ -123,8 +131,8 @@ final class MobileCustomizationTests {
                                                       isPad: false) { _ in }
 
         let loadedState = customizationLoaded.state
-        #expect(loadedState.currentToolbarButton == .home)
-        #expect(loadedState.currentAddressBarButton == .addEditBookmark)
+        #expect(loadedState.currentToolbarButton == .zoom)
+        #expect(loadedState.currentAddressBarButton == .passwords)
 
     }
 
@@ -174,26 +182,81 @@ final class MobileCustomizationTests {
 
     }
 
-    @Test("Validate defaults when invalid state persisted")
-    func returnDefaultsWhenInvalidStatePersisted() {
+    @Test("Validate defaults when unavailable state persisted")
+    func returnDefaultsWhenUnavailableStatePersisted() {
 
         let keyValueStore = MockThrowingKeyValueStore()
 
-        let customization = MobileCustomization(keyValueStore: keyValueStore,
-                                                isPad: false) { _ in }
+        let customization = MobileCustomization(
+            keyValueStore: keyValueStore,
+            isPad: false,
+            postChangeNotification: { _ in },
+            voiceShortcutFeature: MockVoiceShortcutFeature(available: false))
 
         var state = customization.state
-        state.currentAddressBarButton = .passwords
-        state.currentToolbarButton = .zoom
+        state.currentAddressBarButton = .duckAIVoice
+        state.currentToolbarButton = .none
         customization.persist(state)
 
 
-        let customizationLoaded = MobileCustomization(keyValueStore: keyValueStore,
-                                                      isPad: false) { _ in }
+        let customizationLoaded = MobileCustomization(
+            keyValueStore: keyValueStore,
+            isPad: false,
+            postChangeNotification: { _ in },
+            voiceShortcutFeature: MockVoiceShortcutFeature(available: false))
 
         let loadedState = customizationLoaded.state
         #expect(loadedState.currentToolbarButton == .fire)
         #expect(loadedState.currentAddressBarButton == .share)
+    }
+
+    @available(iOS 16, *)
+    @Test("Validate all requested options are available on both surfaces", .timeLimit(.minutes(1)))
+    func requestedOptionsAvailableOnBothSurfaces() {
+        let customization = MobileCustomization(keyValueStore: MockThrowingKeyValueStore(),
+                                                isPad: false) { _ in }
+
+        #expect(customization.addressBarButtonOptions.contains(.bookmarks))
+        #expect(customization.addressBarButtonOptions.contains(.downloads))
+        #expect(customization.addressBarButtonOptions.contains(.home))
+        #expect(customization.addressBarButtonOptions.contains(.newTab))
+        #expect(customization.addressBarButtonOptions.contains(.passwords))
+        #expect(customization.toolbarButtonOptions.contains(.addEditBookmark))
+        #expect(customization.toolbarButtonOptions.contains(.addEditFavorite))
+        #expect(customization.toolbarButtonOptions.contains(.zoom))
+    }
+
+    @available(iOS 16, *)
+    @Test("Validate webpage context requirements", .timeLimit(.minutes(1)))
+    func webpageContextRequirements() {
+        #expect(MobileCustomization.Button.share.requiresWebPage)
+        #expect(MobileCustomization.Button.addEditBookmark.requiresWebPage)
+        #expect(MobileCustomization.Button.addEditFavorite.requiresWebPage)
+        #expect(MobileCustomization.Button.zoom.requiresWebPage)
+        #expect(!MobileCustomization.Button.bookmarks.requiresWebPage)
+        #expect(!MobileCustomization.Button.downloads.requiresWebPage)
+        #expect(!MobileCustomization.Button.home.requiresWebPage)
+        #expect(!MobileCustomization.Button.newTab.requiresWebPage)
+        #expect(!MobileCustomization.Button.passwords.requiresWebPage)
+    }
+
+    @available(iOS 16, *)
+    @Test("Validate VPN icon reflects connection status", .timeLimit(.minutes(1)))
+    func vpnIconReflectsConnectionStatus() {
+        let connectionStatusObserver = MockConnectionStatusObserver()
+        let customization = MobileCustomization(
+            keyValueStore: MockThrowingKeyValueStore(),
+            isPad: false,
+            postChangeNotification: { _ in },
+            connectionStatusObserver: connectionStatusObserver)
+
+        #expect(customization.largeIconForButton(.vpn) == DesignSystemImages.Glyphs.Size24.vpnUnlocked)
+        #expect(customization.smallIconForButton(.vpn) == DesignSystemImages.Glyphs.Size16.vpnOff)
+
+        connectionStatusObserver.subject.send(.connected(connectedDate: Date()))
+
+        #expect(customization.largeIconForButton(.vpn) == DesignSystemImages.Glyphs.Size24.vpn)
+        #expect(customization.smallIconForButton(.vpn) == DesignSystemImages.Glyphs.Size16.vpnOn)
     }
 
     // MARK: - Duck.ai Voice toolbar button FF gating

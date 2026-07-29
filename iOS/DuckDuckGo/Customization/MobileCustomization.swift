@@ -18,10 +18,12 @@
 //
 
 import BrowserServicesKit
+import Combine
 import Persistence
 import DesignResourcesKitIcons
 import UIKit
 import Core
+import VPN
 
 /// Handles logic and persistence of customization options.  iPad is not supported so this returns false for `isEnabled` on iPad.
 class MobileCustomization {
@@ -74,7 +76,7 @@ class MobileCustomization {
             case .fire:
                 DesignSystemImages.Glyphs.Size24.fireSolid
             case .vpn:
-                DesignSystemImages.Glyphs.Size24.vpn
+                DesignSystemImages.Glyphs.Size24.vpnUnlocked
             case .passwords:
                 DesignSystemImages.Glyphs.Size24.key
             case .downloads:
@@ -105,13 +107,22 @@ class MobileCustomization {
             case .fire:
                 DesignSystemImages.Glyphs.Size16.fireSolid
             case .vpn:
-                DesignSystemImages.Glyphs.Size16.vpnOn
+                DesignSystemImages.Glyphs.Size16.vpnOff
             case .passwords:
                 DesignSystemImages.Glyphs.Size16.keyLogin
             case .downloads:
                 DesignSystemImages.Glyphs.Size16.downloads
             case .duckAIVoice:
                 DesignSystemImages.Glyphs.Size16.voice
+            }
+        }
+
+        var requiresWebPage: Bool {
+            switch self {
+            case .share, .addEditBookmark, .addEditFavorite, .zoom:
+                true
+            default:
+                false
             }
         }
 
@@ -145,6 +156,11 @@ class MobileCustomization {
             .fire,
             .vpn,
             .zoom,
+            .bookmarks,
+            .downloads,
+            .home,
+            .newTab,
+            .passwords,
             .none
         ]
 
@@ -157,6 +173,9 @@ class MobileCustomization {
             .share,
             .vpn,
             .downloads,
+            .addEditBookmark,
+            .addEditFavorite,
+            .zoom,
         ]
 
     var toolbarButtonOptions: [Button] {
@@ -199,6 +218,11 @@ class MobileCustomization {
     private let postChangeNotification: (State) -> Void
     private let pixelFiring: PixelFiring.Type
     private let voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding
+    private let connectionStatusObserver: ConnectionStatusObserver?
+
+    var connectionStatusPublisher: AnyPublisher<ConnectionStatus, Never> {
+        connectionStatusObserver?.publisher ?? Empty<ConnectionStatus, Never>().eraseToAnyPublisher()
+    }
 
     public weak var delegate: Delegate?
 
@@ -215,13 +239,14 @@ class MobileCustomization {
             NotificationCenter.default.post(name: AppUserDefaults.Notifications.customizationSettingsChanged, object: $0)
          },
          pixelFiring: PixelFiring.Type = Pixel.self,
-         voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding = DuckAIVoiceShortcutFeature()
-    ) {
+         voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding = DuckAIVoiceShortcutFeature(),
+         connectionStatusObserver: ConnectionStatusObserver? = nil) {
         self.keyValueStore = keyValueStore
         self.isPad = isPad
         self.postChangeNotification = postChangeNotification
         self.pixelFiring = pixelFiring
         self.voiceShortcutFeature = voiceShortcutFeature
+        self.connectionStatusObserver = connectionStatusObserver
     }
 
     /// Get the current button for the given storage key.  If the button isn't in the alloweed list then the default is returned.  This prevents migration problems if the options change.
@@ -276,6 +301,14 @@ class MobileCustomization {
         try? keyValueStore.set(button.rawValue, forKey: StorageKeys.addressBarButton.rawValue)
     }
 
+    func smallIconForButton(_ button: Button) -> UIImage? {
+        guard button == .vpn else { return button.smallIcon }
+        if case .connected = connectionStatusObserver?.recentValue ?? .disconnected {
+            return DesignSystemImages.Glyphs.Size16.vpnOn
+        }
+        return DesignSystemImages.Glyphs.Size16.vpnOff
+    }
+
     func largeIconForButton(_ button: Button) -> UIImage? {
 
         switch button {
@@ -284,6 +317,12 @@ class MobileCustomization {
 
         case .addEditFavorite:
             return delegate?.canEditFavorite() == true ? button.altLargeIcon : button.largeIcon
+
+        case .vpn:
+            if case .connected = connectionStatusObserver?.recentValue ?? .disconnected {
+                return DesignSystemImages.Glyphs.Size24.vpn
+            }
+            return DesignSystemImages.Glyphs.Size24.vpnUnlocked
 
         default:
             return button.largeIcon

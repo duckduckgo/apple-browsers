@@ -298,7 +298,9 @@ struct Launching: LaunchingHandling {
             )
         )
 
-        let mobileCustomization = MobileCustomization(keyValueStore: appKeyValueFileStoreService.keyValueFilesStore)
+        let mobileCustomization = MobileCustomization(
+            keyValueStore: appKeyValueFileStoreService.keyValueFilesStore,
+            connectionStatusObserver: AppDependencyProvider.shared.connectionObserver)
 
         // MARK: - Main Coordinator Setup
         // Initialize the main coordinator which manages the app's primary view controller

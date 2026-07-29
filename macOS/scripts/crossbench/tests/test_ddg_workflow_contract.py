@@ -16,11 +16,14 @@ LAUNCHER = (
 
 
 class DDGWorkflowContractTests(unittest.TestCase):
-    def test_real_measurement_uses_only_trusted_branches(self) -> None:
+    def test_real_measurement_is_manual_and_default_branch_only(self) -> None:
         self.assertIn("workflow_dispatch:", WORKFLOW)
         self.assertNotIn("schedule:", WORKFLOW)
-        self.assertIn("TEMPORARY_TEST_BRANCH: diego/crossbench-ddg-ci", WORKFLOW)
-        self.assertIn('branch="${GITHUB_REF#refs/heads/}"', WORKFLOW)
+        self.assertNotIn("push:", WORKFLOW)
+        self.assertIn(
+            'GITHUB_REF" != "refs/heads/$DEFAULT_BRANCH',
+            WORKFLOW,
+        )
         self.assertIn("git merge-base --is-ancestor", WORKFLOW)
 
     def test_measurement_uses_only_the_dedicated_runner(self) -> None:

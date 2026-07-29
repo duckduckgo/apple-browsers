@@ -1022,7 +1022,9 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
 
     private func presentDuckAIMenuButtonMenu(from sender: NSButton) {
         let menu = makeDuckAIMenuButtonMenu()
-        menu.popUp(positioning: nil, at: NSPoint(x: 0, y: sender.bounds.height + 4), in: sender)
+        // Right-align: anchor the menu's top-right corner to the button's bottom-right.
+        let origin = NSPoint(x: sender.bounds.width - menu.size.width, y: sender.bounds.height + 4)
+        menu.popUp(positioning: nil, at: origin, in: sender)
     }
 
     /// The pill's two-item dropdown (New Chat + a state-dependent sidebar item), rebuilt per press so

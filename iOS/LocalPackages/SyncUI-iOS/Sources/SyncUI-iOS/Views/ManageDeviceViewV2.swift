@@ -123,14 +123,17 @@ struct ManageDeviceViewV2: View {
 
     private var syncToggleSection: some View {
         Section {
-            Toggle(isOn: syncToggleBinding) {
+            HStack {
                 Text(UserText.simplifiedSyncToggleTitleThisDevice)
                     .daxBodyRegular()
                     .foregroundColor(Color(designSystemColor: .textPrimary))
+                Spacer()
+                Toggle("", isOn: syncToggleBinding)
+                    .labelsHidden()
+                    .tint(Color(designSystemColor: .accentPrimary))
+                    .disabled(model.isBusy)
+                    .accessibility(identifier: "SyncThisDeviceToggle")
             }
-            .tint(Color(designSystemColor: .accentPrimary))
-            .disabled(model.isBusy)
-            .accessibility(identifier: "SyncThisDeviceToggle")
         } footer: {
             Text(UserText.simplifiedManageDeviceTurnOffFooter)
         }

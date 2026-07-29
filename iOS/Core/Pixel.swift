@@ -219,6 +219,11 @@ public struct PixelParameters {
 
     // Fire animation
     public static let fireAnimation = "fireAnimationType"
+
+    // Contextual suggested prompts
+    public static let suggestionId = "suggestionId"
+    public static let suggestionsPageType = "pageType"
+    public static let suggestionsAreSmart = "isSmart"
 }
 
 public struct PixelValues {

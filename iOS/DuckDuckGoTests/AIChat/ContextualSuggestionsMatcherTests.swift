@@ -90,7 +90,7 @@ final class ContextualSuggestionsMatcherTests: XCTestCase {
     }
 
     private func resolvedIDs(_ input: ResolvePageSuggestionsInput, _ catalog: SuggestionCatalog) -> [String] {
-        ContextualSuggestionsMatcher.resolve(input, catalog: catalog).map(\.id)
+        ContextualSuggestionsMatcher.resolve(input, catalog: catalog).suggestions.map(\.id)
     }
 
     // MARK: - Defaults / floor
@@ -99,7 +99,7 @@ final class ContextualSuggestionsMatcherTests: XCTestCase {
         let result = ContextualSuggestionsMatcher.resolve(input(nil, uiLocale: "en_US"), catalog: try standardCatalog())
         // translate-page carries `differentLanguage`; with no page language it is filtered, leaving the
         // unconditional summarize-page floor.
-        XCTAssertEqual(result.map(\.id), ["summarize-page"])
+        XCTAssertEqual(result.suggestions.map(\.id), ["summarize-page"])
     }
 
     func testUnknownTypeFallsBackToDefaults() throws {
@@ -159,6 +159,43 @@ final class ContextualSuggestionsMatcherTests: XCTestCase {
         let ids = resolvedIDs(input(signals(jsonLd: ["Recipe"], lang: "en"), url: "https://github.com/foo"), try standardCatalog())
         XCTAssertFalse(ids.contains("repo-a"))
         XCTAssertEqual(ids, ["recipe-a", "recipe-b", "recipe-c"])
+    }
+
+    // MARK: - Analytics metadata
+
+    func testWhenJsonLdMatchesThenResultIsSmartAndUsesMappedPageType() throws {
+        let result = ContextualSuggestionsMatcher.resolve(
+            input(signals(jsonLd: ["Recipe"], lang: "en")),
+            catalog: try standardCatalog())
+
+        XCTAssertTrue(result.isSmart)
+        XCTAssertEqual(result.pageType, .recipe)
+    }
+
+    func testWhenNoContextualMatchThenResultIsNotSmartAndPageTypeIsNone() throws {
+        let result = ContextualSuggestionsMatcher.resolve(
+            input(signals(jsonLd: ["Nonexistent"], lang: "en")),
+            catalog: try standardCatalog())
+
+        XCTAssertFalse(result.isSmart)
+        XCTAssertEqual(result.pageType, .none)
+    }
+
+    func testWhenDomainMatchesThenResultIsSmartAndPageTypeIsNone() throws {
+        let result = ContextualSuggestionsMatcher.resolve(
+            input(signals(lang: "en"), url: "https://github.com/duckduckgo/apple-browsers"),
+            catalog: try standardCatalog())
+
+        XCTAssertTrue(result.isSmart)
+        XCTAssertEqual(result.pageType, .none)
+    }
+
+    func testWhenJsonLdAndOgTypeMatchThenJsonLdDeterminesPageType() throws {
+        let result = ContextualSuggestionsMatcher.resolve(
+            input(signals(jsonLd: ["Recipe"], ogType: "article", lang: "en")),
+            catalog: try standardCatalog())
+
+        XCTAssertEqual(result.pageType, .recipe)
     }
 
     // MARK: - Dedup & cap
@@ -258,19 +295,19 @@ final class ContextualSuggestionsMatcherTests: XCTestCase {
         }
         """
         let result = ContextualSuggestionsMatcher.resolve(input(nil, uiLocale: "en_US"), catalog: try catalog(json))
-        XCTAssertEqual(result.map(\.prompt), ["Translate into English."])
+        XCTAssertEqual(result.suggestions.map(\.prompt), ["Translate into English."])
     }
 
     func testTemplateLeavesPromptsWithoutPlaceholderUnchanged() throws {
         let result = ContextualSuggestionsMatcher.resolve(input(signals(jsonLd: ["Recipe"], lang: "en")), catalog: try standardCatalog())
-        XCTAssertEqual(result.first { $0.id == "recipe-a" }?.prompt, "Make a list.")
+        XCTAssertEqual(result.suggestions.first { $0.id == "recipe-a" }?.prompt, "Make a list.")
     }
 
     // MARK: - Copy & icon passthrough
 
     func testUnmappedIDsUseCatalogCopyAndIcon() throws {
         let result = ContextualSuggestionsMatcher.resolve(input(signals(jsonLd: ["Recipe"], lang: "en")), catalog: try standardCatalog())
-        let recipeA = try XCTUnwrap(result.first { $0.id == "recipe-a" })
+        let recipeA = try XCTUnwrap(result.suggestions.first { $0.id == "recipe-a" })
         XCTAssertEqual(recipeA.label, "Shopping list")
         XCTAssertEqual(recipeA.prompt, "Make a list.")
         XCTAssertNil(recipeA.icon)
@@ -278,22 +315,29 @@ final class ContextualSuggestionsMatcherTests: XCTestCase {
 
     func testIconIsPassedThroughFromCatalog() throws {
         let result = ContextualSuggestionsMatcher.resolve(input(nil, uiLocale: "en_US"), catalog: try standardCatalog())
-        XCTAssertEqual(result.first { $0.id == "summarize-page" }?.icon, "summary")
+        XCTAssertEqual(result.suggestions.first { $0.id == "summarize-page" }?.icon, "summary")
     }
 
     // MARK: - Provider
 
-    func testProviderWithNilCatalogReturnsSummarizeFallback() async {
-        let provider = DefaultContextualSuggestedPromptsProvider(catalog: nil)
+    func testWhenCatalogIsMissingThenProviderFiresDebugPixelAndReturnsNonSmartFallback() async {
+        var pixelFireCount = 0
+        let provider = DefaultContextualSuggestedPromptsProvider(
+            catalog: nil,
+            fireCatalogLoadFailedPixel: { pixelFireCount += 1 })
         let result = await provider.resolveSuggestions(input(signals(jsonLd: ["Recipe"], lang: "es")))
-        XCTAssertEqual(result.map(\.id), ["summarize-page"])
-        XCTAssertEqual(result.first?.icon, "summary")
+
+        XCTAssertEqual(result.suggestions.map(\.id), ["summarize-page"])
+        XCTAssertEqual(result.suggestions.first?.icon, "summary")
+        XCTAssertFalse(result.isSmart)
+        XCTAssertEqual(result.pageType, .recipe)
+        XCTAssertEqual(pixelFireCount, 1)
     }
 
     func testProviderWithCatalogDelegatesToMatcher() async throws {
         let catalog = try standardCatalog()
         let provider = DefaultContextualSuggestedPromptsProvider(catalog: catalog)
         let result = await provider.resolveSuggestions(input(signals(jsonLd: ["Recipe"], lang: "en")))
-        XCTAssertEqual(result.map(\.id), ["recipe-a", "recipe-b", "recipe-c"])
+        XCTAssertEqual(result.suggestions.map(\.id), ["recipe-a", "recipe-b", "recipe-c"])
     }
 }

@@ -869,7 +869,7 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
     func contextualInputViewController(_ viewController: AIChatContextualInputViewController, didSelectSuggestion suggestion: ContextualSuggestedPrompt) {
         guard featureFlagger.isFeatureOn(.contextualSuggestedPrompts) else { return }
         cancelSuggestionSubmission()
-        pixelHandler.fireSuggestionSelected(suggestionId: suggestion.id,pageType: sessionState.viewState.suggestionsPageType)
+        pixelHandler.fireSuggestionSelected(suggestionId: suggestion.id, pageType: sessionState.viewState.suggestionsPageType)
         contextualInputViewController.setStartActionsDimmed(true)
         let submissionID = UUID()
         suggestionSubmissionID = submissionID

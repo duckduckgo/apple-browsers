@@ -692,5 +692,21 @@ Jeg blokerede dem!
 			<string>%2$@ Trackere</string>
 		</dict>
 	</dict>
+	<key>aiChat.history.download.complete.message</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@chats@</string>
+		<key>chats</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d chat downloadet</string>
+			<key>other</key>
+			<string>%1$d chats downloadet</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

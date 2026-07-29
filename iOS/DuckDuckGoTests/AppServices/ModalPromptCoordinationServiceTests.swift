@@ -20,6 +20,8 @@
 import UIKit
 import Foundation
 import Combine
+import Core
+import PrivacyConfig
 import Testing
 import PersistenceTestingUtils
 @testable import DuckDuckGo
@@ -565,6 +567,29 @@ final class ModalPromptCoordinationServiceTests {
     }
 
     @available(iOS 16, *)
+    @Test("Promo Queue State Is Re-read After Feature Subscription Is Established", .timeLimit(.minutes(1)))
+    func whenPromoQueueChangesDuringFeatureSubscriptionThenSubscribedStateWins() {
+        let featureFlagger = PromoQueueSubscriptionHookFeatureFlagger()
+        featureFlagger.onUpdatesPublisherSubscription = { [weak featureFlagger] in
+            featureFlagger?.isPromoQueueEnabled = true
+            featureFlagger?.triggerUpdate()
+        }
+
+        sut = ModalPromptCoordinationService(
+            launchSourceManager: launchSourceManagerMock,
+            modalPromptCoordinationManager: managerMock,
+            featureFlagger: featureFlagger,
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter
+        )
+
+        #expect(sut.promoQueueFeatureState == .enabled)
+        #expect(managerMock.promoQueueWillTransitionTargets == [.enabled])
+        #expect(managerMock.promoQueueDidTransitionTargets == [.enabled])
+        #expect(featureFlagger.updatesPublisherSubscriptionCount == 1)
+        #expect(featureFlagger.promoQueueReadCount == 2)
+    }
+
+    @available(iOS 16, *)
     @Test("Promo Queue Feature Updates Are Deduplicated", .timeLimit(.minutes(1)))
     func whenFeatureFlagPublishesDuplicateValuesThenOnlyEffectiveChangesTransition() async {
         sut = ModalPromptCoordinationService(
@@ -825,6 +850,58 @@ private final class MockDismissingViewController: UIViewController {
     override var isBeingDismissed: Bool {
         get { _isBeingDismissed }
         set { _isBeingDismissed = newValue }
+    }
+}
+
+private final class PromoQueueSubscriptionHookFeatureFlagger: FeatureFlagger {
+    var internalUserDecider: InternalUserDecider = DefaultInternalUserDecider(store: MockInternalUserStoring())
+    var localOverrides: FeatureFlagLocalOverriding?
+    var allActiveExperiments: Experiments = [:]
+    var isPromoQueueEnabled = false
+    var onUpdatesPublisherSubscription: (() -> Void)?
+    private(set) var updatesPublisherSubscriptionCount = 0
+    private(set) var promoQueueReadCount = 0
+
+    private let updatesSubject = PassthroughSubject<Void, Never>()
+
+    var updatesPublisher: AnyPublisher<Void, Never> {
+        Deferred { [weak self] () -> AnyPublisher<Void, Never> in
+            guard let self else {
+                return Empty(completeImmediately: false).eraseToAnyPublisher()
+            }
+
+            updatesPublisherSubscriptionCount += 1
+            onUpdatesPublisherSubscription?()
+            return updatesSubject.eraseToAnyPublisher()
+        }
+        .eraseToAnyPublisher()
+    }
+
+    func triggerUpdate() {
+        updatesSubject.send()
+    }
+
+    func isFeatureOn<Flag: FeatureFlagDescribing>(for featureFlag: Flag, allowOverride: Bool) -> Bool {
+        guard featureFlag.rawValue == FeatureFlag.promoQueue.rawValue else {
+            return false
+        }
+
+        promoQueueReadCount += 1
+        return isPromoQueueEnabled
+    }
+
+    func resolveCohort<Flag: FeatureFlagDescribing>(
+        for featureFlag: Flag,
+        allowOverride: Bool
+    ) -> (any FeatureFlagCohortDescribing)? {
+        nil
+    }
+
+    func assignedCohort<Flag: FeatureFlagDescribing>(
+        for featureFlag: Flag,
+        allowOverride: Bool
+    ) -> (any FeatureFlagCohortDescribing)? {
+        nil
     }
 }
 

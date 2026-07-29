@@ -52,15 +52,12 @@ protocol ModalPromptRootAttachmentChecking {
 
 struct ModalPromptRootAttachmentChecker: ModalPromptRootAttachmentChecking {
 
-    /// A root in the middle of its dismissal transition counts as detached.
+    /// A root remains attached throughout dismissal while UIKit still presents it or keeps its view in a window.
     ///
-    /// UIKit keeps both `presentingViewController` and the view's window non-nil for the whole dismissal animation, so
-    /// every other attachment term still fires while the modal is on its way out. Calling such a root attached would
-    /// retain the modal lease for one more checkpoint and defer a waiting promo by that checkpoint for nothing. The rest
-    /// of the subsystem already treats a dismissing controller as gone, so the dismissal flag wins over every disjunct.
+    /// `isBeingDismissed` becomes true at the start of the animation, before the modal has left the screen. The concrete
+    /// presentation and window relationships are the source of truth so the modal lease cannot be released while the
+    /// outgoing root can still overlap a newly admitted promo.
     func isAttached(_ root: UIViewController) -> Bool {
-        guard !root.isBeingDismissed else { return false }
-
         return root.isBeingPresented || root.presentingViewController != nil || root.viewIfLoaded?.window != nil
     }
 }

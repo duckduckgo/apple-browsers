@@ -348,6 +348,11 @@ final class ModalPromptCoordinationService {
             .sink { [weak self] targetState in
                 self?.transitionPromoQueueFeature(to: targetState)
             }
+
+        // Re-read after the subscriber is attached so a flag update emitted while the subscription was being
+        // established cannot leave the initial seed stale.
+        let subscribedTargetState = PromoQueueFeatureTargetState(isEnabled: featureFlagger.isFeatureOn(.promoQueue))
+        transitionPromoQueueFeature(to: subscribedTargetState)
     }
 
     private func transitionPromoQueueFeature(to targetState: PromoQueueFeatureTargetState) {

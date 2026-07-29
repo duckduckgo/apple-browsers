@@ -659,6 +659,74 @@ final class ModalPromptCoordinationManagerTests {
     }
 
     @available(iOS 16, *)
+    @Test("Dismissing Root Retains Lease Until UIKit Detaches It", .timeLimit(.minutes(1)))
+    func whenPresentedRootIsBeingDismissedThenLeaseBlocksAdmissionUntilDetachment() async throws {
+        // GIVEN
+        cooldownManagerMock.cooldownInfoToReturn = .notInCoolDown
+        let provider = MockModalPromptProvider()
+        let exactRoot = UIViewController()
+        provider.modalConfigurationToReturn = ModalPromptConfiguration(
+            viewController: exactRoot,
+            animated: false
+        )
+        let presentationHost = UIKitModalPromptPresenter()
+        let window = makeKeyWindow(withRoot: presentationHost)
+        defer { window.isHidden = true }
+        sut = ModalPromptCoordinationManager(
+            providers: [provider],
+            cooldownManager: cooldownManagerMock,
+            onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
+            modalPromptScheduling: schedulerMock
+        )
+        let lease = try acquireModalLease()
+        _ = sut.presentModalPromptIfNeeded(from: presentationHost, with: lease)
+        schedulerMock.executeScheduledBlock()
+        #expect(exactRoot.presentingViewController === presentationHost)
+        #expect(sut.modalAttemptPhase == .presentationActive(lease.attemptIdentity))
+
+        let waitingPromoIdentity = VisiblePromoIdentity(
+            surfaceID: UUID(),
+            promoType: .remoteMessage,
+            promoID: "waiting-promo"
+        )
+
+        // WHEN dismissal starts but UIKit still presents and windows the exact root.
+        await withCheckedContinuation { continuation in
+            exactRoot.dismiss(animated: true) {
+                continuation.resume()
+            }
+
+            // THEN the modal still owns the lease and blocks a waiting visible promo for the whole animation.
+            #expect(exactRoot.isBeingDismissed)
+            #expect(exactRoot.presentingViewController === presentationHost)
+            #expect(exactRoot.viewIfLoaded?.window != nil)
+            #expect(!sut.reconcilePresentedModal())
+            #expect(sut.modalAttemptPhase == .presentationActive(lease.attemptIdentity))
+            guard case .blockedByModal = promoQueueLeaseArbiter.acquireVisiblePromoLease(for: waitingPromoIdentity) else {
+                Issue.record("Expected the dismissing modal to keep blocking visible promo admission")
+                return
+            }
+        }
+
+        // WHEN UIKit has completed dismissal and removed every attachment relationship.
+        #expect(!exactRoot.isBeingPresented)
+        #expect(exactRoot.presentingViewController == nil)
+        #expect(exactRoot.viewIfLoaded?.window == nil)
+
+        // THEN reconciliation releases the modal lease and the waiting promo can be admitted.
+        #expect(sut.reconcilePresentedModal())
+        #expect(sut.modalAttemptPhase == .idle)
+        #expect(!promoQueueLeaseArbiter.snapshot.hasModalLease)
+        guard case .acquired(let visiblePromoLease) = promoQueueLeaseArbiter.acquireVisiblePromoLease(for: waitingPromoIdentity) else {
+            Issue.record("Expected visible promo admission after the dismissed modal detached")
+            return
+        }
+        #expect(promoQueueLeaseArbiter.snapshot.visiblePromoIdentities == [waitingPromoIdentity])
+        _ = visiblePromoLease
+    }
+
+    @available(iOS 16, *)
     @Test("Deallocated Presented Root Releases The Modal Lease", .timeLimit(.minutes(1)))
     func whenPresentedRootIsDeallocatedThenReconciliationReleasesLease() throws {
         // GIVEN
@@ -1080,8 +1148,8 @@ final class ModalPromptRootAttachmentCheckerTests {
     }
 
     @available(iOS 16, *)
-    @Test("Root Being Dismissed Is Not Attached", .timeLimit(.minutes(1)))
-    func whenRootIsBeingDismissedThenAttachmentCheckFails() async {
+    @Test("Root Being Dismissed Stays Attached Until Dismissal Completes", .timeLimit(.minutes(1)))
+    func whenRootIsBeingDismissedThenAttachmentCheckPassesUntilDetachment() async {
         // GIVEN
         let presenter = UIViewController()
         let window = makeKeyWindow(withRoot: presenter)
@@ -1097,14 +1165,23 @@ final class ModalPromptRootAttachmentCheckerTests {
         }
         #expect(sut.isAttached(root))
 
-        // WHEN
-        root.dismiss(animated: true, completion: nil)
+        // WHEN dismissal starts.
+        await withCheckedContinuation { continuation in
+            root.dismiss(animated: true) {
+                continuation.resume()
+            }
 
-        // THEN — UIKit still reports the root as presented and windowed for the whole dismissal animation, so only the
-        // dismissal flag distinguishes a modal on its way out from one that is staying.
-        #expect(root.isBeingDismissed)
-        #expect(root.presentingViewController === presenter)
-        #expect(root.viewIfLoaded?.window != nil)
+            // THEN UIKit's presentation and window relationships keep the outgoing root attached during the animation.
+            #expect(root.isBeingDismissed)
+            #expect(root.presentingViewController === presenter)
+            #expect(root.viewIfLoaded?.window != nil)
+            #expect(sut.isAttached(root))
+        }
+
+        // THEN the root becomes detached only after UIKit completes the dismissal.
+        #expect(!root.isBeingPresented)
+        #expect(root.presentingViewController == nil)
+        #expect(root.viewIfLoaded?.window == nil)
         #expect(!sut.isAttached(root))
     }
 
@@ -1177,6 +1254,9 @@ private final class DeferredCompletionModalPromptPresenter: ModalPromptPresenter
         completion?()
     }
 }
+
+@MainActor
+private final class UIKitModalPromptPresenter: UIViewController, ModalPromptPresenter {}
 
 /// Models attachment as the set of exact root identities that the test considers attached.
 ///

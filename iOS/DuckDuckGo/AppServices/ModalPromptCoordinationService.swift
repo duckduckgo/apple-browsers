@@ -36,7 +36,8 @@ extension MainViewController: ModalPromptPresenter {}
 
 // MARK: - Promo Queue Feature State
 
-/// The resolved promo queue flag reading: `PromoQueueFeatureState`'s settled subset, so `.transitioning(to:)` cannot nest — the seed at init and a transition's destination.
+/// The resolved promo queue flag reading: `PromoQueueFeatureState`'s settled subset, so `.transitioning(to:)` cannot
+/// nest — the seed at init and a transition's destination.
 enum PromoQueueFeatureTargetState: Equatable {
     case disabled
     case enabled

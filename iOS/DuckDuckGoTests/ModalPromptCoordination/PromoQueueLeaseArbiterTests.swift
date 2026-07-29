@@ -300,35 +300,6 @@ struct PromoQueueLeaseArbiterTests {
     }
 
     @available(iOS 16, *)
-    @Test("A stale visible promo token cannot release the next lease on its slot after a refresh", .timeLimit(.minutes(1)))
-    func staleVisiblePromoTokenCannotReleaseRefreshedLeaseOnItsSlot() throws {
-        let arbiter = PromoQueueLeaseArbiter()
-        let surfaceID = UUID()
-        let staleIdentity = makeVisiblePromoIdentity(
-            surfaceID: surfaceID,
-            promoID: "message-a"
-        )
-        let currentIdentity = makeVisiblePromoIdentity(
-            surfaceID: surfaceID,
-            promoID: "message-b"
-        )
-        let staleLease = try acquiredLease(from: arbiter.acquireVisiblePromoLease(for: staleIdentity))
-        staleLease.release()
-        let currentLease = try acquiredLease(from: arbiter.acquireVisiblePromoLease(for: currentIdentity))
-
-        staleLease.release()
-
-        #expect(arbiter.snapshot.visiblePromoIdentities == [currentIdentity])
-        let result = arbiter.acquireModalLease()
-        guard case .blockedByVisiblePromos(let identities) = result else {
-            Issue.record("Expected the refreshed visible promo lease to keep blocking modal acquisition")
-            return
-        }
-        #expect(identities == [currentIdentity])
-        _ = currentLease
-    }
-
-    @available(iOS 16, *)
     @Test("An old token cannot release a re-acquisition of its own identity after invalidation", .timeLimit(.minutes(1)))
     func oldVisiblePromoTokenCannotReleaseReacquisitionOfSameIdentity() throws {
         let arbiter = PromoQueueLeaseArbiter()

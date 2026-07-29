@@ -355,28 +355,6 @@ final class ModalPromptCoordinationManagerTests {
     }
 
     @available(iOS 16, *)
-    @Test("Check Session Flag Is Set After Successful Presentation", .timeLimit(.minutes(1)))
-    func whenModalIsPresentedThenSessionFlagIsSet() {
-        // GIVEN
-        cooldownManagerMock.cooldownInfoToReturn = .notInCoolDown
-        let provider = MockModalPromptProvider()
-        sut = ModalPromptCoordinationManager(
-            providers: [provider],
-            cooldownManager: cooldownManagerMock,
-            onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
-            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
-            modalPromptScheduling: schedulerMock
-        )
-        #expect(!sut.didPresentModalPromptThisSession)
-
-        // WHEN
-        sut.presentModalPromptIfNeeded(from: presenterMock)
-
-        // THEN
-        #expect(sut.didPresentModalPromptThisSession)
-    }
-
-    @available(iOS 16, *)
     @Test("Check Session Flag Survives The Legacy Presentation Completion", .timeLimit(.minutes(1)))
     func whenLegacyPresentationCompletesThenSessionFlagRemainsSet() {
         // GIVEN

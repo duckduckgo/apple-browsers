@@ -29,7 +29,8 @@ struct VisiblePromoIdentity: Hashable {
     let promoID: String
 }
 
-/// Opaque per-acquisition identity that travels with its modal lease through the evaluating, committed, and presentation-active phases, so a callback for an older attempt can be recognised and ignored.
+/// Opaque per-acquisition identity that travels with its modal lease through the evaluating, committed, and
+/// presentation-active phases, so a callback for an older attempt can be recognised and ignored.
 struct PromoQueueModalAttemptIdentity: Hashable {
     fileprivate let id: UUID
 
@@ -77,7 +78,8 @@ protocol PromoQueueLeaseArbitrating: AnyObject {
 
     /// Acquires the modal lease, which succeeds only when there is no modal lease and no visible-promo leases.
     func acquireModalLease() -> PromoQueueModalLeaseAcquisitionResult
-    /// Acquires a visible-promo lease, which succeeds only when there is no modal lease and the identity's `(surfaceID, promoType)` slot is free, so several surfaces may hold leases concurrently but one slot may not hold two.
+    /// Acquires a visible-promo lease, which succeeds only when there is no modal lease and the identity's
+    /// `(surfaceID, promoType)` slot is free, so several surfaces may hold leases concurrently but one slot may not hold two.
     func acquireVisiblePromoLease(for identity: VisiblePromoIdentity) -> PromoQueueVisiblePromoLeaseAcquisitionResult
     /// Clears every lease, so outstanding tokens become no-ops. Used on a live feature-flag transition.
     func invalidateAllLeases()

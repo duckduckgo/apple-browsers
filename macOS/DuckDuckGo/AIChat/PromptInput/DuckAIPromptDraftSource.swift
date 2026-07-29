@@ -23,8 +23,6 @@ import Foundation
 @MainActor
 protocol DuckAIPromptDraftSource: AnyObject {
 
-    var currentDraftStore: DuckAIPromptDraftStoring? { get }
-
     /// Emits on subscription, then on every change.
     var currentDraftStorePublisher: AnyPublisher<DuckAIPromptDraftStoring?, Never> { get }
 }
@@ -36,10 +34,6 @@ final class TabPromptDraftSource: DuckAIPromptDraftSource {
 
     init(tabCollectionViewModel: TabCollectionViewModel) {
         self.tabCollectionViewModel = tabCollectionViewModel
-    }
-
-    var currentDraftStore: DuckAIPromptDraftStoring? {
-        tabCollectionViewModel.selectedTabViewModel?.addressBarSharedTextState
     }
 
     /// Maps the emitted tab rather than re-reading `selectedTabViewModel`: `@Published` fires in
@@ -58,10 +52,6 @@ final class StaticPromptDraftSource: DuckAIPromptDraftSource {
 
     init(store: DuckAIPromptDraftStoring) {
         self.store = store
-    }
-
-    var currentDraftStore: DuckAIPromptDraftStoring? {
-        store
     }
 
     var currentDraftStorePublisher: AnyPublisher<DuckAIPromptDraftStoring?, Never> {

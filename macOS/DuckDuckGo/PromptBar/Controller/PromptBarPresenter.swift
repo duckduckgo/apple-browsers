@@ -83,7 +83,9 @@ final class PromptBarPresenter: PromptBarPresenting {
     }
 
     func dismiss() {
-        guard let window else { return }
+        // Visibility, not just existence: submitting reports through two delegate callbacks and so
+        // asks to dismiss twice, and `resetAfterDismissal` must not run against a torn-down bar.
+        guard let window, window.isVisible else { return }
         resignKeyCancellable = nil
         window.orderOut(nil)
         content.resetAfterDismissal()
@@ -116,7 +118,7 @@ final class PromptBarPresenter: PromptBarPresenting {
     }
 
     private func resizeWindow(toContentSize size: NSSize) {
-        guard let window, window.isVisible else { return }
+        guard let window else { return }
 
         var frame = window.frame
         let top = frame.maxY

@@ -2441,11 +2441,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         let promptSubmitter = PromptBarPromptSubmitter(aiChatTabOpener: aiChatTabOpener,
                                                        windowControllersManager: windowControllersManager)
+        let content = PromptBarContentFactory.makeContent(promptSubmitter: promptSubmitter,
+                                                          themeManager: themeManager,
+                                                          aiChatTabOpener: aiChatTabOpener,
+                                                          duckAiNativeStorageHandler: duckAiNativeStorageHandler,
+                                                          preferences: aiChatPreferencesPersistor)
         let coordinator = PromptBarCoordinator(
             featureFlagger: featureFlagger,
             preferences: promptBarPreferences,
             shortcutRegistrar: CarbonGlobalShortcutRegistrar(),
-            presenter: PromptBarPresenter(content: PromptBarViewController(promptSubmitter: promptSubmitter))
+            presenter: PromptBarPresenter(content: content)
         )
         coordinator.start()
         promptBarCoordinator = coordinator

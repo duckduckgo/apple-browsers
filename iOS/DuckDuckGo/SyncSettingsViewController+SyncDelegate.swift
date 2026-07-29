@@ -221,12 +221,13 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
             alertController.addAction(okAction)
 
             if isPresentingV2ConnectingSheet {
-                viewModel.dismissConnectingSheet { [weak self] in
+                viewModel.dismissConnectingSheet()
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
                     guard let self else {
                         continuation.resume()
                         return
                     }
-                    self.present(alertController, animated: true) {
+                    self.topmostPresentedViewController().present(alertController, animated: true) {
                         continuation.resume()
                     }
                 }

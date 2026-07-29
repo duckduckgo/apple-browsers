@@ -92,7 +92,7 @@ extension DebugScreensViewModel {
             .view(title: "Ad Blocking", { d in
                 AdBlockingDebugView(keyValueStore: d.keyValueStore)
             }),
-            browserChromeBlurDebugScreen,
+            browserChromeBackgroundDebugScreen,
             .view(title: "AI Chat", { dependencies in
                 AIChatDebugView(duckAiNativeStorageHandler: dependencies.duckAiNativeStorageHandler)
             }),
@@ -324,42 +324,42 @@ extension DebugScreensViewModel {
         }
     }
 
-    private var browserChromeBlurDebugScreen: DebugScreen? {
+    private var browserChromeBackgroundDebugScreen: DebugScreen? {
         guard UIDevice.current.userInterfaceIdiom != .pad else { return nil }
 
-        return .view(title: "Browser Chrome Blur") { dependencies in
-            BrowserChromeBlurDebugView(keyValueStore: dependencies.keyValueStore)
+        return .view(title: "Browser Chrome Background") { dependencies in
+            BrowserChromeBackgroundDebugView(keyValueStore: dependencies.keyValueStore)
         }
     }
 
 }
 
-private struct BrowserChromeBlurDebugView: View {
+private struct BrowserChromeBackgroundDebugView: View {
 
     let keyValueStore: ThrowingKeyValueStoring
-    @State private var selectedStyle: BrowserChromeBlurStyle
+    @State private var selectedStyle: BrowserChromeBackgroundStyle
 
     init(keyValueStore: ThrowingKeyValueStoring) {
         self.keyValueStore = keyValueStore
-        _selectedStyle = State(initialValue: BrowserChromeBlurStylePersistor(keyValueStore: keyValueStore).selectedStyle)
+        _selectedStyle = State(initialValue: BrowserChromeBackgroundStylePersistor(keyValueStore: keyValueStore).selectedStyle)
     }
 
     var body: some View {
         List {
             Section {
-                Picker("Blur Style", selection: $selectedStyle) {
-                    ForEach(BrowserChromeBlurStyle.allCases) { style in
+                Picker("Background Style", selection: $selectedStyle) {
+                    ForEach(BrowserChromeBackgroundStyle.allCases) { style in
                         Text(verbatim: style.displayName)
                             .tag(style)
                     }
                 }
             } footer: {
-                Text(verbatim: "Restart the app to apply the selected style.")
+                Text(verbatim: "Restart the app to apply the selected style. Glass requires iOS 26 and keeps the omnibar blurred.")
             }
         }
-        .navigationTitle("Browser Chrome Blur")
+        .navigationTitle("Browser Chrome Background")
         .onChange(of: selectedStyle) { newValue in
-            var persistor = BrowserChromeBlurStylePersistor(keyValueStore: keyValueStore)
+            var persistor = BrowserChromeBackgroundStylePersistor(keyValueStore: keyValueStore)
             persistor.selectedStyle = newValue
         }
     }

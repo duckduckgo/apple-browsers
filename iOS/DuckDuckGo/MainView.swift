@@ -27,10 +27,25 @@ import History
 import Core
 
 enum BrowserChromeMaterial {
-    static private(set) var blurStyle: UIBlurEffect.Style = BrowserChromeBlurStyle.defaultValue.uiBlurEffectStyle
+    static private(set) var selectedStyle = BrowserChromeBackgroundStyle.defaultValue
+
+    static var blurStyle: UIBlurEffect.Style {
+        selectedStyle.uiBlurEffectStyle ?? .systemChromeMaterial
+    }
+
+    static var usesGlassBackground: Bool {
+        selectedStyle == .glass
+    }
+
+    static var backgroundEffect: UIVisualEffect {
+        if #available(iOS 26, *), usesGlassBackground {
+            return UIGlassEffect(style: .regular)
+        }
+        return UIBlurEffect(style: blurStyle)
+    }
 
     static func configure(with keyValueStore: ThrowingKeyValueStoring) {
-        blurStyle = BrowserChromeBlurStylePersistor(keyValueStore: keyValueStore).selectedStyle.uiBlurEffectStyle
+        selectedStyle = BrowserChromeBackgroundStylePersistor(keyValueStore: keyValueStore).selectedStyle
     }
 }
 
@@ -41,7 +56,8 @@ enum BrowserChromeUpdate {
     }
 }
 
-enum BrowserChromeBlurStyle: String, CaseIterable, Identifiable {
+enum BrowserChromeBackgroundStyle: String, CaseIterable, Identifiable {
+    case glass
     case regular
     case prominent
     case systemUltraThinMaterial
@@ -50,7 +66,7 @@ enum BrowserChromeBlurStyle: String, CaseIterable, Identifiable {
     case systemThickMaterial
     case systemChromeMaterial
 
-    static let defaultValue = BrowserChromeBlurStyle.systemChromeMaterial
+    static let defaultValue = BrowserChromeBackgroundStyle.systemChromeMaterial
 
     var id: String {
         rawValue
@@ -58,6 +74,8 @@ enum BrowserChromeBlurStyle: String, CaseIterable, Identifiable {
 
     var displayName: String {
         switch self {
+        case .glass:
+            "Glass"
         case .regular:
             "Regular"
         case .prominent:
@@ -75,8 +93,10 @@ enum BrowserChromeBlurStyle: String, CaseIterable, Identifiable {
         }
     }
 
-    var uiBlurEffectStyle: UIBlurEffect.Style {
+    var uiBlurEffectStyle: UIBlurEffect.Style? {
         switch self {
+        case .glass:
+            nil
         case .regular:
             .regular
         case .prominent:
@@ -95,7 +115,7 @@ enum BrowserChromeBlurStyle: String, CaseIterable, Identifiable {
     }
 }
 
-struct BrowserChromeBlurStylePersistor {
+struct BrowserChromeBackgroundStylePersistor {
     private enum Key: String {
         case selectedStyle = "debug.browser-chrome.blur-style"
     }
@@ -106,12 +126,12 @@ struct BrowserChromeBlurStylePersistor {
         self.keyValueStore = keyValueStore
     }
 
-    var selectedStyle: BrowserChromeBlurStyle {
+    var selectedStyle: BrowserChromeBackgroundStyle {
         get {
             guard let rawValue = try? keyValueStore.object(forKey: Key.selectedStyle.rawValue) as? String else {
                 return .defaultValue
             }
-            return BrowserChromeBlurStyle(rawValue: rawValue) ?? .defaultValue
+            return BrowserChromeBackgroundStyle(rawValue: rawValue) ?? .defaultValue
         }
         set {
             try? keyValueStore.set(newValue.rawValue, forKey: Key.selectedStyle.rawValue)
@@ -363,7 +383,7 @@ extension MainViewFactory {
 
     final class StatusBackgroundView: UIVisualEffectView { }
     private func createStatusBackground() {
-        let effect = isBrowserChromeUpdateEnabled ? UIBlurEffect(style: BrowserChromeMaterial.blurStyle) : nil
+        let effect = isBrowserChromeUpdateEnabled ? BrowserChromeMaterial.backgroundEffect : nil
         let view = StatusBackgroundView(effect: effect)
         view.backgroundColor = isBrowserChromeUpdateEnabled ? .clear : UIColor(designSystemColor: .background)
         coordinator.statusBackground = view
@@ -402,7 +422,7 @@ extension MainViewFactory {
     }
 
     private func createToolbarMaterialBackground() {
-        let effect = isBrowserChromeUpdateEnabled ? UIBlurEffect(style: BrowserChromeMaterial.blurStyle) : nil
+        let effect = isBrowserChromeUpdateEnabled ? BrowserChromeMaterial.backgroundEffect : nil
         coordinator.toolbarMaterialBackground = UIVisualEffectView(effect: effect)
         coordinator.toolbarMaterialBackground.isHidden = !isBrowserChromeUpdateEnabled
         coordinator.toolbarMaterialBackground.isUserInteractionEnabled = false

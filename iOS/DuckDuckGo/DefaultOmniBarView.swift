@@ -716,7 +716,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     final class TopLevelStackView: UIStackView { }
     private let stackView = TopLevelStackView()
 
-    private lazy var glassEffect = makeGlassEffectView()
+    private lazy var backgroundEffectView = makeBackgroundEffectView()
 
     static func create() -> Self {
         Self.init(isBrowserChromeUpdateEnabled: false)
@@ -726,9 +726,9 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         Self.init(isBrowserChromeUpdateEnabled: isBrowserChromeUpdateEnabled)
     }
 
-    private func makeGlassEffectView() -> UIVisualEffectView {
+    private func makeBackgroundEffectView() -> UIVisualEffectView {
         let view: UIVisualEffectView
-        if #available(iOS 26.0, *) {
+        if #available(iOS 26.0, *), !BrowserChromeMaterial.usesGlassBackground {
             let effect = UIGlassEffect()
             effect.tintColor = fireMode ? UIColor(singleUseColor: .fireModeBackground) : nil
             view = UIVisualEffectView(effect: effect)
@@ -1056,10 +1056,10 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
 
     private func updateFireModeAppearance() {
         if isBrowserChromeUpdateEnabled {
-            glassEffect.removeFromSuperview()
-            glassEffect = makeGlassEffectView()
-            glassEffect.frame = searchAreaContainerView.bounds
-            searchAreaContainerView.insertSubview(glassEffect, at: 0)
+            backgroundEffectView.removeFromSuperview()
+            backgroundEffectView = makeBackgroundEffectView()
+            backgroundEffectView.frame = searchAreaContainerView.bounds
+            searchAreaContainerView.insertSubview(backgroundEffectView, at: 0)
             searchAreaContainerView.backgroundColor = .clear
         } else {
             searchAreaContainerView.backgroundColor = fireMode

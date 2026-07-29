@@ -545,7 +545,7 @@ class MainViewCoordinator {
 
     private func setToolbarBackgroundForOmnibarEditing(_ isEditing: Bool) {
         guard isBrowserChromeUpdateEnabled else { return }
-        toolbarMaterialBackground.effect = isEditing ? nil : UIBlurEffect(style: BrowserChromeMaterial.blurStyle)
+        toolbarMaterialBackground.effect = isEditing ? nil : BrowserChromeMaterial.backgroundEffect
         toolbarMaterialBackground.backgroundColor = isEditing ? UIColor(designSystemColor: .panel) : .clear
     }
 
@@ -555,9 +555,9 @@ class MainViewCoordinator {
             return
         }
 
-        let usesMaterialBackground = statusBackgroundPresentation == .standard && pageThemeColor == nil
-        (statusBackground as? UIVisualEffectView)?.effect = usesMaterialBackground ? UIBlurEffect(style: BrowserChromeMaterial.blurStyle) : nil
-        statusBackground.backgroundColor = usesMaterialBackground ? .clear : resolvedStatusBackgroundColor()
+        let usesEffectBackground = statusBackgroundPresentation == .standard && pageThemeColor == nil
+        (statusBackground as? UIVisualEffectView)?.effect = usesEffectBackground ? BrowserChromeMaterial.backgroundEffect : nil
+        statusBackground.backgroundColor = usesEffectBackground ? .clear : resolvedStatusBackgroundColor()
     }
 
     private func resolvedStatusBackgroundColor() -> UIColor {

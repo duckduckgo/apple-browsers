@@ -191,6 +191,7 @@ public extension DesignSystemImages {
             public static var browser: DesignSystemImage { .init(resource: .browser16) }
             public static var camera: DesignSystemImage { .init(resource: .camera16) }
             public static var calendarWeek: DesignSystemImage { .init(resource: .calendarWeek16) }
+            public static var chatPinned: DesignSystemImage { .init(resource: .chatPinned16) }
             public static var check: DesignSystemImage { .init(resource: .check16) }
             public static var checkCircle: DesignSystemImage { .init(resource: .checkCircle16) }
             public static var chat: DesignSystemImage { .init(resource: .chat16) }

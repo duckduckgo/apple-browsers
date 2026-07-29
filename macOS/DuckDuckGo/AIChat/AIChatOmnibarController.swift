@@ -1130,26 +1130,29 @@ final class AIChatOmnibarController {
         aiChatTabOpener.openAIChatTab(with: .url(url), behavior: .newTab(selected: true))
     }
 
+    private var canSendImages: Bool {
+        isImageGenerationMode || selectedModelSupportsImageUpload
+    }
+
+    /// Each picker allows one pick past its limit so the user gets a visible "you've gone over"
+    /// cue; submitting from that state is held until they remove the excess.
+    private var hasSubmitBlockingAttachmentExcess: Bool {
+        if canSendImages && activeImageAttachments.count > maxImageAttachments {
+            return true
+        }
+        if selectedModelSupportsFileUpload && activeFileAttachments.count > maxFileAttachments {
+            return true
+        }
+        // Unconditional, since tab cards render regardless of the picker flag.
+        return hasExcessTabAttachments
+    }
+
     func submit() {
         guard !currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             return
         }
 
-        // Block submission if too many images are attached and would be sent
-        let canSendImages = isImageGenerationMode || selectedModelSupportsImageUpload
-        if canSendImages && activeImageAttachments.count > maxImageAttachments {
-            return
-        }
-
-        // Block submission if too many files are attached. The picker caps picks at one over the
-        // limit (`+1`) so the user gets a visible "you've gone over" cue; if they actually try to
-        // submit while in that state, hold the submit until they remove the excess.
-        if selectedModelSupportsFileUpload && activeFileAttachments.count > maxFileAttachments {
-            return
-        }
-
-        // Hold submit while over the tab cap — unconditional, since tab cards render regardless of the picker flag.
-        if hasExcessTabAttachments {
+        guard !hasSubmitBlockingAttachmentExcess else {
             return
         }
 

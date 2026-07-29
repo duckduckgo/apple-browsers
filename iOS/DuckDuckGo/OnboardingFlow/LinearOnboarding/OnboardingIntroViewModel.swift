@@ -323,9 +323,8 @@ final class OnboardingIntroViewModel: ObservableObject {
     }
 
     func keepDuckAIContinueAction(isEnabled: Bool) {
-        if isEnabled {
-            onboardingSearchExperienceProvider.storeAIChatSearchInputDuringOnboardingChoice(enable: true)
-        }
+        onboardingSearchExperienceProvider.storeAIChatSearchInputDuringOnboardingChoice(enable: isEnabled)
+
         makeNextViewState()
     }
 
@@ -692,15 +691,14 @@ private extension OnboardingIntroViewModel {
     }
 
     func postDownloadSelectionPersonalizationSetup(for reason: OnboardingDownloadReason) {
+        personalizationManager.applyDefaults(for: reason)
+
         switch reason {
-        case .browserPrivately:
-            break
         case .privateAIChat:
+            // Users who selected AI Chat reason will have the Toggle Search/AI enabled by default.
             onboardingSearchExperienceProvider.storeAIChatSearchInputDuringOnboardingChoice(enable: true)
             aiModelsPrefetcher.prefetch()
-        case .noAI:
-            break
-        case .blockAds:
+        default:
             break
         }
     }

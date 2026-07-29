@@ -528,6 +528,7 @@ public extension DesignSystemImages {
             public static var privacyCheckGreyscale: DesignSystemImage { .init(resource: .privacyCheckGreyscaleColor24) }
             public static var profile: DesignSystemImage { .init(resource: .profileColor24) }
             public static var rocket: DesignSystemImage { .init(resource: .rocketColor24) }
+            public static var searchAssist: DesignSystemImage { .init(resource: .searchAssistColor24) }
             public static var searchAssistStrikethrough: DesignSystemImage { .init(resource: .searchAssistStrikethroughColor24) }
             public static var sessionRestore: DesignSystemImage { .init(resource: .sessionRestoreColor24) }
             public static var settings: DesignSystemImage {

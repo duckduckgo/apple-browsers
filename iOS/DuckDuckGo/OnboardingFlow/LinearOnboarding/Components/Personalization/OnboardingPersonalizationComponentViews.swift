@@ -32,9 +32,9 @@ extension OnboardingPersonalizationContent.Item.ItemType {
         case .safeSearch:
             Image(uiImage: DesignSystemImages.Color.Size24.exclamation)
         case .searchAssist:
-            Image("")
+            Image(uiImage: DesignSystemImages.Color.Size24.searchAssist)
         case .aiGeneratedImages:
-            Image("")
+            Image(uiImage: DesignSystemImages.Color.Size24.aiImagesStriketrough)
         case .youTubeAdBlocking:
             Image(uiImage: DesignSystemImages.Color.Size24.adsBlocked)
         case .duckPlayer:

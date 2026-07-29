@@ -36,10 +36,10 @@ final class PromptBarPreferences: ObservableObject {
         didSet { persistor.isMenuBarIconVisible = isMenuBarIconVisible }
     }
 
-    /// The icon is a Duck.ai entry point behind the shortcut, so it stays hidden
-    /// unless both are on. Stored values are kept so they can be restored.
+    /// The icon is a Duck.ai entry point in its own right, independent of the keyboard
+    /// shortcut, so it only needs Duck.ai to be available.
     var isMenuBarIconEffectivelyVisible: Bool {
-        isMenuBarIconVisible && isKeyboardShortcutEnabled && aiChatMenuConfiguration.shouldDisplayAnyAIChatFeature
+        isMenuBarIconVisible && aiChatMenuConfiguration.shouldDisplayAnyAIChatFeature
     }
 
     var isMenuBarIconEffectivelyVisiblePublisher: AnyPublisher<Bool, Never> {
@@ -48,9 +48,9 @@ final class PromptBarPreferences: ObservableObject {
             .map { _ in () }
             .prepend(())
 
-        return Publishers.CombineLatest3($isMenuBarIconVisible, $isKeyboardShortcutEnabled, aiChatFeatureChanges)
-            .map { isMenuBarIconVisible, isKeyboardShortcutEnabled, _ in
-                isMenuBarIconVisible && isKeyboardShortcutEnabled && aiChatMenuConfiguration.shouldDisplayAnyAIChatFeature
+        return Publishers.CombineLatest($isMenuBarIconVisible, aiChatFeatureChanges)
+            .map { isMenuBarIconVisible, _ in
+                isMenuBarIconVisible && aiChatMenuConfiguration.shouldDisplayAnyAIChatFeature
             }
             .removeDuplicates()
             .eraseToAnyPublisher()

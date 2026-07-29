@@ -105,8 +105,18 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsRootView> {
 
     let useSimplifiedLayoutV2: Bool
 
+    var syncUIVersion: String {
+        useSimplifiedLayoutV2 ? "v2" : "v1"
+    }
+
+    var uiVersionParameters: [String: String] {
+        [PixelParameters.uiVersion: syncUIVersion]
+    }
+
     private var sourcePixelParameters: [String: String] {
-        source.map { [PixelParameters.source: $0] } ?? [:]
+        var parameters = uiVersionParameters
+        parameters[PixelParameters.source] = source
+        return parameters
     }
 
     // For some reason, on iOS 14, the viewDidLoad wasn't getting called so do some setup here
@@ -325,7 +335,8 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsRootView> {
         super.viewDidAppear(animated)
 
         Pixel.fire(pixel: .settingsSyncOpen, withAdditionalParameters: [
-            "is_enabled": isSyncEnabled ? "1" : "0"
+            "is_enabled": isSyncEnabled ? "1" : "0",
+            PixelParameters.uiVersion: syncUIVersion
         ])
 
         startPairingIfNecessary()
@@ -450,7 +461,10 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsRootView> {
                 return
             }
 
-            Pixel.fire(pixel: .syncSetupDeepLinkFlowStarted, includedParameters: [.appVersion])
+            Pixel.fire(pixel: .syncSetupDeepLinkFlowStarted,
+                       withAdditionalParameters: uiVersionParameters,
+                       includedParameters: [.appVersion],
+                       onComplete: { _ in })
 
             await connectionController.syncCodeEntered(
                 code: pairingInfo.base64Code,
@@ -476,12 +490,16 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsRootView> {
 
     private func handlePairingConfirmation() {
         askForAuthThenStartPairing()
-        Pixel.fire(pixel: .syncSetupDeepLinkFlowStarted, includedParameters: [.appVersion])
+        Pixel.fire(pixel: .syncSetupDeepLinkFlowStarted,
+                   withAdditionalParameters: uiVersionParameters,
+                   includedParameters: [.appVersion])
     }
 
     private func handlePairingCancellation() {
         pairingInfo = nil
-        Pixel.fire(pixel: .syncSetupDeepLinkFlowAbandoned, includedParameters: [.appVersion])
+        Pixel.fire(pixel: .syncSetupDeepLinkFlowAbandoned,
+                   withAdditionalParameters: uiVersionParameters,
+                   includedParameters: [.appVersion])
     }
 }
 
@@ -845,7 +863,9 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
             Pixel.fire(pixel: .syncSetupEndedSuccessful, withAdditionalParameters: parameters, includedParameters: [.appVersion])
             pairingV2PeerKind = nil
         case .deepLink:
-            Pixel.fire(pixel: .syncSetupDeepLinkFlowSuccess, includedParameters: [.appVersion])
+            Pixel.fire(pixel: .syncSetupDeepLinkFlowSuccess,
+                       withAdditionalParameters: uiVersionParameters,
+                       includedParameters: [.appVersion])
         }
     }
 
@@ -879,7 +899,9 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
         guard case .receiver(_, .deepLink) = setupRole else {
             return
         }
-        Pixel.fire(pixel: .syncSetupDeepLinkFlowAbandoned, includedParameters: [.appVersion])
+        Pixel.fire(pixel: .syncSetupDeepLinkFlowAbandoned,
+                   withAdditionalParameters: uiVersionParameters,
+                   includedParameters: [.appVersion])
     }
 
     private func syncSetupPixelParameters(setupRole: SyncSetupRole, reason: String?, timeoutStage: String? = nil) -> [String: String] {
@@ -911,6 +933,7 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
                                           peerKind: String? = nil,
                                           myRole: String? = nil) -> [String: String] {
         var parameters = source.map { [PixelParameters.source: $0] } ?? [PixelParameters.source: setupSource.rawValue]
+        parameters[PixelParameters.uiVersion] = syncUIVersion
         parameters[SyncSetupPixelParameter.myKind] = SyncSetupPixelValue.ddg
         parameters[SyncSetupPixelParameter.codeType] = codeType
         parameters[SyncSetupPixelParameter.codeVersion] = codeVersion
@@ -953,7 +976,9 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
         guard case .deepLink = codeSource else {
             return
         }
-        Pixel.fire(pixel: .syncSetupDeepLinkFlowTimeout, includedParameters: [.appVersion])
+        Pixel.fire(pixel: .syncSetupDeepLinkFlowTimeout,
+                   withAdditionalParameters: uiVersionParameters,
+                   includedParameters: [.appVersion])
     }
 }
 

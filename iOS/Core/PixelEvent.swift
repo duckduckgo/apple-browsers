@@ -1445,6 +1445,8 @@ extension Pixel {
         case settingsSyncRecoverSyncedDataTapped
         case settingsSyncSignupConfirmedTapped
         case settingsSyncRecoveryConfirmedTapped
+        case settingsSyncAnotherDevicePromptShown
+        case settingsSyncAnotherDevicePromptOptionTapped
         case settingsAppearanceOpen
         case settingsThemeSelectorPressed
         case settingsAddressBarTopSelected
@@ -2214,6 +2216,8 @@ extension Pixel.Event {
         case .settingsSyncRecoverSyncedDataTapped: return "m_settings_sync_recover_synced_data_tapped"
         case .settingsSyncSignupConfirmedTapped: return "m_settings_sync_signup_confirmed_tapped"
         case .settingsSyncRecoveryConfirmedTapped: return "m_settings_sync_recovery_confirmed_tapped"
+        case .settingsSyncAnotherDevicePromptShown: return "m_settings_sync_another_device_prompt_shown"
+        case .settingsSyncAnotherDevicePromptOptionTapped: return "m_settings_sync_another_device_prompt_option_tapped"
         case .settingsAppearanceOpen: return "m_settings_appearance_open"
         case .settingsThemeSelectorPressed: return "m_settings_theme_selector_pressed"
         case .settingsAddressBarTopSelected: return "m_settings_address_bar_top_selected"

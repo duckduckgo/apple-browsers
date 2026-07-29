@@ -476,6 +476,26 @@ Zablokovali jsme je.
 			<string>Zavřít karty</string>
 		</dict>
 	</dict>
+	<key>tab.switcher.close-tabs.button.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Zavřít %1$d kartu</string>
+			<key>few</key>
+			<string>Zavřít %1$d karty</string>
+			<key>many</key>
+			<string>Zavřít %1$d karty</string>
+			<key>other</key>
+			<string>Zavřít %1$d karet</string>
+		</dict>
+	</dict>
 	<key>closeAllTabs.withCount</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>

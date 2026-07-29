@@ -382,7 +382,7 @@ final class PixelExperimentKitTests: XCTestCase {
 
         mockFeatureFlagger.experiments = [subfeatureID: experimentData8]
         PixelKit.fireSearchExperimentPixels()
-        XCTAssertEqual(firedEvent.count, 0) // Nothing
+        XCTAssertEqual(firedEvent.count, 1) // Fires 1 8-14
     }
 
     func testFireSearchExperimentPixels_WithValue4() {
@@ -429,12 +429,12 @@ final class PixelExperimentKitTests: XCTestCase {
         clearEvents()
 
         mockFeatureFlagger.experiments = [subfeatureID: experimentData8]
-        PixelKit.fireSearchExperimentPixels() // Nothing
-        PixelKit.fireSearchExperimentPixels() // Nothing
-        PixelKit.fireSearchExperimentPixels() // Nothing
-        XCTAssertEqual(firedEventSet.count, 0)
-        PixelKit.fireSearchExperimentPixels() // Fires 4 8-15
+        PixelKit.fireSearchExperimentPixels() // Fires 1 8-14
+        PixelKit.fireSearchExperimentPixels() // Nothing new
+        PixelKit.fireSearchExperimentPixels() // Nothing new
         XCTAssertEqual(firedEventSet.count, 1)
+        PixelKit.fireSearchExperimentPixels() // Fires 4 8-14
+        XCTAssertEqual(firedEventSet.count, 2)
         clearEvents()
 
         mockFeatureFlagger.experiments = [subfeatureID: experimentData15]
@@ -442,8 +442,8 @@ final class PixelExperimentKitTests: XCTestCase {
         PixelKit.fireSearchExperimentPixels() // Nothing
         PixelKit.fireSearchExperimentPixels() // Nothing
         XCTAssertEqual(firedEventSet.count, 0)
-        PixelKit.fireSearchExperimentPixels() // Fires 4 8-15
-        XCTAssertEqual(firedEventSet.count, 1)
+        PixelKit.fireSearchExperimentPixels() // Nothing
+        XCTAssertEqual(firedEventSet.count, 0)
         clearEvents()
 
         mockFeatureFlagger.experiments = [subfeatureID: experimentData16]
@@ -499,21 +499,25 @@ final class PixelExperimentKitTests: XCTestCase {
             }
         )
 
-        // Verify no pixel fired for the second experiment (outside conversion window)
+        // Verify the second experiment (enrolled 10 days ago) fires its value=1 8-14 pixel on the first call
         XCTAssertNotNil(mockPixelStore.store)
-        XCTAssertFalse(
+        XCTAssertTrue(
             firedEvent.contains {
-                $0.name == "experiment_metrics_\(subfeatureID2)_\(cohort2)"
+                $0.name == "experiment_metrics_\(subfeatureID2)_\(cohort2)" &&
+                $0.parameters?[PixelKit.Constants.valueKey] == "1" &&
+                $0.parameters?[PixelKit.Constants.conversionWindowDaysKey] == "8-14"
             }
         )
 
-        // Verify no pixel fired that after 4 reps second experiment pixel is sent(outside conversion window)
+        // Verify the value=4 threshold pixel for the second experiment fires once its 4-call threshold is reached
         PixelKit.fireSearchExperimentPixels()
         PixelKit.fireSearchExperimentPixels()
         PixelKit.fireSearchExperimentPixels()
         XCTAssertTrue(
             firedEvent.contains {
-                $0.name == "experiment_metrics_\(subfeatureID2)_\(cohort2)"
+                $0.name == "experiment_metrics_\(subfeatureID2)_\(cohort2)" &&
+                $0.parameters?[PixelKit.Constants.valueKey] == "4" &&
+                $0.parameters?[PixelKit.Constants.conversionWindowDaysKey] == "8-14"
             }
         )
     }
@@ -561,21 +565,13 @@ final class PixelExperimentKitTests: XCTestCase {
             }
         )
 
-        // Verify no pixel fired for the second experiment (outside conversion window)
+        // Verify the second experiment (enrolled 10 days ago) fires its value=1 8-14 pixel
         XCTAssertNotNil(mockPixelStore.store)
-        XCTAssertFalse(
-            firedEvent.contains {
-                $0.name == "experiment_metrics_\(subfeatureID2)_\(cohort2)"
-            }
-        )
-
-        // Verify no pixel fired that after 4 reps second experiment pixel is sent(outside conversion window)
-        PixelKit.fireAppRetentionExperimentPixels()
-        PixelKit.fireAppRetentionExperimentPixels()
-        PixelKit.fireAppRetentionExperimentPixels()
         XCTAssertTrue(
             firedEvent.contains {
-                $0.name == "experiment_metrics_\(subfeatureID2)_\(cohort2)"
+                $0.name == "experiment_metrics_\(subfeatureID2)_\(cohort2)" &&
+                $0.parameters?[PixelKit.Constants.valueKey] == "1" &&
+                $0.parameters?[PixelKit.Constants.conversionWindowDaysKey] == "8-14"
             }
         )
     }

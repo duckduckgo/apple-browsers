@@ -513,6 +513,10 @@ final class PageContextTabExtension {
     /// native equivalent of the web app's "attach page content" request. Used by "Ask About Page".
     @MainActor
     func requestPageContextAttachment() {
+        // Non-URL pages (NTP, settings, …) have nothing to attach. Bail without arming the force flag:
+        // collectPageContextIfNeeded would bail too, leaving the flag set and leaking into the next
+        // navigation (auto-attaching that page even with auto-send off).
+        guard case .url = content else { return }
         shouldForceContextCollection = true
         collectPageContextIfNeeded(trigger: .userRequest)
     }

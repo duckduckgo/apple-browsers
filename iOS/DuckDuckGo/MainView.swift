@@ -49,10 +49,26 @@ enum BrowserChromeMaterial {
     }
 }
 
+enum BrowserChromeDebugOptions {
+    static private(set) var usesProductionUIWithDomainCapsule = false
+
+    static func configure(with keyValueStore: ThrowingKeyValueStoring) {
+        usesProductionUIWithDomainCapsule =
+            BrowserChromeDebugOptionsPersistor(keyValueStore: keyValueStore).usesProductionUIWithDomainCapsule
+    }
+}
+
 enum BrowserChromeUpdate {
     static func isEnabled(featureFlagger: FeatureFlagger) -> Bool {
         UIDevice.current.userInterfaceIdiom != .pad
+            && !BrowserChromeDebugOptions.usesProductionUIWithDomainCapsule
             && featureFlagger.isFeatureOn(.browserChromeUpdateJuly2026)
+    }
+
+    static func isDomainCapsuleEnabled(featureFlagger: FeatureFlagger) -> Bool {
+        UIDevice.current.userInterfaceIdiom != .pad
+            && (BrowserChromeDebugOptions.usesProductionUIWithDomainCapsule
+                || featureFlagger.isFeatureOn(.browserChromeUpdateJuly2026))
     }
 }
 
@@ -135,6 +151,27 @@ struct BrowserChromeBackgroundStylePersistor {
         }
         set {
             try? keyValueStore.set(newValue.rawValue, forKey: Key.selectedStyle.rawValue)
+        }
+    }
+}
+
+struct BrowserChromeDebugOptionsPersistor {
+    private enum Key: String {
+        case usesProductionUIWithDomainCapsule = "debug.browser-chrome.production-ui-domain-capsule"
+    }
+
+    private let keyValueStore: ThrowingKeyValueStoring
+
+    init(keyValueStore: ThrowingKeyValueStoring) {
+        self.keyValueStore = keyValueStore
+    }
+
+    var usesProductionUIWithDomainCapsule: Bool {
+        get {
+            (try? keyValueStore.object(forKey: Key.usesProductionUIWithDomainCapsule.rawValue) as? Bool) ?? false
+        }
+        set {
+            try? keyValueStore.set(newValue, forKey: Key.usesProductionUIWithDomainCapsule.rawValue)
         }
     }
 }

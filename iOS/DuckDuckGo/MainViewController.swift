@@ -679,6 +679,7 @@ class MainViewController: UIViewController {
         super.viewDidLoad()
 
         BrowserChromeMaterial.configure(with: keyValueStore)
+        BrowserChromeDebugOptions.configure(with: keyValueStore)
         viewCoordinator = MainViewFactory.createViewHierarchy(self,
                                                               aiChatSettings: aiChatSettings,
                                                               aiChatSyncCleaner: aiChatSyncCleaner,
@@ -694,7 +695,7 @@ class MainViewController: UIViewController {
         viewCoordinator.navigationBarCollectionView.allowsOverflowHitTesting = true
 
         viewCoordinator.moveAddressBarToPosition(appSettings.currentAddressBarPosition)
-        if viewCoordinator.isBrowserChromeUpdateEnabled {
+        if BrowserChromeUpdate.isDomainCapsuleEnabled(featureFlagger: featureFlagger) {
             floatingDomainCapsuleController.install(in: view)
         }
 
@@ -1444,8 +1445,12 @@ class MainViewController: UIViewController {
         return host.hasPrefix("www.") ? String(host.dropFirst(4)) : host
     }
 
+    private var isFloatingDomainCapsuleEnabled: Bool {
+        BrowserChromeUpdate.isDomainCapsuleEnabled(featureFlagger: featureFlagger)
+    }
+
     private var isFloatingDomainCapsuleActive: Bool {
-        viewCoordinator.isBrowserChromeUpdateEnabled
+        isFloatingDomainCapsuleEnabled
             && unifiedToggleInputCoordinator?.isActive != true
             && currentTab?.isAITab != true
             && !isInMinimalChromeLayout
@@ -1453,11 +1458,11 @@ class MainViewController: UIViewController {
     }
 
     private func updateFloatingDomainCapsuleVisibility(for barsVisibilityPercent: CGFloat) {
-        guard viewCoordinator.isBrowserChromeUpdateEnabled else { return }
+        guard isFloatingDomainCapsuleEnabled else { return }
 
         floatingDomainCapsuleController.update(
             addressBarPosition: appSettings.currentAddressBarPosition,
-            isEnabled: viewCoordinator.isBrowserChromeUpdateEnabled,
+            isEnabled: isFloatingDomainCapsuleEnabled,
             isUnifiedToggleInputActive: unifiedToggleInputCoordinator?.isActive == true,
             isAITab: currentTab?.isAITab == true,
             isMinimalChromeLayout: isInMinimalChromeLayout,
@@ -1477,7 +1482,7 @@ class MainViewController: UIViewController {
     }
 
     private func captureFloatingDomainCapsuleExpandedFrame() {
-        guard viewCoordinator.isBrowserChromeUpdateEnabled,
+        guard isFloatingDomainCapsuleEnabled,
               lastChromeVisibilityPercent >= 0.99 else { return }
 
         floatingDomainCapsuleExpandedFrame = viewCoordinator.omniBar.barView.convert(

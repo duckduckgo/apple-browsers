@@ -338,14 +338,21 @@ private struct BrowserChromeBackgroundDebugView: View {
 
     let keyValueStore: ThrowingKeyValueStoring
     @State private var selectedStyle: BrowserChromeBackgroundStyle
+    @State private var usesProductionUIWithDomainCapsule: Bool
 
     init(keyValueStore: ThrowingKeyValueStoring) {
         self.keyValueStore = keyValueStore
         _selectedStyle = State(initialValue: BrowserChromeBackgroundStylePersistor(keyValueStore: keyValueStore).selectedStyle)
+        _usesProductionUIWithDomainCapsule = State(
+            initialValue: BrowserChromeDebugOptionsPersistor(keyValueStore: keyValueStore).usesProductionUIWithDomainCapsule)
     }
 
     var body: some View {
         List {
+            Section {
+                Toggle("Production UI with Domain Capsule", isOn: $usesProductionUIWithDomainCapsule)
+            }
+
             Section {
                 Picker("Background Style", selection: $selectedStyle) {
                     ForEach(BrowserChromeBackgroundStyle.allCases) { style in
@@ -353,14 +360,22 @@ private struct BrowserChromeBackgroundDebugView: View {
                             .tag(style)
                     }
                 }
+                .disabled(usesProductionUIWithDomainCapsule)
             } footer: {
-                Text(verbatim: "Restart the app to apply the selected style. Glass requires iOS 26 and keeps the omnibar blurred.")
+                VStack(alignment: .leading) {
+                    Text(verbatim: "Restart the app to apply changes. Production UI disables the background style.")
+                    Text(verbatim: "Glass requires iOS 26 and keeps the omnibar blurred.")
+                }
             }
         }
         .navigationTitle("Browser Chrome Background")
         .onChange(of: selectedStyle) { newValue in
             var persistor = BrowserChromeBackgroundStylePersistor(keyValueStore: keyValueStore)
             persistor.selectedStyle = newValue
+        }
+        .onChange(of: usesProductionUIWithDomainCapsule) { newValue in
+            var persistor = BrowserChromeDebugOptionsPersistor(keyValueStore: keyValueStore)
+            persistor.usesProductionUIWithDomainCapsule = newValue
         }
     }
 }

@@ -6,6 +6,7 @@
         "suffixes": ["platform", "form_factor"],
         "parameters": [
             "appVersion",
+            "ui_version",
             {
                 "key": "source",
                 "type": "string",
@@ -29,6 +30,7 @@
         "suffixes": ["platform", "form_factor"],
         "parameters": [
             "appVersion",
+            "ui_version",
             {
                 "key": "source",
                 "type": "string",
@@ -55,6 +57,7 @@
         "suffixes": ["platform", "form_factor"],
         "parameters": [
             "appVersion",
+            "ui_version",
             {
                 "key": "source",
                 "type": "string",
@@ -93,6 +96,7 @@
         "suffixes": ["platform", "form_factor"],
         "parameters": [
             "appVersion",
+            "ui_version",
             {
                 "key": "source",
                 "type": "string",
@@ -125,6 +129,7 @@
         "suffixes": ["platform", "form_factor"],
         "parameters": [
             "appVersion",
+            "ui_version",
             {
                 "key": "source",
                 "type": "string",
@@ -157,6 +162,7 @@
         "suffixes": ["platform", "form_factor"],
         "parameters": [
             "appVersion",
+            "ui_version",
             {
                 "key": "flow_version",
                 "type": "string",
@@ -178,6 +184,7 @@
         "suffixes": ["platform", "form_factor"],
         "parameters": [
             "appVersion",
+            "ui_version",
             {
                 "key": "source",
                 "type": "string",
@@ -216,6 +223,7 @@
         "suffixes": ["platform", "form_factor"],
         "parameters": [
             "appVersion",
+            "ui_version",
             {
                 "key": "source",
                 "type": "string",
@@ -248,6 +256,7 @@
         "suffixes": ["platform", "form_factor"],
         "parameters": [
             "appVersion",
+            "ui_version",
             {
                 "key": "source",
                 "type": "string",
@@ -280,6 +289,7 @@
         "suffixes": ["platform", "form_factor"],
         "parameters": [
             "appVersion",
+            "ui_version",
             {
                 "key": "source",
                 "type": "string",
@@ -364,6 +374,7 @@
         "suffixes": ["platform", "form_factor"],
         "parameters": [
             "appVersion",
+            "ui_version",
             {
                 "key": "source",
                 "type": "string",
@@ -400,5 +411,85 @@
                 "enum": ["host", "joiner"]
             }
         ]
+    },
+    "m_sync_signup_direct": {
+        "description": "Fired when the app creates a Sync account directly for this device.",
+        "owners": ["amddg44", "frosty"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "ui_version",
+            {
+                "key": "source",
+                "type": "string",
+                "description": "The Sync entry point or promotion source that led to account creation, when known."
+            }
+        ]
+    },
+    "m_sync_signup_connect": {
+        "description": "Fired when the app creates a Sync account while connecting another device.",
+        "owners": ["amddg44", "frosty"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "ui_version",
+            {
+                "key": "source",
+                "type": "string",
+                "description": "The Sync entry point or promotion source that led to account creation, when known."
+            }
+        ]
+    },
+    "sync_disabled": {
+        "description": "Fired when the user turns off Sync without deleting server data.",
+        "owners": ["amddg44", "frosty"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "ui_version"]
+    },
+    "sync_disabledanddeleted": {
+        "description": "Fired when the user turns off Sync and deletes the account's server data.",
+        "owners": ["amddg44", "frosty"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "ui_version",
+            {
+                "key": "connected_devices",
+                "type": "integer",
+                "description": "The number of connected devices when the account was deleted."
+            }
+        ]
+    },
+    "sync_setup_deep_link_flow_started": {
+        "description": "Fired when a Sync setup flow starts from a deep link.",
+        "owners": ["amddg44"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "ui_version"]
+    },
+    "sync_setup_deep_link_flow_success": {
+        "description": "Fired when a Sync setup flow started from a deep link completes successfully.",
+        "owners": ["amddg44"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "ui_version"]
+    },
+    "sync_setup_deep_link_flow_abandoned": {
+        "description": "Fired when the user abandons a Sync setup flow started from a deep link.",
+        "owners": ["amddg44"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "ui_version"]
+    },
+    "sync_setup_deep_link_timeout": {
+        "description": "Fired when a Sync setup flow started from a deep link times out.",
+        "owners": ["amddg44"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "ui_version"]
     }
 }

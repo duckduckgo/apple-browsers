@@ -7,7 +7,11 @@ appId: com.duckduckgo.mobile.ios
 
 - assertVisible: Sync With Another Device
 - tapOn: Sync With Another Device
-- tapOn: Passcode field
+# The passcode screen auto-focuses its field, so wait for the screen and type directly
+# (the field's label differs across iOS versions, so don't match it by name).
+- extendedWaitUntil:
+    visible: Unlock device to set up Sync & Backup
+    timeout: 30000
 - inputText: "0000"
 - pressKey: Enter
 - runFlow:

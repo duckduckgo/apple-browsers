@@ -35,7 +35,6 @@ name: 06_delete_account_v2
     when:
       visible: Unlock device to set up Sync & Backup
     commands:
-      - tapOn: Passcode field
       - inputText: "0000"
       - pressKey: Enter
 - runFlow:

@@ -9,7 +9,11 @@ appId: com.duckduckgo.mobile.ios
 - assertVisible: Sync & Backup
 - tapOn:
     id: "SyncToggle"
-- tapOn: Passcode field
+# The passcode screen auto-focuses its field, so wait for the screen and type directly.
+# Its field's label differs across iOS versions, so don't match "Passcode field" by name.
+- extendedWaitUntil:
+    visible: Unlock device to set up Sync & Backup
+    timeout: 30000
 - inputText: "0000"
 - pressKey: Enter
 # Sync-another-device prompt shown after enabling the toggle.
@@ -30,7 +34,6 @@ appId: com.duckduckgo.mobile.ios
     when:
       visible: Unlock device to set up Sync & Backup
     commands:
-      - tapOn: Passcode field
       - inputText: "0000"
       - pressKey: Enter
 - tapOn:

@@ -12,7 +12,6 @@ appId: com.duckduckgo.mobile.ios
     when:
       visible: Unlock device to set up Sync & Backup
     commands:
-      - tapOn: Passcode field
       - inputText: "0000"
       - pressKey: Enter
 - assertVisible: Recover your synced data

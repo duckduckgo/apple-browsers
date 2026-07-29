@@ -43,6 +43,12 @@ extension WebExtensionManager {
             if enabledTypes.contains(descriptor.type) {
                 await syncEmbeddedExtension(descriptor)
             } else {
+                // A launch loads every installed extension before this sync runs, so a type that is
+                // disabled gets unloaded seconds after loading — the same window the upgrade branch
+                // above waits out.
+                if let installed = installedEmbeddedExtension(for: descriptor.type) {
+                    await unloadGuard.awaitSettled(context(for: installed.uniqueIdentifier))
+                }
                 uninstallEmbeddedExtension(type: descriptor.type)
             }
         }
@@ -85,6 +91,7 @@ extension WebExtensionManager {
                 if shouldUpgrade(installed: installed, bundledVersion: bundledMetadata.version) {
                     Logger.webExtensions.info("⬆️ Upgrading embedded extension \(descriptor.type.rawValue): \(installed.version ?? "?") → \(bundledMetadata.version ?? "?")")
                     let oldVersion = installed.version
+                    await unloadGuard.awaitSettled(context(for: installed.uniqueIdentifier))
                     try uninstallExtension(identifier: installed.uniqueIdentifier)
                     try await installEmbeddedExtension(from: bundledURL, type: descriptor.type, requiresExtraction: bundledMetadata.requiresExtraction)
                     pixelFiring.fire(.embeddedUpgraded(type: descriptor.type, fromVersion: oldVersion, toVersion: bundledMetadata.version))
@@ -139,6 +146,7 @@ extension WebExtensionManager {
 
         do {
             let loadResult = try await loader.loadWebExtension(identifier: identifier, into: controller)
+            unloadGuard.recordLoad(of: identifier)
 
             let installedExtension = InstalledWebExtension(
                 uniqueIdentifier: identifier,

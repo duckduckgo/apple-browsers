@@ -24,6 +24,10 @@ on:
         description: "Asana release task URL"
         required: false
         type: string
+      build-arm64-only:
+        description: "Build arm64 only (review builds only)"
+        default: false
+        type: boolean
   workflow_call:
     inputs:
       release-type:
@@ -52,6 +56,10 @@ on:
         type: string
       skip-notify:
         description: "Skip Mattermost notification"
+        default: false
+        type: boolean
+      build-arm64-only:
+        description: "Build arm64 only (review builds only)"
         default: false
         type: boolean
     secrets:
@@ -102,6 +110,16 @@ jobs:
       branch: ${{ inputs.branch || github.ref_name }}
 
     steps:
+    - name: Validate architecture selection
+      env:
+        BUILD_ARM64_ONLY: ${{ inputs.build-arm64-only }}
+        RELEASE_TYPE: ${{ github.event.inputs.release-type || inputs.release-type }}
+      run: |
+        if [[ "$BUILD_ARM64_ONLY" == "true" && "$RELEASE_TYPE" != "review" && "$RELEASE_TYPE" != "sandbox-review" ]]; then
+          echo "::error::Arm64-only archives are limited to review builds. Release and alpha archives must remain universal."
+          exit 1
+        fi
+
     - name: Register SSH keys for private repos
       uses: webfactory/ssh-agent@v0.10.0
       with:
@@ -216,10 +234,15 @@ jobs:
         APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
         APPLE_API_KEY_ISSUER: ${{ secrets.APPLE_API_KEY_ISSUER }}
         ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
+        BUILD_ARM64_ONLY: ${{ inputs.build-arm64-only }}
       run: |
         # import API Key from secrets
         export APPLE_API_KEY_PATH="$RUNNER_TEMP/apple_api_key.pem"
         echo -n "$APPLE_API_KEY_BASE64" | base64 --decode -o $APPLE_API_KEY_PATH
+
+        if [[ "$BUILD_ARM64_ONLY" == "true" ]]; then
+          export EXCLUDED_ARCHS=x86_64
+        fi
 
         if [[ "${{ runner.debug }}" == "1" ]]; then
           ./scripts/archive.sh ${{ env.release-type }} -r
@@ -236,6 +259,22 @@ jobs:
         pixel-name: m_ci_apple_duration_macos_notarized_build
         pixel-params: |
           runner: ${{ env.RUNS_ON }}
+
+    - name: Validate arm64-only review build
+      if: inputs.build-arm64-only
+      run: |
+        app_path="release/${{ env.app-name }}.app"
+        plist_path="${app_path}/Contents/Info.plist"
+        executable_name=$(/usr/libexec/PlistBuddy -c "Print :CFBundleExecutable" "$plist_path")
+        executable_path="${app_path}/Contents/MacOS/${executable_name}"
+        architectures=$(lipo -archs "$executable_path")
+
+        if [[ "$architectures" != "arm64" ]]; then
+          echo "::error::Expected an arm64-only review app, but ${executable_path} contains: ${architectures}"
+          exit 1
+        fi
+
+        echo "Validated arm64-only review app: ${executable_path}"
 
     - name: Validate release build
       if: env.is-official-release == 'true'

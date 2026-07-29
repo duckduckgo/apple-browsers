@@ -883,6 +883,23 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         XCTAssertEqual(controller.currentSelectionRange, NSRange(location: 3, length: 2))
     }
 
+    func testWhenTabSwitchesToTabWithSavedDraft_ThenControllerRestoresTextAndSelection() {
+        // Given — tab 1 holds a draft with a live selection, tab 2 is fresh
+        controller.updateText("hello world")
+        controller.updateSelection(NSRange(location: 6, length: 5))
+        tabCollectionViewModel.appendNewTab()
+        XCTAssertEqual(controller.currentText, "", "Tab 2 has no draft; controller should be empty after switch")
+
+        // When — switch back to tab 1
+        tabCollectionViewModel.select(at: .unpinned(0))
+
+        // Then
+        XCTAssertEqual(controller.currentText, "hello world",
+                       "Controller should restore tab 1's draft text on switch back")
+        XCTAssertEqual(controller.currentSelectionRange, NSRange(location: 6, length: 5),
+                       "Controller should restore tab 1's cursor position on switch back")
+    }
+
     func testWhenOnOmnibarActivatedAfterCleanup_ThenRestoresTextAndToolModeFromSharedState() {
         // Given — simulate a draft: user typed, selected a tool, attached an image on this tab.
         let sharedState = tabCollectionViewModel.selectedTabViewModel?.addressBarSharedTextState

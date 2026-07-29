@@ -23,6 +23,7 @@ import XCTest
 
 final class YouTubeAdBlockingTelemetryConsentRequirementTests: XCTestCase {
 
+    private static let adBlockingEnabledKey = "preferences_youtube-ad-blocking_enabled"
     private static let analyticsEnabledKey = "preferences_youtube-analytics_enabled"
 
     private var defaults: UserDefaults!
@@ -57,6 +58,7 @@ final class YouTubeAdBlockingTelemetryConsentRequirementTests: XCTestCase {
     }
 
     func testIsGrantedPublisherEmitsCurrentValueOnSubscribe() {
+        defaults.set(true, forKey: Self.adBlockingEnabledKey)
         defaults.set(true, forKey: Self.analyticsEnabledKey)
         let sut = YouTubeAdBlockingTelemetryConsentRequirement(configNames: [], store: defaults)
 
@@ -64,5 +66,42 @@ final class YouTubeAdBlockingTelemetryConsentRequirementTests: XCTestCase {
         sut.isGrantedPublisher.sink { received.append($0) }.store(in: &cancellables)
 
         XCTAssertEqual(received, [true])
+    }
+
+    /// Both opt-ins are required, matching the composite check the retired `WebEventsSubfeature` applied.
+    /// The two flags are independently writable defaults — nothing at the storage level guarantees that
+    /// disabling ad blocking clears the analytics flag — so consent must not be granted on analytics alone.
+    func testIsNotGrantedWhenAdBlockingIsOffButAnalyticsIsOn() {
+        defaults.set(false, forKey: Self.adBlockingEnabledKey)
+        defaults.set(true, forKey: Self.analyticsEnabledKey)
+        let sut = YouTubeAdBlockingTelemetryConsentRequirement(configNames: [], store: defaults)
+
+        var received: [Bool] = []
+        sut.isGrantedPublisher.sink { received.append($0) }.store(in: &cancellables)
+
+        XCTAssertEqual(received, [false])
+    }
+
+    /// The ad-blocking flag being unset (never explicitly chosen) must also withhold consent — the
+    /// retired gate read it as `?? false`.
+    func testIsNotGrantedWhenAdBlockingIsUnsetButAnalyticsIsOn() {
+        defaults.set(true, forKey: Self.analyticsEnabledKey)
+        let sut = YouTubeAdBlockingTelemetryConsentRequirement(configNames: [], store: defaults)
+
+        var received: [Bool] = []
+        sut.isGrantedPublisher.sink { received.append($0) }.store(in: &cancellables)
+
+        XCTAssertEqual(received, [false])
+    }
+
+    func testIsNotGrantedWhenAdBlockingIsOnButAnalyticsIsOff() {
+        defaults.set(true, forKey: Self.adBlockingEnabledKey)
+        defaults.set(false, forKey: Self.analyticsEnabledKey)
+        let sut = YouTubeAdBlockingTelemetryConsentRequirement(configNames: [], store: defaults)
+
+        var received: [Bool] = []
+        sut.isGrantedPublisher.sink { received.append($0) }.store(in: &cancellables)
+
+        XCTAssertEqual(received, [false])
     }
 }

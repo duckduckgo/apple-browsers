@@ -22,7 +22,14 @@ import Foundation
 import Persistence
 
 /// Gates the migrated YouTube ad-blocking-detection telemetry configs behind the user's YouTube
-/// analytics opt-in (`YouTubeAdBlockingSettings.youTubeAnalyticsEnabled`).
+/// Ad Blocking *and* analytics opt-ins, matching the composite check the retired `WebEventsSubfeature`
+/// applied per event.
+///
+/// Both flags are required deliberately, rather than relying on analytics alone. Turning YouTube Ad
+/// Blocking off does clear the analytics opt-in, but that coupling is a `didSet` side effect in
+/// `YouTubeAdBlockingPreferences` — it only runs while an instance of that model exists and the value
+/// actually changes. The two flags are independently writable defaults with no storage-level invariant
+/// tying them together, so a consent gate must not depend on that side effect having run.
 final class YouTubeAdBlockingTelemetryConsentRequirement: EventHubConsentRequirement {
 
     let consentID = "youTubeAdBlockingAnalytics"
@@ -32,8 +39,10 @@ final class YouTubeAdBlockingTelemetryConsentRequirement: EventHubConsentRequire
     init(configNames: Set<String>, store: any ObservableKeyValueStoring = UserDefaults.standard) {
         self.configNames = configNames
         let settings: any ObservableKeyedStoring<YouTubeAdBlockingSettings> = store.observableKeyedStoring()
-        isGrantedPublisher = settings.publisher(for: \.youTubeAnalyticsEnabled)
-            .map { $0 ?? false }
+        isGrantedPublisher = settings.publisher(for: \.youTubeAdBlockingEnabled)
+            .combineLatest(settings.publisher(for: \.youTubeAnalyticsEnabled))
+            .map { ($0 ?? false) && ($1 ?? false) }
+            .removeDuplicates()
             .eraseToAnyPublisher()
     }
 }

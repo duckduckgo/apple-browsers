@@ -64,7 +64,8 @@ struct AddressBarPromptPixelHandler: DuckAIPromptPixelFiring {
         }
     }
 
-    private static func addressBarPixel(for event: DuckAIPromptPixelEvent) -> AIChatPixel? {
+    /// Internal, not private, so the mapping can be asserted case-by-case without PixelKit.
+    static func addressBarPixel(for event: DuckAIPromptPixelEvent) -> AIChatPixel? {
         switch event {
         case .promptSubmitted: .aiChatAddressBarAIChatSubmitPrompt
         case .urlSubmitted: .aiChatAddressBarAIChatSubmitURL

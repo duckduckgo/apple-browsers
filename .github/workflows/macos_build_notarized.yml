@@ -440,7 +440,7 @@ jobs:
             "dmg"
         echo "dmg=${dmg}" >> $GITHUB_OUTPUT
 
-    - name: Validate official release DMG
+    - name: Validate release DMG
       if: env.release-type == 'release' && env.upload-to == 's3'
       run: ./scripts/validate_release_artifact.sh dmg "${{ steps.create-dmg.outputs.dmg }}" "${{ env.app-version }}"
 

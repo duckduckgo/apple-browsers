@@ -1,0 +1,254 @@
+// Duck.ai Prompt Bar: the floating bar opened by the global keyboard shortcut or the menu bar icon.
+// Names mirror their m_mac_aichat_addressbar_* counterparts so the two prompt surfaces can be
+// compared directly; the Prompt Bar-only pixels at the end cover its own lifecycle and settings.
+{
+    "m_mac_aichat_promptbar_submit_prompt": {
+        "description": "Fired when user submits a prompt from the Prompt Bar",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_aichat_promptbar_submit_url": {
+        "description": "Fired when user submits a URL from the Prompt Bar",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_aichat_promptbar_submit_with_image": {
+        "description": "Fired when user submits a prompt from the Prompt Bar that includes one or more image attachments",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "imageCount",
+                "type": "integer",
+                "description": "Number of images attached to the submitted prompt"
+            }
+        ]
+    },
+    "m_mac_aichat_promptbar_submit_with_files": {
+        "description": "Fired when user submits a prompt from the Prompt Bar that includes one or more file (PDF etc.) attachments",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "fileCount",
+                "type": "integer",
+                "description": "Number of files attached to the submitted prompt"
+            }
+        ]
+    },
+    "m_mac_aichat_promptbar_image_attached": {
+        "description": "Fired when user attaches an image via the file picker in the Prompt Bar",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_aichat_promptbar_image_removed": {
+        "description": "Fired when user removes an attached image in the Prompt Bar",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_aichat_promptbar_file_attached": {
+        "description": "Fired when user attaches a file (PDF etc.) via the file picker in the Prompt Bar",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_aichat_promptbar_file_removed": {
+        "description": "Fired when user removes an attached file (PDF etc.) in the Prompt Bar by clicking the × on the carousel card",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_aichat_promptbar_file_validation_failed": {
+        "description": "Fired when a file picked for the Prompt Bar is rejected at pick-time by the attachment validator (too large, over the total-size budget, too many pages, unsupported type, encrypted, or unreadable)",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "reason",
+                "description": "Reason for the file validation failure.",
+                "type": "string",
+                "enum": ["size_exceeded", "count_exceeded", "unsupported_type", "encrypted", "unreadable", "other"]
+            }
+        ]
+    },
+    "m_mac_aichat_promptbar_image_generation_activated": {
+        "description": "Fired when user selects the Create Image tool in the Prompt Bar to enter image generation mode",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_aichat_promptbar_image_generation_deactivated": {
+        "description": "Fired when user dismisses the Prompt Bar's image generation chip (X button)",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_aichat_promptbar_image_generation_submitted": {
+        "description": "Fired when user submits a prompt from the Prompt Bar while image generation mode is active",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_aichat_promptbar_web_search_activated": {
+        "description": "Fired when user selects the Web Search tool in the Prompt Bar to enter web search mode",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_aichat_promptbar_web_search_deactivated": {
+        "description": "Fired when user dismisses the Prompt Bar's web search chip (X button)",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_aichat_promptbar_web_search_submitted": {
+        "description": "Fired when user submits a prompt from the Prompt Bar while web search mode is active",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_aichat_promptbar_model_selected": {
+        "description": "Fired when user selects a model from the Prompt Bar's model picker menu",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_aichat_promptbar_reasoning_effort_selected": {
+        "description": "Fired when user selects a reasoning effort from the Prompt Bar's picker",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_aichat_promptbar_new_voice_chat": {
+        "description": "Fired when user opens a new Duck.ai voice chat from the Prompt Bar",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_aichat_promptbar_shown_shortcut": {
+        "description": "Fired when the Prompt Bar is presented by pressing the global keyboard shortcut",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_aichat_promptbar_shown_menu_bar_icon": {
+        "description": "Fired when the Prompt Bar is presented by clicking the Duck.ai menu bar icon",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_aichat_promptbar_dismissed_without_submission": {
+        "description": "Fired when the Prompt Bar closes without a prompt, URL or voice session being handed off. Together with the shown pixels this measures how often an open converts into a Duck.ai request",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "reason",
+                "description": "How the Prompt Bar was dismissed. Menus, file pickers and modals taking focus are excluded from click_outside.",
+                "type": "string",
+                "enum": ["escape", "click_outside", "shortcut_toggle", "menu_bar_icon"]
+            },
+            {
+                "key": "had_text",
+                "description": "Whether the prompt field held non-whitespace text at dismissal, separating an abandoned prompt from an exploratory open. Attachments alone do not set it.",
+                "type": "string",
+                "enum": ["true", "false"]
+            }
+        ]
+    },
+    "m_mac_aichat_promptbar_settings_shortcut_on": {
+        "description": "Fired when the Prompt Bar keyboard shortcut setting is turned on in Settings → AI Features",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_aichat_promptbar_settings_shortcut_off": {
+        "description": "Fired when the Prompt Bar keyboard shortcut setting is turned off in Settings → AI Features",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_aichat_promptbar_settings_menu_bar_icon_on": {
+        "description": "Fired when the Prompt Bar menu bar icon setting is turned on in Settings → AI Features",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_aichat_promptbar_settings_menu_bar_icon_off": {
+        "description": "Fired when the Prompt Bar menu bar icon setting is turned off in Settings → AI Features",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_aichat_promptbar_settings_shortcut_changed": {
+        "description": "Fired when the recorded Prompt Bar key combination changes, including a reset to the default. The combination itself is never sent — this only reports that the default did not suit the user",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_aichat_promptbar_state": {
+        "description": "Daily pixel reporting both Prompt Bar settings, so the enabled share of the active base is measurable rather than only the users who touch a setting",
+        "owners": ["Bunn"],
+        "triggers": ["startup"],
+        "suffixes": ["daily"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "shortcut_enabled",
+                "description": "Whether the global keyboard shortcut setting is currently on",
+                "type": "string",
+                "enum": ["true", "false"]
+            },
+            {
+                "key": "menu_bar_icon_enabled",
+                "description": "Whether the menu bar icon setting is currently on",
+                "type": "string",
+                "enum": ["true", "false"]
+            }
+        ]
+    }
+}

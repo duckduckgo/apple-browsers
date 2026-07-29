@@ -195,7 +195,8 @@ final class ModalPromptCoordinationServiceTests {
 
     // MARK: - Promo Queue Admission
 
-    @Test("Enabled Modal Evaluation Acquires Lease Before Calling Manager")
+    @available(iOS 16, *)
+    @Test("Enabled Modal Evaluation Acquires Lease Before Calling Manager", .timeLimit(.minutes(1)))
     func whenPromoQueueIsEnabledThenManagerReceivesAcquiredLease() {
         featureFlaggerMock.enabledFeatureFlags = [.promoQueue]
         launchSourceManagerMock.source = .standard
@@ -213,7 +214,8 @@ final class ModalPromptCoordinationServiceTests {
         #expect(promoQueueLeaseArbiter.snapshot.hasModalLease)
     }
 
-    @Test("Visible Promo Denial Does Not Reach Modal Manager")
+    @available(iOS 16, *)
+    @Test("Visible Promo Denial Does Not Reach Modal Manager", .timeLimit(.minutes(1)))
     func whenVisiblePromoOwnsSlotThenModalManagerIsNotCalled() throws {
         featureFlaggerMock.enabledFeatureFlags = [.promoQueue]
         launchSourceManagerMock.source = .standard
@@ -240,7 +242,8 @@ final class ModalPromptCoordinationServiceTests {
         #expect(promoQueueLeaseArbiter.snapshot.visiblePromoIdentities == [visibleIdentity])
     }
 
-    @Test("Visible Promo Denial Never Queries A Real Provider Chain")
+    @available(iOS 16, *)
+    @Test("Visible Promo Denial Never Queries A Real Provider Chain", .timeLimit(.minutes(1)))
     func whenVisiblePromoOwnsSlotThenProvidersAreNotQueried() throws {
         featureFlaggerMock.enabledFeatureFlags = [.promoQueue]
         launchSourceManagerMock.source = .standard
@@ -280,7 +283,8 @@ final class ModalPromptCoordinationServiceTests {
         #expect(!presenterMock.didCallPresent)
     }
 
-    @Test("Disabled Modal Evaluation Uses Legacy Manager Path Without Lease")
+    @available(iOS 16, *)
+    @Test("Disabled Modal Evaluation Uses Legacy Manager Path Without Lease", .timeLimit(.minutes(1)))
     func whenPromoQueueIsDisabledThenLegacyManagerPathIsUnchanged() {
         launchSourceManagerMock.source = .standard
         presenterMock.presentedViewController = nil
@@ -299,7 +303,8 @@ final class ModalPromptCoordinationServiceTests {
         #expect(managerMock.reconcilePresentedModalCallCount == 0)
     }
 
-    @Test("Released Modal Lease Retries Two Active Registrations Once Without Recursion")
+    @available(iOS 16, *)
+    @Test("Released Modal Lease Retries Two Active Registrations Once Without Recursion", .timeLimit(.minutes(1)))
     func whenManagerReleasesModalLeaseThenActiveRegistrationsRetryOnce() {
         featureFlaggerMock.enabledFeatureFlags = [.promoQueue]
         launchSourceManagerMock.source = .standard
@@ -345,7 +350,8 @@ final class ModalPromptCoordinationServiceTests {
         #expect(managerMock.didCallPresentModalPromptIfNeeded)
     }
 
-    @Test("Visible Admission Checkpoint Admits Triggering Surface Before Retrying Other Surface")
+    @available(iOS 16, *)
+    @Test("Visible Admission Checkpoint Admits Triggering Surface Before Retrying Other Surface", .timeLimit(.minutes(1)))
     func whenVisibleAdmissionReleasesDetachedModalThenTriggeringSurfaceWinsBeforeRetrySnapshot() {
         featureFlaggerMock.enabledFeatureFlags = [.promoQueue]
         sut = ModalPromptCoordinationService(
@@ -395,7 +401,8 @@ final class ModalPromptCoordinationServiceTests {
         #expect(promoQueueLeaseArbiter.snapshot.visiblePromoCount == 2)
     }
 
-    @Test("Stale Registration Cannot Remove Or Invoke Its Replacement")
+    @available(iOS 16, *)
+    @Test("Stale Registration Cannot Remove Or Invoke Its Replacement", .timeLimit(.minutes(1)))
     func whenRegistrationIsReplacedThenOldTokenCannotRemoveReplacement() {
         featureFlaggerMock.enabledFeatureFlags = [.promoQueue]
         sut = ModalPromptCoordinationService(
@@ -422,7 +429,8 @@ final class ModalPromptCoordinationServiceTests {
 
     // MARK: - Promo Queue Feature State
 
-    @Test("Initial Promo Queue State Is Seeded Before Subscription Updates")
+    @available(iOS 16, *)
+    @Test("Initial Promo Queue State Is Seeded Before Subscription Updates", .timeLimit(.minutes(1)))
     func whenPromoQueueIsInitiallyEnabledThenInitialStateIsEnabled() {
         featureFlaggerMock.enabledFeatureFlags = [.promoQueue]
         sut = ModalPromptCoordinationService(
@@ -435,10 +443,11 @@ final class ModalPromptCoordinationServiceTests {
         #expect(sut.promoQueueFeatureState == .enabled)
         #expect(managerMock.promoQueueWillTransitionTargets.isEmpty)
         #expect(managerMock.promoQueueDidTransitionTargets.isEmpty)
-        #expect(featureFlaggerMock.updatesPublisherAccessCount == 1)
+        #expect(featureFlaggerMock.updatesPublisherSubscriptionCount == 1)
     }
 
-    @Test("Promo Queue Feature Updates Are Deduplicated")
+    @available(iOS 16, *)
+    @Test("Promo Queue Feature Updates Are Deduplicated", .timeLimit(.minutes(1)))
     func whenFeatureFlagPublishesDuplicateValuesThenOnlyEffectiveChangesTransition() async {
         sut = ModalPromptCoordinationService(
             launchSourceManager: launchSourceManagerMock,
@@ -463,12 +472,13 @@ final class ModalPromptCoordinationServiceTests {
         #expect(managerMock.promoQueueWillTransitionTargets == [.enabled])
         #expect(managerMock.promoQueueDidTransitionTargets == [.enabled])
         #expect(sut.promoQueueFeatureState == .enabled)
-        #expect(featureFlaggerMock.updatesPublisherAccessCount == 1)
+        #expect(featureFlaggerMock.updatesPublisherSubscriptionCount == 1)
         #expect(enabledGeneration != initialGeneration)
         #expect(promoQueueLeaseArbiter.snapshot.generation == enabledGeneration)
     }
 
-    @Test("Promo Queue Feature Subscription Is Cancelled With Service")
+    @available(iOS 16, *)
+    @Test("Promo Queue Feature Subscription Is Cancelled With Service", .timeLimit(.minutes(1)))
     func whenServiceIsReleasedThenFeatureUpdatesStop() async {
         sut = ModalPromptCoordinationService(
             launchSourceManager: launchSourceManagerMock,
@@ -489,7 +499,8 @@ final class ModalPromptCoordinationServiceTests {
         #expect(managerMock.promoQueueDidTransitionTargets.isEmpty)
     }
 
-    @Test("Promo Queue Transition Barrier Rejects Reentrant Modal Evaluation In Both Directions")
+    @available(iOS 16, *)
+    @Test("Promo Queue Transition Barrier Rejects Reentrant Modal Evaluation In Both Directions", .timeLimit(.minutes(1)))
     func whenTransitionCallbacksReenterModalEvaluationThenEvaluationWaitsForBarrier() async {
         sut = ModalPromptCoordinationService(
             launchSourceManager: launchSourceManagerMock,

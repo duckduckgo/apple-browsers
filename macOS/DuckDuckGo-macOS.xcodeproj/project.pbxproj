@@ -14239,6 +14239,7 @@
 				CCF78AD42F34996900263097 /* XCRemoteSwiftPackageReference "combine-schedulers" */,
 				A1A1A1A12F50000600A0A0A0 /* XCLocalSwiftPackageReference "LocalPackages/CrashReporting" */,
 				315E395D2F86A36200D2289D /* XCLocalSwiftPackageReference "../SharedPackages/DebugServer" */,
+				55EE0BC98B362A2A48B16BD0 /* XCLocalSwiftPackageReference "../SharedPackages/EventHub" */,
 			);
 			productRefGroup = AA585D7F248FD31100E9A3E2 /* Products */;
 			projectDirPath = "";
@@ -20475,6 +20476,10 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = ../SharedPackages/AutomationServer;
 		};
+		55EE0BC98B362A2A48B16BD0 /* XCLocalSwiftPackageReference "../SharedPackages/EventHub" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../SharedPackages/EventHub;
+		};
 		7BBE51062DC27EAB004F08B3 /* XCLocalSwiftPackageReference "LocalPackages/BuildToolPlugins" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = LocalPackages/BuildToolPlugins;
@@ -20971,18 +20976,22 @@
 		};
 		8714BC081D36DA291FF7A650 /* EventHub */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 55EE0BC98B362A2A48B16BD0 /* XCLocalSwiftPackageReference "../SharedPackages/EventHub" */;
 			productName = EventHub;
 		};
 		F07A89FE5A0959D49AF0E27F /* EventHub */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 55EE0BC98B362A2A48B16BD0 /* XCLocalSwiftPackageReference "../SharedPackages/EventHub" */;
 			productName = EventHub;
 		};
 		EC2E83ED38F4FAB06EE3D557 /* EventHub */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 55EE0BC98B362A2A48B16BD0 /* XCLocalSwiftPackageReference "../SharedPackages/EventHub" */;
 			productName = EventHub;
 		};
 		CA7335A53836D5A56E2F5B4A /* EventHub */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 55EE0BC98B362A2A48B16BD0 /* XCLocalSwiftPackageReference "../SharedPackages/EventHub" */;
 			productName = EventHub;
 		};
 		4B9EE3312D76C89500DDC75C /* PixelKit */ = {

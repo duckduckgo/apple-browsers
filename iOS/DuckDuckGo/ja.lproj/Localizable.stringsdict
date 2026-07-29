@@ -320,6 +320,20 @@
 			<string>タブを閉じる</string>
 		</dict>
 	</dict>
+	<key>tab.switcher.close-tabs.button.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>other</key>
+			<string>%1$d件のタブを閉じる</string>
+		</dict>
+	</dict>
 	<key>closeAllTabs.withCount</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>

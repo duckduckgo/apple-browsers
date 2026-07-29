@@ -424,6 +424,24 @@ I-am blocat!
 			<string>Închide filele</string>
 		</dict>
 	</dict>
+	<key>tab.switcher.close-tabs.button.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Închide %1$d filă</string>
+			<key>few</key>
+			<string>Închide %1$d file</string>
+			<key>other</key>
+			<string>Închide %1$d de file</string>
+		</dict>
+	</dict>
 	<key>closeAllTabs.withCount</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>

@@ -36,8 +36,6 @@ final class PromptBarPreferences: ObservableObject {
         didSet { persistor.isMenuBarIconVisible = isMenuBarIconVisible }
     }
 
-    /// The icon is a Duck.ai entry point in its own right, independent of the keyboard
-    /// shortcut, so it only needs Duck.ai to be available.
     var isMenuBarIconEffectivelyVisible: Bool {
         isMenuBarIconVisible && aiChatMenuConfiguration.shouldDisplayAnyAIChatFeature
     }

@@ -19,9 +19,6 @@
 import PreferencesUI_macOS
 import SwiftUI
 
-/// The Prompt Bar rows on the AI Features preferences screen: the menu bar icon
-/// visibility and the system-wide keyboard shortcut (with its recorder). Both are
-/// top-level entry points, independent of each other.
 struct PromptBarPreferencesView: View {
 
     @ObservedObject var preferences: PromptBarPreferences

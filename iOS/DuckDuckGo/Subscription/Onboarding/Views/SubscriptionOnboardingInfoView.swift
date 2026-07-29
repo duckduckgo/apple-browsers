@@ -68,7 +68,7 @@ struct SubscriptionOnboardingInfoView: View {
     /// The disclaimer renders Markdown, so its `[label](url)` becomes a tappable link that opens in the
     /// system URL handler (e.g. the Summary of Benefits PDF).
     private func disclaimerView(_ disclaimer: String) -> some View {
-        Text(LocalizedStringKey(disclaimer))
+        Text(.init("\(disclaimer)"))
             .daxFootnoteRegular()
             .multilineTextAlignment(.leading)
             .foregroundColor(Color(designSystemColor: .textSecondary))

@@ -203,7 +203,7 @@ private extension CardItem {
     var textBlock: some View {
         VStack(alignment: .leading, spacing: 0) {
             if let overline {
-                Text(verbatim: overline.text)
+                Text(overline.text)
                     .font(overline.font.font)
                     .foregroundColor(overline.color ?? Color(designSystemColor: .textPrimary))
                     .applyingModifier(overline.modifier)
@@ -211,7 +211,7 @@ private extension CardItem {
             VStack(alignment: .leading, spacing: titleTextSpacing) {
                 titleLine
                 if let text {
-                    Text(verbatim: text.text)
+                    Text(text.text)
                         .font(text.font.font)
                         .foregroundColor(text.color ?? Color(designSystemColor: .textSecondary))
                         .fixedSize(horizontal: false, vertical: true)
@@ -227,13 +227,13 @@ private extension CardItem {
         if title != nil || !titleDetails.isEmpty {
             HStack(alignment: .firstTextBaseline, spacing: 6) {
                 if let title {
-                    Text(verbatim: title.text)
+                    Text(title.text)
                         .font(title.font.font)
                         .foregroundColor(title.color ?? Color(designSystemColor: .textPrimary))
                         .applyingModifier(title.modifier)
                 }
                 ForEach(Array(titleDetails.enumerated()), id: \.offset) { _, detail in
-                    Text(verbatim: detail.text)
+                    Text(detail.text)
                         .font(detail.font.font)
                         .foregroundColor(detail.color ?? Color(designSystemColor: .textSecondary))
                         .applyingModifier(detail.modifier)

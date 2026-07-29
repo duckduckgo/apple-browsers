@@ -122,6 +122,7 @@ class MainViewCoordinator {
         var statusBackgroundBottomToSafeAreaTop: NSLayoutConstraint!
         var contentContainerBottomToToolbarTop: NSLayoutConstraint!
         var contentContainerBottomToSafeArea: NSLayoutConstraint!
+        var contentContainerBottomToDeviceSafeArea: NSLayoutConstraint!
         var topSlideContainerBottomToNavigationBarBottom: NSLayoutConstraint!
         var topSlideContainerBottomToStatusBackgroundBottom: NSLayoutConstraint!
         var topSlideContainerTopToNavigationBar: NSLayoutConstraint!
@@ -142,7 +143,7 @@ class MainViewCoordinator {
         navigationBarContainer.isHidden = false
         navigationBarContainer.alpha = 1
         navigationBarContainer.isUserInteractionEnabled = true
-        if position.isBottom {
+        if position.isBottom || constraints.contentContainerBottomToDeviceSafeArea.isActive {
             setContentContainerBottomAnchorMode(requesting: .toolbar)
         }
     }
@@ -606,6 +607,7 @@ class MainViewCoordinator {
         case toolbar
         case unifiedToggleInput
         case safeArea
+        case deviceSafeArea
     }
 
     /// Anchors the contentContainer to the UTI's top — except when the bottom chrome is hidden
@@ -627,10 +629,26 @@ class MainViewCoordinator {
     }
 
     private func setContentContainerBottomAnchorMode(requesting requestedMode: ContentContainerBottomAnchorMode) {
-        let resolvedMode: ContentContainerBottomAnchorMode = shouldUnifiedToggleInputOwnBottomAnchor ? .unifiedToggleInput : requestedMode
+        let resolvedMode: ContentContainerBottomAnchorMode
+        if shouldUnifiedToggleInputOwnBottomAnchor {
+            resolvedMode = .unifiedToggleInput
+        } else if shouldKeepContentAboveDeviceSafeArea {
+            resolvedMode = .deviceSafeArea
+        } else {
+            resolvedMode = requestedMode
+        }
         constraints.contentContainerBottomToToolbarTop.isActive = resolvedMode == .toolbar
         constraints.contentContainerBottomToUnifiedToggleInputTop.isActive = resolvedMode == .unifiedToggleInput
         constraints.contentContainerBottomToSafeArea.isActive = resolvedMode == .safeArea
+        constraints.contentContainerBottomToDeviceSafeArea.isActive = resolvedMode == .deviceSafeArea
+    }
+
+    private var shouldKeepContentAboveDeviceSafeArea: Bool {
+        guard isBrowserChromeUpdateEnabled, addressBarPosition.isBottom else { return false }
+        if #available(iOS 26, *) {
+            return false
+        }
+        return true
     }
 
     func applyContentContainerTopAnchorForCurrentState() {

@@ -887,7 +887,7 @@ class TabViewController: UIViewController {
                 /// When address bar is at bottom on iPhone, offset webview to make room for the bars.
                 /// AI tabs skip this inset only when unifiedToggleInput is active — that feature
                 /// manages its own native bottom layout via the UnifiedToggleInput container.
-                let targetHeight = chromeDelegate?.barsMaxHeight ?? 0.0
+                let targetHeight = standardBottomChromeHeight
                 let effectiveBarsVisibilityPercent: CGFloat
                 if #available(iOS 26, *),
                    featureFlagger.isFeatureOn(.bottomBarViewportFixedElementsWorkaround) {
@@ -905,6 +905,17 @@ class TabViewController: UIViewController {
         }
         borderView.isHidden = false
         borderView.bottomAlpha = AppWidthObserver.shared.isLargeWidth ? 0 : barsVisibilityPercent
+    }
+
+    private var standardBottomChromeHeight: CGFloat {
+        let barsMaxHeight = chromeDelegate?.barsMaxHeight ?? 0
+        guard BrowserChromeUpdate.isEnabled(featureFlagger: featureFlagger) else {
+            return barsMaxHeight
+        }
+        if #available(iOS 26, *) {
+            return barsMaxHeight
+        }
+        return barsMaxHeight + (chromeDelegate?.toolbarHeight ?? 0)
     }
 
     private func observeNetPConnectionStatusChanges() {

@@ -557,6 +557,8 @@ extension MainViewFactory {
         coordinator.constraints.contentContainerTopToSafeArea = contentContainer.topAnchor.constraint(equalTo: superview.safeAreaLayoutGuide.topAnchor)
         coordinator.constraints.contentContainerBottomToToolbarTop = contentContainer.constrainView(toolbar, by: .bottom, to: .top)
         coordinator.constraints.contentContainerBottomToSafeArea = contentContainer.constrainView(superview, by: .bottom)
+        coordinator.constraints.contentContainerBottomToDeviceSafeArea =
+            contentContainer.bottomAnchor.constraint(equalTo: superview.safeAreaLayoutGuide.bottomAnchor)
         coordinator.constraints.contentContainerBottomToUnifiedToggleInputTop = contentContainer.bottomAnchor.constraint(equalTo: coordinator.unifiedToggleInputContainer.topAnchor)
 
         NSLayoutConstraint.activate([

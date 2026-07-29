@@ -58,8 +58,44 @@ struct RebrandedColorPalette: ColorPaletteDefinition {
             return DynamicColor(lightColor: RebrandingColor.Red.red70, darkColor: RebrandingColor.Red.red60)
         case .destructiveGlowPrimary:
             return DynamicColor(lightColor: Color(0xE5244B).opacity(0.2), darkColor: Color(0xEE6D87).opacity(0.2))
-        case .surfaceSecondary:
+        case .background, .panel:
+            return DynamicColor(lightHex: 0xF8F8F8, darkHex: 0x212121)
+        case .surface, .surfaceSecondary:
             return DynamicColor(lightHex: 0xFCFCFC, darkHex: 0x2B2B2B)
+        case .surfaceTertiary:
+            return DynamicColor(lightHex: 0xFFFFFF, darkHex: 0x333333)
+        case .surfaceCanvas:
+            return DynamicColor(lightHex: 0xFDFDFD, darkHex: 0x1C1C1C)
+        case .backdrop:
+            return DynamicColor(lightHex: 0xE4E4E4, darkHex: 0x050505)
+        case .decorationPrimary:
+            return DynamicColor(lightHex: 0x000000, lightOpacity: 0.09, darkHex: 0xFFFFFF, darkOpacity: 0.12)
+        case .decorationSecondary:
+            return DynamicColor(lightHex: 0x000000, lightOpacity: 0.16, darkHex: 0xFFFFFF, darkOpacity: 0.2)
+        case .decorationTertiary:
+            return DynamicColor(lightHex: 0x000000, lightOpacity: 0.24, darkHex: 0xFFFFFF, darkOpacity: 0.32)
+        case .textPrimary:
+            return DynamicColor(lightHex: 0x000000, lightOpacity: 0.96, darkHex: 0xFFFFFF, darkOpacity: 1)
+        case .textSecondary:
+            return DynamicColor(lightHex: 0x000000, lightOpacity: 0.6, darkHex: 0xFFFFFF, darkOpacity: 0.7)
+        case .textTertiary:
+            return DynamicColor(lightHex: 0x000000, lightOpacity: 0.36, darkHex: 0xFFFFFF, darkOpacity: 0.4)
+        case .icons:
+            return DynamicColor(lightHex: 0x000000, lightOpacity: 0.84, darkHex: 0xFFFFFF, darkOpacity: 0.78)
+        case .iconsSecondary:
+            return DynamicColor(lightHex: 0x000000, lightOpacity: 0.6, darkHex: 0xFFFFFF, darkOpacity: 0.48)
+        case .controlsFillPrimary:
+            return DynamicColor(lightHex: 0x000000, lightOpacity: 0.06, darkHex: 0xFFFFFF, darkOpacity: 0.06)
+        case .controlsFillSecondary:
+            return DynamicColor(lightHex: 0x000000, lightOpacity: 0.09, darkHex: 0xFFFFFF, darkOpacity: 0.09)
+        case .controlsFillTertiary:
+            return DynamicColor(lightHex: 0x000000, lightOpacity: 0.12, darkHex: 0xFFFFFF, darkOpacity: 0.12)
+        case .shadowPrimary:
+            return DynamicColor(lightHex: 0x000000, lightOpacity: 0.05, darkHex: 0x000000, darkOpacity: 0.16)
+        case .shadowSecondary:
+            return DynamicColor(lightHex: 0x000000, lightOpacity: 0.08, darkHex: 0x000000, darkOpacity: 0.24)
+        case .shadowTertiary:
+            return DynamicColor(lightHex: 0x000000, lightOpacity: 0.16, darkHex: 0x000000, darkOpacity: 0.32)
         default:
             return DefaultColorPalette.dynamicColor(for: designSystemColor)
         }

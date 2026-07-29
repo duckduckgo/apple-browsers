@@ -1,5 +1,5 @@
 //
-//  OnboardingView+SERPPersonalizationi.swift
+//  OnboardingView+PersonalizationToggleContent.swift
 //  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
@@ -97,10 +97,10 @@ extension OnboardingPersonalizationContent.Item.ItemType {
         case .duckPlayer:
             Binding(
                 get: {
-                    manager.isYouTubeAdBlockingEnabled
+                    manager.isDuckPlayerEnabled
                 },
                 set: {
-                    manager.setYouTubeAdBlocking($0)
+                    manager.setDuckPlayer($0)
                 }
             )
         }

@@ -24,6 +24,9 @@ final class MockOnboardingAIModelsPrefetcher: OnboardingAIModelsPrefetching {
     var resolvedModel: (models: [OnboardingAIModelOption], defaultModelId: String?) = ([], nil)
 
     private(set) var prefetchCallCount = 0
+
+    nonisolated init() {}
+
     func prefetch() {
         prefetchCallCount += 1
     }

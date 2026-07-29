@@ -58,8 +58,25 @@ final class UTIStateMachine {
         displayState == .aiTab(.expanded)
     }
 
+    /// A Duck.ai tab showing the collapsed chat-input footer rather than the expanded input pane.
+    var isAITabCollapsed: Bool {
+        displayState == .aiTab(.collapsed)
+    }
+
     var isContextualChatState: Bool {
         displayState == .contextualChat
+    }
+
+    /// The omnibar session is being edited. Distinct from `isOmnibarSession` (any omnibar state)
+    /// and from `isActive` (any state other than `.hidden`).
+    var isOmnibarEditing: Bool {
+        displayState == .omnibar(.active)
+    }
+
+    /// The omnibar sub-state, or `nil` when the current state isn't an omnibar one.
+    var omnibarState: UnifiedToggleInputDisplayState.OmnibarState? {
+        if case .omnibar(let state) = displayState { return state }
+        return nil
     }
 
     /// Folds contextual + Duck.ai tab into one "Duck.ai surface" bucket — used only for the funnel `origin`.
@@ -96,6 +113,12 @@ final class UTIStateMachine {
     /// Combines user setting + Duck.ai-tab hide flag; the kill-switch term drops out on non-AI tabs.
     func isToggleVisible(isToggleEnabled: Bool) -> Bool {
         isToggleEnabled && !(hidesToggleOnDuckAITab && isAITabState)
+    }
+
+    /// Search mode on an expanded Duck.ai tab — requires `.aiTab(.expanded)`, not any AI-tab state.
+    /// Not reachable with default behaviour: the mode toggle isn't shown on Duck.ai tabs today.
+    func isSearchOnAITab(inputMode: TextEntryMode) -> Bool {
+        isAITabExpanded && inputMode == .search
     }
 
     // MARK: - Render
@@ -135,7 +158,7 @@ final class UTIStateMachine {
             isExpanded = true
             isInputVisible = true
             let isAIChatOnAITab = isAITabState && inputMode == .aiChat
-            let isSearchOnAITab = isAITabState && inputMode == .search
+            let isSearchOnAITab = self.isSearchOnAITab(inputMode: inputMode)
             // Toggling to Search on a chat tab without visible text is a mode switch — keep the
             // chat web view; `textState` (not `currentText`) excludes preserved drafts from
             // dismiss-cleanup.

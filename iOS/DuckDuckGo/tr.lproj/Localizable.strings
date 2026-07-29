@@ -4197,6 +4197,9 @@
 /* The name of a settings category listing next steps */
 "settings.next.steps" = "Sonraki Adımlar";
 
+/* Accessibility label / title for the button that hides the Settings Next Steps section */
+"settings.next.steps.hide" = "Gizle";
+
 /* Label describing a feature which is turned off */
 "settings.off" = "Kapalı";
 
@@ -4391,6 +4394,12 @@
 
 /* Settings screen cell text for Unprotected Sites */
 "settings.unprotected.sites" = "Korumasız Siteler";
+
+/* Description shown above the list of unprotected sites */
+"settings.unprotected.sites.description" = "Bu siteler için Gizlilik Koruması uygulanmayacaktır.";
+
+/* Message shown when there are no unprotected sites */
+"settings.unprotected.sites.empty.state" = "Gizlilik Koruması tüm siteler için etkin";
 
 /* Settings cell for Version */
 "settings.version" = "Versiyon";

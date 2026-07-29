@@ -4197,6 +4197,9 @@
 /* The name of a settings category listing next steps */
 "settings.next.steps" = "Passaggi successivi";
 
+/* Accessibility label / title for the button that hides the Settings Next Steps section */
+"settings.next.steps.hide" = "Nascondi";
+
 /* Label describing a feature which is turned off */
 "settings.off" = "Off";
 
@@ -4391,6 +4394,12 @@
 
 /* Settings screen cell text for Unprotected Sites */
 "settings.unprotected.sites" = "Siti non protetti";
+
+/* Description shown above the list of unprotected sites */
+"settings.unprotected.sites.description" = "Questi siti non saranno ottimizzati dalla Protezione della privacy.";
+
+/* Message shown when there are no unprotected sites */
+"settings.unprotected.sites.empty.state" = "Protezione della privacy attivata per tutti i siti";
 
 /* Settings cell for Version */
 "settings.version" = "Versione";

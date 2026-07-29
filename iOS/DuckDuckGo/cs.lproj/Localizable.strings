@@ -4197,6 +4197,9 @@
 /* The name of a settings category listing next steps */
 "settings.next.steps" = "Další kroky";
 
+/* Accessibility label / title for the button that hides the Settings Next Steps section */
+"settings.next.steps.hide" = "Skrýt";
+
 /* Label describing a feature which is turned off */
 "settings.off" = "Vypnout";
 
@@ -4391,6 +4394,12 @@
 
 /* Settings screen cell text for Unprotected Sites */
 "settings.unprotected.sites" = "Nechráněné stránky";
+
+/* Description shown above the list of unprotected sites */
+"settings.unprotected.sites.description" = "Tyto weby nebudou vylepšeny ochranou soukromí.";
+
+/* Message shown when there are no unprotected sites */
+"settings.unprotected.sites.empty.state" = "Ochrana osobních údajů zapnuta pro všechny weby";
 
 /* Settings cell for Version */
 "settings.version" = "Verze";

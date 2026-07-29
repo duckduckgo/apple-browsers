@@ -83,6 +83,7 @@ extension OnboardingComparisonContent {
     static let mockBrowser = OnboardingComparisonContent(
         title: "Browser Comparison Title",
         subHeader: nil,
+        competitor: .safari,
         features: [
             .init(type: RebrandedComparisonTableModel.Feature.BrowserFeatureType.privateSearch, competitorAvailability: .unavailable, ddgAvailability: .available)
         ],
@@ -94,6 +95,7 @@ extension OnboardingComparisonContent {
     static let mockAI = OnboardingComparisonContent(
         title: "AI Comparison Title",
         subHeader: "AI Comparison SubHeader",
+        competitor: .ai,
         features: [
             .init(type: RebrandedComparisonTableModel.Feature.AIFeatureType.anonymousChats, competitorAvailability: .unavailable, ddgAvailability: .available)
         ],

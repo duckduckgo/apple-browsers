@@ -4197,6 +4197,9 @@
 /* The name of a settings category listing next steps */
 "settings.next.steps" = "Дальнейшие шаги";
 
+/* Accessibility label / title for the button that hides the Settings Next Steps section */
+"settings.next.steps.hide" = "Скрыть";
+
 /* Label describing a feature which is turned off */
 "settings.off" = "Выключено";
 
@@ -4391,6 +4394,12 @@
 
 /* Settings screen cell text for Unprotected Sites */
 "settings.unprotected.sites" = "Незащищенные сайты";
+
+/* Description shown above the list of unprotected sites */
+"settings.unprotected.sites.description" = "Сайты без защиты конфиденциальности.";
+
+/* Message shown when there are no unprotected sites */
+"settings.unprotected.sites.empty.state" = "Защита конфиденциальности включена на всех сайтах";
 
 /* Settings cell for Version */
 "settings.version" = "Версия";

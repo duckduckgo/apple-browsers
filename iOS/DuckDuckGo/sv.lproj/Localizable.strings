@@ -4197,6 +4197,9 @@
 /* The name of a settings category listing next steps */
 "settings.next.steps" = "Nästa steg";
 
+/* Accessibility label / title for the button that hides the Settings Next Steps section */
+"settings.next.steps.hide" = "Dölj";
+
 /* Label describing a feature which is turned off */
 "settings.off" = "Av";
 
@@ -4391,6 +4394,12 @@
 
 /* Settings screen cell text for Unprotected Sites */
 "settings.unprotected.sites" = "Oskyddade webbplatser";
+
+/* Description shown above the list of unprotected sites */
+"settings.unprotected.sites.description" = "Dessa webbplatser kommer inte att förbättras av integritetsskydd.";
+
+/* Message shown when there are no unprotected sites */
+"settings.unprotected.sites.empty.state" = "Integritetsskydd aktiverat för alla webbplatser";
 
 /* Settings cell for Version */
 "settings.version" = "Version";

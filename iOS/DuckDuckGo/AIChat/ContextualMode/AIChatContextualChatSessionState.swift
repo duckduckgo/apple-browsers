@@ -275,6 +275,13 @@ final class AIChatContextualChatSessionState {
         rebuildViewState()
     }
 
+    func attachContextFromSuggestionTap(_ context: AIChatPageContext) {
+        chipState = .attached(context)
+        userDowngradedToPlaceholder = false
+        emitDeliveryIfNeeded(context.contextData)
+        rebuildViewState()
+    }
+
     /// Call when starting a new chat (resetting frontend)
     func resetToNoChat() {
         frontendState = .noChat
@@ -717,7 +724,9 @@ private extension AIChatContextualChatSessionState {
         suggestionsResolveTask?.cancel()
         suggestionsResolveTask = Task { [weak self] in
             guard let resolved = await self?.suggestedPromptsProvider.resolveSuggestions(input) else { return }
-            guard let self, !Task.isCancelled else { return }
+            // A prompt submission may start a chat while the resolve is in flight; submission
+            // methods don't cancel this task, so drop late results to keep chat view state intact.
+            guard let self, !Task.isCancelled, !self.hasActiveChat else { return }
             self.suggestions = resolved
             self.suggestionsLoadState = .loaded
             self.rebuildViewState()
@@ -733,15 +742,28 @@ private extension AIChatContextualChatSessionState {
             content = .webView(restoreURL: contextualChatURL)
         }
 
+        let quickActions = resolveQuickActions()
         viewState = SheetViewState(
             content: content,
             isExpandButtonEnabled: frontendState == .noChat || contextualChatURL != nil,
             shouldShowNewChatButton: frontendState != .noChat,
             chipState: chipState,
-            quickActions: resolveQuickActions(),
-            suggestions: suggestions,
+            quickActions: quickActions,
+            suggestions: visibleSuggestions(reserving: quickActions.count),
             suggestionsLoadState: suggestionsLoadState
         )
+    }
+
+    func visibleSuggestions(reserving slots: Int) -> [ContextualSuggestedPrompt] {
+        let cap = max(0, suggestedPromptsProvider.maxSuggestedPrompts - slots)
+        guard suggestions.count > cap else { return suggestions }
+
+        let prioritySuggestionIDs = suggestedPromptsProvider.prioritySuggestionIDs
+        let prioritySuggestions = suggestions.filter { prioritySuggestionIDs.contains($0.id) }
+        let regularSuggestions = suggestions.filter { !prioritySuggestionIDs.contains($0.id) }
+        let priorityCount = min(prioritySuggestions.count, cap)
+
+        return Array(regularSuggestions.prefix(cap - priorityCount)) + Array(prioritySuggestions.prefix(priorityCount))
     }
 
     func emit(_ effect: SheetEffect) {

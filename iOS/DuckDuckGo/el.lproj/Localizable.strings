@@ -4197,6 +4197,9 @@
 /* The name of a settings category listing next steps */
 "settings.next.steps" = "Επόμενα βήματα";
 
+/* Accessibility label / title for the button that hides the Settings Next Steps section */
+"settings.next.steps.hide" = "Απόκρυψη";
+
 /* Label describing a feature which is turned off */
 "settings.off" = "Κλειστό";
 
@@ -4391,6 +4394,12 @@
 
 /* Settings screen cell text for Unprotected Sites */
 "settings.unprotected.sites" = "Μη προστατευόμενοι ιστότοποι";
+
+/* Description shown above the list of unprotected sites */
+"settings.unprotected.sites.description" = "Οι ιστότοποι αυτοί δεν θα ενισχυθούν από την Προστασία προσωπικών δεδομένων.";
+
+/* Message shown when there are no unprotected sites */
+"settings.unprotected.sites.empty.state" = "Η προστασία προσωπικών δεδομένων είναι ενεργοποιημένη για όλους τους ιστότοπους";
 
 /* Settings cell for Version */
 "settings.version" = "Έκδοση";

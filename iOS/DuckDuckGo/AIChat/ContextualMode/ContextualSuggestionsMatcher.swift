@@ -64,15 +64,14 @@ struct ContextualSuggestionsMatcher {
 
     private init() {}
 
-    private static let summarizePageID = "summarize-page"
-
     static func resolve(_ input: ResolvePageSuggestionsInput, catalog: SuggestionCatalog) -> [ContextualSuggestedPrompt] {
-        let candidateIds = collectCandidateIds(input, catalog: catalog)
+        let cap = max(1, catalog.maxSuggestedPrompts)
+        let candidateIds = collectCandidateIds(input, catalog: catalog, cap: cap)
         var seen = Set<String>()
         var resolved: [ContextualSuggestedPrompt] = []
 
         for id in candidateIds {
-            if resolved.count >= catalog.maxSuggestedPrompts { break }
+            if resolved.count >= cap { break }
             if seen.contains(id) { continue }
             seen.insert(id)
 
@@ -92,7 +91,7 @@ struct ContextualSuggestionsMatcher {
 
     // MARK: Candidate collection
 
-    private static func collectCandidateIds(_ input: ResolvePageSuggestionsInput, catalog: SuggestionCatalog) -> [String] {
+    private static func collectCandidateIds(_ input: ResolvePageSuggestionsInput, catalog: SuggestionCatalog, cap: Int) -> [String] {
         var contextual: [String]?
 
         if let signals = input.pageTypeSignals {
@@ -105,11 +104,21 @@ struct ContextualSuggestionsMatcher {
             contextual = matchByDomain(hostname, catalog.byDomain)
         }
 
-        // "Summarize this page" is a generic fallback: when page-tailored suggestions matched, drop it
-        // so it is only offered when nothing page-specific did. It is unconditional, so it is always
-        // present otherwise — this is the never-empty floor for the start surface.
-        let defaults = contextual != nil ? catalog.defaults.filter { $0 != summarizePageID } : catalog.defaults
-        return (contextual ?? []) + defaults
+        // Defaults split by whether they carry a condition.
+        // - Priority defaults (conditional, e.g. `translate-page` on `differentLanguage`) hold a slot
+        //   whenever their condition passes, so the cap displaces a page-tailored suggestion rather
+        //   than dropping them.
+        // - Floor defaults (unconditional, e.g. `summarize-page`) are a generic fallback: offered only
+        //   when nothing page-specific matched, so the start surface is never empty.
+        let priorityDefaults = catalog.defaults.filter { id in
+            guard let condition = catalog.catalog[id]?.condition else { return false }
+            return conditionPasses(condition, input: input)
+        }
+        let floorDefaults = catalog.defaults.filter { catalog.catalog[$0]?.condition == nil }
+
+        let body = contextual ?? floorDefaults
+        let bodyBudget = max(0, cap - priorityDefaults.count)
+        return Array(body.prefix(bodyBudget)) + priorityDefaults
     }
 
     private static func matchByJsonLdType(_ types: [String], _ mappings: [SuggestionCatalog.JSONLDMapping]) -> [String]? {
@@ -240,6 +249,15 @@ struct ContextualSuggestionsMatcher {
 
 struct DefaultContextualSuggestedPromptsProvider: ContextualSuggestedPromptsProviding {
     private let catalog: SuggestionCatalog?
+
+    var maxSuggestedPrompts: Int {
+        catalog?.maxSuggestedPrompts ?? Self.decodeFailureFallback.count
+    }
+
+    var prioritySuggestionIDs: Set<String> {
+        guard let catalog else { return [] }
+        return Set(catalog.defaults.filter { catalog.catalog[$0]?.condition != nil })
+    }
 
     init(catalog: SuggestionCatalog? = SuggestionCatalog.bundled) {
         self.catalog = catalog

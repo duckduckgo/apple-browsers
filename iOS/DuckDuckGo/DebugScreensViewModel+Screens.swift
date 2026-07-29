@@ -173,6 +173,9 @@ extension DebugScreensViewModel {
             .view(title: "What's New", { dependencies in
                 WhatsNewDebugView(keyValueStore: dependencies.keyValueStore, remoteMessagingDebugHandler: dependencies.remoteMessagingDebugHandler)
             }),
+            .view(title: "Next Steps Dismissal", { d in
+                SettingsNextStepsDebugView(keyValueStore: d.keyValueStore)
+            }),
 
             // MARK: Controllers
             .controller(title: "Image Cache", { d in

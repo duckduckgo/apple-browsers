@@ -4197,6 +4197,9 @@
 /* The name of a settings category listing next steps */
 "settings.next.steps" = "Järgmised sammud";
 
+/* Accessibility label / title for the button that hides the Settings Next Steps section */
+"settings.next.steps.hide" = "Peida";
+
 /* Label describing a feature which is turned off */
 "settings.off" = "Väljas";
 
@@ -4391,6 +4394,12 @@
 
 /* Settings screen cell text for Unprotected Sites */
 "settings.unprotected.sites" = "Kaitseta saidid";
+
+/* Description shown above the list of unprotected sites */
+"settings.unprotected.sites.description" = "Nendele saitidele ei laiene Privaatsuse kaitse.";
+
+/* Message shown when there are no unprotected sites */
+"settings.unprotected.sites.empty.state" = "Privaatsuse kaitse on lubatud kõigil saitidel";
 
 /* Settings cell for Version */
 "settings.version" = "Versioon";

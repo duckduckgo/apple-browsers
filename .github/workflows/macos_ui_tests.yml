@@ -95,7 +95,6 @@ jobs:
       create-dmg: false
       branch: ${{ inputs.branch || github.sha }}
       skip-notify: true
-      include-x86-architecture: false
     secrets: inherit
 
   # This job sets up the matrix strategy arguments for the ui-tests jobs
@@ -142,7 +141,7 @@ jobs:
             all_os_versions='true'
             runner='["macos-14-xlarge", "macos-15-xlarge", "macos-26-xlarge"]'
             include=$(jq -c <<< '[
-              {"runner": "macos-14-xlarge", "os-version": "14", "xcode-version": "15.4"},
+              {"runner": "macos-14-xlarge", "os-version": "14", "xcode-version": "16.2"},
               {"runner": "macos-15-xlarge", "os-version": "15", "xcode-version": "26.2"},
               {"runner": "macos-26-xlarge", "os-version": "26", "xcode-version": "26.4"}
             ]')

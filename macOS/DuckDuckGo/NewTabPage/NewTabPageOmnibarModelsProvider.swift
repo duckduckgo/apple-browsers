@@ -126,7 +126,7 @@ final class NewTabPageOmnibarModelsProvider: NewTabPageOmnibarModelsProviding {
     private func reasoningEfforts(for model: AIChatModel, userTier: AIChatUserTier) -> [NewTabPageDataModel.AIModelReasoningEffort] {
         model.availableReasoningModes.compactMap { mode in
             guard let effort = model.reasoningEffort(for: mode) else { return nil }
-            let isAvailable = model.accessibleReasoningModes.contains(mode)
+            let isAvailable = model.isAccessible(effort)
             let upsell = isAvailable ? nil : model.lowestPublicAccessTier(for: effort).flatMap { upsellString(for: userTier.upgradeFlow(for: $0)) }
             return NewTabPageDataModel.AIModelReasoningEffort(
                 id: effort.rawValue,

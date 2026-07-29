@@ -246,6 +246,34 @@ final class NewTabPageOmnibarModelsProviderTests: XCTestCase {
         XCTAssertEqual(efforts?.last?.name, UserText.aiChatReasoningEffortMediumTitle)
     }
 
+    /// `extendedReasoning` supports two raw efforts (`.high` then `.medium`); the representative
+    /// one picked for display is `.high`. Availability must be checked against that specific
+    /// effort, not whether the mode has *any* accessible effort — otherwise a Plus user with only
+    /// `.medium` access would see the `.high`-labeled row reported as available.
+    func testWhenRepresentativeEffortIsGatedButModeHasAnotherAccessibleEffortThenItIsMappedUnavailable() async {
+        mockSubscriptionManager.resultSubscription = .success(makeSubscription(tier: .plus))
+        mockModelsService.modelsToReturn = [
+            makeRemoteModel(
+                id: "reasoning-model",
+                supportedReasoningEffort: [.none, .low, .high, .medium],
+                accessTier: ["free", "plus", "pro"],
+                reasoningEffortAccess: [
+                    AIChatReasoningEffortAccess(effort: .none, accessTier: ["free", "plus", "pro"], entityHasAccess: true),
+                    AIChatReasoningEffortAccess(effort: .low, accessTier: ["free", "plus", "pro"], entityHasAccess: true),
+                    AIChatReasoningEffortAccess(effort: .high, accessTier: ["pro"], entityHasAccess: false),
+                    AIChatReasoningEffortAccess(effort: .medium, accessTier: ["plus", "pro"], entityHasAccess: true)
+                ]
+            )
+        ]
+
+        let sections = await provider.fetchAIModelSections()
+        let efforts = sections.flatMap(\.items).first(where: { $0.id == "reasoning-model" })?.reasoningEfforts
+
+        XCTAssertEqual(efforts?.map(\.id), ["none", "low", "high"])
+        XCTAssertEqual(efforts?.map(\.isAvailable), [true, true, false])
+        XCTAssertEqual(efforts?.last?.upsell, "upgrade")
+    }
+
     /// The same gated effort routes to "subscribe" rather than "upgrade" for a free user.
     func testWhenReasoningEffortIsGatedForFreeUserThenItIsMappedUnavailableWithSubscribeUpsell() async {
         mockModelsService.modelsToReturn = [

@@ -269,6 +269,10 @@ public enum SyncCredentialID {
     public static let thirdParty = "3party"
 }
 
+enum ProtectedKeyPurpose {
+    static let accountInfo = "account_info"
+}
+
 // AccessCredential is decoded from API responses using JSONDecoder.snakeCaseKeys. The server key
 // is "encrypted_3party_credential", and .convertFromSnakeCase maps that to encrypted3PartyCredential.
 // Adding a CodingKeys raw value for the literal server key would make decoding return nil.

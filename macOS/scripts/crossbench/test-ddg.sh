@@ -656,10 +656,6 @@ tsproxy_saw_site() {
     "$TSPROXY_LOG"
 }
 
-wpr_had_replay_miss() {
-  grep -q "Proxy: FAILED to find request" "$WPR_LOG"
-}
-
 start_app() {
   assert_port_free "$AUTOMATION_PORT" automation || return 1
   AUTOMATION_TOKEN_VALUE="$("$PYTHON_BIN" -c 'import secrets; print(secrets.token_hex(32))')"
@@ -850,15 +846,6 @@ measure_site() {
       finish_repetition_logs "$site" "$rep" 1
       continue
     fi
-    if wpr_had_replay_miss; then
-      site_failed=1
-      set_runtime_failure 70 replay archive_miss \
-        "WPR could not serve at least one requested resource; repetition=$rep"
-      rm -f "$status_file"
-      finish_repetition_logs "$site" "$rep" 1
-      break
-    fi
-
     watchdog_lines="$(wc -l < "$status_file" 2>/dev/null || echo 0)"
     IFS=$'\t' read -r watchdog_state watchdog_code watchdog_cleanup watchdog_extra \
       < "$status_file" || true

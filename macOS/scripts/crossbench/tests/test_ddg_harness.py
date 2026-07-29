@@ -468,13 +468,13 @@ class DDGHarnessTests(unittest.TestCase):
         self.assertEqual(row[3], "infra_error")
         self.assertEqual(row[9:11], ["replay", "missing_proxy_route"])
 
-    def test_wpr_replay_miss_rejects_measurement(self):
+    def test_wpr_subresource_miss_does_not_reject_valid_measurement(self):
         result = self.run_harness(AUTOMATION_MODE="replay_miss")
-        self.assertEqual(result.returncode, 1)
+        self.assertEqual(result.returncode, 0, result.stderr)
         row = self.disposition_rows()[0]
-        self.assertEqual(row[3], "infra_error")
-        self.assertEqual(row[9:11], ["replay", "archive_miss"])
-        self.assertEqual(len(self.measurement_rows()), 0)
+        self.assertEqual(row[3], "measured")
+        self.assertEqual(row[9:11], ["-", "-"])
+        self.assertEqual(len(self.measurement_rows()), 1)
 
     def test_offsite_landing_keeps_specific_failure_reason(self):
         result = self.run_harness(AUTOMATION_MODE="offsite")

@@ -1,7 +1,7 @@
 {
     "m_sync_login": {
         "description": "Fired when the app successfully logs in to an existing Sync account.",
-        "owners": ["amddg44", "frosty"],
+        "owners": ["amddg44", "pballart"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
         "parameters": [
@@ -414,7 +414,7 @@
     },
     "m_sync_signup_direct": {
         "description": "Fired when the app creates a Sync account directly for this device.",
-        "owners": ["amddg44", "frosty"],
+        "owners": ["amddg44", "pballart"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
         "parameters": [
@@ -429,7 +429,7 @@
     },
     "m_sync_signup_connect": {
         "description": "Fired when the app creates a Sync account while connecting another device.",
-        "owners": ["amddg44", "frosty"],
+        "owners": ["amddg44", "pballart"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
         "parameters": [
@@ -444,14 +444,14 @@
     },
     "sync_disabled": {
         "description": "Fired when the user turns off Sync without deleting server data.",
-        "owners": ["amddg44", "frosty"],
+        "owners": ["amddg44", "pballart"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion", "ui_version"]
     },
     "sync_disabledanddeleted": {
         "description": "Fired when the user turns off Sync and deletes the account's server data.",
-        "owners": ["amddg44", "frosty"],
+        "owners": ["amddg44", "pballart"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
         "parameters": [

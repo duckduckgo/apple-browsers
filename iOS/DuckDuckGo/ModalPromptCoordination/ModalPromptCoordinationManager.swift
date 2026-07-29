@@ -22,9 +22,6 @@ import UIKit
 @MainActor
 protocol ModalPromptCoordinationManaging {
     var didPresentModalPromptThisSession: Bool { get }
-    var didActuallyPresentModalPromptThisSession: Bool { get }
-    var hasActiveOrPendingModalAttempt: Bool { get }
-    var modalAttemptPhase: ModalPromptAttemptPhase { get }
 
     func presentModalPromptIfNeeded(from presenter: ModalPromptPresenter)
     func presentModalPromptIfNeeded(
@@ -105,7 +102,7 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
 
     private var attemptState = AttemptState.idle
     private var legacyActiveAttemptIDs = Set<UUID>()
-    private var lastSelectedExactRoot: UIViewController?
+    private weak var lastSelectedExactRoot: UIViewController?
     private weak var lastSelectedPresentationHost: UIViewController?
 
     private(set) var didActuallyPresentModalPromptThisSession = false
@@ -147,8 +144,14 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
         self.rootAttachmentChecker = rootAttachmentChecker ?? ModalPromptRootAttachmentChecker()
     }
 
+    /// Clears legacy and coordinated modal bookkeeping before the feature state flips.
+    ///
+    /// The cleanup is intentionally direction-independent, so `targetState` is not consulted here: both directions
+    /// must drop the other path's in-flight bookkeeping. The parameter is kept because transition callbacks carry
+    /// the target state by design.
     func promoQueueWillTransition(to targetState: PromoQueueFeatureTargetState) {
         legacyActiveAttemptIDs.removeAll()
+        latchActualPresentationHistoryIfPresentationActive()
         releaseCoordinationAttempt()
     }
 
@@ -359,6 +362,22 @@ private extension ModalPromptCoordinationManager {
             lastSelectedPresentationHost = presenter.modalPromptPresentationViewController
             presenter.present(modalPromptConfiguration.viewController, animated: modalPromptConfiguration.animated, completion: completion)
         }
+    }
+
+    /// Records an attempt that is already presenting as actual session history before a feature transition tears it down.
+    ///
+    /// The manager only enters `.presentationActive` after `present(_:animated:completion:)` has been called, so the modal
+    /// is on screen — or animating in — even when UIKit has not run the presentation completion yet. That makes it a
+    /// presented attempt, not a pre-presentation cancellation: only `.evaluating` and `.committed` are pre-presentation
+    /// cancellations, and those must keep clearing suppression. Latching here keeps `didPresentModalPromptThisSession`
+    /// true across the transition so no other promo can slip in underneath a visible modal.
+    ///
+    /// This must not be shared with `reconcilePresentedModal()`, which also clears a `.presentationActive` attempt: there,
+    /// a real presentation has already latched the flag from its completion, and a presentation UIKit refused genuinely
+    /// never appeared.
+    func latchActualPresentationHistoryIfPresentationActive() {
+        guard case .presentationActive = attemptState else { return }
+        didActuallyPresentModalPromptThisSession = true
     }
 
     func releaseCoordinationAttempt() {

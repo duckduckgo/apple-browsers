@@ -37,6 +37,7 @@ struct PromoQueueLeaseGeneration: Hashable {
     }
 }
 
+/// Opaque per-acquisition identity that travels with its modal lease through the evaluating, committed, and presentation-active phases, so a callback for an older attempt can be recognised and ignored.
 struct PromoQueueModalAttemptIdentity: Hashable {
     fileprivate let id: UUID
 
@@ -60,18 +61,27 @@ struct PromoQueueLeaseSnapshot: Equatable {
 }
 
 enum PromoQueueLeaseAcquisitionResult<Lease> {
+    /// The caller now owns the lease and is responsible for releasing it.
     case acquired(Lease)
+    /// A modal lease already owns the slot. Returned by both acquisitions.
     case blockedByModal
+    /// One or more visible promos own the slot, carried as their identities. Returned only by `acquireModalLease()`.
     case blockedByVisiblePromos(Set<VisiblePromoIdentity>)
+    /// The requested `(surfaceID, promoType)` slot already holds the carried identity, even when the promo ID differs. Returned only by `acquireVisiblePromoLease(for:)`.
     case occupiedSurfaceSlot(VisiblePromoIdentity)
 }
 
+/// The single mutual-exclusion authority for promo slots. It owns no provider policy, RMF selection, cooldown, or persistent history.
 @MainActor
 protocol PromoQueueLeaseArbitrating: AnyObject {
+    /// Read-only view of the current leases, for tests and the debug screen.
     var snapshot: PromoQueueLeaseSnapshot { get }
 
+    /// Acquires the modal lease, which succeeds only when there is no modal lease and no visible-promo leases.
     func acquireModalLease() -> PromoQueueLeaseAcquisitionResult<PromoQueueModalLease>
+    /// Acquires a visible-promo lease, which succeeds only when there is no modal lease and the identity's `(surfaceID, promoType)` slot is free, so several surfaces may hold leases concurrently but one slot may not hold two.
     func acquireVisiblePromoLease(for identity: VisiblePromoIdentity) -> PromoQueueLeaseAcquisitionResult<PromoQueueVisiblePromoLease>
+    /// Advances the generation and clears every lease, so outstanding tokens become no-ops. Used on a live feature-flag transition.
     func invalidateAllLeases()
 }
 
@@ -115,7 +125,6 @@ final class PromoQueueVisiblePromoLease {
 final class PromoQueueLeaseArbiter: PromoQueueLeaseArbitrating {
     private struct ModalLeaseRecord {
         let id: UUID
-        let generation: PromoQueueLeaseGeneration
         let attemptIdentity: PromoQueueModalAttemptIdentity
     }
 
@@ -131,7 +140,6 @@ final class PromoQueueLeaseArbiter: PromoQueueLeaseArbitrating {
 
     private struct VisiblePromoLeaseRecord {
         let id: UUID
-        let generation: PromoQueueLeaseGeneration
         let identity: VisiblePromoIdentity
     }
 
@@ -161,7 +169,6 @@ final class PromoQueueLeaseArbiter: PromoQueueLeaseArbitrating {
         let attemptIdentity = PromoQueueModalAttemptIdentity()
         modalLease = ModalLeaseRecord(
             id: leaseID,
-            generation: leaseGeneration,
             attemptIdentity: attemptIdentity
         )
 
@@ -188,7 +195,6 @@ final class PromoQueueLeaseArbiter: PromoQueueLeaseArbitrating {
         let leaseGeneration = generation
         visiblePromoLeases[slot] = VisiblePromoLeaseRecord(
             id: leaseID,
-            generation: leaseGeneration,
             identity: identity
         )
 
@@ -209,9 +215,9 @@ final class PromoQueueLeaseArbiter: PromoQueueLeaseArbitrating {
     }
 
     private func releaseModalLease(id: UUID, generation: PromoQueueLeaseGeneration) {
+        // `id` proves the stored record is this token's; `generation` rejects a token minted before an invalidation.
         guard let modalLease,
               modalLease.id == id,
-              modalLease.generation == generation,
               generation == self.generation else {
             return
         }
@@ -224,9 +230,9 @@ final class PromoQueueLeaseArbiter: PromoQueueLeaseArbitrating {
         id: UUID,
         generation: PromoQueueLeaseGeneration
     ) {
+        // `id` proves the record in this slot is this token's; `generation` rejects a token minted before an invalidation.
         guard let visiblePromoLease = visiblePromoLeases[slot],
               visiblePromoLease.id == id,
-              visiblePromoLease.generation == generation,
               generation == self.generation else {
             return
         }

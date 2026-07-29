@@ -28,9 +28,6 @@ final class MockModalPromptCoordinationManager: ModalPromptCoordinationManaging 
     private(set) var promoQueueWillTransitionTargets = [PromoQueueFeatureTargetState]()
     private(set) var promoQueueDidTransitionTargets = [PromoQueueFeatureTargetState]()
     var didPresentModalPromptThisSession = false
-    var didActuallyPresentModalPromptThisSession = false
-    var hasActiveOrPendingModalAttempt = false
-    var modalAttemptPhase = ModalPromptAttemptPhase.idle
     var coordinatedPresentationDisposition = ModalPromptLeaseDisposition.retained
     var reconcilePresentedModalResult = false
     private(set) var capturedModalLease: PromoQueueModalLease?

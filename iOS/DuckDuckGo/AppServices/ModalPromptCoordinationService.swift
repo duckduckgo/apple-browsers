@@ -39,6 +39,7 @@ extension MainViewController: ModalPromptPresenter {
 
 // MARK: - Promo Queue Feature State
 
+/// The resolved promo queue flag reading: `PromoQueueFeatureState`'s settled subset, so `.transitioning(to:)` cannot nest — the seed at init and a transition's destination.
 enum PromoQueueFeatureTargetState: Equatable {
     case disabled
     case enabled
@@ -49,8 +50,12 @@ enum PromoQueueFeatureTargetState: Equatable {
 }
 
 enum PromoQueueFeatureState: Equatable {
+    /// Coordination is bypassed: the legacy modal and RMF paths are in force.
     case disabled
+    /// The serialized main-actor flag-change barrier is up while moving to the carried target state: modal
+    /// evaluation is deferred and public NTP admission cannot acquire a lease.
     case transitioning(to: PromoQueueFeatureTargetState)
+    /// Coordinated admission is active.
     case enabled
 
     init(targetState: PromoQueueFeatureTargetState) {
@@ -71,11 +76,19 @@ enum PromoQueueFeatureState: Equatable {
 }
 
 enum VisiblePromoAdmissionResult {
+    /// Admitted: the caller owns the lease and must release it.
     case acquired(PromoQueueVisiblePromoLease)
+    /// A coordinated modal attempt owns the slot.
     case blockedByModal
+    /// Reserved: carries the blocking identities, but is not currently produced — visible-promo acquisition
+    /// only rejects on the modal lease and on an occupied surface slot, so only `acquireModalLease()` can be
+    /// blocked by visible promos.
     case blockedByVisiblePromos(Set<VisiblePromoIdentity>)
+    /// The requesting surface's `(surfaceID, promoType)` slot already holds a lease; carries the occupying identity.
     case occupiedSurfaceSlot(VisiblePromoIdentity)
+    /// The promo queue flag is off, so admission is not arbitrated.
     case featureDisabled
+    /// A flag transition barrier is up; the caller should retry after the transition.
     case unavailableDuringTransition
 }
 
@@ -111,23 +124,6 @@ protocol NewTabPagePromoCoordinating: AnyObject {
         for surfaceID: UUID,
         target: NewTabPagePromoRetrying
     ) -> NewTabPagePromoRetryRegistration
-}
-
-extension NewTabPagePromoCoordinating {
-    func admitVisiblePromo(_ identity: VisiblePromoIdentity) -> VisiblePromoAdmissionResult {
-        .featureDisabled
-    }
-
-    func releaseVisiblePromoLease(_ lease: PromoQueueVisiblePromoLease) {
-        lease.release()
-    }
-
-    func registerVisiblePromoRetry(
-        for surfaceID: UUID,
-        target: NewTabPagePromoRetrying
-    ) -> NewTabPagePromoRetryRegistration {
-        NewTabPagePromoRetryRegistration()
-    }
 }
 
 // MARK: - Service
@@ -371,8 +367,6 @@ final class ModalPromptCoordinationService {
 
         promoQueueFeatureState = .transitioning(to: targetState)
         defer {
-            promoQueueFeatureState = PromoQueueFeatureState(targetState: targetState)
-
             if let pendingTargetState = pendingPromoQueueFeatureTargetState {
                 pendingPromoQueueFeatureTargetState = nil
                 transitionPromoQueueFeature(to: pendingTargetState)
@@ -385,6 +379,9 @@ final class ModalPromptCoordinationService {
 
         modalPromptCoordinationManager.promoQueueDidTransition(to: targetState)
 
+        // The barrier must be lifted here, before the retry pass: retry targets come back through
+        // `admitVisiblePromo`, which answers `.unavailableDuringTransition` while it is still up. Do not
+        // move this into the `defer` above — that would run after the retries and re-write a stale value.
         promoQueueFeatureState = PromoQueueFeatureState(targetState: targetState)
         if targetState == .enabled {
             retryActiveVisiblePromoRegistrations()

@@ -370,6 +370,7 @@ public enum FeatureFlag: String {
     case showNTPAfterIdleReturn
 
     /// Coordinates launch modal prompts and Remote Messaging Framework cards.
+    /// https://app.asana.com/1/137249556945/project/1208671677432066/task/1214300205792360?focus=true
     case promoQueue
 
     /// Test-only feature flag for verifying UI test override mechanism.

@@ -30,9 +30,14 @@ name: 06_delete_account_v2
 # Try to login with the now-deleted account's recovery code and check for error
 - assertVisible: Sync With Another Device
 - tapOn: Sync With Another Device
-- tapOn: Passcode field
-- inputText: "0000"
-- pressKey: Enter
+# Authenticate only if prompted — the auth session may still be valid from a recent step.
+- runFlow:
+    when:
+      visible: Unlock device to set up Sync & Backup
+    commands:
+      - tapOn: Passcode field
+      - inputText: "0000"
+      - pressKey: Enter
 - runFlow:
     when:
       visible: Allows you to upload photographs and videos

@@ -7127,7 +7127,7 @@
     },
     "aichat.model-picker.advanced-section-header" : {
       "comment" : "Section header in the model picker menu for premium models that require a subscription",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -7187,7 +7187,7 @@
     },
     "aichat.model-picker.basic-models-section-header" : {
       "comment" : "Section header in the model picker menu for basic/free models when user has an active subscription",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -8938,7 +8938,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Get access to advanced AI models in Duck.ai by subscribing to DuckDuckGo, which also includes our VPN and other premium privacy protections."
+            "value" : "Get access to advanced AI models in Duck.ai, our VPN, and other premium protections by subscribing to DuckDuckGo."
           }
         },
         "es" : {

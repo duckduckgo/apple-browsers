@@ -262,6 +262,13 @@ final class SettingsViewModel: ObservableObject {
     @Published var shouldShowSetAsDefaultBrowser: Bool = false
     @Published var shouldShowImportPasswords: Bool = false
 
+    @Published var shouldShowAddToDockNextStep: Bool = true
+    @Published var shouldShowAddWidgetNextStep: Bool = true
+    @Published var shouldShowSetAddressBarPositionNextStep: Bool = true
+    @Published var shouldShowEnableVoiceSearchNextStep: Bool = true
+    @Published var nextStepsSectionHidden: Bool = false
+    @Published var shouldShowNextStepsHideButton: Bool = false
+
     // MARK: - Deep linking
     // Used to automatically navigate to a specific section
     // immediately after loading the Settings View
@@ -1092,6 +1099,7 @@ final class SettingsViewModel: ObservableObject {
         self.adBlockingAvailability = adBlockingAvailability
         setupNotificationObservers()
         updateRecentlyVisitedSitesVisibility()
+        refreshNextStepsVisibility(animated: false)
         startForwardingAdapterWillChangeEvents(afterInactivityOptionAdapter)
         startForwardingAdapterWillChangeEvents(lastTabShortcutAdapter)
     }
@@ -1226,6 +1234,7 @@ extension SettingsViewModel {
             .store(in: &cancellables)
 
         updateRecentlyVisitedSitesVisibility()
+        refreshNextStepsVisibility(animated: false)
 
         if #available(iOS 18.2, *) {
             updateCompleteSetupSectionVisiblity()
@@ -1408,6 +1417,16 @@ extension SettingsViewModel {
         static let didDismissSetAsDefaultBrowserKey = "com.duckduckgo.settings.setup.browser-default-dismissed"
         static let didDismissImportPasswordsKey = "com.duckduckgo.settings.setup.import-passwords-dismissed"
         static let shouldCheckIfDefaultBrowserKey = "com.duckduckgo.settings.setup.check-browser-default"
+
+        // Next Steps section: timestamp (Double, timeIntervalSinceReferenceDate) of the first tap on each item.
+        static let didTapAddToDockNextStepKey = "com.duckduckgo.settings.next-steps.add-to-dock-tapped-at"
+        static let didTapAddWidgetNextStepKey = "com.duckduckgo.settings.next-steps.add-widget-tapped-at"
+        // How long after tapping an instructional Next Steps item (Add to Dock / Add Widget) it stays visible.
+        static let nextStepTapDismissalInterval: TimeInterval = 24 * 60 * 60 // 1 day
+        // Whether the user has permanently hidden the entire Next Steps section.
+        static let nextStepsSectionHiddenKey = "com.duckduckgo.settings.next-steps.section-hidden"
+        // How long after install the "Hide" affordance for the Next Steps section becomes available.
+        static let nextStepsHideMinimumInstallAge: TimeInterval = 14 * 24 * 60 * 60 // 14 days
     }
 
     func onFirstAppear() {
@@ -1418,6 +1437,7 @@ extension SettingsViewModel {
     }
 
     func onSubsequentAppear() {
+        refreshNextStepsVisibility(animated: false)
         Task {
             await setupSubscriptionEnvironment()
         }
@@ -1446,6 +1466,78 @@ extension SettingsViewModel {
     func dismissImportPasswords() {
         try? keyValueStore.set(true, forKey: Constants.didDismissImportPasswordsKey)
         updateCompleteSetupSectionVisiblity()
+    }
+
+    // MARK: Next Steps section
+
+    var shouldShowNextStepsSection: Bool {
+        !nextStepsSectionHidden && (
+            shouldShowAddToDockNextStep
+                || shouldShowAddWidgetNextStep
+                || shouldShowSetAddressBarPositionNextStep
+                || shouldShowEnableVoiceSearchNextStep
+        )
+    }
+
+    func refreshNextStepsVisibility(animated: Bool) {
+        let apply = {
+            self.nextStepsSectionHidden = (try? self.keyValueStore.object(forKey: Constants.nextStepsSectionHiddenKey) as? Bool) ?? false
+            self.shouldShowSetAddressBarPositionNextStep = !self.isPad && self.appSettings.currentAddressBarPosition == .top
+            self.shouldShowEnableVoiceSearchNextStep = self.voiceSearchHelper.isSpeechRecognizerAvailable
+                && !self.voiceSearchHelper.isVoiceSearchEnabled
+            self.shouldShowAddToDockNextStep = !Self.hasTapDismissalElapsed(
+                tappedAt: try? self.keyValueStore.object(forKey: Constants.didTapAddToDockNextStepKey) as? Double,
+                interval: Constants.nextStepTapDismissalInterval)
+            self.shouldShowAddWidgetNextStep = !Self.hasTapDismissalElapsed(
+                tappedAt: try? self.keyValueStore.object(forKey: Constants.didTapAddWidgetNextStepKey) as? Double,
+                interval: Constants.nextStepTapDismissalInterval)
+            self.shouldShowNextStepsHideButton = Self.hasInstallGracePeriodElapsed(
+                installDate: StatisticsUserDefaults().installDate,
+                requiredInterval: Constants.nextStepsHideMinimumInstallAge)
+        }
+        if animated {
+            withAnimation { apply() }
+        } else {
+            apply()
+        }
+    }
+
+    func hideNextStepsSection() {
+        try? keyValueStore.set(true, forKey: Constants.nextStepsSectionHiddenKey)
+        withAnimation { nextStepsSectionHidden = true }
+    }
+
+    func recordAddToDockNextStepTapped() {
+        recordNextStepTapIfNeeded(forKey: Constants.didTapAddToDockNextStepKey)
+    }
+
+    func recordAddWidgetNextStepTapped() {
+        recordNextStepTapIfNeeded(forKey: Constants.didTapAddWidgetNextStepKey)
+    }
+
+    private func recordNextStepTapIfNeeded(forKey key: String) {
+        Self.recordFirstTap(forKey: key, in: keyValueStore)
+    }
+
+    static func recordFirstTap(forKey key: String,
+                               in keyValueStore: ThrowingKeyValueStoring,
+                               now: TimeInterval = Date().timeIntervalSinceReferenceDate) {
+        guard (try? keyValueStore.object(forKey: key) as? Double) == nil else { return }
+        try? keyValueStore.set(now, forKey: key)
+    }
+
+    static func hasTapDismissalElapsed(tappedAt: Double?,
+                                       now: TimeInterval = Date().timeIntervalSinceReferenceDate,
+                                       interval: TimeInterval) -> Bool {
+        guard let tappedAt else { return false }
+        return now - tappedAt >= interval
+    }
+
+    static func hasInstallGracePeriodElapsed(installDate: Date?,
+                                             now: Date = Date(),
+                                             requiredInterval: TimeInterval) -> Bool {
+        guard let installDate else { return false }
+        return now.timeIntervalSince(installDate) >= requiredInterval
     }
 
     @MainActor func shouldPresentAutofillViewWith(accountDetails: SecureVaultModels.WebsiteAccount?, card: SecureVaultModels.CreditCard?, showCreditCardManagement: Bool, showSettingsScreen: AutofillSettingsDestination? = nil, source: AutofillSettingsSource? = nil) {

@@ -193,6 +193,10 @@ extension Preferences {
                         .disabled(model.isPageContextToggleDisabled)
                         .padding(.leading, 19)
                     }
+
+                    if model.shouldShowPromptBarPreferences {
+                        PromptBarPreferencesView(preferences: model.promptBarPreferences)
+                    }
                 }
                                       .visibility(model.shouldShowAIFeatures ? .visible : .gone)
 

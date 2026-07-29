@@ -514,7 +514,7 @@ extension SyncSettingsViewController: ScanOrPasteCodeViewModelDelegate {
                    withAdditionalParameters: sourcePixelParameters,
                    includedParameters: [.appVersion],
                    onComplete: { _ in })
-        if isPresentingV2ConnectingSheet {
+        if useSimplifiedLayoutV2 {
             presentSuccessScreen(isRecovery: codeCollectionIntent == .recoverData)
         } else {
             presentSyncCompletionAfterDelay()
@@ -604,14 +604,18 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
     func controllerDidCompleteAccountConnection(shouldShowSyncEnabled: Bool, setupSource: SyncSetupSource, codeSource: SyncCodeSource) {
         sendSetupEndedSuccessfullyPixel(setupSource: setupSource, codeSource: codeSource)
         guard shouldShowSyncEnabled else { return }
-        self.viewModel.$devices
-            .removeDuplicates()
-            .dropFirst()
-            .prefix(1)
-            .sink { [weak self] _ in
-                guard let self else { return }
-                self.dismissVCAndShowDeviceSyncedToast()
-            }.store(in: &cancellables)
+        if useSimplifiedLayoutV2 {
+            presentSuccessScreen(isRecovery: false)
+        } else {
+            self.viewModel.$devices
+                .removeDuplicates()
+                .dropFirst()
+                .prefix(1)
+                .sink { [weak self] _ in
+                    guard let self else { return }
+                    self.dismissVCAndShowDeviceSyncedToast()
+                }.store(in: &cancellables)
+        }
     }
 
     func controllerDidCreateSyncAccount(shouldShowSyncEnabled: Bool) {
@@ -625,7 +629,11 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
     
     func controllerWillBeginTransmittingRecoveryKey() async {
         await dismissPresentedViewController()
-        await showPreparingSync()
+        if useSimplifiedLayoutV2 {
+            viewModel.connectingSheetPhase = .connecting(isRecovery: codeCollectionIntent == .recoverData)
+        } else {
+            await showPreparingSync()
+        }
     }
     
     private func waitForDevicesToChange(then action: @escaping (SyncSettingsViewController) -> Void) {
@@ -659,8 +667,15 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
     }
     
     func controllerDidReceiveRecoveryKey() {
+        guard useSimplifiedLayoutV2 else {
+            dismissPresentedViewController { [weak self] in
+                self?.showPreparingSync(nil)
+            }
+            return
+        }
         dismissPresentedViewController { [weak self] in
-            self?.showPreparingSync(nil)
+            guard let self, self.viewModel.connectingSheetPhase == nil else { return }
+            self.viewModel.connectingSheetPhase = .connecting(isRecovery: self.codeCollectionIntent == .recoverData)
         }
     }
     
@@ -696,7 +711,7 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
                 await connectionController.cancel()
             }
         }
-        if isPresentingV2ConnectingSheet {
+        if useSimplifiedLayoutV2 {
             presentSuccessScreen(isRecovery: codeCollectionIntent == .recoverData)
         } else {
             presentSyncCompletionAfterDelay()

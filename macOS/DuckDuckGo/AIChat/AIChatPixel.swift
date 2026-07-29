@@ -338,6 +338,10 @@ enum AIChatPixel: PixelKitEvent {
     /// Event Trigger: User selects a reasoning effort from the New Tab Page omnibar picker
     case aiChatNtpReasoningEffortSelected
 
+    /// Event Trigger: User taps a gated model or reasoning effort in the New Tab Page omnibar,
+    /// routing them to the subscription purchase/upgrade flow.
+    case aiChatNtpSubscriptionUpsellTriggered(flowType: String, source: String)
+
     /// Event Trigger: User taps "View all chats" from the New Tab Page omnibar
     case aiChatNtpViewAllChatsClicked
 
@@ -680,6 +684,8 @@ enum AIChatPixel: PixelKitEvent {
             return "aichat_ntp_model_selected"
         case .aiChatNtpReasoningEffortSelected:
             return "aichat_ntp_reasoning_effort_selected"
+        case .aiChatNtpSubscriptionUpsellTriggered:
+            return "aichat_ntp_subscription_upsell_triggered"
         case .aiChatNtpViewAllChatsClicked:
             return "aichat_ntp_view_all_chats_clicked"
         case .aiChatNewVoiceChatOmnibarNtp:
@@ -878,6 +884,8 @@ enum AIChatPixel: PixelKitEvent {
             return nil
         case .aiChatAddressBarSubscriptionUpsellTriggered(let currentTier, let requiredTier, let flowType):
             return ["current_tier": currentTier, "required_tier": requiredTier, "flow_type": flowType]
+        case .aiChatNtpSubscriptionUpsellTriggered(let flowType, let source):
+            return ["flow_type": flowType, "source": source]
         case .aiChatIsEnabled(let isEnabled):
             return ["is_enabled": isEnabled ? "1" : "0"]
         case .aiFeaturesState(let duckAI, let searchAssist, let hideAIImages, let noAI):
@@ -1029,6 +1037,7 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatNtpSubmitWithImage,
                 .aiChatNtpModelSelected,
                 .aiChatNtpReasoningEffortSelected,
+                .aiChatNtpSubscriptionUpsellTriggered,
                 .aiChatNtpViewAllChatsClicked,
                 .aiChatNewVoiceChatOmnibarNtp,
                 .aiChatNtpImageGenerationSubmitted,

@@ -403,7 +403,7 @@ public final class AttributedMetricManager: @unchecked Sendable {
         guard dataStorage.searchLastThreshold != daysSinceInstalled else { return }
 
         let search8Days = dataStorage.search8Days
-        let result = search8Days.past7DaysAverage
+        let result = search8Days.past7DaysAverage(daysSinceInstalled: daysSinceInstalled)
 
         guard result.average > 0 else { return }
 
@@ -420,7 +420,7 @@ public final class AttributedMetricManager: @unchecked Sendable {
             pixelKit?.fire(AttributedMetricPixel.userAverageSearchesPastWeekFirstMonth(origin: originOrInstall.origin,
                                                                                        installDate: originOrInstall.installDate,
                                                                                        count: bucket.value,
-                                                                                       dayAverage: result.daysCounted,
+                                                                                       dayAverage: result.dayAverage,
                                                                                        bucketVersion: bucket.version),
                            frequency: .legacyDailyNoSuffix,
                            includeAppVersionParameter: false,
@@ -435,7 +435,7 @@ public final class AttributedMetricManager: @unchecked Sendable {
             pixelKit?.fire(AttributedMetricPixel.userAverageSearchesPastWeek(origin: originOrInstall.origin,
                                                                              installDate: originOrInstall.installDate,
                                                                              count: bucket.value,
-                                                                             dayAverage: result.daysCounted,
+                                                                             dayAverage: result.dayAverage,
                                                                              bucketVersion: bucket.version),
                            frequency: .legacyDailyNoSuffix,
                            includeAppVersionParameter: false,
@@ -462,7 +462,7 @@ public final class AttributedMetricManager: @unchecked Sendable {
 
         let adClick8Days = dataStorage.adClick8Days
         guard adClick8Days.countPast7Days > 0 else { return }
-        let result = adClick8Days.past7DaysAverage
+        let result = adClick8Days.past7DaysAverage(daysSinceInstalled: daysSinceInstalled)
         guard let bucket = try? bucketModifier.bucket(value: result.average, pixelName: .userAverageAdClicksPastWeek) else {
             Logger.attributedMetric.error("Failed to bucket average AD click value")
             return
@@ -472,7 +472,7 @@ public final class AttributedMetricManager: @unchecked Sendable {
         pixelKit?.fire(AttributedMetricPixel.userAverageAdClicksPastWeek(origin: originOrInstall.origin,
                                                                          installDate: originOrInstall.installDate,
                                                                          count: bucket.value,
-                                                                         dayAverage: result.daysCounted,
+                                                                         dayAverage: result.dayAverage,
                                                                          bucketVersion: bucket.version),
                        frequency: .legacyDailyNoSuffix,
                        includeAppVersionParameter: false,
@@ -498,7 +498,7 @@ public final class AttributedMetricManager: @unchecked Sendable {
 
         let duckAIChat8Days = dataStorage.duckAIChat8Days
         guard duckAIChat8Days.countPast7Days > 0 else { return }
-        let result = duckAIChat8Days.past7DaysAverage
+        let result = duckAIChat8Days.past7DaysAverage(daysSinceInstalled: daysSinceInstalled)
         guard let bucket = try? bucketModifier.bucket(value: result.average, pixelName: .userAverageDuckAiUsagePastWeek) else {
             Logger.attributedMetric.error("Failed to bucket average Duck.AI chat value")
             return
@@ -508,7 +508,7 @@ public final class AttributedMetricManager: @unchecked Sendable {
         pixelKit?.fire(AttributedMetricPixel.userAverageDuckAiUsagePastWeek(origin: originOrInstall.origin,
                                                                             installDate: originOrInstall.installDate,
                                                                             count: bucket.value,
-                                                                            dayAverage: result.daysCounted,
+                                                                            dayAverage: result.dayAverage,
                                                                             bucketVersion: bucket.version),
                        frequency: .legacyDailyNoSuffix,
                        includeAppVersionParameter: false,

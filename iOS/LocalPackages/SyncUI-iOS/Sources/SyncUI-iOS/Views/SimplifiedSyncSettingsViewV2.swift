@@ -224,13 +224,13 @@ extension SimplifiedSyncSettingsViewV2 {
             .animation(.easeInOut(duration: 0.3), value: model.isBusy)
             .disabled(model.isBusy || (!model.isSyncEnabled && !model.isAccountCreationAvailable))
         }
-        .listRowBackground(Color(designSystemColor: .surface))
+        .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
 
         if !model.isSyncEnabled {
             Section {
                 syncWithAnotherDeviceButton
             }
-            .listRowBackground(Color(designSystemColor: .surface))
+            .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
         }
     }
 
@@ -274,7 +274,7 @@ extension SimplifiedSyncSettingsViewV2 {
         } header: {
             Text(UserText.simplifiedRecoverSyncedDataSectionHeader)
         }
-        .listRowBackground(Color(designSystemColor: .surface))
+        .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
     }
 
     @ViewBuilder
@@ -293,7 +293,7 @@ extension SimplifiedSyncSettingsViewV2 {
         } header: {
             Text(UserText.simplifiedDownloadSectionHeader)
         }
-        .listRowBackground(Color(designSystemColor: .surface))
+        .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
     }
 }
 
@@ -420,7 +420,7 @@ extension SimplifiedSyncSettingsViewV2 {
                 model.delegate?.refreshDevices(clearDevices: false)
             }
         }
-        .listRowBackground(Color(designSystemColor: .surface))
+        .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
     }
 
     @ViewBuilder
@@ -527,7 +527,7 @@ extension SimplifiedSyncSettingsViewV2 {
         .onAppear {
             model.delegate?.updateOptions()
         }
-        .listRowBackground(Color(designSystemColor: .surface))
+        .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
     }
 
     // MARK: Recovery
@@ -581,7 +581,7 @@ extension SimplifiedSyncSettingsViewV2 {
             Text(LocalizedStringKey(String(format: UserText.simplifiedRecoverySectionFooterFormat, "ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting#does-my-sync--backup-data-ever-expire")))
                 .tint(Color(designSystemColor: .accentPrimary))
         }
-        .listRowBackground(Color(designSystemColor: .surface))
+        .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
     }
 
     // MARK: Delete
@@ -595,7 +595,7 @@ extension SimplifiedSyncSettingsViewV2 {
                 Text(UserText.simplifiedDeleteSyncDataButton)
             }
         }
-        .listRowBackground(Color(designSystemColor: .surface))
+        .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
     }
 }
 

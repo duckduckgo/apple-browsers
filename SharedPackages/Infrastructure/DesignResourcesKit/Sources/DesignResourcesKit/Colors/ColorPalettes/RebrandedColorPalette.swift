@@ -102,7 +102,12 @@ struct RebrandedColorPalette: ColorPaletteDefinition {
     }
 
     static func dynamicColor(for singleUseColor: SingleUseColor) -> DynamicColor {
-        DefaultColorPalette.dynamicColor(for: singleUseColor)
+        switch singleUseColor {
+        case .groupedListContentBackground:
+            return dynamicColor(for: DesignSystemColor.surfaceTertiary)
+        default:
+            return DefaultColorPalette.dynamicColor(for: singleUseColor)
+        }
     }
 }
 

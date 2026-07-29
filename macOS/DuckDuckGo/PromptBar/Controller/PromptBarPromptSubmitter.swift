@@ -89,13 +89,28 @@ final class PromptBarPromptSubmitter: PromptBarPromptSubmitting {
     }
 
     func open(url: URL, preferringWindowOn screen: NSScreen?) {
-        // `show(url:)` targets the last key window, so promote the screen-scoped one before asking.
-        windowToReuse(on: screen)?.window?.makeKeyAndOrderFront(nil)
+        if let windowController = windowToReuse(on: screen) {
+            // `show(url:)` targets the last key window, so promote the screen-scoped one before asking.
+            windowController.window?.makeKeyAndOrderFront(nil)
+            showInLastKeyWindow(url)
+        } else if let visibleFrame = screen?.visibleFrame {
+            // Placed explicitly for the same reason as `submit(query:)`: `show(url:)`'s own
+            // new-window fallback cascades off the last key window, i.e. onto its display.
+            WindowsManager.openNewWindow(with: url,
+                                         source: .userEntered(url.absoluteString),
+                                         droppingPoint: Self.newWindowDroppingPoint(in: visibleFrame))
+        } else {
+            showInLastKeyWindow(url)
+        }
+
+        NSApp.activate(ignoringOtherApps: true)
+    }
+
+    private func showInLastKeyWindow(_ url: URL) {
         windowControllersManager.show(url: url,
                                       source: .userEntered(url.absoluteString),
                                       newTab: true,
                                       selected: true)
-        NSApp.activate(ignoringOtherApps: true)
     }
 
     /// `droppingPoint` is a window's top-center: centered on the display, flush with its visible top.

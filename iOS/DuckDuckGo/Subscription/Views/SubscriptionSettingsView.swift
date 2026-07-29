@@ -158,7 +158,7 @@ struct SubscriptionSettingsViewV2: View {
     private var devicesSectionFooter: some View {
         let hasEmail = !(viewModel.state.subscriptionEmail ?? "").isEmpty
         let footerText = hasEmail ? UserText.subscriptionDevicesSectionWithEmailFooter : UserText.subscriptionDevicesSectionNoEmailFooter
-        return Text(.init("\(footerText)")) // required to parse markdown formatting
+        return Text(.init("\(footerText)"))
             .environment(\.openURL, OpenURLAction { _ in
                 viewModel.displayLearnMoreView(true)
                 return .handled

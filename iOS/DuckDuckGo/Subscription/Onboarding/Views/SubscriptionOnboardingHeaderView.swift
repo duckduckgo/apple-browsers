@@ -74,7 +74,7 @@ private extension SubscriptionOnboardingHeaderView {
     /// the current section's info screen, so any tap fires `onInfoLinkTap`; when it's nil the tap defers to
     /// the system URL handler.
     func explanationView(_ explanation: String) -> some View {
-        Text(.init("\(explanation)")) // required to parse markdown formatting
+        Text(.init("\(explanation)"))
             .daxSubheadRegular()
             .multilineTextAlignment(.center)
             .foregroundColor(Color(designSystemColor: .textSecondary))

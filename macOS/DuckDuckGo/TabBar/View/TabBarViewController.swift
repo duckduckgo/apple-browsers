@@ -1078,6 +1078,15 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         return icon
     }
 
+    /// Copies a glyph (avoids mutating the shared asset) and sizes it for the context menu. Both items
+    /// use their 24pt variants resized to 16 so they share the same design grid and render at a
+    /// consistent visual size.
+    static func contextMenuIcon(_ image: NSImage) -> NSImage {
+        guard let icon = image.copy() as? NSImage else { return image }
+        icon.size = NSSize(width: 16, height: 16)
+        return icon
+    }
+
     /// Whether a Duck.ai chat is currently presented for the selected tab (docked sidebar or floating).
     var isDuckAIChatPresented: Bool {
         guard let tab = tabCollectionViewModel.selectedTabViewModel?.tab else { return false }
@@ -2847,6 +2856,7 @@ extension TabBarViewController: NSMenuDelegate {
             keyEquivalent: "Y"
         )
         duckAIItem.target = self
+        duckAIItem.image = Self.contextMenuIcon(DesignSystemImages.Glyphs.Size24.aiChat)
         menu.addItem(duckAIItem)
 
         if !isMenuButtonLayout {
@@ -2868,6 +2878,7 @@ extension TabBarViewController: NSMenuDelegate {
             keyEquivalent: ""
         )
         settingsItem.target = self
+        settingsItem.image = Self.contextMenuIcon(DesignSystemImages.Glyphs.Size24.settingsAiChat)
         menu.addItem(settingsItem)
     }
 

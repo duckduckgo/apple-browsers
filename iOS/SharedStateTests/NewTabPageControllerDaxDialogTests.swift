@@ -278,11 +278,6 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
     }
 }
 
-@MainActor
-private final class MockNewTabPagePromoCoordinator: NewTabPagePromoCoordinating {
-    let promoQueueFeatureState = PromoQueueFeatureState.disabled
-}
-
 class CapturingVariantManager: VariantManager {
     var currentVariant: Variant?
     var capturedFeatureName: FeatureName?

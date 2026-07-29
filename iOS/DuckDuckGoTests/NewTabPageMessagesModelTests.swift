@@ -342,11 +342,6 @@ final class NewTabPageMessagesModelTests: XCTestCase {
     }
 }
 
-@MainActor
-private final class MockNewTabPagePromoCoordinator: NewTabPagePromoCoordinating {
-    let promoQueueFeatureState = PromoQueueFeatureState.disabled
-}
-
 extension NewTabPageMessagesModelTests: MessageNavigationDelegate {
 
     func segueToSettingsAIChat(openedFromSERPSettingsButton: Bool, presentationStyle: PresentationContext.Style) {

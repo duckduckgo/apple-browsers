@@ -221,7 +221,7 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
             whatsNewRepository: MockWhatsNewMessageRepository(scheduledRemoteMessage: nil),
             darkReaderFeatureSettings: MockDarkReaderFeatureSettings(),
             onboardingManager: OnboardingManagerMock(),
-            newTabPagePromoCoordinator: MockOnboardingNewTabPagePromoCoordinator()
+            newTabPagePromoCoordinator: MockNewTabPagePromoCoordinator()
         )
         let window = UIWindow(frame: UIScreen.main.bounds)
         window.rootViewController = UIViewController()
@@ -279,9 +279,4 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
         XCTAssertTrue(contextualOnboardingLogicMock.didCallEnableAddFavoriteFlow)
     }
 
-}
-
-@MainActor
-private final class MockOnboardingNewTabPagePromoCoordinator: NewTabPagePromoCoordinating {
-    let promoQueueFeatureState = PromoQueueFeatureState.disabled
 }

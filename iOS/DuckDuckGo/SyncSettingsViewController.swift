@@ -603,10 +603,10 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
 
     func controllerDidCompleteAccountConnection(shouldShowSyncEnabled: Bool, setupSource: SyncSetupSource, codeSource: SyncCodeSource) {
         sendSetupEndedSuccessfullyPixel(setupSource: setupSource, codeSource: codeSource)
-        guard shouldShowSyncEnabled else { return }
         if useSimplifiedLayoutV2 {
             presentSuccessScreen(isRecovery: false)
         } else {
+            guard shouldShowSyncEnabled else { return }
             self.viewModel.$devices
                 .removeDuplicates()
                 .dropFirst()

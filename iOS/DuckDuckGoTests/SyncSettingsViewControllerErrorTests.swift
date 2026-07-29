@@ -369,6 +369,26 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
     }
 
     @MainActor
+    func testWhenV1ConnectCreatesAccountWithSimplifiedV2LayoutThenCompletionShowsSuccess() {
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.simplifiedSyncSetupV2])
+        let spyVC = SpySyncSettingsViewController(
+            syncService: ddgSyncing,
+            syncBookmarksAdapter: syncBookmarksAdapter,
+            syncCredentialsAdapter: syncCredentialsAdapter,
+            syncCreditCardsAdapter: syncCreditCardsAdapter,
+            syncPausedStateManager: errorHandler,
+            featureFlagger: featureFlagger,
+            syncAutoRestoreHandler: syncAutoRestoreHandler
+        )
+        spyVC.viewModel.connectingSheetPhase = .connecting(isRecovery: false)
+
+        spyVC.controllerDidCreateSyncAccount(shouldShowSyncEnabled: true)
+        spyVC.controllerDidCompleteAccountConnection(shouldShowSyncEnabled: false, setupSource: .connect, codeSource: .qrCode)
+
+        XCTAssertEqual(spyVC.viewModel.connectingSheetPhase, .connecting(isRecovery: false, isFinishing: true))
+    }
+
+    @MainActor
     func testWhenLegacyConnectURLPairingInfoIsPresentThenPairingIsSilentlyDropped() throws {
         let syncCode = SyncCode(recovery: nil,
                                 connect: SyncCode.ConnectCode(deviceId: "device-id", secretKey: Data("secret".utf8)),

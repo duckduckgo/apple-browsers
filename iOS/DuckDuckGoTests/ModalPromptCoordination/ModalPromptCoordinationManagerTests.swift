@@ -442,7 +442,8 @@ final class ModalPromptCoordinationManagerTests {
 
     // MARK: - Promo Queue Attempt Phases
 
-    @Test("Coordinated Cooldown Releases Lease Without Querying Providers")
+    @available(iOS 16, *)
+    @Test("Coordinated Cooldown Releases Lease Without Querying Providers", .timeLimit(.minutes(1)))
     func whenCoordinatedAttemptIsInCooldownThenLeaseIsReleasedSynchronously() {
         cooldownManagerMock.cooldownInfoToReturn = .inCoolDown
         let provider = MockModalPromptProvider()
@@ -463,7 +464,8 @@ final class ModalPromptCoordinationManagerTests {
         #expect(!provider.didCallProvideModalPrompt)
     }
 
-    @Test("Coordinated No Provider Releases Lease")
+    @available(iOS 16, *)
+    @Test("Coordinated No Provider Releases Lease", .timeLimit(.minutes(1)))
     func whenNoCoordinatedProviderReturnsPromptThenLeaseIsReleasedSynchronously() {
         cooldownManagerMock.cooldownInfoToReturn = .notInCoolDown
         let provider = MockModalPromptProvider(shouldReturnPrompt: false)
@@ -484,7 +486,8 @@ final class ModalPromptCoordinationManagerTests {
         #expect(!sut.hasActiveOrPendingModalAttempt)
     }
 
-    @Test("Same Lease Attempt Moves From Committed To Presentation Active")
+    @available(iOS 16, *)
+    @Test("Same Lease Attempt Moves From Committed To Presentation Active", .timeLimit(.minutes(1)))
     func whenCoordinatedPromptIsSelectedThenSameAttemptIdentityMovesThroughPhases() {
         cooldownManagerMock.cooldownInfoToReturn = .notInCoolDown
         let provider = MockModalPromptProvider()
@@ -511,7 +514,8 @@ final class ModalPromptCoordinationManagerTests {
         #expect(promoQueueLeaseArbiter.snapshot.modalAttemptIdentity == lease.attemptIdentity)
     }
 
-    @Test("Nested Child Does Not Release Exact Selected Root")
+    @available(iOS 16, *)
+    @Test("Nested Child Does Not Release Exact Selected Root", .timeLimit(.minutes(1)))
     func whenSelectedRootPresentsNestedChildThenReconciliationRetainsLease() {
         cooldownManagerMock.cooldownInfoToReturn = .notInCoolDown
         let provider = MockModalPromptProvider()
@@ -529,20 +533,37 @@ final class ModalPromptCoordinationManagerTests {
         let lease = acquireModalLease()
         _ = sut.presentModalPromptIfNeeded(from: presenterMock, with: lease)
         schedulerMock.executeScheduledBlock()
-        attachmentChecker.attachedRoots.insert(ObjectIdentifier(exactRoot))
+
+        // Give the selected root a real child presentation. The window exists only so UIKit accepts the nesting:
+        // without it `exactRoot.presentedViewController` stays nil and a topmost walk would resolve straight back to
+        // the exact root, leaving the two implementations indistinguishable.
+        let window = makeKeyWindow(withRoot: exactRoot)
+        defer { window.isHidden = true }
         let nestedChild = UIViewController()
-        attachmentChecker.topmostViewController = nestedChild
+        exactRoot.present(nestedChild, animated: false, completion: nil)
+
+        // Assert the UIKit nesting the rest of the test depends on before drawing conclusions from it.
+        #expect(exactRoot.presentedViewController === nestedChild)
+        #expect(nestedChild.presentingViewController === exactRoot)
+
+        // Only the exact root is attached as far as coordination is concerned: the child is never registered, so an
+        // implementation that consulted the topmost controller would report the attempt finished and drop the lease.
+        attachmentChecker.markAttached(exactRoot)
 
         #expect(!sut.reconcilePresentedModal())
         #expect(promoQueueLeaseArbiter.snapshot.hasModalLease)
+        #expect(attachmentChecker.didQuery(exactRoot))
+        #expect(!attachmentChecker.didQuery(nestedChild))
 
+        // The lease is released only once the retained root itself goes away, child presentation or not.
         attachmentChecker.attachedRoots.remove(ObjectIdentifier(exactRoot))
 
         #expect(sut.reconcilePresentedModal())
         #expect(!promoQueueLeaseArbiter.snapshot.hasModalLease)
     }
 
-    @Test("Disable Releases Coordination But Preserves Actual History And Visible Controller")
+    @available(iOS 16, *)
+    @Test("Disable Releases Coordination But Preserves Actual History And Visible Controller", .timeLimit(.minutes(1)))
     func whenFeatureDisablesAfterPresentationThenHistoryAndUIKitModalRemain() {
         cooldownManagerMock.cooldownInfoToReturn = .notInCoolDown
         let provider = MockModalPromptProvider()
@@ -566,7 +587,52 @@ final class ModalPromptCoordinationManagerTests {
         #expect(presenterMock.capturedViewController === presentedRoot)
     }
 
-    @Test("Enabling Re-Adopts Attached Root Observed On Legacy Path")
+    @available(iOS 16, *)
+    @Test("Disable During Present Animation Preserves Actual History", .timeLimit(.minutes(1)))
+    func whenFeatureDisablesDuringPresentAnimationThenActualHistoryIsPreserved() {
+        // GIVEN
+        cooldownManagerMock.cooldownInfoToReturn = .notInCoolDown
+        let provider = MockModalPromptProvider()
+        let deferredPresenter = DeferredCompletionModalPromptPresenter()
+        sut = ModalPromptCoordinationManager(
+            providers: [provider],
+            cooldownManager: cooldownManagerMock,
+            onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
+            modalPromptScheduling: schedulerMock
+        )
+        let lease = acquireModalLease()
+        _ = sut.presentModalPromptIfNeeded(from: deferredPresenter, with: lease)
+        schedulerMock.executeScheduledBlock()
+        let presentedRoot = deferredPresenter.capturedViewController
+
+        // The presentation is in flight: the modal is on screen but UIKit has not run the completion yet.
+        #expect(deferredPresenter.didCallPresent)
+        #expect(sut.modalAttemptPhase == .presentationActive(lease.attemptIdentity))
+        #expect(!sut.didActuallyPresentModalPromptThisSession)
+        #expect(sut.didPresentModalPromptThisSession)
+
+        // WHEN
+        sut.promoQueueWillTransition(to: .disabled)
+
+        // THEN
+        #expect(sut.modalAttemptPhase == .idle)
+        #expect(sut.didActuallyPresentModalPromptThisSession)
+        #expect(sut.didPresentModalPromptThisSession)
+        #expect(!promoQueueLeaseArbiter.snapshot.hasModalLease)
+        #expect(deferredPresenter.capturedViewController === presentedRoot)
+
+        // WHEN the withheld UIKit completion finally lands, session history stays latched.
+        deferredPresenter.completePendingPresentation()
+
+        // THEN
+        #expect(sut.modalAttemptPhase == .idle)
+        #expect(sut.didPresentModalPromptThisSession)
+        #expect(provider.didCallDidPresentModal)
+    }
+
+    @available(iOS 16, *)
+    @Test("Enabling Re-Adopts Attached Root Observed On Legacy Path", .timeLimit(.minutes(1)))
     func whenLegacyRootIsAttachedThenEnablingReAdoptsModalLease() {
         cooldownManagerMock.cooldownInfoToReturn = .notInCoolDown
         let provider = MockModalPromptProvider()
@@ -596,7 +662,80 @@ final class ModalPromptCoordinationManagerTests {
         }
     }
 
-    @Test("Enabling Invalidates Legacy Delayed Presentation")
+    @available(iOS 16, *)
+    @Test("Enabling Re-Adopts Root Attached To The Recorded Presentation Host", .timeLimit(.minutes(1)))
+    func whenLegacyRootIsAttachedToRecordedHostThenEnablingReAdoptsModalLease() {
+        // GIVEN
+        cooldownManagerMock.cooldownInfoToReturn = .notInCoolDown
+        let provider = MockModalPromptProvider()
+        let exactRoot = UIViewController()
+        provider.modalConfigurationToReturn = ModalPromptConfiguration(viewController: exactRoot)
+        let presentationHost = UIViewController()
+        presenterMock.modalPromptPresentationViewController = presentationHost
+        let attachmentChecker = MockModalPromptRootAttachmentChecker()
+        attachmentChecker.markAttached(exactRoot, presentedBy: presentationHost)
+        sut = ModalPromptCoordinationManager(
+            providers: [provider],
+            cooldownManager: cooldownManagerMock,
+            onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
+            modalPromptScheduling: schedulerMock,
+            rootAttachmentChecker: attachmentChecker
+        )
+        sut.presentModalPromptIfNeeded(from: presenterMock)
+        schedulerMock.executeScheduledBlock()
+
+        // WHEN
+        sut.promoQueueWillTransition(to: .enabled)
+        promoQueueLeaseArbiter.invalidateAllLeases()
+        sut.promoQueueDidTransition(to: .enabled)
+
+        // THEN
+        #expect(promoQueueLeaseArbiter.snapshot.hasModalLease)
+        guard case .presentationActive = sut.modalAttemptPhase else {
+            Issue.record("Expected a root attached to the recorded presentation host to be re-adopted")
+            return
+        }
+    }
+
+    @available(iOS 16, *)
+    @Test("Enabling Does Not Re-Adopt Root Attached To A Different Host", .timeLimit(.minutes(1)))
+    func whenLegacyRootIsAttachedToAnotherHostThenEnablingDoesNotReAdoptModalLease() {
+        // GIVEN
+        cooldownManagerMock.cooldownInfoToReturn = .notInCoolDown
+        let provider = MockModalPromptProvider()
+        let exactRoot = UIViewController()
+        provider.modalConfigurationToReturn = ModalPromptConfiguration(viewController: exactRoot)
+        let presentationHost = UIViewController()
+        presenterMock.modalPromptPresentationViewController = presentationHost
+        let attachmentChecker = MockModalPromptRootAttachmentChecker()
+        // The root is attached, but to a controller the manager never presented from: a legacy-path modal that is
+        // still visible somewhere else must not be re-adopted underneath, or an RMF could be admitted below it.
+        let unrelatedHost = UIViewController()
+        attachmentChecker.markAttached(exactRoot, presentedBy: unrelatedHost)
+        sut = ModalPromptCoordinationManager(
+            providers: [provider],
+            cooldownManager: cooldownManagerMock,
+            onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
+            modalPromptScheduling: schedulerMock,
+            rootAttachmentChecker: attachmentChecker
+        )
+        sut.presentModalPromptIfNeeded(from: presenterMock)
+        schedulerMock.executeScheduledBlock()
+
+        // WHEN
+        sut.promoQueueWillTransition(to: .enabled)
+        promoQueueLeaseArbiter.invalidateAllLeases()
+        sut.promoQueueDidTransition(to: .enabled)
+
+        // THEN
+        #expect(!promoQueueLeaseArbiter.snapshot.hasModalLease)
+        #expect(sut.modalAttemptPhase == .idle)
+    }
+
+    @available(iOS 16, *)
+    @Test("Enabling Invalidates Legacy Delayed Presentation", .timeLimit(.minutes(1)))
     func whenFeatureEnablesDuringLegacyDelayThenStaleClosureCannotPresent() {
         cooldownManagerMock.cooldownInfoToReturn = .notInCoolDown
         let provider = MockModalPromptProvider()
@@ -675,18 +814,195 @@ final class ModalPromptCoordinationManagerTests {
         }
         return lease
     }
+
+    /// Stands up a visible window so UIKit accepts synchronous, unanimated presentations from `root`.
+    ///
+    /// Callers must hide the returned window again so it does not stay key for later tests.
+    private func makeKeyWindow(withRoot root: UIViewController) -> UIWindow {
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        window.rootViewController = root
+        window.makeKeyAndVisible()
+        return window
+    }
 }
 
 @MainActor
+@Suite("Modal Prompt Coordination - Root Attachment Checker")
+final class ModalPromptRootAttachmentCheckerTests {
+    private let sut: ModalPromptRootAttachmentChecker
+
+    init() {
+        sut = ModalPromptRootAttachmentChecker()
+    }
+
+    @available(iOS 16, *)
+    @Test("Root Presented By The Intended Presenter Is Attached To It", .timeLimit(.minutes(1)))
+    func whenRootIsPresentedByIntendedPresenterThenRoutedCheckPasses() {
+        // GIVEN
+        let intendedPresenter = UIViewController()
+        let window = makeKeyWindow(withRoot: intendedPresenter)
+        defer { window.isHidden = true }
+        let root = UIViewController()
+
+        // WHEN
+        intendedPresenter.present(root, animated: false, completion: nil)
+
+        // THEN — the UIKit relationship is asserted first, so the verdict below cannot pass for the wrong reason.
+        #expect(root.presentingViewController === intendedPresenter)
+        #expect(intendedPresenter.presentedViewController === root)
+        #expect(sut.isAttached(root, to: intendedPresenter))
+    }
+
+    @available(iOS 16, *)
+    @Test("Root Presented By Another Controller Is Not Attached To The Intended Presenter", .timeLimit(.minutes(1)))
+    func whenRootIsPresentedByAnotherControllerThenRoutedCheckFails() {
+        // GIVEN
+        let actualPresenter = UIViewController()
+        let window = makeKeyWindow(withRoot: actualPresenter)
+        defer { window.isHidden = true }
+        let root = UIViewController()
+        let unrelatedIntendedPresenter = UIViewController()
+
+        // WHEN
+        actualPresenter.present(root, animated: false, completion: nil)
+
+        // THEN — the root really is attached, so only the routed check can reject it.
+        #expect(root.presentingViewController === actualPresenter)
+        #expect(sut.isAttached(root))
+        #expect(!sut.isAttached(root, to: unrelatedIntendedPresenter))
+    }
+
+    @available(iOS 16, *)
+    @Test("Root Presenting Its Own Child Stays Attached To Its Presenter", .timeLimit(.minutes(1)))
+    func whenRootPresentsNestedChildThenRootRemainsAttached() {
+        // GIVEN
+        let intendedPresenter = UIViewController()
+        let window = makeKeyWindow(withRoot: intendedPresenter)
+        defer { window.isHidden = true }
+        let root = UIViewController()
+        let nestedChild = UIViewController()
+
+        // WHEN
+        intendedPresenter.present(root, animated: false, completion: nil)
+        root.present(nestedChild, animated: false, completion: nil)
+
+        // THEN — a child flow presented by the root does not detach the root itself.
+        #expect(root.presentingViewController === intendedPresenter)
+        #expect(root.presentedViewController === nestedChild)
+        #expect(nestedChild.presentingViewController === root)
+        #expect(sut.isAttached(root))
+        #expect(sut.isAttached(root, to: intendedPresenter))
+    }
+
+    @available(iOS 16, *)
+    @Test("Missing Intended Presenter Falls Back To The Plain Attachment Check", .timeLimit(.minutes(1)))
+    func whenIntendedPresenterIsNilThenPlainAttachmentCheckDecides() {
+        // GIVEN
+        let actualPresenter = UIViewController()
+        let window = makeKeyWindow(withRoot: actualPresenter)
+        defer { window.isHidden = true }
+        let attachedRoot = UIViewController()
+        let detachedRoot = UIViewController()
+
+        // WHEN
+        actualPresenter.present(attachedRoot, animated: false, completion: nil)
+
+        // THEN
+        #expect(attachedRoot.presentingViewController === actualPresenter)
+        #expect(sut.isAttached(attachedRoot, to: nil) == sut.isAttached(attachedRoot))
+        #expect(sut.isAttached(attachedRoot, to: nil))
+        #expect(sut.isAttached(detachedRoot, to: nil) == sut.isAttached(detachedRoot))
+        #expect(!sut.isAttached(detachedRoot, to: nil))
+    }
+
+    @available(iOS 16, *)
+    @Test("Detached Root Is Never Attached, With Or Without An Intended Presenter", .timeLimit(.minutes(1)))
+    func whenRootIsNotAttachedThenNoIntendedPresenterMakesItAttached() {
+        // GIVEN
+        let intendedPresenter = UIViewController()
+        let window = makeKeyWindow(withRoot: intendedPresenter)
+        defer { window.isHidden = true }
+        let root = UIViewController()
+
+        // THEN — nothing ever presented the root, so no intended presenter can make it count as attached.
+        #expect(!root.isBeingPresented)
+        #expect(root.presentingViewController == nil)
+        #expect(root.viewIfLoaded?.window == nil)
+        #expect(!sut.isAttached(root))
+        #expect(!sut.isAttached(root, to: intendedPresenter))
+        #expect(!sut.isAttached(root, to: nil))
+    }
+
+    /// Stands up a visible window so UIKit accepts synchronous, unanimated presentations from `root`.
+    ///
+    /// Callers must hide the returned window again so it does not stay key for later tests.
+    private func makeKeyWindow(withRoot root: UIViewController) -> UIWindow {
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        window.rootViewController = root
+        window.makeKeyAndVisible()
+        return window
+    }
+}
+
+/// A presenter that withholds the UIKit presentation completion so an attempt can be observed mid-animation.
+@MainActor
+private final class DeferredCompletionModalPromptPresenter: ModalPromptPresenter {
+    var presentedViewController: UIViewController?
+    var modalPromptPresentationViewController: UIViewController?
+
+    private(set) var didCallPresent = false
+    private(set) var capturedViewController: UIViewController?
+    private var pendingCompletion: (() -> Void)?
+
+    func present(_ viewControllerToPresent: UIViewController, animated flag: Bool, completion: (() -> Void)?) {
+        didCallPresent = true
+        capturedViewController = viewControllerToPresent
+        pendingCompletion = completion
+    }
+
+    func completePendingPresentation() {
+        let completion = pendingCompletion
+        pendingCompletion = nil
+        completion?()
+    }
+}
+
+/// Models attachment as data the test owns: which roots count as attached, and which controller presents each of them.
+///
+/// `queriedRoots` records the controller the manager actually asked about, so a test can pin the *subject* of the
+/// predicate and not merely its answer — a check resolved against a topmost controller instead of the retained exact
+/// root asks about a different object even when both are on screen.
+@MainActor
 private final class MockModalPromptRootAttachmentChecker: ModalPromptRootAttachmentChecking {
     var attachedRoots = Set<ObjectIdentifier>()
-    var topmostViewController: UIViewController?
+
+    private(set) var queriedRoots: [ObjectIdentifier] = []
+    private var presentationHosts: [ObjectIdentifier: ObjectIdentifier] = [:]
+
+    /// Marks `root` as attached, optionally recording the controller presenting it so the routed check can match on it.
+    ///
+    /// A root marked without a host is attached only to the host-agnostic check, which is how a root observed on the
+    /// legacy path with no recorded presentation host behaves.
+    func markAttached(_ root: UIViewController, presentedBy host: UIViewController? = nil) {
+        attachedRoots.insert(ObjectIdentifier(root))
+        if let host {
+            presentationHosts[ObjectIdentifier(root)] = ObjectIdentifier(host)
+        }
+    }
+
+    func didQuery(_ root: UIViewController) -> Bool {
+        queriedRoots.contains(ObjectIdentifier(root))
+    }
 
     func isAttached(_ root: UIViewController) -> Bool {
-        attachedRoots.contains(ObjectIdentifier(root))
+        queriedRoots.append(ObjectIdentifier(root))
+        return attachedRoots.contains(ObjectIdentifier(root))
     }
 
     func isAttached(_ root: UIViewController, to intendedPresenter: UIViewController?) -> Bool {
-        isAttached(root)
+        guard isAttached(root) else { return false }
+        guard let intendedPresenter else { return true }
+
+        return presentationHosts[ObjectIdentifier(root)] == ObjectIdentifier(intendedPresenter)
     }
 }

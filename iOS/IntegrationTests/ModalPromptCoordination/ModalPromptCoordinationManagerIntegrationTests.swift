@@ -350,7 +350,8 @@ final class ModalPromptCoordinationManagerIntegrationTests {
 
     // MARK: - Promo Queue Lease Integration
 
-    @Test("Coordinated Presentation Retains Lease And Records Cooldown")
+    @available(iOS 16, *)
+    @Test("Coordinated Presentation Retains Lease And Records Cooldown", .timeLimit(.minutes(1)))
     func whenCoordinatedPromptPresentsThenLeaseAndPersistentCooldownAreRetained() throws {
         let provider = MockModalPromptProvider()
         sut = ModalPromptCoordinationManager(
@@ -378,7 +379,8 @@ final class ModalPromptCoordinationManagerIntegrationTests {
         #expect(storedTimestamp == timeTraveller.getDate().timeIntervalSince1970)
     }
 
-    @Test("Coordinated Cooldown Denial Releases Lease Before Provider Evaluation")
+    @available(iOS 16, *)
+    @Test("Coordinated Cooldown Denial Releases Lease Before Provider Evaluation", .timeLimit(.minutes(1)))
     func whenPersistentCooldownBlocksCoordinatedAttemptThenLeaseIsReleased() {
         cooldownStore.lastPresentationTimestamp = timeTraveller.getDate().timeIntervalSince1970
         let provider = MockModalPromptProvider()

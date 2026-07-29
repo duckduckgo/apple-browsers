@@ -33,6 +33,7 @@ final class PromptBarOmnibarContentLayoutTests: XCTestCase {
 
     private var content: PromptBarOmnibarContentViewController!
     private var omnibarController: AIChatOmnibarController!
+    private var containerViewController: AIChatOmnibarContainerViewController!
 
     override func setUp() {
         super.setUp()
@@ -42,6 +43,7 @@ final class PromptBarOmnibarContentLayoutTests: XCTestCase {
     override func tearDown() {
         content = nil
         omnibarController = nil
+        containerViewController = nil
         super.tearDown()
     }
 
@@ -87,6 +89,30 @@ final class PromptBarOmnibarContentLayoutTests: XCTestCase {
         let settled = content.preferredWindowContentSize.height
 
         XCTAssertEqual(firstRead, settled, accuracy: 1)
+    }
+
+    /// `controlsRowHeight` is hand-derived as "28pt button + 8pt tool inset + 4pt". Nothing else
+    /// checks that against the shared row, so drift there would silently mis-size the panel.
+    func testWhenTheControlsRowIsLaidOutThenItMatchesTheHeightThePanelBudgetsForIt() {
+        let view = content.view
+        _ = layOutAndMeasureGap(prompt: "what is a duck")
+
+        XCTAssertEqual(containerViewController.suggestionsHeight, 0,
+                       "This measurement only isolates the controls row while nothing sits below it")
+        XCTAssertEqual(containerViewController.additionalContentHeight, 0,
+                       "This measurement only isolates the controls row while nothing sits below it")
+
+        let buttons = controlsRowButtons(in: view)
+        XCTAssertFalse(buttons.isEmpty, "No controls row in the hierarchy")
+
+        for button in buttons {
+            XCTAssertEqual(button.bounds.height, 28, accuracy: 1,
+                           "Controls are no longer 28pt tall — `controlsRowHeight` must be re-derived")
+
+            let bottom = distanceFromTop(of: view, toPointIn: button, point: NSPoint(x: 0, y: button.bounds.minY))
+            XCTAssertLessThanOrEqual(bottom, view.frame.height,
+                                     "\(type(of: button)) hangs past the panel bottom — `controlsRowHeight` is too small")
+        }
     }
 
     // MARK: - Measurement
@@ -147,11 +173,16 @@ final class PromptBarOmnibarContentLayoutTests: XCTestCase {
 
     /// From the real button frames rather than a constant.
     private func topOfControlsRow(in host: NSView) -> CGFloat? {
-        let buttons = descendants(of: host).filter { $0 is AIChatOmnibarToolButton || $0 is AIChatModelPickerButton }
-        let tops = buttons.filter { !$0.isHiddenOrHasHiddenAncestor }.map { button in
+        let tops = controlsRowButtons(in: host).map { button in
             distanceFromTop(of: host, toPointIn: button, point: NSPoint(x: 0, y: button.bounds.maxY))
         }
         return tops.min()
+    }
+
+    private func controlsRowButtons(in host: NSView) -> [NSView] {
+        descendants(of: host)
+            .filter { $0 is AIChatOmnibarToolButton || $0 is AIChatModelPickerButton }
+            .filter { !$0.isHiddenOrHasHiddenAncestor }
     }
 
     /// Normalised to a top-left origin, so measurements compare regardless of which views are flipped.
@@ -200,6 +231,7 @@ final class PromptBarOmnibarContentLayoutTests: XCTestCase {
             duckAiNativeStorageHandler: nil,
             burnerMode: .regular
         )
+        self.containerViewController = containerViewController
         let textViewController = AIChatOmnibarTextContainerViewController(
             omnibarController: omnibarController,
             themeManager: themeManager,

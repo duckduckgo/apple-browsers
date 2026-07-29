@@ -36,7 +36,6 @@ class TabsBarCell: UICollectionViewCell {
         static let titleLeadingInset: CGFloat = 12
         static let titleTrailingInset: CGFloat = 8
         static let titleCloseButtonTrailingOffset: CGFloat = 32
-        static let bottomBackgroundHeightMultiplier: CGFloat = 0.75
         static let separatorInset: CGFloat = 16
         static let separatorWidth: CGFloat = 1
         static let labelFontSize: CGFloat = 15
@@ -45,8 +44,6 @@ class TabsBarCell: UICollectionViewCell {
     private let label = FadeOutLabel()
     let removeButton = BrowserChromeButton(.tabSwitcher)
     private let faviconImage = UIImageView()
-    private let topBackgroundView = UIView()
-    private let bottomBackgroundView = UIView()
     private let separatorView = UIView()
 
     private let titleStackView = UIStackView()
@@ -87,11 +84,6 @@ class TabsBarCell: UICollectionViewCell {
         clipsToBounds = true
         contentView.clipsToBounds = true
 
-        topBackgroundView.translatesAutoresizingMaskIntoConstraints = false
-        topBackgroundView.layer.cornerRadius = Self.cornerRadius
-
-        bottomBackgroundView.translatesAutoresizingMaskIntoConstraints = false
-
         faviconContainerView.translatesAutoresizingMaskIntoConstraints = false
 
         faviconImage.translatesAutoresizingMaskIntoConstraints = false
@@ -119,8 +111,6 @@ class TabsBarCell: UICollectionViewCell {
         removeButton.addTarget(self, action: #selector(onRemovePressed), for: .touchUpInside)
 
         faviconContainerView.addSubview(faviconImage)
-        contentView.addSubview(topBackgroundView)
-        contentView.addSubview(bottomBackgroundView)
         contentView.addSubview(titleStackView)
         contentView.addSubview(separatorView)
         contentView.addSubview(removeButton)
@@ -136,17 +126,6 @@ class TabsBarCell: UICollectionViewCell {
         labelRemoveButtonConstraint?.isActive = false
 
         NSLayoutConstraint.activate([
-            topBackgroundView.topAnchor.constraint(equalTo: contentView.topAnchor),
-            topBackgroundView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
-            topBackgroundView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
-            topBackgroundView.heightAnchor.constraint(equalTo: contentView.heightAnchor),
-
-            bottomBackgroundView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
-            bottomBackgroundView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
-            bottomBackgroundView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
-            bottomBackgroundView.heightAnchor.constraint(equalTo: contentView.heightAnchor,
-                                                         multiplier: Constants.bottomBackgroundHeightMultiplier),
-
             titleStackView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor,
                                                     constant: Constants.titleLeadingInset),
             titleStackView.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
@@ -224,9 +203,6 @@ class TabsBarCell: UICollectionViewCell {
     }
 
     func applyCurrentStyle(isCurrent: Bool, isNextCurrent: Bool, hidesInactiveCloseButton: Bool, withTheme theme: Theme) {
-        // Active-tab background is drawn behind the cells, so the cell stays clear.
-        topBackgroundView.backgroundColor = .clear
-        bottomBackgroundView.backgroundColor = .clear
         if !isCurrent {
             separatorView.backgroundColor = theme.tabsBarSeparatorColor
         }
@@ -258,8 +234,6 @@ class TabsBarCell: UICollectionViewCell {
         label.accessibilityLabel = nil
         faviconImage.image = nil
 
-        topBackgroundView.backgroundColor = .clear
-        bottomBackgroundView.backgroundColor = .clear
         separatorView.backgroundColor = theme.tabsBarSeparatorColor
 
         labelRemoveButtonConstraint?.isActive = false

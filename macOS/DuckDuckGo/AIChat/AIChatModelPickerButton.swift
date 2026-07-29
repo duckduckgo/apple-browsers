@@ -142,14 +142,40 @@ final class AIChatModelPickerButton: NSView {
 
     override func becomeFirstResponder() -> Bool {
         let didBecome = super.becomeFirstResponder()
-        if didBecome { setFocusRingHidden(false) }
+        if didBecome { isFocused = true }
         return didBecome
     }
 
     override func resignFirstResponder() -> Bool {
         let didResign = super.resignFirstResponder()
-        if didResign { setFocusRingHidden(true) }
+        if didResign {
+            isFocused = false
+            wantsFocusRing = false
+        }
         return didResign
+    }
+
+    func takeKeyboardFocus() {
+        wantsFocusRing = true
+        window?.makeFirstResponder(self)
+    }
+
+    private var isFocused = false {
+        didSet { applyFocusRingVisibility() }
+    }
+
+    /// AppKit promotes any clicked view that accepts first responder, so focus alone can't gate
+    /// the ring — it's a keyboard affordance, opted into by `takeKeyboardFocus()`.
+    private var wantsFocusRing = false {
+        didSet { applyFocusRingVisibility() }
+    }
+
+    var isFocusRingSuppressed = false {
+        didSet { applyFocusRingVisibility() }
+    }
+
+    private func applyFocusRingVisibility() {
+        setFocusRingHidden(!isFocused || !wantsFocusRing || isFocusRingSuppressed)
     }
 
     private func setFocusRingHidden(_ hidden: Bool) {
@@ -277,6 +303,8 @@ final class AIChatModelPickerButton: NSView {
     }
 
     override func mouseDown(with event: NSEvent) {
+        // Covers clicking a control that already holds keyboard focus, so no click ever rings it.
+        wantsFocusRing = false
         isMouseDown = true
     }
 
@@ -327,3 +355,5 @@ final class AIChatModelPickerButton: NSView {
         addCursorRect(bounds, cursor: .arrow)
     }
 }
+
+extension AIChatModelPickerButton: FocusRingControlling {}

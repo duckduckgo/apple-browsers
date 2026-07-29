@@ -26,6 +26,19 @@ private final class NonInteractiveImageView: NSImageView {
     }
 }
 
+/// A control that owns its focus ring rather than letting AppKit infer it: the ring is shown only
+/// for keyboard focus, and can be hidden without giving up first-responder status.
+@MainActor
+protocol FocusRingControlling: AnyObject {
+
+    /// Takes first responder *and* opts into the ring. Plain `makeFirstResponder` deliberately
+    /// does not, so a click never rings the control.
+    func takeKeyboardFocus()
+
+    /// Hides the ring while keeping keyboard focus, e.g. under the control's own open menu.
+    var isFocusRingSuppressed: Bool { get set }
+}
+
 /// A reusable toolbar button for the AI Chat omnibar with circular hover background effect.
 final class AIChatOmnibarToolButton: NSView {
 
@@ -238,14 +251,40 @@ final class AIChatOmnibarToolButton: NSView {
 
     override func becomeFirstResponder() -> Bool {
         let didBecome = super.becomeFirstResponder()
-        if didBecome { setFocusRingHidden(false) }
+        if didBecome { isFocused = true }
         return didBecome
     }
 
     override func resignFirstResponder() -> Bool {
         let didResign = super.resignFirstResponder()
-        if didResign { setFocusRingHidden(true) }
+        if didResign {
+            isFocused = false
+            wantsFocusRing = false
+        }
         return didResign
+    }
+
+    func takeKeyboardFocus() {
+        wantsFocusRing = true
+        window?.makeFirstResponder(self)
+    }
+
+    private var isFocused = false {
+        didSet { applyFocusRingVisibility() }
+    }
+
+    /// AppKit promotes any clicked view that accepts first responder, so focus alone can't gate
+    /// the ring — it's a keyboard affordance, opted into by `takeKeyboardFocus()`.
+    private var wantsFocusRing = false {
+        didSet { applyFocusRingVisibility() }
+    }
+
+    var isFocusRingSuppressed = false {
+        didSet { applyFocusRingVisibility() }
+    }
+
+    private func applyFocusRingVisibility() {
+        setFocusRingHidden(!isFocused || !wantsFocusRing || isFocusRingSuppressed)
     }
 
     private func setFocusRingHidden(_ hidden: Bool) {
@@ -432,6 +471,8 @@ final class AIChatOmnibarToolButton: NSView {
     }
 
     override func mouseDown(with event: NSEvent) {
+        // Covers clicking a control that already holds keyboard focus, so no click ever rings it.
+        wantsFocusRing = false
         isMouseDown = true
     }
 
@@ -487,3 +528,5 @@ final class AIChatOmnibarToolButton: NSView {
         addCursorRect(bounds, cursor: .arrow)
     }
 }
+
+extension AIChatOmnibarToolButton: FocusRingControlling {}

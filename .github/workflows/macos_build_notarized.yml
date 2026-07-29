@@ -110,16 +110,6 @@ jobs:
       branch: ${{ inputs.branch || github.ref_name }}
 
     steps:
-    - name: Validate architecture selection
-      env:
-        BUILD_ARM64_ONLY: ${{ inputs.build-arm64-only }}
-        RELEASE_TYPE: ${{ github.event.inputs.release-type || inputs.release-type }}
-      run: |
-        if [[ "$BUILD_ARM64_ONLY" == "true" && "$RELEASE_TYPE" != "review" && "$RELEASE_TYPE" != "sandbox-review" ]]; then
-          echo "::error::Arm64-only archives are limited to review builds. Release and alpha archives must remain universal."
-          exit 1
-        fi
-
     - name: Register SSH keys for private repos
       uses: webfactory/ssh-agent@v0.10.0
       with:
@@ -132,6 +122,16 @@ jobs:
       with:
         submodules: recursive
         ref: ${{ inputs.commit-sha || env.branch }}
+
+    - name: Validate architecture selection
+      env:
+        BUILD_ARM64_ONLY: ${{ inputs.build-arm64-only }}
+        RELEASE_TYPE: ${{ github.event.inputs.release-type || inputs.release-type }}
+      run: |
+        if [[ "$BUILD_ARM64_ONLY" == "true" && "$RELEASE_TYPE" != "review" && "$RELEASE_TYPE" != "sandbox-review" ]]; then
+          echo "::error::Arm64-only archives are limited to review builds. Release and alpha archives must remain universal."
+          exit 1
+        fi
 
     - name: Start measuring duration
       id: start-duration

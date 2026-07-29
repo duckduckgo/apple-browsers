@@ -72,16 +72,3 @@ enum DuckAIPanelAttachmentReconciler {
         return result
     }
 }
-
-extension NSRange {
-
-    func clamped(toTextLength length: Int) -> NSRange {
-        if location > length {
-            return NSRange(location: length, length: 0)
-        }
-        if upperBound > length {
-            return NSRange(location: location, length: max(0, length - location))
-        }
-        return self
-    }
-}

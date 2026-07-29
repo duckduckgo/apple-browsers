@@ -69,14 +69,6 @@ protocol AIChatContextualSheetCoordinatorDelegate: AnyObject {
 
     /// Called when the user requests a new Duck.ai voice chat.
     func aiChatContextualSheetCoordinatorDidRequestNewVoiceChat(_ coordinator: AIChatContextualSheetCoordinator)
-
-    /// Called after the contextual sheet is dismissed, so a host driving a flow can advance.
-    func aiChatContextualSheetCoordinatorDidDismiss(_ coordinator: AIChatContextualSheetCoordinator)
-}
-
-/// Default no-op so only hosts that care about dismissal need implement it.
-extension AIChatContextualSheetCoordinatorDelegate {
-    func aiChatContextualSheetCoordinatorDidDismiss(_ coordinator: AIChatContextualSheetCoordinator) {}
 }
 
 /// Coordinates the presentation and lifecycle of the contextual AI chat sheet.
@@ -98,7 +90,6 @@ final class AIChatContextualSheetCoordinator {
     private let duckAiFireModeStorageHandler: DuckAiNativeStorageHandling?
     private let debugSettings: AIChatDebugSettingsHandling
     private let isFireTab: Bool
-    private let voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding
     static let contextualContextCollectionTimeout: TimeInterval = 5
 
     /// Handler for page context - single source of truth.
@@ -162,9 +153,7 @@ final class AIChatContextualSheetCoordinator {
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
          duckAiFireModeStorageHandler: DuckAiNativeStorageHandling? = nil,
          debugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings(),
-         pixelHandler: AIChatContextualModePixelFiring = AIChatContextualModePixelHandler(),
-         voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding = DuckAIVoiceShortcutFeature()) {
-        self.voiceShortcutFeature = voiceShortcutFeature
+         pixelHandler: AIChatContextualModePixelFiring = AIChatContextualModePixelHandler()) {
         self.voiceSearchHelper = voiceSearchHelper
         self.aiChatSettings = aiChatSettings
         self.privacyConfigurationManager = privacyConfigurationManager
@@ -256,7 +245,6 @@ final class AIChatContextualSheetCoordinator {
         stopObservingContextUpdates()
         sessionState.handleSheetDismissed()
         startSessionTimer()
-        delegate?.aiChatContextualSheetCoordinatorDidDismiss(self)
     }
 
     // Mirrors handleSheetDismissed but deliberately skips startSessionTimer — a fire-button
@@ -421,7 +409,6 @@ private extension AIChatContextualSheetCoordinator {
             isCurrentPageAttachable: { [weak self] in self?.pageContextHandler.isCurrentPageAttachable() ?? true },
             isFireTab: isFireTab,
             lastUsedModelProvider: duckAiLastUsedModelProvider,
-            voiceShortcutFeature: voiceShortcutFeature,
             startsPreSubmit: startsPreSubmit
         )
         host.onAttachRequested = { [weak self] in
@@ -757,10 +744,7 @@ extension AIChatContextualSheetCoordinator: AIChatContextualSheetViewControllerD
     func aiChatContextualSheetViewControllerDidConfirmDeleteChat(_ viewController: AIChatContextualSheetViewController) {
         let chatURL = sessionState.contextualChatURL
         clearActiveChat()
-        viewController.dismiss(animated: true) { [weak self] in
-            guard let self else { return }
-            self.delegate?.aiChatContextualSheetCoordinatorDidDismiss(self)
-        }
+        viewController.dismiss(animated: true)
 
         if let chatID = chatURL?.duckAIChatID {
             delegate?.aiChatContextualSheetCoordinator(self, didRequestDeleteChatWithID: chatID)

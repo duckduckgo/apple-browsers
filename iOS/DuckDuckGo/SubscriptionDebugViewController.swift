@@ -47,11 +47,8 @@ final class SubscriptionDebugViewController: UITableViewController {
         AppDependencyProvider.shared.subscriptionManager.currentEnvironment
     }
 
-    private let aiChatViewControllerManager: AIChatViewControllerManager?
-
-    init?(coder: NSCoder, subscriptionDataReporter: SubscriptionDataReporting, aiChatViewControllerManager: AIChatViewControllerManager?) {
+    init?(coder: NSCoder, subscriptionDataReporter: SubscriptionDataReporting) {
         self.reporter = subscriptionDataReporter
-        self.aiChatViewControllerManager = aiChatViewControllerManager
         super.init(coder: coder)
     }
     

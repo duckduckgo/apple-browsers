@@ -63,7 +63,7 @@ enum SubscriptionOnboardingNavigationButton {
     }
 }
 
-/// A footer button: a title and either a tap action or a push destination (rendered as a `NavigationLink`).
+/// A footer button: a title and either a tap action or a push destination.
 struct SubscriptionOnboardingFooterButton {
     enum Action {
         case tap(() -> Void)
@@ -85,18 +85,13 @@ struct SubscriptionOnboardingFooterButton {
 }
 
 /// The page's bottom-pinned footer: a single primary button, or a primary button above a secondary one.
-/// Pass `nil` (the default) for no footer.
 enum SubscriptionOnboardingFooter {
     case single(SubscriptionOnboardingFooterButton)
     case double(primary: SubscriptionOnboardingFooterButton, secondary: SubscriptionOnboardingFooterButton)
 }
 
-/// A generic, high-level page for the post-subscription onboarding flow: toolbar chrome (an optional
-/// leading back/close button and an optional centered title), an optional ``SubscriptionOnboardingHeaderView``,
-/// a caller-supplied body, and an optional bottom-pinned footer of one or two buttons. It carries no
-/// `NavigationView` of its own — the toolbar/title render inside the shared navigation stack applied by
-/// ``subscriptionOnboardingNavigationContainer()``. Each concrete section (VPN, Duck.ai, …) supplies its
-/// own title, header, body and footer.
+/// A generic page for the post-subscription onboarding flow: an optional leading button and centered title,
+/// an optional header, a caller-supplied body, and an optional bottom-pinned footer.
 struct SubscriptionOnboardingBaseView<Content: View>: View {
 
     private let title: String?
@@ -173,7 +168,7 @@ private extension SubscriptionOnboardingBaseView {
                         .resizable()
                         .scaledToFit()
                         .frame(width: Metrics.navigationGlyphSize, height: Metrics.navigationGlyphSize)
-                        .foregroundColor(Color(designSystemColor: .iconsSecondary))
+                        .foregroundColor(Color(designSystemColor: .icons))
                         .frame(width: Metrics.navigationButtonSize, height: Metrics.navigationButtonSize)
                         .background(Color(designSystemColor: .controlsFillPrimary))
                         .clipShape(Circle())

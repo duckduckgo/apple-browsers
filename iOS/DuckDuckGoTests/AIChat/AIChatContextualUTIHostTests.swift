@@ -45,8 +45,7 @@ final class AIChatContextualUTIHostTests: XCTestCase {
 
     private func makeSUT(
         initialAttachedContext: AIChatPageContext? = nil,
-        initialAttachmentDeliveryState: PageContextAttachmentDeliveryState = .delivered,
-        voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding = MockVoiceShortcutFeature(available: true)
+        initialAttachmentDeliveryState: PageContextAttachmentDeliveryState = .delivered
     ) {
         sut = AIChatContextualUTIHost(
             originatingURLPublisher: originatingURL.eraseToAnyPublisher(),
@@ -54,21 +53,8 @@ final class AIChatContextualUTIHostTests: XCTestCase {
             initialAttachmentDeliveryState: initialAttachmentDeliveryState,
             hasActiveChat: { [weak self] in self?.hasActiveChat ?? false },
             isAutoAttachEnabled: { [weak self] in self?.autoAttachEnabled ?? false },
-            isFireTab: false,
-            voiceShortcutFeature: voiceShortcutFeature
+            isFireTab: false
         )
-    }
-
-    func test_voiceShortcutFeatureAvailable_enablesAIVoiceChatOnToggleInput() {
-        makeSUT(voiceShortcutFeature: MockVoiceShortcutFeature(available: true))
-
-        XCTAssertTrue(sut.isAIVoiceChatEnabled)
-    }
-
-    func test_voiceShortcutFeatureUnavailable_disablesAIVoiceChatOnToggleInput() {
-        makeSUT(voiceShortcutFeature: MockVoiceShortcutFeature(available: false))
-
-        XCTAssertFalse(sut.isAIVoiceChatEnabled)
     }
 
     func test_chipAttachAction_firesAttachCallback() {
@@ -239,11 +225,6 @@ final class AIChatContextualUTIHostTests: XCTestCase {
             favicon: nil
         )
     }
-}
-
-private struct MockVoiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding {
-    let available: Bool
-    var isAvailable: Bool { available }
 }
 
 private func XCTAssertEqualState(

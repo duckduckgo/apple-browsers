@@ -144,7 +144,7 @@ class SettingsLegacyViewProvider: ObservableObject {
         }
     }
 
-    private func instantiateDebugController(aiChatViewControllerManager: AIChatViewControllerManager?) -> UIViewController {
+    private func instantiateDebugController() -> UIViewController {
         return DebugScreensViewController(dependencies: .init(
             syncService: self.syncService,
             syncAutoRestoreHandler: self.syncAutoRestoreHandler,
@@ -165,8 +165,7 @@ class SettingsLegacyViewProvider: ObservableObject {
             subscriptionDataReporter: self.subscriptionDataReporter,
             remoteMessagingDebugHandler: self.remoteMessagingDebugHandler,
             webExtensionManager: self.webExtensionManager,
-            duckAiNativeStorageHandler: self.duckAiNativeStorageHandler,
-            aiChatViewControllerManager: aiChatViewControllerManager))
+            duckAiNativeStorageHandler: self.duckAiNativeStorageHandler))
     }
 
     // Legacy UIKit Views (Pushed unmodified)
@@ -177,9 +176,7 @@ class SettingsLegacyViewProvider: ObservableObject {
     var fireproofSites: UIViewController { instantiateFireproofingController() }
     var keyboard: UIViewController { instantiate("Keyboard", fromStoryboard: StoryboardName.settings) }
     var feedback: UIViewController { instantiate("Feedback", fromStoryboard: StoryboardName.feedback) }
-    func debug(aiChatViewControllerManager: AIChatViewControllerManager?) -> UIViewController {
-        instantiateDebugController(aiChatViewControllerManager: aiChatViewControllerManager)
-    }
+    var debug: UIViewController { instantiateDebugController() }
 
     func appIconSettings(onChange: @escaping (AppIcon) -> Void) -> UIViewController {
         instantiateAppIconController(onChange: onChange)

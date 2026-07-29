@@ -118,11 +118,6 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate {
         coordinator.updateImageButtonVisibility()
     }
 
-    /// Whether the AI voice-chat shortcut is enabled on the toggle input, as set from `voiceShortcutFeature` at init.
-    var isAIVoiceChatEnabled: Bool {
-        coordinator.viewController.handler.isAIVoiceChatEnabled
-    }
-
     func setAttachedContext(_ context: AIChatPageContext, deliveryState: PageContextAttachmentDeliveryState = .pendingSubmit) {
         chipViewModel.setAttached(context, deliveryState: deliveryState)
     }

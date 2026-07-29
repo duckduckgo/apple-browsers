@@ -447,8 +447,8 @@ final class AIChatContextualSheetViewController: UIViewController {
         sheet.detents = [.medium(), .large()]
         sheet.selectedDetentIdentifier = .medium
         sheet.largestUndimmedDetentIdentifier = .medium
-        sheet.prefersGrabberVisible = true
         sheet.prefersScrollingExpandsWhenScrolledToEdge = false
+        sheet.prefersGrabberVisible = true
         sheet.prefersEdgeAttachedInCompactHeight = true
         sheet.preferredCornerRadius = SheetMetrics.cornerRadius
     }
@@ -513,15 +513,6 @@ final class AIChatContextualSheetViewController: UIViewController {
         }
         transitionToWebView()
         expandToLargeDetent()
-    }
-
-    /// Hides the expand button permanently — for surfaces with no tab behind the sheet to expand into (e.g. onboarding).
-    func hideExpandButton() {
-        expandButton.isHidden = true
-    }
-
-    var isExpandButtonHidden: Bool {
-        expandButton.isHidden
     }
 
 }
@@ -1226,7 +1217,6 @@ private extension AIChatContextualSheetViewController {
 
         headerView.addSubview(leftButtonContainer)
         leftButtonContainer.addSubview(leftButtonStack)
-
         leftButtonStack.addArrangedSubview(expandButton)
         if suggestionsReader != nil {
             leftButtonStack.addArrangedSubview(recentChatsButton)

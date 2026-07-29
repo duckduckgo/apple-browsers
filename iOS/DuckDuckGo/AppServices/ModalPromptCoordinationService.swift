@@ -80,10 +80,6 @@ enum VisiblePromoAdmissionResult {
     case acquired(PromoQueueVisiblePromoLease)
     /// A coordinated modal attempt owns the slot.
     case blockedByModal
-    /// Reserved: carries the blocking identities, but is not currently produced — visible-promo acquisition
-    /// only rejects on the modal lease and on an occupied surface slot, so only `acquireModalLease()` can be
-    /// blocked by visible promos.
-    case blockedByVisiblePromos(Set<VisiblePromoIdentity>)
     /// The requesting surface's `(surfaceID, promoType)` slot already holds a lease; carries the occupying identity.
     case occupiedSurfaceSlot(VisiblePromoIdentity)
     /// The promo queue flag is off, so admission is not arbitrated.
@@ -281,8 +277,6 @@ final class ModalPromptCoordinationService {
             Logger.modalPrompt.debug("[Modal Prompt Coordination] - Skipping modal prompt - A coordinated modal attempt already owns the slot.")
         case .blockedByVisiblePromos:
             Logger.modalPrompt.debug("[Modal Prompt Coordination] - Skipping modal prompt - One or more visible promos own the slot.")
-        case .occupiedSurfaceSlot:
-            assertionFailure("Modal lease acquisition cannot be blocked by an occupied surface slot.")
         }
     }
 
@@ -303,8 +297,6 @@ final class ModalPromptCoordinationService {
             result = .acquired(lease)
         case .blockedByModal:
             result = .blockedByModal
-        case .blockedByVisiblePromos(let identities):
-            result = .blockedByVisiblePromos(identities)
         case .occupiedSurfaceSlot(let identity):
             result = .occupiedSurfaceSlot(identity)
         }

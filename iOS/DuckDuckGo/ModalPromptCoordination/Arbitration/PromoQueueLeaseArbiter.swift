@@ -60,14 +60,21 @@ struct PromoQueueLeaseSnapshot: Equatable {
     }
 }
 
-enum PromoQueueLeaseAcquisitionResult<Lease> {
+enum PromoQueueModalLeaseAcquisitionResult {
     /// The caller now owns the lease and is responsible for releasing it.
-    case acquired(Lease)
-    /// A modal lease already owns the slot. Returned by both acquisitions.
+    case acquired(PromoQueueModalLease)
+    /// A modal lease already owns the slot.
     case blockedByModal
-    /// One or more visible promos own the slot, carried as their identities. Returned only by `acquireModalLease()`.
+    /// One or more visible promos own the slot, carried as their identities.
     case blockedByVisiblePromos(Set<VisiblePromoIdentity>)
-    /// The requested `(surfaceID, promoType)` slot already holds the carried identity, even when the promo ID differs. Returned only by `acquireVisiblePromoLease(for:)`.
+}
+
+enum PromoQueueVisiblePromoLeaseAcquisitionResult {
+    /// The caller now owns the lease and is responsible for releasing it.
+    case acquired(PromoQueueVisiblePromoLease)
+    /// A modal lease already owns the slot.
+    case blockedByModal
+    /// The requested `(surfaceID, promoType)` slot already holds the carried identity, even when the promo ID differs.
     case occupiedSurfaceSlot(VisiblePromoIdentity)
 }
 
@@ -78,9 +85,9 @@ protocol PromoQueueLeaseArbitrating: AnyObject {
     var snapshot: PromoQueueLeaseSnapshot { get }
 
     /// Acquires the modal lease, which succeeds only when there is no modal lease and no visible-promo leases.
-    func acquireModalLease() -> PromoQueueLeaseAcquisitionResult<PromoQueueModalLease>
+    func acquireModalLease() -> PromoQueueModalLeaseAcquisitionResult
     /// Acquires a visible-promo lease, which succeeds only when there is no modal lease and the identity's `(surfaceID, promoType)` slot is free, so several surfaces may hold leases concurrently but one slot may not hold two.
-    func acquireVisiblePromoLease(for identity: VisiblePromoIdentity) -> PromoQueueLeaseAcquisitionResult<PromoQueueVisiblePromoLease>
+    func acquireVisiblePromoLease(for identity: VisiblePromoIdentity) -> PromoQueueVisiblePromoLeaseAcquisitionResult
     /// Advances the generation and clears every lease, so outstanding tokens become no-ops. Used on a live feature-flag transition.
     func invalidateAllLeases()
 }
@@ -155,7 +162,7 @@ final class PromoQueueLeaseArbiter: PromoQueueLeaseArbitrating {
         )
     }
 
-    func acquireModalLease() -> PromoQueueLeaseAcquisitionResult<PromoQueueModalLease> {
+    func acquireModalLease() -> PromoQueueModalLeaseAcquisitionResult {
         guard modalLease == nil else {
             return .blockedByModal
         }
@@ -181,7 +188,7 @@ final class PromoQueueLeaseArbiter: PromoQueueLeaseArbitrating {
         return .acquired(lease)
     }
 
-    func acquireVisiblePromoLease(for identity: VisiblePromoIdentity) -> PromoQueueLeaseAcquisitionResult<PromoQueueVisiblePromoLease> {
+    func acquireVisiblePromoLease(for identity: VisiblePromoIdentity) -> PromoQueueVisiblePromoLeaseAcquisitionResult {
         guard modalLease == nil else {
             return .blockedByModal
         }

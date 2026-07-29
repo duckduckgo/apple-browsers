@@ -293,9 +293,18 @@ struct PromoQueueLeaseArbiterTests {
         )
     }
 
-    private func acquiredLease<Lease>(
-        from result: PromoQueueLeaseAcquisitionResult<Lease>
-    ) throws -> Lease {
+    private func acquiredLease(
+        from result: PromoQueueModalLeaseAcquisitionResult
+    ) throws -> PromoQueueModalLease {
+        guard case .acquired(let lease) = result else {
+            throw TestError.expectedAcquiredLease
+        }
+        return lease
+    }
+
+    private func acquiredLease(
+        from result: PromoQueueVisiblePromoLeaseAcquisitionResult
+    ) throws -> PromoQueueVisiblePromoLease {
         guard case .acquired(let lease) = result else {
             throw TestError.expectedAcquiredLease
         }

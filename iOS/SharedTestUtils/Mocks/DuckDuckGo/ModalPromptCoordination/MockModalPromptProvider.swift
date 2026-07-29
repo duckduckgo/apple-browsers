@@ -23,9 +23,11 @@ import UIKit
 @MainActor
 final class MockModalPromptProvider: ModalPromptProvider {
     var modalConfigurationToReturn: ModalPromptConfiguration?
+    var isEligibleToPresentResult: Bool?
 
     private(set) var didCallProvideModalPrompt = false
     private(set) var didCallDidPresentModal = false
+    private(set) var capturedIsOnboardingComplete: Bool?
 
     init(shouldReturnPrompt: Bool = true) {
         if shouldReturnPrompt {
@@ -41,6 +43,11 @@ final class MockModalPromptProvider: ModalPromptProvider {
         return modalConfigurationToReturn
     }
 
+    func isEligibleToPresent(isOnboardingComplete: Bool) -> Bool {
+        capturedIsOnboardingComplete = isOnboardingComplete
+        return isEligibleToPresentResult ?? isOnboardingComplete
+    }
+
     func didPresentModal() {
         didCallDidPresentModal = true
     }
@@ -48,5 +55,6 @@ final class MockModalPromptProvider: ModalPromptProvider {
     func reset() {
         didCallProvideModalPrompt = false
         didCallDidPresentModal = false
+        capturedIsOnboardingComplete = nil
     }
 }

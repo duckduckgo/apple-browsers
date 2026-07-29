@@ -233,12 +233,6 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate {
         coordinator.viewController.deactivateInput()
     }
 
-    /// Preselects a model on the bound coordinator, so the first submitted
-    /// prompt — and every subsequent live-pushed one — carries it.
-    func preselectModel(_ modelId: String) {
-        coordinator.updateSelectedModel(modelId)
-    }
-
     func submitQuickActionPrompt(_ prompt: String) {
         coordinator.submitProgrammatic(text: prompt)
     }

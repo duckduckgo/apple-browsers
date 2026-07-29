@@ -169,7 +169,7 @@ final class SubscriptionOnboardingDuckAIViewModelTests: XCTestCase {
         viewModel.startChat()
 
         XCTAssertEqual(delegate.requestedChatModelIDs, ["a"])
-        // Completion is deferred until the chat is dismissed (sectionDidFinishDuckAIChat).
+        // Requesting the chat does not complete the section.
         XCTAssertTrue(delegate.completedSections.isEmpty)
     }
 
@@ -233,15 +233,11 @@ private final class MockAIModelProvider: SubscriptionOnboardingAIModelProviding 
 private final class SpySectionDelegate: SubscriptionOnboardingSectionDelegate {
     private(set) var completedSections: [SubscriptionOnboardingSection] = []
     private(set) var requestedChatModelIDs: [String?] = []
-    private(set) var finishedChatCount = 0
     func sectionDidComplete(_ section: SubscriptionOnboardingSection) {
         completedSections.append(section)
     }
     func sectionDidRequestDuckAIChat(modelID: String?) {
         requestedChatModelIDs.append(modelID)
-    }
-    func sectionDidFinishDuckAIChat() {
-        finishedChatCount += 1
     }
     func sectionDidRequestAdvance() {}
     func sectionDidRequestGoBack() {}

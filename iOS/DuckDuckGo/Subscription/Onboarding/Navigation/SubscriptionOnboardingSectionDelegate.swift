@@ -25,7 +25,6 @@
 protocol SubscriptionOnboardingSectionDelegate: AnyObject {
     func sectionDidComplete(_ section: SubscriptionOnboardingSection)
     func sectionDidRequestDuckAIChat(modelID: String?)
-    func sectionDidFinishDuckAIChat()
     func sectionDidRequestAdvance()
     func sectionDidRequestGoBack()
 }

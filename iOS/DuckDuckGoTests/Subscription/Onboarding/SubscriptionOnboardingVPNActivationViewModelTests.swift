@@ -395,7 +395,6 @@ private final class SpySectionDelegate: SubscriptionOnboardingSectionDelegate {
     }
 
     func sectionDidRequestDuckAIChat(modelID: String?) {}
-    func sectionDidFinishDuckAIChat() {}
     func sectionDidRequestAdvance() {}
     func sectionDidRequestGoBack() {}
 }

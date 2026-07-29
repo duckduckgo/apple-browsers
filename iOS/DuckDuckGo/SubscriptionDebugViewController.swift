@@ -36,8 +36,6 @@ final class SubscriptionDebugViewController: UITableViewController {
     private let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
     private lazy var subscriptionUserDefaults = UserDefaults(suiteName: subscriptionAppGroup)!
     private let reporter: SubscriptionDataReporting
-    /// Retained for the lifetime of an in-flight/presented onboarding Duck.ai chat sheet.
-    private var duckAIChatLauncher: SubscriptionOnboardingDuckAIChatLauncher?
 
     private var subscriptionManager: SubscriptionManager {
         AppDependencyProvider.shared.subscriptionManager
@@ -793,13 +791,6 @@ final class SubscriptionDebugViewController: UITableViewController {
         }
     }
 
-    private func showWelcomeOnboarding() {
-        let hostingController = UIHostingController(
-            rootView: SubscriptionOnboardingWelcomeView(onClose: { [weak self] in self?.dismiss(animated: true) })
-                .subscriptionOnboardingNavigationContainer())
-        present(hostingController, animated: true)
-    }
-
     private func showBuyProductionSubscriptions() {
         // Create the subscription selection handler that routes to the appropriate feature method
         let handler: SubscriptionSelectionHandler = { productId, changeType in
@@ -922,11 +913,7 @@ extension SubscriptionDebugViewController: SubscriptionOnboardingSectionDelegate
     func sectionDidComplete(_ section: SubscriptionOnboardingSection) {}
 
     func sectionDidRequestDuckAIChat(modelID: String?) {
-        launchDuckAIChat(modelID: modelID)
-    }
-
-    func sectionDidFinishDuckAIChat() {
-        duckAIChatLauncher = nil
+        SubscriptionOnboardingDuckAIChatLauncher().launch(from: self, modelID: modelID)
     }
 
     func sectionDidRequestAdvance() {
@@ -935,14 +922,5 @@ extension SubscriptionDebugViewController: SubscriptionOnboardingSectionDelegate
 
     func sectionDidRequestGoBack() {
         dismiss(animated: true)
-    }
-
-    private func launchDuckAIChat(modelID: String?) {
-        guard let contentBlockingAssetsPublisher = (view.window?.rootViewController as? MainViewController)?.contentBlockingAssetsPublisher else { return }
-        let launcher = SubscriptionOnboardingDuckAIChatLauncher(contentBlockingAssetsPublisher: contentBlockingAssetsPublisher)
-        duckAIChatLauncher = launcher
-        launcher.present(from: presentedViewController ?? self, modelID: modelID) { [weak self] in
-            self?.sectionDidFinishDuckAIChat()
-        }
     }
 }

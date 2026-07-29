@@ -139,10 +139,6 @@ final class AIChatContextualSheetViewController: UIViewController {
     private let featureFlagger: FeatureFlagger
     private let suggestionsReader: AIChatSuggestionsReading?
     private let persistentUTIHost: AIChatContextualUTIHost?
-    /// A standalone full-screen surface with no browser tab behind it. Presents at
-    /// `.large()` only with no grabber, and strips the header down to just a close button (moved to the leading side),
-    /// since there's nothing to expand into or browse chat history for.
-    private let presentsStandaloneFullScreen: Bool
     private var recentChatsPopup: AIChatRecentChatsPopupViewController?
     private var popupWindow: UIWindow?
     private var isFetchingRecentChats = false
@@ -150,7 +146,6 @@ final class AIChatContextualSheetViewController: UIViewController {
     private lazy var contextualInputViewController = AIChatContextualInputViewController(
         voiceSearchHelper: voiceSearchHelper,
         showsBasicNativeInput: persistentUTIHost == nil,
-        presentsStandaloneFullScreen: presentsStandaloneFullScreen,
         showsWelcomeMessage: !featureFlagger.isFeatureOn(.contextualSuggestedPrompts)
     )
     private var cancellables = Set<AnyCancellable>()
@@ -336,8 +331,7 @@ final class AIChatContextualSheetViewController: UIViewController {
          appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
          persistentUTIHost: AIChatContextualUTIHost? = nil,
-         suggestionsReader: AIChatSuggestionsReading? = nil,
-         presentsStandaloneFullScreen: Bool = false) {
+         suggestionsReader: AIChatSuggestionsReading? = nil) {
         self.sessionState = sessionState
         self.aiChatSettings = aiChatSettings
         self.voiceSearchHelper = voiceSearchHelper
@@ -347,7 +341,6 @@ final class AIChatContextualSheetViewController: UIViewController {
         self.featureFlagger = featureFlagger
         self.persistentUTIHost = persistentUTIHost
         self.suggestionsReader = suggestionsReader
-        self.presentsStandaloneFullScreen = presentsStandaloneFullScreen
         super.init(nibName: nil, bundle: nil)
         configureModalPresentation()
     }
@@ -451,17 +444,10 @@ final class AIChatContextualSheetViewController: UIViewController {
 
         sheet.delegate = self
         presentationController?.delegate = self
-        if presentsStandaloneFullScreen {
-            sheet.detents = [.large()]
-            sheet.selectedDetentIdentifier = .large
-            sheet.largestUndimmedDetentIdentifier = .large
-            sheet.prefersGrabberVisible = false
-        } else {
-            sheet.detents = [.medium(), .large()]
-            sheet.selectedDetentIdentifier = .medium
-            sheet.largestUndimmedDetentIdentifier = .medium
-            sheet.prefersGrabberVisible = true
-        }
+        sheet.detents = [.medium(), .large()]
+        sheet.selectedDetentIdentifier = .medium
+        sheet.largestUndimmedDetentIdentifier = .medium
+        sheet.prefersGrabberVisible = true
         sheet.prefersScrollingExpandsWhenScrolledToEdge = false
         sheet.prefersEdgeAttachedInCompactHeight = true
         sheet.preferredCornerRadius = SheetMetrics.cornerRadius
@@ -1241,19 +1227,13 @@ private extension AIChatContextualSheetViewController {
         headerView.addSubview(leftButtonContainer)
         leftButtonContainer.addSubview(leftButtonStack)
 
-        if presentsStandaloneFullScreen {
-            // No tab behind this surface: nothing to expand into and no chat history to browse.
-            // Surface only the close button, on the leading side (where history normally sits).
-            leftButtonStack.addArrangedSubview(closeButton)
-        } else {
-            leftButtonStack.addArrangedSubview(expandButton)
-            if suggestionsReader != nil {
-                leftButtonStack.addArrangedSubview(recentChatsButton)
-                NSLayoutConstraint.activate([
-                    recentChatsButton.widthAnchor.constraint(equalToConstant: Constants.headerButtonSize),
-                    recentChatsButton.heightAnchor.constraint(equalToConstant: Constants.headerButtonSize),
-                ])
-            }
+        leftButtonStack.addArrangedSubview(expandButton)
+        if suggestionsReader != nil {
+            leftButtonStack.addArrangedSubview(recentChatsButton)
+            NSLayoutConstraint.activate([
+                recentChatsButton.widthAnchor.constraint(equalToConstant: Constants.headerButtonSize),
+                recentChatsButton.heightAnchor.constraint(equalToConstant: Constants.headerButtonSize),
+            ])
         }
         if featureFlagger.isFeatureOn(.contextualSuggestedPrompts) {
             let tapControl = makeTitleTapControl()
@@ -1287,9 +1267,7 @@ private extension AIChatContextualSheetViewController {
                 fireButton.heightAnchor.constraint(equalToConstant: Constants.headerButtonSize),
             ])
         }
-        if !presentsStandaloneFullScreen {
-            rightButtonStack.addArrangedSubview(closeButton)
-        }
+        rightButtonStack.addArrangedSubview(closeButton)
 
         view.addSubview(contentContainerView)
 

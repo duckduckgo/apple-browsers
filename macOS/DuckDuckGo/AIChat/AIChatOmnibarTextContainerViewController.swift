@@ -471,8 +471,9 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
                 view.window?.makeFirstResponder(customToggleControl)
                 return true
             }
-            return false
-
+            // No toggle to hop through — the Prompt Bar has none — so enter the controls cycle
+            // directly, otherwise Tab never leaves the prompt and the cycle never starts.
+            return focusFirstControlInCycle()
         }
 
         return false
@@ -558,17 +559,25 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
 
     /// Called by the owner when the toggle receives a Tab press in AI Chat mode.
     func handleToggleTabPressed() {
-        guard let containerVC = containerViewController else {
+        if !focusFirstControlInCycle() {
             focusTextViewWithCursorAtEnd()
-            return
         }
+    }
+
+    /// Moves focus to the first control of the controls row. Reports whether it moved, so a caller
+    /// with a fallback (Tab straight from the prompt) can defer to AppKit instead of swallowing it.
+    private func focusFirstControlInCycle() -> Bool {
+        guard let containerVC = containerViewController else { return false }
+
         if containerVC.firstAvailableToolButtonForFocus() != nil {
             containerVC.makeFirstAvailableToolButtonFirstResponder()
-        } else if containerVC.isModelPickerButtonAvailableForFocus {
-            containerVC.makeModelPickerButtonFirstResponder()
-        } else {
-            focusTextViewWithCursorAtEnd()
+            return true
         }
+        if containerVC.isModelPickerButtonAvailableForFocus {
+            containerVC.makeModelPickerButtonFirstResponder()
+            return true
+        }
+        return false
     }
 
     private func wireTabCycle() {

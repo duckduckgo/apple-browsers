@@ -19,6 +19,7 @@
 import Cocoa
 import Combine
 import AIChat
+import AppKitExtensions
 import PixelKit
 import PrivacyConfig
 
@@ -69,6 +70,7 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
     private var isUpdatingProgrammatically = false
 
     private let featureFlagger: FeatureFlagger
+    private let isBurner: Bool
     let themeManager: ThemeManaging
     var themeUpdateCancellable: AnyCancellable?
     private var appearanceCancellable: AnyCancellable?
@@ -81,9 +83,10 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
     /// Used by the orchestrating layer to re-focus into duck.ai mode when the user clicks the prompt while unfocused.
     var onTextViewDidBecomeFirstResponder: (() -> Void)?
 
-    init(omnibarController: AIChatOmnibarController, themeManager: ThemeManaging, featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
+    init(omnibarController: AIChatOmnibarController, themeManager: ThemeManaging, isBurner: Bool, featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
         self.omnibarController = omnibarController
         self.themeManager = themeManager
+        self.isBurner = isBurner
         self.featureFlagger = featureFlagger
 
         textStorage.addLayoutManager(layoutManager)
@@ -111,7 +114,9 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
 
     override func viewDidLoad() {
         super.viewDidLoad()
+
         setupUI()
+        setupBurnerStyleIfNeeded()
         setupTextViewDelegate()
         subscribeToThemeChanges()
         applyThemeStyle()
@@ -224,6 +229,13 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
             placeholderLabel.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor, constant: placeholderLeadingConstant),
             placeholderLabel.topAnchor.constraint(equalTo: scrollView.topAnchor, constant: 9),
         ])
+    }
+
+    private func setupBurnerStyleIfNeeded() {
+        guard isBurner, themeManager.isAppRebranded else { return }
+
+        let style = BurnerAppearanceStyle()
+        style.enableDarkModeOverride(in: view)
     }
 
     func applyThemeStyle(theme: ThemeStyleProviding) {
@@ -385,6 +397,12 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
         heightDidChange?(desiredHeight)
     }
 
+    /// The text's own height, without the bottom band `calculateDesiredPanelHeight()` reserves for a
+    /// host that overlaps its controls into it, as the address bar does.
+    var promptContentHeight: CGFloat {
+        calculateDesiredPanelHeight() - Constants.bottomPadding
+    }
+
     func calculateDesiredPanelHeight() -> CGFloat {
         guard let layoutManager = textView.layoutManager,
               let textContainer = textView.textContainer else {
@@ -453,8 +471,8 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
                 view.window?.makeFirstResponder(customToggleControl)
                 return true
             }
-            return false
-
+            // The Prompt Bar has no toggle to hop through, so Tab would never leave the prompt.
+            return focusFirstControlInCycle()
         }
 
         return false
@@ -540,17 +558,23 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
 
     /// Called by the owner when the toggle receives a Tab press in AI Chat mode.
     func handleToggleTabPressed() {
-        guard let containerVC = containerViewController else {
+        if !focusFirstControlInCycle() {
             focusTextViewWithCursorAtEnd()
-            return
         }
+    }
+
+    private func focusFirstControlInCycle() -> Bool {
+        guard let containerVC = containerViewController else { return false }
+
         if containerVC.firstAvailableToolButtonForFocus() != nil {
             containerVC.makeFirstAvailableToolButtonFirstResponder()
-        } else if containerVC.isModelPickerButtonAvailableForFocus {
-            containerVC.makeModelPickerButtonFirstResponder()
-        } else {
-            focusTextViewWithCursorAtEnd()
+            return true
         }
+        if containerVC.isModelPickerButtonAvailableForFocus {
+            containerVC.makeModelPickerButtonFirstResponder()
+            return true
+        }
+        return false
     }
 
     private func wireTabCycle() {

@@ -88,6 +88,10 @@ enum SubscriptionFunnelOrigin: String {
     /// https://app.asana.com/1/137249556945/project/1208671677432066/task/1215275657171787
     case duckAIReasoningPicker = "funnel_duckai_macos__reasoningpicker"
 
+    /// User entered the funnel by tapping a gated model or reasoning effort in the New Tab Page's duck.ai omnibar.
+    /// https://app.asana.com/1/137249556945/task/1216424447885172
+    case newTabPageOmnibar = "funnel_newtab_macos__omnibar"
+
     // MARK: - Duck.ai Funnel Origins (frontend-reported)
 
     /// Entry points shown in the duck.ai web frontend; reported over the `reportMetric` bridge because

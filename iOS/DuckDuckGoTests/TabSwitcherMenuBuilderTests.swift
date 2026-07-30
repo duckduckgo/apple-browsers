@@ -62,6 +62,30 @@ class DefaultTabSwitcherMenuBuilderTests: XCTestCase {
         XCTAssertFalse(actions.contains(title: UserText.tabSwitcherBookmarkAllTabs))
     }
 
+    func testMultiSelectMenu_whenSelectionToggleActionsAreHidden_doesNotShowSelectAll() {
+        let state = TabSwitcherMultiSelectMenuState(
+            selectedCount: 0, totalCount: 3,
+            selectedContainsWebPages: false, allContainsWebPages: false,
+            shouldShowSelectionToggleActions: false
+        )
+        let items = builder.multiSelectionMenuItems(state: state, actions: noopMultiSelectActions)
+        let actions = flatActions(items)
+
+        XCTAssertFalse(actions.contains(title: UserText.selectAllTabs))
+    }
+
+    func testMultiSelectMenu_whenSelectionToggleActionsAreHidden_doesNotShowDeselectAll() {
+        let state = TabSwitcherMultiSelectMenuState(
+            selectedCount: 3, totalCount: 3,
+            selectedContainsWebPages: false, allContainsWebPages: false,
+            shouldShowSelectionToggleActions: false
+        )
+        let items = builder.multiSelectionMenuItems(state: state, actions: noopMultiSelectActions)
+        let actions = flatActions(items)
+
+        XCTAssertFalse(actions.contains(title: UserText.deselectAllTabs))
+    }
+
     func testMultiSelectMenu_whenAllSelected_showsDeselectAllAndClose() {
         let state = TabSwitcherMultiSelectMenuState(
             selectedCount: 3, totalCount: 3,

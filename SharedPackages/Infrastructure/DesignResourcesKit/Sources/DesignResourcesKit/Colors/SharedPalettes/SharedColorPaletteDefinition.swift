@@ -145,8 +145,21 @@ protocol SharedColorPaletteDefinition {
     static var iconsTertiary: DynamicColor { get }
 
     // MARK: - Input Colors
-    static var inputActive: DynamicColor { get }
-    static var inputResting: DynamicColor { get }
+    static var unifiedInputControlFillPrimary: DynamicColor { get }
+    static var unifiedInputControlFillSecondary: DynamicColor { get }
+    static var unifiedInputControlShadowPrimary: DynamicColor { get }
+    static var unifiedInputFieldFillPrimary: DynamicColor { get }
+    static var unifiedInputFieldFillSecondary: DynamicColor { get }
+    static var unifiedInputFireControlFillPrimary: DynamicColor { get }
+    static var unifiedInputFireControlFillSecondary: DynamicColor { get }
+    static var unifiedInputFireFieldFillPrimary: DynamicColor { get }
+    static var unifiedInputFireFieldFillSecondary: DynamicColor { get }
+    static var unifiedInputFireIconsPrimary: DynamicColor { get }
+    static var unifiedInputFireIconsSecondary: DynamicColor { get }
+    static var unifiedInputFireTextPrimary: DynamicColor { get }
+    static var unifiedInputFireTextSecondary: DynamicColor { get }
+    static var unifiedInputTextPrimary: DynamicColor { get }
+    static var unifiedInputTextSecondary: DynamicColor { get }
 
     // MARK: - System
     static var lines: DynamicColor { get }
@@ -163,7 +176,9 @@ protocol SharedColorPaletteDefinition {
     static var statusWarningContentPrimary: DynamicColor { get }
     static var statusWarningFillPrimary: DynamicColor { get }
     static var statusWarningPrimary: DynamicColor { get }
-    static var statusYellow: DynamicColor { get }
+    static var statusYellowPrimary: DynamicColor { get }
+    static var statusYellowSecondary: DynamicColor { get }
+    static var statusYellowTertiary: DynamicColor { get }
 
     // MARK: - Surface Colors
     static var surfaceBackdrop: DynamicColor { get }

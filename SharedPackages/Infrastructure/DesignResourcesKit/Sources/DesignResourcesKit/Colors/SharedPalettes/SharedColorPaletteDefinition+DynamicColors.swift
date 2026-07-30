@@ -35,6 +35,26 @@ extension SharedColorPaletteDefinition {
             return accentContentTertiary
         case .accentFirePrimary:
             return accentFirePrimary
+        case .accentFireSecondary:
+            return accentFireSecondary
+        case .accentFireTertiary:
+            return accentFireTertiary
+        case .accentFireContentPrimary:
+            return accentFireContentPrimary
+        case .accentFireContentSecondary:
+            return accentFireContentSecondary
+        case .accentFireContentTertiary:
+            return accentFireContentTertiary
+        case .accentFireGlowPrimary:
+            return accentFireGlowPrimary
+        case .accentFireGlowSecondary:
+            return accentFireGlowSecondary
+        case .accentFireTextPrimary:
+            return accentFireTextPrimary
+        case .accentFireTextSecondary:
+            return accentFireTextSecondary
+        case .accentFireTextTertiary:
+            return accentFireTextTertiary
         case .accentGlowPrimary:
             return accentGlowPrimary
         case .accentGlowSecondary:
@@ -208,10 +228,10 @@ extension SharedColorPaletteDefinition {
             return iconsTertiary
 
         /// Input
-        case .inputActive:
-            return inputActive
-        case .inputResting:
-            return inputResting
+        case .unifiedInputFieldFillPrimary:
+            return unifiedInputFieldFillPrimary
+        case .unifiedInputFieldFillSecondary:
+            return unifiedInputFieldFillSecondary
 
         /// System
         case .lines:
@@ -230,6 +250,14 @@ extension SharedColorPaletteDefinition {
             return shadowSecondary
         case .shadowTertiary:
             return shadowTertiary
+
+        /// Status
+        case .statusYellowPrimary:
+            return statusYellowPrimary
+        case .statusYellowSecondary:
+            return statusYellowSecondary
+        case .statusYellowTertiary:
+            return statusYellowTertiary
 
         /// Surface Colors
         case .surfaceBackdrop:
@@ -285,6 +313,15 @@ extension SharedColorPaletteDefinition {
 
     static func dynamicColor(for singleUseColor: SingleUseColor) -> DynamicColor {
         switch singleUseColor {
+        case .aiToggleBorder:
+            return DynamicColor(staticColor: .clear)
+        case .aiToggleBackground:
+            return controlsSubtleFillSecondary
+        case .aiToggleSelectionBackground:
+            return controlsRaisedFillPrimary
+        case .aiToggleSelectionBorder:
+            return shadowTertiary
+
         case .fireModeAccent:
             return DynamicColor(lightColor: RebrandingColor.Mandarin.mandarin50, darkColor: RebrandingColor.Mandarin.mandarin40)
         case .fireButtonGradientStart:

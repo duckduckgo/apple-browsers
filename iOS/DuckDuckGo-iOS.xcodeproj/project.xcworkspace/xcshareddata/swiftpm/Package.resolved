@@ -1,5 +1,5 @@
 {
-  "originHash" : "0a2effd929864ad86e836edc7e81c16ec885147eeaaa92b9bc03c5c4b0fcfd30",
+  "originHash" : "d12331c5b7a28c0bf24cecdbfb0d45bdc60e72cdb567107d8d46eb9063e7da44",
   "pins" : [
     {
       "identity" : "apple-toolbox",
@@ -33,8 +33,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/content-scope-scripts.git",
       "state" : {
-        "revision" : "c757cf8afc2c89aedeb7cd8eeb84044239b088b3",
-        "version" : "15.18.0"
+        "revision" : "b10fd8938e9afc6671b104b3339dcd101f4e7373",
+        "version" : "15.21.0"
       }
     },
     {
@@ -87,8 +87,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/airbnb/lottie-spm.git",
       "state" : {
-        "revision" : "04f2fd18cc9404a0a0917265a449002674f24ec9",
-        "version" : "4.5.2"
+        "revision" : "0aff16288f8dc1e3dab35cbf5cf45979673fd3df",
+        "version" : "4.6.1"
       }
     },
     {
@@ -114,8 +114,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/privacy-dashboard",
       "state" : {
-        "revision" : "40a8c752fb73a15738899dc0edb5e17e33302a37",
-        "version" : "9.10.1"
+        "revision" : "88a028fe9e4aa53941cb49dfc93bbcf62bd46f3b",
+        "version" : "9.10.2"
       }
     },
     {

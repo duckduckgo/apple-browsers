@@ -18,6 +18,7 @@
 
 import AppKit
 import Foundation
+import DesignResourcesKitIcons
 
 @objc protocol BookmarkTableCellViewDelegate: AnyObject {
 
@@ -225,12 +226,19 @@ final class BookmarkTableCellView: NSTableCellView {
             accessoryImageView.isHidden = false
         }
 
-        accessoryImageView.image = bookmark.isFavorite ? .favoriteFilledBorder : nil
+        accessoryImageView.image = bookmark.isFavorite ? DesignSystemImages.Color.Size16.favorite : nil
         accessoryImageView.setAccessibilityIdentifier("BookmarkTableCellView.accessoryImageView")
         accessoryImageView.setAccessibilityValue(bookmark.isFavorite ? "Favorited" : "Unfavorited")
         titleLabel.stringValue = bookmark.title
         primaryTitleLabelValue = bookmark.title
         tertiaryTitleLabelValue = bookmark.url
+    }
+
+    /// Upgrades the displayed favicon in place once it becomes available, without touching the rest of the
+    /// cell. Never falls back to the placeholder icon, so a transient cache miss doesn't blank a real favicon.
+    func refreshDisplayedFavicon() {
+        guard let bookmark = entity as? Bookmark, let favicon = bookmark.favicon(.small) else { return }
+        faviconImageView.image = favicon
     }
 
     func update(from folder: BookmarkFolder) {

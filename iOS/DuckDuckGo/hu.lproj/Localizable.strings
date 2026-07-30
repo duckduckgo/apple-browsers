@@ -212,7 +212,7 @@
 "action.title.vpn" = "VPN";
 
 /* Description of the Ad Blocking feature in settings */
-"ad.blocking.description" = "Még betöltés előtt blokkolja az invazív nyomkövetőket, így hatékonyan kiküszöböljük a nyomkövetésre épülő hirdetéseket";
+"ad.blocking.description" = "Még betöltés előtt blokkolja az invazív nyomkövetőket, így hatékonyan kiküszöböljük a nyomkövetésre épülő hirdetéseket.";
 
 /* Section header for YouTube-specific ad blocking settings */
 "ad.blocking.youtube.section.header" = "YouTube-hirdetésblokkolás";
@@ -1935,6 +1935,246 @@
 /* Title for the Duck.ai Siri education screen */
 "duckai.siri.education.screen.title" = "Beszélgess a Duck.ai-jal a Siri segítségével!";
 
+/* Suggested prompt chip: cast and crew */
+"duckai.suggestion.cast-crew.label" = "Szereplők és alkotók";
+
+/* Suggested prompt submitted text: cast and crew */
+"duckai.suggestion.cast-crew.prompt" = "Kik a legfontosabb szereplők és alkotók, és miről ismertek még?";
+
+/* Suggested prompt chip: counterarguments */
+"duckai.suggestion.counterarguments.label" = "Mik az ellenérvek?";
+
+/* Suggested prompt submitted text: counterarguments */
+"duckai.suggestion.counterarguments.prompt" = "Mik a fő ellenérvek vagy kritikák ezzel kapcsolatban?";
+
+/* Suggested prompt chip: course learning outcomes */
+"duckai.suggestion.course-learn.label" = "Mit fogok megtanulni?";
+
+/* Suggested prompt submitted text: course learning outcomes */
+"duckai.suggestion.course-learn.prompt" = "Mik azok a legfontosabb dolgok, amiket megtanulok ezen a kurzuson?";
+
+/* Suggested prompt chip: is a course worth taking */
+"duckai.suggestion.course-worth.label" = "Érdemes elvégezni?";
+
+/* Suggested prompt submitted text: is a course worth taking */
+"duckai.suggestion.course-worth.prompt" = "Az oldalon szereplő információk alapján érdemes elvégezni ezt a tanfolyamot?";
+
+/* Suggested prompt chip: draft a cover letter */
+"duckai.suggestion.cover-letter.label" = "Motivációs levél írása";
+
+/* Suggested prompt submitted text: draft a cover letter */
+"duckai.suggestion.cover-letter.prompt" = "Írj egy motivációs levelet ehhez az álláshoz.";
+
+/* Suggested prompt chip: event details */
+"duckai.suggestion.event-details.label" = "Mik a legfontosabb részletek?";
+
+/* Suggested prompt submitted text: event details */
+"duckai.suggestion.event-details.prompt" = "Foglald össze az esemény legfontosabb részleteit.";
+
+/* Suggested prompt chip: explain the top answer */
+"duckai.suggestion.explain-answer.label" = "Legjobb válasz magyarázata";
+
+/* Suggested prompt submitted text: explain the top answer */
+"duckai.suggestion.explain-answer.prompt" = "Magyarázd el egyszerűen az elfogadott választ.";
+
+/* Suggested prompt chip: explain a research paper */
+"duckai.suggestion.explain-paper.label" = "Tanulmány magyarázata";
+
+/* Suggested prompt submitted text: explain a research paper */
+"duckai.suggestion.explain-paper.prompt" = "Magyarázd el ezt a kutatási tanulmányt közérthetően.";
+
+/* Suggested prompt chip: explain a code repository */
+"duckai.suggestion.explain-repo.label" = "Kódtár magyarázata";
+
+/* Suggested prompt submitted text: explain a code repository */
+"duckai.suggestion.explain-repo.prompt" = "Magyarázd el, mire szolgál ez a kódtár, és hogyan használható.";
+
+/* Suggested prompt chip: explain the content simply */
+"duckai.suggestion.explain-simply.label" = "Magyarázd el egyszerűen";
+
+/* Suggested prompt submitted text: explain the content simply */
+"duckai.suggestion.explain-simply.prompt" = "Magyarázd el ezt egyszerű, közérthető nyelven.";
+
+/* Suggested prompt chip: what an FAQ page answers */
+"duckai.suggestion.faq-answer.label" = "Mire ad ez választ?";
+
+/* Suggested prompt submitted text: what an FAQ page answers */
+"duckai.suggestion.faq-answer.prompt" = "Melyek a fő kérdések, amelyekre választ ad ez az oldal?";
+
+/* Suggested prompt chip: summarize FAQ Q&As */
+"duckai.suggestion.faq-summary.label" = "Kérdések és válaszok összefoglalása";
+
+/* Suggested prompt submitted text: summarize FAQ Q&As */
+"duckai.suggestion.faq-summary.prompt" = "Foglald össze az oldalon szereplő kérdéseket és válaszokat.";
+
+/* Suggested prompt chip: product alternatives */
+"duckai.suggestion.find-alternatives.label" = "Mutass alternatívákat";
+
+/* Suggested prompt submitted text: product alternatives */
+"duckai.suggestion.find-alternatives.prompt" = "Ajánlj néhány alternatívát ehhez a termékhez.";
+
+/* Suggested prompt chip: how-to materials */
+"duckai.suggestion.howto-materials.label" = "Mire lesz szükségem?";
+
+/* Suggested prompt submitted text: how-to materials */
+"duckai.suggestion.howto-materials.prompt" = "Sorold fel, milyen eszközökre, anyagokra vagy előfeltételekre van szükségem ehhez.";
+
+/* Suggested prompt chip: how-to steps */
+"duckai.suggestion.howto-steps.label" = "Vezess végig a lépéseken";
+
+/* Suggested prompt submitted text: how-to steps */
+"duckai.suggestion.howto-steps.prompt" = "Bontsd le ezt világos, számozott lépésekre.";
+
+/* Suggested prompt chip: interview prep */
+"duckai.suggestion.interview-prep.label" = "Segíts felkészülni az interjúra";
+
+/* Suggested prompt submitted text: interview prep */
+"duckai.suggestion.interview-prep.prompt" = "Milyen interjúkérdések merülhetnek fel ennél a munkakörnél?";
+
+/* Suggested prompt chip: key takeaways of an article */
+"duckai.suggestion.key-takeaways.label" = "Melyek a legfontosabb tanulságok?";
+
+/* Suggested prompt submitted text: key takeaways of an article */
+"duckai.suggestion.key-takeaways.prompt" = "Mik a cikk legfontosabb tanulságai?";
+
+/* Suggested prompt chip: restaurant menu highlights */
+"duckai.suggestion.menu-highlights.label" = "Mit rendeljek?";
+
+/* Suggested prompt submitted text: restaurant menu highlights */
+"duckai.suggestion.menu-highlights.prompt" = "Melyek a kihagyhatatlan ételek itt?";
+
+/* Suggested prompt chip: paper contributions */
+"duckai.suggestion.paper-contributions.label" = "Mik a főbb eredmények?";
+
+/* Suggested prompt submitted text: paper contributions */
+"duckai.suggestion.paper-contributions.prompt" = "Mik a tanulmány főbb eredményei?";
+
+/* Suggested prompt chip: summarize a person's background */
+"duckai.suggestion.person-background.label" = "Háttér összefoglalása";
+
+/* Suggested prompt submitted text: summarize a person's background */
+"duckai.suggestion.person-background.prompt" = "Foglald össze ennek a személynek a hátterét és jelentősebb munkáit.";
+
+/* Suggested prompt chip: place hours and location */
+"duckai.suggestion.place-hours.label" = "Mi a nyitvatartás és a cím?";
+
+/* Suggested prompt submitted text: place hours and location */
+"duckai.suggestion.place-hours.prompt" = "Milyen a hely nyitvatartása, hol található, és mik az elérhetőségei?";
+
+/* Suggested prompt chip: place reputation */
+"duckai.suggestion.place-reviews.label" = "Jó ez a hely?";
+
+/* Suggested prompt submitted text: place reputation */
+"duckai.suggestion.place-reviews.prompt" = "Jó ez a hely? Foglald össze a megítélését az értékelések és a vélemények alapján.";
+
+/* Suggested prompt chip: product pros and cons */
+"duckai.suggestion.product-pros-cons.label" = "Mik az előnyök és a hátrányok?";
+
+/* Suggested prompt submitted text: product pros and cons */
+"duckai.suggestion.product-pros-cons.prompt" = "Milyen előnyei és hátrányai vannak ennek a terméknek?";
+
+/* Suggested prompt chip: recipe nutrition */
+"duckai.suggestion.recipe-nutrition.label" = "Tápérték becslése";
+
+/* Suggested prompt submitted text: recipe nutrition */
+"duckai.suggestion.recipe-nutrition.prompt" = "Becsüld meg ennek a receptnek a tápértékadatait.";
+
+/* Suggested prompt chip: related articles */
+"duckai.suggestion.related-articles.label" = "Kapcsolódó cikkek javaslata";
+
+/* Suggested prompt submitted text: related articles */
+"duckai.suggestion.related-articles.prompt" = "Javasolj kapcsolódó cikkeket vagy témákat, amelyeket érdemes lenne ezután megnézni.";
+
+/* Suggested prompt chip: summarize reviews */
+"duckai.suggestion.review-summary.label" = "Értékelések összefoglalása";
+
+/* Suggested prompt submitted text: summarize reviews */
+"duckai.suggestion.review-summary.prompt" = "Foglald össze, mit mondanak az értékelések.";
+
+/* Suggested prompt chip: review verdict */
+"duckai.suggestion.review-verdict.label" = "Mi a végső vélemény?";
+
+/* Suggested prompt submitted text: review verdict */
+"duckai.suggestion.review-verdict.prompt" = "Mi az általános vélemény és értékelés erről?";
+
+/* Suggested prompt chip: scale a recipe */
+"duckai.suggestion.scale-recipe.label" = "Adagok módosítása";
+
+/* Suggested prompt submitted text: scale a recipe */
+"duckai.suggestion.scale-recipe.prompt" = "Írd át ezt a receptet más adagszámra méretezve.";
+
+/* Suggested prompt chip: shopping list from a recipe */
+"duckai.suggestion.shopping-list.label" = "Bevásárlólista generálása";
+
+/* Suggested prompt submitted text: shopping list from a recipe */
+"duckai.suggestion.shopping-list.prompt" = "Készíts a receptből egy bevásárlólistát, amelyen a mennyiségek is szerepelnek.";
+
+/* Suggested prompt chip: similar books */
+"duckai.suggestion.similar-books.label" = "Hasonló könyvek ajánlása";
+
+/* Suggested prompt submitted text: similar books */
+"duckai.suggestion.similar-books.prompt" = "Ajánlj hasonló könyveket.";
+
+/* Suggested prompt chip: similar movies or shows */
+"duckai.suggestion.similar-titles.label" = "Hasonló tartalmak ajánlása";
+
+/* Suggested prompt submitted text: similar movies or shows */
+"duckai.suggestion.similar-titles.prompt" = "Ajánlj hasonló filmeket vagy sorozatokat.";
+
+/* Suggested prompt chip: summarize a book */
+"duckai.suggestion.summarize-book.label" = "Könyv összefoglalása";
+
+/* Suggested prompt submitted text: summarize a book */
+"duckai.suggestion.summarize-book.prompt" = "Foglald össze ezt a könyvet.";
+
+/* Suggested prompt chip: summarize the current page */
+"duckai.suggestion.summarize-page.label" = "Oldal összefoglalása";
+
+/* Suggested prompt submitted text: summarize the current page */
+"duckai.suggestion.summarize-page.prompt" = "Foglald össze ezt az oldalt.";
+
+/* Suggested prompt chip: summarize a discussion thread */
+"duckai.suggestion.summarize-thread.label" = "Beszélgetés összefoglalása";
+
+/* Suggested prompt submitted text: summarize a discussion thread */
+"duckai.suggestion.summarize-thread.prompt" = "Foglald össze ezt a beszélgetési szálat.";
+
+/* Suggested prompt chip: summarize a video */
+"duckai.suggestion.summarize-video.label" = "Videó összefoglalása";
+
+/* Suggested prompt submitted text: summarize a video */
+"duckai.suggestion.summarize-video.prompt" = "Foglald össze ezt a videót.";
+
+/* Suggested prompt chip: tailor a resume to a job */
+"duckai.suggestion.tailor-resume.label" = "Önéletrajz igazítása";
+
+/* Suggested prompt submitted text: tailor a resume to a job */
+"duckai.suggestion.tailor-resume.prompt" = "Segíts hozzáigazítani az önéletrajzomat ehhez az álláshoz.";
+
+/* Suggested prompt chip: translate the current page */
+"duckai.suggestion.translate-page.label" = "Oldal lefordítása";
+
+/* Suggested prompt submitted text: translate the page. %@ is replaced with the name of the user's language. */
+"duckai.suggestion.translate-page.prompt" = "Fordítsd le ezt az oldalt %@ nyelvre.";
+
+/* Suggested prompt chip: video key points */
+"duckai.suggestion.video-key-points.label" = "Mik a legfontosabb pontok?";
+
+/* Suggested prompt submitted text: video key points */
+"duckai.suggestion.video-key-points.prompt" = "Melyek a videóban érintett legfontosabb pontok?";
+
+/* Suggested prompt chip: person background */
+"duckai.suggestion.who-is-this.label" = "Ki ez a személy?";
+
+/* Suggested prompt submitted text: person background */
+"duckai.suggestion.who-is-this.prompt" = "Adj egy rövid áttekintést erről a személyről.";
+
+/* Suggested prompt chip: is a movie/show worth watching */
+"duckai.suggestion.worth-watching.label" = "Érdemes megnézni?";
+
+/* Suggested prompt submitted text: is a movie/show worth watching */
+"duckai.suggestion.worth-watching.prompt" = "Érdemes megnézni? Mondj egy spoilermentes véleményt.";
+
 /* Welcome message in Duck.ai contextual sheet. %@ is replaced by a shield icon. */
 "duckai.welcome.message" = "Minden csevegés %@ privát";
 
@@ -3199,7 +3439,7 @@
 "omnibar.notification.trackers-blocked" = "%d Trackers";
 
 /* Text displayed on notification appearing in the address bar when YouTube ad blocking is active */
-"omnibar.notification.youtube-ad-block-on" = "A YouTube-hirdetésblokkolás be van kapcsolva";
+"omnibar.notification.youtube-ad-block-on" = "Hirdetésblokkolás bekapcsolva";
 
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Megvan";
@@ -3864,9 +4104,6 @@
 /* Settings picker label for what to show when returning after inactivity */
 "settings.afterInactivity.v2.label" = "Inaktivitás után";
 
-/* Footer under the AI picker, descriptive sentence without link */
-"settings.ai.new.picker.footer" = "Próbáld ki az új funkciót, amellyel a címsorban váltogathatsz a keresés és a Duck.ai között.";
-
 /* Settings row that opens Duck.ai in a new tab */
 "settings.aichat.duckai.settings" = "A Duck.ai beállításai";
 
@@ -3881,9 +4118,6 @@
 
 /* Settings screen footer text for showing AI Chat in the input box */
 "settings.aichat.shortcuts.input.footer" = "Keresés a weben vagy a Duck.ai megkérdezése közvetlenül a címsorból";
-
-/* Title of search assist settings link */
-"settings.aifeatures.assist" = "Keresési asszisztens beállításai";
 
 /* Search Assist frequency option: never show AI-assisted answers */
 "settings.aifeatures.assist.never" = "Soha";
@@ -4203,6 +4437,9 @@
 /* The name of a settings category listing next steps */
 "settings.next.steps" = "Következő lépések";
 
+/* Accessibility label / title for the button that hides the Settings Next Steps section */
+"settings.next.steps.hide" = "Elrejtés";
+
 /* Label describing a feature which is turned off */
 "settings.off" = "Ki";
 
@@ -4397,6 +4634,12 @@
 
 /* Settings screen cell text for Unprotected Sites */
 "settings.unprotected.sites" = "Védelem nélküli weboldalak";
+
+/* Description shown above the list of unprotected sites */
+"settings.unprotected.sites.description" = "Ezeket a webhelyeket nem erősíti adatvédelem.";
+
+/* Message shown when there are no unprotected sites */
+"settings.unprotected.sites.empty.state" = "Adatvédelem engedélyezve minden webhelyhez";
 
 /* Settings cell for Version */
 "settings.version" = "Változat";
@@ -5317,10 +5560,10 @@
 "windows-waitlist.waitlist-download-screen.try-duckduckgo-for-windows" = "Töltsd le a DuckDuckGo Windows verzióját!";
 
 /* Body text of the bottom sheet asking the user to send an anonymous breakage report */
-"youtube.ad.blocking.breakage-report.message" = "Névtelen hibajelentés küldése a DuckDuckGo-nak. Segíts, hogy mindenkinek jobb legyen a hirdetésblokkolás.";
+"youtube.ad.blocking.breakage-report.message" = "Küldj névtelen jelentést a DuckDuckGo-nak, és segíts, hogy mindenkinek jobb legyen a hirdetésblokkolás!";
 
 /* Primary action sending an anonymous YouTube ad-blocking breakage report */
-"youtube.ad.blocking.breakage-report.send" = "Hibás működésre vonatkozó jelentés küldése";
+"youtube.ad.blocking.breakage-report.send" = "Névtelen jelentés küldése";
 
 /* Title of the bottom sheet asking the user to send an anonymous breakage report after disabling YouTube ad blocking */
 "youtube.ad.blocking.breakage-report.title" = "Nem működik a YouTube hirdetésblokkolója?";
@@ -5457,3 +5700,39 @@
 "network.protection.strict.routing.reminder.notification.body" = "Kikapcsolt állapotában bizonyos forgalmak megkerülhetik a VPN-t. Nyilvános hálózatok esetén ajánlott a szigorú útvonalválasztás.";
 /* The title of the notification reminding the user to turn the VPN Strict routing setting back on */
 "network.protection.strict.routing.reminder.notification.title" = "A szigorú útvonalválasztás KI van kapcsolva";
+
+/* Title for the New Image row in the Duck.ai tab header Plus (+) menu — opens Duck.ai in image generation mode */
+"aichat.header.plusMenu.newImage" = "Új kép";
+
+/* Error toast shown when a Duck.ai chat download fails and nothing was saved. */
+"aiChat.history.download.failed.message" = "Nem sikerült letölteni. Próbáld újra.";
+
+/* Accessibility label for the overflow (three dots) menu button in the Duck.ai chat history navigation bar. */
+"aiChat.history.menu.a11y" = "Továbbiak";
+
+/* Menu item opening Duck.ai Chat Protection settings from the Duck.ai chat history list. */
+"aiChat.history.menu.chatProtection" = "Beszélgetésvédelem";
+
+/* Menu item that starts multi-selecting chats in the Duck.ai chat history list. */
+"aiChat.history.menu.selectChats" = "Beszélgetések kiválasztása";
+
+/* Long-press row menu item that deletes a Duck.ai chat. */
+"aiChat.history.rowMenu.delete" = "Törlés";
+
+/* Long-press row menu item that downloads a Duck.ai chat. */
+"aiChat.history.rowMenu.download" = "Letöltés";
+
+/* Long-press row menu item that pins a Duck.ai chat. */
+"aiChat.history.rowMenu.pin" = "Kitűzés";
+
+/* Long-press row menu item that starts multi-selecting chats in the Duck.ai chat history list. */
+"aiChat.history.rowMenu.select" = "Kiválasztás";
+
+/* Long-press row menu item that unpins a Duck.ai chat. */
+"aiChat.history.rowMenu.unpin" = "Kitűzés megszüntetése";
+
+/* Accessibility label for the search button in the Duck.ai chat history navigation bar. */
+"aiChat.history.search.a11y" = "Keresés";
+
+/* Multi-select toolbar button that deletes all chats when none are individually selected. */
+"aiChat.history.selection.deleteAll" = "Összes törlése";

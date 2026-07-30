@@ -295,6 +295,15 @@ final class URLExtensionTests: XCTestCase {
         XCTAssertFalse(url.isDuckAIVoiceMode)
     }
 
+    // MARK: - Deep-link Surface Tests (Chat Protection)
+
+    func testIsDuckAIChatProtectionOpen() {
+        XCTAssertTrue(URL(string: "https://duck.ai/?chatProtection=open")!.isDuckAIChatProtectionOpen)
+        XCTAssertTrue(URL(string: "https://alice.duck.ai/?chatProtection=open")!.isDuckAIChatProtectionOpen)
+        XCTAssertFalse(URL(string: "https://duck.ai/?chatProtection=closed")!.isDuckAIChatProtectionOpen)
+        XCTAssertFalse(URL(string: "https://duck.ai/")!.isDuckAIChatProtectionOpen)
+    }
+
     // MARK: - Chat ID Tests
 
     func testDuckAIChatIDWithValidChatID() {

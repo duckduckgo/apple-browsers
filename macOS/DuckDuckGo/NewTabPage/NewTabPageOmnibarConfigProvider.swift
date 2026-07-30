@@ -323,6 +323,32 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
             .eraseToAnyPublisher()
     }
 
+    var isAIChatDeletionEnabled: Bool {
+        featureFlagger.isFeatureOn(.aiChatNtpSuggestionsDeletion)
+    }
+
+    /// Re-emits on feature-flag change so the client can push `omnibar_onConfigUpdate` (no reload needed).
+    var isAIChatDeletionEnabledPublisher: AnyPublisher<Bool, Never> {
+        featureFlagger.updatesPublisher
+            .compactMap { [weak self] in self?.isAIChatDeletionEnabled }
+            .prepend(isAIChatDeletionEnabled)
+            .removeDuplicates()
+            .eraseToAnyPublisher()
+    }
+
+    var isSearchSuggestionDeletionEnabled: Bool {
+        featureFlagger.isFeatureOn(.ntpSearchSuggestionsDeletion)
+    }
+
+    /// Re-emits on feature-flag change so the client can push `omnibar_onConfigUpdate` (no reload needed).
+    var isSearchSuggestionDeletionEnabledPublisher: AnyPublisher<Bool, Never> {
+        featureFlagger.updatesPublisher
+            .compactMap { [weak self] in self?.isSearchSuggestionDeletionEnabled }
+            .prepend(isSearchSuggestionDeletionEnabled)
+            .removeDuplicates()
+            .eraseToAnyPublisher()
+    }
+
     var showCustomizePopover: Bool {
         get {
             // We no longer present the tooltip

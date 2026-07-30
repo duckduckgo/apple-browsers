@@ -109,6 +109,12 @@ extension URL {
         } == true
     }
 
+    public var isDuckAIChatProtectionOpen: Bool {
+        queryItems?.contains {
+            $0.name == AIChatURLParameters.chatProtectionName && $0.value == AIChatURLParameters.chatProtectionOpenValue
+        } == true
+    }
+
     /// Returns the chat ID from the URL if present, or nil if not a Duck AI URL with a chat ID.
     public var duckAIChatID: String? {
         guard isDuckAIURL,

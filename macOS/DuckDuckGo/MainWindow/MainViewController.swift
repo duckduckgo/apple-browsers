@@ -304,7 +304,7 @@ final class MainViewController: NSViewController {
                                                                          pinningManager: pinningManager,
                                                                          memoryUsageMonitor: memoryUsageMonitor)
 
-        fireViewController = FireViewController.create(tabCollectionViewModel: tabCollectionViewModel, fireViewModel: fireCoordinator.fireViewModel, visualizeFireAnimationDecider: visualizeFireAnimationDecider)
+        fireViewController = FireViewController.create(tabCollectionViewModel: tabCollectionViewModel, fireViewModel: fireCoordinator.fireViewModel, visualizeFireAnimationDecider: visualizeFireAnimationDecider, featureFlagger: featureFlagger)
         bookmarksBarViewController = BookmarksBarViewController.create(
             tabCollectionViewModel: tabCollectionViewModel,
             bookmarkManager: bookmarkManager,
@@ -324,7 +324,10 @@ final class MainViewController: NSViewController {
         )
         let aiChatOmnibarController = AIChatOmnibarController(
             aiChatTabOpener: aiChatTabOpener,
-            tabCollectionViewModel: tabCollectionViewModel,
+            surface: .addressBar,
+            draftSource: TabPromptDraftSource(tabCollectionViewModel: tabCollectionViewModel),
+            origin: WindowPromptOrigin(tabCollectionViewModel: tabCollectionViewModel),
+            pixelHandler: AddressBarPromptPixelHandler(),
             suggestionsReader: suggestionsReader,
             preferences: NSApp.delegateTyped.aiChatPreferencesPersistor
         )
@@ -338,7 +341,8 @@ final class MainViewController: NSViewController {
         )
         aiChatOmnibarTextContainerViewController = AIChatOmnibarTextContainerViewController(
             omnibarController: aiChatOmnibarController,
-            themeManager: themeManager
+            themeManager: themeManager,
+            isBurner: tabCollectionViewModel.isBurner
         )
         self.vpnUpsellPopoverPresenter = vpnUpsellPopoverPresenter
         self.startupProfiler = startupProfiler

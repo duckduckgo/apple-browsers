@@ -72,6 +72,9 @@ struct SheetViewState {
     let quickActions: [AIChatContextualQuickAction]
     let suggestions: [ContextualSuggestedPrompt]
     let suggestionsLoadState: SuggestionsLoadState
+    /// Analytics-only metadata for the resolved suggestions; meaningful when `suggestionsLoadState == .loaded`.
+    let suggestionsAreSmart: Bool
+    let suggestionsPageType: SuggestionsPageType
 
     enum ContentMode {
         case nativeInput
@@ -127,7 +130,9 @@ final class AIChatContextualChatSessionState {
         chipState: .placeholder,
         quickActions: [.summarize],
         suggestions: [],
-        suggestionsLoadState: .loaded
+        suggestionsLoadState: .loaded,
+        suggestionsAreSmart: false,
+        suggestionsPageType: .none
     )
 
     let effects = PassthroughSubject<SheetEffect, Never>()
@@ -150,6 +155,8 @@ final class AIChatContextualChatSessionState {
 
     private(set) var suggestionsLoadState: SuggestionsLoadState = .loaded
     private(set) var suggestions: [ContextualSuggestedPrompt] = []
+    private var suggestionsAreSmart = false
+    private var suggestionsPageType: SuggestionsPageType = .none
     private var suggestionsResolveTask: Task<Void, Never>?
     private var suggestionsTimeoutTask: Task<Void, Never>?
 
@@ -216,6 +223,12 @@ final class AIChatContextualChatSessionState {
         featureFlagger.isFeatureOn(.contextualSuggestedPrompts)
     }
 
+    /// A pinned context remains tied to its original page while auto-attach is disabled, so page
+    /// suggestions must remain tied to that same context until the chip is removed.
+    var shouldSuspendSuggestionsRefresh: Bool {
+        !shouldAutoCollectContext && intendedAttachedContext != nil
+    }
+
     private var hasUserOptedOutOfContext: Bool {
         userDowngradedToPlaceholder
     }
@@ -275,6 +288,13 @@ final class AIChatContextualChatSessionState {
         rebuildViewState()
     }
 
+    func attachContextFromSuggestionTap(_ context: AIChatPageContext) {
+        chipState = .attached(context)
+        userDowngradedToPlaceholder = false
+        emitDeliveryIfNeeded(context.contextData)
+        rebuildViewState()
+    }
+
     /// Call when starting a new chat (resetting frontend)
     func resetToNoChat() {
         frontendState = .noChat
@@ -289,6 +309,8 @@ final class AIChatContextualChatSessionState {
         suggestionsResolveTask?.cancel()
         suggestionsTimeoutTask?.cancel()
         suggestions = []
+        suggestionsAreSmart = false
+        suggestionsPageType = .none
         suggestionsLoadState = .loaded
         pixelHandler.endManualAttach()
         rebuildViewState()
@@ -445,14 +467,18 @@ final class AIChatContextualChatSessionState {
             return
         }
 
+        let context = context.flatMap { $0.contextData.content.isEmpty ? nil : $0 }
+
         guard let context = context else {
             guard shouldProcessNilContextUpdate else {
                 Logger.aiChat.debug("[SessionState] Ignoring nil context update without active collection")
                 return
             }
-            Logger.aiChat.debug("[SessionState] Context collection returned nil - clearing context and downgrading to placeholder")
+            Logger.aiChat.debug("[SessionState] Context collection returned nil/empty - clearing context and downgrading to placeholder")
             latestContext = nil
             chipState = .placeholder
+            // Clear the persistent UTI host chip
+            emit(.deliverPageContext(nil, targets: .utiChip))
             cleanupFlags()
             rebuildViewState()
             return
@@ -693,6 +719,10 @@ private extension AIChatContextualChatSessionState {
         suggestionsTimeoutTask = Task { [weak self] in
             try? await Task.sleep(nanoseconds: UInt64(timeout * 1_000_000_000))
             guard let self, !Task.isCancelled else { return }
+            guard self.suggestionsLoadState == .loading,
+                  self.featureFlagger.isFeatureOn(.contextualSuggestedPrompts),
+                  !self.hasActiveChat else { return }
+            self.pixelHandler.fireSuggestionsContextCollectionTimedOut()
             self.resolveSuggestionsIfLoading(from: nil)
         }
     }
@@ -713,8 +743,12 @@ private extension AIChatContextualChatSessionState {
         suggestionsResolveTask?.cancel()
         suggestionsResolveTask = Task { [weak self] in
             guard let resolved = await self?.suggestedPromptsProvider.resolveSuggestions(input) else { return }
-            guard let self, !Task.isCancelled else { return }
-            self.suggestions = resolved
+            // A prompt submission may start a chat while the resolve is in flight; submission
+            // methods don't cancel this task, so drop late results to keep chat view state intact.
+            guard let self, !Task.isCancelled, !self.hasActiveChat else { return }
+            self.suggestions = resolved.suggestions
+            self.suggestionsAreSmart = resolved.isSmart
+            self.suggestionsPageType = resolved.pageType
             self.suggestionsLoadState = .loaded
             self.rebuildViewState()
         }
@@ -729,15 +763,30 @@ private extension AIChatContextualChatSessionState {
             content = .webView(restoreURL: contextualChatURL)
         }
 
+        let quickActions = resolveQuickActions()
         viewState = SheetViewState(
             content: content,
             isExpandButtonEnabled: frontendState == .noChat || contextualChatURL != nil,
             shouldShowNewChatButton: frontendState != .noChat,
             chipState: chipState,
-            quickActions: resolveQuickActions(),
-            suggestions: suggestions,
-            suggestionsLoadState: suggestionsLoadState
+            quickActions: quickActions,
+            suggestions: visibleSuggestions(reserving: quickActions.count),
+            suggestionsLoadState: suggestionsLoadState,
+            suggestionsAreSmart: suggestionsAreSmart,
+            suggestionsPageType: suggestionsPageType
         )
+    }
+
+    func visibleSuggestions(reserving slots: Int) -> [ContextualSuggestedPrompt] {
+        let cap = max(0, suggestedPromptsProvider.maxSuggestedPrompts - slots)
+        guard suggestions.count > cap else { return suggestions }
+
+        let prioritySuggestionIDs = suggestedPromptsProvider.prioritySuggestionIDs
+        let prioritySuggestions = suggestions.filter { prioritySuggestionIDs.contains($0.id) }
+        let regularSuggestions = suggestions.filter { !prioritySuggestionIDs.contains($0.id) }
+        let priorityCount = min(prioritySuggestions.count, cap)
+
+        return Array(regularSuggestions.prefix(cap - priorityCount)) + Array(prioritySuggestions.prefix(priorityCount))
     }
 
     func emit(_ effect: SheetEffect) {

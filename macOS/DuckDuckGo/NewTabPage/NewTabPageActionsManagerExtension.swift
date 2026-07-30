@@ -116,7 +116,14 @@ extension NewTabPageActionsManager {
         )
         let omnibarActionHandler = NewTabPageOmnibarActionsHandler(
             windowControllersManager: windowControllersManager,
-            tabsPreferences: tabsPreferences
+            tabsPreferences: tabsPreferences,
+            historyCoordinator: historyCoordinator,
+            aiChatDeleter: AIChatDeleter(historyCleaner: HistoryCleaner(
+                featureFlagger: featureFlagger,
+                privacyConfig: contentBlocking.privacyConfigurationManager,
+                nativeStorageHandler: NSApp.delegateTyped.duckAiNativeStorageHandler,
+                featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: featureFlagger)
+            ))
         )
         let omnibarConfigProvider = NewTabPageOmnibarConfigProvider(
             keyValueStore: keyValueStore,
@@ -232,9 +239,13 @@ extension NewTabPageActionsManager {
             NewTabPageOmnibarClient(configProvider: omnibarConfigProvider,
                                     suggestionsProvider: suggestionsProvider,
                                     aiChatsProvider: aiChatsProvider,
-                                    modelsProvider: NewTabPageOmnibarModelsProvider(),
+                                    modelsProvider: NewTabPageOmnibarModelsProvider(featureFlagger: featureFlagger),
                                     actionHandler: omnibarActionHandler,
-                                    tabsProvider: NewTabPageOmnibarTabsProvider(windowControllersManager: windowControllersManager)),
+                                    tabsProvider: NewTabPageOmnibarTabsProvider(windowControllersManager: windowControllersManager),
+                                    subscriptionDialogPresenter: NewTabPageOmnibarSubscriptionDialogPresenter(
+                                        coordinator: Application.appDelegate.subscriptionNavigationCoordinator,
+                                        subscriptionManager: Application.appDelegate.subscriptionManager
+                                    )),
             NewTabPageWinBackOfferClient(provider: winBackOfferBannerProvider)
         ])
     }

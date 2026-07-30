@@ -1028,6 +1028,25 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         guard tabCollectionViewModel.isBurner,
               !tabCollectionViewModel.isPopup else { return }
 
+        if themeManager.isAppRebranded {
+            rebrandingSetupAsBurnerWindow(theme: theme)
+            return
+        }
+
+        legacySetupAsBurnerWindow(theme: theme)
+    }
+
+    private func rebrandingSetupAsBurnerWindow(theme: (any ThemeStyleProviding)? = nil) {
+        fireButton.isAnimationEnabled = false
+        fireButton.backgroundColor = NSColor(designSystemColor: .accentFirePrimary)
+        fireButton.mouseOverColor = NSColor(designSystemColor: .accentFireSecondary)
+        fireButton.mouseDownColor = NSColor(designSystemColor: .accentFireTertiary)
+        fireButton.normalTintColor = NSColor.white
+        fireButton.mouseDownTintColor = NSColor.white
+        fireButton.mouseOverTintColor = NSColor.white
+    }
+
+    private func legacySetupAsBurnerWindow(theme: (any ThemeStyleProviding)? = nil) {
         fireButton.isAnimationEnabled = false
         fireButton.backgroundColor = NSColor.fireButtonRedBackground
         fireButton.mouseOverColor = NSColor.fireButtonRedHover
@@ -1265,8 +1284,11 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
             return
         }
 
-        tabCollectionViewModel.remove(at: sourceTab, published: false)
-        WindowsManager.openNewWindow(with: tab, droppingPoint: droppingPoint)
+        // The tab moves to a new window; it isn't closed and reopened.
+        TabCollectionViewModel.withWebExtensionTabLifecycleEventsSuppressed {
+            tabCollectionViewModel.remove(at: sourceTab, published: false)
+            WindowsManager.openNewWindow(with: tab, droppingPoint: droppingPoint)
+        }
     }
 
     // MARK: - Mouse Monitor
@@ -1660,8 +1682,9 @@ extension TabBarViewController: ThemeUpdateListening {
 
         backgroundColorView.backgroundColor = colorsProvider.baseBackgroundColor
 
+        let fireWindowHoverColor = themeManager.isAppRebranded ? NSColor(designSystemColor: .accentFireSecondary) : .fireButtonRedHover
         fireButton.normalTintColor = isFireWindow ? .white : colorsProvider.iconsColor
-        fireButton.mouseOverColor = isFireWindow ? .fireButtonRedHover : colorsProvider.buttonMouseOverColor
+        fireButton.mouseOverColor = isFireWindow ? fireWindowHoverColor : colorsProvider.buttonMouseOverColor
 
         leftScrollButton.normalTintColor = colorsProvider.iconsColor
         leftScrollButton.mouseOverColor = colorsProvider.buttonMouseOverColor

@@ -346,7 +346,7 @@ class StatisticsLoaderTests: XCTestCase {
 
         let testExpectation = expectation(description: "refresh complete")
         testee.refreshAppRetentionAtb {
-            Thread.sleep(forTimeInterval: .seconds(0.1))
+            Thread.sleep(forTimeInterval: 0.1)
             testExpectation.fulfill()
         }
 

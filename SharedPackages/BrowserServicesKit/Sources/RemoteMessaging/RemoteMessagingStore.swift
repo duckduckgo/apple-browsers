@@ -83,7 +83,7 @@ public final class RemoteMessagingStore: RemoteMessagingStoring {
                 guard fetchScheduledRemoteMessage(surfaces: RemoteMessageSurfaceType.allCases, triggerFilter: .any) != nil else {
                     return
                 }
-                Task {
+                startTrackedTask(.deleteScheduledMessages) {
                     await self.deleteScheduledMessages()
                 }
             }
@@ -150,6 +150,33 @@ public final class RemoteMessagingStore: RemoteMessagingStoring {
 
     private let errorEvents: EventMapping<RemoteMessagingStoreError>?
     private var featureFlagDisabledCancellable: AnyCancellable?
+
+    private enum PendingTask: Hashable {
+        case dismissal(messageID: String)
+        case deleteScheduledMessages
+    }
+
+    private let pendingTasksLock = NSLock()
+    private var pendingTasks: [PendingTask: Task<Void, Never>] = [:]
+
+    public func waitForStoreInitiatedTasks() async {
+        let tasks = pendingTasksLock.withLock { Array(pendingTasks.values) }
+
+        for task in tasks {
+            await task.value
+        }
+    }
+
+    private func startTrackedTask(_ key: PendingTask, operation: @escaping () async -> Void) {
+        pendingTasksLock.withLock {
+            guard pendingTasks[key] == nil else { return }
+
+            pendingTasks[key] = Task {
+                await operation()
+                self.pendingTasksLock.withLock { self.pendingTasks[key] = nil }
+            }
+        }
+    }
 }
 
 // MARK: - RemoteMessagingConfigManagedObject Public Interface
@@ -461,8 +488,8 @@ extension RemoteMessagingStore {
     }
 
     private func dismissExpiredMessage(withID id: String) {
-        Task {
-            await dismissRemoteMessage(withID: id)
+        startTrackedTask(.dismissal(messageID: id)) {
+            await self.dismissRemoteMessage(withID: id)
         }
     }
 

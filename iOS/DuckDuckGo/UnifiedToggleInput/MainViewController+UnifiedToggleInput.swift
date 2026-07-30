@@ -84,7 +84,8 @@ extension MainViewController {
             syncService: syncService,
             aiChatSyncCleaner: aiChatSyncCleaner,
             recentModalPromptStatusProvider: recentModalPromptStatusProvider,
-            duckAIWideEventInstrumentation: duckAIWideEventInstrumentation
+            duckAIWideEventInstrumentation: duckAIWideEventInstrumentation,
+            attachmentPasteEnabled: unifiedToggleInputFeature.isAttachmentPasteEnabled
         )
         coordinator.delegate = self
         coordinator.updateVoiceSearchAvailability(voiceSearchHelper.isVoiceSearchEnabled)
@@ -362,6 +363,7 @@ struct UnifiedToggleInputRefreshActionInputs: Equatable {
     let tabURL: URL?
     let tabLinkURL: URL?
     let tabIsVoiceModeRequested: Bool
+    let tabRequestsDeepLinkSurface: Bool
     let coordinatorIsAITabState: Bool
     let coordinatorIsActive: Bool
     let coordinatorIsOmnibarSession: Bool
@@ -409,7 +411,7 @@ extension MainViewController {
         let hasExistingChat = resolvedURL?.duckAIChatID != nil
         let isSidebarOpen = resolvedURL?.isDuckAISidebarOpen == true
         let isSettingsOpen = resolvedURL?.isDuckAISettingsOpen == true
-        let shouldExpandAfterRefresh = !hasExistingChat && !inputs.coordinatorHasSubmittedPrompt && !isVoiceMode && !isSidebarOpen && !isSettingsOpen
+        let shouldExpandAfterRefresh = !hasExistingChat && !inputs.coordinatorHasSubmittedPrompt && !isVoiceMode && !isSidebarOpen && !isSettingsOpen && !inputs.tabRequestsDeepLinkSurface
         return .refreshAITab(.showCollapsed(expandAfterRefresh: shouldExpandAfterRefresh))
     }
 }
@@ -475,7 +477,7 @@ private extension MainViewController {
             .removeDuplicates()
             .sink { [weak self] _ in
                 guard let self, let coordinator = self.unifiedToggleInputCoordinator,
-                      coordinator.isAITabExpanded, coordinator.inputMode == .search else { return }
+                      coordinator.isSearchOnAITab else { return }
                 self.updateUnifiedInputContentVisibility(for: coordinator)
             }
             .store(in: &unifiedToggleInputCancellables)
@@ -674,6 +676,7 @@ private extension MainViewController {
             tabURL: tab.url,
             tabLinkURL: tab.link?.url,
             tabIsVoiceModeRequested: tab.isVoiceModeRequested,
+            tabRequestsDeepLinkSurface: tab.isDuckAIDeepLinkSurfaceRequested,
             coordinatorIsAITabState: coordinator.isAITabState,
             coordinatorIsActive: coordinator.isActive,
             coordinatorIsOmnibarSession: coordinator.isOmnibarSession,
@@ -694,6 +697,7 @@ private extension MainViewController {
         // collection is ready and would assert.
         reconcileToolbarVisibilityForCurrentTab()
         reconcileAIChromeForCurrentTab()
+        restoreCurrentBarsVisibilityAfterLayoutRefresh()
     }
 
     func refreshAITab(
@@ -712,6 +716,7 @@ private extension MainViewController {
             coordinator.aiChatInputBoxVisibility = .hidden
         }
         tab.isVoiceModeRequested = false
+        tab.isDuckAIDeepLinkSurfaceRequested = false
         // Before the early-return so AI→AI tab transitions (`preserveCurrentPresentation`) also
         // override the `UIView`-default-visible borders on a freshly-bound tab.
         tab.borderView.isTopVisible = false
@@ -812,7 +817,8 @@ private extension MainViewController {
     }
 
     func setUpAIChatTabChatHeader() {
-        let headerView = AIChatTabChatHeaderView(isFireModeEnabled: fireModeCapability.isFireModeEnabled)
+        let headerView = AIChatTabChatHeaderView(isFireModeEnabled: fireModeCapability.isFireModeEnabled,
+                                                 shouldShowImageGeneration: featureFlagger.isFeatureOn(.aiChatNativeSidebar))
         headerView.delegate = self
         headerView.translatesAutoresizingMaskIntoConstraints = false
         viewCoordinator.aiChatTabChatHeaderContainer.addSubview(headerView)
@@ -833,6 +839,7 @@ private extension MainViewController {
     func refreshAIChatTabChatHeaderSubscriptionState() {
         Task { @MainActor [weak self] in
             let isActive = (try? await AppDependencyProvider.shared.subscriptionManager.isFeatureEnabled(.paidAIChat)) ?? false
+            self?.isPaidAIChatEnabledForSwipe = isActive
             self?.aiChatTabChatHeaderView?.configure(isSubscriptionActive: isActive)
         }
     }
@@ -844,11 +851,13 @@ extension MainViewController {
         updateUnifiedInputContentVisibility(for: coordinator, renderState: coordinator.computeRenderState())
     }
 
+    /// The collapsed-footer pose — how the Duck.ai chat input and its separator sit at the bottom of the
+    /// screen — reads the coordinator's live display state; the chrome below it still trusts `renderState`.
     func updateUnifiedInputContentVisibility(for coordinator: UnifiedToggleInputCoordinator, renderState: UTIRenderState) {
         let isOnAITab = currentTab?.isAITab == true
         coordinator.contentViewController.forceBottomBarLayout = coordinator.isAITabState
 
-        let isAITabCollapsed = coordinator.isAITabState && !renderState.isExpanded
+        let isAITabCollapsed = coordinator.isAITabCollapsed
         coordinator.viewController.setAITabCollapsedFooterPoseActive(isAITabCollapsed)
         viewCoordinator.setAITabCollapsedTopSeparatorVisible(isAITabCollapsed)
 
@@ -1159,8 +1168,19 @@ extension MainViewController: UnifiedToggleInputOmnibarActivating {
         coordinator.updateInputMode(inputMode, animated: false)
         let isToggleEnabled = isAIChatSearchInputToggleEnabledForCurrentOnboardingState()
         coordinator.updateToggleEnabled(isToggleEnabled)
-        coordinator.activateFromOmnibar(prefilledText: currentText, inputMode: inputMode, cardPosition: position)
+        coordinator.activateFromOmnibar(prefilledText: currentText,
+                                        shouldSelectAllText: shouldAutoSelectOmnibarText(currentText),
+                                        inputMode: inputMode,
+                                        cardPosition: position)
         return .intercept
+    }
+
+    private func shouldAutoSelectOmnibarText(_ text: String?) -> Bool {
+        guard let text = text?.trimmingWhitespace(), !text.isEmpty else { return false }
+        if URL(trimmedAddressBarString: text, useUnifiedLogic: isUnifiedURLPredictionEnabled) != nil {
+            return true
+        }
+        return shouldAutoSelectTextForSERPQuery()
     }
 }
 
@@ -1328,8 +1348,12 @@ extension MainViewController: AIChatTabChatHeaderViewDelegate {
 
     func aiChatTabChatHeaderDidTapChatList() {
         DailyPixel.fireDailyAndCount(pixel: .aiChatOmnibarSidebarButtonTapped)
-        unifiedToggleInputCoordinator?.showCollapsed()
-        currentTab?.submitToggleSidebarAction()
+        if featureFlagger.isFeatureOn(.aiChatNativeSidebar) {
+            openAIChatHistory(source: .addressBar)
+        } else {
+            unifiedToggleInputCoordinator?.showCollapsed()
+            currentTab?.submitToggleSidebarAction()
+        }
     }
 
     func aiChatTabChatHeaderDidTapUpgrade() {
@@ -1377,6 +1401,14 @@ extension MainViewController: AIChatTabChatHeaderViewDelegate {
 
     func aiChatTabChatHeaderDidTapNewVoiceChat() {
         onDuckAIVoiceModeRequested()
+    }
+
+    func aiChatTabChatHeaderDidTapNewImage() {
+        DailyPixel.fireDailyAndCount(pixel: .aiChatNewImageTapped)
+        unifiedToggleInputCoordinator?.startNewChat()
+        unifiedToggleInputCoordinator?.selectTool(.imageGeneration)
+        unifiedToggleInputCoordinator?.showExpanded(inputMode: .aiChat)
+        currentTab?.submitStartChatAction()
     }
 
     func aiChatTabChatHeaderDidTapNewTab() {

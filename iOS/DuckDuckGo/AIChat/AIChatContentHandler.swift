@@ -51,6 +51,7 @@ protocol AIChatUserScriptProviding: AnyObject {
     func submitOpenSettingsAction()
     func submitPageContext(_ context: AIChatPageContextData?)
     func submitToggleSidebarAction()
+    func submitOpenChatProtectionAction()
 }
 
 extension AIChatUserScriptProviding {
@@ -126,6 +127,9 @@ protocol AIChatContentHandling: AnyObject {
 
     /// Submits a toggle sidebar action to open/close the sidebar.
     func submitToggleSidebarAction()
+
+    /// Submits a chat-protection action, opening the "All chats are private" page.
+    func submitOpenChatProtectionAction()
 
     /// Pushes page context to the frontend (for context updates during navigation).
     func submitPageContext(_ context: AIChatPageContextData?)
@@ -313,6 +317,10 @@ final class AIChatContentHandler: AIChatContentHandling {
     /// Submits a toggle sidebar action to open/close the sidebar.
     func submitToggleSidebarAction() {
         userScript?.submitToggleSidebarAction()
+    }
+
+    func submitOpenChatProtectionAction() {
+        userScript?.submitOpenChatProtectionAction()
     }
 
     func submitPageContext(_ context: AIChatPageContextData?) {

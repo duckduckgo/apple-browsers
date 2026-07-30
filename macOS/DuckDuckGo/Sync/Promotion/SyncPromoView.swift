@@ -85,7 +85,7 @@ struct SyncPromoView: View {
     }
 
     private var image: some View {
-        Image(viewModel.image)
+        Image(nsImage: viewModel.image)
             .resizable()
             .frame(width: 48, height: 48)
     }

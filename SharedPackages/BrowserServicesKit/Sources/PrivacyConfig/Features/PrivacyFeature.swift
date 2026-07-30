@@ -253,6 +253,10 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213037858764805
     case crashCollectionLimitCallStackTreeDepth
 
+    /// Enables sending MetricKit launch-time telemetry pixels.
+    /// https://app.asana.com/1/137249556945/project/1208671677432066/task/1214963974721156
+    case launchTimeMetrics
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212835969125260
     case browsingMenuSheetEnabledByDefault
 
@@ -294,16 +298,14 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1204186595873227/task/1214830562427843
     case defaultExistingIPhoneUsersToNewTabAfterIdle
 
-    /// Coalesces tabManager.save into a debounced/max-wait window and moves the disk write off-main.
-    /// Kill switch in case the new path regresses persistence reliability or hang counts.
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215099690878849
-    case tabsSaveOptimization
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215169783702336
     case walletPassDownload
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215359554019438?focus=true
     case floatingUI
+
+    /// https://app.asana.com/1/137249556945/project/392891325557410/task/1216807388526023?focus=true
+    case tabSwitcherJuly2026
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215385432113040?focus=true
     case removeChatHistory
@@ -315,6 +317,12 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// NA Experiment: tailor the onboarding flow based on the user's download reason.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216491579842691?focus=true
     case onboardingFlowByDownloadReasonExperiment
+
+    /// Caches the blank-snapshot overlay off the suspend path to avoid the background scene-update watchdog.
+    case blankSnapshotCaching
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216629730083154?focus=true
+    case systemFindInPage
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {
@@ -373,6 +381,7 @@ public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
     case webViewUserAgent
     case freemiumPIR
     case optOutRetryError96Hours
+    case deferredSecureVaultInit
 }
 
 public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
@@ -464,6 +473,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables Unified Toggle Input inside the iOS contextual AI chat sheet.
     case contextualUnifiedToggleInput
 
+    /// Kill switch for routing native image/file paste into the unified input attachment strip.
+    case unifiedToggleInputAttachmentPaste
+
     /// Signals that the iOS app should display duck.ai chats in "contextual mode" when opened from specific entry points
     case contextualDuckAIMode
 
@@ -512,6 +524,12 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Enables attaching content from multiple open tabs to the New Tab Page omnibar Duck.ai chat.
     case ntpAttachMoreTabs
+
+    /// Enables the cap on how many open tabs can be attached (native omnibar and NTP). Kill switch.
+    case tabAttachmentLimit
+
+    /// Enables deleting recent AI chats from the New Tab Page omnibar
+    case ntpSuggestionsDeletion
 
     /// Enables page context feature on iPad
     case iPadPageContext
@@ -589,11 +607,6 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// search-mode toggle and seeds the duckduckgo.com homepage. Off keeps the choice address-bar only.
     case onboardingToggleAffectsNtpAndDdg
 
-    /// Replaces the web-link Search Assist and Hide AI-Generated Images rows on the AI Features
-    /// settings screen with native controls, regroups the main AI settings at the top, and adds the
-    /// "Disable All AI Options" / Reset button. Off keeps today's web-link rows.
-    case aiFeaturesNativeControls
-
     /// Enables the native Duck.ai bar controls (model picker) in the iPad address bar's
     /// expanded Duck.ai input area.
     case iPadDuckAIBarControls
@@ -606,6 +619,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Replaces Duck.ai's web-based chat sidebar with native UI.
     case nativeSidebar
+
+    /// macOS only. System-wide Duck.ai entry point: global keyboard shortcut and menu bar icon.
+    case macosPromptBar
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {
@@ -621,6 +637,9 @@ public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Global switch to disable advanced card ordering for the Next Steps List widget
     case nextStepsListAdvancedCardOrdering
+
+    /// Enables deleting history-based search suggestions from the New Tab Page omnibar
+    case searchSuggestionsDeletion
 }
 
 public enum NetworkProtectionSubfeature: String, Equatable, PrivacySubfeature {
@@ -660,14 +679,6 @@ public enum NetworkProtectionSubfeature: String, Equatable, PrivacySubfeature {
     /// Exclude Carrier-Grade NAT (100.64.0.0/10) from the VPN tunnel.
     /// Keeps Wi-Fi calling, Visual Voicemail, and mesh VPNs (Tailscale/ZeroTier) working.
     case excludeCGNAT
-
-    /// Kill switch for the orphaned-proxy detection machinery (tunnel heartbeat + proxy detection loop + pixel).
-    /// Off by default → detection runs; enable remotely to disable it.
-    case orphanProxyDetectionKillSwitch
-
-    /// Kill switch for the orphaned-proxy full-bypass behavior.
-    /// Off by default → bypass engages when an orphaned proxy is detected; enable remotely to disable it.
-    case orphanProxyBypassKillSwitch
 
     /// Toggle for the Copy VPN Diagnostics button in VPN settings/status.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215794369750045
@@ -736,6 +747,7 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case subscriptionPromoForReinstallers
     case subscriptionExpirationReminderNotification
     case subscriptionPromoForExistingUsers
+    case monthlyFreeTrialExperiment
 }
 
 public enum DuckPlayerSubfeature: String, PrivacySubfeature {

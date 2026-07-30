@@ -259,6 +259,11 @@ final class UnifiedToggleInputView: UIView {
         set { toolsToolbar.attachmentMenu = newValue }
     }
 
+    weak var attachmentPasteHandler: AttachmentPasteHandling? {
+        get { textEntryView.attachmentPasteHandler }
+        set { textEntryView.attachmentPasteHandler = newValue }
+    }
+
     var reasoningPickerMenu: UIMenu? {
         get { toolsToolbar.reasoningPickerMenu }
         set { toolsToolbar.reasoningPickerMenu = newValue }
@@ -668,6 +673,10 @@ final class UnifiedToggleInputView: UIView {
 
     func selectAllText() {
         textEntryView.selectAllText()
+    }
+
+    func moveCaretToStart() {
+        textEntryView.moveCaretToStart()
     }
 
     var placeholderWindowX: CGFloat? { textEntryView.placeholderWindowX }

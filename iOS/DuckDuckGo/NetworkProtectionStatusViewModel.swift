@@ -18,6 +18,7 @@
 //
 
 import Foundation
+import FoundationExtensions
 import Combine
 import CombineExtensions
 import NetworkExtension
@@ -94,7 +95,8 @@ final class NetworkProtectionStatusViewModel: ObservableObject {
     }()
 
     private let featureFlagger: FeatureFlagger
-    private let tunnelController: (TunnelController & TunnelSessionProvider)
+    private let tunnelController: (VPNConnectionContextProvidingTunnelController & TunnelSessionProvider)
+    private let entryContextProvider: () -> VPNConnectionWideEventData.EntryContext
     private let statusObserver: ConnectionStatusObserver
     private let serverInfoObserver: ConnectionServerInfoObserver
     private let errorObserver: ConnectionErrorObserver
@@ -212,7 +214,8 @@ final class NetworkProtectionStatusViewModel: ObservableObject {
 
     public let enablesUnifiedFeedbackForm: Bool
 
-    public init(tunnelController: (TunnelController & TunnelSessionProvider),
+    public init(tunnelController: (VPNConnectionContextProvidingTunnelController & TunnelSessionProvider),
+                entryContextProvider: @escaping () -> VPNConnectionWideEventData.EntryContext,
                 settings: VPNSettings,
                 statusObserver: ConnectionStatusObserver,
                 serverInfoObserver: ConnectionServerInfoObserver,
@@ -224,6 +227,7 @@ final class NetworkProtectionStatusViewModel: ObservableObject {
                 featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
                 featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery()) {
         self.tunnelController = tunnelController
+        self.entryContextProvider = entryContextProvider
         self.settings = settings
         self.statusObserver = statusObserver
         self.serverInfoObserver = serverInfoObserver
@@ -632,7 +636,7 @@ final class NetworkProtectionStatusViewModel: ObservableObject {
 
     @MainActor
     private func enableNetP() async {
-        await tunnelController.start()
+        await tunnelController.start(entryContext: entryContextProvider())
     }
 
     @MainActor

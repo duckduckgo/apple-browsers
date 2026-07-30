@@ -46,6 +46,9 @@ public enum AIChatURLParameters {
     public static let settingsName = "settings"
     public static let settingsOpenValue = "open"
 
+    public static let chatProtectionName = "chatProtection"
+    public static let chatProtectionOpenValue = "open"
+
     /// Tells the Duck.ai FE to render only the Customize Responses card.
     public static let customizeResponsesName = "customize-responses"
     public static let customizeResponsesValue = "full"
@@ -68,6 +71,11 @@ public enum AIChatURLParameters {
     /// Appends `?settings=open` to the given base URL.
     public static func settingsOpenURL(from baseURL: URL) -> URL {
         baseURL.addingOrReplacing(URLQueryItem(name: settingsName, value: settingsOpenValue))
+    }
+
+    /// Appends `?chatProtection=open` to the given base URL.
+    public static func chatProtectionURL(from baseURL: URL) -> URL {
+        baseURL.addingOrReplacing(URLQueryItem(name: chatProtectionName, value: chatProtectionOpenValue))
     }
 
     /// Appends `?customize-responses=full` to the given base URL.

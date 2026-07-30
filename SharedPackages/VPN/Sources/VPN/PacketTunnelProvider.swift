@@ -816,6 +816,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
         let startupOptions = StartupOptions(options: options ?? [:])
         Logger.networkProtection.log("Starting tunnel with options: \(startupOptions.description, privacy: .public)")
+        loopDetector.connectionStarted(isOnDemand: startupOptions.startupMethod == .automaticOnDemand)
         setupAndStartConnectionWideEvent(with: startupOptions.startupMethod)
 
         // Reset snooze if the VPN is restarting.
@@ -1575,7 +1576,6 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     // MARK: - Tunnel heartbeat
 
     private func startHeartbeat() {
-        guard settings.isOrphanProxyDetectionEnabled else { return }
         guard let heartbeatStore else { return }
         heartbeatTask = Task.periodic(interval: Self.heartbeatInterval) { [weak heartbeatStore] in
             heartbeatStore?.recordHeartbeat()
@@ -1758,12 +1758,20 @@ extension PacketTunnelProvider {
     }
 
     func completeAndCleanupConnectionWideEvent(with error: Error? = nil, description: String? = nil) {
+        defer {
+            loopDetector.connectionFinished()
+        }
+
         guard let data = self.connectionWideEventData else { return }
         data.tunnelStartDuration?.complete()
         data.overallDuration?.complete()
         if let error {
             data.errorData = .init(error: error, description: description)
-            wideEvent.completeFlow(data, status: .failure, onComplete: { _, _ in })
+            if loopDetector.shouldSuppressCurrentAttemptTelemetry {
+                wideEvent.discardFlow(data)
+            } else {
+                wideEvent.completeFlow(data, status: .failure, onComplete: { _, _ in })
+            }
         } else {
             wideEvent.completeFlow(data, status: .success, onComplete: { _, _ in })
         }

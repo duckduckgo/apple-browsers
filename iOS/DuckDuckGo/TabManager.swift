@@ -382,6 +382,20 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         return tabControllerCache.first { $0.tabModel === tab }
     }
 
+    @MainActor
+    func controller(for tab: Tab, createIfNeeded: Bool) -> TabViewController? {
+        if let controller = controller(for: tab) {
+            return controller
+        }
+        guard createIfNeeded, tab.link != nil else { return nil }
+
+        let tabInteractionState = interactionStateSource?.popLastStateForTab(tab)
+        let controller = buildController(forTab: tab, inheritedAttribution: nil, interactionState: tabInteractionState)
+        tabControllerCache.append(controller)
+        cacheDelegate?.tabManager(self, didCreateController: controller)
+        return controller
+    }
+
     func controller(forWebView webView: WKWebView) -> TabViewController? {
         return tabControllerCache.first { $0.webView === webView }
     }
@@ -640,14 +654,9 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
 
     /// Schedules a debounced save. Returns immediately; the write is async. Callers that need
     /// the write on disk before returning, or that need the real write `Result`, must use
-    /// `flushPendingSave()` instead. When the `tabsSaveOptimization` feature flag is off, falls
-    /// back to a synchronous save (old behavior) but the result is still discarded.
+    /// `flushPendingSave()` instead.
     @MainActor
     func save() {
-        guard featureFlagger.isFeatureOn(.tabsSaveOptimization) else {
-            _ = tabsModelProvider.flushPendingSave()
-            return
-        }
         scheduleDebouncedSave()
     }
 

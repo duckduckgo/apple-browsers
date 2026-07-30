@@ -173,7 +173,9 @@ extension Preferences {
                                     Text(UserText.vpnDnsServerPickerCustomTitle)
                                     Button(UserText.vpnDnsServerPickerCustomButtonTitle) {
                                         showsCustomDNSServerPageSheet.toggle()
-                                    }.disabled(!model.isCustomDNSSelected)
+                                    }
+                                    .tint(nil)
+                                    .disabled(!model.isCustomDNSSelected)
                                 }
                                 if let dnsServersText = model.customDNSServers {
                                     TextMenuItemCaption(dnsServersText)
@@ -182,6 +184,7 @@ extension Preferences {
                             }.tag(true)
                         }
                         .pickerStyle(.radioGroup)
+                        .rebrandedControlTint()
                         .offset(x: PreferencesUI_macOS.Const.pickerHorizontalOffset)
                         .onChange(of: model.isCustomDNSSelected) { isCustomDNSSelected in
                             if isCustomDNSSelected && (model.customDNSServers?.isEmpty ?? true) {

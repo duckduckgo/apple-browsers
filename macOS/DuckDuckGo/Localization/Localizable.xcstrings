@@ -75455,6 +75455,42 @@
         }
       }
     },
+    "permission.center.autoplay.disclaimer.message" : {
+      "comment" : "Explains the Autoplay behavior the Permission Center",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "DuckDuckGo stops videos from autoplaying. You can change settings for this site here, and for all sites in"
+          }
+        }
+      }
+    },
+    "permission.center.autoplay.disclaimer.settings.link" : {
+      "comment" : "Clickable label in the autoplay disclaimer UI that opens the General settings pane",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Settings → General → Permissions."
+          }
+        }
+      }
+    },
+    "permission.center.autoplay.disclaimer.title" : {
+      "comment" : "Title of the informational card explaining autoplay blocking in the Permission Center",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Video autoplay stopped"
+          }
+        }
+      }
+    },
     "permission.center.external.apps" : {
       "comment" : "Permission center header for external app permissions",
       "extractionState" : "extracted_with_value",

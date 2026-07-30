@@ -1380,6 +1380,9 @@ struct UserText {
     static let permissionCenterResetTooltip = NSLocalizedString("permission.center.reset.tooltip", value: "Remove permission", comment: "Tooltip for the remove permission button in permission center")
     static let permissionCenterReloadMessage = NSLocalizedString("permission.center.reload.message", value: "Reload for changes to take effect", comment: "Message shown in permission center when permissions have been changed and reload is needed")
     static let permissionCenterReloadButton = NSLocalizedString("permission.center.reload.button", value: "Reload", comment: "Button to reload the page to apply permission changes")
+    static let permissionCenterAutoplayDisclaimerTitle = NSLocalizedString("permission.center.autoplay.disclaimer.title", value: "Video autoplay stopped", comment: "Title of the informational card explaining autoplay blocking in the Permission Center")
+    static let permissionCenterAutoplayDisclaimerMessage = NSLocalizedString("permission.center.autoplay.disclaimer.message", value: "DuckDuckGo stops videos from autoplaying. You can change settings for this site here, and for all sites in", comment: "Explains the Autoplay behavior the Permission Center")
+    static let permissionCenterAutoplayDisclaimerSettingsLink = NSLocalizedString("permission.center.autoplay.disclaimer.settings.link", value: "Settings → General → Permissions.", comment: "Clickable label in the autoplay disclaimer UI that opens the General settings pane")
 
     static let permissionsSection = NSLocalizedString("preferences.permissions.section", value: "Permissions", comment: "Section header for the Permissions section in General preferences")
     static let autoplayLabel = NSLocalizedString("preferences.autoplay.label", value: "Autoplay website media", comment: "Label for the autoplay blocking preference picker in General preferences")

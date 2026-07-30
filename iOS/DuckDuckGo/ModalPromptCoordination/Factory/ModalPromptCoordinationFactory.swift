@@ -72,7 +72,9 @@ enum ModalPromptCoordinationFactory {
                 subscriptionPromoExistingUser: subscriptionPromoExistingUserModalPromptProvider,
                 whatsNew: whatsNewModalPromptProvider,
                 cookiePopupProtectionOptIn: cookiePopupProtectionOptInModalPromptProvider
-            )
+            ),
+            featureFlagger: dependency.featureFlagger,
+            promoQueueLeaseArbiter: dependency.promoQueueLeaseArbiter
         )
     }
 
@@ -118,6 +120,7 @@ extension ModalPromptCoordinationFactory {
         let keyValueFileStoreService: ThrowingKeyValueStoring
         let privacyConfigurationManager: PrivacyConfigurationManaging
         let featureFlagger: FeatureFlagger
+        let promoQueueLeaseArbiter: PromoQueueLeaseArbitrating
         let whatsNewRepository: WhatsNewMessageRepository
         let remoteMessagingActionHandler: RemoteMessagingActionHandling
         let remoteMessagingPixelReporter: RemoteMessagingPixelReporting

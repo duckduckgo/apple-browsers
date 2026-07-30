@@ -272,6 +272,7 @@ struct Launching: LaunchingHandling {
 
         // Initialise modal prompts coordination
         let omniBarFocuser = OmniBarFocuserProvider()
+        let promoQueueLeaseArbiter = PromoQueueLeaseArbiter()
         let modalPromptCoordinationService = ModalPromptCoordinationFactory.makeService(
             dependency: .init(
                 launchSourceManager: launchSourceManager,
@@ -279,6 +280,7 @@ struct Launching: LaunchingHandling {
                 keyValueFileStoreService: appKeyValueFileStoreService.keyValueFilesStore,
                 privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager,
                 featureFlagger: featureFlagger,
+                promoQueueLeaseArbiter: promoQueueLeaseArbiter,
                 whatsNewRepository: whatsNewRepository,
                 remoteMessagingActionHandler: remoteMessagingService.remoteMessagingActionHandler,
                 remoteMessagingPixelReporter: remoteMessagingService.pixelReporter,

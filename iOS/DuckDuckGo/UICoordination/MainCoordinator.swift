@@ -312,6 +312,7 @@ final class MainCoordinator {
                                         darkReaderFeatureSettings: darkReaderFeatureSettings,
                                         toggleModeStorage: toggleModeStorage,
                                         onboardingManager: onboardingManager,
+                                        newTabPagePromoCoordinator: modalPromptCoordinationService,
                                         recentModalPromptStatusProvider: modalPromptCoordinationService)
 
         setupWebExtensions(privacyConfigurationManager: privacyConfigurationManager)

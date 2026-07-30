@@ -1535,6 +1535,13 @@
 		9F387DFD2EA8BFA4006861F8 /* MockModalPromptCoordinationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F387DFB2EA8BFA0006861F8 /* MockModalPromptCoordinationManager.swift */; };
 		9F387DFE2EA8BFA4006861F8 /* MockModalPromptCoordinationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F387DFB2EA8BFA0006861F8 /* MockModalPromptCoordinationManager.swift */; };
 		9F387DFF2EA8BFA4006861F8 /* MockModalPromptCoordinationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F387DFB2EA8BFA0006861F8 /* MockModalPromptCoordinationManager.swift */; };
+		B6A7C20C31A1000100F00D01 /* MockNewTabPagePromoCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6A7C20B31A1000100F00D01 /* MockNewTabPagePromoCoordinator.swift */; };
+		B6A7C20D31A1000100F00D01 /* MockNewTabPagePromoCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6A7C20B31A1000100F00D01 /* MockNewTabPagePromoCoordinator.swift */; };
+		B6A7C20E31A1000100F00D01 /* MockNewTabPagePromoCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6A7C20B31A1000100F00D01 /* MockNewTabPagePromoCoordinator.swift */; };
+		B6A7C20F31A1000100F00D01 /* MockNewTabPagePromoCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6A7C20B31A1000100F00D01 /* MockNewTabPagePromoCoordinator.swift */; };
+		B6A7C21231A1000100F00D01 /* PromoQueueFeatureState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6A7C21131A1000100F00D01 /* PromoQueueFeatureState.swift */; };
+		B6A7C21431A1000100F00D01 /* NewTabPagePromoCoordination.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6A7C21331A1000100F00D01 /* NewTabPagePromoCoordination.swift */; };
+		B6A7C21631A1000100F00D01 /* ModalPromptRootAttachmentChecker.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6A7C21531A1000100F00D01 /* ModalPromptRootAttachmentChecker.swift */; };
 		9F387E032EA98146006861F8 /* ModalPromptCoordinationFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F387E022EA98140006861F8 /* ModalPromptCoordinationFactory.swift */; };
 		9F387E062EA9A1D8006861F8 /* NewAddressBarPickerModalPromptProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F387E042EA9A1D8006861F8 /* NewAddressBarPickerModalPromptProviderTests.swift */; };
 		9F387E082EA9A29A006861F8 /* MockNewAddressBarPickerDisplayValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F387E072EA9A297006861F8 /* MockNewAddressBarPickerDisplayValidator.swift */; };
@@ -4341,6 +4348,10 @@
 		9F387DF42EA8BED0006861F8 /* ModalPromptCoordinationServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModalPromptCoordinationServiceTests.swift; sourceTree = "<group>"; };
 		9F387DF62EA8BF46006861F8 /* MockLaunchSourceManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockLaunchSourceManager.swift; sourceTree = "<group>"; };
 		9F387DFB2EA8BFA0006861F8 /* MockModalPromptCoordinationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockModalPromptCoordinationManager.swift; sourceTree = "<group>"; };
+		B6A7C20B31A1000100F00D01 /* MockNewTabPagePromoCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockNewTabPagePromoCoordinator.swift; sourceTree = "<group>"; };
+		B6A7C21131A1000100F00D01 /* PromoQueueFeatureState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromoQueueFeatureState.swift; sourceTree = "<group>"; };
+		B6A7C21331A1000100F00D01 /* NewTabPagePromoCoordination.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPagePromoCoordination.swift; sourceTree = "<group>"; };
+		B6A7C21531A1000100F00D01 /* ModalPromptRootAttachmentChecker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModalPromptRootAttachmentChecker.swift; sourceTree = "<group>"; };
 		9F387E022EA98140006861F8 /* ModalPromptCoordinationFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModalPromptCoordinationFactory.swift; sourceTree = "<group>"; };
 		9F387E042EA9A1D8006861F8 /* NewAddressBarPickerModalPromptProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewAddressBarPickerModalPromptProviderTests.swift; sourceTree = "<group>"; };
 		9F387E072EA9A297006861F8 /* MockNewAddressBarPickerDisplayValidator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockNewAddressBarPickerDisplayValidator.swift; sourceTree = "<group>"; };
@@ -8618,6 +8629,8 @@
 				9FA09DA52EA71F2900E26F3F /* Cooldown */,
 				9F0B19B22EA5E4FA001FA867 /* Providers */,
 				9F0B19B62EA5E740001FA867 /* ModalPromptCoordinationManager.swift */,
+				B6A7C21131A1000100F00D01 /* PromoQueueFeatureState.swift */,
+				B6A7C21331A1000100F00D01 /* NewTabPagePromoCoordination.swift */,
 			);
 			path = ModalPromptCoordination;
 			sourceTree = "<group>";
@@ -8788,6 +8801,7 @@
 			isa = PBXGroup;
 			children = (
 				9F387DFB2EA8BFA0006861F8 /* MockModalPromptCoordinationManager.swift */,
+				B6A7C20B31A1000100F00D01 /* MockNewTabPagePromoCoordinator.swift */,
 				9F387DDC2EA881C7006861F8 /* PromptCooldownMocks.swift */,
 				9F387DE72EA895B6006861F8 /* MockModalPromptProvider.swift */,
 				9F387DEC2EA895DC006861F8 /* MockModalPromptPresenter.swift */,
@@ -9120,6 +9134,7 @@
 			isa = PBXGroup;
 			children = (
 				9FA09DAE2EA84F5200E26F3F /* ModalPromptScheduling.swift */,
+				B6A7C21531A1000100F00D01 /* ModalPromptRootAttachmentChecker.swift */,
 			);
 			path = Helpers;
 			sourceTree = "<group>";
@@ -13829,6 +13844,9 @@
 				5AB12C3D4E5F60718293A4E1 /* ChatExportWriter.swift in Sources */,
 				5AB12C3D4E5F60718293A4E3 /* ChatHistoryDownloader.swift in Sources */,
 				9F0B19B72EA5E74F001FA867 /* ModalPromptCoordinationManager.swift in Sources */,
+				B6A7C21231A1000100F00D01 /* PromoQueueFeatureState.swift in Sources */,
+				B6A7C21431A1000100F00D01 /* NewTabPagePromoCoordination.swift in Sources */,
+				B6A7C21631A1000100F00D01 /* ModalPromptRootAttachmentChecker.swift in Sources */,
 				B6A7C20231A1000100F00D01 /* PromoQueueLeaseArbiter.swift in Sources */,
 				CBD4F13C279EBF4A00B20FD7 /* HomeMessage.swift in Sources */,
 				6FB2A67E2C2DAFB4004D20C8 /* NewTabPageGridView.swift in Sources */,
@@ -14609,6 +14627,7 @@
 				98E563FD2DE8B32D00E6E75F /* OnboardingManagerMock.swift in Sources */,
 				9FE7CD5E2E14C81A006691AB /* MockDefaultBrowserPromptUserActivityStorage.swift in Sources */,
 				9F387DFD2EA8BFA4006861F8 /* MockModalPromptCoordinationManager.swift in Sources */,
+				B6A7C20E31A1000100F00D01 /* MockNewTabPagePromoCoordinator.swift in Sources */,
 				C19888EC2EF18B69004612AD /* DaxEasterEggLogoStoreTests.swift in Sources */,
 				98E563FF2DE8B32D00E6E75F /* DuckPlayerMocks.swift in Sources */,
 				CB6D17A22FA397FC00ECD5AE /* UnifiedToggleInputPageContextChipViewModelTests.swift in Sources */,
@@ -14979,6 +14998,7 @@
 				98E5642F2DE8B32D00E6E75F /* MockTutorialSettings.swift in Sources */,
 				989F0DAA2ECB517100781641 /* MockDefaultScriptSourceProviderDependencies.swift in Sources */,
 				9F387DFE2EA8BFA4006861F8 /* MockModalPromptCoordinationManager.swift in Sources */,
+				B6A7C20C31A1000100F00D01 /* MockNewTabPagePromoCoordinator.swift in Sources */,
 				36F2CA622E6098F800C7039D /* InactivityNotificationSchedulerServiceIntegrationTests.swift in Sources */,
 				98E564302DE8B32D00E6E75F /* OnboardingPixelReporterMock.swift in Sources */,
 				80483EEF2F4D5C0100563037 /* MockAutoconsentManagement.swift in Sources */,
@@ -15059,6 +15079,7 @@
 				9F60CBBB2E989EDC004D2367 /* MockLastSearchStateRefresher.swift in Sources */,
 				98E564A02DE8EDCE00E6E75F /* CapturingSyncPausedStateManager.swift in Sources */,
 				9F387DFC2EA8BFA4006861F8 /* MockModalPromptCoordinationManager.swift in Sources */,
+				B6A7C20F31A1000100F00D01 /* MockNewTabPagePromoCoordinator.swift in Sources */,
 				989F0DA22ECB278600781641 /* ContentBlockerRulesManagerMock.swift in Sources */,
 				98E563472DE8B04D00E6E75F /* TestDataLoader.swift in Sources */,
 				9FA0AF242EB8358100713387 /* MockWhatsNewDisplayModelMapper.swift in Sources */,
@@ -15184,6 +15205,7 @@
 				9F60CBBA2E989EDC004D2367 /* MockLastSearchStateRefresher.swift in Sources */,
 				98E564AA2DE8EDF000E6E75F /* CapturingAdapterErrorHandler.swift in Sources */,
 				9F387DFF2EA8BFA4006861F8 /* MockModalPromptCoordinationManager.swift in Sources */,
+				B6A7C20D31A1000100F00D01 /* MockNewTabPagePromoCoordinator.swift in Sources */,
 				989F0DA02ECB278600781641 /* ContentBlockerRulesManagerMock.swift in Sources */,
 				9876DF2C2DEEE21700E30713 /* MockThemeManager.swift in Sources */,
 				9FA0AF222EB8358100713387 /* MockWhatsNewDisplayModelMapper.swift in Sources */,

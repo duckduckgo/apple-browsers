@@ -13,23 +13,14 @@
 /* Class = "UILabel"; text = "Global Privacy Control (GPC)"; ObjectID = "cW7-OM-2oW"; */
 "cW7-OM-2oW.text" = "Global Privacy Control (GPC)";
 
-/* Class = "UIBarButtonItem"; title = "Add"; ObjectID = "CxT-QK-iVn"; */
-"CxT-QK-iVn.title" = "追加する";
-
 /* Class = "UILabel"; text = "Label"; ObjectID = "dud-qo-Ces"; */
 "dud-qo-Ces.text" = "ラベル";
-
-/* Class = "UILabel"; text = "Label"; ObjectID = "EIq-Ev-nfj"; */
-"EIq-Ev-nfj.text" = "ラベル";
 
 /* Class = "UINavigationItem"; title = "App Icon"; ObjectID = "eMH-uv-Kms"; */
 "eMH-uv-Kms.title" = "アプリアイコン";
 
 /* Class = "UITableViewController"; title = "Global Privacy Control (GPC)"; ObjectID = "fV3-86-QQj"; */
 "fV3-86-QQj.title" = "Global Privacy Control (GPC)";
-
-/* Class = "UILabel"; text = "Privacy Protection enabled for all sites"; ObjectID = "Hu1-5i-vjL"; */
-"Hu1-5i-vjL.text" = "すべてのサイトでプライバシー保護が有効になっています";
 
 /* Class = "UICollectionViewController"; title = "Icon"; ObjectID = "jbD-Oy-Cmw"; */
 "jbD-Oy-Cmw.title" = "アイコン";
@@ -39,9 +30,6 @@
 
 /* Class = "UILabel"; text = "No Fireproof sites yet"; ObjectID = "OfP-Kw-IOk"; */
 "OfP-Kw-IOk.text" = "まだFireproofサイトはありません";
-
-/* Class = "UINavigationItem"; title = "Unprotected Sites"; ObjectID = "OHV-qC-tL9"; */
-"OHV-qC-tL9.title" = "保護されていないサイト";
 
 /* Class = "UITableViewSection"; headerTitle = "Show keyboard on"; ObjectID = "tGh-di-rfq"; */
 "tGh-di-rfq.headerTitle" = "キーボードを表示";
@@ -57,9 +45,6 @@
 
 /* Class = "UILabel"; text = "New Tab"; ObjectID = "Zpg-h0-rYv"; */
 "Zpg-h0-rYv.text" = "新しいタブ";
-
-/* Class = "UILabel"; text = "These sites will not be enhanced by Privacy Protection."; ObjectID = "zvh-2e-Wmz"; */
-"zvh-2e-Wmz.text" = "これらのサイトはプライバシー保護によって強化されません。";
 
 /* Class = "UITableViewController"; title = "Home Screen"; ObjectID = "zWP-d3-nVc"; */
 "zWP-d3-nVc.title" = "ホーム画面";

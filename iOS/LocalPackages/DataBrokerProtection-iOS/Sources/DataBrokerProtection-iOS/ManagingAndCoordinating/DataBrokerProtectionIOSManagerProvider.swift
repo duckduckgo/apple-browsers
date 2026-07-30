@@ -95,8 +95,7 @@ public class DataBrokerProtectionIOSManagerProvider {
                 applicationNameForUserAgentProvider: applicationNameForUserAgentProvider,
                 contentBlocking: contentBlocking,
                 dbpSettings: dbpSettings,
-                contentScopeProperties: contentScopeProperties,
-                profileStateManager: profileStateManager
+                contentScopeProperties: contentScopeProperties
             )
         }
 
@@ -161,8 +160,7 @@ public class DataBrokerProtectionIOSManagerProvider {
                                            applicationNameForUserAgentProvider: @escaping () -> String?,
                                            contentBlocking: DBPWebViewContentBlocking,
                                            dbpSettings: DataBrokerProtectionSettings,
-                                           contentScopeProperties: ContentScopeProperties,
-                                           profileStateManager: DBPProfileStateManaging) throws -> DBPVaultResources {
+                                           contentScopeProperties: ContentScopeProperties) throws -> DBPVaultResources {
         let fakeBroker = DataBrokerDebugFlagFakeBroker()
         let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(directoryName: DatabaseConstants.directoryName, fileName: DatabaseConstants.fileName)
         let vaultFactory = createDataBrokerProtectionSecureVaultFactory(appGroupName: nil, databaseFileURL: databaseURL)
@@ -178,14 +176,6 @@ public class DataBrokerProtectionIOSManagerProvider {
                                                         optOutRetryErrorFeatureFlagger: featureFlagger)
 
         let database = DataBrokerProtectionDatabase(fakeBrokerFlag: fakeBroker, pixelHandler: sharedPixelsHandler, vault: vault, localBrokerService: localBrokerService)
-
-        if profileStateManager.profileState == .unknown {
-            do {
-                profileStateManager.reconcileProfileState(hasSavedProfile: try database.fetchProfile() != nil)
-            } catch {
-                Logger.dataBrokerProtection.error("Error reconciling profile state, error: \(error.localizedDescription, privacy: .public)")
-            }
-        }
 
         let operationQueue = OperationQueue()
         let jobProvider = BrokerProfileJobProvider()

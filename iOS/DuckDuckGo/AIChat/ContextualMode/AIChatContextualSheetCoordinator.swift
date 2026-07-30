@@ -283,10 +283,7 @@ final class AIChatContextualSheetCoordinator {
             sessionState.clearProcessingNavigationFlag()
             pageContextHandler.reportAttachabilityMeasurement(trigger: .navigation)
         } else if shouldCollectSignalsOnly {
-            sessionState.markPendingSignalsOnlyCollection()
-            if !pageContextHandler.triggerContextCollection(trigger: .tabContent) {
-                sessionState.clearProcessingNavigationFlag()
-            }
+            startSignalsOnlyCollection()
         } else {
             sessionState.clearProcessingNavigationFlag()
             pageContextHandler.reportAttachabilityMeasurement(trigger: .navigation)
@@ -302,6 +299,28 @@ final class AIChatContextualSheetCoordinator {
         featureFlagger.isFeatureOn(.contextualSuggestedPrompts)
             && !sessionState.hasActiveChat
             && !sessionState.shouldAutoCollectContext
+            && !sessionState.shouldSuspendSuggestionsRefresh
+    }
+
+    private func startSignalsOnlyCollection() {
+        guard shouldCollectSignalsOnly else { return }
+        sessionState.markPendingSignalsOnlyCollection()
+        if !pageContextHandler.triggerContextCollection(trigger: .tabContent) {
+            sessionState.clearProcessingNavigationFlag()
+        }
+    }
+
+    private func removeAttachedContext() {
+        sessionState.downgradeToPlaceholder()
+        guard currentPageURL != nil, shouldCollectSignalsOnly else {
+            pageContextHandler.clear()
+            return
+        }
+
+        stopObservingContextUpdates()
+        pageContextHandler.clear()
+        startObservingContextUpdates()
+        startSignalsOnlyCollection()
     }
 
     /// Attachment (and its delivery state) a freshly created persistent UTI host should start with.
@@ -402,8 +421,7 @@ private extension AIChatContextualSheetCoordinator {
         }
         host.onRemoveRequested = { [weak self] in
             guard let self else { return }
-            self.sessionState.downgradeToPlaceholder()
-            self.pageContextHandler.clear()
+            self.removeAttachedContext()
         }
         host.onPromptSubmitted = { [weak self] in
             guard let self else { return }
@@ -685,8 +703,7 @@ extension AIChatContextualSheetCoordinator: AIChatContextualSheetViewControllerD
     }
 
     func aiChatContextualSheetViewControllerDidRequestRemoveChip(_ viewController: AIChatContextualSheetViewController) {
-        sessionState.downgradeToPlaceholder()
-        pageContextHandler.clear()
+        removeAttachedContext()
     }
 
     func aiChatContextualSheetViewController(_ viewController: AIChatContextualSheetViewController, didUpdateContextualChatURL url: URL?) {

@@ -180,6 +180,8 @@ final class CurrentColorsProviding: ColorsProviding {
 
     // MARK: - Suggestions
     var suggestionsTextColor: NSColor { palette.textPrimary }
+    var suggestionsSuffixColor: NSColor { palette.accentTextPrimary }
+    var suggestionsHighlightSuffixColor: NSColor { palette.accentTextPrimary }
     var suggestionsHighlightBackgroundColor: NSColor { palette.controlsFillPrimary }
     var suggestionsHighlightTextColor: NSColor { palette.textPrimary }
 

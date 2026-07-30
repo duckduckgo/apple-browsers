@@ -40,7 +40,7 @@ struct PromptBarPreferencesUserDefaultsPersistor: PromptBarPreferencesPersistor 
     }
 
     var isKeyboardShortcutEnabled: Bool {
-        get { (try? keyValueStore.object(forKey: Key.keyboardShortcutIsEnabled.rawValue) as? Bool) ?? true }
+        get { (try? keyValueStore.object(forKey: Key.keyboardShortcutIsEnabled.rawValue) as? Bool) ?? false }
         set { try? keyValueStore.set(newValue, forKey: Key.keyboardShortcutIsEnabled.rawValue) }
     }
 
@@ -59,7 +59,7 @@ struct PromptBarPreferencesUserDefaultsPersistor: PromptBarPreferencesPersistor 
     }
 
     var isMenuBarIconVisible: Bool {
-        get { (try? keyValueStore.object(forKey: Key.menuBarIconIsVisible.rawValue) as? Bool) ?? true }
+        get { (try? keyValueStore.object(forKey: Key.menuBarIconIsVisible.rawValue) as? Bool) ?? false }
         set { try? keyValueStore.set(newValue, forKey: Key.menuBarIconIsVisible.rawValue) }
     }
 }

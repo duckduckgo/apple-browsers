@@ -459,8 +459,12 @@ class TabViewCell: UICollectionViewCell {
 
     func updateSelectionIndicator(_ image: UIImageView) {
         if !isSelected {
+            image.preferredSymbolConfiguration = UIImage.SymbolConfiguration(pointSize: Constants.selectionIndicatorSize)
             image.image = DesignSystemImages.Glyphs.Size24.shapeCircle
+            image.tintColor = UIColor(designSystemColor: .iconsTertiary)
         } else {
+            // Hack to fix image size.
+            image.preferredSymbolConfiguration = UIImage.SymbolConfiguration(pointSize: Constants.selectionIndicatorSize - 4)
             image.image = DesignSystemImages.Recolorable.Size24.check.applyPalleteColorsToSymbol(
                 foreground: UIColor(designSystemColor: .accentContentPrimary),
                 background: accentColor,

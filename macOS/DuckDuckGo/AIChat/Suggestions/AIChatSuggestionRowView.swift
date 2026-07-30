@@ -218,7 +218,7 @@ final class AIChatSuggestionRowView: NSView {
         // persisted model on the Duck.ai stored record), everything else uses the chat bubble.
         let icon: NSImage
         if suggestion.isPinned {
-            icon = DesignSystemImages.Glyphs.Size16.pin
+            icon = DesignSystemImages.Glyphs.Size16.chatPinned
         } else {
             switch suggestion.kind {
             case .voice:

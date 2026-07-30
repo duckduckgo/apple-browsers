@@ -72,6 +72,9 @@ struct SheetViewState {
     let quickActions: [AIChatContextualQuickAction]
     let suggestions: [ContextualSuggestedPrompt]
     let suggestionsLoadState: SuggestionsLoadState
+    /// Analytics-only metadata for the resolved suggestions; meaningful when `suggestionsLoadState == .loaded`.
+    let suggestionsAreSmart: Bool
+    let suggestionsPageType: SuggestionsPageType
 
     enum ContentMode {
         case nativeInput
@@ -127,7 +130,9 @@ final class AIChatContextualChatSessionState {
         chipState: .placeholder,
         quickActions: [.summarize],
         suggestions: [],
-        suggestionsLoadState: .loaded
+        suggestionsLoadState: .loaded,
+        suggestionsAreSmart: false,
+        suggestionsPageType: .none
     )
 
     let effects = PassthroughSubject<SheetEffect, Never>()
@@ -150,6 +155,8 @@ final class AIChatContextualChatSessionState {
 
     private(set) var suggestionsLoadState: SuggestionsLoadState = .loaded
     private(set) var suggestions: [ContextualSuggestedPrompt] = []
+    private var suggestionsAreSmart = false
+    private var suggestionsPageType: SuggestionsPageType = .none
     private var suggestionsResolveTask: Task<Void, Never>?
     private var suggestionsTimeoutTask: Task<Void, Never>?
 
@@ -214,6 +221,12 @@ final class AIChatContextualChatSessionState {
 
     var showsSuggestionsStartSurface: Bool {
         featureFlagger.isFeatureOn(.contextualSuggestedPrompts)
+    }
+
+    /// A pinned context remains tied to its original page while auto-attach is disabled, so page
+    /// suggestions must remain tied to that same context until the chip is removed.
+    var shouldSuspendSuggestionsRefresh: Bool {
+        !shouldAutoCollectContext && intendedAttachedContext != nil
     }
 
     private var hasUserOptedOutOfContext: Bool {
@@ -296,6 +309,8 @@ final class AIChatContextualChatSessionState {
         suggestionsResolveTask?.cancel()
         suggestionsTimeoutTask?.cancel()
         suggestions = []
+        suggestionsAreSmart = false
+        suggestionsPageType = .none
         suggestionsLoadState = .loaded
         pixelHandler.endManualAttach()
         rebuildViewState()
@@ -704,6 +719,10 @@ private extension AIChatContextualChatSessionState {
         suggestionsTimeoutTask = Task { [weak self] in
             try? await Task.sleep(nanoseconds: UInt64(timeout * 1_000_000_000))
             guard let self, !Task.isCancelled else { return }
+            guard self.suggestionsLoadState == .loading,
+                  self.featureFlagger.isFeatureOn(.contextualSuggestedPrompts),
+                  !self.hasActiveChat else { return }
+            self.pixelHandler.fireSuggestionsContextCollectionTimedOut()
             self.resolveSuggestionsIfLoading(from: nil)
         }
     }
@@ -727,7 +746,9 @@ private extension AIChatContextualChatSessionState {
             // A prompt submission may start a chat while the resolve is in flight; submission
             // methods don't cancel this task, so drop late results to keep chat view state intact.
             guard let self, !Task.isCancelled, !self.hasActiveChat else { return }
-            self.suggestions = resolved
+            self.suggestions = resolved.suggestions
+            self.suggestionsAreSmart = resolved.isSmart
+            self.suggestionsPageType = resolved.pageType
             self.suggestionsLoadState = .loaded
             self.rebuildViewState()
         }
@@ -750,7 +771,9 @@ private extension AIChatContextualChatSessionState {
             chipState: chipState,
             quickActions: quickActions,
             suggestions: visibleSuggestions(reserving: quickActions.count),
-            suggestionsLoadState: suggestionsLoadState
+            suggestionsLoadState: suggestionsLoadState,
+            suggestionsAreSmart: suggestionsAreSmart,
+            suggestionsPageType: suggestionsPageType
         )
     }
 

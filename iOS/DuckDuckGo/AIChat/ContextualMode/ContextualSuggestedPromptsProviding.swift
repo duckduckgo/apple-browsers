@@ -26,11 +26,40 @@ struct ResolvePageSuggestionsInput {
     let uiLocale: String
 }
 
+/// Coarse, pixel-safe classification of the current page, mirroring the frontend's `PageType`.
+/// Analytics-only — never drives which suggestions are offered. Raw values are the pixel
+/// parameter values.
+enum SuggestionsPageType: String, Equatable {
+    case recipe
+    case product
+    case article
+    case video
+    case job
+    case book
+    case event
+    case place
+    case forum
+    case code
+    case course
+    case review
+    case person
+    case howto
+    case faq
+    case none
+}
+
+struct ResolvedPageSuggestions: Equatable {
+    let suggestions: [ContextualSuggestedPrompt]
+    /// Whether the suggestions came from a page-tailored (contextual) match rather than the generic defaults.
+    let isSmart: Bool
+    let pageType: SuggestionsPageType
+}
+
 protocol ContextualSuggestedPromptsProviding {
     /// Catalog-owned chip budget shared by suggestions and quick actions.
     var maxSuggestedPrompts: Int { get }
     /// Suggestions that must displace a regular suggestion rather than be trimmed from the end.
     var prioritySuggestionIDs: Set<String> { get }
 
-    func resolveSuggestions(_ input: ResolvePageSuggestionsInput) async -> [ContextualSuggestedPrompt]
+    func resolveSuggestions(_ input: ResolvePageSuggestionsInput) async -> ResolvedPageSuggestions
 }

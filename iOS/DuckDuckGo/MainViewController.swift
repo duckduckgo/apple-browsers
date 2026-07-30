@@ -6494,9 +6494,7 @@ extension MainViewController: TabSwitcherDelegate {
 
         if #available(iOS 18.4, *) {
             for tab in tabs {
-                if let tabController = tabManager.controller(for: tab) {
-                    webExtensionEventsCoordinator?.didCloseTab(tabController)
-                }
+                webExtensionEventsCoordinator?.didCloseTab(tab)
             }
         }
     }
@@ -6511,9 +6509,7 @@ extension MainViewController: TabSwitcherDelegate {
             showBars() // In case the browser chrome bars are hidden when calling this method
         }
         if #available(iOS 18.4, *) {
-            if let closingTabController = tabManager.controller(for: tab) {
-                webExtensionEventsCoordinator?.didCloseTab(closingTabController)
-            }
+            webExtensionEventsCoordinator?.didCloseTab(tab)
         }
 
         reportDuckAITabClosedIfNeeded(tab)
@@ -6989,9 +6985,7 @@ extension MainViewController: FireExecutorDelegate {
                 tabs = []
             }
             for tab in tabs {
-                if let tabController = tabManager.controller(for: tab) {
-                    webExtensionEventsCoordinator?.didCloseTab(tabController)
-                }
+                webExtensionEventsCoordinator?.didCloseTab(tab)
             }
         }
     }

@@ -26,31 +26,58 @@ public extension NewTabPageDataModel {
         case search, ai
     }
 
+    /// A reasoning-effort option for a reasoning-capable model, with localized display copy and
+    /// per-effort availability. Replaces the old flat `supportedReasoningEffort: [String]` list.
+    struct AIModelReasoningEffort: Codable, Equatable {
+        /// Stable server key for this option (e.g. `"none"`, `"low"`, `"medium"`); round-tripped
+        /// on `omnibar_submitChat`'s `reasoningEffort` param.
+        public let id: String
+        public let name: String
+        public let description: String?
+        /// Whether this option is selectable (`true`) or gated behind a subscription upsell (`false`).
+        public let isAvailable: Bool
+        /// `"subscribe"` or `"upgrade"`. Present only when `isAvailable == false`.
+        public let upsell: String?
+
+        public init(id: String, name: String, description: String? = nil, isAvailable: Bool, upsell: String? = nil) {
+            self.id = id
+            self.name = name
+            self.description = description
+            self.isAvailable = isAvailable
+            self.upsell = upsell
+        }
+    }
+
     struct AIModelItem: Codable, Equatable {
         public let id: String
         public let name: String
         public let shortName: String
-        public let isEnabled: Bool
+        public let isAvailable: Bool
         public let supportsImageUpload: Bool
         public let supportedTools: [String]
-        /// Reasoning effort levels the model supports (e.g. `["none", "low", "medium", "high"]`).
-        /// Empty when the model does not support reasoning, or when the reasoning-effort
-        /// feature is disabled natively — in which case the picker is hidden web-side.
-        public let supportedReasoningEffort: [String]
+        /// `nil` for a model with no tier requirement; set on every item, not just gated ones.
+        public let accessTier: String?
+        /// Empty when reasoning isn't supported, or when disabled natively (picker stays hidden).
+        public let reasoningEfforts: [AIModelReasoningEffort]
         /// MIME types the model accepts as file attachments (e.g. `["application/pdf"]`). Empty
         /// when the model accepts no files; the web uses this to drive the file picker's `accept`
         /// and to clear attached files whose MIME isn't supported when the user switches models.
         public let supportedFileTypes: [String]
+        /// For a gated (`isAvailable == false`) model, which upsell flow it leads to: `"subscribe"` or
+        /// `"upgrade"`. `nil` for enabled models.
+        public let upsell: String?
 
-        public init(id: String, name: String, shortName: String, isEnabled: Bool, supportsImageUpload: Bool, supportedTools: [String] = [], supportedReasoningEffort: [String] = [], supportedFileTypes: [String] = []) {
+        public init(id: String, name: String, shortName: String, isAvailable: Bool, supportsImageUpload: Bool, supportedTools: [String] = [], accessTier: String? = nil, reasoningEfforts: [AIModelReasoningEffort] = [], supportedFileTypes: [String] = [], upsell: String? = nil) {
             self.id = id
             self.name = name
             self.shortName = shortName
-            self.isEnabled = isEnabled
+            self.isAvailable = isAvailable
             self.supportsImageUpload = supportsImageUpload
             self.supportedTools = supportedTools
-            self.supportedReasoningEffort = supportedReasoningEffort
+            self.accessTier = accessTier
+            self.reasoningEfforts = reasoningEfforts
             self.supportedFileTypes = supportedFileTypes
+            self.upsell = upsell
         }
     }
 
@@ -155,6 +182,9 @@ public extension NewTabPageDataModel {
         /// Backend-provided attachment limits, already tier-resolved. `nil` on older native builds
         /// or when the backend omits them, in which case the web falls back to its built-in defaults.
         let attachmentLimits: AttachmentLimits?
+        /// Whether a free-tier user is eligible for a free trial — independent of `AIModelItem.upsell`
+        /// (which only says which flow), used to pick "Try for Free" vs "Upgrade" copy on gated rows.
+        let isEligibleForFreeTrial: Bool?
         /// When true, recent-chat suggestions show a delete button that sends `omnibar_confirmDeleteAiChat`.
         let enableAiChatDeletion: Bool?
         /// When true, history-entry suggestions show a delete button that sends `omnibar_removeSuggestion`.
@@ -443,6 +473,21 @@ public extension NewTabPageDataModel {
 
     struct SetCustomizeResponsesActiveAction: Codable, Equatable {
         let active: Bool
+    }
+
+    // MARK: - omnibar_showSubscriptionUpsell / omnibar_showSubscriptionUpgrade
+
+    public enum OmnibarSubscriptionUpsellSource: String, Codable, Equatable {
+        case model
+        case reasoning
+    }
+
+    struct ShowSubscriptionUpsellAction: Codable, Equatable {
+        let source: OmnibarSubscriptionUpsellSource
+    }
+
+    struct ShowSubscriptionUpgradeAction: Codable, Equatable {
+        let source: OmnibarSubscriptionUpsellSource
     }
 
     /// Customize Responses row state resolved for a specific window (sub-label + toggle).

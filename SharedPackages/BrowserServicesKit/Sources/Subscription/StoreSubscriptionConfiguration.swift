@@ -43,12 +43,16 @@ final class DefaultStoreSubscriptionConfiguration: StoreSubscriptionConfiguratio
                   appIdentifier: "com.duckduckgo.mobile.ios",
                   environment: .production,
                   identifiersByRegion: [.usa: ["ddg.privacy.pro.monthly.renews.us.freetrial",
+                                               "ddg.privacy.pro.monthly.renews.us", // https://app.asana.com/1/137249556945/project/59792373528535/task/1216781290121284?focus=true
                                                "ddg.privacy.pro.yearly.renews.us.freetrial",
                                                "ddg.subscription.monthly.renews.us.freetrial.\(StoreSubscriptionConstants.proTierIdentifier)",
+                                               "ddg.subscription.monthly.renews.us.\(StoreSubscriptionConstants.proTierIdentifier)", // https://app.asana.com/1/137249556945/project/59792373528535/task/1216781290121284?focus=true
                                                "ddg.subscription.yearly.renews.us.freetrial.\(StoreSubscriptionConstants.proTierIdentifier)"],
                                         .restOfWorld: ["ddg.privacy.pro.monthly.renews.row.freetrial",
+                                                       "ddg.privacy.pro.monthly.renews.row", // https://app.asana.com/1/137249556945/project/59792373528535/task/1216781290121284?focus=true
                                                        "ddg.privacy.pro.yearly.renews.row.freetrial",
                                                        "ddg.subscription.monthly.renews.row.freetrial.\(StoreSubscriptionConstants.proTierIdentifier)",
+                                                       "ddg.subscription.monthly.renews.row.\(StoreSubscriptionConstants.proTierIdentifier)", // https://app.asana.com/1/137249556945/project/59792373528535/task/1216781290121284?focus=true
                                                        "ddg.subscription.yearly.renews.row.freetrial.\(StoreSubscriptionConstants.proTierIdentifier)"]]),
             // iOS debug Alpha build
             .init(name: "DuckDuckGo Alpha",
@@ -58,14 +62,12 @@ final class DefaultStoreSubscriptionConfiguration: StoreSubscriptionConfiguratio
                                                "ios.subscription.1year.freetrial.dev",
                                                "ios.subscription.1month.freetrial.dev.\(StoreSubscriptionConstants.proTierIdentifier)",
                                                "ios.subscription.1month.dev.\(StoreSubscriptionConstants.proTierIdentifier)",
-                                               // Added for the monthly free-trial experiment: https://app.asana.com/1/137249556945/project/1211834678943996/task/1216851336490252
-                                               "ios.subscription.1month",
+                                               "ios.subscription.1month", // https://app.asana.com/1/137249556945/project/59792373528535/task/1216781290121284?focus=true
                                                "ios.subscription.1year.freetrial.dev.\(StoreSubscriptionConstants.proTierIdentifier)"],
                                         .restOfWorld: ["ios.subscription.1month.row.freetrial.dev",
                                                        "ios.subscription.1year.row.freetrial.dev",
                                                        "ios.subscription.1month.row.freetrial.dev.\(StoreSubscriptionConstants.proTierIdentifier)",
-                                                       // Added for the monthly free-trial experiment: https://app.asana.com/1/137249556945/project/1211834678943996/task/1216851336490252
-                                                       "ios.subscription.1month.row",
+                                                       "ios.subscription.1month.row", // https://app.asana.com/1/137249556945/project/59792373528535/task/1216781290121284?focus=true
                                                        "ios.subscription.1month.row.dev.\(StoreSubscriptionConstants.proTierIdentifier)",
                                                        "ios.subscription.1year.row.freetrial.dev.\(StoreSubscriptionConstants.proTierIdentifier)"]]),
             // macOS debug build

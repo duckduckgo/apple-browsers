@@ -1935,6 +1935,246 @@
 /* Title for the Duck.ai Siri education screen */
 "duckai.siri.education.screen.title" = "Sprich mit Duck.ai mithilfe von Siri!";
 
+/* Suggested prompt chip: cast and crew */
+"duckai.suggestion.cast-crew.label" = "Besetzung & Crew";
+
+/* Suggested prompt submitted text: cast and crew */
+"duckai.suggestion.cast-crew.prompt" = "Wer gehört zur Hauptbesetzung und zum Stab, und wofür sind sie sonst noch bekannt?";
+
+/* Suggested prompt chip: counterarguments */
+"duckai.suggestion.counterarguments.label" = "Was sind die Gegenargumente?";
+
+/* Suggested prompt submitted text: counterarguments */
+"duckai.suggestion.counterarguments.prompt" = "Was sind die wichtigsten Gegenargumente oder Kritikpunkte dazu?";
+
+/* Suggested prompt chip: course learning outcomes */
+"duckai.suggestion.course-learn.label" = "Was werde ich lernen?";
+
+/* Suggested prompt submitted text: course learning outcomes */
+"duckai.suggestion.course-learn.prompt" = "Was sind die wichtigsten Dinge, die ich in diesem Kurs lernen werde?";
+
+/* Suggested prompt chip: is a course worth taking */
+"duckai.suggestion.course-worth.label" = "Lohnt es sich, daran teilzunehmen?";
+
+/* Suggested prompt submitted text: is a course worth taking */
+"duckai.suggestion.course-worth.prompt" = "Lohnt es sich, basierend auf dieser Seite, diesen Kurs zu belegen?";
+
+/* Suggested prompt chip: draft a cover letter */
+"duckai.suggestion.cover-letter.label" = "Schreibe ein Anschreiben";
+
+/* Suggested prompt submitted text: draft a cover letter */
+"duckai.suggestion.cover-letter.prompt" = "Schreibe ein Anschreiben für diesen Job.";
+
+/* Suggested prompt chip: event details */
+"duckai.suggestion.event-details.label" = "Was sind die wichtigsten Details?";
+
+/* Suggested prompt submitted text: event details */
+"duckai.suggestion.event-details.prompt" = "Fasse die wichtigsten Details dieses Ereignisses zusammen.";
+
+/* Suggested prompt chip: explain the top answer */
+"duckai.suggestion.explain-answer.label" = "Erkläre die oberste Antwort";
+
+/* Suggested prompt submitted text: explain the top answer */
+"duckai.suggestion.explain-answer.prompt" = "Erkläre die akzeptierte Antwort in einfachen Worten.";
+
+/* Suggested prompt chip: explain a research paper */
+"duckai.suggestion.explain-paper.label" = "Erkläre diese Arbeit";
+
+/* Suggested prompt submitted text: explain a research paper */
+"duckai.suggestion.explain-paper.prompt" = "Erkläre dieses Forschungspapier in einfachen Worten.";
+
+/* Suggested prompt chip: explain a code repository */
+"duckai.suggestion.explain-repo.label" = "Erkläre dieses Repo";
+
+/* Suggested prompt submitted text: explain a code repository */
+"duckai.suggestion.explain-repo.prompt" = "Erkläre, was dieses Repository tut und wie man es verwendet.";
+
+/* Suggested prompt chip: explain the content simply */
+"duckai.suggestion.explain-simply.label" = "Erkläre das einfach";
+
+/* Suggested prompt submitted text: explain the content simply */
+"duckai.suggestion.explain-simply.prompt" = "Erkläre das in einfachen, klaren Worten.";
+
+/* Suggested prompt chip: what an FAQ page answers */
+"duckai.suggestion.faq-answer.label" = "Was beantwortet das?";
+
+/* Suggested prompt submitted text: what an FAQ page answers */
+"duckai.suggestion.faq-answer.prompt" = "Welche Hauptfragen beantwortet diese Seite?";
+
+/* Suggested prompt chip: summarize FAQ Q&As */
+"duckai.suggestion.faq-summary.label" = "Q&As zusammenfassen";
+
+/* Suggested prompt submitted text: summarize FAQ Q&As */
+"duckai.suggestion.faq-summary.prompt" = "Die Fragen und Antworten auf dieser Seite zusammenfassen.";
+
+/* Suggested prompt chip: product alternatives */
+"duckai.suggestion.find-alternatives.label" = "Finde mir Alternativen";
+
+/* Suggested prompt submitted text: product alternatives */
+"duckai.suggestion.find-alternatives.prompt" = "Schlage einige Alternativen zu diesem Produkt vor.";
+
+/* Suggested prompt chip: how-to materials */
+"duckai.suggestion.howto-materials.label" = "Was brauche ich?";
+
+/* Suggested prompt submitted text: how-to materials */
+"duckai.suggestion.howto-materials.prompt" = "Ich benötige eine Liste der Werkzeuge, Materialien oder Voraussetzungen, die ich dafür brauche.";
+
+/* Suggested prompt chip: how-to steps */
+"duckai.suggestion.howto-steps.label" = "Führe mich durch die Schritte";
+
+/* Suggested prompt submitted text: how-to steps */
+"duckai.suggestion.howto-steps.prompt" = "Unterteile dies in klare, nummerierte Schritte.";
+
+/* Suggested prompt chip: interview prep */
+"duckai.suggestion.interview-prep.label" = "Hilf mir, mich auf das Vorstellungsgespräch vorzubereiten";
+
+/* Suggested prompt submitted text: interview prep */
+"duckai.suggestion.interview-prep.prompt" = "Welche Fragen könnten bei diesem Vorstellungsgespräch für diese Rolle aufkommen?";
+
+/* Suggested prompt chip: key takeaways of an article */
+"duckai.suggestion.key-takeaways.label" = "Was sind die wichtigsten Erkenntnisse?";
+
+/* Suggested prompt submitted text: key takeaways of an article */
+"duckai.suggestion.key-takeaways.prompt" = "Was sind die wichtigsten Erkenntnisse aus diesem Artikel?";
+
+/* Suggested prompt chip: restaurant menu highlights */
+"duckai.suggestion.menu-highlights.label" = "Was soll ich bestellen?";
+
+/* Suggested prompt submitted text: restaurant menu highlights */
+"duckai.suggestion.menu-highlights.prompt" = "Was muss man hier unbedingt probieren?";
+
+/* Suggested prompt chip: paper contributions */
+"duckai.suggestion.paper-contributions.label" = "Was sind die wichtigsten Beiträge?";
+
+/* Suggested prompt submitted text: paper contributions */
+"duckai.suggestion.paper-contributions.prompt" = "Was sind die wichtigsten Beiträge dieses Artikels?";
+
+/* Suggested prompt chip: summarize a person's background */
+"duckai.suggestion.person-background.label" = "Hintergrund zusammenfassen";
+
+/* Suggested prompt submitted text: summarize a person's background */
+"duckai.suggestion.person-background.prompt" = "Fasse den Hintergrund und die bemerkenswerte Arbeit dieser Person zusammen.";
+
+/* Suggested prompt chip: place hours and location */
+"duckai.suggestion.place-hours.label" = "Wie sind die Öffnungszeiten & der Standort?";
+
+/* Suggested prompt submitted text: place hours and location */
+"duckai.suggestion.place-hours.prompt" = "Wie sind die Öffnungszeiten, der Standort und die Kontaktdaten dieses Ortes?";
+
+/* Suggested prompt chip: place reputation */
+"duckai.suggestion.place-reviews.label" = "Ist dieser Ort gut?";
+
+/* Suggested prompt submitted text: place reputation */
+"duckai.suggestion.place-reviews.prompt" = "Ist dieser Ort gut? Fasse den Ruf basierend auf Bewertungen und Rezensionen zusammen.";
+
+/* Suggested prompt chip: product pros and cons */
+"duckai.suggestion.product-pros-cons.label" = "Was sind die Vor- und Nachteile?";
+
+/* Suggested prompt submitted text: product pros and cons */
+"duckai.suggestion.product-pros-cons.prompt" = "Was sind die Vor- und Nachteile dieses Produkts?";
+
+/* Suggested prompt chip: recipe nutrition */
+"duckai.suggestion.recipe-nutrition.label" = "Ernährung schätzen";
+
+/* Suggested prompt submitted text: recipe nutrition */
+"duckai.suggestion.recipe-nutrition.prompt" = "Schätze die Nährwertinformationen für dieses Rezept.";
+
+/* Suggested prompt chip: related articles */
+"duckai.suggestion.related-articles.label" = "Schlage verwandte Artikel zum Erkunden vor";
+
+/* Suggested prompt submitted text: related articles */
+"duckai.suggestion.related-articles.prompt" = "Schlage verwandte Artikel oder Themen vor, die als Nächstes interessant sein könnten.";
+
+/* Suggested prompt chip: summarize reviews */
+"duckai.suggestion.review-summary.label" = "Fasse die Rezensionen zusammen";
+
+/* Suggested prompt submitted text: summarize reviews */
+"duckai.suggestion.review-summary.prompt" = "Fasse zusammen, was in den Bewertungen steht.";
+
+/* Suggested prompt chip: review verdict */
+"duckai.suggestion.review-verdict.label" = "Wie lautet das Fazit?";
+
+/* Suggested prompt submitted text: review verdict */
+"duckai.suggestion.review-verdict.prompt" = "Wie lauten das Gesamturteil und die Bewertung hierfür?";
+
+/* Suggested prompt chip: scale a recipe */
+"duckai.suggestion.scale-recipe.label" = "Portionen anpassen";
+
+/* Suggested prompt submitted text: scale a recipe */
+"duckai.suggestion.scale-recipe.prompt" = "Schreibe dieses Rezept für eine andere Anzahl an Portionen um.";
+
+/* Suggested prompt chip: shopping list from a recipe */
+"duckai.suggestion.shopping-list.label" = "Erstelle eine Einkaufsliste";
+
+/* Suggested prompt submitted text: shopping list from a recipe */
+"duckai.suggestion.shopping-list.prompt" = "Erstelle eine Einkaufsliste mit Mengen aus diesem Rezept.";
+
+/* Suggested prompt chip: similar books */
+"duckai.suggestion.similar-books.label" = "Ähnliche Bücher empfehlen";
+
+/* Suggested prompt submitted text: similar books */
+"duckai.suggestion.similar-books.prompt" = "Empfiehl ähnliche Bücher.";
+
+/* Suggested prompt chip: similar movies or shows */
+"duckai.suggestion.similar-titles.label" = "Ähnliche Titel empfehlen";
+
+/* Suggested prompt submitted text: similar movies or shows */
+"duckai.suggestion.similar-titles.prompt" = "Ähnliche Filme oder Serien empfehlen.";
+
+/* Suggested prompt chip: summarize a book */
+"duckai.suggestion.summarize-book.label" = "Dieses Buch zusammenfassen";
+
+/* Suggested prompt submitted text: summarize a book */
+"duckai.suggestion.summarize-book.prompt" = "Fasse dieses Buch zusammen.";
+
+/* Suggested prompt chip: summarize the current page */
+"duckai.suggestion.summarize-page.label" = "Diese Seite zusammenfassen";
+
+/* Suggested prompt submitted text: summarize the current page */
+"duckai.suggestion.summarize-page.prompt" = "Diese Seite zusammenfassen.";
+
+/* Suggested prompt chip: summarize a discussion thread */
+"duckai.suggestion.summarize-thread.label" = "Diese Diskussion zusammenfassen";
+
+/* Suggested prompt submitted text: summarize a discussion thread */
+"duckai.suggestion.summarize-thread.prompt" = "Fasse diesen Diskussionsfaden zusammen.";
+
+/* Suggested prompt chip: summarize a video */
+"duckai.suggestion.summarize-video.label" = "Dieses Video zusammenfassen";
+
+/* Suggested prompt submitted text: summarize a video */
+"duckai.suggestion.summarize-video.prompt" = "Dieses Video zusammenfassen.";
+
+/* Suggested prompt chip: tailor a resume to a job */
+"duckai.suggestion.tailor-resume.label" = "Passe meinen Lebenslauf an";
+
+/* Suggested prompt submitted text: tailor a resume to a job */
+"duckai.suggestion.tailor-resume.prompt" = "Hilf mir, meinen Lebenslauf für diesen Job anzupassen.";
+
+/* Suggested prompt chip: translate the current page */
+"duckai.suggestion.translate-page.label" = "Diese Seite übersetzen";
+
+/* Suggested prompt submitted text: translate the page. %@ is replaced with the name of the user's language. */
+"duckai.suggestion.translate-page.prompt" = "Diese Seite in %@ übersetzen.";
+
+/* Suggested prompt chip: video key points */
+"duckai.suggestion.video-key-points.label" = "Was sind die wichtigsten Punkte?";
+
+/* Suggested prompt submitted text: video key points */
+"duckai.suggestion.video-key-points.prompt" = "Was sind die wichtigsten Punkte, die in diesem Video behandelt werden?";
+
+/* Suggested prompt chip: person background */
+"duckai.suggestion.who-is-this.label" = "Wer ist diese Person?";
+
+/* Suggested prompt submitted text: person background */
+"duckai.suggestion.who-is-this.prompt" = "Gib mir einen kurzen Hintergrund zu dieser Person.";
+
+/* Suggested prompt chip: is a movie/show worth watching */
+"duckai.suggestion.worth-watching.label" = "Lohnt es sich, das anzuschauen?";
+
+/* Suggested prompt submitted text: is a movie/show worth watching */
+"duckai.suggestion.worth-watching.prompt" = "Lohnt es sich, das anzuschauen? Gib mir eine spoilerfreie Einschätzung.";
+
 /* Welcome message in Duck.ai contextual sheet. %@ is replaced by a shield icon. */
 "duckai.welcome.message" = "Alle Chats sind %@ privat";
 
@@ -4395,6 +4635,12 @@
 /* Settings screen cell text for Unprotected Sites */
 "settings.unprotected.sites" = "Ungeschützte Websites";
 
+/* Description shown above the list of unprotected sites */
+"settings.unprotected.sites.description" = "Für diese Websites ist der Datenschutz nicht aktiviert.";
+
+/* Message shown when there are no unprotected sites */
+"settings.unprotected.sites.empty.state" = "Datenschutz für alle Websites aktiviert";
+
 /* Settings cell for Version */
 "settings.version" = "Version";
 
@@ -5454,3 +5700,39 @@
 "network.protection.strict.routing.reminder.notification.body" = "Ein Teil des Datenverkehrs könnte das VPN umgehen, während es deaktiviert ist. Striktes Routing wird für öffentliche Netzwerke empfohlen.";
 /* The title of the notification reminding the user to turn the VPN Strict routing setting back on */
 "network.protection.strict.routing.reminder.notification.title" = "Striktes Routing ist DEAKTIVIERT";
+
+/* Title for the New Image row in the Duck.ai tab header Plus (+) menu — opens Duck.ai in image generation mode */
+"aichat.header.plusMenu.newImage" = "Neues Bild";
+
+/* Error toast shown when a Duck.ai chat download fails and nothing was saved. */
+"aiChat.history.download.failed.message" = "Download fehlgeschlagen. Bitte versuche es noch einmal.";
+
+/* Accessibility label for the overflow (three dots) menu button in the Duck.ai chat history navigation bar. */
+"aiChat.history.menu.a11y" = "Mehr";
+
+/* Menu item opening Duck.ai Chat Protection settings from the Duck.ai chat history list. */
+"aiChat.history.menu.chatProtection" = "Chat-Schutz";
+
+/* Menu item that starts multi-selecting chats in the Duck.ai chat history list. */
+"aiChat.history.menu.selectChats" = "Chats auswählen";
+
+/* Long-press row menu item that deletes a Duck.ai chat. */
+"aiChat.history.rowMenu.delete" = "Löschen";
+
+/* Long-press row menu item that downloads a Duck.ai chat. */
+"aiChat.history.rowMenu.download" = "Download";
+
+/* Long-press row menu item that pins a Duck.ai chat. */
+"aiChat.history.rowMenu.pin" = "Anpinnen";
+
+/* Long-press row menu item that starts multi-selecting chats in the Duck.ai chat history list. */
+"aiChat.history.rowMenu.select" = "Auswählen";
+
+/* Long-press row menu item that unpins a Duck.ai chat. */
+"aiChat.history.rowMenu.unpin" = "Lösen";
+
+/* Accessibility label for the search button in the Duck.ai chat history navigation bar. */
+"aiChat.history.search.a11y" = "Suche";
+
+/* Multi-select toolbar button that deletes all chats when none are individually selected. */
+"aiChat.history.selection.deleteAll" = "Alle löschen";

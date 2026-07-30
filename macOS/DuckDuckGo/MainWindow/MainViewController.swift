@@ -324,7 +324,10 @@ final class MainViewController: NSViewController {
         )
         let aiChatOmnibarController = AIChatOmnibarController(
             aiChatTabOpener: aiChatTabOpener,
-            tabCollectionViewModel: tabCollectionViewModel,
+            surface: .addressBar,
+            draftSource: TabPromptDraftSource(tabCollectionViewModel: tabCollectionViewModel),
+            origin: WindowPromptOrigin(tabCollectionViewModel: tabCollectionViewModel),
+            pixelHandler: AddressBarPromptPixelHandler(),
             suggestionsReader: suggestionsReader,
             preferences: NSApp.delegateTyped.aiChatPreferencesPersistor
         )

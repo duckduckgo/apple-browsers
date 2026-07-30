@@ -21,13 +21,14 @@ import Foundation
 @testable import DuckDuckGo
 
 final class MockOnboardingAIModelsPrefetcher: OnboardingAIModelsPrefetching {
-    var resolvedModel: (models: [OnboardingAIModelOption], defaultModelId: String?) = ([], nil)
+    var resolvedModel: DuckDuckGo.OnboardingAIModelResponse = .empty
 
     private(set) var prefetchCallCount = 0
 
     nonisolated init() {}
 
-    func prefetch() {
+    func prefetch() -> Task<Void, Never> {
         prefetchCallCount += 1
+        return Task {}
     }
 }

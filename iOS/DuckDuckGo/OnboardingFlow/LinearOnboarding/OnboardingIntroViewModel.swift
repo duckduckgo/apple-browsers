@@ -124,7 +124,7 @@ final class OnboardingIntroViewModel: ObservableObject {
     private var pendingOnboardingIntroActions: (() -> Void)?
 
 
-    var resolvedAIModels: (models: [OnboardingAIModelOption], defaultModelId: String?) {
+    var resolvedAIModels: OnboardingAIModelResponse {
         aiModelsPrefetcher.resolvedModel
     }
 

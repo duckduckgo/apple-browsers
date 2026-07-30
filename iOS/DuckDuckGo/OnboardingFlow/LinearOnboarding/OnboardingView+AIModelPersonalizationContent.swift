@@ -17,7 +17,6 @@
 //  limitations under the License.
 //
 
-import AIChat
 import DuckUI
 import Onboarding
 import SwiftUI
@@ -162,110 +161,10 @@ extension OnboardingPersonalizationSelectionItem {
 
 }
 
-extension OnboardingAIModelOption {
-
-    init?(_ value: AIChatRemoteModel) {
-        guard let provider = OnboardingAIProvider(rawValue: value.provider) else { return nil }
-        self.init(id: value.id, provider: provider, modelShortName: value.modelShortName)
-    }
-
-}
-
 extension OnboardingAIModel {
 
     init(_ option: OnboardingAIModelOption) {
         self.init(id: option.id, name: option.modelShortName ?? "")
-    }
-
-}
-
-// MARK: - Prefetcher
-
-enum OnboardingAIProvider: String, CaseIterable {
-    case anthropic
-    case openai
-    case mistral
-}
-
-struct OnboardingAIModelOption: Identifiable {
-    let id: String
-    let provider: OnboardingAIProvider
-    let modelShortName: String?
-}
-
-@MainActor
-protocol OnboardingAIModelsPrefetching {
-    var resolvedModel: (models: [OnboardingAIModelOption], defaultModelId: String?) { get }
-
-    func prefetch()
-}
-
-/// Fetches the AI models ahead of the picker step so its options are ready when the view appears
-/// (avoids a loading state and the bubble resize that comes with late-arriving content).
-///
-/// `prefetch()` is kicked off when the user picks the `.privateAIChat` reason — a couple of screens
-/// before the model step — and the result is read synchronously via `resolvedModels`. If the fetch
-/// isn't finished (or failed), `resolvedModels` returns the fallback list, so callers never wait.
-@MainActor
-final class OnboardingAIModelsPrefetcher: OnboardingAIModelsPrefetching {
-
-    private let service: AIChatModelsProviding
-    private var didStartPrefetch = false
-
-    // The mapped result, computed once when the fetch completes.
-    private var resolved: (models: [OnboardingAIModelOption], defaultId: String?)?
-
-    // The fallback, mapped once at init.
-    private let fallbackModels: [AIChatRemoteModel]
-
-    var resolvedModel: (models: [OnboardingAIModelOption], defaultModelId: String?) {
-        resolved ?? ([], nil)
-    }
-
-    init(
-        service: AIChatModelsProviding = AIChatModelsService(),
-        fallbackModels: [AIChatRemoteModel] = []
-    ) {
-        self.service = service
-        self.fallbackModels = fallbackModels
-    }
-
-    /// Starts the fetch once. On success the models are mapped immediately and cached; failures are
-    /// swallowed — `resolvedModels` returns the fallback instead.
-    func prefetch() {
-        guard !didStartPrefetch else { return }
-        didStartPrefetch = true
-        let fallbackModels = self.fallbackModels
-        Task { [weak self, service] in
-            do {
-                let apiModels = try await service.fetchModels().models
-                self?.resolved = OnboardingAIModelsResolver.resolve(from: apiModels)
-            } catch {
-                self?.resolved = OnboardingAIModelsResolver.resolve(from: fallbackModels)
-            }
-        }
-    }
-}
-
-// MARK: - Private
-
-enum OnboardingAIModelsResolver {
-
-    /// Maps raw models to options (accessible only, one per provider in first-appearance order) and
-    /// picks the default (OpenAI, falling back to the first available).
-    static func resolve(from models: [AIChatRemoteModel]) -> (models: [OnboardingAIModelOption], defaultId: String?) {
-        let aiModels = models
-            .filter(\.entityHasAccess)
-            .compactMap(OnboardingAIModelOption.init)
-
-        let modelsByProvider = Dictionary(grouping: aiModels, by: \.provider)
-
-        let modelsToReturn = OnboardingAIProvider.allCases
-            .compactMap { modelsByProvider[$0]?.first }
-        
-        let defaultProviderId = modelsByProvider[OnboardingAIProvider.openai]?.first?.id
-
-        return (modelsToReturn, defaultProviderId)
     }
 
 }

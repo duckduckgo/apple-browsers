@@ -20,6 +20,7 @@
 import UIKit
 import Combine
 import Core
+import FoundationExtensions
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import BrowserServicesKit
@@ -59,15 +60,14 @@ class TabsBarViewController: UIViewController {
         static let maxItemWidthFraction: CGFloat = 0.33
         static let narrowMaxItemWidthFraction: CGFloat = 0.5
         static let leadingInset: CGFloat = 16
-        /// Wider than `leadingInset` so the active tab's flare clears the rounded address bar corner below.
+        // Extra room keeps flare clear of rounded address bar corner.
         static let firstTabLeadingMargin: CGFloat = 24
-        /// Active-tab bottom fillet size (Figma spec).
+        // Matches Figma fillet size.
         static let tabRampSize = CGSize(width: 10, height: 10)
-        /// Gap around the active tab while it's a detached pill (chrome hidden), so it doesn't sit
-        /// flush against the edges of the strip.
-        static let detachedTabVerticalInset: CGFloat = 4
-        /// Breathing room between the system window controls and the first tab when they share a row.
-        /// The layout region already reserves the controls themselves plus a standard margin.
+        static let contentHideScale: CGFloat = 0.86
+        // Address bar shrinks half as much as tabs for one visual movement.
+        static let addressBarHideScale: CGFloat = 1 - (1 - contentHideScale) / 2
+        static let flareFadeCompletesAtContentAlpha: CGFloat = 0.6
         static let windowControlsTabGap: CGFloat = 16
     }
     
@@ -89,33 +89,40 @@ class TabsBarViewController: UIViewController {
     // Opaque backdrop so tabs scrolling under the sticky button don't show through it.
     private let addTabButtonBackground = UIView()
 
-    // Draws the active tab's flared background; the callbacks below forward to it.
     private lazy var flareBackground = TabFlareBackgroundController(
         collectionView: collectionView,
         topCornerRadius: TabsBarCell.cornerRadius,
-        bottomCornerRadius: TabsBarCell.cornerRadius,
         rampSize: Constants.tabRampSize,
-        detachedVerticalInset: Constants.detachedTabVerticalInset,
         currentIndex: { [weak self] in self?.currentIndex },
         fillColor: { ThemeManager.shared.currentTheme.omniBarBackgroundColor }
     )
 
-    /// The flared skirt merges the active tab into the address bar below it. Once the bar starts
-    /// sliding out from under the tabs bar the skirt has nothing to merge into, so the tab becomes a
-    /// detached rounded rectangle for as long as the chrome is away.
-    var isBrowserChromeFullyVisible = true {
-        didSet {
-            guard isBrowserChromeFullyVisible != oldValue else { return }
-            flareBackground.setShape(detachedTabShape, animated: true)
-        }
-    }
+    // Cache views because visibility updates run every display frame.
+    private lazy var contentViews: [UIView] = [collectionView, buttonsStack, buttonsBackground, addTabButton, addTabButtonBackground]
 
-    /// Only the shared window controls row keeps the tabs bar on screen while the chrome hides, so
-    /// it's the only case where the tab is left without a bar to merge into. Everywhere else the
-    /// whole strip leaves with the chrome and the tab keeps its usual shape.
-    private var detachedTabShape: TabFlaredBackgroundView.Shape {
-        let sharesWindowControlsRow = WindowControlsRowLayout.sharesRow(in: view, featureFlagger: featureFlagger)
-        return (sharesWindowControlsRow && !isBrowserChromeFullyVisible) ? .roundedRectangle : .flared
+    private var appliedContentVisibility = (alpha: CGFloat(1), hideProgress: CGFloat(0), stripHeight: CGFloat(0))
+
+    /// Hides shared row contents while preserving strip background and independent fade and movement timing.
+    func setContentVisibility(alpha: CGFloat, hideProgress: CGFloat) {
+        let sharesRow = WindowControlsRowLayout.sharesRow(in: view, featureFlagger: featureFlagger)
+        // Include strip height so resizing reapplies travel at unchanged progress.
+        let target = sharesRow
+            ? (alpha: alpha.clamped(to: 0...1), hideProgress: hideProgress.clamped(to: 0...1), stripHeight: view.bounds.height)
+            : (alpha: CGFloat(1), hideProgress: CGFloat(0), stripHeight: CGFloat(0))
+        guard target != appliedContentVisibility else { return }
+        appliedContentVisibility = target
+
+        let scale = 1 - (1 - Constants.contentHideScale) * target.hideProgress
+        let rise = target.stripHeight * target.hideProgress
+        let pivot = CGPoint(x: view.bounds.midX, y: view.bounds.minY)
+        contentViews.forEach {
+            $0.alpha = target.alpha
+            $0.applyTransform(scale: scale, about: pivot, rise: rise)
+            $0.isUserInteractionEnabled = target.alpha > 0
+        }
+        // Fade flare early to avoid clipping its edge.
+        let flareFadeFloor = Constants.flareFadeCompletesAtContentAlpha
+        flareBackground.hideAlpha = ((target.alpha - flareFadeFloor) / (1 - flareFadeFloor)).clamped(to: 0...1)
     }
 
     lazy var fireButton: UIButton = {
@@ -198,6 +205,8 @@ class TabsBarViewController: UIViewController {
 
     private func setUpSubviews() {
 
+        // Keep moving content clear of window controls.
+        view.clipsToBounds = true
         collectionView.clipsToBounds = true
         collectionView.delegate = self
         collectionView.dataSource = self
@@ -209,9 +218,8 @@ class TabsBarViewController: UIViewController {
         collectionView.isPrefetchingEnabled = false
         collectionView.register(TabsBarCell.self, forCellWithReuseIdentifier: TabsBarCell.reuseIdentifier)
 
-        // Insert the flare overlay and reserve room for the leftmost tab's fillet (collection leading
-        // is pulled in to match).
         flareBackground.update()
+        // Reserve one ramp width so first flare remains visible.
         collectionView.contentInset.left = Constants.tabRampSize.width
 
         addTabButton.setImage(DesignSystemImages.Glyphs.Size24.add, for: .normal)
@@ -606,17 +614,14 @@ class TabsBarViewController: UIViewController {
         NotificationCenter.default.post(name: TabsBarViewController.viewDidLayoutNotification, object: self)
     }
 
-    /// When the tabs bar shares the system window controls' row, the first tab has to start after
-    /// them. The reserved width changes as the window is resized or goes full screen, so it's read
-    /// back on every layout pass; the equality guard keeps that from looping.
+    // Recalculate after resizing because reserved window control width changes.
     private func updateWindowControlsInsetIfNeeded() {
         let margin: CGFloat
         if WindowControlsRowLayout.sharesRow(in: view, featureFlagger: featureFlagger) {
             let clearsWindowControls = WindowControlsRowLayout.leadingInset(in: view) + Constants.windowControlsTabGap
             margin = max(Constants.firstTabLeadingMargin, clearsWindowControls)
         } else {
-            // Full screen has no controls to clear, and the horizontal region's inset there is the
-            // display's rounded corner, which is far wider than the tabs bar wants.
+            // Horizontal adaptation reserves display corner space in full screen.
             margin = Constants.firstTabLeadingMargin
         }
         guard tabsBarView.firstTabLeadingMargin != margin else { return }
@@ -685,8 +690,7 @@ extension TabsBarViewController: UICollectionViewDelegate {
 
     func collectionView(_ collectionView: UICollectionView,
                         previewForDismissingContextMenuWithConfiguration configuration: UIContextMenuConfiguration) -> UITargetedPreview? {
-        // Fires on every preview dismissal; `willEndContextMenu` may not (e.g. when the lift converts
-        // into a drag), so restore from here.
+        // Restore here because menu end callback can be skipped when preview becomes a drag.
         flareBackground.endPreview()
         return tabMenuPreview(for: configuration)
     }
@@ -700,14 +704,13 @@ extension TabsBarViewController: UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView,
                         willEndContextMenu configuration: UIContextMenuConfiguration,
                         animator: UIContextMenuInteractionAnimating?) {
-        // Fallback; `previewForDismissing` handles the rest.
         flareBackground.endPreview()
     }
 
     func collectionView(_ collectionView: UICollectionView,
                         willPerformPreviewActionForMenuWith configuration: UIContextMenuConfiguration,
                         animator: UIContextMenuInteractionCommitAnimating) {
-        // Committing the preview also ends the menu without `willEndContextMenu`.
+        // Menu end callback is skipped when preview is committed.
         flareBackground.endPreview()
     }
 
@@ -905,7 +908,7 @@ extension TabsBarViewController {
         let theme = ThemeManager.shared.currentTheme
         view.backgroundColor = theme.tabsBarBackgroundColor
         view.tintColor = theme.barTintColor
-        // Clear so the flare behind the cells shows through.
+        // Reveal flare drawn behind cells.
         collectionView.backgroundColor = .clear
         buttonsBackground.backgroundColor = theme.tabsBarBackgroundColor
         addTabButtonBackground.backgroundColor = theme.tabsBarBackgroundColor

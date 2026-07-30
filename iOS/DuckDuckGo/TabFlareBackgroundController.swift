@@ -19,8 +19,7 @@
 
 import UIKit
 
-/// Draws the active tab's flared background and keeps it in place through the current tab's
-/// context-menu preview and reorder drag.
+/// Maintains active tab flare during context menu previews and reordering.
 final class TabFlareBackgroundController {
 
     private final class WeakDisplayLinkProxy {
@@ -41,17 +40,22 @@ final class TabFlareBackgroundController {
     private let fillColor: () -> UIColor
     private let rampWidth: CGFloat
 
-    // Tab lifted for a context-menu preview, or nil.
     private var previewedTabIndex: Int?
+
+    /// Additional fade applied before strip clipping.
+    var hideAlpha: CGFloat = 1 {
+        didSet {
+            guard hideAlpha != oldValue else { return }
+            applyAlpha()
+        }
+    }
 
     private var isReordering = false
     private var reorderTrackingDisplayLink: CADisplayLink?
 
     init(collectionView: UICollectionView,
          topCornerRadius: CGFloat,
-         bottomCornerRadius: CGFloat,
          rampSize: CGSize,
-         detachedVerticalInset: CGFloat,
          currentIndex: @escaping () -> Int?,
          fillColor: @escaping () -> UIColor) {
         self.collectionView = collectionView
@@ -59,27 +63,17 @@ final class TabFlareBackgroundController {
         self.fillColor = fillColor
         self.rampWidth = rampSize.width
         view.topCornerRadius = topCornerRadius
-        view.bottomCornerRadius = bottomCornerRadius
         view.rampSize = rampSize
-        view.detachedVerticalInset = detachedVerticalInset
         view.isHidden = true
         collectionView.insertSubview(view, at: 0)
-    }
-
-    /// Switches the active tab between the flared silhouette and the detached rounded rectangle.
-    /// Lays out first so the morph interpolates towards a path built for the view's current bounds.
-    func setShape(_ shape: TabFlaredBackgroundView.Shape, animated: Bool) {
-        view.layoutIfNeeded()
-        view.setShape(shape, animated: animated)
     }
 
     deinit {
         stopReorderTracking()
     }
 
-    /// Positions the flare over the current tab.
     func update() {
-        // The display link owns the frame during a reorder.
+        // Display link owns frame updates during reordering.
         guard !isReordering else { return }
         guard let collectionView,
               let index = currentIndex(),
@@ -90,29 +84,27 @@ final class TabFlareBackgroundController {
         view.frame = attributes.frame.insetBy(dx: -rampWidth, dy: 0)
         view.fillColor = fillColor()
         view.isHidden = false
-        view.alpha = (previewedTabIndex == index) ? 0 : 1
+        applyAlpha()
         collectionView.sendSubviewToBack(view)
     }
 
-    /// Fades the flare out while the current tab is lifted for its preview.
     func beginPreview(forRow row: Int?, animator: UIContextMenuInteractionAnimating?) {
         guard row == currentIndex() else { return }
         previewedTabIndex = currentIndex()
         animator?.addAnimations { self.view.alpha = 0 }
     }
 
-    /// Restores the flare after a preview.
     func endPreview() {
         guard previewedTabIndex != nil else { return }
         previewedTabIndex = nil
-        view.alpha = 1
+        applyAlpha()
     }
 
     func beginReorder() {
-        // A long-press preview can convert into a drag without firing its dismiss callback.
+        // Preview dismissal is not called when preview becomes a drag.
         previewedTabIndex = nil
         isReordering = true
-        view.alpha = 1
+        applyAlpha()
         startReorderTracking()
     }
 
@@ -120,6 +112,15 @@ final class TabFlareBackgroundController {
         stopReorderTracking()
         isReordering = false
         update()
+    }
+
+    // Preview hiding takes precedence over scroll hiding.
+    private func applyAlpha() {
+        guard let previewedTabIndex, previewedTabIndex == currentIndex() else {
+            view.alpha = hideAlpha
+            return
+        }
+        view.alpha = 0
     }
 
     private func startReorderTracking() {
@@ -134,13 +135,12 @@ final class TabFlareBackgroundController {
         reorderTrackingDisplayLink = nil
     }
 
-    /// Follows the current tab cell's live frame during a reorder.
     private func trackToCurrentTabCell() {
         guard let collectionView else {
             endReorder()
             return
         }
-        // Stop if the drag ended without `dragSessionDidEnd`, so the link can't run on forever.
+        // End tracking if drag completion callback was skipped.
         guard collectionView.hasActiveDrag else {
             endReorder()
             return

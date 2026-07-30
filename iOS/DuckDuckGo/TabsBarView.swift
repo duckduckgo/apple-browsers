@@ -27,17 +27,14 @@ final class TabsBarView: UIView {
 
     private var collectionViewLeading: NSLayoutConstraint?
 
-    /// Distance from the leading edge of the bar to the first tab. Grows to clear the system window
-    /// controls when the tabs bar shares their row.
+    /// Leading tab margin, expanded when window controls share the row.
     var firstTabLeadingMargin: CGFloat = TabsBarViewController.Constants.firstTabLeadingMargin {
         didSet {
             collectionViewLeading?.constant = Self.collectionViewLeadingConstant(for: firstTabLeadingMargin)
         }
     }
 
-    /// The collection view starts one ramp width earlier than the tabs do, so the first tab's leading
-    /// fillet has room and isn't clipped. `collectionView.contentInset.left` puts the tabs back where
-    /// the margin says, see `TabsBarViewController.setUpSubviews()`.
+    // Offset by one ramp width so content inset can preserve the tab margin without clipping the flare.
     private static func collectionViewLeadingConstant(for firstTabLeadingMargin: CGFloat) -> CGFloat {
         firstTabLeadingMargin - TabsBarViewController.Constants.tabRampSize.width
     }

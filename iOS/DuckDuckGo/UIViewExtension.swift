@@ -74,13 +74,25 @@ extension UIView {
         }
     }
 
-    /// True when the app isn't full screen (Split View / Slide Over / Stage Manager). Sides are sorted
-    /// for orientation independence; the 1pt slack absorbs rounding.
+    /// Detects a window smaller than its screen using sorted dimensions and 1 pt tolerance for rounding.
     var isWindowedPresentation: Bool {
         guard let window, let scene = window.windowScene else { return false }
         let windowSides = [window.frame.width, window.frame.height].sorted()
         let screenSides = [scene.screen.bounds.width, scene.screen.bounds.height].sorted()
         return windowSides[0] < screenSides[0] - 1 || windowSides[1] < screenSides[1] - 1
+    }
+
+    /// Scales around a superview point and optionally moves upward so sibling views transform as one group.
+    func applyTransform(scale: CGFloat, about pivot: CGPoint, rise: CGFloat = 0) {
+        let pivotCorrection = CGPoint(x: (pivot.x - center.x) * (1 - scale),
+                                      y: (pivot.y - center.y) * (1 - scale))
+        transform = CGAffineTransform(translationX: pivotCorrection.x, y: pivotCorrection.y - rise)
+            .scaledBy(x: scale, y: scale)
+    }
+
+    /// Top center of the view in its superview coordinates before transforms.
+    var untransformedTopCenter: CGPoint {
+        CGPoint(x: center.x, y: center.y - bounds.height / 2)
     }
 
     @MainActor

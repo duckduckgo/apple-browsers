@@ -103,9 +103,7 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         return true
     }
 
-    /// The unified style draws the window controls as part of the scene's content, which is what
-    /// lets the iPad tabs bar share their row. Anything else keeps the controls in a strip of their
-    /// own above the browser chrome.
+    /// Unified style exposes layout regions so browser chrome can share the window controls row.
     @available(iOS 26.0, *)
     func preferredWindowingControlStyle(for windowScene: UIWindowScene) -> UIWindowScene.WindowingControlStyle {
         WindowControlsRowLayout.isEnabled(featureFlagger: AppDependencyProvider.shared.featureFlagger) ? .unified : .automatic

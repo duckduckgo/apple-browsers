@@ -106,17 +106,7 @@ class MainViewFactory {
 
 }
 
-/// iOS 26 draws system window controls in the top leading corner of a resizable iPad window.
-/// UIKit doesn't publish their frame; the only supported way to reserve room for them is a
-/// corner adapted layout region. `.vertical` adaptation reserves a strip *above* the content,
-/// which is what the browser chrome uses by default, so the tabs bar ends up in its own row
-/// underneath the controls. `.horizontal` adaptation reserves room *beside* them instead,
-/// which lets the tabs bar share the controls' row.
-///
-/// Corner adaptation also covers the *display's* rounded corners, not just the window controls, so
-/// the horizontal region is only right while the window is actually windowed. Full screen has no
-/// controls to clear and would otherwise get a wide leading inset and a top inset too short to
-/// clear the status bar, so the chrome stays on the vertical region there.
+/// Uses corner adapted layout regions because UIKit does not expose window control frames.
 enum WindowControlsRowLayout {
 
     static func isEnabled(featureFlagger: FeatureFlagger) -> Bool {
@@ -124,21 +114,17 @@ enum WindowControlsRowLayout {
         return featureFlagger.isFeatureOn(.iPadTabsBarInWindowControlsRow)
     }
 
-    /// True when the chrome should currently share the controls' row, i.e. the feature is on *and*
-    /// this window has controls to share it with.
+    /// Returns false in full screen because horizontal adaptation also reserves display corner space.
     static func sharesRow(in view: UIView, featureFlagger: FeatureFlagger?) -> Bool {
         guard let featureFlagger, isEnabled(featureFlagger: featureFlagger) else { return false }
         return view.isWindowedPresentation
     }
 
-    /// Room the window controls need on the leading edge of the shared row.
     static func leadingInset(in view: UIView) -> CGFloat {
         guard #available(iOS 26, *) else { return 0 }
         return view.directionalEdgeInsets(for: .margins(cornerAdaptation: .horizontal)).leading
     }
 
-    /// Height of the strip the controls would occupy if the chrome were pushed below them. Used to
-    /// offset the omni bar when the tabs bar isn't there to fill the row.
     static func rowHeight(in view: UIView) -> CGFloat {
         guard #available(iOS 26, *) else { return 0 }
         let pushedBelow = view.directionalEdgeInsets(for: .margins(cornerAdaptation: .vertical)).top
@@ -583,6 +569,12 @@ extension MainViewFactory {
         let toolbar = coordinator.toolbar!
 
         coordinator.constraints.contentContainerTop = contentContainer.constrainView(coordinator.topSlideContainer!, by: .top, to: .bottom)
+        if isWindowControlsRowEnabled {
+            // Lower priority lets shared row clearance win while top chrome slides behind it.
+            coordinator.constraints.contentContainerTop.priority = .init(999)
+            coordinator.constraints.contentContainerTopBelowTabsBar =
+                contentContainer.constrainView(coordinator.tabBarContainer, by: .top, to: .bottom, relatedBy: .greaterThanOrEqual)
+        }
         coordinator.constraints.contentContainerTopToSafeArea = contentContainer.topAnchor.constraint(equalTo: superview.safeAreaLayoutGuide.topAnchor)
         coordinator.constraints.contentContainerTopToSuperview = contentContainer.topAnchor.constraint(equalTo: superview.topAnchor)
         coordinator.constraints.contentContainerBottomToToolbarTop = contentContainer.constrainView(toolbar, by: .bottom, to: .top)

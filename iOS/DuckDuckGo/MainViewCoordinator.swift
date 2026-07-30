@@ -24,8 +24,7 @@ class MainViewCoordinator {
 
     enum Constants {
         static let tabBarContainerHeight: CGFloat = 40
-        /// Drop applied to the whole top chrome while the tabs bar shares the system window controls'
-        /// row, so the tabs line up with the controls instead of hugging the top of the window.
+        // Aligns top chrome with window controls.
         static let windowControlsRowTopSpacing: CGFloat = 4
     }
 
@@ -124,10 +123,8 @@ class MainViewCoordinator {
         var toolbarBottom: NSLayoutConstraint!
         var toolbarHeight: NSLayoutConstraint!
         var contentContainerTop: NSLayoutConstraint!
+        var contentContainerTopBelowTabsBar: NSLayoutConstraint?
         var tabBarContainerTop: NSLayoutConstraint!
-        /// The two top anchors the chrome can hang off: beside the system window controls, or below
-        /// them. `tabBarContainerTop` / `navigationBarContainerTop` always point at the active one.
-        /// Nil unless the feature is on, see `MainViewFactory.constrainTabBarContainer()`.
         var tabBarContainerTopInWindowControlsRow: NSLayoutConstraint?
         var tabBarContainerTopBelowWindowControls: NSLayoutConstraint?
         var navigationBarContainerTopInWindowControlsRow: NSLayoutConstraint?
@@ -151,8 +148,7 @@ class MainViewCoordinator {
 
     }
 
-    /// Hangs the chrome off the horizontally corner adapted guide (beside the window controls) or the
-    /// vertically adapted one (below them). Returns true when it actually changed something.
+    /// Returns true after swapping between shared and separate window control rows.
     @discardableResult
     func setChromeSharesWindowControlsRow(_ sharesRow: Bool) -> Bool {
         guard let tabBarBesideControls = constraints.tabBarContainerTopInWindowControlsRow,
@@ -170,7 +166,11 @@ class MainViewCoordinator {
         return true
     }
 
-    /// The constants carry the chrome-hide offsets, so they move across with the swap.
+    func setContentClearsSharedTabsRow(_ clearsRow: Bool) {
+        constraints.contentContainerTopBelowTabsBar?.isActive = clearsRow
+    }
+
+    // Preserve chrome hiding offset across anchor swaps.
     private func activate(_ activating: NSLayoutConstraint, replacing deactivating: NSLayoutConstraint) -> NSLayoutConstraint {
         deactivating.isActive = false
         activating.constant = deactivating.constant

@@ -47,8 +47,8 @@ public final class PIRDebugSession {
     public let emailConfirmationStore = DebugEmailConfirmationStore()
     private let emailConfirmationDataService: EmailConfirmationDataService
 
-    private let settings: DataBrokerProtectionSettings
-    private let userDefaultsSuiteName: String
+    /// Held for the session's lifetime: it owns the ephemeral defaults suite the services read.
+    private let ephemeralSettings: PIRDebugEphemeralSettings
 
     /// Maps an extracted-profile stable id → the profile query it came from, for opt-out resolution
     /// within the same session.
@@ -90,14 +90,9 @@ public final class PIRDebugSession {
                                                              featureToggles: features)
 
         // Settings over an ephemeral UserDefaults suite — never UserDefaults.standard / UserDefaults.dbp.
-        let suiteName = "com.duckduckgo.pir-debug.session.\(UUID().uuidString)"
-        self.userDefaultsSuiteName = suiteName
-        guard let defaults = UserDefaults(suiteName: suiteName) else {
-            throw PIRDebugError.ephemeralDefaultsUnavailable
-        }
-        let settings = DataBrokerProtectionSettings(defaults: defaults)
-        settings.selectedEnvironment = configuration.servicesEndpoint.selectedEnvironment
-        self.settings = settings
+        let ephemeralSettings = try PIRDebugEphemeralSettings(servicesEndpoint: configuration.servicesEndpoint)
+        self.ephemeralSettings = ephemeralSettings
+        let settings = ephemeralSettings.settings
 
         let baseURL = configuration.servicesEndpoint.baseURL
         let backendServicePixels = DefaultDataBrokerProtectionBackendServicePixels(pixelHandler: configuration.pixelHandler,
@@ -137,7 +132,6 @@ public final class PIRDebugSession {
 
     deinit {
         eventContinuation.finish()
-        UserDefaults.standard.removeSuite(named: userDefaultsSuiteName)
     }
 
     // MARK: - Rules

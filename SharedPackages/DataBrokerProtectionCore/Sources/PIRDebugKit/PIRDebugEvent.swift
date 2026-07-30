@@ -69,24 +69,10 @@ public struct PIRDebugEvent: Codable, Sendable, Equatable {
         case details
     }
 
-    private static let iso8601: ISO8601DateFormatter = {
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        return formatter
-    }()
-
-    /// Fallback for externally produced timestamps lacking fractional seconds.
-    private static let iso8601NoFraction: ISO8601DateFormatter = {
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withInternetDateTime]
-        return formatter
-    }()
-
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         let timestampString = try container.decode(String.self, forKey: .timestamp)
-        guard let parsed = Self.iso8601.date(from: timestampString)
-                ?? Self.iso8601NoFraction.date(from: timestampString) else {
+        guard let parsed = PIRDebugISO8601.date(from: timestampString) else {
             throw DecodingError.dataCorruptedError(forKey: .timestamp, in: container,
                                                    debugDescription: "Not an ISO-8601 timestamp: \(timestampString)")
         }
@@ -99,7 +85,7 @@ public struct PIRDebugEvent: Codable, Sendable, Equatable {
 
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encode(Self.iso8601.string(from: timestamp), forKey: .timestamp)
+        try container.encode(PIRDebugISO8601.string(from: timestamp), forKey: .timestamp)
         try container.encode(profileQueryLabel, forKey: .profileQueryLabel)
         try container.encode(kind, forKey: .kind)
         try container.encodeIfPresent(actionType, forKey: .actionType)

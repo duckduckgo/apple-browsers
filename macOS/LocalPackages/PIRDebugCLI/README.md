@@ -183,6 +183,50 @@ used; otherwise you must disambiguate. Result JSON is a single `PIROptOutResult`
 > **An opt-out that halts awaiting email confirmation *without* `--wait-for-email` exits `0`** — a
 > `PIROptOutResult` with `awaitingEmailConfirmation: true` is an expected halt, not a failure.
 
+#### `email`
+
+```
+pir-debug email generate --broker <domain> [--attempt-id <uuid>] [--wait] [--poll-interval <s>]
+pir-debug email inbox --email <address> --attempt-id <uuid> [--wait] [--poll-interval <s>]
+pir-debug email delete --email <address> --attempt-id <uuid>
+```
+
+Drives the DBP disposable-email services directly — no rules source, no script source, no web view.
+These are the same services a scan/opt-out hits from a broker's `generateEmail` / `emailConfirmation`
+/ `getEmailData` actions, so this is the way to check the email side on its own: generate an address,
+watch what the backend extracts from mail sent to it, then clear it.
+
+A mailbox is keyed by **(address, attempt id)** — the pair the v1 `email-data` endpoint takes — so
+keep the `attemptId` that `generate` reports and pass it to `inbox` / `delete`. `generate` also
+prints the exact `email inbox` command to stderr.
+
+Every subcommand needs a token: `--auth-token`, or `PRIVACYPRO_STAGING_ACCESS_TOKEN_V2`. Without one
+the command exits `2` up front rather than failing inside the service.
+
+Shared flags (`EmailOptions`, plus `AuthOptions`):
+
+| Flag | Meaning |
+|------|---------|
+| `--environment staging\|production` | Which environment's email service to use. Default `staging`. |
+| `--services-url <url>` | Verbatim services base URL, overriding `--environment` (e.g. a localhost fake service). **Only the `email` commands expose this**; `scan`/`optout` derive the endpoint from `--environment`. |
+| `--output <path>` | Write result JSON to a file instead of stdout. |
+| `--timeout <seconds>` | Watchdog (exit `3`). Default `600`. This is what bounds `--wait`. |
+| `--verbose` | Verbose progress logging on stderr. |
+
+Per-subcommand:
+
+| Flag | Meaning |
+|------|---------|
+| `--broker <domain>` (`generate`) | Sent as the service's `dataBroker` parameter — the broker JSON's `url` (e.g. `fakebroker.com`), exactly what the engine sends. |
+| `--attempt-id <uuid>` | On `generate`, the id to generate under (default: a fresh UUID). On `inbox`/`delete`, **required** — the id `generate` reported. Non-UUID values are a usage error, since a wrong id silently reads a different mailbox. |
+| `--email <address>` (`inbox`, `delete`) | The generated address. |
+| `--wait` (`generate`, `inbox`) | Poll the mailbox until it leaves `pending`. Unbounded except by `--timeout`, matching `optout --wait-for-email`. |
+| `--poll-interval <s>` | Seconds between polls with `--wait`. Default `15`. |
+
+Exit codes: `ready` and `pending` both exit `0` (pending is an expected state, not a failure); the
+service reporting `error`/`unknown` for the mailbox, or returning no item for the pair at all, exits
+`1`.
+
 #### `validate`
 
 ```
@@ -339,6 +383,46 @@ needed to drive a later `optout` (deterministic across processes):
   "duration": 6.3,
   "eventCount": 20
 }
+```
+
+### `email generate` → `PIRDebugGeneratedEmail`
+
+```jsonc
+{
+  "dataBroker": "fakebroker.com",
+  "email": "abc123@duck.com",
+  "pattern": "fakebroker.com+*@duck.com",   // the service's address pattern, when it reports one
+  "attemptId": "11111111-2222-3333-4444-555555555555"
+}
+```
+
+With `--wait`, the same object gains an `inbox` field holding the item below (or `null` if the
+service returned nothing for the mailbox).
+
+### `email inbox` → `PIRDebugEmailInboxItem`
+
+```jsonc
+{
+  "email": "abc123@duck.com",
+  "attemptId": "11111111-2222-3333-4444-555555555555",
+  "status": "ready",                        // "ready" | "pending" | "unknown" | "error"
+  "errorCode": null,                        // "server_error" | "extraction_error" | "request_error"
+  "confirmationLink": "https://fakebroker.com/confirm/abc",   // the "link" datum, once ready
+  "data": {                                 // every datum the service extracted, by name
+    "link": "https://fakebroker.com/confirm/abc",
+    "code": "12345"
+  },
+  "receivedAt": "2026-07-25T17:20:00.500Z"  // ISO-8601, as in the event stream
+}
+```
+
+`data` is the full bag a broker's `getEmailData` action selects keys from; `confirmationLink` is
+just the `link` key surfaced for convenience.
+
+### `email delete` → report
+
+```jsonc
+{ "email": "abc123@duck.com", "attemptId": "1111…", "deleted": true }
 ```
 
 ### `validate` → report
@@ -525,6 +609,33 @@ swift run pir-debug optout \
 Without `--wait-for-email`, an opt-out that stops to await confirmation exits `0` with
 `awaitingEmailConfirmation: true`.
 
+### Email loop (check the email side without running a scan)
+
+Same token. Useful when an opt-out stalls at email confirmation and you want to know whether the
+problem is the mail or the rule:
+
+```bash
+export PRIVACYPRO_STAGING_ACCESS_TOKEN_V2="$(… fetch from Bitwarden …)"
+
+# 1. Generate an address for the broker, and keep the mailbox key:
+swift run pir-debug email generate --broker fakebroker.com --output mailbox.json
+ADDRESS=$(jq -r .email mailbox.json)
+ATTEMPT=$(jq -r .attemptId mailbox.json)
+
+# 2. Send mail to $ADDRESS (submit the broker's opt-out form with it), then read the mailbox:
+swift run pir-debug email inbox --email "$ADDRESS" --attempt-id "$ATTEMPT"
+
+# …or block until something lands (bounded by --timeout, exit 3 if it never does):
+swift run pir-debug email inbox --email "$ADDRESS" --attempt-id "$ATTEMPT" \
+  --wait --poll-interval 15 --timeout 900 | jq -r .confirmationLink
+
+# 3. Clear the backend's copy when you're done:
+swift run pir-debug email delete --email "$ADDRESS" --attempt-id "$ATTEMPT"
+```
+
+`generate --wait` collapses steps 1–2 into one command when the mail is triggered elsewhere. Against
+a local fake email service, add `--services-url http://localhost:<port>` to every call.
+
 ### Always use fake brokers for automated loops
 
 Point loops at `DuckDuckGo/pir-fake-broker` (served at `http://localhost:3001`) or the bundled fake
@@ -608,6 +719,10 @@ so both the Swift contract and the JS artifact come from the same tree. Revert b
   (via `--index` or a lone match) emits a single object.
 - An **opt-out that halts awaiting email confirmation without `--wait-for-email` exits `0`** (an
   expected halt, not a failure).
+- **`email inbox` with `status: "pending"` exits `0`** for the same reason; only `error`/`unknown`,
+  or no item at all for the (address, attempt id) pair, exit `1`.
+- **`--services-url` exists only on the `email` commands.** `scan`/`optout`/`serve` still derive the
+  services endpoint from `--environment`.
 - **Acceptance criteria 1, 3, and 5** (live headless scan, headed scan with `--show-webview`, and
   the opt-out email-confirmation continuation) require a manual run against a **running** fake
   broker and were **not** automatically verified.

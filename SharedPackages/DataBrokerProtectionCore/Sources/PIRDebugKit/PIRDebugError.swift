@@ -40,6 +40,8 @@ public enum PIRDebugError: Error, LocalizedError {
     case remoteRulesClientError
     /// The per-session ephemeral `UserDefaults` suite could not be created.
     case ephemeralDefaultsUnavailable
+    /// More mailboxes were passed to the email-data service than one request accepts.
+    case emailBatchTooLarge(count: Int, maximum: Int)
 
     public var errorDescription: String? {
         switch self {
@@ -63,6 +65,8 @@ public enum PIRDebugError: Error, LocalizedError {
             return "Remote rules client error"
         case .ephemeralDefaultsUnavailable:
             return "Could not create an ephemeral UserDefaults suite for this session"
+        case .emailBatchTooLarge(let count, let maximum):
+            return "Too many mailboxes in one email-data request: \(count) (maximum \(maximum))"
         }
     }
 }

@@ -25,7 +25,7 @@ struct PIRDebug: ParsableCommand {
 
     static let configuration = CommandConfiguration(
         commandName: "pir-debug",
-        abstract: "Headless driver for the PIR/DBP debug engine (scan, opt-out, rule/script overrides).",
+        abstract: "Headless driver for the PIR/DBP debug engine (scan, opt-out, disposable email, rule/script overrides).",
         discussion: """
         I/O contract:
           • stdout  — result JSON only (kept pure via an fd-swap before the engine starts).
@@ -41,6 +41,7 @@ struct PIRDebug: ParsableCommand {
         subcommands: [
             ScanCommand.self,
             OptOutCommand.self,
+            EmailCommand.self,
             ValidateCommand.self,
             ListBrokersCommand.self,
             FetchRulesCommand.self,

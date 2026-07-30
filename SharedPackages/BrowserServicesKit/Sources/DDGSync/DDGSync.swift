@@ -122,7 +122,8 @@ public class DDGSync: DDGSyncing {
         let result = try await dependencies.account.login(recoveryKey, deviceName: deviceName, deviceType: deviceType)
         try updateAccount(result.account)
         persistRecoveredThirdPartyScopedPasswordIfAvailable(from: result.accessCredentials, account: result.account)
-        updateProtectedKeysCache(with: result.keys)
+        let accountInfoKeys = await ensureAccountInfoProtectedKeysIfNeeded(for: result.account)
+        updateProtectedKeysCache(with: (result.keys ?? []) + accountInfoKeys)
         scheduler.requestSyncImmediately()
         return result.devices
     }
@@ -609,6 +610,20 @@ public class DDGSync: DDGSyncing {
         }
 
         try? dependencies.secureStore.persistProtectedKeys(encodedKeys)
+    }
+
+    private func ensureAccountInfoProtectedKeysIfNeeded(for account: SyncAccount) async -> [ProtectedKey] {
+        guard dependencies.syncFeatureFlags.canWriteUnifiedDeviceList() else {
+            return []
+        }
+
+        do {
+            return try await dependencies.scopedAccess.ensureAccountInfoProtectedKeys(for: account)
+        } catch {
+            let errorType = String(describing: type(of: error))
+            Logger.sync.error("Failed to ensure account_info protected keys after login: \(errorType, privacy: .public)")
+            return []
+        }
     }
 
     private func persistRecoveredThirdPartyScopedPasswordIfAvailable(from accessCredentials: [AccessCredential]?, account: SyncAccount) {

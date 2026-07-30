@@ -29,7 +29,10 @@ final class ScopedAccessCredentialManagerTests: XCTestCase {
     func testWhenEnsuringScopedPasswordAndCredentialExistsThenRecoversPasswordWithoutCreatingCredential() async throws {
         let api = RemoteAPIRequestCreatingMock()
         let endpoints = Endpoints(baseURL: Self.baseURL)
-        let manager = ScopedAccessCredentialManager(endpoints: endpoints, api: api, crypter: CryptingMock())
+        let manager = ScopedAccessCredentialManager(endpoints: endpoints,
+                                                    api: api,
+                                                    crypter: CryptingMock(),
+                                                    accountInfoKeyFactory: AccountInfoKeyFactoryMock())
 
         let scopedPassword = Data(repeating: 8, count: 32)
         let account = makeAccount(primaryKey: Data((0..<32).map(UInt8.init)))
@@ -62,7 +65,10 @@ final class ScopedAccessCredentialManagerTests: XCTestCase {
                                passwordHash: Data([0xAB]),
                                stretchedPrimaryKey: Data())
         }
-        let manager = ScopedAccessCredentialManager(endpoints: endpoints, api: api, crypter: crypter)
+        let manager = ScopedAccessCredentialManager(endpoints: endpoints,
+                                                    api: api,
+                                                    crypter: crypter,
+                                                    accountInfoKeyFactory: AccountInfoKeyFactoryMock())
 
         let scopedPassword = Data((32..<64).map(UInt8.init))
         let account = makeAccount(primaryKey: Data((0..<32).map(UInt8.init)))
@@ -96,7 +102,10 @@ final class ScopedAccessCredentialManagerTests: XCTestCase {
                                passwordHash: Data([0xAB]),
                                stretchedPrimaryKey: Data())
         }
-        let manager = ScopedAccessCredentialManager(endpoints: endpoints, api: api, crypter: crypter)
+        let manager = ScopedAccessCredentialManager(endpoints: endpoints,
+                                                    api: api,
+                                                    crypter: crypter,
+                                                    accountInfoKeyFactory: AccountInfoKeyFactoryMock())
 
         let scopedPassword = Data((32..<64).map(UInt8.init))
         let account = makeAccount(primaryKey: Data((0..<32).map(UInt8.init)))
@@ -123,7 +132,10 @@ final class ScopedAccessCredentialManagerTests: XCTestCase {
     func testWhenFetchingAccessCredentialsReturns404ThenReturnsEmptyCredentials() async throws {
         let api = RemoteAPIRequestCreatingMock()
         let endpoints = Endpoints(baseURL: Self.baseURL)
-        let manager = ScopedAccessCredentialManager(endpoints: endpoints, api: api, crypter: CryptingMock())
+        let manager = ScopedAccessCredentialManager(endpoints: endpoints,
+                                                    api: api,
+                                                    crypter: CryptingMock(),
+                                                    accountInfoKeyFactory: AccountInfoKeyFactoryMock())
         let account = makeAccount(primaryKey: Data((0..<32).map(UInt8.init)))
         api.fakeRequests[endpoints.accessCredentials] = makeFailingRequest(statusCode: 404)
 
@@ -135,7 +147,10 @@ final class ScopedAccessCredentialManagerTests: XCTestCase {
     func testWhenFetchingProtectedKeysReturns404ThenReturnsEmptyKeys() async throws {
         let api = RemoteAPIRequestCreatingMock()
         let endpoints = Endpoints(baseURL: Self.baseURL)
-        let manager = ScopedAccessCredentialManager(endpoints: endpoints, api: api, crypter: CryptingMock())
+        let manager = ScopedAccessCredentialManager(endpoints: endpoints,
+                                                    api: api,
+                                                    crypter: CryptingMock(),
+                                                    accountInfoKeyFactory: AccountInfoKeyFactoryMock())
         let account = makeAccount(primaryKey: Data((0..<32).map(UInt8.init)))
         api.fakeRequests[endpoints.keys] = makeFailingRequest(statusCode: 404)
 
@@ -154,7 +169,10 @@ final class ScopedAccessCredentialManagerTests: XCTestCase {
                                passwordHash: Data([0xAB]),
                                stretchedPrimaryKey: Data())
         }
-        let manager = ScopedAccessCredentialManager(endpoints: endpoints, api: api, crypter: crypter)
+        let manager = ScopedAccessCredentialManager(endpoints: endpoints,
+                                                    api: api,
+                                                    crypter: crypter,
+                                                    accountInfoKeyFactory: AccountInfoKeyFactoryMock())
 
         let accountPrimaryKey = Data((0..<32).map(UInt8.init))
         let scopedPassword = Data((32..<64).map(UInt8.init))
@@ -206,7 +224,10 @@ final class ScopedAccessCredentialManagerTests: XCTestCase {
                                passwordHash: Data([0xAB]),
                                stretchedPrimaryKey: Data())
         }
-        let manager = ScopedAccessCredentialManager(endpoints: endpoints, api: api, crypter: crypter)
+        let manager = ScopedAccessCredentialManager(endpoints: endpoints,
+                                                    api: api,
+                                                    crypter: crypter,
+                                                    accountInfoKeyFactory: AccountInfoKeyFactoryMock())
 
         let accountPrimaryKey = Data((0..<32).map(UInt8.init))
         let scopedPassword = Data((32..<64).map(UInt8.init))
@@ -247,7 +268,10 @@ final class ScopedAccessCredentialManagerTests: XCTestCase {
                                passwordHash: Data([0xAB]),
                                stretchedPrimaryKey: Data())
         }
-        let manager = ScopedAccessCredentialManager(endpoints: endpoints, api: api, crypter: crypter)
+        let manager = ScopedAccessCredentialManager(endpoints: endpoints,
+                                                    api: api,
+                                                    crypter: crypter,
+                                                    accountInfoKeyFactory: AccountInfoKeyFactoryMock())
 
         let accountPrimaryKey = Data((0..<32).map(UInt8.init))
         let localScopedPassword = Data((32..<64).map(UInt8.init))
@@ -288,7 +312,10 @@ final class ScopedAccessCredentialManagerTests: XCTestCase {
                                passwordHash: Data([0xAB]),
                                stretchedPrimaryKey: Data())
         }
-        let manager = ScopedAccessCredentialManager(endpoints: endpoints, api: api, crypter: crypter)
+        let manager = ScopedAccessCredentialManager(endpoints: endpoints,
+                                                    api: api,
+                                                    crypter: crypter,
+                                                    accountInfoKeyFactory: AccountInfoKeyFactoryMock())
 
         let accountPrimaryKey = Data((0..<32).map(UInt8.init))
         let scopedPassword = Data((32..<64).map(UInt8.init))
@@ -311,10 +338,105 @@ final class ScopedAccessCredentialManagerTests: XCTestCase {
         }
     }
 
+    func testWhenEnsuringAccountInfoProtectedKeysAndKeysAreStoredThenReturnsThemWithoutCreatingKeys() async throws {
+        let api = RemoteAPIRequestCreatingMock()
+        let endpoints = Endpoints(baseURL: Self.baseURL)
+        let accountInfoKeyFactory = AccountInfoKeyFactoryMock()
+        let manager = ScopedAccessCredentialManager(endpoints: endpoints,
+                                                    api: api,
+                                                    crypter: CryptingMock(),
+                                                    accountInfoKeyFactory: accountInfoKeyFactory)
+        let account = makeAccount(primaryKey: Data(repeating: 0x1, count: 32))
+        let storedKeys = [
+            makeProtectedKey(kid: "account-info", encryptedWith: SyncCredentialID.defaultCredential, purpose: ProtectedKeyPurpose.accountInfo),
+            makeProtectedKey(kid: "account-info", encryptedWith: SyncCredentialID.thirdParty, purpose: ProtectedKeyPurpose.accountInfo),
+            makeProtectedKey(kid: "other", encryptedWith: SyncCredentialID.defaultCredential, purpose: "bookmarks")
+        ]
+        api.fakeRequests[endpoints.keys] = makeRequest(statusCode: 200, body: try protectedKeysBody(storedKeys))
+
+        let result = try await manager.ensureAccountInfoProtectedKeys(for: account)
+
+        XCTAssertEqual(result.map(\.kid), ["account-info", "account-info"])
+        XCTAssertEqual(Set(result.map(\.encryptedWith)), Set([SyncCredentialID.defaultCredential, SyncCredentialID.thirdParty]))
+        XCTAssertTrue(accountInfoKeyFactory.makeProtectedKeysCalls.isEmpty)
+        XCTAssertEqual(api.createRequestCallArgs.map(\.url), [endpoints.keys])
+    }
+
+    func testWhenEnsuringAccountInfoProtectedKeysWithoutThirdPartyCredentialThenCreatesAndRegistersDefaultWrapper() async throws {
+        let api = RemoteAPIRequestCreatingMock()
+        let endpoints = Endpoints(baseURL: Self.baseURL)
+        let accountInfoKeyFactory = AccountInfoKeyFactoryMock()
+        let account = makeAccount(primaryKey: Data(repeating: 0x2, count: 32))
+        let createdKey = makeProtectedKey(kid: "created",
+                                          encryptedWith: SyncCredentialID.defaultCredential,
+                                          purpose: ProtectedKeyPurpose.accountInfo)
+        accountInfoKeyFactory.makeProtectedKeysStub = [createdKey]
+        let manager = ScopedAccessCredentialManager(endpoints: endpoints,
+                                                    api: api,
+                                                    crypter: CryptingMock(),
+                                                    accountInfoKeyFactory: accountInfoKeyFactory)
+        api.fakeRequests[endpoints.keys] = makeRequest(statusCode: 200, body: try protectedKeysBody([]))
+        api.fakeRequests[endpoints.accessCredentials] = makeRequest(statusCode: 200, body: try accessCredentialsBody([]))
+        api.fakeRequests[endpoints.setKeyIfAbsent(purpose: ProtectedKeyPurpose.accountInfo)] = makeRequest(statusCode: 201)
+
+        let result = try await manager.ensureAccountInfoProtectedKeys(for: account)
+
+        XCTAssertEqual(result.map(\.kid), ["created"])
+        let factoryCall = try XCTUnwrap(accountInfoKeyFactory.makeProtectedKeysCalls.first)
+        XCTAssertEqual(factoryCall.accountSecretKey, account.secretKey)
+        XCTAssertNil(factoryCall.thirdPartyMainKey)
+        XCTAssertEqual(api.createRequestCallArgs.map(\.url), [
+            endpoints.keys,
+            endpoints.accessCredentials,
+            endpoints.setKeyIfAbsent(purpose: ProtectedKeyPurpose.accountInfo)
+        ])
+    }
+
+    func testWhenEnsuringAccountInfoProtectedKeysWithThirdPartyCredentialThenCreatesAndRegistersBothWrappers() async throws {
+        let api = RemoteAPIRequestCreatingMock()
+        let endpoints = Endpoints(baseURL: Self.baseURL)
+        let accountInfoKeyFactory = AccountInfoKeyFactoryMock()
+        let accountPrimaryKey = Data((0..<32).map(UInt8.init))
+        let scopedPassword = Data((32..<64).map(UInt8.init))
+        let account = makeAccount(primaryKey: accountPrimaryKey)
+        let defaultCredentialMainKey = hkdf(input: accountPrimaryKey, salt: account.userId, info: "Main Key")
+        let encryptedCredential = try ScopedAccessCredentialEnvelope().encryptScopedPassword(scopedPassword,
+                                                                                             using: defaultCredentialMainKey,
+                                                                                             kid: SyncCredentialID.defaultCredential)
+        let accessCredentials = [
+            AccessCredential(id: SyncCredentialID.thirdParty,
+                             scope: "sync",
+                             encrypted3PartyCredential: encryptedCredential)
+        ]
+        let createdKeys = [
+            makeProtectedKey(kid: "created", encryptedWith: SyncCredentialID.defaultCredential, purpose: ProtectedKeyPurpose.accountInfo),
+            makeProtectedKey(kid: "created", encryptedWith: SyncCredentialID.thirdParty, purpose: ProtectedKeyPurpose.accountInfo)
+        ]
+        accountInfoKeyFactory.makeProtectedKeysStub = createdKeys
+        let manager = ScopedAccessCredentialManager(endpoints: endpoints,
+                                                    api: api,
+                                                    crypter: CryptingMock(),
+                                                    accountInfoKeyFactory: accountInfoKeyFactory)
+        api.fakeRequests[endpoints.keys] = makeRequest(statusCode: 200, body: try protectedKeysBody([]))
+        api.fakeRequests[endpoints.accessCredentials] = makeRequest(statusCode: 200, body: try accessCredentialsBody(accessCredentials))
+        api.fakeRequests[endpoints.setKeyIfAbsent(purpose: ProtectedKeyPurpose.accountInfo)] = makeRequest(statusCode: 201)
+
+        let result = try await manager.ensureAccountInfoProtectedKeys(for: account)
+
+        XCTAssertEqual(result.map(\.kid), ["created", "created"])
+        XCTAssertEqual(Set(result.map(\.encryptedWith)), Set([SyncCredentialID.defaultCredential, SyncCredentialID.thirdParty]))
+        let factoryCall = try XCTUnwrap(accountInfoKeyFactory.makeProtectedKeysCalls.first)
+        XCTAssertEqual(factoryCall.accountSecretKey, account.secretKey)
+        XCTAssertEqual(factoryCall.thirdPartyMainKey, hkdf(input: scopedPassword, salt: account.userId, info: "Main Key"))
+    }
+
     func testWhenSetKeysIfAbsentReturns409ThenRefetchesStoredKeysForPurpose() async throws {
         let api = RemoteAPIRequestCreatingMock()
         let endpoints = Endpoints(baseURL: Self.baseURL)
-        let manager = ScopedAccessCredentialManager(endpoints: endpoints, api: api, crypter: CryptingMock())
+        let manager = ScopedAccessCredentialManager(endpoints: endpoints,
+                                                    api: api,
+                                                    crypter: CryptingMock(),
+                                                    accountInfoKeyFactory: AccountInfoKeyFactoryMock())
         let account = makeAccount(primaryKey: Data(repeating: 0x1, count: 32))
         let requestedKeys = [
             makeProtectedKey(kid: "candidate", encryptedWith: SyncCredentialID.defaultCredential, purpose: ProtectedKeyPurpose.accountInfo),
@@ -343,7 +465,10 @@ final class ScopedAccessCredentialManagerTests: XCTestCase {
     func testWhenSetKeysIfAbsentReturns409AndRefetchHasNoRequestedPurposeThenThrows() async throws {
         let api = RemoteAPIRequestCreatingMock()
         let endpoints = Endpoints(baseURL: Self.baseURL)
-        let manager = ScopedAccessCredentialManager(endpoints: endpoints, api: api, crypter: CryptingMock())
+        let manager = ScopedAccessCredentialManager(endpoints: endpoints,
+                                                    api: api,
+                                                    crypter: CryptingMock(),
+                                                    accountInfoKeyFactory: AccountInfoKeyFactoryMock())
         let account = makeAccount(primaryKey: Data(repeating: 0x1, count: 32))
         let requestedKeys = [
             makeProtectedKey(kid: "candidate", encryptedWith: SyncCredentialID.defaultCredential, purpose: ProtectedKeyPurpose.accountInfo)
@@ -374,7 +499,10 @@ final class ScopedAccessCredentialManagerTests: XCTestCase {
     func testWhenSetKeysIfAbsentCreatesKeysThenUploadsAllWrappersAndReturnsKeysForPurpose() async throws {
         let api = RemoteAPIRequestCreatingMock()
         let endpoints = Endpoints(baseURL: Self.baseURL)
-        let manager = ScopedAccessCredentialManager(endpoints: endpoints, api: api, crypter: CryptingMock())
+        let manager = ScopedAccessCredentialManager(endpoints: endpoints,
+                                                    api: api,
+                                                    crypter: CryptingMock(),
+                                                    accountInfoKeyFactory: AccountInfoKeyFactoryMock())
         let account = makeAccount(primaryKey: Data(repeating: 0x3, count: 32))
         let requestedKeys = [
             makeProtectedKey(kid: "candidate", encryptedWith: SyncCredentialID.defaultCredential, purpose: ProtectedKeyPurpose.accountInfo),
@@ -406,7 +534,10 @@ final class ScopedAccessCredentialManagerTests: XCTestCase {
     func testWhenSetKeysIfAbsentCreatesKeysWithoutResponseBodyThenReturnsUploadedKeys() async throws {
         let api = RemoteAPIRequestCreatingMock()
         let endpoints = Endpoints(baseURL: Self.baseURL)
-        let manager = ScopedAccessCredentialManager(endpoints: endpoints, api: api, crypter: CryptingMock())
+        let manager = ScopedAccessCredentialManager(endpoints: endpoints,
+                                                    api: api,
+                                                    crypter: CryptingMock(),
+                                                    accountInfoKeyFactory: AccountInfoKeyFactoryMock())
         let account = makeAccount(primaryKey: Data(repeating: 0x4, count: 32))
         let requestedKeys = [
             makeProtectedKey(kid: "candidate", encryptedWith: SyncCredentialID.defaultCredential, purpose: ProtectedKeyPurpose.accountInfo),
@@ -426,7 +557,10 @@ final class ScopedAccessCredentialManagerTests: XCTestCase {
     func testWhenSetKeysIfAbsentReturnsExistingKeysThenUsesStoredKeysFromResponse() async throws {
         let api = RemoteAPIRequestCreatingMock()
         let endpoints = Endpoints(baseURL: Self.baseURL)
-        let manager = ScopedAccessCredentialManager(endpoints: endpoints, api: api, crypter: CryptingMock())
+        let manager = ScopedAccessCredentialManager(endpoints: endpoints,
+                                                    api: api,
+                                                    crypter: CryptingMock(),
+                                                    accountInfoKeyFactory: AccountInfoKeyFactoryMock())
         let account = makeAccount(primaryKey: Data(repeating: 0x5, count: 32))
         let requestedKeys = [
             makeProtectedKey(kid: "candidate", encryptedWith: SyncCredentialID.defaultCredential, purpose: ProtectedKeyPurpose.accountInfo)
@@ -452,7 +586,10 @@ final class ScopedAccessCredentialManagerTests: XCTestCase {
     func testWhenSetKeysIfAbsentReturnsExistingWithoutResponseBodyThenRefetchesStoredKeys() async throws {
         let api = RemoteAPIRequestCreatingMock()
         let endpoints = Endpoints(baseURL: Self.baseURL)
-        let manager = ScopedAccessCredentialManager(endpoints: endpoints, api: api, crypter: CryptingMock())
+        let manager = ScopedAccessCredentialManager(endpoints: endpoints,
+                                                    api: api,
+                                                    crypter: CryptingMock(),
+                                                    accountInfoKeyFactory: AccountInfoKeyFactoryMock())
         let account = makeAccount(primaryKey: Data(repeating: 0x6, count: 32))
         let requestedKeys = [
             makeProtectedKey(kid: "candidate", encryptedWith: SyncCredentialID.defaultCredential, purpose: ProtectedKeyPurpose.accountInfo)
@@ -474,7 +611,10 @@ final class ScopedAccessCredentialManagerTests: XCTestCase {
     func testWhenSetKeysIfAbsentPayloadIsRejectedThenThrowsUnexpectedStatusCode() async throws {
         let api = RemoteAPIRequestCreatingMock()
         let endpoints = Endpoints(baseURL: Self.baseURL)
-        let manager = ScopedAccessCredentialManager(endpoints: endpoints, api: api, crypter: CryptingMock())
+        let manager = ScopedAccessCredentialManager(endpoints: endpoints,
+                                                    api: api,
+                                                    crypter: CryptingMock(),
+                                                    accountInfoKeyFactory: AccountInfoKeyFactoryMock())
         let account = makeAccount(primaryKey: Data(repeating: 0x9, count: 32))
         let requestedKeys = [
             makeProtectedKey(kid: "candidate", encryptedWith: SyncCredentialID.defaultCredential, purpose: ProtectedKeyPurpose.accountInfo)
@@ -501,7 +641,10 @@ final class ScopedAccessCredentialManagerTests: XCTestCase {
     func testWhenFetchingProtectedKeysFailsThenCachedKeysAreNotUsedForThirdPartyCredentialCreation() async throws {
         let api = RemoteAPIRequestCreatingMock()
         let endpoints = Endpoints(baseURL: Self.baseURL)
-        let manager = ScopedAccessCredentialManager(endpoints: endpoints, api: api, crypter: CryptingMock())
+        let manager = ScopedAccessCredentialManager(endpoints: endpoints,
+                                                    api: api,
+                                                    crypter: CryptingMock(),
+                                                    accountInfoKeyFactory: AccountInfoKeyFactoryMock())
         let account = makeAccount(primaryKey: Data((0..<32).map(UInt8.init)))
         api.fakeRequests[endpoints.accessCredentials] = makeRequest(statusCode: 200, body: try accessCredentialsBody([]))
         api.fakeRequests[endpoints.keys] = makeFailingRequest(statusCode: 500)

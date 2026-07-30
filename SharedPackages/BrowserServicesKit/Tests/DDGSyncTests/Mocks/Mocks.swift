@@ -367,6 +367,20 @@ final class PairingV2MessageExchangingMock: PairingV2MessageExchanging {
     }
 }
 
+final class AccountInfoKeyFactoryMock: AccountInfoKeyFactory {
+    var makeProtectedKeysCalls: [(accountSecretKey: Data, thirdPartyMainKey: Data?)] = []
+    var makeProtectedKeysStub: [ProtectedKey] = []
+    var makeProtectedKeysError: Error?
+
+    func makeProtectedKeys(accountSecretKey: Data, thirdPartyMainKey: Data?) throws -> [ProtectedKey] {
+        makeProtectedKeysCalls.append((accountSecretKey: accountSecretKey, thirdPartyMainKey: thirdPartyMainKey))
+        if let makeProtectedKeysError {
+            throw makeProtectedKeysError
+        }
+        return makeProtectedKeysStub
+    }
+}
+
 final class ScopedAccessCredentialManagingMock: ScopedAccessCredentialManaging {
 
     var recoverScopedPasswordCalls: [(accessCredentials: [AccessCredential]?, primaryKey: Data, userID: String)] = []
@@ -395,6 +409,17 @@ final class ScopedAccessCredentialManagingMock: ScopedAccessCredentialManaging {
         }
         return EnsuredThirdPartyCredential(scopedPassword: try cachedScopedPassword() ?? Data(repeating: 1, count: 32),
                                            protectedKeysToCache: [])
+    }
+
+    var ensureAccountInfoProtectedKeysCalls: [SyncAccount] = []
+    var ensureAccountInfoProtectedKeysStub: [ProtectedKey] = []
+    var ensureAccountInfoProtectedKeysError: Error?
+    func ensureAccountInfoProtectedKeys(for account: SyncAccount) async throws -> [ProtectedKey] {
+        ensureAccountInfoProtectedKeysCalls.append(account)
+        if let ensureAccountInfoProtectedKeysError {
+            throw ensureAccountInfoProtectedKeysError
+        }
+        return ensureAccountInfoProtectedKeysStub
     }
 
     var makeRecoveryCodeCalls: [(account: SyncAccount, scopedPassword: Data)] = []

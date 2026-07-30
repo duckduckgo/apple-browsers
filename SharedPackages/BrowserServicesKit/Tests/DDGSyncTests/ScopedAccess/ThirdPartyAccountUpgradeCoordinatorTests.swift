@@ -340,7 +340,10 @@ final class ThirdPartyAccountUpgradeCoordinatorTests: XCTestCase {
         }
         crypter._extractSecretKey = { _, _ in extractedSecretKey }
 
-        let manager = ScopedAccessCredentialManager(endpoints: endpoints, api: api, crypter: crypter)
+        let manager = ScopedAccessCredentialManager(endpoints: endpoints,
+                                                    api: api,
+                                                    crypter: crypter,
+                                                    accountInfoKeyFactory: AccountInfoKeyFactoryMock())
         let coordinator = ThirdPartyAccountUpgradeCoordinator(endpoints: endpoints,
                                                               api: api,
                                                               crypter: crypter,

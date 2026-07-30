@@ -1,15 +1,12 @@
 {
   "images" : [
     {
-      "filename" : "Info-Recolorable-24.svg",
+      "filename" : "Ai-Chat-Advanced-Color-24.svg",
       "idiom" : "universal"
     }
   ],
   "info" : {
     "author" : "xcode",
     "version" : 1
-  },
-  "properties" : {
-    "preserves-vector-representation" : true
   }
 }

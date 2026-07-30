@@ -555,6 +555,7 @@ public extension DesignSystemImages {
             public static var imageAIHide: DesignSystemImage { .init(resource: .imageAIHide24) }
             public static var imagesPinned: DesignSystemImage { .init(resource: .imagesPinned24) }
             public static var info: DesignSystemImage { .init(resource: .info24) }
+            public static var infoRecolorable: DesignSystemImage { .init(resource: .infoRecolorable24) }
             public static var infoSolid: DesignSystemImage { .init(resource: .infoSolid24) }
             public static var key: DesignSystemImage { .init(resource: .key24) }
             public static var lightning: DesignSystemImage { .init(resource: .lightning24) }

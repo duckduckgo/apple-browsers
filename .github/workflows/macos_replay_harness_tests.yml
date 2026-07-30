@@ -27,4 +27,4 @@ jobs:
 
       - name: Run replay harness tests
         working-directory: macOS/scripts/crossbench
-        run: python3 -m unittest discover -s tests -p 'test_*.py'
+        run: python3 -m unittest discover -v -s tests -p 'test_*.py'

@@ -96,6 +96,7 @@ exit "${FAKE_EXIT:-0}"
             "WPR_DIR": str(self.archives),
             "WPR_ARCHIVES_PREPARED": "1",
             "SHAPE": "0",
+            "MIN_FREE_DISK_MB": "1",
             "FAKE_RESULTS_ROOT": str(self.results),
             "RUN_WORK_BASE": str(self.root / "work"),
         }
@@ -121,6 +122,14 @@ exit "${FAKE_EXIT:-0}"
             for line in path.read_text().splitlines()[1:]
         ]
 
+    @staticmethod
+    def failure_context(result: subprocess.CompletedProcess[str]) -> str:
+        return (
+            f"returncode: {result.returncode}\n"
+            f"stdout:\n{result.stdout}\n"
+            f"stderr:\n{result.stderr}"
+        )
+
     def add_valid_site(self, site: str) -> None:
         archive = self.archives / f"navToLCP_{site}.wprgo"
         archive.write_bytes(site.encode())
@@ -143,12 +152,13 @@ exit "${FAKE_EXIT:-0}"
 
     def test_crossbench_nonzero_with_results_is_infra_error_and_keeps_sample(self) -> None:
         result = self.run_harness(FAKE_RESULTS="1", FAKE_METRIC="1", FAKE_EXIT="7")
-        self.assertEqual(result.returncode, 0, result.stderr)
+        context = self.failure_context(result)
+        self.assertEqual(result.returncode, 0, context)
         row = self.disposition()
-        self.assertEqual(row[3], "infra_error")
-        self.assertEqual(row[12:17], ["1", "1", "1", "0", "0"])
+        self.assertEqual(row[3], "infra_error", context)
+        self.assertEqual(row[12:17], ["1", "1", "1", "0", "0"], context)
         measurement = next((self.root / "crossbench-results").glob("*.tsv")).read_text()
-        self.assertIn("1000.0", measurement)
+        self.assertIn("1000.0", measurement, context)
 
     def test_incomplete_results_keep_completed_sample(self) -> None:
         result = self.run_harness(
@@ -306,23 +316,30 @@ exit "${FAKE_EXIT:-0}"
             capture_output=True,
             timeout=15,
         )
-        self.assertEqual(result.returncode, 0, result.stderr)
+        context = self.failure_context(result)
+        self.assertEqual(result.returncode, 0, context)
         rows = self.disposition_rows()
         self.assertEqual(
             [(row[2], row[3]) for row in rows],
             [("apple.com", "infra_error"), ("example.com", "measured")],
+            context,
         )
-        self.assertEqual(rows[0][9:11], ["crossbench", "site_timeout"])
+        self.assertEqual(
+            rows[0][9:11], ["crossbench", "site_timeout"], context
+        )
         self.assertRegex(
             rows[0][11],
             r"process_group_cleanup=(terminated|killed)",
+            context,
         )
-        self.assertEqual(rows[0][12:17], ["1", "1", "1", "0", "0"])
-        self.assertNotIn("site_timeout", rows[1])
+        self.assertEqual(
+            rows[0][12:17], ["1", "1", "1", "0", "0"], context
+        )
+        self.assertNotIn("site_timeout", rows[1], context)
         measurements = next(
             (self.root / "crossbench-results").glob("*.tsv")
         ).read_text()
-        self.assertEqual(measurements.count("1000.0"), 2)
+        self.assertEqual(measurements.count("1000.0"), 2, context)
         pid = int(pid_file.read_text())
         with self.assertRaises(ProcessLookupError):
             os.kill(pid, 0)

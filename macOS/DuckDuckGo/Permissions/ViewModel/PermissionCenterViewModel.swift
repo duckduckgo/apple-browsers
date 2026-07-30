@@ -209,6 +209,9 @@ final class PermissionCenterViewModel: ObservableObject {
     /// Whether the Autoplay Policy permission must be inserted(or not)
     private let displaysAutoplayPolicy: Bool
 
+    /// Indicates if the Permissions UI can be automatically dismissed (ie. thru the Autoplay Policy Discoverability Promo)
+    let allowsAutodismiss: Bool
+
     init(
         domain: String,
         usedPermissions: Permissions,
@@ -231,6 +234,7 @@ final class PermissionCenterViewModel: ObservableObject {
         pageInitiatedPopupOpened: Bool = false,
         displaysAutoplayPolicy: Bool = false,
         permissionsNeedReload: Bool = false,
+        allowsAutodismiss: Bool = false,
         systemPermissionManager: SystemPermissionManagerProtocol = SystemPermissionManager()
     ) {
         self.domain = domain
@@ -255,6 +259,7 @@ final class PermissionCenterViewModel: ObservableObject {
         self.displaysAutoplayPolicy = displaysAutoplayPolicy
         self.systemPermissionManager = systemPermissionManager
         self.showReloadBanner = permissionsNeedReload
+        self.allowsAutodismiss = allowsAutodismiss
 
         loadPermissions()
         subscribeToPermissionChanges()

@@ -2020,6 +2020,10 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     @IBAction func permissionCenterButtonAction(_ sender: Any) {
+        presentPermissionCenterPopoverIfPossible()
+    }
+
+    private func presentPermissionCenterPopoverIfPossible(allowsAutodismiss: Bool = false) {
         guard let tabViewModel else { return }
 
         // Don't open epermission center while authorization or popup blocked dialog is presented
@@ -2106,7 +2110,8 @@ final class AddressBarButtonsViewController: NSViewController {
             hasTemporaryPopupAllowance: tabViewModel.tab.popupHandling?.popupsTemporarilyAllowedForCurrentPage ?? false,
             pageInitiatedPopupOpened: tabViewModel.tab.popupHandling?.pageInitiatedPopupOpened ?? false,
             displaysAutoplayPolicy: tabViewModel.tab.mustDisplayAutoplayPolicy,
-            permissionsNeedReload: tabViewModel.permissionsNeedReload
+            permissionsNeedReload: tabViewModel.permissionsNeedReload,
+            allowsAutodismiss: allowsAutodismiss
         )
 
         let popover = PermissionCenterPopover(viewModel: viewModel)

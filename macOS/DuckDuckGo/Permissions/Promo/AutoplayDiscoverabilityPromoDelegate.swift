@@ -55,7 +55,7 @@ final class AutoplayDiscoverabilityPromoDelegate: InternalPromoDelegate {
 
     @MainActor
     func show(history: PromoHistoryRecord, force: Bool) async -> PromoResult {
-        guard addressBarButtonsViewController?.showPermissionCenterPopoverForAutoplayPromo() == true else {
+        guard let addressBarButtonsViewController, addressBarButtonsViewController.presentPermissionCenterForAutoplayPromoIfPossible() else {
             return .noChange
         }
 
@@ -66,7 +66,7 @@ final class AutoplayDiscoverabilityPromoDelegate: InternalPromoDelegate {
 
     @MainActor
     func hide() {
-        addressBarButtonsViewController?.dismissAutoplayPromoPopover()
+        addressBarButtonsViewController?.autodismissPermissionCenterIfPossible()
         resume(with: .noChange)
     }
 }

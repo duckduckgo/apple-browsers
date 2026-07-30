@@ -2023,22 +2023,25 @@ final class AddressBarButtonsViewController: NSViewController {
         presentPermissionCenterPopoverIfPossible()
     }
 
-    private func presentPermissionCenterPopoverIfPossible(allowsAutodismiss: Bool = false) {
-        guard let tabViewModel else { return }
+    @discardableResult
+    private func presentPermissionCenterPopoverIfPossible(allowsAutodismiss: Bool = false) -> Bool {
+        guard let tabViewModel else {
+            return false
+        }
 
-        // Don't open epermission center while authorization or popup blocked dialog is presented
+        // Don't open permission center while authorization or popup blocked dialog is presented
         if let authPopover = permissionAuthorizationPopover, authPopover.isShown {
-            return
+            return false
         }
         if let popupPopover = popupBlockedPopover, popupPopover.isShown {
-            return
+            return false
         }
 
         // Close existing popover if shown
         if let existingPopover = permissionCenterPopover, existingPopover.isShown {
             existingPopover.close()
             permissionCenterPopover = nil
-            return
+            return false
         }
 
         let url = tabViewModel.tab.content.urlForWebView ?? .empty
@@ -2058,7 +2061,7 @@ final class AddressBarButtonsViewController: NSViewController {
             } else {
                 showSystemDisabledInfoPopover(for: domain, permissionType: .microphone, micPromptSource: lastSystemDisabledMicPromptSource)
             }
-            return
+            return false
         }
 
         // Get popup queries for the Permission Center
@@ -2125,6 +2128,8 @@ final class AddressBarButtonsViewController: NSViewController {
         NotificationCenter.default.addObserver(self, selector: #selector(popoverDidClose), name: NSPopover.didCloseNotification, object: popover)
 
         popover.show(positionedBelow: permissionCenterButton.bounds.insetFromLineOfDeath(flipped: permissionCenterButton.isFlipped), in: permissionCenterButton)
+
+        return true
     }
 
     private func updateYouTubeAdBlockButtonVisibility() {
@@ -2899,6 +2904,36 @@ extension AddressBarButtonsViewController: NSPopoverDelegate {
         }
     }
 
+}
+
+// MARK: - Autoplay Discoverability Promo
+
+extension AddressBarButtonsViewController {
+
+    /// Opens the Permission Center for the Autoplay Discoverability promo
+    /// - Returns: Whether it was presented. `false` leaves the promo eligible for the next autoplay event.
+    func presentPermissionCenterForAutoplayPromoIfPossible() -> Bool {
+        guard
+            isViewLoaded,
+            view.window?.isKeyWindow == true,
+            tabViewModel?.tab.mustDisplayAutoplayPolicy == true,
+            permissionCenterButton.isShown,
+            permissionCenterPopover?.isShown != true
+        else {
+            return false
+        }
+
+        return presentPermissionCenterPopoverIfPossible(allowsAutodismiss: true)
+    }
+
+    /// Closes the Permission Center, as long as it still allows autodismissal. This is no longer true once the user interacted with the popover.
+    func autodismissPermissionCenterIfPossible() {
+        guard let permissionCenterPopover, permissionCenterPopover.viewController.allowsAutodismiss else {
+            return
+        }
+
+        permissionCenterPopover.close()
+    }
 }
 
 // MARK: - URL Helpers

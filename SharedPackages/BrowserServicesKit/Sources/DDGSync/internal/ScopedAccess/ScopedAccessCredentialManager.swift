@@ -401,9 +401,11 @@ struct ScopedAccessCredentialManager: ScopedAccessCredentialManaging {
                                                                      userID: account.userId))
         }
 
-        let storedKeys = try await setKeysIfAbsent(purpose: ProtectedKeyPurpose.accountInfo,
-                                                  keys: repairedKeys,
-                                                  for: account)
+        _ = try await setKeysIfAbsent(purpose: ProtectedKeyPurpose.accountInfo,
+                                     keys: repairedKeys,
+                                     for: account)
+        let storedKeys = try await fetchStoredProtectedKeys(for: ProtectedKeyPurpose.accountInfo,
+                                                           account: account)
         return try validateAccountInfoProtectedKeys(storedKeys,
                                                     requiresThirdPartyWrapper: requiresThirdPartyWrapper)
     }

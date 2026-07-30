@@ -41,9 +41,6 @@ final class AIChatContextualFloatingInputViewController: UIViewController {
         static let springBackDuration: TimeInterval = 0.3
         static let entranceDuration: TimeInterval = 0.25
         static let chipsRevealDuration: TimeInterval = 0.2
-        /// The chips controller already carries the design's 12pt gap above the card via its own
-        /// bottom padding, so this adds nothing on top of it.
-        static let chipsBottomSpacing: CGFloat = 0
         /// Deliberately longer than the keyboard's own ~0.25s slide, so the content keeps dissolving
         /// after it reaches the bottom rather than snapping away the moment the keyboard lands.
         static let dismissAnimationDuration: TimeInterval = 0.45
@@ -182,9 +179,9 @@ final class AIChatContextualFloatingInputViewController: UIViewController {
                        delay: 0,
                        options: [.curveEaseInOut, .beginFromCurrentState],
                        animations: {
-            self.dimView.alpha = 0
-            self.chipsContainerView.alpha = 0
-            self.mountedInputView?.alpha = 0
+            // Our own view, mirroring the entrance: one alpha covers the dim, chips and bar, and the
+            // bar's own alpha belongs to the host.
+            self.view.alpha = 0
             self.view.layoutIfNeeded()
         }, completion: { _ in
             completion()
@@ -193,7 +190,7 @@ final class AIChatContextualFloatingInputViewController: UIViewController {
 
     func remove() {
         utiHost.unmount()
-        // The host reuses this view, so anything applied while dragging has to be undone.
+        // Handed back clean: the host reuses this view, and a drag leaves a transform on it.
         mountedInputView?.alpha = 1
         mountedInputView?.transform = .identity
         mountedInputView = nil
@@ -253,7 +250,9 @@ private extension AIChatContextualFloatingInputViewController {
         NSLayoutConstraint.activate([
             chipsContainerView.leadingAnchor.constraint(equalTo: utiHost.inputCardLeadingAnchor),
             chipsContainerView.trailingAnchor.constraint(equalTo: utiHost.inputCardTrailingAnchor),
-            chipsContainerView.bottomAnchor.constraint(equalTo: inputCardTop, constant: -Constants.chipsBottomSpacing),
+            // Flush to the card: the chips controller already carries the design's 12pt gap in its
+            // own bottom padding.
+            chipsContainerView.bottomAnchor.constraint(equalTo: inputCardTop),
             chipsViewController.view.topAnchor.constraint(equalTo: chipsContainerView.topAnchor),
             chipsViewController.view.leadingAnchor.constraint(equalTo: chipsContainerView.leadingAnchor),
             chipsViewController.view.trailingAnchor.constraint(equalTo: chipsContainerView.trailingAnchor),

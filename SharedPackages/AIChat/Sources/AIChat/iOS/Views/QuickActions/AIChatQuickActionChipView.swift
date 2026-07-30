@@ -31,7 +31,6 @@ public final class AIChatQuickActionChipView: UIView {
         static let height: CGFloat = 36
         static let cornerRadius: CGFloat = 12
         static let iconLeadingPadding: CGFloat = 8
-        static let iconTopPadding: CGFloat = 10
         static let trailingPadding: CGFloat = 12
         static let iconSize: CGFloat = 16
         static let iconLabelSpacing: CGFloat = 6
@@ -39,8 +38,9 @@ public final class AIChatQuickActionChipView: UIView {
         static let highlightAlpha: CGFloat = 0.1
 
         // Glass appearance, per the contextual floating-input design.
+        /// The design's 26 radius exceeds half this height, so the shape is a capsule and the radius
+        /// is derived rather than stored.
         static let glassHeight: CGFloat = 44
-        static let glassCornerRadius: CGFloat = 26
         static let glassFontSize: CGFloat = 17
         static let glassShadowOpacity: Float = 0.02
         static let glassShadowRadius: CGFloat = 15
@@ -157,7 +157,6 @@ private extension AIChatQuickActionChipView {
             layer.borderWidth = 0
             installGlassBackgroundIfNeeded()
             applyGlassShadow()
-            // The design's 26 exceeds half the 44 height, so the intended shape is a capsule.
             applyCornerRadius(Constants.glassHeight / 2)
             heightConstraint?.constant = Constants.glassHeight
             label.font = .systemFont(ofSize: Constants.glassFontSize, weight: .medium)

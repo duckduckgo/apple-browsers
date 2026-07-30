@@ -39,10 +39,6 @@ struct OnboardingAIModelResponse {
     let defaultModelId: String?
 }
 
-extension OnboardingAIModelResponse {
-    static let empty = OnboardingAIModelResponse(models: [], defaultModelId: nil)
-}
-
 // MARK: - Prefetcher
 
 @MainActor
@@ -57,8 +53,8 @@ protocol OnboardingAIModelsPrefetching {
 /// (avoids a loading state and the bubble resize that comes with late-arriving content).
 ///
 /// `prefetch()` is kicked off when the user picks the `.privateAIChat` reason — a couple of screens
-/// before the model step — and the result is read synchronously via `resolvedModels`. If the fetch
-/// isn't finished (or failed), `resolvedModels` returns the fallback list, so callers never wait.
+/// before the model step — and the result is read synchronously via `resolvedModel`. If the fetch
+/// isn't finished (or failed), `resolvedModel` returns the fallback list, so callers never wait.
 @MainActor
 final class OnboardingAIModelsPrefetcher: OnboardingAIModelsPrefetching {
     // The service to fetch the AIChatModels from
@@ -68,13 +64,14 @@ final class OnboardingAIModelsPrefetcher: OnboardingAIModelsPrefetching {
     // Resolve the AI Chat Models according to the Onboarding requirements
     private let resolver: ([AIChatRemoteModel]) -> OnboardingAIModelResponse
 
-    private var didStartPrefetch = false
+    // The current in-flight fetch, if any. Calls while one is running share it instead of starting another
+    private var inFlight: Task<Void, Never>?
 
     // The mapped result, computed once when the fetch completes.
     private var resolved: OnboardingAIModelResponse?
 
     var resolvedModel: OnboardingAIModelResponse {
-        resolved ?? .empty
+        resolved ?? fallback.aiModels
     }
 
     init(
@@ -87,14 +84,18 @@ final class OnboardingAIModelsPrefetcher: OnboardingAIModelsPrefetching {
         self.resolver = resolver
     }
     
-    /// Prefetch the AI Models showed in the Onboarding flow.
-    /// If the fetch fails, fallback to a default set of models
-    /// - Returns: The Task
+    /// Prefetch the AI Models shown in the Onboarding flow. If the fetch fails, the fallback list is used instead.
+    ///
+    /// Fire-and-forget in production — the result is read synchronously via `resolvedModel`. The
+    /// `Task` is returned only so tests can `await` completion before asserting.
+    ///
+    /// - Returns: The in-flight prefetch `Task`.
+    @discardableResult
     func prefetch() -> Task<Void, Never> {
-        guard !didStartPrefetch else { return Task {} }
-        didStartPrefetch = true
-        
-        return Task { [weak self, service] in
+        if let inFlight { return inFlight }
+
+        let task = Task { [weak self, service] in
+            defer { self?.inFlight = nil }
             do {
                 let apiModels = try await service.fetchModels().models
                 self?.resolved = self?.resolver(apiModels)
@@ -102,6 +103,8 @@ final class OnboardingAIModelsPrefetcher: OnboardingAIModelsPrefetching {
                 self?.resolved = self?.fallback.aiModels
             }
         }
+        inFlight = task
+        return task
     }
 }
 

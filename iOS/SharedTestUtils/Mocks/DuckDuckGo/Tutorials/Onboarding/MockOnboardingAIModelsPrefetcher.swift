@@ -21,7 +21,7 @@ import Foundation
 @testable import DuckDuckGo
 
 final class MockOnboardingAIModelsPrefetcher: OnboardingAIModelsPrefetching {
-    var resolvedModel: DuckDuckGo.OnboardingAIModelResponse = .empty
+    var resolvedModel: DuckDuckGo.OnboardingAIModelResponse = OnboardingAIModelResponse(models: [], defaultModelId: nil)
 
     private(set) var prefetchCallCount = 0
 

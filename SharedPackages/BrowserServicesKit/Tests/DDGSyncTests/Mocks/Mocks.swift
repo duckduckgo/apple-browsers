@@ -441,15 +441,15 @@ final class ScopedAccessCredentialManagingMock: ScopedAccessCredentialManaging {
         return fetchProtectedKeysStub
     }
 
-    var setKeyIfAbsentCalls: [(purpose: String, key: ProtectedKey, account: SyncAccount)] = []
-    var setKeyIfAbsentStub: ProtectedKey?
-    var setKeyIfAbsentError: Error?
-    func setKeyIfAbsent(purpose: String, key: ProtectedKey, for account: SyncAccount) async throws -> ProtectedKey? {
-        setKeyIfAbsentCalls.append((purpose: purpose, key: key, account: account))
-        if let setKeyIfAbsentError {
-            throw setKeyIfAbsentError
+    var setKeysIfAbsentCalls: [(purpose: String, keys: [ProtectedKey], account: SyncAccount)] = []
+    var setKeysIfAbsentStub: [ProtectedKey] = []
+    var setKeysIfAbsentError: Error?
+    func setKeysIfAbsent(purpose: String, keys: [ProtectedKey], for account: SyncAccount) async throws -> [ProtectedKey] {
+        setKeysIfAbsentCalls.append((purpose: purpose, keys: keys, account: account))
+        if let setKeysIfAbsentError {
+            throw setKeysIfAbsentError
         }
-        return setKeyIfAbsentStub
+        return setKeysIfAbsentStub
     }
 }
 

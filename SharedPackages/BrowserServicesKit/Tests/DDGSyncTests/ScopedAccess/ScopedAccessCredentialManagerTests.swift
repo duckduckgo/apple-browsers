@@ -311,81 +311,59 @@ final class ScopedAccessCredentialManagerTests: XCTestCase {
         }
     }
 
-    func testWhenSetKeyIfAbsentReturns409ThenRefetchesAndReconciles() async throws {
+    func testWhenSetKeysIfAbsentReturns409ThenRefetchesStoredKeysForPurpose() async throws {
         let api = RemoteAPIRequestCreatingMock()
         let endpoints = Endpoints(baseURL: Self.baseURL)
         let manager = ScopedAccessCredentialManager(endpoints: endpoints, api: api, crypter: CryptingMock())
         let account = makeAccount(primaryKey: Data(repeating: 0x1, count: 32))
-        let requestedKey = makeProtectedKey(kid: "requested", encryptedWith: "ddg", purpose: "ai_chats")
+        let requestedKeys = [
+            makeProtectedKey(kid: "candidate", encryptedWith: SyncCredentialID.defaultCredential, purpose: ProtectedKeyPurpose.accountInfo),
+            makeProtectedKey(kid: "candidate", encryptedWith: SyncCredentialID.thirdParty, purpose: ProtectedKeyPurpose.accountInfo)
+        ]
+        let storedKeys = [
+            makeProtectedKey(kid: "server", encryptedWith: SyncCredentialID.defaultCredential, purpose: ProtectedKeyPurpose.accountInfo),
+            makeProtectedKey(kid: "server", encryptedWith: SyncCredentialID.thirdParty, purpose: ProtectedKeyPurpose.accountInfo),
+            makeProtectedKey(kid: "other", encryptedWith: SyncCredentialID.defaultCredential, purpose: "bookmarks")
+        ]
 
         let conflictRequest = HTTPRequestingMock()
         conflictRequest.error = SyncError.unexpectedStatusCode(409)
-        api.fakeRequests[endpoints.setKeyIfAbsent(purpose: "ai_chats")] = conflictRequest
-        api.fakeRequests[endpoints.keys] = makeRequest(statusCode: 200,
-                                                       body: """
-                                                       {
-                                                         "keys": [
-                                                           {
-                                                             "kid": "requested",
-                                                             "encrypted_private_key": "enc-private",
-                                                             "public_key": {
-                                                               "kty": "RSA",
-                                                               "alg": "RSA-OAEP-256",
-                                                               "use": "enc",
-                                                               "n": "mod",
-                                                               "e": "AQAB"
-                                                             },
-                                                             "encrypted_with": "ddg",
-                                                             "purpose": "ai_chats"
-                                                           }
-                                                         ]
-                                                       }
-                                                       """)
+        api.fakeRequests[endpoints.setKeyIfAbsent(purpose: ProtectedKeyPurpose.accountInfo)] = conflictRequest
+        api.fakeRequests[endpoints.keys] = makeRequest(statusCode: 200, body: try protectedKeysBody(storedKeys))
 
-        let result = try await manager.setKeyIfAbsent(purpose: "ai_chats", key: requestedKey, for: account)
+        let result = try await manager.setKeysIfAbsent(purpose: ProtectedKeyPurpose.accountInfo,
+                                                       keys: requestedKeys,
+                                                       for: account)
 
-        XCTAssertEqual(result?.kid, "requested")
-        XCTAssertEqual(result?.encryptedWith, "ddg")
-        XCTAssertEqual(result?.purpose, "ai_chats")
+        XCTAssertEqual(result.map(\.kid), ["server", "server"])
+        XCTAssertEqual(Set(result.map(\.encryptedWith)), Set([SyncCredentialID.defaultCredential, SyncCredentialID.thirdParty]))
         XCTAssertEqual(api.createRequestCallArgs.count, 2)
     }
 
-    func testWhenSetKeyIfAbsentReturns409WithOnlyPurposeMatchThenThrows() async throws {
+    func testWhenSetKeysIfAbsentReturns409AndRefetchHasNoRequestedPurposeThenThrows() async throws {
         let api = RemoteAPIRequestCreatingMock()
         let endpoints = Endpoints(baseURL: Self.baseURL)
         let manager = ScopedAccessCredentialManager(endpoints: endpoints, api: api, crypter: CryptingMock())
         let account = makeAccount(primaryKey: Data(repeating: 0x1, count: 32))
-        let requestedKey = makeProtectedKey(kid: "requested", encryptedWith: "ddg", purpose: "ai_chats")
+        let requestedKeys = [
+            makeProtectedKey(kid: "candidate", encryptedWith: SyncCredentialID.defaultCredential, purpose: ProtectedKeyPurpose.accountInfo)
+        ]
+        let otherPurposeKeys = [
+            makeProtectedKey(kid: "other", encryptedWith: SyncCredentialID.defaultCredential, purpose: "bookmarks")
+        ]
 
         let conflictRequest = HTTPRequestingMock()
         conflictRequest.error = SyncError.unexpectedStatusCode(409)
-        api.fakeRequests[endpoints.setKeyIfAbsent(purpose: "ai_chats")] = conflictRequest
-        api.fakeRequests[endpoints.keys] = makeRequest(statusCode: 200,
-                                                       body: """
-                                                       {
-                                                         "keys": [
-                                                           {
-                                                             "kid": "server-3party",
-                                                             "encrypted_private_key": "enc-private",
-                                                             "public_key": {
-                                                               "kty": "RSA",
-                                                               "alg": "RSA-OAEP-256",
-                                                               "use": "enc",
-                                                               "n": "mod",
-                                                               "e": "AQAB"
-                                                             },
-                                                             "encrypted_with": "3party",
-                                                             "purpose": "ai_chats"
-                                                           }
-                                                         ]
-                                                       }
-                                                       """)
+        api.fakeRequests[endpoints.setKeyIfAbsent(purpose: ProtectedKeyPurpose.accountInfo)] = conflictRequest
+        api.fakeRequests[endpoints.keys] = makeRequest(statusCode: 200, body: try protectedKeysBody(otherPurposeKeys))
 
         do {
-            _ = try await manager.setKeyIfAbsent(purpose: "ai_chats", key: requestedKey, for: account)
-            XCTFail("Expected setKeyIfAbsent to throw")
+            _ = try await manager.setKeysIfAbsent(purpose: ProtectedKeyPurpose.accountInfo,
+                                                  keys: requestedKeys,
+                                                  for: account)
+            XCTFail("Expected setKeysIfAbsent to throw")
         } catch SyncError.invalidDataInResponse(let message) {
-            XCTAssertTrue(message.contains("no matching key"))
+            XCTAssertTrue(message.contains("no protected keys for purpose=account_info"))
         } catch {
             XCTFail("Unexpected error: \(error)")
         }
@@ -393,91 +371,124 @@ final class ScopedAccessCredentialManagerTests: XCTestCase {
         XCTAssertEqual(api.createRequestCallArgs.count, 2)
     }
 
-    func testWhenSetKeyIfAbsentReturnsWrappedKeysThenMatchingKeyIsReturned() async throws {
+    func testWhenSetKeysIfAbsentCreatesKeysThenUploadsAllWrappersAndReturnsKeysForPurpose() async throws {
         let api = RemoteAPIRequestCreatingMock()
         let endpoints = Endpoints(baseURL: Self.baseURL)
         let manager = ScopedAccessCredentialManager(endpoints: endpoints, api: api, crypter: CryptingMock())
         let account = makeAccount(primaryKey: Data(repeating: 0x3, count: 32))
-        let requestedKey = makeProtectedKey(kid: "requested", encryptedWith: "ddg", purpose: "ai_chats")
+        let requestedKeys = [
+            makeProtectedKey(kid: "candidate", encryptedWith: SyncCredentialID.defaultCredential, purpose: ProtectedKeyPurpose.accountInfo),
+            makeProtectedKey(kid: "candidate", encryptedWith: SyncCredentialID.thirdParty, purpose: ProtectedKeyPurpose.accountInfo)
+        ]
+        let responseKeys = [
+            makeProtectedKey(kid: "other", encryptedWith: SyncCredentialID.defaultCredential, purpose: "bookmarks")
+        ] + requestedKeys
+        api.fakeRequests[endpoints.setKeyIfAbsent(purpose: ProtectedKeyPurpose.accountInfo)] = makeRequest(
+            statusCode: 201,
+            body: try protectedKeysBody(responseKeys)
+        )
 
-        api.fakeRequests[endpoints.setKeyIfAbsent(purpose: "ai_chats")] = makeRequest(statusCode: 201,
-                                                                                       body: """
-                                                                                       {
-                                                                                         "keys": [
-                                                                                           {
-                                                                                             "kid": "server-other",
-                                                                                             "encrypted_private_key": "enc-private-other",
-                                                                                             "public_key": {
-                                                                                               "kty": "RSA",
-                                                                                               "alg": "RSA-OAEP-256",
-                                                                                               "use": "enc",
-                                                                                               "n": "mod",
-                                                                                               "e": "AQAB"
-                                                                                             },
-                                                                                             "encrypted_with": "3party",
-                                                                                             "purpose": "bookmarks"
-                                                                                           },
-                                                                                           {
-                                                                                             "kid": "requested",
-                                                                                             "encrypted_private_key": "enc-private",
-                                                                                             "public_key": {
-                                                                                               "kty": "RSA",
-                                                                                               "alg": "RSA-OAEP-256",
-                                                                                               "use": "enc",
-                                                                                               "n": "mod",
-                                                                                               "e": "AQAB"
-                                                                                             },
-                                                                                             "encrypted_with": "ddg",
-                                                                                             "purpose": "ai_chats"
-                                                                                           }
-                                                                                         ]
-                                                                                       }
-                                                                                       """)
+        let result = try await manager.setKeysIfAbsent(purpose: ProtectedKeyPurpose.accountInfo,
+                                                       keys: requestedKeys,
+                                                       for: account)
 
-        let result = try await manager.setKeyIfAbsent(purpose: "ai_chats", key: requestedKey, for: account)
+        XCTAssertEqual(result.map(\.kid), ["candidate", "candidate"])
+        XCTAssertEqual(Set(result.map(\.encryptedWith)), Set([SyncCredentialID.defaultCredential, SyncCredentialID.thirdParty]))
 
-        XCTAssertEqual(result?.kid, "requested")
-        XCTAssertEqual(result?.encryptedWith, "ddg")
-        XCTAssertEqual(result?.purpose, "ai_chats")
+        let requestBody = try XCTUnwrap(api.createRequestCallArgs.last?.body)
+        let payload = try decodeJSONObject(requestBody)
+        let uploadedKeys = try XCTUnwrap(payload["keys"] as? [[String: Any]])
+        XCTAssertEqual(uploadedKeys.count, 2)
+        XCTAssertEqual(Set(uploadedKeys.compactMap { $0["encrypted_with"] as? String }),
+                       Set([SyncCredentialID.defaultCredential, SyncCredentialID.thirdParty]))
     }
 
-    func testWhenSetKeyIfAbsentReturns200ThenThrowsUnexpectedStatusCode() async throws {
+    func testWhenSetKeysIfAbsentCreatesKeysWithoutResponseBodyThenReturnsUploadedKeys() async throws {
         let api = RemoteAPIRequestCreatingMock()
         let endpoints = Endpoints(baseURL: Self.baseURL)
         let manager = ScopedAccessCredentialManager(endpoints: endpoints, api: api, crypter: CryptingMock())
         let account = makeAccount(primaryKey: Data(repeating: 0x4, count: 32))
-        let requestedKey = makeProtectedKey(kid: "requested", encryptedWith: "ddg", purpose: "ai_chats")
+        let requestedKeys = [
+            makeProtectedKey(kid: "candidate", encryptedWith: SyncCredentialID.defaultCredential, purpose: ProtectedKeyPurpose.accountInfo),
+            makeProtectedKey(kid: "candidate", encryptedWith: SyncCredentialID.thirdParty, purpose: ProtectedKeyPurpose.accountInfo)
+        ]
+        api.fakeRequests[endpoints.setKeyIfAbsent(purpose: ProtectedKeyPurpose.accountInfo)] = makeRequest(statusCode: 201)
 
-        api.fakeRequests[endpoints.setKeyIfAbsent(purpose: "ai_chats")] = makeRequest(statusCode: 200)
+        let result = try await manager.setKeysIfAbsent(purpose: ProtectedKeyPurpose.accountInfo,
+                                                       keys: requestedKeys,
+                                                       for: account)
 
-        do {
-            _ = try await manager.setKeyIfAbsent(purpose: "ai_chats", key: requestedKey, for: account)
-            XCTFail("Expected setKeyIfAbsent to throw")
-        } catch SyncError.unexpectedStatusCode(let statusCode) {
-            XCTAssertEqual(statusCode, 200)
-        } catch {
-            XCTFail("Unexpected error: \(error)")
-        }
-
+        XCTAssertEqual(result.map(\.kid), ["candidate", "candidate"])
+        XCTAssertEqual(Set(result.map(\.encryptedWith)), Set([SyncCredentialID.defaultCredential, SyncCredentialID.thirdParty]))
         XCTAssertEqual(api.createRequestCallArgs.count, 1)
     }
 
-    func testWhenKeysPayloadIsRejectedThenThrowsUnexpectedStatusCode() async throws {
+    func testWhenSetKeysIfAbsentReturnsExistingKeysThenUsesStoredKeysFromResponse() async throws {
+        let api = RemoteAPIRequestCreatingMock()
+        let endpoints = Endpoints(baseURL: Self.baseURL)
+        let manager = ScopedAccessCredentialManager(endpoints: endpoints, api: api, crypter: CryptingMock())
+        let account = makeAccount(primaryKey: Data(repeating: 0x5, count: 32))
+        let requestedKeys = [
+            makeProtectedKey(kid: "candidate", encryptedWith: SyncCredentialID.defaultCredential, purpose: ProtectedKeyPurpose.accountInfo)
+        ]
+        let storedKeys = [
+            makeProtectedKey(kid: "server", encryptedWith: SyncCredentialID.defaultCredential, purpose: ProtectedKeyPurpose.accountInfo),
+            makeProtectedKey(kid: "server", encryptedWith: SyncCredentialID.thirdParty, purpose: ProtectedKeyPurpose.accountInfo)
+        ]
+        api.fakeRequests[endpoints.setKeyIfAbsent(purpose: ProtectedKeyPurpose.accountInfo)] = makeRequest(
+            statusCode: 200,
+            body: try protectedKeysBody(storedKeys)
+        )
+
+        let result = try await manager.setKeysIfAbsent(purpose: ProtectedKeyPurpose.accountInfo,
+                                                       keys: requestedKeys,
+                                                       for: account)
+
+        XCTAssertEqual(result.map(\.kid), ["server", "server"])
+        XCTAssertEqual(Set(result.map(\.encryptedWith)), Set([SyncCredentialID.defaultCredential, SyncCredentialID.thirdParty]))
+        XCTAssertEqual(api.createRequestCallArgs.count, 1)
+    }
+
+    func testWhenSetKeysIfAbsentReturnsExistingWithoutResponseBodyThenRefetchesStoredKeys() async throws {
+        let api = RemoteAPIRequestCreatingMock()
+        let endpoints = Endpoints(baseURL: Self.baseURL)
+        let manager = ScopedAccessCredentialManager(endpoints: endpoints, api: api, crypter: CryptingMock())
+        let account = makeAccount(primaryKey: Data(repeating: 0x6, count: 32))
+        let requestedKeys = [
+            makeProtectedKey(kid: "candidate", encryptedWith: SyncCredentialID.defaultCredential, purpose: ProtectedKeyPurpose.accountInfo)
+        ]
+        let storedKeys = [
+            makeProtectedKey(kid: "server", encryptedWith: SyncCredentialID.defaultCredential, purpose: ProtectedKeyPurpose.accountInfo)
+        ]
+        api.fakeRequests[endpoints.setKeyIfAbsent(purpose: ProtectedKeyPurpose.accountInfo)] = makeRequest(statusCode: 200)
+        api.fakeRequests[endpoints.keys] = makeRequest(statusCode: 200, body: try protectedKeysBody(storedKeys))
+
+        let result = try await manager.setKeysIfAbsent(purpose: ProtectedKeyPurpose.accountInfo,
+                                                       keys: requestedKeys,
+                                                       for: account)
+
+        XCTAssertEqual(result.map(\.kid), ["server"])
+        XCTAssertEqual(api.createRequestCallArgs.count, 2)
+    }
+
+    func testWhenSetKeysIfAbsentPayloadIsRejectedThenThrowsUnexpectedStatusCode() async throws {
         let api = RemoteAPIRequestCreatingMock()
         let endpoints = Endpoints(baseURL: Self.baseURL)
         let manager = ScopedAccessCredentialManager(endpoints: endpoints, api: api, crypter: CryptingMock())
         let account = makeAccount(primaryKey: Data(repeating: 0x9, count: 32))
-        let requestedKey = makeProtectedKey(kid: "requested",
-                                            encryptedWith: "ddg",
-                                            purpose: "ai_chats")
+        let requestedKeys = [
+            makeProtectedKey(kid: "candidate", encryptedWith: SyncCredentialID.defaultCredential, purpose: ProtectedKeyPurpose.accountInfo)
+        ]
 
         let rejectingRequest = HTTPRequestingMock()
         rejectingRequest.error = SyncError.unexpectedStatusCode(422)
-        api.fakeRequests[endpoints.setKeyIfAbsent(purpose: "ai_chats")] = rejectingRequest
+        api.fakeRequests[endpoints.setKeyIfAbsent(purpose: ProtectedKeyPurpose.accountInfo)] = rejectingRequest
 
         do {
-            _ = try await manager.setKeyIfAbsent(purpose: "ai_chats", key: requestedKey, for: account)
-            XCTFail("Expected setKeyIfAbsent to throw")
+            _ = try await manager.setKeysIfAbsent(purpose: ProtectedKeyPurpose.accountInfo,
+                                                  keys: requestedKeys,
+                                                  for: account)
+            XCTFail("Expected setKeysIfAbsent to throw")
         } catch SyncError.unexpectedStatusCode(let statusCode) {
             XCTAssertEqual(statusCode, 422)
         } catch {

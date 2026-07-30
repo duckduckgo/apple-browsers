@@ -86,6 +86,25 @@ class SafariHarnessContractTests(unittest.TestCase):
             self.assertEqual(workflow.count("failed=$((failed + 1))"), 2)
             self.assertIn('if [ "$failed" -gt 0 ]; then', workflow)
 
+    def test_run_refuses_to_start_while_another_safari_is_open(self):
+        self.assertIn('[ -z "$(safari_pids)" ] || {', HARNESS)
+        self.assertIn("Safari is already running; refusing to start", HARNESS)
+
+    def test_safari_is_quit_before_every_measurement(self):
+        self.assertIn("quit_safari()", HARNESS)
+        self.assertLess(
+            HARNESS.index("if ! quit_safari; then"),
+            HARNESS.index('"$SAFARIDRIVER_PORT" measure'),
+        )
+        self.assertIn("safari_quit_failed", HARNESS)
+
+    def test_cleanup_only_quits_a_safari_this_run_launched(self):
+        self.assertIn(
+            'if [ -n "$SAFARIDRIVER_PID" ]; then\n'
+            '    quit_safari || echo "WARNING: Safari did not quit during cleanup."',
+            HARNESS,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

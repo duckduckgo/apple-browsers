@@ -124,9 +124,18 @@ shaping, or SafariDriver service stops measurement and records the remaining
 eligible sites as `infra_error`. Its rows use `webview_type=safari`. CI retains
 bounded Safari, proxy, shaping, and per-site WPR logs in `safari-diagnostics/`.
 
-A new WebDriver session does not by itself prove a cold Safari HTTP cache.
-Before comparing absolute Safari values with Chrome cold-profile values, verify
-per-repetition WPR subresource traffic or add a reliable cache reset.
+Safari is quit before every repetition, so each load runs on a process
+safaridriver has just launched — the same per-repetition freshness Chrome gets
+from a new process and profile, and DuckDuckGo from a relaunch and data wipe.
+Because Safari must therefore be the only one on the machine, the run refuses to
+start while another Safari is already open, and a Safari that will not quit is a
+harness failure rather than a warmer measurement.
+
+WebKit keeps its disk cache outside the process, so quitting removes the JIT,
+prewarmed-process and in-memory carry-over but not the HTTP cache. Before
+comparing absolute Safari values with Chrome cold-profile values, verify
+per-repetition WPR subresource traffic, and add an on-disk cache reset only if
+that traffic shows the cache still carrying over.
 
 ## DuckDuckGo
 

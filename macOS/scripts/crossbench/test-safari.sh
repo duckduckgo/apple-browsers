@@ -23,7 +23,13 @@
 # replay needs no DNS/CDN warm-up. An unavailable archive never causes a live
 # network fallback.
 #
+# Safari is quit before every repetition so each load runs on a freshly launched
+# process, matching the per-repetition freshness Chrome and DuckDuckGo already
+# have. Safari must therefore be the only one on the machine: the run refuses to
+# start while another Safari is open, since safaridriver would attach to it.
+#
 # Prerequisites: run provision-macos.sh and enable Safari remote automation.
+# No Safari window may be open when the run starts.
 #
 # Usage:
 #   ./test-safari.sh [--sites a.com,b.com] [--reps N] [--out FILE] [--yes]
@@ -197,6 +203,43 @@ kill_pid() {
   wait "$pid" 2>/dev/null || true
 }
 
+# safaridriver launches Safari, not this script, so there is no PID to track.
+# check_prerequisites refuses to start while any Safari is running, so every
+# Safari alive during a run is one safaridriver started on our behalf.
+safari_pids() {
+  pgrep -x Safari 2>/dev/null || true
+}
+
+# Quit Safari so the next repetition starts on a fresh process, the way Chrome
+# (new process + new profile per repetition) and DuckDuckGo (relaunch + website
+# data wipe per repetition) already do. WebKit's disk cache lives outside the
+# process, so this does not clear the cache by itself; it removes the JIT,
+# prewarmed-process and in-memory carry-over that made later repetitions faster
+# than the first, and it is the precondition for clearing anything on disk.
+# Returns non-zero if a Safari survives, since later repetitions would then be
+# measuring a warmer browser than the ones already recorded.
+quit_safari() {
+  local pid attempt
+  [ -n "$(safari_pids)" ] || return 0
+  # shellcheck disable=SC2046  # The PID list is deliberately word-split.
+  for pid in $(safari_pids); do
+    kill "$pid" 2>/dev/null || true
+  done
+  for attempt in 1 2 3 4 5 6 7 8 9 10; do
+    [ -n "$(safari_pids)" ] || return 0
+    sleep 0.5
+  done
+  # shellcheck disable=SC2046  # The PID list is deliberately word-split.
+  for pid in $(safari_pids); do
+    kill -9 "$pid" 2>/dev/null || true
+  done
+  for attempt in 1 2 3 4; do
+    [ -n "$(safari_pids)" ] || return 0
+    sleep 0.25
+  done
+  return 1
+}
+
 capture_proxy_key() {
   local key="$1" state_name="$2" value_name="$3" value type
   if value="$(defaults read "$SAFARI_DOMAIN" "$key" 2>/dev/null)"; then
@@ -300,6 +343,14 @@ cleanup() {
   local exit_code=$?
   trap - EXIT HUP INT TERM
   kill_pid "$SAFARIDRIVER_PID"
+  # The last repetition's Safari is still up; leave the box as we found it. Only
+  # when we got as far as launching safaridriver: on an earlier exit the only
+  # Safari that can be running is one we never owned — including the one the
+  # startup check refused to start alongside.
+  # Best-effort: a lingering Safari is untidy, not a reason to fail the run.
+  if [ -n "$SAFARIDRIVER_PID" ]; then
+    quit_safari || echo "WARNING: Safari did not quit during cleanup." >&2
+  fi
   # Keep the proxy chain alive until Safari's own preferences are restored.
   # This avoids leaving Safari pointed at a dead local endpoint if restoration
   # itself needs to communicate with its preferences service.
@@ -359,9 +410,26 @@ check_prerequisites() {
     echo "ERROR: shasum not found." >&2
     exit 1
   }
+  # Without pgrep the Safari checks below would find nothing and quietly stop
+  # enforcing per-repetition freshness, so treat it as a hard requirement.
+  command -v pgrep >/dev/null 2>&1 || {
+    echo "ERROR: pgrep not found; cannot verify or quit Safari between reps." >&2
+    exit 1
+  }
   [ -d "$SAFARI_APP" ] || {
     echo "ERROR: Safari not found at $SAFARI_APP." >&2
     exit 1
+  }
+  # A Safari that is already running is not ours to drive or to quit: safaridriver
+  # would attach to it, so the run would measure someone's warm browser and take
+  # over their windows, and the per-repetition quit below would kill it. Refusing
+  # to start also makes every later Safari attributable to this run.
+  [ -z "$(safari_pids)" ] || {
+    echo "ERROR: Safari is already running; refusing to start." >&2
+    echo "       This run drives Safari and quits it between repetitions," >&2
+    echo "       so it must be the only Safari on the machine." >&2
+    echo "       Quit Safari and re-run." >&2
+    exit 2
   }
   [ -x "$WPR_BIN" ] || {
     echo "ERROR: WPR binary missing at $WPR_BIN. Run provision-macos.sh." >&2
@@ -700,6 +768,15 @@ measure_site() {
       echo "ERROR: WPR exited unexpectedly during $site replay." >&2
       site_harness_failed=1
       mark_runtime_failure replay wpr_exited "repetition=$rep"
+      break
+    fi
+    # Start every repetition on a browser safaridriver has just launched. This is
+    # a no-op on the first repetition, where check_prerequisites has already
+    # established that no Safari is running.
+    if ! quit_safari; then
+      echo "    attempt rep=$rep: Safari would not quit -> HARNESS FAILURE" >&2
+      site_harness_failed=1
+      mark_runtime_failure runner safari_quit_failed "repetition=$rep"
       break
     fi
     before="$(proxy_log_line_count)"

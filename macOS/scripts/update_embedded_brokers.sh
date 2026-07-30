@@ -1,11 +1,7 @@
 #!/bin/bash
 #
-# Updates the DBP broker JSONs embedded in DataBrokerProtectionCore.
-#
-# Only brokers listed in main_config.json's active_data_brokers are installed.
-# The bundled seed path installs every file it finds, and the client cannot
-# deactivate a broker once installed, so a broker parked in test_data_brokers
-# must never reach the bundle.
+# Updates the DBP broker JSONs embedded in DataBrokerProtectionCore, installing
+# only the brokers listed in main_config.json's active_data_brokers.
 
 DBP_BROKER_URL="https://dbp.duckduckgo.com/dbp/remote/v0?name=all.zip&type=combined"
 DBP_MAIN_CONFIG_URL="https://dbp.duckduckgo.com/dbp/remote/v0/main_config.json"
@@ -121,8 +117,7 @@ main() {
 	printf "DBP broker JSON files updated\n\n"
 }
 
-# set -e is scoped to direct execution so sourcing from the tests does not
-# change their error handling.
+# set -e stays scoped here so sourcing from the tests keeps their error handling.
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 	set -eo pipefail
 	main "$@"

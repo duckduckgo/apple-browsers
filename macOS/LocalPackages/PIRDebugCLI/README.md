@@ -125,11 +125,18 @@ explicit source):
 | `--css-no-build` | Skip the build; use the existing `dist` artifact in `--css-checkout`. |
 | `--css-branch <branch>` | Download a `pr-releases/<branch>` CI build. Branch name used **verbatim** (slashes included). |
 
-**Auth** (`AuthOptions`):
+**Auth** (`AuthOptions`) — used **only** by the email/captcha services (opt-out and the `email`
+commands). Rules fetch and captcha-free scans need no credentials. Two sources, in precedence order:
 
 | Flag | Meaning |
 |------|---------|
-| `--auth-token <jwt>` | Staging JWT used **only** by email/captcha services during opt-out. Falls back to env `PRIVACYPRO_STAGING_ACCESS_TOKEN_V2`. Rules fetch and captcha-free scans need no token. |
+| `--auth-token <jwt>` | An access token used **verbatim, never refreshed**. Falls back to env `PRIVACYPRO_STAGING_ACCESS_TOKEN_V2`. Overrides the stored token. |
+| `--token-file <path>` | The stored token container to use. Default `~/.config/pir-debug/token.json`, written by `pir-debug auth import` or the app's export item — **refreshed automatically**. See [`auth`](#auth). |
+
+Prefer the stored container. Access tokens are short-lived (minutes on staging), so a bare
+`--auth-token` goes stale *mid-run*: an `optout --wait-for-email` or `email inbox --wait` that
+outlives its token starts getting 401s from the services. The stored container is refreshed on every
+request, so long waits keep working.
 
 **Runtime** (`RuntimeOptions`):
 
@@ -226,6 +233,48 @@ Per-subcommand:
 Exit codes: `ready` and `pending` both exit `0` (pending is an expected state, not a failure); the
 service reporting `error`/`unknown` for the mailbox, or returning no item for the pair at all, exits
 `1`.
+
+#### `auth`
+
+```
+pir-debug auth status  [--token-file <path>] [--output <path>]
+pir-debug auth import  (--file <token.json> | --stdin) [--token-file <path>]
+pir-debug auth refresh [--environment staging|production] [--timeout <s>]
+pir-debug auth logout  [--token-file <path>]
+```
+
+Manages the CLI's own subscription token, so opt-out and the `email` commands can run off a real
+subscription instead of a hand-pasted access token. `status` is the default subcommand.
+
+**Why the token is copied rather than read.** The app stores its token container in the
+**data-protection keychain under an access group** (`AppDelegate` → `KeychainType.dataProtection(.named(subscriptionAppGroup))`).
+Reading that requires the process to be signed with matching entitlements and the team-ID prefix;
+`pir-debug` is an unsigned SPM executable with none, so it cannot read the app's token at all. Instead
+the container is handed over once and kept at `~/.config/pir-debug/token.json` (mode `0600`), and the
+CLI refreshes it from then on.
+
+Setup:
+
+1. In the DuckDuckGo app: log in, then **Debug › Privacy Pro › Export Token for pir-debug**.
+2. `pir-debug auth status`
+
+| Subcommand | Does |
+|------------|------|
+| `status` | Prints the stored token's issuer/environment, email, external ID, entitlements and both expiries. Offline — no refresh. Exits `1` if unusable (absent, refresh token expired, or no PIR entitlement). |
+| `import` | Stores a token container JSON (`--file` or `--stdin`) and then reports its status. For the paste path, or when the app wrote it somewhere else. |
+| `refresh` | Forces a refresh now — proves the stored refresh token still works. `--environment` must match the token's issuer. |
+| `logout` | Deletes the stored file. **Local only** — the app stays signed in, because the refresh token is the app's too and invalidating it server-side would sign the app out. |
+
+The environment must match: a token issued by staging auth (`quackdev`) is rejected by production DBP
+services and vice versa. `auth status` reports which one the stored token came from, and the app
+exports whichever environment it was logged into (the Subscription debug menu can switch it).
+
+> **`accessTokenExpired: true` in `auth status` is normal.** Access tokens are short-lived; the
+> refresh token is the durable credential. Only `refreshTokenExpired` means you need a fresh export.
+
+There is no self-service login: auth v2's `createAccount` yields an account with
+`entitlements: []`, and the DBP services reject it with `401 Authorization required`, so an entitled
+subscription (staging sandbox/Stripe test, or production) is required.
 
 #### `validate`
 
@@ -425,6 +474,27 @@ just the `link` key surfaced for convenience.
 { "email": "abc123@duck.com", "attemptId": "1111…", "deleted": true }
 ```
 
+### `auth status` → report
+
+Claims only — the token strings are never printed.
+
+```jsonc
+{
+  "tokenFile": "/Users/me/.config/pir-debug/token.json",
+  "present": true,
+  "issuer": "https://quackdev.duckduckgo.com",
+  "environment": "staging",                     // derived from the issuer; null if unrecognised
+  "email": "me@duck.com",
+  "externalID": "ad9dd169-…",
+  "entitlements": ["Data Broker Protection", "Network Protection"],
+  "hasPIREntitlement": true,
+  "accessTokenExpired": true,                   // normal — refreshed on the next request
+  "accessTokenExpiresAt": "2026-07-30T02:00:29Z",
+  "refreshTokenExpired": false,                 // the one that matters
+  "refreshTokenExpiresAt": "2026-08-29T02:01:29Z"
+}
+```
+
 ### `validate` → report
 
 ```jsonc
@@ -587,10 +657,23 @@ swift run pir-debug scan --css-branch my/feature-branch --broker-file "$FAKE" --
 The unauthenticated GitHub API limit is **60 requests/hour**; set `GITHUB_TOKEN` to raise it. A
 branch with no CI build yields a clear error.
 
-### Opt-out testing (with staging token + email confirmation)
+### Opt-out testing (with your own subscription + email confirmation)
 
-Opt-out email/captcha need a staging JWT. Supply it via `--auth-token` or the env var
-`PRIVACYPRO_STAGING_ACCESS_TOKEN_V2` (stored in **Bitwarden**):
+Opt-out email/captcha need credentials. The durable way — log in once in the app, then the CLI keeps
+itself alive:
+
+```bash
+# In the app: Debug › Privacy Pro › Export Token for pir-debug (Environment submenu picks staging/production)
+swift run pir-debug auth status          # confirms environment + "Data Broker Protection" entitlement
+
+swift run pir-debug scan --broker-file "$FAKE" --profile p.json --output scan.json
+swift run pir-debug optout --broker-file "$FAKE" --profile p.json \
+  --broker fakebroker.com --extracted scan.json \
+  --wait-for-email --poll-interval 15 --timeout 900   # survives access-token expiry mid-wait
+```
+
+The shared staging JWT still works and takes precedence when supplied (`--auth-token` or the env var,
+stored in **Bitwarden**) — but it is a bare access token, so a long `--wait` can outlive it:
 
 ```bash
 export PRIVACYPRO_STAGING_ACCESS_TOKEN_V2="$(… fetch from Bitwarden …)"
@@ -723,6 +806,18 @@ so both the Swift contract and the JS artifact come from the same tree. Revert b
   or no item at all for the (address, attempt id) pair, exit `1`.
 - **`--services-url` exists only on the `email` commands.** `scan`/`optout`/`serve` still derive the
   services endpoint from `--environment`.
+- **`--auth-token` is never refreshed.** It is used exactly as given, so a run longer than the access
+  token's lifetime starts failing partway through. Use the stored container (`auth import`) for long
+  waits.
+- **The stored token file holds a refresh token** — a real credential, in plaintext under `$HOME` at
+  mode `0600`. `auth logout` deletes it. The CLI's own keychain item would be stronger, but an
+  unsigned binary's keychain ACL is path/identity-bound and re-prompts after every `swift build`,
+  which breaks unattended loops.
+- **`auth logout` is local only.** It does not call the auth service's logout, because the refresh
+  token is shared with the signed-in app and invalidating it would sign the app out too.
+- **Date fidelity in the token file is load-bearing.** `OAuthClient.getTokens(policy: .localValid)`
+  decides whether to refresh from the deserialized `exp` claim, so the store encodes and decodes with
+  matching `Date` strategies; `PIRDebugTokenStoreTests` pins that round-trip.
 - **Acceptance criteria 1, 3, and 5** (live headless scan, headed scan with `--show-webview`, and
   the opt-out email-confirmation continuation) require a manual run against a **running** fake
   broker and were **not** automatically verified.

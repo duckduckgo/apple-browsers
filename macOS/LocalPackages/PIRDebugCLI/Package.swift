@@ -29,6 +29,7 @@ let package = Package(
         .executable(name: "pir-debug", targets: ["pir-debug"]),
     ],
     dependencies: [
+        .package(path: "../../../SharedPackages/BrowserServicesKit"),
         .package(path: "../../../SharedPackages/DataBrokerProtectionCore"),
         .package(path: "../../../SharedPackages/DebugServer"),
         .package(url: "https://github.com/apple/swift-argument-parser", exact: "1.8.2"),
@@ -38,6 +39,7 @@ let package = Package(
             name: "pir-debug",
             dependencies: [
                 .product(name: "PIRDebugKit", package: "DataBrokerProtectionCore"),
+                .product(name: "Networking", package: "BrowserServicesKit"),
                 .product(name: "DataBrokerProtectionCore", package: "DataBrokerProtectionCore"),
                 .product(name: "DebugServer", package: "DebugServer"),
                 .product(name: "ArgumentParser", package: "swift-argument-parser"),

@@ -93,6 +93,8 @@ let package = Package(
                 .product(name: "BrowserServicesKit", package: "BrowserServicesKit"),
                 .product(name: "PrivacyConfig", package: "BrowserServicesKit"),
                 .product(name: "PixelKit", package: "BrowserServicesKit"),
+                .product(name: "Networking", package: "BrowserServicesKit"),
+                .product(name: "Subscription", package: "BrowserServicesKit"),
                 "ZIPFoundation",
             ],
             resources: [.copy("Resources/macos-config.json")],
@@ -105,6 +107,7 @@ let package = Package(
             dependencies: [
                 "PIRDebugKit",
                 "DataBrokerProtectionCore",
+                .product(name: "NetworkingTestingUtils", package: "BrowserServicesKit"),
                 "ZIPFoundation",
             ],
             resources: [

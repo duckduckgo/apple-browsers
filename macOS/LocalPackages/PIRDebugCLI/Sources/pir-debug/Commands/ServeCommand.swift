@@ -79,7 +79,7 @@ struct ServeCommand: CLIRunnable {
 
             let configuration = try PIRDebugSessionConfiguration(
                 rulesSource: provider,
-                authManager: auth.authenticationManager(),
+                authManager: auth.authenticationManager(servicesEndpoint: rules.resolvedServicesEndpoint),
                 scriptSource: scriptSource,
                 showWebView: runtime.showWebview,
                 operationAwaitTime: runtime.awaitTime,

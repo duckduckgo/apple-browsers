@@ -74,6 +74,7 @@ public final class SubscriptionDebugMenu: NSMenuItem {
         menu.addItem(NSMenuItem(title: "Remove Subscription From This Device", action: #selector(signOut), target: self))
         menu.addItem(NSMenuItem(title: "Show Account Details", action: #selector(showAccountDetails), target: self))
         menu.addItem(.separator())
+        menu.addItem(NSMenuItem(title: "Export Token for pir-debug", action: #selector(exportTokenForPIRDebug), target: self))
         menu.addItem(NSMenuItem(title: "Validate Token", action: #selector(validateToken), target: self))
         menu.addItem(NSMenuItem(title: "Check Entitlements", action: #selector(checkEntitlements), target: self))
         menu.addItem(NSMenuItem(title: "Get Subscription Details", action: #selector(getSubscriptionDetails), target: self))
@@ -243,6 +244,47 @@ public final class SubscriptionDebugMenu: NSMenuItem {
                                                                      "\(tokenContainer!.debugDescription)",
                                                                      "Email: \(subscriptionManager.userEmail ?? "")"].joined(separator: "\n") : nil
             showAlert(title: title, message: message)
+        }
+    }
+
+    /// Writes the current token container to `~/.config/pir-debug/token.json` for the `pir-debug`
+    /// CLI, which is unsigned and so cannot read this app's access-group keychain. The CLI refreshes
+    /// the exported container itself, so this is a one-off per refresh-token lifetime.
+    ///
+    /// The file contains a refresh token; it is written `0600`, and `pir-debug auth logout` removes it.
+    @objc
+    func exportTokenForPIRDebug() {
+        Task {
+            let destination = FileManager.default.homeDirectoryForCurrentUser
+                .appendingPathComponent(".config/pir-debug/token.json")
+            do {
+                // .localValid so the CLI starts from a token that is current, not one already expired.
+                let tokenContainer = try await subscriptionManager.getTokenContainer(policy: .localValid)
+                let data = try JSONEncoder().encode(tokenContainer)
+                try FileManager.default.createDirectory(at: destination.deletingLastPathComponent(),
+                                                        withIntermediateDirectories: true,
+                                                        attributes: [.posixPermissions: 0o700])
+                if !FileManager.default.createFile(atPath: destination.path,
+                                                  contents: data,
+                                                  attributes: [.posixPermissions: 0o600]) {
+                    try data.write(to: destination, options: .atomic)
+                }
+                try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: destination.path)
+
+                let entitlements = tokenContainer.decodedAccessToken.subscriptionEntitlements
+                    .map(\.rawValue).sorted().joined(separator: ", ")
+                showAlert(title: "Token exported for pir-debug",
+                          message: """
+                          Written to \(destination.path)
+
+                          Environment: \(currentEnvironment.serviceEnvironment.description)
+                          Entitlements: \(entitlements.isEmpty ? "none" : entitlements)
+
+                          Check it with: pir-debug auth status
+                          """)
+            } catch {
+                showAlert(title: "Token export failed", message: "\(error)")
+            }
         }
     }
 

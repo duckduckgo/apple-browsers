@@ -42,6 +42,7 @@ struct PIRDebug: ParsableCommand {
             ScanCommand.self,
             OptOutCommand.self,
             EmailCommand.self,
+            AuthCommand.self,
             ValidateCommand.self,
             ListBrokersCommand.self,
             FetchRulesCommand.self,

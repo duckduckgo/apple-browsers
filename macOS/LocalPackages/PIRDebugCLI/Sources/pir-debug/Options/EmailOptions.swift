@@ -68,14 +68,16 @@ struct EmailOptions: ParsableArguments {
         }
     }
 
-    /// The email service rejects every request without a token, so fail as a usage error up front
-    /// rather than as an opaque `noAuthToken` from the service.
+    /// The email service rejects every request without credentials, so fail as a usage error up
+    /// front rather than as an opaque `noAuthToken` from the service.
     func makeClient(auth: AuthOptions) throws -> PIRDebugEmailClient {
-        guard auth.resolvedToken != nil else {
-            throw CLIUsageError("The email service needs a token: pass --auth-token or set $\(AuthOptions.envVariableName).")
+        guard auth.hasCredentials else {
+            throw CLIUsageError(auth.missingCredentialsMessage)
         }
-        return try PIRDebugEmailClient(authManager: auth.authenticationManager(),
-                                       servicesEndpoint: try resolvedServicesEndpoint())
+        let endpoint = try resolvedServicesEndpoint()
+        Log.debug("Credentials: \(auth.sourceDescription)")
+        return try PIRDebugEmailClient(authManager: auth.authenticationManager(servicesEndpoint: endpoint),
+                                       servicesEndpoint: endpoint)
     }
 
     /// Parses an `--attempt-id` value. The services key mailboxes on (email, attemptId), so a typo

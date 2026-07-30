@@ -97,6 +97,9 @@ final class SyncService {
                 },
                 canWriteUnifiedDeviceList: {
                     featureFlagger.isFeatureOn(for: FeatureFlag.syncCanWriteUnifiedDeviceList)
+                },
+                canReadUnifiedDeviceList: {
+                    featureFlagger.isFeatureOn(for: FeatureFlag.syncCanReadUnifiedDeviceList)
                 }
             ),
             shouldPreserveAccountWhenSyncDisabled: {

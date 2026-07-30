@@ -2288,7 +2288,8 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     func preparePreviewForTabTransition(completion: @escaping (UIImage?) -> Void) {
-        guard let webView else {
+        guard let webView,
+              webView.window?.windowScene?.activationState == .foregroundActive else {
             completion(nil)
             return
         }

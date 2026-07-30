@@ -7,3 +7,8 @@ Apple monorepo.
 
 The base layer establishes the shared context used by the next pull request in
 the stack.
+
+## Stacked layer
+
+The stacked layer builds on the base document and confirms that reviewers see
+only the follow-up change in the top pull request.

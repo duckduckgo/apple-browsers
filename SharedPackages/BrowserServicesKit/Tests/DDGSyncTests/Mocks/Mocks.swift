@@ -237,6 +237,7 @@ final class MockSyncDependencies: SyncDependencies, SyncDependenciesDebuggingSup
     var endpoints: Endpoints = Endpoints(baseURL: URL(string: "https://dev.null")!)
     var account: AccountManaging = AccountManagingMock()
     var scopedAccess: ScopedAccessCredentialManaging = ScopedAccessCredentialManagingMock()
+    var accountInfoKeys: AccountInfoKeyManaging = AccountInfoKeyManagingMock()
     var api: RemoteAPIRequestCreating = RemoteAPIRequestCreatingMock()
     var payloadCompressor: SyncPayloadCompressing = SyncGzipPayloadCompressorMock()
     var secureStore: SecureStoring = SecureStorageStub()
@@ -378,6 +379,36 @@ final class AccountInfoKeyFactoryMock: AccountInfoKeyFactory {
             throw makeProtectedKeysError
         }
         return makeProtectedKeysStub
+    }
+}
+
+final class AccountInfoKeyManagingMock: AccountInfoKeyManaging {
+    var loadKeyCalls: [SyncAccount] = []
+    var loadKeyStub: AccountInfoKeyMaterial?
+    var loadKeyError: Error?
+    func loadKey(for account: SyncAccount) async throws -> AccountInfoKeyMaterial {
+        loadKeyCalls.append(account)
+        if let loadKeyError {
+            throw loadKeyError
+        }
+        guard let loadKeyStub else {
+            throw AccountInfoKeyManagerError.missingProtectedKey
+        }
+        return loadKeyStub
+    }
+
+    var refreshKeyCalls: [SyncAccount] = []
+    var refreshKeyStub: AccountInfoKeyMaterial?
+    var refreshKeyError: Error?
+    func refreshKey(for account: SyncAccount) async throws -> AccountInfoKeyMaterial {
+        refreshKeyCalls.append(account)
+        if let refreshKeyError {
+            throw refreshKeyError
+        }
+        guard let refreshKeyStub else {
+            throw AccountInfoKeyManagerError.missingProtectedKey
+        }
+        return refreshKeyStub
     }
 }
 

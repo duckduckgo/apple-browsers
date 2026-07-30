@@ -28,6 +28,33 @@ public enum AIChatMetricName: String, Codable {
     case userDidAcceptTermsAndConditions
     case userDidSelectSuggestion
     case userDidViewSuggestions
+
+    // MARK: - Subscription funnel metrics
+    // Reported by the frontend only inside a native app, where its own website pixel is suppressed.
+    // https://app.asana.com/1/137249556945/task/1216395339071571
+    case userDidViewAiSidebarUpgradeButton
+    case userDidViewActivateSubscriptionBanner
+    case userDidViewFreePlanBadge
+    case userDidViewFreeLimitMessage
+    case userDidViewImageGenerationLimitMessage
+    case userDidViewPlusLimitMessage
+    case userDidViewPromotionCard
+    case userDidViewSettingsSubscribeButton
+    case userDidViewProUpgradeDisclaimerBanner
+    case userDidViewVoiceChatLimitModal
+    case userDidViewVoiceChatDurationLimitModal
+
+    case userDidClickAiSidebarUpgradeButton
+    case userDidClickActivateSubscriptionButton
+    case userDidClickFreePlanUpgradeButton
+    case userDidClickFreeLimitSubscribeLink
+    case userDidClickImageGenerationLimitSubscribeButton
+    case userDidClickPlusLimitUpgradeLink
+    case userDidClickPromotionCardButton
+    case userDidClickSettingsSubscribeButton
+    case userDidClickProUpgradeDisclaimerBannerButton
+    case userDidClickVoiceChatLimitModalSubscribeButton
+    case userDidClickVoiceChatDurationLimitModalSubscribeButton
 }
 
 // Model tier for AI Chat metrics

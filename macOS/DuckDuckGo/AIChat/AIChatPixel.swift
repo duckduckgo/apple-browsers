@@ -301,6 +301,14 @@ enum AIChatPixel: PixelKitEvent {
     /// routing them to the subscription purchase/upgrade flow.
     case aiChatAddressBarSubscriptionUpsellTriggered(currentTier: String, requiredTier: String, flowType: String)
 
+    // MARK: - Duck.ai Subscription Funnel (frontend-reported)
+
+    /// Event Trigger: A Duck.ai subscription-funnel entry point is shown in the web frontend, reported over the `reportMetric` bridge. `origin` is the entry point.
+    case aiChatSubscriptionFunnelImpression(origin: String)
+
+    /// Event Trigger: The CTA on a Duck.ai subscription-funnel entry point is clicked, reported over the `reportMetric` bridge.
+    case aiChatSubscriptionFunnelClick(origin: String)
+
     /// Event Trigger: User opens a new voice Duck.ai chat from the native omnibar
     case aiChatNewVoiceChatOmnibarNative
 
@@ -659,6 +667,10 @@ enum AIChatPixel: PixelKitEvent {
             return "aichat_addressbar_reasoning_effort_selected"
         case .aiChatAddressBarSubscriptionUpsellTriggered:
             return "aichat_addressbar_subscription_upsell_triggered"
+        case .aiChatSubscriptionFunnelImpression:
+            return "aichat_subscription-funnel_impression"
+        case .aiChatSubscriptionFunnelClick:
+            return "aichat_subscription-funnel_click"
         case .aiChatNewVoiceChatOmnibarNative:
             return "aichat_new_voice_chat_omnibar_native"
         case .aiChatAddressBarImageGenerationActivated:
@@ -878,6 +890,9 @@ enum AIChatPixel: PixelKitEvent {
             return nil
         case .aiChatAddressBarSubscriptionUpsellTriggered(let currentTier, let requiredTier, let flowType):
             return ["current_tier": currentTier, "required_tier": requiredTier, "flow_type": flowType]
+        case .aiChatSubscriptionFunnelImpression(let origin),
+                .aiChatSubscriptionFunnelClick(let origin):
+            return ["origin": origin]
         case .aiChatNtpSubscriptionUpsellTriggered(let flowType, let source):
             return ["flow_type": flowType, "source": source]
         case .aiChatIsEnabled(let isEnabled):
@@ -1027,6 +1042,8 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatAddressBarModelSelected,
                 .aiChatAddressBarReasoningEffortSelected,
                 .aiChatAddressBarSubscriptionUpsellTriggered,
+                .aiChatSubscriptionFunnelImpression,
+                .aiChatSubscriptionFunnelClick,
                 .aiChatNtpSubmitWithImage,
                 .aiChatNtpModelSelected,
                 .aiChatNtpReasoningEffortSelected,

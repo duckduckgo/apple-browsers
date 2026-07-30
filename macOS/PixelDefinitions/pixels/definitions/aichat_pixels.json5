@@ -316,5 +316,19 @@
             },
             "channel"
         ]
+    },
+    "m_mac_aichat_subscription-funnel_impression": {
+        "description": "Fired when a Duck.ai subscription-funnel entry point (e.g. free-plan badge, promo card, usage-limit message) is shown to the user in the web frontend. The website pixel is suppressed in-app, so the frontend reports the surface over the reportMetric bridge and the native layer fires this pixel with the funnel origin. See https://app.asana.com/1/137249556945/task/1216395339071571",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel", "subscriptionFunnelOrigin"]
+    },
+    "m_mac_aichat_subscription-funnel_click": {
+        "description": "Fired when the user clicks the CTA on a Duck.ai subscription-funnel entry point (e.g. an upgrade/subscribe button) in the web frontend. The website pixel is suppressed in-app, so the frontend reports the surface over the reportMetric bridge and the native layer fires this pixel with the funnel origin. See https://app.asana.com/1/137249556945/task/1216395339071571",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel", "subscriptionFunnelOrigin"]
     }
 }

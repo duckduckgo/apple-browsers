@@ -248,10 +248,12 @@ final class MockSyncDependencies: SyncDependencies, SyncDependenciesDebuggingSup
     var isScopedAccessCredentialsEnabled: () -> Bool = { true }
     var isPairingV2ScanningEnabled: () -> Bool = { true }
     var isPairingV2CodeEnabled: () -> Bool = { true }
+    var canWriteUnifiedDeviceList: () -> Bool = { false }
     lazy var syncFeatureFlags: any SyncFeatureFlagProviding = SyncFeatureFlagProvider(
         isScopedAccessCredentialsEnabled: { [weak self] in self?.isScopedAccessCredentialsEnabled() == true },
         isPairingV2ScanningEnabled: { [weak self] in self?.isPairingV2ScanningEnabled() == true },
-        isPairingV2CodeEnabled: { [weak self] in self?.isPairingV2CodeEnabled() == true }
+        isPairingV2CodeEnabled: { [weak self] in self?.isPairingV2CodeEnabled() == true },
+        canWriteUnifiedDeviceList: { [weak self] in self?.canWriteUnifiedDeviceList() == true }
     )
     var keyValueStore: ThrowingKeyValueStoring = try! MockKeyValueFileStore()
     var legacyKeyValueStore: KeyValueStoring = MockKeyValueStore()

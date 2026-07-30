@@ -94,6 +94,9 @@ final class SyncService {
                 },
                 isPairingV2CodeEnabled: {
                     featureFlagger.isFeatureOn(for: FeatureFlag.syncCanShowV2ConnectCode)
+                },
+                canWriteUnifiedDeviceList: {
+                    featureFlagger.isFeatureOn(for: FeatureFlag.syncCanWriteUnifiedDeviceList)
                 }
             ),
             shouldPreserveAccountWhenSyncDisabled: {

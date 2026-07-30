@@ -2268,6 +2268,9 @@
 		CB781CF0301A822E008DCD60 /* DuckAIAddressBarEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB781CEF301A822E008DCD60 /* DuckAIAddressBarEntry.swift */; };
 		CB781CF2301A824C008DCD60 /* AIChatContextualFloatingInputViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB781CF1301A824C008DCD60 /* AIChatContextualFloatingInputViewController.swift */; };
 		CB781CF4301A82EB008DCD60 /* MainViewController+DuckAIAddressBarMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB781CF3301A82EB008DCD60 /* MainViewController+DuckAIAddressBarMenu.swift */; };
+		CB781CF6301BDBB7008DCD60 /* DuckAIAddressBarEntryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB781CF5301BDBB7008DCD60 /* DuckAIAddressBarEntryTests.swift */; };
+		CB781CF8301BDBCB008DCD60 /* DuckAIAddressBarMenuFactoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB781CF7301BDBCB008DCD60 /* DuckAIAddressBarMenuFactoryTests.swift */; };
+		CB781CFA301BDBE8008DCD60 /* AIChatContextualFloatingInputViewControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB781CF9301BDBE8008DCD60 /* AIChatContextualFloatingInputViewControllerTests.swift */; };
 		CB7CF9FA2F9A6C100051BEE9 /* CircularButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB7CF9F92F9A6C100051BEE9 /* CircularButton.swift */; };
 		CB7E0A212D5E1D96002A7C0C /* UIInteractionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB7E0A202D5E1D96002A7C0C /* UIInteractionManager.swift */; };
 		CB7E0A232D5E1E55002A7C0C /* LaunchActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB7E0A222D5E1E55002A7C0C /* LaunchActionHandler.swift */; };
@@ -5037,6 +5040,9 @@
 		CB781CEF301A822E008DCD60 /* DuckAIAddressBarEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAIAddressBarEntry.swift; sourceTree = "<group>"; };
 		CB781CF1301A824C008DCD60 /* AIChatContextualFloatingInputViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatContextualFloatingInputViewController.swift; sourceTree = "<group>"; };
 		CB781CF3301A82EB008DCD60 /* MainViewController+DuckAIAddressBarMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MainViewController+DuckAIAddressBarMenu.swift"; sourceTree = "<group>"; };
+		CB781CF5301BDBB7008DCD60 /* DuckAIAddressBarEntryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAIAddressBarEntryTests.swift; sourceTree = "<group>"; };
+		CB781CF7301BDBCB008DCD60 /* DuckAIAddressBarMenuFactoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAIAddressBarMenuFactoryTests.swift; sourceTree = "<group>"; };
+		CB781CF9301BDBE8008DCD60 /* AIChatContextualFloatingInputViewControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatContextualFloatingInputViewControllerTests.swift; sourceTree = "<group>"; };
 		CB7CF9F92F9A6C100051BEE9 /* CircularButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CircularButton.swift; sourceTree = "<group>"; };
 		CB7E0A202D5E1D96002A7C0C /* UIInteractionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIInteractionManager.swift; sourceTree = "<group>"; };
 		CB7E0A222D5E1E55002A7C0C /* LaunchActionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchActionHandler.swift; sourceTree = "<group>"; };
@@ -6146,6 +6152,9 @@
 				80E5CA022FE0F17800B8F0A0 /* DuckAIVoiceSessionTrackerTests.swift */,
 				80E2BDB12FDB80AD00441FDF /* DuckAIGridContentResolverTests.swift */,
 				CB781CE9301A8048008DCD60 /* AIChatContextualFloatingInputFeatureTests.swift */,
+				CB781CF5301BDBB7008DCD60 /* DuckAIAddressBarEntryTests.swift */,
+				CB781CF7301BDBCB008DCD60 /* DuckAIAddressBarMenuFactoryTests.swift */,
+				CB781CF9301BDBE8008DCD60 /* AIChatContextualFloatingInputViewControllerTests.swift */,
 			);
 			path = AIChat;
 			sourceTree = "<group>";
@@ -14378,6 +14387,7 @@
 				9F387DE62EA89551006861F8 /* ModalPromptCoordinationManagerTests.swift in Sources */,
 				98E5631D2DE8AF3100E6E75F /* CoreDataTestUtilities.swift in Sources */,
 				9F3361BC2F2B394700E0C21A /* ContextualOnboardingDelegateMock.swift in Sources */,
+				CB781CFA301BDBE8008DCD60 /* AIChatContextualFloatingInputViewControllerTests.swift in Sources */,
 				98E563242DE8AF3100E6E75F /* SwiftUITestUtilities.swift in Sources */,
 				98E5632A2DE8AF3100E6E75F /* CoreDataDatabaseTestUtilities.swift in Sources */,
 				36F6195C2F68657100CBF121 /* DataClearingPixelsReporterTests.swift in Sources */,
@@ -14397,6 +14407,7 @@
 				9F3668762EAF0A7600AA8670 /* MockContextualOnboardingStatusProvider.swift in Sources */,
 				CBC88EE32C7F8B1700F0F8C5 /* SSLErrorPageNavigationHandlerTests.swift in Sources */,
 				C13A463D2EB39C9200BF7762 /* UniversalOmniBarStateTests.swift in Sources */,
+				CB781CF6301BDBB7008DCD60 /* DuckAIAddressBarEntryTests.swift in Sources */,
 				85C11E4120904BBE00BFFEB4 /* VariantManagerTests.swift in Sources */,
 				563A3D032D37C363001966FD /* AppConfigurationURLProviderTests.swift in Sources */,
 				CB781CE83019069B008DCD60 /* UTIAttachmentControllerTests.swift in Sources */,
@@ -14501,6 +14512,7 @@
 				98E564BC2DE8F34E00E6E75F /* MockMaliciousSiteProtectionManager.swift in Sources */,
 				989F0DAD2ECB517100781641 /* MockDefaultScriptSourceProviderDependencies.swift in Sources */,
 				98E564BD2DE8F34E00E6E75F /* TimeTraveller.swift in Sources */,
+				CB781CF8301BDBCB008DCD60 /* DuckAIAddressBarMenuFactoryTests.swift in Sources */,
 				98E564BE2DE8F34E00E6E75F /* MaliciousSiteProtectionMocks.swift in Sources */,
 				8341D807212D5E8D000514C2 /* HashExtensionTest.swift in Sources */,
 				9FCCC0A22FB59FF3001F2670 /* MockAIChatDeepLinkHandler.swift in Sources */,

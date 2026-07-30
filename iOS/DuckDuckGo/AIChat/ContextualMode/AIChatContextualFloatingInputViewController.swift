@@ -214,6 +214,10 @@ final class AIChatContextualFloatingInputViewController: UIViewController {
     func simulateDimTapForTesting() {
         handleDimTap()
     }
+
+    var hasPlayedChipsEntranceForTesting: Bool {
+        hasPlayedChipsEntrance
+    }
 #endif
 }
 

@@ -53,6 +53,7 @@ protocol AddressBarStyleProviding {
     var addressBarActiveOuterBorderSize: CGFloat { get }
     var addressBarButtonSize: CGFloat { get }
     var addressBarButtonsCornerRadius: CGFloat { get }
+    var addressBarPrivacyAnimationSize: CGSize? { get }
     var addressBarInactiveBackgroundViewVerticalPadding: CGFloat { get }
     var addressBarInactiveBackgroundViewLeadingPadding: CGFloat { get }
     var addressBarInactiveBackgroundViewTrailingPadding: CGFloat { get }
@@ -131,6 +132,7 @@ final class LegacyAddressBarStyleProvider: AddressBarStyleProviding {
     let shouldAddAddressBarShadowWhenInactive: Bool = true
     let tabBarButtonSize: CGFloat = 28
     let addressBarButtonSize: CGFloat = 28
+    let addressBarPrivacyAnimationSize: CGSize? = nil
     let addTabButtonPadding: CGFloat = 32 // Takes into account the extra 24pts (12pts for each inset on s-shaped tabs)
     let addressBarActiveBackgroundViewRadius: CGFloat = 15
     let addressBarActiveBackgroundViewRadiusWithSuggestions: CGFloat = 15
@@ -260,6 +262,7 @@ final class CurrentAddressBarStyleProvider: AddressBarStyleProviding {
     let addressBarActiveOuterBorderSize: CGFloat = 0            // Deprecated
     let addressBarButtonSize: CGFloat = 28
     let addressBarButtonsCornerRadius: CGFloat = 14
+    let addressBarPrivacyAnimationSize: CGSize? = CGSize(width: 34, height: 34)
     let addressBarInactiveBackgroundViewVerticalPadding: CGFloat = 7
     let addressBarInactiveBackgroundViewRadius: CGFloat = 17
     let addressBarInactiveBackgroundViewLeadingPadding: CGFloat = 6

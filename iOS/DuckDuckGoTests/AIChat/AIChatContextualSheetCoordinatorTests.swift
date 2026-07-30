@@ -400,6 +400,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     func testNotifyPageChangedTriggersCollectionWhenAutoAttachEnabled() async {
         mockSettings.isAutomaticContextAttachmentEnabled = true
         await sut.presentSheet(from: mockPresentingVC)
+        sut.sessionState.updateContext(makeTestContext(title: "Page A"))
         mockPageContextHandler.triggerContextCollectionCallCount = 0
 
         await sut.notifyPageChanged()
@@ -459,6 +460,78 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         await sut.notifyPageChanged()
 
         XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 1)
+    }
+
+    @MainActor
+    func testNotifyPageChangedDoesNotRefreshSuggestionsWhenAutoAttachIsOffAndContextIsPinned() async {
+        // Given
+        let pageAURL = URL(string: "https://example.com/page-a")!
+        let pageBURL = URL(string: "https://example.com/page-b")!
+        mockFeatureFlagger.enabledFeatureFlags = [.contextualSuggestedPrompts]
+        mockSettings.isAutomaticContextAttachmentEnabled = false
+        await sut.presentSheet(from: mockPresentingVC)
+        originatingTabURLSubject.send(pageAURL)
+        sut.sessionState.beginManualAttach()
+        mockPageContextHandler.sendContext(makeTestContext(title: "Page A", url: pageAURL.absoluteString))
+        await waitForAttachedChip()
+        originatingTabURLSubject.send(pageBURL)
+        mockPageContextHandler.triggerContextCollectionCallCount = 0
+
+        // When
+        await sut.notifyPageChanged()
+
+        // Then
+        XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 0)
+        XCTAssertEqual(sut.sessionState.suggestionsLoadState, .loaded)
+    }
+
+    @MainActor
+    func testRemovePinnedContextImmediatelyRefreshesSuggestionsForCurrentPage() async {
+        // Given
+        let pageAURL = URL(string: "https://example.com/page-a")!
+        let pageBURL = URL(string: "https://example.com/page-b")!
+        mockFeatureFlagger.enabledFeatureFlags = [.contextualSuggestedPrompts]
+        mockSettings.isAutomaticContextAttachmentEnabled = false
+        await sut.presentSheet(from: mockPresentingVC)
+        originatingTabURLSubject.send(pageAURL)
+        sut.sessionState.beginManualAttach()
+        mockPageContextHandler.sendContext(makeTestContext(title: "Page A", url: pageAURL.absoluteString))
+        await waitForAttachedChip()
+        originatingTabURLSubject.send(pageBURL)
+        await sut.notifyPageChanged()
+        mockPageContextHandler.triggerContextCollectionCallCount = 0
+        let refreshStarted = expectation(description: "suggestions refresh started")
+        mockPageContextHandler.onTriggerContextCollection = {
+            refreshStarted.fulfill()
+        }
+
+        // When
+        sut.aiChatContextualSheetViewControllerDidRequestRemoveChip(sut.sheetViewController!)
+        await fulfillment(of: [refreshStarted], timeout: 1.0)
+
+        // Then
+        XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 1)
+        XCTAssertEqual(mockPageContextHandler.lastTriggerContextCollectionTrigger, .tabContent)
+        XCTAssertEqual(sut.sessionState.suggestionsLoadState, .loading)
+    }
+
+    @MainActor
+    func testNotifyPageChangedRefreshesSuggestionsWhenAutoAttachIsOffAndContextIsNotPinned() async {
+        // Given
+        let pageURL = URL(string: "https://example.com/page")!
+        mockFeatureFlagger.enabledFeatureFlags = [.contextualSuggestedPrompts]
+        mockSettings.isAutomaticContextAttachmentEnabled = false
+        await sut.presentSheet(from: mockPresentingVC)
+        originatingTabURLSubject.send(pageURL)
+        mockPageContextHandler.triggerContextCollectionCallCount = 0
+
+        // When
+        await sut.notifyPageChanged()
+
+        // Then
+        XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 1)
+        XCTAssertEqual(mockPageContextHandler.lastTriggerContextCollectionTrigger, .tabContent)
+        XCTAssertEqual(sut.sessionState.suggestionsLoadState, .loading)
     }
 
     @MainActor

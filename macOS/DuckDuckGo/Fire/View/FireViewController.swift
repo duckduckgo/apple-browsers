@@ -31,8 +31,25 @@ import PrivacyConfig
 @MainActor
 final class FireViewController: NSViewController {
 
-    enum Const {
-        static let animationName = "01_Fire_really_small"
+    struct Settings {
+        let animationName: String
+        let animationSpeed: CGFloat
+        let animationBeginning: CGFloat
+        let animationEnd: CGFloat
+        let renderingEngine: Lottie.RenderingEngineOption
+
+        static var current: Settings {
+            guard DesignSystemRebrand.isAppRebranded() else {
+                return Settings(animationName: "01_Fire_really_small", animationSpeed: 1.2, animationBeginning: 0.1, animationEnd: 0.63, renderingEngine: .mainThread)
+            }
+
+            /// # Important
+            ///     We're switching the renderingEngine back to `.coreAnimation`, as the `.mainThread` alternative is choppy.
+            ///     This was initially switched due to a high CPU usage bug, in Lottie 4.4 circa 2024.
+            ///
+            ///     Ref.: https://github.com/duckduckgo/macos-browser/pull/2598
+            return Settings(animationName: "02_Fire_rebranded", animationSpeed: 1, animationBeginning: 0, animationEnd: 1, renderingEngine: .coreAnimation)
+        }
     }
 
     private(set) var fireViewModel: FireViewModel
@@ -297,7 +314,8 @@ final class FireViewController: NSViewController {
         NSLayoutConstraint.activate(constraints)
         fireAnimationView = animationView
 
-        animationView.animationSpeed = fireAnimationSpeed
+        let settings = Settings.current
+        animationView.animationSpeed = settings.animationSpeed
 
         fakeFireButton.wantsLayer = true
         fakeFireButton.layer?.backgroundColor = NSColor.buttonMouseDown.cgColor
@@ -357,10 +375,6 @@ final class FireViewController: NSViewController {
         fakeFireButton.isHidden = true
     }
 
-    private let fireAnimationSpeed = 1.2
-    private let fireAnimationBeginning = 0.1
-    private let fireAnimationEnd = 0.63
-
     @MainActor
     func animateFireWhenClosing() async {
         closeAllChildWindows()
@@ -380,7 +394,9 @@ final class FireViewController: NSViewController {
                 fireViewModel.setAnimationPlaying(false, isFireWindow: true)
                 continuation.resume()
             }
-            fireAnimationView?.play(fromProgress: fireAnimationBeginning, toProgress: fireAnimationEnd) { [weak self] _ in
+
+            let settings = Settings.current
+            fireAnimationView?.play(fromProgress: settings.animationBeginning, toProgress: settings.animationEnd) { [weak self] _ in
                 defer { completion() }
                 guard let self = self else { return }
 
@@ -413,7 +429,8 @@ final class FireViewController: NSViewController {
             fireAnimationView?.isHidden = false
             fireAnimationView?.currentProgress = 0
 
-            fireAnimationView?.play(fromProgress: fireAnimationBeginning, toProgress: fireAnimationEnd) { [weak self, fireViewModel] _ in
+            let settings = Settings.current
+            fireAnimationView?.play(fromProgress: settings.animationBeginning, toProgress: settings.animationEnd) { [weak self, fireViewModel] _ in
                 Logger.general.debug("Fire animation did finish")
                 fireViewModel.setAnimationPlaying(false, isFireWindow: false)
 
@@ -461,14 +478,17 @@ final class FireViewController: NSViewController {
  */
 private actor FireAnimationViewLoader {
 
-    static let shared: FireAnimationViewLoader = .init(animationName: FireViewController.Const.animationName)
+    static let shared: FireAnimationViewLoader = .init(animationName: FireViewController.Settings.current.animationName)
 
     @MainActor
     func createAnimationView() async -> LottieAnimationView? {
         guard let animation = await animation else {
             return nil
         }
-        let view = LottieAnimationView(animation: animation)
+        // The global default is .mainThread (see AppDelegate), but CPU-rasterizing this full-window 3840x2160 animation can't sustain 30fps.
+        // Our fire animation needs the GPU-backed Core Animation engine.
+        let settings = FireViewController.Settings.current
+        let view = LottieAnimationView(animation: animation, configuration: LottieConfiguration(renderingEngine: settings.renderingEngine))
         view.identifier = .init(rawValue: animationName)
         return view
     }

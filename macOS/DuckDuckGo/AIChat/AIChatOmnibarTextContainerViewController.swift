@@ -397,6 +397,12 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
         heightDidChange?(desiredHeight)
     }
 
+    /// The text's own height, without the bottom band `calculateDesiredPanelHeight()` reserves for a
+    /// host that overlaps its controls into it, as the address bar does.
+    var promptContentHeight: CGFloat {
+        calculateDesiredPanelHeight() - Constants.bottomPadding
+    }
+
     func calculateDesiredPanelHeight() -> CGFloat {
         guard let layoutManager = textView.layoutManager,
               let textContainer = textView.textContainer else {
@@ -465,8 +471,8 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
                 view.window?.makeFirstResponder(customToggleControl)
                 return true
             }
-            return false
-
+            // The Prompt Bar has no toggle to hop through, so Tab would never leave the prompt.
+            return focusFirstControlInCycle()
         }
 
         return false
@@ -552,17 +558,23 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
 
     /// Called by the owner when the toggle receives a Tab press in AI Chat mode.
     func handleToggleTabPressed() {
-        guard let containerVC = containerViewController else {
+        if !focusFirstControlInCycle() {
             focusTextViewWithCursorAtEnd()
-            return
         }
+    }
+
+    private func focusFirstControlInCycle() -> Bool {
+        guard let containerVC = containerViewController else { return false }
+
         if containerVC.firstAvailableToolButtonForFocus() != nil {
             containerVC.makeFirstAvailableToolButtonFirstResponder()
-        } else if containerVC.isModelPickerButtonAvailableForFocus {
-            containerVC.makeModelPickerButtonFirstResponder()
-        } else {
-            focusTextViewWithCursorAtEnd()
+            return true
         }
+        if containerVC.isModelPickerButtonAvailableForFocus {
+            containerVC.makeModelPickerButtonFirstResponder()
+            return true
+        }
+        return false
     }
 
     private func wireTabCycle() {

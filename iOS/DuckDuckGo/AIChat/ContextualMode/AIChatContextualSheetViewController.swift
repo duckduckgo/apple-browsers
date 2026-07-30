@@ -175,6 +175,7 @@ final class AIChatContextualSheetViewController: UIViewController {
     /// Tracks whether the "Ask about page" quick action chip is currently on screen, so the impression
     /// pixel fires once per appearance rather than on every view-state update.
     private var isAskAboutPageQuickActionVisible = false
+    private var areSuggestionsVisible = false
 
     /// Stops async suggestion work as soon as the sheet starts dismissing.
     private var canProcessSuggestionSubmission = false
@@ -413,8 +414,14 @@ final class AIChatContextualSheetViewController: UIViewController {
         hideDimmingView(animated: animated)
     }
 
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        fireSuggestionsViewedPixelIfNeeded(for: sessionState.viewState)
+    }
+
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
+        areSuggestionsVisible = false
         if isBeingDismissed {
             prepareForDismissal()
             delegate?.aiChatContextualSheetViewControllerDidDismiss(self)
@@ -454,6 +461,7 @@ final class AIChatContextualSheetViewController: UIViewController {
     }
 
     @objc private func titleTapped() {
+        pixelHandler.fireHeaderTitleTapped()
         requestExpand()
     }
 
@@ -833,6 +841,9 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
         switch action {
         case .askAboutPage:
             pixelHandler.fireQuickActionAskAboutPageSelected()
+            if featureFlagger.isFeatureOn(.contextualSuggestedPrompts) {
+                pixelHandler.fireAskAboutPageSuggestionSelected(pageType: sessionState.viewState.suggestionsPageType)
+            }
             delegate?.aiChatContextualSheetViewControllerDidRequestAttachPage(self)
             if let persistentUTIHost {
                 persistentUTIHost.activateInput()
@@ -858,6 +869,7 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
     func contextualInputViewController(_ viewController: AIChatContextualInputViewController, didSelectSuggestion suggestion: ContextualSuggestedPrompt) {
         guard featureFlagger.isFeatureOn(.contextualSuggestedPrompts) else { return }
         cancelSuggestionSubmission()
+        pixelHandler.fireSuggestionSelected(suggestionId: suggestion.id, pageType: sessionState.viewState.suggestionsPageType)
         contextualInputViewController.setStartActionsDimmed(true)
         let submissionID = UUID()
         suggestionSubmissionID = submissionID
@@ -1022,6 +1034,7 @@ private extension AIChatContextualSheetViewController {
         contextualInputViewController.updateStartActions(suggestions: viewState.suggestions, quickActions: viewState.quickActions)
         contextualInputViewController.updateSuggestionsLoading(viewState.suggestionsLoadState == .loading)
         fireAskAboutPageShownPixelIfNeeded(for: viewState)
+        fireSuggestionsViewedPixelIfNeeded(for: viewState)
 
         switch viewState.content {
         case .nativeInput:
@@ -1077,6 +1090,25 @@ private extension AIChatContextualSheetViewController {
         defer { isAskAboutPageQuickActionVisible = isVisible }
         guard isVisible, !isAskAboutPageQuickActionVisible else { return }
         pixelHandler.fireQuickActionAskAboutPageShown()
+    }
+
+    private func fireSuggestionsViewedPixelIfNeeded(for viewState: SheetViewState) {
+        let isVisible: Bool
+        switch viewState.content {
+        case .nativeInput:
+            isVisible = viewIfLoaded?.window != nil
+                && viewState.suggestionsLoadState == .loaded
+                && !viewState.suggestions.isEmpty
+        case .webView:
+            isVisible = false
+        }
+
+        defer { areSuggestionsVisible = isVisible }
+        guard isVisible, !areSuggestionsVisible else { return }
+        pixelHandler.fireSuggestionsViewed(
+            isSmart: viewState.suggestionsAreSmart,
+            pageType: viewState.suggestionsPageType
+        )
     }
 }
 

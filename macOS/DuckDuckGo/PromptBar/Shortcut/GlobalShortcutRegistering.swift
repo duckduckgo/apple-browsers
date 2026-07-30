@@ -1,8 +1,7 @@
 //
-//  AllProtectedCell.swift
-//  DuckDuckGo
+//  GlobalShortcutRegistering.swift
 //
-//  Copyright © 2024 DuckDuckGo. All rights reserved.
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -17,11 +16,16 @@
 //  limitations under the License.
 //
 
-import UIKit
+import AppKit
 
-class AllProtectedCell: UITableViewCell {
+/// Registers a system-wide keyboard shortcut that fires whether or not the app is active.
+protocol GlobalShortcutRegistering: AnyObject {
 
-    static let reuseIdentifier = "AllProtectedCell"
+    var registeredShortcut: PromptBarShortcut? { get }
 
-    @IBOutlet weak var label: UILabel!
+    /// - Returns: `false` when the OS refused the combination, typically because another app owns it.
+    @discardableResult
+    func register(_ shortcut: PromptBarShortcut, handler: @escaping () -> Void) -> Bool
+
+    func unregister()
 }

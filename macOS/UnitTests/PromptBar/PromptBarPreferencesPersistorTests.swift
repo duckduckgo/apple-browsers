@@ -39,21 +39,21 @@ final class PromptBarPreferencesPersistorTests: XCTestCase {
     }
 
     func testWhenNothingIsPersistedThenDefaultsAreReturned() {
-        XCTAssertTrue(persistor.isKeyboardShortcutEnabled)
-        XCTAssertTrue(persistor.isMenuBarIconVisible)
+        XCTAssertFalse(persistor.isKeyboardShortcutEnabled)
+        XCTAssertFalse(persistor.isMenuBarIconVisible)
         XCTAssertEqual(persistor.keyboardShortcut, .defaultShortcut)
     }
 
     func testWhenValuesAreSetThenTheyArePersistedToTheStore() {
         let customShortcut = PromptBarShortcut(keyCode: UInt16(kVK_ANSI_D), modifierFlags: [.control, .option])
 
-        persistor.isKeyboardShortcutEnabled = false
-        persistor.isMenuBarIconVisible = false
+        persistor.isKeyboardShortcutEnabled = true
+        persistor.isMenuBarIconVisible = true
         persistor.keyboardShortcut = customShortcut
 
         let rereadPersistor = PromptBarPreferencesUserDefaultsPersistor(keyValueStore: keyValueStore)
-        XCTAssertFalse(rereadPersistor.isKeyboardShortcutEnabled)
-        XCTAssertFalse(rereadPersistor.isMenuBarIconVisible)
+        XCTAssertTrue(rereadPersistor.isKeyboardShortcutEnabled)
+        XCTAssertTrue(rereadPersistor.isMenuBarIconVisible)
         XCTAssertEqual(rereadPersistor.keyboardShortcut, customShortcut)
     }
 
@@ -67,8 +67,8 @@ final class PromptBarPreferencesPersistorTests: XCTestCase {
     func testWhenStoreThrowsOnReadThenDefaultsAreReturned() {
         keyValueStore.shouldThrowOnGet = true
 
-        XCTAssertTrue(persistor.isKeyboardShortcutEnabled)
-        XCTAssertTrue(persistor.isMenuBarIconVisible)
+        XCTAssertFalse(persistor.isKeyboardShortcutEnabled)
+        XCTAssertFalse(persistor.isMenuBarIconVisible)
         XCTAssertEqual(persistor.keyboardShortcut, .defaultShortcut)
     }
 }

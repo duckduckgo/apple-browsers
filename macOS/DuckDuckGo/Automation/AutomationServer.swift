@@ -164,6 +164,17 @@ final class MacOSAutomationProvider: BrowserAutomationProvider {
         }
     }
 
+    func clearWebsiteData() async -> Bool {
+        guard let dataStore = currentWebView?.configuration.websiteDataStore else {
+            return false
+        }
+        await dataStore.removeData(
+            ofTypes: WKWebsiteDataStore.allWebsiteDataTypes(),
+            modifiedSince: .distantPast
+        )
+        return true
+    }
+
     func takeScreenshot(rect: CGRect?) async -> Data? {
         guard let webView = currentWebView else { return nil }
 

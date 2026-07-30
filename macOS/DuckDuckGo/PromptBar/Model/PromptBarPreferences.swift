@@ -36,10 +36,8 @@ final class PromptBarPreferences: ObservableObject {
         didSet { persistor.isMenuBarIconVisible = isMenuBarIconVisible }
     }
 
-    /// The icon is a Duck.ai entry point behind the shortcut, so it stays hidden
-    /// unless both are on. Stored values are kept so they can be restored.
     var isMenuBarIconEffectivelyVisible: Bool {
-        isMenuBarIconVisible && isKeyboardShortcutEnabled && aiChatMenuConfiguration.shouldDisplayAnyAIChatFeature
+        isMenuBarIconVisible && aiChatMenuConfiguration.shouldDisplayAnyAIChatFeature
     }
 
     var isMenuBarIconEffectivelyVisiblePublisher: AnyPublisher<Bool, Never> {
@@ -48,9 +46,30 @@ final class PromptBarPreferences: ObservableObject {
             .map { _ in () }
             .prepend(())
 
-        return Publishers.CombineLatest3($isMenuBarIconVisible, $isKeyboardShortcutEnabled, aiChatFeatureChanges)
-            .map { isMenuBarIconVisible, isKeyboardShortcutEnabled, _ in
-                isMenuBarIconVisible && isKeyboardShortcutEnabled && aiChatMenuConfiguration.shouldDisplayAnyAIChatFeature
+        return Publishers.CombineLatest($isMenuBarIconVisible, aiChatFeatureChanges)
+            .map { isMenuBarIconVisible, _ in
+                isMenuBarIconVisible && aiChatMenuConfiguration.shouldDisplayAnyAIChatFeature
+            }
+            .removeDuplicates()
+            .eraseToAnyPublisher()
+    }
+
+    /// The shortcut opens Duck.ai, so it stays unregistered while Duck.ai is off.
+    var isKeyboardShortcutEffectivelyEnabled: Bool {
+        isKeyboardShortcutEnabled && aiChatMenuConfiguration.shouldDisplayAnyAIChatFeature
+    }
+
+    /// `nil` when no shortcut should be registered.
+    var effectiveKeyboardShortcutPublisher: AnyPublisher<PromptBarShortcut?, Never> {
+        let aiChatMenuConfiguration = self.aiChatMenuConfiguration
+        let aiChatFeatureChanges = aiChatMenuConfiguration.valuesChangedPublisher
+            .map { _ in () }
+            .prepend(())
+
+        return Publishers.CombineLatest3($isKeyboardShortcutEnabled, $keyboardShortcut, aiChatFeatureChanges)
+            .map { isEnabled, shortcut, _ -> PromptBarShortcut? in
+                guard isEnabled, aiChatMenuConfiguration.shouldDisplayAnyAIChatFeature else { return nil }
+                return shortcut
             }
             .removeDuplicates()
             .eraseToAnyPublisher()

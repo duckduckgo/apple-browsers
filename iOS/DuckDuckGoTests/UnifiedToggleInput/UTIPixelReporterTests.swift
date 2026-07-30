@@ -120,6 +120,28 @@ final class UTIPixelReporterTests: XCTestCase {
         XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.params, ["surface": "address_bar", "source": "file_picker"])
     }
 
+    func testReportImageAttachedFiresDailyWithResolvedSurface() {
+        let reporter = makeReporter { self.context(surface: .addressBar) }
+
+        reporter.reportImageAttached(source: "paste")
+
+        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.pixelName, Pixel.Event.unifiedToggleInputImageAttached.name)
+        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.params, ["surface": "address_bar", "source": "paste"])
+    }
+
+    func testReportFileValidationFailedWithRawReasonFiresDaily() {
+        let reporter = makeReporter { self.context(surface: .duckAI) }
+
+        reporter.reportFileValidationFailed(reason: "size_exceeded", source: "paste")
+
+        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.pixelName, Pixel.Event.unifiedToggleInputFileValidationFailed.name)
+        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.params, [
+            "reason": "size_exceeded",
+            "surface": "duck_ai",
+            "source": "paste"
+        ])
+    }
+
     // MARK: - Voice tap uses `source` (not `surface`) for its surface param
 
     func testReportVoiceTappedUsesSourceKey() {

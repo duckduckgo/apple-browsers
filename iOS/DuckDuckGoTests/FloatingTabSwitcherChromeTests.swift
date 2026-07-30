@@ -97,6 +97,26 @@ final class FloatingTabSwitcherChromeTests: XCTestCase {
         XCTAssertEqual(chrome.navigationItem.rightBarButtonItems?.first?.title, UserText.selectAllTabs)
     }
 
+    func testWhenEditingTitleChangesThenLabelResizesToFitNewTitle() {
+        let chrome = makeInstalledChrome()
+        chrome.setTitle("2 Tabs")
+        chrome.update(state: .editingRegularSize(selectedCount: 0, totalCount: 2),
+                      tabsStyle: .grid,
+                      canShowSelectionMenu: true,
+                      isEditing: true)
+
+        guard let titleLabel = chrome.navigationItem.leftBarButtonItems?.first?.customView as? UILabel else {
+            XCTFail("Missing selection title label")
+            return
+        }
+        let initialWidth = titleLabel.frame.width
+
+        chrome.setTitle("5 Private Tabs")
+
+        XCTAssertGreaterThan(titleLabel.frame.width, initialWidth)
+        XCTAssertGreaterThanOrEqual(titleLabel.frame.width, titleLabel.intrinsicContentSize.width)
+    }
+
     func testWhenEditingThenBottomBarHasDoneCloseTabsAndMenu() {
         let chrome = makeInstalledChrome()
         chrome.actions.onMultiSelectMenuRequested = { UIMenu(children: []) }
@@ -108,7 +128,7 @@ final class FloatingTabSwitcherChromeTests: XCTestCase {
 
         let items = chrome.toolbar.items ?? []
         let doneIndex = items.firstIndex { $0.accessibilityLabel == UserText.navigationTitleDone }
-        let closeTabsIndex = items.firstIndex { $0.title == UserText.closeTabs(withCount: 2) }
+        let closeTabsIndex = items.firstIndex { $0.title == UserText.tabSwitcherCloseTabsButtonTitle(withCount: 2) }
         let menuIndex = items.firstIndex { $0.menu != nil }
 
         guard let doneIndex, let closeTabsIndex, let menuIndex else {
@@ -130,6 +150,102 @@ final class FloatingTabSwitcherChromeTests: XCTestCase {
         XCTAssertEqual(chrome.navigationItem.rightBarButtonItems?.first?.title, UserText.deselectAllTabs)
     }
 
+    func testWhenLargeSizeThenMatchesIPhoneControlStyle() {
+        let chrome = makeInstalledChrome()
+        chrome.actions.onEditMenuRequested = { UIMenu(children: []) }
+
+        chrome.update(state: .largeSize(selectedCount: 0, totalCount: 3, containsWebPages: true, showAIChat: false, canDismissOnEmpty: true),
+                      tabsStyle: .grid,
+                      canShowSelectionMenu: false,
+                      isEditing: false)
+
+        XCTAssertEqual(chrome.navigationItem.leftBarButtonItems?.count, 2)
+        XCTAssertNotNil(chrome.navigationItem.leftBarButtonItems?.first?.menu)
+        XCTAssertNotNil(chrome.navigationItem.leftBarButtonItems?.last?.menu)
+        XCTAssertEqual(chrome.navigationItem.rightBarButtonItems?.first?.accessibilityLabel, UserText.navigationTitleDone)
+        XCTAssertEqual(chrome.navigationItem.rightBarButtonItems?.count, 3)
+        XCTAssertTrue(chrome.toolbar.isHidden)
+        XCTAssertTrue(chrome.toolbar.items?.isEmpty == true)
+
+        if #available(iOS 26.0, *) {
+            XCTAssertEqual(chrome.navigationItem.rightBarButtonItems?.first?.style, .prominent)
+            XCTAssertEqual(chrome.navigationItem.leftBarButtonItems?.map(\.sharesBackground), [false, false])
+            XCTAssertEqual(chrome.navigationItem.rightBarButtonItems?.map(\.sharesBackground), [false, false, true])
+        }
+    }
+
+    func testWhenLargeSizeWithAIChatThenDuckChatIsInTopBar() {
+        let chrome = makeInstalledChrome()
+
+        chrome.update(state: .largeSize(selectedCount: 0, totalCount: 3, containsWebPages: true, showAIChat: true, canDismissOnEmpty: true),
+                      tabsStyle: .grid,
+                      canShowSelectionMenu: false,
+                      isEditing: false)
+
+        XCTAssertEqual(chrome.navigationItem.rightBarButtonItems?.count, 4)
+        XCTAssertEqual(chrome.navigationItem.rightBarButtonItems?.last?.accessibilityIdentifier, "TabSwitcher.Button.DuckChat")
+        XCTAssertTrue(chrome.toolbar.items?.isEmpty == true)
+
+        if #available(iOS 26.0, *) {
+            XCTAssertEqual(chrome.navigationItem.rightBarButtonItems?.map(\.sharesBackground), [false, false, true, true])
+        }
+    }
+
+    func testWhenEditingLargeSizeThenMatchesProductionBarLayout() {
+        let chrome = makeInstalledChrome()
+        chrome.setTitle("2 Selected")
+        chrome.actions.onMultiSelectMenuRequested = { UIMenu(children: []) }
+
+        chrome.update(state: .editingLargeSize(selectedCount: 2, totalCount: 4),
+                      tabsStyle: .grid,
+                      canShowSelectionMenu: true,
+                      isEditing: true)
+
+        XCTAssertEqual(chrome.navigationItem.leftBarButtonItems?.first?.accessibilityLabel, UserText.navigationTitleDone)
+        XCTAssertEqual((chrome.navigationItem.titleView as? UILabel)?.text, "2 Selected")
+        XCTAssertNotNil(chrome.navigationItem.rightBarButtonItems?.first?.menu)
+        XCTAssertTrue(chrome.toolbar.isHidden)
+        XCTAssertTrue(chrome.toolbar.items?.isEmpty == true)
+
+        if #available(iOS 26.0, *) {
+            XCTAssertEqual(chrome.navigationItem.leftBarButtonItems?.first?.style, .prominent)
+        }
+    }
+
+    func testWhenLargeSizeThenCollectionHasNoBottomInset() {
+        let chrome = FloatingTabSwitcherChrome()
+        let host = UIView()
+        let content = UIScrollView()
+        let collectionView = UICollectionView(frame: .zero, collectionViewLayout: UICollectionViewFlowLayout())
+        chrome.install(in: host, contentView: content)
+
+        chrome.layout(addressBarPosition: .top, interfaceMode: .largeSize)
+        chrome.applyCollectionContentInset(to: collectionView)
+
+        XCTAssertEqual(collectionView.contentInset.bottom, 0)
+    }
+
+    func testWhenCollectionContentInsetIsAppliedThenTopIncludesFloatingMargin() {
+        let chrome = FloatingTabSwitcherChrome()
+        let collectionView = UICollectionView(frame: .zero, collectionViewLayout: UICollectionViewFlowLayout())
+
+        chrome.applyCollectionContentInset(to: collectionView)
+
+        XCTAssertEqual(collectionView.contentInset.top, 58)
+    }
+
+    func testWhenLargeSizeHasSingleEmptyTabThenEditMenuIsDisabled() {
+        let chrome = makeInstalledChrome()
+        chrome.actions.onEditMenuRequested = { UIMenu(children: []) }
+
+        chrome.update(state: .largeSize(selectedCount: 0, totalCount: 1, containsWebPages: false, showAIChat: false, canDismissOnEmpty: true),
+                      tabsStyle: .grid,
+                      canShowSelectionMenu: false,
+                      isEditing: false)
+
+        XCTAssertEqual(chrome.navigationItem.leftBarButtonItems?.first?.isEnabled, false)
+    }
+
     func testWhenNoTabsSelectedWhileEditingThenCloseTabsDisabled() {
         let chrome = makeInstalledChrome()
 
@@ -138,8 +254,22 @@ final class FloatingTabSwitcherChromeTests: XCTestCase {
                       canShowSelectionMenu: false,
                       isEditing: true)
 
-        let closeTabsItem = chrome.toolbar.items?.first { $0.title == UserText.closeTabs(withCount: 0) }
+        let closeTabsItem = chrome.toolbar.items?.first { $0.title == UserText.tabSwitcherCloseTabsButtonTitle(withCount: 0) }
         XCTAssertEqual(closeTabsItem?.isEnabled, false)
+    }
+
+    func testWhenOneTabSelectedWhileEditingThenCloseTabsTitleIncludesCount() {
+        let chrome = makeInstalledChrome()
+
+        chrome.update(state: .editingRegularSize(selectedCount: 1, totalCount: 4),
+                      tabsStyle: .grid,
+                      canShowSelectionMenu: true,
+                      isEditing: true)
+
+        let closeTabsItem = chrome.toolbar.items?.first {
+            $0.title == UserText.tabSwitcherCloseTabsButtonTitle(withCount: 1)
+        }
+        XCTAssertNotNil(closeTabsItem)
     }
 
     func testWhenTabsSelectedWhileEditingThenCloseTabsEnabled() {
@@ -150,7 +280,7 @@ final class FloatingTabSwitcherChromeTests: XCTestCase {
                       canShowSelectionMenu: true,
                       isEditing: true)
 
-        let closeTabsItem = chrome.toolbar.items?.first { $0.title == UserText.closeTabs(withCount: 2) }
+        let closeTabsItem = chrome.toolbar.items?.first { $0.title == UserText.tabSwitcherCloseTabsButtonTitle(withCount: 2) }
         XCTAssertEqual(closeTabsItem?.isEnabled, true)
     }
 
@@ -188,6 +318,21 @@ final class FloatingTabSwitcherChromeTests: XCTestCase {
         XCTAssertEqual(secondContentConstraints.count, 4)
         XCTAssertTrue(firstContentConstraints.allSatisfy { !$0.isActive })
         XCTAssertTrue(secondContentConstraints.allSatisfy(\.isActive))
+    }
+
+    func testWhenLayoutIsAppliedThenNavigationBarUsesPlatformTopMargin() {
+        guard UIDevice.current.userInterfaceIdiom != .pad else { return }
+        let chrome = FloatingTabSwitcherChrome()
+        let host = UIView()
+        let content = UIScrollView()
+        chrome.install(in: host, contentView: content)
+
+        chrome.layout(addressBarPosition: .top, interfaceMode: .regularSize)
+
+        let topConstraint = host.constraints.first {
+            $0.firstItem is UINavigationBar && $0.firstAttribute == .top
+        }
+        XCTAssertTrue((topConstraint?.secondItem as? UILayoutGuide) === host.layoutMarginsGuide)
     }
 
     func testWhenLayoutIsAppliedThenFallbackTopBackgroundCoversContentBeforeIOS26() {

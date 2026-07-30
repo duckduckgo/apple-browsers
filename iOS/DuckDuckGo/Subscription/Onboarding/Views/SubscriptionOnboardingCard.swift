@@ -73,7 +73,7 @@ struct SubscriptionOnboardingCard<Header: View, Items: View, Footer: View>: View
         .overlay {
             if style == .bordered {
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .strokeBorder(Color(designSystemColor: .decorationTertiary), lineWidth: 1)
+                    .strokeBorder(Color(designSystemColor: .containerBorderPrimary), lineWidth: 1)
             }
         }
     }

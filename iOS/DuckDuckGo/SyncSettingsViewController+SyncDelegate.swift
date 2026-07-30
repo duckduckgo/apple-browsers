@@ -177,10 +177,13 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                     return
                 }
                 try await self.syncService.createAccount(deviceName: self.deviceName, deviceType: self.deviceType)
-                let additionalParameters = self.source.map { ["source": $0] } ?? [:]
+                var additionalParameters = self.uiVersionParameters
+                additionalParameters[PixelParameters.source] = self.source
                 try await Pixel.fire(pixel: .syncSignupDirect, withAdditionalParameters: additionalParameters, includedParameters: [.appVersion])
+                var setupEndedParameters = self.uiVersionParameters
+                setupEndedParameters[PixelParameters.source] = "signup"
                 Pixel.fire(pixel: .syncSetupEndedSuccessful,
-                           withAdditionalParameters: [PixelParameters.source: "signup"],
+                           withAdditionalParameters: setupEndedParameters,
                            includedParameters: [.appVersion],
                            onComplete: { _ in })
                 optionsViewModel.syncEnabled(recoveryCode: self.recoveryCode)
@@ -221,12 +224,13 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
             alertController.addAction(okAction)
 
             if isPresentingV2ConnectingSheet {
-                viewModel.dismissConnectingSheet { [weak self] in
+                viewModel.dismissConnectingSheet()
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
                     guard let self else {
                         continuation.resume()
                         return
                     }
-                    self.present(alertController, animated: true) {
+                    self.topmostPresentedViewController().present(alertController, animated: true) {
                         continuation.resume()
                     }
                 }
@@ -440,17 +444,37 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
     func fireSyncSetupPixel(event: SyncSettingsViewModel.SyncSetupPixelEvent) {
         switch event {
         case .backUpThisDeviceTapped:
-            Pixel.fire(pixel: .settingsSyncBackUpThisDeviceTapped, includedParameters: [.appVersion])
+            Pixel.fire(pixel: .settingsSyncBackUpThisDeviceTapped,
+                       withAdditionalParameters: uiVersionParameters,
+                       includedParameters: [.appVersion])
         case .signupConfirmedTapped:
-            Pixel.fire(pixel: .settingsSyncSignupConfirmedTapped, includedParameters: [.appVersion])
+            Pixel.fire(pixel: .settingsSyncSignupConfirmedTapped,
+                       withAdditionalParameters: uiVersionParameters,
+                       includedParameters: [.appVersion])
         case .signupAbandoned:
+            var parameters = uiVersionParameters
+            parameters[PixelParameters.source] = "signup"
             Pixel.fire(pixel: .syncSetupEndedAbandoned,
-                       withAdditionalParameters: [PixelParameters.source: "signup"],
+                       withAdditionalParameters: parameters,
                        includedParameters: [.appVersion])
         case .recoverSyncedDataTapped:
-            Pixel.fire(pixel: .settingsSyncRecoverSyncedDataTapped, includedParameters: [.appVersion])
+            Pixel.fire(pixel: .settingsSyncRecoverSyncedDataTapped,
+                       withAdditionalParameters: uiVersionParameters,
+                       includedParameters: [.appVersion])
         case .recoveryConfirmedTapped:
-            Pixel.fire(pixel: .settingsSyncRecoveryConfirmedTapped, includedParameters: [.appVersion])
+            Pixel.fire(pixel: .settingsSyncRecoveryConfirmedTapped,
+                       withAdditionalParameters: uiVersionParameters,
+                       includedParameters: [.appVersion])
+        case .anotherDevicePromptShown:
+            Pixel.fire(pixel: .settingsSyncAnotherDevicePromptShown,
+                       withAdditionalParameters: uiVersionParameters,
+                       includedParameters: [.appVersion])
+        case .anotherDevicePromptOptionTapped(let option):
+            var parameters = uiVersionParameters
+            parameters[PixelParameters.syncPromptOption] = option.rawValue
+            Pixel.fire(pixel: .settingsSyncAnotherDevicePromptOptionTapped,
+                       withAdditionalParameters: parameters,
+                       includedParameters: [.appVersion])
         }
     }
 
@@ -660,7 +684,8 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                 let pixelSource = self.source ?? onPresentPixelInfo.source.rawValue
                 var parameters = [
                     PixelParameters.source: pixelSource,
-                    SyncSetupPixelInfo.Parameter.myKind: SyncSetupPixelInfo.Value.ddg
+                    SyncSetupPixelInfo.Parameter.myKind: SyncSetupPixelInfo.Value.ddg,
+                    PixelParameters.uiVersion: self.syncUIVersion
                 ]
                 parameters[SyncSetupPixelInfo.Parameter.flowVersion] = onPresentPixelInfo.flowVersion
                 Pixel.fire(pixel: onPresentPixelInfo.pixel, withAdditionalParameters: parameters, includedParameters: [.appVersion])
@@ -718,8 +743,6 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
     }
 
     private func presentPairingV2ConfirmationAlert(message: String) async -> Bool {
-        await dismissSyncCodeSheetIfPresented()
-
         return await withCheckedContinuation { continuation in
             let alert = UIAlertController(title: UserText.syncPairingV2ConfirmationTitle, message: message, preferredStyle: .alert)
             alert.addAction(UIAlertAction(title: UserText.actionCancel, style: .cancel) { _ in
@@ -741,16 +764,6 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
             topController = presented
         }
         return topController
-    }
-
-    private func dismissSyncCodeSheetIfPresented() async {
-        guard let scanCodeViewModel, scanCodeViewModel.isShowingSyncCodeSheet else { return }
-        await withCheckedContinuation { continuation in
-            scanCodeViewModel.onSyncCodeSheetDismissed = {
-                continuation.resume()
-            }
-            scanCodeViewModel.isShowingSyncCodeSheet = false
-        }
     }
 
     private func pairingV2DisplayName(for peerName: String?) -> String {
@@ -778,7 +791,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                 Task { @MainActor in
                     do {
                         try await self.syncService.disconnect()
-                        Pixel.fire(pixel: .syncDisabled)
+                        Pixel.fire(pixel: .syncDisabled, withAdditionalParameters: self.uiVersionParameters)
                         self.syncPausedStateManager.syncDidTurnOff()
                         continuation.resume(returning: true)
                     } catch {
@@ -795,6 +808,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
 
     func confirmAndDeleteAllData() async -> Bool {
         let deviceCount = viewModel.devices.count
+        let pixelParameters = uiVersionParameters
         return await withCheckedContinuation { continuation in
             let alert = UIAlertController(title: useSimplifiedLayoutV2 ? UserText.simplifiedSyncDeleteAllConfirmTitle : UserText.syncDeleteAllConfirmTitle,
                                           message: useSimplifiedLayoutV2 ? UserText.simplifiedSyncDeleteAllConfirmMessage : UserText.syncDeleteAllConfirmMessage,
@@ -806,7 +820,9 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                 Task { @MainActor in
                     do {
                         try await self?.syncService.deleteAccount()
-                        Pixel.fire(pixel: .syncDisabledAndDeleted, withAdditionalParameters: [PixelParameters.connectedDevices: "\(deviceCount)"])
+                        var parameters = pixelParameters
+                        parameters[PixelParameters.connectedDevices] = "\(deviceCount)"
+                        Pixel.fire(pixel: .syncDisabledAndDeleted, withAdditionalParameters: parameters)
                         self?.viewModel.isSyncEnabled = false
                         self?.syncPausedStateManager.syncDidTurnOff()
                         if self?.useSimplifiedLayoutV2 == true {
@@ -856,7 +872,8 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         Pixel.fire(pixel: .syncSetupManualCodeEntryScreenShown,
                    withAdditionalParameters: [
                     SyncSetupPixelInfo.Parameter.myKind: SyncSetupPixelInfo.Value.ddg,
-                    SyncSetupPixelInfo.Parameter.flowVersion: syncSetupPixelFlowVersion
+                    SyncSetupPixelInfo.Parameter.flowVersion: syncSetupPixelFlowVersion,
+                    PixelParameters.uiVersion: syncUIVersion
                    ],
                    includedParameters: [.appVersion])
     }

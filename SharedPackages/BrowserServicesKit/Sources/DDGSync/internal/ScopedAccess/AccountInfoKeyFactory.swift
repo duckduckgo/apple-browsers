@@ -18,7 +18,11 @@
 
 import Foundation
 
-struct AccountInfoKeyFactory {
+protocol AccountInfoKeyFactory {
+    func makeProtectedKeys(accountSecretKey: Data, thirdPartyMainKey: Data?) throws -> [ProtectedKey]
+}
+
+struct DefaultAccountInfoKeyFactory: AccountInfoKeyFactory {
 
     private static let keySizeInBits = 3072
 

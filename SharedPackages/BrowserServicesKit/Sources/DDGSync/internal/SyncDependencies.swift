@@ -85,8 +85,8 @@ protocol ScopedAccessCredentialManaging {
     func fetchAccessCredentials(_ account: SyncAccount) async throws -> [AccessCredential]
     /// Fetches the account's protected keys (empty if none exist).
     func fetchProtectedKeys(_ account: SyncAccount) async throws -> [ProtectedKey]
-    /// Uploads a protected key for the given purpose only if one isn't already stored, returning the stored key (existing or new).
-    func setKeyIfAbsent(purpose: String, key: ProtectedKey, for account: SyncAccount) async throws -> ProtectedKey?
+    /// Uploads every wrapper for a protected-key purpose atomically if the purpose is absent, returning the canonical stored wrappers.
+    func setKeysIfAbsent(purpose: String, keys: [ProtectedKey], for account: SyncAccount) async throws -> [ProtectedKey]
 }
 
 protocol SecureStoring {

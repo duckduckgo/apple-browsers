@@ -171,32 +171,41 @@ struct ScopedAccessCredentialManager: ScopedAccessCredentialManaging {
         }
     }
 
-    func setKeyIfAbsent(purpose: String, key: ProtectedKey, for account: SyncAccount) async throws -> ProtectedKey? {
-        try await setKeysIfAbsent(purpose: purpose, keys: [key], for: account)
-            .first
-    }
-
-    private func setKeysIfAbsent(purpose: String, keys: [ProtectedKey], for account: SyncAccount) async throws -> [ProtectedKey] {
+    func setKeysIfAbsent(purpose: String, keys: [ProtectedKey], for account: SyncAccount) async throws -> [ProtectedKey] {
         guard let token = account.token else {
             throw SyncError.noToken
         }
 
         let deduplicatedKeys = keys.removingDuplicateWrappingIdentities()
+        guard !deduplicatedKeys.isEmpty else {
+            throw SyncError.invalidDataInResponse("set-if-absent requires at least one protected key")
+        }
+        guard deduplicatedKeys.allSatisfy({ $0.purpose == purpose }) else {
+            throw SyncError.invalidDataInResponse("set-if-absent keys must match purpose=\(purpose)")
+        }
+
         let params = SetKeyIfAbsentParameters(keys: deduplicatedKeys)
         let requestJSON = try JSONEncoder.snakeCaseKeys.encode(params)
         let request = api.createAuthenticatedJSONRequest(url: setKeyIfAbsentURL(purpose: purpose), method: .post, authToken: token, json: requestJSON)
         do {
             let result = try await request.execute()
-            guard result.response.statusCode == 201 else {
+            switch result.response.statusCode {
+            case 201:
+                guard let body = result.data, !body.isEmpty else {
+                    return deduplicatedKeys
+                }
+                return try decodeProtectedKeys(for: purpose, from: body)
+            case 200:
+                guard let body = result.data, !body.isEmpty else {
+                    return try await fetchStoredProtectedKeys(for: purpose, account: account)
+                }
+                return try decodeProtectedKeys(for: purpose, from: body)
+            default:
                 throw SyncError.unexpectedStatusCode(result.response.statusCode)
             }
-            guard let body = result.data, !body.isEmpty else {
-                return deduplicatedKeys
-            }
-            return try decodeProtectedKeys(from: body, expectedKeys: deduplicatedKeys)
         } catch SyncError.unexpectedStatusCode(let statusCode) {
             if statusCode == 409 {
-                return try await reconcileConflictingProtectedKeys(purpose: purpose, expectedKeys: deduplicatedKeys, account: account)
+                return try await fetchStoredProtectedKeys(for: purpose, account: account)
             }
             throw SyncError.unexpectedStatusCode(statusCode)
         }
@@ -288,21 +297,13 @@ struct ScopedAccessCredentialManager: ScopedAccessCredentialManaging {
         return keys
     }
 
-    private func reconcileConflictingProtectedKeys(purpose: String, expectedKeys: [ProtectedKey], account: SyncAccount) async throws -> [ProtectedKey] {
+    private func fetchStoredProtectedKeys(for purpose: String, account: SyncAccount) async throws -> [ProtectedKey] {
         let keys = try await fetchProtectedKeys(account)
-        let matchingKeys = selectBestMatchingKeys(in: keys, expectedKeys: expectedKeys)
-        if matchingKeys.count == expectedKeys.count {
-            return matchingKeys
-        }
-        throw SyncError.invalidDataInResponse("set-if-absent returned 409 for purpose=\(purpose), but no matching keys were found after refetch")
+        return try requiredProtectedKeys(for: purpose, in: keys)
     }
 
-    private func decodeProtectedKeys(from data: Data, expectedKeys: [ProtectedKey]) throws -> [ProtectedKey] {
-        let result = try JSONDecoder.snakeCaseKeys.decode(SetKeyIfAbsentResult.self, from: data)
-        guard let keys = result.keys else {
-            throw SyncError.unableToDecodeResponse("Failed to decode protected keys")
-        }
-        return selectBestMatchingKeys(in: keys, expectedKeys: expectedKeys)
+    private func decodeProtectedKeys(for purpose: String, from data: Data) throws -> [ProtectedKey] {
+        try requiredProtectedKeys(for: purpose, in: decodeProtectedKeys(from: data))
     }
 
     private func accessCredentialURL(id: String) -> URL {
@@ -316,11 +317,12 @@ struct ScopedAccessCredentialManager: ScopedAccessCredentialManaging {
             .appendingPathComponent("set-if-absent")
     }
 
-    private func selectBestMatchingKeys(in keys: [ProtectedKey],
-                                        expectedKeys: [ProtectedKey]) -> [ProtectedKey] {
-        expectedKeys.compactMap { expectedKey in
-            keys.first(where: { $0.hasSameWrappingIdentity(as: expectedKey) })
+    private func requiredProtectedKeys(for purpose: String, in keys: [ProtectedKey]) throws -> [ProtectedKey] {
+        let keysForPurpose = protectedKeys(for: purpose, in: keys)
+        guard !keysForPurpose.isEmpty else {
+            throw SyncError.invalidDataInResponse("set-if-absent returned no protected keys for purpose=\(purpose)")
         }
+        return keysForPurpose
     }
 
     private func accessCredentialProtectedKeys(from protectedKeys: [ProtectedKey],
@@ -400,10 +402,6 @@ struct ScopedAccessCredentialManager: ScopedAccessCredentialManaging {
 
     struct SetKeyIfAbsentParameters: Encodable {
         let keys: [ProtectedKey]
-    }
-
-    struct SetKeyIfAbsentResult: Decodable {
-        let keys: [ProtectedKey]?
     }
 
     private struct ProtectedKeysForThirdPartyCredential {

@@ -349,12 +349,6 @@ private struct ProtectedKeyWrappingIdentity: Hashable {
     }
 }
 
-extension ProtectedKey {
-    func hasSameWrappingIdentity(as other: ProtectedKey) -> Bool {
-        kid == other.kid && encryptedWith == other.encryptedWith && purpose == other.purpose
-    }
-}
-
 extension Sequence where Element == ProtectedKey {
     func removingDuplicateWrappingIdentities() -> [ProtectedKey] {
         var seenIdentities: Set<ProtectedKeyWrappingIdentity> = []

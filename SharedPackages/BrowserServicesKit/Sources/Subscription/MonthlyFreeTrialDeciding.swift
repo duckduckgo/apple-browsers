@@ -45,7 +45,7 @@ struct MonthlyFreeTrialSKUPair {
 
 extension MonthlyFreeTrialDeciding {
 
-    /// Monthly SKUs swapped based on the experiment cohort. Production IDs to be added.
+    /// Monthly SKUs swapped based on the experiment cohort.
     static var monthlyFreeTrialSKUPairs: [MonthlyFreeTrialSKUPair] {
         [
             MonthlyFreeTrialSKUPair(control: "ios.subscription.1month.freetrial.dev",
@@ -55,7 +55,15 @@ extension MonthlyFreeTrialDeciding {
             MonthlyFreeTrialSKUPair(control: "ios.subscription.1month.freetrial.dev.pro",
                                     treatment: "ios.subscription.1month.dev.pro"),
             MonthlyFreeTrialSKUPair(control: "ios.subscription.1month.row.freetrial.dev.pro",
-                                    treatment: "ios.subscription.1month.row.dev.pro")
+                                    treatment: "ios.subscription.1month.row.dev.pro"),
+            MonthlyFreeTrialSKUPair(control: "ddg.subscription.monthly.renews.us.freetrial.pro",
+                                    treatment: "ddg.subscription.monthly.renews.us.pro"),
+            MonthlyFreeTrialSKUPair(control: "ddg.subscription.monthly.renews.row.freetrial.pro",
+                                    treatment: "ddg.subscription.monthly.renews.row.pro"),
+            MonthlyFreeTrialSKUPair(control: "ddg.privacy.pro.monthly.renews.us.freetrial",
+                                    treatment: "ddg.privacy.pro.monthly.renews.us"),
+            MonthlyFreeTrialSKUPair(control: "ddg.privacy.pro.monthly.renews.row.freetrial",
+                                    treatment: "ddg.privacy.pro.monthly.renews.row"),
         ]
     }
 

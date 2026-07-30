@@ -18,6 +18,7 @@
 //
 
 import AIChat
+import Core
 import Foundation
 import os.log
 
@@ -64,13 +65,13 @@ struct ContextualSuggestionsMatcher {
 
     private init() {}
 
-    static func resolve(_ input: ResolvePageSuggestionsInput, catalog: SuggestionCatalog) -> [ContextualSuggestedPrompt] {
+    static func resolve(_ input: ResolvePageSuggestionsInput, catalog: SuggestionCatalog) -> ResolvedPageSuggestions {
         let cap = max(1, catalog.maxSuggestedPrompts)
-        let candidateIds = collectCandidateIds(input, catalog: catalog, cap: cap)
+        let candidates = collectCandidateIds(input, catalog: catalog, cap: cap)
         var seen = Set<String>()
         var resolved: [ContextualSuggestedPrompt] = []
 
-        for id in candidateIds {
+        for id in candidates.ids {
             if resolved.count >= cap { break }
             if seen.contains(id) { continue }
             seen.insert(id)
@@ -86,12 +87,79 @@ struct ContextualSuggestionsMatcher {
             ))
         }
 
-        return resolved
+        return ResolvedPageSuggestions(
+            suggestions: resolved,
+            isSmart: candidates.isSmart,
+            pageType: classifyPageType(input.pageTypeSignals)
+        )
     }
+
+    // MARK: Page-type classification
+
+    /// 1:1 port of the frontend's `classifyPageType`: JSON-LD types are scanned in *signal* order
+    /// (not catalog order), then the OG type, else `.none`. A domain-only match deliberately yields
+    /// `.none`.
+    static func classifyPageType(_ signals: AIChatPageTypeSignals?) -> SuggestionsPageType {
+        guard let signals else { return .none }
+        for type in signals.jsonLdType {
+            if let bucket = jsonLdTypeToPageType[type.trimmingCharacters(in: .whitespaces).lowercased()] {
+                return bucket
+            }
+        }
+        if let ogType = signals.ogType?.trimmingCharacters(in: .whitespaces).lowercased(),
+           let bucket = ogTypeToPageType[ogType] {
+            return bucket
+        }
+        return .none
+    }
+
+    private static let jsonLdTypeToPageType: [String: SuggestionsPageType] = [
+        "recipe": .recipe,
+        "product": .product,
+        "article": .article,
+        "newsarticle": .article,
+        "reportagenewsarticle": .article,
+        "liveblogposting": .article,
+        "blogposting": .article,
+        "scholarlyarticle": .article,
+        "videoobject": .video,
+        "movie": .video,
+        "tvseries": .video,
+        "jobposting": .job,
+        "book": .book,
+        "course": .course,
+        "event": .event,
+        "restaurant": .place,
+        "foodestablishment": .place,
+        "localbusiness": .place,
+        "discussionforumposting": .forum,
+        "qapage": .forum,
+        "faqpage": .faq,
+        "softwaresourcecode": .code,
+        "review": .review,
+        "aggregaterating": .review,
+        "person": .person,
+        "howto": .howto
+    ]
+
+    private static let ogTypeToPageType: [String: SuggestionsPageType] = [
+        "article": .article,
+        "product": .product,
+        "product.item": .product,
+        "video": .video,
+        "video.other": .video,
+        "video.movie": .video,
+        "video.episode": .video,
+        "video.tv_show": .video,
+        "book": .book,
+        "profile": .person
+    ]
 
     // MARK: Candidate collection
 
-    private static func collectCandidateIds(_ input: ResolvePageSuggestionsInput, catalog: SuggestionCatalog, cap: Int) -> [String] {
+    private static func collectCandidateIds(_ input: ResolvePageSuggestionsInput,
+                                            catalog: SuggestionCatalog,
+                                            cap: Int) -> (ids: [String], isSmart: Bool) {
         var contextual: [String]?
 
         if let signals = input.pageTypeSignals {
@@ -118,7 +186,7 @@ struct ContextualSuggestionsMatcher {
 
         let body = contextual ?? floorDefaults
         let bodyBudget = max(0, cap - priorityDefaults.count)
-        return Array(body.prefix(bodyBudget)) + priorityDefaults
+        return (ids: Array(body.prefix(bodyBudget)) + priorityDefaults, isSmart: contextual != nil)
     }
 
     private static func matchByJsonLdType(_ types: [String], _ mappings: [SuggestionCatalog.JSONLDMapping]) -> [String]? {
@@ -152,9 +220,17 @@ struct ContextualSuggestionsMatcher {
         }
     }
 
+    /// Localized copy carries `%@` (the loc-pipeline placeholder format); the bundled catalog keeps
+    /// the FE's `{language}` token so it stays byte-comparable with the FE catalog. Both guards must
+    /// stay `contains`-based so copy without a placeholder never goes through `String(format:)`.
     private static func applyTemplate(_ prompt: String, input: ResolvePageSuggestionsInput) -> String {
-        guard prompt.contains("{language}") else { return prompt }
-        return prompt.replacingOccurrences(of: "{language}", with: languageDisplayName(input.uiLocale))
+        if prompt.contains("{language}") {
+            return prompt.replacingOccurrences(of: "{language}", with: languageDisplayName(input.uiLocale))
+        }
+        if prompt.contains("%@") {
+            return String(format: prompt, languageDisplayName(input.uiLocale))
+        }
+        return prompt
     }
 
     // MARK: Localization
@@ -249,9 +325,10 @@ struct ContextualSuggestionsMatcher {
 
 struct DefaultContextualSuggestedPromptsProvider: ContextualSuggestedPromptsProviding {
     private let catalog: SuggestionCatalog?
+    private let fireCatalogLoadFailedPixel: () -> Void
 
     var maxSuggestedPrompts: Int {
-        catalog?.maxSuggestedPrompts ?? Self.decodeFailureFallback.count
+        catalog?.maxSuggestedPrompts ?? 1
     }
 
     var prioritySuggestionIDs: Set<String> {
@@ -259,23 +336,35 @@ struct DefaultContextualSuggestedPromptsProvider: ContextualSuggestedPromptsProv
         return Set(catalog.defaults.filter { catalog.catalog[$0]?.condition != nil })
     }
 
-    init(catalog: SuggestionCatalog? = SuggestionCatalog.bundled) {
+    init(catalog: SuggestionCatalog? = SuggestionCatalog.bundled,
+         fireCatalogLoadFailedPixel: @escaping () -> Void = {
+             DailyPixel.fireDailyAndCount(pixel: .aiChatContextualSuggestionsCatalogLoadFailed)
+         }) {
         self.catalog = catalog
+        self.fireCatalogLoadFailedPixel = fireCatalogLoadFailedPixel
     }
 
-    func resolveSuggestions(_ input: ResolvePageSuggestionsInput) async -> [ContextualSuggestedPrompt] {
-        guard let catalog else { return Self.decodeFailureFallback }
+    func resolveSuggestions(_ input: ResolvePageSuggestionsInput) async -> ResolvedPageSuggestions {
+        guard let catalog else {
+            fireCatalogLoadFailedPixel()
+            return Self.decodeFailureFallback(for: input)
+        }
         return ContextualSuggestionsMatcher.resolve(input, catalog: catalog)
     }
 
     /// Last-resort floor if the bundled catalog cannot be decoded: a single unconditional
-    /// "Summarize this page" so the start surface is never empty.
-    private static var decodeFailureFallback: [ContextualSuggestedPrompt] {
-        [ContextualSuggestedPrompt(
-            id: "summarize-page",
-            label: UserText.aiChatSuggestionSummarizePageLabel,
-            prompt: UserText.aiChatSuggestionSummarizePagePrompt,
-            icon: "summary"
-        )]
+    /// "Summarize this page" so the start surface is never empty. The page type is still
+    /// classified — it does not depend on the catalog.
+    private static func decodeFailureFallback(for input: ResolvePageSuggestionsInput) -> ResolvedPageSuggestions {
+        ResolvedPageSuggestions(
+            suggestions: [ContextualSuggestedPrompt(
+                id: "summarize-page",
+                label: UserText.aiChatSuggestionSummarizePageLabel,
+                prompt: UserText.aiChatSuggestionSummarizePagePrompt,
+                icon: "summary"
+            )],
+            isSmart: false,
+            pageType: ContextualSuggestionsMatcher.classifyPageType(input.pageTypeSignals)
+        )
     }
 }

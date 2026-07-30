@@ -88,12 +88,25 @@ final class AIChatNativeConfigValuesTests: XCTestCase {
         XCTAssertEqual(json["supportsSuggestions"] as? Bool, false)
     }
 
+    func testAttachmentLimitsOmittedWhenNil() throws {
+        let json = try jsonObject(makeConfig(supportsSuggestions: false))
+        XCTAssertNil(json["attachmentLimits"])
+    }
+
+    func testAttachmentLimitsEncodeTabsMaxAttached() throws {
+        let config = makeConfig(supportsSuggestions: false, attachmentLimits: .init(tabs: .init(maxAttached: 3)))
+        let json = try jsonObject(config)
+        let limits = try XCTUnwrap(json["attachmentLimits"] as? [String: Any])
+        let tabs = try XCTUnwrap(limits["tabs"] as? [String: Any])
+        XCTAssertEqual(tabs["maxAttached"] as? Int, 3)
+    }
+
     private func jsonObject(_ config: AIChatNativeConfigValues) throws -> [String: Any] {
         let data = try JSONEncoder().encode(config)
         return try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
     }
 
-    private func makeConfig(supportsSuggestions: Bool) -> AIChatNativeConfigValues {
+    private func makeConfig(supportsSuggestions: Bool, attachmentLimits: AIChatNativeAttachmentLimits? = nil) -> AIChatNativeConfigValues {
         AIChatNativeConfigValues(
             isAIChatHandoffEnabled: false,
             supportsClosingAIChat: true,
@@ -108,7 +121,8 @@ final class AIChatNativeConfigValuesTests: XCTestCase {
             supportsAIChatContextualMode: false,
             appVersion: "1.0.0",
             supportsAIChatSync: false,
-            supportsSuggestions: supportsSuggestions
+            supportsSuggestions: supportsSuggestions,
+            attachmentLimits: attachmentLimits
         )
     }
 

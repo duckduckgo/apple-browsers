@@ -174,7 +174,7 @@ final class CurrentColorsProviding: ColorsProviding {
     var suggestionsTextColor: NSColor { palette.textPrimary }
     var suggestionsSuffixColor: NSColor { palette.accentTextPrimary }
     var suggestionsHighlightSuffixColor: NSColor { palette.accentTextPrimary }
-    var suggestionsHighlightBackgroundColor: NSColor { palette.controlsFillPrimary }
+    var suggestionsHighlightBackgroundColor: NSColor { palette.accentAltPrimary }
     var suggestionsHighlightTextColor: NSColor { palette.textPrimary }
 
     // MARK: - Suggestions + Fire

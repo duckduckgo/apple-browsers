@@ -1,30 +1,69 @@
 {
-    "m_settings_sync_back_up_this_device_tapped": {
-        "description": "Fired when the user taps the 'Sync And Back Up This Device' action from the sync settings screen.",
-        "owners": ["frosty"],
+    "m_settings_sync_open": {
+        "description": "Fired when the Sync & Backup settings screen is shown.",
+        "owners": ["pballart"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": ["appVersion"]
+        "parameters": [
+            "appVersion",
+            "ui_version",
+            {
+                "key": "is_enabled",
+                "type": "string",
+                "description": "Whether Sync is enabled when the screen is shown.",
+                "enum": ["0", "1"]
+            }
+        ]
+    },
+    "m_settings_sync_back_up_this_device_tapped": {
+        "description": "Fired when the user taps the 'Sync And Back Up This Device' action from the sync settings screen.",
+        "owners": ["pballart"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "ui_version"]
     },
     "m_settings_sync_recover_synced_data_tapped": {
         "description": "Fired when the user taps the entry point to the Recover Synced Data flow from the sync settings screen.",
-        "owners": ["frosty"],
+        "owners": ["pballart"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": ["appVersion"]
+        "parameters": ["appVersion", "ui_version"]
     },
     "m_settings_sync_signup_confirmed_tapped": {
         "description": "Fired when the user taps the primary 'Turn On Sync and Backup' button on the Sync With Server confirmation sheet (SyncWithServerView), confirming intent to set up sync on this device.",
-        "owners": ["frosty"],
+        "owners": ["pballart"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": ["appVersion"]
+        "parameters": ["appVersion", "ui_version"]
     },
     "m_settings_sync_recovery_confirmed_tapped": {
         "description": "Fired when the user taps the primary 'Recover Synced Data' button on the Recover Synced Data sheet (RecoverSyncedDataView), confirming intent to begin recovery.",
-        "owners": ["frosty"],
+        "owners": ["pballart"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": ["appVersion"]
+        "parameters": ["appVersion", "ui_version"]
+    },
+    "m_settings_sync_another_device_prompt_shown": {
+        "description": "Fired when the 'Sync another device / set up this device only' prompt (simplifiedSyncSetupV2) is shown after the user turns on the sync toggle.",
+        "owners": ["pballart"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "ui_version"]
+    },
+    "m_settings_sync_another_device_prompt_option_tapped": {
+        "description": "Fired when the user chooses an option on the Sync Another Device prompt (simplifiedSyncSetupV2).",
+        "owners": ["pballart"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "ui_version",
+            {
+                "key": "option",
+                "type": "string",
+                "description": "Which option the user tapped on the prompt.",
+                "enum": ["this_device_only", "sync_another_device"]
+            }
+        ]
     }
 }

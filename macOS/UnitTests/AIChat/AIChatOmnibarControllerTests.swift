@@ -64,7 +64,10 @@ final class AIChatOmnibarControllerTests: XCTestCase {
 
         controller = AIChatOmnibarController(
             aiChatTabOpener: mockTabOpener,
-            tabCollectionViewModel: tabCollectionViewModel,
+            surface: .addressBar,
+            draftSource: TabPromptDraftSource(tabCollectionViewModel: tabCollectionViewModel),
+            origin: WindowPromptOrigin(tabCollectionViewModel: tabCollectionViewModel),
+            pixelHandler: AddressBarPromptPixelHandler(),
             featureFlagger: featureFlagger,
             searchPreferencesPersistor: searchPreferencesPersistor,
             preferences: mockPreferences,
@@ -878,6 +881,23 @@ final class AIChatOmnibarControllerTests: XCTestCase {
 
         // Then
         XCTAssertEqual(controller.currentSelectionRange, NSRange(location: 3, length: 2))
+    }
+
+    func testWhenTabSwitchesToTabWithSavedDraft_ThenControllerRestoresTextAndSelection() {
+        // Given — tab 1 holds a draft with a live selection, tab 2 is fresh
+        controller.updateText("hello world")
+        controller.updateSelection(NSRange(location: 6, length: 5))
+        tabCollectionViewModel.appendNewTab()
+        XCTAssertEqual(controller.currentText, "", "Tab 2 has no draft; controller should be empty after switch")
+
+        // When — switch back to tab 1
+        tabCollectionViewModel.select(at: .unpinned(0))
+
+        // Then
+        XCTAssertEqual(controller.currentText, "hello world",
+                       "Controller should restore tab 1's draft text on switch back")
+        XCTAssertEqual(controller.currentSelectionRange, NSRange(location: 6, length: 5),
+                       "Controller should restore tab 1's cursor position on switch back")
     }
 
     func testWhenOnOmnibarActivatedAfterCleanup_ThenRestoresTextAndToolModeFromSharedState() {
@@ -2304,6 +2324,92 @@ final class AIChatOmnibarControllerTests: XCTestCase {
     private func hasSeparator(_ items: [AIChatModelPickerItem]) -> Bool {
         items.contains { if case .separator = $0 { return true }; return false }
     }
+
+    // MARK: - Prompt Bar surface
+
+    private func makePromptBarController(draftStore: EphemeralPromptDraftStore) -> AIChatOmnibarController {
+        AIChatOmnibarController(
+            aiChatTabOpener: mockTabOpener,
+            surface: .promptBar,
+            draftSource: StaticPromptDraftSource(store: draftStore),
+            origin: nil,
+            pixelHandler: PromptBarPixelHandler(),
+            featureFlagger: featureFlagger,
+            searchPreferencesPersistor: searchPreferencesPersistor,
+            preferences: mockPreferences,
+            modelsService: mockModelsService,
+            subscriptionManager: mockSubscriptionManager,
+            subscriptionUpsellPresenter: mockSubscriptionUpsellPresenter,
+            badgeImpressionPersistor: mockBadgeImpressionPersistor
+        )
+    }
+
+    func testWhenSurfaceIsPromptBarThenSuggestionsStayOffEvenWithTheFlagAndSettingOn() {
+        featureFlagger.featuresStub[FeatureFlag.aiChatSuggestions.rawValue] = true
+        searchPreferencesPersistor.showAutocompleteSuggestions = true
+        let promptBarController = makePromptBarController(draftStore: EphemeralPromptDraftStore())
+
+        XCTAssertFalse(promptBarController.isSuggestionsEnabled)
+        XCTAssertTrue(controller.isSuggestionsEnabled, "The address bar must be unaffected")
+    }
+
+    func testWhenSurfaceIsPromptBarThenTheTabPickerStaysOffEvenWithBothFlagsOn() {
+        featureFlagger.featuresStub[FeatureFlag.aiChatPageContext.rawValue] = true
+        featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarAttachMoreTabs.rawValue] = true
+        let promptBarController = makePromptBarController(draftStore: EphemeralPromptDraftStore())
+
+        XCTAssertFalse(promptBarController.isOmnibarTabPickerEnabled)
+        XCTAssertTrue(controller.isOmnibarTabPickerEnabled, "The address bar must be unaffected")
+    }
+
+    func testWhenSurfaceIsPromptBarThenCustomizeResponsesStaysOffEvenWithTheFlagOn() {
+        featureFlagger.featuresStub[FeatureFlag.aiChatCustomizeResponses.rawValue] = true
+        let promptBarController = makePromptBarController(draftStore: EphemeralPromptDraftStore())
+
+        XCTAssertFalse(promptBarController.isCustomizeResponsesEnabled)
+        XCTAssertTrue(controller.isCustomizeResponsesEnabled, "The address bar must be unaffected")
+    }
+
+    func testWhenSurfaceIsPromptBarThenTheSubscriptionUpsellStaysOffEvenWithTheFlagOn() {
+        featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarSubscriptionUpsell.rawValue] = true
+        let promptBarController = makePromptBarController(draftStore: EphemeralPromptDraftStore())
+
+        XCTAssertFalse(promptBarController.isSubscriptionUpsellEnabled)
+        XCTAssertTrue(controller.isSubscriptionUpsellEnabled, "The address bar must be unaffected")
+    }
+
+    func testWhenSurfaceIsPromptBarThenThereIsNoOriginTabToAttachOrDiscriminateAgainst() {
+        let promptBarController = makePromptBarController(draftStore: EphemeralPromptDraftStore())
+
+        XCTAssertTrue(promptBarController.openTabsForOmnibarPicker().isEmpty)
+        XCTAssertNil(promptBarController.currentTabUUID)
+    }
+
+    func testWhenSurfaceIsPromptBarThenSubmitIsHandedToTheHostRatherThanOpeningATab() async {
+        let promptBarController = makePromptBarController(draftStore: EphemeralPromptDraftStore())
+        let delegate = MockAIChatOmnibarControllerDelegate()
+        promptBarController.delegate = delegate
+        promptBarController.updateText("what is a duck")
+
+        promptBarController.submit()
+        await Task.yield()
+
+        XCTAssertTrue(delegate.requestsSubmissionCalled)
+        XCTAssertEqual(delegate.lastRequestedQuery, "what is a duck")
+        XCTAssertNotNil(delegate.lastRequestedPayload)
+        XCTAssertFalse(mockTabOpener.openAIChatTabCalled, "The host owns opening the tab for this surface")
+    }
+
+    func testWhenSurfaceIsPromptBarThenTheVoiceButtonIsHandedToTheHost() {
+        let promptBarController = makePromptBarController(draftStore: EphemeralPromptDraftStore())
+        let delegate = MockAIChatOmnibarControllerDelegate()
+        promptBarController.delegate = delegate
+
+        promptBarController.openNewVoiceChat()
+
+        XCTAssertTrue(delegate.requestsVoiceSessionCalled)
+        XCTAssertFalse(mockTabOpener.openVoiceSessionCalled, "The host resolves the window first for this surface")
+    }
 }
 
 // MARK: - Mock Delegate
@@ -2314,9 +2420,25 @@ private class MockAIChatOmnibarControllerDelegate: AIChatOmnibarControllerDelega
     var lastNavigationURL: URL?
     var didSelectSuggestionCalled = false
     var lastSelectedSuggestion: AIChatSuggestion?
+    var requestsSubmissionCalled = false
+    var lastRequestedQuery: String?
+    var lastRequestedPayload: AIChatNativePrompt?
+    var requestsVoiceSessionCalled = false
 
     func aiChatOmnibarControllerDidSubmit(_ controller: AIChatOmnibarController) {
         didSubmitCalled = true
+    }
+
+    func aiChatOmnibarController(_ controller: AIChatOmnibarController,
+                                 requestsSubmissionOf query: String,
+                                 payload: AIChatNativePrompt) {
+        requestsSubmissionCalled = true
+        lastRequestedQuery = query
+        lastRequestedPayload = payload
+    }
+
+    func aiChatOmnibarControllerRequestsVoiceSession(_ controller: AIChatOmnibarController) {
+        requestsVoiceSessionCalled = true
     }
 
     func aiChatOmnibarController(_ controller: AIChatOmnibarController, didRequestNavigationToURL url: URL) {

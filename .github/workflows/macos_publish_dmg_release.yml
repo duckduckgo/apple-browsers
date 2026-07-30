@@ -209,13 +209,13 @@ jobs:
         env:
           DMG_NAME: duckduckgo-${{ steps.verify-tag.outputs.release-version }}.dmg
         run: |
-          # Public release doesn't need fetching a DMG (it's already uploaded to S3)
-          if [[ "${RELEASE_TYPE}" != 'public' ]]; then
-            DMG_URL="${{ vars.DMG_URL_ROOT }}${DMG_NAME}"
-            curl -fLSs -o "$DMG_NAME" "$DMG_URL"
-          fi
+          DMG_URL="${{ vars.DMG_URL_ROOT }}${DMG_NAME}"
+          curl -fLSs -o "$DMG_NAME" "$DMG_URL"
           echo "dmg-name=$DMG_NAME" >> $GITHUB_OUTPUT
           echo "dmg-path=$DMG_NAME" >> $GITHUB_OUTPUT
+
+      - name: Validate release DMG before publishing to Sparkle
+        run: ./scripts/validate_release_artifact.sh dmg "${{ steps.fetch-dmg.outputs.dmg-path }}" "${{ steps.verify-tag.outputs.release-version }}"
 
       - name: Generate appcast
         id: appcast

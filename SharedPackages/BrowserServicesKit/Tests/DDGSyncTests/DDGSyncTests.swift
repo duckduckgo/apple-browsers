@@ -611,6 +611,78 @@ final class DDGSyncTests: XCTestCase {
         XCTAssertEqual(cachedProtectedKeys.count, 3)
     }
 
+    func testWhenUnifiedDeviceListWritingIsEnabledThenLoginEnsuresAndCachesAccountInfoKeys() async throws {
+        dependencies.canWriteUnifiedDeviceList = { true }
+        (dependencies.secureStore as? SecureStorageStub)?.theAccount = nil
+        let loginKey = makeProtectedKey(kid: "ai-chat-key", encryptedWith: "ddg", purpose: "ai_chats")
+        let accountInfoKey = makeProtectedKey(kid: "account-info-key", encryptedWith: "ddg", purpose: "account_info")
+        (dependencies.account as? AccountManagingMock)?.loginStub = LoginResult(account: .mock,
+                                                                                devices: [],
+                                                                                keys: [loginKey])
+        let scopedAccess = try XCTUnwrap(dependencies.scopedAccess as? ScopedAccessCredentialManagingMock)
+        scopedAccess.ensureAccountInfoProtectedKeysStub = [accountInfoKey]
+        let syncService = DDGSync(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
+
+        _ = try await syncService.login(.init(userId: "userId", primaryKey: Data()),
+                                        deviceName: "iPhone",
+                                        deviceType: "iOS")
+
+        let cachedProtectedKeysData = try XCTUnwrap((dependencies.secureStore as? SecureStorageStub)?.theProtectedKeysData)
+        let cachedProtectedKeys = try JSONDecoder.snakeCaseKeys.decode([ProtectedKey].self, from: cachedProtectedKeysData)
+
+        XCTAssertEqual(scopedAccess.ensureAccountInfoProtectedKeysCalls.map(\.userId), [SyncAccount.mock.userId])
+        XCTAssertEqual(Set(cachedProtectedKeys.map(\.kid)), Set(["ai-chat-key", "account-info-key"]))
+        XCTAssertEqual(cachedProtectedKeys.count, 2)
+    }
+
+    func testWhenUnifiedDeviceListWritingIsDisabledThenLoginDoesNotEnsureAccountInfoKeys() async throws {
+        dependencies.canWriteUnifiedDeviceList = { false }
+        (dependencies.secureStore as? SecureStorageStub)?.theAccount = nil
+        let loginKey = makeProtectedKey(kid: "ai-chat-key", encryptedWith: "ddg", purpose: "ai_chats")
+        (dependencies.account as? AccountManagingMock)?.loginStub = LoginResult(account: .mock,
+                                                                                devices: [],
+                                                                                keys: [loginKey])
+        let scopedAccess = try XCTUnwrap(dependencies.scopedAccess as? ScopedAccessCredentialManagingMock)
+        scopedAccess.ensureAccountInfoProtectedKeysStub = [
+            makeProtectedKey(kid: "account-info-key", encryptedWith: "ddg", purpose: "account_info")
+        ]
+        let syncService = DDGSync(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
+
+        _ = try await syncService.login(.init(userId: "userId", primaryKey: Data()),
+                                        deviceName: "iPhone",
+                                        deviceType: "iOS")
+
+        let cachedProtectedKeysData = try XCTUnwrap((dependencies.secureStore as? SecureStorageStub)?.theProtectedKeysData)
+        let cachedProtectedKeys = try JSONDecoder.snakeCaseKeys.decode([ProtectedKey].self, from: cachedProtectedKeysData)
+
+        XCTAssertTrue(scopedAccess.ensureAccountInfoProtectedKeysCalls.isEmpty)
+        XCTAssertEqual(cachedProtectedKeys.map(\.kid), ["ai-chat-key"])
+    }
+
+    func testWhenEnsuringAccountInfoKeysFailsThenLoginStillSucceedsAndResponseKeysAreCached() async throws {
+        dependencies.canWriteUnifiedDeviceList = { true }
+        (dependencies.secureStore as? SecureStorageStub)?.theAccount = nil
+        let loginKey = makeProtectedKey(kid: "ai-chat-key", encryptedWith: "ddg", purpose: "ai_chats")
+        (dependencies.account as? AccountManagingMock)?.loginStub = LoginResult(account: .mock,
+                                                                                devices: [.mock],
+                                                                                keys: [loginKey])
+        let scopedAccess = try XCTUnwrap(dependencies.scopedAccess as? ScopedAccessCredentialManagingMock)
+        scopedAccess.ensureAccountInfoProtectedKeysError = SyncError.invalidDataInResponse("account_info registration failed")
+        let syncService = DDGSync(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
+
+        let devices = try await syncService.login(.init(userId: "userId", primaryKey: Data()),
+                                                  deviceName: "iPhone",
+                                                  deviceType: "iOS")
+
+        let cachedProtectedKeysData = try XCTUnwrap((dependencies.secureStore as? SecureStorageStub)?.theProtectedKeysData)
+        let cachedProtectedKeys = try JSONDecoder.snakeCaseKeys.decode([ProtectedKey].self, from: cachedProtectedKeysData)
+
+        XCTAssertEqual(devices.map(\.id), [RegisteredDevice.mock.id])
+        XCTAssertNotNil((dependencies.secureStore as? SecureStorageStub)?.theAccount)
+        XCTAssertEqual(scopedAccess.ensureAccountInfoProtectedKeysCalls.count, 1)
+        XCTAssertEqual(cachedProtectedKeys.map(\.kid), ["ai-chat-key"])
+    }
+
     func testWhenScopedPasswordRecoveryFailsDuringLoginThenNativeLoginStillSucceeds() async throws {
         (dependencies.secureStore as? SecureStorageStub)?.theAccount = nil
         (dependencies.secureStore as? SecureStorageStub)?.theScopedPassword = Data(repeating: 9, count: 32)
@@ -914,12 +986,12 @@ final class DDGSyncTests: XCTestCase {
         }
     }
 
-    private func makeProtectedKey(kid: String, encryptedWith: String) -> ProtectedKey {
+    private func makeProtectedKey(kid: String, encryptedWith: String, purpose: String = "browser") -> ProtectedKey {
         ProtectedKey(kid: kid,
                      encryptedPrivateKey: "encrypted-private-key",
                      publicKey: .mock,
                      encryptedWith: encryptedWith,
-                     purpose: "browser")
+                     purpose: purpose)
     }
 
     private func scopedAccessMainKey(from secret: Data, userID: String) -> Data {

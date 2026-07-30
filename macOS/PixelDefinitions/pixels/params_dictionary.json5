@@ -70,6 +70,12 @@
         "type": "string",
         "description": "OSStatus code returned by the Keychain when reading or writing the encryption key failed"
     },
+    "keychainKeyOutcome": {
+        "key": "keychain_key_outcome",
+        "type": "string",
+        "description": "What happened after the data encryption key could not be read from the Keychain: no_ui - no session to prompt in, so the app exited; quit - the user quit at the prompt; retried - the user asked to try again; recovered - a retry succeeded and the app launched",
+        "enum": ["no_ui", "quit", "retried", "recovered"]
+    },
     "fromExtension": {
         "key": "fromExtension",
         "description": "0 when fired from UserScript (web extensions available but autoconsent extension not loaded), 1 when fired from the web extension",

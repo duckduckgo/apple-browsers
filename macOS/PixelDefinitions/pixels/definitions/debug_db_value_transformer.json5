@@ -1,6 +1,6 @@
 {
     "m_mac_debug_db_value_transformer_registration_error": {
-        "description": "Fired when the app fails to register Core Data value transformers during database initialization, just before a fatal error",
+        "description": "Fired when the app fails to register Core Data value transformers during database initialization, because the data encryption key could not be read from the Keychain",
         "owners": ["samsymons"],
         "triggers": ["other"],
         "suffixes": ["daily_count"],
@@ -11,7 +11,8 @@
             "errorDomain",
             "underlyingErrorCode",
             "underlyingErrorDomain",
-            "keychainErrorCode"
+            "keychainErrorCode",
+            "keychainKeyOutcome"
         ]
     }
 }

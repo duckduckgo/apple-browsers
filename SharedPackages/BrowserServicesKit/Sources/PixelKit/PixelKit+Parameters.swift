@@ -43,6 +43,7 @@ public extension PixelKit {
 
         public static let keychainFieldName = "fieldName"
         public static let keychainErrorCode = "keychain_error_code"
+        public static let keychainKeyOutcome = "keychain_key_outcome"
 
         public static let emailCohort = "cohort"
         public static let emailLastUsed = "duck_address_last_used"

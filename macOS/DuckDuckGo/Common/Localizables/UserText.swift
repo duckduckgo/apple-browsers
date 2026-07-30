@@ -2122,6 +2122,12 @@ struct UserText {
     static let databaseFactoryFailedMessage = NSLocalizedString("database.factory.failed.message", value: "There was an error initializing the database", comment: "Alert title when we fail to init database")
     static let databaseFactoryFailedInformative = NSLocalizedString("database.factory.failed.information", value: "Restart your Mac and try again", comment: "Info to restart macOS after database init failure")
 
+    // Pending Ship Review copy approval
+    static let keychainKeyUnavailableMessage = NotLocalizedString("keychain.key.unavailable.message", value: "DuckDuckGo can’t unlock your browsing data", comment: "Alert title shown at launch when the data encryption key can't be read from the login keychain")
+    static let keychainKeyUnavailableInformative = NotLocalizedString("keychain.key.unavailable.information", value: "DuckDuckGo needs a key stored in your macOS login keychain to open your history, favorites and downloads. Unlock your login keychain in Keychain Access, then try again.\n\nKeychain error %d", comment: "Alert body shown at launch when the data encryption key can't be read from the login keychain. %d is the macOS Keychain OSStatus code")
+    static let keychainKeyUnavailableRetry = NotLocalizedString("keychain.key.unavailable.retry", value: "Try Again", comment: "Button retrying to read the data encryption key from the login keychain")
+    static let keychainKeyUnavailableQuit = NotLocalizedString("keychain.key.unavailable.quit", value: "Quit", comment: "Button quitting the app when the data encryption key can't be read from the login keychain")
+
     static func passwordManagerPopoverTitle(managerName: String) -> String {
         let localized = NSLocalizedString("autofill.popover.password-manager-title", value: "You're using %@ to manage passwords", comment: "Explanation of what password manager is being used")
         return String(format: localized, managerName)

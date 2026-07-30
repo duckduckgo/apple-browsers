@@ -537,7 +537,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         bookmarkDatabase = BookmarkDatabase()
 
         if AppVersion.runType.requiresEnvironment {
-            let commonDatabase = Database()
+            let commonDatabase = Database(keyStore: keyStore)
             database = commonDatabase
 
             database.db.loadStore { _, error in

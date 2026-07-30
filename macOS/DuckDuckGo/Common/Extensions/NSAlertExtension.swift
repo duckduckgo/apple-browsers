@@ -91,6 +91,17 @@ extension NSAlert {
         return alert
     }
 
+    /// Shown at launch when the data encryption key can't be read from the login keychain.
+    static func keychainKeyUnavailable(status: OSStatus) -> NSAlert {
+        let alert = NSAlert()
+        alert.messageText = UserText.keychainKeyUnavailableMessage
+        alert.informativeText = String(format: UserText.keychainKeyUnavailableInformative, status)
+        alert.alertStyle = .critical
+        alert.addButton(withTitle: UserText.keychainKeyUnavailableRetry, response: .alertFirstButtonReturn)
+        alert.addButton(withTitle: UserText.keychainKeyUnavailableQuit, response: .alertSecondButtonReturn)
+        return alert
+    }
+
     static func resetNetworkProtectionAlert() -> NSAlert {
         let alert = NSAlert()
         alert.messageText = "Reset VPN?"

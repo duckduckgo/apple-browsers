@@ -44,6 +44,17 @@ enum EncryptionKeyStoreError: Error, ErrorWithPixelParameters {
             return [PixelKit.Parameters.keychainErrorCode: "\(status)"]
         }
     }
+
+    var status: OSStatus {
+        switch self {
+        case .storageFailed(let status),
+             .readFailed(let status),
+             .deletionFailed(let status),
+             .cannotTransformDataToString(let status),
+             .cannotTransfrotmStringToBase64Data(let status):
+            return status
+        }
+    }
 }
 
 final class EncryptionKeyStore: EncryptionKeyStoring {
@@ -58,6 +69,7 @@ final class EncryptionKeyStore: EncryptionKeyStoring {
 
     private let generator: EncryptionKeyGenerating
     private let account: String
+    private var cachedKey: SymmetricKey?
 
     private var defaultKeychainQueryAttributes: [String: Any] {
         return [
@@ -95,6 +107,15 @@ final class EncryptionKeyStore: EncryptionKeyStoring {
      }
 
     func readKey() throws -> SymmetricKey {
+        if let cachedKey {
+            return cachedKey
+        }
+        let key = try readKeyFromKeychainOrGenerate()
+        cachedKey = key
+        return key
+    }
+
+    private func readKeyFromKeychainOrGenerate() throws -> SymmetricKey {
         /// Needed to change how we save the key
         /// Checks if the base64 non iCloud key already exist
         /// if so we return
@@ -102,24 +123,20 @@ final class EncryptionKeyStore: EncryptionKeyStoring {
             return key
         }
         /// If the base64 key does not exist we check if we have the legacy key
-        /// if so we store it as base64 local item key
+        /// if so we store it as base64 local item key. Storing is best-effort: when the Keychain
+        /// refuses the write we still hold a usable key, and the migration is retried next launch.
         if let key = try readKeyFromKeychain(account: account, format: .raw) {
-            try store(key: key)
+            try? store(key: key)
+            return key
         }
 
-        /// We try again to retrieve the base64 non iCloud key
-        /// if so we return the key
-        /// otherwise we generate a new one and store it
-        if let key = try readKeyFromKeychain(account: account, format: .base64) {
-            return key
-        } else {
-            let generatedKey = generator.randomKey()
-            try store(key: generatedKey)
-            return generatedKey
-        }
+        let generatedKey = generator.randomKey()
+        try store(key: generatedKey)
+        return generatedKey
     }
 
     func deleteKey() throws {
+        cachedKey = nil
         let status = SecItemDelete(defaultKeychainQueryAttributes as CFDictionary)
 
         switch status {

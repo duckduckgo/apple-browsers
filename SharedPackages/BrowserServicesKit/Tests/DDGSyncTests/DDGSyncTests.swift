@@ -823,7 +823,8 @@ final class DDGSyncTests: XCTestCase {
 
         let code = try XCTUnwrap(ScopedAccessCredentialManager(endpoints: Endpoints(baseURL: URL(string: "https://example.com")!),
                                                                api: RemoteAPIRequestCreatingMock(),
-                                                               crypter: CryptingMock())
+                                                               crypter: CryptingMock(),
+                                                               accountInfoKeyFactory: AccountInfoKeyFactoryMock())
             .makeRecoveryCode(for: .mock, scopedPassword: scopedPassword))
         let decoded = try SyncCode.decodeBase64URLString(code)
 

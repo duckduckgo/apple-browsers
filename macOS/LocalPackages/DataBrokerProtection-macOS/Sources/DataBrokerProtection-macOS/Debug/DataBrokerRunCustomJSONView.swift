@@ -137,7 +137,6 @@ struct DataBrokerRunCustomJSONView: View {
 
     private var dbpFeatureFlagLines: [(name: String, value: String)] {
         [
-            (FeatureFlag.dbpRemoteBrokerDelivery.rawValue, viewModel.featureFlagger.isRemoteBrokerDeliveryFeatureOn.description),
             (FeatureFlag.dbpWebViewUserAgent.rawValue, viewModel.featureFlagger.isWebViewUserAgentOn.description),
         ]
     }

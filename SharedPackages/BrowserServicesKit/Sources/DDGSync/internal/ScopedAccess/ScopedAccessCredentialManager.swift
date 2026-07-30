@@ -81,13 +81,7 @@ struct ScopedAccessCredentialManager: ScopedAccessCredentialManaging {
         let storedAccountInfoKeys = protectedKeys(for: ProtectedKeyPurpose.accountInfo, in: storedKeys)
         if !storedAccountInfoKeys.isEmpty {
             Logger.sync.debug("Sync-UnifiedDevices: account_info key already exists")
-            if storedAccountInfoKeys.contains(where: { $0.encryptedWith == SyncCredentialID.thirdParty }) {
-                return try validateAccountInfoProtectedKeys(storedAccountInfoKeys, requiresThirdPartyWrapper: true)
-            }
-            let accessCredentials = try await fetchAccessCredentials(account)
-            let requiresThirdPartyWrapper = accessCredentials.contains { $0.id == SyncCredentialID.thirdParty }
-            return try validateAccountInfoProtectedKeys(storedAccountInfoKeys,
-                                                        requiresThirdPartyWrapper: requiresThirdPartyWrapper)
+            return try await repairAccountInfoProtectedKeysIfNeeded(storedAccountInfoKeys, account: account)
         }
 
         let accessCredentials = try await fetchAccessCredentials(account)
@@ -366,23 +360,120 @@ struct ScopedAccessCredentialManager: ScopedAccessCredentialManaging {
         return keysForPurpose
     }
 
-    private func validateAccountInfoProtectedKeys(_ keys: [ProtectedKey],
-                                                  requiresThirdPartyWrapper: Bool) throws -> [ProtectedKey] {
+    private func repairAccountInfoProtectedKeysIfNeeded(_ keys: [ProtectedKey],
+                                                        account: SyncAccount) async throws -> [ProtectedKey] {
+        let accountInfoKeys = try validateAccountInfoProtectedKeyIdentity(keys)
+        let hasDefaultWrapper = accountInfoKeys.contains { $0.encryptedWith == SyncCredentialID.defaultCredential }
+        let hasThirdPartyWrapper = accountInfoKeys.contains { $0.encryptedWith == SyncCredentialID.thirdParty }
+        if hasDefaultWrapper && hasThirdPartyWrapper {
+            return try validateAccountInfoProtectedKeys(accountInfoKeys, requiresThirdPartyWrapper: true)
+        }
+
+        let accessCredentials = try await fetchAccessCredentials(account)
+        let requiresThirdPartyWrapper = accessCredentials.contains { $0.id == SyncCredentialID.thirdParty }
+        let needsDefaultWrapper = !hasDefaultWrapper
+        let needsThirdPartyWrapper = requiresThirdPartyWrapper && !hasThirdPartyWrapper
+        guard needsDefaultWrapper || needsThirdPartyWrapper else {
+            return try validateAccountInfoProtectedKeys(accountInfoKeys, requiresThirdPartyWrapper: false)
+        }
+
+        guard let scopedPassword = try recoverScopedPassword(from: accessCredentials,
+                                                             primaryKey: account.primaryKey,
+                                                             userID: account.userId) else {
+            throw SyncError.invalidDataInResponse("account_info protected keys cannot be repaired without a 3party credential")
+        }
+        guard let sourceKey = accountInfoKeys.first else {
+            throw SyncError.invalidDataInResponse("account_info protected keys are missing")
+        }
+        let privateKeyPKCS8 = try unwrapAccountInfoPrivateKey(from: accountInfoKeys,
+                                                             account: account,
+                                                             scopedPassword: scopedPassword)
+        var repairedKeys = accountInfoKeys
+        if needsDefaultWrapper {
+            repairedKeys.append(try makeDefaultAccountInfoWrapper(sourceKey: sourceKey,
+                                                                  privateKeyPKCS8: privateKeyPKCS8,
+                                                                  accountSecretKey: account.secretKey))
+        }
+        if needsThirdPartyWrapper {
+            repairedKeys.append(try makeThirdPartyAccountInfoWrapper(sourceKey: sourceKey,
+                                                                     privateKeyPKCS8: privateKeyPKCS8,
+                                                                     scopedPassword: scopedPassword,
+                                                                     userID: account.userId))
+        }
+
+        let storedKeys = try await setKeysIfAbsent(purpose: ProtectedKeyPurpose.accountInfo,
+                                                  keys: repairedKeys,
+                                                  for: account)
+        return try validateAccountInfoProtectedKeys(storedKeys,
+                                                    requiresThirdPartyWrapper: requiresThirdPartyWrapper)
+    }
+
+    private func validateAccountInfoProtectedKeyIdentity(_ keys: [ProtectedKey]) throws -> [ProtectedKey] {
         let accountInfoKeys = protectedKeys(for: ProtectedKeyPurpose.accountInfo, in: keys)
-        guard let defaultCredentialKey = accountInfoKeys.first(where: { $0.encryptedWith == SyncCredentialID.defaultCredential }),
-              !defaultCredentialKey.kid.isEmpty else {
-            throw SyncError.invalidDataInResponse("account_info protected keys are missing a ddg wrapper")
+        guard let firstKey = accountInfoKeys.first, !firstKey.kid.isEmpty else {
+            throw SyncError.invalidDataInResponse("account_info protected keys are missing")
         }
         guard accountInfoKeys.allSatisfy({
-            $0.kid == defaultCredentialKey.kid && $0.publicKey == defaultCredentialKey.publicKey
+            $0.kid == firstKey.kid && $0.publicKey == firstKey.publicKey
         }) else {
             throw SyncError.invalidDataInResponse("account_info protected key wrappers do not describe the same key")
+        }
+        return accountInfoKeys
+    }
+
+    private func validateAccountInfoProtectedKeys(_ keys: [ProtectedKey],
+                                                  requiresThirdPartyWrapper: Bool) throws -> [ProtectedKey] {
+        let accountInfoKeys = try validateAccountInfoProtectedKeyIdentity(keys)
+        guard accountInfoKeys.contains(where: { $0.encryptedWith == SyncCredentialID.defaultCredential }) else {
+            throw SyncError.invalidDataInResponse("account_info protected keys are missing a ddg wrapper")
         }
         if requiresThirdPartyWrapper,
            !accountInfoKeys.contains(where: { $0.encryptedWith == SyncCredentialID.thirdParty }) {
             throw SyncError.invalidDataInResponse("account_info protected keys are missing a 3party wrapper")
         }
         return accountInfoKeys
+    }
+
+    private func unwrapAccountInfoPrivateKey(from keys: [ProtectedKey],
+                                             account: SyncAccount,
+                                             scopedPassword: Data) throws -> Data {
+        if let defaultWrapper = keys.first(where: { $0.encryptedWith == SyncCredentialID.defaultCredential }) {
+            return try decryptDefaultCredentialPrivateKeyForRewrap(defaultWrapper,
+                                                                   accountSecretKey: account.secretKey)
+        }
+        guard let thirdPartyWrapper = keys.first(where: { $0.encryptedWith == SyncCredentialID.thirdParty }) else {
+            throw SyncError.invalidDataInResponse("account_info protected keys have no supported wrapper")
+        }
+        let thirdPartyMainKey = ScopedAccessKeyDerivation.mainKey(from: scopedPassword, userID: account.userId)
+        return try jweCompactCodec.decryptDirect(token: thirdPartyWrapper.encryptedPrivateKey,
+                                                 contentEncryptionKey: thirdPartyMainKey,
+                                                 expectedKid: SyncCredentialID.thirdParty)
+    }
+
+    private func makeDefaultAccountInfoWrapper(sourceKey: ProtectedKey,
+                                               privateKeyPKCS8: Data,
+                                               accountSecretKey: Data) throws -> ProtectedKey {
+        let encryptedPrivateKey = try crypter.encrypt(privateKeyPKCS8, using: accountSecretKey)
+        return ProtectedKey(kid: sourceKey.kid,
+                            encryptedPrivateKey: Base64URL.encode(encryptedPrivateKey),
+                            publicKey: sourceKey.publicKey,
+                            encryptedWith: SyncCredentialID.defaultCredential,
+                            purpose: ProtectedKeyPurpose.accountInfo)
+    }
+
+    private func makeThirdPartyAccountInfoWrapper(sourceKey: ProtectedKey,
+                                                  privateKeyPKCS8: Data,
+                                                  scopedPassword: Data,
+                                                  userID: String) throws -> ProtectedKey {
+        let thirdPartyMainKey = ScopedAccessKeyDerivation.mainKey(from: scopedPassword, userID: userID)
+        let encryptedPrivateKey = try jweCompactCodec.encryptDirect(payload: privateKeyPKCS8,
+                                                                    contentEncryptionKey: thirdPartyMainKey,
+                                                                    kid: SyncCredentialID.thirdParty)
+        return ProtectedKey(kid: sourceKey.kid,
+                            encryptedPrivateKey: encryptedPrivateKey,
+                            publicKey: sourceKey.publicKey,
+                            encryptedWith: SyncCredentialID.thirdParty,
+                            purpose: ProtectedKeyPurpose.accountInfo)
     }
 
     private func accessCredentialProtectedKeys(from protectedKeys: [ProtectedKey],

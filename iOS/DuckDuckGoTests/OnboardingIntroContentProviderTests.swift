@@ -1157,6 +1157,134 @@ struct OnboardingIntroContentProviderTests {
     }
 
     @MainActor
+    @Suite("Personalization Content")
+    struct PersonalizationContent {
+        private let sut: OnboardingIntroContentProvider
+
+        init() {
+            sut = OnboardingIntroContentProvider(flowType: .default, featureFlagger: MockFeatureFlagger())
+        }
+
+        @Test("SERP personalization content matches the expected copy and toggles")
+        func serpPersonalizationContent() {
+            // GIVEN
+            let expected = OnboardingPersonalizationContent(
+                title: "Your search, your way.",
+                message: nil,
+                items: [
+                    .init(type: .recentlyVisitedSites, title: "Recently visited sites", subtitle: "Show when searching. Private, only on your device."),
+                    .init(type: .safeSearch, title: "Safe search", subtitle: "Omit questionable (mostly adult) material in results.")
+                ],
+                primaryCTA: "Next",
+                daxAnimation: .wingLeft
+            )
+
+            // WHEN
+            let result = sut.serpPersonalizationContent
+
+            // THEN
+            #expect(result == expected)
+        }
+
+        @Test("AI-model personalization content matches the expected copy")
+        func aiModelPersonalizationContent() {
+            // GIVEN
+            let expected = OnboardingAIModelContent(
+                title: "Your chats, your way.",
+                message: "Change your default AI now, or anytime during chat.",
+                primaryCTA: "Next",
+                daxAnimation: .wingLeft
+            )
+
+            // WHEN
+            let result = sut.aiModelPersonalizationContent
+
+            // THEN
+            #expect(result == expected)
+        }
+
+        @Test("Address-bar toggle-mode personalization content matches the expected copy and icon")
+        func addressBarToggleModePersonalizationContent() {
+            // GIVEN
+            let expected = OnboardingAddressBarToggleModeContent(
+                title: "Want new tabs to open with AI chat?",
+                icon: OnboardingImageResources.Personalization.addressBarToggleMode,
+                footer: "You can switch to Search with one tap",
+                primaryCTA: "Open tabs with AI chat",
+                secondaryCTA: "Not Now",
+                daxAnimation: nil
+            )
+
+            // WHEN
+            let result = sut.addressBarToggleModePersonalizationContent
+
+            // THEN
+            #expect(result == expected)
+        }
+
+        @Test("AI-search (no-AI) personalization content matches the expected copy and toggles")
+        func aiSearchPersonalizationContent() {
+            // GIVEN
+            let expected = OnboardingPersonalizationContent(
+                title: "Search without AI",
+                message: nil,
+                items: [
+                    .init(type: .searchAssist, title: "Search Assist", subtitle: "AI-generated answers within search results"),
+                    .init(type: .aiGeneratedImages, title: "Hide AI-generated images", subtitle: "Filters out known AI spam sites from image search results")
+                ],
+                primaryCTA: "Next",
+                daxAnimation: .wingLeft
+            )
+
+            // WHEN
+            let result = sut.aiSearchPersonalizationContent
+
+            // THEN
+            #expect(result == expected)
+        }
+
+        @Test("Keep-Duck.ai personalization content matches the expected copy and icon")
+        func aiChatEnabledPersonalizationContent() {
+            // GIVEN
+            let expected = OnboardingDuckAIEnabledPersonalizationContent(
+                icon: OnboardingImageResources.Personalization.addressBarToggleMode,
+                title: "Want the option to chat privately with popular AIs?",
+                message: "In Duck.ai, your chats are anonymized by us and never used to train AI.",
+                primaryCTA: "Keep Duck.ai On",
+                secondaryCTA: "Turn Duck.ai Off",
+                daxAnimation: nil
+            )
+
+            // WHEN
+            let result = sut.aiChatEnabledPersonalizationContent
+
+            // THEN
+            #expect(result == expected)
+        }
+
+        @Test("YouTube personalization content matches the expected copy and toggles")
+        func youTubePersonalizationContent() {
+            // GIVEN
+            let expected = OnboardingPersonalizationContent(
+                title: "YouTube, without the noise.",
+                message: nil,
+                items: [
+                    .init(type: .youTubeAdBlocking, title: "YouTube ad blocking", subtitle: nil),
+                    .init(type: .duckPlayer, title: "Duck Player", subtitle: "Opens YouTube videos in theater mode")
+                ],
+                primaryCTA: "Next",
+                daxAnimation: .wingLeft
+            )
+
+            // WHEN
+            let result = sut.youTubePersonalizationContent
+
+            // THEN
+            #expect(result == expected)
+        }
+    }
+
+    @MainActor
     @Suite("Dax Animations")
     struct DaxAnimations {
 

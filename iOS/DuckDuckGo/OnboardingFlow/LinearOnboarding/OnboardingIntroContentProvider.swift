@@ -246,46 +246,46 @@ extension OnboardingIntroContentProvider {
 
     var serpPersonalizationContent: OnboardingPersonalizationContent {
         OnboardingPersonalizationContent(
-            title: "Your search, your way.",
+            title: UserText.Onboarding.Personalization.Search.title,
             message: nil,
             items: [
-                OnboardingPersonalizationContent.Item(type: .recentlyVisitedSites, title: "Recently visited sites", subtitle: "Show when searching. Private, only on your device."),
-                OnboardingPersonalizationContent.Item(type: .safeSearch, title: "Safe search", subtitle: "Omit questionable (mostly adult) material in results.")
+                OnboardingPersonalizationContent.Item(type: .recentlyVisitedSites, title: UserText.Onboarding.Personalization.Search.recentlyVisitedSitesTitle, subtitle: UserText.Onboarding.Personalization.Search.recentlyVisitedSitesSubtitle),
+                OnboardingPersonalizationContent.Item(type: .safeSearch, title: UserText.Onboarding.Personalization.Search.safeSearchTitle, subtitle: UserText.Onboarding.Personalization.Search.safeSearchSubtitle)
             ],
-            primaryCTA: "Next",
+            primaryCTA: UserText.Onboarding.Personalization.Search.cta,
             daxAnimation: .wingLeft
         )
     }
 
     var aiModelPersonalizationContent: OnboardingAIModelContent {
         OnboardingAIModelContent(
-            title: "Your chats, your way.",
-            message: "Change your default AI now, or anytime during chat.",
-            primaryCTA: "Next",
+            title: UserText.Onboarding.Personalization.AIModel.title,
+            message: UserText.Onboarding.Personalization.AIModel.message,
+            primaryCTA: UserText.Onboarding.Personalization.AIModel.cta,
             daxAnimation: .wingLeft
         )
     }
 
     var addressBarToggleModePersonalizationContent: OnboardingAddressBarToggleModeContent {
         OnboardingAddressBarToggleModeContent(
-            title: "Want new tabs to open with AI chat?",
+            title: UserText.Onboarding.Personalization.AddressBarToggle.title,
             icon: OnboardingImageResources.Personalization.addressBarToggleMode,
-            footer: "You can switch to Search with one tap",
-            primaryCTA: "Open tabs with AI chat",
-            secondaryCTA: "Not Now",
+            footer: UserText.Onboarding.Personalization.AddressBarToggle.footer,
+            primaryCTA: UserText.Onboarding.Personalization.AddressBarToggle.primaryCTA,
+            secondaryCTA: UserText.Onboarding.Personalization.AddressBarToggle.secondaryCTA,
             daxAnimation: nil
         )
     }
 
     var aiSearchPersonalizationContent: OnboardingPersonalizationContent {
         OnboardingPersonalizationContent(
-            title: "Search without AI",
+            title: UserText.Onboarding.Personalization.AISearch.title,
             message: nil,
             items: [
-                OnboardingPersonalizationContent.Item(type: .searchAssist, title: "Search Assist", subtitle: "AI-generated answers within search results"),
-                OnboardingPersonalizationContent.Item(type: .aiGeneratedImages, title: "Hide AI-generated images", subtitle: "Filters out known AI spam sites from image search results")
+                OnboardingPersonalizationContent.Item(type: .searchAssist, title: UserText.Onboarding.Personalization.AISearch.searchAssistTitle, subtitle: UserText.Onboarding.Personalization.AISearch.searchAssistSubtitle),
+                OnboardingPersonalizationContent.Item(type: .aiGeneratedImages, title: UserText.Onboarding.Personalization.AISearch.hideAIGeneratedImagesTitle, subtitle: UserText.Onboarding.Personalization.AISearch.hideAIGeneratedImagesSubtitle)
             ],
-            primaryCTA: "Next",
+            primaryCTA: UserText.Onboarding.Personalization.AISearch.cta,
             daxAnimation: .wingLeft
         )
     }
@@ -293,23 +293,23 @@ extension OnboardingIntroContentProvider {
     var aiChatEnabledPersonalizationContent: OnboardingDuckAIEnabledPersonalizationContent {
         OnboardingDuckAIEnabledPersonalizationContent(
             icon: OnboardingImageResources.Personalization.addressBarToggleMode,
-            title: "Want the option to chat privately with popular AIs?",
-            message: "In Duck.ai, your chats are anonymized by us and never used to train AI.",
-            primaryCTA: "Keep Duck.ai On",
-            secondaryCTA: "Turn Duck.ai Off",
+            title: UserText.Onboarding.Personalization.DuckAIEnabled.title,
+            message: UserText.Onboarding.Personalization.DuckAIEnabled.message,
+            primaryCTA: UserText.Onboarding.Personalization.DuckAIEnabled.primaryCTA,
+            secondaryCTA: UserText.Onboarding.Personalization.DuckAIEnabled.secondaryCTA,
             daxAnimation: nil
         )
     }
 
     var youTubePersonalizationContent: OnboardingPersonalizationContent {
         OnboardingPersonalizationContent(
-            title: "YouTube, without the noise.",
+            title: UserText.Onboarding.Personalization.YouTube.title,
             message: nil,
             items: [
-                OnboardingPersonalizationContent.Item(type: .youTubeAdBlocking, title: "YouTube ad blocking", subtitle: nil),
-                OnboardingPersonalizationContent.Item(type: .duckPlayer, title: "Duck Player", subtitle: "Opens YouTube videos in theater mode")
+                OnboardingPersonalizationContent.Item(type: .youTubeAdBlocking, title: UserText.Onboarding.Personalization.YouTube.adBlockingTitle, subtitle: nil),
+                OnboardingPersonalizationContent.Item(type: .duckPlayer, title: UserText.Onboarding.Personalization.YouTube.duckPlayerTitle, subtitle: UserText.Onboarding.Personalization.YouTube.duckPlayerSubtitle)
             ],
-            primaryCTA: "Next",
+            primaryCTA: UserText.Onboarding.Personalization.YouTube.cta,
             daxAnimation: .wingLeft
         )
     }
@@ -591,7 +591,7 @@ private enum DuckAIQueryScreen {
 
     var title: String {
         switch self {
-        case .privateSearch: "Now, try a private search!"
+        case .privateSearch: UserText.Onboarding.Personalization.DuckAIQuery.privateSearchTitle
         case .searchOrAIChat: UserText.Onboarding.DuckAIQuery.title
         case .privateAIChat: UserText.Onboarding.DuckAICPP.DuckAIQuery.title
         }

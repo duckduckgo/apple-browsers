@@ -60,7 +60,7 @@ class DDGWorkflowContractTests(unittest.TestCase):
             "inputs.alert-asana }}",
             WORKFLOW,
         )
-        self.assertEqual(WORKFLOW.count("--webview-type ddg-wpr"), 2)
+        self.assertEqual(WORKFLOW.count("--webview-type ddg"), 2)
         self.assertEqual(WORKFLOW.count("--webview-channel review"), 2)
         self.assertIn("Browser Measurement Failure: DuckDuckGo LCP", WORKFLOW)
         self.assertIn("Review Build Validation Failure: DuckDuckGo LCP", WORKFLOW)

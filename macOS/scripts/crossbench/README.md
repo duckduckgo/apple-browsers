@@ -82,8 +82,7 @@ The runner writes:
 - `wpr-validation/manifest.tsv`
 - `wpr-validation/report.txt`
 
-CI uploads both artifacts and aggregates them with `webview_type=chr-wpr`, so
-replay results cannot be mixed with the earlier live-network `chr` rows.
+CI uploads both artifacts with `webview_type=chrome`.
 
 The attempts table records one row for every requested site.
 `requested_repetitions` remains the configured count when validation excludes a
@@ -122,7 +121,7 @@ Safari runs ten replay loads per eligible site with no live-network fallback.
 Validation errors are exclusions. A per-site WPR or automation failure is
 `infra_error` and does not stop later sites; failure of the shared proxy,
 shaping, or SafariDriver service stops measurement and records the remaining
-eligible sites as `infra_error`. Its rows use `webview_type=sfr-wpr`. CI retains
+eligible sites as `infra_error`. Its rows use `webview_type=safari`. CI retains
 bounded Safari, proxy, shaping, and per-site WPR logs in `safari-diagnostics/`.
 
 A new WebDriver session does not by itself prove a cold Safari HTTP cache.
@@ -152,4 +151,4 @@ included in the consolidated runtime report.
 
 DDG scheduling remains disabled until two dedicated-runner full runs complete
 with understood variance. The optional ClickHouse rows use
-`webview_type=ddg-wpr` and `webview_channel=review`.
+`webview_type=ddg` and `webview_channel=review`.

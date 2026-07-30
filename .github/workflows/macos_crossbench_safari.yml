@@ -1,5 +1,5 @@
-name: macOS - Safari LCP (WPR)
-run-name: macOS - Safari LCP (WPR)
+name: "macOS: Safari LCP"
+run-name: "macOS: Safari LCP"
 
 # Measures Safari navigation-to-LCP against validated WPR archives through the
 # US-broadband shaping profile. ClickHouse upload is scheduled or opt-in.
@@ -173,8 +173,6 @@ jobs:
           # start_time — and the date partition derived from it — identical
           # for every attempt of the run.
           #
-          # Replay rows use sfr-wpr so they cannot mix with historical
-          # live-network sfr rows. webview-channel remains stable.
           shopt -s nullglob
           in_tsv=(crossbench-results/*.tsv)
           if [ "${#in_tsv[@]}" -eq 0 ]; then
@@ -192,7 +190,7 @@ jobs:
             --run-id "$GITHUB_RUN_ID" \
             --start-time "$(jq -r '.created_at' <<< "$run_json")" \
             --gh-run-started-at "$(jq -r '.run_started_at' <<< "$run_json")" \
-            --webview-type sfr-wpr
+            --webview-type safari
           cat clickhouse-rows.tsv
 
       - name: Upload ClickHouse rows TSV
@@ -233,7 +231,7 @@ jobs:
             --run-id "$GITHUB_RUN_ID" \
             --start-time "$(jq -r '.created_at' <<< "$run_json")" \
             --gh-run-started-at "$(jq -r '.run_started_at' <<< "$run_json")" \
-            --webview-type sfr-wpr
+            --webview-type safari
           cat clickhouse-attempts.tsv
 
       - name: Upload ClickHouse attempts TSV

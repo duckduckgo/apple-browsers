@@ -19,7 +19,7 @@ ON CLUSTER `ch-prod-cluster`
     domain LowCardinality(String)
         COMMENT 'Requested site hostname, not a redirected or final URL',
     webview_type LowCardinality(String)
-        COMMENT 'Stable browser and harness code shared with the metrics table, such as chr-wpr',
+        COMMENT 'Browser name: chrome, safari, or ddg',
     webview_channel LowCardinality(String)
         COMMENT 'Browser release channel, such as stable, beta, dev, or canary',
     webview_version String

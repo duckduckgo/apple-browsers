@@ -29,7 +29,7 @@ class AggregateDispositionsTests(unittest.TestCase):
                     "--output", str(output), "--run-id", "42",
                     "--start-time", "2026-07-27T10:00:00Z",
                     "--gh-run-started-at", "2026-07-27T10:01:00Z",
-                    "--webview-type", "chr-wpr",
+                    "--webview-type", "chrome",
                 ],
                 text=True, capture_output=True,
             )

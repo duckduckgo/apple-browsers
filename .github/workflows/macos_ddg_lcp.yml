@@ -1,5 +1,5 @@
-name: macOS - DuckDuckGo LCP (WPR)
-run-name: macOS - DuckDuckGo LCP (WPR)
+name: "macOS: DuckDuckGo LCP"
+run-name: "macOS: DuckDuckGo LCP"
 
 # Real measurements are manual until two dedicated-runner full runs have been
 # completed and understood. The workflow only accepts the default branch.
@@ -274,7 +274,7 @@ jobs:
             --run-id "$GITHUB_RUN_ID" \
             --start-time "$(jq -r '.created_at' <<< "$run_json")" \
             --gh-run-started-at "$(jq -r '.run_started_at' <<< "$run_json")" \
-            --webview-type ddg-wpr \
+            --webview-type ddg \
             --webview-channel review
           cat clickhouse-rows.tsv
 
@@ -313,7 +313,7 @@ jobs:
             --run-id "$GITHUB_RUN_ID" \
             --start-time "$(jq -r '.created_at' <<< "$run_json")" \
             --gh-run-started-at "$(jq -r '.run_started_at' <<< "$run_json")" \
-            --webview-type ddg-wpr \
+            --webview-type ddg \
             --webview-channel review
           cat clickhouse-attempts.tsv
 

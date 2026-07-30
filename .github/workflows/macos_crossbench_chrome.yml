@@ -1,5 +1,5 @@
-name: macOS - crossbench Chrome LCP (WPR)
-run-name: macOS - crossbench Chrome LCP (WPR)
+name: "macOS: Chrome LCP"
+run-name: "macOS: Chrome LCP"
 
 # Test harness: stands up crossbench on a GitHub-hosted macOS runner,
 # measures Chrome navigation -> Largest Contentful Paint from WPR archives,
@@ -163,7 +163,7 @@ jobs:
             --run-id "$GITHUB_RUN_ID" \
             --start-time "$(jq -r '.created_at' <<< "$run_json")" \
             --gh-run-started-at "$(jq -r '.run_started_at' <<< "$run_json")" \
-            --webview-type chr-wpr
+            --webview-type chrome
           cat clickhouse-rows.tsv
 
       - name: Upload ClickHouse rows TSV
@@ -216,7 +216,7 @@ jobs:
             --run-id "$GITHUB_RUN_ID" \
             --start-time "$(jq -r '.created_at' <<< "$run_json")" \
             --gh-run-started-at "$(jq -r '.run_started_at' <<< "$run_json")" \
-            --webview-type chr-wpr
+            --webview-type chrome
           cat clickhouse-attempts.tsv
 
       - name: Upload ClickHouse attempts TSV

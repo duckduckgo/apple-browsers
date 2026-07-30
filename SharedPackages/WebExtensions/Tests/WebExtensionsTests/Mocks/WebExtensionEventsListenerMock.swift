@@ -79,4 +79,11 @@ final class WebExtensionEventsListenerMock: WebExtensionEventsListening {
     func didChangeTabProperties(_ properties: WKWebExtension.TabChangedProperties, for tab: WKWebExtensionTab) {
         didChangeTabPropertiesCalled = true
     }
+
+    private(set) var isSuppressingTabLifecycleEvents = false
+    func withTabLifecycleEventsSuppressed(_ body: () -> Void) {
+        isSuppressingTabLifecycleEvents = true
+        body()
+        isSuppressingTabLifecycleEvents = false
+    }
 }

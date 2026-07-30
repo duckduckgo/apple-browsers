@@ -1635,7 +1635,7 @@ class MainViewController: UIViewController {
         updateUnifiedToggleInputKeyboardVisibility(keyboardVisible)
 
         let coordinator = unifiedToggleInputCoordinator
-        let isAITabCollapsed = coordinator?.displayState == .aiTab(.collapsed)
+        let isAITabCollapsed = coordinator?.isAITabCollapsed == true
         let isBottomExpandedUTIKeyboardAnchored = coordinator?.isInputEditing == true
             && coordinator?.cardPosition == .bottom
             && viewCoordinator.isNavigationBarContainerBottomKeyboardBased
@@ -1896,9 +1896,8 @@ class MainViewController: UIViewController {
         configureUnifiedInputEscapeHatch(model)
     }
 
-    /// True when an escape hatch action runs in focus mode (reads the persistent omnibar-session state, which
-    /// survives the card tap that dismisses the keyboard).
-    private var isEscapeHatchInFocusMode: Bool {
+    /// True when the address bar owns editing focus; survives a card tap that dismisses the keyboard.
+    private var isAddressBarFocused: Bool {
         omniBar.isTextFieldEditing || unifiedToggleInputCoordinator?.isOmnibarSession == true
     }
 
@@ -2439,7 +2438,7 @@ class MainViewController: UIViewController {
         let tab = tabManager.add(url: url, inheritedAttribution: inheritedAttribution)
         tab.inferredOpenerContext = .external
         tab.isVoiceModeRequested = voiceMode
-        tab.isDuckAIDeepLinkSurfaceRequested = url?.isDuckAIFeedbackOpen == true || url?.isDuckAIChatProtectionOpen == true
+        tab.isDuckAIDeepLinkSurfaceRequested = url?.isDuckAIChatProtectionOpen == true
 
         // Mark tab as external launch if opened from external URL or shortcut
         if fromExternalLink {
@@ -3172,7 +3171,7 @@ class MainViewController: UIViewController {
     /// no-op once correct — no loop, no per-frame work beyond the bool check.
     private func reanchorAITabCollapsedFooterIfNeeded() {
         guard let coordinator = unifiedToggleInputCoordinator,
-              coordinator.displayState == .aiTab(.collapsed),
+              coordinator.isAITabCollapsed,
               coordinator.cardPosition == .bottom,
               !viewCoordinator.isNavigationBarContainerBottomKeyboardBased else { return }
         viewCoordinator.setNavBarContainerBottomToKeyboard()
@@ -4154,7 +4153,7 @@ extension MainViewController: BrowserChromeDelegate {
         chromeMorphAnimator.cancel()
 
         if percent < 1 {
-            if omniBar.isTextFieldEditing || unifiedToggleInputCoordinator?.isOmnibarSession == true {
+            if isAddressBarFocused {
                 dismissOmniBar()
             }
             _ = findInPageView?.resignFirstResponder()
@@ -4471,7 +4470,7 @@ extension MainViewController: BrowserChromeDelegate {
             }
             loadUrlInNewTab(url, inheritedAttribution: nil, fromExternalLink: fromExternalLink)
         case .loadInPlace:
-            currentTab?.isDuckAIDeepLinkSurfaceRequested = url.isDuckAIFeedbackOpen || url.isDuckAIChatProtectionOpen
+            currentTab?.isDuckAIDeepLinkSurfaceRequested = url.isDuckAIChatProtectionOpen
             loadUrl(url, fromExternalLink: fromExternalLink)
         }
     }
@@ -5726,7 +5725,7 @@ extension MainViewController: EscapeHatchActionRouter {
         }
 
         // Captured before the confirmation dialog steals focus, so we can restore the keyboard afterwards.
-        let wasInFocusMode = isEscapeHatchInFocusMode
+        let wasInFocusMode = isAddressBarFocused
         let tabViewModel = tabManager.viewModel(for: tab)
         let presenter = FireConfirmationPresenter()
         presenter.presentFireConfirmation(
@@ -5756,7 +5755,7 @@ extension MainViewController: EscapeHatchActionRouter {
             return
         }
 
-        let wasInFocusMode = isEscapeHatchInFocusMode
+        let wasInFocusMode = isAddressBarFocused
         let tabViewModel = tabManager.viewModel(for: tab)
         let request = FireRequest(
             options: .all,
@@ -6186,43 +6185,6 @@ extension MainViewController: TabDelegate {
         openAIChatHistory(source: source)
     }
 
-    func tabDidRequestAIChatFeedback(tab: TabViewController) {
-        let optionsView = DuckAIFeedbackOptionsView(
-            onSelect: { [weak self, weak tab] sentiment in
-                let positive: Bool
-                switch sentiment {
-                case .positive: positive = true
-                case .critical: positive = false
-                }
-                DailyPixel.fireDailyAndCount(pixel: .aiChatFeedbackOptionSelected,
-                                             withAdditionalParameters: [PixelParameters.sentiment: positive ? "positive" : "critical"])
-                self?.dismiss(animated: true) {
-                    tab?.openAIChatFeedback(positive: positive)
-                }
-            }
-        )
-        let hostingController = UIHostingController(rootView: optionsView)
-        hostingController.title = UserText.aiChatFeedbackOptionsTitle
-        hostingController.navigationItem.rightBarButtonItem = UIBarButtonItem(
-            image: DesignSystemImages.Glyphs.Size24.close,
-            primaryAction: UIAction { [weak self] _ in self?.dismiss(animated: true) }
-        )
-        let navigationController = UINavigationController(rootViewController: hostingController)
-        navigationController.navigationBar.tintColor = UIColor(designSystemColor: .textPrimary)
-        if let sheet = navigationController.sheetPresentationController {
-            if #available(iOS 16.0, *) {
-                sheet.detents = [.custom(identifier: .init("duckAIFeedbackOptions")) { _ in 230 }]
-            } else {
-                sheet.detents = [.medium()]
-            }
-            sheet.prefersGrabberVisible = true
-            if #unavailable(iOS 26) {
-                sheet.preferredCornerRadius = 24
-            }
-        }
-        present(navigationController, animated: true)
-    }
-
     func openAIChatHistory(source: AIChatHistorySource = .browserMenu) {
         // The native chat history sheet is an iPhone-only experience; entrypoints are hidden on iPad,
         // and this guard ensures the sheet can never be presented there.
@@ -6532,9 +6494,7 @@ extension MainViewController: TabSwitcherDelegate {
 
         if #available(iOS 18.4, *) {
             for tab in tabs {
-                if let tabController = tabManager.controller(for: tab) {
-                    webExtensionEventsCoordinator?.didCloseTab(tabController)
-                }
+                webExtensionEventsCoordinator?.didCloseTab(tab)
             }
         }
     }
@@ -6549,9 +6509,7 @@ extension MainViewController: TabSwitcherDelegate {
             showBars() // In case the browser chrome bars are hidden when calling this method
         }
         if #available(iOS 18.4, *) {
-            if let closingTabController = tabManager.controller(for: tab) {
-                webExtensionEventsCoordinator?.didCloseTab(closingTabController)
-            }
+            webExtensionEventsCoordinator?.didCloseTab(tab)
         }
 
         reportDuckAITabClosedIfNeeded(tab)
@@ -7027,9 +6985,7 @@ extension MainViewController: FireExecutorDelegate {
                 tabs = []
             }
             for tab in tabs {
-                if let tabController = tabManager.controller(for: tab) {
-                    webExtensionEventsCoordinator?.didCloseTab(tabController)
-                }
+                webExtensionEventsCoordinator?.didCloseTab(tab)
             }
         }
     }

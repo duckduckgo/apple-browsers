@@ -109,13 +109,6 @@ extension URL {
         } == true
     }
 
-    public var isDuckAIFeedbackOpen: Bool {
-        queryItems?.contains {
-            $0.name == AIChatURLParameters.feedbackName
-            && ($0.value == AIChatURLParameters.feedbackPositiveValue || $0.value == AIChatURLParameters.feedbackNegativeValue)
-        } == true
-    }
-
     public var isDuckAIChatProtectionOpen: Bool {
         queryItems?.contains {
             $0.name == AIChatURLParameters.chatProtectionName && $0.value == AIChatURLParameters.chatProtectionOpenValue

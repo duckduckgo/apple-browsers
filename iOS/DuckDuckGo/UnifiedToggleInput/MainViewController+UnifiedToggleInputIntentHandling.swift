@@ -43,7 +43,7 @@ extension MainViewController {
 
     func syncBottomOmnibarAnchorIfNeeded(for coordinator: UnifiedToggleInputCoordinator) {
         guard coordinator.cardPosition == .bottom,
-              case .omnibar(let state) = coordinator.displayState,
+              let state = coordinator.omnibarState,
               viewCoordinator.addressBarPosition.isBottom else {
             return
         }

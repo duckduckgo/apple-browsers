@@ -131,7 +131,7 @@ final class AddressBarSharedTextState: ObservableObject {
         // its own conformance), which is exactly the change-detection rule we want here.
         guard attachments != aiChatAttachments else { return }
         aiChatAttachments = attachments
-        aiChatPanelAttachments = reconcilePanelAttachments(updatedImages: attachments)
+        aiChatPanelAttachments = DuckAIPanelAttachmentReconciler.reconciled(aiChatPanelAttachments, replacingImagesWith: attachments)
     }
 
     /// Replaces the duck.ai tab attachment list for this tab. Skips the write when the list is
@@ -143,7 +143,7 @@ final class AddressBarSharedTextState: ObservableObject {
     func setAIChatTabAttachments(_ attachments: [AIChatTabAttachment]) {
         guard attachments != aiChatTabAttachments else { return }
         aiChatTabAttachments = attachments
-        aiChatPanelAttachments = reconcilePanelAttachments(updatedTabs: attachments)
+        aiChatPanelAttachments = DuckAIPanelAttachmentReconciler.reconciled(aiChatPanelAttachments, replacingTabsWith: attachments)
     }
 
     /// Replaces the duck.ai file attachment list for this tab. Same idempotency + reconcile
@@ -154,69 +154,7 @@ final class AddressBarSharedTextState: ObservableObject {
         // matches the change-detection rule we want here.
         guard attachments != aiChatFileAttachments else { return }
         aiChatFileAttachments = attachments
-        aiChatPanelAttachments = reconcilePanelAttachments(updatedFiles: attachments)
-    }
-
-    /// Walks the current panel attachment list and produces a new one based on a fresh list of
-    /// one attachment kind (images, tabs, or files). Entries of the *other* kinds keep their
-    /// positions; entries of *this* kind are replaced from the new list (preserving order,
-    /// dropping removed ones), and any genuinely new ids are appended.
-    /// Exactly one parameter should be non-nil per call.
-    private func reconcilePanelAttachments(
-        updatedImages: [AIChatImageAttachment]? = nil,
-        updatedTabs: [AIChatTabAttachment]? = nil,
-        updatedFiles: [AIChatFileAttachment]? = nil
-    ) -> [AIChatPanelAttachment] {
-        if let updatedImages {
-            return reconcile(
-                replacingKindWith: updatedImages.map(AIChatPanelAttachment.image),
-                matchesKind: { if case .image = $0 { return true } else { return false } }
-            )
-        }
-        if let updatedTabs {
-            return reconcile(
-                replacingKindWith: updatedTabs.map(AIChatPanelAttachment.tab),
-                matchesKind: { if case .tab = $0 { return true } else { return false } }
-            )
-        }
-        if let updatedFiles {
-            return reconcile(
-                replacingKindWith: updatedFiles.map(AIChatPanelAttachment.file),
-                matchesKind: { if case .file = $0 { return true } else { return false } }
-            )
-        }
-        return aiChatPanelAttachments
-    }
-
-    /// Replaces all entries of a single kind in the panel attachment list with a fresh list of
-    /// that kind, preserving the position of *other-kind* entries. Newly-introduced ids of the
-    /// replaced kind are appended at the end. Used by `reconcilePanelAttachments` once per
-    /// kind so the cyclomatic complexity stays linear.
-    private func reconcile(
-        replacingKindWith updatedOfKind: [AIChatPanelAttachment],
-        matchesKind: (AIChatPanelAttachment) -> Bool
-    ) -> [AIChatPanelAttachment] {
-        let updatedById: [String: AIChatPanelAttachment] = Dictionary(
-            uniqueKeysWithValues: updatedOfKind.map { ($0.attachmentId, $0) }
-        )
-        var consumed = Set<String>()
-        var result: [AIChatPanelAttachment] = []
-        for entry in aiChatPanelAttachments {
-            if matchesKind(entry) {
-                if let updated = updatedById[entry.attachmentId] {
-                    result.append(updated)
-                    consumed.insert(entry.attachmentId)
-                }
-                // else: dropped from the new list — omit.
-            } else {
-                result.append(entry)
-            }
-        }
-        for entry in updatedOfKind where !consumed.contains(entry.attachmentId) {
-            result.append(entry)
-        }
-
-        return result
+        aiChatPanelAttachments = DuckAIPanelAttachmentReconciler.reconciled(aiChatPanelAttachments, replacingFilesWith: attachments)
     }
 
     func resetUserInteraction() {
@@ -242,28 +180,12 @@ final class AddressBarSharedTextState: ObservableObject {
         }
 
         text = newText
-
-        // Adjust selection range if it's now beyond the text length
-        if selectionRange.location > newText.count {
-            selectionRange = NSRange(location: newText.count, length: 0)
-        } else if selectionRange.upperBound > newText.count {
-            selectionRange = NSRange(location: selectionRange.location, length: max(0, newText.count - selectionRange.location))
-        }
+        selectionRange = selectionRange.clamped(toTextLength: newText.count)
     }
 
     /// Updates the selection range
     /// - Parameter range: The new selection range
     func updateSelection(_ range: NSRange) {
-        // Validate the range
-        let validatedRange: NSRange
-        if range.location > text.count {
-            validatedRange = NSRange(location: text.count, length: 0)
-        } else if range.upperBound > text.count {
-            validatedRange = NSRange(location: range.location, length: max(0, text.count - range.location))
-        } else {
-            validatedRange = range
-        }
-
-        selectionRange = validatedRange
+        selectionRange = range.clamped(toTextLength: text.count)
     }
 }

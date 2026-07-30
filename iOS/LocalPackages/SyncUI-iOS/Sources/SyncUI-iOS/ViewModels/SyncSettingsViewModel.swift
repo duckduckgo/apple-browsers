@@ -128,12 +128,19 @@ public class SyncSettingsViewModel: ObservableObject {
         case readySkipRestoreTapped
     }
 
-    public enum SyncSetupPixelEvent {
+    public enum SyncSetupPixelEvent: Equatable {
         case backUpThisDeviceTapped
         case signupConfirmedTapped
         case signupAbandoned
         case recoverSyncedDataTapped
         case recoveryConfirmedTapped
+        case anotherDevicePromptShown
+        case anotherDevicePromptOptionTapped(SyncAnotherDeviceOption)
+    }
+
+    public enum SyncAnotherDeviceOption: String {
+        case thisDeviceOnly = "this_device_only"
+        case syncAnotherDevice = "sync_another_device"
     }
 
     public enum SyncSetupEntryPoint: Equatable {
@@ -440,7 +447,12 @@ public class SyncSettingsViewModel: ObservableObject {
         return true
     }
 
+    public func anotherDevicePromptAppeared() {
+        delegate?.fireSyncSetupPixel(event: .anotherDevicePromptShown)
+    }
+
     public func syncAnotherDeviceFromConnectingSheet() {
+        delegate?.fireSyncSetupPixel(event: .anotherDevicePromptOptionTapped(.syncAnotherDevice))
         postConnectingSheetDismissAction = { [weak self] in
             guard let self else { return }
             guard isConnectingDevicesAvailable else { return }
@@ -452,6 +464,7 @@ public class SyncSettingsViewModel: ObservableObject {
 
     @MainActor
     public func syncThisDeviceOnlyFromConnectingSheet() {
+        delegate?.fireSyncSetupPixel(event: .anotherDevicePromptOptionTapped(.thisDeviceOnly))
         guard !isBusy else { return }
         connectingSheetPhase = .syncAnotherDevice(isConnecting: true)
         beginSimplifiedSyncSetup()

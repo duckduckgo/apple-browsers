@@ -114,6 +114,7 @@ public final class JobQueueManager: JobQueueManaging {
     private let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
 
     private var mode = BrokerProfileJobQueueMode.idle
+    private let operationErrorsLock = NSLock()
     private var operationErrors: [Error] = []
 
     public var debugRunningStatusString: String {
@@ -304,7 +305,7 @@ private extension JobQueueManager {
 
     func resetMode() {
         mode = .idle
-        operationErrors = []
+        operationErrorsLock.withLock { operationErrors = [] }
     }
 
     func addJobs(for jobType: JobType,
@@ -346,7 +347,9 @@ private extension JobQueueManager {
     }
 
     func operationErrorsForCurrentOperations() -> [Error]? {
-        return operationErrors.count != 0 ? operationErrors : nil
+        operationErrorsLock.withLock {
+            operationErrors.isEmpty ? nil : operationErrors
+        }
     }
 }
 
@@ -357,7 +360,7 @@ extension JobQueueManager: BrokerProfileJobStatusReportingDelegate {
                                             identifier: CompletedJobIdentifier?,
                                             dataBrokerParent: String?,
                                             isFreeScan: Bool?) {
-        operationErrors.append(error)
+        operationErrorsLock.withLock { operationErrors.append(error) }
         delegate?.queueManagerDidCompleteIndividualJob(self, identifier: identifier)
 
         guard let error = error as? DataBrokerProtectionError, let brokerURL, let version else { return }
@@ -389,7 +392,7 @@ extension JobQueueManager: BrokerProfileJobStatusReportingDelegate {
 
 extension JobQueueManager: EmailConfirmationErrorDelegate {
     public func emailConfirmationOperationDidError(_ error: Error, withBrokerURL brokerURL: String?, version: String?) {
-        operationErrors.append(error)
+        operationErrorsLock.withLock { operationErrors.append(error) }
 
         guard let error = error as? DataBrokerProtectionError, let brokerURL, let version else {
             return

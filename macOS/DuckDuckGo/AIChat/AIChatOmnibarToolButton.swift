@@ -26,6 +26,16 @@ private final class NonInteractiveImageView: NSImageView {
     }
 }
 
+/// A control whose focus ring shows for keyboard focus only.
+@MainActor
+protocol FocusRingControlling: AnyObject {
+
+    /// Opts into the ring, unlike a plain `makeFirstResponder` — so a click never rings the control.
+    func takeKeyboardFocus()
+
+    var isFocusRingSuppressed: Bool { get set }
+}
+
 /// A reusable toolbar button for the AI Chat omnibar with circular hover background effect.
 final class AIChatOmnibarToolButton: NSView {
 
@@ -238,14 +248,39 @@ final class AIChatOmnibarToolButton: NSView {
 
     override func becomeFirstResponder() -> Bool {
         let didBecome = super.becomeFirstResponder()
-        if didBecome { setFocusRingHidden(false) }
+        if didBecome { isFocused = true }
         return didBecome
     }
 
     override func resignFirstResponder() -> Bool {
         let didResign = super.resignFirstResponder()
-        if didResign { setFocusRingHidden(true) }
+        if didResign {
+            isFocused = false
+            wantsFocusRing = false
+        }
         return didResign
+    }
+
+    func takeKeyboardFocus() {
+        wantsFocusRing = true
+        window?.makeFirstResponder(self)
+    }
+
+    private var isFocused = false {
+        didSet { applyFocusRingVisibility() }
+    }
+
+    /// AppKit promotes any clicked view that accepts first responder, so focus can't gate the ring.
+    private var wantsFocusRing = false {
+        didSet { applyFocusRingVisibility() }
+    }
+
+    var isFocusRingSuppressed = false {
+        didSet { applyFocusRingVisibility() }
+    }
+
+    private func applyFocusRingVisibility() {
+        setFocusRingHidden(!isFocused || !wantsFocusRing || isFocusRingSuppressed)
     }
 
     private func setFocusRingHidden(_ hidden: Bool) {
@@ -432,6 +467,7 @@ final class AIChatOmnibarToolButton: NSView {
     }
 
     override func mouseDown(with event: NSEvent) {
+        wantsFocusRing = false
         isMouseDown = true
     }
 
@@ -487,3 +523,5 @@ final class AIChatOmnibarToolButton: NSView {
         addCursorRect(bounds, cursor: .arrow)
     }
 }
+
+extension AIChatOmnibarToolButton: FocusRingControlling {}

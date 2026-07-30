@@ -1048,6 +1048,7 @@ public class MockDataBrokerProtectionPixelsHandler: EventMapping<DataBrokerProte
 public final class MockDatabase: DataBrokerProtectionRepository {
     public enum MockError: Error {
         case saveFailed
+        case fetchFailed
     }
 
     public var wasSaveProfileCalled = false
@@ -1108,6 +1109,7 @@ public final class MockDatabase: DataBrokerProtectionRepository {
     public var lastAddedHistoryEvent: HistoryEvent?
 
     public var saveResult: Result<Void, Error> = .success(())
+    public var fetchProfileError: Error?
     public var addHistoryEventError: Error?
     public var updateLastRunDateError: Error?
     public var updatePreferredRunDateError: Error?
@@ -1157,8 +1159,11 @@ public final class MockDatabase: DataBrokerProtectionRepository {
         }
     }
 
-    public func fetchProfile() -> DataBrokerProtectionProfile? {
+    public func fetchProfile() throws -> DataBrokerProtectionProfile? {
         wasFetchProfileCalled = true
+        if let fetchProfileError {
+            throw fetchProfileError
+        }
         return profile
     }
 

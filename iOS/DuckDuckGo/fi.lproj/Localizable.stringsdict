@@ -372,6 +372,22 @@
 			<string>Sulje välilehdet</string>
 		</dict>
 	</dict>
+	<key>tab.switcher.close-tabs.button.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Sulje %1$d välilehti</string>
+			<key>other</key>
+			<string>Sulje %1$d välilehteä</string>
+		</dict>
+	</dict>
 	<key>closeAllTabs.withCount</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
@@ -690,6 +706,22 @@
 			<string>%2$@ trackeri estetty</string>
 			<key>other</key>
 			<string>%2$@ trackereita estetty</string>
+		</dict>
+	</dict>
+	<key>aiChat.history.download.complete.message</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@chats@</string>
+		<key>chats</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d keskustelu ladattu</string>
+			<key>other</key>
+			<string>%1$d keskustelua ladattu</string>
 		</dict>
 	</dict>
 </dict>

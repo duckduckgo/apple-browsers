@@ -29,6 +29,29 @@
         "suffixes": ["daily_count"],
         "parameters": ["appVersion", "pixelSource", "channel"]
     },
+    "m_mac_aichat_ntp_subscription_upsell_triggered": {
+        "description": "Fired when user taps a gated model or reasoning effort in the New Tab Page omnibar, routing them to the subscription purchase/upgrade flow",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "flow_type",
+                "type": "string",
+                "description": "Which subscription flow the user was routed to",
+                "enum": ["purchase", "upgrade"]
+            },
+            {
+                "key": "source",
+                "type": "string",
+                "description": "Which omnibar picker triggered the upsell",
+                "enum": ["model", "reasoning"]
+            }
+        ]
+    },
     "m_mac_aichat_ntp_view_all_chats_clicked": {
         "description": "Fired when user taps 'View all chats' from the New Tab Page omnibar",
         "owners": ["jotaemepereira"],

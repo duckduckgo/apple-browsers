@@ -24,33 +24,50 @@ import UIComponents
 /// A showcase card for the post-subscription onboarding flow: a bordered card presenting a single feature
 /// or benefit as a top-leading icon above a title and a paragraph of body text (e.g. an Identity Theft
 /// Restoration benefit). Built from `SubscriptionOnboardingCard` + `CardItem`.
-struct SubscriptionOnboardingShowcaseCard: View {
-    private enum Metrics {
-        static let iconSpacing: CGFloat = 8
-        static let titleTextSpacing: CGFloat = 4
-        static let textBlockLeadingInset: CGFloat = 2
-    }
+private enum ShowcaseCardMetrics {
+    static let iconSpacing: CGFloat = 8
+    static let titleTextSpacing: CGFloat = 4
+    static let textBlockLeadingInset: CGFloat = 4
+}
 
-    private let visual: Graphic
+struct SubscriptionOnboardingShowcaseCard<Footer: View>: View {
+    private let icon: Image
     private let title: String
     private let text: String
+    private let footer: Footer
 
-    init(visual: Graphic, title: String, text: String) {
-        self.visual = visual
+    /// Creates a card whose `footer` renders below the title/body inside the same bordered card (via
+    /// `SubscriptionOnboardingCard`'s footer slot) — e.g. the "Devices" card's platform grid.
+    init(icon: Image, title: String, text: String, @ViewBuilder footer: () -> Footer) {
+        self.icon = icon
         self.title = title
         self.text = text
+        self.footer = footer()
     }
 
     var body: some View {
         SubscriptionOnboardingCard(
-            CardItem(
-                icon: CardItemIcon(position: .topLeading, visual: visual, size: .size32, spacing: Metrics.iconSpacing),
-                title: CardItemText(title, font: .footnoteSemibold),
-                text: CardItemText(text, font: .footnoteRegular),
-                titleTextSpacing: Metrics.titleTextSpacing,
-                textBlockLeadingInset: Metrics.textBlockLeadingInset),
-            style: .bordered)
+            style: .bordered,
+            header: { EmptyView() },
+            items: {
+                VStack(alignment: .leading, spacing: ShowcaseCardMetrics.iconSpacing) {
+                    IconBadge(icon: icon)
+                    CardItem(
+                        title: CardItemText(title, font: .footnoteSemibold),
+                        text: CardItemText(text, font: .footnoteRegular),
+                        titleTextSpacing: ShowcaseCardMetrics.titleTextSpacing,
+                        textBlockLeadingInset: ShowcaseCardMetrics.textBlockLeadingInset)
+                }
+            },
+            footer: { footer.padding(.leading, ShowcaseCardMetrics.textBlockLeadingInset) })
         .accessibilityElement(children: .combine)
+    }
+}
+
+extension SubscriptionOnboardingShowcaseCard where Footer == EmptyView {
+    /// Creates a card with no footer.
+    init(icon: Image, title: String, text: String) {
+        self.init(icon: icon, title: title, text: text) { EmptyView() }
     }
 }
 
@@ -61,7 +78,7 @@ private struct SubscriptionOnboardingShowcaseCardPreview: View {
         ScrollView {
             VStack(spacing: 16) {
                 SubscriptionOnboardingShowcaseCard(
-                    visual: .image(Image(systemName: "creditcard.fill")),
+                    icon: Image(systemName: "creditcard.fill"),
                     title: "Recover financial losses",
                     text: """
                         We'll work with financial institutions to help reverse any fraudulent \
@@ -70,7 +87,7 @@ private struct SubscriptionOnboardingShowcaseCardPreview: View {
                         """)
 
                 SubscriptionOnboardingShowcaseCard(
-                    visual: .image(Image(systemName: "doc.text.magnifyingglass")),
+                    icon: Image(systemName: "doc.text.magnifyingglass"),
                     title: "Fix your credit report",
                     text: "We'll help fix errors in your credit report that result from fraudulent activity.")
             }
@@ -98,6 +115,21 @@ private struct SubscriptionOnboardingShowcaseCardPreview: View {
         SubscriptionOnboardingShowcaseCardPreview()
     }
     .dynamicTypeSize(.accessibility5)
+}
+
+#Preview("With footer") {
+    RebrandedPreview {
+        ScrollView {
+            SubscriptionOnboardingShowcaseCard(
+                icon: Image(systemName: "laptopcomputer.and.iphone"),
+                title: "Devices",
+                text: "Full-device coverage on up to 5 devices at once.") {
+                SubscriptionOnboardingPlatformGrid()
+            }
+            .padding()
+        }
+        .background(Color(designSystemColor: .surfaceTertiary).ignoresSafeArea())
+    }
 }
 
 #endif

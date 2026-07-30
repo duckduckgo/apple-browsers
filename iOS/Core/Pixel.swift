@@ -91,7 +91,6 @@ public struct PixelParameters {
 
     public static let count = "count"
     public static let source = "source"
-    public static let sentiment = "sentiment"
     public static let cookiePopupPreference = "cookie_popup_preference"
     public static let autoconsentEnabled = "autoconsent_enabled"
     public static let timeSinceShown = "time_since_shown"
@@ -190,6 +189,8 @@ public struct PixelParameters {
 
     // Sync
     public static let connectedDevices = "connected_devices"
+    public static let syncPromptOption = "option"
+    public static let uiVersion = "ui_version"
 
     // Persistent pixel
     public static let originalPixelTimestamp = "originalPixelTimestamp"
@@ -220,6 +221,11 @@ public struct PixelParameters {
 
     // Fire animation
     public static let fireAnimation = "fireAnimationType"
+
+    // Contextual suggested prompts
+    public static let suggestionId = "suggestionId"
+    public static let suggestionsPageType = "pageType"
+    public static let suggestionsAreSmart = "isSmart"
 }
 
 public struct PixelValues {

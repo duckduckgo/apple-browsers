@@ -286,6 +286,9 @@
 /* Title for the New Fire Tab row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newFireTab" = "New Fire Tab";
 
+/* Title for the New Image row in the Duck.ai tab header Plus (+) menu — opens Duck.ai in image generation mode */
+"aichat.header.plusMenu.newImage" = "New Image";
+
 /* Title for the New Search row in the Duck.ai tab header Plus (+) menu — opens a new tab and forces search mode for that entry */
 "aichat.header.plusMenu.newSearch" = "New Search";
 
@@ -294,6 +297,9 @@
 
 /* Title for the New Voice Chat row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newVoiceChat" = "New Voice Chat";
+
+/* Error toast shown when a Duck.ai chat download fails and nothing was saved. */
+"aiChat.history.download.failed.message" = "Couldn't download. Please try again.";
 
 /* Primary button on the empty Duck.ai chat-history screen; opens the Duck.ai web chat. */
 "aiChat.history.emptyState.openDuckAi" = "Open Duck.ai";
@@ -307,8 +313,35 @@
 /* Title of the alert shown when Duck.ai chat history fails to load. */
 "aiChat.history.loadError.title" = "Couldn't load chats";
 
+/* Accessibility label for the overflow (three dots) menu button in the Duck.ai chat history navigation bar. */
+"aiChat.history.menu.a11y" = "More";
+
+/* Menu item opening Duck.ai Chat Protection settings from the Duck.ai chat history list. */
+"aiChat.history.menu.chatProtection" = "Chat Protection";
+
+/* Menu item that starts multi-selecting chats in the Duck.ai chat history list. */
+"aiChat.history.menu.selectChats" = "Select Chats";
+
 /* Shown inside the Duck.ai chat history list when the user's search query returns no matching chats. */
 "aiChat.history.noSearchResults.title" = "No matches found";
+
+/* Long-press row menu item that deletes a Duck.ai chat. */
+"aiChat.history.rowMenu.delete" = "Delete";
+
+/* Long-press row menu item that downloads a Duck.ai chat. */
+"aiChat.history.rowMenu.download" = "Download";
+
+/* Long-press row menu item that pins a Duck.ai chat. */
+"aiChat.history.rowMenu.pin" = "Pin";
+
+/* Long-press row menu item that starts multi-selecting chats in the Duck.ai chat history list. */
+"aiChat.history.rowMenu.select" = "Select";
+
+/* Long-press row menu item that unpins a Duck.ai chat. */
+"aiChat.history.rowMenu.unpin" = "Unpin";
+
+/* Accessibility label for the search button in the Duck.ai chat history navigation bar. */
+"aiChat.history.search.a11y" = "Search";
 
 /* Placeholder for the search bar at the top of the Duck.ai chat history list. */
 "aiChat.history.searchBar.placeholder" = "Search";
@@ -318,6 +351,9 @@
 
 /* Section header above the user's recent (unpinned) chats in the Duck.ai chat history list. */
 "aiChat.history.section.recent" = "Recent";
+
+/* Multi-select toolbar button that deletes all chats when none are individually selected. */
+"aiChat.history.selection.deleteAll" = "Delete All";
 
 /* Accessibility label for the delete action revealed by swiping a Duck.ai chat row. */
 "aiChat.history.swipe.delete.a11y" = "Delete chat";
@@ -348,18 +384,6 @@
 
 /* Title for the reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.reasoning.title" = "Reasoning";
-
-/* Body of the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. ** markers indicate bold text and should be preserved around the translated equivalents of the menu options Settings, Sync & Backup, and Sync With Another Device. */
-"aiChat.syncIntroSheet.body" = "Find the QR Code on the DuckDuckGo app on your other device by going to **Settings** › **Sync & Backup** › **Sync With Another Device**.";
-
-/* Secondary button on the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. */
-"aiChat.syncIntroSheet.notNow" = "Not Now";
-
-/* Primary button on the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. */
-"aiChat.syncIntroSheet.scan.button" = "Scan QR Code";
-
-/* Title of the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. */
-"aiChat.syncIntroSheet.title" = "Let’s sync your chats across your devices!";
 
 /* Primary button of the sync promo card shown above the Duck.ai recent chats list. */
 "aiChat.syncPromo.button" = "Sync With Another Device";
@@ -4024,6 +4048,9 @@ Take back control of your personal information with the browser designed for dat
 /* The name of a settings category listing next steps */
 "settings.next.steps" = "Next Steps";
 
+/* Accessibility label / title for the button that hides the Settings Next Steps section */
+"settings.next.steps.hide" = "Hide";
+
 /* Label describing a feature which is turned off */
 "settings.off" = "Off";
 
@@ -4218,6 +4245,12 @@ Take back control of your personal information with the browser designed for dat
 
 /* Settings screen cell text for Unprotected Sites */
 "settings.unprotected.sites" = "Unprotected Sites";
+
+/* Description shown above the list of unprotected sites */
+"settings.unprotected.sites.description" = "These sites will not be enhanced by Privacy Protection.";
+
+/* Message shown when there are no unprotected sites */
+"settings.unprotected.sites.empty.state" = "Privacy Protection enabled for all sites";
 
 /* Settings cell for Version */
 "settings.version" = "Version";

@@ -105,6 +105,8 @@
 		1D3B1AB92934062B006F4388 /* PasswordManagerCoordinatingMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3B1AB82934062B006F4388 /* PasswordManagerCoordinatingMock.swift */; };
 		1D3DCCF02F6A9EEE00388752 /* NewTabPageOmnibarModelsProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3DCCEF2F6A9EEE00388752 /* NewTabPageOmnibarModelsProvider.swift */; };
 		1D3DCCF12F6A9EEE00388752 /* NewTabPageOmnibarModelsProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3DCCEF2F6A9EEE00388752 /* NewTabPageOmnibarModelsProvider.swift */; };
+		7260827D8EA789D699522A4F /* NewTabPageOmnibarSubscriptionDialogPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC8AD4809D753F81755525AD /* NewTabPageOmnibarSubscriptionDialogPresenter.swift */; };
+		62A0715146D181EEE08C6214 /* NewTabPageOmnibarSubscriptionDialogPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC8AD4809D753F81755525AD /* NewTabPageOmnibarSubscriptionDialogPresenter.swift */; };
 		1D4071AE2BD64267002D4537 /* DockCustomizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D4071AD2BD64266002D4537 /* DockCustomizer.swift */; };
 		1D4071AF2BD64267002D4537 /* DockCustomizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D4071AD2BD64266002D4537 /* DockCustomizer.swift */; };
 		1D43EB3429297D760065E5D6 /* BWNotRespondingAlert.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D43EB3329297D760065E5D6 /* BWNotRespondingAlert.swift */; };
@@ -232,6 +234,8 @@
 		1DE28D612EEB4A7E00C07F15 /* NewPermissionViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DE28D602EEB4A7E00C07F15 /* NewPermissionViewTests.swift */; };
 		1DE8222E2F6D6B4300177B99 /* NewTabPageOmnibarModelsProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DE8222D2F6D6B4000177B99 /* NewTabPageOmnibarModelsProviderTests.swift */; };
 		1DE8222F2F6D6B4300177B99 /* NewTabPageOmnibarModelsProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DE8222D2F6D6B4000177B99 /* NewTabPageOmnibarModelsProviderTests.swift */; };
+		AD9928CD790ABAB8D9EDA767 /* NewTabPageOmnibarSubscriptionDialogPresenterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB4CEDF81CD010E256D02F54 /* NewTabPageOmnibarSubscriptionDialogPresenterTests.swift */; };
+		5FDF4C801FDF14A44C149130 /* NewTabPageOmnibarSubscriptionDialogPresenterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB4CEDF81CD010E256D02F54 /* NewTabPageOmnibarSubscriptionDialogPresenterTests.swift */; };
 		1DE906D32F3DBF4900C3B853 /* AIChatImageAttachmentThumbnailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DE906D22F3DBF4500C3B853 /* AIChatImageAttachmentThumbnailView.swift */; };
 		1DE906D42F3DBF4900C3B853 /* AIChatImageAttachmentThumbnailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DE906D22F3DBF4500C3B853 /* AIChatImageAttachmentThumbnailView.swift */; };
 		1DEF3BAD2BD145A9004A2FBA /* AutoClearHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DEF3BAC2BD145A9004A2FBA /* AutoClearHandler.swift */; };
@@ -773,6 +777,8 @@
 		3706FC0C293F65D500E42796 /* NSAttributedStringExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85C48CCB278D808F00D3263E /* NSAttributedStringExtension.swift */; };
 		3706FC0D293F65D500E42796 /* AnimationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA7EB6E427E7D6DC00036718 /* AnimationView.swift */; };
 		3706FC0E293F65D500E42796 /* NSRectExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85625999269CA0A600EE44BC /* NSRectExtension.swift */; };
+		FB07BAE10000000000000002 /* NSRangeExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAE10000000000000001 /* NSRangeExtension.swift */; };
+		FB07BAE10000000000000003 /* NSRangeExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAE10000000000000001 /* NSRangeExtension.swift */; };
 		3706FC0F293F65D500E42796 /* YoutubeOverlayUserScript.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31F28C4E28C8EEC500119F70 /* YoutubeOverlayUserScript.swift */; };
 		3706FC10293F65D500E42796 /* DictionaryExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6040855274B830F00680351 /* DictionaryExtension.swift */; };
 		3706FC11293F65D500E42796 /* Publishers.NestedObjectChanges.swift in Sources */ = {isa = PBXBuildFile; fileRef = B684592625C93C0500DC17B6 /* Publishers.NestedObjectChanges.swift */; };
@@ -2933,6 +2939,8 @@
 		9FFBEE702DDEDB3C0058B11A /* MockDefaultBrowserAndDockPromptCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FFBEE6E2DDEDB2D0058B11A /* MockDefaultBrowserAndDockPromptCoordinator.swift */; };
 		9FFBEE732DDEDC650058B11A /* ApplicationBuildTypeMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FFBEE722DDEDC600058B11A /* ApplicationBuildTypeMock.swift */; };
 		9FFBEE742DDEDC650058B11A /* ApplicationBuildTypeMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FFBEE722DDEDC600058B11A /* ApplicationBuildTypeMock.swift */; };
+		DDAC10022F90000100000002 /* LaunchOptionsHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDAC10012F90000100000001 /* LaunchOptionsHandlerTests.swift */; };
+		DDAC10032F90000100000003 /* LaunchOptionsHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDAC10012F90000100000001 /* LaunchOptionsHandlerTests.swift */; };
 		9FFBEE762DDEDE870058B11A /* DefaultBrowserAndDockPromptStoreMigrator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FFBEE752DDEDE770058B11A /* DefaultBrowserAndDockPromptStoreMigrator.swift */; };
 		9FFBEE772DDEDE870058B11A /* DefaultBrowserAndDockPromptStoreMigrator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FFBEE752DDEDE770058B11A /* DefaultBrowserAndDockPromptStoreMigrator.swift */; };
 		9FFBEE7A2DDEE1E80058B11A /* DefaultBrowserAndDockStoreMigratorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FFBEE792DDEE1E40058B11A /* DefaultBrowserAndDockStoreMigratorTests.swift */; };
@@ -3103,6 +3111,8 @@
 		B520EBE32EC4D66A00D286E4 /* LoadingIndicatorPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = B520EBE02EC4D66A00D286E4 /* LoadingIndicatorPolicy.swift */; };
 		B52B61802E94331B008888E3 /* ThemeUpdateListening.swift in Sources */ = {isa = PBXBuildFile; fileRef = B52B617F2E94331B008888E3 /* ThemeUpdateListening.swift */; };
 		B52B61812E94331B008888E3 /* ThemeUpdateListening.swift in Sources */ = {isa = PBXBuildFile; fileRef = B52B617F2E94331B008888E3 /* ThemeUpdateListening.swift */; };
+		B531B7F930112DB60087A2DE /* Shield-Off-Gray.json in Resources */ = {isa = PBXBuildFile; fileRef = B531B7F830112DB60087A2DE /* Shield-Off-Gray.json */; };
+		B531B7FA30112DB60087A2DE /* Shield-Off-Gray.json in Resources */ = {isa = PBXBuildFile; fileRef = B531B7F830112DB60087A2DE /* Shield-Off-Gray.json */; };
 		B53D46B22E9D9710000D59F7 /* ThemeUpdateListeningTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B53D46B02E9D9710000D59F7 /* ThemeUpdateListeningTests.swift */; };
 		B53D46B42E9D9710000D59F7 /* ThemeUpdateListeningTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B53D46B02E9D9710000D59F7 /* ThemeUpdateListeningTests.swift */; };
 		B53F4E922EA917AB0043B5EF /* LetterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B53F4E912EA917AB0043B5EF /* LetterView.swift */; };
@@ -3131,6 +3141,8 @@
 		B57B123A2F4CE34100B610F1 /* StartupMetricsPixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B57B12382F4CE34100B610F1 /* StartupMetricsPixel.swift */; };
 		B57B123F2F4CFAFD00B610F1 /* StartupMetricsBuckets.swift in Sources */ = {isa = PBXBuildFile; fileRef = B57B123E2F4CFAFD00B610F1 /* StartupMetricsBuckets.swift */; };
 		B57B12402F4CFAFD00B610F1 /* StartupMetricsBuckets.swift in Sources */ = {isa = PBXBuildFile; fileRef = B57B123E2F4CFAFD00B610F1 /* StartupMetricsBuckets.swift */; };
+		B57B84CD3013AFB20017774A /* 02_Fire_rebranded.json in Resources */ = {isa = PBXBuildFile; fileRef = B57B84CC3013AFB20017774A /* 02_Fire_rebranded.json */; };
+		B57B84CE3013AFB20017774A /* 02_Fire_rebranded.json in Resources */ = {isa = PBXBuildFile; fileRef = B57B84CC3013AFB20017774A /* 02_Fire_rebranded.json */; };
 		B57E206A2F5783070045B419 /* StartupPerformanceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B57E20692F5783070045B419 /* StartupPerformanceTests.swift */; };
 		B59845C62F22777700A25DA4 /* MemoryUsageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B59845C52F22774C00A25DA4 /* MemoryUsageTests.swift */; };
 		B598E7B82F4F745E00F19027 /* StartupMetricsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B598E7B62F4F745E00F19027 /* StartupMetricsTests.swift */; };
@@ -4641,6 +4653,78 @@
 		FEE12B412E520E4D00AD9807 /* PromoHistoryRecordTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEE12B412E520E4D00AD9808 /* PromoHistoryRecordTests.swift */; };
 		FEE12B412E520E4D00AD9809 /* PromoHistoryRecordTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEE12B412E520E4D00AD9808 /* PromoHistoryRecordTests.swift */; };
 		FFF6627FC03B410786EF2635 /* RebrandedContextualOnboardingDialogs+SearchCompleted.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E776DE170ED47F4B3E992DF /* RebrandedContextualOnboardingDialogs+SearchCompleted.swift */; };
+		FB07BAD00000000000000011 /* PromptBarShortcut.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD00000000000000001 /* PromptBarShortcut.swift */; };
+		FB07BAD00000000000000016 /* PromptBarShortcut.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD00000000000000001 /* PromptBarShortcut.swift */; };
+		FB07BAD00000000000000012 /* PromptBarPreferencesPersistor.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD00000000000000002 /* PromptBarPreferencesPersistor.swift */; };
+		FB07BAD00000000000000017 /* PromptBarPreferencesPersistor.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD00000000000000002 /* PromptBarPreferencesPersistor.swift */; };
+		FB07BAD00000000000000013 /* PromptBarPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD00000000000000003 /* PromptBarPreferences.swift */; };
+		FB07BAD00000000000000018 /* PromptBarPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD00000000000000003 /* PromptBarPreferences.swift */; };
+		FB07BAD00000000000000014 /* PromptBarShortcutRecorderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD00000000000000004 /* PromptBarShortcutRecorderView.swift */; };
+		FB07BAD00000000000000019 /* PromptBarShortcutRecorderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD00000000000000004 /* PromptBarShortcutRecorderView.swift */; };
+		FB07BAD00000000000000015 /* PromptBarPreferencesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD00000000000000005 /* PromptBarPreferencesView.swift */; };
+		FB07BAD00000000000000020 /* PromptBarPreferencesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD00000000000000005 /* PromptBarPreferencesView.swift */; };
+		FB07BAD00000000000000021 /* PromptBarShortcutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD00000000000000006 /* PromptBarShortcutTests.swift */; };
+		FB07BAD00000000000000024 /* PromptBarShortcutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD00000000000000006 /* PromptBarShortcutTests.swift */; };
+		FB07BAD00000000000000022 /* PromptBarPreferencesPersistorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD00000000000000007 /* PromptBarPreferencesPersistorTests.swift */; };
+		FB07BAD00000000000000025 /* PromptBarPreferencesPersistorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD00000000000000007 /* PromptBarPreferencesPersistorTests.swift */; };
+		FB07BAD00000000000000023 /* PromptBarPreferencesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD00000000000000008 /* PromptBarPreferencesTests.swift */; };
+		FB07BAD00000000000000026 /* PromptBarPreferencesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD00000000000000008 /* PromptBarPreferencesTests.swift */; };
+		FB07BAD00000000000000027 /* PromptBarMenuBarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD00000000000000009 /* PromptBarMenuBarController.swift */; };
+		FB07BAD00000000000000028 /* PromptBarMenuBarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD00000000000000009 /* PromptBarMenuBarController.swift */; };
+		FB07BAD00000000000000029 /* PromptBarMenuBarControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD00000000000000010 /* PromptBarMenuBarControllerTests.swift */; };
+		FB07BAD00000000000000034 /* PromptBarMenuBarControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD00000000000000010 /* PromptBarMenuBarControllerTests.swift */; };
+		FB07BAD10000000000000002 /* PromptBarWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD10000000000000001 /* PromptBarWindow.swift */; };
+				FB07BAD10000000000000003 /* PromptBarWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD10000000000000001 /* PromptBarWindow.swift */; };
+				FB07BAD10000000000000005 /* PromptBarPlacement.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD10000000000000004 /* PromptBarPlacement.swift */; };
+				FB07BAD10000000000000006 /* PromptBarPlacement.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD10000000000000004 /* PromptBarPlacement.swift */; };
+				FB07BAD10000000000000008 /* PromptBarContentHosting.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD10000000000000007 /* PromptBarContentHosting.swift */; };
+				FB07BAD10000000000000009 /* PromptBarContentHosting.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD10000000000000007 /* PromptBarContentHosting.swift */; };
+				FB07BAD1000000000000000B /* PromptBarOmnibarContentViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD1000000000000000A /* PromptBarOmnibarContentViewController.swift */; };
+				FB07BAD1000000000000000C /* PromptBarOmnibarContentViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD1000000000000000A /* PromptBarOmnibarContentViewController.swift */; };
+				FB07BAD1000000000000000F /* PromptBarPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD1000000000000000E /* PromptBarPresenter.swift */; };
+				FB07BAD10000000000000010 /* PromptBarPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD1000000000000000E /* PromptBarPresenter.swift */; };
+				FB07BAD10000000000000012 /* PromptBarCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD10000000000000011 /* PromptBarCoordinator.swift */; };
+				FB07BAD10000000000000013 /* PromptBarCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD10000000000000011 /* PromptBarCoordinator.swift */; };
+				FB07BAD10000000000000016 /* GlobalShortcutRegistering.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD10000000000000015 /* GlobalShortcutRegistering.swift */; };
+				FB07BAD10000000000000017 /* GlobalShortcutRegistering.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD10000000000000015 /* GlobalShortcutRegistering.swift */; };
+				FB07BAD10000000000000019 /* CarbonGlobalShortcutRegistrar.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD10000000000000018 /* CarbonGlobalShortcutRegistrar.swift */; };
+				FB07BAD1000000000000001A /* CarbonGlobalShortcutRegistrar.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD10000000000000018 /* CarbonGlobalShortcutRegistrar.swift */; };
+				FB07BAD1000000000000001C /* PromptBarPlacementTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD1000000000000001B /* PromptBarPlacementTests.swift */; };
+				FB07BAD1000000000000001D /* PromptBarPlacementTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD1000000000000001B /* PromptBarPlacementTests.swift */; };
+				FB07BAD1000000000000001F /* PromptBarCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD1000000000000001E /* PromptBarCoordinatorTests.swift */; };
+				FB07BAD10000000000000020 /* PromptBarCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD1000000000000001E /* PromptBarCoordinatorTests.swift */; };
+				FB07BAD10000000000000022 /* PromptBarPromptSubmitter.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD10000000000000021 /* PromptBarPromptSubmitter.swift */; };
+				FB07BAD10000000000000023 /* PromptBarPromptSubmitter.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD10000000000000021 /* PromptBarPromptSubmitter.swift */; };
+				FB07BAD10000000000000025 /* PromptBarPromptSubmitterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD10000000000000024 /* PromptBarPromptSubmitterTests.swift */; };
+				FB07BAD10000000000000026 /* PromptBarPromptSubmitterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD10000000000000024 /* PromptBarPromptSubmitterTests.swift */; };
+				FB07BAD20000000000000201 /* DuckAIPromptSurface.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD20000000000000001 /* DuckAIPromptSurface.swift */; };
+		FB07BAD20000000000000301 /* DuckAIPromptSurface.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD20000000000000001 /* DuckAIPromptSurface.swift */; };
+		FB07BAD20000000000000202 /* DuckAIPromptDraftStoring.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD20000000000000002 /* DuckAIPromptDraftStoring.swift */; };
+		FB07BAD20000000000000302 /* DuckAIPromptDraftStoring.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD20000000000000002 /* DuckAIPromptDraftStoring.swift */; };
+		FB07BAD20000000000000203 /* DuckAIPromptDraftSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD20000000000000003 /* DuckAIPromptDraftSource.swift */; };
+		FB07BAD20000000000000303 /* DuckAIPromptDraftSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD20000000000000003 /* DuckAIPromptDraftSource.swift */; };
+		FB07BAD20000000000000204 /* DuckAIPromptOriginProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD20000000000000004 /* DuckAIPromptOriginProviding.swift */; };
+		FB07BAD20000000000000304 /* DuckAIPromptOriginProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD20000000000000004 /* DuckAIPromptOriginProviding.swift */; };
+		FB07BAD20000000000000205 /* DuckAIPromptPixelFiring.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD20000000000000005 /* DuckAIPromptPixelFiring.swift */; };
+		FB07BAD20000000000000305 /* DuckAIPromptPixelFiring.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD20000000000000005 /* DuckAIPromptPixelFiring.swift */; };
+		FB07BAD20000000000000206 /* DuckAIPanelAttachmentReconciler.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD20000000000000006 /* DuckAIPanelAttachmentReconciler.swift */; };
+		FB07BAD20000000000000306 /* DuckAIPanelAttachmentReconciler.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD20000000000000006 /* DuckAIPanelAttachmentReconciler.swift */; };
+		FB07BAD20000000000000207 /* EphemeralPromptDraftStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD20000000000000007 /* EphemeralPromptDraftStore.swift */; };
+		FB07BAD20000000000000307 /* EphemeralPromptDraftStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD20000000000000007 /* EphemeralPromptDraftStore.swift */; };
+		FB07BAD20000000000000208 /* PromptBarPixelHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD20000000000000008 /* PromptBarPixelHandler.swift */; };
+		FB07BAD20000000000000308 /* PromptBarPixelHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD20000000000000008 /* PromptBarPixelHandler.swift */; };
+		FB07BAD20000000000000209 /* PromptBarContentFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD20000000000000009 /* PromptBarContentFactory.swift */; };
+		FB07BAD20000000000000309 /* PromptBarContentFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD20000000000000009 /* PromptBarContentFactory.swift */; };
+		FB07BAD20000000000000501 /* DuckAIPromptSurfaceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD20000000000000401 /* DuckAIPromptSurfaceTests.swift */; };
+		FB07BAE20000000000000002 /* DuckAIPromptPixelFiringTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAE20000000000000001 /* DuckAIPromptPixelFiringTests.swift */; };
+		FB07BAE20000000000000003 /* DuckAIPromptPixelFiringTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAE20000000000000001 /* DuckAIPromptPixelFiringTests.swift */; };
+		FB07BAD20000000000000601 /* DuckAIPromptSurfaceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD20000000000000401 /* DuckAIPromptSurfaceTests.swift */; };
+		FB07BAD20000000000000502 /* EphemeralPromptDraftStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD20000000000000402 /* EphemeralPromptDraftStoreTests.swift */; };
+		FB07BAD20000000000000602 /* EphemeralPromptDraftStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD20000000000000402 /* EphemeralPromptDraftStoreTests.swift */; };
+		FB07BAD20000000000000503 /* PromptBarOmnibarContentLayoutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD20000000000000403 /* PromptBarOmnibarContentLayoutTests.swift */; };
+		FB07BAD20000000000000603 /* PromptBarOmnibarContentLayoutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD20000000000000403 /* PromptBarOmnibarContentLayoutTests.swift */; };
+		FB07BAD20000000000000504 /* PromptBarPresenterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD20000000000000404 /* PromptBarPresenterTests.swift */; };
+		FB07BAD20000000000000604 /* PromptBarPresenterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB07BAD20000000000000404 /* PromptBarPresenterTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -4926,6 +5010,7 @@
 		1D3A2B652D2D230000F06679 /* WebExtensionInternalSiteHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebExtensionInternalSiteHandler.swift; sourceTree = "<group>"; };
 		1D3B1AB82934062B006F4388 /* PasswordManagerCoordinatingMock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PasswordManagerCoordinatingMock.swift; sourceTree = "<group>"; };
 		1D3DCCEF2F6A9EEE00388752 /* NewTabPageOmnibarModelsProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPageOmnibarModelsProvider.swift; sourceTree = "<group>"; };
+		EC8AD4809D753F81755525AD /* NewTabPageOmnibarSubscriptionDialogPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPageOmnibarSubscriptionDialogPresenter.swift; sourceTree = "<group>"; };
 		1D4071AD2BD64266002D4537 /* DockCustomizer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DockCustomizer.swift; sourceTree = "<group>"; };
 		1D43EB3329297D760065E5D6 /* BWNotRespondingAlert.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BWNotRespondingAlert.swift; sourceTree = "<group>"; };
 		1D48634AE4C346D2A58138C1 /* OnboardingChromeExtensionExperiment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingChromeExtensionExperiment.swift; sourceTree = "<group>"; };
@@ -4994,6 +5079,7 @@
 		1DE28D5D2EEADBCF00C07F15 /* SystemPermissionManagerMock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemPermissionManagerMock.swift; sourceTree = "<group>"; };
 		1DE28D602EEB4A7E00C07F15 /* NewPermissionViewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewPermissionViewTests.swift; sourceTree = "<group>"; };
 		1DE8222D2F6D6B4000177B99 /* NewTabPageOmnibarModelsProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPageOmnibarModelsProviderTests.swift; sourceTree = "<group>"; };
+		BB4CEDF81CD010E256D02F54 /* NewTabPageOmnibarSubscriptionDialogPresenterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPageOmnibarSubscriptionDialogPresenterTests.swift; sourceTree = "<group>"; };
 		1DE906D22F3DBF4500C3B853 /* AIChatImageAttachmentThumbnailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatImageAttachmentThumbnailView.swift; sourceTree = "<group>"; };
 		1DEF3BAC2BD145A9004A2FBA /* AutoClearHandler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AutoClearHandler.swift; sourceTree = "<group>"; };
 		1DF78E0E2CE6197200AB898E /* Tab+WKWebExtensionTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Tab+WKWebExtensionTab.swift"; sourceTree = "<group>"; };
@@ -6008,6 +6094,7 @@
 		85625995269C953C00EE44BC /* PasswordManagementViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PasswordManagementViewController.swift; sourceTree = "<group>"; };
 		85625997269C9C5F00EE44BC /* PasswordManagementPopover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PasswordManagementPopover.swift; sourceTree = "<group>"; };
 		85625999269CA0A600EE44BC /* NSRectExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSRectExtension.swift; sourceTree = "<group>"; };
+		FB07BAE10000000000000001 /* NSRangeExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSRangeExtension.swift; sourceTree = "<group>"; };
 		856C98D42570116900A22F1F /* NSWindow+Toast.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NSWindow+Toast.swift"; sourceTree = "<group>"; };
 		856C98DE257014BD00A22F1F /* FileDownloadManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileDownloadManager.swift; sourceTree = "<group>"; };
 		856CADEF271710F400E79BB0 /* HoverUserScript.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HoverUserScript.swift; sourceTree = "<group>"; };
@@ -6165,6 +6252,7 @@
 		9FFBEE6B2DDEAF7E0058B11A /* MockDefaultBrowserAndDockPromptTypeDecider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockDefaultBrowserAndDockPromptTypeDecider.swift; sourceTree = "<group>"; };
 		9FFBEE6E2DDEDB2D0058B11A /* MockDefaultBrowserAndDockPromptCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockDefaultBrowserAndDockPromptCoordinator.swift; sourceTree = "<group>"; };
 		9FFBEE722DDEDC600058B11A /* ApplicationBuildTypeMock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplicationBuildTypeMock.swift; sourceTree = "<group>"; };
+		DDAC10012F90000100000001 /* LaunchOptionsHandlerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchOptionsHandlerTests.swift; sourceTree = "<group>"; };
 		9FFBEE752DDEDE770058B11A /* DefaultBrowserAndDockPromptStoreMigrator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserAndDockPromptStoreMigrator.swift; sourceTree = "<group>"; };
 		9FFBEE792DDEE1E40058B11A /* DefaultBrowserAndDockStoreMigratorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserAndDockStoreMigratorTests.swift; sourceTree = "<group>"; };
 		9FFBEE7C2DDF02CE0058B11A /* DefaultBrowserAndDockPromptStatusUpdateNotifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserAndDockPromptStatusUpdateNotifier.swift; sourceTree = "<group>"; };
@@ -6324,6 +6412,7 @@
 		B51A90D92F044C3E00FB9C0C /* ScriptStyleProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptStyleProviderTests.swift; sourceTree = "<group>"; };
 		B520EBE02EC4D66A00D286E4 /* LoadingIndicatorPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoadingIndicatorPolicy.swift; sourceTree = "<group>"; };
 		B52B617F2E94331B008888E3 /* ThemeUpdateListening.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeUpdateListening.swift; sourceTree = "<group>"; };
+		B531B7F830112DB60087A2DE /* Shield-Off-Gray.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "Shield-Off-Gray.json"; sourceTree = "<group>"; };
 		B53D46B02E9D9710000D59F7 /* ThemeUpdateListeningTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeUpdateListeningTests.swift; sourceTree = "<group>"; };
 		B53F4E912EA917AB0043B5EF /* LetterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LetterView.swift; sourceTree = "<group>"; };
 		B541A3532E858041004AEAAD /* ThemeColors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeColors.swift; sourceTree = "<group>"; };
@@ -6339,6 +6428,7 @@
 		B574243A2EBA8CDF002E5460 /* TabFaviconView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabFaviconView.swift; sourceTree = "<group>"; };
 		B57B12382F4CE34100B610F1 /* StartupMetricsPixel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StartupMetricsPixel.swift; sourceTree = "<group>"; };
 		B57B123E2F4CFAFD00B610F1 /* StartupMetricsBuckets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StartupMetricsBuckets.swift; sourceTree = "<group>"; };
+		B57B84CC3013AFB20017774A /* 02_Fire_rebranded.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = 02_Fire_rebranded.json; sourceTree = "<group>"; };
 		B57E20692F5783070045B419 /* StartupPerformanceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StartupPerformanceTests.swift; sourceTree = "<group>"; };
 		B59845C52F22774C00A25DA4 /* MemoryUsageTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoryUsageTests.swift; sourceTree = "<group>"; };
 		B598E7B42F4F745E00F19027 /* StartupMetricsBucketsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StartupMetricsBucketsTests.swift; sourceTree = "<group>"; };
@@ -7119,6 +7209,42 @@
 		FD23FD2A28816606007F6985 /* AutoconsentMessageProtocolTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AutoconsentMessageProtocolTests.swift; path = UnitTests/Autoconsent/AutoconsentMessageProtocolTests.swift; sourceTree = SOURCE_ROOT; };
 		FD23FD2C2886A81D007F6985 /* AutoconsentManagement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoconsentManagement.swift; sourceTree = "<group>"; };
 		FEE12B412E520E4D00AD9808 /* PromoHistoryRecordTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromoHistoryRecordTests.swift; sourceTree = "<group>"; };
+		FB07BAD00000000000000001 /* PromptBarShortcut.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptBarShortcut.swift; sourceTree = "<group>"; };
+		FB07BAD00000000000000002 /* PromptBarPreferencesPersistor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptBarPreferencesPersistor.swift; sourceTree = "<group>"; };
+		FB07BAD00000000000000003 /* PromptBarPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptBarPreferences.swift; sourceTree = "<group>"; };
+		FB07BAD00000000000000004 /* PromptBarShortcutRecorderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptBarShortcutRecorderView.swift; sourceTree = "<group>"; };
+		FB07BAD00000000000000005 /* PromptBarPreferencesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptBarPreferencesView.swift; sourceTree = "<group>"; };
+		FB07BAD00000000000000006 /* PromptBarShortcutTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptBarShortcutTests.swift; sourceTree = "<group>"; };
+		FB07BAD00000000000000007 /* PromptBarPreferencesPersistorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptBarPreferencesPersistorTests.swift; sourceTree = "<group>"; };
+		FB07BAD00000000000000008 /* PromptBarPreferencesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptBarPreferencesTests.swift; sourceTree = "<group>"; };
+		FB07BAD00000000000000009 /* PromptBarMenuBarController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptBarMenuBarController.swift; sourceTree = "<group>"; };
+		FB07BAD00000000000000010 /* PromptBarMenuBarControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptBarMenuBarControllerTests.swift; sourceTree = "<group>"; };
+		FB07BAD10000000000000001 /* PromptBarWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptBarWindow.swift; sourceTree = "<group>"; };
+				FB07BAD10000000000000004 /* PromptBarPlacement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptBarPlacement.swift; sourceTree = "<group>"; };
+				FB07BAD10000000000000007 /* PromptBarContentHosting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptBarContentHosting.swift; sourceTree = "<group>"; };
+				FB07BAD1000000000000000A /* PromptBarOmnibarContentViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptBarOmnibarContentViewController.swift; sourceTree = "<group>"; };
+				FB07BAD1000000000000000E /* PromptBarPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptBarPresenter.swift; sourceTree = "<group>"; };
+				FB07BAD10000000000000011 /* PromptBarCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptBarCoordinator.swift; sourceTree = "<group>"; };
+				FB07BAD10000000000000015 /* GlobalShortcutRegistering.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlobalShortcutRegistering.swift; sourceTree = "<group>"; };
+				FB07BAD10000000000000018 /* CarbonGlobalShortcutRegistrar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarbonGlobalShortcutRegistrar.swift; sourceTree = "<group>"; };
+				FB07BAD1000000000000001B /* PromptBarPlacementTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptBarPlacementTests.swift; sourceTree = "<group>"; };
+				FB07BAD1000000000000001E /* PromptBarCoordinatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptBarCoordinatorTests.swift; sourceTree = "<group>"; };
+				FB07BAD10000000000000021 /* PromptBarPromptSubmitter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptBarPromptSubmitter.swift; sourceTree = "<group>"; };
+				FB07BAD10000000000000024 /* PromptBarPromptSubmitterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptBarPromptSubmitterTests.swift; sourceTree = "<group>"; };
+				FB07BAD20000000000000008 /* PromptBarPixelHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptBarPixelHandler.swift; sourceTree = "<group>"; };
+		FB07BAD20000000000000009 /* PromptBarContentFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptBarContentFactory.swift; sourceTree = "<group>"; };
+		FB07BAD20000000000000001 /* DuckAIPromptSurface.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAIPromptSurface.swift; sourceTree = "<group>"; };
+		FB07BAD20000000000000002 /* DuckAIPromptDraftStoring.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAIPromptDraftStoring.swift; sourceTree = "<group>"; };
+		FB07BAD20000000000000003 /* DuckAIPromptDraftSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAIPromptDraftSource.swift; sourceTree = "<group>"; };
+		FB07BAD20000000000000004 /* DuckAIPromptOriginProviding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAIPromptOriginProviding.swift; sourceTree = "<group>"; };
+		FB07BAD20000000000000005 /* DuckAIPromptPixelFiring.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAIPromptPixelFiring.swift; sourceTree = "<group>"; };
+		FB07BAD20000000000000006 /* DuckAIPanelAttachmentReconciler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAIPanelAttachmentReconciler.swift; sourceTree = "<group>"; };
+		FB07BAD20000000000000007 /* EphemeralPromptDraftStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EphemeralPromptDraftStore.swift; sourceTree = "<group>"; };
+		FB07BAD20000000000000401 /* DuckAIPromptSurfaceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAIPromptSurfaceTests.swift; sourceTree = "<group>"; };
+		FB07BAE20000000000000001 /* DuckAIPromptPixelFiringTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAIPromptPixelFiringTests.swift; sourceTree = "<group>"; };
+		FB07BAD20000000000000402 /* EphemeralPromptDraftStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EphemeralPromptDraftStoreTests.swift; sourceTree = "<group>"; };
+		FB07BAD20000000000000403 /* PromptBarOmnibarContentLayoutTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptBarOmnibarContentLayoutTests.swift; sourceTree = "<group>"; };
+		FB07BAD20000000000000404 /* PromptBarPresenterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptBarPresenterTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -7906,6 +8032,7 @@
 		31521ABE2CC0139C00248E6F /* AIChat */ = {
 			isa = PBXGroup;
 			children = (
+				FB07BAD20000000000000100 /* PromptInput */,
 				BB027E882FBB4D30009B4FE4 /* DuckAiVoiceChatShieldScope.swift */,
 				BBC2778D2FB22DAD00756A85 /* DuckAiVoiceChatFailureHandler.swift */,
 				BBC277872FAE18A600756A85 /* DuckAiVoiceChatPermissionOverride.swift */,
@@ -8072,6 +8199,9 @@
 		31F25EFD2CC3C9F9002F9084 /* AIChat */ = {
 			isa = PBXGroup;
 			children = (
+				FB07BAD20000000000000402 /* EphemeralPromptDraftStoreTests.swift */,
+				FB07BAD20000000000000401 /* DuckAIPromptSurfaceTests.swift */,
+				FB07BAE20000000000000001 /* DuckAIPromptPixelFiringTests.swift */,
 				BB027E8B2FBB4D3A009B4FE4 /* DuckAiVoiceChatShieldScopeTests.swift */,
 				BBC277902FB2367300756A85 /* DuckAiVoiceChatFailureHandlerTests.swift */,
 				BBC2779D2FBF000200756A85 /* DuckAiVoiceChatPermissionOverrideTests.swift */,
@@ -8239,6 +8369,7 @@
 				1DD0DBBA2E3DEE8500B0E5F1 /* NewTabPageLoadMetrics.swift */,
 				E231C3CC2E1BB72300B53914 /* NewTabPageSectionsAvailabilityProvider.swift */,
 				1D3DCCEF2F6A9EEE00388752 /* NewTabPageOmnibarModelsProvider.swift */,
+				EC8AD4809D753F81755525AD /* NewTabPageOmnibarSubscriptionDialogPresenter.swift */,
 				E274EFF52E1D55CF00373C41 /* NewTabPageOmnibarSuggestionsProvider.swift */,
 				E2BC1B222E210AE600F58D61 /* NewTabPageOmnibarConfigProvider.swift */,
 				D1A7B0010000000000000001 /* NewTabPageOmnibarTabsProvider.swift */,
@@ -8297,6 +8428,7 @@
 			isa = PBXGroup;
 			children = (
 				1DE8222D2F6D6B4000177B99 /* NewTabPageOmnibarModelsProviderTests.swift */,
+				BB4CEDF81CD010E256D02F54 /* NewTabPageOmnibarSubscriptionDialogPresenterTests.swift */,
 				CCE3F8392F5A27910046F5E4 /* NextStepsCardsPromoDelegateTests.swift */,
 				1D31FB052F586AB000A69392 /* NewTabPageOmnibarAiChatsProviderTests.swift */,
 				E274EFF22E1BD8B000373C41 /* NewTabPageSectionsAvailabilityProviderTests.swift */,
@@ -10088,6 +10220,7 @@
 			isa = PBXGroup;
 			children = (
 				8511E18325F82B34002F516B /* 01_Fire_really_small.json */,
+				B57B84CC3013AFB20017774A /* 02_Fire_rebranded.json */,
 			);
 			path = Resources;
 			sourceTree = "<group>";
@@ -10134,6 +10267,7 @@
 				B599B5EC2FFE9DF700B5E877 /* Flame-24.json */,
 				B5EA14A92FFFDB8000FC2512 /* Shield-Color-24.json */,
 				B599B5E42FFE95A900B5E877 /* Shield-Color-24-Hover.json */,
+				B531B7F830112DB60087A2DE /* Shield-Off-Gray.json */,
 			);
 			path = Resources;
 			sourceTree = "<group>";
@@ -10679,6 +10813,7 @@
 			children = (
 				BBB819192EC493DD0064977E /* MockBlackFridayCampaignProvider.swift */,
 				9FFBEE722DDEDC600058B11A /* ApplicationBuildTypeMock.swift */,
+				DDAC10012F90000100000001 /* LaunchOptionsHandlerTests.swift */,
 				CC34456E2E674E7700019518 /* UserScriptErrorTests.swift */,
 				BBE9A9AA2E9D1DED00E573AA /* MockWinBackOfferVisibilityManager.swift */,
 			);
@@ -10971,6 +11106,7 @@
 				4B0511A2262CAA5A00F6079C /* Preferences */,
 				B6FA893A269C414900588ECD /* PrivacyDashboard */,
 				37C9F78E2CF1C855004D73A1 /* PrivacyStats */,
+				FB07BAD00000000000000030 /* PromptBar */,
 				BB8DD9E82EDF73A900F75D8E /* QuitSurvey */,
 				AAC6881528626B6F00D54247 /* RecentlyClosed */,
 				3712091F2C232E2B003ADF3D /* RemoteMessaging */,
@@ -11051,6 +11187,7 @@
 				4B0511EE262CAEB300F6079C /* Preferences */,
 				31E163BB293A577200963C10 /* PrivacyReferenceTests */,
 				CC199E8F2F4E182C00964700 /* Promotions */,
+				FB07BAD00000000000000033 /* PromptBar */,
 				BBE497DC2EDF9AE6000C3DB5 /* QuitSurvey */,
 				AA7E9174286DAFB700AB6B62 /* RecentlyClosed */,
 				373B2F7F2C384DD20013A94B /* RemoteMessaging */,
@@ -11837,6 +11974,7 @@
 				AA5C8F5D2590EEE800748EB7 /* NSPointExtension.swift */,
 				1D6A491F29CF7A490011DF74 /* NSPopoverExtension.swift */,
 				844D7DA32C9443E500BE61D4 /* NSPrintInfoExtension.swift */,
+				FB07BAE10000000000000001 /* NSRangeExtension.swift */,
 				85625999269CA0A600EE44BC /* NSRectExtension.swift */,
 				B6B3E0DC2657E9CF0040E0A2 /* NSScreenExtension.swift */,
 				4B39AAF527D9B2C700A73FD5 /* NSStackViewExtension.swift */,
@@ -13332,6 +13470,92 @@
 			path = Subscription;
 			sourceTree = "<group>";
 		};
+		FB07BAD1000000000000000D /* Controller */ = {
+			isa = PBXGroup;
+			children = (
+				FB07BAD20000000000000009 /* PromptBarContentFactory.swift */,
+				FB07BAD10000000000000021 /* PromptBarPromptSubmitter.swift */,
+				FB07BAD10000000000000011 /* PromptBarCoordinator.swift */,
+				FB07BAD1000000000000000E /* PromptBarPresenter.swift */,
+			);
+			path = Controller;
+			sourceTree = "<group>";
+		};
+		FB07BAD10000000000000014 /* Shortcut */ = {
+			isa = PBXGroup;
+			children = (
+				FB07BAD10000000000000018 /* CarbonGlobalShortcutRegistrar.swift */,
+				FB07BAD10000000000000015 /* GlobalShortcutRegistering.swift */,
+			);
+			path = Shortcut;
+			sourceTree = "<group>";
+		};
+		FB07BAD00000000000000030 /* PromptBar */ = {
+			isa = PBXGroup;
+			children = (
+				FB07BAD10000000000000014 /* Shortcut */,
+				FB07BAD1000000000000000D /* Controller */,
+				FB07BAD00000000000000031 /* Model */,
+				FB07BAD00000000000000032 /* View */,
+			);
+			path = PromptBar;
+			sourceTree = "<group>";
+		};
+		FB07BAD00000000000000031 /* Model */ = {
+			isa = PBXGroup;
+			children = (
+				FB07BAD20000000000000008 /* PromptBarPixelHandler.swift */,
+				FB07BAD00000000000000002 /* PromptBarPreferencesPersistor.swift */,
+				FB07BAD00000000000000003 /* PromptBarPreferences.swift */,
+				FB07BAD00000000000000001 /* PromptBarShortcut.swift */,
+			);
+			path = Model;
+			sourceTree = "<group>";
+		};
+		FB07BAD00000000000000032 /* View */ = {
+			isa = PBXGroup;
+			children = (
+				FB07BAD1000000000000000A /* PromptBarOmnibarContentViewController.swift */,
+				FB07BAD10000000000000007 /* PromptBarContentHosting.swift */,
+				FB07BAD10000000000000004 /* PromptBarPlacement.swift */,
+				FB07BAD10000000000000001 /* PromptBarWindow.swift */,
+				FB07BAD00000000000000005 /* PromptBarPreferencesView.swift */,
+				FB07BAD00000000000000004 /* PromptBarShortcutRecorderView.swift */,
+				FB07BAD00000000000000009 /* PromptBarMenuBarController.swift */,
+			);
+			path = View;
+			sourceTree = "<group>";
+		};
+		FB07BAD00000000000000033 /* PromptBar */ = {
+			isa = PBXGroup;
+			children = (
+				FB07BAD20000000000000404 /* PromptBarPresenterTests.swift */,
+				FB07BAD20000000000000403 /* PromptBarOmnibarContentLayoutTests.swift */,
+				FB07BAD10000000000000024 /* PromptBarPromptSubmitterTests.swift */,
+				FB07BAD1000000000000001E /* PromptBarCoordinatorTests.swift */,
+				FB07BAD1000000000000001B /* PromptBarPlacementTests.swift */,
+				FB07BAD00000000000000007 /* PromptBarPreferencesPersistorTests.swift */,
+				FB07BAD00000000000000008 /* PromptBarPreferencesTests.swift */,
+				FB07BAD00000000000000006 /* PromptBarShortcutTests.swift */,
+				FB07BAD00000000000000010 /* PromptBarMenuBarControllerTests.swift */,
+			);
+			path = PromptBar;
+			sourceTree = "<group>";
+		};
+		FB07BAD20000000000000100 /* PromptInput */ = {
+			isa = PBXGroup;
+			children = (
+				FB07BAD20000000000000001 /* DuckAIPromptSurface.swift */,
+				FB07BAD20000000000000002 /* DuckAIPromptDraftStoring.swift */,
+				FB07BAD20000000000000003 /* DuckAIPromptDraftSource.swift */,
+				FB07BAD20000000000000004 /* DuckAIPromptOriginProviding.swift */,
+				FB07BAD20000000000000005 /* DuckAIPromptPixelFiring.swift */,
+				FB07BAD20000000000000006 /* DuckAIPanelAttachmentReconciler.swift */,
+				FB07BAD20000000000000007 /* EphemeralPromptDraftStore.swift */,
+			);
+			path = PromptInput;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -14403,6 +14627,7 @@
 				372042E22DF9C04400CE099A /* internal-feedback-autofiller.js in Resources */,
 				3706FCD0293F65D500E42796 /* BookmarksBarCollectionViewItem.xib in Resources */,
 				7B5A23762C46A4A8007213AC /* ExcludedDomains.storyboard in Resources */,
+				B57B84CD3013AFB20017774A /* 02_Fire_rebranded.json in Resources */,
 				84C96E482CF9BB6400A80A01 /* malwareFilterSet.json in Resources */,
 				84C96E492CF9BB6400A80A01 /* malwareHashPrefixes.json in Resources */,
 				3706FCD6293F65D500E42796 /* httpsMobileV2FalsePositives.json in Resources */,
@@ -14416,6 +14641,7 @@
 				BD384ACB2BBC821B00EF3735 /* vpn-dark-mode.json in Resources */,
 				BB0DA4DE2DB1806000AB9C29 /* dark-shield-new.json in Resources */,
 				BB0DA4DF2DB1806000AB9C29 /* dark-shield-dot-new.json in Resources */,
+				B531B7FA30112DB60087A2DE /* Shield-Off-Gray.json in Resources */,
 				3706FCEA293F65D500E42796 /* PasswordManager.storyboard in Resources */,
 				7B0A6DFB2D47CCDF00FDFDC2 /* ExcludedApps.storyboard in Resources */,
 				BD384ACC2BBC821B00EF3735 /* vpn-light-mode.json in Resources */,
@@ -14646,6 +14872,7 @@
 				372042E12DF9C04400CE099A /* internal-feedback-autofiller.js in Resources */,
 				4BE5336B286912D40019DBFD /* BookmarksBarCollectionViewItem.xib in Resources */,
 				7B5A23752C46A4A8007213AC /* ExcludedDomains.storyboard in Resources */,
+				B57B84CE3013AFB20017774A /* 02_Fire_rebranded.json in Resources */,
 				84C96E462CF9BB6400A80A01 /* malwareFilterSet.json in Resources */,
 				84C96E472CF9BB6400A80A01 /* malwareHashPrefixes.json in Resources */,
 				4B677435255DBEB800025BD8 /* httpsMobileV2FalsePositives.json in Resources */,
@@ -14659,6 +14886,7 @@
 				BB0DA4E02DB1806000AB9C29 /* dark-shield-new.json in Resources */,
 				BB0DA4E12DB1806000AB9C29 /* dark-shield-dot-new.json in Resources */,
 				85625994269C8F9600EE44BC /* PasswordManager.storyboard in Resources */,
+				B531B7F930112DB60087A2DE /* Shield-Off-Gray.json in Resources */,
 				7B0A6DFD2D47CCDF00FDFDC2 /* ExcludedApps.storyboard in Resources */,
 				BD384ACA2BBC821A00EF3735 /* vpn-light-mode.json in Resources */,
 				4B677433255DBEB800025BD8 /* httpsMobileV2Bloom.bin in Resources */,
@@ -15071,6 +15299,24 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				FB07BAD20000000000000209 /* PromptBarContentFactory.swift in Sources */,
+				FB07BAD20000000000000208 /* PromptBarPixelHandler.swift in Sources */,
+				FB07BAD20000000000000207 /* EphemeralPromptDraftStore.swift in Sources */,
+				FB07BAD20000000000000206 /* DuckAIPanelAttachmentReconciler.swift in Sources */,
+				FB07BAD20000000000000205 /* DuckAIPromptPixelFiring.swift in Sources */,
+				FB07BAD20000000000000204 /* DuckAIPromptOriginProviding.swift in Sources */,
+				FB07BAD20000000000000203 /* DuckAIPromptDraftSource.swift in Sources */,
+				FB07BAD20000000000000202 /* DuckAIPromptDraftStoring.swift in Sources */,
+				FB07BAD20000000000000201 /* DuckAIPromptSurface.swift in Sources */,
+				FB07BAD10000000000000023 /* PromptBarPromptSubmitter.swift in Sources */,
+				FB07BAD1000000000000001A /* CarbonGlobalShortcutRegistrar.swift in Sources */,
+				FB07BAD10000000000000017 /* GlobalShortcutRegistering.swift in Sources */,
+				FB07BAD10000000000000013 /* PromptBarCoordinator.swift in Sources */,
+				FB07BAD10000000000000010 /* PromptBarPresenter.swift in Sources */,
+				FB07BAD1000000000000000C /* PromptBarOmnibarContentViewController.swift in Sources */,
+				FB07BAD10000000000000009 /* PromptBarContentHosting.swift in Sources */,
+				FB07BAD10000000000000006 /* PromptBarPlacement.swift in Sources */,
+				FB07BAD10000000000000003 /* PromptBarWindow.swift in Sources */,
 				A1B2C3D42E5F601100000001 /* PromoType.swift in Sources */,
 				A1B2C3D42E5F601200000002 /* PromoHistoryRecord.swift in Sources */,
 				CC0816472FAC9FE9000F8217 /* PromoDelegate.swift in Sources */,
@@ -15097,6 +15343,7 @@
 				EEC4A66E2B2C894F00F7C0AA /* VPNLocationPreferenceItemModel.swift in Sources */,
 				3706FA83293F65D500E42796 /* LazyLoadable.swift in Sources */,
 				1D3DCCF02F6A9EEE00388752 /* NewTabPageOmnibarModelsProvider.swift in Sources */,
+				7260827D8EA789D699522A4F /* NewTabPageOmnibarSubscriptionDialogPresenter.swift in Sources */,
 				37EE56122D5F197300D53C7C /* BadgeAnimationView.swift in Sources */,
 				37EE56132D5F197300D53C7C /* BadgeNotificationAnimationModel.swift in Sources */,
 				37EE56142D5F197300D53C7C /* BadgeNotificationContainerView.swift in Sources */,
@@ -15592,6 +15839,12 @@
 				3706FB60293F65D500E42796 /* PasswordManagementIdentityItemView.swift in Sources */,
 				3706FB61293F65D500E42796 /* ProgressExtension.swift in Sources */,
 				31C26A0E2CBE9DFE00FFF462 /* AIChatPreferences.swift in Sources */,
+				FB07BAD00000000000000016 /* PromptBarShortcut.swift in Sources */,
+				FB07BAD00000000000000017 /* PromptBarPreferencesPersistor.swift in Sources */,
+				FB07BAD00000000000000018 /* PromptBarPreferences.swift in Sources */,
+				FB07BAD00000000000000019 /* PromptBarShortcutRecorderView.swift in Sources */,
+				FB07BAD00000000000000020 /* PromptBarPreferencesView.swift in Sources */,
+				FB07BAD00000000000000028 /* PromptBarMenuBarController.swift in Sources */,
 				84537A032C998C28008723BC /* FireWindowSession.swift in Sources */,
 				BB470EBC2C5A66D6002EE91D /* BookmarkManagementDetailViewModel.swift in Sources */,
 				3706FB65293F65D500E42796 /* PrivacyDashboardWebView.swift in Sources */,
@@ -16058,6 +16311,7 @@
 				3170D0EA2F2A9D6600CFE563 /* PasswordsStatusBarMenu.swift in Sources */,
 				1E4EDA2E2DE9ED710019B6E8 /* AIChatViewController.swift in Sources */,
 				9FA173DB2B79BD8A00EE4E6E /* BookmarkDialogContainerView.swift in Sources */,
+				FB07BAE10000000000000002 /* NSRangeExtension.swift in Sources */,
 				3706FC0E293F65D500E42796 /* NSRectExtension.swift in Sources */,
 				370C23122C7747E200A80A3E /* ImageProcessor.swift in Sources */,
 				3706FC0F293F65D500E42796 /* YoutubeOverlayUserScript.swift in Sources */,
@@ -16424,6 +16678,14 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				FB07BAD20000000000000504 /* PromptBarPresenterTests.swift in Sources */,
+				FB07BAD20000000000000503 /* PromptBarOmnibarContentLayoutTests.swift in Sources */,
+				FB07BAD20000000000000502 /* EphemeralPromptDraftStoreTests.swift in Sources */,
+				FB07BAD20000000000000501 /* DuckAIPromptSurfaceTests.swift in Sources */,
+				FB07BAE20000000000000002 /* DuckAIPromptPixelFiringTests.swift in Sources */,
+				FB07BAD10000000000000026 /* PromptBarPromptSubmitterTests.swift in Sources */,
+				FB07BAD10000000000000020 /* PromptBarCoordinatorTests.swift in Sources */,
+				FB07BAD1000000000000001D /* PromptBarPlacementTests.swift in Sources */,
 				20AC3AA2FB956B8B11BCA072 /* DarkReaderFeatureSettingsTests.swift in Sources */,
 				BB35FFD52F742B160090410A /* QuitSurveyReturnUserHandlerTests.swift in Sources */,
 				9F0FFFB92BCCAE9C007C87DD /* AddEditBookmarkDialogViewModelMock.swift in Sources */,
@@ -16731,6 +16993,7 @@
 				1DA6D1032A1FFA3B00540406 /* HTTPCookieTests.swift in Sources */,
 				31A2FD182BAB43BA00D0E741 /* DataBrokerProtectionFeatureGatekeeperTests.swift in Sources */,
 				9FFBEE732DDEDC650058B11A /* ApplicationBuildTypeMock.swift in Sources */,
+				DDAC10022F90000100000002 /* LaunchOptionsHandlerTests.swift in Sources */,
 				B6619F072B17138D00CD9186 /* DataImportSourceViewModelTests.swift in Sources */,
 				3706FE46293F661700E42796 /* EncryptedValueTransformerTests.swift in Sources */,
 				9F3910632B68C35600CB5112 /* DownloadsTabExtensionTests.swift in Sources */,
@@ -16875,6 +17138,10 @@
 				9FFBEE702DDEDB3C0058B11A /* MockDefaultBrowserAndDockPromptCoordinator.swift in Sources */,
 				372D43D92DF2573A00A3A10D /* MockFireproofDomains.swift in Sources */,
 				3706FE79293F661700E42796 /* AppearancePreferencesTests.swift in Sources */,
+				FB07BAD00000000000000024 /* PromptBarShortcutTests.swift in Sources */,
+				FB07BAD00000000000000025 /* PromptBarPreferencesPersistorTests.swift in Sources */,
+				FB07BAD00000000000000026 /* PromptBarPreferencesTests.swift in Sources */,
+				FB07BAD00000000000000034 /* PromptBarMenuBarControllerTests.swift in Sources */,
 				3706FE7A293F661700E42796 /* FireDialogViewModelTests.swift in Sources */,
 				7B09CBAA2BA4BE8200CF245B /* NetworkProtectionPixelEventTests.swift in Sources */,
 				3706FE7B293F661700E42796 /* HistoryStoringMock.swift in Sources */,
@@ -16923,6 +17190,7 @@
 				9FBD84712BB3DD8400220859 /* MockAttributionsPixelHandler.swift in Sources */,
 				3706FE83293F661700E42796 /* AutofillPreferencesModelTests.swift in Sources */,
 				1DE8222E2F6D6B4300177B99 /* NewTabPageOmnibarModelsProviderTests.swift in Sources */,
+				AD9928CD790ABAB8D9EDA767 /* NewTabPageOmnibarSubscriptionDialogPresenterTests.swift in Sources */,
 				3706FE84293F661700E42796 /* TabCollectionViewModelTests+PinnedTabs.swift in Sources */,
 				7B99CF352EEAC1B3003FA486 /* UserNotificationAuthorizationServiceTests.swift in Sources */,
 				EE2868512EAFC38200AB597F /* LegacyDataImportViewModelTests.swift in Sources */,
@@ -17402,6 +17670,24 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				FB07BAD20000000000000309 /* PromptBarContentFactory.swift in Sources */,
+				FB07BAD20000000000000308 /* PromptBarPixelHandler.swift in Sources */,
+				FB07BAD20000000000000307 /* EphemeralPromptDraftStore.swift in Sources */,
+				FB07BAD20000000000000306 /* DuckAIPanelAttachmentReconciler.swift in Sources */,
+				FB07BAD20000000000000305 /* DuckAIPromptPixelFiring.swift in Sources */,
+				FB07BAD20000000000000304 /* DuckAIPromptOriginProviding.swift in Sources */,
+				FB07BAD20000000000000303 /* DuckAIPromptDraftSource.swift in Sources */,
+				FB07BAD20000000000000302 /* DuckAIPromptDraftStoring.swift in Sources */,
+				FB07BAD20000000000000301 /* DuckAIPromptSurface.swift in Sources */,
+				FB07BAD10000000000000022 /* PromptBarPromptSubmitter.swift in Sources */,
+				FB07BAD10000000000000019 /* CarbonGlobalShortcutRegistrar.swift in Sources */,
+				FB07BAD10000000000000016 /* GlobalShortcutRegistering.swift in Sources */,
+				FB07BAD10000000000000012 /* PromptBarCoordinator.swift in Sources */,
+				FB07BAD1000000000000000F /* PromptBarPresenter.swift in Sources */,
+				FB07BAD1000000000000000B /* PromptBarOmnibarContentViewController.swift in Sources */,
+				FB07BAD10000000000000008 /* PromptBarContentHosting.swift in Sources */,
+				FB07BAD10000000000000005 /* PromptBarPlacement.swift in Sources */,
+				FB07BAD10000000000000002 /* PromptBarWindow.swift in Sources */,
 				CC3967ED2F461D6700AE83F2 /* PromoType.swift in Sources */,
 				CC3967EE2F461D6B00AE83F2 /* PromoHistoryRecord.swift in Sources */,
 				CC0816482FAC9FE9000F8217 /* PromoDelegate.swift in Sources */,
@@ -17430,6 +17716,7 @@
 				841BE93B2C6F1CB200E9C2B5 /* MenuItemNode.swift in Sources */,
 				37D2377A287EB8CA00BCE03B /* TabIndex.swift in Sources */,
 				1D3DCCF12F6A9EEE00388752 /* NewTabPageOmnibarModelsProvider.swift in Sources */,
+				62A0715146D181EEE08C6214 /* NewTabPageOmnibarSubscriptionDialogPresenter.swift in Sources */,
 				B60C6F8D29B200AB007BFAA8 /* SavePanelAccessoryView.swift in Sources */,
 				F1D042992BFBABA100A31506 /* SubscriptionManager+StandardConfiguration.swift in Sources */,
 				37534CA3281132CB002621E7 /* TabLazyLoaderDataSource.swift in Sources */,
@@ -17748,6 +18035,12 @@
 				369BA9862F31305F0037B56D /* DataClearingPixels.swift in Sources */,
 				AAB7320926DD0CD9002FACF9 /* FireViewController.swift in Sources */,
 				31C26A0D2CBE9DFE00FFF462 /* AIChatPreferences.swift in Sources */,
+				FB07BAD00000000000000011 /* PromptBarShortcut.swift in Sources */,
+				FB07BAD00000000000000012 /* PromptBarPreferencesPersistor.swift in Sources */,
+				FB07BAD00000000000000013 /* PromptBarPreferences.swift in Sources */,
+				FB07BAD00000000000000014 /* PromptBarShortcutRecorderView.swift in Sources */,
+				FB07BAD00000000000000015 /* PromptBarPreferencesView.swift in Sources */,
+				FB07BAD00000000000000027 /* PromptBarMenuBarController.swift in Sources */,
 				4B92928C26670D1700AD2C21 /* OutlineSeparatorViewCell.swift in Sources */,
 				8426108D2C9811F30070D5F9 /* KeyEquivalentView.swift in Sources */,
 				CC442CAD2F6C45B8002E8175 /* DockPreferencesModel.swift in Sources */,
@@ -18355,6 +18648,7 @@
 				4B41EDB42B168C55001EEDF4 /* UnifiedFeedbackFormViewModel.swift in Sources */,
 				CD33012C2C89B588009AA127 /* ErrorPageHTMLFactory.swift in Sources */,
 				AA7EB6E527E7D6DC00036718 /* AnimationView.swift in Sources */,
+				FB07BAE10000000000000003 /* NSRangeExtension.swift in Sources */,
 				8562599A269CA0A600EE44BC /* NSRectExtension.swift in Sources */,
 				371E1D682D0B2E9F00F9205B /* NewTabPageCustomizationProvider.swift in Sources */,
 				9FFBEE7E2DDF02F30058B11A /* DefaultBrowserAndDockPromptStatusUpdateNotifier.swift in Sources */,
@@ -18741,10 +19035,19 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				FB07BAD20000000000000604 /* PromptBarPresenterTests.swift in Sources */,
+				FB07BAD20000000000000603 /* PromptBarOmnibarContentLayoutTests.swift in Sources */,
+				FB07BAD20000000000000602 /* EphemeralPromptDraftStoreTests.swift in Sources */,
+				FB07BAD20000000000000601 /* DuckAIPromptSurfaceTests.swift in Sources */,
+				FB07BAE20000000000000003 /* DuckAIPromptPixelFiringTests.swift in Sources */,
+				FB07BAD10000000000000025 /* PromptBarPromptSubmitterTests.swift in Sources */,
+				FB07BAD1000000000000001F /* PromptBarCoordinatorTests.swift in Sources */,
+				FB07BAD1000000000000001C /* PromptBarPlacementTests.swift in Sources */,
 				365B217A2F64460D00DE0CB0 /* DataClearingWideEventServiceTests.swift in Sources */,
 				F076A1D953FD915AAA066DB2 /* DarkReaderFeatureSettingsTests.swift in Sources */,
 				9833913327AAAEEE00DAF119 /* EmbeddedTrackerDataTests.swift in Sources */,
 				1DE8222F2F6D6B4300177B99 /* NewTabPageOmnibarModelsProviderTests.swift in Sources */,
+				5FDF4C801FDF14A44C149130 /* NewTabPageOmnibarSubscriptionDialogPresenterTests.swift in Sources */,
 				3776583127F8325B009A6B35 /* AutofillPreferencesTests.swift in Sources */,
 				373B2F852C387B830013A94B /* ActiveRemoteMessageModelTests.swift in Sources */,
 				373B2F8A2C387C000013A94B /* RemoteMessagePromoDelegateTests.swift in Sources */,
@@ -19183,6 +19486,7 @@
 				9FFBEE6D2DDEAF820058B11A /* MockDefaultBrowserAndDockPromptTypeDecider.swift in Sources */,
 				4BB99D1026FE1A84001E4761 /* FirefoxBookmarksReaderTests.swift in Sources */,
 				9FFBEE742DDEDC650058B11A /* ApplicationBuildTypeMock.swift in Sources */,
+				DDAC10032F90000100000003 /* LaunchOptionsHandlerTests.swift in Sources */,
 				9FBD84702BB3DD8400220859 /* MockAttributionsPixelHandler.swift in Sources */,
 				37657FC52DB8D564003D749E /* TabCrashRecoveryExtensionTests.swift in Sources */,
 				DBDE0003000000000000BDE0 /* NavigationPixelNavigationResponderTests.swift in Sources */,
@@ -19228,6 +19532,10 @@
 				CC951AC52EB51FE90047E245 /* DefaultBrowserAndDockPromptUserActivityStoreTests.swift in Sources */,
 				37AA017C2E2100DA00844427 /* CrashPixelAppIdentifierTests.swift in Sources */,
 				37CD54B927F1F8AC00F1F7B9 /* AppearancePreferencesTests.swift in Sources */,
+				FB07BAD00000000000000021 /* PromptBarShortcutTests.swift in Sources */,
+				FB07BAD00000000000000022 /* PromptBarPreferencesPersistorTests.swift in Sources */,
+				FB07BAD00000000000000023 /* PromptBarPreferencesTests.swift in Sources */,
+				FB07BAD00000000000000029 /* PromptBarMenuBarControllerTests.swift in Sources */,
 				EEF53E182950CED5002D78F4 /* JSAlertViewModelTests.swift in Sources */,
 				376C4DB928A1A48A00CC0F5B /* FireDialogViewModelTests.swift in Sources */,
 				AAEC74B62642CC6A00C2EFBC /* HistoryStoringMock.swift in Sources */,
@@ -20642,7 +20950,7 @@
 			repositoryURL = "https://github.com/airbnb/lottie-spm.git";
 			requirement = {
 				kind = exactVersion;
-				version = 4.5.2;
+				version = 4.6.1;
 			};
 		};
 		B65CD8C92B316DF100A595BB /* XCRemoteSwiftPackageReference "swift-snapshot-testing" */ = {

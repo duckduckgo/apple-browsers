@@ -31,6 +31,7 @@ struct ScopedAccessCredentialManager: ScopedAccessCredentialManaging {
     let endpoints: Endpoints
     let api: RemoteAPIRequestCreating
     let crypter: CryptingInternal
+    let accountInfoKeyFactory: AccountInfoKeyFactory
     private let jweCompactCodec = JWECompactCodec()
     private let scopedAccessCredentialEnvelope = ScopedAccessCredentialEnvelope()
 
@@ -72,6 +73,25 @@ struct ScopedAccessCredentialManager: ScopedAccessCredentialManaging {
         } catch {
             throw ScopedAccessCredentialError.accountExtendFailed
         }
+    }
+
+    func ensureAccountInfoProtectedKeys(for account: SyncAccount) async throws -> [ProtectedKey] {
+        let storedKeys = try await fetchProtectedKeys(account)
+        let storedAccountInfoKeys = protectedKeys(for: ProtectedKeyPurpose.accountInfo, in: storedKeys)
+        guard storedAccountInfoKeys.isEmpty else {
+            return storedAccountInfoKeys
+        }
+
+        let accessCredentials = try await fetchAccessCredentials(account)
+        let scopedPassword = try recoverScopedPassword(from: accessCredentials,
+                                                       primaryKey: account.primaryKey,
+                                                       userID: account.userId)
+        let thirdPartyMainKey = scopedPassword.map {
+            ScopedAccessKeyDerivation.mainKey(from: $0, userID: account.userId)
+        }
+        let keys = try accountInfoKeyFactory.makeProtectedKeys(accountSecretKey: account.secretKey,
+                                                              thirdPartyMainKey: thirdPartyMainKey)
+        return try await setKeysIfAbsent(purpose: ProtectedKeyPurpose.accountInfo, keys: keys, for: account)
     }
 
     func makeRecoveryCode(for account: SyncAccount, scopedPassword: Data) -> String? {

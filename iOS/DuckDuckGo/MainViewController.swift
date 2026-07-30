@@ -1118,8 +1118,8 @@ class MainViewController: UIViewController {
 
     func presentNetworkProtectionStatusSettingsModal(entryPoint: VPNEntryPoint, scrollToStrictRouting: Bool = false) {
         Task {
-            let canShowVPNInUI = (try? await subscriptionManager.isFeatureIncludedInSubscription(.networkProtection)) ?? false
-            if canShowVPNInUI {
+            if let canShowVPNInUI = try? await subscriptionManager.isFeatureIncludedInSubscription(.networkProtection),
+               canShowVPNInUI {
                 segueToVPN(source: entryPoint.screenSource, scrollToStrictRouting: scrollToStrictRouting)
             } else {
                 PixelKit.fire(entryPoint.subscriptionFunnelClickPixel, frequency: .dailyAndCount)

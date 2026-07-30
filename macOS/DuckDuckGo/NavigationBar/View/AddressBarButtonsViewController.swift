@@ -2024,7 +2024,7 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     @discardableResult
-    private func presentPermissionCenterPopoverIfPossible(allowsAutodismiss: Bool = false) -> Bool {
+    private func presentPermissionCenterPopoverIfPossible(displaysAutoplayDiscovery: Bool = false) -> Bool {
         guard let tabViewModel else {
             return false
         }
@@ -2114,7 +2114,7 @@ final class AddressBarButtonsViewController: NSViewController {
             pageInitiatedPopupOpened: tabViewModel.tab.popupHandling?.pageInitiatedPopupOpened ?? false,
             displaysAutoplayPolicy: tabViewModel.tab.mustDisplayAutoplayPolicy,
             permissionsNeedReload: tabViewModel.permissionsNeedReload,
-            allowsAutodismiss: allowsAutodismiss
+            displaysAutoplayDiscovery: displaysAutoplayDiscovery
         )
 
         let popover = PermissionCenterPopover(viewModel: viewModel)
@@ -2923,7 +2923,7 @@ extension AddressBarButtonsViewController {
             return false
         }
 
-        return presentPermissionCenterPopoverIfPossible(allowsAutodismiss: true)
+        return presentPermissionCenterPopoverIfPossible(displaysAutoplayDiscovery: true)
     }
 
     /// Closes the Permission Center, as long as it still allows autodismissal. This is no longer true once the user interacted with the popover.

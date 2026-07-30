@@ -209,8 +209,12 @@ final class PermissionCenterViewModel: ObservableObject {
     /// Whether the Autoplay Policy permission must be inserted(or not)
     private let displaysAutoplayPolicy: Bool
 
-    /// Indicates if the Permissions UI can be automatically dismissed (ie. thru the Autoplay Policy Discoverability Promo)
-    let allowsAutodismiss: Bool
+    /// Whether the UI is presented by the Autoplay Policy Discoverability Promo, which also displays the autoplay disclaimer
+    private let displaysAutoplayDiscovery: Bool
+
+    /// Indicates if the Permissions UI can be automatically dismissed. Starts off matching `displaysAutoplayDiscovery`,
+    /// since the promo is the only presentation that autodismisses, and only ever goes false (see `disableAutodismiss()`).
+    private(set) var allowsAutodismiss: Bool
 
     init(
         domain: String,
@@ -234,7 +238,7 @@ final class PermissionCenterViewModel: ObservableObject {
         pageInitiatedPopupOpened: Bool = false,
         displaysAutoplayPolicy: Bool = false,
         permissionsNeedReload: Bool = false,
-        allowsAutodismiss: Bool = false,
+        displaysAutoplayDiscovery: Bool = false,
         systemPermissionManager: SystemPermissionManagerProtocol = SystemPermissionManager()
     ) {
         self.domain = domain
@@ -259,13 +263,20 @@ final class PermissionCenterViewModel: ObservableObject {
         self.displaysAutoplayPolicy = displaysAutoplayPolicy
         self.systemPermissionManager = systemPermissionManager
         self.showReloadBanner = permissionsNeedReload
-        self.allowsAutodismiss = allowsAutodismiss
+        self.displaysAutoplayDiscovery = displaysAutoplayDiscovery
+        self.allowsAutodismiss = displaysAutoplayDiscovery
 
         loadPermissions()
         subscribeToPermissionChanges()
     }
 
     // MARK: - Public Methods
+
+    /// Opts out of automatic dismissal, permanently. Called as soon as the user reaches the UI with the pointer, so that
+    /// the Autoplay Policy Discoverability Promo doesn't close the popover from under them.
+    func disableAutodismiss() {
+        allowsAutodismiss = false
+    }
 
     /// Updates the decision for a permission type
     func setDecision(_ decision: PersistedPermissionDecision, for permissionType: PermissionType) {
@@ -427,9 +438,9 @@ final class PermissionCenterViewModel: ObservableObject {
         permissionManager.hasPermissionPersisted(forDomain: domain, permissionType: .autoplayPolicy)
     }
 
-    /// Whether the autoplay disclaimer card is shown, which tracks the presence of the autoplay row
+    /// Whether the autoplay disclaimer card is shown: only within the Autoplay Discoverability Promo, and only alongside the row it explains
     var showAutoplayDisclaimer: Bool {
-        permissionItems.contains { $0.permissionType == .autoplayPolicy }
+        displaysAutoplayDiscovery && permissionItems.contains { $0.permissionType == .autoplayPolicy }
     }
 
     /// Opens the General settings pane, where the all-sites autoplay preference lives

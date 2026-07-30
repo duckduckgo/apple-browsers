@@ -191,33 +191,52 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate {
         Logger.contextualUTI.info("Installed at bottom of contextual web chat")
     }
 
-    func mountAtSheetLevel(in sheetViewController: UIViewController) -> UIView {
-        coordinator.attachmentPresentingViewController = sheetViewController
+    @discardableResult
+    func mount(in parent: UIViewController) -> UIView {
+        coordinator.attachmentPresentingViewController = parent
 
         let viewController = coordinator.viewController
-        guard viewController.parent !== sheetViewController else {
+        guard viewController.parent !== parent else {
             return viewController.view
         }
+
+        // A dismissal animating out may still hold the input, and a child can only have one parent.
+        unmount()
 
         // Install + lay out without animation. Otherwise the half-sheet's slide-up animation
         // captures the UTI's first layout pass and interpolates from a zero-frame at (0,0),
         // making the bar fly in from the top-left.
         UIView.performWithoutAnimation {
-            sheetViewController.addChild(viewController)
-            sheetViewController.view.addSubview(viewController.view)
+            parent.addChild(viewController)
+            parent.view.addSubview(viewController.view)
             viewController.view.translatesAutoresizingMaskIntoConstraints = false
             NSLayoutConstraint.activate([
-                viewController.view.leadingAnchor.constraint(equalTo: sheetViewController.view.leadingAnchor),
-                viewController.view.trailingAnchor.constraint(equalTo: sheetViewController.view.trailingAnchor),
-                viewController.view.bottomAnchor.constraint(equalTo: sheetViewController.view.keyboardLayoutGuide.topAnchor),
+                viewController.view.leadingAnchor.constraint(equalTo: parent.view.leadingAnchor),
+                viewController.view.trailingAnchor.constraint(equalTo: parent.view.trailingAnchor),
+                viewController.view.bottomAnchor.constraint(equalTo: parent.view.keyboardLayoutGuide.topAnchor),
             ])
-            viewController.didMove(toParent: sheetViewController)
+            viewController.didMove(toParent: parent)
             coordinator.showExpanded(activatesInput: false)
             applyCurrentRenderState()
-            sheetViewController.view.layoutIfNeeded()
+            parent.view.layoutIfNeeded()
         }
-        Logger.contextualUTI.info("Mounted at bottom of contextual sheet")
+        Logger.contextualUTI.info("Mounted above the keyboard")
         return viewController.view
+    }
+
+    /// Edges of the visible input card, for aligning content sitting around the bar.
+    var inputCardTopAnchor: NSLayoutYAxisAnchor { coordinator.viewController.inputCardTopAnchor }
+    var inputCardLeadingAnchor: NSLayoutXAxisAnchor { coordinator.viewController.inputCardLeadingAnchor }
+    var inputCardTrailingAnchor: NSLayoutXAxisAnchor { coordinator.viewController.inputCardTrailingAnchor }
+
+    /// Detaches the input so it can be mounted in a different parent. A child view controller may
+    /// only have one parent, so this has to run before the next `mount(in:)`.
+    func unmount() {
+        let viewController = coordinator.viewController
+        guard viewController.parent != nil else { return }
+        viewController.willMove(toParent: nil)
+        viewController.view.removeFromSuperview()
+        viewController.removeFromParent()
     }
 
     func activateInput() {

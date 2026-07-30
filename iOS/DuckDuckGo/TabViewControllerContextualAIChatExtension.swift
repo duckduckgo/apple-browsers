@@ -45,6 +45,12 @@ extension TabViewController {
         }
     }
 
+    func presentContextualFloatingInput(from presentingViewController: UIViewController) {
+        Task { @MainActor in
+            await aiChatContextualSheetCoordinator.presentFloatingInput(from: presentingViewController)
+        }
+    }
+
     /// Reloads the contextual AI chat web view if one exists.
     func reloadContextualAIChatIfNeeded() {
         aiChatContextualSheetCoordinator.reloadIfNeeded()

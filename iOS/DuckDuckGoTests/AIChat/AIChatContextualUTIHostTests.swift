@@ -19,6 +19,7 @@
 
 import AIChat
 import Combine
+import UIKit
 import XCTest
 @testable import DuckDuckGo
 
@@ -210,6 +211,40 @@ final class AIChatContextualUTIHostTests: XCTestCase {
         XCTAssertEqual(removeCallCount, 0)
         XCTAssertEqualState(sut.chipViewModel.state, .attached(title: "Page A", favicon: nil))
         XCTAssertEqual(sut.attachedContextURL, pageAURL)
+    }
+
+    func test_unmountThenMountElsewhere_leavesExactlyOneParent() {
+        makeSUT()
+        let first = UIViewController()
+        let second = UIViewController()
+
+        let firstView = sut.mount(in: first)
+        XCTAssertTrue(firstView.isDescendant(of: first.view))
+        XCTAssertEqual(first.children.count, 1)
+
+        sut.unmount()
+        XCTAssertTrue(first.children.isEmpty)
+        XCTAssertNil(firstView.superview)
+
+        let secondView = sut.mount(in: second)
+        XCTAssertTrue(secondView.isDescendant(of: second.view))
+        XCTAssertEqual(second.children.count, 1)
+        XCTAssertTrue(first.children.isEmpty)
+    }
+
+    func test_mountTwiceInSameParent_doesNotDuplicate() {
+        makeSUT()
+        let parent = UIViewController()
+
+        sut.mount(in: parent)
+        sut.mount(in: parent)
+
+        XCTAssertEqual(parent.children.count, 1)
+    }
+
+    func test_unmountWithoutMount_doesNothing() {
+        makeSUT()
+        sut.unmount()
     }
 
     private func makeContext(title: String, url: String) -> AIChatPageContext {

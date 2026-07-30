@@ -86,6 +86,7 @@ final class AIChatContextualSheetCoordinator {
     private let featureDiscovery: FeatureDiscovery
     private let featureFlagger: FeatureFlagger
     private let unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding
+    private let floatingInputFeature: AIChatContextualFloatingInputFeatureProviding
     private let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
     private let duckAiFireModeStorageHandler: DuckAiNativeStorageHandling?
     private let debugSettings: AIChatDebugSettingsHandling
@@ -111,6 +112,13 @@ final class AIChatContextualSheetCoordinator {
 
     /// The retained sheet view controller for this tab's active chat session.
     private(set) var sheetViewController: AIChatContextualSheetViewController?
+
+    /// The floating pre-submit input, when it is the current surface instead of the sheet.
+    private(set) var floatingInputViewController: AIChatContextualFloatingInputViewController?
+
+    var isFloatingInputPresented: Bool { floatingInputViewController != nil }
+
+    private var floatingChipsCancellable: AnyCancellable?
 
     /// Session timer for auto-resetting the chat after inactivity
     private var sessionTimer: AIChatSessionTimer?
@@ -147,6 +155,7 @@ final class AIChatContextualSheetCoordinator {
          featureDiscovery: FeatureDiscovery,
          featureFlagger: FeatureFlagger,
          unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature(),
+         floatingInputFeature: AIChatContextualFloatingInputFeatureProviding = AIChatContextualFloatingInputFeature(),
          pageContextHandler: AIChatPageContextHandling,
          tabURLPublishers: AIChatTabURLPublishers,
          isFireTab: Bool = false,
@@ -161,6 +170,7 @@ final class AIChatContextualSheetCoordinator {
         self.featureDiscovery = featureDiscovery
         self.featureFlagger = featureFlagger
         self.unifiedToggleInputFeature = unifiedToggleInputFeature
+        self.floatingInputFeature = floatingInputFeature
         self.pageContextHandler = pageContextHandler
         self.tabURLPublishers = tabURLPublishers
         self.isFireTab = isFireTab
@@ -210,7 +220,111 @@ final class AIChatContextualSheetCoordinator {
         clearStaleManualContextIfNeeded()
 
         startObservingContextUpdates()
+        collectContextForNewSession()
 
+        stopSessionTimer()
+
+        if let sheetViewController {
+            presentExistingSheet(sheetViewController, from: presentingViewController)
+        } else {
+            presentNewSheet(from: presentingViewController, restoreURL: restoreURL)
+        }
+    }
+
+    /// Presents the suggestion chips and the input floating over the page, with no sheet.
+    func presentFloatingInput(from presentingViewController: UIViewController) async {
+        guard floatingInputViewController == nil, !isSheetPresented else { return }
+
+        sessionState.refreshAutoAttachSetting()
+        sessionState.updateUnifiedToggleInputActive(isWebUTIEnabled, isImmediateContextual: isImmediateContextualUTIEnabled)
+        clearStaleManualContextIfNeeded()
+
+        startObservingContextUpdates()
+        // "Ask About Page" is an explicit attach request, so the page attaches outright rather than
+        // going down the signals-only path an auto-collect would take with auto-attach off.
+        if sessionState.showsSuggestionsStartSurface {
+            sessionState.beginLoadingSuggestions()
+        }
+        requestManualPageContextAttach()
+
+        stopSessionTimer()
+
+        guard let host = makePersistentUTIHostIfNeeded(startsPreSubmit: true) else { return }
+
+        let chips = makeChipsViewController()
+        chips.delegate = self
+        chips.useGlassStartActionBackgrounds()
+        let controller = AIChatContextualFloatingInputViewController(
+            utiHost: host,
+            chipsViewController: chips
+        )
+        controller.delegate = self
+        floatingInputViewController = controller
+        controller.install(in: presentingViewController)
+        observeViewStateForFloatingChips()
+        host.activateInput()
+        controller.playEntrance()
+    }
+
+    /// The sheet feeds its chips from `apply(viewState)`; the floating input has no sheet, so the
+    /// coordinator drives them for as long as it is the current surface.
+    private func observeViewStateForFloatingChips() {
+        floatingChipsCancellable = sessionState.$viewState
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] viewState in
+                guard let floatingInput = self?.floatingInputViewController else { return }
+                let chips = floatingInput.chipsViewController
+
+                guard viewState.suggestionsLoadState == .loaded else {
+                    // Loader alone while suggestions resolve. Passing the actions through here would
+                    // flash the placeholder "Ask about page" chip beside it, then replace it.
+                    chips.updateStartActions(suggestions: [], quickActions: [])
+                    chips.updateSuggestionsLoading(true)
+                    return
+                }
+
+                chips.updateStartActions(suggestions: viewState.suggestions, quickActions: viewState.quickActions)
+                // The entrance hands the loader over to the deck, so it owns clearing the loading state.
+                floatingInput.playChipsEntranceIfNeeded()
+            }
+    }
+
+    /// Every dismissal route funnels through here, so the pixel belongs here rather than at each
+    /// call site. `promoteFloatingInputToSheet` deliberately bypasses it.
+    func dismissFloatingInput() {
+        guard let controller = floatingInputViewController else { return }
+        floatingInputViewController = nil
+        floatingChipsCancellable = nil
+        pixelHandler.fireFloatingInputDismissedWithoutSubmission()
+        controller.dismissRidingKeyboard { controller.remove() }
+        stopObservingContextUpdates()
+        sessionState.handleSheetDismissed()
+        startSessionTimer()
+    }
+
+    /// Hands the in-flight chat off from the floating input to the sheet, keeping the same input host
+    /// so the prompt, attachments, model and user-script binding all survive.
+    func promoteFloatingInputToSheet() {
+        guard let floatingInputViewController,
+              let presentingViewController = floatingInputViewController.parent else { return }
+
+        persistentUTIHost?.deactivateInput()
+        self.floatingInputViewController = nil
+        floatingChipsCancellable = nil
+        floatingInputViewController.remove()
+        presentNewSheet(from: presentingViewController, restoreURL: nil)
+    }
+
+    /// Explicit user request to attach the current page, as opposed to a passive auto-collect.
+    private func requestManualPageContextAttach() {
+        sessionState.beginManualAttach()
+        let didTrigger = pageContextHandler.triggerContextCollection(trigger: .userRequest)
+        if !didTrigger {
+            sessionState.cancelManualAttach()
+        }
+    }
+
+    private func collectContextForNewSession() {
         if currentPageURL != nil, sessionState.shouldTriggerAutoCollect(for: currentPageURL) {
             if sessionState.showsSuggestionsStartSurface {
                 sessionState.beginLoadingSuggestions()
@@ -223,14 +337,14 @@ final class AIChatContextualSheetCoordinator {
             // No collection attempted — still measure the current page's attachability.
             pageContextHandler.reportAttachabilityMeasurement(trigger: .navigation)
         }
+    }
 
-        stopSessionTimer()
-
-        if let sheetViewController {
-            presentExistingSheet(sheetViewController, from: presentingViewController)
-        } else {
-            presentNewSheet(from: presentingViewController, restoreURL: restoreURL)
-        }
+    private func makeChipsViewController() -> AIChatContextualInputViewController {
+        AIChatContextualInputViewController(
+            voiceSearchHelper: voiceSearchHelper,
+            showsBasicNativeInput: false,
+            showsWelcomeMessage: false
+        )
     }
 
     /// Dismisses the sheet if currently presented. The sheet is retained for potential re-presentation.
@@ -353,7 +467,7 @@ private extension AIChatContextualSheetCoordinator {
     }
 
     func presentNewSheet(from presentingVC: UIViewController, restoreURL: URL?) {
-        guard presentingVC.presentedViewController == nil else { return }
+        guard presentingVC.presentedViewController == nil, floatingInputViewController == nil else { return }
 
         if let restoreURL {
             sessionState.restoreChat(with: restoreURL)
@@ -412,12 +526,7 @@ private extension AIChatContextualSheetCoordinator {
             startsPreSubmit: startsPreSubmit
         )
         host.onAttachRequested = { [weak self] in
-            guard let self else { return }
-            self.sessionState.beginManualAttach()
-            let didTrigger = self.pageContextHandler.triggerContextCollection(trigger: .userRequest)
-            if !didTrigger {
-                self.sessionState.cancelManualAttach()
-            }
+            self?.requestManualPageContextAttach()
         }
         host.onRemoveRequested = { [weak self] in
             guard let self else { return }
@@ -426,6 +535,10 @@ private extension AIChatContextualSheetCoordinator {
         host.onPromptSubmitted = { [weak self] in
             guard let self else { return }
             self.sessionState.beginChatForUTISubmission()
+            if self.isFloatingInputPresented {
+                self.pixelHandler.fireFloatingInputPromotedToSheet()
+                self.promoteFloatingInputToSheet()
+            }
             self.sheetViewController?.handleFirstUTISubmission()
         }
         host.onPromptDelivered = { [weak self] in
@@ -654,6 +767,41 @@ private extension AIChatContextualSheetCoordinator {
 }
 
 // MARK: - AIChatContextualSheetViewControllerDelegate
+extension AIChatContextualSheetCoordinator: AIChatContextualFloatingInputViewControllerDelegate {
+
+    func aiChatContextualFloatingInputViewControllerDidRequestDismiss(_ viewController: AIChatContextualFloatingInputViewController) {
+        dismissFloatingInput()
+    }
+}
+
+// MARK: - Floating input chip taps
+
+extension AIChatContextualSheetCoordinator: AIChatContextualInputViewControllerDelegate {
+
+    func contextualInputViewController(_ viewController: AIChatContextualInputViewController, didSelectQuickAction action: AIChatContextualQuickAction) {
+        switch action {
+        case .askAboutPage:
+            pixelHandler.fireQuickActionAskAboutPageSelected()
+            persistentUTIHost?.activateInput()
+        case .summarize, .summarizePage:
+            pixelHandler.fireQuickActionSummarizeSelected()
+            promoteFloatingInputToSheet()
+            persistentUTIHost?.submitQuickActionPrompt(action.prompt)
+        }
+    }
+
+    func contextualInputViewController(_ viewController: AIChatContextualInputViewController, didSelectSuggestion suggestion: ContextualSuggestedPrompt) {
+        promoteFloatingInputToSheet()
+        sheetViewController?.submitSuggestion(suggestion)
+    }
+
+    func contextualInputViewController(_ viewController: AIChatContextualInputViewController, didSubmitPrompt prompt: String) {}
+    func contextualInputViewControllerDidTapVoice(_ viewController: AIChatContextualInputViewController) {}
+    func contextualInputViewControllerDidRemoveContextChip(_ viewController: AIChatContextualInputViewController) {}
+}
+
+// MARK: - AIChatContextualSheetViewControllerDelegate
+
 extension AIChatContextualSheetCoordinator: AIChatContextualSheetViewControllerDelegate {
 
     func aiChatContextualSheetViewController(_ viewController: AIChatContextualSheetViewController, didRequestToLoad url: URL) {

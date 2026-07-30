@@ -399,6 +399,12 @@ final class UnifiedToggleInputView: UIView {
     // MARK: - UI
 
     private let cardView = UIView()
+
+    /// Edges of the visible input card, which sits inside this view's own padding. Content placed
+    /// around the bar should align to these rather than to the view's edges.
+    var cardTopAnchor: NSLayoutYAxisAnchor { cardView.topAnchor }
+    var cardLeadingAnchor: NSLayoutXAxisAnchor { cardView.leadingAnchor }
+    var cardTrailingAnchor: NSLayoutXAxisAnchor { cardView.trailingAnchor }
     private let toggleView = UnifiedToggleInputToggleView()
     private lazy var inlineDismissButton: UIButton = Self.makeInlineDismissButton()
     private let attachmentsStrip = UnifiedToggleInputAttachmentsStripView()

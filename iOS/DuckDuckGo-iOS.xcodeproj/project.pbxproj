@@ -2264,6 +2264,10 @@
 		CB781CE83019069B008DCD60 /* UTIAttachmentControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB781CE73019069B008DCD60 /* UTIAttachmentControllerTests.swift */; };
 		CB781CEA301A8048008DCD60 /* AIChatContextualFloatingInputFeatureTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB781CE9301A8048008DCD60 /* AIChatContextualFloatingInputFeatureTests.swift */; };
 		CB781CEC301A810B008DCD60 /* AIChatContextualFloatingInputFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB781CEB301A810B008DCD60 /* AIChatContextualFloatingInputFeature.swift */; };
+		CB781CEE301A8221008DCD60 /* DuckAIAddressBarMenuFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB781CED301A8221008DCD60 /* DuckAIAddressBarMenuFactory.swift */; };
+		CB781CF0301A822E008DCD60 /* DuckAIAddressBarEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB781CEF301A822E008DCD60 /* DuckAIAddressBarEntry.swift */; };
+		CB781CF2301A824C008DCD60 /* AIChatContextualFloatingInputViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB781CF1301A824C008DCD60 /* AIChatContextualFloatingInputViewController.swift */; };
+		CB781CF4301A82EB008DCD60 /* MainViewController+DuckAIAddressBarMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB781CF3301A82EB008DCD60 /* MainViewController+DuckAIAddressBarMenu.swift */; };
 		CB7CF9FA2F9A6C100051BEE9 /* CircularButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB7CF9F92F9A6C100051BEE9 /* CircularButton.swift */; };
 		CB7E0A212D5E1D96002A7C0C /* UIInteractionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB7E0A202D5E1D96002A7C0C /* UIInteractionManager.swift */; };
 		CB7E0A232D5E1E55002A7C0C /* LaunchActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB7E0A222D5E1E55002A7C0C /* LaunchActionHandler.swift */; };
@@ -5029,6 +5033,10 @@
 		CB781CE73019069B008DCD60 /* UTIAttachmentControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UTIAttachmentControllerTests.swift; sourceTree = "<group>"; };
 		CB781CE9301A8048008DCD60 /* AIChatContextualFloatingInputFeatureTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatContextualFloatingInputFeatureTests.swift; sourceTree = "<group>"; };
 		CB781CEB301A810B008DCD60 /* AIChatContextualFloatingInputFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatContextualFloatingInputFeature.swift; sourceTree = "<group>"; };
+		CB781CED301A8221008DCD60 /* DuckAIAddressBarMenuFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAIAddressBarMenuFactory.swift; sourceTree = "<group>"; };
+		CB781CEF301A822E008DCD60 /* DuckAIAddressBarEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAIAddressBarEntry.swift; sourceTree = "<group>"; };
+		CB781CF1301A824C008DCD60 /* AIChatContextualFloatingInputViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatContextualFloatingInputViewController.swift; sourceTree = "<group>"; };
+		CB781CF3301A82EB008DCD60 /* MainViewController+DuckAIAddressBarMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MainViewController+DuckAIAddressBarMenu.swift"; sourceTree = "<group>"; };
 		CB7CF9F92F9A6C100051BEE9 /* CircularButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CircularButton.swift; sourceTree = "<group>"; };
 		CB7E0A202D5E1D96002A7C0C /* UIInteractionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIInteractionManager.swift; sourceTree = "<group>"; };
 		CB7E0A222D5E1E55002A7C0C /* LaunchActionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchActionHandler.swift; sourceTree = "<group>"; };
@@ -9607,6 +9615,10 @@
 				CB6D179C2FA38CAF00ECD5AE /* Logger+ContextualUTI.swift */,
 				CB6D17A72FA39FC900ECD5AE /* AIChatContextualUTIHost.swift */,
 				CB781CEB301A810B008DCD60 /* AIChatContextualFloatingInputFeature.swift */,
+				CB781CED301A8221008DCD60 /* DuckAIAddressBarMenuFactory.swift */,
+				CB781CEF301A822E008DCD60 /* DuckAIAddressBarEntry.swift */,
+				CB781CF1301A824C008DCD60 /* AIChatContextualFloatingInputViewController.swift */,
+				CB781CF3301A82EB008DCD60 /* MainViewController+DuckAIAddressBarMenu.swift */,
 			);
 			path = ContextualMode;
 			sourceTree = "<group>";
@@ -13238,6 +13250,7 @@
 				9F254AFF2CF9FA1B0063B308 /* WebViewNavigationHandling.swift in Sources */,
 				B5E5F7432FB6362D00A318E7 /* EscapeHatchModel+Previews.swift in Sources */,
 				1E4F4A5A297193DE00625985 /* MainViewController+CookiesManaged.swift in Sources */,
+				CB781CF0301A822E008DCD60 /* DuckAIAddressBarEntry.swift in Sources */,
 				C12324C32C4697C900FBB26B /* AutofillBreakageReportTableViewCell.swift in Sources */,
 				4B104AE72F6F64FD00843054 /* SyncPausedStateManaging.swift in Sources */,
 				8586A10D24CBA7070049720E /* FindInPageActivity.swift in Sources */,
@@ -13565,6 +13578,7 @@
 				C1C23C352D4C0F1A00B6BDF6 /* DataImportSummaryViewModel.swift in Sources */,
 				C1C23C362D4C0F1A00B6BDF6 /* ZipContentSelectionViewController.swift in Sources */,
 				85449EF523FDA02800512AAF /* KeyboardSettingsViewController.swift in Sources */,
+				CB781CF4301A82EB008DCD60 /* MainViewController+DuckAIAddressBarMenu.swift in Sources */,
 				85C11E4C2090888C00BFFEB4 /* HomeRowReminder.swift in Sources */,
 				C1935A122C88D1D8001AD72D /* AutofillHeaderViewFactory.swift in Sources */,
 				4B104AED2F6F658800843054 /* SyncDataProviders.swift in Sources */,
@@ -13849,6 +13863,7 @@
 				976C98B93018AD9100385C4B /* AIChatFrontendReadinessGate.swift in Sources */,
 				C1F9D9122EEAE70400E35AD5 /* AIChatContextualSheetViewController.swift in Sources */,
 				BBA8EA4E30120A4600FE41CD /* IOSMonthlyFreeTrialDecider.swift in Sources */,
+				CB781CEE301A8221008DCD60 /* DuckAIAddressBarMenuFactory.swift in Sources */,
 				A06E1D600618608596891F29 /* AIChatRecentChatsPopupViewController.swift in Sources */,
 				B7A3E1F20A1B2C3D4E5F6A70 /* AIChatRecentChatsPopupViewModel.swift in Sources */,
 				C1F9D91D2EF6400000E35AD5 /* AIChatContextualInputViewController.swift in Sources */,
@@ -13919,6 +13934,7 @@
 				9FE7E7A12EAAF4BE00AEAD83 /* WhatsNewModalPromptProvider.swift in Sources */,
 				85010502292FB1000033978F /* FireproofFaviconUpdater.swift in Sources */,
 				CB781CD2301130CD008DCD60 /* UTISessionMonitor.swift in Sources */,
+				CB781CF2301A824C008DCD60 /* AIChatContextualFloatingInputViewController.swift in Sources */,
 				981CA7EA2617797500E119D5 /* MainViewController+AddFavoriteFlow.swift in Sources */,
 				DA0001022F3D000100000002 /* DarkReaderFeatureSettings.swift in Sources */,
 				80A09D602F6BA03A00AACDEE /* ContextualChatFireWorker.swift in Sources */,

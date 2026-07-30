@@ -2202,6 +2202,11 @@ private final class MockContextualModePixelHandler: AIChatContextualModePixelFir
     func fireViewAllChatsTapped() {}
     func fireFireButtonTapped() { fireButtonTappedFired = true }
     func fireFireButtonConfirmed() { fireButtonConfirmedFired = true }
+    func fireAddressBarMenuShown() {}
+    func fireAddressBarMenuNewChatSelected() {}
+    func fireAddressBarMenuAskAboutPageSelected() {}
+    func fireFloatingInputDismissedWithoutSubmission() {}
+    func fireFloatingInputPromotedToSheet() {}
     func firePageContextAutoAttached() { pageContextAutoAttachedFired = true }
     func firePageContextUpdatedOnNavigation(url: String) { pageContextUpdatedOnNavigationFired = true }
     func firePageContextManuallyAttachedNative() { pageContextManuallyAttachedNativeFired = true }

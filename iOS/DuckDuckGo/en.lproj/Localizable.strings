@@ -1798,6 +1798,9 @@
 /* Message explaining to the user that Duck Player is not available */
 "duck-player.video-contingency-message" = "Duck Player's functionality has been affected by recent changes to YouTube. We’re working to fix these issues and appreciate your understanding.";
 
+/* Address bar Duck.ai menu option that opens a fresh chat with no page context */
+"duckai.address.bar.menu.new.chat" = "New Chat";
+
 /* Fourth paragraph of the Duck.ai widget education screen */
 "duckai.addWidget.settings.fourthParagraph" = "Tap the widget to edit it, then set **Duck.ai** and **Duck.ai Voice** as your shortcuts";
 
@@ -1809,6 +1812,9 @@
 
 /* Info text shown below the context chip explaining that content will be sent with the message */
 "duckai.context.chip.info" = "Sent with your message to Duck.ai";
+
+/* Accessibility label for the dimmed page area behind the floating Duck.ai input; activating it closes the input */
+"duckai.contextual.floating.input.dismiss.accessibility" = "Dismiss Duck.ai";
 
 /* Accessibility label for the recent chats button in the Duck.ai contextual sheet header */
 "duckai.contextual.recent.chats.button" = "Recent Chats";

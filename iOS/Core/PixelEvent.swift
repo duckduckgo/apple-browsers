@@ -1855,6 +1855,11 @@ extension Pixel {
 
         case aiChatContextualQuickActionAskAboutPageShown
         case aiChatContextualQuickActionAskAboutPageSelected
+        case aiChatContextualAddressBarMenuShown
+        case aiChatContextualAddressBarMenuNewChatSelected
+        case aiChatContextualAddressBarMenuAskAboutPageSelected
+        case aiChatContextualFloatingInputDismissedWithoutSubmission
+        case aiChatContextualFloatingInputPromotedToSheet
         case aiChatContextualSuggestionSelected
         case aiChatContextualSuggestionsViewed
         case aiChatContextualHeaderTitleTapped
@@ -3786,6 +3791,11 @@ extension Pixel.Event {
         case .aiChatPageContextExtractionPrevented: return "aichat_page_context_extraction_prevented"
         case .aiChatContextualQuickActionAskAboutPageShown: return "m_aichat_contextual_quick_action_ask_about_page_shown"
         case .aiChatContextualQuickActionAskAboutPageSelected: return "m_aichat_contextual_quick_action_ask_about_page_selected"
+        case .aiChatContextualAddressBarMenuShown: return "m_aichat_contextual_address_bar_menu_shown"
+        case .aiChatContextualAddressBarMenuNewChatSelected: return "m_aichat_contextual_address_bar_menu_new_chat_selected"
+        case .aiChatContextualAddressBarMenuAskAboutPageSelected: return "m_aichat_contextual_address_bar_menu_ask_about_page_selected"
+        case .aiChatContextualFloatingInputDismissedWithoutSubmission: return "m_aichat_contextual_floating_input_dismissed_without_submission"
+        case .aiChatContextualFloatingInputPromotedToSheet: return "m_aichat_contextual_floating_input_promoted_to_sheet"
         case .aiChatContextualSuggestionSelected: return "aichat_contextual_suggestion_selected"
         case .aiChatContextualSuggestionsViewed: return "aichat_contextual_suggestions_viewed"
         case .aiChatContextualHeaderTitleTapped: return "aichat_contextual_header_title_tapped"

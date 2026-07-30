@@ -37,11 +37,49 @@ public final class AIChatQuickActionChipView: UIView {
         static let iconLabelSpacing: CGFloat = 6
         static let borderWidth: CGFloat = 1
         static let highlightAlpha: CGFloat = 0.1
+
+        // Glass appearance, per the contextual floating-input design.
+        static let glassHeight: CGFloat = 44
+        static let glassCornerRadius: CGFloat = 26
+        static let glassFontSize: CGFloat = 17
+        static let glassShadowOpacity: Float = 0.02
+        static let glassShadowRadius: CGFloat = 15
+        static let glassShadowOffsetY: CGFloat = 8
+        /// Outer 8 plus the label group's inner 6, per the design.
+        static let glassIconLeadingPadding: CGFloat = 14
+        static let glassIconLabelSpacing: CGFloat = 8
+        static let glassTrailingPadding: CGFloat = 14
+        /// Lightens the glass without hiding the blurred backdrop, so this carries the lightness the
+        /// underlay can't. Raise for a lighter pill.
+        static let glassTintAlpha: CGFloat = 0.32
+        /// Sits behind the effect view, so the pill reads light on the first frame — before the glass
+        /// has sampled a backdrop — instead of flashing grey. Kept low: it hides the blurred page
+        /// behind it, which is the glassiness. Lower for more glass, raise for less first-frame flash.
+        static let glassUnderlayAlpha: CGFloat = 0.18
+    }
+
+    /// How the chip renders behind its content.
+    ///
+    /// `.translucent` is the sheet's flat fill. `.glass` is the contextual floating input: an iOS
+    /// glass effect with its own radius, height and type scale, so it reads over live page content.
+    public enum BackgroundStyle {
+        case translucent
+        case glass
     }
 
     // MARK: - Properties
 
     var onTap: (() -> Void)?
+
+    var backgroundStyle: BackgroundStyle = .translucent {
+        didSet { applyBackgroundStyle() }
+    }
+
+    private var heightConstraint: NSLayoutConstraint?
+    private var iconLeadingConstraint: NSLayoutConstraint?
+    private var iconLabelSpacingConstraint: NSLayoutConstraint?
+    private var labelTrailingConstraint: NSLayoutConstraint?
+    private var glassBackgroundView: UIVisualEffectView?
 
     // MARK: - UI Components
 
@@ -97,33 +135,127 @@ public final class AIChatQuickActionChipView: UIView {
 
 private extension AIChatQuickActionChipView {
 
+    func applyBackgroundStyle() {
+        switch backgroundStyle {
+        case .translucent:
+            glassBackgroundView?.removeFromSuperview()
+            glassBackgroundView = nil
+            backgroundColor = UIColor(designSystemColor: .controlsFillPrimary)
+            layer.borderWidth = Constants.borderWidth
+            layer.borderColor = UIColor(designSystemColor: .decorationQuaternary).cgColor
+            layer.shadowOpacity = 0
+            applyCornerRadius(Constants.cornerRadius)
+            heightConstraint?.constant = Constants.height
+            label.font = UIFont.daxButton()
+            applyHorizontalPadding(leading: Constants.iconLeadingPadding,
+                                   iconToLabel: Constants.iconLabelSpacing,
+                                   trailing: Constants.trailingPadding)
+        case .glass:
+            backgroundColor = UIColor(white: 1, alpha: Constants.glassUnderlayAlpha)
+            // No border: it lives on this layer, so it can't scale with the glass's interactive
+            // expansion and would sit inside the enlarged pill on touch.
+            layer.borderWidth = 0
+            installGlassBackgroundIfNeeded()
+            applyGlassShadow()
+            // The design's 26 exceeds half the 44 height, so the intended shape is a capsule.
+            applyCornerRadius(Constants.glassHeight / 2)
+            heightConstraint?.constant = Constants.glassHeight
+            label.font = .systemFont(ofSize: Constants.glassFontSize, weight: .medium)
+            applyHorizontalPadding(leading: Constants.glassIconLeadingPadding,
+                                   iconToLabel: Constants.glassIconLabelSpacing,
+                                   trailing: Constants.glassTrailingPadding)
+        }
+    }
+
+    func applyHorizontalPadding(leading: CGFloat, iconToLabel: CGFloat, trailing: CGFloat) {
+        iconLeadingConstraint?.constant = leading
+        iconLabelSpacingConstraint?.constant = iconToLabel
+        labelTrailingConstraint?.constant = -trailing
+    }
+
+    func applyCornerRadius(_ radius: CGFloat) {
+        layer.cornerRadius = radius
+        layer.cornerCurve = .continuous
+        highlightOverlay.layer.cornerRadius = radius
+        if #unavailable(iOS 26.0) {
+            glassBackgroundView?.layer.cornerRadius = radius
+        }
+    }
+
+    /// The design layers three translucent fills; `UIGlassEffect` is the platform equivalent and is
+    /// what the omnibar and toolbar already use. The glass shapes itself via `cornerConfiguration` —
+    /// a layer `cornerRadius` leaves the effect rectangular behind a rounded overlay.
+    func installGlassBackgroundIfNeeded() {
+        guard glassBackgroundView == nil else { return }
+
+        let effectView: UIVisualEffectView
+        if #available(iOS 26.0, *) {
+            let effect = UIGlassEffect(style: .regular)
+            effect.isInteractive = true
+            effect.tintColor = UIColor.white.withAlphaComponent(Constants.glassTintAlpha)
+            effectView = UIVisualEffectView(effect: effect)
+            effectView.cornerConfiguration = .capsule()
+        } else {
+            effectView = UIVisualEffectView(effect: UIBlurEffect(style: .systemThinMaterial))
+            effectView.clipsToBounds = true
+            effectView.layer.cornerCurve = .continuous
+        }
+
+        effectView.translatesAutoresizingMaskIntoConstraints = false
+        insertSubview(effectView, at: 0)
+        NSLayoutConstraint.activate([
+            effectView.topAnchor.constraint(equalTo: topAnchor),
+            effectView.bottomAnchor.constraint(equalTo: bottomAnchor),
+            effectView.leadingAnchor.constraint(equalTo: leadingAnchor),
+            effectView.trailingAnchor.constraint(equalTo: trailingAnchor),
+        ])
+        glassBackgroundView = effectView
+    }
+
+    func applyGlassShadow() {
+        layer.shadowColor = UIColor.black.cgColor
+        layer.shadowOpacity = Constants.glassShadowOpacity
+        layer.shadowRadius = Constants.glassShadowRadius
+        layer.shadowOffset = CGSize(width: 0, height: Constants.glassShadowOffsetY)
+        layer.masksToBounds = false
+    }
+
     func setupUI() {
-        backgroundColor = UIColor(designSystemColor: .controlsFillPrimary)
-        layer.cornerRadius = Constants.cornerRadius
-        layer.borderWidth = Constants.borderWidth
         layer.borderColor = UIColor(designSystemColor: .decorationQuaternary).cgColor
 
         addSubview(iconView)
         addSubview(label)
         addSubview(highlightOverlay)
-        highlightOverlay.layer.cornerRadius = Constants.cornerRadius
 
         setupConstraints()
+        applyBackgroundStyle()
         setupAccessibility()
     }
 
     func setupConstraints() {
-        NSLayoutConstraint.activate([
-            heightAnchor.constraint(equalToConstant: Constants.height),
+        let height = heightAnchor.constraint(equalToConstant: Constants.height)
+        heightConstraint = height
 
-            iconView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Constants.iconLeadingPadding),
-            iconView.topAnchor.constraint(equalTo: topAnchor, constant: Constants.iconTopPadding),
+        let iconLeading = iconView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Constants.iconLeadingPadding)
+        iconLeadingConstraint = iconLeading
+
+        let iconLabelSpacing = label.leadingAnchor.constraint(equalTo: iconView.trailingAnchor, constant: Constants.iconLabelSpacing)
+        iconLabelSpacingConstraint = iconLabelSpacing
+
+        let labelTrailing = label.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Constants.trailingPadding)
+        labelTrailingConstraint = labelTrailing
+
+        NSLayoutConstraint.activate([
+            height,
+
+            iconLeading,
+            iconView.centerYAnchor.constraint(equalTo: centerYAnchor),
             iconView.widthAnchor.constraint(equalToConstant: Constants.iconSize),
             iconView.heightAnchor.constraint(equalToConstant: Constants.iconSize),
 
-            label.leadingAnchor.constraint(equalTo: iconView.trailingAnchor, constant: Constants.iconLabelSpacing),
+            iconLabelSpacing,
             label.centerYAnchor.constraint(equalTo: centerYAnchor),
-            label.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Constants.trailingPadding),
+            labelTrailing,
 
             highlightOverlay.topAnchor.constraint(equalTo: topAnchor),
             highlightOverlay.bottomAnchor.constraint(equalTo: bottomAnchor),
@@ -151,8 +283,18 @@ private extension AIChatQuickActionChipView {
 
 extension AIChatQuickActionChipView {
 
+    /// Without an explicit path the shadow follows the layer's opaque content, which for the clear
+    /// glass chip renders as a rectangular halo instead of hugging the capsule.
+    public override func layoutSubviews() {
+        super.layoutSubviews()
+        guard backgroundStyle == .glass else { return }
+        layer.shadowPath = UIBezierPath(roundedRect: bounds, cornerRadius: layer.cornerRadius).cgPath
+    }
+
     public override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         super.touchesBegan(touches, with: event)
+        // Interactive glass supplies its own touch response, so a second overlay would double it.
+        guard backgroundStyle != .glass else { return }
         highlightOverlay.isHidden = false
     }
 
@@ -170,7 +312,7 @@ extension AIChatQuickActionChipView {
         super.traitCollectionDidChange(previousTraitCollection)
 
         if traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) {
-            layer.borderColor = UIColor(designSystemColor: .decorationQuaternary).cgColor
+            applyBackgroundStyle()
         }
     }
 }

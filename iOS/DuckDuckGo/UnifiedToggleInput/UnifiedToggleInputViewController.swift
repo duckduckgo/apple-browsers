@@ -59,6 +59,11 @@ final class UnifiedToggleInputViewController: UIViewController {
     let isToggleEnabled: Bool
     let handler: UnifiedToggleInputHandler
     private lazy var inputBarView = UnifiedToggleInputView(handler: handler, isToggleEnabled: isToggleEnabled)
+
+    /// Edges of the visible input card, for aligning content sitting around the bar.
+    var inputCardTopAnchor: NSLayoutYAxisAnchor { inputBarView.cardTopAnchor }
+    var inputCardLeadingAnchor: NSLayoutXAxisAnchor { inputBarView.cardLeadingAnchor }
+    var inputCardTrailingAnchor: NSLayoutXAxisAnchor { inputBarView.cardTrailingAnchor }
     private(set) var attachmentValidationMessage: String?
 
     private var containerView: UnifiedToggleInputContainerView? {

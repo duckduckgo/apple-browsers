@@ -2232,6 +2232,8 @@ public struct UserText {
     public static let aiChatAttachmentOptionAttachFile = NSLocalizedString("aichat.attachment.option.attach.file", value: "Add File", comment: "Top-level attachment menu option to add a file to an AI chat message")
     public static let aiChatAttachmentOptionTakePhoto = NSLocalizedString("aichat.attachment.option.take.photo", value: "Take Photo", comment: "Top-level attachment menu option to take a photo using the device camera for attaching to an AI chat message")
     public static let aiChatAttachmentOptionAskAboutPage = NSLocalizedString("aichat.attachment.option.ask.about.page", value: "Ask About Page", comment: "Top-level attachment menu option to attach the current page content to an AI chat message")
+    public static let duckAiAddressBarMenuNewChat = NSLocalizedString("duckai.address.bar.menu.new.chat", value: "New Chat", comment: "Address bar Duck.ai menu option that opens a fresh chat with no page context")
+    public static let aiChatContextualFloatingInputDismissAccessibility = NSLocalizedString("duckai.contextual.floating.input.dismiss.accessibility", value: "Dismiss Duck.ai", comment: "Accessibility label for the dimmed page area behind the floating Duck.ai input; activating it closes the input")
     public static func aiChatAttachmentFileTooLarge(maxFileSizeMB: Int) -> String {
         let message = NSLocalizedString("aichat.attachment.file.too.large", value: "This file is too large. The maximum file size is %d MB.", comment: "Error message displayed when the user tries to attach a file that exceeds the maximum allowed size. Parameter is the backend-provided size limit in megabytes.")
         return message.format(arguments: maxFileSizeMB)

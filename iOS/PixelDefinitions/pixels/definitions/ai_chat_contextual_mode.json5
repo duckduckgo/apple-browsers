@@ -153,6 +153,41 @@
         "suffixes": ["first_daily_count", "platform", "form_factor"],
         "parameters": ["appVersion"]
     },
+    "m_aichat_contextual_address_bar_menu_shown": {
+        "description": "Fired when the Duck.ai menu offering New Chat and Ask About Page is shown from the address bar",
+        "owners": ["Jacek"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_aichat_contextual_address_bar_menu_new_chat_selected": {
+        "description": "Fired when the user selects New Chat in the address bar Duck.ai menu",
+        "owners": ["Jacek"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_aichat_contextual_address_bar_menu_ask_about_page_selected": {
+        "description": "Fired when the user selects Ask About Page in the address bar Duck.ai menu",
+        "owners": ["Jacek"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_aichat_contextual_floating_input_dismissed_without_submission": {
+        "description": "Fired when the floating contextual input is closed without the user sending a prompt",
+        "owners": ["Jacek"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_aichat_contextual_floating_input_promoted_to_sheet": {
+        "description": "Fired when a prompt sent from the floating contextual input opens the contextual sheet",
+        "owners": ["Jacek"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
     "m_aichat_contextual_quick_action_ask_about_page_selected": {
         "description": "Fired when the user selects the Ask about page quick action chip in the contextual sheet",
         "owners": ["SabrinaTardio"],

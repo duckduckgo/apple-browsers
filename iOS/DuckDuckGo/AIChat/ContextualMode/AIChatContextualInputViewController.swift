@@ -116,6 +116,8 @@ final class AIChatContextualInputViewController: UIViewController {
     }()
 
     private var welcomeCenterYConstraint: NSLayoutConstraint?
+    private var startActionsLeadingConstraint: NSLayoutConstraint?
+    private var startActionsTrailingConstraint: NSLayoutConstraint?
     private var bottomConstraint: NSLayoutConstraint?
 
     // MARK: - Initialization
@@ -216,6 +218,37 @@ final class AIChatContextualInputViewController: UIViewController {
         quickActionsView.setLoading(isLoading)
     }
 
+    /// Chips floating over live page content use the glass appearance from the design.
+    ///
+    /// Clipping is released because interactive glass scales a chip beyond its bounds on touch, and
+    /// the enclosing scroll view would otherwise trim it. Safe here: the scroll view is sized to its
+    /// content, so it never actually scrolls.
+    func useGlassStartActionBackgrounds() {
+        quickActionsView.chipBackgroundStyle = .glass
+        quickActionsScrollView.clipsToBounds = false
+        quickActionsView.clipsToBounds = false
+    }
+
+    var startActionCount: Int {
+        quickActionsView.chipCount
+    }
+
+    func animateStartActionsIn() {
+        quickActionsView.animateChipsIn()
+    }
+
+    /// Removes this controller's own horizontal inset so a host can align the chips itself.
+    func clearStartActionsHorizontalInset() {
+        startActionsLeadingConstraint?.constant = 0
+        startActionsTrailingConstraint?.constant = 0
+    }
+
+    /// Whether `point`, expressed in `view`'s coordinate space, lands on a chip rather than the gaps
+    /// around them. Lets a host pass taps in the empty areas through to whatever sits behind.
+    func containsStartAction(at point: CGPoint, from view: UIView) -> Bool {
+        quickActionsView.containsChip(at: point, from: view)
+    }
+
     func setStartActionsDimmed(_ dimmed: Bool) {
         quickActionsView.alpha = dimmed ? Constants.dimmedStartActionsAlpha : 1
         quickActionsView.isUserInteractionEnabled = !dimmed
@@ -314,9 +347,14 @@ private extension AIChatContextualInputViewController {
         centerY.priority = .defaultHigh
         welcomeCenterYConstraint = centerY
 
+        let scrollLeading = quickActionsScrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.horizontalPadding)
+        startActionsLeadingConstraint = scrollLeading
+        let scrollTrailing = quickActionsScrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.horizontalPadding)
+        startActionsTrailingConstraint = scrollTrailing
+
         NSLayoutConstraint.activate([
-            quickActionsScrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.horizontalPadding),
-            quickActionsScrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.horizontalPadding),
+            scrollLeading,
+            scrollTrailing,
             quickActionsScrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -Constants.quickActionsBottomSpacing),
 
             quickActionsView.topAnchor.constraint(equalTo: quickActionsScrollView.contentLayoutGuide.topAnchor),

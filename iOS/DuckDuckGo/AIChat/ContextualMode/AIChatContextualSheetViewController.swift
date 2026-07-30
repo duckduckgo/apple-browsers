@@ -867,6 +867,12 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
     }
 
     func contextualInputViewController(_ viewController: AIChatContextualInputViewController, didSelectSuggestion suggestion: ContextualSuggestedPrompt) {
+        submitSuggestion(suggestion)
+    }
+
+    /// Attaches context, waits for the frontend, then submits. Also used by the floating input, which
+    /// promotes to this sheet first so the web view exists to receive the prompt.
+    func submitSuggestion(_ suggestion: ContextualSuggestedPrompt) {
         guard featureFlagger.isFeatureOn(.contextualSuggestedPrompts) else { return }
         cancelSuggestionSubmission()
         pixelHandler.fireSuggestionSelected(suggestionId: suggestion.id, pageType: sessionState.viewState.suggestionsPageType)
@@ -1326,7 +1332,7 @@ private extension AIChatContextualSheetViewController {
     func mountPersistentUTIHostIfNeeded() {
         guard let persistentUTIHost else { return }
 
-        let utiView = persistentUTIHost.mountAtSheetLevel(in: self)
+        let utiView = persistentUTIHost.mount(in: self)
         contentContainerBottomConstraint?.isActive = false
         let bottomConstraint = contentContainerView.bottomAnchor.constraint(equalTo: utiView.topAnchor)
         contentContainerBottomConstraint = bottomConstraint

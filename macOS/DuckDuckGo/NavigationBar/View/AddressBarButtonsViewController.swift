@@ -771,9 +771,18 @@ final class AddressBarButtonsViewController: NSViewController {
     private func subscribeToVideoPlayback() {
         videoPlaybackCancellable = tabViewModel?.tab.$mustDisplayAutoplayPolicy
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
+            .sink { [weak self] mustDisplayAutoplayPolicy in
                 self?.updatePermissionCenterButton()
+                self?.postAutoplayPromoTriggerIfNeeded(mustDisplayAutoplayPolicy)
             }
+    }
+
+    /// Notifies the promo queue that this tab is displaying the autoplay policy, so the Autoplay
+    /// Discoverability promo can open the Permission Center. Posting more than once per tab is
+    /// harmless: the promo shows at most once, and it re-checks that it can present.
+    private func postAutoplayPromoTriggerIfNeeded(_ mustDisplayAutoplayPolicy: Bool) {
+        guard mustDisplayAutoplayPolicy else { return }
+        NotificationCenter.default.post(name: .autoplayPolicyDisplayed, object: nil)
     }
 
     /// Refresh the address-bar button's icon + tint whenever the ad-blocking state changes from

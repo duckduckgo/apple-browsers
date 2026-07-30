@@ -6092,16 +6092,10 @@ extension MainViewController: TabDelegate {
         // Capture source tab preview now; otherwise its thumbnail stays stale once we switch to the new tab.
         guard tab.link != nil else { return }
 
-        if floatingUIManager.isFloatingUIEnabled {
-            tab.preparePreview { [weak self, weak tab] image in
-                guard let self, let tab, let image else { return }
-                previewsSource.update(preview: image, forTab: tab.tabModel)
-            }
-            return
+        tab.preparePreviewForTabTransition { [weak self, weak tab] image in
+            guard let self, let tab, let image else { return }
+            previewsSource.update(preview: image, forTab: tab.tabModel)
         }
-
-        guard let image = tab.preparePreviewSync() else { return }
-        previewsSource.update(preview: image, forTab: tab.tabModel)
     }
 
     func tab(_ tab: TabViewController,

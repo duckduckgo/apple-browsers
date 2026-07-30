@@ -12,7 +12,16 @@
                 "key": "source",
                 "description": "What triggered the sidebar to open",
                 "type": "string",
-                "enum": ["address-bar-button", "summarization", "serp", "context-menu", "translation", "attach-selection", "tabbar-button"]
+                "enum": [
+                    "address-bar-button",
+                    "summarization",
+                    "serp",
+                    "context-menu",
+                    "translation",
+                    "attach-selection",
+                    "tabbar-button",
+                    "ask-about-page"
+                ]
             },
             {
                 "key": "automaticPageContext",
@@ -247,6 +256,13 @@
     },
     "m_mac_aichat_tabbar_button_clicked": {
         "description": "Fired when user clicks the Duck.ai button in the tab bar to open a new chat tab",
+        "owners": ["jaceklyp"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_aichat_new_chat_title_bar_menu": {
+        "description": "Fired when user picks New Chat from the tab-bar Ask Duck.ai menu (or middle-clicks the pill) to open a new chat tab",
         "owners": ["jaceklyp"],
         "triggers": ["other"],
         "suffixes": ["daily_standard"],

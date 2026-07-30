@@ -28,6 +28,7 @@ struct ProductionDependencies: SyncDependencies {
     let endpoints: Endpoints
     let account: AccountManaging
     let scopedAccess: ScopedAccessCredentialManaging
+    let accountInfoKeys: AccountInfoKeyManaging
     let api: RemoteAPIRequestCreating
     let payloadCompressor: SyncPayloadCompressing
     var keyValueStore: ThrowingKeyValueStoring
@@ -88,6 +89,9 @@ struct ProductionDependencies: SyncDependencies {
                                                          api: api,
                                                          crypter: crypter,
                                                          accountInfoKeyFactory: DefaultAccountInfoKeyFactory(crypter: crypter))
+        accountInfoKeys = AccountInfoKeyManager(secureStore: secureStore,
+                                                scopedAccess: scopedAccess,
+                                                crypter: crypter)
         let registeredDeviceMapper = RegisteredDeviceMapper(crypter: crypter,
                                                             scopedAccess: scopedAccess,
                                                             cachedScopedPassword: secureStore.scopedPassword,

@@ -32,6 +32,7 @@ protocol SyncDependencies: SyncDependenciesDebuggingSupport {
     var endpoints: Endpoints { get }
     var account: AccountManaging { get }
     var scopedAccess: ScopedAccessCredentialManaging { get }
+    var accountInfoKeys: AccountInfoKeyManaging { get }
     var api: RemoteAPIRequestCreating { get }
     var payloadCompressor: SyncPayloadCompressing { get }
     var keyValueStore: ThrowingKeyValueStoring { get }
@@ -99,6 +100,7 @@ protocol SecureStoring {
     func scopedPassword() throws -> Data?
     func removeScopedPassword() throws
     func persistProtectedKeys(_ data: Data) throws
+    func protectedKeys() throws -> Data?
     func removeProtectedKeys() throws
 }
 

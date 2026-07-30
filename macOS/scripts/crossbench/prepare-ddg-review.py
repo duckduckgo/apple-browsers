@@ -16,6 +16,8 @@ from pathlib import Path, PurePosixPath
 
 
 MAX_DOWNLOAD_BYTES = 2 * 1024 * 1024 * 1024
+MAX_ARCHIVE_MEMBERS = 100_000
+MAX_EXPANDED_BYTES = 4 * 1024 * 1024 * 1024
 EXPECTED_BUNDLE_ID = "com.duckduckgo.macos.browser.review"
 EXPECTED_TEAM_ID = "HKE973VLUW"
 
@@ -30,22 +32,47 @@ def safe_archive_path(value: str) -> bool:
 
 
 def validate_tar_members(archive: tarfile.TarFile) -> None:
-    for member in archive.getmembers():
+    members = archive.getmembers()
+    if len(members) > MAX_ARCHIVE_MEMBERS:
+        raise PreparationError("archive contains too many members")
+    expanded_bytes = 0
+    for member in members:
         if not safe_archive_path(member.name):
             raise PreparationError("archive contains an unsafe path")
         if member.issym() or member.islnk():
             target = PurePosixPath(member.name).parent / member.linkname
             if not safe_archive_path(str(target)):
                 raise PreparationError("archive contains an unsafe link")
+        expanded_bytes += member.size
+        if expanded_bytes > MAX_EXPANDED_BYTES:
+            raise PreparationError("archive expands beyond the 4 GiB limit")
 
 
 def validate_zip_members(archive: zipfile.ZipFile) -> None:
-    for member in archive.infolist():
+    members = archive.infolist()
+    if len(members) > MAX_ARCHIVE_MEMBERS:
+        raise PreparationError("archive contains too many members")
+    expanded_bytes = 0
+    for member in members:
         if not safe_archive_path(member.filename):
             raise PreparationError("archive contains an unsafe path")
         mode = member.external_attr >> 16
         if mode & 0o170000 == 0o120000:
             raise PreparationError("ZIP archives containing symlinks are unsupported")
+        expanded_bytes += member.file_size
+        if expanded_bytes > MAX_EXPANDED_BYTES:
+            raise PreparationError("archive expands beyond the 4 GiB limit")
+
+
+def validate_app_size(app: Path) -> None:
+    expanded_bytes = 0
+    for root, _, files in os.walk(app, followlinks=False):
+        for filename in files:
+            expanded_bytes += (Path(root) / filename).stat(
+                follow_symlinks=False
+            ).st_size
+            if expanded_bytes > MAX_EXPANDED_BYTES:
+                raise PreparationError("Review app exceeds the 4 GiB limit")
 
 
 def download_review(url: str, destination: Path) -> None:
@@ -89,6 +116,7 @@ def copy_app(source: Path, destination: Path) -> None:
 
 def extract_source(source: Path, destination: Path) -> None:
     if source.is_dir() and source.suffix == ".app":
+        validate_app_size(source)
         copy_app(source, destination / source.name)
         return
     if tarfile.is_tarfile(source):
@@ -126,6 +154,7 @@ def extract_source(source: Path, destination: Path) -> None:
         apps = outer_apps(mountpoint)
         if len(apps) != 1:
             raise PreparationError("Review DMG must contain exactly one outer app")
+        validate_app_size(apps[0])
         copy_app(apps[0], destination / apps[0].name)
     finally:
         subprocess.run(

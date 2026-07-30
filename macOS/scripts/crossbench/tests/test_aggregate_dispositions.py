@@ -7,6 +7,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PROGRAM = ROOT / "aggregate-dispositions.py"
+LCP_PROGRAM = ROOT / "aggregate-lcp.py"
+ATTEMPTS_SCHEMA = (ROOT / "attempts-schema.sql").read_text(encoding="utf-8")
 HEADER = (
     "browser\tbrowser_version\tsite\toutcome\tvalidation_status\t"
     "validation_reason\tvalidation_http_status\tvalidation_detail\tarchive_sha256\t"
@@ -18,7 +20,11 @@ SHA = "a" * 64
 
 
 class AggregateDispositionsTests(unittest.TestCase):
-    def run_program(self, rows: str) -> subprocess.CompletedProcess[str]:
+    def run_program(
+        self,
+        rows: str,
+        webview_type: str = "chrome",
+    ) -> subprocess.CompletedProcess[str]:
         with tempfile.TemporaryDirectory() as directory:
             source = Path(directory) / "input.tsv"
             output = Path(directory) / "output.tsv"
@@ -29,12 +35,32 @@ class AggregateDispositionsTests(unittest.TestCase):
                     "--output", str(output), "--run-id", "42",
                     "--start-time", "2026-07-27T10:00:00Z",
                     "--gh-run-started-at", "2026-07-27T10:01:00Z",
-                    "--webview-type", "chrome",
+                    "--webview-type", webview_type,
                 ],
                 text=True, capture_output=True,
             )
             result.output = output.read_text() if output.exists() else ""
             return result
+
+    def run_lcp_program(self, webview_type: str) -> subprocess.CompletedProcess[str]:
+        with tempfile.TemporaryDirectory() as directory:
+            source = Path(directory) / "input.tsv"
+            output = Path(directory) / "output.tsv"
+            source.write_text(
+                "browser\tbrowser_version\tsite\trep\tlcp_ms\n"
+                "chrome\t1.2\texample.com\t1\t100\n",
+                encoding="utf-8",
+            )
+            return subprocess.run(
+                [
+                    "python3", str(LCP_PROGRAM), "--input", str(source),
+                    "--output", str(output), "--run-id", "42",
+                    "--start-time", "2026-07-27T10:00:00Z",
+                    "--gh-run-started-at", "2026-07-27T10:01:00Z",
+                    "--webview-type", webview_type,
+                ],
+                text=True, capture_output=True,
+            )
 
     def test_emits_exact_columns_null_and_clickhouse_escaping(self) -> None:
         detail = r'"path=C:\tmp\literal\N"'
@@ -120,8 +146,39 @@ class AggregateDispositionsTests(unittest.TestCase):
             text=True, capture_output=True,
         )
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn("--webview-type WEBVIEW_TYPE", result.stdout)
-        self.assertNotIn("[--webview-type WEBVIEW_TYPE]", result.stdout)
+        self.assertIn("--webview-type {chrome,safari,ddg}", result.stdout)
+        self.assertNotIn("[--webview-type {chrome,safari,ddg}]", result.stdout)
+
+    def test_aggregators_accept_exactly_the_supported_webview_types(self) -> None:
+        disposition_row = (
+            f"chrome\t1.2\texample.com\tmeasured\tok\t-\t-\t-\t{SHA}"
+            "\t-\t-\t-\t1\t1\t1\t0\t0\t12000\tmacOS-15\n"
+        )
+        runners = (
+            lambda value: self.run_program(disposition_row, value),
+            self.run_lcp_program,
+        )
+        for runner in runners:
+            for webview_type in ("chrome", "safari", "ddg"):
+                with self.subTest(runner=runner, webview_type=webview_type):
+                    result = runner(webview_type)
+                    self.assertEqual(result.returncode, 0, result.stderr)
+            with self.subTest(runner=runner, webview_type="firefox"):
+                result = runner("firefox")
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn(
+                    "invalid choice: 'firefox' (choose from 'chrome', 'safari', 'ddg')",
+                    result.stderr,
+                )
+
+    def test_attempts_schema_is_non_destructive_and_idempotent(self) -> None:
+        normalized_schema = ATTEMPTS_SCHEMA.upper()
+        self.assertNotIn("DROP TABLE", normalized_schema)
+        self.assertIn(
+            "CREATE TABLE IF NOT EXISTS "
+            "NATIVE_APPS.MACOS_BROWSER_HEALTH_NAV_TO_LCP_ATTEMPTS",
+            normalized_schema,
+        )
 
 
 if __name__ == "__main__":

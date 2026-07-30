@@ -70,6 +70,25 @@ class DDGWorkflowContractTests(unittest.TestCase):
         self.assertIn("./provision-ddg-runtime.sh", WORKFLOW)
         self.assertNotIn("./provision-macos.sh", WORKFLOW)
 
+    def test_cleanup_removes_partial_install_only_at_the_exact_review_path(self) -> None:
+        cleanup = WORKFLOW[
+            WORKFLOW.index("      - name: Remove dedicated Review app") :
+            WORKFLOW.index("      - name: Upload results TSV")
+        ]
+        self.assertIn(
+            'expected="/Applications/DuckDuckGo Performance Review-'
+            '${GITHUB_RUN_ID}.app"',
+            cleanup,
+        )
+        self.assertIn('if [ "$DDG_APP" != "$expected" ]; then', cleanup)
+        self.assertIn(
+            'if [ -e "$DDG_APP" ]; then\n'
+            '            rm -rf -- "$DDG_APP"',
+            cleanup,
+        )
+        self.assertNotIn("defaults read", cleanup)
+        self.assertNotIn("Info.plist", cleanup)
+
     def test_review_app_uses_launch_services_without_token_logging(self) -> None:
         self.assertIn("/usr/bin/open -n", LAUNCHER)
         self.assertIn('--env "AUTOMATION_TOKEN=$AUTOMATION_TOKEN"', LAUNCHER)

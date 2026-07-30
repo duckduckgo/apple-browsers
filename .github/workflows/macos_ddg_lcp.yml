@@ -217,11 +217,6 @@ jobs:
             exit 1
           fi
           if [ -e "$DDG_APP" ]; then
-            bundle_id="$(defaults read "$DDG_APP/Contents/Info" CFBundleIdentifier)"
-            if [ "$bundle_id" != "com.duckduckgo.macos.browser.review" ]; then
-              echo "ERROR: refusing to remove an unexpected app bundle." >&2
-              exit 1
-            fi
             rm -rf -- "$DDG_APP"
           fi
 

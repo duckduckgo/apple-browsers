@@ -84,6 +84,9 @@ class TabsBarCell: UICollectionViewCell {
         clipsToBounds = true
         contentView.clipsToBounds = true
 
+        contentView.layer.cornerRadius = Self.cornerRadius
+        contentView.layer.cornerCurve = .circular
+
         faviconContainerView.translatesAutoresizingMaskIntoConstraints = false
 
         faviconImage.translatesAutoresizingMaskIntoConstraints = false
@@ -292,9 +295,10 @@ extension TabsBarCell: TabObserver {
 }
 
 extension TabsBarCell: UIPointerInteractionDelegate {
-    
+
     func pointerInteraction(_ interaction: UIPointerInteraction, styleFor region: UIPointerRegion) -> UIPointerStyle? {
-        return .init(effect: .highlight(.init(view: contentView)))
+        guard let view = interaction.view else { return nil }
+        return .init(effect: .automatic(.init(view: view)))
     }
 
 }

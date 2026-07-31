@@ -18,6 +18,7 @@
 //
 
 import Foundation
+import PersistenceTestingUtils
 import UIKit
 import XCTest
 @testable import Core
@@ -304,13 +305,31 @@ class LargeOmniBarStateTests: XCTestCase {
         XCTAssertTrue(testee.clearTextOnStart)
     }
 
-    func testWhenCustomizeNTPIconsIsEnabledThenHomeNonEditingStateShowsCustomizableButton() {
+    func testWhenCustomizeNTPIconsIsEnabledAndButtonDoesNotRequireWebPageThenHomeNonEditingStateShowsCustomizableButton() {
         mockFeatureFlagger.enabledFeatureFlags = [.customizeNTPIcons]
+        let mobileCustomization = MobileCustomization(keyValueStore: MockThrowingKeyValueStore(), isPad: false)
+        var customizationState = mobileCustomization.state
+        customizationState.currentAddressBarButton = .home
+        mobileCustomization.persist(customizationState)
         let testee = LargeOmniBarState.HomeNonEditingState(
-            dependencies: MockOmnibarDependency(voiceSearchHelper: enabledVoiceSearchHelper, featureFlagger: mockFeatureFlagger),
+            dependencies: MockOmnibarDependency(voiceSearchHelper: enabledVoiceSearchHelper,
+                                                featureFlagger: mockFeatureFlagger,
+                                                mobileCustomization: mobileCustomization),
             isLoading: false)
 
         XCTAssertTrue(testee.showCustomizableButton)
+    }
+
+    func testWhenCustomizeNTPIconsIsEnabledAndButtonRequiresWebPageThenHomeNonEditingStateHidesCustomizableButton() {
+        mockFeatureFlagger.enabledFeatureFlags = [.customizeNTPIcons]
+        let mobileCustomization = MobileCustomization(keyValueStore: MockThrowingKeyValueStore(), isPad: false)
+        let testee = LargeOmniBarState.HomeNonEditingState(
+            dependencies: MockOmnibarDependency(voiceSearchHelper: enabledVoiceSearchHelper,
+                                                featureFlagger: mockFeatureFlagger,
+                                                mobileCustomization: mobileCustomization),
+            isLoading: false)
+
+        XCTAssertFalse(testee.showCustomizableButton)
     }
 
     func testWhenInHomeNonEditingStateThenEditingStartedTransitionsToEmptyEditingState() {

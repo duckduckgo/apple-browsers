@@ -180,7 +180,7 @@ class MobileCustomization {
 
     var toolbarButtonOptions: [Button] {
         var buttons = Self.toolbarButtons
-        if voiceShortcutFeature.isAvailable {
+        if voiceShortcutFeature.isAvailable && isDuckAIEnabled() {
             buttons.append(.duckAIVoice)
         }
         return buttons
@@ -188,7 +188,7 @@ class MobileCustomization {
 
     var addressBarButtonOptions: [Button] {
         var buttons = Self.addressBarButtons
-        if voiceShortcutFeature.isAvailable {
+        if voiceShortcutFeature.isAvailable && isDuckAIEnabled() {
             buttons.append(.duckAIVoice)
         }
         return buttons
@@ -219,6 +219,7 @@ class MobileCustomization {
     private let pixelFiring: PixelFiring.Type
     private let voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding
     private let connectionStatusObserver: ConnectionStatusObserver?
+    private let isDuckAIEnabled: () -> Bool
 
     var connectionStatusPublisher: AnyPublisher<ConnectionStatus, Never> {
         connectionStatusObserver?.publisher ?? Empty<ConnectionStatus, Never>().eraseToAnyPublisher()
@@ -240,13 +241,15 @@ class MobileCustomization {
          },
          pixelFiring: PixelFiring.Type = Pixel.self,
          voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding = DuckAIVoiceShortcutFeature(),
-         connectionStatusObserver: ConnectionStatusObserver? = nil) {
+         connectionStatusObserver: ConnectionStatusObserver? = nil,
+         isDuckAIEnabled: @escaping () -> Bool = { true }) {
         self.keyValueStore = keyValueStore
         self.isPad = isPad
         self.postChangeNotification = postChangeNotification
         self.pixelFiring = pixelFiring
         self.voiceShortcutFeature = voiceShortcutFeature
         self.connectionStatusObserver = connectionStatusObserver
+        self.isDuckAIEnabled = isDuckAIEnabled
     }
 
     /// Get the current button for the given storage key.  If the button isn't in the alloweed list then the default is returned.  This prevents migration problems if the options change.
@@ -265,6 +268,10 @@ class MobileCustomization {
         setCurrentAddressBarButton(state.currentAddressBarButton)
         cachedState = nil
         postChangeNotification(state)
+    }
+
+    func refreshAvailability() {
+        cachedState = nil
     }
 
     func fireAddressBarCustomizationStartedPixel() {

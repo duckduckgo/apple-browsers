@@ -113,7 +113,9 @@ struct SmallOmniBarState {
         let showAbort = false
         let showRefresh = false
         var showCustomizableButton: Bool {
-            dependencies.featureFlagger.isFeatureOn(.customizeNTPIcons)
+            guard dependencies.featureFlagger.isFeatureOn(.customizeNTPIcons) else { return false }
+            let state = dependencies.mobileCustomization.state
+            return state.isEnabled && !state.currentAddressBarButton.requiresWebPage
         }
         let showMenu = false
         let showSettings = false

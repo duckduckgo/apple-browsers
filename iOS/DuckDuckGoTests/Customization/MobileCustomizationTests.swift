@@ -286,6 +286,31 @@ final class MobileCustomizationTests {
     }
 
     @available(iOS 16, *)
+    @Test("Duck.ai options are hidden and selections fall back when Duck.ai is disabled", .timeLimit(.minutes(1)))
+    func duckAIOptionsHiddenWhenDuckAIIsDisabled() {
+        var isDuckAIEnabled = true
+        let customization = MobileCustomization(
+            keyValueStore: MockThrowingKeyValueStore(),
+            isPad: false,
+            postChangeNotification: { _ in },
+            voiceShortcutFeature: MockVoiceShortcutFeature(available: true),
+            isDuckAIEnabled: { isDuckAIEnabled })
+
+        var state = customization.state
+        state.currentToolbarButton = .duckAIVoice
+        state.currentAddressBarButton = .duckAIVoice
+        customization.persist(state)
+
+        isDuckAIEnabled = false
+        customization.refreshAvailability()
+
+        #expect(!customization.toolbarButtonOptions.contains(.duckAIVoice))
+        #expect(!customization.addressBarButtonOptions.contains(.duckAIVoice))
+        #expect(customization.state.currentToolbarButton == MobileCustomization.toolbarDefault)
+        #expect(customization.state.currentAddressBarButton == MobileCustomization.addressBarDefault)
+    }
+
+    @available(iOS 16, *)
     @Test("Saved duckAIVoice falls back to default when FF is off", .timeLimit(.minutes(1)))
     func savedDuckAIVoiceFallsBackWhenFFOff() {
         let keyValueStore = MockThrowingKeyValueStore()

@@ -103,6 +103,9 @@
 /* Cancel action - button shown in alert */
 "action.title.cancel" = "Annuleren";
 
+/* Open the native Duck.ai chat history sheet from the browser menu. */
+"action.title.chats" = "Chats";
+
 /* Copy action */
 "action.title.copy" = "Kopiëren";
 
@@ -212,7 +215,7 @@
 "action.title.vpn" = "VPN";
 
 /* Description of the Ad Blocking feature in settings */
-"ad.blocking.description" = "Blokkeert invasieve trackers voordat ze worden geladen, waardoor advertenties die afhankelijk zijn van tracking effectief worden geëlimineerd";
+"ad.blocking.description" = "We blokkeren invasieve trackers voordat ze worden geladen. Zo elimineren we effectief advertenties die afhankelijk zijn van tracking.";
 
 /* Section header for YouTube-specific ad blocking settings */
 "ad.blocking.youtube.section.header" = "YouTube-advertentieblokkering";
@@ -247,24 +250,6 @@
 /* Settings screen title for AI features */
 "ai-features.settings.title" = "AI-functies";
 
-/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as a regular text conversation. */
-"aiChat.tabSwitcher.card.chip.chat" = "Chat";
-
-/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as the transcript of a finished voice conversation. Not translated; final copy will land in a follow-up PR. */
-"aiChat.tabSwitcher.card.chip.transcript" = "Transcript";
-
-/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as a live voice session. Not translated; final copy will land in a follow-up PR. */
-"aiChat.tabSwitcher.card.chip.voice" = "Voicechat";
-
-/* Title shown on a Duck.ai tab grid card when the chat has no title yet. Not translated; final copy will land in a follow-up PR. */
-"aiChat.tabSwitcher.card.untitledChat" = "Nieuwe chat";
-
-/* Status label at the top of the Duck.ai tab grid card for a tab with a live voice session in progress. A leading microphone glyph is shown next to it in the UI. Not translated; final copy will land in a follow-up PR. */
-"aiChat.tabSwitcher.card.voice.listening" = "Luisteren …";
-
-/* VoiceOver label for the Duck.ai tab grid card of a tab with a live voice session — same as the visible status without the decorative emoji. Not translated; final copy will land in a follow-up PR. */
-"aiChat.tabSwitcher.card.voice.listening.accessibilityLabel" = "Luisteren…";
-
 /* List row label in the app menu on a Duck.ai tab — opens the recent Duck.ai chats sidebar */
 "aichat.appMenu.chats" = "Chats";
 
@@ -298,6 +283,9 @@
 /* Error message displayed when the user has attached more images than are allowed in one message. Parameter is the backend-provided maximum number of images per message. */
 "aichat.attachment.image.turn.limit" = "Je kunt slechts %d afbeeldingen tegelijk bijvoegen.";
 
+/* Top-level attachment menu option to attach the current page content to an AI chat message */
+"aichat.attachment.option.ask.about.page" = "Stel een vraag over de pagina";
+
 /* Top-level attachment menu option to add a file to an AI chat message */
 "aichat.attachment.option.attach.file" = "Bestand toevoegen";
 
@@ -328,6 +316,9 @@
 /* Title for the New Fire Tab row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newFireTab" = "Nieuw Fire-tabblad";
 
+/* Title for the New Image row in the Duck.ai tab header Plus (+) menu — opens Duck.ai in image generation mode */
+"aichat.header.plusMenu.newImage" = "Nieuwe afbeelding";
+
 /* Title for the New Search row in the Duck.ai tab header Plus (+) menu — opens a new tab and forces search mode for that entry */
 "aichat.header.plusMenu.newSearch" = "Nieuw zoeken";
 
@@ -336,6 +327,75 @@
 
 /* Title for the New Voice Chat row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newVoiceChat" = "Nieuwe spraakchat";
+
+/* Error toast shown when a Duck.ai chat download fails and nothing was saved. */
+"aiChat.history.download.failed.message" = "Kon niet downloaden. Probeer het opnieuw.";
+
+/* Primary button on the empty Duck.ai chat-history screen; opens the Duck.ai web chat. */
+"aiChat.history.emptyState.openDuckAi" = "Duck.ai openen";
+
+/* Title shown when the user has no Duck.ai chat history yet. */
+"aiChat.history.emptyState.title" = "Geen recente chats";
+
+/* Message of the alert shown when Duck.ai chat history fails to load. */
+"aiChat.history.loadError.message" = "Er is iets misgegaan bij het laden van je Duck.ai-chats. Probeer het later opnieuw.";
+
+/* Title of the alert shown when Duck.ai chat history fails to load. */
+"aiChat.history.loadError.title" = "Kon chats niet laden";
+
+/* Accessibility label for the overflow (three dots) menu button in the Duck.ai chat history navigation bar. */
+"aiChat.history.menu.a11y" = "Meer";
+
+/* Menu item opening Duck.ai Chat Protection settings from the Duck.ai chat history list. */
+"aiChat.history.menu.chatProtection" = "Chatbeveiliging";
+
+/* Menu item that starts multi-selecting chats in the Duck.ai chat history list. */
+"aiChat.history.menu.selectChats" = "Chats selecteren";
+
+/* Shown inside the Duck.ai chat history list when the user's search query returns no matching chats. */
+"aiChat.history.noSearchResults.title" = "Geen overeenkomsten gevonden";
+
+/* Long-press row menu item that deletes a Duck.ai chat. */
+"aiChat.history.rowMenu.delete" = "Verwijderen";
+
+/* Long-press row menu item that downloads a Duck.ai chat. */
+"aiChat.history.rowMenu.download" = "Downloaden";
+
+/* Long-press row menu item that pins a Duck.ai chat. */
+"aiChat.history.rowMenu.pin" = "Pin";
+
+/* Long-press row menu item that starts multi-selecting chats in the Duck.ai chat history list. */
+"aiChat.history.rowMenu.select" = "Selecteren";
+
+/* Long-press row menu item that unpins a Duck.ai chat. */
+"aiChat.history.rowMenu.unpin" = "Loskoppelen";
+
+/* Accessibility label for the search button in the Duck.ai chat history navigation bar. */
+"aiChat.history.search.a11y" = "Zoeken";
+
+/* Placeholder for the search bar at the top of the Duck.ai chat history list. */
+"aiChat.history.searchBar.placeholder" = "Zoeken";
+
+/* Section header above the user's pinned chats in the Duck.ai chat history list. */
+"aiChat.history.section.pinned" = "Vastgezet";
+
+/* Section header above the user's recent (unpinned) chats in the Duck.ai chat history list. */
+"aiChat.history.section.recent" = "Recent";
+
+/* Multi-select toolbar button that deletes all chats when none are individually selected. */
+"aiChat.history.selection.deleteAll" = "Alles verwijderen";
+
+/* Accessibility label for the delete action revealed by swiping a Duck.ai chat row. */
+"aiChat.history.swipe.delete.a11y" = "Chat verwijderen";
+
+/* Accessibility label for the download action revealed by swiping a Duck.ai chat row. */
+"aiChat.history.swipe.download.a11y" = "Chat downloaden";
+
+/* Accessibility label for the pin action revealed by leading-swiping a Duck.ai chat row in the Recent section. */
+"aiChat.history.swipe.pin.a11y" = "Chat vastzetten";
+
+/* Accessibility label for the unpin action revealed by leading-swiping a Duck.ai chat row in the Pinned section. */
+"aiChat.history.swipe.unpin.a11y" = "Chat loskoppelen";
 
 /* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.extended.subtitle" = "Voor analytische taken";
@@ -355,18 +415,6 @@
 /* Title for the reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.reasoning.title" = "Redenering";
 
-/* Body of the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. ** markers indicate bold text and should be preserved around the translated equivalents of the menu options Settings, Sync & Backup, and Sync With Another Device. */
-"aiChat.syncIntroSheet.body" = "Vind de QR-code in de DuckDuckGo-app op je andere apparaat door naar **Instellingen** › **Sync & Backup** › **Synchroniseren met een ander apparaat** te gaan.";
-
-/* Secondary button on the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. */
-"aiChat.syncIntroSheet.notNow" = "Niet nu";
-
-/* Primary button on the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. */
-"aiChat.syncIntroSheet.scan.button" = "QR-code scannen";
-
-/* Title of the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. */
-"aiChat.syncIntroSheet.title" = "Laten we je chats synchroniseren op al je apparaten!";
-
 /* Primary button of the sync promo card shown above the Duck.ai recent chats list. */
 "aiChat.syncPromo.button" = "Synchroniseren met een ander apparaat";
 
@@ -375,6 +423,24 @@
 
 /* Headline of the sync promo card shown above the Duck.ai recent chats list. */
 "aiChat.syncPromo.title" = "Krijg toegang tot je chats op al je apparaten met Sync & Backup.";
+
+/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as a regular text conversation. */
+"aiChat.tabSwitcher.card.chip.chat" = "Chat";
+
+/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as the transcript of a finished voice conversation. */
+"aiChat.tabSwitcher.card.chip.transcript" = "Transcript";
+
+/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as a live voice session. */
+"aiChat.tabSwitcher.card.chip.voice" = "Voicechat";
+
+/* Title shown on a Duck.ai tab grid card when the chat has no title yet. */
+"aiChat.tabSwitcher.card.untitledChat" = "Nieuwe chat";
+
+/* Status label at the top of the Duck.ai tab grid card for a tab with a live voice session in progress. A leading microphone glyph is shown next to it in the UI. */
+"aiChat.tabSwitcher.card.voice.listening" = "Luisteren …";
+
+/* VoiceOver label for the Duck.ai tab grid card of a tab with a live voice session — same as the visible status without the decorative emoji. */
+"aiChat.tabSwitcher.card.voice.listening.accessibilityLabel" = "Luisteren…";
 
 /* Subtitle for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.subtitle" = "Stel toon, lengte en gedrag in";
@@ -540,8 +606,6 @@
 
 /* Description for unable to sync to server error */
 "alert.unable-to-sync-to-server-description" = "Er kan geen verbinding worden gemaakt met de server.";
-
-/* Description for unable to sync with another device error */
 
 /* Description for unable to turn sync off error */
 "alert.unable-to-turn-sync-off-description" = "'Synchronisatie en back-up' kan niet worden uitgeschakeld.";
@@ -1935,6 +1999,246 @@
 /* Title for the Duck.ai Siri education screen */
 "duckai.siri.education.screen.title" = "Praat met Duck.ai met behulp van Siri!";
 
+/* Suggested prompt chip: cast and crew */
+"duckai.suggestion.cast-crew.label" = "Cast en crew";
+
+/* Suggested prompt submitted text: cast and crew */
+"duckai.suggestion.cast-crew.prompt" = "Wie zijn de belangrijkste leden in de cast en crew, en waar staan ze nog meer om bekend?";
+
+/* Suggested prompt chip: counterarguments */
+"duckai.suggestion.counterarguments.label" = "Wat zijn de tegenargumenten?";
+
+/* Suggested prompt submitted text: counterarguments */
+"duckai.suggestion.counterarguments.prompt" = "Wat zijn de belangrijkste tegenargumenten of kritiekpunten hierop?";
+
+/* Suggested prompt chip: course learning outcomes */
+"duckai.suggestion.course-learn.label" = "Wat ga ik leren?";
+
+/* Suggested prompt submitted text: course learning outcomes */
+"duckai.suggestion.course-learn.prompt" = "Wat zijn de belangrijkste dingen die ik in deze cursus kan leren?";
+
+/* Suggested prompt chip: is a course worth taking */
+"duckai.suggestion.course-worth.label" = "Is het de moeite waard?";
+
+/* Suggested prompt submitted text: is a course worth taking */
+"duckai.suggestion.course-worth.prompt" = "Is deze cursus aan de hand van deze pagina de moeite waard?";
+
+/* Suggested prompt chip: draft a cover letter */
+"duckai.suggestion.cover-letter.label" = "Een sollicitatiebrief opstellen";
+
+/* Suggested prompt submitted text: draft a cover letter */
+"duckai.suggestion.cover-letter.prompt" = "Stel een sollicitatiebrief op voor deze baan.";
+
+/* Suggested prompt chip: event details */
+"duckai.suggestion.event-details.label" = "Wat zijn de belangrijkste details?";
+
+/* Suggested prompt submitted text: event details */
+"duckai.suggestion.event-details.prompt" = "Vat de belangrijkste details van dit evenement samen.";
+
+/* Suggested prompt chip: explain the top answer */
+"duckai.suggestion.explain-answer.label" = "Geef uitleg voor het beste antwoord";
+
+/* Suggested prompt submitted text: explain the top answer */
+"duckai.suggestion.explain-answer.prompt" = "Leg het geaccepteerde antwoord in eenvoudige bewoordingen uit.";
+
+/* Suggested prompt chip: explain a research paper */
+"duckai.suggestion.explain-paper.label" = "Dit artikel nader uitleggen";
+
+/* Suggested prompt submitted text: explain a research paper */
+"duckai.suggestion.explain-paper.prompt" = "Leg dit onderzoeksartikel uit in eenvoudige taal.";
+
+/* Suggested prompt chip: explain a code repository */
+"duckai.suggestion.explain-repo.label" = "Leg deze repo uit";
+
+/* Suggested prompt submitted text: explain a code repository */
+"duckai.suggestion.explain-repo.prompt" = "Leg uit wat deze repository doet en hoe je deze gebruikt.";
+
+/* Suggested prompt chip: explain the content simply */
+"duckai.suggestion.explain-simply.label" = "Leg dit eenvoudig uit";
+
+/* Suggested prompt submitted text: explain the content simply */
+"duckai.suggestion.explain-simply.prompt" = "Leg dit uit in eenvoudige, gewone taal.";
+
+/* Suggested prompt chip: what an FAQ page answers */
+"duckai.suggestion.faq-answer.label" = "Welke vragen worden hier beantwoord?";
+
+/* Suggested prompt submitted text: what an FAQ page answers */
+"duckai.suggestion.faq-answer.prompt" = "Wat zijn de belangrijkste vragen die deze pagina beantwoordt?";
+
+/* Suggested prompt chip: summarize FAQ Q&As */
+"duckai.suggestion.faq-summary.label" = "De Q&A's samenvatten";
+
+/* Suggested prompt submitted text: summarize FAQ Q&As */
+"duckai.suggestion.faq-summary.prompt" = "Vat de vragen en antwoorden op deze pagina samen.";
+
+/* Suggested prompt chip: product alternatives */
+"duckai.suggestion.find-alternatives.label" = "Alternatieven zoeken";
+
+/* Suggested prompt submitted text: product alternatives */
+"duckai.suggestion.find-alternatives.prompt" = "Stel een aantal alternatieven voor dit product voor.";
+
+/* Suggested prompt chip: how-to materials */
+"duckai.suggestion.howto-materials.label" = "Wat heb ik nodig?";
+
+/* Suggested prompt submitted text: how-to materials */
+"duckai.suggestion.howto-materials.prompt" = "Maak een lijst van het gereedschap, de materialen en andere dingen die ik hiervoor nodig heb.";
+
+/* Suggested prompt chip: how-to steps */
+"duckai.suggestion.howto-steps.label" = "Help me door de stappen";
+
+/* Suggested prompt submitted text: how-to steps */
+"duckai.suggestion.howto-steps.prompt" = "Deel dit op in duidelijke, genummerde stappen.";
+
+/* Suggested prompt chip: interview prep */
+"duckai.suggestion.interview-prep.label" = "Help me met de voorbereiding op het sollicitatiegesprek";
+
+/* Suggested prompt submitted text: interview prep */
+"duckai.suggestion.interview-prep.prompt" = "Welke sollicitatievragen kan ik voor deze vacature verwachten?";
+
+/* Suggested prompt chip: key takeaways of an article */
+"duckai.suggestion.key-takeaways.label" = "Wat zijn de belangrijkste punten?";
+
+/* Suggested prompt submitted text: key takeaways of an article */
+"duckai.suggestion.key-takeaways.prompt" = "Wat zijn de belangrijkste punten uit dit artikel?";
+
+/* Suggested prompt chip: restaurant menu highlights */
+"duckai.suggestion.menu-highlights.label" = "Wat moet ik bestellen?";
+
+/* Suggested prompt submitted text: restaurant menu highlights */
+"duckai.suggestion.menu-highlights.prompt" = "Wat zijn de gerechten die hier aangeraden worden?";
+
+/* Suggested prompt chip: paper contributions */
+"duckai.suggestion.paper-contributions.label" = "Wat zijn de belangrijkste bijdragen?";
+
+/* Suggested prompt submitted text: paper contributions */
+"duckai.suggestion.paper-contributions.prompt" = "Wat zijn de belangrijkste bijdragen van dit artikel?";
+
+/* Suggested prompt chip: summarize a person's background */
+"duckai.suggestion.person-background.label" = "Hun achtergrond samenvatten";
+
+/* Suggested prompt submitted text: summarize a person's background */
+"duckai.suggestion.person-background.prompt" = "Geef een samenvatting van de achtergrond en het belangrijkste werk van deze persoon.";
+
+/* Suggested prompt chip: place hours and location */
+"duckai.suggestion.place-hours.label" = "Wat zijn de openingstijden en locatie?";
+
+/* Suggested prompt submitted text: place hours and location */
+"duckai.suggestion.place-hours.prompt" = "Wat zijn de openingstijden, locatie en contactgegevens van deze plek?";
+
+/* Suggested prompt chip: place reputation */
+"duckai.suggestion.place-reviews.label" = "Is dit een goede plek?";
+
+/* Suggested prompt submitted text: place reputation */
+"duckai.suggestion.place-reviews.prompt" = "Is dit een goede plek? Vat de reputatie samen op basis van beoordelingen en ratings.";
+
+/* Suggested prompt chip: product pros and cons */
+"duckai.suggestion.product-pros-cons.label" = "Wat zijn de voor- en nadelen?";
+
+/* Suggested prompt submitted text: product pros and cons */
+"duckai.suggestion.product-pros-cons.prompt" = "Wat zijn de voor- en nadelen van dit product?";
+
+/* Suggested prompt chip: recipe nutrition */
+"duckai.suggestion.recipe-nutrition.label" = "De voedingswaarde inschatten";
+
+/* Suggested prompt submitted text: recipe nutrition */
+"duckai.suggestion.recipe-nutrition.prompt" = "Schat de voedingsinformatie voor dit recept in.";
+
+/* Suggested prompt chip: related articles */
+"duckai.suggestion.related-articles.label" = "Gerelateerde artikelen voorstellen om verder te lezen";
+
+/* Suggested prompt submitted text: related articles */
+"duckai.suggestion.related-articles.prompt" = "Stel gerelateerde artikelen of onderwerpen voor die de moeite waard zijn om verder te lezen.";
+
+/* Suggested prompt chip: summarize reviews */
+"duckai.suggestion.review-summary.label" = "De beoordelingen samenvatten";
+
+/* Suggested prompt submitted text: summarize reviews */
+"duckai.suggestion.review-summary.prompt" = "Vat samen wat er in de beoordelingen staat.";
+
+/* Suggested prompt chip: review verdict */
+"duckai.suggestion.review-verdict.label" = "Wat is het oordeel?";
+
+/* Suggested prompt submitted text: review verdict */
+"duckai.suggestion.review-verdict.prompt" = "Wat is hiervan de beoordeling en de conclusie?";
+
+/* Suggested prompt chip: scale a recipe */
+"duckai.suggestion.scale-recipe.label" = "Aanpassen voor een ander aantal porties";
+
+/* Suggested prompt submitted text: scale a recipe */
+"duckai.suggestion.scale-recipe.prompt" = "Pas dit recept aan voor een ander aantal porties.";
+
+/* Suggested prompt chip: shopping list from a recipe */
+"duckai.suggestion.shopping-list.label" = "Een boodschappenlijst genereren";
+
+/* Suggested prompt submitted text: shopping list from a recipe */
+"duckai.suggestion.shopping-list.prompt" = "Maak een boodschappenlijst met de juiste hoeveelheden om dit recept te maken.";
+
+/* Suggested prompt chip: similar books */
+"duckai.suggestion.similar-books.label" = "Vergelijkbare boeken aanbevelen";
+
+/* Suggested prompt submitted text: similar books */
+"duckai.suggestion.similar-books.prompt" = "Beveel vergelijkbare boeken aan.";
+
+/* Suggested prompt chip: similar movies or shows */
+"duckai.suggestion.similar-titles.label" = "Beveel vergelijkbare titels aan";
+
+/* Suggested prompt submitted text: similar movies or shows */
+"duckai.suggestion.similar-titles.prompt" = "Beveel soortgelijke films of series aan.";
+
+/* Suggested prompt chip: summarize a book */
+"duckai.suggestion.summarize-book.label" = "Dit boek samenvatten";
+
+/* Suggested prompt submitted text: summarize a book */
+"duckai.suggestion.summarize-book.prompt" = "Vat dit boek samen.";
+
+/* Suggested prompt chip: summarize the current page */
+"duckai.suggestion.summarize-page.label" = "Deze pagina samenvatten";
+
+/* Suggested prompt submitted text: summarize the current page */
+"duckai.suggestion.summarize-page.prompt" = "Deze pagina samenvatten.";
+
+/* Suggested prompt chip: summarize a discussion thread */
+"duckai.suggestion.summarize-thread.label" = "Deze discussie samenvatten";
+
+/* Suggested prompt submitted text: summarize a discussion thread */
+"duckai.suggestion.summarize-thread.prompt" = "Vat deze discussiethread samen.";
+
+/* Suggested prompt chip: summarize a video */
+"duckai.suggestion.summarize-video.label" = "Deze video samenvatten";
+
+/* Suggested prompt submitted text: summarize a video */
+"duckai.suggestion.summarize-video.prompt" = "Vat deze video samen.";
+
+/* Suggested prompt chip: tailor a resume to a job */
+"duckai.suggestion.tailor-resume.label" = "Mijn cv aanpassen";
+
+/* Suggested prompt submitted text: tailor a resume to a job */
+"duckai.suggestion.tailor-resume.prompt" = "Help me mijn cv af te stemmen op deze vacature.";
+
+/* Suggested prompt chip: translate the current page */
+"duckai.suggestion.translate-page.label" = "Vertaal deze pagina";
+
+/* Suggested prompt submitted text: translate the page. %@ is replaced with the name of the user's language. */
+"duckai.suggestion.translate-page.prompt" = "Vertaal deze pagina naar %@.";
+
+/* Suggested prompt chip: video key points */
+"duckai.suggestion.video-key-points.label" = "Wat zijn de belangrijkste punten?";
+
+/* Suggested prompt submitted text: video key points */
+"duckai.suggestion.video-key-points.prompt" = "Wat zijn de belangrijkste punten die in deze video aan bod komen?";
+
+/* Suggested prompt chip: person background */
+"duckai.suggestion.who-is-this.label" = "Wie is deze persoon?";
+
+/* Suggested prompt submitted text: person background */
+"duckai.suggestion.who-is-this.prompt" = "Geef me korte achtergrondinformatie over deze persoon.";
+
+/* Suggested prompt chip: is a movie/show worth watching */
+"duckai.suggestion.worth-watching.label" = "Is dit de moeite waard om te bekijken?";
+
+/* Suggested prompt submitted text: is a movie/show worth watching */
+"duckai.suggestion.worth-watching.prompt" = "Is dit de moeite waard? Geef me een mening zonder spoilers.";
+
 /* Welcome message in Duck.ai contextual sheet. %@ is replaced by a shield icon. */
 "duckai.welcome.message" = "Alle chats zijn %@ privé";
 
@@ -2961,6 +3265,9 @@
 /* Message label text for the status view when VPN is disconnected */
 "network.protection.status.header.message.on" = "Al het internetverkeer van apparaten wordt beveiligd\nvia de VPN.";
 
+/* Status view message shown while the VPN is on but Strict routing is off */
+"network.protection.status.header.message.strict.routing.off" = "Als Stricte Routering uitstaat, kan het zijn dat een deel van het verkeer het VPN omzeilt. Strikte routering wordt aanbevolen voor openbare netwerken.";
+
 /* Header title label text for the status view when VPN is disconnected */
 "network.protection.status.header.title.off" = "DuckDuckGo VPN is uitgeschakeld";
 
@@ -3003,8 +3310,29 @@
 /* Label shown on the title of the settings section in NetworkProtection's status view. */
 "network.protection.status.view.settings.section.title" = "Beheren";
 
+/* Label for the status pill shown while the VPN's Strict routing setting is off */
+"network.protection.status.view.strict.routing.pill.off" = "Strikte routering: Uit";
+
+/* Label for the status pill shown while the VPN's Strict routing setting is on */
+"network.protection.status.view.strict.routing.pill.on" = "Strikte routering: Aan";
+
+/* Tooltip shown for the status pill while the VPN's Strict routing setting is off */
+"network.protection.status.view.strict.routing.pill.tooltip.off" = "Strikte routering wordt aanbevolen voor openbare netwerken.";
+
+/* Tooltip shown for the status pill while the VPN's Strict routing setting is on */
+"network.protection.status.view.strict.routing.pill.tooltip.on" = "Sommige apps werken mogelijk niet terwijl Strikte routering is ingeschakeld.";
+
 /* Title label text for the status view when netP is disconnected */
 "network.protection.status.view.title" = "VPN";
+
+/* Title of the Troubleshooting section in the VPN status screen. */
+"network.protection.status.view.troubleshooting.section.title" = "Problemen oplossen";
+
+/* The body of the notification reminding the user to turn the VPN Strict routing setting back on */
+"network.protection.strict.routing.reminder.notification.body" = "Als strikte routering uitstaat, kan het zijn dat een deel van het verkeer het VPN omzeilt. Strikte routering wordt aanbevolen voor openbare netwerken.";
+
+/* The title of the notification reminding the user to turn the VPN Strict routing setting back on */
+"network.protection.strict.routing.reminder.notification.title" = "Strikte routering staat UIT";
 
 /* The body of the notification shown when VPN reconnects successfully */
 "network.protection.success.notification.body" = "DuckDuckGo VPN is ingeschakeld. Je locatie en online-activiteiten zijn beschermd.";
@@ -3199,7 +3527,7 @@
 "omnibar.notification.trackers-blocked" = "%d Trackers";
 
 /* Text displayed on notification appearing in the address bar when YouTube ad blocking is active */
-"omnibar.notification.youtube-ad-block-on" = "Blokkering van YouTube-advertenties aan";
+"omnibar.notification.youtube-ad-block-on" = "Advertentieblokkering aan";
 
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Ik snap het";
@@ -3732,6 +4060,9 @@
 /* Button to delete all tabs and data in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.all.button" = "Alles verwijderen";
 
+/* Button to delete all chats in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.chats.button" = "Chats verwijderen";
+
 /* Button to delete a single tab and its site data in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.tab.button" = "Tabblad verwijderen";
 
@@ -3864,9 +4195,6 @@
 /* Settings picker label for what to show when returning after inactivity */
 "settings.afterInactivity.v2.label" = "Na inactiviteit";
 
-/* Footer under the AI picker, descriptive sentence without link */
-"settings.ai.new.picker.footer" = "Probeer de nieuwe optie om te schakelen tussen zoeken en Duck.ai in de adresbalk.";
-
 /* Settings row that opens Duck.ai in a new tab */
 "settings.aichat.duckai.settings" = "Duck.ai-instellingen";
 
@@ -3882,9 +4210,6 @@
 /* Settings screen footer text for showing AI Chat in the input box */
 "settings.aichat.shortcuts.input.footer" = "Zoeken op het web of direct een vraag stellen aan Duck.ai vanuit de adresbalk";
 
-/* Title of search assist settings link */
-"settings.aifeatures.assist" = "Instellingen voor zoek Assist";
-
 /* Search Assist frequency option: never show AI-assisted answers */
 "settings.aifeatures.assist.never" = "Nooit";
 
@@ -3898,7 +4223,7 @@
 "settings.aifeatures.assist.sometimes" = "Soms";
 
 /* Title of the native Search Assist setting control */
-"settings.aifeatures.assist.title" = "Zoek Assist";
+"settings.aifeatures.assist.title" = "Search Assist";
 
 /* Settings screen cell subtitle for enabling automatic page content attachment */
 "settings.aifeatures.automatic.context.subtitle" = "Pagina-inhoud automatisch naar Duck.ai verzenden";
@@ -3910,7 +4235,7 @@
 "settings.aifeatures.chat.suggestions.title" = "Chatsuggesties";
 
 /* Button that turns off all AI features */
-"settings.aifeatures.disable.all" = "DuckDuckGo gebruiken zonder AI";
+"settings.aifeatures.disable.all" = "Gebruik DuckDuckGo zonder AI";
 
 /* Footer text below the disable all AI features button */
 "settings.aifeatures.disable.all.footer" = "Schakelt Duck.ai uit, verbergt door AI ondersteunde antwoorden in zoekresultaten en filtert bekende AI-spamwebsites in zoekresultaten voor afbeeldingen.";
@@ -4050,26 +4375,26 @@
 /* The name of the settings section containing options to set up the app */
 "settings.complete.setup" = "Je instelling voltooien";
 
-/* The name of Settings category in Privacy Features related to configuration of the privacy feature related to cookie pop-ups */
-"settings.cookie.pop-up-protection.protection" = "Bescherming tegen cookiepop-ups";
-
-/* Explanation in Settings how the cookie pop up protection feature works */
-"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo kan cookievoorkeuren automatisch beheren om je privacy te maximaliseren, het aantal cookies te minimaliseren en deze pop-ups te sluiten.\n[Meer informatie](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
-
 /* Explanation below the auto-manage cookie pop-ups toggle in settings */
 "settings.cookie.auto-manage.explanation" = "We proberen alleen de meest privacyvriendelijke cookie-opties voor je te selecteren en sluiten daarna deze pop-ups.";
 
 /* Title for the auto-manage cookie pop-ups toggle in settings */
 "settings.cookie.auto-manage.title" = "Cookiepop-ups automatisch beheren";
 
+/* The name of Settings category in Privacy Features related to configuration of the privacy feature related to cookie pop-ups */
+"settings.cookie.pop-up-protection.protection" = "Bescherming tegen cookiepop-ups";
+
+/* Explanation in Settings how the cookie pop up protection feature works */
+"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo kan cookievoorkeuren automatisch beheren om je privacy te maximaliseren, het aantal cookies te minimaliseren en deze pop-ups te sluiten.\n[Meer informatie](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
+
+/* Settings screen cell text for Cookie popups */
+"settings.cookie.popups" = "Cookiepop-ups beheren";
+
 /* Explanation below the pop-ups without opt-outs toggle in settings */
 "settings.cookie.popups-without-opt-outs.explanation" = "Laat DuckDuckGo je ook een klik besparen door namens jou cookies te accepteren om pop-ups te sluiten waarbij je je niet kunt afmelden.";
 
 /* Title for the pop-ups without opt-outs toggle in settings */
 "settings.cookie.popups-without-opt-outs.title" = "Pop-ups zonder afmeldmogelijkheid";
-
-/* Settings screen cell text for Cookie popups */
-"settings.cookie.popups" = "Cookiepop-ups beheren";
 
 /* Label for customizable toolbar button that deletes tabs and data */
 "settings.customizable.button.delete.tabs.and.data" = "Tabbladen en gegevens verwijderen";
@@ -4202,6 +4527,9 @@
 
 /* The name of a settings category listing next steps */
 "settings.next.steps" = "Volgende stappen";
+
+/* Accessibility label / title for the button that hides the Settings Next Steps section */
+"settings.next.steps.hide" = "Verbergen";
 
 /* Label describing a feature which is turned off */
 "settings.off" = "Uit";
@@ -4397,6 +4725,12 @@
 
 /* Settings screen cell text for Unprotected Sites */
 "settings.unprotected.sites" = "Onbeschermde sites";
+
+/* Description shown above the list of unprotected sites */
+"settings.unprotected.sites.description" = "Deze sites worden niet beschermd met privacybescherming.";
+
+/* Message shown when there are no unprotected sites */
+"settings.unprotected.sites.empty.state" = "Privacybescherming ingeschakeld voor alle sites";
 
 /* Settings cell for Version */
 "settings.version" = "Versie";
@@ -5317,10 +5651,10 @@
 "windows-waitlist.waitlist-download-screen.try-duckduckgo-for-windows" = "Download DuckDuckGo voor Windows!";
 
 /* Body text of the bottom sheet asking the user to send an anonymous breakage report */
-"youtube.ad.blocking.breakage-report.message" = "Stuur een anoniem functioneringsrapport naar DuckDuckGo. Help mee om advertentieblokkering voor iedereen te verbeteren!";
+"youtube.ad.blocking.breakage-report.message" = "Stuur een anoniem rapport naar DuckDuckGo en help mee om advertentieblokkering voor iedereen te verbeteren!";
 
 /* Primary action sending an anonymous YouTube ad-blocking breakage report */
-"youtube.ad.blocking.breakage-report.send" = "Functioneringsrapport verzenden";
+"youtube.ad.blocking.breakage-report.send" = "Anoniem rapport verzenden";
 
 /* Title of the bottom sheet asking the user to send an anonymous breakage report after disabling YouTube ad blocking */
 "youtube.ad.blocking.breakage-report.title" = "Werkt de blokkering van YouTube-advertenties niet?";
@@ -5365,7 +5699,7 @@
 "youtube.ad.blocking.unavailable.got-it" = "Ik snap het";
 
 /* Body text of the bottom sheet shown when YouTube ad blocking has been remotely disabled */
-"youtube.ad.blocking.unavailable.message" = "Door recente wijzigingen in YouTube werkt advertentieblokkering niet meer naar behoren. We werken aan een oplossing voor deze problemen. Bedankt voor je begrip.";
+"youtube.ad.blocking.unavailable.message" = "De blokkering van advertenties is beïnvloed door recente wijzigingen aan YouTube. We werken aan een oplossing voor deze problemen. Bedankt voor je begrip.";
 
 /* Title of the bottom sheet shown when YouTube ad blocking has been remotely disabled */
 "youtube.ad.blocking.unavailable.title" = "YouTube-advertentieblokkering niet beschikbaar";
@@ -5385,75 +5719,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Wat wil je importeren?";
 
-
-/* No comment provided by engineer. */
-"No matches for \"%@\"" = "Geen resultaten voor \"%@\"";
-
-
-/* Open the native Duck.ai chat history sheet from the browser menu. */
-"action.title.chats" = "Chats";
-
-/* Title shown when the user has no Duck.ai chat history yet. */
-"aiChat.history.emptyState.title" = "Geen recente chats";
-
-/* Primary button on the empty Duck.ai chat-history screen; opens the Duck.ai web chat. */
-"aiChat.history.emptyState.openDuckAi" = "Duck.ai openen";
-
-/* Placeholder for the search bar at the top of the Duck.ai chat history list. */
-"aiChat.history.searchBar.placeholder" = "Zoeken";
-
-/* Section header above the user's pinned chats in the Duck.ai chat history list. */
-"aiChat.history.section.pinned" = "Vastgezet";
-
-/* Section header above the user's recent (unpinned) chats in the Duck.ai chat history list. */
-"aiChat.history.section.recent" = "Recent";
-
-/* Shown inside the Duck.ai chat history list when the user's search query returns no matching chats. */
-"aiChat.history.noSearchResults.title" = "Geen overeenkomsten gevonden";
-
-/* Title of the alert shown when Duck.ai chat history fails to load. */
-"aiChat.history.loadError.title" = "Kon chats niet laden";
-
-/* Message of the alert shown when Duck.ai chat history fails to load. */
-"aiChat.history.loadError.message" = "Er is iets misgegaan bij het laden van je Duck.ai-chats. Probeer het later opnieuw.";
-
-/* Accessibility label for the delete action revealed by swiping a Duck.ai chat row. */
-"aiChat.history.swipe.delete.a11y" = "Chat verwijderen";
-
-/* Accessibility label for the download action revealed by swiping a Duck.ai chat row. */
-"aiChat.history.swipe.download.a11y" = "Chat downloaden";
-
-/* Accessibility label for the pin action revealed by leading-swiping a Duck.ai chat row in the Recent section. */
-"aiChat.history.swipe.pin.a11y" = "Chat vastzetten";
-
-/* Accessibility label for the unpin action revealed by leading-swiping a Duck.ai chat row in the Pinned section. */
-"aiChat.history.swipe.unpin.a11y" = "Chat loskoppelen";
-
-/* Button to delete all chats in scoped fire confirmation dialog */
-"scoped.fire.confirmation.delete.chats.button" = "Chats verwijderen";
-
-/* Top-level attachment menu option to attach the current page content to an AI chat message */
-"aichat.attachment.option.ask.about.page" = "Stel een vraag over de pagina";
-
-/* Status view message shown while the VPN is on but Strict routing is off */
-"network.protection.status.header.message.strict.routing.off" = "Als Stricte Routering uitstaat, kan het zijn dat een deel van het verkeer het VPN omzeilt. Strikte routering wordt aanbevolen voor openbare netwerken.";
-
-/* Label for the status pill shown while the VPN's Strict routing setting is off */
-"network.protection.status.view.strict.routing.pill.off" = "Strikte routering: Uit";
-
-/* Label for the status pill shown while the VPN's Strict routing setting is on */
-"network.protection.status.view.strict.routing.pill.on" = "Strikte routering: Aan";
-
-/* Tooltip shown for the status pill while the VPN's Strict routing setting is off */
-"network.protection.status.view.strict.routing.pill.tooltip.off" = "Strikte routering wordt aanbevolen voor openbare netwerken.";
-
-/* Tooltip shown for the status pill while the VPN's Strict routing setting is on */
-"network.protection.status.view.strict.routing.pill.tooltip.on" = "Sommige apps werken mogelijk niet terwijl Strikte routering is ingeschakeld.";
-
-/* Title of the Troubleshooting section in the VPN status screen. */
-"network.protection.status.view.troubleshooting.section.title" = "Problemen oplossen";
-
-/* The body of the notification reminding the user to turn the VPN Strict routing setting back on */
-"network.protection.strict.routing.reminder.notification.body" = "Als strikte routering uitstaat, kan het zijn dat een deel van het verkeer het VPN omzeilt. Strikte routering wordt aanbevolen voor openbare netwerken.";
-/* The title of the notification reminding the user to turn the VPN Strict routing setting back on */
-"network.protection.strict.routing.reminder.notification.title" = "Strikte routering staat UIT";

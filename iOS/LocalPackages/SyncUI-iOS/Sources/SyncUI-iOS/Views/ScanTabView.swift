@@ -34,10 +34,12 @@ struct ScanTabView: View {
 
     var body: some View {
         ZStack(alignment: .top) {
+            if shouldRenderCamera {
+                cameraContainer
+            }
+
             if showIntroAnimation {
                 introAnimation
-            } else {
-                cameraContainer
             }
 
             instructions
@@ -47,9 +49,18 @@ struct ScanTabView: View {
                     }
                 )
         }
+        .background(Color(designSystemColor: .surfaceSecondary))
         .clipShape(RoundedRectangle(cornerRadius: 34))
         .ignoresSafeArea(.all, edges: .bottom)
         .onPreferenceChange(InstructionsHeightKey.self) { instructionsHeight = $0 }
+        .onAppear {
+            model.resetScanningGate()
+            model.prepareCameraForIntroIfAuthorized()
+        }
+    }
+
+    private var shouldRenderCamera: Bool {
+        !showIntroAnimation || model.videoPermission == .authorised
     }
 
     private var introAnimation: some View {
@@ -75,6 +86,8 @@ struct ScanTabView: View {
             .buttonStyle(SecondaryFillButtonStyle(compact: true, fullWidth: false))
             .padding(.bottom, 24)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color(designSystemColor: .surfaceSecondary))
         .contentShape(Rectangle())
         .onTapGesture {
             dismissIntroAnimation()
@@ -99,7 +112,7 @@ struct ScanTabView: View {
                     CameraPermissionDeniedView(model: model)
                 } else if model.videoPermission == .authorised && !model.showCamera {
                     CameraUnavailableView()
-                } else if model.showCamera && isCameraActive {
+                } else if model.videoPermission == .authorised && model.showCamera && isCameraActive {
                     QRCodeScannerView {
                         return await model.codeScanned($0)
                     } onCameraUnavailable: {
@@ -111,8 +124,10 @@ struct ScanTabView: View {
             }
         }
         .overlay {
-            if isScanningActive {
-                QRScannerOverlay(topInset: instructionsHeight)
+            if isScanningActive && !showIntroAnimation {
+                QRScannerOverlay(topInset: instructionsHeight) {
+                    model.scanningCanBegin()
+                }
             } else {
                 Color(designSystemColor: .shadowSecondary).opacity(0.7)
                     .allowsHitTesting(false)
@@ -150,8 +165,6 @@ private struct CameraPermissionDeniedView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            Spacer()
-
             Image(rebrandable: "SyncCameraPermission", bundle: .module)
                 .padding(.bottom, 20)
 
@@ -168,18 +181,16 @@ private struct CameraPermissionDeniedView: View {
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
 
-            Spacer()
-
             Button {
                 model.gotoSettings()
             } label: {
                 HStack {
-                    Image("SyncGotoButton", bundle: .module)
+                    Image(uiImage: DesignSystemImages.Glyphs.Size16.openIn)
                     Text(UserText.cameraGoToSettingsButton)
                 }
             }
-            .buttonStyle(SyncLabelButtonStyle())
-            .padding(.bottom, 24)
+            .buttonStyle(PrimaryButtonStyle(compact: true, fullWidth: false))
+            .padding(.vertical, 24)
         }
         .padding(.horizontal, 40)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -216,19 +227,21 @@ private struct InstructionsHeightKey: PreferenceKey {
 private struct QRScannerOverlay: View {
 
     let topInset: CGFloat
+    var onAnimationComplete: (() -> Void)?
 
     private let cornerRadius: CGFloat = 26
-    private let armLength: CGFloat = 28
-    private let lineWidth: CGFloat = 6
-    private let sideRatio: CGFloat = 0.6
-    private let initialScale: CGFloat = 0.5
+    private let armLength: CGFloat = 60
+    private let lineWidth: CGFloat = 4
+    private let sideRatio: CGFloat = 0.8
+    private let initialScale: CGFloat = 0.8
     private let animationDelay: TimeInterval = 0.5
+    private let animationResponse: TimeInterval = 0.5
 
     @State private var isExpanded = false
 
     var body: some View {
         GeometryReader { proxy in
-            let side = proxy.size.width * sideRatio
+            let side = min(proxy.size.width, proxy.size.height - topInset) * sideRatio
             let scale = isExpanded ? 1 : initialScale
             let center = CGPoint(x: proxy.size.width / 2, y: topInset + (proxy.size.height - topInset) / 2)
 
@@ -252,9 +265,14 @@ private struct QRScannerOverlay: View {
                 .position(center)
         }
         .onAppear {
-            withAnimation(.spring(response: 0.5, dampingFraction: 0.6).delay(animationDelay)) {
+            withAnimation(.spring(response: animationResponse, dampingFraction: 0.6).delay(animationDelay)) {
                 isExpanded = true
             }
+        }
+        .task {
+            try? await Task.sleep(nanoseconds: UInt64((animationDelay + animationResponse) * 1_000_000_000))
+            guard !Task.isCancelled else { return }
+            onAnimationComplete?()
         }
     }
 }
@@ -316,7 +334,6 @@ private struct ScanTabPreview: View {
             NavigationView {
                 ScanTabView(model: model, showIntroAnimation: $showIntroAnimation)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(SimplifiedSyncStyle.screenBackground)
                     .environment(\.colorScheme, .dark)
             }
         }
@@ -325,20 +342,21 @@ private struct ScanTabPreview: View {
 
 #Preview("Camera") {
     ScanTabPreview(model: scanTabPreviewModel(permission: .authorised, showCamera: true))
+        .environment(\.colorScheme, .dark)
 }
 
 #Preview("Permission Denied") {
     ScanTabPreview(model: scanTabPreviewModel(permission: .denied, showCamera: false))
+        .environment(\.colorScheme, .dark)
 }
 
 #Preview("Intro Animation") {
     ScanTabPreview(model: scanTabPreviewModel(permission: .authorised, showCamera: true), showIntroAnimation: true)
+        .environment(\.colorScheme, .dark)
 }
 
 #Preview("Scanner Overlay") {
     QRScannerOverlay(topInset: 0)
-        .background(SimplifiedSyncStyle.screenBackground)
         .ignoresSafeArea()
-        .environment(\.colorScheme, .dark)
 }
 #endif

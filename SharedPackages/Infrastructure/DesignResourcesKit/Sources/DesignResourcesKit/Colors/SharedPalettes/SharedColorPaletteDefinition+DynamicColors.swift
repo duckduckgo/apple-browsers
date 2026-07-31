@@ -228,10 +228,10 @@ extension SharedColorPaletteDefinition {
             return iconsTertiary
 
         /// Input
-        case .inputActive:
-            return inputActive
-        case .inputResting:
-            return inputResting
+        case .unifiedInputFieldFillPrimary:
+            return unifiedInputFieldFillPrimary
+        case .unifiedInputFieldFillSecondary:
+            return unifiedInputFieldFillSecondary
 
         /// System
         case .lines:
@@ -313,6 +313,15 @@ extension SharedColorPaletteDefinition {
 
     static func dynamicColor(for singleUseColor: SingleUseColor) -> DynamicColor {
         switch singleUseColor {
+        case .aiToggleBorder:
+            return DynamicColor(staticColor: .clear)
+        case .aiToggleBackground:
+            return controlsSubtleFillSecondary
+        case .aiToggleSelectionBackground:
+            return controlsRaisedFillPrimary
+        case .aiToggleSelectionBorder:
+            return shadowTertiary
+
         case .fireModeAccent:
             return DynamicColor(lightColor: RebrandingColor.Mandarin.mandarin50, darkColor: RebrandingColor.Mandarin.mandarin40)
         case .fireButtonGradientStart:

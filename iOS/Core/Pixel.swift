@@ -24,6 +24,7 @@ import FoundationExtensions
 import Networking
 import os.log
 
+/// *** Deprecated.  Use PixelKit for new pixels. ***
 public struct PixelParameters {
     public static let url = "url"
     public static let duration = "dur"
@@ -188,6 +189,8 @@ public struct PixelParameters {
 
     // Sync
     public static let connectedDevices = "connected_devices"
+    public static let syncPromptOption = "option"
+    public static let uiVersion = "ui_version"
 
     // Persistent pixel
     public static let originalPixelTimestamp = "originalPixelTimestamp"
@@ -218,12 +221,18 @@ public struct PixelParameters {
 
     // Fire animation
     public static let fireAnimation = "fireAnimationType"
+
+    // Contextual suggested prompts
+    public static let suggestionId = "suggestionId"
+    public static let suggestionsPageType = "pageType"
+    public static let suggestionsAreSmart = "isSmart"
 }
 
 public struct PixelValues {
     static let test = "1"
 }
 
+/// *** Deprecated. Use PixelKit for new pixels. ***
 public class Pixel {
 
     private struct Constants {

@@ -43,6 +43,12 @@ extension WebExtensionManager {
             if enabledTypes.contains(descriptor.type) {
                 await syncEmbeddedExtension(descriptor)
             } else {
+                // A launch loads every installed extension before this sync runs, so a type that is
+                // disabled gets unloaded seconds after loading — the same window the upgrade branch
+                // above waits out.
+                if let installed = installedEmbeddedExtension(for: descriptor.type) {
+                    await unloadGuard.awaitSettled(context(for: installed.uniqueIdentifier))
+                }
                 uninstallEmbeddedExtension(type: descriptor.type)
             }
         }
@@ -85,8 +91,26 @@ extension WebExtensionManager {
                 if shouldUpgrade(installed: installed, bundledVersion: bundledMetadata.version) {
                     Logger.webExtensions.info("⬆️ Upgrading embedded extension \(descriptor.type.rawValue): \(installed.version ?? "?") → \(bundledMetadata.version ?? "?")")
                     let oldVersion = installed.version
-                    try uninstallExtension(identifier: installed.uniqueIdentifier)
+                    let oldIdentifier = installed.uniqueIdentifier
+
+                    // Install before uninstalling: the versions have distinct identifiers and can
+                    // coexist, so a failed upgrade leaves the old version installed and working.
                     try await installEmbeddedExtension(from: bundledURL, type: descriptor.type, requiresExtraction: bundledMetadata.requiresExtraction)
+
+                    // Only unload the old version once its own load has settled.
+                    await unloadGuard.awaitSettled(context(for: oldIdentifier))
+
+                    // Removal failure isn't fatal — the new version is already installed.
+                    do {
+                        try uninstallExtension(identifier: oldIdentifier)
+                    } catch {
+                        Logger.webExtensions.error("⚠️ Upgraded \(descriptor.type.rawValue) but failed to remove old version '\(oldIdentifier)': \(error.localizedDescription)")
+                    }
+
+                    // Uninstalling the old version disabled scriptlet handling for the type (it's
+                    // keyed by type, not identifier), so re-enable it for the now-current version.
+                    await scriptletCoordinator?.onExtensionEnabled(for: descriptor.type)
+
                     pixelFiring.fire(.embeddedUpgraded(type: descriptor.type, fromVersion: oldVersion, toVersion: bundledMetadata.version))
                 } else {
                     Logger.webExtensions.debug("👌 Embedded extension \(descriptor.type.rawValue) is up to date (v\(installed.version ?? "?"))")
@@ -139,6 +163,7 @@ extension WebExtensionManager {
 
         do {
             let loadResult = try await loader.loadWebExtension(identifier: identifier, into: controller)
+            unloadGuard.recordLoad(of: identifier)
 
             let installedExtension = InstalledWebExtension(
                 uniqueIdentifier: identifier,

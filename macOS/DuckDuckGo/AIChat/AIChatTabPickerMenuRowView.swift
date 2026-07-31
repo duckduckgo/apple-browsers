@@ -45,6 +45,7 @@ final class AIChatTabPickerMenuRowView: NSView {
         static let spacingAfterCheckmark: CGFloat = 6
         static let spacingAfterIcon: CGFloat = 4
         static let spacingBeforeAccessory: CGFloat = 6
+        static let disabledAlpha: CGFloat = 0.4
     }
 
     private let checkmarkView = NSImageView()
@@ -52,6 +53,9 @@ final class AIChatTabPickerMenuRowView: NSView {
     private let titleLabel = NSTextField(labelWithString: "")
     private let accessoryLabel = NSTextField(labelWithString: "")
     private var trackingArea: NSTrackingArea?
+
+    /// The tab's id, so the submenu can refresh this row from the attachment list after a toggle.
+    let tabId: String
 
     private(set) var isAttached: Bool {
         didSet { checkmarkView.isHidden = !isAttached }
@@ -67,12 +71,23 @@ final class AIChatTabPickerMenuRowView: NSView {
 
     private let onToggle: () -> Void
 
+    /// Inert + dimmed when the cap is reached and this tab isn't attached. Mutable so the still-open submenu can refresh it.
+    private var isDisabled: Bool {
+        didSet {
+            guard oldValue != isDisabled else { return }
+            alphaValue = isDisabled ? Layout.disabledAlpha : 1.0
+            if isDisabled { isHovering = false }
+        }
+    }
+
     override var intrinsicContentSize: NSSize {
         NSSize(width: Layout.width, height: Layout.height)
     }
 
-    init(attachment: AIChatTabAttachment, isAttached: Bool, isCurrentTab: Bool, onToggle: @escaping () -> Void) {
+    init(attachment: AIChatTabAttachment, isAttached: Bool, isCurrentTab: Bool, isDisabled: Bool = false, onToggle: @escaping () -> Void) {
+        self.tabId = attachment.id
         self.isAttached = isAttached
+        self.isDisabled = isDisabled
         self.onToggle = onToggle
         super.init(frame: NSRect(x: 0, y: 0, width: Layout.width, height: Layout.height))
 
@@ -170,6 +185,9 @@ final class AIChatTabPickerMenuRowView: NSView {
             addSubview(accessoryLabel)
         }
 
+        // Set directly (a `didSet` doesn't fire during init).
+        alphaValue = isDisabled ? Layout.disabledAlpha : 1.0
+
         updateColors()
     }
 
@@ -209,6 +227,7 @@ final class AIChatTabPickerMenuRowView: NSView {
     }
 
     override func mouseEntered(with event: NSEvent) {
+        guard !isDisabled else { return }
         isHovering = true
     }
 
@@ -235,10 +254,17 @@ final class AIChatTabPickerMenuRowView: NSView {
     /// `NSMenu` would normally close on `mouseUp:` if we let the click bubble back as an item
     /// activation. Toggling locally here without chaining to `super` keeps the submenu open.
     override func mouseUp(with event: NSEvent) {
+        guard !isDisabled else { return }
         let pointInView = convert(event.locationInWindow, from: nil)
         guard bounds.contains(pointInView) else { return }
-        isAttached.toggle()
+        // Don't flip `isAttached` here — the toggle can no-op at the cap; `onToggle` refreshes via `applyState`.
         onToggle()
+    }
+
+    /// Re-applies attached + disabled state from the source of truth.
+    func applyState(isAttached: Bool, isDisabled: Bool) {
+        self.isAttached = isAttached
+        self.isDisabled = isDisabled
     }
 
     /// We override `mouseDown:` solely to consume the press half of the click. Without this,

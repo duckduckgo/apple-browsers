@@ -45,6 +45,7 @@ public enum OnboardingRebrandingImages {
     public enum Comparison {
         public static let safariIcon = Image("SafariBrowserIcon", bundle: .module)
         public static let ddgIcon = Image("DDGBrowserIcon", bundle: .module)
+        public static let googleIcon = Image("GoogleBrowserIcon", bundle: .module)
         public static let popularAIsIcon = Image("PopularAIsIcon", bundle: .module)
         public static let availableIcon = Image("Rebranding/Onboarding-Check", bundle: .module)
         public static let partialIcon = Image("Rebranding/Onboarding-Stop", bundle: .module)
@@ -58,6 +59,7 @@ public enum OnboardingRebrandingImages {
         public static let eraseDataIcon = Image("Rebranding/Comparison-EraseData", bundle: .module)
         public static let lockIcon = Image("Rebranding/Comparison-Lock", bundle: .module)
         public static let aiIcon = Image("Rebranding/Comparison-Ai", bundle: .module)
+        public static let lensIcon = Image("Rebranding/Comparison-Lens", bundle: .module)
     }
 
     public enum SearchExperience {

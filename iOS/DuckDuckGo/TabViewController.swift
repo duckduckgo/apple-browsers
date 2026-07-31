@@ -74,6 +74,8 @@ class TabViewController: UIViewController {
     /// auto-expand even before the `?mode=voice` URL is committed to the web view.
     var isVoiceModeRequested = false
 
+    var isDuckAIDeepLinkSurfaceRequested = false
+
     lazy var borderView = StyledTopBottomBorderView()
 
     var privacyDashboardAnchor: UIView!
@@ -2344,7 +2346,8 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     private func showDuckPlayerToastIfNeeded() {
-        guard let url = webView.url,
+        guard UIDevice.current.userInterfaceIdiom == .pad,
+              let url = webView.url,
               url.isYoutube,
               webView?.canGoBack == false else { return }
 

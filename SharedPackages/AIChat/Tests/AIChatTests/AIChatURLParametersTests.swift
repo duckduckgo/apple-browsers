@@ -114,6 +114,24 @@ final class AIChatURLParametersTests: XCTestCase {
         XCTAssertEqual(settingsItems.first?.value, "open")
     }
 
+    // MARK: - chatProtectionURL
+
+    func testChatProtectionURLAppendsParam() {
+        let baseURL = URL(string: "https://duck.ai")!
+        let result = AIChatURLParameters.chatProtectionURL(from: baseURL)
+        XCTAssertEqual(result.absoluteString, "https://duck.ai?chatProtection=open")
+    }
+
+    func testChatProtectionURLPreservesExistingQueryItems() {
+        let baseURL = URL(string: "https://duck.ai?q=hello")!
+        let result = AIChatURLParameters.chatProtectionURL(from: baseURL)
+
+        let components = URLComponents(url: result, resolvingAgainstBaseURL: false)!
+        let queryItems = components.queryItems ?? []
+        XCTAssertTrue(queryItems.contains(URLQueryItem(name: "q", value: "hello")))
+        XCTAssertTrue(queryItems.contains(URLQueryItem(name: "chatProtection", value: "open")))
+    }
+
     // MARK: - nativeCustomizeModalURL
 
     func testNativeCustomizeModalURLAppendsCustomizeResponsesParam() {

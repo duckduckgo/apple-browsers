@@ -103,6 +103,9 @@
 /* Cancel action - button shown in alert */
 "action.title.cancel" = "Prekliči";
 
+/* Open the native Duck.ai chat history sheet from the browser menu. */
+"action.title.chats" = "Klepeti";
+
 /* Copy action */
 "action.title.copy" = "Kopiraj";
 
@@ -212,7 +215,7 @@
 "action.title.vpn" = "VPN";
 
 /* Description of the Ad Blocking feature in settings */
-"ad.blocking.description" = "Blokira invazivne sledilnike, še preden se naložijo, s čimer učinkovito odstrani oglase, ki temeljijo na sledenju";
+"ad.blocking.description" = "Blokira invazivne sledilnike, še preden se naložijo, s čimer učinkovito odstrani oglase, ki temeljijo na sledenju.";
 
 /* Section header for YouTube-specific ad blocking settings */
 "ad.blocking.youtube.section.header" = "Blokiranje oglasov na YouTube";
@@ -247,24 +250,6 @@
 /* Settings screen title for AI features */
 "ai-features.settings.title" = "Lastnosti UI";
 
-/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as a regular text conversation. */
-"aiChat.tabSwitcher.card.chip.chat" = "Klepet";
-
-/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as the transcript of a finished voice conversation. Not translated; final copy will land in a follow-up PR. */
-"aiChat.tabSwitcher.card.chip.transcript" = "Prepis";
-
-/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as a live voice session. Not translated; final copy will land in a follow-up PR. */
-"aiChat.tabSwitcher.card.chip.voice" = "Glasovni klepet";
-
-/* Title shown on a Duck.ai tab grid card when the chat has no title yet. Not translated; final copy will land in a follow-up PR. */
-"aiChat.tabSwitcher.card.untitledChat" = "Nov klepet";
-
-/* Status label at the top of the Duck.ai tab grid card for a tab with a live voice session in progress. A leading microphone glyph is shown next to it in the UI. Not translated; final copy will land in a follow-up PR. */
-"aiChat.tabSwitcher.card.voice.listening" = "Poslušam …";
-
-/* VoiceOver label for the Duck.ai tab grid card of a tab with a live voice session — same as the visible status without the decorative emoji. Not translated; final copy will land in a follow-up PR. */
-"aiChat.tabSwitcher.card.voice.listening.accessibilityLabel" = "Poslušanje …";
-
 /* List row label in the app menu on a Duck.ai tab — opens the recent Duck.ai chats sidebar */
 "aichat.appMenu.chats" = "Klepeti";
 
@@ -298,6 +283,9 @@
 /* Error message displayed when the user has attached more images than are allowed in one message. Parameter is the backend-provided maximum number of images per message. */
 "aichat.attachment.image.turn.limit" = "Naenkrat lahko priložite samo toliko slik: %d.";
 
+/* Top-level attachment menu option to attach the current page content to an AI chat message */
+"aichat.attachment.option.ask.about.page" = "Vprašajte o strani";
+
 /* Top-level attachment menu option to add a file to an AI chat message */
 "aichat.attachment.option.attach.file" = "Dodaj datoteko";
 
@@ -328,6 +316,9 @@
 /* Title for the New Fire Tab row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newFireTab" = "Nov zavihek Fire";
 
+/* Title for the New Image row in the Duck.ai tab header Plus (+) menu — opens Duck.ai in image generation mode */
+"aichat.header.plusMenu.newImage" = "Nova slika";
+
 /* Title for the New Search row in the Duck.ai tab header Plus (+) menu — opens a new tab and forces search mode for that entry */
 "aichat.header.plusMenu.newSearch" = "Novo iskanje";
 
@@ -336,6 +327,75 @@
 
 /* Title for the New Voice Chat row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newVoiceChat" = "Nov glasovni klepet";
+
+/* Error toast shown when a Duck.ai chat download fails and nothing was saved. */
+"aiChat.history.download.failed.message" = "Prenos ni bil mogoč. Poskusite znova.";
+
+/* Primary button on the empty Duck.ai chat-history screen; opens the Duck.ai web chat. */
+"aiChat.history.emptyState.openDuckAi" = "Odprite Duck.ai";
+
+/* Title shown when the user has no Duck.ai chat history yet. */
+"aiChat.history.emptyState.title" = "Ni nedavnih pogovorov";
+
+/* Message of the alert shown when Duck.ai chat history fails to load. */
+"aiChat.history.loadError.message" = "Pri nalaganju klepetov Duck.ai je prišlo do napake. Poskusite znova pozneje.";
+
+/* Title of the alert shown when Duck.ai chat history fails to load. */
+"aiChat.history.loadError.title" = "Klepetov ni bilo mogoče naložiti";
+
+/* Accessibility label for the overflow (three dots) menu button in the Duck.ai chat history navigation bar. */
+"aiChat.history.menu.a11y" = "Več";
+
+/* Menu item opening Duck.ai Chat Protection settings from the Duck.ai chat history list. */
+"aiChat.history.menu.chatProtection" = "Zaščita klepeta";
+
+/* Menu item that starts multi-selecting chats in the Duck.ai chat history list. */
+"aiChat.history.menu.selectChats" = "Izberite klepete";
+
+/* Shown inside the Duck.ai chat history list when the user's search query returns no matching chats. */
+"aiChat.history.noSearchResults.title" = "Ni zadetkov";
+
+/* Long-press row menu item that deletes a Duck.ai chat. */
+"aiChat.history.rowMenu.delete" = "Izbriši";
+
+/* Long-press row menu item that downloads a Duck.ai chat. */
+"aiChat.history.rowMenu.download" = "Prenesi";
+
+/* Long-press row menu item that pins a Duck.ai chat. */
+"aiChat.history.rowMenu.pin" = "Pripni";
+
+/* Long-press row menu item that starts multi-selecting chats in the Duck.ai chat history list. */
+"aiChat.history.rowMenu.select" = "Izberi";
+
+/* Long-press row menu item that unpins a Duck.ai chat. */
+"aiChat.history.rowMenu.unpin" = "Odpni";
+
+/* Accessibility label for the search button in the Duck.ai chat history navigation bar. */
+"aiChat.history.search.a11y" = "Iskanje";
+
+/* Placeholder for the search bar at the top of the Duck.ai chat history list. */
+"aiChat.history.searchBar.placeholder" = "Iskanje";
+
+/* Section header above the user's pinned chats in the Duck.ai chat history list. */
+"aiChat.history.section.pinned" = "Pripeto";
+
+/* Section header above the user's recent (unpinned) chats in the Duck.ai chat history list. */
+"aiChat.history.section.recent" = "Nedavno";
+
+/* Multi-select toolbar button that deletes all chats when none are individually selected. */
+"aiChat.history.selection.deleteAll" = "Izbriši vse";
+
+/* Accessibility label for the delete action revealed by swiping a Duck.ai chat row. */
+"aiChat.history.swipe.delete.a11y" = "Izbriši klepet";
+
+/* Accessibility label for the download action revealed by swiping a Duck.ai chat row. */
+"aiChat.history.swipe.download.a11y" = "Prenesi klepet";
+
+/* Accessibility label for the pin action revealed by leading-swiping a Duck.ai chat row in the Recent section. */
+"aiChat.history.swipe.pin.a11y" = "Pripni klepet";
+
+/* Accessibility label for the unpin action revealed by leading-swiping a Duck.ai chat row in the Pinned section. */
+"aiChat.history.swipe.unpin.a11y" = "Odpni klepet";
 
 /* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.extended.subtitle" = "Za analitične naloge";
@@ -355,18 +415,6 @@
 /* Title for the reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.reasoning.title" = "Razmišljanje";
 
-/* Body of the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. ** markers indicate bold text and should be preserved around the translated equivalents of the menu options Settings, Sync & Backup, and Sync With Another Device. */
-"aiChat.syncIntroSheet.body" = "Poiščite kodo QR v aplikaciji DuckDuckGo v drugi napravi tako, da odprete **Nastavitve** › **Sync & Backup** › **Sinhronizacija z drugo napravo**.";
-
-/* Secondary button on the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. */
-"aiChat.syncIntroSheet.notNow" = "Ne zdaj";
-
-/* Primary button on the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. */
-"aiChat.syncIntroSheet.scan.button" = "Skeniranje kode QR";
-
-/* Title of the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. */
-"aiChat.syncIntroSheet.title" = "Sinhronizirajte svoje klepete med napravami!";
-
 /* Primary button of the sync promo card shown above the Duck.ai recent chats list. */
 "aiChat.syncPromo.button" = "Sinhronizacija z drugo napravo";
 
@@ -375,6 +423,24 @@
 
 /* Headline of the sync promo card shown above the Duck.ai recent chats list. */
 "aiChat.syncPromo.title" = "Do klepetov lahko dostopate v vseh napravah z uporabo funkcije Sync & Backup.";
+
+/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as a regular text conversation. */
+"aiChat.tabSwitcher.card.chip.chat" = "Klepet";
+
+/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as the transcript of a finished voice conversation. */
+"aiChat.tabSwitcher.card.chip.transcript" = "Prepis";
+
+/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as a live voice session. */
+"aiChat.tabSwitcher.card.chip.voice" = "Glasovni klepet";
+
+/* Title shown on a Duck.ai tab grid card when the chat has no title yet. */
+"aiChat.tabSwitcher.card.untitledChat" = "Nov klepet";
+
+/* Status label at the top of the Duck.ai tab grid card for a tab with a live voice session in progress. A leading microphone glyph is shown next to it in the UI. */
+"aiChat.tabSwitcher.card.voice.listening" = "Poslušam …";
+
+/* VoiceOver label for the Duck.ai tab grid card of a tab with a live voice session — same as the visible status without the decorative emoji. */
+"aiChat.tabSwitcher.card.voice.listening.accessibilityLabel" = "Poslušanje …";
 
 /* Subtitle for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.subtitle" = "Določite ton, dolžino in vedenje";
@@ -540,8 +606,6 @@
 
 /* Description for unable to sync to server error */
 "alert.unable-to-sync-to-server-description" = "Ni bilo mogoče vzpostaviti povezave s strežnikom.";
-
-/* Description for unable to sync with another device error */
 
 /* Description for unable to turn sync off error */
 "alert.unable-to-turn-sync-off-description" = "Sinhronizacije in varnostnega kopiranja ni bilo mogoče izklopiti.";
@@ -1935,6 +1999,246 @@
 /* Title for the Duck.ai Siri education screen */
 "duckai.siri.education.screen.title" = "Pogovarjajte se z Duck.ai s pomočjo Siri!";
 
+/* Suggested prompt chip: cast and crew */
+"duckai.suggestion.cast-crew.label" = "Igralska zasedba in ekipa";
+
+/* Suggested prompt submitted text: cast and crew */
+"duckai.suggestion.cast-crew.prompt" = "Kdo so glavni igralci in člani ekipe ter po čem so še znani?";
+
+/* Suggested prompt chip: counterarguments */
+"duckai.suggestion.counterarguments.label" = "Kateri so protiargumenti?";
+
+/* Suggested prompt submitted text: counterarguments */
+"duckai.suggestion.counterarguments.prompt" = "Kateri so glavni protiargumenti ali kritike tega?";
+
+/* Suggested prompt chip: course learning outcomes */
+"duckai.suggestion.course-learn.label" = "Kaj se bom naučil/-a?";
+
+/* Suggested prompt submitted text: course learning outcomes */
+"duckai.suggestion.course-learn.prompt" = "Katere so ključne stvari, ki se jih bom naučil/-a v tem tečaju?";
+
+/* Suggested prompt chip: is a course worth taking */
+"duckai.suggestion.course-worth.label" = "Se splača udeležiti?";
+
+/* Suggested prompt submitted text: is a course worth taking */
+"duckai.suggestion.course-worth.prompt" = "Glede na to stran se ta tečaj splača opraviti?";
+
+/* Suggested prompt chip: draft a cover letter */
+"duckai.suggestion.cover-letter.label" = "Pripravi spremno pismo";
+
+/* Suggested prompt submitted text: draft a cover letter */
+"duckai.suggestion.cover-letter.prompt" = "Pripravi spremno pismo za to delovno mesto.";
+
+/* Suggested prompt chip: event details */
+"duckai.suggestion.event-details.label" = "Katere so ključne podrobnosti?";
+
+/* Suggested prompt submitted text: event details */
+"duckai.suggestion.event-details.prompt" = "Povzemi ključne podrobnosti tega dogodka.";
+
+/* Suggested prompt chip: explain the top answer */
+"duckai.suggestion.explain-answer.label" = "Razloži najboljši odgovor";
+
+/* Suggested prompt submitted text: explain the top answer */
+"duckai.suggestion.explain-answer.prompt" = "Razloži sprejeti odgovor s preprostimi besedami.";
+
+/* Suggested prompt chip: explain a research paper */
+"duckai.suggestion.explain-paper.label" = "Razloži mi ta članek";
+
+/* Suggested prompt submitted text: explain a research paper */
+"duckai.suggestion.explain-paper.prompt" = "Razloži ta raziskovalni članek v preprostem jeziku.";
+
+/* Suggested prompt chip: explain a code repository */
+"duckai.suggestion.explain-repo.label" = "Razloži mi ta repozitorij";
+
+/* Suggested prompt submitted text: explain a code repository */
+"duckai.suggestion.explain-repo.prompt" = "Pojasni, kaj počne ta repozitorij in kako ga uporabljati.";
+
+/* Suggested prompt chip: explain the content simply */
+"duckai.suggestion.explain-simply.label" = "Razloži preprosto";
+
+/* Suggested prompt submitted text: explain the content simply */
+"duckai.suggestion.explain-simply.prompt" = "Razloži to s preprostim, razumljivim jezikom.";
+
+/* Suggested prompt chip: what an FAQ page answers */
+"duckai.suggestion.faq-answer.label" = "Na kaj to odgovarja?";
+
+/* Suggested prompt submitted text: what an FAQ page answers */
+"duckai.suggestion.faq-answer.prompt" = "Na katera glavna vprašanja odgovarja ta stran?";
+
+/* Suggested prompt chip: summarize FAQ Q&As */
+"duckai.suggestion.faq-summary.label" = "Povzemi vprašanja in odgovore";
+
+/* Suggested prompt submitted text: summarize FAQ Q&As */
+"duckai.suggestion.faq-summary.prompt" = "Povzemi vprašanja in odgovore na tej strani.";
+
+/* Suggested prompt chip: product alternatives */
+"duckai.suggestion.find-alternatives.label" = "Poišči druge možnosti";
+
+/* Suggested prompt submitted text: product alternatives */
+"duckai.suggestion.find-alternatives.prompt" = "Predlagaj nekaj alternativ za ta izdelek.";
+
+/* Suggested prompt chip: how-to materials */
+"duckai.suggestion.howto-materials.label" = "Kaj potrebujem?";
+
+/* Suggested prompt submitted text: how-to materials */
+"duckai.suggestion.howto-materials.prompt" = "Naštej orodja, materiale ali pogoje, ki jih potrebujem za to.";
+
+/* Suggested prompt chip: how-to steps */
+"duckai.suggestion.howto-steps.label" = "Vodi me skozi korake";
+
+/* Suggested prompt submitted text: how-to steps */
+"duckai.suggestion.howto-steps.prompt" = "Razdeli to na jasne, oštevilčene korake.";
+
+/* Suggested prompt chip: interview prep */
+"duckai.suggestion.interview-prep.label" = "Pomagaj mi pri pripravi na razgovor";
+
+/* Suggested prompt submitted text: interview prep */
+"duckai.suggestion.interview-prep.prompt" = "Katera vprašanja za razgovor se lahko pojavijo za to vlogo?";
+
+/* Suggested prompt chip: key takeaways of an article */
+"duckai.suggestion.key-takeaways.label" = "Kateri so ključne ugotovitve?";
+
+/* Suggested prompt submitted text: key takeaways of an article */
+"duckai.suggestion.key-takeaways.prompt" = "Katere so ključne ugotovitve tega članka?";
+
+/* Suggested prompt chip: restaurant menu highlights */
+"duckai.suggestion.menu-highlights.label" = "Kaj naj naročim?";
+
+/* Suggested prompt submitted text: restaurant menu highlights */
+"duckai.suggestion.menu-highlights.prompt" = "Katere jedi moraš tukaj poskusiti?";
+
+/* Suggested prompt chip: paper contributions */
+"duckai.suggestion.paper-contributions.label" = "Kateri so ključni prispevki?";
+
+/* Suggested prompt submitted text: paper contributions */
+"duckai.suggestion.paper-contributions.prompt" = "Kateri so ključni prispevki tega članka?";
+
+/* Suggested prompt chip: summarize a person's background */
+"duckai.suggestion.person-background.label" = "Povzemi ozadje";
+
+/* Suggested prompt submitted text: summarize a person's background */
+"duckai.suggestion.person-background.prompt" = "Povzemi ozadje in pomembnejše delo te osebe.";
+
+/* Suggested prompt chip: place hours and location */
+"duckai.suggestion.place-hours.label" = "Kakšen je delovni čas in lokacija?";
+
+/* Suggested prompt submitted text: place hours and location */
+"duckai.suggestion.place-hours.prompt" = "Kakšen je delovni čas, lokacija in kontaktni podatki za ta kraj?";
+
+/* Suggested prompt chip: place reputation */
+"duckai.suggestion.place-reviews.label" = "Je ta kraj v redu?";
+
+/* Suggested prompt submitted text: place reputation */
+"duckai.suggestion.place-reviews.prompt" = "Je ta kraj vreden obiska? Povzemi njegov ugled na podlagi ocen in mnenj.";
+
+/* Suggested prompt chip: product pros and cons */
+"duckai.suggestion.product-pros-cons.label" = "Katere so prednosti in slabosti?";
+
+/* Suggested prompt submitted text: product pros and cons */
+"duckai.suggestion.product-pros-cons.prompt" = "Katere so prednosti in slabosti tega izdelka?";
+
+/* Suggested prompt chip: recipe nutrition */
+"duckai.suggestion.recipe-nutrition.label" = "Oceni hranilne vrednosti";
+
+/* Suggested prompt submitted text: recipe nutrition */
+"duckai.suggestion.recipe-nutrition.prompt" = "Oceni hranilne vrednosti za ta recept.";
+
+/* Suggested prompt chip: related articles */
+"duckai.suggestion.related-articles.label" = "Predlagaj sorodne članke za raziskovanje";
+
+/* Suggested prompt submitted text: related articles */
+"duckai.suggestion.related-articles.prompt" = "Predlagaj sorodne članke ali teme, ki jih je vredno raziskati.";
+
+/* Suggested prompt chip: summarize reviews */
+"duckai.suggestion.review-summary.label" = "Povzemi mnenja";
+
+/* Suggested prompt submitted text: summarize reviews */
+"duckai.suggestion.review-summary.prompt" = "Povzemi, kaj pravijo ocene.";
+
+/* Suggested prompt chip: review verdict */
+"duckai.suggestion.review-verdict.label" = "Kakšna je razsodba?";
+
+/* Suggested prompt submitted text: review verdict */
+"duckai.suggestion.review-verdict.prompt" = "Kakšna je skupna razsodba in ocena za to?";
+
+/* Suggested prompt chip: scale a recipe */
+"duckai.suggestion.scale-recipe.label" = "Prilagodi porcije";
+
+/* Suggested prompt submitted text: scale a recipe */
+"duckai.suggestion.scale-recipe.prompt" = "Prepiši ta recept, prilagojen za drugo število porcij.";
+
+/* Suggested prompt chip: shopping list from a recipe */
+"duckai.suggestion.shopping-list.label" = "Ustvari nakupovalni seznam";
+
+/* Suggested prompt submitted text: shopping list from a recipe */
+"duckai.suggestion.shopping-list.prompt" = "Ustvari nakupovalni seznam s količinami iz tega recepta.";
+
+/* Suggested prompt chip: similar books */
+"duckai.suggestion.similar-books.label" = "Priporoči podobne knjige";
+
+/* Suggested prompt submitted text: similar books */
+"duckai.suggestion.similar-books.prompt" = "Priporoči podobne knjige.";
+
+/* Suggested prompt chip: similar movies or shows */
+"duckai.suggestion.similar-titles.label" = "Priporoči podobne naslove";
+
+/* Suggested prompt submitted text: similar movies or shows */
+"duckai.suggestion.similar-titles.prompt" = "Priporoči podobne filme ali TV-oddaje.";
+
+/* Suggested prompt chip: summarize a book */
+"duckai.suggestion.summarize-book.label" = "Povzemi to knjigo";
+
+/* Suggested prompt submitted text: summarize a book */
+"duckai.suggestion.summarize-book.prompt" = "Povzemi to knjigo.";
+
+/* Suggested prompt chip: summarize the current page */
+"duckai.suggestion.summarize-page.label" = "Povzemi to stran";
+
+/* Suggested prompt submitted text: summarize the current page */
+"duckai.suggestion.summarize-page.prompt" = "Povzemi to stran.";
+
+/* Suggested prompt chip: summarize a discussion thread */
+"duckai.suggestion.summarize-thread.label" = "Povzemi to razpravo";
+
+/* Suggested prompt submitted text: summarize a discussion thread */
+"duckai.suggestion.summarize-thread.prompt" = "Povzemi to nit razprave.";
+
+/* Suggested prompt chip: summarize a video */
+"duckai.suggestion.summarize-video.label" = "Povzemi ta videoposnetek";
+
+/* Suggested prompt submitted text: summarize a video */
+"duckai.suggestion.summarize-video.prompt" = "Povzemi ta videoposnetek.";
+
+/* Suggested prompt chip: tailor a resume to a job */
+"duckai.suggestion.tailor-resume.label" = "Prilagodi moj življenjepis";
+
+/* Suggested prompt submitted text: tailor a resume to a job */
+"duckai.suggestion.tailor-resume.prompt" = "Pomagaj mi prilagoditi življenjepis za to delovno mesto.";
+
+/* Suggested prompt chip: translate the current page */
+"duckai.suggestion.translate-page.label" = "Prevedi to stran";
+
+/* Suggested prompt submitted text: translate the page. %@ is replaced with the name of the user's language. */
+"duckai.suggestion.translate-page.prompt" = "Prevedi to stran v jezik %@.";
+
+/* Suggested prompt chip: video key points */
+"duckai.suggestion.video-key-points.label" = "Katere so ključne točke?";
+
+/* Suggested prompt submitted text: video key points */
+"duckai.suggestion.video-key-points.prompt" = "Katere so ključne točke, zajete v tem videoposnetku?";
+
+/* Suggested prompt chip: person background */
+"duckai.suggestion.who-is-this.label" = "Kdo je ta oseba?";
+
+/* Suggested prompt submitted text: person background */
+"duckai.suggestion.who-is-this.prompt" = "Na kratko mi opiši to osebo.";
+
+/* Suggested prompt chip: is a movie/show worth watching */
+"duckai.suggestion.worth-watching.label" = "Se splača gledati?";
+
+/* Suggested prompt submitted text: is a movie/show worth watching */
+"duckai.suggestion.worth-watching.prompt" = "Se splača gledati? Podaj mi mnenje brez razkritja vsebine.";
+
 /* Welcome message in Duck.ai contextual sheet. %@ is replaced by a shield icon. */
 "duckai.welcome.message" = "Vsi klepeti so %@ zasebni";
 
@@ -2961,6 +3265,9 @@
 /* Message label text for the status view when VPN is disconnected */
 "network.protection.status.header.message.on" = "Ves internetni promet v napravi je zaščiten\nprek omrežja VPN.";
 
+/* Status view message shown while the VPN is on but Strict routing is off */
+"network.protection.status.header.message.strict.routing.off" = "Nekaj prometa lahko zaobide omrežje VPN, medtem ko je strogo usmerjanje izklopljeno. Strogo usmerjanje je priporočljivo za javna omrežja.";
+
 /* Header title label text for the status view when VPN is disconnected */
 "network.protection.status.header.title.off" = "Omrežje VPN DuckDuckGo je izklopljeno";
 
@@ -3003,8 +3310,29 @@
 /* Label shown on the title of the settings section in NetworkProtection's status view. */
 "network.protection.status.view.settings.section.title" = "Upravljanje";
 
+/* Label for the status pill shown while the VPN's Strict routing setting is off */
+"network.protection.status.view.strict.routing.pill.off" = "Strogo usmerjanje: Izklop";
+
+/* Label for the status pill shown while the VPN's Strict routing setting is on */
+"network.protection.status.view.strict.routing.pill.on" = "Strogo usmerjanje: Vklop";
+
+/* Tooltip shown for the status pill while the VPN's Strict routing setting is off */
+"network.protection.status.view.strict.routing.pill.tooltip.off" = "Strogo usmerjanje je priporočljivo za javna omrežja.";
+
+/* Tooltip shown for the status pill while the VPN's Strict routing setting is on */
+"network.protection.status.view.strict.routing.pill.tooltip.on" = "Nekatere aplikacije morda ne bodo delovale, ko je strogo usmerjanje vklopljeno.";
+
 /* Title label text for the status view when netP is disconnected */
 "network.protection.status.view.title" = "VPN";
+
+/* Title of the Troubleshooting section in the VPN status screen. */
+"network.protection.status.view.troubleshooting.section.title" = "Odpravljanje težav";
+
+/* The body of the notification reminding the user to turn the VPN Strict routing setting back on */
+"network.protection.strict.routing.reminder.notification.body" = "Nekaj prometa lahko zaobide VPN, ko je ta možnost izklopljena. Strogo usmerjanje je priporočljivo za javna omrežja.";
+
+/* The title of the notification reminding the user to turn the VPN Strict routing setting back on */
+"network.protection.strict.routing.reminder.notification.title" = "Strogo usmerjanje je IZKLOPLJENO";
 
 /* The body of the notification shown when VPN reconnects successfully */
 "network.protection.success.notification.body" = "Omrežje VPN DuckDuckGo je vklopljeno. Vaša lokacija in spletna dejavnost sta zaščiteni.";
@@ -3199,7 +3527,7 @@
 "omnibar.notification.trackers-blocked" = "%d Trackers";
 
 /* Text displayed on notification appearing in the address bar when YouTube ad blocking is active */
-"omnibar.notification.youtube-ad-block-on" = "Blokiranje oglasov na YouTubu je omogočeno";
+"omnibar.notification.youtube-ad-block-on" = "Blokiranje oglasov je vklopljeno";
 
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Razumem";
@@ -3732,6 +4060,9 @@
 /* Button to delete all tabs and data in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.all.button" = "Izbriši vse";
 
+/* Button to delete all chats in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.chats.button" = "Izbriši klepete";
+
 /* Button to delete a single tab and its site data in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.tab.button" = "Izbriši zavihek";
 
@@ -3864,9 +4195,6 @@
 /* Settings picker label for what to show when returning after inactivity */
 "settings.afterInactivity.v2.label" = "Po neaktivnosti";
 
-/* Footer under the AI picker, descriptive sentence without link */
-"settings.ai.new.picker.footer" = "Preizkusite novo možnost preklopa med iskanjem in Duck.ai v naslovni vrstici.";
-
 /* Settings row that opens Duck.ai in a new tab */
 "settings.aichat.duckai.settings" = "Nastavitve Duck.ai";
 
@@ -3881,9 +4209,6 @@
 
 /* Settings screen footer text for showing AI Chat in the input box */
 "settings.aichat.shortcuts.input.footer" = "Išči po spletu ali vprašaj Duck.ai neposredno iz naslovne vrstice";
-
-/* Title of search assist settings link */
-"settings.aifeatures.assist" = "Nastavitve modula Search Assist";
 
 /* Search Assist frequency option: never show AI-assisted answers */
 "settings.aifeatures.assist.never" = "Nikoli";
@@ -3910,7 +4235,7 @@
 "settings.aifeatures.chat.suggestions.title" = "Predlogi za klepet";
 
 /* Button that turns off all AI features */
-"settings.aifeatures.disable.all" = "Uporabi DuckDuckGo brez umetne inteligence";
+"settings.aifeatures.disable.all" = "Uporabite DuckDuckGo brez AI";
 
 /* Footer text below the disable all AI features button */
 "settings.aifeatures.disable.all.footer" = "Onemogoči Duck.ai, skrije odgovore z uporabo umetne inteligence v rezultatih iskanja in iz rezultatov iskanja slik odstrani znana spletna mesta z neželeno vsebino, ustvarjeno z umetno inteligenco.";
@@ -3925,10 +4250,10 @@
 "settings.aifeatures.hide.ai.generated.images" = "Skrij slike, ki jih ustvari umetna inteligenca";
 
 /* Hide AI-Generated Images option: off (images shown) */
-"settings.aifeatures.hide.ai.generated.images.off" = "Izklopljeno";
+"settings.aifeatures.hide.ai.generated.images.off" = "Izklop";
 
 /* Hide AI-Generated Images option: on (images hidden) */
-"settings.aifeatures.hide.ai.generated.images.on" = "Vklopljeno";
+"settings.aifeatures.hide.ai.generated.images.on" = "Vklop";
 
 /* Footnote for the hide AI-generated images setting; ends with a Learn more link to the help page (do not remove the link) */
 "settings.aifeatures.hide.ai.generated.images.subtitle" = "Iz rezultatov iskanja slik filtrira znane strani z neželenimi zadetki UI. [Več](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/results/how-to-filter-out-ai-images-in-duckduckgo-search-results)";
@@ -4050,26 +4375,26 @@
 /* The name of the settings section containing options to set up the app */
 "settings.complete.setup" = "Dokončanje nastavitve";
 
-/* The name of Settings category in Privacy Features related to configuration of the privacy feature related to cookie pop-ups */
-"settings.cookie.pop-up-protection.protection" = "Zaščita pred pojavnimi okni piškotkov";
-
-/* Explanation in Settings how the cookie pop up protection feature works */
-"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo lahko samodejno upravlja nastavitve piškotkov za povečanje zasebnosti, zmanjšanje števila piškotkov in zapiranje teh pojavnih oken.\n[Več o tem](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
-
 /* Explanation below the auto-manage cookie pop-ups toggle in settings */
 "settings.cookie.auto-manage.explanation" = "Poskušali bomo izbrati le najbolj zasebne možnosti piškotkov, ki so na voljo za vas, nato pa zapreti ta pojavna okna.";
 
 /* Title for the auto-manage cookie pop-ups toggle in settings */
 "settings.cookie.auto-manage.title" = "Samodejno upravljanje pojavnih oken za piškotke";
 
+/* The name of Settings category in Privacy Features related to configuration of the privacy feature related to cookie pop-ups */
+"settings.cookie.pop-up-protection.protection" = "Zaščita pred pojavnimi okni piškotkov";
+
+/* Explanation in Settings how the cookie pop up protection feature works */
+"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo lahko samodejno upravlja nastavitve piškotkov za povečanje zasebnosti, zmanjšanje števila piškotkov in zapiranje teh pojavnih oken.\n[Več o tem](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
+
+/* Settings screen cell text for Cookie popups */
+"settings.cookie.popups" = "Upravljanje pojavnih oken za piškotke";
+
 /* Explanation below the pop-ups without opt-outs toggle in settings */
 "settings.cookie.popups-without-opt-outs.explanation" = "Prav tako vam DuckDuckGo prihrani klik tako, da namesto vas sprejme piškotke za zapiranje pojavnih oken, ki vam ne omogočajo zavrnitve.";
 
 /* Title for the pop-ups without opt-outs toggle in settings */
 "settings.cookie.popups-without-opt-outs.title" = "Pojavna okna brez možnosti zavrnitve";
-
-/* Settings screen cell text for Cookie popups */
-"settings.cookie.popups" = "Upravljanje pojavnih oken za piškotke";
 
 /* Label for customizable toolbar button that deletes tabs and data */
 "settings.customizable.button.delete.tabs.and.data" = "Izbriši zavihke in podatke";
@@ -4202,6 +4527,9 @@
 
 /* The name of a settings category listing next steps */
 "settings.next.steps" = "Naslednji koraki";
+
+/* Accessibility label / title for the button that hides the Settings Next Steps section */
+"settings.next.steps.hide" = "Skrij";
 
 /* Label describing a feature which is turned off */
 "settings.off" = "Izklopljeno";
@@ -4397,6 +4725,12 @@
 
 /* Settings screen cell text for Unprotected Sites */
 "settings.unprotected.sites" = "Nezaščitene strani";
+
+/* Description shown above the list of unprotected sites */
+"settings.unprotected.sites.description" = "Te spletne strani ne bodo zaščitene s funkcijo zaščite zasebnosti.";
+
+/* Message shown when there are no unprotected sites */
+"settings.unprotected.sites.empty.state" = "Zaščita zasebnosti je omogočena za vsa spletna mesta";
 
 /* Settings cell for Version */
 "settings.version" = "Različica";
@@ -5317,10 +5651,10 @@
 "windows-waitlist.waitlist-download-screen.try-duckduckgo-for-windows" = "Pridobite DuckDuckGo za Windows!";
 
 /* Body text of the bottom sheet asking the user to send an anonymous breakage report */
-"youtube.ad.blocking.breakage-report.message" = "Pošljite anonimno poročilo o prekinitvi delovanja v DuckDuckGo. Pomagajte izboljšati blokiranje oglasov za vse uporabnike.";
+"youtube.ad.blocking.breakage-report.message" = "Pošljite anonimno poročilo v DuckDuckGo in pomagajte izboljšati blokiranje oglasov za vse uporabnike.";
 
 /* Primary action sending an anonymous YouTube ad-blocking breakage report */
-"youtube.ad.blocking.breakage-report.send" = "Pošljite poročilo o prekinitvi delovanja";
+"youtube.ad.blocking.breakage-report.send" = "Pošlji anonimno poročilo";
 
 /* Title of the bottom sheet asking the user to send an anonymous breakage report after disabling YouTube ad blocking */
 "youtube.ad.blocking.breakage-report.title" = "Ali blokiranje oglasov na YouTubu ne deluje?";
@@ -5385,75 +5719,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Kaj želite uvoziti?";
 
-
-/* No comment provided by engineer. */
-"No matches for \"%@\"" = "Ni zadetkov za »% @«";
-
-
-/* Open the native Duck.ai chat history sheet from the browser menu. */
-"action.title.chats" = "Klepeti";
-
-/* Title shown when the user has no Duck.ai chat history yet. */
-"aiChat.history.emptyState.title" = "Ni nedavnih pogovorov";
-
-/* Primary button on the empty Duck.ai chat-history screen; opens the Duck.ai web chat. */
-"aiChat.history.emptyState.openDuckAi" = "Odprite Duck.ai";
-
-/* Placeholder for the search bar at the top of the Duck.ai chat history list. */
-"aiChat.history.searchBar.placeholder" = "Iskanje";
-
-/* Section header above the user's pinned chats in the Duck.ai chat history list. */
-"aiChat.history.section.pinned" = "Pripeto";
-
-/* Section header above the user's recent (unpinned) chats in the Duck.ai chat history list. */
-"aiChat.history.section.recent" = "Nedavno";
-
-/* Shown inside the Duck.ai chat history list when the user's search query returns no matching chats. */
-"aiChat.history.noSearchResults.title" = "Ni zadetkov";
-
-/* Title of the alert shown when Duck.ai chat history fails to load. */
-"aiChat.history.loadError.title" = "Klepetov ni bilo mogoče naložiti";
-
-/* Message of the alert shown when Duck.ai chat history fails to load. */
-"aiChat.history.loadError.message" = "Pri nalaganju klepetov Duck.ai je prišlo do napake. Poskusite znova pozneje.";
-
-/* Accessibility label for the delete action revealed by swiping a Duck.ai chat row. */
-"aiChat.history.swipe.delete.a11y" = "Izbriši klepet";
-
-/* Accessibility label for the download action revealed by swiping a Duck.ai chat row. */
-"aiChat.history.swipe.download.a11y" = "Prenesi klepet";
-
-/* Accessibility label for the pin action revealed by leading-swiping a Duck.ai chat row in the Recent section. */
-"aiChat.history.swipe.pin.a11y" = "Pripni klepet";
-
-/* Accessibility label for the unpin action revealed by leading-swiping a Duck.ai chat row in the Pinned section. */
-"aiChat.history.swipe.unpin.a11y" = "Odpni klepet";
-
-/* Button to delete all chats in scoped fire confirmation dialog */
-"scoped.fire.confirmation.delete.chats.button" = "Izbriši klepete";
-
-/* Top-level attachment menu option to attach the current page content to an AI chat message */
-"aichat.attachment.option.ask.about.page" = "Vprašajte o strani";
-
-/* Status view message shown while the VPN is on but Strict routing is off */
-"network.protection.status.header.message.strict.routing.off" = "Nekaj prometa lahko zaobide omrežje VPN, medtem ko je strogo usmerjanje izklopljeno. Strogo usmerjanje je priporočljivo za javna omrežja.";
-
-/* Label for the status pill shown while the VPN's Strict routing setting is off */
-"network.protection.status.view.strict.routing.pill.off" = "Strogo usmerjanje: Izklop";
-
-/* Label for the status pill shown while the VPN's Strict routing setting is on */
-"network.protection.status.view.strict.routing.pill.on" = "Strogo usmerjanje: Vklop";
-
-/* Tooltip shown for the status pill while the VPN's Strict routing setting is off */
-"network.protection.status.view.strict.routing.pill.tooltip.off" = "Strogo usmerjanje je priporočljivo za javna omrežja.";
-
-/* Tooltip shown for the status pill while the VPN's Strict routing setting is on */
-"network.protection.status.view.strict.routing.pill.tooltip.on" = "Nekatere aplikacije morda ne bodo delovale, ko je strogo usmerjanje vklopljeno.";
-
-/* Title of the Troubleshooting section in the VPN status screen. */
-"network.protection.status.view.troubleshooting.section.title" = "Odpravljanje težav";
-
-/* The body of the notification reminding the user to turn the VPN Strict routing setting back on */
-"network.protection.strict.routing.reminder.notification.body" = "Nekaj prometa lahko zaobide VPN, ko je ta možnost izklopljena. Strogo usmerjanje je priporočljivo za javna omrežja.";
-/* The title of the notification reminding the user to turn the VPN Strict routing setting back on */
-"network.protection.strict.routing.reminder.notification.title" = "Strogo usmerjanje je IZKLOPLJENO";

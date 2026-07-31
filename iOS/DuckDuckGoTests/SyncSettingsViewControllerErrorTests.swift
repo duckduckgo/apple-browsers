@@ -98,6 +98,29 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
     }
 
     @MainActor
+    func testWhenSimplifiedSyncSetupV2IsDisabledThenSyncUIVersionIsV1() {
+        XCTAssertEqual(vc.syncUIVersion, "v1")
+        XCTAssertEqual(vc.uiVersionParameters, [PixelParameters.uiVersion: "v1"])
+    }
+
+    @MainActor
+    func testWhenSimplifiedSyncSetupV2IsEnabledThenSyncUIVersionIsV2() {
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.simplifiedSyncSetupV2])
+        let vc = SyncSettingsViewController(
+            syncService: ddgSyncing,
+            syncBookmarksAdapter: syncBookmarksAdapter,
+            syncCredentialsAdapter: syncCredentialsAdapter,
+            syncCreditCardsAdapter: syncCreditCardsAdapter,
+            syncPausedStateManager: errorHandler,
+            featureFlagger: featureFlagger,
+            syncAutoRestoreHandler: syncAutoRestoreHandler
+        )
+
+        XCTAssertEqual(vc.syncUIVersion, "v2")
+        XCTAssertEqual(vc.uiVersionParameters, [PixelParameters.uiVersion: "v2"])
+    }
+
+    @MainActor
     func test_WhenSyncPausedIsTrue_andChangePublished_isSyncPausedIsUpdated() async {
         let expectation2 = XCTestExpectation(description: "isSyncPaused received the update")
         let expectation1 = XCTestExpectation(description: "isSyncPaused published")
@@ -431,6 +454,26 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
         spyVC.controllerDidCreateSyncAccount(shouldShowSyncEnabled: false)
 
         XCTAssertEqual(spyVC.dismissVCAndShowDeviceSyncedToastCallCount, 0)
+    }
+
+    @MainActor
+    func testWhenV1ConnectCreatesAccountWithSimplifiedV2LayoutThenCompletionShowsSuccess() {
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.simplifiedSyncSetupV2])
+        let spyVC = SpySyncSettingsViewController(
+            syncService: ddgSyncing,
+            syncBookmarksAdapter: syncBookmarksAdapter,
+            syncCredentialsAdapter: syncCredentialsAdapter,
+            syncCreditCardsAdapter: syncCreditCardsAdapter,
+            syncPausedStateManager: errorHandler,
+            featureFlagger: featureFlagger,
+            syncAutoRestoreHandler: syncAutoRestoreHandler
+        )
+        spyVC.viewModel.connectingSheetPhase = .connecting(isRecovery: false)
+
+        spyVC.controllerDidCreateSyncAccount(shouldShowSyncEnabled: true)
+        spyVC.controllerDidCompleteAccountConnection(shouldShowSyncEnabled: false, setupSource: .connect, codeSource: .qrCode)
+
+        XCTAssertEqual(spyVC.viewModel.connectingSheetPhase, .connecting(isRecovery: false, isFinishing: true))
     }
 
     @MainActor

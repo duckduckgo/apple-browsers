@@ -420,6 +420,15 @@ class MainViewController: UIViewController {
                                   windowProvider: { settings.refreshWindow })
     }()
 
+    /// Whether the ad-blocking rollout's Duck Player default (disable) should be applied at onboarding
+    /// completion. It runs only when the rollout is active *and* the user didn't set Duck Player
+    /// themselves during onboarding — the download-reason Block Ads flow includes a Duck
+    /// Player step, and overriding it here would silently discard the user's choice.
+    private var shouldApplyAdBlockingRolloutDuckPlayerDefault: Bool {
+        adBlockingAvailability.areAdBlockingDefaultsActive
+            && onboardingManager.currentDownloadReason != .blockAds
+    }
+
     init(
         privacyConfigurationManager: PrivacyConfigurationManaging,
         bookmarksDatabase: CoreDataDatabase,
@@ -772,7 +781,7 @@ class MainViewController: UIViewController {
         // Automation bypass: a UI-test override can mark onboarding already-completed without ever
         // calling onboardingCompleted(controller:), so apply the rollout Duck Player defaults here too.
         if case .overridden(.uiTests(completed: true)) = onboardingStatus, ProcessInfo.isRunningUITests {
-            appSettings.applyAdBlockingRolloutDuckPlayerDefaultsIfNeeded(rolloutActive: adBlockingAvailability.areAdBlockingDefaultsActive)
+            appSettings.applyAdBlockingRolloutDuckPlayerDefaultsIfNeeded(rolloutActive: shouldApplyAdBlockingRolloutDuckPlayerDefault)
         }
 
         isStartupOnboardingPending = startupOnboardingDecision.shouldShowOnboarding
@@ -1626,7 +1635,7 @@ class MainViewController: UIViewController {
         updateUnifiedToggleInputKeyboardVisibility(keyboardVisible)
 
         let coordinator = unifiedToggleInputCoordinator
-        let isAITabCollapsed = coordinator?.displayState == .aiTab(.collapsed)
+        let isAITabCollapsed = coordinator?.isAITabCollapsed == true
         let isBottomExpandedUTIKeyboardAnchored = coordinator?.isInputEditing == true
             && coordinator?.cardPosition == .bottom
             && viewCoordinator.isNavigationBarContainerBottomKeyboardBased
@@ -1887,9 +1896,8 @@ class MainViewController: UIViewController {
         configureUnifiedInputEscapeHatch(model)
     }
 
-    /// True when an escape hatch action runs in focus mode (reads the persistent omnibar-session state, which
-    /// survives the card tap that dismisses the keyboard).
-    private var isEscapeHatchInFocusMode: Bool {
+    /// True when the address bar owns editing focus; survives a card tap that dismisses the keyboard.
+    private var isAddressBarFocused: Bool {
         omniBar.isTextFieldEditing || unifiedToggleInputCoordinator?.isOmnibarSession == true
     }
 
@@ -2430,6 +2438,7 @@ class MainViewController: UIViewController {
         let tab = tabManager.add(url: url, inheritedAttribution: inheritedAttribution)
         tab.inferredOpenerContext = .external
         tab.isVoiceModeRequested = voiceMode
+        tab.isDuckAIDeepLinkSurfaceRequested = url?.isDuckAIChatProtectionOpen == true
 
         // Mark tab as external launch if opened from external URL or shortcut
         if fromExternalLink {
@@ -3162,7 +3171,7 @@ class MainViewController: UIViewController {
     /// no-op once correct — no loop, no per-frame work beyond the bool check.
     private func reanchorAITabCollapsedFooterIfNeeded() {
         guard let coordinator = unifiedToggleInputCoordinator,
-              coordinator.displayState == .aiTab(.collapsed),
+              coordinator.isAITabCollapsed,
               coordinator.cardPosition == .bottom,
               !viewCoordinator.isNavigationBarContainerBottomKeyboardBased else { return }
         viewCoordinator.setNavBarContainerBottomToKeyboard()
@@ -4144,7 +4153,7 @@ extension MainViewController: BrowserChromeDelegate {
         chromeMorphAnimator.cancel()
 
         if percent < 1 {
-            if omniBar.isTextFieldEditing || unifiedToggleInputCoordinator?.isOmnibarSession == true {
+            if isAddressBarFocused {
                 dismissOmniBar()
             }
             _ = findInPageView?.resignFirstResponder()
@@ -4461,6 +4470,7 @@ extension MainViewController: BrowserChromeDelegate {
             }
             loadUrlInNewTab(url, inheritedAttribution: nil, fromExternalLink: fromExternalLink)
         case .loadInPlace:
+            currentTab?.isDuckAIDeepLinkSurfaceRequested = url.isDuckAIChatProtectionOpen
             loadUrl(url, fromExternalLink: fromExternalLink)
         }
     }
@@ -5715,7 +5725,7 @@ extension MainViewController: EscapeHatchActionRouter {
         }
 
         // Captured before the confirmation dialog steals focus, so we can restore the keyboard afterwards.
-        let wasInFocusMode = isEscapeHatchInFocusMode
+        let wasInFocusMode = isAddressBarFocused
         let tabViewModel = tabManager.viewModel(for: tab)
         let presenter = FireConfirmationPresenter()
         presenter.presentFireConfirmation(
@@ -5745,7 +5755,7 @@ extension MainViewController: EscapeHatchActionRouter {
             return
         }
 
-        let wasInFocusMode = isEscapeHatchInFocusMode
+        let wasInFocusMode = isAddressBarFocused
         let tabViewModel = tabManager.viewModel(for: tab)
         let request = FireRequest(
             options: .all,
@@ -6484,9 +6494,7 @@ extension MainViewController: TabSwitcherDelegate {
 
         if #available(iOS 18.4, *) {
             for tab in tabs {
-                if let tabController = tabManager.controller(for: tab) {
-                    webExtensionEventsCoordinator?.didCloseTab(tabController)
-                }
+                webExtensionEventsCoordinator?.didCloseTab(tab)
             }
         }
     }
@@ -6501,9 +6509,7 @@ extension MainViewController: TabSwitcherDelegate {
             showBars() // In case the browser chrome bars are hidden when calling this method
         }
         if #available(iOS 18.4, *) {
-            if let closingTabController = tabManager.controller(for: tab) {
-                webExtensionEventsCoordinator?.didCloseTab(closingTabController)
-            }
+            webExtensionEventsCoordinator?.didCloseTab(tab)
         }
 
         reportDuckAITabClosedIfNeeded(tab)
@@ -6979,9 +6985,7 @@ extension MainViewController: FireExecutorDelegate {
                 tabs = []
             }
             for tab in tabs {
-                if let tabController = tabManager.controller(for: tab) {
-                    webExtensionEventsCoordinator?.didCloseTab(tabController)
-                }
+                webExtensionEventsCoordinator?.didCloseTab(tab)
             }
         }
     }
@@ -7168,8 +7172,7 @@ extension MainViewController: OnboardingDelegate {
         // enrol new users; enrollIfEligible function additionally excludes returning users (reinstallers).
         searchTokenExperiment.enrollIfEligible()
 
-        appSettings.applyAdBlockingRolloutDuckPlayerDefaultsIfNeeded(rolloutActive: adBlockingAvailability.areAdBlockingDefaultsActive)
-
+        appSettings.applyAdBlockingRolloutDuckPlayerDefaultsIfNeeded(rolloutActive: shouldApplyAdBlockingRolloutDuckPlayerDefault)
 
         // Now that linear onboarding has finished, run the unified-toggle-input
         // setup that was deferred at viewDidLoad.
@@ -7213,7 +7216,6 @@ extension MainViewController: OnboardingDelegate {
     }
 
 }
-
 
 extension MainViewController: OnboardingNavigationDelegate {
     func navigateFromOnboarding(to url: URL) {

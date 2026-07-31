@@ -57,6 +57,7 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsRootView> {
     let syncCreditCardsAdapter: SyncCreditCardsAdapter?
     var connector: RemoteConnecting?
     weak var scanCodeViewModel: ScanOrPasteCodeViewModel?
+    var codeCollectionIntent: CodeCollectionIntent?
 
     let userAuthenticator = UserAuthenticator(reason: UserText.syncUserUserAuthenticationReason,
                                               cancelTitle: UserText.autofillLoginListAuthenticationCancelButton)
@@ -104,8 +105,18 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsRootView> {
 
     let useSimplifiedLayoutV2: Bool
 
+    var syncUIVersion: String {
+        useSimplifiedLayoutV2 ? "v2" : "v1"
+    }
+
+    var uiVersionParameters: [String: String] {
+        [PixelParameters.uiVersion: syncUIVersion]
+    }
+
     private var sourcePixelParameters: [String: String] {
-        source.map { [PixelParameters.source: $0] } ?? [:]
+        var parameters = uiVersionParameters
+        parameters[PixelParameters.source] = source
+        return parameters
     }
 
     // For some reason, on iOS 14, the viewDidLoad wasn't getting called so do some setup here
@@ -324,7 +335,8 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsRootView> {
         super.viewDidAppear(animated)
 
         Pixel.fire(pixel: .settingsSyncOpen, withAdditionalParameters: [
-            "is_enabled": isSyncEnabled ? "1" : "0"
+            "is_enabled": isSyncEnabled ? "1" : "0",
+            PixelParameters.uiVersion: syncUIVersion
         ])
 
         startPairingIfNecessary()
@@ -449,7 +461,10 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsRootView> {
                 return
             }
 
-            Pixel.fire(pixel: .syncSetupDeepLinkFlowStarted, includedParameters: [.appVersion])
+            Pixel.fire(pixel: .syncSetupDeepLinkFlowStarted,
+                       withAdditionalParameters: uiVersionParameters,
+                       includedParameters: [.appVersion],
+                       onComplete: { _ in })
 
             await connectionController.syncCodeEntered(
                 code: pairingInfo.base64Code,
@@ -475,12 +490,16 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsRootView> {
 
     private func handlePairingConfirmation() {
         askForAuthThenStartPairing()
-        Pixel.fire(pixel: .syncSetupDeepLinkFlowStarted, includedParameters: [.appVersion])
+        Pixel.fire(pixel: .syncSetupDeepLinkFlowStarted,
+                   withAdditionalParameters: uiVersionParameters,
+                   includedParameters: [.appVersion])
     }
 
     private func handlePairingCancellation() {
         pairingInfo = nil
-        Pixel.fire(pixel: .syncSetupDeepLinkFlowAbandoned, includedParameters: [.appVersion])
+        Pixel.fire(pixel: .syncSetupDeepLinkFlowAbandoned,
+                   withAdditionalParameters: uiVersionParameters,
+                   includedParameters: [.appVersion])
     }
 }
 
@@ -513,8 +532,8 @@ extension SyncSettingsViewController: ScanOrPasteCodeViewModelDelegate {
                    withAdditionalParameters: sourcePixelParameters,
                    includedParameters: [.appVersion],
                    onComplete: { _ in })
-        if isPresentingV2ConnectingSheet {
-            presentDeviceAddedSuccessScreen()
+        if useSimplifiedLayoutV2 {
+            presentSuccessScreen(isRecovery: codeCollectionIntent == .recoverData)
         } else {
             presentSyncCompletionAfterDelay()
         }
@@ -530,10 +549,10 @@ extension SyncSettingsViewController: ScanOrPasteCodeViewModelDelegate {
         useSimplifiedLayoutV2 && viewModel.connectingSheetPhase != nil
     }
 
-    func presentDeviceAddedSuccessScreen() {
+    func presentSuccessScreen(isRecovery: Bool) {
         enableAutoRestoreByDefaultIfNeeded()
         refreshAutoRestoreDecisionState()
-        viewModel.showDeviceConnectedInConnectingSheet(recoveryCode: recoveryCode)
+        viewModel.showSuccess(recoveryCode: recoveryCode, isRecovery: isRecovery)
     }
 
     func startPolling() {
@@ -602,15 +621,19 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
 
     func controllerDidCompleteAccountConnection(shouldShowSyncEnabled: Bool, setupSource: SyncSetupSource, codeSource: SyncCodeSource) {
         sendSetupEndedSuccessfullyPixel(setupSource: setupSource, codeSource: codeSource)
-        guard shouldShowSyncEnabled else { return }
-        self.viewModel.$devices
-            .removeDuplicates()
-            .dropFirst()
-            .prefix(1)
-            .sink { [weak self] _ in
-                guard let self else { return }
-                self.dismissVCAndShowDeviceSyncedToast()
-            }.store(in: &cancellables)
+        if useSimplifiedLayoutV2 {
+            presentSuccessScreen(isRecovery: false)
+        } else {
+            guard shouldShowSyncEnabled else { return }
+            self.viewModel.$devices
+                .removeDuplicates()
+                .dropFirst()
+                .prefix(1)
+                .sink { [weak self] _ in
+                    guard let self else { return }
+                    self.dismissVCAndShowDeviceSyncedToast()
+                }.store(in: &cancellables)
+        }
     }
 
     func controllerDidCreateSyncAccount(shouldShowSyncEnabled: Bool) {
@@ -624,7 +647,11 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
     
     func controllerWillBeginTransmittingRecoveryKey() async {
         await dismissPresentedViewController()
-        await showPreparingSync()
+        if useSimplifiedLayoutV2 {
+            viewModel.connectingSheetPhase = .connecting(isRecovery: codeCollectionIntent == .recoverData)
+        } else {
+            await showPreparingSync()
+        }
     }
     
     private func waitForDevicesToChange(then action: @escaping (SyncSettingsViewController) -> Void) {
@@ -648,7 +675,7 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
                    includedParameters: [.appVersion])
         pairingV2PeerKind = nil
         let presentResult: (SyncSettingsViewController) -> Void = isPresentingV2ConnectingSheet
-            ? { $0.presentDeviceAddedSuccessScreen() }
+            ? { $0.presentSuccessScreen(isRecovery: false) }
             : { $0.dismissVCAndShowDeviceSyncedToast() }
         if shouldWaitForDevicesToChange {
             waitForDevicesToChange(then: presentResult)
@@ -658,8 +685,15 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
     }
     
     func controllerDidReceiveRecoveryKey() {
+        guard useSimplifiedLayoutV2 else {
+            dismissPresentedViewController { [weak self] in
+                self?.showPreparingSync(nil)
+            }
+            return
+        }
         dismissPresentedViewController { [weak self] in
-            self?.showPreparingSync(nil)
+            guard let self, self.viewModel.connectingSheetPhase == nil else { return }
+            self.viewModel.connectingSheetPhase = .connecting(isRecovery: self.codeCollectionIntent == .recoverData)
         }
     }
     
@@ -667,8 +701,8 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
         pairingV2JoinerCodeSource = codeVersion == .v2 && setupSource == .exchange ? codeSource : nil
         sendCodeRecognisedPixel(setupSource: setupSource, codeSource: codeSource, codeVersion: codeVersion)
         await dismissPresentedViewController()
-        if useSimplifiedLayoutV2, setupSource == .exchange {
-            viewModel.connectingSheetPhase = .connecting
+        if useSimplifiedLayoutV2 {
+            viewModel.connectingSheetPhase = .connecting(isRecovery: codeCollectionIntent == .recoverData)
         } else {
             await showPreparingSync(context: setupSource == .recovery ? .recoveringData : .syncingDevices)
         }
@@ -695,8 +729,8 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
                 await connectionController.cancel()
             }
         }
-        if isPresentingV2ConnectingSheet {
-            presentDeviceAddedSuccessScreen()
+        if useSimplifiedLayoutV2 {
+            presentSuccessScreen(isRecovery: codeCollectionIntent == .recoverData)
         } else {
             presentSyncCompletionAfterDelay()
         }
@@ -830,7 +864,9 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
             Pixel.fire(pixel: .syncSetupEndedSuccessful, withAdditionalParameters: parameters, includedParameters: [.appVersion])
             pairingV2PeerKind = nil
         case .deepLink:
-            Pixel.fire(pixel: .syncSetupDeepLinkFlowSuccess, includedParameters: [.appVersion])
+            Pixel.fire(pixel: .syncSetupDeepLinkFlowSuccess,
+                       withAdditionalParameters: uiVersionParameters,
+                       includedParameters: [.appVersion])
         }
     }
 
@@ -905,7 +941,9 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
         guard case .receiver(_, .deepLink) = setupRole else {
             return
         }
-        Pixel.fire(pixel: .syncSetupDeepLinkFlowAbandoned, includedParameters: [.appVersion])
+        Pixel.fire(pixel: .syncSetupDeepLinkFlowAbandoned,
+                   withAdditionalParameters: uiVersionParameters,
+                   includedParameters: [.appVersion])
     }
 
     private func syncSetupPixelParameters(setupRole: SyncSetupRole,
@@ -943,6 +981,7 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
                                           myRole: String? = nil,
                                           pairingV2FailureContext: PairingV2FailureContext? = nil) -> [String: String] {
         var parameters = source.map { [PixelParameters.source: $0] } ?? [PixelParameters.source: setupSource.rawValue]
+        parameters[PixelParameters.uiVersion] = syncUIVersion
         parameters[SyncSetupPixelParameter.myKind] = SyncSetupPixelValue.ddg
         parameters[SyncSetupPixelParameter.codeType] = codeType
         parameters[SyncSetupPixelParameter.codeVersion] = codeVersion
@@ -987,7 +1026,9 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
         guard case .deepLink = codeSource else {
             return
         }
-        Pixel.fire(pixel: .syncSetupDeepLinkFlowTimeout, includedParameters: [.appVersion])
+        Pixel.fire(pixel: .syncSetupDeepLinkFlowTimeout,
+                   withAdditionalParameters: uiVersionParameters,
+                   includedParameters: [.appVersion])
     }
 }
 

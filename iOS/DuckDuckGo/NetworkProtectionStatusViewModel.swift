@@ -18,6 +18,7 @@
 //
 
 import Foundation
+import FoundationExtensions
 import Combine
 import CombineExtensions
 import NetworkExtension

@@ -144,31 +144,32 @@ public class RollingEightDaysInt: RollingEightDays<Int>, CustomDebugStringConver
         }
     }
 
-    /// Calculates the average of the past 7 days, excluding today and unknown values.
-    public var past7DaysAverage: (average: Float, daysCounted: Int) {
-        var sum = 0
-        var notUnknownValues = 0
-        for value in values.dropLast() {
-            switch value {
-            case .unknown:
-                break
-            case .value(let intValue):
-                notUnknownValues += 1
-                sum += intValue
-            }
-        }
-
-        if notUnknownValues > 0 {
-            let average = (Float(sum) / Float(notUnknownValues))
-            return (average, notUnknownValues)
-        } else {
-            return (0, 0)
-        }
+    /// Average events per calendar day of history (`total / min(daysSinceInstalled, 7)`), not per active day.
+    /// `dayAverage` is that denominator during the days 1–6 ramp-up, and `nil` once the window is full (day 7+).
+    public func past7DaysAverage(daysSinceInstalled: Int) -> (average: Float, dayAverage: Int?) {
+        let windowDays = values.count - 1   // 8 slots, excluding today
+        let daysOfHistory = min(max(daysSinceInstalled, 0), windowDays)
+        guard daysOfHistory > 0 else { return (0, nil) }
+        let average = Float(past7DaysTotal) / Float(daysOfHistory)
+        let dayAverage = daysOfHistory < windowDays ? daysOfHistory : nil
+        return (average, dayAverage)
     }
 
     /// Counts non-unknown values in the past 7 days, excluding today.
     public var countPast7Days: Int {
         return values.dropLast().count(where: { $0 != .unknown })
+    }
+
+    /// Sum over the past 7 days, excluding today and unknown days. Numerator for the rolling average.
+    public var past7DaysTotal: Int {
+        values.dropLast().reduce(0) { partialResult, value in
+            switch value {
+            case .unknown:
+                return partialResult
+            case .value(let intValue):
+                return partialResult + intValue
+            }
+        }
     }
 
     public var debugDescription: String {
@@ -194,7 +195,7 @@ public class RollingEightDaysInt: RollingEightDays<Int>, CustomDebugStringConver
                 RollingEightDaysInt
                 lastDay: \(dateString)
                 values: [\(valuesDescription)]
-                past7DaysAverage: average: \(past7DaysAverage.average) - days counted: \(past7DaysAverage.daysCounted)
+                past7DaysTotal: \(past7DaysTotal)
                 countPast7Days: \(countPast7Days)
                 """
     }

@@ -1107,6 +1107,25 @@ class MockAIChatTabOpener: AIChatTabOpening {
         openMethodCalledExpectation = expectation
     }
 
+    var lastTargetedQuery: String?
+    var lastTargetWindowController: MainWindowController?
+
+    @MainActor
+    func openAIChatTab(withQuery query: String, inNewTabOf windowController: MainWindowController) {
+        openAIChatTabCalled = true
+        lastTargetedQuery = query
+        lastTargetWindowController = windowController
+    }
+
+    var lastNewWindowDroppingPoint: NSPoint?
+
+    @MainActor
+    func openAIChatTab(withQuery query: String, inNewWindowAt droppingPoint: NSPoint) {
+        openAIChatTabCalled = true
+        lastTargetedQuery = query
+        lastNewWindowDroppingPoint = droppingPoint
+    }
+
     @MainActor
     func openAIChatTab(with trigger: AIChatOpenTrigger, behavior: LinkOpenBehavior) {
         openAIChatTabCalled = true

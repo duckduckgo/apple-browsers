@@ -87,6 +87,27 @@ enum SubscriptionFunnelOrigin: String {
     /// User entered the funnel by tapping a gated reasoning effort in duck.ai's own omnibar.
     /// https://app.asana.com/1/137249556945/project/1208671677432066/task/1215275657171787
     case duckAIReasoningPicker = "funnel_duckai_macos__reasoningpicker"
+
+    /// User entered the funnel by tapping a gated model or reasoning effort in the New Tab Page's duck.ai omnibar.
+    /// https://app.asana.com/1/137249556945/task/1216424447885172
+    case newTabPageOmnibar = "funnel_newtab_macos__omnibar"
+
+    // MARK: - Duck.ai Funnel Origins (frontend-reported)
+
+    /// Entry points shown in the duck.ai web frontend; reported over the `reportMetric` bridge because
+    /// the frontend suppresses its own website pixel in-app. Native then fires the funnel pixel.
+    /// https://app.asana.com/1/137249556945/task/1216395339071571
+    case duckAIAiSidebar = "funnel_duckai_macos__aisidebar"
+    case duckAIActivateSubscription = "funnel_duckai_macos__activatesubscription"
+    case duckAIFreeLabel = "funnel_duckai_macos__freelabel"
+    case duckAIFreeLimit = "funnel_duckai_macos__freelimit"
+    case duckAIImageGenerationLimit = "funnel_duckai_macos__imagegenerationlimit"
+    case duckAIPlusLimit = "funnel_duckai_macos__pluslimit"
+    case duckAIPromotionCard = "funnel_duckai_macos__promotioncard"
+    case duckAISettings = "funnel_duckai_macos__settings"
+    case duckAIDisclaimerBanner = "funnel_duckai_macos__disclaimerbanner"
+    case duckAIVoiceChatLimit = "funnel_duckai_macos__voicechatlimit"
+    case duckAIVoiceChatDurationLimit = "funnel_duckai_macos__voicechatdurationlimit"
 }
 
 /// Represents the origin point from which the user enters the subscription restore funnel in the macOS app.

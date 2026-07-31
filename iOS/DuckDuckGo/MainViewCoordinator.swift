@@ -51,6 +51,7 @@ class MainViewCoordinator {
     var statusBackground: UIView!
     var focusedStateBackground: UIView!
     var suggestionTrayContainer: UIView!
+    var windowControlsRowBackground: UIView?
     var tabBarContainer: UIView!
     var aiChatTabChatHeaderContainer: UIView!
     var unifiedToggleInputContainer: UIView!
@@ -123,7 +124,7 @@ class MainViewCoordinator {
         var toolbarBottom: NSLayoutConstraint!
         var toolbarHeight: NSLayoutConstraint!
         var contentContainerTop: NSLayoutConstraint!
-        var contentContainerTopBelowTabsBar: NSLayoutConstraint?
+        var contentContainerTopBelowWindowControlsRow: NSLayoutConstraint?
         var tabBarContainerTop: NSLayoutConstraint!
         var tabBarContainerTopInWindowControlsRow: NSLayoutConstraint?
         var tabBarContainerTopBelowWindowControls: NSLayoutConstraint?
@@ -166,8 +167,9 @@ class MainViewCoordinator {
         return true
     }
 
-    func setContentClearsSharedTabsRow(_ clearsRow: Bool) {
-        constraints.contentContainerTopBelowTabsBar?.isActive = clearsRow
+    func setSharedWindowControlsRowVisible(_ visible: Bool) {
+        windowControlsRowBackground?.isHidden = !visible
+        constraints.contentContainerTopBelowWindowControlsRow?.isActive = visible
     }
 
     // Preserve chrome hiding offset across anchor swaps.

@@ -87,19 +87,6 @@ extension UIView {
         return windowSides[0] < screenSides[0] - 1 || windowSides[1] < screenSides[1] - 1
     }
 
-    /// Scales around a superview point and optionally moves upward so sibling views transform as one group.
-    func applyTransform(scale: CGFloat, about pivot: CGPoint, rise: CGFloat = 0) {
-        let pivotCorrection = CGPoint(x: (pivot.x - center.x) * (1 - scale),
-                                      y: (pivot.y - center.y) * (1 - scale))
-        transform = CGAffineTransform(translationX: pivotCorrection.x, y: pivotCorrection.y - rise)
-            .scaledBy(x: scale, y: scale)
-    }
-
-    /// Top center of the view in its superview coordinates before transforms.
-    var untransformedTopCenter: CGPoint {
-        CGPoint(x: center.x, y: center.y - bounds.height / 2)
-    }
-
     @MainActor
     public func createImageSnapshot(inBounds bounds: CGRect? = nil) -> UIImage? {
         let bounds = bounds ?? self.frame

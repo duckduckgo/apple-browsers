@@ -236,6 +236,7 @@ class MainViewController: UIViewController {
     /// non-linear handoff ramp, so alpha is no longer a reliable source for the real percent.
     private var lastChromeVisibilityPercent: CGFloat = 1
     private var lastWindowControlsRowState: (sharesRow: Bool, tabsBarHidden: Bool, topInset: CGFloat) = (false, false, -1)
+    private lazy var isWindowControlsRowEnabled = WindowControlsRowLayout.isEnabled(featureFlagger: featureFlagger)
     private var lastForegroundEntryDate = Date.distantPast
     private var syncRecoveryPromptService: SyncRecoveryPromptService?
     private var currentNTPEscapeHatch: EscapeHatchModel?
@@ -1542,25 +1543,11 @@ class MainViewController: UIViewController {
         ((percent - start) / (1 - start)).clamped(to: 0...1)
     }
 
-    private func updateSharedRowAddressBarScale(hideProgress: CGFloat, sharesRow: Bool) {
-        let container = viewCoordinator.navigationBarContainer!
-        guard sharesRow, !viewCoordinator.tabBarContainer.isHidden, !isInMinimalChromeLayout else {
-            // Minimal chrome owns this transform.
-            if !isInMinimalChromeLayout, !container.transform.isIdentity {
-                container.transform = .identity
-            }
-            return
-        }
-
-        let fullyHiddenScale = TabsBarViewController.Constants.addressBarHideScale
-        let scale = 1 - (1 - fullyHiddenScale) * hideProgress.clamped(to: 0...1)
-        container.applyTransform(scale: scale, about: container.untransformedTopCenter)
-    }
-
-    // Keep tab flare and address bar fades synchronized.
-    private func sharedRowHideAlpha(for percent: CGFloat) -> CGFloat {
-        let fadeCompletePercent: CGFloat = 0.8
-        return rampedProgress(percent, from: fadeCompletePercent)
+    private func currentTabSelectionAlpha(for chromeAlpha: CGFloat) -> CGFloat {
+        guard chromeAlpha > 0 else { return 0 }
+        let fadeSpeed: CGFloat = 2
+        let targetAlpha = (1 - (1 - chromeAlpha) * fadeSpeed).clamped(to: 0...1)
+        return (targetAlpha / chromeAlpha).clamped(to: 0...1)
     }
 
     private func shouldResetNavBarContainerBottomForTopPosition() -> Bool {
@@ -2878,7 +2865,7 @@ class MainViewController: UIViewController {
             view.layoutIfNeeded()
         }
 
-        let sharesRow = WindowControlsRowLayout.sharesRow(in: view, for: targetSize, featureFlagger: featureFlagger)
+        let sharesRow = WindowControlsRowLayout.sharesRow(in: view, for: targetSize, isEnabled: isWindowControlsRowEnabled)
         updateWindowControlsRowMetricsIfNeeded(sharesRow: sharesRow, force: true)
         DispatchQueue.main.async { [weak self] in
             self?.updateWindowControlsRowMetricsIfNeeded(sharesRow: sharesRow, force: true)
@@ -4274,14 +4261,12 @@ extension MainViewController: BrowserChromeDelegate {
         currentTab?.updateWebViewBottomAnchor(for: percent)
         updateFloatingTopNewTabPageInset(for: percent)
 
-        let sharesRow = sharesWindowControlsRow
         let chromeAlpha = chromeAlpha(for: percent)
-        let sharedRowAlpha = sharesRow ? min(chromeAlpha, sharedRowHideAlpha(for: percent)) : chromeAlpha
-        viewCoordinator.navigationBarContainer.alpha = sharedRowAlpha
-        // Keep strip visible so window controls never float over web content.
-        viewCoordinator.tabBarContainer.alpha = sharesRow ? 1 : chromeAlpha
-        tabsBarController?.setContentVisibility(alpha: sharedRowAlpha, hideProgress: 1 - percent)
-        updateSharedRowAddressBarScale(hideProgress: 1 - percent, sharesRow: sharesRow)
+        viewCoordinator.navigationBarContainer.alpha = chromeAlpha
+        viewCoordinator.tabBarContainer.alpha = chromeAlpha
+        if isWindowControlsRowEnabled {
+            tabsBarController?.setCurrentTabSelectionAlpha(currentTabSelectionAlpha(for: chromeAlpha))
+        }
         viewCoordinator.toolbar.alpha = chromeAlpha
         updateFloatingDomainCapsuleVisibility(for: percent)
 
@@ -4322,10 +4307,10 @@ extension MainViewController: BrowserChromeDelegate {
             // let toolbar offset/alpha animations own chrome visibility to avoid blank "missing" bars.
             viewCoordinator.omniBar.barView.alpha = 1
         }
-        let sharesRow = sharesWindowControlsRow
-        viewCoordinator.tabBarContainer.alpha = (hidden && !sharesRow) ? 0 : 1
-        tabsBarController?.setContentVisibility(alpha: hidden ? 0 : 1, hideProgress: hidden ? 1 : 0)
-        updateSharedRowAddressBarScale(hideProgress: hidden ? 1 : 0, sharesRow: sharesRow)
+        viewCoordinator.tabBarContainer.alpha = hidden ? 0 : 1
+        if isWindowControlsRowEnabled {
+            tabsBarController?.setCurrentTabSelectionAlpha(hidden ? 0 : 1)
+        }
         viewCoordinator.statusBackground.alpha = hidden ? 0 : 1
         updateFloatingDomainCapsuleVisibility(for: hidden ? 0 : 1)
     }
@@ -4487,8 +4472,8 @@ extension MainViewController: BrowserChromeDelegate {
     }
 
     // 1.0 - full size, 0.0 - hidden
-    private func updateNavBarConstant(_ ratio: CGFloat) {
-        let sharesRow = sharesWindowControlsRow
+    private func updateNavBarConstant(_ ratio: CGFloat, sharesRow requestedSharesRow: Bool? = nil) {
+        let sharesRow = requestedSharesRow ?? sharesWindowControlsRow
         let isTabsBarHidden = viewCoordinator.tabBarContainer.isHidden
         let browserTabsOffset = (isTabsBarHidden ? 0 : viewCoordinator.tabBarContainer.frame.size.height)
         let navBarTopOffset = viewCoordinator.navigationBarContainer.frame.size.height + browserTabsOffset
@@ -4496,22 +4481,15 @@ extension MainViewController: BrowserChromeDelegate {
         let windowControlsOffset = (sharesRow && isTabsBarHidden) ? WindowControlsRowLayout.rowHeight(in: view) : 0
         let sharedRowTopSpacing = sharesRow ? MainViewCoordinator.Constants.windowControlsRowTopSpacing : 0
         if !isTabsBarHidden {
-            // Keep shared strip fixed while address bar slides away.
-            let topBarsConstant = sharesRow
-                ? sharedRowTopSpacing
-                : -browserTabsOffset * (1.0 - ratio)
+            let topBarsConstant = sharedRowTopSpacing - browserTabsOffset * (1.0 - ratio)
             viewCoordinator.constraints.tabBarContainerTop.constant = topBarsConstant
         }
         viewCoordinator.constraints.navigationBarContainerTop.constant =
             sharedRowTopSpacing + windowControlsOffset + browserTabsOffset + -navBarTopOffset * (1.0 - ratio)
     }
 
-    var isWindowControlsRowEnabled: Bool {
-        WindowControlsRowLayout.isEnabled(featureFlagger: featureFlagger)
-    }
-
     private var sharesWindowControlsRow: Bool {
-        WindowControlsRowLayout.sharesRow(in: view, featureFlagger: featureFlagger)
+        WindowControlsRowLayout.sharesRow(in: view, isEnabled: isWindowControlsRowEnabled)
     }
 
     private func updateWindowControlsRowMetricsIfNeeded(sharesRow requestedSharesRow: Bool? = nil, force: Bool = false) {
@@ -4525,8 +4503,10 @@ extension MainViewController: BrowserChromeDelegate {
 
         lastWindowControlsRowState = state
         viewCoordinator.setChromeSharesWindowControlsRow(state.sharesRow)
-        viewCoordinator.setContentClearsSharedTabsRow(state.sharesRow && !state.tabsBarHidden)
-        updateNavBarConstant(lastChromeVisibilityPercent)
+        viewCoordinator.setSharedWindowControlsRowVisible(state.sharesRow && !state.tabsBarHidden)
+        updateNavBarConstant(lastChromeVisibilityPercent, sharesRow: state.sharesRow)
+        let chromeAlpha = chromeAlpha(for: lastChromeVisibilityPercent)
+        tabsBarController?.setCurrentTabSelectionAlpha(currentTabSelectionAlpha(for: chromeAlpha))
         view.layoutIfNeeded()
     }
 
@@ -7211,6 +7191,7 @@ extension MainViewController {
 
         viewCoordinator.navigationBarContainer.backgroundColor = theme.barBackgroundColor
         viewCoordinator.navigationBarContainer.tintColor = theme.barTintColor
+        viewCoordinator.windowControlsRowBackground?.backgroundColor = theme.tabsBarBackgroundColor
 
         updateWindowedAddressBarCorners()
 

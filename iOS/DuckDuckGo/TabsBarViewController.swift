@@ -64,10 +64,6 @@ class TabsBarViewController: UIViewController {
         static let firstTabLeadingMargin: CGFloat = 24
         // Matches Figma fillet size.
         static let tabRampSize = CGSize(width: 10, height: 10)
-        static let contentHideScale: CGFloat = 0.86
-        // Address bar shrinks half as much as tabs for one visual movement.
-        static let addressBarHideScale: CGFloat = 1 - (1 - contentHideScale) / 2
-        static let flareFadeCompletesAtContentAlpha: CGFloat = 0.6
         static let windowControlsTabGap: CGFloat = 16
     }
     
@@ -97,32 +93,8 @@ class TabsBarViewController: UIViewController {
         fillColor: { ThemeManager.shared.currentTheme.omniBarBackgroundColor }
     )
 
-    // Cache views because visibility updates run every display frame.
-    private lazy var contentViews: [UIView] = [collectionView, buttonsStack, buttonsBackground, addTabButton, addTabButtonBackground]
-
-    private var appliedContentVisibility = (alpha: CGFloat(1), hideProgress: CGFloat(0), stripHeight: CGFloat(0))
-
-    /// Hides shared row contents while preserving strip background and independent fade and movement timing.
-    func setContentVisibility(alpha: CGFloat, hideProgress: CGFloat) {
-        let sharesRow = WindowControlsRowLayout.sharesRow(in: view, featureFlagger: featureFlagger)
-        // Include strip height so resizing reapplies travel at unchanged progress.
-        let target = sharesRow
-            ? (alpha: alpha.clamped(to: 0...1), hideProgress: hideProgress.clamped(to: 0...1), stripHeight: view.bounds.height)
-            : (alpha: CGFloat(1), hideProgress: CGFloat(0), stripHeight: CGFloat(0))
-        guard target != appliedContentVisibility else { return }
-        appliedContentVisibility = target
-
-        let scale = 1 - (1 - Constants.contentHideScale) * target.hideProgress
-        let rise = target.stripHeight * target.hideProgress
-        let pivot = CGPoint(x: view.bounds.midX, y: view.bounds.minY)
-        contentViews.forEach {
-            $0.alpha = target.alpha
-            $0.applyTransform(scale: scale, about: pivot, rise: rise)
-            $0.isUserInteractionEnabled = target.alpha > 0
-        }
-        // Fade flare early to avoid clipping its edge.
-        let flareFadeFloor = Constants.flareFadeCompletesAtContentAlpha
-        flareBackground.hideAlpha = ((target.alpha - flareFadeFloor) / (1 - flareFadeFloor)).clamped(to: 0...1)
+    func setCurrentTabSelectionAlpha(_ alpha: CGFloat) {
+        flareBackground.hideAlpha = alpha.clamped(to: 0...1)
     }
 
     lazy var fireButton: UIButton = {
@@ -205,8 +177,6 @@ class TabsBarViewController: UIViewController {
 
     private func setUpSubviews() {
 
-        // Keep moving content clear of window controls.
-        view.clipsToBounds = true
         collectionView.clipsToBounds = true
         collectionView.delegate = self
         collectionView.dataSource = self
@@ -617,7 +587,7 @@ class TabsBarViewController: UIViewController {
     // Recalculate after resizing because reserved window control width changes.
     private func updateWindowControlsInsetIfNeeded() {
         let margin: CGFloat
-        if WindowControlsRowLayout.sharesRow(in: view, featureFlagger: featureFlagger) {
+        if WindowControlsRowLayout.sharesRow(in: view, isEnabled: WindowControlsRowLayout.isEnabled(featureFlagger: featureFlagger)) {
             let clearsWindowControls = WindowControlsRowLayout.leadingInset(in: view) + Constants.windowControlsTabGap
             margin = max(Constants.firstTabLeadingMargin, clearsWindowControls)
         } else {

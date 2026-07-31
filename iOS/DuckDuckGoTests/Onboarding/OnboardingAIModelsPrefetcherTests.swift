@@ -71,7 +71,7 @@ struct OnboardingAIModelsPrefetcherTests {
         var didCallResolver = false
         let service = MockAIChatModelsService()
         service.behavior = .success([remoteModel(id: "from-service", provider: "openai")])
-        let sut = makeSUT(service: service, resolver: { models in
+        let sut = makeSUT(service: service, resolver: { _ in
             didCallResolver = true
             return OnboardingAIModelResponse(models: [], defaultModelId: nil)
         })

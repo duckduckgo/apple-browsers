@@ -3161,6 +3161,30 @@ class MainViewController: UIViewController {
         ViewHighlighter.updatePositions()
         omniBar.refreshCustomizableButton()
         reanchorAITabCollapsedFooterIfNeeded()
+        updateWindowedAddressBarCorners()
+    }
+
+    // True while the address-bar move animation runs; it owns the container background. See `onMoveAddressBar`.
+    private var isAddressBarMoveInProgress = false
+
+    /// Rounds the top address bar's top corners on iPad when windowed. Uses `cornerRadius` without
+    /// clipping (keeps the pill shadow and below-bar overflow) and tints the exposed container darker
+    /// so the notch shows.
+    private func updateWindowedAddressBarCorners() {
+        // Floating UI and the move animation own the container background; don't fight them. Both
+        // re-run this via decorate().
+        guard !isFloatingUIEnabled, !isAddressBarMoveInProgress else { return }
+
+        let barView = omniBar.barView
+        let isTopPosition = !appSettings.currentAddressBarPosition.isBottom
+        let shouldRound = AppWidthObserver.shared.isLargeWidth && isTopPosition && barView.isWindowedPresentation
+
+        barView.layer.cornerCurve = .continuous
+        barView.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
+        barView.layer.cornerRadius = shouldRound ? TabsBarCell.cornerRadius : 0
+
+        let theme = ThemeManager.shared.currentTheme
+        viewCoordinator.navigationBarContainer.backgroundColor = shouldRound ? theme.tabsBarBackgroundColor : theme.barBackgroundColor
     }
 
     /// The AI-tab collapsed footer is a bottom chat input that must sit above the keyboard/home
@@ -4975,11 +4999,13 @@ extension MainViewController: OmniBarDelegate {
                 //  which doesn't appear to work properly on iOS 26.4,
                 if #available(iOS 18.0, *) {
 
+                    self?.isAddressBarMoveInProgress = true
                     self?.viewCoordinator.navigationBarContainer.backgroundColor = .clear
                     self?.omniBar.prepareForMoveTransition()
                     UIView.animate(.smooth) {
                         self?.toggleAddressBarLocation()
                     } completion: {
+                        self?.isAddressBarMoveInProgress = false
                         self?.omniBar.moveTransitionCompleted()
                         self?.decorate()
                     }
@@ -5987,6 +6013,7 @@ extension MainViewController: TabDelegate {
             self.dismissOmniBar()
             self.attachTab(tab: newTab)
             self.refreshOmniBar()
+            self.tabsBarController?.refresh(tabsModel: self.tabManager.currentTabsModel, scrollToSelected: true)
         }
 
         return newTab.webView
@@ -7112,6 +7139,8 @@ extension MainViewController {
 
         viewCoordinator.navigationBarContainer.backgroundColor = theme.barBackgroundColor
         viewCoordinator.navigationBarContainer.tintColor = theme.barTintColor
+
+        updateWindowedAddressBarCorners()
 
         viewCoordinator.toolbar.tintColor = UIColor(singleUseColor: .toolbarButton)
 

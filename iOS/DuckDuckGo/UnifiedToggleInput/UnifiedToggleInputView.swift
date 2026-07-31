@@ -382,6 +382,7 @@ final class UnifiedToggleInputView: UIView {
     func bindPageContextChip(to viewModel: UnifiedToggleInputPageContextChipViewModel) {
         pageContextChipCancellables.removeAll()
         attachmentsStrip.onPageContextRemove = { [weak viewModel] in viewModel?.tapToRemove() }
+        attachmentsStrip.onPageContextTap = { [weak viewModel] in viewModel?.tapToAttach() }
         viewModel.$state
             .sink { [weak self] state in self?.attachmentsStrip.setPageContextChipState(state) }
             .store(in: &pageContextChipCancellables)
@@ -554,12 +555,22 @@ final class UnifiedToggleInputView: UIView {
     private var toolbarBottomConstraint: NSLayoutConstraint!
     private var attachmentsStripHeightConstraint: NSLayoutConstraint!
     private var toolbarHeightConstraint: NSLayoutConstraint!
+    /// The link in the vertical chain that differs between the two attachment-strip orders.
+    private var attachmentsStripChainConstraint: NSLayoutConstraint!
+
+    /// Attachment strip above the text entry, per the contextual Duck.ai design. Decided by the owning
+    /// coordinator — this view must not resolve the feature itself, or it would restructure every UTI
+    /// surface including the omnibar.
+    private let placesAttachmentsAboveInput: Bool
 
     // MARK: - Initialization
 
-    init(handler: UnifiedToggleInputHandler, isToggleEnabled: Bool = true) {
+    init(handler: UnifiedToggleInputHandler,
+         isToggleEnabled: Bool = true,
+         placesAttachmentsAboveInput: Bool = false) {
         self.handler = handler
         self.isToggleEnabled = isToggleEnabled
+        self.placesAttachmentsAboveInput = placesAttachmentsAboveInput
         self.textEntryView = SwitchBarTextEntryView(handler: handler, voiceButtonAppearance: .aiVoicePlain)
         super.init(frame: .zero)
         textEntryView.style = isToggleEnabled ? .multiLine : .singleLine
@@ -1519,8 +1530,18 @@ private extension UnifiedToggleInputView {
         toggleHeightConstraint = toggleView.heightAnchor.constraint(equalToConstant: 0)
         inlineDismissTopConstraint = inlineDismissButton.topAnchor.constraint(equalTo: cardView.topAnchor, constant: Constants.toggleTopPadding)
         inlineDismissCenterYConstraint = inlineDismissButton.centerYAnchor.constraint(equalTo: textEntryView.centerYAnchor)
-        inputTopConstraint = textEntryView.topAnchor.constraint(equalTo: toggleView.bottomAnchor, constant: 0)
-        inputBottomConstraint = attachmentsStrip.topAnchor.constraint(equalTo: textEntryView.bottomAnchor)
+        // Vertical chain inside the card. `inputTopConstraint` and `inputBottomConstraint` keep their
+        // meaning in both orders — padding above the block, and below the text entry — so every
+        // caller that mutates their constants stays correct.
+        if placesAttachmentsAboveInput {
+            inputTopConstraint = attachmentsStrip.topAnchor.constraint(equalTo: toggleView.bottomAnchor, constant: 0)
+            attachmentsStripChainConstraint = textEntryView.topAnchor.constraint(equalTo: attachmentsStrip.bottomAnchor)
+            inputBottomConstraint = toolsToolbar.topAnchor.constraint(equalTo: textEntryView.bottomAnchor)
+        } else {
+            inputTopConstraint = textEntryView.topAnchor.constraint(equalTo: toggleView.bottomAnchor, constant: 0)
+            inputBottomConstraint = attachmentsStrip.topAnchor.constraint(equalTo: textEntryView.bottomAnchor)
+            attachmentsStripChainConstraint = toolsToolbar.topAnchor.constraint(equalTo: attachmentsStrip.bottomAnchor)
+        }
         textEntryViewLeadingConstraint = textEntryView.leadingAnchor.constraint(equalTo: cardView.leadingAnchor)
         textEntryViewTrailingConstraint = textEntryView.trailingAnchor.constraint(equalTo: cardView.trailingAnchor)
         toolbarBottomConstraint = toolsToolbar.bottomAnchor.constraint(equalTo: cardView.bottomAnchor)
@@ -1552,7 +1573,7 @@ private extension UnifiedToggleInputView {
             attachmentsStrip.trailingAnchor.constraint(equalTo: cardView.trailingAnchor),
             attachmentsStripHeightConstraint,
 
-            toolsToolbar.topAnchor.constraint(equalTo: attachmentsStrip.bottomAnchor),
+            attachmentsStripChainConstraint,
             toolsToolbar.leadingAnchor.constraint(equalTo: cardView.leadingAnchor),
             toolsToolbar.trailingAnchor.constraint(equalTo: cardView.trailingAnchor),
             toolbarBottomConstraint,

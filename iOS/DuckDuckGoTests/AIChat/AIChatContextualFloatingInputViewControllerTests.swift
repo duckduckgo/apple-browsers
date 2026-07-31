@@ -105,12 +105,40 @@ final class AIChatContextualFloatingInputViewControllerTests: XCTestCase {
 
     // MARK: - Dismissal
 
-    func testTappingTheDimRequestsDismissal() {
+    func testTappingThePageRequestsDismissal() {
         let (subject, spy, _) = makeSubject()
 
-        subject.simulateDimTapForTesting()
+        subject.simulatePageTapForTesting()
 
         XCTAssertEqual(spy.dismissRequestCount, 1)
+    }
+
+    /// The tap that dismisses must still reach the page, so whatever it hit — a link, a text field —
+    /// activates on the same tap rather than needing a second one.
+    func testThePageTapRecognizerDoesNotConsumeTheTouch() throws {
+        let (_, _, parent) = makeSubject()
+        let recognizer = try XCTUnwrap(parent.view.gestureRecognizers?.compactMap { $0 as? UITapGestureRecognizer }.first)
+
+        XCTAssertFalse(recognizer.cancelsTouchesInView)
+        XCTAssertFalse(recognizer.delaysTouchesBegan)
+        XCTAssertFalse(recognizer.delaysTouchesEnded)
+    }
+
+    func testRemoveDetachesThePageTapRecognizerFromThePresenter() {
+        let (subject, _, parent) = makeSubject()
+        XCTAssertFalse(parent.view.gestureRecognizers?.isEmpty ?? true)
+
+        subject.remove()
+
+        XCTAssertTrue(parent.view.gestureRecognizers?.isEmpty ?? true)
+    }
+
+    /// The page stays scrollable underneath, so the surface must only claim touches on its own controls.
+    func testTouchesOutsideTheControlsPassThroughToThePage() {
+        let (subject, _, _) = makeSubject()
+        let emptyArea = CGPoint(x: subject.view.bounds.midX, y: subject.view.bounds.minY + 1)
+
+        XCTAssertNil(subject.view.hitTest(emptyArea, with: nil))
     }
 
     func testAccessibilityEscapeRequestsDismissal() {

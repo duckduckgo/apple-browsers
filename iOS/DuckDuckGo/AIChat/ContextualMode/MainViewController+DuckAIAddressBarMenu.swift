@@ -59,6 +59,14 @@ extension MainViewController {
         currentTab.presentContextualFloatingInput(from: self)
     }
 
+    /// Tapping the address bar is one of the floating input's dismissal routes, and the page stays
+    /// interactive underneath so that tap reaches the omnibar in the first place.
+    func dismissFloatingContextualInputIfPresented() {
+        // No presence check — `dismissFloatingInput` already no-ops when nothing is up, and a second
+        // gate here would be one more thing to keep in step with it.
+        currentTab?.aiChatContextualSheetCoordinator.dismissFloatingInput()
+    }
+
     func dismissContextualDuckAISurface() {
         guard let coordinator = currentTab?.aiChatContextualSheetCoordinator else { return }
         if coordinator.isFloatingInputPresented {

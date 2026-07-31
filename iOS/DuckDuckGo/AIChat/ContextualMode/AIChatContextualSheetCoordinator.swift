@@ -114,9 +114,13 @@ final class AIChatContextualSheetCoordinator {
     private(set) var sheetViewController: AIChatContextualSheetViewController?
 
     /// The floating pre-submit input, when it is the current surface instead of the sheet.
-    private(set) var floatingInputViewController: AIChatContextualFloatingInputViewController?
+    private(set) var floatingInputViewController: AIChatContextualFloatingInputViewController? {
+        didSet { isFloatingInputPresented = floatingInputViewController != nil }
+    }
 
-    var isFloatingInputPresented: Bool { floatingInputViewController != nil }
+    /// Published so the address bar can re-attach its menu when this surface comes and goes; the
+    /// sheet's own flag does not cover the floating input.
+    @Published private(set) var isFloatingInputPresented: Bool = false
 
     private var floatingChipsCancellable: AnyCancellable?
 
@@ -266,16 +270,35 @@ final class AIChatContextualSheetCoordinator {
         controller.playEntrance()
     }
 
+    /// The slice of the view state the floating input's chips actually render, so unrelated state
+    /// changes don't rebuild them.
+    private struct StartActionsContent: Equatable {
+        let isLoaded: Bool
+        let suggestions: [ContextualSuggestedPrompt]
+        let quickActions: [AIChatContextualQuickAction]
+
+        init(viewState: SheetViewState) {
+            isLoaded = viewState.suggestionsLoadState == .loaded
+            suggestions = viewState.suggestions
+            quickActions = viewState.quickActions
+        }
+    }
+
     /// The sheet feeds its chips from `apply(viewState)`; the floating input has no sheet, so the
     /// coordinator drives them for as long as it is the current surface.
     private func observeViewStateForFloatingChips() {
         floatingChipsCancellable = sessionState.$viewState
+            // Only the chip content matters here, and `rebuildViewState` fires on many unrelated
+            // changes. Without this, every emission recreates each chip — and each glass chip is a
+            // fresh `UIVisualEffectView` — while the one-shot entrance leaves the new ones unanimated.
+            .map { StartActionsContent(viewState: $0) }
+            .removeDuplicates()
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] viewState in
+            .sink { [weak self] content in
                 guard let floatingInput = self?.floatingInputViewController else { return }
                 let chips = floatingInput.chipsViewController
 
-                guard viewState.suggestionsLoadState == .loaded else {
+                guard content.isLoaded else {
                     // Loader alone while suggestions resolve. Passing the actions through here would
                     // flash the placeholder "Ask about page" chip beside it, then replace it.
                     chips.updateStartActions(suggestions: [], quickActions: [])
@@ -283,8 +306,10 @@ final class AIChatContextualSheetCoordinator {
                     return
                 }
 
-                chips.updateStartActions(suggestions: viewState.suggestions, quickActions: viewState.quickActions)
-                // The entrance hands the loader over to the deck, so it owns clearing the loading state.
+                chips.updateStartActions(suggestions: content.suggestions, quickActions: content.quickActions)
+                // Cleared on every resolve, not just the first: removing the page context starts a new
+                // loading cycle, and the one-shot entrance can't be relied on to end it.
+                chips.updateSuggestionsLoading(false)
                 floatingInput.playChipsEntranceIfNeeded()
             }
     }
@@ -296,7 +321,7 @@ final class AIChatContextualSheetCoordinator {
         floatingInputViewController = nil
         floatingChipsCancellable = nil
         pixelHandler.fireFloatingInputDismissedWithoutSubmission()
-        controller.dismissRidingKeyboard { controller.remove() }
+        controller.dismiss { controller.remove() }
         stopObservingContextUpdates()
         sessionState.handleSheetDismissed()
         startSessionTimer()
@@ -781,8 +806,9 @@ extension AIChatContextualSheetCoordinator: AIChatContextualInputViewControllerD
     func contextualInputViewController(_ viewController: AIChatContextualInputViewController, didSelectQuickAction action: AIChatContextualQuickAction) {
         switch action {
         case .askAboutPage:
-            pixelHandler.fireQuickActionAskAboutPageSelected()
-            persistentUTIHost?.activateInput()
+            // Unreachable on this surface: the strip's own re-attach button owns the action, so the
+            // session state filters this chip out wherever that button is shown.
+            break
         case .summarize, .summarizePage:
             pixelHandler.fireQuickActionSummarizeSelected()
             promoteFloatingInputToSheet()

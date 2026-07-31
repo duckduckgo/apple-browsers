@@ -58,7 +58,9 @@ final class UnifiedToggleInputViewController: UIViewController {
 
     let isToggleEnabled: Bool
     let handler: UnifiedToggleInputHandler
-    private lazy var inputBarView = UnifiedToggleInputView(handler: handler, isToggleEnabled: isToggleEnabled)
+    private lazy var inputBarView = UnifiedToggleInputView(handler: handler,
+                                                          isToggleEnabled: isToggleEnabled,
+                                                          placesAttachmentsAboveInput: placesAttachmentsAboveInput)
 
     /// Edges of the visible input card, for aligning content sitting around the bar.
     var inputCardTopAnchor: NSLayoutYAxisAnchor { inputBarView.cardTopAnchor }
@@ -85,8 +87,12 @@ final class UnifiedToggleInputViewController: UIViewController {
         inputBarView.setMenuAlertVisible(isVisible, animated: animated)
     }
 
-    init(isToggleEnabled: Bool, isFireTab: Bool = false) {
+    /// Decided by the coordinator, which knows whether this is the omnibar or a contextual surface.
+    private let placesAttachmentsAboveInput: Bool
+
+    init(isToggleEnabled: Bool, isFireTab: Bool = false, placesAttachmentsAboveInput: Bool = false) {
         self.isToggleEnabled = isToggleEnabled
+        self.placesAttachmentsAboveInput = placesAttachmentsAboveInput
         self.handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false,
                                                  isToggleEnabled: isToggleEnabled,
                                                  isFireTab: isFireTab)

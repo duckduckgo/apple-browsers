@@ -1813,9 +1813,6 @@
 /* Info text shown below the context chip explaining that content will be sent with the message */
 "duckai.context.chip.info" = "Sent with your message to Duck.ai";
 
-/* Accessibility label for the dimmed page area behind the floating Duck.ai input; activating it closes the input */
-"duckai.contextual.floating.input.dismiss.accessibility" = "Dismiss Duck.ai";
-
 /* Accessibility label for the recent chats button in the Duck.ai contextual sheet header */
 "duckai.contextual.recent.chats.button" = "Recent Chats";
 

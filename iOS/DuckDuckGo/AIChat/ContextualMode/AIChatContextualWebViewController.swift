@@ -89,8 +89,11 @@ final class AIChatContextualWebViewController: UIViewController {
     private var isContentHandlerReady = false
     /// The Duck.ai initialization handshake is signaled by `getAIChatPageContext`.
     private let frontendReadinessGate = AIChatFrontendReadinessGate()
+    /// The frontend is part of the rule, not just the page and the content handler: the page finishes
+    /// navigating before the chat app starts listening, and anything dispatched into that gap is
+    /// silently dropped. Prompts that arrive early are queued and flushed by `markFrontendAsReady()`.
     private var canDeliverPrompt: Bool {
-        isPageReady && isContentHandlerReady
+        isPageReady && isContentHandlerReady && frontendReadinessGate.isReady
     }
     private var urlObservation: NSKeyValueObservation?
     private var lastContextualChatURL: URL?
@@ -401,7 +404,7 @@ final class AIChatContextualWebViewController: UIViewController {
             submitPromptNow(prompt, pageContext: pageContext)
         }
 
-        if hasPendingChipContext, frontendReadinessGate.isReady {
+        if hasPendingChipContext {
             let context = pendingChipContext
             hasPendingChipContext = false
             pendingChipContext = nil

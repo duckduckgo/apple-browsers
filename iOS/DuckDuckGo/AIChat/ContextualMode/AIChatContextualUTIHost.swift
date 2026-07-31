@@ -61,6 +61,7 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate {
         lastUsedModelProvider: DuckAiLastUsedModelProviding? = nil,
         voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding = DuckAIVoiceShortcutFeature(),
         unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature(),
+        floatingInputFeature: AIChatContextualFloatingInputFeatureProviding = AIChatContextualFloatingInputFeature(),
         startsPreSubmit: Bool = false
     ) {
         self.hasActiveChat = hasActiveChat
@@ -78,13 +79,15 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate {
             duckAIWideEventInstrumentation: wideEventInstrumentation,
             duckAIWideEventFlowScope: duckAIWideEventFlowScope,
             contextualStartsPreSubmit: startsPreSubmit,
-            attachmentPasteEnabled: unifiedToggleInputFeature.isAttachmentPasteEnabled
+            attachmentPasteEnabled: unifiedToggleInputFeature.isAttachmentPasteEnabled,
+            placesAttachmentsAboveInput: floatingInputFeature.isAvailable
         )
         self.chipViewModel = UnifiedToggleInputPageContextChipViewModel(
             originatingURLPublisher: originatingURLPublisher,
             initialAttachedContext: initialAttachedContext,
             initialAttachmentDeliveryState: initialAttachmentDeliveryState,
-            isAutoAttachEnabled: isAutoAttachEnabled
+            isAutoAttachEnabled: isAutoAttachEnabled,
+            showsAttachAffordance: floatingInputFeature.isAvailable
         )
         coordinator.delegate = self
         coordinator.updateAIVoiceChatAvailability(voiceShortcutFeature.isAvailable)
@@ -254,6 +257,7 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate {
     func prepareForNewChat() {
         hasDeliveredFirstPrompt = !startsPreSubmit
         clearAttachedContext()
+        chipViewModel.clearReattachOffer()
         if startsPreSubmit, let currentUserScript {
             coordinator.unbind()
             isBoundToUserScript = false

@@ -281,7 +281,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         duckAIWideEventFlowScope: DuckAIWideEventFlowScope? = nil,
         pixelFiring: UTIPixelFiring = .live,
         contextualStartsPreSubmit: Bool = false,
-        attachmentPasteEnabled: Bool = false
+        attachmentPasteEnabled: Bool = false,
+        placesAttachmentsAboveInput: Bool = false
     ) {
         self.host = host
         self.isToggleEnabled = isToggleEnabled
@@ -310,7 +311,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         self.lastUsedReasoningModeProvider = lastUsedReasoningModeProvider
             ?? duckAiNativeStorageHandler.map { DuckAiLastUsedReasoningModeProvider(storage: $0, pixelFiring: duckAiNativeStoragePixelFiring) }
         self.duckAIWideEventFlowScope = duckAIWideEventFlowScope
-        viewController = UnifiedToggleInputViewController(isToggleEnabled: isToggleEnabled, isFireTab: isFireTab)
+        viewController = UnifiedToggleInputViewController(isToggleEnabled: isToggleEnabled,
+                                                         isFireTab: isFireTab,
+                                                         placesAttachmentsAboveInput: placesAttachmentsAboveInput)
         contentViewController = UnifiedInputContentContainerViewController(
             switchBarHandler: viewController.handler,
             duckAiNativeStorageHandler: duckAiNativeStorageHandler,

@@ -33,6 +33,8 @@ final class UnifiedToggleInputAttachmentsStripView: UIView {
     var onAttachmentRemoved: ((UUID, UnifiedToggleInputAttachment, Bool) -> Void)?
     var onAttachmentsChanged: (() -> Void)?
     var onPageContextRemove: (() -> Void)?
+    /// Tapping the chip in its placeholder state asks for the page to be attached again.
+    var onPageContextTap: (() -> Void)?
 
     private(set) var hasVisiblePageContext = false
 
@@ -139,6 +141,9 @@ final class UnifiedToggleInputAttachmentsStripView: UIView {
         clipsToBounds = false
         pageContextChip.onRemove = { [weak self] in
             self?.onPageContextRemove?()
+        }
+        pageContextChip.onTap = { [weak self] in
+            self?.onPageContextTap?()
         }
         addSubview(scrollView)
         scrollView.addSubview(stackView)

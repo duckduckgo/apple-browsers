@@ -24,8 +24,6 @@ import UIKit
 private enum AIChatQuickActionsViewConstants {
     static let chipSpacing: CGFloat = 8
 
-    /// No head start needed: the loader fading out already separates the deck from the bar's arrival.
-    static let entranceDelay: TimeInterval = 0
     /// The stacked deck fades in as one, so no single card reads as more important.
     static let deckRevealDuration: TimeInterval = 0.12
     static let deckScale: CGFloat = 0.94
@@ -33,8 +31,6 @@ private enum AIChatQuickActionsViewConstants {
     static let spreadStagger: TimeInterval = 0.04
     static let spreadDamping: CGFloat = 0.78
     static let spreadInitialVelocity: CGFloat = 0.15
-    /// The loader dissolves before the deck arrives, so the two read as a handover.
-    static let loaderFadeDuration: TimeInterval = 0.12
 }
 
 // MARK: - View
@@ -107,32 +103,11 @@ public final class AIChatQuickActionsView<Action: AIChatQuickActionType>: UIView
     /// The chips arrive as a deck: stacked on one spot, revealed together, then springing apart into
     /// their slots. Revealing them as a group avoids any one card looking more important than the rest.
     ///
-    /// Requires a layout pass first: the deck position and each card's travel come from resting frames.
+    /// The deck position and each card's travel come from resting frames, so the loader is cleared first
+    /// — it holds a slot in this stack, and the cards would otherwise be measured low and jump when it
+    /// disappeared.
     public func animateChipsIn() {
-        // Hidden up front: `configure` has already added them at full alpha, and anything that delays
-        // the entrance would otherwise leave them on screen until it hides them again.
-        chips.forEach { $0.alpha = 0 }
-
-        // The loader holds a slot in the stack, so it fades and is removed before the cards are
-        // measured — otherwise they would settle low and jump when it disappears.
-        guard let loadingView else {
-            runDeckEntrance()
-            return
-        }
-
-        UIView.animate(withDuration: AIChatQuickActionsViewConstants.loaderFadeDuration,
-                       delay: 0,
-                       options: [.curveEaseOut, .beginFromCurrentState],
-                       animations: {
-            loadingView.alpha = 0
-        }, completion: { [weak self] _ in
-            guard let self else { return }
-            self.setLoading(false)
-            self.runDeckEntrance()
-        })
-    }
-
-    private func runDeckEntrance() {
+        setLoading(false)
         layoutIfNeeded()
         let cards = chips
         cards.forEach { $0.transform = .identity }
@@ -151,13 +126,12 @@ public final class AIChatQuickActionsView<Action: AIChatQuickActionType>: UIView
         cards.reversed().forEach(stackView.bringSubviewToFront)
 
         UIView.animate(withDuration: AIChatQuickActionsViewConstants.deckRevealDuration,
-                       delay: AIChatQuickActionsViewConstants.entranceDelay,
+                       delay: 0,
                        options: [.curveEaseOut, .beginFromCurrentState]) {
             cards.forEach { $0.alpha = 1 }
         }
 
-        let spreadStart = AIChatQuickActionsViewConstants.entranceDelay
-            + AIChatQuickActionsViewConstants.deckRevealDuration
+        let spreadStart = AIChatQuickActionsViewConstants.deckRevealDuration
 
         for (index, card) in cards.reversed().enumerated() {
             UIView.animate(withDuration: AIChatQuickActionsViewConstants.spreadDuration,

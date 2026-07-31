@@ -1064,7 +1064,13 @@ class MainViewController: UIViewController {
             return
         }
 
-        currentTab.aiChatContextualSheetCoordinator.$isSheetPresented
+        // Both surfaces, because the floating input is dismissed by routes the sheet knows nothing
+        // about — a page tap, a swipe — and the address bar menu has to be re-attached either way.
+        // `dropFirst` skips the replay of the current state, which the explicit refresh below covers.
+        let coordinator = currentTab.aiChatContextualSheetCoordinator
+        Publishers.CombineLatest(coordinator.$isSheetPresented, coordinator.$isFloatingInputPresented)
+            .removeDuplicates { $0 == $1 }
+            .dropFirst()
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in self?.refreshAIChatChromeChip() }
             .store(in: &aiChatChromeChipCancellables)
@@ -5303,6 +5309,7 @@ extension MainViewController: OmniBarDelegate {
 
     func onDidBeginEditing() {
         // Omnibar got focus. Lift minimal chrome bar above keyboard.
+        dismissFloatingContextualInputIfPresented()
         refreshMinimalChromeBottomAnchor()
         warmSearchTokenIfEligible()
     }

@@ -506,6 +506,18 @@
       },
       "shouldTranslate" : false
     },
+    "duckai.contextual.ask.about.page" : {
+      "comment" : "Title for the button that re-attaches the current page's content after the user removed it",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Ask About Page"
+          }
+        }
+      }
+    },
     "duckai.contextual.attach.content" : {
       "comment" : "Title for the attach placeholder chip in Duck.ai contextual sheet",
       "extractionState" : "extracted_with_value",

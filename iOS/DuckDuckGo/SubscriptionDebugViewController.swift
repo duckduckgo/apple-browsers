@@ -64,6 +64,7 @@ final class SubscriptionDebugViewController: UITableViewController {
         Sections.metadata: "StoreKit Metadata",
         Sections.regionOverride: "Region override for App Store Sandbox",
         Sections.expirationReminder: "Expiration Reminder Notification",
+        Sections.onboarding: "Onboarding",
     ]
 
     enum Sections: Int, CaseIterable {
@@ -76,6 +77,7 @@ final class SubscriptionDebugViewController: UITableViewController {
         case metadata
         case regionOverride
         case expirationReminder
+        case onboarding
     }
 
     enum AuthorizationRows: Int, CaseIterable {
@@ -121,6 +123,10 @@ final class SubscriptionDebugViewController: UITableViewController {
     enum ExpirationReminderRows: Int, CaseIterable {
         case currentStatus
         case triggerMockNotification
+    }
+
+    enum OnboardingRows: Int, CaseIterable {
+        case welcome
     }
 
     private var notificationAuthStatusText: String = "Loading"
@@ -308,6 +314,15 @@ final class SubscriptionDebugViewController: UITableViewController {
                 break
             }
 
+        case .onboarding:
+            switch OnboardingRows(rawValue: indexPath.row) {
+            case .welcome:
+                cell.textLabel?.text = "Welcome"
+                cell.accessoryType = .disclosureIndicator
+            case .none:
+                break
+            }
+
         case .none:
             break
         }
@@ -326,6 +341,7 @@ final class SubscriptionDebugViewController: UITableViewController {
         case .metadata: return MetadataRows.allCases.count
         case .regionOverride: return RegionOverrideRows.allCases.count
         case .expirationReminder: return ExpirationReminderRows.allCases.count
+        case .onboarding: return OnboardingRows.allCases.count
         case .none: return 0
         }
     }
@@ -372,6 +388,11 @@ final class SubscriptionDebugViewController: UITableViewController {
         case .expirationReminder:
             switch ExpirationReminderRows(rawValue: indexPath.row) {
             case .triggerMockNotification: triggerMockExpirationReminder()
+            default: break
+            }
+        case .onboarding:
+            switch OnboardingRows(rawValue: indexPath.row) {
+            case .welcome: showWelcomeOnboarding()
             default: break
             }
         case .none:
@@ -748,6 +769,13 @@ final class SubscriptionDebugViewController: UITableViewController {
             }
             tableView.reloadSections(IndexSet(integer: Sections.expirationReminder.rawValue), with: .none)
         }
+    }
+
+    private func showWelcomeOnboarding() {
+        let hostingController = UIHostingController(
+            rootView: SubscriptionOnboardingWelcomeView(onClose: { [weak self] in self?.dismiss(animated: true) })
+                .subscriptionOnboardingNavigationContainer())
+        present(hostingController, animated: true)
     }
 
     private func showBuyProductionSubscriptions() {

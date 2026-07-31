@@ -95,6 +95,7 @@ jobs:
       create-dmg: false
       branch: ${{ inputs.branch || github.sha }}
       skip-notify: true
+      build-arm64-only: true # UI Test runners are Apple Silicon, so their prebuilt app does not need x86_64.
     secrets: inherit
 
   # This job sets up the matrix strategy arguments for the ui-tests jobs

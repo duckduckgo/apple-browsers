@@ -1,5 +1,8 @@
 # sync_setup.yaml
 # Shared setup for the sync_tests suite.
+# Forces the simplifiedSyncSetupV2 feature flag off via the ff.<flag> UI-test
+# launch-argument override, so these flows keep exercising the V1 Sync setup UI
+# regardless of the flag's default value (sync_setup_v2.yaml forces it on).
 appId: com.duckduckgo.mobile.ios
 
 ---
@@ -13,3 +16,4 @@ appId: com.duckduckgo.mobile.ios
         currentAppVariant: ${APP_VARIANT}
         isRunningUITests: true
         isInternalUser: ${INTERNAL_USER_MODE}
+        ff.simplifiedSyncSetupV2: "false"

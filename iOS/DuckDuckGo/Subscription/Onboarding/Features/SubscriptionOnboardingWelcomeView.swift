@@ -1,5 +1,5 @@
 //
-//  SubscriptionOnboardingWelcomeListView.swift
+//  SubscriptionOnboardingWelcomeView.swift
 //  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
@@ -22,11 +22,34 @@ import DesignResourcesKit
 import DesignResourcesKitIcons
 import UIComponents
 
-/// The feature list on the post-subscription onboarding welcome screen: a single card listing the
-/// premium protections — VPN, Identity Theft Restoration, Advanced AI Models and Personal Information
-/// Removal — one selectable row each, with a trailing chevron affordance. `onSelect` receives the tapped
-/// feature; the caller maps it to the matching "Learn More" info sheet.
-struct SubscriptionOnboardingWelcomeListView: View {
+/// An overview of the four premium protections (VPN, Identity Theft Restoration, Advanced AI Models, Personal Information Removal).
+/// Tapping a row presents that feature's  info screen (``SubscriptionOnboardingInfoView``) as a sheet; the primary button starts the flow.
+struct SubscriptionOnboardingWelcomeView: View {
+    let onClose: () -> Void
+
+    @State private var selectedFeature: SubscriptionOnboardingChecklistItem?
+
+    var body: some View {
+        SubscriptionOnboardingBaseView(
+            navigationButton: .close(onClose),
+            header: SubscriptionOnboardingHeaderView(
+                visual: .image(Image(.subscriptionDDG96)),
+                title: UserText.subscriptionOnboardingWelcomeTitle,
+                explanation: UserText.subscriptionOnboardingWelcomeExplanation),
+            footer: .single(.init(UserText.subscriptionOnboardingWelcomeNextButton, action: {
+                // TODO: advance to the first section once the flow view model exists.
+            }))) {
+            WelcomeCard(onSelect: { selectedFeature = $0 })
+        }
+        .subscriptionOnboardingInfoSheet(item: $selectedFeature)
+    }
+}
+
+// MARK: - Welcome card
+
+/// The feature-list card: one selectable row per premium protection, each with a leading icon, title,
+/// description and a trailing chevron. `onSelect` receives the tapped feature.
+private struct WelcomeCard: View {
     private enum Metrics {
         static let iconTextSpacing: CGFloat = 8
         static let contentInsetHorizontal: CGFloat = 16
@@ -50,7 +73,7 @@ struct SubscriptionOnboardingWelcomeListView: View {
     }
 }
 
-private extension SubscriptionOnboardingWelcomeListView {
+private extension WelcomeCard {
     static func row(for feature: SubscriptionOnboardingChecklistItem) -> CardItem {
         CardItem(
             icon: CardItemIcon(position: .leading, visual: visual(for: feature), spacing: Metrics.iconTextSpacing),
@@ -93,32 +116,25 @@ private extension SubscriptionOnboardingWelcomeListView {
 
 #if DEBUG
 
-private struct SubscriptionOnboardingWelcomeListViewPreview: View {
-    var body: some View {
-        ScrollView {
-            SubscriptionOnboardingWelcomeListView(onSelect: { _ in })
-                .padding()
-        }
-        .background(Color(designSystemColor: .surfaceTertiary).ignoresSafeArea())
-    }
-}
-
 #Preview("Light") {
     RebrandedPreview {
-        SubscriptionOnboardingWelcomeListViewPreview()
+        SubscriptionOnboardingWelcomeView(onClose: {})
+            .subscriptionOnboardingNavigationContainer()
     }
 }
 
 #Preview("Dark") {
     RebrandedPreview {
-        SubscriptionOnboardingWelcomeListViewPreview()
+        SubscriptionOnboardingWelcomeView(onClose: {})
+            .subscriptionOnboardingNavigationContainer()
     }
     .preferredColorScheme(.dark)
 }
 
 #Preview("Large Text") {
     RebrandedPreview {
-        SubscriptionOnboardingWelcomeListViewPreview()
+        SubscriptionOnboardingWelcomeView(onClose: {})
+            .subscriptionOnboardingNavigationContainer()
     }
     .dynamicTypeSize(.accessibility5)
 }

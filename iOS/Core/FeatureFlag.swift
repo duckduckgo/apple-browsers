@@ -885,7 +885,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .syncCanShowV2ConnectCode:
             Config(source: .remoteReleasable(SyncSubfeature.canShowV2ConnectCode))
         case .simplifiedSyncSetupV2:
-            Config(source: .remoteReleasable(SyncSubfeature.simplifiedSyncSetupV2))
+            Config(defaultValue: .enabled, source: .remoteReleasable(SyncSubfeature.simplifiedSyncSetupV2))
         case .blankSnapshotCaching:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.blankSnapshotCaching))
         case .systemFindInPage:

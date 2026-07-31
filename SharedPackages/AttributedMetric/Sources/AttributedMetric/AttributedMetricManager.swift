@@ -584,8 +584,8 @@ public final class AttributedMetricManager: @unchecked Sendable {
         let monthsActive = Double(QuantisedTimePast.daysBetween(from: subscriptionDate, to: now)) / Double(Constants.daysInAMonth)
         let activeFromMoreThan1Month = monthsActive > 1.0
 
-        if freeTrialPixelSent && !isFreeTrial {
-            // At each app startup, check the subscription state. If the a month=0 pixel was sent, the user is no longer on a free trial, and the state is autoRenewable or notAutoRenewable, send this pixel with month=1.
+        if freeTrialPixelSent && !firstMonthPixelSent && !isFreeTrial {
+            // First launch after a free trial converts to paid: send month=1 once. The !firstMonthPixelSent guard stops it re-firing on every later launch.
             do {
                 let bucket = try bucketModifier.bucket(value: 1, pixelName: .userSubscribed)
                 pixelKit?.fire(AttributedMetricPixel.userSubscribed(origin: originOrInstall.origin,

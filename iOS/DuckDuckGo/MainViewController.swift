@@ -4397,7 +4397,7 @@ extension MainViewController: BrowserChromeDelegate {
 
     func restoreCurrentBarsVisibilityAfterLayoutRefresh() {
         applyBarsVisibilityState(lastChromeVisibilityPercent, postChromeVisibilityNotification: false)
-        view.layoutIfNeeded()
+        view.setNeedsLayout()
     }
 
     // 1.0 - full size, 0.0 - hidden

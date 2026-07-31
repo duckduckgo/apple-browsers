@@ -6014,6 +6014,7 @@ extension MainViewController: TabDelegate {
             self.dismissOmniBar()
             self.attachTab(tab: newTab)
             self.refreshOmniBar()
+            self.tabsBarController?.refresh(tabsModel: self.tabManager.currentTabsModel, scrollToSelected: true)
         }
 
         return newTab.webView

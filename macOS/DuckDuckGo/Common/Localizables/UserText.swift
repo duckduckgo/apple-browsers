@@ -1521,6 +1521,9 @@ struct UserText {
     static let addToDockShowMeHow = NSLocalizedString("preferences.add-to-dock.show-me-how", value: "Show Me How", comment: "Opens a short video demonstrating how to add the app to the Dock")
 
     static let onStartup = NSLocalizedString("preferences.on-startup", value: "On Startup", comment: "Name of the preferences section related to app startup")
+    static let openAtLogin = NSLocalizedString("preferences.open-at-login", value: "Open DuckDuckGo at login", comment: "Option to launch the browser automatically when the user logs in to macOS")
+    static let openAtLoginRequiresApproval = NSLocalizedString("preferences.open-at-login.requires-approval", value: "Allow DuckDuckGo in System Settings to finish turning this on.", comment: "Explains that macOS needs the user to approve the app in System Settings before it will open at login")
+    static let openAtLoginOpenSystemSettings = NSLocalizedString("preferences.open-at-login.open-system-settings", value: "Open System Settings…", comment: "Button that opens the macOS System Settings pane listing login items")
     static let reopenAllWindowsFromLastSession = NSLocalizedString("preferences.reopen-windows", value: "Reopen all windows and tabs from last session", comment: "Option to control session restoration")
     static let showHomePage = NSLocalizedString("preferences.show-home", value: "Open a new window", comment: "Option to control session startup")
     static let openANew = NSLocalizedString("preferences.startup.open-a-new", value: "Open a new", comment: "Label for startup window type selection")

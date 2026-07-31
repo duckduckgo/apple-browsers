@@ -4107,6 +4107,10 @@
 		CC438E242EBCEB5A008537AD /* MockDefaultBrowserAndDockPromptUIProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC438E222EBCEB50008537AD /* MockDefaultBrowserAndDockPromptUIProvider.swift */; };
 		CC442CAC2F6C45B8002E8175 /* DockPreferencesModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC442CAB2F6C45AC002E8175 /* DockPreferencesModel.swift */; };
 		CC442CAD2F6C45B8002E8175 /* DockPreferencesModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC442CAB2F6C45AC002E8175 /* DockPreferencesModel.swift */; };
+		FB10A0022F9A0001002E8175 /* MainAppLoginItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB10A0012F9A0001002E8175 /* MainAppLoginItem.swift */; };
+		FB10A0032F9A0001002E8175 /* MainAppLoginItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB10A0012F9A0001002E8175 /* MainAppLoginItem.swift */; };
+		FB10A0052F9A0001002E8175 /* OpenAtLoginModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB10A0042F9A0001002E8175 /* OpenAtLoginModel.swift */; };
+		FB10A0062F9A0001002E8175 /* OpenAtLoginModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB10A0042F9A0001002E8175 /* OpenAtLoginModel.swift */; };
 		CC442CAF2F6C64AB002E8175 /* DockPreferencesModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC442CAE2F6C64AB002E8175 /* DockPreferencesModelTests.swift */; };
 		CC442CB02F6C64AB002E8175 /* DockPreferencesModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC442CAE2F6C64AB002E8175 /* DockPreferencesModelTests.swift */; };
 		CC4B39BF2ECB4E7000A3C9EF /* DefaultBrowserAndDockPromptNotificationPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC4B39BE2ECB4E7000A3C9EF /* DefaultBrowserAndDockPromptNotificationPresenter.swift */; };
@@ -6961,6 +6965,8 @@
 		CC438E1C2EBCE224008537AD /* DefaultBrowserAndDockPromptUIProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserAndDockPromptUIProvider.swift; sourceTree = "<group>"; };
 		CC438E222EBCEB50008537AD /* MockDefaultBrowserAndDockPromptUIProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockDefaultBrowserAndDockPromptUIProvider.swift; sourceTree = "<group>"; };
 		CC442CAB2F6C45AC002E8175 /* DockPreferencesModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DockPreferencesModel.swift; sourceTree = "<group>"; };
+		FB10A0012F9A0001002E8175 /* MainAppLoginItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainAppLoginItem.swift; sourceTree = "<group>"; };
+		FB10A0042F9A0001002E8175 /* OpenAtLoginModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenAtLoginModel.swift; sourceTree = "<group>"; };
 		CC442CAE2F6C64AB002E8175 /* DockPreferencesModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DockPreferencesModelTests.swift; sourceTree = "<group>"; };
 		CC4B39BE2ECB4E7000A3C9EF /* DefaultBrowserAndDockPromptNotificationPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserAndDockPromptNotificationPresenter.swift; sourceTree = "<group>"; };
 		CC5415622F29238F0084A139 /* AIChatMenuConfigurationMock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatMenuConfigurationMock.swift; sourceTree = "<group>"; };
@@ -8688,6 +8694,7 @@
 				37CD54C127F2FDD100F1F7B9 /* DataClearingPreferences.swift */,
 				37CD54C827F2FDD100F1F7B9 /* DefaultBrowserPreferences.swift */,
 				CC442CAB2F6C45AC002E8175 /* DockPreferencesModel.swift */,
+				FB10A0042F9A0001002E8175 /* OpenAtLoginModel.swift */,
 				37CD54C327F2FDD100F1F7B9 /* DownloadsPreferences.swift */,
 				37F19A6628E1B43200740DC6 /* DuckPlayerPreferences.swift */,
 				37CD54C427F2FDD100F1F7B9 /* PreferencesSection.swift */,
@@ -10612,6 +10619,7 @@
 			isa = PBXGroup;
 			children = (
 				9D9AE86A2AA76CF90026E7DC /* LoginItemsManager.swift */,
+				FB10A0012F9A0001002E8175 /* MainAppLoginItem.swift */,
 			);
 			path = LoginItems;
 			sourceTree = "<group>";
@@ -15616,6 +15624,8 @@
 				C18194652C7DF7D600381092 /* FreemiumDBPPresenter.swift in Sources */,
 				4B0BD7B82A9FE6E600EF609D /* NetworkProtectionOnboardingMenu.swift in Sources */,
 				CC442CAC2F6C45B8002E8175 /* DockPreferencesModel.swift in Sources */,
+				FB10A0022F9A0001002E8175 /* MainAppLoginItem.swift in Sources */,
+				FB10A0052F9A0001002E8175 /* OpenAtLoginModel.swift in Sources */,
 				CC8B4BE32F730591000D1884 /* PreferencesVideoSheet.swift in Sources */,
 				3706FB10293F65D500E42796 /* SuggestionTableRowView.swift in Sources */,
 				B55D8E5F2EE77688009083D9 /* BundleExtension.swift in Sources */,
@@ -17976,6 +17986,8 @@
 				4B92928C26670D1700AD2C21 /* OutlineSeparatorViewCell.swift in Sources */,
 				8426108D2C9811F30070D5F9 /* KeyEquivalentView.swift in Sources */,
 				CC442CAD2F6C45B8002E8175 /* DockPreferencesModel.swift in Sources */,
+				FB10A0032F9A0001002E8175 /* MainAppLoginItem.swift in Sources */,
+				FB10A0062F9A0001002E8175 /* OpenAtLoginModel.swift in Sources */,
 				CC8B4BE42F730591000D1884 /* PreferencesVideoSheet.swift in Sources */,
 				4BB99D0426FE191E001E4761 /* SafariDataImporter.swift in Sources */,
 				987799F929999973005D8EB6 /* LocalBookmarkStore.swift in Sources */,

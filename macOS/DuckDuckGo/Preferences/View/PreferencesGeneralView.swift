@@ -37,6 +37,7 @@ extension Preferences {
         @ObservedObject var maliciousSiteDetectionModel: MaliciousSiteProtectionPreferences
         @ObservedObject var autoplayModel: AutoplayPreferences
         @ObservedObject var dockModel: DockPreferencesModel
+        @ObservedObject var openAtLoginModel: OpenAtLoginModel
         @State private var showingCustomHomePageSheet = false
         let featureFlagger = NSApp.delegateTyped.featureFlagger
         let pinnedTabsManagerProvider: PinnedTabsManagerProviding = Application.appDelegate.pinnedTabsManagerProvider
@@ -56,6 +57,15 @@ extension Preferences {
             guard tabsModel.pinnedTabsMode != newMode else { return }
             tabsModel.pinnedTabsMode = newMode
             firePinnedTabsPixel(newMode)
+        }
+
+        private var openAtLogin: Binding<Bool> {
+            Binding(
+                get: { openAtLoginModel.isOn },
+                set: { newValue in
+                    Task { await openAtLoginModel.setOpenAtLogin(newValue) }
+                }
+            )
         }
 
         private var isPresentingAddToDockDemoVideo: Binding<Bool> {
@@ -124,6 +134,26 @@ extension Preferences {
 
                 // SECTION: On Startup
                 PreferencePaneSection(UserText.onStartup) {
+
+                    if openAtLoginModel.isSupported {
+                        PreferencePaneSubSection {
+                            ToggleMenuItem(UserText.openAtLogin, isOn: openAtLogin)
+                                .accessibilityIdentifier("PreferencesGeneralView.openAtLogin")
+
+                            if openAtLoginModel.needsApproval {
+                                VStack(alignment: .leading, spacing: 1) {
+                                    TextMenuItemCaption(UserText.openAtLoginRequiresApproval)
+                                    TextButton(UserText.openAtLoginOpenSystemSettings) {
+                                        openAtLoginModel.openSystemSettings()
+                                    }
+                                }
+                                .padding(.leading, 19)
+                            }
+                        }
+                        .task {
+                            await openAtLoginModel.refresh()
+                        }
+                    }
 
                     PreferencePaneSubSection {
                         Picker(selection: $startupModel.restorePreviousSession, content: {

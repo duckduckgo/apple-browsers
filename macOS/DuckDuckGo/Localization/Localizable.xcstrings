@@ -93608,6 +93608,42 @@
         }
       }
     },
+    "preferences.open-at-login" : {
+      "comment" : "Option to launch the browser automatically when the user logs in to macOS",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Open DuckDuckGo at login"
+          }
+        }
+      }
+    },
+    "preferences.open-at-login.open-system-settings" : {
+      "comment" : "Button that opens the macOS System Settings pane listing login items",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Open System Settings…"
+          }
+        }
+      }
+    },
+    "preferences.open-at-login.requires-approval" : {
+      "comment" : "Explains that macOS needs the user to approve the app in System Settings before it will open at login",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Allow DuckDuckGo in System Settings to finish turning this on."
+          }
+        }
+      }
+    },
     "preferences.open-fire-window-by-default" : {
       "comment" : "Option to make all new windows Fire Windows",
       "extractionState" : "extracted_with_value",

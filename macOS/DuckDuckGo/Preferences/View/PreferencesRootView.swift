@@ -52,6 +52,7 @@ enum Preferences {
 
         @ObservedObject var model: PreferencesSidebarModel
         @ObservedObject var themeManager: ThemeManager
+        @StateObject private var openAtLoginModel = OpenAtLoginModel()
 
         var purchaseSubscriptionModel: PreferencesPurchaseSubscriptionModel?
         var personalInformationRemovalModel: PreferencesPersonalInformationRemovalModel?
@@ -157,7 +158,8 @@ enum Preferences {
                                 dataClearingModel: NSApp.delegateTyped.dataClearingPreferences,
                                 maliciousSiteDetectionModel: MaliciousSiteProtectionPreferences.shared,
                                 autoplayModel: NSApp.delegateTyped.autoplayPreferences,
-                                dockModel: model.dockPreferences)
+                                dockModel: model.dockPreferences,
+                                openAtLoginModel: openAtLoginModel)
                 case .sync:
                     SyncView()
                 case .appearance:

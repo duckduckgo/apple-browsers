@@ -199,8 +199,15 @@ struct AdBlockingDebugView: View {
         case let bool?:
             try? storage.set(bool, for: key)
         }
-        if key == \YouTubeAdBlockingKeys.youTubeAnalyticsEnabled {
+        // Both flags gate EventHub telemetry consent, and neither store write is observable, so a change
+        // made here has to be announced the same way the real toggles announce theirs.
+        switch key {
+        case \YouTubeAdBlockingKeys.youTubeAnalyticsEnabled:
             NotificationCenter.default.post(name: YouTubeAdBlockingStorageKeys.youTubeAnalyticsEnabledDidChangeNotification, object: nil)
+        case \YouTubeAdBlockingKeys.youTubeAdBlockingEnabled:
+            NotificationCenter.default.post(name: YouTubeAdBlockingStorageKeys.youTubeAdBlockingEnabledDidChangeNotification, object: nil)
+        default:
+            break
         }
         refresh()
     }

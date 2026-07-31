@@ -25,8 +25,9 @@ import XCTest
 
 @testable import DuckDuckGo
 
-/// Covers the notification bridge this requirement exists for: the store backing the opt-in has no
-/// change publisher, so a revoked opt-in only reaches EventHub if a posted notification makes it re-read.
+/// Covers the two things this requirement exists for: consent needs *both* opt-ins, and neither is
+/// observable — the store has no change publisher, so a revoked opt-in only reaches EventHub if a posted
+/// notification makes it re-read.
 final class YouTubeAdBlockingTelemetryConsentRequirementTests: XCTestCase {
 
     private var store: MockKeyValueFileStore!
@@ -51,48 +52,86 @@ final class YouTubeAdBlockingTelemetryConsentRequirementTests: XCTestCase {
         XCTAssertEqual(makeSUT().configNames, EventHubGatedConfigNames.youTubeAdBlockingTelemetry)
     }
 
-    func testIsGrantedIsFalseWhenTheOptInWasNeverSet() {
+    // MARK: - Both opt-ins required
+
+    func testConsentIsWithheldWhenNeitherOptInIsSet() {
         XCTAssertEqual(record(from: makeSUT()).values, [false])
     }
 
-    func testIsGrantedEmitsTheStoredValueOnSubscribe() throws {
-        try setOptIn(true)
+    func testConsentIsWithheldWhenOnlyAnalyticsIsEnabled() throws {
+        try set(analytics: true)
+
+        XCTAssertEqual(record(from: makeSUT()).values, [false])
+    }
+
+    func testConsentIsWithheldWhenOnlyAdBlockingIsEnabled() throws {
+        try set(adBlocking: true)
+
+        XCTAssertEqual(record(from: makeSUT()).values, [false])
+    }
+
+    func testConsentIsGrantedOnlyWhenBothOptInsAreEnabled() throws {
+        try set(adBlocking: true)
+        try set(analytics: true)
 
         XCTAssertEqual(record(from: makeSUT()).values, [true])
     }
 
-    func testIsGrantedReEmitsWhenTheOptInIsRevoked() throws {
-        try setOptIn(true)
+    // MARK: - Change notifications
+
+    func testRevokingAnalyticsWithdrawsConsent() throws {
+        try set(adBlocking: true)
+        try set(analytics: true)
         let recorder = record(from: makeSUT())
 
-        try setOptIn(false)
-        postChange()
+        try set(analytics: false)
+        post(.analytics)
 
         XCTAssertEqual(recorder.values, [true, false])
     }
 
-    func testIsGrantedReEmitsWhenTheOptInIsGranted() throws {
+    /// The one the analytics-only gate got wrong: turning ad blocking off must withdraw consent even when
+    /// the analytics flag is left behind, granted.
+    func testRevokingAdBlockingWithdrawsConsentEvenWhileAnalyticsStaysEnabled() throws {
+        try set(adBlocking: true)
+        try set(analytics: true)
         let recorder = record(from: makeSUT())
 
-        try setOptIn(true)
-        postChange()
+        try set(adBlocking: false)
+        post(.adBlocking)
+
+        XCTAssertEqual(recorder.values, [true, false])
+    }
+
+    func testGrantingTheSecondOptInGrantsConsent() throws {
+        try set(adBlocking: true)
+        let recorder = record(from: makeSUT())
+
+        try set(analytics: true)
+        post(.analytics)
 
         XCTAssertEqual(recorder.values, [false, true])
     }
 
-    /// The ad-blocking toggle cascades into this setting whether or not the value changes, so a write
-    /// landing on the stored value must not churn EventHub's config.
-    func testWriteThatDoesNotChangeTheValueDoesNotReEmit() throws {
-        try setOptIn(true)
+    /// The ad-blocking toggle cascades into the analytics setting whether or not the value changes, so a
+    /// write landing on the stored value must not churn EventHub's config.
+    func testWriteThatDoesNotChangeTheOutcomeDoesNotReEmit() throws {
+        try set(adBlocking: true)
+        try set(analytics: true)
         let recorder = record(from: makeSUT())
 
-        try setOptIn(true)
-        postChange()
+        try set(analytics: true)
+        post(.analytics)
 
         XCTAssertEqual(recorder.values, [true])
     }
 
     // MARK: - Helpers
+
+    private enum Flag {
+        case adBlocking
+        case analytics
+    }
 
     private func makeSUT() -> YouTubeAdBlockingTelemetryConsentRequirement {
         YouTubeAdBlockingTelemetryConsentRequirement(keyValueStore: store, notificationCenter: notificationCenter)
@@ -108,12 +147,22 @@ final class YouTubeAdBlockingTelemetryConsentRequirementTests: XCTestCase {
         return recorder
     }
 
-    private func setOptIn(_ enabled: Bool) throws {
+    private func set(adBlocking: Bool? = nil, analytics: Bool? = nil) throws {
         let storage: any ThrowingKeyedStoring<YouTubeAdBlockingKeys> = store.throwingKeyedStoring()
-        try storage.set(enabled, for: \YouTubeAdBlockingKeys.youTubeAnalyticsEnabled)
+        if let adBlocking {
+            try storage.set(adBlocking, for: \YouTubeAdBlockingKeys.youTubeAdBlockingEnabled)
+        }
+        if let analytics {
+            try storage.set(analytics, for: \YouTubeAdBlockingKeys.youTubeAnalyticsEnabled)
+        }
     }
 
-    private func postChange() {
-        notificationCenter.post(name: YouTubeAdBlockingStorageKeys.youTubeAnalyticsEnabledDidChangeNotification, object: nil)
+    private func post(_ flag: Flag) {
+        switch flag {
+        case .adBlocking:
+            notificationCenter.post(name: YouTubeAdBlockingStorageKeys.youTubeAdBlockingEnabledDidChangeNotification, object: nil)
+        case .analytics:
+            notificationCenter.post(name: YouTubeAdBlockingStorageKeys.youTubeAnalyticsEnabledDidChangeNotification, object: nil)
+        }
     }
 }

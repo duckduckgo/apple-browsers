@@ -23,14 +23,22 @@ import Foundation
 import Persistence
 
 /// Gates the migrated YouTube ad-blocking-detection telemetry configs behind the user's YouTube
-/// analytics opt-in (`YouTubeAdBlockingKeys.youTubeAnalyticsEnabled`).
+/// Ad Blocking *and* analytics opt-ins, matching both the composite check the retired
+/// `WebEventsSubfeature` applied per event and the macOS requirement.
 ///
-/// The opt-in lives in the app's file-backed key-value store, which — unlike macOS' `UserDefaults` —
-/// deliberately does not conform to `ObservableThrowingKeyValueStoring`, so there is no store-level
-/// change publisher to observe. Writers post `youTubeAnalyticsEnabledDidChangeNotification` instead and
-/// this re-reads the store on each one. `removeDuplicates` keeps a write that lands on the value already
-/// stored — the ad-blocking toggle cascades into this setting whether or not it changes — from
-/// needlessly churning EventHub's config.
+/// Both flags are required deliberately, rather than relying on analytics alone. Turning YouTube Ad
+/// Blocking off does clear the analytics opt-in, but on iOS that coupling is an explicit cascade at two
+/// call sites (`SettingsViewModel.setYouTubeAnalyticsEnabled` and
+/// `MainViewController.setYouTubeAdBlockingEnabled`) — even weaker than macOS' `didSet`, since any write
+/// that bypasses them, such as the ad-blocking debug screen, leaves analytics granted. The two flags are
+/// independently writable with no storage-level invariant tying them together, so a consent gate must not
+/// depend on the cascade having run.
+///
+/// Neither flag can be observed directly: they live in the app's file-backed key-value store, which —
+/// unlike macOS' `UserDefaults` — deliberately does not conform to `ObservableThrowingKeyValueStoring`.
+/// Writers post the two `…DidChangeNotification`s instead, and this re-reads both values on either one.
+/// `removeDuplicates` keeps a write that lands on the value already stored from needlessly churning
+/// EventHub's config.
 final class YouTubeAdBlockingTelemetryConsentRequirement: EventHubConsentRequirement {
 
     let consentID = "youTubeAdBlockingAnalytics"
@@ -43,16 +51,25 @@ final class YouTubeAdBlockingTelemetryConsentRequirement: EventHubConsentRequire
         self.configNames = configNames
 
         let storage: any ThrowingKeyedStoring<YouTubeAdBlockingKeys> = keyValueStore.throwingKeyedStoring()
+        // An unset flag counts as withheld. This deliberately ignores the `adBlockingExtensionEnabledByDefault`
+        // rollout default that `AdBlockingAvailability` applies to `youTubeAdBlockingEnabled`: consulting it
+        // here would make consent depend on a remote flag and could fail open, and failing closed only ever
+        // withholds telemetry.
         let isGranted = {
-            (try? storage.value(for: \YouTubeAdBlockingKeys.youTubeAnalyticsEnabled)) ?? false
+            let adBlockingEnabled = (try? storage.value(for: \YouTubeAdBlockingKeys.youTubeAdBlockingEnabled)) ?? false
+            let analyticsEnabled = (try? storage.value(for: \YouTubeAdBlockingKeys.youTubeAnalyticsEnabled)) ?? false
+            return adBlockingEnabled && analyticsEnabled
         }
 
         // The store is read at emission time, not here: `prepend` seeds the Void stream so that every
         // subscriber — whenever it subscribes — gets the value current at that moment, as
         // `EventHubConsentRequirement` requires.
         isGrantedPublisher = notificationCenter
-            .publisher(for: YouTubeAdBlockingStorageKeys.youTubeAnalyticsEnabledDidChangeNotification)
+            .publisher(for: YouTubeAdBlockingStorageKeys.youTubeAdBlockingEnabledDidChangeNotification)
             .map { _ in () }
+            .merge(with: notificationCenter
+                .publisher(for: YouTubeAdBlockingStorageKeys.youTubeAnalyticsEnabledDidChangeNotification)
+                .map { _ in () })
             .prepend(())
             .map { _ in isGranted() }
             .removeDuplicates()

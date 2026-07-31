@@ -503,7 +503,7 @@ struct NewFileImportView: View {
             }
 
             VStack(alignment: .center, spacing: 20) {
-                Image(nsImage: isTargeted ? DesignSystemImages.Color.Size128.fileDrop : DesignSystemImages.Color.Size128.fileDrag)
+                Image(nsImage: isTargeted ? DesignSystemImages.Color.Size56.filedDrop : DesignSystemImages.Color.Size56.fileDrag)
 
                 VStack(alignment: .center, spacing: 0) {
                     Text(UserText.importDragAndDropFile).font(.system(size: 14, weight: .bold))

@@ -743,8 +743,6 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
     }
 
     private func presentPairingV2ConfirmationAlert(message: String) async -> Bool {
-        await dismissSyncCodeSheetIfPresented()
-
         return await withCheckedContinuation { continuation in
             let alert = UIAlertController(title: UserText.syncPairingV2ConfirmationTitle, message: message, preferredStyle: .alert)
             alert.addAction(UIAlertAction(title: UserText.actionCancel, style: .cancel) { _ in
@@ -766,16 +764,6 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
             topController = presented
         }
         return topController
-    }
-
-    private func dismissSyncCodeSheetIfPresented() async {
-        guard let scanCodeViewModel, scanCodeViewModel.isShowingSyncCodeSheet else { return }
-        await withCheckedContinuation { continuation in
-            scanCodeViewModel.onSyncCodeSheetDismissed = {
-                continuation.resume()
-            }
-            scanCodeViewModel.isShowingSyncCodeSheet = false
-        }
     }
 
     private func pairingV2DisplayName(for peerName: String?) -> String {

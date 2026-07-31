@@ -53,6 +53,36 @@ final class DuckAIPromptPixelFiringTests: XCTestCase {
         (.voiceChatOpened, nil)
     ]
 
+    /// `nil` where `DuckAIPromptSurface` turns the feature off for the Prompt Bar — page context,
+    /// Customize Responses and the subscription upsell. Same rule as above: add a row per case.
+    private static let promptBarMapping: [(event: DuckAIPromptPixelEvent, pixel: PromptBarPixel?)] = [
+        (.promptSubmitted, .submitPrompt),
+        (.urlSubmitted, .submitURL),
+        (.imageGenerationSubmitted, .imageGenerationSubmitted),
+        (.webSearchSubmitted, .webSearchSubmitted),
+        (.submittedWithImages(count: 2), .submitWithImage(imageCount: 2)),
+        (.submittedWithFiles(count: 3), .submitWithFiles(fileCount: 3)),
+        (.submittedWithTabs(count: 4), nil),
+        (.imageGenerationActivated, .imageGenerationActivated),
+        (.imageGenerationDeactivated, .imageGenerationDeactivated),
+        (.webSearchActivated, .webSearchActivated),
+        (.webSearchDeactivated, .webSearchDeactivated),
+        (.customizeResponsesOpened, nil),
+        (.imageAttached, .imageAttached),
+        (.imageRemoved, .imageRemoved),
+        (.fileAttached, .fileAttached),
+        (.fileRemoved, .fileRemoved),
+        (.fileValidationFailed(reason: "tooLarge"), .fileValidationFailed(reason: "tooLarge")),
+        (.tabAttachmentRemoved, nil),
+        (.tabPickerShown, nil),
+        (.tabChosen, nil),
+        (.tabPickerCanceled, nil),
+        (.modelSelected, .modelSelected),
+        (.reasoningEffortSelected, .reasoningEffortSelected),
+        (.subscriptionUpsellTriggered(currentTier: "free", requiredTier: "plus", flowType: "modal"), nil),
+        (.voiceChatOpened, .newVoiceChat)
+    ]
+
     func testWhenAddressBarHandlerMapsAnEvent_ThenItKeepsThePixelItFiredBefore() {
         for (event, expected) in Self.addressBarMapping {
             let mapped = AddressBarPromptPixelHandler.addressBarPixel(for: event)
@@ -62,7 +92,29 @@ final class DuckAIPromptPixelFiringTests: XCTestCase {
         }
     }
 
-    func testWhenPromptBarHandlerFiresEveryEvent_ThenNothingReachesPixelKit() {
+    func testWhenPromptBarHandlerMapsAnEvent_ThenItReportsUnderItsOwnName() {
+        for (event, expected) in Self.promptBarMapping {
+            let mapped = PromptBarPixelHandler.promptBarPixel(for: event)
+
+            XCTAssertEqual(mapped?.name, expected?.name, "Wrong pixel name for \(event)")
+            XCTAssertEqual(mapped?.parameters, expected?.parameters, "Wrong pixel parameters for \(event)")
+        }
+    }
+
+    /// The two surfaces must never share a name, or the Prompt Bar's numbers fold into the address
+    /// bar's and the comparison the prefix exists for becomes impossible.
+    func testWhenBothHandlersMapTheSameEvent_ThenTheNamesDiffer() {
+        for (event, promptBarPixel) in Self.promptBarMapping {
+            guard let promptBarPixel,
+                  let addressBarPixel = AddressBarPromptPixelHandler.addressBarPixel(for: event) else { continue }
+
+            XCTAssertNotEqual(promptBarPixel.name, addressBarPixel.name, "Shared pixel name for \(event)")
+            XCTAssertTrue(promptBarPixel.name.hasPrefix("aichat_promptbar_"),
+                          "\(promptBarPixel.name) is not under the Prompt Bar prefix")
+        }
+    }
+
+    func testWhenPromptBarHandlerFiresAnUnsupportedEvent_ThenNothingReachesPixelKit() {
         var firedNames: [String] = []
         PixelKit.setUp(dryRun: false,
                        appVersion: "1.0.0",
@@ -75,11 +127,11 @@ final class DuckAIPromptPixelFiringTests: XCTestCase {
         defer { PixelKit.tearDown() }
 
         let handler = PromptBarPixelHandler()
-        for (event, _) in Self.addressBarMapping {
+        for (event, pixel) in Self.promptBarMapping where pixel == nil {
             handler.fire(event)
         }
 
         XCTAssertTrue(firedNames.isEmpty,
-                      "The Prompt Bar handler must stay silent, but fired: \(firedNames)")
+                      "Events the Prompt Bar can't produce must stay silent, but fired: \(firedNames)")
     }
 }

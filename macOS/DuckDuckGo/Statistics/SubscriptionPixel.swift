@@ -137,6 +137,7 @@ enum SubscriptionPixel: PixelKitEvent {
     case subscriptionEntrySettingsSubscriptionClick
 
     // New Tab Page Next Steps Card
+    case subscriptionNewTabPageNextStepsCardShown
     case subscriptionNewTabPageNextStepsCardClicked
     case subscriptionNewTabPageNextStepsCardDismissed
 
@@ -253,6 +254,7 @@ enum SubscriptionPixel: PixelKitEvent {
         case .subscriptionEntrySettingsImpression: return "m_mac_\(appDistribution)_subscription_settings_impression"
         case .subscriptionEntrySettingsSubscriptionClick: return "m_mac_\(appDistribution)_subscription_settings_subscription_click"
             // New Tab Page Next Steps Card
+        case .subscriptionNewTabPageNextStepsCardShown: return "privacy-pro_new_tab_page_next_steps_card_shown"
         case .subscriptionNewTabPageNextStepsCardClicked: return "m_mac_\(appDistribution)_privacy-pro_new_tab_page_next_steps_card_clicked"
         case .subscriptionNewTabPageNextStepsCardDismissed: return "m_mac_\(appDistribution)_privacy-pro_new_tab_page_next_steps_card_dismissed"
             // Free Trial Journey
@@ -380,6 +382,7 @@ enum SubscriptionPixel: PixelKitEvent {
                 .subscriptionWinBackOfferNewTabPageShown,
                 .subscriptionWinBackOfferNewTabPageCTAClicked,
                 .subscriptionWinBackOfferNewTabPageDismissed,
+                .subscriptionNewTabPageNextStepsCardShown,
                 .subscriptionNewTabPageNextStepsCardClicked,
                 .subscriptionNewTabPageNextStepsCardDismissed,
                 .subscriptionEntryAppMenuImpression,

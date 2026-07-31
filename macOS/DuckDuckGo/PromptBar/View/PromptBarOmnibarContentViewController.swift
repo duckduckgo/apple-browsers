@@ -215,6 +215,11 @@ extension PromptBarOmnibarContentViewController: PromptBarContentHosting {
         isMenuTracking || view.window?.attachedSheet != nil || NSApp.modalWindow != nil
     }
 
+    /// Attachments don't count: this reports the text field alone.
+    var hasPromptText: Bool {
+        !draftStore.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
     var preferredWindowContentSize: NSSize {
         // Wrapping depends on the final width, so resolve pending layout before measuring.
         if isViewLoaded {

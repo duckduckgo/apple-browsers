@@ -254,7 +254,7 @@
 "sync.simplified.enter.code.paste.button" = "同期コードを貼り付け";
 
 /* Second part of the enter-code instructions. **...** marks the parts shown in the primary text color. */
-"sync.simplified.enter.code.steps" = "「Sync & Backup」›「別のデバイスと同期」›「テキストコードをコピー」に移動します。";
+"sync.simplified.enter.code.steps" = "**「Sync & Backup」** › **「別のデバイスと同期」** › **「テキストコードをコピー」** に移動します。";
 
 /* Title on the enter-code tab of the V2 scan screen */
 "sync.simplified.enter.code.title" = "同期コードを入力してください。";
@@ -380,7 +380,7 @@
 "sync.simplified.scan.v2.qr.ready.button" = "スキャンの準備完了";
 
 /* Second part of the scan-QR instructions. **...** marks the parts shown in the primary text color. */
-"sync.simplified.scan.v2.qr.steps" = "そして「Sync & Backup」›「別のデバイスと同期」に移動";
+"sync.simplified.scan.v2.qr.steps" = "そして **「Sync & Backup」** › **「別のデバイスと同期」** に移動";
 
 /* V2 segmented control tab title for entering a code */
 "sync.simplified.scan.v2.tab.enter.code" = "コードを入力";
@@ -401,7 +401,7 @@
 "sync.simplified.sync.code.sheet.open" = "別のデバイスで、開く";
 
 /* Second part of the sync-code sheet instructions. **...** marks the parts shown in the primary text color. */
-"sync.simplified.sync.code.sheet.scan" = "「Sync & Backup」›「別のデバイスと同期」に移動して、このコードをスキャン：";
+"sync.simplified.sync.code.sheet.scan" = "**「Sync & Backup」** › **「別のデバイスと同期」** に移動して、このコードをスキャン：";
 
 /* Navigation title of the sheet that shows this device's sync QR code */
 "sync.simplified.sync.code.sheet.title" = "コードをスキャンまたはコピー";

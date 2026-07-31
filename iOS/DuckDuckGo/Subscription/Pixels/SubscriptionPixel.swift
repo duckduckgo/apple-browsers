@@ -37,6 +37,14 @@ enum SubscriptionPixel: PixelKitEvent {
     case subscriptionKeychainManagerDeallocatedWithBacklog(SubscriptionPixelHandler.Source)
     case subscriptionKeychainManagerDataWroteFromBacklog(SubscriptionPixelHandler.Source)
     case subscriptionKeychainManagerFailedToWriteDataFromBacklog(SubscriptionPixelHandler.Source)
+    // VPN Subscription Funnel Entry Points
+    case subscriptionVPNToolbarImpression(isSubscriptionActive: Bool?)
+    case subscriptionVPNToolbarClick
+    case subscriptionVPNAddressBarImpression(isSubscriptionActive: Bool?)
+    case subscriptionVPNAddressBarClick
+    case subscriptionVPNWidgetClick
+    case subscriptionVPNShortcutClick
+    case subscriptionVPNNotificationClick
 
     var name: String {
         switch self {
@@ -53,6 +61,14 @@ enum SubscriptionPixel: PixelKitEvent {
         case .subscriptionKeychainManagerDeallocatedWithBacklog: return "m_privacy-pro_keychain_manager_deallocated_with_backlog"
         case .subscriptionKeychainManagerDataWroteFromBacklog: return "m_privacy-pro_keychain_manager_data_wrote_from_backlog"
         case .subscriptionKeychainManagerFailedToWriteDataFromBacklog: return "m_privacy-pro_keychain_manager_failed_to_write_data_from_backlog"
+            // VPN Subscription Funnel Entry Points
+        case .subscriptionVPNToolbarImpression: return "subscription_vpn_toolbar_impression"
+        case .subscriptionVPNToolbarClick: return "subscription_vpn_toolbar_click"
+        case .subscriptionVPNAddressBarImpression: return "subscription_vpn_address-bar_impression"
+        case .subscriptionVPNAddressBarClick: return "subscription_vpn_address-bar_click"
+        case .subscriptionVPNWidgetClick: return "subscription_vpn_widget_click"
+        case .subscriptionVPNShortcutClick: return "subscription_vpn_shortcut_click"
+        case .subscriptionVPNNotificationClick: return "subscription_vpn_notification_click"
         }
     }
 
@@ -60,6 +76,14 @@ enum SubscriptionPixel: PixelKitEvent {
         static let policyCacheKey = "policycache"
         static let sourceKey = "source"
         static let platformKey = "platform"
+        static let vpnSubscriptionActiveKey = "vpnSubscriptionActive"
+    }
+
+    private static func vpnSubscriptionActiveValue(_ isSubscriptionActive: Bool?) -> String {
+        guard let isSubscriptionActive else {
+            return "no_subscription"
+        }
+        return String(isSubscriptionActive)
     }
 
     var parameters: [String: String]? {
@@ -75,6 +99,9 @@ enum SubscriptionPixel: PixelKitEvent {
         case .subscriptionAuthV2GetTokensError(let policy, let source, _):
             return [SubscriptionPixelsDefaults.policyCacheKey: policy.description,
                     SubscriptionPixelsDefaults.sourceKey: source.rawValue]
+        case .subscriptionVPNToolbarImpression(let isSubscriptionActive),
+                .subscriptionVPNAddressBarImpression(let isSubscriptionActive):
+            return [SubscriptionPixelsDefaults.vpnSubscriptionActiveKey: Self.vpnSubscriptionActiveValue(isSubscriptionActive)]
         default:
             return nil
         }
@@ -92,7 +119,14 @@ enum SubscriptionPixel: PixelKitEvent {
                 .subscriptionKeychainManagerDataAddedToTheBacklog,
                 .subscriptionKeychainManagerDeallocatedWithBacklog,
                 .subscriptionKeychainManagerDataWroteFromBacklog,
-                .subscriptionKeychainManagerFailedToWriteDataFromBacklog:
+                .subscriptionKeychainManagerFailedToWriteDataFromBacklog,
+                .subscriptionVPNToolbarImpression,
+                .subscriptionVPNToolbarClick,
+                .subscriptionVPNAddressBarImpression,
+                .subscriptionVPNAddressBarClick,
+                .subscriptionVPNWidgetClick,
+                .subscriptionVPNShortcutClick,
+                .subscriptionVPNNotificationClick:
             return [.pixelSource]
         }
     }

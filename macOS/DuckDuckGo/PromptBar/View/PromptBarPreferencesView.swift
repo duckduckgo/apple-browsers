@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import PixelKit
 import PreferencesUI_macOS
 import SwiftUI
 
@@ -29,14 +30,28 @@ struct PromptBarPreferencesView: View {
                                       isOn: $preferences.isMenuBarIconVisible,
                                       spacing: 4)
         .accessibilityIdentifier("Preferences.AIChat.promptBarMenuBarIconToggle")
+        .onChange(of: preferences.isMenuBarIconVisible) { isVisible in
+            fire(isVisible ? .settingsMenuBarIconTurnedOn : .settingsMenuBarIconTurnedOff)
+        }
 
         ToggleMenuItem(UserText.promptBarKeyboardShortcutToggle,
                        isOn: $preferences.isKeyboardShortcutEnabled)
         .accessibilityIdentifier("Preferences.AIChat.promptBarKeyboardShortcutToggle")
+        .onChange(of: preferences.isKeyboardShortcutEnabled) { isEnabled in
+            fire(isEnabled ? .settingsShortcutTurnedOn : .settingsShortcutTurnedOff)
+        }
 
         PromptBarShortcutRecorderView(shortcut: $preferences.keyboardShortcut)
             .disabled(!preferences.isKeyboardShortcutEnabled)
             .padding(.leading, 19)
             .padding(.bottom, 4)
+            // Covers both recording a new combo and resetting to the default; the combo itself is never sent.
+            .onChange(of: preferences.keyboardShortcut) { _ in
+                fire(.settingsShortcutChanged)
+            }
+    }
+
+    private func fire(_ pixel: PromptBarPixel) {
+        PixelKit.fire(pixel, frequency: .dailyAndCount, includeAppVersionParameter: true)
     }
 }

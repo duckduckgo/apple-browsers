@@ -42,6 +42,9 @@ protocol NewTabPageNextStepsCardsPixelHandling {
     /// Fires the `GeneralPixel.defaultRequestedFromHomepageSetupView` pixel.
     func fireDefaultBrowserRequestedPixel()
 
+    /// Fires the `SubscriptionPixel.subscriptionNewTabPageNextStepsCardShown` pixel.
+    func fireSubscriptionCardShownPixel()
+
     /// Fires the `SubscriptionPixel.subscriptionNewTabPageNextStepsCardClicked` pixel.
     func fireSubscriptionCardClickedPixel()
 
@@ -106,6 +109,10 @@ final class NewTabPageNextStepsCardsPixelHandler: NewTabPageNextStepsCardsPixelH
 
     func fireDefaultBrowserRequestedPixel() {
         pixelHandler(GeneralPixel.defaultRequestedFromHomepageSetupView, .standard, true)
+    }
+
+    func fireSubscriptionCardShownPixel() {
+        pixelHandler(SubscriptionPixel.subscriptionNewTabPageNextStepsCardShown, .dailyAndCount, true)
     }
 
     func fireSubscriptionCardClickedPixel() {

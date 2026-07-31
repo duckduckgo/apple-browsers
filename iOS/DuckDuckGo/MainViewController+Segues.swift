@@ -34,31 +34,39 @@ import VPN
 struct VPNEntryPoint {
     let screenSource: VPNConnectionWideEventData.ScreenSource
     let subscriptionFunnelOrigin: SubscriptionFunnelOrigin
+    let subscriptionFunnelClickPixel: SubscriptionPixel
 
     static let toolbar = VPNEntryPoint(
         screenSource: .toolbar,
-        subscriptionFunnelOrigin: .toolbarVPN)
+        subscriptionFunnelOrigin: .toolbarVPN,
+        subscriptionFunnelClickPixel: .subscriptionVPNToolbarClick)
 
     static let addressBar = VPNEntryPoint(
         screenSource: .addressBar,
-        subscriptionFunnelOrigin: .addressBarVPN)
+        subscriptionFunnelOrigin: .addressBarVPN,
+        subscriptionFunnelClickPixel: .subscriptionVPNAddressBarClick)
 
     static let widget = VPNEntryPoint(
         screenSource: .widget,
-        subscriptionFunnelOrigin: .widgetVPN)
+        subscriptionFunnelOrigin: .widgetVPN,
+        subscriptionFunnelClickPixel: .subscriptionVPNWidgetClick)
 
     static let shortcut = VPNEntryPoint(
         screenSource: .shortcut,
-        subscriptionFunnelOrigin: .shortcutVPN)
+        subscriptionFunnelOrigin: .shortcutVPN,
+        subscriptionFunnelClickPixel: .subscriptionVPNShortcutClick)
 
     static let notification = VPNEntryPoint(
         screenSource: .notification,
-        subscriptionFunnelOrigin: .notificationVPN)
+        subscriptionFunnelOrigin: .notificationVPN,
+        subscriptionFunnelClickPixel: .subscriptionVPNNotificationClick)
 
     private init(screenSource: VPNConnectionWideEventData.ScreenSource,
-                 subscriptionFunnelOrigin: SubscriptionFunnelOrigin) {
+                 subscriptionFunnelOrigin: SubscriptionFunnelOrigin,
+                 subscriptionFunnelClickPixel: SubscriptionPixel) {
         self.screenSource = screenSource
         self.subscriptionFunnelOrigin = subscriptionFunnelOrigin
+        self.subscriptionFunnelClickPixel = subscriptionFunnelClickPixel
     }
 }
 

@@ -307,7 +307,7 @@ final class ContextualSuggestionsMatcherTests: XCTestCase {
         // translate-page resolves through the native localized copy, which carries `%@`
         // (the loc-pipeline placeholder) instead of the catalog's `{language}` token.
         let result = ContextualSuggestionsMatcher.resolve(input(signals(lang: "es"), uiLocale: "en_US"), catalog: try standardCatalog())
-        let translate = try XCTUnwrap(result.first { $0.id == "translate-page" })
+        let translate = try XCTUnwrap(result.suggestions.first { $0.id == "translate-page" })
         XCTAssertFalse(translate.prompt.contains("%@"))
         XCTAssertFalse(translate.prompt.contains("{language}"))
         XCTAssertTrue(translate.prompt.contains("English"))
@@ -325,7 +325,7 @@ final class ContextualSuggestionsMatcherTests: XCTestCase {
         }
         """
         let result = ContextualSuggestionsMatcher.resolve(input(nil, uiLocale: "en_US"), catalog: try catalog(json))
-        XCTAssertEqual(result.map(\.prompt), ["Summarize with 100% accuracy."])
+        XCTAssertEqual(result.suggestions.map(\.prompt), ["Summarize with 100% accuracy."])
     }
 
     // MARK: - Copy & icon passthrough

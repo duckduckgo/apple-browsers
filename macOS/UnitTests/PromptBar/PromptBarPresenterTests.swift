@@ -26,6 +26,7 @@ final class PromptBarPresenterTests: XCTestCase {
     private var content: MockPromptBarContent!
     private var presenter: PromptBarPresenter!
     private var windows: [StubPromptBarWindow] = []
+    private var firedPixels: [PromptBarPixel] = []
 
     override func setUp() {
         super.setUp()
@@ -37,28 +38,32 @@ final class PromptBarPresenterTests: XCTestCase {
                 let window = StubPromptBarWindow(contentRect: rect)
                 self?.windows.append(window)
                 return window
+            },
+            firePixel: { [weak self] pixel in
+                self?.firedPixels.append(pixel)
             }
         )
     }
 
     override func tearDown() {
         windows = []
+        firedPixels = []
         presenter = nil
         content = nil
         super.tearDown()
     }
 
     func testWhenShownThenTheBarIsVisibleAndPreparedOnce() {
-        presenter.show()
+        presenter.show(source: .keyboardShortcut)
 
         XCTAssertTrue(presenter.isVisible)
         XCTAssertEqual(content.prepareCount, 1)
     }
 
     func testWhenDismissedThenTheContentIsResetOnce() {
-        presenter.show()
+        presenter.show(source: .keyboardShortcut)
 
-        presenter.dismiss()
+        presenter.dismiss(reason: .escape)
 
         XCTAssertFalse(presenter.isVisible)
         XCTAssertEqual(content.resetCount, 1)
@@ -67,29 +72,97 @@ final class PromptBarPresenterTests: XCTestCase {
     /// Submitting reports through both `requestsSubmissionOf` and `didSubmit`, so the host asks to
     /// dismiss twice. The second must not tear down an already-dismissed bar.
     func testWhenDismissedTwiceThenTheContentIsResetOnlyOnce() {
-        presenter.show()
+        presenter.show(source: .keyboardShortcut)
 
-        presenter.dismiss()
-        presenter.dismiss()
+        presenter.dismiss(reason: .submission)
+        presenter.dismiss(reason: .submission)
 
         XCTAssertEqual(content.resetCount, 1)
     }
 
     func testWhenDismissedWithoutBeingShownThenTheContentIsNotReset() {
-        presenter.dismiss()
+        presenter.dismiss(reason: .escape)
 
         XCTAssertEqual(content.resetCount, 0)
     }
 
     func testWhenShownAgainAfterDismissalThenItReusesTheWindowAndResetsAgainOnDismissal() {
-        presenter.show()
-        presenter.dismiss()
+        presenter.show(source: .keyboardShortcut)
+        presenter.dismiss(reason: .escape)
 
-        presenter.show()
-        presenter.dismiss()
+        presenter.show(source: .keyboardShortcut)
+        presenter.dismiss(reason: .escape)
 
         XCTAssertEqual(windows.count, 1, "The panel is reused rather than rebuilt per presentation")
         XCTAssertEqual(content.resetCount, 2)
+    }
+
+    // MARK: - Pixels
+
+    func testWhenShownFromEachSourceThenThatSourcesPixelIsReported() {
+        presenter.show(source: .keyboardShortcut)
+        presenter.dismiss(reason: .submission)
+        presenter.show(source: .menuBarIcon)
+
+        XCTAssertEqual(firedPixels.map(\.name), [PromptBarPixel.shownFromShortcut.name,
+                                                 PromptBarPixel.shownFromMenuBarIcon.name])
+    }
+
+    func testWhenDismissedAfterSubmittingThenNoCancellationIsReported() {
+        presenter.show(source: .keyboardShortcut)
+        firedPixels = []
+
+        presenter.dismiss(reason: .submission)
+
+        XCTAssertTrue(firedPixels.isEmpty, "Submitting is covered by the submit pixels, but fired: \(firedPixels.map(\.name))")
+    }
+
+    func testWhenDismissedWithoutSubmittingThenEachReasonIsReported() {
+        let expected: [(PromptBarDismissReason, PromptBarCancellationReason)] = [
+            (.escape, .escape),
+            (.clickOutside, .clickOutside),
+            (.shortcutToggle, .shortcutToggle),
+            (.menuBarIconToggle, .menuBarIcon)
+        ]
+
+        for (dismissReason, cancellationReason) in expected {
+            presenter.show(source: .keyboardShortcut)
+            firedPixels = []
+
+            presenter.dismiss(reason: dismissReason)
+
+            XCTAssertEqual(firedPixels.map(\.name), [PromptBarPixel.dismissedWithoutSubmission(reason: cancellationReason, hadText: false).name])
+            XCTAssertEqual(firedPixels.first?.parameters?["reason"], cancellationReason.rawValue)
+        }
+    }
+
+    /// The draft is cleared by `resetAfterDismissal()`, so the flag has to be read before that runs.
+    func testWhenDismissedWithTypedTextThenHadTextIsReported() {
+        content.hasPromptText = true
+        presenter.show(source: .keyboardShortcut)
+        firedPixels = []
+
+        presenter.dismiss(reason: .clickOutside)
+
+        XCTAssertEqual(firedPixels.first?.parameters?["had_text"], "true")
+    }
+
+    func testWhenDismissedWithAnEmptyPromptThenHadTextIsFalse() {
+        presenter.show(source: .keyboardShortcut)
+        firedPixels = []
+
+        presenter.dismiss(reason: .clickOutside)
+
+        XCTAssertEqual(firedPixels.first?.parameters?["had_text"], "false")
+    }
+
+    func testWhenToggledWhileVisibleThenTheEntryPointIsTheCancellationReason() {
+        presenter.toggle(source: .menuBarIcon)
+        firedPixels = []
+
+        presenter.toggle(source: .menuBarIcon)
+
+        XCTAssertEqual(firedPixels.first?.parameters?["reason"], PromptBarCancellationReason.menuBarIcon.rawValue)
     }
 }
 
@@ -135,6 +208,7 @@ private final class MockPromptBarContent: PromptBarContentHosting {
     let hostedViewController = NSViewController()
 
     var isPresentingAuxiliaryUI = false
+    var hasPromptText = false
     var preferredWindowContentSize = NSSize(width: 680, height: 80)
     var onPreferredWindowContentSizeChanged: ((NSSize) -> Void)?
     var onSubmit: (() -> Void)?

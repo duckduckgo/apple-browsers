@@ -961,7 +961,43 @@ extension AIChatUserScriptHandler {
 
 extension AIChatUserScriptHandler: AIChatMetricReportingHandling {
 
+    /// Maps each frontend-reported funnel metric to its origin and click flag. Picker/sidebar/browser-upsell
+    /// surfaces are intentionally absent — instrumented natively elsewhere, not via `reportMetric`.
+    private static let funnelMetrics: [AIChatMetricName: (origin: SubscriptionFunnelOrigin, isClick: Bool)] = [
+        .userDidViewAiSidebarUpgradeButton: (.duckAIAiSidebar, false),
+        .userDidClickAiSidebarUpgradeButton: (.duckAIAiSidebar, true),
+        .userDidViewActivateSubscriptionBanner: (.duckAIActivateSubscription, false),
+        .userDidClickActivateSubscriptionButton: (.duckAIActivateSubscription, true),
+        .userDidViewFreePlanBadge: (.duckAIFreeLabel, false),
+        .userDidClickFreePlanUpgradeButton: (.duckAIFreeLabel, true),
+        .userDidViewFreeLimitMessage: (.duckAIFreeLimit, false),
+        .userDidClickFreeLimitSubscribeLink: (.duckAIFreeLimit, true),
+        .userDidViewImageGenerationLimitMessage: (.duckAIImageGenerationLimit, false),
+        .userDidClickImageGenerationLimitSubscribeButton: (.duckAIImageGenerationLimit, true),
+        .userDidViewPlusLimitMessage: (.duckAIPlusLimit, false),
+        .userDidClickPlusLimitUpgradeLink: (.duckAIPlusLimit, true),
+        .userDidViewPromotionCard: (.duckAIPromotionCard, false),
+        .userDidClickPromotionCardButton: (.duckAIPromotionCard, true),
+        .userDidViewSettingsSubscribeButton: (.duckAISettings, false),
+        .userDidClickSettingsSubscribeButton: (.duckAISettings, true),
+        .userDidViewProUpgradeDisclaimerBanner: (.duckAIDisclaimerBanner, false),
+        .userDidClickProUpgradeDisclaimerBannerButton: (.duckAIDisclaimerBanner, true),
+        .userDidViewVoiceChatLimitModal: (.duckAIVoiceChatLimit, false),
+        .userDidClickVoiceChatLimitModalSubscribeButton: (.duckAIVoiceChatLimit, true),
+        .userDidViewVoiceChatDurationLimitModal: (.duckAIVoiceChatDurationLimit, false),
+        .userDidClickVoiceChatDurationLimitModalSubscribeButton: (.duckAIVoiceChatDurationLimit, true),
+    ]
+
     func didReportMetric(_ metric: AIChatMetric, completion: (() -> Void)? = nil) {
+        if let funnel = Self.funnelMetrics[metric.metricName] {
+            let pixel: AIChatPixel = funnel.isClick
+                ? .aiChatSubscriptionFunnelClick(origin: funnel.origin.rawValue)
+                : .aiChatSubscriptionFunnelImpression(origin: funnel.origin.rawValue)
+            pixelFiring?.fire(pixel, frequency: .dailyAndCount)
+            completion?()
+            return
+        }
+
         switch metric.metricName {
         case .userDidSubmitFirstPrompt:
             notificationCenter.post(name: .aiChatUserDidSubmitPrompt, object: nil)

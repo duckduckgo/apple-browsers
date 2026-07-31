@@ -190,6 +190,12 @@
 /* Prompt title after enabling sync */
 "sync.simplified.another.device.title" = "Sinchronizuoti duomenis su kitu įrenginiu?";
 
+/* Body on the sync-setup prompt explaining the sync-another-device option */
+"sync.simplified.another.device.v2.body" = "Padėsime sinchronizuoti įrenginius.";
+
+/* Title on the sync-setup prompt asking whether to sync with another device or just this device */
+"sync.simplified.another.device.v2.title" = "Sinchronizuokite šį įrenginį su netoliese esančiu kompiuteriu.";
+
 /* Caption displayed on 'auto-download bookmarks icons' toggle. */
 "sync.simplified.bookmarks.section.fetch-favicons.caption" = "Įkelia piktogramas iš jūsų žymėse esančių svetainių. Piktogramų atsisiuntimai rodomi jūsų tinkle.";
 
@@ -202,14 +208,56 @@
 /* Text shown next to toggle while sync is being set up */
 "sync.simplified.connecting" = "Jungiamasi...";
 
+/* Title shown on the connecting screen while Sync & Backup is being set up on this device */
+"sync.simplified.connecting.v2.title" = "Funkcijai „Sync & Backup“ visuose jūsų įrenginiuose naudojamas ištisinis šifravimas.";
+
 /* Sync settings 'Copy Recovery Code' button */
 "sync.simplified.copy.recovery.code.button" = "Nukopijuok atkūrimo kodą";
 
 /* Sync settings action button title to turn off sync and delete server data */
 "sync.simplified.delete.sync.data.button" = "Išjunk sinchronizavimą ir ištrink serverio duomenis";
 
+/* Description on the device-added success screen explaining what the recovery code is for */
+"sync.simplified.device.added.v2.description" = "Naudokite šį kodą duomenims atkurti, jeigu prarastumėte prieigą prie savo įrenginių. Laikykite saugioje vietoje.";
+
+/* Fallback subject used in the device-added success title when the current device's name is unavailable. Substituted as %@ in simplifiedDeviceAddedV2Title. */
+"sync.simplified.device.added.v2.fallback.device.name" = "Šis įrenginys";
+
+/* Title on the success screen shown after a device joins Sync & Backup. %@ is the name of the current device that was just added. */
+"sync.simplified.device.added.v2.title" = "%@ buvo pridėtas prie „Sync & Backup“.";
+
 /* Sync settings 'Download Recovery Code' button */
 "sync.simplified.download.recovery.code.button" = "Atsisiųsk atkūrimo kodą";
+
+/* Section header above the get-desktop-browser option in sync setup */
+"sync.simplified.download.section.header" = "Atsisiųsti";
+
+/* Button to download the recovery code on the recover-your-data screen */
+"sync.simplified.download.your.recovery.code.button" = "Atsisiųsti atkūrimo kodą";
+
+/* Description shown when Sync & Backup is enabled (when AI chat sync is available) */
+"sync.simplified.enabled.header.message" = "Jūsų žymių, automatinio pildymo duomenų ir „Duck.ai“ pokalbių sinchronizavimas bei atsarginių kopijų kūrimas vyksta naudojant ištisinį šifravimą.";
+
+/* Description shown when Sync & Backup is enabled */
+"sync.simplified.enabled.header.message.basic" = "Jūsų žymės ir automatinio pildymo duomenys sinchronizuojami naudojant ištisinį šifravimą.";
+
+/* Sync & Backup screen title shown when Sync is enabled */
+"sync.simplified.enabled.header.title" = "„DuckDuckGo“ yra sinchronizuota";
+
+/* Label above the example sync code placeholder on the enter-code tab */
+"sync.simplified.enter.code.example.label" = "Kodo pavyzdys:";
+
+/* First part of the enter-code instructions, followed by a DuckDuckGo app chip */
+"sync.simplified.enter.code.open" = "Atidarykite savo kitą";
+
+/* Button to paste the sync code on the enter-code tab */
+"sync.simplified.enter.code.paste.button" = "Įklijuoti sinchronizavimo kodą";
+
+/* Second part of the enter-code instructions. **...** marks the parts shown in the primary text color. */
+"sync.simplified.enter.code.steps" = "Eikite į **Sync & Backup** › **Sinchronizuokite su kitu įrenginiu** › **Nukopijuokite tekstinį kodą**.";
+
+/* Title on the enter-code tab of the V2 scan screen */
+"sync.simplified.enter.code.title" = "Įveskite sinchronizavimo kodą.";
 
 /* Button subtitle to get the DuckDuckGo desktop browser */
 "sync.simplified.get.desktop.browser.subtitle" = "„DuckDuckGo“, skirta „Mac“ ir „Windows“";
@@ -217,11 +265,53 @@
 /* Button title to get the DuckDuckGo desktop browser. */
 "sync.simplified.get.desktop.browser.title" = "Gaukite kompiuterio naršyklę";
 
+/* Row label to get the DuckDuckGo desktop browser */
+"sync.simplified.get.our.desktop.browser.title" = "Atsisiųskite mūsų kompiuteriui skirtą naršyklę";
+
+/* Sync setup row label to recover synced data using an existing recovery code */
+"sync.simplified.have.recovery.code.button" = "Turiu atkūrimo kodą";
+
 /* Description of the Sync & Backup feature (when AI chat sync is available) */
 "sync.simplified.header.message" = "Išsaugok parankines, automatinio pildymo duomenis bei „Duck.ai“ pokalbius ir sinchronizuok juos tarp savo įrenginių naudojant galutinį šifravimą.";
 
 /* Description of the Sync & Backup feature */
 "sync.simplified.header.message.basic" = "Išsaugok parankines bei automatinio pildymo duomenis ir sinchronizuok juos tarp savo įrenginių naudojant galutinį šifravimą.";
+
+/* Description of the Sync & Backup feature */
+"sync.simplified.header.message.basic.v2" = "Sinchronizuokite savo automatinio pildymo duomenis ir žymes, užšifruotus ištisiniu šifravimu visose „DuckDuckGo“ programose.";
+
+/* Description of the Sync & Backup feature (when AI chat sync is available) */
+"sync.simplified.header.message.v2" = "Sinchronizuokite ir kurkite atsargines automatinio pildymo duomenų, žymių ir „Duck.ai“ pokalbių kopijas visose savo „DuckDuckGo“ programose su ištisiniu šifravimu.";
+
+/* Sync & Backup screen title */
+"sync.simplified.header.title" = "Sinchronizuoti „DuckDuckGo“";
+
+/* Footer caption shown under the Remove Device button on the manage device screen */
+"sync.simplified.manage.device.remove.footer" = "Pašalinus šį įrenginį, jis nebegalės pasiekti jūsų sinchronizuotų duomenų.";
+
+/* Status label shown under a device name on the manage device screen when the device is synced */
+"sync.simplified.manage.device.status.synced" = "Sinchronizuota";
+
+/* Footer caption shown under the Sync & Backup This Device toggle on the manage this device screen */
+"sync.simplified.manage.device.turn.off.footer" = "Jeigu išjungsite, šis įrenginys nebegalės pasiekti jūsų sinchronizuotų duomenų.";
+
+/* My Devices section header shown when Sync & Backup is enabled */
+"sync.simplified.my.devices.section.header" = "Mano įrenginiai";
+
+/* Section header above the recovery-code option in sync setup */
+"sync.simplified.recover.synced.data.section.header" = "Atkurti sinchronizuotus duomenis";
+
+/* Title shown on the connecting screen while a device's synced data is being recovered */
+"sync.simplified.recovering.data.v2.title" = "Duomenų atkūrimas";
+
+/* Label above the recovery code on the recover-your-data screen */
+"sync.simplified.recovery.code.label" = "Atkūrimo kodas";
+
+/* Description on the success screen shown after synced data has been recovered on this device */
+"sync.simplified.recovery.complete.v2.description" = "Ištisinis šifravimas visuose jūsų įrenginiuose.";
+
+/* Title on the success screen shown after synced data has been recovered on this device */
+"sync.simplified.recovery.complete.v2.title" = "Įjungta funkcija „Sync & Backup“";
 
 /* Sync settings data recovery section footer. %@ is replaced with the URL. */
 "sync.simplified.recovery.section.footer" = "Naudok šį kodą duomenims atkurti, jei prarasi prieigą prie šio įrenginio. Po 18 mėnesių neaktyvumo negalėsi atkurti „Sync & Backup“ duomenų. [Sužinoti daugiau](%@)";
@@ -274,8 +364,56 @@
 /* Instructions on sync QR code display screen (will be shown above the DuckDuckGo app icon and name) */
 "sync.simplified.scan-or-view-code.view.instructions" = "Nuskaityk arba įklijuok šį kodą kitame savo";
 
+/* Close button in the V2 scan screen navigation bar */
+"sync.simplified.scan.v2.close.button" = "Uždaryti";
+
+/* Chip label on the scan-QR tab referring to the DuckDuckGo desktop app */
+"sync.simplified.scan.v2.qr.app.name" = "„DuckDuckGo“ kompiuteriui";
+
+/* Heading overlaid on the camera on the scan-QR tab of the V2 scan screen */
+"sync.simplified.scan.v2.qr.heading" = "Nuskaitykite QR kodą, kad sinchronizuotumėte.";
+
+/* First part of the scan-QR instructions, followed by a DuckDuckGo app chip */
+"sync.simplified.scan.v2.qr.open" = "Atidarykite";
+
+/* Button on the scan-QR intro animation that dismisses the animation and reveals the camera */
+"sync.simplified.scan.v2.qr.ready.button" = "Galima nuskaityti";
+
+/* Second part of the scan-QR instructions. **...** marks the parts shown in the primary text color. */
+"sync.simplified.scan.v2.qr.steps" = "ir eikite į **Sync & Backup** › **Sinchronizuoti su kitu įrenginiu**";
+
+/* V2 segmented control tab title for entering a code */
+"sync.simplified.scan.v2.tab.enter.code" = "Įvesti kodą";
+
+/* V2 segmented control tab title for scanning a QR code */
+"sync.simplified.scan.v2.tab.scan.qr" = "Nuskaityti QR";
+
+/* Status label shown next to the title when Sync & Backup is disabled */
+"sync.simplified.status.off" = "Išjungta";
+
+/* Status label shown next to the title when Sync & Backup is enabled */
+"sync.simplified.status.on" = "Įjungta";
+
+/* Button to copy the text sync code on the sync-code sheet */
+"sync.simplified.sync.code.copy.button" = "Kopijuoti tekstinį kodą";
+
+/* First part of the sync-code sheet instructions, followed by a DuckDuckGo app chip */
+"sync.simplified.sync.code.sheet.open" = "Kitame įrenginyje atidarykite";
+
+/* Second part of the sync-code sheet instructions. **...** marks the parts shown in the primary text color. */
+"sync.simplified.sync.code.sheet.scan" = "Eikite į **Sync & Backup** › **Sinchronizuoti su kitu įrenginiu** ir nuskaitykite šį kodą:";
+
+/* Navigation title of the sheet that shows this device's sync QR code */
+"sync.simplified.sync.code.sheet.title" = "Nuskaityti arba nukopijuoti kodą";
+
+/* Button on the sync-setup prompt to enable Sync & Backup on the current device only, without pairing another device */
+"sync.simplified.this.device.only" = "Sinchronizuoti tik šį įrenginį";
+
 /* Sync & Backup enabled / disabled toggle title */
 "sync.simplified.toggle.title" = "Sinchronizuoti ir kurti atsarginę kopiją";
+
+/* Sync & Backup enabled / disabled toggle title, referring to the current device */
+"sync.simplified.toggle.title.this.device" = "Sinchronizuoti šį įrenginį";
 
 /* Use Recovery Code sync setup button label */
 "sync.simplified.use.recovery.code.button" = "Naudok atkūrimo kodą";

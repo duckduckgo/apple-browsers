@@ -67,7 +67,7 @@ struct SaveRecoveryPDFView: View {
             Button(UserText.next) {
                 viewModel.delegate?.recoveryCodeNextPressed()
             }
-            .buttonStyle(DefaultActionButtonStyle(enabled: true))
+            .buttonStyle(DefaultActionButtonStyle(enabled: true, stateColors: .themedActionButton))
         }
         .frame(width: 420)
     }

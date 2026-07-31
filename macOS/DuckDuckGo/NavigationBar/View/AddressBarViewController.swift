@@ -708,6 +708,7 @@ final class AddressBarViewController: NSViewController {
 
     private func updateView() {
         let colorsProvider = theme.colorsProvider
+        let isAddressBarEmpty = addressBarTextField.stringValue.isEmpty
 
         switch selectionState {
         case .activeWithAIChat:
@@ -715,20 +716,11 @@ final class AddressBarViewController: NSViewController {
             /// text / suffix doesn't peek out past the panel edges.
             addressBarTextField.isHidden = true
             passiveTextField.isHidden = true
-        case .inactiveWithAIChat:
-            /// Unfocused Duck.ai: always render via `addressBarTextField` showing the preserved prompt (or empty
-            /// for the "Ask anything privately" placeholder). The value is pushed onto the field by the transitions
-            /// that enter this state (`resignFocusKeepingAIChatMode`, `applyIncomingTabAIChatMode`, and
-            /// `refocusInAIChatMode` when bouncing in/out), not here — calling `applyDuckAIUnfocusedValue` from
-            /// inside `updateView` would recurse through the `$value` sink.
-            addressBarTextField.isHidden = false
-            passiveTextField.isHidden = true
-        case .active, .inactive:
-            let isPassiveTextFieldHidden = selectionState.isSelected || mode.isEditing
-            addressBarTextField.isHidden = isPassiveTextFieldHidden ? false : true
-            passiveTextField.isHidden = isPassiveTextFieldHidden ? true : false
+        case .active, .inactive, .inactiveWithAIChat:
+            let isPassiveTextFieldHidden = selectionState.isSelected || mode.isEditing && !isAddressBarEmpty
+            addressBarTextField.isHidden = !isPassiveTextFieldHidden
+            passiveTextField.isHidden = isPassiveTextFieldHidden
         }
-        passiveTextField.textColor = colorsProvider.textPrimaryColor
 
         // Workaround for macOS 26.0 NSTextFieldSimpleLabel rendering bug.
         // The internal labels get `alpha = 0` when the text field is hidden; un-hiding the field (e.g. transitioning
@@ -1062,6 +1054,13 @@ final class AddressBarViewController: NSViewController {
         activeBackgroundViewWithSuggestions.backgroundColor = theme.colorsProvider.suggestionsBackgroundColor
     }
 
+    private func refreshPlaceholderAppearance() {
+        let displaysTrustIndicator = tabViewModel?.passiveAddressBarDisplaysTrustIndicator == true
+        let colorsProvider = theme.colorsProvider
+
+        passiveTextField.textColor = displaysTrustIndicator ? colorsProvider.textSecondaryColor : colorsProvider.textPrimaryColor
+    }
+
     private func layoutTextFields(withMinX minX: CGFloat) {
         /// Keep the text leading X fixed across focused / unfocused / mode transitions so accepting a suggestion
         /// (which flips `mode` between `.text` / `.url` / `.openTabSuggestion`) doesn't visibly shift the text.
@@ -1376,6 +1375,7 @@ extension AddressBarViewController: ThemeUpdateListening {
     func applyThemeStyle(theme: ThemeStyleProviding) {
         refreshAddressBarAppearance(nil)
         refreshSuggestionsAppearance()
+        refreshPlaceholderAppearance()
         updateView()
     }
 }

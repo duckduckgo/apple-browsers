@@ -71,6 +71,7 @@ final class TabViewModel: NSObject {
 
     @Published private(set) var addressBarString: String = ""
     @Published private(set) var passiveAddressBarAttributedString = NSAttributedString()
+    @Published private(set) var passiveAddressBarDisplaysTrustIndicator = false
 
     var lastAddressBarTextFieldValue: AddressBarTextField.Value?
 
@@ -164,6 +165,7 @@ final class TabViewModel: NSObject {
         subscribeToTabError()
         subscribeToPermissions()
         subscribeToPreferences()
+        subscribeToAddressBarDuckAIState()
         subscribeToWebViewDidFinishNavigation()
         subscribeToYouTubeAdBlockAnimationTrigger()
         tab.$isLoading
@@ -336,6 +338,16 @@ final class TabViewModel: NSObject {
             }.store(in: &cancellables)
     }
 
+    private func subscribeToAddressBarDuckAIState() {
+        tab.addressBarSharedTextState.$isInDuckAIMode
+            .removeDuplicates()
+            .dropFirst()
+            .sink { [weak self] inDuckAIMode in
+                self?.updatePassiveAddressBarString(inDuckAIMode: inDuckAIMode)
+            }
+            .store(in: &cancellables)
+    }
+
     private var isThereZoomPerWebsite: Bool {
         guard let urlString = tab.url?.absoluteString else { return false }
         guard !tab.burnerMode.isBurner else { return false }
@@ -405,11 +417,15 @@ final class TabViewModel: NSObject {
         }()
     }
 
-    private func updatePassiveAddressBarString(showFullURL: Bool? = nil) {
+    private func updatePassiveAddressBarString(showFullURL: Bool? = nil, inDuckAIMode: Bool? = nil) {
         let showFullURL = showFullURL ?? appearancePreferences.showFullURL
+        let inDuckAIMode = inDuckAIMode ?? addressBarSharedTextState.isInDuckAIMode
+
         passiveAddressBarAttributedString = switch tab.content {
+        case .newtab where inDuckAIMode:
+            .addressBarPlaceholderForDuckAI
         case .newtab, .none:
-            .init() // empty
+            .addressBarPlaceholder
         case .onboarding:
             .onboardingTrustedIndicator
         case .settings:
@@ -437,6 +453,8 @@ final class TabViewModel: NSObject {
         case .url(let url, _, _), .webExtensionUrl(let url):
             NSAttributedString(string: passiveAddressBarString(with: url, showFullURL: showFullURL))
         }
+
+        passiveAddressBarDisplaysTrustIndicator = ([.newtab, .none].contains(tab.content) == false)
     }
 
     private func passiveAddressBarString(with url: URL, showFullURL: Bool) -> String {
@@ -611,6 +629,8 @@ extension TabViewModel {
     }
 }
 
+// MARK: - NSAttributedString + Trust Indicators
+
 private extension NSAttributedString {
 
     private typealias Component = NSAttributedString
@@ -686,4 +706,25 @@ private extension NSAttributedString {
     static let aiChatTrustedIndicator = singlePartTrustedIndicatorAttributedString(with: DesignSystemImages.Color.Size16.duckAI,
                                                                                    title: UserText.aiChatAddressBarTrustedIndicator)
 
+}
+
+// MARK: - NSAttributedString + Placeholders
+
+private extension NSAttributedString {
+
+    private static func placehoderAttributedString(title: String) -> NSAttributedString {
+        guard let icon = NSImage(systemSymbolName: "magnifyingglass", accessibilityDescription: nil) else {
+            return NSAttributedString(string: title)
+        }
+
+        return singlePartTrustedIndicatorAttributedString(with: icon, title: title)
+    }
+
+    static var addressBarPlaceholder: NSAttributedString {
+        placehoderAttributedString(title: UserText.addressBarPlaceholder)
+    }
+
+    static var addressBarPlaceholderForDuckAI: NSAttributedString {
+        placehoderAttributedString(title: UserText.aiChatOmnibarPlaceholder)
+    }
 }

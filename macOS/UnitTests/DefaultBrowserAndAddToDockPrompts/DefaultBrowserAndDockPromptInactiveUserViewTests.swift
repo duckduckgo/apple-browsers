@@ -25,7 +25,7 @@ import Testing
 @Suite("Default Browser And Dock Prompt Inactive User View Tests", .disabled("Snapshot testing is opt-in until the sync automations land"))
 final class DefaultBrowserAndDockPromptInactiveUserViewTests {
 
-    @available(iOS 16, macOS 13, *)
+    @available(macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
     func testDefaultBrowserAndDockPromptInactiveUserViewSnapshot() {
         assertImageSnapshots(

@@ -24,7 +24,7 @@ import Testing
 @Suite("Info View Tests", .disabled("Snapshot testing is opt-in until the sync automations land"))
 final class InfoViewTests {
 
-    @available(iOS 16, macOS 13, *)
+    @available(macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
     func testInfoViewSnapshot() {
         assertImageSnapshot(

@@ -69,6 +69,11 @@ public enum SharedDesignSystemColor {
     // Shield
     case shieldPrivacy
 
+    // Status
+    case statusGray
+    case statusGreen
+    case statusRed
+
     // VPN
     case vpnGreen
     case vpnGreenPressed

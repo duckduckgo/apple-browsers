@@ -108,6 +108,14 @@ extension SharedColorPaletteDefinition {
         case .shieldPrivacy:
             return shieldPrivacy
 
+        /// Status
+        case .statusGray:
+            return statusGray
+        case .statusGreen:
+            return statusGreen
+        case .statusRed:
+            return statusRed
+
         /// VPN
         /// Feature-scoped colours for the VPN status pill and header animation, resolved inline
         /// (following the Permission Center pattern) since they don't vary by accent palette. Per the

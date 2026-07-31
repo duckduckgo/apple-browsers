@@ -104,6 +104,10 @@ final class EventHubFixture {
 
     func advance(by interval: TimeInterval) { scheduler.advance(by: interval) }
 
+    /// Moves virtual time forward but leaves the armed period-end callback pending, so a test can act
+    /// while `now` is past `periodEnd` and the period has not yet been swept.
+    func advanceClockOnly(by interval: TimeInterval) { scheduler.advanceClockOnly(by: interval) }
+
     /// Plants a corrupt persisted state directly into the store (an active period window, but an
     /// unparseable config snapshot) so load-time resilience can be exercised on the next start.
     func plantCorruptState(_ pixelName: String) {

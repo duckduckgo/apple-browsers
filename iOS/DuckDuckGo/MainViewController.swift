@@ -7199,8 +7199,6 @@ extension MainViewController {
 
         updateWindowedAddressBarCorners()
 
-        updateWindowedAddressBarCorners()
-
         viewCoordinator.toolbar.tintColor = UIColor(singleUseColor: .toolbarButton)
 
         viewCoordinator.toolbarTabSwitcherView.tintColor = UIColor(singleUseColor: .toolbarButton)

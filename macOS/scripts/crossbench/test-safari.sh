@@ -74,6 +74,7 @@ SAFARI_DOMAIN="com.apple.Safari"
 SAFARI_HTTP_PROXY_KEY="WebKit2HTTPProxy"
 SAFARI_HTTPS_PROXY_KEY="WebKit2HTTPSProxy"
 SAFARI_APP="${SAFARI_APP:-/Applications/Safari.app}"
+SAFARI_AUTOMATION_STORE_DIR="${SAFARI_AUTOMATION_STORE_DIR:-$HOME/Library/Containers/com.apple.Safari/Data/tmp/SafariAutomation}"
 LOAD_WINDOW="12s"
 LOAD_WINDOW_MS=12000
 LOAD_WINDOW_SECONDS=12
@@ -240,6 +241,33 @@ quit_safari() {
   return 1
 }
 
+# safaridriver gives every WebDriver session its own on-disk website data store
+# and never removes it, so a run leaves one directory per repetition behind. They
+# are dead session temporaries, but they accumulate until a later run trips the
+# disk-headroom check. Pruning is only safe with no Safari alive, because a live
+# session owns its store, so every caller prunes right after quitting Safari.
+prune_safari_automation_stores() {
+  local dir root="$SAFARI_AUTOMATION_STORE_DIR"
+  # The loop below removes directories recursively, so refuse any root that is
+  # not recognizably the automation store — including an empty override.
+  case "$root" in
+    */SafariAutomation) ;;
+    *)
+      echo "WARNING: refusing to prune unexpected session-store path: $root" >&2
+      return 0
+      ;;
+  esac
+  [ -d "$root" ] || return 0
+  if [ -n "$(safari_pids)" ]; then
+    echo "WARNING: Safari is running; leaving safaridriver session stores." >&2
+    return 0
+  fi
+  for dir in "$root"/*; do
+    [ -e "$dir" ] || continue
+    rm -rf -- "$dir"
+  done
+}
+
 capture_proxy_key() {
   local key="$1" state_name="$2" value_name="$3" value type
   if value="$(defaults read "$SAFARI_DOMAIN" "$key" 2>/dev/null)"; then
@@ -350,6 +378,8 @@ cleanup() {
   # Best-effort: a lingering Safari is untidy, not a reason to fail the run.
   if [ -n "$SAFARIDRIVER_PID" ]; then
     quit_safari || echo "WARNING: Safari did not quit during cleanup." >&2
+    # Removes the last repetition's store, which no earlier prune could reach.
+    prune_safari_automation_stores
   fi
   # Keep the proxy chain alive until Safari's own preferences are restored.
   # This avoids leaving Safari pointed at a dead local endpoint if restoration
@@ -431,6 +461,10 @@ check_prerequisites() {
     echo "       Quit Safari and re-run." >&2
     exit 2
   }
+  # No Safari is alive, so anything still under the automation store is left over
+  # from a run that has already ended. Clearing it here keeps a long run from
+  # starting on top of every earlier run's leftovers.
+  prune_safari_automation_stores
   [ -x "$WPR_BIN" ] || {
     echo "ERROR: WPR binary missing at $WPR_BIN. Run provision-macos.sh." >&2
     exit 1
@@ -779,6 +813,9 @@ measure_site() {
       mark_runtime_failure runner safari_quit_failed "repetition=$rep"
       break
     fi
+    # The previous repetition's session store is now unowned; drop it before the
+    # next session allocates its own, so disk use stays flat across a long run.
+    prune_safari_automation_stores
     before="$(proxy_log_line_count)"
     if output="$("$PYTHON_BIN" "$SAFARI_AUTOMATION_PY" \
         "$SAFARIDRIVER_PORT" measure "https://$site" \

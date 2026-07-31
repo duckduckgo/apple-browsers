@@ -98,6 +98,34 @@ class SafariHarnessContractTests(unittest.TestCase):
         )
         self.assertIn("safari_quit_failed", HARNESS)
 
+    def test_session_stores_are_pruned_at_start_between_reps_and_at_cleanup(self):
+        self.assertIn("prune_safari_automation_stores() {", HARNESS)
+        # Definition plus exactly three call sites: startup, per repetition, cleanup.
+        self.assertEqual(HARNESS.count("prune_safari_automation_stores"), 4)
+        # Startup: after the refusal to run alongside another Safari.
+        self.assertIn('prune_safari_automation_stores\n  [ -x "$WPR_BIN" ]', HARNESS)
+        # Cleanup: right after the quit that releases the last session's store.
+        self.assertIn(
+            'quit_safari || echo "WARNING: Safari did not quit during cleanup." >&2\n'
+            "    # Removes the last repetition's store, which no earlier prune could reach.\n"
+            "    prune_safari_automation_stores\n",
+            HARNESS,
+        )
+        # Per repetition: after the quit, before the session that measures.
+        rep = HARNESS.index("prune_safari_automation_stores\n    before=")
+        self.assertLess(HARNESS.index("if ! quit_safari; then"), rep)
+        self.assertLess(rep, HARNESS.index('"$SAFARIDRIVER_PORT" measure'))
+
+    def test_pruning_refuses_an_unrecognized_store_root(self):
+        prune = HARNESS[
+            HARNESS.index("prune_safari_automation_stores() {") :
+            HARNESS.index("capture_proxy_key() {")
+        ]
+        self.assertIn("*/SafariAutomation) ;;", prune)
+        self.assertIn("refusing to prune unexpected session-store path", prune)
+        self.assertLess(prune.index("*/SafariAutomation) ;;"), prune.index("rm -rf --"))
+        self.assertLess(prune.index('[ -n "$(safari_pids)" ]'), prune.index("rm -rf --"))
+
     def test_cleanup_only_quits_a_safari_this_run_launched(self):
         self.assertIn(
             'if [ -n "$SAFARIDRIVER_PID" ]; then\n'

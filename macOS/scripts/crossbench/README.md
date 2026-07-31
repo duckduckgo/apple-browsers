@@ -131,11 +131,16 @@ Because Safari must therefore be the only one on the machine, the run refuses to
 start while another Safari is already open, and a Safari that will not quit is a
 harness failure rather than a warmer measurement.
 
-WebKit keeps its disk cache outside the process, so quitting removes the JIT,
-prewarmed-process and in-memory carry-over but not the HTTP cache. Before
-comparing absolute Safari values with Chrome cold-profile values, verify
-per-repetition WPR subresource traffic, and add an on-disk cache reset only if
-that traffic shows the cache still carrying over.
+Quitting removes the JIT, prewarmed-process and in-memory carry-over. The disk
+cache needs no separate reset: safaridriver gives every WebDriver session its own
+ephemeral store under the Safari container's `tmp/SafariAutomation`, and the
+harness opens one session per repetition, so each load starts with an empty
+network cache, cookie jar and local storage while Safari's own persistent cache
+is left untouched.
+
+safaridriver never removes those session stores, so the harness prunes them
+itself: at startup, after each repetition's quit, and during cleanup. Pruning is
+skipped while any Safari is alive, since a live session owns its store.
 
 ## DuckDuckGo
 

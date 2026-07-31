@@ -50,9 +50,25 @@ struct PreviewSnapshotsTests {
 
         #expect(previews.configurations.count == 1)
         #expect(previews.configurations.first?.name == "")
+        #expect(previews.configurations.first?.interfaceOrientation == .portrait)
         #expect(previews.previewConfigurations.count == 1)
         #expect(previews.snapshotConfigurations.count == 1)
         _ = previews.configure(())
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func configurationPreservesInterfaceOrientation() {
+        let previews = PreviewSnapshots(
+            configurations: [
+                .init(name: "Portrait", state: "portrait"),
+                .init(name: "Landscape", state: "landscape", scope: .previews, interfaceOrientation: .landscapeRight)
+            ],
+            configure: { Text($0) }
+        )
+
+        #expect(previews.configurations.map(\.interfaceOrientation) == [.portrait, .landscapeRight])
+        #expect(previews.snapshotConfigurations.map(\.name) == ["Portrait"])
     }
 
     @available(iOS 16, macOS 13, *)

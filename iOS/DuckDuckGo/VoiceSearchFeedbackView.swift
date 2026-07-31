@@ -240,7 +240,8 @@ struct VoiceSearchFeedbackView_Previews: PreviewProvider {
     static let snapshots = PreviewSnapshots(
         configurations: [
             .init(name: "AI Chat", state: .preview()),
-            .init(name: "Search", state: .preview(preferredTarget: .SERP))
+            .init(name: "Search", state: .preview(preferredTarget: .SERP)),
+            .init(name: "Landscape", state: .preview(), interfaceOrientation: .landscapeRight)
         ],
         configure: {
             VoiceSearchFeedbackView(speechModel: $0)

@@ -5333,7 +5333,9 @@ extension MainViewController: OmniBarDelegate {
         guard searchTokenExperiment.cohort == .treatment else { return }
         // Match the SERP navigation's UA exactly (the token is UA-bound): the tab's desktop state + a
         // duckduckgo.com URL, resolved through the same `agent(forUrl:isDesktop:)` the WebView uses.
-        let isDesktop = currentTab?.tabModel.isDesktop ?? false
+        // Fall back to the same default a new tab would use (`isLargeWidth`, i.e. desktop on iPad)
+        // so a nil `currentTab` doesn't warm a mobile UA the SERP then navigates as desktop.
+        let isDesktop = currentTab?.tabModel.isDesktop ?? AppWidthObserver.shared.isLargeWidth
         let userAgent = DefaultUserAgentManager.shared.userAgent(isDesktop: isDesktop, url: .ddg)
         Task { await searchTokenFetcher.fetchIfNeeded(userAgent: userAgent) }
     }

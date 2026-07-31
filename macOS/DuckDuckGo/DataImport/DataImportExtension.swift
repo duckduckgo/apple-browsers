@@ -337,9 +337,6 @@ extension DataImport.Source {
     }
 
     var importSourceImage: NSImage? {
-        guard Application.appDelegate.featureFlagger.isFeatureOn(.dataImportNewExperience) else {
-            return ThirdPartyBrowser.browser(for: self)?.applicationIcon
-        }
         switch self {
         case .csv, .bookmarksHTML, .fileImport:
             return DesignSystemImages.Color.Size32.document

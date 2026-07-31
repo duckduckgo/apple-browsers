@@ -247,6 +247,56 @@ final class AIChatContextualUTIHostTests: XCTestCase {
         sut.unmount()
     }
 
+    /// Freezing is what lets a dismissal own the surface's motion, so it has to hand over the position the
+    /// keyboard guide was holding — not shift it as the constraint is swapped.
+    func test_freezeInputPosition_leavesTheInputExactlyWhereItWas() {
+        makeSUT()
+        let parent = UIViewController()
+        parent.view.frame = CGRect(x: 0, y: 0, width: 390, height: 844)
+        let inputView = sut.mount(in: parent)
+        parent.view.layoutIfNeeded()
+        let before = inputView.frame
+
+        sut.freezeInputPosition()
+        parent.view.layoutIfNeeded()
+
+        XCTAssertEqual(inputView.frame, before)
+    }
+
+    func test_freezeInputPositionTwice_stillLeavesItWhereItWas() {
+        makeSUT()
+        let parent = UIViewController()
+        parent.view.frame = CGRect(x: 0, y: 0, width: 390, height: 844)
+        let inputView = sut.mount(in: parent)
+        parent.view.layoutIfNeeded()
+        let before = inputView.frame
+
+        sut.freezeInputPosition()
+        sut.freezeInputPosition()
+        parent.view.layoutIfNeeded()
+
+        XCTAssertEqual(inputView.frame, before)
+    }
+
+    /// A frozen pin belongs to the parent it was measured against. Left behind, the next mount would sit at a
+    /// stale position.
+    func test_freezeThenRemount_pinsToTheNewParent() {
+        makeSUT()
+        let first = UIViewController()
+        first.view.frame = CGRect(x: 0, y: 0, width: 390, height: 844)
+        _ = sut.mount(in: first)
+        first.view.layoutIfNeeded()
+        sut.freezeInputPosition()
+
+        let second = UIViewController()
+        second.view.frame = CGRect(x: 0, y: 0, width: 320, height: 568)
+        let inputView = sut.mount(in: second)
+        second.view.layoutIfNeeded()
+
+        XCTAssertTrue(inputView.isDescendant(of: second.view))
+        XCTAssertEqual(inputView.frame.maxY, second.view.keyboardLayoutGuide.layoutFrame.minY)
+    }
+
     private func makeContext(title: String, url: String) -> AIChatPageContext {
         AIChatPageContext(
             contextData: AIChatPageContextData(

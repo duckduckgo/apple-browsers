@@ -33,6 +33,39 @@ final class AIChatContextualFloatingInputViewControllerTests: XCTestCase {
         }
     }
 
+    /// Stands in for the real host so the exit's two levers — resigning the input and pinning it — can be
+    /// observed. Mounts a plain view, which is all the surface needs for layout.
+    private final class HostSpy: AIChatContextualFloatingInputHosting {
+        let inputView = UIView()
+        var deactivateInputCount = 0
+        var freezeInputPositionCount = 0
+        var unmountCount = 0
+
+        var inputCardTopAnchor: NSLayoutYAxisAnchor { inputView.topAnchor }
+        var inputCardLeadingAnchor: NSLayoutXAxisAnchor { inputView.leadingAnchor }
+        var inputCardTrailingAnchor: NSLayoutXAxisAnchor { inputView.trailingAnchor }
+
+        func mount(in parent: UIViewController) -> UIView {
+            inputView.translatesAutoresizingMaskIntoConstraints = false
+            parent.view.addSubview(inputView)
+            NSLayoutConstraint.activate([
+                inputView.leadingAnchor.constraint(equalTo: parent.view.leadingAnchor),
+                inputView.trailingAnchor.constraint(equalTo: parent.view.trailingAnchor),
+                inputView.bottomAnchor.constraint(equalTo: parent.view.keyboardLayoutGuide.topAnchor),
+                inputView.heightAnchor.constraint(equalToConstant: 56),
+            ])
+            return inputView
+        }
+
+        func unmount() {
+            unmountCount += 1
+            inputView.removeFromSuperview()
+        }
+
+        func deactivateInput() { deactivateInputCount += 1 }
+        func freezeInputPosition() { freezeInputPositionCount += 1 }
+    }
+
     private var originatingURL: CurrentValueSubject<URL?, Never>!
 
     override func setUp() async throws {
@@ -64,6 +97,21 @@ final class AIChatContextualFloatingInputViewControllerTests: XCTestCase {
             showsBasicNativeInput: false,
             showsWelcomeMessage: false
         )
+    }
+
+    /// Installed with a spied host, for the assertions that turn on what the exit asks of it.
+    private func makeSubjectWithHostSpy() -> (AIChatContextualFloatingInputViewController, HostSpy, DelegateSpy, UIViewController) {
+        let host = HostSpy()
+        let subject = AIChatContextualFloatingInputViewController(utiHost: host, chipsViewController: makeChips())
+        let spy = DelegateSpy()
+        subject.delegate = spy
+
+        let parent = UIViewController()
+        parent.view.frame = CGRect(x: 0, y: 0, width: 390, height: 844)
+        subject.install(in: parent)
+        parent.view.layoutIfNeeded()
+
+        return (subject, host, spy, parent)
     }
 
     private func makeSubject() -> (AIChatContextualFloatingInputViewController, DelegateSpy, UIViewController) {
@@ -172,6 +220,85 @@ final class AIChatContextualFloatingInputViewControllerTests: XCTestCase {
 
         XCTAssertEqual(inputView.alpha, 1)
         XCTAssertEqual(inputView.transform, .identity)
+    }
+
+    // MARK: - Keyboard handover
+
+    /// The keyboard is leaving with the surface, so resigning up front is what starts it down alongside the
+    /// slide rather than after it.
+    func testADismissalTheKeyboardLeavesWithResignsTheInputUpFront() async {
+        let (subject, host, _, _) = makeSubjectWithHostSpy()
+
+        let slideFinished = expectation(description: "slide finished")
+        subject.dismiss { slideFinished.fulfill() }
+
+        XCTAssertEqual(host.deactivateInputCount, 1)
+        await fulfillment(of: [slideFinished], timeout: 3)
+        XCTAssertEqual(host.deactivateInputCount, 1, "resigning happens once per dismissal, not on both sides")
+    }
+
+    /// Resigning as the tap lands is what made the keyboard dip out and come straight back when the tap
+    /// focused a page field. Waiting leaves the choice to whatever the page does with focus.
+    func testAPageTapDefersResigningTheInputUntilTheSurfaceHasGone() async {
+        let (subject, host, _, _) = makeSubjectWithHostSpy()
+
+        subject.simulatePageTapForTesting()
+        let slideFinished = expectation(description: "slide finished")
+        subject.dismiss { slideFinished.fulfill() }
+
+        XCTAssertEqual(host.deactivateInputCount, 0, "the page has to be given the chance to take the keyboard")
+        await fulfillment(of: [slideFinished], timeout: 3)
+        XCTAssertEqual(host.deactivateInputCount, 1, "the page declined it, so it was still ours to put away")
+    }
+
+    /// Pinned before it moves, so a keyboard that stays put or changes height cannot drag the surface
+    /// mid-slide — the page's own field raises a taller one than ours.
+    func testEveryDismissalPinsTheInputBeforeItSlides() {
+        let (subject, host, _, _) = makeSubjectWithHostSpy()
+
+        subject.dismiss { }
+
+        XCTAssertEqual(host.freezeInputPositionCount, 1)
+    }
+
+    func testAPageTapPinsTheInputToo() {
+        let (subject, host, _, _) = makeSubjectWithHostSpy()
+
+        subject.simulatePageTapForTesting()
+        subject.dismiss { }
+
+        XCTAssertEqual(host.freezeInputPositionCount, 1)
+    }
+
+    /// This surface only makes sense above a keyboard. Something else took it — a long press starting a text
+    /// selection, the page blurring its own field — so the surface goes too.
+    func testAKeyboardTakenAwayByAnythingElseRequestsDismissal() {
+        let (_, _, spy, _) = makeSubjectWithHostSpy()
+
+        NotificationCenter.default.post(name: UIResponder.keyboardWillHideNotification, object: nil)
+
+        XCTAssertEqual(spy.dismissRequestCount, 1)
+    }
+
+    /// Our own dismissal resigns the input, which reports a keyboard hide. That must not come back around as
+    /// a second dismissal request.
+    func testAKeyboardHideDuringOurOwnDismissalDoesNotRequestAnother() {
+        let (subject, _, spy, _) = makeSubjectWithHostSpy()
+
+        subject.dismiss { }
+        NotificationCenter.default.post(name: UIResponder.keyboardWillHideNotification, object: nil)
+
+        XCTAssertEqual(spy.dismissRequestCount, 0)
+    }
+
+    /// A removed surface has no business reacting to a keyboard it no longer sits above.
+    func testAKeyboardHideAfterRemovalRequestsNothing() {
+        let (subject, _, spy, _) = makeSubjectWithHostSpy()
+
+        subject.remove()
+        NotificationCenter.default.post(name: UIResponder.keyboardWillHideNotification, object: nil)
+
+        XCTAssertEqual(spy.dismissRequestCount, 0)
     }
 
     // MARK: - Chips entrance

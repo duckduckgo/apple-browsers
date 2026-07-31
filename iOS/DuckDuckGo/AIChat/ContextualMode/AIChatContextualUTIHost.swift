@@ -24,7 +24,7 @@ import os.log
 
 /// Owns a `UnifiedToggleInputCoordinator` configured for the contextual chat surface.
 @MainActor
-final class AIChatContextualUTIHost: UnifiedToggleInputDelegate {
+final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextualFloatingInputHosting {
 
     private let coordinator: UnifiedToggleInputCoordinator
     let chipViewModel: UnifiedToggleInputPageContextChipViewModel

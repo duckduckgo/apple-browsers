@@ -24,6 +24,20 @@ protocol AIChatContextualFloatingInputViewControllerDelegate: AnyObject {
     func aiChatContextualFloatingInputViewControllerDidRequestDismiss(_ viewController: AIChatContextualFloatingInputViewController)
 }
 
+/// The slice of the input host this surface drives: where to mount the bar, the card edges to align content
+/// to, and the two levers the exit pulls — resigning the input, and pinning it clear of the keyboard.
+@MainActor
+protocol AIChatContextualFloatingInputHosting: AnyObject {
+    var inputCardTopAnchor: NSLayoutYAxisAnchor { get }
+    var inputCardLeadingAnchor: NSLayoutXAxisAnchor { get }
+    var inputCardTrailingAnchor: NSLayoutXAxisAnchor { get }
+
+    func mount(in parent: UIViewController) -> UIView
+    func unmount()
+    func deactivateInput()
+    func freezeInputPosition()
+}
+
 /// Chip suggestions and the unified toggle input floating over the page, with no sheet chrome.
 ///
 /// Dismissed by tapping the dimmed page, by swiping the input down, or by a VoiceOver escape.
@@ -92,7 +106,7 @@ final class AIChatContextualFloatingInputViewController: UIViewController {
 
     weak var delegate: AIChatContextualFloatingInputViewControllerDelegate?
 
-    private let utiHost: AIChatContextualUTIHost
+    private let utiHost: AIChatContextualFloatingInputHosting
     let chipsViewController: AIChatContextualInputViewController
 
     /// Lets touches outside the input reach the page underneath, so it stays scrollable while the
@@ -176,7 +190,7 @@ final class AIChatContextualFloatingInputViewController: UIViewController {
         return recognizer
     }()
 
-    init(utiHost: AIChatContextualUTIHost, chipsViewController: AIChatContextualInputViewController) {
+    init(utiHost: AIChatContextualFloatingInputHosting, chipsViewController: AIChatContextualInputViewController) {
         self.utiHost = utiHost
         self.chipsViewController = chipsViewController
         super.init(nibName: nil, bundle: nil)

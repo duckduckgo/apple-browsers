@@ -104,17 +104,17 @@ final class PromptBarPreferencesTests: XCTestCase {
         XCTAssertEqual(persistor.keyboardShortcut, .defaultShortcut)
     }
 
-    func testWhenKeyboardShortcutIsDisabledThenMenuBarIconIsNotEffectivelyVisible() {
+    func testWhenKeyboardShortcutIsDisabledThenMenuBarIconIsStillEffectivelyVisible() {
         let persistor = MockPromptBarPreferencesPersistor()
         persistor.isMenuBarIconVisible = true
         persistor.isKeyboardShortcutEnabled = false
 
         let preferences = makePreferences(persistor: persistor)
 
-        XCTAssertFalse(preferences.isMenuBarIconEffectivelyVisible)
+        XCTAssertTrue(preferences.isMenuBarIconEffectivelyVisible)
     }
 
-    func testWhenKeyboardShortcutAndMenuBarIconAreEnabledThenIconIsEffectivelyVisible() {
+    func testWhenMenuBarIconIsEnabledThenIconIsEffectivelyVisible() {
         let persistor = MockPromptBarPreferencesPersistor()
         persistor.isMenuBarIconVisible = true
         persistor.isKeyboardShortcutEnabled = true
@@ -124,7 +124,7 @@ final class PromptBarPreferencesTests: XCTestCase {
         XCTAssertTrue(preferences.isMenuBarIconEffectivelyVisible)
     }
 
-    func testWhenKeyboardShortcutIsDisabledThenStoredMenuBarIconPreferenceIsUnchanged() {
+    func testWhenKeyboardShortcutIsTurnedOffThenMenuBarIconVisibilityIsUnaffected() {
         let persistor = MockPromptBarPreferencesPersistor()
         persistor.isMenuBarIconVisible = true
         persistor.isKeyboardShortcutEnabled = true
@@ -134,10 +134,10 @@ final class PromptBarPreferencesTests: XCTestCase {
 
         XCTAssertTrue(preferences.isMenuBarIconVisible)
         XCTAssertTrue(persistor.isMenuBarIconVisible)
-        XCTAssertFalse(preferences.isMenuBarIconEffectivelyVisible)
+        XCTAssertTrue(preferences.isMenuBarIconEffectivelyVisible)
     }
 
-    func testWhenKeyboardShortcutIsDisabledThenEffectiveVisibilityPublisherEmitsFalse() {
+    func testWhenKeyboardShortcutIsTurnedOffThenEffectiveVisibilityPublisherDoesNotEmitAgain() {
         let persistor = MockPromptBarPreferencesPersistor()
         persistor.isMenuBarIconVisible = true
         persistor.isKeyboardShortcutEnabled = true
@@ -147,14 +147,27 @@ final class PromptBarPreferencesTests: XCTestCase {
 
         preferences.isKeyboardShortcutEnabled = false
 
+        XCTAssertEqual(received, [true])
+        cancellable.cancel()
+    }
+
+    func testWhenMenuBarIconIsTurnedOffThenEffectiveVisibilityPublisherEmitsFalse() {
+        let persistor = MockPromptBarPreferencesPersistor()
+        persistor.isMenuBarIconVisible = true
+        let preferences = makePreferences(persistor: persistor)
+        var received: [Bool] = []
+        let cancellable = preferences.isMenuBarIconEffectivelyVisiblePublisher.sink { received.append($0) }
+
+        preferences.isMenuBarIconVisible = false
+
         XCTAssertEqual(received, [true, false])
         cancellable.cancel()
     }
 
     func testWhenSubscribedThenEffectiveVisibilityPublisherEmitsCurrentValueSynchronously() {
         let persistor = MockPromptBarPreferencesPersistor()
-        persistor.isMenuBarIconVisible = true
-        persistor.isKeyboardShortcutEnabled = false
+        persistor.isMenuBarIconVisible = false
+        persistor.isKeyboardShortcutEnabled = true
         let preferences = makePreferences(persistor: persistor)
         var received: [Bool] = []
 

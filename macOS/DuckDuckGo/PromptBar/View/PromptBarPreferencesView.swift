@@ -19,31 +19,24 @@
 import PreferencesUI_macOS
 import SwiftUI
 
-/// The Prompt Bar rows on the AI Features preferences screen: the system-wide
-/// keyboard shortcut (with its recorder) and the menu bar icon visibility.
 struct PromptBarPreferencesView: View {
 
     @ObservedObject var preferences: PromptBarPreferences
 
     var body: some View {
-        ToggleMenuItemWithDescription(UserText.promptBarKeyboardShortcutToggle,
-                                      UserText.promptBarKeyboardShortcutCaption,
-                                      isOn: $preferences.isKeyboardShortcutEnabled,
-                                      spacing: 4)
-        .accessibilityIdentifier("Preferences.AIChat.promptBarKeyboardShortcutToggle")
-        .padding(.top, Const.Spacing.groupedCheckboxesSeparation)
-
-        PromptBarShortcutRecorderView(shortcut: $preferences.keyboardShortcut)
-            .disabled(!preferences.isKeyboardShortcutEnabled)
-            .padding(.leading, 19)
-            .padding(.bottom, 4)
-
         ToggleMenuItemWithDescription(UserText.promptBarMenuBarIconToggle,
                                       UserText.promptBarMenuBarIconCaption,
                                       isOn: $preferences.isMenuBarIconVisible,
                                       spacing: 4)
         .accessibilityIdentifier("Preferences.AIChat.promptBarMenuBarIconToggle")
-        .disabled(!preferences.isKeyboardShortcutEnabled)
-        .padding(.leading, 19)
+
+        ToggleMenuItem(UserText.promptBarKeyboardShortcutToggle,
+                       isOn: $preferences.isKeyboardShortcutEnabled)
+        .accessibilityIdentifier("Preferences.AIChat.promptBarKeyboardShortcutToggle")
+
+        PromptBarShortcutRecorderView(shortcut: $preferences.keyboardShortcut)
+            .disabled(!preferences.isKeyboardShortcutEnabled)
+            .padding(.leading, 19)
+            .padding(.bottom, 4)
     }
 }

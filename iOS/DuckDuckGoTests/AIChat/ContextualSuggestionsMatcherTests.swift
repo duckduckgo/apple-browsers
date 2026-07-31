@@ -303,6 +303,31 @@ final class ContextualSuggestionsMatcherTests: XCTestCase {
         XCTAssertEqual(result.suggestions.first { $0.id == "recipe-a" }?.prompt, "Make a list.")
     }
 
+    func testLocalizedTranslatePromptInterpolatesLanguageViaFormatPlaceholder() throws {
+        // translate-page resolves through the native localized copy, which carries `%@`
+        // (the loc-pipeline placeholder) instead of the catalog's `{language}` token.
+        let result = ContextualSuggestionsMatcher.resolve(input(signals(lang: "es"), uiLocale: "en_US"), catalog: try standardCatalog())
+        let translate = try XCTUnwrap(result.suggestions.first { $0.id == "translate-page" })
+        XCTAssertFalse(translate.prompt.contains("%@"))
+        XCTAssertFalse(translate.prompt.contains("{language}"))
+        XCTAssertTrue(translate.prompt.contains("English"))
+    }
+
+    func testTemplateDoesNotFormatPromptWithLiteralPercentButNoPlaceholder() throws {
+        let json = """
+        {
+          "maxSuggestedPrompts": 4,
+          "defaults": ["percent-x"],
+          "catalog": { "percent-x": { "label": "P", "prompt": "Summarize with 100% accuracy." } },
+          "byJsonLdType": [],
+          "byOgType": {},
+          "byDomain": {}
+        }
+        """
+        let result = ContextualSuggestionsMatcher.resolve(input(nil, uiLocale: "en_US"), catalog: try catalog(json))
+        XCTAssertEqual(result.suggestions.map(\.prompt), ["Summarize with 100% accuracy."])
+    }
+
     // MARK: - Copy & icon passthrough
 
     func testUnmappedIDsUseCatalogCopyAndIcon() throws {

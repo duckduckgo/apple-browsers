@@ -43,6 +43,15 @@ public struct PreviewSnapshots<State> {
     }
 
     public init<Content: View>(
+        configure: @escaping () -> Content
+    ) where State == Void {
+        self.init(
+            configurations: [.init(name: "", state: ())],
+            configure: { _ in configure() }
+        )
+    }
+
+    public init<Content: View>(
         states: [State],
         configure: @escaping (State) -> Content
     ) where State: NamedPreviewState {

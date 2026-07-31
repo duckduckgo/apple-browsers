@@ -77,13 +77,8 @@ struct AIChatSyncPromoView_Previews: PreviewProvider {
         snapshots.previews
     }
 
-    static let snapshots = PreviewSnapshots(
-        configurations: [
-            .init(name: "", state: "")
-        ],
-        configure: { _ in
-            AIChatSyncPromoView(onCTATap: {}, onCloseTap: {})
-        }
-    )
+    static let snapshots = PreviewSnapshots {
+        AIChatSyncPromoView(onCTATap: {}, onCloseTap: {})
+    }
 }
 #endif

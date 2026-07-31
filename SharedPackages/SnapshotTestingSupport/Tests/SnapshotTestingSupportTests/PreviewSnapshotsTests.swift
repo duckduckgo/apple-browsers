@@ -43,6 +43,20 @@ struct PreviewSnapshotsTests {
 
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
+    func convenienceInitializerCreatesSingleUnnamedConfiguration() {
+        let previews = PreviewSnapshots {
+            Text("Content")
+        }
+
+        #expect(previews.configurations.count == 1)
+        #expect(previews.configurations.first?.name == "")
+        #expect(previews.previewConfigurations.count == 1)
+        #expect(previews.snapshotConfigurations.count == 1)
+        _ = previews.configure(())
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func statesInitializerUsesNamedStateNames() {
         let previews = PreviewSnapshots(
             states: [

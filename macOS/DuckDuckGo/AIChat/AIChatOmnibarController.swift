@@ -91,6 +91,10 @@ final class AIChatOmnibarController {
     private let featureFlagger: FeatureFlagger
     private let searchPreferencesPersistor: SearchPreferencesPersistor
     private let suggestionsReader: AIChatSuggestionsReading?
+    /// Burner (Fire Window) omnibars run an isolated Duck.ai session, so persisted chat-history
+    /// suggestions from the regular session can't be opened here. When true, suggestions are
+    /// suppressed entirely — see `isSuggestionsEnabled`.
+    private let isBurner: Bool
     private let modelsService: AIChatModelsProviding
     private let subscriptionManager: any SubscriptionManager
     private let subscriptionUpsellPresenter: AIChatOmnibarSubscriptionUpselling
@@ -148,7 +152,8 @@ final class AIChatOmnibarController {
     /// Whether the suggestions feature is enabled.
     /// Requires both the feature flag and the autocomplete setting to be on.
     var isSuggestionsEnabled: Bool {
-        surface.supportsSuggestions
+        !isBurner
+            && surface.supportsSuggestions
             && featureFlagger.isFeatureOn(.aiChatSuggestions)
             && searchPreferencesPersistor.showAutocompleteSuggestions
     }
@@ -264,6 +269,7 @@ final class AIChatOmnibarController {
         featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
         searchPreferencesPersistor: SearchPreferencesPersistor = SearchPreferencesUserDefaultsPersistor(),
         suggestionsReader: AIChatSuggestionsReading? = nil,
+        isBurner: Bool = false,
         preferences: AIChatPreferencesPersisting = AIChatPreferencesPersistor(),
         modelsService: AIChatModelsProviding = AIChatModelsService(),
         subscriptionManager: any SubscriptionManager = Application.appDelegate.subscriptionManager,
@@ -282,6 +288,7 @@ final class AIChatOmnibarController {
         self.featureFlagger = featureFlagger
         self.searchPreferencesPersistor = searchPreferencesPersistor
         self.suggestionsReader = suggestionsReader
+        self.isBurner = isBurner
         self.preferences = preferences
         self.modelsService = modelsService
         self.subscriptionManager = subscriptionManager

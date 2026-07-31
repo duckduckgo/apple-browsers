@@ -46,6 +46,11 @@ enum YouTubeAdBlockingStorageKeys: String, StorageKeyDescribing {
     case youTubeAdBlockUnavailableNoticeShown = "com_duckduckgo_ios_youTubeAdBlockUnavailableNoticeShown"
 
     static let youTubeAdBlockingEnabledDidChangeNotification = Notification.Name("youTubeAdBlockingEnabledDidChange")
+
+    /// Posted whenever `youTubeAnalyticsEnabled` is written. The store backing these keys is the
+    /// file-based one, which deliberately exposes no change publisher, so consumers that need to react
+    /// to the opt-in — `YouTubeAdBlockingTelemetryConsentRequirement` — observe this instead.
+    static let youTubeAnalyticsEnabledDidChangeNotification = Notification.Name("youTubeAnalyticsEnabledDidChange")
 }
 
 struct YouTubeAdBlockingKeys: StoringKeys {
@@ -803,6 +808,7 @@ final class SettingsViewModel: ObservableObject {
 
     func setYouTubeAnalyticsEnabled(_ enabled: Bool) {
         try? youTubeAdBlockingStorage.set(enabled, for: \YouTubeAdBlockingKeys.youTubeAnalyticsEnabled)
+        NotificationCenter.default.post(name: YouTubeAdBlockingStorageKeys.youTubeAnalyticsEnabledDidChangeNotification, object: nil)
     }
 
     var isYouTubeAdBlockingDisclosureHidden: Bool {

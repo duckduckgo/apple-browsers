@@ -27,6 +27,7 @@ import Subscription
 import Persistence
 import DDGSync
 import Configuration
+import EventHub
 import SetDefaultBrowserUI
 import SystemSettingsPiPTutorial
 import DataBrokerProtection_iOS
@@ -136,7 +137,8 @@ final class MainCoordinator {
          sharedSecureVault: (any AutofillSecureVault)? = nil,
          syncAutoRestoreDecisionManager: SyncAutoRestoreDecisionManaging = AppDependencyProvider.shared.syncAutoRestoreDecisionManager,
          wideEvent: WideEventManaging,
-         onboardingManager: OnboardingManaging
+         onboardingManager: OnboardingManaging,
+         eventHub: EventHubManaging
     ) throws {
         self.subscriptionManager = subscriptionManager
         self.featureFlagger = featureFlagger
@@ -218,7 +220,8 @@ final class MainCoordinator {
                                 duckAiNativeStorageHandler: contentBlockingService.duckAiNativeStorageHandler,
                                 duckAiFireModeStorageHandler: contentBlockingService.duckAiFireModeStorageHandler,
                                 toggleModeStorage: toggleModeStorage,
-                                adBlockingAvailability: contentBlockingService.adBlockingAvailability)
+                                adBlockingAvailability: contentBlockingService.adBlockingAvailability,
+                                eventHub: eventHub)
         let fireExecutor = FireExecutor(tabManager: tabManager,
                                         websiteDataManager: websiteDataManager,
                                         daxDialogsManager: daxDialogsManager,

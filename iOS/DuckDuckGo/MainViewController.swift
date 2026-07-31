@@ -5933,11 +5933,16 @@ extension MainViewController: TabDelegate {
         let disclosureVisibleAtToggle = (try? storage.value(for: \YouTubeAdBlockingKeys.shouldHideYouTubeAdBlockingDisclosure)) != true
         try? storage.set(enabled, for: \YouTubeAdBlockingKeys.youTubeAdBlockingEnabled)
         if !enabled {
-            try? storage.set(false, for: \YouTubeAdBlockingKeys.youTubeAnalyticsEnabled)
+            setYouTubeAnalyticsEnabled(false, in: storage)
         } else if disclosureVisibleAtToggle {
-            try? storage.set(true, for: \YouTubeAdBlockingKeys.youTubeAnalyticsEnabled)
+            setYouTubeAnalyticsEnabled(true, in: storage)
         }
         NotificationCenter.default.post(name: YouTubeAdBlockingStorageKeys.youTubeAdBlockingEnabledDidChangeNotification, object: nil)
+    }
+
+    private func setYouTubeAnalyticsEnabled(_ enabled: Bool, in storage: any ThrowingKeyedStoring<YouTubeAdBlockingKeys>) {
+        try? storage.set(enabled, for: \YouTubeAdBlockingKeys.youTubeAnalyticsEnabled)
+        NotificationCenter.default.post(name: YouTubeAdBlockingStorageKeys.youTubeAnalyticsEnabledDidChangeNotification, object: nil)
     }
 
     func tabDidEngageWithPage(_ tab: TabViewController) {

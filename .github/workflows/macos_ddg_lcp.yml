@@ -1,5 +1,5 @@
-name: "macOS: DuckDuckGo LCP"
-run-name: "macOS: DuckDuckGo LCP"
+name: "macOS - Measure LCP (DDG)"
+run-name: "macOS - Measure LCP (DDG)"
 
 # Real measurements are manual until two dedicated-runner full runs have been
 # completed and understood.

@@ -1,5 +1,5 @@
-name: "macOS: Chrome LCP"
-run-name: "macOS: Chrome LCP"
+name: "macOS - Measure LCP (Chrome)"
+run-name: "macOS - Measure LCP (Chrome)"
 
 # Test harness: stands up crossbench on a GitHub-hosted macOS runner,
 # measures Chrome navigation -> Largest Contentful Paint from WPR archives,

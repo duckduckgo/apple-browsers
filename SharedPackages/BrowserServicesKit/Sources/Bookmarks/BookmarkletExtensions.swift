@@ -27,10 +27,10 @@ public extension String {
 
     /// URL schemes that are unsafe to import as a bookmark target, because activating the
     /// bookmark would execute embedded content rather than navigate to a page. Used to drop
-    /// such bookmarks during third-party import (e.g. `javascript:`, `data:`).
+    /// such bookmarks during third-party import (e.g. `javascript:`, `data:`, `vbscript:`).
     func hasUnsafeBookmarkImportScheme() -> Bool {
         let value = trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        return value.hasPrefix("javascript:") || value.hasPrefix("data:")
+        return value.hasPrefix("javascript:") || value.hasPrefix("data:") || value.hasPrefix("vbscript:")
     }
 
     func toDecodedBookmarklet() -> String? {

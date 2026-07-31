@@ -6,6 +6,7 @@
         "parameters": [
             "appVersion",
             "pixelSource",
+            "channel",
             {
                 "key": "source",
                 "type": "string",
@@ -32,6 +33,7 @@
         "parameters": [
             "appVersion",
             "pixelSource",
+            "channel",
             {
                 "key": "source",
                 "type": "string",
@@ -58,6 +60,7 @@
         "parameters": [
             "appVersion",
             "pixelSource",
+            "channel",
             {
                 "key": "flow_version",
                 "type": "string",
@@ -79,6 +82,7 @@
         "parameters": [
             "appVersion",
             "pixelSource",
+            "channel",
             {
                 "key": "source",
                 "type": "string",
@@ -117,6 +121,7 @@
         "parameters": [
             "appVersion",
             "pixelSource",
+            "channel",
             {
                 "key": "source",
                 "type": "string",
@@ -149,6 +154,7 @@
         "parameters": [
             "appVersion",
             "pixelSource",
+            "channel",
             {
                 "key": "source",
                 "type": "string",
@@ -181,6 +187,7 @@
         "parameters": [
             "appVersion",
             "pixelSource",
+            "channel",
             {
                 "key": "source",
                 "type": "string",
@@ -296,6 +303,7 @@
         "parameters": [
             "appVersion",
             "pixelSource",
+            "channel",
             {
                 "key": "source",
                 "type": "string",

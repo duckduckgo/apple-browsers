@@ -834,6 +834,7 @@ private extension MainViewController {
             isFireMode: tabManager.currentBrowsingMode == .fire
         )
         self.aiChatTabChatHeaderView = headerView
+        viewCoordinator.aiChatTabChatHeaderView = headerView
     }
 
     func refreshAIChatTabChatHeaderSubscriptionState() {
@@ -1354,6 +1355,11 @@ extension MainViewController: AIChatTabChatHeaderViewDelegate {
             unifiedToggleInputCoordinator?.showCollapsed()
             currentTab?.submitToggleSidebarAction()
         }
+    }
+
+    func aiChatTabChatHeaderUpgradePlateDidBecomeVisible() {
+        Pixel.fire(pixel: .unifiedToggleInputChatHeaderUpgradeShown,
+                   withAdditionalParameters: [AttributionParameter.origin: SubscriptionFunnelOrigin.duckAIFreeLabel.rawValue])
     }
 
     func aiChatTabChatHeaderDidTapUpgrade() {

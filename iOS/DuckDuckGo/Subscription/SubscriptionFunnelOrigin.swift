@@ -57,6 +57,10 @@ enum SubscriptionFunnelOrigin: String {
     /// https://app.asana.com/1/137249556945/project/1207260194172075/task/1213994750860310
     case duckAIReasoningPicker = "funnel_duckai_ios__reasoningpicker"
 
+    /// User entered the funnel via the native "Free Plan / Upgrade" plate in the Duck.ai tab header.
+    /// https://app.asana.com/1/137249556945/project/414235014887631/task/1216395339071576?focus=true
+    case duckAIFreeLabel = "funnel_duckai_ios__freelabel"
+
     // MARK: - Win-Back Offer Origins
     
     /// User entered via win-back offer launch prompt

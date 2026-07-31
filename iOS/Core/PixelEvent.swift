@@ -1887,6 +1887,7 @@ extension Pixel {
         case unifiedToggleInputStopGenerationTapped
         case unifiedToggleInputSubscriptionUpsellTriggered
         case unifiedToggleInputChatHeaderUpgradeTapped
+        case unifiedToggleInputChatHeaderUpgradeShown
         case unifiedToggleInputPromptSubmitted
         case unifiedToggleInputShowModelPicker
         case unifiedToggleInputSubmitChangeModel
@@ -3821,6 +3822,7 @@ extension Pixel.Event {
         case .unifiedToggleInputStopGenerationTapped: return "m_aichat_unified_input_stop_generation_tapped"
         case .unifiedToggleInputSubscriptionUpsellTriggered: return "m_aichat_unified_input_subscription_upsell_triggered"
         case .unifiedToggleInputChatHeaderUpgradeTapped: return "m_aichat_unified_input_chat_header_upgrade_tapped"
+        case .unifiedToggleInputChatHeaderUpgradeShown: return "m_aichat_unified_input_chat_header_upgrade_shown"
         case .unifiedToggleInputPromptSubmitted: return "m_aichat_unified_input_prompt_submitted"
         case .unifiedToggleInputShowModelPicker: return "aichat_unified_input_show_model_picker"
         case .unifiedToggleInputSubmitChangeModel: return "aichat_unified_input_submit_change_model"

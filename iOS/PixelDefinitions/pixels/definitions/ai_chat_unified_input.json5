@@ -268,6 +268,21 @@
         "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion"]
     },
+    "m_aichat_unified_input_chat_header_upgrade_shown": {
+        "description": "Fires each time the 'Free Plan / Upgrade' label in the Duck.ai tab header becomes visible.",
+        "owners": ["pikorddg"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "origin",
+                "description": "Origin value for the Duck.ai tab-header upgrade label impression.",
+                "type": "string",
+                "enum": ["funnel_duckai_ios__freelabel"]
+            }
+        ]
+    },
     "m_autocomplete_duckai_click_website": {
         "description": "Fires when user clicks on a website suggestion in the Duck.ai autocomplete suggestion list.",
         "owners": ["pikorddg"],

@@ -100,7 +100,9 @@ struct ScopedAccessCredentialManager: ScopedAccessCredentialManaging {
         } else {
             Logger.sync.debug("Sync-UnifiedDevices: adopted existing account_info key")
         }
-        return try validateAccountInfoProtectedKeys(registeredKeys,
+        let persistedKeys = try await fetchStoredProtectedKeys(for: ProtectedKeyPurpose.accountInfo,
+                                                              account: account)
+        return try validateAccountInfoProtectedKeys(persistedKeys,
                                                     requiresThirdPartyWrapper: scopedPassword != nil)
     }
 

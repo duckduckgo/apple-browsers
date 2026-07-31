@@ -2,7 +2,7 @@ name: "macOS: DuckDuckGo LCP"
 run-name: "macOS: DuckDuckGo LCP"
 
 # Real measurements are manual until two dedicated-runner full runs have been
-# completed and understood. The workflow only accepts the default branch.
+# completed and understood.
 
 on:
   workflow_dispatch:
@@ -43,35 +43,8 @@ defaults:
     working-directory: macOS/scripts/crossbench
 
 jobs:
-  authorize:
-    name: Authorize trusted measurement ref
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - name: Check out trusted history
-        uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-
-      - name: Require the current default branch
-        working-directory: .
-        env:
-          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
-        run: |
-          if [ "$GITHUB_REF" != "refs/heads/$DEFAULT_BRANCH" ]; then
-            echo "ERROR: DDG measurements may only run from the current default branch." >&2
-            exit 1
-          fi
-          if ! git merge-base --is-ancestor \
-              "$GITHUB_SHA" "origin/$DEFAULT_BRANCH"; then
-            echo "ERROR: workflow commit is not reachable from the current default branch." >&2
-            exit 1
-          fi
-
   build-review:
     name: Build signed Review app
-    needs: authorize
     if: inputs.review-build-url == ''
     uses: ./.github/workflows/macos_build_notarized.yml
     with:
@@ -94,7 +67,6 @@ jobs:
       SSH_PRIVATE_KEY_DUCKSANS_FONT: ${{ secrets.SSH_PRIVATE_KEY_DUCKSANS_FONT }}
 
   validate-wpr:
-    needs: authorize
     uses: ./.github/workflows/wpr_archive_validation.yml
     with:
       sites: ${{ inputs.sites }}
@@ -104,10 +76,9 @@ jobs:
 
   ddg-lcp:
     name: DuckDuckGo LCP (WPR)
-    needs: [authorize, build-review, validate-wpr]
+    needs: [build-review, validate-wpr]
     if: >-
       always() &&
-      needs.authorize.result == 'success' &&
       needs.validate-wpr.result == 'success'
     runs-on: [self-hosted, macOS, ARM64, performance]
     environment: macos-performance

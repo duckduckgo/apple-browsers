@@ -154,9 +154,8 @@ disposition formats as the other browser runners. Replay misses, failed
 automation acknowledgements, incomplete cleanup, and invalid measurements are
 recorded as infrastructure errors, and affected samples are discarded.
 
-The manual `macos_ddg_lcp.yml` workflow runs only from the default branch on a
-runner labeled `self-hosted`, `macOS`, `ARM64`, and `performance`, behind the
-`macos-performance` environment. A supplied Review URL is downloaded without
+The manual `macos_ddg_lcp.yml` workflow runs on a runner labeled `self-hosted`,
+`macOS`, `ARM64`, and `performance`, behind the `macos-performance` environment. A supplied Review URL is downloaded without
 placing it on a process command line. With a blank URL, CI builds the exact
 workflow commit using the existing notarized Review workflow. Before execution,
 the app is checked for its Review bundle identifier, DuckDuckGo signing team,

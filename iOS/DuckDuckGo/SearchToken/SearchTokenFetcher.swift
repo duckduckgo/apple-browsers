@@ -29,7 +29,7 @@ import os.log
 ///
 /// - `fetchIfNeeded(userAgent:)` fetches only when there is no live token or the current token is within
 ///   `window` seconds of expiry (refresh-ahead), and coalesces concurrent triggers into one request.
-/// - `retrieveToken()` returns the cached token synchronously while it is still within its TTL, else `nil`.
+/// - `retrieveToken(matching:)` returns the cached token if it was minted for the given UA and is still within its TTL, else `nil`.
 final class SearchTokenFetcher {
 
     private let requester: SearchTokenRequesting
@@ -39,6 +39,7 @@ final class SearchTokenFetcher {
 
     private let lock = NSLock()
     private var cachedToken: String?
+    private var cachedUserAgent: String?
     private var fetchedAt: Date?
     private var isFetching = false
 
@@ -53,9 +54,9 @@ final class SearchTokenFetcher {
     }
 
     /// The cached token while it is still within its TTL, otherwise `nil`. Synchronous, non-blocking.
-    func retrieveToken() -> String? {
+    func retrieveToken(matching userAgent: String) -> String? {
         lock.lock(); defer { lock.unlock() }
-        guard let cachedToken, let fetchedAt else { // Token Exists
+        guard let cachedToken, let fetchedAt, cachedUserAgent == userAgent else { // Token exists for this UA
             return nil
         }
         guard now().timeIntervalSince(fetchedAt) < ttlProvider() else { // Token is valid
@@ -70,12 +71,12 @@ final class SearchTokenFetcher {
     /// All locking is confined to the synchronous helpers below; the lock is never touched across the
     /// `await`, keeping this async-safe.
     func fetchIfNeeded(userAgent: String) async {
-        guard beginFetching() else { return }
+        guard beginFetching(userAgent: userAgent) else { return }
         defer { endFetching() }
 
         do {
             let token = try await requester.requestToken(userAgent: userAgent)
-            store(token: token)
+            store(token: token, userAgent: userAgent)
             Logger.general.debug("SearchToken: fetched (len=\(token.count, privacy: .public))")
         } catch {
             Logger.general.debug("SearchToken: fetch failed: \(error.localizedDescription, privacy: .public)")
@@ -86,10 +87,10 @@ final class SearchTokenFetcher {
 
     /// Marks a fetch as in flight and returns whether the caller should proceed. Skips if a fetch is
     /// already running or the current token still has more than `window` seconds of life.
-    private func beginFetching() -> Bool {
+    private func beginFetching(userAgent: String) -> Bool {
         lock.lock(); defer { lock.unlock() }
         if isFetching { return false }
-        if let fetchedAt, cachedToken != nil, // Token exists
+        if let fetchedAt, cachedToken != nil, cachedUserAgent == userAgent, // Fresh token already cached for this UA
            ttlProvider() - now().timeIntervalSince(fetchedAt) > windowProvider() { // Token is fresh
             return false
         }
@@ -97,9 +98,10 @@ final class SearchTokenFetcher {
         return true
     }
 
-    private func store(token: String) {
+    private func store(token: String, userAgent: String) {
         lock.lock(); defer { lock.unlock() }
         cachedToken = token
+        cachedUserAgent = userAgent
         fetchedAt = now()
     }
 

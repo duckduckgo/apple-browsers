@@ -35,7 +35,7 @@ protocol TabDelegate: AnyObject {
 
     /// The current cached search token, or nil if none is live. Used by the SERP interceptor
     /// to attach `X-DDG-Search-Token` for the treatment cohort of the Search Token experiment.
-    func searchToken(for tab: TabViewController) -> String?
+    func searchToken(for tab: TabViewController, userAgent: String) -> String?
 
     func tabDidRequestNewTab(_ tab: TabViewController)
 
@@ -195,6 +195,6 @@ extension TabDelegate {
 
     func tab(_ tab: TabViewController, didFailDuckAINavigationFor url: URL, error: Error) {}
 
-    func searchToken(for tab: TabViewController) -> String? { nil }
+    func searchToken(for tab: TabViewController, userAgent: String) -> String? { nil }
 
 }

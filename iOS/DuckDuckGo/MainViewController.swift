@@ -5862,8 +5862,8 @@ extension MainViewController: NewTabPageControllerDelegate {
 
 extension MainViewController: TabDelegate {
 
-    func searchToken(for tab: TabViewController) -> String? {
-        searchTokenFetcher.retrieveToken()
+    func searchToken(for tab: TabViewController, userAgent: String) -> String? {
+        searchTokenFetcher.retrieveToken(matching: userAgent)
     }
 
     var isEmailProtectionSignedIn: Bool {

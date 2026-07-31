@@ -35,13 +35,9 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
         static let dividerTopOffset: CGFloat = -10.0
         static let placeholderLeadingOffset: CGFloat = 10
         static let placeholderLegacyLeadingOffset: CGFloat = 9
-        /// Where the prompt's glyphs start: `textContainerInset.width` plus the container's
-        /// line-fragment padding. Unlike the placeholder's offset, it doesn't shift with the theme.
         static let textLeadingOffset: CGFloat = 10
         static let brandLogoSize: CGFloat = 24
         static let brandLogoToTextSpacing: CGFloat = 12
-        /// The logo takes the prompt's own text-leading position, so the text moves right by the
-        /// logo's width plus the gap after it.
         static let brandLogoTextIndent: CGFloat = brandLogoSize + brandLogoToTextSpacing
     }
 
@@ -215,9 +211,6 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
         let placeholderLeadingConstant = themeManager.isAppRebranded ? Constants.placeholderLeadingOffset : Constants.placeholderLegacyLeadingOffset
 
         let showsBrandLogo = omnibarController.surface.showsBrandLogo
-        // Indenting the scroll view, not `textContainerInset`: the text container tracks the text
-        // view's width, so an inset would be taken off the trailing edge too and wrap the text early
-        // under the submit button.
         let textIndent = showsBrandLogo ? Constants.brandLogoTextIndent : 0
 
         NSLayoutConstraint.activate([
@@ -251,19 +244,16 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
         }
     }
 
-    /// Sits where the prompt text would otherwise start, centred on its first line.
     private func setUpBrandLogo() {
         brandLogoView.translatesAutoresizingMaskIntoConstraints = false
         brandLogoView.image = DesignSystemImages.Color.Size24.duckAI
         brandLogoView.imageScaling = .scaleProportionallyUpOrDown
-        /// Clicks on the mark focus the prompt rather than dead-zoning, as they do on the placeholder.
         brandLogoView.hitTestForwardingTarget = textView
         brandLogoView.setAccessibilityElement(false)
         containerView.addSubview(brandLogoView)
 
         NSLayoutConstraint.activate([
             brandLogoView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: Constants.textLeadingOffset),
-            /// The placeholder hides once there's text, but a hidden view still anchors layout.
             brandLogoView.centerYAnchor.constraint(equalTo: placeholderLabel.centerYAnchor),
             brandLogoView.widthAnchor.constraint(equalToConstant: Constants.brandLogoSize),
             brandLogoView.heightAnchor.constraint(equalToConstant: Constants.brandLogoSize)
@@ -734,8 +724,6 @@ private final class ClickThroughLabel: NSTextField {
     }
 }
 
-/// `NSImageView` that forwards mouse hits the way `ClickThroughLabel` does, so the branding mark
-/// never intercepts a click meant for the prompt behind it.
 private final class ClickThroughImageView: NSImageView {
     weak var hitTestForwardingTarget: NSView?
 

@@ -26,8 +26,6 @@ import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 @testable import Subscription
 
-/// Lays the real prompt text container out on each surface and measures the result, so the Prompt
-/// Bar's leading Duck.ai mark is pinned as Prompt-Bar-only rather than by reading the constraints back.
 @MainActor
 final class AIChatOmnibarBrandLogoLayoutTests: XCTestCase {
 
@@ -58,8 +56,6 @@ final class AIChatOmnibarBrandLogoLayoutTests: XCTestCase {
                        "The prompt text no longer sits a 12pt gap clear of the logo")
     }
 
-    /// The placeholder and the typed text ride the same scroll view, so they must indent by the same
-    /// amount — otherwise the text jumps sideways on the first keystroke.
     func testWhenSurfaceIsPromptBarThenThePlaceholderIndentsWithTheText() {
         let addressBar = layOutTextContainer(surface: .addressBar).view
         let promptBar = layOutTextContainer(surface: .promptBar).view
@@ -90,8 +86,6 @@ final class AIChatOmnibarBrandLogoLayoutTests: XCTestCase {
         XCTAssertNil(brandLogo(in: textViewController.view))
     }
 
-    /// The regression guard: the address bar's prompt must start exactly where it did before the
-    /// Prompt Bar's logo existed, so its text sits a full logo-indent left of the Prompt Bar's.
     func testWhenSurfaceIsAddressBarThenThePromptTextIsNotIndented() {
         let addressBarLeading = textLeading(in: layOutTextContainer(surface: .addressBar).view)
         let promptBarLeading = textLeading(in: layOutTextContainer(surface: .promptBar).view)
@@ -102,7 +96,6 @@ final class AIChatOmnibarBrandLogoLayoutTests: XCTestCase {
 
     // MARK: - Measurement
 
-    /// The x of the first glyph's origin, in the host view's coordinates.
     private func textLeading(in host: NSView) -> CGFloat {
         guard let textView = firstDescendant(of: host, ofType: NSTextView.self),
               let textContainer = textView.textContainer else {

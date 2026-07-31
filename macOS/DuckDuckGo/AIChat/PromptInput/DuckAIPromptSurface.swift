@@ -67,7 +67,6 @@ extension DuckAIPromptSurface {
         }
     }
 
-    /// A leading Duck.ai mark, standing in for the branding the browser chrome gives the address bar.
     var showsBrandLogo: Bool {
         switch self {
         case .addressBar: false

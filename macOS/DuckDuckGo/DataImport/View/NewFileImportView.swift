@@ -778,20 +778,20 @@ struct NewInstructionsView: View {
 struct NewCircleNumberView: View {
 
     enum Constants {
-        static let diameter: CGFloat = 20
+        static let diameter: CGFloat = 16
     }
 
     let number: Int
 
     var body: some View {
         Circle()
-            .fill(Color(designSystemColor: .accentAltPrimary))
+            .fill(Color(designSystemColor: .toneTintSecondary))
             .frame(width: Constants.diameter, height: Constants.diameter)
             .overlay(
                 Text("\(number)")
+                    .font(.system(size: 8.75, weight: .semibold))
                     .foregroundColor(Color(designSystemColor: .accentAltTextPrimary))
                     .bold()
-
             )
     }
 

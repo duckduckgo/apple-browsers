@@ -195,6 +195,7 @@ public enum SharedDesignSystemColor {
     // Tone
     case toneShadePrimary
     case toneTintPrimary
+    case toneTintSecondary
 
     // Permission Center
     case permissionCenterBackground

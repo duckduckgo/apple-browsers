@@ -1,5 +1,5 @@
 //
-//  AIChatOmnibarBrandLogoLayoutTests.swift
+//  AIChatOmnibarDuckAILogoLayoutTests.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -27,15 +27,15 @@ import XCTest
 @testable import Subscription
 
 @MainActor
-final class AIChatOmnibarBrandLogoLayoutTests: XCTestCase {
+final class AIChatOmnibarDuckAILogoLayoutTests: XCTestCase {
 
     // MARK: - Prompt Bar
 
-    func testWhenSurfaceIsPromptBarThenTheBrandLogoLeadsThePrompt() {
+    func testWhenSurfaceIsPromptBarThenTheDuckAILogoLeadsThePrompt() {
         let textViewController = layOutTextContainer(surface: .promptBar)
 
-        guard let logo = brandLogo(in: textViewController.view) else {
-            return XCTFail("No brand logo in the Prompt Bar's prompt")
+        guard let logo = duckAILogo(in: textViewController.view) else {
+            return XCTFail("No Duck.ai logo in the Prompt Bar's prompt")
         }
 
         XCTAssertEqual(logo.bounds.width, 24, accuracy: 0.5)
@@ -43,12 +43,12 @@ final class AIChatOmnibarBrandLogoLayoutTests: XCTestCase {
         XCTAssertNotNil(logo.image, "The logo view has no image, so nothing renders")
     }
 
-    func testWhenSurfaceIsPromptBarThenThePromptTextClearsTheBrandLogo() {
+    func testWhenSurfaceIsPromptBarThenThePromptTextClearsTheDuckAILogo() {
         let textViewController = layOutTextContainer(surface: .promptBar)
         let host = textViewController.view
 
-        guard let logo = brandLogo(in: host) else {
-            return XCTFail("No brand logo in the Prompt Bar's prompt")
+        guard let logo = duckAILogo(in: host) else {
+            return XCTFail("No Duck.ai logo in the Prompt Bar's prompt")
         }
         let logoTrailing = host.convert(NSPoint(x: logo.bounds.maxX, y: 0), from: logo).x
 
@@ -66,11 +66,11 @@ final class AIChatOmnibarBrandLogoLayoutTests: XCTestCase {
         XCTAssertEqual(placeholderIndent, textIndent, accuracy: 0.5)
     }
 
-    func testWhenTheBrandLogoIsClickedThenTheHitGoesToThePromptEditor() {
+    func testWhenTheDuckAILogoIsClickedThenTheHitGoesToThePromptEditor() {
         let host = layOutTextContainer(surface: .promptBar).view
 
-        guard let logo = brandLogo(in: host) else {
-            return XCTFail("No brand logo in the Prompt Bar's prompt")
+        guard let logo = duckAILogo(in: host) else {
+            return XCTFail("No Duck.ai logo in the Prompt Bar's prompt")
         }
         let logoCentre = host.convert(NSPoint(x: logo.bounds.midX, y: logo.bounds.midY), from: logo)
 
@@ -80,10 +80,10 @@ final class AIChatOmnibarBrandLogoLayoutTests: XCTestCase {
 
     // MARK: - Address bar
 
-    func testWhenSurfaceIsAddressBarThenThereIsNoBrandLogo() {
+    func testWhenSurfaceIsAddressBarThenThereIsNoDuckAILogo() {
         let textViewController = layOutTextContainer(surface: .addressBar)
 
-        XCTAssertNil(brandLogo(in: textViewController.view))
+        XCTAssertNil(duckAILogo(in: textViewController.view))
     }
 
     func testWhenSurfaceIsAddressBarThenThePromptTextIsNotIndented() {
@@ -114,7 +114,7 @@ final class AIChatOmnibarBrandLogoLayoutTests: XCTestCase {
         return host.convert(NSPoint(x: placeholder.bounds.minX, y: 0), from: placeholder).x
     }
 
-    private func brandLogo(in host: NSView) -> NSImageView? {
+    private func duckAILogo(in host: NSView) -> NSImageView? {
         firstDescendant(of: host, ofType: NSImageView.self)
     }
 

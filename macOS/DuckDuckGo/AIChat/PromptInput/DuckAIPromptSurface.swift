@@ -67,7 +67,7 @@ extension DuckAIPromptSurface {
         }
     }
 
-    var showsBrandLogo: Bool {
+    var showsDuckAILogo: Bool {
         switch self {
         case .addressBar: false
         case .promptBar: true

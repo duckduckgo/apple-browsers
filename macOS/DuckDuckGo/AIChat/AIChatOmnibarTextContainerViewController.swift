@@ -36,9 +36,9 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
         static let placeholderLeadingOffset: CGFloat = 10
         static let placeholderLegacyLeadingOffset: CGFloat = 9
         static let textLeadingOffset: CGFloat = 10
-        static let brandLogoSize: CGFloat = 24
-        static let brandLogoToTextSpacing: CGFloat = 12
-        static let brandLogoTextIndent: CGFloat = brandLogoSize + brandLogoToTextSpacing
+        static let duckAILogoSize: CGFloat = 24
+        static let duckAILogoToTextSpacing: CGFloat = 12
+        static let duckAILogoTextIndent: CGFloat = duckAILogoSize + duckAILogoToTextSpacing
     }
 
     private let backgroundView = MouseBlockingBackgroundView()
@@ -49,7 +49,7 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
     private let textContainer = NSTextContainer()
     private let textView: FocusableTextView
     private let placeholderLabel = ClickThroughLabel(labelWithString: "")
-    private let brandLogoView = ClickThroughImageView()
+    private let duckAILogoView = ClickThroughImageView()
     private let dividerView = ColorView(frame: .zero)
     private let omnibarController: AIChatOmnibarController
     /// Coordinator for the `@`-mention tab picker. `nil` until the first detected token, so
@@ -210,8 +210,8 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
 
         let placeholderLeadingConstant = themeManager.isAppRebranded ? Constants.placeholderLeadingOffset : Constants.placeholderLegacyLeadingOffset
 
-        let showsBrandLogo = omnibarController.surface.showsBrandLogo
-        let textIndent = showsBrandLogo ? Constants.brandLogoTextIndent : 0
+        let showsDuckAILogo = omnibarController.surface.showsDuckAILogo
+        let textIndent = showsDuckAILogo ? Constants.duckAILogoTextIndent : 0
 
         NSLayoutConstraint.activate([
             backgroundView.topAnchor.constraint(equalTo: view.topAnchor),
@@ -239,24 +239,24 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
             placeholderLabel.topAnchor.constraint(equalTo: scrollView.topAnchor, constant: 9),
         ])
 
-        if showsBrandLogo {
+        if showsDuckAILogo {
             setUpDuckAILogo()
         }
     }
 
     private func setUpDuckAILogo() {
-        brandLogoView.translatesAutoresizingMaskIntoConstraints = false
-        brandLogoView.image = DesignSystemImages.Color.Size24.duckAI
-        brandLogoView.imageScaling = .scaleProportionallyUpOrDown
-        brandLogoView.hitTestForwardingTarget = textView
-        brandLogoView.setAccessibilityElement(false)
-        containerView.addSubview(brandLogoView)
+        duckAILogoView.translatesAutoresizingMaskIntoConstraints = false
+        duckAILogoView.image = DesignSystemImages.Color.Size24.duckAI
+        duckAILogoView.imageScaling = .scaleProportionallyUpOrDown
+        duckAILogoView.hitTestForwardingTarget = textView
+        duckAILogoView.setAccessibilityElement(false)
+        containerView.addSubview(duckAILogoView)
 
         NSLayoutConstraint.activate([
-            brandLogoView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: Constants.textLeadingOffset),
-            brandLogoView.centerYAnchor.constraint(equalTo: placeholderLabel.centerYAnchor),
-            brandLogoView.widthAnchor.constraint(equalToConstant: Constants.brandLogoSize),
-            brandLogoView.heightAnchor.constraint(equalToConstant: Constants.brandLogoSize)
+            duckAILogoView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: Constants.textLeadingOffset),
+            duckAILogoView.centerYAnchor.constraint(equalTo: placeholderLabel.centerYAnchor),
+            duckAILogoView.widthAnchor.constraint(equalToConstant: Constants.duckAILogoSize),
+            duckAILogoView.heightAnchor.constraint(equalToConstant: Constants.duckAILogoSize)
         ])
     }
 

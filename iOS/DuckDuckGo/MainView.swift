@@ -120,9 +120,20 @@ enum WindowControlsRowLayout {
         return view.isWindowedPresentation
     }
 
+    static func sharesRow(in view: UIView, for size: CGSize, featureFlagger: FeatureFlagger?) -> Bool {
+        guard let featureFlagger, isEnabled(featureFlagger: featureFlagger) else { return false }
+        return view.isWindowedPresentation(for: size)
+    }
+
     static func leadingInset(in view: UIView) -> CGFloat {
         guard #available(iOS 26, *) else { return 0 }
         return view.directionalEdgeInsets(for: .margins(cornerAdaptation: .horizontal)).leading
+    }
+
+    static func topInset(in view: UIView, sharesRow: Bool) -> CGFloat {
+        guard #available(iOS 26, *) else { return 0 }
+        let adaptation: UIView.LayoutRegion.AdaptivityAxis = sharesRow ? .horizontal : .vertical
+        return view.directionalEdgeInsets(for: .margins(cornerAdaptation: adaptation)).top
     }
 
     static func rowHeight(in view: UIView) -> CGFloat {

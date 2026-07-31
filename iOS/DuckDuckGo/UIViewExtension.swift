@@ -76,8 +76,13 @@ extension UIView {
 
     /// Detects a window smaller than its screen using sorted dimensions and 1 pt tolerance for rounding.
     var isWindowedPresentation: Bool {
-        guard let window, let scene = window.windowScene else { return false }
-        let windowSides = [window.frame.width, window.frame.height].sorted()
+        guard let window else { return false }
+        return isWindowedPresentation(for: window.frame.size)
+    }
+
+    func isWindowedPresentation(for size: CGSize) -> Bool {
+        guard let scene = window?.windowScene else { return false }
+        let windowSides = [size.width, size.height].sorted()
         let screenSides = [scene.screen.bounds.width, scene.screen.bounds.height].sorted()
         return windowSides[0] < screenSides[0] - 1 || windowSides[1] < screenSides[1] - 1
     }

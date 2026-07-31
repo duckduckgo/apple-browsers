@@ -235,8 +235,7 @@ class MainViewController: UIViewController {
     /// separately from container alpha because the floating capsule morph drives chrome alpha with a
     /// non-linear handoff ramp, so alpha is no longer a reliable source for the real percent.
     private var lastChromeVisibilityPercent: CGFloat = 1
-    // Both values can change independently and affect shared row clearance.
-    private var lastWindowControlsRowState: (sharesRow: Bool, tabsBarHidden: Bool) = (false, false)
+    private var lastWindowControlsRowState: (sharesRow: Bool, tabsBarHidden: Bool, topInset: CGFloat) = (false, false, -1)
     private var lastForegroundEntryDate = Date.distantPast
     private var syncRecoveryPromptService: SyncRecoveryPromptService?
     private var currentNTPEscapeHatch: EscapeHatchModel?
@@ -2845,7 +2844,8 @@ class MainViewController: UIViewController {
             self.viewWillTransitionAnimationComplete(
                 toolbarSnapshot: toolbarSnapshot,
                 isKeyboardShowing: isKeyboardShowing,
-                isShowingToolbar: isShowingToolbar)
+                isShowingToolbar: isShowingToolbar,
+                targetSize: size)
         }
 
         hideNotificationBarIfBrokenSitePromptShown()
@@ -2853,7 +2853,8 @@ class MainViewController: UIViewController {
 
     private func viewWillTransitionAnimationComplete(toolbarSnapshot: UIView?,
                                                      isKeyboardShowing: Bool,
-                                                     isShowingToolbar: Bool) {
+                                                     isShowingToolbar: Bool,
+                                                     targetSize: CGSize) {
         toolbarSnapshot?.removeFromSuperview()
 
         resetBarsAfterTransitionAnimationIfNeeded(wasKeyboardShowing: isKeyboardShowing)
@@ -2877,8 +2878,11 @@ class MainViewController: UIViewController {
             view.layoutIfNeeded()
         }
 
-        // Window reports full screen until resize animation settles.
-        updateWindowControlsRowMetricsIfNeeded()
+        let sharesRow = WindowControlsRowLayout.sharesRow(in: view, for: targetSize, featureFlagger: featureFlagger)
+        updateWindowControlsRowMetricsIfNeeded(sharesRow: sharesRow, force: true)
+        DispatchQueue.main.async { [weak self] in
+            self?.updateWindowControlsRowMetricsIfNeeded(sharesRow: sharesRow, force: true)
+        }
 
         ViewHighlighter.updatePositions()
         // iOS reframes the keyboard post-rotation with no animation, so the UTI height can only
@@ -4510,13 +4514,14 @@ extension MainViewController: BrowserChromeDelegate {
         WindowControlsRowLayout.sharesRow(in: view, featureFlagger: featureFlagger)
     }
 
-    // State guard prevents layout below from recursing.
-    private func updateWindowControlsRowMetricsIfNeeded() {
+    private func updateWindowControlsRowMetricsIfNeeded(sharesRow requestedSharesRow: Bool? = nil, force: Bool = false) {
         guard isWindowControlsRowEnabled else { return }
 
-        let state = (sharesRow: sharesWindowControlsRow,
-                     tabsBarHidden: viewCoordinator.tabBarContainer.isHidden)
-        guard state != lastWindowControlsRowState else { return }
+        let sharesRow = requestedSharesRow ?? sharesWindowControlsRow
+        let state = (sharesRow: sharesRow,
+                     tabsBarHidden: viewCoordinator.tabBarContainer.isHidden,
+                     topInset: WindowControlsRowLayout.topInset(in: view, sharesRow: sharesRow))
+        guard force || state != lastWindowControlsRowState else { return }
 
         lastWindowControlsRowState = state
         viewCoordinator.setChromeSharesWindowControlsRow(state.sharesRow)

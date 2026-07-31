@@ -67,6 +67,14 @@ extension DuckAIPromptSurface {
         }
     }
 
+    /// A leading Duck.ai mark, standing in for the branding the browser chrome gives the address bar.
+    var showsBrandLogo: Bool {
+        switch self {
+        case .addressBar: false
+        case .promptBar: true
+        }
+    }
+
     /// Set for surfaces with no window of their own, whose host has to resolve one first. Covers the
     /// voice button too.
     var routesSubmissionThroughHost: Bool {

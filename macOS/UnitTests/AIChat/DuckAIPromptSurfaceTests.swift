@@ -36,6 +36,7 @@ final class DuckAIPromptSurfaceTests: XCTestCase {
         let surface = DuckAIPromptSurface.addressBar
 
         XCTAssertFalse(surface.drawsOwnChrome)
+        XCTAssertFalse(surface.showsBrandLogo)
         XCTAssertFalse(surface.routesSubmissionThroughHost)
     }
 
@@ -57,6 +58,7 @@ final class DuckAIPromptSurfaceTests: XCTestCase {
         let surface = DuckAIPromptSurface.promptBar
 
         XCTAssertTrue(surface.drawsOwnChrome)
+        XCTAssertTrue(surface.showsBrandLogo)
         XCTAssertTrue(surface.routesSubmissionThroughHost)
     }
 }

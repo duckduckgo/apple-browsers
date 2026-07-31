@@ -150,6 +150,21 @@ exit "${FAKE_EXIT:-0}"
                 f"{detail}\t{status}\thttps://{site}/\ttext/html\t\n"
             )
 
+    def test_lcp_uses_a_dot_decimal_separator_under_a_comma_locale(self) -> None:
+        # awk formats and parses numbers according to LC_NUMERIC, so an operator
+        # or runner with a comma-decimal locale would otherwise write "1000,0"
+        # into the results TSV that CI ingests.
+        result = self.run_harness(
+            FAKE_RESULTS="1", FAKE_METRIC="1", LC_ALL="es_ES.UTF-8"
+        )
+        context = self.failure_context(result)
+        self.assertEqual(result.returncode, 0, context)
+        measurement = next(
+            (self.root / "crossbench-results").glob("*.tsv")
+        ).read_text()
+        self.assertIn("1000.0", measurement, context)
+        self.assertNotIn("1000,0", measurement, context)
+
     def test_crossbench_nonzero_with_results_is_infra_error_and_keeps_sample(self) -> None:
         result = self.run_harness(FAKE_RESULTS="1", FAKE_METRIC="1", FAKE_EXIT="7")
         context = self.failure_context(result)

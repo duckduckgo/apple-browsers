@@ -37,6 +37,12 @@
 #   ./test-chrome.sh [--sites a.com,b.com] [--reps N] [--out FILE]
 #
 set -euo pipefail
+# Everything this script emits is machine-readable, so no text handling may
+# follow the operator's locale. Under a comma-decimal locale awk renders an
+# LCP of 1000.0 ms as "1000,0" in the TSV that CI ingests; character ranges
+# and sort order would vary the same way. LC_NUMERIC alone is not enough
+# because LC_ALL overrides it, so pin the whole environment to C.
+export LC_ALL=C
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=macOS/scripts/crossbench/wpr-config.sh

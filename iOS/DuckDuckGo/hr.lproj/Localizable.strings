@@ -103,6 +103,9 @@
 /* Cancel action - button shown in alert */
 "action.title.cancel" = "Otkaži";
 
+/* Open the native Duck.ai chat history sheet from the browser menu. */
+"action.title.chats" = "Čavrljanja";
+
 /* Copy action */
 "action.title.copy" = "Kopiraj";
 
@@ -247,24 +250,6 @@
 /* Settings screen title for AI features */
 "ai-features.settings.title" = "AI značajke";
 
-/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as a regular text conversation. */
-"aiChat.tabSwitcher.card.chip.chat" = "Čavrljanje";
-
-/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as the transcript of a finished voice conversation. Not translated; final copy will land in a follow-up PR. */
-"aiChat.tabSwitcher.card.chip.transcript" = "Transkript";
-
-/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as a live voice session. Not translated; final copy will land in a follow-up PR. */
-"aiChat.tabSwitcher.card.chip.voice" = "Glasovno čavrljanje";
-
-/* Title shown on a Duck.ai tab grid card when the chat has no title yet. Not translated; final copy will land in a follow-up PR. */
-"aiChat.tabSwitcher.card.untitledChat" = "Novo čavrljanje";
-
-/* Status label at the top of the Duck.ai tab grid card for a tab with a live voice session in progress. A leading microphone glyph is shown next to it in the UI. Not translated; final copy will land in a follow-up PR. */
-"aiChat.tabSwitcher.card.voice.listening" = "Slušanje…";
-
-/* VoiceOver label for the Duck.ai tab grid card of a tab with a live voice session — same as the visible status without the decorative emoji. Not translated; final copy will land in a follow-up PR. */
-"aiChat.tabSwitcher.card.voice.listening.accessibilityLabel" = "Sluša se...";
-
 /* List row label in the app menu on a Duck.ai tab — opens the recent Duck.ai chats sidebar */
 "aichat.appMenu.chats" = "Čavrljanja";
 
@@ -298,6 +283,9 @@
 /* Error message displayed when the user has attached more images than are allowed in one message. Parameter is the backend-provided maximum number of images per message. */
 "aichat.attachment.image.turn.limit" = "Možeš priložiti samo %d slike/a odjednom.";
 
+/* Top-level attachment menu option to attach the current page content to an AI chat message */
+"aichat.attachment.option.ask.about.page" = "Pitaj o stranici";
+
 /* Top-level attachment menu option to add a file to an AI chat message */
 "aichat.attachment.option.attach.file" = "Dodaj datoteku";
 
@@ -328,6 +316,9 @@
 /* Title for the New Fire Tab row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newFireTab" = "Nova Fire kartica";
 
+/* Title for the New Image row in the Duck.ai tab header Plus (+) menu — opens Duck.ai in image generation mode */
+"aichat.header.plusMenu.newImage" = "Nova slika";
+
 /* Title for the New Search row in the Duck.ai tab header Plus (+) menu — opens a new tab and forces search mode for that entry */
 "aichat.header.plusMenu.newSearch" = "Novo pretraživanje";
 
@@ -336,6 +327,75 @@
 
 /* Title for the New Voice Chat row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newVoiceChat" = "Novo glasovno čavrljanje";
+
+/* Error toast shown when a Duck.ai chat download fails and nothing was saved. */
+"aiChat.history.download.failed.message" = "Preuzimanje nije uspjelo. Pokušaj ponovno.";
+
+/* Primary button on the empty Duck.ai chat-history screen; opens the Duck.ai web chat. */
+"aiChat.history.emptyState.openDuckAi" = "Otvori Duck.ai";
+
+/* Title shown when the user has no Duck.ai chat history yet. */
+"aiChat.history.emptyState.title" = "Nema nedavnih čavrljanja";
+
+/* Message of the alert shown when Duck.ai chat history fails to load. */
+"aiChat.history.loadError.message" = "Došlo je do pogreške prilikom učitavanja tvojih Duck.ai čavrljanja. Pokušaj ponovno nešto kasnije.";
+
+/* Title of the alert shown when Duck.ai chat history fails to load. */
+"aiChat.history.loadError.title" = "Nije moguće učitati čavrljanja";
+
+/* Accessibility label for the overflow (three dots) menu button in the Duck.ai chat history navigation bar. */
+"aiChat.history.menu.a11y" = "Više";
+
+/* Menu item opening Duck.ai Chat Protection settings from the Duck.ai chat history list. */
+"aiChat.history.menu.chatProtection" = "Zaštita čavrljanja";
+
+/* Menu item that starts multi-selecting chats in the Duck.ai chat history list. */
+"aiChat.history.menu.selectChats" = "Odaberi čavrljanja";
+
+/* Shown inside the Duck.ai chat history list when the user's search query returns no matching chats. */
+"aiChat.history.noSearchResults.title" = "Nema pronađenih rezultata";
+
+/* Long-press row menu item that deletes a Duck.ai chat. */
+"aiChat.history.rowMenu.delete" = "Izbriši";
+
+/* Long-press row menu item that downloads a Duck.ai chat. */
+"aiChat.history.rowMenu.download" = "Preuzimanje";
+
+/* Long-press row menu item that pins a Duck.ai chat. */
+"aiChat.history.rowMenu.pin" = "Prikvači";
+
+/* Long-press row menu item that starts multi-selecting chats in the Duck.ai chat history list. */
+"aiChat.history.rowMenu.select" = "Odabir";
+
+/* Long-press row menu item that unpins a Duck.ai chat. */
+"aiChat.history.rowMenu.unpin" = "Otkvači";
+
+/* Accessibility label for the search button in the Duck.ai chat history navigation bar. */
+"aiChat.history.search.a11y" = "Traži";
+
+/* Placeholder for the search bar at the top of the Duck.ai chat history list. */
+"aiChat.history.searchBar.placeholder" = "Traži";
+
+/* Section header above the user's pinned chats in the Duck.ai chat history list. */
+"aiChat.history.section.pinned" = "Prikvačeno";
+
+/* Section header above the user's recent (unpinned) chats in the Duck.ai chat history list. */
+"aiChat.history.section.recent" = "Nedavno";
+
+/* Multi-select toolbar button that deletes all chats when none are individually selected. */
+"aiChat.history.selection.deleteAll" = "Izbriši sve";
+
+/* Accessibility label for the delete action revealed by swiping a Duck.ai chat row. */
+"aiChat.history.swipe.delete.a11y" = "Izbriši čavrljanje";
+
+/* Accessibility label for the download action revealed by swiping a Duck.ai chat row. */
+"aiChat.history.swipe.download.a11y" = "Preuzmi čavrljanje";
+
+/* Accessibility label for the pin action revealed by leading-swiping a Duck.ai chat row in the Recent section. */
+"aiChat.history.swipe.pin.a11y" = "Prikvači čavrljanje";
+
+/* Accessibility label for the unpin action revealed by leading-swiping a Duck.ai chat row in the Pinned section. */
+"aiChat.history.swipe.unpin.a11y" = "Otkvači čavrljanje";
 
 /* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.extended.subtitle" = "Za analitičke zadatke";
@@ -355,18 +415,6 @@
 /* Title for the reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.reasoning.title" = "Rasuđivanje";
 
-/* Body of the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. ** markers indicate bold text and should be preserved around the translated equivalents of the menu options Settings, Sync & Backup, and Sync With Another Device. */
-"aiChat.syncIntroSheet.body" = "Pronađi QR kôd u aplikaciji DuckDuckGo na drugom uređaju tako da odeš na **Postavke** › **Sync & Backup** › **Sinkronizacija s drugim uređajem**.";
-
-/* Secondary button on the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. */
-"aiChat.syncIntroSheet.notNow" = "Ne sada";
-
-/* Primary button on the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. */
-"aiChat.syncIntroSheet.scan.button" = "Skeniraj QR kôd";
-
-/* Title of the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. */
-"aiChat.syncIntroSheet.title" = "Sinkroniziraj svoje razgovore na svim svojim uređajima!";
-
 /* Primary button of the sync promo card shown above the Duck.ai recent chats list. */
 "aiChat.syncPromo.button" = "Sinkronizacija s drugim uređajem";
 
@@ -375,6 +423,24 @@
 
 /* Headline of the sync promo card shown above the Duck.ai recent chats list. */
 "aiChat.syncPromo.title" = "Pristupi svojim čavrljanjima na svim uređajima pomoću opcije Sync & Backup.";
+
+/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as a regular text conversation. */
+"aiChat.tabSwitcher.card.chip.chat" = "Čavrljanje";
+
+/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as the transcript of a finished voice conversation. */
+"aiChat.tabSwitcher.card.chip.transcript" = "Transkript";
+
+/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as a live voice session. */
+"aiChat.tabSwitcher.card.chip.voice" = "Glasovno čavrljanje";
+
+/* Title shown on a Duck.ai tab grid card when the chat has no title yet. */
+"aiChat.tabSwitcher.card.untitledChat" = "Novo čavrljanje";
+
+/* Status label at the top of the Duck.ai tab grid card for a tab with a live voice session in progress. A leading microphone glyph is shown next to it in the UI. */
+"aiChat.tabSwitcher.card.voice.listening" = "Slušanje…";
+
+/* VoiceOver label for the Duck.ai tab grid card of a tab with a live voice session — same as the visible status without the decorative emoji. */
+"aiChat.tabSwitcher.card.voice.listening.accessibilityLabel" = "Sluša se...";
 
 /* Subtitle for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.subtitle" = "Postavi ton, duljinu i ponašanje";
@@ -540,8 +606,6 @@
 
 /* Description for unable to sync to server error */
 "alert.unable-to-sync-to-server-description" = "Nije moguće spojiti se na poslužitelj.";
-
-/* Description for unable to sync with another device error */
 
 /* Description for unable to turn sync off error */
 "alert.unable-to-turn-sync-off-description" = "Nije moguće isključiti Sinkronizaciju i sigurnosno kopiranje.";
@@ -3201,6 +3265,9 @@
 /* Message label text for the status view when VPN is disconnected */
 "network.protection.status.header.message.on" = "Sav internetski promet uređaja osiguran je\nputem VPN-a.";
 
+/* Status view message shown while the VPN is on but Strict routing is off */
+"network.protection.status.header.message.strict.routing.off" = "Dio prometa može zaobići VPN dok je opcija Strogo usmjeravanje isključena. Strogo usmjeravanje preporučuje se za javne mreže.";
+
 /* Header title label text for the status view when VPN is disconnected */
 "network.protection.status.header.title.off" = "DuckDuckGo VPN je isključen";
 
@@ -3243,8 +3310,29 @@
 /* Label shown on the title of the settings section in NetworkProtection's status view. */
 "network.protection.status.view.settings.section.title" = "Upravljanje";
 
+/* Label for the status pill shown while the VPN's Strict routing setting is off */
+"network.protection.status.view.strict.routing.pill.off" = "Strogo usmjeravanje: isključeno";
+
+/* Label for the status pill shown while the VPN's Strict routing setting is on */
+"network.protection.status.view.strict.routing.pill.on" = "Strogo usmjeravanje: uključeno";
+
+/* Tooltip shown for the status pill while the VPN's Strict routing setting is off */
+"network.protection.status.view.strict.routing.pill.tooltip.off" = "Strogo usmjeravanje preporučuje se za javne mreže.";
+
+/* Tooltip shown for the status pill while the VPN's Strict routing setting is on */
+"network.protection.status.view.strict.routing.pill.tooltip.on" = "Neke aplikacije možda neće raditi dok je uključeno Strogo usmjeravanje.";
+
 /* Title label text for the status view when netP is disconnected */
 "network.protection.status.view.title" = "VPN";
+
+/* Title of the Troubleshooting section in the VPN status screen. */
+"network.protection.status.view.troubleshooting.section.title" = "Rješavanje problema";
+
+/* The body of the notification reminding the user to turn the VPN Strict routing setting back on */
+"network.protection.strict.routing.reminder.notification.body" = "Dio prometa može zaobići VPN dok je isključen. Strogo usmjeravanje preporučuje se za javne mreže.";
+
+/* The title of the notification reminding the user to turn the VPN Strict routing setting back on */
+"network.protection.strict.routing.reminder.notification.title" = "Strogo usmjeravanje je ISKLJUČENO";
 
 /* The body of the notification shown when VPN reconnects successfully */
 "network.protection.success.notification.body" = "DuckDuckGo VPN je uključen. Tvoja lokacija i aktivnosti na internetu zaštićeni su.";
@@ -3972,6 +4060,9 @@
 /* Button to delete all tabs and data in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.all.button" = "Izbriši sve";
 
+/* Button to delete all chats in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.chats.button" = "Izbriši čavrljanja";
+
 /* Button to delete a single tab and its site data in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.tab.button" = "Izbriši karticu";
 
@@ -4120,7 +4211,7 @@
 "settings.aichat.shortcuts.input.footer" = "Pretraži mrežu ili pitaj Duck.ai izravno iz adresne trake";
 
 /* Search Assist frequency option: never show AI-assisted answers */
-"settings.aifeatures.assist.never" = "Nikad";
+"settings.aifeatures.assist.never" = "Nikada";
 
 /* Search Assist frequency option: often show AI-assisted answers */
 "settings.aifeatures.assist.often" = "Često";
@@ -4144,7 +4235,7 @@
 "settings.aifeatures.chat.suggestions.title" = "Prijedlozi za čavrljanje";
 
 /* Button that turns off all AI features */
-"settings.aifeatures.disable.all" = "Koristi DuckDuckGo bez AI-a";
+"settings.aifeatures.disable.all" = "DuckDuckGo bez AI";
 
 /* Footer text below the disable all AI features button */
 "settings.aifeatures.disable.all.footer" = "Onemogućuje Duck.ai, skriva odgovore potpomognute umjetnom inteligencijom u pretraživanju i filtrira poznata web-mjesta s neželjenom umjetnom inteligencijom u rezultatima pretraživanja slika.";
@@ -4284,26 +4375,26 @@
 /* The name of the settings section containing options to set up the app */
 "settings.complete.setup" = "Dovrši postavljanje";
 
-/* The name of Settings category in Privacy Features related to configuration of the privacy feature related to cookie pop-ups */
-"settings.cookie.pop-up-protection.protection" = "Zaštita od kolačića i skočnih prozora";
-
-/* Explanation in Settings how the cookie pop up protection feature works */
-"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo može automatski upravljati postavkama kolačića kako bi maksimizirao privatnost, minimizirao kolačiće i zatvorio te skočne prozore.\n[Saznaj više](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
-
 /* Explanation below the auto-manage cookie pop-ups toggle in settings */
 "settings.cookie.auto-manage.explanation" = "Pokušat ćemo za tebe odabrati samo najprivatnije dostupne opcije kolačića, a zatim zatvoriti te skočne prozore.";
 
 /* Title for the auto-manage cookie pop-ups toggle in settings */
 "settings.cookie.auto-manage.title" = "Automatsko upravljanje skočnim prozorima kolačića";
 
+/* The name of Settings category in Privacy Features related to configuration of the privacy feature related to cookie pop-ups */
+"settings.cookie.pop-up-protection.protection" = "Zaštita od kolačića i skočnih prozora";
+
+/* Explanation in Settings how the cookie pop up protection feature works */
+"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo može automatski upravljati postavkama kolačića kako bi maksimizirao privatnost, minimizirao kolačiće i zatvorio te skočne prozore.\n[Saznaj više](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
+
+/* Settings screen cell text for Cookie popups */
+"settings.cookie.popups" = "Upravljanje skočnim prozorima kolačića";
+
 /* Explanation below the pop-ups without opt-outs toggle in settings */
 "settings.cookie.popups-without-opt-outs.explanation" = "Također neka DuckDuckGo uštedi jedan tvoj klik prihvaćanjem kolačića u tvoje ime kako bi zatvorio skočne prozore koji ti ne dopuštaju isključivanje.";
 
 /* Title for the pop-ups without opt-outs toggle in settings */
 "settings.cookie.popups-without-opt-outs.title" = "Skočni prozori bez mogućnosti isključivanja";
-
-/* Settings screen cell text for Cookie popups */
-"settings.cookie.popups" = "Upravljanje skočnim prozorima kolačića";
 
 /* Label for customizable toolbar button that deletes tabs and data */
 "settings.customizable.button.delete.tabs.and.data" = "Izbriši kartice i podatke";
@@ -5628,111 +5719,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Što želiš uvesti?";
 
-
-/* No comment provided by engineer. */
-"No matches for \"%@\"" = "Nema rezultata za \"%@\"";
-
-
-/* Open the native Duck.ai chat history sheet from the browser menu. */
-"action.title.chats" = "Čavrljanja";
-
-/* Title shown when the user has no Duck.ai chat history yet. */
-"aiChat.history.emptyState.title" = "Nema nedavnih čavrljanja";
-
-/* Primary button on the empty Duck.ai chat-history screen; opens the Duck.ai web chat. */
-"aiChat.history.emptyState.openDuckAi" = "Otvori Duck.ai";
-
-/* Placeholder for the search bar at the top of the Duck.ai chat history list. */
-"aiChat.history.searchBar.placeholder" = "Traži";
-
-/* Section header above the user's pinned chats in the Duck.ai chat history list. */
-"aiChat.history.section.pinned" = "Prikvačeno";
-
-/* Section header above the user's recent (unpinned) chats in the Duck.ai chat history list. */
-"aiChat.history.section.recent" = "Nedavno";
-
-/* Shown inside the Duck.ai chat history list when the user's search query returns no matching chats. */
-"aiChat.history.noSearchResults.title" = "Nema pronađenih rezultata";
-
-/* Title of the alert shown when Duck.ai chat history fails to load. */
-"aiChat.history.loadError.title" = "Nije moguće učitati čavrljanja";
-
-/* Message of the alert shown when Duck.ai chat history fails to load. */
-"aiChat.history.loadError.message" = "Došlo je do pogreške prilikom učitavanja tvojih Duck.ai čavrljanja. Pokušaj ponovno nešto kasnije.";
-
-/* Accessibility label for the delete action revealed by swiping a Duck.ai chat row. */
-"aiChat.history.swipe.delete.a11y" = "Izbriši čavrljanje";
-
-/* Accessibility label for the download action revealed by swiping a Duck.ai chat row. */
-"aiChat.history.swipe.download.a11y" = "Preuzmi čavrljanje";
-
-/* Accessibility label for the pin action revealed by leading-swiping a Duck.ai chat row in the Recent section. */
-"aiChat.history.swipe.pin.a11y" = "Prikvači čavrljanje";
-
-/* Accessibility label for the unpin action revealed by leading-swiping a Duck.ai chat row in the Pinned section. */
-"aiChat.history.swipe.unpin.a11y" = "Otkvači čavrljanje";
-
-/* Button to delete all chats in scoped fire confirmation dialog */
-"scoped.fire.confirmation.delete.chats.button" = "Izbriši čavrljanja";
-
-/* Top-level attachment menu option to attach the current page content to an AI chat message */
-"aichat.attachment.option.ask.about.page" = "Pitaj o stranici";
-
-/* Status view message shown while the VPN is on but Strict routing is off */
-"network.protection.status.header.message.strict.routing.off" = "Dio prometa može zaobići VPN dok je opcija Strogo usmjeravanje isključena. Strogo usmjeravanje preporučuje se za javne mreže.";
-
-/* Label for the status pill shown while the VPN's Strict routing setting is off */
-"network.protection.status.view.strict.routing.pill.off" = "Strogo usmjeravanje: isključeno";
-
-/* Label for the status pill shown while the VPN's Strict routing setting is on */
-"network.protection.status.view.strict.routing.pill.on" = "Strogo usmjeravanje: uključeno";
-
-/* Tooltip shown for the status pill while the VPN's Strict routing setting is off */
-"network.protection.status.view.strict.routing.pill.tooltip.off" = "Strogo usmjeravanje preporučuje se za javne mreže.";
-
-/* Tooltip shown for the status pill while the VPN's Strict routing setting is on */
-"network.protection.status.view.strict.routing.pill.tooltip.on" = "Neke aplikacije možda neće raditi dok je uključeno Strogo usmjeravanje.";
-
-/* Title of the Troubleshooting section in the VPN status screen. */
-"network.protection.status.view.troubleshooting.section.title" = "Rješavanje problema";
-
-/* The body of the notification reminding the user to turn the VPN Strict routing setting back on */
-"network.protection.strict.routing.reminder.notification.body" = "Dio prometa može zaobići VPN dok je isključen. Strogo usmjeravanje preporučuje se za javne mreže.";
-/* The title of the notification reminding the user to turn the VPN Strict routing setting back on */
-"network.protection.strict.routing.reminder.notification.title" = "Strogo usmjeravanje je ISKLJUČENO";
-
-/* Title for the New Image row in the Duck.ai tab header Plus (+) menu — opens Duck.ai in image generation mode */
-"aichat.header.plusMenu.newImage" = "Nova slika";
-
-/* Error toast shown when a Duck.ai chat download fails and nothing was saved. */
-"aiChat.history.download.failed.message" = "Preuzimanje nije uspjelo. Pokušaj ponovno.";
-
-/* Accessibility label for the overflow (three dots) menu button in the Duck.ai chat history navigation bar. */
-"aiChat.history.menu.a11y" = "Više";
-
-/* Menu item opening Duck.ai Chat Protection settings from the Duck.ai chat history list. */
-"aiChat.history.menu.chatProtection" = "Zaštita čavrljanja";
-
-/* Menu item that starts multi-selecting chats in the Duck.ai chat history list. */
-"aiChat.history.menu.selectChats" = "Odaberi čavrljanja";
-
-/* Long-press row menu item that deletes a Duck.ai chat. */
-"aiChat.history.rowMenu.delete" = "Izbriši";
-
-/* Long-press row menu item that downloads a Duck.ai chat. */
-"aiChat.history.rowMenu.download" = "Preuzimanje";
-
-/* Long-press row menu item that pins a Duck.ai chat. */
-"aiChat.history.rowMenu.pin" = "Prikvači";
-
-/* Long-press row menu item that starts multi-selecting chats in the Duck.ai chat history list. */
-"aiChat.history.rowMenu.select" = "Odabir";
-
-/* Long-press row menu item that unpins a Duck.ai chat. */
-"aiChat.history.rowMenu.unpin" = "Otkvači";
-
-/* Accessibility label for the search button in the Duck.ai chat history navigation bar. */
-"aiChat.history.search.a11y" = "Traži";
-
-/* Multi-select toolbar button that deletes all chats when none are individually selected. */
-"aiChat.history.selection.deleteAll" = "Izbriši sve";

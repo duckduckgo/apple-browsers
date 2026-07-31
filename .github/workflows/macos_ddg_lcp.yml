@@ -210,9 +210,20 @@ jobs:
               \( -name 'DuckDuckGo*' -o -name 'com.duckduckgo*' \) \
               -exec cp {} "$out/" \;
           done
-          log show --style compact --last 60m \
+          # Two separate views. The process predicate shows what the system did
+          # to the app; the subsystem predicate shows what the app itself logged,
+          # which is where its own reason for exiting appears.
+          log show --style compact --last 60m --info --debug \
             --predicate 'process BEGINSWITH "DuckDuckGo"' \
-            > "$out/unified-log.txt" 2>&1 || true
+            > "$out/unified-log-process.txt" 2>&1 || true
+          log show --style compact --last 60m --info --debug \
+            --predicate 'subsystem BEGINSWITH "com.duckduckgo"' \
+            > "$out/unified-log-subsystem.txt" 2>&1 || true
+          # Anything that terminated the app leaves a record here even when the
+          # app logs nothing itself.
+          log show --style compact --last 60m --info \
+            --predicate 'process == "launchd" OR process == "loginwindow" OR eventMessage CONTAINS "DuckDuckGo"' \
+            > "$out/unified-log-system.txt" 2>&1 || true
           ls -la "$out"
 
       - name: Upload app crash diagnostics

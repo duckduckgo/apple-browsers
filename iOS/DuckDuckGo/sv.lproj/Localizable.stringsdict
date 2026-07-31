@@ -2,6 +2,22 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>aiChat.history.download.complete.message</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@chats@</string>
+		<key>chats</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d chatt har laddats ner</string>
+			<key>other</key>
+			<string>%1$d chattar har laddats ner</string>
+		</dict>
+	</dict>
 	<key>aiChat.history.deleteAll.confirmation.title</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
@@ -690,22 +706,6 @@ Jag blockerade dem!
 			<string>%2$@ Spårare</string>
 			<key>other</key>
 			<string>%2$@ Spårare</string>
-		</dict>
-	</dict>
-	<key>aiChat.history.download.complete.message</key>
-	<dict>
-		<key>NSStringLocalizedFormatKey</key>
-		<string>%#@chats@</string>
-		<key>chats</key>
-		<dict>
-			<key>NSStringFormatSpecTypeKey</key>
-			<string>NSStringPluralRuleType</string>
-			<key>NSStringFormatValueTypeKey</key>
-			<string>d</string>
-			<key>one</key>
-			<string>%1$d chatt har laddats ner</string>
-			<key>other</key>
-			<string>%1$d chattar har laddats ner</string>
 		</dict>
 	</dict>
 </dict>

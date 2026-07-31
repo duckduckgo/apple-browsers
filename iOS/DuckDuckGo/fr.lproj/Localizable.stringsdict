@@ -2,6 +2,22 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>aiChat.history.download.complete.message</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@chats@</string>
+		<key>chats</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d discussion téléchargée</string>
+			<key>other</key>
+			<string>%1$d discussions téléchargées</string>
+		</dict>
+	</dict>
 	<key>aiChat.history.deleteAll.confirmation.title</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
@@ -690,22 +706,6 @@ Je les ai bloqués !
 			<string>%2$@ Trackeur bloqué</string>
 			<key>other</key>
 			<string>%2$@ Trackeurs bloqués</string>
-		</dict>
-	</dict>
-	<key>aiChat.history.download.complete.message</key>
-	<dict>
-		<key>NSStringLocalizedFormatKey</key>
-		<string>%#@chats@</string>
-		<key>chats</key>
-		<dict>
-			<key>NSStringFormatSpecTypeKey</key>
-			<string>NSStringPluralRuleType</string>
-			<key>NSStringFormatValueTypeKey</key>
-			<string>d</string>
-			<key>one</key>
-			<string>%1$d discussion téléchargée</string>
-			<key>other</key>
-			<string>%1$d discussions téléchargées</string>
 		</dict>
 	</dict>
 </dict>

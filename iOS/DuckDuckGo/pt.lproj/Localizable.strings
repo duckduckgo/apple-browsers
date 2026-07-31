@@ -103,6 +103,9 @@
 /* Cancel action - button shown in alert */
 "action.title.cancel" = "Cancelar";
 
+/* Open the native Duck.ai chat history sheet from the browser menu. */
+"action.title.chats" = "Conversas";
+
 /* Copy action */
 "action.title.copy" = "Copiar";
 
@@ -247,24 +250,6 @@
 /* Settings screen title for AI features */
 "ai-features.settings.title" = "Funcionalidades de IA";
 
-/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as a regular text conversation. */
-"aiChat.tabSwitcher.card.chip.chat" = "Chat";
-
-/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as the transcript of a finished voice conversation. Not translated; final copy will land in a follow-up PR. */
-"aiChat.tabSwitcher.card.chip.transcript" = "Transcrição";
-
-/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as a live voice session. Not translated; final copy will land in a follow-up PR. */
-"aiChat.tabSwitcher.card.chip.voice" = "Chat de voz";
-
-/* Title shown on a Duck.ai tab grid card when the chat has no title yet. Not translated; final copy will land in a follow-up PR. */
-"aiChat.tabSwitcher.card.untitledChat" = "Nova conversa";
-
-/* Status label at the top of the Duck.ai tab grid card for a tab with a live voice session in progress. A leading microphone glyph is shown next to it in the UI. Not translated; final copy will land in a follow-up PR. */
-"aiChat.tabSwitcher.card.voice.listening" = "A escutar…";
-
-/* VoiceOver label for the Duck.ai tab grid card of a tab with a live voice session — same as the visible status without the decorative emoji. Not translated; final copy will land in a follow-up PR. */
-"aiChat.tabSwitcher.card.voice.listening.accessibilityLabel" = "A escutar…";
-
 /* List row label in the app menu on a Duck.ai tab — opens the recent Duck.ai chats sidebar */
 "aichat.appMenu.chats" = "Chats";
 
@@ -298,6 +283,9 @@
 /* Error message displayed when the user has attached more images than are allowed in one message. Parameter is the backend-provided maximum number of images per message. */
 "aichat.attachment.image.turn.limit" = "Só podes anexar %d imagens de cada vez.";
 
+/* Top-level attachment menu option to attach the current page content to an AI chat message */
+"aichat.attachment.option.ask.about.page" = "Perguntar sobre a página";
+
 /* Top-level attachment menu option to add a file to an AI chat message */
 "aichat.attachment.option.attach.file" = "Adicionar ficheiro";
 
@@ -328,6 +316,9 @@
 /* Title for the New Fire Tab row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newFireTab" = "Novo separador Fire";
 
+/* Title for the New Image row in the Duck.ai tab header Plus (+) menu — opens Duck.ai in image generation mode */
+"aichat.header.plusMenu.newImage" = "Nova imagem";
+
 /* Title for the New Search row in the Duck.ai tab header Plus (+) menu — opens a new tab and forces search mode for that entry */
 "aichat.header.plusMenu.newSearch" = "Nova Pesquisa";
 
@@ -336,6 +327,75 @@
 
 /* Title for the New Voice Chat row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newVoiceChat" = "Novo chat de voz";
+
+/* Error toast shown when a Duck.ai chat download fails and nothing was saved. */
+"aiChat.history.download.failed.message" = "Não foi possível transferir. Tenta novamente.";
+
+/* Primary button on the empty Duck.ai chat-history screen; opens the Duck.ai web chat. */
+"aiChat.history.emptyState.openDuckAi" = "Abrir Duck.ai";
+
+/* Title shown when the user has no Duck.ai chat history yet. */
+"aiChat.history.emptyState.title" = "Sem conversas recentes";
+
+/* Message of the alert shown when Duck.ai chat history fails to load. */
+"aiChat.history.loadError.message" = "Ocorreu um erro ao carregar as tuas conversas do Duck.ai. Tenta novamente mais tarde.";
+
+/* Title of the alert shown when Duck.ai chat history fails to load. */
+"aiChat.history.loadError.title" = "Não foi possível carregar as conversas";
+
+/* Accessibility label for the overflow (three dots) menu button in the Duck.ai chat history navigation bar. */
+"aiChat.history.menu.a11y" = "Mais";
+
+/* Menu item opening Duck.ai Chat Protection settings from the Duck.ai chat history list. */
+"aiChat.history.menu.chatProtection" = "Proteção de conversas";
+
+/* Menu item that starts multi-selecting chats in the Duck.ai chat history list. */
+"aiChat.history.menu.selectChats" = "Selecionar conversas";
+
+/* Shown inside the Duck.ai chat history list when the user's search query returns no matching chats. */
+"aiChat.history.noSearchResults.title" = "Nenhuma correspondência encontrada";
+
+/* Long-press row menu item that deletes a Duck.ai chat. */
+"aiChat.history.rowMenu.delete" = "Eliminar";
+
+/* Long-press row menu item that downloads a Duck.ai chat. */
+"aiChat.history.rowMenu.download" = "Transferir";
+
+/* Long-press row menu item that pins a Duck.ai chat. */
+"aiChat.history.rowMenu.pin" = "Afixar";
+
+/* Long-press row menu item that starts multi-selecting chats in the Duck.ai chat history list. */
+"aiChat.history.rowMenu.select" = "Selecionar";
+
+/* Long-press row menu item that unpins a Duck.ai chat. */
+"aiChat.history.rowMenu.unpin" = "Desafixar";
+
+/* Accessibility label for the search button in the Duck.ai chat history navigation bar. */
+"aiChat.history.search.a11y" = "Pesquisar";
+
+/* Placeholder for the search bar at the top of the Duck.ai chat history list. */
+"aiChat.history.searchBar.placeholder" = "Pesquisar";
+
+/* Section header above the user's pinned chats in the Duck.ai chat history list. */
+"aiChat.history.section.pinned" = "Afixado";
+
+/* Section header above the user's recent (unpinned) chats in the Duck.ai chat history list. */
+"aiChat.history.section.recent" = "Recente";
+
+/* Multi-select toolbar button that deletes all chats when none are individually selected. */
+"aiChat.history.selection.deleteAll" = "Eliminar tudo";
+
+/* Accessibility label for the delete action revealed by swiping a Duck.ai chat row. */
+"aiChat.history.swipe.delete.a11y" = "Eliminar conversa";
+
+/* Accessibility label for the download action revealed by swiping a Duck.ai chat row. */
+"aiChat.history.swipe.download.a11y" = "Descarregar conversa";
+
+/* Accessibility label for the pin action revealed by leading-swiping a Duck.ai chat row in the Recent section. */
+"aiChat.history.swipe.pin.a11y" = "Fixar conversa";
+
+/* Accessibility label for the unpin action revealed by leading-swiping a Duck.ai chat row in the Pinned section. */
+"aiChat.history.swipe.unpin.a11y" = "Desafixar conversa";
 
 /* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.extended.subtitle" = "Para tarefas analíticas";
@@ -355,18 +415,6 @@
 /* Title for the reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.reasoning.title" = "Raciocínio";
 
-/* Body of the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. ** markers indicate bold text and should be preserved around the translated equivalents of the menu options Settings, Sync & Backup, and Sync With Another Device. */
-"aiChat.syncIntroSheet.body" = "Encontra o código QR na aplicação DuckDuckGo no teu outro dispositivo e acede a **Definições** › **Sync & Backup** › **Sincronizar com outro dispositivo**.";
-
-/* Secondary button on the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. */
-"aiChat.syncIntroSheet.notNow" = "Agora não";
-
-/* Primary button on the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. */
-"aiChat.syncIntroSheet.scan.button" = "Ler código QR";
-
-/* Title of the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. */
-"aiChat.syncIntroSheet.title" = "Vamos sincronizar as tuas conversas em todos os teus dispositivos!";
-
 /* Primary button of the sync promo card shown above the Duck.ai recent chats list. */
 "aiChat.syncPromo.button" = "Sincronizar com outro dispositivo";
 
@@ -375,6 +423,24 @@
 
 /* Headline of the sync promo card shown above the Duck.ai recent chats list. */
 "aiChat.syncPromo.title" = "Acede às tuas conversas em todos os teus dispositivos através da funcionalidade Sync & Backup.";
+
+/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as a regular text conversation. */
+"aiChat.tabSwitcher.card.chip.chat" = "Chat";
+
+/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as the transcript of a finished voice conversation. */
+"aiChat.tabSwitcher.card.chip.transcript" = "Transcrição";
+
+/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as a live voice session. */
+"aiChat.tabSwitcher.card.chip.voice" = "Chat de voz";
+
+/* Title shown on a Duck.ai tab grid card when the chat has no title yet. */
+"aiChat.tabSwitcher.card.untitledChat" = "Nova conversa";
+
+/* Status label at the top of the Duck.ai tab grid card for a tab with a live voice session in progress. A leading microphone glyph is shown next to it in the UI. */
+"aiChat.tabSwitcher.card.voice.listening" = "A escutar…";
+
+/* VoiceOver label for the Duck.ai tab grid card of a tab with a live voice session — same as the visible status without the decorative emoji. */
+"aiChat.tabSwitcher.card.voice.listening.accessibilityLabel" = "A escutar…";
 
 /* Subtitle for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.subtitle" = "Define o tom, a duração e o comportamento";
@@ -540,8 +606,6 @@
 
 /* Description for unable to sync to server error */
 "alert.unable-to-sync-to-server-description" = "Não foi possível ligar ao servidor.";
-
-/* Description for unable to sync with another device error */
 
 /* Description for unable to turn sync off error */
 "alert.unable-to-turn-sync-off-description" = "Não foi possível desativar a Sincronização e cópia de segurança.";
@@ -2961,6 +3025,9 @@
 /* Message label text for the status view when VPN is disconnected */
 "network.protection.status.header.message.on" = "Todo o tráfego de Internet do dispositivo está protegido\n através da VPN.";
 
+/* Status view message shown while the VPN is on but Strict routing is off */
+"network.protection.status.header.message.strict.routing.off" = "Algum tráfego pode contornar a VPN enquanto o encaminhamento estrito estiver desativado. O encaminhamento estrito é recomendado para redes públicas.";
+
 /* Header title label text for the status view when VPN is disconnected */
 "network.protection.status.header.title.off" = "A DuckDuckGo VPN está Desativada";
 
@@ -3003,8 +3070,29 @@
 /* Label shown on the title of the settings section in NetworkProtection's status view. */
 "network.protection.status.view.settings.section.title" = "Gerir";
 
+/* Label for the status pill shown while the VPN's Strict routing setting is off */
+"network.protection.status.view.strict.routing.pill.off" = "Encaminhamento estrito: desativado";
+
+/* Label for the status pill shown while the VPN's Strict routing setting is on */
+"network.protection.status.view.strict.routing.pill.on" = "Encaminhamento estrito: ativado";
+
+/* Tooltip shown for the status pill while the VPN's Strict routing setting is off */
+"network.protection.status.view.strict.routing.pill.tooltip.off" = "O encaminhamento estrito é recomendado para redes públicas.";
+
+/* Tooltip shown for the status pill while the VPN's Strict routing setting is on */
+"network.protection.status.view.strict.routing.pill.tooltip.on" = "Algumas aplicações podem não funcionar enquanto o encaminhamento estrito estiver ativado.";
+
 /* Title label text for the status view when netP is disconnected */
 "network.protection.status.view.title" = "VPN";
+
+/* Title of the Troubleshooting section in the VPN status screen. */
+"network.protection.status.view.troubleshooting.section.title" = "Resolução de problemas";
+
+/* The body of the notification reminding the user to turn the VPN Strict routing setting back on */
+"network.protection.strict.routing.reminder.notification.body" = "Algum tráfego pode contornar a VPN enquanto estiver desativada. O encaminhamento estrito é recomendado para redes públicas.";
+
+/* The title of the notification reminding the user to turn the VPN Strict routing setting back on */
+"network.protection.strict.routing.reminder.notification.title" = "O encaminhamento estrito está desativado";
 
 /* The body of the notification shown when VPN reconnects successfully */
 "network.protection.success.notification.body" = "A VPN DuckDuckGo está ativada. A tua localização e atividade online estão protegidas.";
@@ -3732,6 +3820,9 @@
 /* Button to delete all tabs and data in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.all.button" = "Eliminar tudo";
 
+/* Button to delete all chats in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.chats.button" = "Eliminar conversas";
+
 /* Button to delete a single tab and its site data in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.tab.button" = "Eliminar separador";
 
@@ -3886,13 +3977,13 @@
 "settings.aifeatures.assist.often" = "Frequentemente";
 
 /* Search Assist frequency option: show AI-assisted answers on demand */
-"settings.aifeatures.assist.ondemand" = "Sob pedido";
+"settings.aifeatures.assist.ondemand" = "A pedido";
 
 /* Search Assist frequency option: sometimes show AI-assisted answers */
 "settings.aifeatures.assist.sometimes" = "Às vezes";
 
 /* Title of the native Search Assist setting control */
-"settings.aifeatures.assist.title" = "Assist de pesquisa";
+"settings.aifeatures.assist.title" = "Search Assist";
 
 /* Settings screen cell subtitle for enabling automatic page content attachment */
 "settings.aifeatures.automatic.context.subtitle" = "Enviar automaticamente o conteúdo da página para o Duck.ai";
@@ -3904,7 +3995,7 @@
 "settings.aifeatures.chat.suggestions.title" = "Sugestões de chat";
 
 /* Button that turns off all AI features */
-"settings.aifeatures.disable.all" = "Usar DuckDuckGo sem IA";
+"settings.aifeatures.disable.all" = "Usar o DuckDuckGo sem IA";
 
 /* Footer text below the disable all AI features button */
 "settings.aifeatures.disable.all.footer" = "Desativa o Duck.ai, esconde as respostas assistidas por IA nos resultados de pesquisa e filtra os sites conhecidos de spam gerado por IA nos resultados da pesquisa de imagens.";
@@ -4044,26 +4135,26 @@
 /* The name of the settings section containing options to set up the app */
 "settings.complete.setup" = "Concluir a configuração";
 
-/* The name of Settings category in Privacy Features related to configuration of the privacy feature related to cookie pop-ups */
-"settings.cookie.pop-up-protection.protection" = "Proteção contra pop-ups de cookies";
-
-/* Explanation in Settings how the cookie pop up protection feature works */
-"settings.cookie.pop.up.protection.explanation" = "O DuckDuckGo pode gerir automaticamente as tuas preferências de cookies para maximizar a privacidade, minimizar os cookies e fechar estes pop-ups.\n[Sabe mais](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
-
 /* Explanation below the auto-manage cookie pop-ups toggle in settings */
 "settings.cookie.auto-manage.explanation" = "Vamos tentar selecionar apenas as opções de cookies mais privadas disponíveis por ti e, em seguida, fechar estes pop-ups.";
 
 /* Title for the auto-manage cookie pop-ups toggle in settings */
 "settings.cookie.auto-manage.title" = "Gerir automaticamente pop-ups de cookies";
 
+/* The name of Settings category in Privacy Features related to configuration of the privacy feature related to cookie pop-ups */
+"settings.cookie.pop-up-protection.protection" = "Proteção contra pop-ups de cookies";
+
+/* Explanation in Settings how the cookie pop up protection feature works */
+"settings.cookie.pop.up.protection.explanation" = "O DuckDuckGo pode gerir automaticamente as tuas preferências de cookies para maximizar a privacidade, minimizar os cookies e fechar estes pop-ups.\n[Sabe mais](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
+
+/* Settings screen cell text for Cookie popups */
+"settings.cookie.popups" = "Gerir pop-ups de cookies";
+
 /* Explanation below the pop-ups without opt-outs toggle in settings */
 "settings.cookie.popups-without-opt-outs.explanation" = "Permite também que o DuckDuckGo te poupe um clique, aceitando cookies em teu nome para fechar pop-ups sem opção de exclusão.";
 
 /* Title for the pop-ups without opt-outs toggle in settings */
 "settings.cookie.popups-without-opt-outs.title" = "Pop-ups sem opção de exclusão";
-
-/* Settings screen cell text for Cookie popups */
-"settings.cookie.popups" = "Gerir pop-ups de cookies";
 
 /* Label for customizable toolbar button that deletes tabs and data */
 "settings.customizable.button.delete.tabs.and.data" = "Eliminar separadores e dados";
@@ -5388,111 +5479,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "O que queres importar?";
 
-
-/* No comment provided by engineer. */
-"No matches for \"%@\"" = "Nenhuma correspondência para\"%@\"";
-
-
-/* Open the native Duck.ai chat history sheet from the browser menu. */
-"action.title.chats" = "Conversas";
-
-/* Title shown when the user has no Duck.ai chat history yet. */
-"aiChat.history.emptyState.title" = "Sem conversas recentes";
-
-/* Primary button on the empty Duck.ai chat-history screen; opens the Duck.ai web chat. */
-"aiChat.history.emptyState.openDuckAi" = "Abrir Duck.ai";
-
-/* Placeholder for the search bar at the top of the Duck.ai chat history list. */
-"aiChat.history.searchBar.placeholder" = "Pesquisar";
-
-/* Section header above the user's pinned chats in the Duck.ai chat history list. */
-"aiChat.history.section.pinned" = "Afixado";
-
-/* Section header above the user's recent (unpinned) chats in the Duck.ai chat history list. */
-"aiChat.history.section.recent" = "Recente";
-
-/* Shown inside the Duck.ai chat history list when the user's search query returns no matching chats. */
-"aiChat.history.noSearchResults.title" = "Nenhuma correspondência encontrada";
-
-/* Title of the alert shown when Duck.ai chat history fails to load. */
-"aiChat.history.loadError.title" = "Não foi possível carregar as conversas";
-
-/* Message of the alert shown when Duck.ai chat history fails to load. */
-"aiChat.history.loadError.message" = "Ocorreu um erro ao carregar as tuas conversas do Duck.ai. Tenta novamente mais tarde.";
-
-/* Accessibility label for the delete action revealed by swiping a Duck.ai chat row. */
-"aiChat.history.swipe.delete.a11y" = "Eliminar conversa";
-
-/* Accessibility label for the download action revealed by swiping a Duck.ai chat row. */
-"aiChat.history.swipe.download.a11y" = "Descarregar conversa";
-
-/* Accessibility label for the pin action revealed by leading-swiping a Duck.ai chat row in the Recent section. */
-"aiChat.history.swipe.pin.a11y" = "Fixar conversa";
-
-/* Accessibility label for the unpin action revealed by leading-swiping a Duck.ai chat row in the Pinned section. */
-"aiChat.history.swipe.unpin.a11y" = "Desafixar conversa";
-
-/* Button to delete all chats in scoped fire confirmation dialog */
-"scoped.fire.confirmation.delete.chats.button" = "Eliminar conversas";
-
-/* Top-level attachment menu option to attach the current page content to an AI chat message */
-"aichat.attachment.option.ask.about.page" = "Perguntar sobre a página";
-
-/* Status view message shown while the VPN is on but Strict routing is off */
-"network.protection.status.header.message.strict.routing.off" = "Algum tráfego pode contornar a VPN enquanto o encaminhamento estrito estiver desativado. O encaminhamento estrito é recomendado para redes públicas.";
-
-/* Label for the status pill shown while the VPN's Strict routing setting is off */
-"network.protection.status.view.strict.routing.pill.off" = "Encaminhamento estrito: desativado";
-
-/* Label for the status pill shown while the VPN's Strict routing setting is on */
-"network.protection.status.view.strict.routing.pill.on" = "Encaminhamento estrito: ativado";
-
-/* Tooltip shown for the status pill while the VPN's Strict routing setting is off */
-"network.protection.status.view.strict.routing.pill.tooltip.off" = "O encaminhamento estrito é recomendado para redes públicas.";
-
-/* Tooltip shown for the status pill while the VPN's Strict routing setting is on */
-"network.protection.status.view.strict.routing.pill.tooltip.on" = "Algumas aplicações podem não funcionar enquanto o encaminhamento estrito estiver ativado.";
-
-/* Title of the Troubleshooting section in the VPN status screen. */
-"network.protection.status.view.troubleshooting.section.title" = "Resolução de problemas";
-
-/* The body of the notification reminding the user to turn the VPN Strict routing setting back on */
-"network.protection.strict.routing.reminder.notification.body" = "Algum tráfego pode contornar a VPN enquanto estiver desativada. O encaminhamento estrito é recomendado para redes públicas.";
-/* The title of the notification reminding the user to turn the VPN Strict routing setting back on */
-"network.protection.strict.routing.reminder.notification.title" = "O encaminhamento estrito está desativado";
-
-/* Title for the New Image row in the Duck.ai tab header Plus (+) menu — opens Duck.ai in image generation mode */
-"aichat.header.plusMenu.newImage" = "Nova imagem";
-
-/* Error toast shown when a Duck.ai chat download fails and nothing was saved. */
-"aiChat.history.download.failed.message" = "Não foi possível transferir. Tenta novamente.";
-
-/* Accessibility label for the overflow (three dots) menu button in the Duck.ai chat history navigation bar. */
-"aiChat.history.menu.a11y" = "Mais";
-
-/* Menu item opening Duck.ai Chat Protection settings from the Duck.ai chat history list. */
-"aiChat.history.menu.chatProtection" = "Proteção de conversas";
-
-/* Menu item that starts multi-selecting chats in the Duck.ai chat history list. */
-"aiChat.history.menu.selectChats" = "Selecionar conversas";
-
-/* Long-press row menu item that deletes a Duck.ai chat. */
-"aiChat.history.rowMenu.delete" = "Eliminar";
-
-/* Long-press row menu item that downloads a Duck.ai chat. */
-"aiChat.history.rowMenu.download" = "Transferir";
-
-/* Long-press row menu item that pins a Duck.ai chat. */
-"aiChat.history.rowMenu.pin" = "Afixar";
-
-/* Long-press row menu item that starts multi-selecting chats in the Duck.ai chat history list. */
-"aiChat.history.rowMenu.select" = "Selecionar";
-
-/* Long-press row menu item that unpins a Duck.ai chat. */
-"aiChat.history.rowMenu.unpin" = "Desafixar";
-
-/* Accessibility label for the search button in the Duck.ai chat history navigation bar. */
-"aiChat.history.search.a11y" = "Pesquisar";
-
-/* Multi-select toolbar button that deletes all chats when none are individually selected. */
-"aiChat.history.selection.deleteAll" = "Eliminar tudo";

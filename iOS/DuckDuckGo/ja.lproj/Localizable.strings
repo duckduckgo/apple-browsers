@@ -103,6 +103,9 @@
 /* Cancel action - button shown in alert */
 "action.title.cancel" = "キャンセル";
 
+/* Open the native Duck.ai chat history sheet from the browser menu. */
+"action.title.chats" = "チャット";
+
 /* Copy action */
 "action.title.copy" = "コピー";
 
@@ -247,24 +250,6 @@
 /* Settings screen title for AI features */
 "ai-features.settings.title" = "AI機能";
 
-/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as a regular text conversation. */
-"aiChat.tabSwitcher.card.chip.chat" = "チャット";
-
-/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as the transcript of a finished voice conversation. Not translated; final copy will land in a follow-up PR. */
-"aiChat.tabSwitcher.card.chip.transcript" = "トランスクリプト";
-
-/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as a live voice session. Not translated; final copy will land in a follow-up PR. */
-"aiChat.tabSwitcher.card.chip.voice" = "ボイスチャット";
-
-/* Title shown on a Duck.ai tab grid card when the chat has no title yet. Not translated; final copy will land in a follow-up PR. */
-"aiChat.tabSwitcher.card.untitledChat" = "新しいチャット";
-
-/* Status label at the top of the Duck.ai tab grid card for a tab with a live voice session in progress. A leading microphone glyph is shown next to it in the UI. Not translated; final copy will land in a follow-up PR. */
-"aiChat.tabSwitcher.card.voice.listening" = "リスニング中…";
-
-/* VoiceOver label for the Duck.ai tab grid card of a tab with a live voice session — same as the visible status without the decorative emoji. Not translated; final copy will land in a follow-up PR. */
-"aiChat.tabSwitcher.card.voice.listening.accessibilityLabel" = "リスニング中…";
-
 /* List row label in the app menu on a Duck.ai tab — opens the recent Duck.ai chats sidebar */
 "aichat.appMenu.chats" = "チャット";
 
@@ -298,6 +283,9 @@
 /* Error message displayed when the user has attached more images than are allowed in one message. Parameter is the backend-provided maximum number of images per message. */
 "aichat.attachment.image.turn.limit" = "一度に添付できる画像は枚までです。";
 
+/* Top-level attachment menu option to attach the current page content to an AI chat message */
+"aichat.attachment.option.ask.about.page" = "ページについてお尋ねください";
+
 /* Top-level attachment menu option to add a file to an AI chat message */
 "aichat.attachment.option.attach.file" = "ファイルを追加";
 
@@ -328,6 +316,9 @@
 /* Title for the New Fire Tab row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newFireTab" = "新しいFireタブ";
 
+/* Title for the New Image row in the Duck.ai tab header Plus (+) menu — opens Duck.ai in image generation mode */
+"aichat.header.plusMenu.newImage" = "新しい画像";
+
 /* Title for the New Search row in the Duck.ai tab header Plus (+) menu — opens a new tab and forces search mode for that entry */
 "aichat.header.plusMenu.newSearch" = "新規検索";
 
@@ -336,6 +327,75 @@
 
 /* Title for the New Voice Chat row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newVoiceChat" = "新しいボイスチャット";
+
+/* Error toast shown when a Duck.ai chat download fails and nothing was saved. */
+"aiChat.history.download.failed.message" = "ダウンロードできませんでした。 もう一度お試しください。";
+
+/* Primary button on the empty Duck.ai chat-history screen; opens the Duck.ai web chat. */
+"aiChat.history.emptyState.openDuckAi" = "Duck.aiを開く";
+
+/* Title shown when the user has no Duck.ai chat history yet. */
+"aiChat.history.emptyState.title" = "最近のチャットはありません";
+
+/* Message of the alert shown when Duck.ai chat history fails to load. */
+"aiChat.history.loadError.message" = "Duck.aiのチャットの読み込み中に問題が発生しました。時間を置いてもう一度お試しください。";
+
+/* Title of the alert shown when Duck.ai chat history fails to load. */
+"aiChat.history.loadError.title" = "チャットを読み込めませんでした";
+
+/* Accessibility label for the overflow (three dots) menu button in the Duck.ai chat history navigation bar. */
+"aiChat.history.menu.a11y" = "その他";
+
+/* Menu item opening Duck.ai Chat Protection settings from the Duck.ai chat history list. */
+"aiChat.history.menu.chatProtection" = "チャットの保護";
+
+/* Menu item that starts multi-selecting chats in the Duck.ai chat history list. */
+"aiChat.history.menu.selectChats" = "チャットを選択";
+
+/* Shown inside the Duck.ai chat history list when the user's search query returns no matching chats. */
+"aiChat.history.noSearchResults.title" = "一致するものが見つかりませんでした";
+
+/* Long-press row menu item that deletes a Duck.ai chat. */
+"aiChat.history.rowMenu.delete" = "削除";
+
+/* Long-press row menu item that downloads a Duck.ai chat. */
+"aiChat.history.rowMenu.download" = "ダウンロード";
+
+/* Long-press row menu item that pins a Duck.ai chat. */
+"aiChat.history.rowMenu.pin" = "ピン留め";
+
+/* Long-press row menu item that starts multi-selecting chats in the Duck.ai chat history list. */
+"aiChat.history.rowMenu.select" = "選択";
+
+/* Long-press row menu item that unpins a Duck.ai chat. */
+"aiChat.history.rowMenu.unpin" = "ピン留めを解除";
+
+/* Accessibility label for the search button in the Duck.ai chat history navigation bar. */
+"aiChat.history.search.a11y" = "検索";
+
+/* Placeholder for the search bar at the top of the Duck.ai chat history list. */
+"aiChat.history.searchBar.placeholder" = "検索";
+
+/* Section header above the user's pinned chats in the Duck.ai chat history list. */
+"aiChat.history.section.pinned" = "ピン留め済み";
+
+/* Section header above the user's recent (unpinned) chats in the Duck.ai chat history list. */
+"aiChat.history.section.recent" = "最近";
+
+/* Multi-select toolbar button that deletes all chats when none are individually selected. */
+"aiChat.history.selection.deleteAll" = "すべて削除";
+
+/* Accessibility label for the delete action revealed by swiping a Duck.ai chat row. */
+"aiChat.history.swipe.delete.a11y" = "チャットを削除";
+
+/* Accessibility label for the download action revealed by swiping a Duck.ai chat row. */
+"aiChat.history.swipe.download.a11y" = "チャットをダウンロード";
+
+/* Accessibility label for the pin action revealed by leading-swiping a Duck.ai chat row in the Recent section. */
+"aiChat.history.swipe.pin.a11y" = "チャットをピン留め";
+
+/* Accessibility label for the unpin action revealed by leading-swiping a Duck.ai chat row in the Pinned section. */
+"aiChat.history.swipe.unpin.a11y" = "チャットのピン留めを解除";
 
 /* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.extended.subtitle" = "分析タスク用";
@@ -355,18 +415,6 @@
 /* Title for the reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.reasoning.title" = "推論";
 
-/* Body of the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. ** markers indicate bold text and should be preserved around the translated equivalents of the menu options Settings, Sync & Backup, and Sync With Another Device. */
-"aiChat.syncIntroSheet.body" = "**設定** › **Sync & Backup** › **別のデバイスと同期**に移動し、他のデバイスのDuckDuckGoアプリでQRコードを見つけてください。";
-
-/* Secondary button on the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. */
-"aiChat.syncIntroSheet.notNow" = "後で";
-
-/* Primary button on the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. */
-"aiChat.syncIntroSheet.scan.button" = "QRコードをスキャン";
-
-/* Title of the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. */
-"aiChat.syncIntroSheet.title" = "チャットをデバイス間で同期しましょう！";
-
 /* Primary button of the sync promo card shown above the Duck.ai recent chats list. */
 "aiChat.syncPromo.button" = "別のデバイスと同期";
 
@@ -375,6 +423,24 @@
 
 /* Headline of the sync promo card shown above the Duck.ai recent chats list. */
 "aiChat.syncPromo.title" = "Sync & Backupを使って、デバイス間でチャットにアクセスできます。";
+
+/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as a regular text conversation. */
+"aiChat.tabSwitcher.card.chip.chat" = "チャット";
+
+/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as the transcript of a finished voice conversation. */
+"aiChat.tabSwitcher.card.chip.transcript" = "トランスクリプト";
+
+/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as a live voice session. */
+"aiChat.tabSwitcher.card.chip.voice" = "ボイスチャット";
+
+/* Title shown on a Duck.ai tab grid card when the chat has no title yet. */
+"aiChat.tabSwitcher.card.untitledChat" = "新しいチャット";
+
+/* Status label at the top of the Duck.ai tab grid card for a tab with a live voice session in progress. A leading microphone glyph is shown next to it in the UI. */
+"aiChat.tabSwitcher.card.voice.listening" = "リスニング中…";
+
+/* VoiceOver label for the Duck.ai tab grid card of a tab with a live voice session — same as the visible status without the decorative emoji. */
+"aiChat.tabSwitcher.card.voice.listening.accessibilityLabel" = "リスニング中…";
 
 /* Subtitle for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.subtitle" = "トーン、長さ、挙動を設定";
@@ -540,8 +606,6 @@
 
 /* Description for unable to sync to server error */
 "alert.unable-to-sync-to-server-description" = "サーバーに接続できません。";
-
-/* Description for unable to sync with another device error */
 
 /* Description for unable to turn sync off error */
 "alert.unable-to-turn-sync-off-description" = "Sync & Backupをオフにできません。";
@@ -2961,6 +3025,9 @@
 /* Message label text for the status view when VPN is disconnected */
 "network.protection.status.header.message.on" = "すべてのデバイスのインターネットトラフィックがVPNを通じて保護されます。";
 
+/* Status view message shown while the VPN is on but Strict routing is off */
+"network.protection.status.header.message.strict.routing.off" = "厳格なルーティングがオフの間は、一部のトラフィックがVPNをバイパスする可能性があります。公共ネットワークでは、厳格なルーティングの使用をおすすめします。";
+
 /* Header title label text for the status view when VPN is disconnected */
 "network.protection.status.header.title.off" = "DuckDuckGo VPNがオフです";
 
@@ -3003,8 +3070,29 @@
 /* Label shown on the title of the settings section in NetworkProtection's status view. */
 "network.protection.status.view.settings.section.title" = "管理";
 
+/* Label for the status pill shown while the VPN's Strict routing setting is off */
+"network.protection.status.view.strict.routing.pill.off" = "厳格なルーティング：無効";
+
+/* Label for the status pill shown while the VPN's Strict routing setting is on */
+"network.protection.status.view.strict.routing.pill.on" = "厳格なルーティング：オン";
+
+/* Tooltip shown for the status pill while the VPN's Strict routing setting is off */
+"network.protection.status.view.strict.routing.pill.tooltip.off" = "公共ネットワークでは、厳格なルーティングが推奨されます。";
+
+/* Tooltip shown for the status pill while the VPN's Strict routing setting is on */
+"network.protection.status.view.strict.routing.pill.tooltip.on" = "厳格なルーティングが有効な間は、一部のアプリが動作しない場合があります。";
+
 /* Title label text for the status view when netP is disconnected */
 "network.protection.status.view.title" = "VPN";
+
+/* Title of the Troubleshooting section in the VPN status screen. */
+"network.protection.status.view.troubleshooting.section.title" = "トラブルシューティング";
+
+/* The body of the notification reminding the user to turn the VPN Strict routing setting back on */
+"network.protection.strict.routing.reminder.notification.body" = "オフの間、一部のトラフィックがVPNをバイパスする可能性があります。公共ネットワークでは、厳格なルーティングが推奨されます。";
+
+/* The title of the notification reminding the user to turn the VPN Strict routing setting back on */
+"network.protection.strict.routing.reminder.notification.title" = "厳格なルーティングは無効です";
 
 /* The body of the notification shown when VPN reconnects successfully */
 "network.protection.success.notification.body" = "DuckDuckGo VPNはオンです。位置情報とオンラインアクティビティは保護されています。";
@@ -3732,6 +3820,9 @@
 /* Button to delete all tabs and data in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.all.button" = "すべて削除";
 
+/* Button to delete all chats in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.chats.button" = "チャットを削除";
+
 /* Button to delete a single tab and its site data in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.tab.button" = "タブを削除";
 
@@ -3880,16 +3971,16 @@
 "settings.aichat.shortcuts.input.footer" = "アドレスバーからウェブを検索するか、Duck.aiに直接質問できます";
 
 /* Search Assist frequency option: never show AI-assisted answers */
-"settings.aifeatures.assist.never" = "なし";
+"settings.aifeatures.assist.never" = "一切表示しない";
 
 /* Search Assist frequency option: often show AI-assisted answers */
-"settings.aifeatures.assist.often" = "頻繁";
+"settings.aifeatures.assist.often" = "頻繁に";
 
 /* Search Assist frequency option: show AI-assisted answers on demand */
-"settings.aifeatures.assist.ondemand" = "オンデマンド";
+"settings.aifeatures.assist.ondemand" = "要求時";
 
 /* Search Assist frequency option: sometimes show AI-assisted answers */
-"settings.aifeatures.assist.sometimes" = "ときどき";
+"settings.aifeatures.assist.sometimes" = "時々";
 
 /* Title of the native Search Assist setting control */
 "settings.aifeatures.assist.title" = "Search Assist";
@@ -3919,10 +4010,10 @@
 "settings.aifeatures.hide.ai.generated.images" = "AI生成画像を非表示にする";
 
 /* Hide AI-Generated Images option: off (images shown) */
-"settings.aifeatures.hide.ai.generated.images.off" = "オフ";
+"settings.aifeatures.hide.ai.generated.images.off" = "表示";
 
 /* Hide AI-Generated Images option: on (images hidden) */
-"settings.aifeatures.hide.ai.generated.images.on" = "オン";
+"settings.aifeatures.hide.ai.generated.images.on" = "非表示";
 
 /* Footnote for the hide AI-generated images setting; ends with a Learn more link to the help page (do not remove the link) */
 "settings.aifeatures.hide.ai.generated.images.subtitle" = "画像検索結果から既知のAIスパムサイトが除外されます。[詳細を表示](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/results/how-to-filter-out-ai-images-in-duckduckgo-search-results)";
@@ -4044,26 +4135,26 @@
 /* The name of the settings section containing options to set up the app */
 "settings.complete.setup" = "セットアップを完了";
 
-/* The name of Settings category in Privacy Features related to configuration of the privacy feature related to cookie pop-ups */
-"settings.cookie.pop-up-protection.protection" = "Cookieポップアップ保護";
-
-/* Explanation in Settings how the cookie pop up protection feature works */
-"settings.cookie.pop.up.protection.explanation" = "DuckDuckGoではCookie設定の自動管理が可能です。プライバシーを最大限に保護しつつ、Cookieを最小限に抑え、ポップアップを閉じる手間を省きます。\n[詳細はこちら](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
-
 /* Explanation below the auto-manage cookie pop-ups toggle in settings */
 "settings.cookie.auto-manage.explanation" = "選択可能な中で最もプライバシー保護を強化したCookieオプションのみが選択され、ポップアップは自動的に閉じます。";
 
 /* Title for the auto-manage cookie pop-ups toggle in settings */
 "settings.cookie.auto-manage.title" = "Cookieポップアップを自動管理";
 
+/* The name of Settings category in Privacy Features related to configuration of the privacy feature related to cookie pop-ups */
+"settings.cookie.pop-up-protection.protection" = "Cookieポップアップ保護";
+
+/* Explanation in Settings how the cookie pop up protection feature works */
+"settings.cookie.pop.up.protection.explanation" = "DuckDuckGoではCookie設定の自動管理が可能です。プライバシーを最大限に保護しつつ、Cookieを最小限に抑え、ポップアップを閉じる手間を省きます。\n[詳細はこちら](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
+
+/* Settings screen cell text for Cookie popups */
+"settings.cookie.popups" = "Cookieポップアップを管理";
+
 /* Explanation below the pop-ups without opt-outs toggle in settings */
 "settings.cookie.popups-without-opt-outs.explanation" = "また、オプトアウトできないCookieについては、DuckDuckGoが代わりに受け入れて、ポップアウトを閉じるため、クリックする手間がなくなります。";
 
 /* Title for the pop-ups without opt-outs toggle in settings */
 "settings.cookie.popups-without-opt-outs.title" = "オプトアウト不可のポップアップ";
-
-/* Settings screen cell text for Cookie popups */
-"settings.cookie.popups" = "Cookieポップアップを管理";
 
 /* Label for customizable toolbar button that deletes tabs and data */
 "settings.customizable.button.delete.tabs.and.data" = "タブとデータを削除";
@@ -5388,111 +5479,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "何をインポートしますか？";
 
-
-/* No comment provided by engineer. */
-"No matches for \"%@\"" = "「%@」に一致するものはありません";
-
-
-/* Open the native Duck.ai chat history sheet from the browser menu. */
-"action.title.chats" = "チャット";
-
-/* Title shown when the user has no Duck.ai chat history yet. */
-"aiChat.history.emptyState.title" = "最近のチャットはありません";
-
-/* Primary button on the empty Duck.ai chat-history screen; opens the Duck.ai web chat. */
-"aiChat.history.emptyState.openDuckAi" = "Duck.aiを開く";
-
-/* Placeholder for the search bar at the top of the Duck.ai chat history list. */
-"aiChat.history.searchBar.placeholder" = "検索";
-
-/* Section header above the user's pinned chats in the Duck.ai chat history list. */
-"aiChat.history.section.pinned" = "ピン留め済み";
-
-/* Section header above the user's recent (unpinned) chats in the Duck.ai chat history list. */
-"aiChat.history.section.recent" = "最近";
-
-/* Shown inside the Duck.ai chat history list when the user's search query returns no matching chats. */
-"aiChat.history.noSearchResults.title" = "一致するものが見つかりませんでした";
-
-/* Title of the alert shown when Duck.ai chat history fails to load. */
-"aiChat.history.loadError.title" = "チャットを読み込めませんでした";
-
-/* Message of the alert shown when Duck.ai chat history fails to load. */
-"aiChat.history.loadError.message" = "Duck.aiのチャットの読み込み中に問題が発生しました。時間を置いてもう一度お試しください。";
-
-/* Accessibility label for the delete action revealed by swiping a Duck.ai chat row. */
-"aiChat.history.swipe.delete.a11y" = "チャットを削除";
-
-/* Accessibility label for the download action revealed by swiping a Duck.ai chat row. */
-"aiChat.history.swipe.download.a11y" = "チャットをダウンロード";
-
-/* Accessibility label for the pin action revealed by leading-swiping a Duck.ai chat row in the Recent section. */
-"aiChat.history.swipe.pin.a11y" = "チャットをピン留め";
-
-/* Accessibility label for the unpin action revealed by leading-swiping a Duck.ai chat row in the Pinned section. */
-"aiChat.history.swipe.unpin.a11y" = "チャットのピン留めを解除";
-
-/* Button to delete all chats in scoped fire confirmation dialog */
-"scoped.fire.confirmation.delete.chats.button" = "チャットを削除";
-
-/* Top-level attachment menu option to attach the current page content to an AI chat message */
-"aichat.attachment.option.ask.about.page" = "ページについてお尋ねください";
-
-/* Status view message shown while the VPN is on but Strict routing is off */
-"network.protection.status.header.message.strict.routing.off" = "厳格なルーティングがオフの間は、一部のトラフィックがVPNをバイパスする可能性があります。公共ネットワークでは、厳格なルーティングの使用をおすすめします。";
-
-/* Label for the status pill shown while the VPN's Strict routing setting is off */
-"network.protection.status.view.strict.routing.pill.off" = "厳格なルーティング：無効";
-
-/* Label for the status pill shown while the VPN's Strict routing setting is on */
-"network.protection.status.view.strict.routing.pill.on" = "厳格なルーティング：オン";
-
-/* Tooltip shown for the status pill while the VPN's Strict routing setting is off */
-"network.protection.status.view.strict.routing.pill.tooltip.off" = "公共ネットワークでは、厳格なルーティングが推奨されます。";
-
-/* Tooltip shown for the status pill while the VPN's Strict routing setting is on */
-"network.protection.status.view.strict.routing.pill.tooltip.on" = "厳格なルーティングが有効な間は、一部のアプリが動作しない場合があります。";
-
-/* Title of the Troubleshooting section in the VPN status screen. */
-"network.protection.status.view.troubleshooting.section.title" = "トラブルシューティング";
-
-/* The body of the notification reminding the user to turn the VPN Strict routing setting back on */
-"network.protection.strict.routing.reminder.notification.body" = "オフの間、一部のトラフィックがVPNをバイパスする可能性があります。公共ネットワークでは、厳格なルーティングが推奨されます。";
-/* The title of the notification reminding the user to turn the VPN Strict routing setting back on */
-"network.protection.strict.routing.reminder.notification.title" = "厳格なルーティングは無効です";
-
-/* Title for the New Image row in the Duck.ai tab header Plus (+) menu — opens Duck.ai in image generation mode */
-"aichat.header.plusMenu.newImage" = "新しい画像";
-
-/* Error toast shown when a Duck.ai chat download fails and nothing was saved. */
-"aiChat.history.download.failed.message" = "ダウンロードできませんでした。 もう一度お試しください。";
-
-/* Accessibility label for the overflow (three dots) menu button in the Duck.ai chat history navigation bar. */
-"aiChat.history.menu.a11y" = "その他";
-
-/* Menu item opening Duck.ai Chat Protection settings from the Duck.ai chat history list. */
-"aiChat.history.menu.chatProtection" = "チャットの保護";
-
-/* Menu item that starts multi-selecting chats in the Duck.ai chat history list. */
-"aiChat.history.menu.selectChats" = "チャットを選択";
-
-/* Long-press row menu item that deletes a Duck.ai chat. */
-"aiChat.history.rowMenu.delete" = "削除";
-
-/* Long-press row menu item that downloads a Duck.ai chat. */
-"aiChat.history.rowMenu.download" = "ダウンロード";
-
-/* Long-press row menu item that pins a Duck.ai chat. */
-"aiChat.history.rowMenu.pin" = "ピン留め";
-
-/* Long-press row menu item that starts multi-selecting chats in the Duck.ai chat history list. */
-"aiChat.history.rowMenu.select" = "選択";
-
-/* Long-press row menu item that unpins a Duck.ai chat. */
-"aiChat.history.rowMenu.unpin" = "ピン留めを解除";
-
-/* Accessibility label for the search button in the Duck.ai chat history navigation bar. */
-"aiChat.history.search.a11y" = "検索";
-
-/* Multi-select toolbar button that deletes all chats when none are individually selected. */
-"aiChat.history.selection.deleteAll" = "すべて削除";

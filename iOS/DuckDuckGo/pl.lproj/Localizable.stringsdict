@@ -2,6 +2,26 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>aiChat.history.download.complete.message</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@chats@</string>
+		<key>chats</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d czat pobrany</string>
+			<key>few</key>
+			<string>%1$d czaty pobrane</string>
+			<key>many</key>
+			<string>%1$d czatów pobranych</string>
+			<key>other</key>
+			<string>%1$d czatów pobranych</string>
+		</dict>
+	</dict>
 	<key>aiChat.history.deleteAll.confirmation.title</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
@@ -874,26 +894,6 @@ Zablokowałem ich!
 			<string>%2$@ śledzące</string>
 			<key>other</key>
 			<string>%2$@ śledzące</string>
-		</dict>
-	</dict>
-	<key>aiChat.history.download.complete.message</key>
-	<dict>
-		<key>NSStringLocalizedFormatKey</key>
-		<string>%#@chats@</string>
-		<key>chats</key>
-		<dict>
-			<key>NSStringFormatSpecTypeKey</key>
-			<string>NSStringPluralRuleType</string>
-			<key>NSStringFormatValueTypeKey</key>
-			<string>d</string>
-			<key>one</key>
-			<string>%1$d czat pobrany</string>
-			<key>few</key>
-			<string>%1$d czaty pobrane</string>
-			<key>many</key>
-			<string>%1$d czatów pobranych</string>
-			<key>other</key>
-			<string>%1$d czatów pobranych</string>
 		</dict>
 	</dict>
 </dict>

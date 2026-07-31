@@ -90,7 +90,7 @@ final class AIChatOmnibarDuckAILogoLayoutTests: XCTestCase {
         let addressBarLeading = textLeading(in: layOutTextContainer(surface: .addressBar).view)
         let promptBarLeading = textLeading(in: layOutTextContainer(surface: .promptBar).view)
 
-        XCTAssertEqual(promptBarLeading - addressBarLeading, 36, accuracy: 0.5,
+        XCTAssertEqual(promptBarLeading - addressBarLeading, 31, accuracy: 0.5,
                        "The address bar's prompt has shifted — only the Prompt Bar indents for the logo")
     }
 
@@ -115,7 +115,9 @@ final class AIChatOmnibarDuckAILogoLayoutTests: XCTestCase {
     }
 
     private func duckAILogo(in host: NSView) -> NSImageView? {
-        firstDescendant(of: host, ofType: NSImageView.self)
+        descendants(of: host)
+            .compactMap { $0 as? NSImageView }
+            .first { $0.accessibilityIdentifier() == "AIChatOmnibarTextContainerViewController.duckAILogoView" }
     }
 
     private func descendants(of view: NSView) -> [NSView] {

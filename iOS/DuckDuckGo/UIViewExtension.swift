@@ -74,7 +74,8 @@ extension UIView {
         }
     }
 
-    /// Detects a window smaller than its screen using sorted dimensions and 1 pt tolerance for rounding.
+    /// True when the app isn't full screen (Split View / Slide Over / Stage Manager). Sides are sorted
+    /// for orientation independence; the 1pt slack absorbs rounding.
     var isWindowedPresentation: Bool {
         guard let window else { return false }
         return isWindowedPresentation(for: window.frame.size)

@@ -19,7 +19,8 @@
 
 import UIKit
 
-/// Maintains active tab flare during context menu previews and reordering.
+/// Draws the active tab's flared background and keeps it in place through the current tab's
+/// context-menu preview and reorder drag.
 final class TabFlareBackgroundController {
 
     private final class WeakDisplayLinkProxy {
@@ -40,6 +41,7 @@ final class TabFlareBackgroundController {
     private let fillColor: () -> UIColor
     private let rampWidth: CGFloat
 
+    // Tab lifted for a context-menu preview, or nil.
     private var previewedTabIndex: Int?
 
     /// Additional fade applied before strip clipping.
@@ -72,8 +74,9 @@ final class TabFlareBackgroundController {
         stopReorderTracking()
     }
 
+    /// Positions the flare over the current tab.
     func update() {
-        // Display link owns frame updates during reordering.
+        // The display link owns the frame during a reorder.
         guard !isReordering else { return }
         guard let collectionView,
               let index = currentIndex(),
@@ -88,12 +91,14 @@ final class TabFlareBackgroundController {
         collectionView.sendSubviewToBack(view)
     }
 
+    /// Fades the flare out while the current tab is lifted for its preview.
     func beginPreview(forRow row: Int?, animator: UIContextMenuInteractionAnimating?) {
         guard row == currentIndex() else { return }
         previewedTabIndex = currentIndex()
         animator?.addAnimations { self.view.alpha = 0 }
     }
 
+    /// Restores the flare after a preview.
     func endPreview() {
         guard previewedTabIndex != nil else { return }
         previewedTabIndex = nil
@@ -101,7 +106,7 @@ final class TabFlareBackgroundController {
     }
 
     func beginReorder() {
-        // Preview dismissal is not called when preview becomes a drag.
+        // A long-press preview can convert into a drag without firing its dismiss callback.
         previewedTabIndex = nil
         isReordering = true
         applyAlpha()
@@ -135,12 +140,13 @@ final class TabFlareBackgroundController {
         reorderTrackingDisplayLink = nil
     }
 
+    /// Follows the current tab cell's live frame during a reorder.
     private func trackToCurrentTabCell() {
         guard let collectionView else {
             endReorder()
             return
         }
-        // End tracking if drag completion callback was skipped.
+        // Stop if the drag ended without `dragSessionDidEnd`, so the link can't run on forever.
         guard collectionView.hasActiveDrag else {
             endReorder()
             return

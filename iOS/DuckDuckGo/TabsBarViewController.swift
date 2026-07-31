@@ -60,9 +60,9 @@ class TabsBarViewController: UIViewController {
         static let maxItemWidthFraction: CGFloat = 0.33
         static let narrowMaxItemWidthFraction: CGFloat = 0.5
         static let leadingInset: CGFloat = 16
-        // Extra room keeps flare clear of rounded address bar corner.
+        /// Wider than `leadingInset` so the active tab's flare clears the rounded address bar corner below.
         static let firstTabLeadingMargin: CGFloat = 24
-        // Matches Figma fillet size.
+        /// Active-tab bottom fillet size (Figma spec).
         static let tabRampSize = CGSize(width: 10, height: 10)
         static let windowControlsTabGap: CGFloat = 16
     }
@@ -85,6 +85,7 @@ class TabsBarViewController: UIViewController {
     // Opaque backdrop so tabs scrolling under the sticky button don't show through it.
     private let addTabButtonBackground = UIView()
 
+    // Draws the active tab's flared background; the callbacks below forward to it.
     private lazy var flareBackground = TabFlareBackgroundController(
         collectionView: collectionView,
         topCornerRadius: TabsBarCell.cornerRadius,
@@ -188,8 +189,9 @@ class TabsBarViewController: UIViewController {
         collectionView.isPrefetchingEnabled = false
         collectionView.register(TabsBarCell.self, forCellWithReuseIdentifier: TabsBarCell.reuseIdentifier)
 
+        // Insert the flare overlay and reserve room for the leftmost tab's fillet (collection leading
+        // is pulled in to match).
         flareBackground.update()
-        // Reserve one ramp width so first flare remains visible.
         collectionView.contentInset.left = Constants.tabRampSize.width
 
         addTabButton.setImage(DesignSystemImages.Glyphs.Size24.add, for: .normal)
@@ -660,7 +662,8 @@ extension TabsBarViewController: UICollectionViewDelegate {
 
     func collectionView(_ collectionView: UICollectionView,
                         previewForDismissingContextMenuWithConfiguration configuration: UIContextMenuConfiguration) -> UITargetedPreview? {
-        // Restore here because menu end callback can be skipped when preview becomes a drag.
+        // Fires on every preview dismissal; `willEndContextMenu` may not (e.g. when the lift converts
+        // into a drag), so restore from here.
         flareBackground.endPreview()
         return tabMenuPreview(for: configuration)
     }
@@ -674,13 +677,14 @@ extension TabsBarViewController: UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView,
                         willEndContextMenu configuration: UIContextMenuConfiguration,
                         animator: UIContextMenuInteractionAnimating?) {
+        // Fallback; `previewForDismissing` handles the rest.
         flareBackground.endPreview()
     }
 
     func collectionView(_ collectionView: UICollectionView,
                         willPerformPreviewActionForMenuWith configuration: UIContextMenuConfiguration,
                         animator: UIContextMenuInteractionCommitAnimating) {
-        // Menu end callback is skipped when preview is committed.
+        // Committing the preview also ends the menu without `willEndContextMenu`.
         flareBackground.endPreview()
     }
 
@@ -878,7 +882,7 @@ extension TabsBarViewController {
         let theme = ThemeManager.shared.currentTheme
         view.backgroundColor = theme.tabsBarBackgroundColor
         view.tintColor = theme.barTintColor
-        // Reveal flare drawn behind cells.
+        // Clear so the flare behind the cells shows through.
         collectionView.backgroundColor = .clear
         buttonsBackground.backgroundColor = theme.tabsBarBackgroundColor
         addTabButtonBackground.backgroundColor = theme.tabsBarBackgroundColor

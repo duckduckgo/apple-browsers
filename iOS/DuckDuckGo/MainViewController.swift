@@ -3186,11 +3186,15 @@ class MainViewController: UIViewController {
         updateWindowedAddressBarCorners()
     }
 
-    // Prevents layout from overwriting background during address bar move animation.
+    // True while the address-bar move animation runs; it owns the container background. See `onMoveAddressBar`.
     private var isAddressBarMoveInProgress = false
 
+    /// Rounds the top address bar's top corners on iPad when windowed. Uses `cornerRadius` without
+    /// clipping (keeps the pill shadow and below-bar overflow) and tints the exposed container darker
+    /// so the notch shows.
     private func updateWindowedAddressBarCorners() {
-        // Floating UI and move animation restore this background through decorate().
+        // Floating UI and the move animation own the container background; don't fight them. Both
+        // re-run this via decorate().
         guard !isFloatingUIEnabled, !isAddressBarMoveInProgress else { return }
 
         let barView = omniBar.barView
@@ -7192,6 +7196,8 @@ extension MainViewController {
         viewCoordinator.navigationBarContainer.backgroundColor = theme.barBackgroundColor
         viewCoordinator.navigationBarContainer.tintColor = theme.barTintColor
         viewCoordinator.windowControlsRowBackground?.backgroundColor = theme.tabsBarBackgroundColor
+
+        updateWindowedAddressBarCorners()
 
         updateWindowedAddressBarCorners()
 

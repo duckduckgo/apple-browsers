@@ -699,22 +699,9 @@ struct OnboardingDownloadReasonExperimentTests {
 
     @Test(
         "selectDownloadReason returns the reason-tailored steps",
-        arguments: zip(
-            [
-                .browserPrivately,
-                .privateAIChat,
-                .noAI,
-                .blockAds
-            ] as [OnboardingDownloadReason],
-            [
-                [.setDefaultBrowser, .searchPrivacySettingsSelection, .searchExperienceSelection, .addressBarPositionSelection, .addToDockPromo, .appIconSelection, .duckAIQuerySelection],
-                [.setDefaultBrowser, .aiModelSelection, .toggleInputModeSelection, .addressBarPositionSelection, .addToDockPromo, .appIconSelection, .duckAIQuerySelection],
-                [.setDefaultBrowser, .aiSearchSettingsSelection, .keepDuckAISelection, .addressBarPositionSelection, .addToDockPromo, .appIconSelection, .duckAIQuerySelection],
-                [.setDefaultBrowser, .duckPlayerSelection, .searchExperienceSelection, .addressBarPositionSelection, .addToDockPromo, .appIconSelection, .duckAIQuerySelection],
-            ] as [[OnboardingIntroStep]]
-        )
+        arguments: OnboardingDownloadReason.allCases
     )
-    func selectDownloadReasonReturnsTailoredSteps(_ reason: OnboardingDownloadReason, _ expected: [OnboardingIntroStep]) {
+    func selectDownloadReasonReturnsTailoredSteps(_ reason: OnboardingDownloadReason) {
         // GIVEN
         let sut = makeManager(cohort: .treatment)
 
@@ -722,7 +709,7 @@ struct OnboardingDownloadReasonExperimentTests {
         let result = sut.selectDownloadReason(reason)
 
         // THEN
-        #expect(result == expected)
+        #expect(result == OnboardingStepsHelper.expectedRemainingSteps(for: reason))
     }
 
     // MARK: - currentDownloadReason

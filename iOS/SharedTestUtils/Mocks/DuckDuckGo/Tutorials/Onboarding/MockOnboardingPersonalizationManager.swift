@@ -30,6 +30,9 @@ final class MockOnboardingPersonalizationManager: OnboardingPersonalizationManag
     var isYouTubeAdBlockingEnabled = false
     var isDuckPlayerEnabled = false
 
+    private(set) var applyDefaultsCallCount = 0
+    private(set) var capturedApplyDefaultsReason: OnboardingDownloadReason?
+
     func setRecentlyVisitedSites(_ enabled: Bool) { isRecentlyVisitedSitesEnabled = enabled }
     func setSafeSearch(_ enabled: Bool) { isSafeSearchEnabled = enabled }
     func setAIChatModel(_ model: OnboardingAIModel) {}
@@ -39,5 +42,8 @@ final class MockOnboardingPersonalizationManager: OnboardingPersonalizationManag
     func setDuckAIEnabled(_ enabled: Bool) { isDuckAIEnabled = enabled }
     func setYouTubeAdBlocking(_ enabled: Bool) { isYouTubeAdBlockingEnabled = enabled }
     func setDuckPlayer(_ enabled: Bool) { isDuckPlayerEnabled = enabled }
-    func applyDefaults(for reason: OnboardingDownloadReason) {}
+    func applyDefaults(for reason: OnboardingDownloadReason) {
+        applyDefaultsCallCount += 1
+        capturedApplyDefaultsReason = reason
+    }
 }

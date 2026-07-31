@@ -75,6 +75,138 @@ final class AccountManagerTests: XCTestCase {
         XCTAssertNil(signupBody["credential_id"])
     }
 
+    func testWhenCreatingAccountWithUnifiedWriteEnabledThenSignupIncludesKeysAndDeviceInfo() async throws {
+        let api = RemoteAPIRequestCreatingMock()
+        let endpoints = Endpoints(baseURL: Self.baseURL)
+        let accountInfoKeyFactory = AccountInfoKeyFactoryMock()
+        let protectedKey = makeAccountInfoProtectedKey()
+        accountInfoKeyFactory.makeProtectedKeysStub = [protectedKey]
+        let deviceInfoCodec = DeviceInfoCodingMock()
+        let accountManager = AccountManager(endpoints: endpoints,
+                                            api: api,
+                                            crypter: CryptingMock(),
+                                            accountInfoKeyFactory: accountInfoKeyFactory,
+                                            deviceInfoCodec: deviceInfoCodec,
+                                            isScopedAccessCredentialsEnabled: { true },
+                                            canWriteUnifiedDeviceList: { true })
+        api.fakeRequests[endpoints.signup] = makeJSONRequest("""
+        {
+            "user_id": "user-1",
+            "token": "token-1"
+        }
+        """)
+
+        _ = try await accountManager.createAccount(deviceName: "iPhone", deviceType: "iOS")
+
+        let signupBody = try makeSignupBody(from: api)
+        let keys = try XCTUnwrap(signupBody["keys"] as? [[String: Any]])
+        let key = try XCTUnwrap(keys.first)
+        XCTAssertEqual(signupBody["device_info"] as? String, deviceInfoCodec.encryptUsingProtectedKeyStub)
+        XCTAssertEqual(signupBody["device_name"] as? String, "encrypted_iPhone")
+        XCTAssertEqual(signupBody["device_type"] as? String, "encrypted_iOS")
+        XCTAssertEqual(key["kid"] as? String, protectedKey.kid)
+        XCTAssertEqual(key["purpose"] as? String, ProtectedKeyPurpose.accountInfo)
+        XCTAssertEqual(key["encrypted_with"] as? String, SyncCredentialID.defaultCredential)
+        XCTAssertEqual(accountInfoKeyFactory.makeProtectedKeysCalls.count, 1)
+        XCTAssertNil(accountInfoKeyFactory.makeProtectedKeysCalls.first?.thirdPartyMainKey)
+        XCTAssertEqual(deviceInfoCodec.encryptUsingProtectedKeyCalls.first?.deviceInfo,
+                       DeviceInfo(name: "iPhone", type: "iOS"))
+        XCTAssertEqual(deviceInfoCodec.encryptUsingProtectedKeyCalls.first?.protectedKey.kid, protectedKey.kid)
+    }
+
+    func testWhenCreatingAccountWithUnifiedWriteDisabledThenSignupOmitsKeysAndDeviceInfo() async throws {
+        let api = RemoteAPIRequestCreatingMock()
+        let endpoints = Endpoints(baseURL: Self.baseURL)
+        let accountInfoKeyFactory = AccountInfoKeyFactoryMock()
+        accountInfoKeyFactory.makeProtectedKeysStub = [makeAccountInfoProtectedKey()]
+        let deviceInfoCodec = DeviceInfoCodingMock()
+        let accountManager = AccountManager(endpoints: endpoints,
+                                            api: api,
+                                            crypter: CryptingMock(),
+                                            accountInfoKeyFactory: accountInfoKeyFactory,
+                                            deviceInfoCodec: deviceInfoCodec,
+                                            isScopedAccessCredentialsEnabled: { true },
+                                            canWriteUnifiedDeviceList: { false })
+        api.fakeRequests[endpoints.signup] = makeJSONRequest("""
+        {
+            "user_id": "user-1",
+            "token": "token-1"
+        }
+        """)
+
+        _ = try await accountManager.createAccount(deviceName: "iPhone", deviceType: "iOS")
+
+        let signupBody = try makeSignupBody(from: api)
+        XCTAssertNil(signupBody["keys"])
+        XCTAssertNil(signupBody["device_info"])
+        XCTAssertEqual(signupBody["device_name"] as? String, "encrypted_iPhone")
+        XCTAssertEqual(signupBody["device_type"] as? String, "encrypted_iOS")
+        XCTAssertTrue(accountInfoKeyFactory.makeProtectedKeysCalls.isEmpty)
+        XCTAssertTrue(deviceInfoCodec.encryptUsingProtectedKeyCalls.isEmpty)
+    }
+
+    func testWhenDeviceInfoEncryptionFailsThenSignupFallsBackToLegacyFields() async throws {
+        let api = RemoteAPIRequestCreatingMock()
+        let endpoints = Endpoints(baseURL: Self.baseURL)
+        let accountInfoKeyFactory = AccountInfoKeyFactoryMock()
+        accountInfoKeyFactory.makeProtectedKeysStub = [makeAccountInfoProtectedKey()]
+        let deviceInfoCodec = DeviceInfoCodingMock()
+        deviceInfoCodec.encryptUsingProtectedKeyError = DeviceInfoCodecError.invalidPayload
+        let accountManager = AccountManager(endpoints: endpoints,
+                                            api: api,
+                                            crypter: CryptingMock(),
+                                            accountInfoKeyFactory: accountInfoKeyFactory,
+                                            deviceInfoCodec: deviceInfoCodec,
+                                            isScopedAccessCredentialsEnabled: { true },
+                                            canWriteUnifiedDeviceList: { true })
+        api.fakeRequests[endpoints.signup] = makeJSONRequest("""
+        {
+            "user_id": "user-1",
+            "token": "token-1"
+        }
+        """)
+
+        _ = try await accountManager.createAccount(deviceName: "iPhone", deviceType: "iOS")
+
+        let signupBody = try makeSignupBody(from: api)
+        XCTAssertNil(signupBody["keys"])
+        XCTAssertNil(signupBody["device_info"])
+        XCTAssertEqual(signupBody["device_name"] as? String, "encrypted_iPhone")
+        XCTAssertEqual(signupBody["device_type"] as? String, "encrypted_iOS")
+        XCTAssertEqual(api.createRequestCallArgs.map(\.url), [endpoints.signup])
+    }
+
+    func testWhenDeviceInfoExceedsServerLimitThenSignupFallsBackToLegacyFields() async throws {
+        let api = RemoteAPIRequestCreatingMock()
+        let endpoints = Endpoints(baseURL: Self.baseURL)
+        let accountInfoKeyFactory = AccountInfoKeyFactoryMock()
+        accountInfoKeyFactory.makeProtectedKeysStub = [makeAccountInfoProtectedKey()]
+        let deviceInfoCodec = DeviceInfoCodingMock()
+        deviceInfoCodec.encryptUsingProtectedKeyStub = String(repeating: "a",
+                                                              count: AccountManager.Signup.maximumDeviceInfoLength + 1)
+        let accountManager = AccountManager(endpoints: endpoints,
+                                            api: api,
+                                            crypter: CryptingMock(),
+                                            accountInfoKeyFactory: accountInfoKeyFactory,
+                                            deviceInfoCodec: deviceInfoCodec,
+                                            isScopedAccessCredentialsEnabled: { true },
+                                            canWriteUnifiedDeviceList: { true })
+        api.fakeRequests[endpoints.signup] = makeJSONRequest("""
+        {
+            "user_id": "user-1",
+            "token": "token-1"
+        }
+        """)
+
+        _ = try await accountManager.createAccount(deviceName: "iPhone", deviceType: "iOS")
+
+        let signupBody = try makeSignupBody(from: api)
+        XCTAssertNil(signupBody["keys"])
+        XCTAssertNil(signupBody["device_info"])
+        XCTAssertEqual(signupBody["device_name"] as? String, "encrypted_iPhone")
+        XCTAssertEqual(signupBody["device_type"] as? String, "encrypted_iOS")
+    }
+
     func testWhenDecodingLoginResultWithoutScopedFieldsThenDecodingSucceeds() throws {
         let json = """
         {
@@ -363,6 +495,40 @@ final class AccountManagerTests: XCTestCase {
         XCTAssertNil(loginBody["scope"])
     }
 
+    func testWhenLoggingInWithUnifiedWriteEnabledThenLoginUsesLegacyMetadataOnly() async throws {
+        let api = RemoteAPIRequestCreatingMock()
+        let endpoints = Endpoints(baseURL: Self.baseURL)
+        let accountInfoKeyFactory = AccountInfoKeyFactoryMock()
+        accountInfoKeyFactory.makeProtectedKeysStub = [makeAccountInfoProtectedKey()]
+        let deviceInfoCodec = DeviceInfoCodingMock()
+        let accountManager = AccountManager(endpoints: endpoints,
+                                            api: api,
+                                            crypter: CryptingMock(),
+                                            accountInfoKeyFactory: accountInfoKeyFactory,
+                                            deviceInfoCodec: deviceInfoCodec,
+                                            isScopedAccessCredentialsEnabled: { true },
+                                            canWriteUnifiedDeviceList: { true })
+        api.fakeRequests[endpoints.login] = makeJSONRequest("""
+        {
+            "devices": [],
+            "token": "token-1",
+            "protected_encryption_key": ""
+        }
+        """)
+
+        _ = try await accountManager.login(.init(userId: "user-1", primaryKey: Data()),
+                                           deviceName: "iPhone",
+                                           deviceType: "iOS")
+
+        let loginBody = try makeLoginBody(from: api)
+        XCTAssertNil(loginBody["keys"])
+        XCTAssertNil(loginBody["device_info"])
+        XCTAssertEqual(loginBody["device_name"] as? String, "encrypted_iPhone")
+        XCTAssertEqual(loginBody["device_type"] as? String, "encrypted_iOS")
+        XCTAssertTrue(accountInfoKeyFactory.makeProtectedKeysCalls.isEmpty)
+        XCTAssertTrue(deviceInfoCodec.encryptUsingProtectedKeyCalls.isEmpty)
+    }
+
     func testWhenRefreshingTokenWithoutAccessCredentialsThenResultAccessCredentialsIsNil() async throws {
         let api = RemoteAPIRequestCreatingMock()
         let endpoints = Endpoints(baseURL: Self.baseURL)
@@ -540,6 +706,14 @@ final class AccountManagerTests: XCTestCase {
                     state: .active)
     }
 
+    private func makeAccountInfoProtectedKey() -> ProtectedKey {
+        ProtectedKey(kid: "account-info-key",
+                     encryptedPrivateKey: "encrypted-private-key",
+                     publicKey: .mock,
+                     encryptedWith: SyncCredentialID.defaultCredential,
+                     purpose: ProtectedKeyPurpose.accountInfo)
+    }
+
     private func makeJSONRequest(_ json: String) -> HTTPRequestingMock {
         HTTPRequestingMock(result: .init(data: Data(json.utf8), response: .init()))
     }
@@ -560,6 +734,29 @@ final class AccountManagerTests: XCTestCase {
         return try XCTUnwrap(json as? [String: Any])
     }
 
+}
+
+private final class DeviceInfoCodingMock: DeviceInfoCoding {
+
+    private(set) var encryptUsingProtectedKeyCalls: [(deviceInfo: DeviceInfo, protectedKey: ProtectedKey)] = []
+    var encryptUsingProtectedKeyStub = "encrypted-device-info"
+    var encryptUsingProtectedKeyError: Error?
+
+    func encrypt(_ deviceInfo: DeviceInfo, using protectedKey: ProtectedKey) throws -> String {
+        encryptUsingProtectedKeyCalls.append((deviceInfo: deviceInfo, protectedKey: protectedKey))
+        if let encryptUsingProtectedKeyError {
+            throw encryptUsingProtectedKeyError
+        }
+        return encryptUsingProtectedKeyStub
+    }
+
+    func encrypt(_ deviceInfo: DeviceInfo, using key: AccountInfoKeyMaterial) throws -> String {
+        throw DeviceInfoCodecError.invalidProtectedKey
+    }
+
+    func decrypt(_ encryptedDeviceInfo: String, using key: AccountInfoKeyMaterial) throws -> DeviceInfo {
+        throw DeviceInfoCodecError.invalidPayload
+    }
 }
 
 private final class RegisteredDeviceMappingMock: RegisteredDeviceMapping {

@@ -85,11 +85,11 @@ struct ProductionDependencies: SyncDependencies {
         payloadCompressor = SyncGzipPayloadCompressor()
 
         crypter = Crypter(secureStore: secureStore)
+        let accountInfoKeyFactory = DefaultAccountInfoKeyFactory(crypter: crypter)
         let scopedAccess = ScopedAccessCredentialManager(endpoints: endpoints,
                                                          api: api,
                                                          crypter: crypter,
-                                                         accountInfoKeyFactory: DefaultAccountInfoKeyFactory(crypter: crypter),
-                                                         canWriteUnifiedDeviceList: { syncFeatureFlags.canWriteUnifiedDeviceList() })
+                                                         accountInfoKeyFactory: accountInfoKeyFactory)
         accountInfoKeys = AccountInfoKeyManager(secureStore: secureStore,
                                                 scopedAccess: scopedAccess,
                                                 crypter: crypter)
@@ -101,7 +101,9 @@ struct ProductionDependencies: SyncDependencies {
                                  api: api,
                                  crypter: crypter,
                                  registeredDeviceMapper: registeredDeviceMapper,
-                                 isScopedAccessCredentialsEnabled: { syncFeatureFlags.isScopedAccessCredentialsEnabled() })
+                                 accountInfoKeyFactory: accountInfoKeyFactory,
+                                 isScopedAccessCredentialsEnabled: { syncFeatureFlags.isScopedAccessCredentialsEnabled() },
+                                 canWriteUnifiedDeviceList: { syncFeatureFlags.canWriteUnifiedDeviceList() })
         self.scopedAccess = scopedAccess
         scheduler = SyncScheduler()
     }
@@ -148,8 +150,7 @@ struct ProductionDependencies: SyncDependencies {
                                             api: api,
                                             crypter: crypter,
                                             scopedAccess: scopedAccess,
-                                            account: account,
-                                            canWriteUnifiedDeviceList: { syncFeatureFlags.canWriteUnifiedDeviceList() })
+                                            account: account)
     }
 
     func createTokenRescope() -> TokenRescoping {

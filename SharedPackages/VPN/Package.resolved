@@ -6,8 +6,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/content-scope-scripts.git",
       "state" : {
-        "revision" : "dc9b1280951a22359aac33d07ffd410cbbae2b94",
-        "version" : "15.12.0"
+        "branch" : "pr-releases/mgurgel/duckplayer-spinner",
+        "revision" : "199ffd6228d11064c9ec673895c2b5bc84b73775"
       }
     },
     {

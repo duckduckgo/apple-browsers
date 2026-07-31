@@ -24,6 +24,7 @@ import PrivacyConfig
 import SwiftUI
 import UIComponents
 import UniformTypeIdentifiers
+import SwiftUIExtensions
 
 @MainActor
 struct DataImportView: ModalView {
@@ -168,6 +169,9 @@ struct DataImportView: ModalView {
         .font(.system(size: 13))
         .frame(width: 420)
         .fixedSize()
+        .background(
+            Color(designSystemColor: .surfaceSecondary)
+        )
         .onReceive(internalUserDecider.isInternalUserPublisher.removeDuplicates()) {
             isInternalUser = $0
         }
@@ -194,16 +198,16 @@ struct DataImportView: ModalView {
                 passwordsExplainerView()
             }
             Spacer()
-            ForEach(model.buttons.indices, id: \.self) { idx in
+            ForEach(Array(model.buttons.enumerated()), id: \.offset) { _, button in
                 Button {
-                    model.performAction(for: model.buttons[idx],
-                                        dismiss: dismiss.callAsFunction)
+                    model.performAction(for: button, dismiss: dismiss.callAsFunction)
                 } label: {
-                    Text(model.buttons[idx].title(dataType: model.screen.fileImportDataType))
+                    Text(button.title(dataType: model.screen.fileImportDataType))
                         .frame(minWidth: 80 - 16 - 1)
                 }
-                .ifLet(model.buttons[idx].shortcut) { $0.keyboardShortcut($1) }
-                .disabled(model.buttons[idx].isDisabled)
+                .ifLet(button.shortcut) { $0.keyboardShortcut($1) }
+                .disabled(button.isDisabled)
+                .applyFooterButtonStyle(for: button)
             }
         }
         .opacity(model.shouldHideFooter ? 0 : 1)
@@ -417,6 +421,21 @@ extension DataImportViewModel.ButtonType {
         }
     }
 
+    var isPrimaryAction: Bool {
+        shortcut == .defaultAction
+    }
+}
+
+private extension View {
+
+    @ViewBuilder
+    func applyFooterButtonStyle(for button: DataImportViewModel.ButtonType) -> some View {
+        if button.isPrimaryAction {
+            buttonStyle(DefaultActionButtonStyle(enabled: !button.isDisabled, stateColors: .themedActionButton))
+        } else {
+            buttonStyle(DismissActionButtonStyle(stateColors: .themedDismissButton))
+        }
+    }
 }
 
 extension DataImportViewModel.ButtonType {

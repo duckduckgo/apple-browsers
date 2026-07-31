@@ -785,11 +785,11 @@ struct NewCircleNumberView: View {
 
     var body: some View {
         Circle()
-            .fill(.globalBackground)
+            .fill(Color(designSystemColor: .accentAltPrimary))
             .frame(width: Constants.diameter, height: Constants.diameter)
             .overlay(
                 Text("\(number)")
-                    .foregroundColor(Color(.onboardingActionButton))
+                    .foregroundColor(Color(designSystemColor: .accentAltTextPrimary))
                     .bold()
 
             )

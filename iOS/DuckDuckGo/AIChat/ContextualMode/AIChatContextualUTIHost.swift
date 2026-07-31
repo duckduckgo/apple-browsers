@@ -208,7 +208,7 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
         }
 
         // A dismissal animating out may still hold the input, and a child can only have one parent.
-        unmount()
+        detachInput()
 
         // Install + lay out without animation. Otherwise the half-sheet's slide-up animation
         // captures the UTI's first layout pass and interpolates from a zero-frame at (0,0),
@@ -257,7 +257,14 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
 
     /// Detaches the input so it can be mounted in a different parent. A child view controller may
     /// only have one parent, so this has to run before the next `mount(in:)`.
-    func unmount() {
+    /// Only if `parent` is still the one holding the input. A surface animating itself out finishes after the
+    /// next one may already have mounted the input, and it must not take that surface's bar away with it.
+    func unmount(from parent: UIViewController) {
+        guard coordinator.viewController.parent === parent else { return }
+        detachInput()
+    }
+
+    private func detachInput() {
         // Ahead of the mounted check, so a surface that lost its parent some other way still leaves these
         // behind. Rebuilt by the next mount, against whatever parent that is.
         frozenBottomConstraint?.isActive = false
@@ -266,6 +273,8 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
 
         let viewController = coordinator.viewController
         guard viewController.parent != nil else { return }
+        // Handed back clean: this view is reused across mounts, and a slide leaves a transform on it.
+        viewController.view.transform = .identity
         viewController.willMove(toParent: nil)
         viewController.view.removeFromSuperview()
         viewController.removeFromParent()

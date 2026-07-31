@@ -222,7 +222,7 @@ final class AIChatContextualUTIHostTests: XCTestCase {
         XCTAssertTrue(firstView.isDescendant(of: first.view))
         XCTAssertEqual(first.children.count, 1)
 
-        sut.unmount()
+        sut.unmount(from: first)
         XCTAssertTrue(first.children.isEmpty)
         XCTAssertNil(firstView.superview)
 
@@ -244,7 +244,23 @@ final class AIChatContextualUTIHostTests: XCTestCase {
 
     func test_unmountWithoutMount_doesNothing() {
         makeSUT()
-        sut.unmount()
+        sut.unmount(from: UIViewController())
+    }
+
+    /// A dismissal animating out finishes after the next surface may already have mounted the input. Taking
+    /// it away then would leave that surface without its bar.
+    func test_unmountFromAStaleParent_leavesTheCurrentMountAlone() {
+        makeSUT()
+        let stale = UIViewController()
+        let current = UIViewController()
+
+        _ = sut.mount(in: stale)
+        let inputView = sut.mount(in: current)
+
+        sut.unmount(from: stale)
+
+        XCTAssertTrue(inputView.isDescendant(of: current.view))
+        XCTAssertEqual(current.children.count, 1)
     }
 
     /// Freezing is what lets a dismissal own the surface's motion, so it has to hand over the position the

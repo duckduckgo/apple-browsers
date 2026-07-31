@@ -57,7 +57,8 @@ final class AIChatContextualFloatingInputViewControllerTests: XCTestCase {
             return inputView
         }
 
-        func unmount() {
+        func unmount(from parent: UIViewController) {
+            guard inputView.superview === parent.view else { return }
             unmountCount += 1
             inputView.removeFromSuperview()
         }
@@ -100,6 +101,11 @@ final class AIChatContextualFloatingInputViewControllerTests: XCTestCase {
     }
 
     /// Installed with a spied host, for the assertions that turn on what the exit asks of it.
+    /// The surface only reacts to a keyboard going away once one has arrived for it.
+    private func postKeyboardAppeared() {
+        NotificationCenter.default.post(name: UIResponder.keyboardWillShowNotification, object: nil)
+    }
+
     private func makeSubjectWithHostSpy() -> (AIChatContextualFloatingInputViewController, HostSpy, DelegateSpy, UIViewController) {
         let host = HostSpy()
         let subject = AIChatContextualFloatingInputViewController(utiHost: host, chipsViewController: makeChips())
@@ -275,9 +281,21 @@ final class AIChatContextualFloatingInputViewControllerTests: XCTestCase {
     func testAKeyboardTakenAwayByAnythingElseRequestsDismissal() {
         let (_, _, spy, _) = makeSubjectWithHostSpy()
 
+        postKeyboardAppeared()
         NotificationCenter.default.post(name: UIResponder.keyboardWillHideNotification, object: nil)
 
         XCTAssertEqual(spy.dismissRequestCount, 1)
+    }
+
+    /// Presenting takes the keyboard over from whatever held it before, and that handover reports a hide of its
+    /// own. With a hardware keyboard attached, no software keyboard appears at all. Dismissing on either would
+    /// tear down a surface that never had a keyboard to lose.
+    func testAKeyboardHideBeforeOneHasAppearedIsIgnored() {
+        let (_, _, spy, _) = makeSubjectWithHostSpy()
+
+        NotificationCenter.default.post(name: UIResponder.keyboardWillHideNotification, object: nil)
+
+        XCTAssertEqual(spy.dismissRequestCount, 0)
     }
 
     /// Our own dismissal resigns the input, which reports a keyboard hide. That must not come back around as
@@ -285,6 +303,7 @@ final class AIChatContextualFloatingInputViewControllerTests: XCTestCase {
     func testAKeyboardHideDuringOurOwnDismissalDoesNotRequestAnother() {
         let (subject, _, spy, _) = makeSubjectWithHostSpy()
 
+        postKeyboardAppeared()
         subject.dismiss { }
         NotificationCenter.default.post(name: UIResponder.keyboardWillHideNotification, object: nil)
 
@@ -295,6 +314,7 @@ final class AIChatContextualFloatingInputViewControllerTests: XCTestCase {
     func testAKeyboardHideAfterRemovalRequestsNothing() {
         let (subject, _, spy, _) = makeSubjectWithHostSpy()
 
+        postKeyboardAppeared()
         subject.remove()
         NotificationCenter.default.post(name: UIResponder.keyboardWillHideNotification, object: nil)
 

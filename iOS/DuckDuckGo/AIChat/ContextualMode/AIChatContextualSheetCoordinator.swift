@@ -318,6 +318,10 @@ final class AIChatContextualSheetCoordinator {
     /// call site. `promoteFloatingInputToSheet` deliberately bypasses it.
     func dismissFloatingInput() {
         guard let controller = floatingInputViewController else { return }
+        // Released here rather than when the animation ends: this is what the address bar reads to decide
+        // whether its Duck.ai button offers the menu, and a surface on its way out is no longer a surface to
+        // dismiss. Removal that lands late cannot disturb a newer surface — `unmount(from:)` is scoped to
+        // the parent that owns the input.
         floatingInputViewController = nil
         floatingChipsCancellable = nil
         pixelHandler.fireFloatingInputDismissedWithoutSubmission()

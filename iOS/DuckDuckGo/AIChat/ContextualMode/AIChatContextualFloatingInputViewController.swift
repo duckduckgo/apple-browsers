@@ -33,7 +33,7 @@ protocol AIChatContextualFloatingInputHosting: AnyObject {
     var inputCardTrailingAnchor: NSLayoutXAxisAnchor { get }
 
     func mount(in parent: UIViewController) -> UIView
-    func unmount()
+    func unmount(from parent: UIViewController)
     func deactivateInput()
     func freezeInputPosition()
 }
@@ -80,6 +80,12 @@ final class AIChatContextualFloatingInputViewController: UIViewController {
 
     private var keyboardAnimation = KeyboardAnimation()
 
+    /// Whether a keyboard has appeared for this surface. Presenting takes the keyboard over from whatever held
+    /// it before, and that handover reports a hide of its own; with a hardware keyboard attached no software
+    /// keyboard appears at all. Neither is this surface losing the keyboard it was sitting above.
+    private var hasKeyboardAppeared = false
+
+    /// Stays true for the rest of this surface's life — it is presented once and dismissed once.
     private var isDismissing = false
     private var hasResignedInput = false
     private var hasPlayedChipsEntrance = false
@@ -306,9 +312,9 @@ final class AIChatContextualFloatingInputViewController: UIViewController {
         // from the remembered view rather than `parent`, which is already nil if we were detached first.
         presenterView?.removeGestureRecognizer(dismissOnPageTapRecognizer)
         presenterView = nil
-        utiHost.unmount()
-        // Handed back clean: the host reuses this view, and a slide leaves a transform on it.
-        mountedInputView?.transform = .identity
+        // Scoped to this surface: a dismissal finishing after the next surface has mounted the shared input
+        // must leave it alone. Clearing the slide's transform is the host's own business on the way out.
+        utiHost.unmount(from: self)
         mountedInputView = nil
         removeChips()
         willMove(toParent: nil)
@@ -451,10 +457,21 @@ private extension AIChatContextualFloatingInputViewController {
             keyboardAnimation = animation
         }
 
-        // This surface only makes sense above a keyboard, and something else has just taken it away — a long
-        // press starting a text selection, the page blurring its own field, the app going to the background.
-        // Dismissals of our own are already under way by the time they reach here.
-        guard notification.name == UIResponder.keyboardWillHideNotification, !isDismissing else { return }
+        if notification.name == UIResponder.keyboardWillShowNotification {
+            hasKeyboardAppeared = true
+        }
+
+        // Something else has taken away the keyboard this surface was sitting above — a long press starting a
+        // text selection, or the page blurring its own field — so the surface goes too. Only once one has
+        // actually appeared for it: otherwise a handover's own hide, or a hardware keyboard leaving no
+        // software one to show, would dismiss a surface that never had a keyboard to lose. Dismissals of our
+        // own are already under way by the time they reach here.
+        guard notification.name == UIResponder.keyboardWillHideNotification,
+              hasKeyboardAppeared,
+              !isDismissing else { return }
+        // Backgrounding and system interruptions take the keyboard too, and neither is the user leaving: the
+        // surface and whatever has been typed into it should still be here on the way back.
+        guard UIApplication.shared.applicationState == .active else { return }
         requestDismiss()
     }
 

@@ -1064,11 +1064,18 @@ class MainViewController: UIViewController {
             return
         }
 
-        // Both surfaces, because the floating input is dismissed by routes the sheet knows nothing
-        // about — a page tap, a swipe — and the address bar menu has to be re-attached either way.
+        // Every runtime input to `duckAIAddressBarEntry`, so the Duck.ai button's menu can never be left
+        // attached — or detached — against what a tap will do. Both surfaces, because the floating input is
+        // dismissed by routes the sheet knows nothing about, and `hasActiveChat`, which flips on its own when
+        // a session times out or is cleared, with no surface and no navigation to notice it.
+        // `isHomeTab`, the remaining input, changes only with navigation, which refreshes the omnibar anyway.
         // `dropFirst` skips the replay of the current state, which the explicit refresh below covers.
         let coordinator = currentTab.aiChatContextualSheetCoordinator
-        Publishers.CombineLatest(coordinator.$isSheetPresented, coordinator.$isFloatingInputPresented)
+        let sessionState = coordinator.sessionState
+        let hasActiveChat = sessionState.$viewState
+            .map { _ in sessionState.hasActiveChat }
+            .removeDuplicates()
+        Publishers.CombineLatest3(coordinator.$isSheetPresented, coordinator.$isFloatingInputPresented, hasActiveChat)
             .removeDuplicates { $0 == $1 }
             .dropFirst()
             .receive(on: DispatchQueue.main)
@@ -5237,7 +5244,8 @@ extension MainViewController: OmniBarDelegate {
 
         switch duckAIAddressBarEntry {
         case .menu:
-            // The menu is the button's primary action, so a tap never reaches here.
+            // Unreachable: the menu is the button's primary action, and everything the entry is derived from
+            // re-attaches it on change, so a tap in this state is consumed by the menu itself.
             break
         case .contextualSheet:
             guard let currentTab else { return }

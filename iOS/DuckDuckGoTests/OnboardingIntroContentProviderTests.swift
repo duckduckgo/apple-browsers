@@ -610,7 +610,7 @@ struct OnboardingIntroContentProviderTests {
             "Check add to dock message is correct per flow",
             arguments: zip(
                 [OnboardingFlowType.default, .duckAI],
-                [UserText.AddToDockOnboarding.Promo.introMessage, UserText.Onboarding.DuckAICPP.AddToDock.Promo.message]
+                [UserText.AddToDockOnboarding.Promo.introMessageNew, UserText.Onboarding.DuckAICPP.AddToDock.Promo.message]
             )
         )
         func checkAddToDockMessage(flow: OnboardingFlowType, expectedMessage: String) {

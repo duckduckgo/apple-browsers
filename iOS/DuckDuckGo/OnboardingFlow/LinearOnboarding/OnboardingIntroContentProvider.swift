@@ -422,7 +422,7 @@ extension OnboardingIntroContentProvider {
 
     var addToDockContent: OnboardingAddToDockContent {
         let promoMessage = switch flowType {
-        case .default: UserText.AddToDockOnboarding.Promo.introMessage
+        case .default: UserText.AddToDockOnboarding.Promo.introMessageNew
         case .duckAI: UserText.Onboarding.DuckAICPP.AddToDock.Promo.message
         }
 

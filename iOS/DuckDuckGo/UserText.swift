@@ -2859,6 +2859,7 @@ public struct UserText {
         public enum Promo {
             static let title = NSLocalizedString("contextual.onboarding.addToDock.promo.title", value: "Add me to your Dock!", comment: "The title of the onboarding dialog popup that promotes adding the DDG browser icon to the dock.")
             static let introMessage = NSLocalizedString("contextual.onboarding.addToDock.promo.intro.message", value: "I’ll nest in easy reach for all your daily browsing.", comment: "The message of the onboarding dialog popup that promotes adding the DDG browser icon to the dock.")
+            static let introMessageNew = NotLocalizedString("onboarding.addToDock.promo.intro.message", value: "I'll nest in easy reach for quick access.", comment: "The message of the onboarding dialog popup that promotes adding the DDG browser icon to the dock.")
             static let contextualMessage = NSLocalizedString("contextual.onboarding.addToDock.promo.contextual.message", value: "Remember, every time you browse with me a creepy ad loses its wings.\n\nSo keep me in your Dock for daily browsing.", comment: "Message of the last screen of the onboarding that promotes adding the DDG browser icon to the dock.")
         }
 

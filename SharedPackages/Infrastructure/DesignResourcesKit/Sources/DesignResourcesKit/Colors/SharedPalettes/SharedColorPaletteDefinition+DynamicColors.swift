@@ -228,10 +228,10 @@ extension SharedColorPaletteDefinition {
             return iconsTertiary
 
         /// Input
-        case .inputActive:
-            return inputActive
-        case .inputResting:
-            return inputResting
+        case .unifiedInputFieldFillPrimary:
+            return unifiedInputFieldFillPrimary
+        case .unifiedInputFieldFillSecondary:
+            return unifiedInputFieldFillSecondary
 
         /// System
         case .lines:

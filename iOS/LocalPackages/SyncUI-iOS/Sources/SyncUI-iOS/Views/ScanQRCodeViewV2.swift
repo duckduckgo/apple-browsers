@@ -66,10 +66,7 @@ public struct ScanQRCodeViewV2: View {
                 }
             }
         }
-        .sheet(isPresented: $model.isShowingSyncCodeSheet, onDismiss: {
-            model.onSyncCodeSheetDismissed?()
-            model.onSyncCodeSheetDismissed = nil
-        }) {
+        .sheet(isPresented: $model.isShowingSyncCodeSheet) {
             SyncCodeSheetView(model: model)
         }
         .navigationBarTitleDisplayMode(.inline)

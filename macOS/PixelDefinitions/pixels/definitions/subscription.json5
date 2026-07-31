@@ -825,6 +825,13 @@
         "triggers": ["other"],
         "parameters": ["appVersion", "pixelSource", "channel"]
     },
+    "privacy-pro_new_tab_page_next_steps_card_shown": {
+        "description": "Fired when the subscription Next Steps card is shown on the New Tab Page. Uses feature-grouped naming (no m_/mac/distribution prefix); platform is derived from the request client header and App-Store-vs-direct distribution from the pixelSource parameter.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
 
     // Free Trial Journey Pixels - App Store Distribution
     "m_mac_store_privacy-pro_freetrial_start": {

@@ -103,6 +103,9 @@
 /* Cancel action - button shown in alert */
 "action.title.cancel" = "Ακύρωση";
 
+/* Open the native Duck.ai chat history sheet from the browser menu. */
+"action.title.chats" = "Συνομιλίες";
+
 /* Copy action */
 "action.title.copy" = "Αντιγραφή";
 
@@ -247,24 +250,6 @@
 /* Settings screen title for AI features */
 "ai-features.settings.title" = "Λειτουργίες τεχνητής νοημοσύνης";
 
-/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as a regular text conversation. */
-"aiChat.tabSwitcher.card.chip.chat" = "Συνομιλία";
-
-/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as the transcript of a finished voice conversation. Not translated; final copy will land in a follow-up PR. */
-"aiChat.tabSwitcher.card.chip.transcript" = "Μεταγραφή";
-
-/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as a live voice session. Not translated; final copy will land in a follow-up PR. */
-"aiChat.tabSwitcher.card.chip.voice" = "Φωνητική συνομιλία";
-
-/* Title shown on a Duck.ai tab grid card when the chat has no title yet. Not translated; final copy will land in a follow-up PR. */
-"aiChat.tabSwitcher.card.untitledChat" = "Νέα συνομιλία";
-
-/* Status label at the top of the Duck.ai tab grid card for a tab with a live voice session in progress. A leading microphone glyph is shown next to it in the UI. Not translated; final copy will land in a follow-up PR. */
-"aiChat.tabSwitcher.card.voice.listening" = "Ακρόαση…";
-
-/* VoiceOver label for the Duck.ai tab grid card of a tab with a live voice session — same as the visible status without the decorative emoji. Not translated; final copy will land in a follow-up PR. */
-"aiChat.tabSwitcher.card.voice.listening.accessibilityLabel" = "Ακρόαση…";
-
 /* List row label in the app menu on a Duck.ai tab — opens the recent Duck.ai chats sidebar */
 "aichat.appMenu.chats" = "Συνομιλίες";
 
@@ -298,6 +283,9 @@
 /* Error message displayed when the user has attached more images than are allowed in one message. Parameter is the backend-provided maximum number of images per message. */
 "aichat.attachment.image.turn.limit" = "Μπορείτε να επισυνάψετε μόνο %d εικόνες κάθε φορά.";
 
+/* Top-level attachment menu option to attach the current page content to an AI chat message */
+"aichat.attachment.option.ask.about.page" = "Ρώτα για τη σελίδα";
+
 /* Top-level attachment menu option to add a file to an AI chat message */
 "aichat.attachment.option.attach.file" = "Προσθήκη αρχείου";
 
@@ -328,6 +316,9 @@
 /* Title for the New Fire Tab row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newFireTab" = "Νέα καρτέλα Fire";
 
+/* Title for the New Image row in the Duck.ai tab header Plus (+) menu — opens Duck.ai in image generation mode */
+"aichat.header.plusMenu.newImage" = "Νέα εικόνα";
+
 /* Title for the New Search row in the Duck.ai tab header Plus (+) menu — opens a new tab and forces search mode for that entry */
 "aichat.header.plusMenu.newSearch" = "Νέα αναζήτηση";
 
@@ -336,6 +327,75 @@
 
 /* Title for the New Voice Chat row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newVoiceChat" = "Νέα φωνητική συνομιλία";
+
+/* Error toast shown when a Duck.ai chat download fails and nothing was saved. */
+"aiChat.history.download.failed.message" = "Δεν ήταν δυνατή η λήψη. Δοκιμάστε ξανά.";
+
+/* Primary button on the empty Duck.ai chat-history screen; opens the Duck.ai web chat. */
+"aiChat.history.emptyState.openDuckAi" = "Άνοιξε το Duck.ai";
+
+/* Title shown when the user has no Duck.ai chat history yet. */
+"aiChat.history.emptyState.title" = "Δεν υπάρχουν πρόσφατες συνομιλίες";
+
+/* Message of the alert shown when Duck.ai chat history fails to load. */
+"aiChat.history.loadError.message" = "Κάτι πήγε στραβά κατά τη φόρτωση των συνομιλιών σου στο Duck.ai. Δοκίμασε ξανά αργότερα.";
+
+/* Title of the alert shown when Duck.ai chat history fails to load. */
+"aiChat.history.loadError.title" = "Δεν ήταν δυνατή η φόρτωση των συνομιλιών";
+
+/* Accessibility label for the overflow (three dots) menu button in the Duck.ai chat history navigation bar. */
+"aiChat.history.menu.a11y" = "Περισσότερα";
+
+/* Menu item opening Duck.ai Chat Protection settings from the Duck.ai chat history list. */
+"aiChat.history.menu.chatProtection" = "Προστασία συνομιλίας";
+
+/* Menu item that starts multi-selecting chats in the Duck.ai chat history list. */
+"aiChat.history.menu.selectChats" = "Επιλογή συνομιλιών";
+
+/* Shown inside the Duck.ai chat history list when the user's search query returns no matching chats. */
+"aiChat.history.noSearchResults.title" = "Δεν βρέθηκαν αντιστοιχίες";
+
+/* Long-press row menu item that deletes a Duck.ai chat. */
+"aiChat.history.rowMenu.delete" = "Διαγραφή";
+
+/* Long-press row menu item that downloads a Duck.ai chat. */
+"aiChat.history.rowMenu.download" = "Λήψη";
+
+/* Long-press row menu item that pins a Duck.ai chat. */
+"aiChat.history.rowMenu.pin" = "Καρφίτσωμα";
+
+/* Long-press row menu item that starts multi-selecting chats in the Duck.ai chat history list. */
+"aiChat.history.rowMenu.select" = "Επιλογή";
+
+/* Long-press row menu item that unpins a Duck.ai chat. */
+"aiChat.history.rowMenu.unpin" = "Ξεκαρφίτσωμα";
+
+/* Accessibility label for the search button in the Duck.ai chat history navigation bar. */
+"aiChat.history.search.a11y" = "Αναζήτηση";
+
+/* Placeholder for the search bar at the top of the Duck.ai chat history list. */
+"aiChat.history.searchBar.placeholder" = "Αναζήτηση";
+
+/* Section header above the user's pinned chats in the Duck.ai chat history list. */
+"aiChat.history.section.pinned" = "Καρφιτσωμένες";
+
+/* Section header above the user's recent (unpinned) chats in the Duck.ai chat history list. */
+"aiChat.history.section.recent" = "Πρόσφατες";
+
+/* Multi-select toolbar button that deletes all chats when none are individually selected. */
+"aiChat.history.selection.deleteAll" = "Διαγραφή όλων";
+
+/* Accessibility label for the delete action revealed by swiping a Duck.ai chat row. */
+"aiChat.history.swipe.delete.a11y" = "Διαγραφή συνομιλίας";
+
+/* Accessibility label for the download action revealed by swiping a Duck.ai chat row. */
+"aiChat.history.swipe.download.a11y" = "Λήψη συνομιλίας";
+
+/* Accessibility label for the pin action revealed by leading-swiping a Duck.ai chat row in the Recent section. */
+"aiChat.history.swipe.pin.a11y" = "Καρφίτσωμα συνομιλίας";
+
+/* Accessibility label for the unpin action revealed by leading-swiping a Duck.ai chat row in the Pinned section. */
+"aiChat.history.swipe.unpin.a11y" = "Ξεκαρφίτσωμα συνομιλίας";
 
 /* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.extended.subtitle" = "Για εργασίες ανάλυσης";
@@ -355,18 +415,6 @@
 /* Title for the reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.reasoning.title" = "Συλλογιστική";
 
-/* Body of the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. ** markers indicate bold text and should be preserved around the translated equivalents of the menu options Settings, Sync & Backup, and Sync With Another Device. */
-"aiChat.syncIntroSheet.body" = "Βρες τον κωδικό QR στην εφαρμογή DuckDuckGo στην άλλη συσκευή σου μεταβαίνοντας στις **Ρυθμίσεις** › **Sync & Backup** › **Συγχρονισμός με άλλη συσκευή**.";
-
-/* Secondary button on the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. */
-"aiChat.syncIntroSheet.notNow" = "Όχι τώρα";
-
-/* Primary button on the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. */
-"aiChat.syncIntroSheet.scan.button" = "Σάρωση κώδικα QR";
-
-/* Title of the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. */
-"aiChat.syncIntroSheet.title" = "Ας συγχρονίσουμε τις συνομιλίες σου σε όλες τις συσκευές σου!";
-
 /* Primary button of the sync promo card shown above the Duck.ai recent chats list. */
 "aiChat.syncPromo.button" = "Συγχρονισμός με άλλη συσκευή";
 
@@ -375,6 +423,24 @@
 
 /* Headline of the sync promo card shown above the Duck.ai recent chats list. */
 "aiChat.syncPromo.title" = "Απόκτησε πρόσβαση στις συνομιλίες σου σε όλες τις συσκευές σου χρησιμοποιώντας το Sync & Backup.";
+
+/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as a regular text conversation. */
+"aiChat.tabSwitcher.card.chip.chat" = "Συνομιλία";
+
+/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as the transcript of a finished voice conversation. */
+"aiChat.tabSwitcher.card.chip.transcript" = "Μεταγραφή";
+
+/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as a live voice session. */
+"aiChat.tabSwitcher.card.chip.voice" = "Φωνητική συνομιλία";
+
+/* Title shown on a Duck.ai tab grid card when the chat has no title yet. */
+"aiChat.tabSwitcher.card.untitledChat" = "Νέα συνομιλία";
+
+/* Status label at the top of the Duck.ai tab grid card for a tab with a live voice session in progress. A leading microphone glyph is shown next to it in the UI. */
+"aiChat.tabSwitcher.card.voice.listening" = "Ακρόαση…";
+
+/* VoiceOver label for the Duck.ai tab grid card of a tab with a live voice session — same as the visible status without the decorative emoji. */
+"aiChat.tabSwitcher.card.voice.listening.accessibilityLabel" = "Ακρόαση…";
 
 /* Subtitle for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.subtitle" = "Ορισμός τόνου, μήκους και συμπεριφοράς";
@@ -540,8 +606,6 @@
 
 /* Description for unable to sync to server error */
 "alert.unable-to-sync-to-server-description" = "Δεν είναι δυνατή η σύνδεση με τον διακομιστή.";
-
-/* Description for unable to sync with another device error */
 
 /* Description for unable to turn sync off error */
 "alert.unable-to-turn-sync-off-description" = "Δεν είναι δυνατή η απενεργοποίηση της λειτουργίας Συγχρονισμός και δημιουργία αντιγράφων ασφαλείας.";
@@ -1935,6 +1999,246 @@
 /* Title for the Duck.ai Siri education screen */
 "duckai.siri.education.screen.title" = "Συνομιλήστε με το Duck.ai χρησιμοποιώντας το Siri!";
 
+/* Suggested prompt chip: cast and crew */
+"duckai.suggestion.cast-crew.label" = "Ηθοποιοί και συντελεστές";
+
+/* Suggested prompt submitted text: cast and crew */
+"duckai.suggestion.cast-crew.prompt" = "Ποιοι είναι οι βασικοί ηθοποιοί και οι συντελεστές, και για τι άλλο είναι γνωστοί;";
+
+/* Suggested prompt chip: counterarguments */
+"duckai.suggestion.counterarguments.label" = "Ποια είναι τα αντεπιχειρήματα;";
+
+/* Suggested prompt submitted text: counterarguments */
+"duckai.suggestion.counterarguments.prompt" = "Ποια είναι τα κύρια αντεπιχειρήματα ή οι επικρίσεις γι' αυτό;";
+
+/* Suggested prompt chip: course learning outcomes */
+"duckai.suggestion.course-learn.label" = "Τι θα μάθω;";
+
+/* Suggested prompt submitted text: course learning outcomes */
+"duckai.suggestion.course-learn.prompt" = "Ποια είναι τα βασικά πράγματα που θα μάθω από αυτή τη σειρά μαθημάτων;";
+
+/* Suggested prompt chip: is a course worth taking */
+"duckai.suggestion.course-worth.label" = "Αξίζει να την παρακολουθήσω;";
+
+/* Suggested prompt submitted text: is a course worth taking */
+"duckai.suggestion.course-worth.prompt" = "Με βάση αυτήν τη σελίδα, αξίζει να παρακολουθήσω αυτήν τη σειρά μαθημάτων;";
+
+/* Suggested prompt chip: draft a cover letter */
+"duckai.suggestion.cover-letter.label" = "Σύνταξε μια συνοδευτική επιστολή";
+
+/* Suggested prompt submitted text: draft a cover letter */
+"duckai.suggestion.cover-letter.prompt" = "Σύνταξε μια συνοδευτική επιστολή γι' αυτήν την εργασία.";
+
+/* Suggested prompt chip: event details */
+"duckai.suggestion.event-details.label" = "Ποιες είναι οι βασικές λεπτομέρειες;";
+
+/* Suggested prompt submitted text: event details */
+"duckai.suggestion.event-details.prompt" = "Συνόψισε τις βασικές λεπτομέρειες αυτού του γεγονότος.";
+
+/* Suggested prompt chip: explain the top answer */
+"duckai.suggestion.explain-answer.label" = "Εξήγησε την κορυφαία απάντηση";
+
+/* Suggested prompt submitted text: explain the top answer */
+"duckai.suggestion.explain-answer.prompt" = "Εξήγησε την αποδεκτή απάντηση με απλά λόγια.";
+
+/* Suggested prompt chip: explain a research paper */
+"duckai.suggestion.explain-paper.label" = "Εξήγησε αυτή την εργασία";
+
+/* Suggested prompt submitted text: explain a research paper */
+"duckai.suggestion.explain-paper.prompt" = "Εξήγησε αυτή την ερευνητική εργασία με απλά λόγια.";
+
+/* Suggested prompt chip: explain a code repository */
+"duckai.suggestion.explain-repo.label" = "Εξήγησε αυτό το αποθετήριο";
+
+/* Suggested prompt submitted text: explain a code repository */
+"duckai.suggestion.explain-repo.prompt" = "Εξήγησε τι κάνει αυτό το αποθετήριο και πώς χρησιμοποιείται.";
+
+/* Suggested prompt chip: explain the content simply */
+"duckai.suggestion.explain-simply.label" = "Εξήγησέ το αυτό απλά";
+
+/* Suggested prompt submitted text: explain the content simply */
+"duckai.suggestion.explain-simply.prompt" = "Εξήγησέ το αυτό με απλά, κατανοητά λόγια.";
+
+/* Suggested prompt chip: what an FAQ page answers */
+"duckai.suggestion.faq-answer.label" = "Σε τι απαντά αυτό;";
+
+/* Suggested prompt submitted text: what an FAQ page answers */
+"duckai.suggestion.faq-answer.prompt" = "Ποιες είναι οι κύριες ερωτήσεις που απαντά αυτή η σελίδα;";
+
+/* Suggested prompt chip: summarize FAQ Q&As */
+"duckai.suggestion.faq-summary.label" = "Συνόψισε τις ερωταπαντήσεις";
+
+/* Suggested prompt submitted text: summarize FAQ Q&As */
+"duckai.suggestion.faq-summary.prompt" = "Συνόψισε τις ερωτήσεις και τις απαντήσεις σε αυτήν τη σελίδα.";
+
+/* Suggested prompt chip: product alternatives */
+"duckai.suggestion.find-alternatives.label" = "Βρες μου εναλλακτικές λύσεις";
+
+/* Suggested prompt submitted text: product alternatives */
+"duckai.suggestion.find-alternatives.prompt" = "Πρότεινε μερικές εναλλακτικές γι' αυτό το προϊόν.";
+
+/* Suggested prompt chip: how-to materials */
+"duckai.suggestion.howto-materials.label" = "Τι θα χρειαστώ;";
+
+/* Suggested prompt submitted text: how-to materials */
+"duckai.suggestion.howto-materials.prompt" = "Απαρίθμησε εργαλεία, υλικά ή προϋποθέσεις που χρειάζομαι γι' αυτό.";
+
+/* Suggested prompt chip: how-to steps */
+"duckai.suggestion.howto-steps.label" = "Καθοδήγησέ με στα βήματα";
+
+/* Suggested prompt submitted text: how-to steps */
+"duckai.suggestion.howto-steps.prompt" = "Χώρισέ το σε σαφή, αριθμημένα βήματα.";
+
+/* Suggested prompt chip: interview prep */
+"duckai.suggestion.interview-prep.label" = "Βοήθησέ με να προετοιμαστώ για τη συνέντευξη";
+
+/* Suggested prompt submitted text: interview prep */
+"duckai.suggestion.interview-prep.prompt" = "Ποιες ερωτήσεις συνέντευξης μπορεί να προκύψουν για αυτόν τον ρόλο;";
+
+/* Suggested prompt chip: key takeaways of an article */
+"duckai.suggestion.key-takeaways.label" = "Ποια είναι τα βασικά σημεία;";
+
+/* Suggested prompt submitted text: key takeaways of an article */
+"duckai.suggestion.key-takeaways.prompt" = "Ποια είναι τα βασικά σημεία αυτού του άρθρου;";
+
+/* Suggested prompt chip: restaurant menu highlights */
+"duckai.suggestion.menu-highlights.label" = "Τι να παραγγείλω;";
+
+/* Suggested prompt submitted text: restaurant menu highlights */
+"duckai.suggestion.menu-highlights.prompt" = "Ποια πιάτα πρέπει οπωσδήποτε να δοκιμάσω εδώ;";
+
+/* Suggested prompt chip: paper contributions */
+"duckai.suggestion.paper-contributions.label" = "Ποιες είναι οι βασικές συνεισφορές;";
+
+/* Suggested prompt submitted text: paper contributions */
+"duckai.suggestion.paper-contributions.prompt" = "Ποιες είναι οι βασικές συνεισφορές αυτής της εργασίας;";
+
+/* Suggested prompt chip: summarize a person's background */
+"duckai.suggestion.person-background.label" = "Συνόψισε το ιστορικό τους";
+
+/* Suggested prompt submitted text: summarize a person's background */
+"duckai.suggestion.person-background.prompt" = "Συνόψισε το ιστορικό αυτού του ατόμου και το σημαντικό του έργο.";
+
+/* Suggested prompt chip: place hours and location */
+"duckai.suggestion.place-hours.label" = "Ποιες είναι οι ώρες και η τοποθεσία;";
+
+/* Suggested prompt submitted text: place hours and location */
+"duckai.suggestion.place-hours.prompt" = "Ποιες είναι οι ώρες λειτουργίας, η τοποθεσία και τα στοιχεία επικοινωνίας γι' αυτό το μέρος;";
+
+/* Suggested prompt chip: place reputation */
+"duckai.suggestion.place-reviews.label" = "Είναι καλό αυτό το μέρος;";
+
+/* Suggested prompt submitted text: place reputation */
+"duckai.suggestion.place-reviews.prompt" = "Είναι καλό αυτό το μέρος; Συνόψισε τη φήμη του με βάση κριτικές και αξιολογήσεις.";
+
+/* Suggested prompt chip: product pros and cons */
+"duckai.suggestion.product-pros-cons.label" = "Ποια είναι τα πλεονεκτήματα και τα μειονεκτήματα;";
+
+/* Suggested prompt submitted text: product pros and cons */
+"duckai.suggestion.product-pros-cons.prompt" = "Ποια είναι τα πλεονεκτήματα και τα μειονεκτήματα αυτού του προϊόντος;";
+
+/* Suggested prompt chip: recipe nutrition */
+"duckai.suggestion.recipe-nutrition.label" = "Υπολόγισε τη διατροφή";
+
+/* Suggested prompt submitted text: recipe nutrition */
+"duckai.suggestion.recipe-nutrition.prompt" = "Υπολόγισε τις διατροφικές πληροφορίες γι' αυτήν τη συνταγή.";
+
+/* Suggested prompt chip: related articles */
+"duckai.suggestion.related-articles.label" = "Πρότεινε σχετικά άρθρα για εξερεύνηση";
+
+/* Suggested prompt submitted text: related articles */
+"duckai.suggestion.related-articles.prompt" = "Πρότεινε σχετικά άρθρα ή θέματα που αξίζουν εξερεύνηση στη συνέχεια.";
+
+/* Suggested prompt chip: summarize reviews */
+"duckai.suggestion.review-summary.label" = "Συνόψισε τις κριτικές";
+
+/* Suggested prompt submitted text: summarize reviews */
+"duckai.suggestion.review-summary.prompt" = "Συνόψισε τι λένε οι κριτικές.";
+
+/* Suggested prompt chip: review verdict */
+"duckai.suggestion.review-verdict.label" = "Ποιο είναι η ετυμηγορία;";
+
+/* Suggested prompt submitted text: review verdict */
+"duckai.suggestion.review-verdict.prompt" = "Ποια είναι η συνολική ετυμηγορία και η βαθμολογία γι' αυτό;";
+
+/* Suggested prompt chip: scale a recipe */
+"duckai.suggestion.scale-recipe.label" = "Προσάρμοσε τις μερίδες";
+
+/* Suggested prompt submitted text: scale a recipe */
+"duckai.suggestion.scale-recipe.prompt" = "Ξαναγράψε αυτή τη συνταγή προσαρμοσμένη για διαφορετικό αριθμό μερίδων.";
+
+/* Suggested prompt chip: shopping list from a recipe */
+"duckai.suggestion.shopping-list.label" = "Δημιούργησε μια λίστα αγορών";
+
+/* Suggested prompt submitted text: shopping list from a recipe */
+"duckai.suggestion.shopping-list.prompt" = "Δημιούργησε μια λίστα αγορών με τις ποσότητες από αυτήν τη συνταγή.";
+
+/* Suggested prompt chip: similar books */
+"duckai.suggestion.similar-books.label" = "Πρότεινε παρόμοια βιβλία";
+
+/* Suggested prompt submitted text: similar books */
+"duckai.suggestion.similar-books.prompt" = "Πρότεινε παρόμοια βιβλία.";
+
+/* Suggested prompt chip: similar movies or shows */
+"duckai.suggestion.similar-titles.label" = "Πρότεινε παρόμοιους τίτλους";
+
+/* Suggested prompt submitted text: similar movies or shows */
+"duckai.suggestion.similar-titles.prompt" = "Πρότεινε παρόμοιες ταινίες ή εκπομπές.";
+
+/* Suggested prompt chip: summarize a book */
+"duckai.suggestion.summarize-book.label" = "Συνόψισε αυτό το βιβλίο";
+
+/* Suggested prompt submitted text: summarize a book */
+"duckai.suggestion.summarize-book.prompt" = "Συνόψισε αυτό το βιβλίο.";
+
+/* Suggested prompt chip: summarize the current page */
+"duckai.suggestion.summarize-page.label" = "Συνόψισε αυτήν τη σελίδα";
+
+/* Suggested prompt submitted text: summarize the current page */
+"duckai.suggestion.summarize-page.prompt" = "Συνόψισε αυτήν τη σελίδα.";
+
+/* Suggested prompt chip: summarize a discussion thread */
+"duckai.suggestion.summarize-thread.label" = "Συνόψισε αυτήν τη συζήτηση";
+
+/* Suggested prompt submitted text: summarize a discussion thread */
+"duckai.suggestion.summarize-thread.prompt" = "Συνόψισε αυτό το νήμα συζήτησης.";
+
+/* Suggested prompt chip: summarize a video */
+"duckai.suggestion.summarize-video.label" = "Συνόψισε αυτό το βίντεο";
+
+/* Suggested prompt submitted text: summarize a video */
+"duckai.suggestion.summarize-video.prompt" = "Συνόψισε αυτό το βίντεο.";
+
+/* Suggested prompt chip: tailor a resume to a job */
+"duckai.suggestion.tailor-resume.label" = "Προσάρμοσε το βιογραφικό μου";
+
+/* Suggested prompt submitted text: tailor a resume to a job */
+"duckai.suggestion.tailor-resume.prompt" = "Βοήθησέ με να προσαρμόσω το βιογραφικό μου γι' αυτήν τη θέση εργασίας.";
+
+/* Suggested prompt chip: translate the current page */
+"duckai.suggestion.translate-page.label" = "Μετάφρασε αυτή τη σελίδα";
+
+/* Suggested prompt submitted text: translate the page. %@ is replaced with the name of the user's language. */
+"duckai.suggestion.translate-page.prompt" = "Μετάφρασε αυτή τη σελίδα στα %@.";
+
+/* Suggested prompt chip: video key points */
+"duckai.suggestion.video-key-points.label" = "Ποια είναι τα βασικά σημεία;";
+
+/* Suggested prompt submitted text: video key points */
+"duckai.suggestion.video-key-points.prompt" = "Ποια είναι τα βασικά σημεία που καλύπτονται σε αυτό το βίντεο;";
+
+/* Suggested prompt chip: person background */
+"duckai.suggestion.who-is-this.label" = "Ποιο είναι αυτό το άτομο;";
+
+/* Suggested prompt submitted text: person background */
+"duckai.suggestion.who-is-this.prompt" = "Δώσε μου ένα σύντομο ιστορικό γι' αυτό το άτομο.";
+
+/* Suggested prompt chip: is a movie/show worth watching */
+"duckai.suggestion.worth-watching.label" = "Αξίζει να το παρακολουθήσω;";
+
+/* Suggested prompt submitted text: is a movie/show worth watching */
+"duckai.suggestion.worth-watching.prompt" = "Αξίζει να το παρακολουθήσω; Δώσε μου μια ιδέα χωρίς spoiler.";
+
 /* Welcome message in Duck.ai contextual sheet. %@ is replaced by a shield icon. */
 "duckai.welcome.message" = "Όλες οι συνομιλίες είναι %@ ιδιωτικές";
 
@@ -2961,6 +3265,9 @@
 /* Message label text for the status view when VPN is disconnected */
 "network.protection.status.header.message.on" = "Όλη η επισκεψιμότητα στο διαδίκτυο από τη συσκευή διασφαλίζεται\n μέσω του VPN.";
 
+/* Status view message shown while the VPN is on but Strict routing is off */
+"network.protection.status.header.message.strict.routing.off" = "Ορισμένη επισκεψιμότητα ενδέχεται να παρακάμπτει το VPN όσο η Αυστηρή δρομολόγηση είναι απενεργοποιημένη. Η Αυστηρή δρομολόγηση συνιστάται για δημόσια δίκτυα.";
+
 /* Header title label text for the status view when VPN is disconnected */
 "network.protection.status.header.title.off" = "Το DuckDuckGo VPN είναι απενεργοποιημένο";
 
@@ -3003,8 +3310,29 @@
 /* Label shown on the title of the settings section in NetworkProtection's status view. */
 "network.protection.status.view.settings.section.title" = "Διαχείριση";
 
+/* Label for the status pill shown while the VPN's Strict routing setting is off */
+"network.protection.status.view.strict.routing.pill.off" = "Αυστηρή δρομολόγηση: Απενεργοποιημένη";
+
+/* Label for the status pill shown while the VPN's Strict routing setting is on */
+"network.protection.status.view.strict.routing.pill.on" = "Αυστηρή δρομολόγηση: Ενεργοποιημένη";
+
+/* Tooltip shown for the status pill while the VPN's Strict routing setting is off */
+"network.protection.status.view.strict.routing.pill.tooltip.off" = "Η Αυστηρή δρομολόγηση συνιστάται για δημόσια δίκτυα.";
+
+/* Tooltip shown for the status pill while the VPN's Strict routing setting is on */
+"network.protection.status.view.strict.routing.pill.tooltip.on" = "Ορισμένες εφαρμογές ενδέχεται να μη λειτουργούν όσο είναι ενεργοποιημένη η Αυστηρή δρομολόγηση.";
+
 /* Title label text for the status view when netP is disconnected */
 "network.protection.status.view.title" = "VPN";
+
+/* Title of the Troubleshooting section in the VPN status screen. */
+"network.protection.status.view.troubleshooting.section.title" = "Αντιμετώπιση προβλημάτων";
+
+/* The body of the notification reminding the user to turn the VPN Strict routing setting back on */
+"network.protection.strict.routing.reminder.notification.body" = "Ορισμένη επισκεψιμότητα ενδέχεται να παρακάμπτει το VPN όσο είναι απενεργοποιημένο. Η Αυστηρή δρομολόγηση συνιστάται για δημόσια δίκτυα.";
+
+/* The title of the notification reminding the user to turn the VPN Strict routing setting back on */
+"network.protection.strict.routing.reminder.notification.title" = "Η Αυστηρή δρομολόγηση είναι απενεργοποιημένη";
 
 /* The body of the notification shown when VPN reconnects successfully */
 "network.protection.success.notification.body" = "Το DuckDuckGo VPN είναι ενεργοποιημένο. Η τοποθεσία και η διαδικτυακή δραστηριότητά σας προστατεύονται.";
@@ -3732,6 +4060,9 @@
 /* Button to delete all tabs and data in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.all.button" = "Διαγραφή όλων";
 
+/* Button to delete all chats in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.chats.button" = "Διαγραφή συνομιλιών";
+
 /* Button to delete a single tab and its site data in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.tab.button" = "Διαγραφή καρτέλας";
 
@@ -3904,7 +4235,7 @@
 "settings.aifeatures.chat.suggestions.title" = "Προτάσεις συνομιλίας";
 
 /* Button that turns off all AI features */
-"settings.aifeatures.disable.all" = "Χρήση DuckDuckGo χωρίς τεχνητή νοημοσύνη";
+"settings.aifeatures.disable.all" = "Χρησιμοποιήστε το DuckDuckGo χωρίς τεχνητή νοημοσύνη";
 
 /* Footer text below the disable all AI features button */
 "settings.aifeatures.disable.all.footer" = "Απενεργοποιεί το Duck.ai, αποκρύπτει από την αναζήτηση απαντήσεις που υποβοηθούνται από τεχνητή νοημοσύνη και φιλτράρει γνωστούς ιστότοπους με απατηλό περιεχόμενο τεχνητής νοημοσύνης στα αποτελέσματα αναζήτησης εικόνων.";
@@ -4044,26 +4375,26 @@
 /* The name of the settings section containing options to set up the app */
 "settings.complete.setup" = "Ολοκληρώστε την εγκατάστασή σας";
 
-/* The name of Settings category in Privacy Features related to configuration of the privacy feature related to cookie pop-ups */
-"settings.cookie.pop-up-protection.protection" = "Προστασία αναδυόμενων παραθύρων για cookies";
-
-/* Explanation in Settings how the cookie pop up protection feature works */
-"settings.cookie.pop.up.protection.explanation" = "Το DuckDuckGo μπορεί να διαχειρίζεται αυτόματα τις προτιμήσεις για τα cookie ώστε να μεγιστοποιείται το απόρρητο, να ελαχιστοποιούνται τα cookie και να κλείνουν αυτά τα αναδυόμενα παράθυρα.\n[Μάθετε περισσότερα](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
-
 /* Explanation below the auto-manage cookie pop-ups toggle in settings */
 "settings.cookie.auto-manage.explanation" = "Θα προσπαθήσουμε να επιλέξουμε μόνο τις πιο ιδιωτικές διαθέσιμες επιλογές cookie για εσάς και έπειτα να κλείσουμε αυτά τα αναδυόμενα παράθυρα.";
 
 /* Title for the auto-manage cookie pop-ups toggle in settings */
 "settings.cookie.auto-manage.title" = "Αυτόματη διαχείριση αναδυόμενων παραθύρων cookie";
 
+/* The name of Settings category in Privacy Features related to configuration of the privacy feature related to cookie pop-ups */
+"settings.cookie.pop-up-protection.protection" = "Προστασία αναδυόμενων παραθύρων για cookies";
+
+/* Explanation in Settings how the cookie pop up protection feature works */
+"settings.cookie.pop.up.protection.explanation" = "Το DuckDuckGo μπορεί να διαχειρίζεται αυτόματα τις προτιμήσεις για τα cookie ώστε να μεγιστοποιείται το απόρρητο, να ελαχιστοποιούνται τα cookie και να κλείνουν αυτά τα αναδυόμενα παράθυρα.\n[Μάθετε περισσότερα](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
+
+/* Settings screen cell text for Cookie popups */
+"settings.cookie.popups" = "Διαχείριση αναδυόμενων παραθύρων cookies";
+
 /* Explanation below the pop-ups without opt-outs toggle in settings */
 "settings.cookie.popups-without-opt-outs.explanation" = "Επίσης, επιτρέψτε στο DuckDuckGo να σας γλιτώσει ένα κλικ αποδεχόμενο cookie εκ μέρους σας, ώστε να κλείνουν τα αναδυόμενα παράθυρα που δεν σας επιτρέπουν να εξαιρεθείτε.";
 
 /* Title for the pop-ups without opt-outs toggle in settings */
 "settings.cookie.popups-without-opt-outs.title" = "Αναδυόμενα παράθυρα χωρίς επιλογή εξαίρεσης";
-
-/* Settings screen cell text for Cookie popups */
-"settings.cookie.popups" = "Διαχείριση αναδυόμενων παραθύρων cookies";
 
 /* Label for customizable toolbar button that deletes tabs and data */
 "settings.customizable.button.delete.tabs.and.data" = "Διαγραφή καρτελών και δεδομένων";
@@ -5388,111 +5719,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Τι θέλετε να εισαγάγετε;";
 
-
-/* No comment provided by engineer. */
-"No matches for \"%@\"" = "Δεν υπάρχουν αντιστοιχίες για το «%@»";
-
-
-/* Open the native Duck.ai chat history sheet from the browser menu. */
-"action.title.chats" = "Συνομιλίες";
-
-/* Title shown when the user has no Duck.ai chat history yet. */
-"aiChat.history.emptyState.title" = "Δεν υπάρχουν πρόσφατες συνομιλίες";
-
-/* Primary button on the empty Duck.ai chat-history screen; opens the Duck.ai web chat. */
-"aiChat.history.emptyState.openDuckAi" = "Άνοιξε το Duck.ai";
-
-/* Placeholder for the search bar at the top of the Duck.ai chat history list. */
-"aiChat.history.searchBar.placeholder" = "Αναζήτηση";
-
-/* Section header above the user's pinned chats in the Duck.ai chat history list. */
-"aiChat.history.section.pinned" = "Καρφιτσωμένες";
-
-/* Section header above the user's recent (unpinned) chats in the Duck.ai chat history list. */
-"aiChat.history.section.recent" = "Πρόσφατες";
-
-/* Shown inside the Duck.ai chat history list when the user's search query returns no matching chats. */
-"aiChat.history.noSearchResults.title" = "Δεν βρέθηκαν αντιστοιχίες";
-
-/* Title of the alert shown when Duck.ai chat history fails to load. */
-"aiChat.history.loadError.title" = "Δεν ήταν δυνατή η φόρτωση των συνομιλιών";
-
-/* Message of the alert shown when Duck.ai chat history fails to load. */
-"aiChat.history.loadError.message" = "Κάτι πήγε στραβά κατά τη φόρτωση των συνομιλιών σου στο Duck.ai. Δοκίμασε ξανά αργότερα.";
-
-/* Accessibility label for the delete action revealed by swiping a Duck.ai chat row. */
-"aiChat.history.swipe.delete.a11y" = "Διαγραφή συνομιλίας";
-
-/* Accessibility label for the download action revealed by swiping a Duck.ai chat row. */
-"aiChat.history.swipe.download.a11y" = "Λήψη συνομιλίας";
-
-/* Accessibility label for the pin action revealed by leading-swiping a Duck.ai chat row in the Recent section. */
-"aiChat.history.swipe.pin.a11y" = "Καρφίτσωμα συνομιλίας";
-
-/* Accessibility label for the unpin action revealed by leading-swiping a Duck.ai chat row in the Pinned section. */
-"aiChat.history.swipe.unpin.a11y" = "Ξεκαρφίτσωμα συνομιλίας";
-
-/* Button to delete all chats in scoped fire confirmation dialog */
-"scoped.fire.confirmation.delete.chats.button" = "Διαγραφή συνομιλιών";
-
-/* Top-level attachment menu option to attach the current page content to an AI chat message */
-"aichat.attachment.option.ask.about.page" = "Ρώτα για τη σελίδα";
-
-/* Status view message shown while the VPN is on but Strict routing is off */
-"network.protection.status.header.message.strict.routing.off" = "Ορισμένη επισκεψιμότητα ενδέχεται να παρακάμπτει το VPN όσο η Αυστηρή δρομολόγηση είναι απενεργοποιημένη. Η Αυστηρή δρομολόγηση συνιστάται για δημόσια δίκτυα.";
-
-/* Label for the status pill shown while the VPN's Strict routing setting is off */
-"network.protection.status.view.strict.routing.pill.off" = "Αυστηρή δρομολόγηση: Απενεργοποιημένη";
-
-/* Label for the status pill shown while the VPN's Strict routing setting is on */
-"network.protection.status.view.strict.routing.pill.on" = "Αυστηρή δρομολόγηση: Ενεργοποιημένη";
-
-/* Tooltip shown for the status pill while the VPN's Strict routing setting is off */
-"network.protection.status.view.strict.routing.pill.tooltip.off" = "Η Αυστηρή δρομολόγηση συνιστάται για δημόσια δίκτυα.";
-
-/* Tooltip shown for the status pill while the VPN's Strict routing setting is on */
-"network.protection.status.view.strict.routing.pill.tooltip.on" = "Ορισμένες εφαρμογές ενδέχεται να μη λειτουργούν όσο είναι ενεργοποιημένη η Αυστηρή δρομολόγηση.";
-
-/* Title of the Troubleshooting section in the VPN status screen. */
-"network.protection.status.view.troubleshooting.section.title" = "Αντιμετώπιση προβλημάτων";
-
-/* The body of the notification reminding the user to turn the VPN Strict routing setting back on */
-"network.protection.strict.routing.reminder.notification.body" = "Ορισμένη επισκεψιμότητα ενδέχεται να παρακάμπτει το VPN όσο είναι απενεργοποιημένο. Η Αυστηρή δρομολόγηση συνιστάται για δημόσια δίκτυα.";
-/* The title of the notification reminding the user to turn the VPN Strict routing setting back on */
-"network.protection.strict.routing.reminder.notification.title" = "Η Αυστηρή δρομολόγηση είναι απενεργοποιημένη";
-
-/* Title for the New Image row in the Duck.ai tab header Plus (+) menu — opens Duck.ai in image generation mode */
-"aichat.header.plusMenu.newImage" = "Νέα εικόνα";
-
-/* Error toast shown when a Duck.ai chat download fails and nothing was saved. */
-"aiChat.history.download.failed.message" = "Δεν ήταν δυνατή η λήψη. Δοκιμάστε ξανά.";
-
-/* Accessibility label for the overflow (three dots) menu button in the Duck.ai chat history navigation bar. */
-"aiChat.history.menu.a11y" = "Περισσότερα";
-
-/* Menu item opening Duck.ai Chat Protection settings from the Duck.ai chat history list. */
-"aiChat.history.menu.chatProtection" = "Προστασία συνομιλίας";
-
-/* Menu item that starts multi-selecting chats in the Duck.ai chat history list. */
-"aiChat.history.menu.selectChats" = "Επιλογή συνομιλιών";
-
-/* Long-press row menu item that deletes a Duck.ai chat. */
-"aiChat.history.rowMenu.delete" = "Διαγραφή";
-
-/* Long-press row menu item that downloads a Duck.ai chat. */
-"aiChat.history.rowMenu.download" = "Λήψη";
-
-/* Long-press row menu item that pins a Duck.ai chat. */
-"aiChat.history.rowMenu.pin" = "Καρφίτσωμα";
-
-/* Long-press row menu item that starts multi-selecting chats in the Duck.ai chat history list. */
-"aiChat.history.rowMenu.select" = "Επιλογή";
-
-/* Long-press row menu item that unpins a Duck.ai chat. */
-"aiChat.history.rowMenu.unpin" = "Ξεκαρφίτσωμα";
-
-/* Accessibility label for the search button in the Duck.ai chat history navigation bar. */
-"aiChat.history.search.a11y" = "Αναζήτηση";
-
-/* Multi-select toolbar button that deletes all chats when none are individually selected. */
-"aiChat.history.selection.deleteAll" = "Διαγραφή όλων";

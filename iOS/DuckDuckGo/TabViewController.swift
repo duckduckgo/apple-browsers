@@ -2287,8 +2287,34 @@ extension TabViewController: WKNavigationDelegate {
         }
     }
 
-    // Synchronous capture, used when we must grab the preview before the view is torn down.
-    func preparePreviewSync(afterScreenUpdates: Bool = false) -> UIImage? {
+    func preparePreviewForTabTransition(completion: @escaping (UIImage?) -> Void) {
+        guard let webView,
+              webView.window?.windowScene?.activationState == .foregroundActive else {
+            completion(nil)
+            return
+        }
+
+        let contentInset = webView.scrollView.contentInset
+        let rect = webView.bounds.inset(by: UIEdgeInsets(top: contentInset.top,
+                                                        left: 0,
+                                                        bottom: contentInset.bottom,
+                                                        right: 0))
+        guard rect.width > 0, rect.height > 0 else {
+            completion(nil)
+            return
+        }
+
+        let configuration = WKSnapshotConfiguration()
+        configuration.rect = rect
+        configuration.afterScreenUpdates = false
+        webView.takeSnapshot(with: configuration) { image, _ in
+            DispatchQueue.main.async {
+                completion(image)
+            }
+        }
+    }
+
+    private func preparePreviewSync(afterScreenUpdates: Bool = false) -> UIImage? {
         guard let webView, webView.bounds.height > 0, webView.bounds.width > 0 else { return nil }
 
         let size = CGSize(width: webView.frame.size.width,

@@ -961,6 +961,67 @@ final class AttributedMetricManagerTests: XCTestCase {
         XCTAssertEqual(capturedMonth, 2, "Should send bucketed length 2 for month 2+")
     }
 
+    /// A converted free-trial user must emit month=1 (paid start) once, not on every app launch.
+    func testProcessSubscriptionCheck_month1_firesOnceAcrossRestarts() async {
+        let firstFire = XCTestExpectation(description: "month=1 fired")
+        let noSecondFire = XCTestExpectation(description: "month=1 not re-fired")
+        noSecondFire.isInverted = true
+        var month1FireCount = 0
+
+        let fixture = createTestFixture(
+            pixelHandler: { pixelName, _, parameters, _, _, _ in
+                guard pixelName == "attributed_metric_subscribed",
+                      self.extractIntParameter(parameters, key: "month") == 1 else { return }
+                month1FireCount += 1
+                if month1FireCount == 1 { firstFire.fulfill() } else { noSecondFire.fulfill() }
+            },
+            subscriptionStateProvider: SubscriptionStateProviderMock(isFreeTrial: false, isActive: true)
+        )
+        defer { fixture.cleanup() }
+
+        fixture.installDateProvider.installDate = fixture.timeMachine.now()
+        fixture.dataStorage.subscriptionDate = fixture.timeMachine.now()
+        fixture.dataStorage.subscriptionFreeTrialFired = true   // trial pixel sent; user has now converted to paid
+
+        // First launch after conversion → month=1 fires once.
+        fixture.attributionManager.process(trigger: .appDidStart)
+        await fulfillment(of: [firstFire], timeout: 5.0)
+
+        // Next day, another launch → must NOT re-fire month=1.
+        fixture.timeMachine.travel(by: .day, value: 1)
+        fixture.attributionManager.process(trigger: .appDidStart)
+        await fulfillment(of: [noSecondFire], timeout: 2.0)
+
+        XCTAssertEqual(month1FireCount, 1, "month=1 (paid start) must fire once, not on every launch")
+    }
+
+    /// A converted free-trial user (month=1 already sent) must advance to month=2+, not stay stuck on month=1.
+    func testProcessSubscriptionCheck_convertedTrialUser_advancesToMonth2() async {
+        let pixelExpectation = XCTestExpectation(description: "subscription pixel fired")
+        var capturedMonth: Int?
+
+        let fixture = createTestFixture(
+            pixelHandler: { pixelName, _, parameters, _, _, _ in
+                guard pixelName == "attributed_metric_subscribed" else { return }
+                capturedMonth = self.extractIntParameter(parameters, key: "month")
+                pixelExpectation.fulfill()
+            },
+            subscriptionStateProvider: SubscriptionStateProviderMock(isFreeTrial: false, isActive: true)
+        )
+        defer { fixture.cleanup() }
+
+        fixture.installDateProvider.installDate = fixture.timeMachine.now()
+        fixture.dataStorage.subscriptionDate = fixture.timeMachine.now()
+        fixture.dataStorage.subscriptionFreeTrialFired = true   // started on a free trial...
+        fixture.dataStorage.subscriptionMonth1Fired = true      // ...converted, month=1 already sent
+
+        fixture.timeMachine.travel(by: .day, value: 31)         // now active for more than a month
+        fixture.attributionManager.process(trigger: .appDidStart)
+
+        await fulfillment(of: [pixelExpectation], timeout: 5.0)
+        XCTAssertEqual(capturedMonth, 2, "Converted trial user must advance to month=2+, not re-fire month=1")
+    }
+
     // MARK: - Sync Tests
 
     /// Tests sync pixel for valid device counts (< 3 devices)

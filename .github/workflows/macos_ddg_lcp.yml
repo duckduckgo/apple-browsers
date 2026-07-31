@@ -1,8 +1,8 @@
 name: "macOS - Measure LCP (DDG)"
 run-name: "macOS - Measure LCP (DDG)"
 
-# Real measurements are manual until two dedicated-runner full runs have been
-# completed and understood.
+# Real measurements are manual until two full runs have been completed and
+# understood.
 
 on:
   workflow_dispatch:
@@ -75,12 +75,14 @@ jobs:
       ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
 
   ddg-lcp:
-    name: DuckDuckGo LCP (WPR)
+    name: DuckDuckGo LCP
     needs: [build-review, validate-wpr]
     if: >-
       always() &&
       needs.validate-wpr.result == 'success'
-    runs-on: [self-hosted, macOS, ARM64, performance]
+    # Same hosted Apple Silicon runner as the Chrome and Safari measurements,
+    # so the three browsers' numbers stay comparable.
+    runs-on: macos-latest
     environment: macos-performance
     timeout-minutes: 220
 

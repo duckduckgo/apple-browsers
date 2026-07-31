@@ -70,7 +70,7 @@ jobs:
       ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
 
   chrome-lcp:
-    name: Chrome LCP (WPR)
+    name: Chrome LCP
     needs: validate-wpr
     # Standard hosted Apple Silicon runner, matching the Safari architecture.
     runs-on: macos-latest

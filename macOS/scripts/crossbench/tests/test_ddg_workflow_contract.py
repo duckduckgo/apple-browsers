@@ -10,6 +10,18 @@ WORKFLOW = (
     / "workflows"
     / "macos_ddg_lcp.yml"
 ).read_text(encoding="utf-8")
+CHROME_WORKFLOW = (
+    Path(__file__).parents[4]
+    / ".github"
+    / "workflows"
+    / "macos_crossbench_chrome.yml"
+).read_text(encoding="utf-8")
+SAFARI_WORKFLOW = (
+    Path(__file__).parents[4]
+    / ".github"
+    / "workflows"
+    / "macos_crossbench_safari.yml"
+).read_text(encoding="utf-8")
 LAUNCHER = (
     Path(__file__).parents[1] / "launch-ddg-app.sh"
 ).read_text(encoding="utf-8")
@@ -21,15 +33,16 @@ class DDGWorkflowContractTests(unittest.TestCase):
         self.assertNotIn("schedule:", WORKFLOW)
         self.assertNotIn("push:", WORKFLOW)
 
-    def test_measurement_uses_only_the_dedicated_runner(self) -> None:
+    def test_measurement_uses_the_same_runner_as_the_other_browsers(self) -> None:
         measurement = WORKFLOW[
             WORKFLOW.index("\n  ddg-lcp:\n") :
             WORKFLOW.index("\n  upload-to-clickhouse:\n")
         ]
-        self.assertIn(
-            "runs-on: [self-hosted, macOS, ARM64, performance]",
-            measurement,
-        )
+        # Comparability with Chrome and Safari depends on all three measuring on
+        # the same hosted Apple Silicon runner.
+        self.assertIn("runs-on: macos-latest", measurement)
+        self.assertIn("runs-on: macos-latest", CHROME_WORKFLOW)
+        self.assertIn("runs-on: macos-latest", SAFARI_WORKFLOW)
         self.assertIn("environment: macos-performance", measurement)
         self.assertNotIn("sudo ", measurement)
         self.assertIn(

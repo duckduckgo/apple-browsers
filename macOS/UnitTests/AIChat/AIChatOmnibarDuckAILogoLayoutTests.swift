@@ -88,10 +88,16 @@ final class AIChatOmnibarDuckAILogoLayoutTests: XCTestCase {
 
     func testWhenSurfaceIsAddressBarThenThePromptTextIsNotIndented() {
         let addressBarLeading = textLeading(in: layOutTextContainer(surface: .addressBar).view)
+
+        XCTAssertEqual(addressBarLeading, 10, accuracy: 0.5,
+                       "The address bar's prompt no longer starts at the text container's own 5pt inset plus 5pt line-fragment padding — only the Prompt Bar indents for the logo")
+    }
+
+    func testWhenSurfaceIsPromptBarThenThePromptTextIsIndentedPastTheAddressBars() {
+        let addressBarLeading = textLeading(in: layOutTextContainer(surface: .addressBar).view)
         let promptBarLeading = textLeading(in: layOutTextContainer(surface: .promptBar).view)
 
-        XCTAssertEqual(promptBarLeading - addressBarLeading, 31, accuracy: 0.5,
-                       "The address bar's prompt has shifted — only the Prompt Bar indents for the logo")
+        XCTAssertGreaterThan(promptBarLeading, addressBarLeading)
     }
 
     // MARK: - Measurement

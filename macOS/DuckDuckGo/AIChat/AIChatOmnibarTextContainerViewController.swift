@@ -39,6 +39,7 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
         static let duckAILogoSize: CGFloat = 24
         static let duckAILogoToTextSpacing: CGFloat = 12
         static let duckAILogoLeadingOffset: CGFloat = 5
+        static let duckAILogoLegacyLeadingOffset: CGFloat = 3
     }
 
     private let backgroundView = MouseBlockingBackgroundView()
@@ -256,8 +257,10 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
         duckAILogoView.setAccessibilityElement(false)
         containerView.addSubview(duckAILogoView)
 
+        let leadingConstant = themeManager.isAppRebranded ? Constants.duckAILogoLeadingOffset : Constants.duckAILogoLegacyLeadingOffset
+
         NSLayoutConstraint.activate([
-            duckAILogoView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: Constants.duckAILogoLeadingOffset),
+            duckAILogoView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: leadingConstant),
             duckAILogoView.centerYAnchor.constraint(equalTo: placeholderLabel.centerYAnchor),
             duckAILogoView.widthAnchor.constraint(equalToConstant: Constants.duckAILogoSize),
             duckAILogoView.heightAnchor.constraint(equalToConstant: Constants.duckAILogoSize)

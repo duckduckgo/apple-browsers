@@ -15,11 +15,6 @@ tags:
     id: "searchEntry"
 - tapOn:
     id: "searchEntry"
-- inputText: "https://privacy-test-pages.site/"
-- pressKey: Enter
-
-- tapOn:
-    id: "searchEntry"
 - inputText: "https://privacy-test-pages.site/tracker-reporting/1major-via-script.html"
 - pressKey: Enter
 

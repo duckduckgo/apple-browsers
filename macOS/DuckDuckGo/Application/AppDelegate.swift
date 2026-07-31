@@ -124,6 +124,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private(set) var autofillPixelReporter: AutofillPixelReporter?
     private var passwordsStatusBarMenu: PasswordsStatusBarMenu?
     private var passwordsMenuBarCancellable: AnyCancellable?
+    private var promptBarMenuBarController: PromptBarMenuBarController?
+    private var promptBarMenuBarCancellable: AnyCancellable?
+    private var promptBarCoordinator: PromptBarCoordinator?
 
     private(set) var syncDataProviders: SyncDataProvidersSource?
     private(set) var syncService: DDGSyncing?
@@ -248,6 +251,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable
     let aiChatSessionStore: AIChatSessionStoring
     let aiChatPreferences: AIChatPreferences
+    let promptBarPreferences: PromptBarPreferences
     private(set) var aiChatHistoryCleaner: AIChatHistoryCleaning!
 
     /// Shared across the native address-bar omnibar and the New Tab Page omnibar so that model-selection
@@ -834,11 +838,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         contentScopePreferences = ContentScopePreferences(windowControllersManager: windowControllersManager)
         webTrackingProtectionPreferences = WebTrackingProtectionPreferences(persistor: WebTrackingProtectionPreferencesUserDefaultsPersistor(), windowControllersManager: windowControllersManager)
         cookiePopupProtectionPreferences = CookiePopupProtectionPreferences(persistor: CookiePopupProtectionPreferencesUserDefaultsPersistor(), windowControllersManager: windowControllersManager)
+        promptBarPreferences = PromptBarPreferences(persistor: PromptBarPreferencesUserDefaultsPersistor(keyValueStore: keyValueStore),
+                                                    aiChatMenuConfiguration: aiChatMenuConfiguration)
         aiChatPreferences = AIChatPreferences(
             storage: DefaultAIChatPreferencesStorage(),
             aiChatMenuConfiguration: aiChatMenuConfiguration,
             windowControllersManager: windowControllersManager,
-            featureFlagger: featureFlagger
+            featureFlagger: featureFlagger,
+            promptBarPreferences: promptBarPreferences
         )
 
         let subscriptionNavigationCoordinator = SubscriptionNavigationCoordinator(
@@ -1492,6 +1499,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         setUpAutofillPixelReporter()
         setUpPasswordsMenuBarVisibility()
+        setUpPromptBar()
+        setUpPromptBarMenuBarVisibility()
 
         remoteMessagingClient?.startRefreshingRemoteMessages()
 
@@ -1569,6 +1578,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         fireDailyFireWindowConfigurationPixels()
         fireDailyAIChatEnabledPixel()
         fireDailyAIFeaturesStatePixel()
+        fireDailyPromptBarStatePixel()
         fireDailyAdBlockingPixel()
         fireDailyAutoClearOnExitEnabledPixel()
 
@@ -1619,6 +1629,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func fireDailyAIChatEnabledPixel() {
         PixelKit.fire(AIChatPixel.aiChatIsEnabled(isEnabled: aiChatPreferences.isAIFeaturesEnabled), frequency: .daily)
+    }
+
+    /// The settings toggles only cover users who touch a setting; this sizes the enabled base.
+    @MainActor
+    private func fireDailyPromptBarStatePixel() {
+        guard featureFlagger.isFeatureOn(.macosPromptBar) else { return }
+
+        PixelKit.fire(PromptBarPixel.state(shortcutEnabled: promptBarPreferences.isKeyboardShortcutEnabled,
+                                           menuBarIconEnabled: promptBarPreferences.isMenuBarIconVisible),
+                      frequency: .daily)
     }
 
     /// Once-daily snapshot of the three AI settings + the derived "no AI" state, across the active base.
@@ -2418,6 +2438,59 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     } else {
                         self?.passwordsStatusBarMenu?.hide()
                     }
+                }
+            }
+    }
+
+    /// Must run before `setUpPromptBarMenuBarVisibility()`, which hands the icon's click to the coordinator.
+    @MainActor
+    private func setUpPromptBar() {
+        guard featureFlagger.isFeatureOn(.macosPromptBar) else {
+            promptBarCoordinator = nil
+            return
+        }
+
+        let promptSubmitter = PromptBarPromptSubmitter(aiChatTabOpener: aiChatTabOpener,
+                                                       windowControllersManager: windowControllersManager)
+        let content = PromptBarContentFactory.makeContent(promptSubmitter: promptSubmitter,
+                                                          themeManager: themeManager,
+                                                          aiChatTabOpener: aiChatTabOpener,
+                                                          duckAiNativeStorageHandler: duckAiNativeStorageHandler,
+                                                          preferences: aiChatPreferencesPersistor)
+        let coordinator = PromptBarCoordinator(
+            featureFlagger: featureFlagger,
+            preferences: promptBarPreferences,
+            shortcutRegistrar: CarbonGlobalShortcutRegistrar(),
+            presenter: PromptBarPresenter(content: content)
+        )
+        coordinator.start()
+        promptBarCoordinator = coordinator
+    }
+
+    @MainActor
+    private func setUpPromptBarMenuBarVisibility() {
+        guard featureFlagger.isFeatureOn(.macosPromptBar) else {
+            promptBarMenuBarController?.hide()
+            promptBarMenuBarController = nil
+            promptBarMenuBarCancellable = nil
+            return
+        }
+
+        if promptBarMenuBarController == nil {
+            promptBarMenuBarController = PromptBarMenuBarController()
+        }
+        promptBarMenuBarController?.onClick = { [weak self] in
+            self?.promptBarCoordinator?.togglePromptBar(source: .menuBarIcon)
+        }
+
+        // Applied synchronously: a deferred first update lets the icon appear at
+        // launch before a hide lands.
+        promptBarMenuBarCancellable = promptBarPreferences.isMenuBarIconEffectivelyVisiblePublisher
+            .sink { [weak self] isVisible in
+                if isVisible {
+                    self?.promptBarMenuBarController?.show()
+                } else {
+                    self?.promptBarMenuBarController?.hide()
                 }
             }
     }

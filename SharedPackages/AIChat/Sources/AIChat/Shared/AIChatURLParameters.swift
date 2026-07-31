@@ -46,10 +46,6 @@ public enum AIChatURLParameters {
     public static let settingsName = "settings"
     public static let settingsOpenValue = "open"
 
-    public static let feedbackName = "feedback"
-    public static let feedbackPositiveValue = "positive"
-    public static let feedbackNegativeValue = "negative"
-
     public static let chatProtectionName = "chatProtection"
     public static let chatProtectionOpenValue = "open"
 
@@ -75,11 +71,6 @@ public enum AIChatURLParameters {
     /// Appends `?settings=open` to the given base URL.
     public static func settingsOpenURL(from baseURL: URL) -> URL {
         baseURL.addingOrReplacing(URLQueryItem(name: settingsName, value: settingsOpenValue))
-    }
-
-    /// Appends `?feedback=positive` / `?feedback=negative` to the given base URL.
-    public static func feedbackURL(from baseURL: URL, value: String) -> URL {
-        baseURL.addingOrReplacing(URLQueryItem(name: feedbackName, value: value))
     }
 
     /// Appends `?chatProtection=open` to the given base URL.

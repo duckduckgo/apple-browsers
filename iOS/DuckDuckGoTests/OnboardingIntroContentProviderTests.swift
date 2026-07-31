@@ -25,6 +25,7 @@ import Testing
 @Suite("Onboarding - Content Provider")
 struct OnboardingIntroContentProviderTests {
 
+    @MainActor
     @Suite("Landing Content")
     struct LandingContent {
 
@@ -69,6 +70,7 @@ struct OnboardingIntroContentProviderTests {
 
     }
 
+    @MainActor
     @Suite("Intro Step Content")
     struct IntroStepContent {
 
@@ -135,6 +137,7 @@ struct OnboardingIntroContentProviderTests {
             #expect(result.secondaryCTA == UserText.Onboarding.Intro.skipCTA)
         }
 
+        @MainActor
         @Suite("Restore Prompt")
         struct RestorePrompt {
 
@@ -200,6 +203,7 @@ struct OnboardingIntroContentProviderTests {
 
         }
 
+        @MainActor
         @Suite("Skip Flow")
         struct SkipFlow {
 
@@ -297,6 +301,7 @@ struct OnboardingIntroContentProviderTests {
 
     }
 
+    @MainActor
     @Suite("Browser Comparison Content")
     struct BrowserComparisonContent {
 
@@ -380,6 +385,113 @@ struct OnboardingIntroContentProviderTests {
 
     }
 
+    @MainActor
+    @Suite("Comparison Content For Download Reason")
+    struct DownloadReasonComparisonContent {
+
+        private func makeSUT(reason: OnboardingDownloadReason?) -> OnboardingIntroContentProvider {
+            OnboardingIntroContentProvider(
+                flowType: .default,
+                featureFlagger: MockFeatureFlagger(),
+                downloadReasonProvider: { reason }
+            )
+        }
+
+        @Test("Nil reason keeps the original content")
+        func nilReasonUsesDefaultContent() {
+            // GIVEN
+            let sut = makeSUT(reason: nil)
+
+            // WHEN
+            let result = sut.setDefaultBrowserContent
+
+            // THEN
+            #expect(result.title == UserText.Onboarding.BrowsersComparison.title)
+            #expect(result.subHeader == nil)
+            #expect(result.features == RebrandedComparisonTableModel.defaultBrowserFeatures)
+        }
+
+        @Test(
+            "Every reason shows the shared heading and keeps the browser CTAs",
+            arguments: OnboardingDownloadReason.allCases
+        )
+        func sharedHeadingAndCTAs(reason: OnboardingDownloadReason) {
+            // GIVEN
+            let sut = makeSUT(reason: reason)
+
+            // WHEN
+            let result = sut.setDefaultBrowserContent
+
+            // THEN
+            #expect(result.title == UserText.Onboarding.BrowsersComparison.titleDownloadExperiment)
+            #expect(result.primaryCTA == UserText.Onboarding.BrowsersComparison.cta)
+            #expect(result.secondaryCTA == UserText.onboardingSkip)
+        }
+
+        @Test(
+            "Browser-style reasons return their tailored feature list with no sub-header",
+            arguments: [OnboardingDownloadReason.browserPrivately, .noAI, .blockAds]
+        )
+        func browserStyleReasons(reason: OnboardingDownloadReason) {
+            // GIVEN
+            let sut = makeSUT(reason: reason)
+
+            // WHEN
+            let result = sut.setDefaultBrowserContent
+
+            // THEN
+            #expect(result.subHeader == nil)
+            #expect(result.features == RebrandedComparisonTableModel.browserFeatures(for: reason))
+            #expect(!result.features.isEmpty)
+        }
+
+        @Test("The private-AI-chat reason returns the AI-providers table with a sub-header")
+        func privateAIChatReasonUsesAITable() {
+            // GIVEN
+            let sut = makeSUT(reason: .privateAIChat)
+
+            // WHEN
+            let result = sut.setDefaultBrowserContent
+
+            // THEN
+            #expect(result.subHeader == UserText.Onboarding.DuckAICPP.AIComparison.subHeader)
+            #expect(result.features == RebrandedComparisonTableModel.browserFeatures(for: .privateAIChat))
+        }
+
+        @Test(
+            "Each reason maps to the expected competitor",
+            arguments: [
+                (.browserPrivately, .safari),
+                (.blockAds, .safari),
+                (.privateAIChat, .ai),
+                (.noAI, .google),
+            ] as [(OnboardingDownloadReason, OnboardingComparisonContent.Competitor)]
+        )
+        func competitorPerReason(reason: OnboardingDownloadReason, expectedCompetitor: OnboardingComparisonContent.Competitor) {
+            // GIVEN
+            let sut = makeSUT(reason: reason)
+
+            // WHEN
+            let result = sut.setDefaultBrowserContent
+
+            // THEN
+            #expect(result.competitor == expectedCompetitor)
+        }
+
+        @Test("Nil Download Reason keeps Safari as the competitor")
+        func nilReasonUsesSafariCompetitor() {
+            // GIVEN
+            let sut = makeSUT(reason: nil)
+
+            // WHEN
+            let result = sut.setDefaultBrowserContent
+
+            // THEN
+            #expect(result.competitor == .safari)
+        }
+    }
+
+    @MainActor
     @Suite("AI Comparison Content")
     struct AIIntroContent {
 
@@ -458,8 +570,24 @@ struct OnboardingIntroContentProviderTests {
             #expect(result.features == RebrandedComparisonTableModel.defaultAIFeatures)
         }
 
+        @Test(
+            "Check AI comparison shows popular AIs as the competitor",
+            arguments: [.default, .duckAI] as [OnboardingFlowType]
+        )
+        func checkAIComparisonCompetitor(flow: OnboardingFlowType) {
+            // GIVEN
+            let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
+
+            // WHEN
+            let result = sut.aiIntroContent
+
+            // THEN
+            #expect(result.competitor == .ai)
+        }
+
     }
 
+    @MainActor
     @Suite("Add to Dock Content")
     struct AddToDockContent {
 
@@ -526,6 +654,7 @@ struct OnboardingIntroContentProviderTests {
             #expect(result.secondaryCTA == UserText.AddToDockOnboarding.Buttons.skip)
         }
 
+        @MainActor
         @Suite("Tutorial")
         struct Tutorial {
 
@@ -578,6 +707,7 @@ struct OnboardingIntroContentProviderTests {
 
     }
 
+    @MainActor
     @Suite("App Icon Color Content")
     struct AppIconColorContent {
 
@@ -628,6 +758,7 @@ struct OnboardingIntroContentProviderTests {
 
     }
 
+    @MainActor
     @Suite("Address Bar Position Content")
     struct AddressBarPositionContent {
 
@@ -711,6 +842,7 @@ struct OnboardingIntroContentProviderTests {
 
         }
 
+        @MainActor
         @Suite("Bottom Option")
         struct BottomOption {
 
@@ -748,6 +880,7 @@ struct OnboardingIntroContentProviderTests {
 
     }
 
+    @MainActor
     @Suite("Search Experience Content")
     struct SearchExperienceContent {
 
@@ -798,6 +931,7 @@ struct OnboardingIntroContentProviderTests {
 
     }
 
+    @MainActor
     @Suite("Duck.ai Query Content")
     struct DuckAIQueryContent {
 
@@ -869,6 +1003,7 @@ struct OnboardingIntroContentProviderTests {
 
     }
 
+    @MainActor
     @Suite("Download Reason Content")
     struct DownloadReasonContent {
 
@@ -939,6 +1074,7 @@ struct OnboardingIntroContentProviderTests {
 
     }
 
+    @MainActor
     @Suite("Dax Animations")
     struct DaxAnimations {
 

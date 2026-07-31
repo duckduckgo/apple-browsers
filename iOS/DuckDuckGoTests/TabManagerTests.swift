@@ -315,9 +315,7 @@ final class TabManagerTests: XCTestCase {
         let tabsModel = TabsModel(desktop: false)
         tabsModel.insert(tab: Tab(link: Link(title: "a", url: URL(string: "https://a.com")!)),
                          placement: .atEnd, selectNewTab: false)
-        let flagger = MockFeatureFlagger()
-        flagger.enabledFeatureFlags = [.tabsSaveOptimization]
-        let manager = try makeManager(tabsModel, featureFlagger: flagger, normalStore: countingStore)
+        let manager = try makeManager(tabsModel, normalStore: countingStore)
 
         for _ in 0..<10 {
             manager.save()
@@ -336,9 +334,7 @@ final class TabManagerTests: XCTestCase {
         let tabsModel = TabsModel(desktop: false)
         tabsModel.insert(tab: Tab(link: Link(title: "a", url: URL(string: "https://a.com")!)),
                          placement: .atEnd, selectNewTab: false)
-        let flagger = MockFeatureFlagger()
-        flagger.enabledFeatureFlags = [.tabsSaveOptimization]
-        let manager = try makeManager(tabsModel, featureFlagger: flagger, normalStore: countingStore)
+        let manager = try makeManager(tabsModel, normalStore: countingStore)
 
         // Drive save() faster than the debounce window for ~1.5 s.
         let start = Date()
@@ -368,9 +364,7 @@ final class TabManagerTests: XCTestCase {
         let tabsModel = TabsModel(desktop: false)
         tabsModel.insert(tab: Tab(link: Link(title: "a", url: URL(string: "https://a.com")!)),
                          placement: .atEnd, selectNewTab: false)
-        let flagger = MockFeatureFlagger()
-        flagger.enabledFeatureFlags = [.tabsSaveOptimization]
-        let manager = try makeManager(tabsModel, featureFlagger: flagger, normalStore: countingStore)
+        let manager = try makeManager(tabsModel, normalStore: countingStore)
 
         manager.save()
         // No wait. flushPendingSave should drain synchronously.

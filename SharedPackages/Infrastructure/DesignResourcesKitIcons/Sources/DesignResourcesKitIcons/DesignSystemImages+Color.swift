@@ -230,9 +230,21 @@ public extension DesignSystemImages {
                     ? .init(resource: .shieldColor16)
                     : .init(resource: .shieldColor16Legacy)
             }
-            public static var shieldCheck: DesignSystemImage { .init(resource: .shieldCheckColor16) }
-            public static var shieldNeutral: DesignSystemImage { .init(resource: .shieldNeutralColor16) }
-            public static var shieldNeutralAlert: DesignSystemImage { .init(resource: .shieldNeutralAlertColor16) }
+            public static var shieldCheck: DesignSystemImage {
+                AppRebrand.isAppRebranded()
+                    ? .init(resource: .shieldCheckColor16)
+                    : .init(resource: .shieldCheckColor16Legacy)
+            }
+            public static var shieldNeutral: DesignSystemImage {
+                AppRebrand.isAppRebranded()
+                    ? .init(resource: .shieldNeutralColor16)
+                    : .init(resource: .shieldNeutralColor16Legacy)
+            }
+            public static var shieldNeutralAlert: DesignSystemImage {
+                AppRebrand.isAppRebranded()
+                    ? .init(resource: .shieldNeutralAlertColor16)
+                    : .init(resource: .shieldNeutralAlertColor16Legacy)
+            }
             public static var shopping: DesignSystemImage { .init(resource: .shoppingColor16) }
             public static var siri: DesignSystemImage { .init(resource: .siriColor16) }
             public static var sync: DesignSystemImage {
@@ -319,6 +331,7 @@ public extension DesignSystemImages {
                     ? .init(resource: .aiGeneralColor24)
                     : .init(resource: .aiGeneralColor24Legacy)
             }
+            public static var aiImagesStriketrough: DesignSystemImage { .init(resource: .aiImagesStrikethroughColor24)}
             public static var announce: DesignSystemImage {
                 AppRebrand.isAppRebranded()
                     ? .init(resource: .announceColor24)
@@ -496,6 +509,7 @@ public extension DesignSystemImages {
                     ? .init(resource: .lockColor24)
                     : .init(resource: .lockColor24Legacy)
             }
+            public static var mask: DesignSystemImage { .init(resource: .maskColor24) }
             public static var microphone: DesignSystemImage {
                 AppRebrand.isAppRebranded()
                     ? .init(resource: .microphoneColor24)
@@ -515,6 +529,7 @@ public extension DesignSystemImages {
             public static var privacyCheckGreyscale: DesignSystemImage { .init(resource: .privacyCheckGreyscaleColor24) }
             public static var profile: DesignSystemImage { .init(resource: .profileColor24) }
             public static var rocket: DesignSystemImage { .init(resource: .rocketColor24) }
+            public static var searchAssistStrikethrough: DesignSystemImage { .init(resource: .searchAssistStrikethroughColor24) }
             public static var sessionRestore: DesignSystemImage { .init(resource: .sessionRestoreColor24) }
             public static var settings: DesignSystemImage {
                 AppRebrand.isAppRebranded()

@@ -58,7 +58,7 @@ final class SyncPromoManager: SyncPromoManaging {
         case impressionCap = "impression_cap"
     }
 
-    static let aiChatImpressionCap = 3
+    static let aiChatImpressionCap = 5
 
     private let featureFlagger: FeatureFlagger
     private let syncService: DDGSyncing

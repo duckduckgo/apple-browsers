@@ -172,7 +172,7 @@ final class PageContextTabExtension {
                     self.didReportExtractionForCurrentNavigation = false
                     self.didReportSidebarOpenOutcomeForCurrentNavigation = false
                 }
-                self.handleNavigationForMultipleContexts(from: previousContent, to: tabContent)
+                self.updateSidebarPageContextOnNavigation(from: previousContent, to: tabContent)
                 self.sendNonAttachableContextIfNeeded()
                 // A settled navigation that beat this debounced update deferred its re-collect; now
                 // that `content` matches, run it (a fast / back-forward restore the delegate missed).
@@ -509,6 +509,18 @@ final class PageContextTabExtension {
         Task { @MainActor [weak self] in self?.flushPendingSelectionContexts() }
     }
 
+    /// Forces page-context collection into the sidebar regardless of the auto-send preference — the
+    /// native equivalent of the web app's "attach page content" request. Used by "Ask About Page".
+    @MainActor
+    func requestPageContextAttachment() {
+        // Non-URL pages (NTP, settings, …) have nothing to attach. Bail without arming the force flag:
+        // collectPageContextIfNeeded would bail too, leaving the flag set and leaking into the next
+        // navigation (auto-attaching that page even with auto-send off).
+        guard case .url = content else { return }
+        shouldForceContextCollection = true
+        collectPageContextIfNeeded(trigger: .userRequest)
+    }
+
     /// Stamps the source page's base64-encoded favicon onto the selection (raw favicon URLs get
     /// CSP-blocked in the sidebar). Mirrors `replaceFaviconURLWithEncodedData`; returns the item
     /// unchanged when no favicon is cached.
@@ -550,55 +562,44 @@ final class PageContextTabExtension {
     /// Determines the appropriate action when the browser tab navigates to a new URL
     /// while the sidebar has an active chat session.
     private enum NavigationContextAction {
-        /// Auto-collect is enabled — collect and push the new page's context.
+        /// Auto-send is enabled — collect and push the new page's context.
         case collectNewContext
-        /// A prompt was already submitted — send nil so the frontend shows "Add page content".
+        /// Auto-send is off — send nil so the previous attachment is dropped and the frontend shows
+        /// "Add page content" for the new page.
         case sendNavigationSignal
-        /// Context hasn't been consumed yet — keep the existing attached context.
-        case keepExistingContext
     }
 
-    private func navigationAction(autoCollectEnabled: Bool, contextConsumed: Bool, fromAttachablePage: Bool = true) -> NavigationContextAction {
-        if autoCollectEnabled {
-            return .collectNewContext
-        } else if contextConsumed || !fromAttachablePage {
-            return .sendNavigationSignal
-        } else {
-            return .keepExistingContext
-        }
+    private func navigationAction(autoCollectEnabled: Bool) -> NavigationContextAction {
+        autoCollectEnabled ? .collectNewContext : .sendNavigationSignal
     }
 
-    /// Handles navigation events for the multiple page contexts feature.
-    /// When enabled, pushes new page context or signals the frontend depending on settings.
-    private func handleNavigationForMultipleContexts(from previousContent: Tab.TabContent?, to newContent: Tab.TabContent) {
-        guard featureFlagger.isFeatureOn(.aiChatMultiplePageContexts),
-              case .url(let newURL, _, _) = newContent,
+    /// Keeps the open sidebar's page attachment in sync when the tab navigates to a different URL.
+    /// With auto-send on the new page is (re)collected; with auto-send off the previous attachment is
+    /// dropped so it never lingers from the page the user navigated away from.
+    private func updateSidebarPageContextOnNavigation(from previousContent: Tab.TabContent?, to newContent: Tab.TabContent) {
+        guard case .url(let newURL, _, _) = newContent,
               let session = aiChatSessionStore.sessions[tabID],
               session.state.presentationMode != .hidden,
-              session.chatViewController != nil else {
+              let chatViewController = session.chatViewController else {
             return
         }
 
-        // When the previous page was also a URL, skip if the URL hasn't changed.
-        // When coming from a non-URL page (NTP, settings, etc.) always proceed —
-        // the attachability just changed from false to true, so the sidebar needs a signal.
-        let previousWasURL: Bool
+        // Skip if the URL didn't actually change (in-page updates coming from a URL to the same URL).
         if case .url(let oldURL, _, _) = previousContent {
             guard oldURL != newURL else { return }
-            previousWasURL = true
-        } else {
-            previousWasURL = false
         }
 
-        switch navigationAction(autoCollectEnabled: isContextCollectionEnabled,
-                                contextConsumed: hasContextBeenConsumedByChat,
-                                fromAttachablePage: previousWasURL) {
+        switch navigationAction(autoCollectEnabled: isContextCollectionEnabled) {
         case .collectNewContext:
-            collectPageContextIfNeeded(trigger: .navigation)
+            // The proactive collect-on-navigation is the multiple-page-contexts feature; when it's off
+            // the auto-send path still re-collects the new page via navigationDidFinish.
+            if featureFlagger.isFeatureOn(.aiChatMultiplePageContexts) {
+                collectPageContextIfNeeded(trigger: .navigation)
+            }
         case .sendNavigationSignal:
-            session.chatViewController?.setPageContext(nil)
-        case .keepExistingContext:
-            break
+            // Auto-send off: navigating away invalidates the attached page, so drop it. Runs regardless
+            // of the multiple-page-contexts flag so a manual "Ask About Page" attachment can't linger.
+            chatViewController.setPageContext(nil)
         }
     }
 
@@ -738,6 +739,10 @@ protocol PageContextProtocol: AnyObject, NavigationResponder {
     /// Appends a user text selection to the sidebar's selection-context list. See the
     /// implementation in `PageContextTabExtension` for buffering/lifecycle semantics.
     @MainActor func appendSelectionContext(_ selection: AIChatSelectionContextData)
+
+    /// Force-collects and attaches the current page's context to the sidebar, bypassing the
+    /// auto-send preference (used by the tab-bar "Ask About Page" action).
+    @MainActor func requestPageContextAttachment()
 }
 
 extension PageContextTabExtension: PageContextProtocol, TabExtension {

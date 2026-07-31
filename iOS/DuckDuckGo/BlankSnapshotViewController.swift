@@ -46,6 +46,7 @@ class BlankSnapshotViewController: UIViewController {
     let voiceSearchHelper: VoiceSearchHelperProtocol
     let appSettings: AppSettings
     let mobileCustomization: MobileCustomization
+    private let floatingUIManager: FloatingUIManaging
 
     var viewCoordinator: MainViewCoordinator!
     var useMinimalChromeLayout: Bool = false
@@ -66,6 +67,7 @@ class BlankSnapshotViewController: UIViewController {
         self.featureFlagger = featureFlagger
         self.appSettings = appSettings
         self.mobileCustomization = mobileCustomization
+        self.floatingUIManager = FloatingUIManager(featureFlagger: featureFlagger)
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -83,7 +85,7 @@ class BlankSnapshotViewController: UIViewController {
                                                               aiChatAddressBarExperience: aiChatAddressBarExperience,
                                                               voiceSearchHelper: voiceSearchHelper,
                                                               featureFlagger: featureFlagger,
-                                                              floatingUIManager: FloatingUIManager(featureFlagger: featureFlagger),
+                                                              floatingUIManager: floatingUIManager,
                                                               appSettings: appSettings,
                                                               mobileCustomization: mobileCustomization)
         if addressBarPosition.isBottom {
@@ -105,6 +107,7 @@ class BlankSnapshotViewController: UIViewController {
 
         addTapInterceptor()
         decorate()
+        configureFloatingUI()
     }
 
     private func addTapInterceptor() {
@@ -157,7 +160,27 @@ class BlankSnapshotViewController: UIViewController {
 
         viewCoordinator.navigationBarCollectionView.dataSource = self
         if useMinimalChromeLayout {
-            viewCoordinator.omniBar.enterPadState()
+            if floatingUIManager.isFloatingUIEnabled {
+                viewCoordinator.omniBar.enterPhoneState()
+            } else {
+                viewCoordinator.omniBar.enterPadState()
+            }
+        }
+    }
+
+    private func configureFloatingUI() {
+        guard floatingUIManager.isFloatingUIEnabled else { return }
+
+        viewCoordinator.setFloatingUIEnabled(true)
+        viewCoordinator.setMinimalChromeLayout(useMinimalChromeLayout)
+        viewCoordinator.navigationBarCollectionView.backgroundColor = .clear
+        viewCoordinator.omniBar.isExpandedPhone = useMinimalChromeLayout
+        viewCoordinator.omniBar.barView.setFloatingMinimalChromeBar(useMinimalChromeLayout)
+        FloatingUIChromeStyler().decorateMainViewIfNeeded(manager: floatingUIManager, coordinator: viewCoordinator)
+        viewCoordinator.updateToolbarLayoutForAddressBarPosition(addressBarPosition)
+
+        if useMinimalChromeLayout, addressBarPosition.isBottom {
+            viewCoordinator.applyMinimalChromeBottomLayout(pinnedToScreenBottom: true)
         }
     }
     
@@ -175,6 +198,10 @@ extension BlankSnapshotViewController: UICollectionViewDataSource {
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "omnibar", for: indexPath) as? OmniBarCell else {
             fatalError("Not \(OmniBarCell.self)")
+        }
+        cell.coordinator = viewCoordinator
+        cell.isFloatingUIEnabledProvider = { [weak self] in
+            self?.floatingUIManager.isFloatingUIEnabled == true
         }
         cell.omniBar = viewCoordinator.omniBar
         cell.omniBar?.barView.aiChatButton.setImage(DesignSystemImages.Glyphs.Size24.aiChat, for: .normal)
@@ -196,16 +223,19 @@ extension BlankSnapshotViewController {
 
     private func updateStatusBarBackgroundColor() {
         let theme = ThemeManager.shared.currentTheme
+        let color: UIColor
 
         if addressBarPosition == .bottom {
-            viewCoordinator.statusBackground.backgroundColor = theme.backgroundColor
+            color = theme.backgroundColor
         } else {
             if AppWidthObserver.shared.isPad && traitCollection.horizontalSizeClass == .regular {
-                viewCoordinator.statusBackground.backgroundColor = theme.tabsBarBackgroundColor
+                color = theme.tabsBarBackgroundColor
             } else {
-                viewCoordinator.statusBackground.backgroundColor = theme.omniBarBackgroundColor
+                color = theme.omniBarBackgroundColor
             }
         }
+
+        viewCoordinator.setStandardStatusBackgroundColor(color)
     }
 
     private func decorate() {

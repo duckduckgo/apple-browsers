@@ -123,7 +123,7 @@
         ]
     },
     "m_aichat_unified_input_image_attached": {
-        "description": "Fires when the user attaches an image (camera or photo library) in the Unified Toggle Input.",
+        "description": "Fires when the user attaches an image (camera, photo library, or paste) in the Unified Toggle Input.",
         "owners": ["pikorddg", "aataraxiaa"],
         "triggers": ["other"],
         "suffixes": ["daily_count", "platform", "form_factor"],
@@ -134,7 +134,7 @@
                 "key": "source",
                 "description": "Source of the attached image.",
                 "type": "string",
-                "enum": ["camera", "photo_library"]
+                "enum": ["camera", "photo_library", "paste"]
             }
         ]
     },
@@ -146,11 +146,20 @@
         "parameters": ["appVersion", "unified_input_surface"]
     },
     "m_aichat_unified_input_file_attached": {
-        "description": "Fires when the user attaches a file in the Unified Toggle Input (post-validation).",
+        "description": "Fires when the user attaches a file (file picker or paste) in the Unified Toggle Input (post-validation).",
         "owners": ["pikorddg", "aataraxiaa"],
         "triggers": ["other"],
         "suffixes": ["daily_count", "platform", "form_factor"],
-        "parameters": ["appVersion", "unified_input_surface"]
+        "parameters": [
+            "appVersion",
+            "unified_input_surface",
+            {
+                "key": "source",
+                "description": "Source of the attached file.",
+                "type": "string",
+                "enum": ["file_picker", "paste"]
+            }
+        ]
     },
     "m_aichat_unified_input_file_removed": {
         "description": "Fires when the user removes an attached file (or invalid file) from the Unified Toggle Input.",
@@ -172,6 +181,12 @@
                 "description": "Reason for the file validation failure.",
                 "type": "string",
                 "enum": ["size_exceeded", "count_exceeded", "unsupported_type", "encrypted", "unreadable", "other"]
+            },
+            {
+                "key": "source",
+                "description": "Source of the rejected file.",
+                "type": "string",
+                "enum": ["file_picker", "paste"]
             }
         ]
     },

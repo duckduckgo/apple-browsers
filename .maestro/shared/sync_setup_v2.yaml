@@ -1,0 +1,19 @@
+# sync_setup_v2.yaml
+# Shared setup for the sync_v2_tests suite.
+# Identical to sync_setup.yaml but forces the simplifiedSyncSetupV2 feature flag on
+# via the ff.<flag> UI-test launch-argument override, so these flows exercise the
+# V2 simplified Sync setup UI while sync_setup.yaml keeps testing the flag-off flow.
+appId: com.duckduckgo.mobile.ios
+
+---
+
+- launchApp:
+    appId: "com.duckduckgo.mobile.ios"
+    clearState: true
+    clearKeychain: true
+    arguments:
+        isOnboardingCompleted: ${ONBOARDING_COMPLETED}
+        currentAppVariant: ${APP_VARIANT}
+        isRunningUITests: true
+        isInternalUser: ${INTERNAL_USER_MODE}
+        ff.simplifiedSyncSetupV2: "true"

@@ -240,11 +240,11 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
         ])
 
         if showsBrandLogo {
-            setUpBrandLogo()
+            setUpDuckAILogo()
         }
     }
 
-    private func setUpBrandLogo() {
+    private func setUpDuckAILogo() {
         brandLogoView.translatesAutoresizingMaskIntoConstraints = false
         brandLogoView.image = DesignSystemImages.Color.Size24.duckAI
         brandLogoView.imageScaling = .scaleProportionallyUpOrDown

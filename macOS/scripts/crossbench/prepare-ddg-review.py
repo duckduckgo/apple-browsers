@@ -68,9 +68,10 @@ def validate_app_size(app: Path) -> None:
     expanded_bytes = 0
     for root, _, files in os.walk(app, followlinks=False):
         for filename in files:
-            expanded_bytes += (Path(root) / filename).stat(
-                follow_symlinks=False
-            ).st_size
+            # os.lstat rather than Path.stat(follow_symlinks=False): the latter
+            # only accepts that argument from Python 3.10, and the system python3
+            # on macOS is still 3.9.
+            expanded_bytes += os.lstat(Path(root) / filename).st_size
             if expanded_bytes > MAX_EXPANDED_BYTES:
                 raise PreparationError("Review app exceeds the 4 GiB limit")
 

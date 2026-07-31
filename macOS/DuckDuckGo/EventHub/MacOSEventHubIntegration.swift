@@ -27,17 +27,6 @@ import PrivacyConfig
 /// pixel firing, and consent gating. Constructed once by `AppDelegate`.
 final class MacOSEventHubIntegration {
 
-    /// The `telemetry` config names (keys in the remote eventHub settings) gated behind the YouTube
-    /// analytics opt-in. These must byte-match the server-side config keys: a mismatch fails open — the
-    /// entry is never stripped, so its telemetry would be collected without consent.
-    private static let youTubeAdBlockingTelemetryConfigNames: Set<String> = [
-        "webTelemetry_youtube_adBlocker_day",
-        "webTelemetry_youtube_playabilityError_day",
-        "webTelemetry_youtube_videoAd_day",
-        "webTelemetry_youtube_staticAd_day",
-        "webTelemetry_youtube_buffering_day"
-    ]
-
     let eventHub: EventHubManaging
 
     private var cancellables = Set<AnyCancellable>()
@@ -60,7 +49,7 @@ final class MacOSEventHubIntegration {
             featureEnabledPublisher: enabledSubject.eraseToAnyPublisher(),
             featureSettingsPublisher: settingsSubject.eraseToAnyPublisher(),
             consentRequirements: [
-                YouTubeAdBlockingTelemetryConsentRequirement(configNames: Self.youTubeAdBlockingTelemetryConfigNames)
+                YouTubeAdBlockingTelemetryConsentRequirement()
             ]
         )
 

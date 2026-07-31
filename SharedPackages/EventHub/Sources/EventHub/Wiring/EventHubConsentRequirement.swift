@@ -34,3 +34,21 @@ public protocol EventHubConsentRequirement {
     /// requirement that never seeds a value would stall telemetry filtering for every feature.
     var isGrantedPublisher: AnyPublisher<Bool, Never> { get }
 }
+
+/// The config-name sets behind each consent group, shared by every platform that gates them.
+///
+/// These live here rather than in the platform apps on purpose: every name must byte-match a
+/// server-side `telemetry` key, and a mismatch fails *open* — the entry is never stripped, so its
+/// telemetry would be collected without consent. One list can be reviewed against the server config
+/// once; a per-platform copy each would double the chance of a silent drift.
+public enum EventHubGatedConfigNames {
+
+    /// The `telemetry` config names gated behind the YouTube analytics opt-in.
+    public static let youTubeAdBlockingTelemetry: Set<String> = [
+        "webTelemetry_youtube_adBlocker_day",
+        "webTelemetry_youtube_playabilityError_day",
+        "webTelemetry_youtube_videoAd_day",
+        "webTelemetry_youtube_staticAd_day",
+        "webTelemetry_youtube_buffering_day"
+    ]
+}

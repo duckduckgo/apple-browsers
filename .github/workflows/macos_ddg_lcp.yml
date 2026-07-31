@@ -11,6 +11,10 @@ on:
         description: "Review app archive/DMG URL (blank = build this commit)"
         required: false
         default: ""
+      review-run-id:
+        description: "Reuse the Review app built by this run ID (blank = build this commit)"
+        required: false
+        default: ""
       sites:
         description: "Comma-separated sites (blank = full 22-site list)"
         required: false
@@ -45,7 +49,7 @@ defaults:
 jobs:
   build-review:
     name: Build signed Review app
-    if: inputs.review-build-url == ''
+    if: inputs.review-build-url == '' && inputs.review-run-id == ''
     uses: ./.github/workflows/macos_build_notarized.yml
     with:
       release-type: review
@@ -105,6 +109,19 @@ jobs:
           pattern: DuckDuckGo-review-*.app.tar.xz
           merge-multiple: true
           path: ${{ runner.temp }}/ddg-review-source
+
+      # Reusing an earlier run's app skips a ~17-minute rebuild when the only
+      # thing under test is the measurement itself. The app still goes through
+      # the same signature, team and Gatekeeper checks below.
+      - name: Download Review artifact from an earlier run
+        if: inputs.review-build-url == '' && inputs.review-run-id != ''
+        uses: actions/download-artifact@v7
+        with:
+          pattern: DuckDuckGo-review-*.app.tar.xz
+          merge-multiple: true
+          path: ${{ runner.temp }}/ddg-review-source
+          run-id: ${{ inputs.review-run-id }}
+          github-token: ${{ github.token }}
 
       - name: Prepare and validate Review app
         env:
@@ -177,6 +194,35 @@ jobs:
             args+=(--reps "$REPS")
           fi
           ./test-ddg.sh "${args[@]}"
+
+      # The app is launched through LaunchServices, so a crash leaves nothing on
+      # the redirected stdout/stderr the harness captures. Its crash reports and
+      # unified-log entries are the only record of why it exited.
+      - name: Collect app crash reports and unified log
+        if: always()
+        run: |
+          out="$GITHUB_WORKSPACE/macOS/scripts/crossbench/ddg-app-diagnostics"
+          mkdir -p "$out"
+          for dir in "$HOME/Library/Logs/DiagnosticReports" \
+                     /Library/Logs/DiagnosticReports; do
+            [ -d "$dir" ] || continue
+            find "$dir" -maxdepth 1 -type f \
+              \( -name 'DuckDuckGo*' -o -name 'com.duckduckgo*' \) \
+              -exec cp {} "$out/" \;
+          done
+          log show --style compact --last 60m \
+            --predicate 'process BEGINSWITH "DuckDuckGo"' \
+            > "$out/unified-log.txt" 2>&1 || true
+          ls -la "$out"
+
+      - name: Upload app crash diagnostics
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: ddg-app-diagnostics
+          path: macOS/scripts/crossbench/ddg-app-diagnostics/
+          if-no-files-found: warn
+          retention-days: 7
 
       - name: Remove dedicated Review app
         if: always()

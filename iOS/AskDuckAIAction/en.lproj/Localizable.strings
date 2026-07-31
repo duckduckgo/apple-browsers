@@ -1,0 +1,2 @@
+/* Shown in the Ask Duck.ai share sheet when the shared file exceeds the size limit */
+"share.error.fileTooLarge" = "This file is too large to share to Duck.ai";

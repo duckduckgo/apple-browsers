@@ -69,3 +69,80 @@ final class WebViewInputAccessoryTests: XCTestCase {
         XCTAssertNil(webView.inputAccessoryView)
     }
 }
+
+final class WebViewAskAIChatMenuTests: XCTestCase {
+
+    private func makeWebView() -> WebView {
+        WebView(frame: .zero, configuration: WKWebViewConfiguration())
+    }
+
+    func testWhenAvailabilityUnsetThenMenuIsNotInserted() {
+        let webView = makeWebView()
+        XCTAssertFalse(webView.shouldInsertAskAIChatMenu(forSystem: .context))
+    }
+
+    func testWhenAvailabilityReturnsFalseThenMenuIsNotInserted() {
+        let webView = makeWebView()
+        webView.isAskAIChatMenuAvailable = { false }
+        XCTAssertFalse(webView.shouldInsertAskAIChatMenu(forSystem: .context))
+    }
+
+    func testWhenAvailabilityReturnsTrueThenMenuIsInserted() {
+        let webView = makeWebView()
+        webView.isAskAIChatMenuAvailable = { true }
+        XCTAssertTrue(webView.shouldInsertAskAIChatMenu(forSystem: .context))
+    }
+
+    func testWhenSystemIsMainThenMenuIsNotInsertedEvenWhenAvailable() {
+        let webView = makeWebView()
+        webView.isAskAIChatMenuAvailable = { true }
+        XCTAssertFalse(webView.shouldInsertAskAIChatMenu(forSystem: .main))
+    }
+
+    func testAvailabilityIsReevaluatedOnEveryMenuBuild() {
+        let webView = makeWebView()
+        var available = false
+        webView.isAskAIChatMenuAvailable = { available }
+
+        XCTAssertFalse(webView.shouldInsertAskAIChatMenu(forSystem: .context))
+        available = true
+        XCTAssertTrue(webView.shouldInsertAskAIChatMenu(forSystem: .context))
+        available = false
+        XCTAssertFalse(webView.shouldInsertAskAIChatMenu(forSystem: .context))
+    }
+
+    func testSelectionIsTrimmedOfSurroundingWhitespaceAndNewlines() {
+        XCTAssertEqual(WebView.normalizedAskAIChatSelection("  \n hello world \n\t "), "hello world")
+    }
+
+    func testSelectionKeepsInteriorWhitespace() {
+        XCTAssertEqual(WebView.normalizedAskAIChatSelection("first line\nsecond line"), "first line\nsecond line")
+    }
+
+    func testEmptySelectionIsRejected() {
+        XCTAssertNil(WebView.normalizedAskAIChatSelection(""))
+    }
+
+    func testWhitespaceOnlySelectionIsRejected() {
+        XCTAssertNil(WebView.normalizedAskAIChatSelection("   \n\t  "))
+    }
+
+    func testLongSelectionIsCappedAtMaximumLength() {
+        let selection = String(repeating: "a", count: WebView.maxAskAIChatSelectionLength + 500)
+        let normalized = WebView.normalizedAskAIChatSelection(selection)
+        XCTAssertEqual(normalized?.count, WebView.maxAskAIChatSelectionLength)
+    }
+
+    func testSelectionAtMaximumLengthIsUnchanged() {
+        let selection = String(repeating: "a", count: WebView.maxAskAIChatSelectionLength)
+        XCTAssertEqual(WebView.normalizedAskAIChatSelection(selection), selection)
+    }
+
+    func testSelectionIsTrimmedBeforeBeingCapped() {
+        let padding = String(repeating: " ", count: 100)
+        let selection = padding + String(repeating: "a", count: WebView.maxAskAIChatSelectionLength) + padding
+        let normalized = WebView.normalizedAskAIChatSelection(selection)
+        XCTAssertEqual(normalized?.count, WebView.maxAskAIChatSelectionLength)
+        XCTAssertEqual(normalized?.first, "a")
+    }
+}

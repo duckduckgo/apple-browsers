@@ -150,6 +150,25 @@ final class UTIAttachmentController {
         updateAttachButtonPresentation()
     }
 
+    /// Whether the current model + remaining capacity can take another image, expressed as the
+    /// message to show when they can't. `addImageAttachment` returns silently in that case, so
+    /// callers without their own UI (share delivery) use this to surface the rejection.
+    var imageRejectionMessage: String? {
+        let policy = environment.policy()
+        guard !policy.canAttachImages else { return nil }
+        return policy.imageCapacityValidationMessage() ?? UserText.aiChatAttachmentUnavailable
+    }
+
+    /// Why the current model / remaining capacity can't take `fileAttachment`, or nil when it can.
+    func fileRejectionMessage(for fileAttachment: AIChatFileAttachment) -> String? {
+        environment.policy().fileValidationError(for: fileAttachment)?.message
+    }
+
+    /// Shows a rejection banner that survives an async attachment/model re-sync, like the paste-rejection path.
+    func presentRejectionBanner(_ message: String) {
+        presentTransientValidationError(message)
+    }
+
     func addFileAttachment(_ fileAttachment: AIChatFileAttachment, sourceURL: URL? = nil, source: String = "file_picker") {
         if let validationError = environment.policy().fileValidationError(for: fileAttachment) {
             pixelReporter.reportFileValidationFailed(reason: validationError.reason, source: source)

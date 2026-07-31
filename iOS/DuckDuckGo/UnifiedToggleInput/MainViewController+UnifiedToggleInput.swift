@@ -208,11 +208,38 @@ extension MainViewController {
         }
     }
 
+    /// Holds "Ask Duck.ai" share content until the Duck.ai tab's input is live, then hands it to the
+    /// coordinator as an editable draft. The tab is still loading when the deep link is handled, and
+    /// the UTI's own activation wipes text + attachments, so delivery has to wait for the refresh
+    /// that puts the coordinator into its AI-tab state.
+    func stageAIChatShareDraft(_ draft: AIChatShareDraft) {
+        pendingAIChatShareDraft = draft
+        deliverPendingAIChatShareDraftIfReady()
+    }
+
+    /// Hands the staged draft over once the coordinator is bound to a foreground Duck.ai tab. Called
+    /// from every exit of `refreshUnifiedToggleInput(for:)`, since any of them can be the refresh
+    /// that settles the coordinator into its AI-tab state.
+    func deliverPendingAIChatShareDraftIfReady() {
+        guard let draft = pendingAIChatShareDraft,
+              currentTab?.isAITab == true,
+              let coordinator = unifiedToggleInputCoordinator,
+              coordinator.isAITabState else {
+            return
+        }
+        pendingAIChatShareDraft = nil
+        coordinator.applySharedDraft(draft) { outcome in
+            AIChatDeepLinkHandler.reportShareDraftOutcome(outcome)
+        }
+    }
+
     func refreshUnifiedToggleInput(for tab: TabViewController) {
         guard unifiedToggleInputFeature.isAvailable,
               let coordinator = unifiedToggleInputCoordinator else {
             return
         }
+
+        defer { deliverPendingAIChatShareDraftIfReady() }
 
         coordinator.activateForTab(tab.tabModel.uid)
 

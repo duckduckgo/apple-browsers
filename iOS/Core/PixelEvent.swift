@@ -1642,6 +1642,10 @@ extension Pixel {
         case openAIChatFromIconShortcut
         case openAIChatFromTabManager
         case openAIChatFromNavigationBarShortcut
+        case openAIChatFromTextSelectionMenu
+        case aiChatShareExtensionDelivered
+        case aiChatShareExtensionRejected
+        case aiChatShareExtensionDegraded
 
         case aiChatNavigationBarContextualSheetOpened
         case aiChatNavigationBarShortcutMenuOpened
@@ -3590,6 +3594,10 @@ extension Pixel.Event {
         case .browsingMenuAIChatWebPage: return "m_aichat_menu_webpage"
         case .openAIChatFromIconShortcut: return "m_aichat-icon-shortcut"
         case .openAIChatFromTabManager: return "m_aichat_tabmanager_icon"
+        case .openAIChatFromTextSelectionMenu: return "m_aichat_text_selection_menu"
+        case .aiChatShareExtensionDelivered: return "m_aichat_share_extension_delivered"
+        case .aiChatShareExtensionRejected: return "m_aichat_share_extension_rejected"
+        case .aiChatShareExtensionDegraded: return "m_aichat_share_extension_degraded"
         case .openAIChatFromNavigationBarShortcut: return "m_aichat_navigation_bar_shortcut_open"
         case .aiChatNavigationBarContextualSheetOpened: return "m_aichat_navigation_bar_contextual_sheet_opened"
         case .aiChatNavigationBarShortcutMenuOpened: return "m_aichat_navigation_bar_shortcut_menu_opened"

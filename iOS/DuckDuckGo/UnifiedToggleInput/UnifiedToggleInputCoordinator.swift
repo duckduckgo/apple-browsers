@@ -1237,6 +1237,104 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         modelSelector.updateSelectedModel(modelId)
     }
 
+    // MARK: - Shared Draft Delivery
+
+    private static let sharedDraftModelsTimeout: TimeInterval = 5
+
+    private var pendingSharedDraft: AIChatShareDraft?
+    private var pendingSharedDraftCompletion: ((AIChatShareDraftOutcome) -> Void)?
+    private var pendingSharedDraftTimeout: Task<Void, Never>?
+
+    /// Injects "Ask Duck.ai" share content into the input as an editable draft — shared text in the
+    /// field, attachments as chips — rather than auto-submitting it. Held until the model list
+    /// resolves, because both the capability-driven model switch and attachment validation need it;
+    /// a timeout releases the draft anyway so an unreachable models endpoint still shows the text.
+    func applySharedDraft(_ draft: AIChatShareDraft, completion: @escaping (AIChatShareDraftOutcome) -> Void) {
+        pendingSharedDraft = draft
+        pendingSharedDraftCompletion = completion
+
+        let needsModels = !(draft.images.isEmpty && draft.files.isEmpty)
+        guard models.isEmpty, needsModels else {
+            deliverPendingSharedDraft()
+            return
+        }
+
+        fetchModels()
+        pendingSharedDraftTimeout?.cancel()
+        pendingSharedDraftTimeout = Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: UInt64(Self.sharedDraftModelsTimeout * 1_000_000_000))
+            guard !Task.isCancelled else { return }
+            self?.deliverPendingSharedDraft()
+        }
+    }
+
+    private func deliverPendingSharedDraftIfModelsResolved() {
+        guard !models.isEmpty else { return }
+        deliverPendingSharedDraft()
+    }
+
+    private func deliverPendingSharedDraft() {
+        guard let draft = pendingSharedDraft else { return }
+        let completion = pendingSharedDraftCompletion
+        pendingSharedDraft = nil
+        pendingSharedDraftCompletion = nil
+        pendingSharedDraftTimeout?.cancel()
+        pendingSharedDraftTimeout = nil
+
+        switchToModelSupportingSharedDraft(draft)
+        expandIfOnExpandedInputHost()
+
+        if !draft.text.isEmpty {
+            setText(draft.text)
+        }
+
+        var rejectionMessage: String?
+        var rejectedImageCount = 0
+        for image in draft.images {
+            if let message = attachmentController.imageRejectionMessage {
+                rejectionMessage = message
+                rejectedImageCount += 1
+                continue
+            }
+            attachmentController.addImageAttachment(image: image.image, fileName: image.fileName)
+        }
+
+        var rejectedFileCount = 0
+        for file in draft.files {
+            if let message = attachmentController.fileRejectionMessage(for: file) {
+                rejectionMessage = message
+                rejectedFileCount += 1
+            }
+            attachmentController.addFileAttachment(file, source: AIChatShareDraft.attachmentSource)
+        }
+
+        // Presented last, and as a transient banner, so it outlives both the per-attachment banner
+        // `addFileAttachment` sets and any later models-updated re-sync that sweeps the chip.
+        if let rejectionMessage {
+            attachmentController.presentRejectionBanner(rejectionMessage)
+        }
+
+        completion?(AIChatShareDraftOutcome(rejectedImageCount: rejectedImageCount, rejectedFileCount: rejectedFileCount))
+    }
+
+    /// Points the live model selection at the first accessible model that can take every shared
+    /// attachment, so the chips validate against that model rather than whatever the last chat used.
+    private func switchToModelSupportingSharedDraft(_ draft: AIChatShareDraft) {
+        let needsImage = !draft.images.isEmpty
+        let fileMimeTypes = Set(draft.files.map(\.mimeType))
+        guard needsImage || !fileMimeTypes.isEmpty else { return }
+
+        if let selectedModel,
+           AIChatDeepLinkHandler.model(selectedModel, supports: needsImage, fileMimeTypes: fileMimeTypes) {
+            return
+        }
+        guard let pick = AIChatDeepLinkHandler.model(in: models, needsImage: needsImage, fileMimeTypes: fileMimeTypes),
+              pick.id != persistedModelId else {
+            return
+        }
+        updateSelectedModel(pick.id)
+    }
+
     /// Tells the FE to switch the active chat's model via the `submitChangeModelAction` bridge push.
     /// No-op for a new chat that hasn't submitted yet — there the model rides in the first
     /// `submitAIChatNativePrompt`.
@@ -1730,6 +1828,9 @@ private extension UnifiedToggleInputCoordinator {
     // MARK: Tools
 
     func handleModelsUpdated() {
+        // Deferred so the reconcile below (which sweeps attachments the selected model can't take)
+        // has already run by the time a share draft adds its chips.
+        defer { deliverPendingSharedDraftIfModelsResolved() }
         toolsController.clearSelectionIfUnsupported(for: modelStore)
         attachmentController.removeUnsupportedAttachmentsForSelectedModel()
         modelSelector.updateModelChipLabel()

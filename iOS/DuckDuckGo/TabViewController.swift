@@ -1126,6 +1126,16 @@ class TabViewController: UIViewController {
             (webView as? WebView)?.setInputAccessoryViewHidden(true)
         }
 
+        (webView as? WebView)?.isAskAIChatMenuAvailable = { [weak self] in
+            guard let self, self.featureFlagger.isFeatureOn(.aiChatTextActions) else { return false }
+            return self.aiChatSettings.isAIChatBrowsingMenuUserSettingsEnabled
+        }
+
+        (webView as? WebView)?.askAIChatHandler = { [weak self] text in
+            guard let self else { return }
+            self.delegate?.tab(self, didRequestAskAIChatWithSelectedText: text)
+        }
+
         updateContentMode()
 
         if #available(iOS 16.4, *) {

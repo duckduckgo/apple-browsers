@@ -370,6 +370,8 @@ class MainViewController: UIViewController {
     )
     lazy var minimalChromeSettings: MinimalChromeSettingsProviding = MinimalChromeSettings()
     var unifiedToggleInputCoordinator: UnifiedToggleInputCoordinator?
+    /// "Ask Duck.ai" share content waiting for the Duck.ai tab's input to come up; see `stageAIChatShareDraft`.
+    var pendingAIChatShareDraft: AIChatShareDraft?
     var unifiedInputStateStore: UnifiedInputStateStore?
     var isPaidAIChatEnabledForSwipe = false
     var unifiedToggleInputCancellables = Set<AnyCancellable>()
@@ -3916,6 +3918,11 @@ class MainViewController: UIViewController {
         Pixel.fire(pixel: pixel, withAdditionalParameters: pixelParameters)
     }
 
+    /// Share drafts land in the unified input, which only exists on the in-tab Duck.ai presentation.
+    var supportsAIChatShareDraftDelivery: Bool {
+        unifiedToggleInputFeature.isAvailable && (aichatFullModeFeature.isAvailable || DevicePlatform.isIpad)
+    }
+
     func openAIChat(_ query: String? = nil,
                     autoSend: Bool = false,
                     payload: Any? = nil,
@@ -4057,9 +4064,11 @@ class MainViewController: UIViewController {
             }
             // Stage prompt singleton before `loadUrlInNewTab` — matches legacy `setData → load` order.
             // Per-tab payload runs in completion since it targets the newly-selected chat tab.
-            if let query, !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            let hasQuery = query?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false
+            let hasAttachments = images?.isEmpty == false || files?.isEmpty == false
+            if hasQuery || hasAttachments {
                 let prompt = AIChatNativePrompt.queryPrompt(
-                    query,
+                    query ?? "",
                     autoSubmit: autoSend,
                     toolChoice: tools?.map(\.rawValue),
                     images: images,
@@ -6179,6 +6188,19 @@ extension MainViewController: TabDelegate {
             newTab(allowingKeyboard: false)
         }
         openAIChat()
+    }
+
+    func tab(_ tab: TabViewController, didRequestAskAIChatWithSelectedText text: String) {
+        Pixel.fire(pixel: .openAIChatFromTextSelectionMenu)
+        if DevicePlatform.isIpad {
+            newTab(allowingKeyboard: false)
+        }
+        if supportsAIChatShareDraftDelivery {
+            openAIChat()
+            stageAIChatShareDraft(AIChatShareDraft(text: text, images: [], files: []))
+        } else {
+            openAIChat(text, autoSend: false)
+        }
     }
 
     func tabDidRequestAIChatHistory(tab: TabViewController, source: AIChatHistorySource) {

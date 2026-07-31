@@ -397,6 +397,12 @@ struct Launching: LaunchingHandling {
                 taskContext.finish()
             }
         })
+        launchTaskManager.register(task: BlockLaunchTask(name: "Clean Ask Duck.ai share inbox") { taskContext in
+            DispatchQueue.global(qos: .utility).async {
+                AIChatShareInbox.collectGarbage(olderThan: 24 * 60 * 60)
+                taskContext.finish()
+            }
+        })
 
         // MARK: - Final Configuration
         // Complete the configuration process and set up the main window

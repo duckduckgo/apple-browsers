@@ -878,6 +878,13 @@
 		8546A54A2A672959003929BF /* MainViewController+Email.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8546A5492A672959003929BF /* MainViewController+Email.swift */; };
 		85482D8D2462DCD100EDEDD1 /* ActionViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85482D8C2462DCD100EDEDD1 /* ActionViewController.swift */; };
 		85482D942462DCD100EDEDD1 /* OpenAction.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 85482D882462DCD100EDEDD1 /* OpenAction.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		AD5A000000000000000000B6 /* AskDuckAIAction.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = AD5A00000000000000000001 /* AskDuckAIAction.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		AD5A000000000000000000B1 /* ActionViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD5A00000000000000000002 /* ActionViewController.swift */; };
+		AD5A000000000000000000B3 /* Core.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F143C2E41E4A4CD400CFDE3A /* Core.framework */; };
+		AD5A000000000000000000B4 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = AD5A00000000000000000004 /* InfoPlist.strings */; };
+		AD5A000000000000000000B5 /* ActionIcons.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AD5A00000000000000000007 /* ActionIcons.xcassets */; };
+		AD5A000000000000000000BA /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = AD5A0000000000000000000A /* Localizable.strings */; };
+		AD5A000000000000000000B8 /* AIChatShareInbox.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD5A000000000000000000B7 /* AIChatShareInbox.swift */; };
 		85482D992462F1C600EDEDD1 /* ActionIcons.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 85482D982462F1C600EDEDD1 /* ActionIcons.xcassets */; };
 		8548D95E25262B1B005AAE49 /* ViewHighlighter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8548D95D25262B1B005AAE49 /* ViewHighlighter.swift */; };
 		8548D96825262C33005AAE49 /* view_highlight.json in Resources */ = {isa = PBXBuildFile; fileRef = 8548D96725262C33005AAE49 /* view_highlight.json */; };
@@ -911,6 +918,7 @@
 		8577A1C5255D2C0D00D43FCD /* BrowserToolbarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8577A1C4255D2C0D00D43FCD /* BrowserToolbarView.swift */; };
 		857917E22D806C1900E23CDC /* BulkGeneratorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 857917E12D806C1900E23CDC /* BulkGeneratorView.swift */; };
 		8579791C2E4A3BF900A9F6DB /* AIChatSettingsMigrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8579791B2E4A3BF300A9F6DB /* AIChatSettingsMigrationTests.swift */; };
+		AD5B000000000000000000C2 /* AIChatShareDeepLinkTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD5B000000000000000000C1 /* AIChatShareDeepLinkTests.swift */; };
 		857BAE932E3BB7FC00231728 /* SwitchBarTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 857BAE922E3BB7FC00231728 /* SwitchBarTextView.swift */; };
 		857BAE952E3BB7FC00231728 /* SwitchBarTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 857BAE942E3BB7FC00231728 /* SwitchBarTextField.swift */; };
 		857EE6EF30058D7400DAC799 /* DuckPlayerFloatingPillView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 857EE6EE30058D7400DAC799 /* DuckPlayerFloatingPillView.swift */; };
@@ -2716,6 +2724,20 @@
 			remoteGlobalIDString = 85482D872462DCD100EDEDD1;
 			remoteInfo = OpenAction;
 		};
+		AD5A000000000000000000A9 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 84E3418A1E2F7EFB00BDBA6F /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = AD5A00000000000000000009;
+			remoteInfo = AskDuckAIAction;
+		};
+		AD5A000000000000000000B9 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 84E3418A1E2F7EFB00BDBA6F /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = F143C2E31E4A4CD400CFDE3A;
+			remoteInfo = Core;
+		};
 		85D33FD025C97B6E002B91A6 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 84E3418A1E2F7EFB00BDBA6F /* Project object */;
@@ -2790,6 +2812,7 @@
 			files = (
 				C1EF5B2E2CC0457B002980E6 /* AutofillCredentialProvider.appex in Embed App Extensions */,
 				85482D942462DCD100EDEDD1 /* OpenAction.appex in Embed App Extensions */,
+				AD5A000000000000000000B6 /* AskDuckAIAction.appex in Embed App Extensions */,
 				8512EA5D24ED30D30073EE19 /* WidgetsExtension.appex in Embed App Extensions */,
 				8390447620BDCE10006461CD /* ShareExtension.appex in Embed App Extensions */,
 			);
@@ -3610,6 +3633,14 @@
 		85482D8C2462DCD100EDEDD1 /* ActionViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActionViewController.swift; sourceTree = "<group>"; };
 		85482D912462DCD100EDEDD1 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		85482D982462F1C600EDEDD1 /* ActionIcons.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = ActionIcons.xcassets; sourceTree = "<group>"; };
+		AD5A00000000000000000001 /* AskDuckAIAction.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = AskDuckAIAction.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		AD5A00000000000000000002 /* ActionViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActionViewController.swift; sourceTree = "<group>"; };
+		AD5A00000000000000000003 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		AD5A00000000000000000005 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		AD5A0000000000000000000B /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
+		AD5A00000000000000000006 /* AskDuckAIAction.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = AskDuckAIAction.entitlements; sourceTree = "<group>"; };
+		AD5A00000000000000000007 /* ActionIcons.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = ActionIcons.xcassets; sourceTree = "<group>"; };
+		AD5A000000000000000000B7 /* AIChatShareInbox.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatShareInbox.swift; sourceTree = "<group>"; };
 		8548D95D25262B1B005AAE49 /* ViewHighlighter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewHighlighter.swift; sourceTree = "<group>"; };
 		8548D96725262C33005AAE49 /* view_highlight.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = view_highlight.json; sourceTree = "<group>"; };
 		854A012A2A54412600FCC628 /* ActivityViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ActivityViewController.swift; sourceTree = "<group>"; };
@@ -3640,6 +3671,7 @@
 		8577A1C4255D2C0D00D43FCD /* BrowserToolbarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserToolbarView.swift; sourceTree = "<group>"; };
 		857917E12D806C1900E23CDC /* BulkGeneratorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BulkGeneratorView.swift; sourceTree = "<group>"; };
 		8579791B2E4A3BF300A9F6DB /* AIChatSettingsMigrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatSettingsMigrationTests.swift; sourceTree = "<group>"; };
+		AD5B000000000000000000C1 /* AIChatShareDeepLinkTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatShareDeepLinkTests.swift; sourceTree = "<group>"; };
 		857BAE922E3BB7FC00231728 /* SwitchBarTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwitchBarTextView.swift; sourceTree = "<group>"; };
 		857BAE942E3BB7FC00231728 /* SwitchBarTextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwitchBarTextField.swift; sourceTree = "<group>"; };
 		857EE6EE30058D7400DAC799 /* DuckPlayerFloatingPillView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckPlayerFloatingPillView.swift; sourceTree = "<group>"; };
@@ -5616,6 +5648,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		AD5A000000000000000000A1 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AD5A000000000000000000B3 /* Core.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		85D33FC825C97B6E002B91A6 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -6113,6 +6153,7 @@
 				C14C7EB12EF3B77400ABCDC0 /* AIChatContextualQuickActionTests.swift */,
 				85F996CF2E54C260006B4641 /* OpenAIChatFromAddressBarHandlingTests.swift */,
 				8579791B2E4A3BF300A9F6DB /* AIChatSettingsMigrationTests.swift */,
+				AD5B000000000000000000C1 /* AIChatShareDeepLinkTests.swift */,
 				3105BCF32DF2154800EB755E /* AIChatPixelMetricHandlerTests.swift */,
 				3105BCF42DF2154800EB755E /* MockAIChatPixelMetricHandler.swift */,
 				319BE1082D47EBE300E510A4 /* AIChatUserScriptHandlerTests.swift */,
@@ -7688,6 +7729,7 @@
 				8390446D20BDCE10006461CD /* ShareExtension */,
 				98A54A8222AFCB2C00E541F4 /* Instruments */,
 				85482D892462DCD100EDEDD1 /* OpenAction */,
+				AD5A00000000000000000008 /* AskDuckAIAction */,
 				8512EA5224ED30D20073EE19 /* Widgets */,
 				02025665298818B200E694E7 /* PacketTunnelProvider */,
 				84E341A91E2F7EFB00BDBA6F /* UnitTests */,
@@ -7715,6 +7757,7 @@
 				85F21DAD210F5E32002631A6 /* AtbUITests.xctest */,
 				98A54A8122AFCB2C00E541F4 /* Instruments.instrdst */,
 				85482D882462DCD100EDEDD1 /* OpenAction.appex */,
+				AD5A00000000000000000001 /* AskDuckAIAction.appex */,
 				8512EA4D24ED30D20073EE19 /* WidgetsExtension.appex */,
 				85D33FCB25C97B6E002B91A6 /* IntegrationTests.xctest */,
 				9825F9D7293F2DE900F220F2 /* PerformanceTests.xctest */,
@@ -7962,6 +8005,19 @@
 				85482D982462F1C600EDEDD1 /* ActionIcons.xcassets */,
 			);
 			path = OpenAction;
+			sourceTree = "<group>";
+		};
+		AD5A00000000000000000008 /* AskDuckAIAction */ = {
+			isa = PBXGroup;
+			children = (
+				AD5A00000000000000000002 /* ActionViewController.swift */,
+				AD5A00000000000000000003 /* Info.plist */,
+				AD5A00000000000000000004 /* InfoPlist.strings */,
+				AD5A0000000000000000000A /* Localizable.strings */,
+				AD5A00000000000000000006 /* AskDuckAIAction.entitlements */,
+				AD5A00000000000000000007 /* ActionIcons.xcassets */,
+			);
+			path = AskDuckAIAction;
 			sourceTree = "<group>";
 		};
 		855ED5062E841EB800047A88 /* Views */ = {
@@ -11286,6 +11342,7 @@
 		F143C2E51E4A4CD400CFDE3A /* Core */ = {
 			isa = PBXGroup;
 			children = (
+				AD5A000000000000000000B7 /* AIChatShareInbox.swift */,
 				85DDB83D2E4CDDEB00C6FA9F /* AppConfigurationKeyNames.swift */,
 				C1CAAAA12CFCBBAC00C37EE6 /* Authenticator */,
 				C1CAAA962CFCAB8000C37EE6 /* Autofill */,
@@ -12014,6 +12071,7 @@
 				F143C2EA1E4A4CD400CFDE3A /* PBXTargetDependency */,
 				8390447520BDCE10006461CD /* PBXTargetDependency */,
 				85482D932462DCD100EDEDD1 /* PBXTargetDependency */,
+				AD5A000000000000000000B0 /* PBXTargetDependency */,
 				8512EA5C24ED30D30073EE19 /* PBXTargetDependency */,
 				02FFD7BC2A1FC8BE007BD7D1 /* PBXTargetDependency */,
 				C1EF5B2D2CC0457B002980E6 /* PBXTargetDependency */,
@@ -12140,6 +12198,24 @@
 			name = OpenAction;
 			productName = OpenAction;
 			productReference = 85482D882462DCD100EDEDD1 /* OpenAction.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+		AD5A00000000000000000009 /* AskDuckAIAction */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AD5A000000000000000000A3 /* Build configuration list for PBXNativeTarget "AskDuckAIAction" */;
+			buildPhases = (
+				AD5A000000000000000000A0 /* Sources */,
+				AD5A000000000000000000A1 /* Frameworks */,
+				AD5A000000000000000000A2 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				AD5A000000000000000000C0 /* PBXTargetDependency */,
+			);
+			name = AskDuckAIAction;
+			productName = AskDuckAIAction;
+			productReference = AD5A00000000000000000001 /* AskDuckAIAction.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
 		85D33FCA25C97B6E002B91A6 /* IntegrationTests */ = {
@@ -12408,6 +12484,10 @@
 					85482D872462DCD100EDEDD1 = {
 						CreatedOnToolsVersion = 11.4.1;
 					};
+					AD5A00000000000000000009 = {
+						CreatedOnToolsVersion = 16.0;
+						ProvisioningStyle = Automatic;
+					};
 					85D33FCA25C97B6E002B91A6 = {
 						CreatedOnToolsVersion = 12.4;
 						TestTargetID = 84E341911E2F7EFB00BDBA6F;
@@ -12498,6 +12578,7 @@
 				84E341911E2F7EFB00BDBA6F /* DuckDuckGo */,
 				8390446B20BDCE10006461CD /* ShareExtension */,
 				85482D872462DCD100EDEDD1 /* OpenAction */,
+				AD5A00000000000000000009 /* AskDuckAIAction */,
 				8512EA4C24ED30D20073EE19 /* WidgetsExtension */,
 				02025661298818B100E694E7 /* PacketTunnelProvider */,
 				C1EF5B202CC0457B002980E6 /* AutofillCredentialProvider */,
@@ -12664,6 +12745,16 @@
 			files = (
 				98B001A7251EABB40090EC07 /* InfoPlist.strings in Resources */,
 				85482D992462F1C600EDEDD1 /* ActionIcons.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AD5A000000000000000000A2 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AD5A000000000000000000B4 /* InfoPlist.strings in Resources */,
+				AD5A000000000000000000BA /* Localizable.strings in Resources */,
+				AD5A000000000000000000B5 /* ActionIcons.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -14616,6 +14707,7 @@
 				F13B4BFB1F18E3D900814661 /* TabsModelPersistenceTests.swift in Sources */,
 				36F2CA5D2E60589600C7039D /* MockUNUserNotificationCenter.swift in Sources */,
 				8579791C2E4A3BF900A9F6DB /* AIChatSettingsMigrationTests.swift in Sources */,
+				AD5B000000000000000000C2 /* AIChatShareDeepLinkTests.swift in Sources */,
 				CBB4A85B2FD318A500A65956 /* SearchSuggestionsSourceTests.swift in Sources */,
 				9FD6E61B2DFA739200C2B032 /* MockAVPictureInPictureController.swift in Sources */,
 				8528AE7E212EF5FF00D0BD74 /* AppRatingPromptTests.swift in Sources */,
@@ -14878,6 +14970,14 @@
 			files = (
 				85482D8D2462DCD100EDEDD1 /* ActionViewController.swift in Sources */,
 				85C91CA224671F4C00A11132 /* AppDeepLinkSchemes.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AD5A000000000000000000A0 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AD5A000000000000000000B1 /* ActionViewController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -15364,6 +15464,7 @@
 				F41C2DA326C1925700F9A760 /* BookmarksAndFolders.xcdatamodeld in Sources */,
 				F4F6DFBA26EFF28A00ED7E12 /* BookmarkObjects.swift in Sources */,
 				85DDB83E2E4CDDF000C6FA9F /* AppConfigurationKeyNames.swift in Sources */,
+				AD5A000000000000000000B8 /* AIChatShareInbox.swift in Sources */,
 				EE7A92872AC6DE4700832A36 /* NetworkProtectionNotificationIdentifier.swift in Sources */,
 				836A941D247F23C600BF8EF5 /* UserAgentManaging.swift in Sources */,
 				F143C3181E4A99D200CFDE3A /* Link.swift in Sources */,
@@ -15425,6 +15526,16 @@
 			isa = PBXTargetDependency;
 			target = 85482D872462DCD100EDEDD1 /* OpenAction */;
 			targetProxy = 85482D922462DCD100EDEDD1 /* PBXContainerItemProxy */;
+		};
+		AD5A000000000000000000B0 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = AD5A00000000000000000009 /* AskDuckAIAction */;
+			targetProxy = AD5A000000000000000000A9 /* PBXContainerItemProxy */;
+		};
+		AD5A000000000000000000C0 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = F143C2E31E4A4CD400CFDE3A /* Core */;
+			targetProxy = AD5A000000000000000000B9 /* PBXContainerItemProxy */;
 		};
 		85D33FD125C97B6E002B91A6 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -15669,6 +15780,22 @@
 				D6D718802F17A3D800616AD1 /* ja */,
 			);
 			name = InfoPlist.strings;
+			sourceTree = "<group>";
+		};
+		AD5A00000000000000000004 /* InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				AD5A00000000000000000005 /* en */,
+			);
+			name = InfoPlist.strings;
+			sourceTree = "<group>";
+		};
+		AD5A0000000000000000000A /* Localizable.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				AD5A0000000000000000000B /* en */,
+			);
+			name = Localizable.strings;
 			sourceTree = "<group>";
 		};
 		98B001A5251EABB40090EC07 /* InfoPlist.strings */ = {
@@ -16910,6 +17037,143 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = "match AppStore com.duckduckgo.mobile.ios.Widgets";
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		AD5A000000000000000000A4 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = ActionIcons;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_ENTITLEMENTS = AskDuckAIAction/AskDuckAIAction.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				INFOPLIST_FILE = AskDuckAIAction/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(APP_ID).AskDuckAIAction";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		AD5A000000000000000000A5 /* Alpha Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = ActionIcons;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_ENTITLEMENTS = AskDuckAIAction/AskDuckAIAction.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				INFOPLIST_FILE = AskDuckAIAction/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(APP_ID).AskDuckAIAction";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = "Alpha Debug";
+		};
+		AD5A000000000000000000A6 /* Alpha */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = ActionIcons;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_ENTITLEMENTS = AskDuckAIAction/AskDuckAIAction.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				INFOPLIST_FILE = AskDuckAIAction/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MTL_FAST_MATH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(APP_ID).AskDuckAIAction";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Alpha;
+		};
+		AD5A000000000000000000A7 /* Experimental */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = ActionIcons;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_ENTITLEMENTS = AskDuckAIAction/AskDuckAIAction.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				INFOPLIST_FILE = AskDuckAIAction/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MTL_FAST_MATH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(APP_ID).AskDuckAIAction";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Experimental;
+		};
+		AD5A000000000000000000A8 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = ActionIcons;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_ENTITLEMENTS = AskDuckAIAction/AskDuckAIAction.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				INFOPLIST_FILE = AskDuckAIAction/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MTL_FAST_MATH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(APP_ID).AskDuckAIAction";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -18395,6 +18659,18 @@
 				EE5A7C492A82BBB700387C84 /* Alpha */,
 				4B4A6CF82F0EBA640074444F /* Experimental */,
 				85482D962462DCD100EDEDD1 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		AD5A000000000000000000A3 /* Build configuration list for PBXNativeTarget "AskDuckAIAction" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AD5A000000000000000000A4 /* Debug */,
+				AD5A000000000000000000A5 /* Alpha Debug */,
+				AD5A000000000000000000A6 /* Alpha */,
+				AD5A000000000000000000A7 /* Experimental */,
+				AD5A000000000000000000A8 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

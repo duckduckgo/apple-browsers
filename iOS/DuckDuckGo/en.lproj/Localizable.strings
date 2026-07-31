@@ -34,6 +34,9 @@
 /* Add action - button shown in alert */
 "action.title.add" = "Add";
 
+/* Edit-menu action shown on selected text in the browser; opens Duck.ai with the selection as the prompt */
+"action.title.aiChat.askDuckAI" = "Ask Duck.ai";
+
 /* Long-press menu item on the iPad Duck.ai chrome chip that hides the bottom-sheet button half. */
 "action.title.aiChat.hideContextualSheetButton" = "Hide Bottom Sheet Shortcut";
 
@@ -384,6 +387,9 @@
 
 /* Title for the reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.reasoning.title" = "Reasoning";
+
+/* Toast message displayed when content shared into Duck.ai from another app can no longer be read */
+"aichat.share.could.not.load" = "Couldn't load the shared content";
 
 /* Primary button of the sync promo card shown above the Duck.ai recent chats list. */
 "aiChat.syncPromo.button" = "Sync With Another Device";

@@ -462,6 +462,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214797978179697?focus=true
     case customProductPageDuckAiChat
 
+    /// https://app.asana.com/1/137249556945/task/1217068078362103
+    case aiChatTextActions
+
     /// Gate the default-to-NTP-after-idle behavior for existing iPhone users behind a remote flag.
     /// https://app.asana.com/1/137249556945/project/1204186595873227/task/1214830562427843
     case defaultExistingIPhoneUsersToNewTabAfterIdle
@@ -859,6 +862,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.omniBarLongPressMenu))
         case .customProductPageDuckAiChat:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.customProductPageDuckAiChat), supportsLocalOverriding: true)
+        case .aiChatTextActions:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.textActions), supportsLocalOverriding: true)
         case .defaultExistingIPhoneUsersToNewTabAfterIdle:
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.defaultExistingIPhoneUsersToNewTabAfterIdle))
         case .walletPassDownload:

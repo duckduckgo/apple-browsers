@@ -89,6 +89,8 @@ final class MockTabDelegate: TabDelegate {
 
     func tabDidRequestAIChat(tab: TabViewController) {}
 
+    func tab(_ tab: TabViewController, didRequestAskAIChatWithSelectedText text: String) {}
+
     func tabDidRequestAIChatHistory(tab: TabViewController, source: AIChatHistorySource) {}
 
     func tabDidRequestNewPrivateEmailAddress(tab: TabViewController) {}

@@ -23,7 +23,15 @@ import AIChat
 
 final class MockAppStoreCustomProductPagePresenter: UIViewController, AppStoreCustomProductPagePresenter {
 
+    private(set) var stagedShareDrafts: [AIChatShareDraft] = []
+
+    var supportsAIChatShareDraftDelivery = false
+
     func openAIVoiceChatFromDeepLink() {}
+
+    func stageAIChatShareDraft(_ draft: AIChatShareDraft) {
+        stagedShareDrafts.append(draft)
+    }
 
     func openAIChat(
         _ query: String?,

@@ -494,6 +494,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Controls pin/unpin updates of Synced chats
     case supportsSyncChatsUpdate
 
+    /// "Ask Duck.ai" text actions: in-app selection-menu item and share-extension delivery pipeline
+    case textActions
+
     /// Shows a link in Settings → AI Features that opens the Duck.ai Settings modal.
     case settingsLinkInAiFeatures
 

@@ -333,9 +333,12 @@ final class AIChatContextualSheetCoordinator {
         guard let floatingInputViewController,
               let presentingViewController = floatingInputViewController.parent else { return }
 
-        persistentUTIHost?.deactivateInput()
+        // Detached before the keyboard is touched: resigning reports a keyboard hide, which the floating
+        // input would otherwise read as something else having taken the keyboard, and dismiss itself over
+        // this handover.
         self.floatingInputViewController = nil
         floatingChipsCancellable = nil
+        persistentUTIHost?.deactivateInput()
         floatingInputViewController.remove()
         presentNewSheet(from: presentingViewController, restoreURL: nil)
     }

@@ -34,6 +34,10 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate {
     private weak var pendingUserScriptToBind: AIChatUserScript?
     private var isBoundToUserScript = false
     private var hasDeliveredFirstPrompt = false
+
+    /// The input's bottom while it tracks the keyboard, and the fixed pin that replaces it once frozen.
+    private var keyboardBottomConstraint: NSLayoutConstraint?
+    private var frozenBottomConstraint: NSLayoutConstraint?
     private let startsPreSubmit: Bool
     private var cancellables = Set<AnyCancellable>()
     private let duckAIWideEventInstrumentation: DuckAIWideEventInstrumentation
@@ -213,10 +217,12 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate {
             parent.addChild(viewController)
             parent.view.addSubview(viewController.view)
             viewController.view.translatesAutoresizingMaskIntoConstraints = false
+            let bottom = viewController.view.bottomAnchor.constraint(equalTo: parent.view.keyboardLayoutGuide.topAnchor)
+            keyboardBottomConstraint = bottom
             NSLayoutConstraint.activate([
                 viewController.view.leadingAnchor.constraint(equalTo: parent.view.leadingAnchor),
                 viewController.view.trailingAnchor.constraint(equalTo: parent.view.trailingAnchor),
-                viewController.view.bottomAnchor.constraint(equalTo: parent.view.keyboardLayoutGuide.topAnchor),
+                bottom,
             ])
             viewController.didMove(toParent: parent)
             coordinator.showExpanded(activatesInput: false)
@@ -232,9 +238,32 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate {
     var inputCardLeadingAnchor: NSLayoutXAxisAnchor { coordinator.viewController.inputCardLeadingAnchor }
     var inputCardTrailingAnchor: NSLayoutXAxisAnchor { coordinator.viewController.inputCardTrailingAnchor }
 
+    /// Pins the input where it currently sits, so a keyboard that moves or changes height afterwards cannot
+    /// drag it. For a surface animating itself out: its own motion is then the only thing moving it.
+    func freezeInputPosition() {
+        let view = coordinator.viewController.view
+        guard let parentView = view?.superview,
+              let view,
+              keyboardBottomConstraint?.isActive == true else { return }
+
+        // From `center` and `bounds` rather than `frame`, which carries any transform the animation applies.
+        let restingBottom = view.center.y + view.bounds.height / 2
+        keyboardBottomConstraint?.isActive = false
+        let frozen = view.bottomAnchor.constraint(equalTo: parentView.bottomAnchor,
+                                                 constant: restingBottom - parentView.bounds.maxY)
+        frozen.isActive = true
+        frozenBottomConstraint = frozen
+    }
+
     /// Detaches the input so it can be mounted in a different parent. A child view controller may
     /// only have one parent, so this has to run before the next `mount(in:)`.
     func unmount() {
+        // Ahead of the mounted check, so a surface that lost its parent some other way still leaves these
+        // behind. Rebuilt by the next mount, against whatever parent that is.
+        frozenBottomConstraint?.isActive = false
+        frozenBottomConstraint = nil
+        keyboardBottomConstraint = nil
+
         let viewController = coordinator.viewController
         guard viewController.parent != nil else { return }
         viewController.willMove(toParent: nil)

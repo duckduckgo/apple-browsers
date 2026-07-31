@@ -30,21 +30,18 @@ protocol AIChatContextualFloatingInputViewControllerDelegate: AnyObject {
 @MainActor
 final class AIChatContextualFloatingInputViewController: UIViewController {
 
-    /// Matches the design's system overlay scrim, `rgba(0, 0, 0, 0.2)`.
-    static let dimmingAlpha: CGFloat = 0.2
-
     private enum Constants {
+        /// Matches the design's system overlay scrim, `rgba(0, 0, 0, 0.2)`.
+        static let dimmingAlpha: CGFloat = 0.2
         /// Drag distance that maps to a fully faded dim, and the point past which release dismisses.
         static let dragFadeDistance: CGFloat = 200
         static let dragDismissDistance: CGFloat = 80
         static let dismissVelocityThreshold: CGFloat = 600
         static let springBackDuration: TimeInterval = 0.3
-        static let chipsRevealDuration: TimeInterval = 0.2
         /// Only used until the keyboard has reported an animation of its own.
         static let assumedKeyboardSlideDuration: TimeInterval = 0.25
-        /// The share of the keyboard's animation over which it actually travels — its hide curve covers 96%
-        /// of the distance in the first 60% and crawls the rest, and following that crawl reads as a stop.
-        static let keyboardVisibleFraction: TimeInterval = 0.6
+        /// Longer than this and the finger was resting or scrolling, not tapping.
+        static let maximumTapDuration: CFTimeInterval = 0.4
     }
 
     /// The keyboard's own animation, taken from its notifications: moving with the keyboard means running
@@ -70,19 +67,20 @@ final class AIChatContextualFloatingInputViewController: UIViewController {
     private var keyboardAnimation = KeyboardAnimation()
 
     private var isDismissing = false
+    private var hasResignedInput = false
     private var hasPlayedChipsEntrance = false
 
-    /// When the input resigns, which is what sends the keyboard down.
-    private enum KeyboardRelease {
-        /// Before the slide, so the keyboard travels with the surface. Nothing else is claiming focus.
-        case beforeSlide
-        /// After it, when the dismissing tap is also handing focus to the page: resigning first makes the
-        /// keyboard dip out and come straight back, where waiting lets the page's own focus decide — an
-        /// editable element keeps the keyboard exactly where it is and this becomes a no-op.
-        case afterSlide
+    /// Where the keyboard is going while this surface leaves. The slide is the same either way; this only
+    /// decides when the input resigns.
+    private enum KeyboardDeparture {
+        /// Nothing else is claiming focus, so resigning now sends the keyboard down alongside the slide.
+        case withSurface
+        /// The dismissing tap is handing focus to the page, so the page's own focus decides the keyboard —
+        /// an editable element keeps it exactly where it is. Resigning first is what makes it dip and return.
+        case stays
     }
 
-    private var keyboardRelease: KeyboardRelease = .beforeSlide
+    private var keyboardDeparture: KeyboardDeparture = .withSurface
 
     /// The view the page-tap recognizer is installed on, so it can be detached even if this controller
     /// has already lost its parent.
@@ -106,21 +104,42 @@ final class AIChatContextualFloatingInputViewController: UIViewController {
         }
     }
 
-    /// Purely visual — dimming the page must not stop it being scrolled or tapped.
+    /// Purely visual — dimming the page must not stop it being scrolled or tapped. Set to strength outright:
+    /// the entrance and the exit fade the whole surface, dim included, so a fade of its own would compound.
+    /// Its alpha still carries the drag, where the dim alone thins out as the page is pulled back into view.
     private lazy var dimView: UIView = {
         let view = UIView()
         view.backgroundColor = .black
-        view.alpha = 0
+        view.alpha = Constants.dimmingAlpha
         view.isUserInteractionEnabled = false
         view.translatesAutoresizingMaskIntoConstraints = false
         return view
     }()
 
+    /// Fails on a held finger. Pausing mid-scroll is not a tap, and reading a page with a finger resting on
+    /// it must not dismiss the surface — `allowableMovement` already covers the moving case, not this one.
+    private final class BriefTapGestureRecognizer: UITapGestureRecognizer {
+        private var touchStart: CFTimeInterval = 0
+
+        override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent) {
+            touchStart = CACurrentMediaTime()
+            super.touchesBegan(touches, with: event)
+        }
+
+        override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent) {
+            guard CACurrentMediaTime() - touchStart <= Constants.maximumTapDuration else {
+                state = .failed
+                return
+            }
+            super.touchesEnded(touches, with: event)
+        }
+    }
+
     /// Installed on the presenter so it sees taps that land on the page, and deliberately does not
     /// consume them: a tap dismisses this surface *and* still activates whatever it hit, so a link
     /// opens on the same tap. Taps on our own chips and bar are filtered out by the delegate.
     private lazy var dismissOnPageTapRecognizer: UITapGestureRecognizer = {
-        let recognizer = UITapGestureRecognizer(target: self, action: #selector(handlePageTap))
+        let recognizer = BriefTapGestureRecognizer(target: self, action: #selector(handlePageTap))
         recognizer.delegate = self
         recognizer.cancelsTouchesInView = false
         recognizer.delaysTouchesBegan = false
@@ -200,21 +219,26 @@ final class AIChatContextualFloatingInputViewController: UIViewController {
         embedChips(above: utiHost.inputCardTopAnchor)
         presenterView = parent.view
         parent.view.addGestureRecognizer(dismissOnPageTapRecognizer)
-        revealDim()
-        revealChips()
         // Settles at the pre-keyboard resting position, which the entrance then animates away from.
         // Without it the first layout pass lands inside that animation, and the bar rides in from nowhere.
         view.layoutIfNeeded()
         Logger.contextualUTI.info("Floating contextual input installed")
     }
 
-    /// Rides up glued to the keyboard's top edge. The bar's bottom is already pinned to the keyboard guide,
-    /// so this only animates the layout on the keyboard's own terms — an offset of its own is what would
-    /// let it drift off that edge. Called after activation, which re-applies the bar's render state.
+    /// Fades in as it rides up glued to the keyboard's top edge. The bar's bottom is already pinned to the
+    /// keyboard guide, so the layout only has to animate on the keyboard's own terms — an offset of its own
+    /// is what would let it drift off that edge, and the fade covers it being at full strength on the first
+    /// frame, at the bottom, before the ride has gone anywhere.
+    ///
+    /// One alpha for the whole surface, dim included. Fading this view rather than the bar: the bar belongs
+    /// to the host and is reused, and activation re-applies its render state, which flushes an animation set
+    /// directly on it.
     func playEntrance() {
+        view.alpha = 0
         UIView.animate(withDuration: keyboardAnimation.duration,
                        delay: 0,
                        options: [keyboardAnimation.options, .beginFromCurrentState]) {
+            self.view.alpha = 1
             self.view.layoutIfNeeded()
         }
     }
@@ -226,37 +250,44 @@ final class AIChatContextualFloatingInputViewController: UIViewController {
         hasPlayedChipsEntrance = true
         // Resting frames first: each chip's start offset is measured from where it lands.
         view.layoutIfNeeded()
-        chipsContainerView.alpha = 1
         chipsViewController.animateStartActionsIn()
     }
 
-    /// Slides down off the bottom edge at one unchanging pace, taking the dim with it. The layout ride is
-    /// deliberately not animated here: the keyboard guide animates itself alongside the keyboard, and a
-    /// second animation of our own over the same positions is what breaks the pace.
+    /// The entrance in reverse: settles back down to where it rose from, fading out as it goes. One alpha for
+    /// the whole surface, dim included, so it never has to travel far enough to clear the screen.
     func dismiss(completion: @escaping () -> Void) {
         guard !isDismissing else { return }
         isDismissing = true
 
-        // Measured before resigning, which collapses the keyboard guide it reads from. Never upwards: a
-        // long drag can already have carried the surface past where this lands.
-        let target = max(slideOutDistance, contentTranslation)
+        // Measured before resigning, which collapses the keyboard guide it reads from. Never upwards: a long
+        // drag can already have carried the surface past where this lands.
+        let target = max(entranceTravel, contentTranslation)
+        // Pinned first, so the slide is the only thing that moves the surface and nothing the keyboard does —
+        // leaving, staying, or the page's field raising a taller one — can disturb it.
+        utiHost.freezeInputPosition()
 
-        releaseKeyboard(if: .beforeSlide)
+        if keyboardDeparture == .withSurface {
+            resignInput()
+        }
 
-        // Read after resigning, which is what reports the dismissal's own duration.
-        UIView.animate(withDuration: keyboardAnimation.duration * Constants.keyboardVisibleFraction,
+        // Resigning above is what reports the dismissal's own duration and curve, so this reads them after it.
+        UIView.animate(withDuration: keyboardAnimation.duration,
                        delay: 0,
-                       options: [.curveLinear, .beginFromCurrentState],
+                       options: [keyboardAnimation.options, .beginFromCurrentState],
                        animations: {
             self.translateContent(by: target)
-            self.dimView.alpha = 0
+            self.view.alpha = 0
         }, completion: { _ in
-            self.releaseKeyboard(if: .afterSlide)
+            // Already done when the keyboard left with the surface. Otherwise the page was offered the
+            // keyboard and, if it declined, it is still ours to put away now the surface has gone.
+            self.resignInput()
             completion()
         })
     }
 
     func remove() {
+        // A removed surface has no business reacting to the keyboard it no longer sits above.
+        NotificationCenter.default.removeObserver(self)
         // Lives on the presenter, so it outlives this controller unless detached explicitly. Detached
         // from the remembered view rather than `parent`, which is already nil if we were detached first.
         presenterView?.removeGestureRecognizer(dismissOnPageTapRecognizer)
@@ -305,8 +336,6 @@ private extension AIChatContextualFloatingInputViewController {
     /// Horizontal alignment waits for `embedChips`, since the card's anchors only share an ancestor
     /// with us once the input is mounted.
     func addChipsContainer() {
-        // Faded in by `revealChips` so the loader arrives smoothly rather than snapping on.
-        chipsContainerView.alpha = 0
         view.addSubview(chipsContainerView)
         chipsContainerView.topAnchor.constraint(greaterThanOrEqualTo: view.safeAreaLayoutGuide.topAnchor).isActive = true
     }
@@ -339,28 +368,17 @@ private extension AIChatContextualFloatingInputViewController {
         chipsViewController.removeFromParent()
     }
 
-    /// Set outright rather than faded in: the chips' glass samples whatever sits behind it, so a dim
-    /// still animating underneath gets captured mid-fade and the pills keep that stale backdrop.
-    func revealDim() {
-        dimView.alpha = Self.dimmingAlpha
-    }
-
-    func revealChips() {
-        UIView.animate(withDuration: Constants.chipsRevealDuration,
-                       delay: 0,
-                       options: [.curveEaseOut, .beginFromCurrentState]) {
-            self.chipsContainerView.alpha = 1
-        }
-    }
-
 
     @objc func handlePageTap() {
-        keyboardRelease = .afterSlide
+        keyboardDeparture = .stays
         requestDismiss()
     }
 
-    private func releaseKeyboard(if timing: KeyboardRelease) {
-        guard keyboardRelease == timing else { return }
+    /// Resigning is what sends the keyboard down, and it happens once per dismissal — either as the slide
+    /// starts or as it ends, never both.
+    func resignInput() {
+        guard !hasResignedInput else { return }
+        hasResignedInput = true
         utiHost.deactivateInput()
     }
 
@@ -396,19 +414,10 @@ private extension AIChatContextualFloatingInputViewController {
         chipsContainerView.transform.ty
     }
 
-    /// Where the top of the surface sits at rest — the chips once they are up, the bar otherwise. Read
-    /// through any current offset, since a slide sets an absolute translation rather than adding to one.
-    var restingContentTop: CGFloat {
-        let top = min(chipsContainerView.frame.minY, mountedInputView?.frame.minY ?? .greatestFiniteMagnitude)
-        return top - contentTranslation
-    }
-
-    /// How far the surface still has to travel to be gone. The keyboard guide carries the bar as far as
-    /// the bottom safe area on its own, so this is only what that ride leaves over.
-    var slideOutDistance: CGFloat {
-        let clearingBottomEdge = view.bounds.maxY - restingContentTop
-        let keyboardRide = view.safeAreaLayoutGuide.layoutFrame.maxY - view.keyboardLayoutGuide.layoutFrame.minY
-        return max(0, clearingBottomEdge - max(0, keyboardRide))
+    /// How far the surface rose from the bottom on the way in, and so how far it settles back down on the way
+    /// out: the keyboard guide's travel, from where its top rests with the keyboard down to where it is now.
+    var entranceTravel: CGFloat {
+        max(0, view.safeAreaLayoutGuide.layoutFrame.maxY - view.keyboardLayoutGuide.layoutFrame.minY)
     }
 
     func observeKeyboardAnimation() {
@@ -417,15 +426,22 @@ private extension AIChatContextualFloatingInputViewController {
                                           UIResponder.keyboardWillHideNotification]
         for name in names {
             NotificationCenter.default.addObserver(self,
-                                                   selector: #selector(recordKeyboardAnimation),
+                                                   selector: #selector(handleKeyboardNotification),
                                                    name: name,
                                                    object: nil)
         }
     }
 
-    @objc func recordKeyboardAnimation(_ notification: Notification) {
-        guard let animation = KeyboardAnimation(notification: notification) else { return }
-        keyboardAnimation = animation
+    @objc func handleKeyboardNotification(_ notification: Notification) {
+        if let animation = KeyboardAnimation(notification: notification) {
+            keyboardAnimation = animation
+        }
+
+        // This surface only makes sense above a keyboard, and something else has just taken it away — a long
+        // press starting a text selection, the page blurring its own field, the app going to the background.
+        // Dismissals of our own are already under way by the time they reach here.
+        guard notification.name == UIResponder.keyboardWillHideNotification, !isDismissing else { return }
+        requestDismiss()
     }
 
     /// Upward drags are ignored, so the surface only ever travels toward its dismissal.
@@ -433,7 +449,7 @@ private extension AIChatContextualFloatingInputViewController {
         let distance = max(0, translation)
         let progress = min(1, distance / Constants.dragFadeDistance)
         translateContent(by: distance)
-        dimView.alpha = Self.dimmingAlpha * (1 - progress)
+        dimView.alpha = Constants.dimmingAlpha * (1 - progress)
     }
 
     func springBackFromDrag() {
@@ -443,7 +459,7 @@ private extension AIChatContextualFloatingInputViewController {
                        initialSpringVelocity: 0,
                        options: [.beginFromCurrentState]) {
             self.translateContent(by: 0)
-            self.dimView.alpha = Self.dimmingAlpha
+            self.dimView.alpha = Constants.dimmingAlpha
         }
     }
 

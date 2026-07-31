@@ -643,6 +643,27 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
         XCTAssertEqual(pixelHandler.fireAddToDockPresentedPixelIfNeededCalledWith, [.addAppToDockMac])
     }
 
+    @MainActor
+    func testWhenWillDisplayCardsIsCalledWithSubscriptionFirstThenSubscriptionShownPixelIsFired() {
+        let testProvider = createProvider()
+        let cards: [NewTabPageDataModel.CardID] = [.subscription, .emailProtection, .bringStuff]
+
+        testProvider.willDisplayCards(cards)
+
+        XCTAssertEqual(pixelHandler.fireNextStepsCardShownPixelsCalledWith, [.subscription])
+        XCTAssertTrue(pixelHandler.fireSubscriptionCardShownPixelCalled)
+    }
+
+    @MainActor
+    func testWhenWillDisplayCardsIsCalledWithSubscriptionNotFirstThenSubscriptionShownPixelIsNotFired() {
+        let testProvider = createProvider()
+        let cards: [NewTabPageDataModel.CardID] = [.emailProtection, .subscription, .bringStuff]
+
+        testProvider.willDisplayCards(cards)
+
+        XCTAssertFalse(pixelHandler.fireSubscriptionCardShownPixelCalled)
+    }
+
     // MARK: - Edge Cases
 
     func testWhenAllCardsArePermanentlyDismissedThenCardsListIsEmpty() {

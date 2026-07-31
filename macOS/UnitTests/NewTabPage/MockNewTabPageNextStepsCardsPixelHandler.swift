@@ -27,6 +27,7 @@ final class MockNewTabPageNextStepsCardsPixelHandler: NewTabPageNextStepsCardsPi
     private(set) var fireNextStepsCardDismissedPixelCalledWith: NewTabPageDataModel.CardID?
     private(set) var fireAddedToDockPixelCalled = false
     private(set) var fireDefaultBrowserRequestedPixelCalled = false
+    private(set) var fireSubscriptionCardShownPixelCalled = false
     private(set) var fireSubscriptionCardClickedPixelCalled = false
     private(set) var fireSubscriptionCardDismissedPixelCalled = false
 
@@ -52,6 +53,10 @@ final class MockNewTabPageNextStepsCardsPixelHandler: NewTabPageNextStepsCardsPi
 
     func fireDefaultBrowserRequestedPixel() {
         fireDefaultBrowserRequestedPixelCalled = true
+    }
+
+    func fireSubscriptionCardShownPixel() {
+        fireSubscriptionCardShownPixelCalled = true
     }
 
     func fireSubscriptionCardClickedPixel() {

@@ -55,6 +55,7 @@ ALLOW_TEST_OVERRIDES="${ALLOW_TEST_OVERRIDES:-0}"
 LCP_SETTLE_MS="${LCP_SETTLE_MS:-600}"
 REPETITION_TIMEOUT_SECONDS="${REPETITION_TIMEOUT_SECONDS:-60}"
 SERVICE_START_TIMEOUT_SECONDS="${SERVICE_START_TIMEOUT_SECONDS:-15}"
+AUTOMATION_READY_TIMEOUT_SECONDS="${AUTOMATION_READY_TIMEOUT_SECONDS:-30}"
 
 DIAGNOSTICS_DIR="${DIAGNOSTICS_DIR:-$PWD/ddg-diagnostics}"
 MAX_SITE_DIAGNOSTICS="${MAX_SITE_DIAGNOSTICS:-5}"
@@ -88,6 +89,7 @@ bounded_integer() {
 bounded_integer MEASURED_REPS 1 20
 bounded_integer REPETITION_TIMEOUT_SECONDS 1 300
 bounded_integer SERVICE_START_TIMEOUT_SECONDS 1 30
+bounded_integer AUTOMATION_READY_TIMEOUT_SECONDS 1 120
 bounded_integer LCP_SETTLE_MS 0 5000
 bounded_integer MAX_SITE_DIAGNOSTICS 0 22
 bounded_integer MAX_DIAGNOSTIC_BYTES 1 10485760
@@ -683,16 +685,20 @@ start_app() {
     echo "ERROR: DuckDuckGo automation server did not become ready." >&2
     return 1
   fi
-  for _ in 1 2 3 4 5 6 7 8 9 10; do
+  # The check polls both the content blocker and the first tab, and the window
+  # can appear well after the port does, so the budget is generous.
+  local attempts=$((AUTOMATION_READY_TIMEOUT_SECONDS * 2))
+  while [ "$attempts" -gt 0 ]; do
     if AUTOMATION_TOKEN="$AUTOMATION_TOKEN_VALUE" \
         DDG_AUTOMATION_HOST="$DDG_AUTOMATION_HOST" \
         "$PYTHON_BIN" "$DDG_AUTOMATION_PY" "$AUTOMATION_PORT" check; then
       return 0
     fi
     process_is_alive "$DDG_PID" || return 1
+    attempts=$((attempts - 1))
     sleep 0.5
   done
-  echo "ERROR: DuckDuckGo content blocker did not become ready." >&2
+  echo "ERROR: DuckDuckGo did not report a ready window and content blocker." >&2
   return 1
 }
 

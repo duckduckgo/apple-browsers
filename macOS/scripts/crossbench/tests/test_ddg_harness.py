@@ -273,6 +273,22 @@ class DDGHarnessTests(unittest.TestCase):
             if os.environ.get("AUTOMATION_TOKEN") != expected_token:
                 raise SystemExit(8)
             if command == "check":
+                # Emulates a window that only appears after a few polls.
+                budget = int(os.environ.get("AUTOMATION_CHECK_FAILURES", "0"))
+                if budget:
+                    counter = os.path.join(
+                        os.path.dirname(os.environ["APP_LAUNCHES_FILE"]),
+                        "check-attempts",
+                    )
+                    attempts = 0
+                    if os.path.exists(counter):
+                        with open(counter, encoding="utf-8") as source:
+                            attempts = int(source.read() or "0")
+                    attempts += 1
+                    with open(counter, "w", encoding="utf-8") as sink:
+                        sink.write(str(attempts))
+                    if attempts <= budget:
+                        raise SystemExit(1)
                 raise SystemExit(0)
             if command == "shutdown":
                 with socket.create_connection(("127.0.0.1", port)) as client:
@@ -412,6 +428,23 @@ class DDGHarnessTests(unittest.TestCase):
             self.assertNotIn(launch["token"], result.stdout + result.stderr)
             with self.assertRaises(ProcessLookupError):
                 os.kill(launch["pid"], 0)
+
+    def test_readiness_gate_waits_for_the_window_instead_of_giving_up(self):
+        result = self.run_harness(AUTOMATION_CHECK_FAILURES="3")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(len(self.measurement_rows()), 1)
+
+    def test_readiness_gate_gives_up_within_its_budget(self):
+        result = self.run_harness(
+            AUTOMATION_CHECK_FAILURES="1000",
+            AUTOMATION_READY_TIMEOUT_SECONDS="1",
+        )
+        self.assertIn(
+            "did not report a ready window", result.stdout + result.stderr
+        )
+        self.assertEqual(
+            self.disposition_rows()[0][9:11], ["automation", "app_start_failed"]
+        )
 
     def test_delayed_shutdown_releases_port_before_next_launch(self):
         result = self.run_harness(

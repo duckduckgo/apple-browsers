@@ -6,6 +6,7 @@ import io
 import os
 import pathlib
 import unittest
+import urllib.error
 from contextlib import redirect_stderr, redirect_stdout
 from unittest import mock
 
@@ -95,6 +96,41 @@ class DDGAutomationTests(unittest.TestCase):
         )
         self.assertIn("landed_offsite=0", stdout.getvalue())
         self.assertIn("lcp_ms=321", stdout.getvalue())
+
+    def test_check_requires_a_selected_tab_not_just_compiled_rules(self):
+        calls = []
+
+        def request(_port, method, path, params=None, timeout=60):
+            calls.append(path)
+            if path == "/getWindowHandle":
+                raise urllib.error.HTTPError(
+                    "http://[::1]:8788" + path, 400, "Bad Request", {}, None
+                )
+            return "true"
+
+        with mock.patch.object(
+            DDG_AUTOMATION, "request", side_effect=request
+        ), redirect_stderr(io.StringIO()):
+            status = DDG_AUTOMATION.check("8788")
+
+        self.assertEqual(status, 1)
+        self.assertEqual(calls, ["/contentBlockerReady", "/getWindowHandle"])
+
+    def test_check_passes_once_a_tab_handle_exists(self):
+        def request(_port, _method, path, params=None, timeout=60):
+            return "true" if path == "/contentBlockerReady" else "tab-uuid"
+
+        with mock.patch.object(DDG_AUTOMATION, "request", side_effect=request):
+            self.assertEqual(DDG_AUTOMATION.check("8788"), 0)
+
+    def test_check_rejects_an_empty_tab_handle(self):
+        def request(_port, _method, path, params=None, timeout=60):
+            return "true" if path == "/contentBlockerReady" else ""
+
+        with mock.patch.object(
+            DDG_AUTOMATION, "request", side_effect=request
+        ), redirect_stderr(io.StringIO()):
+            self.assertEqual(DDG_AUTOMATION.check("8788"), 1)
 
     def test_probe_enforces_twelve_second_window(self):
         probe = DDG_AUTOMATION.lcp_probe(600, 12000)

@@ -98,6 +98,13 @@ def check(port):
         request_expect(
             port, "GET", "/contentBlockerReady", "true", timeout=15
         )
+        # Compiled rules do not imply a window exists, and every other endpoint
+        # resolves its target through the selected tab, so a nil tab fails both
+        # /navigate and /clearWebsiteData. /getWindowHandle asks exactly that
+        # question: it answers HTTP 400 until the first tab is selected.
+        handle = request(port, "GET", "/getWindowHandle", timeout=15)
+        if not isinstance(handle, str) or not handle:
+            raise RuntimeError("/getWindowHandle returned no tab handle")
     except Exception as error:  # noqa: BLE001 - command-line boundary
         print("automation check failed: {}".format(error), file=sys.stderr)
         return 1

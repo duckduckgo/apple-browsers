@@ -28,7 +28,9 @@
             {
                 "key": "imageCount",
                 "type": "integer",
-                "description": "Number of images attached to the submitted prompt"
+                "description": "Number of images attached to the submitted prompt",
+                "minimum": 1,
+                "maximum": 4
             }
         ]
     },
@@ -44,7 +46,9 @@
             {
                 "key": "fileCount",
                 "type": "integer",
-                "description": "Number of files attached to the submitted prompt"
+                "description": "Number of files attached to the submitted prompt",
+                "minimum": 1,
+                "maximum": 6
             }
         ]
     },

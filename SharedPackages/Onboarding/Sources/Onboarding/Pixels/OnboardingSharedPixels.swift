@@ -67,8 +67,8 @@ public enum OnboardingPixelParameter {
 
 final public class OnboardingSharedPixelHandler: OnboardingSharedPixelHandling {
     private struct ParameterKeys {
-        static let installType = "it"
-        static let daysSinceInstall = "d"
+        static let installType = "installType"
+        static let daysSinceInstall = "daysSinceInstall"
         static let source = "source"
         static let flow = "flow"
         static let variant = "variant"
@@ -111,11 +111,29 @@ final public class OnboardingSharedPixelHandler: OnboardingSharedPixelHandling {
             additionalParameters[ParameterKeys.installType] = installType.rawValue
         }
 
-        if let daysSinceInstall, (0...28).contains(daysSinceInstall) {
-            additionalParameters[ParameterKeys.daysSinceInstall] = String(daysSinceInstall)
+        if let daysSinceInstall,
+           let bucket = Self.daysSinceInstallBucket(for: daysSinceInstall) {
+            additionalParameters[ParameterKeys.daysSinceInstall] = bucket
         }
 
         return additionalParameters
+    }
+
+    private static func daysSinceInstallBucket(for days: Int) -> String? {
+        switch days {
+        case 0:
+            return "0"
+        case 1...3:
+            return "1-3"
+        case 4...10:
+            return "4-10"
+        case 11...28:
+            return "11-28"
+        case 29...:
+            return "28+"
+        default:
+            return nil
+        }
     }
 
     public init(platform: Platform,
@@ -267,7 +285,7 @@ public extension OnboardingSharedPixelEvent {
 
     var parameters: [String: String]? {
         var parameters = [
-            "e": eventType
+            "event": eventType
         ]
 
         if let value {

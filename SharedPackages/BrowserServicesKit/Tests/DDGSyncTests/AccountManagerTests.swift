@@ -549,6 +549,60 @@ final class AccountManagerTests: XCTestCase {
         XCTAssertNil(result.accessCredentials)
     }
 
+    func testWhenEncodingUpdateDevicesParametersThenUsesPatchContractShape() throws {
+        let deviceUpdate = AccountManager.UpdateDevices.Update(
+            id: "device-1",
+            name: "encrypted-name",
+            type: "encrypted-type",
+            info: "encrypted-info")
+        let parameters = AccountManager.UpdateDevices.Parameters(updates: [deviceUpdate])
+
+        let data = try JSONEncoder.snakeCaseKeys.encode(parameters)
+        let body = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        let updates = try XCTUnwrap(body["updates"] as? [[String: Any]])
+        let encodedUpdate = try XCTUnwrap(updates.first)
+
+        XCTAssertEqual(updates.count, 1)
+        XCTAssertEqual(encodedUpdate["id"] as? String, "device-1")
+        XCTAssertEqual(encodedUpdate["name"] as? String, "encrypted-name")
+        XCTAssertEqual(encodedUpdate["type"] as? String, "encrypted-type")
+        XCTAssertEqual(encodedUpdate["info"] as? String, "encrypted-info")
+    }
+
+    func testWhenDecodingUpdateDevicesResultThenMapsLegacyAndUnifiedDevices() throws {
+        let json = """
+        {
+            "devices": [
+                {
+                    "id": "device-1",
+                    "name": "encrypted-name",
+                    "type": "encrypted-type",
+                    "jwt_iat": "2026-06-23T10:00:00Z"
+                }
+            ],
+            "devices_v2": [
+                {
+                    "id": "device-1",
+                    "name": "encrypted-name",
+                    "type": "encrypted-type",
+                    "info": "encrypted-info",
+                    "jwt_iat": "2026-06-23T10:00:00Z",
+                    "credential_id": "ddg"
+                }
+            ]
+        }
+        """
+
+        let result = try JSONDecoder.snakeCaseKeys.decode(AccountManager.UpdateDevices.Result.self, from: Data(json.utf8))
+
+        XCTAssertEqual(result.devices.map(\.id), ["device-1"])
+        XCTAssertNil(result.devices.first?.info)
+        XCTAssertNil(result.devices.first?.credentialId)
+        XCTAssertEqual(result.devicesV2.map(\.id), ["device-1"])
+        XCTAssertEqual(result.devicesV2.first?.info, "encrypted-info")
+        XCTAssertEqual(result.devicesV2.first?.credentialId, SyncCredentialID.defaultCredential)
+    }
+
     func testWhenFetchingDevicesWithScopedAccessEnabledThenPrefersEntriesV2OverLegacyEntries() async throws {
         let api = RemoteAPIRequestCreatingMock()
         let endpoints = Endpoints(baseURL: Self.baseURL)

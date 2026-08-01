@@ -28,6 +28,7 @@ final class RegisteredDeviceMapperTests: XCTestCase {
         let entry = RegisteredDeviceEntry(id: "native-device",
                                           name: "encrypted_Mac",
                                           type: "encrypted_desktop",
+                                          info: nil,
                                           credentialId: SyncCredentialID.defaultCredential)
 
         let device = mapper.registeredDevice(fromLegacyEntry: entry, account: makeAccount())
@@ -51,6 +52,7 @@ final class RegisteredDeviceMapperTests: XCTestCase {
             type: try codec.encryptDirect(payload: Data("browser".utf8),
                                           contentEncryptionKey: thirdPartyMainKey,
                                           kid: SyncCredentialID.thirdParty),
+            info: nil,
             credentialId: SyncCredentialID.thirdParty)
         let mapper = RegisteredDeviceMapper(crypter: CryptingMock(),
                                             cachedScopedPassword: { scopedPassword },
@@ -78,6 +80,7 @@ final class RegisteredDeviceMapperTests: XCTestCase {
             type: try codec.encryptDirect(payload: Data("browser".utf8),
                                           contentEncryptionKey: thirdPartyMainKey,
                                           kid: SyncCredentialID.thirdParty),
+            info: nil,
             credentialId: SyncCredentialID.thirdParty)
         let accessCredentials = [AccessCredential(id: SyncCredentialID.thirdParty, scope: "sync", encrypted3PartyCredential: "encrypted")]
         let scopedAccess = ScopedAccessCredentialManagingMock()
@@ -113,10 +116,12 @@ final class RegisteredDeviceMapperTests: XCTestCase {
             type: try codec.encryptDirect(payload: Data("browser".utf8),
                                           contentEncryptionKey: thirdPartyMainKey,
                                           kid: SyncCredentialID.thirdParty),
+            info: nil,
             credentialId: SyncCredentialID.thirdParty)
         let undecryptableEntry = RegisteredDeviceEntry(id: "undecryptable-third-party-device",
                                                        name: "not-jwe",
                                                        type: "not-jwe",
+                                                       info: nil,
                                                        credentialId: SyncCredentialID.thirdParty)
         let mapper = RegisteredDeviceMapper(crypter: CryptingMock(),
                                             cachedScopedPassword: { scopedPassword },
@@ -141,6 +146,7 @@ final class RegisteredDeviceMapperTests: XCTestCase {
         let entry = RegisteredDeviceEntry(id: "future-device",
                                           name: "encrypted_Future",
                                           type: "encrypted_browser",
+                                          info: nil,
                                           credentialId: "future")
 
         let devices = await mapper.registeredDevices(from: [entry], account: makeAccount())

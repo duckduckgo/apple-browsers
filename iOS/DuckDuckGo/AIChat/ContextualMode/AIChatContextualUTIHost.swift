@@ -35,7 +35,7 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
     private var isBoundToUserScript = false
     private var hasDeliveredFirstPrompt = false
 
-    /// The input's bottom while it tracks the keyboard, and the fixed pin that replaces it once frozen.
+    /// The input's bottom while it follows the keyboard, and the fixed pin that replaces it once frozen.
     private var keyboardBottomConstraint: NSLayoutConstraint?
     private var frozenBottomConstraint: NSLayoutConstraint?
     private let startsPreSubmit: Bool

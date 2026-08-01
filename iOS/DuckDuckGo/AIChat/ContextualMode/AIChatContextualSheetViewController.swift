@@ -168,6 +168,16 @@ final class AIChatContextualSheetViewController: UIViewController {
 
     /// Prevents showing the preloaded Duck.ai start surface before the frontend switches into a response state.
     private var isWaitingForInitialPromptResponseState = false
+
+    /// This sheet was opened by a submission from another surface rather than typed into, so it opens onto the
+    /// chat that submission produces: full height, on the web view, never on a start surface the user never saw.
+    private let opensOntoSubmittedChat: Bool
+
+    /// True until that chat arrives, which it cannot do any sooner — the prompt needs the web view this sheet
+    /// owns. Until then the session still reports its pre-submit state, and that state is stale here.
+    private var isAwaitingSubmittedChat: Bool
+
+    private var hasMountedPersistentUTIHost = false
     private var initialPromptRevealFallbackWorkItem: DispatchWorkItem?
     private var suggestionSubmissionTask: Task<Void, Never>?
     private var suggestionSubmissionID: UUID?
@@ -331,7 +341,8 @@ final class AIChatContextualSheetViewController: UIViewController {
          appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
          persistentUTIHost: AIChatContextualUTIHost? = nil,
-         suggestionsReader: AIChatSuggestionsReading? = nil) {
+         suggestionsReader: AIChatSuggestionsReading? = nil,
+         opensOntoSubmittedChat: Bool = false) {
         self.sessionState = sessionState
         self.aiChatSettings = aiChatSettings
         self.voiceSearchHelper = voiceSearchHelper
@@ -341,6 +352,8 @@ final class AIChatContextualSheetViewController: UIViewController {
         self.featureFlagger = featureFlagger
         self.persistentUTIHost = persistentUTIHost
         self.suggestionsReader = suggestionsReader
+        self.opensOntoSubmittedChat = opensOntoSubmittedChat
+        self.isAwaitingSubmittedChat = opensOntoSubmittedChat
         super.init(nibName: nil, bundle: nil)
         configureModalPresentation()
     }
@@ -363,8 +376,16 @@ final class AIChatContextualSheetViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
-        mountPersistentUTIHostIfNeeded()
+        // Held back while a promoted submission is in flight: until the input rebinds to the chat it still
+        // renders its pre-submit self — page chip, model picker, "Ask anything privately" — which belongs to
+        // the surface the prompt was sent from, not to the answer it produced.
+        if !opensOntoSubmittedChat {
+            mountPersistentUTIHostIfNeeded()
+        }
         createAndConfigureWebViewController(restoreURL: sessionState.contextualChatURL)
+        if opensOntoSubmittedChat {
+            transitionToWebView()
+        }
         bindViewModel()
     }
 
@@ -445,7 +466,7 @@ final class AIChatContextualSheetViewController: UIViewController {
         sheet.delegate = self
         presentationController?.delegate = self
         sheet.detents = [.medium(), .large()]
-        sheet.selectedDetentIdentifier = .medium
+        sheet.selectedDetentIdentifier = opensOntoSubmittedChat ? .large : .medium
         sheet.largestUndimmedDetentIdentifier = .medium
         sheet.prefersScrollingExpandsWhenScrolledToEdge = false
         sheet.prefersGrabberVisible = true
@@ -1044,6 +1065,9 @@ private extension AIChatContextualSheetViewController {
 
         switch viewState.content {
         case .nativeInput:
+            // Stale while a promoted submission is in flight: the chat it starts has not been reported yet,
+            // and this sheet must not fall back to a pre-submit surface the user never opened.
+            if isAwaitingSubmittedChat { return }
             cancelWaitingForInitialPromptResponseState()
             // When returning to native input (new chat), reload the default URL on existing web VC
             if isWebViewVisible, let webVC = webViewController {
@@ -1058,6 +1082,7 @@ private extension AIChatContextualSheetViewController {
                 showNativeInputUI()
             }
         case .webView:
+            isAwaitingSubmittedChat = false
             if isWaitingForInitialPromptResponseState {
                 fireButton.isHidden = true
                 return
@@ -1155,7 +1180,9 @@ private extension AIChatContextualSheetViewController {
 
     @discardableResult
     func beginWaitingForInitialPromptResponseStateIfNeeded() -> Bool {
-        guard featureFlagger.isFeatureOn(.contextualSuggestedPrompts) else { return false }
+        // A sheet opened onto a submitted chat always waits, whatever the flag says: its reveal is what brings
+        // the input in alongside the chat, and it carries the fallback that guarantees the reveal happens.
+        guard opensOntoSubmittedChat || featureFlagger.isFeatureOn(.contextualSuggestedPrompts) else { return false }
         isWaitingForInitialPromptResponseState = true
         scheduleInitialPromptRevealFallback()
         return true
@@ -1185,6 +1212,7 @@ private extension AIChatContextualSheetViewController {
             transitionToWebView()
         }
         fireButton.isHidden = !sessionState.viewState.shouldShowNewChatButton
+        mountPersistentUTIHostIfNeeded()
         expandToLargeDetent()
     }
 }
@@ -1330,7 +1358,8 @@ private extension AIChatContextualSheetViewController {
     }
 
     func mountPersistentUTIHostIfNeeded() {
-        guard let persistentUTIHost else { return }
+        guard let persistentUTIHost, !hasMountedPersistentUTIHost else { return }
+        hasMountedPersistentUTIHost = true
 
         let utiView = persistentUTIHost.mount(in: self)
         contentContainerBottomConstraint?.isActive = false

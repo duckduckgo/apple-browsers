@@ -344,7 +344,10 @@ final class AIChatContextualSheetCoordinator {
         floatingChipsCancellable = nil
         persistentUTIHost?.deactivateInput()
         floatingInputViewController.remove()
-        presentNewSheet(from: presentingViewController, restoreURL: nil)
+        // Every promotion is a submission, whether the prompt has already gone or follows immediately: the
+        // sheet opens onto the chat, not onto a pre-submit surface the user never saw at a detent it would
+        // only have to grow out of.
+        presentNewSheet(from: presentingViewController, restoreURL: nil, opensOntoSubmittedChat: true)
     }
 
     /// Explicit user request to attach the current page, as opposed to a passive auto-collect.
@@ -498,7 +501,7 @@ private extension AIChatContextualSheetCoordinator {
         isSheetPresented = true
     }
 
-    func presentNewSheet(from presentingVC: UIViewController, restoreURL: URL?) {
+    func presentNewSheet(from presentingVC: UIViewController, restoreURL: URL?, opensOntoSubmittedChat: Bool = false) {
         guard presentingVC.presentedViewController == nil, floatingInputViewController == nil else { return }
 
         if let restoreURL {
@@ -521,7 +524,8 @@ private extension AIChatContextualSheetCoordinator {
             pixelHandler: pixelHandler,
             featureFlagger: featureFlagger,
             persistentUTIHost: persistentUTIHost,
-            suggestionsReader: suggestionsReader
+            suggestionsReader: suggestionsReader,
+            opensOntoSubmittedChat: opensOntoSubmittedChat
         )
         sheetVC.delegate = self
         sheetViewController = sheetVC

@@ -90,17 +90,17 @@ final class AIChatContextualFloatingInputViewController: UIViewController {
     private var hasResignedInput = false
     private var hasPlayedChipsEntrance = false
 
-    /// Where the keyboard is going while this surface leaves. The slide is the same either way; this only
-    /// decides when the input resigns.
-    private enum KeyboardDeparture {
+    /// Where the keyboard goes while this surface leaves. The slide is the same either way; this only decides
+    /// when the input resigns.
+    private enum KeyboardHandling {
         /// Nothing else is claiming focus, so resigning now sends the keyboard down alongside the slide.
-        case withSurface
-        /// The dismissing tap is handing focus to the page, so the page's own focus decides the keyboard —
-        /// an editable element keeps it exactly where it is. Resigning first is what makes it dip and return.
-        case stays
+        case leavesWithSurface
+        /// The dismissing tap is handing focus to the page, so the page's own focus decides the keyboard — an
+        /// editable element keeps it exactly where it is. Resigning first is what makes it dip and return.
+        case staysWithPage
     }
 
-    private var keyboardDeparture: KeyboardDeparture = .withSurface
+    private var keyboardHandling: KeyboardHandling = .leavesWithSurface
 
     /// The view the page-tap recognizer is installed on, so it can be detached even if this controller
     /// has already lost its parent.
@@ -286,7 +286,7 @@ final class AIChatContextualFloatingInputViewController: UIViewController {
         // leaving, staying, or the page's field raising a taller one — can disturb it.
         utiHost.freezeInputPosition()
 
-        if keyboardDeparture == .withSurface {
+        if keyboardHandling == .leavesWithSurface {
             resignInput()
         }
 
@@ -390,7 +390,7 @@ private extension AIChatContextualFloatingInputViewController {
 
 
     @objc func handlePageTap() {
-        keyboardDeparture = .stays
+        keyboardHandling = .staysWithPage
         requestDismiss()
     }
 

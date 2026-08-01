@@ -49,7 +49,7 @@ permissions:
   actions: read
 
 concurrency:
-  group: ${{ github.workflow }}
+  group: macos-browser-lcp-performance
   cancel-in-progress: false
 
 defaults:

@@ -550,12 +550,12 @@ final class AccountManagerTests: XCTestCase {
     }
 
     func testWhenEncodingUpdateDevicesParametersThenUsesPatchContractShape() throws {
-        let deviceUpdate = AccountManager.UpdateDevices.Update(
+        let deviceUpdate = UpdateDevices.Update(
             id: "device-1",
             name: "encrypted-name",
             type: "encrypted-type",
             info: "encrypted-info")
-        let parameters = AccountManager.UpdateDevices.Parameters(updates: [deviceUpdate])
+        let parameters = UpdateDevices.Parameters(updates: [deviceUpdate])
 
         let data = try JSONEncoder.snakeCaseKeys.encode(parameters)
         let body = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
@@ -593,7 +593,7 @@ final class AccountManagerTests: XCTestCase {
         }
         """
 
-        let result = try JSONDecoder.snakeCaseKeys.decode(AccountManager.UpdateDevices.Result.self, from: Data(json.utf8))
+        let result = try JSONDecoder.snakeCaseKeys.decode(UpdateDevices.Result.self, from: Data(json.utf8))
 
         XCTAssertEqual(result.devices.map(\.id), ["device-1"])
         XCTAssertNil(result.devices.first?.info)
@@ -601,6 +601,94 @@ final class AccountManagerTests: XCTestCase {
         XCTAssertEqual(result.devicesV2.map(\.id), ["device-1"])
         XCTAssertEqual(result.devicesV2.first?.info, "encrypted-info")
         XCTAssertEqual(result.devicesV2.first?.credentialId, SyncCredentialID.defaultCredential)
+    }
+
+    func testWhenUpdatingDeviceThenUsesAuthenticatedPatchAndDecodesResponse() async throws {
+        let api = RemoteAPIRequestCreatingMock()
+        let endpoints = Endpoints(baseURL: Self.baseURL)
+        let accountManager = AccountManager(endpoints: endpoints,
+                                            api: api,
+                                            crypter: CryptingMock(),
+                                            isScopedAccessCredentialsEnabled: { true })
+        api.fakeRequests[endpoints.devices] = makeJSONRequest("""
+        {
+            "devices": [],
+            "devices_v2": [
+                {
+                    "id": "device-1",
+                    "name": "encrypted-name",
+                    "type": "encrypted-type",
+                    "info": "encrypted-info",
+                    "jwt_iat": "2026-06-23T10:00:00Z",
+                    "credential_id": "ddg"
+                }
+            ]
+        }
+        """)
+
+        let result = try await accountManager.updateDevice(makeDeviceUpdate(), for: makeAccount(primaryKey: Data()))
+
+        let requestArguments = try XCTUnwrap(api.createRequestCallArgs.last)
+        let requestBody = try XCTUnwrap(requestArguments.body)
+        let body = try XCTUnwrap(JSONSerialization.jsonObject(with: requestBody) as? [String: Any])
+        let updates = try XCTUnwrap(body["updates"] as? [[String: Any]])
+        XCTAssertEqual(requestArguments.url, endpoints.devices)
+        XCTAssertEqual(requestArguments.method, .patch)
+        XCTAssertEqual(requestArguments.headers["Authorization"], "Bearer token-1")
+        XCTAssertEqual(requestArguments.contentType, "application/json")
+        XCTAssertEqual(updates.first?["id"] as? String, "device-1")
+        XCTAssertEqual(updates.first?["name"] as? String, "encrypted-name")
+        XCTAssertEqual(updates.first?["type"] as? String, "encrypted-type")
+        XCTAssertEqual(updates.first?["info"] as? String, "encrypted-info")
+        XCTAssertEqual(result.devicesV2.map(\.id), ["device-1"])
+    }
+
+    func testWhenUpdatingDeviceWithoutTokenThenThrowsNoToken() async {
+        let api = RemoteAPIRequestCreatingMock()
+        let endpoints = Endpoints(baseURL: Self.baseURL)
+        let accountManager = AccountManager(endpoints: endpoints,
+                                            api: api,
+                                            crypter: CryptingMock(),
+                                            isScopedAccessCredentialsEnabled: { true })
+
+        await assertThrowsError(SyncError.noToken) {
+            try await accountManager.updateDevice(makeDeviceUpdate(),
+                                                  for: makeAccount(primaryKey: Data(), token: nil))
+        }
+
+        XCTAssertTrue(api.createRequestCallArgs.isEmpty)
+    }
+
+    func testWhenUpdatingDeviceResponseHasNoBodyThenThrowsNoResponseBody() async {
+        let api = RemoteAPIRequestCreatingMock()
+        let endpoints = Endpoints(baseURL: Self.baseURL)
+        let accountManager = AccountManager(endpoints: endpoints,
+                                            api: api,
+                                            crypter: CryptingMock(),
+                                            isScopedAccessCredentialsEnabled: { true })
+        api.fakeRequests[endpoints.devices] = HTTPRequestingMock(result: .init(data: nil, response: .init()))
+
+        await assertThrowsError(SyncError.noResponseBody) {
+            try await accountManager.updateDevice(makeDeviceUpdate(), for: makeAccount(primaryKey: Data()))
+        }
+    }
+
+    func testWhenUpdatingDeviceResponseIsInvalidThenThrowsUnableToDecodeResponse() async {
+        let api = RemoteAPIRequestCreatingMock()
+        let endpoints = Endpoints(baseURL: Self.baseURL)
+        let accountManager = AccountManager(endpoints: endpoints,
+                                            api: api,
+                                            crypter: CryptingMock(),
+                                            isScopedAccessCredentialsEnabled: { true })
+        api.fakeRequests[endpoints.devices] = makeJSONRequest("""
+        {
+            "devices": []
+        }
+        """)
+
+        await assertThrowsError(SyncError.unableToDecodeResponse("Failed to decode devices update")) {
+            try await accountManager.updateDevice(makeDeviceUpdate(), for: makeAccount(primaryKey: Data()))
+        }
     }
 
     func testWhenFetchingDevicesWithScopedAccessEnabledThenPrefersEntriesV2OverLegacyEntries() async throws {
@@ -749,14 +837,21 @@ final class AccountManagerTests: XCTestCase {
         XCTAssertTrue(api.createRequestCallArgs.contains { $0.url == endpoints.logoutDevice })
     }
 
-    private func makeAccount(primaryKey: Data) -> SyncAccount {
+    private func makeDeviceUpdate() -> UpdateDevices.Update {
+        UpdateDevices.Update(id: "device-1",
+                             name: "encrypted-name",
+                             type: "encrypted-type",
+                             info: "encrypted-info")
+    }
+
+    private func makeAccount(primaryKey: Data, token: String? = "token-1") -> SyncAccount {
         SyncAccount(deviceId: "device-1",
                     deviceName: "iPhone",
                     deviceType: "ios",
                     userId: "user-1",
                     primaryKey: primaryKey,
                     secretKey: Data(repeating: 0x2, count: 32),
-                    token: "token-1",
+                    token: token,
                     state: .active)
     }
 

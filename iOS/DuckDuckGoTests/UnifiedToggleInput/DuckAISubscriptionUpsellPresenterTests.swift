@@ -94,6 +94,21 @@ final class DuckAISubscriptionUpsellPresenterTests: XCTestCase {
         wait(for: [expectation], timeout: 1.0)
     }
 
+    func testPresentPurchaseFlowFromChatHeaderPlateCarriesFeaturePageAndFreeLabelOrigin() {
+        let expectation = expectation(forNotification: .settingsDeepLinkNotification, object: nil, notificationCenter: notificationCenter) { notification in
+            guard let deepLink = notification.object as? SettingsViewModel.SettingsDeepLinkSection,
+                  case .subscriptionFlow(let components) = deepLink else {
+                return false
+            }
+            return self.hasQueryItem(in: components, name: "featurePage", value: "duckai")
+                && self.hasQueryItem(in: components, name: "origin", value: "funnel_duckai_ios__freelabel")
+        }
+
+        sut.presentPurchaseFlow(origin: .duckAIFreeLabel)
+
+        wait(for: [expectation], timeout: 1.0)
+    }
+
     // MARK: - Helpers
 
     private func hasQueryItem(in components: URLComponents?, name: String, value: String) -> Bool {

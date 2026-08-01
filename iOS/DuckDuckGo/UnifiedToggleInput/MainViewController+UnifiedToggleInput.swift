@@ -1364,12 +1364,10 @@ extension MainViewController: AIChatTabChatHeaderViewDelegate {
 
     func aiChatTabChatHeaderDidTapUpgrade() {
         if let subscriptionState = unifiedToggleInputCoordinator?.subscriptionState, !subscriptionState.hasActiveSubscription {
-            Pixel.fire(pixel: .unifiedToggleInputChatHeaderUpgradeTapped)
+            Pixel.fire(pixel: .unifiedToggleInputChatHeaderUpgradeTapped,
+                       withAdditionalParameters: [AttributionParameter.origin: SubscriptionFunnelOrigin.duckAIFreeLabel.rawValue])
         }
-        NotificationCenter.default.post(
-            name: .settingsDeepLinkNotification,
-            object: SettingsViewModel.SettingsDeepLinkSection.subscriptionFlow()
-        )
+        DuckAISubscriptionUpsellPresenter().presentPurchaseFlow(origin: .duckAIFreeLabel)
     }
 
     /// Close the chat tab. Selection follows the tab-switcher rule; chat is recoverable via Duck.ai → Recent chats.

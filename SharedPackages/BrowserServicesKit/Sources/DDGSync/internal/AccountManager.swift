@@ -355,6 +355,25 @@ struct AccountManager: AccountManaging {
         }
     }
 
+    struct UpdateDevices {
+
+        struct Parameters: Encodable {
+            let updates: [Update]
+        }
+
+        struct Update: Encodable {
+            let id: String
+            let name: String?
+            let type: String?
+            let info: String?
+        }
+
+        struct Result: Decodable {
+            let devices: [RegisteredDeviceEntry]
+            let devicesV2: [RegisteredDeviceEntry]
+        }
+    }
+
     struct FetchDevicesResult: Decodable {
         struct DeviceWrapper: Decodable {
             var lastModified: String?

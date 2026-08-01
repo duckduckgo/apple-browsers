@@ -1,9 +1,6 @@
 name: "macOS - Measure LCP (DDG)"
 run-name: "macOS - Measure LCP (DDG)"
 
-# Real measurements are manual until two full runs have been completed and
-# understood.
-
 on:
   workflow_dispatch:
     inputs:
@@ -33,6 +30,8 @@ on:
         type: boolean
         required: false
         default: true
+  schedule:
+    - cron: "41 4 * * *"
 
 permissions:
   contents: read
@@ -357,7 +356,7 @@ jobs:
     if: >-
       always() &&
       needs.validate-wpr.result == 'success' &&
-      inputs.upload-to-clickhouse
+      (github.event_name == 'schedule' || inputs.upload-to-clickhouse)
     runs-on: [self-hosted, apple]
 
     steps:
@@ -417,7 +416,7 @@ jobs:
     needs: ddg-lcp
     if: >-
       always() &&
-      inputs.alert-asana &&
+      (github.event_name != 'workflow_dispatch' || inputs.alert-asana) &&
       vars.CROSSBENCH_RUNTIME_ASANA_ALERTS_ENABLED != 'false'
     runs-on: ubuntu-latest
     timeout-minutes: 10

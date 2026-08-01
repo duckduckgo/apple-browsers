@@ -144,8 +144,7 @@ struct AccountManager: AccountManaging {
             throw SyncError.noToken
         }
 
-        let url = endpoints.syncGet.appendingPathComponent("devices")
-        let request = api.createAuthenticatedGetRequest(url: url, authToken: token)
+        let request = api.createAuthenticatedGetRequest(url: endpoints.devices, authToken: token)
         let result = try await request.execute()
 
         guard let body = result.data else {

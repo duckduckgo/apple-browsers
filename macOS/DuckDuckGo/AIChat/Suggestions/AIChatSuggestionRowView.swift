@@ -36,6 +36,7 @@ protocol SuggestionRowThemeProviding {
 /// Default implementation that uses the app's theme manager.
 struct DefaultSuggestionRowThemeProvider: SuggestionRowThemeProviding {
     let themeManager: ThemeManaging
+    let isBurner: Bool
 
     var accentPrimaryColor: NSColor {
         themeManager.theme.colorsProvider.suggestionsHighlightBackgroundColor
@@ -55,7 +56,7 @@ struct DefaultSuggestionRowThemeProvider: SuggestionRowThemeProviding {
         }
 
         let provider = themeManager.theme.colorsProvider
-        return provider.suggestionsSuffixColor
+        return isBurner ? provider.suggestionsFireSuffixColor : provider.suggestionsSuffixColor
     }
 
     var suffixSelectedTextColor: NSColor {
@@ -64,8 +65,7 @@ struct DefaultSuggestionRowThemeProvider: SuggestionRowThemeProviding {
         }
 
         let provider = themeManager.theme.colorsProvider
-        return provider.suggestionsHighlightSuffixColor
-
+        return isBurner ? provider.suggestionsFireHighlightSuffixColor : provider.suggestionsHighlightSuffixColor
     }
 }
 
@@ -157,10 +157,10 @@ final class AIChatSuggestionRowView: NSView {
 
     // MARK: - Initialization
 
-    init(suggestion: AIChatSuggestion, themeManager: ThemeManaging = NSApp.delegateTyped.themeManager, themeProvider: SuggestionRowThemeProviding? = nil) {
+    init(suggestion: AIChatSuggestion, isBurner: Bool = false, themeManager: ThemeManaging = NSApp.delegateTyped.themeManager, themeProvider: SuggestionRowThemeProviding? = nil) {
         self.suggestion = suggestion
         self.themeManager = themeManager
-        self.themeProvider = themeProvider ?? DefaultSuggestionRowThemeProvider(themeManager: themeManager)
+        self.themeProvider = themeProvider ?? DefaultSuggestionRowThemeProvider(themeManager: themeManager, isBurner: isBurner)
         super.init(frame: .zero)
         setupView()
         configure(with: suggestion)

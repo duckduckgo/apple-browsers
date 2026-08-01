@@ -202,9 +202,6 @@ public enum FeatureFlag: String {
     /// This is off by default.  We can turn it on to get daily pixels of users's widget usage for a short time.
     case widgetReporting
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866467213996
-    case createFireproofFaviconUpdaterSecureVaultInBackground
-
     /// Local inactivity provisional notifications delivered to Notification Center.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866471590692
     case inactivityNotification
@@ -690,8 +687,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(DBPSubfeature.pirRollout))
         case .widgetReporting:
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.widgetReporting), supportsLocalOverriding: false)
-        case .createFireproofFaviconUpdaterSecureVaultInBackground:
-            Config(defaultValue: .enabled, source: .remoteReleasable(AutofillSubfeature.createFireproofFaviconUpdaterSecureVaultInBackground))
         case .inactivityNotification:
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.inactivityNotification))
         case .daxEasterEggLogos:
@@ -886,7 +881,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .syncCanShowV2ConnectCode:
             Config(source: .remoteReleasable(SyncSubfeature.canShowV2ConnectCode))
         case .simplifiedSyncSetupV2:
-            Config(source: .remoteReleasable(SyncSubfeature.simplifiedSyncSetupV2))
+            Config(defaultValue: .enabled, source: .remoteReleasable(SyncSubfeature.simplifiedSyncSetupV2))
         case .blankSnapshotCaching:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.blankSnapshotCaching))
         case .systemFindInPage:

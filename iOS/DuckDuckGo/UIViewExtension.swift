@@ -74,6 +74,15 @@ extension UIView {
         }
     }
 
+    /// True when the app isn't full screen (Split View / Slide Over / Stage Manager). Sides are sorted
+    /// for orientation independence; the 1pt slack absorbs rounding.
+    var isWindowedPresentation: Bool {
+        guard let window, let scene = window.windowScene else { return false }
+        let windowSides = [window.frame.width, window.frame.height].sorted()
+        let screenSides = [scene.screen.bounds.width, scene.screen.bounds.height].sorted()
+        return windowSides[0] < screenSides[0] - 1 || windowSides[1] < screenSides[1] - 1
+    }
+
     @MainActor
     public func createImageSnapshot(inBounds bounds: CGRect? = nil) -> UIImage? {
         let bounds = bounds ?? self.frame

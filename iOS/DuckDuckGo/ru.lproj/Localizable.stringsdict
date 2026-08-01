@@ -2,6 +2,26 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>aiChat.history.download.complete.message</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@chats@</string>
+		<key>chats</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Загружен %1$d чат</string>
+			<key>few</key>
+			<string>Загружено %1$d чата</string>
+			<key>many</key>
+			<string>Загружено %1$d чатов</string>
+			<key>other</key>
+			<string>Загружено %1$d чата</string>
+		</dict>
+	</dict>
 	<key>aiChat.history.deleteAll.confirmation.title</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
@@ -476,6 +496,26 @@
 			<string>Закрыть вкладки</string>
 		</dict>
 	</dict>
+	<key>tab.switcher.close-tabs.button.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Закрыть %1$d вкладку</string>
+			<key>few</key>
+			<string>Закрыть %1$d вкладки</string>
+			<key>many</key>
+			<string>Закрыть %1$d вкладок</string>
+			<key>other</key>
+			<string>Закрыть вкладки (%1$d)</string>
+		</dict>
+	</dict>
 	<key>closeAllTabs.withCount</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
@@ -874,26 +914,6 @@
 			<string>%2$@ трекеров</string>
 			<key>other</key>
 			<string>%2$@ трекера</string>
-		</dict>
-	</dict>
-	<key>aiChat.history.download.complete.message</key>
-	<dict>
-		<key>NSStringLocalizedFormatKey</key>
-		<string>%#@chats@</string>
-		<key>chats</key>
-		<dict>
-			<key>NSStringFormatSpecTypeKey</key>
-			<string>NSStringPluralRuleType</string>
-			<key>NSStringFormatValueTypeKey</key>
-			<string>d</string>
-			<key>one</key>
-			<string>Загружен %1$d чат</string>
-			<key>few</key>
-			<string>Загружено %1$d чата</string>
-			<key>many</key>
-			<string>Загружено %1$d чатов</string>
-			<key>other</key>
-			<string>Загружено %1$d чата</string>
 		</dict>
 	</dict>
 </dict>

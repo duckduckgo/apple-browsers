@@ -2,6 +2,24 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>aiChat.history.download.complete.message</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@chats@</string>
+		<key>chats</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>zero</key>
+			<string>%1$d tērzēšanas lejupielādētas</string>
+			<key>one</key>
+			<string>%1$d tērzēšana lejupielādēta</string>
+			<key>other</key>
+			<string>%1$d tērzēšanas lejupielādētas</string>
+		</dict>
+	</dict>
 	<key>aiChat.history.deleteAll.confirmation.title</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
@@ -424,6 +442,24 @@ Es tos nobloķēju!
 			<string>Aizvērt cilnes</string>
 		</dict>
 	</dict>
+	<key>tab.switcher.close-tabs.button.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>zero</key>
+			<string>Aizvērt %1$d cilnes</string>
+			<key>one</key>
+			<string>Aizvērt %1$d cilni</string>
+			<key>other</key>
+			<string>Aizvērt %1$d cilnes</string>
+		</dict>
+	</dict>
 	<key>closeAllTabs.withCount</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
@@ -782,24 +818,6 @@ Es tos nobloķēju!
 			<string>%2$@ Zsekotājs</string>
 			<key>other</key>
 			<string>%2$@ Izsekotāji</string>
-		</dict>
-	</dict>
-	<key>aiChat.history.download.complete.message</key>
-	<dict>
-		<key>NSStringLocalizedFormatKey</key>
-		<string>%#@chats@</string>
-		<key>chats</key>
-		<dict>
-			<key>NSStringFormatSpecTypeKey</key>
-			<string>NSStringPluralRuleType</string>
-			<key>NSStringFormatValueTypeKey</key>
-			<string>d</string>
-			<key>zero</key>
-			<string>%1$d tērzēšanas lejupielādētas</string>
-			<key>one</key>
-			<string>%1$d tērzēšana lejupielādēta</string>
-			<key>other</key>
-			<string>%1$d tērzēšanas lejupielādētas</string>
 		</dict>
 	</dict>
 </dict>

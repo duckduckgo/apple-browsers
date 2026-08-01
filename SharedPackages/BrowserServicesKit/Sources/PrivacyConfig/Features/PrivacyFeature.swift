@@ -355,7 +355,6 @@ public enum AutofillSubfeature: String, PrivacySubfeature {
     case inputFocusApi
     case canPromoteImportPasswordsInPasswordManagement
     case canPromoteImportPasswordsInBrowser
-    case createFireproofFaviconUpdaterSecureVaultInBackground
     case autofillExtensionSettings
     case canPromoteAutofillExtensionInBrowser
     case canPromoteAutofillExtensionInPasswordManagement
@@ -403,6 +402,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Adds capability to load AI Chat in a sidebar
     case sidebar
+
+    /// Single "Ask Duck.ai" menu button (New Chat / Ask About Page) replacing the two-part split button.
+    case chromeMenuButton
 
     /// Experimental address bar with duck.ai
     case experimentalAddressBar
@@ -703,7 +705,6 @@ public enum SyncSubfeature: String, PrivacySubfeature {
     case canScanUrlBasedSyncSetupBarcodes
     case canInterceptSyncSetupUrls
     case syncSetupBarcodeIsUrlBased
-    case refactorOfSyncPreferences
     case newSyncEntryPoints
     case newDeviceSyncPrompt
     case syncAutoRestore

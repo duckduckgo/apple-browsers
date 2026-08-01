@@ -118,23 +118,27 @@ struct ManageDeviceViewV2: View {
                 }
                 .accessibility(identifier: "deviceName")
         }
-        .listRowBackground(Color(designSystemColor: .surface))
+        .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
     }
 
     private var syncToggleSection: some View {
         Section {
-            Toggle(isOn: syncToggleBinding) {
+            HStack {
                 Text(UserText.simplifiedSyncToggleTitleThisDevice)
                     .daxBodyRegular()
                     .foregroundColor(Color(designSystemColor: .textPrimary))
+                Spacer()
+                Toggle("", isOn: syncToggleBinding)
+                    .labelsHidden()
+                    .tint(Color(designSystemColor: .accentPrimary))
+                    .disabled(model.isBusy)
+                    .accessibilityLabel(UserText.simplifiedSyncToggleTitleThisDevice)
+                    .accessibility(identifier: "SyncThisDeviceToggle")
             }
-            .tint(Color(designSystemColor: .accentPrimary))
-            .disabled(model.isBusy)
-            .accessibility(identifier: "SyncThisDeviceToggle")
         } footer: {
             Text(UserText.simplifiedManageDeviceTurnOffFooter)
         }
-        .listRowBackground(Color(designSystemColor: .surface))
+        .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
     }
 
     private var syncToggleBinding: Binding<Bool> {
@@ -169,7 +173,7 @@ struct ManageDeviceViewV2: View {
         } footer: {
             Text(UserText.simplifiedManageDeviceRemoveFooter)
         }
-        .listRowBackground(Color(designSystemColor: .surface))
+        .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
         .alert(UserText.removeDeviceTitle, isPresented: $isShowingRemoveConfirmation) {
             Button(UserText.cancelButton, role: .cancel) {}
             Button(UserText.removeDeviceButton, role: .destructive) {

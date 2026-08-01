@@ -329,10 +329,16 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         await unloadGuard.awaitSettled(context(for: identifier))
 
         try loader.unloadExtension(identifier: identifier, from: controller)
-        unregisterHandlers(for: identifier)
 
-        _ = try await loader.loadWebExtension(identifier: identifier, into: controller)
-        unloadGuard.recordLoad(of: identifier)
+        // loadWebExtension re-registers the handlers itself, so unregistering up front only opens a
+        // window with no handlers — and leaves none at all if the reload throws. Clean up on failure.
+        do {
+            _ = try await loader.loadWebExtension(identifier: identifier, into: controller)
+            unloadGuard.recordLoad(of: identifier)
+        } catch {
+            unregisterHandlers(for: identifier)
+            throw error
+        }
 
         Logger.webExtensions.info("✅ Reloaded extension '\(identifier)'")
         notifyUpdate()

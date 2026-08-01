@@ -97,10 +97,6 @@ class FireproofFaviconUpdater: NSObject, FaviconUserScriptDelegate {
         favicons.loadFavicon(forDomain: host, fromURL: faviconURL, intoCache: .tabs) { [weak self] image in
             guard let self = self else { return }
             self.tab.didUpdateFavicon()
-            guard featureFlagger.isFeatureOn(.createFireproofFaviconUpdaterSecureVaultInBackground) else {
-                legacyReplaceFireproofFaviconIfNecessary(image, forHost: host)
-                return
-            }
             replaceFireproofFaviconIfNecessary(image, forHost: host)
         }
     }
@@ -181,41 +177,6 @@ class FireproofFaviconUpdater: NSObject, FaviconUserScriptDelegate {
             let autofillLoginExists = await autofillLoginExists(for: domain)
             guard !autofillLoginExists else { return }
             favicons.removeBookmarkFavicon(forDomain: domain)
-        }
-    }
-
-    // MARK: Legacy flow
-    // To be deleted with createFireproofFaviconUpdaterSecureVaultInBackground FeatureFlag
-
-    private func legacyReplaceFireproofFaviconIfNecessary(_ image: UIImage?, forHost host: String) {
-        guard self.bookmarkExists(for: host) || self.legacyAutofillLoginExists(for: host),
-              let image = image else { return }
-
-        self.favicons.replaceFireproofFavicon(forDomain: host, withImage: image)
-    }
-
-    private func legacyInitSecureVault() -> (any AutofillSecureVault)? {
-        if featureFlagger.isFeatureOn(.autofillCredentialInjecting) && AutofillSettingStatus.isAutofillEnabledInSettings {
-            if secureVault == nil {
-                // Fallback: Create new instance if shared one was not injected
-                Logger.general.info("FireproofFaviconUpdater creating fallback SecureVault instance (legacy)")
-                secureVault = try? AutofillSecureVaultFactory.makeVault(reporter: SecureVaultReporter())
-            }
-            return secureVault
-        }
-        return nil
-    }
-
-    private func legacyAutofillLoginExists(for domain: String) -> Bool {
-        guard let secureVault = legacyInitSecureVault() else {
-            return false
-        }
-
-        do {
-            let accounts = try secureVault.accounts()
-            return accounts.contains(where: { $0.domain == domain })
-        } catch {
-            return false
         }
     }
 

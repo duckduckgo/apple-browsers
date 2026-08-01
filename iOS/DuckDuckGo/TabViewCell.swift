@@ -253,7 +253,7 @@ class TabViewCell: UICollectionViewCell {
                                                             height: Constants.cellLogoSize),
                                                format: renderFormat)
         return renderer.image { _ in
-            UIImage(resource: .logo).draw(in: CGRect(x: 0,
+            UIImage(rebrandable: "duckduckgo-favicon-128x128")?.draw(in: CGRect(x: 0,
                                                      y: 0,
                                                      width: Constants.cellLogoSize,
                                                      height: Constants.cellLogoSize))
@@ -459,8 +459,12 @@ class TabViewCell: UICollectionViewCell {
 
     func updateSelectionIndicator(_ image: UIImageView) {
         if !isSelected {
+            image.preferredSymbolConfiguration = UIImage.SymbolConfiguration(pointSize: Constants.selectionIndicatorSize)
             image.image = DesignSystemImages.Glyphs.Size24.shapeCircle
+            image.tintColor = UIColor(designSystemColor: .iconsTertiary)
         } else {
+            // Hack to fix image size.
+            image.preferredSymbolConfiguration = UIImage.SymbolConfiguration(pointSize: Constants.selectionIndicatorSize - 4)
             image.image = DesignSystemImages.Recolorable.Size24.check.applyPalleteColorsToSymbol(
                 foreground: UIColor(designSystemColor: .accentContentPrimary),
                 background: accentColor,
@@ -559,7 +563,7 @@ class TabViewCell: UICollectionViewCell {
             updateEmptyTabLabel(for: tab)
             link?.isHidden = false
             link?.text = UserText.homeTabSearchAndFavorites
-            favicon.image = UIImage(resource: .logo)
+            favicon.image = UIImage(rebrandable: "duckduckgo-favicon-128x128")
             unread.isHidden = true
             self.preview?.isHidden = !tab.viewed
             title.isHidden = !tab.viewed

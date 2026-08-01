@@ -181,6 +181,30 @@ struct AccountManager: AccountManaging {
         return devices
     }
 
+    func updateDevice(_ update: UpdateDevices.Update, for account: SyncAccount) async throws -> UpdateDevices.Result {
+        guard let token = account.token else {
+            throw SyncError.noToken
+        }
+
+        let parameters = UpdateDevices.Parameters(updates: [update])
+        let requestJSON = try JSONEncoder.snakeCaseKeys.encode(parameters)
+        let request = api.createAuthenticatedJSONRequest(url: endpoints.devices,
+                                                         method: .patch,
+                                                         authToken: token,
+                                                         json: requestJSON)
+        let response = try await request.execute()
+
+        guard let body = response.data else {
+            throw SyncError.noResponseBody
+        }
+
+        guard let result = try? JSONDecoder.snakeCaseKeys.decode(UpdateDevices.Result.self, from: body) else {
+            throw SyncError.unableToDecodeResponse("Failed to decode devices update")
+        }
+
+        return result
+    }
+
     func refreshToken(_ account: SyncAccount, deviceName: String) async throws -> LoginResult {
         let info = try crypter.extractLoginInfo(recoveryKey: SyncCode.RecoveryKey(userId: account.userId,
                                                                                   primaryKey: account.primaryKey))
@@ -355,25 +379,6 @@ struct AccountManager: AccountManaging {
         }
     }
 
-    struct UpdateDevices {
-
-        struct Parameters: Encodable {
-            let updates: [Update]
-        }
-
-        struct Update: Encodable {
-            let id: String
-            let name: String?
-            let type: String?
-            let info: String?
-        }
-
-        struct Result: Decodable {
-            let devices: [RegisteredDeviceEntry]
-            let devicesV2: [RegisteredDeviceEntry]
-        }
-    }
-
     struct FetchDevicesResult: Decodable {
         struct DeviceWrapper: Decodable {
             var lastModified: String?
@@ -382,6 +387,25 @@ struct AccountManager: AccountManaging {
         }
 
         var devices: DeviceWrapper?
+    }
+}
+
+struct UpdateDevices {
+
+    struct Parameters: Encodable {
+        let updates: [Update]
+    }
+
+    struct Update: Encodable {
+        let id: String
+        let name: String?
+        let type: String?
+        let info: String?
+    }
+
+    struct Result: Decodable {
+        let devices: [RegisteredDeviceEntry]
+        let devicesV2: [RegisteredDeviceEntry]
     }
 }
 

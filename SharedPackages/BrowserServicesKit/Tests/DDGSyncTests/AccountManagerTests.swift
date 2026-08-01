@@ -719,7 +719,7 @@ final class AccountManagerTests: XCTestCase {
     }
 
     private func devicesURL(for endpoints: Endpoints) -> URL {
-        endpoints.syncGet.appendingPathComponent("devices")
+        endpoints.devices
     }
 
     private func makeSignupBody(from api: RemoteAPIRequestCreatingMock) throws -> [String: Any] {

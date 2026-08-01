@@ -26,6 +26,7 @@ final class Endpoints {
     private(set) var connect: URL
     private(set) var exchange: URL
     private(set) var aiChats: URL
+    private(set) var devices: URL
     private(set) var tokenRescope: URL
     private(set) var accessCredentials: URL
     private(set) var keys: URL
@@ -61,6 +62,7 @@ final class Endpoints {
         syncPatch = baseURL.appendingPathComponent("sync/data")
         exchange = baseURL.appendingPathComponent("sync/exchange")
         aiChats = baseURL.appendingPathComponent("sync/ai_chats")
+        devices = baseURL.appendingPathComponent("sync/devices")
         tokenRescope = baseURL.appendingPathComponent("sync/token/rescope")
         accessCredentials = baseURL.appendingPathComponent("sync/access-credentials")
         keys = baseURL.appendingPathComponent("sync/keys")
@@ -84,6 +86,7 @@ extension Endpoints {
         syncPatch = baseURL.appendingPathComponent("sync/data")
         exchange = baseURL.appendingPathComponent("sync/exchange")
         aiChats = baseURL.appendingPathComponent("sync/ai_chats")
+        devices = baseURL.appendingPathComponent("sync/devices")
         tokenRescope = baseURL.appendingPathComponent("sync/token/rescope")
         accessCredentials = baseURL.appendingPathComponent("sync/access-credentials")
         keys = baseURL.appendingPathComponent("sync/keys")

@@ -25,6 +25,9 @@ SAFARI_WORKFLOW = (
 LAUNCHER = (
     Path(__file__).parents[1] / "launch-ddg-app.sh"
 ).read_text(encoding="utf-8")
+HARNESS = (
+    Path(__file__).parents[1] / "test-ddg.sh"
+).read_text(encoding="utf-8")
 
 
 class DDGWorkflowContractTests(unittest.TestCase):
@@ -102,6 +105,14 @@ class DDGWorkflowContractTests(unittest.TestCase):
         self.assertIn('--env "AUTOMATION_TOKEN=$AUTOMATION_TOKEN"', LAUNCHER)
         self.assertNotIn("set -x", LAUNCHER)
         self.assertNotIn("echo \"$AUTOMATION_TOKEN\"", LAUNCHER)
+
+    def test_app_is_launched_without_the_runner_ci_variable(self) -> None:
+        # A non-empty CI puts the app in UI-test mode, where it opens no window
+        # and the automation server has no tab to drive.
+        self.assertIn("/usr/bin/env -u CI /usr/bin/open -n", LAUNCHER)
+
+    def test_normal_launch_does_not_arm_the_updater(self) -> None:
+        self.assertIn("-SUEnableAutomaticChecks false", HARNESS)
 
 
 if __name__ == "__main__":

@@ -425,6 +425,12 @@ class DDGHarnessTests(unittest.TestCase):
             )
             self.assertIn("-isOnboardingCompleted", launch["args"])
             self.assertIn("-acceptInsecureCerts", launch["args"])
+            # A normal launch arms Sparkle, which must not reach the network
+            # mid-measurement.
+            self.assertEqual(
+                launch["args"][launch["args"].index("-SUEnableAutomaticChecks") + 1],
+                "false",
+            )
             self.assertNotIn(launch["token"], result.stdout + result.stderr)
             with self.assertRaises(ProcessLookupError):
                 os.kill(launch["pid"], 0)

@@ -668,13 +668,18 @@ start_app() {
   assert_port_free "$AUTOMATION_PORT" automation || return 1
   AUTOMATION_TOKEN_VALUE="$("$PYTHON_BIN" -c 'import secrets; print(secrets.token_hex(32))')"
   DDG_LOG="$(mktemp)"
+  # The app opens its startup window only outside UI-test mode, so it runs here
+  # as a normal launch — which also arms the Sparkle updater. Turn automatic
+  # checks off: they would reach the network outside the replay proxy and could
+  # update the very build under measurement.
   if ! DDG_PID="$(
     AUTOMATION_TOKEN="$AUTOMATION_TOKEN_VALUE" \
       "$DDG_LAUNCHER" "$DDG_APP" "$DDG_EXECUTABLE" "$DDG_LOG" -- \
       -automationPort "$AUTOMATION_PORT" \
       -isOnboardingCompleted true \
       -webViewProxy "socks5://127.0.0.1:$TSPROXY_PORT" \
-      -acceptInsecureCerts true
+      -acceptInsecureCerts true \
+      -SUEnableAutomaticChecks false
   )"; then
     echo "ERROR: DuckDuckGo could not be launched through LaunchServices." >&2
     return 1

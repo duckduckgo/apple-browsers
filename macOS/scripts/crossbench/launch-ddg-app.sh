@@ -60,7 +60,11 @@ if [ -n "$(matching_pids)" ]; then
   exit 1
 fi
 
-/usr/bin/open -n \
+# The app treats a non-empty CI variable as "running under UI tests" and then
+# skips the window it normally opens at startup, which leaves the automation
+# server with no tab to drive. Hosted runners export CI for every step, so drop
+# it from the app's environment only; the caller's own CI is untouched.
+/usr/bin/env -u CI /usr/bin/open -n \
   --stdout "$log_file" \
   --stderr "$log_file" \
   --env "AUTOMATION_TOKEN=$AUTOMATION_TOKEN" \

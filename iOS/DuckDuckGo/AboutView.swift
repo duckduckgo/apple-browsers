@@ -109,7 +109,13 @@ struct AboutViewVersion: View {
 #else
         let version = viewModel.state.version
 #endif
+
+#if (ALPHA || EXPERIMENTAL) && !DEBUG
         let build = AppVersion.shared.commitSHAShort
+#else
+        let build = ""
+#endif
+
         let xcodeMajorVersion = AppVersion.shared.xcodeMajorVersion
         let toolchainSuffix = xcodeMajorVersion.isEmpty ? "" : " (Xcode \(xcodeMajorVersion))"
         let commitSuffix = build.isEmpty ? "" : "-(\(build))"

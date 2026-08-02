@@ -116,6 +116,62 @@ final class AIChatContextualModePixelHandlerTests {
         #expect(PixelFiringMock.lastPixelName == Pixel.Event.aiChatContextualQuickActionSummarizeSelected.name)
     }
 
+    // MARK: - Suggested Prompt Pixels
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Suggestion selected includes suggestion id and page type", .timeLimit(.minutes(1)))
+    func suggestion_selected_includes_suggestion_id_and_page_type() {
+        var firedEventName: String?
+        var firedParameters: [String: String]?
+        let sut = AIChatContextualModePixelHandler(
+            firePixel: { _ in },
+            firePixelWithParameters: { event, parameters in
+                firedEventName = event.name
+                firedParameters = parameters
+            })
+
+        sut.fireSuggestionSelected(suggestionId: "shopping-list", pageType: .recipe)
+
+        #expect(firedEventName == Pixel.Event.aiChatContextualSuggestionSelected.name)
+        #expect(firedParameters == ["suggestionId": "shopping-list", "pageType": "recipe"])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Ask about page uses the cross-platform suggestion id", .timeLimit(.minutes(1)))
+    func ask_about_page_uses_cross_platform_suggestion_id() {
+        var firedEventName: String?
+        var firedParameters: [String: String]?
+        let sut = AIChatContextualModePixelHandler(
+            firePixel: { _ in },
+            firePixelWithParameters: { event, parameters in
+                firedEventName = event.name
+                firedParameters = parameters
+            })
+
+        sut.fireAskAboutPageSuggestionSelected(pageType: .article)
+
+        #expect(firedEventName == Pixel.Event.aiChatContextualSuggestionSelected.name)
+        #expect(firedParameters == ["suggestionId": "ask-about-page", "pageType": "article"])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Suggestions viewed includes smartness and page type", .timeLimit(.minutes(1)))
+    func suggestions_viewed_includes_smartness_and_page_type() {
+        var firedEventName: String?
+        var firedParameters: [String: String]?
+        let sut = AIChatContextualModePixelHandler(
+            firePixel: { _ in },
+            firePixelWithParameters: { event, parameters in
+                firedEventName = event.name
+                firedParameters = parameters
+            })
+
+        sut.fireSuggestionsViewed(isSmart: true, pageType: .video)
+
+        #expect(firedEventName == Pixel.Event.aiChatContextualSuggestionsViewed.name)
+        #expect(firedParameters == ["isSmart": "true", "pageType": "video"])
+    }
+
     // MARK: - Page Context Attachment Pixels
 
     @Test("Page context auto attached pixel fires correctly")

@@ -56,6 +56,10 @@ protocol ColorsProviding {
     var suggestionsHighlightBackgroundColor: NSColor { get }
     var suggestionsHighlightTextColor: NSColor { get }
 
+    // MARK: - Suggestions + Fire
+    var suggestionsFireSuffixColor: NSColor { get }
+    var suggestionsFireHighlightSuffixColor: NSColor { get }
+
     // MARK: - Semantic
     var accentPrimaryColor: NSColor { get }
     var baseBackgroundColor: NSColor { get }
@@ -124,6 +128,8 @@ final class LegacyColorsProviding: ColorsProviding {
     var suggestionsHighlightSuffixColor: NSColor { palette.accentContentSecondary }
     var suggestionsHighlightBackgroundColor: NSColor { palette.accentPrimary }
     var suggestionsHighlightTextColor: NSColor { palette.accentContentPrimary }
+    var suggestionsFireSuffixColor: NSColor { palette.accentPrimary }
+    var suggestionsFireHighlightSuffixColor: NSColor { palette.accentContentSecondary }
     var bannerBackgroundColor: NSColor { palette.surfacePrimary }
     var popoverBackgroundColor: NSColor { palette.surfaceSecondary }
 
@@ -168,8 +174,12 @@ final class CurrentColorsProviding: ColorsProviding {
     var suggestionsTextColor: NSColor { palette.textPrimary }
     var suggestionsSuffixColor: NSColor { palette.accentTextPrimary }
     var suggestionsHighlightSuffixColor: NSColor { palette.accentTextPrimary }
-    var suggestionsHighlightBackgroundColor: NSColor { palette.controlsFillPrimary }
+    var suggestionsHighlightBackgroundColor: NSColor { palette.accentAltPrimary }
     var suggestionsHighlightTextColor: NSColor { palette.textPrimary }
+
+    // MARK: - Suggestions + Fire
+    var suggestionsFireSuffixColor: NSColor { palette.accentFirePrimary }
+    var suggestionsFireHighlightSuffixColor: NSColor { palette.accentFirePrimary }
 
     // MARK: - Semantic
     var accentPrimaryColor: NSColor { palette.accentPrimary }

@@ -36,7 +36,9 @@ struct SimplifiedConnectingContentViewV2: View {
                 ? .playing(.fromProgress(0, toProgress: 1, loopMode: .playOnce))
                 : .paused(at: .progress(0)))
             .animationDidFinish { _ in
-                onAnimationFinished()
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                    onAnimationFinished()
+                }
             }
             .resizable()
             .aspectRatio(contentMode: .fit)

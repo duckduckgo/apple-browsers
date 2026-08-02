@@ -258,9 +258,11 @@ final class AppDependencyProvider: DependencyProvider {
 
         let pendingTransactionHandler = DefaultPendingTransactionHandler(userDefaults: subscriptionUserDefaults,
                                                                          pixelHandler: pixelHandler)
+        let monthlyFreeTrialDecider = IOSMonthlyFreeTrialDecider(featureFlagger: featureFlagger)
         let storePurchaseManager = DefaultStorePurchaseManager(subscriptionFeatureMappingCache: subscriptionEndpointService,
                                                                subscriptionFeatureFlagger: subscriptionFeatureFlagger,
-                                                               pendingTransactionHandler: pendingTransactionHandler)
+                                                               pendingTransactionHandler: pendingTransactionHandler,
+                                                               monthlyFreeTrialDecider: monthlyFreeTrialDecider)
         let subscriptionManager = DefaultSubscriptionManager(storePurchaseManager: storePurchaseManager,
                                                                oAuthClient: authClient,
                                                                userDefaults: subscriptionUserDefaults,

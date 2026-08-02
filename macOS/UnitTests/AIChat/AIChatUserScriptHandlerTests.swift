@@ -538,6 +538,60 @@ struct AIChatUserScriptHandlerTests {
         #expect(testPixelFiring.actualFireCalls.isEmpty)
     }
 
+    @available(iOS 16, macOS 13, *)
+    @Test("didReportMetric fires the subscription-funnel impression pixel with the matching origin", .timeLimit(.minutes(1)), arguments: [
+        (AIChatMetricName.userDidViewAiSidebarUpgradeButton, "funnel_duckai_macos__aisidebar"),
+        (.userDidViewActivateSubscriptionBanner, "funnel_duckai_macos__activatesubscription"),
+        (.userDidViewFreePlanBadge, "funnel_duckai_macos__freelabel"),
+        (.userDidViewFreeLimitMessage, "funnel_duckai_macos__freelimit"),
+        (.userDidViewImageGenerationLimitMessage, "funnel_duckai_macos__imagegenerationlimit"),
+        (.userDidViewPlusLimitMessage, "funnel_duckai_macos__pluslimit"),
+        (.userDidViewPromotionCard, "funnel_duckai_macos__promotioncard"),
+        (.userDidViewSettingsSubscribeButton, "funnel_duckai_macos__settings"),
+        (.userDidViewProUpgradeDisclaimerBanner, "funnel_duckai_macos__disclaimerbanner"),
+        (.userDidViewVoiceChatLimitModal, "funnel_duckai_macos__voicechatlimit"),
+        (.userDidViewVoiceChatDurationLimitModal, "funnel_duckai_macos__voicechatdurationlimit")
+    ])
+    @MainActor
+    func testFunnelImpressionMetricFiresImpressionPixelWithOrigin(metric: AIChatMetricName, origin: String) async {
+        pixelFiring.expectedFireCalls = [.init(pixel: AIChatPixel.aiChatSubscriptionFunnelImpression(origin: origin), frequency: .dailyAndCount)]
+
+        await withCheckedContinuation { continuation in
+            handler.didReportMetric(.init(metricName: metric)) {
+                continuation.resume()
+            }
+        }
+
+        #expect(pixelFiring.expectedFireCalls == pixelFiring.actualFireCalls)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("didReportMetric fires the subscription-funnel click pixel with the matching origin", .timeLimit(.minutes(1)), arguments: [
+        (AIChatMetricName.userDidClickAiSidebarUpgradeButton, "funnel_duckai_macos__aisidebar"),
+        (.userDidClickActivateSubscriptionButton, "funnel_duckai_macos__activatesubscription"),
+        (.userDidClickFreePlanUpgradeButton, "funnel_duckai_macos__freelabel"),
+        (.userDidClickFreeLimitSubscribeLink, "funnel_duckai_macos__freelimit"),
+        (.userDidClickImageGenerationLimitSubscribeButton, "funnel_duckai_macos__imagegenerationlimit"),
+        (.userDidClickPlusLimitUpgradeLink, "funnel_duckai_macos__pluslimit"),
+        (.userDidClickPromotionCardButton, "funnel_duckai_macos__promotioncard"),
+        (.userDidClickSettingsSubscribeButton, "funnel_duckai_macos__settings"),
+        (.userDidClickProUpgradeDisclaimerBannerButton, "funnel_duckai_macos__disclaimerbanner"),
+        (.userDidClickVoiceChatLimitModalSubscribeButton, "funnel_duckai_macos__voicechatlimit"),
+        (.userDidClickVoiceChatDurationLimitModalSubscribeButton, "funnel_duckai_macos__voicechatdurationlimit")
+    ])
+    @MainActor
+    func testFunnelClickMetricFiresClickPixelWithOrigin(metric: AIChatMetricName, origin: String) async {
+        pixelFiring.expectedFireCalls = [.init(pixel: AIChatPixel.aiChatSubscriptionFunnelClick(origin: origin), frequency: .dailyAndCount)]
+
+        await withCheckedContinuation { continuation in
+            handler.didReportMetric(.init(metricName: metric)) {
+                continuation.resume()
+            }
+        }
+
+        #expect(pixelFiring.expectedFireCalls == pixelFiring.actualFireCalls)
+    }
+
     // MARK: - Sync tests
 
     @available(iOS 16, macOS 13, *)
@@ -824,11 +878,13 @@ struct AIChatUserScriptHandlerTests {
 
     private func makeFeatureFlagger(aiChatSyncEnabled: Bool = false,
                                     aiChatNativeStorageEnabled: Bool = false,
-                                    aiChatNativeVoicePermissionFlowEnabled: Bool = false) -> MockFeatureFlagger {
+                                    aiChatNativeVoicePermissionFlowEnabled: Bool = false,
+                                    aiChatTabAttachmentLimitEnabled: Bool = false) -> MockFeatureFlagger {
         let featureFlagger = MockFeatureFlagger()
         featureFlagger.featuresStub["aiChatSync"] = aiChatSyncEnabled
         featureFlagger.featuresStub["aiChatNativeStorage"] = aiChatNativeStorageEnabled
         featureFlagger.featuresStub["aiChatNativeVoicePermissionFlow"] = aiChatNativeVoicePermissionFlowEnabled
+        featureFlagger.featuresStub["aiChatTabAttachmentLimit"] = aiChatTabAttachmentLimitEnabled
         return featureFlagger
     }
 
@@ -1045,6 +1101,32 @@ struct AIChatUserScriptHandlerTests {
                                            installTypeProvider: { .new })
 
         #expect(handler.getNativeConfigValues(isFireWindow: false).supportsNativeVoicePermissionHandler == false)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("When aiChatTabAttachmentLimit is enabled, attachmentLimits.tabs carries the native cap", .timeLimit(.minutes(1)))
+    func testWhenTabAttachmentLimitEnabledThenAttachmentLimitsCarriesTabCap() {
+        let featureFlagger = makeFeatureFlagger(aiChatTabAttachmentLimitEnabled: true)
+        let handler = AIChatMessageHandler(featureFlagger: featureFlagger,
+                                           promptHandler: AIChatPromptHandler.shared,
+                                           installDateProvider: { nil },
+                                           installTypeProvider: { .new })
+
+        let config = handler.getNativeConfigValues(isFireWindow: false)
+
+        #expect(config.attachmentLimits?.tabs?.maxAttached == AIChatOmnibarController.maxTabAttachments)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("When aiChatTabAttachmentLimit is disabled, attachmentLimits is omitted", .timeLimit(.minutes(1)))
+    func testWhenTabAttachmentLimitDisabledThenAttachmentLimitsIsNil() {
+        let featureFlagger = makeFeatureFlagger(aiChatTabAttachmentLimitEnabled: false)
+        let handler = AIChatMessageHandler(featureFlagger: featureFlagger,
+                                           promptHandler: AIChatPromptHandler.shared,
+                                           installDateProvider: { nil },
+                                           installTypeProvider: { .new })
+
+        #expect(handler.getNativeConfigValues(isFireWindow: false).attachmentLimits == nil)
     }
 
     // MARK: - voiceChatStartFailed flag gating

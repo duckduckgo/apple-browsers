@@ -1310,6 +1310,8 @@ final class AddressBarButtonsViewController: NSViewController {
         permissionCenterButtonHeightConstraint.constant = addressBarButtonSize
         youTubeAdBlockButtonWidthConstraint.constant = addressBarButtonSize
         youTubeAdBlockButtonHeightConstraint.constant = addressBarButtonSize
+
+        privacyDashboardButton.overrideAnimationViewSize = theme.addressBarStyleProvider.addressBarPrivacyAnimationSize
     }
 
     private func setupButtonIcons() {
@@ -1913,13 +1915,21 @@ final class AddressBarButtonsViewController: NSViewController {
         aiChatSettings.isAIFeaturesEnabled
     }
 
-    /// True when the toggle should be shown (feature active + user setting enabled).
-    /// Hidden in pure passive browsing — URL loaded, bar unfocused, not duck.ai — because there's no user
-    /// input or mode context to toggle between, and the design matches the pre-redesign behaviour there.
+    /// SearchMode Toggle will only be shown whenever the TextField is being edited
     private var shouldShowSearchModeToggle: Bool {
-        guard isSearchModeToggleFeatureActive && aiChatSettings.showSearchAndDuckAIToggle else { return false }
-        let isPassiveBrowsing = !isTextFieldEditorFirstResponder && !isAIChatPanelActive && controllerMode == .browsing
-        return !isPassiveBrowsing
+        guard isSearchModeToggleFeatureActive && aiChatSettings.showSearchAndDuckAIToggle else {
+            return false
+        }
+
+        guard themeManager.isAppRebranded else {
+            /// True when the toggle should be shown (feature active + user setting enabled).
+            /// Hidden in pure passive browsing — URL loaded, bar unfocused, not duck.ai — because there's no user
+            /// input or mode context to toggle between, and the design matches the pre-redesign behaviour there.
+            let isPassiveBrowsing = !isTextFieldEditorFirstResponder && !isAIChatPanelActive && controllerMode == .browsing
+            return !isPassiveBrowsing
+        }
+
+        return isTextFieldEditorFirstResponder
     }
 
     func updateButtons() {
@@ -2422,8 +2432,10 @@ final class AddressBarButtonsViewController: NSViewController {
                 newAnimationView.translatesAutoresizingMaskIntoConstraints = false
                 animationWrapperView.addSubview(newAnimationView)
 
+                let leadingConstant: CGFloat = themeManager.isAppRebranded ? 1 : 0.5
+
                 NSLayoutConstraint.activate([
-                    newAnimationView.leadingAnchor.constraint(equalTo: animationWrapperView.leadingAnchor, constant: 0.5),
+                    newAnimationView.leadingAnchor.constraint(equalTo: animationWrapperView.leadingAnchor, constant: leadingConstant),
                     newAnimationView.centerYAnchor.constraint(equalTo: animationWrapperView.centerYAnchor),
                     newAnimationView.widthAnchor.constraint(equalTo: animationWrapperView.heightAnchor, constant: 4),
                     newAnimationView.heightAnchor.constraint(equalTo: animationWrapperView.heightAnchor, constant: 4)
@@ -2668,6 +2680,7 @@ extension AddressBarButtonsViewController: ThemeUpdateListening {
         updateZoomButtonVisibility()
         refreshAskAIChatButtonStyle()
         refreshButtonsThemeStyle(theme: theme)
+        refreshNotificationsColor(theme: theme)
 
         // Update toggle control theme
         if let toggleControl = searchModeToggleControl {
@@ -2679,6 +2692,12 @@ extension AddressBarButtonsViewController: ThemeUpdateListening {
         let colorsProvider = theme.colorsProvider
 
         bookmarkButton.normalTintColor = colorsProvider.iconsColor
+    }
+
+    private func refreshNotificationsColor(theme: ThemeStyleProviding) {
+        let notificationColor = theme.colorsProvider.accentPrimaryColor
+        aiChatButton.notificationColor = notificationColor
+        askAIChatButton.notificationColor = notificationColor
     }
 }
 

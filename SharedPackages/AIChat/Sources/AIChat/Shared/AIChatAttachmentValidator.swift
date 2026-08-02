@@ -197,6 +197,11 @@ public struct AIChatAttachmentValidator {
         return max(0, maxTotalFileSizeBytes - usage.fileSizeBytesUsed - pendingFileSizeBytes)
     }
 
+    public var remainingFilesInConversation: Int {
+        guard let maxFilesPerConversation else { return 0 }
+        return max(0, maxFilesPerConversation - usage.filesUsed - pendingFileCount)
+    }
+
     // MARK: - File validation
 
     public func fileValidationMessage(for file: FileDescriptor) -> String? {
@@ -323,6 +328,23 @@ public struct AIChatAttachmentValidator {
         }
 
         return nil
+    }
+
+    /// Message naming the image cap that binds when no headroom is left (conversation cap prioritized); `nil` while another image can still be added.
+    public func imageCapacityValidationMessage() -> String? {
+        guard model?.supportsImageUpload == true,
+              let maxImagesPerTurn,
+              let maxImagesPerConversation else {
+            return messages.unavailable
+        }
+
+        guard remainingImagesForPicker == 0 else { return nil }
+
+        if remainingImagesInConversation - pendingImageCount <= 0 {
+            return messages.imageCountLimit(maxImagesPerConversation)
+        }
+
+        return messages.imageTurnLimit(maxImagesPerTurn)
     }
 
     public func promptValidationMessage(for text: String) -> String? {

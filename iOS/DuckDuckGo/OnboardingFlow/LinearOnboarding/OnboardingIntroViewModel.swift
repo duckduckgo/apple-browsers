@@ -144,7 +144,8 @@ final class OnboardingIntroViewModel: ObservableObject {
             tutorialSettings: tutorialSettings,
             contentProvider: OnboardingIntroContentProvider(
                 flowType: onboardingManager.currentOnboardingFlow,
-                featureFlagger: featureFlagger
+                featureFlagger: featureFlagger,
+                downloadReasonProvider: { onboardingManager.currentDownloadReason }
             ),
             onboardingResumeStepStore: onboardingResumeStepStore
         )

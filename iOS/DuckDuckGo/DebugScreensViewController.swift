@@ -64,9 +64,9 @@ struct DebugScreensView: View {
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                 }
-                .listRowBackground(Color(designSystemColor: .surface))
+                .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
                 DebugTogglesView(model: model)
-                    .listRowBackground(Color(designSystemColor: .surface))
+                    .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
 
                 if !model.pinnedScreens.isEmpty {
                     DebugScreensListView(model: model, sectionTitle: "Pinned", screens: model.pinnedScreens)
@@ -77,7 +77,7 @@ struct DebugScreensView: View {
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
-                .listRowBackground(Color(designSystemColor: .surface))
+                .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
 
                 DebugScreensListView(model: model, sectionTitle: "Screens", screens: model.unpinnedScreens)
                 DebugScreensListView(model: model, sectionTitle: "Actions", screens: model.actions)
@@ -122,7 +122,7 @@ struct DebugScreensView: View {
                             }
                         }
                     }
-                    .listRowBackground(Color(designSystemColor: .surface))
+                    .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
                 }
             }
         }
@@ -179,7 +179,7 @@ struct DebugScreensListView: View {
                     }
                 }
             }
-            .listRowBackground(Color(designSystemColor: .surface))
+            .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
         } header: {
             Text(verbatim: sectionTitle)
         }

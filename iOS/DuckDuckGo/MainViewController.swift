@@ -349,6 +349,10 @@ class MainViewController: UIViewController {
 
     private var duckPlayerEntryPointVisible = false
     private var subscriptionManager = AppDependencyProvider.shared.subscriptionManager
+
+    // Ensure the VPN entry-point impression pixels fire at most once per app launch.
+    private var didFireVPNToolbarImpressionPixel = false
+    private var didFireVPNAddressBarImpressionPixel = false
     
     private let daxEasterEggPresenter: DaxEasterEggPresenting
     private let daxEasterEggLogoStore: DaxEasterEggLogoStoring
@@ -1118,6 +1122,7 @@ class MainViewController: UIViewController {
                canShowVPNInUI {
                 segueToVPN(source: entryPoint.screenSource, scrollToStrictRouting: scrollToStrictRouting)
             } else {
+                PixelKit.fire(entryPoint.subscriptionFunnelClickPixel, frequency: .dailyAndCount)
                 segueToDuckDuckGoSubscription(origin: entryPoint.subscriptionFunnelOrigin.rawValue)
             }
         }
@@ -1635,7 +1640,7 @@ class MainViewController: UIViewController {
         updateUnifiedToggleInputKeyboardVisibility(keyboardVisible)
 
         let coordinator = unifiedToggleInputCoordinator
-        let isAITabCollapsed = coordinator?.displayState == .aiTab(.collapsed)
+        let isAITabCollapsed = coordinator?.isAITabCollapsed == true
         let isBottomExpandedUTIKeyboardAnchored = coordinator?.isInputEditing == true
             && coordinator?.cardPosition == .bottom
             && viewCoordinator.isNavigationBarContainerBottomKeyboardBased
@@ -1896,9 +1901,8 @@ class MainViewController: UIViewController {
         configureUnifiedInputEscapeHatch(model)
     }
 
-    /// True when an escape hatch action runs in focus mode (reads the persistent omnibar-session state, which
-    /// survives the card tap that dismisses the keyboard).
-    private var isEscapeHatchInFocusMode: Bool {
+    /// True when the address bar owns editing focus; survives a card tap that dismisses the keyboard.
+    private var isAddressBarFocused: Bool {
         omniBar.isTextFieldEditing || unifiedToggleInputCoordinator?.isOmnibarSession == true
     }
 
@@ -2439,7 +2443,7 @@ class MainViewController: UIViewController {
         let tab = tabManager.add(url: url, inheritedAttribution: inheritedAttribution)
         tab.inferredOpenerContext = .external
         tab.isVoiceModeRequested = voiceMode
-        tab.isDuckAIDeepLinkSurfaceRequested = url?.isDuckAIFeedbackOpen == true || url?.isDuckAIChatProtectionOpen == true
+        tab.isDuckAIDeepLinkSurfaceRequested = url?.isDuckAIChatProtectionOpen == true
 
         // Mark tab as external launch if opened from external URL or shortcut
         if fromExternalLink {
@@ -3162,6 +3166,30 @@ class MainViewController: UIViewController {
         ViewHighlighter.updatePositions()
         omniBar.refreshCustomizableButton()
         reanchorAITabCollapsedFooterIfNeeded()
+        updateWindowedAddressBarCorners()
+    }
+
+    // True while the address-bar move animation runs; it owns the container background. See `onMoveAddressBar`.
+    private var isAddressBarMoveInProgress = false
+
+    /// Rounds the top address bar's top corners on iPad when windowed. Uses `cornerRadius` without
+    /// clipping (keeps the pill shadow and below-bar overflow) and tints the exposed container darker
+    /// so the notch shows.
+    private func updateWindowedAddressBarCorners() {
+        // Floating UI and the move animation own the container background; don't fight them. Both
+        // re-run this via decorate().
+        guard !isFloatingUIEnabled, !isAddressBarMoveInProgress else { return }
+
+        let barView = omniBar.barView
+        let isTopPosition = !appSettings.currentAddressBarPosition.isBottom
+        let shouldRound = AppWidthObserver.shared.isLargeWidth && isTopPosition && barView.isWindowedPresentation
+
+        barView.layer.cornerCurve = .continuous
+        barView.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
+        barView.layer.cornerRadius = shouldRound ? TabsBarCell.cornerRadius : 0
+
+        let theme = ThemeManager.shared.currentTheme
+        viewCoordinator.navigationBarContainer.backgroundColor = shouldRound ? theme.tabsBarBackgroundColor : theme.barBackgroundColor
     }
 
     /// The AI-tab collapsed footer is a bottom chat input that must sit above the keyboard/home
@@ -3172,7 +3200,7 @@ class MainViewController: UIViewController {
     /// no-op once correct — no loop, no per-frame work beyond the bool check.
     private func reanchorAITabCollapsedFooterIfNeeded() {
         guard let coordinator = unifiedToggleInputCoordinator,
-              coordinator.displayState == .aiTab(.collapsed),
+              coordinator.isAITabCollapsed,
               coordinator.cardPosition == .bottom,
               !viewCoordinator.isNavigationBarContainerBottomKeyboardBased else { return }
         viewCoordinator.setNavBarContainerBottomToKeyboard()
@@ -4154,7 +4182,7 @@ extension MainViewController: BrowserChromeDelegate {
         chromeMorphAnimator.cancel()
 
         if percent < 1 {
-            if omniBar.isTextFieldEditing || unifiedToggleInputCoordinator?.isOmnibarSession == true {
+            if isAddressBarFocused {
                 dismissOmniBar()
             }
             _ = findInPageView?.resignFirstResponder()
@@ -4398,7 +4426,7 @@ extension MainViewController: BrowserChromeDelegate {
 
     func restoreCurrentBarsVisibilityAfterLayoutRefresh() {
         applyBarsVisibilityState(lastChromeVisibilityPercent, postChromeVisibilityNotification: false)
-        view.layoutIfNeeded()
+        view.setNeedsLayout()
     }
 
     // 1.0 - full size, 0.0 - hidden
@@ -4471,7 +4499,7 @@ extension MainViewController: BrowserChromeDelegate {
             }
             loadUrlInNewTab(url, inheritedAttribution: nil, fromExternalLink: fromExternalLink)
         case .loadInPlace:
-            currentTab?.isDuckAIDeepLinkSurfaceRequested = url.isDuckAIFeedbackOpen || url.isDuckAIChatProtectionOpen
+            currentTab?.isDuckAIDeepLinkSurfaceRequested = url.isDuckAIChatProtectionOpen
             loadUrl(url, fromExternalLink: fromExternalLink)
         }
     }
@@ -4976,11 +5004,13 @@ extension MainViewController: OmniBarDelegate {
                 //  which doesn't appear to work properly on iOS 26.4,
                 if #available(iOS 18.0, *) {
 
+                    self?.isAddressBarMoveInProgress = true
                     self?.viewCoordinator.navigationBarContainer.backgroundColor = .clear
                     self?.omniBar.prepareForMoveTransition()
                     UIView.animate(.smooth) {
                         self?.toggleAddressBarLocation()
                     } completion: {
+                        self?.isAddressBarMoveInProgress = false
                         self?.omniBar.moveTransitionCompleted()
                         self?.decorate()
                     }
@@ -5726,7 +5756,7 @@ extension MainViewController: EscapeHatchActionRouter {
         }
 
         // Captured before the confirmation dialog steals focus, so we can restore the keyboard afterwards.
-        let wasInFocusMode = isEscapeHatchInFocusMode
+        let wasInFocusMode = isAddressBarFocused
         let tabViewModel = tabManager.viewModel(for: tab)
         let presenter = FireConfirmationPresenter()
         presenter.presentFireConfirmation(
@@ -5756,7 +5786,7 @@ extension MainViewController: EscapeHatchActionRouter {
             return
         }
 
-        let wasInFocusMode = isEscapeHatchInFocusMode
+        let wasInFocusMode = isAddressBarFocused
         let tabViewModel = tabManager.viewModel(for: tab)
         let request = FireRequest(
             options: .all,
@@ -5988,6 +6018,7 @@ extension MainViewController: TabDelegate {
             self.dismissOmniBar()
             self.attachTab(tab: newTab)
             self.refreshOmniBar()
+            self.tabsBarController?.refresh(tabsModel: self.tabManager.currentTabsModel, scrollToSelected: true)
         }
 
         return newTab.webView
@@ -6093,16 +6124,10 @@ extension MainViewController: TabDelegate {
         // Capture source tab preview now; otherwise its thumbnail stays stale once we switch to the new tab.
         guard tab.link != nil else { return }
 
-        if floatingUIManager.isFloatingUIEnabled {
-            tab.preparePreview { [weak self, weak tab] image in
-                guard let self, let tab, let image else { return }
-                previewsSource.update(preview: image, forTab: tab.tabModel)
-            }
-            return
+        tab.preparePreviewForTabTransition { [weak self, weak tab] image in
+            guard let self, let tab, let image else { return }
+            previewsSource.update(preview: image, forTab: tab.tabModel)
         }
-
-        guard let image = tab.preparePreviewSync() else { return }
-        previewsSource.update(preview: image, forTab: tab.tabModel)
     }
 
     func tab(_ tab: TabViewController,
@@ -6184,43 +6209,6 @@ extension MainViewController: TabDelegate {
 
     func tabDidRequestAIChatHistory(tab: TabViewController, source: AIChatHistorySource) {
         openAIChatHistory(source: source)
-    }
-
-    func tabDidRequestAIChatFeedback(tab: TabViewController) {
-        let optionsView = DuckAIFeedbackOptionsView(
-            onSelect: { [weak self, weak tab] sentiment in
-                let positive: Bool
-                switch sentiment {
-                case .positive: positive = true
-                case .critical: positive = false
-                }
-                DailyPixel.fireDailyAndCount(pixel: .aiChatFeedbackOptionSelected,
-                                             withAdditionalParameters: [PixelParameters.sentiment: positive ? "positive" : "critical"])
-                self?.dismiss(animated: true) {
-                    tab?.openAIChatFeedback(positive: positive)
-                }
-            }
-        )
-        let hostingController = UIHostingController(rootView: optionsView)
-        hostingController.title = UserText.aiChatFeedbackOptionsTitle
-        hostingController.navigationItem.rightBarButtonItem = UIBarButtonItem(
-            image: DesignSystemImages.Glyphs.Size24.close,
-            primaryAction: UIAction { [weak self] _ in self?.dismiss(animated: true) }
-        )
-        let navigationController = UINavigationController(rootViewController: hostingController)
-        navigationController.navigationBar.tintColor = UIColor(designSystemColor: .textPrimary)
-        if let sheet = navigationController.sheetPresentationController {
-            if #available(iOS 16.0, *) {
-                sheet.detents = [.custom(identifier: .init("duckAIFeedbackOptions")) { _ in 230 }]
-            } else {
-                sheet.detents = [.medium()]
-            }
-            sheet.prefersGrabberVisible = true
-            if #unavailable(iOS 26) {
-                sheet.preferredCornerRadius = 24
-            }
-        }
-        present(navigationController, animated: true)
     }
 
     func openAIChatHistory(source: AIChatHistorySource = .browserMenu) {
@@ -6532,9 +6520,7 @@ extension MainViewController: TabSwitcherDelegate {
 
         if #available(iOS 18.4, *) {
             for tab in tabs {
-                if let tabController = tabManager.controller(for: tab) {
-                    webExtensionEventsCoordinator?.didCloseTab(tabController)
-                }
+                webExtensionEventsCoordinator?.didCloseTab(tab)
             }
         }
     }
@@ -6549,9 +6535,7 @@ extension MainViewController: TabSwitcherDelegate {
             showBars() // In case the browser chrome bars are hidden when calling this method
         }
         if #available(iOS 18.4, *) {
-            if let closingTabController = tabManager.controller(for: tab) {
-                webExtensionEventsCoordinator?.didCloseTab(closingTabController)
-            }
+            webExtensionEventsCoordinator?.didCloseTab(tab)
         }
 
         reportDuckAITabClosedIfNeeded(tab)
@@ -7027,9 +7011,7 @@ extension MainViewController: FireExecutorDelegate {
                 tabs = []
             }
             for tab in tabs {
-                if let tabController = tabManager.controller(for: tab) {
-                    webExtensionEventsCoordinator?.didCloseTab(tabController)
-                }
+                webExtensionEventsCoordinator?.didCloseTab(tab)
             }
         }
     }
@@ -7162,6 +7144,8 @@ extension MainViewController {
 
         viewCoordinator.navigationBarContainer.backgroundColor = theme.barBackgroundColor
         viewCoordinator.navigationBarContainer.tintColor = theme.barTintColor
+
+        updateWindowedAddressBarCorners()
 
         viewCoordinator.toolbar.tintColor = UIColor(singleUseColor: .toolbarButton)
 
@@ -7661,6 +7645,13 @@ extension MainViewController {
     func applyCustomizationForAddressBar(_ state: MobileCustomization.State) {
         omniBar.refreshCustomizableButton()
         if state.isEnabled {
+            if !isNewTabPageVisible, state.currentAddressBarButton == .vpn, !didFireVPNAddressBarImpressionPixel {
+                didFireVPNAddressBarImpressionPixel = true
+                Task {
+                    let isSubscriptionActive = (try? await subscriptionManager.getSubscription())?.isActive
+                    PixelKit.fire(SubscriptionPixel.subscriptionVPNAddressBarImpression(isSubscriptionActive: isSubscriptionActive), frequency: .dailyAndCount)
+                }
+            }
             omniBar.barView.customizableButton.menu = UIMenu(children: [
                 UIAction(title: "Customize", image: DesignSystemImages.Glyphs.Size16.options) { [weak self] _ in
                     self?.segueToCustomizeAddressBarSettings()
@@ -7727,6 +7718,14 @@ extension MainViewController {
 
         if let omniBarFireButton = viewCoordinator.omniBar.barView.fireButton as? BrowserChromeButton {
             customizeFireButton(omniBarFireButton, state: state)
+        }
+
+        if !isNewTabPageVisible, state.isEnabled, state.currentToolbarButton == .vpn, !didFireVPNToolbarImpressionPixel {
+            didFireVPNToolbarImpressionPixel = true
+            Task {
+                let isSubscriptionActive = (try? await subscriptionManager.getSubscription())?.isActive
+                PixelKit.fire(SubscriptionPixel.subscriptionVPNToolbarImpression(isSubscriptionActive: isSubscriptionActive), frequency: .dailyAndCount)
+            }
         }
     }
 

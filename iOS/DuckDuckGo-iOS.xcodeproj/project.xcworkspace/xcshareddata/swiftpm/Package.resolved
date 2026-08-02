@@ -168,8 +168,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/pointfreeco/swift-concurrency-extras",
       "state" : {
-        "revision" : "a90e2e40a7a840a853dd29e57cbef5dbb72c9d5b",
-        "version" : "1.4.0"
+        "revision" : "5fa253428866f2360c3754e88537f700ed2656b5",
+        "version" : "1.4.1"
       }
     },
     {
@@ -267,8 +267,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/pointfreeco/xctest-dynamic-overlay",
       "state" : {
-        "revision" : "dfd70507def84cb5fb821278448a262c6ff2bbad",
-        "version" : "1.9.0"
+        "revision" : "8f6abcf4c8950e2679d5b2fee4ca284fd7c34886",
+        "version" : "1.11.0"
       }
     },
     {

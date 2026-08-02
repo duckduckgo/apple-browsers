@@ -21,6 +21,7 @@ import AppIntents
 import Common
 import WidgetKit
 import SwiftUI
+import DesignResourcesKitIcons
 import Core
 import CoreData
 import Kingfisher
@@ -216,6 +217,12 @@ struct PasswordsWidget: Widget {
 
 @main
 struct Widgets: WidgetBundle {
+
+    init() {
+        // The widget extension has no live FeatureFlagger; the app-rebrand flag has shipped,
+        // so opt the widgets' visuals into the rebrand unconditionally. Revert to restore flag-gating.
+        AppRebrand.isAppRebranded = { true }
+    }
 
     @WidgetBundleBuilder
     var body: some Widget {

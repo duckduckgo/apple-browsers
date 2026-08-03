@@ -2796,8 +2796,6 @@
 		9D9AE86E2AA76D1F0026E7DC /* LoginItem+NetworkProtection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D9AE8682AA76CDC0026E7DC /* LoginItem+NetworkProtection.swift */; };
 		9D9AE91D2AAA3B450026E7DC /* DuckDuckGoDBPBackgroundAgentAppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D9AE9152AAA3B450026E7DC /* DuckDuckGoDBPBackgroundAgentAppDelegate.swift */; };
 		9D9AE91E2AAA3B450026E7DC /* DuckDuckGoDBPBackgroundAgentAppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D9AE9152AAA3B450026E7DC /* DuckDuckGoDBPBackgroundAgentAppDelegate.swift */; };
-		9D9AE91F2AAA3B450026E7DC /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 9D9AE9162AAA3B450026E7DC /* Assets.xcassets */; };
-		9D9AE9202AAA3B450026E7DC /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 9D9AE9162AAA3B450026E7DC /* Assets.xcassets */; };
 		9D9AE9212AAA3B450026E7DC /* UserText.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D9AE9172AAA3B450026E7DC /* UserText.swift */; };
 		9D9AE9222AAA3B450026E7DC /* UserText.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D9AE9172AAA3B450026E7DC /* UserText.swift */; };
 		9D9DE5732C63AA0700D20B15 /* AppKitExtensions in Frameworks */ = {isa = PBXBuildFile; productRef = 9D9DE5722C63AA0700D20B15 /* AppKitExtensions */; };
@@ -4339,6 +4337,22 @@
 		DBDE0002000000000000BDE0 /* NavigationPixelNavigationResponderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBDE0001000000000000BDE0 /* NavigationPixelNavigationResponderTests.swift */; };
 		DBDE0003000000000000BDE0 /* NavigationPixelNavigationResponderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBDE0001000000000000BDE0 /* NavigationPixelNavigationResponderTests.swift */; };
 		DD64C09B3FB444E5878C0D31 /* MockExperimentActionPixelStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17FCC743A88243F0AEF8B22D /* MockExperimentActionPixelStore.swift */; };
+		DD7A0101301D500100000001 /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 378CA39E2FBC79290043CF38 /* AppIcon.icon */; };
+		DD7A0101301D500100000002 /* AppIcon-Debug.icon in Resources */ = {isa = PBXBuildFile; fileRef = ED314EC0301CC10E00D1A0A0 /* AppIcon-Debug.icon */; };
+		DD7A0101301D500100000003 /* AppIcon-Review.icon in Resources */ = {isa = PBXBuildFile; fileRef = ED314EC4301CC10E00D1A0A0 /* AppIcon-Review.icon */; };
+		DD7A0101301D500100000004 /* AppIcon-Alpha.icon in Resources */ = {isa = PBXBuildFile; fileRef = ED314EC3301CC10E00D1A0A0 /* AppIcon-Alpha.icon */; };
+		DD7A0102301D500100000001 /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 378CA39E2FBC79290043CF38 /* AppIcon.icon */; };
+		DD7A0102301D500100000002 /* AppIcon-Debug.icon in Resources */ = {isa = PBXBuildFile; fileRef = ED314EC0301CC10E00D1A0A0 /* AppIcon-Debug.icon */; };
+		DD7A0102301D500100000003 /* AppIcon-Review.icon in Resources */ = {isa = PBXBuildFile; fileRef = ED314EC4301CC10E00D1A0A0 /* AppIcon-Review.icon */; };
+		DD7A0102301D500100000004 /* AppIcon-Alpha.icon in Resources */ = {isa = PBXBuildFile; fileRef = ED314EC3301CC10E00D1A0A0 /* AppIcon-Alpha.icon */; };
+		DD7A0103301D500100000001 /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 378CA39E2FBC79290043CF38 /* AppIcon.icon */; };
+		DD7A0103301D500100000002 /* AppIcon-Debug.icon in Resources */ = {isa = PBXBuildFile; fileRef = ED314EC0301CC10E00D1A0A0 /* AppIcon-Debug.icon */; };
+		DD7A0103301D500100000003 /* AppIcon-Review.icon in Resources */ = {isa = PBXBuildFile; fileRef = ED314EC4301CC10E00D1A0A0 /* AppIcon-Review.icon */; };
+		DD7A0103301D500100000004 /* AppIcon-Alpha.icon in Resources */ = {isa = PBXBuildFile; fileRef = ED314EC3301CC10E00D1A0A0 /* AppIcon-Alpha.icon */; };
+		DD7A0104301D500100000001 /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 378CA39E2FBC79290043CF38 /* AppIcon.icon */; };
+		DD7A0104301D500100000002 /* AppIcon-Debug.icon in Resources */ = {isa = PBXBuildFile; fileRef = ED314EC0301CC10E00D1A0A0 /* AppIcon-Debug.icon */; };
+		DD7A0104301D500100000003 /* AppIcon-Review.icon in Resources */ = {isa = PBXBuildFile; fileRef = ED314EC4301CC10E00D1A0A0 /* AppIcon-Review.icon */; };
+		DD7A0104301D500100000004 /* AppIcon-Alpha.icon in Resources */ = {isa = PBXBuildFile; fileRef = ED314EC3301CC10E00D1A0A0 /* AppIcon-Alpha.icon */; };
 		DDBB9E343D3A8AA3C0A9FBF7 /* AIChatDebugServer in Frameworks */ = {isa = PBXBuildFile; productRef = 30EF23C27554D957E2FCC6EE /* AIChatDebugServer */; };
 		DE5427713AC642CE9E29303C /* TabContentDisplayTitleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6308141E2A1B48C8B5FC059A /* TabContentDisplayTitleTests.swift */; };
 		DFE9DC288642264669587656 /* WebViewUserAgentProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAAA013D5BF54C0C260E784E /* WebViewUserAgentProvider.swift */; };
@@ -6219,7 +6233,6 @@
 		9D9AE8F22AAA39D30026E7DC /* DuckDuckGo Personal Information Removal App Store.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "DuckDuckGo Personal Information Removal App Store.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		9D9AE9142AAA3B450026E7DC /* Info-AppStore.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "Info-AppStore.plist"; sourceTree = "<group>"; };
 		9D9AE9152AAA3B450026E7DC /* DuckDuckGoDBPBackgroundAgentAppDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DuckDuckGoDBPBackgroundAgentAppDelegate.swift; sourceTree = "<group>"; };
-		9D9AE9162AAA3B450026E7DC /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		9D9AE9172AAA3B450026E7DC /* UserText.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = UserText.swift; sourceTree = "<group>"; };
 		9D9AE9182AAA3B450026E7DC /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		9D9AE9192AAA3B450026E7DC /* DuckDuckGoDBPBackgroundAgentAppStore.entitlements */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.entitlements; path = DuckDuckGoDBPBackgroundAgentAppStore.entitlements; sourceTree = "<group>"; };
@@ -10696,7 +10709,6 @@
 				F17E7DDB2C7C7F8100907A84 /* Logger+DBPBackgroundAgent.swift */,
 				9D9AE9172AAA3B450026E7DC /* UserText.swift */,
 				31ECDA102BED339600AE679F /* DataBrokerAuthenticationManagerBuilder.swift */,
-				9D9AE9162AAA3B450026E7DC /* Assets.xcassets */,
 				9D9AE91A2AAA3B450026E7DC /* DuckDuckGoDBPBackgroundAgent.entitlements */,
 				9D9AE9192AAA3B450026E7DC /* DuckDuckGoDBPBackgroundAgentAppStore.entitlements */,
 				9D9AE9182AAA3B450026E7DC /* Info.plist */,
@@ -14763,6 +14775,10 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				DD7A0101301D500100000001 /* AppIcon.icon in Resources */,
+				DD7A0101301D500100000002 /* AppIcon-Debug.icon in Resources */,
+				DD7A0101301D500100000003 /* AppIcon-Review.icon in Resources */,
+				DD7A0101301D500100000004 /* AppIcon-Alpha.icon in Resources */,
 				4B1561872F2FF36400E444AA /* macos-config.json in Resources */,
 				B5165043300FACD7007AE203 /* upsell_devices_reveal.json in Resources */,
 				B5165044300FACD7007AE203 /* upsell_devices_loop.json in Resources */,
@@ -14780,6 +14796,10 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				DD7A0102301D500100000001 /* AppIcon.icon in Resources */,
+				DD7A0102301D500100000002 /* AppIcon-Debug.icon in Resources */,
+				DD7A0102301D500100000003 /* AppIcon-Review.icon in Resources */,
+				DD7A0102301D500100000004 /* AppIcon-Alpha.icon in Resources */,
 				4B1561882F2FF36400E444AA /* macos-config.json in Resources */,
 				B5165049300FACD7007AE203 /* upsell_devices_reveal.json in Resources */,
 				B516504A300FACD7007AE203 /* upsell_devices_loop.json in Resources */,
@@ -14862,7 +14882,10 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				9D9AE91F2AAA3B450026E7DC /* Assets.xcassets in Resources */,
+				DD7A0103301D500100000001 /* AppIcon.icon in Resources */,
+				DD7A0103301D500100000002 /* AppIcon-Debug.icon in Resources */,
+				DD7A0103301D500100000003 /* AppIcon-Review.icon in Resources */,
+				DD7A0103301D500100000004 /* AppIcon-Alpha.icon in Resources */,
 				4B1561892F2FF36400E444AA /* macos-config.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -14871,7 +14894,10 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				9D9AE9202AAA3B450026E7DC /* Assets.xcassets in Resources */,
+				DD7A0104301D500100000001 /* AppIcon.icon in Resources */,
+				DD7A0104301D500100000002 /* AppIcon-Debug.icon in Resources */,
+				DD7A0104301D500100000003 /* AppIcon-Review.icon in Resources */,
+				DD7A0104301D500100000004 /* AppIcon-Alpha.icon in Resources */,
 				4B15618A2F2FF36400E444AA /* macos-config.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

@@ -65,14 +65,32 @@
         "owners": ["tomasstrba"],
         "triggers": ["search_ddg"],
         "suffixes": ["first_daily_count"],
-        "parameters": ["appVersion", "pixelSource", "channel"]
+        "parameters": [
+            {
+                "key": "isFireWindow",
+                "type": "boolean",
+                "description": "Whether the submission came from a Fire Window's New Tab Page"
+            },
+            "appVersion",
+            "pixelSource",
+            "channel"
+        ]
     },
     "m_mac_new-tab-page_prompt_submitted": {
         "description": "Fires when a user submits a chat prompt via the New Tab Page AI chat box. Helps track interaction with DuckAI.",
         "owners": ["tomasstrba"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count"],
-        "parameters": ["appVersion", "pixelSource", "channel"]
+        "parameters": [
+            {
+                "key": "isFireWindow",
+                "type": "boolean",
+                "description": "Whether the submission came from a Fire Window's New Tab Page"
+            },
+            "appVersion",
+            "pixelSource",
+            "channel"
+        ]
     },
     "m_mac_new-tab-page_omnibar_mode_changed": {
         "description": "Fires when a user switches between search and DuckAI mode in the omnibar. Used to understand mode preference.",

@@ -226,4 +226,19 @@ final class NewTabPageCoordinatorTests: XCTestCase {
         XCTAssertEqual(firePixelCalls.count, 1)
     }
 
+    func testWhenFireWindowNewTabPageAppearsThenPixelIsTaggedAsFireWindow() throws {
+        notificationCenter.post(
+            name: .newTabPageWebViewDidAppear,
+            object: nil,
+            userInfo: [NewTabPageWebViewModel.isFireWindowUserInfoKey: true]
+        )
+        let pixel = try XCTUnwrap(firePixelCalls.first as? NewTabPagePixel)
+        switch pixel {
+        case .newTabPageShown(_, _, _, isFireWindow: true):
+            break
+        default:
+            XCTFail("Unexpected pixel value: \(pixel)")
+        }
+    }
+
 }

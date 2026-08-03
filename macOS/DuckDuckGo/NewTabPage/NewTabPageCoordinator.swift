@@ -119,8 +119,9 @@ final class NewTabPageCoordinator {
         )
 
         notificationCenter.publisher(for: .newTabPageWebViewDidAppear)
-            .sink { [weak self] _ in
-                self?.newTabPageShownPixelSender.firePixel()
+            .sink { [weak self] notification in
+                let isFireWindow = notification.userInfo?[NewTabPageWebViewModel.isFireWindowUserInfoKey] as? Bool ?? false
+                self?.newTabPageShownPixelSender.firePixel(isFireWindow: isFireWindow)
             }
             .store(in: &cancellables)
     }

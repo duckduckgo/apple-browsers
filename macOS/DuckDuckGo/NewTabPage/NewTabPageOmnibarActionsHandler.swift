@@ -69,6 +69,13 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
         self.presentDeleteConfirmation = presentDeleteConfirmation
     }
 
+    /// Whether the NTP omnibar submitting this action lives in a Fire Window — used only to tag
+    /// pixels, resolved the same way the action itself resolves its target window.
+    @MainActor
+    private var isFireWindowSubmission: Bool {
+        windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel.isBurner ?? false
+    }
+
     func submitSearch(_ term: String, target: NewTabPage.NewTabPageDataModel.OpenTarget) {
         // Check for the keyboard shortcut to open the chat
         if isShiftPressed() {
@@ -76,7 +83,7 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
             return
         }
 
-        firePixel(NewTabPagePixel.searchSubmitted)
+        firePixel(NewTabPagePixel.searchSubmitted(isFireWindow: isFireWindowSubmission))
 
         guard let mainWindowController = windowControllersManager.lastKeyMainWindowController else {
             Logger.newTabPageOmnibar.error("Failed to get mainWindowController in submitSearch")
@@ -148,7 +155,7 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
                     reasoningEffort: String?,
                     pageContexts: [NewTabPage.NewTabPageDataModel.OmnibarPageContext]?,
                     files: [NewTabPage.NewTabPageDataModel.OmnibarPromptFile]?) {
-        firePixel(NewTabPagePixel.promptSubmitted)
+        firePixel(NewTabPagePixel.promptSubmitted(isFireWindow: isFireWindowSubmission))
 
         if let images, !images.isEmpty {
             PixelKit.fire(AIChatPixel.aiChatNtpSubmitWithImage(imageCount: images.count), frequency: .dailyAndCount, includeAppVersionParameter: true)

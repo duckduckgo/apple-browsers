@@ -80,18 +80,18 @@ final class NewTabPageShownPixelSenderTests: XCTestCase {
     }
 
     func testWhenFirePixelIsCalledThenPixelIsSent() {
-        handler.firePixel()
+        handler.firePixel(isFireWindow: false)
         XCTAssertEqual(firePixelCalls.count, 1)
     }
 
     func testWhenFavoritesIsVisibleThenPixelSetsTrueForFavorites() throws {
         appearancePreferences.isFavoriteVisible = true
 
-        handler.firePixel()
+        handler.firePixel(isFireWindow: false)
         let pixel = try XCTUnwrap(firePixelCalls.first as? NewTabPagePixel)
 
         switch pixel {
-        case .newTabPageShown(favorites: true, _, _):
+        case .newTabPageShown(favorites: true, _, _, _):
             break
         default:
             XCTFail("Unexpected pixel value: \(pixel)")
@@ -101,11 +101,11 @@ final class NewTabPageShownPixelSenderTests: XCTestCase {
     func testWhenFavoritesIsNotVisibleThenPixelSetsFalseForFavorites() throws {
         appearancePreferences.isFavoriteVisible = false
 
-        handler.firePixel()
+        handler.firePixel(isFireWindow: false)
         let pixel = try XCTUnwrap(firePixelCalls.first as? NewTabPagePixel)
 
         switch pixel {
-        case .newTabPageShown(favorites: false, _, _):
+        case .newTabPageShown(favorites: false, _, _, _):
             break
         default:
             XCTFail("Unexpected pixel value: \(pixel)")
@@ -116,11 +116,11 @@ final class NewTabPageShownPixelSenderTests: XCTestCase {
         appearancePreferences.isProtectionsReportVisible = true
         visibleFeedProvider.visibleFeed = .privacyStats
 
-        handler.firePixel()
+        handler.firePixel(isFireWindow: false)
         let pixel = try XCTUnwrap(firePixelCalls.first as? NewTabPagePixel)
 
         switch pixel {
-        case .newTabPageShown(_, protections: .blockedTrackingAttempts, _):
+        case .newTabPageShown(_, protections: .blockedTrackingAttempts, _, _):
             break
         default:
             XCTFail("Unexpected pixel value: \(pixel)")
@@ -131,11 +131,11 @@ final class NewTabPageShownPixelSenderTests: XCTestCase {
         appearancePreferences.isProtectionsReportVisible = true
         visibleFeedProvider.visibleFeed = .activity
 
-        handler.firePixel()
+        handler.firePixel(isFireWindow: false)
         let pixel = try XCTUnwrap(firePixelCalls.first as? NewTabPagePixel)
 
         switch pixel {
-        case .newTabPageShown(_, protections: .recentActivity, _):
+        case .newTabPageShown(_, protections: .recentActivity, _, _):
             break
         default:
             XCTFail("Unexpected pixel value: \(pixel)")
@@ -146,11 +146,11 @@ final class NewTabPageShownPixelSenderTests: XCTestCase {
         appearancePreferences.isProtectionsReportVisible = true
         visibleFeedProvider.visibleFeed = nil
 
-        handler.firePixel()
+        handler.firePixel(isFireWindow: false)
         let pixel = try XCTUnwrap(firePixelCalls.first as? NewTabPagePixel)
 
         switch pixel {
-        case .newTabPageShown(_, protections: .collapsed, _):
+        case .newTabPageShown(_, protections: .collapsed, _, _):
             break
         default:
             XCTFail("Unexpected pixel value: \(pixel)")
@@ -160,11 +160,11 @@ final class NewTabPageShownPixelSenderTests: XCTestCase {
     func testWhenProtectionsReportIsNotVisibleThenPixelSetsHiddenForProtectionsReport() throws {
         appearancePreferences.isProtectionsReportVisible = false
 
-        handler.firePixel()
+        handler.firePixel(isFireWindow: false)
         let pixel = try XCTUnwrap(firePixelCalls.first as? NewTabPagePixel)
 
         switch pixel {
-        case .newTabPageShown(_, protections: .hidden, _):
+        case .newTabPageShown(_, protections: .hidden, _, _):
             break
         default:
             XCTFail("Unexpected pixel value: \(pixel)")
@@ -174,11 +174,11 @@ final class NewTabPageShownPixelSenderTests: XCTestCase {
     func testWhenBackgroundIsCustomThenPixelSetsTrueForCustomBackground() throws {
         customizationModel.customBackground = .gradient(.gradient02)
 
-        handler.firePixel()
+        handler.firePixel(isFireWindow: false)
         let pixel = try XCTUnwrap(firePixelCalls.first as? NewTabPagePixel)
 
         switch pixel {
-        case .newTabPageShown(_, _, customBackground: true):
+        case .newTabPageShown(_, _, customBackground: true, _):
             break
         default:
             XCTFail("Unexpected pixel value: \(pixel)")
@@ -188,11 +188,35 @@ final class NewTabPageShownPixelSenderTests: XCTestCase {
     func testWhenBackgroundIsDefaultThenPixelSetsFalseForCustomBackground() throws {
         customizationModel.customBackground = nil
 
-        handler.firePixel()
+        handler.firePixel(isFireWindow: false)
         let pixel = try XCTUnwrap(firePixelCalls.first as? NewTabPagePixel)
 
         switch pixel {
-        case .newTabPageShown(_, _, customBackground: false):
+        case .newTabPageShown(_, _, customBackground: false, _):
+            break
+        default:
+            XCTFail("Unexpected pixel value: \(pixel)")
+        }
+    }
+
+    func testWhenFireWindowThenPixelSetsTrueForIsFireWindow() throws {
+        handler.firePixel(isFireWindow: true)
+        let pixel = try XCTUnwrap(firePixelCalls.first as? NewTabPagePixel)
+
+        switch pixel {
+        case .newTabPageShown(_, _, _, isFireWindow: true):
+            break
+        default:
+            XCTFail("Unexpected pixel value: \(pixel)")
+        }
+    }
+
+    func testWhenNotFireWindowThenPixelSetsFalseForIsFireWindow() throws {
+        handler.firePixel(isFireWindow: false)
+        let pixel = try XCTUnwrap(firePixelCalls.first as? NewTabPagePixel)
+
+        switch pixel {
+        case .newTabPageShown(_, _, _, isFireWindow: false):
             break
         default:
             XCTFail("Unexpected pixel value: \(pixel)")

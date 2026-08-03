@@ -36,7 +36,7 @@ enum NewTabPagePixel: PixelKitEvent {
      * Anomaly Investigation:
      * - Anomaly in this pixel may mean an increase/drop in app use.
      */
-    case newTabPageShown(favorites: Bool, protections: ProtectionsReportMode, customBackground: Bool)
+    case newTabPageShown(favorites: Bool, protections: ProtectionsReportMode, customBackground: Bool, isFireWindow: Bool)
 
     /**
      * Event Trigger: Favorites section on NTP is hidden.
@@ -151,8 +151,8 @@ enum NewTabPagePixel: PixelKitEvent {
     case customizerHidden
 
     // See macOS/PixelDefinitions/pixels/new_tab_page_pixels.json5
-    case searchSubmitted
-    case promptSubmitted
+    case searchSubmitted(isFireWindow: Bool)
+    case promptSubmitted(isFireWindow: Bool)
     case omnibarModeChanged(mode: OmnibarMode)
     case omnibarHidden
     case omnibarShown
@@ -221,15 +221,20 @@ enum NewTabPagePixel: PixelKitEvent {
             return [
                 "themePopoverWasOpen": themePopoverWasOpen.description
             ]
-        case .newTabPageShown(let favorites, let protections, let customBackground):
+        case .newTabPageShown(let favorites, let protections, let customBackground, let isFireWindow):
             return [
                 "favorites": String(favorites),
                 "protections": protections.rawValue,
-                "background": customBackground ? "custom" : "default"
+                "background": customBackground ? "custom" : "default",
+                "isFireWindow": String(isFireWindow)
             ]
         case .omnibarModeChanged(let mode):
             return [
                 "mode": mode.rawValue
+            ]
+        case .searchSubmitted(let isFireWindow), .promptSubmitted(let isFireWindow):
+            return [
+                "isFireWindow": String(isFireWindow)
             ]
         case .newTabPageLoadingTime(let duration):
             // "loadingTime" is reported in **milliseconds**
@@ -259,8 +264,6 @@ enum NewTabPagePixel: PixelKitEvent {
                 .privacyStatsCouldNotLoadDatabase,
                 .privacyStatsDatabaseError,
                 .newTabPageExceptionReported,
-                .searchSubmitted,
-                .promptSubmitted,
                 .omnibarHidden,
                 .omnibarShown,
                 .aiChatRecentChatSelectedPinnedMouse,

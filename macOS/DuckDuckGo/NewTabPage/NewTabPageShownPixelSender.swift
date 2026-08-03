@@ -44,12 +44,13 @@ final class NewTabPageShownPixelSender {
         self.fireDailyPixel = fireDailyPixel
     }
 
-    func firePixel() {
+    func firePixel(isFireWindow: Bool) {
         fireDailyPixel(
             NewTabPagePixel.newTabPageShown(
                 favorites: isFavoritesVisible,
                 protections: protectionsReportMode,
-                customBackground: hasCustomBackground
+                customBackground: hasCustomBackground,
+                isFireWindow: isFireWindow
             )
         )
     }

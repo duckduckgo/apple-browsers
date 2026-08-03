@@ -310,6 +310,7 @@ final class AIChatOmnibarController {
         // Defer the tab open: synchronously it tears the panel down mid-click, so the click falls through to the bookmarks bar behind.
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
+            AIChatConversationSourceHandler.shared.setData(.voice)
             self.aiChatTabOpener.openVoiceSession(
                 inSourceCollection: self.origin?.originTabCollectionViewModel,
                 behavior: .newTab(selected: true)
@@ -1121,12 +1122,14 @@ final class AIChatOmnibarController {
 
     func viewAllChats() {
         PixelKit.fire(AIChatPixel.aiChatViewAllChatsClicked, frequency: .dailyAndCount, includeAppVersionParameter: true)
+        AIChatConversationSourceHandler.shared.setData(.omnibar)
         aiChatTabOpener.openNewAIChat(in: .newTab(selected: true))
     }
 
     /// Fallback when no window can host the modal: opens the customize URL in a tab.
     func openCustomizeResponses() {
         let url = AIChatURLParameters.nativeCustomizeModalURL(from: AIChatRemoteSettings().aiChatURL)
+        AIChatConversationSourceHandler.shared.setData(.omnibar)
         aiChatTabOpener.openAIChatTab(with: .url(url), behavior: .newTab(selected: true))
     }
 
@@ -1277,6 +1280,7 @@ final class AIChatOmnibarController {
             if surface.routesSubmissionThroughHost {
                 delegate?.aiChatOmnibarController(self, requestsSubmissionOf: trimmedText, payload: prompt)
             } else {
+                AIChatConversationSourceHandler.shared.setData(.omnibar)
                 aiChatTabOpener.openAIChatTab(
                     with: .query(trimmedText, shouldAutoSubmit: true),
                     behavior: .currentTab

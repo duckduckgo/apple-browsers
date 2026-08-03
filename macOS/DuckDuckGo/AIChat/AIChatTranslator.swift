@@ -95,6 +95,7 @@ final class AIChatTranslator: AIChatTranslating {
                 frequency: .dailyAndStandard
             )
         }
+        AIChatConversationSourceHandler.shared.setData(.translation)
         aiChatCoordinator.revealChat(for: prompt)
     }
 

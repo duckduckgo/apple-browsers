@@ -96,13 +96,75 @@
         "description": "Fired when user submits their first prompt in a new Duck.ai conversation",
         "owners": ["pikorddg"],
         "triggers": ["other"],
-        "parameters": ["appVersion", "pixelSource", "channel"]
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "source",
+                "description": "The user-facing surface that opened the chat this conversation was started from",
+                "type": "string",
+                "enum": [
+                    "tab-bar-button",
+                    "ask-about-page",
+                    "tab-bar-sidebar",
+                    "address-bar",
+                    "new-tab-page",
+                    "omnibar",
+                    "prompt-bar",
+                    "main-menu",
+                    "more-options-menu",
+                    "summarization",
+                    "translation",
+                    "attach-selection",
+                    "context-menu",
+                    "serp",
+                    "sidebar-handoff",
+                    "voice",
+                    "image",
+                    "recent-chat",
+                    "settings",
+                    "other"
+                ]
+            }
+        ]
     },
     "m_mac_aichat_sent_prompt_ongoing_chat": {
         "description": "Fired when user submits a prompt in an ongoing Duck.ai conversation",
         "owners": ["pikorddg"],
         "triggers": ["other"],
-        "parameters": ["appVersion", "pixelSource", "channel"]
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "source",
+                "description": "The user-facing surface that opened the chat this conversation belongs to",
+                "type": "string",
+                "enum": [
+                    "tab-bar-button",
+                    "ask-about-page",
+                    "tab-bar-sidebar",
+                    "address-bar",
+                    "new-tab-page",
+                    "omnibar",
+                    "prompt-bar",
+                    "main-menu",
+                    "more-options-menu",
+                    "summarization",
+                    "translation",
+                    "attach-selection",
+                    "context-menu",
+                    "serp",
+                    "sidebar-handoff",
+                    "voice",
+                    "image",
+                    "recent-chat",
+                    "settings",
+                    "other"
+                ]
+            }
+        ]
     },
     "m_mac_aichat_suggestion_selected": {
         "description": "Fired when the user taps a sidebar page-suggestion chip (including ask-about-page, which only attaches the page and does not submit a prompt)",

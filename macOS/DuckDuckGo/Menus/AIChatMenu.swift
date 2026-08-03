@@ -328,18 +328,22 @@ extension AIChatMenu.Actions {
     ) -> AIChatMenu.Actions {
         AIChatMenu.Actions(
             openNewChat: {
+                AIChatConversationSourceHandler.shared.setData(.tabBarButton)
                 tabOpener.openAIChatTab(with: .newChat, behavior: .newTab(selected: true))
             },
             openNewVoiceChat: {
                 let sourceCollection = windowControllersManager.lastKeyMainWindowController?
                     .mainViewController.tabCollectionViewModel
+                AIChatConversationSourceHandler.shared.setData(.voice)
                 tabOpener.openVoiceSession(inSourceCollection: sourceCollection, behavior: .newTab(selected: true))
             },
             openNewImageChat: {
                 let url = AIChatURLParameters.imageModeURL(from: remoteSettings.aiChatURL)
+                AIChatConversationSourceHandler.shared.setData(.imageGeneration)
                 tabOpener.openAIChatTab(with: .url(url), behavior: .newTab(selected: true))
             },
             openChat: { suggestion in
+                AIChatConversationSourceHandler.shared.setData(.recentChat)
                 tabOpener.openAIChatTab(with: .existingChat(chatId: suggestion.chatId), behavior: .currentTab)
             },
             deleteAllChats: {

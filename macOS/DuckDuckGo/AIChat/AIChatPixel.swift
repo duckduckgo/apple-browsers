@@ -18,6 +18,7 @@
 
 import Foundation
 import PixelKit
+import AIChat
 
 /// This enum keeps pixels related to AI Chat (duck.ai)
 /// > Related links:
@@ -382,11 +383,13 @@ enum AIChatPixel: PixelKitEvent {
 
     // MARK: - Prompt Metrics
 
-    /// Event Trigger: User submits their first prompt in a new Duck.ai conversation
-    case aiChatMetricStartNewConversation
+    /// Event Trigger: User submits their first prompt in a new Duck.ai conversation.
+    /// `source` attributes the conversation to the surface that opened the chat.
+    case aiChatMetricStartNewConversation(source: AIChatConversationSource)
 
-    /// Event Trigger: User submits a prompt in an ongoing Duck.ai conversation
-    case aiChatMetricSentPromptOngoingChat
+    /// Event Trigger: User submits a prompt in an ongoing Duck.ai conversation.
+    /// `source` attributes the conversation to the surface that opened the chat.
+    case aiChatMetricSentPromptOngoingChat(source: AIChatConversationSource)
 
     /// Event Trigger: User taps a sidebar page-suggestion chip (a tailored prompt or "Ask about this page").
     /// `suggestionId` is the FE's fixed catalog key; `pageType` is the FE's coarse page classification.
@@ -862,8 +865,6 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatNtpWebSearchSubmitted,
                 .aiChatViewAllChatsClicked,
                 .aiChatModelsFetchFailed,
-                .aiChatMetricStartNewConversation,
-                .aiChatMetricSentPromptOngoingChat,
                 .aiChatTermsAcceptedDuplicateSyncOff,
                 .aiChatTermsAcceptedDuplicateSyncOn,
                 .aiChatOpenDuckAiMainMenu,
@@ -894,6 +895,9 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatNtpCustomizeResponsesOpened,
                 .serpSettingsUnrecognizedValue:
             return nil
+        case .aiChatMetricStartNewConversation(let source),
+                .aiChatMetricSentPromptOngoingChat(let source):
+            return ["source": source.rawValue]
         case .aiChatAddressBarSubscriptionUpsellTriggered(let currentTier, let requiredTier, let flowType):
             return ["current_tier": currentTier, "required_tier": requiredTier, "flow_type": flowType]
         case .aiChatSubscriptionFunnelImpression(let origin),

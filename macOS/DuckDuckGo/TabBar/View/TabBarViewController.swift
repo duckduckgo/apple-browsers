@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import Cocoa
 import Combine
 import Common
@@ -1143,6 +1144,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
                     frequency: .dailyAndStandard
                 )
             }
+            AIChatConversationSourceHandler.shared.setData(.askAboutPage)
             aiChatCoordinator?.revealChat()
         }
 
@@ -1174,6 +1176,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
                     ),
                     frequency: .dailyAndStandard
                 )
+                AIChatConversationSourceHandler.shared.setData(.tabBarSidebar)
             }
             aiChatCoordinator?.toggleSidebar()
         } else {

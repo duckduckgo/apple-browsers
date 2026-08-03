@@ -451,7 +451,7 @@ struct AIChatUserScriptHandlerTests {
     @MainActor
     func testThatUserDidSubmitFirstPromptFiresStartNewConversationPixel() async throws {
         let testPixelFiring = PixelKitMock()
-        testPixelFiring.expectedFireCalls = [.init(pixel: AIChatPixel.aiChatMetricStartNewConversation, frequency: .standard)]
+        testPixelFiring.expectedFireCalls = [.init(pixel: AIChatPixel.aiChatMetricStartNewConversation(source: .other), frequency: .standard)]
 
         let testHandler = AIChatUserScriptHandler(
             storage: storage,
@@ -475,11 +475,47 @@ struct AIChatUserScriptHandlerTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("didReportMetric attributes the conversation pixel to the surface that opened the chat", .timeLimit(.minutes(1)))
+    @MainActor
+    func testThatConversationPixelCarriesTheOpeningSource() async throws {
+        // A surface stamps the pending source just before opening the chat.
+        AIChatConversationSourceHandler.shared.reset()
+        AIChatConversationSourceHandler.shared.setData(.tabBarButton)
+
+        let testPixelFiring = PixelKitMock()
+        testPixelFiring.expectedFireCalls = [.init(pixel: AIChatPixel.aiChatMetricStartNewConversation(source: .tabBarButton), frequency: .standard)]
+
+        let testHandler = AIChatUserScriptHandler(
+            storage: storage,
+            messageHandling: messageHandler,
+            windowControllersManager: windowControllersManager,
+            pixelFiring: testPixelFiring,
+            statisticsLoader: statisticsLoader,
+            syncServiceProvider: { nil },
+            syncErrorHandler: syncErrorHandler,
+            featureFlagger: MockFeatureFlagger(),
+            notificationCenter: notificationCenter
+        )
+
+        // The chat's first native-config fetch (load) consumes and stores the pending source...
+        _ = await testHandler.getAIChatNativeConfigValues(params: [], message: WKScriptMessage.mock())
+
+        // ...so the deferred first-prompt pixel is attributed to it.
+        await withCheckedContinuation { continuation in
+            testHandler.didReportMetric(.init(metricName: .userDidSubmitFirstPrompt)) {
+                continuation.resume()
+            }
+        }
+
+        #expect(testPixelFiring.expectedFireCalls == testPixelFiring.actualFireCalls)
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("didReportMetric fires sent prompt ongoing chat pixel for subsequent prompts", .timeLimit(.minutes(1)))
     @MainActor
     func testThatUserDidSubmitPromptFiresSentPromptOngoingChatPixel() async throws {
         let testPixelFiring = PixelKitMock()
-        testPixelFiring.expectedFireCalls = [.init(pixel: AIChatPixel.aiChatMetricSentPromptOngoingChat, frequency: .standard)]
+        testPixelFiring.expectedFireCalls = [.init(pixel: AIChatPixel.aiChatMetricSentPromptOngoingChat(source: .other), frequency: .standard)]
 
         let testHandler = AIChatUserScriptHandler(
             storage: storage,

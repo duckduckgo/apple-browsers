@@ -62,6 +62,84 @@ public final class AIChatPromptHandler: AIChatConsumableDataHandling {
     }
 }
 
+/// The user-facing surface that initiated a Duck.ai conversation. Written to
+/// `AIChatConversationSourceHandler.shared` at open time and attached to the conversation
+/// pixels (`aichat_start_new_conversation` / `aichat_sent_prompt_ongoing_chat`) so a started
+/// conversation can be attributed to its entry point — chiefly to measure the redesigned
+/// Duck.ai tab-bar button. Raw values are the pixel parameter values; keep in sync with the
+/// `source` enum in `aichat_pixels.json5`. Aligned with the Windows `InvocationSource` taxonomy
+/// (reconcile exact strings with the Windows owner before shipping cross-platform dashboards).
+public enum AIChatConversationSource: String, CaseIterable {
+    /// Duck.ai tab-bar button — new chat (direct click or the button menu's "New Chat").
+    case tabBarButton = "tab-bar-button"
+    /// Tab-bar / main-menu "Ask About Page" — opens the sidebar and attaches the current page.
+    case askAboutPage = "ask-about-page"
+    /// Tab-bar Duck.ai sidebar toggle (the "chrome" sidebar button).
+    case tabBarSidebar = "tab-bar-sidebar"
+    /// Address-bar Duck.ai button, its context menu, and omnibar text submissions.
+    case addressBar = "address-bar"
+    /// New Tab Page omnibar.
+    case newTabPage = "new-tab-page"
+    /// Duck.ai omnibar panel.
+    case omnibar = "omnibar"
+    /// Floating prompt bar.
+    case promptBar = "prompt-bar"
+    /// File / application main menu.
+    case mainMenu = "main-menu"
+    /// More-options (hamburger) menu.
+    case moreOptionsMenu = "more-options-menu"
+    /// Contextual "Summarize" action.
+    case summarization = "summarization"
+    /// Contextual "Translate" action.
+    case translation = "translation"
+    /// Contextual "Attach selection to Duck.ai" action.
+    case attachSelection = "attach-selection"
+    /// Address-bar button context menu → open in sidebar, and other context-menu entry points.
+    case contextMenu = "context-menu"
+    /// SERP handoff.
+    case serp = "serp"
+    /// Sidebar → "Open in new tab" / handoff to a full tab.
+    case sidebarHandoff = "sidebar-handoff"
+    /// Voice entry points.
+    case voice = "voice"
+    /// Image-generation mode entry points.
+    case imageGeneration = "image"
+    /// Opening a previously saved chat (recent-chat pickers).
+    case recentChat = "recent-chat"
+    /// Settings → AI Features links.
+    case settings = "settings"
+    /// Origin unknown / not instrumented (restored chats, external deep links, etc.).
+    case other = "other"
+}
+
+/// Carries the `AIChatConversationSource` from the surface that opens a Duck.ai chat to the
+/// per-webview `AIChatUserScriptHandler` that fires the conversation pixels. Mirrors
+/// `AIChatPromptHandler.shared`: a global one-shot slot written just before the chat is opened
+/// and consumed once when the chat's user script loads. The handler stores the consumed value
+/// for the lifetime of the conversation, so the deferred first-prompt pixel can read it.
+public final class AIChatConversationSourceHandler: AIChatConsumableDataHandling {
+    public typealias DataType = AIChatConversationSource
+    private var data: DataType?
+
+    public static let shared = AIChatConversationSourceHandler()
+
+    private init() {}
+
+    public func setData(_ data: DataType) {
+        self.data = data
+    }
+
+    public func consumeData() -> DataType? {
+        let currentData = data
+        reset()
+        return currentData
+    }
+
+    public func reset() {
+        self.data = nil
+    }
+}
+
 /// Handles payload data for AI chat interactions, typically set by the SERP.
 public final class AIChatPayloadHandler: AIChatConsumableDataHandling {
     public typealias DataType = AIChatPayload

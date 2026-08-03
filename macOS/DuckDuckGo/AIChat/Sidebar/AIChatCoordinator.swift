@@ -382,6 +382,7 @@ final class AIChatCoordinator: AIChatCoordinating {
     private func handleAIChatHandoff(with payload: AIChatPayload) {
         guard let currentTabID = sidebarHost.currentTabID else { return }
 
+        AIChatConversationSourceHandler.shared.setData(.serp)
         if isChatPresented(for: currentTabID) {
             aiChatTabOpener.openAIChatTab(with: .payload(payload), behavior: .newTab(selected: true))
         } else {
@@ -629,6 +630,7 @@ extension AIChatCoordinator: AIChatViewControllerDelegate {
 
         Task { @MainActor in
             let behavior: LinkOpenBehavior = isCurrentTabNewTab ? .currentTab : .newTab(selected: true)
+            AIChatConversationSourceHandler.shared.setData(.sidebarHandoff)
             if let data = restorationData {
                 aiChatTabOpener.openAIChatTab(with: .restoration(data), behavior: behavior)
             } else {

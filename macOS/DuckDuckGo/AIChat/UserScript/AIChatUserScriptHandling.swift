@@ -195,6 +195,11 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
 
     var isFireWindowProvider: (() -> Bool)?
 
+    /// The surface that opened this chat. Consumed once from `AIChatConversationSourceHandler.shared`
+    /// when the chat's native config is first fetched (at load), then retained so the deferred
+    /// conversation pixels (`start_new_conversation` / `sent_prompt_ongoing_chat`) can be attributed.
+    private var conversationSource: AIChatConversationSource?
+
     init(
         storage: AIChatPreferencesStorage,
         messageHandling: AIChatMessageHandling = AIChatMessageHandler(),
@@ -252,6 +257,12 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     }
 
     public func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) async -> Encodable? {
+        // Consumed once, at the chat's first native-config fetch (load time), before the user can
+        // submit a prompt — so the conversation pixels fired later in `didReportMetric` can attribute
+        // the conversation to the surface that opened it.
+        if conversationSource == nil {
+            conversationSource = AIChatConversationSourceHandler.shared.consumeData()
+        }
         let isFireWindow = isFireWindowProvider?() ?? false
         return messageHandling.getNativeConfigValues(isFireWindow: isFireWindow)
     }
@@ -1005,7 +1016,7 @@ extension AIChatUserScriptHandler: AIChatMetricReportingHandling {
             pageContextConsumedSubject.send()
             // Selections were consumed by the prompt; clear the pull-store so a later init doesn't resurrect them.
             messageHandling.clearSelectionContexts()
-            pixelFiring?.fire(AIChatPixel.aiChatMetricStartNewConversation, frequency: .standard)
+            pixelFiring?.fire(AIChatPixel.aiChatMetricStartNewConversation(source: conversationSource ?? .other), frequency: .standard)
             DispatchQueue.main.async { [self] in
                 refreshAtbs(completion: completion)
             }
@@ -1014,7 +1025,7 @@ extension AIChatUserScriptHandler: AIChatMetricReportingHandling {
             markDuckAIActivatedIfNeeded(metric)
             pageContextConsumedSubject.send()
             messageHandling.clearSelectionContexts()
-            pixelFiring?.fire(AIChatPixel.aiChatMetricSentPromptOngoingChat, frequency: .standard)
+            pixelFiring?.fire(AIChatPixel.aiChatMetricSentPromptOngoingChat(source: conversationSource ?? .other), frequency: .standard)
             DispatchQueue.main.async { [self] in
                 refreshAtbs(completion: completion)
             }

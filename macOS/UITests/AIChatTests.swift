@@ -50,7 +50,7 @@ class AIChatTests: UITestCase {
     override func setUpWithError() throws {
         try super.setUpWithError()
         continueAfterFailure = false
-        app = XCUIApplication.setUp(featureFlags: ["aiChatChromeSidebar": true, "aiChatSidebarFloating": true])
+        app = XCUIApplication.setUp(featureFlags: ["aiChatChromeSidebar": true, "aiChatSidebarFloating": true, "aiChatChromeMenuButton": false])
 
         addressBarTextField = app.addressBar
         app.enforceSingleWindow()

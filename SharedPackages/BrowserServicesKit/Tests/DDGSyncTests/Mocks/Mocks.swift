@@ -120,9 +120,13 @@ class AccountManagingMock: AccountManaging {
     var updateDeviceCalls: [(update: UpdateDevices.Update, account: SyncAccount)] = []
     var updateDeviceStub: UpdateDevices.Result?
     var updateDeviceError: Error?
+    var updateDeviceHandler: ((UpdateDevices.Update, SyncAccount) async throws -> UpdateDevices.Result)?
     func updateDevice(_ update: UpdateDevices.Update,
                       for account: SyncAccount) async throws -> UpdateDevices.Result {
         updateDeviceCalls.append((update: update, account: account))
+        if let updateDeviceHandler {
+            return try await updateDeviceHandler(update, account)
+        }
         if let updateDeviceError {
             throw updateDeviceError
         }
@@ -321,6 +325,11 @@ final class MockSyncDependencies: SyncDependencies, SyncDependenciesDebuggingSup
         createThirdPartyAccountUpgradeCoordinatorStub ?? ThirdPartyAccountUpgradeCoordinatingMock()
     }
 
+    var createDeviceInfoMigrationCoordinatorStub: DeviceInfoMigrationCoordinating?
+    func createDeviceInfoMigrationCoordinator() -> DeviceInfoMigrationCoordinating {
+        createDeviceInfoMigrationCoordinatorStub ?? DeviceInfoMigrationCoordinatingMock()
+    }
+
     func updateServerEnvironment(_ serverEnvironment: ServerEnvironment) {}
 
     var createTokenRescopeStub: TokenRescoping?
@@ -457,8 +466,12 @@ final class ScopedAccessCredentialManagingMock: ScopedAccessCredentialManaging {
     var ensureAccountInfoProtectedKeysCalls: [SyncAccount] = []
     var ensureAccountInfoProtectedKeysStub: [ProtectedKey] = []
     var ensureAccountInfoProtectedKeysError: Error?
+    var ensureAccountInfoProtectedKeysHandler: ((SyncAccount) async throws -> [ProtectedKey])?
     func ensureAccountInfoProtectedKeys(for account: SyncAccount) async throws -> [ProtectedKey] {
         ensureAccountInfoProtectedKeysCalls.append(account)
+        if let ensureAccountInfoProtectedKeysHandler {
+            return try await ensureAccountInfoProtectedKeysHandler(account)
+        }
         if let ensureAccountInfoProtectedKeysError {
             throw ensureAccountInfoProtectedKeysError
         }
@@ -537,6 +550,47 @@ final class ThirdPartyAccountUpgradeCoordinatingMock: ThirdPartyAccountUpgradeCo
             throw upgradeThirdPartyAccountError
         }
         return upgradeThirdPartyAccountStub
+    }
+}
+
+final class DeviceInfoMigrationCoordinatingMock: DeviceInfoMigrationCoordinating {
+
+    struct Call {
+        let account: SyncAccount
+    }
+
+    private let lock = NSLock()
+    private var recordedCalls: [Call] = []
+    private var recordedResetCallCount = 0
+    var calls: [Call] {
+        lock.lock()
+        defer { lock.unlock() }
+        return recordedCalls
+    }
+    var resetCallCount: Int {
+        lock.lock()
+        defer { lock.unlock() }
+        return recordedResetCallCount
+    }
+    var migrateCurrentDeviceHandler: (() async -> Void)?
+
+    func migrateCurrentDeviceIfNeeded(for account: SyncAccount) async {
+        let handler = record(Call(account: account))
+        await handler?()
+    }
+
+    func reset() {
+        lock.lock()
+        recordedResetCallCount += 1
+        lock.unlock()
+    }
+
+    private func record(_ call: Call) -> (() async -> Void)? {
+        lock.lock()
+        recordedCalls.append(call)
+        let handler = migrateCurrentDeviceHandler
+        lock.unlock()
+        return handler
     }
 }
 

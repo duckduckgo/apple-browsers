@@ -271,7 +271,7 @@
         ]
     },
     "m_aichat_unified_input_chat_header_upgrade_tapped": {
-        "description": "Fires when the user taps the Upgrade label in the AI Chat tab header.",
+        "description": "Fires when the user taps the Upgrade label in the AI Chat tab header. The header is only shown to users without an active subscription.",
         "owners": ["pikorddg"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],

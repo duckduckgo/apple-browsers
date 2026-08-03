@@ -32,6 +32,7 @@ final class NewTabPageConfigurationClientTests: XCTestCase {
     private var userScript: NewTabPageUserScript!
     private var messageHelper: MessageHelper<NewTabPageConfigurationClient.MessageName>!
     private var eventMapper: CapturingNewTabPageConfigurationEventHandler!
+    private var burnerContextProvider: MockNewTabPageBurnerContextProvider!
     private var isRebrandEnabled = false
 
     override func setUpWithError() throws {
@@ -42,6 +43,7 @@ final class NewTabPageConfigurationClientTests: XCTestCase {
         stateProvider = MockNewTabPageStateProviding()
         contextMenuPresenter = CapturingNewTabPageContextMenuPresenter()
         eventMapper = CapturingNewTabPageConfigurationEventHandler()
+        burnerContextProvider = MockNewTabPageBurnerContextProvider()
         userScript = NewTabPageUserScript()
         messageHelper = .init(userScript: userScript)
         client = buildConfigurationClient(userScript: userScript, isRebrandEnabled: false)
@@ -58,7 +60,8 @@ final class NewTabPageConfigurationClientTests: XCTestCase {
             linkOpener: CapturingNewTabPageLinkOpener(),
             eventMapper: eventMapper,
             stateProvider: stateProvider,
-            isRebrandEnabled: isRebrandEnabled
+            isRebrandEnabled: isRebrandEnabled,
+            burnerContextProvider: burnerContextProvider
         )
         client.registerMessageHandlers(for: userScript)
         return client
@@ -178,7 +181,66 @@ final class NewTabPageConfigurationClientTests: XCTestCase {
         XCTAssertEqual(configuration.platform, .init(name: "macos"))
     }
 
+    func testWhenBurnerThenInitialSetupReturnsReducedWidgetSet() async throws {
+        sectionsAvailabilityProvider.isOmnibarAvailable = true
+        burnerContextProvider.isBurnerStub = true
+
+        let configuration: NewTabPageDataModel.NewTabPageConfiguration = try await messageHelper.handleMessage(named: .initialSetup)
+        XCTAssertEqual(configuration.widgets, [
+            .init(id: .rmf),
+            .init(id: .omnibar)
+        ])
+        XCTAssertEqual(configuration.widgetConfigs, [
+            .init(id: .omnibar, isVisible: sectionsVisibilityProvider.isOmnibarVisible)
+        ])
+    }
+
+    func testWhenBurnerAndOmnibarNotAvailableThenInitialSetupReturnsOnlyRMF() async throws {
+        sectionsAvailabilityProvider.isOmnibarAvailable = false
+        burnerContextProvider.isBurnerStub = true
+
+        let configuration: NewTabPageDataModel.NewTabPageConfiguration = try await messageHelper.handleMessage(named: .initialSetup)
+        XCTAssertEqual(configuration.widgets, [.init(id: .rmf)])
+        XCTAssertEqual(configuration.widgetConfigs, [])
+    }
+
+    // MARK: - contextMenu (burner)
+
+    @MainActor
+    func testWhenBurnerThenContextMenuOmitsFavoritesAndProtections() async throws {
+        sectionsAvailabilityProvider.isOmnibarAvailable = true
+        sectionsVisibilityProvider.isOmnibarVisible = true
+        burnerContextProvider.isBurnerStub = true
+
+        let parameters = NewTabPageDataModel.ContextMenuParams(visibilityMenuItems: [])
+        try await messageHelper.handleMessageExpectingNilResponse(named: .contextMenu, parameters: parameters)
+
+        let menu = try XCTUnwrap(contextMenuPresenter.showContextMenuCalls.first)
+        let itemTitles = menu.items.map(\.title)
+
+        XCTAssertTrue(itemTitles.contains(UserText.newTabPageContextMenuSearch))
+        XCTAssertFalse(itemTitles.contains(UserText.newTabPageContextMenuFavorites))
+        XCTAssertFalse(itemTitles.contains(UserText.newTabPageContextMenuProtectionsReport))
+    }
+
     // MARK: - widgetsSetConfig
+
+    func testWhenBurnerThenWidgetsSetConfigIgnoresFavoritesAndProtectionsButUpdatesOmnibar() async throws {
+        burnerContextProvider.isBurnerStub = true
+        let initialIsFavoritesVisible = sectionsVisibilityProvider.isFavoritesVisible
+        let initialIsProtectionsReportVisible = sectionsVisibilityProvider.isProtectionsReportVisible
+
+        let configs: [NewTabPageDataModel.NewTabPageConfiguration.WidgetConfig] = [
+            .init(id: .favorites, isVisible: !initialIsFavoritesVisible),
+            .init(id: .protections, isVisible: !initialIsProtectionsReportVisible),
+            .init(id: .omnibar, isVisible: false)
+        ]
+        try await messageHelper.handleMessageExpectingNilResponse(named: .widgetsSetConfig, parameters: configs)
+
+        XCTAssertEqual(sectionsVisibilityProvider.isFavoritesVisible, initialIsFavoritesVisible)
+        XCTAssertEqual(sectionsVisibilityProvider.isProtectionsReportVisible, initialIsProtectionsReportVisible)
+        XCTAssertEqual(sectionsVisibilityProvider.isOmnibarVisible, false)
+    }
 
     func testWhenWidgetsSetConfigIsReceivedThenWidgetConfigsAreUpdated() async throws {
         let configs: [NewTabPageDataModel.NewTabPageConfiguration.WidgetConfig] = [

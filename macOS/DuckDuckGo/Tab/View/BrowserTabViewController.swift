@@ -64,7 +64,8 @@ final class BrowserTabViewController: NSViewController {
             featureFlagger: featureFlagger,
             actionsManager: newTabPageActionsManager(),
             activeRemoteMessageModel: activeRemoteMessageModel,
-            newTabPageLoadMetrics: newTabPageLoadMetrics
+            newTabPageLoadMetrics: newTabPageLoadMetrics,
+            burnerMode: tabCollectionViewModel.burnerMode
         )
         _newTabPageWebViewModel = newTabPageWebViewModel
         return newTabPageWebViewModel
@@ -1253,8 +1254,9 @@ final class BrowserTabViewController: NSViewController {
             updateTabIfNeeded(tabViewModel: tabViewModel)
 
         case .newtab:
-            // We only use HTML New Tab Page in regular windows for now
-            if tabCollectionViewModel.isBurner {
+            // Fire Windows get a reduced HTML New Tab Page (RMF + Omnibar) behind the
+            // fireWindowNewTabPage flag; otherwise they keep the static native info screen.
+            if tabCollectionViewModel.isBurner && !featureFlagger.isFeatureOn(.fireWindowNewTabPage) {
                 removeAllTabContent()
                 let burnerHomePage = burnerHomePageViewControllerCreatingIfNeeded()
                 if let tab = tabViewModel?.tab {
@@ -1350,7 +1352,10 @@ final class BrowserTabViewController: NSViewController {
         case .onboarding:
             return
         case .newtab:
+            // When the Fire Window is showing the HTML NTP (fireWindowNewTabPage flag on), it's
+            // snapshotted the same way as a regular NTP webView — nothing to do here.
             guard tabCollectionViewModel.isBurner,
+                  !featureFlagger.isFeatureOn(.fireWindowNewTabPage),
                   let burnerHomePage = burnerHomePageViewController else {
                 return
             }

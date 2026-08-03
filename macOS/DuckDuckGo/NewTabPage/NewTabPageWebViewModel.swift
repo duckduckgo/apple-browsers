@@ -40,12 +40,16 @@ final class NewTabPageWebViewModel: NSObject {
     private let newTabPageLoadMetrics: NewTabPageLoadMetrics
     private var cancellables: Set<AnyCancellable> = []
 
-    init(featureFlagger: FeatureFlagger, actionsManager: NewTabPageActionsManager, activeRemoteMessageModel: ActiveRemoteMessageModel, newTabPageLoadMetrics: NewTabPageLoadMetrics) {
+    /// `userInfo` key on `.newTabPageWebViewDidAppear` carrying whether the appearing NTP belongs to
+    /// a Fire Window, so pixel senders can tag Fire Window impressions/submissions distinctly.
+    static let isFireWindowUserInfoKey = "isFireWindow"
+
+    init(featureFlagger: FeatureFlagger, actionsManager: NewTabPageActionsManager, activeRemoteMessageModel: ActiveRemoteMessageModel, newTabPageLoadMetrics: NewTabPageLoadMetrics, burnerMode: BurnerMode = .regular) {
         newTabPageUserScript = NewTabPageUserScript()
         actionsManager.registerUserScript(newTabPageUserScript)
 
         let configuration = WKWebViewConfiguration()
-        configuration.applyNewTabPageWebViewConfiguration(with: featureFlagger, newTabPageUserScript: newTabPageUserScript)
+        configuration.applyNewTabPageWebViewConfiguration(with: featureFlagger, newTabPageUserScript: newTabPageUserScript, burnerMode: burnerMode)
         webView = WebView(frame: .zero, configuration: configuration, featureFlagger: featureFlagger)
 
         self.newTabPageLoadMetrics = newTabPageLoadMetrics
@@ -60,12 +64,17 @@ final class NewTabPageWebViewModel: NSObject {
         webView.publisher(for: \.window)
             .map { $0 != nil }
             .sink { [weak activeRemoteMessageModel] isOnScreen in
-                if isOnScreen && OnboardingActionsManager.isOnboardingFinished && AppDelegate.isNewUser {
+                // Not meaningful for Fire Windows: this tracks the very first NTP a new user sees.
+                if isOnScreen && !burnerMode.isBurner && OnboardingActionsManager.isOnboardingFinished && AppDelegate.isNewUser {
                     PixelKit.fire(GeneralPixel.newTabInitial, frequency: .legacyInitial)
                 }
                 activeRemoteMessageModel?.isViewOnScreen = isOnScreen
                 if isOnScreen {
-                    NotificationCenter.default.post(name: .newTabPageWebViewDidAppear, object: nil)
+                    NotificationCenter.default.post(
+                        name: .newTabPageWebViewDidAppear,
+                        object: nil,
+                        userInfo: [Self.isFireWindowUserInfoKey: burnerMode.isBurner]
+                    )
                 }
             }
             .store(in: &cancellables)
@@ -121,12 +130,19 @@ extension Notification.Name {
 extension WKWebViewConfiguration {
 
     @MainActor
-    func applyNewTabPageWebViewConfiguration(with featureFlagger: FeatureFlagger, newTabPageUserScript: NewTabPageUserScript) {
+    func applyNewTabPageWebViewConfiguration(with featureFlagger: FeatureFlagger, newTabPageUserScript: NewTabPageUserScript, burnerMode: BurnerMode = .regular) {
         if urlSchemeHandler(forURLScheme: URL.NavigationalScheme.duck.rawValue) == nil {
             setURLSchemeHandler(
                 DuckURLSchemeHandler(featureFlagger: featureFlagger, isNTPSpecialPageSupported: true),
                 forURLScheme: URL.NavigationalScheme.duck.rawValue
             )
+        }
+        // Fire Window NTP: use the Fire Window's isolated, non-persistent data store so the omnibar's
+        // search/Duck.ai session never touches regular browsing data. The store already carries its
+        // `fireWindowSession` tag (set by WindowsManager at window creation), which NewTabPageConfigurationClient
+        // uses to detect burner webViews without depending on `webView.window` being attached yet.
+        if case .burner(let websiteDataStore) = burnerMode {
+            self.websiteDataStore = websiteDataStore
         }
         preferences[.developerExtrasEnabled] = true
         self.userContentController = NewTabPageUserContentController(newTabPageUserScript: newTabPageUserScript)

@@ -44,6 +44,19 @@ public protocol NewTabPageStateProviding: AnyObject {
     var stateChangedPublisher: AnyPublisher<Void, Never> { get }
 }
 
+/// Resolves whether a given NTP webView belongs to a Fire Window, so the configuration client can
+/// serve a reduced widget set there. `webView` is `nil`-safe because callers may not always have it
+/// (e.g. broadcast paths).
+public protocol NewTabPageBurnerContextProviding: AnyObject {
+    func isBurner(webView: WKWebView?) -> Bool
+}
+
+/// Default used where no app-provided burner context is wired up — treats every webView as regular.
+public final class DefaultNewTabPageBurnerContextProvider: NewTabPageBurnerContextProviding {
+    public init() {}
+    public func isBurner(webView: WKWebView?) -> Bool { false }
+}
+
 public struct WindowNewTabPageStateData {
     let tabs: NewTabPageDataModel.Tabs
     let webView: WKWebView
@@ -81,6 +94,7 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
     private let eventMapper: EventMapping<NewTabPageConfigurationEvent>?
     private let stateProvider: NewTabPageStateProviding
     private let isRebrandEnabled: Bool
+    private let burnerContextProvider: NewTabPageBurnerContextProviding
 
     public init(
         environment: Environment,
@@ -92,7 +106,8 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
         linkOpener: NewTabPageLinkOpening,
         eventMapper: EventMapping<NewTabPageConfigurationEvent>?,
         stateProvider: NewTabPageStateProviding,
-        isRebrandEnabled: Bool = false
+        isRebrandEnabled: Bool = false,
+        burnerContextProvider: NewTabPageBurnerContextProviding = DefaultNewTabPageBurnerContextProvider()
     ) {
         self.environment = environment
         self.sectionsAvailabilityProvider = sectionsAvailabilityProvider
@@ -104,6 +119,7 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
         self.eventMapper = eventMapper
         self.stateProvider = stateProvider
         self.isRebrandEnabled = isRebrandEnabled
+        self.burnerContextProvider = burnerContextProvider
         super.init()
 
         Publishers.Merge3(
@@ -152,7 +168,18 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
         ])
     }
 
-    private func fetchWidgets() -> [NewTabPageDataModel.NewTabPageConfiguration.Widget] {
+    /// Fire Windows get a reduced widget set (RMF + Omnibar only) — no favorites, protections,
+    /// next-steps, or promo banners, since a burner window's New Tab Page is meant to stay minimal
+    /// and its session is ephemeral.
+    private func fetchWidgets(isBurner: Bool) -> [NewTabPageDataModel.NewTabPageConfiguration.Widget] {
+        if isBurner {
+            var widgets: [NewTabPageDataModel.NewTabPageConfiguration.Widget] = [.init(id: .rmf)]
+            if sectionsAvailabilityProvider.isOmnibarAvailable {
+                widgets.append(.init(id: .omnibar))
+            }
+            return widgets
+        }
+
         var widgets: [NewTabPageDataModel.NewTabPageConfiguration.Widget] = [
             .init(id: .rmf),
             .init(id: .freemiumPIRBanner),
@@ -169,7 +196,13 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
         return widgets
     }
 
-    private func fetchWidgetConfigs() -> [NewTabPageDataModel.NewTabPageConfiguration.WidgetConfig] {
+    private func fetchWidgetConfigs(isBurner: Bool) -> [NewTabPageDataModel.NewTabPageConfiguration.WidgetConfig] {
+        if isBurner {
+            guard sectionsAvailabilityProvider.isOmnibarAvailable else { return [] }
+            // Omnibar visibility in Fire Windows is user-hideable via the same setting as regular windows.
+            return [.init(id: .omnibar, isVisible: sectionsVisibilityProvider.isOmnibarVisible)]
+        }
+
         var configs: [NewTabPageDataModel.NewTabPageConfiguration.WidgetConfig] = [
             .init(id: .favorites, isVisible: sectionsVisibilityProvider.isFavoritesVisible),
             .init(id: .protections, isVisible: sectionsVisibilityProvider.isProtectionsReportVisible)
@@ -183,8 +216,12 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
     }
 
     private func notifyWidgetConfigsDidChange() {
-        let widgetConfigs = fetchWidgetConfigs()
-        pushMessage(named: MessageName.widgetsOnConfigUpdated.rawValue, params: widgetConfigs)
+        guard let userScripts = actionsManager?.userScripts else { return }
+        for userScript in userScripts {
+            guard let webView = userScript.webView else { continue }
+            let widgetConfigs = fetchWidgetConfigs(isBurner: burnerContextProvider.isBurner(webView: webView))
+            pushMessage(named: MessageName.widgetsOnConfigUpdated.rawValue, params: widgetConfigs, to: webView)
+        }
     }
 
     @MainActor
@@ -215,6 +252,7 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
 
     @MainActor
     private func showContextMenu(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        let isBurner = burnerContextProvider.isBurner(webView: original.webView)
         let menu = NSMenu {
             // Show only when the search box is available
             if sectionsAvailabilityProvider.isOmnibarAvailable {
@@ -226,19 +264,23 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
                 .withAccessibilityIdentifier("HomePage.Views.Menu.Search")
             }
 
-            NSMenuItem(title: UserText.newTabPageContextMenuFavorites,
-                       action: #selector(self.toggleVisibility(_:)),
-                       target: self,
-                       representedObject: NewTabPageDataModel.WidgetId.favorites,
-                       state: sectionsVisibilityProvider.isFavoritesVisible ? .on: .off)
-            .withAccessibilityIdentifier("HomePage.Views.Menu.Favorites")
+            // Favorites and Protections Report aren't offered in Fire Windows — not part of the
+            // reduced widget set.
+            if !isBurner {
+                NSMenuItem(title: UserText.newTabPageContextMenuFavorites,
+                           action: #selector(self.toggleVisibility(_:)),
+                           target: self,
+                           representedObject: NewTabPageDataModel.WidgetId.favorites,
+                           state: sectionsVisibilityProvider.isFavoritesVisible ? .on: .off)
+                .withAccessibilityIdentifier("HomePage.Views.Menu.Favorites")
 
-            NSMenuItem(title: UserText.newTabPageContextMenuProtectionsReport,
-                       action: #selector(self.toggleVisibility(_:)),
-                       target: self,
-                       representedObject: NewTabPageDataModel.WidgetId.protections,
-                       state: sectionsVisibilityProvider.isProtectionsReportVisible ? .on: .off)
-            .withAccessibilityIdentifier("HomePage.Views.Menu.ProtectionsReport")
+                NSMenuItem(title: UserText.newTabPageContextMenuProtectionsReport,
+                           action: #selector(self.toggleVisibility(_:)),
+                           target: self,
+                           representedObject: NewTabPageDataModel.WidgetId.protections,
+                           state: sectionsVisibilityProvider.isProtectionsReportVisible ? .on: .off)
+                .withAccessibilityIdentifier("HomePage.Views.Menu.ProtectionsReport")
+            }
 
             // The separator won't be presented if it's the last menu item
             NSMenuItem.separator()
@@ -288,8 +330,9 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
 
     @MainActor
     private func initialSetup(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        let widgets = fetchWidgets()
-        let widgetConfigs = fetchWidgetConfigs()
+        let isBurner = burnerContextProvider.isBurner(webView: original.webView)
+        let widgets = fetchWidgets(isBurner: isBurner)
+        let widgetConfigs = fetchWidgetConfigs(isBurner: isBurner)
         let customizerData = customBackgroundProvider.customizerData
 
         let tabs = stateProvider
@@ -317,13 +360,16 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
         guard let widgetConfigs: [NewTabPageDataModel.NewTabPageConfiguration.WidgetConfig] = DecodableHelper.decode(from: params) else {
             return nil
         }
+        // Favorites/Protections toggles aren't offered in Fire Windows (not part of the reduced
+        // widget set), so ignore them defensively if received from a burner webView.
+        let isBurner = burnerContextProvider.isBurner(webView: original.webView)
         for widgetConfig in widgetConfigs {
             switch widgetConfig.id {
             case .omnibar:
                 sectionsVisibilityProvider.isOmnibarVisible = widgetConfig.visibility.isVisible
-            case .favorites:
+            case .favorites where !isBurner:
                 sectionsVisibilityProvider.isFavoritesVisible = widgetConfig.visibility.isVisible
-            case .protections:
+            case .protections where !isBurner:
                 sectionsVisibilityProvider.isProtectionsReportVisible = widgetConfig.visibility.isVisible
             default:
                 break

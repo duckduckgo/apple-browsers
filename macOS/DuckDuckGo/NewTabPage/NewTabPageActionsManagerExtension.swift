@@ -68,6 +68,7 @@ extension NewTabPageActionsManager {
         dockCustomization: DockCustomization
     ) {
         let availabilityProvider = NewTabPageSectionsAvailabilityProvider(featureFlagger: featureFlagger)
+        let burnerContextProvider = NewTabPageBurnerContextProvider(featureFlagger: featureFlagger)
         let favoritesPublisher = bookmarkManager.listPublisher.map({ $0?.favoriteBookmarks ?? [] }).eraseToAnyPublisher()
         let favoritesModel = NewTabPageFavoritesModel(
             actionsHandler: DefaultFavoritesActionsHandler(bookmarkManager: bookmarkManager),
@@ -226,7 +227,8 @@ extension NewTabPageActionsManager {
                 linkOpener: NewTabPageLinkOpener(),
                 eventMapper: NewTabPageConfigurationEventHandler(),
                 stateProvider: stateProvider,
-                isRebrandEnabled: featureFlagger.isFeatureOn(.newTabPageRebranding)
+                isRebrandEnabled: featureFlagger.isFeatureOn(.newTabPageRebranding),
+                burnerContextProvider: burnerContextProvider
             ),
             NewTabPageCustomBackgroundClient(model: customizationProvider),
             NewTabPageRMFClient(remoteMessageProvider: activeRemoteMessageModel),

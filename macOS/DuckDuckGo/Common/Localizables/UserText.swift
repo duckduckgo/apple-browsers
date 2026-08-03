@@ -1987,7 +1987,7 @@ struct UserText {
     static let showBookmarksBarNewTabOnly = NSLocalizedString("bookmarks.bar.show.new-tab-only", value: "Only show on New Tab", comment: "Preference for only showing the bookmarks bar on new tab")
     static let bookmarksBarFolderEmpty = NSLocalizedString("bookmarks.bar.folder.empty", value: "Empty", comment: "Empty state for a bookmarks bar folder")
     static let bookmarksBarContextMenuDelete = NSLocalizedString("bookmarks.bar.context-menu.delete", value: "Delete", comment: "Delete menu item for the bookmarks bar context menu")
-    static let bookmarksBarContextMenuReorderByName = NotLocalizedString("bookmarks.bar.context-menu.reorder-by-name", value: "Reorder by Name", comment: "Reorder by Name menu item for bookmark folder context menus")
+    static let bookmarksBarContextMenuReorderByName = NotLocalizedString("bookmarks.bar.context-menu.reorder-by-name", value: "Reorder by name", comment: "Reorder by name menu item for bookmark folder context menus")
     static let bookmarksBarContextMenuMoveToEnd = NSLocalizedString("bookmarks.bar.context-menu.move-to-end", value: "Move to End", comment: "Move to End menu item for the bookmarks bar context menu")
 
     static let inviteDialogGetStartedButton = NSLocalizedString("invite.dialog.get.started.button", value: "Get Started", comment: "Get Started button on an invite dialog")

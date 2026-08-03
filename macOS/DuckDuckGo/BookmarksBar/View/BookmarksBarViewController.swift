@@ -21,6 +21,7 @@ import Combine
 import Common
 import ConcurrencyExtensions
 import DesignResourcesKitIcons
+import FeatureFlags
 import Foundation
 import FoundationExtensions
 import os.log
@@ -558,6 +559,10 @@ private extension BookmarksBarViewController {
         showDialog(BookmarksDialogViewFactory.makeAddBookmarkFolderView(parentFolder: nil, bookmarkManager: bookmarkManager))
     }
 
+    @objc func reorderBookmarksBarByName(_ sender: NSMenuItem) {
+        bookmarkManager.reorderByName(bookmarkManager.list?.topLevelEntities ?? [], withinParentFolder: .root)
+    }
+
 }
 // MARK: - NSMenuDelegate
 extension BookmarksBarViewController: NSMenuDelegate {
@@ -568,6 +573,7 @@ extension BookmarksBarViewController: NSMenuDelegate {
             menu,
             target: self,
             addFolderSelector: #selector(addFolder(sender:)),
+            reorderByNameSelector: NSApp.delegateTyped.featureFlagger.isFeatureOn(.bookmarksReorderByName) ? #selector(reorderBookmarksBarByName(_:)) : nil,
             manageBookmarksSelector: #selector(manageBookmarks),
             prefs: NSApp.delegateTyped.appearancePreferences
         )

@@ -21,7 +21,6 @@ import Bookmarks
 import DesignResourcesKitIcons
 import FeatureFlags
 import PrivacyConfig
-import os.log
 
 protocol BookmarksContextMenuDelegate: NSMenuDelegate, BookmarkSearchMenuItemSelectors {
     var isSearching: Bool { get }
@@ -469,24 +468,7 @@ extension BookmarksContextMenu: FolderMenuItemSelectors {
             return
         }
 
-        let sortedChildIDs = folder.children
-            .sorted(by: .nameAscending)
-            .map(\.id)
-
-        guard sortedChildIDs != folder.children.map(\.id) else {
-            bookmarkManager.sortMode = .manual
-            return
-        }
-
-        let bookmarkManager = bookmarkManager
-        bookmarkManager.move(objectUUIDs: sortedChildIDs, toIndex: 0, withinParentFolder: .parent(uuid: folder.id)) { error in
-            guard let error else {
-                bookmarkManager.sortMode = .manual
-                return
-            }
-
-            Logger.bookmarks.error("Failed to reorder bookmark folder by name: \(error.localizedDescription, privacy: .public)")
-        }
+        bookmarkManager.reorderByName(folder.children, withinParentFolder: .parent(uuid: folder.id))
     }
 
     @MainActor

@@ -468,7 +468,10 @@ public class DDGSync: DDGSyncing {
 
             var didRemoveAccount = false
             do {
+                deviceInfoMigrationTask?.cancel()
+                deviceInfoMigrationTask = nil
                 try dependencies.secureStore.removeAccount()
+                deviceInfoMigrationCoordinator.reset()
                 didRemoveAccount = true
             } catch {
                 dependencies.errorEvents.fire(.failedToRemoveAccount, error: error)
@@ -710,6 +713,8 @@ public class DDGSync: DDGSyncing {
     }
 
     private func removeAccount(reason: SyncError.AccountRemovedReason) throws {
+        deviceInfoMigrationTask?.cancel()
+        deviceInfoMigrationTask = nil
         dependencies.scheduler.isEnabled = false
         startSyncCancellable?.cancel()
         syncQueueCancellable?.cancel()
@@ -724,6 +729,7 @@ public class DDGSync: DDGSyncing {
         syncQueue = nil
         authState = .inactive
         try dependencies.secureStore.removeAccount()
+        deviceInfoMigrationCoordinator.reset()
         try dependencies.keyValueStore.set(nil, forKey: Constants.syncEnabledKey)
         dependencies.errorEvents.fire(.accountRemoved(reason))
     }

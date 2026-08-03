@@ -111,12 +111,15 @@ final class DDGSyncLifecycleTests: XCTestCase {
 
     func testWhenInitializingAndAfterReinstallThenStateIsInactive() {
         secureStorageStub.theAccount = .mock
+        let migrationCoordinator = DeviceInfoMigrationCoordinatingMock()
+        dependencies.createDeviceInfoMigrationCoordinatorStub = migrationCoordinator
 
         let syncService = DDGSync(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
         XCTAssertEqual(syncService.authState, .initializing)
         syncService.initializeIfNeeded()
         XCTAssertEqual(syncService.authState, .inactive)
         XCTAssertNil(secureStorageStub.theAccount)
+        XCTAssertEqual(migrationCoordinator.resetCallCount, 1)
         XCTAssertEqual(mockErrorHandler.handledErrors, [.accountRemoved(.syncEnabledNotSetOnKeyValueStore)])
     }
 

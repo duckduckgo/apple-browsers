@@ -2934,8 +2934,8 @@ extension AddressBarButtonsViewController {
         return presentPermissionCenterPopoverIfPossible(displaysAutoplayDiscovery: true)
     }
 
-    ///
-    ///
+    /// Forcefully presents the Autoplay Policy, alongside with the Discoverability UI.
+    /// - Important: This flow is required by the `Promo Queue > Autoplay Discoverability > Force Show` flow
     @discardableResult
     func forcePresentPermissionCenterForAutoplayPromo() -> Bool {
         guard isViewLoaded, view.window?.isKeyWindow == true else {

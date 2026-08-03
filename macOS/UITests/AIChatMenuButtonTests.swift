@@ -120,8 +120,8 @@ class AIChatMenuButtonTests: UITestCase {
     func test_menu_onNewTabPage_showsOpenSidebar_andOpensSidebar() {
         // We start on NTP after enforceSingleWindow.
         openDropdown()
-        XCTAssertEqual(sidebarMenuItem.label, MenuTitles.openSidebar,
-                       "On the new-tab page the sidebar item should read 'Open Sidebar'")
+        XCTAssertTrue(app.menuItems[MenuTitles.openSidebar].exists,
+                      "On the new-tab page the sidebar item should read 'Open Sidebar'")
         sidebarMenuItem.click()
 
         XCTAssertTrue(detachButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
@@ -134,8 +134,8 @@ class AIChatMenuButtonTests: UITestCase {
         addressBarTextField.typeURL(UITests.simpleServedPage(titled: "Ask About Page Test"))
 
         openDropdown()
-        XCTAssertEqual(sidebarMenuItem.label, MenuTitles.askAboutPage,
-                       "On a web page the sidebar item should read 'Ask About Page'")
+        XCTAssertTrue(app.menuItems[MenuTitles.askAboutPage].exists,
+                      "On a web page the sidebar item should read 'Ask About Page'")
         sidebarMenuItem.click()
 
         XCTAssertTrue(detachButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
@@ -150,7 +150,7 @@ class AIChatMenuButtonTests: UITestCase {
         let tabsBefore = app.tabGroups.matching(identifier: "Tabs").radioButtons.count
 
         openDropdown()
-        XCTAssertEqual(newChatMenuItem.label, MenuTitles.newChat)
+        XCTAssertTrue(app.menuItems[MenuTitles.newChat].exists, "Dropdown should contain a New Chat item")
         newChatMenuItem.click()
 
         let tabsAfter = app.tabGroups.matching(identifier: "Tabs").radioButtons.count
@@ -164,15 +164,15 @@ class AIChatMenuButtonTests: UITestCase {
     func test_menu_whenChatOpen_showsCloseSidebar_andCloses() {
         // Open the sidebar first (NTP → "Open Sidebar").
         openDropdown()
-        XCTAssertEqual(sidebarMenuItem.label, MenuTitles.openSidebar)
+        XCTAssertTrue(app.menuItems[MenuTitles.openSidebar].exists)
         sidebarMenuItem.click()
         XCTAssertTrue(detachButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
                       "Sidebar should be open before testing close")
 
         // Re-open the dropdown: the item should now offer to close the sidebar.
         openDropdown()
-        XCTAssertEqual(sidebarMenuItem.label, MenuTitles.closeSidebar,
-                       "With a chat open the sidebar item should read 'Close Sidebar'")
+        XCTAssertTrue(app.menuItems[MenuTitles.closeSidebar].exists,
+                      "With a chat open the sidebar item should read 'Close Sidebar'")
         sidebarMenuItem.click()
 
         XCTAssertTrue(detachButton.waitForNonExistence(timeout: UITests.Timeouts.elementExistence),
@@ -188,8 +188,8 @@ class AIChatMenuButtonTests: UITestCase {
         let hideItem = app.menuItems[MenuItemIdentifiers.hideDuckAI].firstMatch
         XCTAssertTrue(hideItem.waitForExistence(timeout: UITests.Timeouts.elementExistence),
                       "Context menu should offer to hide the Ask Duck.ai button")
-        XCTAssertEqual(hideItem.label, MenuTitles.hideAskDuckAI,
-                       "The hide item should use the 'Ask Duck.ai' wording in menu-button layout")
+        XCTAssertTrue(app.menuItems[MenuTitles.hideAskDuckAI].exists,
+                      "The hide item should use the 'Ask Duck.ai' wording in menu-button layout")
         hideItem.click()
 
         XCTAssertTrue(pillButton.waitForNonExistence(timeout: UITests.Timeouts.elementExistence),

@@ -33,6 +33,7 @@ struct BookmarkFavoriteView: View {
             }
         }
         .toggleStyle(.checkbox)
+        .rebrandedControlTint()
         .accessibilityIdentifier("bookmark.add.add.to.favorites.button")
     }
 }

@@ -18,6 +18,7 @@
 //
 
 import UIKit
+import DesignResourcesKitIcons
 import DesignResourcesKit
 
 protocol AuthenticationViewControllerDelegate: AnyObject {
@@ -45,7 +46,7 @@ class AuthenticationViewController: UIViewController {
     }
 
     private let logo: UIImageView = {
-        let imageView = UIImageView(image: UIImage(named: "LogoText"))
+        let imageView = UIImageView(image: UIImage(rebrandable: "LogoText"))
         imageView.contentMode = .scaleAspectFit
         imageView.translatesAutoresizingMaskIntoConstraints = false
         return imageView

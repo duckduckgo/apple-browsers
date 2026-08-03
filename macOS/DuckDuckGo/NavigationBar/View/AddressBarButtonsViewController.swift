@@ -1915,13 +1915,21 @@ final class AddressBarButtonsViewController: NSViewController {
         aiChatSettings.isAIFeaturesEnabled
     }
 
-    /// True when the toggle should be shown (feature active + user setting enabled).
-    /// Hidden in pure passive browsing — URL loaded, bar unfocused, not duck.ai — because there's no user
-    /// input or mode context to toggle between, and the design matches the pre-redesign behaviour there.
+    /// SearchMode Toggle will only be shown whenever the TextField is being edited
     private var shouldShowSearchModeToggle: Bool {
-        guard isSearchModeToggleFeatureActive && aiChatSettings.showSearchAndDuckAIToggle else { return false }
-        let isPassiveBrowsing = !isTextFieldEditorFirstResponder && !isAIChatPanelActive && controllerMode == .browsing
-        return !isPassiveBrowsing
+        guard isSearchModeToggleFeatureActive && aiChatSettings.showSearchAndDuckAIToggle else {
+            return false
+        }
+
+        guard themeManager.isAppRebranded else {
+            /// True when the toggle should be shown (feature active + user setting enabled).
+            /// Hidden in pure passive browsing — URL loaded, bar unfocused, not duck.ai — because there's no user
+            /// input or mode context to toggle between, and the design matches the pre-redesign behaviour there.
+            let isPassiveBrowsing = !isTextFieldEditorFirstResponder && !isAIChatPanelActive && controllerMode == .browsing
+            return !isPassiveBrowsing
+        }
+
+        return isTextFieldEditorFirstResponder
     }
 
     func updateButtons() {
@@ -2359,19 +2367,19 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     private func applyThemeToToggleControl(_ toggleControl: CustomToggleControl) {
-        let isAppRebranded = themeManager.isAppRebranded
-        let backgroundColor = isAppRebranded ? NSColor(singleUseColor: .aiToggleBackground) : NSColor(designSystemColor: .controlsRaisedBackdrop)
-        let borderColor = isAppRebranded ? NSColor(singleUseColor: .aiToggleBorder) : nil
-        let selectionBorder = isAppRebranded ? NSColor(singleUseColor: .aiToggleSelectionBorder) : NSColor(designSystemColor: .shadowSecondary)
-        let selectionBackgroundColor = isAppRebranded ? NSColor(singleUseColor: .aiToggleSelectionBackground) : NSColor(designSystemColor: .controlsRaisedFillPrimary)
+        let colorsProvider = themeManager.theme.colorsProvider
+        let isBurner = tabCollectionViewModel.isBurner
+        let backgroundColor = colorsProvider.unifiedInputToggleBackground(isBurner: isBurner)
+        let selectionBorder = colorsProvider.unifiedInputToggleSelectionBorder(isBurner: isBurner)
+        let selectionBackgroundColor = colorsProvider.unifiedInputToggleSelectionBackground(isBurner: isBurner)
 
         toggleControl.backgroundColor = backgroundColor
-        toggleControl.borderColor = borderColor
+        toggleControl.borderColor = nil
         toggleControl.focusedBackgroundColor = backgroundColor
         toggleControl.selectionColor = selectionBackgroundColor
         toggleControl.selectionInnerBorderColor = selectionBorder
 
-        if tabCollectionViewModel.isBurner {
+        if isBurner {
             toggleControl.focusBorderColor = NSColor.burnerAccent.withAlphaComponent(0.8)
             toggleControl.outerBorderColor = NSColor.burnerAccent.withAlphaComponent(0.2)
         } else {

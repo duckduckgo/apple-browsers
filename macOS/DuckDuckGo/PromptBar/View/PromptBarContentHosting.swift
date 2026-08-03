@@ -27,6 +27,10 @@ protocol PromptBarContentHosting: AnyObject {
     /// True while a menu, file picker or modal is up: those take key away, and must not dismiss the bar.
     var isPresentingAuxiliaryUI: Bool { get }
 
+    /// Whether the prompt holds anything the user typed. Read at dismissal to tell an abandoned
+    /// prompt from an exploratory open.
+    var hasPromptText: Bool { get }
+
     /// Not `preferredContentSize`, which would collide with the `NSViewController` property conformers inherit.
     var preferredWindowContentSize: NSSize { get }
 

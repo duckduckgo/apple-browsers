@@ -20,6 +20,7 @@ import Cocoa
 import Combine
 import AIChat
 import AppKitExtensions
+import DesignResourcesKitIcons
 import PixelKit
 import PrivacyConfig
 
@@ -34,6 +35,11 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
         static let dividerTopOffset: CGFloat = -10.0
         static let placeholderLeadingOffset: CGFloat = 10
         static let placeholderLegacyLeadingOffset: CGFloat = 9
+        static let textLeadingOffset: CGFloat = 10
+        static let duckAILogoSize: CGFloat = 24
+        static let duckAILogoToTextSpacing: CGFloat = 12
+        static let duckAILogoLeadingOffset: CGFloat = 5
+        static let duckAILogoLegacyLeadingOffset: CGFloat = 3
     }
 
     private let backgroundView = MouseBlockingBackgroundView()
@@ -44,6 +50,7 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
     private let textContainer = NSTextContainer()
     private let textView: FocusableTextView
     private let placeholderLabel = ClickThroughLabel(labelWithString: "")
+    private let duckAILogoView = ClickThroughImageView()
     private let dividerView = ColorView(frame: .zero)
     private let omnibarController: AIChatOmnibarController
     /// Coordinator for the `@`-mention tab picker. `nil` until the first detected token, so
@@ -204,6 +211,16 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
 
         let placeholderLeadingConstant = themeManager.isAppRebranded ? Constants.placeholderLeadingOffset : Constants.placeholderLegacyLeadingOffset
 
+        let showsDuckAILogo = omnibarController.surface.showsDuckAILogo
+        if showsDuckAILogo {
+            setUpDuckAILogo()
+        }
+
+        let scrollViewLeading = showsDuckAILogo
+            ? scrollView.leadingAnchor.constraint(equalTo: duckAILogoView.trailingAnchor,
+                                                  constant: Constants.duckAILogoToTextSpacing - Constants.textLeadingOffset)
+            : scrollView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor)
+
         NSLayoutConstraint.activate([
             backgroundView.topAnchor.constraint(equalTo: view.topAnchor),
             backgroundView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
@@ -216,7 +233,7 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
             containerView.bottomAnchor.constraint(equalTo: backgroundView.bottomAnchor),
 
             scrollView.topAnchor.constraint(equalTo: containerView.topAnchor),
-            scrollView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
+            scrollViewLeading,
             scrollView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
             scrollView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -Constants.bottomPadding),
 
@@ -228,6 +245,25 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
 
             placeholderLabel.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor, constant: placeholderLeadingConstant),
             placeholderLabel.topAnchor.constraint(equalTo: scrollView.topAnchor, constant: 9),
+        ])
+    }
+
+    private func setUpDuckAILogo() {
+        duckAILogoView.translatesAutoresizingMaskIntoConstraints = false
+        duckAILogoView.image = DesignSystemImages.Color.Size24.duckAI
+        duckAILogoView.imageScaling = .scaleProportionallyUpOrDown
+        duckAILogoView.hitTestForwardingTarget = textView
+        duckAILogoView.setAccessibilityIdentifier("AIChatOmnibarTextContainerViewController.duckAILogoView")
+        duckAILogoView.setAccessibilityElement(false)
+        containerView.addSubview(duckAILogoView)
+
+        let leadingConstant = themeManager.isAppRebranded ? Constants.duckAILogoLeadingOffset : Constants.duckAILogoLegacyLeadingOffset
+
+        NSLayoutConstraint.activate([
+            duckAILogoView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: leadingConstant),
+            duckAILogoView.centerYAnchor.constraint(equalTo: placeholderLabel.centerYAnchor),
+            duckAILogoView.widthAnchor.constraint(equalToConstant: Constants.duckAILogoSize),
+            duckAILogoView.heightAnchor.constraint(equalToConstant: Constants.duckAILogoSize)
         ])
     }
 
@@ -688,6 +724,14 @@ protocol FocusableTextViewNavigationDelegate: AnyObject {
 /// Used for the prompt placeholder: clicks on the placeholder area hit-test to the text view so the prompt takes focus,
 /// rather than falling through the empty scroll-view area to the address bar behind (which would switch to search mode).
 private final class ClickThroughLabel: NSTextField {
+    weak var hitTestForwardingTarget: NSView?
+
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        return hitTestForwardingTarget ?? nil
+    }
+}
+
+private final class ClickThroughImageView: NSImageView {
     weak var hitTestForwardingTarget: NSView?
 
     override func hitTest(_ point: NSPoint) -> NSView? {

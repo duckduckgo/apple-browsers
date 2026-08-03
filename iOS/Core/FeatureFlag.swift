@@ -202,9 +202,6 @@ public enum FeatureFlag: String {
     /// This is off by default.  We can turn it on to get daily pixels of users's widget usage for a short time.
     case widgetReporting
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866467213996
-    case createFireproofFaviconUpdaterSecureVaultInBackground
-
     /// Local inactivity provisional notifications delivered to Notification Center.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866471590692
     case inactivityNotification
@@ -309,9 +306,6 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213433942918287?focus=true
     case multiplePageContexts
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213608678718359?focus=true
-    case iPadPageContext
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212980785692847?focus=true
     case aiChatSync
@@ -443,9 +437,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213813585476250?focus=true
     case screenTimeCleaning
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213763338305579?focus=true
-    case aiChatContextualFireButton
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215448831345663?focus=true
     case bottomBarViewportFixedElementsWorkaround
 
@@ -522,6 +513,13 @@ public enum FeatureFlag: String {
     /// Experiment for removing monthly free trials
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216851336490252
     case monthlyFreeTrialExperiment
+
+    /// Moves the iPad tabs bar up into the system window controls row (iOS 26+ resizable windows).
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217015452646368?focus=true
+    case iPadTabsBarInWindowControlsRow
+    
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1216352541195038?focus=true
+    case nativeAIPromptEditing
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -690,8 +688,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(DBPSubfeature.pirRollout))
         case .widgetReporting:
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.widgetReporting), supportsLocalOverriding: false)
-        case .createFireproofFaviconUpdaterSecureVaultInBackground:
-            Config(defaultValue: .enabled, source: .remoteReleasable(AutofillSubfeature.createFireproofFaviconUpdaterSecureVaultInBackground))
         case .inactivityNotification:
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.inactivityNotification))
         case .daxEasterEggLogos:
@@ -762,8 +758,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(AIChatSubfeature.autoAttachContextByDefault))
         case .multiplePageContexts:
             Config(source: .remoteReleasable(AIChatSubfeature.multiplePageContexts))
-        case .iPadPageContext:
-            Config(source: .remoteReleasable(AIChatSubfeature.iPadPageContext))
         case .aiChatSync:
             Config(source: .remoteReleasable(SyncSubfeature.aiChatSync))
         case .aiChatSyncPromo:
@@ -849,8 +843,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(AIChatSubfeature.voiceShortcut))
         case .screenTimeCleaning:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.screenTimeCleaning))
-        case .aiChatContextualFireButton:
-            Config(source: .remoteReleasable(AIChatSubfeature.contextualFireButton))
         case .bottomBarViewportFixedElementsWorkaround:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.bottomBarViewportFixedElementsWorkaround))
         case .aiChatNativeStorage:
@@ -886,11 +878,15 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .syncCanShowV2ConnectCode:
             Config(source: .remoteReleasable(SyncSubfeature.canShowV2ConnectCode))
         case .simplifiedSyncSetupV2:
-            Config(source: .remoteReleasable(SyncSubfeature.simplifiedSyncSetupV2))
+            Config(defaultValue: .enabled, source: .remoteReleasable(SyncSubfeature.simplifiedSyncSetupV2))
         case .blankSnapshotCaching:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.blankSnapshotCaching))
         case .systemFindInPage:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.systemFindInPage))
+        case .iPadTabsBarInWindowControlsRow:
+            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.iPadTabsBarInWindowControlsRow))
+        case .nativeAIPromptEditing:
+            Config(defaultValue: .disabled, source: .remoteReleasable(AIChatSubfeature.nativePromptEditing))
         }
     }
 

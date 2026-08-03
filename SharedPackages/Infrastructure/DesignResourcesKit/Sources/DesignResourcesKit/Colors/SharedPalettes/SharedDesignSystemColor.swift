@@ -137,8 +137,21 @@ public enum SharedDesignSystemColor {
     case iconsTertiary
 
     // Input
+    case unifiedInputControlFillPrimary
+    case unifiedInputControlFillSecondary
+    case unifiedInputControlShadowPrimary
     case unifiedInputFieldFillPrimary
     case unifiedInputFieldFillSecondary
+    case unifiedInputFireControlFillPrimary
+    case unifiedInputFireControlFillSecondary
+    case unifiedInputFireFieldFillPrimary
+    case unifiedInputFireFieldFillSecondary
+    case unifiedInputFireIconsPrimary
+    case unifiedInputFireIconsSecondary
+    case unifiedInputFireTextPrimary
+    case unifiedInputFireTextSecondary
+    case unifiedInputTextPrimary
+    case unifiedInputTextSecondary
 
     // System
     case lines

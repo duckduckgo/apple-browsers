@@ -17,6 +17,7 @@
 //
 
 import Cocoa
+import Combine
 import Common
 import FoundationExtensions
 import DesignResourcesKitIcons
@@ -37,11 +38,16 @@ protocol FirePopoverViewControllerDelegate: AnyObject {
 /// Regular windows use the SwiftUI FireDialogView instead.
 final class FirePopoverViewController: NSViewController {
 
+    private enum Constants {
+        static let closeButtonHeight: CGFloat = 28
+    }
+
     weak var delegate: FirePopoverViewControllerDelegate?
 
     private let fireViewModel: FireViewModel
     private weak var tabCollectionViewModel: TabCollectionViewModel?
-    private let themeManager: ThemeManaging
+    let themeManager: ThemeManaging
+    var themeUpdateCancellable: AnyCancellable?
 
 #if DEBUG
     // Preview action handlers (optional, for testing/previewing without side effects)
@@ -50,7 +56,7 @@ final class FirePopoverViewController: NSViewController {
 #endif
 
     private lazy var backgroundView: ColorView = {
-        let view = ColorView(frame: .zero, backgroundColor: NSColor(designSystemColor: .surfacePrimary))
+        let view = ColorView(frame: .zero)
         view.translatesAutoresizingMaskIntoConstraints = false
         return view
     }()
@@ -61,8 +67,6 @@ final class FirePopoverViewController: NSViewController {
         button.isBordered = false
         button.setButtonType(.momentaryPushIn)
         button.title = ""
-        button.mouseOverColor = themeManager.theme.colorsProvider.buttonMouseOverColor
-        button.mouseDownColor = themeManager.theme.colorsProvider.buttonMouseDownColor
         button.cornerRadius = 4
         button.target = self
         button.action = #selector(openNewBurnerWindowAction)
@@ -112,20 +116,17 @@ final class FirePopoverViewController: NSViewController {
         return box
     }()
 
-    private lazy var closeBurnerWindowButton: NSButton = {
-        let button = NSButton(title: "", target: self, action: #selector(closeBurnerWindowButtonAction))
+    private lazy var closeBurnerWindowButton: MouseOverButton = {
+        let button = MouseOverButton()
         button.translatesAutoresizingMaskIntoConstraints = false
-        button.bezelStyle = .rounded
+        button.target = self
+        button.action = #selector(closeBurnerWindowButtonAction)
+        button.isBordered = false
         button.controlSize = .large
         button.setButtonType(.momentaryPushIn)
-
-        button.attributedTitle = NSAttributedString(
-            string: UserText.fireDialogBurnWindowButton,
-            attributes: [
-                .font: NSFont.systemFont(ofSize: 13),
-                .foregroundColor: themeManager.theme.palette.destructiveTextPrimary
-            ]
-        )
+        button.cornerRadius = Constants.closeButtonHeight * 0.5
+        button.title = UserText.fireDialogBurnWindowButton
+        button.font = .systemFont(ofSize: 13)
 
         return button
     }()
@@ -152,6 +153,9 @@ final class FirePopoverViewController: NSViewController {
         super.viewDidLoad()
 
         setupUI()
+
+        applyThemeStyle()
+        subscribeToThemeChanges()
     }
 
     private func setupUI() {
@@ -203,7 +207,7 @@ final class FirePopoverViewController: NSViewController {
             closeBurnerWindowButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
             closeBurnerWindowButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
             closeBurnerWindowButton.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -16),
-            closeBurnerWindowButton.heightAnchor.constraint(equalToConstant: 28)
+            closeBurnerWindowButton.heightAnchor.constraint(equalToConstant: Constants.closeButtonHeight)
         ])
     }
 
@@ -232,6 +236,21 @@ final class FirePopoverViewController: NSViewController {
             return
         }
         windowController.window?.close()
+    }
+}
+
+extension FirePopoverViewController: ThemeUpdateListening {
+
+    func applyThemeStyle(theme: ThemeStyleProviding) {
+        backgroundView.backgroundColor = theme.palette.surfacePrimary
+
+        openBurnerWindowButton.mouseOverColor = theme.colorsProvider.buttonMouseOverColor
+        openBurnerWindowButton.mouseDownColor = theme.colorsProvider.buttonMouseDownColor
+
+        closeBurnerWindowButton.backgroundColor = theme.palette.destructivePrimary
+        closeBurnerWindowButton.mouseOverColor = theme.palette.destructiveSecondary
+        closeBurnerWindowButton.mouseDownColor = theme.palette.destructiveTertiary
+        closeBurnerWindowButton.normalTintColor = .white
     }
 }
 

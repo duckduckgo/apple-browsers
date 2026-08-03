@@ -187,9 +187,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// Note: 'Failsafe' feature flag. See https://app.asana.com/1/137249556945/project/1202500774821704/task/1210572145398078?focus=true
     case supportsAlternateStripePaymentFlow
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866719485546
-    case refactorOfSyncPreferences
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866619299477
     case newSyncEntryPoints
 
@@ -387,6 +384,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213610208091978?focus=true
     case aiChatChromeSidebar
 
+    /// https://app.asana.com/1/137249556945/project/1148564399326804/task/1215556915315562?focus=true
+    case aiChatChromeMenuButton
+
     /// Enable Look Up (three-finger click) while keeping link preview disabled
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213489080183740
     case webViewLookUpAction
@@ -472,6 +472,11 @@ public enum FeatureFlag: String, CaseIterable {
     /// keyboard shortcut or a menu bar icon, plus its rows on the AI Features settings screen.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216850216210288?focus=true
     case macosPromptBar
+
+    /// Gates the bookmarks "Reorder by name" action, which permanently reorders the target
+    /// folder's direct children alphabetically and persists the new order.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217076881156357?focus=true
+    case bookmarksReorderByName
 
 }
 
@@ -620,8 +625,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .internalOnly, source: .remoteReleasable(HtmlNewTabPageSubfeature.searchSuggestionsDeletion))
         case .supportsAlternateStripePaymentFlow:
             Config(defaultValue: .enabled, source: .remoteReleasable(PrivacyProSubfeature.supportsAlternateStripePaymentFlow), category: .subscription)
-        case .refactorOfSyncPreferences:
-            Config(defaultValue: .enabled, source: .remoteReleasable(SyncSubfeature.refactorOfSyncPreferences))
         case .newSyncEntryPoints:
             Config(source: .remoteReleasable(SyncSubfeature.newSyncEntryPoints))
         case .syncFeatureLevel3:
@@ -736,6 +739,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.sidebarSuggestedPrompts), category: .duckAI)
         case .aiChatChromeSidebar:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.sidebar), category: .duckAI)
+        case .aiChatChromeMenuButton:
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.chromeMenuButton), category: .duckAI)
         case .webViewLookUpAction:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.webViewLookUpAction))
         case .promoQueue:
@@ -787,6 +792,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(SyncSubfeature.canShowV2ConnectCode), category: .sync)
         case .macosPromptBar:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.macosPromptBar), category: .duckAI)
+        case .bookmarksReorderByName:
+            Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.bookmarksReorderByName))
         }
     }
 

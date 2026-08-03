@@ -73,6 +73,7 @@ final class AIChatSuggestionsView: NSView {
     private var viewAllChatsRowView: AIChatViewAllChatsRowView?
     private var viewAllChatsSeparatorView: NSView?
 
+    var isBurner: Bool = false
     var canDeleteSuggestions: Bool = false
     var onSuggestionClicked: ((AIChatSuggestion) -> Void)?
     var onSuggestionDeleted: ((AIChatSuggestion) -> Void)?
@@ -182,7 +183,7 @@ final class AIChatSuggestionsView: NSView {
 
         // Create new row views
         for (index, suggestion) in suggestions.enumerated() {
-            let rowView = AIChatSuggestionRowView(suggestion: suggestion)
+            let rowView = AIChatSuggestionRowView(suggestion: suggestion, isBurner: isBurner)
             rowView.translatesAutoresizingMaskIntoConstraints = false
 
             rowView.onClick = { [weak self] in
@@ -242,7 +243,7 @@ final class AIChatSuggestionsView: NSView {
             viewAllChatsSeparatorView = separator
         }
 
-        let viewAllRow = AIChatViewAllChatsRowView()
+        let viewAllRow = AIChatViewAllChatsRowView(isBurner: isBurner)
         viewAllRow.translatesAutoresizingMaskIntoConstraints = false
 
         viewAllRow.onClick = { [weak self] in

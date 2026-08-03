@@ -21,6 +21,10 @@ import SwiftUI
 import DesignResourcesKitIcons
 import UIComponents
 
+#if DEBUG
+import PreviewSnapshots
+#endif
+
 struct VoiceSearchFeedbackView: View {
     @ObservedObject var speechModel: VoiceSearchFeedbackViewModel
     @Environment(\.verticalSizeClass) var sizeClass
@@ -225,30 +229,23 @@ extension VoiceSearchFeedbackView {
 
 // MARK: - Preview
 
+#if DEBUG
 struct VoiceSearchFeedbackView_Previews: PreviewProvider {
+    typealias State = VoiceSearchFeedbackViewModel
+
     static var previews: some View {
-        Group {
-            ForEach(ColorScheme.allCases, id: \.self) {
-                VoiceSearchFeedbackView(speechModel: VoiceSearchFeedbackViewModel(speechRecognizer: PreviewMockSpeechRecognizer(),
-                                                                                  aiChatSettings: AIChatSettings()))
-                    .preferredColorScheme($0)
-            }
-
-            VoiceSearchFeedbackView(speechModel: VoiceSearchFeedbackViewModel(speechRecognizer: PreviewMockSpeechRecognizer(),
-                                                                              aiChatSettings: AIChatSettings()))
-                .previewInterfaceOrientation(.landscapeRight)
-        }
+        snapshots.previews
     }
+
+    static let snapshots = PreviewSnapshots(
+        configurations: [
+            .init(name: "AI Chat", state: .preview()),
+            .init(name: "Search", state: .preview(preferredTarget: .SERP)),
+            .init(name: "Landscape", state: .preview(), interfaceOrientation: .landscapeRight)
+        ],
+        configure: {
+            VoiceSearchFeedbackView(speechModel: $0)
+        }
+    )
 }
-
-private struct PreviewMockSpeechRecognizer: SpeechRecognizerProtocol {
-    var isAvailable: Bool = false
-
-    static func requestMicAccess(withHandler handler: @escaping (Bool) -> Void) { }
-
-    func getVolumeLevel(from channelData: UnsafeMutablePointer<Float>) -> Float { 10 }
-
-    func startRecording(resultHandler: @escaping (String?, Error?, Bool) -> Void, volumeCallback: @escaping (Float) -> Void) { }
-
-    func stopRecording() { }
-}
+#endif

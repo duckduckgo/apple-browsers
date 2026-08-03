@@ -78,7 +78,7 @@ final class SearchTokenFetcher {
 
         do {
             let token = try await requester.requestToken(userAgent: userAgent)
-            store(token: token, userAgent: userAgent)
+            cache(token: token, userAgent: userAgent)
             Logger.general.debug("SearchToken: fetched (len=\(token.count, privacy: .public))")
         } catch {
             Logger.general.debug("SearchToken: fetch failed: \(error.localizedDescription, privacy: .public)")
@@ -101,7 +101,7 @@ final class SearchTokenFetcher {
         return true
     }
 
-    private func store(token: String, userAgent: String) {
+    private func cache(token: String, userAgent: String) {
         lock.lock(); defer { lock.unlock() }
         cachedToken = token
         cachedUserAgent = userAgent

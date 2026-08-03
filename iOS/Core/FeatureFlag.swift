@@ -515,6 +515,10 @@ public enum FeatureFlag: String {
     /// Experiment for removing monthly free trials
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216851336490252
     case monthlyFreeTrialExperiment
+
+    /// Moves the iPad tabs bar up into the system window controls row (iOS 26+ resizable windows).
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217015452646368?focus=true
+    case iPadTabsBarInWindowControlsRow
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -880,6 +884,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.blankSnapshotCaching))
         case .systemFindInPage:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.systemFindInPage))
+        case .iPadTabsBarInWindowControlsRow:
+            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.iPadTabsBarInWindowControlsRow))
         }
     }
 

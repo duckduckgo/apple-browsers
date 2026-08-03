@@ -48,6 +48,10 @@ class MainViewFactory {
         return false
     }
 
+    var isWindowControlsRowEnabled: Bool {
+        WindowControlsRowLayout.isEnabled(featureFlagger: featureFlagger)
+    }
+
     private init(parentController: UIViewController,
                  omnibarDependencies: OmnibarDependencyProvider,
                  featureFlagger: FeatureFlagger,
@@ -102,6 +106,43 @@ class MainViewFactory {
 
 }
 
+/// Uses corner adapted layout regions because UIKit does not expose window control frames.
+enum WindowControlsRowLayout {
+
+    static func isEnabled(featureFlagger: FeatureFlagger?) -> Bool {
+        guard #available(iOS 26, *), UIDevice.current.userInterfaceIdiom == .pad, let featureFlagger else { return false }
+        return featureFlagger.isFeatureOn(.iPadTabsBarInWindowControlsRow)
+    }
+
+    /// Returns false in full screen because horizontal adaptation also reserves display corner space.
+    static func sharesRow(in view: UIView, isEnabled: Bool) -> Bool {
+        isEnabled && view.isWindowedPresentation
+    }
+
+    static func sharesRow(in view: UIView, for size: CGSize, isEnabled: Bool) -> Bool {
+        isEnabled && view.isWindowedPresentation(for: size)
+    }
+
+    static func leadingInset(in view: UIView) -> CGFloat {
+        guard #available(iOS 26, *) else { return 0 }
+        return view.directionalEdgeInsets(for: .margins(cornerAdaptation: .horizontal)).leading
+    }
+
+    static func topInset(in view: UIView, sharesRow: Bool) -> CGFloat {
+        guard #available(iOS 26, *) else { return 0 }
+        let adaptation: UIView.LayoutRegion.AdaptivityAxis = sharesRow ? .horizontal : .vertical
+        return view.directionalEdgeInsets(for: .margins(cornerAdaptation: adaptation)).top
+    }
+
+    static func rowHeight(in view: UIView) -> CGFloat {
+        guard #available(iOS 26, *) else { return 0 }
+        let pushedBelow = view.directionalEdgeInsets(for: .margins(cornerAdaptation: .vertical)).top
+        let pushedAside = view.directionalEdgeInsets(for: .margins(cornerAdaptation: .horizontal)).top
+        return max(0, pushedBelow - pushedAside)
+    }
+
+}
+
 /// Create functions.  The lightweight subclases of UIView make it easier to debug to the UI.
 extension MainViewFactory {
 
@@ -113,6 +154,7 @@ extension MainViewFactory {
         createUnifiedInputContentContainer()
         createTopSlideContainer()
         createStatusBackground()
+        createWindowControlsRowBackground()
         createTabBarContainer()
         createOmniBar()
         createToolbar()
@@ -342,6 +384,16 @@ extension MainViewFactory {
         superview.addSubview(coordinator.statusBackground)
     }
 
+    final class WindowControlsRowBackground: UIView { }
+    private func createWindowControlsRowBackground() {
+        guard isWindowControlsRowEnabled else { return }
+        let view = WindowControlsRowBackground()
+        view.isHidden = true
+        view.isUserInteractionEnabled = false
+        coordinator.windowControlsRowBackground = view
+        superview.addSubview(view)
+    }
+
     final class TabBarContainer: UIView { }
     private func createTabBarContainer() {
         coordinator.tabBarContainer = TabBarContainer()
@@ -441,6 +493,7 @@ extension MainViewFactory {
     private func constrainViews() {
         constrainLogoBackground()
         constrainTopSlideContainer()
+        constrainWindowControlsRowBackground()
         constrainContentContainer()
         constrainSuggestionTrayContainer()
         constrainFocusedStateBackground()
@@ -453,6 +506,17 @@ extension MainViewFactory {
         constrainAITabCollapsedTopSeparator()
         constrainAIChatTabChatHeaderContainer()
     }
+
+    private func constrainWindowControlsRowBackground() {
+        guard #available(iOS 26, *), isPad, let background = coordinator.windowControlsRowBackground else { return }
+        let guide = superview.layoutGuide(for: .margins(cornerAdaptation: .horizontal))
+        NSLayoutConstraint.activate([
+            background.constrainView(superview, by: .leading),
+            background.constrainView(superview, by: .trailing),
+            background.constrainAttribute(.height, to: MainViewCoordinator.Constants.tabBarContainerHeight),
+            background.topAnchor.constraint(equalTo: guide.topAnchor, constant: MainViewCoordinator.Constants.windowControlsRowTopSpacing),
+        ])
+    }
     
     private func constrainNavigationBarContainer() {
         let container = coordinator.navigationBarContainer!
@@ -463,6 +527,11 @@ extension MainViewFactory {
         if #available(iOS 26, *), isPad {
             let guide = superview.layoutGuide(for: .margins(cornerAdaptation: .vertical))
             coordinator.constraints.navigationBarContainerTop = container.topAnchor.constraint(equalTo: guide.topAnchor)
+            if isWindowControlsRowEnabled {
+                let sharedRowGuide = superview.layoutGuide(for: .margins(cornerAdaptation: .horizontal))
+                coordinator.constraints.navigationBarContainerTopBelowWindowControls = coordinator.constraints.navigationBarContainerTop
+                coordinator.constraints.navigationBarContainerTopInWindowControlsRow = container.topAnchor.constraint(equalTo: sharedRowGuide.topAnchor)
+            }
         } else {
             coordinator.constraints.navigationBarContainerTop = container.constrainView(superview.safeAreaLayoutGuide, by: .top)
         }
@@ -491,6 +560,11 @@ extension MainViewFactory {
         if #available(iOS 26, *), isPad {
             let guide = superview.layoutGuide(for: .margins(cornerAdaptation: .vertical))
             coordinator.constraints.tabBarContainerTop = tabBarContainer.topAnchor.constraint(equalTo: guide.topAnchor)
+            if isWindowControlsRowEnabled {
+                let sharedRowGuide = superview.layoutGuide(for: .margins(cornerAdaptation: .horizontal))
+                coordinator.constraints.tabBarContainerTopBelowWindowControls = coordinator.constraints.tabBarContainerTop
+                coordinator.constraints.tabBarContainerTopInWindowControlsRow = tabBarContainer.topAnchor.constraint(equalTo: sharedRowGuide.topAnchor)
+            }
         } else {
             coordinator.constraints.tabBarContainerTop = tabBarContainer.constrainView(superview.safeAreaLayoutGuide, by: .top)
         }
@@ -498,9 +572,10 @@ extension MainViewFactory {
         NSLayoutConstraint.activate([
             tabBarContainer.constrainView(superview, by: .leading),
             tabBarContainer.constrainView(superview, by: .trailing),
-            tabBarContainer.constrainAttribute(.height, to: 40),
+            tabBarContainer.constrainAttribute(.height, to: MainViewCoordinator.Constants.tabBarContainerHeight),
             coordinator.constraints.tabBarContainerTop,
         ])
+
     }
 
     private func constrainStatusBackground() {
@@ -526,6 +601,12 @@ extension MainViewFactory {
         let toolbar = coordinator.toolbar!
 
         coordinator.constraints.contentContainerTop = contentContainer.constrainView(coordinator.topSlideContainer!, by: .top, to: .bottom)
+        if let windowControlsRowBackground = coordinator.windowControlsRowBackground {
+            // Lower priority lets shared row clearance win while top chrome slides behind it.
+            coordinator.constraints.contentContainerTop.priority = .init(999)
+            coordinator.constraints.contentContainerTopBelowWindowControlsRow =
+                contentContainer.constrainView(windowControlsRowBackground, by: .top, to: .bottom, relatedBy: .greaterThanOrEqual)
+        }
         coordinator.constraints.contentContainerTopToSafeArea = contentContainer.topAnchor.constraint(equalTo: superview.safeAreaLayoutGuide.topAnchor)
         coordinator.constraints.contentContainerTopToSuperview = contentContainer.topAnchor.constraint(equalTo: superview.topAnchor)
         coordinator.constraints.contentContainerBottomToToolbarTop = contentContainer.constrainView(toolbar, by: .bottom, to: .top)

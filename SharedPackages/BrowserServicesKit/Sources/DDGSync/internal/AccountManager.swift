@@ -19,6 +19,7 @@
 import Foundation
 import DDGSyncCrypto
 import Networking
+import os.log
 
 struct AccountManager: AccountManaging {
 
@@ -215,16 +216,20 @@ struct AccountManager: AccountManaging {
             let keys = try accountInfoKeyFactory.makeProtectedKeys(accountSecretKey: accountSecretKey,
                                                                   thirdPartyMainKey: nil)
             guard let protectedKey = keys.first else {
+                Logger.sync.error("Failed to prepare unified device info for signup: missing account_info protected key")
                 return nil
             }
             let encryptedDeviceInfo = try deviceInfoCodec.encrypt(DeviceInfo(name: name, type: type),
                                                                   using: protectedKey)
-            guard encryptedDeviceInfo.utf8.count <= Signup.maximumDeviceInfoLength else {
+            guard encryptedDeviceInfo.utf8.count <= DeviceInfo.maximumEncryptedLength else {
+                Logger.sync.error("Failed to prepare unified device info for signup: encrypted payload exceeds the maximum length")
                 return nil
             }
             return (keys: keys, deviceInfo: encryptedDeviceInfo)
         } catch {
             // Device info is additive, so local preparation failures must not block legacy signup.
+            let errorType = String(describing: type(of: error))
+            Logger.sync.error("Failed to prepare unified device info for signup: \(errorType, privacy: .public)")
             return nil
         }
     }
@@ -293,8 +298,6 @@ struct AccountManager: AccountManaging {
     }
 
     struct Signup {
-
-        static let maximumDeviceInfoLength = 2_000
 
         struct Result: Decodable {
             let userId: String

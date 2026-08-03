@@ -183,7 +183,7 @@ final class AccountManagerTests: XCTestCase {
         accountInfoKeyFactory.makeProtectedKeysStub = [makeAccountInfoProtectedKey()]
         let deviceInfoCodec = DeviceInfoCodingMock()
         deviceInfoCodec.encryptUsingProtectedKeyStub = String(repeating: "a",
-                                                              count: AccountManager.Signup.maximumDeviceInfoLength + 1)
+                                                              count: DeviceInfo.maximumEncryptedLength + 1)
         let accountManager = AccountManager(endpoints: endpoints,
                                             api: api,
                                             crypter: CryptingMock(),

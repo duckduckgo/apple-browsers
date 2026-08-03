@@ -29,6 +29,13 @@ final class TabTerminationTelemetryTests: XCTestCase {
 
     private var date = Date(timeIntervalSince1970: 1_000_000)
 
+    func testInteractionStateRestorationPixelNamesRemainBackwardCompatible() {
+        XCTAssertEqual(TabTerminationTelemetryPixel.interactionStateFailedToRestore.name,
+                       "m_d_tab-interaction-state_failed-to-restore")
+        XCTAssertEqual(TabTerminationTelemetryPixel.interactionStateFailedToRestoreDaily.name,
+                       "m_d_tab-interaction-state_failed-to-restore_daily")
+    }
+
     func testWhenFeatureIsDisabledThenNoPixelsFire() {
         let pixelFiring = MockTabTerminationPixelFiring()
         let telemetry = makeTelemetry(featureEnabled: false, pixelFiring: pixelFiring)

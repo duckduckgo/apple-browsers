@@ -125,6 +125,8 @@ final class TabTerminationTelemetryOccurrenceStore {
 }
 
 enum TabTerminationTelemetryPixel: PixelKitEvent, PixelKitEventWithCustomPrefix {
+    case interactionStateFailedToRestore
+    case interactionStateFailedToRestoreDaily
     case foreground
     case background
     case occurrence(OccurrenceBucket)
@@ -134,6 +136,10 @@ enum TabTerminationTelemetryPixel: PixelKitEvent, PixelKitEventWithCustomPrefix 
 
     var name: String {
         switch self {
+        case .interactionStateFailedToRestore:
+            return "m_d_tab-interaction-state_failed-to-restore"
+        case .interactionStateFailedToRestoreDaily:
+            return "m_d_tab-interaction-state_failed-to-restore_daily"
         case .foreground:
             return "debug_webkit_termination_foreground"
         case .background:

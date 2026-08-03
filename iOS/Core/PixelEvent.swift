@@ -1917,7 +1917,6 @@ extension Pixel {
         case tabInteractionStateSourceMissingRootDirectory
         case tabInteractionStateSourceFailedToWrite
 
-        case tabInteractionStateFailedToRestore
         case tabInteractionStateRestorationTime(_ time: BucketAggregation)
 
         // MARK: Malicious Site Protection
@@ -3020,8 +3019,6 @@ extension Pixel.Event {
         case .tabInteractionStateSourceFailedToWrite:
             return "m_d_tab-interaction-state-source_failed-to-write"
 
-        case .tabInteractionStateFailedToRestore:
-            return "m_d_tab-interaction-state_failed-to-restore"
         case .tabInteractionStateRestorationTime(let aggregation):
             return "m_d_tab-interaction-state_restoration-time-\(aggregation)"
 

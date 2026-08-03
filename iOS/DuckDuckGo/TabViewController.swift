@@ -502,7 +502,7 @@ class TabViewController: UIViewController {
                                    duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
                                    duckAiFireModeStorageHandler: DuckAiNativeStorageHandling? = nil,
                                    adBlockingAvailability: AdBlockingAvailabilityProviding,
-                                   pixelFiring: (any PixelKit.PixelFiring)? = PixelKit.shared) -> TabViewController {
+                                   pixelFiring: (any PixelKitFiring)? = PixelKit.shared) -> TabViewController {
 
         return TabViewController(tabModel: model,
                                  privacyConfigurationManager: privacyConfigurationManager,
@@ -609,7 +609,7 @@ class TabViewController: UIViewController {
     let aiChatFullModeFeature: AIChatFullModeFeatureProviding
     let sharedSecureVault: (any AutofillSecureVault)?
     let privacyStats: PrivacyStatsProviding
-    private let pixelFiring: (any PixelKit.PixelFiring)?
+    private let pixelFiring: (any PixelKitFiring)?
 
     private(set) var aiChatContentHandler: AIChatContentHandling
     private(set) var voiceSearchHelper: VoiceSearchHelperProtocol
@@ -688,7 +688,7 @@ class TabViewController: UIViewController {
          duckAiFireModeStorageHandler: DuckAiNativeStorageHandling? = nil,
          addressBarURLFilter: AddressBarURLFiltering = AddressBarURLFilter(),
          adBlockingAvailability: AdBlockingAvailabilityProviding,
-         pixelFiring: (any PixelKit.PixelFiring)? = PixelKit.shared) {
+         pixelFiring: (any PixelKitFiring)? = PixelKit.shared) {
 
         self.tabModel = tabModel
         self.viewModel = TabViewModel(tab: tabModel, historyManager: historyManager)

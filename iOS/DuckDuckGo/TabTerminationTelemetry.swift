@@ -22,6 +22,8 @@ import PixelKit
 import PrivacyConfig
 import UIKit
 
+typealias PixelKitFiring = PixelFiring
+
 @MainActor
 protocol TabTerminationTelemetry {
     func webContentProcessDidTerminate(activeTabCount: Int)
@@ -33,7 +35,7 @@ final class DefaultTabTerminationTelemetry: TabTerminationTelemetry {
 
     private let featureFlagger: FeatureFlagger
     private let occurrenceStore: TabTerminationTelemetryOccurrenceStore
-    private let pixelFiring: (any PixelFiring)?
+    private let pixelFiring: (any PixelKitFiring)?
     private let applicationState: @MainActor () -> UIApplication.State
     private let memoryFootprint: @MainActor () -> UInt64?
     private let date: () -> Date
@@ -41,7 +43,7 @@ final class DefaultTabTerminationTelemetry: TabTerminationTelemetry {
 
     init(featureFlagger: FeatureFlagger,
          keyValueStore: KeyValueStoring,
-         pixelFiring: (any PixelFiring)? = PixelKit.shared,
+         pixelFiring: (any PixelKitFiring)? = PixelKit.shared,
          applicationState: (@MainActor () -> UIApplication.State)? = nil,
          memoryFootprint: (@MainActor () -> UInt64?)? = nil,
          date: @escaping () -> Date = Date.init) {

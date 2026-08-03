@@ -2889,7 +2889,7 @@ extension TabViewController: WKNavigationDelegate {
            navigationAction.navigationType != .backForward,
            let url = navigationAction.request.url,
            SerpSearchTokenInterceptor.isSerpURL(url),
-           let cohort = featureFlagger.assignedCohort(for: FeatureFlag.searchTokenExperiment) as? FeatureFlag.SearchTokenExperimentCohort {
+           let cohort = featureFlagger.assignedCohort(for: FeatureFlag.searchTokenExperimentV2) as? FeatureFlag.SearchTokenExperimentCohort {
             let token = cohort == .treatment ? delegate?.searchToken(for: self) : nil
             if let signalled = SerpSearchTokenInterceptor.signalledRequest(for: modifiedRequest,
                                                                            cohort: cohort,

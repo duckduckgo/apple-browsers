@@ -17,6 +17,8 @@
 //
 
 import Foundation
+import FeatureFlags
+import PrivacyConfig
 
 enum BookmarksContentState: Equatable {
     case loading
@@ -25,10 +27,10 @@ enum BookmarksContentState: Equatable {
 }
 
 final class BookmarkManagementDetailViewModel {
-
     private let bookmarkManager: BookmarkManager
     private let bookmarksSearchAndSortMetrics: BookmarksSearchAndSortMetrics
     private let navigationEngagementMetrics: BookmarksNavigationEngagementMetrics
+    private let featureFlagger: FeatureFlagger
 
     private var currentSelectionState: BookmarkManagementSidebarViewController.SelectionState = .empty
     private var searchQuery = ""
@@ -39,12 +41,33 @@ final class BookmarkManagementDetailViewModel {
         !searchQuery.isBlank
     }
 
-    init(bookmarkManager: BookmarkManager, metrics: BookmarksSearchAndSortMetrics, navigationEngagementMetrics: BookmarksNavigationEngagementMetrics, mode: BookmarksSortMode = .manual) {
+    var isBookmarksReorderByNameEnabled: Bool {
+        featureFlagger.isFeatureOn(.bookmarksReorderByName)
+    }
+
+    var sortButtonTitle: String {
+        isBookmarksReorderByNameEnabled ? UserText.bookmarksSortViewTitle : UserText.bookmarksSort.capitalized
+    }
+
+    var sortButtonByNameTitle: String {
+        isBookmarksReorderByNameEnabled ? UserText.bookmarksSortViewByNameTitle : UserText.bookmarksSortByNameTitle
+    }
+
+    init(
+        bookmarkManager: BookmarkManager,
+        metrics: BookmarksSearchAndSortMetrics,
+        navigationEngagementMetrics: BookmarksNavigationEngagementMetrics,
+        featureFlagger: FeatureFlagger,
+        mode: BookmarksSortMode = .manual
+    ) {
         self.bookmarkManager = bookmarkManager
         self.bookmarksSearchAndSortMetrics = metrics
         self.navigationEngagementMetrics = navigationEngagementMetrics
+        self.featureFlagger = featureFlagger
         self.mode = mode
     }
+
+    // MARK: - Public
 
     var contentState: BookmarksContentState {
         if bookmarkManager.isLoading {

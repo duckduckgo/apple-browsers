@@ -1,19 +1,19 @@
 {
-    "m_webview_webkit-termination_error-page_shown": {
+    "tab-termination_error-page_shown": {
         "description": "Fires when repeated WebKit terminations cause the tab termination error page to be shown.",
         "owners": ["brindy"],
         "triggers": ["exception"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],
         "parameters": ["appVersion"]
     },
-    "m_webview_webkit-termination_error-page_reload": {
+    "tab-termination_error-page_reload": {
         "description": "Fires when the user reloads from the tab termination error page.",
         "owners": ["brindy"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],
         "parameters": ["appVersion"]
     },
-    "m_webview_webkit-termination_error-page_send-feedback": {
+    "tab-termination_error-page_send-feedback": {
         "description": "Fires when the user sends feedback from the tab termination error page.",
         "owners": ["brindy"],
         "triggers": ["other"],

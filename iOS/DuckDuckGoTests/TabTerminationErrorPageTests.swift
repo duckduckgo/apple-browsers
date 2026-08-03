@@ -17,7 +17,7 @@
 //  limitations under the License.
 //
 
-import Core
+import PixelKit
 import PrivacyConfig
 import PrivacyConfigTestsUtils
 import XCTest
@@ -111,12 +111,25 @@ final class TabTerminationErrorPageTests: XCTestCase {
     }
 
     func testPixelNames() {
-        XCTAssertEqual(Pixel.Event.webViewWebKitTerminationErrorPageShown.name,
-                       "m_webview_webkit-termination_error-page_shown")
-        XCTAssertEqual(Pixel.Event.webViewWebKitTerminationErrorPageReload.name,
-                       "m_webview_webkit-termination_error-page_reload")
-        XCTAssertEqual(Pixel.Event.webViewWebKitTerminationErrorPageSendFeedback.name,
-                       "m_webview_webkit-termination_error-page_send-feedback")
+        XCTAssertEqual(TabTerminationErrorPagePixel.shown.name, "tab-termination_error-page_shown")
+        XCTAssertEqual(TabTerminationErrorPagePixel.reload.name, "tab-termination_error-page_reload")
+        XCTAssertEqual(TabTerminationErrorPagePixel.sendFeedback.name, "tab-termination_error-page_send-feedback")
+    }
+
+    func testInstrumentationFiresPixelKitEvents() {
+        let pixelFiring = MockTabTerminationErrorPagePixelFiring()
+        let instrumentation = DefaultTabTerminationErrorPageInstrumentation(pixelFiring: pixelFiring)
+
+        instrumentation.errorPageShown()
+        instrumentation.reloadSelected()
+        instrumentation.sendFeedbackSelected()
+
+        XCTAssertEqual(pixelFiring.calls.map(\.event.name), [
+            "tab-termination_error-page_shown",
+            "tab-termination_error-page_reload",
+            "tab-termination_error-page_send-feedback"
+        ])
+        XCTAssertTrue(pixelFiring.calls.allSatisfy { $0.frequency == .dailyAndCount })
     }
 
     private func makeSettings(json: String?) -> TabTerminationErrorPageSettings {
@@ -138,5 +151,26 @@ final class TabTerminationErrorPageTests: XCTestCase {
             featureFlagger: featureFlagger,
             privacyConfigurationManager: manager,
             date: { self.date })
+    }
+}
+
+private final class MockTabTerminationErrorPagePixelFiring: PixelFiring {
+
+    struct Call {
+        let event: PixelKitEvent
+        let frequency: PixelKit.Frequency
+    }
+
+    private(set) var calls: [Call] = []
+
+    func fire(_ event: PixelKitEvent,
+              frequency: PixelKit.Frequency,
+              includeAppVersionParameter: Bool,
+              withAdditionalParameters: [String: String]?,
+              withNamePrefix: String?,
+              doNotEnforcePrefix: Bool,
+              onComplete: @escaping PixelKit.CompletionBlock) {
+        calls.append(.init(event: event, frequency: frequency))
+        onComplete(true, nil)
     }
 }

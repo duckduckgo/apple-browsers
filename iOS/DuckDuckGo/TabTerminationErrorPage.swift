@@ -18,7 +18,58 @@
 //
 
 import Foundation
+import PixelKit
 import PrivacyConfig
+
+protocol TabTerminationErrorPageInstrumenting {
+    func errorPageShown()
+    func reloadSelected()
+    func sendFeedbackSelected()
+}
+
+final class DefaultTabTerminationErrorPageInstrumentation: TabTerminationErrorPageInstrumenting {
+
+    private let pixelFiring: (any PixelFiring)?
+
+    init(pixelFiring: (any PixelFiring)? = PixelKit.shared) {
+        self.pixelFiring = pixelFiring
+    }
+
+    func errorPageShown() {
+        pixelFiring?.fire(TabTerminationErrorPagePixel.shown, frequency: .dailyAndCount)
+    }
+
+    func reloadSelected() {
+        pixelFiring?.fire(TabTerminationErrorPagePixel.reload, frequency: .dailyAndCount)
+    }
+
+    func sendFeedbackSelected() {
+        pixelFiring?.fire(TabTerminationErrorPagePixel.sendFeedback, frequency: .dailyAndCount)
+    }
+}
+
+enum TabTerminationErrorPagePixel: PixelKitEvent, PixelKitEventWithCustomPrefix {
+    case shown
+    case reload
+    case sendFeedback
+
+    var name: String {
+        switch self {
+        case .shown:
+            return "tab-termination_error-page_shown"
+        case .reload:
+            return "tab-termination_error-page_reload"
+        case .sendFeedback:
+            return "tab-termination_error-page_send-feedback"
+        }
+    }
+
+    var parameters: [String: String]? { nil }
+
+    var standardParameters: [PixelKitStandardParameter]? { nil }
+
+    var namePrefix: String { "" }
+}
 
 struct TabTerminationErrorPageSettings {
 

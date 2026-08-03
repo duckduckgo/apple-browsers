@@ -2295,7 +2295,9 @@
 		7BAB1A0100000000A0000092 /* AIChatMentionPickerEmptyRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BAB1A0100000000A0000090 /* AIChatMentionPickerEmptyRowView.swift */; };
 		7BAB1A0100000000A0000093 /* AIChatMentionPickerEmptyRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BAB1A0100000000A0000090 /* AIChatMentionPickerEmptyRowView.swift */; };
 		7BAB1A0100000000A00000A1 /* AIChatMentionPickerFilterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BAB1A0100000000A00000A0 /* AIChatMentionPickerFilterTests.swift */; };
+		7BAB1A0100000000A00000E1 /* AIChatTabSelectionDiffTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BAB1A0100000000A00000E0 /* AIChatTabSelectionDiffTests.swift */; };
 		7BAB1A0100000000A00000A2 /* AIChatMentionPickerFilterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BAB1A0100000000A00000A0 /* AIChatMentionPickerFilterTests.swift */; };
+		7BAB1A0100000000A00000E2 /* AIChatTabSelectionDiffTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BAB1A0100000000A00000E0 /* AIChatTabSelectionDiffTests.swift */; };
 		7BAB1A0100000000A00000B1 /* AIChatMentionPickerViewControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BAB1A0100000000A00000B0 /* AIChatMentionPickerViewControllerTests.swift */; };
 		7BAB1A0100000000A00000B2 /* AIChatMentionPickerViewControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BAB1A0100000000A00000B0 /* AIChatMentionPickerViewControllerTests.swift */; };
 		7BAB1A0100000000A00000C1 /* PointingHandButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BAB1A0100000000A00000C0 /* PointingHandButton.swift */; };
@@ -5920,6 +5922,7 @@
 		7BAB1A0100000000A0000080 /* AIChatMentionPickerFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatMentionPickerFilter.swift; sourceTree = "<group>"; };
 		7BAB1A0100000000A0000090 /* AIChatMentionPickerEmptyRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatMentionPickerEmptyRowView.swift; sourceTree = "<group>"; };
 		7BAB1A0100000000A00000A0 /* AIChatMentionPickerFilterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatMentionPickerFilterTests.swift; sourceTree = "<group>"; };
+		7BAB1A0100000000A00000E0 /* AIChatTabSelectionDiffTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatTabSelectionDiffTests.swift; sourceTree = "<group>"; };
 		7BAB1A0100000000A00000B0 /* AIChatMentionPickerViewControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatMentionPickerViewControllerTests.swift; sourceTree = "<group>"; };
 		7BAB1A0100000000A00000C0 /* PointingHandButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PointingHandButton.swift; sourceTree = "<group>"; };
 		7BAC0C302DF84292008D26EC /* SupportedOSCheckerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupportedOSCheckerTests.swift; sourceTree = "<group>"; };
@@ -8194,6 +8197,7 @@
 				47D82828FB034DE7BCB7BB91 /* AIChatOmnibarSubscriptionUpsellPresenterTests.swift */,
 				7BAB1A0100000000A0000030 /* AIChatMentionTokenDetectorTests.swift */,
 				7BAB1A0100000000A00000A0 /* AIChatMentionPickerFilterTests.swift */,
+				7BAB1A0100000000A00000E0 /* AIChatTabSelectionDiffTests.swift */,
 				7BAB1A0100000000A00000B0 /* AIChatMentionPickerViewControllerTests.swift */,
 				1A77VST00000000000000002 /* VoiceSessionTrackerTests.swift */,
 				31031EB62CC94C6C00684340 /* AIChatRemoteSettingsTests.swift */,
@@ -16907,6 +16911,7 @@
 				968FC19A13C54CE4981CBD7A /* AIChatOmnibarSubscriptionUpsellPresenterTests.swift in Sources */,
 				7BAB1A0100000000A0000031 /* AIChatMentionTokenDetectorTests.swift in Sources */,
 				7BAB1A0100000000A00000A1 /* AIChatMentionPickerFilterTests.swift in Sources */,
+				7BAB1A0100000000A00000E1 /* AIChatTabSelectionDiffTests.swift in Sources */,
 				7BAB1A0100000000A00000B1 /* AIChatMentionPickerViewControllerTests.swift in Sources */,
 				1A77VST00000000000000006 /* VoiceSessionTrackerTests.swift in Sources */,
 				56A054482C22536A007D8FAB /* CapturingOnboardingActionsManager.swift in Sources */,
@@ -19073,6 +19078,7 @@
 				F1396E92FC2749888523B2FD /* AIChatOmnibarSubscriptionUpsellPresenterTests.swift in Sources */,
 				7BAB1A0100000000A0000032 /* AIChatMentionTokenDetectorTests.swift in Sources */,
 				7BAB1A0100000000A00000A2 /* AIChatMentionPickerFilterTests.swift in Sources */,
+				7BAB1A0100000000A00000E2 /* AIChatTabSelectionDiffTests.swift in Sources */,
 				7BAB1A0100000000A00000B2 /* AIChatMentionPickerViewControllerTests.swift in Sources */,
 				1A77VST00000000000000005 /* VoiceSessionTrackerTests.swift in Sources */,
 				CCAED35A2EB8E0C700C7368E /* MockDefaultBrowserAndDockPromptUserActivityProvider.swift in Sources */,

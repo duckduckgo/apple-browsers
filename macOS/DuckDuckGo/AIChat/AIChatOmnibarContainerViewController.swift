@@ -1517,14 +1517,14 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     }
 
     private func applyTabSelection(_ selected: [AIChatTabAttachment], offered: [AIChatTabAttachment]) {
-        let selectedIds = Set(selected.map(\.id))
-        let offeredIds = Set(offered.map(\.id))
-        for attached in omnibarController.activeTabAttachments where offeredIds.contains(attached.id) && !selectedIds.contains(attached.id) {
-            omnibarController.removeTabAttachmentFromActiveTab(id: attached.id)
+        let diff = AIChatTabSelectionDiff.compute(current: omnibarController.activeTabAttachments,
+                                                 selected: selected,
+                                                 offered: offered)
+        for id in diff.remove {
+            omnibarController.removeTabAttachmentFromActiveTab(id: id)
             omnibarController.pixelHandler.fire(.tabAttachmentRemoved)
         }
-        let attachedIds = Set(omnibarController.activeTabAttachments.map(\.id))
-        for tab in selected where !attachedIds.contains(tab.id) {
+        for tab in diff.add {
             omnibarController.toggleTabAttachment(tab)
             omnibarController.pixelHandler.fire(.tabChosen)
         }

@@ -140,8 +140,92 @@ final class ContextualMenuTests: XCTestCase {
 
         // THEN
         XCTAssertEqual(items.count, 10)
-        assertMenuItem(items[5], withTitle: UserText.bookmarksBarContextMenuReorderByName, selector: nil, representedObject: folder)
-        assertMenuItem(items[6], withTitle: UserText.bookmarksBarContextMenuMoveToEnd, selector: #selector(FolderMenuItemSelectors.moveToEnd(_:)), representedObject: folder)
+        assertMenuItem(
+            items[5],
+            withTitle: UserText.bookmarksBarContextMenuReorderByName,
+            selector: #selector(FolderMenuItemSelectors.reorderByName(_:)),
+            representedObject: folder)
+        assertMenuItem(
+            items[6],
+            withTitle: UserText.bookmarksBarContextMenuMoveToEnd,
+            selector: #selector(FolderMenuItemSelectors.moveToEnd(_:)),
+            representedObject: folder)
+    }
+
+    @MainActor
+    func testWhenReorderByNameIsSelectedThenChildrenAreMovedInAscendingOrderAndSortModeChangesToManual() throws {
+        // GIVEN
+        let charlie = Bookmark(id: "charlie", url: "https://charlie.example", title: "charlie", isFavorite: false)
+        let alpha = BookmarkFolder(id: "alpha", title: "Alpha")
+        let delta = Bookmark(id: "delta", url: "https://delta.example", title: "delta", isFavorite: false)
+        let bravo = Bookmark(id: "bravo", url: "https://bravo.example", title: "Bravo", isFavorite: false)
+        let folder = BookmarkFolder(id: "folder", title: "Folder", children: [charlie, alpha, delta, bravo])
+        let menu = BookmarksContextMenu.folderMenu(with: folder, isReorderByNameEnabled: true)
+        let bookmarkManager = try XCTUnwrap(menu.bookmarkManager as? MockBookmarkManager)
+        bookmarkManager.sortMode = .nameDescending
+        let menuItem = try XCTUnwrap(menu.items.first(where: { $0.title == UserText.bookmarksBarContextMenuReorderByName }))
+
+        // WHEN
+        try perform(menuItem)
+
+        // THEN
+        XCTAssertEqual(
+            bookmarkManager.moveObjectsCalled,
+            .init(
+                objectUUIDs: [alpha.id, bravo.id, charlie.id, delta.id],
+                toIndex: 0,
+                withinParentFolder: .parent(uuid: folder.id)))
+        XCTAssertEqual(bookmarkManager.sortMode, .manual)
+    }
+
+    @MainActor
+    func testWhenReorderByNameDoesNotChangeOrderThenMoveIsSkippedAndSortModeChangesToManual() throws {
+        let testChildren: [[BaseBookmarkEntity]] = [
+            [],
+            [Bookmark(id: "only", url: "https://only.example", title: "Only", isFavorite: false)],
+            [
+                Bookmark(id: "alpha", url: "https://alpha.example", title: "Alpha", isFavorite: false),
+                BookmarkFolder(id: "bravo", title: "Bravo")
+            ]
+        ]
+
+        for children in testChildren {
+            // GIVEN
+            let folder = BookmarkFolder(id: "folder", title: "Folder", children: children)
+            let menu = BookmarksContextMenu.folderMenu(with: folder, isReorderByNameEnabled: true)
+            let bookmarkManager = try XCTUnwrap(menu.bookmarkManager as? MockBookmarkManager)
+            bookmarkManager.sortMode = .nameDescending
+            let menuItem = try XCTUnwrap(menu.items.first(where: { $0.title == UserText.bookmarksBarContextMenuReorderByName }))
+
+            // WHEN
+            try perform(menuItem)
+
+            // THEN
+            XCTAssertNil(bookmarkManager.moveObjectsCalled)
+            XCTAssertEqual(bookmarkManager.sortMode, .manual)
+        }
+    }
+
+    @MainActor
+    func testWhenReorderByNamePersistenceFailsThenSortModeIsUnchanged() throws {
+        // GIVEN
+        let zulu = Bookmark(id: "zulu", url: "https://zulu.example", title: "Zulu", isFavorite: false)
+        let alpha = Bookmark(id: "alpha", url: "https://alpha.example", title: "Alpha", isFavorite: false)
+        let folder = BookmarkFolder(id: "folder", title: "Folder", children: [zulu, alpha])
+        let menu = BookmarksContextMenu.folderMenu(with: folder, isReorderByNameEnabled: true)
+        let bookmarkManager = try XCTUnwrap(menu.bookmarkManager as? MockBookmarkManager)
+        bookmarkManager.sortMode = .nameDescending
+        bookmarkManager.moveObjectsError = NSError(domain: "ContextualMenuTests", code: 1)
+        let menuItem = try XCTUnwrap(menu.items.first(where: { $0.title == UserText.bookmarksBarContextMenuReorderByName }))
+
+        // WHEN
+        try perform(menuItem)
+
+        // THEN
+        XCTAssertEqual(
+            bookmarkManager.moveObjectsCalled,
+            .init(objectUUIDs: [alpha.id, zulu.id], toIndex: 0, withinParentFolder: .parent(uuid: folder.id)))
+        XCTAssertEqual(bookmarkManager.sortMode, .nameDescending)
     }
 
     @MainActor
@@ -784,6 +868,12 @@ final class ContextualMenuTests: XCTestCase {
 }
 
 private extension ContextualMenuTests {
+
+    func perform(_ menuItem: NSMenuItem, file: StaticString = #filePath, line: UInt = #line) throws {
+        let target = try XCTUnwrap(menuItem.target, file: file, line: line)
+        let action = try XCTUnwrap(menuItem.action, file: file, line: line)
+        _ = target.perform(action, with: menuItem)
+    }
 
     func assertMenuItem<T: Equatable>(_ item: NSMenuItem, withTitle title: String, selector: Selector?, representedObject: T = Empty(), disabled: Bool = false, file: StaticString = #filePath, line: UInt = #line) {
         XCTAssertEqual(item.title, title, file: file, line: line)

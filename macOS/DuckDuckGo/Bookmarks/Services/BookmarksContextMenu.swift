@@ -17,9 +17,11 @@
 //
 
 import AppKit
+import Bookmarks
 import DesignResourcesKitIcons
 import FeatureFlags
 import PrivacyConfig
+import os.log
 
 protocol BookmarksContextMenuDelegate: NSMenuDelegate, BookmarkSearchMenuItemSelectors {
     var isSearching: Bool { get }
@@ -51,7 +53,8 @@ final class BookmarksContextMenu: NSMenu {
         bookmarkManager: BookmarkManager? = nil,
         windowControllersManager: WindowControllersManagerProtocol? = nil,
         featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
-        delegate: BookmarksContextMenuDelegate) {
+        delegate: BookmarksContextMenuDelegate
+    ) {
         self.bookmarkManager = bookmarkManager ?? NSApp.delegateTyped.bookmarkManager
         self.windowControllersManager = windowControllersManager ?? Application.appDelegate.windowControllersManager
         self.featureFlagger = featureFlagger
@@ -271,7 +274,7 @@ extension BookmarksContextMenu {
     }
 
     static func reorderByNameMenuItem(folder: BookmarkFolder?, target: AnyObject?) -> NSMenuItem {
-        NSMenuItem(title: UserText.bookmarksBarContextMenuReorderByName, action: nil, target: target, representedObject: folder)
+        NSMenuItem(title: UserText.bookmarksBarContextMenuReorderByName, action: #selector(FolderMenuItemSelectors.reorderByName(_:)), target: target, representedObject: folder)
             .withImage(DesignSystemImages.Glyphs.Size12.arrowUpDown)
     }
 
@@ -459,6 +462,33 @@ extension BookmarksContextMenu: BookmarkMenuItemSelectors {
 }
 // MARK: - FolderMenuItemSelectors
 extension BookmarksContextMenu: FolderMenuItemSelectors {
+    @MainActor
+    @objc func reorderByName(_ sender: NSMenuItem) {
+        guard let folder = sender.representedObject as? BookmarkFolder else {
+            assertionFailure("Failed to retrieve BookmarkFolder from Reorder by Name context menu item")
+            return
+        }
+
+        let sortedChildIDs = folder.children
+            .sorted(by: .nameAscending)
+            .map(\.id)
+
+        guard sortedChildIDs != folder.children.map(\.id) else {
+            bookmarkManager.sortMode = .manual
+            return
+        }
+
+        let bookmarkManager = bookmarkManager
+        bookmarkManager.move(objectUUIDs: sortedChildIDs, toIndex: 0, withinParentFolder: .parent(uuid: folder.id)) { error in
+            guard let error else {
+                bookmarkManager.sortMode = .manual
+                return
+            }
+
+            Logger.bookmarks.error("Failed to reorder bookmark folder by name: \(error.localizedDescription, privacy: .public)")
+        }
+    }
+
     @MainActor
     @objc func newFolder(_ sender: Any?) {
         var representedObject: Any?

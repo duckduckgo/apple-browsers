@@ -232,8 +232,9 @@ final class PermissionCenterViewModelTests: XCTestCase {
         XCTAssertTrue(viewModel.showAutoplayDisclaimer)
     }
 
-    /// The disclaimer explains the autoplay row, so it must never stand on its own.
-    func testWhenDisplaysAutoplayDiscoveryWithoutAutoplayRowThenDisclaimerIsHidden() {
+    /// The disclaimer explains the autoplay row, so the promo presentation always carries that row — even when the
+    /// page isn't displaying the autoplay policy itself, as with a debug force-show.
+    func testWhenDisplaysAutoplayDiscoveryWithoutAutoplayPolicyThenAutoplayRowIsInserted() {
         let viewModel = PermissionCenterViewModel(
             domain: "example.com",
             usedPermissions: Permissions(),
@@ -247,7 +248,8 @@ final class PermissionCenterViewModelTests: XCTestCase {
             systemPermissionManager: mockSystemPermissionManager
         )
 
-        XCTAssertFalse(viewModel.showAutoplayDisclaimer)
+        XCTAssertTrue(viewModel.permissionItems.contains { $0.permissionType == .autoplayPolicy })
+        XCTAssertTrue(viewModel.showAutoplayDisclaimer)
     }
 
     /// The disclaimer belongs to the Autoplay Discoverability Promo: opening the Permission Center from the shield must not show it.

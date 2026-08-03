@@ -26,7 +26,7 @@ extension PromoServiceFactory {
     ///     A Next Steps card on the New Tab Page blocks every `.medium` promo for as long as it exists.
     @MainActor
     static func autoplayDiscoverability(dependencies: PromoDependencies) -> Promo {
-        let promoType = PromoType(.inlineTip, customTimeoutInterval: .seconds(5), customTimeoutResult: .ignored())
+        let promoType = PromoType(.inlineTip, customTimeoutInterval: AutoplayDiscoverabilityPromoDelegate.displayDuration, customTimeoutResult: .ignored())
         let identifier = "autoplay-discoverability"
         let delegate = AutoplayDiscoverabilityPromoDelegate(featureFlagger: dependencies.featureFlagger, windowControllersManager: dependencies.windowControllersManager)
 

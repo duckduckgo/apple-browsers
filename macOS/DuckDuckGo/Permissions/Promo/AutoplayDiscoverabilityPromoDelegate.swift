@@ -30,6 +30,10 @@ import PrivacyConfig
 ///
 final class AutoplayDiscoverabilityPromoDelegate: InternalPromoDelegate {
 
+    /// How long the Permission Center stays open before the promo is retired. `PromoServiceFactory` hands this to
+    /// `PromoType` as the promo's custom timeout; the debug force-show path has to apply it itself, see `show(history:force:)`.
+    static let displayDuration: TimeInterval = .seconds(5)
+
     private let featureFlagger: FeatureFlagger
     private let windowControllersManager: WindowControllersManagerProtocol
     private var showContinuation: CheckedContinuation<PromoResult, Never>?
@@ -55,7 +59,17 @@ final class AutoplayDiscoverabilityPromoDelegate: InternalPromoDelegate {
 
     @MainActor
     func show(history: PromoHistoryRecord, force: Bool) async -> PromoResult {
-        guard let addressBarButtonsViewController, addressBarButtonsViewController.presentPermissionCenterForAutoplayPromoIfPossible() else {
+        guard let addressBarButtonsViewController else {
+            return .noChange
+        }
+
+        if force {
+            addressBarButtonsViewController.forcePresentPermissionCenterForAutoplayPromo()
+            try? await Task.sleep(nanoseconds: UInt64(Self.displayDuration * TimeInterval(NSEC_PER_SEC)))
+            return .ignored()
+        }
+
+        guard addressBarButtonsViewController.presentPermissionCenterForAutoplayPromoIfPossible() else {
             return .noChange
         }
 

@@ -523,8 +523,8 @@ final class PermissionCenterViewModel: ObservableObject {
             otherPermissions.append(.popups)
         }
 
-        // Always include autoplay policy when feature flag is on
-        if displaysAutoplayPolicy,
+        // Always include autoplay policy when feature flag is on (OR) we're displaying the Autoplay Discovery
+        if displaysAutoplayPolicy || displaysAutoplayDiscovery,
            !otherPermissions.contains(.autoplayPolicy),
            !removedPermissions.contains(.autoplayPolicy) {
             otherPermissions.append(.autoplayPolicy)

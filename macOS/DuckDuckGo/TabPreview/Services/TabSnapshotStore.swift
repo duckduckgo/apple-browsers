@@ -84,7 +84,7 @@ final class TabSnapshotStore: TabSnapshotStoring {
                                                         withIntermediateDirectories: true,
                                                         attributes: nil)
             } catch {
-                fatalError("Failed to create directory at \(directoryURL.path)")
+                Logger.tabSnapshots.error("TabSnapshotPersistenceService: Failed to create directory at \(directoryURL.path, privacy: .public): \(error.localizedDescription, privacy: .public)")
             }
         }
     }

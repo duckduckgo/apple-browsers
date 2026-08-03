@@ -38,11 +38,8 @@ jobs:
           github.event_name == 'workflow_dispatch' ||
           (
             github.event_name == 'pull_request' &&
-            github.event.pull_request.state == 'open' &&
-            github.event.pull_request.base.repo.full_name == 'duckduckgo/apple-browsers' &&
-            github.event.pull_request.head.repo.full_name == 'duckduckgo/apple-browsers' &&
-            github.event.pull_request.author_association == 'MEMBER' &&
-            github.event.pull_request.user.type == 'User' &&
+            github.event.pull_request.head.repo.id == github.event.repository.id &&
+            contains(fromJSON('["MEMBER", "OWNER"]'), github.event.pull_request.author_association) &&
             (
               (github.event.action == 'labeled' && github.event.label.name == 'auto-review-builds') ||
               (github.event.action == 'synchronize' && contains(github.event.pull_request.labels.*.name, 'auto-review-builds'))
@@ -292,12 +289,6 @@ jobs:
       ${{
         always() &&
         github.event_name == 'pull_request' &&
-        github.repository == 'duckduckgo/apple-browsers' &&
-        github.event.pull_request.state == 'open' &&
-        github.event.pull_request.base.repo.full_name == 'duckduckgo/apple-browsers' &&
-        github.event.pull_request.head.repo.full_name == 'duckduckgo/apple-browsers' &&
-        github.event.pull_request.author_association == 'MEMBER' &&
-        github.event.pull_request.user.type == 'User' &&
         (needs.make-adhoc.result == 'success' || needs.make-adhoc.result == 'failure')
       }}
 

@@ -377,7 +377,7 @@ struct PermissionRowView: View {
             SystemPermissionWarningView(
                 prefixText: item.permissionType.systemPermissionDisabledText,
                 linkText: item.permissionType.systemSettingsLinkText,
-                linkColor: .accentColor,
+                linkColor: Color(designSystemColor: .accentTextPrimary),
                 linkOnNewLine: item.permissionType == .notification
             ) {
                 openSystemSettings()

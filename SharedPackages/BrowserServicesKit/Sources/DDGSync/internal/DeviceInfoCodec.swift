@@ -20,6 +20,8 @@ import Foundation
 import Security
 
 struct DeviceInfo: Codable, Equatable, Sendable {
+    static let maximumEncryptedLength = 2_000
+
     let name: String
     let type: String
 }

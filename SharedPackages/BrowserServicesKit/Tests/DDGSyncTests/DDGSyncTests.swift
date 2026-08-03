@@ -764,6 +764,47 @@ final class DDGSyncTests: XCTestCase {
         XCTAssertEqual(scopedAccess.recoverScopedPasswordCalls.count, 1)
     }
 
+    func testWhenRenamingDeviceDuringMigrationThenMigrationIsCancelledBeforeRenameAndRescheduled() async throws {
+        let migrationStarted = expectation(description: "Device info migration started")
+        let migrationFinished = expectation(description: "Device info migration finished")
+        let migrationRescheduled = expectation(description: "Device info migration rescheduled")
+        let (migrationCancellationGate, migrationCancellationContinuation) = AsyncStream<Void>.makeStream()
+        defer { migrationCancellationContinuation.finish() }
+        let migrationCoordinator = DeviceInfoMigrationCoordinatingMock()
+        migrationCoordinator.migrateCurrentDeviceHandler = {
+            guard migrationCoordinator.calls.count == 1 else {
+                migrationRescheduled.fulfill()
+                return
+            }
+            migrationStarted.fulfill()
+            for await _ in migrationCancellationGate {}
+            migrationFinished.fulfill()
+        }
+        dependencies.createDeviceInfoMigrationCoordinatorStub = migrationCoordinator
+        let renamedAccount = SyncAccount(
+            deviceId: SyncAccount.mock.deviceId,
+            deviceName: "Renamed Device",
+            deviceType: SyncAccount.mock.deviceType,
+            userId: SyncAccount.mock.userId,
+            primaryKey: SyncAccount.mock.primaryKey,
+            secretKey: SyncAccount.mock.secretKey,
+            token: SyncAccount.mock.token,
+            state: .active)
+        let accountManager = try XCTUnwrap(dependencies.account as? AccountManagingMock)
+        accountManager.refreshTokenStub = LoginResult(account: renamedAccount, devices: [.mock])
+        let syncService = DDGSync(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
+        syncService.initializeIfNeeded()
+        await fulfillment(of: [migrationStarted], timeout: 1)
+
+        _ = try await syncService.updateDeviceName(renamedAccount.deviceName)
+        await fulfillment(of: [migrationFinished, migrationRescheduled], timeout: 1)
+
+        XCTAssertTrue(accountManager.refreshTokenCalled)
+        XCTAssertEqual((dependencies.secureStore as? SecureStorageStub)?.theAccount?.deviceName, renamedAccount.deviceName)
+        XCTAssertEqual(migrationCoordinator.calls.count, 2)
+        XCTAssertEqual(migrationCoordinator.calls.last?.account.deviceName, renamedAccount.deviceName)
+    }
+
     func testWhenRefreshResponseContainsRecoverableScopedPasswordThenScopedPasswordIsCached() async throws {
         let scopedPassword = Data(repeating: 7, count: 32)
         (dependencies.account as? AccountManagingMock)?.refreshTokenStub = LoginResult(

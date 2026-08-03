@@ -191,6 +191,7 @@ final class PermissionCenterViewModel: ObservableObject {
     private let grantPermission: ((PermissionAuthorizationQuery) -> Void)?
     private let reloadPage: (() -> Void)?
     private let setPermissionsNeedReload: (() -> Void)?
+    private let openSettingsPane: ((PreferencePaneIdentifier) -> Void)?
     private var cancellables = Set<AnyCancellable>()
     private var removedPermissions = Set<PermissionType>()
     private(set) var hasTemporaryPopupAllowance: Bool
@@ -225,6 +226,7 @@ final class PermissionCenterViewModel: ObservableObject {
         grantPermission: ((PermissionAuthorizationQuery) -> Void)? = nil,
         reloadPage: (() -> Void)? = nil,
         setPermissionsNeedReload: (() -> Void)? = nil,
+        openSettingsPane: ((PreferencePaneIdentifier) -> Void)? = nil,
         hasTemporaryPopupAllowance: Bool = false,
         pageInitiatedPopupOpened: Bool = false,
         displaysAutoplayPolicy: Bool = false,
@@ -247,6 +249,7 @@ final class PermissionCenterViewModel: ObservableObject {
         self.grantPermission = grantPermission
         self.reloadPage = reloadPage
         self.setPermissionsNeedReload = setPermissionsNeedReload
+        self.openSettingsPane = openSettingsPane
         self.hasTemporaryPopupAllowance = hasTemporaryPopupAllowance
         self.pageInitiatedPopupOpened = pageInitiatedPopupOpened
         self.displaysAutoplayPolicy = displaysAutoplayPolicy
@@ -417,6 +420,17 @@ final class PermissionCenterViewModel: ObservableObject {
     /// Indicates if there is an Autoplay Policy set for the current domain
     func allowsAutoplayPolicyRemoval() -> Bool {
         permissionManager.hasPermissionPersisted(forDomain: domain, permissionType: .autoplayPolicy)
+    }
+
+    /// Whether the autoplay disclaimer card is shown, which tracks the presence of the autoplay row
+    var showAutoplayDisclaimer: Bool {
+        permissionItems.contains { $0.permissionType == .autoplayPolicy }
+    }
+
+    /// Opens the General settings pane, where the all-sites autoplay preference lives
+    func openAutoplaySettings() {
+        openSettingsPane?(.general)
+        dismissPopover()
     }
 
     /// Opens a specific blocked popup

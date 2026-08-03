@@ -73,35 +73,19 @@ final class AIChatContextualModeFeatureTests: XCTestCase {
         XCTAssertFalse(feature.isAvailable)
     }
 
-    func testWhenIphoneAndOnlyIPadPageContextEnabledThenIsNotAvailable() {
-        let feature = makeFeature(
-            enabledFlags: [.contextualDuckAIMode, .iPadPageContext],
-            isIphone: true
-        )
-        XCTAssertFalse(feature.isAvailable)
-    }
-
     // MARK: - iPad Tests
 
-    func testWhenIPadAndIpadPageContextEnabledThenIsAvailable() {
+    func testWhenIPadAndContextualDuckAIModeEnabledThenIsAvailable() {
         let feature = makeFeature(
-            enabledFlags: [.contextualDuckAIMode, .iPadPageContext],
+            enabledFlags: [.contextualDuckAIMode],
             isIphone: false
         )
         XCTAssertTrue(feature.isAvailable)
     }
 
-    func testWhenIPadAndIpadPageContextDisabledThenIsNotAvailable() {
+    func testWhenIPadAndContextualDuckAIModeDisabledThenIsNotAvailable() {
         let feature = makeFeature(
-            enabledFlags: [.contextualDuckAIMode],
-            isIphone: false
-        )
-        XCTAssertFalse(feature.isAvailable)
-    }
-
-    func testWhenIPadAndOnlyIphonePageContextEnabledThenIsNotAvailable() {
-        let feature = makeFeature(
-            enabledFlags: [.contextualDuckAIMode, .pageContextFeature],
+            enabledFlags: [],
             isIphone: false
         )
         XCTAssertFalse(feature.isAvailable)
@@ -109,7 +93,7 @@ final class AIChatContextualModeFeatureTests: XCTestCase {
 
     func testWhenIPadAndURLDomainIsNotDuckAIThenIsNotAvailable() {
         let feature = makeFeature(
-            enabledFlags: [.contextualDuckAIMode, .iPadPageContext],
+            enabledFlags: [.contextualDuckAIMode],
             isIphone: false,
             aiChatURL: Self.nonDuckAIURL
         )

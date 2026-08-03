@@ -55,10 +55,6 @@ protocol ColorsProviding {
     func suggestionsSuffixColor(isBurner: Bool) -> NSColor
     func suggestionsHighlightSuffixColor(isBurner: Bool) -> NSColor
 
-    // MARK: - Suggestions + Fire
-    var suggestionsFireSuffixColor: NSColor { get }
-    var suggestionsFireHighlightSuffixColor: NSColor { get }
-
     // MARK: - Semantic
     var accentPrimaryColor: NSColor { get }
     var baseBackgroundColor: NSColor { get }
@@ -125,8 +121,6 @@ final class LegacyColorsProviding: ColorsProviding {
     var suggestionsTextColor: NSColor { addressBarTextFieldColor }
     var suggestionsHighlightBackgroundColor: NSColor { palette.accentPrimary }
     var suggestionsHighlightTextColor: NSColor { palette.accentContentPrimary }
-    var suggestionsFireSuffixColor: NSColor { palette.accentPrimary }
-    var suggestionsFireHighlightSuffixColor: NSColor { palette.accentContentSecondary }
     var bannerBackgroundColor: NSColor { palette.surfacePrimary }
     var popoverBackgroundColor: NSColor { palette.surfaceSecondary }
 

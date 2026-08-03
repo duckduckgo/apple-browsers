@@ -1413,8 +1413,8 @@ extension AddressBarViewController: AddressBarButtonsViewControllerDelegate {
         _ = escapeKeyDown()
     }
 
-    func addressBarButtonsViewControllerOpenAIChatSettingsButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController) {
-        tabCollectionViewModel.insertOrAppendNewTab(.settings(pane: .aiChat))
+    func addressBarButtonsViewController(_ addressBarButtonsViewController: AddressBarButtonsViewController, openSettingsPane pane: PreferencePaneIdentifier) {
+        tabCollectionViewModel.insertOrAppendNewTab(.settings(pane: pane))
     }
 
     func addressBarButtonsViewControllerAIChatButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController) {

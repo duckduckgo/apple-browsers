@@ -19,12 +19,18 @@
 
 import Lottie
 import SwiftUI
+import DesignResourcesKitIcons
 
 struct NewTabPageDaxLogoView: View {
     @Environment(\.colorScheme) private var colorScheme
 
     private var animationName: String {
-        colorScheme == .dark ? "duckduckgo-ai-transition-dark.json" : "duckduckgo-ai-transition.json"
+        let isDark = colorScheme == .dark
+        if AppRebrand.isAppRebranded() {
+            return isDark ? "duckduckgo-ai-transition-dark.json" : "duckduckgo-ai-transition.json"
+        } else {
+            return isDark ? "duckduckgo-ai-transition-dark-legacy.json" : "duckduckgo-ai-transition-legacy.json"
+        }
     }
 
     var body: some View {

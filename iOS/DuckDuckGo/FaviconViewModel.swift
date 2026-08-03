@@ -18,10 +18,11 @@
 //
 
 import SwiftUI
+import DesignResourcesKitIcons
 import Core
 
 final class FaviconViewModel: ObservableObject {
-    @Published var image = UIImage(resource: .logo)
+    @Published var image = UIImage(rebrandable: "duckduckgo-favicon-128x128") ?? UIImage(resource: .logo)
 
     private let domain: String
     private let useFakeFavicon: Bool

@@ -20,6 +20,7 @@
 import Foundation
 import PixelKit
 import PrivacyConfig
+import UIKit
 
 protocol TabTerminationErrorPageInstrumenting {
     func errorPageShown()
@@ -73,10 +74,16 @@ enum TabTerminationErrorPagePixel: PixelKitEvent, PixelKitEventWithCustomPrefix 
 
 struct TabTerminationErrorPageSettings {
 
+    enum FormFactor: String, CaseIterable {
+        case phone
+        case tablet
+    }
+
     private enum Constants {
         static let defaultTerminationCount = 3
         static let defaultTimeWindow: TimeInterval = 60
         static let terminationCountKey = "terminationCount"
+        static let supportedFormFactorsKey = "supportedFormFactors"
         static let timeWindowSecondsKey = "timeWindowSeconds"
     }
 
@@ -103,15 +110,29 @@ struct TabTerminationErrorPageSettings {
         return number.doubleValue
     }
 
+    var supportedFormFactors: Set<FormFactor> {
+        guard let values = value(forKey: Constants.supportedFormFactorsKey) as? [String] else {
+            return Set(FormFactor.allCases)
+        }
+        return Set(values.compactMap(FormFactor.init(rawValue:)))
+    }
+
     private func number(forKey key: String) -> NSNumber? {
-        guard let json = privacyConfigurationManager.privacyConfig.settings(for: iOSBrowserConfigSubfeature.tabTerminationErrorPage),
-              let data = json.data(using: .utf8),
-              let dictionary = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let value = dictionary[key],
+        guard let value = value(forKey: key),
               !(value is Bool) else {
             return nil
         }
         return value as? NSNumber
+    }
+
+    private func value(forKey key: String) -> Any? {
+        guard let json = privacyConfigurationManager.privacyConfig.settings(for: iOSBrowserConfigSubfeature.tabTerminationErrorPage),
+              let data = json.data(using: .utf8),
+              let dictionary = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let value = dictionary[key] else {
+            return nil
+        }
+        return value
     }
 }
 
@@ -126,19 +147,23 @@ final class TabTerminationErrorPageDetector: TabTerminationErrorPageDetecting {
 
     private let featureFlagger: FeatureFlagger
     private let settings: TabTerminationErrorPageSettings
+    private let formFactor: TabTerminationErrorPageSettings.FormFactor
     private let date: () -> Date
     private var terminationDatesByTabID: [String: [Date]] = [:]
 
     init(featureFlagger: FeatureFlagger,
          privacyConfigurationManager: PrivacyConfigurationManaging,
+         formFactor: TabTerminationErrorPageSettings.FormFactor = UIDevice.current.userInterfaceIdiom == .pad ? .tablet : .phone,
          date: @escaping () -> Date = Date.init) {
         self.featureFlagger = featureFlagger
         self.settings = TabTerminationErrorPageSettings(privacyConfigurationManager: privacyConfigurationManager)
+        self.formFactor = formFactor
         self.date = date
     }
 
     func shouldShowErrorPage(forTabID tabID: String) -> Bool {
-        guard featureFlagger.isFeatureOn(.tabTerminationErrorPage) else {
+        guard featureFlagger.isFeatureOn(.tabTerminationErrorPage),
+              settings.supportedFormFactors.contains(formFactor) else {
             terminationDatesByTabID[tabID] = nil
             return false
         }

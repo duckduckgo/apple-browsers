@@ -29,10 +29,12 @@ final class TabTerminationErrorPageTests: XCTestCase {
     private var date = Date(timeIntervalSince1970: 1_000_000)
 
     func testWhenSettingsAreConfiguredThenValuesAreRead() {
-        let settings = makeSettings(json: "{\"terminationCount\": 5, \"timeWindowSeconds\": 30}")
+        let settings = makeSettings(
+            json: "{\"terminationCount\": 5, \"timeWindowSeconds\": 30, \"supportedFormFactors\": [\"phone\"]}")
 
         XCTAssertEqual(settings.terminationCount, 5)
         XCTAssertEqual(settings.timeWindow, 30)
+        XCTAssertEqual(settings.supportedFormFactors, [.phone])
     }
 
     func testWhenSettingsAreMissingThenDefaultsAreUsed() {
@@ -40,6 +42,7 @@ final class TabTerminationErrorPageTests: XCTestCase {
 
         XCTAssertEqual(settings.terminationCount, 3)
         XCTAssertEqual(settings.timeWindow, 60)
+        XCTAssertEqual(settings.supportedFormFactors, [.phone, .tablet])
     }
 
     func testWhenSettingsAreMalformedThenDefaultsAreUsed() {
@@ -47,6 +50,7 @@ final class TabTerminationErrorPageTests: XCTestCase {
 
         XCTAssertEqual(settings.terminationCount, 3)
         XCTAssertEqual(settings.timeWindow, 60)
+        XCTAssertEqual(settings.supportedFormFactors, [.phone, .tablet])
     }
 
     func testWhenIndividualSettingsAreInvalidThenEachFallsBackIndependently() {
@@ -57,10 +61,12 @@ final class TabTerminationErrorPageTests: XCTestCase {
     }
 
     func testWhenSettingsHaveWrongTypesThenDefaultsAreUsed() {
-        let settings = makeSettings(json: "{\"terminationCount\": true, \"timeWindowSeconds\": \"30\"}")
+        let settings = makeSettings(
+            json: "{\"terminationCount\": true, \"timeWindowSeconds\": \"30\", \"supportedFormFactors\": \"phone\"}")
 
         XCTAssertEqual(settings.terminationCount, 3)
         XCTAssertEqual(settings.timeWindow, 60)
+        XCTAssertEqual(settings.supportedFormFactors, [.phone, .tablet])
     }
 
     func testWhenFeatureIsDisabledThenErrorPageIsNotShown() {
@@ -68,6 +74,22 @@ final class TabTerminationErrorPageTests: XCTestCase {
 
         XCTAssertFalse(detector.shouldShowErrorPage(forTabID: "tab"))
         XCTAssertFalse(detector.shouldShowErrorPage(forTabID: "tab"))
+        XCTAssertFalse(detector.shouldShowErrorPage(forTabID: "tab"))
+    }
+
+    func testWhenFormFactorIsSupportedThenErrorPageIsShown() {
+        let detector = makeDetector(
+            json: "{\"terminationCount\": 1, \"supportedFormFactors\": [\"tablet\"]}",
+            formFactor: .tablet)
+
+        XCTAssertTrue(detector.shouldShowErrorPage(forTabID: "tab"))
+    }
+
+    func testWhenFormFactorIsNotSupportedThenErrorPageIsNotShown() {
+        let detector = makeDetector(
+            json: "{\"terminationCount\": 1, \"supportedFormFactors\": [\"phone\"]}",
+            formFactor: .tablet)
+
         XCTAssertFalse(detector.shouldShowErrorPage(forTabID: "tab"))
     }
 
@@ -141,7 +163,8 @@ final class TabTerminationErrorPageTests: XCTestCase {
     }
 
     private func makeDetector(featureEnabled: Bool = true,
-                              json: String? = nil) -> TabTerminationErrorPageDetector {
+                              json: String? = nil,
+                              formFactor: TabTerminationErrorPageSettings.FormFactor = .phone) -> TabTerminationErrorPageDetector {
         let configuration = MockPrivacyConfiguration()
         configuration.subfeatureSettings = json
         let manager = MockPrivacyConfigurationManager()
@@ -150,6 +173,7 @@ final class TabTerminationErrorPageTests: XCTestCase {
         return TabTerminationErrorPageDetector(
             featureFlagger: featureFlagger,
             privacyConfigurationManager: manager,
+            formFactor: formFactor,
             date: { self.date })
     }
 }

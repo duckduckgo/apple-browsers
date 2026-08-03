@@ -675,8 +675,7 @@ struct UserText {
 
     // Prompt Bar (Settings → AI Features)
     static let promptBarKeyboardShortcutToggle = NotLocalizedString("duckai.prompt-bar.keyboard-shortcut.toggle", value: "Open Duck.ai floating window with a keyboard shortcut", comment: "Checkbox in Settings → AI Features that enables the system-wide Duck.ai keyboard shortcut")
-    static let promptBarMenuBarIconToggle = NotLocalizedString("duckai.prompt-bar.menu-bar-icon.toggle", value: "Show Duck.ai in menu bar", comment: "Checkbox in Settings → AI Features that shows the Duck.ai icon in the macOS menu bar")
-    static let promptBarMenuBarIconCaption = NotLocalizedString("duckai.prompt-bar.menu-bar-icon.caption", value: "Adds a menu bar shortcut to open Duck.ai in a floating window", comment: "Caption under the 'Show Duck.ai in menu bar' checkbox describing what the menu bar icon does")
+    static let promptBarMenuBarIconToggle = NotLocalizedString("duckai.prompt-bar.menu-bar-icon.toggle", value: "Show Duck.ai shortcut in menu bar", comment: "Checkbox in Settings → AI Features that shows the Duck.ai icon in the macOS menu bar")
     static let promptBarShortcutRecordingPlaceholder = NotLocalizedString("duckai.prompt-bar.shortcut.recording-placeholder", value: "Type shortcut", comment: "Placeholder shown in the shortcut recorder control while it waits for a key combination")
     static let promptBarShortcutRecordingCancelHint = NotLocalizedString("duckai.prompt-bar.shortcut.recording-cancel-hint", value: "Press **Esc** to cancel", comment: "Hint under the shortcut recorder while recording. 'Esc' is the Escape key; the surrounding asterisks render it bold and must be kept")
     static let promptBarShortcutResetToDefault = NotLocalizedString("duckai.prompt-bar.shortcut.reset-to-default", value: "Reset to default", comment: "Button that reverts the Duck.ai keyboard shortcut to the default combination")

@@ -46,16 +46,16 @@ enum SubscriptionFunnelOrigin: String {
     case addressBarModelPicker = "funnel_addressbar_ios__modelpicker"
 
     /// User entered the funnel by tapping a gated reasoning level in the Unified Toggle Input reasoning picker from the address bar.
-    /// https://app.asana.com/1/137249556945/project/1207260194172075/task/1213994750860310
-    case addressBarReasoningPicker = "funnel_addressbar_ios__reasoningpicker"
+    /// https://app.asana.com/1/137249556945/project/414235014887631/task/1216243794936344?focus=true
+    case addressBarReasoningPicker = "funnel_addressbar_ios__reasoningdropdown"
 
     /// User entered the funnel by tapping a gated model in the Unified Toggle Input model picker from the Duck.ai tab.
     /// https://app.asana.com/1/137249556945/project/1207260194172075/task/1213994750860310
     case duckAIModelPicker = "funnel_duckai_ios__modelpicker"
 
     /// User entered the funnel by tapping a gated reasoning level in the Unified Toggle Input reasoning picker from the Duck.ai tab.
-    /// https://app.asana.com/1/137249556945/project/1207260194172075/task/1213994750860310
-    case duckAIReasoningPicker = "funnel_duckai_ios__reasoningpicker"
+    /// https://app.asana.com/1/137249556945/project/414235014887631/task/1216243794936344?focus=true
+    case duckAIReasoningPicker = "funnel_duckai_ios__reasoningdropdown"
 
     /// User entered the funnel via the native "Free Plan / Upgrade" plate in the Duck.ai tab header.
     /// https://app.asana.com/1/137249556945/project/414235014887631/task/1216395339071576?focus=true

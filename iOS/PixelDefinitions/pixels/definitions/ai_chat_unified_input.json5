@@ -118,7 +118,13 @@
                 "key": "origin",
                 "description": "Origin value for the reasoning effort picker impression.",
                 "type": "string",
-                "enum": ["funnel_addressbar_ios__reasoningpicker", "funnel_duckai_ios__reasoningpicker"]
+                "enum": [
+                    "funnel_addressbar_ios__reasoningdropdown",
+                    "funnel_duckai_ios__reasoningdropdown",
+                    // Shipped from 7.228.0 until the rename to ...__reasoningdropdown; kept so historic data validates.
+                    "funnel_addressbar_ios__reasoningpicker",
+                    "funnel_duckai_ios__reasoningpicker"
+                ]
             }
         ]
     },
@@ -254,8 +260,11 @@
                 "type": "string",
                 "enum": [
                     "funnel_addressbar_ios__modelpicker",
-                    "funnel_addressbar_ios__reasoningpicker",
+                    "funnel_addressbar_ios__reasoningdropdown",
                     "funnel_duckai_ios__modelpicker",
+                    "funnel_duckai_ios__reasoningdropdown",
+                    // Shipped from 7.228.0 until the rename to ...__reasoningdropdown; kept so historic data validates.
+                    "funnel_addressbar_ios__reasoningpicker",
                     "funnel_duckai_ios__reasoningpicker"
                 ]
             }

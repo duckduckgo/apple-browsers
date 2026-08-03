@@ -44,7 +44,7 @@ final class DuckAISubscriptionUpsellPresenterTests: XCTestCase {
                 return false
             }
             return self.hasQueryItem(in: components, name: "featurePage", value: "duckai")
-                && self.hasQueryItem(in: components, name: "origin", value: "funnel_addressbar_ios__reasoningpicker")
+                && self.hasQueryItem(in: components, name: "origin", value: "funnel_addressbar_ios__reasoningdropdown")
         }
 
         sut.presentPurchaseFlow(source: .reasoningPicker, isAITabState: false)
@@ -58,7 +58,7 @@ final class DuckAISubscriptionUpsellPresenterTests: XCTestCase {
                   case .subscriptionPlanChangeFlow(let components) = deepLink else {
                 return false
             }
-            return self.hasQueryItem(in: components, name: "origin", value: "funnel_addressbar_ios__reasoningpicker")
+            return self.hasQueryItem(in: components, name: "origin", value: "funnel_addressbar_ios__reasoningdropdown")
         }
 
         sut.presentUpgradeFlow(source: .reasoningPicker, isAITabState: false)
@@ -72,7 +72,7 @@ final class DuckAISubscriptionUpsellPresenterTests: XCTestCase {
                   case .subscriptionFlow(let components) = deepLink else {
                 return false
             }
-            return self.hasQueryItem(in: components, name: "origin", value: "funnel_duckai_ios__reasoningpicker")
+            return self.hasQueryItem(in: components, name: "origin", value: "funnel_duckai_ios__reasoningdropdown")
         }
 
         sut.presentPurchaseFlow(source: .reasoningPicker, isAITabState: true)

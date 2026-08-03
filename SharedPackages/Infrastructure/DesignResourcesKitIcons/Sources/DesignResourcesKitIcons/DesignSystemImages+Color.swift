@@ -587,7 +587,7 @@ public extension DesignSystemImages {
 
         public enum Size56 {
             public static var fileDrag: DesignSystemImage { .init(resource: .fileDrag56) }
-            public static var filedDrop: DesignSystemImage { .init(resource: .fileDrop56) }
+            public static var fileDrop: DesignSystemImage { .init(resource: .fileDrop56) }
         }
 
         public enum Size72 {

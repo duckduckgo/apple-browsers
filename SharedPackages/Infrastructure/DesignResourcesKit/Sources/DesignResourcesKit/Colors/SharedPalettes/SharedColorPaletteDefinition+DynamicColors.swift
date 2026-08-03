@@ -330,7 +330,7 @@ extension SharedColorPaletteDefinition {
             return toneShadePrimary
         case .toneTintPrimary:
             return toneTintPrimary
-        case.toneTintSecondary:
+        case .toneTintSecondary:
             return toneTintSecondary
 
         /// Permission Center

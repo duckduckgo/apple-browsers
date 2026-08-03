@@ -154,6 +154,15 @@ struct ProductionDependencies: SyncDependencies {
                                             account: account)
     }
 
+    func createDeviceInfoMigrationCoordinator() -> DeviceInfoMigrationCoordinating {
+        DeviceInfoMigrationCoordinator(accountManager: account,
+                                       scopedAccess: scopedAccess,
+                                       crypter: crypter,
+                                       secureStore: secureStore,
+                                       keyValueStore: keyValueStore,
+                                       canWriteUnifiedDeviceList: { syncFeatureFlags.canWriteUnifiedDeviceList() })
+    }
+
     func createTokenRescope() -> TokenRescoping {
         return TokenRescope(api: api, endpoints: endpoints)
     }

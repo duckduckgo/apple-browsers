@@ -85,6 +85,7 @@ public class DDGSync: DDGSyncing {
 
     public weak var dataProvidersSource: DataProvidersSource?
     private var customOperations: [any SyncCustomOperation] = []
+    private let deviceInfoMigrationCoordinator: DeviceInfoMigrationCoordinating
 
     /// This is the constructor intended for use by app clients.
     public convenience init(dataProvidersSource: DataProvidersSource,
@@ -112,6 +113,7 @@ public class DDGSync: DDGSyncing {
 
         let account = try await dependencies.account.createAccount(deviceName: deviceName, deviceType: deviceType)
         try updateAccount(account)
+        scheduleDeviceInfoMigration(for: account)
         scheduler.requestSyncImmediately()
     }
 
@@ -123,8 +125,8 @@ public class DDGSync: DDGSyncing {
         let result = try await dependencies.account.login(recoveryKey, deviceName: deviceName, deviceType: deviceType)
         try updateAccount(result.account)
         persistRecoveredThirdPartyScopedPasswordIfAvailable(from: result.accessCredentials, account: result.account)
-        let accountInfoKeys = await ensureAccountInfoProtectedKeysIfNeeded(for: result.account)
-        updateProtectedKeysCache(with: (result.keys ?? []) + accountInfoKeys)
+        updateProtectedKeysCache(with: result.keys)
+        scheduleDeviceInfoMigration(for: result.account)
         scheduler.requestSyncImmediately()
         return result.devices
     }
@@ -349,6 +351,7 @@ public class DDGSync: DDGSyncing {
             }
             cacheScopedPasswordInBackground(result.scopedPassword)
             updateProtectedKeysCache(with: result.protectedKeys)
+            scheduleDeviceInfoMigration(for: result.account)
             scheduler.requestSyncImmediately()
             return result.devices
         } catch {
@@ -396,6 +399,7 @@ public class DDGSync: DDGSyncing {
     init(dataProvidersSource: DataProvidersSource, dependencies: SyncDependencies) {
         self.dataProvidersSource = dataProvidersSource
         self.dependencies = dependencies
+        self.deviceInfoMigrationCoordinator = dependencies.createDeviceInfoMigrationCoordinator()
 
         featureFlagsCancellable = Publishers.Merge(
             self.dependencies.privacyConfigurationManager.updatesPublisher,
@@ -498,6 +502,9 @@ public class DDGSync: DDGSyncing {
 
         do {
             try updateAccount(account)
+            if isSyncEngineReady {
+                scheduleDeviceInfoMigration(for: account)
+            }
         } catch {
             dependencies.errorEvents.fire(.failedToSetupEngine, error: error)
         }
@@ -655,6 +662,16 @@ public class DDGSync: DDGSyncing {
         }
     }
 
+    private func scheduleDeviceInfoMigration(for account: SyncAccount) {
+        guard deviceInfoMigrationTask == nil else {
+            return
+        }
+        let deviceInfoMigrationCoordinator = deviceInfoMigrationCoordinator
+        deviceInfoMigrationTask = Task {
+            await deviceInfoMigrationCoordinator.migrateCurrentDeviceIfNeeded(for: account)
+        }
+    }
+
     private func persistRecoveredThirdPartyScopedPasswordIfAvailable(from accessCredentials: [AccessCredential]?, account: SyncAccount) {
         guard dependencies.syncFeatureFlags.isScopedAccessCredentialsEnabled() else {
             return
@@ -768,4 +785,5 @@ public class DDGSync: DDGSyncing {
     private var syncQueueCancellable: AnyCancellable?
     private var syncDidFinishCancellable: AnyCancellable?
     private var syncQueueRequestErrorCancellable: AnyCancellable?
+    private var deviceInfoMigrationTask: Task<Void, Never>?
 }

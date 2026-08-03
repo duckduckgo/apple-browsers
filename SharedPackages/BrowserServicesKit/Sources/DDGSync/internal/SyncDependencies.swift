@@ -53,6 +53,7 @@ protocol SyncDependencies: SyncDependenciesDebuggingSupport {
     func createExchangeRecoveryKeyTransmitter(exchangeMessage: ExchangeMessage) throws -> ExchangeRecoveryKeyTransmitting
     func createPairingV2MessageExchanger() -> PairingV2MessageExchanging
     func createThirdPartyAccountUpgradeCoordinator() -> ThirdPartyAccountUpgradeCoordinating
+    func createDeviceInfoMigrationCoordinator() -> DeviceInfoMigrationCoordinating
     func createTokenRescope() -> TokenRescoping
     func createAIChats() -> AIChatsHandling
 }

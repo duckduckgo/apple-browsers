@@ -787,6 +787,8 @@ final class DDGSyncTests: XCTestCase {
         (dependencies.secureStore as? SecureStorageStub)?.theAccount = .mock
         (dependencies.secureStore as? SecureStorageStub)?.theScopedPassword = Data(repeating: 6, count: 32)
         (dependencies.secureStore as? SecureStorageStub)?.theProtectedKeysData = protectedKeysData
+        let migrationCoordinator = DeviceInfoMigrationCoordinatingMock()
+        dependencies.createDeviceInfoMigrationCoordinatorStub = migrationCoordinator
         let syncService = DDGSync(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
 
         try await syncService.disconnect()
@@ -794,6 +796,7 @@ final class DDGSyncTests: XCTestCase {
         XCTAssertNil((dependencies.secureStore as? SecureStorageStub)?.theAccount)
         XCTAssertNil((dependencies.secureStore as? SecureStorageStub)?.theScopedPassword)
         XCTAssertNil((dependencies.secureStore as? SecureStorageStub)?.theProtectedKeysData)
+        XCTAssertEqual(migrationCoordinator.resetCallCount, 1)
     }
 
     func testWhenPreparingThirdPartyRecoveryCodeAndCredentialExistsThenRecoveredScopedPasswordIsUsed() async throws {

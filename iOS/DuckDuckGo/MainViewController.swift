@@ -5864,7 +5864,13 @@ extension MainViewController: NewTabPageControllerDelegate {
 extension MainViewController: TabDelegate {
 
     func searchToken(for tab: TabViewController) -> String? {
-        searchTokenFetcher.retrieveToken()
+        if let token = searchTokenFetcher.retrieveToken() {
+            return token
+        } else {
+            // No live token for this SERP nav — warm now so a follow-up request finds one.
+            warmSearchTokenIfEligible()
+            return nil
+        }
     }
 
     var isEmailProtectionSignedIn: Bool {

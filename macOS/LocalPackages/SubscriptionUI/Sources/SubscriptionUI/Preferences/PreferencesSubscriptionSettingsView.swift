@@ -21,6 +21,7 @@ import SwiftUI
 import SwiftUIExtensions
 import BrowserServicesKit
 import DesignResourcesKit
+import DesignResourcesKitIcons
 
 public struct PreferencesSubscriptionSettingsView: View {
 
@@ -182,7 +183,7 @@ public struct PreferencesSubscriptionSettingsView: View {
         if model.shouldShowUpgrade, let tierName = model.firstAvailableUpgradeTier {
             SubfeatureGroup {
                 HStack(alignment: .top, spacing: 12) {
-                    Image(.aiChatAdvancedColor24)
+                    Image(AppRebrand.isAppRebranded() ? .aiChatAdvancedColor24 :  .aiChatAdvancedColor24Legacy)
                     VStack(alignment: .leading, spacing: 18) {
                         Text(UserText.upgradeSectionCaption)
                             .foregroundColor(Color(.textPrimary))

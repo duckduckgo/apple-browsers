@@ -215,6 +215,10 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// legacy `javascript:` URL trampoline. Kill switch — disable remotely to revert to the
     /// trampoline if the SPI ever misbehaves.
     case newErrorPageReload
+
+    /// "Reorder by name" — permanently reorders a bookmark folder's direct children alphabetically.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217076881156357?focus=true
+    case bookmarksReorderByName
 }
 
 public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
@@ -323,6 +327,9 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216629730083154?focus=true
     case systemFindInPage
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217015452646368?focus=true
+    case iPadTabsBarInWindowControlsRow
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {
@@ -532,9 +539,6 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Enables deleting recent AI chats from the New Tab Page omnibar
     case ntpSuggestionsDeletion
-
-    /// Enables page context feature on iPad
-    case iPadPageContext
 
     /// Enables voice chat shortcut in the focused address bar
     case voiceShortcut

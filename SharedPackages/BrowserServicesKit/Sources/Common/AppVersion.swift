@@ -71,6 +71,14 @@ public struct AppVersion: OSVersionProviding {
         return String(commitSHA.prefix(7))
     }
 
+    public var xcodeMajorVersion: String {
+        guard let encodedVersion = bundle.object(forInfoDictionaryKey: Bundle.Key.xcodeVersion) as? String,
+              let numericVersion = Int(encodedVersion) else {
+            return ""
+        }
+        return String(numericVersion / 100)
+    }
+
     public var versionAndBuildNumber: String {
         let baseVersion = "\(versionNumber).\(buildNumber)"
         let suffix = alphaBuildSuffix

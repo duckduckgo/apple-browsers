@@ -251,7 +251,7 @@ final class SuggestionTableCellView: NSTableCellView {
 
         let colorsProvider = theme.colorsProvider
         let textColor = isSelected ? colorsProvider.suggestionsHighlightTextColor : colorsProvider.suggestionsTextColor
-        let suffixColor = isSelected ? colorsProvider.suggestionsHighlightSuffixColor : colorsProvider.suggestionsSuffixColor
+        let suffixColor = suggestionsSuffixColor(colorsProvider: colorsProvider)
 
         textField?.attributedStringValue = attributedString
         textField?.textColor = textColor
@@ -364,5 +364,16 @@ final class SuggestionTableCellView: NSTableCellView {
         searchSuggestionTextFieldLeadingConstraint.constant = styleProvider.suggestionTextFieldLeadingPadding
 
         super.layout()
+    }
+}
+
+private extension SuggestionTableCellView {
+
+    func suggestionsSuffixColor(colorsProvider: ColorsProviding) -> NSColor {
+        if isBurner {
+            return isSelected ? colorsProvider.suggestionsFireHighlightSuffixColor : colorsProvider.suggestionsFireSuffixColor
+        }
+
+        return isSelected ? colorsProvider.suggestionsHighlightSuffixColor : colorsProvider.suggestionsSuffixColor
     }
 }

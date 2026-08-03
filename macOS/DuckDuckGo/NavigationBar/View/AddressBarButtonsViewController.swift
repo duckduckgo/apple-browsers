@@ -1924,13 +1924,21 @@ final class AddressBarButtonsViewController: NSViewController {
         aiChatSettings.isAIFeaturesEnabled
     }
 
-    /// True when the toggle should be shown (feature active + user setting enabled).
-    /// Hidden in pure passive browsing — URL loaded, bar unfocused, not duck.ai — because there's no user
-    /// input or mode context to toggle between, and the design matches the pre-redesign behaviour there.
+    /// SearchMode Toggle will only be shown whenever the TextField is being edited
     private var shouldShowSearchModeToggle: Bool {
-        guard isSearchModeToggleFeatureActive && aiChatSettings.showSearchAndDuckAIToggle else { return false }
-        let isPassiveBrowsing = !isTextFieldEditorFirstResponder && !isAIChatPanelActive && controllerMode == .browsing
-        return !isPassiveBrowsing
+        guard isSearchModeToggleFeatureActive && aiChatSettings.showSearchAndDuckAIToggle else {
+            return false
+        }
+
+        guard themeManager.isAppRebranded else {
+            /// True when the toggle should be shown (feature active + user setting enabled).
+            /// Hidden in pure passive browsing — URL loaded, bar unfocused, not duck.ai — because there's no user
+            /// input or mode context to toggle between, and the design matches the pre-redesign behaviour there.
+            let isPassiveBrowsing = !isTextFieldEditorFirstResponder && !isAIChatPanelActive && controllerMode == .browsing
+            return !isPassiveBrowsing
+        }
+
+        return isTextFieldEditorFirstResponder
     }
 
     func updateButtons() {

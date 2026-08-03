@@ -513,6 +513,9 @@ public enum FeatureFlag: String {
     /// Moves the iPad tabs bar up into the system window controls row (iOS 26+ resizable windows).
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217015452646368?focus=true
     case iPadTabsBarInWindowControlsRow
+    
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1216352541195038?focus=true
+    case nativeAIPromptEditing
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -876,6 +879,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.systemFindInPage))
         case .iPadTabsBarInWindowControlsRow:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.iPadTabsBarInWindowControlsRow))
+        case .nativeAIPromptEditing:
+            Config(defaultValue: .disabled, source: .remoteReleasable(AIChatSubfeature.nativePromptEditing))
         }
     }
 

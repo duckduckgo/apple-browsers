@@ -22,6 +22,7 @@ import FeatureFlags
 import PrivacyConfig
 import Foundation
 import NewTabPage
+import WebKit
 import os.log
 
 final class NewTabPageOmnibarAiChatsProvider: NewTabPageOmnibarAiChatsProviding {
@@ -29,6 +30,7 @@ final class NewTabPageOmnibarAiChatsProvider: NewTabPageOmnibarAiChatsProviding 
     private let featureFlagger: FeatureFlagger
     private let suggestionsReader: AIChatSuggestionsReading
     private let searchPreferences: SearchPreferences
+    private let burnerContextProvider: NewTabPageBurnerContextProviding
     private var cancellables = Set<AnyCancellable>()
     @Published private var hasExcessChats = false
 
@@ -39,10 +41,12 @@ final class NewTabPageOmnibarAiChatsProvider: NewTabPageOmnibarAiChatsProviding 
     init(featureFlagger: FeatureFlagger,
          configProvider: NewTabPageOmnibarConfigProviding,
          suggestionsReader: AIChatSuggestionsReading,
-         searchPreferences: SearchPreferences) {
+         searchPreferences: SearchPreferences,
+         burnerContextProvider: NewTabPageBurnerContextProviding = DefaultNewTabPageBurnerContextProvider()) {
         self.featureFlagger = featureFlagger
         self.suggestionsReader = suggestionsReader
         self.searchPreferences = searchPreferences
+        self.burnerContextProvider = burnerContextProvider
 
         // configProvider is not stored — Combine keeps the publisher pipeline alive
         // as long as the cancellables are retained. If configProvider is deallocated,
@@ -70,11 +74,16 @@ final class NewTabPageOmnibarAiChatsProvider: NewTabPageOmnibarAiChatsProviding 
     }
 
     @MainActor
-    func aiChats(query: String?) async -> NewTabPageDataModel.AiChatsData {
+    func aiChats(query: String?, requestingWebView: WKWebView?) async -> NewTabPageDataModel.AiChatsData {
         guard featureFlagger.isFeatureOn(.aiChatNtpRecentChats) else {
             return .empty
         }
         guard searchPreferences.showAutocompleteSuggestions else {
+            return .empty
+        }
+        // Fire Windows run an isolated Duck.ai session; persisted chat-history suggestions from the
+        // regular session can't be opened here, so suppress them (mirrors the address bar omnibar).
+        guard !burnerContextProvider.isBurner(webView: requestingWebView) else {
             return .empty
         }
         let effectiveQuery = query

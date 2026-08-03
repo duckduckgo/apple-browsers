@@ -32,6 +32,7 @@ final class NewTabPageOmnibarAiChatsProviderTests: XCTestCase {
     private var suggestionsReader: MockAIChatSuggestionsReader!
     private var configProvider: MockAiChatsConfigProvider!
     private var searchPreferencesPersistorMock: MockSearchPreferencesPersistor!
+    private var burnerContextProvider: MockOmnibarBurnerContextProvider!
     private var provider: NewTabPageOmnibarAiChatsProvider!
 
     override func setUp() {
@@ -41,6 +42,7 @@ final class NewTabPageOmnibarAiChatsProviderTests: XCTestCase {
         configProvider = MockAiChatsConfigProvider()
         searchPreferencesPersistorMock = MockSearchPreferencesPersistor()
         searchPreferencesPersistorMock.showAutocompleteSuggestions = true
+        burnerContextProvider = MockOmnibarBurnerContextProvider()
         provider = makeProvider()
     }
 
@@ -50,6 +52,7 @@ final class NewTabPageOmnibarAiChatsProviderTests: XCTestCase {
         configProvider = nil
         suggestionsReader = nil
         featureFlagger = nil
+        burnerContextProvider = nil
         super.tearDown()
     }
 
@@ -61,8 +64,23 @@ final class NewTabPageOmnibarAiChatsProviderTests: XCTestCase {
             searchPreferences: SearchPreferences(
                 persistor: searchPreferencesPersistorMock,
                 windowControllersManager: WindowControllersManagerMock()
-            )
+            ),
+            burnerContextProvider: burnerContextProvider
         )
+    }
+
+    // MARK: - Fire Window suppression
+
+    @MainActor
+    func testWhenBurner_thenReturnsEmptyEvenWithChatsAvailable() async {
+        featureFlagger.featuresStub = ["aiChatNtpRecentChats": true]
+        suggestionsReader.pinnedChats = [.make(chatId: "1", title: "Pinned")]
+        suggestionsReader.recentChats = [.make(chatId: "2", title: "Recent")]
+        burnerContextProvider.isBurnerStub = true
+
+        let result = await provider.aiChats(query: nil, requestingWebView: nil)
+
+        XCTAssertTrue(result.chats.isEmpty)
     }
 
     // MARK: - Feature flag
@@ -71,7 +89,7 @@ final class NewTabPageOmnibarAiChatsProviderTests: XCTestCase {
     func testWhenFeatureFlagOff_thenReturnsEmpty() async {
         featureFlagger.featuresStub = ["aiChatNtpRecentChats": false]
 
-        let result = await provider.aiChats(query: nil)
+        let result = await provider.aiChats(query: nil, requestingWebView: nil)
 
         XCTAssertTrue(result.chats.isEmpty)
     }
@@ -82,7 +100,7 @@ final class NewTabPageOmnibarAiChatsProviderTests: XCTestCase {
         suggestionsReader.pinnedChats = [.make(chatId: "1", title: "Pinned")]
         suggestionsReader.recentChats = [.make(chatId: "2", title: "Recent")]
 
-        let result = await provider.aiChats(query: nil)
+        let result = await provider.aiChats(query: nil, requestingWebView: nil)
 
         XCTAssertFalse(result.chats.isEmpty)
     }
@@ -97,7 +115,7 @@ final class NewTabPageOmnibarAiChatsProviderTests: XCTestCase {
         searchPreferencesPersistorMock.showAutocompleteSuggestions = false
         provider = makeProvider()
 
-        let result = await provider.aiChats(query: nil)
+        let result = await provider.aiChats(query: nil, requestingWebView: nil)
 
         XCTAssertTrue(result.chats.isEmpty)
     }
@@ -108,7 +126,7 @@ final class NewTabPageOmnibarAiChatsProviderTests: XCTestCase {
     func testWhenQueryIsWhitespaceOnly_thenPassesNilToReader() async {
         featureFlagger.featuresStub = ["aiChatNtpRecentChats": true]
 
-        _ = await provider.aiChats(query: "   ")
+        _ = await provider.aiChats(query: "   ", requestingWebView: nil)
 
         XCTAssertNil(suggestionsReader.receivedQuery)
     }
@@ -117,7 +135,7 @@ final class NewTabPageOmnibarAiChatsProviderTests: XCTestCase {
     func testWhenQueryIsNil_thenPassesNilToReader() async {
         featureFlagger.featuresStub = ["aiChatNtpRecentChats": true]
 
-        _ = await provider.aiChats(query: nil)
+        _ = await provider.aiChats(query: nil, requestingWebView: nil)
 
         XCTAssertNil(suggestionsReader.receivedQuery)
     }
@@ -126,7 +144,7 @@ final class NewTabPageOmnibarAiChatsProviderTests: XCTestCase {
     func testWhenQueryHasContent_thenPassesTrimmedQueryToReader() async {
         featureFlagger.featuresStub = ["aiChatNtpRecentChats": true]
 
-        _ = await provider.aiChats(query: "  swift  ")
+        _ = await provider.aiChats(query: "  swift  ", requestingWebView: nil)
 
         XCTAssertEqual(suggestionsReader.receivedQuery, "swift")
     }
@@ -139,7 +157,7 @@ final class NewTabPageOmnibarAiChatsProviderTests: XCTestCase {
         suggestionsReader.pinnedChats = [.make(chatId: "pinned", title: "Pinned", isPinned: true)]
         suggestionsReader.recentChats = [.make(chatId: "recent", title: "Recent", isPinned: false)]
 
-        let result = await provider.aiChats(query: nil)
+        let result = await provider.aiChats(query: nil, requestingWebView: nil)
 
         XCTAssertEqual(result.chats.first?.chatId, "pinned")
         XCTAssertEqual(result.chats.last?.chatId, "recent")
@@ -152,7 +170,7 @@ final class NewTabPageOmnibarAiChatsProviderTests: XCTestCase {
         let newer = AIChatSuggestion.make(chatId: "newer", title: "Newer", timestamp: Date().addingTimeInterval(-60))
         suggestionsReader.recentChats = [older, newer]
 
-        let result = await provider.aiChats(query: nil)
+        let result = await provider.aiChats(query: nil, requestingWebView: nil)
 
         XCTAssertEqual(result.chats.first?.chatId, "newer")
         XCTAssertEqual(result.chats.last?.chatId, "older")
@@ -166,7 +184,7 @@ final class NewTabPageOmnibarAiChatsProviderTests: XCTestCase {
         let date = Date(timeIntervalSince1970: 1_700_000_000)
         suggestionsReader.recentChats = [.make(chatId: "1", title: "Chat", timestamp: date)]
 
-        let result = await provider.aiChats(query: nil)
+        let result = await provider.aiChats(query: nil, requestingWebView: nil)
 
         XCTAssertNotNil(result.chats.first?.lastEdit)
         // Verify it round-trips through ISO8601 back to the original date
@@ -181,7 +199,7 @@ final class NewTabPageOmnibarAiChatsProviderTests: XCTestCase {
         featureFlagger.featuresStub = ["aiChatNtpRecentChats": true]
         suggestionsReader.recentChats = [.make(chatId: "1", title: "Chat", timestamp: nil)]
 
-        let result = await provider.aiChats(query: nil)
+        let result = await provider.aiChats(query: nil, requestingWebView: nil)
 
         XCTAssertNil(result.chats.first?.lastEdit)
     }
@@ -193,7 +211,7 @@ final class NewTabPageOmnibarAiChatsProviderTests: XCTestCase {
         featureFlagger.featuresStub = ["aiChatNtpRecentChats": true]
         suggestionsReader.maxHistoryCount = 5
 
-        _ = await provider.aiChats(query: nil)
+        _ = await provider.aiChats(query: nil, requestingWebView: nil)
 
         XCTAssertEqual(suggestionsReader.receivedMaxChats, 6)
     }
@@ -210,7 +228,7 @@ final class NewTabPageOmnibarAiChatsProviderTests: XCTestCase {
 
         var lastValue: Bool?
         let cancellable = provider.hasExcessChatsPublisher.sink { lastValue = $0 }
-        _ = await provider.aiChats(query: nil)
+        _ = await provider.aiChats(query: nil, requestingWebView: nil)
 
         XCTAssertEqual(lastValue, true)
         cancellable.cancel()
@@ -227,7 +245,7 @@ final class NewTabPageOmnibarAiChatsProviderTests: XCTestCase {
 
         var lastValue: Bool?
         let cancellable = provider.hasExcessChatsPublisher.sink { lastValue = $0 }
-        _ = await provider.aiChats(query: nil)
+        _ = await provider.aiChats(query: nil, requestingWebView: nil)
 
         XCTAssertEqual(lastValue, false)
         cancellable.cancel()
@@ -245,7 +263,7 @@ final class NewTabPageOmnibarAiChatsProviderTests: XCTestCase {
 
         var lastValue: Bool?
         let cancellable = provider.hasExcessChatsPublisher.sink { lastValue = $0 }
-        _ = await provider.aiChats(query: nil)
+        _ = await provider.aiChats(query: nil, requestingWebView: nil)
 
         XCTAssertEqual(lastValue, false)
         cancellable.cancel()
@@ -259,7 +277,7 @@ final class NewTabPageOmnibarAiChatsProviderTests: XCTestCase {
         suggestionsReader.pinnedChats = [.make(chatId: "p", title: "Pinned", isPinned: true)]
         suggestionsReader.recentChats = [.make(chatId: "r", title: "Recent", isPinned: false)]
 
-        let result = await provider.aiChats(query: nil)
+        let result = await provider.aiChats(query: nil, requestingWebView: nil)
 
         XCTAssertEqual(result.chats.first(where: { $0.chatId == "p" })?.pinned, true)
         XCTAssertEqual(result.chats.first(where: { $0.chatId == "r" })?.pinned, false)
@@ -270,7 +288,7 @@ final class NewTabPageOmnibarAiChatsProviderTests: XCTestCase {
         featureFlagger.featuresStub = ["aiChatNtpRecentChats": true]
         suggestionsReader.recentChats = [.make(chatId: "v", title: "Voice", model: AIChatNativePrompt.voiceMode)]
 
-        let result = await provider.aiChats(query: nil)
+        let result = await provider.aiChats(query: nil, requestingWebView: nil)
 
         XCTAssertEqual(result.chats.first(where: { $0.chatId == "v" })?.model, "voice-mode")
     }
@@ -280,7 +298,7 @@ final class NewTabPageOmnibarAiChatsProviderTests: XCTestCase {
         featureFlagger.featuresStub = ["aiChatNtpRecentChats": true]
         suggestionsReader.recentChats = [.make(chatId: "i", title: "Image", model: AIChatNativePrompt.imageGenerationMode)]
 
-        let result = await provider.aiChats(query: nil)
+        let result = await provider.aiChats(query: nil, requestingWebView: nil)
 
         XCTAssertEqual(result.chats.first(where: { $0.chatId == "i" })?.model, "image-generation")
     }
@@ -290,7 +308,7 @@ final class NewTabPageOmnibarAiChatsProviderTests: XCTestCase {
         featureFlagger.featuresStub = ["aiChatNtpRecentChats": true]
         suggestionsReader.recentChats = [.make(chatId: "t", title: "Text", model: "gpt-4o-mini")]
 
-        let result = await provider.aiChats(query: nil)
+        let result = await provider.aiChats(query: nil, requestingWebView: nil)
 
         XCTAssertEqual(result.chats.first(where: { $0.chatId == "t" })?.model, "gpt-4o-mini")
     }
@@ -300,13 +318,18 @@ final class NewTabPageOmnibarAiChatsProviderTests: XCTestCase {
         featureFlagger.featuresStub = ["aiChatNtpRecentChats": true]
         suggestionsReader.recentChats = [.make(chatId: "n", title: "No model", model: nil)]
 
-        let result = await provider.aiChats(query: nil)
+        let result = await provider.aiChats(query: nil, requestingWebView: nil)
 
         XCTAssertNil(result.chats.first(where: { $0.chatId == "n" })?.model)
     }
 }
 
 // MARK: - Mocks
+
+private final class MockOmnibarBurnerContextProvider: NewTabPageBurnerContextProviding {
+    var isBurnerStub = false
+    func isBurner(webView: WKWebView?) -> Bool { isBurnerStub }
+}
 
 @MainActor
 private final class MockAIChatSuggestionsReader: AIChatSuggestionsReading {

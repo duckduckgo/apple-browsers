@@ -18,14 +18,17 @@
 
 import Combine
 import NewTabPage
+import WebKit
 
 final class MockNewTabPageOmnibarAiChatsProvider: NewTabPageOmnibarAiChatsProviding {
 
     var aiChatsHandler: ((String?) async -> NewTabPageDataModel.AiChatsData)?
     var hasExcessChatsPublisher: AnyPublisher<Bool, Never> { Just(false).eraseToAnyPublisher() }
+    private(set) var receivedRequestingWebView: WKWebView?
 
     @MainActor
-    func aiChats(query: String?) async -> NewTabPageDataModel.AiChatsData {
+    func aiChats(query: String?, requestingWebView: WKWebView?) async -> NewTabPageDataModel.AiChatsData {
+        receivedRequestingWebView = requestingWebView
         return await aiChatsHandler?(query) ?? .empty
     }
 

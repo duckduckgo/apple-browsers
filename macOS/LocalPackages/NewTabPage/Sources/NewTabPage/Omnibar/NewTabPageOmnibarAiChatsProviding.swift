@@ -17,11 +17,14 @@
 //
 
 import Combine
+import WebKit
 
 public protocol NewTabPageOmnibarAiChatsProviding: AnyObject {
 
+    /// `requestingWebView` lets implementations suppress chat-history suggestions for Fire Windows,
+    /// whose isolated Duck.ai session can't open chats persisted from the regular session.
     @MainActor
-    func aiChats(query: String?) async -> NewTabPageDataModel.AiChatsData
+    func aiChats(query: String?, requestingWebView: WKWebView?) async -> NewTabPageDataModel.AiChatsData
 
     var hasExcessChatsPublisher: AnyPublisher<Bool, Never> { get }
 

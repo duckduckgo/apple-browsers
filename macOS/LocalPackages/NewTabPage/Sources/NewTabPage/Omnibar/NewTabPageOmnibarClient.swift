@@ -358,7 +358,7 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
         guard let request: NewTabPageDataModel.OmnibarGetAiChatsRequest = DecodableHelper.decode(from: params) else {
             return nil
         }
-        return await aiChatsProvider.aiChats(query: request.query)
+        return await aiChatsProvider.aiChats(query: request.query, requestingWebView: original.webView)
     }
 
     private func openAiChat(params: Any, original: WKScriptMessage) async throws -> Encodable? {

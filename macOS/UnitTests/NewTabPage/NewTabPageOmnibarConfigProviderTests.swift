@@ -25,6 +25,7 @@ import PersistenceTestingUtils
 import PixelKit
 import PrivacyConfig
 import NewTabPage
+import WebKit
 @testable import DuckDuckGo_Privacy_Browser
 
 final class MockNewTabPageAIChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProviding {
@@ -673,7 +674,7 @@ private final class MockAIChatExcessProvider: NewTabPageOmnibarAiChatsProviding 
     }
 
     @MainActor
-    func aiChats(query: String?) async -> NewTabPageDataModel.AiChatsData {
+    func aiChats(query: String?, requestingWebView: WKWebView?) async -> NewTabPageDataModel.AiChatsData {
         NewTabPageDataModel.AiChatsData(chats: [])
     }
 

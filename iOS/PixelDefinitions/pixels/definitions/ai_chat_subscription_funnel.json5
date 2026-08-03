@@ -12,7 +12,16 @@
                 "description": "Duck.ai subscription entry point that was shown.",
                 "type": "string",
                 "enum": [
-                    "funnel_duckai_ios__aisidebar", "funnel_duckai_ios__activatesubscription", "funnel_duckai_ios__freelimit", "funnel_duckai_ios__imagegenerationlimit", "funnel_duckai_ios__pluslimit", "funnel_duckai_ios__promotioncard", "funnel_duckai_ios__settings", "funnel_duckai_ios__disclaimerbanner","funnel_duckai_ios__voicechatlimit", "funnel_duckai_ios__voicechatdurationlimit"
+                    "funnel_duckai_ios__aisidebar",
+                    "funnel_duckai_ios__activatesubscription",
+                    "funnel_duckai_ios__freelimit",
+                    "funnel_duckai_ios__imagegenerationlimit",
+                    "funnel_duckai_ios__pluslimit",
+                    "funnel_duckai_ios__promotioncard",
+                    "funnel_duckai_ios__settings",
+                    "funnel_duckai_ios__disclaimerbanner",
+                    "funnel_duckai_ios__voicechatlimit",
+                    "funnel_duckai_ios__voicechatdurationlimit"
                 ]
             }
         ]
@@ -29,7 +38,16 @@
                 "description": "Duck.ai subscription entry point that was tapped.",
                 "type": "string",
                 "enum": [
-                    "funnel_duckai_ios__aisidebar", "funnel_duckai_ios__activatesubscription", "funnel_duckai_ios__freelimit", "funnel_duckai_ios__imagegenerationlimit", "funnel_duckai_ios__pluslimit", "funnel_duckai_ios__promotioncard", "funnel_duckai_ios__settings", "funnel_duckai_ios__disclaimerbanner","funnel_duckai_ios__voicechatlimit", "funnel_duckai_ios__voicechatdurationlimit"
+                    "funnel_duckai_ios__aisidebar",
+                    "funnel_duckai_ios__activatesubscription",
+                    "funnel_duckai_ios__freelimit",
+                    "funnel_duckai_ios__imagegenerationlimit",
+                    "funnel_duckai_ios__pluslimit",
+                    "funnel_duckai_ios__promotioncard",
+                    "funnel_duckai_ios__settings",
+                    "funnel_duckai_ios__disclaimerbanner",
+                    "funnel_duckai_ios__voicechatlimit",
+                    "funnel_duckai_ios__voicechatdurationlimit"
                 ]
             }
         ]

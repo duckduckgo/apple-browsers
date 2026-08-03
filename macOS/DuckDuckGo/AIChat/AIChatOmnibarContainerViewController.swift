@@ -1511,14 +1511,15 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             preselectedIds: Set(omnibarController.activeTabAttachments.map(\.id)),
             maxSelection: omnibarController.isTabAttachmentLimitEnabled ? AIChatOmnibarController.maxTabAttachments : .max,
             onAttach: { [weak self] selected in
-                self?.applyTabSelection(selected)
+                self?.applyTabSelection(selected, offered: candidates)
             }
         ).show(in: view.window)
     }
 
-    private func applyTabSelection(_ selected: [AIChatTabAttachment]) {
+    private func applyTabSelection(_ selected: [AIChatTabAttachment], offered: [AIChatTabAttachment]) {
         let selectedIds = Set(selected.map(\.id))
-        for attached in omnibarController.activeTabAttachments where !selectedIds.contains(attached.id) {
+        let offeredIds = Set(offered.map(\.id))
+        for attached in omnibarController.activeTabAttachments where offeredIds.contains(attached.id) && !selectedIds.contains(attached.id) {
             omnibarController.removeTabAttachmentFromActiveTab(id: attached.id)
             omnibarController.pixelHandler.fire(.tabAttachmentRemoved)
         }

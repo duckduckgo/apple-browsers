@@ -183,6 +183,11 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216469223737804
     case ntpSearchSuggestionsDeletion
 
+    /// Shows a reduced New Tab Page (Omnibar + RMF) in Fire Windows instead of the static native
+    /// info screen.
+    /// https://app.asana.com/1/137249556945/project/1211654189969294/task/1209367838763405
+    case fireWindowNewTabPage
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866618846917
     /// Note: 'Failsafe' feature flag. See https://app.asana.com/1/137249556945/project/1202500774821704/task/1210572145398078?focus=true
     case supportsAlternateStripePaymentFlow
@@ -618,6 +623,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(HtmlNewTabPageSubfeature.newTabPageTabIDs))
         case .ntpSearchSuggestionsDeletion:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(HtmlNewTabPageSubfeature.searchSuggestionsDeletion))
+        case .fireWindowNewTabPage:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(HtmlNewTabPageSubfeature.fireWindowNewTabPage))
         case .supportsAlternateStripePaymentFlow:
             Config(defaultValue: .enabled, source: .remoteReleasable(PrivacyProSubfeature.supportsAlternateStripePaymentFlow), category: .subscription)
         case .newSyncEntryPoints:

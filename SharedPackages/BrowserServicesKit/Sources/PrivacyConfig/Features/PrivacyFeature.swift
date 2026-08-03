@@ -642,6 +642,10 @@ public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Enables deleting history-based search suggestions from the New Tab Page omnibar
     case searchSuggestionsDeletion
+
+    /// macOS only. Shows a reduced New Tab Page (Omnibar + RMF) in Fire Windows instead of the
+    /// static native info screen.
+    case fireWindowNewTabPage
 }
 
 public enum NetworkProtectionSubfeature: String, Equatable, PrivacySubfeature {

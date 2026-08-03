@@ -1,0 +1,37 @@
+// https://app.asana.com/1/137249556945/project/414235014887631/task/1211744626927520?focus=true
+{
+    "m_aichat_subscription-funnel_impression": {
+        "description": "Fires when the Duck.ai web frontend reports that a subscription entry point became visible.",
+        "owners": ["pikorddg"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "origin",
+                "description": "Duck.ai subscription entry point that was shown.",
+                "type": "string",
+                "enum": [
+                    "funnel_duckai_ios__aisidebar", "funnel_duckai_ios__activatesubscription", "funnel_duckai_ios__freelimit", "funnel_duckai_ios__imagegenerationlimit", "funnel_duckai_ios__pluslimit", "funnel_duckai_ios__promotioncard", "funnel_duckai_ios__settings", "funnel_duckai_ios__disclaimerbanner","funnel_duckai_ios__voicechatlimit", "funnel_duckai_ios__voicechatdurationlimit"
+                ]
+            }
+        ]
+    },
+    "m_aichat_subscription-funnel_click": {
+        "description": "Fires when the Duck.ai web frontend reports that the user tapped a subscription entry point.",
+        "owners": ["pikorddg"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "origin",
+                "description": "Duck.ai subscription entry point that was tapped.",
+                "type": "string",
+                "enum": [
+                    "funnel_duckai_ios__aisidebar", "funnel_duckai_ios__activatesubscription", "funnel_duckai_ios__freelimit", "funnel_duckai_ios__imagegenerationlimit", "funnel_duckai_ios__pluslimit", "funnel_duckai_ios__promotioncard", "funnel_duckai_ios__settings", "funnel_duckai_ios__disclaimerbanner","funnel_duckai_ios__voicechatlimit", "funnel_duckai_ios__voicechatdurationlimit"
+                ]
+            }
+        ]
+    }
+}

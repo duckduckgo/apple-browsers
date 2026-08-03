@@ -1696,6 +1696,10 @@ extension Pixel {
         case aiChatContextualAutoAttachDAU
         case aiChatIsEnabledDaily
 
+        // MARK: Duck.ai subscription funnel (frontend-reported entry points)
+        case aiChatSubscriptionFunnelImpression
+        case aiChatSubscriptionFunnelClick
+
         case duckAiNativeStorageMigrationDoneUnique(key: String)
         case duckAiNativeStorageMigrationDoneCount(key: String)
         case duckAiNativeStorageMigrationDoneBlankCount
@@ -3630,6 +3634,11 @@ extension Pixel.Event {
         case .aiChatExperimentalAddressBarIsEnabledDaily: return "m_aichat_experimental_address_bar_is_enabled_daily"
         case .aiChatContextualAutoAttachDAU: return "m_aichat_contextual_auto_attach_dau"
         case .aiChatIsEnabledDaily: return "m_aichat_is_enabled_daily"
+
+        // The hyphen inside these snake_case names is deliberate: it matches the macOS names so a single
+        // query answers both platforms.
+        case .aiChatSubscriptionFunnelImpression: return "m_aichat_subscription-funnel_impression"
+        case .aiChatSubscriptionFunnelClick: return "m_aichat_subscription-funnel_click"
 
         // AI Features telemetry: no `m_` prefix so the wire names are identical to macOS.
         case .aiFeaturesStateDaily: return "ai_features_state_daily"

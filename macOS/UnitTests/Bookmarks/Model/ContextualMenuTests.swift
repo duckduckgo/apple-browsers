@@ -17,6 +17,7 @@
 //
 
 import Common
+import FeatureFlags
 import FoundationExtensions
 import History
 import HistoryView
@@ -127,6 +128,20 @@ final class ContextualMenuTests: XCTestCase {
         XCTAssertTrue(items[6].isSeparatorItem) // Separator
         assertMenuItem(items[7], withTitle: UserText.addFolder, selector: #selector(FolderMenuItemSelectors.newFolder(_:)), representedObject: folder)
         assertMenuItem(items[8], withTitle: UserText.bookmarksManageBookmarks, selector: #selector(FolderMenuItemSelectors.manageBookmarks(_:)))
+    }
+
+    @MainActor
+    func testWhenAskingFolderItemAndReorderByNameIsEnabledThenItShouldIncludeReorderByNameAboveMoveToEnd() {
+        // GIVEN
+        let folder = BookmarkFolder(id: "1", title: "DuckDuckGo")
+
+        // WHEN
+        let items = BookmarksContextMenu.folderMenuItems(with: folder, isReorderByNameEnabled: true)
+
+        // THEN
+        XCTAssertEqual(items.count, 10)
+        assertMenuItem(items[5], withTitle: UserText.bookmarksBarContextMenuReorderByName, selector: nil, representedObject: folder)
+        assertMenuItem(items[6], withTitle: UserText.bookmarksBarContextMenuMoveToEnd, selector: #selector(FolderMenuItemSelectors.moveToEnd(_:)), representedObject: folder)
     }
 
     @MainActor
@@ -828,7 +843,11 @@ extension BookmarksContextMenu {
         delegate.selectedBookmarkItems = [bookmark]
         delegate.shouldIncludeManageBookmarksItem = enableManageBookmarks
         let bkman = MockBookmarkManager(list: .init(entities: [bookmark], topLevelEntities: [BookmarkFolder(id: PseudoFolder.bookmarks.id, title: "Bookmarks", children: [bookmark])]))
-        let menu = BookmarksContextMenu(bookmarkManager: bkman, windowControllersManager: WindowControllersManagerMock(), delegate: delegate)
+        let menu = BookmarksContextMenu(
+            bookmarkManager: bkman,
+            windowControllersManager: WindowControllersManagerMock(),
+            featureFlagger: MockFeatureFlagger(),
+            delegate: delegate)
         menu.onDeinit {
             withExtendedLifetime(delegate) {}
         }
@@ -837,16 +856,32 @@ extension BookmarksContextMenu {
         return menu
     }
     @MainActor
-    static func folderMenuItems(with bookmarkFolder: BookmarkFolder, enableManageBookmarks: Bool = true) -> [NSMenuItem] {
-        folderMenu(with: bookmarkFolder, enableManageBookmarks: enableManageBookmarks).items
+    static func folderMenuItems(
+        with bookmarkFolder: BookmarkFolder,
+        enableManageBookmarks: Bool = true,
+        isReorderByNameEnabled: Bool = false) -> [NSMenuItem] {
+        folderMenu(
+            with: bookmarkFolder,
+            enableManageBookmarks: enableManageBookmarks,
+            isReorderByNameEnabled: isReorderByNameEnabled).items
     }
     @MainActor
-    static func folderMenu(with bookmarkFolder: BookmarkFolder, enableManageBookmarks: Bool = true) -> BookmarksContextMenu {
+    static func folderMenu(
+        with bookmarkFolder: BookmarkFolder,
+        enableManageBookmarks: Bool = true,
+        isReorderByNameEnabled: Bool = false) -> BookmarksContextMenu {
         let delegate = MockBookmarksContextMenuDelegate()
         delegate.selectedBookmarkItems = [bookmarkFolder]
         delegate.shouldIncludeManageBookmarksItem = enableManageBookmarks
         let bkman = MockBookmarkManager(list: .init(entities: [bookmarkFolder], topLevelEntities: [BookmarkFolder(id: PseudoFolder.bookmarks.id, title: "Bookmarks", children: [bookmarkFolder])]))
-        let menu = BookmarksContextMenu(bookmarkManager: bkman, windowControllersManager: WindowControllersManagerMock(), delegate: delegate)
+        let featureFlagger = MockFeatureFlagger(featuresStub: [
+            FeatureFlag.bookmarksReorderByName.rawValue: isReorderByNameEnabled
+        ])
+        let menu = BookmarksContextMenu(
+            bookmarkManager: bkman,
+            windowControllersManager: WindowControllersManagerMock(),
+            featureFlagger: featureFlagger,
+            delegate: delegate)
         menu.onDeinit {
             withExtendedLifetime(delegate) {}
         }
@@ -861,7 +896,11 @@ extension BookmarksContextMenu {
         delegate.isSearching = forSearch
         let entities = items as? [BaseBookmarkEntity] ?? (items as? [BookmarkNode])!.map { $0.representedObject as! BaseBookmarkEntity }
         let bkman = MockBookmarkManager(list: .init(entities: entities, topLevelEntities: [BookmarkFolder(id: PseudoFolder.bookmarks.id, title: "Bookmarks", children: entities)]))
-        let menu = BookmarksContextMenu(bookmarkManager: bkman, windowControllersManager: WindowControllersManagerMock(), delegate: delegate)
+        let menu = BookmarksContextMenu(
+            bookmarkManager: bkman,
+            windowControllersManager: WindowControllersManagerMock(),
+            featureFlagger: MockFeatureFlagger(),
+            delegate: delegate)
         menu.onDeinit {
             withExtendedLifetime(delegate) {}
         }

@@ -20,7 +20,7 @@ on:
 
 jobs:
   build-experimental:
-    runs-on: macos-26
+    runs-on: xcode-27
     name: Build Experimental
     timeout-minutes: 30
     
@@ -106,13 +106,9 @@ jobs:
       uses: actions/cache@v5
       with:
         path: iOS/DerivedData/SourcePackages
-        key: ${{ runner.os }}-ios-${{ env.cache_key_hash }}
+        key: ${{ runner.os }}-ios-experimental-${{ env.cache_key_hash }}
         restore-keys: |
-          ${{ runner.os }}-ios-
-
-    - name: Select Xcode
-      if: steps.check-upload.outputs.should_skip != 'true'
-      uses: ./.github/actions/select-xcode-version
+          ${{ runner.os }}-ios-experimental-
 
     - name: Setup Ruby and dependencies
       if: steps.check-upload.outputs.should_skip != 'true'

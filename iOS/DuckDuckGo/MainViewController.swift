@@ -5332,10 +5332,10 @@ extension MainViewController: OmniBarDelegate {
     /// the fetcher's refresh-ahead window coalesces redundant triggers.
     func warmSearchTokenIfEligible() {
         guard searchTokenExperiment.cohort == .treatment else { return }
-        // Match the SERP navigation's UA exactly (the token is UA-bound): the tab's desktop state + a
-        // duckduckgo.com URL, resolved through the same `agent(forUrl:isDesktop:)` the WebView uses.
-        // Fall back to the same default a new tab would use (`isLargeWidth`, i.e. desktop on iPad)
-        // so a nil `currentTab` doesn't warm a mobile UA the SERP then navigates as desktop.
+        // The token is UA-bound. Warm it with the UA the SERP navigation will use: the tab's desktop
+        // state resolved through the same `agent(forUrl:isDesktop:)` the WebView applies. With no current
+        // tab (e.g. an empty new tab) fall back to the same default a new tab uses (`Tab.init` sets
+        // `desktop = isLargeWidth`, Tab.swift:156) so iPad, which navigates desktop, requests a desktop token.
         let isDesktop = currentTab?.tabModel.isDesktop ?? AppWidthObserver.shared.isLargeWidth
         let userAgent = DefaultUserAgentManager.shared.userAgent(isDesktop: isDesktop, url: .ddg)
         Task { await searchTokenFetcher.fetchIfNeeded(userAgent: userAgent) }
@@ -5863,8 +5863,8 @@ extension MainViewController: NewTabPageControllerDelegate {
 
 extension MainViewController: TabDelegate {
 
-    func searchToken(for tab: TabViewController, userAgent: String) -> String? {
-        searchTokenFetcher.retrieveToken(matching: userAgent)
+    func searchToken(for tab: TabViewController) -> String? {
+        searchTokenFetcher.retrieveToken()
     }
 
     var isEmailProtectionSignedIn: Bool {

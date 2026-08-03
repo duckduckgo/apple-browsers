@@ -2256,9 +2256,9 @@
 		7BA930B22E0DB0C600723574 /* BookmarksNavigationEngagementMetrics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BA930B02E0DB0BC00723574 /* BookmarksNavigationEngagementMetrics.swift */; };
 		7BAB1A0100000000A0000002 /* AIChatTabAttachment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BAB1A0100000000A0000001 /* AIChatTabAttachment.swift */; };
 		7BAB1A0100000000A0000003 /* AIChatTabAttachment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BAB1A0100000000A0000001 /* AIChatTabAttachment.swift */; };
-		7BAB1A0100000000A0000005 /* AIChatTabPickerMenuRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BAB1A0100000000A0000004 /* AIChatTabPickerMenuRowView.swift */; };
-		7BAB1A0100000000A0000006 /* AIChatTabPickerMenuRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BAB1A0100000000A0000004 /* AIChatTabPickerMenuRowView.swift */; };
-		7BAB1A0100000000A0000007 /* AIChatTabPickerMenuRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BAB1A0100000000A0000004 /* AIChatTabPickerMenuRowView.swift */; };
+		7BAB1A0100000000A00000D1 /* AIChatAttachTabsModal.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BAB1A0100000000A00000D0 /* AIChatAttachTabsModal.swift */; };
+		7BAB1A0100000000A00000D2 /* AIChatAttachTabsModal.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BAB1A0100000000A00000D0 /* AIChatAttachTabsModal.swift */; };
+		7BAB1A0100000000A00000D3 /* AIChatAttachTabsModal.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BAB1A0100000000A00000D0 /* AIChatAttachTabsModal.swift */; };
 		7BAB1A0100000000A0000009 /* AIChatTabAttachmentCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BAB1A0100000000A0000008 /* AIChatTabAttachmentCardView.swift */; };
 		7BAB1A0100000000A000000A /* AIChatTabAttachmentCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BAB1A0100000000A0000008 /* AIChatTabAttachmentCardView.swift */; };
 		7BAB1A0100000000A000000B /* AIChatTabAttachmentCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BAB1A0100000000A0000008 /* AIChatTabAttachmentCardView.swift */; };
@@ -5906,7 +5906,7 @@
 		7BA930AD2E0DA5B800723574 /* NavigationEngagementPixel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationEngagementPixel.swift; sourceTree = "<group>"; };
 		7BA930B02E0DB0BC00723574 /* BookmarksNavigationEngagementMetrics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarksNavigationEngagementMetrics.swift; sourceTree = "<group>"; };
 		7BAB1A0100000000A0000001 /* AIChatTabAttachment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatTabAttachment.swift; sourceTree = "<group>"; };
-		7BAB1A0100000000A0000004 /* AIChatTabPickerMenuRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatTabPickerMenuRowView.swift; sourceTree = "<group>"; };
+		7BAB1A0100000000A00000D0 /* AIChatAttachTabsModal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatAttachTabsModal.swift; sourceTree = "<group>"; };
 		7BAB1A0100000000A0000008 /* AIChatTabAttachmentCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatTabAttachmentCardView.swift; sourceTree = "<group>"; };
 		7BAB1A0100000000A000000C /* AIChatAttachmentsCarouselView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatAttachmentsCarouselView.swift; sourceTree = "<group>"; };
 		7BAB1A0100000000A0000010 /* AIChatPanelAttachment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatPanelAttachment.swift; sourceTree = "<group>"; };
@@ -8052,7 +8052,7 @@
 				1D94E7982F333CA1008315A2 /* AIChatOmnibarToolButton.swift */,
 				1DE906D22F3DBF4500C3B853 /* AIChatImageAttachmentThumbnailView.swift */,
 				7BAB1A0100000000A0000001 /* AIChatTabAttachment.swift */,
-				7BAB1A0100000000A0000004 /* AIChatTabPickerMenuRowView.swift */,
+				7BAB1A0100000000A00000D0 /* AIChatAttachTabsModal.swift */,
 				7BAB1A0100000000A0000008 /* AIChatTabAttachmentCardView.swift */,
 				7BAB1A0100000000A000000C /* AIChatAttachmentsCarouselView.swift */,
 				7BAB1A0100000000A0000010 /* AIChatPanelAttachment.swift */,
@@ -16127,7 +16127,7 @@
 				3706FBE3293F65D500E42796 /* WindowControllersManager.swift in Sources */,
 				37197EAA2942443D00394917 /* ModalSheetCancellable.swift in Sources */,
 				7BAB1A0100000000A0000002 /* AIChatTabAttachment.swift in Sources */,
-				7BAB1A0100000000A0000005 /* AIChatTabPickerMenuRowView.swift in Sources */,
+				7BAB1A0100000000A00000D1 /* AIChatAttachTabsModal.swift in Sources */,
 				7BAB1A0100000000A0000009 /* AIChatTabAttachmentCardView.swift in Sources */,
 				7BAB1A0100000000A000000D /* AIChatAttachmentsCarouselView.swift in Sources */,
 				7BAB1A0100000000A0000011 /* AIChatPanelAttachment.swift in Sources */,
@@ -16579,7 +16579,7 @@
 				BBFEE6C92E99229800F9BA45 /* NewTabPageWinBackOfferBannerProvider.swift in Sources */,
 				1DE906D32F3DBF4900C3B853 /* AIChatImageAttachmentThumbnailView.swift in Sources */,
 				7BAB1A0100000000A0000003 /* AIChatTabAttachment.swift in Sources */,
-				7BAB1A0100000000A0000006 /* AIChatTabPickerMenuRowView.swift in Sources */,
+				7BAB1A0100000000A00000D2 /* AIChatAttachTabsModal.swift in Sources */,
 				7BAB1A0100000000A000000A /* AIChatTabAttachmentCardView.swift in Sources */,
 				7BAB1A0100000000A000000E /* AIChatAttachmentsCarouselView.swift in Sources */,
 				7BAB1A0100000000A0000012 /* AIChatPanelAttachment.swift in Sources */,
@@ -18605,7 +18605,7 @@
 				B6040856274B830F00680351 /* DictionaryExtension.swift in Sources */,
 				B684592725C93C0500DC17B6 /* Publishers.NestedObjectChanges.swift in Sources */,
 				1DB433792FAB390D0047762C /* AIChatTabAttachment.swift in Sources */,
-				7BAB1A0100000000A0000007 /* AIChatTabPickerMenuRowView.swift in Sources */,
+				7BAB1A0100000000A00000D3 /* AIChatAttachTabsModal.swift in Sources */,
 				7BAB1A0100000000A000000B /* AIChatTabAttachmentCardView.swift in Sources */,
 				7BAB1A0100000000A000000F /* AIChatAttachmentsCarouselView.swift in Sources */,
 				7BAB1A0100000000A0000013 /* AIChatPanelAttachment.swift in Sources */,

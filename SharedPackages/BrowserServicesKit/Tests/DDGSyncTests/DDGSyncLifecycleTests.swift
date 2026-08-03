@@ -72,6 +72,43 @@ final class DDGSyncLifecycleTests: XCTestCase {
         XCTAssertEqual(mockErrorHandler.handledErrors, [])
     }
 
+    func testWhenInitializingActiveAccountThenCurrentDeviceMigrationIsScheduled() async throws {
+        secureStorageStub.theAccount = .mock
+        try dependencies.keyValueStore.set(true, forKey: DDGSync.Constants.syncEnabledKey)
+        let migrationScheduled = expectation(description: "Device info migration scheduled")
+        let migrationCoordinator = DeviceInfoMigrationCoordinatingMock()
+        migrationCoordinator.migrateCurrentDeviceHandler = {
+            migrationScheduled.fulfill()
+        }
+        dependencies.createDeviceInfoMigrationCoordinatorStub = migrationCoordinator
+        let syncService = DDGSync(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
+
+        syncService.initializeIfNeeded()
+        await fulfillment(of: [migrationScheduled], timeout: 1)
+
+        let migrationCall = try XCTUnwrap(migrationCoordinator.calls.first)
+        XCTAssertEqual(migrationCall.account.deviceId, SyncAccount.mock.deviceId)
+    }
+
+    func testWhenInitializingInactiveAccountThenCurrentDeviceMigrationIsNotScheduled() async throws {
+        secureStorageStub.theAccount = .mock.updatingState(.inactive)
+        try dependencies.keyValueStore.set(true, forKey: DDGSync.Constants.syncEnabledKey)
+        let migrationScheduled = expectation(description: "Device info migration not scheduled")
+        migrationScheduled.isInverted = true
+        let migrationCoordinator = DeviceInfoMigrationCoordinatingMock()
+        migrationCoordinator.migrateCurrentDeviceHandler = {
+            migrationScheduled.fulfill()
+        }
+        dependencies.createDeviceInfoMigrationCoordinatorStub = migrationCoordinator
+        let syncService = DDGSync(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
+
+        syncService.initializeIfNeeded()
+        await fulfillment(of: [migrationScheduled], timeout: 0.1)
+
+        XCTAssertTrue(migrationCoordinator.calls.isEmpty)
+        XCTAssertEqual(syncService.authState, .inactive)
+    }
+
     func testWhenInitializingAndAfterReinstallThenStateIsInactive() {
         secureStorageStub.theAccount = .mock
 

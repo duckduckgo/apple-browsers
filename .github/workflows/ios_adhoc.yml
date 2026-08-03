@@ -44,8 +44,8 @@ jobs:
             github.event.pull_request.author_association == 'MEMBER' &&
             github.event.pull_request.user.type == 'User' &&
             (
-              (github.event.action == 'labeled' && github.event.label.name == 'create-review-builds') ||
-              (github.event.action == 'synchronize' && contains(github.event.pull_request.labels.*.name, 'create-review-builds'))
+              (github.event.action == 'labeled' && github.event.label.name == 'auto-review-builds') ||
+              (github.event.action == 'synchronize' && contains(github.event.pull_request.labels.*.name, 'auto-review-builds'))
             )
           )
         )

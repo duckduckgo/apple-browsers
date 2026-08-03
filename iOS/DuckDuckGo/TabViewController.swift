@@ -5007,7 +5007,8 @@ private extension TabViewController {
                 preventUniversalLinksOnce = true
                 tabInteractionStateSource?.saveState(webView.interactionState, for: tabModel)
             } else {
-                Pixel.fire(pixel: .tabInteractionStateFailedToRestore)
+                DailyPixel.fireDailyAndCount(pixel: .tabInteractionStateFailedToRestore,
+                                             pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes)
             }
 
             let timeElapsed = CFAbsoluteTimeGetCurrent() - startTime

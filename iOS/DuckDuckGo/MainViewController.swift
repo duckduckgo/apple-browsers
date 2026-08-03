@@ -6307,6 +6307,7 @@ extension MainViewController: TabDelegate {
 
     func tabContentProcessDidTerminate(tab: TabViewController) {
         findInPageView?.done()
+        tabManager.webContentProcessDidTerminate()
         tabManager.invalidateCache(forController: tab)
     }
 

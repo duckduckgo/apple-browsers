@@ -1,0 +1,75 @@
+{
+    "m_d_tab-interaction-state_failed-to-restore": {
+        "description": "Fires when WebKit interaction state is applied but does not restore a URL.",
+        "owners": ["brindy"],
+        "triggers": ["exception"],
+        "suffixes": ["daily_standard", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "debug_webkit_termination_foreground": {
+        "description": "Fires when a WebKit web content process terminates while the app is in the foreground.",
+        "owners": ["brindy"],
+        "triggers": ["exception"],
+        "suffixes": ["platform", "form_factor", "daily_count"],
+        "parameters": ["appVersion"]
+    },
+    "debug_webkit_termination_background": {
+        "description": "Fires when a WebKit web content process terminates while the app is in the background.",
+        "owners": ["brindy"],
+        "triggers": ["exception"],
+        "suffixes": ["platform", "form_factor", "daily_count"],
+        "parameters": ["appVersion"]
+    },
+    "debug_webkit_termination_occurence_": {
+        "description": "Fires once daily for each bucket reached by the number of WebKit web content process terminations on the device that day.",
+        "owners": ["brindy"],
+        "triggers": ["exception"],
+        "suffixes": [
+            {
+                "description": "WebKit termination occurrence bucket for the current day",
+                "enum": ["1", "2", "3", "4", "5-plus"]
+            },
+            "platform",
+            "form_factor",
+            "daily"
+        ],
+        "parameters": ["appVersion"]
+    },
+    "debug_webkit_termination_memory_": {
+        "description": "Fires with the app physical memory footprint bucket when a WebKit web content process terminates.",
+        "owners": ["brindy"],
+        "triggers": ["exception"],
+        "suffixes": [
+            {
+                "description": "App physical memory footprint bucket in megabytes",
+                "enum": ["less-512", "512-1023", "1024-2047", "2048-4095", "4096-8191", "8192-16383", "16384-plus"]
+            },
+            "platform",
+            "form_factor",
+            "daily_count"
+        ],
+        "parameters": ["appVersion"]
+    },
+    "debug_webkit_termination_active-tabs_": {
+        "description": "Fires with the number of in-memory tab view controllers when a WebKit web content process terminates.",
+        "owners": ["brindy"],
+        "triggers": ["exception"],
+        "suffixes": [
+            {
+                "description": "In-memory tab view controller count bucket",
+                "enum": ["1", "2-5", "6-10", "11-20", "21-40", "41-60", "61-80", "81-plus"]
+            },
+            "platform",
+            "form_factor",
+            "daily_count"
+        ],
+        "parameters": ["appVersion"]
+    },
+    "debug_webkit_termination_time-since-memory-warning_": {
+        "description": "Fires with the elapsed-time bucket since the last in-process memory warning when a WebKit web content process terminates.",
+        "owners": ["brindy"],
+        "triggers": ["exception"],
+        "suffixes": ["time_bucket", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    }
+}

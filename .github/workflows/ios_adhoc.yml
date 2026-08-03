@@ -1,4 +1,10 @@
 name: iOS - Make ad-hoc build
+run-name: >-
+  iOS ad-hoc:
+  association=${{ github.event.pull_request.author_association || 'missing' }},
+  same-repo=${{ github.event.pull_request.head.repo.id == github.event.repository.id }},
+  has-label=${{ contains(github.event.pull_request.labels.*.name, 'auto-review-builds') }},
+  action=${{ github.event.action }}
 
 defaults:
   run:

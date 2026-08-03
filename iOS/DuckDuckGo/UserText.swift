@@ -238,6 +238,22 @@ public struct UserText {
     public static let generalPageProblemTitle = NSLocalizedString("prompt.general-page-problem.title", value: "This page only loads in Safari", comment: "Special error page title for pages that can only be opened in Safari")
     public static let generalPageProblemMessage = NSLocalizedString("prompt.general-page-problem.message", value: "We tried to load it privately, but it won't display.", comment: "Special error page message for pages that can only be opened in Safari")
     public static let generalPageProblemOpenInBrowserButton = NSLocalizedString("prompt.general-page-problem.open-in-browser", value: "Open in Safari", comment: "Special error page primary button for opening the page in Safari")
+    public static let tabTerminationErrorPageTitle = NSLocalizedString(
+        "prompt.tab-termination-error-page.title",
+        value: "We couldn’t load this page",
+        comment: "Error page title shown after repeated tab terminations")
+    public static let tabTerminationErrorPageMessage = NSLocalizedString(
+        "prompt.tab-termination-error-page.message",
+        value: "This page stopped loading multiple times. Try reloading or send us feedback.",
+        comment: "Error page message shown after repeated tab terminations")
+    public static let tabTerminationErrorPageReloadButton = NSLocalizedString(
+        "prompt.tab-termination-error-page.reload",
+        value: "Reload",
+        comment: "Button that reloads a page after repeated tab terminations")
+    public static let tabTerminationErrorPageSendFeedbackButton = NSLocalizedString(
+        "prompt.tab-termination-error-page.send-feedback",
+        value: "Send Feedback",
+        comment: "Button that opens site feedback after repeated tab terminations")
 
     public static let failedToOpenExternally = NSLocalizedString("open.externally.failed", value: "The app required to open that link can’t be found", comment: "’Link’ is link on a website")
 

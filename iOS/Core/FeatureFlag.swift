@@ -387,6 +387,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217109908046478?focus=true
     case tabTerminationTelemetry
 
+    #warning("Add Asana task URL for tabTerminationErrorPage")
+    case tabTerminationErrorPage
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214974217398704?focus=true
     case appRebranding
 
@@ -810,6 +813,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.launchTimeMetrics), supportsLocalOverriding: true)
         case .tabTerminationTelemetry:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.tabTerminationTelemetry), supportsLocalOverriding: true)
+        case .tabTerminationErrorPage:
+            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.tabTerminationErrorPage))
 
         case .appRebranding:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.appRebranding), supportsLocalOverriding: true)

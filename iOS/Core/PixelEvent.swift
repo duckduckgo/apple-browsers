@@ -1624,6 +1624,9 @@ extension Pixel {
         case webViewExternalSchemeNavigationSafariRedirectLoadURLRequested
         case webViewExternalSchemeNavigationSafariRedirectLoopErrorPageShown
         case webViewExternalSchemeNavigationSafariRedirectLoopErrorPageReportSiteBreakage
+        case webViewWebKitTerminationErrorPageShown
+        case webViewWebKitTerminationErrorPageReload
+        case webViewWebKitTerminationErrorPageSendFeedback
 
         // MARK: Browsing
         case stopPageLoad
@@ -3564,6 +3567,9 @@ extension Pixel.Event {
         case .webViewExternalSchemeNavigationSafariRedirectLoadURLRequested: return "m_webview_external-scheme-navigation_safari-redirect_load-url-requested"
         case .webViewExternalSchemeNavigationSafariRedirectLoopErrorPageShown: return "m_webview_external-scheme-navigation_safari-redirect-loop_error-page-shown"
         case .webViewExternalSchemeNavigationSafariRedirectLoopErrorPageReportSiteBreakage: return "m_webview_external-scheme-navigation_safari-redirect-loop_error-page_report-broken-site"
+        case .webViewWebKitTerminationErrorPageShown: return "m_webview_webkit-termination_error-page_shown"
+        case .webViewWebKitTerminationErrorPageReload: return "m_webview_webkit-termination_error-page_reload"
+        case .webViewWebKitTerminationErrorPageSendFeedback: return "m_webview_webkit-termination_error-page_send-feedback"
 
         // MARK: - DuckPlayer FE Application Telemetry
         case .duckPlayerLandscapeLayoutImpressions: return "duckplayer_landscape_layout_impressions"

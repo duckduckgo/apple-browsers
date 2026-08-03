@@ -138,6 +138,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     private let onboardingPixelReporter: OnboardingPixelReporting
     private let featureFlagger: FeatureFlagger
     private let tabTerminationTelemetry: any TabTerminationTelemetry
+    private let tabTerminationErrorPageDetector: any TabTerminationErrorPageDetecting
     private let contentScopeExperimentManager: ContentScopeExperimentsManaging
     private let textZoomCoordinatorProvider: TextZoomCoordinatorProviding
     private let autoconsentManagementProvider: AutoconsentManagementProviding
@@ -220,7 +221,8 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
          duckAiFireModeStorageHandler: DuckAiNativeStorageHandling? = nil,
          toggleModeStorage: ToggleModeStoring = ToggleModeStorage(),
          adBlockingAvailability: AdBlockingAvailabilityProviding,
-         tabTerminationTelemetry: (any TabTerminationTelemetry)? = nil
+         tabTerminationTelemetry: (any TabTerminationTelemetry)? = nil,
+         tabTerminationErrorPageDetector: (any TabTerminationErrorPageDetecting)? = nil
     ) {
         self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
         self.duckAiFireModeStorageHandler = duckAiFireModeStorageHandler
@@ -241,6 +243,9 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         self.tabTerminationTelemetry = tabTerminationTelemetry ?? DefaultTabTerminationTelemetry(
             featureFlagger: featureFlagger,
             keyValueStore: UserDefaults.app)
+        self.tabTerminationErrorPageDetector = tabTerminationErrorPageDetector ?? TabTerminationErrorPageDetector(
+            featureFlagger: featureFlagger,
+            privacyConfigurationManager: privacyConfigurationManager)
         self.contentScopeExperimentManager = contentScopeExperimentManager
         self.appSettings = appSettings
         self.autoplaySettings = autoplaySettings
@@ -634,6 +639,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         if let index = tabControllerCache.firstIndex(of: controller) {
             tabControllerCache.remove(at: index)
         }
+        tabTerminationErrorPageDetector.removeHistory(forTabID: controller.tabModel.uid)
         controller.dismiss()
     }
 
@@ -649,6 +655,11 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     @MainActor
     func invalidateCache(forController controller: TabViewController) {
         if current() === controller {
+            if tabTerminationErrorPageDetector.shouldShowErrorPage(forTabID: controller.tabModel.uid) {
+                controller.showTabTerminationErrorPage()
+                return
+            }
+
             DailyPixel.fireDailyAndCount(pixel: .webKitTerminationDidReloadCurrentTab, pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes)
 
             if controller.url?.isDuckAIURL == true {

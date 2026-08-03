@@ -393,6 +393,20 @@ final class TabManagerTests: XCTestCase {
         XCTAssertEqual(telemetry.webContentProcessTerminationActiveTabCounts, [0])
     }
 
+    func testWhenTerminationThresholdIsReachedThenCurrentTabShowsErrorPage() throws {
+        let detector = MockTabTerminationErrorPageDetector(shouldShowErrorPage: true)
+        let manager = try makeManager(
+            TabsModel(desktop: false),
+            tabTerminationErrorPageDetector: detector)
+        let controller = try XCTUnwrap(manager.current(createIfNeeded: true))
+
+        manager.invalidateCache(forController: controller)
+
+        XCTAssertEqual(detector.checkedTabIDs, [controller.tabModel.uid])
+        XCTAssertFalse(controller.error.isHidden)
+        XCTAssertEqual(controller.errorHeader.text, UserText.tabTerminationErrorPageTitle)
+    }
+
     func makeManager(_ model: TabsModel,
                      fireModel: TabsModel? = nil,
                      previewsSource: TabPreviewsSource = MockTabPreviewsSource(),
@@ -400,7 +414,8 @@ final class TabManagerTests: XCTestCase {
                      featureFlagger: MockFeatureFlagger = MockFeatureFlagger(),
                      launchSourceManager: LaunchSourceManaging = MockLaunchSourceManager(),
                      normalStore: ThrowingKeyValueStoring? = nil,
-                     tabTerminationTelemetry: (any TabTerminationTelemetry)? = nil) throws -> TabManager {
+                     tabTerminationTelemetry: (any TabTerminationTelemetry)? = nil,
+                     tabTerminationErrorPageDetector: (any TabTerminationErrorPageDetecting)? = nil) throws -> TabManager {
         FireModeCapability.resolve(using: featureFlagger)
         let normalStore = try normalStore ?? MockKeyValueFileStore(throwOnInit: nil)
         let tabsPersistence = TabsModelPersistence(normalStore: normalStore,
@@ -441,7 +456,8 @@ final class TabManagerTests: XCTestCase {
                           launchSourceManager: launchSourceManager,
                           darkReaderFeatureSettings: MockDarkReaderFeatureSettings(),
                           adBlockingAvailability: StubAdBlockingAvailability(),
-                          tabTerminationTelemetry: tabTerminationTelemetry)
+                          tabTerminationTelemetry: tabTerminationTelemetry,
+                          tabTerminationErrorPageDetector: tabTerminationErrorPageDetector)
     }
 
 }
@@ -483,5 +499,26 @@ private final class MockTabTerminationTelemetry: TabTerminationTelemetry {
 
     func didReceiveMemoryWarning() {
         memoryWarningCallCount += 1
+    }
+}
+
+@MainActor
+private final class MockTabTerminationErrorPageDetector: TabTerminationErrorPageDetecting {
+
+    private let shouldShowErrorPage: Bool
+    private(set) var checkedTabIDs: [String] = []
+    private(set) var removedTabIDs: [String] = []
+
+    init(shouldShowErrorPage: Bool) {
+        self.shouldShowErrorPage = shouldShowErrorPage
+    }
+
+    func shouldShowErrorPage(forTabID tabID: String) -> Bool {
+        checkedTabIDs.append(tabID)
+        return shouldShowErrorPage
+    }
+
+    func removeHistory(forTabID tabID: String) {
+        removedTabIDs.append(tabID)
     }
 }

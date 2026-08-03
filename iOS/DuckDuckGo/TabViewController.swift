@@ -130,13 +130,17 @@ class TabViewController: UIViewController {
 
     var preventUniversalLinksOnce = false
     private var shouldUseSafariOnlyUserAgentForNextMainFrameNavigation = false
-    private var safariRedirectLoopErrorURL: URL?
+    private enum ActionableErrorPage {
+        case safariRedirectLoop(URL)
+        case tabTermination
+    }
+    private var actionableErrorPage: ActionableErrorPage?
     private var defaultErrorHeaderText = ""
     lazy var errorActionButton: UIButton = {
         let button = UIButton(type: .system)
         button.translatesAutoresizingMaskIntoConstraints = false
         button.isHidden = true
-        button.addTarget(self, action: #selector(onOpenInSafariFromErrorPage), for: .touchUpInside)
+        button.addTarget(self, action: #selector(onErrorPagePrimaryAction), for: .touchUpInside)
         return button
     }()
     lazy var errorReportBrokenSiteButton: UIButton = {
@@ -502,7 +506,7 @@ class TabViewController: UIViewController {
                                    duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
                                    duckAiFireModeStorageHandler: DuckAiNativeStorageHandling? = nil,
                                    adBlockingAvailability: AdBlockingAvailabilityProviding,
-                                   pixelFiring: (any PixelKit.PixelFiring)? = PixelKit.shared) -> TabViewController {
+                                   pixelFiring: (any PixelKitFiring)? = PixelKit.shared) -> TabViewController {
 
         return TabViewController(tabModel: model,
                                  privacyConfigurationManager: privacyConfigurationManager,
@@ -609,7 +613,7 @@ class TabViewController: UIViewController {
     let aiChatFullModeFeature: AIChatFullModeFeatureProviding
     let sharedSecureVault: (any AutofillSecureVault)?
     let privacyStats: PrivacyStatsProviding
-    private let pixelFiring: (any PixelKit.PixelFiring)?
+    private let pixelFiring: (any PixelKitFiring)?
 
     private(set) var aiChatContentHandler: AIChatContentHandling
     private(set) var voiceSearchHelper: VoiceSearchHelperProtocol
@@ -688,7 +692,7 @@ class TabViewController: UIViewController {
          duckAiFireModeStorageHandler: DuckAiNativeStorageHandling? = nil,
          addressBarURLFilter: AddressBarURLFiltering = AddressBarURLFilter(),
          adBlockingAvailability: AdBlockingAvailabilityProviding,
-         pixelFiring: (any PixelKit.PixelFiring)? = PixelKit.shared) {
+         pixelFiring: (any PixelKitFiring)? = PixelKit.shared) {
 
         self.tabModel = tabModel
         self.viewModel = TabViewModel(tab: tabModel, historyManager: historyManager)
@@ -1585,7 +1589,7 @@ class TabViewController: UIViewController {
         errorMessage.text = formattedErrorMessage(message)
         errorActionButton.isHidden = true
         errorReportBrokenSiteButton.isHidden = true
-        safariRedirectLoopErrorURL = nil
+        actionableErrorPage = nil
         error.layoutIfNeeded()
     }
 
@@ -1605,11 +1609,11 @@ class TabViewController: UIViewController {
         errorHeader.text = defaultErrorHeaderText
         errorActionButton.isHidden = true
         errorReportBrokenSiteButton.isHidden = true
-        safariRedirectLoopErrorURL = nil
+        actionableErrorPage = nil
     }
 
     private func showSafariRedirectLoopError(for url: URL) {
-        safariRedirectLoopErrorURL = url
+        actionableErrorPage = .safariRedirectLoop(url)
         webView.isHidden = true
         error.isHidden = false
         setErrorInfoImage(resource: .shieldAlert96)
@@ -1621,6 +1625,22 @@ class TabViewController: UIViewController {
         errorReportBrokenSiteButton.isHidden = false
         error.layoutIfNeeded()
         webpageDidFailToLoad()
+    }
+
+    func showTabTerminationErrorPage() {
+        actionableErrorPage = .tabTermination
+        webView.isHidden = true
+        error.isHidden = false
+        setErrorInfoImage(resource: .shieldAlert96)
+        errorHeader.text = UserText.tabTerminationErrorPageTitle
+        errorMessage.text = UserText.tabTerminationErrorPageMessage
+        errorActionButton.setTitle(UserText.tabTerminationErrorPageReloadButton, for: .normal)
+        errorActionButton.isHidden = false
+        errorReportBrokenSiteButton.setTitle(UserText.tabTerminationErrorPageSendFeedbackButton, for: .normal)
+        errorReportBrokenSiteButton.isHidden = false
+        error.layoutIfNeeded()
+        webpageDidFailToLoad()
+        DailyPixel.fireDailyAndCount(pixel: .webViewWebKitTerminationErrorPageShown, error: nil, withAdditionalParameters: [:])
     }
 
     private func setErrorInfoImage(resource: ImageResource = AppRebrand.isAppRebranded() ? .daxAccident : .daxAccidentLegacy) {
@@ -4002,14 +4022,31 @@ extension TabViewController: UserContentControllerDelegate {
     }
 
     @objc
-    func onOpenInSafariFromErrorPage() {
-        guard let safariRedirectLoopErrorURL else { return }
-        openExternally(url: makeXSafariHTTPSURL(from: safariRedirectLoopErrorURL))
+    func onErrorPagePrimaryAction() {
+        switch actionableErrorPage {
+        case .safariRedirectLoop(let url):
+            openExternally(url: makeXSafariHTTPSURL(from: url))
+        case .tabTermination:
+            DailyPixel.fireDailyAndCount(pixel: .webViewWebKitTerminationErrorPageReload, error: nil, withAdditionalParameters: [:])
+            hideErrorMessage()
+            reload()
+        case nil:
+            return
+        }
     }
 
     @objc
     func onReportBrokenSiteFromErrorPage() {
-        DailyPixel.fireDailyAndCount(pixel: .webViewExternalSchemeNavigationSafariRedirectLoopErrorPageReportSiteBreakage, error: nil, withAdditionalParameters: [:])
+        switch actionableErrorPage {
+        case .safariRedirectLoop:
+            DailyPixel.fireDailyAndCount(pixel: .webViewExternalSchemeNavigationSafariRedirectLoopErrorPageReportSiteBreakage,
+                                         error: nil,
+                                         withAdditionalParameters: [:])
+        case .tabTermination:
+            DailyPixel.fireDailyAndCount(pixel: .webViewWebKitTerminationErrorPageSendFeedback, error: nil, withAdditionalParameters: [:])
+        case nil:
+            return
+        }
         delegate?.tabDidRequestReportBrokenSite(tab: self)
     }
 

@@ -23,14 +23,49 @@ on:
            - Alpha
            - Release
            - Experimental
+  pull_request:
+    types: [labeled, synchronize]
+
+permissions:
+  contents: read
 
 jobs:
   make-adhoc:
+    if: >-
+      ${{
+        github.repository == 'duckduckgo/apple-browsers' &&
+        (
+          github.event_name == 'workflow_dispatch' ||
+          (
+            github.event_name == 'pull_request' &&
+            github.event.pull_request.state == 'open' &&
+            github.event.pull_request.base.repo.full_name == 'duckduckgo/apple-browsers' &&
+            github.event.pull_request.head.repo.full_name == 'duckduckgo/apple-browsers' &&
+            github.event.pull_request.author_association == 'MEMBER' &&
+            github.event.pull_request.user.type == 'User' &&
+            (
+              (github.event.action == 'labeled' && github.event.label.name == 'create-review-builds') ||
+              (github.event.action == 'synchronize' && contains(github.event.pull_request.labels.*.name, 'create-review-builds'))
+            )
+          )
+        )
+      }}
+
     runs-on: macos-26-xlarge
     name: Make ad-hoc build
 
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
+      cancel-in-progress: true
+
+    outputs:
+      install-url: ${{ steps.generate-ota.outputs.install-url }}
+      ipa-url: ${{ steps.upload-ipa-to-s3.outputs.ipa-url }}
+
     env:
       RUNS_ON: macos-26-xlarge # keep this in sync with runs-on above
+      BUILD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      BUILD_TYPE: ${{ github.event.inputs.build-type || 'Alpha' }}
 
     steps:
 
@@ -44,6 +79,7 @@ jobs:
       - name: Check out the code
         uses: actions/checkout@v6
         with:
+          ref: ${{ env.BUILD_SHA }}
           submodules: recursive
 
       - name: Start measuring duration
@@ -55,19 +91,19 @@ jobs:
       - name: Select Xcode
         uses: ./.github/actions/select-xcode-version
         with:
-          xcode-version: ${{ github.event.inputs.build-type == 'Experimental' && '26.4' || '' }}
+          xcode-version: ${{ env.BUILD_TYPE == 'Experimental' && '26.4' || '' }}
 
       - name: Add commit SHA to plist
         run: |
-          echo "Setting DDG_COMMIT_SHA to ${{ github.sha }}"
+          echo "Setting DDG_COMMIT_SHA to ${BUILD_SHA}"
 
           plist_path="DuckDuckGo/Info.plist"
-          /usr/libexec/PlistBuddy -c "Add :DDG_COMMIT_SHA string ${{ github.sha }}" "${plist_path}" \
-            || /usr/libexec/PlistBuddy -c "Set :DDG_COMMIT_SHA ${{ github.sha }}" "${plist_path}"
+          /usr/libexec/PlistBuddy -c "Add :DDG_COMMIT_SHA string ${BUILD_SHA}" "${plist_path}" \
+            || /usr/libexec/PlistBuddy -c "Set :DDG_COMMIT_SHA ${BUILD_SHA}" "${plist_path}"
 
           experimental_plist_path="DuckDuckGo/Info-Experimental.plist"
-          /usr/libexec/PlistBuddy -c "Add :DDG_COMMIT_SHA string ${{ github.sha }}" "${experimental_plist_path}" \
-            || /usr/libexec/PlistBuddy -c "Set :DDG_COMMIT_SHA ${{ github.sha }}" "${experimental_plist_path}"
+          /usr/libexec/PlistBuddy -c "Add :DDG_COMMIT_SHA string ${BUILD_SHA}" "${experimental_plist_path}" \
+            || /usr/libexec/PlistBuddy -c "Set :DDG_COMMIT_SHA ${BUILD_SHA}" "${experimental_plist_path}"
 
       - name: Setup Ruby and dependencies
         uses: ./.github/actions/setup-ruby
@@ -89,9 +125,9 @@ jobs:
           echo "build_number=${build_number}" >> $GITHUB_ENV
 
           lane_to_use="adhoc"
-          if [[ "${{ github.event.inputs.build-type }}" == "Release" ]]; then
+          if [[ "${BUILD_TYPE}" == "Release" ]]; then
             lane_to_use="release_adhoc"
-          elif [[ "${{ github.event.inputs.build-type }}" == "Experimental" ]]; then
+          elif [[ "${BUILD_TYPE}" == "Experimental" ]]; then
             lane_to_use="experimental_adhoc"
           fi
 
@@ -199,7 +235,7 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_RELEASE_S3 }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_RELEASE_S3 }}
           aws-default-region: ${{ vars.AWS_DEFAULT_REGION }}
-          build-type: ${{ github.event.inputs.build-type }}
+          build-type: ${{ env.BUILD_TYPE }}
           ipa-url: ${{ steps.upload-ipa-to-s3.outputs.ipa-url }}
           ipa-s3-path: ${{ steps.upload-ipa-to-s3.outputs.ipa-s3-path }}
           app-version: ${{ env.app_version }}
@@ -248,3 +284,55 @@ jobs:
           bundle exec fastlane run asana_add_comment \
             task_url:"$ASANA_TASK_URL" \
             template_name:"ios-adhoc-build-available"
+
+  notify-pr-author:
+    name: Notify PR author in Mattermost
+    needs: make-adhoc
+    if: >-
+      ${{
+        always() &&
+        github.event_name == 'pull_request' &&
+        github.repository == 'duckduckgo/apple-browsers' &&
+        github.event.pull_request.state == 'open' &&
+        github.event.pull_request.base.repo.full_name == 'duckduckgo/apple-browsers' &&
+        github.event.pull_request.head.repo.full_name == 'duckduckgo/apple-browsers' &&
+        github.event.pull_request.author_association == 'MEMBER' &&
+        github.event.pull_request.user.type == 'User' &&
+        (needs.make-adhoc.result == 'success' || needs.make-adhoc.result == 'failure')
+      }}
+
+    runs-on: macos-26
+
+    steps:
+      - name: Check out notification dependencies
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          sparse-checkout: |
+            .github
+            .ruby-version
+            iOS/Gemfile
+            iOS/Gemfile.lock
+            iOS/fastlane
+
+      - name: Setup Ruby and dependencies
+        uses: ./.github/actions/setup-ruby
+        with:
+          working-directory: iOS
+          cache-key-prefix: ios-ruby
+
+      - name: Send Mattermost message
+        env:
+          COMMIT_SHA: ${{ github.event.pull_request.head.sha }}
+          COMMIT_URL: https://github.com/${{ github.repository }}/commit/${{ github.event.pull_request.head.sha }}
+          INSTALL_URL: ${{ needs.make-adhoc.outputs.install-url }}
+          IPA_URL: ${{ needs.make-adhoc.outputs.ipa-url }}
+          WORKFLOW_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          MM_WEBHOOK_URL: ${{ secrets.MM_WEBHOOK_URL }}
+          TEMPLATE_NAME: ${{ needs.make-adhoc.result == 'success' && 'ios-adhoc-build-complete' || 'ios-adhoc-build-failed' }}
+        run: |
+          bundle exec fastlane run mattermost_send_message \
+            mattermost_webhook_url:"$MM_WEBHOOK_URL" \
+            github_handle:"$PR_AUTHOR" \
+            template_name:"$TEMPLATE_NAME"

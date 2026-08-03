@@ -82,6 +82,8 @@ class TabViewController: UIViewController {
     var error: UIView!
     
     var errorInfoImage: UIImageView!
+    var errorInfoImageWidthConstraint: NSLayoutConstraint!
+    var errorInfoImageHeightConstraint: NSLayoutConstraint!
     var errorHeader: UILabel!
     var errorMessage: UILabel!
     
@@ -1635,7 +1637,7 @@ class TabViewController: UIViewController {
         actionableErrorPage = .tabTermination
         webView.isHidden = true
         error.isHidden = false
-        setErrorInfoImage(resource: .shieldAlert96)
+        setErrorInfoImage(resource: .webAlert128, size: CGSize(width: 128, height: 96))
         errorHeader.text = UserText.tabTerminationErrorPageTitle
         errorMessage.text = UserText.tabTerminationErrorPageMessage
         errorActionButton.setTitle(UserText.tabTerminationErrorPageReloadButton, for: .normal)
@@ -1647,8 +1649,11 @@ class TabViewController: UIViewController {
         tabTerminationErrorPageInstrumentation.errorPageShown()
     }
 
-    private func setErrorInfoImage(resource: ImageResource = AppRebrand.isAppRebranded() ? .daxAccident : .daxAccidentLegacy) {
+    private func setErrorInfoImage(resource: ImageResource = AppRebrand.isAppRebranded() ? .daxAccident : .daxAccidentLegacy,
+                                   size: CGSize = CGSize(width: 296, height: 188)) {
         errorInfoImage.image = UIImage(resource: resource)
+        errorInfoImageWidthConstraint.constant = size.width
+        errorInfoImageHeightConstraint.constant = size.height
         errorInfoImage.isHidden = false
     }
 

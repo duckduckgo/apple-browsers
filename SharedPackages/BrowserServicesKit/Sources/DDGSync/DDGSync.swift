@@ -254,6 +254,8 @@ public class DDGSync: DDGSyncing {
     }
 
     public func updateDeviceName(_ name: String) async throws -> [RegisteredDevice] {
+        await cancelDeviceInfoMigrationAndWait()
+
         guard let account = try dependencies.secureStore.account() else {
             throw SyncError.accountNotFound
         }
@@ -263,6 +265,7 @@ public class DDGSync: DDGSyncing {
             try dependencies.secureStore.persistAccount(result.account)
             persistRecoveredThirdPartyScopedPasswordIfAvailable(from: result.accessCredentials, account: result.account)
             updateProtectedKeysCache(with: result.keys)
+            scheduleDeviceInfoMigration(for: result.account)
             return result.devices
         } catch {
             throw handleUnauthenticatedAndMap(error)
@@ -651,6 +654,15 @@ public class DDGSync: DDGSyncing {
         deviceInfoMigrationTask = Task {
             await deviceInfoMigrationCoordinator.migrateCurrentDeviceIfNeeded(for: account)
         }
+    }
+
+    private func cancelDeviceInfoMigrationAndWait() async {
+        guard let deviceInfoMigrationTask else {
+            return
+        }
+        deviceInfoMigrationTask.cancel()
+        await deviceInfoMigrationTask.value
+        self.deviceInfoMigrationTask = nil
     }
 
     private func persistRecoveredThirdPartyScopedPasswordIfAvailable(from accessCredentials: [AccessCredential]?, account: SyncAccount) {

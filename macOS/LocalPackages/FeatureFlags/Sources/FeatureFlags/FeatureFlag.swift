@@ -473,6 +473,11 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216850216210288?focus=true
     case macosPromptBar
 
+    /// Gates the bookmarks "Reorder by name" action, which permanently reorders the target
+    /// folder's direct children alphabetically and persists the new order.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217076881156357?focus=true
+    case bookmarksReorderByName
+
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -787,6 +792,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(SyncSubfeature.canShowV2ConnectCode), category: .sync)
         case .macosPromptBar:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.macosPromptBar), category: .duckAI)
+        case .bookmarksReorderByName:
+            Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.bookmarksReorderByName))
         }
     }
 

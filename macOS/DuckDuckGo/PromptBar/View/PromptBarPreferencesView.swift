@@ -25,10 +25,8 @@ struct PromptBarPreferencesView: View {
     @ObservedObject var preferences: PromptBarPreferences
 
     var body: some View {
-        ToggleMenuItemWithDescription(UserText.promptBarMenuBarIconToggle,
-                                      UserText.promptBarMenuBarIconCaption,
-                                      isOn: $preferences.isMenuBarIconVisible,
-                                      spacing: 4)
+        ToggleMenuItem(UserText.promptBarMenuBarIconToggle,
+                       isOn: $preferences.isMenuBarIconVisible)
         .accessibilityIdentifier("Preferences.AIChat.promptBarMenuBarIconToggle")
         .onChange(of: preferences.isMenuBarIconVisible) { isVisible in
             fire(isVisible ? .settingsMenuBarIconTurnedOn : .settingsMenuBarIconTurnedOff)

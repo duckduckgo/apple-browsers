@@ -65,31 +65,22 @@ struct NetworkProtectionVPNSettingsView: View {
 
                 shortcutsView
 
-                toggleSection(
-                    text: UserText.netPExcludeLocalNetworksSettingTitle,
-                    headerText: UserText.netPExcludeLocalNetworksSettingHeader,
-                    footerText: UserText.netPExcludeLocalNetworksSettingFooter
-                ) {
-                    Toggle("", isOn: $viewModel.excludeLocalNetworks)
-                }
+                toggleSection(text: UserText.netPExcludeLocalNetworksSettingTitle,
+                              headerText: UserText.netPExcludeLocalNetworksSettingHeader,
+                              footerText: UserText.netPExcludeLocalNetworksSettingFooter,
+                              isOn: $viewModel.excludeLocalNetworks)
 
                 if viewModel.isExcludeCGNATAvailable {
-                    toggleSection(
-                        text: UserText.netPExcludeCGNATSettingTitle,
-                        footerText: UserText.netPExcludeCGNATSettingFooter
-                    ) {
-                        Toggle("", isOn: $viewModel.excludeCGNAT)
-                    }
+                    toggleSection(text: UserText.netPExcludeCGNATSettingTitle,
+                                  footerText: UserText.netPExcludeCGNATSettingFooter,
+                                  isOn: $viewModel.excludeCGNAT)
                 }
 
                 if viewModel.isStrictRoutingAvailable {
-                    toggleSection(
-                        text: UserText.netPStrictRoutingSettingTitle,
-                        footerText: UserText.netPStrictRoutingSettingFooter,
-                        rowID: strictRoutingRowID
-                    ) {
-                        Toggle("", isOn: $viewModel.enforceRoutes)
-                    }
+                    toggleSection(text: UserText.netPStrictRoutingSettingTitle,
+                                  footerText: UserText.netPStrictRoutingSettingFooter,
+                                  isOn: $viewModel.enforceRoutes,
+                                  rowID: strictRoutingRowID)
                 }
 
                 dnsSection()
@@ -246,22 +237,16 @@ struct NetworkProtectionVPNSettingsView: View {
     }
 
     @ViewBuilder
-    func toggleSection(text: String, headerText: String? = nil, footerText: String, rowID: String? = nil, @ViewBuilder toggle: () -> some View) -> some View {
+    func toggleSection(text: String,
+                       headerText: String? = nil,
+                       footerText: String,
+                       isOn: Binding<Bool>,
+                       rowID: String? = nil) -> some View {
         Section {
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(text)
-                        .daxBodyRegular()
-                        .foregroundColor(.init(designSystemColor: .textPrimary))
-                        .layoutPriority(1)
+            SettingsCellView(label: text, accessory: .toggle(isOn: isOn))
+                .ifLet(rowID) { view, id in
+                    view.id(id)
                 }
-
-                toggle()
-                    .toggleStyle(SwitchToggleStyle(tint: .init(designSystemColor: .accentPrimary)))
-            }
-            .ifLet(rowID) { view, id in
-                view.id(id)
-            }
         } header: {
             if let headerText {
                 Text(headerText)

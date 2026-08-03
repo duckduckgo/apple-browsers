@@ -132,7 +132,7 @@ final class ModalPromptCoordinationService {
         self.featureFlagger = featureFlagger
         self.promoQueueLeaseArbiter = promoQueueLeaseArbiter
 
-        let initialTargetState = PromoQueueFeatureTargetState(isEnabled: featureFlagger.isFeatureOn(.modalPromptCoordination))
+        let initialTargetState = PromoQueueFeatureTargetState(isEnabled: featureFlagger.isFeatureOn(.promoPresentationCoordination))
         promoQueueFeatureState = PromoQueueFeatureState(targetState: initialTargetState)
         subscribeToPromoQueueFeatureState(initialTargetState: initialTargetState)
     }
@@ -262,7 +262,7 @@ final class ModalPromptCoordinationService {
         promoQueueFeatureStateCancellable = featureFlagger.updatesPublisher
             .receive(on: DispatchQueue.main)
             .map { [featureFlagger] in
-                PromoQueueFeatureTargetState(isEnabled: featureFlagger.isFeatureOn(.modalPromptCoordination))
+                PromoQueueFeatureTargetState(isEnabled: featureFlagger.isFeatureOn(.promoPresentationCoordination))
             }
             .prepend(initialTargetState)
             .removeDuplicates()
@@ -273,7 +273,7 @@ final class ModalPromptCoordinationService {
 
         // Re-read after the subscriber is attached so a flag update emitted while the subscription was being
         // established cannot leave the initial seed stale.
-        let subscribedTargetState = PromoQueueFeatureTargetState(isEnabled: featureFlagger.isFeatureOn(.modalPromptCoordination))
+        let subscribedTargetState = PromoQueueFeatureTargetState(isEnabled: featureFlagger.isFeatureOn(.promoPresentationCoordination))
         transitionPromoQueueFeature(to: subscribedTargetState)
     }
 

@@ -54,7 +54,7 @@ final class ModalPromptCoordinationServicePromoQueueTests {
     @available(iOS 16, *)
     @Test("Enabled Modal Evaluation Acquires Lease Before Calling Manager", .timeLimit(.minutes(1)))
     func whenPromoQueueIsEnabledThenManagerReceivesAcquiredLease() {
-        featureFlaggerMock.enabledFeatureFlags = [.modalPromptCoordination]
+        featureFlaggerMock.enabledFeatureFlags = [.promoPresentationCoordination]
         launchSourceManagerMock.source = .standard
         presenterMock.presentedViewController = nil
         sut = ModalPromptCoordinationService(
@@ -73,7 +73,7 @@ final class ModalPromptCoordinationServicePromoQueueTests {
     @available(iOS 16, *)
     @Test("Visible Promo Denial Does Not Reach Modal Manager", .timeLimit(.minutes(1)))
     func whenVisiblePromoOwnsSlotThenModalManagerIsNotCalled() throws {
-        featureFlaggerMock.enabledFeatureFlags = [.modalPromptCoordination]
+        featureFlaggerMock.enabledFeatureFlags = [.promoPresentationCoordination]
         launchSourceManagerMock.source = .standard
         presenterMock.presentedViewController = nil
         let visibleIdentity = VisiblePromoIdentity(
@@ -102,7 +102,7 @@ final class ModalPromptCoordinationServicePromoQueueTests {
     @available(iOS 16, *)
     @Test("Visible Promo Denial Never Queries A Real Provider Chain", .timeLimit(.minutes(1)))
     func whenVisiblePromoOwnsSlotThenProvidersAreNotQueried() throws {
-        featureFlaggerMock.enabledFeatureFlags = [.modalPromptCoordination]
+        featureFlaggerMock.enabledFeatureFlags = [.promoPresentationCoordination]
         launchSourceManagerMock.source = .standard
         presenterMock.presentedViewController = nil
         let provider = MockModalPromptProvider()
@@ -164,7 +164,7 @@ final class ModalPromptCoordinationServicePromoQueueTests {
     @available(iOS 16, *)
     @Test("Released Modal Lease Does Not Retry Active Registrations A Second Time", .timeLimit(.minutes(1)))
     func whenManagerReleasesModalLeaseThenActiveRegistrationsRetryOnce() {
-        featureFlaggerMock.enabledFeatureFlags = [.modalPromptCoordination]
+        featureFlaggerMock.enabledFeatureFlags = [.promoPresentationCoordination]
         launchSourceManagerMock.source = .standard
         presenterMock.presentedViewController = nil
         managerMock.coordinatedPresentationDisposition = .released
@@ -195,7 +195,7 @@ final class ModalPromptCoordinationServicePromoQueueTests {
     @available(iOS 16, *)
     @Test("Visible Admission Checkpoint Admits Triggering Surface Before Retrying Other Surface", .timeLimit(.minutes(1)))
     func whenVisibleAdmissionReleasesDetachedModalThenTriggeringSurfaceWinsBeforeRetrySnapshot() {
-        featureFlaggerMock.enabledFeatureFlags = [.modalPromptCoordination]
+        featureFlaggerMock.enabledFeatureFlags = [.promoPresentationCoordination]
         sut = ModalPromptCoordinationService(
             launchSourceManager: launchSourceManagerMock,
             modalPromptCoordinationManager: managerMock,
@@ -248,7 +248,7 @@ final class ModalPromptCoordinationServicePromoQueueTests {
     @available(iOS 16, *)
     @Test("Stale Registration Cannot Remove Or Invoke Its Replacement", .timeLimit(.minutes(1)))
     func whenRegistrationIsReplacedThenOldTokenCannotRemoveReplacement() {
-        featureFlaggerMock.enabledFeatureFlags = [.modalPromptCoordination]
+        featureFlaggerMock.enabledFeatureFlags = [.promoPresentationCoordination]
         sut = ModalPromptCoordinationService(
             launchSourceManager: launchSourceManagerMock,
             modalPromptCoordinationManager: managerMock,
@@ -288,7 +288,7 @@ final class ModalPromptCoordinationServicePromoQueueTests {
         )
 
         guard case .featureDisabled = result else {
-            Issue.record("Expected admission to be refused while the modalPromptCoordination flag is off")
+            Issue.record("Expected admission to be refused while the promoPresentationCoordination flag is off")
             return
         }
         // The refusal has to come before arbitration, not through it. An NTP holding a coordination lease with the flag
@@ -306,7 +306,7 @@ final class ModalPromptCoordinationServicePromoQueueTests {
     @available(iOS 16, *)
     @Test("Coordinated Modal Attempt Blocks Visible Promo Admission", .timeLimit(.minutes(1)))
     func whenModalAttemptOwnsSlotThenVisibleAdmissionIsBlockedByModal() {
-        featureFlaggerMock.enabledFeatureFlags = [.modalPromptCoordination]
+        featureFlaggerMock.enabledFeatureFlags = [.promoPresentationCoordination]
         sut = ModalPromptCoordinationService(
             launchSourceManager: launchSourceManagerMock,
             modalPromptCoordinationManager: managerMock,
@@ -336,7 +336,7 @@ final class ModalPromptCoordinationServicePromoQueueTests {
     @available(iOS 16, *)
     @Test("Occupied Surface Slot Refuses A Second Promo And Names Its Occupant", .timeLimit(.minutes(1)))
     func whenSurfaceSlotIsOccupiedThenVisibleAdmissionCarriesTheOccupyingIdentity() {
-        featureFlaggerMock.enabledFeatureFlags = [.modalPromptCoordination]
+        featureFlaggerMock.enabledFeatureFlags = [.promoPresentationCoordination]
         sut = ModalPromptCoordinationService(
             launchSourceManager: launchSourceManagerMock,
             modalPromptCoordinationManager: managerMock,
@@ -367,7 +367,7 @@ final class ModalPromptCoordinationServicePromoQueueTests {
     @available(iOS 16, *)
     @Test("Releasing A Visible Promo Lease Frees Its Surface Slot", .timeLimit(.minutes(1)))
     func whenVisiblePromoLeaseIsReleasedThenTheSurfaceSlotIsReacquirable() {
-        featureFlaggerMock.enabledFeatureFlags = [.modalPromptCoordination]
+        featureFlaggerMock.enabledFeatureFlags = [.promoPresentationCoordination]
         sut = ModalPromptCoordinationService(
             launchSourceManager: launchSourceManagerMock,
             modalPromptCoordinationManager: managerMock,
@@ -398,7 +398,7 @@ final class ModalPromptCoordinationServicePromoQueueTests {
     @available(iOS 16, *)
     @Test("Initial Promo Queue State Is Seeded Before Subscription Updates", .timeLimit(.minutes(1)))
     func whenPromoQueueIsInitiallyEnabledThenInitialStateIsEnabled() {
-        featureFlaggerMock.enabledFeatureFlags = [.modalPromptCoordination]
+        featureFlaggerMock.enabledFeatureFlags = [.promoPresentationCoordination]
         sut = ModalPromptCoordinationService(
             launchSourceManager: launchSourceManagerMock,
             modalPromptCoordinationManager: managerMock,
@@ -417,7 +417,7 @@ final class ModalPromptCoordinationServicePromoQueueTests {
     func whenPromoQueueChangesDuringFeatureSubscriptionThenSubscribedStateWins() {
         let featureFlagger = ModalPromptCoordinationSubscriptionHookFeatureFlagger()
         featureFlagger.onUpdatesPublisherSubscription = { [weak featureFlagger] in
-            featureFlagger?.isModalPromptCoordinationEnabled = true
+            featureFlagger?.isPromoPresentationCoordinationEnabled = true
             featureFlagger?.triggerUpdate()
         }
 
@@ -432,7 +432,7 @@ final class ModalPromptCoordinationServicePromoQueueTests {
         #expect(managerMock.promoQueueWillTransitionTargets == [.enabled])
         #expect(managerMock.promoQueueDidTransitionTargets == [.enabled])
         #expect(featureFlagger.updatesPublisherSubscriptionCount == 1)
-        #expect(featureFlagger.modalPromptCoordinationReadCount == 2)
+        #expect(featureFlagger.promoPresentationCoordinationReadCount == 2)
     }
 
     @available(iOS 16, *)
@@ -460,7 +460,7 @@ final class ModalPromptCoordinationServicePromoQueueTests {
         // A deduplicated update never reaches the arbiter, so the outstanding lease survives it.
         #expect(promoQueueLeaseArbiter.snapshot.visiblePromoIdentities == [outstandingIdentity])
 
-        featureFlaggerMock.enabledFeatureFlags = [.modalPromptCoordination]
+        featureFlaggerMock.enabledFeatureFlags = [.promoPresentationCoordination]
         featureFlaggerMock.triggerUpdate()
         await waitForFeatureFlagUpdateDelivery()
         // The one effective change transitions, and a transition invalidates every lease.
@@ -494,7 +494,7 @@ final class ModalPromptCoordinationServicePromoQueueTests {
         sut = nil
         #expect(weakService == nil)
 
-        featureFlaggerMock.enabledFeatureFlags = [.modalPromptCoordination]
+        featureFlaggerMock.enabledFeatureFlags = [.promoPresentationCoordination]
         featureFlaggerMock.triggerUpdate()
         await waitForFeatureFlagUpdateDelivery()
 
@@ -526,7 +526,7 @@ final class ModalPromptCoordinationServicePromoQueueTests {
             sut.presentModalPromptIfNeeded(from: presenterMock)
         }
 
-        featureFlaggerMock.enabledFeatureFlags = [.modalPromptCoordination]
+        featureFlaggerMock.enabledFeatureFlags = [.promoPresentationCoordination]
         featureFlaggerMock.triggerUpdate()
         await waitForFeatureFlagUpdateDelivery()
         featureFlaggerMock.enabledFeatureFlags = []
@@ -570,7 +570,7 @@ final class ModalPromptCoordinationServicePromoQueueTests {
         managerMock.onPromoQueueWillTransition = admitDuringTransition
         managerMock.onPromoQueueDidTransition = admitDuringTransition
 
-        featureFlaggerMock.enabledFeatureFlags = [.modalPromptCoordination]
+        featureFlaggerMock.enabledFeatureFlags = [.promoPresentationCoordination]
         featureFlaggerMock.triggerUpdate()
         await waitForFeatureFlagUpdateDelivery()
         featureFlaggerMock.enabledFeatureFlags = []
@@ -621,7 +621,7 @@ final class ModalPromptCoordinationServicePromoQueueTests {
         }
         let registration = sut.registerVisiblePromoRetry(for: surfaceID, target: retryTarget)
 
-        featureFlaggerMock.enabledFeatureFlags = [.modalPromptCoordination]
+        featureFlaggerMock.enabledFeatureFlags = [.promoPresentationCoordination]
         featureFlaggerMock.triggerUpdate()
         await waitForFeatureFlagUpdateDelivery()
 
@@ -653,10 +653,10 @@ private final class ModalPromptCoordinationSubscriptionHookFeatureFlagger: Featu
     var internalUserDecider: InternalUserDecider = DefaultInternalUserDecider(store: MockInternalUserStoring())
     var localOverrides: FeatureFlagLocalOverriding?
     var allActiveExperiments: Experiments = [:]
-    var isModalPromptCoordinationEnabled = false
+    var isPromoPresentationCoordinationEnabled = false
     var onUpdatesPublisherSubscription: (() -> Void)?
     private(set) var updatesPublisherSubscriptionCount = 0
-    private(set) var modalPromptCoordinationReadCount = 0
+    private(set) var promoPresentationCoordinationReadCount = 0
 
     private let updatesSubject = PassthroughSubject<Void, Never>()
 
@@ -678,12 +678,12 @@ private final class ModalPromptCoordinationSubscriptionHookFeatureFlagger: Featu
     }
 
     func isFeatureOn<Flag: FeatureFlagDescribing>(for featureFlag: Flag, allowOverride: Bool) -> Bool {
-        guard featureFlag.rawValue == FeatureFlag.modalPromptCoordination.rawValue else {
+        guard featureFlag.rawValue == FeatureFlag.promoPresentationCoordination.rawValue else {
             return false
         }
 
-        modalPromptCoordinationReadCount += 1
-        return isModalPromptCoordinationEnabled
+        promoPresentationCoordinationReadCount += 1
+        return isPromoPresentationCoordinationEnabled
     }
 
     func resolveCohort<Flag: FeatureFlagDescribing>(

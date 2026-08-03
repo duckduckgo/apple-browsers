@@ -1,5 +1,5 @@
 //
-//  ModalPromptCoordinationFeatureFlagTests.swift
+//  PromoPresentationCoordinationFeatureFlagTests.swift
 //  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
@@ -22,42 +22,42 @@ import PrivacyConfig
 import PrivacyConfigTestsUtils
 import Testing
 
-@Suite("Modal Prompt Coordination Feature Flag")
-struct ModalPromptCoordinationFeatureFlagTests {
+@Suite("Promo Presentation Coordination Feature Flag")
+struct PromoPresentationCoordinationFeatureFlagTests {
 
     // MARK: - Flag declaration
 
     @available(iOS 16, *)
-    @Test("Modal prompt coordination is disabled by default", .timeLimit(.minutes(1)))
-    func whenInspectingModalPromptCoordinationThenDefaultIsDisabled() {
-        guard case .disabled = FeatureFlag.modalPromptCoordination.defaultValue else {
-            Issue.record("Expected modal prompt coordination to be disabled by default")
+    @Test("Promo presentation coordination is disabled by default", .timeLimit(.minutes(1)))
+    func whenInspectingPromoPresentationCoordinationThenDefaultIsDisabled() {
+        guard case .disabled = FeatureFlag.promoPresentationCoordination.defaultValue else {
+            Issue.record("Expected promo presentation coordination to be disabled by default")
             return
         }
     }
 
     @available(iOS 16, *)
-    @Test("Modal prompt coordination maps to the remote-releasable iOS browser config subfeature", .timeLimit(.minutes(1)))
-    func whenInspectingModalPromptCoordinationThenSourceIsRemoteReleasableIOSBrowserConfigSubfeature() {
-        guard case .remoteReleasable(let subfeature) = FeatureFlag.modalPromptCoordination.source else {
-            Issue.record("Expected modal prompt coordination to use a remote-releasable source")
+    @Test("Promo presentation coordination maps to the remote-releasable iOS browser config subfeature", .timeLimit(.minutes(1)))
+    func whenInspectingPromoPresentationCoordinationThenSourceIsRemoteReleasableIOSBrowserConfigSubfeature() {
+        guard case .remoteReleasable(let subfeature) = FeatureFlag.promoPresentationCoordination.source else {
+            Issue.record("Expected promo presentation coordination to use a remote-releasable source")
             return
         }
 
-        #expect(subfeature as? iOSBrowserConfigSubfeature == .modalPromptCoordination)
+        #expect(subfeature as? iOSBrowserConfigSubfeature == .promoPresentationCoordination)
     }
 
     @available(iOS 16, *)
-    @Test("Modal prompt coordination supports local overriding", .timeLimit(.minutes(1)))
-    func whenInspectingModalPromptCoordinationThenLocalOverridingIsSupported() {
-        #expect(FeatureFlag.modalPromptCoordination.supportsLocalOverriding)
+    @Test("Promo presentation coordination supports local overriding", .timeLimit(.minutes(1)))
+    func whenInspectingPromoPresentationCoordinationThenLocalOverridingIsSupported() {
+        #expect(FeatureFlag.promoPresentationCoordination.supportsLocalOverriding)
     }
 
     // MARK: - Embedded privacy configuration
 
     @available(iOS 16, *)
-    @Test("Embedded privacy config ships no modal prompt coordination entry, so the flag default is what decides", .timeLimit(.minutes(1)))
-    func whenReadingEmbeddedPrivacyConfigThenModalPromptCoordinationSubfeatureIsMissing() throws {
+    @Test("Embedded privacy config ships no promo presentation coordination entry, so the flag default is what decides", .timeLimit(.minutes(1)))
+    func whenReadingEmbeddedPrivacyConfigThenPromoPresentationCoordinationSubfeatureIsMissing() throws {
         let privacyConfig = try makeEmbeddedPrivacyConfiguration()
 
         // Assert the parent first: `iOSBrowserConfig` ships enabled, so the subfeature reading below is not the
@@ -68,8 +68,8 @@ struct ModalPromptCoordinationFeatureFlagTests {
             return
         }
 
-        guard case .disabled(.featureMissing) = privacyConfig.stateFor(iOSBrowserConfigSubfeature.modalPromptCoordination) else {
-            Issue.record("Expected the embedded privacy config to omit the modal prompt coordination subfeature")
+        guard case .disabled(.featureMissing) = privacyConfig.stateFor(iOSBrowserConfigSubfeature.promoPresentationCoordination) else {
+            Issue.record("Expected the embedded privacy config to omit the promo presentation coordination subfeature")
             return
         }
     }
@@ -86,7 +86,7 @@ struct ModalPromptCoordinationFeatureFlagTests {
     private func makePrivacyConfiguration(data: PrivacyConfigurationData) -> AppPrivacyConfiguration {
         AppPrivacyConfiguration(
             data: data,
-            identifier: "modal-prompt-coordination-tests",
+            identifier: "promo-presentation-coordination-tests",
             localProtection: MockDomainsProtectionStore(),
             internalUserDecider: MockInternalUserDecider()
         )

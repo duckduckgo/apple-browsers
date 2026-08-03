@@ -26,7 +26,7 @@ enum VisiblePromoAdmissionResult {
     case blockedByModal
     /// The requesting surface's `(surfaceID, promoType)` slot already holds a lease; carries the occupying identity.
     case occupiedSurfaceSlot(VisiblePromoIdentity)
-    /// The `modalPromptCoordination` flag is off, so admission is not arbitrated.
+    /// The `promoPresentationCoordination` flag is off, so admission is not arbitrated.
     case featureDisabled
     /// A flag transition barrier is up; the caller should retry after the transition.
     case unavailableDuringTransition

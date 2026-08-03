@@ -17,7 +17,7 @@
 //  limitations under the License.
 //
 
-/// The resolved `modalPromptCoordination` flag reading.
+/// The resolved `promoPresentationCoordination` flag reading.
 enum PromoQueueFeatureTargetState: Equatable {
     case disabled
     case enabled

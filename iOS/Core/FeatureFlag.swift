@@ -363,9 +363,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1213076120133808?focus=true
     case showNTPAfterIdleReturn
 
-    /// Coordinates launch modal prompts and Remote Messaging Framework cards so they cannot be visible together.
+    /// Coordinates presentation across modal prompts and visible promotional surfaces.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216996143775013?focus=true
-    case modalPromptCoordination
+    case promoPresentationCoordination
 
     /// Test-only feature flag for verifying UI test override mechanism.
     /// Used in Debug > UI Test Overrides screen.
@@ -792,8 +792,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(TabSwitcherTrackerCountSubfeature.featureEnabled))
         case .showNTPAfterIdleReturn:
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.showNTPAfterIdleReturn))
-        case .modalPromptCoordination:
-            Config(defaultValue: .disabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.modalPromptCoordination))
+        case .promoPresentationCoordination:
+            Config(defaultValue: .disabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.promoPresentationCoordination))
         case .uiTestFeatureFlag:
             Config(source: .disabled)
         case .uiTestExperiment:

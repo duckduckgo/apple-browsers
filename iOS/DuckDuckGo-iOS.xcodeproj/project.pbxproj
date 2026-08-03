@@ -1510,7 +1510,7 @@
 		9F387DE42EA8922B006861F8 /* WinBackOfferModalPromptProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F387DE32EA89228006861F8 /* WinBackOfferModalPromptProvider.swift */; };
 		9F387DE62EA89551006861F8 /* ModalPromptCoordinationManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F387DE52EA89551006861F8 /* ModalPromptCoordinationManagerTests.swift */; };
 		B6A7C20531A1000100F00D01 /* PromoQueueLeaseArbiterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6A7C20431A1000100F00D01 /* PromoQueueLeaseArbiterTests.swift */; };
-		B6A7C20A31A1000100F00D01 /* ModalPromptCoordinationFeatureFlagTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6A7C20931A1000100F00D01 /* ModalPromptCoordinationFeatureFlagTests.swift */; };
+		B6A7C20A31A1000100F00D01 /* PromoPresentationCoordinationFeatureFlagTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6A7C20931A1000100F00D01 /* PromoPresentationCoordinationFeatureFlagTests.swift */; };
 		9F387DE82EA895B7006861F8 /* MockModalPromptProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F387DE72EA895B6006861F8 /* MockModalPromptProvider.swift */; };
 		9F387DE92EA895B7006861F8 /* MockModalPromptProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F387DE72EA895B6006861F8 /* MockModalPromptProvider.swift */; };
 		9F387DEA2EA895B7006861F8 /* MockModalPromptProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F387DE72EA895B6006861F8 /* MockModalPromptProvider.swift */; };
@@ -4362,7 +4362,7 @@
 		9F387DE32EA89228006861F8 /* WinBackOfferModalPromptProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WinBackOfferModalPromptProvider.swift; sourceTree = "<group>"; };
 		9F387DE52EA89551006861F8 /* ModalPromptCoordinationManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModalPromptCoordinationManagerTests.swift; sourceTree = "<group>"; };
 		B6A7C20431A1000100F00D01 /* PromoQueueLeaseArbiterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromoQueueLeaseArbiterTests.swift; sourceTree = "<group>"; };
-		B6A7C20931A1000100F00D01 /* ModalPromptCoordinationFeatureFlagTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModalPromptCoordinationFeatureFlagTests.swift; sourceTree = "<group>"; };
+		B6A7C20931A1000100F00D01 /* PromoPresentationCoordinationFeatureFlagTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromoPresentationCoordinationFeatureFlagTests.swift; sourceTree = "<group>"; };
 		9F387DE72EA895B6006861F8 /* MockModalPromptProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockModalPromptProvider.swift; sourceTree = "<group>"; };
 		9F387DEC2EA895DC006861F8 /* MockModalPromptPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockModalPromptPresenter.swift; sourceTree = "<group>"; };
 		9F387DF22EA8AB43006861F8 /* ModalPromptCoordinationManagerIntegrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModalPromptCoordinationManagerIntegrationTests.swift; sourceTree = "<group>"; };
@@ -7067,7 +7067,7 @@
 			children = (
 				563A3D002D37BF83001966FD /* ConfigurationManagerTests.swift */,
 				563A3D022D37C363001966FD /* AppConfigurationURLProviderTests.swift */,
-				B6A7C20931A1000100F00D01 /* ModalPromptCoordinationFeatureFlagTests.swift */,
+				B6A7C20931A1000100F00D01 /* PromoPresentationCoordinationFeatureFlagTests.swift */,
 			);
 			path = Configuration;
 			sourceTree = "<group>";
@@ -14543,7 +14543,7 @@
 				B6A7C21C31A1000100F00D01 /* ModalPromptRootAttachmentCheckerTests.swift in Sources */,
 				B6A7C21E31A1000100F00D01 /* ModalPromptCoordinationRealUIKitTests.swift in Sources */,
 				B6A7C20531A1000100F00D01 /* PromoQueueLeaseArbiterTests.swift in Sources */,
-				B6A7C20A31A1000100F00D01 /* ModalPromptCoordinationFeatureFlagTests.swift in Sources */,
+				B6A7C20A31A1000100F00D01 /* PromoPresentationCoordinationFeatureFlagTests.swift in Sources */,
 				98E5631D2DE8AF3100E6E75F /* CoreDataTestUtilities.swift in Sources */,
 				9F3361BC2F2B394700E0C21A /* ContextualOnboardingDelegateMock.swift in Sources */,
 				98E563242DE8AF3100E6E75F /* SwiftUITestUtilities.swift in Sources */,

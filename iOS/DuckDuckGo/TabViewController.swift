@@ -2890,6 +2890,9 @@ extension TabViewController: WKNavigationDelegate {
            let url = navigationAction.request.url,
            SerpSearchTokenInterceptor.isSerpURL(url),
            let cohort = featureFlagger.assignedCohort(for: FeatureFlag.searchTokenExperimentV2) as? FeatureFlag.SearchTokenExperimentCohort {
+            // Pin the UA this SERP navigation will send so it can't inherit a stale `customUserAgent`
+            // from a prior (non-DDG) navigation. Matches the UA the token was warmed against.
+            webView.customUserAgent = userAgentManager.userAgent(isDesktop: tabModel.isDesktop, url: url)
             let token = cohort == .treatment ? delegate?.searchToken(for: self) : nil
             if let signalled = SerpSearchTokenInterceptor.signalledRequest(for: modifiedRequest,
                                                                            cohort: cohort,

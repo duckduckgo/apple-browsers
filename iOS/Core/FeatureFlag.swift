@@ -384,7 +384,7 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216663565461118?focus=true
     case launchTimeMetrics
 
-    #warning("Add Asana task URL for tabTerminationTelemetry")
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217109908046478?focus=true
     case tabTerminationTelemetry
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214974217398704?focus=true

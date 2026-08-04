@@ -174,6 +174,44 @@ class AIChatUserScriptHandlerTests: XCTestCase {
         XCTAssertEqual(configValues?.supportsNativeStorage, true)
     }
 
+    // MARK: - Native prompt editing
+
+    func testWhenNativePromptEditingFlagIsOnThenConfigAdvertisesSupport() {
+        mockFeatureFlagger.enabledFeatureFlags = [.nativeAIPromptEditing]
+        aiChatUserScriptHandler = makeAIChatUserScriptHandler()
+
+        let configValues = aiChatUserScriptHandler.getAIChatNativeConfigValues(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? AIChatNativeConfigValues
+
+        XCTAssertEqual(configValues?.supportsNativePromptEditing, true)
+    }
+
+    func testWhenNativePromptEditingFlagIsOffThenConfigDoesNotAdvertiseSupport() {
+        mockFeatureFlagger.enabledFeatureFlags = []
+        aiChatUserScriptHandler = makeAIChatUserScriptHandler()
+
+        let configValues = aiChatUserScriptHandler.getAIChatNativeConfigValues(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? AIChatNativeConfigValues
+
+        XCTAssertEqual(configValues?.supportsNativePromptEditing, false)
+    }
+
+    func testWhenNativePromptEditingFlagIsOffThenEditPromptReturnsCancelled() async throws {
+        mockFeatureFlagger.enabledFeatureFlags = []
+        let params: [String: Any] = ["prompt": "hi", "hasResponsesToLose": false]
+
+        let reply = try XCTUnwrap(await aiChatUserScriptHandler.editPrompt(params: params, message: MockUserScriptMessage(name: "test", body: [:])) as? EditPromptReply)
+
+        guard case .cancelled = reply else { return XCTFail("Expected .cancelled when the flag is off") }
+    }
+
+    func testWhenEditPromptParamsAreInvalidThenReturnsCancelled() async throws {
+        mockFeatureFlagger.enabledFeatureFlags = [.nativeAIPromptEditing]
+
+        // Missing the required `prompt` / `hasResponsesToLose` fields.
+        let reply = try XCTUnwrap(await aiChatUserScriptHandler.editPrompt(params: ["foo": "bar"], message: MockUserScriptMessage(name: "test", body: [:])) as? EditPromptReply)
+
+        guard case .cancelled = reply else { return XCTFail("Expected .cancelled for invalid params") }
+    }
+
     func testWhenNativeStorageFeatureIsOnAndBridgeIsUnavailableThenSupportsNativeStorageIsFalse() {
         // Given
         mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeStorage]

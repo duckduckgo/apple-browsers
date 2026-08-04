@@ -42,6 +42,17 @@ public protocol AIChatInputBoxHandling {
 
     var attachmentUsagePublisher: Published<AIChatAttachmentUsage?>.Publisher { get }
     var attachmentUsage: AIChatAttachmentUsage? { get set }
+
+    /// Drives the native input's edit flow for an existing message. Called by the `editPrompt`
+    /// bridge handler: the input prefills from the stored message, enters edit mode, and this
+    /// call suspends until the user submits or cancels, returning the resulting `EditPromptReply`.
+    func editPrompt(_ request: EditPromptRequest) async -> EditPromptReply
+}
+
+public extension AIChatInputBoxHandling {
+    /// Default no-op so conformers that don't yet implement native editing still compile and
+    /// safely report a cancel (the FE then restores its own message bubble).
+    func editPrompt(_ request: EditPromptRequest) async -> EditPromptReply { .cancelled }
 }
 
 public enum AIChatStatusValue: String, Codable {

@@ -355,10 +355,9 @@ final class UnifiedToggleInputView: UIView {
         set { toolsToolbar.isImageButtonHidden = newValue }
     }
 
-    func setEditMode(_ editing: Bool) {
+    func setEditMode(_ editing: Bool, showsReplaceDisclaimer: Bool) {
         toolsToolbar.isEditing = editing
-        // TODO: gate on the FE-supplied `hasResponsesToLose`; shown whenever editing for now.
-        setEditReplaceDisclaimerCardVisible(editing)
+        setEditReplaceDisclaimerCardVisible(showsReplaceDisclaimer)
     }
 
     private func setEditReplaceDisclaimerCardVisible(_ visible: Bool) {

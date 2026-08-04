@@ -379,7 +379,7 @@ extension SuggestionViewController: ThemeUpdateListening {
 
         NSAppearance.withAppearance(from: view) {
             shadowView.shadowColor = colorsProvider.addressBarShadowColor
-            backgroundView.backgroundColor = colorsProvider.suggestionsBackgroundColor
+            backgroundView.backgroundColor = colorsProvider.suggestionsBackgroundColor(isBurner: isBurner)
         }
 
         tableView.reloadData()

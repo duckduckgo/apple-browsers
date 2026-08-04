@@ -494,7 +494,7 @@ public enum FeatureFlag: String {
 
     /// NA experiment: attach a search token to speed up SERP by combining Index/Deep responses.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216365830146824
-    case searchTokenExperiment
+    case searchTokenExperimentV2
 
     /// NA Experiment: tailor the onboarding flow based on the user's download reason.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216491579842691?focus=true
@@ -513,6 +513,9 @@ public enum FeatureFlag: String {
     /// Moves the iPad tabs bar up into the system window controls row (iOS 26+ resizable windows).
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217015452646368?focus=true
     case iPadTabsBarInWindowControlsRow
+    
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1216352541195038?focus=true
+    case nativeAIPromptEditing
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -789,8 +792,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .disabled)
         case .uiTestExperiment:
             Config(source: .disabled, cohortType: UITestExperimentCohort.self)
-        case .searchTokenExperiment:
-            Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.searchTokenExperiment), cohortType: SearchTokenExperimentCohort.self)
+        case .searchTokenExperimentV2:
+            Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.searchTokenExperimentV2), cohortType: SearchTokenExperimentCohort.self)
         case .onboardingFlowByDownloadReasonExperiment:
             Config(source: .disabled, cohortType: OnboardingFlowByDownloadReasonExperimentCohort.self)
         case .monthlyFreeTrialExperiment:
@@ -876,6 +879,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.systemFindInPage))
         case .iPadTabsBarInWindowControlsRow:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.iPadTabsBarInWindowControlsRow))
+        case .nativeAIPromptEditing:
+            Config(defaultValue: .disabled, source: .remoteReleasable(AIChatSubfeature.nativePromptEditing))
         }
     }
 

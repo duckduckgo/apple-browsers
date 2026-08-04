@@ -9028,7 +9028,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Erhalte Zugang zu den fortschrittlichen KI-Modellen in Duck.ai, indem du DuckDuckGo abonnierst, was auch unser VPN und andere Premium-Datenschutzmaßnahmen beinhaltet."
+            "value" : "Hol dir Zugang zu fortschrittlichen KI-Modellen in Duck.ai, unserem VPN und weiteren Premium-Schutzfunktionen, indem du DuckDuckGo abonnierst."
           }
         },
         "en" : {
@@ -9040,43 +9040,43 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Obtén acceso a modelos avanzados de IA en Duck.ai suscribiéndote a DuckDuckGo, que también incluye nuestra VPN y otras protecciones de privacidad premium."
+            "value" : "Obtén acceso a modelos avanzados de IA en Duck.ai, nuestra VPN y otras protecciones prémium suscribiéndote a DuckDuckGo."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Accédez à des modèles d'IA avancés dans Duck.ai en vous abonnant à DuckDuckGo, qui comprend également notre VPN et d'autres protections de confidentialité premium."
+            "value" : "Accédez à des modèles d'IA avancés dans Duck.ai, à notre VPN et à d'autres protections Premium en vous abonnant à DuckDuckGo."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Accedi ai modelli avanzati di AI su Duck.ai abbonandoti a DuckDuckGo, che include anche la nostra VPN e altre protezioni della privacy premium."
+            "value" : "Accedi ai modelli avanzati di AI su Duck.ai, alla nostra VPN e ad altre protezioni premium abbonandoti a DuckDuckGo."
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Krijg toegang tot geavanceerde AI-modellen in Duck.ai door je te abonneren op DuckDuckGo, dat ook onze VPN en andere premium privacybescherming omvat."
+            "value" : "Krijg toegang tot geavanceerde AI-modellen in Duck.ai, onze VPN en andere premium beschermingen door je te abonneren op DuckDuckGo."
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Uzyskaj dostęp do zaawansowanych modeli sztucznej inteligencji w Duck.ai, subskrybując DuckDuckGo, co obejmuje również naszą sieć VPN i inne usługi ochrony prywatności premium."
+            "value" : "Uzyskaj dostęp do zaawansowanych modeli sztucznej inteligencji w Duck.ai, naszej sieci VPN i innych usług ochrony premium, subskrybując DuckDuckGo."
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Obtém acesso a modelos avançados de IA no Duck.ai ao subscreveres o DuckDuckGo, que também inclui a nossa VPN e outras proteções de privacidade premium."
+            "value" : "Obtém acesso a modelos avançados de IA no Duck.ai, à nossa VPN e a outras proteções premium ao subscreveres o DuckDuckGo."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Подписка DuckDuckGo позволит вам пользоваться продвинутыми ИИ-моделями в Duck.ai, а также сервисом VPN и другими видами повышенной защиты."
+            "value" : "Подписка DuckDuckGo откроет вам доступ к продвинутым ИИ-моделям в Duck.ai, нашему VPN и другим видам премиум-защиты."
           }
         }
       }
@@ -75871,6 +75871,186 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Всегда спрашивать"
+          }
+        }
+      }
+    },
+    "permission.center.autoplay.disclaimer.message" : {
+      "comment" : "Explains the Autoplay behavior the Permission Center",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo verhindert, dass Videos automatisch abgespielt werden. Hier kannst du die Einstellungen für diese Website ändern und für alle Websites in"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "DuckDuckGo stops videos from autoplaying. You can change settings for this site here, and for all sites in"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo evita la reproducción automática de vídeos. Puedes cambiar la configuración de este sitio aquí, y la de todos los sitios en"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo empêche la lecture automatique des vidéos. Vous pouvez modifier les paramètres de ce site ici, et ceux de tous les sites dans"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo impedisce la riproduzione automatica dei video. Puoi modificare le impostazioni per questo sito qui e per tutti i siti in"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo voorkomt dat video's automatisch worden afgespeeld. Je kunt de instellingen voor deze site en voor alle sites wijzigen in"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo blokuje automatyczne odtwarzanie filmów. W tym miejscu możesz zmienić ustawienia dla tej witryny. Aby wprowadzić zmianę dla wszystkich witryn, przejdź do obszaru"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O DuckDuckGo impede a reprodução automática de vídeos. Podes alterar as definições para este site aqui, e para todos os sites no"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo блокирует автовоспроизведение видео. Настройки для этого сайта можно изменить здесь; для изменения настроек для всех сайтов перейдите в"
+          }
+        }
+      }
+    },
+    "permission.center.autoplay.disclaimer.settings.link" : {
+      "comment" : "Clickable label in the autoplay disclaimer UI that opens the General settings pane",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Einstellungen → Allgemein → Berechtigungen."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Settings → General → Permissions."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajustes → General → Permisos."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paramètres → Général → Autorisations."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impostazioni → Generali → Autorizzazioni."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Instellingen → Algemeen → Toestemmingen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ustawienia → Ogólne → Uprawnienia."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Definições → Geral → Permissões."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Настройки → Общие → Разрешения."
+          }
+        }
+      }
+    },
+    "permission.center.autoplay.disclaimer.title" : {
+      "comment" : "Title of the informational card explaining autoplay blocking in the Permission Center",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Automatisches Abspielen von Videos gestoppt"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Video autoplay stopped"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reproducción automática de vídeo detenida"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lecture automatique des vidéos arrêtée"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Riproduzione automatica video interrotta"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Automatisch afspelen van video's gestopt"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Automatyczne odtwarzanie filmów zatrzymane"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reprodução automática de vídeos interrompida"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Автовоспроизведение видео остановлено"
           }
         }
       }

@@ -1,5 +1,6 @@
 //
 //  URLInputClassifier.swift
+//  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //

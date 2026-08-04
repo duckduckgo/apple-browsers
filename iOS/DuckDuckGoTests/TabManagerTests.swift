@@ -374,13 +374,33 @@ final class TabManagerTests: XCTestCase {
                                     "flushPendingSave should write synchronously without waiting for debounce")
     }
 
+    func testWhenMemoryWarningIsReceivedThenTabTerminationTelemetryIsNotified() throws {
+        let telemetry = MockTabTerminationTelemetry()
+        let manager = try makeManager(TabsModel(desktop: false), tabTerminationTelemetry: telemetry)
+
+        NotificationCenter.default.post(name: UIApplication.didReceiveMemoryWarningNotification, object: nil)
+
+        XCTAssertEqual(telemetry.memoryWarningCallCount, 1)
+        withExtendedLifetime(manager) {}
+    }
+
+    func testWhenWebContentProcessTerminatesThenTabTerminationTelemetryIsNotified() throws {
+        let telemetry = MockTabTerminationTelemetry()
+        let manager = try makeManager(TabsModel(desktop: false), tabTerminationTelemetry: telemetry)
+
+        manager.webContentProcessDidTerminate()
+
+        XCTAssertEqual(telemetry.webContentProcessTerminationActiveTabCounts, [0])
+    }
+
     func makeManager(_ model: TabsModel,
                      fireModel: TabsModel? = nil,
                      previewsSource: TabPreviewsSource = MockTabPreviewsSource(),
                      historyManager: MockHistoryManager = MockHistoryManager(),
                      featureFlagger: MockFeatureFlagger = MockFeatureFlagger(),
                      launchSourceManager: LaunchSourceManaging = MockLaunchSourceManager(),
-                     normalStore: ThrowingKeyValueStoring? = nil) throws -> TabManager {
+                     normalStore: ThrowingKeyValueStoring? = nil,
+                     tabTerminationTelemetry: (any TabTerminationTelemetry)? = nil) throws -> TabManager {
         FireModeCapability.resolve(using: featureFlagger)
         let normalStore = try normalStore ?? MockKeyValueFileStore(throwOnInit: nil)
         let tabsPersistence = TabsModelPersistence(normalStore: normalStore,
@@ -420,7 +440,8 @@ final class TabManagerTests: XCTestCase {
                           voiceSearchHelper: MockVoiceSearchHelper(),
                           launchSourceManager: launchSourceManager,
                           darkReaderFeatureSettings: MockDarkReaderFeatureSettings(),
-                          adBlockingAvailability: StubAdBlockingAvailability())
+                          adBlockingAvailability: StubAdBlockingAvailability(),
+                          tabTerminationTelemetry: tabTerminationTelemetry)
     }
 
 }
@@ -448,5 +469,19 @@ private final class CountingThrowingKeyValueStore: ThrowingKeyValueStoring, @unc
         lock.lock()
         storedValue = nil
         lock.unlock()
+    }
+}
+
+@MainActor
+private final class MockTabTerminationTelemetry: TabTerminationTelemetry {
+    private(set) var memoryWarningCallCount = 0
+    private(set) var webContentProcessTerminationActiveTabCounts: [Int] = []
+
+    func webContentProcessDidTerminate(activeTabCount: Int) {
+        webContentProcessTerminationActiveTabCounts.append(activeTabCount)
+    }
+
+    func didReceiveMemoryWarning() {
+        memoryWarningCallCount += 1
     }
 }

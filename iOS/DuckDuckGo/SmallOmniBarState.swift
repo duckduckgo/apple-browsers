@@ -20,6 +20,7 @@
 import Foundation
 import Core
 import BrowserServicesKit
+import FeatureFlags
 struct SmallOmniBarState {
 
     struct HomeEmptyEditingState: OmniBarState, OmniBarLoadingBearerStateCreating {
@@ -112,7 +113,11 @@ struct SmallOmniBarState {
         let showClear = false
         let showAbort = false
         let showRefresh = false
-        let showCustomizableButton = false
+        var showCustomizableButton: Bool {
+            guard dependencies.featureFlagger.isFeatureOn(.customizeNTPIcons) else { return false }
+            let state = dependencies.mobileCustomization.state
+            return state.isEnabled && !state.currentAddressBarButton.requiresWebPage
+        }
         let showMenu = false
         let showSettings = false
         let showDismiss = false

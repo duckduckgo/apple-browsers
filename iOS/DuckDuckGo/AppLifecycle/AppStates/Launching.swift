@@ -248,7 +248,8 @@ struct Launching: LaunchingHandling {
         )
 
         // Has to be initialised after configuration.start in case values need to be migrated
-        aiChatSettings = AIChatSettings()
+        let aiChatSettings = AIChatSettings()
+        self.aiChatSettings = aiChatSettings
 
         // Create What's New repository for use in modal prompts and settings
         let whatsNewRepository = DefaultWhatsNewMessageRepository(
@@ -299,7 +300,10 @@ struct Launching: LaunchingHandling {
             )
         )
 
-        let mobileCustomization = MobileCustomization(keyValueStore: appKeyValueFileStoreService.keyValueFilesStore)
+        let mobileCustomization = MobileCustomization(
+            keyValueStore: appKeyValueFileStoreService.keyValueFilesStore,
+            connectionStatusObserver: AppDependencyProvider.shared.connectionObserver,
+            isDuckAIEnabled: { aiChatSettings.isAIChatEnabled })
 
         // MARK: - Main Coordinator Setup
         // Initialize the main coordinator which manages the app's primary view controller

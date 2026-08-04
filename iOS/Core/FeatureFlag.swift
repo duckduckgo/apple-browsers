@@ -112,9 +112,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866711151217
     case adAttributionReporting
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866610480266
-    case dbpRemoteBrokerDelivery
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212258549430653
     case dbpForegroundRunningOnAppActive
 
@@ -201,9 +198,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866712516861
     /// This is off by default.  We can turn it on to get daily pixels of users's widget usage for a short time.
     case widgetReporting
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866467213996
-    case createFireproofFaviconUpdaterSecureVaultInBackground
 
     /// Local inactivity provisional notifications delivered to Notification Center.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866471590692
@@ -310,9 +304,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213433942918287?focus=true
     case multiplePageContexts
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213608678718359?focus=true
-    case iPadPageContext
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212980785692847?focus=true
     case aiChatSync
 
@@ -369,6 +360,10 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1213076120133808?focus=true
     case showNTPAfterIdleReturn
 
+    /// Coordinates presentation across modal prompts and visible promotional surfaces.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216996143775013?focus=true
+    case promoPresentationCoordination
+
     /// Test-only feature flag for verifying UI test override mechanism.
     /// Used in Debug > UI Test Overrides screen.
     case uiTestFeatureFlag
@@ -386,6 +381,9 @@ public enum FeatureFlag: String {
     /// Enables sending MetricKit launch-time telemetry pixels.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216663565461118?focus=true
     case launchTimeMetrics
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217109908046478?focus=true
+    case tabTerminationTelemetry
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214974217398704?focus=true
     case appRebranding
@@ -439,9 +437,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213813585476250?focus=true
     case screenTimeCleaning
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213763338305579?focus=true
-    case aiChatContextualFireButton
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215448831345663?focus=true
     case bottomBarViewportFixedElementsWorkaround
 
@@ -465,6 +460,9 @@ public enum FeatureFlag: String {
     /// Gate the default-to-NTP-after-idle behavior for existing iPhone users behind a remote flag.
     /// https://app.asana.com/1/137249556945/project/1204186595873227/task/1214830562427843
     case defaultExistingIPhoneUsersToNewTabAfterIdle
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217024926605808
+    case customizeNTPIcons
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215169783702336
     case walletPassDownload
@@ -503,7 +501,7 @@ public enum FeatureFlag: String {
 
     /// NA experiment: attach a search token to speed up SERP by combining Index/Deep responses.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216365830146824
-    case searchTokenExperiment
+    case searchTokenExperimentV2
 
     /// NA Experiment: tailor the onboarding flow based on the user's download reason.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216491579842691?focus=true
@@ -518,6 +516,13 @@ public enum FeatureFlag: String {
     /// Experiment for removing monthly free trials
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216851336490252
     case monthlyFreeTrialExperiment
+
+    /// Moves the iPad tabs bar up into the system window controls row (iOS 26+ resizable windows).
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217015452646368?focus=true
+    case iPadTabsBarInWindowControlsRow
+    
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1216352541195038?focus=true
+    case nativeAIPromptEditing
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -628,8 +633,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(AutofillSurveysSubfeature.featureEnabled), supportsLocalOverriding: false)
         case .adAttributionReporting:
             Config(defaultValue: .enabled, source: .remoteReleasable(AdAttributionReportingSubfeature.featureEnabled), supportsLocalOverriding: false)
-        case .dbpRemoteBrokerDelivery:
-            Config(source: .remoteReleasable(DBPSubfeature.remoteBrokerDelivery))
         case .dbpForegroundRunningOnAppActive:
             Config(defaultValue: .enabled, source: .remoteReleasable(DBPSubfeature.foregroundRunningOnAppActive))
         case .dbpContinuedProcessing:
@@ -686,8 +689,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(DBPSubfeature.pirRollout))
         case .widgetReporting:
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.widgetReporting), supportsLocalOverriding: false)
-        case .createFireproofFaviconUpdaterSecureVaultInBackground:
-            Config(defaultValue: .enabled, source: .remoteReleasable(AutofillSubfeature.createFireproofFaviconUpdaterSecureVaultInBackground))
         case .inactivityNotification:
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.inactivityNotification))
         case .daxEasterEggLogos:
@@ -758,8 +759,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(AIChatSubfeature.autoAttachContextByDefault))
         case .multiplePageContexts:
             Config(source: .remoteReleasable(AIChatSubfeature.multiplePageContexts))
-        case .iPadPageContext:
-            Config(source: .remoteReleasable(AIChatSubfeature.iPadPageContext))
         case .aiChatSync:
             Config(source: .remoteReleasable(SyncSubfeature.aiChatSync))
         case .aiChatSyncPromo:
@@ -794,12 +793,14 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(TabSwitcherTrackerCountSubfeature.featureEnabled))
         case .showNTPAfterIdleReturn:
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.showNTPAfterIdleReturn))
+        case .promoPresentationCoordination:
+            Config(defaultValue: .disabled, source: .remoteReleasable(PromoQueueSubfeature.iOSPromoPresentationCoordination))
         case .uiTestFeatureFlag:
             Config(source: .disabled)
         case .uiTestExperiment:
             Config(source: .disabled, cohortType: UITestExperimentCohort.self)
-        case .searchTokenExperiment:
-            Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.searchTokenExperiment), cohortType: SearchTokenExperimentCohort.self)
+        case .searchTokenExperimentV2:
+            Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.searchTokenExperimentV2), cohortType: SearchTokenExperimentCohort.self)
         case .onboardingFlowByDownloadReasonExperiment:
             Config(source: .disabled, cohortType: OnboardingFlowByDownloadReasonExperimentCohort.self)
         case .monthlyFreeTrialExperiment:
@@ -810,6 +811,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.crashCollectionLimitCallStackTreeDepth), supportsLocalOverriding: false)
         case .launchTimeMetrics:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.launchTimeMetrics), supportsLocalOverriding: true)
+        case .tabTerminationTelemetry:
+            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.tabTerminationTelemetry), supportsLocalOverriding: true)
 
         case .appRebranding:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.appRebranding), supportsLocalOverriding: true)
@@ -843,8 +846,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(AIChatSubfeature.voiceShortcut))
         case .screenTimeCleaning:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.screenTimeCleaning))
-        case .aiChatContextualFireButton:
-            Config(source: .remoteReleasable(AIChatSubfeature.contextualFireButton))
         case .bottomBarViewportFixedElementsWorkaround:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.bottomBarViewportFixedElementsWorkaround))
         case .aiChatNativeStorage:
@@ -861,6 +862,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.customProductPageDuckAiChat), supportsLocalOverriding: true)
         case .defaultExistingIPhoneUsersToNewTabAfterIdle:
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.defaultExistingIPhoneUsersToNewTabAfterIdle))
+        case .customizeNTPIcons:
+            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.customizeNTPIcons))
         case .walletPassDownload:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.walletPassDownload))
         case .aiChatChromeShortcutIPad:
@@ -880,11 +883,15 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .syncCanShowV2ConnectCode:
             Config(source: .remoteReleasable(SyncSubfeature.canShowV2ConnectCode))
         case .simplifiedSyncSetupV2:
-            Config(source: .remoteReleasable(SyncSubfeature.simplifiedSyncSetupV2))
+            Config(defaultValue: .enabled, source: .remoteReleasable(SyncSubfeature.simplifiedSyncSetupV2))
         case .blankSnapshotCaching:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.blankSnapshotCaching))
         case .systemFindInPage:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.systemFindInPage))
+        case .iPadTabsBarInWindowControlsRow:
+            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.iPadTabsBarInWindowControlsRow))
+        case .nativeAIPromptEditing:
+            Config(defaultValue: .disabled, source: .remoteReleasable(AIChatSubfeature.nativePromptEditing))
         }
     }
 

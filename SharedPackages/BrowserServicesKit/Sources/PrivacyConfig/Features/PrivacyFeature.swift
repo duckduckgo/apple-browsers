@@ -215,6 +215,10 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// legacy `javascript:` URL trampoline. Kill switch — disable remotely to revert to the
     /// trampoline if the SPI ever misbehaves.
     case newErrorPageReload
+
+    /// "Reorder by name" — permanently reorders a bookmark folder's direct children alphabetically.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217076881156357?focus=true
+    case bookmarksReorderByName
 }
 
 public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
@@ -257,6 +261,9 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1208671677432066/task/1214963974721156
     case launchTimeMetrics
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217109908046478?focus=true
+    case tabTerminationTelemetry
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212835969125260
     case browsingMenuSheetEnabledByDefault
 
@@ -298,6 +305,8 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1204186595873227/task/1214830562427843
     case defaultExistingIPhoneUsersToNewTabAfterIdle
 
+    case customizeNTPIcons
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215169783702336
     case walletPassDownload
 
@@ -312,7 +321,7 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// NA experiment: search token to speed up SERP by combining Index/Deep responses.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216365830146824
-    case searchTokenExperiment
+    case searchTokenExperimentV2
 
     /// NA Experiment: tailor the onboarding flow based on the user's download reason.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216491579842691?focus=true
@@ -323,6 +332,9 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216629730083154?focus=true
     case systemFindInPage
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217015452646368?focus=true
+    case iPadTabsBarInWindowControlsRow
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {
@@ -355,7 +367,6 @@ public enum AutofillSubfeature: String, PrivacySubfeature {
     case inputFocusApi
     case canPromoteImportPasswordsInPasswordManagement
     case canPromoteImportPasswordsInBrowser
-    case createFireproofFaviconUpdaterSecureVaultInBackground
     case autofillExtensionSettings
     case canPromoteAutofillExtensionInBrowser
     case canPromoteAutofillExtensionInPasswordManagement
@@ -373,7 +384,6 @@ public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
     case waitlist
     case waitlistBetaActive
     case freemium
-    case remoteBrokerDelivery
     case foregroundRunningOnAppActive
     case continuedProcessing
     case pirRollout
@@ -403,6 +413,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Adds capability to load AI Chat in a sidebar
     case sidebar
+
+    /// Single "Ask Duck.ai" menu button (New Chat / Ask About Page) replacing the two-part split button.
+    case chromeMenuButton
 
     /// Experimental address bar with duck.ai
     case experimentalAddressBar
@@ -531,17 +544,11 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables deleting recent AI chats from the New Tab Page omnibar
     case ntpSuggestionsDeletion
 
-    /// Enables page context feature on iPad
-    case iPadPageContext
-
     /// Enables voice chat shortcut in the focused address bar
     case voiceShortcut
 
     /// Enables removing individual AI chat suggestions
     case removeSuggestion
-
-    /// Enables the fire button in the contextual AI chat sheet
-    case contextualFireButton
 
     /// Enables the Duck.ai top-level main menu shortcut (macOS only)
     case mainMenuShortcut
@@ -621,7 +628,10 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     case nativeSidebar
 
     /// macOS only. System-wide Duck.ai entry point: global keyboard shortcut and menu bar icon.
-    case macosPromptBar
+    case promptBar
+
+    /// Supports Duck.ai edit prompt from the native input field.
+    case nativePromptEditing
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {
@@ -699,7 +709,6 @@ public enum SyncSubfeature: String, PrivacySubfeature {
     case canScanUrlBasedSyncSetupBarcodes
     case canInterceptSyncSetupUrls
     case syncSetupBarcodeIsUrlBased
-    case refactorOfSyncPreferences
     case newSyncEntryPoints
     case newDeviceSyncPrompt
     case syncAutoRestore
@@ -927,6 +936,10 @@ public enum PromoQueueSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .promoQueue }
 
     case featureEnabled
+
+    /// Coordinates presentation across iOS modal prompts and visible promotional surfaces.
+    /// https://app.asana.com/1/137249556945/project/1208671677432066/task/1214300205792360?focus=true
+    case iOSPromoPresentationCoordination
 }
 
 public enum AutofillBreakageReporterSubfeature: String, PrivacySubfeature {

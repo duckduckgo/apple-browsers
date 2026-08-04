@@ -227,11 +227,37 @@ extension SharedColorPaletteDefinition {
         case .iconsTertiary:
             return iconsTertiary
 
-        /// Input
-        case .inputActive:
-            return inputActive
-        case .inputResting:
-            return inputResting
+        /// Unified Input
+        case .unifiedInputControlFillPrimary:
+            return unifiedInputControlFillPrimary
+        case .unifiedInputControlFillSecondary:
+            return unifiedInputControlFillSecondary
+        case .unifiedInputControlShadowPrimary:
+            return unifiedInputControlShadowPrimary
+        case .unifiedInputFieldFillPrimary:
+            return unifiedInputFieldFillPrimary
+        case .unifiedInputFieldFillSecondary:
+            return unifiedInputFieldFillSecondary
+        case .unifiedInputFireControlFillPrimary:
+            return unifiedInputFireControlFillPrimary
+        case .unifiedInputFireControlFillSecondary:
+            return unifiedInputFireControlFillSecondary
+        case .unifiedInputFireFieldFillPrimary:
+            return unifiedInputFireFieldFillPrimary
+        case .unifiedInputFireFieldFillSecondary:
+            return unifiedInputFireFieldFillSecondary
+        case .unifiedInputFireIconsPrimary:
+            return unifiedInputFireIconsPrimary
+        case .unifiedInputFireIconsSecondary:
+            return unifiedInputFireIconsSecondary
+        case .unifiedInputFireTextPrimary:
+            return unifiedInputFireTextPrimary
+        case .unifiedInputFireTextSecondary:
+            return unifiedInputFireTextSecondary
+        case .unifiedInputTextPrimary:
+            return unifiedInputTextPrimary
+        case .unifiedInputTextSecondary:
+            return unifiedInputTextSecondary
 
         /// System
         case .lines:
@@ -313,15 +339,6 @@ extension SharedColorPaletteDefinition {
 
     static func dynamicColor(for singleUseColor: SingleUseColor) -> DynamicColor {
         switch singleUseColor {
-        case .aiToggleBorder:
-            return DynamicColor(staticColor: .clear)
-        case .aiToggleBackground:
-            return controlsSubtleFillSecondary
-        case .aiToggleSelectionBackground:
-            return controlsRaisedFillPrimary
-        case .aiToggleSelectionBorder:
-            return shadowTertiary
-
         case .fireModeAccent:
             return DynamicColor(lightColor: RebrandingColor.Mandarin.mandarin50, darkColor: RebrandingColor.Mandarin.mandarin40)
         case .fireButtonGradientStart:

@@ -59,6 +59,18 @@ enum WebViewPreviewSnapshotGeometry {
         guard webViewBounds.width > 0, webViewBounds.height > 0 else { return nil }
         return webViewBounds
     }
+
+    /// The web content rect with the top and bottom content insets removed, matching the framing the
+    /// synchronous `drawHierarchy` capture produced. Nil when the insets leave no visible height.
+    static func visibleRect(webViewBounds: CGRect, contentInset: UIEdgeInsets) -> CGRect? {
+        let remainingHeight = webViewBounds.height - contentInset.top - contentInset.bottom
+        guard webViewBounds.width > 0, remainingHeight > 0 else { return nil }
+
+        return webViewBounds.inset(by: UIEdgeInsets(top: contentInset.top,
+                                                    left: 0,
+                                                    bottom: contentInset.bottom,
+                                                    right: 0))
+    }
 }
 
 class TabViewController: UIViewController {
@@ -501,7 +513,8 @@ class TabViewController: UIViewController {
                                    autoplaySettings: AutoplaySettings,
                                    duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
                                    duckAiFireModeStorageHandler: DuckAiNativeStorageHandling? = nil,
-                                   adBlockingAvailability: AdBlockingAvailabilityProviding) -> TabViewController {
+                                   adBlockingAvailability: AdBlockingAvailabilityProviding,
+                                   pixelFiring: (any PixelKitFiring)? = PixelKit.shared) -> TabViewController {
 
         return TabViewController(tabModel: model,
                                  privacyConfigurationManager: privacyConfigurationManager,
@@ -536,7 +549,8 @@ class TabViewController: UIViewController {
                                  autoplaySettings: autoplaySettings,
                                  duckAiNativeStorageHandler: duckAiNativeStorageHandler,
                                  duckAiFireModeStorageHandler: duckAiFireModeStorageHandler,
-                                 adBlockingAvailability: adBlockingAvailability)
+                                 adBlockingAvailability: adBlockingAvailability,
+                                 pixelFiring: pixelFiring)
     }
 
     private var userContentController: UserContentController {
@@ -607,6 +621,7 @@ class TabViewController: UIViewController {
     let aiChatFullModeFeature: AIChatFullModeFeatureProviding
     let sharedSecureVault: (any AutofillSecureVault)?
     let privacyStats: PrivacyStatsProviding
+    private let pixelFiring: (any PixelKitFiring)?
 
     private(set) var aiChatContentHandler: AIChatContentHandling
     private(set) var voiceSearchHelper: VoiceSearchHelperProtocol
@@ -684,7 +699,8 @@ class TabViewController: UIViewController {
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
          duckAiFireModeStorageHandler: DuckAiNativeStorageHandling? = nil,
          addressBarURLFilter: AddressBarURLFiltering = AddressBarURLFilter(),
-         adBlockingAvailability: AdBlockingAvailabilityProviding) {
+         adBlockingAvailability: AdBlockingAvailabilityProviding,
+         pixelFiring: (any PixelKitFiring)? = PixelKit.shared) {
 
         self.tabModel = tabModel
         self.viewModel = TabViewModel(tab: tabModel, historyManager: historyManager)
@@ -715,6 +731,7 @@ class TabViewController: UIViewController {
         self.daxDialogsManager = daxDialogsManager
         self.sharedSecureVault = sharedSecureVault
         self.privacyStats = privacyStats
+        self.pixelFiring = pixelFiring
         self.tabURLInterceptor = TabURLInterceptorDefault(featureFlagger: featureFlagger) {
             return AppDependencyProvider.shared.subscriptionManager.isSubscriptionPurchaseEligible
         }
@@ -2260,26 +2277,34 @@ extension TabViewController: WKNavigationDelegate {
         }
     }
 
+    /// Captures a preview of the current web content via WebKit's asynchronous `takeSnapshot`, which
+    /// renders out of process rather than blocking the main thread. Falls back to `preparePreviewSync`
+    /// only while a JS alert is on screen, since `takeSnapshot` captures web content but not native overlays.
     func preparePreview(completion: @escaping (UIImage?) -> Void) {
-        guard FloatingUIManager(featureFlagger: featureFlagger).isFloatingUIEnabled else {
-            DispatchQueue.main.async { [weak self] in
-                completion(self?.preparePreviewSync(afterScreenUpdates: true))
-            }
-            return
-        }
+        let capturesFullBounds = FloatingUIManager(featureFlagger: featureFlagger).isFloatingUIEnabled
 
         DispatchQueue.main.async { [weak self] in
-            guard let self,
-                  let webView,
-                  let rect = WebViewPreviewSnapshotGeometry.visibleRect(
-                    webViewBounds: webView.bounds
-                  ) else {
+            guard let self, let webView else {
+                completion(nil)
+                return
+            }
+
+            if jsAlertView?.isShown == true {
+                completion(preparePreviewSync(afterScreenUpdates: true))
+                return
+            }
+
+            let visibleRect = capturesFullBounds
+                ? WebViewPreviewSnapshotGeometry.visibleRect(webViewBounds: webView.bounds)
+                : WebViewPreviewSnapshotGeometry.visibleRect(webViewBounds: webView.bounds,
+                                                            contentInset: webView.scrollView.contentInset)
+            guard let visibleRect else {
                 completion(nil)
                 return
             }
 
             let configuration = WKSnapshotConfiguration()
-            configuration.rect = rect
+            configuration.rect = visibleRect
             configuration.afterScreenUpdates = true
             webView.takeSnapshot(with: configuration) { image, _ in
                 completion(image)
@@ -2287,8 +2312,37 @@ extension TabViewController: WKNavigationDelegate {
         }
     }
 
-    // Synchronous capture, used when we must grab the preview before the view is torn down.
-    func preparePreviewSync(afterScreenUpdates: Bool = false) -> UIImage? {
+    func preparePreviewForTabTransition(completion: @escaping (UIImage?) -> Void) {
+        guard let webView,
+              webView.window?.windowScene?.activationState == .foregroundActive else {
+            completion(nil)
+            return
+        }
+
+        let contentInset = webView.scrollView.contentInset
+        let rect = webView.bounds.inset(by: UIEdgeInsets(top: contentInset.top,
+                                                        left: 0,
+                                                        bottom: contentInset.bottom,
+                                                        right: 0))
+        guard rect.width > 0, rect.height > 0 else {
+            completion(nil)
+            return
+        }
+
+        let configuration = WKSnapshotConfiguration()
+        configuration.rect = rect
+        configuration.afterScreenUpdates = false
+        webView.takeSnapshot(with: configuration) { image, _ in
+            DispatchQueue.main.async {
+                completion(image)
+            }
+        }
+    }
+
+    /// Renders the web view on the calling thread. `drawHierarchy` blocks until the render server
+    /// commits, so this stalls the main thread — prefer `preparePreview`. Retained only to capture
+    /// native overlays that `takeSnapshot` cannot see.
+    private func preparePreviewSync(afterScreenUpdates: Bool = false) -> UIImage? {
         guard let webView, webView.bounds.height > 0, webView.bounds.width > 0 else { return nil }
 
         let size = CGSize(width: webView.frame.size.width,
@@ -2863,7 +2917,10 @@ extension TabViewController: WKNavigationDelegate {
            navigationAction.navigationType != .backForward,
            let url = navigationAction.request.url,
            SerpSearchTokenInterceptor.isSerpURL(url),
-           let cohort = featureFlagger.assignedCohort(for: FeatureFlag.searchTokenExperiment) as? FeatureFlag.SearchTokenExperimentCohort {
+           let cohort = featureFlagger.assignedCohort(for: FeatureFlag.searchTokenExperimentV2) as? FeatureFlag.SearchTokenExperimentCohort {
+            // Pin the UA this SERP navigation will send so it can't inherit a stale `customUserAgent`
+            // from a prior (non-DDG) navigation. Matches the UA the token was warmed against.
+            webView.customUserAgent = userAgentManager.userAgent(isDesktop: tabModel.isDesktop, url: url)
             let token = cohort == .treatment ? delegate?.searchToken(for: self) : nil
             if let signalled = SerpSearchTokenInterceptor.signalledRequest(for: modifiedRequest,
                                                                            cohort: cohort,
@@ -4981,7 +5038,8 @@ private extension TabViewController {
                 preventUniversalLinksOnce = true
                 tabInteractionStateSource?.saveState(webView.interactionState, for: tabModel)
             } else {
-                Pixel.fire(pixel: .tabInteractionStateFailedToRestore)
+                pixelFiring?.fire(TabTerminationTelemetryPixel.interactionStateFailedToRestore, frequency: .standard)
+                pixelFiring?.fire(TabTerminationTelemetryPixel.interactionStateFailedToRestoreDaily, frequency: .legacyDailyNoSuffix)
             }
 
             let timeElapsed = CFAbsoluteTimeGetCurrent() - startTime

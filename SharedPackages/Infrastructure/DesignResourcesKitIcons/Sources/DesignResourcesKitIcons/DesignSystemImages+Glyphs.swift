@@ -354,6 +354,7 @@ public extension DesignSystemImages {
             public static var systemTheme: DesignSystemImage { .init(resource: .systemTheme16) }
             public static var tabCloseAlt: DesignSystemImage { .init(resource: .tabCloseAlt16) }
             public static var tabContent: DesignSystemImage { .init(resource: .tabContent16) }
+            public static var tabContentAttach: DesignSystemImage { .init(resource: .tabContentAttach16) }
             public static var tabDesktop: DesignSystemImage { .init(resource: .tabDesktop16) }
             public static var tabMobile: DesignSystemImage { .init(resource: .tabMobile16) }
             public static var tabReopen: DesignSystemImage { .init(resource: .tabReopen16) }
@@ -566,6 +567,7 @@ public extension DesignSystemImages {
             public static var imageAIHide: DesignSystemImage { .init(resource: .imageAIHide24) }
             public static var imagesPinned: DesignSystemImage { .init(resource: .imagesPinned24) }
             public static var info: DesignSystemImage { .init(resource: .info24) }
+            public static var infoRecolorable: DesignSystemImage { .init(resource: .infoRecolorable24) }
             public static var infoSolid: DesignSystemImage { .init(resource: .infoSolid24) }
             public static var key: DesignSystemImage { .init(resource: .key24) }
             public static var lightning: DesignSystemImage { .init(resource: .lightning24) }

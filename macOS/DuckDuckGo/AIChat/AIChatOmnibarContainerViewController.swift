@@ -65,6 +65,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         static let toolButtonBottomInset: CGFloat = 8
         static let modelPickerTrailingSpacing: CGFloat = 4
         static let modelPickerHeight: CGFloat = 28
+        static let recentTabsInMenu = 5
         static let attachmentsLeadingInset: CGFloat = 13
         static let attachmentsBottomSpacing: CGFloat = 16
         static let attachmentsRowHeight: CGFloat = AIChatImageAttachmentThumbnailView.totalHeight
@@ -134,6 +135,8 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     /// data still updates immediately so the menu's checkmarks stay in sync; only the panel
     /// growth is held back.
     private var isDeferringCarouselLayout = false
+
+    private var didMutateDuringAttachMenuSession = false
 
     /// Sticky error from the most recent file pick that was rejected at pick-time (too large, too
     /// many pages, encrypted/unreadable, unsupported, or over the count limit). Shown in the
@@ -897,6 +900,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     // MARK: - Suggestions Setup
 
     private func setupSuggestionsView() {
+        suggestionsView.isBurner = burnerMode.isBurner
         suggestionsView.translatesAutoresizingMaskIntoConstraints = false
         containerView.addSubview(suggestionsView)
 
@@ -1400,7 +1404,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         // false and the menu only offers page content, so the tooltip must match rather than read
         // "Add Images or PDFs".
         guard shouldShowImageOrFileMenuItem else {
-            return UserText.aiChatAttachMenuPageContent
+            return UserText.aiChatAttachMenuAttachTabs
         }
         return attachMenuItemTitle()
     }
@@ -1424,114 +1428,107 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             imageItem.target = self
             imageItem.image = DesignSystemImages.Glyphs.Size16.folder
             menu.addItem(imageItem)
-            menu.addItem(NSMenuItem.separator())
         }
 
-        let pageItem = NSMenuItem(
-            title: UserText.aiChatAttachMenuPageContent,
-            action: nil,
+        let candidates = omnibarController.openTabsForOmnibarPicker()
+
+        let attachTabsItem = NSMenuItem(
+            title: UserText.aiChatAttachMenuAttachTabs,
+            action: #selector(attachMenuAttachTabsClicked),
             keyEquivalent: ""
         )
-        pageItem.image = DesignSystemImages.Glyphs.Size16.pageContentAttach
-        pageItem.submenu = buildAttachTabsSubmenu()
-        menu.addItem(pageItem)
+        attachTabsItem.target = self
+        attachTabsItem.image = DesignSystemImages.Glyphs.Size16.tabContentAttach
+        attachTabsItem.isEnabled = !candidates.isEmpty
+        menu.addItem(attachTabsItem)
+
+        appendRecentTabs(candidates, to: menu)
 
         return menu
     }
 
-    /// Observer installed as the `NSMenuDelegate` of the "Add Page Content" submenu so we can
-    /// fire the picker-shown / picker-canceled pixels exactly once per open/close cycle. The
-    /// row's `onToggle` callback below flips the observer's `didMutateDuringSession` flag so
-    /// the canceled pixel is only fired when nothing was toggled during the session.
-    /// Retained on the VC because `NSMenu.delegate` is weak.
-    private var attachTabsSubmenuObserver: AttachTabsSubmenuObserver?
-
-    /// Builds the "Attach Page Content" submenu. When the user has open URL tabs, the submenu
-    /// starts with a "Recent Tabs" section header followed by a custom-view row per tab — each
-    /// row stays-open-on-click via `AIChatTabPickerMenuRowView` so the user can multi-toggle
-    /// without dismissing the menu. When there are no tabs to show, the submenu drops the header
-    /// and shows only a disabled "No open tabs" placeholder.
-    private func buildAttachTabsSubmenu() -> NSMenu {
-        let menu = NSMenu()
-        menu.autoenablesItems = false
-
-        // Observer fires the picker-shown pixel on willOpen and the picker-canceled pixel on
-        // didClose when no row was toggled in between. Stored on the VC so its lifetime
-        // covers the menu's lifetime (NSMenu's delegate ref is weak).
-        let observer = AttachTabsSubmenuObserver(pixelHandler: omnibarController.pixelHandler)
-        attachTabsSubmenuObserver = observer
-        menu.delegate = observer
-
+    private func appendRecentTabs(_ allCandidates: [AIChatTabAttachment], to menu: NSMenu) {
         let attachedIds = Set(omnibarController.activeTabAttachments.map(\.id))
-        let candidates = omnibarController.openTabsForOmnibarPicker()
         let currentTabId = omnibarController.currentTabUUID
+        let candidates = allCandidates.prefix(Constants.recentTabsInMenu)
+
+        menu.addItem(NSMenuItem.separator())
 
         guard !candidates.isEmpty else {
             let empty = NSMenuItem(title: UserText.aiChatAttachMenuNoOpenTabs, action: nil, keyEquivalent: "")
             empty.isEnabled = false
             menu.addItem(empty)
-            return menu
+            return
         }
 
         let header = NSMenuItem(title: UserText.aiChatAttachMenuRecentTabsHeader, action: nil, keyEquivalent: "")
         header.isEnabled = false
         menu.addItem(header)
 
-        // Disable unattached rows once at the display cap; attached rows stay interactive.
         let atCap = attachedIds.count >= omnibarController.tabAttachmentsDisplayCap
 
-        // `openTabsForOmnibarPicker()` returns the current tab first, so the menu shows
-        // "(Current Tab)" pinned on top.
         for candidate in candidates {
             let isAttached = attachedIds.contains(candidate.id)
-            let item = NSMenuItem()
-            let row = AIChatTabPickerMenuRowView(
-                attachment: candidate,
-                isAttached: isAttached,
-                isCurrentTab: candidate.id == currentTabId,
-                isDisabled: !isAttached && atCap,
-                onToggle: { [weak self, weak observer, weak menu] in
-                    guard let self else { return }
-                    // Only fire a pixel / count a mutation on a real change — the toggle no-ops at the cap.
-                    let wasAttached = self.omnibarController.activeTabAttachments.contains(where: { $0.id == candidate.id })
-                    let wasOverCap = self.omnibarController.hasExcessTabAttachments
-                    self.omnibarController.toggleTabAttachment(candidate)
-                    let nowAttached = self.omnibarController.activeTabAttachments.contains(where: { $0.id == candidate.id })
-                    if nowAttached != wasAttached {
-                        self.omnibarController.pixelHandler.fire(wasAttached ? .tabAttachmentRemoved : .tabChosen)
-                        observer?.markDidMutate()
-                    }
-                    // The submenu stays open and never rebuilds, so refresh rows from the attachment list.
-                    self.refreshAttachTabsRows(in: menu)
-                    // The panel reflow (error label + height) is deferred while the menu is open, so
-                    // crossing the cap boundary either way would leave a stale error. Close the menu so
-                    // `menuDidClose` reflows and the over-limit error appears / clears correctly.
-                    if self.omnibarController.hasExcessTabAttachments != wasOverCap {
-                        menu?.cancelTrackingWithoutAnimation()
-                    }
-                }
-            )
-            item.view = row
+            var title = candidate.title.isEmpty ? (candidate.url.host ?? candidate.url.absoluteString) : candidate.title
+            if candidate.id == currentTabId {
+                title += " " + UserText.aiChatTabPickerCurrentTabSuffix
+            }
+            let item = NSMenuItem(title: title, action: #selector(recentTabClicked), keyEquivalent: "")
+            item.target = self
+            item.representedObject = candidate
+            item.toolTip = candidate.url.absoluteString
+            item.isEnabled = !isAttached && !atCap
+            item.image = menuFavicon(for: candidate)
             menu.addItem(item)
         }
-
-        return menu
     }
 
-    /// Re-applies every row's checkmark + disabled state from the attachment list after a toggle.
-    private func refreshAttachTabsRows(in menu: NSMenu?) {
-        guard let menu else { return }
-        let attachedIds = Set(omnibarController.activeTabAttachments.map(\.id))
-        let atCap = attachedIds.count >= omnibarController.tabAttachmentsDisplayCap
-        for item in menu.items {
-            guard let row = item.view as? AIChatTabPickerMenuRowView else { continue }
-            let isAttached = attachedIds.contains(row.tabId)
-            row.applyState(isAttached: isAttached, isDisabled: !isAttached && atCap)
-        }
+    private func menuFavicon(for attachment: AIChatTabAttachment) -> NSImage? {
+        let image = (attachment.favicon ?? DesignSystemImages.Glyphs.Size16.globe).copy() as? NSImage
+        image?.size = NSSize(width: 16, height: 16)
+        return image
+    }
+
+    @objc private func recentTabClicked(_ sender: NSMenuItem) {
+        guard let candidate = sender.representedObject as? AIChatTabAttachment else { return }
+        didMutateDuringAttachMenuSession = true
+        omnibarController.toggleTabAttachment(candidate)
+        omnibarController.pixelHandler.fire(.tabChosen)
+        updateAttachmentsLayout()
     }
 
     @objc private func attachMenuImageOrFileClicked() {
+        didMutateDuringAttachMenuSession = true
         presentImageFilePicker()
+    }
+
+    @objc private func attachMenuAttachTabsClicked() {
+        didMutateDuringAttachMenuSession = true
+        let candidates = omnibarController.openTabsForOmnibarPicker()
+        AIChatAttachTabsModal(
+            tabs: candidates,
+            currentTabId: omnibarController.currentTabUUID,
+            preselectedIds: Set(omnibarController.activeTabAttachments.map(\.id)),
+            maxSelection: omnibarController.isTabAttachmentLimitEnabled ? AIChatOmnibarController.maxTabAttachments : .max,
+            onAttach: { [weak self] selected in
+                self?.applyTabSelection(selected, offered: candidates)
+            }
+        ).show(in: view.window)
+    }
+
+    private func applyTabSelection(_ selected: [AIChatTabAttachment], offered: [AIChatTabAttachment]) {
+        let diff = AIChatTabSelectionDiff.compute(current: omnibarController.activeTabAttachments,
+                                                 selected: selected,
+                                                 offered: offered)
+        for id in diff.remove {
+            omnibarController.removeTabAttachmentFromActiveTab(id: id)
+            omnibarController.pixelHandler.fire(.tabAttachmentRemoved)
+        }
+        for tab in diff.add {
+            omnibarController.toggleTabAttachment(tab)
+            omnibarController.pixelHandler.fire(.tabChosen)
+        }
+        updateAttachmentsLayout()
     }
 
     /// Attempts to add an image attachment from a drag-and-drop operation.
@@ -2023,7 +2020,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
         // Painted transparent rather than skipped: `applyTheme` re-runs on appearance changes and
         // would otherwise restore what `setupUI` set.
-        backgroundView.backgroundColor = hostDrawsChrome ? .clear : colorsProvider.activeAddressBarBackgroundColor
+        backgroundView.backgroundColor = hostDrawsChrome ? .clear : colorsProvider.activeAddressBarBackgroundColor(isBurner: burnerMode.isBurner)
         backgroundView.cornerRadius = barStyleProvider.addressBarActiveBackgroundViewRadiusWithSuggestions
 
         if isAppRebranding {
@@ -2159,52 +2156,25 @@ final class AIChatSubmitButton: MouseOverButton {
 
 extension AIChatOmnibarContainerViewController: NSMenuDelegate {
 
+    func menuWillOpen(_ menu: NSMenu) {
+        didMutateDuringAttachMenuSession = false
+        omnibarController.pixelHandler.fire(.tabPickerShown)
+    }
+
     /// `NSMenu` calls this when the entire menu chain (top-level menu + any open submenu) closes.
     /// Used to release the carousel-layout deferral that was started in `attachButtonClicked` —
     /// once unset, the panel reflows once with whatever toggles the user accumulated. Full
     /// `updateAttachmentsLayout()` (vs. just the row layout) so error label / attach-button
     /// state stay in sync with whatever the user attached while the menu was open.
     func menuDidClose(_ menu: NSMenu) {
+        DispatchQueue.main.async { [weak self] in
+            guard let self, !self.didMutateDuringAttachMenuSession else { return }
+            self.omnibarController.pixelHandler.fire(.tabPickerCanceled)
+        }
         guard isDeferringCarouselLayout else { return }
         isDeferringCarouselLayout = false
         updateAttachmentsLayout()
         attachmentsCarouselView.superview?.layoutSubtreeIfNeeded()
         attachmentsCarouselView.scrollLastAddedAttachmentIntoView()
-    }
-}
-
-// MARK: - "Add Page Content" submenu observer
-
-/// Observes one open/close cycle of the "Add Page Content" submenu so the picker-shown and
-/// picker-canceled pixels fire exactly once per session. Sits as the submenu's
-/// `NSMenuDelegate` (the VC's own conformance already handles the top-level attach menu's
-/// `menuDidClose`, so we keep this submenu-only logic separate to avoid mixing concerns).
-private final class AttachTabsSubmenuObserver: NSObject, NSMenuDelegate {
-
-    /// `true` once any row's `onToggle` fired during the current open session. Reset on the
-    /// next `menuWillOpen` so each open/close pair is evaluated independently.
-    private var didMutateDuringSession = false
-
-    private let pixelHandler: DuckAIPromptPixelFiring
-
-    init(pixelHandler: DuckAIPromptPixelFiring) {
-        self.pixelHandler = pixelHandler
-        super.init()
-    }
-
-    func menuWillOpen(_ menu: NSMenu) {
-        didMutateDuringSession = false
-        pixelHandler.fire(.tabPickerShown)
-    }
-
-    func menuDidClose(_ menu: NSMenu) {
-        guard !didMutateDuringSession else { return }
-        pixelHandler.fire(.tabPickerCanceled)
-    }
-
-    /// Called from the row's `onToggle` closure so the cancel pixel is suppressed when the
-    /// user actually picked or removed something during this session.
-    func markDidMutate() {
-        didMutateDuringSession = true
     }
 }

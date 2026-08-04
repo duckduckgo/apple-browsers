@@ -588,6 +588,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                     pairingInfo = try await connectionController.startExchangeMode()
                     source = .exchange
                 } catch {
+                    sendPairingV2PresenterStartFailurePixelIfNeeded(error, setupSource: .exchange)
                     await handleError(SyncErrorMessage.unableToSyncWithDevice, error: error, event: .syncLoginError)
                     return
                 }
@@ -596,6 +597,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                     pairingInfo = try await connectionController.startConnectMode()
                     source = .connect
                 } catch {
+                    sendPairingV2PresenterStartFailurePixelIfNeeded(error, setupSource: .connect)
                     await handleError(SyncErrorMessage.unableToSyncToServer, error: error, event: .syncLoginError)
                     return
                 }
@@ -632,6 +634,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                     source = intent == .syncAnotherDevice ? .connect : .recovery
                     onPresentPixelInfo = .init(pixel: .syncSetupBarcodeScreenShown, source: source, flowVersion: syncSetupPixelFlowVersion)
                 } catch {
+                    sendPairingV2PresenterStartFailurePixelIfNeeded(error, setupSource: .connect)
                     await handleError(SyncErrorMessage.unableToSyncToServer, error: error, event: .syncLoginError)
                     return
                 }
@@ -743,8 +746,6 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
     }
 
     private func presentPairingV2ConfirmationAlert(message: String) async -> Bool {
-        await dismissSyncCodeSheetIfPresented()
-
         return await withCheckedContinuation { continuation in
             let alert = UIAlertController(title: UserText.syncPairingV2ConfirmationTitle, message: message, preferredStyle: .alert)
             alert.addAction(UIAlertAction(title: UserText.actionCancel, style: .cancel) { _ in
@@ -766,16 +767,6 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
             topController = presented
         }
         return topController
-    }
-
-    private func dismissSyncCodeSheetIfPresented() async {
-        guard let scanCodeViewModel, scanCodeViewModel.isShowingSyncCodeSheet else { return }
-        await withCheckedContinuation { continuation in
-            scanCodeViewModel.onSyncCodeSheetDismissed = {
-                continuation.resume()
-            }
-            scanCodeViewModel.isShowingSyncCodeSheet = false
-        }
     }
 
     private func pairingV2DisplayName(for peerName: String?) -> String {

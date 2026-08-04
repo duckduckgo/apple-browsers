@@ -249,6 +249,9 @@ final class NewTabPageNextStepsSingleCardProvider: NewTabPageNextStepsCardsProvi
         if let card = cards.first {
             pixelHandler.fireNextStepsCardShownPixels([card])
             pixelHandler.fireAddToDockPresentedPixelIfNeeded([card])
+            if card == .subscription {
+                pixelHandler.fireSubscriptionCardShownPixel()
+            }
         }
     }
 }

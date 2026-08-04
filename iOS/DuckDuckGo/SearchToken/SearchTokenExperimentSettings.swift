@@ -48,7 +48,7 @@ struct SearchTokenExperimentSettings {
     }
 
     private func seconds(forKey key: String) -> TimeInterval? {
-        guard let json = privacyConfigurationManager.privacyConfig.settings(for: iOSBrowserConfigSubfeature.searchTokenExperiment),
+        guard let json = privacyConfigurationManager.privacyConfig.settings(for: iOSBrowserConfigSubfeature.searchTokenExperimentV2),
               let data = json.data(using: .utf8),
               let dict = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
               let value = dict[key] as? NSNumber else {

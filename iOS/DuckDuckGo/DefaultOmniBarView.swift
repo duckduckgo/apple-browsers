@@ -1708,9 +1708,7 @@ extension DefaultOmniBarView: UIContextMenuInteractionDelegate {
     func contextMenuInteraction(_ interaction: UIContextMenuInteraction, configurationForMenuAtLocation location: CGPoint) -> UIContextMenuConfiguration? {
         guard let menu = longPressMenuProvider?() else { return nil }
 
-        return UIContextMenuConfiguration(identifier: nil, previewProvider: { [weak self] in
-            self?.makeLongPressMenuPreviewController()
-        }) { _ in
+        return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { _ in
             menu
         }
     }
@@ -1719,49 +1717,6 @@ extension DefaultOmniBarView: UIContextMenuInteractionDelegate {
                                 willDisplayMenuFor configuration: UIContextMenuConfiguration,
                                 animator: UIContextMenuInteractionAnimating?) {
         onLongPressMenuDisplayed?()
-    }
-
-    private func makeLongPressMenuPreviewController() -> UIViewController? {
-        OmniBarLongPressPreviewViewController(sourceView: searchContainer)
-    }
-}
-
-private final class OmniBarLongPressPreviewViewController: UIViewController {
-
-    private let sourceView: UIView
-
-    init(sourceView: UIView) {
-        self.sourceView = sourceView
-        super.init(nibName: nil, bundle: nil)
-        preferredContentSize = sourceView.bounds.size
-    }
-
-    @available(*, unavailable)
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-
-    override func loadView() {
-        let containerView = UIView(frame: CGRect(origin: .zero, size: preferredContentSize))
-        containerView.backgroundColor = .clear
-        containerView.clipsToBounds = false
-        view = containerView
-    }
-
-    override func viewDidLoad() {
-        super.viewDidLoad()
-
-        guard let snapshotView = sourceView.snapshotView(afterScreenUpdates: false) else { return }
-
-        snapshotView.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(snapshotView)
-
-        NSLayoutConstraint.activate([
-            snapshotView.topAnchor.constraint(equalTo: view.topAnchor),
-            snapshotView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            snapshotView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            snapshotView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
-        ])
     }
 }
 

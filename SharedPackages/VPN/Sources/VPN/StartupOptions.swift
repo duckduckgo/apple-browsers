@@ -167,6 +167,17 @@ public struct StartupOptions {
             }
         }
 
+        var stateDescription: String {
+            switch self {
+            case .set:
+                return "set"
+            case .reset:
+                return "reset"
+            case .useExisting:
+                return "useExisting"
+            }
+        }
+
         // MARK: - Equatable
 
         public static func == (lhs: StartupOptions.StoredOption<T>, rhs: StartupOptions.StoredOption<T>) -> Bool {
@@ -231,7 +242,7 @@ public struct StartupOptions {
         """
 #if os(macOS)
         result += """
-            tokenContainer: \(self.tokenContainer),
+            tokenContainer: \(self.tokenContainer.stateDescription),
         """
 #endif
         return result

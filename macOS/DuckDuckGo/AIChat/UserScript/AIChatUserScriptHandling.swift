@@ -565,12 +565,8 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         }
     }
 
-    /// Resolves `tabId` to a live `Tab` within the origin scope — **waking a suspended/unloaded tab
-    /// if needed** — then extracts its page context. A freshly-woken tab's page isn't loaded yet, so
-    /// we trigger a load and wait (bounded) for navigation to finish before collecting; an
-    /// already-loaded tab (e.g. the current page) extracts immediately with no wait. Returns `nil`
-    /// if the tab can't be found, the wake fails, or the page doesn't load within the budget.
-    /// Never selects or focuses the tab.
+    /// Resolves `tabId` to a live `Tab` in the origin scope and extracts its page context, loading the
+    /// tab first (or waiting out a load in flight) so content isn't collected from a blank page.
     @MainActor
     static func extractPageContext(forTabId tabId: String,
                                    origin: TabCollectionViewModel,
@@ -581,34 +577,31 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             return nil
         }
 
-        if resolved.wasMaterialized {
-            // Mirror `resumeTab(at:)`: a just-materialized tab won't auto-load, so kick a reload and
-            // wait for navigation to finish before collecting — otherwise an early empty JS response
-            // could win the `collectAndWait` race.
-            let didNavigate = await waitForNavigationFinish(tab: resolved.tab, timeout: navigationTimeout) {
+        // `needsLoad` goes false as soon as a navigation starts, so check for a load in flight first —
+        // otherwise the load started at attach time gets restarted here.
+        if resolved.tab.isLoading {
+            let didLoad = await waitForLoadingFinish(tab: resolved.tab, timeout: navigationTimeout) {}
+            guard didLoad else { return nil }
+        } else if resolved.needsLoad {
+            let didLoad = await waitForLoadingFinish(tab: resolved.tab, timeout: navigationTimeout) {
                 resolved.tab.reload()
             }
-            guard didNavigate else { return nil }
+            guard didLoad else { return nil }
         }
 
         return await extractPageContext(from: resolved.tab, timeout: collectTimeout)
     }
 
-    /// Subscribes to the tab's first finished navigation, runs `start()` (e.g. `reload()`), and
-    /// awaits the navigation bounded by `timeout`. Subscribing before `start()` avoids missing a
-    /// fast-finishing navigation. Returns `true` if navigation finished, `false` on timeout.
-    ///
-    /// The navigation signal is bridged through an `AsyncStream` (not `withCheckedContinuation`) so
-    /// that cancelling the task group on timeout actually tears the waiter down — a bare
-    /// continuation isn't cancellation-aware, so the timeout loser would otherwise hang the group
-    /// forever and leak the continuation. Mirrors `PageContextUserScript.collectAndWait`.
+    /// Runs `start()` and waits (bounded) for the tab's first completed load; pass an empty `start` to
+    /// wait on a load already in flight. Same signal `TabLazyLoader` uses for restored pinned tabs.
     @MainActor
-    private static func waitForNavigationFinish(tab: Tab,
-                                                timeout: TimeInterval,
-                                                start: @escaping @MainActor () -> Void) async -> Bool {
-        let navigationFinished = AsyncStream<Void> { continuation in
+    private static func waitForLoadingFinish(tab: Tab,
+                                             timeout: TimeInterval,
+                                             start: @escaping @MainActor () -> Void) async -> Bool {
+        // `AsyncStream` rather than a continuation so cancelling on timeout tears the waiter down.
+        let loadingFinished = AsyncStream<Void> { continuation in
             var cancellable: AnyCancellable?
-            cancellable = tab.webViewDidFinishNavigationPublisher
+            cancellable = tab.loadingFinishedPublisher
                 .first()
                 .sink { _ in
                     continuation.yield(())
@@ -620,7 +613,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
 
         return await withTaskGroup(of: Bool.self) { group in
             group.addTask {
-                for await _ in navigationFinished { return true }
+                for await _ in loadingFinished { return true }
                 return false
             }
             group.addTask {

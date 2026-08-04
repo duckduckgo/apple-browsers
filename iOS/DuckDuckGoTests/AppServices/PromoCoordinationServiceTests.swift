@@ -1,5 +1,5 @@
 //
-//  ModalPromptCoordinationServiceTests.swift
+//  PromoCoordinationServiceTests.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -27,15 +27,15 @@ import PersistenceTestingUtils
 @testable import DuckDuckGo
 
 @MainActor
-@Suite("Modal Prompt Coordination - Service")
-final class ModalPromptCoordinationServiceTests {
+@Suite("Promo Coordination - Service")
+final class PromoCoordinationServiceTests {
     private let launchSourceManagerMock: MockLaunchSourceManager
     private let contextualOnboardingMock: MockContextualOnboardingStatusProvider
     private let managerMock: MockModalPromptCoordinationManager
     private let presenterMock: MockModalPromptPresenter
     private let featureFlaggerMock: MockFeatureFlagger
     private let promoQueueLeaseArbiter: PromoQueueLeaseArbiter
-    private var sut: ModalPromptCoordinationService!
+    private var sut: PromoCoordinationService!
 
     init() {
         launchSourceManagerMock = MockLaunchSourceManager()
@@ -59,7 +59,7 @@ final class ModalPromptCoordinationServiceTests {
         // GIVEN
         launchSourceManagerMock.source = launchSource
         presenterMock.presentedViewController = nil
-        sut = ModalPromptCoordinationService(
+        sut = PromoCoordinationService(
             launchSourceManager: launchSourceManagerMock,
             modalPromptCoordinationManager: managerMock,
             featureFlagger: featureFlaggerMock,
@@ -78,7 +78,7 @@ final class ModalPromptCoordinationServiceTests {
         // GIVEN
         launchSourceManagerMock.source = .standard
         presenterMock.presentedViewController = nil
-        sut = ModalPromptCoordinationService(
+        sut = PromoCoordinationService(
             launchSourceManager: launchSourceManagerMock,
             modalPromptCoordinationManager: managerMock,
             featureFlagger: featureFlaggerMock,
@@ -101,7 +101,7 @@ final class ModalPromptCoordinationServiceTests {
         launchSourceManagerMock.source = .standard
         let alreadyPresentedVC = UIViewController()
         presenterMock.presentedViewController = alreadyPresentedVC
-        sut = ModalPromptCoordinationService(
+        sut = PromoCoordinationService(
             launchSourceManager: launchSourceManagerMock,
             modalPromptCoordinationManager: managerMock,
             featureFlagger: featureFlaggerMock,
@@ -120,7 +120,7 @@ final class ModalPromptCoordinationServiceTests {
         // GIVEN
         launchSourceManagerMock.source = .standard
         presenterMock.presentedViewController = nil
-        sut = ModalPromptCoordinationService(
+        sut = PromoCoordinationService(
             launchSourceManager: launchSourceManagerMock,
             modalPromptCoordinationManager: managerMock,
             featureFlagger: featureFlaggerMock,
@@ -141,7 +141,7 @@ final class ModalPromptCoordinationServiceTests {
         let dismissingVC = MockDismissingViewController()
         dismissingVC.isBeingDismissed = true
         presenterMock.presentedViewController = dismissingVC
-        sut = ModalPromptCoordinationService(
+        sut = PromoCoordinationService(
             launchSourceManager: launchSourceManagerMock,
             modalPromptCoordinationManager: managerMock,
             featureFlagger: featureFlaggerMock,
@@ -162,7 +162,7 @@ final class ModalPromptCoordinationServiceTests {
         presenterMock.presentedViewController = OmniBarEditingStateViewController(
             switchBarHandler: MockSwitchBarHandler()
         )
-        sut = ModalPromptCoordinationService(
+        sut = PromoCoordinationService(
             launchSourceManager: launchSourceManagerMock,
             modalPromptCoordinationManager: managerMock,
             featureFlagger: featureFlaggerMock,
@@ -181,7 +181,7 @@ final class ModalPromptCoordinationServiceTests {
         // GIVEN
         launchSourceManagerMock.source = .URL
         presenterMock.presentedViewController = UIViewController()
-        sut = ModalPromptCoordinationService(
+        sut = PromoCoordinationService(
             launchSourceManager: launchSourceManagerMock,
             modalPromptCoordinationManager: managerMock,
             featureFlagger: featureFlaggerMock,
@@ -225,7 +225,7 @@ final class ModalPromptCoordinationServiceTests {
         launchSourceManagerMock.source = .standard
         presenterMock.presentedViewController = nil
 
-        sut = ModalPromptCoordinationService(
+        sut = PromoCoordinationService(
             launchSourceManager: launchSourceManagerMock,
             keyValueStore: keyValueStore,
             contextualOnboardingStatusProvider: contextualOnboardingMock,

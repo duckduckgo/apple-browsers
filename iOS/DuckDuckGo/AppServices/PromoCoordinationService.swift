@@ -1,5 +1,5 @@
 //
-//  ModalPromptCoordinationService.swift
+//  PromoCoordinationService.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -51,7 +51,7 @@ struct ModalPromptProviders {
 /// The transitioning state blocks admission while leases and manager state are reset. Foreground and promo-admission
 /// checkpoints reconcile dismissed modals, then weakly registered active promo surfaces are retried when a slot may be free.
 @MainActor
-final class ModalPromptCoordinationService {
+final class PromoCoordinationService {
     private final class WeakPromoRetryRegistration {
         let id: UUID
         let surfaceID: UUID
@@ -319,7 +319,7 @@ final class ModalPromptCoordinationService {
 
 }
 
-extension ModalPromptCoordinationService: NewTabPagePromoCoordinating {
+extension PromoCoordinationService: NewTabPagePromoCoordinating {
     func admitVisiblePromo(_ identity: VisiblePromoIdentity) -> VisiblePromoAdmissionResult {
         switch promoQueueFeatureState {
         case .disabled:
@@ -360,6 +360,6 @@ extension ModalPromptCoordinationService: NewTabPagePromoCoordinating {
     }
 }
 
-extension ModalPromptCoordinationService: RecentModalPromptStatusProviding {
+extension PromoCoordinationService: RecentModalPromptStatusProviding {
     var wasModalPromptRecentlyPresented: Bool { modalPromptCoordinationManager.didPresentModalPromptThisSession }
 }

@@ -58,7 +58,7 @@ enum ModalPromptAttemptPhase: Equatable {
 /// - Presenting the first eligible modal.
 /// - Track when modals were last presented.
 ///
-/// The manager does NOT handle app-lifecycle level concerns like launch source checking. Those are handled by the `ModalPromptsCoordinationService`.
+/// App-lifecycle concerns, such as launch source checks, belong to `PromoCoordinationService`.
 @MainActor
 final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
     private struct SelectedPrompt {

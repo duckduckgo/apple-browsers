@@ -270,10 +270,10 @@ struct Launching: LaunchingHandling {
         )
         let subscriptionPromoExistingUserPresenter = SubscriptionPromoPresenter(coordinator: subscriptionPromoExistingUserCoordinator)
 
-        // Initialise modal prompts coordination
+        // Initialise promo coordination
         let omniBarFocuser = OmniBarFocuserProvider()
         let promoQueueLeaseArbiter = PromoQueueLeaseArbiter()
-        let modalPromptCoordinationService = ModalPromptCoordinationFactory.makeService(
+        let promoCoordinationService = PromoCoordinationFactory.makeService(
             dependency: .init(
                 launchSourceManager: launchSourceManager,
                 contextualOnboardingStatusProvider: daxDialogs,
@@ -334,7 +334,7 @@ struct Launching: LaunchingHandling {
                                               freemiumPIRDebugSettings: freemiumPIRDebugSettings,
                                               freemiumDBPUserStateManager: dbpService.freemiumDBPUserStateManager,
                                               profileStateManager: dbpService.profileStateManager,
-                                              modalPromptCoordinationService: modalPromptCoordinationService,
+                                              promoCoordinationService: promoCoordinationService,
                                               mobileCustomization: mobileCustomization,
                                               productSurfaceTelemetry: productSurfaceTelemetry,
                                               whatsNewRepository: whatsNewRepository,

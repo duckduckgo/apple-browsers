@@ -1,5 +1,5 @@
 //
-//  ModalPromptCoordinationServicePromoQueueTests.swift
+//  PromoCoordinationServicePromoQueueTests.swift
 //  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
@@ -27,15 +27,15 @@ import PersistenceTestingUtils
 @testable import DuckDuckGo
 
 @MainActor
-@Suite("Modal Prompt Coordination - Service Promo Queue")
-final class ModalPromptCoordinationServicePromoQueueTests {
+@Suite("Promo Coordination - Service Promo Queue")
+final class PromoCoordinationServicePromoQueueTests {
     private let launchSourceManagerMock: MockLaunchSourceManager
     private let contextualOnboardingMock: MockContextualOnboardingStatusProvider
     private let managerMock: MockModalPromptCoordinationManager
     private let presenterMock: MockModalPromptPresenter
     private let featureFlaggerMock: MockFeatureFlagger
     private let promoQueueLeaseArbiter: PromoQueueLeaseArbiter
-    private var sut: ModalPromptCoordinationService!
+    private var sut: PromoCoordinationService!
 
     init() {
         launchSourceManagerMock = MockLaunchSourceManager()
@@ -57,7 +57,7 @@ final class ModalPromptCoordinationServicePromoQueueTests {
         featureFlaggerMock.enabledFeatureFlags = [.promoPresentationCoordination]
         launchSourceManagerMock.source = .standard
         presenterMock.presentedViewController = nil
-        sut = ModalPromptCoordinationService(
+        sut = PromoCoordinationService(
             launchSourceManager: launchSourceManagerMock,
             modalPromptCoordinationManager: managerMock,
             featureFlagger: featureFlaggerMock,
@@ -85,7 +85,7 @@ final class ModalPromptCoordinationServicePromoQueueTests {
             Issue.record("Expected visible promo lease acquisition")
             return
         }
-        sut = ModalPromptCoordinationService(
+        sut = PromoCoordinationService(
             launchSourceManager: launchSourceManagerMock,
             modalPromptCoordinationManager: managerMock,
             featureFlagger: featureFlaggerMock,
@@ -124,7 +124,7 @@ final class ModalPromptCoordinationServicePromoQueueTests {
             Issue.record("Expected visible promo lease acquisition")
             return
         }
-        sut = ModalPromptCoordinationService(
+        sut = PromoCoordinationService(
             launchSourceManager: launchSourceManagerMock,
             keyValueStore: try MockKeyValueFileStore(),
             contextualOnboardingStatusProvider: contextualOnboardingMock,
@@ -146,7 +146,7 @@ final class ModalPromptCoordinationServicePromoQueueTests {
     func whenPromoQueueIsDisabledThenLegacyManagerPathIsUnchanged() {
         launchSourceManagerMock.source = .standard
         presenterMock.presentedViewController = nil
-        sut = ModalPromptCoordinationService(
+        sut = PromoCoordinationService(
             launchSourceManager: launchSourceManagerMock,
             modalPromptCoordinationManager: managerMock,
             featureFlagger: featureFlaggerMock,
@@ -168,7 +168,7 @@ final class ModalPromptCoordinationServicePromoQueueTests {
         launchSourceManagerMock.source = .standard
         presenterMock.presentedViewController = nil
         managerMock.coordinatedPresentationDisposition = .released
-        sut = ModalPromptCoordinationService(
+        sut = PromoCoordinationService(
             launchSourceManager: launchSourceManagerMock,
             modalPromptCoordinationManager: managerMock,
             featureFlagger: featureFlaggerMock,
@@ -196,7 +196,7 @@ final class ModalPromptCoordinationServicePromoQueueTests {
     @Test("Visible Admission Checkpoint Admits Triggering Surface Before Retrying Other Surface", .timeLimit(.minutes(1)))
     func whenVisibleAdmissionReleasesDetachedModalThenTriggeringSurfaceWinsBeforeRetrySnapshot() {
         featureFlaggerMock.enabledFeatureFlags = [.promoPresentationCoordination]
-        sut = ModalPromptCoordinationService(
+        sut = PromoCoordinationService(
             launchSourceManager: launchSourceManagerMock,
             modalPromptCoordinationManager: managerMock,
             featureFlagger: featureFlaggerMock,
@@ -249,7 +249,7 @@ final class ModalPromptCoordinationServicePromoQueueTests {
     @Test("Stale Registration Cannot Remove Or Invoke Its Replacement", .timeLimit(.minutes(1)))
     func whenRegistrationIsReplacedThenOldTokenCannotRemoveReplacement() {
         featureFlaggerMock.enabledFeatureFlags = [.promoPresentationCoordination]
-        sut = ModalPromptCoordinationService(
+        sut = PromoCoordinationService(
             launchSourceManager: launchSourceManagerMock,
             modalPromptCoordinationManager: managerMock,
             featureFlagger: featureFlaggerMock,
@@ -276,7 +276,7 @@ final class ModalPromptCoordinationServicePromoQueueTests {
     @available(iOS 16, *)
     @Test("Disabled Feature Refuses Visible Promo Admission Without Arbitrating", .timeLimit(.minutes(1)))
     func whenPromoQueueIsDisabledThenVisibleAdmissionIsRefusedWithoutTakingALease() {
-        sut = ModalPromptCoordinationService(
+        sut = PromoCoordinationService(
             launchSourceManager: launchSourceManagerMock,
             modalPromptCoordinationManager: managerMock,
             featureFlagger: featureFlaggerMock,
@@ -307,7 +307,7 @@ final class ModalPromptCoordinationServicePromoQueueTests {
     @Test("Coordinated Modal Attempt Blocks Visible Promo Admission", .timeLimit(.minutes(1)))
     func whenModalAttemptOwnsSlotThenVisibleAdmissionIsBlockedByModal() {
         featureFlaggerMock.enabledFeatureFlags = [.promoPresentationCoordination]
-        sut = ModalPromptCoordinationService(
+        sut = PromoCoordinationService(
             launchSourceManager: launchSourceManagerMock,
             modalPromptCoordinationManager: managerMock,
             featureFlagger: featureFlaggerMock,
@@ -337,7 +337,7 @@ final class ModalPromptCoordinationServicePromoQueueTests {
     @Test("Occupied Surface Slot Refuses A Second Promo And Names Its Occupant", .timeLimit(.minutes(1)))
     func whenSurfaceSlotIsOccupiedThenVisibleAdmissionCarriesTheOccupyingIdentity() {
         featureFlaggerMock.enabledFeatureFlags = [.promoPresentationCoordination]
-        sut = ModalPromptCoordinationService(
+        sut = PromoCoordinationService(
             launchSourceManager: launchSourceManagerMock,
             modalPromptCoordinationManager: managerMock,
             featureFlagger: featureFlaggerMock,
@@ -368,7 +368,7 @@ final class ModalPromptCoordinationServicePromoQueueTests {
     @Test("Releasing A Visible Promo Lease Frees Its Surface Slot", .timeLimit(.minutes(1)))
     func whenVisiblePromoLeaseIsReleasedThenTheSurfaceSlotIsReacquirable() {
         featureFlaggerMock.enabledFeatureFlags = [.promoPresentationCoordination]
-        sut = ModalPromptCoordinationService(
+        sut = PromoCoordinationService(
             launchSourceManager: launchSourceManagerMock,
             modalPromptCoordinationManager: managerMock,
             featureFlagger: featureFlaggerMock,
@@ -399,7 +399,7 @@ final class ModalPromptCoordinationServicePromoQueueTests {
     @Test("Initial Promo Queue State Is Seeded Before Subscription Updates", .timeLimit(.minutes(1)))
     func whenPromoQueueIsInitiallyEnabledThenInitialStateIsEnabled() {
         featureFlaggerMock.enabledFeatureFlags = [.promoPresentationCoordination]
-        sut = ModalPromptCoordinationService(
+        sut = PromoCoordinationService(
             launchSourceManager: launchSourceManagerMock,
             modalPromptCoordinationManager: managerMock,
             featureFlagger: featureFlaggerMock,
@@ -421,7 +421,7 @@ final class ModalPromptCoordinationServicePromoQueueTests {
             featureFlagger?.triggerUpdate()
         }
 
-        sut = ModalPromptCoordinationService(
+        sut = PromoCoordinationService(
             launchSourceManager: launchSourceManagerMock,
             modalPromptCoordinationManager: managerMock,
             featureFlagger: featureFlagger,
@@ -438,7 +438,7 @@ final class ModalPromptCoordinationServicePromoQueueTests {
     @available(iOS 16, *)
     @Test("Promo Queue Feature Updates Are Deduplicated", .timeLimit(.minutes(1)))
     func whenFeatureFlagPublishesDuplicateValuesThenOnlyEffectiveChangesTransition() async {
-        sut = ModalPromptCoordinationService(
+        sut = PromoCoordinationService(
             launchSourceManager: launchSourceManagerMock,
             modalPromptCoordinationManager: managerMock,
             featureFlagger: featureFlaggerMock,
@@ -483,7 +483,7 @@ final class ModalPromptCoordinationServicePromoQueueTests {
     @available(iOS 16, *)
     @Test("Promo Queue Feature Subscription Is Cancelled With Service", .timeLimit(.minutes(1)))
     func whenServiceIsReleasedThenFeatureUpdatesStop() async {
-        sut = ModalPromptCoordinationService(
+        sut = PromoCoordinationService(
             launchSourceManager: launchSourceManagerMock,
             modalPromptCoordinationManager: managerMock,
             featureFlagger: featureFlaggerMock,
@@ -505,7 +505,7 @@ final class ModalPromptCoordinationServicePromoQueueTests {
     @available(iOS 16, *)
     @Test("Promo Queue Transition Barrier Rejects Reentrant Modal Evaluation In Both Directions", .timeLimit(.minutes(1)))
     func whenTransitionCallbacksReenterModalEvaluationThenEvaluationWaitsForBarrier() async {
-        sut = ModalPromptCoordinationService(
+        sut = PromoCoordinationService(
             launchSourceManager: launchSourceManagerMock,
             modalPromptCoordinationManager: managerMock,
             featureFlagger: featureFlaggerMock,
@@ -548,7 +548,7 @@ final class ModalPromptCoordinationServicePromoQueueTests {
     @available(iOS 16, *)
     @Test("Promo Queue Transition Barrier Rejects Visible Promo Admission In Both Directions", .timeLimit(.minutes(1)))
     func whenTransitionCallbacksAdmitVisiblePromoThenAdmissionWaitsForBarrier() async {
-        sut = ModalPromptCoordinationService(
+        sut = PromoCoordinationService(
             launchSourceManager: launchSourceManagerMock,
             modalPromptCoordinationManager: managerMock,
             featureFlagger: featureFlaggerMock,
@@ -589,7 +589,7 @@ final class ModalPromptCoordinationServicePromoQueueTests {
     @available(iOS 16, *)
     @Test("Enable Retry Keeps Public Barrier Up And Uses Transition Admission", .timeLimit(.minutes(1)))
     func whenEnablingRetriesActiveVisiblePromoThenOnlyTransitionAdmissionCanAcquire() async {
-        sut = ModalPromptCoordinationService(
+        sut = PromoCoordinationService(
             launchSourceManager: launchSourceManagerMock,
             modalPromptCoordinationManager: managerMock,
             featureFlagger: featureFlaggerMock,

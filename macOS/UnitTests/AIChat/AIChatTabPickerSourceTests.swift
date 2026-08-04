@@ -99,12 +99,8 @@ final class AIChatTabPickerSourceTests: XCTestCase {
         XCTAssertTrue(resolved?.needsLoad == true)
     }
 
-    /// The pinned-tab-at-launch shape: `PinnedTabsManager.setUp(movingTabsFrom:)` eagerly materializes
-    /// restored pinned tabs into `.loaded` (see `PinnedTabsManagerTests.testSetUpMaterializesUnloadedTabs`),
-    /// but `materialize()` performs no navigation — the page stays in `interactionStateData` until first
-    /// selection or lazy loading. So the tab resolves as *not* materialized while its web view is still
-    /// empty, which is exactly the case the old `wasMaterialized`-only gate skipped: extraction then ran
-    /// against a blank page and the attachment was silently dropped from the payload.
+    /// The pinned-tab-at-launch shape: already `.loaded` so there's nothing to materialize, but the web
+    /// view is still empty. This is the case a `wasMaterialized`-only check skips.
     func testNeedsLoadIsTrueForRestoredTabThatWasAlreadyLoadedButNeverNavigated() {
         let restored = Tab(content: .url(URL(string: "https://pinned.example")!, credential: nil, source: .pendingStateRestoration),
                            interactionStateData: Data())

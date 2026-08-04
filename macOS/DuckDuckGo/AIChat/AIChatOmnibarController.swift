@@ -856,11 +856,8 @@ final class AIChatOmnibarController {
         persistTabAttachmentsToActiveTab(current)
     }
 
-    /// Wakes a just-attached tab whose page isn't loaded yet — a suspended tab, or a pinned tab
-    /// restored at launch and not yet selected — so its content is ready by the time the user submits.
-    /// Fire-and-forget: `extractPageContextsForOmnibarSubmit` re-resolves and waits regardless, so this
-    /// is purely a latency optimization. Without it a pinned-tab attach pays the full navigation +
-    /// collect budget on the submit critical path.
+    /// Starts loading a just-attached tab whose page isn't loaded yet, so it's ready by submit time.
+    /// Fire-and-forget: the submit path waits regardless, this just keeps it off the critical path.
     private func prewarmAttachedTab(id: String) {
         guard let originTabCollection = origin?.originTabCollectionViewModel,
               let resolved = AIChatTabPickerSource.materializeAttachableTab(withId: id, forOrigin: originTabCollection, in: Application.appDelegate.windowControllersManager),

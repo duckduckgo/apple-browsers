@@ -565,14 +565,8 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         }
     }
 
-    /// Resolves `tabId` to a live `Tab` within the origin scope — **waking a tab whose page isn't
-    /// loaded yet** — then extracts its page context. A tab with an empty web view (just materialized
-    /// from `.unloaded`, or a pinned tab restored at launch and not yet selected) has its load kicked
-    /// here; a tab whose load is already in flight is waited on. Either way we wait (bounded) for
-    /// loading to finish before collecting, otherwise an early empty JS response could win the
-    /// `collectAndWait` race. An already-loaded tab (e.g. the current page) extracts immediately with
-    /// no wait. Returns `nil` if the tab can't be found or the page doesn't load within the budget.
-    /// Never selects or focuses the tab.
+    /// Resolves `tabId` to a live `Tab` in the origin scope and extracts its page context, loading the
+    /// tab first (or waiting out a load in flight) so content isn't collected from a blank page.
     @MainActor
     static func extractPageContext(forTabId tabId: String,
                                    origin: TabCollectionViewModel,
@@ -583,14 +577,12 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             return nil
         }
 
-        // `isLoading` is checked first: the attach-time prewarm (or the lazy loader) may already have a
-        // load running, and `needsLoad` goes false the moment that navigation starts. Kicking another
-        // `reload()` over it would restart the load we're about to wait for.
+        // `needsLoad` goes false as soon as a navigation starts, so check for a load in flight first —
+        // otherwise the load started at attach time gets restarted here.
         if resolved.tab.isLoading {
             let didLoad = await waitForLoadingFinish(tab: resolved.tab, timeout: navigationTimeout) {}
             guard didLoad else { return nil }
         } else if resolved.needsLoad {
-            // Mirror `resumeTab(at:)`: a tab with an empty web view won't auto-load, so kick it.
             let didLoad = await waitForLoadingFinish(tab: resolved.tab, timeout: navigationTimeout) {
                 resolved.tab.reload()
             }
@@ -600,28 +592,13 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         return await extractPageContext(from: resolved.tab, timeout: collectTimeout)
     }
 
-    /// Subscribes to the tab's first completed load, runs `start()` (e.g. `reload()`), and awaits the
-    /// load bounded by `timeout`. Subscribing before `start()` avoids missing a fast-finishing load.
-    /// Pass an empty `start` to wait on a load that's already in flight. Returns `true` if loading
-    /// completed, `false` on timeout.
-    ///
-    /// Waits on `loadingFinishedPublisher` rather than `webViewDidFinishNavigationPublisher`: the
-    /// latter also requires `navigationDelegate.currentNavigation` to be non-nil and filters
-    /// same-document navigations, neither of which is guaranteed when the wake is served by
-    /// `Tab.restoreInteractionState(with:)` (a `reloadIfNeeded` that returns no `ExpectedNavigation`).
-    /// `TabLazyLoader` loads restored pinned tabs with the same plain `reload()` and waits on
-    /// `loadingFinishedPublisher`, so it's proven for that state. It also completes on failure
-    /// (`NavigationState.isCompleted`), so an unreachable page resolves at once instead of burning the
-    /// whole timeout.
-    ///
-    /// The signal is bridged through an `AsyncStream` (not `withCheckedContinuation`) so that
-    /// cancelling the task group on timeout actually tears the waiter down — a bare continuation isn't
-    /// cancellation-aware, so the timeout loser would otherwise hang the group forever and leak the
-    /// continuation. Mirrors `PageContextUserScript.collectAndWait`.
+    /// Runs `start()` and waits (bounded) for the tab's first completed load; pass an empty `start` to
+    /// wait on a load already in flight. Same signal `TabLazyLoader` uses for restored pinned tabs.
     @MainActor
     private static func waitForLoadingFinish(tab: Tab,
                                              timeout: TimeInterval,
                                              start: @escaping @MainActor () -> Void) async -> Bool {
+        // `AsyncStream` rather than a continuation so cancelling on timeout tears the waiter down.
         let loadingFinished = AsyncStream<Void> { continuation in
             var cancellable: AnyCancellable?
             cancellable = tab.loadingFinishedPublisher

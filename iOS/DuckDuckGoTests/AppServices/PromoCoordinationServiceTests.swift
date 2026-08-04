@@ -1,5 +1,5 @@
 //
-//  ModalPromptCoordinationServiceTests.swift
+//  PromoCoordinationServiceTests.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -20,24 +20,30 @@
 import UIKit
 import Foundation
 import Combine
+import Core
+import PrivacyConfig
 import Testing
 import PersistenceTestingUtils
 @testable import DuckDuckGo
 
 @MainActor
-@Suite("Modal Prompt Coordination - Service")
-final class ModalPromptCoordinationServiceTests {
+@Suite("Promo Coordination - Service")
+final class PromoCoordinationServiceTests {
     private let launchSourceManagerMock: MockLaunchSourceManager
     private let contextualOnboardingMock: MockContextualOnboardingStatusProvider
     private let managerMock: MockModalPromptCoordinationManager
     private let presenterMock: MockModalPromptPresenter
-    private var sut: ModalPromptCoordinationService!
+    private let featureFlaggerMock: MockFeatureFlagger
+    private let promoQueueLeaseArbiter: PromoQueueLeaseArbiter
+    private var sut: PromoCoordinationService!
 
     init() {
         launchSourceManagerMock = MockLaunchSourceManager()
         contextualOnboardingMock = MockContextualOnboardingStatusProvider(hasSeenOnboarding: true)
         managerMock = MockModalPromptCoordinationManager()
         presenterMock = MockModalPromptPresenter()
+        featureFlaggerMock = MockFeatureFlagger()
+        promoQueueLeaseArbiter = PromoQueueLeaseArbiter()
     }
 
     // MARK: - Launch Source Checks
@@ -53,9 +59,11 @@ final class ModalPromptCoordinationServiceTests {
         // GIVEN
         launchSourceManagerMock.source = launchSource
         presenterMock.presentedViewController = nil
-        sut = ModalPromptCoordinationService(
+        sut = PromoCoordinationService(
             launchSourceManager: launchSourceManagerMock,
-            modalPromptCoordinationManager: managerMock
+            modalPromptCoordinationManager: managerMock,
+            featureFlagger: featureFlaggerMock,
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter
         )
 
         // WHEN
@@ -70,9 +78,11 @@ final class ModalPromptCoordinationServiceTests {
         // GIVEN
         launchSourceManagerMock.source = .standard
         presenterMock.presentedViewController = nil
-        sut = ModalPromptCoordinationService(
+        sut = PromoCoordinationService(
             launchSourceManager: launchSourceManagerMock,
-            modalPromptCoordinationManager: managerMock
+            modalPromptCoordinationManager: managerMock,
+            featureFlagger: featureFlaggerMock,
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter
         )
 
         // WHEN
@@ -91,9 +101,11 @@ final class ModalPromptCoordinationServiceTests {
         launchSourceManagerMock.source = .standard
         let alreadyPresentedVC = UIViewController()
         presenterMock.presentedViewController = alreadyPresentedVC
-        sut = ModalPromptCoordinationService(
+        sut = PromoCoordinationService(
             launchSourceManager: launchSourceManagerMock,
-            modalPromptCoordinationManager: managerMock
+            modalPromptCoordinationManager: managerMock,
+            featureFlagger: featureFlaggerMock,
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter
         )
 
         // WHEN
@@ -108,9 +120,11 @@ final class ModalPromptCoordinationServiceTests {
         // GIVEN
         launchSourceManagerMock.source = .standard
         presenterMock.presentedViewController = nil
-        sut = ModalPromptCoordinationService(
+        sut = PromoCoordinationService(
             launchSourceManager: launchSourceManagerMock,
-            modalPromptCoordinationManager: managerMock
+            modalPromptCoordinationManager: managerMock,
+            featureFlagger: featureFlaggerMock,
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter
         )
 
         // WHEN
@@ -127,9 +141,11 @@ final class ModalPromptCoordinationServiceTests {
         let dismissingVC = MockDismissingViewController()
         dismissingVC.isBeingDismissed = true
         presenterMock.presentedViewController = dismissingVC
-        sut = ModalPromptCoordinationService(
+        sut = PromoCoordinationService(
             launchSourceManager: launchSourceManagerMock,
-            modalPromptCoordinationManager: managerMock
+            modalPromptCoordinationManager: managerMock,
+            featureFlagger: featureFlaggerMock,
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter
         )
 
         // WHEN
@@ -146,9 +162,11 @@ final class ModalPromptCoordinationServiceTests {
         presenterMock.presentedViewController = OmniBarEditingStateViewController(
             switchBarHandler: MockSwitchBarHandler()
         )
-        sut = ModalPromptCoordinationService(
+        sut = PromoCoordinationService(
             launchSourceManager: launchSourceManagerMock,
-            modalPromptCoordinationManager: managerMock
+            modalPromptCoordinationManager: managerMock,
+            featureFlagger: featureFlaggerMock,
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter
         )
 
         // WHEN
@@ -163,9 +181,11 @@ final class ModalPromptCoordinationServiceTests {
         // GIVEN
         launchSourceManagerMock.source = .URL
         presenterMock.presentedViewController = UIViewController()
-        sut = ModalPromptCoordinationService(
+        sut = PromoCoordinationService(
             launchSourceManager: launchSourceManagerMock,
-            modalPromptCoordinationManager: managerMock
+            modalPromptCoordinationManager: managerMock,
+            featureFlagger: featureFlaggerMock,
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter
         )
 
         // WHEN
@@ -205,12 +225,14 @@ final class ModalPromptCoordinationServiceTests {
         launchSourceManagerMock.source = .standard
         presenterMock.presentedViewController = nil
 
-        sut = ModalPromptCoordinationService(
+        sut = PromoCoordinationService(
             launchSourceManager: launchSourceManagerMock,
             keyValueStore: keyValueStore,
             contextualOnboardingStatusProvider: contextualOnboardingMock,
             privacyConfigManager: privacyConfigManager,
-            providers: providers
+            providers: providers,
+            featureFlagger: featureFlaggerMock,
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter
         )
 
         // WHEN
@@ -226,6 +248,7 @@ final class ModalPromptCoordinationServiceTests {
             }
         }
     }
+
 
 }
 

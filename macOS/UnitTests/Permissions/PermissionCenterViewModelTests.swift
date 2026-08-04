@@ -19,6 +19,7 @@
 import Combine
 import FeatureFlags
 import PixelKit
+import PixelKitTestingUtilities
 import PrivacyConfig
 import XCTest
 
@@ -332,7 +333,7 @@ final class PermissionCenterViewModelTests: XCTestCase {
 
     // Hover events can arrive repeatedly; the promo must only report engagement once.
     func testWhenDisableAutodismissIsCalledRepeatedlyThenEngagedPixelFiresOnce() {
-        var firedPixels: [PixelKitEvent] = []
+        var pixelFiring = PixelKitMock()
 
         let viewModel = PermissionCenterViewModel(
             domain: "example.com",
@@ -344,20 +345,20 @@ final class PermissionCenterViewModelTests: XCTestCase {
             dismissPopover: { },
             displaysAutoplayPolicy: true,
             displaysAutoplayDiscovery: true,
-            firePixel: { firedPixels.append($0) },
+            pixelFiring: pixelFiring,
             systemPermissionManager: mockSystemPermissionManager
         )
 
         viewModel.disableAutodismiss()
         viewModel.disableAutodismiss()
 
-        XCTAssertEqual(firedPixels.map(\.name), [AutoplayPromoPixel.engaged.name])
+        XCTAssertEqual(pixelFiring.actualFireCalls.map(\.pixel.name), [AutoplayPromoPixel.engaged.name])
         XCTAssertFalse(viewModel.allowsAutodismiss)
     }
 
     /// Outside the promo there is nothing to autodismiss, so there is no engagement to report.
     func testWhenDisableAutodismissIsCalledOutsideThePromoThenNoPixelIsFired() {
-        var firedPixels: [PixelKitEvent] = []
+        var pixelFiring = PixelKitMock()
 
         let viewModel = PermissionCenterViewModel(
             domain: "example.com",
@@ -369,18 +370,18 @@ final class PermissionCenterViewModelTests: XCTestCase {
             dismissPopover: { },
             displaysAutoplayPolicy: true,
             displaysAutoplayDiscovery: false,
-            firePixel: { firedPixels.append($0) },
+            pixelFiring: pixelFiring,
             systemPermissionManager: mockSystemPermissionManager
         )
 
         viewModel.disableAutodismiss()
 
-        XCTAssertTrue(firedPixels.isEmpty)
+        XCTAssertTrue(pixelFiring.actualFireCalls.isEmpty)
         XCTAssertFalse(viewModel.allowsAutodismiss)
     }
 
     func testWhenOpenAutoplaySettingsWithinThePromoThenSettingsLinkClickedPixelIsFired() {
-        var firedPixels: [PixelKitEvent] = []
+        var pixelFiring = PixelKitMock()
         var openedPanes: [PreferencePaneIdentifier] = []
 
         let viewModel = PermissionCenterViewModel(
@@ -394,19 +395,19 @@ final class PermissionCenterViewModelTests: XCTestCase {
             openSettingsPane: { openedPanes.append($0) },
             displaysAutoplayPolicy: true,
             displaysAutoplayDiscovery: true,
-            firePixel: { firedPixels.append($0) },
+            pixelFiring: pixelFiring,
             systemPermissionManager: mockSystemPermissionManager
         )
 
         viewModel.openAutoplaySettings()
 
-        XCTAssertEqual(firedPixels.map(\.name), [AutoplayPromoPixel.settingsLinkClicked.name])
+        XCTAssertEqual(pixelFiring.actualFireCalls.map(\.pixel.name), [AutoplayPromoPixel.settingsLinkClicked.name])
         XCTAssertEqual(openedPanes, [.general])
     }
 
     /// The disclaimer link only exists within the promo: a settings jump from anywhere else isn't promo attribution.
     func testWhenOpenAutoplaySettingsOutsideThePromoThenNoPixelIsFired() {
-        var firedPixels: [PixelKitEvent] = []
+        var pixelFiring = PixelKitMock()
         var openedPanes: [PreferencePaneIdentifier] = []
 
         let viewModel = PermissionCenterViewModel(
@@ -420,13 +421,13 @@ final class PermissionCenterViewModelTests: XCTestCase {
             openSettingsPane: { openedPanes.append($0) },
             displaysAutoplayPolicy: true,
             displaysAutoplayDiscovery: false,
-            firePixel: { firedPixels.append($0) },
+            pixelFiring: pixelFiring,
             systemPermissionManager: mockSystemPermissionManager
         )
 
         viewModel.openAutoplaySettings()
 
-        XCTAssertTrue(firedPixels.isEmpty)
+        XCTAssertTrue(pixelFiring.actualFireCalls.isEmpty)
         XCTAssertEqual(openedPanes, [.general])
     }
 

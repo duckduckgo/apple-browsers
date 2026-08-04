@@ -81,6 +81,45 @@ final class LocalBookmarkManagerTests: XCTestCase {
     }
 
     @MainActor
+    func testWhenBookmarksAreLoadedThenBookmarkCountPixelReceivesTotalBookmarks() {
+        let bookmarks = (0..<11).map { index in
+            Bookmark(
+                id: "bookmark-\(index)",
+                url: "https://example.com/\(index)",
+                title: "Bookmark \(index)",
+                isFavorite: index == 0
+            )
+        }
+        let folder = BookmarkFolder(id: "folder", title: "Folder", children: bookmarks)
+        var reportedBookmarksCount: Int?
+        let bookmarkManager = LocalBookmarkManager(
+            bookmarkStore: BookmarkStoreMock(bookmarks: [folder]),
+            appearancePreferences: .mock,
+            fireBookmarksCountPixel: { reportedBookmarksCount = $0 }
+        )
+
+        bookmarkManager.loadBookmarks()
+
+        XCTAssertEqual(reportedBookmarksCount, 11)
+    }
+
+    @MainActor
+    func testWhenLoadingBookmarksFailsThenBookmarkCountPixelIsNotFired() {
+        let bookmarkStore = BookmarkStoreMock()
+        bookmarkStore.loadError = BookmarkManagerError.somethingReallyBad
+        var reportedBookmarksCount: Int?
+        let bookmarkManager = LocalBookmarkManager(
+            bookmarkStore: bookmarkStore,
+            appearancePreferences: .mock,
+            fireBookmarksCountPixel: { reportedBookmarksCount = $0 }
+        )
+
+        bookmarkManager.loadBookmarks()
+
+        XCTAssertNil(reportedBookmarksCount)
+    }
+
+    @MainActor
     func testWhenLoadFails_ThenTheManagerHoldsBookmarksAreNil() {
         let bookmarkStoreMock = BookmarkStoreMock()
         let bookmarkManager = LocalBookmarkManager(bookmarkStore: bookmarkStoreMock, appearancePreferences: .mock)

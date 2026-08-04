@@ -26,7 +26,6 @@ import FoundationExtensions
 import os.log
 
 protocol BookmarkManager: AnyObject {
-
     func isUrlBookmarked(url: URL) -> Bool
     func isAnyUrlVariantBookmarked(url: URL) -> Bool
     func isUrlFavorited(url: URL) -> Bool
@@ -88,16 +87,19 @@ extension BookmarkManager {
     }
 }
 final class LocalBookmarkManager: BookmarkManager {
-
     init(
         bookmarkStore: BookmarkStore,
         foldersStore: BookmarkFoldersStore = UserDefaultsBookmarkFoldersStore(),
         sortRepository: SortBookmarksRepository = SortBookmarksUserDefaults(),
-        appearancePreferences: AppearancePreferences
+        appearancePreferences: AppearancePreferences,
+        fireBookmarksCountPixel: @escaping (Int) -> Void = { bookmarksCount in
+            BookmarksPixel.count(.init(bookmarksCount)).fire()
+        }
     ) {
         self.foldersStore = foldersStore
         self.bookmarkStore = bookmarkStore
         self.sortRepository = sortRepository
+        self.fireBookmarksCountPixel = fireBookmarksCountPixel
 
         subscribeToFavoritesDisplayMode(with: appearancePreferences)
         sortMode = sortRepository.storedSortMode
@@ -128,6 +130,7 @@ final class LocalBookmarkManager: BookmarkManager {
     private let bookmarkStore: BookmarkStore
     private let sortRepository: SortBookmarksRepository
     private let foldersStore: BookmarkFoldersStore
+    private let fireBookmarksCountPixel: (Int) -> Void
 
     private var favoritesDisplayMode: FavoritesDisplayMode = .displayNative(.desktop)
     private var favoritesDisplayModeCancellable: AnyCancellable?
@@ -156,8 +159,10 @@ final class LocalBookmarkManager: BookmarkManager {
                         return
                     }
 
+                    let bookmarkList = BookmarkList(entities: bookmarks, topLevelEntities: topLevelEntities, favorites: favorites)
                     self.isLoading = false
-                    self.list = BookmarkList(entities: bookmarks, topLevelEntities: topLevelEntities, favorites: favorites)
+                    self.list = bookmarkList
+                    self.fireBookmarksCountPixel(bookmarkList.totalBookmarks)
                 }
             }
         }

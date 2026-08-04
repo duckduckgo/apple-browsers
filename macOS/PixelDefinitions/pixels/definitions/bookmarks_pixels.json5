@@ -1,5 +1,22 @@
 // Bookmarks pixels
 {
+    "m_mac_bookmarks_count": {
+        "description": "Fires once daily for active users after bookmarks load to report the user's total bookmark count in a privacy-preserving bucket",
+        "owners": ["andremartingo"],
+        "triggers": ["scheduled"],
+        "suffixes": ["daily"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "bookmarks_count_bucket",
+                "type": "string",
+                "description": "Total number of bookmarks across all folders, bucketed to prevent reporting an exact count",
+                "enum": ["0", "1-10", "11-50", "51-100", "101-500", "501+"]
+            }
+        ]
+    },
     "m_mac_bookmarks_save-all-open-tabs": {
         "description": "Daily and count pixel fired when user bookmark all open tabs",
         "owners": ["alessandroboron"],

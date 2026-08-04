@@ -23,8 +23,7 @@ final class CustomizeResponsesMenuRowView: NSView {
     private enum Layout {
         static let width: CGFloat = 300
         // Height matches the native two-line Tools-menu items (title + subtitle) so the hover
-        // highlight is the same size — the two-line text block (~32pt) plus the same ~6pt total
-        // padding the single-line AIChatTabPickerMenuRowView uses around its block.
+        // highlight is the same size — the two-line text block (~32pt) plus ~6pt total padding.
         static let height: CGFloat = 38
         static let leadingPadding: CGFloat = 16
         static let trailingPadding: CGFloat = 14

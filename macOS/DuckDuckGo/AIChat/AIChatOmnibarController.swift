@@ -987,15 +987,23 @@ final class AIChatOmnibarController {
         // every access, so caching avoids hitting it per-tab.
         let debugURLSettings: any KeyedStoring<AIChatDebugURLSettings> = UserDefaults.standard.keyedStoring()
         let customAIChatURLHost = debugURLSettings.customURLHostname
-        let candidates = AIChatTabPickerSource.attachableTabs(forOrigin: originTabCollection, in: Application.appDelegate.windowControllersManager).compactMap { tab -> AIChatTabAttachment? in
-            guard case .url(let url, _, _) = tab.content else { return nil }
-            if let customHost = customAIChatURLHost, !customHost.isEmpty, url.host == customHost {
-                return nil
+        let candidates = AIChatTabPickerSource.attachableTabs(forOrigin: originTabCollection, in: Application.appDelegate.windowControllersManager)
+            .enumerated()
+            .sorted { lhs, rhs in
+                let lhsDate = lhs.element.lastSelectedAt ?? .distantPast
+                let rhsDate = rhs.element.lastSelectedAt ?? .distantPast
+                if lhsDate != rhsDate { return lhsDate > rhsDate }
+                return lhs.offset < rhs.offset
             }
-            let title = tab.title ?? url.host ?? ""
-            let favicon = faviconManager.getCachedFavicon(for: url, sizeCategory: .small)?.image
-            return AIChatTabAttachment(id: tab.uuid, title: title, url: url, favicon: favicon)
-        }
+            .compactMap { _, tab -> AIChatTabAttachment? in
+                guard case .url(let url, _, _) = tab.content else { return nil }
+                if let customHost = customAIChatURLHost, !customHost.isEmpty, url.host == customHost {
+                    return nil
+                }
+                let title = tab.title ?? url.host ?? ""
+                let favicon = faviconManager.getCachedFavicon(for: url, sizeCategory: .small)?.image
+                return AIChatTabAttachment(id: tab.uuid, title: title, url: url, favicon: favicon)
+            }
         // Move the current tab to the front so the picker pins it on top.
         guard let currentTabUUID,
               let currentIndex = candidates.firstIndex(where: { $0.id == currentTabUUID }),

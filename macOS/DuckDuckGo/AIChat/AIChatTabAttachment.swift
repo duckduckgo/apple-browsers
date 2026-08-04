@@ -44,3 +44,22 @@ extension AIChatTabAttachment: Equatable {
             && lhs.favicon === rhs.favicon
     }
 }
+
+/// Resolves what the "Attach Tabs" modal's confirmed selection means for the current attachments.
+/// Removals are scoped to the tabs the modal actually offered, so an attachment that dropped out of
+/// the picker (navigated to an excluded URL, closed, moved windows) survives an untouched confirm.
+enum AIChatTabSelectionDiff {
+
+    static func compute(current: [AIChatTabAttachment],
+                        selected: [AIChatTabAttachment],
+                        offered: [AIChatTabAttachment]) -> (remove: [String], add: [AIChatTabAttachment]) {
+        let selectedIds = Set(selected.map(\.id))
+        let offeredIds = Set(offered.map(\.id))
+        let currentIds = Set(current.map(\.id))
+        let remove = current
+            .filter { offeredIds.contains($0.id) && !selectedIds.contains($0.id) }
+            .map(\.id)
+        let add = selected.filter { !currentIds.contains($0.id) }
+        return (remove, add)
+    }
+}

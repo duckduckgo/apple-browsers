@@ -24,6 +24,7 @@ enum JWECompactCodecError: Error, Equatable {
     case invalidDirectTokenShape
     case invalidBase64URLComponent
     case unsupportedProtectedHeader
+    case unexpectedKeyID
     case invalidDirectProtectedHeaderKid
     case invalidPublicKey
     case invalidPrivateKey
@@ -143,7 +144,7 @@ final class JWECompactCodec {
         let components = try decodeCompactToken(token)
         let protectedHeader = try decodeRSAOAEP256ProtectedHeader(components.protectedHeader)
         if let expectedKid, protectedHeader.kid != expectedKid {
-            throw JWECompactCodecError.unsupportedProtectedHeader
+            throw JWECompactCodecError.unexpectedKeyID
         }
 
         let contentEncryptionKey = try decryptContentEncryptionKey(components.encryptedContentEncryptionKey, privateKey: privateKey)

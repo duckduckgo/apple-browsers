@@ -162,6 +162,12 @@ struct PermissionCenterView: View {
         }
         .frame(width: popoverWidth)
         .background(Color(viewModel.backgroundColor))
+        .onHover { isHovered in
+            // Reaching the popover with the pointer counts as engaging with it: stop any pending autodismissal.
+            if isHovered {
+                viewModel.disableAutodismiss()
+            }
+        }
     }
 }
 

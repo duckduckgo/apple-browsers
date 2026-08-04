@@ -59,11 +59,21 @@ struct DataImportView: ModalView {
     @State private var debugViewDisabled: Bool = true
 #endif
 
+    @State private var areErrorsExpanded = false
+
+    private var errorMessages: [String] {
+        model.errors.flatMap { errorsByDataType in
+            DataImport.DataType.allCases.compactMap { dataType in
+                errorsByDataType[dataType].map { "\(dataType.rawValue.uppercased()): \($0)" }
+            }
+        }
+    }
+
     private var shouldShowDebugView: Bool {
 #if DEBUG
-        return !debugViewDisabled
+        return !debugViewDisabled || !errorMessages.isEmpty
 #else
-        return (!model.errors.isEmpty && isInternalUser)
+        return !errorMessages.isEmpty && isInternalUser
 #endif
     }
 
@@ -293,25 +303,13 @@ struct DataImportView: ModalView {
                         .padding(.trailing, 20)
                 }
 
-                if model.errors.count > 0 && isInternalUser {
+                if !errorMessages.isEmpty {
                     Divider()
                 }
 #endif
 
-                if model.errors.count > 0 && isInternalUser {
-                    Text(verbatim: "ERRORS:" as String).bold()
-                        .padding(.top, 10)
-                        .padding(.leading, 20)
-
-                    ForEach(model.errors.indices, id: \.self) { i in
-                        ForEach(Array(model.errors[i].keys), id: \.self) { key in
-                            if let value = model.errors[i][key] {
-                                Text(verbatim: "\(key.rawValue.uppercased()): \(value)").textSelection(.enabled)
-                            }
-                        }
-                    }
-                    .padding(.horizontal, 20)
-                    .padding(.bottom, 10)
+                if !errorMessages.isEmpty {
+                    errorsView(errorMessages)
                 }
             }
             Spacer()
@@ -327,6 +325,37 @@ struct DataImportView: ModalView {
         }
         .padding(10)
         .background(Color(NSColor(red: 1, green: 0, blue: 0, alpha: 0.2)))
+    }
+
+    private func errorsView(_ messages: [String]) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Button {
+                areErrorsExpanded.toggle()
+            } label: {
+                HStack(spacing: 4) {
+                    Text(verbatim: messages.count == 1 ? "1 error" : "\(messages.count) errors").bold()
+                    Image(systemName: "chevron.right")
+                        .rotationEffect(.degrees(areErrorsExpanded ? 90 : 0))
+                }
+            }
+            .buttonStyle(.link)
+
+            if areErrorsExpanded {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 4) {
+                        ForEach(messages.indices, id: \.self) { idx in
+                            Text(verbatim: messages[idx])
+                                .textSelection(.enabled)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                    }
+                }
+                .frame(height: 100)
+            }
+        }
+        .padding(.vertical, 10)
+        .padding(.leading, 20)
     }
 
 #if DEBUG

@@ -188,6 +188,145 @@ final class PermissionCenterViewModelTests: XCTestCase {
         XCTAssertFalse(types.contains(.autoplayPolicy), "Autoplay row should not appear when feature flag is off")
     }
 
+    // MARK: - Autoplay Settings Tests
+
+    func testWhenOpenAutoplaySettingsThenGeneralPaneIsOpenedAndPopoverDismissed() {
+        var openedPanes: [PreferencePaneIdentifier] = []
+        var dismissCallCount = 0
+
+        let viewModel = PermissionCenterViewModel(
+            domain: "example.com",
+            usedPermissions: Permissions(),
+            permissionManager: mockPermissionManager,
+            autoplayPreferences: autoplayPreferences,
+            featureFlagger: mockFeatureFlagger,
+            removePermission: { _ in },
+            dismissPopover: { dismissCallCount += 1 },
+            openSettingsPane: { openedPanes.append($0) },
+            displaysAutoplayPolicy: true,
+            systemPermissionManager: mockSystemPermissionManager
+        )
+
+        viewModel.openAutoplaySettings()
+
+        XCTAssertEqual(openedPanes, [.general])
+        XCTAssertEqual(dismissCallCount, 1)
+    }
+
+    // MARK: - Autoplay Disclaimer Tests
+
+    func testWhenDisplaysAutoplayDiscoveryAndAutoplayRowIsPresentThenDisclaimerIsShown() {
+        let viewModel = PermissionCenterViewModel(
+            domain: "example.com",
+            usedPermissions: Permissions(),
+            permissionManager: mockPermissionManager,
+            autoplayPreferences: autoplayPreferences,
+            featureFlagger: mockFeatureFlagger,
+            removePermission: { _ in },
+            dismissPopover: { },
+            displaysAutoplayPolicy: true,
+            displaysAutoplayDiscovery: true,
+            systemPermissionManager: mockSystemPermissionManager
+        )
+
+        XCTAssertTrue(viewModel.showAutoplayDisclaimer)
+    }
+
+    /// The disclaimer explains the autoplay row, so the promo presentation always carries that row — even when the
+    /// page isn't displaying the autoplay policy itself, as with a debug force-show.
+    func testWhenDisplaysAutoplayDiscoveryWithoutAutoplayPolicyThenAutoplayRowIsInserted() {
+        let viewModel = PermissionCenterViewModel(
+            domain: "example.com",
+            usedPermissions: Permissions(),
+            permissionManager: mockPermissionManager,
+            autoplayPreferences: autoplayPreferences,
+            featureFlagger: mockFeatureFlagger,
+            removePermission: { _ in },
+            dismissPopover: { },
+            displaysAutoplayPolicy: false,
+            displaysAutoplayDiscovery: true,
+            systemPermissionManager: mockSystemPermissionManager
+        )
+
+        XCTAssertTrue(viewModel.permissionItems.contains { $0.permissionType == .autoplayPolicy })
+        XCTAssertTrue(viewModel.showAutoplayDisclaimer)
+    }
+
+    /// The disclaimer belongs to the Autoplay Discoverability Promo: opening the Permission Center from the shield must not show it.
+    func testWhenAutoplayRowIsPresentOutsideThePromoThenDisclaimerIsHidden() {
+        let viewModel = PermissionCenterViewModel(
+            domain: "example.com",
+            usedPermissions: Permissions(),
+            permissionManager: mockPermissionManager,
+            autoplayPreferences: autoplayPreferences,
+            featureFlagger: mockFeatureFlagger,
+            removePermission: { _ in },
+            dismissPopover: { },
+            displaysAutoplayPolicy: true,
+            systemPermissionManager: mockSystemPermissionManager
+        )
+
+        XCTAssertFalse(viewModel.showAutoplayDisclaimer)
+    }
+
+    /// Reaching the popover stops it from closing by itself, but must never take the disclaimer away mid-read.
+    func testWhenAutodismissIsDisabledThenDisclaimerRemainsShown() {
+        let viewModel = PermissionCenterViewModel(
+            domain: "example.com",
+            usedPermissions: Permissions(),
+            permissionManager: mockPermissionManager,
+            autoplayPreferences: autoplayPreferences,
+            featureFlagger: mockFeatureFlagger,
+            removePermission: { _ in },
+            dismissPopover: { },
+            displaysAutoplayPolicy: true,
+            displaysAutoplayDiscovery: true,
+            systemPermissionManager: mockSystemPermissionManager
+        )
+
+        viewModel.disableAutodismiss()
+
+        XCTAssertTrue(viewModel.showAutoplayDisclaimer)
+    }
+
+    // MARK: - Autodismiss Tests
+
+    /// Only the Autoplay Discoverability Promo opts into autodismissal: a popover the user opened must never close by itself.
+    func testWhenAutodismissIsNotRequestedThenItIsNotAllowed() {
+        let viewModel = PermissionCenterViewModel(
+            domain: "example.com",
+            usedPermissions: Permissions(),
+            permissionManager: mockPermissionManager,
+            autoplayPreferences: autoplayPreferences,
+            featureFlagger: mockFeatureFlagger,
+            removePermission: { _ in },
+            dismissPopover: { },
+            systemPermissionManager: mockSystemPermissionManager
+        )
+
+        XCTAssertFalse(viewModel.allowsAutodismiss)
+    }
+
+    /// Once the user reaches the UI, the promo must not close it from under them, and it must stay open for good.
+    func testWhenAutodismissIsDisabledThenItIsNoLongerAllowed() {
+        let viewModel = PermissionCenterViewModel(
+            domain: "example.com",
+            usedPermissions: Permissions(),
+            permissionManager: mockPermissionManager,
+            autoplayPreferences: autoplayPreferences,
+            featureFlagger: mockFeatureFlagger,
+            removePermission: { _ in },
+            dismissPopover: { },
+            displaysAutoplayDiscovery: true,
+            systemPermissionManager: mockSystemPermissionManager
+        )
+        XCTAssertTrue(viewModel.allowsAutodismiss)
+
+        viewModel.disableAutodismiss()
+
+        XCTAssertFalse(viewModel.allowsAutodismiss)
+    }
+
     // MARK: - currentAutoplayDecision Tests
 
     func testWhenNoOverrideAndGlobalBlockAudioThenCurrentDecisionIsAudioMuted() {

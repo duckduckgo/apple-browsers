@@ -55,7 +55,7 @@ final class PairingV2MessageExchanger: PairingV2MessageExchanging {
                                         parameters: [:],
                                         body: nil,
                                         contentType: nil)
-        try await executeRequestIgnoringResponse(request, validatingStatusWith: validateSuccessfulStatusCode)
+        _ = try await executeRelayRequest(request)
     }
 
     func send(_ messages: [PairingV2EncryptedMessage], to channelID: String) async throws {
@@ -76,7 +76,7 @@ final class PairingV2MessageExchanger: PairingV2MessageExchanging {
                                         parameters: ["after": String(sequence)],
                                         body: nil,
                                         contentType: nil)
-        let result = try await executeRequest(request, validatingStatusWith: validateMessageExchangeStatusCode)
+        let result = try await executeRelayRequest(request)
         guard let body = result.data else {
             throw SyncError.noResponseBody
         }
@@ -90,7 +90,7 @@ final class PairingV2MessageExchanger: PairingV2MessageExchanging {
                                         parameters: [:],
                                         body: nil,
                                         contentType: nil)
-        try await executeRequestIgnoringResponse(request, validatingStatusWith: validateCloseChannelStatusCode)
+        try await executeCloseRequest(request)
     }
 
     private struct SendMessagesRequest: Encodable {
@@ -109,27 +109,30 @@ final class PairingV2MessageExchanger: PairingV2MessageExchanging {
         channelURL(channelID).appendingPathComponent("messages")
     }
 
-    private func executeRequest(_ request: HTTPRequesting, validatingStatusWith validateStatusCode: (Int) throws -> Void) async throws -> HTTPResult {
+    private func executeRelayRequest(_ request: HTTPRequesting) async throws -> HTTPResult {
         do {
             let result = try await request.execute()
-            try validateStatusCode(result.response.statusCode)
+            guard result.response.statusCode.isSuccessfulHTTPStatusCode else {
+                throw relayRequestError(statusCode: result.response.statusCode)
+            }
             return result
+        } catch let error as PairingV2RelayRequestError {
+            throw error
         } catch SyncError.unexpectedStatusCode(let statusCode) {
-            // Some request implementations throw status-code errors instead of returning a response.
-            // Re-run the injected validator so endpoint-specific status mapping still applies.
-            try validateStatusCode(statusCode)
-            throw SyncError.unexpectedStatusCode(statusCode)
+            throw relayRequestError(statusCode: statusCode)
+        } catch {
+            throw PairingV2RelayRequestError(kind: .networkError, underlyingError: error)
         }
     }
 
-    private func executeRequestIgnoringResponse(_ request: HTTPRequesting, validatingStatusWith validateStatusCode: (Int) throws -> Void) async throws {
+    private func executeCloseRequest(_ request: HTTPRequesting) async throws {
         do {
             let result = try await request.execute()
-            try validateStatusCode(result.response.statusCode)
+            try validateCloseChannelStatusCode(result.response.statusCode)
         } catch SyncError.unexpectedStatusCode(let statusCode) {
             // Some request implementations throw status-code errors instead of returning a response.
-            // Re-run the injected validator so endpoint-specific status mapping still applies.
-            try validateStatusCode(statusCode)
+            // Apply the close endpoint's status rules to the thrown status as well.
+            try validateCloseChannelStatusCode(statusCode)
         }
     }
 
@@ -138,13 +141,11 @@ final class PairingV2MessageExchanger: PairingV2MessageExchanging {
 
         while true {
             do {
-                let result = try await request.execute()
-                try validateMessageExchangeStatusCode(result.response.statusCode)
+                _ = try await executeRelayRequest(request)
                 channelsWithCompletedFirstMessagePost.insert(channelID)
                 return
-            } catch {
-                let error = normalizeMessageExchangeError(error)
-                if case PairingV2Error.relayChannelUnavailable = error,
+            } catch let error as PairingV2RelayRequestError {
+                if error.kind == .unavailable,
                    !channelsWithCompletedFirstMessagePost.contains(channelID),
                    !retryDelays.isEmpty {
                     let retryDelay = retryDelays.removeFirst()
@@ -158,34 +159,17 @@ final class PairingV2MessageExchanger: PairingV2MessageExchanging {
         }
     }
 
-    private func normalizeMessageExchangeError(_ error: Error) -> Error {
-        guard case SyncError.unexpectedStatusCode(let statusCode) = error else {
-            return error
-        }
-
-        do {
-            try validateMessageExchangeStatusCode(statusCode)
-            return error
-        } catch let normalizedError {
-            return normalizedError
-        }
-    }
-
-    private func validateSuccessfulStatusCode(_ statusCode: Int) throws {
-        guard statusCode.isSuccessfulHTTPStatusCode else {
-            throw SyncError.unexpectedStatusCode(statusCode)
-        }
-    }
-
-    private func validateMessageExchangeStatusCode(_ statusCode: Int) throws {
+    private func relayRequestError(statusCode: Int) -> PairingV2RelayRequestError {
+        let underlyingError: Error
         switch statusCode {
         case 404:
-            throw PairingV2Error.relayChannelUnavailable
+            underlyingError = PairingV2Error.relayChannelUnavailable
         case 410:
-            throw PairingV2Error.relayChannelExpired
+            underlyingError = PairingV2Error.relayChannelExpired
         default:
-            try validateSuccessfulStatusCode(statusCode)
+            underlyingError = SyncError.unexpectedStatusCode(statusCode)
         }
+        return PairingV2RelayRequestError(kind: PairingV2FailureKind(statusCode: statusCode), underlyingError: underlyingError)
     }
 
     private func validateCloseChannelStatusCode(_ statusCode: Int) throws {
@@ -193,7 +177,9 @@ final class PairingV2MessageExchanger: PairingV2MessageExchanging {
         case 404, 410:
             return
         default:
-            try validateSuccessfulStatusCode(statusCode)
+            guard statusCode.isSuccessfulHTTPStatusCode else {
+                throw SyncError.unexpectedStatusCode(statusCode)
+            }
         }
     }
 }

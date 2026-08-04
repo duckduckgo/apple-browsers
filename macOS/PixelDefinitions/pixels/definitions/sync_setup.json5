@@ -6,6 +6,7 @@
         "parameters": [
             "appVersion",
             "pixelSource",
+            "channel",
             {
                 "key": "source",
                 "type": "string",
@@ -32,6 +33,7 @@
         "parameters": [
             "appVersion",
             "pixelSource",
+            "channel",
             {
                 "key": "source",
                 "type": "string",
@@ -58,6 +60,7 @@
         "parameters": [
             "appVersion",
             "pixelSource",
+            "channel",
             {
                 "key": "flow_version",
                 "type": "string",
@@ -79,6 +82,7 @@
         "parameters": [
             "appVersion",
             "pixelSource",
+            "channel",
             {
                 "key": "source",
                 "type": "string",
@@ -117,6 +121,7 @@
         "parameters": [
             "appVersion",
             "pixelSource",
+            "channel",
             {
                 "key": "source",
                 "type": "string",
@@ -149,6 +154,7 @@
         "parameters": [
             "appVersion",
             "pixelSource",
+            "channel",
             {
                 "key": "source",
                 "type": "string",
@@ -181,6 +187,7 @@
         "parameters": [
             "appVersion",
             "pixelSource",
+            "channel",
             {
                 "key": "source",
                 "type": "string",
@@ -233,6 +240,7 @@
                     "unexpected_second_hello",
                     "unexpected_event",
                     "pairing_session_not_ready",
+                    "relay_channel_failure",
                     "relay_channel_unavailable",
                     "recovery_code_preparation_failed",
                     "peer_recovery_code_unavailable",
@@ -255,6 +263,36 @@
                     "waiting_for_recovery_code",
                     "logging_in"
                 ]
+            },
+            {
+                "key": "pairing_failure_stage",
+                "type": "string",
+                "description": "The Pairing V2 operation that failed, when known.",
+                "enum": [
+                    "presenter_generate_code",
+                    "presenter_open_own_channel",
+                    "presenter_poll_own_channel",
+                    "presenter_send_peer_status",
+                    "presenter_send_confirmation_status",
+                    "presenter_send_recovery_denied",
+                    "presenter_send_recovery_code",
+                    "presenter_send_recovery_unavailable",
+                    "scanner_generate_keys",
+                    "scanner_open_own_channel",
+                    "scanner_send_hello",
+                    "scanner_send_peer_status",
+                    "scanner_poll_own_channel",
+                    "scanner_send_confirmation_status",
+                    "scanner_send_recovery_denied",
+                    "scanner_send_recovery_code",
+                    "scanner_send_recovery_unavailable"
+                ]
+            },
+            {
+                "key": "pairing_failure_kind",
+                "type": "string",
+                "description": "The terminal relay request error class. Present for relay_channel_failure.",
+                "enum": ["unavailable", "expired", "http_error", "network_error"]
             }
         ]
     },
@@ -265,6 +303,7 @@
         "parameters": [
             "appVersion",
             "pixelSource",
+            "channel",
             {
                 "key": "source",
                 "type": "string",

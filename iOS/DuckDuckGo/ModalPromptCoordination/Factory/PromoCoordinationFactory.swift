@@ -1,5 +1,5 @@
 //
-//  ModalPromptCoordinationFactory.swift
+//  PromoCoordinationFactory.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -28,11 +28,11 @@ import RemoteMessaging
 // MARK: - Factory
 
 @MainActor
-enum ModalPromptCoordinationFactory {
+enum PromoCoordinationFactory {
 
     static func makeService(
         dependency: Dependency
-    ) -> ModalPromptCoordinationService {
+    ) -> PromoCoordinationService {
 
         let isIPad = DevicePlatform.isIpad
 
@@ -59,7 +59,7 @@ enum ModalPromptCoordinationFactory {
             featureFlagger: dependency.featureFlagger
         )
 
-        return ModalPromptCoordinationService(
+        return PromoCoordinationService(
             launchSourceManager: dependency.launchSourceManager,
             keyValueStore: dependency.keyValueFileStoreService,
             contextualOnboardingStatusProvider: dependency.contextualOnboardingStatusProvider,
@@ -72,7 +72,9 @@ enum ModalPromptCoordinationFactory {
                 subscriptionPromoExistingUser: subscriptionPromoExistingUserModalPromptProvider,
                 whatsNew: whatsNewModalPromptProvider,
                 cookiePopupProtectionOptIn: cookiePopupProtectionOptInModalPromptProvider
-            )
+            ),
+            featureFlagger: dependency.featureFlagger,
+            promoQueueLeaseArbiter: dependency.promoQueueLeaseArbiter
         )
     }
 
@@ -80,7 +82,7 @@ enum ModalPromptCoordinationFactory {
 
 // MARK: - New Address Bar Picker
 
-private extension ModalPromptCoordinationFactory {
+private extension PromoCoordinationFactory {
 
     static func makeNewAddressBarPickerModalPromptProvider(dependency: Dependency, isIPad: Bool) -> NewAddressBarPickerModalPromptProvider {
 
@@ -110,7 +112,7 @@ private extension ModalPromptCoordinationFactory {
 
 // MARK: - Dependencies
 
-extension ModalPromptCoordinationFactory {
+extension PromoCoordinationFactory {
 
     struct Dependency {
         let launchSourceManager: LaunchSourceManager
@@ -118,6 +120,7 @@ extension ModalPromptCoordinationFactory {
         let keyValueFileStoreService: ThrowingKeyValueStoring
         let privacyConfigurationManager: PrivacyConfigurationManaging
         let featureFlagger: FeatureFlagger
+        let promoQueueLeaseArbiter: PromoQueueLeaseArbitrating
         let whatsNewRepository: WhatsNewMessageRepository
         let remoteMessagingActionHandler: RemoteMessagingActionHandling
         let remoteMessagingPixelReporter: RemoteMessagingPixelReporting

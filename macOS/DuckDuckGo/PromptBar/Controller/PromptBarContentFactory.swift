@@ -60,7 +60,8 @@ enum PromptBarContentFactory {
             containerViewController: containerViewController,
             textViewController: textViewController,
             draftStore: draftStore,
-            promptSubmitter: promptSubmitter
+            promptSubmitter: promptSubmitter,
+            themeManager: themeManager
         )
     }
 }

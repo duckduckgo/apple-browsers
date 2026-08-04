@@ -29,13 +29,13 @@ import DesignResourcesKitIcons
 final class AIChatFileAttachmentCardView: NSView {
 
     private enum Constants {
-        static let cardWidth: CGFloat = 224
+        static let cardWidth: CGFloat = 180
         static let cardHeight: CGFloat = 56
-        static let cornerRadius: CGFloat = 12
+        static let cornerRadius: CGFloat = 8
         static let leadingPadding: CGFloat = 10
         static let trailingPadding: CGFloat = 14
         static let thumbnailSize: CGFloat = 36
-        static let spacingAfterThumbnail: CGFloat = 12
+        static let spacingAfterThumbnail: CGFloat = 10
         static let removeButtonSize: CGFloat = 20
         static let removeButtonOverflow: CGFloat = 6
         static let removeButtonInset: CGFloat = 4
@@ -260,10 +260,10 @@ private final class AIChatFilePagePreviewView: NSView {
     private enum Layout {
         static let size: CGFloat = 36
         static let cornerRadius: CGFloat = 6
-        static let bar1Rect = NSRect(x: 6, y: 7, width: 18, height: 2)
-        static let bar2Rect = NSRect(x: 6, y: 12, width: 12, height: 2)
-        static let badgeRect = NSRect(x: 4, y: 18, width: 28, height: 13)
-        static let badgeCornerRadius: CGFloat = 3.5
+        static let bar1Rect = NSRect(x: 5, y: 6, width: 16, height: 2)
+        static let bar2Rect = NSRect(x: 5, y: 11, width: 10, height: 2)
+        static let badgeRect = NSRect(x: 5, y: 18, width: 26, height: 13)
+        static let badgeCornerRadius: CGFloat = 4
         static let barCornerRadius: CGFloat = 1
     }
 
@@ -313,12 +313,12 @@ private final class AIChatFilePagePreviewView: NSView {
         super.draw(dirtyRect)
 
         NSAppearance.withAppAppearance {
-            NSColor(designSystemColor: .lines).setFill()
+            NSColor(designSystemColor: .surfaceDecorationSecondary).setFill()
             NSBezierPath(roundedRect: Layout.bar1Rect, xRadius: Layout.barCornerRadius, yRadius: Layout.barCornerRadius).fill()
             NSBezierPath(roundedRect: Layout.bar2Rect, xRadius: Layout.barCornerRadius, yRadius: Layout.barCornerRadius).fill()
 
-            // Brand-red kind badge (the duck.ai web app uses the same hue).
-            NSColor.systemRed.setFill()
+            // Fixed brand red — the badge doesn't tint with the theme accent (same on Windows).
+            NSColor(baseColor: .red50).setFill()
             NSBezierPath(roundedRect: Layout.badgeRect, xRadius: Layout.badgeCornerRadius, yRadius: Layout.badgeCornerRadius).fill()
         }
     }

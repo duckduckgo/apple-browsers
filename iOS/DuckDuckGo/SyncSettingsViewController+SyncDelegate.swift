@@ -588,6 +588,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                     pairingInfo = try await connectionController.startExchangeMode()
                     source = .exchange
                 } catch {
+                    sendPairingV2PresenterStartFailurePixelIfNeeded(error, setupSource: .exchange)
                     await handleError(SyncErrorMessage.unableToSyncWithDevice, error: error, event: .syncLoginError)
                     return
                 }
@@ -596,6 +597,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                     pairingInfo = try await connectionController.startConnectMode()
                     source = .connect
                 } catch {
+                    sendPairingV2PresenterStartFailurePixelIfNeeded(error, setupSource: .connect)
                     await handleError(SyncErrorMessage.unableToSyncToServer, error: error, event: .syncLoginError)
                     return
                 }
@@ -632,6 +634,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                     source = intent == .syncAnotherDevice ? .connect : .recovery
                     onPresentPixelInfo = .init(pixel: .syncSetupBarcodeScreenShown, source: source, flowVersion: syncSetupPixelFlowVersion)
                 } catch {
+                    sendPairingV2PresenterStartFailurePixelIfNeeded(error, setupSource: .connect)
                     await handleError(SyncErrorMessage.unableToSyncToServer, error: error, event: .syncLoginError)
                     return
                 }

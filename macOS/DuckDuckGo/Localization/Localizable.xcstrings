@@ -25052,6 +25052,54 @@
         }
       }
     },
+    "contextual.onboarding.subscription-upsell.accept-button" : {
+      "comment" : "Primary button on the subscription upsell onboarding screen, it opens the subscription purchase page.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Try for free!"
+          }
+        }
+      }
+    },
+    "contextual.onboarding.subscription-upsell.decline-button" : {
+      "comment" : "Secondary button on the subscription upsell onboarding screen, it dismisses the screen and completes onboarding.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "No thanks"
+          }
+        }
+      }
+    },
+    "contextual.onboarding.subscription-upsell.message" : {
+      "comment" : "Message of the onboarding screen promoting the optional paid subscription. Text between single asterisks is rendered in bold; keep the asterisks in the translation.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "DuckDuckGo also has an *optional paid subscription*, with a secure *VPN* and *advanced, private AI.*"
+          }
+        }
+      }
+    },
+    "contextual.onboarding.subscription-upsell.title" : {
+      "comment" : "Title of the onboarding screen promoting the optional paid subscription.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Oh, before I forget..."
+          }
+        }
+      }
+    },
     "contextual.onboarding.try-a-search.message" : {
       "comment" : "Message of a popover on the browser that invites the user to try a search explaining that their searches are anonymous",
       "extractionState" : "extracted_with_value",

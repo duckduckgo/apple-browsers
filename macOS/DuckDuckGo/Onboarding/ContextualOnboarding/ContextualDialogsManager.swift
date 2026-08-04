@@ -35,6 +35,7 @@ enum ContextualDialogType: Equatable {
     case trackers(message: NSAttributedString, shouldFollowUp: Bool)
     case tryFireButton
     case highFive
+    case subscriptionUpsell
 }
 
 /// Protocol for providing the appropriate dialog type based on a Tab.
@@ -159,12 +160,18 @@ public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDia
             // When user press got it "trackers" dialog it will automatically show "tryFireButton" therefore we mark it as seen and as lastDialog
             markSeen(.tryFireButton)
             lastDialog = .tryFireButton
+        case .tryFireButton?:
+            // When user skips the "tryFireButton" dialog it will automatically show "highFive" therefore we only set it as lastDialog
+            lastDialog = .highFive
         case .highFive?:
-            // Enroll here rather than when highFive is shown: this is the last moment before the
-            // treatment arm's upsell screen would appear, and the A/B framework wants enrollment
-            // immediately before the two arms diverge.
-            subscriptionUpsellExperiment.enroll()
-            // If highFive dialog, complete onboarding.
+            guard subscriptionUpsellExperiment.enroll() == .treatment else {
+                state = .onboardingCompleted
+                lastDialog = nil
+                return
+            }
+            markSeen(.subscriptionUpsell)
+            lastDialog = .subscriptionUpsell
+        case .subscriptionUpsell?:
             state = .onboardingCompleted
             lastDialog = nil
         default:
@@ -188,6 +195,14 @@ public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDia
         guard state != .onboardingCompleted else { return nil }
         // If onboarding hasn't started, mark it as ongoing.
         if state == .notStarted { state = .ongoing }
+        // The treatment arm's upsell stays pending until it is dismissed, and it isn't
+        // tab-contextual. Hand it back for whichever tab asks next rather than recomputing: every
+        // dialog helper is gated on `!hasSeen(.highFive)` and so would return nil here, clobbering
+        // `lastDialog` and stranding onboarding in `.ongoing` forever.
+        if lastDialog == .subscriptionUpsell {
+            lastTab = tab
+            return .subscriptionUpsell
+        }
         // If a highFive has already been seen, conclude onboarding.
         if hasSeen(.highFive) {
             state = .onboardingCompleted
@@ -331,6 +346,8 @@ extension ContextualDialogType {
             return "tryFireButton"
         case .highFive:
             return "highFive"
+        case .subscriptionUpsell:
+            return "subscriptionUpsell"
         }
     }
 

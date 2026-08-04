@@ -120,6 +120,8 @@ struct RebrandedContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
         case .highFive:
             onboardingPixelReporter.measureLastDialogShown()
             return AnyView(highFiveDialog(onDismiss: onDismiss, onManualDismiss: onManualDismiss, onGotItPressed: onGotItPressed))
+        case .subscriptionUpsell:
+            return AnyView(subscriptionUpsellDialog(delegate: delegate, onDismiss: onDismiss, onManualDismiss: onManualDismiss, onGotItPressed: onGotItPressed))
         }
     }
 
@@ -176,6 +178,8 @@ struct RebrandedContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
             return Image("contextual-bg-fire")
         case .highFive:
             return Image("contextual-bg-end-of-journey")
+        case .subscriptionUpsell:
+            return Image("contextual-bg-subscription-upsell")
         }
     }
 
@@ -230,6 +234,21 @@ struct RebrandedContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
     private func tryFireButtonDialog(onDismiss: @escaping () -> Void, onManualDismiss: @escaping () -> Void, onGotItPressed: @escaping () -> Void, onFireButtonPressed: @escaping () -> Void) -> some View {
         let viewModel = OnboardingFireButtonDialogViewModel(onboardingPixelReporter: onboardingPixelReporter, fireCoordinator: fireCoordinator, onDismiss: onDismiss, onGotItPressed: onGotItPressed, onFireButtonPressed: onFireButtonPressed)
         return OnboardingRebranding.OnboardingFireDialog(viewModel: viewModel, onManualDismiss: onManualDismiss, onContentTransition: nil)
+    }
+
+    private func subscriptionUpsellDialog(delegate: any OnboardingNavigationDelegate, onDismiss: @escaping () -> Void, onManualDismiss: @escaping () -> Void, onGotItPressed: @escaping () -> Void) -> some View {
+        OnboardingRebranding.OnboardingSubscriptionUpsellDialog(
+            acceptAction: {
+                delegate.navigateToSubscriptionUpsellPurchasePage()
+                onDismiss()
+                onGotItPressed()
+            },
+            declineAction: {
+                onDismiss()
+                onGotItPressed()
+            },
+            onManualDismiss: onManualDismiss
+        )
     }
 
     private func highFiveDialog(onDismiss: @escaping () -> Void, onManualDismiss: @escaping () -> Void, onGotItPressed: @escaping () -> Void) -> some View {

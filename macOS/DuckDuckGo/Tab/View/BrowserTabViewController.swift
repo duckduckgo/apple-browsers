@@ -850,8 +850,18 @@ final class BrowserTabViewController: NSViewController {
         wasContextualOnboardingDialogDismissed = true
         delegate?.dismissViewHighlight()
         removeChild(in: containerStackView, webViewContainer: webViewContainer)
+        // The panel is gone, so nothing is presented any more. Keeping this in step with the actual
+        // teardown is what lets `handleContextualOnboardingOnGotItPressed` tell whether a dialog's
+        // dismiss has already run.
+        presentedContextualOnboardingDialogType = nil
         if let lastDialog = onboardingDialogTypeProvider.lastDialog {
             onboardingPixelReporter.measureDialogDismissed(dialogType: lastDialog)
+        }
+        // Rebranded dialogs fade out before dismissing, so this runs *after* the got-it handler and
+        // is where the upsell takes the panel over. See `handleContextualOnboardingOnGotItPressed`
+        // for the legacy ordering.
+        if case .subscriptionUpsell = onboardingDialogTypeProvider.lastDialog {
+            presentContextualOnboarding(showLastDialog: true)
         }
     }
 
@@ -869,6 +879,16 @@ final class BrowserTabViewController: NSViewController {
         delegate?.dismissViewHighlight()
         if case .tryFireButton = currentState {
             delegate?.highlightFireButton()
+        }
+        // The treatment arm inserts the upsell after the final dialog, which needs a fresh
+        // presentation rather than an in-place content swap. The two factories tear the previous
+        // dialog down in opposite orders: legacy dismisses synchronously before this runs, rebranded
+        // fades out and dismisses after. A nil `presentedContextualOnboardingDialogType` means the
+        // teardown has already happened, so presenting now is safe; otherwise a dismiss is still
+        // pending and would remove the upsell moments after it appeared, so
+        // `handleContextualOnboardingOnDismiss` presents it instead.
+        if case .subscriptionUpsell = currentState, presentedContextualOnboardingDialogType == nil {
+            presentContextualOnboarding(showLastDialog: true)
         }
     }
 

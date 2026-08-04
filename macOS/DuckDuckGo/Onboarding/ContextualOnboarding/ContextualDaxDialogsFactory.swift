@@ -49,6 +49,8 @@ struct DefaultContextualDaxDialogViewFactory: ContextualDaxDialogsFactory {
         case .highFive:
             dialogView = AnyView(highFiveDialog(onDismiss: onDismiss, onManualDismiss: onManualDismiss, onGotItPressed: onGotItPressed))
             onboardingPixelReporter.measureLastDialogShown()
+        case .subscriptionUpsell:
+            dialogView = AnyView(subscriptionUpsellDialog(delegate: delegate, onDismiss: onDismiss, onManualDismiss: onManualDismiss, onGotItPressed: onGotItPressed))
         }
         onboardingPixelReporter.measureDialogShown(dialogType: type)
         let adjustedView = {
@@ -101,6 +103,21 @@ struct DefaultContextualDaxDialogViewFactory: ContextualDaxDialogsFactory {
     private func tryFireButtonDialog(onDismiss: @escaping () -> Void, onManualDismiss: @escaping () -> Void, onGotItPressed: @escaping () -> Void, onFireButtonPressed: @escaping () -> Void) -> some View {
         let viewModel = OnboardingFireButtonDialogViewModel(onboardingPixelReporter: onboardingPixelReporter, fireCoordinator: fireCoordinator, onDismiss: onDismiss, onGotItPressed: onGotItPressed, onFireButtonPressed: onFireButtonPressed)
         return OnboardingFireDialog(viewModel: viewModel, onManualDismiss: onManualDismiss)
+    }
+
+    private func subscriptionUpsellDialog(delegate: any OnboardingNavigationDelegate, onDismiss: @escaping () -> Void, onManualDismiss: @escaping () -> Void, onGotItPressed: @escaping () -> Void) -> some View {
+        OnboardingSubscriptionUpsellDialog(
+            acceptAction: {
+                delegate.navigateToSubscriptionUpsellPurchasePage()
+                onDismiss()
+                onGotItPressed()
+            },
+            declineAction: {
+                onDismiss()
+                onGotItPressed()
+            },
+            onManualDismiss: onManualDismiss
+        )
     }
 
     private func highFiveDialog(onDismiss: @escaping () -> Void, onManualDismiss: @escaping () -> Void, onGotItPressed: @escaping () -> Void) -> some View {

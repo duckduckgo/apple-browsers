@@ -46,6 +46,10 @@ struct ModalPromptProviders {
     let cookiePopupProtectionOptIn: ModalPromptProvider
 }
 
+/// Coordinates app-launch modal prompts with visible new-tab promos.
+///
+/// The transitioning state blocks admission while leases and manager state are reset. Foreground and promo-admission
+/// checkpoints reconcile dismissed modals, then weakly registered active promo surfaces are retried when a slot may be free.
 @MainActor
 final class ModalPromptCoordinationService {
     private final class WeakPromoRetryRegistration {

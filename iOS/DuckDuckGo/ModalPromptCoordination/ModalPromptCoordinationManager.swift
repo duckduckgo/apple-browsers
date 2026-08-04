@@ -34,14 +34,20 @@ protocol ModalPromptCoordinationManaging {
 }
 
 enum ModalPromptLeaseDisposition: Equatable {
+    /// The manager kept the lease for a selected or presented modal.
     case retained
+    /// The manager released the lease because no modal will be presented.
     case released
 }
 
 enum ModalPromptAttemptPhase: Equatable {
+    /// No coordinated modal owns a lease.
     case idle
+    /// A modal is being selected; carries this lease acquisition's identity.
     case evaluating(PromoQueueModalAttemptIdentity)
+    /// A modal was selected and scheduled; carries this lease acquisition's identity.
     case committed(PromoQueueModalAttemptIdentity)
+    /// The modal root was handed to UIKit; carries this lease acquisition's identity.
     case presentationActive(PromoQueueModalAttemptIdentity)
 }
 

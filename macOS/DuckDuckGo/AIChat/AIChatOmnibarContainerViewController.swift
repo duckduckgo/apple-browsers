@@ -1483,8 +1483,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     }
 
     private func menuFavicon(for attachment: AIChatTabAttachment) -> NSImage? {
-        let image = attachment.favicon?.copy() as? NSImage
-            ?? NSImage(systemSymbolName: "doc.text", accessibilityDescription: nil)
+        let image = (attachment.favicon ?? DesignSystemImages.Glyphs.Size16.globe).copy() as? NSImage
         image?.size = NSSize(width: 16, height: 16)
         return image
     }

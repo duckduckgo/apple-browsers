@@ -17,6 +17,7 @@
 //
 
 import AppKit
+import DesignResourcesKitIcons
 import SwiftUI
 import SwiftUIExtensions
 
@@ -160,7 +161,7 @@ struct AIChatAttachTabsModal: ModalView {
         if let favicon = tab.favicon {
             Image(nsImage: favicon).resizable().aspectRatio(contentMode: .fit)
         } else {
-            Image(systemName: "doc.text").resizable().aspectRatio(contentMode: .fit)
+            Image(nsImage: DesignSystemImages.Glyphs.Size16.globe).resizable().aspectRatio(contentMode: .fit)
         }
     }
 }

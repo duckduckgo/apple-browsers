@@ -1,0 +1,38 @@
+appId: com.duckduckgo.mobile.ios
+tags:
+    - iphone
+    - sync_v2
+name: 02_login_account_v2
+
+---
+
+# Set up
+- runFlow:
+    file: ../shared/sync_setup_v2.yaml
+
+#  Copy Recovery Code
+- tapOn: Browsing menu
+- tapOn: Settings
+- runFlow:
+    file: ../shared/copy_recovery_code_from_settings.yaml
+    env:
+        CODE: ${CODE}
+
+# Set Internal User
+- runFlow:
+    file: ../shared/set_internal_user_from_settings.yaml
+
+    # Set Dev environment
+- runFlow:
+    file: ../shared/set_sync_dev_environment.yaml
+
+# Login
+- assertVisible: Sync & Backup
+- tapOn: Sync & Backup
+- runFlow:
+    file: ../shared/sync_login_v2.yaml
+- assertVisible: Sync & Backup
+
+# Clean up
+- runFlow:
+    file: ../shared/sync_logout_v2.yaml

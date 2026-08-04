@@ -18,7 +18,9 @@
 
 import Bookmarks
 import Combine
+import Foundation
 import Persistence
+import PixelKit
 @testable import SyncUI_macOS
 import XCTest
 import PersistenceTestingUtils
@@ -96,6 +98,34 @@ final class SyncDialogControllerTests: XCTestCase {
         scheduler = nil
         authenticator = nil
         super.tearDown()
+    }
+
+    func testSyncSetupEndedFailedRelayEventIncludesPairingFailureContext() {
+        let context = PairingV2FailureContext(stage: .scannerSendHello, kind: .unavailable)
+        let event = SyncSetupPixelKitEvent.syncSetupEndedFailed(.exchange,
+                                                                flowVersion: "v2",
+                                                                peerKind: nil,
+                                                                myRole: "joiner",
+                                                                reason: "relay_channel_failure",
+                                                                timeoutStage: nil,
+                                                                pairingV2FailureContext: context)
+
+        XCTAssertEqual(event.parameters?[SyncSetupPixelKitEvent.ParameterKey.pairingFailureStage], "scanner_send_hello")
+        XCTAssertEqual(event.parameters?[SyncSetupPixelKitEvent.ParameterKey.pairingFailureKind], "unavailable")
+    }
+
+    func testSyncSetupEndedFailedGenerationEventOmitsPairingFailureKind() {
+        let context = PairingV2FailureContext(stage: .presenterGenerateCode, kind: nil)
+        let event = SyncSetupPixelKitEvent.syncSetupEndedFailed(.exchange,
+                                                                flowVersion: "v2",
+                                                                peerKind: nil,
+                                                                myRole: "host",
+                                                                reason: "unexpected_failure",
+                                                                timeoutStage: nil,
+                                                                pairingV2FailureContext: context)
+
+        XCTAssertEqual(event.parameters?[SyncSetupPixelKitEvent.ParameterKey.pairingFailureStage], "presenter_generate_code")
+        XCTAssertNil(event.parameters?[SyncSetupPixelKitEvent.ParameterKey.pairingFailureKind])
     }
 
     func testOnPresentRecoverSyncAccountDialogThenRecoverAccountDialogShown() async {
@@ -506,6 +536,58 @@ final class SyncDialogControllerTests: XCTestCase {
         }
 
         await fulfillment(of: [expectation], timeout: 5)
+    }
+
+    func test_syncWithAnotherDevicePressed_whenPairingV2ExchangePresenterStartFails_firesFailureContextPixel() async {
+        featureFlagger.isFeatureOn[FeatureFlag.exchangeKeysToSyncWithAnotherDevice.rawValue] = true
+        ddgSyncing.account = .mock
+        await assertPairingV2PresenterStartFailurePixel(source: .exchange, myRole: "host") { failure in
+            connectionController.startExchangeModeError = failure
+        }
+    }
+
+    func test_syncWithAnotherDevicePressed_whenPairingV2ConnectPresenterStartFails_firesFailureContextPixel() async {
+        featureFlagger.isFeatureOn[FeatureFlag.exchangeKeysToSyncWithAnotherDevice.rawValue] = true
+        ddgSyncing.account = nil
+        await assertPairingV2PresenterStartFailurePixel(source: .connect, myRole: "joiner") { failure in
+            connectionController.startConnectModeError = failure
+        }
+    }
+
+    private func assertPairingV2PresenterStartFailurePixel(source: SyncSetupSource,
+                                                           myRole: String,
+                                                           configure: (PairingV2OperationFailure) -> Void) async {
+        let context = PairingV2FailureContext(stage: .presenterOpenOwnChannel, kind: .httpError)
+        let failure = PairingV2OperationFailure(
+            context: context,
+            underlyingError: SyncError.unexpectedStatusCode(500)
+        )
+        configure(failure)
+        let pixelExpectation = expectation(description: "fires Pairing V2 presenter start failure pixel")
+        var firedParameters: [String: String]?
+        PixelKit.setUp(
+            dryRun: false,
+            appVersion: "1.0.0",
+            session: "test",
+            defaultHeaders: [:],
+            defaults: UserDefaults()
+        ) { pixelName, _, parameters, _, _, completion in
+            if pixelName == "sync_setup_ended_failed_mac" {
+                firedParameters = parameters
+                pixelExpectation.fulfill()
+            }
+            completion(true, nil)
+        }
+        defer { PixelKit.tearDown() }
+
+        await syncDialogController.syncWithAnotherDevicePressed(source: nil)
+        await fulfillment(of: [pixelExpectation], timeout: 5)
+
+        XCTAssertEqual(firedParameters?[SyncSetupPixelKitEvent.ParameterKey.reason], SyncSetupFailureReason.relayChannelFailure)
+        XCTAssertEqual(firedParameters?[SyncSetupPixelKitEvent.ParameterKey.source], source.rawValue)
+        XCTAssertEqual(firedParameters?[SyncSetupPixelKitEvent.ParameterKey.myRole], myRole)
+        XCTAssertEqual(firedParameters?[SyncSetupPixelKitEvent.ParameterKey.pairingFailureStage], "presenter_open_own_channel")
+        XCTAssertEqual(firedParameters?[SyncSetupPixelKitEvent.ParameterKey.pairingFailureKind], "http_error")
     }
 
     func test_WhenSyncIsTurnedOff_ErrorHandlerSyncDidTurnOffCalled() async throws {

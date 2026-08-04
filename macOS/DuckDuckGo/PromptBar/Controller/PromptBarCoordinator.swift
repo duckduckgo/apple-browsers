@@ -43,7 +43,7 @@ final class PromptBarCoordinator {
     }
 
     func start() {
-        guard featureFlagger.isFeatureOn(.macosPromptBar) else { return }
+        guard featureFlagger.isFeatureOn(.promptBar) else { return }
 
         shortcutCancellable = preferences.effectiveKeyboardShortcutPublisher
             .sink { [weak self] shortcut in
@@ -51,9 +51,10 @@ final class PromptBarCoordinator {
             }
     }
 
-    func togglePromptBar() {
-        guard featureFlagger.isFeatureOn(.macosPromptBar) else { return }
-        presenter.toggle()
+    /// - Parameter source: The entry point that asked, which is what the visibility pixels report.
+    func togglePromptBar(source: PromptBarPresentationSource) {
+        guard featureFlagger.isFeatureOn(.promptBar) else { return }
+        presenter.toggle(source: source)
     }
 
     private func applyShortcut(_ shortcut: PromptBarShortcut?) {
@@ -65,7 +66,7 @@ final class PromptBarCoordinator {
         shortcutRegistrar.register(shortcut) { [weak self] in
             // The Carbon handler is nonisolated.
             Task { @MainActor in
-                self?.togglePromptBar()
+                self?.togglePromptBar(source: .keyboardShortcut)
             }
         }
     }

@@ -16,8 +16,10 @@
 //  limitations under the License.
 //
 
-import XCTest
+import FeatureFlags
 import PixelKitTestingUtilities
+import PrivacyConfig
+import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 @testable import PixelKit
 
@@ -506,6 +508,22 @@ final class BookmarkManagementDetailViewModelTests: XCTestCase {
 
     // MARK: - Sort tests
 
+    func testWhenBookmarksReorderByNameIsDisabled_thenLegacySortButtonTitlesAreUsed() {
+        let sut = createSUT(isBookmarksReorderByNameEnabled: false)
+
+        XCTAssertFalse(sut.isBookmarksReorderByNameEnabled)
+        XCTAssertEqual(sut.sortButtonTitle, UserText.bookmarksSort.capitalized)
+        XCTAssertEqual(sut.sortButtonByNameTitle, UserText.bookmarksSortByNameTitle)
+    }
+
+    func testWhenBookmarksReorderByNameIsEnabled_thenSortViewButtonTitlesAreUsed() {
+        let sut = createSUT(isBookmarksReorderByNameEnabled: true)
+
+        XCTAssertTrue(sut.isBookmarksReorderByNameEnabled)
+        XCTAssertEqual(sut.sortButtonTitle, UserText.bookmarksSortViewTitle)
+        XCTAssertEqual(sut.sortButtonByNameTitle, UserText.bookmarksSortViewByNameTitle)
+    }
+
     func testWhenSortModeIsManualAndInSearch_thenBookmarksAreInTheSameOrderAsReturnedFromManager() {
         let (bookmarkOne, bookmarkTwo, bookmarkThree) = createBookmarks()
         let bookmarkManager = createBookmarkManager(with: [bookmarkTwo, bookmarkOne, bookmarkThree])
@@ -626,6 +644,18 @@ final class BookmarkManagementDetailViewModelTests: XCTestCase {
 
     // MARK: - Helper functions
 
+    private func createSUT(isBookmarksReorderByNameEnabled: Bool) -> BookmarkManagementDetailViewModel {
+        let featureFlagger = MockFeatureFlagger(featuresStub: [
+            FeatureFlag.bookmarksReorderByName.rawValue: isBookmarksReorderByNameEnabled
+        ])
+        return BookmarkManagementDetailViewModel(
+            bookmarkManager: MockBookmarkManager(),
+            metrics: metrics,
+            navigationEngagementMetrics: .init(),
+            featureFlagger: featureFlagger
+        )
+    }
+
     private func createBookmarkManager(with bookmarks: [BaseBookmarkEntity], favorites: [BaseBookmarkEntity] = []) -> MockBookmarkManager {
         let bookmarkManager = MockBookmarkManager()
         bookmarkManager.list = BookmarkList(entities: bookmarks, topLevelEntities: bookmarks, favorites: favorites)
@@ -693,5 +723,22 @@ final class BookmarkManagementDetailViewModelTests: XCTestCase {
     private func cleanUp(pixelKit: PixelKit) {
         PixelKit.tearDown()
         pixelKit.clearFrequencyHistoryForAllPixels()
+    }
+}
+
+private extension BookmarkManagementDetailViewModel {
+    convenience init(
+        bookmarkManager: BookmarkManager,
+        metrics: BookmarksSearchAndSortMetrics,
+        navigationEngagementMetrics: BookmarksNavigationEngagementMetrics,
+        mode: BookmarksSortMode = .manual
+    ) {
+        self.init(
+            bookmarkManager: bookmarkManager,
+            metrics: metrics,
+            navigationEngagementMetrics: navigationEngagementMetrics,
+            featureFlagger: MockFeatureFlagger(),
+            mode: mode
+        )
     }
 }

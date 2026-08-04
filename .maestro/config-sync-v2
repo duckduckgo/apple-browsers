@@ -1,0 +1,10 @@
+flows:
+  - "**"
+executionOrder:
+  flowsOrder:
+    - 01_create_account_v2
+    - 02_login_account_v2
+    - 03_recover_account_v2
+    - 04_sync_data_setup_v2
+    - 05_sync_data_check_v2
+    - 06_delete_account_v2

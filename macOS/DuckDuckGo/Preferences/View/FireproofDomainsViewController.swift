@@ -23,28 +23,38 @@ import Common
 import FoundationExtensions
 import SwiftUI
 import CoreAudioTypes
+import Combine
+
 final class FireproofDomainsViewController: NSViewController {
 
     enum Constants {
         static let preferredContentSize = CGSize(width: 475, height: 307)
+        static let accentFilledButtonCornerRadius: CGFloat = 5
+        static let accentFilledButtonTitleInset: CGFloat = 8
     }
 
     // Factory used by callers (e.g., preferences) to present this controller
-    static func create(fireproofDomains: FireproofDomains, faviconManager: FaviconManagement) -> FireproofDomainsViewController {
-        FireproofDomainsViewController(fireproofDomains: fireproofDomains, faviconManager: faviconManager)
+    static func create(fireproofDomains: FireproofDomains,
+                       faviconManager: FaviconManagement,
+                       themeManager: ThemeManaging = NSApp.delegateTyped.themeManager) -> FireproofDomainsViewController {
+        FireproofDomainsViewController(fireproofDomains: fireproofDomains, faviconManager: faviconManager, themeManager: themeManager)
     }
 
     // MARK: - Dependencies
     private let fireproofDomains: FireproofDomains
     private let faviconManager: FaviconManagement
 
+    // MARK: - Theming
+    let themeManager: ThemeManaging
+    var themeUpdateCancellable: AnyCancellable?
+
     // MARK: - UI
     private let buttonsStackView = NSStackView()
-    private lazy var addDomainButton = NSButton(title: UserText.fireproofAddButton, target: self, action: #selector(addDomain(_:)))
-    private lazy var addCurrentDomainButton = NSButton(title: UserText.fireproofAddCurrentButton, target: self, action: #selector(addCurrentDomain(_:)))
-    private lazy var removeDomainButton = NSButton(title: UserText.remove, target: self, action: #selector(removeSelectedDomain(_:)))
-    private lazy var removeAllDomainsButton = NSButton(title: UserText.fireproofRemoveAllButton, target: self, action: #selector(removeAllDomains(_:)))
-    private lazy var doneButton = NSButton(title: UserText.done, target: self, action: #selector(doneButtonClicked(_:)))
+    private lazy var addDomainButton = MouseOverButton(title: UserText.fireproofAddButton, target: self, action: #selector(addDomain(_:)))
+    private lazy var addCurrentDomainButton = MouseOverButton(title: UserText.fireproofAddCurrentButton, target: self, action: #selector(addCurrentDomain(_:)))
+    private lazy var removeDomainButton = MouseOverButton(title: UserText.remove, target: self, action: #selector(removeSelectedDomain(_:)))
+    private lazy var removeAllDomainsButton = MouseOverButton(title: UserText.fireproofRemoveAllButton, target: self, action: #selector(removeAllDomains(_:)))
+    private lazy var doneButton = MouseOverButton(title: UserText.done, target: self, action: #selector(doneButtonClicked(_:)))
     private lazy var fireproofSitesLabel = NSTextField(labelWithString: UserText.fireproofSites)
     private let searchBar = NSSearchField()
     private let scrollView = NSScrollView()
@@ -56,9 +66,10 @@ final class FireproofDomainsViewController: NSViewController {
     private var visibleFireproofDomains: [String] { filteredFireproofDomains ?? allFireproofDomains }
 
     // MARK: - Init
-    init(fireproofDomains: FireproofDomains, faviconManager: FaviconManagement) {
+    init(fireproofDomains: FireproofDomains, faviconManager: FaviconManagement, themeManager: ThemeManaging) {
         self.fireproofDomains = fireproofDomains
         self.faviconManager = faviconManager
+        self.themeManager = themeManager
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -130,6 +141,7 @@ final class FireproofDomainsViewController: NSViewController {
         configureToolbarButton(removeDomainButton)
         configureToolbarButton(removeAllDomainsButton)
         configureToolbarButton(doneButton)
+        configureAccentFilledButton(doneButton)
 
         buttonsStackView.orientation = .horizontal
         buttonsStackView.spacing = 12
@@ -185,6 +197,9 @@ final class FireproofDomainsViewController: NSViewController {
             self?.selectAllRows() ?? false
         }
         doneButton.keyEquivalent = "\r"
+
+        applyThemeStyle()
+        subscribeToThemeChanges()
     }
 
     override func viewWillAppear() {
@@ -197,6 +212,14 @@ final class FireproofDomainsViewController: NSViewController {
         button.setContentHuggingPriority(.defaultHigh, for: .vertical)
         button.heightAnchor.constraint(equalToConstant: 24).isActive = true
         button.widthAnchor.constraint(greaterThanOrEqualToConstant: 24).isActive = true
+    }
+
+    /// Drops the standard bezel, which AppKit desaturates in inactive windows, in favour of a fill drawn by
+    /// `MouseOverButton` itself. `horizontalPadding` makes up for the title insets the bezel used to provide.
+    private func configureAccentFilledButton(_ button: MouseOverButton) {
+        button.isBordered = false
+        button.cornerRadius = Constants.accentFilledButtonCornerRadius
+        button.horizontalPadding = Constants.accentFilledButtonTitleInset * 2
     }
 
     private func updateRemoveButtonState() {
@@ -462,7 +485,16 @@ extension FireproofDomainsViewController: NSSearchFieldDelegate {
             return false
         }
     }
+}
 
+extension FireproofDomainsViewController: ThemeUpdateListening {
+
+    func applyThemeStyle(theme: ThemeStyleProviding) {
+        doneButton.backgroundColor = theme.palette.accentPrimary
+        doneButton.mouseOverColor = theme.palette.accentSecondary
+        doneButton.mouseDownColor = theme.palette.accentTertiary
+        doneButton.normalTintColor = theme.palette.accentContentPrimary
+    }
 }
 
 // MARK: - #Preview
@@ -490,9 +522,12 @@ private class MockFireproofDomains: FireproofDomains {
     faviconMock.setImage(NSImage(named: NSImage.applicationIconName)!, forHost: "duckduckgo.com")
     faviconMock.setImage(NSImage(named: NSImage.networkName)!, forHost: "github.com")
 
+    let themeManagerMock = MockThemeManager()
+
     let controller = FireproofDomainsViewController(
         fireproofDomains: mockDomains,
-        faviconManager: faviconMock
+        faviconManager: faviconMock,
+        themeManager: themeManagerMock
     )._preview_hidingWindowControlsOnAppear()
     return controller
 }

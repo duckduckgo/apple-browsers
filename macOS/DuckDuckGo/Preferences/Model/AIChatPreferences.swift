@@ -143,6 +143,24 @@ final class AIChatPreferences: ObservableObject {
         featureFlagger.isFeatureOn(.aiChatChromeSidebar)
     }
 
+    /// Single "Ask Duck.ai" menu pill: hides the separate sidebar-button option and rewords a few labels.
+    var isMenuButtonLayout: Bool {
+        shouldShowTabBarButtonVisibilityOptions && featureFlagger.isFeatureOn(.aiChatChromeMenuButton)
+    }
+
+    /// The separate "Show sidebar button" option only applies to the two-part split control.
+    var shouldShowSidebarButtonVisibilityOption: Bool {
+        shouldShowTabBarButtonVisibilityOptions && !isMenuButtonLayout
+    }
+
+    var tabBarButtonVisibilityLabel: String {
+        isMenuButtonLayout ? UserText.aiChatShowAskDuckAIButtonInTabBarLabel : UserText.aiChatShowDuckAIButtonInTabBarLabel
+    }
+
+    var automaticallySendPageContentLabel: String {
+        isMenuButtonLayout ? UserText.aiChatAutomaticallySendPageContentWhenNavigatingToggle : UserText.aiChatAutomaticallySendPageContentToggle
+    }
+
     var isPageContextToggleDisabled: Bool {
         if shouldShowTabBarButtonVisibilityOptions {
             return false
@@ -151,7 +169,7 @@ final class AIChatPreferences: ObservableObject {
     }
 
     var shouldShowPromptBarPreferences: Bool {
-        featureFlagger.isFeatureOn(.macosPromptBar)
+        featureFlagger.isFeatureOn(.promptBar)
     }
 
     // Native SERP AI settings (Search Assist / Hide AI Images), backed by the shared SERP settings store.

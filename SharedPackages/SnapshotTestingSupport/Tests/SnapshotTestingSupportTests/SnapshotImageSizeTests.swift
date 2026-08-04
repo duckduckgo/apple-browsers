@@ -80,6 +80,17 @@ struct SnapshotImageSizeTests {
 
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
+    func landscapeOrientationSwapsDeviceDimensions() {
+        let device = SnapshotDevice.iPhoneDefault.oriented(for: .landscapeRight)
+
+        #expect(device.size == CGSize(width: 844, height: 390))
+        #if os(iOS)
+        #expect(device.verticalSizeClass == .compact)
+        #endif
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func sheetUsesConfigurationDeviceSize() {
         let configuration = SnapshotImageConfiguration(
             appearance: .dark,

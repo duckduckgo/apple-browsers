@@ -1578,6 +1578,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         fireDailyFireWindowConfigurationPixels()
         fireDailyAIChatEnabledPixel()
         fireDailyAIFeaturesStatePixel()
+        fireDailyPromptBarStatePixel()
         fireDailyAdBlockingPixel()
         fireDailyAutoClearOnExitEnabledPixel()
 
@@ -1628,6 +1629,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func fireDailyAIChatEnabledPixel() {
         PixelKit.fire(AIChatPixel.aiChatIsEnabled(isEnabled: aiChatPreferences.isAIFeaturesEnabled), frequency: .daily)
+    }
+
+    /// The settings toggles only cover users who touch a setting; this sizes the enabled base.
+    @MainActor
+    private func fireDailyPromptBarStatePixel() {
+        guard featureFlagger.isFeatureOn(.promptBar) else { return }
+
+        PixelKit.fire(PromptBarPixel.state(shortcutEnabled: promptBarPreferences.isKeyboardShortcutEnabled,
+                                           menuBarIconEnabled: promptBarPreferences.isMenuBarIconVisible),
+                      frequency: .daily)
     }
 
     /// Once-daily snapshot of the three AI settings + the derived "no AI" state, across the active base.
@@ -2434,7 +2445,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// Must run before `setUpPromptBarMenuBarVisibility()`, which hands the icon's click to the coordinator.
     @MainActor
     private func setUpPromptBar() {
-        guard featureFlagger.isFeatureOn(.macosPromptBar) else {
+        guard featureFlagger.isFeatureOn(.promptBar) else {
             promptBarCoordinator = nil
             return
         }
@@ -2458,7 +2469,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @MainActor
     private func setUpPromptBarMenuBarVisibility() {
-        guard featureFlagger.isFeatureOn(.macosPromptBar) else {
+        guard featureFlagger.isFeatureOn(.promptBar) else {
             promptBarMenuBarController?.hide()
             promptBarMenuBarController = nil
             promptBarMenuBarCancellable = nil
@@ -2469,7 +2480,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             promptBarMenuBarController = PromptBarMenuBarController()
         }
         promptBarMenuBarController?.onClick = { [weak self] in
-            self?.promptBarCoordinator?.togglePromptBar()
+            self?.promptBarCoordinator?.togglePromptBar(source: .menuBarIcon)
         }
 
         // Applied synchronously: a deferred first update lets the icon appear at

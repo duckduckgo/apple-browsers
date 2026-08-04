@@ -725,6 +725,6 @@ private extension NSAttributedString {
     }
 
     static var addressBarPlaceholderForDuckAI: NSAttributedString {
-        placehoderAttributedString(title: UserText.aiChatOmnibarPlaceholder)
+        NSAttributedString(string: UserText.aiChatOmnibarPlaceholder)
     }
 }

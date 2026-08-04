@@ -988,8 +988,14 @@ final class AIChatOmnibarController {
         let debugURLSettings: any KeyedStoring<AIChatDebugURLSettings> = UserDefaults.standard.keyedStoring()
         let customAIChatURLHost = debugURLSettings.customURLHostname
         let candidates = AIChatTabPickerSource.attachableTabs(forOrigin: originTabCollection, in: Application.appDelegate.windowControllersManager)
-            .sorted { ($0.lastSelectedAt ?? .distantPast) > ($1.lastSelectedAt ?? .distantPast) }
-            .compactMap { tab -> AIChatTabAttachment? in
+            .enumerated()
+            .sorted { lhs, rhs in
+                let lhsDate = lhs.element.lastSelectedAt ?? .distantPast
+                let rhsDate = rhs.element.lastSelectedAt ?? .distantPast
+                if lhsDate != rhsDate { return lhsDate > rhsDate }
+                return lhs.offset < rhs.offset
+            }
+            .compactMap { _, tab -> AIChatTabAttachment? in
                 guard case .url(let url, _, _) = tab.content else { return nil }
                 if let customHost = customAIChatURLHost, !customHost.isEmpty, url.host == customHost {
                     return nil

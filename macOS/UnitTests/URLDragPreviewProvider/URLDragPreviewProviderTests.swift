@@ -31,14 +31,14 @@ final class URLDragPreviewProviderTests {
     @Test(.timeLimit(.minutes(1)))
     func testURLPreviewWithFavicon() {
         let provider = URLDragPreviewProvider(url: URL(string: "https://duckduckgo.com")!, favicon: .homeFavicon)
-        assertImageSnapshot(matching: provider.createPreview(), size: .intrinsicContentSize)
+        assertImageSnapshot(matching: provider.createPreview().snapshotBackground(), size: .intrinsicContentSize)
     }
 
     @available(macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
     func testURLPreviewWithoutFavicon() {
         let provider = URLDragPreviewProvider(url: URL(string: "https://duckduckgo.com")!, favicon: nil)
-        assertImageSnapshot(matching: provider.createPreview(), size: .intrinsicContentSize)
+        assertImageSnapshot(matching: provider.createPreview().snapshotBackground(), size: .intrinsicContentSize)
     }
 
     @available(macOS 13, *)
@@ -50,7 +50,7 @@ final class URLDragPreviewProviderTests {
             backgroundColor: .button,
             textColor: .textColor
         )
-        assertImageSnapshot(matching: provider.createPreview(), size: .intrinsicContentSize)
+        assertImageSnapshot(matching: provider.createPreview().snapshotBackground(), size: .intrinsicContentSize)
     }
 
     @available(macOS 13, *)
@@ -61,14 +61,14 @@ final class URLDragPreviewProviderTests {
             favicon: .homeFavicon,
             width: 300
         )
-        assertImageSnapshot(matching: provider.createPreview(), size: .intrinsicContentSize)
+        assertImageSnapshot(matching: provider.createPreview().snapshotBackground(), size: .intrinsicContentSize)
     }
 
     @available(macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
     func testURLPreviewWithCustomWidthAndWithoutFavicon() {
         let provider = URLDragPreviewProvider(url: URL(string: "https://duckduckgo.com")!, favicon: nil, width: 300)
-        assertImageSnapshot(matching: provider.createPreview(), size: .intrinsicContentSize)
+        assertImageSnapshot(matching: provider.createPreview().snapshotBackground(), size: .intrinsicContentSize)
     }
 
     @available(macOS 13, *)
@@ -78,21 +78,21 @@ final class URLDragPreviewProviderTests {
             url: URL(string: "https://very-long-domain-name-that-should-be-truncated.com/path/to/some/very/long/resource")!,
             favicon: .homeFavicon
         )
-        assertImageSnapshot(matching: provider.createPreview(), size: .intrinsicContentSize)
+        assertImageSnapshot(matching: provider.createPreview().snapshotBackground(), size: .intrinsicContentSize)
     }
 
     @available(macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
     func testTextPreviewWithTextOnly() {
         let provider = URLDragPreviewProvider(text: "Custom Text Only Preview", favicon: nil)
-        assertImageSnapshot(matching: provider.createPreview(), size: .intrinsicContentSize)
+        assertImageSnapshot(matching: provider.createPreview().snapshotBackground(), size: .intrinsicContentSize)
     }
 
     @available(macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
     func testTextPreviewWithFavicon() {
         let provider = URLDragPreviewProvider(text: "Custom Text Only Preview", favicon: .homeFavicon)
-        assertImageSnapshot(matching: provider.createPreview(), size: .intrinsicContentSize)
+        assertImageSnapshot(matching: provider.createPreview().snapshotBackground(), size: .intrinsicContentSize)
     }
 
 }

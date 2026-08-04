@@ -44,3 +44,40 @@ private struct SnapshotBackground: View {
         #endif
     }
 }
+
+#if os(macOS)
+public extension NSView {
+    func snapshotBackground() -> NSView {
+        SnapshotBackgroundView(content: self)
+    }
+}
+
+private final class SnapshotBackgroundView: NSView {
+
+    init(content: NSView) {
+        super.init(frame: content.frame)
+        wantsLayer = true
+        content.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(content)
+        NSLayoutConstraint.activate([
+            content.leadingAnchor.constraint(equalTo: leadingAnchor),
+            content.trailingAnchor.constraint(equalTo: trailingAnchor),
+            content.topAnchor.constraint(equalTo: topAnchor),
+            content.bottomAnchor.constraint(equalTo: bottomAnchor)
+        ])
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override var wantsUpdateLayer: Bool {
+        true
+    }
+
+    override func updateLayer() {
+        layer?.backgroundColor = NSColor.windowBackgroundColor.cgColor
+    }
+}
+#endif

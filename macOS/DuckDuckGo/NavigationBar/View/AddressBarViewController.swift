@@ -38,6 +38,7 @@ protocol AddressBarViewControllerDelegate: AnyObject {
     /// Called when the user refocuses the address bar while duck.ai mode is the persistent mode for the current tab.
     /// The suggestions row should re-expand and the prompt editor should become first responder.
     func addressBarViewControllerDidRefocusInAIChatMode(_ addressBarViewController: AddressBarViewController)
+    func addressBarViewController(_ addressBarViewController: AddressBarViewController, openSettings destination: PreferencesDestination)
 }
 
 final class AddressBarViewController: NSViewController {
@@ -1397,6 +1398,7 @@ private extension AddressBarViewController {
 }
 
 extension AddressBarViewController: AddressBarButtonsViewControllerDelegate {
+
     func addressBarButtonsViewControllerHideAIChatButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController) {
         aiChatSettings.showShortcutInAddressBar = false
     }
@@ -1413,8 +1415,8 @@ extension AddressBarViewController: AddressBarButtonsViewControllerDelegate {
         _ = escapeKeyDown()
     }
 
-    func addressBarButtonsViewController(_ addressBarButtonsViewController: AddressBarButtonsViewController, openSettingsPane pane: PreferencePaneIdentifier) {
-        tabCollectionViewModel.insertOrAppendNewTab(.settings(pane: pane))
+    func addressBarButtonsViewController(_ addressBarButtonsViewController: AddressBarButtonsViewController, openSettings destination: PreferencesDestination) {
+        delegate?.addressBarViewController(self, openSettings: destination)
     }
 
     func addressBarButtonsViewControllerAIChatButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController) {

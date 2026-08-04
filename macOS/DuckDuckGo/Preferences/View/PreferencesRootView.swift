@@ -113,18 +113,34 @@ enum Preferences {
                     .frame(minWidth: Const.minSidebarWidth, maxWidth: Const.sidebarWidth)
                     .layoutPriority(1)
                 Color(NSColor.separatorColor).frame(width: 1)
-                ScrollView(.vertical) {
-                    HStack(spacing: 0) {
-                        contentView
-                        Spacer()
+                ScrollViewReader { proxy in
+                    ScrollView(.vertical) {
+                        HStack(spacing: 0) {
+                            contentView
+                            Spacer()
+                        }
+                    }
+                    .frame(minWidth: Const.minContentWidth, maxWidth: .infinity)
+                    .accessibilityIdentifier("Settings.ScrollView")
+                    // `onReceive` rather than `onChange`: a request made before this view's first body evaluation
+                    // — the ordering when a fresh Settings tab is opened deep-linked — is already the current value
+                    // by the time the view exists, and `onChange` never fires for it.
+                    .onReceive(model.$scrollTarget) { anchor in
+                        guard let anchor else { return }
+                        scroll(proxy, to: anchor)
                     }
                 }
-                .frame(minWidth: Const.minContentWidth, maxWidth: .infinity)
-                .accessibilityIdentifier("Settings.ScrollView")
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color(colorsProvider.settingsBackgroundColor))
             .environment(\.designSystemPalette, themeManager.designColorPalette)
+        }
+
+        private func scroll(_ proxy: ScrollViewProxy, to anchor: PreferencesSectionAnchor) {
+            DispatchQueue.main.async {
+                proxy.scrollTo(anchor, anchor: nil)
+                model.resetScrollRequest()
+            }
         }
 
         @ViewBuilder

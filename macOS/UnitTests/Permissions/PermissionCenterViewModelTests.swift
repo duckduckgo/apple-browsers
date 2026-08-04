@@ -190,8 +190,8 @@ final class PermissionCenterViewModelTests: XCTestCase {
 
     // MARK: - Autoplay Settings Tests
 
-    func testWhenOpenAutoplaySettingsThenGeneralPaneIsOpenedAndPopoverDismissed() {
-        var openedPanes: [PreferencePaneIdentifier] = []
+    func testWhenOpenAutoplaySettingsThenPermissionsSectionIsOpenedAndPopoverDismissed() {
+        var destinations: [PreferencesDestination] = []
         var dismissCallCount = 0
 
         let viewModel = PermissionCenterViewModel(
@@ -202,14 +202,14 @@ final class PermissionCenterViewModelTests: XCTestCase {
             featureFlagger: mockFeatureFlagger,
             removePermission: { _ in },
             dismissPopover: { dismissCallCount += 1 },
-            openSettingsPane: { openedPanes.append($0) },
+            openSettings: { destinations.append($0) },
             displaysAutoplayPolicy: true,
             systemPermissionManager: mockSystemPermissionManager
         )
 
         viewModel.openAutoplaySettings()
 
-        XCTAssertEqual(openedPanes, [.general])
+        XCTAssertEqual(destinations, [.generalPermissions])
         XCTAssertEqual(dismissCallCount, 1)
     }
 

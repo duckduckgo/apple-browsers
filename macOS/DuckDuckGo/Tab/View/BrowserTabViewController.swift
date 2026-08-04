@@ -1326,6 +1326,10 @@ final class BrowserTabViewController: NSViewController {
         }
     }
 
+    func requestSettingsScroll(to anchor: PreferencesSectionAnchor) {
+        preferencesViewController?.model.requestScroll(to: anchor)
+    }
+
     private func shouldReplaceWebView(for tabViewModel: TabViewModel?) -> Bool {
         guard let tabViewModel else { return false }
 

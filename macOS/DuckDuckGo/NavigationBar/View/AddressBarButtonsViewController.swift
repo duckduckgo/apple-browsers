@@ -58,7 +58,7 @@ protocol AddressBarButtonsViewControllerDelegate: AnyObject {
     func addressBarButtonsViewControllerHideAIChatButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController)
     func addressBarButtonsViewControllerHideAskAIChatButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController)
     func addressBarButtonsViewControllerHideSearchModeToggleClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController)
-    func addressBarButtonsViewController(_ addressBarButtonsViewController: AddressBarButtonsViewController, openSettingsPane pane: PreferencePaneIdentifier)
+    func addressBarButtonsViewController(_ addressBarButtonsViewController: AddressBarButtonsViewController, openSettings destination: PreferencesDestination)
     func addressBarButtonsViewControllerAIChatButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController)
     func addressBarButtonsViewControllerSearchModeToggleChanged(_ addressBarButtonsViewController: AddressBarButtonsViewController, isAIChatMode: Bool)
 }
@@ -1634,7 +1634,7 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     @objc func openAIChatSettingsContextMenuAction(_ sender: NSMenuItem) {
-        delegate?.addressBarButtonsViewController(self, openSettingsPane: .aiChat)
+        delegate?.addressBarButtonsViewController(self, openSettings: .aiChat)
     }
 
     private func updateAIChatDividerVisibility() {
@@ -2114,9 +2114,9 @@ final class AddressBarButtonsViewController: NSViewController {
             setPermissionsNeedReload: { [weak tabViewModel] in
                 tabViewModel?.tab.permissions.setPermissionsNeedReload()
             },
-            openSettingsPane: { [weak self] pane in
+            openSettings: { [weak self] destination in
                 guard let self else { return }
-                delegate?.addressBarButtonsViewController(self, openSettingsPane: pane)
+                delegate?.addressBarButtonsViewController(self, openSettings: destination)
             },
             hasTemporaryPopupAllowance: tabViewModel.tab.popupHandling?.popupsTemporarilyAllowedForCurrentPage ?? false,
             pageInitiatedPopupOpened: tabViewModel.tab.popupHandling?.pageInitiatedPopupOpened ?? false,

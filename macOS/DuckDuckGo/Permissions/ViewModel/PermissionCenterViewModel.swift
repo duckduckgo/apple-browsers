@@ -191,7 +191,7 @@ final class PermissionCenterViewModel: ObservableObject {
     private let grantPermission: ((PermissionAuthorizationQuery) -> Void)?
     private let reloadPage: (() -> Void)?
     private let setPermissionsNeedReload: (() -> Void)?
-    private let openSettingsPane: ((PreferencePaneIdentifier) -> Void)?
+    private let openSettings: ((PreferencesDestination) -> Void)?
     private var cancellables = Set<AnyCancellable>()
     private var removedPermissions = Set<PermissionType>()
     private(set) var hasTemporaryPopupAllowance: Bool
@@ -233,7 +233,7 @@ final class PermissionCenterViewModel: ObservableObject {
         grantPermission: ((PermissionAuthorizationQuery) -> Void)? = nil,
         reloadPage: (() -> Void)? = nil,
         setPermissionsNeedReload: (() -> Void)? = nil,
-        openSettingsPane: ((PreferencePaneIdentifier) -> Void)? = nil,
+        openSettings: ((PreferencesDestination) -> Void)? = nil,
         hasTemporaryPopupAllowance: Bool = false,
         pageInitiatedPopupOpened: Bool = false,
         displaysAutoplayPolicy: Bool = false,
@@ -257,7 +257,7 @@ final class PermissionCenterViewModel: ObservableObject {
         self.grantPermission = grantPermission
         self.reloadPage = reloadPage
         self.setPermissionsNeedReload = setPermissionsNeedReload
-        self.openSettingsPane = openSettingsPane
+        self.openSettings = openSettings
         self.hasTemporaryPopupAllowance = hasTemporaryPopupAllowance
         self.pageInitiatedPopupOpened = pageInitiatedPopupOpened
         self.displaysAutoplayPolicy = displaysAutoplayPolicy
@@ -443,9 +443,9 @@ final class PermissionCenterViewModel: ObservableObject {
         displaysAutoplayDiscovery && permissionItems.contains { $0.permissionType == .autoplayPolicy }
     }
 
-    /// Opens the General settings pane, where the all-sites autoplay preference lives
+    /// Opens the General settings pane, scrolled to the Permissions section where the all-sites autoplay preference lives
     func openAutoplaySettings() {
-        openSettingsPane?(.general)
+        openSettings?(.generalPermissions)
         dismissPopover()
     }
 

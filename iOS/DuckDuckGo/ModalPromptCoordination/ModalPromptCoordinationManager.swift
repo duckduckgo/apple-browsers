@@ -85,9 +85,13 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
     }
 
     private enum AttemptState {
+        /// No coordinated modal owns a lease.
         case idle
+        /// Holds the lease while providers are evaluated.
         case evaluating(PromoQueueModalLease)
+        /// Holds the lease and selected prompt until scheduled presentation begins.
         case committed(CommittedAttempt)
+        /// Holds the lease and exact presented root until reconciliation observes its dismissal.
         case presentationActive(PromoQueueModalLease, exactRoot: PresentedModalRoot)
     }
 

@@ -32,13 +32,13 @@ enum AutoplayPromoPixel: PixelKitEvent, Equatable {
     var name: String {
         switch self {
         case .shown:
-            return "m_mac_autoplay-promo_shown"
+            return "autoplay-promo_shown"
         case .engaged:
-            return "m_mac_autoplay-promo_engaged"
+            return "autoplay-promo_engaged"
         case .autoDismissed:
-            return "m_mac_autoplay-promo_auto-dismissed"
+            return "autoplay-promo_auto-dismissed"
         case .settingsLinkClicked:
-            return "m_mac_autoplay-promo_settings-click"
+            return "autoplay-promo_settings-click"
         }
     }
 

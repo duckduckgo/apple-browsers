@@ -122,6 +122,11 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
     @Published var attachmentUsage: AIChatAttachmentUsage?
 
+    /// True while the native input is in "edit an existing message" mode. Hosts observe this to
+    /// apply the edit-mode chrome (dim the transcript, swap the header). Independent of how the
+    /// edit is triggered — set by `beginEditMode`, cleared by `endEditMode` (the single exit).
+    @Published private(set) var isEditing: Bool = false
+
     var isSubmitBlockedByRecoveryCard: Bool = false {
         didSet {
             guard oldValue != isSubmitBlockedByRecoveryCard else { return }
@@ -738,6 +743,40 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     func submitProgrammatic(text: String) {
         unifiedToggleInputVC(viewController, didSubmitText: text, mode: .aiChat)
     }
+
+    // MARK: - Edit mode
+
+    /// Enters "edit an existing message" mode: opens the input prefilled with the message's text
+    /// and attachments and flips `isEditing` so hosts apply the edit-mode chrome. Independent of
+    /// the FE / messaging layer — callers (the FE bridge, or the debug trigger) supply the content.
+    func beginEditMode(prompt: String, attachments: [UnifiedToggleInputAttachment] = []) {
+        isEditing = true
+        showExpanded(prefilledText: prompt, inputMode: .aiChat, activatesInput: true)
+        attachments.forEach { viewController.addAttachment($0) }
+    }
+
+    /// Exits edit mode back to a normal input: clears the flag (restoring host chrome) and resets
+    /// the input. The single exit point for submit / cancel / teardown.
+    func endEditMode() {
+        guard isEditing else { return }
+        isEditing = false
+        resetToolsSelection()
+        clearAttachments()
+        setText("")
+        showCollapsed()
+    }
+
+#if DEBUG
+    /// Debug-only sample attachments (a generated image) so edit mode can be exercised from the
+    /// app without the FE. Used by the "/editdebug" trigger.
+    private func makeDebugEditAttachments() -> [UnifiedToggleInputAttachment] {
+        let image = UIGraphicsImageRenderer(size: CGSize(width: 48, height: 48)).image { context in
+            UIColor.systemBlue.setFill()
+            context.fill(CGRect(x: 0, y: 0, width: 48, height: 48))
+        }
+        return [.image(AIChatImageAttachment(image: image, fileName: "debug.png"))]
+    }
+#endif
 
     func hide() {
         keyboardMonitor.disarm()
@@ -1429,11 +1468,27 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             delegate?.unifiedToggleInputDidSubmitQuery(text)
             didSubmitQuery.send(text)
         case .aiChat:
+#if DEBUG
+            // Debug-only: submit "/editdebug" in an AI chat to enter edit mode with sample
+            // content, so the edit-mode UI can be exercised without the FE.
+            if text == "/editdebug" {
+                setText("")
+                beginEditMode(prompt: "Debug: edit me", attachments: makeDebugEditAttachments())
+                return
+            }
+#endif
             let userScript = boundUserScript
             let tools = toolsController.selectedToolsForSubmission()
 
             if let validationMessage = attachmentController.submissionValidationMessage(for: text, mode: mode) {
                 attachmentController.presentValidationError(validationMessage)
+                return
+            }
+
+            // In edit mode, submitting exits edit mode instead of sending a new prompt. (When the
+            // messaging layer lands, this is also where the editPrompt reply gets resolved.)
+            if isEditing {
+                endEditMode()
                 return
             }
 

@@ -191,19 +191,6 @@ final class ModalPromptCoordinationService {
         }
     }
 
-    func admitVisiblePromo(_ identity: VisiblePromoIdentity) -> VisiblePromoAdmissionResult {
-        switch promoQueueFeatureState {
-        case .disabled:
-            return .featureDisabled
-        case .transitioning:
-            return .unavailableDuringTransition
-        case .enabled:
-            break
-        }
-
-        return admitCoordinatedVisiblePromo(identity)
-    }
-
     private func admitVisiblePromoDuringEnablingTransition(_ identity: VisiblePromoIdentity) -> VisiblePromoAdmissionResult {
         guard promoQueueFeatureState == .transitioning(to: .enabled) else {
             return .unavailableDuringTransition
@@ -230,32 +217,6 @@ final class ModalPromptCoordinationService {
             retryActiveVisiblePromoRegistrations(excluding: identity.surfaceID)
         }
         return result
-    }
-
-    func releaseVisiblePromoLease(_ lease: PromoQueueVisiblePromoLease) {
-        lease.release()
-    }
-
-    func registerVisiblePromoRetry(
-        for surfaceID: UUID,
-        target: NewTabPagePromoRetrying
-    ) -> NewTabPagePromoRetryRegistration {
-        let registrationID = UUID()
-        let registration = WeakPromoRetryRegistration(
-            id: registrationID,
-            surfaceID: surfaceID,
-            target: target
-        )
-
-        promoRetryRegistrations.removeAll { $0.surfaceID == surfaceID }
-        promoRetryRegistrations.append(registration)
-
-        return NewTabPagePromoRetryRegistration { [weak self] in
-            self?.deregisterVisiblePromoRetry(
-                for: surfaceID,
-                registrationID: registrationID
-            )
-        }
     }
 
     private func subscribeToPromoQueueFeatureState(initialTargetState: PromoQueueFeatureTargetState) {
@@ -354,7 +315,46 @@ final class ModalPromptCoordinationService {
 
 }
 
-extension ModalPromptCoordinationService: NewTabPagePromoCoordinating {}
+extension ModalPromptCoordinationService: NewTabPagePromoCoordinating {
+    func admitVisiblePromo(_ identity: VisiblePromoIdentity) -> VisiblePromoAdmissionResult {
+        switch promoQueueFeatureState {
+        case .disabled:
+            return .featureDisabled
+        case .transitioning:
+            return .unavailableDuringTransition
+        case .enabled:
+            break
+        }
+
+        return admitCoordinatedVisiblePromo(identity)
+    }
+
+    func releaseVisiblePromoLease(_ lease: PromoQueueVisiblePromoLease) {
+        lease.release()
+    }
+
+    func registerVisiblePromoRetry(
+        for surfaceID: UUID,
+        target: NewTabPagePromoRetrying
+    ) -> NewTabPagePromoRetryRegistration {
+        let registrationID = UUID()
+        let registration = WeakPromoRetryRegistration(
+            id: registrationID,
+            surfaceID: surfaceID,
+            target: target
+        )
+
+        promoRetryRegistrations.removeAll { $0.surfaceID == surfaceID }
+        promoRetryRegistrations.append(registration)
+
+        return NewTabPagePromoRetryRegistration { [weak self] in
+            self?.deregisterVisiblePromoRetry(
+                for: surfaceID,
+                registrationID: registrationID
+            )
+        }
+    }
+}
 
 extension ModalPromptCoordinationService: RecentModalPromptStatusProviding {
     var wasModalPromptRecentlyPresented: Bool { modalPromptCoordinationManager.didPresentModalPromptThisSession }

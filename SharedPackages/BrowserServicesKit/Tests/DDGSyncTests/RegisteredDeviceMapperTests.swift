@@ -42,7 +42,7 @@ final class RegisteredDeviceMapperTests: XCTestCase {
     func testWhenUnifiedReadIsEnabledThenPrefersDeviceInfoOverLegacyFields() async throws {
         let account = makeAccount()
         let accountInfoKeys = AccountInfoKeyManagingMock()
-        accountInfoKeys.loadKeyStub = try makeAccountInfoKeyMaterial()
+        accountInfoKeys.loadKeyStub = try makeAccountInfoKey()
         let deviceInfoCodec = DeviceInfoReadingMock()
         deviceInfoCodec.decryptHandler = { encryptedDeviceInfo, _ in
             XCTAssertEqual(encryptedDeviceInfo, "encrypted-info")
@@ -96,7 +96,7 @@ final class RegisteredDeviceMapperTests: XCTestCase {
     func testWhenUnifiedEntriesAreMixedThenEachEntryFallsBackIndependently() async throws {
         let account = makeAccount()
         let accountInfoKeys = AccountInfoKeyManagingMock()
-        accountInfoKeys.loadKeyStub = try makeAccountInfoKeyMaterial()
+        accountInfoKeys.loadKeyStub = try makeAccountInfoKey()
         let deviceInfoCodec = DeviceInfoReadingMock()
         deviceInfoCodec.decryptHandler = { encryptedDeviceInfo, _ in
             guard encryptedDeviceInfo == "valid-info" else {
@@ -141,8 +141,8 @@ final class RegisteredDeviceMapperTests: XCTestCase {
     func testWhenUnifiedInfoUsesUnexpectedKeyIDThenRefreshesOnceAndRetriesAllEntries() async throws {
         let account = makeAccount()
         let accountInfoKeys = AccountInfoKeyManagingMock()
-        accountInfoKeys.loadKeyStub = try makeAccountInfoKeyMaterial(kid: "stale-key")
-        accountInfoKeys.refreshKeyStub = try makeAccountInfoKeyMaterial(kid: "current-key")
+        accountInfoKeys.loadKeyStub = try makeAccountInfoKey(kid: "stale-key")
+        accountInfoKeys.refreshKeyStub = try makeAccountInfoKey(kid: "current-key")
         let deviceInfoCodec = DeviceInfoReadingMock()
         deviceInfoCodec.decryptHandler = { encryptedDeviceInfo, key in
             guard key.kid == "current-key" else {
@@ -179,8 +179,8 @@ final class RegisteredDeviceMapperTests: XCTestCase {
     func testWhenUnifiedInfoStillUsesUnexpectedKeyIDAfterRefreshThenFallsBackWithoutRefreshingAgain() async throws {
         let account = makeAccount()
         let accountInfoKeys = AccountInfoKeyManagingMock()
-        accountInfoKeys.loadKeyStub = try makeAccountInfoKeyMaterial(kid: "stale-key")
-        accountInfoKeys.refreshKeyStub = try makeAccountInfoKeyMaterial(kid: "refreshed-key")
+        accountInfoKeys.loadKeyStub = try makeAccountInfoKey(kid: "stale-key")
+        accountInfoKeys.refreshKeyStub = try makeAccountInfoKey(kid: "refreshed-key")
         let deviceInfoCodec = DeviceInfoReadingMock()
         deviceInfoCodec.decryptHandler = { _, _ in
             throw DeviceInfoCodecError.unexpectedKeyID
@@ -351,28 +351,28 @@ final class RegisteredDeviceMapperTests: XCTestCase {
                     state: .active)
     }
 
-    private func makeAccountInfoKeyMaterial(kid: String = "account-info-key") throws -> AccountInfoKeyMaterial {
+    private func makeAccountInfoKey(kid: String = "account-info-key") throws -> AccountInfoKey {
         let keyPair = try RSAKeyPairGenerator.makeKeyPair()
-        return AccountInfoKeyMaterial(kid: kid,
-                                      publicKey: keyPair.publicKey,
-                                      privateKey: keyPair.privateKey)
+        return AccountInfoKey(kid: kid,
+                              publicKey: keyPair.publicKey,
+                              privateKey: keyPair.privateKey)
     }
 }
 
 private final class DeviceInfoReadingMock: DeviceInfoCoding {
 
     private(set) var decryptCalls: [String] = []
-    var decryptHandler: ((String, AccountInfoKeyMaterial) throws -> DeviceInfo)?
+    var decryptHandler: ((String, AccountInfoKey) throws -> DeviceInfo)?
 
     func encrypt(_ deviceInfo: DeviceInfo, using protectedKey: ProtectedKey) throws -> String {
         throw DeviceInfoCodecError.invalidProtectedKey
     }
 
-    func encrypt(_ deviceInfo: DeviceInfo, using key: AccountInfoKeyMaterial) throws -> String {
+    func encrypt(_ deviceInfo: DeviceInfo, using key: AccountInfoKey) throws -> String {
         throw DeviceInfoCodecError.invalidProtectedKey
     }
 
-    func decrypt(_ encryptedDeviceInfo: String, using key: AccountInfoKeyMaterial) throws -> DeviceInfo {
+    func decrypt(_ encryptedDeviceInfo: String, using key: AccountInfoKey) throws -> DeviceInfo {
         decryptCalls.append(encryptedDeviceInfo)
         guard let decryptHandler else {
             throw DeviceInfoCodecError.invalidPayload

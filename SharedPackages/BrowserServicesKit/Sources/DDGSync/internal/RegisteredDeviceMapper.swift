@@ -132,7 +132,7 @@ struct RegisteredDeviceMapper: RegisteredDeviceMapping {
 
     private func registeredDevice(from entry: RegisteredDeviceEntry,
                                   account: SyncAccount,
-                                  accountInfoKey: AccountInfoKeyMaterial?,
+                                  accountInfoKey: AccountInfoKey?,
                                   thirdPartyMainKey: Data?,
                                   isUnifiedReadEnabled: Bool) -> MappingAttempt {
         let unifiedDeviceInfo = readUnifiedDeviceInfo(from: entry,
@@ -160,7 +160,7 @@ struct RegisteredDeviceMapper: RegisteredDeviceMapping {
     }
 
     private func readUnifiedDeviceInfo(from entry: RegisteredDeviceEntry,
-                                       accountInfoKey: AccountInfoKeyMaterial?,
+                                       accountInfoKey: AccountInfoKey?,
                                        isUnifiedReadEnabled: Bool) -> UnifiedDeviceInfoReadResult {
         guard isUnifiedReadEnabled else {
             return .notAttempted
@@ -236,7 +236,7 @@ struct RegisteredDeviceMapper: RegisteredDeviceMapping {
 
     private func accountInfoKeyIfNeeded(for entries: [RegisteredDeviceEntry],
                                         account: SyncAccount,
-                                        isUnifiedReadEnabled: Bool) async -> AccountInfoKeyMaterial? {
+                                        isUnifiedReadEnabled: Bool) async -> AccountInfoKey? {
         guard isUnifiedReadEnabled,
               entries.contains(where: { $0.info != nil }),
               let accountInfoKeys else {

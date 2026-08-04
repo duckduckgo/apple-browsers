@@ -110,7 +110,8 @@ struct ProductionDependencies: SyncDependencies {
                                  accountInfoKeyFactory: accountInfoKeyFactory,
                                  deviceInfoCodec: deviceInfoCodec,
                                  isScopedAccessCredentialsEnabled: { syncFeatureFlags.isScopedAccessCredentialsEnabled() },
-                                 canWriteUnifiedDeviceList: { syncFeatureFlags.canWriteUnifiedDeviceList() })
+                                 canWriteUnifiedDeviceList: { syncFeatureFlags.canWriteUnifiedDeviceList() },
+                                 canReadUnifiedDeviceList: { syncFeatureFlags.canReadUnifiedDeviceList() })
         self.scopedAccess = scopedAccess
         scheduler = SyncScheduler()
     }

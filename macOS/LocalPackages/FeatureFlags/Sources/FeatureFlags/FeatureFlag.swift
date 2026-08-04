@@ -468,7 +468,7 @@ public enum FeatureFlag: String, CaseIterable {
     /// Gates the macOS Prompt Bar: a system-wide Duck.ai entry point opened via a global
     /// keyboard shortcut or a menu bar icon, plus its rows on the AI Features settings screen.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216850216210288?focus=true
-    case macosPromptBar
+    case promptBar
 
     /// Gates the bookmarks "Reorder by name" action, which permanently reorders the target
     /// folder's direct children alphabetically and persists the new order.
@@ -785,8 +785,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(SyncSubfeature.canUseV2ConnectFlow), category: .sync)
         case .syncCanShowV2ConnectCode:
             Config(source: .remoteReleasable(SyncSubfeature.canShowV2ConnectCode), category: .sync)
-        case .macosPromptBar:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.macosPromptBar), category: .duckAI)
+        case .promptBar:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.promptBar), category: .duckAI)
         case .bookmarksReorderByName:
             Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.bookmarksReorderByName))
         }

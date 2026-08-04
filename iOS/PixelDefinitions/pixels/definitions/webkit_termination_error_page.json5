@@ -4,20 +4,23 @@
         "owners": ["brindy"],
         "triggers": ["exception"],
         "suffixes": ["platform", "form_factor", "daily_count"],
-        "parameters": ["appVersion"]
+        "parameters": ["appVersion"],
+        "expires": "2026-11-01"
     },
     "tab-termination_error-page_reload": {
         "description": "Fires when the user reloads from the tab termination error page.",
         "owners": ["brindy"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor", "daily_count"],
-        "parameters": ["appVersion"]
+        "parameters": ["appVersion"],
+        "expires": "2026-11-01"
     },
     "tab-termination_error-page_send-feedback": {
         "description": "Fires when the user sends feedback from the tab termination error page.",
         "owners": ["brindy"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor", "daily_count"],
-        "parameters": ["appVersion"]
+        "parameters": ["appVersion"],
+        "expires": "2026-11-01"
     }
 }

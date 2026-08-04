@@ -68,7 +68,7 @@ final class YouTubeAdBlockingTelemetryConsentRequirementTests: XCTestCase {
         XCTAssertEqual(received, [true])
     }
 
-    /// Both opt-ins are required, matching the composite check the retired `WebEventsSubfeature` applied.
+    /// Both opt-ins are required, matching the composite check the retired per-event telemetry path applied.
     /// The two flags are independently writable defaults — nothing at the storage level guarantees that
     /// disabling ad blocking clears the analytics flag — so consent must not be granted on analytics alone.
     func testIsNotGrantedWhenAdBlockingIsOffButAnalyticsIsOn() {

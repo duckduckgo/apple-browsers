@@ -22,8 +22,8 @@ import Foundation
 import Persistence
 
 /// Gates the migrated YouTube ad-blocking-detection telemetry configs behind the user's YouTube
-/// Ad Blocking *and* analytics opt-ins, matching the composite check the retired `WebEventsSubfeature`
-/// applied per event.
+/// Ad Blocking *and* analytics opt-ins, matching the composite check the retired per-event telemetry
+/// path applied.
 ///
 /// Both flags are required deliberately, rather than relying on analytics alone. Turning YouTube Ad
 /// Blocking off does clear the analytics opt-in, but that coupling is a `didSet` side effect in

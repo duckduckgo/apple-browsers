@@ -23,8 +23,8 @@ import Foundation
 import Persistence
 
 /// Gates the migrated YouTube ad-blocking-detection telemetry configs behind the user's YouTube
-/// Ad Blocking *and* analytics opt-ins, matching both the composite check the retired
-/// `WebEventsSubfeature` applied per event and the macOS requirement.
+/// Ad Blocking *and* analytics opt-ins, matching both the composite check the retired per-event
+/// telemetry path applied and the macOS requirement.
 ///
 /// Both flags are required deliberately, rather than relying on analytics alone. Turning YouTube Ad
 /// Blocking off does clear the analytics opt-in, but on iOS that coupling is an explicit cascade at two

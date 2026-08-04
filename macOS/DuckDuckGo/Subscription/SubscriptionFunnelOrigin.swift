@@ -78,7 +78,7 @@ enum SubscriptionFunnelOrigin: String {
 
     /// User entered the funnel by tapping a gated reasoning effort in the address bar's duck.ai omnibar.
     /// https://app.asana.com/1/137249556945/project/1208671677432066/task/1215275657171787
-    case addressBarReasoningPicker = "funnel_addressbar_macos__reasoningpicker"
+    case addressBarReasoningDropdown = "funnel_addressbar_macos__reasoningdropdown"
 
     /// User entered the funnel by tapping a gated model in duck.ai's own model picker.
     /// https://app.asana.com/1/137249556945/project/1208671677432066/task/1215275657171787
@@ -86,7 +86,7 @@ enum SubscriptionFunnelOrigin: String {
 
     /// User entered the funnel by tapping a gated reasoning effort in duck.ai's own omnibar.
     /// https://app.asana.com/1/137249556945/project/1208671677432066/task/1215275657171787
-    case duckAIReasoningPicker = "funnel_duckai_macos__reasoningpicker"
+    case duckAIReasoningDropdown = "funnel_duckai_macos__reasoningdropdown"
 
     /// User entered the funnel by tapping a gated model or reasoning effort in the New Tab Page's duck.ai omnibar.
     /// https://app.asana.com/1/137249556945/task/1216424447885172
@@ -108,6 +108,13 @@ enum SubscriptionFunnelOrigin: String {
     case duckAIDisclaimerBanner = "funnel_duckai_macos__disclaimerbanner"
     case duckAIVoiceChatLimit = "funnel_duckai_macos__voicechatlimit"
     case duckAIVoiceChatDurationLimit = "funnel_duckai_macos__voicechatdurationlimit"
+
+    /// The model switcher under a chat response. Only ever reported as a modal's `source` — the surface
+    /// itself is frontend-only, so nothing native fires this on its own.
+    case duckAISwitchModel = "funnel_duckai_macos__switchmodel"
+
+    /// The frontend opened a modal without attributing it to an entry point.
+    case duckAIUnknown = "funnel_duckai_macos__unknown"
 }
 
 /// Represents the origin point from which the user enters the subscription restore funnel in the macOS app.

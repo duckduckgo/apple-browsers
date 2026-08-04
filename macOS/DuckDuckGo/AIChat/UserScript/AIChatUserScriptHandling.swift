@@ -988,12 +988,49 @@ extension AIChatUserScriptHandler: AIChatMetricReportingHandling {
         .userDidClickVoiceChatDurationLimitModalSubscribeButton: (.duckAIVoiceChatDurationLimit, true),
     ]
 
+    /// The modal metrics, each building its pixel from the origin the modal was opened from.
+    private static let modalFunnelPixels: [AIChatMetricName: (String) -> AIChatPixel] = [
+        .userDidOpenSubscribeModal: AIChatPixel.aiChatSubscriptionFunnelSubscribeModalImpression,
+        .userDidClickSubscribeOnSubscribeModal: AIChatPixel.aiChatSubscriptionFunnelSubscribeModalSubscribeClick,
+        .userDidClickActivateOnSubscribeModal: AIChatPixel.aiChatSubscriptionFunnelSubscribeModalActivateClick,
+        .userDidOpenUpgradeToProModal: AIChatPixel.aiChatSubscriptionFunnelUpgradeToProModalImpression,
+        .userDidClickUpgradeOnUpgradeToProModal: AIChatPixel.aiChatSubscriptionFunnelUpgradeToProModalUpgradeClick,
+    ]
+
+    /// Entry points a modal can be opened from. Allow-listed rather than interpolated into an origin so
+    /// an unrecognised frontend slug can't reach the pixel's origin parameter.
+    private static let modalFunnelOrigins: [String: SubscriptionFunnelOrigin] = [
+        "activatesubscription": .duckAIActivateSubscription,
+        "aisidebar": .duckAIAiSidebar,
+        "disclaimerbanner": .duckAIDisclaimerBanner,
+        "freelabel": .duckAIFreeLabel,
+        "freelimit": .duckAIFreeLimit,
+        "imagegenerationlimit": .duckAIImageGenerationLimit,
+        "modelpicker": .duckAIModelPicker,
+        "pluslimit": .duckAIPlusLimit,
+        "promotioncard": .duckAIPromotionCard,
+        "reasoningdropdown": .duckAIReasoningDropdown,
+        "switchmodel": .duckAISwitchModel,
+        "voicechatdurationlimit": .duckAIVoiceChatDurationLimit,
+        "voicechatlimit": .duckAIVoiceChatLimit,
+        "unknown": .duckAIUnknown,
+    ]
+
     func didReportMetric(_ metric: AIChatMetric, completion: (() -> Void)? = nil) {
         if let funnel = Self.funnelMetrics[metric.metricName] {
             let pixel: AIChatPixel = funnel.isClick
                 ? .aiChatSubscriptionFunnelClick(origin: funnel.origin.rawValue)
                 : .aiChatSubscriptionFunnelImpression(origin: funnel.origin.rawValue)
             pixelFiring?.fire(pixel, frequency: .dailyAndCount)
+            completion?()
+            return
+        }
+
+        if let makePixel = Self.modalFunnelPixels[metric.metricName] {
+            // Without a recognised entry point the pixel would carry no usable attribution, so skip it.
+            if let source = metric.source, let origin = Self.modalFunnelOrigins[source] {
+                pixelFiring?.fire(makePixel(origin.rawValue), frequency: .dailyAndCount)
+            }
             completion?()
             return
         }

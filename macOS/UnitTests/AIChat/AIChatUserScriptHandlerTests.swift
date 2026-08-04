@@ -592,6 +592,97 @@ struct AIChatUserScriptHandlerTests {
         #expect(pixelFiring.expectedFireCalls == pixelFiring.actualFireCalls)
     }
 
+    @available(iOS 16, macOS 13, *)
+    @Test("didReportMetric fires the matching modal pixel for each modal metric", .timeLimit(.minutes(1)), arguments: [
+        (AIChatMetricName.userDidOpenSubscribeModal,
+         AIChatPixel.aiChatSubscriptionFunnelSubscribeModalImpression(origin: "funnel_duckai_macos__freelimit")),
+        (.userDidClickSubscribeOnSubscribeModal,
+         .aiChatSubscriptionFunnelSubscribeModalSubscribeClick(origin: "funnel_duckai_macos__freelimit")),
+        (.userDidClickActivateOnSubscribeModal,
+         .aiChatSubscriptionFunnelSubscribeModalActivateClick(origin: "funnel_duckai_macos__freelimit")),
+        (.userDidOpenUpgradeToProModal,
+         .aiChatSubscriptionFunnelUpgradeToProModalImpression(origin: "funnel_duckai_macos__freelimit")),
+        (.userDidClickUpgradeOnUpgradeToProModal,
+         .aiChatSubscriptionFunnelUpgradeToProModalUpgradeClick(origin: "funnel_duckai_macos__freelimit"))
+    ])
+    @MainActor
+    func testModalMetricFiresMatchingModalPixel(metric: AIChatMetricName, expectedPixel: AIChatPixel) async {
+        pixelFiring.expectedFireCalls = [.init(pixel: expectedPixel, frequency: .dailyAndCount)]
+
+        await withCheckedContinuation { continuation in
+            handler.didReportMetric(.init(metricName: metric, source: "freelimit")) {
+                continuation.resume()
+            }
+        }
+
+        #expect(pixelFiring.expectedFireCalls == pixelFiring.actualFireCalls)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("didReportMetric maps every allowed modal source to its funnel origin", .timeLimit(.minutes(1)), arguments: [
+        ("activatesubscription", "funnel_duckai_macos__activatesubscription"),
+        ("aisidebar", "funnel_duckai_macos__aisidebar"),
+        ("disclaimerbanner", "funnel_duckai_macos__disclaimerbanner"),
+        ("freelabel", "funnel_duckai_macos__freelabel"),
+        ("freelimit", "funnel_duckai_macos__freelimit"),
+        ("imagegenerationlimit", "funnel_duckai_macos__imagegenerationlimit"),
+        ("modelpicker", "funnel_duckai_macos__modelpicker"),
+        ("pluslimit", "funnel_duckai_macos__pluslimit"),
+        ("promotioncard", "funnel_duckai_macos__promotioncard"),
+        ("reasoningdropdown", "funnel_duckai_macos__reasoningdropdown"),
+        ("switchmodel", "funnel_duckai_macos__switchmodel"),
+        ("voicechatdurationlimit", "funnel_duckai_macos__voicechatdurationlimit"),
+        ("voicechatlimit", "funnel_duckai_macos__voicechatlimit"),
+        ("unknown", "funnel_duckai_macos__unknown")
+    ])
+    @MainActor
+    func testModalMetricMapsSourceToOrigin(source: String, origin: String) async {
+        pixelFiring.expectedFireCalls = [
+            .init(pixel: AIChatPixel.aiChatSubscriptionFunnelSubscribeModalImpression(origin: origin), frequency: .dailyAndCount)
+        ]
+
+        await withCheckedContinuation { continuation in
+            handler.didReportMetric(.init(metricName: .userDidOpenSubscribeModal, source: source)) {
+                continuation.resume()
+            }
+        }
+
+        #expect(pixelFiring.expectedFireCalls == pixelFiring.actualFireCalls)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("didReportMetric fires no modal pixel when the source is missing or unrecognised", .timeLimit(.minutes(1)), arguments: [
+        nil, "", "somethingnew", "funnel_duckai_macos__freelimit"
+    ] as [String?])
+    @MainActor
+    func testModalMetricWithoutUsableSourceFiresNothing(source: String?) async {
+        await withCheckedContinuation { continuation in
+            handler.didReportMetric(.init(metricName: .userDidOpenSubscribeModal, source: source)) {
+                continuation.resume()
+            }
+        }
+
+        #expect(pixelFiring.actualFireCalls.isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("reportMetric decodes source off the wire and fires the modal pixel", .timeLimit(.minutes(1)))
+    @MainActor
+    func testReportMetricDecodesModalSource() async {
+        pixelFiring.expectedFireCalls = [
+            .init(pixel: AIChatPixel.aiChatSubscriptionFunnelSubscribeModalImpression(origin: "funnel_duckai_macos__pluslimit"),
+                  frequency: .dailyAndCount)
+        ]
+
+        _ = await handler.reportMetric(
+            params: ["metricName": "userDidOpenSubscribeModal", "source": "pluslimit"],
+            message: WKScriptMessage.mock()
+        )
+
+        #expect(pixelFiring.expectedFireCalls == pixelFiring.actualFireCalls)
+        #expect(userScriptErrorEventMapper.events.isEmpty)
+    }
+
     // MARK: - Sync tests
 
     @available(iOS 16, macOS 13, *)

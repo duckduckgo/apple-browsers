@@ -346,5 +346,40 @@
         "triggers": ["other"],
         "suffixes": ["daily_count"],
         "parameters": ["appVersion", "pixelSource", "channel", "subscriptionFunnelOrigin"]
+    },
+    "m_mac_aichat_subscription-funnel_subscribe-modal_impression": {
+        "description": "Fired when the Duck.ai subscribe modal is shown in the web frontend. The frontend reports the modal over the reportMetric bridge and the native layer fires this pixel with the funnel origin of the entry point the modal was opened from. See https://app.asana.com/1/137249556945/task/1216395339071571",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel", "subscriptionFunnelOrigin"]
+    },
+    "m_mac_aichat_subscription-funnel_subscribe-modal_subscribe_click": {
+        "description": "Fired when the user clicks the subscribe CTA in the Duck.ai subscribe modal. The frontend reports the click over the reportMetric bridge and the native layer fires this pixel with the funnel origin of the entry point the modal was opened from. See https://app.asana.com/1/137249556945/task/1216395339071571",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel", "subscriptionFunnelOrigin"]
+    },
+    "m_mac_aichat_subscription-funnel_subscribe-modal_activate_click": {
+        "description": "Fired when the user clicks the \"I have a subscription\" CTA in the Duck.ai subscribe modal. The frontend reports the click over the reportMetric bridge and the native layer fires this pixel with the funnel origin of the entry point the modal was opened from. See https://app.asana.com/1/137249556945/task/1216395339071571",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel", "subscriptionFunnelOrigin"]
+    },
+    "m_mac_aichat_subscription-funnel_upgrade-to-pro-modal_impression": {
+        "description": "Fired when the Duck.ai upgrade-to-Pro modal is shown to an existing Plus subscriber in the web frontend. The frontend reports the modal over the reportMetric bridge and the native layer fires this pixel with the funnel origin of the entry point the modal was opened from. See https://app.asana.com/1/137249556945/task/1216395339071571",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel", "subscriptionFunnelOrigin"]
+    },
+    "m_mac_aichat_subscription-funnel_upgrade-to-pro-modal_upgrade_click": {
+        "description": "Fired when the user clicks the upgrade CTA in the Duck.ai upgrade-to-Pro modal. The frontend reports the click over the reportMetric bridge and the native layer fires this pixel with the funnel origin of the entry point the modal was opened from. See https://app.asana.com/1/137249556945/task/1216395339071571",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel", "subscriptionFunnelOrigin"]
     }
 }

@@ -312,6 +312,21 @@ enum AIChatPixel: PixelKitEvent {
     /// Event Trigger: The CTA on a Duck.ai subscription-funnel entry point is clicked, reported over the `reportMetric` bridge.
     case aiChatSubscriptionFunnelClick(origin: String)
 
+    /// Event Trigger: The Duck.ai subscribe modal is shown. `origin` is the entry point it was opened from.
+    case aiChatSubscriptionFunnelSubscribeModalImpression(origin: String)
+
+    /// Event Trigger: The subscribe CTA in the Duck.ai subscribe modal is clicked.
+    case aiChatSubscriptionFunnelSubscribeModalSubscribeClick(origin: String)
+
+    /// Event Trigger: The "I have a subscription" CTA in the Duck.ai subscribe modal is clicked.
+    case aiChatSubscriptionFunnelSubscribeModalActivateClick(origin: String)
+
+    /// Event Trigger: The Duck.ai upgrade-to-Pro modal is shown. `origin` is the entry point it was opened from.
+    case aiChatSubscriptionFunnelUpgradeToProModalImpression(origin: String)
+
+    /// Event Trigger: The upgrade CTA in the Duck.ai upgrade-to-Pro modal is clicked.
+    case aiChatSubscriptionFunnelUpgradeToProModalUpgradeClick(origin: String)
+
     /// Event Trigger: User opens a new voice Duck.ai chat from the native omnibar
     case aiChatNewVoiceChatOmnibarNative
 
@@ -676,6 +691,16 @@ enum AIChatPixel: PixelKitEvent {
             return "aichat_subscription-funnel_impression"
         case .aiChatSubscriptionFunnelClick:
             return "aichat_subscription-funnel_click"
+        case .aiChatSubscriptionFunnelSubscribeModalImpression:
+            return "aichat_subscription-funnel_subscribe-modal_impression"
+        case .aiChatSubscriptionFunnelSubscribeModalSubscribeClick:
+            return "aichat_subscription-funnel_subscribe-modal_subscribe_click"
+        case .aiChatSubscriptionFunnelSubscribeModalActivateClick:
+            return "aichat_subscription-funnel_subscribe-modal_activate_click"
+        case .aiChatSubscriptionFunnelUpgradeToProModalImpression:
+            return "aichat_subscription-funnel_upgrade-to-pro-modal_impression"
+        case .aiChatSubscriptionFunnelUpgradeToProModalUpgradeClick:
+            return "aichat_subscription-funnel_upgrade-to-pro-modal_upgrade_click"
         case .aiChatNewVoiceChatOmnibarNative:
             return "aichat_new_voice_chat_omnibar_native"
         case .aiChatAddressBarImageGenerationActivated:
@@ -897,7 +922,12 @@ enum AIChatPixel: PixelKitEvent {
         case .aiChatAddressBarSubscriptionUpsellTriggered(let currentTier, let requiredTier, let flowType):
             return ["current_tier": currentTier, "required_tier": requiredTier, "flow_type": flowType]
         case .aiChatSubscriptionFunnelImpression(let origin),
-                .aiChatSubscriptionFunnelClick(let origin):
+                .aiChatSubscriptionFunnelClick(let origin),
+                .aiChatSubscriptionFunnelSubscribeModalImpression(let origin),
+                .aiChatSubscriptionFunnelSubscribeModalSubscribeClick(let origin),
+                .aiChatSubscriptionFunnelSubscribeModalActivateClick(let origin),
+                .aiChatSubscriptionFunnelUpgradeToProModalImpression(let origin),
+                .aiChatSubscriptionFunnelUpgradeToProModalUpgradeClick(let origin):
             return ["origin": origin]
         case .aiChatNtpSubscriptionUpsellTriggered(let flowType, let source):
             return ["flow_type": flowType, "source": source]
@@ -1051,6 +1081,11 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatAddressBarSubscriptionUpsellTriggered,
                 .aiChatSubscriptionFunnelImpression,
                 .aiChatSubscriptionFunnelClick,
+                .aiChatSubscriptionFunnelSubscribeModalImpression,
+                .aiChatSubscriptionFunnelSubscribeModalSubscribeClick,
+                .aiChatSubscriptionFunnelSubscribeModalActivateClick,
+                .aiChatSubscriptionFunnelUpgradeToProModalImpression,
+                .aiChatSubscriptionFunnelUpgradeToProModalUpgradeClick,
                 .aiChatNtpSubmitWithImage,
                 .aiChatNtpModelSelected,
                 .aiChatNtpReasoningEffortSelected,

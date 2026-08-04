@@ -1925,7 +1925,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     @objc private func reasoningEffortBadgeSelected(_ sender: NSMenuItem) {
         guard let effort = sender.representedObject as? AIChatReasoningEffort,
               let requiredTier = omnibarController.requiredTier(for: effort) else { return }
-        presentSubscriptionUpsellDialog(requiredTier: requiredTier, origin: .addressBarReasoningPicker)
+        presentSubscriptionUpsellDialog(requiredTier: requiredTier, origin: .addressBarReasoningDropdown)
     }
 
     @objc private func reasoningEffortSelected(_ sender: NSMenuItem) {
@@ -1937,7 +1937,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         case .gated(let requiredTier):
             // Explains the upsell via a sheet rather than navigating immediately, and leaves the
             // current selection unchanged.
-            presentSubscriptionUpsellDialog(requiredTier: requiredTier, origin: .addressBarReasoningPicker)
+            presentSubscriptionUpsellDialog(requiredTier: requiredTier, origin: .addressBarReasoningDropdown)
         }
     }
 

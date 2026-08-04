@@ -196,6 +196,7 @@ final class PairingV2MessageCrypto {
         case .invalidBase64URLComponent:
             return .invalidBase64URLComponent
         case .unsupportedProtectedHeader,
+                .unexpectedKeyID,
                 .invalidDirectTokenShape,
                 .invalidDirectProtectedHeaderKid:
             return .unsupportedProtectedHeader

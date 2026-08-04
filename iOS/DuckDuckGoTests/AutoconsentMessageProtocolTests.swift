@@ -26,6 +26,7 @@ import WebKit
 import PrivacyConfig
 import PrivacyConfigTestsUtils
 import PrivacyDashboard
+import FeatureFlags
 
 final class AutoconsentMessageProtocolTests: XCTestCase {
 

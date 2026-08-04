@@ -30,6 +30,7 @@ import BrowserServicesKit
 import Subscription
 import RemoteMessaging
 import WebExtensions
+import FeatureFlags
 
 /// Represents the transient state where the app is being prepared for user interaction after being launched by the system.
 /// - Usage:

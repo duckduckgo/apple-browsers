@@ -28,6 +28,7 @@ import os.log
 import PrivacyConfig
 import AttributedMetric
 import Persistence
+import FeatureFlags
 
 @MainActor
 class SyncSettingsViewController: UIHostingController<SyncSettingsRootView> {

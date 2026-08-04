@@ -22,6 +22,7 @@ import ZIPFoundation
 import os.log
 import PrivacyConfig
 import Common
+import FeatureFlags
 
 public protocol ImportArchiveReading {
     func readContents(from archiveURL: URL, featureFlagger: FeatureFlagger) throws -> ImportArchiveContents

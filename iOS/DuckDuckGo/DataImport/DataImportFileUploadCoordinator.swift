@@ -28,6 +28,7 @@ import DDGSync
 import Persistence
 import PrivacyConfig
 import os.log
+import FeatureFlags
 
 protocol DataImportFileUploadFlowOwner: AnyObject {
     func dataImportUploadDidCompleteSummary()

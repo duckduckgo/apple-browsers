@@ -29,6 +29,7 @@ import SwiftUI
 import WebKit
 import UIKit
 import UserScript
+import FeatureFlags
 
 /// Values that the frontend can use to determine the current state.
 struct InitialPlayerSettings: Codable {

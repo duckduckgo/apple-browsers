@@ -24,6 +24,7 @@ import BrowserServicesKit
 import Persistence
 import PrivacyConfig
 import DDGSync
+import FeatureFlags
 
 @MainActor
 final class SyncRecoveryPromptService {

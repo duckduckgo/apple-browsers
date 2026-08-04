@@ -27,6 +27,7 @@ import NetworkExtension
 import VPN
 import Subscription
 import PixelKit
+import FeatureFlags
 
 enum VPNConfigurationRemovalReason: String {
     case didBecomeActiveCheck

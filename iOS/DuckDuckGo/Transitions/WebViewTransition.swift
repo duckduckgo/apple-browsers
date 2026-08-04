@@ -18,6 +18,7 @@
 //
 
 import Core
+import FeatureFlags
 
 class WebViewTransition: TabSwitcherTransition {
     

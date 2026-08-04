@@ -21,6 +21,7 @@ import Foundation
 import Core
 import Common
 import AIChat
+import FeatureFlags
 
 extension FeatureFlag.SearchTokenExperimentCohort {
     var paramValue: String {

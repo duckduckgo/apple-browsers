@@ -21,6 +21,7 @@ import UIKit
 import AIChat
 import Core
 import PrivacyConfig
+import FeatureFlags
 
 protocol UserInterfaceIdiomProviding {
     var userInterfaceIdiom: UIUserInterfaceIdiom { get }

@@ -19,6 +19,7 @@
 
 import os.log
 import PrivacyConfig
+import FeatureFlags
 
 protocol SyncAutoRestoreDecisionManaging {
     var isAutoRestoreFeatureEnabled: Bool { get }

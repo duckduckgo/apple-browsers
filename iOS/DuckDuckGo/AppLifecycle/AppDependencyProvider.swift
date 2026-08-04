@@ -36,6 +36,7 @@ import PrivacyConfig
 import Networking
 import Configuration
 import Network
+import FeatureFlags
 
 protocol DependencyProvider {
 

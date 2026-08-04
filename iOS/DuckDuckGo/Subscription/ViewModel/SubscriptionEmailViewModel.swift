@@ -25,6 +25,7 @@ import Subscription
 import PrivacyConfig
 import DataBrokerProtection_iOS
 import PixelKit
+import FeatureFlags
 
 final class SubscriptionEmailViewModel: ObservableObject {
     

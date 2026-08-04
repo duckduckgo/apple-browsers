@@ -23,6 +23,7 @@ import Core
 import SwiftUI
 import MaliciousSiteProtection
 import PrivacyConfig
+import FeatureFlags
 
 final class MaliciousSiteProtectionSettingsViewModel: ObservableObject {
     @Published var shouldShowMaliciousSiteProtectionSection: Bool

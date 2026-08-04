@@ -22,6 +22,7 @@ import Core
 import Common
 import FoundationExtensions
 import PrivacyConfig
+import FeatureFlags
 
 struct ExperimentalAIChatManager {
     private let featureFlagger: FeatureFlagger

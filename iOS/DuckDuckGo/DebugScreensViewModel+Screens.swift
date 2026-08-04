@@ -28,6 +28,7 @@ import AIChat
 import WebExtensions
 import DuckUI
 import Persistence
+import FeatureFlags
 
 extension DebugScreensViewModel {
 

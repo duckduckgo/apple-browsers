@@ -22,6 +22,7 @@ import FoundationExtensions
 import Core
 import Crashes
 import PrivacyConfig
+import FeatureFlags
 
 final class CrashCollectionService {
 

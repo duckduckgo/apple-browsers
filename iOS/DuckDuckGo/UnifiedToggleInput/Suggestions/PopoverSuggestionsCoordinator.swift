@@ -24,6 +24,7 @@ import Core
 import History
 import Persistence
 import PrivacyConfig
+import FeatureFlags
 
 /// The view operations the coordinator drives to present its decision. Implemented by the owner
 /// (`MainViewController`), which reveals/hides the popover container and shows the favorites grid.

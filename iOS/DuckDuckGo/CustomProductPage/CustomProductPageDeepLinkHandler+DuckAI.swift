@@ -21,6 +21,7 @@ import Foundation
 import AIChat
 import Core
 import PrivacyConfig
+import FeatureFlags
 
 protocol AIChatDeepLinkHandling {
     func handleDeepLink(_ url: URL, on presenter: AIChatDeepLinkPresenting, voiceMode: Bool)

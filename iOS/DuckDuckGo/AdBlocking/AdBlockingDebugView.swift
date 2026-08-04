@@ -20,6 +20,7 @@
 import Core
 import Persistence
 import SwiftUI
+import FeatureFlags
 
 struct AdBlockingDebugView: View {
 

@@ -22,6 +22,7 @@ import DataBrokerProtection_iOS
 import Persistence
 import PrivacyConfig
 import Subscription
+import FeatureFlags
 
 protocol FreemiumPIREligibilityChecking {
     func canShowEntryPoint() -> Bool

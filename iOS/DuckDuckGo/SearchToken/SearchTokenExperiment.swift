@@ -21,6 +21,7 @@ import BrowserServicesKit
 import Core
 import Foundation
 import PrivacyConfig
+import FeatureFlags
 
 struct SearchTokenExperiment {
 

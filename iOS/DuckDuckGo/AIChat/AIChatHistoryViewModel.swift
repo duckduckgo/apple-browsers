@@ -25,6 +25,7 @@ import Core
 import PrivacyConfig
 import DesignResourcesKitIcons
 import os.log
+import FeatureFlags
 
 @MainActor
 final class AIChatHistoryViewModel: ObservableObject {

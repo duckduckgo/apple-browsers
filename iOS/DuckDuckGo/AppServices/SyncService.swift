@@ -24,6 +24,7 @@ import DDGSync
 import Persistence
 import PrivacyConfig
 import AIChat
+import FeatureFlags
 
 final class SyncService {
 

@@ -24,6 +24,7 @@ import DesignResourcesKitIcons
 import UIComponents
 import UniformTypeIdentifiers
 import VPN
+import FeatureFlags
 
 struct NetworkProtectionVPNSettingsView: View {
 

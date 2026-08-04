@@ -22,6 +22,7 @@ import BrowserServicesKit
 import DuckPlayer
 import PrivacyConfig
 import WebExtensions
+import FeatureFlags
 
 final class AdBlockingAvailability: AdBlockingAvailabilityProviding, ObservableObject {
 

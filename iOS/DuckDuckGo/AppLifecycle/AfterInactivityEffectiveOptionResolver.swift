@@ -22,6 +22,7 @@ import Core
 import Persistence
 import PrivacyConfig
 import UIKit
+import FeatureFlags
 
 protocol AfterInactivityEffectiveOptionResolving {
     /// Returns the user selected or default option for page to open after idle time.

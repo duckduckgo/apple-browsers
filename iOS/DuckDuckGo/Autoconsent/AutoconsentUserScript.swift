@@ -28,6 +28,7 @@ import os.log
 import PixelKit
 import Combine
 import WebExtensions
+import FeatureFlags
 
 protocol AutoconsentPreferences {
     var cookiePopupPreference: CookiePopupPreference { get set }

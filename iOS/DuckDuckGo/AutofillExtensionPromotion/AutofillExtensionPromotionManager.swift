@@ -23,6 +23,7 @@ import BrowserServicesKit
 import Core
 import Persistence
 import PrivacyConfig
+import FeatureFlags
 
 enum ExtensionPromotionPlacement: CaseIterable {
     case passwords

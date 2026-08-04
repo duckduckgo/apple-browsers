@@ -30,6 +30,7 @@ import VPN
 import Subscription
 import DDGSync
 import DataBrokerProtection_iOS
+import FeatureFlags
 
 extension DefaultVPNActivationDateStore: VPNActivationDateProviding {}
 

@@ -21,6 +21,7 @@ import PrivacyConfig
 import Core
 import Foundation
 import Subscription
+import FeatureFlags
 
 /// Protocol defining the interface for the VPN Subscription promotion helper.
 ///

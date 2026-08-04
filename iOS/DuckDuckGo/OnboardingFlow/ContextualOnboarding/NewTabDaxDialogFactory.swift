@@ -24,6 +24,7 @@ import Subscription
 import Common
 import FoundationExtensions
 import PrivacyConfig
+import FeatureFlags
 
 typealias DaxDialogsFlowCoordinator = ContextualOnboardingLogic & SubscriptionPromotionCoordinating
 

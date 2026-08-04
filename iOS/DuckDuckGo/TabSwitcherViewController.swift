@@ -35,6 +35,7 @@ import PrivacyConfig
 import AIChat
 import TipKit
 import UIComponents
+import FeatureFlags
 
 class TabSwitcherViewController: UIViewController {
 

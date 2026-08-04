@@ -22,6 +22,7 @@ import Core
 import Persistence
 import ScreenTimeDataCleaner
 import WebKit
+import FeatureFlags
 
 /// Represents the state where the app is in the background and not visible to the user.
 /// - Usage:

@@ -28,6 +28,7 @@ import Combine
 import DDGSync
 import AuthenticationServices
 import PrivacyConfig
+import FeatureFlags
 
 protocol AutofillSettingsViewModelDelegate: AnyObject {
     func navigateToPasswords(viewModel: AutofillSettingsViewModel)

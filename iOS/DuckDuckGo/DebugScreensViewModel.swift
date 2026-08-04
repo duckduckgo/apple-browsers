@@ -24,6 +24,7 @@ import PrivacyConfig
 import Combine
 import Core
 import Configuration
+import FeatureFlags
 
 /// The view mode for the debug view.  You shouldn't have to add or change anything here.
 ///  Please add new views/controllers to DebugScreensViewModel+Screens.swift.

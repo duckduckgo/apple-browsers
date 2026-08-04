@@ -21,6 +21,7 @@ import Common
 import Core
 import Foundation
 import PrivacyConfig
+import FeatureFlags
 
 protocol FloatingUIManaging {
     var isFloatingUIEnabled: Bool { get }

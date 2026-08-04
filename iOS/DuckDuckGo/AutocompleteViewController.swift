@@ -32,6 +32,7 @@ import Combine
 import PrivacyConfig
 import SwiftUI
 import AIChat
+import FeatureFlags
 
 class AutocompleteViewController: UIHostingController<AutocompleteView> {
 

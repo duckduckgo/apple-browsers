@@ -24,6 +24,7 @@ import Common
 import Core
 import Kingfisher
 import DesignResourcesKitIcons
+import FeatureFlags
 
 class OmniBarViewController: UIViewController, OmniBar {
 

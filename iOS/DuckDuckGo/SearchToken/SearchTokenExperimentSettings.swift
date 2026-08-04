@@ -19,6 +19,7 @@
 
 import Foundation
 import PrivacyConfig
+import FeatureFlags
 
 /// Remotely-configured tuning for the Search Token experiment, read from the `searchTokenExperiment`
 /// subfeature settings. Falls back to defaults when the setting is absent or malformed.

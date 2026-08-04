@@ -21,6 +21,7 @@ import Foundation
 import FoundationExtensions
 import LocalAuthentication
 import BrowserServicesKit
+import FeatureFlags
 
 extension ContentScopeFeatureToggles {
     

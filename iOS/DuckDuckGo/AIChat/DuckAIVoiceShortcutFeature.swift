@@ -18,6 +18,7 @@
 //
 
 import PrivacyConfig
+import FeatureFlags
 
 /// Provides access to Duck AI voice shortcut availability.
 protocol DuckAIVoiceShortcutFeatureProviding {

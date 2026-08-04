@@ -38,6 +38,7 @@ import DataBrokerProtection_iOS
 import SystemSettingsPiPTutorial
 import SERPSettings
 import Networking
+import FeatureFlags
 
 enum YouTubeAdBlockingStorageKeys: String, StorageKeyDescribing {
     case youTubeAdBlockingEnabled = "com_duckduckgo_ios_youTubeAdBlockingEnabled"

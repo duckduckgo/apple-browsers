@@ -24,6 +24,7 @@ import SwiftUI
 import UIKit
 import WebExtensions
 import PrivacyConfig
+import FeatureFlags
 
 /// Persisted state for the Cookie Pop-up Protection opt-in dialog (for telemetry + showing conditions + debug reset).
 struct CookiePopupProtectionOptInPromptStore {

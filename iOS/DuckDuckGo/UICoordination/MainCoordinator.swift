@@ -34,6 +34,7 @@ import PrivacyStats
 import Networking
 import WebExtensions
 import Onboarding
+import FeatureFlags
 
 @MainActor
 protocol URLHandling: AnyObject {

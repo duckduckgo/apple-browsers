@@ -22,6 +22,7 @@ import WebKit
 import Core
 import PrivacyConfig
 import WebExtensions
+import FeatureFlags
 
 /// Holds a reference to the WebExtensionManager that can be set after initialization.
 /// This allows WebExtensionAvailability to be created before the manager exists,

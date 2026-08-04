@@ -26,6 +26,7 @@ import Persistence
 import PrivacyConfig
 import AIChat
 import RemoteMessaging
+import FeatureFlags
 
 protocol NewAddressBarPickerDisplayValidating {
     func shouldDisplayNewAddressBarPicker() -> Bool

@@ -20,6 +20,7 @@
 import Core
 import SwiftUI
 import DesignResourcesKit
+import FeatureFlags
 
 enum AfterInactivityOption: String, CaseIterable, CustomStringConvertible {
     case newTab

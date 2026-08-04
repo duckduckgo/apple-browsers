@@ -24,6 +24,7 @@ import Common
 import FoundationExtensions
 import Persistence
 import PrivacyConfig
+import FeatureFlags
 
 final class AutofillService {
 

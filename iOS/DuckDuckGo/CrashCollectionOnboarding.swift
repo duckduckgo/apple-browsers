@@ -21,6 +21,7 @@ import Combine
 import Foundation
 import SwiftUI
 import PrivacyConfig
+import FeatureFlags
 
 enum CrashCollectionOptInStatus: String {
     case undetermined, optedIn, optedOut

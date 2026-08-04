@@ -25,6 +25,7 @@ import BrowserServicesKit
 import PrivacyConfig
 import DataBrokerProtection_iOS
 import PixelKit
+import FeatureFlags
 
 enum SubscriptionContainerViewFactory {
 

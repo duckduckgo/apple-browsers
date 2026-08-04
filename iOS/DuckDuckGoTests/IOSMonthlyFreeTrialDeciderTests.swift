@@ -19,6 +19,7 @@
 
 import PrivacyConfig
 import Testing
+import FeatureFlags
 @testable import Core
 @testable import DuckDuckGo
 

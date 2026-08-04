@@ -25,6 +25,7 @@ import Core
 import Combine
 import PrivacyConfig
 import CombineSchedulers
+import FeatureFlags
 
 protocol MaliciousSiteProtectionDatasetsFetching {
     @MainActor

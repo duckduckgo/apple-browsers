@@ -20,6 +20,7 @@
 import UIKit
 import Core
 import BrowserServicesKit
+import FeatureFlags
 
 enum FloatingSwipePreviewGeometry {
 

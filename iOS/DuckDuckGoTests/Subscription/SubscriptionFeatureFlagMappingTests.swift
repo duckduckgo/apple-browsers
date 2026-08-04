@@ -23,6 +23,7 @@ import XCTest
 @testable import Subscription
 import PrivacyConfig
 import Combine
+import FeatureFlags
 
 final class SubscriptionFeatureFlagMappingTests: XCTestCase {
 

@@ -22,6 +22,7 @@ import FoundationExtensions
 import PrivacyConfig
 import MaliciousSiteProtection
 import Core
+import FeatureFlags
 
 // Container for Malicious Site Protection Feature.
 final class MaliciousSiteProtectionService {

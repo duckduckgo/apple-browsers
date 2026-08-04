@@ -30,6 +30,7 @@ import OSLog
 import PrivacyConfig
 import SwiftUI
 import UIKit
+import FeatureFlags
 
 /// Delegate protocol for contextual sheet related actions
 @MainActor

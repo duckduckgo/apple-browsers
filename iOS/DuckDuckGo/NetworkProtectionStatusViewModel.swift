@@ -29,6 +29,7 @@ import Core
 import PrivacyConfig
 import Subscription
 import TipKit
+import FeatureFlags
 
 struct NetworkProtectionLocationStatusModel {
     enum LocationIcon {

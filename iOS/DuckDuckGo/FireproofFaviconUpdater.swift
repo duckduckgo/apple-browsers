@@ -25,6 +25,7 @@ import os.log
 import Persistence
 import UserScript
 import WebKit
+import FeatureFlags
 
 protocol TabNotifying {
     func didUpdateFavicon()

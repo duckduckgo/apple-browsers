@@ -7,6 +7,12 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A64F1A050000000000000005 /* FeatureFlags in Frameworks */ = {isa = PBXBuildFile; productRef = A64F1A020000000000000002 /* FeatureFlags */; };
+		A64F1A060000000000000006 /* FeatureFlags in Frameworks */ = {isa = PBXBuildFile; productRef = A64F1A030000000000000003 /* FeatureFlags */; };
+		A64F1A070000000000000007 /* FeatureFlags in Frameworks */ = {isa = PBXBuildFile; productRef = A64F1A040000000000000004 /* FeatureFlags */; };
+		A64F1A080000000000000008 /* FeatureFlags in Frameworks */ = {isa = PBXBuildFile; productRef = A64F1A0B000000000000000B /* FeatureFlags */; };
+		A64F1A090000000000000009 /* FeatureFlags in Frameworks */ = {isa = PBXBuildFile; productRef = A64F1A0C000000000000000C /* FeatureFlags */; };
+		A64F1A0A000000000000000A /* FeatureFlags in Frameworks */ = {isa = PBXBuildFile; productRef = A64F1A0D000000000000000D /* FeatureFlags */; };
 		02025664298818B200E694E7 /* NetworkExtension.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 02025663298818B100E694E7 /* NetworkExtension.framework */; };
 		021440742C7FAB1900426724 /* ConfigurationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 021440732C7FAB1900426724 /* ConfigurationManager.swift */; };
 		021440762C7FAB4100426724 /* ConfigurationStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 021440752C7FAB4100426724 /* ConfigurationStore.swift */; };
@@ -2507,7 +2513,6 @@
 		EE4BE0092A740BED00CD6AA8 /* ClearTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE4BE0082A740BED00CD6AA8 /* ClearTextField.swift */; };
 		EE4FB1862A28CE7200E5CBA7 /* NetworkProtectionStatusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE4FB1852A28CE7200E5CBA7 /* NetworkProtectionStatusView.swift */; };
 		EE4FB1882A28D11900E5CBA7 /* NetworkProtectionStatusViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE4FB1872A28D11900E5CBA7 /* NetworkProtectionStatusViewModel.swift */; };
-		EE50052E29C369D300AE0773 /* FeatureFlag.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE50052D29C369D300AE0773 /* FeatureFlag.swift */; };
 		EE50053029C3BA0800AE0773 /* InternalUserStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE50052F29C3BA0800AE0773 /* InternalUserStore.swift */; };
 		EE5929622C5A8AF40029380B /* AutofillUsageMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE5929612C5A8AF40029380B /* AutofillUsageMonitor.swift */; };
 		EE72CA852A862D000043B5B3 /* NetworkProtectionDebugViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE72CA842A862D000043B5B3 /* NetworkProtectionDebugViewController.swift */; };
@@ -2836,6 +2841,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		A64F1A010000000000000001 /* FeatureFlags */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = FeatureFlags; sourceTree = "<group>"; };
 		02025662298818B100E694E7 /* PacketTunnelProvider.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = PacketTunnelProvider.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		02025663298818B100E694E7 /* NetworkExtension.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = NetworkExtension.framework; path = System/Library/Frameworks/NetworkExtension.framework; sourceTree = SDKROOT; };
 		02025668298818B200E694E7 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -5323,7 +5329,6 @@
 		EE4BE0082A740BED00CD6AA8 /* ClearTextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClearTextField.swift; sourceTree = "<group>"; };
 		EE4FB1852A28CE7200E5CBA7 /* NetworkProtectionStatusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkProtectionStatusView.swift; sourceTree = "<group>"; };
 		EE4FB1872A28D11900E5CBA7 /* NetworkProtectionStatusViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkProtectionStatusViewModel.swift; sourceTree = "<group>"; };
-		EE50052D29C369D300AE0773 /* FeatureFlag.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeatureFlag.swift; sourceTree = "<group>"; };
 		EE50052F29C3BA0800AE0773 /* InternalUserStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InternalUserStore.swift; sourceTree = "<group>"; };
 		EE5929612C5A8AF40029380B /* AutofillUsageMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillUsageMonitor.swift; sourceTree = "<group>"; };
 		EE72CA842A862D000043B5B3 /* NetworkProtectionDebugViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkProtectionDebugViewController.swift; sourceTree = "<group>"; };
@@ -5552,6 +5557,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A64F1A060000000000000006 /* FeatureFlags in Frameworks */,
 				8518F12B2F742E1800B53C75 /* ScreenTimeDataCleaner in Frameworks */,
 				CBDD5AC62F238F7300441F0A /* PrivacyStats in Frameworks */,
 				C1A60F232F1FE5EC0078851C /* PrivacyConfig in Frameworks */,
@@ -5602,6 +5608,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A64F1A070000000000000007 /* FeatureFlags in Frameworks */,
 				9FE59CDA2E309A4F00C4B65D /* SystemSettingsPiPTutorialTestSupport in Frameworks */,
 				D1A4C0DE2F210004004E5001 /* Lottie in Frameworks */,
 				F486D3362506A037002D07D7 /* OHHTTPStubs in Frameworks */,
@@ -5652,6 +5659,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A64F1A080000000000000008 /* FeatureFlags in Frameworks */,
 				4B69239F2F28720300A816B9 /* AIChat in Frameworks */,
 				986CD5352DE8F4FA00AFA98A /* RemoteMessaging in Frameworks */,
 				1E1D8B632995143200C96994 /* OHHTTPStubs in Frameworks */,
@@ -5690,6 +5698,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A64F1A090000000000000009 /* FeatureFlags in Frameworks */,
 				986CD5372DE8F50100AFA98A /* RemoteMessaging in Frameworks */,
 				7BC26CB62DFC156A00E52480 /* VPNTestUtils in Frameworks */,
 				98424A962CED4F430071C7DB /* OHHTTPStubs in Frameworks */,
@@ -5713,6 +5722,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A64F1A0A000000000000000A /* FeatureFlags in Frameworks */,
 				CC55B23F2E82CD650032E8BD /* BrowserServicesKitTestsUtils in Frameworks */,
 				98E564902DE8DE7200E6E75F /* RemoteMessaging in Frameworks */,
 				7BC26CB42DFC155E00E52480 /* VPNTestUtils in Frameworks */,
@@ -5754,6 +5764,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A64F1A050000000000000005 /* FeatureFlags in Frameworks */,
 				C1A60F242F1FE5EC0078851C /* Common in Frameworks */,
 				4BC95E812D7416D7002FAB32 /* Bookmarks in Frameworks */,
 				CB6CC7E42CD2529000320907 /* BrokenSitePrompt in Frameworks */,
@@ -6533,6 +6544,7 @@
 				4BC5E8602E174B6A00391C19 /* DesignResourcesKit */,
 				BB631D142DE0D8B70099977D /* DesignResourcesKitIcons */,
 				31794BFF2821DFB600F18633 /* DuckUI */,
+				A64F1A010000000000000001 /* FeatureFlags */,
 				9F292C522F342B1200441F7A /* MetricBuilder */,
 				85B6ABB62DE5E4CC009C85C7 /* Onboarding */,
 				8518F12C2F742F7600B53C75 /* ScreenTimeDataCleaner */,
@@ -10955,7 +10967,6 @@
 		EE50052C29C3692700AE0773 /* FeatureFlags */ = {
 			isa = PBXGroup;
 			children = (
-				EE50052D29C369D300AE0773 /* FeatureFlag.swift */,
 				EE50052F29C3BA0800AE0773 /* InternalUserStore.swift */,
 			);
 			name = FeatureFlags;
@@ -12101,6 +12112,7 @@
 			);
 			name = DuckDuckGo;
 			packageProductDependencies = (
+				A64F1A030000000000000003 /* FeatureFlags */,
 				31E69A62280F4CB600478327 /* DuckUI */,
 				F4D7F633298C00C3006C3AE9 /* FindInPageIOSJSSupport */,
 				0238E44E29C0FAA100615E30 /* FindInPageIOSJSSupport */,
@@ -12157,6 +12169,7 @@
 			);
 			name = UnitTests;
 			packageProductDependencies = (
+				A64F1A040000000000000004 /* FeatureFlags */,
 				F486D3352506A037002D07D7 /* OHHTTPStubs */,
 				F486D3372506A225002D07D7 /* OHHTTPStubsSwift */,
 				4BC95EA42D741787002FAB32 /* Common */,
@@ -12238,6 +12251,7 @@
 			);
 			name = IntegrationTests;
 			packageProductDependencies = (
+				A64F1A0B000000000000000B /* FeatureFlags */,
 				1E1D8B622995143200C96994 /* OHHTTPStubs */,
 				1E1D8B642995143200C96994 /* OHHTTPStubsSwift */,
 				4BC95EB62D7417DC002FAB32 /* Common */,
@@ -12313,6 +12327,7 @@
 			);
 			name = WebViewUnitTests;
 			packageProductDependencies = (
+				A64F1A0C000000000000000C /* FeatureFlags */,
 				984249C02CED4F430071C7DB /* OHHTTPStubs */,
 				984249C22CED4F430071C7DB /* OHHTTPStubsSwift */,
 				984249C62CED4F430071C7DB /* ContentBlocking */,
@@ -12364,6 +12379,7 @@
 			);
 			name = SharedStateTests;
 			packageProductDependencies = (
+				A64F1A0D000000000000000D /* FeatureFlags */,
 				98E564832DE8DE3F00E6E75F /* Common */,
 				98E564852DE8DE5700E6E75F /* Persistence */,
 				98E564872DE8DE5A00E6E75F /* Bookmarks */,
@@ -12420,6 +12436,7 @@
 			);
 			name = Core;
 			packageProductDependencies = (
+				A64F1A020000000000000002 /* FeatureFlags */,
 				F486D33325069BBB002D07D7 /* Kingfisher */,
 				C14882EC27F211A000D59F0C /* SwiftSoup */,
 				D61CDA172B7CF78300A0FBB9 /* ZIPFoundation */,
@@ -15451,7 +15468,6 @@
 				85C503F92CEF78C10075DF6F /* DataStoreIDManager.swift in Sources */,
 				98F6EA472863124100720957 /* ContentBlockerRulesLists.swift in Sources */,
 				F1134EB01F40AC6300B73467 /* AtbParser.swift in Sources */,
-				EE50052E29C369D300AE0773 /* FeatureFlag.swift in Sources */,
 				B652DF10287C2C1600C12A9C /* ContentBlocking.swift in Sources */,
 				4BE2756827304F57006B20B0 /* URLRequestExtension.swift in Sources */,
 				85BA79911F6FF75000F59015 /* ContentBlockerStoreConstants.swift in Sources */,
@@ -18740,6 +18756,30 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		A64F1A020000000000000002 /* FeatureFlags */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = FeatureFlags;
+		};
+		A64F1A030000000000000003 /* FeatureFlags */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = FeatureFlags;
+		};
+		A64F1A040000000000000004 /* FeatureFlags */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = FeatureFlags;
+		};
+		A64F1A0B000000000000000B /* FeatureFlags */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = FeatureFlags;
+		};
+		A64F1A0C000000000000000C /* FeatureFlags */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = FeatureFlags;
+		};
+		A64F1A0D000000000000000D /* FeatureFlags */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = FeatureFlags;
+		};
 		0238E44E29C0FAA100615E30 /* FindInPageIOSJSSupport */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 0238E44D29C0FAA100615E30 /* XCRemoteSwiftPackageReference "ios-js-support" */;

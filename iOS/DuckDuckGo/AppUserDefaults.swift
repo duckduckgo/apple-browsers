@@ -24,6 +24,7 @@ import Onboarding
 import Persistence
 import WebExtensions
 import WidgetKit
+import FeatureFlags
 
 private enum CookiePopupProtectionStorageKeys: String, StorageKeyDescribing {
     case cookiePopupPreference = "com_duckduckgo_ios_cookiePopupPreference"

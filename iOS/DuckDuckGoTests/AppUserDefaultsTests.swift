@@ -19,6 +19,7 @@
 
 import XCTest
 import PrivacyConfig
+import FeatureFlags
 
 @testable import DuckDuckGo
 @testable import Core

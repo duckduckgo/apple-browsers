@@ -22,6 +22,7 @@ import UserNotifications
 import FoundationExtensions
 import Core
 import PrivacyConfig
+import FeatureFlags
 
 final class InactivityNotificationSchedulerService {
     

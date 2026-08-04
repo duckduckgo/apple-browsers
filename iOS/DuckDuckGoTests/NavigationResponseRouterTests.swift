@@ -22,6 +22,7 @@ import Core
 import Foundation
 import PrivacyConfig
 import Testing
+import FeatureFlags
 @testable import DuckDuckGo
 
 @Suite("NavigationResponseRouter", .serialized)

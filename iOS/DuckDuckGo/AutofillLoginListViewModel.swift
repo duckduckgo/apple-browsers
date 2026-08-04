@@ -29,6 +29,7 @@ import PrivacyDashboard
 import Persistence
 import PrivacyConfig
 import os.log
+import FeatureFlags
 
 class AutofillLoginListViewModel: ObservableObject {
     

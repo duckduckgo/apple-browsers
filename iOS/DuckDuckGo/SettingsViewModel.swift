@@ -1906,6 +1906,8 @@ extension SettingsViewModel {
                                                                   object: nil,
                                                                   queue: .main, using: { [weak self] _ in
             guard let self = self else { return }
+            self.mobileCustomization.refreshAvailability()
+            self.state.mobileCustomization = self.mobileCustomization.state
             Task { @MainActor in
                 self.refreshAutoClearOptionsIfNeeded()
             }

@@ -608,7 +608,7 @@ class HTTPRequestingMock: HTTPRequesting {
     }
 
     var executeCallCount = 0
-    var error: SyncError?
+    var error: Error?
     var result: HTTPResult
 
     func execute() async throws -> HTTPResult {

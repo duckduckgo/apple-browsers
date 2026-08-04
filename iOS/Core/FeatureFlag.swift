@@ -463,6 +463,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1204186595873227/task/1214830562427843
     case defaultExistingIPhoneUsersToNewTabAfterIdle
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217024926605808
+    case customizeNTPIcons
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215169783702336
     case walletPassDownload
 
@@ -814,7 +817,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.tabTerminationTelemetry), supportsLocalOverriding: true)
         case .tabTerminationErrorPage:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.tabTerminationErrorPage))
-
         case .appRebranding:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.appRebranding), supportsLocalOverriding: true)
         case .webExtensions:
@@ -863,6 +865,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.customProductPageDuckAiChat), supportsLocalOverriding: true)
         case .defaultExistingIPhoneUsersToNewTabAfterIdle:
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.defaultExistingIPhoneUsersToNewTabAfterIdle))
+        case .customizeNTPIcons:
+            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.customizeNTPIcons))
         case .walletPassDownload:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.walletPassDownload))
         case .aiChatChromeShortcutIPad:

@@ -256,6 +256,16 @@
             skipped = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
+               BlueprintIdentifier = "AppRoutingTests"
+               BuildableName = "AppRoutingTests"
+               BlueprintName = "AppRoutingTests"
+               ReferencedContainer = "container:LocalPackages/AppRouting">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
                BlueprintIdentifier = "SnapshotTestingSupportTests"
                BuildableName = "SnapshotTestingSupportTests"
                BlueprintName = "SnapshotTestingSupportTests"

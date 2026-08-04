@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import AppRouting
 import BrowserServicesKit
 import Foundation
 import URLPredictor
@@ -158,25 +159,18 @@ public extension URL {
         static let partialHost = "pv1"
         static let searchHeader = "ko"
         static let kbg = "kbg"
-        static let vertical = "ia"
-        static let verticalRewrite = "iar"
-        static let verticalMaps = "iaxm"
         static let email = "email"
         static let isTablet = "is_tablet"
     }
 
     fileprivate enum ParamValue {
 
-        static let phoneSource = "ddg_ios"
-        static let iPadSource = "ddg_ios_tablet"
         static let appUsage = "app_use"
         static let duckAI = "duckai"
         static let searchHeader = "-1"
         static let kbgDisabled = "-1"
         static let emailEnabled = "1"
         static let emailDisabled = "0"
-        static let majorVerticals: Set<String> = ["images", "videos", "news"]
-
     }
 
     // MARK: - StatisticsDependentURLs
@@ -229,65 +223,32 @@ public final class StatisticsDependentURLFactory {
 
     private let statisticsStore: StatisticsStore
     private let isPad: Bool
+    private let searchURLBuilder: SearchURLBuilder
 
     var source: String {
-        isPad ? URL.ParamValue.iPadSource : URL.ParamValue.phoneSource
+        searchURLBuilder.source
     }
 
     init(statisticsStore: StatisticsStore = StatisticsUserDefaults(), isPad: Bool = UIDevice.current.userInterfaceIdiom == .pad) {
         self.statisticsStore = statisticsStore
         self.isPad = isPad
+        self.searchURLBuilder = SearchURLBuilder(searchBaseURL: URL.ddg, isPad: isPad) {
+            statisticsStore.atbWithVariant
+        }
     }
 
     // MARK: Search
 
     func makeSearchURL(text: String) -> URL? {
-        makeSearchURL(text: text, additionalParameters: [])
+        searchURLBuilder.makeSearchURL(query: text, forceSearchQuery: true)
     }
 
     func makeSearchURL(query: String, forceSearchQuery: Bool = false, queryContext: URL? = nil) -> URL? {
-        if !forceSearchQuery, let url = URL.webUrl(from: query) {
-            return url
-        }
-
-        var parameters = [String: String]()
-        if let queryContext = queryContext,
-           queryContext.isDuckDuckGoSearch,
-           queryContext.getParameter(named: URL.Param.verticalMaps) == nil,
-           let vertical = queryContext.getParameter(named: URL.Param.vertical),
-           URL.ParamValue.majorVerticals.contains(vertical) {
-
-            parameters[URL.Param.verticalRewrite] = vertical
-        }
-
-        return makeSearchURL(text: query, additionalParameters: parameters)
-    }
-
-    /**
-     Generates a search url with the source (t) https://duck.co/help/privacy/t
-     and cohort (atb) https://duck.co/help/privacy/atb
-     */
-    private func makeSearchURL<C: Collection>(text: String, additionalParameters: C) -> URL
-    where C.Element == (key: String, value: String) {
-        // encode spaces as "+"
-        var queryItem = URLQueryItem(percentEncodingName: URL.Param.search, value: text, withAllowedCharacters: .init(charactersIn: " "))
-        queryItem.value = queryItem.value?.replacingOccurrences(of: " ", with: "+")
-
-        let searchURL = URL(string: URL.ddg.absoluteString.dropping(suffix: "/") + "/")!
-            .appending(percentEncodedQueryItem: queryItem)
-            .appendingParameters(additionalParameters)
-        return applyingStatsParams(to: searchURL)
+        searchURLBuilder.makeSearchURL(query: query, forceSearchQuery: forceSearchQuery, queryContext: queryContext)
     }
 
     func applyingStatsParams(to url: URL) -> URL {
-        var searchURL = url.removingParameters(named: [URL.Param.source, URL.Param.atb])
-            .appendingParameter(name: URL.Param.source,
-                                value: source)
-
-        if let atbWithVariant = statisticsStore.atbWithVariant {
-            searchURL = searchURL.appendingParameter(name: URL.Param.atb, value: atbWithVariant)
-        }
-        return searchURL
+        searchURLBuilder.applyingSourceAndAttributionParameters(to: url)
     }
 
     // MARK: ATB
@@ -337,13 +298,7 @@ public final class StatisticsDependentURLFactory {
     }
 
     func hasCorrectMobileStatsParams(url: URL) -> Bool {
-        guard let source = url.getParameter(named: URL.Param.source),
-              source == self.source
-        else { return false }
-        if let atbWithVariant = statisticsStore.atbWithVariant {
-            return atbWithVariant == url.getParameter(named: URL.Param.atb)
-        }
-        return true
+        searchURLBuilder.hasExpectedSourceAndAttributionParameters(in: url)
     }
 
     // MARK: Pixel

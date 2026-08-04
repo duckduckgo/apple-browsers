@@ -22,77 +22,11 @@ import XCTest
 
 class AppDeepLinksTests: XCTestCase {
 
-    func testWhenLinkIsLowercaseQuickLinkThenDetected() {
-        XCTAssertEqual(AppDeepLinkSchemes.fromURL(URL(string: "ddgquicklink://foo.bar")!),
-                       .quickLink)
-    }
+    func testWhenCoreDeepLinkAliasIsUsedThenConstructionAndParsingRemainAvailable() {
+        let url = AppDeepLinkSchemes.quickLink.url
 
-    func testWhenLinkIsUppercaseQuicklinkThenDetected() {
-        XCTAssertEqual(AppDeepLinkSchemes.fromURL(URL(string: "DDGQUICKLINK://foo.bar")!),
-                      .quickLink)
-    }
-
-    func testWhenLinkIsCamelCaseQuickLinkThenDetected() {
-        XCTAssertEqual(AppDeepLinkSchemes.fromURL(URL(string: "ddgQuickLink://foo.bar")!),
-                       .quickLink)
-    }
-
-    func testWhenLinkIsNotKnownSchemeThenNotDetected() {
-        XCTAssertNil(AppDeepLinkSchemes.fromURL(URL(string: "someOtherType://foo.bar")!))
-    }
-
-    func testWhenLinkIsLowercaseQuickLinkThenQueryIsExtracted() {
-        XCTAssertEqual(AppDeepLinkSchemes.query(fromQuickLink: URL(string: "ddgquicklink://foo.bar")!), "foo.bar")
-    }
-
-    func testWhenLinkIsUppercaseQuickLinkThenQueryIsExtracted() {
-        XCTAssertEqual(AppDeepLinkSchemes.query(fromQuickLink: URL(string: "DDGQUICKLINK://foo.bar")!), "foo.bar")
-    }
-
-    func testWhenLinkIsCamelCaseQuickLinkThenQueryIsExtracted() {
-        XCTAssertEqual(AppDeepLinkSchemes.query(fromQuickLink: URL(string: "ddgQuickLink://foo.bar")!), "foo.bar")
-    }
-
-    func testWhenLinkIsNotQuickLinkThenQueryIsSame() {
-        XCTAssertEqual(AppDeepLinkSchemes.query(fromQuickLink: URL(string: "someOtherType://foo.bar")!), "someOtherType://foo.bar")
-    }
-
-    func testWhenQuickLinkIsExtractedThenURLSchemeIsPreserved() {
-        XCTAssertEqual(AppDeepLinkSchemes.query(fromQuickLink: URL(string: "ddgquicklink://https://foo.bar")!), "https://foo.bar")
-    }
-
-    func testWhenQuickLinkIsExtractedThenURLPathPreserved() {
-        XCTAssertEqual(AppDeepLinkSchemes.query(fromQuickLink: URL(string: "ddgquicklink://foo.bar/baz/123")!), "foo.bar/baz/123")
-    }
-
-    func testWhenQuickLinkIsExtractedThenURLQueryPreserved() {
-        XCTAssertEqual(AppDeepLinkSchemes.query(fromQuickLink: URL(string: "ddgquicklink://foo.bar/baz/123?A=b&c=D")!), "foo.bar/baz/123?A=b&c=D")
-    }
-
-    func testWhenQuickLinkIsExtractedThenURLFragmentPreserved() {
-        XCTAssertEqual(AppDeepLinkSchemes.query(fromQuickLink: URL(string: "ddgquicklink://foo.bar/baz/123#hello-world?A=b&c=D")!),
-                       "foo.bar/baz/123#hello-world?A=b&c=D")
-    }
-
-    // MARK: - Voice Chat Deep Link
-
-    func testWhenLinkIsVoiceChatThenDetected() {
-        XCTAssertEqual(AppDeepLinkSchemes.fromURL(URL(string: "ddgOpenAIVoiceChat://")!),
-                       .openAIVoiceChat)
-    }
-
-    func testWhenLinkIsLowercaseVoiceChatThenDetected() {
-        XCTAssertEqual(AppDeepLinkSchemes.fromURL(URL(string: "ddgopenaivoicechat://")!),
-                       .openAIVoiceChat)
-    }
-
-    func testVoiceChatDeepLinkURLIsCorrect() {
-        XCTAssertEqual(AppDeepLinkSchemes.openAIVoiceChat.url.absoluteString, "ddgOpenAIVoiceChat://")
-    }
-
-    func testVoiceChatDeepLinkPreservesSourceParameter() {
-        let url = AppDeepLinkSchemes.openAIVoiceChat.url.appendingParameter(name: "source", value: "control_center")
-        XCTAssertEqual(url.getParameter(named: "source"), "control_center")
+        XCTAssertEqual(url.absoluteString, "ddgQuickLink://")
+        XCTAssertEqual(AppDeepLinkSchemes.fromURL(url), .quickLink)
     }
 
 }

@@ -262,6 +262,16 @@
                ReferencedContainer = "container:../SharedPackages/SnapshotTestingSupport">
             </BuildableReference>
          </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "FeatureFlagsTests"
+               BuildableName = "FeatureFlagsTests"
+               BlueprintName = "FeatureFlagsTests"
+               ReferencedContainer = "container:LocalPackages/FeatureFlags">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
    </TestAction>
    <LaunchAction

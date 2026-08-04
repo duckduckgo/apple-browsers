@@ -46,5 +46,13 @@ let package = Package(
                 .define("DEBUG", .when(configuration: .debug))
             ]
         ),
+        .testTarget(
+            name: "FeatureFlagsTests",
+            dependencies: [
+                "FeatureFlags",
+                .product(name: "PrivacyConfig", package: "BrowserServicesKit"),
+                .product(name: "PrivacyConfigTestsUtils", package: "BrowserServicesKit")
+            ]
+        ),
     ]
 )

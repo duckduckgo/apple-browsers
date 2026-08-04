@@ -50,6 +50,7 @@ struct RegisteredDeviceMapper: RegisteredDeviceMapping {
 
     private struct MappingAttempt {
         let device: RegisteredDevice
+        let usedUnifiedDeviceInfo: Bool
         let unifiedDeviceInfoFailure: UnifiedDeviceInfoFailure?
     }
 
@@ -85,26 +86,30 @@ struct RegisteredDeviceMapper: RegisteredDeviceMapping {
         let accountInfoKey = await accountInfoKeyIfNeeded(for: entries,
                                                           account: account,
                                                           isUnifiedReadEnabled: isUnifiedReadEnabled)
-        let thirdPartyMainKey = await thirdPartyMainKeyIfNeeded(for: entries, account: account)
         let initialMappings = entries.map {
             registeredDevice(from: $0,
                              account: account,
                              accountInfoKey: accountInfoKey,
-                             thirdPartyMainKey: thirdPartyMainKey,
+                             thirdPartyMainKey: nil,
                              isUnifiedReadEnabled: isUnifiedReadEnabled)
         }
-        guard initialMappings.contains(where: { $0.unifiedDeviceInfoFailure == .staleKey }),
-              let accountInfoKeys,
-              let refreshedAccountInfoKey = try? await accountInfoKeys.refreshKey(for: account) else {
-            return initialMappings.map(\.device)
+        let finalMappings: [MappingAttempt]
+        if initialMappings.contains(where: { $0.unifiedDeviceInfoFailure == .staleKey }),
+           let accountInfoKeys,
+           let refreshedAccountInfoKey = try? await accountInfoKeys.refreshKey(for: account) {
+            finalMappings = entries.map {
+                registeredDevice(from: $0,
+                                 account: account,
+                                 accountInfoKey: refreshedAccountInfoKey,
+                                 thirdPartyMainKey: nil,
+                                 isUnifiedReadEnabled: isUnifiedReadEnabled)
+            }
+        } else {
+            finalMappings = initialMappings
         }
-        return entries.map {
-            registeredDevice(from: $0,
-                             account: account,
-                             accountInfoKey: refreshedAccountInfoKey,
-                             thirdPartyMainKey: thirdPartyMainKey,
-                             isUnifiedReadEnabled: isUnifiedReadEnabled).device
-        }
+        return await devicesApplyingThirdPartyFallback(to: finalMappings,
+                                                       entries: entries,
+                                                       account: account)
     }
 
     func registeredDevice(fromLegacyEntry entry: RegisteredDeviceEntry, account: SyncAccount) -> RegisteredDevice? {
@@ -144,6 +149,7 @@ struct RegisteredDeviceMapper: RegisteredDeviceMapping {
                                          name: deviceInfo.name,
                                          type: deviceInfo.type,
                                          credentialId: entry.credentialId ?? SyncCredentialID.defaultCredential),
+                usedUnifiedDeviceInfo: true,
                 unifiedDeviceInfoFailure: nil)
         }
 
@@ -156,7 +162,31 @@ struct RegisteredDeviceMapper: RegisteredDeviceMapping {
         } else {
             failure = nil
         }
-        return MappingAttempt(device: device, unifiedDeviceInfoFailure: failure)
+        return MappingAttempt(device: device,
+                              usedUnifiedDeviceInfo: false,
+                              unifiedDeviceInfoFailure: failure)
+    }
+
+    private func devicesApplyingThirdPartyFallback(to mappings: [MappingAttempt],
+                                                   entries: [RegisteredDeviceEntry],
+                                                   account: SyncAccount) async -> [RegisteredDevice] {
+        let fallbackEntryIndices = entries.indices.filter {
+            entries[$0].credentialId == SyncCredentialID.thirdParty
+                && !mappings[$0].usedUnifiedDeviceInfo
+        }
+        let fallbackEntries = fallbackEntryIndices.map { entries[$0] }
+        guard !fallbackEntries.isEmpty,
+              let thirdPartyMainKey = await thirdPartyMainKeyIfNeeded(for: fallbackEntries, account: account) else {
+            return mappings.map(\.device)
+        }
+
+        var devices = mappings.map(\.device)
+        for index in fallbackEntryIndices {
+            let entry = entries[index]
+            devices[index] = decryptedThirdPartyRegisteredDevice(from: entry, thirdPartyMainKey: thirdPartyMainKey)
+                ?? fallbackRegisteredDevice(from: entry)
+        }
+        return devices
     }
 
     private func readUnifiedDeviceInfo(from entry: RegisteredDeviceEntry,

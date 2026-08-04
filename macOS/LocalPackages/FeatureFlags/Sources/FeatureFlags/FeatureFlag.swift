@@ -32,9 +32,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866470686549
     case contextualOnboarding
 
-    /// Onboarding rebranding feature flag
-    case onboardingRebranding
-
     /// https://app.asana.com/1/137249556945/project/1211150618152277/task/1216081727196784
     case appRebranding
 
@@ -531,8 +528,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(DBPSubfeature.freemium), supportsLocalOverriding: false)
         case .contextualOnboarding:
             Config(defaultValue: .enabled, source: .remoteReleasable(ContextualOnboardingSubfeature.featureEnabled), supportsLocalOverriding: false)
-        case .onboardingRebranding:
-            Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.onboardingRebranding))
         case .appRebranding:
             Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.appRebranding))
         case .newTabPageRebranding:

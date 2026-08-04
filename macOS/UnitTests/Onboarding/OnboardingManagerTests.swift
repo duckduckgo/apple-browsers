@@ -99,7 +99,7 @@ class OnboardingManagerTests: XCTestCase {
         chromeExtensionInstaller = nil
     }
 
-    func testReturnsExpectedOnboardingConfig_WhenBothFlagsAreOff_ExcludesAddressBarMode() {
+    func testReturnsExpectedOnboardingConfig_WhenNoFlagsAreOn_ExcludesAddressBarMode() {
         // Given
         let systemSettings = SystemSettings(rows: ["dock", "import"])
         let stepDefinitions = StepDefinitions(
@@ -109,7 +109,7 @@ class OnboardingManagerTests: XCTestCase {
         let expectedConfig = OnboardingConfiguration(
             stepDefinitions: stepDefinitions,
             exclude: [OnboardingExcludedStep.duckPlayerSingle.rawValue, OnboardingExcludedStep.addressBarMode.rawValue],
-            order: "v3",
+            order: "v4",
             env: "development",
             locale: "en",
             platform: .init(name: "macos")
@@ -166,7 +166,7 @@ class OnboardingManagerTests: XCTestCase {
         let expectedConfig = OnboardingConfiguration(
             stepDefinitions: stepDefinitions,
             exclude: [OnboardingExcludedStep.duckPlayerSingle.rawValue, OnboardingExcludedStep.addressBarMode.rawValue],
-            order: "v3",
+            order: "v4",
             env: "development",
             locale: "en",
             platform: .init(name: "macos")
@@ -200,7 +200,7 @@ class OnboardingManagerTests: XCTestCase {
         let expectedConfig = OnboardingConfiguration(
             stepDefinitions: stepDefinitions,
             exclude: [OnboardingExcludedStep.duckPlayerSingle.rawValue, OnboardingExcludedStep.addressBarMode.rawValue],
-            order: "v3",
+            order: "v4",
             env: "development",
             locale: "en",
             platform: .init(name: "macos")
@@ -234,7 +234,7 @@ class OnboardingManagerTests: XCTestCase {
         let expectedConfig = OnboardingConfiguration(
             stepDefinitions: stepDefinitions,
             exclude: [OnboardingExcludedStep.duckPlayerSingle.rawValue],
-            order: "v3",
+            order: "v4",
             env: "development",
             locale: "en",
             platform: .init(name: "macos")
@@ -486,20 +486,6 @@ class OnboardingManagerTests: XCTestCase {
         // Then
         XCTAssertTrue(managerWithControl.configuration.stepDefinitions.getStarted.options.isEmpty)
         XCTAssertTrue(featureFlagger.didCallResolveCohort)
-    }
-
-    func testWhenNotV4ThenDoesNotResolveCohortOrIncludeChromeExtensionInstallOption() {
-        // Given
-        let featureFlagger = makeFeatureFlagger(cohort: .treatment, isOnboardingRebrandingEnabled: false)
-        chromeExtensionInstaller.canInstallDDGExtension = true
-        let managerWithTreatment = makeExperimentManager(featureFlagger: featureFlagger)
-
-        // When
-        managerWithTreatment.onboardingStarted()
-
-        // Then
-        XCTAssertTrue(managerWithTreatment.configuration.stepDefinitions.getStarted.options.isEmpty)
-        XCTAssertFalse(featureFlagger.didCallResolveCohort)
     }
 
     func testWhenChromeCannotBeInstalledThenDoesNotResolveCohortOrIncludeOption() {
@@ -851,14 +837,7 @@ private extension OnboardingManagerTests {
         )
     }
 
-    func makeFeatureFlagger(
-        cohort: FeatureFlag.OnboardingChromeExtensionCohort?,
-        isOnboardingRebrandingEnabled: Bool = true
-    ) -> MockFeatureFlagger {
-        let featureFlagger = MockFeatureFlagger(resolveCohortStub: cohort)
-        if isOnboardingRebrandingEnabled {
-            featureFlagger.enabledFeatureFlags = [.onboardingRebranding]
-        }
-        return featureFlagger
+    func makeFeatureFlagger(cohort: FeatureFlag.OnboardingChromeExtensionCohort?) -> MockFeatureFlagger {
+        MockFeatureFlagger(resolveCohortStub: cohort)
     }
 }

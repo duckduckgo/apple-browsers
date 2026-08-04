@@ -3456,7 +3456,6 @@
 		70AA0BDA5B192D7F634F5112 /* SubscriptionOnboardingWelcomeView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SubscriptionOnboardingWelcomeView.swift; sourceTree = "<group>"; };
 		7A0308260000000000000001 /* TabTerminationTelemetry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabTerminationTelemetry.swift; sourceTree = "<group>"; };
 		7A0308260000000000000003 /* TabTerminationTelemetryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabTerminationTelemetryTests.swift; sourceTree = "<group>"; };
-		70AA0BDA5B192D7F634F5112 /* SubscriptionOnboardingWelcomeView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SubscriptionOnboardingWelcomeView.swift; sourceTree = "<group>"; };
 		78BBBA6A2FE42A6700AE8F41 /* VoiceSearchFeedbackView_PreviewMocks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceSearchFeedbackView_PreviewMocks.swift; sourceTree = "<group>"; };
 		7A11B0C0D0E0F00102030406 /* IPadOmnibarToolPickerController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = IPadOmnibarToolPickerController.swift; sourceTree = "<group>"; };
 		7A11B0C0D0E0F00102030408 /* IPadOmnibarToolPickerControllerTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = IPadOmnibarToolPickerControllerTests.swift; sourceTree = "<group>"; };

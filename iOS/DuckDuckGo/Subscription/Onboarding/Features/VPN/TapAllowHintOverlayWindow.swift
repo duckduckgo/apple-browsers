@@ -52,7 +52,7 @@ final class TapAllowHintCoordinator: ObservableObject {
     }
 
     func turnOnFinished() {
-        didTapStart = false
+        reset()
     }
 
     func connected() {

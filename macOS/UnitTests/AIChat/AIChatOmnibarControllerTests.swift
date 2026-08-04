@@ -817,6 +817,101 @@ final class AIChatOmnibarControllerTests: XCTestCase {
                       "File attachments are cleared from shared state after a successful submit")
     }
 
+    // MARK: - Submit-time file re-validation
+    //
+    // Pick-time validation lives in the container VC and is skipped entirely while
+    // `attachmentLimits` is nil, so `submit()` re-checks the pending files itself. These cover the
+    // gate directly: an accepted-then-invalid file must not reach the prompt handler.
+
+    func testWhenSubmitWithOversizedFile_ThenSubmitIsBlockedAndErrorSurfaces() async {
+        await loadPDFModel(limits: makeAttachmentLimits(maxFileSizeMB: 1))
+        var reportedError: String?
+        controller.onAttachmentValidationFailed = { reportedError = $0 }
+
+        controller.addFileAttachmentToActiveTab(makePDFAttachment(byteCount: 1_048_577, pageCount: 1))
+        controller.updateText("summarise this PDF")
+
+        controller.submit()
+        await Task.yield()
+
+        XCTAssertFalse(mockTabOpener.openAIChatTabCalled, "An over-size file must not reach the backend")
+        XCTAssertNil(AIChatPromptHandler.shared.consumeData(), "No prompt is posted when submit is blocked")
+        XCTAssertEqual(reportedError, UserText.aiChatAttachmentFileTooLarge(maxFileSizeMB: 1))
+        XCTAssertEqual(controller.activeFileAttachments.count, 1, "A blocked submit leaves the attachment in place")
+    }
+
+    func testWhenSubmitWithFilesOverTotalSizeLimit_ThenSubmitIsBlocked() async {
+        // Each file is inside the 1MB per-file limit; together they exceed the 1.5MB total, which
+        // only the cumulative pass catches.
+        await loadPDFModel(limits: makeAttachmentLimits(maxFileSizeMB: 1, maxTotalFileSizeBytes: 1_500_000))
+        var reportedError: String?
+        controller.onAttachmentValidationFailed = { reportedError = $0 }
+
+        controller.addFileAttachmentToActiveTab(makePDFAttachment(byteCount: 800_000, pageCount: 1))
+        controller.addFileAttachmentToActiveTab(makePDFAttachment(byteCount: 800_000, pageCount: 1))
+        controller.updateText("compare these")
+
+        controller.submit()
+        await Task.yield()
+
+        XCTAssertFalse(mockTabOpener.openAIChatTabCalled)
+        // The copy rounds the byte budget up to whole MB (1_500_000 bytes -> "2 MB").
+        XCTAssertEqual(reportedError, UserText.aiChatAttachmentFilesExceedTotalSizeLimit(maxTotalFileSizeMB: 2))
+    }
+
+    func testWhenSubmitWithFileOverPageLimit_ThenSubmitIsBlocked() async {
+        await loadPDFModel(limits: makeAttachmentLimits(maxPagesPerFile: 15))
+        var reportedError: String?
+        controller.onAttachmentValidationFailed = { reportedError = $0 }
+
+        controller.addFileAttachmentToActiveTab(makePDFAttachment(byteCount: 1_000, pageCount: 16))
+        controller.updateText("summarise")
+
+        controller.submit()
+        await Task.yield()
+
+        XCTAssertFalse(mockTabOpener.openAIChatTabCalled)
+        XCTAssertEqual(reportedError, UserText.aiChatAttachmentFileTooManyPages(maxPagesPerFile: 15))
+    }
+
+    func testWhenSubmitWithFileWithinLimits_ThenSubmitProceeds() async {
+        await loadPDFModel(limits: makeAttachmentLimits())
+        var reportedError: String?
+        controller.onAttachmentValidationFailed = { reportedError = $0 }
+
+        controller.addFileAttachmentToActiveTab(makePDFAttachment(byteCount: 100_000, pageCount: 5))
+        controller.updateText("summarise")
+
+        controller.submit()
+        await Task.yield()
+
+        XCTAssertTrue(mockTabOpener.openAIChatTabCalled, "A valid file still submits")
+        XCTAssertNil(reportedError)
+        guard case let .query(query)? = AIChatPromptHandler.shared.consumeData()?.tool else {
+            XCTFail("Expected a `.query` tool in the submitted prompt")
+            return
+        }
+        XCTAssertEqual(query.files?.count, 1)
+    }
+
+    func testWhenLimitsAreUnavailable_ThenOversizedFileStillSubmits() async {
+        // No limits from the endpoint means no client-side enforcement anywhere — the backend
+        // stays the authority. Deliberate: blocking here would make PDFs unsendable whenever the
+        // models endpoint is unreachable.
+        await loadPDFModel(limits: nil)
+        var reportedError: String?
+        controller.onAttachmentValidationFailed = { reportedError = $0 }
+
+        controller.addFileAttachmentToActiveTab(makePDFAttachment(byteCount: 30_000_000, pageCount: nil))
+        controller.updateText("summarise")
+
+        controller.submit()
+        await Task.yield()
+
+        XCTAssertTrue(mockTabOpener.openAIChatTabCalled)
+        XCTAssertNil(reportedError)
+    }
+
     func testWhenSubmitWithoutTabAttachments_ThenPromptOmitsPageContext() async {
         // Given — only text, no attachments
         controller.updateText("just text")
@@ -2286,6 +2381,48 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         )
     }
 
+    /// A PDF attachment with the byte size and page count the validator reads. The size is passed
+    /// explicitly rather than allocated, so a "30MB file" costs nothing. `pageCount: nil` stands in
+    /// for an unreadable PDF (what the inspector returns when it can't parse one).
+    private func makePDFAttachment(byteCount: Int, pageCount: Int?) -> AIChatFileAttachment {
+        AIChatFileAttachment(
+            data: Data("%PDF-1.4 mock".utf8),
+            fileName: "spec.pdf",
+            mimeType: "application/pdf",
+            fileSizeBytes: byteCount,
+            pageCount: pageCount
+        )
+    }
+
+    /// Same limits on every tier, so a test doesn't have to pin the resolved tier to assert on them.
+    private func makeAttachmentLimits(
+        maxPerConversation: Int = 5,
+        maxFileSizeMB: Int = 5,
+        maxTotalFileSizeBytes: Int = 20_000_000,
+        maxPagesPerFile: Int = 15
+    ) -> AIChatAttachmentLimits {
+        let tier = AIChatAttachmentTierLimits(
+            files: AIChatAttachmentFileLimits(
+                maxPerConversation: maxPerConversation,
+                maxFileSizeMB: maxFileSizeMB,
+                maxTotalFileSizeBytes: maxTotalFileSizeBytes,
+                maxPagesPerFile: maxPagesPerFile
+            ),
+            images: AIChatAttachmentImageLimits(maxPerTurn: 3, maxPerConversation: 3, maxInputCharsWithAttachments: 10_000)
+        )
+        return AIChatAttachmentLimits(free: tier, plus: tier, pro: tier)
+    }
+
+    /// Loads a single PDF-capable model plus `limits`, as a real models fetch would.
+    private func loadPDFModel(limits: AIChatAttachmentLimits?) async {
+        mockModelsService.attachmentLimitsToReturn = limits
+        mockPreferences.selectedModelId = "pdf-model"
+        await loadModels(
+            [makeRemoteModel(id: "pdf-model", supportedFileTypes: ["application/pdf"], entityHasAccess: true)],
+            tier: nil
+        )
+    }
+
     /// Loads `models` and resolves the user's tier + trial eligibility, mirroring a real fetch.
     private func loadModels(_ models: [AIChatRemoteModel], tier: TierName?, trialEligible: Bool = false) async {
         setUserTier(tier)
@@ -2475,13 +2612,14 @@ private class MockAIChatPreferencesPersisting: AIChatPreferencesPersisting {
 @MainActor
 private class MockAIChatModelsProviding: AIChatModelsProviding {
     var modelsToReturn: [AIChatRemoteModel] = []
+    var attachmentLimitsToReturn: AIChatAttachmentLimits?
     var errorToThrow: Error?
 
     func fetchModels() async throws -> AIChatModelsResponse {
         if let error = errorToThrow {
             throw error
         }
-        return AIChatModelsResponse(models: modelsToReturn)
+        return AIChatModelsResponse(models: modelsToReturn, attachmentLimits: attachmentLimitsToReturn)
     }
 }
 

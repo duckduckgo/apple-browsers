@@ -86,6 +86,39 @@ final class AIChatTabPickerSourceTests: XCTestCase {
         XCTAssertTrue(resolved?.wasMaterialized == true)
     }
 
+    // MARK: - needsLoad (page not in the web view yet)
+
+    func testNeedsLoadIsTrueForJustMaterializedSuspendedTab() {
+        let collection = collectionWithSuspendedTab(id: "suspended-4", url: "https://apple.com")
+        let wcm = WindowControllersManagerMock()
+        wcm.customAllTabCollectionViewModels = [collection]
+
+        let resolved = AIChatTabPickerSource.materializeAttachableTab(withId: "suspended-4", forOrigin: collection, in: wcm)
+
+        XCTAssertTrue(resolved?.wasMaterialized == true)
+        XCTAssertTrue(resolved?.needsLoad == true)
+    }
+
+    /// The pinned-tab-at-launch shape: `PinnedTabsManager.setUp(movingTabsFrom:)` eagerly materializes
+    /// restored pinned tabs into `.loaded` (see `PinnedTabsManagerTests.testSetUpMaterializesUnloadedTabs`),
+    /// but `materialize()` performs no navigation — the page stays in `interactionStateData` until first
+    /// selection or lazy loading. So the tab resolves as *not* materialized while its web view is still
+    /// empty, which is exactly the case the old `wasMaterialized`-only gate skipped: extraction then ran
+    /// against a blank page and the attachment was silently dropped from the payload.
+    func testNeedsLoadIsTrueForRestoredTabThatWasAlreadyLoadedButNeverNavigated() {
+        let restored = Tab(content: .url(URL(string: "https://pinned.example")!, credential: nil, source: .pendingStateRestoration),
+                           interactionStateData: Data())
+        let collection = TabCollectionViewModel(tabCollection: TabCollection(tabs: [restored]))
+        let wcm = WindowControllersManagerMock()
+        wcm.customAllTabCollectionViewModels = [collection]
+
+        let resolved = AIChatTabPickerSource.materializeAttachableTab(withId: restored.uuid, forOrigin: collection, in: wcm)
+
+        XCTAssertNotNil(resolved)
+        XCTAssertFalse(resolved?.wasMaterialized ?? true, "Nothing to materialize — the tab is already .loaded")
+        XCTAssertTrue(resolved?.needsLoad == true, "…but its web view has no page, so a load must still be kicked")
+    }
+
     func testMaterializeDoesNotResolveRegularTabFromFireWindowOrigin() {
         let regular = collectionWithSuspendedTab(id: "suspended-3", url: "https://apple.com")
         let burner = burnerCollection()

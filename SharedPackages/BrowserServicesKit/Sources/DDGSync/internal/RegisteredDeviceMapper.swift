@@ -63,8 +63,14 @@ struct RegisteredDeviceMapper: RegisteredDeviceMapping {
     }
 
     func registeredDevices(from entries: [RegisteredDeviceEntry], account: SyncAccount) async -> [RegisteredDevice] {
+        let accountInfoKey = await accountInfoKeyIfNeeded(for: entries, account: account)
         let thirdPartyMainKey = await thirdPartyMainKeyIfNeeded(for: entries, account: account)
-        return entries.map { registeredDevice(from: $0, account: account, thirdPartyMainKey: thirdPartyMainKey) }
+        return entries.map {
+            registeredDevice(from: $0,
+                             account: account,
+                             accountInfoKey: accountInfoKey,
+                             thirdPartyMainKey: thirdPartyMainKey)
+        }
     }
 
     func registeredDevice(fromLegacyEntry entry: RegisteredDeviceEntry, account: SyncAccount) -> RegisteredDevice? {
@@ -90,12 +96,34 @@ struct RegisteredDeviceMapper: RegisteredDeviceMapping {
                                                          credentialId: SyncCredentialID.defaultCredential)
     }
 
-    private func registeredDevice(from entry: RegisteredDeviceEntry, account: SyncAccount, thirdPartyMainKey: Data?) -> RegisteredDevice {
+    private func registeredDevice(from entry: RegisteredDeviceEntry,
+                                  account: SyncAccount,
+                                  accountInfoKey: AccountInfoKeyMaterial?,
+                                  thirdPartyMainKey: Data?) -> RegisteredDevice {
         // Keep every server entry visible even if one encrypted field is malformed or uses a key we cannot recover.
-        decryptedRegisteredDevice(from: entry, account: account, thirdPartyMainKey: thirdPartyMainKey) ?? fallbackRegisteredDevice(from: entry)
+        return decryptedUnifiedRegisteredDevice(from: entry, accountInfoKey: accountInfoKey)
+            ?? decryptedLegacyRegisteredDevice(from: entry, account: account, thirdPartyMainKey: thirdPartyMainKey)
+            ?? fallbackRegisteredDevice(from: entry)
     }
 
-    private func decryptedRegisteredDevice(from entry: RegisteredDeviceEntry, account: SyncAccount, thirdPartyMainKey: Data?) -> RegisteredDevice? {
+    private func decryptedUnifiedRegisteredDevice(from entry: RegisteredDeviceEntry,
+                                                  accountInfoKey: AccountInfoKeyMaterial?) -> RegisteredDevice? {
+        guard canReadUnifiedDeviceList(),
+              let accountInfoKey,
+              let encryptedDeviceInfo = entry.info,
+              let deviceInfo = try? deviceInfoCodec.decrypt(encryptedDeviceInfo, using: accountInfoKey) else {
+            return nil
+        }
+
+        return RegisteredDevice(id: entry.id,
+                                name: deviceInfo.name,
+                                type: deviceInfo.type,
+                                credentialId: entry.credentialId ?? SyncCredentialID.defaultCredential)
+    }
+
+    private func decryptedLegacyRegisteredDevice(from entry: RegisteredDeviceEntry,
+                                                 account: SyncAccount,
+                                                 thirdPartyMainKey: Data?) -> RegisteredDevice? {
         switch entry.credentialId {
         case SyncCredentialID.thirdParty:
             return decryptedThirdPartyRegisteredDevice(from: entry, thirdPartyMainKey: thirdPartyMainKey)
@@ -145,6 +173,15 @@ struct RegisteredDeviceMapper: RegisteredDeviceMapping {
 
         // 3party device fields are direct JWE plaintext strings, not base64-wrapped values.
         return String(data: plaintext, encoding: .utf8)
+    }
+
+    private func accountInfoKeyIfNeeded(for entries: [RegisteredDeviceEntry], account: SyncAccount) async -> AccountInfoKeyMaterial? {
+        guard canReadUnifiedDeviceList(),
+              entries.contains(where: { $0.info != nil }),
+              let accountInfoKeys else {
+            return nil
+        }
+        return try? await accountInfoKeys.loadKey(for: account)
     }
 
     private func thirdPartyMainKeyIfNeeded(for entries: [RegisteredDeviceEntry], account: SyncAccount) async -> Data? {

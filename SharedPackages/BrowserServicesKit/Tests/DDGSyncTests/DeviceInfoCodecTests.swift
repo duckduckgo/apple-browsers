@@ -31,12 +31,12 @@ final class DeviceInfoCodecTests: XCTestCase {
                 .makeProtectedKeys(accountSecretKey: accountSecretKey)
                 .first
         )
-        let keyMaterial = try makeKeyMaterial(from: protectedKey, crypter: crypter)
+        let accountInfoKey = try makeAccountInfoKey(from: protectedKey, crypter: crypter)
         let deviceInfo = DeviceInfo(name: "Anya's Mac", type: "desktop")
         let codec = DeviceInfoCodec()
 
         let encryptedDeviceInfo = try codec.encrypt(deviceInfo, using: protectedKey)
-        let decryptedDeviceInfo = try codec.decrypt(encryptedDeviceInfo, using: keyMaterial)
+        let decryptedDeviceInfo = try codec.decrypt(encryptedDeviceInfo, using: accountInfoKey)
 
         XCTAssertEqual(decryptedDeviceInfo, deviceInfo)
     }
@@ -62,24 +62,24 @@ final class DeviceInfoCodecTests: XCTestCase {
 
     func testWhenDecryptedPayloadIsNotDeviceInfoThenThrows() throws {
         let keyPair = try RSAKeyPairGenerator.makeKeyPair()
-        let keyMaterial = AccountInfoKeyMaterial(kid: "account-info-key",
-                                                 publicKey: keyPair.publicKey,
-                                                 privateKey: keyPair.privateKey)
+        let accountInfoKey = AccountInfoKey(kid: "account-info-key",
+                                            publicKey: keyPair.publicKey,
+                                            privateKey: keyPair.privateKey)
         let encryptedPayload = try JWECompactCodec().encryptRSAOAEP256(payload: Data("invalid".utf8),
                                                                       recipientPublicKey: keyPair.publicKey,
-                                                                      kid: keyMaterial.kid)
+                                                                      kid: accountInfoKey.kid)
 
-        XCTAssertThrowsError(try DeviceInfoCodec().decrypt(encryptedPayload, using: keyMaterial)) { error in
+        XCTAssertThrowsError(try DeviceInfoCodec().decrypt(encryptedPayload, using: accountInfoKey)) { error in
             XCTAssertEqual(error as? DeviceInfoCodecError, .invalidPayload)
         }
     }
 
-    private func makeKeyMaterial(from protectedKey: ProtectedKey,
-                                 crypter: CryptingInternal) throws -> AccountInfoKeyMaterial {
+    private func makeAccountInfoKey(from protectedKey: ProtectedKey,
+                                    crypter: CryptingInternal) throws -> AccountInfoKey {
         let encryptedPrivateKey = try XCTUnwrap(Base64URL.decode(protectedKey.encryptedPrivateKey))
         let privateKeyPKCS8 = try crypter.decryptData(encryptedPrivateKey, using: accountSecretKey)
-        return AccountInfoKeyMaterial(kid: protectedKey.kid,
-                                      publicKey: try RSAKeyImporter.makePublicKey(from: protectedKey.publicKey),
-                                      privateKey: try RSAKeyImporter.makePrivateKey(fromPKCS8: privateKeyPKCS8))
+        return AccountInfoKey(kid: protectedKey.kid,
+                              publicKey: try RSAKeyImporter.makePublicKey(from: protectedKey.publicKey),
+                              privateKey: try RSAKeyImporter.makePrivateKey(fromPKCS8: privateKeyPKCS8))
     }
 }

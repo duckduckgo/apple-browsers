@@ -33,8 +33,8 @@ enum DeviceInfoCodecError: Error, Equatable {
 
 protocol DeviceInfoCoding {
     func encrypt(_ deviceInfo: DeviceInfo, using protectedKey: ProtectedKey) throws -> String
-    func encrypt(_ deviceInfo: DeviceInfo, using key: AccountInfoKeyMaterial) throws -> String
-    func decrypt(_ encryptedDeviceInfo: String, using key: AccountInfoKeyMaterial) throws -> DeviceInfo
+    func encrypt(_ deviceInfo: DeviceInfo, using key: AccountInfoKey) throws -> String
+    func decrypt(_ encryptedDeviceInfo: String, using key: AccountInfoKey) throws -> DeviceInfo
 }
 
 struct DeviceInfoCodec: DeviceInfoCoding {
@@ -53,11 +53,11 @@ struct DeviceInfoCodec: DeviceInfoCoding {
         return try encrypt(deviceInfo, publicKey: publicKey, keyID: protectedKey.kid)
     }
 
-    func encrypt(_ deviceInfo: DeviceInfo, using key: AccountInfoKeyMaterial) throws -> String {
+    func encrypt(_ deviceInfo: DeviceInfo, using key: AccountInfoKey) throws -> String {
         try encrypt(deviceInfo, publicKey: key.publicKey, keyID: key.kid)
     }
 
-    func decrypt(_ encryptedDeviceInfo: String, using key: AccountInfoKeyMaterial) throws -> DeviceInfo {
+    func decrypt(_ encryptedDeviceInfo: String, using key: AccountInfoKey) throws -> DeviceInfo {
         let payload = try jweCompactCodec.decryptRSAOAEP256(token: encryptedDeviceInfo,
                                                            privateKey: key.privateKey,
                                                            expectedKid: key.kid)

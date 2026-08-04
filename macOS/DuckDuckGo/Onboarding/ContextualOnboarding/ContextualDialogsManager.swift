@@ -92,6 +92,7 @@ public class ContextualOnboardingStateStorage: ContextualOnboardingStateStoring 
 public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDialogTypeProviding, ContextualOnboardingStateUpdater {
 
     private let trackerMessageProvider: TrackerMessageProviding
+    private let subscriptionUpsellExperiment: OnboardingSubscriptionUpsellEnrolling
     private var stateStorage: ContextualOnboardingStateStoring
 
     // The last dialog that was presented.
@@ -128,8 +129,11 @@ public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDia
         }
     }
 
-    init(trackerMessageProvider: TrackerMessageProviding, stateStorage: ContextualOnboardingStateStoring = ContextualOnboardingStateStorage()) {
+    init(trackerMessageProvider: TrackerMessageProviding,
+         subscriptionUpsellExperiment: OnboardingSubscriptionUpsellEnrolling,
+         stateStorage: ContextualOnboardingStateStoring = ContextualOnboardingStateStorage()) {
         self.trackerMessageProvider = trackerMessageProvider
+        self.subscriptionUpsellExperiment = subscriptionUpsellExperiment
         self.stateStorage = stateStorage
         self.isContextualOnboardingCompleted = stateStorage.stateString == ContextualOnboardingState.onboardingCompleted.rawValue
     }
@@ -156,6 +160,10 @@ public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDia
             markSeen(.tryFireButton)
             lastDialog = .tryFireButton
         case .highFive?:
+            // Enroll here rather than when highFive is shown: this is the last moment before the
+            // treatment arm's upsell screen would appear, and the A/B framework wants enrollment
+            // immediately before the two arms diverge.
+            subscriptionUpsellExperiment.enroll()
             // If highFive dialog, complete onboarding.
             state = .onboardingCompleted
             lastDialog = nil

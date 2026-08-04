@@ -29,6 +29,7 @@ struct DeviceInfo: Codable, Equatable, Sendable {
 enum DeviceInfoCodecError: Error, Equatable {
     case invalidProtectedKey
     case invalidPayload
+    case unexpectedKeyID
 }
 
 protocol DeviceInfoCoding {
@@ -58,9 +59,14 @@ struct DeviceInfoCodec: DeviceInfoCoding {
     }
 
     func decrypt(_ encryptedDeviceInfo: String, using key: AccountInfoKey) throws -> DeviceInfo {
-        let payload = try jweCompactCodec.decryptRSAOAEP256(token: encryptedDeviceInfo,
+        let payload: Data
+        do {
+            payload = try jweCompactCodec.decryptRSAOAEP256(token: encryptedDeviceInfo,
                                                            privateKey: key.privateKey,
                                                            expectedKid: key.kid)
+        } catch JWECompactCodecError.unexpectedKeyID {
+            throw DeviceInfoCodecError.unexpectedKeyID
+        }
         do {
             return try JSONDecoder().decode(DeviceInfo.self, from: payload)
         } catch {

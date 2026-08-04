@@ -35,6 +35,24 @@ struct RegisteredDeviceMapper: RegisteredDeviceMapping {
     private static let undecryptableDeviceName = "Unknown"
     private static let undecryptableDeviceType = "unknown"
 
+    private enum UnifiedDeviceInfoFailure: Equatable {
+        case missing
+        case keyUnavailable
+        case staleKey
+        case corrupt
+    }
+
+    private enum UnifiedDeviceInfoReadResult {
+        case notAttempted
+        case decrypted(DeviceInfo)
+        case failed(UnifiedDeviceInfoFailure)
+    }
+
+    private struct MappingAttempt {
+        let device: RegisteredDevice
+        let unifiedDeviceInfoFailure: UnifiedDeviceInfoFailure?
+    }
+
     let crypter: CryptingInternal
     let scopedAccess: ScopedAccessCredentialManaging?
     let accountInfoKeys: AccountInfoKeyManaging?
@@ -63,13 +81,29 @@ struct RegisteredDeviceMapper: RegisteredDeviceMapping {
     }
 
     func registeredDevices(from entries: [RegisteredDeviceEntry], account: SyncAccount) async -> [RegisteredDevice] {
-        let accountInfoKey = await accountInfoKeyIfNeeded(for: entries, account: account)
+        let isUnifiedReadEnabled = canReadUnifiedDeviceList()
+        let accountInfoKey = await accountInfoKeyIfNeeded(for: entries,
+                                                          account: account,
+                                                          isUnifiedReadEnabled: isUnifiedReadEnabled)
         let thirdPartyMainKey = await thirdPartyMainKeyIfNeeded(for: entries, account: account)
-        return entries.map {
+        let initialMappings = entries.map {
             registeredDevice(from: $0,
                              account: account,
                              accountInfoKey: accountInfoKey,
-                             thirdPartyMainKey: thirdPartyMainKey)
+                             thirdPartyMainKey: thirdPartyMainKey,
+                             isUnifiedReadEnabled: isUnifiedReadEnabled)
+        }
+        guard initialMappings.contains(where: { $0.unifiedDeviceInfoFailure == .staleKey }),
+              let accountInfoKeys,
+              let refreshedAccountInfoKey = try? await accountInfoKeys.refreshKey(for: account) else {
+            return initialMappings.map(\.device)
+        }
+        return entries.map {
+            registeredDevice(from: $0,
+                             account: account,
+                             accountInfoKey: refreshedAccountInfoKey,
+                             thirdPartyMainKey: thirdPartyMainKey,
+                             isUnifiedReadEnabled: isUnifiedReadEnabled).device
         }
     }
 
@@ -99,26 +133,51 @@ struct RegisteredDeviceMapper: RegisteredDeviceMapping {
     private func registeredDevice(from entry: RegisteredDeviceEntry,
                                   account: SyncAccount,
                                   accountInfoKey: AccountInfoKeyMaterial?,
-                                  thirdPartyMainKey: Data?) -> RegisteredDevice {
-        // Keep every server entry visible even if one encrypted field is malformed or uses a key we cannot recover.
-        return decryptedUnifiedRegisteredDevice(from: entry, accountInfoKey: accountInfoKey)
-            ?? decryptedLegacyRegisteredDevice(from: entry, account: account, thirdPartyMainKey: thirdPartyMainKey)
-            ?? fallbackRegisteredDevice(from: entry)
-    }
-
-    private func decryptedUnifiedRegisteredDevice(from entry: RegisteredDeviceEntry,
-                                                  accountInfoKey: AccountInfoKeyMaterial?) -> RegisteredDevice? {
-        guard canReadUnifiedDeviceList(),
-              let accountInfoKey,
-              let encryptedDeviceInfo = entry.info,
-              let deviceInfo = try? deviceInfoCodec.decrypt(encryptedDeviceInfo, using: accountInfoKey) else {
-            return nil
+                                  thirdPartyMainKey: Data?,
+                                  isUnifiedReadEnabled: Bool) -> MappingAttempt {
+        let unifiedDeviceInfo = readUnifiedDeviceInfo(from: entry,
+                                                      accountInfoKey: accountInfoKey,
+                                                      isUnifiedReadEnabled: isUnifiedReadEnabled)
+        if case .decrypted(let deviceInfo) = unifiedDeviceInfo {
+            return MappingAttempt(
+                device: RegisteredDevice(id: entry.id,
+                                         name: deviceInfo.name,
+                                         type: deviceInfo.type,
+                                         credentialId: entry.credentialId ?? SyncCredentialID.defaultCredential),
+                unifiedDeviceInfoFailure: nil)
         }
 
-        return RegisteredDevice(id: entry.id,
-                                name: deviceInfo.name,
-                                type: deviceInfo.type,
-                                credentialId: entry.credentialId ?? SyncCredentialID.defaultCredential)
+        // Keep every server entry visible even if one encrypted field is malformed or uses a key we cannot recover.
+        let device = decryptedLegacyRegisteredDevice(from: entry, account: account, thirdPartyMainKey: thirdPartyMainKey)
+            ?? fallbackRegisteredDevice(from: entry)
+        let failure: UnifiedDeviceInfoFailure?
+        if case .failed(let unifiedDeviceInfoFailure) = unifiedDeviceInfo {
+            failure = unifiedDeviceInfoFailure
+        } else {
+            failure = nil
+        }
+        return MappingAttempt(device: device, unifiedDeviceInfoFailure: failure)
+    }
+
+    private func readUnifiedDeviceInfo(from entry: RegisteredDeviceEntry,
+                                       accountInfoKey: AccountInfoKeyMaterial?,
+                                       isUnifiedReadEnabled: Bool) -> UnifiedDeviceInfoReadResult {
+        guard isUnifiedReadEnabled else {
+            return .notAttempted
+        }
+        guard let encryptedDeviceInfo = entry.info else {
+            return .failed(.missing)
+        }
+        guard let accountInfoKey else {
+            return .failed(.keyUnavailable)
+        }
+        do {
+            return .decrypted(try deviceInfoCodec.decrypt(encryptedDeviceInfo, using: accountInfoKey))
+        } catch DeviceInfoCodecError.unexpectedKeyID {
+            return .failed(.staleKey)
+        } catch {
+            return .failed(.corrupt)
+        }
     }
 
     private func decryptedLegacyRegisteredDevice(from entry: RegisteredDeviceEntry,
@@ -175,8 +234,10 @@ struct RegisteredDeviceMapper: RegisteredDeviceMapping {
         return String(data: plaintext, encoding: .utf8)
     }
 
-    private func accountInfoKeyIfNeeded(for entries: [RegisteredDeviceEntry], account: SyncAccount) async -> AccountInfoKeyMaterial? {
-        guard canReadUnifiedDeviceList(),
+    private func accountInfoKeyIfNeeded(for entries: [RegisteredDeviceEntry],
+                                        account: SyncAccount,
+                                        isUnifiedReadEnabled: Bool) async -> AccountInfoKeyMaterial? {
+        guard isUnifiedReadEnabled,
               entries.contains(where: { $0.info != nil }),
               let accountInfoKeys else {
             return nil

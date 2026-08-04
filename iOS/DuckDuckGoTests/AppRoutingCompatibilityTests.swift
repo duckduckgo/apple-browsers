@@ -1,8 +1,8 @@
 //
-//  AppDeepLinksTests.swift
+//  AppRoutingCompatibilityTests.swift
 //  DuckDuckGo
 //
-//  Copyright © 2017 DuckDuckGo. All rights reserved.
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@
 import XCTest
 @testable import Core
 
-class AppDeepLinksTests: XCTestCase {
+final class AppRoutingCompatibilityTests: XCTestCase {
 
     func testWhenCoreDeepLinkAliasIsUsedThenConstructionAndParsingRemainAvailable() {
         let url = AppDeepLinkSchemes.quickLink.url
@@ -28,5 +28,4 @@ class AppDeepLinksTests: XCTestCase {
         XCTAssertEqual(url.absoluteString, "ddgQuickLink://")
         XCTAssertEqual(AppDeepLinkSchemes.fromURL(url), .quickLink)
     }
-
 }

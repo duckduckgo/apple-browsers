@@ -24,35 +24,39 @@ import Network
 
 public enum URLInputClassifier {
 
-    public static func webURL(from text: String) -> URL? {
+    public static func webUrl(from text: String) -> URL? {
         guard var url = URL(string: text) else { return nil }
 
         switch url.navigationalScheme {
         case .http, .https, .duck:
             break
         case .none:
-            guard let urlWithScheme = URL(string: URL.NavigationalScheme.http.separated() + text),
-                  let host = urlWithScheme.host else {
+            // assume http by default
+            guard let urlWithScheme = URL(string: URL.NavigationalScheme.http.separated() + text), let host = urlWithScheme.host else {
                 return nil
             }
-            guard host.contains(".") || host == .localhost else {
+            // only allow 2nd+ level domains or "localhost" without scheme
+            guard host.contains(".") == true || host == .localhost else {
                 return nil
             }
             if IPv4Address(host) != nil {
+                // Require 4 octets specified explicitly for an IPv4 address (avoid 1.4 -> 1.0.0.4 expansion)
                 guard host.split(separator: ".").count == 4 else {
                     return nil
                 }
             }
             url = urlWithScheme
+
         default:
             return nil
         }
 
         guard url.host?.isValidHost == true else { return nil }
+
         return url
     }
 
     public static func isValidAddressBarURLInput(_ text: String) -> Bool {
-        !text.contains(where: { $0.isWhitespace }) && webURL(from: text) != nil
+        !text.contains(where: { $0.isWhitespace }) && webUrl(from: text) != nil
     }
 }

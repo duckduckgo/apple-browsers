@@ -41,7 +41,7 @@ extension URL {
     // MARK: static
 
     public static func webUrl(from text: String) -> URL? {
-        URLInputClassifier.webURL(from: text)
+        URLInputClassifier.webUrl(from: text)
     }
 
     /// Returns true when address bar text should be treated as a direct URL navigation input.

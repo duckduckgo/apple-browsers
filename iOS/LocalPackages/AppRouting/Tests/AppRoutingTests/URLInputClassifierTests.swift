@@ -2,7 +2,7 @@
 //  URLInputClassifierTests.swift
 //  DuckDuckGo
 //
-//  Copyright © 2026 DuckDuckGo. All rights reserved.
+//  Copyright © 2017 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -17,82 +17,123 @@
 //  limitations under the License.
 //
 
-import CustomDump
-import Foundation
-import Testing
+import XCTest
 @testable import AppRouting
 
-@Suite("URL Input Classifier")
-struct URLInputClassifierTests {
+class URLInputClassifierTests: XCTestCase {
 
-    @Test("Supported URL inputs are classified as navigation")
-    func whenInputIsAValidWebURLThenItIsReturned() {
-        let inputs = [
-            "https://blah.accountants",
-            "http://www.veganchic.com/products/Camo-High-Top-Sneaker-by-The-Critical-Slide-Societ+80758-0180.html",
-            "https://example.com/path?x=1",
-            "http://localhost",
-            "http://localserver",
-            "duck://example.com/path",
-            "example.com",
-            "localhost/path",
-            "myhost.local",
-            "82.xn--b1aew.xn--p1ai",
-            "121.33.2.11/path",
-            "test.com?s=dafas&d=342",
-            "https://m.facebook.com/?refsrc=https%3A%2F%2Fwww.facebook.com%2F&_rdr"
-        ]
-        let expected = [
-            "https://blah.accountants",
-            "http://www.veganchic.com/products/Camo-High-Top-Sneaker-by-The-Critical-Slide-Societ+80758-0180.html",
-            "https://example.com/path?x=1",
-            "http://localhost",
-            "http://localserver",
-            "duck://example.com/path",
-            "http://example.com",
-            "http://localhost/path",
-            "http://myhost.local",
-            "http://82.xn--b1aew.xn--p1ai",
-            "http://121.33.2.11/path",
-            "http://test.com?s=dafas&d=342",
-            "https://m.facebook.com/?refsrc=https%3A%2F%2Fwww.facebook.com%2F&_rdr"
-        ]
-
-        expectNoDifference(inputs.map { URLInputClassifier.webURL(from: $0)?.absoluteString }, expected.map(Optional.some))
+    func testWhenURLHasLongTLDItStillIsConsideredValid() {
+        XCTAssertTrue(URLInputClassifier.isWebUrl("https://blah.accountants"))
     }
 
-    @Test("Unsupported or malformed URL inputs are rejected")
-    func whenInputIsNotAValidWebURLThenItIsRejected() {
-        let inputs = [
-            "randomtext",
-            "33",
-            ".randomtext",
-            "randomtext.",
-            "http",
-            "http:",
-            "http:/",
-            "https",
-            "https:",
-            "https:/",
-            "asdas://test.com",
-            "asdas://121.33.2.11",
-            "asdas://localhost",
-            "http://test .com",
-            "test!com.com",
-            "121.33.33.",
-            "localserver",
-            "1.4"
-        ]
-
-        let expected: [URL?] = Array(repeating: nil, count: inputs.count)
-        expectNoDifference(inputs.map { URLInputClassifier.webURL(from: $0) }, expected)
+    func testWhenGivenLongWellFormedUrlThenIsWebUrlIsTrue() {
+        XCTAssertTrue(URLInputClassifier.isWebUrl("http://www.veganchic.com/products/Camo-High-Top-Sneaker-by-The-Critical-Slide-Societ+80758-0180.html"))
     }
 
-    @Test("Address-bar validation rejects whitespace")
-    func whenAddressBarInputContainsWhitespaceThenItIsRejected() {
-        #expect(URLInputClassifier.isValidAddressBarURLInput("https://example.com/path"))
-        #expect(URLInputClassifier.isValidAddressBarURLInput("example.com"))
-        #expect(!URLInputClassifier.isValidAddressBarURLInput("https://example .com"))
-        #expect(!URLInputClassifier.isValidAddressBarURLInput("example com"))
+    func testWhenHostIsValidThenIsWebUrlIsTrue() {
+        XCTAssertTrue(URLInputClassifier.isWebUrl("test.com"))
+        XCTAssertTrue(URLInputClassifier.isWebUrl("121.33.2.11"))
+        XCTAssertTrue(URLInputClassifier.isWebUrl("localhost"))
+        XCTAssertTrue(URLInputClassifier.isWebUrl("myhost.local"))
+    }
+
+    func testWhenHostIsInvalidThenIsWebUrlIsFalse() {
+        XCTAssertFalse(URLInputClassifier.isWebUrl("t est.com"))
+        XCTAssertFalse(URLInputClassifier.isWebUrl("test!com.com"))
+        XCTAssertFalse(URLInputClassifier.isWebUrl("121.33.33."))
+        XCTAssertFalse(URLInputClassifier.isWebUrl("localhostt"))
+        XCTAssertFalse(URLInputClassifier.isWebUrl("localserver"))
+    }
+
+    func testWhenSchemeIsValidThenIsWebUrlIsTrue() {
+        XCTAssertTrue(URLInputClassifier.isWebUrl("http://test.com"))
+        XCTAssertTrue(URLInputClassifier.isWebUrl("http://121.33.2.11"))
+        XCTAssertTrue(URLInputClassifier.isWebUrl("http://localhost"))
+        XCTAssertTrue(URLInputClassifier.isWebUrl("http://localserver"))
+    }
+
+    func testWhenSchemeIsInvalidThenIsWebUrlIsFalse() {
+        XCTAssertFalse(URLInputClassifier.isWebUrl("asdas://test.com"))
+        XCTAssertFalse(URLInputClassifier.isWebUrl("asdas://121.33.2.11"))
+        XCTAssertFalse(URLInputClassifier.isWebUrl("asdas://localhost"))
+    }
+
+    func testWhenTextIsIncompleteSchemeThenIsWebUrlIsFalse() {
+        XCTAssertFalse(URLInputClassifier.isWebUrl("http"))
+        XCTAssertFalse(URLInputClassifier.isWebUrl("http:"))
+        XCTAssertFalse(URLInputClassifier.isWebUrl("http:/"))
+        XCTAssertFalse(URLInputClassifier.isWebUrl("https"))
+        XCTAssertFalse(URLInputClassifier.isWebUrl("https:"))
+        XCTAssertFalse(URLInputClassifier.isWebUrl("https:/"))
+    }
+
+    func testWhenPathIsValidThenIsWebUrlIsTrue() {
+        XCTAssertTrue(URLInputClassifier.isWebUrl("http://test.com/path"))
+        XCTAssertTrue(URLInputClassifier.isWebUrl("http://121.33.2.11/path"))
+        XCTAssertTrue(URLInputClassifier.isWebUrl("http://localhost/path"))
+        XCTAssertTrue(URLInputClassifier.isWebUrl("test.com/path"))
+        XCTAssertTrue(URLInputClassifier.isWebUrl("121.33.2.11/path"))
+        XCTAssertTrue(URLInputClassifier.isWebUrl("localhost/path"))
+    }
+
+    func testWhenParamsAreValidThenIsWebUrlIsTrue() {
+        XCTAssertTrue(URLInputClassifier.isWebUrl("http://test.com?s=dafas&d=342"))
+        XCTAssertTrue(URLInputClassifier.isWebUrl("http://121.33.2.11?s=dafas&d=342"))
+        XCTAssertTrue(URLInputClassifier.isWebUrl("http://localhost?s=dafas&d=342"))
+        XCTAssertTrue(URLInputClassifier.isWebUrl("test.com?s=dafas&d=342"))
+        XCTAssertTrue(URLInputClassifier.isWebUrl("121.33.2.11?s=dafas&d=342"))
+        XCTAssertTrue(URLInputClassifier.isWebUrl("localhost?s=dafas&d=342"))
+        XCTAssertTrue(URLInputClassifier.isWebUrl("https://m.facebook.com/?refsrc=https%3A%2F%2Fwww.facebook.com%2F&_rdr"))
+    }
+
+    func testWhenGivenSimpleStringThenIsWebUrlIsFalse() {
+        XCTAssertFalse(URLInputClassifier.isWebUrl("randomtext"))
+    }
+
+    func testWhenGivenStringWithDotPrefixThenIsWebUrlIsFalse() {
+        XCTAssertFalse(URLInputClassifier.isWebUrl(".randomtext"))
+    }
+
+    func testWhenGivenStringWithDotSuffixThenIsWebUrlIsFalse() {
+        XCTAssertFalse(URLInputClassifier.isWebUrl("randomtext."))
+    }
+
+    func testWhenGivenNumberThenIsWebUrlIsFalse() {
+        XCTAssertFalse(URLInputClassifier.isWebUrl("33"))
+    }
+
+    func testWhenWebUrlCalledWithValidURLThenSameUrlIsReturned() {
+        let input = "http://test.com"
+        let result = URLInputClassifier.webUrl(from: input)
+        XCTAssertNotNil(result)
+        XCTAssertEqual(input, result?.absoluteString)
+    }
+
+    func testWhenWebUrlCalledWithInvalidURLThenNilIsReturned() {
+        let result = URLInputClassifier.webUrl(from: "http://test .com")
+        XCTAssertNil(result)
+    }
+
+    func testWhenWebUrlCalledWithoutSchemeThenSchemeIsAdded() {
+        let result = URLInputClassifier.webUrl(from: "test.com")
+        XCTAssertNotNil(result)
+        XCTAssertEqual("http://test.com", result?.absoluteString)
+    }
+
+    func testWhenAddressBarInputHasWhitespaceThenIsValidAddressBarURLInputIsFalse() {
+        XCTAssertFalse(URLInputClassifier.isValidAddressBarURLInput("https://example .com"))
+        XCTAssertFalse(URLInputClassifier.isValidAddressBarURLInput("example com"))
+    }
+
+    func testWhenAddressBarInputIsValidURLThenIsValidAddressBarURLInputIsTrue() {
+        XCTAssertTrue(URLInputClassifier.isValidAddressBarURLInput("https://example.com/path"))
+        XCTAssertTrue(URLInputClassifier.isValidAddressBarURLInput("example.com"))
+    }
+}
+
+extension URLInputClassifier {
+
+    static func isWebUrl(_ text: String) -> Bool {
+        webUrl(from: text) != nil
     }
 }

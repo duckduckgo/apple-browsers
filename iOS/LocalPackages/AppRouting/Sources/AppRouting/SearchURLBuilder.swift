@@ -23,106 +23,99 @@ import FoundationExtensions
 
 public struct SearchURLBuilder {
 
-    public static let defaultSearchBaseURL: URL = SearchURLDefaults.searchBaseURL(environment: ProcessInfo.processInfo.environment)
-
-    private enum Parameter {
-        static let attribution = "atb"
-        static let query = "q"
+    private enum Param {
+        static let search = "q"
         static let source = "t"
+        static let atb = "atb"
         static let vertical = "ia"
-        static let verticalMaps = "iaxm"
         static let verticalRewrite = "iar"
+        static let verticalMaps = "iaxm"
     }
 
-    private enum ParameterValue {
+    private enum ParamValue {
         static let phoneSource = "ddg_ios"
-        static let tabletSource = "ddg_ios_tablet"
+        static let iPadSource = "ddg_ios_tablet"
         static let majorVerticals: Set<String> = ["images", "videos", "news"]
     }
 
     private let searchBaseURL: URL
     private let isPad: Bool
-    private let atbProvider: () -> String?
+    private let atbWithVariant: () -> String?
 
     public var source: String {
-        isPad ? ParameterValue.tabletSource : ParameterValue.phoneSource
+        isPad ? ParamValue.iPadSource : ParamValue.phoneSource
     }
 
     public init(
-        searchBaseURL: URL = SearchURLBuilder.defaultSearchBaseURL,
+        searchBaseURL: URL,
         isPad: Bool,
-        atbProvider: @escaping () -> String? = { nil }
+        atbWithVariant: @escaping () -> String? = { nil }
     ) {
         self.searchBaseURL = searchBaseURL
         self.isPad = isPad
-        self.atbProvider = atbProvider
+        self.atbWithVariant = atbWithVariant
+    }
+
+    // MARK: Search
+
+    public func makeSearchURL(text: String) -> URL? {
+        makeSearchURL(text: text, additionalParameters: [])
     }
 
     public func makeSearchURL(query: String, forceSearchQuery: Bool = false, queryContext: URL? = nil) -> URL? {
-        if !forceSearchQuery, let url = URLInputClassifier.webURL(from: query) {
+        if !forceSearchQuery, let url = URLInputClassifier.webUrl(from: query) {
             return url
         }
 
         var parameters = [String: String]()
-        if let vertical = verticalRewrite(from: queryContext) {
-            parameters[Parameter.verticalRewrite] = vertical
+        if let queryContext,
+           let searchDomain = searchBaseURL.host,
+           queryContext.isPart(ofDomain: searchDomain),
+           queryContext.getParameter(named: Param.search) != nil,
+           queryContext.getParameter(named: Param.verticalMaps) == nil,
+           let vertical = queryContext.getParameter(named: Param.vertical),
+           ParamValue.majorVerticals.contains(vertical) {
+
+            parameters[Param.verticalRewrite] = vertical
         }
 
         return makeSearchURL(text: query, additionalParameters: parameters)
     }
 
-    public func applyingSourceAndAttributionParameters(to url: URL) -> URL {
-        var searchURL = url.removingParameters(named: [Parameter.source, Parameter.attribution])
-            .appendingParameter(name: Parameter.source, value: source)
+    /**
+     Generates a search url with the source (t) https://duck.co/help/privacy/t
+     and cohort (atb) https://duck.co/help/privacy/atb
+     */
+    private func makeSearchURL<C: Collection>(text: String, additionalParameters: C) -> URL
+    where C.Element == (key: String, value: String) {
+        // encode spaces as "+"
+        var queryItem = URLQueryItem(percentEncodingName: Param.search, value: text, withAllowedCharacters: .init(charactersIn: " "))
+        queryItem.value = queryItem.value?.replacingOccurrences(of: " ", with: "+")
 
-        if let attribution = atbProvider() {
-            searchURL = searchURL.appendingParameter(name: Parameter.attribution, value: attribution)
+        let searchURL = URL(string: searchBaseURL.absoluteString.dropping(suffix: "/") + "/")!
+            .appending(percentEncodedQueryItem: queryItem)
+            .appendingParameters(additionalParameters)
+        return applyingStatsParams(to: searchURL)
+    }
+
+    public func applyingStatsParams(to url: URL) -> URL {
+        var searchURL = url.removingParameters(named: [Param.source, Param.atb])
+            .appendingParameter(name: Param.source,
+                                value: source)
+
+        if let atbWithVariant = atbWithVariant() {
+            searchURL = searchURL.appendingParameter(name: Param.atb, value: atbWithVariant)
         }
         return searchURL
     }
 
-    public func hasExpectedSourceAndAttributionParameters(in url: URL) -> Bool {
-        guard url.getParameter(named: Parameter.source) == source else { return false }
-        if let attribution = atbProvider() {
-            return url.getParameter(named: Parameter.attribution) == attribution
+    public func hasCorrectMobileStatsParams(url: URL) -> Bool {
+        guard let source = url.getParameter(named: Param.source),
+              source == self.source
+        else { return false }
+        if let atbWithVariant = atbWithVariant() {
+            return atbWithVariant == url.getParameter(named: Param.atb)
         }
         return true
-    }
-
-    private func verticalRewrite(from queryContext: URL?) -> String? {
-        guard let queryContext,
-              isSearchURL(queryContext),
-              queryContext.getParameter(named: Parameter.verticalMaps) == nil,
-              let vertical = queryContext.getParameter(named: Parameter.vertical),
-              ParameterValue.majorVerticals.contains(vertical) else {
-            return nil
-        }
-        return vertical
-    }
-
-    private func isSearchURL(_ url: URL) -> Bool {
-        guard let searchDomain = searchBaseURL.host else { return false }
-        return url.isPart(ofDomain: searchDomain) && url.getParameter(named: Parameter.query) != nil
-    }
-
-    private func makeSearchURL<C: Collection>(text: String, additionalParameters: C) -> URL
-    where C.Element == (key: String, value: String) {
-        var queryItem = URLQueryItem(percentEncodingName: Parameter.query, value: text, withAllowedCharacters: .init(charactersIn: " "))
-        queryItem.value = queryItem.value?.replacingOccurrences(of: " ", with: "+")
-
-        let baseURLString = searchBaseURL.absoluteString.dropping(suffix: "/") + "/"
-        let normalizedBaseURL = URL(string: baseURLString)!
-        let searchURL = normalizedBaseURL
-            .appending(percentEncodedQueryItem: queryItem)
-            .appendingParameters(additionalParameters)
-        return applyingSourceAndAttributionParameters(to: searchURL)
-    }
-}
-
-enum SearchURLDefaults {
-
-    static func searchBaseURL(environment: [String: String]) -> URL {
-        let baseURLString = environment["BASE_URL", default: "https://duckduckgo.com"]
-        return URL(string: baseURLString)!
     }
 }

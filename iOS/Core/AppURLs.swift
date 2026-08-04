@@ -248,7 +248,7 @@ public final class StatisticsDependentURLFactory {
     }
 
     func applyingStatsParams(to url: URL) -> URL {
-        searchURLBuilder.applyingSourceAndAttributionParameters(to: url)
+        searchURLBuilder.applyingStatsParams(to: url)
     }
 
     // MARK: ATB
@@ -298,7 +298,7 @@ public final class StatisticsDependentURLFactory {
     }
 
     func hasCorrectMobileStatsParams(url: URL) -> Bool {
-        searchURLBuilder.hasExpectedSourceAndAttributionParameters(in: url)
+        searchURLBuilder.hasCorrectMobileStatsParams(url: url)
     }
 
     // MARK: Pixel

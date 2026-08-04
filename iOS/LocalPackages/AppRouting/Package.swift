@@ -16,8 +16,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../../../SharedPackages/BrowserServicesKit"),
-        .package(path: "../../../SharedPackages/Infrastructure/SystemFrameworksExtensions"),
-        .package(url: "https://github.com/pointfreeco/swift-custom-dump", exact: "1.6.1")
+        .package(path: "../../../SharedPackages/Infrastructure/SystemFrameworksExtensions")
     ],
     targets: [
         .target(
@@ -30,8 +29,7 @@ let package = Package(
         .testTarget(
             name: "AppRoutingTests",
             dependencies: [
-                "AppRouting",
-                .product(name: "CustomDump", package: "swift-custom-dump")
+                "AppRouting"
             ]
         )
     ]

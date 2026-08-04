@@ -683,6 +683,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     // MARK: - AI Tab State
 
     func showCollapsed() {
+        clearEditModeFlag()
         // Contextual chat has no AI tab collapsed mode; the host always renders expanded.
         if host == .contextualChat { return }
         keyboardMonitor.disarm()
@@ -766,6 +767,14 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         showCollapsed()
     }
 
+    /// Clears the edit-mode flag without touching layout — for exits where the input is already
+    /// collapsing or hiding (so we don't recurse into those methods). The `isEditing` observer
+    /// restores host chrome (e.g. the transcript whiteout), and re-entering edit mode later
+    /// re-fires it because the flag is back to its resting value.
+    private func clearEditModeFlag() {
+        if isEditing { isEditing = false }
+    }
+
 #if DEBUG
     /// Debug-only sample attachments (a generated image) so edit mode can be exercised from the
     /// app without the FE. Used by the "/editdebug" trigger.
@@ -779,6 +788,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 #endif
 
     func hide() {
+        clearEditModeFlag()
         keyboardMonitor.disarm()
         displayState = .hidden
         isClearingModelPickerPinWithoutPersist = true

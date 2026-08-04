@@ -274,7 +274,8 @@ final class PromptBarOmnibarContentLayoutTests: XCTestCase {
             containerViewController: containerViewController,
             textViewController: textViewController,
             draftStore: draftStore,
-            promptSubmitter: StubPromptBarPromptSubmitter()
+            promptSubmitter: StubPromptBarPromptSubmitter(),
+            themeManager: themeManager
         )
     }
 }

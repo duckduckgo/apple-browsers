@@ -33,6 +33,7 @@ struct AccountManager: AccountManaging {
     let deviceInfoCodec: DeviceInfoCoding
     let isScopedAccessCredentialsEnabled: () -> Bool
     let canWriteUnifiedDeviceList: () -> Bool
+    let canReadUnifiedDeviceList: () -> Bool
 
     init(endpoints: Endpoints,
          api: RemoteAPIRequestCreating,
@@ -41,16 +42,20 @@ struct AccountManager: AccountManaging {
          accountInfoKeyFactory: AccountInfoKeyFactory? = nil,
          deviceInfoCodec: DeviceInfoCoding = DeviceInfoCodec(),
          isScopedAccessCredentialsEnabled: @escaping () -> Bool,
-         canWriteUnifiedDeviceList: @escaping () -> Bool = { false }) {
+         canWriteUnifiedDeviceList: @escaping () -> Bool = { false },
+         canReadUnifiedDeviceList: @escaping () -> Bool = { false }) {
         self.endpoints = endpoints
         self.api = api
         self.crypter = crypter
-        self.registeredDeviceMapper = registeredDeviceMapper ?? RegisteredDeviceMapper(crypter: crypter,
-                                                                                       isScopedAccessCredentialsEnabled: isScopedAccessCredentialsEnabled)
+        self.registeredDeviceMapper = registeredDeviceMapper ?? RegisteredDeviceMapper(
+            crypter: crypter,
+            isScopedAccessCredentialsEnabled: isScopedAccessCredentialsEnabled,
+            canReadUnifiedDeviceList: canReadUnifiedDeviceList)
         self.accountInfoKeyFactory = accountInfoKeyFactory ?? DefaultAccountInfoKeyFactory(crypter: crypter)
         self.deviceInfoCodec = deviceInfoCodec
         self.isScopedAccessCredentialsEnabled = isScopedAccessCredentialsEnabled
         self.canWriteUnifiedDeviceList = canWriteUnifiedDeviceList
+        self.canReadUnifiedDeviceList = canReadUnifiedDeviceList
     }
 
     func createAccount(deviceName: String, deviceType: String) async throws -> SyncAccount {
@@ -181,7 +186,7 @@ struct AccountManager: AccountManaging {
         return devices
     }
 
-    func updateDevice(_ update: UpdateDevices.Update, for account: SyncAccount) async throws -> UpdateDevices.Result {
+    func updateDevice(_ update: UpdateDevices.Update, for account: SyncAccount) async throws -> [RegisteredDevice] {
         guard let token = account.token else {
             throw SyncError.noToken
         }
@@ -203,7 +208,13 @@ struct AccountManager: AccountManaging {
         }
 
         Logger.sync.debug("Sync-UnifiedDevices: device update PATCH succeeded")
-        return result
+        let entries: [RegisteredDeviceEntry]
+        if canReadUnifiedDeviceList(), !result.devicesV2.isEmpty {
+            entries = result.devicesV2
+        } else {
+            entries = result.devices
+        }
+        return await registeredDeviceMapper.registeredDevices(from: entries, account: account)
     }
 
     func refreshToken(_ account: SyncAccount, deviceName: String) async throws -> LoginResult {
@@ -299,26 +310,32 @@ struct AccountManager: AccountManaging {
         let secretKey = try crypter.extractSecretKey(protectedSecretKey: protectedSecretKey,
                                                      stretchedPrimaryKey: info.stretchedPrimaryKey)
 
-        return LoginResult(
-            account: SyncAccount(
-                deviceId: deviceId,
-                deviceName: deviceName,
-                deviceType: deviceType,
-                userId: info.userId,
-                primaryKey: info.primaryKey,
-                secretKey: secretKey,
-                token: token,
-                state: .addingNewDevice
-            ),
-            devices: result.devices.compactMap { device in
+        let account = SyncAccount(deviceId: deviceId,
+                                  deviceName: deviceName,
+                                  deviceType: deviceType,
+                                  userId: info.userId,
+                                  primaryKey: info.primaryKey,
+                                  secretKey: secretKey,
+                                  token: token,
+                                  state: .addingNewDevice)
+        let devices: [RegisteredDevice]
+        if canReadUnifiedDeviceList(),
+           let devicesV2 = result.devicesV2,
+           !devicesV2.isEmpty {
+            devices = await registeredDeviceMapper.registeredDevices(from: devicesV2, account: account)
+        } else {
+            devices = result.devices.compactMap { device in
                 registeredDeviceMapper.registeredDevice(fromDefaultCredentialLoginEntryWithID: device.id,
                                                         encryptedName: device.name,
                                                         encryptedType: device.type,
                                                         primaryKey: info.primaryKey)
-            },
-            keys: result.keys,
-            accessCredentials: result.accessCredentials
-        )
+            }
+        }
+
+        return LoginResult(account: account,
+                           devices: devices,
+                           keys: result.keys,
+                           accessCredentials: result.accessCredentials)
 
     }
 
@@ -346,6 +363,7 @@ struct AccountManager: AccountManaging {
 
         struct Result: Decodable {
             let devices: [Device]
+            let devicesV2: [RegisteredDeviceEntry]?
             let token: String
             let protectedEncryptionKey: String
             let accessCredentials: [AccessCredential]?

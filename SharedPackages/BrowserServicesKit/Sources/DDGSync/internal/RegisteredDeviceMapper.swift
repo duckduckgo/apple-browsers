@@ -37,19 +37,28 @@ struct RegisteredDeviceMapper: RegisteredDeviceMapping {
 
     let crypter: CryptingInternal
     let scopedAccess: ScopedAccessCredentialManaging?
+    let accountInfoKeys: AccountInfoKeyManaging?
+    let deviceInfoCodec: DeviceInfoCoding
     let cachedScopedPassword: () throws -> Data?
     let isScopedAccessCredentialsEnabled: () -> Bool
+    let canReadUnifiedDeviceList: () -> Bool
     private let jweCompactCodec: JWECompactCodec
 
     init(crypter: CryptingInternal,
          scopedAccess: ScopedAccessCredentialManaging? = nil,
+         accountInfoKeys: AccountInfoKeyManaging? = nil,
+         deviceInfoCodec: DeviceInfoCoding = DeviceInfoCodec(),
          cachedScopedPassword: @escaping () throws -> Data? = { nil },
          isScopedAccessCredentialsEnabled: @escaping () -> Bool,
+         canReadUnifiedDeviceList: @escaping () -> Bool = { false },
          jweCompactCodec: JWECompactCodec = JWECompactCodec()) {
         self.crypter = crypter
         self.scopedAccess = scopedAccess
+        self.accountInfoKeys = accountInfoKeys
+        self.deviceInfoCodec = deviceInfoCodec
         self.cachedScopedPassword = cachedScopedPassword
         self.isScopedAccessCredentialsEnabled = isScopedAccessCredentialsEnabled
+        self.canReadUnifiedDeviceList = canReadUnifiedDeviceList
         self.jweCompactCodec = jweCompactCodec
     }
 

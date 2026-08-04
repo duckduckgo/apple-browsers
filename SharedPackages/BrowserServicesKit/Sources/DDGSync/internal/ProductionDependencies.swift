@@ -91,18 +91,24 @@ struct ProductionDependencies: SyncDependencies {
                                                          crypter: crypter,
                                                          accountInfoKeyFactory: accountInfoKeyFactory,
                                                          canWriteUnifiedDeviceList: { syncFeatureFlags.canWriteUnifiedDeviceList() })
-        accountInfoKeys = AccountInfoKeyManager(secureStore: secureStore,
-                                                scopedAccess: scopedAccess,
-                                                crypter: crypter)
+        let accountInfoKeyManager = AccountInfoKeyManager(secureStore: secureStore,
+                                                          scopedAccess: scopedAccess,
+                                                          crypter: crypter)
+        accountInfoKeys = accountInfoKeyManager
+        let deviceInfoCodec = DeviceInfoCodec()
         let registeredDeviceMapper = RegisteredDeviceMapper(crypter: crypter,
                                                             scopedAccess: scopedAccess,
+                                                            accountInfoKeys: accountInfoKeyManager,
+                                                            deviceInfoCodec: deviceInfoCodec,
                                                             cachedScopedPassword: secureStore.scopedPassword,
-                                                            isScopedAccessCredentialsEnabled: { syncFeatureFlags.isScopedAccessCredentialsEnabled() })
+                                                            isScopedAccessCredentialsEnabled: { syncFeatureFlags.isScopedAccessCredentialsEnabled() },
+                                                            canReadUnifiedDeviceList: { syncFeatureFlags.canReadUnifiedDeviceList() })
         account = AccountManager(endpoints: endpoints,
                                  api: api,
                                  crypter: crypter,
                                  registeredDeviceMapper: registeredDeviceMapper,
                                  accountInfoKeyFactory: accountInfoKeyFactory,
+                                 deviceInfoCodec: deviceInfoCodec,
                                  isScopedAccessCredentialsEnabled: { syncFeatureFlags.isScopedAccessCredentialsEnabled() },
                                  canWriteUnifiedDeviceList: { syncFeatureFlags.canWriteUnifiedDeviceList() })
         self.scopedAccess = scopedAccess

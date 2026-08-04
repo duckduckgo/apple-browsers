@@ -626,7 +626,7 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     case nativeSidebar
 
     /// macOS only. System-wide Duck.ai entry point: global keyboard shortcut and menu bar icon.
-    case macosPromptBar
+    case promptBar
 
     /// Supports Duck.ai edit prompt from the native input field.
     case nativePromptEditing

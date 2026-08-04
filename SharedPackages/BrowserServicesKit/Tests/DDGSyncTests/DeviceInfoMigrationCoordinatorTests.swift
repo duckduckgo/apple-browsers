@@ -307,11 +307,11 @@ private final class DeviceInfoMigrationCodingMock: DeviceInfoCoding {
         return encryptStub
     }
 
-    func encrypt(_ deviceInfo: DeviceInfo, using key: AccountInfoKeyMaterial) throws -> String {
+    func encrypt(_ deviceInfo: DeviceInfo, using key: AccountInfoKey) throws -> String {
         throw DeviceInfoCodecError.invalidProtectedKey
     }
 
-    func decrypt(_ encryptedDeviceInfo: String, using key: AccountInfoKeyMaterial) throws -> DeviceInfo {
+    func decrypt(_ encryptedDeviceInfo: String, using key: AccountInfoKey) throws -> DeviceInfo {
         throw DeviceInfoCodecError.invalidPayload
     }
 }

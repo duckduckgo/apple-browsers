@@ -147,7 +147,7 @@ enum TabTerminationTelemetryPixel: PixelKitEvent, PixelKitEventWithCustomPrefix 
         case .background:
             return "debug_webkit_termination_background"
         case .occurrence(let bucket):
-            return "debug_webkit_termination_occurence_\(bucket.rawValue)"
+            return "debug_webkit_termination_occurrence_\(bucket.rawValue)"
         case .memory(let bucket):
             return "debug_webkit_termination_memory_\(bucket.rawValue)"
         case .activeTabs(let bucket):

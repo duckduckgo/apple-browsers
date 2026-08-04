@@ -19,6 +19,7 @@
 import Combine
 import FeatureFlags
 import PixelKit
+import PixelKitTestingUtilities
 import PrivacyConfig
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
@@ -28,22 +29,24 @@ final class AutoplayDiscoverabilityPromoDelegateTests: XCTestCase {
 
     private var featureFlagger: MockFeatureFlagger!
     private var windowControllersManager: WindowControllersManagerMock!
-    private var firedPixels: [PixelKitEvent]!
+    private var pixelFiring: PixelKitMock!
     private var sut: AutoplayDiscoverabilityPromoDelegate!
+
+    private var firedPixels: [ExpectedFireCall] { pixelFiring.actualFireCalls }
 
     override func setUp() {
         super.setUp()
         featureFlagger = MockFeatureFlagger(featuresStub: [FeatureFlag.autoplayPolicy.rawValue: true])
         windowControllersManager = WindowControllersManagerMock()
-        firedPixels = []
+        pixelFiring = PixelKitMock()
         sut = AutoplayDiscoverabilityPromoDelegate(featureFlagger: featureFlagger,
                                                    windowControllersManager: windowControllersManager,
-                                                   firePixel: { [weak self] pixel in self?.firedPixels.append(pixel) })
+                                                   pixelFiring: pixelFiring)
     }
 
     override func tearDown() {
         sut = nil
-        firedPixels = nil
+        pixelFiring = nil
         windowControllersManager = nil
         featureFlagger = nil
         super.tearDown()
@@ -96,11 +99,11 @@ final class AutoplayDiscoverabilityPromoDelegateTests: XCTestCase {
         XCTAssertTrue(firedPixels.isEmpty)
     }
 
-    /// The names must match `autoplay_promo_pixels.json5` verbatim.
+    /// The names must match `autoplay_promo_pixels.json5` minus the `m_mac_` prefix, which PixelKit prepends when firing.
     func testPixelNames() {
-        XCTAssertEqual(AutoplayPromoPixel.shown.name, "m_mac_autoplay-promo_shown")
-        XCTAssertEqual(AutoplayPromoPixel.engaged.name, "m_mac_autoplay-promo_engaged")
-        XCTAssertEqual(AutoplayPromoPixel.autoDismissed.name, "m_mac_autoplay-promo_auto-dismissed")
-        XCTAssertEqual(AutoplayPromoPixel.settingsLinkClicked.name, "m_mac_autoplay-promo_settings-click")
+        XCTAssertEqual(AutoplayPromoPixel.shown.name, "autoplay-promo_shown")
+        XCTAssertEqual(AutoplayPromoPixel.engaged.name, "autoplay-promo_engaged")
+        XCTAssertEqual(AutoplayPromoPixel.autoDismissed.name, "autoplay-promo_auto-dismissed")
+        XCTAssertEqual(AutoplayPromoPixel.settingsLinkClicked.name, "autoplay-promo_settings-click")
     }
 }

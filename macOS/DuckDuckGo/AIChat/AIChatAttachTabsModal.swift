@@ -27,6 +27,8 @@ struct AIChatAttachTabsModal: ModalView {
         static let rowHeight: CGFloat = 22
         static let rowSpacing: CGFloat = 4
         static let maxListHeight: CGFloat = 234
+        /// Row inset wide enough that titles and the checkbox hit area clear the scroller lane.
+        static let listTrailingInset: CGFloat = 34
     }
 
     @ObservedObject private var themeManager: ThemeManager = NSApp.delegateTyped.themeManager
@@ -92,7 +94,8 @@ struct AIChatAttachTabsModal: ModalView {
                             .frame(height: Layout.rowHeight)
                     }
                 }
-                .padding(.horizontal, 20)
+                .padding(.leading, 20)
+                .padding(.trailing, Layout.listTrailingInset)
             }
             .frame(height: min(CGFloat(max(tabs.count, 1)) * (Layout.rowHeight + Layout.rowSpacing), Layout.maxListHeight))
 

@@ -114,7 +114,7 @@ final class JWECompactCodecTests: XCTestCase {
         XCTAssertThrowsError(try codec.decryptRSAOAEP256(token: token,
                                                          privateKey: keyPair.privateKey,
                                                          expectedKid: "other-sender")) { error in
-            XCTAssertEqual(error as? JWECompactCodecError, .unsupportedProtectedHeader)
+            XCTAssertEqual(error as? JWECompactCodecError, .unexpectedKeyID)
         }
     }
 

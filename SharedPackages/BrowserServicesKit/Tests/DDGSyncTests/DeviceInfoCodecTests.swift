@@ -74,6 +74,21 @@ final class DeviceInfoCodecTests: XCTestCase {
         }
     }
 
+    func testWhenEncryptedPayloadUsesUnexpectedKeyIDThenThrowsClassifiedError() throws {
+        let keyPair = try RSAKeyPairGenerator.makeKeyPair()
+        let accountInfoKey = AccountInfoKey(kid: "stale-key",
+                                            publicKey: keyPair.publicKey,
+                                            privateKey: keyPair.privateKey)
+        let encryptedPayload = try JWECompactCodec().encryptRSAOAEP256(
+            payload: try JSONEncoder().encode(DeviceInfo(name: "Mac", type: "desktop")),
+            recipientPublicKey: keyPair.publicKey,
+            kid: "current-key")
+
+        XCTAssertThrowsError(try DeviceInfoCodec().decrypt(encryptedPayload, using: accountInfoKey)) { error in
+            XCTAssertEqual(error as? DeviceInfoCodecError, .unexpectedKeyID)
+        }
+    }
+
     private func makeAccountInfoKey(from protectedKey: ProtectedKey,
                                     crypter: CryptingInternal) throws -> AccountInfoKey {
         let encryptedPrivateKey = try XCTUnwrap(Base64URL.decode(protectedKey.encryptedPrivateKey))

@@ -118,11 +118,11 @@ class AccountManagingMock: AccountManaging {
     }
 
     var updateDeviceCalls: [(update: UpdateDevices.Update, account: SyncAccount)] = []
-    var updateDeviceStub: UpdateDevices.Result?
+    var updateDeviceStub: [RegisteredDevice]?
     var updateDeviceError: Error?
-    var updateDeviceHandler: ((UpdateDevices.Update, SyncAccount) async throws -> UpdateDevices.Result)?
+    var updateDeviceHandler: ((UpdateDevices.Update, SyncAccount) async throws -> [RegisteredDevice])?
     func updateDevice(_ update: UpdateDevices.Update,
-                      for account: SyncAccount) async throws -> UpdateDevices.Result {
+                      for account: SyncAccount) async throws -> [RegisteredDevice] {
         updateDeviceCalls.append((update: update, account: account))
         if let updateDeviceHandler {
             return try await updateDeviceHandler(update, account)
@@ -130,7 +130,7 @@ class AccountManagingMock: AccountManaging {
         if let updateDeviceError {
             throw updateDeviceError
         }
-        return updateDeviceStub ?? UpdateDevices.Result(devices: [], devicesV2: [])
+        return updateDeviceStub ?? []
     }
 }
 
@@ -430,6 +430,13 @@ final class AccountInfoKeyManagingMock: AccountInfoKeyManaging {
             throw AccountInfoKeyManagerError.missingProtectedKey
         }
         return refreshKeyStub
+    }
+
+    var clearCachedKeyCalls: [SyncAccount] = []
+    var clearCachedKeyHandler: ((SyncAccount) -> Void)?
+    func clearCachedKey(for account: SyncAccount) async {
+        clearCachedKeyCalls.append(account)
+        clearCachedKeyHandler?(account)
     }
 }
 

@@ -830,13 +830,21 @@ final class DDGSyncTests: XCTestCase {
         (dependencies.secureStore as? SecureStorageStub)?.theProtectedKeysData = protectedKeysData
         let migrationCoordinator = DeviceInfoMigrationCoordinatingMock()
         dependencies.createDeviceInfoMigrationCoordinatorStub = migrationCoordinator
+        let accountInfoKeys = try XCTUnwrap(dependencies.accountInfoKeys as? AccountInfoKeyManagingMock)
+        let accountInfoKeyCacheCleared = expectation(description: "Account-info key cache cleared")
+        accountInfoKeys.clearCachedKeyHandler = { account in
+            XCTAssertEqual(account.deviceId, SyncAccount.mock.deviceId)
+            accountInfoKeyCacheCleared.fulfill()
+        }
         let syncService = DDGSync(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
 
         try await syncService.disconnect()
+        await fulfillment(of: [accountInfoKeyCacheCleared], timeout: 1)
 
         XCTAssertNil((dependencies.secureStore as? SecureStorageStub)?.theAccount)
         XCTAssertNil((dependencies.secureStore as? SecureStorageStub)?.theScopedPassword)
         XCTAssertNil((dependencies.secureStore as? SecureStorageStub)?.theProtectedKeysData)
+        XCTAssertEqual(accountInfoKeys.clearCachedKeyCalls.map(\.deviceId), [SyncAccount.mock.deviceId])
         XCTAssertEqual(migrationCoordinator.resetCallCount, 1)
     }
 

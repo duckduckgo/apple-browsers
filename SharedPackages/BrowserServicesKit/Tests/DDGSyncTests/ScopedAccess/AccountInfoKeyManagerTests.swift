@@ -40,6 +40,86 @@ final class AccountInfoKeyManagerTests: XCTestCase {
         XCTAssertTrue(scopedAccess.fetchProtectedKeysCalls.isEmpty)
     }
 
+    func testWhenKeyIsLoadedRepeatedlyThenUsesInMemoryKeyMaterial() async throws {
+        let protectedKey = try makeDefaultCredentialProtectedKey()
+        let secureStore = SecureStorageStub()
+        secureStore.theProtectedKeysData = try JSONEncoder.snakeCaseKeys.encode([protectedKey])
+        let scopedAccess = ScopedAccessCredentialManagingMock()
+        let manager = AccountInfoKeyManager(secureStore: secureStore,
+                                            scopedAccess: scopedAccess,
+                                            crypter: crypter)
+
+        let firstKey = try await manager.loadKey(for: account)
+        secureStore.theProtectedKeysData = nil
+        let secondKey = try await manager.loadKey(for: account)
+
+        XCTAssertEqual(firstKey.kid, protectedKey.kid)
+        XCTAssertEqual(secondKey.kid, protectedKey.kid)
+        XCTAssertEqual(secureStore.protectedKeysCalls, 1)
+        XCTAssertTrue(scopedAccess.fetchProtectedKeysCalls.isEmpty)
+    }
+
+    func testWhenAccountChangesThenDoesNotReuseInMemoryKeyMaterial() async throws {
+        let protectedKey = try makeDefaultCredentialProtectedKey()
+        let secureStore = SecureStorageStub()
+        secureStore.theProtectedKeysData = try JSONEncoder.snakeCaseKeys.encode([protectedKey])
+        let scopedAccess = ScopedAccessCredentialManagingMock()
+        let manager = AccountInfoKeyManager(secureStore: secureStore,
+                                            scopedAccess: scopedAccess,
+                                            crypter: crypter)
+        let otherAccount = SyncAccount(deviceId: "other-device",
+                                       deviceName: account.deviceName,
+                                       deviceType: account.deviceType,
+                                       userId: "other-user",
+                                       primaryKey: account.primaryKey,
+                                       secretKey: account.secretKey,
+                                       token: account.token,
+                                       state: account.state)
+
+        _ = try await manager.loadKey(for: account)
+        _ = try await manager.loadKey(for: otherAccount)
+
+        XCTAssertEqual(secureStore.protectedKeysCalls, 2)
+    }
+
+    func testWhenCachedKeyIsClearedThenLoadsProtectedKeyAgain() async throws {
+        let protectedKey = try makeDefaultCredentialProtectedKey()
+        let secureStore = SecureStorageStub()
+        secureStore.theProtectedKeysData = try JSONEncoder.snakeCaseKeys.encode([protectedKey])
+        let scopedAccess = ScopedAccessCredentialManagingMock()
+        let manager = AccountInfoKeyManager(secureStore: secureStore,
+                                            scopedAccess: scopedAccess,
+                                            crypter: crypter)
+
+        _ = try await manager.loadKey(for: account)
+        await manager.clearCachedKey(for: account)
+        _ = try await manager.loadKey(for: account)
+
+        XCTAssertEqual(secureStore.protectedKeysCalls, 2)
+    }
+
+    func testWhenKeyIsRefreshedThenSubsequentLoadsUseRefreshedInMemoryMaterial() async throws {
+        let cachedProtectedKey = try makeDefaultCredentialProtectedKey()
+        let refreshedProtectedKey = try makeDefaultCredentialProtectedKey()
+        let secureStore = SecureStorageStub()
+        secureStore.theProtectedKeysData = try JSONEncoder.snakeCaseKeys.encode([cachedProtectedKey])
+        let scopedAccess = ScopedAccessCredentialManagingMock()
+        scopedAccess.fetchProtectedKeysStub = [refreshedProtectedKey]
+        let manager = AccountInfoKeyManager(secureStore: secureStore,
+                                            scopedAccess: scopedAccess,
+                                            crypter: crypter)
+
+        _ = try await manager.loadKey(for: account)
+        let refreshedKey = try await manager.refreshKey(for: account)
+        secureStore.theProtectedKeysData = nil
+        let loadedKey = try await manager.loadKey(for: account)
+
+        XCTAssertEqual(refreshedKey.kid, refreshedProtectedKey.kid)
+        XCTAssertEqual(loadedKey.kid, refreshedProtectedKey.kid)
+        XCTAssertEqual(secureStore.protectedKeysCalls, 1)
+        XCTAssertEqual(scopedAccess.fetchProtectedKeysCalls.map(\.userId), [account.userId])
+    }
+
     func testWhenCacheIsCorruptThenFetchesAndCachesServerKeys() async throws {
         let protectedKey = try makeDefaultCredentialProtectedKey()
         let secureStore = SecureStorageStub()

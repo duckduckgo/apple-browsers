@@ -212,19 +212,45 @@ final class PromoQueueLeaseArbiter: PromoQueueLeaseArbitrating {
     }
 
     func invalidateAllLeases() {
+        let hadModalLease = modalLease != nil
+        let visiblePromoLeaseCount = visiblePromoLeases.count
         modalLease = nil
         visiblePromoLeases.removeAll()
+
+        guard hadModalLease || visiblePromoLeaseCount > 0 else { return }
+
+        Logger.modalPrompt.debug(
+            """
+            [Promo Queue] - Invalidated leases \
+            (modal: \(hadModalLease, privacy: .public), visible promos: \(visiblePromoLeaseCount, privacy: .public)).
+            """
+        )
     }
 
     /// Reclaims leases whose token deallocated without `release()`, so a dropped token cannot wedge the arbiter for the
     /// rest of the session: one leaked visible-promo token would otherwise block every launch modal, and a leaked modal
     /// token would block every visible promo, with no timeout and no recovery.
     private func pruneLeasesWithDeallocatedTokens() {
+        let didPruneModalLease: Bool
         if let modalLease, modalLease.token == nil {
             self.modalLease = nil
+            didPruneModalLease = true
+        } else {
+            didPruneModalLease = false
         }
 
+        let visiblePromoLeaseCount = visiblePromoLeases.count
         visiblePromoLeases = visiblePromoLeases.filter { $0.value.token != nil }
+        let prunedVisiblePromoLeaseCount = visiblePromoLeaseCount - visiblePromoLeases.count
+
+        guard didPruneModalLease || prunedVisiblePromoLeaseCount > 0 else { return }
+
+        Logger.modalPrompt.debug(
+            """
+            [Promo Queue] - Pruned deallocated lease tokens \
+            (modal: \(didPruneModalLease, privacy: .public), visible promos: \(prunedVisiblePromoLeaseCount, privacy: .public)).
+            """
+        )
     }
 
     private func releaseModalLease(attemptIdentity: PromoQueueModalAttemptIdentity) {

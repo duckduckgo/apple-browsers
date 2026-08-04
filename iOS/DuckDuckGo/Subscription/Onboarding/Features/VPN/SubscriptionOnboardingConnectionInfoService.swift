@@ -18,6 +18,7 @@
 //
 
 import Foundation
+import Networking
 
 /// The current connection's public IP and coarse geolocation, as returned by
 /// `https://duckduckgo.com/connection.json`. While the VPN is off this describes the customer's real
@@ -51,24 +52,33 @@ protocol SubscriptionOnboardingConnectionInfoService {
     func fetchConnectionInfo() async throws -> SubscriptionOnboardingConnectionInfo
 }
 
-/// Reads `https://duckduckgo.com/connection.json`
+/// Reads `https://duckduckgo.com/connection.json` through `APIService`, which supplies the retry policy,
+/// the request logging and cancellation checking. The status check below is deliberately local: `fetch`
+/// returns non-2xx responses as-is rather than throwing, so without it an error body would reach the decoder.
 struct DefaultSubscriptionOnboardingConnectionInfoService: SubscriptionOnboardingConnectionInfoService {
     private static let connectionInfoURL = URL(string: "https://duckduckgo.com/connection.json")!
     private static let requestTimeout: TimeInterval = 10
+    private static let retryPolicy = APIRequestV2.RetryPolicy(maxRetries: 1, delay: .fixed(0.5))
 
-    private let urlSession: URLSession
+    private let apiService: APIService
 
-    init(urlSession: URLSession = .shared) {
-        self.urlSession = urlSession
+    init(apiService: APIService = DefaultAPIService()) {
+        self.apiService = apiService
     }
 
     func fetchConnectionInfo() async throws -> SubscriptionOnboardingConnectionInfo {
-        var request = URLRequest(url: Self.connectionInfoURL)
-        request.timeoutInterval = Self.requestTimeout
-        let (data, response) = try await urlSession.data(for: request)
-        if let httpResponse = response as? HTTPURLResponse, !(200..<300).contains(httpResponse.statusCode) {
-            throw URLError(.badServerResponse)
+        guard let request = APIRequestV2(url: Self.connectionInfoURL,
+                                         method: .get,
+                                         timeoutInterval: Self.requestTimeout,
+                                         retryPolicy: Self.retryPolicy) else {
+            throw APIRequestV2Error.invalidURL
         }
-        return try JSONDecoder().decode(SubscriptionOnboardingConnectionInfo.self, from: data)
+        let response = try await apiService.fetch(request: request)
+        // Reported from `statusCode` rather than `httpStatus.rawValue`: a code with no `HTTPStatusCode` case
+        // (e.g. Cloudflare's 520) maps to `.unknown`, whose raw value is 0.
+        guard response.httpResponse.httpStatus.isSuccess else {
+            throw APIRequestV2Error.invalidStatusCode(response.httpResponse.statusCode)
+        }
+        return try response.decodeBody()
     }
 }

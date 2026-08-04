@@ -39,7 +39,6 @@ struct SubscriptionOnboardingDuckAIView: View {
 
     @State private var isShowingInfoSheet = false
 
-    @MainActor
     init(viewModel: @autoclosure @escaping () -> SubscriptionOnboardingDuckAIViewModel,
          title: String? = nil) {
         _viewModel = StateObject(wrappedValue: viewModel())
@@ -49,7 +48,7 @@ struct SubscriptionOnboardingDuckAIView: View {
     var body: some View {
         SubscriptionOnboardingBaseView(
             title: title,
-            navigationButton: .back({ viewModel.delegate?.sectionDidRequestGoBack() }),
+            navigationButton: .back({ viewModel.goBack() }),
             header: header,
             footer: footer,
             scrollsContent: false) {
@@ -108,12 +107,11 @@ private extension SubscriptionOnboardingDuckAIView {
 
     var cardItems: [CardItem] {
         viewModel.availableModels.map { model in
-            let nameParts = model.name.split(separator: " ", maxSplits: 1)
-            let title = nameParts.first.map(String.init) ?? model.name
+            let (title, remainder) = model.titleComponents
 
             var details: [CardItemText] = []
-            if nameParts.count > 1 {
-                details.append(CardItemText(String(nameParts[1]), font: .bodyRegular))
+            if !remainder.isEmpty {
+                details.append(CardItemText(remainder, font: .bodyRegular))
             }
             if let tierMarker = tierMarker(for: model) {
                 details.append(CardItemText(tierMarker, font: .footnoteRegular))
@@ -157,7 +155,6 @@ private final class PreviewAIModelProvider: SubscriptionOnboardingAIModelProvidi
         AIChatModel(id: "gpt-5.4-mini", name: "GPT-5.4 mini", provider: .openAI, supportsImageUpload: false, entityHasAccess: true, accessTier: ["free"]),
         AIChatModel(id: "claude-haiku-4.5", name: "Claude Haiku 4.5", provider: .anthropic, supportsImageUpload: false, entityHasAccess: true, accessTier: ["free"])
     ]
-    var persistedModelID: String? = "gpt-5.4-nano"
     func fetchModels() async -> [AIChatModel] { models }
     func updateSelectedModel(_ modelID: String) {}
 }
@@ -165,7 +162,6 @@ private final class PreviewAIModelProvider: SubscriptionOnboardingAIModelProvidi
 /// Resolves to no models, mimicking a failed or empty `/models` fetch so the empty-list state can be previewed.
 @MainActor
 private final class EmptyPreviewAIModelProvider: SubscriptionOnboardingAIModelProviding {
-    var persistedModelID: String?
     func fetchModels() async -> [AIChatModel] { [] }
     func updateSelectedModel(_ modelID: String) {}
 }

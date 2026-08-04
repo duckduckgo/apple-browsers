@@ -26,6 +26,7 @@ import VPN
 /// starts the VPN through the injected controller; and describes the new (egress) IP and location
 /// from the shared server-info observer and reports
 /// completion up to the flow via ``SubscriptionOnboardingSectionDelegate``.
+@MainActor
 final class SubscriptionOnboardingVPNActivationViewModel: ObservableObject {
 
     /// The two states of the single activation screen.
@@ -57,7 +58,7 @@ final class SubscriptionOnboardingVPNActivationViewModel: ObservableObject {
     private let vpnController: SubscriptionOnboardingVPNControlling
     private let vpnLocationProvider: SubscriptionOnboardingVPNLocationProviding
     private let serverInfoObserver: ConnectionServerInfoObserver
-    private(set) weak var delegate: SubscriptionOnboardingSectionDelegate?
+    private weak var delegate: SubscriptionOnboardingSectionDelegate?
     private let locale: Locale
 
     private var hasReportedCompletion = false
@@ -114,7 +115,6 @@ final class SubscriptionOnboardingVPNActivationViewModel: ObservableObject {
 
     /// Sets up the connection and prefetcher observers, then kicks off the appropriate fetch for the current
     /// state when the view appears, and returns immediately
-    @MainActor
     func onAppear() {
         observeConnection()
         switch connectionState {
@@ -125,13 +125,21 @@ final class SubscriptionOnboardingVPNActivationViewModel: ObservableObject {
         }
     }
 
-    @MainActor
     func onDisappear() {
         cancellables.removeAll()
     }
 
+    /// Leaves this section, going back to the previous one.
+    func goBack() {
+        delegate?.sectionDidRequestGoBack()
+    }
+
+    /// Finishes this section, moving the flow to the next one.
+    func advance() {
+        delegate?.sectionDidRequestAdvance()
+    }
+
     /// Starts the VPN.
-    @MainActor
     func turnOnVPN() async {
         await vpnController.start()
     }
@@ -143,7 +151,6 @@ final class SubscriptionOnboardingVPNActivationViewModel: ObservableObject {
 
     // MARK: - Connection observing
 
-    @MainActor
     private func observeConnection() {
         guard cancellables.isEmpty else { return }
         vpnController.isConnectedPublisher
@@ -349,7 +356,6 @@ private extension NetworkProtectionStatusServerInfo {
 extension SubscriptionOnboardingVPNActivationViewModel {
     /// A view model seeded with fixed connection info for previews — no network, no tunnel. Pass `nil`
     /// connection info to preview the loading state (the info cards render the placeholders).
-    @MainActor
     static func preview(state: ConnectionState,
                         originalConnectionInfo: SubscriptionOnboardingConnectionInfo?,
                         vpnConnectionInfo: SubscriptionOnboardingConnectionInfo? = nil,
@@ -370,7 +376,6 @@ extension SubscriptionOnboardingVPNActivationViewModel {
 
     /// A view model that starts off and transitions to on when the VPN is turned on, for previewing the
     /// off→on reveal. The egress info is seeded so the on-state cards show a value once revealed.
-    @MainActor
     static func previewReveal(original: SubscriptionOnboardingConnectionInfo?,
                               vpn: SubscriptionOnboardingConnectionInfo?,
                               isNearestSelected: Bool = false) -> SubscriptionOnboardingVPNActivationViewModel {

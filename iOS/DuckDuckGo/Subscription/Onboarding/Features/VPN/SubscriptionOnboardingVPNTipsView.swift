@@ -26,7 +26,8 @@ import UIComponents
 struct SubscriptionOnboardingVPNTipsView: View {
 
     var title: String?
-    weak var delegate: SubscriptionOnboardingSectionDelegate?
+    /// Called when the customer finishes the VPN section, moving the flow to the next one.
+    var onDone: () -> Void = {}
 
     @Environment(\.dismiss) private var dismiss
 
@@ -35,7 +36,7 @@ struct SubscriptionOnboardingVPNTipsView: View {
             title: title,
             navigationButton: .back({ dismiss() }),
             header: SubscriptionOnboardingHeaderView(title: UserText.subscriptionOnboardingVPNTipsTitle),
-            footer: .single(.init(UserText.subscriptionOnboardingVPNTipsDoneButton) { delegate?.sectionDidRequestAdvance() })) {
+            footer: .single(.init(UserText.subscriptionOnboardingVPNTipsDoneButton) { onDone() })) {
             VPNTipsCarousel()
                 .padding(.top, 24)
         }

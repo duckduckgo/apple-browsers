@@ -39,11 +39,11 @@ struct SubscriptionOnboardingVPNActivationView: View {
 
     private let title: String?
 
-    @State private var isShowingInfoSheet = false
-    @State private var tapAllowHint = TapAllowHintOverlayWindow()
-    @State private var didTapStartVPN = false
+    @StateObject private var tapAllowHint = TapAllowHintCoordinator()
 
-    @MainActor
+    @State private var isShowingInfoSheet = false
+    @State private var tapAllowHintWindow = TapAllowHintOverlayWindow()
+
     init(viewModel: @autoclosure @escaping () -> SubscriptionOnboardingVPNActivationViewModel,
          title: String? = nil) {
         _viewModel = StateObject(wrappedValue: viewModel())
@@ -53,7 +53,7 @@ struct SubscriptionOnboardingVPNActivationView: View {
     var body: some View {
         SubscriptionOnboardingBaseView(
             title: title,
-            navigationButton: .back({ viewModel.delegate?.sectionDidRequestGoBack() }),
+            navigationButton: .back({ viewModel.goBack() }),
             header: header,
             footer: footer) {
             content
@@ -62,32 +62,29 @@ struct SubscriptionOnboardingVPNActivationView: View {
         .onDisappear {
             viewModel.onDisappear()
             // Safety net
-            tapAllowHint.hide()
-            didTapStartVPN = false
+            tapAllowHintWindow.hide()
+            tapAllowHint.disappeared()
         }
         .subscriptionOnboardingInfoSheet(.vpn, isPresented: $isShowingInfoSheet)
-        .onReceive(Publishers.Merge(NotificationCenter.default.publisher(for: UIApplication.willResignActiveNotification),
-                                    NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification))) { _ in
-            reevaluateTapAllowHint()
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.willResignActiveNotification)) { _ in
+            tapAllowHint.appWillResignActive(isVPNConfigured: viewModel.isVPNConfigured)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
+            tapAllowHint.appDidBecomeActive(isVPNConfigured: viewModel.isVPNConfigured)
         }
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.didEnterBackgroundNotification)) { _ in
-            tapAllowHint.hide()
+            tapAllowHint.appDidEnterBackground()
         }
         .onReceive(viewModel.$didDenyVPNPermission) { didDeny in
             guard didDeny else { return }
-            tapAllowHint.hide()
-            didTapStartVPN = false
+            tapAllowHint.permissionDenied()
         }
-    }
-
-    /// Clears the hint, then re-shows it only if the user has tapped Turn On VPN and the config still isn't installed.
-    private func reevaluateTapAllowHint() {
-        tapAllowHint.hide()
-        guard didTapStartVPN else { return }
-        Task {
-            let isInstalled = await viewModel.isVPNConfigured()
-            guard didTapStartVPN, !isInstalled else { return }
-            tapAllowHint.show()
+        .onReceive(tapAllowHint.$shouldShowHint) { shouldShow in
+            if shouldShow {
+                tapAllowHintWindow.show()
+            } else {
+                tapAllowHintWindow.hide()
+            }
         }
     }
 }
@@ -185,11 +182,10 @@ private extension SubscriptionOnboardingVPNActivationView {
         switch viewModel.connectionState {
         case .off:
             let startVPN: () -> Void = {
-                tapAllowHint.hide()
-                didTapStartVPN = true
+                tapAllowHint.startTapped()
                 Task {
                     await viewModel.turnOnVPN()
-                    didTapStartVPN = false
+                    tapAllowHint.turnOnFinished()
                 }
             }
             guard viewModel.didDenyVPNPermission else {
@@ -197,10 +193,10 @@ private extension SubscriptionOnboardingVPNActivationView {
             }
             return .double(primary: .init(UserText.subscriptionOnboardingVPNActivationTryAgainButton, action: startVPN),
                            secondary: .init(UserText.subscriptionOnboardingVPNActivationSkipButton,
-                                            push: SubscriptionOnboardingVPNWidgetEducationView(title: title, delegate: viewModel.delegate)))
+                                            push: SubscriptionOnboardingVPNWidgetEducationView(title: title, onDone: { viewModel.advance() })))
         case .on:
             return .single(.init(UserText.subscriptionOnboardingVPNActivationNextButton,
-                                 push: SubscriptionOnboardingVPNWidgetEducationView(title: title, delegate: viewModel.delegate)))
+                                 push: SubscriptionOnboardingVPNWidgetEducationView(title: title, onDone: { viewModel.advance() })))
         }
     }
 }

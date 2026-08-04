@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import Networking
 import XCTest
 @testable import DuckDuckGo
 
@@ -31,7 +32,8 @@ final class SubscriptionOnboardingConnectionInfoServiceTests: XCTestCase {
         StubURLProtocol.stub = (statusCode, body)
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [StubURLProtocol.self]
-        return DefaultSubscriptionOnboardingConnectionInfoService(urlSession: URLSession(configuration: configuration))
+        return DefaultSubscriptionOnboardingConnectionInfoService(
+            apiService: DefaultAPIService(urlSession: URLSession(configuration: configuration)))
     }
 
     func testWhenResponseIsValidJSONThenInfoIsDecoded() async throws {
@@ -54,14 +56,28 @@ final class SubscriptionOnboardingConnectionInfoServiceTests: XCTestCase {
         }
     }
 
-    func testWhenServerReturns500ThenThrows() async {
+    func testWhenServerReturns500ThenThrowsInvalidStatusCode() async {
         let service = makeService(statusCode: 500, body: Data("{}".utf8))
 
         do {
             _ = try await service.fetchConnectionInfo()
             XCTFail("Expected an error for a 5xx response")
         } catch {
-            // Expected: a non-2xx status must not be decoded as success.
+            // Asserting the specific error matters: an empty catch would also pass on the `DecodingError`
+            // you'd get if the status check were dropped, which is the regression this test guards.
+            XCTAssertEqual(error as? APIRequestV2Error, .invalidStatusCode(500))
+        }
+    }
+
+    func testWhenServerReturnsUnmappedStatusThenThrowsThatStatusRatherThanZero() async {
+        // 520 has no `HTTPStatusCode` case, so `httpStatus.rawValue` would report 0.
+        let service = makeService(statusCode: 520, body: Data("{}".utf8))
+
+        do {
+            _ = try await service.fetchConnectionInfo()
+            XCTFail("Expected an error for a 520 response")
+        } catch {
+            XCTAssertEqual(error as? APIRequestV2Error, .invalidStatusCode(520))
         }
     }
 }

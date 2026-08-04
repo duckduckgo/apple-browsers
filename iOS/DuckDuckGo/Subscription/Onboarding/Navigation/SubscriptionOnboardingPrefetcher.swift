@@ -54,13 +54,17 @@ final class SubscriptionOnboardingPrefetcher: ObservableObject {
     private var modelsTask: Task<Void, Never>?
 
     init(connectionInfoService: SubscriptionOnboardingConnectionInfoService = DefaultSubscriptionOnboardingConnectionInfoService(),
-         modelProvider: SubscriptionOnboardingAIModelProviding = DefaultSubscriptionOnboardingAIModelProvider()) {
+         modelProvider: SubscriptionOnboardingAIModelProviding? = nil) {
         self.connectionInfoService = connectionInfoService
-        self.modelProvider = modelProvider
+        self.modelProvider = modelProvider ?? DefaultSubscriptionOnboardingAIModelProvider()
+    }
+
+    deinit {
+        connectionInfoTask?.cancel()
+        modelsTask?.cancel()
     }
 
     /// Kicks off both fetches at flow start.
-    @MainActor
     func prefetch() {
         fetchConnectionInfoIfNeeded()
         fetchModelsIfNeeded()
@@ -68,34 +72,39 @@ final class SubscriptionOnboardingPrefetcher: ObservableObject {
 
     func fetchConnectionInfoIfNeeded() {
         guard connectionInfo.shouldStartFetch else { return }
-        connectionInfoTask?.cancel()
         connectionInfo = .loading
         connectionInfoTask = Task { @MainActor [weak self] in
-            guard let self else { return }
+            guard let service = self?.connectionInfoService else { return }
             do {
-                let info = try await self.connectionInfoService.fetchConnectionInfo()
-                guard !Task.isCancelled else { return }
-                self.connectionInfo = .loaded(info)
+                let info = try await service.fetchConnectionInfo()
+                guard !Task.isCancelled else {
+                    self?.connectionInfo = .idle
+                    return
+                }
+                self?.connectionInfo = .loaded(info)
             } catch {
-                guard !Task.isCancelled else { return }
-                self.connectionInfo = .failed
+                guard !Task.isCancelled else {
+                    self?.connectionInfo = .idle
+                    return
+                }
+                self?.connectionInfo = .failed
             }
         }
     }
 
     func fetchModelsIfNeeded() {
         guard models.shouldStartFetch else { return }
-        modelsTask?.cancel()
         models = .loading
         modelsTask = Task { @MainActor [weak self] in
-            guard let self else { return }
-            let fetched = await self.modelProvider.fetchModels()
-            guard !Task.isCancelled else { return }
-            self.models = fetched.isEmpty ? .failed : .loaded(fetched)
+            guard let provider = self?.modelProvider else { return }
+            let fetched = await provider.fetchModels()
+            guard !Task.isCancelled else {
+                self?.models = .idle
+                return
+            }
+            self?.models = fetched.isEmpty ? .failed : .loaded(fetched)
         }
     }
-
-    var persistedModelID: String? { modelProvider.persistedModelID }
 
     func updateSelectedModel(_ modelID: String) {
         modelProvider.updateSelectedModel(modelID)

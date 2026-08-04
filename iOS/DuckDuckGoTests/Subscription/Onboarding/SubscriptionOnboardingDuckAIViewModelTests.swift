@@ -20,6 +20,7 @@
 import Combine
 import XCTest
 import AIChat
+import SubscriptionTestingUtilities
 @testable import DuckDuckGo
 
 @MainActor
@@ -31,11 +32,11 @@ final class SubscriptionOnboardingDuckAIViewModelTests: XCTestCase {
         let provider = MockAIModelProvider(models: [model("a", tier: ["plus"]), model("b", tier: ["free"])])
         let (viewModel, _) = makeViewModel(provider: provider)
 
-        await wait(viewModel.$models, until: { !$0.isEmpty }) {
+        await wait(viewModel.$availableModels, until: { !$0.isEmpty }) {
             viewModel.onAppear()
         }
 
-        XCTAssertEqual(viewModel.models.count, 2)
+        XCTAssertEqual(viewModel.availableModels.count, 2)
         XCTAssertEqual(provider.fetchCallCount, 1)
     }
 
@@ -43,7 +44,7 @@ final class SubscriptionOnboardingDuckAIViewModelTests: XCTestCase {
         let provider = MockAIModelProvider(models: [model("a", tier: ["plus"])])
         let (viewModel, _) = makeViewModel(provider: provider)
 
-        await wait(viewModel.$models, until: { !$0.isEmpty }) {
+        await wait(viewModel.$availableModels, until: { !$0.isEmpty }) {
             viewModel.onAppear()
             viewModel.onAppear()
         }
@@ -60,7 +61,7 @@ final class SubscriptionOnboardingDuckAIViewModelTests: XCTestCase {
         ])
         let (viewModel, _) = makeViewModel(provider: provider)
 
-        await wait(viewModel.$models, until: { !$0.isEmpty }) {
+        await wait(viewModel.$availableModels, until: { !$0.isEmpty }) {
             viewModel.onAppear()
         }
 
@@ -70,7 +71,7 @@ final class SubscriptionOnboardingDuckAIViewModelTests: XCTestCase {
     func testWhenOnAppearThenSelectsMostPremiumAvailableModel() async {
         // "a" is advanced (non-free tier); "b" is a free-tier model. The default selection must be the most
         // premium available model, and must not be swayed by whatever was previously persisted.
-        let provider = MockAIModelProvider(models: [model("b", tier: ["free"]), model("a", tier: ["plus"])], persistedModelID: "b")
+        let provider = MockAIModelProvider(models: [model("b", tier: ["free"]), model("a", tier: ["plus"])])
         let (viewModel, _) = makeViewModel(provider: provider)
 
         await wait(viewModel.$selectedModelID, until: { $0 != nil }) {
@@ -121,11 +122,11 @@ final class SubscriptionOnboardingDuckAIViewModelTests: XCTestCase {
     }
 
     func testWhenModelsLoadThenUserSelectionSurvives() async {
-        let provider = MockAIModelProvider(models: [model("a", tier: ["plus"]), model("b", tier: ["free"])], persistedModelID: "a")
+        let provider = MockAIModelProvider(models: [model("a", tier: ["plus"]), model("b", tier: ["free"])])
         let (viewModel, _) = makeViewModel(provider: provider)
 
         // Select before the async fetch resolves; the load must not overwrite the user's choice with the default one.
-        await wait(viewModel.$models, until: { !$0.isEmpty }) {
+        await wait(viewModel.$availableModels, until: { !$0.isEmpty }) {
             viewModel.onAppear()
             viewModel.select("b")
         }
@@ -136,7 +137,7 @@ final class SubscriptionOnboardingDuckAIViewModelTests: XCTestCase {
     func testWhenSelectThenSelectionUpdatesWithoutPersisting() async {
         let provider = MockAIModelProvider(models: [model("a", tier: ["plus"]), model("b", tier: ["free"])])
         let (viewModel, _) = makeViewModel(provider: provider)
-        await wait(viewModel.$models, until: { !$0.isEmpty }) {
+        await wait(viewModel.$availableModels, until: { !$0.isEmpty }) {
             viewModel.onAppear()
         }
 
@@ -147,7 +148,7 @@ final class SubscriptionOnboardingDuckAIViewModelTests: XCTestCase {
     }
 
     func testWhenStartChatThenSelectedModelIsPersisted() async {
-        let provider = MockAIModelProvider(models: [model("a", tier: ["plus"])], persistedModelID: "a")
+        let provider = MockAIModelProvider(models: [model("a", tier: ["plus"])])
         let (viewModel, _) = makeViewModel(provider: provider)
         await wait(viewModel.$selectedModelID, until: { $0 != nil }) {
             viewModel.onAppear()
@@ -160,7 +161,7 @@ final class SubscriptionOnboardingDuckAIViewModelTests: XCTestCase {
 
     func testWhenStartChatThenRequestsDuckAIChatWithoutCompletingSection() async {
         let delegate = SpySectionDelegate()
-        let provider = MockAIModelProvider(models: [model("a", tier: ["plus"])], persistedModelID: "a")
+        let provider = MockAIModelProvider(models: [model("a", tier: ["plus"])])
         let (viewModel, _) = makeViewModel(provider: provider, delegate: delegate)
         await wait(viewModel.$selectedModelID, until: { $0 != nil }) {
             viewModel.onAppear()
@@ -211,13 +212,11 @@ final class SubscriptionOnboardingDuckAIViewModelTests: XCTestCase {
 @MainActor
 private final class MockAIModelProvider: SubscriptionOnboardingAIModelProviding {
     private let models: [AIChatModel]
-    var persistedModelID: String?
     private(set) var fetchCallCount = 0
     private(set) var updatedModelID: String?
 
-    init(models: [AIChatModel], persistedModelID: String? = nil) {
+    init(models: [AIChatModel]) {
         self.models = models
-        self.persistedModelID = persistedModelID
     }
 
     func fetchModels() async -> [AIChatModel] {
@@ -241,4 +240,190 @@ private final class SpySectionDelegate: SubscriptionOnboardingSectionDelegate {
     }
     func sectionDidRequestAdvance() {}
     func sectionDidRequestGoBack() {}
+}
+
+// MARK: - DefaultSubscriptionOnboardingAIModelProvider
+
+/// Covers the live adapter over ``UTIModelStore``: the `onModelsUpdated` → async bridge and the two
+/// pass-through members. Stubs the store's own dependencies, matching how the other `UTIModelStore`
+/// consumers are tested.
+@MainActor
+final class DefaultSubscriptionOnboardingAIModelProviderTests: XCTestCase {
+
+    private var modelsService: StubModelsService!
+    private var preferences: StubPreferences!
+    private var sut: DefaultSubscriptionOnboardingAIModelProvider!
+
+    override func setUp() {
+        super.setUp()
+        modelsService = StubModelsService()
+        preferences = StubPreferences()
+        sut = DefaultSubscriptionOnboardingAIModelProvider(modelsService: modelsService,
+                                                          preferences: preferences,
+                                                          subscriptionManager: SubscriptionManagerMock())
+    }
+
+    override func tearDown() {
+        // Unblocks any gated fetch so a parked stub doesn't outlive the test.
+        modelsService?.releaseGate()
+        sut = nil
+        preferences = nil
+        modelsService = nil
+        super.tearDown()
+    }
+
+    func testWhenStoreNotifiesThenFetchResolvesWithItsModels() async {
+        modelsService.result = .success(AIChatModelsResponse(models: [remoteModel(id: "gpt-5.4")]))
+
+        let models = await sut.fetchModels()
+
+        XCTAssertEqual(models.map(\.id), ["gpt-5.4"])
+    }
+
+    func testWhenStoreFetchFailsThenFetchResolvesEmpty() async {
+        modelsService.result = .failure(StubModelsService.StubError.fetchFailed)
+
+        let models = await sut.fetchModels()
+
+        XCTAssertTrue(models.isEmpty)
+    }
+
+    func testWhenUpdatingSelectedModelThenItPersistsAsANewChatSelection() {
+        sut.updateSelectedModel("gpt-5.4")
+
+        XCTAssertEqual(preferences.selectedModelId, "gpt-5.4")
+    }
+
+    func testWhenTwoFetchesOverlapThenBothResolveFromOneStoreFetch() async {
+        // The store has a single callback slot, so before coalescing the later fetch overwrote the earlier
+        // one's callback and left it suspended forever.
+        modelsService.isGated = true
+        modelsService.result = .success(AIChatModelsResponse(models: [remoteModel(id: "gpt-5.4")]))
+
+        async let first = sut.fetchModels()
+        async let second = sut.fetchModels()
+
+        // Wait until both callers have actually queued — asserting on `fetchCallCount` alone would only prove
+        // the first one arrived, leaving the second's registration to task-scheduling order.
+        await waitUntil({ self.modelsService.fetchCallCount == 1 && self.sut.pendingCallerCount == 2 },
+                        description: "both callers to queue on one store fetch")
+        modelsService.releaseGate()
+
+        let (firstModels, secondModels) = await (first, second)
+
+        XCTAssertEqual(firstModels.map(\.id), ["gpt-5.4"])
+        XCTAssertEqual(secondModels.map(\.id), ["gpt-5.4"])
+        // One underlying fetch served both callers.
+        XCTAssertEqual(modelsService.fetchCallCount, 1)
+    }
+
+    func testWhenTwoFetchesAreSequentialThenEachStartsItsOwnStoreFetch() async {
+        // The counterpart to the overlapping case: the adapter coalesces in-flight callers but does not
+        // cache, so a call made after the previous one resolved refetches. That is what lets the prefetcher
+        // retry once its state has gone to `.failed`.
+        modelsService.result = .success(AIChatModelsResponse(models: [remoteModel(id: "gpt-5.4")]))
+
+        let first = await sut.fetchModels()
+        let second = await sut.fetchModels()
+
+        XCTAssertEqual(first.map(\.id), ["gpt-5.4"])
+        XCTAssertEqual(second.map(\.id), ["gpt-5.4"])
+        XCTAssertEqual(modelsService.fetchCallCount, 2)
+    }
+
+    func testWhenCallerIsCancelledThenItResolvesWithoutWaitingForTheTimeout() async {
+        // Gated with no release, so the store never notifies and only the cancellation can resolve this.
+        modelsService.isGated = true
+        let task = Task { await sut.fetchModels() }
+        await waitUntil({ self.modelsService.fetchCallCount == 1 }, description: "the store fetch to start")
+
+        let start = Date()
+        task.cancel()
+        let models = await task.value
+
+        XCTAssertTrue(models.isEmpty)
+        // Without the cancellation handler this would park for the full `fetchTimeout`.
+        XCTAssertLessThan(Date().timeIntervalSince(start), 1)
+    }
+
+    func testWhenOneOfTwoCallersIsCancelledThenTheOtherStillGetsTheModels() async {
+        modelsService.isGated = true
+        modelsService.result = .success(AIChatModelsResponse(models: [remoteModel(id: "gpt-5.4")]))
+
+        let cancelled = Task { await sut.fetchModels() }
+        await waitUntil({ self.modelsService.fetchCallCount == 1 }, description: "the store fetch to start")
+        async let survivor = sut.fetchModels()
+        // Both queued before cancelling, so the survivor can't miss the shared fetch and start its own.
+        await waitUntil({ self.sut.pendingCallerCount == 2 }, description: "the survivor to queue")
+
+        cancelled.cancel()
+        _ = await cancelled.value
+        modelsService.releaseGate()
+
+        // Cancelling one caller must not resolve the other with an empty list.
+        let survivorModels = await survivor
+        XCTAssertEqual(survivorModels.map(\.id), ["gpt-5.4"])
+    }
+
+    // MARK: - Helpers
+
+    /// Polls `condition` on the main actor, failing rather than hanging if it never becomes true.
+    private func waitUntil(_ condition: @MainActor () -> Bool,
+                           description: String,
+                           file: StaticString = #filePath,
+                           line: UInt = #line) async {
+        for _ in 0..<200 {
+            if condition() { return }
+            try? await Task.sleep(nanoseconds: 5_000_000)
+        }
+        XCTFail("Timed out waiting for \(description)", file: file, line: line)
+    }
+
+    private func remoteModel(id: String) -> AIChatRemoteModel {
+        AIChatRemoteModel(id: id,
+                          name: "GPT-5.4",
+                          provider: "openai",
+                          entityHasAccess: true,
+                          supportsImageUpload: false,
+                          supportedTools: [],
+                          accessTier: [])
+    }
+}
+
+@MainActor
+private final class StubModelsService: AIChatModelsProviding {
+    enum StubError: Error {
+        case fetchFailed
+    }
+
+    var result: Result<AIChatModelsResponse, Error> = .success(AIChatModelsResponse(models: []))
+
+    /// When set, `fetchModels()` parks until ``releaseGate()``, so a test can hold one fetch in flight
+    /// while it starts another.
+    var isGated = false
+    private(set) var fetchCallCount = 0
+    private var gate: CheckedContinuation<Void, Never>?
+
+    func fetchModels() async throws -> AIChatModelsResponse {
+        fetchCallCount += 1
+        if isGated {
+            await withCheckedContinuation { gate = $0 }
+        }
+        return try result.get()
+    }
+
+    func releaseGate() {
+        gate?.resume()
+        gate = nil
+    }
+}
+
+private final class StubPreferences: AIChatPreferencesPersisting {
+    var selectedReasoningEffort: String?
+    var selectedModelId: String?
+    var selectedModelShortName: String?
+    var selectedReasoningMode: AIChatReasoningMode?
+    var selectedTool: AIChatRAGTool?
+    var selectedModelIdPublisher: AnyPublisher<String?, Never> { Empty().eraseToAnyPublisher() }
+    var selectedReasoningEffortPublisher: AnyPublisher<String?, Never> { Empty().eraseToAnyPublisher() }
 }

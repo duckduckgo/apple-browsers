@@ -19,6 +19,7 @@
 
 import Combine
 import XCTest
+import AIChat
 import VPN
 import VPNTestUtils
 @testable import DuckDuckGo
@@ -290,14 +291,140 @@ final class SubscriptionOnboardingVPNActivationViewModelTests: XCTestCase {
         XCTAssertFalse(viewModel.didDenyVPNPermission)
     }
 
+    // MARK: - Tap allow hint
+
+    func testWhenTurnOnIsTappedAgainThenAVisibleHintIsHidden() async {
+        let coordinator = TapAllowHintCoordinator()
+        coordinator.startTapped()
+        coordinator.appWillResignActive(isVPNConfigured: { false })
+        await waitForHint(coordinator)
+
+        coordinator.startTapped()
+
+        XCTAssertFalse(coordinator.shouldShowHint)
+    }
+
+    func testWhenThePermissionDialogAppearsAfterTappingTurnOnThenTheHintIsShown() async {
+        let coordinator = TapAllowHintCoordinator()
+        coordinator.startTapped()
+
+        coordinator.appWillResignActive(isVPNConfigured: { false })
+
+        await waitForHint(coordinator)
+    }
+
+    func testWhenTheAppResignsActiveWithoutTappingTurnOnThenTheHintIsNotShown() async {
+        let coordinator = TapAllowHintCoordinator()
+
+        coordinator.appWillResignActive(isVPNConfigured: { false })
+
+        await assertHintDoesNotShow(coordinator)
+    }
+
+    func testWhenThePermissionIsGrantedThenTheHintIsHidden() async {
+        let coordinator = TapAllowHintCoordinator()
+        coordinator.startTapped()
+        coordinator.appWillResignActive(isVPNConfigured: { false })
+        await waitForHint(coordinator)
+
+        coordinator.appDidBecomeActive(isVPNConfigured: { true })
+
+        await assertHintDoesNotShow(coordinator)
+    }
+
+    func testWhenThePermissionIsDeniedThenTheHintIsHiddenAndDoesNotReturn() async {
+        let coordinator = TapAllowHintCoordinator()
+        coordinator.startTapped()
+        coordinator.appWillResignActive(isVPNConfigured: { false })
+        await waitForHint(coordinator)
+
+        coordinator.permissionDenied()
+
+        XCTAssertFalse(coordinator.shouldShowHint)
+        coordinator.appDidBecomeActive(isVPNConfigured: { false })
+        await assertHintDoesNotShow(coordinator)
+    }
+
+    func testWhenTheAppEntersBackgroundThenTheHintIsHidden() async {
+        let coordinator = TapAllowHintCoordinator()
+        coordinator.startTapped()
+        coordinator.appWillResignActive(isVPNConfigured: { false })
+        await waitForHint(coordinator)
+
+        coordinator.appDidEnterBackground()
+
+        XCTAssertFalse(coordinator.shouldShowHint)
+    }
+
+    func testWhenTheVPNConnectsThenTheHintIsHiddenAndDoesNotReturn() async {
+        let coordinator = TapAllowHintCoordinator()
+        coordinator.startTapped()
+        coordinator.appWillResignActive(isVPNConfigured: { false })
+        await waitForHint(coordinator)
+
+        coordinator.connected()
+
+        XCTAssertFalse(coordinator.shouldShowHint)
+        coordinator.appWillResignActive(isVPNConfigured: { false })
+        await assertHintDoesNotShow(coordinator)
+    }
+
+    func testWhenTheScreenDisappearsThenTheHintIsHiddenAndDoesNotReturn() async {
+        let coordinator = TapAllowHintCoordinator()
+        coordinator.startTapped()
+        coordinator.appWillResignActive(isVPNConfigured: { false })
+        await waitForHint(coordinator)
+
+        coordinator.disappeared()
+
+        XCTAssertFalse(coordinator.shouldShowHint)
+        coordinator.appWillResignActive(isVPNConfigured: { false })
+        await assertHintDoesNotShow(coordinator)
+    }
+
+    func testWhenTurningOnFinishesWithoutConnectingOrDenialThenTheHintDoesNotReturn() async {
+        let coordinator = TapAllowHintCoordinator()
+        coordinator.startTapped()
+
+        coordinator.turnOnFinished()
+
+        coordinator.appWillResignActive(isVPNConfigured: { false })
+        await assertHintDoesNotShow(coordinator)
+    }
+
     // MARK: - Helpers
+
+    private func waitForHint(_ coordinator: TapAllowHintCoordinator) async {
+        await fulfillment(of: [hintShownExpectation(coordinator, inverted: false)], timeout: 1)
+    }
+
+    private func assertHintDoesNotShow(_ coordinator: TapAllowHintCoordinator) async {
+        await fulfillment(of: [hintShownExpectation(coordinator, inverted: true)], timeout: 0.3)
+    }
+
+    private func hintShownExpectation(_ coordinator: TapAllowHintCoordinator, inverted: Bool) -> XCTestExpectation {
+        let expectation = expectation(description: inverted ? "the hint must not show" : "the hint shows")
+        expectation.isInverted = inverted
+        var fulfilled = false
+        coordinator.$shouldShowHint
+            .filter { $0 }
+            .sink { _ in
+                if !fulfilled {
+                    fulfilled = true
+                    expectation.fulfill()
+                }
+            }
+            .store(in: &cancellables)
+        return expectation
+    }
 
     private func makeViewModel(service: SubscriptionOnboardingConnectionInfoService = MockConnectionInfoService(results: []),
                                controller: SubscriptionOnboardingVPNControlling = MockVPNController(isConnected: false),
                                locationProvider: SubscriptionOnboardingVPNLocationProviding = MockVPNLocationProvider(),
                                serverInfoObserver: ConnectionServerInfoObserver = MockConnectionServerInfoObserver(),
                                delegate: SubscriptionOnboardingSectionDelegate? = nil) -> SubscriptionOnboardingVPNActivationViewModel {
-        SubscriptionOnboardingVPNActivationViewModel(prefetcher: SubscriptionOnboardingPrefetcher(connectionInfoService: service),
+        SubscriptionOnboardingVPNActivationViewModel(prefetcher: SubscriptionOnboardingPrefetcher(connectionInfoService: service,
+                                                                                                  modelProvider: StubAIModelProvider()),
                                                      vpnController: controller,
                                                      vpnLocationProvider: locationProvider,
                                                      serverInfoObserver: serverInfoObserver,
@@ -333,6 +460,15 @@ final class SubscriptionOnboardingVPNActivationViewModelTests: XCTestCase {
 }
 
 // MARK: - Test doubles
+
+@MainActor
+private final class StubAIModelProvider: SubscriptionOnboardingAIModelProviding {
+    nonisolated init() {}
+
+    func fetchModels() async -> [AIChatModel] { [] }
+
+    func updateSelectedModel(_ modelID: String) {}
+}
 
 private final class MockConnectionInfoService: SubscriptionOnboardingConnectionInfoService {
     private var results: [SubscriptionOnboardingConnectionInfo]

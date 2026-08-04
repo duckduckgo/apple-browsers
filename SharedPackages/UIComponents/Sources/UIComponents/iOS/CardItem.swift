@@ -121,9 +121,9 @@ extension CardItemText {
     /// `defaultColor`), plus — when `secondaryText` is set — an inline second run in the same `font`
     /// coloured `secondaryColor` (or `defaultColor`). The caller applies the modifier.
     func styledText(defaultColor: Color) -> Text {
-        let main = Text(verbatim: text).font(font.font).foregroundColor(color ?? defaultColor)
+        let main = Text(text).font(font.font).foregroundColor(color ?? defaultColor)
         guard let secondaryText else { return main }
-        return main + Text(verbatim: " " + secondaryText)
+        return main + Text(" " + secondaryText)
             .font(font.font)
             .foregroundColor(secondaryColor ?? defaultColor)
     }
@@ -224,7 +224,7 @@ private extension CardItem {
     var textBlock: some View {
         VStack(alignment: .leading, spacing: 0) {
             if let overline {
-                Text(verbatim: overline.text)
+                Text(overline.text)
                     .font(overline.font.font)
                     .foregroundColor(overline.color ?? Color(designSystemColor: .textPrimary))
                     .applyingModifier(overline.modifier)
@@ -246,13 +246,13 @@ private extension CardItem {
         if title != nil || !titleDetails.isEmpty {
             HStack(alignment: .firstTextBaseline, spacing: 6) {
                 if let title {
-                    Text(verbatim: title.text)
+                    Text(title.text)
                         .font(title.font.font)
                         .foregroundColor(title.color ?? Color(designSystemColor: .textPrimary))
                         .applyingModifier(title.modifier)
                 }
                 ForEach(Array(titleDetails.enumerated()), id: \.offset) { _, detail in
-                    Text(verbatim: detail.text)
+                    Text(detail.text)
                         .font(detail.font.font)
                         .foregroundColor(detail.color ?? Color(designSystemColor: .textSecondary))
                         .applyingModifier(detail.modifier)

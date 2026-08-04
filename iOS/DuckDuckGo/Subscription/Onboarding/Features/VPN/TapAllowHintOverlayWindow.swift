@@ -22,6 +22,69 @@ import UIKit
 import DesignResourcesKit
 import UIComponents
 
+/// Decides whether the "Tap allow" pointer should be visible. The screen forwards lifecycle and VPN
+/// events; this publishes the single ``shouldShowHint`` the view maps onto ``TapAllowHintOverlayWindow``.
+///
+/// The hint is shown only while the customer has tapped "Turn On VPN" and no VPN configuration is
+/// installed yet — i.e. while the system permission dialog is the reason the app lost focus.
+@MainActor
+final class TapAllowHintCoordinator: ObservableObject {
+
+    @Published private(set) var shouldShowHint = false
+
+    private var didTapStart = false
+
+    func startTapped() {
+        didTapStart = true
+        shouldShowHint = false
+    }
+
+    func appWillResignActive(isVPNConfigured: @escaping () async -> Bool) {
+        reevaluate(isVPNConfigured: isVPNConfigured)
+    }
+
+    func appDidBecomeActive(isVPNConfigured: @escaping () async -> Bool) {
+        reevaluate(isVPNConfigured: isVPNConfigured)
+    }
+
+    func appDidEnterBackground() {
+        shouldShowHint = false
+    }
+
+    func turnOnFinished() {
+        didTapStart = false
+    }
+
+    func connected() {
+        reset()
+    }
+
+    func permissionDenied() {
+        reset()
+    }
+
+    func disappeared() {
+        reset()
+    }
+
+    /// Clears the hint, then re-shows it only if the customer has tapped "Turn On VPN" and the
+    /// configuration still isn't installed.
+    private func reevaluate(isVPNConfigured: @escaping () async -> Bool) {
+        shouldShowHint = false
+        guard didTapStart else { return }
+        Task {
+            let isInstalled = await isVPNConfigured()
+            guard self.didTapStart, !isInstalled else { return }
+            self.shouldShowHint = true
+        }
+    }
+
+    private func reset() {
+        didTapStart = false
+        shouldShowHint = false
+    }
+}
+
 /// Presents the "Tap allow" pointer in a dedicated `UIWindow`. Held by the view for
 /// its lifetime; ``show()`` / ``hide()`` bracket the first-time turn-on.
 @MainActor

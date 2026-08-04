@@ -21,16 +21,21 @@ import AppKit
 import DesignResourcesKit
 import DesignResourcesKitIcons
 
-/// A square card representing a file attachment (PDF etc.) in the duck.ai omnibar carousel.
-/// Matches the duck.ai web app's attachment style: a 56×56 surface-secondary tile with two
-/// short "text" lines at the top and a red filled "PDF" pill below — no inline filename
-/// (the filename surfaces via tooltip and accessibility label so the visual stays compact and
-/// reads as a kind-of-thing, not a labelled item).
+/// A horizontal card representing a file attachment (PDF etc.) in the duck.ai omnibar carousel.
+/// Deliberately shares `AIChatTabAttachmentCardView`'s geometry — same card size, same 36×36
+/// thumbnail slot, same bold title beside it — so a mixed carousel of tabs and files reads as one
+/// row of like elements. Only the thumbnail's contents differ: a stylised page with a red file-kind
+/// badge instead of a favicon.
 final class AIChatFileAttachmentCardView: NSView {
 
     private enum Constants {
-        static let cardSize: CGFloat = 56
+        static let cardWidth: CGFloat = 224
+        static let cardHeight: CGFloat = 56
         static let cornerRadius: CGFloat = 12
+        static let leadingPadding: CGFloat = 10
+        static let trailingPadding: CGFloat = 14
+        static let thumbnailSize: CGFloat = 36
+        static let spacingAfterThumbnail: CGFloat = 12
         static let removeButtonSize: CGFloat = 20
         static let removeButtonOverflow: CGFloat = 6
         static let removeButtonInset: CGFloat = 4
@@ -45,7 +50,7 @@ final class AIChatFileAttachmentCardView: NSView {
     /// Total height of the view including the remove button's vertical overflow — kept identical
     /// to `AIChatTabAttachmentCardView.totalHeight` so files / images / tabs share the same row
     /// baseline in the carousel.
-    static let totalHeight: CGFloat = Constants.cardSize + Constants.removeButtonOverflow
+    static let totalHeight: CGFloat = Constants.cardHeight + Constants.removeButtonOverflow
 
     let attachmentId: UUID
     var onRemove: ((UUID) -> Void)?
@@ -73,7 +78,17 @@ final class AIChatFileAttachmentCardView: NSView {
         return view
     }()
 
-    private let pagePreviewView = AIChatFilePagePreviewView()
+    private let filePreviewView = AIChatFilePagePreviewView()
+
+    private let titleLabel: NSTextField = {
+        let label = NSTextField(labelWithString: "")
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.lineBreakMode = .byTruncatingTail
+        label.maximumNumberOfLines = 1
+        label.usesSingleLineMode = true
+        label.font = .systemFont(ofSize: 14, weight: .semibold)
+        return label
+    }()
 
     private let removeButton: PointingHandButton = {
         let button = PointingHandButton()
@@ -94,16 +109,16 @@ final class AIChatFileAttachmentCardView: NSView {
         translatesAutoresizingMaskIntoConstraints = false
         addSubview(shadowBackingView)
         addSubview(cardView)
-        cardView.addSubview(pagePreviewView)
+        cardView.addSubview(filePreviewView)
+        cardView.addSubview(titleLabel)
         addSubview(removeButton) // outside the card so its overflow can clip past the corner.
 
-        // Filename only surfaces via tooltip + accessibility — the visual is filename-agnostic
-        // to match the duck.ai web app's compact tile style.
+        titleLabel.stringValue = attachment.fileName
+        // The label truncates on narrow cards; the tooltip carries the full filename.
         toolTip = attachment.fileName
         setAccessibilityLabel(String(format: UserText.aiChatFileAttachmentAccessibilityFormat, attachment.fileName))
 
-        pagePreviewView.translatesAutoresizingMaskIntoConstraints = false
-        pagePreviewView.kindLabel = Self.kindLabel(for: attachment.mimeType)
+        filePreviewView.kindLabel = Self.kindLabel(for: attachment.mimeType)
 
         removeButton.image = DesignSystemImages.Glyphs.Size16.clearSolid
         removeButton.imageScaling = .scaleNone
@@ -119,18 +134,22 @@ final class AIChatFileAttachmentCardView: NSView {
             cardView.leadingAnchor.constraint(equalTo: leadingAnchor),
             cardView.bottomAnchor.constraint(equalTo: bottomAnchor),
             cardView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Constants.removeButtonOverflow),
-            cardView.widthAnchor.constraint(equalToConstant: Constants.cardSize),
-            cardView.heightAnchor.constraint(equalToConstant: Constants.cardSize),
+            cardView.widthAnchor.constraint(equalToConstant: Constants.cardWidth),
+            cardView.heightAnchor.constraint(equalToConstant: Constants.cardHeight),
 
             shadowBackingView.leadingAnchor.constraint(equalTo: cardView.leadingAnchor),
             shadowBackingView.trailingAnchor.constraint(equalTo: cardView.trailingAnchor),
             shadowBackingView.topAnchor.constraint(equalTo: cardView.topAnchor),
             shadowBackingView.bottomAnchor.constraint(equalTo: cardView.bottomAnchor),
 
-            pagePreviewView.leadingAnchor.constraint(equalTo: cardView.leadingAnchor),
-            pagePreviewView.trailingAnchor.constraint(equalTo: cardView.trailingAnchor),
-            pagePreviewView.topAnchor.constraint(equalTo: cardView.topAnchor),
-            pagePreviewView.bottomAnchor.constraint(equalTo: cardView.bottomAnchor),
+            filePreviewView.leadingAnchor.constraint(equalTo: cardView.leadingAnchor, constant: Constants.leadingPadding),
+            filePreviewView.centerYAnchor.constraint(equalTo: cardView.centerYAnchor),
+            filePreviewView.widthAnchor.constraint(equalToConstant: Constants.thumbnailSize),
+            filePreviewView.heightAnchor.constraint(equalToConstant: Constants.thumbnailSize),
+
+            titleLabel.leadingAnchor.constraint(equalTo: filePreviewView.trailingAnchor, constant: Constants.spacingAfterThumbnail),
+            titleLabel.centerYAnchor.constraint(equalTo: cardView.centerYAnchor),
+            titleLabel.trailingAnchor.constraint(equalTo: cardView.trailingAnchor, constant: -Constants.trailingPadding),
 
             removeButton.centerXAnchor.constraint(equalTo: cardView.trailingAnchor, constant: -Constants.removeButtonInset),
             removeButton.centerYAnchor.constraint(equalTo: cardView.topAnchor, constant: Constants.removeButtonInset),
@@ -200,22 +219,11 @@ final class AIChatFileAttachmentCardView: NSView {
         addCursorRect(removeButton.frame, cursor: .pointingHand)
     }
 
-    /// Short uppercased label shown on the file pill — derived from the mime type.
+    /// Badge text for the thumbnail. Only PDFs are called out by name; every other accepted type
+    /// gets the generic label (mime subtypes like `vnd.openxmlformats-…` are unreadable at badge
+    /// size, and the filename in the title already carries the extension).
     private static func kindLabel(for mimeType: String) -> String {
-        let lower = mimeType.lowercased()
-        if lower.contains("pdf") {
-            return "PDF"
-        }
-        // Trim "application/" or similar prefixes and uppercase whatever remains. Falls back to
-        // a generic "FILE" label so the pill always reads as something.
-        if let slashIndex = lower.firstIndex(of: "/") {
-            let suffix = lower[lower.index(after: slashIndex)...]
-            let trimmed = suffix.split(separator: "+").first.map(String.init) ?? String(suffix)
-            if !trimmed.isEmpty {
-                return trimmed.uppercased()
-            }
-        }
-        return "FILE"
+        mimeType.lowercased().contains("pdf") ? "PDF" : "FILE"
     }
 
     // MARK: - Appearance
@@ -232,7 +240,7 @@ final class AIChatFileAttachmentCardView: NSView {
             removeButton.layer?.borderColor = removeButtonBackgroundColor.cgColor
             removeButton.contentTintColor = removeButtonIconColor
         }
-        pagePreviewView.refreshAppearance()
+        filePreviewView.refreshAppearance()
     }
 
     override func viewDidChangeEffectiveAppearance() {
@@ -241,34 +249,35 @@ final class AIChatFileAttachmentCardView: NSView {
     }
 }
 
-// MARK: - File preview
+// MARK: - File preview thumbnail
 
-/// Draws the inside of the file card: two short "text" lines at the top and a filled red pill
-/// with the file kind label centred below. Geometry is in flipped (top-left origin) coordinates
-/// so it matches how a designer would describe the layout.
+/// A 36×36 stylised "document" thumbnail matching `AIChatTabAttachmentCardView`'s page preview in
+/// size, corner radius and background: two short "text" lines at the top, and a filled red badge
+/// with the file kind below. Geometry is in flipped (top-left origin) coordinates so it reads the
+/// way a designer would describe it.
 private final class AIChatFilePagePreviewView: NSView {
 
     private enum Layout {
-        // All in flipped-Y coordinates (origin at top-left of the 56×56 card).
-        static let bar1Rect = NSRect(x: 10, y: 10, width: 22, height: 3)
-        static let bar2Rect = NSRect(x: 10, y: 16, width: 14, height: 3)
-        static let pillRect = NSRect(x: 8, y: 24, width: 40, height: 22)
-        static let pillCornerRadius: CGFloat = 5
-        static let barCornerRadius: CGFloat = 1.5
+        static let size: CGFloat = 36
+        static let cornerRadius: CGFloat = 6
+        static let bar1Rect = NSRect(x: 6, y: 7, width: 18, height: 2)
+        static let bar2Rect = NSRect(x: 6, y: 12, width: 12, height: 2)
+        static let badgeRect = NSRect(x: 4, y: 18, width: 28, height: 13)
+        static let badgeCornerRadius: CGFloat = 3.5
+        static let barCornerRadius: CGFloat = 1
     }
 
     var kindLabel: String = "PDF" {
         didSet {
             guard kindLabel != oldValue else { return }
             label.stringValue = kindLabel
-            needsDisplay = true
         }
     }
 
     private let label: NSTextField = {
         let label = NSTextField(labelWithString: "PDF")
         label.translatesAutoresizingMaskIntoConstraints = false
-        label.font = .systemFont(ofSize: 10, weight: .bold)
+        label.font = .systemFont(ofSize: 8, weight: .bold)
         label.textColor = .white
         label.alignment = .center
         return label
@@ -276,15 +285,24 @@ private final class AIChatFilePagePreviewView: NSView {
 
     override var isFlipped: Bool { true }
 
-    override init(frame frameRect: NSRect) {
-        super.init(frame: frameRect)
+    init() {
+        super.init(frame: NSRect(x: 0, y: 0, width: Layout.size, height: Layout.size))
+
+        // The card positions us with Auto Layout (centerY + width/height), so opt out of the
+        // autoresizing-mask constraints AppKit would otherwise synthesise from this frame.
+        translatesAutoresizingMaskIntoConstraints = false
+
+        wantsLayer = true
+        layer?.cornerRadius = Layout.cornerRadius
+        layer?.masksToBounds = true
+
         addSubview(label)
-        // Centre the label inside the pill area; using AppKit constraints keeps the text
-        // pixel-aligned regardless of the parent's frame.
         NSLayoutConstraint.activate([
-            label.centerXAnchor.constraint(equalTo: leadingAnchor, constant: Layout.pillRect.midX),
-            label.centerYAnchor.constraint(equalTo: topAnchor, constant: Layout.pillRect.midY),
+            label.centerXAnchor.constraint(equalTo: leadingAnchor, constant: Layout.badgeRect.midX),
+            label.centerYAnchor.constraint(equalTo: topAnchor, constant: Layout.badgeRect.midY),
         ])
+
+        refreshAppearance()
     }
 
     required init?(coder: NSCoder) {
@@ -295,18 +313,22 @@ private final class AIChatFilePagePreviewView: NSView {
         super.draw(dirtyRect)
 
         NSAppearance.withAppAppearance {
-            let barColor = NSColor(designSystemColor: .lines)
-            barColor.setFill()
+            NSColor(designSystemColor: .lines).setFill()
             NSBezierPath(roundedRect: Layout.bar1Rect, xRadius: Layout.barCornerRadius, yRadius: Layout.barCornerRadius).fill()
             NSBezierPath(roundedRect: Layout.bar2Rect, xRadius: Layout.barCornerRadius, yRadius: Layout.barCornerRadius).fill()
 
-            // Brand-red PDF pill (the duck.ai web app uses the same hue).
+            // Brand-red kind badge (the duck.ai web app uses the same hue).
             NSColor.systemRed.setFill()
-            NSBezierPath(roundedRect: Layout.pillRect, xRadius: Layout.pillCornerRadius, yRadius: Layout.pillCornerRadius).fill()
+            NSBezierPath(roundedRect: Layout.badgeRect, xRadius: Layout.badgeCornerRadius, yRadius: Layout.badgeCornerRadius).fill()
         }
     }
 
     func refreshAppearance() {
+        NSAppearance.withAppAppearance {
+            // Subtler tint than the card surface so the thumbnail reads as a nested page preview
+            // rather than a flat block — same treatment as the tab card's page preview.
+            layer?.backgroundColor = NSColor(designSystemColor: .surfaceTertiary).cgColor
+        }
         needsDisplay = true
     }
 }

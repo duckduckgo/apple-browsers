@@ -62,8 +62,7 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
 
     private struct CommittedAttempt {
         let lease: PromoQueueModalLease
-        let configuration: ModalPromptConfiguration
-        let provider: any ModalPromptProvider
+        let selectedPrompt: SelectedPrompt
     }
 
     /// Weak holder for a presented modal root, since an enum payload cannot itself be `weak`.
@@ -213,8 +212,7 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
 
         let committedAttempt = CommittedAttempt(
             lease: lease,
-            configuration: selectedPrompt.configuration,
-            provider: selectedPrompt.provider
+            selectedPrompt: selectedPrompt
         )
         attemptState = .committed(committedAttempt)
         Logger.modalPrompt.debug("[Modal Prompt Coordination] - Presenting modal from \(type(of: selectedPrompt.provider))")
@@ -287,15 +285,15 @@ private extension ModalPromptCoordinationManager {
 
             self.attemptState = .presentationActive(
                 committedAttempt.lease,
-                exactRoot: PresentedModalRoot(committedAttempt.configuration.viewController)
+                exactRoot: PresentedModalRoot(committedAttempt.selectedPrompt.configuration.viewController)
             )
             self.performPresentation(
-                modalPromptConfiguration: committedAttempt.configuration,
+                modalPromptConfiguration: committedAttempt.selectedPrompt.configuration,
                 from: presenter
             ) { [weak self] in
                 self?.didActuallyPresentModalPromptThisSession = true
                 self?.saveModalPromptLastPresentationDate()
-                committedAttempt.provider.didPresentModal()
+                committedAttempt.selectedPrompt.provider.didPresentModal()
             }
         }
     }

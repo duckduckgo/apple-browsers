@@ -439,6 +439,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         subscribeToClearButtonTap()
         subscribeToAttachmentUsageChanges()
         subscribeToSubscriptionChanges()
+        subscribeToAppLifecycle()
         wideEventReporter.subscribe(
             aiChatStatus: $aiChatStatus.eraseToAnyPublisher(),
             stopGeneratingTapped: viewController.handler.stopGeneratingButtonTappedPublisher
@@ -641,7 +642,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     /// is actively building; they belong to the tab, not to the global last-used
     /// defaults, and must not write through to global preferences.
     private func persistDraftToStore() {
-        guard !isApplyingState, !isPerformingDismissCleanup, let uid = currentTabUID else { return }
+        // Don't persist the prefilled edit content as the tab's draft — edit mode is transient,
+        // and this keeps a stray half-edited draft from surviving a background/kill.
+        guard !isApplyingState, !isPerformingDismissCleanup, !isEditing, let uid = currentTabUID else { return }
         stateStore.update(snapshotCurrentState(), for: uid)
     }
 
@@ -1955,6 +1958,17 @@ private extension UnifiedToggleInputCoordinator {
             .sink { [weak self] _ in
                 guard let self else { return }
                 self.refreshModelsAfterSubscriptionChange()
+            }
+            .store(in: &cancellables)
+    }
+
+    /// Cancels an in-progress edit when the app backgrounds, so we don't return to (or, on a
+    /// subsequent kill, leave behind) a half-open edit. `endEditMode` is a no-op when not editing.
+    func subscribeToAppLifecycle() {
+        NotificationCenter.default.publisher(for: UIApplication.didEnterBackgroundNotification)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.endEditMode()
             }
             .store(in: &cancellables)
     }

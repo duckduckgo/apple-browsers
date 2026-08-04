@@ -474,6 +474,7 @@ public class DDGSync: DDGSyncing {
                 deviceInfoMigrationTask?.cancel()
                 deviceInfoMigrationTask = nil
                 try dependencies.secureStore.removeAccount()
+                clearAccountInfoKeyCache(for: storedAccount)
                 deviceInfoMigrationCoordinator.reset()
                 didRemoveAccount = true
             } catch {
@@ -725,6 +726,7 @@ public class DDGSync: DDGSyncing {
     }
 
     private func removeAccount(reason: SyncError.AccountRemovedReason) throws {
+        let account = try? dependencies.secureStore.account()
         deviceInfoMigrationTask?.cancel()
         deviceInfoMigrationTask = nil
         dependencies.scheduler.isEnabled = false
@@ -741,9 +743,20 @@ public class DDGSync: DDGSyncing {
         syncQueue = nil
         authState = .inactive
         try dependencies.secureStore.removeAccount()
+        clearAccountInfoKeyCache(for: account)
         deviceInfoMigrationCoordinator.reset()
         try dependencies.keyValueStore.set(nil, forKey: Constants.syncEnabledKey)
         dependencies.errorEvents.fire(.accountRemoved(reason))
+    }
+
+    private func clearAccountInfoKeyCache(for account: SyncAccount?) {
+        guard let account else {
+            return
+        }
+        let accountInfoKeys = dependencies.accountInfoKeys
+        Task {
+            await accountInfoKeys.clearCachedKey(for: account)
+        }
     }
 
     private func handleUnauthenticatedAndMap(_ error: Error,

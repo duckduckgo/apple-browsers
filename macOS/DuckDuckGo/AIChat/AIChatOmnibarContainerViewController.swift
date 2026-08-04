@@ -1612,6 +1612,11 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             self?.lastAttachmentError = nil
             self?.updateAttachmentsLayout()
         }
+        // Submit-time validation rejection: surface it where pick-time rejections show up.
+        omnibarController.onAttachmentValidationFailed = { [weak self] message in
+            self?.lastAttachmentError = message
+            self?.updateAttachmentsLayout()
+        }
         // Block submit until in-flight resize tasks finish so the prompt carries the resized
         // image, not the placeholder.
         omnibarController.waitForAttachmentsReady = { [weak self] in

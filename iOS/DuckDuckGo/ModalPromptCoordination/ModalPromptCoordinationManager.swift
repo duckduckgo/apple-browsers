@@ -60,12 +60,8 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
         let provider: any ModalPromptProvider
     }
 
-    private struct CoordinatedAttempt {
-        let lease: PromoQueueModalLease
-    }
-
     private struct CommittedAttempt {
-        let attempt: CoordinatedAttempt
+        let lease: PromoQueueModalLease
         let configuration: ModalPromptConfiguration
         let provider: any ModalPromptProvider
     }
@@ -85,9 +81,9 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
 
     private enum AttemptState {
         case idle
-        case evaluating(CoordinatedAttempt)
+        case evaluating(PromoQueueModalLease)
         case committed(CommittedAttempt)
-        case presentationActive(CoordinatedAttempt, exactRoot: PresentedModalRoot)
+        case presentationActive(PromoQueueModalLease, exactRoot: PresentedModalRoot)
     }
 
     private let providers: [any ModalPromptProvider]
@@ -120,12 +116,12 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
         switch attemptState {
         case .idle:
             return .idle
-        case .evaluating(let attempt):
-            return .evaluating(attempt.lease.attemptIdentity)
+        case .evaluating(let lease):
+            return .evaluating(lease.attemptIdentity)
         case .committed(let committedAttempt):
-            return .committed(committedAttempt.attempt.lease.attemptIdentity)
-        case .presentationActive(let attempt, _):
-            return .presentationActive(attempt.lease.attemptIdentity)
+            return .committed(committedAttempt.lease.attemptIdentity)
+        case .presentationActive(let lease, _):
+            return .presentationActive(lease.attemptIdentity)
         }
     }
 
@@ -167,8 +163,7 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
             return
         }
 
-        let attempt = CoordinatedAttempt(lease: lease)
-        attemptState = .presentationActive(attempt, exactRoot: PresentedModalRoot(lastPresentedExactRoot))
+        attemptState = .presentationActive(lease, exactRoot: PresentedModalRoot(lastPresentedExactRoot))
     }
 
     /// Attempts to present a modal prompt if one is eligible.
@@ -209,8 +204,7 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
             return .released
         }
 
-        let attempt = CoordinatedAttempt(lease: lease)
-        attemptState = .evaluating(attempt)
+        attemptState = .evaluating(lease)
 
         guard let selectedPrompt = selectModalPrompt() else {
             releaseCoordinationAttempt()
@@ -218,7 +212,7 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
         }
 
         let committedAttempt = CommittedAttempt(
-            attempt: attempt,
+            lease: lease,
             configuration: selectedPrompt.configuration,
             provider: selectedPrompt.provider
         )
@@ -234,14 +228,14 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
     /// against the observed root itself rather than the topmost view controller. A root that has already been
     /// deallocated counts as not attached, so a lease can never outlive the modal it was taken for.
     func reconcilePresentedModal() -> Bool {
-        guard case .presentationActive(let attempt, let exactRoot) = attemptState else { return false }
+        guard case .presentationActive(let lease, let exactRoot) = attemptState else { return false }
 
         if let root = exactRoot.viewController, rootAttachmentChecker.isAttached(root) {
             return false
         }
 
         attemptState = .idle
-        attempt.lease.release()
+        lease.release()
         return true
     }
 }
@@ -287,12 +281,12 @@ private extension ModalPromptCoordinationManager {
         scheduler.schedule(after: 0.1) { [weak self] in
             guard let self,
                   case .committed(let currentAttempt) = self.attemptState,
-                  currentAttempt.attempt.lease.attemptIdentity == committedAttempt.attempt.lease.attemptIdentity else {
+                  currentAttempt.lease.attemptIdentity == committedAttempt.lease.attemptIdentity else {
                 return
             }
 
             self.attemptState = .presentationActive(
-                committedAttempt.attempt,
+                committedAttempt.lease,
                 exactRoot: PresentedModalRoot(committedAttempt.configuration.viewController)
             )
             self.performPresentation(
@@ -358,12 +352,12 @@ private extension ModalPromptCoordinationManager {
         switch attemptState {
         case .idle:
             return
-        case .evaluating(let attempt), .presentationActive(let attempt, _):
+        case .evaluating(let lease), .presentationActive(let lease, _):
             attemptState = .idle
-            attempt.lease.release()
+            lease.release()
         case .committed(let committedAttempt):
             attemptState = .idle
-            committedAttempt.attempt.lease.release()
+            committedAttempt.lease.release()
         }
     }
 

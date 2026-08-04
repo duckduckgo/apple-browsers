@@ -80,6 +80,109 @@ class ContextualDialogsManagerTests {
         #expect(subscriptionUpsellExperiment.enrollCallCount == 0)
     }
 
+    // MARK: - Subscription Upsell Step
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Treatment cohort gets the upsell after highFive and onboarding stays ongoing", .timeLimit(.minutes(1)))
+    func testWhenTreatmentThenUpsellFollowsHighFive() {
+        subscriptionUpsellExperiment.cohortStub = .treatment
+        manager.state = .ongoing
+        manager.lastDialog = .highFive
+
+        manager.gotItPressed()
+
+        #expect(manager.lastDialog == .subscriptionUpsell)
+        #expect(manager.state == .ongoing)
+        #expect(stateStorage.contextualDialogsSeen.contains("subscriptionUpsell"))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Control cohort completes onboarding at highFive", .timeLimit(.minutes(1)))
+    func testWhenControlThenHighFiveCompletesOnboarding() {
+        subscriptionUpsellExperiment.cohortStub = .control
+        manager.state = .ongoing
+        manager.lastDialog = .highFive
+
+        manager.gotItPressed()
+
+        #expect(manager.state == .onboardingCompleted)
+        #expect(manager.lastDialog == nil)
+        #expect(!stateStorage.contextualDialogsSeen.contains("subscriptionUpsell"))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Dismissing the upsell completes onboarding", .timeLimit(.minutes(1)))
+    func testWhenUpsellIsDismissedThenOnboardingCompletes() {
+        manager.state = .ongoing
+        manager.lastDialog = .subscriptionUpsell
+
+        manager.gotItPressed()
+
+        #expect(manager.state == .onboardingCompleted)
+        #expect(manager.lastDialog == nil)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Skipping the fire dialog points lastDialog at highFive without marking it seen", .timeLimit(.minutes(1)))
+    func testWhenFireButtonDialogIsSkippedThenHighFiveBecomesLastDialog() {
+        manager.state = .ongoing
+        manager.lastDialog = .tryFireButton
+
+        manager.gotItPressed()
+
+        #expect(manager.lastDialog == .highFive)
+        #expect(!stateStorage.contextualDialogsSeen.contains("highFive"))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A pending upsell is returned for any tab and is not clobbered", .timeLimit(.minutes(1)))
+    func testWhenUpsellIsPendingThenItIsReturnedForAnyTab() async {
+        manager.state = .ongoing
+        manager.lastDialog = .subscriptionUpsell
+        stateStorage.contextualDialogsSeen = combinationDictionary[64]!
+        let otherTab = await Tab(content: .newtab)
+
+        let dialog = manager.dialogTypeForTab(otherTab, privacyInfo: nil)
+
+        #expect(dialog == .subscriptionUpsell)
+        #expect(manager.lastDialog == .subscriptionUpsell)
+        #expect(manager.state == .ongoing)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("The upsell is not shown again once onboarding completed", .timeLimit(.minutes(1)))
+    func testWhenOnboardingCompletedThenUpsellIsNotShownAgain() async {
+        manager.state = .ongoing
+        manager.lastDialog = .subscriptionUpsell
+        manager.gotItPressed()
+        let tab = await Tab(content: .newtab)
+
+        let dialog = manager.dialogTypeForTab(tab, privacyInfo: nil)
+
+        #expect(dialog == nil)
+        #expect(manager.state == .onboardingCompleted)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Treatment arm runs fire skip through highFive and the upsell exactly once", .timeLimit(.minutes(1)))
+    func testTreatmentArmSequenceFromFireSkipToCompletion() {
+        subscriptionUpsellExperiment.cohortStub = .treatment
+        manager.state = .ongoing
+        manager.lastDialog = .tryFireButton
+
+        manager.gotItPressed()
+        #expect(manager.lastDialog == .highFive)
+
+        manager.gotItPressed()
+        #expect(manager.lastDialog == .subscriptionUpsell)
+        #expect(manager.state == .ongoing)
+
+        manager.gotItPressed()
+        #expect(manager.lastDialog == nil)
+        #expect(manager.state == .onboardingCompleted)
+        #expect(subscriptionUpsellExperiment.enrollCallCount == 1)
+    }
+
     @available(iOS 16, macOS 13, *)
     @Test("Default state for contextual onboarding is completed", .timeLimit(.minutes(1)))
     func testDefaultStateIsOnboardingCompleted() {

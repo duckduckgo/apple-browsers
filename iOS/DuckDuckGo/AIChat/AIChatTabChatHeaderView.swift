@@ -32,6 +32,7 @@ protocol AIChatTabChatHeaderViewDelegate: AnyObject {
     func aiChatTabChatHeaderDidTapNewSearch()
     func aiChatTabChatHeaderDidTapNewFireTab()
     func aiChatTabChatHeaderDidTapTabSwitcher()
+    func aiChatTabChatHeaderDidTapCancelEdit()
 }
 
 final class AIChatTabChatHeaderView: UIView {
@@ -67,6 +68,9 @@ final class AIChatTabChatHeaderView: UIView {
         var isVoiceSessionActive: Bool = false
         /// Hides the free/upgrade title during the Duck.ai fire onboarding step.
         var isOnboardingLocked: Bool = false
+        /// Swaps the header to the "Edit Message" state: only the ✕ (which cancels the edit) and
+        /// an "Edit Message" title show; the chat-list, plus-menu, and tab-switcher are hidden.
+        var isEditing: Bool = false
     }
 
     private var state = ViewState() {
@@ -274,6 +278,20 @@ final class AIChatTabChatHeaderView: UIView {
         return label
     }()
 
+    private lazy var editTitleLabel: UILabel = {
+        let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.text = UserText.aiChatHeaderEditMessageTitle
+        label.font = AIChatTabChatHeaderView.makeNavigationTitleFont()
+        label.textColor = UIColor(designSystemColor: .textPrimary)
+        label.textAlignment = .center
+        label.adjustsFontForContentSizeCategory = true
+        label.adjustsFontSizeToFitWidth = true
+        label.minimumScaleFactor = Constants.titleMinimumScaleFactor
+        label.isHidden = true
+        return label
+    }()
+
     private lazy var paidIconView: UIImageView = {
         let imageView = UIImageView(image: DesignSystemImages.Color.Size16.aiChat)
         imageView.translatesAutoresizingMaskIntoConstraints = false
@@ -373,6 +391,12 @@ final class AIChatTabChatHeaderView: UIView {
         state.isVoiceSessionActive = active
     }
 
+    /// Swaps the header into/out of the "Edit Message" state: only the ✕ (which cancels the edit)
+    /// and the "Edit Message" title remain; the chat-list, plus-menu, and tab-switcher are hidden.
+    func setEditMode(_ active: Bool) {
+        state.isEditing = active
+    }
+
     /// Lock/unlock header controls during onboarding (close included — would otherwise let users escape via the NTP).
     /// Dimming is applied to the enclosing pills so the glass background and tab-count label fade uniformly with the icons.
     func setOnboardingLocked(_ locked: Bool) {
@@ -392,17 +416,25 @@ final class AIChatTabChatHeaderView: UIView {
     }
 
     private func applyState() {
-        // During fire onboarding, hide the free/upgrade title to avoid distraction.
-        titleContainer.isHidden = state.isOnboardingLocked || state.isSubscriptionActive != false
-        paidTitleStack.isHidden = state.isSubscriptionActive != true
+        let editing = state.isEditing
         let voiceActive = state.isVoiceSessionActive
-        titleHolder.isHidden = voiceActive
+
+        // Edit mode shows the "Edit Message" title; otherwise the free/paid title (unless voice
+        // or onboarding hide it). During fire onboarding, hide the free/upgrade title.
+        editTitleLabel.isHidden = !editing
+        titleContainer.isHidden = editing || state.isOnboardingLocked || state.isSubscriptionActive != false
+        paidTitleStack.isHidden = editing || state.isSubscriptionActive != true
+        titleHolder.isHidden = voiceActive && !editing
+
         // Hide each pill (and its button inside it) together so the surrounding glass pill
-        // background also disappears during voice sessions. Voice mode owns its own dismiss UI.
-        chatListButtonPill.isHidden = voiceActive
-        chatListButton.isHidden = voiceActive
+        // background also disappears. Voice mode owns its own dismiss UI; edit mode keeps the
+        // close button (it cancels the edit) but hides the chat-list, plus-menu, and tab-switcher.
+        chatListButtonPill.isHidden = voiceActive || editing
+        chatListButton.isHidden = voiceActive || editing
         closeButtonPill.isHidden = voiceActive
         closeButton.isHidden = voiceActive
+        rightPairPill.isHidden = editing
+
         titleSpacingConstraints.forEach { $0.isActive = !titleHolder.isHidden }
     }
 
@@ -420,6 +452,7 @@ final class AIChatTabChatHeaderView: UIView {
         addSubview(titleHolder)
         titleHolder.addSubview(paidTitleStack)
         titleHolder.addSubview(titleContainer)
+        titleHolder.addSubview(editTitleLabel)
         addSubview(bottomSeparator)
 
         leftStack.addArrangedSubview(closeButtonPill)
@@ -490,6 +523,11 @@ final class AIChatTabChatHeaderView: UIView {
             paidTitleStack.centerYAnchor.constraint(equalTo: titleHolder.centerYAnchor),
             paidTitleStack.leadingAnchor.constraint(greaterThanOrEqualTo: titleHolder.leadingAnchor),
             paidTitleStack.trailingAnchor.constraint(lessThanOrEqualTo: titleHolder.trailingAnchor),
+
+            editTitleLabel.centerXAnchor.constraint(equalTo: titleHolder.centerXAnchor),
+            editTitleLabel.centerYAnchor.constraint(equalTo: titleHolder.centerYAnchor),
+            editTitleLabel.leadingAnchor.constraint(greaterThanOrEqualTo: titleHolder.leadingAnchor),
+            editTitleLabel.trailingAnchor.constraint(lessThanOrEqualTo: titleHolder.trailingAnchor),
 
             paidIconView.widthAnchor.constraint(equalToConstant: Constants.paidIconSize),
             paidIconView.heightAnchor.constraint(equalToConstant: Constants.paidIconSize),
@@ -652,7 +690,14 @@ final class AIChatTabChatHeaderView: UIView {
         view.clipsToBounds = false
     }
 
-    @objc private func closeTapped() { delegate?.aiChatTabChatHeaderDidTapClose() }
+    @objc private func closeTapped() {
+        // In edit mode the ✕ cancels the edit rather than closing the tab.
+        if state.isEditing {
+            delegate?.aiChatTabChatHeaderDidTapCancelEdit()
+        } else {
+            delegate?.aiChatTabChatHeaderDidTapClose()
+        }
+    }
     @objc private func chatListTapped() { delegate?.aiChatTabChatHeaderDidTapChatList() }
     @objc private func newChatTapped() { delegate?.aiChatTabChatHeaderDidTapNewChat() }
     @objc private func tabSwitcherTapped() { delegate?.aiChatTabChatHeaderDidTapTabSwitcher() }

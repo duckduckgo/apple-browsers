@@ -467,6 +467,7 @@ private extension MainViewController {
             .removeDuplicates()
             .sink { [weak self] isEditing in
                 self?.setDuckAITranscriptDimmedForEditing(isEditing)
+                self?.aiChatTabChatHeaderView?.setEditMode(isEditing)
             }
             .store(in: &unifiedToggleInputCancellables)
 
@@ -1446,6 +1447,10 @@ extension MainViewController: AIChatTabChatHeaderViewDelegate {
     func aiChatTabChatHeaderDidTapTabSwitcher() {
         // Via `requestTabSwitcher()` not `showTabSwitcher()` — fires the same pixels as every other entry point.
         requestTabSwitcher()
+    }
+
+    func aiChatTabChatHeaderDidTapCancelEdit() {
+        unifiedToggleInputCoordinator?.endEditMode()
     }
 }
 

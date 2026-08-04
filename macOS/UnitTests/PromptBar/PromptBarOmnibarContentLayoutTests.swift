@@ -113,7 +113,39 @@ final class PromptBarOmnibarContentLayoutTests: XCTestCase {
         }
     }
 
+    func testWhenTheDuckAILogoIsLaidOutThenItCentresOnTheToolRowsLeadingButton() {
+        let view = content.view
+        _ = layOutAndMeasureGap(prompt: "what is a duck")
+
+        guard let logo = duckAILogo(in: view) else {
+            return XCTFail("No Duck.ai logo in the hierarchy")
+        }
+        guard let leadingButton = leadingControlsRowButton(in: view) else {
+            return XCTFail("No controls row in the hierarchy")
+        }
+
+        let logoCentre = view.convert(NSPoint(x: logo.bounds.midX, y: 0), from: logo).x
+        let buttonLeading = view.convert(NSPoint(x: leadingButton.bounds.minX, y: 0), from: leadingButton).x
+
+        // Half the button's 28pt box: the labelled buttons are wider, so height is the square measure.
+        XCTAssertEqual(logoCentre - buttonLeading, leadingButton.bounds.height / 2, accuracy: 0.5,
+                       "The Duck.ai logo no longer lines up with the attachment button below it")
+    }
+
     // MARK: - Measurement
+
+    private func duckAILogo(in host: NSView) -> NSImageView? {
+        descendants(of: host)
+            .compactMap { $0 as? NSImageView }
+            .first { $0.accessibilityIdentifier() == "AIChatOmnibarTextContainerViewController.duckAILogoView" }
+    }
+
+    private func leadingControlsRowButton(in host: NSView) -> NSView? {
+        controlsRowButtons(in: host).min { lhs, rhs in
+            host.convert(NSPoint(x: lhs.bounds.minX, y: 0), from: lhs).x
+                < host.convert(NSPoint(x: rhs.bounds.minX, y: 0), from: rhs).x
+        }
+    }
 
     /// Distance between the bottom of the laid-out text and the top of the controls row.
     private func layOutAndMeasureGap(prompt: String) -> CGFloat {

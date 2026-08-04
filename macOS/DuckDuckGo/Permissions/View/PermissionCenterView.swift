@@ -56,6 +56,11 @@ struct PermissionCenterView: View {
         return PopoverWidth.base
     }
 
+    /// Whether anything follows the permission rows container, which gets a tighter bottom padding when so
+    private var displaysContentBelowPermissions: Bool {
+        viewModel.showAutoplayDisclaimer || viewModel.showReloadBanner
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             // Header - only show if there are permission items
@@ -137,7 +142,14 @@ struct PermissionCenterView: View {
                         .stroke(Color(designSystemColor: .lines), lineWidth: 1)
                 )
                 .padding(.horizontal, 16)
-                .padding(.bottom, viewModel.showReloadBanner ? 12 : 16)
+                .padding(.bottom, displaysContentBelowPermissions ? 12 : 16)
+            }
+
+            // Autoplay disclaimer
+            if viewModel.showAutoplayDisclaimer {
+                AutoplayDiscoverabilityView(onClickSettings: viewModel.openAutoplaySettings)
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, viewModel.showReloadBanner ? 12 : 16)
             }
 
             // Reload banner

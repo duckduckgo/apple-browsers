@@ -7,6 +7,12 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		CD41A0010000000000100005 /* AutoplayDiscoverabilityPromoDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD41A0010000000000100004 /* AutoplayDiscoverabilityPromoDelegate.swift */; };
+		CD41A0010000000000100006 /* AutoplayDiscoverabilityPromoDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD41A0010000000000100004 /* AutoplayDiscoverabilityPromoDelegate.swift */; };
+		CD41A0010000000000100008 /* PromoServiceFactory+AutoplayDiscoverability.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD41A0010000000000100007 /* PromoServiceFactory+AutoplayDiscoverability.swift */; };
+		CD41A0010000000000100009 /* PromoServiceFactory+AutoplayDiscoverability.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD41A0010000000000100007 /* PromoServiceFactory+AutoplayDiscoverability.swift */; };
+		CD41A001000000000010000B /* AutoplayDiscoverabilityPromoDelegateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD41A001000000000010000A /* AutoplayDiscoverabilityPromoDelegateTests.swift */; };
+		CD41A001000000000010000C /* AutoplayDiscoverabilityPromoDelegateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD41A001000000000010000A /* AutoplayDiscoverabilityPromoDelegateTests.swift */; };
 		00D8FF2311AEAC102CCB6061 /* BookmarksBarMenuWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E98C31C7349D34C0C8A569A /* BookmarksBarMenuWindow.swift */; };
 		021EA0802BD2A9D500772C9A /* TabsPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 021EA07F2BD2A9D500772C9A /* TabsPreferences.swift */; };
 		021EA0812BD2A9D500772C9A /* TabsPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 021EA07F2BD2A9D500772C9A /* TabsPreferences.swift */; };
@@ -4953,6 +4959,9 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		CD41A0010000000000100004 /* AutoplayDiscoverabilityPromoDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoplayDiscoverabilityPromoDelegate.swift; sourceTree = "<group>"; };
+		CD41A0010000000000100007 /* PromoServiceFactory+AutoplayDiscoverability.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PromoServiceFactory+AutoplayDiscoverability.swift"; sourceTree = "<group>"; };
+		CD41A001000000000010000A /* AutoplayDiscoverabilityPromoDelegateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoplayDiscoverabilityPromoDelegateTests.swift; sourceTree = "<group>"; };
 		021EA07F2BD2A9D500772C9A /* TabsPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabsPreferences.swift; sourceTree = "<group>"; };
 		021EA0822BD6DF1B00772C9A /* TabsPreferencesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabsPreferencesTests.swift; sourceTree = "<group>"; };
 		0230C0A2272080090018F728 /* KeyedCodingExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyedCodingExtension.swift; sourceTree = "<group>"; };
@@ -12266,9 +12275,18 @@
 			path = TabExtensions;
 			sourceTree = "<group>";
 		};
+		CD41A0010001000000000001 /* Promo */ = {
+			isa = PBXGroup;
+			children = (
+				CD41A0010000000000100004 /* AutoplayDiscoverabilityPromoDelegate.swift */,
+			);
+			path = Promo;
+			sourceTree = "<group>";
+		};
 		B64C84DB2692D6E80048FEBE /* Permissions */ = {
 			isa = PBXGroup;
 			children = (
+				CD41A0010001000000000001 /* Promo */,
 				B64C84EF269310000048FEBE /* Model */,
 				1D532BE42EDC3E6D00D219FA /* ViewModel */,
 				B64C84DC2692D6FC0048FEBE /* View */,
@@ -13085,6 +13103,7 @@
 		CC199E8F2F4E182C00964700 /* Promotions */ = {
 			isa = PBXGroup;
 			children = (
+				CD41A001000000000010000A /* AutoplayDiscoverabilityPromoDelegateTests.swift */,
 				CCB2EBDE2F62001600C65813 /* Mocks */,
 				CCB2EBCC2F62000C00C65813 /* PromoHistoryStoreTests.swift */,
 				CCB2EBCD2F62000C00C65813 /* PromoRegistryTests.swift */,
@@ -13100,6 +13119,7 @@
 		CC199E9F2F4E182C0096471A /* Promos */ = {
 			isa = PBXGroup;
 			children = (
+				CD41A0010000000000100007 /* PromoServiceFactory+AutoplayDiscoverability.swift */,
 				3646AC3F2F88EC880093AEA7 /* PromoServiceFactory+SubscriptionPromo.swift */,
 				BB046FF62F6D873B007F7107 /* PromoServiceFactory+FreemiumDBP.swift */,
 				CC199E9B2F4E182C00964716 /* PromoDependencies.swift */,
@@ -15957,6 +15977,8 @@
 				CCE3F8342F5A24760046F5E4 /* PromoServiceFactory+NextSteps.swift in Sources */,
 				CCE3F83B2F5A24760046F5E6 /* PromoServiceFactory+DefaultBrowserAndDock.swift in Sources */,
 				0DE0006FAC7029CB1E004100 /* PromoServiceFactory+CookiePopupProtectionOptIn.swift in Sources */,
+				CD41A0010000000000100009 /* PromoServiceFactory+AutoplayDiscoverability.swift in Sources */,
+				CD41A0010000000000100006 /* AutoplayDiscoverabilityPromoDelegate.swift in Sources */,
 				3706FB96293F65D500E42796 /* RecentlyClosedWindow.swift in Sources */,
 				1D532BCA2EDA1DF800D219FA /* SystemPermissionManager.swift in Sources */,
 				B690152D2ACBF4DA00AD0BAB /* MenuPreview.swift in Sources */,
@@ -16745,6 +16767,7 @@
 				A7B001132F6B000100000001 /* DefaultBrowserAndDockPromptInactiveUserViewTests.swift in Sources */,
 				A7B001162F6B000100000001 /* InfoViewTests.swift in Sources */,
 				CCB2EBD12F62000C00C65813 /* PromoRegistryTests.swift in Sources */,
+				CD41A001000000000010000B /* AutoplayDiscoverabilityPromoDelegateTests.swift in Sources */,
 				CCB2EBD22F62000C00C65813 /* PromoServiceTests.swift in Sources */,
 				CCB2EBD32F62000C00C65813 /* PromoServiceFactoryTests.swift in Sources */,
 				CCB2EBD42F62000C00C65813 /* PromoTestHelpers.swift in Sources */,
@@ -18737,6 +18760,8 @@
 				CCE3F8352F5A24760046F5E4 /* PromoServiceFactory+NextSteps.swift in Sources */,
 				CCE3F83C2F5A24760046F5E7 /* PromoServiceFactory+DefaultBrowserAndDock.swift in Sources */,
 				0DE0005FAC7029CB1E004100 /* PromoServiceFactory+CookiePopupProtectionOptIn.swift in Sources */,
+				CD41A0010000000000100008 /* PromoServiceFactory+AutoplayDiscoverability.swift in Sources */,
+				CD41A0010000000000100005 /* AutoplayDiscoverabilityPromoDelegate.swift in Sources */,
 				7B99CF312EEAC1A5003FA486 /* UserNotificationAuthorizationService.swift in Sources */,
 				AAE99B8927088A19008B6BD9 /* FirePopover.swift in Sources */,
 				8443DC6E2CF0C777000B8829 /* Tab+OnboardingNavigationDelegate.swift in Sources */,
@@ -19112,6 +19137,7 @@
 				567DA94529E95C3F008AC5EE /* YoutubeOverlayUserScriptTests.swift in Sources */,
 				8434D9582F23713000B4796F /* WarnBeforeQuitManagerTests.swift in Sources */,
 				CCB2EBD62F62000C00C65813 /* PromoRegistryTests.swift in Sources */,
+				CD41A001000000000010000C /* AutoplayDiscoverabilityPromoDelegateTests.swift in Sources */,
 				CCB2EBD72F62000C00C65813 /* PromoServiceTests.swift in Sources */,
 				CCB2EBD82F62000C00C65813 /* PromoServiceFactoryTests.swift in Sources */,
 				CCB2EBD92F62000C00C65813 /* PromoTestHelpers.swift in Sources */,

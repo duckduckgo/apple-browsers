@@ -319,7 +319,7 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// NA experiment: search token to speed up SERP by combining Index/Deep responses.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216365830146824
-    case searchTokenExperiment
+    case searchTokenExperimentV2
 
     /// NA Experiment: tailor the onboarding flow based on the user's download reason.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216491579842691?focus=true
@@ -330,6 +330,9 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216629730083154?focus=true
     case systemFindInPage
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217015452646368?focus=true
+    case iPadTabsBarInWindowControlsRow
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {
@@ -540,17 +543,11 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables deleting recent AI chats from the New Tab Page omnibar
     case ntpSuggestionsDeletion
 
-    /// Enables page context feature on iPad
-    case iPadPageContext
-
     /// Enables voice chat shortcut in the focused address bar
     case voiceShortcut
 
     /// Enables removing individual AI chat suggestions
     case removeSuggestion
-
-    /// Enables the fire button in the contextual AI chat sheet
-    case contextualFireButton
 
     /// Enables the Duck.ai top-level main menu shortcut (macOS only)
     case mainMenuShortcut
@@ -631,6 +628,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// macOS only. System-wide Duck.ai entry point: global keyboard shortcut and menu bar icon.
     case macosPromptBar
+
+    /// Supports Duck.ai edit prompt from the native input field.
+    case nativePromptEditing
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {

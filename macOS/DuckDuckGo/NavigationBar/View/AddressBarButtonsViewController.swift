@@ -58,7 +58,7 @@ protocol AddressBarButtonsViewControllerDelegate: AnyObject {
     func addressBarButtonsViewControllerHideAIChatButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController)
     func addressBarButtonsViewControllerHideAskAIChatButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController)
     func addressBarButtonsViewControllerHideSearchModeToggleClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController)
-    func addressBarButtonsViewControllerOpenAIChatSettingsButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController)
+    func addressBarButtonsViewController(_ addressBarButtonsViewController: AddressBarButtonsViewController, openSettingsPane pane: PreferencePaneIdentifier)
     func addressBarButtonsViewControllerAIChatButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController)
     func addressBarButtonsViewControllerSearchModeToggleChanged(_ addressBarButtonsViewController: AddressBarButtonsViewController, isAIChatMode: Bool)
 }
@@ -1625,7 +1625,7 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     @objc func openAIChatSettingsContextMenuAction(_ sender: NSMenuItem) {
-        delegate?.addressBarButtonsViewControllerOpenAIChatSettingsButtonClicked(self)
+        delegate?.addressBarButtonsViewController(self, openSettingsPane: .aiChat)
     }
 
     private func updateAIChatDividerVisibility() {
@@ -2098,6 +2098,10 @@ final class AddressBarButtonsViewController: NSViewController {
             setPermissionsNeedReload: { [weak tabViewModel] in
                 tabViewModel?.tab.permissions.setPermissionsNeedReload()
             },
+            openSettingsPane: { [weak self] pane in
+                guard let self else { return }
+                delegate?.addressBarButtonsViewController(self, openSettingsPane: pane)
+            },
             hasTemporaryPopupAllowance: tabViewModel.tab.popupHandling?.popupsTemporarilyAllowedForCurrentPage ?? false,
             pageInitiatedPopupOpened: tabViewModel.tab.popupHandling?.pageInitiatedPopupOpened ?? false,
             displaysAutoplayPolicy: tabViewModel.tab.mustDisplayAutoplayPolicy,
@@ -2367,19 +2371,19 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     private func applyThemeToToggleControl(_ toggleControl: CustomToggleControl) {
-        let isAppRebranded = themeManager.isAppRebranded
-        let backgroundColor = isAppRebranded ? NSColor(singleUseColor: .aiToggleBackground) : NSColor(designSystemColor: .controlsRaisedBackdrop)
-        let borderColor = isAppRebranded ? NSColor(singleUseColor: .aiToggleBorder) : nil
-        let selectionBorder = isAppRebranded ? NSColor(singleUseColor: .aiToggleSelectionBorder) : NSColor(designSystemColor: .shadowSecondary)
-        let selectionBackgroundColor = isAppRebranded ? NSColor(singleUseColor: .aiToggleSelectionBackground) : NSColor(designSystemColor: .controlsRaisedFillPrimary)
+        let colorsProvider = themeManager.theme.colorsProvider
+        let isBurner = tabCollectionViewModel.isBurner
+        let backgroundColor = colorsProvider.unifiedInputToggleBackground(isBurner: isBurner)
+        let selectionBorder = colorsProvider.unifiedInputToggleSelectionBorder(isBurner: isBurner)
+        let selectionBackgroundColor = colorsProvider.unifiedInputToggleSelectionBackground(isBurner: isBurner)
 
         toggleControl.backgroundColor = backgroundColor
-        toggleControl.borderColor = borderColor
+        toggleControl.borderColor = nil
         toggleControl.focusedBackgroundColor = backgroundColor
         toggleControl.selectionColor = selectionBackgroundColor
         toggleControl.selectionInnerBorderColor = selectionBorder
 
-        if tabCollectionViewModel.isBurner {
+        if isBurner {
             toggleControl.focusBorderColor = NSColor.burnerAccent.withAlphaComponent(0.8)
             toggleControl.outerBorderColor = NSColor.burnerAccent.withAlphaComponent(0.2)
         } else {

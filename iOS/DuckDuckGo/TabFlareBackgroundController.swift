@@ -44,6 +44,14 @@ final class TabFlareBackgroundController {
     // Tab lifted for a context-menu preview, or nil.
     private var previewedTabIndex: Int?
 
+    /// Additional fade applied before strip clipping.
+    var hideAlpha: CGFloat = 1 {
+        didSet {
+            guard hideAlpha != oldValue else { return }
+            applyAlpha()
+        }
+    }
+
     private var isReordering = false
     private var reorderTrackingDisplayLink: CADisplayLink?
 
@@ -79,7 +87,7 @@ final class TabFlareBackgroundController {
         view.frame = attributes.frame.insetBy(dx: -rampWidth, dy: 0)
         view.fillColor = fillColor()
         view.isHidden = false
-        view.alpha = (previewedTabIndex == index) ? 0 : 1
+        applyAlpha()
         collectionView.sendSubviewToBack(view)
     }
 
@@ -94,14 +102,14 @@ final class TabFlareBackgroundController {
     func endPreview() {
         guard previewedTabIndex != nil else { return }
         previewedTabIndex = nil
-        view.alpha = 1
+        applyAlpha()
     }
 
     func beginReorder() {
         // A long-press preview can convert into a drag without firing its dismiss callback.
         previewedTabIndex = nil
         isReordering = true
-        view.alpha = 1
+        applyAlpha()
         startReorderTracking()
     }
 
@@ -109,6 +117,15 @@ final class TabFlareBackgroundController {
         stopReorderTracking()
         isReordering = false
         update()
+    }
+
+    // Preview hiding takes precedence over scroll hiding.
+    private func applyAlpha() {
+        guard let previewedTabIndex, previewedTabIndex == currentIndex() else {
+            view.alpha = hideAlpha
+            return
+        }
+        view.alpha = 0
     }
 
     private func startReorderTracking() {

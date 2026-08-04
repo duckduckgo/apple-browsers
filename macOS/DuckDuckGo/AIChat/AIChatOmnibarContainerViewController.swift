@@ -2024,7 +2024,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
         // Painted transparent rather than skipped: `applyTheme` re-runs on appearance changes and
         // would otherwise restore what `setupUI` set.
-        backgroundView.backgroundColor = hostDrawsChrome ? .clear : colorsProvider.activeAddressBarBackgroundColor
+        backgroundView.backgroundColor = hostDrawsChrome ? .clear : colorsProvider.activeAddressBarBackgroundColor(isBurner: burnerMode.isBurner)
         backgroundView.cornerRadius = barStyleProvider.addressBarActiveBackgroundViewRadiusWithSuggestions
 
         if isAppRebranding {

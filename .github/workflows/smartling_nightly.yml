@@ -1,0 +1,121 @@
+name: Smartling - Nightly Jobs
+
+on:
+  schedule:
+    - cron: '17 3 * * *'
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: "Platform"
+        type: choice
+        default: both
+        options:
+          - both
+          - iOS
+          - macOS
+      perform_writes:
+        description: "Create and authorize Smartling jobs"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: smartling-nightly
+  cancel-in-progress: false
+
+jobs:
+  smartling:
+    name: ${{ matrix.platform }} nightly translation job
+    runs-on: macos-26
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: ${{ fromJSON((github.event_name == 'schedule' || inputs.platform == 'both') && '["iOS","macOS"]' || format('["{0}"]', inputs.platform)) }}
+
+    steps:
+      - name: Register SSH keys for private repos
+        uses: webfactory/ssh-agent@v0.10.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_DUCKSANS_FONT }}
+
+      - name: Check out the code
+        uses: actions/checkout@v6
+        with:
+          submodules: recursive
+
+      - name: Select Xcode
+        uses: ./.github/actions/select-xcode-version
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Install Python dependencies
+        run: pip install aiohttp
+
+      - name: Install xmlstarlet
+        if: matrix.platform == 'macOS'
+        run: brew install xmlstarlet
+
+      - name: Export localizations
+        id: export
+        run: |
+          set -e -o pipefail
+          ./${{ matrix.platform }}/scripts/loc_export.sh | xcbeautify
+
+      - name: Manual dry run
+        if: github.event_name == 'workflow_dispatch' && !inputs.perform_writes
+        run: echo "Export completed. Smartling writes were disabled."
+
+      - name: Create and evaluate Smartling job
+        id: nightly
+        if: github.event_name == 'schedule' || inputs.perform_writes
+        env:
+          SMARTLING_USER_ID: ${{ matrix.platform == 'iOS' && secrets.IOS_SMARTLING_USER_ID || secrets.MACOS_SMARTLING_USER_ID }}
+          SMARTLING_USER_SECRET: ${{ matrix.platform == 'iOS' && secrets.IOS_SMARTLING_USER_SECRET || secrets.MACOS_SMARTLING_USER_SECRET }}
+          SMARTLING_PROJECT_ID: ${{ matrix.platform == 'iOS' && vars.IOS_SMARTLING_PROJECT_ID || vars.MACOS_SMARTLING_PROJECT_ID }}
+        run: ./scripts/smartling/smartling_nightly.sh "${{ matrix.platform }}" "500.00"
+
+      - name: Create iOS estimate review task
+        if: >-
+          always() && (github.event_name == 'schedule' || inputs.perform_writes) &&
+          matrix.platform == 'iOS' && (failure() || steps.nightly.outputs.outcome == 'review_required')
+        uses: duckduckgo/native-github-asana-sync@v2.5.1
+        with:
+          action: create-asana-task
+          asana-pat: ${{ secrets.ASANA_ACCESS_TOKEN }}
+          asana-project: ${{ vars.GH_ASANA_IOS_APP_PROJECT_ID }}
+          asana-task-name: Smartling nightly job needs review - iOS - ${{ steps.nightly.outputs.job_id || github.sha }}
+          asana-task-description: >-
+            The iOS nightly Smartling job could not be automatically authorized.
+            Job: https://dashboard.smartling.com/app/projects/${{ vars.IOS_SMARTLING_PROJECT_ID }}/account-jobs/${{ vars.IOS_SMARTLING_PROJECT_ID }}:${{ steps.nightly.outputs.job_id }}
+            Maximum USD estimate: ${{ steps.nightly.outputs.max_usd || 'unavailable' }}.
+            Untranslated strings: ${{ steps.nightly.outputs.total_strings }}.
+            Reason: ${{ steps.nightly.outputs.reason || 'Localization export or nightly orchestration failed' }}.
+            Threshold: $500.00.
+            Commit: ${{ github.sha }}.
+            Workflow: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+      - name: Create macOS estimate review task
+        if: >-
+          always() && (github.event_name == 'schedule' || inputs.perform_writes) &&
+          matrix.platform == 'macOS' && (failure() || steps.nightly.outputs.outcome == 'review_required')
+        uses: duckduckgo/native-github-asana-sync@v2.5.1
+        with:
+          action: create-asana-task
+          asana-pat: ${{ secrets.ASANA_ACCESS_TOKEN }}
+          asana-project: ${{ vars.MACOS_APP_DEVELOPMENT_ASANA_PROJECT_ID }}
+          asana-task-name: Smartling nightly job needs review - macOS - ${{ steps.nightly.outputs.job_id || github.sha }}
+          asana-task-description: >-
+            The macOS nightly Smartling job could not be automatically authorized.
+            Job: https://dashboard.smartling.com/app/projects/${{ vars.MACOS_SMARTLING_PROJECT_ID }}/account-jobs/${{ vars.MACOS_SMARTLING_PROJECT_ID }}:${{ steps.nightly.outputs.job_id }}
+            Maximum USD estimate: ${{ steps.nightly.outputs.max_usd || 'unavailable' }}.
+            Untranslated strings: ${{ steps.nightly.outputs.total_strings }}.
+            Reason: ${{ steps.nightly.outputs.reason || 'Localization export or nightly orchestration failed' }}.
+            Threshold: $500.00.
+            Commit: ${{ github.sha }}.
+            Workflow: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}

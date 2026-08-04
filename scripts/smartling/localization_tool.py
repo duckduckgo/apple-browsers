@@ -14,6 +14,7 @@ import argparse
 import subprocess
 from pathlib import Path
 from datetime import datetime, timedelta
+from decimal import Decimal, InvalidOperation
 from typing import List, Dict
 from dataclasses import dataclass
 from urllib.parse import urlencode
@@ -31,6 +32,25 @@ class Credentials:
     user_id: str
     user_secret: str
     project_id: str
+
+
+@dataclass
+class NightlyResult:
+    """Machine-readable result for nightly automation."""
+    outcome: str
+    job_id: str = ""
+    total_strings: int = 0
+    max_usd: str = ""
+    reason: str = ""
+
+    def as_dict(self) -> Dict:
+        return {
+            'outcome': self.outcome,
+            'job_id': self.job_id,
+            'total_strings': self.total_strings,
+            'max_usd': self.max_usd,
+            'reason': self.reason,
+        }
 
 
 # ============================================================================
@@ -106,6 +126,17 @@ class SmartlingClient:
         )
         return data['response']['data']
 
+    async def list_jobs(self, job_name: str, statuses: List[str]) -> List[Dict]:
+        """List jobs matching a name and statuses."""
+        params = [('jobName', job_name), ('limit', '100')]
+        params.extend(('translationJobStatus', status) for status in statuses)
+        data = await self._request(
+            'GET',
+            f'/jobs-api/v3/projects/{self.creds.project_id}/jobs',
+            params=params
+        )
+        return data['response']['data'].get('items', [])
+
     async def get_job_progress(self, job_id: str) -> int:
         """Get job progress percentage."""
         data = await self._request(
@@ -119,6 +150,13 @@ class SmartlingClient:
             'POST',
             f'/jobs-api/v3/projects/{self.creds.project_id}/jobs/{job_id}/authorize',
             json={'localeWorkflows': []}
+        )
+
+    async def delete_job(self, job_id: str):
+        """Delete an empty translation job."""
+        await self._request(
+            'DELETE',
+            f'/jobs-api/v3/projects/{self.creds.project_id}/jobs/{job_id}'
         )
 
     async def get_project_locales(self) -> List[str]:
@@ -161,6 +199,40 @@ class SmartlingClient:
         )
         return data['response']['data']['status']
 
+    async def generate_cost_estimate(self, job_id: str) -> str:
+        """Start an estimate for unauthorized job content."""
+        data = await self._request(
+            'POST',
+            f'/estimates-api/v2/projects/{self.creds.project_id}/jobs/{job_id}/reports/cost',
+            json={'contentType': 'UNAUTHORIZED'}
+        )
+        return data['response']['data']['reportUid']
+
+    async def get_estimate_status(self, report_id: str) -> str:
+        """Get estimate generation status."""
+        data = await self._request(
+            'GET',
+            f'/estimates-api/v2/projects/{self.creds.project_id}/reports/{report_id}/status'
+        )
+        return data['response']['data']['reportStatus']
+
+    async def get_estimate_report(self, report_id: str) -> Dict:
+        """Get a completed estimate report."""
+        data = await self._request(
+            'GET',
+            f'/estimates-api/v2/projects/{self.creds.project_id}/reports/{report_id}'
+        )
+        report_data = data['response']['data']
+        if 'items' in report_data:
+            matching_reports = [
+                report for report in report_data['items']
+                if report.get('reportUid') == report_id
+            ]
+            if not matching_reports:
+                raise RuntimeError("Completed estimate report was not returned")
+            return matching_reports[0]
+        return report_data
+
     async def get_job_files(self, job_id: str) -> List[str]:
         """Get file URIs in job."""
         data = await self._request(
@@ -190,6 +262,125 @@ class SmartlingClient:
 # ============================================================================
 # CLI Commands
 # ============================================================================
+
+async def wait_for_batch(client: SmartlingClient, batch_id: str, sleep=asyncio.sleep):
+    """Wait for Smartling to finish ingesting a batch."""
+    for _ in range(60):
+        status = await client.get_batch_status(batch_id)
+        if status == 'COMPLETED':
+            return
+        if status == 'FAILED':
+            raise RuntimeError("Smartling batch processing failed")
+        await sleep(5)
+    raise RuntimeError("Smartling batch processing timed out")
+
+
+async def wait_for_estimate(client: SmartlingClient, report_id: str, sleep=asyncio.sleep) -> Dict:
+    """Wait for a Smartling cost estimate."""
+    for _ in range(60):
+        status = await client.get_estimate_status(report_id)
+        if status == 'COMPLETED':
+            return await client.get_estimate_report(report_id)
+        if status in {'FAILED', 'TIMEOUT', 'NOT_FOUND'}:
+            raise RuntimeError(f"Smartling estimate ended with status {status}")
+        await sleep(5)
+    raise RuntimeError("Smartling cost estimate timed out")
+
+
+def parse_estimate(report: Dict) -> tuple[int, Decimal]:
+    """Return untranslated string count and the maximum USD estimate."""
+    errors = report.get('errors') or []
+    if errors:
+        raise RuntimeError("Smartling estimate contains errors")
+
+    total_strings = int(report.get('totalStrings') or 0)
+    if total_strings == 0:
+        return 0, Decimal('0')
+
+    usd_prices = []
+    for price in report.get('priceInformation') or []:
+        if price.get('currencyCode') != 'USD' or price.get('priceMax') is None:
+            continue
+        try:
+            usd_prices.append(Decimal(str(price['priceMax'])))
+        except InvalidOperation as error:
+            raise RuntimeError("Smartling returned an invalid USD estimate") from error
+
+    if not usd_prices:
+        raise RuntimeError("Smartling estimate has no maximum USD price")
+
+    return total_strings, max(usd_prices)
+
+
+async def run_nightly(client: SmartlingClient,
+                      files: List[Path],
+                      job_name: str,
+                      job_prefix: str,
+                      threshold: Decimal,
+                      sleep=asyncio.sleep) -> NightlyResult:
+    """Run nightly Smartling policy with an authenticated client."""
+    job_id = ""
+    try:
+        pending_jobs = await client.list_jobs(
+            job_prefix,
+            ['AWAITING_AUTHORIZATION']
+        )
+        pending_job = next(
+            (
+                job for job in pending_jobs
+                if job.get('jobName', '').startswith(job_prefix)
+            ),
+            None
+        )
+        if pending_job:
+            job_id = pending_job.get('translationJobUid') or pending_job.get('jobUid', '')
+            return NightlyResult(
+                outcome='skipped_active_job',
+                job_id=job_id,
+                reason='A nightly job is already awaiting authorization'
+            )
+
+        locales = await client.get_project_locales()
+        job_id = await client.create_job(
+            job_name,
+            locales,
+            "Created by nightly localization automation"
+        )
+        file_uris = [f"main/{file_path.name}" for file_path in files]
+        batch_id = await client.create_batch(job_id, file_uris)
+        for file_path, file_uri in zip(files, file_uris):
+            await client.upload_to_batch(batch_id, file_path, file_uri, locales)
+        await wait_for_batch(client, batch_id, sleep)
+
+        report_id = await client.generate_cost_estimate(job_id)
+        report = await wait_for_estimate(client, report_id, sleep)
+        total_strings, max_usd = parse_estimate(report)
+
+        if total_strings == 0:
+            await client.delete_job(job_id)
+            return NightlyResult(outcome='no_content')
+        if max_usd <= threshold:
+            await client.authorize_job(job_id)
+            return NightlyResult(
+                outcome='authorized',
+                job_id=job_id,
+                total_strings=total_strings,
+                max_usd=format(max_usd, 'f')
+            )
+        return NightlyResult(
+            outcome='review_required',
+            job_id=job_id,
+            total_strings=total_strings,
+            max_usd=format(max_usd, 'f'),
+            reason=f"Maximum USD estimate exceeds {format(threshold, 'f')}"
+        )
+    except Exception as error:  # pylint: disable=broad-except
+        return NightlyResult(
+            outcome='review_required',
+            job_id=job_id,
+            reason=str(error).replace('\n', ' ').replace('\r', ' ')[:500]
+        )
+
 
 def get_git_branch() -> str:
     """Get current git branch name."""
@@ -256,6 +447,38 @@ async def upload_command(args):
         print(f"JOB_ID={job_id}")
         print(f"BATCH_ID={batch_id}")
         print(f"\n🎉 Upload complete! Job ID: {job_id}")
+
+
+async def nightly_command(args):
+    """Create and conditionally authorize a nightly translation job."""
+    try:
+        files = [Path(file_path) for file_path in args.files]
+        missing_files = [str(file_path) for file_path in files if not file_path.exists()]
+        if missing_files:
+            raise RuntimeError(f"Missing export files: {', '.join(missing_files)}")
+
+        threshold = Decimal(args.threshold)
+        async with SmartlingClient(get_credentials(args)) as client:
+            result = await run_nightly(
+                client,
+                files,
+                args.job_name,
+                args.job_prefix,
+                threshold
+            )
+    except Exception as error:  # pylint: disable=broad-except
+        result = NightlyResult(
+            outcome='review_required',
+            reason=str(error).replace('\n', ' ').replace('\r', ' ')[:500]
+        )
+
+    result_path = Path(args.result_file)
+    result_path.write_text(json.dumps(result.as_dict()), encoding='utf-8')
+    print(f"NIGHTLY_OUTCOME={result.outcome}")
+    print(f"JOB_ID={result.job_id}")
+    print(f"TOTAL_STRINGS={result.total_strings}")
+    print(f"MAX_USD={result.max_usd}")
+    print(f"REASON={result.reason}")
 
 
 async def status_command(args):
@@ -365,6 +588,14 @@ def main():
     upload_parser.add_argument('--job-name', required=True)
     upload_parser.add_argument('--files', nargs='+', required=True)
 
+    # Nightly
+    nightly_parser = subparsers.add_parser('nightly')
+    nightly_parser.add_argument('--job-name', required=True)
+    nightly_parser.add_argument('--job-prefix', required=True)
+    nightly_parser.add_argument('--files', nargs='+', required=True)
+    nightly_parser.add_argument('--threshold', default='500.00')
+    nightly_parser.add_argument('--result-file', default='nightly_result.json')
+
     # Status
     status_parser = subparsers.add_parser('status')
     status_parser.add_argument('--job-id', required=True)
@@ -388,6 +619,7 @@ def main():
     # Run command
     commands = {
         'upload': upload_command,
+        'nightly': nightly_command,
         'status': status_command,
         'approve': approve_command,
         'download': download_command,

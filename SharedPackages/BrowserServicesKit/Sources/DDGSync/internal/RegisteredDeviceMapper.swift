@@ -19,13 +19,25 @@
 import Foundation
 import os.log
 
+struct RegisteredDeviceMappingResult {
+    let devices: [RegisteredDevice]
+    let needsCurrentDeviceInfoRepair: Bool
+}
+
 protocol RegisteredDeviceMapping {
-    func registeredDevices(from entries: [RegisteredDeviceEntry], account: SyncAccount) async -> [RegisteredDevice]
+    func registeredDevicesWithRepairState(from entries: [RegisteredDeviceEntry],
+                                          account: SyncAccount) async -> RegisteredDeviceMappingResult
     func registeredDevice(fromLegacyEntry entry: RegisteredDeviceEntry, account: SyncAccount) -> RegisteredDevice?
     func registeredDevice(fromDefaultCredentialLoginEntryWithID id: String,
                           encryptedName: String,
                           encryptedType: String?,
                           primaryKey: Data) -> RegisteredDevice?
+}
+
+extension RegisteredDeviceMapping {
+    func registeredDevices(from entries: [RegisteredDeviceEntry], account: SyncAccount) async -> [RegisteredDevice] {
+        await registeredDevicesWithRepairState(from: entries, account: account).devices
+    }
 }
 
 /// Maps raw Sync device payloads into app-facing devices without hiding entries that cannot be decrypted locally.
@@ -81,7 +93,8 @@ struct RegisteredDeviceMapper: RegisteredDeviceMapping {
         self.jweCompactCodec = jweCompactCodec
     }
 
-    func registeredDevices(from entries: [RegisteredDeviceEntry], account: SyncAccount) async -> [RegisteredDevice] {
+    func registeredDevicesWithRepairState(from entries: [RegisteredDeviceEntry],
+                                          account: SyncAccount) async -> RegisteredDeviceMappingResult {
         let isUnifiedReadEnabled = canReadUnifiedDeviceList()
         let accountInfoKey = await accountInfoKeyIfNeeded(for: entries,
                                                           account: account,
@@ -107,9 +120,14 @@ struct RegisteredDeviceMapper: RegisteredDeviceMapping {
         } else {
             finalMappings = initialMappings
         }
-        return await devicesApplyingThirdPartyFallback(to: finalMappings,
-                                                       entries: entries,
-                                                       account: account)
+        let devices = await devicesApplyingThirdPartyFallback(to: finalMappings,
+                                                              entries: entries,
+                                                              account: account)
+        return RegisteredDeviceMappingResult(
+            devices: devices,
+            needsCurrentDeviceInfoRepair: needsCurrentDeviceInfoRepair(in: finalMappings,
+                                                                       entries: entries,
+                                                                       account: account))
     }
 
     func registeredDevice(fromLegacyEntry entry: RegisteredDeviceEntry, account: SyncAccount) -> RegisteredDevice? {
@@ -187,6 +205,25 @@ struct RegisteredDeviceMapper: RegisteredDeviceMapping {
                 ?? fallbackRegisteredDevice(from: entry)
         }
         return devices
+    }
+
+    private func needsCurrentDeviceInfoRepair(in mappings: [MappingAttempt],
+                                              entries: [RegisteredDeviceEntry],
+                                              account: SyncAccount) -> Bool {
+        zip(entries, mappings).contains { entry, mapping in
+            guard entry.id == account.deviceId else {
+                return false
+            }
+            guard let failure = mapping.unifiedDeviceInfoFailure else {
+                return false
+            }
+            switch failure {
+            case .missing, .staleKey, .corrupt:
+                return true
+            case .keyUnavailable:
+                return false
+            }
+        }
     }
 
     private func readUnifiedDeviceInfo(from entry: RegisteredDeviceEntry,

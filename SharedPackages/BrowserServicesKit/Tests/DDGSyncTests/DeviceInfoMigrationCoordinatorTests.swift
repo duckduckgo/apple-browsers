@@ -99,6 +99,16 @@ final class DeviceInfoMigrationCoordinatorTests: XCTestCase {
         XCTAssertEqual(scopedAccess.ensureAccountInfoProtectedKeysCalls.count, 1)
     }
 
+    func testWhenMigrationAlreadyCompletedThenRepairStillPatchesCurrentDevice() async {
+        await coordinator.migrateCurrentDeviceIfNeeded(for: .mock)
+
+        await coordinator.repairCurrentDeviceInfo(for: .mock)
+
+        XCTAssertEqual(accountManager.updateDeviceCalls.count, 2)
+        XCTAssertEqual(scopedAccess.ensureAccountInfoProtectedKeysCalls.count, 2)
+        XCTAssertTrue(coordinator.hasCompletedMigration(for: .mock))
+    }
+
     func testWhenMigrationStateIsResetThenCurrentDeviceCanMigrateAgain() async {
         await coordinator.migrateCurrentDeviceIfNeeded(for: .mock)
         coordinator.reset()

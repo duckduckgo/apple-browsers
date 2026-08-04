@@ -144,7 +144,7 @@ struct AccountManager: AccountManaging {
         }
     }
 
-    func fetchDevicesForAccount(_ account: SyncAccount) async throws -> [RegisteredDevice] {
+    func fetchDevicesForAccount(_ account: SyncAccount) async throws -> RegisteredDeviceMappingResult {
         guard let token = account.token else {
             throw SyncError.noToken
         }
@@ -169,7 +169,7 @@ struct AccountManager: AccountManaging {
             } else {
                 entries = result.devices?.entries ?? []
             }
-            return await registeredDeviceMapper.registeredDevices(from: entries, account: account)
+            return await registeredDeviceMapper.registeredDevicesWithRepairState(from: entries, account: account)
         }
 
         // Legacy behaviour (scoped access disabled): invalid native devices are automatically logged out.
@@ -183,7 +183,7 @@ struct AccountManager: AccountManaging {
                 }
             }
         }
-        return devices
+        return RegisteredDeviceMappingResult(devices: devices, needsCurrentDeviceInfoRepair: false)
     }
 
     func updateDevice(_ update: UpdateDevices.Update, for account: SyncAccount) async throws -> [RegisteredDevice] {

@@ -22,6 +22,7 @@ import Persistence
 
 protocol DeviceInfoMigrationCoordinating {
     func migrateCurrentDeviceIfNeeded(for account: SyncAccount) async
+    func repairCurrentDeviceInfo(for account: SyncAccount) async
     func reset()
 }
 
@@ -83,7 +84,21 @@ struct DeviceInfoMigrationCoordinator: DeviceInfoMigrationCoordinating {
             return
         }
         Logger.sync.debug("Sync-UnifiedDevices: migrating current device_info")
+        await updateCurrentDeviceInfo(for: account, identity: identity)
+    }
 
+    func repairCurrentDeviceInfo(for account: SyncAccount) async {
+        let identity = DeviceInfoMigrationIdentity(account: account)
+        guard canWriteUnifiedDeviceList(),
+              currentAccount(matching: identity) != nil,
+              !Task.isCancelled else {
+            return
+        }
+        await updateCurrentDeviceInfo(for: account, identity: identity)
+    }
+
+    private func updateCurrentDeviceInfo(for account: SyncAccount,
+                                         identity: DeviceInfoMigrationIdentity) async {
         do {
             let protectedKey = try await prepareAccountInfoProtectedKey(for: account,
                                                                         identity: identity)
@@ -122,8 +137,8 @@ struct DeviceInfoMigrationCoordinator: DeviceInfoMigrationCoordinating {
             guard !Task.isCancelled else {
                 return
             }
-            let errorType = String(describing: type(of: error))
-            Logger.sync.error("Sync-UnifiedDevices: failed to migrate current device_info: \(errorType)")
+            let errorType = String(describing: Swift.type(of: error))
+            Logger.sync.error("Sync-UnifiedDevices: failed to update current device_info: \(errorType)")
         }
     }
 

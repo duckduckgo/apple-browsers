@@ -7717,7 +7717,7 @@ extension MainViewController {
                 return context.persistentStoreCoordinator === bookmarksDatabase.coordinator
             }
             .receive(on: DispatchQueue.main)
-            .sink { _ in
+            .sink { [weak self] _ in
                 DispatchQueue.main.async { [weak self] in
                     self?.applyCustomizationState()
                 }

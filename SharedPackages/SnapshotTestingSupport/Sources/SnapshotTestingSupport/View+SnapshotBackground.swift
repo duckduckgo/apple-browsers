@@ -81,3 +81,32 @@ private final class SnapshotBackgroundView: NSView {
     }
 }
 #endif
+
+#if os(iOS)
+public extension UIView {
+    func snapshotBackground() -> UIView {
+        SnapshotBackgroundView(content: self)
+    }
+}
+
+private final class SnapshotBackgroundView: UIView {
+
+    init(content: UIView) {
+        super.init(frame: content.frame)
+        backgroundColor = .systemBackground
+        content.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(content)
+        NSLayoutConstraint.activate([
+            content.leadingAnchor.constraint(equalTo: leadingAnchor),
+            content.trailingAnchor.constraint(equalTo: trailingAnchor),
+            content.topAnchor.constraint(equalTo: topAnchor),
+            content.bottomAnchor.constraint(equalTo: bottomAnchor)
+        ])
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+}
+#endif

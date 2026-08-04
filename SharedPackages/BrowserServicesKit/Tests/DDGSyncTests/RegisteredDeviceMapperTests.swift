@@ -39,6 +39,122 @@ final class RegisteredDeviceMapperTests: XCTestCase {
         XCTAssertEqual(device?.credentialId, SyncCredentialID.defaultCredential)
     }
 
+    func testWhenUnifiedReadIsEnabledThenPrefersDeviceInfoOverLegacyFields() async throws {
+        let account = makeAccount()
+        let accountInfoKeys = AccountInfoKeyManagingMock()
+        accountInfoKeys.loadKeyStub = try makeAccountInfoKeyMaterial()
+        let deviceInfoCodec = DeviceInfoReadingMock()
+        deviceInfoCodec.decryptHandler = { encryptedDeviceInfo, _ in
+            XCTAssertEqual(encryptedDeviceInfo, "encrypted-info")
+            return DeviceInfo(name: "Unified Mac", type: "desktop")
+        }
+        let mapper = RegisteredDeviceMapper(crypter: CryptingMock(),
+                                            accountInfoKeys: accountInfoKeys,
+                                            deviceInfoCodec: deviceInfoCodec,
+                                            isScopedAccessCredentialsEnabled: { true },
+                                            canReadUnifiedDeviceList: { true })
+        let entry = RegisteredDeviceEntry(id: "native-device",
+                                          name: "encrypted_Legacy Mac",
+                                          type: "encrypted_mobile",
+                                          info: "encrypted-info",
+                                          credentialId: SyncCredentialID.defaultCredential)
+
+        let devices = await mapper.registeredDevices(from: [entry], account: account)
+
+        XCTAssertEqual(devices.map(\.name), ["Unified Mac"])
+        XCTAssertEqual(devices.map(\.type), ["desktop"])
+        XCTAssertEqual(accountInfoKeys.loadKeyCalls.map(\.deviceId), [account.deviceId])
+        XCTAssertEqual(deviceInfoCodec.decryptCalls, ["encrypted-info"])
+    }
+
+    func testWhenUnifiedReadIsDisabledThenIgnoresDeviceInfoAndUsesLegacyFields() async {
+        let accountInfoKeys = AccountInfoKeyManagingMock()
+        let deviceInfoCodec = DeviceInfoReadingMock()
+        deviceInfoCodec.decryptHandler = { _, _ in
+            XCTFail("Unified device info should not be decrypted while reads are disabled")
+            throw DeviceInfoCodecError.invalidPayload
+        }
+        let mapper = RegisteredDeviceMapper(crypter: CryptingMock(),
+                                            accountInfoKeys: accountInfoKeys,
+                                            deviceInfoCodec: deviceInfoCodec,
+                                            isScopedAccessCredentialsEnabled: { true },
+                                            canReadUnifiedDeviceList: { false })
+        let entry = RegisteredDeviceEntry(id: "native-device",
+                                          name: "encrypted_Legacy Mac",
+                                          type: "encrypted_desktop",
+                                          info: "encrypted-info",
+                                          credentialId: SyncCredentialID.defaultCredential)
+
+        let devices = await mapper.registeredDevices(from: [entry], account: makeAccount())
+
+        XCTAssertEqual(devices.map(\.name), ["Legacy Mac"])
+        XCTAssertEqual(devices.map(\.type), ["desktop"])
+        XCTAssertTrue(accountInfoKeys.loadKeyCalls.isEmpty)
+        XCTAssertTrue(deviceInfoCodec.decryptCalls.isEmpty)
+    }
+
+    func testWhenUnifiedEntriesAreMixedThenEachEntryFallsBackIndependently() async throws {
+        let account = makeAccount()
+        let accountInfoKeys = AccountInfoKeyManagingMock()
+        accountInfoKeys.loadKeyStub = try makeAccountInfoKeyMaterial()
+        let deviceInfoCodec = DeviceInfoReadingMock()
+        deviceInfoCodec.decryptHandler = { encryptedDeviceInfo, _ in
+            guard encryptedDeviceInfo == "valid-info" else {
+                throw DeviceInfoCodecError.invalidPayload
+            }
+            return DeviceInfo(name: "Future Browser", type: "browser")
+        }
+        let mapper = RegisteredDeviceMapper(crypter: CryptingMock(),
+                                            accountInfoKeys: accountInfoKeys,
+                                            deviceInfoCodec: deviceInfoCodec,
+                                            isScopedAccessCredentialsEnabled: { true },
+                                            canReadUnifiedDeviceList: { true })
+        let entries = [
+            RegisteredDeviceEntry(id: "future-device",
+                                  name: nil,
+                                  type: nil,
+                                  info: "valid-info",
+                                  credentialId: "future"),
+            RegisteredDeviceEntry(id: "native-device",
+                                  name: "encrypted_Legacy Mac",
+                                  type: "encrypted_desktop",
+                                  info: "invalid-info",
+                                  credentialId: SyncCredentialID.defaultCredential),
+            RegisteredDeviceEntry(id: "third-party-device",
+                                  name: nil,
+                                  type: nil,
+                                  info: "invalid-info",
+                                  credentialId: SyncCredentialID.thirdParty)
+        ]
+
+        let devices = await mapper.registeredDevices(from: entries, account: account)
+
+        XCTAssertEqual(devices.map(\.id), ["future-device", "native-device", "third-party-device"])
+        XCTAssertEqual(devices.map(\.name), ["Future Browser", "Legacy Mac", "Browser"])
+        XCTAssertEqual(devices.map(\.type), ["browser", "desktop", "unknown"])
+        XCTAssertEqual(devices.map(\.credentialId), ["future", SyncCredentialID.defaultCredential, SyncCredentialID.thirdParty])
+        XCTAssertEqual(accountInfoKeys.loadKeyCalls.count, 1)
+        XCTAssertEqual(deviceInfoCodec.decryptCalls, ["valid-info", "invalid-info", "invalid-info"])
+    }
+
+    func testWhenUnifiedReadIsEnabledButNoEntryHasInfoThenDoesNotLoadAccountInfoKey() async {
+        let accountInfoKeys = AccountInfoKeyManagingMock()
+        let mapper = RegisteredDeviceMapper(crypter: CryptingMock(),
+                                            accountInfoKeys: accountInfoKeys,
+                                            isScopedAccessCredentialsEnabled: { true },
+                                            canReadUnifiedDeviceList: { true })
+        let entry = RegisteredDeviceEntry(id: "native-device",
+                                          name: "encrypted_Mac",
+                                          type: "encrypted_desktop",
+                                          info: nil,
+                                          credentialId: SyncCredentialID.defaultCredential)
+
+        let devices = await mapper.registeredDevices(from: [entry], account: makeAccount())
+
+        XCTAssertEqual(devices.map(\.name), ["Mac"])
+        XCTAssertTrue(accountInfoKeys.loadKeyCalls.isEmpty)
+    }
+
     func testWhenMappingThirdPartyEntryWithCachedScopedPasswordThenDecryptsJWEFields() async throws {
         let account = makeAccount()
         let scopedPassword = Data(repeating: 7, count: 32)
@@ -166,5 +282,34 @@ final class RegisteredDeviceMapperTests: XCTestCase {
                     secretKey: Data(repeating: 2, count: 32),
                     token: "token-1",
                     state: .active)
+    }
+
+    private func makeAccountInfoKeyMaterial() throws -> AccountInfoKeyMaterial {
+        let keyPair = try RSAKeyPairGenerator.makeKeyPair()
+        return AccountInfoKeyMaterial(kid: "account-info-key",
+                                      publicKey: keyPair.publicKey,
+                                      privateKey: keyPair.privateKey)
+    }
+}
+
+private final class DeviceInfoReadingMock: DeviceInfoCoding {
+
+    private(set) var decryptCalls: [String] = []
+    var decryptHandler: ((String, AccountInfoKeyMaterial) throws -> DeviceInfo)?
+
+    func encrypt(_ deviceInfo: DeviceInfo, using protectedKey: ProtectedKey) throws -> String {
+        throw DeviceInfoCodecError.invalidProtectedKey
+    }
+
+    func encrypt(_ deviceInfo: DeviceInfo, using key: AccountInfoKeyMaterial) throws -> String {
+        throw DeviceInfoCodecError.invalidProtectedKey
+    }
+
+    func decrypt(_ encryptedDeviceInfo: String, using key: AccountInfoKeyMaterial) throws -> DeviceInfo {
+        decryptCalls.append(encryptedDeviceInfo)
+        guard let decryptHandler else {
+            throw DeviceInfoCodecError.invalidPayload
+        }
+        return try decryptHandler(encryptedDeviceInfo, key)
     }
 }

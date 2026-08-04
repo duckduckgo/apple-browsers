@@ -37,14 +37,14 @@ struct PromoPresentationCoordinationFeatureFlagTests {
     }
 
     @available(iOS 16, *)
-    @Test("Promo presentation coordination maps to the remote-releasable iOS browser config subfeature", .timeLimit(.minutes(1)))
-    func whenInspectingPromoPresentationCoordinationThenSourceIsRemoteReleasableIOSBrowserConfigSubfeature() {
+    @Test("Promo presentation coordination maps to its remote-releasable promo queue subfeature", .timeLimit(.minutes(1)))
+    func whenInspectingPromoPresentationCoordinationThenSourceIsRemoteReleasablePromoQueueSubfeature() {
         guard case .remoteReleasable(let subfeature) = FeatureFlag.promoPresentationCoordination.source else {
             Issue.record("Expected promo presentation coordination to use a remote-releasable source")
             return
         }
 
-        #expect(subfeature as? iOSBrowserConfigSubfeature == .promoPresentationCoordination)
+        #expect(subfeature as? PromoQueueSubfeature == .iOSPromoPresentationCoordination)
     }
 
     @available(iOS 16, *)
@@ -56,19 +56,16 @@ struct PromoPresentationCoordinationFeatureFlagTests {
     // MARK: - Embedded privacy configuration
 
     @available(iOS 16, *)
-    @Test("Embedded privacy config ships no promo presentation coordination entry, so the flag default is what decides", .timeLimit(.minutes(1)))
-    func whenReadingEmbeddedPrivacyConfigThenPromoPresentationCoordinationSubfeatureIsMissing() throws {
+    @Test("Embedded privacy config ships no promo queue entry, so the flag default is what decides", .timeLimit(.minutes(1)))
+    func whenReadingEmbeddedPrivacyConfigThenPromoQueueFeatureIsMissing() throws {
         let privacyConfig = try makeEmbeddedPrivacyConfiguration()
 
-        // Assert the parent first: `iOSBrowserConfig` ships enabled, so the subfeature reading below is not the
-        // parent kill-switch short-circuiting. The subfeature is genuinely absent from the shipped config, which
-        // is what lets the flag's `.disabled` default decide.
-        guard case .enabled = privacyConfig.stateFor(featureKey: .iOSBrowserConfig) else {
-            Issue.record("Expected the embedded privacy config to enable the iOS browser config parent feature")
+        guard case .disabled(.featureMissing) = privacyConfig.stateFor(featureKey: .promoQueue) else {
+            Issue.record("Expected the embedded privacy config to omit the promo queue parent feature")
             return
         }
 
-        guard case .disabled(.featureMissing) = privacyConfig.stateFor(iOSBrowserConfigSubfeature.promoPresentationCoordination) else {
+        guard case .disabled(.featureMissing) = privacyConfig.stateFor(PromoQueueSubfeature.iOSPromoPresentationCoordination) else {
             Issue.record("Expected the embedded privacy config to omit the promo presentation coordination subfeature")
             return
         }

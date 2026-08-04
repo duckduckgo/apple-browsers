@@ -20,7 +20,7 @@
         "suffixes": ["platform", "form_factor", "daily_count"],
         "parameters": ["appVersion"]
     },
-    "debug_webkit_termination_occurence_": {
+    "debug_webkit_termination_occurrence_": {
         "description": "Fires once daily for each bucket reached by the number of WebKit web content process terminations on the device that day.",
         "owners": ["brindy"],
         "triggers": ["exception"],

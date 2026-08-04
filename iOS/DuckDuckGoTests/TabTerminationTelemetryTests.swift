@@ -55,7 +55,7 @@ final class TabTerminationTelemetryTests: XCTestCase {
         telemetry.webContentProcessDidTerminate(activeTabCount: 7)
 
         XCTAssertEqual(pixelFiring.call(named: "debug_webkit_termination_foreground")?.frequency, .dailyAndCount)
-        XCTAssertEqual(pixelFiring.call(named: "debug_webkit_termination_occurence_1")?.frequency, .daily)
+        XCTAssertEqual(pixelFiring.call(named: "debug_webkit_termination_occurrence_1")?.frequency, .daily)
         XCTAssertEqual(pixelFiring.call(named: "debug_webkit_termination_memory_512-1023")?.frequency, .dailyAndCount)
         XCTAssertEqual(pixelFiring.call(named: "debug_webkit_termination_active-tabs_6-10")?.frequency, .dailyAndCount)
         XCTAssertEqual(pixelFiring.calls.count, 4)
@@ -79,20 +79,20 @@ final class TabTerminationTelemetryTests: XCTestCase {
             telemetry.webContentProcessDidTerminate(activeTabCount: 1)
         }
 
-        XCTAssertEqual(pixelFiring.calls.filter { $0.event.name.hasPrefix("debug_webkit_termination_occurence_") }.map(\.event.name), [
-            "debug_webkit_termination_occurence_1",
-            "debug_webkit_termination_occurence_2",
-            "debug_webkit_termination_occurence_3",
-            "debug_webkit_termination_occurence_4",
-            "debug_webkit_termination_occurence_5-plus",
-            "debug_webkit_termination_occurence_5-plus"
+        XCTAssertEqual(pixelFiring.calls.filter { $0.event.name.hasPrefix("debug_webkit_termination_occurrence_") }.map(\.event.name), [
+            "debug_webkit_termination_occurrence_1",
+            "debug_webkit_termination_occurrence_2",
+            "debug_webkit_termination_occurrence_3",
+            "debug_webkit_termination_occurrence_4",
+            "debug_webkit_termination_occurrence_5-plus",
+            "debug_webkit_termination_occurrence_5-plus"
         ])
 
         date.addTimeInterval(86_400)
         telemetry.webContentProcessDidTerminate(activeTabCount: 1)
 
-        XCTAssertEqual(pixelFiring.calls.last { $0.event.name.hasPrefix("debug_webkit_termination_occurence_") }?.event.name,
-                       "debug_webkit_termination_occurence_1")
+        XCTAssertEqual(pixelFiring.calls.last { $0.event.name.hasPrefix("debug_webkit_termination_occurrence_") }?.event.name,
+                       "debug_webkit_termination_occurrence_1")
     }
 
     func testMemoryBuckets() {

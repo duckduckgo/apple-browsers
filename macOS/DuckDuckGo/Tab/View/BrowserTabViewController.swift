@@ -1326,8 +1326,8 @@ final class BrowserTabViewController: NSViewController {
         }
     }
 
-    func requestSettingsScroll(to anchor: PreferencesSectionAnchor) {
-        preferencesViewController?.model.requestScroll(to: anchor)
+    func selectSettingsDestination(_ destination: PreferencesDestination) {
+        preferencesViewController?.model.select(destination)
     }
 
     private func shouldReplaceWebView(for tabViewModel: TabViewModel?) -> Bool {

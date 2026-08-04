@@ -608,15 +608,17 @@ final class MainViewController: NSViewController {
         updateAIChatOmnibarContainerVisibility(visible: true, shouldKeepSelection: false, shouldFetchSuggestions: false)
     }
 
-    /// Tab insertion displays the pane synchronously, so by the time it returns the pane exists and can take the request.
+    /// Insertion only shows the pane synchronously for a *new* tab; reusing an existing Settings tab swaps
+    /// panes asynchronously, so the destination is applied here instead of waiting on that.
     func openSettings(_ destination: PreferencesDestination) {
         tabCollectionViewModel.insertOrAppendNewTab(.settings(pane: destination.pane))
 
-        guard let anchor = destination.anchor, case .settings = tabCollectionViewModel.selectedTabViewModel?.tab.content else {
+        // Popup windows redirect the insertion elsewhere, leaving this window's Settings untouched.
+        guard case .settings = tabCollectionViewModel.selectedTabViewModel?.tab.content else {
             return
         }
 
-        browserTabViewController.requestSettingsScroll(to: anchor)
+        browserTabViewController.selectSettingsDestination(destination)
     }
 
     func openNewDuckAIChatTab() {

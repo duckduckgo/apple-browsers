@@ -2723,7 +2723,7 @@
     },
     "aichat.attach-menu.page-content" : {
       "comment" : "Top-level item in the AI chat omnibar add-attachment menu that opens the open-tabs submenu",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {

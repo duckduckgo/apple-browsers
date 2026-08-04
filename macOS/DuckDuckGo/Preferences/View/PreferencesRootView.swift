@@ -122,9 +122,8 @@ enum Preferences {
                     }
                     .frame(minWidth: Const.minContentWidth, maxWidth: .infinity)
                     .accessibilityIdentifier("Settings.ScrollView")
-                    // `onReceive` rather than `onChange`: a request made before this view's first body evaluation
-                    // — the ordering when a fresh Settings tab is opened deep-linked — is already the current value
-                    // by the time the view exists, and `onChange` never fires for it.
+                    // `onReceive`, not `onChange`: a deep-linked request lands before this view's first body
+                    // evaluation, so it's already the current value and `onChange` never fires for it.
                     .onReceive(model.$scrollTarget) { anchor in
                         guard let anchor else { return }
                         scroll(proxy, to: anchor)

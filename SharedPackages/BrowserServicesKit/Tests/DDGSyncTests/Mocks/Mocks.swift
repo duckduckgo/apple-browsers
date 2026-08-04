@@ -383,9 +383,9 @@ final class AccountInfoKeyFactoryMock: AccountInfoKeyFactory {
 
 final class AccountInfoKeyManagingMock: AccountInfoKeyManaging {
     var loadKeyCalls: [SyncAccount] = []
-    var loadKeyStub: AccountInfoKeyMaterial?
+    var loadKeyStub: AccountInfoKey?
     var loadKeyError: Error?
-    func loadKey(for account: SyncAccount) async throws -> AccountInfoKeyMaterial {
+    func loadKey(for account: SyncAccount) async throws -> AccountInfoKey {
         loadKeyCalls.append(account)
         if let loadKeyError {
             throw loadKeyError
@@ -397,9 +397,9 @@ final class AccountInfoKeyManagingMock: AccountInfoKeyManaging {
     }
 
     var refreshKeyCalls: [SyncAccount] = []
-    var refreshKeyStub: AccountInfoKeyMaterial?
+    var refreshKeyStub: AccountInfoKey?
     var refreshKeyError: Error?
-    func refreshKey(for account: SyncAccount) async throws -> AccountInfoKeyMaterial {
+    func refreshKey(for account: SyncAccount) async throws -> AccountInfoKey {
         refreshKeyCalls.append(account)
         if let refreshKeyError {
             throw refreshKeyError

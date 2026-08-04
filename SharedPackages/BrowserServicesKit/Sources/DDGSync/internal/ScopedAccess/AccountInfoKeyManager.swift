@@ -19,7 +19,7 @@
 import Foundation
 import Security
 
-struct AccountInfoKeyMaterial: @unchecked Sendable {
+struct AccountInfoKey: @unchecked Sendable {
     let kid: String
     let publicKey: SecKey
     let privateKey: SecKey
@@ -34,8 +34,8 @@ enum AccountInfoKeyManagerError: Error, Equatable {
 }
 
 protocol AccountInfoKeyManaging {
-    func loadKey(for account: SyncAccount) async throws -> AccountInfoKeyMaterial
-    func refreshKey(for account: SyncAccount) async throws -> AccountInfoKeyMaterial
+    func loadKey(for account: SyncAccount) async throws -> AccountInfoKey
+    func refreshKey(for account: SyncAccount) async throws -> AccountInfoKey
 }
 
 actor AccountInfoKeyManager: AccountInfoKeyManaging {
@@ -55,10 +55,10 @@ actor AccountInfoKeyManager: AccountInfoKeyManaging {
         self.jweCompactCodec = jweCompactCodec
     }
 
-    func loadKey(for account: SyncAccount) async throws -> AccountInfoKeyMaterial {
+    func loadKey(for account: SyncAccount) async throws -> AccountInfoKey {
         if let protectedKeys = cachedProtectedKeys() {
             do {
-                return try await makeKeyMaterial(from: protectedKeys, account: account)
+                return try await makeAccountInfoKey(from: protectedKeys, account: account)
             } catch {
                 try? secureStore.removeProtectedKeys()
             }
@@ -66,10 +66,10 @@ actor AccountInfoKeyManager: AccountInfoKeyManaging {
         return try await refreshKey(for: account)
     }
 
-    func refreshKey(for account: SyncAccount) async throws -> AccountInfoKeyMaterial {
+    func refreshKey(for account: SyncAccount) async throws -> AccountInfoKey {
         let protectedKeys = try await scopedAccess.fetchProtectedKeys(account)
             .removingDuplicateWrappingIdentities()
-        let key = try await makeKeyMaterial(from: protectedKeys, account: account)
+        let key = try await makeAccountInfoKey(from: protectedKeys, account: account)
         cache(protectedKeys)
         return key
     }
@@ -92,8 +92,8 @@ actor AccountInfoKeyManager: AccountInfoKeyManaging {
         try? secureStore.persistProtectedKeys(encodedKeys)
     }
 
-    private func makeKeyMaterial(from protectedKeys: [ProtectedKey],
-                                 account: SyncAccount) async throws -> AccountInfoKeyMaterial {
+    private func makeAccountInfoKey(from protectedKeys: [ProtectedKey],
+                                    account: SyncAccount) async throws -> AccountInfoKey {
         let accountInfoKeys = protectedKeys.filter { $0.purpose == ProtectedKeyPurpose.accountInfo }
         guard let firstKey = accountInfoKeys.first else {
             throw AccountInfoKeyManagerError.missingProtectedKey
@@ -115,7 +115,7 @@ actor AccountInfoKeyManager: AccountInfoKeyManaging {
             hasSupportedWrapper = true
             do {
                 let privateKeyPKCS8 = try await unwrapPrivateKey(protectedKey, account: account)
-                return try makeKeyMaterial(protectedKey: protectedKey, privateKeyPKCS8: privateKeyPKCS8)
+                return try makeAccountInfoKey(protectedKey: protectedKey, privateKeyPKCS8: privateKeyPKCS8)
             } catch {
                 lastError = error
             }
@@ -164,8 +164,8 @@ actor AccountInfoKeyManager: AccountInfoKeyManaging {
         return scopedPassword
     }
 
-    private func makeKeyMaterial(protectedKey: ProtectedKey,
-                                 privateKeyPKCS8: Data) throws -> AccountInfoKeyMaterial {
+    private func makeAccountInfoKey(protectedKey: ProtectedKey,
+                                    privateKeyPKCS8: Data) throws -> AccountInfoKey {
         let publicKey = try RSAKeyImporter.makePublicKey(from: protectedKey.publicKey)
         let privateKey = try RSAKeyImporter.makePrivateKey(fromPKCS8: privateKeyPKCS8)
         guard let derivedPublicKey = SecKeyCopyPublicKey(privateKey),
@@ -174,8 +174,8 @@ actor AccountInfoKeyManager: AccountInfoKeyManaging {
               expectedPublicKeyData == derivedPublicKeyData else {
             throw AccountInfoKeyManagerError.publicKeyMismatch
         }
-        return AccountInfoKeyMaterial(kid: protectedKey.kid,
-                                      publicKey: publicKey,
-                                      privateKey: privateKey)
+        return AccountInfoKey(kid: protectedKey.kid,
+                              publicKey: publicKey,
+                              privateKey: privateKey)
     }
 }

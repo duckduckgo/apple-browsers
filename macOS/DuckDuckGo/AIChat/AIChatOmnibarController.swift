@@ -128,8 +128,7 @@ final class AIChatOmnibarController {
     /// resize tasks (data is cleared via `persistAttachmentsToActiveTab([])`).
     var onAttachmentsClearRequested: (() -> Void)?
 
-    /// Called when a submit is blocked by attachment validation, so the container VC can surface
-    /// the reason in the attachments error label — the same channel pick-time rejections use.
+    /// Blocked-submit reason, for the container VC's attachments error label.
     var onAttachmentValidationFailed: ((String) -> Void)?
 
     /// Waits for all attachment resizing to complete before proceeding.
@@ -1158,12 +1157,7 @@ final class AIChatOmnibarController {
         return hasExcessTabAttachments
     }
 
-    /// Re-validates the already-attached files against the current limits. Pick-time validation is
-    /// skipped entirely while `attachmentLimits` is still `nil` (models endpoint slow or down), and
-    /// the limits can be refreshed afterwards — on a tier change, say — so a file that was accepted
-    /// then can be over the limit by the time the user submits. Cumulative, and with `enforceCount`
-    /// off, exactly as at pick time: the count limit keeps its one-over cue via
-    /// `hasSubmitBlockingAttachmentExcess`.
+    /// Files accepted while `attachmentLimits` was nil were never validated, and the limits can change after a pick.
     private var fileSubmissionValidationError: AIChatAttachmentValidator.FileValidationError? {
         guard attachmentLimits != nil, selectedModelSupportsFileUpload else { return nil }
 
@@ -1173,6 +1167,7 @@ final class AIChatOmnibarController {
                 pendingImageCount: activeImageAttachments.count,
                 pendingFiles: validated
             )
+            // enforceCount off: the count limit keeps its one-over cue via `hasSubmitBlockingAttachmentExcess`.
             if let error = validator.fileValidationError(for: descriptor, enforceCount: false) {
                 return error
             }

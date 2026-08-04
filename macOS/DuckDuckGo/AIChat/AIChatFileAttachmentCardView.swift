@@ -21,11 +21,7 @@ import AppKit
 import DesignResourcesKit
 import DesignResourcesKitIcons
 
-/// A horizontal card representing a file attachment (PDF etc.) in the duck.ai omnibar carousel.
-/// Deliberately shares `AIChatTabAttachmentCardView`'s geometry — same card size, same 36×36
-/// thumbnail slot, same bold title beside it — so a mixed carousel of tabs and files reads as one
-/// row of like elements. Only the thumbnail's contents differ: a stylised page with a red file-kind
-/// badge instead of a favicon.
+/// A file (PDF etc.) card for the duck.ai omnibar carousel, sharing `AIChatTabAttachmentCardView`'s geometry so mixed rows line up.
 final class AIChatFileAttachmentCardView: NSView {
 
     private enum Constants {
@@ -114,8 +110,7 @@ final class AIChatFileAttachmentCardView: NSView {
         addSubview(removeButton) // outside the card so its overflow can clip past the corner.
 
         titleLabel.stringValue = attachment.fileName
-        // The label truncates on narrow cards; the tooltip carries the full filename.
-        toolTip = attachment.fileName
+        toolTip = attachment.fileName // the label truncates; the tooltip carries the full name
         setAccessibilityLabel(String(format: UserText.aiChatFileAttachmentAccessibilityFormat, attachment.fileName))
 
         filePreviewView.kindLabel = Self.kindLabel(for: attachment.mimeType)
@@ -219,9 +214,7 @@ final class AIChatFileAttachmentCardView: NSView {
         addCursorRect(removeButton.frame, cursor: .pointingHand)
     }
 
-    /// Badge text for the thumbnail. Only PDFs are called out by name; every other accepted type
-    /// gets the generic label (mime subtypes like `vnd.openxmlformats-…` are unreadable at badge
-    /// size, and the filename in the title already carries the extension).
+    /// Generic label for non-PDFs — mime subtypes are unreadable at badge size and the title already carries the extension.
     private static func kindLabel(for mimeType: String) -> String {
         mimeType.lowercased().contains("pdf") ? "PDF" : "FILE"
     }
@@ -251,10 +244,7 @@ final class AIChatFileAttachmentCardView: NSView {
 
 // MARK: - File preview thumbnail
 
-/// A 36×36 stylised "document" thumbnail matching `AIChatTabAttachmentCardView`'s page preview in
-/// size, corner radius and background: two short "text" lines at the top, and a filled red badge
-/// with the file kind below. Geometry is in flipped (top-left origin) coordinates so it reads the
-/// way a designer would describe it.
+/// A 36×36 document thumbnail: two text bars and a red file-kind badge, in flipped-Y coordinates.
 private final class AIChatFilePagePreviewView: NSView {
 
     private enum Layout {
@@ -288,9 +278,7 @@ private final class AIChatFilePagePreviewView: NSView {
     init() {
         super.init(frame: NSRect(x: 0, y: 0, width: Layout.size, height: Layout.size))
 
-        // The card positions us with Auto Layout (centerY + width/height), so opt out of the
-        // autoresizing-mask constraints AppKit would otherwise synthesise from this frame.
-        translatesAutoresizingMaskIntoConstraints = false
+        translatesAutoresizingMaskIntoConstraints = false // the card positions us with Auto Layout
 
         wantsLayer = true
         layer?.cornerRadius = Layout.cornerRadius
@@ -325,8 +313,6 @@ private final class AIChatFilePagePreviewView: NSView {
 
     func refreshAppearance() {
         NSAppearance.withAppAppearance {
-            // Subtler tint than the card surface so the thumbnail reads as a nested page preview
-            // rather than a flat block — same treatment as the tab card's page preview.
             layer?.backgroundColor = NSColor(designSystemColor: .surfaceTertiary).cgColor
         }
         needsDisplay = true

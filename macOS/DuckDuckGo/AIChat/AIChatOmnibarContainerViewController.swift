@@ -386,9 +386,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             .sink { [weak self] text in
                 guard let self else { return }
                 self.updateSubmitButtonState(for: text)
-                // A file rejected at pick time never becomes a card, so there's no × to clear its
-                // error with — editing the prompt is the only interaction left, and it means the
-                // user has read the message and moved on. A blocked submit re-shows it.
+                // A file rejected at pick time leaves no card, so editing is the only way to clear its error.
                 if self.lastAttachmentError != nil {
                     self.lastAttachmentError = nil
                     self.updateAttachmentsLayout()

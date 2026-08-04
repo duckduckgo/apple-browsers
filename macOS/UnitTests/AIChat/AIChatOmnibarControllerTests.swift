@@ -818,10 +818,6 @@ final class AIChatOmnibarControllerTests: XCTestCase {
     }
 
     // MARK: - Submit-time file re-validation
-    //
-    // Pick-time validation lives in the container VC and is skipped entirely while
-    // `attachmentLimits` is nil, so `submit()` re-checks the pending files itself. These cover the
-    // gate directly: an accepted-then-invalid file must not reach the prompt handler.
 
     func testWhenSubmitWithOversizedFile_ThenSubmitIsBlockedAndErrorSurfaces() async {
         await loadPDFModel(limits: makeAttachmentLimits(maxFileSizeMB: 1))
@@ -841,8 +837,7 @@ final class AIChatOmnibarControllerTests: XCTestCase {
     }
 
     func testWhenSubmitWithFilesOverTotalSizeLimit_ThenSubmitIsBlocked() async {
-        // Each file is inside the 1MB per-file limit; together they exceed the 1.5MB total, which
-        // only the cumulative pass catches.
+        // Each file is inside the per-file limit; only the cumulative pass catches the total.
         await loadPDFModel(limits: makeAttachmentLimits(maxFileSizeMB: 1, maxTotalFileSizeBytes: 1_500_000))
         var reportedError: String?
         controller.onAttachmentValidationFailed = { reportedError = $0 }
@@ -895,9 +890,7 @@ final class AIChatOmnibarControllerTests: XCTestCase {
     }
 
     func testWhenLimitsAreUnavailable_ThenOversizedFileStillSubmits() async {
-        // No limits from the endpoint means no client-side enforcement anywhere — the backend
-        // stays the authority. Deliberate: blocking here would make PDFs unsendable whenever the
-        // models endpoint is unreachable.
+        // Deliberate: blocking here would make PDFs unsendable whenever the models endpoint is unreachable.
         await loadPDFModel(limits: nil)
         var reportedError: String?
         controller.onAttachmentValidationFailed = { reportedError = $0 }
@@ -2381,9 +2374,7 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         )
     }
 
-    /// A PDF attachment with the byte size and page count the validator reads. The size is passed
-    /// explicitly rather than allocated, so a "30MB file" costs nothing. `pageCount: nil` stands in
-    /// for an unreadable PDF (what the inspector returns when it can't parse one).
+    /// Size is declared, not allocated, so a "30MB file" is free. `pageCount: nil` = unreadable PDF.
     private func makePDFAttachment(byteCount: Int, pageCount: Int?) -> AIChatFileAttachment {
         AIChatFileAttachment(
             data: Data("%PDF-1.4 mock".utf8),

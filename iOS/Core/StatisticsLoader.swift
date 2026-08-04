@@ -72,7 +72,7 @@ public class StatisticsLoader {
     static func fireSearchTokenExperimentPixels(metric: String) {
         for threshold in [1, 4, 6, 11, 21, 30] {
             PixelKit.fireExperimentPixelIfThresholdReached(
-                for: iOSBrowserConfigSubfeature.searchTokenExperiment.rawValue,
+                for: iOSBrowserConfigSubfeature.searchTokenExperimentV2.rawValue,
                 metric: metric,
                 conversionWindowDays: 1...4,
                 threshold: threshold

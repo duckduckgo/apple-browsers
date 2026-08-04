@@ -1249,14 +1249,12 @@ private extension AIChatContextualSheetViewController {
 
         headerView.addSubview(rightButtonContainer)
         rightButtonContainer.addSubview(rightButtonStack)
-        if featureFlagger.isFeatureOn(for: FeatureFlag.aiChatContextualFireButton) {
-            rightButtonStack.addArrangedSubview(fireButton)
-            fireButton.isHidden = true
-            NSLayoutConstraint.activate([
-                fireButton.widthAnchor.constraint(equalToConstant: Constants.headerButtonSize),
-                fireButton.heightAnchor.constraint(equalToConstant: Constants.headerButtonSize),
-            ])
-        }
+        rightButtonStack.addArrangedSubview(fireButton)
+        fireButton.isHidden = true
+        NSLayoutConstraint.activate([
+            fireButton.widthAnchor.constraint(equalToConstant: Constants.headerButtonSize),
+            fireButton.heightAnchor.constraint(equalToConstant: Constants.headerButtonSize),
+        ])
         rightButtonStack.addArrangedSubview(closeButton)
 
         view.addSubview(contentContainerView)

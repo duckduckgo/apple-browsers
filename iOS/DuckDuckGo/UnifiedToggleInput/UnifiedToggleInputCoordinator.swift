@@ -171,6 +171,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private var pixelReporter: UTIPixelReporter!
     private var wideEventReporter: UTIWideEventReporter!
     private var modelSelector: UTIModelSelector!
+#if DEBUG
+    private let modelPickerPrototypePresenter = UnifiedToggleInputModelPickerPrototypePresenter()
+#endif
     private var attachmentController: UTIAttachmentController!
     private var isContentOverlaySuppressed = false
     /// Forces the model chip visible mid-chat for the FE's `showModelPicker` flow; cleared on prompt
@@ -385,6 +388,12 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                 onModelApplied: { [weak self] in self?.notifyFrontendOfActiveChatModelChange($0) }
             )
         )
+#if DEBUG
+        viewController.usesCustomModelPickerPresentation = true
+        viewController.onCustomModelPickerTapped = { [weak self] in
+            self?.presentModelPickerPrototype()
+        }
+#endif
         attachmentController = UTIAttachmentController(
             pixelReporter: pixelReporter,
             view: .init(
@@ -1648,6 +1657,23 @@ private extension UnifiedToggleInputCoordinator {
         guard let scene = viewController.view.window?.windowScene else { return nil }
         return scene.keyWindow?.rootViewController
     }
+
+#if DEBUG
+    func presentModelPickerPrototype() {
+        guard let presentingViewController = attachmentPresenterViewController,
+              viewController.modelPickerSourceView.window != nil else {
+            return
+        }
+
+        modelPickerPrototypePresenter.present(
+            from: presentingViewController,
+            sourceView: viewController.modelPickerSourceView,
+            onSelect: { _ in },
+            onInfo: { _ in },
+            onCallToAction: {}
+        )
+    }
+#endif
 
     func makeFloatingReturnKeyState() -> UnifiedToggleInputFloatingReturnKeyState {
         UnifiedToggleInputFloatingReturnKeyState(

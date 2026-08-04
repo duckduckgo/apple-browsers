@@ -180,6 +180,20 @@ final class UnifiedToggleInputViewController: UIViewController {
         set { inputBarView.modelPickerMenu = newValue }
     }
 
+    var usesCustomModelPickerPresentation: Bool {
+        get { inputBarView.usesCustomModelPickerPresentation }
+        set { inputBarView.usesCustomModelPickerPresentation = newValue }
+    }
+
+    var onCustomModelPickerTapped: (() -> Void)? {
+        get { inputBarView.onCustomModelPickerTapped }
+        set { inputBarView.onCustomModelPickerTapped = newValue }
+    }
+
+    var modelPickerSourceView: UIView {
+        inputBarView.modelPickerSourceView
+    }
+
     @discardableResult
     func presentModelPickerMenu() -> Bool {
         inputBarView.presentModelPickerMenu()

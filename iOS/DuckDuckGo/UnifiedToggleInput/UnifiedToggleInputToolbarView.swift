@@ -50,6 +50,7 @@ final class UnifiedToggleInputToolbarView: UIView {
     var onStopGeneratingTapped: (() -> Void)?
     var onReturnKeyTapped: (() -> Void)?
     var onModelPickerShown: (() -> Void)?
+    var onCustomModelPickerTapped: (() -> Void)?
     var onReasoningPickerShown: (() -> Void)?
 
     // MARK: - State
@@ -106,6 +107,10 @@ final class UnifiedToggleInputToolbarView: UIView {
         didSet { updateModelChipConfiguration() }
     }
 
+    var usesCustomModelPickerPresentation = false {
+        didSet { updateModelPickerPrimaryAction() }
+    }
+
     var selectedTool: AIChatRAGTool? {
         didSet { updateChipVisibility() }
     }
@@ -118,8 +123,12 @@ final class UnifiedToggleInputToolbarView: UIView {
         get { modelChipButton.menu }
         set {
             modelChipButton.menu = newValue
-            modelChipButton.showsMenuAsPrimaryAction = (newValue != nil)
+            updateModelPickerPrimaryAction()
         }
+    }
+
+    var modelPickerSourceView: UIView {
+        modelChipButton
     }
 
     /// Programmatically opens the model chip's pull-down menu. Returns `true` when the OS
@@ -264,6 +273,7 @@ final class UnifiedToggleInputToolbarView: UIView {
             button.preferredMenuElementOrder = .fixed
         }
         button.addTarget(self, action: #selector(modelPickerShown), for: .touchDown)
+        button.addTarget(self, action: #selector(customModelPickerTapped), for: .primaryActionTriggered)
         button.translatesAutoresizingMaskIntoConstraints = false
         button.setContentHuggingPriority(.defaultLow, for: .horizontal)
         button.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
@@ -470,6 +480,10 @@ private extension UnifiedToggleInputToolbarView {
         modelChipButton.configuration?.title = modelName
     }
 
+    private func updateModelPickerPrimaryAction() {
+        modelChipButton.showsMenuAsPrimaryAction = modelPickerMenu != nil && !usesCustomModelPickerPresentation
+    }
+
     private func updateReasoningButtonAppearance() {
         guard let mode = selectedReasoningMode else {
             reasoningButton.setImage(nil, for: .normal)
@@ -540,6 +554,10 @@ private extension UnifiedToggleInputToolbarView {
     @objc private func modelPickerShown() {
         guard modelPickerMenu != nil else { return }
         onModelPickerShown?()
+    }
+    @objc private func customModelPickerTapped() {
+        guard usesCustomModelPickerPresentation, modelPickerMenu != nil else { return }
+        onCustomModelPickerTapped?()
     }
     @objc private func reasoningPickerShown() {
         guard reasoningPickerMenu != nil else { return }

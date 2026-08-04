@@ -33,7 +33,8 @@ public enum APIRequestV2Error: DDGError {
     public var description: String {
         switch self {
         case .urlSession(let error):
-            return "URL session error: \(String(describing: error))"
+            let nsError = error as NSError
+            return "URL session error: \(nsError.domain) \(nsError.code)"
         case .invalidResponse:
             return "Invalid response received."
         case .unsatisfiedRequirement(let requirement):

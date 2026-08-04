@@ -140,7 +140,8 @@ final class SuggestionTableCellView: NSTableCellView {
     override func awakeFromNib() {
         let colorsProvider = theme?.colorsProvider
 
-        suffixTextField.textColor = colorsProvider?.suggestionsSuffixColor
+        /// `isBurner` isn't known until `display(_:isBurner:)` runs; this is the initial value it then corrects.
+        suffixTextField.textColor = colorsProvider?.suggestionsSuffixColor(isBurner: isBurner)
         removeButton.toolTip = UserText.removeSuggestionTooltip
         switchToTabLabel.attributedStringValue = Self.switchToTabAttributedString
     }
@@ -251,7 +252,7 @@ final class SuggestionTableCellView: NSTableCellView {
 
         let colorsProvider = theme.colorsProvider
         let textColor = isSelected ? colorsProvider.suggestionsHighlightTextColor : colorsProvider.suggestionsTextColor
-        let suffixColor = isSelected ? colorsProvider.suggestionsHighlightSuffixColor : colorsProvider.suggestionsSuffixColor
+        let suffixColor = suggestionsSuffixColor(colorsProvider: colorsProvider)
 
         textField?.attributedStringValue = attributedString
         textField?.textColor = textColor
@@ -364,5 +365,14 @@ final class SuggestionTableCellView: NSTableCellView {
         searchSuggestionTextFieldLeadingConstraint.constant = styleProvider.suggestionTextFieldLeadingPadding
 
         super.layout()
+    }
+}
+
+private extension SuggestionTableCellView {
+
+    func suggestionsSuffixColor(colorsProvider: ColorsProviding) -> NSColor {
+        isSelected
+            ? colorsProvider.suggestionsHighlightSuffixColor(isBurner: isBurner)
+            : colorsProvider.suggestionsSuffixColor(isBurner: isBurner)
     }
 }

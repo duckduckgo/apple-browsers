@@ -18,6 +18,7 @@
 //
 
 import SwiftUI
+import DesignResourcesKitIcons
 
 struct AutofillExtensionPromptView: View {
 
@@ -80,14 +81,19 @@ struct AutofillExtensionPromptView: View {
         @Environment(\.colorScheme) private var colorScheme
 
         private var lottieFileName: String {
-            colorScheme == .dark ? "autofill-extension-dark" : "autofill-extension-light"
+            if AppRebrand.isAppRebranded() {
+                colorScheme == .dark ? "autofill-extension-dark" : "autofill-extension-light"
+            } else {
+                colorScheme == .dark ? "autofill-extension-dark-legacy" : "autofill-extension-light-legacy"
+            }
         }
 
         var body: some View {
             LottieView(
                 lottieFile: lottieFileName,
                 loopMode: .mode(.loop),
-                isAnimating: $isAnimating
+                isAnimating: $isAnimating,
+                contentSize: CGSize(width: Const.Size.animationWidth, height: Const.Size.animationHeight)
             )
             .frame(width: Const.Size.animationWidth)
             .aspectRatio(contentMode: .fit)
@@ -141,5 +147,10 @@ private enum Const {
         static let bottomPadding: CGFloat = 12.0
         static let bottomPaddingIPad: CGFloat = 24.0
         static let animationWidth: CGFloat = 300.0
+        static let animationHeight: CGFloat = 130.0
     }
+}
+
+#Preview {
+    AutofillExtensionPromptView(viewModel: AutofillExtensionPromptViewModel())
 }

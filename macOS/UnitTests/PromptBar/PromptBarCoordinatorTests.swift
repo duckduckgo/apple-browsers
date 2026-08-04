@@ -68,11 +68,13 @@ private final class MockGlobalShortcutRegistrar: GlobalShortcutRegistering {
 private final class MockPromptBarPresenter: PromptBarPresenting {
     var isVisible = false
     private(set) var toggleCallCount = 0
+    private(set) var toggleSources: [PromptBarPresentationSource] = []
 
-    func show() { isVisible = true }
-    func dismiss() { isVisible = false }
-    func toggle() {
+    func show(source: PromptBarPresentationSource) { isVisible = true }
+    func dismiss(reason: PromptBarDismissReason) { isVisible = false }
+    func toggle(source: PromptBarPresentationSource) {
         toggleCallCount += 1
+        toggleSources.append(source)
         isVisible.toggle()
     }
 }
@@ -182,16 +184,37 @@ final class PromptBarCoordinatorTests: XCTestCase {
     func testWhenTogglingThenPresenterIsToggled() {
         let (coordinator, _, _, presenter) = makeCoordinator()
 
-        coordinator.togglePromptBar()
+        coordinator.togglePromptBar(source: .menuBarIcon)
 
         XCTAssertEqual(presenter.toggleCallCount, 1)
         XCTAssertTrue(presenter.isVisible)
     }
 
+    /// The source decides which visibility pixel is reported, so it has to survive the hop.
+    func testWhenTogglingThenTheEntryPointIsPassedThrough() {
+        let (coordinator, _, _, presenter) = makeCoordinator()
+
+        coordinator.togglePromptBar(source: .menuBarIcon)
+        coordinator.togglePromptBar(source: .keyboardShortcut)
+
+        XCTAssertEqual(presenter.toggleSources, [.menuBarIcon, .keyboardShortcut])
+    }
+
+    func testWhenTheShortcutIsPressedThenItTogglesAsTheKeyboardShortcut() async {
+        let (coordinator, _, registrar, presenter) = makeCoordinator(persistor: .optedIn)
+        coordinator.start()
+
+        registrar.simulateShortcutPressed()
+        // The handler hops to the main actor; this queues behind it, so awaiting it means it ran.
+        await Task { @MainActor in }.value
+
+        XCTAssertEqual(presenter.toggleSources, [.keyboardShortcut])
+    }
+
     func testWhenFeatureFlagIsOffThenTogglingDoesNothing() {
         let (coordinator, _, _, presenter) = makeCoordinator(isFeatureOn: false)
 
-        coordinator.togglePromptBar()
+        coordinator.togglePromptBar(source: .keyboardShortcut)
 
         XCTAssertEqual(presenter.toggleCallCount, 0)
     }

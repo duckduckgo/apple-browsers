@@ -192,7 +192,7 @@ final class PermissionCenterViewModel: ObservableObject {
     private let reloadPage: (() -> Void)?
     private let setPermissionsNeedReload: (() -> Void)?
     private let openSettingsPane: ((PreferencePaneIdentifier) -> Void)?
-    private let firePixel: (PixelKitEvent) -> Void
+    private let pixelFiring: PixelFiring?
     private var cancellables = Set<AnyCancellable>()
     private var removedPermissions = Set<PermissionType>()
     private(set) var hasTemporaryPopupAllowance: Bool
@@ -240,7 +240,7 @@ final class PermissionCenterViewModel: ObservableObject {
         displaysAutoplayPolicy: Bool = false,
         permissionsNeedReload: Bool = false,
         displaysAutoplayDiscovery: Bool = false,
-        firePixel: @escaping (PixelKitEvent) -> Void = { PixelKit.fire($0) },
+        pixelFiring: PixelFiring? = PixelKit.shared,
         systemPermissionManager: SystemPermissionManagerProtocol = SystemPermissionManager()
     ) {
         self.domain = domain
@@ -267,7 +267,7 @@ final class PermissionCenterViewModel: ObservableObject {
         self.showReloadBanner = permissionsNeedReload
         self.displaysAutoplayDiscovery = displaysAutoplayDiscovery
         self.allowsAutodismiss = displaysAutoplayDiscovery
-        self.firePixel = firePixel
+        self.pixelFiring = pixelFiring
 
         loadPermissions()
         subscribeToPermissionChanges()
@@ -283,7 +283,7 @@ final class PermissionCenterViewModel: ObservableObject {
         }
 
         allowsAutodismiss = false
-        firePixel(AutoplayPromoPixel.engaged)
+        pixelFiring?.fire(AutoplayPromoPixel.engaged)
     }
 
     /// Updates the decision for a permission type
@@ -298,7 +298,7 @@ final class PermissionCenterViewModel: ObservableObject {
 
         // Fire pixel for decision change
         if previousDecision != decision {
-            firePixel(PermissionPixel.permissionCenterChanged(permissionType: permissionType, from: previousDecision, to: decision))
+            pixelFiring?.fire(PermissionPixel.permissionCenterChanged(permissionType: permissionType, from: previousDecision, to: decision))
             markReloadNeeded()
         }
 
@@ -334,7 +334,7 @@ final class PermissionCenterViewModel: ObservableObject {
 
         // Fire pixel for decision change
         if previousDecision != decision {
-            firePixel(PermissionPixel.permissionCenterChanged(permissionType: permissionType, from: previousDecision, to: decision))
+            pixelFiring?.fire(PermissionPixel.permissionCenterChanged(permissionType: permissionType, from: previousDecision, to: decision))
             markReloadNeeded()
         }
     }
@@ -346,7 +346,7 @@ final class PermissionCenterViewModel: ObservableObject {
         removePermissionFromTab(permissionType)
 
         // Fire pixel for permission reset
-        firePixel(PermissionPixel.permissionCenterReset(permissionType: permissionType))
+        pixelFiring?.fire(PermissionPixel.permissionCenterReset(permissionType: permissionType))
 
         // Show reload banner
         markReloadNeeded()
@@ -454,7 +454,7 @@ final class PermissionCenterViewModel: ObservableObject {
     /// Opens the General settings pane, where the all-sites autoplay preference lives
     func openAutoplaySettings() {
         if displaysAutoplayDiscovery {
-            firePixel(AutoplayPromoPixel.settingsLinkClicked)
+            pixelFiring?.fire(AutoplayPromoPixel.settingsLinkClicked)
         }
 
         openSettingsPane?(.general)
@@ -473,7 +473,7 @@ final class PermissionCenterViewModel: ObservableObject {
         removePermissionFromTab(permissionType)
 
         // Fire pixel for permission reset
-        firePixel(PermissionPixel.permissionCenterReset(permissionType: permissionType))
+        pixelFiring?.fire(PermissionPixel.permissionCenterReset(permissionType: permissionType))
 
         // Show reload banner
         markReloadNeeded()

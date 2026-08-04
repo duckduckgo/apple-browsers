@@ -37,15 +37,15 @@ final class AutoplayDiscoverabilityPromoDelegate: InternalPromoDelegate {
 
     private let featureFlagger: FeatureFlagger
     private let windowControllersManager: WindowControllersManagerProtocol
-    private let firePixel: (PixelKitEvent) -> Void
+    private let pixelFiring: PixelFiring?
     private var showContinuation: CheckedContinuation<PromoResult, Never>?
 
     init(featureFlagger: FeatureFlagger,
          windowControllersManager: WindowControllersManagerProtocol,
-         firePixel: @escaping (PixelKitEvent) -> Void = { PixelKit.fire($0) }) {
+         pixelFiring: PixelFiring? = PixelKit.shared) {
         self.featureFlagger = featureFlagger
         self.windowControllersManager = windowControllersManager
-        self.firePixel = firePixel
+        self.pixelFiring = pixelFiring
     }
 
     var isEligible: Bool {
@@ -78,7 +78,7 @@ final class AutoplayDiscoverabilityPromoDelegate: InternalPromoDelegate {
             return .noChange
         }
 
-        firePixel(AutoplayPromoPixel.shown)
+        pixelFiring?.fire(AutoplayPromoPixel.shown)
 
         return await withCheckedContinuation { continuation in
             showContinuation = continuation
@@ -90,7 +90,7 @@ final class AutoplayDiscoverabilityPromoDelegate: InternalPromoDelegate {
         let didAutodismiss = addressBarButtonsViewController?.autodismissPermissionCenterIfPossible() ?? false
 
         if didAutodismiss {
-            firePixel(AutoplayPromoPixel.autoDismissed)
+            pixelFiring?.fire(AutoplayPromoPixel.autoDismissed)
         }
 
         resume(with: .noChange)

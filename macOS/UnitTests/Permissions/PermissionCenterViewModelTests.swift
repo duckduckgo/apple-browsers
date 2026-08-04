@@ -330,7 +330,7 @@ final class PermissionCenterViewModelTests: XCTestCase {
 
     // MARK: - Autoplay Promo Pixel Tests
 
-    /// Hover events can arrive repeatedly; the promo must only report engagement once.
+    // Hover events can arrive repeatedly; the promo must only report engagement once.
     func testWhenDisableAutodismissIsCalledRepeatedlyThenEngagedPixelFiresOnce() {
         var firedPixels: [PixelKitEvent] = []
 

@@ -59,6 +59,17 @@ enum WebViewPreviewSnapshotGeometry {
         guard webViewBounds.width > 0, webViewBounds.height > 0 else { return nil }
         return webViewBounds
     }
+
+    /// The web content rect with the top and bottom content insets removed, matching the framing the
+    /// synchronous `drawHierarchy` capture produced.
+    static func visibleRect(webViewBounds: CGRect, contentInset: UIEdgeInsets) -> CGRect? {
+        let rect = webViewBounds.inset(by: UIEdgeInsets(top: contentInset.top,
+                                                       left: 0,
+                                                       bottom: contentInset.bottom,
+                                                       right: 0))
+        guard rect.width > 0, rect.height > 0 else { return nil }
+        return rect
+    }
 }
 
 class TabViewController: UIViewController {
@@ -2260,26 +2271,34 @@ extension TabViewController: WKNavigationDelegate {
         }
     }
 
+    /// Captures a preview of the current web content via WebKit's asynchronous `takeSnapshot`, which
+    /// renders out of process rather than blocking the main thread. Falls back to `preparePreviewSync`
+    /// only while a JS alert is on screen, since `takeSnapshot` captures web content but not native overlays.
     func preparePreview(completion: @escaping (UIImage?) -> Void) {
-        guard FloatingUIManager(featureFlagger: featureFlagger).isFloatingUIEnabled else {
-            DispatchQueue.main.async { [weak self] in
-                completion(self?.preparePreviewSync(afterScreenUpdates: true))
-            }
-            return
-        }
+        let capturesFullBounds = FloatingUIManager(featureFlagger: featureFlagger).isFloatingUIEnabled
 
         DispatchQueue.main.async { [weak self] in
-            guard let self,
-                  let webView,
-                  let rect = WebViewPreviewSnapshotGeometry.visibleRect(
-                    webViewBounds: webView.bounds
-                  ) else {
+            guard let self, let webView else {
+                completion(nil)
+                return
+            }
+
+            if jsAlertView?.isShown == true {
+                completion(preparePreviewSync(afterScreenUpdates: true))
+                return
+            }
+
+            let visibleRect = capturesFullBounds
+                ? WebViewPreviewSnapshotGeometry.visibleRect(webViewBounds: webView.bounds)
+                : WebViewPreviewSnapshotGeometry.visibleRect(webViewBounds: webView.bounds,
+                                                            contentInset: webView.scrollView.contentInset)
+            guard let visibleRect else {
                 completion(nil)
                 return
             }
 
             let configuration = WKSnapshotConfiguration()
-            configuration.rect = rect
+            configuration.rect = visibleRect
             configuration.afterScreenUpdates = true
             webView.takeSnapshot(with: configuration) { image, _ in
                 completion(image)
@@ -2314,6 +2333,9 @@ extension TabViewController: WKNavigationDelegate {
         }
     }
 
+    /// Renders the web view on the calling thread. `drawHierarchy` blocks until the render server
+    /// commits, so this stalls the main thread — prefer `preparePreview`. Retained only to capture
+    /// native overlays that `takeSnapshot` cannot see.
     private func preparePreviewSync(afterScreenUpdates: Bool = false) -> UIImage? {
         guard let webView, webView.bounds.height > 0, webView.bounds.width > 0 else { return nil }
 

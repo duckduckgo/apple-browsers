@@ -189,9 +189,7 @@ class MainViewCoordinator {
             navigationBarContainer.isHidden = false
             navigationBarContainer.alpha = 1
             navigationBarContainer.isUserInteractionEnabled = true
-            if position.isBottom {
-                setContentContainerBottomAnchorMode(requesting: .toolbar)
-            }
+            setContentContainerBottomAnchorMode(requesting: .toolbar)
             isOmnibarInToolbar = false
             return
         }
@@ -465,6 +463,7 @@ class MainViewCoordinator {
             setAddressBarTopActive(true)
         }
         constraints.navigationBarContainerHeight.constant = standardNavigationBarContainerHeight
+        restoreContentContainerBottomAnchorAfterUnifiedToggleInput()
     }
 
     func setAITabCollapsedTopSeparatorVisible(_ visible: Bool) {
@@ -549,6 +548,7 @@ class MainViewCoordinator {
             omniBar?.barView.restoreBarChrome()
             omniBar?.barView.setIconContainersAlpha(1)
         }
+        restoreContentContainerBottomAnchorAfterUnifiedToggleInput()
     }
 
     func setStandardStatusBackgroundColor(_ color: UIColor) {
@@ -749,6 +749,11 @@ class MainViewCoordinator {
         case toolbar
         case unifiedToggleInput
         case safeArea
+    }
+
+    private func restoreContentContainerBottomAnchorAfterUnifiedToggleInput() {
+        guard !isNavigationChromeHidden else { return }
+        setContentContainerBottomAnchorMode(requesting: preferredBottomContentAnchorModeForVisibleChrome())
     }
 
     /// Anchors the contentContainer to the UTI's top — except when the bottom chrome is hidden

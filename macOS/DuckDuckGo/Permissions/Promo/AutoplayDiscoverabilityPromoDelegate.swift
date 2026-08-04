@@ -19,6 +19,7 @@
 import Combine
 import Foundation
 import FeatureFlags
+import PixelKit
 import PrivacyConfig
 
 /// Opens the Permission Center by itself the first time a page displays the autoplay policy, so users discover the autoplay controls and the disclaimer UI.
@@ -36,11 +37,15 @@ final class AutoplayDiscoverabilityPromoDelegate: InternalPromoDelegate {
 
     private let featureFlagger: FeatureFlagger
     private let windowControllersManager: WindowControllersManagerProtocol
+    private let firePixel: (PixelKitEvent) -> Void
     private var showContinuation: CheckedContinuation<PromoResult, Never>?
 
-    init(featureFlagger: FeatureFlagger, windowControllersManager: WindowControllersManagerProtocol) {
+    init(featureFlagger: FeatureFlagger,
+         windowControllersManager: WindowControllersManagerProtocol,
+         firePixel: @escaping (PixelKitEvent) -> Void = { PixelKit.fire($0) }) {
         self.featureFlagger = featureFlagger
         self.windowControllersManager = windowControllersManager
+        self.firePixel = firePixel
     }
 
     var isEligible: Bool {
@@ -73,6 +78,8 @@ final class AutoplayDiscoverabilityPromoDelegate: InternalPromoDelegate {
             return .noChange
         }
 
+        firePixel(AutoplayPromoPixel.shown)
+
         return await withCheckedContinuation { continuation in
             showContinuation = continuation
         }
@@ -80,7 +87,12 @@ final class AutoplayDiscoverabilityPromoDelegate: InternalPromoDelegate {
 
     @MainActor
     func hide() {
-        addressBarButtonsViewController?.autodismissPermissionCenterIfPossible()
+        let didAutodismiss = addressBarButtonsViewController?.autodismissPermissionCenterIfPossible() ?? false
+
+        if didAutodismiss {
+            firePixel(AutoplayPromoPixel.autoDismissed)
+        }
+
         resume(with: .noChange)
     }
 }

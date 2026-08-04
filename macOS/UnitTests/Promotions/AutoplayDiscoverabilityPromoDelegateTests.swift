@@ -18,6 +18,7 @@
 
 import Combine
 import FeatureFlags
+import PixelKit
 import PrivacyConfig
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
@@ -27,18 +28,22 @@ final class AutoplayDiscoverabilityPromoDelegateTests: XCTestCase {
 
     private var featureFlagger: MockFeatureFlagger!
     private var windowControllersManager: WindowControllersManagerMock!
+    private var firedPixels: [PixelKitEvent]!
     private var sut: AutoplayDiscoverabilityPromoDelegate!
 
     override func setUp() {
         super.setUp()
         featureFlagger = MockFeatureFlagger(featuresStub: [FeatureFlag.autoplayPolicy.rawValue: true])
         windowControllersManager = WindowControllersManagerMock()
+        firedPixels = []
         sut = AutoplayDiscoverabilityPromoDelegate(featureFlagger: featureFlagger,
-                                                   windowControllersManager: windowControllersManager)
+                                                   windowControllersManager: windowControllersManager,
+                                                   firePixel: { [weak self] pixel in self?.firedPixels.append(pixel) })
     }
 
     override func tearDown() {
         sut = nil
+        firedPixels = nil
         windowControllersManager = nil
         featureFlagger = nil
         super.tearDown()
@@ -75,8 +80,27 @@ final class AutoplayDiscoverabilityPromoDelegateTests: XCTestCase {
         XCTAssertEqual(result, .noChange)
     }
 
-    /// `PromoService` calls `hide()` on any promo it cleans up, including ones that never showed.
-    func testWhenHiddenWithoutShowingThenNothingHappens() {
+    /// `PromoService` calls `hide()` on any promo it cleans up, including ones that never showed: no dismissal to report.
+    func testWhenHiddenWithoutShowingThenNoPixelIsFired() {
         sut.hide()
+
+        XCTAssertTrue(firedPixels.isEmpty)
+    }
+
+    // MARK: - Pixels
+
+    /// Nothing was presented, so there is no impression to report.
+    func testWhenShowCannotPresentThenNoPixelIsFired() async {
+        _ = await sut.show(history: PromoHistoryRecord(id: "autoplay-discoverability"), force: false)
+
+        XCTAssertTrue(firedPixels.isEmpty)
+    }
+
+    /// The names must match `autoplay_promo_pixels.json5` verbatim.
+    func testPixelNames() {
+        XCTAssertEqual(AutoplayPromoPixel.shown.name, "m_mac_autoplay-promo_shown")
+        XCTAssertEqual(AutoplayPromoPixel.engaged.name, "m_mac_autoplay-promo_engaged")
+        XCTAssertEqual(AutoplayPromoPixel.autoDismissed.name, "m_mac_autoplay-promo_auto-dismissed")
+        XCTAssertEqual(AutoplayPromoPixel.settingsLinkClicked.name, "m_mac_autoplay-promo_settings-click")
     }
 }

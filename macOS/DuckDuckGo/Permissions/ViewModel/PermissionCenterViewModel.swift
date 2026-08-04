@@ -524,6 +524,7 @@ final class PermissionCenterViewModel: ObservableObject {
         }
 
         // Always include autoplay policy when feature flag is on (OR) we're displaying the Autoplay Discovery
+        // When `displaysAutoplayDiscovery` we'll forcefully display the Permission.
         if displaysAutoplayPolicy || displaysAutoplayDiscovery,
            !otherPermissions.contains(.autoplayPolicy),
            !removedPermissions.contains(.autoplayPolicy) {

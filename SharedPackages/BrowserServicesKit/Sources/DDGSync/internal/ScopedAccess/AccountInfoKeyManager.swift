@@ -37,14 +37,31 @@ enum AccountInfoKeyManagerError: Error, Equatable {
 protocol AccountInfoKeyManaging {
     func loadKey(for account: SyncAccount) async throws -> AccountInfoKey
     func refreshKey(for account: SyncAccount) async throws -> AccountInfoKey
+    func clearCachedKey(for account: SyncAccount) async
 }
 
 actor AccountInfoKeyManager: AccountInfoKeyManaging {
+
+    private struct AccountIdentity: Equatable {
+        let userID: String
+        let secretKey: Data
+
+        init(account: SyncAccount) {
+            userID = account.userId
+            secretKey = account.secretKey
+        }
+    }
+
+    private struct CachedAccountInfoKey {
+        let accountIdentity: AccountIdentity
+        let key: AccountInfoKey
+    }
 
     private let secureStore: SecureStoring
     private let scopedAccess: ScopedAccessCredentialManaging
     private let crypter: CryptingInternal
     private let jweCompactCodec: JWECompactCodec
+    private var cachedAccountInfoKey: CachedAccountInfoKey?
 
     init(secureStore: SecureStoring,
          scopedAccess: ScopedAccessCredentialManaging,
@@ -57,9 +74,17 @@ actor AccountInfoKeyManager: AccountInfoKeyManaging {
     }
 
     func loadKey(for account: SyncAccount) async throws -> AccountInfoKey {
+        let accountIdentity = AccountIdentity(account: account)
+        if let cachedAccountInfoKey,
+           cachedAccountInfoKey.accountIdentity == accountIdentity {
+            return cachedAccountInfoKey.key
+        }
+        cachedAccountInfoKey = nil
+
         if let protectedKeys = cachedProtectedKeys() {
             do {
                 let key = try await makeAccountInfoKey(from: protectedKeys, account: account)
+                cache(key, for: accountIdentity)
                 Logger.sync.debug("Sync-UnifiedDevices: loaded account_info key from secure storage")
                 return key
             } catch is CancellationError {
@@ -78,7 +103,15 @@ actor AccountInfoKeyManager: AccountInfoKeyManaging {
             .removingDuplicateWrappingIdentities()
         let key = try await makeAccountInfoKey(from: protectedKeys, account: account)
         cache(protectedKeys)
+        cache(key, for: AccountIdentity(account: account))
         return key
+    }
+
+    func clearCachedKey(for account: SyncAccount) {
+        guard cachedAccountInfoKey?.accountIdentity == AccountIdentity(account: account) else {
+            return
+        }
+        cachedAccountInfoKey = nil
     }
 
     private func cachedProtectedKeys() -> [ProtectedKey]? {
@@ -98,6 +131,10 @@ actor AccountInfoKeyManager: AccountInfoKeyManaging {
             return
         }
         try? secureStore.persistProtectedKeys(encodedKeys)
+    }
+
+    private func cache(_ key: AccountInfoKey, for accountIdentity: AccountIdentity) {
+        cachedAccountInfoKey = CachedAccountInfoKey(accountIdentity: accountIdentity, key: key)
     }
 
     private func makeAccountInfoKey(from protectedKeys: [ProtectedKey],

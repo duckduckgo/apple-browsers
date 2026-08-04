@@ -61,14 +61,15 @@ enum WebViewPreviewSnapshotGeometry {
     }
 
     /// The web content rect with the top and bottom content insets removed, matching the framing the
-    /// synchronous `drawHierarchy` capture produced.
+    /// synchronous `drawHierarchy` capture produced. Nil when the insets leave no visible height.
     static func visibleRect(webViewBounds: CGRect, contentInset: UIEdgeInsets) -> CGRect? {
-        let rect = webViewBounds.inset(by: UIEdgeInsets(top: contentInset.top,
-                                                       left: 0,
-                                                       bottom: contentInset.bottom,
-                                                       right: 0))
-        guard rect.width > 0, rect.height > 0 else { return nil }
-        return rect
+        let remainingHeight = webViewBounds.height - contentInset.top - contentInset.bottom
+        guard webViewBounds.width > 0, remainingHeight > 0 else { return nil }
+
+        return webViewBounds.inset(by: UIEdgeInsets(top: contentInset.top,
+                                                    left: 0,
+                                                    bottom: contentInset.bottom,
+                                                    right: 0))
     }
 }
 

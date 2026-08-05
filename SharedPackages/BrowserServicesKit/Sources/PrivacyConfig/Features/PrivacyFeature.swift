@@ -817,10 +817,6 @@ public enum PromoQueueSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .promoQueue }
 
     case featureEnabled
-
-    /// Coordinates presentation across iOS modal prompts and visible promotional surfaces.
-    /// https://app.asana.com/1/137249556945/project/1208671677432066/task/1214300205792360?focus=true
-    case iOSPromoPresentationCoordination
 }
 
 public enum AutofillBreakageReporterSubfeature: String, PrivacySubfeature {

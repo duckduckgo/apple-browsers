@@ -18,7 +18,7 @@
 
 import Combine
 import Foundation
-import FeatureFlags
+import FeatureFlags_macOS
 import PrivacyConfig
 
 /// Opens the Permission Center by itself the first time a page displays the autoplay policy, so users discover the autoplay controls and the disclaimer UI.

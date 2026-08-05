@@ -94,8 +94,7 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         super.tearDown()
     }
 
-    /// Builds a controller with the shared mocks and a chosen burner mode. Used by the
-    /// suggestions tests to compare Fire Window vs regular behavior with identical inputs.
+    // Builds a controller with the shared mocks and a chosen burner mode.
     private func makeController(isBurner: Bool) -> AIChatOmnibarController {
         AIChatOmnibarController(
             aiChatTabOpener: mockTabOpener,
@@ -336,19 +335,17 @@ final class AIChatOmnibarControllerTests: XCTestCase {
     }
 
     func testWhenBurnerWindow_ThenSuggestionsDisabled_EvenWithFeatureFlagAndAutocompleteEnabled() {
-        // Given a Fire Window omnibar with suggestions otherwise fully enabled.
+        // Given
         featureFlagger.featuresStub[FeatureFlag.aiChatSuggestions.rawValue] = true
         searchPreferencesPersistor.showAutocompleteSuggestions = true
         let burnerController = makeController(isBurner: true)
 
-        // Then a Fire Window runs an isolated Duck.ai session, so chat-history suggestions
-        // (which can't be opened here) are suppressed regardless of the flag and setting.
+        // Then
         XCTAssertFalse(burnerController.isSuggestionsEnabled)
     }
 
     func testWhenNonBurnerWindow_ThenSuggestionsEnabled_WithFeatureFlagAndAutocompleteEnabled() {
-        // Given the same preconditions but a regular window, the burner gate is the only
-        // difference from the case above.
+        // Given
         featureFlagger.featuresStub[FeatureFlag.aiChatSuggestions.rawValue] = true
         searchPreferencesPersistor.showAutocompleteSuggestions = true
         let regularController = makeController(isBurner: false)

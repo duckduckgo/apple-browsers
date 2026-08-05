@@ -2947,12 +2947,15 @@ extension AddressBarButtonsViewController {
     }
 
     /// Closes the Permission Center, as long as it still allows autodismissal. This is no longer true once the user interacted with the popover.
-    func autodismissPermissionCenterIfPossible() {
-        guard let permissionCenterPopover, permissionCenterPopover.viewController.allowsAutodismiss else {
-            return
+    /// - Returns: Whether the popover was closed. `false` means there was nothing to close, or the user already engaged with it.
+    @discardableResult
+    func autodismissPermissionCenterIfPossible() -> Bool {
+        guard let permissionCenterPopover, permissionCenterPopover.isShown, permissionCenterPopover.viewController.allowsAutodismiss else {
+            return false
         }
 
         permissionCenterPopover.close()
+        return true
     }
 }
 

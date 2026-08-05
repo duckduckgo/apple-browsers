@@ -22,6 +22,7 @@ import Core
 import Persistence
 import PrivacyConfig
 import UIKit
+import FeatureFlags_iOS
 
 // MARK: - Modal Prompt Presenter
 

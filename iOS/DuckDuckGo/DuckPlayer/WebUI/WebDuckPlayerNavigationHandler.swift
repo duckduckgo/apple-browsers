@@ -27,6 +27,7 @@ import PrivacyConfig
 import DuckPlayer
 import os.log
 import Combine
+import FeatureFlags_iOS
 
 /// Handles navigation and interactions related to Duck Player within the app.
 final class WebDuckPlayerNavigationHandler: NSObject {

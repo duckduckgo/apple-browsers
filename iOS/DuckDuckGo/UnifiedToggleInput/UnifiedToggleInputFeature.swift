@@ -22,6 +22,7 @@ import Common
 import FoundationExtensions
 import Core
 import PrivacyConfig
+import FeatureFlags_iOS
 
 protocol UnifiedToggleInputFeatureProviding {
     var isAvailable: Bool { get }

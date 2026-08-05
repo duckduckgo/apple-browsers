@@ -20,6 +20,7 @@
 import PrivacyConfig
 import Core
 import Combine
+import FeatureFlags_iOS
 
 final class MockFeatureFlagger: FeatureFlagger {
 

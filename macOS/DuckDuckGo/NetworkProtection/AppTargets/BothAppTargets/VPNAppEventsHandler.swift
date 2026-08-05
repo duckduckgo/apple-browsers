@@ -20,7 +20,7 @@ import BrowserServicesKit
 import Combine
 import Common
 import ConcurrencyExtensions
-import FeatureFlags
+import FeatureFlags_macOS
 import Foundation
 import FoundationExtensions
 import LoginItems

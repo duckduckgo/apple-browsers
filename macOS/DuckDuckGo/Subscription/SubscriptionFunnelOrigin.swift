@@ -92,6 +92,13 @@ enum SubscriptionFunnelOrigin: String {
     /// https://app.asana.com/1/137249556945/task/1216424447885172
     case newTabPageOmnibar = "funnel_newtab_macos__omnibar"
 
+    /// Gated model shown in the Prompt Bar's model picker. Impression only — gated rows aren't
+    /// interactive on this surface, so nothing routes into the purchase flow from here.
+    case promptBarModelPicker = "funnel_promptbar_macos__modelpicker"
+
+    /// Gated reasoning effort shown in the Prompt Bar's reasoning picker. Impression only, as above.
+    case promptBarReasoningDropdown = "funnel_promptbar_macos__reasoningdropdown"
+
     // MARK: - Duck.ai Funnel Origins (frontend-reported)
 
     /// Entry points shown in the duck.ai web frontend; reported over the `reportMetric` bridge because

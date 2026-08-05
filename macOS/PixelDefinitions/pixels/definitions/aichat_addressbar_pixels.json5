@@ -241,6 +241,20 @@
         "suffixes": ["daily_count"],
         "parameters": ["appVersion", "pixelSource", "channel"]
     },
+    "m_mac_aichat_addressbar_model_picker_shown": {
+        "description": "Fired when the address bar's Duck.ai model picker is opened showing at least one subscriber-exclusive model — the subscription-funnel impression for that entry point. See https://app.asana.com/1/137249556945/task/1216395339071571",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel", "subscriptionFunnelOrigin"]
+    },
+    "m_mac_aichat_addressbar_reasoning_picker_shown": {
+        "description": "Fired when the address bar's Duck.ai reasoning-effort picker is opened showing at least one gated effort — the subscription-funnel impression for that entry point. See https://app.asana.com/1/137249556945/task/1216395339071571",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel", "subscriptionFunnelOrigin"]
+    },
     "m_mac_aichat_addressbar_reasoning_effort_selected": {
         "description": "Fired when user selects a reasoning effort from the native omnibar picker",
         "owners": ["jotaemepereira"],

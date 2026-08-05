@@ -44,6 +44,10 @@ enum DuckAIPromptPixelEvent: Equatable {
     case tabPickerCanceled
     case modelSelected
     case reasoningEffortSelected
+    /// A picker opened showing at least one gated row — the funnel impression. Each surface attaches
+    /// its own origin, so the event itself carries none.
+    case modelPickerShown
+    case reasoningPickerShown
     case subscriptionUpsellTriggered(currentTier: String, requiredTier: String, flowType: String)
     case voiceChatOpened
 }
@@ -89,6 +93,10 @@ struct AddressBarPromptPixelHandler: DuckAIPromptPixelFiring {
         case .tabPickerCanceled: .aiChatAddressBarAttachPickerCanceled
         case .modelSelected: .aiChatAddressBarModelSelected
         case .reasoningEffortSelected: .aiChatAddressBarReasoningEffortSelected
+        case .modelPickerShown:
+            .aiChatAddressBarModelPickerShown(origin: SubscriptionFunnelOrigin.addressBarModelPicker.rawValue)
+        case .reasoningPickerShown:
+            .aiChatAddressBarReasoningPickerShown(origin: SubscriptionFunnelOrigin.addressBarReasoningDropdown.rawValue)
         case .subscriptionUpsellTriggered(let currentTier, let requiredTier, let flowType):
             .aiChatAddressBarSubscriptionUpsellTriggered(currentTier: currentTier, requiredTier: requiredTier, flowType: flowType)
         case .voiceChatOpened: nil

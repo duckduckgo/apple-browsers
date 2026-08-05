@@ -1768,6 +1768,11 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     }
 
     @objc private func modelPickerButtonClicked() {
+        let items = omnibarController.modelPickerItems(selectedModelId: selectedModelId)
+        // Only a picker that actually shows a gated row is a subscription-funnel impression.
+        if items.contains(where: { if case .gatedModel = $0 { return true } else { return false } }) {
+            omnibarController.pixelHandler.fire(.modelPickerShown)
+        }
         let menu = buildModelPickerMenu()
         // Align menu's trailing edge with button's trailing edge, with a small gap below
         let x = modelPickerButton.bounds.width - menu.size.width
@@ -1889,7 +1894,11 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         menu.minimumWidth = Self.reasoningPickerMinimumWidth
 
         // The controller decides what the menu shows; this only maps each item to an NSMenuItem.
-        for item in omnibarController.reasoningPickerItems() {
+        let items = omnibarController.reasoningPickerItems()
+        if items.contains(where: \.isGated) {
+            omnibarController.pixelHandler.fire(.reasoningPickerShown)
+        }
+        for item in items {
             menu.addItem(reasoningEffortRow(for: item, in: menu))
         }
 

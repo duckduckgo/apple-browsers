@@ -304,6 +304,12 @@ enum AIChatPixel: PixelKitEvent {
     /// routing them to the subscription purchase/upgrade flow.
     case aiChatAddressBarSubscriptionUpsellTriggered(currentTier: String, requiredTier: String, flowType: String)
 
+    /// Event Trigger: The address bar's model picker opened showing at least one gated model.
+    case aiChatAddressBarModelPickerShown(origin: String)
+
+    /// Event Trigger: The address bar's reasoning picker opened showing at least one gated effort.
+    case aiChatAddressBarReasoningPickerShown(origin: String)
+
     // MARK: - Duck.ai Subscription Funnel (frontend-reported)
 
     /// Event Trigger: A Duck.ai subscription-funnel entry point is shown in the web frontend, reported over the `reportMetric` bridge. `origin` is the entry point.
@@ -687,6 +693,10 @@ enum AIChatPixel: PixelKitEvent {
             return "aichat_addressbar_reasoning_effort_selected"
         case .aiChatAddressBarSubscriptionUpsellTriggered:
             return "aichat_addressbar_subscription_upsell_triggered"
+        case .aiChatAddressBarModelPickerShown:
+            return "aichat_addressbar_model_picker_shown"
+        case .aiChatAddressBarReasoningPickerShown:
+            return "aichat_addressbar_reasoning_picker_shown"
         case .aiChatSubscriptionFunnelImpression:
             return "aichat_subscription-funnel_impression"
         case .aiChatSubscriptionFunnelClick:
@@ -921,6 +931,9 @@ enum AIChatPixel: PixelKitEvent {
             return nil
         case .aiChatAddressBarSubscriptionUpsellTriggered(let currentTier, let requiredTier, let flowType):
             return ["current_tier": currentTier, "required_tier": requiredTier, "flow_type": flowType]
+        case .aiChatAddressBarModelPickerShown(let origin),
+                .aiChatAddressBarReasoningPickerShown(let origin):
+            return ["origin": origin]
         case .aiChatSubscriptionFunnelImpression(let origin),
                 .aiChatSubscriptionFunnelClick(let origin),
                 .aiChatSubscriptionFunnelSubscribeModalImpression(let origin),
@@ -1079,6 +1092,8 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatAddressBarModelSelected,
                 .aiChatAddressBarReasoningEffortSelected,
                 .aiChatAddressBarSubscriptionUpsellTriggered,
+                .aiChatAddressBarModelPickerShown,
+                .aiChatAddressBarReasoningPickerShown,
                 .aiChatSubscriptionFunnelImpression,
                 .aiChatSubscriptionFunnelClick,
                 .aiChatSubscriptionFunnelSubscribeModalImpression,

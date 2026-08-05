@@ -251,5 +251,19 @@
                 "type": "boolean"
             }
         ]
+    },
+    "m_mac_aichat_promptbar_model_picker_shown": {
+        "description": "Fired when the Prompt Bar's model picker is opened showing at least one subscriber-exclusive model — the subscription-funnel impression for that entry point. Impression only: gated rows aren't interactive on this surface, so there is no matching click pixel. See https://app.asana.com/1/137249556945/task/1216395339071571",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel", "subscriptionFunnelOrigin"]
+    },
+    "m_mac_aichat_promptbar_reasoning_picker_shown": {
+        "description": "Fired when the Prompt Bar's reasoning-effort picker is opened showing at least one gated effort — the subscription-funnel impression for that entry point. Impression only, as above. See https://app.asana.com/1/137249556945/task/1216395339071571",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel", "subscriptionFunnelOrigin"]
     }
 }

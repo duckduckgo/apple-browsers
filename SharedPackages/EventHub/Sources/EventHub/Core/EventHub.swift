@@ -174,8 +174,12 @@ public final class EventHub: EventHubManaging {
     /// scheduler is enough: the pending state is picked up by the next period boundary, the next
     /// `flushInterval` deadline, or an explicit `onAppBackgrounded()`.
     private func countPeriodLocked(source: String, data: [String: Any]?, tabID: EventHubTabID) {
+        // The timer is best-effort, so `now` can legitimately be past `periodEnd` before the sweep has
+        // run (notably on macOS, where a period can end while the app runs unfocused). An event
+        // arriving in that window belongs to no period and must not be counted into the elapsed one.
+        let now = scheduler.nowMillis()
         for config in latestConfigs where config.isEnabled && config.trigger.isPeriod {
-            guard let telemetry = telemetries[config.name] else { continue }
+            guard let telemetry = telemetries[config.name], !telemetry.isElapsed(atMillis: now) else { continue }
             if telemetry.handleEvent(source: source, data: data, tabID: tabID) {
                 dirtyNames.insert(config.name)
             }
@@ -189,11 +193,15 @@ public final class EventHub: EventHubManaging {
 
     private func applyConfigLocked() {
         guard latestEnabled else { disableLocked(); return }
-        let enabledNames = Set(latestConfigs.filter { $0.isEnabled && $0.trigger.isPeriod }.map(\.name))
+        // Tear down on *absence* from config, not on a pixel merely being disabled: per the Tech Design,
+        // a config removed remotely stops immediately, whereas a disabled pixel still fires the period
+        // it was already running and only then stops (the restart is gated separately, in
+        // `startNewPeriodLocked`, which checks `config.isEnabled`).
+        let presentNames = Set(latestConfigs.filter { $0.trigger.isPeriod }.map(\.name))
         // Snapshot the keys: tearDownLocked mutates `telemetries` (removes the entry), so iterating a
         // live view of the same dictionary being mutated would be subtle even though Swift's COW makes
         // it memory-safe.
-        for name in Array(telemetries.keys) where !enabledNames.contains(name) {
+        for name in Array(telemetries.keys) where !presentNames.contains(name) {
             tearDownLocked(name)
         }
         for config in latestConfigs where config.isEnabled && config.trigger.isPeriod && telemetries[config.name] == nil {
@@ -260,7 +268,9 @@ public final class EventHub: EventHubManaging {
 
     private func fireLocked(_ name: String) {
         guard latestEnabled, let telemetry = telemetries[name] else { return }
-        guard latestConfigs.contains(where: { $0.name == name && $0.isEnabled && $0.trigger.isPeriod }) else {
+        // Defense-in-depth against a config removed between arming and elapsing. Deliberately checks
+        // presence, not `isEnabled`: a pixel disabled mid-period must still fire this final period.
+        guard latestConfigs.contains(where: { $0.name == name && $0.trigger.isPeriod }) else {
             tearDownLocked(name); return
         }
         telemetries.removeValue(forKey: name)

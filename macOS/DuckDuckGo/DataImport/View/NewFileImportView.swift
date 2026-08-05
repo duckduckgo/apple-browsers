@@ -791,7 +791,6 @@ struct NewCircleNumberView: View {
                 Text("\(number)")
                     .font(.system(size: 8.75, weight: .semibold))
                     .foregroundColor(Color(designSystemColor: .accentAltTextPrimary))
-                    .bold()
             )
     }
 

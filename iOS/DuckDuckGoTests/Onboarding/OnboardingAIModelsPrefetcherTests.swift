@@ -65,7 +65,7 @@ struct OnboardingAIModelsPrefetcherTests {
     }
 
     @available(iOS 16, *)
-    @Test("Check a successful prefetch passes the fetched models through the resolver", .timeLimit(.minutes(1)))
+    @Test("Check a successful prefetch passes the fetched models through the resolver and stores its output", .timeLimit(.minutes(1)))
     func successPassesFetchedModelsThroughResolver() async {
         // GIVEN
         var didCallResolver = false
@@ -73,14 +73,30 @@ struct OnboardingAIModelsPrefetcherTests {
         service.behavior = .success([remoteModel(id: "from-service", provider: "openai")])
         let sut = makeSUT(service: service, resolver: { _ in
             didCallResolver = true
-            return OnboardingAIModelResponse(models: [], defaultModelId: nil)
+            return apiResponse
         })
 
         // WHEN
         await sut.prefetch().value
 
-        // THEN the fetched model reached the resolver and its output was stored
+        // THEN the fetched model reached the resolver and its (non-empty) output was stored
         #expect(didCallResolver)
+        #expect(sut.resolvedModel == apiResponse)
+    }
+
+    @available(iOS 16, *)
+    @Test("Check a successful prefetch that resolves to zero models falls back", .timeLimit(.minutes(1)))
+    func successWithNoResolvedModelsResolvesToFallback() async {
+        // GIVEN a fetch that succeeds but the resolver maps it to an empty list
+        let service = MockAIChatModelsService()
+        service.behavior = .success([remoteModel(id: "from-service", provider: "openai")])
+        let sut = makeSUT(service: service, resolver: { _ in OnboardingAIModelResponse(models: [], defaultModelId: nil) })
+
+        // WHEN
+        await sut.prefetch().value
+
+        // THEN it uses the fallback rather than leaving the picker blank
+        #expect(sut.resolvedModel.models.map(\.id) == ["fallback-model"])
     }
 
     @available(iOS 16, *)

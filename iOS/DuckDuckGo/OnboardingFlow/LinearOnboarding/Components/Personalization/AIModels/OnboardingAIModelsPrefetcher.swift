@@ -95,12 +95,15 @@ final class OnboardingAIModelsPrefetcher: OnboardingAIModelsPrefetching {
         if let inFlight { return inFlight }
 
         let task = Task { [weak self, service] in
-            defer { self?.inFlight = nil }
+            guard let self else { return }
+            defer { self.inFlight = nil }
             do {
                 let apiModels = try await service.fetchModels().models
-                self?.resolved = self?.resolver(apiModels)
+                let resolved = self.resolver(apiModels)
+                // If the fetch resolves to zero usable models, fall back.
+                self.resolved = resolved.models.isEmpty ? self.fallback.aiModels : resolved
             } catch {
-                self?.resolved = self?.fallback.aiModels
+                self.resolved = self.fallback.aiModels
             }
         }
         inFlight = task

@@ -275,8 +275,7 @@ final class PromoCoordinationService {
             // Keep the public barrier up through manager and NTP callbacks. Publish the completed state before draining
             // a reentrant flag update so the pending transition starts from a stable source state and its result cannot
             // be overwritten by this transition.
-            promoQueueFeatureState = PromoQueueFeatureState(targetState: targetState)
-            promoQueueFeatureStateSubject.send(promoQueueFeatureState)
+            updatePromoQueueFeatureState(PromoQueueFeatureState(targetState: targetState))
             if let pendingTargetState = pendingPromoQueueFeatureTargetState {
                 pendingPromoQueueFeatureTargetState = nil
                 transitionPromoQueueFeature(to: pendingTargetState)

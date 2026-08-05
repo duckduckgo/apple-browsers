@@ -193,7 +193,7 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
     private var isApplicationActive = true
 
     private(set) var didActuallyPresentModalPromptThisSession = false
-    var coordinatedAttemptReleaseHandler: (@MainActor () -> Void)?
+    private var coordinatedAttemptReleaseHandler: (@MainActor () -> Void)?
 
     var didPresentModalPromptThisSession: Bool {
         didActuallyPresentModalPromptThisSession || hasActiveOrPendingModalAttempt

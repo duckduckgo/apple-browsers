@@ -267,7 +267,7 @@ private enum ASN1DER {
             contents.removeFirst()
         }
         if let first = contents.first, first & 0x80 != 0 {
-            contents.insert(0x00, at: 0)
+            contents.insert(0x00, at: contents.startIndex)
         }
         return wrap(tag: 0x02, contents: contents)
     }

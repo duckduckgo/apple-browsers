@@ -39,8 +39,9 @@ public protocol EventHubScheduler: EventHubClock {
 ///   `EventHub.init(queue:)`. This queue is where the timer fires; `EventHub`'s scheduler-fire handler
 ///   then calls `.sync` onto its own queue to serialize the fire with all its other state mutations. If
 ///   the two queues are the same instance, the timer fires ON that queue and the `.sync` call is then
-///   dispatched onto the queue it's already executing on — a silent deadlock (the block waiting on
-///   `.sync` can never run until the currently-executing block — itself — returns).
+///   dispatched onto the queue it's already executing on — a deadlock (the block waiting on `.sync` can
+///   never run until the currently-executing block — itself — returns). `EventHub` traps on this before
+///   the `.sync` rather than hanging; see `requireSchedulerFiredOnADifferentQueue`.
 public final class DispatchQueueEventHubScheduler: EventHubScheduler {
     private let queue: DispatchQueue
     private var timer: DispatchSourceTimer?

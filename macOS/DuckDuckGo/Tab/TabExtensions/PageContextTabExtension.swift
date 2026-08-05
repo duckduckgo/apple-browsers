@@ -231,10 +231,11 @@ final class PageContextTabExtension {
 
         pageContextUserScript.collectionResultPublisher
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] pageContext in
+            .sink { [weak self] result in
                 guard let self else {
                     return
                 }
+                let pageContext = result.pageContext
                 /// Process full collection when auto-collect is enabled (or the user explicitly
                 /// requested context). When auto-collect is OFF but we requested a signals-only
                 /// collection, deliver just the page-type signals (content stripped). Otherwise
@@ -243,7 +244,7 @@ final class PageContextTabExtension {
                     self.pendingSignalsOnlyCollection = false
                     let wasForced = self.shouldForceContextCollection
                     self.shouldForceContextCollection = false
-                    self.fireExtractionOutcome(for: pageContext)
+                    self.fireExtractionOutcome(for: result)
                     if Self.shouldDeliverCollectionResult(pageContext, wasForced: wasForced, cached: self.cachedPageContext) {
                         Task {
                             await self.handle(pageContext)
@@ -431,9 +432,9 @@ final class PageContextTabExtension {
         fireExtractionPixel(.prevented(reason), trigger: trigger, latency: nil)
     }
 
-    private func fireExtractionOutcome(for pageContext: AIChatPageContextData?) {
+    private func fireExtractionOutcome(for result: PageContextCollectionResult) {
         // No pending request → duplicate or a collect we didn't initiate; skip the pixel.
-        guard let resolution = extractionResolver.resolve(pageContext: pageContext) else {
+        guard let resolution = extractionResolver.resolve(result) else {
             return
         }
         fire(resolution)

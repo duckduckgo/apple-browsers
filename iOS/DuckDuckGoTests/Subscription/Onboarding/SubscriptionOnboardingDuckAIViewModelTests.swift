@@ -20,6 +20,7 @@
 import Combine
 import XCTest
 import AIChat
+@testable import Subscription
 import SubscriptionTestingUtilities
 @testable import DuckDuckGo
 
@@ -281,35 +282,34 @@ private final class SpySectionDelegate: SubscriptionOnboardingSectionDelegate {
 
 // MARK: - DefaultSubscriptionOnboardingAIModelProvider
 
-/// Covers the live adapter over ``UTIModelStore``: the `onModelsUpdated` → async bridge and the two
-/// pass-through members. Stubs the store's own dependencies, matching how the other `UTIModelStore`
-/// consumers are tested.
+/// Covers the live provider: the `/models` fetch, the tier-aware access mapping, and the persisted selection.
 @MainActor
 final class DefaultSubscriptionOnboardingAIModelProviderTests: XCTestCase {
 
     private var modelsService: StubModelsService!
     private var preferences: StubPreferences!
+    private var subscriptionManager: SubscriptionManagerMock!
     private var sut: DefaultSubscriptionOnboardingAIModelProvider!
 
     override func setUp() {
         super.setUp()
         modelsService = StubModelsService()
         preferences = StubPreferences()
+        subscriptionManager = SubscriptionManagerMock()
         sut = DefaultSubscriptionOnboardingAIModelProvider(modelsService: modelsService,
                                                           preferences: preferences,
-                                                          subscriptionManager: SubscriptionManagerMock())
+                                                          subscriptionManager: subscriptionManager)
     }
 
     override func tearDown() {
-        // Unblocks any gated fetch so a parked stub doesn't outlive the test.
-        modelsService?.releaseGate()
         sut = nil
+        subscriptionManager = nil
         preferences = nil
         modelsService = nil
         super.tearDown()
     }
 
-    func testWhenStoreNotifiesThenFetchResolvesWithItsModels() async {
+    func testWhenTheFetchSucceedsThenItResolvesWithTheModels() async {
         modelsService.result = .success(AIChatModelsResponse(models: [remoteModel(id: "gpt-5.4")]))
 
         let models = await sut.fetchModels()
@@ -317,7 +317,7 @@ final class DefaultSubscriptionOnboardingAIModelProviderTests: XCTestCase {
         XCTAssertEqual(models.map(\.id), ["gpt-5.4"])
     }
 
-    func testWhenStoreFetchFailsThenFetchResolvesEmpty() async {
+    func testWhenTheFetchFailsThenItResolvesEmpty() async {
         modelsService.result = .failure(StubModelsService.StubError.fetchFailed)
 
         let models = await sut.fetchModels()
@@ -325,44 +325,36 @@ final class DefaultSubscriptionOnboardingAIModelProviderTests: XCTestCase {
         XCTAssertTrue(models.isEmpty)
     }
 
-    func testWhenUpdatingSelectedModelThenItPersistsAsANewChatSelection() {
+    func testWhenThereIsNoSubscriptionThenPaidModelsAreNotAccessible() async {
+        // The resolved subscription tier feeds the access mapping, which is the provider's own wiring now.
+        modelsService.result = .success(AIChatModelsResponse(models: [remoteModel(id: "gpt-5.4", accessTier: ["plus"])]))
+
+        let models = await sut.fetchModels()
+
+        XCTAssertEqual(models.map(\.entityHasAccess), [false])
+    }
+
+    func testWhenTheSubscriptionIsPlusThenPlusModelsAreAccessible() async {
+        subscriptionManager.resultSubscription = .success(activeSubscription(tier: .plus))
+        modelsService.result = .success(AIChatModelsResponse(models: [remoteModel(id: "gpt-5.4", accessTier: ["plus"])]))
+
+        let models = await sut.fetchModels()
+
+        XCTAssertEqual(models.map(\.entityHasAccess), [true])
+    }
+
+    func testWhenUpdatingSelectedModelThenTheIDAndShortNameArePersisted() async {
+        modelsService.result = .success(AIChatModelsResponse(models: [remoteModel(id: "gpt-5.4")]))
+        _ = await sut.fetchModels()
+
         sut.updateSelectedModel("gpt-5.4")
 
         XCTAssertEqual(preferences.selectedModelId, "gpt-5.4")
+        XCTAssertEqual(preferences.selectedModelShortName, "GPT-5.4 short")
     }
 
-    func testWhenTwoFetchesOverlapThenBothResolveFromOneStoreFetch() async {
-        // The store has a single callback slot, so before coalescing the later fetch overwrote the earlier
-        // one's callback and left it suspended forever.
-        modelsService.isGated = true
-        modelsService.result = .success(AIChatModelsResponse(models: [remoteModel(id: "gpt-5.4")]))
-
-        let fetchStarted = expectation(description: "the store fetch to start")
-        modelsService.onFetchStarted = { fetchStarted.fulfill() }
-
-        async let first = sut.fetchModels()
-        await fulfillment(of: [fetchStarted], timeout: 5)
-
-        let secondStoreFetch = expectation(description: "the second caller must not start its own store fetch")
-        secondStoreFetch.isInverted = true
-        modelsService.onFetchStarted = { secondStoreFetch.fulfill() }
-        async let second = sut.fetchModels()
-        await fulfillment(of: [secondStoreFetch], timeout: 0.2)
-
-        modelsService.releaseGate()
-
-        let (firstModels, secondModels) = await (first, second)
-
-        XCTAssertEqual(firstModels.map(\.id), ["gpt-5.4"])
-        XCTAssertEqual(secondModels.map(\.id), ["gpt-5.4"])
-        // One underlying fetch served both callers.
-        XCTAssertEqual(modelsService.fetchCallCount, 1)
-    }
-
-    func testWhenTwoFetchesAreSequentialThenEachStartsItsOwnStoreFetch() async {
-        // The counterpart to the overlapping case: the adapter coalesces in-flight callers but does not
-        // cache, so a call made after the previous one resolved refetches. That is what lets the prefetcher
-        // retry once its state has gone to `.failed`.
+    func testWhenFetchesAreSequentialThenEachMakesItsOwnRequest() async {
+        // The provider doesn't cache, which is what lets the prefetcher retry once its state has gone to `.failed`.
         modelsService.result = .success(AIChatModelsResponse(models: [remoteModel(id: "gpt-5.4")]))
 
         let first = await sut.fetchModels()
@@ -373,56 +365,31 @@ final class DefaultSubscriptionOnboardingAIModelProviderTests: XCTestCase {
         XCTAssertEqual(modelsService.fetchCallCount, 2)
     }
 
-    func testWhenCallerIsCancelledThenItResolvesWithoutWaitingForTheTimeout() async {
-        // Gated with no release, so the store never notifies and only the cancellation can resolve this.
-        modelsService.isGated = true
-        let fetchStarted = expectation(description: "the store fetch to start")
-        modelsService.onFetchStarted = { fetchStarted.fulfill() }
-        let task = Task { await sut.fetchModels() }
-        await fulfillment(of: [fetchStarted], timeout: 5)
-
-        let start = Date()
-        task.cancel()
-        let models = await task.value
-
-        XCTAssertTrue(models.isEmpty)
-        XCTAssertLessThan(Date().timeIntervalSince(start), 5)
-    }
-
-    func testWhenOneOfTwoCallersIsCancelledThenTheOtherStillGetsTheModels() async {
-        modelsService.isGated = true
-        modelsService.result = .success(AIChatModelsResponse(models: [remoteModel(id: "gpt-5.4")]))
-
-        let fetchStarted = expectation(description: "the store fetch to start")
-        modelsService.onFetchStarted = { fetchStarted.fulfill() }
-        let cancelled = Task { await sut.fetchModels() }
-        await fulfillment(of: [fetchStarted], timeout: 5)
-
-        let secondStoreFetch = expectation(description: "the survivor must not start its own store fetch")
-        secondStoreFetch.isInverted = true
-        modelsService.onFetchStarted = { secondStoreFetch.fulfill() }
-        async let survivor = sut.fetchModels()
-        await fulfillment(of: [secondStoreFetch], timeout: 0.2)
-
-        cancelled.cancel()
-        _ = await cancelled.value
-        modelsService.releaseGate()
-
-        // Cancelling one caller must not resolve the other with an empty list.
-        let survivorModels = await survivor
-        XCTAssertEqual(survivorModels.map(\.id), ["gpt-5.4"])
-    }
-
     // MARK: - Helpers
 
-    private func remoteModel(id: String) -> AIChatRemoteModel {
+    private func activeSubscription(tier: TierName) -> DuckDuckGoSubscription {
+        DuckDuckGoSubscription(productId: UUID().uuidString,
+                               name: "Test subscription",
+                               billingPeriod: .monthly,
+                               startedAt: Date(),
+                               expiresOrRenewsAt: Date().addingTimeInterval(60 * 60 * 24 * 30),
+                               platform: .apple,
+                               status: .autoRenewable,
+                               activeOffers: [],
+                               tier: tier,
+                               availableChanges: nil,
+                               pendingPlans: nil)
+    }
+
+    private func remoteModel(id: String, accessTier: [String] = []) -> AIChatRemoteModel {
         AIChatRemoteModel(id: id,
                           name: "GPT-5.4",
+                          modelShortName: "GPT-5.4 short",
                           provider: "openai",
                           entityHasAccess: true,
                           supportsImageUpload: false,
                           supportedTools: [],
-                          accessTier: [])
+                          accessTier: accessTier)
     }
 }
 
@@ -433,32 +400,11 @@ private final class StubModelsService: AIChatModelsProviding {
     }
 
     var result: Result<AIChatModelsResponse, Error> = .success(AIChatModelsResponse(models: []))
-
-    /// Fires when the fetch is entered — after the gate is armed, so a test resuming on it can't release nothing.
-    var onFetchStarted: (() -> Void)?
-
-    /// When set, `fetchModels()` parks until ``releaseGate()``, so a test can hold one fetch in flight
-    /// while it starts another.
-    var isGated = false
     private(set) var fetchCallCount = 0
-    private var gate: CheckedContinuation<Void, Never>?
 
     func fetchModels() async throws -> AIChatModelsResponse {
         fetchCallCount += 1
-        if isGated {
-            await withCheckedContinuation { continuation in
-                gate = continuation
-                onFetchStarted?()
-            }
-        } else {
-            onFetchStarted?()
-        }
         return try result.get()
-    }
-
-    func releaseGate() {
-        gate?.resume()
-        gate = nil
     }
 }
 

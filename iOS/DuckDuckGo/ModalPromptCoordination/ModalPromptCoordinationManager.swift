@@ -24,6 +24,31 @@ protocol ModalPromptCoordinationManaging {
     var didPresentModalPromptThisSession: Bool { get }
 
     func presentModalPromptIfNeeded(from presenter: ModalPromptPresenter)
+    func presentModalPromptIfNeeded(
+        from presenter: ModalPromptPresenter,
+        with lease: PromoQueueModalLease
+    ) -> ModalPromptLeaseDisposition
+    func reconcilePresentedModal() -> Bool
+    func promoQueueWillTransition(to targetState: PromoQueueFeatureTargetState)
+    func promoQueueDidTransition(to targetState: PromoQueueFeatureTargetState)
+}
+
+enum ModalPromptLeaseDisposition: Equatable {
+    /// The manager kept the lease for a selected or presented modal.
+    case retained
+    /// The manager released the lease because no modal will be presented.
+    case released
+}
+
+enum ModalPromptAttemptPhase: Equatable {
+    /// No coordinated modal owns a lease.
+    case idle
+    /// A modal is being selected; carries this lease acquisition's identity.
+    case evaluating(PromoQueueModalAttemptIdentity)
+    /// A modal was selected and scheduled; carries this lease acquisition's identity.
+    case committed(PromoQueueModalAttemptIdentity)
+    /// The modal root was handed to UIKit; carries this lease acquisition's identity.
+    case presentationActive(PromoQueueModalAttemptIdentity)
 }
 
 /// Manages the coordination and presentation of modal prompts based on priority and cooldown rules.
@@ -33,26 +58,121 @@ protocol ModalPromptCoordinationManaging {
 /// - Presenting the first eligible modal.
 /// - Track when modals were last presented.
 ///
-/// The manager does NOT handle app-lifecycle level concerns like launch source checking. Those are handled by the `ModalPromptsCoordinationService`.
+/// App-lifecycle concerns, such as launch source checks, belong to `PromoCoordinationService`.
 @MainActor
 final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
+    private struct SelectedPrompt {
+        let configuration: ModalPromptConfiguration
+        let provider: any ModalPromptProvider
+    }
+
+    private struct CommittedAttempt {
+        let lease: PromoQueueModalLease
+        let selectedPrompt: SelectedPrompt
+    }
+
+    /// Weak holder for a presented modal root, since an enum payload cannot itself be `weak`.
+    ///
+    /// Checkpoints are sparse (foreground and NTP promo admission), so a strong payload would leave the manager the
+    /// sole owner of a dismissed modal's whole view hierarchy for as long as the user keeps browsing. The providers that
+    /// keep the presented controller keep it weakly for the same reason.
+    private final class PresentedModalRoot {
+        weak var viewController: UIViewController?
+
+        init(_ viewController: UIViewController) {
+            self.viewController = viewController
+        }
+    }
+
+    private enum AttemptState {
+        /// No coordinated modal owns a lease.
+        case idle
+        /// Holds the lease while providers are evaluated.
+        case evaluating(PromoQueueModalLease)
+        /// Holds the lease and selected prompt until scheduled presentation begins.
+        case committed(CommittedAttempt)
+        /// Holds the lease and exact presented root until reconciliation observes its dismissal.
+        case presentationActive(PromoQueueModalLease, exactRoot: PresentedModalRoot)
+    }
+
     private let providers: [any ModalPromptProvider]
     private let cooldownManager: PromptCooldownManaging
     private let scheduler: ModalPromptScheduling
     private let onboardingStatusProvider: ContextualDaxDialogStatusProvider
+    private let promoQueueLeaseArbiter: PromoQueueLeaseArbitrating
+    private let rootAttachmentChecker: ModalPromptRootAttachmentChecking
 
-    private(set) var didPresentModalPromptThisSession = false
+    private var attemptState = AttemptState.idle
+    private var legacyActiveAttemptIDs = Set<UUID>()
+
+    /// The exact root of the most recent modal the manager actually handed to UIKit, on either path.
+    ///
+    /// Recorded at presentation time rather than selection time: its only reader re-adopts a modal that is genuinely on
+    /// screen when the feature turns on, and a root that was merely selected has nothing on screen to re-adopt.
+    private weak var lastPresentedExactRoot: UIViewController?
+
+    private(set) var didActuallyPresentModalPromptThisSession = false
+
+    var didPresentModalPromptThisSession: Bool {
+        didActuallyPresentModalPromptThisSession || hasActiveOrPendingModalAttempt
+    }
+
+    var hasActiveOrPendingModalAttempt: Bool {
+        !legacyActiveAttemptIDs.isEmpty || modalAttemptPhase != .idle
+    }
+
+    var modalAttemptPhase: ModalPromptAttemptPhase {
+        switch attemptState {
+        case .idle:
+            return .idle
+        case .evaluating(let lease):
+            return .evaluating(lease.attemptIdentity)
+        case .committed(let committedAttempt):
+            return .committed(committedAttempt.lease.attemptIdentity)
+        case .presentationActive(let lease, _):
+            return .presentationActive(lease.attemptIdentity)
+        }
+    }
 
     init(
         providers: [any ModalPromptProvider],
         cooldownManager: PromptCooldownManaging,
         onboardingStatusProvider: ContextualDaxDialogStatusProvider,
-        modalPromptScheduling: ModalPromptScheduling = ModalPromptScheduler()
+        promoQueueLeaseArbiter: PromoQueueLeaseArbitrating,
+        modalPromptScheduling: ModalPromptScheduling = ModalPromptScheduler(),
+        rootAttachmentChecker: ModalPromptRootAttachmentChecking? = nil
     ) {
         self.providers = providers
         self.cooldownManager = cooldownManager
         self.onboardingStatusProvider = onboardingStatusProvider
+        self.promoQueueLeaseArbiter = promoQueueLeaseArbiter
         self.scheduler = modalPromptScheduling
+        self.rootAttachmentChecker = rootAttachmentChecker ?? ModalPromptRootAttachmentChecker()
+    }
+
+    /// Clears legacy and coordinated modal bookkeeping before the feature state flips.
+    ///
+    /// The cleanup is intentionally direction-independent, so `targetState` is not consulted here: both directions
+    /// must drop the other path's in-flight bookkeeping. The parameter is kept because transition callbacks carry
+    /// the target state by design.
+    func promoQueueWillTransition(to targetState: PromoQueueFeatureTargetState) {
+        legacyActiveAttemptIDs.removeAll()
+        latchActualPresentationHistoryIfModalIsAttached()
+        releaseCoordinationAttempt()
+    }
+
+    func promoQueueDidTransition(to targetState: PromoQueueFeatureTargetState) {
+        guard targetState == .enabled,
+              let lastPresentedExactRoot,
+              rootAttachmentChecker.isAttached(lastPresentedExactRoot) else {
+            return
+        }
+
+        guard case .acquired(let lease) = promoQueueLeaseArbiter.acquireModalLease() else {
+            return
+        }
+
+        attemptState = .presentationActive(lease, exactRoot: PresentedModalRoot(lastPresentedExactRoot))
     }
 
     /// Attempts to present a modal prompt if one is eligible.
@@ -66,33 +186,65 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
     ///
     /// - Parameter presenter: The view controller to present from.
     func presentModalPromptIfNeeded(from presenter: ModalPromptPresenter) {
-        guard !cooldownManager.isInCooldownPeriod else {
-            let cooldownInfo = cooldownManager.cooldownInfo
-            let lastPresentationDate = cooldownInfo.lastPresentationDate.flatMap(String.init) ?? "-"
-            Logger.modalPrompt.debug("[Modal Prompt Coordination] - Is in cooldown period. Last presentation: \(lastPresentationDate, privacy: .public) Can Present modal again: \(cooldownInfo.nextPresentationDate, privacy: .public)")
-            return
+        guard let selectedPrompt = selectModalPrompt() else { return }
+
+        let scheduledAttemptID = UUID()
+        legacyActiveAttemptIDs.insert(scheduledAttemptID)
+        Logger.modalPrompt.debug("[Modal Prompt Coordination] - Presenting modal from \(type(of: selectedPrompt.provider))")
+        presentLegacyModalPrompt(
+            modalPromptConfiguration: selectedPrompt.configuration,
+            from: presenter,
+            scheduledAttemptID: scheduledAttemptID
+        ) { [weak self] in
+            self?.legacyActiveAttemptIDs.remove(scheduledAttemptID)
+            self?.didActuallyPresentModalPromptThisSession = true
+            self?.saveModalPromptLastPresentationDate()
+            selectedPrompt.provider.didPresentModal()
+        }
+    }
+
+    func presentModalPromptIfNeeded(
+        from presenter: ModalPromptPresenter,
+        with lease: PromoQueueModalLease
+    ) -> ModalPromptLeaseDisposition {
+        guard modalAttemptPhase == .idle else {
+            assertionFailure("A coordinated modal lease cannot replace an active modal attempt.")
+            lease.release()
+            return .released
         }
 
-        let isOnboardingComplete = onboardingStatusProvider.hasSeenOnboarding
-        for provider in providers {
-            guard provider.isEligibleToPresent(isOnboardingComplete: isOnboardingComplete) else {
-                Logger.modalPrompt.debug("[Modal Prompt Coordination] - \(type(of: provider)) is not eligible to present (isOnboardingComplete: \(isOnboardingComplete)).")
-                continue
-            }
-            guard let modalPromptConfiguration = provider.provideModalPrompt() else { continue }
+        attemptState = .evaluating(lease)
 
-            // Set at commit time (not in the present completion) so the sync banner can't slip in
-            // during the schedule + present-animation window; the completion reflects actual presentation.
-            didPresentModalPromptThisSession = true
-            Logger.modalPrompt.debug("[Modal Prompt Coordination] - Presenting modal from \(type(of: provider))")
-            presentModalPrompt(modalPromptConfiguration: modalPromptConfiguration, from: presenter) { [weak self] in
-                self?.saveModalPromptLastPresentationDate()
-                provider.didPresentModal()
-            }
-            return
+        guard let selectedPrompt = selectModalPrompt() else {
+            releaseCoordinationAttempt()
+            return .released
         }
 
-        Logger.modalPrompt.debug("[Modal Prompt Coordination] - No provider is eligible to present a modal.")
+        let committedAttempt = CommittedAttempt(
+            lease: lease,
+            selectedPrompt: selectedPrompt
+        )
+        attemptState = .committed(committedAttempt)
+        Logger.modalPrompt.debug("[Modal Prompt Coordination] - Presenting modal from \(type(of: selectedPrompt.provider))")
+        presentCoordinatedModal(committedAttempt, from: presenter)
+        return .retained
+    }
+
+    /// Releases a coordinated modal only after the exact selected root is no longer attached.
+    ///
+    /// A child presented by that root does not affect this check because attachment is evaluated
+    /// against the observed root itself rather than the topmost view controller. A root that has already been
+    /// deallocated counts as not attached, so a lease can never outlive the modal it was taken for.
+    func reconcilePresentedModal() -> Bool {
+        guard case .presentationActive(let lease, let exactRoot) = attemptState else { return false }
+
+        if let root = exactRoot.viewController, rootAttachmentChecker.isAttached(root) {
+            return false
+        }
+
+        attemptState = .idle
+        lease.release()
+        return true
     }
 }
 
@@ -100,14 +252,120 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
 
 private extension ModalPromptCoordinationManager {
 
-    func presentModalPrompt(modalPromptConfiguration: ModalPromptConfiguration, from presenter: ModalPromptPresenter, completion: @escaping (() -> Void)) {
-        scheduler.schedule(after: 0.1) {
-            if let presented = presenter.presentedViewController, presented is OmniBarEditingStateViewController, !presented.isBeingDismissed {
-                Logger.modalPrompt.debug("[Modal Prompt Coordination] - Presenting modal on top of OmniBarEditingStateViewController")
-                presented.present(modalPromptConfiguration.viewController, animated: modalPromptConfiguration.animated, completion: completion)
-            } else {
-                presenter.present(modalPromptConfiguration.viewController, animated: modalPromptConfiguration.animated, completion: completion)
+    private func selectModalPrompt() -> SelectedPrompt? {
+        guard !cooldownManager.isInCooldownPeriod else {
+            let cooldownInfo = cooldownManager.cooldownInfo
+            let lastPresentationDate = cooldownInfo.lastPresentationDate.flatMap(String.init) ?? "-"
+            Logger.modalPrompt.debug(
+                """
+                [Modal Prompt Coordination] - Is in cooldown period. Last presentation: \(lastPresentationDate, privacy: .public) \
+                Can Present modal again: \(cooldownInfo.nextPresentationDate, privacy: .public)
+                """
+            )
+            return nil
+        }
+
+        let isOnboardingComplete = onboardingStatusProvider.hasSeenOnboarding
+        for provider in providers {
+            guard provider.isEligibleToPresent(isOnboardingComplete: isOnboardingComplete) else {
+                Logger.modalPrompt.debug(
+                    """
+                    [Modal Prompt Coordination] - \(type(of: provider)) is not eligible to present \
+                    (isOnboardingComplete: \(isOnboardingComplete)).
+                    """
+                )
+                continue
             }
+            guard let configuration = provider.provideModalPrompt() else { continue }
+
+            return SelectedPrompt(configuration: configuration, provider: provider)
+        }
+
+        Logger.modalPrompt.debug("[Modal Prompt Coordination] - No provider is eligible to present a modal.")
+        return nil
+    }
+
+    private func presentCoordinatedModal(_ committedAttempt: CommittedAttempt, from presenter: ModalPromptPresenter) {
+        scheduler.schedule(after: 0.1) { [weak self] in
+            guard let self,
+                  case .committed(let currentAttempt) = self.attemptState,
+                  currentAttempt.lease.attemptIdentity == committedAttempt.lease.attemptIdentity else {
+                return
+            }
+
+            self.attemptState = .presentationActive(
+                committedAttempt.lease,
+                exactRoot: PresentedModalRoot(committedAttempt.selectedPrompt.configuration.viewController)
+            )
+            self.performPresentation(
+                modalPromptConfiguration: committedAttempt.selectedPrompt.configuration,
+                from: presenter
+            ) { [weak self] in
+                self?.didActuallyPresentModalPromptThisSession = true
+                self?.saveModalPromptLastPresentationDate()
+                committedAttempt.selectedPrompt.provider.didPresentModal()
+            }
+        }
+    }
+
+    func presentLegacyModalPrompt(
+        modalPromptConfiguration: ModalPromptConfiguration,
+        from presenter: ModalPromptPresenter,
+        scheduledAttemptID: UUID,
+        completion: @escaping (() -> Void)
+    ) {
+        scheduler.schedule(after: 0.1) { [weak self] in
+            guard let self,
+                  self.legacyActiveAttemptIDs.contains(scheduledAttemptID) else {
+                return
+            }
+
+            self.performPresentation(
+                modalPromptConfiguration: modalPromptConfiguration,
+                from: presenter,
+                completion: completion
+            )
+        }
+    }
+
+    /// Hands the selected root to UIKit, and records it as the last root the manager presented.
+    func performPresentation(
+        modalPromptConfiguration: ModalPromptConfiguration,
+        from presenter: ModalPromptPresenter,
+        completion: @escaping (() -> Void)
+    ) {
+        lastPresentedExactRoot = modalPromptConfiguration.viewController
+
+        if let presented = presenter.presentedViewController, presented is OmniBarEditingStateViewController, !presented.isBeingDismissed {
+            Logger.modalPrompt.debug("[Modal Prompt Coordination] - Presenting modal on top of OmniBarEditingStateViewController")
+            presented.present(modalPromptConfiguration.viewController, animated: modalPromptConfiguration.animated, completion: completion)
+        } else {
+            presenter.present(modalPromptConfiguration.viewController, animated: modalPromptConfiguration.animated, completion: completion)
+        }
+    }
+
+    /// Records an attempt whose modal is genuinely on screen as actual session history before a feature transition tears
+    /// it down.
+    func latchActualPresentationHistoryIfModalIsAttached() {
+        guard case .presentationActive(_, let exactRoot) = attemptState,
+              let root = exactRoot.viewController,
+              rootAttachmentChecker.isAttached(root) else {
+            return
+        }
+
+        didActuallyPresentModalPromptThisSession = true
+    }
+
+    func releaseCoordinationAttempt() {
+        switch attemptState {
+        case .idle:
+            return
+        case .evaluating(let lease), .presentationActive(let lease, _):
+            attemptState = .idle
+            lease.release()
+        case .committed(let committedAttempt):
+            attemptState = .idle
+            committedAttempt.lease.release()
         }
     }
 

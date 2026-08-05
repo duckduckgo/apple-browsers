@@ -424,6 +424,7 @@ struct DataImportViewModel {
     /// handle recoverable errors (request primary password or file permission)
     @MainActor
     private mutating func handleErrors(_ summary: [DataType: any DataImportError]) -> Bool {
+        guard !summary.isEmpty else { return false }
         errors.append(summary)
         for error in summary.values {
             switch error {

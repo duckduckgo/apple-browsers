@@ -1634,7 +1634,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// The settings toggles only cover users who touch a setting; this sizes the enabled base.
     @MainActor
     private func fireDailyPromptBarStatePixel() {
-        guard featureFlagger.isFeatureOn(.macosPromptBar) else { return }
+        guard featureFlagger.isFeatureOn(.promptBar) else { return }
 
         PixelKit.fire(PromptBarPixel.state(shortcutEnabled: promptBarPreferences.isKeyboardShortcutEnabled,
                                            menuBarIconEnabled: promptBarPreferences.isMenuBarIconVisible),
@@ -2445,7 +2445,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// Must run before `setUpPromptBarMenuBarVisibility()`, which hands the icon's click to the coordinator.
     @MainActor
     private func setUpPromptBar() {
-        guard featureFlagger.isFeatureOn(.macosPromptBar) else {
+        guard featureFlagger.isFeatureOn(.promptBar) else {
             promptBarCoordinator = nil
             return
         }
@@ -2469,7 +2469,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @MainActor
     private func setUpPromptBarMenuBarVisibility() {
-        guard featureFlagger.isFeatureOn(.macosPromptBar) else {
+        guard featureFlagger.isFeatureOn(.promptBar) else {
             promptBarMenuBarController?.hide()
             promptBarMenuBarController = nil
             promptBarMenuBarCancellable = nil

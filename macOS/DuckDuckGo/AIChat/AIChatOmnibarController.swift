@@ -19,7 +19,7 @@
 import Cocoa
 import Combine
 import AIChat
-import FeatureFlags
+import FeatureFlags_macOS
 import os.log
 import Persistence
 import PixelKit

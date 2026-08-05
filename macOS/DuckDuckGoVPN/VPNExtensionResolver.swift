@@ -17,7 +17,7 @@
 //
 
 import PrivacyConfig
-import FeatureFlags
+import FeatureFlags_macOS
 import Foundation
 import NetworkProtectionUI
 import VPN

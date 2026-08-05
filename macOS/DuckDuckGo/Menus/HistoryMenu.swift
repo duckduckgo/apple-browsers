@@ -21,7 +21,7 @@ import Combine
 import Common
 import DesignResourcesKitIcons
 import FoundationExtensions
-import FeatureFlags
+import FeatureFlags_macOS
 import History
 import os.log
 import PrivacyConfig

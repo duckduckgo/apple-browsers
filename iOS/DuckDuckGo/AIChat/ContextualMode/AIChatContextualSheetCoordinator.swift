@@ -28,6 +28,7 @@ import os.log
 import PrivacyConfig
 import UIKit
 import WebKit
+import FeatureFlags_iOS
 
 /// Underlying-tab URL publishers the contextual chat needs.
 struct AIChatTabURLPublishers {

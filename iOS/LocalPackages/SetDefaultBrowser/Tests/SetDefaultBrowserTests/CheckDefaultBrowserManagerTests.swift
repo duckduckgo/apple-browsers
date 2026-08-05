@@ -44,6 +44,24 @@ final class DefaultBrowserManagerTests {
         )
     }
 
+    @Test("Stored Browser Info Is Read Without Checking The OS")
+    func storedDefaultBrowserInfoDoesNotCheckTheOS() {
+        let storedInfo = DefaultBrowserContext(
+            isDefaultBrowser: false,
+            lastSuccessfulCheckDate: 1741586108000,
+            lastAttemptedCheckDate: 1741586108000,
+            numberOfTimesChecked: 1,
+            nextRetryAvailableDate: nil
+        )
+        store.defaultBrowserContext = storedInfo
+
+        let result = sut.storedDefaultBrowserInfo()
+
+        #expect(result == storedInfo)
+        #expect(defaultBrowserService.isDefaultWebBrowserCallCount == 0)
+        #expect(!eventMapperMock.didCallFireEvent)
+    }
+
     @Test("Check Browser Succeeds store and returns expected info",
         arguments: [
             true,

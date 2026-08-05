@@ -38,10 +38,20 @@ package enum DefaultBrowserPromptPresentationType {
 @MainActor
 package protocol DefaultBrowserPromptCoordinating: AnyObject {
     func getPrompt() -> DefaultBrowserPromptPresentationType?
+    /// Revalidates prepared work without consuming prompt-selection state or performing a new status check.
+    func isPreparedPromptStillValid() -> Bool
+    /// Revalidates retained work using current browser status before a presentation retry.
+    func isRetainedPreparedPromptStillValid() -> Bool
 
     func setDefaultBrowserAction(forPrompt prompt: DefaultBrowserPromptPresentationType)
     func dismissAction(forPrompt prompt: DefaultBrowserPromptPresentationType, shouldDismissPromptPermanently: Bool)
     func moreProtectionsAction()
+}
+
+package extension DefaultBrowserPromptCoordinating {
+    func isRetainedPreparedPromptStillValid() -> Bool {
+        isPreparedPromptStillValid()
+    }
 }
 
 @MainActor
@@ -82,6 +92,14 @@ extension DefaultBrowserPromptCoordinator: DefaultBrowserPromptCoordinating {
         resetUserActivity()
 
         return DefaultBrowserPromptPresentationType(prompt)
+    }
+
+    package func isPreparedPromptStillValid() -> Bool {
+        promptTypeDecider.isPreparedPromptStillValid()
+    }
+
+    package func isRetainedPreparedPromptStillValid() -> Bool {
+        promptTypeDecider.isRetainedPreparedPromptStillValid()
     }
 
     package func setDefaultBrowserAction(forPrompt prompt: DefaultBrowserPromptPresentationType) {

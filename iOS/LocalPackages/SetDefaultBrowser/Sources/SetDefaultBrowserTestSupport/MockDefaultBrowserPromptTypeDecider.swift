@@ -21,13 +21,27 @@ import SetDefaultBrowserCore
 
 package final class MockDefaultBrowserPromptTypeDecider: DefaultBrowserPromptTypeDeciding {
     package var promptToReturn: DefaultBrowserPromptType?
+    package var isPreparedPromptStillValidResult = true
+    package var isRetainedPreparedPromptStillValidResult = true
     package private(set) var didCallPromptType: Bool = false
+    package private(set) var didCallIsPreparedPromptStillValid = false
+    package private(set) var didCallIsRetainedPreparedPromptStillValid = false
 
     package init() {}
 
     package func promptType() -> DefaultBrowserPromptType? {
         didCallPromptType = true
         return promptToReturn
+    }
+
+    package func isPreparedPromptStillValid() -> Bool {
+        didCallIsPreparedPromptStillValid = true
+        return isPreparedPromptStillValidResult
+    }
+
+    package func isRetainedPreparedPromptStillValid() -> Bool {
+        didCallIsRetainedPreparedPromptStillValid = true
+        return isRetainedPreparedPromptStillValidResult
     }
 
 }

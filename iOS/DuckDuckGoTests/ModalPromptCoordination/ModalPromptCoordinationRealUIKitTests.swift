@@ -316,6 +316,8 @@ private enum RealUIKitTestError: Error {
 /// A real UIKit presentation host, so a test can observe genuine presentation and dismissal transitions.
 @MainActor
 private final class UIKitModalPromptPresenter: UIViewController, ModalPromptPresenter {
+    var modalPromptPresentationViewController: UIViewController? { self }
+
     /// Called once, after UIKit reports that the presentation transition has finished.
     ///
     /// A test that goes on to observe a dismissal must wait on this first: UIKit coalesces a dismissal requested

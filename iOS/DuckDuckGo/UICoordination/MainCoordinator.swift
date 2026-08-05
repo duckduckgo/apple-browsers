@@ -660,6 +660,14 @@ final class MainCoordinator {
         promoCoordinationService.presentModalPromptIfNeeded(from: controller)
     }
 
+    func prepareModalPromptCoordinationForForeground() {
+        promoCoordinationService.applicationDidBecomeActive()
+    }
+
+    func prepareModalPromptCoordinationForInactivity() {
+        promoCoordinationService.applicationWillResignActive()
+    }
+
     // MARK: App Lifecycle handling
 
     func onForeground(isFirstForeground: Bool) {
@@ -684,6 +692,7 @@ final class MainCoordinator {
     }
 
     func onBackground() {
+        promoCoordinationService.applicationDidEnterBackground()
         resetAppStartTime()
         Task {
             await privacyStats.handleAppTermination()

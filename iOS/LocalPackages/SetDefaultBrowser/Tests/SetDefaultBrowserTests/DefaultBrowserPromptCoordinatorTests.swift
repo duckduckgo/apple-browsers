@@ -73,6 +73,29 @@ final class DefaultBrowserPromptCoordinatorTests {
         #expect(result == .activeUserModal)
     }
 
+    @Test("Prepared Prompt Validity Is Delegated Without Selecting Another Prompt")
+    func preparedPromptValidityDelegatesToDecider() {
+        promptTypeDeciderMock.isPreparedPromptStillValidResult = false
+
+        let isStillValid = sut.isPreparedPromptStillValid()
+
+        #expect(!isStillValid)
+        #expect(promptTypeDeciderMock.didCallIsPreparedPromptStillValid)
+        #expect(!promptTypeDeciderMock.didCallPromptType)
+    }
+
+    @Test("Retained Prepared Prompt Validity Uses Current-Status Validation")
+    func retainedPreparedPromptValidityDelegatesToDecider() {
+        promptTypeDeciderMock.isRetainedPreparedPromptStillValidResult = false
+
+        let isStillValid = sut.isRetainedPreparedPromptStillValid()
+
+        #expect(!isStillValid)
+        #expect(promptTypeDeciderMock.didCallIsRetainedPreparedPromptStillValid)
+        #expect(!promptTypeDeciderMock.didCallIsPreparedPromptStillValid)
+        #expect(!promptTypeDeciderMock.didCallPromptType)
+    }
+
     @Test(
         "Check Prompt Occurrency Is Incremented for Active Modal When Prompt Is Not Nil",
         arguments: [

@@ -146,14 +146,61 @@ final class DefaultBrowserModalPromptProviderTests {
         // THEN
         #expect(configuration?.animated == true)
     }
+
+    @Test("Prepared Prompt Is Invalid After Browser Becomes Default")
+    func whenBrowserBecomesDefaultThenPreparedPromptIsInvalid() throws {
+        let mockViewController = UIViewController()
+        let presenter = MockDefaultBrowserPromptPresenter(viewControllerToReturn: mockViewController)
+        let sut = DefaultBrowserModalPromptProvider(presenter: presenter)
+        let configuration = try #require(sut.provideModalPrompt())
+        presenter.isPreparedPromptStillValidResult = false
+
+        let isStillValid = sut.isPreparedModalPromptStillValid(configuration)
+
+        #expect(!isStillValid)
+        #expect(presenter.makeCallCount == 1)
+        #expect(presenter.isPreparedPromptStillValidCallCount == 1)
+    }
+
+    @Test("Prepared Prompt Remains Valid When Presenter Revalidation Succeeds")
+    func whenPresenterRevalidationSucceedsThenPreparedPromptRemainsValid() throws {
+        let mockViewController = UIViewController()
+        let presenter = MockDefaultBrowserPromptPresenter(viewControllerToReturn: mockViewController)
+        let sut = DefaultBrowserModalPromptProvider(presenter: presenter)
+        let configuration = try #require(sut.provideModalPrompt())
+
+        let isStillValid = sut.isPreparedModalPromptStillValid(configuration)
+
+        #expect(isStillValid)
+        #expect(presenter.makeCallCount == 1)
+        #expect(presenter.isPreparedPromptStillValidCallCount == 1)
+    }
+
+    @Test("Retained Prepared Prompt Uses Current Browser Revalidation")
+    func whenPreparedPromptWasRetainedThenProviderUsesCurrentBrowserRevalidation() throws {
+        let presenter = MockDefaultBrowserPromptPresenter(viewControllerToReturn: UIViewController())
+        let sut = DefaultBrowserModalPromptProvider(presenter: presenter)
+        let configuration = try #require(sut.provideModalPrompt())
+        presenter.isRetainedPreparedPromptStillValidResult = false
+
+        let isStillValid = sut.isRetainedPreparedModalPromptStillValid(configuration)
+
+        #expect(!isStillValid)
+        #expect(presenter.isPreparedPromptStillValidCallCount == 0)
+        #expect(presenter.isRetainedPreparedPromptStillValidCallCount == 1)
+    }
 }
 
 // This should belong to SetAsDefaultBrowserTestSupport. Had linking issue as UI depends on DesignResourceKitIcons. Possibly TestSupport needs to depend on that too. Will investigate in a follow up task
 @MainActor
 public final class MockDefaultBrowserPromptPresenter: DefaultBrowserPromptPresenting {
     private let viewControllerToReturn: UIViewController?
+    public var isPreparedPromptStillValidResult = true
+    public var isRetainedPreparedPromptStillValidResult = true
     public private(set) var didCallMakePresentDefaultModalPrompt = false
     public private(set) var makeCallCount = 0
+    public private(set) var isPreparedPromptStillValidCallCount = 0
+    public private(set) var isRetainedPreparedPromptStillValidCallCount = 0
 
     public init(viewControllerToReturn: UIViewController?) {
         self.viewControllerToReturn = viewControllerToReturn
@@ -163,5 +210,15 @@ public final class MockDefaultBrowserPromptPresenter: DefaultBrowserPromptPresen
         didCallMakePresentDefaultModalPrompt = true
         makeCallCount += 1
         return viewControllerToReturn
+    }
+
+    public func isPreparedDefaultModalPromptStillValid() -> Bool {
+        isPreparedPromptStillValidCallCount += 1
+        return isPreparedPromptStillValidResult
+    }
+
+    public func isRetainedPreparedDefaultModalPromptStillValid() -> Bool {
+        isRetainedPreparedPromptStillValidCallCount += 1
+        return isRetainedPreparedPromptStillValidResult
     }
 }

@@ -32,6 +32,7 @@ final class MockPromptCooldownManager: PromptCooldownManaging {
     var cooldownInfoToReturn: PromptCooldownInfo = .notInCoolDown
 
     private(set) var didCallRecordLastPromptPresentationTimestamp = false
+    private(set) var recordLastPromptPresentationTimestampCallCount = 0
 
     var cooldownInfo: PromptCooldownInfo {
         cooldownInfoToReturn
@@ -39,6 +40,7 @@ final class MockPromptCooldownManager: PromptCooldownManaging {
 
     func recordLastPromptPresentationTimestamp() {
         didCallRecordLastPromptPresentationTimestamp = true
+        recordLastPromptPresentationTimestampCallCount += 1
     }
 }
 

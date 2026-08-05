@@ -67,6 +67,10 @@ final class NewAddressBarPickerModalPromptProvider: ModalPromptProvider {
             animated: true
         )
     }
+
+    func isPreparedModalPromptStillValid(_ configuration: ModalPromptConfiguration) -> Bool {
+        validator.shouldDisplayNewAddressBarPicker()
+    }
     
     func didPresentModal() {
         Logger.modalPrompt.info("[Modal Prompt Coordination] - New Address Bar Picker Did Present Prompt")

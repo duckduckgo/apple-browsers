@@ -35,4 +35,12 @@ final class DefaultBrowserModalPromptProvider: ModalPromptProvider {
             animated: true
         )
     }
+
+    func isPreparedModalPromptStillValid(_ configuration: ModalPromptConfiguration) -> Bool {
+        presenter.isPreparedDefaultModalPromptStillValid()
+    }
+
+    func isRetainedPreparedModalPromptStillValid(_ configuration: ModalPromptConfiguration) -> Bool {
+        presenter.isRetainedPreparedDefaultModalPromptStillValid()
+    }
 }

@@ -24,8 +24,10 @@ public final class MockCheckDefaultBrowserService: CheckDefaultBrowserService {
     public init() {}
 
     public var resultToReturn: Result<Bool, CheckDefaultBrowserServiceError> = .success(true)
+    public private(set) var isDefaultWebBrowserCallCount = 0
 
     public func isDefaultWebBrowser() -> Result<Bool, CheckDefaultBrowserServiceError> {
-        resultToReturn
+        isDefaultWebBrowserCallCount += 1
+        return resultToReturn
     }
 }

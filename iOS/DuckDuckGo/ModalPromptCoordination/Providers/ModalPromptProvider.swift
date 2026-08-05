@@ -40,7 +40,7 @@ struct ModalPromptConfiguration {
 /// A type that can provide a prompt to be presented to the centralised modal prompts coordination system.
 /// Providers act as lightweight adapters between feature-specific modal prompt logic and the centralised `ModalPromptCoordinationManager`.
 @MainActor
-protocol ModalPromptProvider {
+protocol ModalPromptProvider: AnyObject {
     /// Per-provider onboarding gate. The manager calls this before evaluating `provideModalPrompt()`.
     ///
     /// Default: returns `isOnboardingComplete` — providers that need standard gating get it for free.
@@ -50,6 +50,20 @@ protocol ModalPromptProvider {
     /// Provides a `ModalPromptConfiguration` if the provider has a prompt that is eligible to present.
     /// - Returns: A configured `ModalPromptConfiguration` ready for presentation if it is eligible to present the modal. `nil` otherwise.
     func provideModalPrompt() -> ModalPromptConfiguration?
+
+    /// Revalidates an already prepared prompt without preparing another controller or consuming selection state.
+    ///
+    /// The manager calls this before presenting coordinated work that may have been delayed or retained as pending.
+    /// Providers whose eligibility can change after preparation should override this with a read-only check.
+    func isPreparedModalPromptStillValid(_ configuration: ModalPromptConfiguration) -> Bool
+
+    /// Revalidates a prepared prompt that was retained across a recoverable presentation failure.
+    func isRetainedPreparedModalPromptStillValid(_ configuration: ModalPromptConfiguration) -> Bool
+
+    /// Provides a replacement for an invalid prepared prompt when repeating preparation is safe.
+    ///
+    /// The default implementation returns `nil` so providers whose preparation has side effects are not evaluated twice.
+    func provideReplacementModalPrompt(for invalidConfiguration: ModalPromptConfiguration) -> ModalPromptConfiguration?
 
     /// Called after the modal has been successfully presented.
     /// Use this to update any feature-specific tracking or state.
@@ -62,6 +76,18 @@ extension ModalPromptProvider {
     /// Override to apply a softer or stricter check.
     func isEligibleToPresent(isOnboardingComplete: Bool) -> Bool {
         isOnboardingComplete
+    }
+
+    func isPreparedModalPromptStillValid(_ configuration: ModalPromptConfiguration) -> Bool {
+        true
+    }
+
+    func isRetainedPreparedModalPromptStillValid(_ configuration: ModalPromptConfiguration) -> Bool {
+        isPreparedModalPromptStillValid(configuration)
+    }
+
+    func provideReplacementModalPrompt(for invalidConfiguration: ModalPromptConfiguration) -> ModalPromptConfiguration? {
+        nil
     }
 
     func didPresentModal() {}

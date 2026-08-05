@@ -38,6 +38,10 @@ final class WinBackOfferModalPromptProvider: ModalPromptProvider {
             animated: true
         )
     }
+
+    func isPreparedModalPromptStillValid(_ configuration: ModalPromptConfiguration) -> Bool {
+        coordinator.shouldPresentLaunchPrompt()
+    }
     
     func didPresentModal() {
         coordinator.markLaunchPromptPresented()

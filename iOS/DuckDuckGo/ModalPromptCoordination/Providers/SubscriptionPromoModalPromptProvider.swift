@@ -38,6 +38,10 @@ final class SubscriptionPromoModalPromptProvider: ModalPromptProvider {
         return ModalPromptConfiguration(viewController: prompt, animated: true)
     }
 
+    func isPreparedModalPromptStillValid(_ configuration: ModalPromptConfiguration) -> Bool {
+        coordinator.shouldPresentLaunchPrompt()
+    }
+
     func didPresentModal() {
         coordinator.markLaunchPromptPresented()
     }

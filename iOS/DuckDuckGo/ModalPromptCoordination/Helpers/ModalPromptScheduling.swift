@@ -19,13 +19,49 @@
 
 import Foundation
 
-// Used to present modal prompt with a small delay. Used to easily write test by replacing it with an ImmediateScheduler.
-protocol ModalPromptScheduling {
-    func schedule(after delay: TimeInterval, execute: @escaping @MainActor () -> Void)
+/// An idempotently cancellable handle for scheduled modal-prompt work.
+@MainActor
+final class ModalPromptScheduledTask {
+    private var cancellationHandler: (() -> Void)?
+
+    init(cancellationHandler: @escaping () -> Void = {}) {
+        self.cancellationHandler = cancellationHandler
+    }
+
+    func cancel() {
+        let cancellationHandler = cancellationHandler
+        self.cancellationHandler = nil
+        cancellationHandler?()
+    }
 }
 
+/// Schedules modal-prompt work while allowing tests to substitute deterministic timing.
+@MainActor
+protocol ModalPromptScheduling {
+    @discardableResult
+    func schedule(after delay: TimeInterval, execute: @escaping @MainActor () -> Void) -> ModalPromptScheduledTask
+
+    @discardableResult
+    func scheduleOnNextMainTurn(execute: @escaping @MainActor () -> Void) -> ModalPromptScheduledTask
+}
+
+@MainActor
 final class ModalPromptScheduler: ModalPromptScheduling {
-    func schedule(after delay: TimeInterval, execute: @escaping @MainActor () -> Void) {
-        DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: execute)
+    @discardableResult
+    func schedule(after delay: TimeInterval, execute: @escaping @MainActor () -> Void) -> ModalPromptScheduledTask {
+        let workItem = DispatchWorkItem(block: execute)
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: workItem)
+        return ModalPromptScheduledTask {
+            workItem.cancel()
+        }
+    }
+
+    @discardableResult
+    func scheduleOnNextMainTurn(execute: @escaping @MainActor () -> Void) -> ModalPromptScheduledTask {
+        let workItem = DispatchWorkItem(block: execute)
+        DispatchQueue.main.async(execute: workItem)
+        return ModalPromptScheduledTask {
+            workItem.cancel()
+        }
     }
 }

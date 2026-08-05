@@ -181,8 +181,8 @@ final class ModalPromptCoordinationManagerPromoQueueTests {
     }
 
     @available(iOS 16, *)
-    @Test("Deallocated Presented Root Releases The Modal Lease", .timeLimit(.minutes(1)))
-    func whenPresentedRootIsDeallocatedThenReconciliationReleasesLease() throws {
+    @Test("Detached Presented Root Releases The Modal Lease", .timeLimit(.minutes(1)))
+    func whenPresentedRootIsDetachedThenReconciliationReleasesLease() throws {
         // GIVEN
         cooldownManagerMock.cooldownInfoToReturn = .notInCoolDown
         let provider = MockModalPromptProvider()
@@ -197,29 +197,125 @@ final class ModalPromptCoordinationManagerPromoQueueTests {
             rootAttachmentChecker: attachmentChecker
         )
         let lease = try acquireModalLease()
-        weak var weakExactRoot: UIViewController?
+        let exactRoot = UIViewController()
+        provider.modalConfigurationToReturn = ModalPromptConfiguration(viewController: exactRoot)
+        attachmentChecker.markAttached(exactRoot)
 
-        autoreleasepool {
-            var exactRoot: UIViewController! = UIViewController()
-            weakExactRoot = exactRoot
-            provider.modalConfigurationToReturn = ModalPromptConfiguration(viewController: exactRoot)
-            attachmentChecker.markAttached(exactRoot)
+        _ = sut.presentModalPromptIfNeeded(from: presenterMock, with: lease)
+        scheduler.executeAndReleaseScheduledBlock()
 
-            _ = sut.presentModalPromptIfNeeded(from: presenterMock, with: lease)
-            scheduler.executeAndReleaseScheduledBlock()
+        #expect(sut.modalAttemptPhase == .presentationActive(lease.attemptIdentity))
+        #expect(!sut.reconcilePresentedModal())
+        #expect(promoQueueLeaseArbiter.snapshot.hasModalLease)
 
-            #expect(sut.modalAttemptPhase == .presentationActive(lease.attemptIdentity))
-            #expect(!sut.reconcilePresentedModal())
-            #expect(promoQueueLeaseArbiter.snapshot.hasModalLease)
+        // WHEN UIKit detaches the exact root.
+        attachmentChecker.attachedRoots.remove(ObjectIdentifier(exactRoot))
 
-            // WHEN every fixture reference is dropped, the manager is the only thing that could keep the root alive.
-            provider.modalConfigurationToReturn = nil
-            presenterMock.reset()
-            exactRoot = nil
-        }
+        // THEN the lease is released rather than pinned until the next foreground.
+        #expect(sut.reconcilePresentedModal())
+        #expect(sut.modalAttemptPhase == .idle)
+        #expect(!promoQueueLeaseArbiter.snapshot.hasModalLease)
+    }
 
-        // THEN — the presented modal is gone, so its lease must be released rather than pinned until the next
-        // foreground, and the manager must not be the last owner of the whole view-controller hierarchy.
+    @available(iOS 16, *)
+    @Test("Attached Root Is Adopted Without Re-Presentation", .timeLimit(.minutes(1)))
+    func whenSelectedRootIsAlreadyAttachedThenPreflightAdoptsIt() throws {
+        cooldownManagerMock.cooldownInfoToReturn = .notInCoolDown
+        let provider = MockModalPromptProvider()
+        let exactRoot = UIViewController()
+        provider.modalConfigurationToReturn = ModalPromptConfiguration(viewController: exactRoot)
+        let intendedHost = UIViewController()
+        presenterMock.modalPromptPresentationViewController = intendedHost
+        let attachmentChecker = MockModalPromptRootAttachmentChecker()
+        attachmentChecker.markAttached(intendedHost)
+        attachmentChecker.markAttached(exactRoot)
+        sut = ModalPromptCoordinationManager(
+            providers: [provider],
+            cooldownManager: cooldownManagerMock,
+            onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
+            modalPromptScheduling: schedulerMock,
+            rootAttachmentChecker: attachmentChecker
+        )
+        let lease = try acquireModalLease()
+
+        _ = sut.presentModalPromptIfNeeded(from: presenterMock, with: lease)
+        schedulerMock.executeScheduledBlock()
+
+        #expect(!presenterMock.didCallPresent)
+        #expect(sut.modalAttemptPhase == .presentationActive(lease.attemptIdentity))
+        #expect(promoQueueLeaseArbiter.snapshot.hasModalLease)
+        #expect(sut.didActuallyPresentModalPromptThisSession)
+        #expect(provider.didPresentModalCallCount == 1)
+        #expect(cooldownManagerMock.recordLastPromptPresentationTimestampCallCount == 1)
+    }
+
+    @available(iOS 16, *)
+    @Test("Attachment Verification Retains Lease For Attached Root", .timeLimit(.minutes(1)))
+    func whenPresentedRootAttachesThenVerificationRetainsLease() throws {
+        cooldownManagerMock.cooldownInfoToReturn = .notInCoolDown
+        let provider = MockModalPromptProvider()
+        let exactRoot = UIViewController()
+        provider.modalConfigurationToReturn = ModalPromptConfiguration(viewController: exactRoot)
+        let intendedHost = UIViewController()
+        presenterMock.modalPromptPresentationViewController = intendedHost
+        presenterMock.shouldCompletePresentation = false
+        let attachmentChecker = MockModalPromptRootAttachmentChecker()
+        attachmentChecker.markAttached(intendedHost)
+        sut = ModalPromptCoordinationManager(
+            providers: [provider],
+            cooldownManager: cooldownManagerMock,
+            onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
+            modalPromptScheduling: schedulerMock,
+            rootAttachmentChecker: attachmentChecker
+        )
+        let lease = try acquireModalLease()
+
+        _ = sut.presentModalPromptIfNeeded(from: presenterMock, with: lease)
+        schedulerMock.executeScheduledBlock()
+        attachmentChecker.markAttached(exactRoot)
+        schedulerMock.executeNextMainTurnBlock()
+
+        #expect(sut.modalAttemptPhase == .presentationActive(lease.attemptIdentity))
+        #expect(promoQueueLeaseArbiter.snapshot.hasModalLease)
+        #expect(!sut.reconcilePresentedModal())
+    }
+
+    @available(iOS 16, *)
+    @Test("Accepted Presentation Does Not Retain Detached Root", .timeLimit(.minutes(1)))
+    func whenAcceptedRootDeallocatesThenReconciliationReleasesLease() throws {
+        cooldownManagerMock.cooldownInfoToReturn = .notInCoolDown
+        let provider = MockModalPromptProvider()
+        var exactRoot: UIViewController? = UIViewController()
+        weak var weakExactRoot = exactRoot
+        provider.modalConfigurationToReturn = ModalPromptConfiguration(viewController: try #require(exactRoot))
+        let scheduler = BlockReleasingModalPromptScheduler()
+        let attachmentChecker = MockModalPromptRootAttachmentChecker()
+        sut = ModalPromptCoordinationManager(
+            providers: [provider],
+            cooldownManager: cooldownManagerMock,
+            onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
+            modalPromptScheduling: scheduler,
+            rootAttachmentChecker: attachmentChecker
+        )
+        let lease = try acquireModalLease()
+
+        _ = sut.presentModalPromptIfNeeded(from: presenterMock, with: lease)
+        scheduler.executeAndReleaseScheduledBlock()
+        let presentedRootIdentifier = ObjectIdentifier(try #require(exactRoot))
+        attachmentChecker.markAttached(try #require(exactRoot))
+        scheduler.executeAndReleaseScheduledBlock()
+
+        #expect(sut.modalAttemptPhase == .presentationActive(lease.attemptIdentity))
+        #expect(promoQueueLeaseArbiter.snapshot.hasModalLease)
+
+        attachmentChecker.attachedRoots.remove(presentedRootIdentifier)
+        provider.modalConfigurationToReturn = nil
+        presenterMock.reset()
+        exactRoot = nil
+
         #expect(weakExactRoot == nil)
         #expect(sut.reconcilePresentedModal())
         #expect(sut.modalAttemptPhase == .idle)
@@ -264,7 +360,9 @@ final class ModalPromptCoordinationManagerPromoQueueTests {
         // reproduce that on its own — it never hands the root to UIKit — so the checker states the premise explicitly
         // instead of leaving it to whatever the real attachment predicate happens to answer for a detached controller.
         let attachmentChecker = MockModalPromptRootAttachmentChecker()
-        attachmentChecker.markAttached(exactRoot)
+        deferredPresenter.onPresent = {
+            attachmentChecker.markAttached(exactRoot)
+        }
         sut = ModalPromptCoordinationManager(
             providers: [provider],
             cooldownManager: cooldownManagerMock,
@@ -352,7 +450,9 @@ final class ModalPromptCoordinationManagerPromoQueueTests {
         let exactRoot = UIViewController()
         provider.modalConfigurationToReturn = ModalPromptConfiguration(viewController: exactRoot)
         let attachmentChecker = MockModalPromptRootAttachmentChecker()
-        attachmentChecker.attachedRoots.insert(ObjectIdentifier(exactRoot))
+        let intendedHost = UIViewController()
+        presenterMock.modalPromptPresentationViewController = intendedHost
+        attachmentChecker.markAttached(exactRoot)
         sut = ModalPromptCoordinationManager(
             providers: [provider],
             cooldownManager: cooldownManagerMock,
@@ -375,18 +475,310 @@ final class ModalPromptCoordinationManagerPromoQueueTests {
         }
     }
 
+    // MARK: - Safe Scheduling And Lifecycle
+
     @available(iOS 16, *)
-    @Test("Enabling Does Not Re-Adopt A Root That Was Only Selected", .timeLimit(.minutes(1)))
-    func whenSelectedRootWasNeverPresentedThenEnablingDoesNotReAdoptModalLease() throws {
-        // GIVEN
+    @Test("Temporary Inactivity Moves Delayed Presentation To Pending", .timeLimit(.minutes(1)))
+    func whenAppTemporarilyResignsActiveDuringDelayThenPreparedItemIsRetriedWithoutReevaluation() throws {
         cooldownManagerMock.cooldownInfoToReturn = .notInCoolDown
         let provider = MockModalPromptProvider()
-        let exactRoot = UIViewController()
-        provider.modalConfigurationToReturn = ModalPromptConfiguration(viewController: exactRoot)
-        // The root would satisfy the attachment predicate, so only the absence of an actual presentation can stop the
-        // manager re-adopting it.
+        sut = ModalPromptCoordinationManager(
+            providers: [provider],
+            cooldownManager: cooldownManagerMock,
+            onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
+            modalPromptScheduling: schedulerMock
+        )
+        var releaseNotificationCount = 0
+        sut.coordinatedAttemptReleaseHandler = {
+            releaseNotificationCount += 1
+        }
+        let lease = try acquireModalLease()
+        _ = sut.presentModalPromptIfNeeded(from: presenterMock, with: lease)
+
+        sut.applicationWillResignActive()
+        schedulerMock.executeScheduledBlock()
+
+        #expect(!presenterMock.didCallPresent)
+        #expect(sut.modalAttemptPhase == .idle)
+        #expect(sut.hasActiveOrPendingModalAttempt)
+        #expect(!promoQueueLeaseArbiter.snapshot.hasModalLease)
+        #expect(releaseNotificationCount == 1)
+
+        sut.applicationDidBecomeActive()
+        let retryLease = try acquireModalLease()
+        let retryDisposition = sut.presentModalPromptIfNeeded(from: presenterMock, with: retryLease)
+
+        #expect(retryDisposition == .retained)
+        #expect(provider.provideModalPromptCallCount == 1)
+        #expect(sut.modalAttemptPhase == .committed(retryLease.attemptIdentity))
+
+        schedulerMock.executeScheduledBlock()
+
+        #expect(presenterMock.didCallPresent)
+        #expect(sut.modalAttemptPhase == .presentationActive(retryLease.attemptIdentity))
+    }
+
+    @available(iOS 16, *)
+    @Test("Background Moves Committed Work To Pending And Cancelled Delay Cannot Present", .timeLimit(.minutes(1)))
+    func whenAppBackgroundsDuringDelayThenPreparedItemIsRetriedBeforeProviders() throws {
+        cooldownManagerMock.cooldownInfoToReturn = .notInCoolDown
+        let provider = MockModalPromptProvider()
+        sut = ModalPromptCoordinationManager(
+            providers: [provider],
+            cooldownManager: cooldownManagerMock,
+            onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
+            modalPromptScheduling: schedulerMock
+        )
+        let firstLease = try acquireModalLease()
+        _ = sut.presentModalPromptIfNeeded(from: presenterMock, with: firstLease)
+
+        sut.applicationWillResignActive()
+
+        #expect(sut.modalAttemptPhase == .committed(firstLease.attemptIdentity))
+        #expect(promoQueueLeaseArbiter.snapshot.modalAttemptIdentity == firstLease.attemptIdentity)
+
+        sut.applicationDidEnterBackground()
+
+        #expect(sut.modalAttemptPhase == .idle)
+        #expect(sut.hasActiveOrPendingModalAttempt)
+        #expect(!promoQueueLeaseArbiter.snapshot.hasModalLease)
+        #expect(!provider.didCallDidPresentModal)
+
+        schedulerMock.executeScheduledBlock(includingCancelled: true)
+        #expect(!presenterMock.didCallPresent)
+
+        sut.applicationDidBecomeActive()
+        let retryLease = try acquireModalLease()
+        let retryDisposition = sut.presentModalPromptIfNeeded(from: presenterMock, with: retryLease)
+
+        #expect(retryDisposition == .retained)
+        #expect(provider.provideModalPromptCallCount == 1)
+        #expect(sut.modalAttemptPhase == .committed(retryLease.attemptIdentity))
+    }
+
+    @available(iOS 16, *)
+    @Test("Disabling Clears Pending Work And Restores Fresh Legacy Evaluation", .timeLimit(.minutes(1)))
+    func whenPreparedPromptIsPendingThenDisablingClearsItBeforeLegacyEvaluation() throws {
+        cooldownManagerMock.cooldownInfoToReturn = .notInCoolDown
+        let provider = MockModalPromptProvider()
+        sut = ModalPromptCoordinationManager(
+            providers: [provider],
+            cooldownManager: cooldownManagerMock,
+            onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
+            modalPromptScheduling: schedulerMock
+        )
+        let lease = try acquireModalLease()
+        _ = sut.presentModalPromptIfNeeded(from: presenterMock, with: lease)
+        sut.applicationDidEnterBackground()
+
+        sut.promoQueueWillTransition(to: .disabled)
+        promoQueueLeaseArbiter.invalidateAllLeases()
+        sut.promoQueueDidTransition(to: .disabled)
+        schedulerMock.executeScheduledBlock(includingCancelled: true)
+
+        #expect(!sut.hasActiveOrPendingModalAttempt)
+        #expect(!sut.didPresentModalPromptThisSession)
+        #expect(!presenterMock.didCallPresent)
+        #expect(provider.provideModalPromptCallCount == 1)
+
+        cooldownManagerMock.cooldownInfoToReturn = .inCoolDown
+        sut.presentModalPromptIfNeeded(from: presenterMock)
+
+        #expect(provider.provideModalPromptCallCount == 1)
+        #expect(!presenterMock.didCallPresent)
+
+        let freshRoot = UIViewController()
+        provider.modalConfigurationToReturn = ModalPromptConfiguration(viewController: freshRoot)
+        cooldownManagerMock.cooldownInfoToReturn = .notInCoolDown
+        sut.presentModalPromptIfNeeded(from: presenterMock)
+        schedulerMock.executeScheduledBlock()
+
+        #expect(presenterMock.didCallPresent)
+        #expect(presenterMock.capturedViewController === freshRoot)
+        #expect(provider.provideModalPromptCallCount == 2)
+    }
+
+    @available(iOS 16, *)
+    @Test("Invalid Pending Prompt Is Replaced By Its Provider In Priority Order", .timeLimit(.minutes(1)))
+    func whenPendingPromptBecomesInvalidThenRetrySelectsReplacementFromSameProvider() throws {
+        cooldownManagerMock.cooldownInfoToReturn = .notInCoolDown
+        let provider = MockModalPromptProvider()
+        let replacementRoot = UIViewController()
+        provider.replacementModalConfigurationToReturn = ModalPromptConfiguration(viewController: replacementRoot)
+        let lowerPriorityProvider = MockModalPromptProvider()
+        sut = ModalPromptCoordinationManager(
+            providers: [provider, lowerPriorityProvider],
+            cooldownManager: cooldownManagerMock,
+            onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
+            modalPromptScheduling: schedulerMock
+        )
+        let firstLease = try acquireModalLease()
+        _ = sut.presentModalPromptIfNeeded(from: presenterMock, with: firstLease)
+        sut.applicationDidEnterBackground()
+        provider.isPreparedModalPromptStillValidResult = false
+        sut.applicationDidBecomeActive()
+
+        let retryLease = try acquireModalLease()
+        let disposition = sut.presentModalPromptIfNeeded(from: presenterMock, with: retryLease)
+
+        #expect(disposition == .retained)
+        #expect(provider.provideModalPromptCallCount == 1)
+        #expect(provider.isPreparedModalPromptStillValidCallCount == 1)
+        #expect(provider.provideReplacementModalPromptCallCount == 1)
+        #expect(lowerPriorityProvider.provideModalPromptCallCount == 0)
+        #expect(!presenterMock.didCallPresent)
+        #expect(sut.modalAttemptPhase == .committed(retryLease.attemptIdentity))
+        #expect(promoQueueLeaseArbiter.snapshot.modalAttemptIdentity == retryLease.attemptIdentity)
+        #expect(!cooldownManagerMock.didCallRecordLastPromptPresentationTimestamp)
+
+        schedulerMock.executeScheduledBlock(includingCancelled: true)
+        schedulerMock.executeScheduledBlock()
+
+        #expect(presenterMock.capturedViewController === replacementRoot)
+    }
+
+    @available(iOS 16, *)
+    @Test("Invalid Pending Prompt Releases When No Other Provider Is Eligible", .timeLimit(.minutes(1)))
+    func whenPendingPromptBecomesInvalidThenRetryDoesNotAskItForAnotherController() throws {
+        cooldownManagerMock.cooldownInfoToReturn = .notInCoolDown
+        let provider = MockModalPromptProvider()
+        provider.isPreparedModalPromptStillValidResult = true
+        provider.isRetainedPreparedModalPromptStillValidResult = false
+        sut = ModalPromptCoordinationManager(
+            providers: [provider],
+            cooldownManager: cooldownManagerMock,
+            onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
+            modalPromptScheduling: schedulerMock
+        )
+        let firstLease = try acquireModalLease()
+        _ = sut.presentModalPromptIfNeeded(from: presenterMock, with: firstLease)
+        sut.applicationDidEnterBackground()
+        sut.applicationDidBecomeActive()
+
+        let retryLease = try acquireModalLease()
+        let disposition = sut.presentModalPromptIfNeeded(from: presenterMock, with: retryLease)
+
+        #expect(disposition == .released)
+        #expect(provider.provideModalPromptCallCount == 1)
+        #expect(provider.isPreparedModalPromptStillValidCallCount == 0)
+        #expect(provider.isRetainedPreparedModalPromptStillValidCallCount == 1)
+        #expect(provider.provideReplacementModalPromptCallCount == 1)
+        #expect(!presenterMock.didCallPresent)
+        #expect(!sut.hasActiveOrPendingModalAttempt)
+        #expect(!promoQueueLeaseArbiter.snapshot.hasModalLease)
+    }
+
+    @available(iOS 16, *)
+    @Test("Valid Pending Prompt Is Retried Before Newly Eligible Providers", .timeLimit(.minutes(1)))
+    func whenHigherPriorityProviderBecomesEligibleThenValidPendingPromptIsRetriedFirst() throws {
+        cooldownManagerMock.cooldownInfoToReturn = .notInCoolDown
+        let higherPriorityProvider = MockModalPromptProvider(shouldReturnPrompt: false)
+        let pendingProvider = MockModalPromptProvider()
+        let pendingRoot = UIViewController()
+        pendingProvider.modalConfigurationToReturn = ModalPromptConfiguration(viewController: pendingRoot)
+        sut = ModalPromptCoordinationManager(
+            providers: [higherPriorityProvider, pendingProvider],
+            cooldownManager: cooldownManagerMock,
+            onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
+            modalPromptScheduling: schedulerMock
+        )
+        let firstLease = try acquireModalLease()
+        _ = sut.presentModalPromptIfNeeded(from: presenterMock, with: firstLease)
+        sut.applicationDidEnterBackground()
+        higherPriorityProvider.modalConfigurationToReturn = ModalPromptConfiguration(viewController: UIViewController())
+        sut.applicationDidBecomeActive()
+
+        let retryLease = try acquireModalLease()
+        let disposition = sut.presentModalPromptIfNeeded(from: presenterMock, with: retryLease)
+
+        #expect(disposition == .retained)
+        #expect(higherPriorityProvider.provideModalPromptCallCount == 1)
+        #expect(pendingProvider.provideModalPromptCallCount == 1)
+        #expect(pendingProvider.isPreparedModalPromptStillValidCallCount == 1)
+        #expect(sut.modalAttemptPhase == .committed(retryLease.attemptIdentity))
+
+        schedulerMock.executeScheduledBlock(includingCancelled: true)
+        schedulerMock.executeScheduledBlock()
+
+        #expect(presenterMock.capturedViewController === pendingRoot)
+    }
+
+    @available(iOS 16, *)
+    @Test("Invalid Prepared Prompt Is Discarded Immediately Before Presentation", .timeLimit(.minutes(1)))
+    func whenPreparedPromptBecomesInvalidDuringDelayThenItIsNotPresentedOrRetained() throws {
+        cooldownManagerMock.cooldownInfoToReturn = .notInCoolDown
+        let provider = MockModalPromptProvider()
+        sut = ModalPromptCoordinationManager(
+            providers: [provider],
+            cooldownManager: cooldownManagerMock,
+            onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
+            modalPromptScheduling: schedulerMock
+        )
+        var releaseNotificationCount = 0
+        sut.coordinatedAttemptReleaseHandler = {
+            releaseNotificationCount += 1
+        }
+        let lease = try acquireModalLease()
+        _ = sut.presentModalPromptIfNeeded(from: presenterMock, with: lease)
+        provider.isPreparedModalPromptStillValidResult = false
+
+        schedulerMock.executeScheduledBlock()
+
+        #expect(provider.provideModalPromptCallCount == 1)
+        #expect(provider.isPreparedModalPromptStillValidCallCount == 1)
+        #expect(!presenterMock.didCallPresent)
+        #expect(!provider.didCallDidPresentModal)
+        #expect(!cooldownManagerMock.didCallRecordLastPromptPresentationTimestamp)
+        #expect(!sut.hasActiveOrPendingModalAttempt)
+        #expect(!promoQueueLeaseArbiter.snapshot.hasModalLease)
+        #expect(releaseNotificationCount == 1)
+    }
+
+    @available(iOS 16, *)
+    @Test("Changed Provider Eligibility Invalidates Prepared Prompt", .timeLimit(.minutes(1)))
+    func whenOnboardingEligibilityChangesDuringDelayThenPreparedPromptIsDiscarded() throws {
+        cooldownManagerMock.cooldownInfoToReturn = .notInCoolDown
+        let onboardingStatusProvider = MockContextualOnboardingStatusProvider(hasSeenOnboarding: true)
+        let provider = MockModalPromptProvider()
+        sut = ModalPromptCoordinationManager(
+            providers: [provider],
+            cooldownManager: cooldownManagerMock,
+            onboardingStatusProvider: onboardingStatusProvider,
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
+            modalPromptScheduling: schedulerMock
+        )
+        let lease = try acquireModalLease()
+        _ = sut.presentModalPromptIfNeeded(from: presenterMock, with: lease)
+        onboardingStatusProvider.hasSeenOnboarding = false
+
+        schedulerMock.executeScheduledBlock()
+
+        #expect(provider.provideModalPromptCallCount == 1)
+        #expect(provider.capturedIsOnboardingComplete == false)
+        #expect(provider.isPreparedModalPromptStillValidCallCount == 0)
+        #expect(!presenterMock.didCallPresent)
+        #expect(!sut.hasActiveOrPendingModalAttempt)
+        #expect(!promoQueueLeaseArbiter.snapshot.hasModalLease)
+    }
+
+    @available(iOS 16, *)
+    @Test("Presentation Route Is Resolved At Fire Time", .timeLimit(.minutes(1)))
+    func whenPresentationHostChangesDuringDelayThenCurrentRouteIsUsed() throws {
+        cooldownManagerMock.cooldownInfoToReturn = .notInCoolDown
+        let provider = MockModalPromptProvider()
+        let originalHost = UIViewController()
+        let currentHost = UIViewController()
+        presenterMock.modalPromptPresentationViewController = originalHost
         let attachmentChecker = MockModalPromptRootAttachmentChecker()
-        attachmentChecker.markAttached(exactRoot)
+        attachmentChecker.markAttached(originalHost)
+        attachmentChecker.markAttached(currentHost)
         sut = ModalPromptCoordinationManager(
             providers: [provider],
             cooldownManager: cooldownManagerMock,
@@ -397,29 +789,155 @@ final class ModalPromptCoordinationManagerPromoQueueTests {
         )
         let lease = try acquireModalLease()
         _ = sut.presentModalPromptIfNeeded(from: presenterMock, with: lease)
+        presenterMock.modalPromptPresentationViewController = currentHost
 
-        // The prompt is selected and committed, but its scheduled presentation never runs.
-        #expect(sut.modalAttemptPhase == .committed(lease.attemptIdentity))
-        #expect(!presenterMock.didCallPresent)
+        schedulerMock.executeScheduledBlock()
 
-        // WHEN
-        sut.promoQueueWillTransition(to: .enabled)
-        promoQueueLeaseArbiter.invalidateAllLeases()
-        sut.promoQueueDidTransition(to: .enabled)
-
-        // THEN — nothing ever reached the screen, so there is nothing to re-adopt: the manager must not park itself in
-        // `.presentationActive` holding the modal lease, and must not even consider the merely selected root.
-        #expect(sut.modalAttemptPhase == .idle)
-        #expect(!promoQueueLeaseArbiter.snapshot.hasModalLease)
-        #expect(!sut.hasActiveOrPendingModalAttempt)
-        #expect(!attachmentChecker.didQuery(exactRoot))
+        #expect(presenterMock.didCallPresent)
+        #expect(attachmentChecker.didQuery(currentHost))
+        #expect(!attachmentChecker.didQuery(originalHost))
+        #expect(sut.modalAttemptPhase == .presentationActive(lease.attemptIdentity))
+        #expect(promoQueueLeaseArbiter.snapshot.hasModalLease)
+        #expect(provider.provideModalPromptCallCount == 1)
     }
 
     @available(iOS 16, *)
-    @Test("Enabling Invalidates Legacy Delayed Presentation", .timeLimit(.minutes(1)))
-    func whenFeatureEnablesDuringLegacyDelayThenStaleClosureCannotPresent() {
+    @Test("In-Flight Presentation Retains Lease Until Late Root Attachment", .timeLimit(.minutes(1)))
+    func whenPresentationRelationshipExistsThenLeaseIsRetainedUntilRootAttaches() throws {
         cooldownManagerMock.cooldownInfoToReturn = .notInCoolDown
         let provider = MockModalPromptProvider()
+        let exactRoot = UIViewController()
+        provider.modalConfigurationToReturn = ModalPromptConfiguration(viewController: exactRoot)
+        let attachmentChecker = MockModalPromptRootAttachmentChecker()
+        let intendedHost = UIViewController()
+        presenterMock.modalPromptPresentationViewController = intendedHost
+        attachmentChecker.markAttached(intendedHost)
+        presenterMock.shouldCompletePresentation = false
+        sut = ModalPromptCoordinationManager(
+            providers: [provider],
+            cooldownManager: cooldownManagerMock,
+            onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
+            modalPromptScheduling: schedulerMock,
+            rootAttachmentChecker: attachmentChecker
+        )
+        let lease = try acquireModalLease()
+        _ = sut.presentModalPromptIfNeeded(from: presenterMock, with: lease)
+        schedulerMock.executeScheduledBlock()
+
+        // UIKit publishes this relationship synchronously when it accepts `present`, before the transition finishes
+        // attaching the destination root to a window.
+        presenterMock.presentedViewController = exactRoot
+        schedulerMock.executeNextMainTurnBlock()
+
+        #expect(sut.modalAttemptPhase == .presentationActive(lease.attemptIdentity))
+        #expect(promoQueueLeaseArbiter.snapshot.hasModalLease)
+        #expect(!sut.didActuallyPresentModalPromptThisSession)
+        #expect(!sut.reconcilePresentedModal())
+        guard case .blockedByModal = promoQueueLeaseArbiter.acquireVisiblePromoLease(for: makeVisiblePromoIdentity()) else {
+            Issue.record("Expected the in-flight modal presentation to keep blocking visible promo admission")
+            return
+        }
+
+        attachmentChecker.markAttached(exactRoot)
+        presenterMock.capturedCompletion?()
+
+        #expect(!sut.reconcilePresentedModal())
+        #expect(sut.modalAttemptPhase == .presentationActive(lease.attemptIdentity))
+        #expect(promoQueueLeaseArbiter.snapshot.hasModalLease)
+        #expect(sut.didActuallyPresentModalPromptThisSession)
+        #expect(provider.didPresentModalCallCount == 1)
+        #expect(cooldownManagerMock.recordLastPromptPresentationTimestampCallCount == 1)
+        guard case .blockedByModal = promoQueueLeaseArbiter.acquireVisiblePromoLease(for: makeVisiblePromoIdentity()) else {
+            Issue.record("Expected reconciliation to block visible promo admission with the restored modal lease")
+            return
+        }
+    }
+
+    @available(iOS 16, *)
+    @Test("Refused Presentation Releases Lease Without A UIKit Presentation Relationship", .timeLimit(.minutes(1)))
+    func whenPresentationHasNoAttachmentOrPresentationRelationshipThenLeaseIsReleased() throws {
+        cooldownManagerMock.cooldownInfoToReturn = .notInCoolDown
+        let provider = MockModalPromptProvider()
+        let exactRoot = UIViewController()
+        provider.modalConfigurationToReturn = ModalPromptConfiguration(viewController: exactRoot)
+        let attachmentChecker = MockModalPromptRootAttachmentChecker()
+        let intendedHost = UIViewController()
+        presenterMock.modalPromptPresentationViewController = intendedHost
+        attachmentChecker.markAttached(intendedHost)
+        presenterMock.shouldCompletePresentation = false
+        sut = ModalPromptCoordinationManager(
+            providers: [provider],
+            cooldownManager: cooldownManagerMock,
+            onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
+            modalPromptScheduling: schedulerMock,
+            rootAttachmentChecker: attachmentChecker
+        )
+        let modalLease = try acquireModalLease()
+        _ = sut.presentModalPromptIfNeeded(from: presenterMock, with: modalLease)
+        schedulerMock.executeScheduledBlock()
+        schedulerMock.executeNextMainTurnBlock()
+        let visibleIdentity = makeVisiblePromoIdentity()
+        guard case .acquired(let visibleLease) = promoQueueLeaseArbiter.acquireVisiblePromoLease(for: visibleIdentity) else {
+            Issue.record("Expected visible promo admission after UIKit refused the modal presentation")
+            return
+        }
+
+        #expect(sut.modalAttemptPhase == .idle)
+        #expect(sut.hasActiveOrPendingModalAttempt)
+        #expect(!promoQueueLeaseArbiter.snapshot.hasModalLease)
+        #expect(promoQueueLeaseArbiter.snapshot.visiblePromoIdentities == [visibleIdentity])
+        #expect(!sut.didActuallyPresentModalPromptThisSession)
+        #expect(provider.didPresentModalCallCount == 0)
+        #expect(cooldownManagerMock.recordLastPromptPresentationTimestampCallCount == 0)
+        _ = visibleLease
+    }
+
+    @available(iOS 16, *)
+    @Test("Accepted Deferred Completion Accounts After Feature Disable", .timeLimit(.minutes(1)))
+    func whenFeatureDisablesAfterUIKitAcceptsThenDeferredCompletionStillRecordsExactlyOnce() throws {
+        cooldownManagerMock.cooldownInfoToReturn = .notInCoolDown
+        let provider = MockModalPromptProvider()
+        let exactRoot = UIViewController()
+        provider.modalConfigurationToReturn = ModalPromptConfiguration(viewController: exactRoot)
+        let attachmentChecker = MockModalPromptRootAttachmentChecker()
+        let intendedHost = UIViewController()
+        presenterMock.modalPromptPresentationViewController = intendedHost
+        attachmentChecker.markAttached(intendedHost)
+        presenterMock.shouldCompletePresentation = false
+        sut = ModalPromptCoordinationManager(
+            providers: [provider],
+            cooldownManager: cooldownManagerMock,
+            onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
+            modalPromptScheduling: schedulerMock,
+            rootAttachmentChecker: attachmentChecker
+        )
+        let lease = try acquireModalLease()
+        _ = sut.presentModalPromptIfNeeded(from: presenterMock, with: lease)
+        schedulerMock.executeScheduledBlock()
+        attachmentChecker.markAttached(exactRoot)
+        let acceptedCompletion = presenterMock.capturedCompletion
+
+        sut.promoQueueWillTransition(to: .disabled)
+        promoQueueLeaseArbiter.invalidateAllLeases()
+        sut.promoQueueDidTransition(to: .disabled)
+        acceptedCompletion?()
+        acceptedCompletion?()
+
+        #expect(sut.didActuallyPresentModalPromptThisSession)
+        #expect(provider.didPresentModalCallCount == 1)
+        #expect(cooldownManagerMock.didCallRecordLastPromptPresentationTimestamp)
+        #expect(!promoQueueLeaseArbiter.snapshot.hasModalLease)
+    }
+
+    @available(iOS 16, *)
+    @Test("Inactive Next-Turn Verification Is Retried After Becoming Active", .timeLimit(.minutes(1)))
+    func whenAppBackgroundsAfterUIKitCallThenUnverifiedLeaseIsRecheckedAfterBecomingActive() throws {
+        cooldownManagerMock.cooldownInfoToReturn = .notInCoolDown
+        let provider = MockModalPromptProvider()
+        presenterMock.shouldCompletePresentation = false
         sut = ModalPromptCoordinationManager(
             providers: [provider],
             cooldownManager: cooldownManagerMock,
@@ -427,16 +945,28 @@ final class ModalPromptCoordinationManagerPromoQueueTests {
             promoQueueLeaseArbiter: promoQueueLeaseArbiter,
             modalPromptScheduling: schedulerMock
         )
-        sut.presentModalPromptIfNeeded(from: presenterMock)
-
-        sut.promoQueueWillTransition(to: .enabled)
-        promoQueueLeaseArbiter.invalidateAllLeases()
-        sut.promoQueueDidTransition(to: .enabled)
+        var releaseNotificationCount = 0
+        sut.coordinatedAttemptReleaseHandler = {
+            releaseNotificationCount += 1
+        }
+        let lease = try acquireModalLease()
+        _ = sut.presentModalPromptIfNeeded(from: presenterMock, with: lease)
         schedulerMock.executeScheduledBlock()
 
-        #expect(!presenterMock.didCallPresent)
-        #expect(!sut.hasActiveOrPendingModalAttempt)
-        #expect(!sut.didActuallyPresentModalPromptThisSession)
+        sut.applicationDidEnterBackground()
+        schedulerMock.executeNextMainTurnBlock()
+
+        #expect(sut.modalAttemptPhase == .presentationActive(lease.attemptIdentity))
+        #expect(promoQueueLeaseArbiter.snapshot.modalAttemptIdentity == lease.attemptIdentity)
+        #expect(releaseNotificationCount == 0)
+
+        sut.applicationDidBecomeActive()
+        schedulerMock.executeNextMainTurnBlock()
+
+        #expect(sut.modalAttemptPhase == .idle)
+        #expect(sut.hasActiveOrPendingModalAttempt)
+        #expect(!promoQueueLeaseArbiter.snapshot.hasModalLease)
+        #expect(releaseNotificationCount == 1)
     }
 
     private func acquireModalLease() throws -> PromoQueueModalLease {
@@ -444,6 +974,14 @@ final class ModalPromptCoordinationManagerPromoQueueTests {
             throw TestError.expectedAcquiredLease
         }
         return lease
+    }
+
+    private func makeVisiblePromoIdentity() -> VisiblePromoIdentity {
+        VisiblePromoIdentity(
+            surfaceID: UUID(),
+            promoType: .remoteMessage,
+            promoID: "message"
+        )
     }
 }
 
@@ -459,8 +997,20 @@ private enum TestError: Error {
 private final class BlockReleasingModalPromptScheduler: ModalPromptScheduling {
     private var scheduledBlock: (@MainActor () -> Void)?
 
-    func schedule(after delay: TimeInterval, execute: @escaping @MainActor () -> Void) {
+    @discardableResult
+    func schedule(after delay: TimeInterval, execute: @escaping @MainActor () -> Void) -> ModalPromptScheduledTask {
         scheduledBlock = execute
+        return ModalPromptScheduledTask { [weak self] in
+            self?.scheduledBlock = nil
+        }
+    }
+
+    @discardableResult
+    func scheduleOnNextMainTurn(execute: @escaping @MainActor () -> Void) -> ModalPromptScheduledTask {
+        scheduledBlock = execute
+        return ModalPromptScheduledTask { [weak self] in
+            self?.scheduledBlock = nil
+        }
     }
 
     @MainActor
@@ -475,6 +1025,8 @@ private final class BlockReleasingModalPromptScheduler: ModalPromptScheduling {
 @MainActor
 private final class DeferredCompletionModalPromptPresenter: ModalPromptPresenter {
     var presentedViewController: UIViewController?
+    var modalPromptPresentationViewController: UIViewController?
+    var onPresent: (() -> Void)?
 
     private(set) var didCallPresent = false
     private(set) var capturedViewController: UIViewController?
@@ -484,6 +1036,7 @@ private final class DeferredCompletionModalPromptPresenter: ModalPromptPresenter
         didCallPresent = true
         capturedViewController = viewControllerToPresent
         pendingCompletion = completion
+        onPresent?()
     }
 
     func completePendingPresentation() {

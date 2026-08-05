@@ -272,6 +272,79 @@ final class PromoCoordinationServicePromoQueueTests {
         #expect(replacementTarget.retryCount == 1)
     }
 
+    @available(iOS 16, *)
+    @Test("Failed Pre-Visible Attempt Synchronously Retries Active Registrations", .timeLimit(.minutes(1)))
+    func whenManagerNotifiesPreVisibleReleaseThenActiveRegistrationsRetry() {
+        featureFlaggerMock.enabledFeatureFlags = [.promoPresentationCoordination]
+        sut = PromoCoordinationService(
+            launchSourceManager: launchSourceManagerMock,
+            modalPromptCoordinationManager: managerMock,
+            featureFlagger: featureFlaggerMock,
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter
+        )
+        let target = MockNewTabPagePromoRetryTarget()
+        let registration = sut.registerVisiblePromoRetry(for: UUID(), target: target)
+
+        managerMock.coordinatedAttemptReleaseHandler?()
+
+        #expect(target.retryCount == 1)
+        _ = registration
+    }
+
+    @available(iOS 16, *)
+    @Test("Inactive Visible Promo Registrations Are Skipped Until Active", .timeLimit(.minutes(1)))
+    func whenManagerNotifiesPreVisibleReleaseThenOnlyActiveRegistrationsRetry() {
+        featureFlaggerMock.enabledFeatureFlags = [.promoPresentationCoordination]
+        sut = PromoCoordinationService(
+            launchSourceManager: launchSourceManagerMock,
+            modalPromptCoordinationManager: managerMock,
+            featureFlagger: featureFlaggerMock,
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter
+        )
+        let target = MockNewTabPagePromoRetryTarget()
+        target.isActiveForPromoRetry = false
+        let registration = sut.registerVisiblePromoRetry(for: UUID(), target: target)
+
+        managerMock.coordinatedAttemptReleaseHandler?()
+        #expect(target.retryCount == 0)
+
+        target.isActiveForPromoRetry = true
+        managerMock.coordinatedAttemptReleaseHandler?()
+        #expect(target.retryCount == 1)
+        _ = registration
+    }
+
+    @available(iOS 16, *)
+    @Test("Lifecycle Events Are Forwarded Without Invalidating Arbiter Leases", .timeLimit(.minutes(1)))
+    func whenServiceMovesBetweenActiveInactiveAndBackgroundThenManagerOwnsModalMigration() {
+        featureFlaggerMock.enabledFeatureFlags = [.promoPresentationCoordination]
+        sut = PromoCoordinationService(
+            launchSourceManager: launchSourceManagerMock,
+            modalPromptCoordinationManager: managerMock,
+            featureFlagger: featureFlaggerMock,
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter
+        )
+        let identity = VisiblePromoIdentity(
+            surfaceID: UUID(),
+            promoType: .remoteMessage,
+            promoID: "rmf"
+        )
+        guard case .acquired(let visibleLease) = promoQueueLeaseArbiter.acquireVisiblePromoLease(for: identity) else {
+            Issue.record("Expected visible promo lease acquisition")
+            return
+        }
+        sut.applicationWillResignActive()
+        sut.applicationDidBecomeActive()
+        sut.applicationWillResignActive()
+        sut.applicationDidEnterBackground()
+
+        #expect(managerMock.applicationWillResignActiveCallCount == 2)
+        #expect(managerMock.applicationDidEnterBackgroundCallCount == 1)
+        #expect(managerMock.applicationDidBecomeActiveCallCount == 1)
+        #expect(promoQueueLeaseArbiter.snapshot.visiblePromoIdentities == [identity])
+        _ = visibleLease
+    }
+
     // MARK: - Visible Promo Admission Results
 
     @available(iOS 16, *)
@@ -392,6 +465,56 @@ final class PromoCoordinationServicePromoQueueTests {
         }
         #expect(promoQueueLeaseArbiter.snapshot.visiblePromoIdentities == [identity])
         _ = reacquiredLease
+    }
+
+    @available(iOS 16, *)
+    @Test("NTP Transition Snapshot Callbacks Bracket Lease Invalidation", .timeLimit(.minutes(1)))
+    func whenPromoQueueTransitionsThenSnapshotCallbacksBracketInvalidation() async {
+        sut = PromoCoordinationService(
+            launchSourceManager: launchSourceManagerMock,
+            modalPromptCoordinationManager: managerMock,
+            featureFlagger: featureFlaggerMock,
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter
+        )
+        let target = MockNewTabPagePromoRetryTarget()
+        let registration = sut.registerVisiblePromoRetry(for: UUID(), target: target)
+        var callbackStates = [PromoQueueFeatureState]()
+        var callbackVisibleLeaseCounts = [Int]()
+        target.onWillTransition = { [weak self] _ in
+            guard let self else { return }
+            callbackStates.append(sut.promoQueueFeatureState)
+            callbackVisibleLeaseCounts.append(promoQueueLeaseArbiter.snapshot.visiblePromoCount)
+        }
+        target.onDidTransition = { [weak self] _ in
+            guard let self else { return }
+            callbackStates.append(sut.promoQueueFeatureState)
+            callbackVisibleLeaseCounts.append(promoQueueLeaseArbiter.snapshot.visiblePromoCount)
+        }
+
+        featureFlaggerMock.enabledFeatureFlags = [.promoPresentationCoordination]
+        featureFlaggerMock.triggerUpdate()
+        await waitForFeatureFlagUpdateDelivery()
+
+        #expect(target.events == ["will-enable", "did-enable"])
+        #expect(callbackStates == [.transitioning(to: .enabled), .transitioning(to: .enabled)])
+
+        target.events.removeAll()
+        callbackStates.removeAll()
+        callbackVisibleLeaseCounts.removeAll()
+        let identity = VisiblePromoIdentity(surfaceID: UUID(), promoType: .remoteMessage, promoID: "rmf")
+        guard case .acquired(let lease) = promoQueueLeaseArbiter.acquireVisiblePromoLease(for: identity) else {
+            Issue.record("Expected visible promo lease acquisition")
+            return
+        }
+
+        featureFlaggerMock.enabledFeatureFlags = []
+        featureFlaggerMock.triggerUpdate()
+        await waitForFeatureFlagUpdateDelivery()
+
+        #expect(target.events == ["will-disable", "did-disable"])
+        #expect(callbackStates == [.transitioning(to: .disabled), .transitioning(to: .disabled)])
+        #expect(callbackVisibleLeaseCounts == [1, 0])
+        _ = (registration, lease)
     }
 
     // MARK: - Promo Queue Feature State
@@ -579,7 +702,7 @@ final class PromoCoordinationServicePromoQueueTests {
         await waitForFeatureFlagUpdateDelivery()
 
         // Both callbacks of both transitions re-enter admission, and every one of the four must be refused: only the
-        // transition routine's own re-adoption and retry steps may mutate arbiter state while the barrier is up.
+        // transition routine's own manager re-adoption may mutate arbiter state while the barrier is up.
         #expect(admissionAttemptsDuringCallbacks == 4)
         #expect(refusalsDuringCallbacks == 4)
         #expect(managerMock.reconcilePresentedModalCallCount == 0)
@@ -588,56 +711,32 @@ final class PromoCoordinationServicePromoQueueTests {
     }
 
     @available(iOS 16, *)
-    @Test("Enable Retry Keeps Public Barrier Up And Uses Transition Admission", .timeLimit(.minutes(1)))
-    func whenEnablingRetriesActiveVisiblePromoThenOnlyTransitionAdmissionCanAcquire() async {
+    @Test("Feature State Publisher Emits Enabled Only After Transition Barrier Is Lowered", .timeLimit(.minutes(1)))
+    func whenLiveEnableCompletesThenPublishedEnabledStateCanUsePublicAdmission() async {
         sut = PromoCoordinationService(
             launchSourceManager: launchSourceManagerMock,
             modalPromptCoordinationManager: managerMock,
             featureFlagger: featureFlaggerMock,
             promoQueueLeaseArbiter: promoQueueLeaseArbiter
         )
-        launchSourceManagerMock.source = .standard
-        presenterMock.presentedViewController = nil
-
-        let surfaceID = UUID()
-        let publicIdentity = VisiblePromoIdentity(
-            surfaceID: UUID(),
-            promoType: .remoteMessage,
-            promoID: "public-reentrant"
-        )
-        let transitionIdentity = VisiblePromoIdentity(
-            surfaceID: surfaceID,
-            promoType: .remoteMessage,
-            promoID: "transition-retry"
-        )
-        let retryTarget = MockNewTabPagePromoRetryTarget()
-        var stateObservedDuringRetry: PromoQueueFeatureState?
-        var publicAdmissionResult = VisiblePromoAdmissionResult.featureDisabled
-        retryTarget.identityToAdmitOnRetry = transitionIdentity
-        retryTarget.onRetry = { [weak self] in
+        let identity = VisiblePromoIdentity(surfaceID: UUID(), promoType: .remoteMessage, promoID: "rmf")
+        var publishedStates = [PromoQueueFeatureState]()
+        var retainedLease: PromoQueueVisiblePromoLease?
+        let cancellable = sut.promoQueueFeatureStatePublisher.sink { [weak self] state in
             guard let self else { return }
-            stateObservedDuringRetry = sut.promoQueueFeatureState
-            publicAdmissionResult = sut.admitVisiblePromo(publicIdentity)
-            sut.presentModalPromptIfNeeded(from: presenterMock)
+            publishedStates.append(state)
+            if state == .enabled, case .acquired(let lease) = sut.admitVisiblePromo(identity) {
+                retainedLease = lease
+            }
         }
-        let registration = sut.registerVisiblePromoRetry(for: surfaceID, target: retryTarget)
 
         featureFlaggerMock.enabledFeatureFlags = [.promoPresentationCoordination]
         featureFlaggerMock.triggerUpdate()
         await waitForFeatureFlagUpdateDelivery()
 
-        #expect(retryTarget.retryCount == 1)
-        #expect(stateObservedDuringRetry == .transitioning(to: .enabled))
-        guard case .unavailableDuringTransition = publicAdmissionResult else {
-            Issue.record("Expected public visible-promo admission to remain blocked during the retry callback")
-            return
-        }
-        #expect(managerMock.callCount == 0)
-        #expect(managerMock.reconcilePresentedModalCallCount == 1)
-        #expect(retryTarget.retainedLease != nil)
-        #expect(promoQueueLeaseArbiter.snapshot.visiblePromoIdentities == [transitionIdentity])
-        #expect(sut.promoQueueFeatureState == .enabled)
-        _ = registration
+        #expect(publishedStates == [.disabled, .transitioning(to: .enabled), .enabled])
+        #expect(retainedLease != nil)
+        withExtendedLifetime((cancellable, retainedLease)) {}
     }
 
     private func waitForFeatureFlagUpdateDelivery() async {
@@ -706,19 +805,40 @@ private final class ModalPromptCoordinationSubscriptionHookFeatureFlagger: Featu
 private final class MockNewTabPagePromoRetryTarget: NewTabPagePromoRetrying {
     var isActiveForPromoRetry = true
     var identityToAdmitOnRetry: VisiblePromoIdentity?
-    var onRetry: (@MainActor () -> Void)?
+    var onWillTransition: (@MainActor (PromoQueueFeatureTargetState) -> Void)?
+    var onDidTransition: (@MainActor (PromoQueueFeatureTargetState) -> Void)?
+    var events = [String]()
     private(set) var retryCount = 0
     private(set) var retainedLease: PromoQueueVisiblePromoLease?
 
     func retryVisiblePromoAdmission(using admissionHandler: VisiblePromoAdmissionHandler) {
         retryCount += 1
-        onRetry?()
+        events.append("retry")
         guard let identityToAdmitOnRetry else {
             return
         }
 
         if case .acquired(let lease) = admissionHandler(identityToAdmitOnRetry) {
             retainedLease = lease
+        }
+    }
+
+    func promoQueueWillTransition(to targetState: PromoQueueFeatureTargetState) {
+        events.append("will-\(targetState.eventName)")
+        onWillTransition?(targetState)
+    }
+
+    func promoQueueDidTransition(to targetState: PromoQueueFeatureTargetState) {
+        events.append("did-\(targetState.eventName)")
+        onDidTransition?(targetState)
+    }
+}
+
+private extension PromoQueueFeatureTargetState {
+    var eventName: String {
+        switch self {
+        case .disabled: return "disable"
+        case .enabled: return "enable"
         }
     }
 }

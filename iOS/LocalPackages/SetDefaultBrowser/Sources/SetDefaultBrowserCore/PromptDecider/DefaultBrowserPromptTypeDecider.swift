@@ -58,6 +58,21 @@ package extension DefaultBrowserPromptType {
 @MainActor
 package protocol DefaultBrowserPromptTypeDeciding {
     func promptType() -> DefaultBrowserPromptType?
+    /// Revalidates prepared work from cached browser status without consuming selection state.
+    func isPreparedPromptStillValid() -> Bool
+    /// Revalidates retained work using a fresh browser-status check before retrying presentation.
+    /// A failed check falls back to the stored status rather than invalidating the retained work.
+    func isRetainedPreparedPromptStillValid() -> Bool
+}
+
+package extension DefaultBrowserPromptTypeDeciding {
+    func isPreparedPromptStillValid() -> Bool {
+        true
+    }
+
+    func isRetainedPreparedPromptStillValid() -> Bool {
+        isPreparedPromptStillValid()
+    }
 }
 
 @MainActor
@@ -154,6 +169,25 @@ package final class DefaultBrowserPromptTypeDecider: DefaultBrowserPromptTypeDec
         return defaultBrowserManager.defaultBrowserInfo().isEligibleToShowDefaultBrowserPrompt() ? promptToShow : nil
     }
 
+    package func isPreparedPromptStillValid() -> Bool {
+        guard let storedInfo = defaultBrowserManager.storedDefaultBrowserInfo() else {
+            return true
+        }
+        return storedInfo.isEligibleToShowDefaultBrowserPrompt()
+    }
+
+    package func isRetainedPreparedPromptStillValid() -> Bool {
+        switch defaultBrowserManager.defaultBrowserInfo() {
+        case let .success(newInfo):
+            return newInfo.isEligibleToShowDefaultBrowserPrompt()
+        case .failure:
+            // The OS status check is rate limited, and the retained prompt already consumed its
+            // selection state, so a failed check must not discard it. Fall back to the stored
+            // status, which a rate-limited check refreshes before failing.
+            return isPreparedPromptStillValid()
+        }
+    }
+
 }
 
 // MARK: - Private
@@ -181,7 +215,15 @@ private extension DefaultBrowserInfoResult {
 
     func isEligibleToShowDefaultBrowserPrompt() -> Bool {
         guard case let .success(newInfo) = self else { return false }
-        return !newInfo.isDefaultBrowser
+        return newInfo.isEligibleToShowDefaultBrowserPrompt()
+    }
+
+}
+
+private extension DefaultBrowserContext {
+
+    func isEligibleToShowDefaultBrowserPrompt() -> Bool {
+        !isDefaultBrowser
     }
 
 }

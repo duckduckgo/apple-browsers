@@ -30,8 +30,12 @@ final class MockModalPromptCoordinationManager: ModalPromptCoordinationManaging 
     var didPresentModalPromptThisSession = false
     var coordinatedPresentationDisposition = ModalPromptLeaseDisposition.retained
     var reconcilePresentedModalResult = false
+    var coordinatedAttemptReleaseHandler: (@MainActor () -> Void)?
     private(set) var capturedModalLease: PromoQueueModalLease?
     private(set) var reconcilePresentedModalCallCount = 0
+    private(set) var applicationWillResignActiveCallCount = 0
+    private(set) var applicationDidBecomeActiveCallCount = 0
+    private(set) var applicationDidEnterBackgroundCallCount = 0
     var onPresentCoordinated: (@MainActor () -> Void)?
     var onReconcilePresentedModal: (@MainActor () -> Void)?
     var onPromoQueueWillTransition: (@MainActor (PromoQueueFeatureTargetState) -> Void)?
@@ -41,6 +45,10 @@ final class MockModalPromptCoordinationManager: ModalPromptCoordinationManaging 
         didCallPresentModalPromptIfNeeded = true
         capturedPresenter = presenter
         callCount += 1
+    }
+
+    func setCoordinatedAttemptReleaseHandler(_ handler: (@MainActor () -> Void)?) {
+        coordinatedAttemptReleaseHandler = handler
     }
 
     func presentModalPromptIfNeeded(
@@ -72,5 +80,17 @@ final class MockModalPromptCoordinationManager: ModalPromptCoordinationManaging 
     func promoQueueDidTransition(to targetState: PromoQueueFeatureTargetState) {
         promoQueueDidTransitionTargets.append(targetState)
         onPromoQueueDidTransition?(targetState)
+    }
+
+    func applicationWillResignActive() {
+        applicationWillResignActiveCallCount += 1
+    }
+
+    func applicationDidBecomeActive() {
+        applicationDidBecomeActiveCallCount += 1
+    }
+
+    func applicationDidEnterBackground() {
+        applicationDidEnterBackgroundCallCount += 1
     }
 }

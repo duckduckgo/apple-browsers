@@ -44,10 +44,8 @@ final class AIChatTabPickerSourceTests: XCTestCase {
     func testMaterializeWakesSuspendedTabWithoutChangingSelection() {
         let collection = collectionWithSuspendedTab(id: "suspended-1", url: "https://apple.com")
         let selectionBefore = collection.selectionIndex
-        let wcm = WindowControllersManagerMock()
-        wcm.customAllTabCollectionViewModels = [collection]
 
-        let resolved = AIChatTabPickerSource.materializeAttachableTab(withId: "suspended-1", forOrigin: collection, in: wcm)
+        let resolved = AIChatTabPickerSource.materializeAttachableTab(withId: "suspended-1", forOrigin: collection)
 
         XCTAssertNotNil(resolved)
         XCTAssertTrue(resolved?.wasMaterialized == true)
@@ -65,35 +63,32 @@ final class AIChatTabPickerSourceTests: XCTestCase {
     func testMaterializeReturnsAlreadyLoadedTabWithoutMaterializing() {
         let collection = regularCollection(urls: ["https://apple.com"])
         let id = collection.tabCollection.tabs[0].uuid
-        let wcm = WindowControllersManagerMock()
-        wcm.customAllTabCollectionViewModels = [collection]
 
-        let resolved = AIChatTabPickerSource.materializeAttachableTab(withId: id, forOrigin: collection, in: wcm)
+        let resolved = AIChatTabPickerSource.materializeAttachableTab(withId: id, forOrigin: collection)
 
         XCTAssertEqual(resolved?.tab.uuid, id)
         XCTAssertFalse(resolved?.wasMaterialized ?? true)
     }
 
-    func testMaterializeFindsSuspendedTabInAnotherRegularWindow() {
+    func testMaterializeDoesNotResolveTabFromAnotherRegularWindow() {
         let origin = regularCollection(urls: ["https://origin.example"])
         let other = collectionWithSuspendedTab(id: "suspended-2", url: "https://apple.com")
-        let wcm = WindowControllersManagerMock()
-        wcm.customAllTabCollectionViewModels = [origin, other]
 
-        let resolved = AIChatTabPickerSource.materializeAttachableTab(withId: "suspended-2", forOrigin: origin, in: wcm)
+        let resolved = AIChatTabPickerSource.materializeAttachableTab(withId: "suspended-2", forOrigin: origin)
 
-        XCTAssertEqual(resolved?.tab.uuid, "suspended-2")
-        XCTAssertTrue(resolved?.wasMaterialized == true)
+        XCTAssertNil(resolved, "A tab that lives in another window must not be resolvable")
+        // The other window's suspended tab was left untouched.
+        if case .loaded = other.tabCollection.tabs[1] {
+            XCTFail("The other window's suspended tab must not have been materialized")
+        }
     }
 
     // MARK: - needsLoad (page not in the web view yet)
 
     func testNeedsLoadIsTrueForJustMaterializedSuspendedTab() {
         let collection = collectionWithSuspendedTab(id: "suspended-4", url: "https://apple.com")
-        let wcm = WindowControllersManagerMock()
-        wcm.customAllTabCollectionViewModels = [collection]
 
-        let resolved = AIChatTabPickerSource.materializeAttachableTab(withId: "suspended-4", forOrigin: collection, in: wcm)
+        let resolved = AIChatTabPickerSource.materializeAttachableTab(withId: "suspended-4", forOrigin: collection)
 
         XCTAssertTrue(resolved?.wasMaterialized == true)
         XCTAssertTrue(resolved?.needsLoad == true)
@@ -105,10 +100,8 @@ final class AIChatTabPickerSourceTests: XCTestCase {
         let restored = Tab(content: .url(URL(string: "https://pinned.example")!, credential: nil, source: .pendingStateRestoration),
                            interactionStateData: Data())
         let collection = TabCollectionViewModel(tabCollection: TabCollection(tabs: [restored]))
-        let wcm = WindowControllersManagerMock()
-        wcm.customAllTabCollectionViewModels = [collection]
 
-        let resolved = AIChatTabPickerSource.materializeAttachableTab(withId: restored.uuid, forOrigin: collection, in: wcm)
+        let resolved = AIChatTabPickerSource.materializeAttachableTab(withId: restored.uuid, forOrigin: collection)
 
         XCTAssertNotNil(resolved)
         XCTAssertFalse(resolved?.wasMaterialized ?? true, "Nothing to materialize — the tab is already .loaded")
@@ -118,87 +111,59 @@ final class AIChatTabPickerSourceTests: XCTestCase {
     func testMaterializeDoesNotResolveRegularTabFromFireWindowOrigin() {
         let regular = collectionWithSuspendedTab(id: "suspended-3", url: "https://apple.com")
         let burner = burnerCollection()
-        let wcm = WindowControllersManagerMock()
-        wcm.customAllTabCollectionViewModels = [regular, burner]
 
         // Origin is the Fire Window → it must not reach into the regular window's tabs.
-        let resolved = AIChatTabPickerSource.materializeAttachableTab(withId: "suspended-3", forOrigin: burner, in: wcm)
+        let resolved = AIChatTabPickerSource.materializeAttachableTab(withId: "suspended-3", forOrigin: burner)
 
         XCTAssertNil(resolved)
-    }
-
-    // MARK: - Scope
-
-    func testRegularOriginSourcesAllRegularWindowsAndExcludesBurner() {
-        let regular1 = regularCollection(urls: [])
-        let regular2 = regularCollection(urls: [])
-        let burner = burnerCollection()
-        let wcm = WindowControllersManagerMock()
-        wcm.customAllTabCollectionViewModels = [regular1, regular2, burner]
-
-        let collections = AIChatTabPickerSource.tabCollections(forOrigin: regular1, in: wcm)
-
-        XCTAssertTrue(collections.contains { $0 === regular1 })
-        XCTAssertTrue(collections.contains { $0 === regular2 })
-        XCTAssertFalse(collections.contains { $0 === burner })
-    }
-
-    func testFireWindowOriginSourcesOnlyThatFireWindow() {
-        let regular = regularCollection(urls: [])
-        let burner = burnerCollection()
-        let otherBurner = burnerCollection()
-        let wcm = WindowControllersManagerMock()
-        wcm.customAllTabCollectionViewModels = [regular, burner, otherBurner]
-
-        let collections = AIChatTabPickerSource.tabCollections(forOrigin: burner, in: wcm)
-
-        XCTAssertEqual(collections.count, 1)
-        XCTAssertTrue(collections.first === burner)
-    }
-
-    // MARK: - Aggregation
-
-    func testAttachableTabsAggregatesAcrossRegularWindowsExcludingBurner() {
-        let regular1 = regularCollection(urls: ["https://example.com"])
-        let regular2 = regularCollection(urls: ["https://apple.com"])
-        let burner = burnerCollection()
-        let wcm = WindowControllersManagerMock()
-        wcm.customAllTabCollectionViewModels = [regular1, regular2, burner]
-
-        let tabs = AIChatTabPickerSource.attachableTabs(forOrigin: regular1, in: wcm)
-        let urls = tabs.compactMap { tab -> String? in
-            guard case .url(let url, _, _) = tab.content else { return nil }
-            return url.absoluteString
+        if case .loaded = regular.tabCollection.tabs[1] {
+            XCTFail("The regular window's suspended tab must not have been materialized")
         }
-
-        XCTAssertTrue(urls.contains("https://example.com"))
-        XCTAssertTrue(urls.contains("https://apple.com"))
     }
 
-    func testAttachableTabsDeduplicatesByUUID() {
-        let regular = regularCollection(urls: ["https://example.com"])
-        let wcm = WindowControllersManagerMock()
-        // Same collection referenced twice (mirrors shared pinned tabs appearing per window).
-        wcm.customAllTabCollectionViewModels = [regular, regular]
+    // MARK: - Scope (origin window only)
 
-        let tabs = AIChatTabPickerSource.attachableTabs(forOrigin: regular, in: wcm)
-        let ids = tabs.map { $0.uuid }
+    func testAttachableTabsOffersOnlyTheOriginWindowsTabs() {
+        let origin = regularCollection(urls: ["https://example.com", "https://wikipedia.org"])
+        let other = regularCollection(urls: ["https://apple.com"])
 
-        XCTAssertEqual(ids.count, Set(ids).count, "Tabs should be deduplicated by uuid")
+        let urls = attachableURLs(forOrigin: origin)
+
+        XCTAssertEqual(urls, ["https://example.com", "https://wikipedia.org"])
+        XCTAssertEqual(attachableURLs(forOrigin: other), ["https://apple.com"],
+                       "Each window's picker sees that window's tabs and nothing else")
     }
 
-    func testFireWindowOriginDoesNotLeakOtherWindowsTabs() {
+    func testFireWindowOriginOffersOnlyItsOwnTabs() {
         let regular = regularCollection(urls: ["https://example.com"])
-        let burner = burnerCollection()
-        let wcm = WindowControllersManagerMock()
-        wcm.customAllTabCollectionViewModels = [regular, burner]
+        let burner = TabCollectionViewModel(
+            tabCollection: TabCollection(tabs: [Tab(content: .url(URL(string: "https://fire.example")!, credential: nil, source: .ui))]),
+            burnerMode: BurnerMode(isBurner: true)
+        )
 
-        let tabs = AIChatTabPickerSource.attachableTabs(forOrigin: burner, in: wcm)
-        let urls = tabs.compactMap { tab -> String? in
-            guard case .url(let url, _, _) = tab.content else { return nil }
-            return url.absoluteString
-        }
+        let urls = attachableURLs(forOrigin: burner)
 
+        XCTAssertEqual(urls, ["https://fire.example"])
         XCTAssertFalse(urls.contains("https://example.com"), "A Fire Window must not surface regular-window tabs")
+        XCTAssertEqual(attachableURLs(forOrigin: regular), ["https://example.com"])
+    }
+
+    // MARK: - Filtering
+
+    func testAttachableTabsExcludesNonURLAndDuckAITabs() {
+        let page = Tab(content: .url(URL(string: "https://example.com")!, credential: nil, source: .ui))
+        let newTab = Tab(content: .newtab)
+        let serp = Tab(content: .url(URL(string: "https://duckduckgo.com/?q=test&ia=web")!, credential: nil, source: .ui))
+        let duckAI = Tab(content: .url(URL(string: "https://duckduckgo.com/?ia=chat")!, credential: nil, source: .ui))
+        let origin = TabCollectionViewModel(tabCollection: TabCollection(tabs: [page, newTab, serp, duckAI]))
+
+        XCTAssertEqual(attachableURLs(forOrigin: origin), ["https://example.com"])
+    }
+
+    private func attachableURLs(forOrigin origin: TabCollectionViewModel) -> [String] {
+        AIChatTabPickerSource.attachableTabs(forOrigin: origin).compactMap { tab in
+            guard case .url(let url, _, _) = tab.content else { return nil }
+            return url.absoluteString
+        }
     }
 }

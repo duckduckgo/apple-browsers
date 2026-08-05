@@ -468,15 +468,14 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
 
     @MainActor
     func getAIChatOpenTabs(params: Any, message: UserScriptMessage) async -> Encodable? {
-        // Source tabs from all windows (except Fire Windows) relative to the window the picker was
-        // opened in — see `AIChatTabPickerSource`. A Fire Window only sees its own tabs.
+        // Source tabs from the window the picker was opened in only — see `AIChatTabPickerSource`.
         guard let origin = AIChatTabPickerSource.originTabCollectionViewModel(for: message.messageWebView, in: windowControllersManager) else {
             return AIChatOpenTabsResponse(tabs: [])
         }
         let currentTabId = origin.selectedTabViewModel?.tab.uuid
 
         let faviconManager = NSApp.delegateTyped.faviconManager
-        let tabMetadata: [AIChatTabMetadata] = AIChatTabPickerSource.attachableTabs(forOrigin: origin, in: windowControllersManager).compactMap { tab in
+        let tabMetadata: [AIChatTabMetadata] = AIChatTabPickerSource.attachableTabs(forOrigin: origin).compactMap { tab in
             guard case .url(let url, _, _) = tab.content else { return nil }
             let favicon: [AIChatPageContextData.PageContextFavicon]
             if let image = faviconManager.getCachedFavicon(for: url, sizeCategory: .small)?.image,
@@ -511,7 +510,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         // The JS-bridge consumer is always a tab-picker flow (sidebar's `@` picker), so the result
         // is always a tab-picker context — stamp `tabId` so the duck.ai web app sees the
         // discriminator and treats it as "additional context", not "current page".
-        let extracted = await Self.extractPageContext(forTabId: params.tabId, origin: origin, in: windowControllersManager)
+        let extracted = await Self.extractPageContext(forTabId: params.tabId, origin: origin)
         return AIChatTabContentResponse(pageContext: extracted?.withTabId(params.tabId))
     }
 
@@ -570,10 +569,9 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     @MainActor
     static func extractPageContext(forTabId tabId: String,
                                    origin: TabCollectionViewModel,
-                                   in windowControllersManager: WindowControllersManagerProtocol,
                                    navigationTimeout: TimeInterval = 5,
                                    collectTimeout: TimeInterval = 5) async -> AIChatPageContextData? {
-        guard let resolved = AIChatTabPickerSource.materializeAttachableTab(withId: tabId, forOrigin: origin, in: windowControllersManager) else {
+        guard let resolved = AIChatTabPickerSource.materializeAttachableTab(withId: tabId, forOrigin: origin) else {
             return nil
         }
 

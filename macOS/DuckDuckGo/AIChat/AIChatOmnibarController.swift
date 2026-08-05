@@ -870,7 +870,7 @@ final class AIChatOmnibarController {
     /// Fire-and-forget: the submit path waits regardless, this just keeps it off the critical path.
     private func prewarmAttachedTab(id: String) {
         guard let originTabCollection = origin?.originTabCollectionViewModel,
-              let resolved = AIChatTabPickerSource.materializeAttachableTab(withId: id, forOrigin: originTabCollection, in: Application.appDelegate.windowControllersManager),
+              let resolved = AIChatTabPickerSource.materializeAttachableTab(withId: id, forOrigin: originTabCollection),
               resolved.needsLoad else {
             return
         }
@@ -996,7 +996,7 @@ final class AIChatOmnibarController {
         // every access, so caching avoids hitting it per-tab.
         let debugURLSettings: any KeyedStoring<AIChatDebugURLSettings> = UserDefaults.standard.keyedStoring()
         let customAIChatURLHost = debugURLSettings.customURLHostname
-        let candidates = AIChatTabPickerSource.attachableTabs(forOrigin: originTabCollection, in: Application.appDelegate.windowControllersManager)
+        let candidates = AIChatTabPickerSource.attachableTabs(forOrigin: originTabCollection)
             .enumerated()
             .sorted { lhs, rhs in
                 let lhsDate = lhs.element.lastSelectedAt ?? .distantPast
@@ -1361,12 +1361,11 @@ final class AIChatOmnibarController {
     ) async -> AIChatPageContextPayload? {
         guard !tabAttachments.isEmpty, let origin = origin?.originTabCollectionViewModel else { return nil }
 
-        let windowControllersManager = Application.appDelegate.windowControllersManager
         let extracted: [(String, AIChatPageContextData?)] = await withTaskGroup(of: (String, AIChatPageContextData?).self) { group in
             for attachment in tabAttachments {
                 let tabId: String = attachment.id
                 group.addTask { @MainActor in
-                    let ctx = await AIChatUserScriptHandler.extractPageContext(forTabId: tabId, origin: origin, in: windowControllersManager)
+                    let ctx = await AIChatUserScriptHandler.extractPageContext(forTabId: tabId, origin: origin)
                     return (tabId, ctx)
                 }
             }

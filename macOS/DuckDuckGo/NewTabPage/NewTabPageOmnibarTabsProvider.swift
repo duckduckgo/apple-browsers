@@ -40,7 +40,7 @@ final class NewTabPageOmnibarTabsProvider: NewTabPageOmnibarTabsProviding {
         let currentTabId = origin.selectedTabViewModel?.tab.uuid
 
         let faviconManager = NSApp.delegateTyped.faviconManager
-        return AIChatTabPickerSource.attachableTabs(forOrigin: origin, in: windowControllersManager).compactMap { tab in
+        return AIChatTabPickerSource.attachableTabs(forOrigin: origin).compactMap { tab in
             guard case .url(let url, _, _) = tab.content else { return nil }
             guard tab.uuid != currentTabId else { return nil }
 
@@ -65,7 +65,7 @@ final class NewTabPageOmnibarTabsProvider: NewTabPageOmnibarTabsProviding {
     func tabContent(tabId: String, requestingWebView: WKWebView?) async -> NewTabPageDataModel.OmnibarPageContext? {
         // Wakes the tab if it's suspended so its content can be extracted instead of being dropped.
         guard let origin = AIChatTabPickerSource.originTabCollectionViewModel(for: requestingWebView, in: windowControllersManager),
-              let pageContext = await AIChatUserScriptHandler.extractPageContext(forTabId: tabId, origin: origin, in: windowControllersManager) else {
+              let pageContext = await AIChatUserScriptHandler.extractPageContext(forTabId: tabId, origin: origin) else {
             return nil
         }
 

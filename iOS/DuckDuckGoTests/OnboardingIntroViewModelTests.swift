@@ -790,6 +790,31 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         XCTAssertEqual(mockSearchExperienceProvider.lastStoredValue, true)
     }
 
+    func testWhenOpenAIChatFromOnboardingIsCalledThenDidStartAIChatDuringOnboardingIsStoredAsTrue() {
+        // GIVEN
+        let mockSearchExperienceProvider = MockOnboardingSearchExperienceProvider()
+        let sut = makeSUT(currentOnboardingStep: .introDialog(isReturningUser: true), onboardingSearchExperienceProvider: mockSearchExperienceProvider)
+        XCTAssertFalse(mockSearchExperienceProvider.didStartAIChatDuringOnboarding)
+
+        // WHEN
+        sut.openAIChatFromOnboarding(prompt: "test", autoSend: false)
+
+        // THEN
+        XCTAssertTrue(mockSearchExperienceProvider.didStartAIChatDuringOnboarding)
+    }
+
+    func testWhenSearchFromOnboardingIsCalledThenDidStartAIChatDuringOnboardingRemainsFalse() {
+        // GIVEN
+        let mockSearchExperienceProvider = MockOnboardingSearchExperienceProvider()
+        let sut = makeSUT(currentOnboardingStep: .introDialog(isReturningUser: true), onboardingSearchExperienceProvider: mockSearchExperienceProvider)
+
+        // WHEN
+        sut.searchFromOnboarding(query: "test")
+
+        // THEN
+        XCTAssertFalse(mockSearchExperienceProvider.didStartAIChatDuringOnboarding)
+    }
+
     func testWhenConfirmSkipOnboardingActionIsCalledThenHasSkippedOnboardingIsSetToTrue() {
         // GIVEN
         onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: true)

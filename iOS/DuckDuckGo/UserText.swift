@@ -2450,9 +2450,6 @@ public struct UserText {
     public static let aiChatQuickActionSummarize = NSLocalizedString("duckai.quick.action.summarize", value: "Summarize This Page", comment: "Title for the summarize quick action chip in Duck.ai contextual sheet")
     public static let aiChatQuickActionSummarizePage = NSLocalizedString("duckai.quick.action.summarize.page", value: "Summarize page", comment: "Title for the summarize page quick action chip in the improved Duck.ai contextual sheet")
     public static let aiChatQuickActionAttach = NSLocalizedString("duckai.quick.action.attach", value: "Attach Page Content", comment: "Title for the attach page content quick action chip in Duck.ai contextual sheet")
-    public static let aiChatQuickActionSummarizeSelection = NSLocalizedString("duckai.quick.action.summarize.selection", value: "Summarize selection", comment: "Title for the quick action chip in the Duck.ai contextual sheet that summarizes the text the user selected on the page")
-    public static let aiChatQuickActionTranslateSelection = NSLocalizedString("duckai.quick.action.translate.selection", value: "Translate selection", comment: "Title for the quick action chip in the Duck.ai contextual sheet that translates the text the user selected on the page")
-    public static let aiChatQuickActionAskAboutSelection = NSLocalizedString("duckai.quick.action.ask.about.selection", value: "Ask about selection", comment: "Title for the quick action chip in the Duck.ai contextual sheet that focuses the input so the user can type their own question about the selected text")
 
     // MARK: - AI Chat Recent Chats Popup
     public static let aiChatRecentChatsButtonAccessibility = NSLocalizedString("duckai.contextual.recent.chats.button", value: "Recent Chats", comment: "Accessibility label for the recent chats button in the Duck.ai contextual sheet header")

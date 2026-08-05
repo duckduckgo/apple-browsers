@@ -868,44 +868,27 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
             } else {
                 submitPromptFromNativeInput(action.prompt)
             }
-        case .summarizeSelection:
-            pixelHandler.fireQuickActionSummarizeSelectionSelected()
-            submitSelectionAction(.summarize)
-        case .translateSelection:
-            pixelHandler.fireQuickActionTranslateSelectionSelected()
-            submitSelectionAction(.translate)
-        case .askAboutSelection:
-            // The selection is already attached as a chip; just give the user the keyboard so they
-            // can write their own question. Nothing is submitted.
-            pixelHandler.fireQuickActionAskAboutSelectionSelected()
-            if let persistentUTIHost {
-                persistentUTIHost.activateInput()
-            } else {
-                contextualInputViewController.becomeFirstResponder()
-            }
         }
     }
 
-    /// Runs one of the selection actions against an attached selection. Shared by the text-selection
-    /// menu (which routes here via the coordinator) and the in-sheet chips, so both behave identically.
-    /// `.ask` does nothing by design — the selection is already attached.
+    /// Runs one of the selection actions against the text the user picked in the selection menu.
+    /// `.ask` does nothing by design — it attaches the selection and waits for the user's own question.
     ///
-    /// The menu passes the selection it just picked plus its page title; the in-sheet chips pass
-    /// neither and fall back to the most recently attached one. Menu-triggered actions must pass
-    /// theirs, because at the cap the new selection was refused and is not in the list.
+    /// `selection` is the one just picked rather than anything read back from the attached list: at the
+    /// cap that selection was refused and is not in the list, and summarize/translate attach nothing
+    /// in any case.
     func submitSelectionAction(_ action: AIChatTextSelectionAction,
-                               on selection: AIChatSelectionContextData? = nil,
-                               pageTitle: String? = nil) {
-        let target = selection.map { (selection: $0, pageTitle: pageTitle) }
+                               on selection: AIChatSelectionContextData,
+                               pageTitle: String?) {
         switch action {
         case .ask:
             return
         case .summarize:
-            submitSelectionTool(target) { selection, url, pageTitle in
+            submitSelectionTool(selection, pageTitle: pageTitle) { selection, url, pageTitle in
                 AIChatNativePrompt.summaryPrompt(selection.content, url: url, title: pageTitle)
             }
         case .translate:
-            submitSelectionTool(target) { selection, url, pageTitle in
+            submitSelectionTool(selection, pageTitle: pageTitle) { selection, url, pageTitle in
                 AIChatNativePrompt.translationPrompt(
                     selection.content,
                     url: url,
@@ -921,20 +904,13 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
     /// Delivers a selection-scoped `AIChatNativePrompt` tool (`.summary` / `.translation`) on the
     /// `submitAIChatNativePrompt` channel — the same wire message the sheet already uses for query
     /// prompts, and the one macOS uses to push these tools into an open sidebar.
-    ///
-    /// With no `target`, acts on the most recently attached selection. That is ambiguous for the
-    /// in-sheet chips when several selections are attached; whether they should act on all of them is
-    /// an open product question.
     private func submitSelectionTool(
-        _ target: (selection: AIChatSelectionContextData, pageTitle: String?)?,
+        _ selection: AIChatSelectionContextData,
+        pageTitle: String?,
         _ makePrompt: (AIChatSelectionContextData, URL?, String?) -> AIChatNativePrompt
     ) {
-        let resolved = target ?? sessionState.attachedSelections.last.map {
-            (selection: $0, pageTitle: sessionState.attachedSelectionPageTitle)
-        }
-        guard let resolved else { return }
-        let url = URL(string: resolved.selection.url)
-        let prompt = makePrompt(resolved.selection, url, resolved.pageTitle)
+        let url = URL(string: selection.url)
+        let prompt = makePrompt(selection, url, pageTitle)
 
         notifyInitialNativePromptSubmitted(hasPageContext: false)
         // We deliver the prompt ourselves, so take the same session transition the unified-input path

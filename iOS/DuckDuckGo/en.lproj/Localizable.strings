@@ -1837,9 +1837,6 @@
 /* Title for the ask about page quick action chip in Duck.ai contextual sheet. Tapping attaches the current page content. */
 "duckai.quick.action.ask.about.page" = "Ask about page";
 
-/* Title for the quick action chip in the Duck.ai contextual sheet that focuses the input so the user can type their own question about the selected text */
-"duckai.quick.action.ask.about.selection" = "Ask about selection";
-
 /* Title for the attach page content quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.attach" = "Attach Page Content";
 
@@ -1848,12 +1845,6 @@
 
 /* Title for the summarize page quick action chip in the improved Duck.ai contextual sheet */
 "duckai.quick.action.summarize.page" = "Summarize page";
-
-/* Title for the quick action chip in the Duck.ai contextual sheet that summarizes the text the user selected on the page */
-"duckai.quick.action.summarize.selection" = "Summarize selection";
-
-/* Title for the quick action chip in the Duck.ai contextual sheet that translates the text the user selected on the page */
-"duckai.quick.action.translate.selection" = "Translate selection";
 
 /* Destructive button confirming deletion of a recent Duck.ai chat */
 "duckai.recent.chat.remove.confirmation.button" = "Delete";

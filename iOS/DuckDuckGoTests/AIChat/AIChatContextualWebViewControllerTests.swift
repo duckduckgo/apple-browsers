@@ -242,9 +242,6 @@ private final class StubDownloadHandler: NSObject, DownloadHandling {
 }
 
 private final class StubContextualModePixelHandler: AIChatContextualModePixelFiring {
-    func fireQuickActionSummarizeSelectionSelected() {}
-    func fireQuickActionTranslateSelectionSelected() {}
-    func fireQuickActionAskAboutSelectionSelected() {}
     func fireSelectionAction(_ action: AIChatTextSelectionAction) {}
     func fireSelectionLimitReached() {}
     func fireSelectionRemoved() {}

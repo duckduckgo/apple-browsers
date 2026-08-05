@@ -2275,35 +2275,20 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         XCTAssertEqual(sessionState.attachedSelectionPageTitle, "Article")
     }
 
-    func testQuickActionsBecomeSelectionScopedWhenASelectionIsAttached() {
+    /// The start surface goes fully empty while a selection is attached — no page suggestions and no
+    /// page quick actions. Deliberate: page-scoped prompts beside a selection are wrong by category,
+    /// and no selection-scoped replacements are offered until the suggestions feature has data.
+    func testStartSurfaceActionsAreEmptyWhileASelectionIsAttached() {
         let selection = makeSelection()
         sessionState.attachSelection(selection, pageTitle: "Article")
-
-        XCTAssertEqual(sessionState.viewState.quickActions, [.summarizeSelection, .translateSelection, .askAboutSelection])
-        XCTAssertTrue(sessionState.viewState.quickActions.allSatisfy(\.isSelectionScoped))
-    }
-
-    func testQuickActionsRevertToPageScopedWhenTheLastSelectionIsRemoved() {
-        let selection = makeSelection()
-        sessionState.attachSelection(selection, pageTitle: "Article")
+        XCTAssertTrue(sessionState.viewState.quickActions.isEmpty)
 
         sessionState.removeAttachedSelection(id: selection.id)
-
-        XCTAssertFalse(sessionState.viewState.quickActions.contains { $0.isSelectionScoped })
+        XCTAssertFalse(sessionState.viewState.quickActions.isEmpty)
     }
 
-    /// Selection-scoped actions belong to the start surface only; once a chat is running the frontend
-    /// drives the UI.
-    func testQuickActionsAreNotSelectionScopedOnceAChatIsRunning() {
-        sessionState.attachSelection(makeSelection(), pageTitle: "Article")
-
-        sessionState.beginChatForUTISubmission()
-
-        XCTAssertFalse(sessionState.viewState.quickActions.contains { $0.isSelectionScoped })
-    }
-
-    /// Suppression is keyed on `attachedSelections` directly, not on the selection-scoped quick
-    /// actions being present, so page suggestions can't reappear beside a selection if those change.
+    /// Suppression is keyed on `attachedSelections` directly, not on anything the action row happens to
+    /// contain, so page suggestions can't reappear beside a selection if that row changes.
     func testPageSuggestionsAreSuppressedWhileASelectionIsAttached() {
         let expected = [ContextualSuggestedPrompt(id: "note-page", label: "Key takeaways", prompt: "Key takeaways?", icon: "note")]
         mockFeatureFlagger.enabledFeatureFlags = [.contextualSuggestedPrompts]
@@ -2341,9 +2326,6 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
 // MARK: - Mock Pixel Handler
 
 private final class MockContextualModePixelHandler: AIChatContextualModePixelFiring {
-    func fireQuickActionSummarizeSelectionSelected() {}
-    func fireQuickActionTranslateSelectionSelected() {}
-    func fireQuickActionAskAboutSelectionSelected() {}
     func fireSelectionAction(_ action: AIChatTextSelectionAction) {}
     func fireSelectionLimitReached() {}
     func fireSelectionRemoved() {}

@@ -296,26 +296,5 @@
         "triggers": ["other"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],
         "parameters": ["appVersion"]
-    },
-    "m_aichat_contextual_quick_action_summarize_selection_selected": {
-        "description": "Fired when the user selects the summarize-selection quick action chip in the contextual sheet",
-        "owners": ["pikorddg"],
-        "triggers": ["other"],
-        "suffixes": ["first_daily_count", "platform", "form_factor"],
-        "parameters": ["appVersion"]
-    },
-    "m_aichat_contextual_quick_action_translate_selection_selected": {
-        "description": "Fired when the user selects the translate-selection quick action chip in the contextual sheet",
-        "owners": ["pikorddg"],
-        "triggers": ["other"],
-        "suffixes": ["first_daily_count", "platform", "form_factor"],
-        "parameters": ["appVersion"]
-    },
-    "m_aichat_contextual_quick_action_ask_about_selection_selected": {
-        "description": "Fired when the user selects the ask-about-selection quick action chip in the contextual sheet",
-        "owners": ["pikorddg"],
-        "triggers": ["other"],
-        "suffixes": ["first_daily_count", "platform", "form_factor"],
-        "parameters": ["appVersion"]
     }
 }

@@ -439,16 +439,6 @@ final class AIChatContextualModePixelHandlerTests {
         #expect(PixelFiringMock.lastPixelName == Pixel.Event.aiChatContextualSelectionRemoved.name)
     }
 
-    @Test("Translate-selection quick action fires its own pixel, not summarize's")
-    func translate_selection_quick_action_has_its_own_pixel() {
-        var firedEventName: String?
-        let sut = AIChatContextualModePixelHandler(firePixel: { firedEventName = $0.name })
-
-        sut.fireQuickActionTranslateSelectionSelected()
-
-        #expect(firedEventName == Pixel.Event.aiChatContextualQuickActionTranslateSelectionSelected.name)
-    }
-
     @Test("Concurrent reset and navigation calls are thread-safe")
     func testConcurrentResetAndNavigation() async {
         // GIVEN

@@ -1844,9 +1844,6 @@ extension Pixel {
         case aiChatContextualSelectionAction
         case aiChatContextualSelectionLimitReached
         case aiChatContextualSelectionRemoved
-        case aiChatContextualQuickActionSummarizeSelectionSelected
-        case aiChatContextualQuickActionTranslateSelectionSelected
-        case aiChatContextualQuickActionAskAboutSelectionSelected
         case aiChatContextualPageContextAutoAttached
         case aiChatContextualPageContextUpdatedOnNavigation
         case aiChatContextualPageContextManuallyAttachedNative
@@ -3790,9 +3787,6 @@ extension Pixel.Event {
         case .aiChatContextualSelectionAction: return "m_aichat_contextual_selection_action"
         case .aiChatContextualSelectionLimitReached: return "m_aichat_contextual_selection_limit_reached"
         case .aiChatContextualSelectionRemoved: return "m_aichat_contextual_selection_removed"
-        case .aiChatContextualQuickActionSummarizeSelectionSelected: return "m_aichat_contextual_quick_action_summarize_selection_selected"
-        case .aiChatContextualQuickActionTranslateSelectionSelected: return "m_aichat_contextual_quick_action_translate_selection_selected"
-        case .aiChatContextualQuickActionAskAboutSelectionSelected: return "m_aichat_contextual_quick_action_ask_about_selection_selected"
         case .aiChatContextualPageContextAutoAttached: return "m_aichat_contextual_page_context_auto_attached"
         case .aiChatContextualPageContextUpdatedOnNavigation: return "m_aichat_contextual_page_context_updated_on_navigation"
         case .aiChatContextualPageContextManuallyAttachedNative: return "m_aichat_contextual_page_context_manually_attached_native"

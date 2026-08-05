@@ -26,11 +26,6 @@ enum AIChatContextualQuickAction: String, CaseIterable, AIChatQuickActionType {
     case askAboutPage
     case summarize
     case summarizePage
-    /// Selection-scoped actions, offered when the sheet was opened from the text-selection menu.
-    /// These act on the attached selection rather than the page.
-    case summarizeSelection
-    case translateSelection
-    case askAboutSelection
 
     var id: String { rawValue }
 
@@ -42,35 +37,15 @@ enum AIChatContextualQuickAction: String, CaseIterable, AIChatQuickActionType {
             return UserText.aiChatQuickActionSummarize
         case .summarizePage:
             return UserText.aiChatQuickActionSummarizePage
-        case .summarizeSelection:
-            return UserText.aiChatQuickActionSummarizeSelection
-        case .translateSelection:
-            return UserText.aiChatQuickActionTranslateSelection
-        case .askAboutSelection:
-            return UserText.aiChatQuickActionAskAboutSelection
         }
     }
 
     var prompt: String {
         switch self {
-        case .askAboutPage, .askAboutSelection:
+        case .askAboutPage:
             return ""
         case .summarize, .summarizePage:
             return UserText.aiChatQuickActionSummarize
-        // Selection summarize/translate carry an `AIChatNativePrompt` tool rather than prompt text,
-        // so the frontend renders them the way macOS does.
-        case .summarizeSelection, .translateSelection:
-            return ""
-        }
-    }
-
-    /// True for actions that operate on an attached text selection rather than the page.
-    var isSelectionScoped: Bool {
-        switch self {
-        case .summarizeSelection, .translateSelection, .askAboutSelection:
-            return true
-        case .askAboutPage, .summarize, .summarizePage:
-            return false
         }
     }
 
@@ -80,12 +55,8 @@ enum AIChatContextualQuickAction: String, CaseIterable, AIChatQuickActionType {
             return DesignSystemImages.Glyphs.Size16.pageContentAttach
         case .summarize:
             return DesignSystemImages.Glyphs.Size16.arrowDownRight
-        case .summarizePage, .summarizeSelection:
+        case .summarizePage:
             return DesignSystemImages.Glyphs.Size16.summary
-        case .translateSelection:
-            return DesignSystemImages.Glyphs.Size16.translate
-        case .askAboutSelection:
-            return DesignSystemImages.Glyphs.Size16.idea
         }
     }
 }

@@ -59,6 +59,9 @@ final class MockModalPromptProvider: ModalPromptProvider {
 
     func isPreparedModalPromptStillValid(_ configuration: ModalPromptConfiguration) -> Bool {
         isPreparedModalPromptStillValidCallCount += 1
+        guard configuration.viewController !== replacementModalConfigurationToReturn?.viewController else {
+            return true
+        }
         return isPreparedModalPromptStillValidResult
     }
 

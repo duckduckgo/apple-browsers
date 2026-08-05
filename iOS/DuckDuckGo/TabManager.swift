@@ -666,7 +666,9 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
                 DailyPixel.fireDailyAndCount(pixel: .aiChatTabDidReloadAfterTermination)
             }
 
-            current()?.reload()
+            if reloadCurrent {
+                current()?.reload()
+            }
         } else {
             removeFromCache(controller)
             cacheDelegate?.tabManager(self, didInvalidateController: controller)

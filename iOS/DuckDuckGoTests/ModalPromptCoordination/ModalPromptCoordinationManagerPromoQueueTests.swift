@@ -525,7 +525,7 @@ final class ModalPromptCoordinationManagerPromoQueueTests {
             modalPromptScheduling: schedulerMock
         )
         var releaseNotificationCount = 0
-        sut.coordinatedAttemptReleaseHandler = {
+        sut.setCoordinatedAttemptReleaseHandler {
             releaseNotificationCount += 1
         }
         let lease = try acquireModalLease()
@@ -757,7 +757,7 @@ final class ModalPromptCoordinationManagerPromoQueueTests {
             modalPromptScheduling: schedulerMock
         )
         var releaseNotificationCount = 0
-        sut.coordinatedAttemptReleaseHandler = {
+        sut.setCoordinatedAttemptReleaseHandler {
             releaseNotificationCount += 1
         }
         let lease = try acquireModalLease()
@@ -981,7 +981,7 @@ final class ModalPromptCoordinationManagerPromoQueueTests {
             modalPromptScheduling: schedulerMock
         )
         var releaseNotificationCount = 0
-        sut.coordinatedAttemptReleaseHandler = {
+        sut.setCoordinatedAttemptReleaseHandler {
             releaseNotificationCount += 1
         }
         let lease = try acquireModalLease()

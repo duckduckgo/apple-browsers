@@ -78,6 +78,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     private var didHideBarsForChatPathVisitSiteDialog = false
     private var isPromoSurfaceOwnerActive = false
     private var isPromoRenderLocationReady = false
+    /// Opt-out: callers mute visibility around alpha animations/handoffs, unlike the opt-in owner-activity and render-location signals a host must assert.
     private var isPromoSurfaceVisible = true
     private var isPromoSurfaceCovered = false
     private let appSettings: AppSettings

@@ -187,6 +187,9 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
     /// The latest exact root handed to UIKit, used to adopt an attached presentation when coordination enables.
     private weak var lastPresentedExactRoot: UIViewController?
     private var isPromoQueueEnabled = false
+    /// Safe to seed as active: the app state machine runs `Foreground.didReturn()` synchronously right after
+    /// `onTransition()`, so `applicationDidBecomeActive()` lands before a scheduled presentation's 0.1s delay
+    /// can reach its fire-time validation.
     private var isApplicationActive = true
 
     private(set) var didActuallyPresentModalPromptThisSession = false
@@ -220,6 +223,8 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
         cooldownManager: PromptCooldownManaging,
         onboardingStatusProvider: ContextualDaxDialogStatusProvider,
         promoQueueLeaseArbiter: PromoQueueLeaseArbitrating,
+        // Optional rather than a default argument: `ModalPromptScheduler` is `@MainActor`, and default
+        // argument expressions are evaluated in a nonisolated context.
         modalPromptScheduling: ModalPromptScheduling? = nil,
         rootAttachmentChecker: ModalPromptRootAttachmentChecking? = nil
     ) {
@@ -415,6 +420,9 @@ private extension ModalPromptCoordinationManager {
     }
 
     private func selectModalPrompt(pendingPreparedItem: PreparedItem? = nil) -> PreparedItem? {
+        // A pending item continues an attempt that already cleared cooldown when it was selected, and every new
+        // coordinated attempt consumes the pending item before selecting, so this bypass cannot skip a cooldown
+        // started by a different modal.
         guard pendingPreparedItem != nil || !cooldownManager.isInCooldownPeriod else {
             let cooldownInfo = cooldownManager.cooldownInfo
             let lastPresentationDate = cooldownInfo.lastPresentationDate.flatMap(String.init) ?? "-"

@@ -19,11 +19,20 @@
 
 import UIKit
 import WebKit
+import DesignResourcesKitIcons
 import os.log
 
 final class WebView: WKWebView {
     private var customAccesoryView: UIView?
     private(set) var inputAccessoryViewHidden = false
+
+    /// Evaluated synchronously each time the edit menu is built, so feature-flag and user-setting changes take effect immediately.
+    var isAskAIChatMenuAvailable: (() -> Bool)?
+
+    /// Called with the picked action and the trimmed selection when the user taps one of the Duck.ai
+    /// edit-menu items. The selection is passed at full length; truncation for the wire payload belongs
+    /// to whoever builds it, since the untruncated length and word count are part of that payload.
+    var askAIChatHandler: ((AIChatTextSelectionAction, String) -> Void)?
 
     // Remembers the last find-in-page query so the system find navigator can be prepopulated per tab.
     var lastFindInPageQuery: String?
@@ -83,6 +92,62 @@ final class WebView: WKWebView {
         guard inputAccessoryViewHidden != hidden else { return }
         inputAccessoryViewHidden = hidden
         reloadContentViewInputViews()
+    }
+
+    /// Since iOS 18.2 `WKWebView` consumes `buildMenu(with:)` rather than propagating it up the responder chain,
+    /// so the selection edit menu can only be extended from the web view subclass itself.
+    override func buildMenu(with builder: UIMenuBuilder) {
+        super.buildMenu(with: builder)
+
+        guard #available(iOS 16.0, *) else { return }
+        guard shouldInsertAskAIChatMenu(forSystem: builder.system) else { return }
+
+        // Order mirrors macOS's context menu (summarize, ask, translate) — see
+        // `ContextMenuManager.handleSearchWebItem`.
+        let actions = [
+            UIAction(title: UserText.actionSummarizeWithAIChat,
+                     image: DesignSystemImages.Glyphs.Size16.summary) { [weak self] _ in
+                self?.requestAskAIChatWithSelectedText(action: .summarize)
+            },
+            UIAction(title: UserText.actionAskAIChat,
+                     image: DesignSystemImages.Glyphs.Size16.aiChat) { [weak self] _ in
+                self?.requestAskAIChatWithSelectedText(action: .ask)
+            },
+            UIAction(title: UserText.actionTranslateWithAIChat,
+                     image: DesignSystemImages.Glyphs.Size16.translate) { [weak self] _ in
+                self?.requestAskAIChatWithSelectedText(action: .translate)
+            },
+        ]
+
+        builder.insertSibling(UIMenu(title: "", options: .displayInline, children: actions),
+                              afterMenu: .standardEdit)
+    }
+
+    /// The items belong to the selection edit menu only; the main menu system drives the iPad menu bar, which
+    /// has no selection context to act on.
+    func shouldInsertAskAIChatMenu(forSystem system: UIMenuSystem) -> Bool {
+        guard system != .main else { return false }
+        return isAskAIChatMenuAvailable?() == true
+    }
+
+    /// Returns the selection trimmed of surrounding whitespace, or nil when nothing usable remains.
+    ///
+    /// Deliberately does not cap the length: the payload's `fullContentLength` and `wordCount` describe
+    /// the untruncated selection, so capping here would silently under-report both. This matches macOS,
+    /// which passes the selection through uncapped and truncates only when building the payload.
+    static func normalizedAskAIChatSelection(_ text: String) -> String? {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+        return trimmed
+    }
+
+    private func requestAskAIChatWithSelectedText(action: AIChatTextSelectionAction) {
+        evaluateJavaScript("window.getSelection().toString()") { [weak self] result, _ in
+            guard let self, let handler = self.askAIChatHandler else { return }
+            guard let text = result as? String,
+                  let selection = Self.normalizedAskAIChatSelection(text) else { return }
+            handler(action, selection)
+        }
     }
 
     private func reloadContentViewInputViews() {

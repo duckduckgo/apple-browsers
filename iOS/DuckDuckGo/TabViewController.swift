@@ -1083,6 +1083,24 @@ class TabViewController: UIViewController {
         }
     }
 
+    /// Whether the Duck.ai text-selection menu items should appear.
+    ///
+    /// Re-evaluated on every menu build so flag and setting changes take effect immediately.
+    /// The selection chips live in the unified input's attachments strip, so every condition that
+    /// strip depends on has to hold or a selection would attach invisibly and still be submitted.
+    /// `UnifiedToggleInputFeature.isAvailable` already requires `devicePlatform.isIphone`, so it
+    /// subsumes the iPhone-only gate; `aiChatContextualUnifiedToggleInput` is what gives the sheet a
+    /// persistent unified-input host *before* the first prompt — without it the sheet falls back to the
+    /// basic native input, which renders a single page-context chip and no selection rail at all.
+    /// Excluded on Duck.ai tabs, matching macOS: there is no page there to select text from.
+    private var isAskAIChatSelectionMenuAvailable: Bool {
+        guard !isAITab,
+              featureFlagger.isFeatureOn(.aiChatTextActions),
+              featureFlagger.isFeatureOn(.aiChatContextualUnifiedToggleInput),
+              unifiedToggleInputFeature.isAvailable else { return false }
+        return aiChatSettings.isAIChatBrowsingMenuUserSettingsEnabled
+    }
+
     // The `consumeCookies` is legacy behaviour from the previous Fireproofing implementation. Cookies no longer need to be consumed after invocations
     // of the Fire button, but the app still does so in the event that previously persisted cookies have not yet been consumed.
     func attachWebView(configuration: WKWebViewConfiguration,
@@ -1142,6 +1160,12 @@ class TabViewController: UIViewController {
             pullToRefreshViewAdapter?.setRefreshControlEnabled(false)
             webView.scrollView.alwaysBounceVertical = false
             (webView as? WebView)?.setInputAccessoryViewHidden(true)
+        }
+
+        // Wired here rather than on the contextual sheet's own web view, so the Duck.ai conversation
+        // itself stays menu-free.
+        (webView as? WebView)?.isAskAIChatMenuAvailable = { [weak self] in
+            self?.isAskAIChatSelectionMenuAvailable ?? false
         }
 
         updateContentMode()

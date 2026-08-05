@@ -34,6 +34,9 @@
 /* Add action - button shown in alert */
 "action.title.add" = "Add";
 
+/* Edit-menu action shown on text selected in the browser; attaches the selection to Duck.ai so the user can ask their own question about it */
+"action.title.aiChat.askDuckAI" = "Ask Duck.ai";
+
 /* Long-press menu item on the iPad Duck.ai chrome chip that hides the bottom-sheet button half. */
 "action.title.aiChat.hideContextualSheetButton" = "Hide Bottom Sheet Shortcut";
 
@@ -58,8 +61,14 @@
 /* Long-press menu item on the iPad Duck.ai chrome chip that re-shows the Duck.ai (open) button half. */
 "action.title.aiChat.showDuckAIButton" = "Show Duck.ai Shortcut";
 
+/* Edit-menu action shown on text selected in the browser; asks Duck.ai to summarize the selection straight away */
+"action.title.aiChat.summarizeWithDuckAI" = "Summarize with Duck.ai";
+
 /* Accessibility label for the icon half of the iPad Duck.ai chrome chip; tapping toggles the contextual chat sheet for the current page. */
 "action.title.aiChat.toggleContextualSheet" = "Toggle Duck.ai sheet";
+
+/* Edit-menu action shown on text selected in the browser; asks Duck.ai to translate the selection straight away */
+"action.title.aiChat.translateWithDuckAI" = "Translate with Duck.ai";
 
 /* Autofill Logins menu item opening the login list */
 "action.title.autofill.logins" = "Passwords";

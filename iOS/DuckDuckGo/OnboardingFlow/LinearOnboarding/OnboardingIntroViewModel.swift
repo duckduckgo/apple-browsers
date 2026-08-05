@@ -123,8 +123,6 @@ final class OnboardingIntroViewModel: ObservableObject {
 
     private var pendingOnboardingIntroActions: (() -> Void)?
 
-
-
     convenience init(pixelReporter: LinearOnboardingPixelReporting,
                      systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging,
                      daxDialogsManager: ContextualDaxDialogDisabling,

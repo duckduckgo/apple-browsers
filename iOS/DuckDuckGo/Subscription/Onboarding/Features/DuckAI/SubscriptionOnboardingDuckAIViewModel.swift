@@ -60,11 +60,6 @@ final class DefaultSubscriptionOnboardingAIModelProvider: SubscriptionOnboarding
         timeoutTask?.cancel()
     }
 
-    /// How many callers are currently awaiting the in-flight fetch. Exposed so tests can wait until a
-    /// second caller has actually queued before releasing the fetch, rather than relying on task-scheduling
-    /// order.
-    var pendingCallerCount: Int { pendingContinuations.count }
-
     /// Bridges `UTIModelStore`'s `onModelsUpdated` callback. Concurrent calls share one underlying fetch, and a
     /// caller whose task is cancelled resolves on its own rather than waiting out the timeout.
     func fetchModels() async -> [AIChatModel] {

@@ -54,10 +54,14 @@ final class SubscriptionOnboardingVPNActivationViewModel: ObservableObject {
     /// configuration-denied signal.
     @Published private(set) var didDenyVPNPermission = false
 
+    /// Whether starting the VPN failed for a reason other than a denial
+    @Published private(set) var didFailToStartVPN = false
+
     private let prefetcher: SubscriptionOnboardingPrefetcher
     private let vpnController: SubscriptionOnboardingVPNControlling
     private let vpnLocationProvider: SubscriptionOnboardingVPNLocationProviding
     private let serverInfoObserver: ConnectionServerInfoObserver
+    private let errorObserver: ConnectionErrorObserver
     private weak var delegate: SubscriptionOnboardingSectionDelegate?
     private let locale: Locale
 
@@ -68,18 +72,23 @@ final class SubscriptionOnboardingVPNActivationViewModel: ObservableObject {
          vpnController: SubscriptionOnboardingVPNControlling = DefaultSubscriptionOnboardingVPNController(),
          vpnLocationProvider: SubscriptionOnboardingVPNLocationProviding = DefaultSubscriptionOnboardingVPNLocationProvider(),
          serverInfoObserver: ConnectionServerInfoObserver = AppDependencyProvider.shared.serverInfoObserver,
+         errorObserver: ConnectionErrorObserver = AppDependencyProvider.shared.connectionErrorObserver,
          delegate: SubscriptionOnboardingSectionDelegate? = nil,
          locale: Locale = .current) {
         self.prefetcher = prefetcher
         self.vpnController = vpnController
         self.vpnLocationProvider = vpnLocationProvider
         self.serverInfoObserver = serverInfoObserver
+        self.errorObserver = errorObserver
         self.delegate = delegate
         self.locale = locale
         self.connectionState = vpnController.isConnected ? .on : .off
     }
 
     // MARK: - Display values
+
+    /// Whether the last activation attempt failed — declined prompt or otherwise
+    var didFailActivation: Bool { didDenyVPNPermission || didFailToStartVPN }
 
     var originalIPText: String { ipText(for: originalConnectionInfo) }
     var originalLocationText: String { locationText(for: originalConnectionInfo) }
@@ -165,6 +174,18 @@ final class SubscriptionOnboardingVPNActivationViewModel: ObservableObject {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in
                 self?.didDenyVPNPermission = true
+                self?.didFailToStartVPN = false
+            }
+            .store(in: &cancellables)
+
+        // Both sources replay their current value on subscription, so each drops its own
+        Publishers.Merge(vpnController.controllerErrorPublisher.dropFirst(),
+                         errorObserver.publisher.dropFirst())
+            .compactMap { $0 }
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.didFailToStartVPN = true
+                self?.didDenyVPNPermission = false
             }
             .store(in: &cancellables)
 
@@ -190,6 +211,7 @@ final class SubscriptionOnboardingVPNActivationViewModel: ObservableObject {
         connectionState = newState
         if isConnected {
             didDenyVPNPermission = false
+            didFailToStartVPN = false
             reportCompletionIfNeeded()
         }
     }
@@ -210,6 +232,8 @@ protocol SubscriptionOnboardingVPNControlling {
     var isConnectedPublisher: AnyPublisher<Bool, Never> { get }
     /// Fires when the customer declines the system VPN-configuration prompt.
     var configurationDeniedPublisher: AnyPublisher<Void, Never> { get }
+    /// Carries the user-facing message for a start failure that aborts before the tunnel session exists
+    var controllerErrorPublisher: AnyPublisher<String?, Never> { get }
     func start() async
     /// Whether a VPN configuration is already installed. If not, starting triggers the system permission
     /// prompt — used to decide whether to show the "Tap allow" hint.
@@ -240,6 +264,10 @@ final class DefaultSubscriptionOnboardingVPNController: SubscriptionOnboardingVP
 
     var configurationDeniedPublisher: AnyPublisher<Void, Never> {
         tunnelController.configurationDeniedPublisher
+    }
+
+    var controllerErrorPublisher: AnyPublisher<String?, Never> {
+        tunnelController.controllerErrorPublisher
     }
 
     func start() async {
@@ -291,6 +319,8 @@ struct PreviewSubscriptionOnboardingVPNController: SubscriptionOnboardingVPNCont
 
     var configurationDeniedPublisher: AnyPublisher<Void, Never> { Empty().eraseToAnyPublisher() }
 
+    var controllerErrorPublisher: AnyPublisher<String?, Never> { Empty().eraseToAnyPublisher() }
+
     func start() async {}
 
     func isVPNConfigured() async -> Bool { false }
@@ -310,6 +340,8 @@ struct RevealPreviewSubscriptionOnboardingVPNController: SubscriptionOnboardingV
 
     var configurationDeniedPublisher: AnyPublisher<Void, Never> { Empty().eraseToAnyPublisher() }
 
+    var controllerErrorPublisher: AnyPublisher<String?, Never> { Empty().eraseToAnyPublisher() }
+
     func start() async {
         subject.send(true)
     }
@@ -322,6 +354,12 @@ struct PreviewSubscriptionOnboardingConnectionInfoService: SubscriptionOnboardin
     func fetchConnectionInfo() async throws -> SubscriptionOnboardingConnectionInfo {
         throw CancellationError()
     }
+}
+
+/// A silent error observer for previews: never reports a VPN failure.
+struct PreviewConnectionErrorObserver: ConnectionErrorObserver {
+    var publisher: AnyPublisher<String?, Never> { Empty().eraseToAnyPublisher() }
+    var recentValue: String? { nil }
 }
 
 /// A fixed location provider for previews: reports whether the "nearest available" location is selected.
@@ -360,17 +398,20 @@ extension SubscriptionOnboardingVPNActivationViewModel {
                         originalConnectionInfo: SubscriptionOnboardingConnectionInfo?,
                         vpnConnectionInfo: SubscriptionOnboardingConnectionInfo? = nil,
                         isNearestSelected: Bool = false,
-                        didDenyVPNPermission: Bool = false) -> SubscriptionOnboardingVPNActivationViewModel {
+                        didDenyVPNPermission: Bool = false,
+                        didFailToStartVPN: Bool = false) -> SubscriptionOnboardingVPNActivationViewModel {
         let serverInfo = NetworkProtectionStatusServerInfo.previewServerInfo(vpnConnectionInfo)
         let viewModel = SubscriptionOnboardingVPNActivationViewModel(
             prefetcher: .preview(connectionInfo: originalConnectionInfo.map(ConnectionInfoState.loaded) ?? .loading),
             vpnController: PreviewSubscriptionOnboardingVPNController(isConnected: state == .on),
             vpnLocationProvider: PreviewSubscriptionOnboardingVPNLocationProvider(isNearestSelected: isNearestSelected),
             serverInfoObserver: PreviewConnectionServerInfoObserver(serverInfo),
+            errorObserver: PreviewConnectionErrorObserver(),
             locale: Locale(identifier: "en_US"))
         viewModel.originalConnectionInfo = originalConnectionInfo.map(ConnectionInfoState.loaded) ?? .loading
         viewModel.vpnServerInfo = serverInfo
         viewModel.didDenyVPNPermission = didDenyVPNPermission
+        viewModel.didFailToStartVPN = didFailToStartVPN
         return viewModel
     }
 
@@ -385,6 +426,7 @@ extension SubscriptionOnboardingVPNActivationViewModel {
             vpnController: RevealPreviewSubscriptionOnboardingVPNController(),
             vpnLocationProvider: PreviewSubscriptionOnboardingVPNLocationProvider(isNearestSelected: isNearestSelected),
             serverInfoObserver: PreviewConnectionServerInfoObserver(serverInfo),
+            errorObserver: PreviewConnectionErrorObserver(),
             locale: Locale(identifier: "en_US"))
         viewModel.originalConnectionInfo = original.map(ConnectionInfoState.loaded) ?? .loading
         viewModel.vpnServerInfo = serverInfo

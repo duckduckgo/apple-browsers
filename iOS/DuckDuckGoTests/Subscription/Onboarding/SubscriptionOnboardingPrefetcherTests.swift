@@ -78,6 +78,18 @@ final class SubscriptionOnboardingPrefetcherTests: XCTestCase {
         XCTAssertEqual(service.fetchCallCount, 2)
     }
 
+    func testWhenFetchConnectionInfoIfNeededIsCalledAfterLoadingThenDoesNotRefetch() async {
+        let service = MockConnectionInfoService(result: .success(.init(ip: "1.2.3.4", city: "Paris", country: "FR")))
+        let prefetcher = makePrefetcher(connectionInfoService: service)
+        await wait(prefetcher.$connectionInfo, until: { !$0.isLoading }) {
+            prefetcher.fetchConnectionInfoIfNeeded()
+        }
+
+        prefetcher.fetchConnectionInfoIfNeeded()
+
+        XCTAssertEqual(service.fetchCallCount, 1)
+    }
+
     // MARK: - Models
 
     func testWhenFetchModelsIfNeededSucceedsThenStateIsLoaded() async {
@@ -129,6 +141,18 @@ final class SubscriptionOnboardingPrefetcherTests: XCTestCase {
 
         XCTAssertEqual(provider.fetchCallCount, 2)
         XCTAssertEqual(loadedModelIDs(prefetcher.models), ["a"])
+    }
+
+    func testWhenFetchModelsIfNeededIsCalledAfterLoadingThenDoesNotRefetch() async {
+        let provider = MockAIModelProvider(models: [model("a")])
+        let prefetcher = makePrefetcher(modelProvider: provider)
+        await wait(prefetcher.$models, until: { !$0.isLoading }) {
+            prefetcher.fetchModelsIfNeeded()
+        }
+
+        prefetcher.fetchModelsIfNeeded()
+
+        XCTAssertEqual(provider.fetchCallCount, 1)
     }
 
     // MARK: - prefetch()
@@ -227,8 +251,10 @@ final class SubscriptionOnboardingPrefetcherTests: XCTestCase {
 
         var prefetcher: SubscriptionOnboardingPrefetcher? = makePrefetcher(connectionInfoService: service)
         weakPrefetcher = prefetcher
+        let fetchStarted = expectation(description: "the fetch reached the service")
+        service.onFetchStarted = { fetchStarted.fulfill() }
         prefetcher?.fetchConnectionInfoIfNeeded()
-        await waitUntil({ service.fetchCallCount == 1 }, description: "the fetch to reach the service")
+        await fulfillment(of: [fetchStarted], timeout: 5)
 
         prefetcher = nil
 
@@ -237,18 +263,6 @@ final class SubscriptionOnboardingPrefetcherTests: XCTestCase {
     }
 
     // MARK: - Helpers
-
-    /// Polls `condition` on the main actor, failing rather than hanging if it never becomes true.
-    private func waitUntil(_ condition: @MainActor () -> Bool,
-                           description: String,
-                           file: StaticString = #filePath,
-                           line: UInt = #line) async {
-        for _ in 0..<200 {
-            if condition() { return }
-            try? await Task.sleep(nanoseconds: 5_000_000)
-        }
-        XCTFail("Timed out waiting for \(description)", file: file, line: line)
-    }
 
     private func makePrefetcher(connectionInfoService: SubscriptionOnboardingConnectionInfoService = MockConnectionInfoService(result: .failure),
                                 modelProvider: SubscriptionOnboardingAIModelProviding = MockAIModelProvider(models: [])) -> SubscriptionOnboardingPrefetcher {
@@ -304,7 +318,7 @@ final class SubscriptionOnboardingPrefetcherTests: XCTestCase {
             }
             .store(in: &cancellables)
         trigger()
-        await fulfillment(of: [expectation], timeout: 1)
+        await fulfillment(of: [expectation], timeout: 5)
     }
 }
 
@@ -331,6 +345,10 @@ private final class MockConnectionInfoService: SubscriptionOnboardingConnectionI
 
     var cancelsInFlight = false
 
+    /// Fires when the fetch is entered, so a test can wait for it to be in flight rather than polling.
+    /// When gated it fires only once the gate is armed, so a test resuming on it can't release nothing.
+    var onFetchStarted: (() -> Void)?
+
     /// When set, `fetchConnectionInfo()` parks until ``releaseGate()``, so a test can keep a fetch in flight.
     var isGated = false
     private var gate: CheckedContinuation<Void, Never>?
@@ -345,7 +363,12 @@ private final class MockConnectionInfoService: SubscriptionOnboardingConnectionI
             withUnsafeCurrentTask { $0?.cancel() }
         }
         if isGated {
-            await withCheckedContinuation { gate = $0 }
+            await withCheckedContinuation { continuation in
+                gate = continuation
+                onFetchStarted?()
+            }
+        } else {
+            onFetchStarted?()
         }
         switch result {
         case .success(let info): return info

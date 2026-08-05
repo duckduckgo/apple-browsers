@@ -291,6 +291,177 @@ final class SubscriptionOnboardingVPNActivationViewModelTests: XCTestCase {
         XCTAssertFalse(viewModel.didDenyVPNPermission)
     }
 
+    // MARK: - Start failure (observed)
+
+    func testWhenStartingTheVPNFailsThenActivationIsMarkedAsFailed() async {
+        let controller = MockVPNController(isConnected: false)
+        let viewModel = makeViewModel(controller: controller)
+        viewModel.onAppear()
+
+        await waitFor(viewModel.$didFailToStartVPN, toEqual: true) {
+            controller.simulateStartFailure()
+        }
+
+        XCTAssertTrue(viewModel.didFailActivation)
+        XCTAssertFalse(viewModel.didDenyVPNPermission)
+    }
+
+    func testWhenTheConfigurationIsDeniedThenActivationIsMarkedAsFailed() async {
+        let controller = MockVPNController(isConnected: false)
+        let viewModel = makeViewModel(controller: controller)
+        viewModel.onAppear()
+
+        await waitFor(viewModel.$didDenyVPNPermission, toEqual: true) {
+            controller.simulateConfigurationDenied()
+        }
+
+        XCTAssertTrue(viewModel.didFailActivation)
+        XCTAssertFalse(viewModel.didFailToStartVPN)
+    }
+
+    func testWhenStartingFailedBeforeTheScreenAppearedThenActivationIsNotMarkedAsFailed() async {
+        let controller = MockVPNController(isConnected: false, controllerError: "failure from an earlier attempt")
+        let viewModel = makeViewModel(controller: controller)
+        let markedAsFailed = expectation(description: "the replayed error must not mark the activation as failed")
+        markedAsFailed.isInverted = true
+        viewModel.$didFailToStartVPN.filter { $0 }.sink { _ in markedAsFailed.fulfill() }.store(in: &cancellables)
+
+        viewModel.onAppear()
+
+        await fulfillment(of: [markedAsFailed], timeout: 0.2)
+        XCTAssertFalse(viewModel.didFailActivation)
+    }
+
+    func testWhenARetryStartsAfterAFailureThenTheFailureStatePersists() async {
+        let controller = MockVPNController(isConnected: false)
+        let viewModel = makeViewModel(controller: controller)
+        viewModel.onAppear()
+
+        await waitFor(viewModel.$didFailToStartVPN, toEqual: true) {
+            controller.simulateStartFailure()
+        }
+
+        let cleared = expectation(description: "a fresh start attempt must not clear the failure")
+        cleared.isInverted = true
+        viewModel.$didFailToStartVPN.filter { !$0 }.sink { _ in cleared.fulfill() }.store(in: &cancellables)
+
+        controller.simulateStartAttempt()
+
+        await fulfillment(of: [cleared], timeout: 0.2)
+        XCTAssertTrue(viewModel.didFailToStartVPN)
+    }
+
+    func testWhenTheTunnelReportsAnErrorThenActivationIsMarkedAsFailed() async {
+        let errorObserver = MockConnectionErrorObserver()
+        let viewModel = makeViewModel(errorObserver: errorObserver)
+        viewModel.onAppear()
+
+        await waitFor(viewModel.$didFailToStartVPN, toEqual: true) {
+            errorObserver.subject.send("Failed to generate a tunnel configuration")
+        }
+
+        XCTAssertTrue(viewModel.didFailActivation)
+    }
+
+    func testWhenTheTunnelErrorPredatesTheScreenThenActivationIsNotMarkedAsFailed() async {
+        let errorObserver = MockConnectionErrorObserver()
+        errorObserver.subject.send("Missing auth token")
+        let viewModel = makeViewModel(errorObserver: errorObserver)
+        let markedAsFailed = expectation(description: "the replayed error must not mark the activation as failed")
+        markedAsFailed.isInverted = true
+        viewModel.$didFailToStartVPN.filter { $0 }.sink { _ in markedAsFailed.fulfill() }.store(in: &cancellables)
+
+        viewModel.onAppear()
+
+        await fulfillment(of: [markedAsFailed], timeout: 0.2)
+        XCTAssertFalse(viewModel.didFailActivation)
+    }
+
+    func testWhenStartingFailsAfterADenialThenOnlyTheStartFailureIsMarked() async {
+        let controller = MockVPNController(isConnected: false)
+        let viewModel = makeViewModel(controller: controller)
+        viewModel.onAppear()
+
+        await waitFor(viewModel.$didDenyVPNPermission, toEqual: true) {
+            controller.simulateConfigurationDenied()
+        }
+
+        await waitFor(viewModel.$didFailToStartVPN, toEqual: true) {
+            controller.simulateStartFailure()
+        }
+
+        XCTAssertFalse(viewModel.didDenyVPNPermission)
+    }
+
+    func testWhenTheConfigurationIsDeniedAfterAStartFailureThenOnlyTheDenialIsMarked() async {
+        let controller = MockVPNController(isConnected: false)
+        let viewModel = makeViewModel(controller: controller)
+        viewModel.onAppear()
+
+        await waitFor(viewModel.$didFailToStartVPN, toEqual: true) {
+            controller.simulateStartFailure()
+        }
+
+        await waitFor(viewModel.$didDenyVPNPermission, toEqual: true) {
+            controller.simulateConfigurationDenied()
+        }
+
+        XCTAssertFalse(viewModel.didFailToStartVPN)
+    }
+
+    func testWhenTunnelConnectsAfterAFailureThenTheFailureStateIsCleared() async {
+        let controller = MockVPNController(isConnected: false)
+        let viewModel = makeViewModel(controller: controller)
+        viewModel.onAppear()
+
+        await waitFor(viewModel.$didFailToStartVPN, toEqual: true) {
+            controller.simulateStartFailure()
+        }
+
+        await waitFor(viewModel.$connectionState, toEqual: .on) {
+            controller.simulateConnected()
+        }
+
+        XCTAssertFalse(viewModel.didFailToStartVPN)
+        XCTAssertFalse(viewModel.didFailActivation)
+    }
+
+    // MARK: - Leaving and returning
+
+    func testWhenTheScreenReappearsThenItStillObservesTheConnection() async {
+        let controller = MockVPNController(isConnected: false)
+        let viewModel = makeViewModel(controller: controller)
+        viewModel.onAppear()
+        viewModel.onDisappear()
+
+        viewModel.onAppear()
+
+        await waitFor(viewModel.$connectionState, toEqual: .on) {
+            controller.simulateConnected()
+        }
+
+        XCTAssertEqual(viewModel.connectionState, .on)
+    }
+
+    func testWhenTheScreenReappearsWhileConnectedThenTheOriginalConnectionIsNotRefetched() async {
+        let service = MockConnectionInfoService(results: [])
+        let controller = MockVPNController(isConnected: false)
+        let viewModel = makeViewModel(service: service, controller: controller)
+
+        await waitFor(viewModel.$originalConnectionInfo, toEqual: .failed) {
+            viewModel.onAppear()
+        }
+        await waitFor(viewModel.$connectionState, toEqual: .on) {
+            controller.simulateConnected()
+        }
+
+        viewModel.onDisappear()
+        viewModel.onAppear()
+
+        // A refetch would leave through the tunnel and describe the VPN's egress, not the original connection.
+        XCTAssertEqual(service.fetchCallCount, 1)
+    }
+
     // MARK: - Tap allow hint
 
     func testWhenTurnOnIsTappedAgainThenAVisibleHintIsHidden() async {
@@ -406,9 +577,10 @@ final class SubscriptionOnboardingVPNActivationViewModelTests: XCTestCase {
     // MARK: - Helpers
 
     private func waitForHint(_ coordinator: TapAllowHintCoordinator) async {
-        await fulfillment(of: [hintShownExpectation(coordinator, inverted: false)], timeout: 1)
+        await fulfillment(of: [hintShownExpectation(coordinator, inverted: false)], timeout: 5)
     }
 
+    /// Kept short: an inverted expectation always waits out its full timeout, on every passing run.
     private func assertHintDoesNotShow(_ coordinator: TapAllowHintCoordinator) async {
         await fulfillment(of: [hintShownExpectation(coordinator, inverted: true)], timeout: 0.3)
     }
@@ -433,12 +605,14 @@ final class SubscriptionOnboardingVPNActivationViewModelTests: XCTestCase {
                                controller: SubscriptionOnboardingVPNControlling = MockVPNController(isConnected: false),
                                locationProvider: SubscriptionOnboardingVPNLocationProviding = MockVPNLocationProvider(),
                                serverInfoObserver: ConnectionServerInfoObserver = MockConnectionServerInfoObserver(),
+                               errorObserver: ConnectionErrorObserver = MockConnectionErrorObserver(),
                                delegate: SubscriptionOnboardingSectionDelegate? = nil) -> SubscriptionOnboardingVPNActivationViewModel {
         SubscriptionOnboardingVPNActivationViewModel(prefetcher: SubscriptionOnboardingPrefetcher(connectionInfoService: service,
                                                                                                   modelProvider: StubAIModelProvider()),
                                                      vpnController: controller,
                                                      vpnLocationProvider: locationProvider,
                                                      serverInfoObserver: serverInfoObserver,
+                                                     errorObserver: errorObserver,
                                                      delegate: delegate,
                                                      locale: enUS)
     }
@@ -466,7 +640,7 @@ final class SubscriptionOnboardingVPNActivationViewModelTests: XCTestCase {
             }
             .store(in: &cancellables)
         trigger()
-        await fulfillment(of: [expectation], timeout: 1)
+        await fulfillment(of: [expectation], timeout: 5)
     }
 }
 
@@ -481,11 +655,14 @@ private final class StubAIModelProvider: SubscriptionOnboardingAIModelProviding 
     func updateSelectedModel(_ modelID: String) {}
 }
 
+/// `@MainActor` so `fetchCallCount` and `results` are never touched from two threads at once — the prefetcher
+/// would otherwise await this off the main actor. `init` stays `nonisolated` so it can be a default argument.
+@MainActor
 private final class MockConnectionInfoService: SubscriptionOnboardingConnectionInfoService {
     private var results: [SubscriptionOnboardingConnectionInfo]
     private(set) var fetchCallCount = 0
 
-    init(results: [SubscriptionOnboardingConnectionInfo]) {
+    nonisolated init(results: [SubscriptionOnboardingConnectionInfo]) {
         self.results = results
     }
 
@@ -499,10 +676,13 @@ private final class MockConnectionInfoService: SubscriptionOnboardingConnectionI
 private final class MockVPNController: SubscriptionOnboardingVPNControlling {
     private let subject: CurrentValueSubject<Bool, Never>
     private let configurationDeniedSubject = PassthroughSubject<Void, Never>()
+    /// Replays its current value on subscription, as the live controller's does.
+    private let controllerErrorSubject: CurrentValueSubject<String?, Never>
     private(set) var startCallCount = 0
 
-    init(isConnected: Bool) {
+    init(isConnected: Bool, controllerError: String? = nil) {
         subject = CurrentValueSubject(isConnected)
+        controllerErrorSubject = CurrentValueSubject(controllerError)
     }
 
     var isConnected: Bool { subject.value }
@@ -510,6 +690,8 @@ private final class MockVPNController: SubscriptionOnboardingVPNControlling {
     var isConnectedPublisher: AnyPublisher<Bool, Never> { subject.eraseToAnyPublisher() }
 
     var configurationDeniedPublisher: AnyPublisher<Void, Never> { configurationDeniedSubject.eraseToAnyPublisher() }
+
+    var controllerErrorPublisher: AnyPublisher<String?, Never> { controllerErrorSubject.eraseToAnyPublisher() }
 
     func start() async {
         startCallCount += 1
@@ -523,6 +705,15 @@ private final class MockVPNController: SubscriptionOnboardingVPNControlling {
 
     func simulateConfigurationDenied() {
         configurationDeniedSubject.send()
+    }
+
+    func simulateStartFailure(_ message: String = "Unable to connect to a VPN server.") {
+        controllerErrorSubject.send(message)
+    }
+
+    /// Clears the carried error, as the live controller does when a start attempt begins.
+    func simulateStartAttempt() {
+        controllerErrorSubject.send(nil)
     }
 }
 

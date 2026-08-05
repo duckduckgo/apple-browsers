@@ -52,13 +52,12 @@ protocol SubscriptionOnboardingConnectionInfoService {
     func fetchConnectionInfo() async throws -> SubscriptionOnboardingConnectionInfo
 }
 
-/// Reads `https://duckduckgo.com/connection.json` through `APIService`, which supplies the retry policy,
-/// the request logging and cancellation checking. The status check below is deliberately local: `fetch`
-/// returns non-2xx responses as-is rather than throwing, so without it an error body would reach the decoder.
+/// Reads `https://duckduckgo.com/connection.json` through `APIService`, which supplies the request logging and
+/// cancellation checking. The status check below is deliberately local: `fetch` returns non-2xx responses as-is
+/// rather than throwing, so without it an error body would reach the decoder.
 struct DefaultSubscriptionOnboardingConnectionInfoService: SubscriptionOnboardingConnectionInfoService {
     private static let connectionInfoURL = URL(string: "https://duckduckgo.com/connection.json")!
     private static let requestTimeout: TimeInterval = 10
-    private static let retryPolicy = APIRequestV2.RetryPolicy(maxRetries: 1, delay: .fixed(0.5))
 
     private let apiService: APIService
 
@@ -67,10 +66,10 @@ struct DefaultSubscriptionOnboardingConnectionInfoService: SubscriptionOnboardin
     }
 
     func fetchConnectionInfo() async throws -> SubscriptionOnboardingConnectionInfo {
+        // A retry can go through a VPN. If we want to add retry later, it needs to be guarded by the VPN state.
         guard let request = APIRequestV2(url: Self.connectionInfoURL,
                                          method: .get,
-                                         timeoutInterval: Self.requestTimeout,
-                                         retryPolicy: Self.retryPolicy) else {
+                                         timeoutInterval: Self.requestTimeout) else {
             throw APIRequestV2Error.invalidURL
         }
         let response = try await apiService.fetch(request: request)

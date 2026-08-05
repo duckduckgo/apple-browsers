@@ -95,11 +95,11 @@ private extension SubscriptionOnboardingVPNActivationView {
     var header: SubscriptionOnboardingHeaderView {
         switch viewModel.connectionState {
         case .off:
-            if viewModel.didDenyVPNPermission {
+            if viewModel.didFailActivation {
                 return SubscriptionOnboardingHeaderView(
                     visual: .image(Image(.onboardingCriticalUpdate128)),
-                    title: UserText.subscriptionOnboardingVPNActivationDeniedTitle,
-                    explanation: UserText.subscriptionOnboardingVPNActivationDeniedExplanation)
+                    title: UserText.subscriptionOnboardingVPNActivationFailedTitle,
+                    explanation: failureExplanation)
             }
             return SubscriptionOnboardingHeaderView(
                 visual: .image(Image(.onboardingVPNDeactivated128)),
@@ -113,6 +113,13 @@ private extension SubscriptionOnboardingVPNActivationView {
                 explanation: UserText.subscriptionOnboardingVPNActivationOnExplanation,
                 onInfoLinkTap: { isShowingInfoSheet = true })
         }
+    }
+
+    /// The explanation under the activation-failure title: the "Allow the configuration" instruction when the
+    /// customer declined the system prompt, and the VPN settings' connection-failure copy for anything else.
+    var failureExplanation: String {
+        viewModel.didDenyVPNPermission ? UserText.subscriptionOnboardingVPNActivationDeniedExplanation
+                                       : UserText.vpnErrorConnectionFailed
     }
 }
 
@@ -188,7 +195,7 @@ private extension SubscriptionOnboardingVPNActivationView {
                     tapAllowHint.turnOnFinished()
                 }
             }
-            guard viewModel.didDenyVPNPermission else {
+            guard viewModel.didFailActivation else {
                 return .single(.init(UserText.subscriptionOnboardingVPNActivationTurnOnButton, action: startVPN))
             }
             return .double(primary: .init(UserText.subscriptionOnboardingVPNActivationTryAgainButton, action: startVPN),
@@ -235,9 +242,14 @@ private let previewLottieRenderer = GraphicLottieRenderer { name, _ in
 private func activationPreview(state: SubscriptionOnboardingVPNActivationViewModel.ConnectionState,
                                original: SubscriptionOnboardingConnectionInfo?,
                                vpn: SubscriptionOnboardingConnectionInfo? = nil,
-                               didDeny: Bool = false) -> some View {
+                               didDeny: Bool = false,
+                               didFailToStart: Bool = false) -> some View {
     SubscriptionOnboardingVPNActivationView(
-        viewModel: .preview(state: state, originalConnectionInfo: original, vpnConnectionInfo: vpn, didDenyVPNPermission: didDeny),
+        viewModel: .preview(state: state,
+                            originalConnectionInfo: original,
+                            vpnConnectionInfo: vpn,
+                            didDenyVPNPermission: didDeny,
+                            didFailToStartVPN: didFailToStart),
         title: String(format: UserText.subscriptionOnboardingStepIndicatorFormat, 1, 4))
     .subscriptionOnboardingNavigationContainer()
     .graphicLottieRenderer(previewLottieRenderer)
@@ -273,6 +285,12 @@ private func activationPreview(state: SubscriptionOnboardingVPNActivationViewMod
         activationPreview(state: .off, original: .madrid, didDeny: true)
     }
     .dynamicTypeSize(.accessibility5)
+}
+
+#Preview("Off - start failed") {
+    RebrandedPreview {
+        activationPreview(state: .off, original: .madrid, didFailToStart: true)
+    }
 }
 
 #Preview("On - Light") {

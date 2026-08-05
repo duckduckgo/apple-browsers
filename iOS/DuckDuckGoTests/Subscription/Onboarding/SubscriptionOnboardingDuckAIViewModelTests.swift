@@ -174,12 +174,43 @@ final class SubscriptionOnboardingDuckAIViewModelTests: XCTestCase {
         XCTAssertTrue(delegate.completedSections.isEmpty)
     }
 
+    func testWhenStartChatWithNoModelsThenChatIsRequestedWithoutASelection() async {
+        let delegate = SpySectionDelegate()
+        let provider = MockAIModelProvider(models: [])
+        let (viewModel, prefetcher) = makeViewModel(provider: provider, delegate: delegate)
+        await wait(prefetcher.$models, until: { if case .failed = $0 { return true } else { return false } }) {
+            viewModel.onAppear()
+        }
+
+        viewModel.startChat()
+
+        XCTAssertEqual(delegate.requestedChatModelIDs.count, 1)
+        XCTAssertNil(delegate.requestedChatModelIDs[0])
+        XCTAssertNil(provider.updatedModelID)
+    }
+
+    func testWhenTheScreenReappearsThenModelsAreKeptWithoutRefetching() async {
+        let provider = MockAIModelProvider(models: [model("a", tier: ["plus"])])
+        let (viewModel, _) = makeViewModel(provider: provider)
+        await wait(viewModel.$availableModels, until: { !$0.isEmpty }) {
+            viewModel.onAppear()
+        }
+
+        viewModel.onDisappear()
+        viewModel.onAppear()
+
+        XCTAssertEqual(viewModel.availableModels.map(\.id), ["a"])
+        XCTAssertEqual(viewModel.selectedModelID, "a")
+        XCTAssertEqual(provider.fetchCallCount, 1)
+    }
+
     // MARK: - Helpers
 
     private func makeViewModel(provider: MockAIModelProvider,
                                delegate: SubscriptionOnboardingSectionDelegate? = nil)
     -> (viewModel: SubscriptionOnboardingDuckAIViewModel, prefetcher: SubscriptionOnboardingPrefetcher) {
-        let prefetcher = SubscriptionOnboardingPrefetcher(modelProvider: provider)
+        let prefetcher = SubscriptionOnboardingPrefetcher(connectionInfoService: StubConnectionInfoService(),
+                                                          modelProvider: provider)
         let viewModel = SubscriptionOnboardingDuckAIViewModel(prefetcher: prefetcher, delegate: delegate)
         return (viewModel, prefetcher)
     }
@@ -203,11 +234,18 @@ final class SubscriptionOnboardingDuckAIViewModelTests: XCTestCase {
             }
             .store(in: &cancellables)
         trigger()
-        await fulfillment(of: [expectation], timeout: 1)
+        await fulfillment(of: [expectation], timeout: 5)
     }
 }
 
 // MARK: - Test doubles
+
+/// Keeps the prefetcher from building a real `DefaultAPIService`; this screen never fetches connection info.
+private struct StubConnectionInfoService: SubscriptionOnboardingConnectionInfoService {
+    func fetchConnectionInfo() async throws -> SubscriptionOnboardingConnectionInfo {
+        throw CancellationError()
+    }
+}
 
 @MainActor
 private final class MockAIModelProvider: SubscriptionOnboardingAIModelProviding {
@@ -249,6 +287,10 @@ private final class SpySectionDelegate: SubscriptionOnboardingSectionDelegate {
 /// consumers are tested.
 @MainActor
 final class DefaultSubscriptionOnboardingAIModelProviderTests: XCTestCase {
+
+    /// Comfortably under the provider's own 10s `fetchTimeout`, so resolving on cancellation is
+    /// distinguishable from waiting that timeout out without a wall-clock budget CI can trip over.
+    private static let cancellationBudget: TimeInterval = 5
 
     private var modelsService: StubModelsService!
     private var preferences: StubPreferences!
@@ -300,13 +342,20 @@ final class DefaultSubscriptionOnboardingAIModelProviderTests: XCTestCase {
         modelsService.isGated = true
         modelsService.result = .success(AIChatModelsResponse(models: [remoteModel(id: "gpt-5.4")]))
 
-        async let first = sut.fetchModels()
-        async let second = sut.fetchModels()
+        let fetchStarted = expectation(description: "the store fetch to start")
+        modelsService.onFetchStarted = { fetchStarted.fulfill() }
 
-        // Wait until both callers have actually queued — asserting on `fetchCallCount` alone would only prove
-        // the first one arrived, leaving the second's registration to task-scheduling order.
-        await waitUntil({ self.modelsService.fetchCallCount == 1 && self.sut.pendingCallerCount == 2 },
-                        description: "both callers to queue on one store fetch")
+        async let first = sut.fetchModels()
+        await fulfillment(of: [fetchStarted], timeout: 5)
+
+        // The second caller must join the in-flight fetch rather than start its own, so reaching the service
+        // again is the failure. Waiting this out is also what gives it time to register.
+        let secondStoreFetch = expectation(description: "the second caller must not start its own store fetch")
+        secondStoreFetch.isInverted = true
+        modelsService.onFetchStarted = { secondStoreFetch.fulfill() }
+        async let second = sut.fetchModels()
+        await fulfillment(of: [secondStoreFetch], timeout: 0.2)
+
         modelsService.releaseGate()
 
         let (firstModels, secondModels) = await (first, second)
@@ -334,27 +383,35 @@ final class DefaultSubscriptionOnboardingAIModelProviderTests: XCTestCase {
     func testWhenCallerIsCancelledThenItResolvesWithoutWaitingForTheTimeout() async {
         // Gated with no release, so the store never notifies and only the cancellation can resolve this.
         modelsService.isGated = true
+        let fetchStarted = expectation(description: "the store fetch to start")
+        modelsService.onFetchStarted = { fetchStarted.fulfill() }
         let task = Task { await sut.fetchModels() }
-        await waitUntil({ self.modelsService.fetchCallCount == 1 }, description: "the store fetch to start")
+        await fulfillment(of: [fetchStarted], timeout: 5)
 
         let start = Date()
         task.cancel()
         let models = await task.value
 
         XCTAssertTrue(models.isEmpty)
-        // Without the cancellation handler this would park for the full `fetchTimeout`.
-        XCTAssertLessThan(Date().timeIntervalSince(start), 1)
+        XCTAssertLessThan(Date().timeIntervalSince(start), Self.cancellationBudget)
     }
 
     func testWhenOneOfTwoCallersIsCancelledThenTheOtherStillGetsTheModels() async {
         modelsService.isGated = true
         modelsService.result = .success(AIChatModelsResponse(models: [remoteModel(id: "gpt-5.4")]))
 
+        let fetchStarted = expectation(description: "the store fetch to start")
+        modelsService.onFetchStarted = { fetchStarted.fulfill() }
         let cancelled = Task { await sut.fetchModels() }
-        await waitUntil({ self.modelsService.fetchCallCount == 1 }, description: "the store fetch to start")
+        await fulfillment(of: [fetchStarted], timeout: 5)
+
+        // The survivor must join the in-flight fetch before the other caller is cancelled, so reaching the
+        // service again is the failure. Waiting this out is also what gives it time to register.
+        let secondStoreFetch = expectation(description: "the survivor must not start its own store fetch")
+        secondStoreFetch.isInverted = true
+        modelsService.onFetchStarted = { secondStoreFetch.fulfill() }
         async let survivor = sut.fetchModels()
-        // Both queued before cancelling, so the survivor can't miss the shared fetch and start its own.
-        await waitUntil({ self.sut.pendingCallerCount == 2 }, description: "the survivor to queue")
+        await fulfillment(of: [secondStoreFetch], timeout: 0.2)
 
         cancelled.cancel()
         _ = await cancelled.value
@@ -366,18 +423,6 @@ final class DefaultSubscriptionOnboardingAIModelProviderTests: XCTestCase {
     }
 
     // MARK: - Helpers
-
-    /// Polls `condition` on the main actor, failing rather than hanging if it never becomes true.
-    private func waitUntil(_ condition: @MainActor () -> Bool,
-                           description: String,
-                           file: StaticString = #filePath,
-                           line: UInt = #line) async {
-        for _ in 0..<200 {
-            if condition() { return }
-            try? await Task.sleep(nanoseconds: 5_000_000)
-        }
-        XCTFail("Timed out waiting for \(description)", file: file, line: line)
-    }
 
     private func remoteModel(id: String) -> AIChatRemoteModel {
         AIChatRemoteModel(id: id,
@@ -398,6 +443,10 @@ private final class StubModelsService: AIChatModelsProviding {
 
     var result: Result<AIChatModelsResponse, Error> = .success(AIChatModelsResponse(models: []))
 
+    /// Fires when the fetch is entered, so a test can wait for it to be in flight rather than polling.
+    /// When gated it fires only once the gate is armed, so a test resuming on it can't release nothing.
+    var onFetchStarted: (() -> Void)?
+
     /// When set, `fetchModels()` parks until ``releaseGate()``, so a test can hold one fetch in flight
     /// while it starts another.
     var isGated = false
@@ -407,7 +456,12 @@ private final class StubModelsService: AIChatModelsProviding {
     func fetchModels() async throws -> AIChatModelsResponse {
         fetchCallCount += 1
         if isGated {
-            await withCheckedContinuation { gate = $0 }
+            await withCheckedContinuation { continuation in
+                gate = continuation
+                onFetchStarted?()
+            }
+        } else {
+            onFetchStarted?()
         }
         return try result.get()
     }

@@ -95,11 +95,6 @@ final class AIChatTabChatHeaderView: UIView {
         !state.isVoiceSessionActive
     }
 
-    /// Edit mode swaps in the "Edit Message" title in place of the free/paid title.
-    private var isEditTitleVisible: Bool {
-        state.isEditing
-    }
-
     private var isPaidTitleVisible: Bool {
         state.isSubscriptionActive == true && !state.isEditing
     }
@@ -108,14 +103,6 @@ final class AIChatTabChatHeaderView: UIView {
     /// but hides the chat-list, plus-menu, and tab-switcher.
     private var isChatListVisible: Bool {
         !state.isVoiceSessionActive && !state.isEditing
-    }
-
-    private var isCloseButtonVisible: Bool {
-        !state.isVoiceSessionActive
-    }
-
-    private var isRightPairVisible: Bool {
-        !state.isEditing
     }
 
     private var isUpgradePlateVisible: Bool {
@@ -464,18 +451,18 @@ final class AIChatTabChatHeaderView: UIView {
     }
 
     private func applyState() {
-        // Each control's visibility is defined by its own named computed property above; this method
-        // is just the assignment pass. Pills and their inner buttons are hidden together so the
-        // surrounding glass pill background disappears too.
-        editTitleLabel.isHidden = !isEditTitleVisible
+        // Pills and their inner buttons are hidden together so the surrounding glass pill
+        // background disappears too. The two non-trivial rules are named properties above.
+        editTitleLabel.isHidden = !state.isEditing
         titleContainer.isHidden = !isTitleContainerVisible
         paidTitleStack.isHidden = !isPaidTitleVisible
         titleHolder.isHidden = !isTitleHolderVisible
         chatListButtonPill.isHidden = !isChatListVisible
         chatListButton.isHidden = !isChatListVisible
-        closeButtonPill.isHidden = !isCloseButtonVisible
-        closeButton.isHidden = !isCloseButtonVisible
-        rightPairPill.isHidden = !isRightPairVisible
+        // Voice owns its own dismiss UI; edit keeps ✕ (it cancels the edit).
+        closeButtonPill.isHidden = state.isVoiceSessionActive
+        closeButton.isHidden = state.isVoiceSessionActive
+        rightPairPill.isHidden = state.isEditing
 
         titleSpacingConstraints.forEach { $0.isActive = !titleHolder.isHidden }
     }

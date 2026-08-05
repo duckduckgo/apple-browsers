@@ -1391,6 +1391,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // https://app.asana.com/0/1177771139624306/1207024603216659/f
         LottieConfiguration.shared.renderingEngine = .mainThread
 
+        // Must run before the first web view is created, as WebKit caches its text
+        // checking state – updating later would only take effect on next launch
+        grammarFeaturesManager.manage()
+
         configurationManager.start()
 
         let isFirstLaunch = LocalStatisticsStore().atb == nil
@@ -1460,8 +1464,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 WindowsManager.openNewWindow(isOpenedAutomatically: true, lazyLoadTabs: true)
             }
         }
-
-        grammarFeaturesManager.manage()
 
         applyPreferredTheme()
 

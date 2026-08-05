@@ -91,6 +91,10 @@ final class AIChatOmnibarController {
     private let featureFlagger: FeatureFlagger
     private let searchPreferencesPersistor: SearchPreferencesPersistor
     private let suggestionsReader: AIChatSuggestionsReading?
+    /// Burner (Fire Window) omnibars run an isolated Duck.ai session, so persisted chat-history
+    /// suggestions from the regular session can't be opened here. When true, suggestions are
+    /// suppressed entirely — see `isSuggestionsEnabled`.
+    private let isBurner: Bool
     private let modelsService: AIChatModelsProviding
     private let subscriptionManager: any SubscriptionManager
     private let subscriptionUpsellPresenter: AIChatOmnibarSubscriptionUpselling
@@ -148,7 +152,8 @@ final class AIChatOmnibarController {
     /// Whether the suggestions feature is enabled.
     /// Requires both the feature flag and the autocomplete setting to be on.
     var isSuggestionsEnabled: Bool {
-        surface.supportsSuggestions
+        !isBurner
+            && surface.supportsSuggestions
             && featureFlagger.isFeatureOn(.aiChatSuggestions)
             && searchPreferencesPersistor.showAutocompleteSuggestions
     }
@@ -264,6 +269,7 @@ final class AIChatOmnibarController {
         featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
         searchPreferencesPersistor: SearchPreferencesPersistor = SearchPreferencesUserDefaultsPersistor(),
         suggestionsReader: AIChatSuggestionsReading? = nil,
+        isBurner: Bool = false,
         preferences: AIChatPreferencesPersisting = AIChatPreferencesPersistor(),
         modelsService: AIChatModelsProviding = AIChatModelsService(),
         subscriptionManager: any SubscriptionManager = Application.appDelegate.subscriptionManager,
@@ -282,6 +288,7 @@ final class AIChatOmnibarController {
         self.featureFlagger = featureFlagger
         self.searchPreferencesPersistor = searchPreferencesPersistor
         self.suggestionsReader = suggestionsReader
+        self.isBurner = isBurner
         self.preferences = preferences
         self.modelsService = modelsService
         self.subscriptionManager = subscriptionManager
@@ -856,13 +863,12 @@ final class AIChatOmnibarController {
         persistTabAttachmentsToActiveTab(current)
     }
 
-    /// Wakes a just-attached tab if it's suspended so its content is loaded by the time the user
-    /// submits, avoiding a submit-time wait. Fire-and-forget — `extractPageContextsForOmnibarSubmit`
-    /// re-resolves and wakes regardless, so this is purely a latency optimization.
+    /// Starts loading a just-attached tab whose page isn't loaded yet, so it's ready by submit time.
+    /// Fire-and-forget: the submit path waits regardless, this just keeps it off the critical path.
     private func prewarmAttachedTab(id: String) {
         guard let originTabCollection = origin?.originTabCollectionViewModel,
               let resolved = AIChatTabPickerSource.materializeAttachableTab(withId: id, forOrigin: originTabCollection, in: Application.appDelegate.windowControllersManager),
-              resolved.wasMaterialized else {
+              resolved.needsLoad else {
             return
         }
         resolved.tab.reload()
@@ -987,15 +993,23 @@ final class AIChatOmnibarController {
         // every access, so caching avoids hitting it per-tab.
         let debugURLSettings: any KeyedStoring<AIChatDebugURLSettings> = UserDefaults.standard.keyedStoring()
         let customAIChatURLHost = debugURLSettings.customURLHostname
-        let candidates = AIChatTabPickerSource.attachableTabs(forOrigin: originTabCollection, in: Application.appDelegate.windowControllersManager).compactMap { tab -> AIChatTabAttachment? in
-            guard case .url(let url, _, _) = tab.content else { return nil }
-            if let customHost = customAIChatURLHost, !customHost.isEmpty, url.host == customHost {
-                return nil
+        let candidates = AIChatTabPickerSource.attachableTabs(forOrigin: originTabCollection, in: Application.appDelegate.windowControllersManager)
+            .enumerated()
+            .sorted { lhs, rhs in
+                let lhsDate = lhs.element.lastSelectedAt ?? .distantPast
+                let rhsDate = rhs.element.lastSelectedAt ?? .distantPast
+                if lhsDate != rhsDate { return lhsDate > rhsDate }
+                return lhs.offset < rhs.offset
             }
-            let title = tab.title ?? url.host ?? ""
-            let favicon = faviconManager.getCachedFavicon(for: url, sizeCategory: .small)?.image
-            return AIChatTabAttachment(id: tab.uuid, title: title, url: url, favicon: favicon)
-        }
+            .compactMap { _, tab -> AIChatTabAttachment? in
+                guard case .url(let url, _, _) = tab.content else { return nil }
+                if let customHost = customAIChatURLHost, !customHost.isEmpty, url.host == customHost {
+                    return nil
+                }
+                let title = tab.title ?? url.host ?? ""
+                let favicon = faviconManager.getCachedFavicon(for: url, sizeCategory: .small)?.image
+                return AIChatTabAttachment(id: tab.uuid, title: title, url: url, favicon: favicon)
+            }
         // Move the current tab to the front so the picker pins it on top.
         guard let currentTabUUID,
               let currentIndex = candidates.firstIndex(where: { $0.id == currentTabUUID }),

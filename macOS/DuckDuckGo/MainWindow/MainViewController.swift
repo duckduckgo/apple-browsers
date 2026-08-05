@@ -331,6 +331,9 @@ final class MainViewController: NSViewController {
             origin: WindowPromptOrigin(tabCollectionViewModel: tabCollectionViewModel),
             pixelHandler: AddressBarPromptPixelHandler(),
             suggestionsReader: suggestionsReader,
+            // Fire Windows run an isolated Duck.ai session; persisted chat-history suggestions
+            // from the regular session can't be opened here, so suppress them.
+            isBurner: tabCollectionViewModel.isBurner,
             preferences: NSApp.delegateTyped.aiChatPreferencesPersistor
         )
 

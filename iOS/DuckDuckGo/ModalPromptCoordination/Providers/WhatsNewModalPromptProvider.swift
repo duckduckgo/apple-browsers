@@ -99,6 +99,19 @@ final class WhatsNewCoordinator: NSObject, ModalPromptProvider {
         )
     }
 
+    func isPreparedModalPromptStillValid(_ configuration: ModalPromptConfiguration) -> Bool {
+        guard displayContext == .scheduled,
+              let preparedMessageID = remoteMessage?.id else {
+            return true
+        }
+
+        return repository.fetchScheduledMessage()?.id == preparedMessageID
+    }
+
+    func provideReplacementModalPrompt(for invalidConfiguration: ModalPromptConfiguration) -> ModalPromptConfiguration? {
+        provideModalPrompt()
+    }
+
     func didPresentModal() {
         // Only mark as shown for modal prompt context
         guard displayContext == .scheduled else { return }

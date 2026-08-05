@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import Combine
 import Foundation
 
 enum VisiblePromoAdmissionResult {
@@ -34,17 +35,25 @@ enum VisiblePromoAdmissionResult {
 
 typealias VisiblePromoAdmissionHandler = @MainActor (VisiblePromoIdentity) -> VisiblePromoAdmissionResult
 
+/// A mounted NTP surface that can refresh and retry its retained visible-promo candidate.
 @MainActor
 protocol NewTabPagePromoRetrying: AnyObject {
     var isActiveForPromoRetry: Bool { get }
 
     /// Refreshes the retained candidate and retries it through the admission route supplied by the coordination owner.
     ///
-    /// The handler is synchronous and nonescaping so a feature transition can grant admission only to its own retry
-    /// pass while the public admission barrier remains active.
+    /// The handler is synchronous and nonescaping so the coordination owner controls admission for the entire retry.
     func retryVisiblePromoAdmission(using admissionHandler: VisiblePromoAdmissionHandler)
+    func promoQueueWillTransition(to targetState: PromoQueueFeatureTargetState)
+    func promoQueueDidTransition(to targetState: PromoQueueFeatureTargetState)
 }
 
+extension NewTabPagePromoRetrying {
+    func promoQueueWillTransition(to targetState: PromoQueueFeatureTargetState) {}
+    func promoQueueDidTransition(to targetState: PromoQueueFeatureTargetState) {}
+}
+
+/// An idempotently removable registration for NTP visible-promo retries.
 @MainActor
 final class NewTabPagePromoRetryRegistration {
     private var deregistrationHandler: (@MainActor () -> Void)?
@@ -60,9 +69,13 @@ final class NewTabPagePromoRetryRegistration {
     }
 }
 
+/// Coordinates NTP visible-promo admission, lease release, and retry registration.
 @MainActor
 protocol NewTabPagePromoCoordinating: AnyObject {
     var promoQueueFeatureState: PromoQueueFeatureState { get }
+    /// Emits the current state on subscription, followed by serialized transition states. Stable states are emitted
+    /// only after their transition barrier has been lowered.
+    var promoQueueFeatureStatePublisher: AnyPublisher<PromoQueueFeatureState, Never> { get }
 
     func admitVisiblePromo(_ identity: VisiblePromoIdentity) -> VisiblePromoAdmissionResult
     func releaseVisiblePromoLease(_ lease: PromoQueueVisiblePromoLease)
@@ -70,4 +83,10 @@ protocol NewTabPagePromoCoordinating: AnyObject {
         for surfaceID: UUID,
         target: NewTabPagePromoRetrying
     ) -> NewTabPagePromoRetryRegistration
+}
+
+extension NewTabPagePromoCoordinating {
+    var promoQueueFeatureStatePublisher: AnyPublisher<PromoQueueFeatureState, Never> {
+        Just(promoQueueFeatureState).eraseToAnyPublisher()
+    }
 }

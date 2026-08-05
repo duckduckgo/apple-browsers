@@ -60,7 +60,7 @@ actor AccountInfoKeyManager: AccountInfoKeyManaging {
             do {
                 return try await makeAccountInfoKey(from: protectedKeys, account: account)
             } catch {
-                try? secureStore.removeProtectedKeys()
+                // Preserve structurally valid cached keys until an authoritative refresh succeeds.
             }
         }
         return try await refreshKey(for: account)

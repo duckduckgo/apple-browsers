@@ -23,9 +23,8 @@ import XCTest
 
 final class AIChatTextSelectionActionTests: XCTestCase {
 
-    /// Only ask attaches. Summarize and translate carry their text inside the tool payload, so
-    /// attaching as well would send the model the text twice and leave a chip behind for a question
-    /// already asked.
+    /// Only ask attaches. Summarize carries its text inside the tool payload, so attaching as well
+    /// would send the model the text twice and leave a chip behind for a question already asked.
     func testOnlyAskAttachesTheSelection() {
         XCTAssertTrue(AIChatTextSelectionAction.ask.attachesSelection)
         XCTAssertFalse(AIChatTextSelectionAction.summarize.attachesSelection)

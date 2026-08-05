@@ -61,14 +61,8 @@
 /* Long-press menu item on the iPad Duck.ai chrome chip that re-shows the Duck.ai (open) button half. */
 "action.title.aiChat.showDuckAIButton" = "Show Duck.ai Shortcut";
 
-/* Edit-menu action shown on text selected in the browser; asks Duck.ai to summarize the selection straight away. Sits in a group of Duck.ai items, so the label stays short */
-"action.title.aiChat.summarizeWithDuckAI" = "Summarize";
-
 /* Accessibility label for the icon half of the iPad Duck.ai chrome chip; tapping toggles the contextual chat sheet for the current page. */
 "action.title.aiChat.toggleContextualSheet" = "Toggle Duck.ai sheet";
-
-/* Edit-menu action shown on text selected in the browser; asks Duck.ai to translate the selection straight away. Sits in a group of Duck.ai items, so the label stays short */
-"action.title.aiChat.translateWithDuckAI" = "Translate";
 
 /* Autofill Logins menu item opening the login list */
 "action.title.autofill.logins" = "Passwords";

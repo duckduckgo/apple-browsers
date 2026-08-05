@@ -102,25 +102,17 @@ final class WebView: WKWebView {
         guard #available(iOS 16.0, *) else { return }
         guard shouldInsertAskAIChatMenu(forSystem: builder.system) else { return }
 
-        // Ask goes last: iOS hides items past the first two behind an overflow chevron, and the two
-        // that act immediately are the ones worth surfacing. Deliberately not macOS's order
-        // (summarize, ask, translate) — its context menu shows all three at once.
-        let actions = [
-            UIAction(title: UserText.actionSummarizeWithAIChat,
-                     image: DesignSystemImages.Glyphs.Size16.summary) { [weak self] _ in
-                self?.requestAskAIChatWithSelectedText(action: .summarize)
-            },
-            UIAction(title: UserText.actionTranslateWithAIChat,
-                     image: DesignSystemImages.Glyphs.Size16.translate) { [weak self] _ in
-                self?.requestAskAIChatWithSelectedText(action: .translate)
-            },
-            UIAction(title: UserText.actionAskAIChat,
-                     image: DesignSystemImages.Glyphs.Size16.aiChat) { [weak self] _ in
-                self?.requestAskAIChatWithSelectedText(action: .ask)
-            },
-        ]
+        // Exactly one item, and deliberately so. "Summarize" and "Translate" read as system actions —
+        // iOS has its own Translate — so a user could tap one expecting the OS and instead send the
+        // selected text to Duck.ai. When the selection might be bank details, a surprise like that is
+        // not recoverable. Only an explicitly Duck.ai-labelled item is offered; summarize and translate
+        // are reachable from the sheet, after the user has chosen to involve Duck.ai at all.
+        let askAction = UIAction(title: UserText.actionAskAIChat,
+                                 image: DesignSystemImages.Glyphs.Size16.aiChat) { [weak self] _ in
+            self?.requestAskAIChatWithSelectedText(action: .ask)
+        }
 
-        builder.insertSibling(UIMenu(title: "", options: .displayInline, children: actions),
+        builder.insertSibling(UIMenu(title: "", options: .displayInline, children: [askAction]),
                               afterMenu: .standardEdit)
     }
 

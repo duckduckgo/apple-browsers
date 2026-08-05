@@ -19,8 +19,10 @@
 
 import Foundation
 
-/// The Duck.ai actions offered on a text selection, mirroring the three macOS context-menu items
-/// (`ContextMenuManager.handleSearchWebItem`). Declared in menu order.
+/// The Duck.ai actions that can be taken on a text selection.
+///
+/// Only `ask` is offered in the selection edit menu — see `WebView.buildMenu`. Summarize and translate
+/// are offered inside the sheet instead, once the user has already chosen to involve Duck.ai.
 enum AIChatTextSelectionAction: String, CaseIterable, Equatable {
     case summarize
     case ask
@@ -28,9 +30,8 @@ enum AIChatTextSelectionAction: String, CaseIterable, Equatable {
 
     /// Whether picking this action submits a prompt straight away.
     ///
-    /// Matches macOS exactly: summarize and translate act immediately (`revealChat(for: prompt)`),
-    /// while ask only attaches the selection and waits for the user to write their own question
-    /// (`revealChat()` with no prompt).
+    /// Matches macOS: summarize acts immediately (`revealChat(for: prompt)`), while ask only attaches
+    /// the selection and waits for the user to write their own question (`revealChat()`, no prompt).
     var autoSubmits: Bool {
         switch self {
         case .summarize, .translate: return true
@@ -40,9 +41,8 @@ enum AIChatTextSelectionAction: String, CaseIterable, Equatable {
 
     /// Whether the selected text becomes an attachment.
     ///
-    /// Only ask does. Summarize and translate carry their text inside the tool payload
-    /// (`TextSummary` / `Translation`), so attaching it as well would send the model the same text
-    /// twice and leave a chip behind for a question that has already been asked.
+    /// Only ask does. Summarize and translate carry their text inside the tool payload (`TextSummary` /
+    /// `Translation`), so attaching it as well would send the model the same text twice.
     var attachesSelection: Bool {
         !autoSubmits
     }

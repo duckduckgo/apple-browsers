@@ -905,6 +905,14 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
         }
     }
 
+    /// Target language for selection translation, matching macOS's use of `Locale.preferredLanguages`.
+    /// Takes the language subtag of the BCP-47 tag, so "en-GB" becomes "en".
+    private static var preferredTranslationTargetLanguage: String {
+        guard let tag = Locale.preferredLanguages.first else { return "en" }
+        let languageSubtag = tag.prefix { $0 != "-" && $0 != "_" }
+        return languageSubtag.isEmpty ? "en" : String(languageSubtag)
+    }
+
     /// Delivers a selection-scoped `AIChatNativePrompt` tool (`.summary` / `.translation`) on the
     /// `submitAIChatNativePrompt` channel — the same wire message the sheet already uses for query
     /// prompts, and the one macOS uses to push these tools into an open sidebar.
@@ -954,13 +962,6 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
         }
     }
 
-    /// Target language for selection translation, matching macOS's use of `Locale.preferredLanguages`.
-    /// Takes the language subtag of the BCP-47 tag, so "en-GB" becomes "en".
-    private static var preferredTranslationTargetLanguage: String {
-        guard let tag = Locale.preferredLanguages.first else { return "en" }
-        let languageSubtag = tag.prefix { $0 != "-" && $0 != "_" }
-        return languageSubtag.isEmpty ? "en" : String(languageSubtag)
-    }
 
     func contextualInputViewController(_ viewController: AIChatContextualInputViewController, didSelectSuggestion suggestion: ContextualSuggestedPrompt) {
         guard featureFlagger.isFeatureOn(.contextualSuggestedPrompts) else { return }

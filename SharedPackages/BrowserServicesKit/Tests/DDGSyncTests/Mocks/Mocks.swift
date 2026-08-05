@@ -116,8 +116,12 @@ class AccountManagingMock: AccountManaging {
     var fetchDevicesForAccountCalls: [SyncAccount] = []
     var fetchDevicesForAccountStub = RegisteredDeviceMappingResult(devices: [.mock], needsCurrentDeviceInfoRepair: false)
     var fetchDevicesForAccountError: Error?
+    var fetchDevicesForAccountHandler: ((SyncAccount) async throws -> RegisteredDeviceMappingResult)?
     func fetchDevicesForAccount(_ account: SyncAccount) async throws -> RegisteredDeviceMappingResult {
         fetchDevicesForAccountCalls.append(account)
+        if let fetchDevicesForAccountHandler {
+            return try await fetchDevicesForAccountHandler(account)
+        }
         if let fetchDevicesForAccountError {
             throw fetchDevicesForAccountError
         }

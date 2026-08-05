@@ -125,7 +125,12 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     /// True while the native input is in "edit an existing message" mode. Hosts observe this to
     /// apply the edit-mode chrome (dim the transcript, swap the header). Independent of how the
     /// edit is triggered — set by `beginEditMode`, cleared by `endEditMode` (the single exit).
-    @Published private(set) var isEditing: Bool = false
+    @Published private(set) var isEditing: Bool = false {
+        didSet {
+            guard oldValue != isEditing else { return }
+            applyEditModeToInput()
+        }
+    }
 
     var isSubmitBlockedByRecoveryCard: Bool = false {
         didSet {
@@ -410,6 +415,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                     self?.attachmentPolicy ?? UTIAttachmentPolicy(attachmentLimits: nil, attachmentUsage: nil, pendingAttachments: [], model: nil)
                 },
                 inputMode: { [weak self] in self?.inputMode ?? .aiChat },
+                isEditing: { [weak self] in self?.isEditing ?? false },
                 pixelSurface: { [weak self] in self?.pixelSurface ?? .addressBar },
                 isContextualChatState: { [weak self] in self?.isContextualChatState ?? false },
                 supportsImageUpload: { [weak self] in self?.selectedModelSupportsImageUpload ?? false },
@@ -776,6 +782,13 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     /// re-fires it because the flag is back to its resting value.
     private func clearEditModeFlag() {
         if isEditing { isEditing = false }
+    }
+
+    /// Central point for input-side edit-mode UI, driven off `isEditing`. Keeping every input
+    /// mutation for edit mode here (rather than scattering them) means future pieces — the
+    /// "editing will replace the response" disclaimer, an "Update" send label — slot in one place.
+    private func applyEditModeToInput() {
+        attachmentController.updateAttachButtonPresentation()
     }
 
 #if DEBUG

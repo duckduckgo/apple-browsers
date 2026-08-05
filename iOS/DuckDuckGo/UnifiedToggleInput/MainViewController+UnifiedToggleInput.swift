@@ -446,9 +446,17 @@ private extension MainViewController {
             .store(in: &unifiedToggleInputCancellables)
     }
 
-    /// Whites out the Duck.ai transcript while the native input is in "edit an existing message"
-    /// mode, so the edit input stands alone (per the "Edit Message" design), and restores it on
-    /// exit. Full-tab only for now; the contextual panel is a follow-up slice.
+    /// Central point for host-side edit-mode chrome (transcript whiteout + header swap), driven
+    /// off the coordinator's `isEditing`. Keeping both here mirrors the input-side
+    /// `applyEditModeToInput` so all edit-mode UI changes live in one place per layer.
+    private func applyEditModeChrome(_ isEditing: Bool) {
+        setDuckAITranscriptDimmedForEditing(isEditing)
+        aiChatTabChatHeaderView?.setEditMode(isEditing)
+    }
+
+    /// Whites out the Duck.ai transcript while editing so the edit input stands alone (per the
+    /// "Edit Message" design), and restores it on exit. Full-tab only for now; the contextual
+    /// panel is a follow-up slice.
     private func setDuckAITranscriptDimmedForEditing(_ isEditing: Bool) {
         guard currentTab?.isAITab == true, let webView = currentTab?.webView else { return }
         UIView.animate(withDuration: 0.2) {
@@ -466,8 +474,7 @@ private extension MainViewController {
         coordinator.$isEditing
             .removeDuplicates()
             .sink { [weak self] isEditing in
-                self?.setDuckAITranscriptDimmedForEditing(isEditing)
-                self?.aiChatTabChatHeaderView?.setEditMode(isEditing)
+                self?.applyEditModeChrome(isEditing)
             }
             .store(in: &unifiedToggleInputCancellables)
 

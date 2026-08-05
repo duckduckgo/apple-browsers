@@ -25,6 +25,7 @@ import PrivacyConfig
 /// Opens the Permission Center by itself the first time a page displays the autoplay policy, so users discover the autoplay controls and the disclaimer UI.
 ///
 ///     Notes:
+///     - Pre-existing users only.
 ///     - Shown at most once: after 5s `PromoService` records the promo's custom timeout result
 ///     - If the user interacted with the popover by then, the address bar keeps it open and it simply behaves like a normally-opened Permission Center.
 ///       The promo is retired either way.
@@ -38,14 +39,17 @@ final class AutoplayDiscoverabilityPromoDelegate: InternalPromoDelegate {
     private let featureFlagger: FeatureFlagger
     private let windowControllersManager: WindowControllersManagerProtocol
     private let pixelFiring: PixelFiring?
+    private let isNewUser: Bool
     private var showContinuation: CheckedContinuation<PromoResult, Never>?
 
     init(featureFlagger: FeatureFlagger,
          windowControllersManager: WindowControllersManagerProtocol,
-         pixelFiring: PixelFiring? = PixelKit.shared) {
+         pixelFiring: PixelFiring? = PixelKit.shared,
+         isNewUser: Bool) {
         self.featureFlagger = featureFlagger
         self.windowControllersManager = windowControllersManager
         self.pixelFiring = pixelFiring
+        self.isNewUser = isNewUser
     }
 
     var isEligible: Bool {
@@ -64,6 +68,11 @@ final class AutoplayDiscoverabilityPromoDelegate: InternalPromoDelegate {
 
     @MainActor
     func show(history: PromoHistoryRecord, force: Bool) async -> PromoResult {
+        // Rendered only to pre-existing users, otherwise we'll retire the promo
+        if !force, isNewUser {
+            return .ignored()
+        }
+
         guard let addressBarButtonsViewController else {
             return .noChange
         }

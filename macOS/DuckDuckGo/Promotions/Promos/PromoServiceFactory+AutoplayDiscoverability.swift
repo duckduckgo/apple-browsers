@@ -28,7 +28,9 @@ extension PromoServiceFactory {
     static func autoplayDiscoverability(dependencies: PromoDependencies) -> Promo {
         let promoType = PromoType(.inlineTip, customTimeoutInterval: AutoplayDiscoverabilityPromoDelegate.displayDuration, customTimeoutResult: .ignored())
         let identifier = "autoplay-discoverability"
-        let delegate = AutoplayDiscoverabilityPromoDelegate(featureFlagger: dependencies.featureFlagger, windowControllersManager: dependencies.windowControllersManager)
+        let delegate = AutoplayDiscoverabilityPromoDelegate(featureFlagger: dependencies.featureFlagger,
+                                                            windowControllersManager: dependencies.windowControllersManager,
+                                                            isNewUser: dependencies.isNewUser)
 
         return InternalPromo(id: identifier, triggers: [.autoplayDiscoverability], initiated: .app, promoType: promoType, context: .webPage, delegate: delegate)
     }

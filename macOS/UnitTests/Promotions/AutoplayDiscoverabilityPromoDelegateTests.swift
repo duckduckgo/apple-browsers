@@ -39,9 +39,14 @@ final class AutoplayDiscoverabilityPromoDelegateTests: XCTestCase {
         featureFlagger = MockFeatureFlagger(featuresStub: [FeatureFlag.autoplayPolicy.rawValue: true])
         windowControllersManager = WindowControllersManagerMock()
         pixelFiring = PixelKitMock()
-        sut = AutoplayDiscoverabilityPromoDelegate(featureFlagger: featureFlagger,
-                                                   windowControllersManager: windowControllersManager,
-                                                   pixelFiring: pixelFiring)
+        sut = makeSUT()
+    }
+
+    private func makeSUT(isNewUser: Bool = false) -> AutoplayDiscoverabilityPromoDelegate {
+        AutoplayDiscoverabilityPromoDelegate(featureFlagger: featureFlagger,
+                                             windowControllersManager: windowControllersManager,
+                                             pixelFiring: pixelFiring,
+                                             isNewUser: isNewUser)
     }
 
     override func tearDown() {
@@ -61,6 +66,20 @@ final class AutoplayDiscoverabilityPromoDelegateTests: XCTestCase {
 
         XCTAssertFalse(sut.isEligible)
     }
+
+    // MARK: - Audience
+
+    /// `.ignored()` retires the promo permanently, which is what stops it from resurfacing once the
+    /// user is no longer new. `.noChange` would leave it eligible.
+    func testWhenNewUserThenShowRetiresThePromo() async {
+        sut = makeSUT(isNewUser: true)
+
+        let result = await sut.show(history: PromoHistoryRecord(id: "autoplay-discoverability"), force: false)
+
+        XCTAssertEqual(result, .ignored())
+    }
+
+    // MARK: - Eligibility Publisher
 
     func testWhenFeatureFlagChangesThenEligibilityPublisherEmits() {
         var received: [Bool] = []

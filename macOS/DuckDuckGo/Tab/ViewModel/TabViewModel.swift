@@ -71,7 +71,7 @@ final class TabViewModel: NSObject {
 
     @Published private(set) var addressBarString: String = ""
     @Published private(set) var passiveAddressBarAttributedString = NSAttributedString()
-    @Published private(set) var passiveAddressBarDisplaysTrustIndicator = false
+    @Published private(set) var passiveAddressBarDisplaysPlaceholder = false
 
     var lastAddressBarTextFieldValue: AddressBarTextField.Value?
 
@@ -461,7 +461,7 @@ final class TabViewModel: NSObject {
             NSAttributedString(string: passiveAddressBarString(with: url, showFullURL: showFullURL))
         }
 
-        passiveAddressBarDisplaysTrustIndicator = ([.newtab, .none].contains(tab.content) == false)
+        passiveAddressBarDisplaysPlaceholder = [.newtab, .none].contains(tab.content)
     }
 
     private func passiveAddressBarString(with url: URL, showFullURL: Bool) -> String {

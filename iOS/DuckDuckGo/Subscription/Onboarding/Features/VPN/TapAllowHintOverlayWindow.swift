@@ -34,7 +34,10 @@ final class TapAllowHintCoordinator: ObservableObject {
 
     private var didTapStart = false
 
+    private var configurationCheck: Task<Void, Never>?
+
     func startTapped() {
+        configurationCheck?.cancel()
         didTapStart = true
         shouldShowHint = false
     }
@@ -70,16 +73,18 @@ final class TapAllowHintCoordinator: ObservableObject {
     /// Clears the hint, then re-shows it only if the customer has tapped "Turn On VPN" and the
     /// configuration still isn't installed.
     private func reevaluate(isVPNConfigured: @escaping () async -> Bool) {
+        configurationCheck?.cancel()
         shouldShowHint = false
         guard didTapStart else { return }
-        Task {
+        configurationCheck = Task {
             let isInstalled = await isVPNConfigured()
-            guard self.didTapStart, !isInstalled else { return }
+            guard !Task.isCancelled, self.didTapStart, !isInstalled else { return }
             self.shouldShowHint = true
         }
     }
 
     private func reset() {
+        configurationCheck?.cancel()
         didTapStart = false
         shouldShowHint = false
     }

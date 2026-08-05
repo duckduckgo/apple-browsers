@@ -297,6 +297,7 @@ final class SubscriptionOnboardingVPNActivationViewModelTests: XCTestCase {
         let controller = MockVPNController(isConnected: false)
         let viewModel = makeViewModel(controller: controller)
         viewModel.onAppear()
+        await viewModel.turnOnVPN()
 
         await waitFor(viewModel.$didFailToStartVPN, toEqual: true) {
             controller.simulateStartFailure()
@@ -304,6 +305,20 @@ final class SubscriptionOnboardingVPNActivationViewModelTests: XCTestCase {
 
         XCTAssertTrue(viewModel.didFailActivation)
         XCTAssertFalse(viewModel.didDenyVPNPermission)
+    }
+
+    func testWhenTheTunnelErrorsBeforeAnyActivationAttemptThenActivationIsNotMarkedAsFailed() async {
+        let errorObserver = MockConnectionErrorObserver()
+        let viewModel = makeViewModel(errorObserver: errorObserver)
+        let markedAsFailed = expectation(description: "an unprompted tunnel error must not mark the activation as failed")
+        markedAsFailed.isInverted = true
+        viewModel.$didFailToStartVPN.filter { $0 }.sink { _ in markedAsFailed.fulfill() }.store(in: &cancellables)
+        viewModel.onAppear()
+
+        errorObserver.subject.send("Failed to generate a tunnel configuration")
+
+        await fulfillment(of: [markedAsFailed], timeout: 0.2)
+        XCTAssertFalse(viewModel.didFailActivation)
     }
 
     func testWhenTheConfigurationIsDeniedThenActivationIsMarkedAsFailed() async {
@@ -327,6 +342,7 @@ final class SubscriptionOnboardingVPNActivationViewModelTests: XCTestCase {
         viewModel.$didFailToStartVPN.filter { $0 }.sink { _ in markedAsFailed.fulfill() }.store(in: &cancellables)
 
         viewModel.onAppear()
+        await viewModel.turnOnVPN()
 
         await fulfillment(of: [markedAsFailed], timeout: 0.2)
         XCTAssertFalse(viewModel.didFailActivation)
@@ -336,6 +352,7 @@ final class SubscriptionOnboardingVPNActivationViewModelTests: XCTestCase {
         let controller = MockVPNController(isConnected: false)
         let viewModel = makeViewModel(controller: controller)
         viewModel.onAppear()
+        await viewModel.turnOnVPN()
 
         await waitFor(viewModel.$didFailToStartVPN, toEqual: true) {
             controller.simulateStartFailure()
@@ -355,6 +372,7 @@ final class SubscriptionOnboardingVPNActivationViewModelTests: XCTestCase {
         let errorObserver = MockConnectionErrorObserver()
         let viewModel = makeViewModel(errorObserver: errorObserver)
         viewModel.onAppear()
+        await viewModel.turnOnVPN()
 
         await waitFor(viewModel.$didFailToStartVPN, toEqual: true) {
             errorObserver.subject.send("Failed to generate a tunnel configuration")
@@ -372,6 +390,7 @@ final class SubscriptionOnboardingVPNActivationViewModelTests: XCTestCase {
         viewModel.$didFailToStartVPN.filter { $0 }.sink { _ in markedAsFailed.fulfill() }.store(in: &cancellables)
 
         viewModel.onAppear()
+        await viewModel.turnOnVPN()
 
         await fulfillment(of: [markedAsFailed], timeout: 0.2)
         XCTAssertFalse(viewModel.didFailActivation)
@@ -381,6 +400,7 @@ final class SubscriptionOnboardingVPNActivationViewModelTests: XCTestCase {
         let controller = MockVPNController(isConnected: false)
         let viewModel = makeViewModel(controller: controller)
         viewModel.onAppear()
+        await viewModel.turnOnVPN()
 
         await waitFor(viewModel.$didDenyVPNPermission, toEqual: true) {
             controller.simulateConfigurationDenied()
@@ -397,6 +417,7 @@ final class SubscriptionOnboardingVPNActivationViewModelTests: XCTestCase {
         let controller = MockVPNController(isConnected: false)
         let viewModel = makeViewModel(controller: controller)
         viewModel.onAppear()
+        await viewModel.turnOnVPN()
 
         await waitFor(viewModel.$didFailToStartVPN, toEqual: true) {
             controller.simulateStartFailure()
@@ -413,6 +434,7 @@ final class SubscriptionOnboardingVPNActivationViewModelTests: XCTestCase {
         let controller = MockVPNController(isConnected: false)
         let viewModel = makeViewModel(controller: controller)
         viewModel.onAppear()
+        await viewModel.turnOnVPN()
 
         await waitFor(viewModel.$didFailToStartVPN, toEqual: true) {
             controller.simulateStartFailure()
@@ -564,6 +586,22 @@ final class SubscriptionOnboardingVPNActivationViewModelTests: XCTestCase {
         XCTAssertFalse(coordinator.shouldShowHint)
     }
 
+    func testWhenASupersededConfigurationCheckReportsLastThenTheHintStaysHidden() async {
+        let coordinator = TapAllowHintCoordinator()
+        let gate = ConfigurationCheckGate()
+        coordinator.startTapped()
+
+        coordinator.appWillResignActive(isVPNConfigured: {
+            await gate.wait()
+            return false
+        })
+
+        coordinator.appDidBecomeActive(isVPNConfigured: { true })
+        await gate.open()
+
+        await assertHintDoesNotShow(coordinator)
+    }
+
     func testWhenTurningOnFinishesWithoutConnectingOrDenialThenTheHintDoesNotReturn() async {
         let coordinator = TapAllowHintCoordinator()
         coordinator.startTapped()
@@ -712,6 +750,22 @@ private final class MockVPNController: SubscriptionOnboardingVPNControlling {
     /// Clears the carried error, as the live controller does when a start attempt begins.
     func simulateStartAttempt() {
         controllerErrorSubject.send(nil)
+    }
+}
+
+private actor ConfigurationCheckGate {
+    private var isOpen = false
+    private var waiter: CheckedContinuation<Void, Never>?
+
+    func wait() async {
+        guard !isOpen else { return }
+        await withCheckedContinuation { waiter = $0 }
+    }
+
+    func open() {
+        isOpen = true
+        waiter?.resume()
+        waiter = nil
     }
 }
 

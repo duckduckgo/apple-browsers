@@ -66,6 +66,7 @@ final class SubscriptionOnboardingVPNActivationViewModel: ObservableObject {
     private let locale: Locale
 
     private var hasReportedCompletion = false
+    private var hasAttemptedActivation = false
     private var cancellables = Set<AnyCancellable>()
 
     init(prefetcher: SubscriptionOnboardingPrefetcher,
@@ -150,6 +151,7 @@ final class SubscriptionOnboardingVPNActivationViewModel: ObservableObject {
 
     /// Starts the VPN.
     func turnOnVPN() async {
+        hasAttemptedActivation = true
         await vpnController.start()
     }
 
@@ -184,6 +186,7 @@ final class SubscriptionOnboardingVPNActivationViewModel: ObservableObject {
             .compactMap { $0 }
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
+                guard self?.hasAttemptedActivation == true else { return }
                 self?.didFailToStartVPN = true
                 self?.didDenyVPNPermission = false
             }

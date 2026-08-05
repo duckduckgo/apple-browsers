@@ -342,7 +342,7 @@ extension DataImport.Source {
         }
         switch self {
         case .csv, .bookmarksHTML, .fileImport:
-            return DesignSystemImages.Color.Size32.document
+            return AppRebrand.isAppRebranded() ? DesignSystemImages.Color.Size56.fileCSV : DesignSystemImages.Color.Size32.document
         default:
             break
         }

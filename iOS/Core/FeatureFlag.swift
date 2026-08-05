@@ -112,9 +112,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866711151217
     case adAttributionReporting
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866610480266
-    case dbpRemoteBrokerDelivery
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212258549430653
     case dbpForegroundRunningOnAppActive
 
@@ -363,6 +360,10 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1213076120133808?focus=true
     case showNTPAfterIdleReturn
 
+    /// Coordinates presentation across modal prompts and visible promotional surfaces.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216996143775013?focus=true
+    case promoPresentationCoordination
+
     /// Test-only feature flag for verifying UI test override mechanism.
     /// Used in Debug > UI Test Overrides screen.
     case uiTestFeatureFlag
@@ -380,6 +381,9 @@ public enum FeatureFlag: String {
     /// Enables sending MetricKit launch-time telemetry pixels.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216663565461118?focus=true
     case launchTimeMetrics
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217109908046478?focus=true
+    case tabTerminationTelemetry
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214974217398704?focus=true
     case appRebranding
@@ -629,8 +633,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(AutofillSurveysSubfeature.featureEnabled), supportsLocalOverriding: false)
         case .adAttributionReporting:
             Config(defaultValue: .enabled, source: .remoteReleasable(AdAttributionReportingSubfeature.featureEnabled), supportsLocalOverriding: false)
-        case .dbpRemoteBrokerDelivery:
-            Config(source: .remoteReleasable(DBPSubfeature.remoteBrokerDelivery))
         case .dbpForegroundRunningOnAppActive:
             Config(defaultValue: .enabled, source: .remoteReleasable(DBPSubfeature.foregroundRunningOnAppActive))
         case .dbpContinuedProcessing:
@@ -791,6 +793,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(TabSwitcherTrackerCountSubfeature.featureEnabled))
         case .showNTPAfterIdleReturn:
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.showNTPAfterIdleReturn))
+        case .promoPresentationCoordination:
+            Config(defaultValue: .disabled, source: .remoteReleasable(PromoQueueSubfeature.iOSPromoPresentationCoordination))
         case .uiTestFeatureFlag:
             Config(source: .disabled)
         case .uiTestExperiment:
@@ -807,6 +811,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.crashCollectionLimitCallStackTreeDepth), supportsLocalOverriding: false)
         case .launchTimeMetrics:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.launchTimeMetrics), supportsLocalOverriding: true)
+        case .tabTerminationTelemetry:
+            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.tabTerminationTelemetry), supportsLocalOverriding: true)
 
         case .appRebranding:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.appRebranding), supportsLocalOverriding: true)

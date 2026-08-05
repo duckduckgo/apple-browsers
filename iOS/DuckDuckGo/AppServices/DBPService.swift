@@ -187,10 +187,6 @@ final class DBPFeatureFlagger: DBPFeatureFlagging, FreemiumPIRFeatureFlagging {
     private let appDependencies: DependencyProvider
     private let freemiumPIRDebugSettings: FreemiumPIRDebugSettings
 
-    var isRemoteBrokerDeliveryFeatureOn: Bool {
-        appDependencies.featureFlagger.isFeatureOn(.dbpRemoteBrokerDelivery)
-    }
-
     var isForegroundRunningOnAppActiveFeatureOn: Bool {
         appDependencies.featureFlagger.isFeatureOn(.dbpForegroundRunningOnAppActive)
     }

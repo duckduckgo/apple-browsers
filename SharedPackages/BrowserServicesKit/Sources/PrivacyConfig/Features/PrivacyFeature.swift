@@ -205,9 +205,6 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     case screenTimeCleaning
 
-    /// https://app.asana.com/1/137249556945/project/1211264967278501/task/1211806114021633?focus=true
-    case onboardingRebranding
-
     /// Option to install Chrome extension during onboarding (DMG only)
     case onboardingChromeExtension
 
@@ -260,6 +257,9 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// Enables sending MetricKit launch-time telemetry pixels.
     /// https://app.asana.com/1/137249556945/project/1208671677432066/task/1214963974721156
     case launchTimeMetrics
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217109908046478?focus=true
+    case tabTerminationTelemetry
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212835969125260
     case browsingMenuSheetEnabledByDefault
@@ -381,7 +381,6 @@ public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
     case waitlist
     case waitlistBetaActive
     case freemium
-    case remoteBrokerDelivery
     case foregroundRunningOnAppActive
     case continuedProcessing
     case pirRollout
@@ -626,7 +625,7 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     case nativeSidebar
 
     /// macOS only. System-wide Duck.ai entry point: global keyboard shortcut and menu bar icon.
-    case macosPromptBar
+    case promptBar
 
     /// Supports Duck.ai edit prompt from the native input field.
     case nativePromptEditing
@@ -934,6 +933,10 @@ public enum PromoQueueSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .promoQueue }
 
     case featureEnabled
+
+    /// Coordinates presentation across iOS modal prompts and visible promotional surfaces.
+    /// https://app.asana.com/1/137249556945/project/1208671677432066/task/1214300205792360?focus=true
+    case iOSPromoPresentationCoordination
 }
 
 public enum AutofillBreakageReporterSubfeature: String, PrivacySubfeature {

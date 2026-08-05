@@ -132,7 +132,6 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
 
     var configuration: OnboardingConfiguration {
         let systemSettings: SystemSettings
-        let order = featureFlagger.isFeatureOn(.onboardingRebranding) ? "v4" : "v3"
         let platform = OnboardingPlatform(name: "macos")
         if dockCustomization.supportsAddingToDock {
             systemSettings = SystemSettings(rows: [
@@ -166,7 +165,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
 
         return OnboardingConfiguration(stepDefinitions: stepDefinitions,
                                        exclude: excludedSteps,
-                                       order: order,
+                                       order: "v4",
                                        env: env,
                                        locale: preferredLocale,
                                        platform: platform)
@@ -189,8 +188,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
     // MARK: Chrome extension install
 
     private var isEligibleForChromeExtensionInstall: Bool {
-        featureFlagger.isFeatureOn(.onboardingRebranding)
-            && chromeExtensionInstaller.canInstallDDGExtension
+        chromeExtensionInstaller.canInstallDDGExtension
     }
 
     private var shouldShowChromeInstallOption: Bool {

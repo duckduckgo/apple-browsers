@@ -49,7 +49,8 @@
                 "type": "string",
                 "description": "Which omnibar picker triggered the upsell",
                 "enum": ["model", "reasoning"]
-            }
+            },
+            "subscriptionFunnelOrigin"
         ]
     },
     "m_mac_aichat_ntp_view_all_chats_clicked": {
@@ -86,5 +87,47 @@
         "triggers": ["other"],
         "suffixes": ["daily_count"],
         "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_aichat_ntp_model_picker_shown": {
+        "description": "Fired when the New Tab Page omnibar's model picker is shown with a subscriber-exclusive section. Reported by the Duck.ai frontend over the New Tab Page telemetryEvent message, since the frontend owns this picker. See https://app.asana.com/1/137249556945/task/1216395339071571",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel", "subscriptionFunnelOrigin"]
+    },
+    "m_mac_aichat_ntp_model_picker_tryforfree_shown": {
+        "description": "Fired when the New Tab Page omnibar's model picker is shown with a \"Try for Free\" CTA on its subscriber-exclusive section. Reported by the Duck.ai frontend over the New Tab Page telemetryEvent message, since the frontend owns this picker. See https://app.asana.com/1/137249556945/task/1216395339071571",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel", "subscriptionFunnelOrigin"]
+    },
+    "m_mac_aichat_ntp_model_picker_upgrade_shown": {
+        "description": "Fired when the New Tab Page omnibar's model picker is shown with an \"Upgrade\" CTA on its subscriber-exclusive section. Reported by the Duck.ai frontend over the New Tab Page telemetryEvent message, since the frontend owns this picker. See https://app.asana.com/1/137249556945/task/1216395339071571",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel", "subscriptionFunnelOrigin"]
+    },
+    "m_mac_aichat_ntp_reasoning_picker_shown": {
+        "description": "Fired when the New Tab Page omnibar's reasoning-effort picker is shown with a subscriber-exclusive section. Reported by the Duck.ai frontend over the New Tab Page telemetryEvent message, since the frontend owns this picker. See https://app.asana.com/1/137249556945/task/1216395339071571",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel", "subscriptionFunnelOrigin"]
+    },
+    "m_mac_aichat_ntp_reasoning_picker_tryforfree_shown": {
+        "description": "Fired when the New Tab Page omnibar's reasoning-effort picker is shown with a \"Try for Free\" CTA on its subscriber-exclusive section. Reported by the Duck.ai frontend over the New Tab Page telemetryEvent message, since the frontend owns this picker. See https://app.asana.com/1/137249556945/task/1216395339071571",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel", "subscriptionFunnelOrigin"]
+    },
+    "m_mac_aichat_ntp_reasoning_picker_upgrade_shown": {
+        "description": "Fired when the New Tab Page omnibar's reasoning-effort picker is shown with an \"Upgrade\" CTA on its subscriber-exclusive section. Reported by the Duck.ai frontend over the New Tab Page telemetryEvent message, since the frontend owns this picker. See https://app.asana.com/1/137249556945/task/1216395339071571",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel", "subscriptionFunnelOrigin"]
     }
 }

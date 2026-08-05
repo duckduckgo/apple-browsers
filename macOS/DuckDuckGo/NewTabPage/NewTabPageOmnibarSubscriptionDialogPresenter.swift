@@ -51,7 +51,7 @@ final class NewTabPageOmnibarSubscriptionDialogPresenter: NewTabPageOmnibarSubsc
             isEligibleForFreeTrial: userTier == .free && subscriptionManager.isUserEligibleForFreeTrial()
         )
         dialog.onSubscribe = { [coordinator] in
-            coordinator.navigateToSubscriptionPurchase(origin: SubscriptionFunnelOrigin.newTabPageOmnibar.rawValue, featurePage: Self.featurePage)
+            coordinator.navigateToSubscriptionPurchase(origin: Self.origin(for: source).rawValue, featurePage: Self.featurePage)
             Self.firePixel(flowType: "purchase", source: source)
         }
         dialog.onHaveSubscription = { [coordinator] in
@@ -64,7 +64,7 @@ final class NewTabPageOmnibarSubscriptionDialogPresenter: NewTabPageOmnibarSubsc
     func makeUpgradeDialog(source: NewTabPageDataModel.OmnibarSubscriptionUpsellSource) -> AIChatSubscriptionUpsellDialog {
         var dialog: AIChatSubscriptionUpsellDialog = .proUpgrade()
         dialog.onSubscribe = { [coordinator] in
-            coordinator.navigateToSubscriptionPlans(origin: SubscriptionFunnelOrigin.newTabPageOmnibar.rawValue, featurePage: Self.featurePage)
+            coordinator.navigateToSubscriptionPlans(origin: Self.origin(for: source).rawValue, featurePage: Self.featurePage)
             Self.firePixel(flowType: "upgrade", source: source)
         }
         dialog.onHaveSubscription = { [coordinator] in
@@ -89,9 +89,20 @@ final class NewTabPageOmnibarSubscriptionDialogPresenter: NewTabPageOmnibarSubsc
         }
     }
 
+    /// Which picker the user was gated in, so the funnel attributes the entry point rather than
+    /// lumping both pickers under one omnibar origin.
+    static func origin(for source: NewTabPageDataModel.OmnibarSubscriptionUpsellSource) -> SubscriptionFunnelOrigin {
+        switch source {
+        case .model: .newTabPageModelPicker
+        case .reasoning: .newTabPageReasoningDropdown
+        }
+    }
+
     private static func firePixel(flowType: String, source: NewTabPageDataModel.OmnibarSubscriptionUpsellSource) {
         PixelKit.fire(
-            AIChatPixel.aiChatNtpSubscriptionUpsellTriggered(flowType: flowType, source: source.rawValue),
+            AIChatPixel.aiChatNtpSubscriptionUpsellTriggered(flowType: flowType,
+                                                             source: source.rawValue,
+                                                             origin: origin(for: source).rawValue),
             frequency: .dailyAndCount,
             includeAppVersionParameter: true
         )

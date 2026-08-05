@@ -304,6 +304,15 @@ enum AIChatPixel: PixelKitEvent {
     /// routing them to the subscription purchase/upgrade flow.
     case aiChatAddressBarSubscriptionUpsellTriggered(currentTier: String, requiredTier: String, flowType: String)
 
+    /// Event Trigger: The New Tab Page omnibar reported a picker impression over `telemetryEvent`.
+    /// The `tryForFree`/`upgrade` variants mean the gated section carried that CTA.
+    case aiChatNtpModelPickerShown(origin: String)
+    case aiChatNtpModelPickerTryForFreeShown(origin: String)
+    case aiChatNtpModelPickerUpgradeShown(origin: String)
+    case aiChatNtpReasoningPickerShown(origin: String)
+    case aiChatNtpReasoningPickerTryForFreeShown(origin: String)
+    case aiChatNtpReasoningPickerUpgradeShown(origin: String)
+
     /// Event Trigger: The address bar's model picker opened showing at least one gated model.
     case aiChatAddressBarModelPickerShown(origin: String)
 
@@ -369,7 +378,7 @@ enum AIChatPixel: PixelKitEvent {
 
     /// Event Trigger: User taps a gated model or reasoning effort in the New Tab Page omnibar,
     /// routing them to the subscription purchase/upgrade flow.
-    case aiChatNtpSubscriptionUpsellTriggered(flowType: String, source: String)
+    case aiChatNtpSubscriptionUpsellTriggered(flowType: String, source: String, origin: String)
 
     /// Event Trigger: User taps "View all chats" from the New Tab Page omnibar
     case aiChatNtpViewAllChatsClicked
@@ -693,6 +702,18 @@ enum AIChatPixel: PixelKitEvent {
             return "aichat_addressbar_reasoning_effort_selected"
         case .aiChatAddressBarSubscriptionUpsellTriggered:
             return "aichat_addressbar_subscription_upsell_triggered"
+        case .aiChatNtpModelPickerShown:
+            return "aichat_ntp_model_picker_shown"
+        case .aiChatNtpModelPickerTryForFreeShown:
+            return "aichat_ntp_model_picker_tryforfree_shown"
+        case .aiChatNtpModelPickerUpgradeShown:
+            return "aichat_ntp_model_picker_upgrade_shown"
+        case .aiChatNtpReasoningPickerShown:
+            return "aichat_ntp_reasoning_picker_shown"
+        case .aiChatNtpReasoningPickerTryForFreeShown:
+            return "aichat_ntp_reasoning_picker_tryforfree_shown"
+        case .aiChatNtpReasoningPickerUpgradeShown:
+            return "aichat_ntp_reasoning_picker_upgrade_shown"
         case .aiChatAddressBarModelPickerShown:
             return "aichat_addressbar_model_picker_shown"
         case .aiChatAddressBarReasoningPickerShown:
@@ -932,7 +953,13 @@ enum AIChatPixel: PixelKitEvent {
         case .aiChatAddressBarSubscriptionUpsellTriggered(let currentTier, let requiredTier, let flowType):
             return ["current_tier": currentTier, "required_tier": requiredTier, "flow_type": flowType]
         case .aiChatAddressBarModelPickerShown(let origin),
-                .aiChatAddressBarReasoningPickerShown(let origin):
+                .aiChatAddressBarReasoningPickerShown(let origin),
+                .aiChatNtpModelPickerShown(let origin),
+                .aiChatNtpModelPickerTryForFreeShown(let origin),
+                .aiChatNtpModelPickerUpgradeShown(let origin),
+                .aiChatNtpReasoningPickerShown(let origin),
+                .aiChatNtpReasoningPickerTryForFreeShown(let origin),
+                .aiChatNtpReasoningPickerUpgradeShown(let origin):
             return ["origin": origin]
         case .aiChatSubscriptionFunnelImpression(let origin),
                 .aiChatSubscriptionFunnelClick(let origin),
@@ -942,8 +969,8 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatSubscriptionFunnelUpgradeToProModalImpression(let origin),
                 .aiChatSubscriptionFunnelUpgradeToProModalUpgradeClick(let origin):
             return ["origin": origin]
-        case .aiChatNtpSubscriptionUpsellTriggered(let flowType, let source):
-            return ["flow_type": flowType, "source": source]
+        case .aiChatNtpSubscriptionUpsellTriggered(let flowType, let source, let origin):
+            return ["flow_type": flowType, "source": source, "origin": origin]
         case .aiChatIsEnabled(let isEnabled):
             return ["is_enabled": isEnabled ? "1" : "0"]
         case .aiFeaturesState(let duckAI, let searchAssist, let hideAIImages, let noAI):
@@ -1094,6 +1121,12 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatAddressBarSubscriptionUpsellTriggered,
                 .aiChatAddressBarModelPickerShown,
                 .aiChatAddressBarReasoningPickerShown,
+                .aiChatNtpModelPickerShown,
+                .aiChatNtpModelPickerTryForFreeShown,
+                .aiChatNtpModelPickerUpgradeShown,
+                .aiChatNtpReasoningPickerShown,
+                .aiChatNtpReasoningPickerTryForFreeShown,
+                .aiChatNtpReasoningPickerUpgradeShown,
                 .aiChatSubscriptionFunnelImpression,
                 .aiChatSubscriptionFunnelClick,
                 .aiChatSubscriptionFunnelSubscribeModalImpression,

@@ -34,11 +34,36 @@ final class NewTabPageConfigurationEventHandler: EventMapping<NewTabPageConfigur
 
             case .newTabPageTelemetry(.customizerClosed):
                 PixelKit.fire(NewTabPagePixel.customizerHidden)
+
+            // Duck.ai omnibar picker impressions. The frontend owns these pickers, so a reported
+            // telemetry event is the only signal native gets that a gated row was on screen.
+            case .newTabPageTelemetry(.omnibarModelPickerShown):
+                Self.fireOmnibarPickerImpression(AIChatPixel.aiChatNtpModelPickerShown, .newTabPageModelPicker)
+
+            case .newTabPageTelemetry(.omnibarModelPickerTryForFreeShown):
+                Self.fireOmnibarPickerImpression(AIChatPixel.aiChatNtpModelPickerTryForFreeShown, .newTabPageModelPicker)
+
+            case .newTabPageTelemetry(.omnibarModelPickerUpgradeShown):
+                Self.fireOmnibarPickerImpression(AIChatPixel.aiChatNtpModelPickerUpgradeShown, .newTabPageModelPicker)
+
+            case .newTabPageTelemetry(.omnibarReasoningPickerShown):
+                Self.fireOmnibarPickerImpression(AIChatPixel.aiChatNtpReasoningPickerShown, .newTabPageReasoningDropdown)
+
+            case .newTabPageTelemetry(.omnibarReasoningPickerTryForFreeShown):
+                Self.fireOmnibarPickerImpression(AIChatPixel.aiChatNtpReasoningPickerTryForFreeShown, .newTabPageReasoningDropdown)
+
+            case .newTabPageTelemetry(.omnibarReasoningPickerUpgradeShown):
+                Self.fireOmnibarPickerImpression(AIChatPixel.aiChatNtpReasoningPickerUpgradeShown, .newTabPageReasoningDropdown)
             }
         }
     }
 
     override init(mapping: @escaping EventMapping<NewTabPageConfigurationEvent>.Mapping) {
         fatalError("Use init()")
+    }
+
+    private static func fireOmnibarPickerImpression(_ makePixel: (String) -> AIChatPixel,
+                                                    _ origin: SubscriptionFunnelOrigin) {
+        PixelKit.fire(makePixel(origin.rawValue), frequency: .dailyAndCount, includeAppVersionParameter: true)
     }
 }

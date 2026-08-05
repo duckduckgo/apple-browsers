@@ -92,6 +92,12 @@ enum SubscriptionFunnelOrigin: String {
     /// https://app.asana.com/1/137249556945/task/1216424447885172
     case newTabPageOmnibar = "funnel_newtab_macos__omnibar"
 
+    /// Gated model in the New Tab Page omnibar's model picker.
+    case newTabPageModelPicker = "funnel_newtab_macos__modelpicker"
+
+    /// Gated reasoning effort in the New Tab Page omnibar's reasoning picker.
+    case newTabPageReasoningDropdown = "funnel_newtab_macos__reasoningdropdown"
+
     /// Gated model shown in the Prompt Bar's model picker. Impression only — gated rows aren't
     /// interactive on this surface, so nothing routes into the purchase flow from here.
     case promptBarModelPicker = "funnel_promptbar_macos__modelpicker"

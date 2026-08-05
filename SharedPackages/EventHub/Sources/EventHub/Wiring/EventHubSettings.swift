@@ -18,6 +18,7 @@
 
 import Foundation
 import Combine
+import Common
 import os.log
 
 /// The EventHub view of remote config: feature enablement plus the telemetry settings JSON with any
@@ -40,11 +41,12 @@ public final class EventHubSettings: EventHubSettingsProviding {
     public init(
         featureEnabledPublisher: AnyPublisher<Bool, Never>,
         featureSettingsPublisher: AnyPublisher<[String: Any]?, Never>,
-        consentRequirements: [EventHubConsentRequirement]
+        consentRequirements: [EventHubConsentRequirement],
+        eventMapping: EventMapping<EventHubDebugEvent>? = nil
     ) {
         self.enabledPublisher = featureEnabledPublisher
         self.settingsPublisher = Publishers.CombineLatest(featureSettingsPublisher, Self.suppressedNames(consentRequirements))
-            .map(Self.strip)
+            .map { settings, suppressed in Self.strip(settings, suppressed: suppressed, eventMapping: eventMapping) }
             .eraseToAnyPublisher()
     }
 
@@ -63,13 +65,22 @@ public final class EventHubSettings: EventHubSettingsProviding {
             .eraseToAnyPublisher()
     }
 
-    private static func strip(_ settings: [String: Any]?, suppressed: Set<String>) -> [String: Any]? {
+    private static func strip(
+        _ settings: [String: Any]?,
+        suppressed: Set<String>,
+        eventMapping: EventMapping<EventHubDebugEvent>?
+    ) -> [String: Any]? {
         guard !suppressed.isEmpty, var settings else { return settings }
         let key = EventHubConfigParser.telemetryKey
-        // Fail closed: if we cannot reach the telemetry map to remove a gated entry from it, expose no
+        // No telemetry configured is the normal pre-rollout state: there is nothing to strip, and nothing
+        // that could be collected without consent, so pass the settings through untouched. Blacking them
+        // out here would fail closed against a config that holds no gated data in the first place.
+        guard settings[key] != nil else { return settings }
+        // Fail closed: telemetry exists but we cannot reach into it to remove a gated entry, so expose no
         // telemetry at all rather than risk collecting without consent.
         guard var telemetry = settings[key] as? [String: Any] else {
             Logger.eventHub.error("settings: consent stripping found no usable `\(key, privacy: .public)` object, failing closed")
+            eventMapping?.fire(.consentStripFailed)
             return nil
         }
         for name in suppressed { telemetry.removeValue(forKey: name) }

@@ -40,6 +40,7 @@ let package = Package(
         .target(
             name: "EventHub",
             dependencies: [
+                .product(name: "Common", package: "BrowserServicesKit"),
                 .product(name: "Persistence", package: "BrowserServicesKit"),
                 .product(name: "UserScript", package: "BrowserServicesKit"),
             ]),

@@ -26,7 +26,7 @@ public struct EnterRecoveryCodeView: View {
 
     public var body: some View {
         SyncDialog(spacing: 20.0) {
-            Image(.lockSucces96)
+            Image(.lockUnlockCompleteAlt96)
             SyncUIViews.TextHeader(text: UserText.enterRecoveryCodeDialogTitle)
             SyncUIViews.TextDetailMultiline(text: UserText.enterRecoveryCodeDialogSubtitle)
             VStack(spacing: 16) {

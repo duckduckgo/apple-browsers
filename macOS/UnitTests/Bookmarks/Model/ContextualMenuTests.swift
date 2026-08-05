@@ -131,7 +131,7 @@ final class ContextualMenuTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenAskingFolderItemAndReorderByNameIsEnabledThenItShouldIncludeReorderByNameAboveMoveToEnd() {
+    func testWhenAskingFolderItemAndReorderByNameIsEnabledThenItShouldIncludeReorderSectionAboveMoveToEnd() {
         // GIVEN
         let folder = BookmarkFolder(id: "1", title: "DuckDuckGo")
 
@@ -139,17 +139,19 @@ final class ContextualMenuTests: XCTestCase {
         let items = BookmarksContextMenu.folderMenuItems(with: folder, isReorderByNameEnabled: true)
 
         // THEN
-        XCTAssertEqual(items.count, 10)
+        XCTAssertEqual(items.count, 11)
+        XCTAssertTrue(items[5].isSeparatorItem)
         assertMenuItem(
-            items[5],
+            items[6],
             withTitle: UserText.bookmarksBarContextMenuReorderByName,
             selector: #selector(FolderMenuItemSelectors.reorderByName(_:)),
             representedObject: folder)
         assertMenuItem(
-            items[6],
+            items[7],
             withTitle: UserText.bookmarksBarContextMenuMoveToEnd,
             selector: #selector(FolderMenuItemSelectors.moveToEnd(_:)),
             representedObject: folder)
+        XCTAssertTrue(items[8].isSeparatorItem)
     }
 
     @MainActor

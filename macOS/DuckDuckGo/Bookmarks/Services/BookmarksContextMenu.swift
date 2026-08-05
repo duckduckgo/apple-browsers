@@ -236,7 +236,10 @@ extension BookmarksContextMenu {
         ]
 
         if includeReorderByNameItem {
-            items.insert(reorderByNameMenuItem(folder: folder, target: target), at: 5)
+            items.insert(contentsOf: [
+                NSMenuItem.separator(),
+                reorderByNameMenuItem(folder: folder, target: target)
+            ], at: 5)
         }
         if includeManageBookmarksItem {
             items.append(manageBookmarksMenuItem(target: target))

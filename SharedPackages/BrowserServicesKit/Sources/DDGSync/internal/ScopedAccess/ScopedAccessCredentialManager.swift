@@ -33,8 +33,21 @@ struct ScopedAccessCredentialManager: ScopedAccessCredentialManaging {
     let api: RemoteAPIRequestCreating
     let crypter: CryptingInternal
     let accountInfoKeyFactory: AccountInfoKeyFactory
+    private let canWriteUnifiedDeviceList: () -> Bool
     private let jweCompactCodec = JWECompactCodec()
     private let scopedAccessCredentialEnvelope = ScopedAccessCredentialEnvelope()
+
+    init(endpoints: Endpoints,
+         api: RemoteAPIRequestCreating,
+         crypter: CryptingInternal,
+         accountInfoKeyFactory: AccountInfoKeyFactory,
+         canWriteUnifiedDeviceList: @escaping () -> Bool) {
+        self.endpoints = endpoints
+        self.api = api
+        self.crypter = crypter
+        self.accountInfoKeyFactory = accountInfoKeyFactory
+        self.canWriteUnifiedDeviceList = canWriteUnifiedDeviceList
+    }
 
     func recoverScopedPassword(from accessCredentials: [AccessCredential]?, primaryKey: Data, userID: String) throws -> Data? {
         guard let thirdPartyCredential = accessCredentials?.first(where: { $0.id == SyncCode.RecoveryKeyV2.thirdPartyCredentialId }) else {
@@ -77,6 +90,10 @@ struct ScopedAccessCredentialManager: ScopedAccessCredentialManaging {
     }
 
     func ensureAccountInfoProtectedKeys(for account: SyncAccount) async throws -> [ProtectedKey] {
+        guard canWriteUnifiedDeviceList() else {
+            return []
+        }
+
         let storedKeys = try await fetchProtectedKeys(account)
         let storedAccountInfoKeys = protectedKeys(for: ProtectedKeyPurpose.accountInfo, in: storedKeys)
         if !storedAccountInfoKeys.isEmpty {
@@ -247,7 +264,9 @@ struct ScopedAccessCredentialManager: ScopedAccessCredentialManaging {
                                                       account: SyncAccount) async throws -> ProtectedKeysForThirdPartyCredential {
         let fetchedProtectedKeys = try await fetchProtectedKeys(account)
         let fetchedDefaultCredentialKeys = defaultCredentialKeys(in: fetchedProtectedKeys)
-        let accountInfoKeys = protectedKeys(for: ProtectedKeyPurpose.accountInfo, in: fetchedProtectedKeys)
+        let accountInfoKeys = canWriteUnifiedDeviceList()
+            ? protectedKeys(for: ProtectedKeyPurpose.accountInfo, in: fetchedProtectedKeys)
+            : []
         if fetchedDefaultCredentialKeys.contains(where: { $0.purpose == purpose }) {
             let protectedKeys = (protectedKeys(for: purpose, in: fetchedProtectedKeys) + accountInfoKeys)
                 .removingDuplicateWrappingIdentities()

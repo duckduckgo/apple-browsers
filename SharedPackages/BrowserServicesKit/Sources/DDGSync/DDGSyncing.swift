@@ -287,10 +287,16 @@ public protocol DDGSyncingDebuggingSupport {
     func updateServerEnvironment(_ serverEnvironment: ServerEnvironment)
     /// Creates or fetches the account_info key and returns its wrapper count.
     func ensureAccountInfoKeyForDebug() async throws -> Int
+    /// Refreshes the account_info key and returns metadata from a subsequent cache-first reload.
+    func validateAccountInfoKeyForDebug() async throws -> (refreshedKeyID: String, reloadedKeyID: String, keySizeInBits: Int)
 }
 
 public extension DDGSyncingDebuggingSupport {
     func ensureAccountInfoKeyForDebug() async throws -> Int {
+        throw SyncError.accountNotFound
+    }
+
+    func validateAccountInfoKeyForDebug() async throws -> (refreshedKeyID: String, reloadedKeyID: String, keySizeInBits: Int) {
         throw SyncError.accountNotFound
     }
 }

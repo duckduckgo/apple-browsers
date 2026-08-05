@@ -25,6 +25,7 @@ import Foundation
 import os.log
 import Persistence
 import PrivacyConfig
+import Security
 
 public class DDGSync: DDGSyncing {
 
@@ -299,6 +300,18 @@ public class DDGSync: DDGSyncing {
         }
 
         return try await dependencies.scopedAccess.ensureAccountInfoProtectedKeys(for: account).count
+    }
+
+    public func validateAccountInfoKeyForDebug() async throws -> (refreshedKeyID: String, reloadedKeyID: String, keySizeInBits: Int) {
+        guard let account = try dependencies.secureStore.account() else {
+            throw SyncError.accountNotFound
+        }
+
+        let refreshedKey = try await dependencies.accountInfoKeys.refreshKey(for: account)
+        let reloadedKey = try await dependencies.accountInfoKeys.loadKey(for: account)
+        return (refreshedKeyID: refreshedKey.kid,
+                reloadedKeyID: reloadedKey.kid,
+                keySizeInBits: SecKeyGetBlockSize(reloadedKey.publicKey) * 8)
     }
 
     public func prepareThirdPartyRecoveryCode(purpose: String) async throws -> String {

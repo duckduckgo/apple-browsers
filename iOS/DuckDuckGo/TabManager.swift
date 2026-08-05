@@ -661,13 +661,13 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
                 return
             }
 
-            DailyPixel.fireDailyAndCount(pixel: .webKitTerminationDidReloadCurrentTab, pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes)
-
-            if controller.url?.isDuckAIURL == true {
-                DailyPixel.fireDailyAndCount(pixel: .aiChatTabDidReloadAfterTermination)
-            }
-
             if reloadCurrent {
+                DailyPixel.fireDailyAndCount(pixel: .webKitTerminationDidReloadCurrentTab, pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes)
+
+                if controller.url?.isDuckAIURL == true {
+                    DailyPixel.fireDailyAndCount(pixel: .aiChatTabDidReloadAfterTermination)
+                }
+
                 current()?.reload()
             }
         } else {

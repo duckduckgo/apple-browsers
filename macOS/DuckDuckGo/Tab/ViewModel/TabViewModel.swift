@@ -339,6 +339,10 @@ final class TabViewModel: NSObject {
     }
 
     private func subscribeToAddressBarDuckAIState() {
+        guard DesignSystemRebrand.isAppRebranded() else {
+            return
+        }
+
         tab.addressBarSharedTextState.$isInDuckAIMode
             .removeDuplicates()
             .dropFirst()
@@ -420,12 +424,15 @@ final class TabViewModel: NSObject {
     private func updatePassiveAddressBarString(showFullURL: Bool? = nil, inDuckAIMode: Bool? = nil) {
         let showFullURL = showFullURL ?? appearancePreferences.showFullURL
         let inDuckAIMode = inDuckAIMode ?? addressBarSharedTextState.isInDuckAIMode
+        let isAppRebranded = DesignSystemRebrand.isAppRebranded()
 
         passiveAddressBarAttributedString = switch tab.content {
-        case .newtab where inDuckAIMode:
+        case .newtab where isAppRebranded && inDuckAIMode:
             .addressBarPlaceholderForDuckAI
-        case .newtab, .none:
+        case .newtab where isAppRebranded, .none where isAppRebranded:
             .addressBarPlaceholder
+        case .newtab, .none:
+            .init() // legacy: empty
         case .onboarding:
             .onboardingTrustedIndicator
         case .settings:

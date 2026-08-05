@@ -427,9 +427,9 @@ final class TabViewModel: NSObject {
         let isAppRebranded = DesignSystemRebrand.isAppRebranded()
 
         passiveAddressBarAttributedString = switch tab.content {
-        case .newtab where isAppRebranded && inDuckAIMode:
-            .addressBarPlaceholderForDuckAI
-        case .newtab where isAppRebranded, .none where isAppRebranded:
+        case .newtab where isAppRebranded:
+            inDuckAIMode ? .addressBarPlaceholderForDuckAI : .addressBarPlaceholder
+        case .none where isAppRebranded:
             .addressBarPlaceholder
         case .newtab, .none:
             .init() // legacy: empty

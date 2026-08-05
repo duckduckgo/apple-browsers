@@ -88,6 +88,9 @@ public final class EventHub: EventHubManaging {
     private var telemetries: [String: Telemetry] = [:]
     private var dirtyNames: Set<String> = []
     private var tabURLs: [EventHubTabID: String] = [:]
+    /// Hub-lifetime so per-tab dedup outlives the `Telemetry` objects that consult it — a period
+    /// rollover, and a period firing while backgrounded, both replace those. See `DedupStore`.
+    private let dedupStore = DedupStore()
     private var latestConfigs: [TelemetryPixelConfig] = []
     private var latestEnabled = false
     private var isForeground = false
@@ -159,7 +162,7 @@ public final class EventHub: EventHubManaging {
         for config in latestConfigs where config.isEnabled && config.trigger.isImmediate && config.trigger.source == source {
             var params: [String: String] = [:]
             for (paramName, paramConfig) in config.parameters where paramConfig.isData {
-                if let parameter = ParameterFactory.make(paramConfig), parameter.handle(data: data, tabID: .empty),
+                if let parameter = ParameterFactory.makeData(paramConfig), parameter.handle(data: data, tabID: .empty),
                    let value = parameter.queryValue() {
                     params[paramName] = value
                 }
@@ -212,7 +215,7 @@ public final class EventHub: EventHubManaging {
 
     private func startNewPeriodLocked(_ config: TelemetryPixelConfig) {
         guard isForeground, latestEnabled, config.isEnabled, config.trigger.period != nil else { return }
-        let telemetry = Telemetry(config: config, periodStartMillis: scheduler.nowMillis())
+        let telemetry = Telemetry(config: config, periodStartMillis: scheduler.nowMillis(), dedupStore: dedupStore)
         telemetries[config.name] = telemetry
         dirtyNames.insert(config.name)
     }
@@ -227,6 +230,7 @@ public final class EventHub: EventHubManaging {
         telemetries.removeAll()
         dirtyNames.removeAll()
         tabURLs.removeAll()
+        dedupStore.clearAll()
         store.deleteAllPixelStates()
         rearmSchedulerLocked()
     }
@@ -250,7 +254,7 @@ public final class EventHub: EventHubManaging {
     private func checkPixelsLocked() {
         guard latestEnabled else { return }
         for stored in store.allPixelStates() where telemetries[stored.pixelName] == nil {
-            telemetries[stored.pixelName] = Telemetry(restoring: stored)
+            telemetries[stored.pixelName] = Telemetry(restoring: stored, dedupStore: dedupStore)
         }
         let now = scheduler.nowMillis()
         // Snapshot the values: fireLocked mutates `telemetries` (removes the fired entry and may add a
@@ -347,14 +351,14 @@ public final class EventHub: EventHubManaging {
             let previous = tabURLs[tabID]
             tabURLs[tabID] = url
             guard let previous, previous != url else { return }
-            for telemetry in telemetries.values { telemetry.onNavigationStarted(tabID: tabID) }
+            dedupStore.clear(tabID: tabID)
         }
     }
 
     public func onTabClosed(tabID: EventHubTabID) {
         queue.sync {
             tabURLs.removeValue(forKey: tabID)
-            for telemetry in telemetries.values { telemetry.onTabClosed(tabID: tabID) }
+            dedupStore.clear(tabID: tabID)
         }
     }
 

@@ -28,26 +28,40 @@ final class Telemetry {
     private var parameters: [String: Parameter]
 
     /// Starts a fresh period from `config`, beginning at `periodStartMillis`.
-    init(config: TelemetryPixelConfig, periodStartMillis: Int64) {
+    init(config: TelemetryPixelConfig, periodStartMillis: Int64, dedupStore: DedupStore) {
         self.name = config.name
         self.config = config
         self.periodStartMillis = periodStartMillis
         self.periodEndMillis = periodStartMillis + (config.trigger.period?.periodSeconds ?? 0) * 1000
-        self.parameters = config.parameters.compactMapValues { ParameterFactory.make($0) }
+        self.parameters = Self.makeParameters(config: config, dedupStore: dedupStore)
     }
 
-    /// Rehydrates from persisted state (restart / foreground catch-up).
-    init(restoring persisted: PixelState) {
+    /// Rehydrates from persisted state (restart / foreground catch-up). Dedup is deliberately not
+    /// restored: it is in-memory only, so after a restart a page legitimately counts once more.
+    init(restoring persisted: PixelState, dedupStore: DedupStore) {
         self.name = persisted.pixelName
         self.config = persisted.config
         self.periodStartMillis = persisted.periodStartMillis
         self.periodEndMillis = persisted.periodEndMillis
-        self.parameters = persisted.config.parameters.compactMapValues { ParameterFactory.make($0) }
+        self.parameters = Self.makeParameters(config: persisted.config, dedupStore: dedupStore)
         for (paramName, parameter) in parameters {
             if let restored = persisted.params[paramName] {
                 parameter.restoreState(restored)
             }
         }
+    }
+
+    /// Builds this pixel's parameters, giving each counter a dedup key scoped to pixel×param×source so
+    /// two pixels sharing a parameter name and source still de-duplicate independently.
+    private static func makeParameters(config: TelemetryPixelConfig, dedupStore: DedupStore) -> [String: Parameter] {
+        var result: [String: Parameter] = [:]
+        for (paramName, paramConfig) in config.parameters {
+            let dedupKey = "\(config.name):\(paramName):\(paramConfig.source ?? "")"
+            if let parameter = ParameterFactory.make(paramConfig, dedupKey: dedupKey, dedupStore: dedupStore) {
+                result[paramName] = parameter
+            }
+        }
+        return result
     }
 
     func isElapsed(atMillis now: Int64) -> Bool { now >= periodEndMillis }
@@ -62,14 +76,6 @@ final class Telemetry {
             if parameter.handle(data: data, tabID: tabID) { changed = true }
         }
         return changed
-    }
-
-    func onNavigationStarted(tabID: EventHubTabID) {
-        for parameter in parameters.values { parameter.onNavigationStarted(tabID: tabID) }
-    }
-
-    func onTabClosed(tabID: EventHubTabID) {
-        for parameter in parameters.values { parameter.onTabClosed(tabID: tabID) }
     }
 
     func snapshot() -> PixelState {

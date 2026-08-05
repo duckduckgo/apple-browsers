@@ -18,21 +18,14 @@
 
 import Foundation
 
-/// A single pixel parameter's runtime behavior. `CounterParameter` owns its counter value, the
-/// stop-at-max-bucket logic, and its own per-tab dedup set (native/`.empty`-tab events are never
-/// deduped). `DataParameter` owns only its last-seen value.
+/// A single pixel parameter's runtime behavior. `CounterParameter` owns its counter value and the
+/// stop-at-max-bucket logic, and makes the per-tab dedup decision against the hub-owned `DedupStore`
+/// (native/`.empty`-tab events are never deduped). `DataParameter` owns only its last-seen value.
 protocol Parameter: AnyObject {
     /// Processes an event whose source already matched this parameter's config source (or, for an
     /// immediate-trigger's data param, the triggering event itself). Returns `true` if state changed.
     @discardableResult
     func handle(data: [String: Any]?, tabID: EventHubTabID) -> Bool
-
-    /// Clears this parameter's dedup entry for `tabID` if it navigated to a genuinely different URL.
-    /// No-op for `DataParameter`.
-    func onNavigationStarted(tabID: EventHubTabID)
-
-    /// Clears this parameter's dedup entry for a closed tab. No-op for `DataParameter`.
-    func onTabClosed(tabID: EventHubTabID)
 
     var state: ParamState { get }
     func restoreState(_ state: ParamState)
@@ -43,25 +36,39 @@ protocol Parameter: AnyObject {
 }
 
 enum ParameterFactory {
-    static func make(_ config: TelemetryParameterConfig) -> Parameter? {
+    /// Builds the parameter for a pixel's running period. `dedupKey` identifies this parameter within
+    /// its pixel (pixel×param×source) for `dedupStore` lookups.
+    static func make(_ config: TelemetryParameterConfig, dedupKey: String, dedupStore: DedupStore) -> Parameter? {
         if config.isCounter, let buckets = config.buckets {
-            return CounterParameter(buckets: buckets)
+            return CounterParameter(buckets: buckets, dedupKey: dedupKey, dedupStore: dedupStore)
         }
         if config.isData {
             return DataParameter(dataKey: config.dataKey)
         }
         return nil
     }
+
+    /// Builds a transient `data` parameter for an immediate pixel, which has no period and no dedup —
+    /// it reports the triggering event's own payload and is discarded straight after firing.
+    static func makeData(_ config: TelemetryParameterConfig) -> Parameter? {
+        guard config.isData else { return nil }
+        return DataParameter(dataKey: config.dataKey)
+    }
 }
 
 final class CounterParameter: Parameter {
     private let buckets: BucketList
+    /// Identifies this parameter (pixel×param×source) inside the shared, tab-keyed `DedupStore`.
+    private let dedupKey: String
+    /// Hub-owned, so dedup outlives this parameter — see `DedupStore`.
+    private let dedupStore: DedupStore
     private var value: Int
     private var stopCounting: Bool
-    private var dedupSeen: Set<EventHubTabID> = []
 
-    init(buckets: BucketList, initialState: ParamState = ParamState(value: 0)) {
+    init(buckets: BucketList, dedupKey: String, dedupStore: DedupStore, initialState: ParamState = ParamState(value: 0)) {
         self.buckets = buckets
+        self.dedupKey = dedupKey
+        self.dedupStore = dedupStore
         self.value = initialState.value
         self.stopCounting = initialState.stopCounting
     }
@@ -71,7 +78,7 @@ final class CounterParameter: Parameter {
         guard !stopCounting else { return false }
         // Native events (tabID == .empty) opt out of dedup: every call is a genuine occurrence.
         if tabID != .empty {
-            guard dedupSeen.insert(tabID).inserted else { return false }
+            guard dedupStore.markSeen(key: dedupKey, tabID: tabID) else { return false }
         }
         if BucketCounter.shouldStopCounting(value, buckets: buckets) {
             stopCounting = true
@@ -80,9 +87,6 @@ final class CounterParameter: Parameter {
         }
         return true
     }
-
-    func onNavigationStarted(tabID: EventHubTabID) { dedupSeen.remove(tabID) }
-    func onTabClosed(tabID: EventHubTabID) { dedupSeen.remove(tabID) }
 
     var state: ParamState { ParamState(value: value, stopCounting: stopCounting) }
     func restoreState(_ state: ParamState) { value = state.value; stopCounting = state.stopCounting }
@@ -115,9 +119,6 @@ final class DataParameter: Parameter {
         lastValue = compact.addingPercentEncoding(withAllowedCharacters: Self.unreservedCharacters)
         return true
     }
-
-    func onNavigationStarted(tabID: EventHubTabID) {}
-    func onTabClosed(tabID: EventHubTabID) {}
 
     var state: ParamState { ParamState(value: 0, lastDataValue: lastValue) }
     func restoreState(_ state: ParamState) { lastValue = state.lastDataValue }

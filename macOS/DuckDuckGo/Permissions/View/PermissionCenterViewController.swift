@@ -29,6 +29,10 @@ final class PermissionCenterViewController: NSViewController {
     let viewModel: PermissionCenterViewModel
     private var hostingView: NSHostingView<PermissionCenterView>?
 
+    var allowsAutodismiss: Bool {
+        viewModel.allowsAutodismiss
+    }
+
     init(viewModel: PermissionCenterViewModel) {
         self.viewModel = viewModel
         super.init(nibName: nil, bundle: nil)

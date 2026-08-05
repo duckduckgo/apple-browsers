@@ -25,10 +25,10 @@ struct SnapshotEnvironmentTests {
 
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
-    func macOS2652IsAccepted() {
+    func macOS2660IsAccepted() {
         let message = SnapshotEnvironment.validationMessage(
             platform: .macOS,
-            operatingSystemVersion: OperatingSystemVersion(majorVersion: 26, minorVersion: 5, patchVersion: 2)
+            operatingSystemVersion: OperatingSystemVersion(majorVersion: 26, minorVersion: 6, patchVersion: 0)
         )
 
         #expect(message == nil)
@@ -42,7 +42,7 @@ struct SnapshotEnvironmentTests {
             operatingSystemVersion: OperatingSystemVersion(majorVersion: 25, minorVersion: 6, patchVersion: 0)
         )
 
-        #expect(message == "UI snapshots must run on macOS 26.5.2. Current OS is 25.6.0.")
+        #expect(message == "UI snapshots must run on macOS 26.6.0. Current OS is 25.6.0.")
     }
 
     @available(iOS 16, macOS 13, *)
@@ -53,7 +53,7 @@ struct SnapshotEnvironmentTests {
             operatingSystemVersion: OperatingSystemVersion(majorVersion: 26, minorVersion: 1, patchVersion: 0)
         )
 
-        #expect(message == "UI snapshots must run on macOS 26.5.2. Current OS is 26.1.0.")
+        #expect(message == "UI snapshots must run on macOS 26.6.0. Current OS is 26.1.0.")
     }
 
     @available(iOS 16, macOS 13, *)
@@ -61,18 +61,18 @@ struct SnapshotEnvironmentTests {
     func macOSDifferentPatchVersionIsRejected() {
         let message = SnapshotEnvironment.validationMessage(
             platform: .macOS,
-            operatingSystemVersion: OperatingSystemVersion(majorVersion: 26, minorVersion: 5, patchVersion: 1)
+            operatingSystemVersion: OperatingSystemVersion(majorVersion: 26, minorVersion: 6, patchVersion: 1)
         )
 
-        #expect(message == "UI snapshots must run on macOS 26.5.2. Current OS is 26.5.1.")
+        #expect(message == "UI snapshots must run on macOS 26.6.0. Current OS is 26.6.1.")
     }
 
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
-    func iOS264At3xIsAccepted() {
+    func iOS2651At3xIsAccepted() {
         let message = SnapshotEnvironment.validationMessage(
             platform: .iOS,
-            operatingSystemVersion: OperatingSystemVersion(majorVersion: 26, minorVersion: 4, patchVersion: 0),
+            operatingSystemVersion: OperatingSystemVersion(majorVersion: 26, minorVersion: 5, patchVersion: 1),
             displayScale: 3
         )
 
@@ -88,7 +88,7 @@ struct SnapshotEnvironmentTests {
             displayScale: 3
         )
 
-        #expect(message == "UI snapshots must run on iOS 26.4. Current OS is 26.1.0.")
+        #expect(message == "UI snapshots must run on iOS 26.5. Current OS is 26.1.0.")
     }
 
     @available(iOS 16, macOS 13, *)
@@ -96,7 +96,7 @@ struct SnapshotEnvironmentTests {
     func iOS26At2xIsRejected() {
         let message = SnapshotEnvironment.validationMessage(
             platform: .iOS,
-            operatingSystemVersion: OperatingSystemVersion(majorVersion: 26, minorVersion: 4, patchVersion: 0),
+            operatingSystemVersion: OperatingSystemVersion(majorVersion: 26, minorVersion: 5, patchVersion: 1),
             displayScale: 2
         )
 
@@ -109,15 +109,15 @@ struct SnapshotEnvironmentTests {
         #expect(
             SnapshotEnvironment.referenceEnvironmentSuffix(
                 platform: .iOS,
-                operatingSystemVersion: OperatingSystemVersion(majorVersion: 26, minorVersion: 4, patchVersion: 1)
-            ) == "iOS-26-4"
+                operatingSystemVersion: OperatingSystemVersion(majorVersion: 26, minorVersion: 5, patchVersion: 1)
+            ) == "iOS-26-5"
         )
 
         #expect(
             SnapshotEnvironment.referenceEnvironmentSuffix(
                 platform: .macOS,
-                operatingSystemVersion: OperatingSystemVersion(majorVersion: 26, minorVersion: 5, patchVersion: 2)
-            ) == "macOS-26-5-2"
+                operatingSystemVersion: OperatingSystemVersion(majorVersion: 26, minorVersion: 6, patchVersion: 0)
+            ) == "macOS-26-6-0"
         )
     }
 }

@@ -791,6 +791,7 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
                 .unexpectedSecondHello,
                 .unexpectedEvent,
                 .pairingSessionNotReady,
+                .pairingV2OperationFailure,
                 .relayChannelUnavailable,
                 .recoveryCodePreparationFailed,
                 .peerRecoveryCodeUnavailable,
@@ -801,7 +802,7 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
                 .missingThirdPartyKey,
                 .localStorageFailed,
                 .invalidCredentials:
-            sendSetupEndedFailedPixel(setupRole: setupRole, reason: error.syncSetupFailureReason)
+            sendSetupEndedFailedPixel(setupRole: setupRole, reason: error.syncSetupFailureReason, pairingV2FailureContext: error.pairingV2FailureContext)
             await handleError(.unableToSyncWithDevice, error: underlyingError, event: .syncLoginError)
         case .failedToCreateAccount:
             sendSetupEndedFailedPixel(setupRole: setupRole, reason: error.syncSetupFailureReason)
@@ -869,11 +870,52 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
         }
     }
 
-    private func sendSetupEndedFailedPixel(setupRole: SyncSetupRole, reason: String?, timeoutStage: String? = nil) {
+    private func sendSetupEndedFailedPixel(setupRole: SyncSetupRole,
+                                           reason: String?,
+                                           timeoutStage: String? = nil,
+                                           pairingV2FailureContext: PairingV2FailureContext? = nil) {
         Pixel.fire(pixel: .syncSetupEndedFailed,
-                   withAdditionalParameters: syncSetupPixelParameters(setupRole: setupRole, reason: reason, timeoutStage: timeoutStage),
+                   withAdditionalParameters: syncSetupPixelParameters(setupRole: setupRole,
+                                                                      reason: reason,
+                                                                      timeoutStage: timeoutStage,
+                                                                      pairingV2FailureContext: pairingV2FailureContext),
                    includedParameters: [.appVersion])
         pairingV2PeerKind = nil
+    }
+
+    private func sendSetupEndedFailedPixel(setupSource: SyncSetupSource,
+                                           myRole: String?,
+                                           reason: String?,
+                                           pairingV2FailureContext: PairingV2FailureContext) {
+        Pixel.fire(pixel: .syncSetupEndedFailed,
+                   withAdditionalParameters: syncSetupPixelParameters(setupSource: setupSource,
+                                                                      path: setupSource.syncSetupPath,
+                                                                      reason: reason,
+                                                                      peerKind: pairingV2PeerKind?.syncSetupPeerKind,
+                                                                      myRole: myRole,
+                                                                      pairingV2FailureContext: pairingV2FailureContext),
+                   includedParameters: [.appVersion])
+        pairingV2PeerKind = nil
+    }
+
+    func sendPairingV2PresenterStartFailurePixelIfNeeded(_ error: Error, setupSource: SyncSetupSource) {
+        guard let operationFailure = error as? PairingV2OperationFailure else {
+            return
+        }
+        let connectionError = SyncConnectionError.pairingV2OperationFailure(operationFailure.context)
+        let myRole: String?
+        switch setupSource {
+        case .exchange:
+            myRole = SyncSetupPixelValue.host
+        case .connect:
+            myRole = SyncSetupPixelValue.joiner
+        case .recovery, .unknown:
+            myRole = nil
+        }
+        sendSetupEndedFailedPixel(setupSource: setupSource,
+                                  myRole: myRole,
+                                  reason: connectionError.syncSetupFailureReason,
+                                  pairingV2FailureContext: operationFailure.context)
     }
 
     private func sendSetupEndedAbandonedPixel(setupRole: SyncSetupRole, reason: String?) {
@@ -904,7 +946,10 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
                    includedParameters: [.appVersion])
     }
 
-    private func syncSetupPixelParameters(setupRole: SyncSetupRole, reason: String?, timeoutStage: String? = nil) -> [String: String] {
+    private func syncSetupPixelParameters(setupRole: SyncSetupRole,
+                                          reason: String?,
+                                          timeoutStage: String? = nil,
+                                          pairingV2FailureContext: PairingV2FailureContext? = nil) -> [String: String] {
         switch setupRole {
         case .receiver(let setupSource, _):
             return syncSetupPixelParameters(setupSource: setupSource,
@@ -912,14 +957,16 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
                                             reason: reason,
                                             timeoutStage: timeoutStage,
                                             peerKind: pairingV2PeerKind?.syncSetupPeerKind,
-                                            myRole: setupSource.syncSetupMyRole)
+                                            myRole: setupSource.syncSetupMyRole,
+                                            pairingV2FailureContext: pairingV2FailureContext)
         case .sharer:
             return syncSetupPixelParameters(setupSource: .exchange,
                                             path: SyncSetupPixelValue.pairing,
                                             reason: reason,
                                             timeoutStage: timeoutStage,
                                             peerKind: pairingV2PeerKind?.syncSetupPeerKind,
-                                            myRole: SyncSetupPixelValue.host)
+                                            myRole: SyncSetupPixelValue.host,
+                                            pairingV2FailureContext: pairingV2FailureContext)
         }
     }
 
@@ -931,7 +978,8 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
                                           reason: String? = nil,
                                           timeoutStage: String? = nil,
                                           peerKind: String? = nil,
-                                          myRole: String? = nil) -> [String: String] {
+                                          myRole: String? = nil,
+                                          pairingV2FailureContext: PairingV2FailureContext? = nil) -> [String: String] {
         var parameters = source.map { [PixelParameters.source: $0] } ?? [PixelParameters.source: setupSource.rawValue]
         parameters[PixelParameters.uiVersion] = syncUIVersion
         parameters[SyncSetupPixelParameter.myKind] = SyncSetupPixelValue.ddg
@@ -943,6 +991,8 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
         parameters[SyncSetupPixelParameter.timeoutStage] = timeoutStage
         parameters[SyncSetupPixelParameter.peerKind] = peerKind
         parameters[SyncSetupPixelParameter.myRole] = myRole
+        parameters[SyncSetupPixelParameter.pairingFailureStage] = pairingV2FailureContext?.stage.rawValue
+        parameters[SyncSetupPixelParameter.pairingFailureKind] = pairingV2FailureContext?.kind?.rawValue
         return parameters
     }
 
@@ -1004,6 +1054,8 @@ private enum SyncSetupPixelParameter {
     static let timeoutStage = "timeout_stage"
     static let peerKind = "peer_kind"
     static let myRole = "my_role"
+    static let pairingFailureStage = "pairing_failure_stage"
+    static let pairingFailureKind = "pairing_failure_kind"
 }
 
 private enum SyncSetupPixelValue {

@@ -1326,8 +1326,8 @@ final class BrowserTabViewController: NSViewController {
         }
     }
 
-    func selectSettingsDestination(_ destination: PreferencesDestination) {
-        preferencesViewController?.model.select(destination)
+    func navigateSettings(to destination: PreferencesDestination) {
+        preferencesViewController?.model.navigate(to: destination)
     }
 
     private func shouldReplaceWebView(for tabViewModel: TabViewModel?) -> Bool {

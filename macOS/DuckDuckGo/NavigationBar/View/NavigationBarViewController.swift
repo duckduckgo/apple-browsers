@@ -2385,7 +2385,7 @@ extension NavigationBarViewController: AddressBarViewControllerDelegate {
     }
 
     func addressBarViewController(_ addressBarViewController: AddressBarViewController, openSettings destination: PreferencesDestination) {
-        (parent as? MainViewController)?.openSettingsDestination(destination)
+        (parent as? MainViewController)?.openSettings(at: destination)
     }
 }
 

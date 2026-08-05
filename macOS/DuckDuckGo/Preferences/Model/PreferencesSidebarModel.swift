@@ -567,10 +567,11 @@ final class PreferencesSidebarModel: ObservableObject {
     /// Selecting the pane here, rather than leaving it to the tab content pipeline, is what makes the
     /// anchored section part of the hierarchy before the request is published.
     @MainActor
-    func select(_ destination: PreferencesDestination) {
+    func navigate(to destination: PreferencesDestination) {
         selectPane(destination.pane)
-
-        guard let anchor = destination.scrollAnchor, destination.pane == selectedPane else { return }
+        guard let anchor = destination.scrollAnchor, destination.pane == selectedPane else {
+            return
+        }
 
         scrollTarget = anchor
     }

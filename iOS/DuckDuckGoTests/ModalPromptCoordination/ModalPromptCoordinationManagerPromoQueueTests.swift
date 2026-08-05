@@ -478,6 +478,41 @@ final class ModalPromptCoordinationManagerPromoQueueTests {
     // MARK: - Safe Scheduling And Lifecycle
 
     @available(iOS 16, *)
+    @Test("Lifecycle Hooks Are No-Ops For A Legacy Presentation", .timeLimit(.minutes(1)))
+    func whenLifecycleHooksRunDuringLegacyDelayThenModalStillPresentsWithoutCoordination() {
+        // GIVEN a flag-off attempt scheduled through the legacy overload, so no lease exists for the lifecycle hooks to
+        // move to pending or release.
+        cooldownManagerMock.cooldownInfoToReturn = .notInCoolDown
+        let provider = MockModalPromptProvider()
+        let exactRoot = UIViewController()
+        provider.modalConfigurationToReturn = ModalPromptConfiguration(viewController: exactRoot)
+        sut = ModalPromptCoordinationManager(
+            providers: [provider],
+            cooldownManager: cooldownManagerMock,
+            onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
+            modalPromptScheduling: schedulerMock
+        )
+        sut.presentModalPromptIfNeeded(from: presenterMock)
+
+        // WHEN
+        sut.applicationWillResignActive()
+        sut.applicationDidEnterBackground()
+        sut.applicationDidBecomeActive()
+        schedulerMock.executeScheduledBlock()
+
+        // THEN the legacy presentation lands exactly as it does without the feature: the delayed block was neither
+        // cancelled nor retained as pending coordinated work, and the arbiter was never involved.
+        #expect(presenterMock.didCallPresent)
+        #expect(presenterMock.capturedViewController === exactRoot)
+        #expect(provider.didPresentModalCallCount == 1)
+        #expect(!sut.hasActiveOrPendingModalAttempt)
+        #expect(sut.modalAttemptPhase == .idle)
+        #expect(!promoQueueLeaseArbiter.snapshot.hasModalLease)
+        #expect(promoQueueLeaseArbiter.snapshot.visiblePromoCount == 0)
+    }
+
+    @available(iOS 16, *)
     @Test("Temporary Inactivity Moves Delayed Presentation To Pending", .timeLimit(.minutes(1)))
     func whenAppTemporarilyResignsActiveDuringDelayThenPreparedItemIsRetriedWithoutReevaluation() throws {
         cooldownManagerMock.cooldownInfoToReturn = .notInCoolDown

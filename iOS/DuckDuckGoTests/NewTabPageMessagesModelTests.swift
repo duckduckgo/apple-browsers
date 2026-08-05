@@ -116,6 +116,31 @@ final class NewTabPageMessagesModelTests: XCTestCase {
         XCTAssertEqual(promoCoordinator.publicAdmissionCallCount, 0)
     }
 
+    func testFeatureOffMapsEveryMessageDirectlyInInputOrder() {
+        let promoCoordinator = ArbitratingNewTabPagePromoCoordinatorMock(featureState: .disabled)
+        let message = HomeMessage.mockRemote(id: "message-a", withType: .small(titleText: "Title", descriptionText: "Body"))
+        messagesConfiguration.homeMessages = [.placeholder, message]
+        let sut = createSUT(promoCoordinator: promoCoordinator)
+
+        sut.load()
+
+        // Collected rather than asserted item by item so the count also pins that *no* item is a coordination gate: a
+        // gated remote message would publish a `remote-message-gate-` mount and drop out of this mapping.
+        let directMessageIDs = sut.homeMessageRenderItems.compactMap { item -> String? in
+            guard case .message(let viewModel) = item.content else {
+                return nil
+            }
+            return viewModel.messageId
+        }
+
+        XCTAssertEqual(sut.homeMessageRenderItems.count, 2)
+        XCTAssertEqual(sut.homeMessageRenderItems.map(\.id), ["local-message-0", "remote-message-message-a"])
+        XCTAssertEqual(directMessageIDs, ["", "message-a"])
+        XCTAssertEqual(sut.homeMessageViewModels.map(\.messageId), ["", "message-a"])
+        XCTAssertEqual(messagesConfiguration.appearanceCallCount, 1)
+        XCTAssertEqual(messagesConfiguration.lastAppearedHomeMessage, message)
+    }
+
     func testFeatureOnRetainsBlockedCandidateWithoutPublishingOrRecordingRemoteCard() throws {
         let promoCoordinator = ArbitratingNewTabPagePromoCoordinatorMock(featureState: .enabled)
         promoCoordinator.acquireModalLease()

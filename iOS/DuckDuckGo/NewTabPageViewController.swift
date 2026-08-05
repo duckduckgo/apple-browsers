@@ -82,6 +82,8 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
 
     private let internalUserCommands: URLBasedDebugCommands
     private let tutorialSettings: TutorialSettings
+    /// Decides whether the end-of-journey step shows the Try AI version
+    private let onboardingEndOfJourneyAIContentProvider: OnboardingEndOfJourneyTryAIContentProviding
 
     var onViewDidAppear: (() -> Void)?
 
@@ -108,7 +110,8 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
          unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature(),
          floatingUIManager: FloatingUIManaging = FloatingUIManager(),
          appWidthObserver: AppWidthObserver = .shared,
-         tutorialSettings: TutorialSettings = DefaultTutorialSettings()) {
+         tutorialSettings: TutorialSettings = DefaultTutorialSettings(),
+         onboardingEndOfJourneyAIContentProvider: OnboardingEndOfJourneyTryAIContentProviding = OnboardingEndOfJourneyTryAIProvider()) {
 
         self.associatedTab = tab
         self.newTabDialogFactory = newTabDialogFactory
@@ -119,6 +122,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
         self.floatingUIManager = floatingUIManager
         self.internalUserCommands = internalUserCommands
         self.tutorialSettings = tutorialSettings
+        self.onboardingEndOfJourneyAIContentProvider = onboardingEndOfJourneyAIContentProvider
 
         newTabPageViewModel = NewTabPageViewModel(fireTab: tab.fireTab)
         newTabPageViewModel.openedAfterIdle = openedAfterIdle
@@ -631,9 +635,8 @@ extension NewTabPageViewController {
             // is about to fire, it drives its own overlay state.  Un-suppressing here while the
             // UTI is active from the premature beginEditing would cause a visual flash of the
             // NTP Dax logo before the completion dialog appears.
-            let contextualLogic = daxDialogsManager as? ContextualOnboardingLogic
-            let chatPathCompletionPending = contextualLogic?.chatPathPhase == .trackerToEOJ
-                && contextualLogic?.isAIChatEnabled == true
+            let chatPathCompletionPending = daxDialogsManager.chatPathPhase == .trackerToEOJ
+                && daxDialogsManager.isAIChatEnabled == true
             if !chatPathCompletionPending {
                 chromeDelegate?.setUnifiedInputContentOverlaySuppressed(false)
             }
@@ -703,7 +706,17 @@ extension NewTabPageViewController {
             self?.chromeDelegate?.omniBar.beginEditing(animated: true)
         }
 
-        let daxDialogView = AnyView(factory.createDaxDialog(for: spec, onCompletion: onDismiss, onManualDismiss: onManualDismiss))
+        let daxDialogView: AnyView
+        // Check if the EOJ dialog should be the Try AI version when the download-reason flow qualifies (decider owns the gating).
+        if spec == .final, let eojDialogTryAIContent = onboardingEndOfJourneyAIContentProvider.dialogContent {
+            daxDialogView = factory.createEndOfJourneyTryAIDialog(
+                content: eojDialogTryAIContent,
+                onTryDuckAI: { [weak self] in self?.dismissEndOfJourneyTryAIDialog(shouldOpenDuckAI: true) },
+                onSkip: { [weak self] in self?.dismissEndOfJourneyTryAIDialog(shouldOpenDuckAI: false) }
+            )
+        } else {
+            daxDialogView = AnyView(factory.createDaxDialog(for: spec, onCompletion: onDismiss, onManualDismiss: onManualDismiss))
+        }
         let hostingController = UIHostingController(rootView: daxDialogView)
         self.hostingController = hostingController
         hostingController.view.backgroundColor = .clear
@@ -714,7 +727,7 @@ extension NewTabPageViewController {
         // Defer to the next run loop so any pending beginEditing() finishes before setBarsHidden
         // (which calls hideKeyboard internally).
         if spec == .subsequent,
-           (daxDialogsManager as? ContextualOnboardingLogic)?.chatPathPhase == .visitSite {
+            daxDialogsManager.chatPathPhase == .visitSite {
             didHideBarsForChatPathVisitSiteDialog = true
             DispatchQueue.main.async { [weak self] in
                 self?.chromeDelegate?.setBarsHidden(true, animated: false, customAnimationDuration: nil)
@@ -750,6 +763,30 @@ extension NewTabPageViewController {
         } else {
             chromeDelegate?.omniBar.endEditing()
             completion()
+        }
+    }
+
+    private func dismissEndOfJourneyTryAIDialog(shouldOpenDuckAI: Bool) {
+        // Complete onboarding. On next NTP show subscription
+        dismissHostingController(didFinishNTPOnboarding: true)
+
+        // - `shouldOpenDuckAI`: dismiss the dialog and activate Omnibar with .aiChat textEntry mode. ands the user in the Duck.ai-mode address bar. The subscription promo will surface on the next new tab.
+        // - `!shouldOpenDuckAI`: dismiss the dialog and shows the subscription promo.
+        if shouldOpenDuckAI {
+            // Opens Duck.ai via the omnibar path, mirroring showDuckAIOnboardingCompletionWithActiveAddressBar.
+            chromeDelegate?.omniBar.beginEditing(animated: true, forTextEntryMode: .aiChat)
+        } else {
+            // Skip: mirror the standard final dialog's subscription hand-off.
+            let nextSpec = daxDialogsManager.nextHomeScreenMessageNew()
+            if nextSpec == .subscriptionPromotion {
+                setLogoHidden(true)
+                dismissAddressBarEditingForSubscriptionPromo(completion: { [weak self] in
+                    self?.showNextDaxDialog()
+                    self?.hostingController?.view.backgroundColor = UIColor(singleUseColor: .rebranding(.backdrop))
+                })
+            } else {
+                daxDialogsManager.dismiss()
+            }
         }
     }
 

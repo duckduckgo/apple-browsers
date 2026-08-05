@@ -661,6 +661,67 @@ final class DDGSyncTests: XCTestCase {
         XCTAssertEqual(migrationCoordinator.resetCallCount, 1)
     }
 
+    func testWhenMigrationCompletesDuringDeviceFetchThenStaleResultDoesNotScheduleRepairUntilNextPoll() async throws {
+        dependencies.canWriteUnifiedDeviceList = { true }
+        (dependencies.secureStore as? SecureStorageStub)?.theAccount = nil
+        let accountManager = try XCTUnwrap(dependencies.account as? AccountManagingMock)
+        let migrationStarted = expectation(description: "Device info migration started")
+        let migrationFinished = expectation(description: "Device info migration finished")
+        let deviceFetchStarted = expectation(description: "Device fetch started")
+        let unexpectedRepair = expectation(description: "Current device info repair not scheduled")
+        unexpectedRepair.isInverted = true
+        let (migrationGate, migrationGateContinuation) = AsyncStream<Void>.makeStream()
+        let (deviceFetchGate, deviceFetchGateContinuation) = AsyncStream<Void>.makeStream()
+        defer {
+            migrationGateContinuation.finish()
+            deviceFetchGateContinuation.finish()
+        }
+        accountManager.fetchDevicesForAccountHandler = { _ in
+            deviceFetchStarted.fulfill()
+            for await _ in deviceFetchGate {}
+            return RegisteredDeviceMappingResult(devices: [.mock], needsCurrentDeviceInfoRepair: true)
+        }
+        let migrationCoordinator = DeviceInfoMigrationCoordinatingMock()
+        migrationCoordinator.migrateCurrentDeviceHandler = {
+            migrationStarted.fulfill()
+            for await _ in migrationGate {}
+            migrationFinished.fulfill()
+        }
+        migrationCoordinator.repairCurrentDeviceInfoHandler = {
+            unexpectedRepair.fulfill()
+        }
+        dependencies.createDeviceInfoMigrationCoordinatorStub = migrationCoordinator
+        let syncService = DDGSync(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
+
+        try await syncService.createAccount(deviceName: "iPhone", deviceType: "iOS")
+        await fulfillment(of: [migrationStarted], timeout: 1)
+        async let fetchedDevices = syncService.fetchDevices()
+        await fulfillment(of: [deviceFetchStarted], timeout: 1)
+        migrationGateContinuation.finish()
+        await fulfillment(of: [migrationFinished], timeout: 1)
+        await Task.yield()
+        deviceFetchGateContinuation.finish()
+        let devices = try await fetchedDevices
+        await fulfillment(of: [unexpectedRepair], timeout: 0.1)
+
+        XCTAssertEqual(devices.map(\.id), [RegisteredDevice.mock.id])
+        XCTAssertTrue(migrationCoordinator.repairCalls.isEmpty)
+
+        let repairScheduledOnNextPoll = expectation(description: "Current device info repair scheduled on next poll")
+        migrationCoordinator.repairCurrentDeviceInfoHandler = {
+            repairScheduledOnNextPoll.fulfill()
+        }
+        accountManager.fetchDevicesForAccountHandler = nil
+        accountManager.fetchDevicesForAccountStub = RegisteredDeviceMappingResult(
+            devices: [.mock],
+            needsCurrentDeviceInfoRepair: true)
+
+        _ = try await syncService.fetchDevices()
+        await fulfillment(of: [repairScheduledOnNextPoll], timeout: 1)
+
+        XCTAssertEqual(migrationCoordinator.repairCalls.map(\.account.deviceId), [SyncAccount.mock.deviceId])
+    }
+
     func testWhenFetchedCurrentDeviceNeedsInfoRepairThenRepairIsScheduledOncePerSession() async throws {
         dependencies.canWriteUnifiedDeviceList = { true }
         let accountManager = try XCTUnwrap(dependencies.account as? AccountManagingMock)

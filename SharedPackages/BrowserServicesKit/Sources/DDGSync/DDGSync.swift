@@ -246,9 +246,10 @@ public class DDGSync: DDGSyncing {
             throw SyncError.accountNotFound
         }
 
+        let wasDeviceInfoMigrationRunning = deviceInfoMigrationTask != nil
         do {
             let result = try await dependencies.account.fetchDevicesForAccount(account)
-            if result.needsCurrentDeviceInfoRepair {
+            if result.needsCurrentDeviceInfoRepair && !wasDeviceInfoMigrationRunning {
                 scheduleCurrentDeviceInfoRepair(for: account)
             }
             return result.devices
@@ -731,6 +732,7 @@ public class DDGSync: DDGSyncing {
 
     private func scheduleCurrentDeviceInfoRepair(for account: SyncAccount) {
         guard dependencies.syncFeatureFlags.canWriteUnifiedDeviceList(),
+              deviceInfoMigrationTask == nil,
               currentDeviceInfoRepairTask == nil,
               !hasAttemptedCurrentDeviceInfoRepair else {
             return

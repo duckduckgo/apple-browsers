@@ -345,8 +345,7 @@ private final class MockConnectionInfoService: SubscriptionOnboardingConnectionI
 
     var cancelsInFlight = false
 
-    /// Fires when the fetch is entered, so a test can wait for it to be in flight rather than polling.
-    /// When gated it fires only once the gate is armed, so a test resuming on it can't release nothing.
+    /// Fires when the fetch is entered — after the gate is armed, so a test resuming on it can't release nothing.
     var onFetchStarted: (() -> Void)?
 
     /// When set, `fetchConnectionInfo()` parks until ``releaseGate()``, so a test can keep a fetch in flight.

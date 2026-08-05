@@ -115,8 +115,6 @@ private extension SubscriptionOnboardingVPNActivationView {
         }
     }
 
-    /// The explanation under the activation-failure title: the "Allow the configuration" instruction when the
-    /// customer declined the system prompt, and the VPN settings' connection-failure copy for anything else.
     var failureExplanation: String {
         viewModel.didDenyVPNPermission ? UserText.subscriptionOnboardingVPNActivationDeniedExplanation
                                        : UserText.vpnErrorConnectionFailed

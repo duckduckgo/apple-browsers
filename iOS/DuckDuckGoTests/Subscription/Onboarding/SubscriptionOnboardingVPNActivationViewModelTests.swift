@@ -580,7 +580,6 @@ final class SubscriptionOnboardingVPNActivationViewModelTests: XCTestCase {
         await fulfillment(of: [hintShownExpectation(coordinator, inverted: false)], timeout: 5)
     }
 
-    /// Kept short: an inverted expectation always waits out its full timeout, on every passing run.
     private func assertHintDoesNotShow(_ coordinator: TapAllowHintCoordinator) async {
         await fulfillment(of: [hintShownExpectation(coordinator, inverted: true)], timeout: 0.3)
     }
@@ -655,8 +654,7 @@ private final class StubAIModelProvider: SubscriptionOnboardingAIModelProviding 
     func updateSelectedModel(_ modelID: String) {}
 }
 
-/// `@MainActor` so `fetchCallCount` and `results` are never touched from two threads at once — the prefetcher
-/// would otherwise await this off the main actor. `init` stays `nonisolated` so it can be a default argument.
+/// `@MainActor` so its state isn't touched from two threads; `init` is `nonisolated` for the default argument.
 @MainActor
 private final class MockConnectionInfoService: SubscriptionOnboardingConnectionInfoService {
     private var results: [SubscriptionOnboardingConnectionInfo]

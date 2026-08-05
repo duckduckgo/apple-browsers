@@ -240,7 +240,6 @@ final class SubscriptionOnboardingDuckAIViewModelTests: XCTestCase {
 
 // MARK: - Test doubles
 
-/// Keeps the prefetcher from building a real `DefaultAPIService`; this screen never fetches connection info.
 private struct StubConnectionInfoService: SubscriptionOnboardingConnectionInfoService {
     func fetchConnectionInfo() async throws -> SubscriptionOnboardingConnectionInfo {
         throw CancellationError()
@@ -287,10 +286,6 @@ private final class SpySectionDelegate: SubscriptionOnboardingSectionDelegate {
 /// consumers are tested.
 @MainActor
 final class DefaultSubscriptionOnboardingAIModelProviderTests: XCTestCase {
-
-    /// Comfortably under the provider's own 10s `fetchTimeout`, so resolving on cancellation is
-    /// distinguishable from waiting that timeout out without a wall-clock budget CI can trip over.
-    private static let cancellationBudget: TimeInterval = 5
 
     private var modelsService: StubModelsService!
     private var preferences: StubPreferences!
@@ -348,8 +343,6 @@ final class DefaultSubscriptionOnboardingAIModelProviderTests: XCTestCase {
         async let first = sut.fetchModels()
         await fulfillment(of: [fetchStarted], timeout: 5)
 
-        // The second caller must join the in-flight fetch rather than start its own, so reaching the service
-        // again is the failure. Waiting this out is also what gives it time to register.
         let secondStoreFetch = expectation(description: "the second caller must not start its own store fetch")
         secondStoreFetch.isInverted = true
         modelsService.onFetchStarted = { secondStoreFetch.fulfill() }
@@ -393,7 +386,7 @@ final class DefaultSubscriptionOnboardingAIModelProviderTests: XCTestCase {
         let models = await task.value
 
         XCTAssertTrue(models.isEmpty)
-        XCTAssertLessThan(Date().timeIntervalSince(start), Self.cancellationBudget)
+        XCTAssertLessThan(Date().timeIntervalSince(start), 5)
     }
 
     func testWhenOneOfTwoCallersIsCancelledThenTheOtherStillGetsTheModels() async {
@@ -405,8 +398,6 @@ final class DefaultSubscriptionOnboardingAIModelProviderTests: XCTestCase {
         let cancelled = Task { await sut.fetchModels() }
         await fulfillment(of: [fetchStarted], timeout: 5)
 
-        // The survivor must join the in-flight fetch before the other caller is cancelled, so reaching the
-        // service again is the failure. Waiting this out is also what gives it time to register.
         let secondStoreFetch = expectation(description: "the survivor must not start its own store fetch")
         secondStoreFetch.isInverted = true
         modelsService.onFetchStarted = { secondStoreFetch.fulfill() }
@@ -443,8 +434,7 @@ private final class StubModelsService: AIChatModelsProviding {
 
     var result: Result<AIChatModelsResponse, Error> = .success(AIChatModelsResponse(models: []))
 
-    /// Fires when the fetch is entered, so a test can wait for it to be in flight rather than polling.
-    /// When gated it fires only once the gate is armed, so a test resuming on it can't release nothing.
+    /// Fires when the fetch is entered — after the gate is armed, so a test resuming on it can't release nothing.
     var onFetchStarted: (() -> Void)?
 
     /// When set, `fetchModels()` parks until ``releaseGate()``, so a test can hold one fetch in flight

@@ -103,8 +103,6 @@ final class AppDependencyProvider: DependencyProvider {
 
     let connectionObserver: ConnectionStatusObserver = ConnectionStatusObserverThroughSession()
     let serverInfoObserver: ConnectionServerInfoObserver = ConnectionServerInfoObserverThroughSession()
-    // Lazy so sessions that never open the VPN or its onboarding don't register its notification
-    // observers at all — unlike its siblings above, nothing reads this until one of those screens appears.
     lazy var connectionErrorObserver: ConnectionErrorObserver = ConnectionErrorObserverThroughSession()
     let vpnSettings = VPNSettings(defaults: .networkProtectionGroupDefaults)
     let dbpSettings = DataBrokerProtectionSettings(defaults: .dbp)

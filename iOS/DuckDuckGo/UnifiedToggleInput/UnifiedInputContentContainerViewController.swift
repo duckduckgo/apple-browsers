@@ -148,6 +148,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     private var isSyncPromoCardVisible = false
 
     private var notificationCancellable: AnyCancellable?
+    private var promoQueueFeatureStateCancellable: AnyCancellable?
 
     private weak var contentAnimator: UIViewPropertyAnimator?
 
@@ -190,6 +191,10 @@ final class UnifiedInputContentContainerViewController: UIViewController {
 
     deinit {
         searchDeleteTask?.cancel()
+        // UIKit view controllers are expected to deallocate on the main thread.
+        MainActor.assumeIsolated {
+            unifiedSuggestionsHost?.tearDown()
+        }
     }
 
     // MARK: - Lifecycle
@@ -201,6 +206,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         installComponents()
         setupSubscriptions()
         observeRemoteMessagesChanges()
+        observePromoQueueFeatureStateChanges()
         observeAddressBarPositionChanges()
 
         refreshSyncPromoIfActive()
@@ -209,6 +215,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
 
+        unifiedSuggestionsHost?.setPromoSurfaceHostActive(isContentActive)
         attachDuckAISurfaceIfNeeded()
     }
 
@@ -225,6 +232,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
 
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
+        unifiedSuggestionsHost?.setPromoSurfaceHostActive(false)
         detachDuckAISurfaceFromSingleHost()
     }
 
@@ -265,10 +273,12 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             // Re-resolve now (synchronously, before the host is shown) so the prior session's stale
             // content isn't flashed. Runs after `prepareForActivation` clears the dismiss freeze.
             activationResolveTrigger.send(())
+            unifiedSuggestionsHost?.setPromoSurfaceHostActive(true)
             syncDuckAISurfaceWithSettings()
             duckAISurface?.refreshRecents()
         } else {
             fireSearchSuggestionsDisplayPixels()
+            unifiedSuggestionsHost?.setPromoSurfaceHostActive(false)
         }
     }
 
@@ -826,9 +836,28 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         notificationCancellable = NotificationCenter.default.publisher(for: RemoteMessagingStore.Notifications.remoteMessagesDidChange)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
-                guard let self else { return }
-                self.refreshVisibleContent(animateContentUpdates: false)
+                self?.refreshVisibleContent(animateContentUpdates: false)
             }
+    }
+
+    private func observePromoQueueFeatureStateChanges() {
+        guard let promoCoordinator = suggestionTrayDependencies?.newTabPageDependencies.promoCoordinator else {
+            return
+        }
+
+        promoQueueFeatureStateCancellable = promoQueueEnablementPublisher(promoCoordinator.promoQueueFeatureStatePublisher)
+            .sink { [weak self] in
+                guard let self else { return }
+                refreshRemoteMessagesForPromoQueue()
+                refreshVisibleContent(animateContentUpdates: false)
+            }
+    }
+
+    private func refreshRemoteMessagesForPromoQueue() {
+        suggestionTrayDependencies?.newTabPageDependencies.homePageMessagesConfiguration.refresh(
+            openedAfterIdle: sessionOpenedAfterIdle
+        )
+        activationResolveTrigger.send(())
     }
 
     private func markNeedsVisibleRefresh() {
@@ -985,6 +1014,18 @@ private extension UnifiedInputContentContainerViewController {
             applyContentUpdates()
         }
     }
+}
+
+/// Emits when promo coordination reaches enabled after the initial feature-state value.
+func promoQueueEnablementPublisher(
+    _ featureStatePublisher: AnyPublisher<PromoQueueFeatureState, Never>
+) -> AnyPublisher<Void, Never> {
+    featureStatePublisher
+        .removeDuplicates()
+        .dropFirst()
+        .filter { $0 == .enabled }
+        .map { _ in () }
+        .eraseToAnyPublisher()
 }
 
 // MARK: - DuckAISuggestionsSurfaceProviderDelegate

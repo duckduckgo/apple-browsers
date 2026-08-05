@@ -127,6 +127,7 @@ class SuggestionTrayViewController: UIViewController {
     private var popoverContentHeights: [PopoverSuggestionsMode: CGFloat] = [:]
     private var newTabPage: NewTabPageViewController?
     private var willRemoveAutocomplete = false
+    private var contentPresentationGeneration = 0
 
     /// Allows to defer autocomplete presentation to avoid short UI glitch (blink) when presenting
     /// autocomplete suggestions when unifiedToggleInput flag is on.
@@ -312,23 +313,49 @@ class SuggestionTrayViewController: UIViewController {
     }
 
     func show(for type: SuggestionType, animated: Bool = true) {
+        contentPresentationGeneration += 1
+        let presentationGeneration = contentPresentationGeneration
         self.fullHeightSafeAreaConstraint.constant = appSettings.currentAddressBarPosition == .bottom ? 50 : 0
 
         switch type {
         case .autocomplete(let query):
+            newTabPage?.setPromoSurfaceRenderable(false)
             displayAutocompleteSuggestions(forQuery: query, animated: animated)
         case .duckAISuggestions:
+            newTabPage?.setPromoSurfaceRenderable(false)
             removeNewTabPage(animated: false)
             setPopoverMode(.duckAI)
         case .favorites:
             if isPad {
-                removeAutocomplete(animated: animated)
-                displayFavoritesIfNeeded(animated: animated)
+                let physicalTransitions = DispatchGroup()
+                physicalTransitions.enter()
+                removeAutocomplete(animated: animated) {
+                    physicalTransitions.leave()
+                }
+                physicalTransitions.enter()
+                displayFavoritesIfNeeded(animated: animated) { _ in
+                    physicalTransitions.leave()
+                }
+                physicalTransitions.notify(queue: .main) { [weak self] in
+                    guard let self,
+                          contentPresentationGeneration == presentationGeneration,
+                          let newTabPage else { return }
+                    newTabPage.setPromoSurfaceRenderable(true)
+                }
             } else {
                 willRemoveAutocomplete = true
-                displayFavoritesIfNeeded(animated: animated) { [weak self] in
-                    self?.removeAutocomplete(animated: animated)
-                    self?.willRemoveAutocomplete = false
+                displayFavoritesIfNeeded(animated: animated) { [weak self] controller in
+                    guard let self else { return }
+                    removeAutocomplete(animated: animated) { [weak self, weak controller] in
+                        guard let self else { return }
+                        guard let controller,
+                              contentPresentationGeneration == presentationGeneration,
+                              newTabPage === controller else { return }
+                        // The cached favorites controller sits below autocomplete during its removal animation.
+                        // Wait for physical removal before allowing it to own the promo slot.
+                        controller.setPromoSurfaceRenderable(true)
+                    }
+                    willRemoveAutocomplete = false
                 }
             }
         }
@@ -343,6 +370,8 @@ class SuggestionTrayViewController: UIViewController {
     }
 
     func didHide(animated: Bool) {
+        contentPresentationGeneration += 1
+        newTabPage?.setPromoSurfaceRenderable(false)
         removeAutocomplete(animated: animated)
         removeNewTabPage(animated: animated)
         teardownPopoverDuckAIController()
@@ -464,15 +493,16 @@ class SuggestionTrayViewController: UIViewController {
         newTabPage?.setSectionTitle(title)
     }
 
-    private func displayFavoritesIfNeeded(animated: Bool, onInstall: @escaping () -> Void = {}) {
-        if newTabPage == nil {
-            installNewTabPage(animated: animated, onInstall: onInstall)
+    private func displayFavoritesIfNeeded(animated: Bool,
+                                          onInstall: @escaping (NewTabPageViewController) -> Void) {
+        if let newTabPage {
+            onInstall(newTabPage)
         } else {
-            onInstall()
+            installNewTabPage(animated: animated, onInstall: onInstall)
         }
     }
 
-    private func installNewTabPage(animated: Bool, onInstall: @escaping () -> Void = {}) {
+    private func installNewTabPage(animated: Bool, onInstall: @escaping (NewTabPageViewController) -> Void = { _ in }) {
         let dependencies = newTabPageDependencies
         let controller = NewTabPageViewController(
             isFocussedState: true,
@@ -504,10 +534,10 @@ class SuggestionTrayViewController: UIViewController {
             controller.setSectionTitle(pendingFavoritesSectionTitle)
         }
 
+        newTabPage = controller
         install(controller: controller,
                 animated: animated,
-                completion: onInstall)
-        newTabPage = controller
+                completion: { onInstall(controller) })
     }
     
     private func canDisplayAutocompleteSuggestions(forQuery query: String, animated: Bool) -> Bool {
@@ -730,31 +760,54 @@ class SuggestionTrayViewController: UIViewController {
         }
     }
 
-    private func removeAutocomplete(animated: Bool) {
+    private func removeAutocomplete(animated: Bool, completion: @escaping () -> Void = {}) {
+        var removals = [(controller: UIViewController, animated: Bool)]()
         if let popoverController = popoverSearchController {
             popoverController.tearDown()
-            removeController(popoverController, animated: animated)
+            removals.append((popoverController, animated))
             popoverSearchController = nil
             popoverSearchSource = nil
         }
-        guard let controller = autocompleteController else { return }
-        removeController(controller, animated: deferAutocompleteReveal ? false : animated)
-        autocompleteController = nil
-        pendingDeferredAutocompleteReveal = false
+        if let autocompleteController {
+            removals.append((autocompleteController, deferAutocompleteReveal ? false : animated))
+            self.autocompleteController = nil
+            pendingDeferredAutocompleteReveal = false
+        }
+
+        guard !removals.isEmpty else {
+            completion()
+            return
+        }
+
+        var remainingRemovalCount = removals.count
+        for removal in removals {
+            removeController(removal.controller, animated: removal.animated) {
+                remainingRemovalCount -= 1
+                if remainingRemovalCount == 0 {
+                    completion()
+                }
+            }
+        }
     }
 
     private func removeNewTabPage(animated: Bool) {
         guard let controller = newTabPage else { return }
-        removeController(controller, animated: animated)
+        removeController(controller, animated: animated) {
+            controller.setPromoSurfaceRenderable(false)
+            controller.tearDownPromoSurface()
+        }
         newTabPage = nil
     }
 
-    private func removeController(_ controller: UIViewController, animated: Bool) {
+    private func removeController(_ controller: UIViewController,
+                                  animated: Bool,
+                                  completion: @escaping () -> Void = {}) {
         controller.willMove(toParent: nil)
 
         let finalize = {
             controller.view.removeFromSuperview()
             controller.removeFromParent()
+            completion()
         }
 
         if animated {

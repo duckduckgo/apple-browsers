@@ -41,6 +41,8 @@ final class UnifiedSuggestionsHost {
     private var cancellables = Set<AnyCancellable>()
     /// Built once on first `.favorites` render; NTP has a heavy init, so don't rebuild per body pass.
     private var cachedFavoritesController: NewTabPageViewController?
+    private var isSurfaceHostActive = false
+    private var isFavoritesContentResolved = false
 
     /// Single-host path only: the duck.ai surface's source/VM, attached lazily and detached on
     /// disappear (mirrors the legacy per-host lifecycle). Nil on the old single-surface path.
@@ -49,6 +51,7 @@ final class UnifiedSuggestionsHost {
     private func memoizedFavoritesController() -> NewTabPageViewController? {
         if let cachedFavoritesController { return cachedFavoritesController }
         cachedFavoritesController = config.favoritesProvider()
+        updateFavoritesPromoSurfaceActivity()
         return cachedFavoritesController
     }
 
@@ -82,7 +85,16 @@ final class UnifiedSuggestionsHost {
         viewModel.$content
             .removeDuplicates()
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in self?.onContentChanged?() }
+            .sink { [weak self] content in
+                guard let self else { return }
+                if case .favorites = content {
+                    isFavoritesContentResolved = true
+                } else {
+                    isFavoritesContentResolved = false
+                }
+                updateFavoritesPromoSurfaceActivity()
+                onContentChanged?()
+            }
             .store(in: &cancellables)
 
         let view = UnifiedSuggestionsView(
@@ -113,6 +125,7 @@ final class UnifiedSuggestionsHost {
     /// Fire tabs render the fire empty state instead of the Dax logo for the empty (`.logo`) state.
     func setIsFireTab(_ value: Bool) {
         viewModel.setFireTab(value)
+        updateFavoritesPromoSurfaceActivity()
     }
 
     /// iPhone landscape suppresses the empty state (no room) — matches the unfocused NTP.
@@ -134,6 +147,11 @@ final class UnifiedSuggestionsHost {
     /// Resets the dismiss/morph state on each focus.
     func prepareForActivation() {
         viewModel.prepareForActivation()
+    }
+
+    func setPromoSurfaceHostActive(_ isActive: Bool) {
+        isSurfaceHostActive = isActive
+        updateFavoritesPromoSurfaceActivity()
     }
 
     func setAdditionalTopInset(_ inset: CGFloat) {
@@ -199,6 +217,11 @@ final class UnifiedSuggestionsHost {
     }
 
     func tearDown() {
+        isSurfaceHostActive = false
+        updateFavoritesPromoSurfaceActivity()
+        let favoritesController = cachedFavoritesController
+        favoritesController?.tearDownPromoSurface()
+        cachedFavoritesController = nil
         cancellables.removeAll()
         onContentChanged = nil
         config.source.tearDown()
@@ -218,5 +241,13 @@ final class UnifiedSuggestionsHost {
             viewModel: viewModel,
             isAddressBarAtBottom: isAddressBarAtBottom,
             favoritesProvider: { [weak self] in self?.memoizedFavoritesController() })
+    }
+
+    private func updateFavoritesPromoSurfaceActivity() {
+        let isActive = isSurfaceHostActive
+            && isFavoritesContentResolved
+            && !viewModel.isFireTab
+
+        cachedFavoritesController?.setPromoSurfaceRenderable(isActive)
     }
 }

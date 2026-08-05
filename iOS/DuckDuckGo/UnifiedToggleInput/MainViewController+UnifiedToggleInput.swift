@@ -877,6 +877,7 @@ extension MainViewController {
         )
 
         if renderState.isContentVisible {
+            newTabPageViewController?.setPromoSurfaceActive(false)
             coordinator.contentViewController.setActive(true)
             coordinator.syncContentInputMode(renderState.contentInputMode, animated: false)
             coordinator.pushContentInsets()
@@ -885,6 +886,7 @@ extension MainViewController {
         } else {
             coordinator.contentViewController.setActive(false)
             viewCoordinator.hideUnifiedInputContent()
+            newTabPageViewController?.setPromoSurfaceActive(viewCoordinator.suggestionTrayContainer.isHidden)
         }
 
         if isOnAITab {

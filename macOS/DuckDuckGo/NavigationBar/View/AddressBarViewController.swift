@@ -708,7 +708,6 @@ final class AddressBarViewController: NSViewController {
 
     private func updateView() {
         let colorsProvider = theme.colorsProvider
-        let isAddressBarEmpty = addressBarTextField.stringValue.isEmpty
 
         switch selectionState {
         case .activeWithAIChat:
@@ -725,10 +724,15 @@ final class AddressBarViewController: NSViewController {
             addressBarTextField.isHidden = false
             passiveTextField.isHidden = true
         case .active, .inactive, .inactiveWithAIChat:
-            let isPassiveTextFieldHidden = selectionState.isSelected || mode.isEditing && !isAddressBarEmpty
+            let isPassiveTextFieldHidden = themeManager.isAppRebranded
+                ? (selectionState.isSelected || (mode.isEditing && !addressBarTextField.stringValue.isEmpty))
+                : (selectionState.isSelected || mode.isEditing)
+
             addressBarTextField.isHidden = !isPassiveTextFieldHidden
             passiveTextField.isHidden = isPassiveTextFieldHidden
         }
+
+        refreshPlaceholderAppearance()
 
         // Workaround for macOS 26.0 NSTextFieldSimpleLabel rendering bug.
         // The internal labels get `alpha = 0` when the text field is hidden; un-hiding the field (e.g. transitioning
@@ -1388,7 +1392,6 @@ extension AddressBarViewController: ThemeUpdateListening {
     func applyThemeStyle(theme: ThemeStyleProviding) {
         refreshAddressBarAppearance(nil)
         refreshSuggestionsAppearance()
-        refreshPlaceholderAppearance()
         updateView()
     }
 }

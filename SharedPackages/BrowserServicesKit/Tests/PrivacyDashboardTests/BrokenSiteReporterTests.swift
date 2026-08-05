@@ -171,7 +171,22 @@ final class BrokenSiteReporterTests: XCTestCase {
         waitForExpectations(timeout: 3)
     }
 
-    private func makeReport(cookieConsentInfo: CookieConsentInfo?) -> BrokenSiteReport {
+#if os(iOS)
+    func testWhenReportIsAfterTabTerminationThenParameterIsIncluded() {
+        let report = makeReport(cookieConsentInfo: nil, isAfterTabTermination: true)
+
+        XCTAssertEqual(report.requestParameters["isAfterTabTermination"], "true")
+    }
+
+    func testWhenReportIsNotAfterTabTerminationThenParameterIsNotIncluded() {
+        let report = makeReport(cookieConsentInfo: nil)
+
+        XCTAssertNil(report.requestParameters["isAfterTabTermination"])
+    }
+#endif
+
+    private func makeReport(cookieConsentInfo: CookieConsentInfo?,
+                            isAfterTabTermination: Bool = false) -> BrokenSiteReport {
 #if os(iOS)
         BrokenSiteReport(siteUrl: URL(string: "https://duckduckgo.com")!,
                          category: "test",
@@ -201,7 +216,8 @@ final class BrokenSiteReporterTests: XCTestCase {
                          debugFlags: "",
                          privacyExperiments: "experiment1:control,experiment2:treatment",
                          isPirEnabled: nil,
-                         isForceDarkModeEnabled: nil)
+                         isForceDarkModeEnabled: nil,
+                         isAfterTabTermination: isAfterTabTermination)
 #else
         BrokenSiteReport(siteUrl: URL(string: "https://duckduckgo.com")!,
                          category: "test",

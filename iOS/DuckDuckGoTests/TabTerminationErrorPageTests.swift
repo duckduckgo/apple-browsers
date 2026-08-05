@@ -78,8 +78,11 @@ final class TabTerminationErrorPageTests: XCTestCase {
     }
 
     func testWhenFormFactorIsSupportedThenErrorPageIsShown() {
+        let json = "{\"terminationCount\": 1, \"supportedFormFactors\": [\"tablet\"]}"
+        XCTAssertEqual(makeSettings(json: json).supportedFormFactors, [.tablet])
         let detector = makeDetector(
-            json: "{\"terminationCount\": 1, \"supportedFormFactors\": [\"tablet\"]}",
+            terminationCount: 1,
+            supportedFormFactors: [.tablet],
             formFactor: .tablet)
 
         XCTAssertTrue(detector.shouldShowErrorPage(forTabID: "tab"))
@@ -87,7 +90,8 @@ final class TabTerminationErrorPageTests: XCTestCase {
 
     func testWhenFormFactorIsNotSupportedThenErrorPageIsNotShown() {
         let detector = makeDetector(
-            json: "{\"terminationCount\": 1, \"supportedFormFactors\": [\"phone\"]}",
+            terminationCount: 1,
+            supportedFormFactors: [.phone],
             formFactor: .tablet)
 
         XCTAssertFalse(detector.shouldShowErrorPage(forTabID: "tab"))
@@ -163,19 +167,26 @@ final class TabTerminationErrorPageTests: XCTestCase {
     }
 
     private func makeDetector(featureEnabled: Bool = true,
-                              json: String? = nil,
+                              terminationCount: Int = 3,
+                              timeWindow: TimeInterval = 60,
+                              supportedFormFactors: Set<TabTerminationErrorPageSettings.FormFactor> = [.phone, .tablet],
                               formFactor: TabTerminationErrorPageSettings.FormFactor = .phone) -> TabTerminationErrorPageDetector {
-        let configuration = MockPrivacyConfiguration()
-        configuration.subfeatureSettings = json
-        let manager = MockPrivacyConfigurationManager()
-        manager.privacyConfig = configuration
         let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: featureEnabled ? [.tabTerminationErrorPage] : [])
         return TabTerminationErrorPageDetector(
             featureFlagger: featureFlagger,
-            privacyConfigurationManager: manager,
+            settings: MockTabTerminationErrorPageSettings(
+                terminationCount: terminationCount,
+                timeWindow: timeWindow,
+                supportedFormFactors: supportedFormFactors),
             formFactor: formFactor,
             date: { self.date })
     }
+}
+
+private struct MockTabTerminationErrorPageSettings: TabTerminationErrorPageSettingsProviding {
+    let terminationCount: Int
+    let timeWindow: TimeInterval
+    let supportedFormFactors: Set<TabTerminationErrorPageSettings.FormFactor>
 }
 
 private final class MockTabTerminationErrorPagePixelFiring: PixelFiring {

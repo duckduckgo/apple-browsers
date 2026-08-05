@@ -306,6 +306,7 @@ extension PrivacyDashboardViewController {
         let isForceDarkModeEnabled: Bool?
         let autoplayBlockingMode: String?
         let isAfterSuppressedXSafariRedirect: Bool
+        let isAfterTabTermination: Bool
         let loadedWebExtensions: String?
         let adBlockingExtensionScriptletsVersion: String?
         let cpmExtensionLoaded: Bool
@@ -390,6 +391,7 @@ extension PrivacyDashboardViewController {
                                 isForceDarkModeEnabled: breakageAdditionalInfo.isForceDarkModeEnabled,
                                 autoplayBlockingMode: breakageAdditionalInfo.autoplayBlockingMode,
                                 isAfterSuppressedXSafariRedirect: breakageAdditionalInfo.isAfterSuppressedXSafariRedirect,
+                                isAfterTabTermination: breakageAdditionalInfo.isAfterTabTermination,
                                 breakageData: breakageData,
                                 loadedWebExtensions: breakageAdditionalInfo.loadedWebExtensions,
                                 adBlockingExtensionScriptletsVersion: breakageAdditionalInfo.adBlockingExtensionScriptletsVersion)

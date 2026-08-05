@@ -272,6 +272,11 @@
                 "description": "Whether the page was loaded after a suppressed x-safari-https redirect. Only sent when true."
             },
             {
+                "key": "isAfterTabTermination",
+                "type": "boolean",
+                "description": "Whether the report is associated with the tab termination error page. Only sent when true."
+            },
+            {
                 "key": "siteType",
                 "type": "string",
                 "description": "Whether the site was loaded in desktop or mobile mode",
@@ -644,6 +649,11 @@
                 "key": "isAfterSuppressedXSafariRedirect",
                 "type": "boolean",
                 "description": "Whether the page was loaded after a suppressed x-safari-https redirect. Only sent when true."
+            },
+            {
+                "key": "isAfterTabTermination",
+                "type": "boolean",
+                "description": "Whether the report is associated with the tab termination error page. Only sent when true."
             },
             {
                 "key": "siteType",

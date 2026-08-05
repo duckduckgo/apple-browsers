@@ -149,6 +149,10 @@ class TabViewController: UIViewController {
         case tabTermination
     }
     private var actionableErrorPage: ActionableErrorPage?
+    private var isAfterTabTermination: Bool {
+        guard case .tabTermination = actionableErrorPage else { return false }
+        return true
+    }
     private var defaultErrorHeaderText = ""
     lazy var errorActionButton: UIButton = {
         let button = UIButton(type: .system)
@@ -1936,6 +1940,7 @@ class TabViewController: UIViewController {
                                                                      isForceDarkModeEnabled: darkReaderFeatureSettings.isForceDarkModeEnabled,
                                                                      autoplayBlockingMode: autoplaySettings.currentAutoplayBlockingMode.rawValue,
                                                                      isAfterSuppressedXSafariRedirect: safariRedirectHandler.isAfterSuppressedXSafariRedirect(for: currentURL),
+                                                                     isAfterTabTermination: isAfterTabTermination,
                                                                      loadedWebExtensions: loadedWebExtensions,
                                                                      adBlockingExtensionScriptletsVersion: adBlockingScriptletsVersion,
                                                                      cpmExtensionLoaded: cpmExtensionLoaded,

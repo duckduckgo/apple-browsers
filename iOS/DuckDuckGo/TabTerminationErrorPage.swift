@@ -72,7 +72,13 @@ enum TabTerminationErrorPagePixel: PixelKitEvent, PixelKitEventWithCustomPrefix 
     var namePrefix: String { "" }
 }
 
-struct TabTerminationErrorPageSettings {
+protocol TabTerminationErrorPageSettingsProviding {
+    var terminationCount: Int { get }
+    var timeWindow: TimeInterval { get }
+    var supportedFormFactors: Set<TabTerminationErrorPageSettings.FormFactor> { get }
+}
+
+struct TabTerminationErrorPageSettings: TabTerminationErrorPageSettingsProviding {
 
     enum FormFactor: String, CaseIterable {
         case phone
@@ -146,17 +152,28 @@ protocol TabTerminationErrorPageDetecting {
 final class TabTerminationErrorPageDetector: TabTerminationErrorPageDetecting {
 
     private let featureFlagger: FeatureFlagger
-    private let settings: TabTerminationErrorPageSettings
+    private let settings: any TabTerminationErrorPageSettingsProviding
     private let formFactor: TabTerminationErrorPageSettings.FormFactor
     private let date: () -> Date
     private var terminationDatesByTabID: [String: [Date]] = [:]
 
+    convenience init(featureFlagger: FeatureFlagger,
+                     privacyConfigurationManager: PrivacyConfigurationManaging,
+                     date: @escaping () -> Date = Date.init) {
+        let formFactor: TabTerminationErrorPageSettings.FormFactor = UIDevice.current.userInterfaceIdiom == .pad ? .tablet : .phone
+        self.init(
+            featureFlagger: featureFlagger,
+            settings: TabTerminationErrorPageSettings(privacyConfigurationManager: privacyConfigurationManager),
+            formFactor: formFactor,
+            date: date)
+    }
+
     init(featureFlagger: FeatureFlagger,
-         privacyConfigurationManager: PrivacyConfigurationManaging,
-         formFactor: TabTerminationErrorPageSettings.FormFactor = UIDevice.current.userInterfaceIdiom == .pad ? .tablet : .phone,
+         settings: any TabTerminationErrorPageSettingsProviding,
+         formFactor: TabTerminationErrorPageSettings.FormFactor,
          date: @escaping () -> Date = Date.init) {
         self.featureFlagger = featureFlagger
-        self.settings = TabTerminationErrorPageSettings(privacyConfigurationManager: privacyConfigurationManager)
+        self.settings = settings
         self.formFactor = formFactor
         self.date = date
     }

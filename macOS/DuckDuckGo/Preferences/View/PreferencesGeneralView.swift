@@ -347,7 +347,7 @@ extension Preferences {
                             TextMenuItemCaption(UserText.autoplayCaption)
                         }
                     }
-                    .id(PreferencesSectionAnchor.permissions)
+                    .id(PreferencesScrollAnchor.permissions)
                 }
             }
             .sheet(isPresented: isPresentingAddToDockDemoVideo) {

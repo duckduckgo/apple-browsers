@@ -47,7 +47,7 @@ final class PreferencesSidebarModel: ObservableObject {
 
     @Published private(set) var sections: [PreferencesSection] = []
 
-    @Published private(set) var scrollTarget: PreferencesSectionAnchor?
+    @Published private(set) var scrollTarget: PreferencesScrollAnchor?
 
     @Published var selectedTabIndex: Int = 0
     @Published private(set) var selectedPane: PreferencePaneIdentifier = .defaultBrowser {
@@ -570,7 +570,7 @@ final class PreferencesSidebarModel: ObservableObject {
     func select(_ destination: PreferencesDestination) {
         selectPane(destination.pane)
 
-        guard let anchor = destination.anchor, destination.pane == selectedPane else { return }
+        guard let anchor = destination.scrollAnchor, destination.pane == selectedPane else { return }
 
         scrollTarget = anchor
     }

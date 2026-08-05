@@ -135,7 +135,7 @@ enum Preferences {
             .environment(\.designSystemPalette, themeManager.designColorPalette)
         }
 
-        private func scroll(_ proxy: ScrollViewProxy, to anchor: PreferencesSectionAnchor) {
+        private func scroll(_ proxy: ScrollViewProxy, to anchor: PreferencesScrollAnchor) {
             DispatchQueue.main.async {
                 proxy.scrollTo(anchor, anchor: nil)
                 model.resetScrollRequest()

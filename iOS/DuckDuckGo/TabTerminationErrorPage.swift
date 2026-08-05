@@ -21,6 +21,7 @@ import Foundation
 import PixelKit
 import PrivacyConfig
 import UIKit
+import FeatureFlags_iOS
 
 protocol TabTerminationErrorPageInstrumenting {
     func errorPageShown()

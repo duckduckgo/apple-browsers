@@ -21,6 +21,7 @@ import SwiftUI
 import VPN
 import Subscription
 import Core
+import FeatureFlags_iOS
 
 struct NetworkProtectionRootView: View {
 

@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import FeatureFlags_iOS
 import Persistence
 import PersistenceTestingUtils
 import PixelKit

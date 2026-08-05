@@ -18,7 +18,7 @@
 
 import AIChat
 import BrowserServicesKit
-import FeatureFlags
+import FeatureFlags_macOS
 import PixelKit
 import PixelKitTestingUtilities
 import PrivacyConfig

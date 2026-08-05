@@ -21,7 +21,7 @@ import Common
 import FoundationExtensions
 import Combine
 import DDGSync
-import FeatureFlags
+import FeatureFlags_macOS
 import SwiftUI
 import Networking
 import Subscription

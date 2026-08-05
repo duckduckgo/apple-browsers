@@ -21,15 +21,15 @@
 import PackageDescription
 
 let package = Package(
-    name: "FeatureFlags",
+    name: "FeatureFlags-macOS",
     platforms: [
         .macOS("12.3")
     ],
     products: [
         // Products define the executables and libraries a package produces, making them visible to other packages.
         .library(
-            name: "FeatureFlags",
-            targets: ["FeatureFlags"]),
+            name: "FeatureFlags-macOS",
+            targets: ["FeatureFlags-macOS"]),
     ],
     dependencies: [
         .package(path: "../../../SharedPackages/BrowserServicesKit"),
@@ -38,10 +38,11 @@ let package = Package(
         // Targets are the basic building blocks of a package, defining a module or a test suite.
         // Targets can depend on other targets in this package and products from dependencies.
         .target(
-            name: "FeatureFlags",
+            name: "FeatureFlags-macOS",
             dependencies: [
                 .product(name: "PrivacyConfig", package: "BrowserServicesKit")
             ],
+            path: "Sources/FeatureFlags",
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
             ]

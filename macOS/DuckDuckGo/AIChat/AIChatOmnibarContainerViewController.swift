@@ -1768,12 +1768,14 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     }
 
     @objc private func modelPickerButtonClicked() {
+        // Resolved once and passed on: `modelPickerItems` records a free-trial badge impression, so
+        // asking for it twice per open would burn through the badge's view cap at double speed.
         let items = omnibarController.modelPickerItems(selectedModelId: selectedModelId)
         // Only a picker that actually shows a gated row is a subscription-funnel impression.
         if items.contains(where: { if case .gatedModel = $0 { return true } else { return false } }) {
             omnibarController.pixelHandler.fire(.modelPickerShown)
         }
-        let menu = buildModelPickerMenu()
+        let menu = buildModelPickerMenu(items: items)
         // Align menu's trailing edge with button's trailing edge, with a small gap below
         let x = modelPickerButton.bounds.width - menu.size.width
         popUp(menu, at: NSPoint(x: x, y: -5), in: modelPickerButton)
@@ -1809,12 +1811,12 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             }
     }
 
-    private func buildModelPickerMenu() -> NSMenu {
+    private func buildModelPickerMenu(items: [AIChatModelPickerItem]) -> NSMenu {
         let menu = NSMenu()
         menu.autoenablesItems = false
 
         // The controller decides what the menu shows; this only maps each item to an NSMenuItem.
-        for item in omnibarController.modelPickerItems(selectedModelId: selectedModelId) {
+        for item in items {
             switch item {
             case .model(let model, let badge, let isSelected):
                 menu.addItem(modelRow(for: model, trailingText: badge, isSelected: isSelected,

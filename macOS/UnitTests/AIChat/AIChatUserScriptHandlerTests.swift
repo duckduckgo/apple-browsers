@@ -618,8 +618,8 @@ struct AIChatUserScriptHandlerTests {
         #expect(pixelFiring.expectedFireCalls == pixelFiring.actualFireCalls)
     }
 
-    /// Pins the wire-visible names, which must match the keys in aichat_pixels.json5. The firing tests
-    /// build expected and actual from the same enum, so they can't catch a wrong name on their own.
+    // Pins the names against the aichat_pixels.json5 keys; the firing tests build both sides from
+    // the same enum, so they can't catch a wrong name.
     @available(iOS 16, macOS 13, *)
     @Test("Modal funnel pixels use the agreed names and carry the origin parameter", .timeLimit(.minutes(1)), arguments: [
         (AIChatPixel.aiChatSubscriptionFunnelSubscribeModalImpression(origin: "funnel_duckai_macos__freelimit"),

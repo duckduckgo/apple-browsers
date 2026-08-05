@@ -767,10 +767,10 @@ struct UserText {
     static let aiChatAttachMenuTabsHeader = NotLocalizedString("aichat.attach-menu.tabs-header", value: "Tabs", comment: "Section header inside the AI chat omnibar add-attachment menu listing the user's currently open browser tabs")
     static let aiChatAttachMenuRecentTabsHeader = NSLocalizedString("aichat.attach-menu.recent-tabs-header", value: "Recent Tabs", comment: "Section header inside the AI chat omnibar add-attachment menu listing the user's currently open browser tabs")
     static let aiChatAttachMenuNoOpenTabs = NSLocalizedString("aichat.attach-menu.no-open-tabs", value: "No page content available", comment: "Placeholder shown inside the AI chat omnibar add-attachment menu when none of the user's open tabs can be attached (e.g. all are filtered out as NTP / duck.ai / DDG homepage). Phrased as 'no page content' rather than 'no open tabs' because tabs may be open but their content isn't attachable.")
-    static let aiChatAttachMenuAttachTabs = NotLocalizedString("aichat.attach-menu.attach-tabs", value: "Attach Tabs", comment: "Item in the AI chat omnibar add-attachment menu that opens a modal for selecting multiple open tabs to attach")
-    static let aiChatAttachTabsModalSearchPlaceholder = NotLocalizedString("aichat.attach-tabs-modal.search-placeholder", value: "Search tabs", comment: "Placeholder in the search field of the AI chat attach-tabs modal, filters the list of open tabs")
-    static let aiChatAttachTabsModalAttachButton = NotLocalizedString("aichat.attach-tabs-modal.attach", value: "Attach", comment: "Confirm button in the AI chat attach-tabs modal, attaches the selected tabs")
-    static let aiChatTabPickerCurrentTabSuffix = NSLocalizedString("aichat.tab-picker.current-tab-suffix", value: "(Current Tab)", comment: "Trailing badge in AI chat tab pickers (omnibar attach menu and the @-mention picker) next to the user's currently active browser tab")
+    static let aiChatAttachMenuAttachTabs = NotLocalizedString("aichat.attach-menu.attach-tabs", value: "Add Tabs", comment: "Item in the AI chat omnibar add-attachment menu that opens a modal for selecting multiple open tabs to attach")
+    static let aiChatAttachTabsModalSearchPlaceholder = NotLocalizedString("aichat.attach-tabs-modal.search-placeholder", value: "Search", comment: "Placeholder in the search field of the AI chat add-tabs modal, filters the list of open tabs")
+    static let aiChatAttachTabsModalAttachButton = NotLocalizedString("aichat.attach-tabs-modal.attach", value: "Add", comment: "Confirm button in the AI chat add-tabs modal, adds the selected tabs")
+    static let aiChatTabPickerCurrentTabSuffix = NSLocalizedString("aichat.tab-picker.current-tab-suffix", value: "• Current Tab", comment: "Trailing badge in AI chat tab pickers (omnibar add-attachment menu, add-tabs modal and the @-mention picker) next to the user's currently active browser tab. The leading bullet separates it from the tab title.")
     static let aiChatMentionPickerNoMatches = NSLocalizedString("aichat.mention-picker.no-matches", value: "No matching tabs", comment: "Placeholder shown inside the @-mention tab picker when the typed filter doesn't match any open browser tab")
     static let aiChatToolsButtonLabel = NSLocalizedString("aichat.tools-button.label", value: "Tools", comment: "Label for the tools dropdown button in AI chat omnibar")
     static let aiChatImageGenButtonLabel = NSLocalizedString("aichat.image-gen-button.label", value: "Create Image", comment: "Label for the image generation toggle button in AI chat omnibar")
@@ -887,7 +887,7 @@ struct UserText {
         return String(format: message, maxFilesPerConversation)
     }
     static func aiChatAttachmentTabCountLimit(maxTabs: Int) -> String {
-        let message = NotLocalizedString("aichat.attachment.tab.count.limit", value: "You can only attach %d tabs at a time.", comment: "Error message displayed when the user has attached more open tabs than are allowed. Parameter is the maximum number of tabs.")
+        let message = NotLocalizedString("aichat.attachment.tab.count.limit", value: "You can only add %d tabs at a time.", comment: "Error message displayed when the user has added more open tabs than are allowed. Parameter is the maximum number of tabs.")
         return String(format: message, maxTabs)
     }
     static let aiChatAttachmentPromptTooLong = NSLocalizedString("aichat.attachment.prompt.too.long", value: "That message is too long to send with attachments.", comment: "Error message shown when an AI chat message exceeds the allowed length while attachments are included")

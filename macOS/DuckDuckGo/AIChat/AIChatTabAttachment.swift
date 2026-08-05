@@ -45,7 +45,7 @@ extension AIChatTabAttachment: Equatable {
     }
 }
 
-/// Resolves what the "Attach Tabs" modal's confirmed selection means for the current attachments.
+/// Resolves what the "Add Tabs" modal's confirmed selection means for the current attachments.
 /// Removals are scoped to the tabs the modal actually offered, so an attachment that dropped out of
 /// the picker (navigated to an excluded URL, closed, moved windows) survives an untouched confirm.
 enum AIChatTabSelectionDiff {

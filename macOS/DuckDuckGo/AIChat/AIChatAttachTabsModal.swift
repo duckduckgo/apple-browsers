@@ -27,12 +27,14 @@ struct AIChatAttachTabsModal: ModalView {
         static let rowHeight: CGFloat = 22
         static let rowSpacing: CGFloat = 4
         static let maxListHeight: CGFloat = 234
+        static let searchFieldHeight: CGFloat = 32
         /// Row inset wide enough that titles and the checkbox hit area clear the scroller lane.
         static let listTrailingInset: CGFloat = 34
     }
 
     @ObservedObject private var themeManager: ThemeManager = NSApp.delegateTyped.themeManager
     @Environment(\.dismiss) private var dismiss
+    @FocusState private var isSearchFocused: Bool
 
     private let tabs: [AIChatTabAttachment]
     private let currentTabId: String?
@@ -61,30 +63,24 @@ struct AIChatAttachTabsModal: ModalView {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             Text(UserText.aiChatAttachMenuAttachTabs)
-                .font(.system(size: 13).weight(.semibold))
+                .font(.system(size: 16).weight(.bold))
                 .foregroundColor(Color(designSystemColor: .textPrimary))
                 .padding(.horizontal, 20)
-                .padding(.vertical, 14)
+                .padding(.top, 20)
+                .padding(.bottom, 14)
+
+            searchField
+                .padding(.horizontal, 20)
 
             Divider()
-
-            TextField(UserText.aiChatAttachTabsModalSearchPlaceholder, text: $searchQuery)
-                .textFieldStyle(.roundedBorder)
-                .padding(.horizontal, 20)
                 .padding(.top, 14)
-
-            Text(UserText.aiChatAttachMenuTabsHeader)
-                .font(.system(size: 10).weight(.semibold))
-                .foregroundColor(Color(designSystemColor: .textSecondary))
-                .padding(.horizontal, 20)
-                .padding(.top, 14)
-                .padding(.bottom, 6)
+                .padding(.bottom, 14)
 
             let visibleTabs = filteredTabs
             ScrollView {
                 VStack(alignment: .leading, spacing: Layout.rowSpacing) {
                     if visibleTabs.isEmpty {
-                        Text(UserText.aiChatAttachMenuNoOpenTabs)
+                        Text(searchQuery.isEmpty ? UserText.aiChatAttachMenuNoOpenTabs : UserText.aiChatMentionPickerNoMatches)
                             .font(.system(size: 13))
                             .foregroundColor(Color(designSystemColor: .textSecondary))
                             .frame(height: Layout.rowHeight)
@@ -98,6 +94,8 @@ struct AIChatAttachTabsModal: ModalView {
                 .padding(.trailing, Layout.listTrailingInset)
             }
             .frame(height: min(CGFloat(max(tabs.count, 1)) * (Layout.rowHeight + Layout.rowSpacing), Layout.maxListHeight))
+
+            Divider()
 
             HStack(spacing: 8) {
                 Button {
@@ -125,6 +123,44 @@ struct AIChatAttachTabsModal: ModalView {
         }
         .frame(width: 340)
         .background(Color(designSystemColor: .surfaceSecondary, palette: themeManager.designColorPalette))
+    }
+
+    private var searchField: some View {
+        HStack(spacing: 6) {
+            Image(nsImage: DesignSystemImages.Glyphs.Size16.findSearch)
+                .renderingMode(.template)
+                .foregroundColor(Color(designSystemColor: .iconsSecondary))
+
+            TextField(UserText.aiChatAttachTabsModalSearchPlaceholder, text: $searchQuery)
+                .textFieldStyle(.plain)
+                .font(.system(size: 13))
+                .focused($isSearchFocused)
+
+            if !searchQuery.isEmpty {
+                Button {
+                    searchQuery = ""
+                } label: {
+                    Image(nsImage: DesignSystemImages.Glyphs.Size12.closeSmall)
+                        .renderingMode(.template)
+                        .foregroundColor(Color(designSystemColor: .iconsSecondary))
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(UserText.clear)
+            }
+        }
+        .padding(.horizontal, 8)
+        .frame(height: Layout.searchFieldHeight)
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(Color(designSystemColor: .surfacePrimary, palette: themeManager.designColorPalette))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(Color(designSystemColor: isSearchFocused ? .accentPrimary : .controlsBorderPrimary,
+                              palette: themeManager.designColorPalette),
+                        lineWidth: isSearchFocused ? 2 : 1)
+        )
+        .onTapGesture { isSearchFocused = true }
     }
 
     private func row(for tab: AIChatTabAttachment) -> some View {

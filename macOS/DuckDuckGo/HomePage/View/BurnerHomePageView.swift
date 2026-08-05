@@ -18,6 +18,7 @@
 
 import Foundation
 import SwiftUI
+import DesignResourcesKit
 
 struct BurnerHomePageView: View {
 
@@ -27,6 +28,10 @@ struct BurnerHomePageView: View {
     enum Const {
         static let verticalPadding = 40.0
         static let contentGap = 20.0
+
+        /// Where the content's vertical center sits, as a fraction of the available height.
+        static let verticalCenterRatio = 0.40
+        static let verticalCenterOffsetRatio = 1 - 2 * verticalCenterRatio
     }
 
     @ObservedObject var promoViewModel: SubscriptionPromoViewModel
@@ -46,7 +51,7 @@ struct BurnerHomePageView: View {
                         RoundedRectangle(cornerRadius: 12)
                             .stroke(Color.homeFavoritesGhost, style: StrokeStyle(lineWidth: 1.0))
                             .background(Color(designSystemColor: .surfaceTertiary))
-                            .cornerRadius(12)
+                            .cornerRadius(DesignSystemRebrand.isAppRebranded() ? 24 : 12)
 
                         VStack(alignment: .leading, spacing: 16) {
                             HStack {
@@ -80,6 +85,7 @@ struct BurnerHomePageView: View {
                     }
                 }
                 .padding(.vertical, Const.verticalPadding)
+                .padding(.bottom, geometry.size.height * Const.verticalCenterOffsetRatio)
                 .frame(maxWidth: .infinity, minHeight: geometry.size.height)
             }
             .background(backgroundColor)

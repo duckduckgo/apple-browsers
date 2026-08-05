@@ -32,7 +32,8 @@ final class ScopedAccessCredentialManagerTests: XCTestCase {
         let manager = ScopedAccessCredentialManager(endpoints: endpoints,
                                                     api: api,
                                                     crypter: CryptingMock(),
-                                                    accountInfoKeyFactory: AccountInfoKeyFactoryMock())
+                                                    accountInfoKeyFactory: AccountInfoKeyFactoryMock(),
+                                                    canWriteUnifiedDeviceList: { true })
 
         let scopedPassword = Data(repeating: 8, count: 32)
         let account = makeAccount(primaryKey: Data((0..<32).map(UInt8.init)))
@@ -68,7 +69,8 @@ final class ScopedAccessCredentialManagerTests: XCTestCase {
         let manager = ScopedAccessCredentialManager(endpoints: endpoints,
                                                     api: api,
                                                     crypter: crypter,
-                                                    accountInfoKeyFactory: AccountInfoKeyFactoryMock())
+                                                    accountInfoKeyFactory: AccountInfoKeyFactoryMock(),
+                                                    canWriteUnifiedDeviceList: { true })
 
         let scopedPassword = Data((32..<64).map(UInt8.init))
         let account = makeAccount(primaryKey: Data((0..<32).map(UInt8.init)))
@@ -105,7 +107,8 @@ final class ScopedAccessCredentialManagerTests: XCTestCase {
         let manager = ScopedAccessCredentialManager(endpoints: endpoints,
                                                     api: api,
                                                     crypter: crypter,
-                                                    accountInfoKeyFactory: AccountInfoKeyFactoryMock())
+                                                    accountInfoKeyFactory: AccountInfoKeyFactoryMock(),
+                                                    canWriteUnifiedDeviceList: { true })
 
         let scopedPassword = Data((32..<64).map(UInt8.init))
         let account = makeAccount(primaryKey: Data((0..<32).map(UInt8.init)))
@@ -135,7 +138,8 @@ final class ScopedAccessCredentialManagerTests: XCTestCase {
         let manager = ScopedAccessCredentialManager(endpoints: endpoints,
                                                     api: api,
                                                     crypter: CryptingMock(),
-                                                    accountInfoKeyFactory: AccountInfoKeyFactoryMock())
+                                                    accountInfoKeyFactory: AccountInfoKeyFactoryMock(),
+                                                    canWriteUnifiedDeviceList: { true })
         let account = makeAccount(primaryKey: Data((0..<32).map(UInt8.init)))
         api.fakeRequests[endpoints.accessCredentials] = makeFailingRequest(statusCode: 404)
 
@@ -150,7 +154,8 @@ final class ScopedAccessCredentialManagerTests: XCTestCase {
         let manager = ScopedAccessCredentialManager(endpoints: endpoints,
                                                     api: api,
                                                     crypter: CryptingMock(),
-                                                    accountInfoKeyFactory: AccountInfoKeyFactoryMock())
+                                                    accountInfoKeyFactory: AccountInfoKeyFactoryMock(),
+                                                    canWriteUnifiedDeviceList: { true })
         let account = makeAccount(primaryKey: Data((0..<32).map(UInt8.init)))
         api.fakeRequests[endpoints.keys] = makeFailingRequest(statusCode: 404)
 
@@ -172,7 +177,8 @@ final class ScopedAccessCredentialManagerTests: XCTestCase {
         let manager = ScopedAccessCredentialManager(endpoints: endpoints,
                                                     api: api,
                                                     crypter: crypter,
-                                                    accountInfoKeyFactory: AccountInfoKeyFactoryMock())
+                                                    accountInfoKeyFactory: AccountInfoKeyFactoryMock(),
+                                                    canWriteUnifiedDeviceList: { true })
 
         let accountPrimaryKey = Data((0..<32).map(UInt8.init))
         let scopedPassword = Data((32..<64).map(UInt8.init))
@@ -227,7 +233,8 @@ final class ScopedAccessCredentialManagerTests: XCTestCase {
         let manager = ScopedAccessCredentialManager(endpoints: endpoints,
                                                     api: api,
                                                     crypter: crypter,
-                                                    accountInfoKeyFactory: AccountInfoKeyFactoryMock())
+                                                    accountInfoKeyFactory: AccountInfoKeyFactoryMock(),
+                                                    canWriteUnifiedDeviceList: { true })
 
         let accountPrimaryKey = Data((0..<32).map(UInt8.init))
         let scopedPassword = Data((32..<64).map(UInt8.init))
@@ -271,7 +278,8 @@ final class ScopedAccessCredentialManagerTests: XCTestCase {
         let manager = ScopedAccessCredentialManager(endpoints: endpoints,
                                                     api: api,
                                                     crypter: crypter,
-                                                    accountInfoKeyFactory: AccountInfoKeyFactoryMock())
+                                                    accountInfoKeyFactory: AccountInfoKeyFactoryMock(),
+                                                    canWriteUnifiedDeviceList: { true })
 
         let account = makeAccount(primaryKey: Data((0..<32).map(UInt8.init)))
         let scopedPassword = Data((32..<64).map(UInt8.init))
@@ -308,6 +316,47 @@ final class ScopedAccessCredentialManagerTests: XCTestCase {
         XCTAssertEqual(decryptedPrivateKey, accountInfoPrivateKey)
     }
 
+    func testWhenCreatingThirdPartyCredentialWithUnifiedDeviceListWriteDisabledThenDoesNotRewrapAccountInfoKey() async throws {
+        let api = RemoteAPIRequestCreatingMock()
+        let endpoints = Endpoints(baseURL: Self.baseURL)
+        var crypter = CryptingMock()
+        crypter._extractLoginInfo = { recoveryKey in
+            ExtractedLoginInfo(userId: recoveryKey.userId,
+                               primaryKey: recoveryKey.primaryKey,
+                               passwordHash: Data([0xAB]),
+                               stretchedPrimaryKey: Data())
+        }
+        let manager = ScopedAccessCredentialManager(endpoints: endpoints,
+                                                    api: api,
+                                                    crypter: crypter,
+                                                    accountInfoKeyFactory: AccountInfoKeyFactoryMock(),
+                                                    canWriteUnifiedDeviceList: { false })
+
+        let account = makeAccount(primaryKey: Data((0..<32).map(UInt8.init)))
+        let scopedPassword = Data((32..<64).map(UInt8.init))
+        let aiChatKey = try makeNativeEncryptedProtectedKey(privateKey: Data("ai-chat-private-key".utf8),
+                                                           account: account,
+                                                           crypter: crypter)
+        let accountInfoKey = try makeNativeEncryptedProtectedKey(privateKey: Data("account-info-private-key".utf8),
+                                                                account: account,
+                                                                crypter: crypter,
+                                                                purpose: ProtectedKeyPurpose.accountInfo)
+        api.fakeRequests[endpoints.accessCredentials] = makeRequest(statusCode: 200, body: try accessCredentialsBody([]))
+        api.fakeRequests[endpoints.keys] = makeRequest(statusCode: 200, body: try protectedKeysBody([aiChatKey, accountInfoKey]))
+        api.fakeRequests[endpoints.accessCredential(SyncCredentialID.thirdParty)] = makeRequest(statusCode: 201)
+
+        _ = try await manager.ensureThirdPartyScopedPassword(for: account,
+                                                            purpose: "ai_chats",
+                                                            cachedScopedPassword: { scopedPassword })
+
+        let requestBody = try XCTUnwrap(api.createRequestCallArgs.last?.body)
+        let payload = try decodeJSONObject(requestBody)
+        let keys = try XCTUnwrap(payload["keys"] as? [[String: Any]])
+        XCTAssertEqual(keys.count, 1)
+        XCTAssertEqual(keys.first?["purpose"] as? String, "ai_chats")
+        XCTAssertNil(keys.first { $0["purpose"] as? String == ProtectedKeyPurpose.accountInfo })
+    }
+
     func testWhenCreatingThirdPartyScopedPasswordReturns409ThenRefetchesAndRecoversScopedPassword() async throws {
         let api = RemoteAPIRequestCreatingMock()
         let endpoints = Endpoints(baseURL: Self.baseURL)
@@ -321,7 +370,8 @@ final class ScopedAccessCredentialManagerTests: XCTestCase {
         let manager = ScopedAccessCredentialManager(endpoints: endpoints,
                                                     api: api,
                                                     crypter: crypter,
-                                                    accountInfoKeyFactory: AccountInfoKeyFactoryMock())
+                                                    accountInfoKeyFactory: AccountInfoKeyFactoryMock(),
+                                                    canWriteUnifiedDeviceList: { true })
 
         let accountPrimaryKey = Data((0..<32).map(UInt8.init))
         let localScopedPassword = Data((32..<64).map(UInt8.init))
@@ -365,7 +415,8 @@ final class ScopedAccessCredentialManagerTests: XCTestCase {
         let manager = ScopedAccessCredentialManager(endpoints: endpoints,
                                                     api: api,
                                                     crypter: crypter,
-                                                    accountInfoKeyFactory: AccountInfoKeyFactoryMock())
+                                                    accountInfoKeyFactory: AccountInfoKeyFactoryMock(),
+                                                    canWriteUnifiedDeviceList: { true })
 
         let accountPrimaryKey = Data((0..<32).map(UInt8.init))
         let scopedPassword = Data((32..<64).map(UInt8.init))
@@ -388,6 +439,51 @@ final class ScopedAccessCredentialManagerTests: XCTestCase {
         }
     }
 
+    func testWhenEnsuringAccountInfoProtectedKeysWithUnifiedDeviceListWriteDisabledThenDoesNotMakeNetworkRequests() async throws {
+        let api = RemoteAPIRequestCreatingMock()
+        let manager = ScopedAccessCredentialManager(endpoints: Endpoints(baseURL: Self.baseURL),
+                                                    api: api,
+                                                    crypter: CryptingMock(),
+                                                    accountInfoKeyFactory: AccountInfoKeyFactoryMock(),
+                                                    canWriteUnifiedDeviceList: { false })
+
+        let result = try await manager.ensureAccountInfoProtectedKeys(for: makeAccount(primaryKey: Data(repeating: 0x1, count: 32)))
+
+        XCTAssertTrue(result.isEmpty)
+        XCTAssertTrue(api.createRequestCallArgs.isEmpty)
+    }
+
+    func testWhenEnsuringAccountInfoWrappersWithDifferentKidsThenThrowsInvalidData() async throws {
+        let api = RemoteAPIRequestCreatingMock()
+        let endpoints = Endpoints(baseURL: Self.baseURL)
+        let manager = ScopedAccessCredentialManager(endpoints: endpoints,
+                                                    api: api,
+                                                    crypter: CryptingMock(),
+                                                    accountInfoKeyFactory: AccountInfoKeyFactoryMock(),
+                                                    canWriteUnifiedDeviceList: { true })
+        let storedKeys = [
+            makeProtectedKey(kid: "first-key",
+                             encryptedWith: SyncCredentialID.defaultCredential,
+                             purpose: ProtectedKeyPurpose.accountInfo),
+            makeProtectedKey(kid: "second-key",
+                             encryptedWith: SyncCredentialID.thirdParty,
+                             purpose: ProtectedKeyPurpose.accountInfo)
+        ]
+        api.fakeRequests[endpoints.keys] = makeRequest(statusCode: 200, body: try protectedKeysBody(storedKeys))
+
+        do {
+            _ = try await manager.ensureAccountInfoProtectedKeys(
+                for: makeAccount(primaryKey: Data(repeating: 0x1, count: 32)))
+            XCTFail("Expected inconsistent account_info wrappers to be rejected")
+        } catch SyncError.invalidDataInResponse(let message) {
+            XCTAssertEqual(message, "account_info protected key wrappers do not describe the same key")
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+
+        XCTAssertEqual(api.createRequestCallArgs.map(\.url), [endpoints.keys])
+    }
+
     func testWhenEnsuringAccountInfoProtectedKeysAndKeysAreStoredThenReturnsThemWithoutCreatingKeys() async throws {
         let api = RemoteAPIRequestCreatingMock()
         let endpoints = Endpoints(baseURL: Self.baseURL)
@@ -395,7 +491,8 @@ final class ScopedAccessCredentialManagerTests: XCTestCase {
         let manager = ScopedAccessCredentialManager(endpoints: endpoints,
                                                     api: api,
                                                     crypter: CryptingMock(),
-                                                    accountInfoKeyFactory: accountInfoKeyFactory)
+                                                    accountInfoKeyFactory: accountInfoKeyFactory,
+                                                    canWriteUnifiedDeviceList: { true })
         let account = makeAccount(primaryKey: Data(repeating: 0x1, count: 32))
         let storedKeys = [
             makeProtectedKey(kid: "account-info", encryptedWith: SyncCredentialID.defaultCredential, purpose: ProtectedKeyPurpose.accountInfo),
@@ -420,7 +517,8 @@ final class ScopedAccessCredentialManagerTests: XCTestCase {
         let manager = ScopedAccessCredentialManager(endpoints: endpoints,
                                                     api: api,
                                                     crypter: crypter,
-                                                    accountInfoKeyFactory: accountInfoKeyFactory)
+                                                    accountInfoKeyFactory: accountInfoKeyFactory,
+                                                    canWriteUnifiedDeviceList: { true })
         let account = makeAccount(primaryKey: Data((0..<32).map(UInt8.init)))
         let scopedPassword = Data((32..<64).map(UInt8.init))
         let privateKeyPKCS8 = Data([0xFF] + Array("account-info-private-key".utf8))
@@ -489,7 +587,8 @@ final class ScopedAccessCredentialManagerTests: XCTestCase {
         let manager = ScopedAccessCredentialManager(endpoints: endpoints,
                                                     api: api,
                                                     crypter: crypter,
-                                                    accountInfoKeyFactory: accountInfoKeyFactory)
+                                                    accountInfoKeyFactory: accountInfoKeyFactory,
+                                                    canWriteUnifiedDeviceList: { true })
         let account = makeAccount(primaryKey: Data((0..<32).map(UInt8.init)))
         let scopedPassword = Data((32..<64).map(UInt8.init))
         let privateKeyPKCS8 = Data([0xFF] + Array("account-info-private-key".utf8))
@@ -558,7 +657,8 @@ final class ScopedAccessCredentialManagerTests: XCTestCase {
         let manager = ScopedAccessCredentialManager(endpoints: endpoints,
                                                     api: api,
                                                     crypter: crypter,
-                                                    accountInfoKeyFactory: AccountInfoKeyFactoryMock())
+                                                    accountInfoKeyFactory: AccountInfoKeyFactoryMock(),
+                                                    canWriteUnifiedDeviceList: { true })
         let account = makeAccount(primaryKey: Data((0..<32).map(UInt8.init)))
         let scopedPassword = Data((32..<64).map(UInt8.init))
         let storedKey = try makeNativeEncryptedProtectedKey(privateKey: Data([0xFF] + Array("account-info-private-key".utf8)),
@@ -612,7 +712,8 @@ final class ScopedAccessCredentialManagerTests: XCTestCase {
         let manager = ScopedAccessCredentialManager(endpoints: endpoints,
                                                     api: api,
                                                     crypter: CryptingMock(),
-                                                    accountInfoKeyFactory: accountInfoKeyFactory)
+                                                    accountInfoKeyFactory: accountInfoKeyFactory,
+                                                    canWriteUnifiedDeviceList: { true })
         api.fakeRequests[endpoints.keys] = SequencedHTTPRequestingMock(results: [
             .init(data: Data(try protectedKeysBody([]).utf8), response: makeHTTPURLResponse(statusCode: 200)),
             .init(data: Data(try protectedKeysBody([createdKey]).utf8), response: makeHTTPURLResponse(statusCode: 200))
@@ -658,7 +759,8 @@ final class ScopedAccessCredentialManagerTests: XCTestCase {
         let manager = ScopedAccessCredentialManager(endpoints: endpoints,
                                                     api: api,
                                                     crypter: CryptingMock(),
-                                                    accountInfoKeyFactory: accountInfoKeyFactory)
+                                                    accountInfoKeyFactory: accountInfoKeyFactory,
+                                                    canWriteUnifiedDeviceList: { true })
         api.fakeRequests[endpoints.keys] = SequencedHTTPRequestingMock(results: [
             .init(data: Data(try protectedKeysBody([]).utf8), response: makeHTTPURLResponse(statusCode: 200)),
             .init(data: Data(try protectedKeysBody(createdKeys).utf8), response: makeHTTPURLResponse(statusCode: 200))
@@ -707,7 +809,8 @@ final class ScopedAccessCredentialManagerTests: XCTestCase {
         let manager = ScopedAccessCredentialManager(endpoints: endpoints,
                                                     api: api,
                                                     crypter: CryptingMock(),
-                                                    accountInfoKeyFactory: accountInfoKeyFactory)
+                                                    accountInfoKeyFactory: accountInfoKeyFactory,
+                                                    canWriteUnifiedDeviceList: { true })
         api.fakeRequests[endpoints.keys] = SequencedHTTPRequestingMock(results: [
             .init(data: Data(try protectedKeysBody([]).utf8), response: makeHTTPURLResponse(statusCode: 200)),
             .init(data: Data(try protectedKeysBody([defaultWrapper]).utf8), response: makeHTTPURLResponse(statusCode: 200))
@@ -738,7 +841,8 @@ final class ScopedAccessCredentialManagerTests: XCTestCase {
         let manager = ScopedAccessCredentialManager(endpoints: endpoints,
                                                     api: api,
                                                     crypter: CryptingMock(),
-                                                    accountInfoKeyFactory: AccountInfoKeyFactoryMock())
+                                                    accountInfoKeyFactory: AccountInfoKeyFactoryMock(),
+                                                    canWriteUnifiedDeviceList: { true })
         let account = makeAccount(primaryKey: Data(repeating: 0x1, count: 32))
         let requestedKeys = [
             makeProtectedKey(kid: "candidate", encryptedWith: SyncCredentialID.defaultCredential, purpose: ProtectedKeyPurpose.accountInfo),
@@ -770,7 +874,8 @@ final class ScopedAccessCredentialManagerTests: XCTestCase {
         let manager = ScopedAccessCredentialManager(endpoints: endpoints,
                                                     api: api,
                                                     crypter: CryptingMock(),
-                                                    accountInfoKeyFactory: AccountInfoKeyFactoryMock())
+                                                    accountInfoKeyFactory: AccountInfoKeyFactoryMock(),
+                                                    canWriteUnifiedDeviceList: { true })
         let account = makeAccount(primaryKey: Data(repeating: 0x1, count: 32))
         let requestedKeys = [
             makeProtectedKey(kid: "candidate", encryptedWith: SyncCredentialID.defaultCredential, purpose: ProtectedKeyPurpose.accountInfo)
@@ -804,7 +909,8 @@ final class ScopedAccessCredentialManagerTests: XCTestCase {
         let manager = ScopedAccessCredentialManager(endpoints: endpoints,
                                                     api: api,
                                                     crypter: CryptingMock(),
-                                                    accountInfoKeyFactory: AccountInfoKeyFactoryMock())
+                                                    accountInfoKeyFactory: AccountInfoKeyFactoryMock(),
+                                                    canWriteUnifiedDeviceList: { true })
         let account = makeAccount(primaryKey: Data(repeating: 0x3, count: 32))
         let requestedKeys = [
             makeProtectedKey(kid: "candidate", encryptedWith: SyncCredentialID.defaultCredential, purpose: ProtectedKeyPurpose.accountInfo),
@@ -839,7 +945,8 @@ final class ScopedAccessCredentialManagerTests: XCTestCase {
         let manager = ScopedAccessCredentialManager(endpoints: endpoints,
                                                     api: api,
                                                     crypter: CryptingMock(),
-                                                    accountInfoKeyFactory: AccountInfoKeyFactoryMock())
+                                                    accountInfoKeyFactory: AccountInfoKeyFactoryMock(),
+                                                    canWriteUnifiedDeviceList: { true })
         let account = makeAccount(primaryKey: Data(repeating: 0x4, count: 32))
         let requestedKeys = [
             makeProtectedKey(kid: "candidate", encryptedWith: SyncCredentialID.defaultCredential, purpose: ProtectedKeyPurpose.accountInfo),
@@ -862,7 +969,8 @@ final class ScopedAccessCredentialManagerTests: XCTestCase {
         let manager = ScopedAccessCredentialManager(endpoints: endpoints,
                                                     api: api,
                                                     crypter: CryptingMock(),
-                                                    accountInfoKeyFactory: AccountInfoKeyFactoryMock())
+                                                    accountInfoKeyFactory: AccountInfoKeyFactoryMock(),
+                                                    canWriteUnifiedDeviceList: { true })
         let account = makeAccount(primaryKey: Data(repeating: 0x5, count: 32))
         let requestedKeys = [
             makeProtectedKey(kid: "candidate", encryptedWith: SyncCredentialID.defaultCredential, purpose: ProtectedKeyPurpose.accountInfo)
@@ -891,7 +999,8 @@ final class ScopedAccessCredentialManagerTests: XCTestCase {
         let manager = ScopedAccessCredentialManager(endpoints: endpoints,
                                                     api: api,
                                                     crypter: CryptingMock(),
-                                                    accountInfoKeyFactory: AccountInfoKeyFactoryMock())
+                                                    accountInfoKeyFactory: AccountInfoKeyFactoryMock(),
+                                                    canWriteUnifiedDeviceList: { true })
         let account = makeAccount(primaryKey: Data(repeating: 0x6, count: 32))
         let requestedKeys = [
             makeProtectedKey(kid: "candidate", encryptedWith: SyncCredentialID.defaultCredential, purpose: ProtectedKeyPurpose.accountInfo)
@@ -916,7 +1025,8 @@ final class ScopedAccessCredentialManagerTests: XCTestCase {
         let manager = ScopedAccessCredentialManager(endpoints: endpoints,
                                                     api: api,
                                                     crypter: CryptingMock(),
-                                                    accountInfoKeyFactory: AccountInfoKeyFactoryMock())
+                                                    accountInfoKeyFactory: AccountInfoKeyFactoryMock(),
+                                                    canWriteUnifiedDeviceList: { true })
         let account = makeAccount(primaryKey: Data(repeating: 0x9, count: 32))
         let requestedKeys = [
             makeProtectedKey(kid: "candidate", encryptedWith: SyncCredentialID.defaultCredential, purpose: ProtectedKeyPurpose.accountInfo)
@@ -946,7 +1056,8 @@ final class ScopedAccessCredentialManagerTests: XCTestCase {
         let manager = ScopedAccessCredentialManager(endpoints: endpoints,
                                                     api: api,
                                                     crypter: CryptingMock(),
-                                                    accountInfoKeyFactory: AccountInfoKeyFactoryMock())
+                                                    accountInfoKeyFactory: AccountInfoKeyFactoryMock(),
+                                                    canWriteUnifiedDeviceList: { true })
         let account = makeAccount(primaryKey: Data((0..<32).map(UInt8.init)))
         api.fakeRequests[endpoints.accessCredentials] = makeRequest(statusCode: 200, body: try accessCredentialsBody([]))
         api.fakeRequests[endpoints.keys] = makeFailingRequest(statusCode: 500)

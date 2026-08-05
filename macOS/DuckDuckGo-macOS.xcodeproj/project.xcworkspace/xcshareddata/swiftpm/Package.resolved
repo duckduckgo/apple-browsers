@@ -1,5 +1,5 @@
 {
-  "originHash" : "0be752435a7b654dd93968483d63dbab6130e2da79150f4d00ad391a626a76d0",
+  "originHash" : "49a9be0859d49eb9b57ffe436e3f8d140c960fb010586d84794c48f660970fb6",
   "pins" : [
     {
       "identity" : "apple-toolbox",
@@ -177,8 +177,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/pointfreeco/swift-custom-dump",
       "state" : {
-        "revision" : "06c57924455064182d6b217f06ebc05d00cb2990",
-        "version" : "1.5.0"
+        "revision" : "a8cd6c976f335ed361dcecddb0dc39ebda51bc3e",
+        "version" : "1.6.1"
       }
     },
     {

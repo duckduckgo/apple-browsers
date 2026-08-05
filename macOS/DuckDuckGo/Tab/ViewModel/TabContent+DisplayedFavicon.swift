@@ -19,7 +19,7 @@
 import AppKit
 import DesignResourcesKit
 import DesignResourcesKitIcons
-import FeatureFlags
+import FeatureFlags_macOS
 import MaliciousSiteProtection
 import PrivacyConfig
 import WebKit

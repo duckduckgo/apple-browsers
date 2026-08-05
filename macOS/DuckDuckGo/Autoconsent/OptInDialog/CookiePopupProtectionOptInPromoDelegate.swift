@@ -19,7 +19,7 @@
 import AppKit
 import BrowserServicesKit
 import Combine
-import FeatureFlags
+import FeatureFlags_macOS
 import Persistence
 import PixelKit
 import PrivacyConfig

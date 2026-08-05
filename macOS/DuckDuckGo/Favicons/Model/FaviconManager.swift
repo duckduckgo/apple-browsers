@@ -18,7 +18,7 @@
 
 import Bookmarks
 import BrowserServicesKit
-import FeatureFlags
+import FeatureFlags_macOS
 import Cocoa
 import Combine
 import Common

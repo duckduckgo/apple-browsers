@@ -20,6 +20,7 @@
 import SwiftUI
 import Core
 import PrivacyConfig
+import FeatureFlags_iOS
 
 /// Debug view for verifying UI test overrides are applied correctly.
 /// Is used in Maestro tests to assert that feature flags, config rollouts,

@@ -42,21 +42,23 @@ public func assertImageSnapshot(
         view.appearance = configuration.appearance.nsAppearance
         let snapshotSize = resolvedSize(for: view, configuration: configuration, size: size)
 
-        assertSnapshot(
-            of: view,
-            as: .image(
-                perceptualPrecision: perceptualPrecision,
-                size: snapshotSize
-            ),
-            named: configuration.name,
-            record: SnapshotRecordMode.snapshotTestingRecord(record: record),
-            snapshotDirectory: snapshotReferenceDirectory(file: file),
-            fileID: fileID,
-            file: file,
-            testName: testName,
-            line: line,
-            column: column
-        )
+        withUnitBackingScale(view, size: snapshotSize) {
+            assertSnapshot(
+                of: view,
+                as: .image(
+                    perceptualPrecision: perceptualPrecision,
+                    size: snapshotSize
+                ),
+                named: configuration.name,
+                record: SnapshotRecordMode.snapshotTestingRecord(record: record),
+                snapshotDirectory: snapshotReferenceDirectory(file: file),
+                fileID: fileID,
+                file: file,
+                testName: testName,
+                line: line,
+                column: column
+            )
+        }
     }
 }
 
@@ -122,6 +124,22 @@ public func assertImageSnapshot<Value: SwiftUI.View>(
     }
 }
 
+private final class UnitBackingScaleWindow: NSWindow {
+    override var backingScaleFactor: CGFloat { 1.0 }
+}
+
+private func withUnitBackingScale(_ view: NSView, size: CGSize, perform body: () -> Void) {
+    let window = UnitBackingScaleWindow(
+        contentRect: CGRect(origin: .zero, size: size),
+        styleMask: [],
+        backing: .buffered,
+        defer: false
+    )
+    window.contentView = view
+    defer { window.contentView = nil }
+    body()
+}
+
 private func resolvedSize(
     for view: NSView,
     configuration: SnapshotImageConfiguration,
@@ -182,21 +200,23 @@ private func assertSwiftUIImageSnapshot<Value: SwiftUI.View>(
     )
     viewController.view.setFrameSize(snapshotSize)
 
-    assertSnapshot(
-        of: viewController.view,
-        as: .image(
-            perceptualPrecision: perceptualPrecision,
-            size: snapshotSize
-        ),
-        named: configuration.name,
-        record: SnapshotRecordMode.snapshotTestingRecord(record: record),
-        snapshotDirectory: snapshotReferenceDirectory(file: file),
-        fileID: fileID,
-        file: file,
-        testName: testName,
-        line: line,
-        column: column
-    )
+    withUnitBackingScale(viewController.view, size: snapshotSize) {
+        assertSnapshot(
+            of: viewController.view,
+            as: .image(
+                perceptualPrecision: perceptualPrecision,
+                size: snapshotSize
+            ),
+            named: configuration.name,
+            record: SnapshotRecordMode.snapshotTestingRecord(record: record),
+            snapshotDirectory: snapshotReferenceDirectory(file: file),
+            fileID: fileID,
+            file: file,
+            testName: testName,
+            line: line,
+            column: column
+        )
+    }
 }
 
 private func swiftUISnapshotSize<Value: SwiftUI.View>(

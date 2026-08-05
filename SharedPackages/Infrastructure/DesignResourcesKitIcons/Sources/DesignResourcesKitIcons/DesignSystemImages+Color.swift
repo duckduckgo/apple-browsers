@@ -585,6 +585,11 @@ public extension DesignSystemImages {
             public static var shieldUtility: DesignSystemImage { .init(resource: .shieldUtilityColor32) }
         }
 
+        public enum Size56 {
+            public static var fileDrag: DesignSystemImage { .init(resource: .fileDrag56) }
+            public static var fileDrop: DesignSystemImage { .init(resource: .fileDrop56) }
+        }
+
         public enum Size72 {
             public static var fire: DesignSystemImage { .init(resource: .fireColor72) }
         }
@@ -649,8 +654,8 @@ public extension DesignSystemImages {
                     ? .init(resource: .success128)
                     : .init(resource: .success128Legacy)
             }
-            public static var fileDrag: DesignSystemImage { .init(resource: .fileDrag128) }
-            public static var fileDrop: DesignSystemImage { .init(resource: .fileDrop128) }
+            public static var fileDrag: DesignSystemImage { .init(resource: .fileDrag128Legacy) }
+            public static var fileDrop: DesignSystemImage { .init(resource: .fileDrop128Legacy) }
             public static var fileIssue: DesignSystemImage {
                 AppRebrand.isAppRebranded()
                     ? .init(resource: .fileIssue128)

@@ -30,6 +30,7 @@ import Networking
 import UserNotifications
 import UIComponents
 import Lottie
+import FeatureFlags_iOS
 
 final class SubscriptionDebugViewController: UITableViewController {
 

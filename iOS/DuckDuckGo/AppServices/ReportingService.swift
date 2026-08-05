@@ -30,6 +30,7 @@ import AIChat
 import SetDefaultBrowserCore
 import ContentBlocking
 import os.log
+import FeatureFlags_iOS
 
 /// Reporting service for various metrics:
 /// - AttributedMetric: https://app.asana.com/1/137249556945/project/1205842942115003/task/1210884473312053

@@ -18,6 +18,7 @@
 //
 
 import UIKit
+import FeatureFlags_iOS
 
 extension MainViewController {
     

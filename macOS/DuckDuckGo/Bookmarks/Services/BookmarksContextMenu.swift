@@ -72,7 +72,8 @@ final class BookmarksContextMenu: NSMenu {
             target: self,
             forSearch: bookmarksContextMenuDelegate?.isSearching ?? false,
             includeManageBookmarksItem: bookmarksContextMenuDelegate?.shouldIncludeManageBookmarksItem ?? true,
-            includeReorderByNameItem: featureFlagger.isFeatureOn(.bookmarksReorderByName)
+            includeReorderByNameItem: featureFlagger.isFeatureOn(.bookmarksReorderByName),
+            bookmarksRootEntities: bookmarkManager.list?.topLevelEntities ?? []
         )
     }
 
@@ -90,7 +91,8 @@ extension BookmarksContextMenu {
         target: AnyObject?,
         forSearch: Bool,
         includeManageBookmarksItem: Bool,
-        includeReorderByNameItem: Bool
+        includeReorderByNameItem: Bool,
+        bookmarksRootEntities: [BaseBookmarkEntity]
     ) -> [NSMenuItem] {
         guard let objects, !objects.isEmpty else {
             return [addNewFolderMenuItem(entity: nil, target: target)]
@@ -100,26 +102,60 @@ extension BookmarksContextMenu {
             return menuItems(for: entities, target: target)
         }
 
-        let object: BaseBookmarkEntity
+        let object: Any
         switch objects.first {
         case let node as BookmarkNode:
-            guard let entity = node.representedObject as? BaseBookmarkEntity else { return [] }
-            object = entity
-        case let entity as BaseBookmarkEntity:
-            object = entity
+            object = node.representedObject
+        case let representedObject as BaseBookmarkEntity:
+            object = representedObject
+        case let representedObject as PseudoFolder:
+            object = representedObject
         default:
             assertionFailure("Unexpected object \(objects.first!)")
             return []
         }
 
-        let menuItems = menuItems(
-            for: object,
-            target: target,
-            forSearch: forSearch,
-            includeManageBookmarksItem: includeManageBookmarksItem,
-            includeReorderByNameItem: includeReorderByNameItem)
+        switch object {
+        case let pseudoFolder as PseudoFolder where pseudoFolder == PseudoFolder.bookmarks:
+            return menuItemsForBookmarksRoot(
+                entities: bookmarksRootEntities,
+                target: target,
+                includeReorderByNameItem: includeReorderByNameItem)
+        case let entity as BaseBookmarkEntity:
+            return menuItems(
+                for: entity,
+                target: target,
+                forSearch: forSearch,
+                includeManageBookmarksItem: includeManageBookmarksItem,
+                includeReorderByNameItem: includeReorderByNameItem)
+        default:
+            return []
+        }
+    }
 
-        return menuItems
+    static func menuItemsForBookmarksRoot(
+        entities: [BaseBookmarkEntity],
+        target: AnyObject?,
+        includeReorderByNameItem: Bool
+    ) -> [NSMenuItem] {
+        let rootFolder = BookmarkFolder(
+            id: PseudoFolder.bookmarks.id,
+            title: PseudoFolder.bookmarks.name,
+            children: entities)
+        let hasBookmarks = entities.contains(where: { $0 is Bookmark })
+        var items = [
+            openInNewTabsMenuItem(folder: rootFolder, target: target, enabled: hasBookmarks),
+            openAllInNewWindowMenuItem(folder: rootFolder, target: target, enabled: hasBookmarks),
+        ]
+
+        if includeReorderByNameItem {
+            items.append(.separator())
+            items.append(reorderByNameMenuItem(folder: rootFolder, target: target))
+        }
+
+        items.append(.separator())
+        items.append(addNewFolderMenuItem(entity: nil, target: target))
+        return items
     }
 
     /// Creates an instance of NSMenu for the specified `BaseBookmarkEntity`and parent `BookmarkFolder`.
@@ -468,7 +504,8 @@ extension BookmarksContextMenu: FolderMenuItemSelectors {
             return
         }
 
-        bookmarkManager.reorderByName(folder.children, withinParentFolder: .parent(uuid: folder.id))
+        let parentFolder: ParentFolderType = folder.id == PseudoFolder.bookmarks.id ? .root : .parent(uuid: folder.id)
+        bookmarkManager.reorderByName(folder.children, withinParentFolder: parentFolder)
     }
 
     @MainActor

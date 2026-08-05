@@ -229,6 +229,81 @@ final class ContextualMenuTests: XCTestCase {
     }
 
     @MainActor
+    func testWhenAskingBookmarksRootItemThenItShouldReturnRootActionsInTheCorrectOrder() throws {
+        // GIVEN
+        let bookmark = Bookmark(id: "bookmark", url: "https://example.com", title: "Bookmark", isFavorite: false)
+        let folder = BookmarkFolder(id: "folder", title: "Folder")
+
+        // WHEN
+        let menu = BookmarksContextMenu.bookmarksRootMenu(
+            with: [bookmark, folder],
+            isReorderByNameEnabled: true)
+
+        // THEN
+        XCTAssertEqual(menu.items.count, 6)
+        let rootFolder = try XCTUnwrap(menu.items[0].representedObject as? BookmarkFolder)
+        XCTAssertEqual(rootFolder.id, PseudoFolder.bookmarks.id)
+        XCTAssertEqual(rootFolder.children.map(\.id), [bookmark.id, folder.id])
+        assertMenuItem(
+            menu.items[0],
+            withTitle: UserText.openAllInNewTabs,
+            selector: #selector(FolderMenuItemSelectors.openInNewTabs(_:)),
+            representedObject: rootFolder)
+        assertMenuItem(
+            menu.items[1],
+            withTitle: UserText.openAllTabsInNewWindow,
+            selector: #selector(FolderMenuItemSelectors.openAllInNewWindow(_:)),
+            representedObject: rootFolder)
+        XCTAssertTrue(menu.items[2].isSeparatorItem)
+        assertMenuItem(
+            menu.items[3],
+            withTitle: UserText.bookmarksBarContextMenuReorderByName,
+            selector: #selector(FolderMenuItemSelectors.reorderByName(_:)),
+            representedObject: rootFolder)
+        XCTAssertTrue(menu.items[4].isSeparatorItem)
+        assertMenuItem(
+            menu.items[5],
+            withTitle: UserText.addFolder,
+            selector: #selector(FolderMenuItemSelectors.newFolder(_:)))
+    }
+
+    @MainActor
+    func testWhenReorderByNameIsDisabledThenBookmarksRootMenuOmitsIt() {
+        // WHEN
+        let menu = BookmarksContextMenu.bookmarksRootMenu(
+            with: [],
+            isReorderByNameEnabled: false)
+
+        // THEN
+        XCTAssertEqual(menu.items.count, 4)
+        XCTAssertFalse(menu.items.contains(where: { $0.title == UserText.bookmarksBarContextMenuReorderByName }))
+        XCTAssertFalse(menu.items[0].isEnabled)
+        XCTAssertFalse(menu.items[1].isEnabled)
+    }
+
+    @MainActor
+    func testWhenReorderByNameIsSelectedForBookmarksRootThenTopLevelEntitiesAreMovedWithinRoot() throws {
+        // GIVEN
+        let zulu = Bookmark(id: "zulu", url: "https://zulu.example", title: "Zulu", isFavorite: false)
+        let alpha = BookmarkFolder(id: "alpha", title: "Alpha")
+        let menu = BookmarksContextMenu.bookmarksRootMenu(
+            with: [zulu, alpha],
+            isReorderByNameEnabled: true)
+        let bookmarkManager = try XCTUnwrap(menu.bookmarkManager as? MockBookmarkManager)
+        bookmarkManager.sortMode = .nameDescending
+        let menuItem = try XCTUnwrap(menu.items.first(where: { $0.title == UserText.bookmarksBarContextMenuReorderByName }))
+
+        // WHEN
+        try perform(menuItem)
+
+        // THEN
+        XCTAssertEqual(
+            bookmarkManager.moveObjectsCalled,
+            .init(objectUUIDs: [alpha.id, zulu.id], toIndex: 0, withinParentFolder: .root))
+        XCTAssertEqual(bookmarkManager.sortMode, .manual)
+    }
+
+    @MainActor
     func testWhenAskingEmptyFolderItem_OpenAllItemsShouldBeDisabled() {
         // WHEN
         let folder = BookmarkFolder(id: "1", title: "DuckDuckGo", children: [])
@@ -922,6 +997,31 @@ class MockBookmarksContextMenuDelegate: NSObject, BookmarksContextMenuDelegate {
 }
 
 extension BookmarksContextMenu {
+
+    @MainActor
+    static func bookmarksRootMenu(
+        with entities: [BaseBookmarkEntity],
+        isReorderByNameEnabled: Bool
+    ) -> BookmarksContextMenu {
+        let delegate = MockBookmarksContextMenuDelegate()
+        delegate.selectedBookmarkItems = [BookmarkNode(representedObject: PseudoFolder.bookmarks, parent: nil)]
+        delegate.shouldIncludeManageBookmarksItem = false
+        let bookmarkManager = MockBookmarkManager(
+            list: .init(entities: entities, topLevelEntities: entities))
+        let featureFlagger = MockFeatureFlagger(featuresStub: [
+            FeatureFlag.bookmarksReorderByName.rawValue: isReorderByNameEnabled
+        ])
+        let menu = BookmarksContextMenu(
+            bookmarkManager: bookmarkManager,
+            windowControllersManager: WindowControllersManagerMock(),
+            featureFlagger: featureFlagger,
+            delegate: delegate)
+        menu.onDeinit {
+            withExtendedLifetime(delegate) {}
+        }
+        menu.update()
+        return menu
+    }
 
     @MainActor
     static func bookmarkMenuItems(with bookmark: Bookmark, enableManageBookmarks: Bool = true) -> [NSMenuItem] {

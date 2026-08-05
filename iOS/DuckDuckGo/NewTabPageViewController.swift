@@ -173,13 +173,6 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
         }
     }
 
-    deinit {
-        // UIKit view controllers are expected to deallocate on the main thread.
-        MainActor.assumeIsolated {
-            messagesModel.tearDown()
-        }
-    }
-
     func setEscapeHatch(_ model: EscapeHatchModel?) {
         newTabPageViewModel.escapeHatch = model
         newTabPageViewModel.openedAfterIdle = (model != nil)

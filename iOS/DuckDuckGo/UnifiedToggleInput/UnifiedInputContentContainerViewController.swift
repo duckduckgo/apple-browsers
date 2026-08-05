@@ -191,10 +191,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
 
     deinit {
         searchDeleteTask?.cancel()
-        // UIKit view controllers are expected to deallocate on the main thread.
-        MainActor.assumeIsolated {
-            unifiedSuggestionsHost?.tearDown()
-        }
     }
 
     // MARK: - Lifecycle

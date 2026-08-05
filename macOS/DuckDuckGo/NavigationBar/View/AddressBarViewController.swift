@@ -1062,9 +1062,8 @@ final class AddressBarViewController: NSViewController {
             return
         }
 
-        let displaysTrustIndicator = tabViewModel?.passiveAddressBarDisplaysTrustIndicator == true
-
-        passiveTextField.textColor = displaysTrustIndicator ? colorsProvider.textSecondaryColor : colorsProvider.textPrimaryColor
+        let displaysPlaceholder = tabViewModel?.passiveAddressBarDisplaysPlaceholder == true
+        passiveTextField.textColor = displaysPlaceholder ? colorsProvider.textSecondaryColor : colorsProvider.textPrimaryColor
     }
 
     private func layoutTextFields(withMinX minX: CGFloat) {

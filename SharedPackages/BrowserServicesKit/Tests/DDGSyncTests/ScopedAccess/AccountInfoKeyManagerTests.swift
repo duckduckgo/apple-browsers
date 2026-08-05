@@ -98,6 +98,37 @@ final class AccountInfoKeyManagerTests: XCTestCase {
         XCTAssertEqual(secureStore.theScopedPassword, scopedPassword)
     }
 
+    func testWhenCachedThirdPartyKeyAndRefreshFailTransientlyThenPreservesProtectedKeyCache() async throws {
+        let scopedPassword = Data(repeating: 0x03, count: 32)
+        let accountInfoKey = try makeThirdPartyCredentialProtectedKey(scopedPassword: scopedPassword)
+        let unrelatedKey = ProtectedKey(kid: "unrelated-key",
+                                        encryptedPrivateKey: "unrelated-encrypted-key",
+                                        publicKey: accountInfoKey.publicKey,
+                                        encryptedWith: SyncCredentialID.defaultCredential,
+                                        purpose: "unrelated-purpose")
+        let cachedData = try JSONEncoder.snakeCaseKeys.encode([accountInfoKey, unrelatedKey])
+        let secureStore = SecureStorageStub()
+        secureStore.theProtectedKeysData = cachedData
+        let scopedAccess = ScopedAccessCredentialManagingMock()
+        let transientError = URLError(.notConnectedToInternet)
+        scopedAccess.fetchAccessCredentialsError = transientError
+        scopedAccess.fetchProtectedKeysError = transientError
+        let manager = AccountInfoKeyManager(secureStore: secureStore,
+                                            scopedAccess: scopedAccess,
+                                            crypter: crypter)
+
+        do {
+            _ = try await manager.loadKey(for: account)
+            XCTFail("Expected transient key loading error")
+        } catch {
+            XCTAssertEqual((error as? URLError)?.code, transientError.code)
+        }
+
+        XCTAssertEqual(secureStore.theProtectedKeysData, cachedData)
+        XCTAssertEqual(scopedAccess.fetchAccessCredentialsCalls.map(\.userId), [account.userId])
+        XCTAssertEqual(scopedAccess.fetchProtectedKeysCalls.map(\.userId), [account.userId])
+    }
+
     func testWhenServerHasNoAccountInfoKeyThenThrows() async throws {
         let secureStore = SecureStorageStub()
         let scopedAccess = ScopedAccessCredentialManagingMock()

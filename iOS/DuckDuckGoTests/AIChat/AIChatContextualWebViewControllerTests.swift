@@ -245,6 +245,8 @@ private final class StubContextualModePixelHandler: AIChatContextualModePixelFir
     func fireSelectionAction(_ action: AIChatTextSelectionAction) {}
     func fireSelectionLimitReached() {}
     func fireSelectionRemoved() {}
+    func firePromptSubmittedWithSelections(count: Int) { promptSubmittedWithSelectionsCounts.append(count) }
+    var promptSubmittedWithSelectionsCounts: [Int] = []
     func fireSheetOpened() {}
     func fireSheetDismissed() {}
     func fireSessionRestored() {}

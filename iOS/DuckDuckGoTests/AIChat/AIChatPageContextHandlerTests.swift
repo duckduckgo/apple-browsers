@@ -686,6 +686,8 @@ private final class MockContextualModePixelHandler: AIChatContextualModePixelFir
     func fireSelectionAction(_ action: AIChatTextSelectionAction) {}
     func fireSelectionLimitReached() {}
     func fireSelectionRemoved() {}
+    func firePromptSubmittedWithSelections(count: Int) { promptSubmittedWithSelectionsCounts.append(count) }
+    var promptSubmittedWithSelectionsCounts: [Int] = []
     var pageContextCollectionEmptyCount = 0
     var pageContextCollectionUnavailableCount = 0
 

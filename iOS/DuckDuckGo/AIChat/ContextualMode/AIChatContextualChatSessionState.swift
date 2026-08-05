@@ -133,6 +133,14 @@ final class AIChatContextualChatSessionState {
     /// URL included in the last submitted prompt with no navigation since; used to spot a stale auto-attach echo.
     private var deliveredContextURLWithNoNavigationSince: URL?
 
+    /// Which prompt-submitted pixel is owed once a conditional delivery is confirmed. See
+    /// `beginChatForUTISubmission(deferringSubmissionPixel:)`.
+    private enum DeferredSubmissionPixel {
+        case withContext
+        case withoutContext
+    }
+    private var deferredSubmissionPixel: DeferredSubmissionPixel?
+
     @Published private(set) var viewState = SheetViewState(
         content: .nativeInput,
         isExpandButtonEnabled: true,
@@ -271,13 +279,19 @@ final class AIChatContextualChatSessionState {
             contextualChatURL = url
         }
 
+        firePromptSubmittedWithSelectionsIfNeeded()
         rebuildViewState()
         emit(.submitPrompt(prompt: prompt, context: contextData))
     }
 
     /// Call when the first prompt is submitted through contextual UTI. The UTI coordinator
     /// delivers the prompt, so this only performs the contextual session transition and pixels.
-    func beginChatForUTISubmission() {
+    ///
+    /// - Parameter deferringSubmissionPixel: pass `true` when delivery is still conditional at this
+    ///   point, so the prompt-submitted pixel is withheld until `confirmDeferredSubmissionPixel()`.
+    ///   The transition itself still happens immediately — the user should see the chat surface right
+    ///   away — but reporting a submission that may never leave the device would be a false positive.
+    func beginChatForUTISubmission(deferringSubmissionPixel: Bool = false) {
         guard frontendState != .restoredChat else {
             Logger.aiChat.debug("[SessionState] UTI chat start request ignored - preserving .restoredChat state")
             return
@@ -287,15 +301,55 @@ final class AIChatContextualChatSessionState {
         case .attached(let context):
             frontendState = .chatWithInitialContext
             deliveredContextURLWithNoNavigationSince = URL(string: context.contextData.url)
-            pixelHandler.firePromptSubmittedWithContext()
+            firePromptSubmittedPixel(.withContext, deferred: deferringSubmissionPixel)
             Logger.aiChat.debug("[SessionState] UTI chat started WITH initial context")
         case .placeholder:
             frontendState = .chatWithoutInitialContext
-            pixelHandler.firePromptSubmittedWithoutContext()
+            firePromptSubmittedPixel(.withoutContext, deferred: deferringSubmissionPixel)
             Logger.aiChat.debug("[SessionState] UTI chat started WITHOUT initial context")
         }
 
+        // Not deferred with the context pixels: a selection-tool submission attaches nothing, so when
+        // this is deferred there are no selections riding along to report anyway.
+        firePromptSubmittedWithSelectionsIfNeeded()
         rebuildViewState()
+    }
+
+    /// Reports how many text selections a submitted prompt carried.
+    ///
+    /// Called from the submission paths rather than from consumption, because consumption runs while the
+    /// payload is being built and is skipped entirely when the prompt carries no selections. Must run
+    /// before anything clears the list.
+    private func firePromptSubmittedWithSelectionsIfNeeded() {
+        guard !attachedSelections.isEmpty else { return }
+        pixelHandler.firePromptSubmittedWithSelections(count: attachedSelections.count)
+    }
+
+    /// Fires a submission pixel withheld by `beginChatForUTISubmission(deferringSubmissionPixel: true)`,
+    /// now that the prompt has actually reached the frontend.
+    func confirmDeferredSubmissionPixel() {
+        guard let deferred = deferredSubmissionPixel else { return }
+        deferredSubmissionPixel = nil
+        switch deferred {
+        case .withContext: pixelHandler.firePromptSubmittedWithContext()
+        case .withoutContext: pixelHandler.firePromptSubmittedWithoutContext()
+        }
+    }
+
+    /// Drops a withheld submission pixel because the prompt never got delivered.
+    func discardDeferredSubmissionPixel() {
+        deferredSubmissionPixel = nil
+    }
+
+    private func firePromptSubmittedPixel(_ pixel: DeferredSubmissionPixel, deferred: Bool) {
+        guard deferred else {
+            switch pixel {
+            case .withContext: pixelHandler.firePromptSubmittedWithContext()
+            case .withoutContext: pixelHandler.firePromptSubmittedWithoutContext()
+            }
+            return
+        }
+        deferredSubmissionPixel = pixel
     }
 
     func attachContextFromSuggestionTap(_ context: AIChatPageContext) {

@@ -2275,6 +2275,66 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         XCTAssertEqual(sessionState.attachedSelectionPageTitle, "Article")
     }
 
+    // MARK: - Submission Telemetry
+
+    /// The prompt-submitted pixel must not claim a submission that delivery may still abandon.
+    func testDeferredSubmissionPixelDoesNotFireUntilDeliveryIsConfirmed() {
+        sessionState.beginChatForUTISubmission(deferringSubmissionPixel: true)
+        XCTAssertFalse(mockPixelHandler.promptSubmittedWithoutContextFired)
+
+        sessionState.confirmDeferredSubmissionPixel()
+        XCTAssertTrue(mockPixelHandler.promptSubmittedWithoutContextFired)
+    }
+
+    func testDiscardedSubmissionPixelNeverFires() {
+        sessionState.beginChatForUTISubmission(deferringSubmissionPixel: true)
+
+        sessionState.discardDeferredSubmissionPixel()
+        sessionState.confirmDeferredSubmissionPixel()
+
+        XCTAssertFalse(mockPixelHandler.promptSubmittedWithoutContextFired)
+    }
+
+    func testConfirmingTwiceFiresOnlyOnce() {
+        sessionState.beginChatForUTISubmission(deferringSubmissionPixel: true)
+
+        sessionState.confirmDeferredSubmissionPixel()
+        mockPixelHandler.promptSubmittedWithoutContextFired = false
+        sessionState.confirmDeferredSubmissionPixel()
+
+        XCTAssertFalse(mockPixelHandler.promptSubmittedWithoutContextFired)
+    }
+
+    func testUndeferredSubmissionStillFiresImmediately() {
+        sessionState.beginChatForUTISubmission()
+        XCTAssertTrue(mockPixelHandler.promptSubmittedWithoutContextFired)
+    }
+
+    /// The with/without-context pixels describe page context and are blind to selections, so submitting
+    /// with selections attached needs its own signal — otherwise the Ask funnel has no bottom.
+    func testSubmittingWithSelectionsReportsHowMany() {
+        sessionState.attachSelection(makeSelection("one"), pageTitle: "Article")
+        sessionState.attachSelection(makeSelection("two"), pageTitle: "Article")
+
+        sessionState.handlePromptSubmission("what do these say?")
+
+        XCTAssertEqual(mockPixelHandler.promptSubmittedWithSelectionsCounts, [2])
+    }
+
+    func testSubmittingWithoutSelectionsReportsNothing() {
+        sessionState.handlePromptSubmission("plain question")
+
+        XCTAssertTrue(mockPixelHandler.promptSubmittedWithSelectionsCounts.isEmpty)
+    }
+
+    func testUTISubmissionAlsoReportsAttachedSelectionCount() {
+        sessionState.attachSelection(makeSelection(), pageTitle: "Article")
+
+        sessionState.beginChatForUTISubmission()
+
+        XCTAssertEqual(mockPixelHandler.promptSubmittedWithSelectionsCounts, [1])
+    }
+
     /// Quick actions survive an attached selection even though suggestions don't. "Ask about page" is
     /// the only route to attaching page context, so hiding it would make a selection and page context
     /// mutually exclusive — which the coexistence decision forbids.
@@ -2330,6 +2390,8 @@ private final class MockContextualModePixelHandler: AIChatContextualModePixelFir
     func fireSelectionAction(_ action: AIChatTextSelectionAction) {}
     func fireSelectionLimitReached() {}
     func fireSelectionRemoved() {}
+    func firePromptSubmittedWithSelections(count: Int) { promptSubmittedWithSelectionsCounts.append(count) }
+    var promptSubmittedWithSelectionsCounts: [Int] = []
     var sheetOpenedFired = false
     var sheetDismissedFired = false
     var sessionRestoredFired = false

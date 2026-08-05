@@ -91,6 +91,7 @@ public struct PixelParameters {
 
     public static let count = "count"
     public static let source = "source"
+    public static let aiChatSelectionCount = "selection_count"
     public static let cookiePopupPreference = "cookie_popup_preference"
     public static let autoconsentEnabled = "autoconsent_enabled"
     public static let timeSinceShown = "time_since_shown"

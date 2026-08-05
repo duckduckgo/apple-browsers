@@ -924,10 +924,15 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
 
         notifyInitialNativePromptSubmitted(hasPageContext: false)
         // We deliver the prompt ourselves, so take the same session transition the unified-input path
-        // takes (state flip + pixels, no `submitPrompt` effect) rather than `handlePromptSubmission`.
-        sessionState.beginChatForUTISubmission()
-        // Transition first: this is what starts the web view loading, so the wait below has something
-        // to wait for.
+        // takes (state flip, no `submitPrompt` effect) rather than `handlePromptSubmission`.
+        //
+        // The submission pixel is withheld until delivery is confirmed below. Firing it here would
+        // report a submission that the timeout may never let happen — the transition is immediate but
+        // the delivery is not.
+        sessionState.beginChatForUTISubmission(deferringSubmissionPixel: true)
+        // Transition now so the user sees the chat surface straight away rather than a dead input for
+        // as long as the wait takes. The web view is already loading either way: it starts in the web
+        // VC's `viewDidLoad`, from the sheet's own setup.
         handleFirstUTISubmission()
 
         selectionToolSubmissionTask?.cancel()
@@ -936,9 +941,13 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
             let isFrontendReady = await webViewController.waitUntilFrontendReady(
                 timeout: Constants.frontendReadinessTimeout
             )
-            guard isFrontendReady, !Task.isCancelled, self.canProcessSuggestionSubmission else { return }
+            guard isFrontendReady, !Task.isCancelled, self.canProcessSuggestionSubmission else {
+                self.sessionState.discardDeferredSubmissionPixel()
+                return
+            }
 
             webViewController.submitNativePrompt(prompt)
+            self.sessionState.confirmDeferredSubmissionPixel()
             // The text rode inside the tool payload, so any chips standing in for it are redundant —
             // and this counts as a submit, which clears selections (matching macOS).
             self.delegate?.aiChatContextualSheetViewControllerDidSubmitSelectionTool(self)

@@ -325,6 +325,12 @@
         "description": "Which Duck.ai text-selection menu action attached the selection",
         "enum": ["ask", "summarize", "translate"]
     },
+    "aiChatSelectionCount": {
+        "key": "selection_count",
+        "type": "string",
+        "description": "How many text selections were attached to a submitted Duck.ai prompt. Bounded by the 5-selection cap",
+        "enum": ["1", "2", "3", "4", "5"]
+    },
     "tabType": {
         "key": "tabType",
         "type": "string",

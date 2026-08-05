@@ -65,6 +65,11 @@ protocol AIChatContextualModePixelFiring {
     func fireSelectionAction(_ action: AIChatTextSelectionAction)
     func fireSelectionLimitReached()
     func fireSelectionRemoved()
+    /// Closes the Ask funnel: how much collected text actually reaches a submitted question, and
+    /// whether multi-selection sessions — the point of the 5-cap and cross-navigation persistence —
+    /// happen at all. Distinct from the with/without-context pixels, which describe page context only
+    /// and are blind to selections.
+    func firePromptSubmittedWithSelections(count: Int)
 
     // MARK: - Page Context Collection
     func firePageContextCollectionEmpty()
@@ -208,6 +213,11 @@ final class AIChatContextualModePixelHandler: AIChatContextualModePixelFiring {
 
     func fireSelectionRemoved() {
         firePixel(.aiChatContextualSelectionRemoved)
+    }
+
+    func firePromptSubmittedWithSelections(count: Int) {
+        firePixelWithParameters(.aiChatContextualPromptSubmittedWithSelections,
+                                [PixelParameters.aiChatSelectionCount: String(count)])
     }
 
     // MARK: - Page Context Collection

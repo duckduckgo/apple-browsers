@@ -290,6 +290,13 @@
         "suffixes": ["first_daily_count", "platform", "form_factor"],
         "parameters": ["appVersion"]
     },
+    "m_aichat_contextual_prompt_submitted_with_selections": {
+        "description": "Fired when the user submits a Duck.ai prompt with at least one text selection attached. The selection_count parameter says how many. Distinct from the with/without-context pixels, which describe page context only",
+        "owners": ["pikorddg"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "aiChatSelectionCount"]
+    },
     "m_aichat_contextual_selection_removed": {
         "description": "Fired when the user removes an attached text selection via its chip's remove button",
         "owners": ["pikorddg"],

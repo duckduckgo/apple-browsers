@@ -89,7 +89,8 @@ struct ProductionDependencies: SyncDependencies {
         let scopedAccess = ScopedAccessCredentialManager(endpoints: endpoints,
                                                          api: api,
                                                          crypter: crypter,
-                                                         accountInfoKeyFactory: accountInfoKeyFactory)
+                                                         accountInfoKeyFactory: accountInfoKeyFactory,
+                                                         canWriteUnifiedDeviceList: { syncFeatureFlags.canWriteUnifiedDeviceList() })
         accountInfoKeys = AccountInfoKeyManager(secureStore: secureStore,
                                                 scopedAccess: scopedAccess,
                                                 crypter: crypter)
@@ -150,7 +151,8 @@ struct ProductionDependencies: SyncDependencies {
                                             api: api,
                                             crypter: crypter,
                                             scopedAccess: scopedAccess,
-                                            account: account)
+                                            account: account,
+                                            canWriteUnifiedDeviceList: { syncFeatureFlags.canWriteUnifiedDeviceList() })
     }
 
     func createTokenRescope() -> TokenRescoping {

@@ -376,7 +376,7 @@ extension PromoCoordinationService: NewTabPagePromoCoordinating {
             target: target
         )
 
-        promoRetryRegistrations.removeAll { $0.surfaceID == surfaceID }
+        promoRetryRegistrations.removeAll { $0.surfaceID == surfaceID || $0.target == nil }
         promoRetryRegistrations.append(registration)
 
         return NewTabPagePromoRetryRegistration { [weak self] in

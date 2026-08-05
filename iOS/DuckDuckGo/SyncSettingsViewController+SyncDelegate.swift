@@ -648,6 +648,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                                             stringForQRCode: String,
                                             source: SyncSetupSource,
                                             onPresentPixelInfo: SyncSetupPixelInfo?) {
+        scanSetupSource = source
         let model = ScanOrPasteCodeViewModel(
             codeForDisplayOrPasting: codeForDisplayOrPasting,
             qrCodeString: stringForQRCode,
@@ -677,19 +678,18 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
             navController.modalPresentationStyle = .fullScreen
         }
         navigationController?.present(navController, animated: true) {
-            if !self.useSimplifiedLayoutV2 {
-                self.checkCameraPermission(model: model)
-            }
-            if let onPresentPixelInfo {
-                let pixelSource = self.source ?? onPresentPixelInfo.source.rawValue
-                var parameters = [
-                    PixelParameters.source: pixelSource,
-                    SyncSetupPixelInfo.Parameter.myKind: SyncSetupPixelInfo.Value.ddg,
-                    PixelParameters.uiVersion: self.syncUIVersion
-                ]
-                parameters[SyncSetupPixelInfo.Parameter.flowVersion] = onPresentPixelInfo.flowVersion
-                Pixel.fire(pixel: onPresentPixelInfo.pixel, withAdditionalParameters: parameters, includedParameters: [.appVersion])
-            }
+            guard !self.useSimplifiedLayoutV2 else { return }
+            self.checkCameraPermission(model: model)
+
+            guard let onPresentPixelInfo else { return }
+            let pixelSource = self.source ?? onPresentPixelInfo.source.rawValue
+            var parameters = [
+                PixelParameters.source: pixelSource,
+                SyncSetupPixelInfo.Parameter.myKind: SyncSetupPixelInfo.Value.ddg,
+                PixelParameters.uiVersion: self.syncUIVersion
+            ]
+            parameters[SyncSetupPixelInfo.Parameter.flowVersion] = onPresentPixelInfo.flowVersion
+            Pixel.fire(pixel: onPresentPixelInfo.pixel, withAdditionalParameters: parameters, includedParameters: [.appVersion])
         }
     }
 
@@ -876,6 +876,24 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                     PixelParameters.uiVersion: syncUIVersion
                    ],
                    includedParameters: [.appVersion])
+    }
+
+    func barcodeScreenShown() {
+        fireScanFlowScreenShownPixel(.syncSetupBarcodeScreenShown)
+    }
+
+    func scanQRCodeScreenShown() {
+        fireScanFlowScreenShownPixel(.syncSetupScanQRScreenShown)
+    }
+
+    private func fireScanFlowScreenShownPixel(_ pixel: Pixel.Event) {
+        var parameters = [
+            SyncSetupPixelInfo.Parameter.myKind: SyncSetupPixelInfo.Value.ddg,
+            SyncSetupPixelInfo.Parameter.flowVersion: syncSetupPixelFlowVersion,
+            PixelParameters.uiVersion: syncUIVersion
+        ]
+        parameters[PixelParameters.source] = source ?? scanSetupSource?.rawValue
+        pixelFiring.fire(pixel, withAdditionalParameters: parameters, includedParameters: [.appVersion], onComplete: { _ in })
     }
 
     func codeCopied(_ code: String, source: CodeCollectionSource) {

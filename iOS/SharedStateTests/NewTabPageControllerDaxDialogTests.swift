@@ -304,6 +304,16 @@ class CapturingNewTabDaxDialogProvider: NewTabDaxDialogProviding {
     func createDuckAIFireOnboardingCompletionDialog(message: String, onDismiss: @escaping () -> Void) -> AnyView {
         AnyView(EmptyView())
     }
+
+    var searchFlowCompletionContent: OnboardingEndOfJourneyTryAIContent?
+    var capturedOnTryDuckAI: (() -> Void)?
+    var capturedOnSkip: (() -> Void)?
+    func createEndOfJourneyTryAIDialog(content: OnboardingEndOfJourneyTryAIContent, onTryDuckAI: @escaping () -> Void, onSkip: @escaping () -> Void) -> AnyView {
+        self.searchFlowCompletionContent = content
+        self.capturedOnTryDuckAI = onTryDuckAI
+        self.capturedOnSkip = onSkip
+        return AnyView(EmptyView())
+    }
 }
 
 final class MockOnboardingFlowProvider: OnboardingFlowProviding {

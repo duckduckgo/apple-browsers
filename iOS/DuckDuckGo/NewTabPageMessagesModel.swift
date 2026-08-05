@@ -308,15 +308,14 @@ final class NewTabPageMessagesModel: ObservableObject {
         let newMessageID = newRemoteMessageCandidate?.remoteMessageID
 
         messagesSnapshot = newMessages
+        remoteMessageCandidate = newRemoteMessageCandidate
 
         if previousMessageID != newMessageID {
-            withdrawAdmittedRemoteMessage()
             visibleRemoteMessageGateID = nil
             visibleRemoteMessageGateMountIDs.removeAll()
             remoteMessageGateIdentity = nil
+            withdrawAdmittedRemoteMessage()
         }
-
-        remoteMessageCandidate = newRemoteMessageCandidate
 
         if let admittedRemoteMessageSession,
            admittedRemoteMessageSession.identity.promoID == newMessageID,

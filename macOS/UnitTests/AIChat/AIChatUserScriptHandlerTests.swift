@@ -618,6 +618,27 @@ struct AIChatUserScriptHandlerTests {
         #expect(pixelFiring.expectedFireCalls == pixelFiring.actualFireCalls)
     }
 
+    /// Pins the wire-visible names, which must match the keys in aichat_pixels.json5. The firing tests
+    /// build expected and actual from the same enum, so they can't catch a wrong name on their own.
+    @available(iOS 16, macOS 13, *)
+    @Test("Modal funnel pixels use the agreed names and carry the origin parameter", .timeLimit(.minutes(1)), arguments: [
+        (AIChatPixel.aiChatSubscriptionFunnelSubscribeModalImpression(origin: "funnel_duckai_macos__freelimit"),
+         "aichat_subscription-funnel_subscribe-modal_impression"),
+        (.aiChatSubscriptionFunnelSubscribeModalSubscribeClick(origin: "funnel_duckai_macos__freelimit"),
+         "aichat_subscription-funnel_subscribe-modal_subscribe_click"),
+        (.aiChatSubscriptionFunnelSubscribeModalActivateClick(origin: "funnel_duckai_macos__freelimit"),
+         "aichat_subscription-funnel_subscribe-modal_activate_click"),
+        (.aiChatSubscriptionFunnelUpgradeToProModalImpression(origin: "funnel_duckai_macos__freelimit"),
+         "aichat_subscription-funnel_upgrade-to-pro-modal_impression"),
+        (.aiChatSubscriptionFunnelUpgradeToProModalUpgradeClick(origin: "funnel_duckai_macos__freelimit"),
+         "aichat_subscription-funnel_upgrade-to-pro-modal_upgrade_click")
+    ])
+    @MainActor
+    func testModalFunnelPixelNameAndParameters(pixel: AIChatPixel, expectedName: String) {
+        #expect(pixel.name == expectedName)
+        #expect(pixel.parameters == ["origin": "funnel_duckai_macos__freelimit"])
+    }
+
     @available(iOS 16, macOS 13, *)
     @Test("didReportMetric maps every allowed modal source to its funnel origin", .timeLimit(.minutes(1)), arguments: [
         ("activatesubscription", "funnel_duckai_macos__activatesubscription"),

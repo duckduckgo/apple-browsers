@@ -120,9 +120,9 @@ struct EventHubFunctionalTests {
     /// `FakeEventHubSettingsProviding`.
     private struct StaticSettingsProviding: EventHubSettingsProviding {
         let enabledPublisher: AnyPublisher<Bool, Never>
-        let settingsPublisher: AnyPublisher<Data?, Never>
+        let settingsPublisher: AnyPublisher<[String: Any]?, Never>
         init(json: String, enabled: AnyPublisher<Bool, Never> = Just(true).eraseToAnyPublisher()) {
-            settingsPublisher = Just(json.data(using: .utf8)).eraseToAnyPublisher()
+            settingsPublisher = Just(settingsDictionary(json)).eraseToAnyPublisher()
             enabledPublisher = enabled
         }
     }

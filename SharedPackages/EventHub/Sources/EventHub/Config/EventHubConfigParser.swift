@@ -22,9 +22,11 @@ import os.log
 /// Parses the remote `eventHub` feature settings JSON into validated telemetry pixel configs, and
 /// serialises a single config back to JSON for persistence as a period's config snapshot.
 public protocol EventHubConfigParsing {
-    /// Parses the `telemetry` map from the feature settings JSON, returning only valid, fully-formed
-    /// pixel configs. Malformed or invalid input yields an empty list (never throws).
-    func parseTelemetry(_ settingsJSON: Data) -> [TelemetryPixelConfig]
+    /// Parses the `telemetry` map from the feature settings, returning only valid, fully-formed pixel
+    /// configs. Malformed or invalid input yields an empty list (never throws). Takes the settings in the
+    /// `[String: Any]` shape remote config already holds them in (BSK's `settings(for:)`), so no JSON
+    /// round trip is needed to reach the parser.
+    func parseTelemetry(_ settings: [String: Any]) -> [TelemetryPixelConfig]
 
     /// Parses a single serialised pixel config (as produced by `serializePixelConfig`), returning `nil`
     /// if it is malformed or invalid.
@@ -35,6 +37,10 @@ public protocol EventHubConfigParsing {
 }
 
 public final class EventHubConfigParser: EventHubConfigParsing {
+    /// The feature-settings key holding the per-pixel telemetry map. Also read by `EventHubSettings`,
+    /// which strips consent-gated entries out of it.
+    static let telemetryKey = "telemetry"
+
     private static let periodType = "period"
     private static let immediateType = "immediate"
     private static let counterTemplate = "counter"
@@ -42,16 +48,24 @@ public final class EventHubConfigParser: EventHubConfigParsing {
 
     public init() {}
 
-    public func parseTelemetry(_ settingsJSON: Data) -> [TelemetryPixelConfig] {
-        let settings: SettingsDTO
-        do {
-            settings = try JSONDecoder().decode(SettingsDTO.self, from: settingsJSON)
-        } catch {
-            Logger.eventHub.error("config: settings JSON could not be decoded, no telemetry configured: \(error.localizedDescription, privacy: .public)")
+    public func parseTelemetry(_ settings: [String: Any]) -> [TelemetryPixelConfig] {
+        // An absent `telemetry` key is the normal pre-rollout state ("eventHub enabled, nothing configured
+        // yet"), not malformed settings, so it must stay distinguishable from the failures below.
+        guard let telemetry = settings[Self.telemetryKey] else { return [] }
+        // `isValidJSONObject` first: `data(withJSONObject:)` raises an ObjC exception Swift cannot catch
+        // for values JSON can't represent, and this is a public entry point taking untyped input.
+        guard JSONSerialization.isValidJSONObject(telemetry) else {
+            Logger.eventHub.error("config: `\(Self.telemetryKey, privacy: .public)` is not a valid JSON object, no telemetry configured")
             return []
         }
-        guard let telemetry = settings.telemetry else { return [] }
-        return telemetry.compactMap { name, pixel in Self.toPixelConfig(name: name, pixel: pixel) }
+        do {
+            let data = try JSONSerialization.data(withJSONObject: telemetry)
+            return try JSONDecoder().decode([String: PixelDTO].self, from: data)
+                .compactMap { name, pixel in Self.toPixelConfig(name: name, pixel: pixel) }
+        } catch {
+            Logger.eventHub.error("config: `\(Self.telemetryKey, privacy: .public)` could not be decoded, no telemetry configured: \(error.localizedDescription, privacy: .public)")
+            return []
+        }
     }
 
     public func parseSinglePixelConfig(name: String, json: String) -> TelemetryPixelConfig? {
@@ -151,11 +165,6 @@ public final class EventHubConfigParser: EventHubConfigParsing {
 
     // MARK: DTOs
 
-    private struct SettingsDTO: Decodable {
-        /// Optional: a missing `telemetry` key means "nothing configured yet", not malformed settings.
-        let telemetry: [String: PixelDTO]?
-    }
-
     private struct PixelDTO: Codable {
         let state: String?
         let trigger: TriggerDTO?
@@ -184,8 +193,12 @@ public final class EventHubConfigParser: EventHubConfigParsing {
         let lt: Int?
     }
 
-    /// Decodes/encodes the `buckets` JSON object preserving key order (`BucketCounter` is
-    /// first-match-wins), relying on `KeyedDecodingContainer.allKeys` returning keys in document order.
+    /// Decodes/encodes the `buckets` JSON object as an ordered list, because `BucketCounter` is
+    /// first-match-wins and Swift's `Dictionary` would not preserve order. Decoding relies on
+    /// `KeyedDecodingContainer.allKeys` returning keys in document order, which holds for the persisted
+    /// snapshot but NOT for live remote config: that arrives as an unordered `[String: Any]`, so the
+    /// initial order is arbitrary. Harmless while bucket ranges are disjoint (exactly one match, and
+    /// `shouldStopCounting` scans all of them); overlapping ranges would resolve unpredictably.
     /// A bucket without a lower bound (`gte`) is invalid and disqualifies the whole counter.
     private struct BucketsDTO: Codable {
         let ordered: BucketList

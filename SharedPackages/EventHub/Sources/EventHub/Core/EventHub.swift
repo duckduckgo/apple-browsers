@@ -129,9 +129,9 @@ public final class EventHub: EventHubManaging {
             .sink { [weak self] enabled in self?.queue.sync { self?.latestEnabled = enabled } }
             .store(in: &subscriptions)
         settings.settingsPublisher
-            .sink { [weak self] data in
+            .sink { [weak self] settings in
                 self?.queue.sync {
-                    self?.latestConfigs = data.map { self?.parser.parseTelemetry($0) ?? [] } ?? []
+                    self?.latestConfigs = settings.map { self?.parser.parseTelemetry($0) ?? [] } ?? []
                 }
             }
             .store(in: &subscriptions)

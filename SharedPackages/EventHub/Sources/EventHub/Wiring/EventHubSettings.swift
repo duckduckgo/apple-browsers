@@ -25,20 +25,21 @@ import os.log
 /// consent directly, keeping the manager consent-agnostic.
 public protocol EventHubSettingsProviding {
     var enabledPublisher: AnyPublisher<Bool, Never> { get }
-    var settingsPublisher: AnyPublisher<Data?, Never> { get }
+    /// The feature settings in the `[String: Any]` shape remote config already holds them in (BSK's
+    /// `settings(for:)` returns `FeatureSettings = [String: Any]`), so no JSON round trip is needed to
+    /// hand them over. `nil` means no settings are available and no telemetry may run.
+    var settingsPublisher: AnyPublisher<[String: Any]?, Never> { get }
 }
 
 /// Combines the raw feature settings with the live consent state of every `EventHubConsentRequirement`,
 /// removing the `telemetry` entries for any consent group that is not currently granted.
 public final class EventHubSettings: EventHubSettingsProviding {
-    private static let telemetryKey = "telemetry"
-
     public let enabledPublisher: AnyPublisher<Bool, Never>
-    public let settingsPublisher: AnyPublisher<Data?, Never>
+    public let settingsPublisher: AnyPublisher<[String: Any]?, Never>
 
     public init(
         featureEnabledPublisher: AnyPublisher<Bool, Never>,
-        featureSettingsPublisher: AnyPublisher<Data?, Never>,
+        featureSettingsPublisher: AnyPublisher<[String: Any]?, Never>,
         consentRequirements: [EventHubConsentRequirement]
     ) {
         self.enabledPublisher = featureEnabledPublisher
@@ -62,27 +63,17 @@ public final class EventHubSettings: EventHubSettingsProviding {
             .eraseToAnyPublisher()
     }
 
-    private static func strip(_ settings: Data?, suppressed: Set<String>) -> Data? {
-        guard !suppressed.isEmpty, let settings else { return settings }
-        do {
-            // Fail closed: if we cannot verify the settings JSON shape when suppressed is non-empty,
-            // expose no telemetry at all rather than risk collecting without consent.
-            guard var object = try JSONSerialization.jsonObject(with: settings) as? [String: Any] else {
-                Logger.eventHub.error("settings: consent stripping could not read the settings JSON as an object, failing closed")
-                return nil
-            }
-            guard var telemetry = object[telemetryKey] as? [String: Any] else {
-                Logger.eventHub.error("settings: consent stripping found no usable `\(telemetryKey, privacy: .public)` object, failing closed")
-                return nil
-            }
-            for name in suppressed { telemetry.removeValue(forKey: name) }
-            object[telemetryKey] = telemetry
-            return try JSONSerialization.data(withJSONObject: object)
-        } catch {
-            // Fail closed: if we cannot reliably strip a gated entry, expose no telemetry at all
-            // rather than risk collecting without consent.
-            Logger.eventHub.error("settings: consent stripping failed, failing closed: \(error.localizedDescription, privacy: .public)")
+    private static func strip(_ settings: [String: Any]?, suppressed: Set<String>) -> [String: Any]? {
+        guard !suppressed.isEmpty, var settings else { return settings }
+        let key = EventHubConfigParser.telemetryKey
+        // Fail closed: if we cannot reach the telemetry map to remove a gated entry from it, expose no
+        // telemetry at all rather than risk collecting without consent.
+        guard var telemetry = settings[key] as? [String: Any] else {
+            Logger.eventHub.error("settings: consent stripping found no usable `\(key, privacy: .public)` object, failing closed")
             return nil
         }
+        for name in suppressed { telemetry.removeValue(forKey: name) }
+        settings[key] = telemetry
+        return settings
     }
 }

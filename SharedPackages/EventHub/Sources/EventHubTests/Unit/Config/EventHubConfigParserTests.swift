@@ -22,7 +22,7 @@ import Foundation
 
 @Suite("EventHubConfigParser")
 struct EventHubConfigParserTests {
-    static let settingsJSON = """
+    static let settings = settingsDictionary("""
     {
         "telemetry": {
             "webTelemetry_testPixel1": {
@@ -48,13 +48,13 @@ struct EventHubConfigParserTests {
             }
         }
     }
-    """.data(using: .utf8)!
+    """)
 
     let parser: EventHubConfigParsing = EventHubConfigParser()
 
     @Test("settings JSON parses the pixel correctly")
     func settingsJSONParsesPixelCorrectly() {
-        let telemetry = parser.parseTelemetry(Self.settingsJSON)
+        let telemetry = parser.parseTelemetry(Self.settings)
 
         #expect(telemetry.count == 1)
         let pixel = telemetry[0]
@@ -64,7 +64,7 @@ struct EventHubConfigParserTests {
 
     @Test("counter parameter with map buckets is parsed correctly")
     func counterParameterWithMapBucketsParsedCorrectly() throws {
-        let telemetry = parser.parseTelemetry(Self.settingsJSON)
+        let telemetry = parser.parseTelemetry(Self.settings)
         let param = try #require(telemetry.first?.parameters["count"])
 
         #expect(param.isCounter)
@@ -76,92 +76,98 @@ struct EventHubConfigParserTests {
 
     @Test("seconds period parses correctly")
     func secondsPeriodParsesCorrectly() {
-        let json = """
+        let json = settingsDictionary("""
         { "telemetry": { "test": {
             "state": "enabled",
             "trigger": { "period": { "seconds": 30 } },
             "parameters": { "c": { "template": "counter", "source": "e", "buckets": {"0+": {"gte": 0}} } }
         } } }
-        """.data(using: .utf8)!
+        """)
 
         #expect(parser.parseTelemetry(json).first?.trigger.period?.periodSeconds == 30)
     }
 
     @Test("empty JSON returns empty telemetry")
     func emptyJSONReturnsEmptyTelemetry() {
-        #expect(parser.parseTelemetry("{}".data(using: .utf8)!).isEmpty)
+        #expect(parser.parseTelemetry(settingsDictionary("{}")).isEmpty)
     }
 
     @Test("pixel missing state is skipped")
     func pixelMissingStateIsSkipped() {
-        let json = """
+        let json = settingsDictionary("""
         { "telemetry": { "test": {
             "trigger": { "period": { "seconds": 86400 } },
             "parameters": { "c": { "template": "counter", "source": "e", "buckets": {"0+": {"gte": 0}} } }
         } } }
-        """.data(using: .utf8)!
+        """)
 
         #expect(parser.parseTelemetry(json).isEmpty)
     }
 
     @Test("bucket missing gte is skipped")
     func bucketMissingGteIsSkipped() {
-        let json = """
+        let json = settingsDictionary("""
         { "telemetry": { "test": {
             "state": "enabled",
             "trigger": { "period": { "seconds": 86400 } },
             "parameters": { "c": { "template": "counter", "source": "e", "buckets": {"bad": {"lt": 5}} } }
         } } }
-        """.data(using: .utf8)!
+        """)
 
         #expect(parser.parseTelemetry(json).isEmpty)
     }
 
-    @Test("malformed JSON returns empty")
-    func malformedJSONReturnsEmpty() {
-        #expect(parser.parseTelemetry("not valid json".data(using: .utf8)!).isEmpty)
+    @Test("telemetry that is not an object returns empty")
+    func telemetryThatIsNotAnObjectReturnsEmpty() {
+        #expect(parser.parseTelemetry([EventHubConfigParser.telemetryKey: "not an object"]).isEmpty)
+    }
+
+    @Test("telemetry holding a value JSON cannot represent returns empty")
+    func telemetryHoldingUnrepresentableValueReturnsEmpty() {
+        // Guards the `isValidJSONObject` check: serialising this would raise an ObjC exception, not throw.
+        #expect(parser.parseTelemetry([EventHubConfigParser.telemetryKey: ["pixel": Date()]]).isEmpty)
     }
 
     @Test("missing telemetry key returns empty telemetry")
     func missingTelemetryKeyReturnsEmptyTelemetry() {
-        #expect(parser.parseTelemetry(#"{"other": {}}"#.data(using: .utf8)!).isEmpty)
+        #expect(parser.parseTelemetry(settingsDictionary(#"{"other": {}}"#)).isEmpty)
     }
 
     @Test("zero period returns no telemetry")
     func zeroPeriodReturnsNoTelemetry() {
-        let json = """
+        let json = settingsDictionary("""
         { "telemetry": { "test": {
             "state": "enabled",
             "trigger": { "period": { "seconds": 0 } },
             "parameters": { "c": { "template": "counter", "source": "e", "buckets": {"0+": {"gte": 0}} } }
         } } }
-        """.data(using: .utf8)!
+        """)
 
         #expect(parser.parseTelemetry(json).isEmpty)
     }
 
     @Test("negative period returns no telemetry")
     func negativePeriodReturnsNoTelemetry() {
-        let json = """
+        let json = settingsDictionary("""
         { "telemetry": { "test": {
             "state": "enabled",
             "trigger": { "period": { "seconds": -10 } },
             "parameters": { "c": { "template": "counter", "source": "e", "buckets": {"0+": {"gte": 0}} } }
         } } }
-        """.data(using: .utf8)!
+        """)
 
         #expect(parser.parseTelemetry(json).isEmpty)
     }
 
     @Test("unknown template is skipped")
     func unknownTemplateIsSkipped() {
-        let json = """
+        let json = settingsDictionary("""
         { "telemetry": { "test": {
             "state": "enabled",
             "trigger": { "period": { "seconds": 86400 } },
             "parameters": { "c": { "template": "unknown_template", "source": "e" } }
         } } }
-        """.data(using: .utf8)!
+        """)
 
         #expect(parser.parseTelemetry(json).isEmpty)
     }
@@ -178,7 +184,7 @@ struct EventHubConfigParserTests {
 
     @Test("serializePixelConfig produces valid JSON that round trips")
     func serializePixelConfigProducesValidJSONThatRoundTrips() throws {
-        let original = try #require(parser.parseTelemetry(Self.settingsJSON).first)
+        let original = try #require(parser.parseTelemetry(Self.settings).first)
 
         let json = try #require(parser.serializePixelConfig(original))
         let restored = try #require(parser.parseSinglePixelConfig(name: original.name, json: json))

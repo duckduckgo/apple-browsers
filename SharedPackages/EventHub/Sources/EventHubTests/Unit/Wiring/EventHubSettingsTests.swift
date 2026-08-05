@@ -23,16 +23,15 @@ import Combine
 
 @Suite("EventHubSettings")
 struct EventHubSettingsTests {
-    static let json = """
+    static let settings = settingsDictionary("""
     { "telemetry": {
         "gated_pixel":   { "state": "enabled", "trigger": { "type": "period", "period": { "seconds": 60 } } },
         "ungated_pixel": { "state": "enabled", "trigger": { "type": "period", "period": { "seconds": 60 } } }
     } }
-    """.data(using: .utf8)!
+    """)
 
-    private static func telemetryKeys(_ settings: Data?) throws -> [String] {
-        let object = try JSONSerialization.jsonObject(with: settings ?? Data()) as? [String: Any]
-        let telemetry = object?["telemetry"] as? [String: Any] ?? [:]
+    private static func telemetryKeys(_ settings: [String: Any]?) -> [String] {
+        let telemetry = settings?[EventHubConfigParser.telemetryKey] as? [String: Any] ?? [:]
         return telemetry.keys.sorted()
     }
 
@@ -44,20 +43,20 @@ struct EventHubSettingsTests {
     }
 
     @Test("removes the gated config while consent is withheld")
-    func removesGatedConfigWhileConsentIsWithheld() throws {
+    func removesGatedConfigWhileConsentIsWithheld() {
         let requirement = FakeConsentRequirement()
         let subject = EventHubSettings(
             featureEnabledPublisher: Just(true).eraseToAnyPublisher(),
-            featureSettingsPublisher: Just(Self.json as Data?).eraseToAnyPublisher(),
+            featureSettingsPublisher: Just(Self.settings as [String: Any]?).eraseToAnyPublisher(),
             consentRequirements: [requirement])
 
-        var latest: Data?
+        var latest: [String: Any]?
         let cancellable = subject.settingsPublisher.sink { latest = $0 }
         defer { cancellable.cancel() }
 
-        #expect(try Self.telemetryKeys(latest) == ["ungated_pixel"])
+        #expect(Self.telemetryKeys(latest) == ["ungated_pixel"])
 
         requirement.granted.send(true)
-        #expect(try Self.telemetryKeys(latest) == ["gated_pixel", "ungated_pixel"])
+        #expect(Self.telemetryKeys(latest) == ["gated_pixel", "ungated_pixel"])
     }
 }

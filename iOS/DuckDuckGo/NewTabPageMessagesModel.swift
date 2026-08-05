@@ -34,6 +34,7 @@ final class NewTabPageMessagesModel: ObservableObject {
     private let messageActionHandler: RemoteMessagingActionHandling
     private let imageLoader: RemoteMessagingImageLoading
     private let pixelReporter: RemoteMessagingPixelReporting?
+    private let promoCoordinator: NewTabPagePromoCoordinating
     private let isOpenedAfterIdle: () -> Bool
 
     init(homePageMessagesConfiguration: HomePageMessagesConfiguration,
@@ -43,6 +44,7 @@ final class NewTabPageMessagesModel: ObservableObject {
          messageActionHandler: RemoteMessagingActionHandling,
          imageLoader: RemoteMessagingImageLoading,
          pixelReporter: RemoteMessagingPixelReporting? = nil,
+         promoCoordinator: NewTabPagePromoCoordinating,
          isOpenedAfterIdle: @escaping () -> Bool = { false }) {
         self.homePageMessagesConfiguration = homePageMessagesConfiguration
         self.notificationCenter = notificationCenter
@@ -51,6 +53,7 @@ final class NewTabPageMessagesModel: ObservableObject {
         self.messageActionHandler = messageActionHandler
         self.imageLoader = imageLoader
         self.pixelReporter = pixelReporter
+        self.promoCoordinator = promoCoordinator
         self.isOpenedAfterIdle = isOpenedAfterIdle
     }
 

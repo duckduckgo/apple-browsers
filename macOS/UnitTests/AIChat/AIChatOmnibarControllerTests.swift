@@ -94,6 +94,25 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         super.tearDown()
     }
 
+    // Builds a controller with the shared mocks and a chosen burner mode.
+    private func makeController(isBurner: Bool) -> AIChatOmnibarController {
+        AIChatOmnibarController(
+            aiChatTabOpener: mockTabOpener,
+            surface: .addressBar,
+            draftSource: TabPromptDraftSource(tabCollectionViewModel: tabCollectionViewModel),
+            origin: WindowPromptOrigin(tabCollectionViewModel: tabCollectionViewModel),
+            pixelHandler: AddressBarPromptPixelHandler(),
+            featureFlagger: featureFlagger,
+            searchPreferencesPersistor: searchPreferencesPersistor,
+            isBurner: isBurner,
+            preferences: mockPreferences,
+            modelsService: mockModelsService,
+            subscriptionManager: mockSubscriptionManager,
+            subscriptionUpsellPresenter: mockSubscriptionUpsellPresenter,
+            badgeImpressionPersistor: mockBadgeImpressionPersistor
+        )
+    }
+
     // MARK: - URL Navigation Tests
 
     func testWhenValidURLIsSubmitted_ThenDelegateReceivesNavigationRequest() {
@@ -313,6 +332,26 @@ final class AIChatOmnibarControllerTests: XCTestCase {
 
         // Then
         XCTAssertFalse(controller.isSuggestionsEnabled)
+    }
+
+    func testWhenBurnerWindow_ThenSuggestionsDisabled_EvenWithFeatureFlagAndAutocompleteEnabled() {
+        // Given
+        featureFlagger.featuresStub[FeatureFlag.aiChatSuggestions.rawValue] = true
+        searchPreferencesPersistor.showAutocompleteSuggestions = true
+        let burnerController = makeController(isBurner: true)
+
+        // Then
+        XCTAssertFalse(burnerController.isSuggestionsEnabled)
+    }
+
+    func testWhenNonBurnerWindow_ThenSuggestionsEnabled_WithFeatureFlagAndAutocompleteEnabled() {
+        // Given
+        featureFlagger.featuresStub[FeatureFlag.aiChatSuggestions.rawValue] = true
+        searchPreferencesPersistor.showAutocompleteSuggestions = true
+        let regularController = makeController(isBurner: false)
+
+        // Then
+        XCTAssertTrue(regularController.isSuggestionsEnabled)
     }
 
     // MARK: - Model Selection Tests

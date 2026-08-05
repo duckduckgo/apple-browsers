@@ -167,12 +167,76 @@ final class AIChatPixelMetricHandlerTests: XCTestCase {
         // Given
         handler = AIChatPixelMetricHandler(timeElapsedInMinutes: nil, pixelFiring: PixelFiringMock.self)
 
-        // When
-        let validMetric = AIChatMetric(metricName: .userDidSubmitPrompt)
-        handler.firePixelWithMetric(validMetric)
+        // When - a metric name in neither the engagement nor the funnel table
+        handler.firePixelWithMetric(AIChatMetric(metricName: .userDidAcceptTermsAndConditions))
 
         // Then
-        XCTAssertEqual(PixelFiringMock.allPixelsFired.count, 1)
+        XCTAssertTrue(PixelFiringMock.allPixelsFired.isEmpty)
+    }
+
+    // MARK: - Subscription Funnel Map Tests
+
+    /// No metric may be mapped twice: a funnel metric added to the engagement table would fire the wrong
+    /// pixel, and a metric in both tables would be a latent double-count.
+    func testEngagementAndFunnelTablesHaveDisjointKeys() {
+        let engagementKeys = Set(AIChatPixelMetricHandler.metricToEventMap.keys)
+        let funnelKeys = Set(AIChatPixelMetricHandler.funnelMetricToPixelMap.keys)
+
+        XCTAssertTrue(engagementKeys.isDisjoint(with: funnelKeys),
+                      "Overlapping keys: \(engagementKeys.intersection(funnelKeys))")
+    }
+
+    func testFunnelMapDeliberatelyOmitsFreePlanBadgeMetrics() {
+        let funnelKeys = Set(AIChatPixelMetricHandler.funnelMetricToPixelMap.keys)
+
+        XCTAssertFalse(funnelKeys.contains(.userDidViewFreePlanBadge))
+        XCTAssertFalse(funnelKeys.contains(.userDidClickFreePlanUpgradeButton))
+    }
+
+    func testFirePixelWithMetricForFunnelMetricsFiresPairWithOrigin() {
+        // Given
+        let testCases: [(origin: String, view: AIChatMetricName, click: AIChatMetricName)] = [
+            ("funnel_duckai_ios__aisidebar", .userDidViewAiSidebarUpgradeButton, .userDidClickAiSidebarUpgradeButton),
+            ("funnel_duckai_ios__activatesubscription", .userDidViewActivateSubscriptionBanner, .userDidClickActivateSubscriptionButton),
+            ("funnel_duckai_ios__freelimit", .userDidViewFreeLimitMessage, .userDidClickFreeLimitSubscribeLink),
+            ("funnel_duckai_ios__imagegenerationlimit", .userDidViewImageGenerationLimitMessage, .userDidClickImageGenerationLimitSubscribeButton),
+            ("funnel_duckai_ios__pluslimit", .userDidViewPlusLimitMessage, .userDidClickPlusLimitUpgradeLink),
+            ("funnel_duckai_ios__promotioncard", .userDidViewPromotionCard, .userDidClickPromotionCardButton),
+            ("funnel_duckai_ios__settings", .userDidViewSettingsSubscribeButton, .userDidClickSettingsSubscribeButton),
+            ("funnel_duckai_ios__disclaimerbanner", .userDidViewProUpgradeDisclaimerBanner, .userDidClickProUpgradeDisclaimerBannerButton),
+            ("funnel_duckai_ios__voicechatlimit", .userDidViewVoiceChatLimitModal, .userDidClickVoiceChatLimitModalSubscribeButton),
+            ("funnel_duckai_ios__voicechatdurationlimit", .userDidViewVoiceChatDurationLimitModal, .userDidClickVoiceChatDurationLimitModalSubscribeButton)
+        ]
+        XCTAssertEqual(testCases.count * 2, AIChatPixelMetricHandler.funnelMetricToPixelMap.count,
+                       "The funnel table gained or lost entries this test does not cover")
+
+        // A non-nil elapsed time proves the funnel branch does not inherit the engagement branch's timestamp
+        handler = AIChatPixelMetricHandler(timeElapsedInMinutes: 7, pixelFiring: PixelFiringMock.self)
+
+        for testCase in testCases {
+            // When
+            PixelFiringMock.tearDown()
+            handler.firePixelWithMetric(AIChatMetric(metricName: testCase.view))
+
+            // Then
+            XCTAssertEqual(PixelFiringMock.allPixelsFired.count, 1, "\(testCase.origin) view")
+            XCTAssertEqual(PixelFiringMock.lastPixelName, Pixel.Event.aiChatSubscriptionFunnelImpression.name)
+            XCTAssertEqual(PixelFiringMock.lastParams, ["origin": testCase.origin])
+
+            // When
+            PixelFiringMock.tearDown()
+            handler.firePixelWithMetric(AIChatMetric(metricName: testCase.click))
+
+            // Then
+            XCTAssertEqual(PixelFiringMock.allPixelsFired.count, 1, "\(testCase.origin) click")
+            XCTAssertEqual(PixelFiringMock.lastPixelName, Pixel.Event.aiChatSubscriptionFunnelClick.name)
+            XCTAssertEqual(PixelFiringMock.lastParams, ["origin": testCase.origin])
+        }
+    }
+
+    func testSubscriptionFunnelPixelNames() {
+        XCTAssertEqual(Pixel.Event.aiChatSubscriptionFunnelImpression.name, "m_aichat_subscription-funnel_impression")
+        XCTAssertEqual(Pixel.Event.aiChatSubscriptionFunnelClick.name, "m_aichat_subscription-funnel_click")
     }
 
     // MARK: - Integration Tests

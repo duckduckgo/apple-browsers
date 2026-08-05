@@ -272,15 +272,17 @@ struct Launching: LaunchingHandling {
         )
         let subscriptionPromoExistingUserPresenter = SubscriptionPromoPresenter(coordinator: subscriptionPromoExistingUserCoordinator)
 
-        // Initialise modal prompts coordination
+        // Initialise promo coordination
         let omniBarFocuser = OmniBarFocuserProvider()
-        let modalPromptCoordinationService = ModalPromptCoordinationFactory.makeService(
+        let promoQueueLeaseArbiter = PromoQueueLeaseArbiter()
+        let promoCoordinationService = PromoCoordinationFactory.makeService(
             dependency: .init(
                 launchSourceManager: launchSourceManager,
                 contextualOnboardingStatusProvider: daxDialogs,
                 keyValueFileStoreService: appKeyValueFileStoreService.keyValueFilesStore,
                 privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager,
                 featureFlagger: featureFlagger,
+                promoQueueLeaseArbiter: promoQueueLeaseArbiter,
                 whatsNewRepository: whatsNewRepository,
                 remoteMessagingActionHandler: remoteMessagingService.remoteMessagingActionHandler,
                 remoteMessagingPixelReporter: remoteMessagingService.pixelReporter,
@@ -337,7 +339,7 @@ struct Launching: LaunchingHandling {
                                               freemiumPIRDebugSettings: freemiumPIRDebugSettings,
                                               freemiumDBPUserStateManager: dbpService.freemiumDBPUserStateManager,
                                               profileStateManager: dbpService.profileStateManager,
-                                              modalPromptCoordinationService: modalPromptCoordinationService,
+                                              promoCoordinationService: promoCoordinationService,
                                               mobileCustomization: mobileCustomization,
                                               productSurfaceTelemetry: productSurfaceTelemetry,
                                               whatsNewRepository: whatsNewRepository,

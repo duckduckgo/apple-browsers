@@ -90,7 +90,7 @@ final class PromptBarCoordinatorTests: XCTestCase {
     ) -> (PromptBarCoordinator, PromptBarPreferences, MockGlobalShortcutRegistrar, MockPromptBarPresenter) {
         let registrar = MockGlobalShortcutRegistrar()
         let presenter = MockPromptBarPresenter()
-        let featureFlagger = MockFeatureFlagger(featuresStub: [FeatureFlag.macosPromptBar.rawValue: isFeatureOn])
+        let featureFlagger = MockFeatureFlagger(featuresStub: [FeatureFlag.promptBar.rawValue: isFeatureOn])
 
         let configuration = MockAIChatConfig()
         configuration.shouldDisplayAnyAIChatFeature = isDuckAIAvailable

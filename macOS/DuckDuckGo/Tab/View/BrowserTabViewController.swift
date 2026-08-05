@@ -164,7 +164,7 @@ final class BrowserTabViewController: NSViewController {
          bookmarkDragDropManager: BookmarkDragDropManager = NSApp.delegateTyped.bookmarkDragDropManager,
          onboardingPixelReporter: OnboardingPixelReporting = OnboardingPixelReporter(),
          onboardingDialogTypeProvider: ContextualOnboardingDialogTypeProviding & ContextualOnboardingStateUpdater = Application.appDelegate.onboardingContextualDialogsManager,
-         onboardingDialogFactory: ContextualDaxDialogsFactory = ContextualDaxDialogsProvider(featureFlagger: NSApp.delegateTyped.featureFlagger, fireCoordinator: NSApp.delegateTyped.fireCoordinator),
+         onboardingDialogFactory: ContextualDaxDialogsFactory = ContextualDaxDialogsProvider(fireCoordinator: NSApp.delegateTyped.fireCoordinator),
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
          newTabPageActionsManager: @autoclosure @escaping @MainActor () -> NewTabPageActionsManager = NSApp.delegateTyped.newTabPageCoordinator.actionsManager,
          activeRemoteMessageModel: ActiveRemoteMessageModel = NSApp.delegateTyped.activeRemoteMessageModel,

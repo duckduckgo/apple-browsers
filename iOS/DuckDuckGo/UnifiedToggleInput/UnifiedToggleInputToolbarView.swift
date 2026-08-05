@@ -169,13 +169,32 @@ final class UnifiedToggleInputToolbarView: UIView {
     }
 
     var isToolsButtonHidden: Bool {
-        get { toolsButton.isHidden }
-        set { toolsButton.isHidden = newValue }
+        get { toolsButtonHiddenByCaller }
+        set {
+            toolsButtonHiddenByCaller = newValue
+            applyEditableControlVisibility()
+        }
     }
 
     var isReasoningButtonHidden: Bool {
-        get { reasoningButton.isHidden }
-        set { reasoningButton.isHidden = newValue }
+        get { reasoningButtonHiddenByCaller }
+        set {
+            reasoningButtonHiddenByCaller = newValue
+            applyEditableControlVisibility()
+        }
+    }
+
+    /// Caller-requested visibility for the tools/reasoning buttons, kept separate from the applied
+    /// state so edit mode can force them hidden (a re-render can't un-hide them) and still restore
+    /// the caller's intent on exit.
+    private var toolsButtonHiddenByCaller = false
+    private var reasoningButtonHiddenByCaller = true
+
+    /// Hidden while editing (only text edits + attachment removal are allowed there), otherwise the
+    /// caller's requested state. Called from the setters and on `isEditing` change.
+    private func applyEditableControlVisibility() {
+        toolsButton.isHidden = toolsButtonHiddenByCaller || isEditing
+        reasoningButton.isHidden = reasoningButtonHiddenByCaller || isEditing
     }
 
     var isImageButtonHidden: Bool {
@@ -194,6 +213,19 @@ final class UnifiedToggleInputToolbarView: UIView {
     var isReturnKeyHidden: Bool {
         get { returnKeyButton.isHidden }
         set { returnKeyButton.isHidden = newValue }
+    }
+
+    /// True while the native input is editing an existing message. Editing only changes text and
+    /// removes attachments, so the tools, reasoning, and model controls are hidden (the attach
+    /// button is hidden by the attachment controller). Captures the pre-edit visibility of the
+    /// tools/reasoning buttons — which have no single update method — and restores it on exit;
+    /// the model/tool chips are handled directly in `updateChipVisibility`.
+    var isEditing: Bool = false {
+        didSet {
+            guard oldValue != isEditing else { return }
+            applyEditableControlVisibility()
+            updateChipVisibility()
+        }
     }
 
     private var modelChipExplicitlyHidden = false
@@ -481,8 +513,8 @@ private extension UnifiedToggleInputToolbarView {
     }
 
     private func updateChipVisibility() {
-        modelChipButton.isHidden = modelChipExplicitlyHidden
-        selectedToolChipView.isHidden = (selectedTool == nil)
+        modelChipButton.isHidden = modelChipExplicitlyHidden || isEditing
+        selectedToolChipView.isHidden = (selectedTool == nil) || isEditing
         selectedToolIconView.image = selectedTool?.toolbarChipIcon
         selectedToolChipView.accessibilityLabel = selectedTool?.toolbarChipAccessibilityLabel
     }

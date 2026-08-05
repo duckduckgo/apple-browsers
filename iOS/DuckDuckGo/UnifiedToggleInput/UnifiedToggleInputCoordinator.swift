@@ -788,6 +788,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     /// mutation for edit mode here (rather than scattering them) means future pieces — the
     /// "editing will replace the response" disclaimer, an "Update" send label — slot in one place.
     private func applyEditModeToInput() {
+        viewController.setEditMode(isEditing)
         attachmentController.updateAttachButtonPresentation()
     }
 

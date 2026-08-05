@@ -348,6 +348,11 @@ final class UnifiedToggleInputView: UIView {
         set { toolsToolbar.isImageButtonHidden = newValue }
     }
 
+    /// Puts the toolbar into/out of edit mode (hides the tools / reasoning / model controls).
+    func setEditMode(_ editing: Bool) {
+        toolsToolbar.isEditing = editing
+    }
+
     var isImageButtonEnabled: Bool {
         get { toolsToolbar.isImageButtonEnabled }
         set { toolsToolbar.isImageButtonEnabled = newValue }

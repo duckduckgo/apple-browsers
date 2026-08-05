@@ -245,6 +245,11 @@ final class UnifiedToggleInputViewController: UIViewController {
         set { inputBarView.isImageButtonHidden = newValue }
     }
 
+    /// Puts the input into/out of edit mode (hides the tools / reasoning / model controls).
+    func setEditMode(_ editing: Bool) {
+        inputBarView.setEditMode(editing)
+    }
+
     var isImageButtonEnabled: Bool {
         get { inputBarView.isImageButtonEnabled }
         set { inputBarView.isImageButtonEnabled = newValue }

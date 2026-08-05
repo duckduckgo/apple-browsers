@@ -287,12 +287,10 @@ enum PreferencePaneIdentifier: String, Equatable, Hashable, Identifiable, CaseIt
     }
 }
 
-/// Preferences Section Anchor
 enum PreferencesScrollAnchor: Hashable {
     case permissions
 }
 
-/// Where a deep link into Settings lands: a pane, optionally narrowed to a section within it.
 struct PreferencesDestination: Hashable {
 
     let pane: PreferencePaneIdentifier

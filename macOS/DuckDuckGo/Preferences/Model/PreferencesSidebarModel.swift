@@ -564,8 +564,6 @@ final class PreferencesSidebarModel: ObservableObject {
         }
     }
 
-    /// Selecting the pane here, rather than leaving it to the tab content pipeline, is what makes the
-    /// anchored section part of the hierarchy before the request is published.
     @MainActor
     func navigate(to destination: PreferencesDestination) {
         selectPane(destination.pane)
@@ -576,7 +574,6 @@ final class PreferencesSidebarModel: ObservableObject {
         scrollTarget = anchor
     }
 
-    /// Clearing back to `nil` is what lets an identical request fire again later.
     @MainActor
     func resetScrollRequest() {
         scrollTarget = nil

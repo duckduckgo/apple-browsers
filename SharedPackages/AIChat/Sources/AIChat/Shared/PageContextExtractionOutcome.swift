@@ -23,7 +23,6 @@ public enum PageContextExtractionOutcome: Equatable {
     public enum FailureReason: String, Equatable {
         case emptyContent = "empty_content"
         case deserializeFailed = "deserialize_failed"
-        /// The user script reported that collection threw; distinct from a hang, which is `timeout`.
         case scriptError = "script_error"
         case timeout
         case noWebView = "no_webview"

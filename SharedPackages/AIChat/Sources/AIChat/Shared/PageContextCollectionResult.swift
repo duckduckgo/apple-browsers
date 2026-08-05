@@ -18,19 +18,12 @@
 
 import Foundation
 
-/// What a `collectionResult` message from the page-context user script carried. Failures are
-/// distinguished so a collection that answered with an error isn't measured as one that never answered.
 public enum PageContextCollectionResult: Equatable {
 
     case collected(AIChatPageContextData)
-
-    /// The script replied with its error envelope, which carries no serialized page data.
     case scriptError
-
-    /// Serialized page data arrived but could not be decoded.
     case decodeFailed
 
-    /// The collected context, or `nil` for either failure.
     public var pageContext: AIChatPageContextData? {
         guard case .collected(let pageContext) = self else { return nil }
         return pageContext

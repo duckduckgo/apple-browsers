@@ -25,6 +25,7 @@ import Bookmarks
 import Persistence
 import History
 import Core
+import FeatureFlags_iOS
 
 class MainViewFactory {
 

@@ -28,6 +28,7 @@ import PrivacyConfig
 import SecureStorage
 import SyncDataProviders
 import Core
+import FeatureFlags_iOS
 
 public class SyncDataProviders: DataProvidersSource {
     public let bookmarksAdapter: SyncBookmarksAdapter

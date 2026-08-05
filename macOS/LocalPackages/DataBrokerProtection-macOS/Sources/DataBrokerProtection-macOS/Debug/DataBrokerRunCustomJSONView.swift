@@ -19,7 +19,7 @@
 import SwiftUI
 import BrowserServicesKit
 import DataBrokerProtectionCore
-import FeatureFlags
+import FeatureFlags_macOS
 
 struct DataBrokerRunCustomJSONView: View {
     private enum Constants {
@@ -137,7 +137,6 @@ struct DataBrokerRunCustomJSONView: View {
 
     private var dbpFeatureFlagLines: [(name: String, value: String)] {
         [
-            (FeatureFlag.dbpRemoteBrokerDelivery.rawValue, viewModel.featureFlagger.isRemoteBrokerDeliveryFeatureOn.description),
             (FeatureFlag.dbpWebViewUserAgent.rawValue, viewModel.featureFlagger.isWebViewUserAgentOn.description),
         ]
     }

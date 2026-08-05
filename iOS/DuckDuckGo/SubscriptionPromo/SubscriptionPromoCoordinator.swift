@@ -22,6 +22,7 @@ import Core
 import Foundation
 import PrivacyConfig
 import Subscription
+import FeatureFlags_iOS
 
 /// Coordinates the subscription promotion launch sheet for users who skipped onboarding.
 ///

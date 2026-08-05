@@ -19,7 +19,7 @@
 import Combine
 import Common
 import ConcurrencyExtensions
-import FeatureFlags
+import FeatureFlags_macOS
 import FoundationExtensions
 import PrivacyConfig
 import WebKit

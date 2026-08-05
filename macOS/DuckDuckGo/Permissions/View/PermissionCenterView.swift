@@ -162,6 +162,12 @@ struct PermissionCenterView: View {
         }
         .frame(width: popoverWidth)
         .background(Color(viewModel.backgroundColor))
+        .onHover { isHovered in
+            // Reaching the popover with the pointer counts as engaging with it: stop any pending autodismissal.
+            if isHovered {
+                viewModel.disableAutodismiss()
+            }
+        }
     }
 }
 
@@ -368,7 +374,7 @@ struct PermissionRowView: View {
             SystemPermissionWarningView(
                 prefixText: UserText.permissionCenterSystemNotificationNotDetermined,
                 linkText: UserText.permissionCenterTurnOnNotifications,
-                linkColor: .accentColor
+                linkColor: Color(designSystemColor: .accentTextPrimary)
             ) {
                 onRequestSystemPermission?()
             }
@@ -377,7 +383,7 @@ struct PermissionRowView: View {
             SystemPermissionWarningView(
                 prefixText: item.permissionType.systemPermissionDisabledText,
                 linkText: item.permissionType.systemSettingsLinkText,
-                linkColor: .accentColor,
+                linkColor: Color(designSystemColor: .accentTextPrimary),
                 linkOnNewLine: item.permissionType == .notification
             ) {
                 openSystemSettings()

@@ -20,15 +20,11 @@ import Foundation
 import DataBrokerProtectionCore
 import DataBrokerProtection_macOS
 import PrivacyConfig
-import FeatureFlags
+import FeatureFlags_macOS
 import PixelKit
 
 final class DBPFeatureFlagger: DBPFeatureFlagging {
     fileprivate let featureFlagger: FeatureFlagger
-
-    var isRemoteBrokerDeliveryFeatureOn: Bool {
-        featureFlagger.isFeatureOn(.dbpRemoteBrokerDelivery)
-    }
 
     var isForegroundRunningOnAppActiveFeatureOn: Bool {
         // Not relevant to macOS

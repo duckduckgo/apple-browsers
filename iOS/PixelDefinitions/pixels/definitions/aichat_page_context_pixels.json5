@@ -17,7 +17,7 @@
                 "key": "reason",
                 "description": "Why extraction produced no usable content.",
                 "type": "string",
-                "enum": ["empty_content", "deserialize_failed", "timeout", "no_webview", "post_failed", "tab_evicted"]
+                "enum": ["empty_content", "deserialize_failed", "script_error", "timeout", "no_webview", "post_failed", "tab_evicted"]
             },
             {
                 "key": "trigger",

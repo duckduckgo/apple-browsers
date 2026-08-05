@@ -1012,18 +1012,6 @@ private extension UnifiedInputContentContainerViewController {
     }
 }
 
-/// Emits when promo coordination reaches enabled after the initial feature-state value.
-func promoQueueEnablementPublisher(
-    _ featureStatePublisher: AnyPublisher<PromoQueueFeatureState, Never>
-) -> AnyPublisher<Void, Never> {
-    featureStatePublisher
-        .removeDuplicates()
-        .dropFirst()
-        .filter { $0 == .enabled }
-        .map { _ in () }
-        .eraseToAnyPublisher()
-}
-
 // MARK: - DuckAISuggestionsSurfaceProviderDelegate
 
 extension UnifiedInputContentContainerViewController: DuckAISuggestionsSurfaceProviderDelegate {

@@ -23,6 +23,7 @@ import Core
 import Onboarding
 import Persistence
 import PrivacyConfig
+import FeatureFlags_iOS
 
 enum OnboardingUserType: String, Equatable, CaseIterable, CustomStringConvertible {
     case notSet

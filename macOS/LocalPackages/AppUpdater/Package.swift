@@ -16,7 +16,7 @@ let package = Package(
         .package(url: "https://github.com/sparkle-project/Sparkle.git", exact: "2.9.4"),
         .package(path: "../../../SharedPackages/BrowserServicesKit"),
         .package(path: "../../../SharedPackages/Infrastructure/SystemFrameworksExtensions"),
-        .package(path: "../FeatureFlags"),
+        .package(path: "../FeatureFlags-macOS"),
     ],
     targets: [
         .target(
@@ -27,7 +27,7 @@ let package = Package(
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
-                .product(name: "FeatureFlags", package: "FeatureFlags"),
+                .product(name: "FeatureFlags-macOS", package: "FeatureFlags-macOS"),
                 .product(name: "Navigation", package: "BrowserServicesKit"),
                 .product(name: "Persistence", package: "BrowserServicesKit"),
                 .product(name: "PixelKit", package: "BrowserServicesKit"),
@@ -42,7 +42,7 @@ let package = Package(
             dependencies: [
                 "AppUpdaterShared",
                 .product(name: "BrowserServicesKit", package: "BrowserServicesKit"),
-                .product(name: "FeatureFlags", package: "FeatureFlags"),
+                .product(name: "FeatureFlags-macOS", package: "FeatureFlags-macOS"),
                 .product(name: "Persistence", package: "BrowserServicesKit"),
                 .product(name: "PixelKit", package: "BrowserServicesKit"),
             ],
@@ -55,7 +55,7 @@ let package = Package(
             dependencies: [
                 "AppUpdaterShared",
                 .product(name: "BrowserServicesKit", package: "BrowserServicesKit"),
-                .product(name: "FeatureFlags", package: "FeatureFlags"),
+                .product(name: "FeatureFlags-macOS", package: "FeatureFlags-macOS"),
                 .product(name: "Persistence", package: "BrowserServicesKit"),
                 .product(name: "UserScript", package: "BrowserServicesKit"),
                 .product(name: "Sparkle", package: "Sparkle"),
@@ -74,7 +74,7 @@ let package = Package(
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
-                .product(name: "FeatureFlags", package: "FeatureFlags"),
+                .product(name: "FeatureFlags-macOS", package: "FeatureFlags-macOS"),
                 .product(name: "Persistence", package: "BrowserServicesKit"),
                 .product(name: "PixelKit", package: "BrowserServicesKit"),
                 .product(name: "PrivacyConfig", package: "BrowserServicesKit"),

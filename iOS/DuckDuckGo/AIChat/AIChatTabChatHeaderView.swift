@@ -32,6 +32,7 @@ protocol AIChatTabChatHeaderViewDelegate: AnyObject {
     func aiChatTabChatHeaderDidTapNewSearch()
     func aiChatTabChatHeaderDidTapNewFireTab()
     func aiChatTabChatHeaderDidTapTabSwitcher()
+    func aiChatTabChatHeaderUpgradePlateDidBecomeVisible()
 }
 
 final class AIChatTabChatHeaderView: UIView {
@@ -67,13 +68,39 @@ final class AIChatTabChatHeaderView: UIView {
         var isVoiceSessionActive: Bool = false
         /// Hides the free/upgrade title during the Duck.ai fire onboarding step.
         var isOnboardingLocked: Bool = false
+        /// Visibility of the enclosing Duck.ai tab-header container.
+        var isContainerVisible: Bool = false
     }
 
     private var state = ViewState() {
         didSet {
             guard state != oldValue else { return }
             applyState()
+            notifyDelegateIfUpgradePlateBecameVisible()
         }
+    }
+
+    private var wasUpgradePlateVisible = false
+
+    /// `nil` subscription state means unresolved, not free — hence the explicit `== false`.
+    private var isTitleContainerVisible: Bool {
+        !state.isOnboardingLocked && state.isSubscriptionActive == false
+    }
+
+    private var isTitleHolderVisible: Bool {
+        !state.isVoiceSessionActive
+    }
+
+    private var isUpgradePlateVisible: Bool {
+        state.isContainerVisible && isTitleHolderVisible && isTitleContainerVisible
+    }
+
+    private func notifyDelegateIfUpgradePlateBecameVisible() {
+        let isVisible = isUpgradePlateVisible
+        guard isVisible != wasUpgradePlateVisible else { return }
+        wasUpgradePlateVisible = isVisible
+        guard isVisible else { return }
+        delegate?.aiChatTabChatHeaderUpgradePlateDidBecomeVisible()
     }
 
     private lazy var closeButton: UIButton = makeIconButton(
@@ -368,6 +395,10 @@ final class AIChatTabChatHeaderView: UIView {
         state.isSubscriptionActive = isSubscriptionActive
     }
 
+    func setContainerVisible(_ visible: Bool) {
+        state.isContainerVisible = visible
+    }
+
     /// Hide title, chat-list pill, and close button during voice — voice owns its own dismiss UI.
     func setVoiceSessionActive(_ active: Bool) {
         state.isVoiceSessionActive = active
@@ -393,10 +424,10 @@ final class AIChatTabChatHeaderView: UIView {
 
     private func applyState() {
         // During fire onboarding, hide the free/upgrade title to avoid distraction.
-        titleContainer.isHidden = state.isOnboardingLocked || state.isSubscriptionActive != false
+        titleContainer.isHidden = !isTitleContainerVisible
         paidTitleStack.isHidden = state.isSubscriptionActive != true
         let voiceActive = state.isVoiceSessionActive
-        titleHolder.isHidden = voiceActive
+        titleHolder.isHidden = !isTitleHolderVisible
         // Hide each pill (and its button inside it) together so the surrounding glass pill
         // background also disappears during voice sessions. Voice mode owns its own dismiss UI.
         chatListButtonPill.isHidden = voiceActive

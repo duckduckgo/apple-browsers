@@ -1,7 +1,7 @@
 {
   "name": "Public Data Check",
   "url": "publicdatacheck.com",
-  "version": "0.2.0",
+  "version": "0.2.0.1",
   "parent": "spyfly.com",
   "addedDatetime": 1778777242134,
   "optOutUrl": "https://www.publicdatacheck.com/help-center/privacy-requests",
@@ -456,5 +456,5 @@
     "maintenanceScan": 120,
     "maxAttempts": -1
   },
-  "removedAt": null
+  "removedAt": 1785369600000
 }

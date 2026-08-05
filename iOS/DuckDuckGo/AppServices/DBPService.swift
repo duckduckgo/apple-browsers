@@ -27,6 +27,7 @@ import PixelKit
 import Networking
 import Subscription
 import os.log
+import FeatureFlags_iOS
 
 final class DBPService: NSObject {
     private let dbpIOSManager: DataBrokerProtectionIOSManager?

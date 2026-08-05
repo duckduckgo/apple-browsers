@@ -18,6 +18,7 @@
 //
 
 import Core
+import FeatureFlags_iOS
 
 class WebViewTransition: TabSwitcherTransition {
     

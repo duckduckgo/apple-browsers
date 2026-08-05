@@ -31,13 +31,13 @@ import DesignResourcesKitIcons
 final class AIChatTabAttachmentCardView: NSView {
 
     private enum Constants {
-        static let cardWidth: CGFloat = 224
+        static let cardWidth: CGFloat = 180
         static let cardHeight: CGFloat = 56
-        static let cornerRadius: CGFloat = 12
+        static let cornerRadius: CGFloat = 8
         static let leadingPadding: CGFloat = 10
         static let trailingPadding: CGFloat = 14
         static let thumbnailSize: CGFloat = 36
-        static let spacingAfterThumbnail: CGFloat = 12
+        static let spacingAfterThumbnail: CGFloat = 10
         static let removeButtonSize: CGFloat = 20
         static let removeButtonOverflow: CGFloat = 6
         static let removeButtonInset: CGFloat = 4
@@ -309,7 +309,7 @@ private final class AIChatTabPagePreviewView: NSView {
 
     override func draw(_ dirtyRect: NSRect) {
         super.draw(dirtyRect)
-        let barColor = NSColor(designSystemColor: .lines)
+        let barColor = NSColor(designSystemColor: .surfaceDecorationSecondary)
         barColor.setFill()
         for bar in Self.bars {
             NSBezierPath(roundedRect: bar, xRadius: 1, yRadius: 1).fill()

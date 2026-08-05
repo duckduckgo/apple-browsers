@@ -17,7 +17,7 @@
 //
 
 import ContentScopeScripts
-import FeatureFlags
+import FeatureFlags_macOS
 import Foundation
 import MaliciousSiteProtection
 import PrivacyConfig

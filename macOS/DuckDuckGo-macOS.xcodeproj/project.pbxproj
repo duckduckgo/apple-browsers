@@ -287,10 +287,10 @@
 		1E559BAF2BBCA9F1002B4AF6 /* AutoplayPolicyTabExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E559BAD2BBCA9F1002B4AF6 /* AutoplayPolicyTabExtension.swift */; };
 		1E559BB12BBCA9F1002B4AF6 /* RedirectNavigationResponder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E559BB02BBCA9F1002B4AF6 /* RedirectNavigationResponder.swift */; };
 		1E559BB22BBCA9F1002B4AF6 /* RedirectNavigationResponder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E559BB02BBCA9F1002B4AF6 /* RedirectNavigationResponder.swift */; };
-		1E5921BF2CF479E600E15CCA /* FeatureFlags in Frameworks */ = {isa = PBXBuildFile; productRef = 1E5921BE2CF479E600E15CCA /* FeatureFlags */; };
-		1E5921C12CF479EE00E15CCA /* FeatureFlags in Frameworks */ = {isa = PBXBuildFile; productRef = 1E5921C02CF479EE00E15CCA /* FeatureFlags */; };
-		1E5921C32CF47A0700E15CCA /* FeatureFlags in Frameworks */ = {isa = PBXBuildFile; productRef = 1E5921C22CF47A0700E15CCA /* FeatureFlags */; };
-		1E5921C52CF47A0F00E15CCA /* FeatureFlags in Frameworks */ = {isa = PBXBuildFile; productRef = 1E5921C42CF47A0F00E15CCA /* FeatureFlags */; };
+		1E5921BF2CF479E600E15CCA /* FeatureFlags-macOS in Frameworks */ = {isa = PBXBuildFile; productRef = 1E5921BE2CF479E600E15CCA /* FeatureFlags-macOS */; };
+		1E5921C12CF479EE00E15CCA /* FeatureFlags-macOS in Frameworks */ = {isa = PBXBuildFile; productRef = 1E5921C02CF479EE00E15CCA /* FeatureFlags-macOS */; };
+		1E5921C32CF47A0700E15CCA /* FeatureFlags-macOS in Frameworks */ = {isa = PBXBuildFile; productRef = 1E5921C22CF47A0700E15CCA /* FeatureFlags-macOS */; };
+		1E5921C52CF47A0F00E15CCA /* FeatureFlags-macOS in Frameworks */ = {isa = PBXBuildFile; productRef = 1E5921C42CF47A0F00E15CCA /* FeatureFlags-macOS */; };
 		1E5A79B02EE0F1A5007C8DB7 /* AutoconsentStatsPopoverCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E5A79AD2EE0F1A5007C8DB7 /* AutoconsentStatsPopoverCoordinatorTests.swift */; };
 		1E5A79B22EE0F1A5007C8DB7 /* AutoconsentStatsPopoverCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E5A79AD2EE0F1A5007C8DB7 /* AutoconsentStatsPopoverCoordinatorTests.swift */; };
 		1E5F7A252EBB78F600928A06 /* AutoconsentStats in Frameworks */ = {isa = PBXBuildFile; productRef = 1E5F7A242EBB78F600928A06 /* AutoconsentStats */; };
@@ -2212,10 +2212,10 @@
 		7B8594192B5B26230007EB3E /* UDSHelper in Frameworks */ = {isa = PBXBuildFile; productRef = 7B8594182B5B26230007EB3E /* UDSHelper */; };
 		7B874BD62CBD7E8D009C6C63 /* VPNProxyExtension.appex in Embed Network Extensions */ = {isa = PBXBuildFile; fileRef = 7BDA36E52B7E037100AD5388 /* VPNProxyExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		7B8DB31A2B504D7500EC16DA /* VPNAppEventsHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B8DB3192B504D7500EC16DA /* VPNAppEventsHandler.swift */; };
-		7B8FDD202CDD88C500720907 /* FeatureFlags in Frameworks */ = {isa = PBXBuildFile; productRef = 7B8FDD1F2CDD88C500720907 /* FeatureFlags */; };
-		7B8FDD222CDD88CB00720907 /* FeatureFlags in Frameworks */ = {isa = PBXBuildFile; productRef = 7B8FDD212CDD88CB00720907 /* FeatureFlags */; };
-		7B8FDD242CDD88D300720907 /* FeatureFlags in Frameworks */ = {isa = PBXBuildFile; productRef = 7B8FDD232CDD88D300720907 /* FeatureFlags */; };
-		7B8FDD262CDD88D900720907 /* FeatureFlags in Frameworks */ = {isa = PBXBuildFile; productRef = 7B8FDD252CDD88D900720907 /* FeatureFlags */; };
+		7B8FDD202CDD88C500720907 /* FeatureFlags-macOS in Frameworks */ = {isa = PBXBuildFile; productRef = 7B8FDD1F2CDD88C500720907 /* FeatureFlags-macOS */; };
+		7B8FDD222CDD88CB00720907 /* FeatureFlags-macOS in Frameworks */ = {isa = PBXBuildFile; productRef = 7B8FDD212CDD88CB00720907 /* FeatureFlags-macOS */; };
+		7B8FDD242CDD88D300720907 /* FeatureFlags-macOS in Frameworks */ = {isa = PBXBuildFile; productRef = 7B8FDD232CDD88D300720907 /* FeatureFlags-macOS */; };
+		7B8FDD262CDD88D900720907 /* FeatureFlags-macOS in Frameworks */ = {isa = PBXBuildFile; productRef = 7B8FDD252CDD88D900720907 /* FeatureFlags-macOS */; };
 		7B8FE0AA2D6F74C7004CF744 /* SystemExtensionManager in Frameworks */ = {isa = PBXBuildFile; productRef = 7B8FE0A92D6F74C7004CF744 /* SystemExtensionManager */; };
 		7B934C412A866DD400FC8F9C /* UserDefaults+NetworkProtectionShared.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B934C402A866DD400FC8F9C /* UserDefaults+NetworkProtectionShared.swift */; };
 		7B93A68B2D4A5AF200E9FFC1 /* ExcludedAppsModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B93A68A2D4A5AEC00E9FFC1 /* ExcludedAppsModel.swift */; };
@@ -2262,9 +2262,9 @@
 		7BA930B22E0DB0C600723574 /* BookmarksNavigationEngagementMetrics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BA930B02E0DB0BC00723574 /* BookmarksNavigationEngagementMetrics.swift */; };
 		7BAB1A0100000000A0000002 /* AIChatTabAttachment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BAB1A0100000000A0000001 /* AIChatTabAttachment.swift */; };
 		7BAB1A0100000000A0000003 /* AIChatTabAttachment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BAB1A0100000000A0000001 /* AIChatTabAttachment.swift */; };
-		7BAB1A0100000000A0000005 /* AIChatTabPickerMenuRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BAB1A0100000000A0000004 /* AIChatTabPickerMenuRowView.swift */; };
-		7BAB1A0100000000A0000006 /* AIChatTabPickerMenuRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BAB1A0100000000A0000004 /* AIChatTabPickerMenuRowView.swift */; };
-		7BAB1A0100000000A0000007 /* AIChatTabPickerMenuRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BAB1A0100000000A0000004 /* AIChatTabPickerMenuRowView.swift */; };
+		7BAB1A0100000000A00000D1 /* AIChatAttachTabsModal.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BAB1A0100000000A00000D0 /* AIChatAttachTabsModal.swift */; };
+		7BAB1A0100000000A00000D2 /* AIChatAttachTabsModal.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BAB1A0100000000A00000D0 /* AIChatAttachTabsModal.swift */; };
+		7BAB1A0100000000A00000D3 /* AIChatAttachTabsModal.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BAB1A0100000000A00000D0 /* AIChatAttachTabsModal.swift */; };
 		7BAB1A0100000000A0000009 /* AIChatTabAttachmentCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BAB1A0100000000A0000008 /* AIChatTabAttachmentCardView.swift */; };
 		7BAB1A0100000000A000000A /* AIChatTabAttachmentCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BAB1A0100000000A0000008 /* AIChatTabAttachmentCardView.swift */; };
 		7BAB1A0100000000A000000B /* AIChatTabAttachmentCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BAB1A0100000000A0000008 /* AIChatTabAttachmentCardView.swift */; };
@@ -2301,7 +2301,9 @@
 		7BAB1A0100000000A0000092 /* AIChatMentionPickerEmptyRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BAB1A0100000000A0000090 /* AIChatMentionPickerEmptyRowView.swift */; };
 		7BAB1A0100000000A0000093 /* AIChatMentionPickerEmptyRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BAB1A0100000000A0000090 /* AIChatMentionPickerEmptyRowView.swift */; };
 		7BAB1A0100000000A00000A1 /* AIChatMentionPickerFilterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BAB1A0100000000A00000A0 /* AIChatMentionPickerFilterTests.swift */; };
+		7BAB1A0100000000A00000E1 /* AIChatTabSelectionDiffTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BAB1A0100000000A00000E0 /* AIChatTabSelectionDiffTests.swift */; };
 		7BAB1A0100000000A00000A2 /* AIChatMentionPickerFilterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BAB1A0100000000A00000A0 /* AIChatMentionPickerFilterTests.swift */; };
+		7BAB1A0100000000A00000E2 /* AIChatTabSelectionDiffTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BAB1A0100000000A00000E0 /* AIChatTabSelectionDiffTests.swift */; };
 		7BAB1A0100000000A00000B1 /* AIChatMentionPickerViewControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BAB1A0100000000A00000B0 /* AIChatMentionPickerViewControllerTests.swift */; };
 		7BAB1A0100000000A00000B2 /* AIChatMentionPickerViewControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BAB1A0100000000A00000B0 /* AIChatMentionPickerViewControllerTests.swift */; };
 		7BAB1A0100000000A00000C1 /* PointingHandButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BAB1A0100000000A00000C0 /* PointingHandButton.swift */; };
@@ -2353,7 +2355,7 @@
 		7BC3E4502D6DF658009787CD /* AppKitExtensions in Frameworks */ = {isa = PBXBuildFile; productRef = 7BC3E44F2D6DF658009787CD /* AppKitExtensions */; };
 		7BC3E4542D6DF664009787CD /* Common in Frameworks */ = {isa = PBXBuildFile; productRef = 7BC3E4532D6DF664009787CD /* Common */; };
 		7BC3E4562D6DF66C009787CD /* Configuration in Frameworks */ = {isa = PBXBuildFile; productRef = 7BC3E4552D6DF66C009787CD /* Configuration */; };
-		7BC3E4582D6DF670009787CD /* FeatureFlags in Frameworks */ = {isa = PBXBuildFile; productRef = 7BC3E4572D6DF670009787CD /* FeatureFlags */; };
+		7BC3E4582D6DF670009787CD /* FeatureFlags-macOS in Frameworks */ = {isa = PBXBuildFile; productRef = 7BC3E4572D6DF670009787CD /* FeatureFlags-macOS */; };
 		7BC3E45A2D6DF67B009787CD /* Networking in Frameworks */ = {isa = PBXBuildFile; productRef = 7BC3E4592D6DF67B009787CD /* Networking */; };
 		7BC3E45E2D6DF69A009787CD /* NetworkProtectionProxy in Frameworks */ = {isa = PBXBuildFile; productRef = 7BC3E45D2D6DF69A009787CD /* NetworkProtectionProxy */; };
 		7BC3E4602D6DF6A0009787CD /* PixelKit in Frameworks */ = {isa = PBXBuildFile; productRef = 7BC3E45F2D6DF6A0009787CD /* PixelKit */; };
@@ -2372,6 +2374,8 @@
 		7BD504A12E5FA45A008A0646 /* WebExtensionInternalSiteNavigationDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3A2B622D2D225B00F06679 /* WebExtensionInternalSiteNavigationDelegate.swift */; };
 		7BD55D012E8F06010094A2B8 /* PermissionPixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BD55D002E8F06000094A2B8 /* PermissionPixel.swift */; };
 		7BD55D022E8F06020094A2B8 /* PermissionPixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BD55D002E8F06000094A2B8 /* PermissionPixel.swift */; };
+		CD41A0010000000000100011 /* AutoplayPromoPixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD41A0010000000000100010 /* AutoplayPromoPixel.swift */; };
+		CD41A0010000000000100012 /* AutoplayPromoPixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD41A0010000000000100010 /* AutoplayPromoPixel.swift */; };
 		7BD7B0012C19D3830039D20A /* VPNIPCResources.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BD7B0002C19D3830039D20A /* VPNIPCResources.swift */; };
 		7BD7B0022C19D3830039D20A /* VPNIPCResources.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BD7B0002C19D3830039D20A /* VPNIPCResources.swift */; };
 		7BD7B0032C19D3830039D20A /* VPNIPCResources.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BD7B0002C19D3830039D20A /* VPNIPCResources.swift */; };
@@ -3165,8 +3169,6 @@
 		B59AB6452EFB179F00C2F87A /* SearchField.swift in Sources */ = {isa = PBXBuildFile; fileRef = B59AB6432EFB179F00C2F87A /* SearchField.swift */; };
 		B5AE99532E84A5D900F45912 /* ThemeName.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5AE99522E84A5D900F45912 /* ThemeName.swift */; };
 		B5AE99542E84A5D900F45912 /* ThemeName.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5AE99522E84A5D900F45912 /* ThemeName.swift */; };
-		B5BD99642EE8DA2E00E7DD99 /* ThemedTextFieldStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5BD99632EE8DA2E00E7DD99 /* ThemedTextFieldStyle.swift */; };
-		B5BD99652EE8DA2E00E7DD99 /* ThemedTextFieldStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5BD99632EE8DA2E00E7DD99 /* ThemedTextFieldStyle.swift */; };
 		B5C2886B2EC6206100A572F2 /* CASpringAnimationExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5C2886A2EC6206100A572F2 /* CASpringAnimationExtension.swift */; };
 		B5C2886C2EC6206100A572F2 /* CASpringAnimationExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5C2886A2EC6206100A572F2 /* CASpringAnimationExtension.swift */; };
 		B5C980EB2F228B5900655B21 /* MemoryAllocationStatsExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5C980EA2F228B5900655B21 /* MemoryAllocationStatsExporter.swift */; };
@@ -5899,7 +5901,7 @@
 		7B7F5D232C52725A00826256 /* AddExcludedDomainButtonsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddExcludedDomainButtonsView.swift; sourceTree = "<group>"; };
 		7B8594172B5B25FB0007EB3E /* UDSHelper */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = UDSHelper; sourceTree = "<group>"; };
 		7B8DB3192B504D7500EC16DA /* VPNAppEventsHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNAppEventsHandler.swift; sourceTree = "<group>"; };
-		7B8FDD1E2CDD877000720907 /* FeatureFlags */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = FeatureFlags; sourceTree = "<group>"; };
+		7B8FDD1E2CDD877000720907 /* FeatureFlags-macOS */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = "FeatureFlags-macOS"; sourceTree = "<group>"; };
 		7B9167A82C09E88800322310 /* AppLauncher */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = AppLauncher; sourceTree = "<group>"; };
 		7B934C3D2A866CFF00FC8F9C /* NetworkProtectionOnboardingMenu.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NetworkProtectionOnboardingMenu.swift; sourceTree = "<group>"; };
 		7B934C402A866DD400FC8F9C /* UserDefaults+NetworkProtectionShared.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "UserDefaults+NetworkProtectionShared.swift"; sourceTree = "<group>"; };
@@ -5926,7 +5928,7 @@
 		7BA930AD2E0DA5B800723574 /* NavigationEngagementPixel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationEngagementPixel.swift; sourceTree = "<group>"; };
 		7BA930B02E0DB0BC00723574 /* BookmarksNavigationEngagementMetrics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarksNavigationEngagementMetrics.swift; sourceTree = "<group>"; };
 		7BAB1A0100000000A0000001 /* AIChatTabAttachment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatTabAttachment.swift; sourceTree = "<group>"; };
-		7BAB1A0100000000A0000004 /* AIChatTabPickerMenuRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatTabPickerMenuRowView.swift; sourceTree = "<group>"; };
+		7BAB1A0100000000A00000D0 /* AIChatAttachTabsModal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatAttachTabsModal.swift; sourceTree = "<group>"; };
 		7BAB1A0100000000A0000008 /* AIChatTabAttachmentCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatTabAttachmentCardView.swift; sourceTree = "<group>"; };
 		7BAB1A0100000000A000000C /* AIChatAttachmentsCarouselView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatAttachmentsCarouselView.swift; sourceTree = "<group>"; };
 		7BAB1A0100000000A0000010 /* AIChatPanelAttachment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatPanelAttachment.swift; sourceTree = "<group>"; };
@@ -5940,6 +5942,7 @@
 		7BAB1A0100000000A0000080 /* AIChatMentionPickerFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatMentionPickerFilter.swift; sourceTree = "<group>"; };
 		7BAB1A0100000000A0000090 /* AIChatMentionPickerEmptyRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatMentionPickerEmptyRowView.swift; sourceTree = "<group>"; };
 		7BAB1A0100000000A00000A0 /* AIChatMentionPickerFilterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatMentionPickerFilterTests.swift; sourceTree = "<group>"; };
+		7BAB1A0100000000A00000E0 /* AIChatTabSelectionDiffTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatTabSelectionDiffTests.swift; sourceTree = "<group>"; };
 		7BAB1A0100000000A00000B0 /* AIChatMentionPickerViewControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatMentionPickerViewControllerTests.swift; sourceTree = "<group>"; };
 		7BAB1A0100000000A00000C0 /* PointingHandButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PointingHandButton.swift; sourceTree = "<group>"; };
 		7BAC0C302DF84292008D26EC /* SupportedOSCheckerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupportedOSCheckerTests.swift; sourceTree = "<group>"; };
@@ -5958,6 +5961,7 @@
 		7BD1688D2AD4A4C400D24876 /* NetworkExtensionController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NetworkExtensionController.swift; sourceTree = "<group>"; };
 		7BD3AF5C2A8E7AF1006F9F56 /* KeychainType+ClientDefault.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "KeychainType+ClientDefault.swift"; sourceTree = "<group>"; };
 		7BD55D002E8F06000094A2B8 /* PermissionPixel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionPixel.swift; sourceTree = "<group>"; };
+		CD41A0010000000000100010 /* AutoplayPromoPixel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoplayPromoPixel.swift; sourceTree = "<group>"; };
 		7BD7B0002C19D3830039D20A /* VPNIPCResources.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNIPCResources.swift; sourceTree = "<group>"; };
 		7BD807BC2E8BCD7600D7C9A0 /* TabCrashAggregator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabCrashAggregator.swift; sourceTree = "<group>"; };
 		7BD8679A2A9E9E000063B9F7 /* VPNFeatureGatekeeper.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = VPNFeatureGatekeeper.swift; sourceTree = "<group>"; };
@@ -6446,7 +6450,6 @@
 		B59AB6432EFB179F00C2F87A /* SearchField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchField.swift; sourceTree = "<group>"; };
 		B5ACEDAB2E8DC635008EC8B9 /* MockThemeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockThemeManager.swift; sourceTree = "<group>"; };
 		B5AE99522E84A5D900F45912 /* ThemeName.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeName.swift; sourceTree = "<group>"; };
-		B5BD99632EE8DA2E00E7DD99 /* ThemedTextFieldStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemedTextFieldStyle.swift; sourceTree = "<group>"; };
 		B5C2886A2EC6206100A572F2 /* CASpringAnimationExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CASpringAnimationExtension.swift; sourceTree = "<group>"; };
 		B5C980EA2F228B5900655B21 /* MemoryAllocationStatsExporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoryAllocationStatsExporter.swift; sourceTree = "<group>"; };
 		B5C980F62F228EE300655B21 /* MemoryAllocationStatsMetric.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoryAllocationStatsMetric.swift; sourceTree = "<group>"; };
@@ -7277,7 +7280,7 @@
 				4B9EE34A2D76C97C00DDC75C /* DDGSync in Frameworks */,
 				4B9EE3482D76C96800DDC75C /* Configuration in Frameworks */,
 				4B9EE3582D76CA3500DDC75C /* PageRefreshMonitor in Frameworks */,
-				7B8FDD262CDD88D900720907 /* FeatureFlags in Frameworks */,
+				7B8FDD262CDD88D900720907 /* FeatureFlags-macOS in Frameworks */,
 				9FF521482BAA909C00B9819B /* Lottie in Frameworks */,
 				9DB9800C2D96AD2F00B174B3 /* DataBrokerProtectionCore in Frameworks */,
 				7B7614392D79F85D00BC6293 /* VPNAppState in Frameworks */,
@@ -7446,7 +7449,7 @@
 				4B9EE3882D76CC2000DDC75C /* Configuration in Frameworks */,
 				4B9EE38A2D76CC2800DDC75C /* Networking in Frameworks */,
 				7BC15A1C2E1917D6000062C8 /* VPNNotifications in Frameworks */,
-				1E5921C12CF479EE00E15CCA /* FeatureFlags in Frameworks */,
+				1E5921C12CF479EE00E15CCA /* FeatureFlags-macOS in Frameworks */,
 				9D9DE57B2C63AA1F00D20B15 /* AppKitExtensions in Frameworks */,
 				4B9EE38E2D76CC3C00DDC75C /* Persistence in Frameworks */,
 				7BBE2B7B2B61663C00697445 /* NetworkProtectionProxy in Frameworks */,
@@ -7467,7 +7470,7 @@
 				4B9EE3A42D76CCB300DDC75C /* Persistence in Frameworks */,
 				7BEEA5122AD1235B00A9E72B /* NetworkProtectionIPC in Frameworks */,
 				4B9EE39E2D76CCA200DDC75C /* Common in Frameworks */,
-				7B8FDD202CDD88C500720907 /* FeatureFlags in Frameworks */,
+				7B8FDD202CDD88C500720907 /* FeatureFlags-macOS in Frameworks */,
 				4B9EE3A02D76CCA200DDC75C /* Configuration in Frameworks */,
 				7BEEA5162AD1236E00A9E72B /* NetworkProtectionUI in Frameworks */,
 				4B9EE3A62D76CCB300DDC75C /* PixelKit in Frameworks */,
@@ -7498,7 +7501,7 @@
 				4B2D067F2A1334D700DE1F49 /* NetworkProtectionUI in Frameworks */,
 				4BA7C4DD2B3F64E500AFE511 /* LoginItems in Frameworks */,
 				4B9EE3B62D76CD1C00DDC75C /* PixelKit in Frameworks */,
-				7B8FDD222CDD88CB00720907 /* FeatureFlags in Frameworks */,
+				7B8FDD222CDD88CB00720907 /* FeatureFlags-macOS in Frameworks */,
 				7BC26CAC2DFC11E200E52480 /* VPN in Frameworks */,
 				4B9EE3B82D76CD1C00DDC75C /* Subscription in Frameworks */,
 				7B7BD9512DFBE2BF0074633C /* VPNNotifications in Frameworks */,
@@ -7511,7 +7514,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				4B9EE37E2D76CBEE00DDC75C /* Persistence in Frameworks */,
-				1E5921BF2CF479E600E15CCA /* FeatureFlags in Frameworks */,
+				1E5921BF2CF479E600E15CCA /* FeatureFlags-macOS in Frameworks */,
 				F1DF95E52BD1807C0045E591 /* Subscription in Frameworks */,
 				4B5235472C7BB15700AFAF64 /* WireGuard in Frameworks */,
 				7B2366882C09FADA002D393F /* VPNAppLauncher in Frameworks */,
@@ -7544,7 +7547,7 @@
 				7BC3E45E2D6DF69A009787CD /* NetworkProtectionProxy in Frameworks */,
 				7BC26CB02DFC11F300E52480 /* VPN in Frameworks */,
 				7BC3E4662D6DF6B8009787CD /* WireGuard in Frameworks */,
-				7BC3E4582D6DF670009787CD /* FeatureFlags in Frameworks */,
+				7BC3E4582D6DF670009787CD /* FeatureFlags-macOS in Frameworks */,
 				7B6413522E1922FC0035D14D /* VPNNotifications in Frameworks */,
 				7B2E36602D6DEFBB00A08CB7 /* NetworkExtension.framework in Frameworks */,
 				7BC3E4622D6DF6AC009787CD /* Persistence in Frameworks */,
@@ -7607,7 +7610,7 @@
 				9DB980182D96AFF400B174B3 /* DataBrokerProtection-macOS in Frameworks */,
 				4B9EE3BE2D76CD3900DDC75C /* Persistence in Frameworks */,
 				9DC5FAC52C6B8A010011F068 /* AppKitExtensions in Frameworks */,
-				1E5921C32CF47A0700E15CCA /* FeatureFlags in Frameworks */,
+				1E5921C32CF47A0700E15CCA /* FeatureFlags-macOS in Frameworks */,
 				C18BF9D02C736C9100ED6B8A /* Freemium in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -7624,7 +7627,7 @@
 				9DB9801A2D96AFF900B174B3 /* DataBrokerProtection-macOS in Frameworks */,
 				4B9EE3C62D76CD7100DDC75C /* Persistence in Frameworks */,
 				9DC5FAC72C6B8A080011F068 /* AppKitExtensions in Frameworks */,
-				1E5921C52CF47A0F00E15CCA /* FeatureFlags in Frameworks */,
+				1E5921C52CF47A0F00E15CCA /* FeatureFlags-macOS in Frameworks */,
 				C18BF9D22C736C9700ED6B8A /* Freemium in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -7656,7 +7659,7 @@
 				7BECF1A92D4905DA00C1D691 /* PreferencesUI-macOS in Frameworks */,
 				4B9EE3142D76C7F900DDC75C /* Bookmarks in Frameworks */,
 				1E7D3C302F2232620099611C /* WebExtensions in Frameworks */,
-				7B8FDD242CDD88D300720907 /* FeatureFlags in Frameworks */,
+				7B8FDD242CDD88D300720907 /* FeatureFlags-macOS in Frameworks */,
 				4B9EE3382D76C8B200DDC75C /* Suggestions in Frameworks */,
 				84C176502DF0462F001DEEC7 /* LetsMove in Frameworks */,
 				4B9EE31E2D76C81E00DDC75C /* ContentBlocking in Frameworks */,
@@ -8069,7 +8072,7 @@
 				1D94E7982F333CA1008315A2 /* AIChatOmnibarToolButton.swift */,
 				1DE906D22F3DBF4500C3B853 /* AIChatImageAttachmentThumbnailView.swift */,
 				7BAB1A0100000000A0000001 /* AIChatTabAttachment.swift */,
-				7BAB1A0100000000A0000004 /* AIChatTabPickerMenuRowView.swift */,
+				7BAB1A0100000000A00000D0 /* AIChatAttachTabsModal.swift */,
 				7BAB1A0100000000A0000008 /* AIChatTabAttachmentCardView.swift */,
 				7BAB1A0100000000A000000C /* AIChatAttachmentsCarouselView.swift */,
 				7BAB1A0100000000A0000010 /* AIChatPanelAttachment.swift */,
@@ -8212,6 +8215,7 @@
 				47D82828FB034DE7BCB7BB91 /* AIChatOmnibarSubscriptionUpsellPresenterTests.swift */,
 				7BAB1A0100000000A0000030 /* AIChatMentionTokenDetectorTests.swift */,
 				7BAB1A0100000000A00000A0 /* AIChatMentionPickerFilterTests.swift */,
+				7BAB1A0100000000A00000E0 /* AIChatTabSelectionDiffTests.swift */,
 				7BAB1A0100000000A00000B0 /* AIChatMentionPickerViewControllerTests.swift */,
 				1A77VST00000000000000002 /* VoiceSessionTrackerTests.swift */,
 				31031EB62CC94C6C00684340 /* AIChatRemoteSettingsTests.swift */,
@@ -8546,7 +8550,7 @@
 				9DB9801B2D96B3FE00B174B3 /* DataBrokerProtectionCore */,
 				4BC5E8612E174B7D00391C19 /* DesignResourcesKit */,
 				BB7D100A2DE0D9370027222A /* DesignResourcesKitIcons */,
-				7B8FDD1E2CDD877000720907 /* FeatureFlags */,
+				7B8FDD1E2CDD877000720907 /* FeatureFlags-macOS */,
 				9DF2DB592C73B52F0025F43C /* Freemium */,
 				379D7A422D384E4F00E6E1CC /* HistoryView */,
 				84AECC4F2DFBF76400438ACC /* LetsMove */,
@@ -10378,7 +10382,6 @@
 				4B1E6EEF27AB5E5D00F51793 /* NSPopUpButtonView.swift */,
 				C1372EF32BBC5BAD003F8793 /* SecureTextField.swift */,
 				B6DE57F52B05EA9000CD54B9 /* SheetHostingWindow.swift */,
-				B5BD99632EE8DA2E00E7DD99 /* ThemedTextFieldStyle.swift */,
 				378F44EA29B4C73E00899924 /* ViewExtension.swift */,
 			);
 			path = SwiftUI;
@@ -12478,6 +12481,7 @@
 				37598EF32D5A18FB00720EAF /* HistoryViewPixel.swift */,
 				1D99CDDA2D929EBE00656A84 /* PinnedTabsPixel.swift */,
 				7BD55D002E8F06000094A2B8 /* PermissionPixel.swift */,
+				CD41A0010000000000100010 /* AutoplayPromoPixel.swift */,
 				A5A7430C39C716A6A3A1F654 /* WebNotificationPixel.swift */,
 				56DB9FE82CD24B47001BEC23 /* ContextualOnboardingPixel.swift */,
 				CC9B678B2E607AD1003353C3 /* SessionRestorePromptPixel.swift */,
@@ -13611,7 +13615,7 @@
 				7B2366852C09FACD002D393F /* VPNAppLauncher */,
 				9D9DE5742C63AA0C00D20B15 /* AppKitExtensions */,
 				C18BF9CD2C73678C00ED6B8A /* Freemium */,
-				7B8FDD252CDD88D900720907 /* FeatureFlags */,
+				7B8FDD252CDD88D900720907 /* FeatureFlags-macOS */,
 				37DF37062CF38B9F005ED34B /* PrivacyStats */,
 				371BBC582D00C897008FA0C7 /* NewTabPage */,
 				37EE81422D00DBCC0068034A /* WebKitExtensions */,
@@ -13855,7 +13859,7 @@
 				7BBE2B7A2B61663C00697445 /* NetworkProtectionProxy */,
 				9D9DE57A2C63AA1F00D20B15 /* AppKitExtensions */,
 				4B5235442C7BB14D00AFAF64 /* WireGuard */,
-				1E5921C02CF479EE00E15CCA /* FeatureFlags */,
+				1E5921C02CF479EE00E15CCA /* FeatureFlags-macOS */,
 				4B9EE3852D76CC1A00DDC75C /* Common */,
 				4B9EE3872D76CC2000DDC75C /* Configuration */,
 				4B9EE3892D76CC2800DDC75C /* Networking */,
@@ -13896,7 +13900,7 @@
 				BDADBDC82BD2BC2200421B9B /* Lottie */,
 				7B23668B2C09FAF1002D393F /* VPNAppLauncher */,
 				9D9DE5802C63BA0B00D20B15 /* AppKitExtensions */,
-				7B8FDD1F2CDD88C500720907 /* FeatureFlags */,
+				7B8FDD1F2CDD88C500720907 /* FeatureFlags-macOS */,
 				7B7BD94E2DFBE2B50074633C /* VPNNotifications */,
 				7BC26CA52DFC104700E52480 /* VPN */,
 			);
@@ -13931,7 +13935,7 @@
 				BDADBDCA2BD2BC2800421B9B /* Lottie */,
 				7B23668D2C09FAFA002D393F /* VPNAppLauncher */,
 				9D9DE5822C63BE9600D20B15 /* AppKitExtensions */,
-				7B8FDD212CDD88CB00720907 /* FeatureFlags */,
+				7B8FDD212CDD88CB00720907 /* FeatureFlags-macOS */,
 				7B8FE0A92D6F74C7004CF744 /* SystemExtensionManager */,
 				7B7BD9502DFBE2BF0074633C /* VPNNotifications */,
 				7BC26CAB2DFC11E200E52480 /* VPN */,
@@ -13960,7 +13964,7 @@
 				7B2366872C09FADA002D393F /* VPNAppLauncher */,
 				9D9DE5762C63AA1600D20B15 /* AppKitExtensions */,
 				4B5235462C7BB15700AFAF64 /* WireGuard */,
-				1E5921BE2CF479E600E15CCA /* FeatureFlags */,
+				1E5921BE2CF479E600E15CCA /* FeatureFlags-macOS */,
 				4B9EE3752D76CBD000DDC75C /* Common */,
 				4B9EE3772D76CBD600DDC75C /* Configuration */,
 				4B9EE3792D76CBE100DDC75C /* Networking */,
@@ -14008,7 +14012,7 @@
 				7BC3E44F2D6DF658009787CD /* AppKitExtensions */,
 				7BC3E4532D6DF664009787CD /* Common */,
 				7BC3E4552D6DF66C009787CD /* Configuration */,
-				7BC3E4572D6DF670009787CD /* FeatureFlags */,
+				7BC3E4572D6DF670009787CD /* FeatureFlags-macOS */,
 				7BC3E4592D6DF67B009787CD /* Networking */,
 				7BC3E45D2D6DF69A009787CD /* NetworkProtectionProxy */,
 				7BC3E45F2D6DF6A0009787CD /* PixelKit */,
@@ -14117,7 +14121,7 @@
 			packageProductDependencies = (
 				9DC5FAC42C6B8A010011F068 /* AppKitExtensions */,
 				C18BF9CF2C736C9100ED6B8A /* Freemium */,
-				1E5921C22CF47A0700E15CCA /* FeatureFlags */,
+				1E5921C22CF47A0700E15CCA /* FeatureFlags-macOS */,
 				4B9EE3B92D76CD3900DDC75C /* Configuration */,
 				4B9EE3BB2D76CD3900DDC75C /* Networking */,
 				4B9EE3BD2D76CD3900DDC75C /* Persistence */,
@@ -14147,7 +14151,7 @@
 			packageProductDependencies = (
 				9DC5FAC62C6B8A080011F068 /* AppKitExtensions */,
 				C18BF9D12C736C9700ED6B8A /* Freemium */,
-				1E5921C42CF47A0F00E15CCA /* FeatureFlags */,
+				1E5921C42CF47A0F00E15CCA /* FeatureFlags-macOS */,
 				4B9EE3C12D76CD7100DDC75C /* Configuration */,
 				4B9EE3C32D76CD7100DDC75C /* Networking */,
 				4B9EE3C52D76CD7100DDC75C /* Persistence */,
@@ -14198,7 +14202,7 @@
 				7B2366832C09FAC2002D393F /* VPNAppLauncher */,
 				9D9DE5722C63AA0700D20B15 /* AppKitExtensions */,
 				C18BF9CB2C73678500ED6B8A /* Freemium */,
-				7B8FDD232CDD88D300720907 /* FeatureFlags */,
+				7B8FDD232CDD88D300720907 /* FeatureFlags-macOS */,
 				37DF37042CF38B96005ED34B /* PrivacyStats */,
 				371BBC562D00C891008FA0C7 /* NewTabPage */,
 				37EE81402D00DBC40068034A /* WebKitExtensions */,
@@ -15997,7 +16001,6 @@
 				3706FB9B293F65D500E42796 /* PrivacyDashboardPermissionHandler.swift in Sources */,
 				3706FB9C293F65D500E42796 /* TabCollectionViewModel.swift in Sources */,
 				369BA9872F31305F0037B56D /* DataClearingPixels.swift in Sources */,
-				B5BD99642EE8DA2E00E7DD99 /* ThemedTextFieldStyle.swift in Sources */,
 				378F44EC29B4C73E00899924 /* ViewExtension.swift in Sources */,
 				37A756EC2DD5EAA50003C8C9 /* NewTabPageProtectionsReportSettingsMigrator.swift in Sources */,
 				3706FB9D293F65D500E42796 /* BookmarkManager.swift in Sources */,
@@ -16168,7 +16171,7 @@
 				3706FBE3293F65D500E42796 /* WindowControllersManager.swift in Sources */,
 				37197EAA2942443D00394917 /* ModalSheetCancellable.swift in Sources */,
 				7BAB1A0100000000A0000002 /* AIChatTabAttachment.swift in Sources */,
-				7BAB1A0100000000A0000005 /* AIChatTabPickerMenuRowView.swift in Sources */,
+				7BAB1A0100000000A00000D1 /* AIChatAttachTabsModal.swift in Sources */,
 				7BAB1A0100000000A0000009 /* AIChatTabAttachmentCardView.swift in Sources */,
 				7BAB1A0100000000A000000D /* AIChatAttachmentsCarouselView.swift in Sources */,
 				7BAB1A0100000000A0000011 /* AIChatPanelAttachment.swift in Sources */,
@@ -16239,6 +16242,7 @@
 				3706FBFA293F65D500E42796 /* FileDownloadError.swift in Sources */,
 				1D99CDDC2D929EC900656A84 /* PinnedTabsPixel.swift in Sources */,
 				7BD55D022E8F06020094A2B8 /* PermissionPixel.swift in Sources */,
+				CD41A0010000000000100011 /* AutoplayPromoPixel.swift in Sources */,
 				0F2D07CBC5636188DAF0BD3E /* WebNotificationPixel.swift in Sources */,
 				379E877729E98729001C8BB0 /* BookmarksCleanupErrorHandling.swift in Sources */,
 				EE28685F2EAFC3E000AB597F /* LegacyDataImportSummaryViewModel.swift in Sources */,
@@ -16621,7 +16625,7 @@
 				BBFEE6C92E99229800F9BA45 /* NewTabPageWinBackOfferBannerProvider.swift in Sources */,
 				1DE906D32F3DBF4900C3B853 /* AIChatImageAttachmentThumbnailView.swift in Sources */,
 				7BAB1A0100000000A0000003 /* AIChatTabAttachment.swift in Sources */,
-				7BAB1A0100000000A0000006 /* AIChatTabPickerMenuRowView.swift in Sources */,
+				7BAB1A0100000000A00000D2 /* AIChatAttachTabsModal.swift in Sources */,
 				7BAB1A0100000000A000000A /* AIChatTabAttachmentCardView.swift in Sources */,
 				7BAB1A0100000000A000000E /* AIChatAttachmentsCarouselView.swift in Sources */,
 				7BAB1A0100000000A0000012 /* AIChatPanelAttachment.swift in Sources */,
@@ -16952,6 +16956,7 @@
 				968FC19A13C54CE4981CBD7A /* AIChatOmnibarSubscriptionUpsellPresenterTests.swift in Sources */,
 				7BAB1A0100000000A0000031 /* AIChatMentionTokenDetectorTests.swift in Sources */,
 				7BAB1A0100000000A00000A1 /* AIChatMentionPickerFilterTests.swift in Sources */,
+				7BAB1A0100000000A00000E1 /* AIChatTabSelectionDiffTests.swift in Sources */,
 				7BAB1A0100000000A00000B1 /* AIChatMentionPickerViewControllerTests.swift in Sources */,
 				1A77VST00000000000000006 /* VoiceSessionTrackerTests.swift in Sources */,
 				56A054482C22536A007D8FAB /* CapturingOnboardingActionsManager.swift in Sources */,
@@ -17688,6 +17693,7 @@
 				D1D1D1D100000000000000F1 /* WindowDimmingBlockingView.swift in Sources */,
 				1D99CDDB2D929EC900656A84 /* PinnedTabsPixel.swift in Sources */,
 				7BD55D012E8F06010094A2B8 /* PermissionPixel.swift in Sources */,
+				CD41A0010000000000100012 /* AutoplayPromoPixel.swift in Sources */,
 				63AC47CDA9BC3FA42B5B335A /* WebNotificationPixel.swift in Sources */,
 				1D3A2B672D2D230800F06679 /* WebExtensionInternalSiteHandler.swift in Sources */,
 				3158B1532B0BF75700AF130C /* LoginItem+DataBrokerProtection.swift in Sources */,
@@ -17922,7 +17928,6 @@
 				B688B4DF27420D290087BEAF /* PDFSearchTextMenuItemHandler.swift in Sources */,
 				F14890852ECCCAA800B5239E /* AttributedMetricUtils.swift in Sources */,
 				AA7E919728746BCC00AB6B62 /* HistoryMenu.swift in Sources */,
-				B5BD99652EE8DA2E00E7DD99 /* ThemedTextFieldStyle.swift in Sources */,
 				BB470EBB2C5A66D6002EE91D /* BookmarkManagementDetailViewModel.swift in Sources */,
 				F4A6198C283CFFBB007F2080 /* ContentScopeFeatureFlagging.swift in Sources */,
 				4B8A4E0127C8447E005F40E8 /* SaveIdentityPopover.swift in Sources */,
@@ -18652,7 +18657,7 @@
 				B6040856274B830F00680351 /* DictionaryExtension.swift in Sources */,
 				B684592725C93C0500DC17B6 /* Publishers.NestedObjectChanges.swift in Sources */,
 				1DB433792FAB390D0047762C /* AIChatTabAttachment.swift in Sources */,
-				7BAB1A0100000000A0000007 /* AIChatTabPickerMenuRowView.swift in Sources */,
+				7BAB1A0100000000A00000D3 /* AIChatAttachTabsModal.swift in Sources */,
 				7BAB1A0100000000A000000B /* AIChatTabAttachmentCardView.swift in Sources */,
 				7BAB1A0100000000A000000F /* AIChatAttachmentsCarouselView.swift in Sources */,
 				7BAB1A0100000000A0000013 /* AIChatPanelAttachment.swift in Sources */,
@@ -19124,6 +19129,7 @@
 				F1396E92FC2749888523B2FD /* AIChatOmnibarSubscriptionUpsellPresenterTests.swift in Sources */,
 				7BAB1A0100000000A0000032 /* AIChatMentionTokenDetectorTests.swift in Sources */,
 				7BAB1A0100000000A00000A2 /* AIChatMentionPickerFilterTests.swift in Sources */,
+				7BAB1A0100000000A00000E2 /* AIChatTabSelectionDiffTests.swift in Sources */,
 				7BAB1A0100000000A00000B2 /* AIChatMentionPickerViewControllerTests.swift in Sources */,
 				1A77VST00000000000000005 /* VoiceSessionTrackerTests.swift in Sources */,
 				CCAED35A2EB8E0C700C7368E /* MockDefaultBrowserAndDockPromptUserActivityProvider.swift in Sources */,
@@ -20954,21 +20960,21 @@
 			isa = XCSwiftPackageProductDependency;
 			productName = AutoconsentStats;
 		};
-		1E5921BE2CF479E600E15CCA /* FeatureFlags */ = {
+		1E5921BE2CF479E600E15CCA /* FeatureFlags-macOS */ = {
 			isa = XCSwiftPackageProductDependency;
-			productName = FeatureFlags;
+			productName = FeatureFlags-macOS;
 		};
-		1E5921C02CF479EE00E15CCA /* FeatureFlags */ = {
+		1E5921C02CF479EE00E15CCA /* FeatureFlags-macOS */ = {
 			isa = XCSwiftPackageProductDependency;
-			productName = FeatureFlags;
+			productName = FeatureFlags-macOS;
 		};
-		1E5921C22CF47A0700E15CCA /* FeatureFlags */ = {
+		1E5921C22CF47A0700E15CCA /* FeatureFlags-macOS */ = {
 			isa = XCSwiftPackageProductDependency;
-			productName = FeatureFlags;
+			productName = FeatureFlags-macOS;
 		};
-		1E5921C42CF47A0F00E15CCA /* FeatureFlags */ = {
+		1E5921C42CF47A0F00E15CCA /* FeatureFlags-macOS */ = {
 			isa = XCSwiftPackageProductDependency;
-			productName = FeatureFlags;
+			productName = FeatureFlags-macOS;
 		};
 		1E5F7A242EBB78F600928A06 /* AutoconsentStats */ = {
 			isa = XCSwiftPackageProductDependency;
@@ -21677,21 +21683,21 @@
 			isa = XCSwiftPackageProductDependency;
 			productName = UDSHelper;
 		};
-		7B8FDD1F2CDD88C500720907 /* FeatureFlags */ = {
+		7B8FDD1F2CDD88C500720907 /* FeatureFlags-macOS */ = {
 			isa = XCSwiftPackageProductDependency;
-			productName = FeatureFlags;
+			productName = FeatureFlags-macOS;
 		};
-		7B8FDD212CDD88CB00720907 /* FeatureFlags */ = {
+		7B8FDD212CDD88CB00720907 /* FeatureFlags-macOS */ = {
 			isa = XCSwiftPackageProductDependency;
-			productName = FeatureFlags;
+			productName = FeatureFlags-macOS;
 		};
-		7B8FDD232CDD88D300720907 /* FeatureFlags */ = {
+		7B8FDD232CDD88D300720907 /* FeatureFlags-macOS */ = {
 			isa = XCSwiftPackageProductDependency;
-			productName = FeatureFlags;
+			productName = FeatureFlags-macOS;
 		};
-		7B8FDD252CDD88D900720907 /* FeatureFlags */ = {
+		7B8FDD252CDD88D900720907 /* FeatureFlags-macOS */ = {
 			isa = XCSwiftPackageProductDependency;
-			productName = FeatureFlags;
+			productName = FeatureFlags-macOS;
 		};
 		7B8FE0A92D6F74C7004CF744 /* SystemExtensionManager */ = {
 			isa = XCSwiftPackageProductDependency;
@@ -21757,9 +21763,9 @@
 			isa = XCSwiftPackageProductDependency;
 			productName = Configuration;
 		};
-		7BC3E4572D6DF670009787CD /* FeatureFlags */ = {
+		7BC3E4572D6DF670009787CD /* FeatureFlags-macOS */ = {
 			isa = XCSwiftPackageProductDependency;
-			productName = FeatureFlags;
+			productName = FeatureFlags-macOS;
 		};
 		7BC3E4592D6DF67B009787CD /* Networking */ = {
 			isa = XCSwiftPackageProductDependency;

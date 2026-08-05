@@ -283,11 +283,17 @@ public final class EventHub: EventHubManaging {
         store.deletePixelState(named: name)
 
         if var params = telemetry.buildPixelParameters() {
-            let attributionPeriod = EventHubAttribution.startOfIntervalSeconds(
-                periodStartMillis: telemetry.periodStartMillis,
-                periodSeconds: telemetry.config.trigger.period?.periodSeconds ?? 0)
-            params["attributionPeriod"] = String(attributionPeriod)
-            pixelFiring.enqueueFirePixel(named: name, parameters: params)
+            // `periodSeconds` is the divisor in the attribution calculation, so a missing period would
+            // trap. `EventHubConfigParser` rejects a period trigger without a positive `seconds`, on both
+            // the live-config and restored-snapshot paths, so this only guards that invariant — if it ever
+            // breaks, skip the fire rather than crash.
+            if let periodSeconds = telemetry.config.trigger.period?.periodSeconds {
+                params["attributionPeriod"] = String(EventHubAttribution.startOfIntervalSeconds(
+                    periodStartMillis: telemetry.periodStartMillis, periodSeconds: periodSeconds))
+                pixelFiring.enqueueFirePixel(named: name, parameters: params)
+            } else {
+                Logger.eventHub.error("pixel \(name, privacy: .public) not fired, its period trigger has no period to attribute to")
+            }
         }
 
         if let latest = latestConfigs.first(where: { $0.name == name }) {

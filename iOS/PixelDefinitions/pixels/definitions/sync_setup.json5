@@ -24,8 +24,35 @@
         ]
     },
     "sync_setup_barcode_screen_shown": {
-        "description": "Fired when the Sync setup QR/code screen is shown.",
-        "owners": ["amddg44"],
+        "description": "Fired when the Sync setup screen displaying this device's QR code/text code is shown. In the V2 simplified layout this is the 'Show QR code' sheet; in the legacy layout it is the combined scan/show-code screen.",
+        "owners": ["amddg44", "pballart"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "ui_version",
+            {
+                "key": "source",
+                "type": "string",
+                "description": "The setup source or entry surface."
+            },
+            {
+                "key": "flow_version",
+                "type": "string",
+                "description": "Whether V2 Sync setup scanning is enabled for this flow.",
+                "enum": ["v1", "v2"]
+            },
+            {
+                "key": "my_kind",
+                "type": "string",
+                "description": "The kind of this client.",
+                "enum": ["ddg"]
+            }
+        ]
+    },
+    "sync_setup_scan_qr_screen_shown": {
+        "description": "Fired when the Sync setup QR code scanner (camera) screen is shown. V2 simplified layout only.",
+        "owners": ["amddg44", "pballart"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
         "parameters": [

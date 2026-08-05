@@ -95,6 +95,7 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsRootView> {
     let viewModel: SyncSettingsViewModel
 
     var source: String?
+    var scanSetupSource: SyncSetupSource?
     var pairingInfo: PairingInfo?
     var pairingV2PeerKind: PairingV2DeviceKind?
     var pairingV2JoinerCodeSource: SyncCodeSource?

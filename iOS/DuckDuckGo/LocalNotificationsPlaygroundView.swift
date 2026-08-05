@@ -61,26 +61,42 @@ struct LocalNotificationsPlaygroundView: View {
             }
 
             Section {
-                VStack(alignment: .leading, spacing: 0) {
-                    Text(verbatim: "Title")
-                        .font(.caption)
-                    TextField("Title", text: $model.notificationTitle)
-                }
+                Picker(
+                    selection: $model.contentMode,
+                    content: {
+                        ForEach(LocalNotificationsPlaygroundViewModel.ContentMode.allCases, id: \.rawValue) { mode in
+                            Text(verbatim: mode.description).tag(mode)
+                        }
+                    },
+                    label: {
+                        Text(verbatim: "Content:")
+                    }
+                )
 
-                VStack(alignment: .leading, spacing: 0) {
-                    Text(verbatim: "Message")
-                        .font(.caption)
-                    TextField("Message", text: $model.notificationMessage)
+                if model.contentMode == .custom {
+                    VStack(alignment: .leading, spacing: 0) {
+                        Text(verbatim: "Title")
+                            .font(.caption)
+                        TextField("Title", text: $model.notificationTitle)
+                    }
+
+                    VStack(alignment: .leading, spacing: 0) {
+                        Text(verbatim: "Message")
+                            .font(.caption)
+                        TextField("Message", text: $model.notificationMessage)
+                    }
                 }
             } header: {
                 Text(verbatim: "Content:")
             } footer: {
-                HStack {
-                    Button("Clear", action: model.clearAllContent)
+                if model.contentMode == .custom {
+                    HStack {
+                        Button("Clear", action: model.clearAllContent)
 
-                    Spacer()
+                        Spacer()
 
-                    Button("Default", action: model.fillDefaultContent)
+                        Button("Default", action: model.fillDefaultContent)
+                    }
                 }
             }
 
@@ -96,6 +112,7 @@ struct LocalNotificationsPlaygroundView: View {
                         Text(verbatim: "Type:")
                     }
                 )
+                .disabled(model.contentMode == .inactivityNotification)
 
                 Picker(
                     selection: $model.notificationSchedulingTime,
@@ -137,6 +154,14 @@ private final class LocalNotificationsPlaygroundViewModel: ObservableObject {
     private static let defaultBody = "We stopped 5 trackers from following you."
 
     @Published private(set) var isSchedulingNotification = false
+    @Published var contentMode: ContentMode = .custom {
+        didSet {
+            // Inactivity notifications are always provisional; keep the type in sync when selected.
+            if contentMode == .inactivityNotification {
+                notificationType = .provisional
+            }
+        }
+    }
     @Published var notificationTitle: String = defaultTitle
     @Published var notificationMessage: String = defaultBody
     @Published var notificationAuthStatus: NotificationAuthStatus = .notDetermined
@@ -162,7 +187,14 @@ private final class LocalNotificationsPlaygroundViewModel: ObservableObject {
             do {
                 guard try await center.requestAuthorization(options: options) else { return }
                 let trigger = UNTimeIntervalNotificationTrigger(timeInterval: Double(notificationSchedulingTime), repeats: false)
-                try await UNUserNotificationCenter.current().add(.make(identifier: Self.testNotificationIdentifier, title: notificationTitle, body: notificationMessage, trigger: trigger))
+                let request: UNNotificationRequest
+                switch contentMode {
+                case .inactivityNotification:
+                    request = .makeInactivityNotification(trigger: trigger)
+                case .custom:
+                    request = .make(identifier: Self.testNotificationIdentifier, title: notificationTitle, body: notificationMessage, trigger: trigger)
+                }
+                try await center.add(request)
             } catch {
                 print("~~~FAILED TO SEND NOTIFICATION TYPE: \(notificationType.description)")
             }
@@ -214,6 +246,20 @@ private final class LocalNotificationsPlaygroundViewModel: ObservableObject {
 
 extension LocalNotificationsPlaygroundViewModel {
 
+    enum ContentMode: Int, CaseIterable {
+        case inactivityNotification
+        case custom
+
+        var description: String {
+            switch self {
+            case .inactivityNotification:
+                return "Inactivity Notification"
+            case .custom:
+                return "Custom"
+            }
+        }
+    }
+
     enum NotificationType: Int, CaseIterable {
         case provisional
         case alert
@@ -264,6 +310,12 @@ extension UNNotificationRequest {
 
     static func make(identifier: String, title: String, body: String, trigger: UNNotificationTrigger? = nil) -> UNNotificationRequest {
         let content = UNNotificationContent.make(title: title, body: body)
+        return UNNotificationRequest(identifier: identifier, content: content, trigger: trigger)
+    }
+
+    static func makeInactivityNotification(trigger: UNNotificationTrigger) -> UNNotificationRequest {
+        let identifier = InactivityNotificationSchedulerService.Constants.notificationIdentifier
+        let content = InactivityNotificationSchedulerService.makeUNNotificationContent()
         return UNNotificationRequest(identifier: identifier, content: content, trigger: trigger)
     }
 

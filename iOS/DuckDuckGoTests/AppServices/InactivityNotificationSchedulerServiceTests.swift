@@ -433,7 +433,7 @@ final class InactivityNotificationSchedulerServiceTests: XCTestCase {
         
     func test_makeNotificationContent_setsTitleBodyAndUserInfo() {
         // When
-        let content = service.makeUNNotificationContent(with: 5)
+        let content = InactivityNotificationSchedulerService.makeUNNotificationContent(with: 5)
         
         // Then
         XCTAssertEqual(content.title, UserText.inactivityNotificationTitle)
@@ -448,7 +448,7 @@ final class InactivityNotificationSchedulerServiceTests: XCTestCase {
     
     func test_makeNotificationContent_setsTitleBodyAndUserInfo_useDefaultValue() {
         // When
-        let content = service.makeUNNotificationContent()
+        let content = InactivityNotificationSchedulerService.makeUNNotificationContent()
         
         // Then
         if let daysInactive = content.userInfo[InactivityNotificationSchedulerService.Settings.daysInactive.rawValue] as? Int {

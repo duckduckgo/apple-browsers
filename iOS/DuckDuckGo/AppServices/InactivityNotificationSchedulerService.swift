@@ -120,7 +120,7 @@ final class InactivityNotificationSchedulerService {
         }
     }
     
-    func makeUNNotificationContent(with daysInactive: Int = Settings.daysInactive.defaultValue) -> UNNotificationContent {
+    static func makeUNNotificationContent(with daysInactive: Int = Settings.daysInactive.defaultValue) -> UNNotificationContent {
         let content = UNMutableNotificationContent()
         content.title = UserText.inactivityNotificationTitle
         content.body = UserText.inactivityNotificationBody
@@ -169,7 +169,7 @@ final class InactivityNotificationSchedulerService {
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: .days(daysInactive), repeats: false)
         return UNNotificationRequest(
             identifier: Constants.notificationIdentifier,
-            content: makeUNNotificationContent(with: daysInactive),
+            content: Self.makeUNNotificationContent(with: daysInactive),
             trigger: trigger
         )
     }

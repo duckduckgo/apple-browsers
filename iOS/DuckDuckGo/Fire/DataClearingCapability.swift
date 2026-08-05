@@ -20,7 +20,7 @@
 import Core
 import Foundation
 import PrivacyConfig
-import FeatureFlags
+import FeatureFlags_iOS
 
 protocol DataClearingCapable {
     var isFireButtonRefinementsEnabled: Bool { get }

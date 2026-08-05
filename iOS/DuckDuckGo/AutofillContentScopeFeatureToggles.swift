@@ -21,7 +21,7 @@ import Foundation
 import FoundationExtensions
 import LocalAuthentication
 import BrowserServicesKit
-import FeatureFlags
+import FeatureFlags_iOS
 
 extension ContentScopeFeatureToggles {
     

@@ -20,7 +20,7 @@
 import Core
 import Foundation
 import PrivacyConfig
-import FeatureFlags
+import FeatureFlags_iOS
 
 /// Protocol for resolving fire mode feature state.
 ///

@@ -25,7 +25,7 @@ import DesignResourcesKitIcons
 import SwiftUI
 import UIKit
 import PrivacyConfig
-import FeatureFlags
+import FeatureFlags_iOS
 
 /// A view controller displaying the list of recent AI chats
 final class AIChatHistoryListViewController: UIViewController {

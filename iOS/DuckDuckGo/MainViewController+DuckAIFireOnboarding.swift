@@ -22,7 +22,7 @@ import Combine
 import Core
 import DesignResourcesKit
 import UIKit
-import FeatureFlags
+import FeatureFlags_iOS
 
 // MARK: - Duck.ai fire onboarding types
 

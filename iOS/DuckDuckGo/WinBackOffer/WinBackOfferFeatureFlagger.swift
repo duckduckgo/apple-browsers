@@ -20,7 +20,7 @@
 import Foundation
 import PrivacyConfig
 import Subscription
-import FeatureFlags
+import FeatureFlags_iOS
 
 /// Feature flag provider for the Win-back offer.
 /// 

@@ -24,7 +24,7 @@ import BrowserServicesKit
 import Persistence
 import PrivacyConfig
 import DDGSync
-import FeatureFlags
+import FeatureFlags_iOS
 
 @MainActor
 final class SyncRecoveryPromptService {

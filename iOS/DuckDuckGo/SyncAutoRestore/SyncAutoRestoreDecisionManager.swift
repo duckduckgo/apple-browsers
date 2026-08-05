@@ -19,7 +19,7 @@
 
 import os.log
 import PrivacyConfig
-import FeatureFlags
+import FeatureFlags_iOS
 
 protocol SyncAutoRestoreDecisionManaging {
     var isAutoRestoreFeatureEnabled: Bool { get }

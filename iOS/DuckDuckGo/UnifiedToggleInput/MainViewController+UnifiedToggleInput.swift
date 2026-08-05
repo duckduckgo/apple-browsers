@@ -26,7 +26,7 @@ import Subscription
 import Suggestions
 import UIKit
 import WebKit
-import FeatureFlags
+import FeatureFlags_iOS
 
 // MARK: - Unified Toggle Input Setup
 

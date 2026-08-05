@@ -22,7 +22,7 @@ import MetricKit
 import Core
 import Persistence
 import PrivacyConfig
-import FeatureFlags
+import FeatureFlags_iOS
 
 /// Owns the MetricKit launch-time subscriber. When enabled, registers it with
 /// `MXMetricManager` and drains any already-available past payloads on start and

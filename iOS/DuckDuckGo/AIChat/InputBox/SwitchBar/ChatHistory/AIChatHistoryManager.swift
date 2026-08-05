@@ -23,7 +23,7 @@ import Combine
 import Core
 import PrivacyConfig
 import UIKit
-import FeatureFlags
+import FeatureFlags_iOS
 
 /// Protocol for handling AI chat history events
 protocol AIChatHistoryManagerDelegate: AnyObject {

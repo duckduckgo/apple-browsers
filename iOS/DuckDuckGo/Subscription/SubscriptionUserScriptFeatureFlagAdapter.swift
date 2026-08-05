@@ -20,7 +20,7 @@
 import PrivacyConfig
 import Core
 import Subscription
-import FeatureFlags
+import FeatureFlags_iOS
 
 /// Adapter that provides feature flags to SubscriptionUserScript
 /// This follows the adapter pattern to avoid direct BSK dependencies in the Subscription module

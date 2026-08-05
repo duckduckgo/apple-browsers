@@ -26,7 +26,7 @@ import Foundation
 import os.log
 import PrivacyConfig
 import UIKit
-import FeatureFlags
+import FeatureFlags_iOS
 
 // MARK: - State Enums
 

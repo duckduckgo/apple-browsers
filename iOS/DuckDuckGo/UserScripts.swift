@@ -31,7 +31,7 @@ import TrackerRadarKit
 import UserScript
 import WebExtensions
 import WebKit
-import FeatureFlags
+import FeatureFlags_iOS
 
 final class UserScripts: UserScriptsProvider {
 

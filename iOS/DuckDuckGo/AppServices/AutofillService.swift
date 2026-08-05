@@ -24,7 +24,7 @@ import Common
 import FoundationExtensions
 import Persistence
 import PrivacyConfig
-import FeatureFlags
+import FeatureFlags_iOS
 
 final class AutofillService {
 

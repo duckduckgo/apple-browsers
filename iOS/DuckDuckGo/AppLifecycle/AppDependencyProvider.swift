@@ -36,7 +36,7 @@ import PrivacyConfig
 import Networking
 import Configuration
 import Network
-import FeatureFlags
+import FeatureFlags_iOS
 
 protocol DependencyProvider {
 

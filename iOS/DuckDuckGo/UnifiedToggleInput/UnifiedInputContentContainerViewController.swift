@@ -31,7 +31,7 @@ import DDGSync
 import Suggestions
 import AIChat
 import RemoteMessaging
-import FeatureFlags
+import FeatureFlags_iOS
 
 protocol UnifiedInputContentContainerViewControllerDelegate: AnyObject {
     func unifiedInputEditingStateDidSubmitQuery(_ query: String)

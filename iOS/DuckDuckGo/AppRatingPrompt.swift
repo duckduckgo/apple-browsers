@@ -23,7 +23,7 @@ import Core
 import CoreData
 import os.log
 import PrivacyConfig
-import FeatureFlags
+import FeatureFlags_iOS
 
 protocol AppRatingPromptStorage {
     

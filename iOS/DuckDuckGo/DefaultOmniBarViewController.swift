@@ -24,7 +24,7 @@ import Suggestions
 import Bookmarks
 import AIChat
 import Core
-import FeatureFlags
+import FeatureFlags_iOS
 
 final class DefaultOmniBarViewController: OmniBarViewController {
 

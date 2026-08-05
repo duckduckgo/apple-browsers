@@ -21,7 +21,7 @@ import Testing
 import BrowserServicesKit
 @testable import DuckDuckGo
 import Core
-import FeatureFlags
+import FeatureFlags_iOS
 
 @Suite("SubscriptionPageFeatureFlagAdapter Tests")
 struct SubscriptionPageFeatureFlagAdapterTests {

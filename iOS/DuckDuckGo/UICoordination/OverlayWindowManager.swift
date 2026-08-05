@@ -20,7 +20,7 @@
 import UIKit
 import Core
 import PrivacyConfig
-import FeatureFlags
+import FeatureFlags_iOS
 
 protocol OverlayWindowManaging {
 

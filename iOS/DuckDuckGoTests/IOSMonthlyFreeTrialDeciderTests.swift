@@ -19,7 +19,7 @@
 
 import PrivacyConfig
 import Testing
-import FeatureFlags
+import FeatureFlags_iOS
 @testable import Core
 @testable import DuckDuckGo
 

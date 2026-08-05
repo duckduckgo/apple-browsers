@@ -19,7 +19,7 @@
 
 import XCTest
 import PrivacyConfig
-import FeatureFlags
+import FeatureFlags_iOS
 @testable import Core
 @testable import DDGSync
 @testable import DuckDuckGo

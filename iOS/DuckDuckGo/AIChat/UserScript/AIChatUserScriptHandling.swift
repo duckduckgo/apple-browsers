@@ -30,7 +30,7 @@ import FoundationExtensions
 import DDGSync
 import Core
 import Persistence
-import FeatureFlags
+import FeatureFlags_iOS
 
 /// The current display mode of the AI Chat interface.
 enum AIChatDisplayMode {

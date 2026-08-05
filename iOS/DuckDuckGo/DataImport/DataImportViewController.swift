@@ -26,7 +26,7 @@ import Persistence
 import Bookmarks
 import DDGSync
 import PrivacyConfig
-import FeatureFlags
+import FeatureFlags_iOS
 
 protocol DataImportViewControllerDelegate: AnyObject {
     func dataImportViewControllerDidFinish(_ controller: DataImportViewController)

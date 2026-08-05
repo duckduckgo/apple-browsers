@@ -28,7 +28,7 @@ import StoreKit
 import PrivacyConfig
 import Networking
 import UserNotifications
-import FeatureFlags
+import FeatureFlags_iOS
 
 final class SubscriptionDebugViewController: UITableViewController {
 

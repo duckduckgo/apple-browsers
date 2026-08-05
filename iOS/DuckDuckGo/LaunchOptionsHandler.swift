@@ -22,7 +22,7 @@ import Persistence
 import PrivacyConfig
 import Common
 import FoundationExtensions
-import FeatureFlags
+import FeatureFlags_iOS
 
 public final class LaunchOptionsHandler {
 

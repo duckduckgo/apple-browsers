@@ -20,7 +20,7 @@
 import Core
 import PrivacyConfig
 import Subscription
-import FeatureFlags
+import FeatureFlags_iOS
 
 struct IOSMonthlyFreeTrialDecider: MonthlyFreeTrialDeciding {
 

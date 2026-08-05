@@ -53,7 +53,7 @@ import VPN
 import WebExtensions
 import WebKit
 import WidgetKit
-import FeatureFlags
+import FeatureFlags_iOS
 
 struct StartupOnboardingDecision {
     let shouldShowOnboarding: Bool

@@ -22,7 +22,7 @@ import FoundationExtensions
 import Core
 import Crashes
 import PrivacyConfig
-import FeatureFlags
+import FeatureFlags_iOS
 
 final class CrashCollectionService {
 

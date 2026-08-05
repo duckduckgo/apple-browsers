@@ -21,7 +21,7 @@ import Foundation
 import Core
 import Persistence
 import PrivacyConfig
-import FeatureFlags
+import FeatureFlags_iOS
 
 enum IdleReturnTreatment {
     case ntp

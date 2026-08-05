@@ -18,7 +18,7 @@
 
 import AppKit
 import Combine
-import FeatureFlags
+import FeatureFlags_macOS
 import MaliciousSiteProtection
 import PixelKit
 import PreferencesUI_macOS

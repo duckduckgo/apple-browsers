@@ -21,7 +21,7 @@ import Foundation
 import Core
 import Persistence
 import PrivacyConfig
-import FeatureFlags
+import FeatureFlags_iOS
 
 /// Combined NTP-after-idle state: eligibility folded together with return-to-tab-card visibility.
 /// Raw values are the strings used by the `ntpAfterIdleState` RMF matching attribute.

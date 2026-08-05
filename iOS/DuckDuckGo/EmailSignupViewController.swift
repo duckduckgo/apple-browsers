@@ -29,7 +29,7 @@ import WebKit
 import DesignResourcesKit
 import SecureStorage
 import Combine
-import FeatureFlags
+import FeatureFlags_iOS
 
 class EmailSignupViewController: UIViewController {
 

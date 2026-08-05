@@ -20,7 +20,7 @@
 import AIChat
 import PrivacyConfig
 import Core
-import FeatureFlags
+import FeatureFlags_iOS
 
 struct AIChatFeatureFlagProvider: AIChatFeatureFlagProviding {
 

@@ -27,7 +27,7 @@ import WebKit
 import Core
 import SwiftUI
 import Combine
-import FeatureFlags
+import FeatureFlags_iOS
 
 protocol AIChatViewControllerManagerDelegate: AnyObject {
     func aiChatViewControllerManager(_ manager: AIChatViewControllerManager, didRequestToLoad url: URL)

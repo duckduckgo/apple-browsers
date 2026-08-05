@@ -18,7 +18,7 @@
 //
 
 import XCTest
-import FeatureFlags
+import FeatureFlags_iOS
 @testable import DuckDuckGo
 @testable import Core
 

@@ -21,7 +21,7 @@ import CombineExtensions
 import Persistence
 import AppKit
 import DDGSync
-import FeatureFlags
+import FeatureFlags_macOS
 import PixelKit
 import PrivacyConfig
 

@@ -18,7 +18,7 @@
 
 import SwiftUI
 import Onboarding
-import FeatureFlags
+import FeatureFlags_macOS
 import PrivacyConfig
 
 final class ContextualDaxDialogsProvider: ContextualDaxDialogsFactory {

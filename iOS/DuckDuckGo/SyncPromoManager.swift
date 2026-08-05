@@ -25,7 +25,7 @@ import FoundationExtensions
 import Core
 import Persistence
 import DDGSync
-import FeatureFlags
+import FeatureFlags_iOS
 
 protocol SyncPromoManaging {
     func shouldPresentPromoFor(_ touchpoint: SyncPromoManager.Touchpoint, count: Int) -> Bool

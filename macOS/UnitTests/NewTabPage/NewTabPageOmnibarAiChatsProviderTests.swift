@@ -21,7 +21,7 @@ import AIChat
 import WebKit
 import Combine
 import PrivacyConfig
-import FeatureFlags
+import FeatureFlags_macOS
 @testable import DuckDuckGo_Privacy_Browser
 @testable import NewTabPage
 

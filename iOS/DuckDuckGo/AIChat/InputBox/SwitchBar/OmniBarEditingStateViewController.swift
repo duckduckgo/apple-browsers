@@ -29,7 +29,7 @@ import Suggestions
 import SwiftUI
 import AIChat
 import RemoteMessaging
-import FeatureFlags
+import FeatureFlags_iOS
 
 protocol OmniBarEditingStateViewControllerDelegate: AnyObject {
     func onQueryUpdated(_ query: String)

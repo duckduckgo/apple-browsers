@@ -21,7 +21,7 @@ import BrowserServicesKit
 import Core
 import Foundation
 import PrivacyConfig
-import FeatureFlags
+import FeatureFlags_iOS
 
 /// Decides which routing branch should fire for a given navigation response.
 ///

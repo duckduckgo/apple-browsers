@@ -20,7 +20,7 @@ import Foundation
 import DataBrokerProtectionCore
 import DataBrokerProtection_macOS
 import PrivacyConfig
-import FeatureFlags
+import FeatureFlags_macOS
 import PixelKit
 
 final class DBPFeatureFlagger: DBPFeatureFlagging {

@@ -31,7 +31,7 @@ import RemoteMessaging
 import AIChat
 import Subscription
 import Onboarding
-import FeatureFlags
+import FeatureFlags_iOS
 
 /// Which suggestions surface the iPad popover currently shows.
 enum PopoverSuggestionsMode {

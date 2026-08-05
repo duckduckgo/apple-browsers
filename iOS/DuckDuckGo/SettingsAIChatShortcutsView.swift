@@ -22,7 +22,7 @@ import DesignResourcesKit
 import DesignResourcesKitIcons
 import Core
 import PrivacyConfig
-import FeatureFlags
+import FeatureFlags_iOS
 
 /// Visibility logic for the Duck.ai chrome shortcut surfaces.
 ///

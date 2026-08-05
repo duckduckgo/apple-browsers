@@ -24,7 +24,7 @@ import DDGSync
 import Persistence
 import PrivacyConfig
 import AIChat
-import FeatureFlags
+import FeatureFlags_iOS
 
 final class SyncService {
 

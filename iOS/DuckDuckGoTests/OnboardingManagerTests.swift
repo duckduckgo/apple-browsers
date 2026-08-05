@@ -24,7 +24,7 @@ import PrivacyConfig
 import Testing
 import class UIKit.UIDevice
 import protocol BrowserServicesKit.VariantManager
-import FeatureFlags
+import FeatureFlags_iOS
 @testable import Core
 @testable import DuckDuckGo
 

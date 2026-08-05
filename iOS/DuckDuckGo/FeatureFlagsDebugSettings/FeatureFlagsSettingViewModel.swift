@@ -22,7 +22,7 @@ import Combine
 import PrivacyConfig
 import Core
 import ContentScopeScripts
-import FeatureFlags
+import FeatureFlags_iOS
 
 class FeatureFlagsSettingViewModel: ObservableObject {
 

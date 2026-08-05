@@ -28,7 +28,7 @@ import AIChat
 import WebExtensions
 import DuckUI
 import Persistence
-import FeatureFlags
+import FeatureFlags_iOS
 
 extension DebugScreensViewModel {
 

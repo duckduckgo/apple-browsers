@@ -27,7 +27,7 @@ import BrowserServicesKit
 import AIChat
 import Persistence
 import PrivacyConfig
-import FeatureFlags
+import FeatureFlags_iOS
 
 protocol TabsBarDelegate: NSObjectProtocol {
     

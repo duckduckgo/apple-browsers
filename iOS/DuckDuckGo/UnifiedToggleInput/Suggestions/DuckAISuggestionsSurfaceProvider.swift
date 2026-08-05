@@ -25,7 +25,7 @@ import History
 import Suggestions
 import AIChat
 import UIKit
-import FeatureFlags
+import FeatureFlags_iOS
 
 @MainActor
 protocol DuckAISuggestionsSurfaceProviderDelegate: AnyObject {

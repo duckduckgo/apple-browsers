@@ -26,7 +26,7 @@ import os.log
 import PrivacyConfig
 import Networking
 import Persistence
-import FeatureFlags
+import FeatureFlags_iOS
 
 /// Status for the cancel-downgrade overlay
 enum CancelDowngradeOverlayStatus {

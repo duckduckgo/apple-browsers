@@ -19,7 +19,7 @@
 import AppKit
 import Combine
 import DesignResourcesKit
-import FeatureFlags
+import FeatureFlags_macOS
 import Foundation
 import PixelKit
 import PrivacyConfig

@@ -22,7 +22,7 @@ import Combine
 import BrowserServicesKit
 import Core
 import PrivacyConfig
-import FeatureFlags
+import FeatureFlags_iOS
 
 @MainActor
 final class TabSwitcherTrackerCountViewModel: ObservableObject {

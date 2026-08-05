@@ -269,7 +269,7 @@
                BlueprintIdentifier = "FeatureFlagsTests"
                BuildableName = "FeatureFlagsTests"
                BlueprintName = "FeatureFlagsTests"
-               ReferencedContainer = "container:LocalPackages/FeatureFlags">
+               ReferencedContainer = "container:LocalPackages/FeatureFlags-iOS">
             </BuildableReference>
          </TestableReference>
       </Testables>

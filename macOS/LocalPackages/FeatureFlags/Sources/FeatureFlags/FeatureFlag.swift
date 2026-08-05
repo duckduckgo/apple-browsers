@@ -399,10 +399,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// Defers menu population to NSMenuDelegate.menuNeedsUpdate(_:) to avoid expensive eager rebuilds
     case lazyMenuRebuild
 
-    /// Enables removing individual AI chat suggestions from the omnibar
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213761882751264?focus=true
-    case aiChatRemoveSuggestion
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213813585476250?focus=true
     case screenTimeCleaning
 
@@ -739,8 +735,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.websitesHistoryFirstTimeQuitSurvey))
         case .lazyMenuRebuild:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.lazyMenuRebuild))
-        case .aiChatRemoveSuggestion:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.removeSuggestion), category: .duckAI)
         case .screenTimeCleaning:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.screenTimeCleaning))
         case .tabSuspension:

@@ -951,28 +951,25 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             )
         }
 
-        // Handle suggestion deletions (gated by feature flag)
-        let canRemoveSuggestions = NSApp.delegateTyped.featureFlagger.isFeatureOn(.aiChatRemoveSuggestion)
-        suggestionsView.canDeleteSuggestions = canRemoveSuggestions
-        if canRemoveSuggestions {
-            suggestionsView.onSuggestionDeleted = { [weak self] suggestion in
-                guard let self, let window = self.view.window else { return }
+        // Handle suggestion deletions
+        suggestionsView.canDeleteSuggestions = true
+        suggestionsView.onSuggestionDeleted = { [weak self] suggestion in
+            guard let self, let window = self.view.window else { return }
 
-                PixelKit.fire(AIChatPixel.aiChatRecentChatDeleteButtonClicked, frequency: .dailyAndCount, includeAppVersionParameter: true)
+            PixelKit.fire(AIChatPixel.aiChatRecentChatDeleteButtonClicked, frequency: .dailyAndCount, includeAppVersionParameter: true)
 
-                let alert = NSAlert.recentChatDeleteConfirmation(title: suggestion.title)
-                alert.beginSheetModal(for: window) { [weak self] response in
-                    guard let self else { return }
-                    guard response == .OK else {
-                        PixelKit.fire(AIChatPixel.aiChatRecentChatDeleteCancelled, frequency: .dailyAndCount, includeAppVersionParameter: true)
-                        return
-                    }
-                    PixelKit.fire(AIChatPixel.aiChatRecentChatDeleteConfirmed, frequency: .dailyAndCount, includeAppVersionParameter: true)
-                    self.omnibarController.suggestionsViewModel.removeSuggestion(suggestion)
-                    // Refresh after deletion: with native storage unavailable, only the JS clear removes the chat.
-                    self.aiChatDeleter.deleteChat(chatID: suggestion.chatId) { [weak self] in
-                        self?.omnibarController.refreshSuggestions()
-                    }
+            let alert = NSAlert.recentChatDeleteConfirmation(title: suggestion.title)
+            alert.beginSheetModal(for: window) { [weak self] response in
+                guard let self else { return }
+                guard response == .OK else {
+                    PixelKit.fire(AIChatPixel.aiChatRecentChatDeleteCancelled, frequency: .dailyAndCount, includeAppVersionParameter: true)
+                    return
+                }
+                PixelKit.fire(AIChatPixel.aiChatRecentChatDeleteConfirmed, frequency: .dailyAndCount, includeAppVersionParameter: true)
+                self.omnibarController.suggestionsViewModel.removeSuggestion(suggestion)
+                // Refresh after deletion: with native storage unavailable, only the JS clear removes the chat.
+                self.aiChatDeleter.deleteChat(chatID: suggestion.chatId) { [weak self] in
+                    self?.omnibarController.refreshSuggestions()
                 }
             }
         }

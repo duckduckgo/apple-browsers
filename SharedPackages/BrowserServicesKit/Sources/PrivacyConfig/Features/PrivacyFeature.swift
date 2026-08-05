@@ -544,9 +544,6 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables voice chat shortcut in the focused address bar
     case voiceShortcut
 
-    /// Enables removing individual AI chat suggestions
-    case removeSuggestion
-
     /// Enables the Duck.ai top-level main menu shortcut (macOS only)
     case mainMenuShortcut
 

@@ -19,30 +19,30 @@
 import Foundation
 import SwiftUI
 
-extension TextFieldStyle where Self == ThemedTextFieldStyle {
+public extension TextFieldStyle where Self == ThemedTextFieldStyle {
     static var themed: ThemedTextFieldStyle {
         ThemedTextFieldStyle()
     }
 }
 
-struct ThemedTextFieldStyle: TextFieldStyle {
+public struct ThemedTextFieldStyle: TextFieldStyle {
     var backgroundColor = Color(designSystemColor: .toneShadePrimary)
     let focusBorderColor = Color(designSystemColor: .accentPrimary)
 
     // swiftlint:disable identifier_name
-    func _body(configuration: TextField<Self._Label>) -> some View {
+    public func _body(configuration: TextField<Self._Label>) -> some View {
         FocusableThemedTextFieldStyle(configuration: configuration, backgroundColor: backgroundColor, focusBorderColor: focusBorderColor)
     }
     // swiftlint:enable identifier_name
 }
 
-struct FocusableThemedTextFieldStyle<Label: View>: View {
+public struct FocusableThemedTextFieldStyle<Label: View>: View {
     @FocusState private var isFocused: Bool
     let configuration: TextField<Label>
     let backgroundColor: Color
     let focusBorderColor: Color
 
-    var body: some View {
+    public var body: some View {
         configuration
             .textFieldStyle(.plain)
             .focused($isFocused)

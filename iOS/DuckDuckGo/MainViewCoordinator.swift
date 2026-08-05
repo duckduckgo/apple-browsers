@@ -54,6 +54,7 @@ class MainViewCoordinator {
     var windowControlsRowBackground: UIView?
     var tabBarContainer: UIView!
     var aiChatTabChatHeaderContainer: UIView!
+    weak var aiChatTabChatHeaderView: AIChatTabChatHeaderView?
     var unifiedToggleInputContainer: UIView!
     var aiTabCollapsedTopSeparator: UIView!
     private var aiTabCollapsedTopSeparatorLogicallyVisible = false
@@ -613,12 +614,14 @@ class MainViewCoordinator {
 
     func showAIChatTabChatHeader() {
         aiChatTabChatHeaderContainer.isHidden = false
+        aiChatTabChatHeaderView?.setContainerVisible(true)
         guard isNavigationChromeHidden else { return }
         setContentContainerTopAnchorMode(.aiChatHeader)
     }
 
     func hideAIChatTabChatHeader() {
         aiChatTabChatHeaderContainer.isHidden = true
+        aiChatTabChatHeaderView?.setContainerVisible(false)
         guard isNavigationChromeHidden else { return }
         setContentContainerTopAnchorMode(.safeArea)
     }

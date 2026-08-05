@@ -117,7 +117,7 @@ private extension SubscriptionOnboardingVPNActivationView {
 
     var failureExplanation: String {
         viewModel.didDenyVPNPermission ? UserText.subscriptionOnboardingVPNActivationDeniedExplanation
-                                       : UserText.vpnErrorConnectionFailed
+                                       : UserText.subscriptionOnboardingVPNActivationFailedExplanation
     }
 }
 

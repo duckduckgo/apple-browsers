@@ -39,6 +39,20 @@ final class UnifiedInputContentContainerViewControllerTests: XCTestCase {
 
         XCTAssertEqual(delegate.syncSetupRequestCount, 1)
     }
+
+    func testPromoQueueEnablementPublisher_WhenAlreadyFocused_RefreshesAfterCompletedLiveEnable() {
+        let featureState = CurrentValueSubject<PromoQueueFeatureState, Never>(.disabled)
+        var refreshCount = 0
+        let cancellable = promoQueueEnablementPublisher(featureState.eraseToAnyPublisher())
+            .sink { refreshCount += 1 }
+
+        featureState.send(.transitioning(to: .enabled))
+        XCTAssertEqual(refreshCount, 0)
+
+        featureState.send(.enabled)
+        XCTAssertEqual(refreshCount, 1)
+        withExtendedLifetime(cancellable) {}
+    }
 }
 
 private final class MockUnifiedInputContentContainerDelegate: UnifiedInputContentContainerViewControllerDelegate {

@@ -18,6 +18,7 @@
 
 import Foundation
 import Combine
+import os.log
 
 /// The EventHub view of remote config: feature enablement plus the telemetry settings JSON with any
 /// consent-gated entries already removed. EventHub consumes this instead of talking to remote config or
@@ -66,8 +67,12 @@ public final class EventHubSettings: EventHubSettingsProviding {
         do {
             // Fail closed: if we cannot verify the settings JSON shape when suppressed is non-empty,
             // expose no telemetry at all rather than risk collecting without consent.
-            guard var object = try JSONSerialization.jsonObject(with: settings) as? [String: Any],
-                  var telemetry = object[telemetryKey] as? [String: Any] else {
+            guard var object = try JSONSerialization.jsonObject(with: settings) as? [String: Any] else {
+                Logger.eventHub.error("settings: consent stripping could not read the settings JSON as an object, failing closed")
+                return nil
+            }
+            guard var telemetry = object[telemetryKey] as? [String: Any] else {
+                Logger.eventHub.error("settings: consent stripping found no usable `\(telemetryKey, privacy: .public)` object, failing closed")
                 return nil
             }
             for name in suppressed { telemetry.removeValue(forKey: name) }
@@ -76,6 +81,7 @@ public final class EventHubSettings: EventHubSettingsProviding {
         } catch {
             // Fail closed: if we cannot reliably strip a gated entry, expose no telemetry at all
             // rather than risk collecting without consent.
+            Logger.eventHub.error("settings: consent stripping failed, failing closed: \(error.localizedDescription, privacy: .public)")
             return nil
         }
     }

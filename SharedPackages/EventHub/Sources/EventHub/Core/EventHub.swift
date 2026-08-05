@@ -18,6 +18,7 @@
 
 import Foundation
 import Combine
+import os.log
 
 /// The EventHub runtime. Receives web events and browser-native signals, routes them to the configured
 /// telemetry, maintains aggregation state and period windows, and fires telemetry pixels. Lifecycle and
@@ -364,10 +365,16 @@ public final class EventHub: EventHubManaging {
 
     private static func encode(_ data: Encodable?) -> [String: Any]? {
         guard let data else { return nil }
-        guard let encoded = try? JSONEncoder().encode(data),
-              let object = try? JSONSerialization.jsonObject(with: encoded) as? [String: Any] else {
+        do {
+            let encoded = try JSONEncoder().encode(data)
+            guard let object = try JSONSerialization.jsonObject(with: encoded) as? [String: Any] else {
+                Logger.eventHub.error("native event payload is not a JSON object, payload dropped")
+                return nil
+            }
+            return object
+        } catch {
+            Logger.eventHub.error("native event payload could not be serialised, payload dropped: \(error.localizedDescription, privacy: .public)")
             return nil
         }
-        return object
     }
 }

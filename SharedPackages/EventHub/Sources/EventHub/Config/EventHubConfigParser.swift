@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import os.log
 
 /// Parses the remote `eventHub` feature settings JSON into validated telemetry pixel configs, and
 /// serialises a single config back to JSON for persistence as a period's config snapshot.
@@ -42,10 +43,15 @@ public final class EventHubConfigParser: EventHubConfigParsing {
     public init() {}
 
     public func parseTelemetry(_ settingsJSON: Data) -> [TelemetryPixelConfig] {
-        guard let settings = try? JSONDecoder().decode(SettingsDTO.self, from: settingsJSON) else {
+        let settings: SettingsDTO
+        do {
+            settings = try JSONDecoder().decode(SettingsDTO.self, from: settingsJSON)
+        } catch {
+            Logger.eventHub.error("config: settings JSON could not be decoded, no telemetry configured: \(error.localizedDescription, privacy: .public)")
             return []
         }
-        return settings.telemetry.compactMap { name, pixel in Self.toPixelConfig(name: name, pixel: pixel) }
+        guard let telemetry = settings.telemetry else { return [] }
+        return telemetry.compactMap { name, pixel in Self.toPixelConfig(name: name, pixel: pixel) }
     }
 
     public func parseSinglePixelConfig(name: String, json: String) -> TelemetryPixelConfig? {
@@ -62,53 +68,68 @@ public final class EventHubConfigParser: EventHubConfigParsing {
     }
 
     private static func toPixelConfig(name: String, pixel: PixelDTO) -> TelemetryPixelConfig? {
-        guard let state = pixel.state, let triggerDTO = pixel.trigger, let trigger = toTrigger(triggerDTO) else {
+        guard let state = pixel.state, let triggerDTO = pixel.trigger else {
+            Logger.eventHub.error("config: pixel \(name, privacy: .public) skipped, missing state and/or trigger")
             return nil
         }
-        let parameters = toParameters(pixel.parameters ?? [:])
+        guard let trigger = toTrigger(triggerDTO, pixelName: name) else { return nil }
+        let parameters = toParameters(pixel.parameters ?? [:], pixelName: name)
         // A period pixel with no parameters has nothing to report; immediate pixels may legitimately
         // carry none (they fire on the event alone).
         if trigger.isPeriod && parameters.isEmpty {
+            Logger.eventHub.error("config: period pixel \(name, privacy: .public) skipped, no valid parameters")
             return nil
         }
         return TelemetryPixelConfig(name: name, state: state, trigger: trigger, parameters: parameters)
     }
 
-    private static func toTrigger(_ dto: TriggerDTO) -> TelemetryTriggerConfig? {
+    private static func toTrigger(_ dto: TriggerDTO, pixelName: String) -> TelemetryTriggerConfig? {
         let type = dto.type ?? periodType
         if type == immediateType {
-            guard let source = dto.source, !source.isEmpty else { return nil }
+            guard let source = dto.source, !source.isEmpty else {
+                Logger.eventHub.error("config: pixel \(pixelName, privacy: .public) skipped, immediate trigger with no source")
+                return nil
+            }
             return TelemetryTriggerConfig(type: immediateType, source: source)
         }
         if type == periodType {
-            guard let period = dto.period, period.seconds > 0 else { return nil }
+            guard let period = dto.period, period.seconds > 0 else {
+                Logger.eventHub.error("config: pixel \(pixelName, privacy: .public) skipped, period seconds missing or not positive")
+                return nil
+            }
             return TelemetryTriggerConfig(type: periodType, period: TelemetryPeriodConfig(seconds: period.seconds))
         }
+        Logger.eventHub.error("config: pixel \(pixelName, privacy: .public) skipped, unknown trigger type \(type, privacy: .public)")
         return nil
     }
 
-    private static func toParameters(_ parameters: [String: ParameterDTO]) -> [String: TelemetryParameterConfig] {
+    private static func toParameters(_ parameters: [String: ParameterDTO], pixelName: String) -> [String: TelemetryParameterConfig] {
         var result: [String: TelemetryParameterConfig] = [:]
         for (name, parameter) in parameters {
-            if let mapped = toParameter(parameter) {
+            if let mapped = toParameter(parameter, pixelName: pixelName, parameterName: name) {
                 result[name] = mapped
             }
         }
         return result
     }
 
-    private static func toParameter(_ parameter: ParameterDTO) -> TelemetryParameterConfig? {
+    private static func toParameter(_ parameter: ParameterDTO, pixelName: String, parameterName: String) -> TelemetryParameterConfig? {
         if parameter.template == counterTemplate {
             guard let source = parameter.source, !source.isEmpty,
                   let buckets = parameter.buckets, !buckets.ordered.isEmpty else {
+                Logger.eventHub.error("config: counter parameter \(pixelName, privacy: .public)/\(parameterName, privacy: .public) dropped, missing source and/or usable buckets")
                 return nil
             }
             return TelemetryParameterConfig(template: counterTemplate, source: source, buckets: buckets.ordered)
         }
         if parameter.template == dataTemplate {
-            guard let dataKey = parameter.dataKey, !dataKey.isEmpty else { return nil }
+            guard let dataKey = parameter.dataKey, !dataKey.isEmpty else {
+                Logger.eventHub.error("config: data parameter \(pixelName, privacy: .public)/\(parameterName, privacy: .public) dropped, missing dataKey")
+                return nil
+            }
             return TelemetryParameterConfig(template: dataTemplate, source: parameter.source, dataKey: dataKey)
         }
+        Logger.eventHub.error("config: parameter \(pixelName, privacy: .public)/\(parameterName, privacy: .public) dropped, unknown template \(parameter.template ?? "<none>", privacy: .public)")
         return nil
     }
 
@@ -131,7 +152,8 @@ public final class EventHubConfigParser: EventHubConfigParsing {
     // MARK: DTOs
 
     private struct SettingsDTO: Decodable {
-        let telemetry: [String: PixelDTO]
+        /// Optional: a missing `telemetry` key means "nothing configured yet", not malformed settings.
+        let telemetry: [String: PixelDTO]?
     }
 
     private struct PixelDTO: Codable {
@@ -185,6 +207,7 @@ public final class EventHubConfigParser: EventHubConfigParsing {
             for key in container.allKeys {
                 let dto = try container.decode(BucketDTO.self, forKey: key)
                 guard let gte = dto.gte else {
+                    Logger.eventHub.error("config: bucket \(key.stringValue, privacy: .public) has no `gte` lower bound, counter discarded")
                     ordered = []
                     return
                 }

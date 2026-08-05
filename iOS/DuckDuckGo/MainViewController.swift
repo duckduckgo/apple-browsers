@@ -6381,7 +6381,10 @@ extension MainViewController: TabDelegate {
     func tabContentProcessDidTerminate(tab: TabViewController) {
         findInPageView?.done()
         tabManager.webContentProcessDidTerminate()
-        tabManager.invalidateCache(forController: tab)
+
+        // Only reload current if the app is active. 
+        let shouldReload = UIApplication.shared.applicationState == .active
+        tabManager.invalidateCache(forController: tab, reloadCurrent: shouldReload)
     }
 
     func showBars() {

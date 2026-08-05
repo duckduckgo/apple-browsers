@@ -408,7 +408,7 @@ final class TabManagerTests: XCTestCase {
 
         XCTAssertFalse(try XCTUnwrap(controller.makeBreakageAdditionalInfo()).isAfterTabTermination)
 
-        manager.invalidateCache(forController: controller)
+        manager.invalidateCache(forController: controller, reloadCurrent: false)
 
         XCTAssertEqual(detector.checkedTabIDs, [controller.tabModel.uid])
         XCTAssertFalse(controller.error.isHidden)

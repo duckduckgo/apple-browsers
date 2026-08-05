@@ -453,15 +453,11 @@ final class PermissionCenterViewModel: ObservableObject {
 
     /// Opens the General settings pane, scrolled to the Permissions section where the all-sites autoplay preference lives
     func openAutoplaySettings() {
-<<<<<<< HEAD
-        openSettings?(.generalPermissions)
-=======
         if displaysAutoplayDiscovery {
             pixelFiring?.fire(AutoplayPromoPixel.settingsLinkClicked)
         }
 
-        openSettingsPane?(.general)
->>>>>>> origin/main
+        openSettings?(.generalPermissions)
         dismissPopover()
     }
 

@@ -2258,6 +2258,11 @@ public struct UserText {
     public static let aiChatAttachmentFileEncrypted = NSLocalizedString("aichat.attachment.file.encrypted", value: "We can't read the files attached because at least one of them is encrypted.", comment: "Error message displayed when one or more attached files are encrypted and cannot be read")
     public static let aiChatAttachmentFileUnreadable = NSLocalizedString("aichat.attachment.file.unreadable", value: "We can't read one of the files attached. Please check that it isn't corrupted and try again.", comment: "Error message displayed when one or more attached files cannot be read")
     public static let aiChatAttachmentUnavailable = NSLocalizedString("aichat.attachment.unavailable", value: "Attachments are temporarily unavailable. Please try again later.", comment: "Generic fallback error message displayed when attachments cannot be validated because the backend-provided attachment limits are unavailable")
+    public static let aiChatTextSelectionTitle = NSLocalizedString("duckai.text-selection.context-title", value: "Text selection", comment: "Generic title shown on the Duck.ai attachment chip when the attached content is a user text selection rather than a full web page")
+    public static func aiChatTextSelectionLimitReached(_ limit: Int) -> String {
+        let message = NSLocalizedString("duckai.text-selection.limit-reached", value: "You can add up to %d text selections. Remove one to add another.", comment: "Message shown when the user selects text and asks Duck.ai about it but has already attached the maximum number of selections. Parameter is that maximum.")
+        return message.format(arguments: limit)
+    }
     public static func aiChatAttachmentUnsupportedFileType(acceptedFileType: String) -> String {
         let message = NSLocalizedString("aichat.attachment.unsupported.file.type.single", value: "This file type is not supported, please attach a %@.", comment: "Error message displayed when the user tries to upload an unsupported file type and we know which type is accepted. Parameter is a single accepted type. E.g. This file type is not supported, please attach a PDF.")
         return message.format(arguments: acceptedFileType)

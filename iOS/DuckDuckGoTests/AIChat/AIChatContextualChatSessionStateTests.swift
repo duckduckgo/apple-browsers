@@ -2158,6 +2158,157 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         )
         return AIChatPageContext(contextData: contextData, favicon: nil)
     }
+
+    private func makeSelection(_ content: String = "selected text") -> AIChatSelectionContextData {
+        AIChatSelectionContextBuilder.makeSelection(text: content, url: URL(string: "https://example.com/article"))
+    }
+
+    // MARK: - Attached Text Selections
+
+    func testAttachSelectionAppendsAndReportsSuccess() {
+        XCTAssertTrue(sessionState.attachSelection(makeSelection("first"), pageTitle: "Article"))
+        XCTAssertTrue(sessionState.attachSelection(makeSelection("second"), pageTitle: "Article"))
+
+        XCTAssertEqual(sessionState.attachedSelections.map(\.content), ["first", "second"])
+        XCTAssertEqual(sessionState.attachedSelectionPageTitle, "Article")
+    }
+
+    func testSelectionsAccumulateUpToTheCap() {
+        for index in 0..<AIChatSelectionContextBuilder.maxAttachedSelections {
+            XCTAssertTrue(sessionState.attachSelection(makeSelection("selection \(index)"), pageTitle: nil))
+        }
+
+        XCTAssertEqual(sessionState.attachedSelections.count, AIChatSelectionContextBuilder.maxAttachedSelections)
+    }
+
+    /// At the cap the newcomer is refused rather than displacing an existing selection, so nothing the
+    /// user already collected disappears without them asking.
+    func testAttachSelectionBeyondTheCapIsRefusedAndKeepsExistingSelections() {
+        for index in 0..<AIChatSelectionContextBuilder.maxAttachedSelections {
+            sessionState.attachSelection(makeSelection("selection \(index)"), pageTitle: nil)
+        }
+        let before = sessionState.attachedSelections.map(\.id)
+
+        XCTAssertFalse(sessionState.attachSelection(makeSelection("one too many"), pageTitle: nil))
+
+        XCTAssertEqual(sessionState.attachedSelections.map(\.id), before)
+    }
+
+    func testRemoveAttachedSelectionRemovesOnlyThatSelection() {
+        let first = makeSelection("first")
+        let second = makeSelection("second")
+        sessionState.attachSelection(first, pageTitle: "Article")
+        sessionState.attachSelection(second, pageTitle: "Article")
+
+        sessionState.removeAttachedSelection(id: first.id)
+
+        XCTAssertEqual(sessionState.attachedSelections.map(\.id), [second.id])
+        XCTAssertEqual(sessionState.attachedSelectionPageTitle, "Article")
+    }
+
+    func testRemovingTheLastSelectionClearsThePageTitle() {
+        let selection = makeSelection()
+        sessionState.attachSelection(selection, pageTitle: "Article")
+
+        sessionState.removeAttachedSelection(id: selection.id)
+
+        XCTAssertTrue(sessionState.attachedSelections.isEmpty)
+        XCTAssertNil(sessionState.attachedSelectionPageTitle)
+    }
+
+    func testRemovingAnUnknownSelectionIsANoOp() {
+        let selection = makeSelection()
+        sessionState.attachSelection(selection, pageTitle: "Article")
+
+        sessionState.removeAttachedSelection(id: "not-attached")
+
+        XCTAssertEqual(sessionState.attachedSelections.map(\.id), [selection.id])
+    }
+
+    func testRemovingASelectionFreesCapacityAtTheCap() {
+        for index in 0..<AIChatSelectionContextBuilder.maxAttachedSelections {
+            sessionState.attachSelection(makeSelection("selection \(index)"), pageTitle: nil)
+        }
+        let removed = sessionState.attachedSelections[0]
+
+        sessionState.removeAttachedSelection(id: removed.id)
+
+        XCTAssertTrue(sessionState.attachSelection(makeSelection("replacement"), pageTitle: nil))
+        XCTAssertEqual(sessionState.attachedSelections.count, AIChatSelectionContextBuilder.maxAttachedSelections)
+    }
+
+    func testConsumeAttachedSelectionsClearsTheList() {
+        sessionState.attachSelection(makeSelection(), pageTitle: "Article")
+
+        sessionState.consumeAttachedSelections()
+
+        XCTAssertTrue(sessionState.attachedSelections.isEmpty)
+        XCTAssertNil(sessionState.attachedSelectionPageTitle)
+    }
+
+    func testClearAttachedSelectionsClearsTheList() {
+        sessionState.attachSelection(makeSelection(), pageTitle: "Article")
+
+        sessionState.clearAttachedSelections()
+
+        XCTAssertTrue(sessionState.attachedSelections.isEmpty)
+        XCTAssertNil(sessionState.attachedSelectionPageTitle)
+    }
+
+    func testResetToNoChatClearsSelectionsByDefault() {
+        sessionState.attachSelection(makeSelection(), pageTitle: "Article")
+
+        sessionState.resetToNoChat()
+
+        XCTAssertTrue(sessionState.attachedSelections.isEmpty)
+        XCTAssertNil(sessionState.attachedSelectionPageTitle)
+    }
+
+    /// The inactivity timer ends the chat but must not destroy text the user gathered across pages.
+    func testResetToNoChatCanPreserveSelections() {
+        let selection = makeSelection()
+        sessionState.attachSelection(selection, pageTitle: "Article")
+
+        sessionState.resetToNoChat(preservingSelections: true)
+
+        XCTAssertEqual(sessionState.attachedSelections.map(\.id), [selection.id])
+        XCTAssertEqual(sessionState.attachedSelectionPageTitle, "Article")
+    }
+
+    /// Suppression is keyed on `attachedSelections` directly, not on the selection-scoped quick
+    /// actions being present, so page suggestions can't reappear beside a selection if those change.
+    func testPageSuggestionsAreSuppressedWhileASelectionIsAttached() {
+        let expected = [ContextualSuggestedPrompt(id: "note-page", label: "Key takeaways", prompt: "Key takeaways?", icon: "note")]
+        mockFeatureFlagger.enabledFeatureFlags = [.contextualSuggestedPrompts]
+        sessionState = AIChatContextualChatSessionState(
+            aiChatSettings: mockSettings,
+            pixelHandler: mockPixelHandler,
+            featureFlagger: mockFeatureFlagger,
+            suggestedPromptsProvider: MockContextualSuggestedPromptsProvider(suggestions: expected)
+        )
+
+        let loaded = expectation(description: "suggestions loaded")
+        // The removal below restores the suggestions, so this predicate becomes true a second time.
+        loaded.assertForOverFulfill = false
+        sessionState.$viewState
+            .dropFirst()
+            .sink { state in
+                if state.suggestionsLoadState == .loaded, state.suggestions == expected {
+                    loaded.fulfill()
+                }
+            }
+            .store(in: &cancellables)
+        sessionState.markPendingSignalsOnlyCollection()
+        sessionState.updateContext(makeTestContext())
+        wait(for: [loaded], timeout: 1.0)
+
+        let selection = makeSelection()
+        sessionState.attachSelection(selection, pageTitle: "Article")
+        XCTAssertTrue(sessionState.viewState.suggestions.isEmpty)
+
+        sessionState.removeAttachedSelection(id: selection.id)
+        XCTAssertEqual(sessionState.viewState.suggestions, expected)
+    }
 }
 
 // MARK: - Mock Pixel Handler

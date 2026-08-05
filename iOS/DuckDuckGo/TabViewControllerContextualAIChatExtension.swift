@@ -45,6 +45,26 @@ extension TabViewController {
         }
     }
 
+    /// Presents the contextual AI chat sheet with `text` — selected on this page — attached as its own
+    /// context, alongside any page context. Nothing is submitted.
+    ///
+    /// - Parameters:
+    ///   - text: The trimmed page selection.
+    ///   - presentingViewController: The view controller to present the sheet from.
+    func presentContextualAIChatSheet(withSelectedText text: String,
+                                      from presentingViewController: UIViewController) {
+        Task { @MainActor in
+            let url = webView.url
+            await aiChatContextualSheetCoordinator.attachSelectionAndPresentSheet(
+                text: text,
+                url: url,
+                pageTitle: link?.displayTitle,
+                faviconBase64: url.flatMap { getFaviconBase64(for: $0) },
+                from: presentingViewController
+            )
+        }
+    }
+
     /// Reloads the contextual AI chat web view if one exists.
     func reloadContextualAIChatIfNeeded() {
         aiChatContextualSheetCoordinator.reloadIfNeeded()

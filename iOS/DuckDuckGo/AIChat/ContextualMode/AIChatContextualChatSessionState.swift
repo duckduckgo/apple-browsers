@@ -121,6 +121,15 @@ final class AIChatContextualChatSessionState {
     private(set) var contextualChatURL: URL?
     private(set) var latestContext: AIChatPageContext?
 
+    /// Text selections attached from the page's selection menu, in attach order. Independent of
+    /// `latestContext`: page context is *trimmed*, so a selection is not guaranteed to be inside it
+    /// and replacing one with the other would lose content the user explicitly chose.
+    private(set) var attachedSelections: [AIChatSelectionContextData] = []
+
+    /// Title of the page the most recent selection came from. Distinct from
+    /// `AIChatSelectionContextData.title`, which is the generic payload title ("Text selection").
+    private(set) var attachedSelectionPageTitle: String?
+
     /// URL included in the last submitted prompt with no navigation since; used to spot a stale auto-attach echo.
     private var deliveredContextURLWithNoNavigationSince: URL?
 
@@ -296,8 +305,67 @@ final class AIChatContextualChatSessionState {
         rebuildViewState()
     }
 
+    // MARK: - Attached Text Selections
+
+    /// Records text the user selected on the page, so it can be shown as a chip and later inlined
+    /// into the prompt.
+    ///
+    /// Capped at `AIChatSelectionContextBuilder.maxAttachedSelections`; a further selection is
+    /// refused rather than displacing an existing one, so nothing the user already collected
+    /// disappears without them asking. Returns whether it was attached, so the caller can tell the
+    /// user why nothing appeared instead of failing silently.
+    @discardableResult
+    func attachSelection(_ selection: AIChatSelectionContextData, pageTitle: String?) -> Bool {
+        guard attachedSelections.count < AIChatSelectionContextBuilder.maxAttachedSelections else {
+            return false
+        }
+        attachedSelections.append(selection)
+        attachedSelectionPageTitle = pageTitle
+        rebuildViewState()
+        return true
+    }
+
+    /// Removes one attached selection (its chip's remove button). Page context and the other
+    /// selections are untouched — each chip is independent.
+    func removeAttachedSelection(id: String) {
+        guard attachedSelections.contains(where: { $0.id == id }) else { return }
+        attachedSelections.removeAll { $0.id == id }
+        if attachedSelections.isEmpty {
+            attachedSelectionPageTitle = nil
+        }
+        rebuildViewState()
+    }
+
+    /// Clears the selections a prompt has taken ownership of, matching macOS's
+    /// `clearSelectionContexts()` on submit.
+    ///
+    /// Separate from `clearAttachedSelections()` because this runs while a payload is being built:
+    /// re-rendering there would fight the submit transition, so the caller refreshes the chips.
+    func consumeAttachedSelections() {
+        guard !attachedSelections.isEmpty else { return }
+        attachedSelections = []
+        attachedSelectionPageTitle = nil
+    }
+
+    /// Drops the attached selections and re-renders. For callers acting outside a submit.
+    func clearAttachedSelections() {
+        guard !attachedSelections.isEmpty else { return }
+        attachedSelections = []
+        attachedSelectionPageTitle = nil
+        rebuildViewState()
+    }
+
     /// Call when starting a new chat (resetting frontend)
-    func resetToNoChat() {
+    ///
+    /// `preservingSelections` keeps the collected selections, for the inactivity timer: expiring an
+    /// idle chat must not destroy text the user gathered across several pages while reading, which is
+    /// the whole point of gathering it before asking. New Chat and the fire button are explicit
+    /// start-overs, so they clear — hence the default.
+    func resetToNoChat(preservingSelections: Bool = false) {
+        if !preservingSelections {
+            attachedSelections = []
+            attachedSelectionPageTitle = nil
+        }
         frontendState = .noChat
         chipState = .placeholder
         contextualChatURL = nil
@@ -316,7 +384,7 @@ final class AIChatContextualChatSessionState {
         pixelHandler.endManualAttach()
         rebuildViewState()
         emit(.clearPrompt)
-        Logger.aiChat.debug("[SessionState] Reset to no chat")
+        Logger.aiChat.debug("[SessionState] Reset to no chat (selections preserved: \(preservingSelections, privacy: .public))")
     }
 
     /// Updates the contextual chat URL (for persistence/expansion)
@@ -765,13 +833,19 @@ private extension AIChatContextualChatSessionState {
         }
 
         let quickActions = resolveQuickActions()
+        // Suggestions are derived from the page (`ResolvePageSuggestionsInput` takes page signals and
+        // the URL, with no selection input), so beside an attached selection they would read as if
+        // they acted on it. Worse, tapping one attaches the *page* and submits, which would send the
+        // model page + selection under a prompt that only mentions the page. Deliberate divergence
+        // from macOS, where the frontend owns this surface and keeps them.
+        let hasAttachedSelection = !attachedSelections.isEmpty
         viewState = SheetViewState(
             content: content,
             isExpandButtonEnabled: frontendState == .noChat || contextualChatURL != nil,
             shouldShowNewChatButton: frontendState != .noChat,
             chipState: chipState,
             quickActions: quickActions,
-            suggestions: visibleSuggestions(reserving: quickActions.count),
+            suggestions: hasAttachedSelection ? [] : visibleSuggestions(reserving: quickActions.count),
             suggestionsLoadState: suggestionsLoadState,
             suggestionsAreSmart: suggestionsAreSmart,
             suggestionsPageType: suggestionsPageType

@@ -40,6 +40,19 @@ struct AIChatPageContext: Equatable {
     static func == (lhs: AIChatPageContext, rhs: AIChatPageContext) -> Bool {
         lhs.contextData == rhs.contextData
     }
+
+    /// Decodes the first base64 data-URI favicon, which is how both page-context collection and an
+    /// attached text selection carry the source page's icon. Nil when absent or undecodable, which
+    /// is what makes the chip fall back to its globe glyph.
+    static func decodeFaviconImage(from favicons: [AIChatPageContextData.PageContextFavicon]) -> UIImage? {
+        guard let favicon = favicons.first,
+              favicon.href.hasPrefix("data:image"),
+              let dataRange = favicon.href.range(of: "base64,"),
+              let imageData = Data(base64Encoded: String(favicon.href[dataRange.upperBound...])) else {
+            return nil
+        }
+        return UIImage(data: imageData)
+    }
 }
 
 // MARK: - Provider Typealiases
@@ -335,7 +348,7 @@ private extension AIChatPageContextHandler {
     func publishContextUpdate(_ context: AIChatPageContextData) {
         Logger.aiChat.debug("[PageContext] Context received - title: \(context.title.prefix(50)), content: \(context.content.count) chars, truncated: \(context.truncated)")
         let enriched = self.enrichWithFavicon(context)
-        let favicon = decodeFaviconImage(from: enriched.favicon)
+        let favicon = AIChatPageContext.decodeFaviconImage(from: enriched.favicon)
         let pageContextWrapper = AIChatPageContext(contextData: enriched, favicon: favicon)
         contextSubject.send(pageContextWrapper)
     }
@@ -365,13 +378,4 @@ private extension AIChatPageContextHandler {
         )
     }
 
-    func decodeFaviconImage(from favicons: [AIChatPageContextData.PageContextFavicon]) -> UIImage? {
-        guard let favicon = favicons.first,
-              favicon.href.hasPrefix("data:image"),
-              let dataRange = favicon.href.range(of: "base64,"),
-              let imageData = Data(base64Encoded: String(favicon.href[dataRange.upperBound...])) else {
-            return nil
-        }
-        return UIImage(data: imageData)
-    }
 }

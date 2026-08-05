@@ -405,6 +405,10 @@ final class UnifiedToggleInputViewController: UIViewController {
         inputBarView.bindPageContextChip(to: viewModel)
     }
 
+    func setSelectionContextChips(_ items: [(id: String, title: String, favicon: UIImage?)], onRemove: @escaping (String) -> Void) {
+        inputBarView.setSelectionContextChips(items, onRemove: onRemove)
+    }
+
     // MARK: - Lifecycle
 
     override func loadView() {

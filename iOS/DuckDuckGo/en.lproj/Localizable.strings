@@ -2158,6 +2158,12 @@
 /* Suggested prompt submitted text: is a movie/show worth watching */
 "duckai.suggestion.worth-watching.prompt" = "Is this worth watching? Give me a spoiler-free take.";
 
+/* Generic title shown on the Duck.ai attachment chip when the attached content is a user text selection rather than a full web page */
+"duckai.text-selection.context-title" = "Text selection";
+
+/* Message shown when the user selects text and asks Duck.ai about it but has already attached the maximum number of selections. Parameter is that maximum. */
+"duckai.text-selection.limit-reached" = "You can add up to %d text selections. Remove one to add another.";
+
 /* Welcome message in Duck.ai contextual sheet. %@ is replaced by a shield icon. */
 "duckai.welcome.message" = "All chats are %@ private";
 

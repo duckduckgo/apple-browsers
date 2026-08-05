@@ -126,6 +126,17 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate {
         chipViewModel.clearAttached()
     }
 
+    /// Renders one chip per attached text selection, alongside the page-context chip in the
+    /// attachments strip. An empty list removes them all.
+    func setSelectionChips(_ items: [(id: String, title: String, favicon: UIImage?)], onRemove: @escaping (String) -> Void) {
+        coordinator.viewController.setSelectionContextChips(items, onRemove: onRemove)
+    }
+
+    /// Tells the user why an action was refused — currently only the text-selection cap.
+    func presentRejectionBanner(_ message: String) {
+        coordinator.presentRejectionBanner(message)
+    }
+
     func showAttachAffordance() {
         chipViewModel.showAttachAffordance()
     }

@@ -89,7 +89,9 @@ final class MainViewController: NSViewController {
 
     private let startupProfiler: StartupProfiler
 
-    private let themeManager: ThemeManaging
+    let themeManager: ThemeManaging
+    var themeUpdateCancellable: AnyCancellable?
+
     private var theme: ThemeStyleProviding {
         themeManager.theme
     }
@@ -376,6 +378,7 @@ final class MainViewController: NSViewController {
         subscribeToSelectedTabViewModel()
         subscribeToBookmarkBarVisibility()
         subscribeToSetAsDefaultAndAddToDockPromptsNotifications()
+        subscribeToThemeChanges()
         mainView.findInPageContainerView.applyDropShadow()
 
         view.registerForDraggedTypes([.URL, .fileURL])
@@ -407,7 +410,7 @@ final class MainViewController: NSViewController {
             }
         }
 
-        updateDividerColor(isShowingHomePage: tabCollectionViewModel.selectedTabViewModel?.tab.content == .newtab)
+        refreshDividerColor()
     }
 
     override func viewDidAppear() {
@@ -763,16 +766,21 @@ final class MainViewController: NSViewController {
         mainView.layoutSubtreeIfNeeded()
         mainView.updateTrackingAreas()
 
-        updateDividerColor(isShowingHomePage: tabCollectionViewModel.selectedTabViewModel?.tab.content == .newtab)
+        refreshDividerColor()
     }
 
-    private func updateDividerColor(isShowingHomePage isHomePage: Bool) {
+    private func refreshDividerColor() {
+        let isShowingHomepage = tabCollectionViewModel.selectedTabViewModel?.tab.content == .newtab
+        refreshDividerColor(isShowingHomePage: isShowingHomepage)
+    }
+
+    private func refreshDividerColor(isShowingHomePage isHomePage: Bool) {
         NSAppearance.withAppAppearance {
             if theme.addToolbarShadow {
                 if mainView.isBannerViewShown {
                     mainView.divider.backgroundColor = .bannerViewDivider
                 } else {
-                    mainView.divider.backgroundColor = theme.palette.surfaceDecorationPrimary
+                    mainView.divider.backgroundColor = theme.palette.unifiedInputFieldFillSecondary
                 }
             } else {
                 let backgroundColor: NSColor = {
@@ -847,7 +855,7 @@ final class MainViewController: NSViewController {
     }
 
     private func resizeNavigationBar(isHomePage homePage: Bool, animated: Bool) {
-        updateDividerColor(isShowingHomePage: homePage)
+        refreshDividerColor(isShowingHomePage: homePage)
         navigationBarViewController.resizeAddressBar(for: homePage ? .homePage : (isInPopUpWindow ? .popUpWindow : .default), animated: animated)
     }
 
@@ -1042,7 +1050,7 @@ final class MainViewController: NSViewController {
         mainView.isBannerViewShown = true
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
-            self?.updateDividerColor(isShowingHomePage: self?.tabCollectionViewModel.selectedTabViewModel?.tab.content == .newtab)
+            self?.refreshDividerColor()
         }
     }
 
@@ -1051,7 +1059,7 @@ final class MainViewController: NSViewController {
         mainView.isBannerViewShown = false
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { [weak self] in
-            self?.updateDividerColor(isShowingHomePage: self?.tabCollectionViewModel.selectedTabViewModel?.tab.content == .newtab)
+            self?.refreshDividerColor()
         }
     }
 
@@ -1433,6 +1441,13 @@ extension MainViewController: DefaultBrowserAndDockPromptUIHosting {
 
     func provideModalAnchor() -> NSWindow? {
         getSourceWindowToShowInactiveUserModal()
+    }
+}
+
+extension MainViewController: ThemeUpdateListening {
+
+    func applyThemeStyle(theme: ThemeStyleProviding) {
+        refreshDividerColor()
     }
 }
 

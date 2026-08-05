@@ -2836,6 +2836,17 @@ public struct UserText {
             static let onboardingGotItButton = NSLocalizedString("contextual.onboarding.got-it.button", value: "Got it!", comment: "During onboarding steps this button is shown and takes either to the next steps or closes the onboarding.")
             static let onboardingFinalScreenTitle = NSLocalizedString("contextual.onboarding.final-screen.title", value: "You’ve got this!", comment: "Title of the last screen of the onboarding to the browser app")
             static let onboardingFinalScreenButton = NSLocalizedString("contextual.onboarding.final-screen.button", value: "High five!", comment: "Button on the last screen of the onboarding, it will dismiss the onboarding screen.")
+
+            /// NA Experiment (Segment app onboarding by download reason): the alternative Search-flow
+            /// end-of-journey dialog shown to treatment users on the Search path (browse privately / no AI /
+            /// block ads) who opted into AI chat in the address bar (Toggle = ON). Experiment-only copy,
+            /// hence NotLocalizedString.
+            enum EndOFJourney {
+                static let title = NotLocalizedString("contextual.onboarding.eoj-try-ai.title", value: "Chat privately with popular AIs in Duck.ai", comment: "Title of the alternative onboarding end-of-journey dialog promoting Duck.ai. 'Duck.ai' is a brand name and should not be translated.")
+                static let message = NotLocalizedString("contextual.onboarding.eoj-ai.message", value: "Chats are anonymized, no account required. And it’s free!", comment: "Body of the alternative onboarding end-of-journey dialog promoting Duck.ai.")
+                static let primaryButton = NotLocalizedString("contextual.onboarding.eoj-try-ai.chat-completion.primary-button", value: "Try Duck.ai", comment: "Primary button on the alternative onboarding end-of-journey dialog; opens Duck.ai. 'Duck.ai' is a brand name and should not be translated.")
+                static let secondaryButton = NotLocalizedString("contextual.onboarding.eoj-try-ai.secondary-button", value: "Skip", comment: "Secondary button on the alternative onboarding end-of-journey dialog; skips to the new tab page.")
+            }
             static let tryASearchOption1English = NSLocalizedString("contextual.onboarding.try-search.option1-English", value: "how to say “duck” in spanish", comment: "Browser Search query for how to say duck in english")
             static let tryASearchOption1International = NSLocalizedString("contextual.onboarding.try-search.option1international", value: "how to say “duck” in english", comment: "Browser Search query for how to say duck in english")
             static let tryASearchOption2English = NSLocalizedString("contextual.onboarding.try-search.option2-english", value: "mighty ducks cast", comment: "Search query for the cast of Mighty Ducks")

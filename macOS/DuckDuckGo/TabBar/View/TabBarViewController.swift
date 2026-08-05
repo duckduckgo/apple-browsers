@@ -1258,12 +1258,12 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
 
     private func rebrandingSetupAsBurnerWindow(theme: (any ThemeStyleProviding)? = nil) {
         fireButton.isAnimationEnabled = false
-        fireButton.backgroundColor = NSColor(designSystemColor: .accentFirePrimary)
-        fireButton.mouseOverColor = NSColor(designSystemColor: .accentFireSecondary)
-        fireButton.mouseDownColor = NSColor(designSystemColor: .accentFireTertiary)
-        fireButton.normalTintColor = NSColor.white
-        fireButton.mouseDownTintColor = NSColor.white
-        fireButton.mouseOverTintColor = NSColor.white
+        fireButton.backgroundColor = NSColor(designSystemColor: .accentFireGlowPrimary)
+        fireButton.mouseOverColor = NSColor(designSystemColor: .accentFireGlowSecondary)
+        fireButton.mouseDownColor = NSColor(designSystemColor: .accentFireGlowSecondary)
+        fireButton.normalTintColor = NSColor(designSystemColor: .accentFirePrimary)
+        fireButton.mouseDownTintColor = NSColor(designSystemColor: .accentFireSecondary)
+        fireButton.mouseOverTintColor = NSColor(designSystemColor: .accentFireSecondary)
     }
 
     private func legacySetupAsBurnerWindow(theme: (any ThemeStyleProviding)? = nil) {
@@ -1902,8 +1902,8 @@ extension TabBarViewController: ThemeUpdateListening {
 
         backgroundColorView.backgroundColor = colorsProvider.baseBackgroundColor
 
-        let fireWindowHoverColor = themeManager.isAppRebranded ? NSColor(designSystemColor: .accentFireSecondary) : .fireButtonRedHover
-        fireButton.normalTintColor = isFireWindow ? .white : colorsProvider.iconsColor
+        let fireWindowHoverColor = themeManager.isAppRebranded ? NSColor(designSystemColor: .accentFireGlowSecondary) : .fireButtonRedHover
+        fireButton.normalTintColor = isFireWindow ? NSColor(designSystemColor: .accentFirePrimary) : colorsProvider.iconsColor
         fireButton.mouseOverColor = isFireWindow ? fireWindowHoverColor : colorsProvider.buttonMouseOverColor
 
         leftScrollButton.normalTintColor = colorsProvider.iconsColor

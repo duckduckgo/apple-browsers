@@ -65,6 +65,7 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsRootView> {
     let featureFlagger: FeatureFlagger
     let syncAutoRestoreHandler: SyncAutoRestoreHandling
     let syncSettingsStore: KeyValueStoring
+    let pixelFiring: PixelFiring.Type
 
     var isSyncEnabled: Bool {
         syncService.account != nil
@@ -132,7 +133,8 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsRootView> {
         pairingInfo: PairingInfo? = nil,
         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
         syncAutoRestoreHandler: SyncAutoRestoreHandling,
-        syncSettingsStore: KeyValueStoring = UserDefaults.standard
+        syncSettingsStore: KeyValueStoring = UserDefaults.standard,
+        pixelFiring: PixelFiring.Type = Pixel.self
     ) {
         self.syncService = syncService
         self.syncBookmarksAdapter = syncBookmarksAdapter
@@ -144,6 +146,7 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsRootView> {
         self.featureFlagger = featureFlagger
         self.syncAutoRestoreHandler = syncAutoRestoreHandler
         self.syncSettingsStore = syncSettingsStore
+        self.pixelFiring = pixelFiring
 
         let viewModel = SyncSettingsViewModel(
             isOnDevEnvironment: { syncService.serverEnvironment == .development },

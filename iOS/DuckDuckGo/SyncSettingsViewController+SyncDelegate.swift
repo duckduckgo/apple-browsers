@@ -893,7 +893,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
             PixelParameters.uiVersion: syncUIVersion
         ]
         parameters[PixelParameters.source] = source ?? scanSetupSource?.rawValue
-        Pixel.fire(pixel: pixel, withAdditionalParameters: parameters, includedParameters: [.appVersion])
+        pixelFiring.fire(pixel, withAdditionalParameters: parameters, includedParameters: [.appVersion], onComplete: { _ in })
     }
 
     func codeCopied(_ code: String, source: CodeCollectionSource) {

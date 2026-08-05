@@ -48,7 +48,7 @@ struct BurnerHomePageView: View {
             ScrollView {
                 VStack(spacing: Const.contentGap) {
                     ZStack {
-                        RoundedRectangle(cornerRadius: 12)
+                        RoundedRectangle(cornerRadius: DesignSystemRebrand.isAppRebranded() ? 24 : 12)
                             .stroke(Color.homeFavoritesGhost, style: StrokeStyle(lineWidth: 1.0))
                             .background(Color(designSystemColor: .surfaceTertiary))
                             .cornerRadius(DesignSystemRebrand.isAppRebranded() ? 24 : 12)

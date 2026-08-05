@@ -768,13 +768,11 @@ private extension AIChatContextualChatSessionState {
     }
 
     private func resolveQuickActions() -> [AIChatContextualQuickAction] {
-        // Page-scoped actions are as wrong beside an attached selection as page suggestions are, and
-        // "Ask about page" would additionally attach the page. Suppressed for the same reason and on
-        // the same key, so the start surface is genuinely empty rather than showing page prompts.
-        // Pre-submit only: once a chat is running the frontend drives the UI.
-        if !attachedSelections.isEmpty, frontendState == .noChat {
-            return []
-        }
+        // Deliberately NOT suppressed while a selection is attached, unlike the suggestions.
+        // "Ask about page" is the only route to attaching page context, so hiding it would make a
+        // selection and page context mutually exclusive — contradicting the decision that the two
+        // coexist, and macOS's TS3 ruling that attaching page content to an ongoing chat must keep
+        // working.
         // No "Ask about page" for pages that can't be attached — it would no-op on tap.
         guard isCurrentPageAttachable() else { return [] }
         if featureFlagger.isFeatureOn(.contextualSuggestedPrompts) {
@@ -842,16 +840,20 @@ private extension AIChatContextualChatSessionState {
         let quickActions = resolveQuickActions()
         // Suggestions are derived from the page (`ResolvePageSuggestionsInput` takes page signals and
         // the URL, with no selection input), so beside an attached selection they would read as if
-        // they acted on it — wrong by category, not merely stale. The same reasoning already hides
-        // them when several tabs are attached; a user who highlighted a paragraph has stated their
-        // intent more precisely still.
+        // they acted on it — wrong, not merely stale. This extends the shipped decision to hide
+        // suggestions when multiple tabs are attached: a selection is a stronger intent signal than a
+        // second tab. Not inherited from macOS, where the frontend owns this surface.
         //
-        // The row is deliberately left **empty** rather than filled with selection-scoped prompts:
-        // the suggestions feature ships days before this one, so building a second suggestion mode on
-        // top of an unmeasured first one stacks assumptions. Revisit once its pixels land.
+        // A state rule rather than an event: there is no suggestion row once the chat starts, and the
+        // routes back to the start surface (New Chat, fire button) clear selections anyway.
+        //
+        // Nothing replaces them — no selection-scoped suggestion set. The suggestions feature reaches
+        // production days before this one, so building a second mode on top of an unmeasured first one
+        // stacks assumptions. Revisit once its pixels land. The quick actions are *not* suppressed;
+        // see `resolveQuickActions`.
         //
         // Keyed on `attachedSelections` rather than on anything the row happens to contain, so this
-        // can't be undone by a later change to the quick actions.
+        // can't be undone by a later change elsewhere in the start surface.
         let hasAttachedSelection = !attachedSelections.isEmpty
         viewState = SheetViewState(
             content: content,

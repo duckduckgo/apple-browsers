@@ -142,6 +142,16 @@ final class WebView: WKWebView {
         return trimmed
     }
 
+    /// The page's current selection, trimmed, or nil when there is nothing usable selected.
+    ///
+    /// Lets an entry point other than the edit menu — opening the Duck.ai sheet from the omnibar while
+    /// text happens to be selected — pick the selection up and treat it as an "Ask Duck.ai".
+    func currentAskAIChatSelection() async -> String? {
+        let result = try? await evaluateJavaScript("window.getSelection().toString()")
+        guard let text = result as? String else { return nil }
+        return Self.normalizedAskAIChatSelection(text)
+    }
+
     private func requestAskAIChatWithSelectedText(action: AIChatTextSelectionAction) {
         evaluateJavaScript("window.getSelection().toString()") { [weak self] result, _ in
             guard let self, let handler = self.askAIChatHandler else { return }

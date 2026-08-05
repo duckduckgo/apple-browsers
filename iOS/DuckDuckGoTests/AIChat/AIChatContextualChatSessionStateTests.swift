@@ -2275,16 +2275,17 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         XCTAssertEqual(sessionState.attachedSelectionPageTitle, "Article")
     }
 
-    /// The start surface goes fully empty while a selection is attached — no page suggestions and no
-    /// page quick actions. Deliberate: page-scoped prompts beside a selection are wrong by category,
-    /// and no selection-scoped replacements are offered until the suggestions feature has data.
-    func testStartSurfaceActionsAreEmptyWhileASelectionIsAttached() {
-        let selection = makeSelection()
-        sessionState.attachSelection(selection, pageTitle: "Article")
-        XCTAssertTrue(sessionState.viewState.quickActions.isEmpty)
+    /// Quick actions survive an attached selection even though suggestions don't. "Ask about page" is
+    /// the only route to attaching page context, so hiding it would make a selection and page context
+    /// mutually exclusive — which the coexistence decision forbids.
+    func testQuickActionsRemainVisibleWhileASelectionIsAttached() {
+        sessionState.updateContext(makeTestContext())
+        let expected = sessionState.viewState.quickActions
+        XCTAssertFalse(expected.isEmpty, "precondition: the page offers quick actions")
 
-        sessionState.removeAttachedSelection(id: selection.id)
-        XCTAssertFalse(sessionState.viewState.quickActions.isEmpty)
+        sessionState.attachSelection(makeSelection(), pageTitle: "Article")
+
+        XCTAssertEqual(sessionState.viewState.quickActions, expected)
     }
 
     /// Suppression is keyed on `attachedSelections` directly, not on anything the action row happens to

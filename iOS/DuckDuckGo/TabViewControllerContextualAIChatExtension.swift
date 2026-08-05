@@ -31,6 +31,16 @@ extension TabViewController {
     /// - Parameter presentingViewController: The view controller to present the sheet from.
     func presentContextualAIChatSheet(from presentingViewController: UIViewController) {
         Task { @MainActor in
+            // Opening the sheet with text already selected on the page means the same thing as picking
+            // "Ask Duck.ai" from the selection menu, so treat it identically and bring the selection
+            // along. Without this the selection is silently dropped by the more obvious of the two
+            // routes to the same intent.
+            if isAskAIChatSelectionAvailable,
+               let selection = await (webView as? WebView)?.currentAskAIChatSelection() {
+                await presentContextualAIChatSheet(withSelectedText: selection, action: .ask, from: presentingViewController)
+                return
+            }
+
             var restoreURL: URL?
 
             if !aiChatContextualSheetCoordinator.hasActiveSheet,
@@ -55,20 +65,19 @@ extension TabViewController {
     ///   - text: The trimmed page selection.
     ///   - action: The Duck.ai action the user picked in the selection menu.
     ///   - presentingViewController: The view controller to present the sheet from.
+    @MainActor
     func presentContextualAIChatSheet(withSelectedText text: String,
                                       action: AIChatTextSelectionAction,
-                                      from presentingViewController: UIViewController) {
-        Task { @MainActor in
-            let url = webView.url
-            await aiChatContextualSheetCoordinator.handleSelectionAction(
-                action,
-                text: text,
-                url: url,
-                pageTitle: link?.displayTitle,
-                faviconBase64: url.flatMap { getFaviconBase64(for: $0) },
-                from: presentingViewController
-            )
-        }
+                                      from presentingViewController: UIViewController) async {
+        let url = webView.url
+        await aiChatContextualSheetCoordinator.handleSelectionAction(
+            action,
+            text: text,
+            url: url,
+            pageTitle: link?.displayTitle,
+            faviconBase64: url.flatMap { getFaviconBase64(for: $0) },
+            from: presentingViewController
+        )
     }
 
     /// Reloads the contextual AI chat web view if one exists.

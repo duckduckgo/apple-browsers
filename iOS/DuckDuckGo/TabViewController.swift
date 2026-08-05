@@ -1083,7 +1083,8 @@ class TabViewController: UIViewController {
         }
     }
 
-    /// Whether the Duck.ai text-selection menu items should appear.
+    /// Whether Duck.ai text-selection attachment is available on this tab — gating both the selection
+    /// edit-menu items and the omnibar sheet button's pick-up of a live selection.
     ///
     /// Re-evaluated on every menu build so flag and setting changes take effect immediately.
     /// The selection chips live in the unified input's attachments strip, so every condition that
@@ -1093,7 +1094,7 @@ class TabViewController: UIViewController {
     /// persistent unified-input host *before* the first prompt — without it the sheet falls back to the
     /// basic native input, which renders a single page-context chip and no selection rail at all.
     /// Excluded on Duck.ai tabs, matching macOS: there is no page there to select text from.
-    private var isAskAIChatSelectionMenuAvailable: Bool {
+    var isAskAIChatSelectionAvailable: Bool {
         guard !isAITab,
               featureFlagger.isFeatureOn(.aiChatTextActions),
               featureFlagger.isFeatureOn(.aiChatContextualUnifiedToggleInput),
@@ -1165,7 +1166,7 @@ class TabViewController: UIViewController {
         // Wired here rather than on the contextual sheet's own web view, so the Duck.ai conversation
         // itself stays menu-free.
         (webView as? WebView)?.isAskAIChatMenuAvailable = { [weak self] in
-            self?.isAskAIChatSelectionMenuAvailable ?? false
+            self?.isAskAIChatSelectionAvailable ?? false
         }
 
         (webView as? WebView)?.askAIChatHandler = { [weak self] action, text in

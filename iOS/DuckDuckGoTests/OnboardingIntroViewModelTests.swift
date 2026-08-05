@@ -1465,7 +1465,7 @@ extension OnboardingIntroViewModelTests {
         sut.onAppear()
 
         // THEN
-        XCTAssertEqual(sut.state, .onboarding(.init(type: .aiModelDialog(content: contentProviderMock.aiModelPersonalizationContent), step: .init(currentStep: 1, totalSteps: 2))))
+        XCTAssertEqual(sut.state, .onboarding(.init(type: .aiModelDialog(content: contentProviderMock.aiModelPersonalizationContent, options: [], selectedID: nil), step: .init(currentStep: 1, totalSteps: 2))))
     }
 
     func makeSUT(
@@ -1495,6 +1495,78 @@ extension OnboardingIntroViewModelTests {
             aiModelsPrefetcher: aiModelsPrefetcher,
             onboardingResumeStepStore: (resumeStepStore ?? MockKeyValueStore()).keyedStoring()
         )
+    }
+}
+
+// MARK: - AI model step populates its options and initial selection
+
+extension OnboardingIntroViewModelTests {
+
+    private func aiModelCatalog() -> OnboardingAIModelResponse {
+        OnboardingAIModelResponse(
+            models: [
+                OnboardingAIModelOption(id: "openai-1", provider: .openai, modelShortName: "GPT"),
+                OnboardingAIModelOption(id: "claude-1", provider: .anthropic, modelShortName: "Claude")
+            ],
+            defaultModelId: "openai-1"
+        )
+    }
+
+    func testAIModelStepPopulatesResolvedOptionsAndPreselectsPersistedModel() {
+        // GIVEN a persisted model that is part of the resolved catalog
+        let prefetcher = MockOnboardingAIModelsPrefetcher()
+        prefetcher.resolvedModel = aiModelCatalog()
+        let personalizationManager = MockOnboardingPersonalizationManager()
+        personalizationManager.selectedAIChatModelID = "claude-1"
+        let sut = makeSUT(currentOnboardingStep: .aiModelSelection, personalizationManager: personalizationManager, aiModelsPrefetcher: prefetcher)
+        sut.onAppear()
+
+        // WHEN
+        guard case let .aiModelDialog(_, options, selectedID) = sut.state.intro?.type else {
+            return XCTFail("Expected aiModelDialog state, got \(String(describing: sut.state.intro?.type))")
+        }
+
+        // THEN both fields are populated: options come from the resolved catalog, selection = the persisted model
+        XCTAssertEqual(options, aiModelCatalog().models)
+        XCTAssertEqual(selectedID, "claude-1")
+    }
+
+    func testAIModelStepPreselectsCatalogDefaultWhenNothingPersisted() {
+        // GIVEN no persisted model
+        let prefetcher = MockOnboardingAIModelsPrefetcher()
+        prefetcher.resolvedModel = aiModelCatalog()
+        let personalizationManager = MockOnboardingPersonalizationManager()
+        personalizationManager.selectedAIChatModelID = nil
+        let sut = makeSUT(currentOnboardingStep: .aiModelSelection, personalizationManager: personalizationManager, aiModelsPrefetcher: prefetcher)
+        sut.onAppear()
+
+        // WHEN
+        guard case let .aiModelDialog(_, options, selectedID) = sut.state.intro?.type else {
+            return XCTFail("Expected aiModelDialog state, got \(String(describing: sut.state.intro?.type))")
+        }
+
+        // THEN options still populate and the selection falls back to the catalog default
+        XCTAssertEqual(options, aiModelCatalog().models)
+        XCTAssertEqual(selectedID, "openai-1")
+    }
+
+    func testAIModelStepPreselectsCatalogDefaultWhenPersistedModelNoLongerOffered() {
+        // GIVEN a persisted model that is no longer offered in the catalog
+        let prefetcher = MockOnboardingAIModelsPrefetcher()
+        prefetcher.resolvedModel = aiModelCatalog()
+        let personalizationManager = MockOnboardingPersonalizationManager()
+        personalizationManager.selectedAIChatModelID = "deprecated-model"
+        let sut = makeSUT(currentOnboardingStep: .aiModelSelection, personalizationManager: personalizationManager, aiModelsPrefetcher: prefetcher)
+        sut.onAppear()
+
+        // WHEN
+        guard case let .aiModelDialog(_, options, selectedID) = sut.state.intro?.type else {
+            return XCTFail("Expected aiModelDialog state, got \(String(describing: sut.state.intro?.type))")
+        }
+
+        // THEN it falls back to the catalog default rather than leaving nothing selected
+        XCTAssertEqual(options, aiModelCatalog().models)
+        XCTAssertEqual(selectedID, "openai-1")
     }
 }
 
@@ -1657,7 +1729,7 @@ extension OnboardingIntroViewModelTests {
         XCTAssertEqual(sut.state.intro?.type, .setDefaultBrowserDialog(content: .mockBrowser))
 
         sut.setDefaultBrowserAction()
-        XCTAssertEqual(sut.state.intro?.type, .aiModelDialog(content: .mock))
+        XCTAssertEqual(sut.state.intro?.type, .aiModelDialog(content: .mock, options: [], selectedID: nil))
 
         sut.aiModelContinueAction()
         XCTAssertEqual(sut.state.intro?.type, .toggleInputModeDialog(content: .mock))

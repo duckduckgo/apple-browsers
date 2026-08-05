@@ -63,7 +63,7 @@ extension OnboardingView {
         init(
             content: OnboardingAIModelContent,
             options: [OnboardingAIModelOption],
-            defaultID: String?,
+            selectedID: String?,
             modelPersonalization: OnboardingAIChatModelPersonalizing,
             isVisible: Binding<Bool>,
             action: @escaping () -> Void
@@ -73,7 +73,7 @@ extension OnboardingView {
             self._isVisible = isVisible
             self.action = action
             _options = State(initialValue: options)
-            _selectedID = State(initialValue: defaultID)
+            _selectedID = State(initialValue: selectedID)
         }
 
         var body: some View {

@@ -28,13 +28,13 @@ enum OnboardingAIProvider: String, CaseIterable {
     case mistral
 }
 
-struct OnboardingAIModelOption: Identifiable {
+struct OnboardingAIModelOption: Identifiable, Equatable {
     let id: String
     let provider: OnboardingAIProvider
     let modelShortName: String?
 }
 
-struct OnboardingAIModelResponse {
+struct OnboardingAIModelResponse: Equatable {
     let models: [OnboardingAIModelOption]
     let defaultModelId: String?
 }

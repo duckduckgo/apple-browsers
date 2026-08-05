@@ -463,8 +463,8 @@ extension OnboardingView {
                 toggleSettingsPersonalizationView(content: content, action: model.searchPrivacySettingsContinueAction)
             case let .aiSearchSettingsDialog(content):
                 toggleSettingsPersonalizationView(content: content, action: model.aiSearchSettingsContinueAction)
-            case let .aiModelDialog(content):
-                aiModelSelectionView(content: content)
+            case let .aiModelDialog(content, options, selectedID):
+                aiModelSelectionView(content: content, options: options, selectedID: selectedID)
             case let .toggleInputModeDialog(content):
                 addressBarToggleModeView(content: content)
             case let .keepDuckAIDialog(content):
@@ -517,12 +517,11 @@ extension OnboardingView {
             }
         }
 
-        private func aiModelSelectionView(content: OnboardingAIModelContent) -> some View {
-            let resolved = model.resolvedAIModels
-            return AIModelSelection(
+        private func aiModelSelectionView(content: OnboardingAIModelContent, options: [OnboardingAIModelOption], selectedID: String?) -> some View {
+            AIModelSelection(
                 content: content,
-                options: resolved.models,
-                defaultID: resolved.defaultModelId,
+                options: options,
+                selectedID: selectedID,
                 modelPersonalization: model.personalizationManager,
                 isVisible: $showBubbleContent
             ) {
@@ -666,7 +665,7 @@ extension OnboardingView {
                 return content.daxAnimation
             case .searchPrivacySettingsDialog(let content), .aiSearchSettingsDialog(let content), .duckPlayerDialog(let content):
                 return content.daxAnimation
-            case .aiModelDialog(let content):
+            case .aiModelDialog(let content, _, _):
                 return content.daxAnimation
             case let .toggleInputModeDialog(content):
                 return content.daxAnimation

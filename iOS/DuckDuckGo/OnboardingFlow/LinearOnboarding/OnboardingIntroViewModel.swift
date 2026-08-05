@@ -124,9 +124,6 @@ final class OnboardingIntroViewModel: ObservableObject {
     private var pendingOnboardingIntroActions: (() -> Void)?
 
 
-    var resolvedAIModels: OnboardingAIModelResponse {
-        aiModelsPrefetcher.resolvedModel
-    }
 
     convenience init(pixelReporter: LinearOnboardingPixelReporting,
                      systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging,
@@ -446,9 +443,16 @@ private extension OnboardingIntroViewModel {
                     )
                 )
             case .aiModelSelection:
+                let resolved = aiModelsPrefetcher.resolvedModel
+                let persistedId = personalizationManager.selectedAIChatModelID
+                let selectedId = resolved.models.contains(where: { $0.id == persistedId }) ? persistedId : resolved.defaultModelId
                 return .onboarding(
                     .init(
-                        type: .aiModelDialog(content: contentProvider.aiModelPersonalizationContent),
+                        type: .aiModelDialog(
+                            content: contentProvider.aiModelPersonalizationContent,
+                            options: resolved.models,
+                            selectedID: selectedId
+                        ),
                         step: stepInfo()
                     )
                 )

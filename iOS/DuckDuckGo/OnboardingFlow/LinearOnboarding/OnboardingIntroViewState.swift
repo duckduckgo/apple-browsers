@@ -64,7 +64,7 @@ extension OnboardingIntroViewState.Intro {
         // built in the UI task (add the associated `content:` then).
         case searchPrivacySettingsDialog(content: OnboardingPersonalizationContent)
         case aiSearchSettingsDialog(content: OnboardingPersonalizationContent)
-        case aiModelDialog(content: OnboardingAIModelContent)
+        case aiModelDialog(content: OnboardingAIModelContent, options: [OnboardingAIModelOption], selectedID: String?)
         case toggleInputModeDialog(content: OnboardingAddressBarToggleModeContent)
         case keepDuckAIDialog(content: OnboardingDuckAIEnabledPersonalizationContent)
         case duckPlayerDialog(content: OnboardingPersonalizationContent)

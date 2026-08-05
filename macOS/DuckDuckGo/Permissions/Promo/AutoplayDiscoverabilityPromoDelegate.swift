@@ -39,17 +39,17 @@ final class AutoplayDiscoverabilityPromoDelegate: InternalPromoDelegate {
     private let featureFlagger: FeatureFlagger
     private let windowControllersManager: WindowControllersManagerProtocol
     private let pixelFiring: PixelFiring?
-    private let isNewUser: Bool
+    private let isNewUserProvider: () -> Bool
     private var showContinuation: CheckedContinuation<PromoResult, Never>?
 
     init(featureFlagger: FeatureFlagger,
          windowControllersManager: WindowControllersManagerProtocol,
          pixelFiring: PixelFiring? = PixelKit.shared,
-         isNewUser: Bool) {
+         isNewUserProvider: @escaping () -> Bool) {
         self.featureFlagger = featureFlagger
         self.windowControllersManager = windowControllersManager
         self.pixelFiring = pixelFiring
-        self.isNewUser = isNewUser
+        self.isNewUserProvider = isNewUserProvider
     }
 
     var isEligible: Bool {
@@ -69,7 +69,7 @@ final class AutoplayDiscoverabilityPromoDelegate: InternalPromoDelegate {
     @MainActor
     func show(history: PromoHistoryRecord, force: Bool) async -> PromoResult {
         // Rendered only to pre-existing users, otherwise we'll retire the promo
-        if !force, isNewUser {
+        if !force, isNewUserProvider() {
             return .ignored()
         }
 

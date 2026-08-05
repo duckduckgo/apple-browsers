@@ -30,7 +30,7 @@ extension PromoServiceFactory {
         let identifier = "autoplay-discoverability"
         let delegate = AutoplayDiscoverabilityPromoDelegate(featureFlagger: dependencies.featureFlagger,
                                                             windowControllersManager: dependencies.windowControllersManager,
-                                                            isNewUser: dependencies.isNewUser)
+                                                            isNewUserProvider: dependencies.isNewUserProvider)
 
         return InternalPromo(id: identifier, triggers: [.autoplayDiscoverability], initiated: .app, promoType: promoType, context: .webPage, delegate: delegate)
     }

@@ -73,7 +73,7 @@ jobs:
       with:
         repository: DuckDuckGo/pir-fake-broker
         ssh-key: ${{ secrets.SSH_PRIVATE_KEY_PIR_FAKE_BROKER }}
-        ref: main
+        ref: selman/windows-native-ci-support
         path: macOS/pir-fake-broker
 
     - name: Update Homebrew

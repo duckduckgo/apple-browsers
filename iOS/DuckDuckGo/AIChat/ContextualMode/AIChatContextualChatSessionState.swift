@@ -114,6 +114,14 @@ final class AIChatContextualChatSessionState {
     /// When false, page-context quick actions are suppressed. Fail-open (always attachable) by default.
     private let isCurrentPageAttachable: () -> Bool
 
+    /// Images and files currently in the input. Lives in `UTIAttachmentController`, which the session
+    /// state has no view of, so it is supplied from outside — and defaults to zero, which is correct for
+    /// the basic native input (no attachment affordance) and for tests.
+    ///
+    /// Settable rather than an init parameter because the unified-input host that answers it is created
+    /// after this object.
+    var inputAttachmentCount: () -> Int = { 0 }
+
     // MARK: - Core State (private(set) - mutations happen via methods)
 
     private(set) var frontendState: FrontendChatState = .noChat
@@ -375,6 +383,7 @@ final class AIChatContextualChatSessionState {
         }
         attachedSelections.append(selection)
         attachedSelectionPageTitle = pageTitle
+        resolveSuggestionsForScopeChange()
         rebuildViewState()
         return true
     }
@@ -387,6 +396,7 @@ final class AIChatContextualChatSessionState {
         if attachedSelections.isEmpty {
             attachedSelectionPageTitle = nil
         }
+        resolveSuggestionsForScopeChange()
         rebuildViewState()
     }
 
@@ -507,6 +517,23 @@ final class AIChatContextualChatSessionState {
 
     /// Re-evaluate the sheet view state (e.g. "Ask about page" quick action) for the current page's
     /// attachability. Driven by the URL-change signal so it stays in sync on back/forward navigation.
+    /// Re-resolves the suggestions because their scope changed: a selection was attached or removed, and
+    /// the page-scoped and selection-scoped sets are different catalog entries. Without this the row
+    /// keeps whichever set was resolved last, so an attached selection would still be offered
+    /// "Summarize this page".
+    private func resolveSuggestionsForScopeChange() {
+        guard frontendState == .noChat, showsSuggestionsStartSurface, !hasActiveChat else { return }
+        suggestionsResolveTask?.cancel()
+        suggestionsLoadState = .loading
+        resolveSuggestionsIfLoading(from: latestContext)
+    }
+
+    /// Re-renders after something outside this object changed the attachment count — an image added to
+    /// or removed from the input — since that decides whether suggestions are offered.
+    func refreshForAttachmentChange() {
+        rebuildViewState()
+    }
+
     func refreshForCurrentPage() {
         rebuildViewState()
     }
@@ -821,6 +848,30 @@ private extension AIChatContextualChatSessionState {
         shouldAutoCollectContext || isManualAttachInProgress || isProcessingNavigation
     }
 
+    /// How many attachments the prompt currently carries: the page-context chip, each text selection,
+    /// and each image or file in the input.
+    ///
+    /// Auto-attached page context counts the same as manually attached — the user sees one chip either
+    /// way, and distinguishing them would mean recording provenance that nothing tracks today.
+    private var attachmentCount: Int {
+        let pageContextCount = if case .attached = chipState { 1 } else { 0 }
+        return pageContextCount + attachedSelections.count + inputAttachmentCount()
+    }
+
+    /// Suggestions are offered only while exactly one thing is attached, or nothing is.
+    ///
+    /// Beyond that the user has assembled something specific, and a one-line suggestion can no longer
+    /// say which part of it it acts on — the same reasoning that already hides suggestions when several
+    /// tabs are attached, generalised to attachments of any kind. So a selection plus an image, or page
+    /// context plus an image, offers nothing.
+    ///
+    /// Consequence worth knowing: with auto-attach on, a selection makes two attachments, so selection
+    /// suggestions never appear for those users. Whether to skip auto-attach when a selection is
+    /// attached is an open product question.
+    private var shouldHideSuggestions: Bool {
+        attachmentCount > 1
+    }
+
     private func resolveQuickActions() -> [AIChatContextualQuickAction] {
         // Deliberately NOT suppressed while a selection is attached, unlike the suggestions.
         // "Ask about page" is the only route to attaching page context, so hiding it would make a
@@ -862,10 +913,14 @@ private extension AIChatContextualChatSessionState {
 
         suggestionsTimeoutTask?.cancel()
 
+        // A selection is attached, so offer the selection-scoped pair instead of page-derived ones.
+        // `pageTypeSignals` still travels: translate's `differentLanguage` condition compares the source
+        // page's language against the UI language, and a selection's source is that page.
         let input = ResolvePageSuggestionsInput(
             pageTypeSignals: context?.contextData.pageTypeSignals,
             url: context?.contextData.url,
-            uiLocale: Locale.current.identifier
+            uiLocale: Locale.current.identifier,
+            scope: attachedSelections.isEmpty ? .page : .selection
         )
 
         suggestionsResolveTask?.cancel()
@@ -892,30 +947,13 @@ private extension AIChatContextualChatSessionState {
         }
 
         let quickActions = resolveQuickActions()
-        // Suggestions are derived from the page (`ResolvePageSuggestionsInput` takes page signals and
-        // the URL, with no selection input), so beside an attached selection they would read as if
-        // they acted on it — wrong, not merely stale. This extends the shipped decision to hide
-        // suggestions when multiple tabs are attached: a selection is a stronger intent signal than a
-        // second tab. Not inherited from macOS, where the frontend owns this surface.
-        //
-        // A state rule rather than an event: there is no suggestion row once the chat starts, and the
-        // routes back to the start surface (New Chat, fire button) clear selections anyway.
-        //
-        // Nothing replaces them — no selection-scoped suggestion set. The suggestions feature reaches
-        // production days before this one, so building a second mode on top of an unmeasured first one
-        // stacks assumptions. Revisit once its pixels land. The quick actions are *not* suppressed;
-        // see `resolveQuickActions`.
-        //
-        // Keyed on `attachedSelections` rather than on anything the row happens to contain, so this
-        // can't be undone by a later change elsewhere in the start surface.
-        let hasAttachedSelection = !attachedSelections.isEmpty
         viewState = SheetViewState(
             content: content,
             isExpandButtonEnabled: frontendState == .noChat || contextualChatURL != nil,
             shouldShowNewChatButton: frontendState != .noChat,
             chipState: chipState,
             quickActions: quickActions,
-            suggestions: hasAttachedSelection ? [] : visibleSuggestions(reserving: quickActions.count),
+            suggestions: shouldHideSuggestions ? [] : visibleSuggestions(reserving: quickActions.count),
             suggestionsLoadState: suggestionsLoadState,
             suggestionsAreSmart: suggestionsAreSmart,
             suggestionsPageType: suggestionsPageType

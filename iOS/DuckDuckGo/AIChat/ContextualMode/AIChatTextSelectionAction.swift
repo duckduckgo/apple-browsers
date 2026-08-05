@@ -46,4 +46,22 @@ enum AIChatTextSelectionAction: String, CaseIterable, Equatable {
     var attachesSelection: Bool {
         !autoSubmits
     }
+
+    /// Catalog id of the suggestion that performs this action on an attached selection. Ask has none —
+    /// it is what attaches the selection in the first place, so there is nothing left to suggest.
+    var selectionSuggestionID: String? {
+        switch self {
+        case .summarize: return "summarize-selection"
+        case .translate: return "translate-selection"
+        case .ask: return nil
+        }
+    }
+
+    /// Suggestion ids offered against an attached selection, in display order.
+    static let selectionSuggestionIDs = [summarize, translate].compactMap(\.selectionSuggestionID)
+
+    init?(selectionSuggestionID id: String) {
+        guard let match = Self.allCases.first(where: { $0.selectionSuggestionID == id }) else { return nil }
+        self = match
+    }
 }

@@ -967,6 +967,15 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
         guard featureFlagger.isFeatureOn(.contextualSuggestedPrompts) else { return }
         cancelSuggestionSubmission()
         pixelHandler.fireSuggestionSelected(suggestionId: suggestion.id, pageType: sessionState.viewState.suggestionsPageType)
+
+        // Selection-scoped suggestions act on the attached selection through the tool payload, so the
+        // frontend renders its summary/translation card rather than a plain chat turn. They must not go
+        // down the page path below, which would attach the *page* and submit the suggestion's text.
+        if let action = AIChatTextSelectionAction(selectionSuggestionID: suggestion.id),
+           let selection = sessionState.attachedSelections.first {
+            submitSelectionAction(action, on: selection, pageTitle: sessionState.attachedSelectionPageTitle)
+            return
+        }
         contextualInputViewController.setStartActionsDimmed(true)
         let submissionID = UUID()
         suggestionSubmissionID = submissionID

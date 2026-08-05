@@ -21,9 +21,27 @@ import AIChat
 import Foundation
 
 struct ResolvePageSuggestionsInput {
+
+    /// What the offered suggestions should act on.
+    enum Scope {
+        /// The current page, matched against its type signals, URL and domain.
+        case page
+        /// A single attached text selection. Only the selection-scoped catalog entries are offered —
+        /// page-derived ones would act on the wrong thing.
+        case selection
+    }
+
     let pageTypeSignals: AIChatPageTypeSignals?
     let url: String?
     let uiLocale: String
+    let scope: Scope
+
+    init(pageTypeSignals: AIChatPageTypeSignals?, url: String?, uiLocale: String, scope: Scope = .page) {
+        self.pageTypeSignals = pageTypeSignals
+        self.url = url
+        self.uiLocale = uiLocale
+        self.scope = scope
+    }
 }
 
 /// Coarse, pixel-safe classification of the current page, mirroring the frontend's `PageType`.

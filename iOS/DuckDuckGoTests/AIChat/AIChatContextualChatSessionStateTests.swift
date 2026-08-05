@@ -2275,6 +2275,81 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         XCTAssertEqual(sessionState.attachedSelectionPageTitle, "Article")
     }
 
+    // MARK: - Suggestions vs Attachment Count
+
+    /// One attachment still allows suggestions — that is today's auto-attach behaviour and the
+    /// single-selection case this feature relies on.
+    func testSuggestionsSurviveASingleAttachment() {
+        let expected = [ContextualSuggestedPrompt(id: "summarize-selection", label: "Summarize this selection", prompt: "Summarize this selection.", icon: "summary")]
+        makeSessionStateWithSuggestions(expected)
+
+        sessionState.attachSelection(makeSelection(), pageTitle: "Article")
+
+        XCTAssertEqual(sessionState.viewState.suggestions, expected)
+    }
+
+    /// Two attachments and the user has assembled something specific; a one-line suggestion can no
+    /// longer say which part of it it acts on.
+    func testSuggestionsAreHiddenOnceTwoSelectionsAreAttached() {
+        makeSessionStateWithSuggestions([ContextualSuggestedPrompt(id: "summarize-selection", label: "l", prompt: "p", icon: nil)])
+
+        sessionState.attachSelection(makeSelection("one"), pageTitle: nil)
+        sessionState.attachSelection(makeSelection("two"), pageTitle: nil)
+
+        XCTAssertTrue(sessionState.viewState.suggestions.isEmpty)
+    }
+
+    /// Auto-attached page context counts the same as anything else, so a selection alongside it makes
+    /// two. Recorded because it means selection suggestions never appear for auto-attach users.
+    func testSuggestionsAreHiddenWhenPageContextAndASelectionAreBothAttached() {
+        makeSessionStateWithSuggestions([ContextualSuggestedPrompt(id: "summarize-selection", label: "l", prompt: "p", icon: nil)])
+        sessionState.attachContextFromSuggestionTap(makeTestContext())
+        XCTAssertEqual(sessionState.chipState.description, "attached", "precondition: page context is attached")
+
+        sessionState.attachSelection(makeSelection(), pageTitle: nil)
+
+        XCTAssertTrue(sessionState.viewState.suggestions.isEmpty)
+    }
+
+    /// The rule is about attachments in general, not text selections — an image counts too.
+    func testSuggestionsAreHiddenWhenAnImageJoinsASelection() {
+        makeSessionStateWithSuggestions([ContextualSuggestedPrompt(id: "summarize-selection", label: "l", prompt: "p", icon: nil)])
+        sessionState.attachSelection(makeSelection(), pageTitle: nil)
+        XCTAssertFalse(sessionState.viewState.suggestions.isEmpty)
+
+        var imageCount = 0
+        sessionState.inputAttachmentCount = { imageCount }
+        imageCount = 1
+        sessionState.refreshForAttachmentChange()
+
+        XCTAssertTrue(sessionState.viewState.suggestions.isEmpty)
+    }
+
+    /// Loads real suggestions into the state so visibility rules can be observed.
+    private func makeSessionStateWithSuggestions(_ suggestions: [ContextualSuggestedPrompt]) {
+        mockFeatureFlagger.enabledFeatureFlags = [.contextualSuggestedPrompts]
+        sessionState = AIChatContextualChatSessionState(
+            aiChatSettings: mockSettings,
+            pixelHandler: mockPixelHandler,
+            featureFlagger: mockFeatureFlagger,
+            suggestedPromptsProvider: MockContextualSuggestedPromptsProvider(suggestions: suggestions)
+        )
+
+        let loaded = expectation(description: "suggestions loaded")
+        loaded.assertForOverFulfill = false
+        sessionState.$viewState
+            .dropFirst()
+            .sink { state in
+                if state.suggestionsLoadState == .loaded, state.suggestions == suggestions {
+                    loaded.fulfill()
+                }
+            }
+            .store(in: &cancellables)
+        sessionState.markPendingSignalsOnlyCollection()
+        sessionState.updateContext(makeTestContext())
+        wait(for: [loaded], timeout: 1.0)
+    }
+
     // MARK: - Submission Telemetry
 
     /// The prompt-submitted pixel must not claim a submission that delivery may still abandon.
@@ -2348,40 +2423,27 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         XCTAssertEqual(sessionState.viewState.quickActions, expected)
     }
 
-    /// Suppression is keyed on `attachedSelections` directly, not on anything the action row happens to
-    /// contain, so page suggestions can't reappear beside a selection if that row changes.
-    func testPageSuggestionsAreSuppressedWhileASelectionIsAttached() {
-        let expected = [ContextualSuggestedPrompt(id: "note-page", label: "Key takeaways", prompt: "Key takeaways?", icon: "note")]
-        mockFeatureFlagger.enabledFeatureFlags = [.contextualSuggestedPrompts]
-        sessionState = AIChatContextualChatSessionState(
-            aiChatSettings: mockSettings,
-            pixelHandler: mockPixelHandler,
-            featureFlagger: mockFeatureFlagger,
-            suggestedPromptsProvider: MockContextualSuggestedPromptsProvider(suggestions: expected)
-        )
+    /// Attaching a selection re-resolves rather than merely re-rendering: page-scoped and
+    /// selection-scoped suggestions are different catalog entries, so without a re-resolve the row would
+    /// keep offering "Summarize this page" next to an attached paragraph.
+    func testAttachingASelectionReResolvesTheSuggestions() {
+        let pageSuggestions = [ContextualSuggestedPrompt(id: "summarize-page", label: "Summarize this page", prompt: "p", icon: nil)]
+        makeSessionStateWithSuggestions(pageSuggestions)
 
-        let loaded = expectation(description: "suggestions loaded")
-        // The removal below restores the suggestions, so this predicate becomes true a second time.
-        loaded.assertForOverFulfill = false
+        let reResolved = expectation(description: "suggestions re-resolved for the selection scope")
+        reResolved.assertForOverFulfill = false
         sessionState.$viewState
             .dropFirst()
             .sink { state in
-                if state.suggestionsLoadState == .loaded, state.suggestions == expected {
-                    loaded.fulfill()
-                }
+                if state.suggestionsLoadState == .loading { reResolved.fulfill() }
             }
             .store(in: &cancellables)
-        sessionState.markPendingSignalsOnlyCollection()
-        sessionState.updateContext(makeTestContext())
-        wait(for: [loaded], timeout: 1.0)
 
-        let selection = makeSelection()
-        sessionState.attachSelection(selection, pageTitle: "Article")
-        XCTAssertTrue(sessionState.viewState.suggestions.isEmpty)
+        sessionState.attachSelection(makeSelection(), pageTitle: "Article")
 
-        sessionState.removeAttachedSelection(id: selection.id)
-        XCTAssertEqual(sessionState.viewState.suggestions, expected)
+        wait(for: [reResolved], timeout: 1.0)
     }
+
 }
 
 // MARK: - Mock Pixel Handler

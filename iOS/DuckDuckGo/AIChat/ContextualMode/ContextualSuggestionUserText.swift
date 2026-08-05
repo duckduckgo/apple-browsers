@@ -27,6 +27,12 @@ extension UserText {
     public static let aiChatSuggestionTranslatePageLabel = NSLocalizedString("duckai.suggestion.translate-page.label", value: "Translate this page", comment: "Suggested prompt chip: translate the current page")
     public static let aiChatSuggestionTranslatePagePrompt = NSLocalizedString("duckai.suggestion.translate-page.prompt", value: "Translate this page into %@.", comment: "Suggested prompt submitted text: translate the page. %@ is replaced with the name of the user's language.")
 
+    public static let aiChatSuggestionSummarizeSelectionLabel = NSLocalizedString("duckai.suggestion.summarize-selection.label", value: "Summarize this selection", comment: "Suggested prompt chip shown when the user has attached a text selection: summarize that selection")
+    public static let aiChatSuggestionSummarizeSelectionPrompt = NSLocalizedString("duckai.suggestion.summarize-selection.prompt", value: "Summarize this selection.", comment: "Suggested prompt submitted text: summarize the attached text selection")
+
+    public static let aiChatSuggestionTranslateSelectionLabel = NSLocalizedString("duckai.suggestion.translate-selection.label", value: "Translate this selection", comment: "Suggested prompt chip shown when the user has attached a text selection: translate that selection")
+    public static let aiChatSuggestionTranslateSelectionPrompt = NSLocalizedString("duckai.suggestion.translate-selection.prompt", value: "Translate this selection into %@.", comment: "Suggested prompt submitted text: translate the attached text selection. %@ is replaced with the name of the user's language.")
+
     public static let aiChatSuggestionKeyTakeawaysLabel = NSLocalizedString("duckai.suggestion.key-takeaways.label", value: "What are the key takeaways?", comment: "Suggested prompt chip: key takeaways of an article")
     public static let aiChatSuggestionKeyTakeawaysPrompt = NSLocalizedString("duckai.suggestion.key-takeaways.prompt", value: "What are the key takeaways from this article?", comment: "Suggested prompt submitted text: key takeaways of an article")
 

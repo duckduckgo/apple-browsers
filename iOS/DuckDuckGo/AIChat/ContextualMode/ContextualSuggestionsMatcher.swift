@@ -65,9 +65,17 @@ struct ContextualSuggestionsMatcher {
 
     private init() {}
 
+    /// Catalog ids offered against an attached text selection. Translate carries the
+    /// `differentLanguage` condition, so a selection from a page in the user's own language offers one
+    /// suggestion rather than two.
+    private static let selectionScopedIDs = AIChatTextSelectionAction.selectionSuggestionIDs
+
     static func resolve(_ input: ResolvePageSuggestionsInput, catalog: SuggestionCatalog) -> ResolvedPageSuggestions {
         let cap = max(1, catalog.maxSuggestedPrompts)
-        let candidates = collectCandidateIds(input, catalog: catalog, cap: cap)
+        // Selection-scoped suggestions are a fixed pair, not page-matched, so they are never "smart".
+        let candidates = input.scope == .selection
+            ? (ids: selectionScopedIDs, isSmart: false)
+            : collectCandidateIds(input, catalog: catalog, cap: cap)
         var seen = Set<String>()
         var resolved: [ContextualSuggestedPrompt] = []
 
@@ -244,6 +252,8 @@ struct ContextualSuggestionsMatcher {
     private static let localizedCopyByID: [String: (label: String, prompt: String)] = [
         "summarize-page": (UserText.aiChatSuggestionSummarizePageLabel, UserText.aiChatSuggestionSummarizePagePrompt),
         "translate-page": (UserText.aiChatSuggestionTranslatePageLabel, UserText.aiChatSuggestionTranslatePagePrompt),
+        "summarize-selection": (UserText.aiChatSuggestionSummarizeSelectionLabel, UserText.aiChatSuggestionSummarizeSelectionPrompt),
+        "translate-selection": (UserText.aiChatSuggestionTranslateSelectionLabel, UserText.aiChatSuggestionTranslateSelectionPrompt),
         "key-takeaways": (UserText.aiChatSuggestionKeyTakeawaysLabel, UserText.aiChatSuggestionKeyTakeawaysPrompt),
         "explain-simply": (UserText.aiChatSuggestionExplainSimplyLabel, UserText.aiChatSuggestionExplainSimplyPrompt),
         "counterarguments": (UserText.aiChatSuggestionCounterargumentsLabel, UserText.aiChatSuggestionCounterargumentsPrompt),

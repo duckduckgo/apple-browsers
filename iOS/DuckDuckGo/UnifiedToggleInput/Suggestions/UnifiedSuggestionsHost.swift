@@ -217,11 +217,6 @@ final class UnifiedSuggestionsHost {
     }
 
     func tearDown() {
-        isSurfaceHostActive = false
-        updateFavoritesPromoSurfaceActivity()
-        let favoritesController = cachedFavoritesController
-        favoritesController?.tearDownPromoSurface()
-        cachedFavoritesController = nil
         cancellables.removeAll()
         onContentChanged = nil
         config.source.tearDown()

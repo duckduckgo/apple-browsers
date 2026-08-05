@@ -75,7 +75,8 @@ extension Preferences {
                             HStack {
                                 if dockModel.isAddedToDock {
                                     HStack {
-                                        Image(.checkCircle).foregroundColor(Color(.successGreen))
+                                        Image(.checkCircle)
+                                            .foregroundColor(Color(designSystemColor: .statusGreen))
                                         Text(UserText.isAddedToDock)
                                     }
                                     .transition(.opacity)

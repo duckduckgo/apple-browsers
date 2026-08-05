@@ -129,6 +129,51 @@ final class AccountInfoKeyManagerTests: XCTestCase {
         XCTAssertEqual(scopedAccess.fetchProtectedKeysCalls.map(\.userId), [account.userId])
     }
 
+    func testWhenAccountInfoWrappersDescribeDifferentPublicKeysThenThrowsInvalidProtectedKeySet() async throws {
+        let protectedKey = try makeDefaultCredentialProtectedKey()
+        let differentPublicKey = try ScopedAccessKeyFactory.makeRSAKeyMaterial().publicKeyJWK
+        let inconsistentWrapper = ProtectedKey(kid: protectedKey.kid,
+                                               encryptedPrivateKey: "unused",
+                                               publicKey: differentPublicKey,
+                                               encryptedWith: SyncCredentialID.thirdParty,
+                                               purpose: ProtectedKeyPurpose.accountInfo)
+
+        await assertRefreshing([protectedKey, inconsistentWrapper], expectedError: .invalidProtectedKeySet)
+    }
+
+    func testWhenAccountInfoKeyHasUnsupportedWrapperThenThrowsUnavailableWrappingKey() async {
+        let protectedKey = ProtectedKey(kid: "account-info-key",
+                                        encryptedPrivateKey: "unused",
+                                        publicKey: .mock,
+                                        encryptedWith: "unsupported",
+                                        purpose: ProtectedKeyPurpose.accountInfo)
+
+        await assertRefreshing([protectedKey], expectedError: .unavailableWrappingKey)
+    }
+
+    func testWhenDefaultWrapperIsNotBase64URLThenThrowsUnableToUnwrapPrivateKey() async {
+        let protectedKey = ProtectedKey(kid: "account-info-key",
+                                        encryptedPrivateKey: "%",
+                                        publicKey: .mock,
+                                        encryptedWith: SyncCredentialID.defaultCredential,
+                                        purpose: ProtectedKeyPurpose.accountInfo)
+
+        await assertRefreshing([protectedKey], expectedError: .unableToUnwrapPrivateKey)
+    }
+
+    func testWhenPrivateKeyDoesNotMatchPublicKeyThenThrowsPublicKeyMismatch() async throws {
+        let privateKeyMaterial = try ScopedAccessKeyFactory.makeRSAKeyMaterial()
+        let publicKeyMaterial = try ScopedAccessKeyFactory.makeRSAKeyMaterial()
+        let encryptedPrivateKey = try crypter.encrypt(privateKeyMaterial.privateKeyPKCS8, using: account.secretKey)
+        let protectedKey = ProtectedKey(kid: "account-info-key",
+                                        encryptedPrivateKey: Base64URL.encode(encryptedPrivateKey),
+                                        publicKey: publicKeyMaterial.publicKeyJWK,
+                                        encryptedWith: SyncCredentialID.defaultCredential,
+                                        purpose: ProtectedKeyPurpose.accountInfo)
+
+        await assertRefreshing([protectedKey], expectedError: .publicKeyMismatch)
+    }
+
     func testWhenServerHasNoAccountInfoKeyThenThrows() async throws {
         let secureStore = SecureStorageStub()
         let scopedAccess = ScopedAccessCredentialManagingMock()
@@ -142,6 +187,24 @@ final class AccountInfoKeyManagerTests: XCTestCase {
             XCTFail("Expected missing protected key error")
         } catch {
             XCTAssertEqual(error as? AccountInfoKeyManagerError, .missingProtectedKey)
+        }
+    }
+
+    private func assertRefreshing(_ protectedKeys: [ProtectedKey],
+                                  expectedError: AccountInfoKeyManagerError,
+                                  file: StaticString = #filePath,
+                                  line: UInt = #line) async {
+        let scopedAccess = ScopedAccessCredentialManagingMock()
+        scopedAccess.fetchProtectedKeysStub = protectedKeys
+        let manager = AccountInfoKeyManager(secureStore: SecureStorageStub(),
+                                            scopedAccess: scopedAccess,
+                                            crypter: crypter)
+
+        do {
+            _ = try await manager.refreshKey(for: account)
+            XCTFail("Expected key refresh to fail", file: file, line: line)
+        } catch {
+            XCTAssertEqual(error as? AccountInfoKeyManagerError, expectedError, file: file, line: line)
         }
     }
 

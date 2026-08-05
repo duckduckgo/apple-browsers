@@ -467,7 +467,7 @@ extension BookmarksBarViewController: ThemeUpdateListening {
 
         backgroundColorView.backgroundColor = navigationBackgroundColor
         bookmarksBarCollectionView.backgroundColors = [navigationBackgroundColor]
-        separatorColorView.backgroundColor = theme.palette.surfaceDecorationPrimary
+        separatorColorView.backgroundColor = theme.palette.unifiedInputFieldFillSecondary
         backseparatorColorView.backgroundColor = theme.palette.surfaceBackdrop
     }
 }

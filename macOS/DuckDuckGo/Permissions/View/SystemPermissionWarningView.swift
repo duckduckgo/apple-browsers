@@ -32,7 +32,7 @@ struct SystemPermissionWarningView: View {
     init(
         prefixText: String,
         linkText: String,
-        linkColor: Color = Color(designSystemColor: .textLink),
+        linkColor: Color = Color(designSystemColor: .accentTextPrimary),
         linkOnNewLine: Bool = false,
         action: @escaping () -> Void
     ) {

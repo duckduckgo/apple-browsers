@@ -17,7 +17,9 @@
 //
 
 import Combine
-import FeatureFlags
+import FeatureFlags_macOS
+import PixelKit
+import PixelKitTestingUtilities
 import PrivacyConfig
 import XCTest
 
@@ -325,6 +327,108 @@ final class PermissionCenterViewModelTests: XCTestCase {
         viewModel.disableAutodismiss()
 
         XCTAssertFalse(viewModel.allowsAutodismiss)
+    }
+
+    // MARK: - Autoplay Promo Pixel Tests
+
+    // Hover events can arrive repeatedly; the promo must only report engagement once.
+    func testWhenDisableAutodismissIsCalledRepeatedlyThenEngagedPixelFiresOnce() {
+        var pixelFiring = PixelKitMock()
+
+        let viewModel = PermissionCenterViewModel(
+            domain: "example.com",
+            usedPermissions: Permissions(),
+            permissionManager: mockPermissionManager,
+            autoplayPreferences: autoplayPreferences,
+            featureFlagger: mockFeatureFlagger,
+            removePermission: { _ in },
+            dismissPopover: { },
+            displaysAutoplayPolicy: true,
+            displaysAutoplayDiscovery: true,
+            pixelFiring: pixelFiring,
+            systemPermissionManager: mockSystemPermissionManager
+        )
+
+        viewModel.disableAutodismiss()
+        viewModel.disableAutodismiss()
+
+        XCTAssertEqual(pixelFiring.actualFireCalls.map(\.pixel.name), [AutoplayPromoPixel.engaged.name])
+        XCTAssertFalse(viewModel.allowsAutodismiss)
+    }
+
+    /// Outside the promo there is nothing to autodismiss, so there is no engagement to report.
+    func testWhenDisableAutodismissIsCalledOutsideThePromoThenNoPixelIsFired() {
+        var pixelFiring = PixelKitMock()
+
+        let viewModel = PermissionCenterViewModel(
+            domain: "example.com",
+            usedPermissions: Permissions(),
+            permissionManager: mockPermissionManager,
+            autoplayPreferences: autoplayPreferences,
+            featureFlagger: mockFeatureFlagger,
+            removePermission: { _ in },
+            dismissPopover: { },
+            displaysAutoplayPolicy: true,
+            displaysAutoplayDiscovery: false,
+            pixelFiring: pixelFiring,
+            systemPermissionManager: mockSystemPermissionManager
+        )
+
+        viewModel.disableAutodismiss()
+
+        XCTAssertTrue(pixelFiring.actualFireCalls.isEmpty)
+        XCTAssertFalse(viewModel.allowsAutodismiss)
+    }
+
+    func testWhenOpenAutoplaySettingsWithinThePromoThenSettingsLinkClickedPixelIsFired() {
+        var pixelFiring = PixelKitMock()
+        var openedPanes: [PreferencePaneIdentifier] = []
+
+        let viewModel = PermissionCenterViewModel(
+            domain: "example.com",
+            usedPermissions: Permissions(),
+            permissionManager: mockPermissionManager,
+            autoplayPreferences: autoplayPreferences,
+            featureFlagger: mockFeatureFlagger,
+            removePermission: { _ in },
+            dismissPopover: { },
+            openSettingsPane: { openedPanes.append($0) },
+            displaysAutoplayPolicy: true,
+            displaysAutoplayDiscovery: true,
+            pixelFiring: pixelFiring,
+            systemPermissionManager: mockSystemPermissionManager
+        )
+
+        viewModel.openAutoplaySettings()
+
+        XCTAssertEqual(pixelFiring.actualFireCalls.map(\.pixel.name), [AutoplayPromoPixel.settingsLinkClicked.name])
+        XCTAssertEqual(openedPanes, [.general])
+    }
+
+    /// The disclaimer link only exists within the promo: a settings jump from anywhere else isn't promo attribution.
+    func testWhenOpenAutoplaySettingsOutsideThePromoThenNoPixelIsFired() {
+        var pixelFiring = PixelKitMock()
+        var openedPanes: [PreferencePaneIdentifier] = []
+
+        let viewModel = PermissionCenterViewModel(
+            domain: "example.com",
+            usedPermissions: Permissions(),
+            permissionManager: mockPermissionManager,
+            autoplayPreferences: autoplayPreferences,
+            featureFlagger: mockFeatureFlagger,
+            removePermission: { _ in },
+            dismissPopover: { },
+            openSettingsPane: { openedPanes.append($0) },
+            displaysAutoplayPolicy: true,
+            displaysAutoplayDiscovery: false,
+            pixelFiring: pixelFiring,
+            systemPermissionManager: mockSystemPermissionManager
+        )
+
+        viewModel.openAutoplaySettings()
+
+        XCTAssertTrue(pixelFiring.actualFireCalls.isEmpty)
+        XCTAssertEqual(openedPanes, [.general])
     }
 
     // MARK: - currentAutoplayDecision Tests

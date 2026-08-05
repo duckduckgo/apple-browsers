@@ -797,7 +797,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .showNTPAfterIdleReturn:
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.showNTPAfterIdleReturn))
         case .promoPresentationCoordination:
-            Config(defaultValue: .disabled, source: .remoteReleasable(PromoQueueSubfeature.iOSPromoPresentationCoordination))
+            Config(defaultValue: .disabled, source: .remoteReleasable(iOSPromoQueueSubfeature.iOSPromoPresentationCoordination))
         case .uiTestFeatureFlag:
             Config(source: .disabled)
         case .uiTestExperiment:

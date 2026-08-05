@@ -21,6 +21,7 @@ import Common
 import FoundationExtensions
 import Core
 import DDGSync
+import FeatureFlags_iOS
 import WebKit
 import BrowserServicesKit
 import Persistence

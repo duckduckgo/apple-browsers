@@ -21,6 +21,7 @@ import Foundation
 import Core
 import Persistence
 import PrivacyConfig
+import FeatureFlags_iOS
 
 enum NewBadgeFeature: Hashable {
     case personalInformationRemoval

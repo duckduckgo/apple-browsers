@@ -18,7 +18,7 @@
 
 import Cocoa
 import Combine
-import FeatureFlags
+import FeatureFlags_macOS
 import PrivacyConfig
 import History
 import Suggestions

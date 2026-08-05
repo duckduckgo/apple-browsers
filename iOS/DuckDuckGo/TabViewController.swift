@@ -52,6 +52,7 @@ import PixelKit
 import PrivacyConfig
 import WebExtensions
 import DesignResourcesKitIcons
+import FeatureFlags_iOS
 
 enum WebViewPreviewSnapshotGeometry {
 

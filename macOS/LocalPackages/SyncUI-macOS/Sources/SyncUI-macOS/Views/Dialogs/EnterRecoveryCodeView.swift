@@ -63,7 +63,7 @@ public struct EnterRecoveryCodeView: View {
             Button(UserText.cancel) {
                 model.cancelPressed()
             }
-            .buttonStyle(DismissActionButtonStyle())
+            .buttonStyle(DismissActionButtonStyle(stateColors: .themedDismissButton))
         }
         .frame(width: 420)
     }

@@ -156,7 +156,7 @@ extension PromoServiceFactoryTests {
         return PromoDependencies(
             keyValueStore: InMemoryThrowingKeyValueStore(),
             isExternallyActivated: false,
-            isNewUser: false,
+            isNewUserProvider: { false },
             isOnboardingCompletedProvider: { true },
             activeRemoteMessageModel: activeRemoteMessageModel,
             defaultBrowserAndDockPromptService: defaultBrowserAndDockPromptService,

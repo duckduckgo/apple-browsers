@@ -46,7 +46,7 @@ final class AutoplayDiscoverabilityPromoDelegateTests: XCTestCase {
         AutoplayDiscoverabilityPromoDelegate(featureFlagger: featureFlagger,
                                              windowControllersManager: windowControllersManager,
                                              pixelFiring: pixelFiring,
-                                             isNewUser: isNewUser)
+                                             isNewUserProvider: { isNewUser })
     }
 
     override func tearDown() {

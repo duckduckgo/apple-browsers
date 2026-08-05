@@ -716,6 +716,14 @@ final class AddressBarViewController: NSViewController {
             /// text / suffix doesn't peek out past the panel edges.
             addressBarTextField.isHidden = true
             passiveTextField.isHidden = true
+        case .inactiveWithAIChat where !themeManager.isAppRebranded:
+            /// Unfocused Duck.ai: always render via `addressBarTextField` showing the preserved prompt (or empty
+            /// for the "Ask anything privately" placeholder). The value is pushed onto the field by the transitions
+            /// that enter this state (`resignFocusKeepingAIChatMode`, `applyIncomingTabAIChatMode`, and
+            /// `refocusInAIChatMode` when bouncing in/out), not here — calling `applyDuckAIUnfocusedValue` from
+            /// inside `updateView` would recurse through the `$value` sink.
+            addressBarTextField.isHidden = false
+            passiveTextField.isHidden = true
         case .active, .inactive, .inactiveWithAIChat:
             let isPassiveTextFieldHidden = selectionState.isSelected || mode.isEditing && !isAddressBarEmpty
             addressBarTextField.isHidden = !isPassiveTextFieldHidden

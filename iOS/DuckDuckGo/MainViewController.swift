@@ -2065,10 +2065,12 @@ class MainViewController: UIViewController {
         // presentChatPathOnboardingCompletionIfNeeded. Restored by NewTabPageViewController
         // on every dismissal path.
         if daxDialogsManager.chatPathPhase == .trackerToEOJ && aiChatSettings.isAIChatEnabled {
+            controller.setPromoSurfaceVisible(false)
             controller.view.alpha = 0
         }
 
         addToContentContainer(controller: controller)
+        controller.setPromoSurfaceActive(true)
         viewCoordinator.logoContainer.isHidden = true
         adjustNewTabPageSafeAreaInsets(for: appSettings.currentAddressBarPosition)
 
@@ -2165,6 +2167,7 @@ class MainViewController: UIViewController {
     }
 
     fileprivate func removeHomeScreen() {
+        newTabPageViewController?.setPromoSurfaceActive(false)
         newTabPageViewController?.willMove(toParent: nil)
         newTabPageViewController?.dismiss()
         newTabPageViewController = nil
@@ -3151,6 +3154,7 @@ class MainViewController: UIViewController {
     }
     
     private func showSuggestionTray(_ type: SuggestionTrayViewController.SuggestionType) {
+        newTabPageViewController?.setPromoSurfaceActive(false)
         suggestionTrayController?.show(for: type)
         applyWidthToTrayController()
         if !isUsingSingleBar {
@@ -3170,6 +3174,8 @@ class MainViewController: UIViewController {
         viewCoordinator.suggestionTrayContainer.isHidden = true
         currentTab?.webView.accessibilityElementsHidden = false
         suggestionTrayController?.didHide(animated: false)
+        let isCoveredByUnifiedInput = unifiedToggleInputCoordinator?.computeRenderState().isContentVisible == true
+        newTabPageViewController?.setPromoSurfaceActive(!isCoveredByUnifiedInput)
     }
     
     func launchAutofillLogins(with currentTabUrl: URL? = nil, currentTabUid: String? = nil, openSearch: Bool = false, source: AutofillSettingsSource, selectedAccount: SecureVaultModels.WebsiteAccount? = nil, extensionPromotionManager: AutofillExtensionPromotionManaging? = nil) {
@@ -6271,6 +6277,7 @@ extension MainViewController: TabDelegate {
         // Hide the NTP synchronously, before any frame is rendered, so its empty-state Dax can't
         // flash before the editing-state transition begins. Restored by NewTabPageViewController
         // on every dismissal path.
+        newTabPageViewController?.setPromoSurfaceVisible(false)
         newTabPageViewController?.view.alpha = 0
         DispatchQueue.main.async { [weak self] in
             self?.newTabPageViewController?.showDuckAIOnboardingCompletionWithActiveAddressBar(message: message)
@@ -6664,18 +6671,26 @@ extension MainViewController: TabSwitcherDelegate {
     }
 
     private func animateLogoAppearance() {
-        newTabPageViewController?.view.transform = CGAffineTransform().scaledBy(x: 0.5, y: 0.5)
-        newTabPageViewController?.view.alpha = 0.0
+        guard let newTabPageViewController else { return }
+        newTabPageViewController.setPromoSurfaceVisible(false)
+        newTabPageViewController.view.transform = CGAffineTransform().scaledBy(x: 0.5, y: 0.5)
+        newTabPageViewController.view.alpha = 0.0
         UIView.animate(withDuration: 0.2, delay: 0.1, options: [.curveEaseInOut, .beginFromCurrentState]) {
-            self.newTabPageViewController?.view.transform = .identity
-            self.newTabPageViewController?.view.alpha = 1.0
+            newTabPageViewController.view.transform = .identity
+            newTabPageViewController.view.alpha = 1.0
+        } completion: { _ in
+            newTabPageViewController.setPromoSurfaceVisible(true)
         }
     }
 
     private func deferNTPAppearance() {
-        newTabPageViewController?.view.alpha = 0.0
+        guard let newTabPageViewController else { return }
+        newTabPageViewController.setPromoSurfaceVisible(false)
+        newTabPageViewController.view.alpha = 0.0
         UIView.animate(withDuration: 0.2, delay: 0.2, options: [.curveEaseInOut, .beginFromCurrentState]) {
-            self.newTabPageViewController?.view.alpha = 1.0
+            newTabPageViewController.view.alpha = 1.0
+        } completion: { _ in
+            newTabPageViewController.setPromoSurfaceVisible(true)
         }
     }
 

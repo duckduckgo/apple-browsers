@@ -95,6 +95,29 @@ final class AIChatTabChatHeaderView: UIView {
         !state.isVoiceSessionActive
     }
 
+    /// Edit mode swaps in the "Edit Message" title in place of the free/paid title.
+    private var isEditTitleVisible: Bool {
+        state.isEditing
+    }
+
+    private var isPaidTitleVisible: Bool {
+        state.isSubscriptionActive == true && !state.isEditing
+    }
+
+    /// Voice mode owns its own dismiss UI; edit mode keeps the close button (it cancels the edit)
+    /// but hides the chat-list, plus-menu, and tab-switcher.
+    private var isChatListVisible: Bool {
+        !state.isVoiceSessionActive && !state.isEditing
+    }
+
+    private var isCloseButtonVisible: Bool {
+        !state.isVoiceSessionActive
+    }
+
+    private var isRightPairVisible: Bool {
+        !state.isEditing
+    }
+
     private var isUpgradePlateVisible: Bool {
         state.isContainerVisible && isTitleHolderVisible && isTitleContainerVisible
     }
@@ -292,29 +315,10 @@ final class AIChatTabChatHeaderView: UIView {
         return label
     }()
 
-    private lazy var titleLabel: UILabel = {
-        let label = UILabel()
-        label.translatesAutoresizingMaskIntoConstraints = false
-        label.text = UserText.aiChatHeaderPaidTitle
-        label.font = AIChatTabChatHeaderView.makeNavigationTitleFont()
-        label.textColor = UIColor(designSystemColor: .textPrimary)
-        label.textAlignment = .center
-        label.adjustsFontForContentSizeCategory = true
-        label.adjustsFontSizeToFitWidth = true
-        label.minimumScaleFactor = Constants.titleMinimumScaleFactor
-        return label
-    }()
+    private lazy var titleLabel = Self.makeNavigationTitleLabel(text: UserText.aiChatHeaderPaidTitle)
 
     private lazy var editTitleLabel: UILabel = {
-        let label = UILabel()
-        label.translatesAutoresizingMaskIntoConstraints = false
-        label.text = UserText.aiChatHeaderEditMessageTitle
-        label.font = AIChatTabChatHeaderView.makeNavigationTitleFont()
-        label.textColor = UIColor(designSystemColor: .textPrimary)
-        label.textAlignment = .center
-        label.adjustsFontForContentSizeCategory = true
-        label.adjustsFontSizeToFitWidth = true
-        label.minimumScaleFactor = Constants.titleMinimumScaleFactor
+        let label = Self.makeNavigationTitleLabel(text: UserText.aiChatHeaderEditMessageTitle)
         label.isHidden = true
         return label
     }()
@@ -363,6 +367,19 @@ final class AIChatTabChatHeaderView: UIView {
     private static func makeNavigationTitleFont() -> UIFont {
         let descriptor = UIFontDescriptor.preferredFontDescriptor(withTextStyle: .headline)
         return UIFont(descriptor: descriptor, size: descriptor.pointSize)
+    }
+
+    private static func makeNavigationTitleLabel(text: String) -> UILabel {
+        let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.text = text
+        label.font = makeNavigationTitleFont()
+        label.textColor = UIColor(designSystemColor: .textPrimary)
+        label.textAlignment = .center
+        label.adjustsFontForContentSizeCategory = true
+        label.adjustsFontSizeToFitWidth = true
+        label.minimumScaleFactor = Constants.titleMinimumScaleFactor
+        return label
     }
 
     private lazy var leftStack: UIStackView = {
@@ -447,23 +464,18 @@ final class AIChatTabChatHeaderView: UIView {
     }
 
     private func applyState() {
-        let editing = state.isEditing
-        let voiceActive = state.isVoiceSessionActive
-
-        // Edit mode shows the "Edit Message" title; the free/paid title's visibility (onboarding,
-        // subscription, and editing) is captured by isTitleContainerVisible / isTitleHolderVisible.
-        editTitleLabel.isHidden = !editing
+        // Each control's visibility is defined by its own named computed property above; this method
+        // is just the assignment pass. Pills and their inner buttons are hidden together so the
+        // surrounding glass pill background disappears too.
+        editTitleLabel.isHidden = !isEditTitleVisible
         titleContainer.isHidden = !isTitleContainerVisible
-        paidTitleStack.isHidden = state.isSubscriptionActive != true || editing
+        paidTitleStack.isHidden = !isPaidTitleVisible
         titleHolder.isHidden = !isTitleHolderVisible
-        // Hide each pill (and its button inside it) together so the surrounding glass pill
-        // background also disappears. Voice mode owns its own dismiss UI; edit mode keeps the
-        // close button (it cancels the edit) but hides the chat-list, plus-menu, and tab-switcher.
-        chatListButtonPill.isHidden = voiceActive || editing
-        chatListButton.isHidden = voiceActive || editing
-        closeButtonPill.isHidden = voiceActive
-        closeButton.isHidden = voiceActive
-        rightPairPill.isHidden = editing
+        chatListButtonPill.isHidden = !isChatListVisible
+        chatListButton.isHidden = !isChatListVisible
+        closeButtonPill.isHidden = !isCloseButtonVisible
+        closeButton.isHidden = !isCloseButtonVisible
+        rightPairPill.isHidden = !isRightPairVisible
 
         titleSpacingConstraints.forEach { $0.isActive = !titleHolder.isHidden }
     }

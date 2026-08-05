@@ -184,23 +184,28 @@ final class UnifiedToggleInputToolbarView: UIView {
         }
     }
 
-    /// Caller-requested visibility for the tools/reasoning buttons, kept separate from the applied
-    /// state so edit mode can force them hidden (a re-render can't un-hide them) and still restore
-    /// the caller's intent on exit.
+    /// Caller-requested visibility for the attach/tools/reasoning buttons, kept separate from the
+    /// applied state so edit mode can force them hidden (a re-render can't un-hide them) and still
+    /// restore the caller's intent on exit.
     private var toolsButtonHiddenByCaller = false
     private var reasoningButtonHiddenByCaller = true
 
     /// Hidden while editing (only text edits + attachment removal are allowed there), otherwise the
     /// caller's requested state. Called from the setters and on `isEditing` change.
     private func applyEditableControlVisibility() {
+        imageButton.isHidden = imageButtonHiddenByCaller || isEditing
         toolsButton.isHidden = toolsButtonHiddenByCaller || isEditing
         reasoningButton.isHidden = reasoningButtonHiddenByCaller || isEditing
     }
 
     var isImageButtonHidden: Bool {
-        get { imageButton.isHidden }
-        set { imageButton.isHidden = newValue }
+        get { imageButtonHiddenByCaller }
+        set {
+            imageButtonHiddenByCaller = newValue
+            applyEditableControlVisibility()
+        }
     }
+    private var imageButtonHiddenByCaller = false
 
     var isImageButtonEnabled: Bool {
         get { imageButton.isEnabled }

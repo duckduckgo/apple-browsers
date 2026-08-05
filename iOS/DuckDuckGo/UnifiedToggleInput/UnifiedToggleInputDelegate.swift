@@ -34,10 +34,14 @@ protocol UnifiedToggleInputDelegate: AnyObject {
     func unifiedToggleInputDismissSnapshot() -> UTIDismissSnapshot
     func unifiedToggleInputDidTapClearText()
     func unifiedToggleInputDidTapToActivate()
+    /// Edit mode entered/exited — the host applies the surrounding chrome (transcript whiteout,
+    /// header swap). The input side is handled within the coordinator.
+    func unifiedToggleInputDidChangeEditMode(_ isEditing: Bool)
 }
 
 extension UnifiedToggleInputDelegate {
     func unifiedToggleInputDismissSnapshot() -> UTIDismissSnapshot { .empty }
     func unifiedToggleInputDidTapClearText() {}
     func unifiedToggleInputDidTapToActivate() {}
+    func unifiedToggleInputDidChangeEditMode(_ isEditing: Bool) {}
 }

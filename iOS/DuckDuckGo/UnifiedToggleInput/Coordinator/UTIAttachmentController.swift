@@ -52,9 +52,6 @@ final class UTIAttachmentController {
     struct Environment {
         let policy: () -> UTIAttachmentPolicy
         let inputMode: () -> TextEntryMode
-        /// True while the native input is editing an existing message. Editing supports removing
-        /// attachments only, so the add-attachment control is hidden.
-        let isEditing: () -> Bool
         let pixelSurface: () -> UnifiedToggleInputPixelSurface
         let isContextualChatState: () -> Bool
         let supportsImageUpload: () -> Bool
@@ -401,13 +398,6 @@ final class UTIAttachmentController {
     }
 
     func updateAttachButtonPresentation() {
-        // Editing an existing message only allows removing attachments, so hide the add control.
-        if environment.isEditing() {
-            view.setImageButtonHidden(true)
-            view.setImageButtonEnabled(false)
-            view.setAttachmentMenu(nil)
-            return
-        }
         let policy = environment.policy()
         let supportsPageContextAttachment = environment.isContextualChatState() && environment.pageContextAttachHandler() != nil && (environment.isPageContextAttachable() ?? true)
         let supportsAttachments = environment.supportsImageUpload() || !allowedFileUTTypes.isEmpty || supportsPageContextAttachment

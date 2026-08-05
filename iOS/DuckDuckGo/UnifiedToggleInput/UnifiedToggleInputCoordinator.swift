@@ -128,7 +128,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     @Published private(set) var isEditing: Bool = false {
         didSet {
             guard oldValue != isEditing else { return }
-            applyEditModeToInput()
+            applyEditMode()
         }
     }
 
@@ -415,7 +415,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                     self?.attachmentPolicy ?? UTIAttachmentPolicy(attachmentLimits: nil, attachmentUsage: nil, pendingAttachments: [], model: nil)
                 },
                 inputMode: { [weak self] in self?.inputMode ?? .aiChat },
-                isEditing: { [weak self] in self?.isEditing ?? false },
                 pixelSurface: { [weak self] in self?.pixelSurface ?? .addressBar },
                 isContextualChatState: { [weak self] in self?.isContextualChatState ?? false },
                 supportsImageUpload: { [weak self] in self?.selectedModelSupportsImageUpload ?? false },
@@ -784,12 +783,12 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         if isEditing { isEditing = false }
     }
 
-    /// Central point for input-side edit-mode UI, driven off `isEditing`. Keeping every input
-    /// mutation for edit mode here (rather than scattering them) means future pieces — the
-    /// "editing will replace the response" disclaimer, an "Update" send label — slot in one place.
-    private func applyEditModeToInput() {
+    /// The single point that fans edit mode out to each part: the input (`setEditMode` cascades to
+    /// the toolbar controls, and later the disclaimer / "Update" label) and the host chrome
+    /// (transcript whiteout + header, via the delegate). Nothing else needs to know about editing.
+    private func applyEditMode() {
         viewController.setEditMode(isEditing)
-        attachmentController.updateAttachButtonPresentation()
+        delegate?.unifiedToggleInputDidChangeEditMode(isEditing)
     }
 
 #if DEBUG

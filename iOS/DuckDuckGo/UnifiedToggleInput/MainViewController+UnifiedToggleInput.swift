@@ -471,12 +471,6 @@ private extension MainViewController {
             }
             .store(in: &unifiedToggleInputCancellables)
 
-        coordinator.$isEditing
-            .removeDuplicates()
-            .sink { [weak self] isEditing in
-                self?.applyEditModeChrome(isEditing)
-            }
-            .store(in: &unifiedToggleInputCancellables)
 
         coordinator.attachmentsChangePublisher
             .sink { [weak self] in
@@ -1285,6 +1279,10 @@ extension MainViewController: UnifiedToggleInputDelegate {
 
     func unifiedToggleInputDidRequestAppMenu() {
         onMenuPressed()
+    }
+
+    func unifiedToggleInputDidChangeEditMode(_ isEditing: Bool) {
+        applyEditModeChrome(isEditing)
     }
 
     func unifiedToggleInputDismissSnapshot() -> UTIDismissSnapshot {

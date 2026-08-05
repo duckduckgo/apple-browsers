@@ -31,7 +31,9 @@ class HomePageMessagesConfigurationMock: HomePageMessagesConfiguration {
     }
 
     private(set) var lastAppearedHomeMessage: HomeMessage?
+    private(set) var appearanceCallCount = 0
     func didAppear(_ homeMessage: HomeMessage) {
+        appearanceCallCount += 1
         lastAppearedHomeMessage = homeMessage
     }
 
@@ -41,9 +43,11 @@ class HomePageMessagesConfigurationMock: HomePageMessagesConfiguration {
     }
 
     private(set) var didRefresh: Bool = false
+    private(set) var refreshCallCount = 0
     private(set) var lastRefreshOpenedAfterIdle: Bool?
     func refresh(openedAfterIdle: Bool) {
         didRefresh = true
+        refreshCallCount += 1
         lastRefreshOpenedAfterIdle = openedAfterIdle
     }
 }

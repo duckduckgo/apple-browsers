@@ -1055,8 +1055,14 @@ final class AddressBarViewController: NSViewController {
     }
 
     private func refreshPlaceholderAppearance() {
-        let displaysTrustIndicator = tabViewModel?.passiveAddressBarDisplaysTrustIndicator == true
         let colorsProvider = theme.colorsProvider
+
+        guard themeManager.isAppRebranded else {
+            passiveTextField.textColor = colorsProvider.textPrimaryColor
+            return
+        }
+
+        let displaysTrustIndicator = tabViewModel?.passiveAddressBarDisplaysTrustIndicator == true
 
         passiveTextField.textColor = displaysTrustIndicator ? colorsProvider.textSecondaryColor : colorsProvider.textPrimaryColor
     }

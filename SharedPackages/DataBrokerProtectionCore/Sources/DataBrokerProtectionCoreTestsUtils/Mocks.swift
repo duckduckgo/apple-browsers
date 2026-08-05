@@ -333,6 +333,8 @@ public final class WebViewHandlerMock: NSObject, WebViewHandler {
     public var wasLoadCalledWithURL: URL?
     public var wasWaitForWebViewLoadCalled = false
     public var wasFinishCalled = false
+    public var executeCallCount = 0
+    public var executeHandler: (() -> Void)?
     public var wasExecuteCalledForUserData = false
     public var wasExecuteCalledForSolveCaptcha = false
     public var wasExecuteJavascriptCalled = false
@@ -359,6 +361,9 @@ public final class WebViewHandlerMock: NSObject, WebViewHandler {
     }
 
     public func execute(action: Action, ofType stepType: StepType?, data: CCFRequestData) async {
+        executeCallCount += 1
+        executeHandler?()
+
         switch data {
         case .solveCaptcha:
             wasExecuteCalledForSolveCaptcha = true
@@ -390,6 +395,8 @@ public final class WebViewHandlerMock: NSObject, WebViewHandler {
         wasLoadCalledWithURL = nil
         wasWaitForWebViewLoadCalled = false
         wasFinishCalled = false
+        executeCallCount = 0
+        executeHandler = nil
         wasExecuteCalledForSolveCaptcha = false
         wasExecuteJavascriptCalled = false
         wasExecuteCalledForUserData = false

@@ -45,7 +45,14 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
     public var continuation: CheckedContinuation<[ExtractedProfile], Error>?
     public var extractedProfile: ExtractedProfile?
     private let operationAwaitTime: TimeInterval
-    public let shouldRunNextStep: () -> Bool
+    private let shouldRunNextStepHandler: () -> Bool
+    private var isCancelled = false
+    public var shouldRunNextStep: () -> Bool {
+        { [weak self] in
+            guard let self else { return false }
+            return !self.isCancelled && self.shouldRunNextStepHandler()
+        }
+    }
     public var retriesCountOnError: Int = 0
     public lazy var clickAwaitTime: TimeInterval = {
         executionConfig.clickAwaitTimeForScan
@@ -81,7 +88,7 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
         self.captchaService = captchaService
         self.operationAwaitTime = operationAwaitTime
         self.stageCalculator = stageDurationCalculator
-        self.shouldRunNextStep = shouldRunNextStep
+        self.shouldRunNextStepHandler = shouldRunNextStep
         self.cookieHandler = cookieHandler
         self.pixelHandler = pixelHandler
         self.executionConfig = executionConfig
@@ -138,8 +145,13 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
                 }
             }
         } onCancel: {
-            Task { @MainActor in
+            Task { @MainActor [weak self] in
+                guard let self, !self.isCancelled else { return }
+
+                self.isCancelled = true
                 task?.cancel()
+                await self.webViewHandler?.finish()
+                self.failed(with: DataBrokerProtectionError.cancelled)
             }
         }
     }
@@ -153,6 +165,8 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
     }
 
     public func executeNextStep() async {
+        guard !isCancelled else { return }
+
         resetRetriesCount()
         Logger.action.debug(loggerContext(), message: "Waiting \(self.operationAwaitTime) seconds...")
         recordDebugEvent(kind: .wait,

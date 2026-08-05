@@ -536,6 +536,13 @@ public extension SubJobWebRunning {
         recordDebugEvent(kind: .actionResponse,
                          actionType: actionsHandler?.currentAction()?.actionType,
                          details: errorDetails(error))
+
+        guard shouldRunNextStep() else {
+            await webViewHandler?.finish()
+            failed(with: DataBrokerProtectionError.cancelled)
+            return
+        }
+
         if let currentAction = actionsHandler?.currentAction(), currentAction is ConditionAction {
             Logger.action.log(loggerContext(for: currentAction),
                               message: "Condition action did NOT meet its expectation, continuing with regular action execution")

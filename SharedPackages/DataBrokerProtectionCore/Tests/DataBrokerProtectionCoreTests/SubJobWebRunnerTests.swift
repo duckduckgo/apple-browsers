@@ -99,32 +99,114 @@ final class DataBrokerJobTests: XCTestCase {
         // Then
         XCTAssertEqual(sut.retriesCountOnError, 1)
     }
+
+    @MainActor
+    func testWhenScanIsCancelledAfterDispatchingAction_thenFinishesAndIgnoresLateCallbacks() async {
+        let action = NavigateAction(id: "navigate", actionType: .navigate, url: "https://example.com")
+        let sut = makeScanJob(actions: [action], operationAwaitTime: 0)
+        let webViewHandler = WebViewHandlerMock()
+        let actionDispatched = expectation(description: "Action dispatched")
+        let runFinished = expectation(description: "Scan run finished")
+        webViewHandler.executeHandler = {
+            actionDispatched.fulfill()
+        }
+
+        let runTask = Task { @MainActor in
+            defer { runFinished.fulfill() }
+
+            do {
+                _ = try await sut.run(inputValue: (),
+                                      webViewHandler: webViewHandler,
+                                      actionsHandler: nil,
+                                      showWebView: false)
+                XCTFail("Expected cancellation error")
+            } catch {
+                XCTAssertEqual(error as? DataBrokerProtectionError, .cancelled)
+            }
+        }
+
+        await fulfillment(of: [actionDispatched], timeout: 1)
+        runTask.cancel()
+        await fulfillment(of: [runFinished], timeout: 1)
+
+        XCTAssertTrue(webViewHandler.wasFinishCalled)
+        XCTAssertEqual(webViewHandler.executeCallCount, 1)
+
+        sut.retriesCountOnError = 1
+        await sut.onError(error: DataBrokerProtectionError.actionFailed(actionID: action.id, message: "Late error"))
+        await sut.success(actionId: action.id, actionType: action.actionType)
+
+        XCTAssertEqual(webViewHandler.executeCallCount, 1)
+    }
+
+    @MainActor
+    func testWhenOptOutIsCancelledAfterDispatchingAction_thenFinishes() async {
+        let action = NavigateAction(id: "navigate", actionType: .navigate, url: "https://example.com")
+        let sut = makeOptOutJob(actions: [action], operationAwaitTime: 0)
+        let webViewHandler = WebViewHandlerMock()
+        let actionDispatched = expectation(description: "Action dispatched")
+        let runFinished = expectation(description: "Opt-out run finished")
+        webViewHandler.executeHandler = {
+            actionDispatched.fulfill()
+        }
+
+        let runTask = Task { @MainActor in
+            defer { runFinished.fulfill() }
+
+            do {
+                try await sut.run(inputValue: .mockWithoutRemovedDate,
+                                  webViewHandler: webViewHandler,
+                                  actionsHandler: nil,
+                                  showWebView: false)
+                XCTFail("Expected cancellation error")
+            } catch {
+                XCTAssertEqual(error as? DataBrokerProtectionError, .cancelled)
+            }
+        }
+
+        await fulfillment(of: [actionDispatched], timeout: 1)
+        runTask.cancel()
+        await fulfillment(of: [runFinished], timeout: 1)
+
+        XCTAssertTrue(webViewHandler.wasFinishCalled)
+        XCTAssertEqual(webViewHandler.executeCallCount, 1)
+    }
 }
 
 private extension DataBrokerJobTests {
 
     var scanJob: BrokerProfileScanSubJobWebRunner {
+        makeScanJob()
+    }
+
+    var optOutJob: BrokerProfileOptOutSubJobWebRunner {
+        makeOptOutJob()
+    }
+
+    func makeScanJob(actions: [Action] = [], operationAwaitTime: TimeInterval = 3) -> BrokerProfileScanSubJobWebRunner {
         BrokerProfileScanSubJobWebRunner(privacyConfig: PrivacyConfigurationManagingMock(),
                                          prefs: .mock,
-                                         context: BrokerProfileQueryData.mock(with: [Step(type: .scan, actions: [])]),
+                                         context: BrokerProfileQueryData.mock(with: [Step(type: .scan, actions: actions)]),
                                          emailConfirmationDataService: MockEmailConfirmationDataServiceProvider(),
                                          captchaService: CaptchaServiceMock(),
                                          featureFlagger: MockDBPFeatureFlagger(),
                                          applicationNameForUserAgentProvider: { nil },
+                                         operationAwaitTime: operationAwaitTime,
                                          stageDurationCalculator: MockStageDurationCalculator(),
                                          pixelHandler: MockDataBrokerProtectionPixelsHandler(),
                                          executionConfig: BrokerJobExecutionConfig(),
                                          shouldRunNextStep: { true })
     }
 
-    var optOutJob: BrokerProfileOptOutSubJobWebRunner {
+    func makeOptOutJob(actions: [Action] = [], operationAwaitTime: TimeInterval = 3) -> BrokerProfileOptOutSubJobWebRunner {
         BrokerProfileOptOutSubJobWebRunner(privacyConfig: PrivacyConfigurationManagingMock(),
                                            prefs: .mock,
-                                           context: BrokerProfileQueryData.mock(with: [Step(type: .optOut, actions: [])]),
+                                           context: BrokerProfileQueryData.mock(with: [Step(type: .optOut, actions: actions)]),
                                            emailConfirmationDataService: MockEmailConfirmationDataServiceProvider(),
                                            captchaService: CaptchaServiceMock(),
                                            featureFlagger: MockDBPFeatureFlagger(),
                                            applicationNameForUserAgentProvider: { nil },
+                                           operationAwaitTime: operationAwaitTime,
                                            stageCalculator: MockStageDurationCalculator(),
                                            pixelHandler: MockDataBrokerProtectionPixelsHandler(),
                                            executionConfig: BrokerJobExecutionConfig(),

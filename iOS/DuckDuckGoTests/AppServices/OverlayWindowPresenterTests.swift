@@ -24,7 +24,8 @@ import UIKit
 @MainActor
 final class OverlayWindowPresenterTests {
 
-    @Test("Revealing a blank snapshot does not change the key window")
+    @available(iOS 16.0, *)
+    @Test("Revealing a blank snapshot does not change the key window", .timeLimit(.minutes(1)))
     func revealBlankSnapshotWindow() {
         let mainWindow = WindowSpy()
         mainWindow.isHidden = false
@@ -39,7 +40,8 @@ final class OverlayWindowPresenterTests {
         #expect(mainWindow.makeKeyAndVisibleCallCount == 0)
     }
 
-    @Test("Revealing an interactive overlay makes it key and hides the main window")
+    @available(iOS 16.0, *)
+    @Test("Revealing an interactive overlay makes it key and hides the main window", .timeLimit(.minutes(1)))
     func revealInteractiveWindow() {
         let mainWindow = WindowSpy()
         mainWindow.isHidden = false
@@ -52,7 +54,8 @@ final class OverlayWindowPresenterTests {
         #expect(mainWindow.isHidden)
     }
 
-    @Test("Removing a blank snapshot does not re-key the visible main window")
+    @available(iOS 16.0, *)
+    @Test("Removing a blank snapshot does not re-key the visible main window", .timeLimit(.minutes(1)))
     func removeBlankSnapshotWindow() {
         let mainWindow = WindowSpy()
         mainWindow.isHidden = false
@@ -66,7 +69,8 @@ final class OverlayWindowPresenterTests {
         #expect(mainWindow.makeKeyAndVisibleCallCount == 0)
     }
 
-    @Test("Removing an interactive overlay restores the hidden main window")
+    @available(iOS 16.0, *)
+    @Test("Removing an interactive overlay restores the hidden main window", .timeLimit(.minutes(1)))
     func removeInteractiveWindow() {
         let mainWindow = WindowSpy()
         mainWindow.isHidden = true

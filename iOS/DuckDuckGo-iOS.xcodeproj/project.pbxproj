@@ -6873,7 +6873,6 @@
 				CB3B4D552D649DC8006DAD63 /* AutoClearServiceTests.swift */,
 				CB3B4D532D648C44006DAD63 /* AuthenticationServiceTests.swift */,
 				CB019FD3300A000100000001 /* OverlayWindowPresenterTests.swift */,
-				9F387DF42EA8BED0006861F8 /* ModalPromptCoordinationServiceTests.swift */,
 				9F387DF42EA8BED0006861F8 /* PromoCoordinationServiceTests.swift */,
 				B6A7C21731A1000100F00D01 /* PromoCoordinationServicePromoQueueTests.swift */,
 				C1A74BAF2EC2618D00870321 /* AutofillServiceTests.swift */,

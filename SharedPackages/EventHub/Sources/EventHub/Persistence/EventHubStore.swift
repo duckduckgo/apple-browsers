@@ -76,11 +76,9 @@ public final class EventHubKeyValueStore: EventHubStore {
             Logger.eventHub.error("store: could not serialise the config snapshot for pixel \(state.pixelName, privacy: .public), state not saved")
             return
         }
-        let paramsJSON: String
-        do {
-            paramsJSON = String(decoding: try JSONEncoder().encode(state.params), as: UTF8.self)
-        } catch {
-            Logger.eventHub.error("store: could not serialise params for pixel \(state.pixelName, privacy: .public), state not saved: \(error.localizedDescription, privacy: .public)")
+        guard let paramsData = try? JSONEncoder().encode(state.params),
+              let paramsJSON = String(bytes: paramsData, encoding: .utf8) else {
+            Logger.eventHub.error("store: could not serialise params for pixel \(state.pixelName, privacy: .public), state not saved")
             return
         }
         var map = readMap()

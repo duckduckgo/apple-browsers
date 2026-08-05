@@ -22,7 +22,7 @@ import Combine
 import WebKit
 @testable import EventHub
 
-@Suite("EventHub functional (message handler through manager to fired pixel)")
+@Suite("EventHub functional (message handler through manager to fired pixel)", .timeLimit(.minutes(1)))
 struct EventHubFunctionalTests {
     static let periodSeconds: TimeInterval = 60
 

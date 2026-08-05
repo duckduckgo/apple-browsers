@@ -21,7 +21,7 @@ import Foundation
 import Combine
 @testable import EventHub
 
-@Suite("EventHubSettings")
+@Suite("EventHubSettings", .timeLimit(.minutes(1)))
 struct EventHubSettingsTests {
     static let settings = settingsDictionary("""
     { "telemetry": {
@@ -60,9 +60,9 @@ struct EventHubSettingsTests {
         #expect(Self.telemetryKeys(latest) == ["gated_pixel", "ungated_pixel"])
     }
 
-    /// Regression guard: "eventHub enabled, nothing configured yet" is the normal pre-rollout state. It
-    /// holds no gated data, so failing closed on it would black out all telemetry — and fire the debug
-    /// event — for every install running a config that has not reached the rollout yet.
+    // Regression guard: "eventHub enabled, nothing configured yet" is the normal pre-rollout state. It
+    // holds no gated data, so failing closed on it would black out all telemetry — and fire the debug
+    // event — for every install running a config that has not reached the rollout yet.
     @Test("settings without a telemetry key pass through untouched and fire nothing")
     func settingsWithoutTelemetryKeyPassThroughUntouchedAndFireNothing() {
         let capture = CapturingEventMapping()

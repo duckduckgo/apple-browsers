@@ -20,7 +20,7 @@ import Testing
 import Foundation
 @testable import EventHub
 
-@Suite("EventHub")
+@Suite("EventHub", .timeLimit(.minutes(1)))
 struct EventHubTests {
     static let pixel1 = "webTelemetry_testPixel1"
 

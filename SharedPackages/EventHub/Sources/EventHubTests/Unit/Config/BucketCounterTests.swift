@@ -19,7 +19,7 @@
 import Testing
 @testable import EventHub
 
-@Suite("BucketCounter")
+@Suite("BucketCounter", .timeLimit(.minutes(1)))
 struct BucketCounterTests {
     static let buckets: BucketList = [
         OrderedBucket(name: "0", config: BucketConfig(gte: 0, lt: 1)),

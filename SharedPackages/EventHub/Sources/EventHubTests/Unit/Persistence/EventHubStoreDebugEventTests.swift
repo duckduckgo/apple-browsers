@@ -20,7 +20,7 @@ import Testing
 import Foundation
 @testable import EventHub
 
-@Suite("EventHubStore debug events")
+@Suite("EventHubStore debug events", .timeLimit(.minutes(1)))
 struct EventHubStoreDebugEventTests {
     private static let sampleConfig = TelemetryPixelConfig(
         name: "testPixel",
@@ -94,8 +94,8 @@ struct EventHubStoreDebugEventTests {
         #expect(capture.errors.first is ThrowingKeyValueStore.StoreError)
     }
 
-    /// Regression guard: "nothing stored yet" is the normal cold-start state on every first launch. Were
-    /// it treated as a read failure, this pixel would fire for the entire install base.
+    // Regression guard: "nothing stored yet" is the normal cold-start state on every first launch. Were
+    // it treated as a read failure, this pixel would fire for the entire install base.
     @Test("an absent value fires nothing")
     func absentValueFiresNothing() {
         _ = repository.allPixelStates()
@@ -104,7 +104,7 @@ struct EventHubStoreDebugEventTests {
         #expect(capture.fired.isEmpty)
     }
 
-    /// The successful path must stay silent even though it reads, writes and deletes.
+    // The successful path must stay silent even though it reads, writes and deletes.
     @Test("a successful round trip fires nothing")
     func successfulRoundTripFiresNothing() {
         repository.savePixelState(Self.sampleState)

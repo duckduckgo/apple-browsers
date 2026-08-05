@@ -19,7 +19,7 @@
 import Testing
 @testable import EventHub
 
-@Suite("EventHub persistence throttling")
+@Suite("EventHub persistence throttling", .timeLimit(.minutes(1)))
 struct EventHubPersistenceThrottlingTests {
     static let burstSize = 5000
 

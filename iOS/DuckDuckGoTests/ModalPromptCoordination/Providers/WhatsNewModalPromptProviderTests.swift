@@ -54,6 +54,32 @@ final class WhatsNewCoordinatorTests {
         #expect(!mockRepository.didCallFetchLastShownMessage)
     }
 
+    @Test("Check Invalid Scheduled Message Can Be Replaced By Current Message")
+    func whenScheduledMessageChangesThenReplacementUsesCurrentMessage() throws {
+        let firstMessage = RemoteMessageModel.makeCardsListMessage(id: "first-message")
+        let replacementMessage = RemoteMessageModel.makeCardsListMessage(id: "replacement-message")
+        let mockRepository = MockWhatsNewMessageRepository(scheduledRemoteMessage: firstMessage)
+        let coordinator = WhatsNewCoordinator(
+            displayContext: .scheduled,
+            repository: mockRepository,
+            remoteMessageActionHandler: MockRemoteMessagingActionHandler(),
+            isIPad: false,
+            pixelReporter: MockRemoteMessagingPixelReporter(),
+            userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
+            imageLoader: MockRemoteMessagingImageLoader(),
+            featureFlagger: MockFeatureFlagger()
+        )
+        let firstConfiguration = try #require(coordinator.provideModalPrompt())
+        mockRepository.setScheduledRemoteMessage(replacementMessage)
+
+        #expect(!coordinator.isPreparedModalPromptStillValid(firstConfiguration))
+
+        let replacementConfiguration = try #require(coordinator.provideReplacementModalPrompt(for: firstConfiguration))
+
+        #expect(replacementConfiguration.viewController !== firstConfiguration.viewController)
+        #expect(coordinator.isPreparedModalPromptStillValid(replacementConfiguration))
+    }
+
     @Test(
         "Check View Controller Sets Page Sheet Presentation Style On iPhone",
         arguments: [.scheduled, .onDemand] as [WhatsNewCoordinator.DisplayContext]

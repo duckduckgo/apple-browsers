@@ -407,10 +407,17 @@ final class ModalPromptCoordinationManagerIntegrationTests {
 
 // MARK: - Helpers
 
+@MainActor
 private final class ImmediateScheduler: ModalPromptScheduling {
-    func schedule(after delay: TimeInterval, execute: @escaping @MainActor () -> Void) {
-        MainActor.assumeIsolated {
-            execute()
-        }
+    @discardableResult
+    func schedule(after delay: TimeInterval, execute: @escaping @MainActor () -> Void) -> ModalPromptScheduledTask {
+        execute()
+        return ModalPromptScheduledTask()
+    }
+
+    @discardableResult
+    func scheduleOnNextMainTurn(execute: @escaping @MainActor () -> Void) -> ModalPromptScheduledTask {
+        execute()
+        return ModalPromptScheduledTask()
     }
 }

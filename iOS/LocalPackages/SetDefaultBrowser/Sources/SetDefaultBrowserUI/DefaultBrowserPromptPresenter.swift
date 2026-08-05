@@ -26,6 +26,16 @@ import SetDefaultBrowserCore
 public protocol DefaultBrowserPromptPresenting: AnyObject {
     /// Returns a view controller if the prompt is eligible to show to the user. Nil, otherwise.
     func makePresentDefaultModalPrompt() -> UIViewController?
+    /// Revalidates an already prepared prompt without consuming prompt-selection state.
+    func isPreparedDefaultModalPromptStillValid() -> Bool
+    /// Revalidates a prompt retained across a recoverable presentation failure using current browser status.
+    func isRetainedPreparedDefaultModalPromptStillValid() -> Bool
+}
+
+public extension DefaultBrowserPromptPresenting {
+    func isRetainedPreparedDefaultModalPromptStillValid() -> Bool {
+        isPreparedDefaultModalPromptStillValid()
+    }
 }
 
 @MainActor
@@ -49,6 +59,14 @@ final class DefaultBrowserModalPresenter: NSObject, DefaultBrowserPromptPresenti
         case .inactiveUserModal:
             return makeDefaultBrowserPromptForInactiveUser()
         }
+    }
+
+    func isPreparedDefaultModalPromptStillValid() -> Bool {
+        coordinator.isPreparedPromptStillValid()
+    }
+
+    func isRetainedPreparedDefaultModalPromptStillValid() -> Bool {
+        coordinator.isRetainedPreparedPromptStillValid()
     }
 
 }

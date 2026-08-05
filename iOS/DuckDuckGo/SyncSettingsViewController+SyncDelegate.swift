@@ -24,6 +24,7 @@ import SyncUI_iOS
 import DDGSync
 import AVFoundation
 import os.log
+import FeatureFlags_iOS
 
 extension SyncSettingsViewController: SyncManagementViewModelDelegate {
 

@@ -30,7 +30,7 @@ let package = Package(
     dependencies: [
         .package(path: "../../../SharedPackages/BrowserServicesKit"),
         .package(path: "../../../SharedPackages/Infrastructure/SystemFrameworksExtensions"),
-        .package(path: "../FeatureFlags"),
+        .package(path: "../FeatureFlags-macOS"),
     ],
     targets: [
         .target(
@@ -41,7 +41,7 @@ let package = Package(
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "Crashes", package: "BrowserServicesKit"),
-                .product(name: "FeatureFlags", package: "FeatureFlags"),
+                .product(name: "FeatureFlags-macOS", package: "FeatureFlags-macOS"),
                 .product(name: "Persistence", package: "BrowserServicesKit"),
                 .product(name: "PrivacyConfig", package: "BrowserServicesKit"),
             ],
@@ -75,7 +75,7 @@ let package = Package(
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "Crashes", package: "BrowserServicesKit"),
-                .product(name: "FeatureFlags", package: "FeatureFlags"),
+                .product(name: "FeatureFlags-macOS", package: "FeatureFlags-macOS"),
                 .product(name: "PrivacyConfig", package: "BrowserServicesKit"),
             ],
             swiftSettings: [

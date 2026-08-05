@@ -20,6 +20,7 @@
 import XCTest
 import Core
 import SubscriptionTestingUtilities
+import FeatureFlags_iOS
 @testable import DuckDuckGo
 
 final class OnboardingSubscriptionPromotionHelpingTests: XCTestCase {

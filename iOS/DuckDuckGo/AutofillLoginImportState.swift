@@ -21,6 +21,7 @@ import BrowserServicesKit
 import Foundation
 import Persistence
 import PrivacyConfig
+import FeatureFlags_iOS
 
 final class AutofillLoginImportState: AutofillLoginImportStateProvider, AutofillLoginImportStateStoring {
 

@@ -21,7 +21,7 @@ import Combine
 import SwiftUI
 import Common
 import FoundationExtensions
-import FeatureFlags
+import FeatureFlags_macOS
 import Foundation
 import NetworkExtension
 import VPN

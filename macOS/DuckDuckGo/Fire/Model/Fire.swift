@@ -21,7 +21,7 @@ import Combine
 import Common
 import FoundationExtensions
 import DDGSync
-import FeatureFlags
+import FeatureFlags_macOS
 import Foundation
 import History
 import os.log

@@ -22,6 +22,7 @@ import Common
 import FoundationExtensions
 import Foundation
 import PrivacyConfig
+import FeatureFlags_iOS
 
 /// Provides access to contextual Duck AI chat mode availability.
 protocol AIChatContextualModeFeatureProviding {

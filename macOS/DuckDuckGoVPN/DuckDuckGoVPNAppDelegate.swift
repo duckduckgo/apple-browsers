@@ -23,7 +23,7 @@ import Combine
 import Common
 import Configuration
 import DesignResourcesKit
-import FeatureFlags
+import FeatureFlags_macOS
 import LoginItems
 import Networking
 import NetworkExtension

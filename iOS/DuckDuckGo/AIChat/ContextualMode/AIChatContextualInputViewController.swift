@@ -233,6 +233,10 @@ final class AIChatContextualInputViewController: UIViewController {
         quickActionsView.chipCount
     }
 
+    func animateStartActionsOut() {
+        quickActionsView.animateChipsOut()
+    }
+
     func animateStartActionsIn() {
         quickActionsView.animateChipsIn()
     }

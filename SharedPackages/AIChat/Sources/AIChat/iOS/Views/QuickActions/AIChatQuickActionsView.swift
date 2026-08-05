@@ -28,9 +28,10 @@ private enum AIChatQuickActionsViewConstants {
     static let deckRevealDuration: TimeInterval = 0.12
     static let deckScale: CGFloat = 0.94
     static let spreadDuration: TimeInterval = 0.45
-    static let spreadStagger: TimeInterval = 0.04
     static let spreadDamping: CGFloat = 0.78
     static let spreadInitialVelocity: CGFloat = 0.15
+    /// Quicker than the spread: getting out of the way should not be something the reader waits for.
+    static let collapseDuration: TimeInterval = 0.2
 }
 
 // MARK: - View
@@ -100,8 +101,9 @@ public final class AIChatQuickActionsView<Action: AIChatQuickActionType>: UIView
         chips.count
     }
 
-    /// The chips arrive as a deck: stacked on one spot, revealed together, then springing apart into
-    /// their slots. Revealing them as a group avoids any one card looking more important than the rest.
+    /// The chips arrive as a deck: stacked on one spot, revealed together, then springing apart into their
+    /// slots as one — the mirror of the collapse. Moving them as a group avoids any one card looking more
+    /// important than the rest.
     ///
     /// The deck position and each card's travel come from resting frames, so the loader is cleared first
     /// — it holds a slot in this stack, and the cards would otherwise be measured low and jump when it
@@ -121,9 +123,7 @@ public final class AIChatQuickActionsView<Action: AIChatQuickActionType>: UIView
                           y: AIChatQuickActionsViewConstants.deckScale)
         }
 
-        // A stack view draws its last arranged subview on top, which would face the last card at the
-        // viewer. Flip the z-order so the deck is dealt from the first card down.
-        cards.reversed().forEach(stackView.bringSubviewToFront)
+        faceDeckWithLastCard(cards)
 
         UIView.animate(withDuration: AIChatQuickActionsViewConstants.deckRevealDuration,
                        delay: 0,
@@ -131,17 +131,50 @@ public final class AIChatQuickActionsView<Action: AIChatQuickActionType>: UIView
             cards.forEach { $0.alpha = 1 }
         }
 
-        let spreadStart = AIChatQuickActionsViewConstants.deckRevealDuration
-
-        for (index, card) in cards.reversed().enumerated() {
-            UIView.animate(withDuration: AIChatQuickActionsViewConstants.spreadDuration,
-                           delay: spreadStart + Double(index) * AIChatQuickActionsViewConstants.spreadStagger,
-                           usingSpringWithDamping: AIChatQuickActionsViewConstants.spreadDamping,
-                           initialSpringVelocity: AIChatQuickActionsViewConstants.spreadInitialVelocity,
-                           options: [.beginFromCurrentState]) {
-                card.transform = .identity
-            }
+        // Every card springs at once, mirroring the collapse: the deck gathers as one thing, so it deals as
+        // one thing. A stagger here made the two directions read as different mechanisms.
+        UIView.animate(withDuration: AIChatQuickActionsViewConstants.spreadDuration,
+                       delay: AIChatQuickActionsViewConstants.deckRevealDuration,
+                       usingSpringWithDamping: AIChatQuickActionsViewConstants.spreadDamping,
+                       initialSpringVelocity: AIChatQuickActionsViewConstants.spreadInitialVelocity,
+                       options: [.beginFromCurrentState]) {
+            cards.forEach { $0.transform = .identity }
         }
+    }
+
+    /// The reverse of the entrance: the cards gather back into their stack and fade as one, so they read as
+    /// the same deck leaving rather than a separate effect. No stagger on the way out — collapsing is a single
+    /// gesture, where dealing is several.
+    public func animateChipsOut(completion: (() -> Void)? = nil) {
+        layoutIfNeeded()
+        let cards = chips
+        faceDeckWithLastCard(cards)
+        let restingTops = cards.map { $0.frame.minY - $0.transform.ty }
+        guard let deckTop = restingTops.last else {
+            completion?()
+            return
+        }
+
+        UIView.animate(withDuration: AIChatQuickActionsViewConstants.collapseDuration,
+                       delay: 0,
+                       options: [.curveEaseIn, .beginFromCurrentState],
+                       animations: {
+            for (card, restingTop) in zip(cards, restingTops) {
+                card.alpha = 0
+                card.transform = CGAffineTransform(translationX: 0, y: deckTop - restingTop)
+                    .scaledBy(x: AIChatQuickActionsViewConstants.deckScale,
+                              y: AIChatQuickActionsViewConstants.deckScale)
+            }
+        }, completion: { _ in
+            completion?()
+        })
+    }
+
+    /// The card the deck forms on sits in front, so the rest gather behind it rather than one sweeping over
+    /// the others. This is a stack view's natural order — last subview on top — stated rather than assumed,
+    /// since both the deal and the collapse depend on it.
+    private func faceDeckWithLastCard(_ cards: [UIView]) {
+        cards.forEach(stackView.bringSubviewToFront)
     }
 
     private var chips: [UIView] {

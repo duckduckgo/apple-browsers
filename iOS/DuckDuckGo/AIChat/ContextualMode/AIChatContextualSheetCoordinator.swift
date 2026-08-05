@@ -236,7 +236,7 @@ final class AIChatContextualSheetCoordinator {
     }
 
     /// Presents the suggestion chips and the input floating over the page, with no sheet.
-    func presentFloatingInput(from presentingViewController: UIViewController) async {
+    func presentFloatingInput(from presentingViewController: UIViewController, pageScrollView: UIScrollView? = nil) async {
         guard floatingInputViewController == nil, !isSheetPresented else { return }
 
         sessionState.refreshAutoAttachSetting()
@@ -264,7 +264,7 @@ final class AIChatContextualSheetCoordinator {
         )
         controller.delegate = self
         floatingInputViewController = controller
-        controller.install(in: presentingViewController)
+        controller.install(in: presentingViewController, pageScrollView: pageScrollView)
         observeViewStateForFloatingChips()
         host.activateInput()
         controller.playEntrance()

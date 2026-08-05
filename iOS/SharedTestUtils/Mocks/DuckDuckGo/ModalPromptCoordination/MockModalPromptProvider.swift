@@ -23,10 +23,18 @@ import UIKit
 @MainActor
 final class MockModalPromptProvider: ModalPromptProvider {
     var modalConfigurationToReturn: ModalPromptConfiguration?
+    var replacementModalConfigurationToReturn: ModalPromptConfiguration?
     var isEligibleToPresentResult: Bool?
+    var isPreparedModalPromptStillValidResult = true
+    var isRetainedPreparedModalPromptStillValidResult: Bool?
 
     private(set) var didCallProvideModalPrompt = false
     private(set) var didCallDidPresentModal = false
+    private(set) var provideModalPromptCallCount = 0
+    private(set) var didPresentModalCallCount = 0
+    private(set) var isPreparedModalPromptStillValidCallCount = 0
+    private(set) var isRetainedPreparedModalPromptStillValidCallCount = 0
+    private(set) var provideReplacementModalPromptCallCount = 0
     private(set) var capturedIsOnboardingComplete: Bool?
 
     init(shouldReturnPrompt: Bool = true) {
@@ -40,6 +48,7 @@ final class MockModalPromptProvider: ModalPromptProvider {
 
     func provideModalPrompt() -> ModalPromptConfiguration? {
         didCallProvideModalPrompt = true
+        provideModalPromptCallCount += 1
         return modalConfigurationToReturn
     }
 
@@ -48,14 +57,38 @@ final class MockModalPromptProvider: ModalPromptProvider {
         return isEligibleToPresentResult ?? isOnboardingComplete
     }
 
+    func isPreparedModalPromptStillValid(_ configuration: ModalPromptConfiguration) -> Bool {
+        isPreparedModalPromptStillValidCallCount += 1
+        return isPreparedModalPromptStillValidResult
+    }
+
+    func isRetainedPreparedModalPromptStillValid(_ configuration: ModalPromptConfiguration) -> Bool {
+        isRetainedPreparedModalPromptStillValidCallCount += 1
+        return isRetainedPreparedModalPromptStillValidResult ?? isPreparedModalPromptStillValid(configuration)
+    }
+
+    func provideReplacementModalPrompt(for invalidConfiguration: ModalPromptConfiguration) -> ModalPromptConfiguration? {
+        provideReplacementModalPromptCallCount += 1
+        return replacementModalConfigurationToReturn
+    }
+
     func didPresentModal() {
         didCallDidPresentModal = true
+        didPresentModalCallCount += 1
     }
 
     func reset() {
         didCallProvideModalPrompt = false
         didCallDidPresentModal = false
+        provideModalPromptCallCount = 0
+        didPresentModalCallCount = 0
+        isPreparedModalPromptStillValidCallCount = 0
+        isRetainedPreparedModalPromptStillValidCallCount = 0
+        provideReplacementModalPromptCallCount = 0
         capturedIsOnboardingComplete = nil
         isEligibleToPresentResult = nil
+        isPreparedModalPromptStillValidResult = true
+        isRetainedPreparedModalPromptStillValidResult = nil
+        replacementModalConfigurationToReturn = nil
     }
 }

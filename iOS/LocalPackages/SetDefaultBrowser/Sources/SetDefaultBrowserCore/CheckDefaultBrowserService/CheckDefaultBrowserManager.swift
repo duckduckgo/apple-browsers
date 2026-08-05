@@ -22,6 +22,8 @@ import class UIKit.UIApplication
 
 public protocol DefaultBrowserManaging: AnyObject {
     func defaultBrowserInfo() -> DefaultBrowserInfoResult
+    /// Returns the cached browser-status context without performing a new system check.
+    func storedDefaultBrowserInfo() -> DefaultBrowserContext?
 }
 
 // MARK: - DefaultBrowserManager
@@ -74,6 +76,10 @@ public final class DefaultBrowserManager: DefaultBrowserManaging {
         case .failure(.notSupportedOnThisOSVersion):
             return .failure(.notSupportedOnCurrentOSVersion)
         }
+    }
+
+    public func storedDefaultBrowserInfo() -> DefaultBrowserContext? {
+        defaultBrowserInfoStore.defaultBrowserContext
     }
 
     private func makeDefaultBrowserInfo(isDefaultBrowser: Bool, lastSuccessfulCheckDate: TimeInterval? = nil, nextRetryAvailableDate: Date? = nil) -> DefaultBrowserContext {

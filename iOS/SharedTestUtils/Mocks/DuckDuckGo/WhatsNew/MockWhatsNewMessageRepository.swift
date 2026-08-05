@@ -30,12 +30,16 @@ final class MockWhatsNewMessageRepository: WhatsNewMessageRepository {
     private(set) var capturedMessageId: String?
 
 
-    private let remoteMessageModel: RemoteMessageModel?
+    private var remoteMessageModel: RemoteMessageModel?
     var hasShownMessage: Bool
 
     init(scheduledRemoteMessage: RemoteMessageModel?, hasShownMessage: Bool = false) {
         self.remoteMessageModel = scheduledRemoteMessage
         self.hasShownMessage = hasShownMessage
+    }
+
+    func setScheduledRemoteMessage(_ message: RemoteMessageModel?) {
+        remoteMessageModel = message
     }
 
     func fetchScheduledMessage() -> RemoteMessageModel? {

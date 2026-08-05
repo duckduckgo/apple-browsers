@@ -137,6 +137,10 @@ final class CookiePopupProtectionOptInModalPromptProvider: ModalPromptProvider {
         }))
     }
 
+    func isPreparedModalPromptStillValid(_ configuration: ModalPromptConfiguration) -> Bool {
+        isEligibleToShow
+    }
+
     func didPresentModal() {
         let parameters = [PixelParameters.autoconsentEnabled: AppUserDefaults().autoconsentEnabled ? "true" : "false"]
         if store.shownCount == 0 {

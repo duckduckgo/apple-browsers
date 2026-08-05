@@ -24,11 +24,18 @@ public final class MockDefaultBrowserManager: DefaultBrowserManaging {
     public init() {}
 
     public private(set) var didCallDefaultBrowserInfo: Bool = false
+    public private(set) var didCallStoredDefaultBrowserInfo: Bool = false
     public var resultToReturn: DefaultBrowserInfoResult = .successful(isDefaultBrowser: true)
+    public var storedInfoToReturn: DefaultBrowserContext?
 
     public func defaultBrowserInfo() -> DefaultBrowserInfoResult {
         didCallDefaultBrowserInfo = true
         return resultToReturn
+    }
+
+    public func storedDefaultBrowserInfo() -> DefaultBrowserContext? {
+        didCallStoredDefaultBrowserInfo = true
+        return storedInfoToReturn
     }
 
 }

@@ -34,7 +34,20 @@
             {
                 "key": "source",
                 "type": "string",
-                "description": "The setup source or entry surface."
+                "description": "The setup source or entry surface.",
+                "enum": [
+                    "sync-start",
+                    "sync-backup",
+                    "data_import_summary",
+                    "promotion_data_import_summary",
+                    "promotion_bookmarks",
+                    "promotion_passwords",
+                    "promotion_ai_chat",
+                    "recovery",
+                    "exchange",
+                    "connect",
+                    "unknown"
+                ]
             },
             {
                 "key": "flow_version",
@@ -61,7 +74,20 @@
             {
                 "key": "source",
                 "type": "string",
-                "description": "The setup source or entry surface."
+                "description": "The setup source or entry surface.",
+                "enum": [
+                    "sync-start",
+                    "sync-backup",
+                    "data_import_summary",
+                    "promotion_data_import_summary",
+                    "promotion_bookmarks",
+                    "promotion_passwords",
+                    "promotion_ai_chat",
+                    "recovery",
+                    "exchange",
+                    "connect",
+                    "unknown"
+                ]
             },
             {
                 "key": "flow_version",

@@ -123,7 +123,6 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
         super.viewDidLoad()
 
         setupUI()
-        setupBurnerStyleIfNeeded()
         setupTextViewDelegate()
         subscribeToThemeChanges()
         applyThemeStyle()
@@ -265,13 +264,6 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
             duckAILogoView.widthAnchor.constraint(equalToConstant: Constants.duckAILogoSize),
             duckAILogoView.heightAnchor.constraint(equalToConstant: Constants.duckAILogoSize)
         ])
-    }
-
-    private func setupBurnerStyleIfNeeded() {
-        guard isBurner, themeManager.isAppRebranded else { return }
-
-        let style = BurnerAppearanceStyle()
-        style.enableDarkModeOverride(in: view)
     }
 
     func applyThemeStyle(theme: ThemeStyleProviding) {

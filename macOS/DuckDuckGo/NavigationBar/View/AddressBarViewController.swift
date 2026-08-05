@@ -349,8 +349,6 @@ final class AddressBarViewController: NSViewController {
         view.wantsLayer = true
         view.layer?.masksToBounds = false
 
-        setupBurnerStyleIfNeeded()
-
         setupAddressBarPlaceHolder()
         addressBarTextField.setAccessibilityIdentifier("AddressBarViewController.addressBarTextField")
 
@@ -778,8 +776,6 @@ final class AddressBarViewController: NSViewController {
             activeBackgroundView.borderColor = colorsProvider.addressBarActiveBorderColor(isBurner: isBurner)
         }
 
-        setupBurnerStyleIfNeeded()
-
         setupAddressBarPlaceHolder()
         refreshAddressBarCornerRadius()
         inactiveAddressBarShadowView.isHidden = selectionState.isSelected
@@ -842,13 +838,6 @@ final class AddressBarViewController: NSViewController {
         inactiveBackgroundViewTrailingConstraint.constant = styleProvider.addressBarInactiveBackgroundViewTrailingPadding
         buttonsContainerViewLeadingConstraint.constant = styleProvider.addressBarButtonsContainerViewLeadingPadding
         buttonsContainerViewTrailingConstraint.constant = styleProvider.addressBarButtonsContainerViewTrailingPadding
-    }
-
-    private func setupBurnerStyleIfNeeded() {
-        guard isBurner, themeManager.isAppRebranded else { return }
-
-        let style = BurnerAppearanceStyle()
-        style.enableDarkModeOverride(in: view)
     }
 
     private func setupAddressBarPlaceHolder() {

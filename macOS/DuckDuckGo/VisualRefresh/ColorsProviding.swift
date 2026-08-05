@@ -154,11 +154,11 @@ final class CurrentColorsProviding: ColorsProviding {
     }
 
     func activeAddressBarBackgroundColor(isBurner: Bool) -> NSColor {
-        isBurner ? palette.unifiedInputFireFieldFillPrimary : palette.unifiedInputFieldFillPrimary
+        palette.unifiedInputFieldFillPrimary
     }
 
     func inactiveAddressBarBackgroundColor(isBurner: Bool) -> NSColor {
-        isBurner ? palette.unifiedInputFireFieldFillSecondary : palette.unifiedInputFieldFillSecondary
+        palette.unifiedInputFieldFillSecondary
     }
 
     // MARK: - Bookmarks
@@ -216,11 +216,11 @@ final class CurrentColorsProviding: ColorsProviding {
 
     // MARK: - Unified Input
     func unifiedInputToggleBackground(isBurner: Bool) -> NSColor {
-        isBurner ? palette.unifiedInputFireControlFillSecondary : palette.unifiedInputControlFillSecondary
+        palette.unifiedInputControlFillSecondary
     }
 
     func unifiedInputToggleSelectionBackground(isBurner: Bool) -> NSColor {
-        isBurner ? palette.unifiedInputFireControlFillPrimary : palette.unifiedInputControlFillPrimary
+        palette.unifiedInputControlFillPrimary
     }
 
     /// Fire shares the standard shadow token — there is no Fire-specific variant in the palette.

@@ -18,6 +18,7 @@
 //
 
 import Core
+import FeatureFlags_iOS
 import PrivacyConfig
 import PrivacyConfigTestsUtils
 import Testing

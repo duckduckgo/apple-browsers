@@ -61,14 +61,14 @@
 /* Long-press menu item on the iPad Duck.ai chrome chip that re-shows the Duck.ai (open) button half. */
 "action.title.aiChat.showDuckAIButton" = "Show Duck.ai Shortcut";
 
-/* Edit-menu action shown on text selected in the browser; asks Duck.ai to summarize the selection straight away */
-"action.title.aiChat.summarizeWithDuckAI" = "Summarize with Duck.ai";
+/* Edit-menu action shown on text selected in the browser; asks Duck.ai to summarize the selection straight away. Sits in a group of Duck.ai items, so the label stays short */
+"action.title.aiChat.summarizeWithDuckAI" = "Summarize";
 
 /* Accessibility label for the icon half of the iPad Duck.ai chrome chip; tapping toggles the contextual chat sheet for the current page. */
 "action.title.aiChat.toggleContextualSheet" = "Toggle Duck.ai sheet";
 
-/* Edit-menu action shown on text selected in the browser; asks Duck.ai to translate the selection straight away */
-"action.title.aiChat.translateWithDuckAI" = "Translate with Duck.ai";
+/* Edit-menu action shown on text selected in the browser; asks Duck.ai to translate the selection straight away. Sits in a group of Duck.ai items, so the label stays short */
+"action.title.aiChat.translateWithDuckAI" = "Translate";
 
 /* Autofill Logins menu item opening the login list */
 "action.title.autofill.logins" = "Passwords";
@@ -1837,6 +1837,9 @@
 /* Title for the ask about page quick action chip in Duck.ai contextual sheet. Tapping attaches the current page content. */
 "duckai.quick.action.ask.about.page" = "Ask about page";
 
+/* Title for the quick action chip in the Duck.ai contextual sheet that focuses the input so the user can type their own question about the selected text */
+"duckai.quick.action.ask.about.selection" = "Ask about selection";
+
 /* Title for the attach page content quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.attach" = "Attach Page Content";
 
@@ -1845,6 +1848,12 @@
 
 /* Title for the summarize page quick action chip in the improved Duck.ai contextual sheet */
 "duckai.quick.action.summarize.page" = "Summarize page";
+
+/* Title for the quick action chip in the Duck.ai contextual sheet that summarizes the text the user selected on the page */
+"duckai.quick.action.summarize.selection" = "Summarize selection";
+
+/* Title for the quick action chip in the Duck.ai contextual sheet that translates the text the user selected on the page */
+"duckai.quick.action.translate.selection" = "Translate selection";
 
 /* Destructive button confirming deletion of a recent Duck.ai chat */
 "duckai.recent.chat.remove.confirmation.button" = "Delete";

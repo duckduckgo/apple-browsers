@@ -137,6 +137,11 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate {
         coordinator.presentRejectionBanner(message)
     }
 
+    /// Drops that message once the refusal no longer applies.
+    func clearRejectionBanner() {
+        coordinator.clearRejectionBanner()
+    }
+
     func showAttachAffordance() {
         chipViewModel.showAttachAffordance()
     }

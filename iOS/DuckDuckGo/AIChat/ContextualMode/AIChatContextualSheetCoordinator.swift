@@ -234,31 +234,54 @@ final class AIChatContextualSheetCoordinator {
         }
     }
 
-    /// Attaches text the user selected on the page and presents the sheet. Nothing is submitted: the
-    /// selection becomes a chip and the user writes their own question.
+    /// Handles a Duck.ai action picked from the page's text-selection menu, presenting the sheet.
     ///
-    /// At the cap the selection is refused and the user is told why, but the sheet still presents —
-    /// the point is to show them the five chips they already have, so the refusal makes sense.
-    func attachSelectionAndPresentSheet(text: String,
-                                        url: URL?,
-                                        pageTitle: String?,
-                                        faviconBase64: String?,
-                                        from presentingViewController: UIViewController) async {
+    /// The two mechanisms differ, and that is the whole shape of this feature:
+    /// - **Ask** attaches the selection as its own context and submits nothing; the user writes their
+    ///   own question with the chip in front of them.
+    /// - **Summarize / translate** carry the text *inside* their tool payload (`TextSummary` /
+    ///   `Translation`) and attach nothing — a chip would be a second, redundant copy. They submit
+    ///   immediately, and submitting clears any selections already attached, matching macOS's
+    ///   `clearSelectionContexts()` on submit.
+    ///
+    /// At the cap, ask refuses the selection and says why, but the sheet still presents so the user can
+    /// see the chips they already have and act on them.
+    func handleSelectionAction(_ action: AIChatTextSelectionAction,
+                               text: String,
+                               url: URL?,
+                               pageTitle: String?,
+                               faviconBase64: String?,
+                               from presentingViewController: UIViewController) async {
+        pixelHandler.fireSelectionAction(action)
+
         let selection = AIChatSelectionContextBuilder.makeSelection(
             text: text,
             url: url,
             faviconBase64: faviconBase64
         )
-        let didAttach = sessionState.attachSelection(selection, pageTitle: pageTitle)
+
+        var didHitCap = false
+        if action.attachesSelection {
+            didHitCap = !sessionState.attachSelection(selection, pageTitle: pageTitle)
+            if didHitCap {
+                pixelHandler.fireSelectionLimitReached()
+            }
+        } else {
+            // Submitting consumes whatever was collected, so the input is clean for the next question.
+            sessionState.clearAttachedSelections()
+        }
 
         await presentSheet(from: presentingViewController)
         refreshSelectionChips()
 
-        if !didAttach {
+        if didHitCap {
             persistentUTIHost?.presentRejectionBanner(
                 UserText.aiChatTextSelectionLimitReached(AIChatSelectionContextBuilder.maxAttachedSelections)
             )
         }
+
+        guard action.autoSubmits else { return }
+        sheetViewController?.submitSelectionAction(action, on: selection, pageTitle: pageTitle)
     }
 
     /// Dismisses the sheet if currently presented. The sheet is retained for potential re-presentation.
@@ -484,7 +507,11 @@ private extension AIChatContextualSheetCoordinator {
         }
         host.setSelectionChips(items) { [weak self] removedID in
             guard let self else { return }
+            self.pixelHandler.fireSelectionRemoved()
             self.sessionState.removeAttachedSelection(id: removedID)
+            // Removing frees capacity, so a cap banner no longer describes the truth. The banner is
+            // transient by design and survives re-syncs, so nothing else would take it down.
+            self.persistentUTIHost?.clearRejectionBanner()
             self.refreshSelectionChips()
         }
     }
@@ -638,6 +665,23 @@ private extension AIChatContextualSheetCoordinator {
             }
         )
 
+        // Interim delivery: attached selections ride along as extra entries in the prompt's
+        // `pageContext` array, which is how they reach the model today. They are modelled and
+        // rendered as their own type; this re-shaping exists only because `AIChatNativePrompt` has no
+        // selection slot the frontend reads yet. Both of these go away once it does.
+        webVC.setAdditionalPageContextsProvider { [weak self] in
+            guard let selections = self?.sessionState.attachedSelections, !selections.isEmpty else { return [] }
+            return selections.map(AIChatSelectionContextBuilder.makePageContextData(from:))
+        }
+
+        // Cleared only once they are actually in a payload. A delivery notification is not a safe
+        // trigger: `submitPrompt(_:pageContext:)` notifies delivery *before* building the payload.
+        webVC.setAdditionalPageContextsConsumedHandler { [weak self] in
+            guard let self else { return }
+            self.sessionState.consumeAttachedSelections()
+            self.refreshSelectionChips()
+        }
+
         return webVC
     }
 
@@ -756,6 +800,11 @@ extension AIChatContextualSheetCoordinator: AIChatContextualSheetViewControllerD
 
     func aiChatContextualSheetViewControllerDidRequestRemoveChip(_ viewController: AIChatContextualSheetViewController) {
         removeAttachedContext()
+    }
+
+    func aiChatContextualSheetViewControllerDidSubmitSelectionTool(_ viewController: AIChatContextualSheetViewController) {
+        sessionState.clearAttachedSelections()
+        refreshSelectionChips()
     }
 
     func aiChatContextualSheetViewController(_ viewController: AIChatContextualSheetViewController, didUpdateContextualChatURL url: URL?) {

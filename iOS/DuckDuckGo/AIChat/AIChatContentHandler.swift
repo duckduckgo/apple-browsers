@@ -36,6 +36,8 @@ protocol AIChatUserScriptProviding: AnyObject {
     func setPayloadHandler(_ payloadHandler: any AIChatConsumableDataHandling)
     func setOpenLinkHandler(_ openLinkHandler: ((URL) -> Void)?)
     func setPageContextProvider(_ provider: PageContextAsyncProvider?)
+    func setAdditionalPageContextsProvider(_ provider: (() -> [AIChatPageContextData])?)
+    func setAdditionalPageContextsConsumedHandler(_ handler: (() -> Void)?)
     func setChatStatusHandler(_ handler: (@MainActor (AIChatStatusValue) -> Void)?)
     func setContextualModePixelHandler(_ pixelHandler: AIChatContextualModePixelFiring)
     func setDisplayMode(_ displayMode: AIChatDisplayMode)
@@ -50,6 +52,7 @@ protocol AIChatUserScriptProviding: AnyObject {
     func submitStartChatAction()
     func submitOpenSettingsAction()
     func submitPageContext(_ context: AIChatPageContextData?)
+    func submitNativePrompt(_ prompt: AIChatNativePrompt)
     func submitToggleSidebarAction()
     func submitOpenChatProtectionAction()
 }
@@ -134,6 +137,16 @@ protocol AIChatContentHandling: AnyObject {
     /// Pushes page context to the frontend (for context updates during navigation).
     func submitPageContext(_ context: AIChatPageContextData?)
 
+    /// Submits a native prompt whose tool the caller chooses (`.query`, `.summary`, `.translation`).
+    func submitNativePrompt(_ prompt: AIChatNativePrompt)
+
+    /// Sets the provider for contexts sent alongside the primary one, so an attached text selection
+    /// travels with the page it came from rather than replacing it.
+    func setAdditionalPageContextsProvider(_ provider: (() -> [AIChatPageContextData])?)
+
+    /// Sets the handler called when those contexts are baked into a payload, i.e. consumed.
+    func setAdditionalPageContextsConsumedHandler(_ handler: (() -> Void)?)
+
     /// Fires AI Chat telemetry: product surface telemetry, 'chat open' pixel, and sets the AI Chat feature as 'used before'
     func fireAIChatTelemetry()
 
@@ -176,6 +189,11 @@ final class AIChatContentHandler: AIChatContentHandling {
     /// Parameter is the request reason (e.g., `.userAction` for manual attach).
     private let getPageContext: PageContextAsyncProvider?
 
+    /// Retained so they survive a `setup` that happens after the owner installed them: the sheet
+    /// attaches a selection before the contextual web view exists.
+    private var getAdditionalPageContexts: (() -> [AIChatPageContextData])?
+    private var onAdditionalPageContextsConsumed: (() -> Void)?
+
     weak var delegate: AIChatContentHandlingDelegate?
 
     init(aiChatSettings: AIChatSettingsProvider,
@@ -217,6 +235,8 @@ final class AIChatContentHandler: AIChatContentHandling {
         }
         self.userScript?.webView = webView
         self.userScript?.setPageContextProvider(getPageContext)
+        self.userScript?.setAdditionalPageContextsProvider(getAdditionalPageContexts)
+        self.userScript?.setAdditionalPageContextsConsumedHandler(onAdditionalPageContextsConsumed)
     }
     
     /// Sets the initial payload data for the AIChat session.
@@ -325,6 +345,20 @@ final class AIChatContentHandler: AIChatContentHandling {
 
     func submitPageContext(_ context: AIChatPageContextData?) {
         userScript?.submitPageContext(context)
+    }
+
+    func submitNativePrompt(_ prompt: AIChatNativePrompt) {
+        userScript?.submitNativePrompt(prompt)
+    }
+
+    func setAdditionalPageContextsProvider(_ provider: (() -> [AIChatPageContextData])?) {
+        getAdditionalPageContexts = provider
+        userScript?.setAdditionalPageContextsProvider(provider)
+    }
+
+    func setAdditionalPageContextsConsumedHandler(_ handler: (() -> Void)?) {
+        onAdditionalPageContextsConsumed = handler
+        userScript?.setAdditionalPageContextsConsumedHandler(handler)
     }
 
     /// Fires AI Chat telemetry: product surface telemetry, 'chat open' pixel, and sets the AI Chat feature as 'used before'

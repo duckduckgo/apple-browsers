@@ -102,20 +102,21 @@ final class WebView: WKWebView {
         guard #available(iOS 16.0, *) else { return }
         guard shouldInsertAskAIChatMenu(forSystem: builder.system) else { return }
 
-        // Order mirrors macOS's context menu (summarize, ask, translate) — see
-        // `ContextMenuManager.handleSearchWebItem`.
+        // Ask goes last: iOS hides items past the first two behind an overflow chevron, and the two
+        // that act immediately are the ones worth surfacing. Deliberately not macOS's order
+        // (summarize, ask, translate) — its context menu shows all three at once.
         let actions = [
             UIAction(title: UserText.actionSummarizeWithAIChat,
                      image: DesignSystemImages.Glyphs.Size16.summary) { [weak self] _ in
                 self?.requestAskAIChatWithSelectedText(action: .summarize)
             },
-            UIAction(title: UserText.actionAskAIChat,
-                     image: DesignSystemImages.Glyphs.Size16.aiChat) { [weak self] _ in
-                self?.requestAskAIChatWithSelectedText(action: .ask)
-            },
             UIAction(title: UserText.actionTranslateWithAIChat,
                      image: DesignSystemImages.Glyphs.Size16.translate) { [weak self] _ in
                 self?.requestAskAIChatWithSelectedText(action: .translate)
+            },
+            UIAction(title: UserText.actionAskAIChat,
+                     image: DesignSystemImages.Glyphs.Size16.aiChat) { [weak self] _ in
+                self?.requestAskAIChatWithSelectedText(action: .ask)
             },
         ]
 

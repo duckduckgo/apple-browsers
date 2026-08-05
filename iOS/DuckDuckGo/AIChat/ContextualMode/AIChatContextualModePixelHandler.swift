@@ -34,6 +34,9 @@ protocol AIChatContextualModePixelFiring {
     func fireQuickActionSummarizeSelected()
     func fireQuickActionAskAboutPageShown()
     func fireQuickActionAskAboutPageSelected()
+    func fireQuickActionSummarizeSelectionSelected()
+    func fireQuickActionTranslateSelectionSelected()
+    func fireQuickActionAskAboutSelectionSelected()
     func fireFireButtonTapped()
     func fireFireButtonConfirmed()
 
@@ -57,6 +60,14 @@ protocol AIChatContextualModePixelFiring {
     // MARK: - Page Context Removal
     func firePageContextRemovedNative()
     func firePageContextRemovedFrontend()
+
+    // MARK: - Text Selections
+    /// Fired for every pick from the text-selection menu, with the action in `source`, so we can see
+    /// the usage mix across the three — the question desktop answered with Translate 75% /
+    /// Summarize 13% / Ask 12%.
+    func fireSelectionAction(_ action: AIChatTextSelectionAction)
+    func fireSelectionLimitReached()
+    func fireSelectionRemoved()
 
     // MARK: - Page Context Collection
     func firePageContextCollectionEmpty()
@@ -144,6 +155,18 @@ final class AIChatContextualModePixelHandler: AIChatContextualModePixelFiring {
         firePixel(.aiChatContextualQuickActionSummarizeSelected)
     }
 
+    func fireQuickActionSummarizeSelectionSelected() {
+        firePixel(.aiChatContextualQuickActionSummarizeSelectionSelected)
+    }
+
+    func fireQuickActionTranslateSelectionSelected() {
+        firePixel(.aiChatContextualQuickActionTranslateSelectionSelected)
+    }
+
+    func fireQuickActionAskAboutSelectionSelected() {
+        firePixel(.aiChatContextualQuickActionAskAboutSelectionSelected)
+    }
+
     func fireQuickActionAskAboutPageShown() {
         firePixel(.aiChatContextualQuickActionAskAboutPageShown)
     }
@@ -186,6 +209,20 @@ final class AIChatContextualModePixelHandler: AIChatContextualModePixelFiring {
 
     func firePageContextRemovedFrontend() {
         firePixel(.aiChatContextualPageContextRemovedFrontend)
+    }
+
+    // MARK: - Text Selections
+
+    func fireSelectionAction(_ action: AIChatTextSelectionAction) {
+        firePixelWithParameters(.aiChatContextualSelectionAction, [PixelParameters.source: action.rawValue])
+    }
+
+    func fireSelectionLimitReached() {
+        firePixel(.aiChatContextualSelectionLimitReached)
+    }
+
+    func fireSelectionRemoved() {
+        firePixel(.aiChatContextualSelectionRemoved)
     }
 
     // MARK: - Page Context Collection

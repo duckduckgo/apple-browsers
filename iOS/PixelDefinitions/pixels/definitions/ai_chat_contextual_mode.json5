@@ -275,5 +275,47 @@
         "triggers": ["exception"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],
         "parameters": ["appVersion"]
+    },
+    "m_aichat_contextual_selection_action": {
+        "description": "Fired when the user picks one of the Duck.ai actions from the text-selection edit menu. The source parameter says which one",
+        "owners": ["pikorddg"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "aiChatSelectionSource"]
+    },
+    "m_aichat_contextual_selection_limit_reached": {
+        "description": "Fired when the user asks Duck.ai about selected text but the maximum number of selections is already attached, so the new one is refused",
+        "owners": ["pikorddg"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_aichat_contextual_selection_removed": {
+        "description": "Fired when the user removes an attached text selection via its chip's remove button",
+        "owners": ["pikorddg"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_aichat_contextual_quick_action_summarize_selection_selected": {
+        "description": "Fired when the user selects the summarize-selection quick action chip in the contextual sheet",
+        "owners": ["pikorddg"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_aichat_contextual_quick_action_translate_selection_selected": {
+        "description": "Fired when the user selects the translate-selection quick action chip in the contextual sheet",
+        "owners": ["pikorddg"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_aichat_contextual_quick_action_ask_about_selection_selected": {
+        "description": "Fired when the user selects the ask-about-selection quick action chip in the contextual sheet",
+        "owners": ["pikorddg"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
     }
 }

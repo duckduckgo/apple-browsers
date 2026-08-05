@@ -398,6 +398,57 @@ final class AIChatContextualModePixelHandlerTests {
         #expect(sut.isManualAttachInProgress == false)
     }
 
+    // MARK: - Text Selection Pixels
+
+    @Test("Selection action pixel carries the menu action as its source", arguments: AIChatTextSelectionAction.allCases)
+    func selection_action_pixel_carries_source(action: AIChatTextSelectionAction) {
+        var firedEventName: String?
+        var firedParameters: [String: String]?
+        let sut = AIChatContextualModePixelHandler(
+            firePixel: { _ in },
+            firePixelWithParameters: { event, parameters in
+                firedEventName = event.name
+                firedParameters = parameters
+            })
+
+        sut.fireSelectionAction(action)
+
+        #expect(firedEventName == Pixel.Event.aiChatContextualSelectionAction.name)
+        #expect(firedParameters?[PixelParameters.source] == action.rawValue)
+    }
+
+    @Test("Selection limit reached pixel fires correctly")
+    func selection_limit_reached_pixel() {
+        let sut = AIChatContextualModePixelHandler(firePixel: { event in
+            PixelFiringMock.fire(event, withAdditionalParameters: [:])
+        })
+
+        sut.fireSelectionLimitReached()
+
+        #expect(PixelFiringMock.lastPixelName == Pixel.Event.aiChatContextualSelectionLimitReached.name)
+    }
+
+    @Test("Selection removed pixel fires correctly")
+    func selection_removed_pixel() {
+        let sut = AIChatContextualModePixelHandler(firePixel: { event in
+            PixelFiringMock.fire(event, withAdditionalParameters: [:])
+        })
+
+        sut.fireSelectionRemoved()
+
+        #expect(PixelFiringMock.lastPixelName == Pixel.Event.aiChatContextualSelectionRemoved.name)
+    }
+
+    @Test("Translate-selection quick action fires its own pixel, not summarize's")
+    func translate_selection_quick_action_has_its_own_pixel() {
+        var firedEventName: String?
+        let sut = AIChatContextualModePixelHandler(firePixel: { firedEventName = $0.name })
+
+        sut.fireQuickActionTranslateSelectionSelected()
+
+        #expect(firedEventName == Pixel.Event.aiChatContextualQuickActionTranslateSelectionSelected.name)
+    }
+
     @Test("Concurrent reset and navigation calls are thread-safe")
     func testConcurrentResetAndNavigation() async {
         // GIVEN

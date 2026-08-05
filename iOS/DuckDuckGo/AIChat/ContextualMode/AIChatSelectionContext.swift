@@ -60,6 +60,35 @@ enum AIChatSelectionContextBuilder {
         )
     }
 
+    /// Re-expresses a selection as page-context data, so it can reach the model before the frontend
+    /// reads selections off the prompt directly.
+    ///
+    /// **Interim.** `AIChatNativePrompt` has `platform`, `tool` and `pageContext` and no selection
+    /// slot, and on iPhone *native* composes the prompt (`supportsNativeChatInput` is true when the
+    /// unified input owns the input), unlike macOS where the frontend composes it and folds in its own
+    /// selection list. So the only shape that reaches the model today is page context. The cost is
+    /// that the model can't tell selected text from the page — which is exactly what the delivery flip
+    /// fixes, and the only thing the frontend is needed for.
+    ///
+    /// `wordCount` has no page-context equivalent and is dropped here; it survives the flip.
+    static func makePageContextData(from selection: AIChatSelectionContextData) -> AIChatPageContextData {
+        AIChatPageContextData(
+            title: selection.title,
+            favicon: selection.favicon,
+            url: selection.url,
+            content: selection.content,
+            truncated: selection.truncated,
+            fullContentLength: selection.fullContentLength,
+            attachable: true,
+            // `tabId` is the frontend's discriminator for "a distinct attached context" versus "the
+            // current page" (nil). Without it a selection sent alongside the page reads as a second
+            // current-page entry and one of the two is discarded. The selection's own id is stable
+            // and unique, so it serves.
+            tabId: selection.id,
+            attached: true
+        )
+    }
+
     /// Label for a selection's chip: the selected text, whitespace-collapsed and curly-quoted as
     /// macOS quotes it, so several chips are told apart by what they contain rather than all reading
     /// "Text selection".

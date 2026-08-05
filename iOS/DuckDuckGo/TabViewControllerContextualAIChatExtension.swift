@@ -45,17 +45,23 @@ extension TabViewController {
         }
     }
 
-    /// Presents the contextual AI chat sheet with `text` — selected on this page — attached as its own
-    /// context, alongside any page context. Nothing is submitted.
+    /// Presents the contextual AI chat sheet for `text` selected on this page.
+    ///
+    /// `action` decides what happens: ask attaches the selection as its own context alongside any page
+    /// context and submits nothing, while summarize and translate submit immediately with the text in
+    /// their tool payload and attach nothing.
     ///
     /// - Parameters:
     ///   - text: The trimmed page selection.
+    ///   - action: The Duck.ai action the user picked in the selection menu.
     ///   - presentingViewController: The view controller to present the sheet from.
     func presentContextualAIChatSheet(withSelectedText text: String,
+                                      action: AIChatTextSelectionAction,
                                       from presentingViewController: UIViewController) {
         Task { @MainActor in
             let url = webView.url
-            await aiChatContextualSheetCoordinator.attachSelectionAndPresentSheet(
+            await aiChatContextualSheetCoordinator.handleSelectionAction(
+                action,
                 text: text,
                 url: url,
                 pageTitle: link?.displayTitle,

@@ -768,6 +768,11 @@ private extension AIChatContextualChatSessionState {
     }
 
     private func resolveQuickActions() -> [AIChatContextualQuickAction] {
+        // A selection was attached from the page's selection menu, so scope the actions to it rather
+        // than the page. Pre-submit only: once a chat is running the frontend drives the UI.
+        if !attachedSelections.isEmpty, frontendState == .noChat {
+            return [.summarizeSelection, .translateSelection, .askAboutSelection]
+        }
         // No "Ask about page" for pages that can't be attached — it would no-op on tap.
         guard isCurrentPageAttachable() else { return [] }
         if featureFlagger.isFeatureOn(.contextualSuggestedPrompts) {

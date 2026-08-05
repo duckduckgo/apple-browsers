@@ -683,6 +683,12 @@ final class AIChatPageContextHandlerTests: XCTestCase {
 // MARK: - Mock Pixel Handler
 
 private final class MockContextualModePixelHandler: AIChatContextualModePixelFiring {
+    func fireQuickActionSummarizeSelectionSelected() {}
+    func fireQuickActionTranslateSelectionSelected() {}
+    func fireQuickActionAskAboutSelectionSelected() {}
+    func fireSelectionAction(_ action: AIChatTextSelectionAction) {}
+    func fireSelectionLimitReached() {}
+    func fireSelectionRemoved() {}
     var pageContextCollectionEmptyCount = 0
     var pageContextCollectionUnavailableCount = 0
 

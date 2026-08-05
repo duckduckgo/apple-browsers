@@ -117,6 +117,17 @@ final class AIChatUserScript: NSObject, Subfeature {
     /// owns the attachment state (e.g. `AIChatContextualUTIHost`).
     var attachedPageContextProvider: (() -> AIChatPageContextData?)?
 
+    /// Extra contexts to send alongside the primary one, turning the prompt's `pageContext` into the
+    /// array form. Used so attached text selections travel *with* the page they came from instead of
+    /// taking its place. Set by the host that owns the attachment state.
+    var additionalPageContextsProvider: (() -> [AIChatPageContextData])?
+
+    /// Fired immediately after `additionalPageContextsProvider`'s contexts are baked into a payload —
+    /// the exact moment they are consumed. Deliberately not driven off a delivery notification:
+    /// `AIChatContextualWebViewController.submitPrompt(_:pageContext:)` notifies delivery *before*
+    /// building the payload, so clearing there would drop the selections from the prompt.
+    var onAdditionalPageContextsConsumed: (() -> Void)?
+
     /// Fires after a prompt is submitted via the multi-modal `submitPrompt(...)` path (used by
     /// the native UTI). Set by the host so the chip can flip to its post-submit silent state.
     var onPromptSubmitted: (() -> Void)?
@@ -277,6 +288,14 @@ final class AIChatUserScript: NSObject, Subfeature {
         self.handler.setPageContextProvider(provider)
     }
 
+    func setAdditionalPageContextsProvider(_ provider: (() -> [AIChatPageContextData])?) {
+        additionalPageContextsProvider = provider
+    }
+
+    func setAdditionalPageContextsConsumedHandler(_ handler: (() -> Void)?) {
+        onAdditionalPageContextsConsumed = handler
+    }
+
     func setChatStatusHandler(_ handler: (@MainActor (AIChatStatusValue) -> Void)?) {
         self.handler.setChatStatusHandler(handler)
     }
@@ -328,11 +347,30 @@ final class AIChatUserScript: NSObject, Subfeature {
     }
 
     func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData? = nil, modelId: String?, reasoningEffort: AIChatReasoningEffort? = nil) {
-        // `AIChatNativePrompt.pageContext` accepts either a single `PageContext` or an array
-        // (omnibar's multi-tab case on macOS). iOS today always sends the single form, which
-        // matches the duck.ai sidebar's existing current-page semantics.
-        let promptPayload = AIChatNativePrompt.queryPrompt(prompt, autoSubmit: true, modelId: modelId, pageContext: pageContext.map(AIChatPageContextPayload.single), reasoningEffort: reasoningEffort)
+        let promptPayload = AIChatNativePrompt.queryPrompt(prompt, autoSubmit: true, modelId: modelId, pageContext: consumeContextPayload(primary: pageContext), reasoningEffort: reasoningEffort)
         push(.submitPrompt(promptPayload))
+    }
+
+    /// Builds the prompt's `pageContext` union, **consuming** any additional contexts in the process.
+    ///
+    /// `AIChatNativePrompt.pageContext` accepts either a single context or an array (macOS's omnibar
+    /// multi-tab case). iOS historically only ever sent `.single`; it sends `.multiple` when
+    /// `additionalPageContextsProvider` supplies extras — today, attached text selections travelling
+    /// alongside the page they came from, so a selection augments the page rather than replacing it.
+    ///
+    /// Consumption happens here rather than at the call sites because this is the only point at which
+    /// the contexts are known to have reached a payload.
+    private func consumeContextPayload(primary: AIChatPageContextData?) -> AIChatPageContextPayload? {
+        let resolvedPrimary = primary ?? attachedPageContextProvider?()
+        let additional = additionalPageContextsProvider?() ?? []
+
+        guard !additional.isEmpty else {
+            return resolvedPrimary.map(AIChatPageContextPayload.single)
+        }
+
+        let payload = AIChatPageContextPayload.multiple([resolvedPrimary].compactMap { $0 } + additional)
+        onAdditionalPageContextsConsumed?()
+        return payload
     }
 
     func submitPrompt(_ prompt: String, images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]? = nil, modelId: String?, reasoningEffort: AIChatReasoningEffort? = nil) {
@@ -346,8 +384,6 @@ final class AIChatUserScript: NSObject, Subfeature {
                       tools: [AIChatRAGTool]?,
                       pageContext: AIChatPageContextData? = nil,
                       reasoningEffort: AIChatReasoningEffort? = nil) {
-        // `attachedPageContextProvider` returns the single current-page form on iOS; wrap it
-        // in the `.single` variant of the union the schema now accepts.
         let promptPayload = AIChatNativePrompt.queryPrompt(
             prompt,
             autoSubmit: true,
@@ -355,10 +391,18 @@ final class AIChatUserScript: NSObject, Subfeature {
             images: images,
             files: files,
             modelId: modelId,
-            pageContext: (pageContext ?? attachedPageContextProvider?()).map(AIChatPageContextPayload.single),
+            pageContext: consumeContextPayload(primary: pageContext),
             reasoningEffort: reasoningEffort
         )
         push(.submitPrompt(promptPayload))
+        onPromptSubmitted?()
+    }
+
+    /// Pushes a fully-formed native prompt, letting callers choose the tool (`.summary`,
+    /// `.translation`) rather than always going through `queryPrompt`. Same wire message as
+    /// `submitPrompt` — macOS delivers its summarize/translate prompts this way too.
+    func submitNativePrompt(_ prompt: AIChatNativePrompt) {
+        push(.submitPrompt(prompt))
         onPromptSubmitted?()
     }
 

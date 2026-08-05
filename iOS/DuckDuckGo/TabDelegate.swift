@@ -103,7 +103,7 @@ protocol TabDelegate: AnyObject {
     func tabDidRequestAIChat(tab: TabViewController)
 
     /// Called when the user picks one of the Duck.ai items from the web view's text-selection edit menu.
-    func tab(_ tab: TabViewController, didRequestAIChatSheetWithSelectedText text: String)
+    func tab(_ tab: TabViewController, didRequestAIChatAction action: AIChatTextSelectionAction, withSelectedText text: String)
 
     func tabDidRequestAIChatHistory(tab: TabViewController, source: AIChatHistorySource)
 

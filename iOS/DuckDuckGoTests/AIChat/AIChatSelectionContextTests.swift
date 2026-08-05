@@ -21,6 +21,32 @@ import XCTest
 @testable import DuckDuckGo
 @testable import AIChat
 
+final class AIChatTextSelectionActionTests: XCTestCase {
+
+    /// Only ask attaches. Summarize and translate carry their text inside the tool payload, so
+    /// attaching as well would send the model the text twice and leave a chip behind for a question
+    /// already asked.
+    func testOnlyAskAttachesTheSelection() {
+        XCTAssertTrue(AIChatTextSelectionAction.ask.attachesSelection)
+        XCTAssertFalse(AIChatTextSelectionAction.summarize.attachesSelection)
+        XCTAssertFalse(AIChatTextSelectionAction.translate.attachesSelection)
+    }
+
+    func testOnlySummarizeAndTranslateSubmitImmediately() {
+        XCTAssertFalse(AIChatTextSelectionAction.ask.autoSubmits)
+        XCTAssertTrue(AIChatTextSelectionAction.summarize.autoSubmits)
+        XCTAssertTrue(AIChatTextSelectionAction.translate.autoSubmits)
+    }
+
+    /// The two are exact opposites today; if that ever stops being true, `attachesSelection` needs its
+    /// own switch rather than being derived from `autoSubmits`.
+    func testAttachingAndAutoSubmittingAreMutuallyExclusive() {
+        for action in AIChatTextSelectionAction.allCases {
+            XCTAssertNotEqual(action.attachesSelection, action.autoSubmits, "\(action)")
+        }
+    }
+}
+
 final class AIChatSelectionContextBuilderTests: XCTestCase {
 
     private let url = URL(string: "https://example.com/article")!
@@ -103,6 +129,58 @@ final class AIChatSelectionContextBuilderTests: XCTestCase {
         let second = AIChatSelectionContextBuilder.makeSelection(text: "text", url: url)
 
         XCTAssertNotEqual(first.id, second.id)
+    }
+
+    // MARK: - makePageContextData (interim delivery)
+
+    func testPageContextDataCarriesTheSelectionsContentAndLengths() {
+        let text = String(repeating: "b", count: AIChatSelectionContextBuilder.maxSelectionContextLength + 100)
+        let selection = AIChatSelectionContextBuilder.makeSelection(text: text, url: url)
+
+        let pageContext = AIChatSelectionContextBuilder.makePageContextData(from: selection)
+
+        XCTAssertEqual(pageContext.content, selection.content)
+        XCTAssertEqual(pageContext.truncated, selection.truncated)
+        XCTAssertEqual(pageContext.fullContentLength, selection.fullContentLength)
+        XCTAssertEqual(pageContext.url, selection.url)
+        XCTAssertEqual(pageContext.title, selection.title)
+    }
+
+    /// Without a `tabId` the frontend reads a selection sent beside the page as a rival "current page"
+    /// entry and discards one of the two. The selection's own id is the discriminator.
+    func testPageContextDataBorrowsTheSelectionIdAsTabId() {
+        let selection = AIChatSelectionContextBuilder.makeSelection(text: "text", url: url)
+
+        let pageContext = AIChatSelectionContextBuilder.makePageContextData(from: selection)
+
+        XCTAssertEqual(pageContext.tabId, selection.id)
+    }
+
+    func testPageContextDataIsMarkedAttached() {
+        let pageContext = AIChatSelectionContextBuilder.makePageContextData(
+            from: AIChatSelectionContextBuilder.makeSelection(text: "text", url: url)
+        )
+
+        XCTAssertEqual(pageContext.attached, true)
+        XCTAssertEqual(pageContext.attachable, true)
+    }
+
+    func testPageContextDataKeepsTheFavicon() {
+        let selection = AIChatSelectionContextBuilder.makeSelection(text: "text", url: url, faviconBase64: "data:image/png;base64,AAAA")
+
+        let pageContext = AIChatSelectionContextBuilder.makePageContextData(from: selection)
+
+        XCTAssertEqual(pageContext.favicon.first?.href, "data:image/png;base64,AAAA")
+    }
+
+    func testDistinctSelectionsProduceDistinctTabIds() {
+        let first = AIChatSelectionContextBuilder.makeSelection(text: "one", url: url)
+        let second = AIChatSelectionContextBuilder.makeSelection(text: "two", url: url)
+
+        let firstContext = AIChatSelectionContextBuilder.makePageContextData(from: first)
+        let secondContext = AIChatSelectionContextBuilder.makePageContextData(from: second)
+
+        XCTAssertNotEqual(firstContext.tabId, secondContext.tabId)
     }
 
     // MARK: - displayTitle

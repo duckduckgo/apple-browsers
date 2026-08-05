@@ -1168,11 +1168,9 @@ class TabViewController: UIViewController {
             self?.isAskAIChatSelectionMenuAvailable ?? false
         }
 
-        // All three items attach the selection and open the sheet; summarize and translate submit
-        // their tool on top of that, which is why the action is not read here yet.
-        (webView as? WebView)?.askAIChatHandler = { [weak self] _, text in
+        (webView as? WebView)?.askAIChatHandler = { [weak self] action, text in
             guard let self else { return }
-            self.delegate?.tab(self, didRequestAIChatSheetWithSelectedText: text)
+            self.delegate?.tab(self, didRequestAIChatAction: action, withSelectedText: text)
         }
 
         updateContentMode()

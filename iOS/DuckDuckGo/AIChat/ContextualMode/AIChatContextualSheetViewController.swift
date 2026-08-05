@@ -60,6 +60,10 @@ protocol AIChatContextualSheetViewControllerDelegate: AnyObject {
     /// Called when the user removes the context chip and it should downgrade to placeholder
     func aiChatContextualSheetViewControllerDidRequestRemoveChip(_ viewController: AIChatContextualSheetViewController)
 
+    /// Called after a selection-scoped tool prompt is submitted, so the attached selections it stands in
+    /// for can be cleared and their chips removed.
+    func aiChatContextualSheetViewControllerDidSubmitSelectionTool(_ viewController: AIChatContextualSheetViewController)
+
     /// Called when the contextual chat URL changes (e.g., user gets a chatID after prompt submission)
     func aiChatContextualSheetViewController(_ viewController: AIChatContextualSheetViewController, didUpdateContextualChatURL url: URL?)
 
@@ -864,7 +868,91 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
             } else {
                 submitPromptFromNativeInput(action.prompt)
             }
+        case .summarizeSelection:
+            pixelHandler.fireQuickActionSummarizeSelectionSelected()
+            submitSelectionAction(.summarize)
+        case .translateSelection:
+            pixelHandler.fireQuickActionTranslateSelectionSelected()
+            submitSelectionAction(.translate)
+        case .askAboutSelection:
+            // The selection is already attached as a chip; just give the user the keyboard so they
+            // can write their own question. Nothing is submitted.
+            pixelHandler.fireQuickActionAskAboutSelectionSelected()
+            if let persistentUTIHost {
+                persistentUTIHost.activateInput()
+            } else {
+                contextualInputViewController.becomeFirstResponder()
+            }
         }
+    }
+
+    /// Runs one of the selection actions against an attached selection. Shared by the text-selection
+    /// menu (which routes here via the coordinator) and the in-sheet chips, so both behave identically.
+    /// `.ask` does nothing by design — the selection is already attached.
+    ///
+    /// The menu passes the selection it just picked plus its page title; the in-sheet chips pass
+    /// neither and fall back to the most recently attached one. Menu-triggered actions must pass
+    /// theirs, because at the cap the new selection was refused and is not in the list.
+    func submitSelectionAction(_ action: AIChatTextSelectionAction,
+                               on selection: AIChatSelectionContextData? = nil,
+                               pageTitle: String? = nil) {
+        let target = selection.map { (selection: $0, pageTitle: pageTitle) }
+        switch action {
+        case .ask:
+            return
+        case .summarize:
+            submitSelectionTool(target) { selection, url, pageTitle in
+                AIChatNativePrompt.summaryPrompt(selection.content, url: url, title: pageTitle)
+            }
+        case .translate:
+            submitSelectionTool(target) { selection, url, pageTitle in
+                AIChatNativePrompt.translationPrompt(
+                    selection.content,
+                    url: url,
+                    title: pageTitle,
+                    sourceTLD: url?.host,
+                    sourceLanguage: nil,
+                    targetLanguage: Self.preferredTranslationTargetLanguage
+                )
+            }
+        }
+    }
+
+    /// Delivers a selection-scoped `AIChatNativePrompt` tool (`.summary` / `.translation`) on the
+    /// `submitAIChatNativePrompt` channel — the same wire message the sheet already uses for query
+    /// prompts, and the one macOS uses to push these tools into an open sidebar.
+    ///
+    /// With no `target`, acts on the most recently attached selection. That is ambiguous for the
+    /// in-sheet chips when several selections are attached; whether they should act on all of them is
+    /// an open product question.
+    private func submitSelectionTool(
+        _ target: (selection: AIChatSelectionContextData, pageTitle: String?)?,
+        _ makePrompt: (AIChatSelectionContextData, URL?, String?) -> AIChatNativePrompt
+    ) {
+        let resolved = target ?? sessionState.attachedSelections.last.map {
+            (selection: $0, pageTitle: sessionState.attachedSelectionPageTitle)
+        }
+        guard let resolved else { return }
+        let url = URL(string: resolved.selection.url)
+        let prompt = makePrompt(resolved.selection, url, resolved.pageTitle)
+
+        notifyInitialNativePromptSubmitted(hasPageContext: false)
+        // We deliver the prompt ourselves, so take the same session transition the unified-input path
+        // takes (state flip + pixels, no `submitPrompt` effect) rather than `handlePromptSubmission`.
+        sessionState.beginChatForUTISubmission()
+        webViewController?.submitNativePrompt(prompt)
+        handleFirstUTISubmission()
+        // The text rode inside the tool payload, so any chips standing in for it are now redundant —
+        // and this counts as a submit, which clears selections (matching macOS).
+        delegate?.aiChatContextualSheetViewControllerDidSubmitSelectionTool(self)
+    }
+
+    /// Target language for selection translation, matching macOS's use of `Locale.preferredLanguages`.
+    /// Takes the language subtag of the BCP-47 tag, so "en-GB" becomes "en".
+    private static var preferredTranslationTargetLanguage: String {
+        guard let tag = Locale.preferredLanguages.first else { return "en" }
+        let languageSubtag = tag.prefix { $0 != "-" && $0 != "_" }
+        return languageSubtag.isEmpty ? "en" : String(languageSubtag)
     }
 
     func contextualInputViewController(_ viewController: AIChatContextualInputViewController, didSelectSuggestion suggestion: ContextualSuggestedPrompt) {

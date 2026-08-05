@@ -397,6 +397,13 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         let fireMode = isFireModeProvider?() ?? false
 
         let supportsSuggestions = supportsContextualMode && featureFlagger.isFeatureOn(.contextualSuggestedPrompts)
+
+        // An attached text selection is sent alongside the page as the array form of `pageContext`.
+        // The frontend only reads that array once it has been told multiple contexts are supported,
+        // so the text-actions flag has to imply it — otherwise we would send two contexts to a
+        // frontend looking at one and the selection would be silently dropped.
+        let supportsMultipleContexts = supportsContextualMode
+            && (featureFlagger.isFeatureOn(.multiplePageContexts) || featureFlagger.isFeatureOn(.aiChatTextActions))
         let config = AIChatNativeConfigValues(
             isAIChatHandoffEnabled: defaults.isAIChatHandoffEnabled,
             supportsClosingAIChat: defaults.supportsClosingAIChat,
@@ -413,7 +420,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             supportsHomePageEntryPoint: defaults.supportsHomePageEntryPoint,
             supportsOpenAIChatLink: defaults.supportsOpenAIChatLink,
             supportsAIChatSync: featureFlagger.isFeatureOn(.aiChatSync) && !fireMode,
-            supportsMultipleContexts: supportsContextualMode && featureFlagger.isFeatureOn(.multiplePageContexts),
+            supportsMultipleContexts: supportsMultipleContexts,
             supportsNativeStorage: featureFlagger.isFeatureOn(.aiChatNativeStorage) && isNativeStorageBridgeAvailable,
             supportsSuggestions: supportsSuggestions,
             installType: installTypeProvider(),

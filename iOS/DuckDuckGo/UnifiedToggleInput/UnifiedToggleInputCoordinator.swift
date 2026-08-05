@@ -1239,6 +1239,11 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         attachmentController.presentRejectionBanner(message)
     }
 
+    /// Clears a banner shown by `presentRejectionBanner` once the caller has freed capacity.
+    func clearRejectionBanner() {
+        attachmentController.clearRejectionBanner()
+    }
+
     func updateSelectedModel(_ modelId: String) {
         modelSelector.updateSelectedModel(modelId)
     }

@@ -840,6 +840,22 @@ final class MockAIChatUserScript: AIChatUserScriptProviding {
         submitPageContextCallCount += 1
         lastSubmittedPageContextViaSubmit = context
     }
+
+    private(set) var lastSubmittedNativePrompt: AIChatNativePrompt?
+    private(set) var additionalPageContextsProvider: (() -> [AIChatPageContextData])?
+    private(set) var additionalPageContextsConsumedHandler: (() -> Void)?
+
+    func submitNativePrompt(_ prompt: AIChatNativePrompt) {
+        lastSubmittedNativePrompt = prompt
+    }
+
+    func setAdditionalPageContextsProvider(_ provider: (() -> [AIChatPageContextData])?) {
+        additionalPageContextsProvider = provider
+    }
+
+    func setAdditionalPageContextsConsumedHandler(_ handler: (() -> Void)?) {
+        additionalPageContextsConsumedHandler = handler
+    }
 }
 
 // swiftlint:disable inclusive_language

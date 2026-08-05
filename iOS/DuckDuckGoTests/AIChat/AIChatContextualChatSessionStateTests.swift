@@ -2275,6 +2275,33 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         XCTAssertEqual(sessionState.attachedSelectionPageTitle, "Article")
     }
 
+    func testQuickActionsBecomeSelectionScopedWhenASelectionIsAttached() {
+        let selection = makeSelection()
+        sessionState.attachSelection(selection, pageTitle: "Article")
+
+        XCTAssertEqual(sessionState.viewState.quickActions, [.summarizeSelection, .translateSelection, .askAboutSelection])
+        XCTAssertTrue(sessionState.viewState.quickActions.allSatisfy(\.isSelectionScoped))
+    }
+
+    func testQuickActionsRevertToPageScopedWhenTheLastSelectionIsRemoved() {
+        let selection = makeSelection()
+        sessionState.attachSelection(selection, pageTitle: "Article")
+
+        sessionState.removeAttachedSelection(id: selection.id)
+
+        XCTAssertFalse(sessionState.viewState.quickActions.contains { $0.isSelectionScoped })
+    }
+
+    /// Selection-scoped actions belong to the start surface only; once a chat is running the frontend
+    /// drives the UI.
+    func testQuickActionsAreNotSelectionScopedOnceAChatIsRunning() {
+        sessionState.attachSelection(makeSelection(), pageTitle: "Article")
+
+        sessionState.beginChatForUTISubmission()
+
+        XCTAssertFalse(sessionState.viewState.quickActions.contains { $0.isSelectionScoped })
+    }
+
     /// Suppression is keyed on `attachedSelections` directly, not on the selection-scoped quick
     /// actions being present, so page suggestions can't reappear beside a selection if those change.
     func testPageSuggestionsAreSuppressedWhileASelectionIsAttached() {
@@ -2314,6 +2341,12 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
 // MARK: - Mock Pixel Handler
 
 private final class MockContextualModePixelHandler: AIChatContextualModePixelFiring {
+    func fireQuickActionSummarizeSelectionSelected() {}
+    func fireQuickActionTranslateSelectionSelected() {}
+    func fireQuickActionAskAboutSelectionSelected() {}
+    func fireSelectionAction(_ action: AIChatTextSelectionAction) {}
+    func fireSelectionLimitReached() {}
+    func fireSelectionRemoved() {}
     var sheetOpenedFired = false
     var sheetDismissedFired = false
     var sessionRestoredFired = false

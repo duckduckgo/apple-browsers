@@ -420,6 +420,15 @@ final class UTIAttachmentController {
         presentTransientValidationError(message)
     }
 
+    /// Drops a rejection banner once whatever caused it no longer applies — the caller freed capacity.
+    /// Needed because `presentRejectionBanner` deliberately survives re-syncs, so nothing else clears it.
+    /// Falls back to any attachment-derived message rather than blanking the banner outright.
+    func clearRejectionBanner() {
+        guard transientValidationMessage != nil else { return }
+        transientValidationMessage = nil
+        syncValidationErrorForCurrentMode()
+    }
+
     /// Shows a limit/rejection banner that survives async re-syncs, unlike an attachment-derived one which `syncValidationError` recomputes from the current attachments.
     private func presentTransientValidationError(_ message: String) {
         transientValidationMessage = message

@@ -319,6 +319,12 @@
         "description": "Source of the burn action",
         "enum": ["browsing", "tabSwitcher", "settings", "quickFire", "deeplink", "autoClear", "escapeHatch"]
     },
+    "aiChatSelectionSource": {
+        "key": "source",
+        "type": "string",
+        "description": "Which Duck.ai text-selection menu action attached the selection",
+        "enum": ["ask", "summarize", "translate"]
+    },
     "tabType": {
         "key": "tabType",
         "type": "string",

@@ -28,9 +28,17 @@ struct CounterParameterTests {
         OrderedBucket(name: "2+", config: BucketConfig(gte: 2)),
     ]
 
+    /// Builds a parameter alongside the store it dedups against, so a test can clear dedup the way
+    /// `EventHub` does (the parameter consults the store; it no longer owns the state itself).
+    private static func makeParameter() -> (parameter: CounterParameter, dedupStore: DedupStore) {
+        let dedupStore = DedupStore()
+        let parameter = CounterParameter(buckets: buckets, dedupKey: "pixel:count:test", dedupStore: dedupStore)
+        return (parameter, dedupStore)
+    }
+
     @Test("increments on each distinct-tab event")
     func incrementsOnEachDistinctTabEvent() {
-        let parameter = CounterParameter(buckets: Self.buckets)
+        let (parameter, _) = Self.makeParameter()
         #expect(parameter.handle(data: nil, tabID: .new()))
         #expect(parameter.handle(data: nil, tabID: .new()))
         #expect(parameter.state.value == 2)
@@ -38,7 +46,7 @@ struct CounterParameterTests {
 
     @Test("dedups repeated events on the same tab")
     func dedupsRepeatedEventsOnSameTab() {
-        let parameter = CounterParameter(buckets: Self.buckets)
+        let (parameter, _) = Self.makeParameter()
         let tab = EventHubTabID.new()
         #expect(parameter.handle(data: nil, tabID: tab))
         #expect(!parameter.handle(data: nil, tabID: tab))
@@ -47,35 +55,42 @@ struct CounterParameterTests {
 
     @Test("native events (.empty tab) are never deduped")
     func nativeEventsAreNeverDeduped() {
-        let parameter = CounterParameter(buckets: Self.buckets)
+        let (parameter, _) = Self.makeParameter()
         #expect(parameter.handle(data: nil, tabID: .empty))
         #expect(parameter.handle(data: nil, tabID: .empty))
         #expect(parameter.state.value == 2)
     }
 
-    @Test("onNavigationStarted clears dedup for that tab")
-    func navigationClearsDedupForTab() {
-        let parameter = CounterParameter(buckets: Self.buckets)
+    @Test("clearing the tab's dedup entry lets it count again")
+    func clearingTabDedupLetsItCountAgain() {
+        // `EventHub` clears the store on navigation to a different URL and on tab close; from the
+        // parameter's side both look the same, so one test covers each caller.
+        let (parameter, dedupStore) = Self.makeParameter()
         let tab = EventHubTabID.new()
         #expect(parameter.handle(data: nil, tabID: tab))
-        parameter.onNavigationStarted(tabID: tab)
+        dedupStore.clear(tabID: tab)
         #expect(parameter.handle(data: nil, tabID: tab))
         #expect(parameter.state.value == 2)
     }
 
-    @Test("onTabClosed clears dedup for that tab")
-    func tabClosedClearsDedupForTab() {
-        let parameter = CounterParameter(buckets: Self.buckets)
+    @Test("two parameters sharing a store dedup independently")
+    func parametersSharingStoreDedupIndependently() {
+        // The store is hub-wide, so the dedup key must keep pixels/params from shadowing each other.
+        let dedupStore = DedupStore()
+        let first = CounterParameter(buckets: Self.buckets, dedupKey: "pixelA:count:test", dedupStore: dedupStore)
+        let second = CounterParameter(buckets: Self.buckets, dedupKey: "pixelB:count:test", dedupStore: dedupStore)
         let tab = EventHubTabID.new()
-        #expect(parameter.handle(data: nil, tabID: tab))
-        parameter.onTabClosed(tabID: tab)
-        #expect(parameter.handle(data: nil, tabID: tab))
-        #expect(parameter.state.value == 2)
+
+        #expect(first.handle(data: nil, tabID: tab))
+        #expect(second.handle(data: nil, tabID: tab))
+
+        #expect(first.state.value == 1)
+        #expect(second.state.value == 1)
     }
 
     @Test("stops counting at the open-ended bucket and further events are no-ops")
     func stopsCountingAtOpenEndedBucket() {
-        let parameter = CounterParameter(buckets: Self.buckets)
+        let (parameter, _) = Self.makeParameter()
         for _ in 0..<5 { parameter.handle(data: nil, tabID: .new()) }
         #expect(parameter.state.stopCounting)
         let valueAtStop = parameter.state.value
@@ -85,7 +100,7 @@ struct CounterParameterTests {
 
     @Test("queryValue reflects the matching bucket")
     func queryValueReflectsMatchingBucket() {
-        let parameter = CounterParameter(buckets: Self.buckets)
+        let (parameter, _) = Self.makeParameter()
         #expect(parameter.queryValue() == "0")
         parameter.handle(data: nil, tabID: .new())
         #expect(parameter.queryValue() == "1")
@@ -93,7 +108,7 @@ struct CounterParameterTests {
 
     @Test("restoreState round trips value and stopCounting")
     func restoreStateRoundTrips() {
-        let parameter = CounterParameter(buckets: Self.buckets)
+        let (parameter, _) = Self.makeParameter()
         parameter.restoreState(ParamState(value: 3, stopCounting: true))
         #expect(parameter.state.value == 3)
         #expect(parameter.state.stopCounting)

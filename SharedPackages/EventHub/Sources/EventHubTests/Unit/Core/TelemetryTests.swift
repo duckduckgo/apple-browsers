@@ -35,43 +35,43 @@ struct TelemetryTests {
 
     @Test("computes periodEndMillis from the trigger period")
     func computesPeriodEndFromTriggerPeriod() {
-        let telemetry = Telemetry(config: Self.config, periodStartMillis: 1000)
+        let telemetry = Telemetry(config: Self.config, periodStartMillis: 1000, dedupStore: DedupStore())
         #expect(telemetry.periodEndMillis == 1000 + 60_000)
     }
 
     @Test("isElapsed reflects the current time against periodEndMillis")
     func isElapsedReflectsCurrentTime() {
-        let telemetry = Telemetry(config: Self.config, periodStartMillis: 0)
+        let telemetry = Telemetry(config: Self.config, periodStartMillis: 0, dedupStore: DedupStore())
         #expect(!telemetry.isElapsed(atMillis: 59_999))
         #expect(telemetry.isElapsed(atMillis: 60_000))
     }
 
     @Test("handleEvent routes only to parameters whose source matches")
     func handleEventRoutesOnlyToMatchingSource() {
-        let telemetry = Telemetry(config: Self.config, periodStartMillis: 0)
+        let telemetry = Telemetry(config: Self.config, periodStartMillis: 0, dedupStore: DedupStore())
         #expect(!telemetry.handleEvent(source: "unrelated", data: nil, tabID: .new()))
         #expect(telemetry.handleEvent(source: "test", data: nil, tabID: .new()))
     }
 
     @Test("buildPixelParameters reports the matched bucket")
     func buildPixelParametersReportsMatchedBucket() {
-        let telemetry = Telemetry(config: Self.config, periodStartMillis: 0)
+        let telemetry = Telemetry(config: Self.config, periodStartMillis: 0, dedupStore: DedupStore())
         telemetry.handleEvent(source: "test", data: nil, tabID: .new())
         #expect(telemetry.buildPixelParameters()?["count"] == "1+")
     }
 
     @Test("snapshot round trips through restoring init")
     func snapshotRoundTripsThroughRestoringInit() {
-        let original = Telemetry(config: Self.config, periodStartMillis: 500)
+        let original = Telemetry(config: Self.config, periodStartMillis: 500, dedupStore: DedupStore())
         original.handleEvent(source: "test", data: nil, tabID: .new())
-        let restored = Telemetry(restoring: original.snapshot())
+        let restored = Telemetry(restoring: original.snapshot(), dedupStore: DedupStore())
         #expect(restored.periodStartMillis == 500)
         #expect(restored.buildPixelParameters()?["count"] == "1+")
     }
 
     @Test("config snapshot is frozen — mutating the source config after construction has no effect")
     func configSnapshotIsFrozen() {
-        let telemetry = Telemetry(config: Self.config, periodStartMillis: 0)
+        let telemetry = Telemetry(config: Self.config, periodStartMillis: 0, dedupStore: DedupStore())
         let originalSource = telemetry.config.parameters["count"]?.source
         // Telemetry copies TelemetryPixelConfig (a value type) at construction; there is no live
         // reference back to a "current" config to mutate — this test documents that guarantee.

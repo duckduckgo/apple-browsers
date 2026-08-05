@@ -87,6 +87,20 @@ struct EventHubTests {
         #expect(f.count(of: Self.pixel1) == 0)
     }
 
+    @Test("handleWebEvent ignores an event that arrives after the period has ended")
+    func handleWebEventIgnoresEventArrivingAfterPeriodEnd() {
+        let f = EventHubFixture.active(Self.dayConfig)
+
+        // The clock passes periodEnd while the sweep has not yet run — a legitimate window, since the
+        // timer is best-effort and (on macOS) a period can end while the app runs unfocused. Spec's
+        // Telemetry.handleEvent opens with "if we're already past the attribution window, don't
+        // process any events", so this event belongs to no period and must not be counted.
+        f.advanceClockOnly(by: 86400 + 1)
+        f.manager.handleWebEvent(EventHubFixture.webEvent("test"), tabID: .new())
+
+        #expect(f.count(of: Self.pixel1) == 0)
+    }
+
     // MARK: Per-tab de-duplication
 
     @Test("same tab, same source is deduplicated")
@@ -140,6 +154,56 @@ struct EventHubTests {
         f.manager.handleWebEvent(EventHubFixture.webEvent("test"), tabID: tab)
 
         #expect(f.count(of: Self.pixel1) == 2)
+    }
+
+    @Test("dedup survives a period boundary")
+    func dedupSurvivesAPeriodBoundary() {
+        let f = EventHubFixture.active(Self.dayConfig)
+        let tab = EventHubTabID.new()
+        f.manager.handleWebEvent(EventHubFixture.webEvent("test"), tabID: tab)
+
+        // The period ends and a fresh one begins, but the tab never navigated — the page has already
+        // been counted and must not be counted again. Spec: "dedup state is not cleared when a
+        // telemetry period ends and a new one begins ... This prevents a long-lived page from
+        // inflating the first count of every new period." Same as Tech Design note [2].
+        f.advance(by: 86400)
+        f.manager.handleWebEvent(EventHubFixture.webEvent("test"), tabID: tab)
+
+        #expect(f.count(of: Self.pixel1) == 0)
+    }
+
+    @Test("dedup survives a period that fires while backgrounded")
+    func dedupSurvivesAPeriodFiringWhileBackgrounded() {
+        let f = EventHubFixture.active(Self.dayConfig)
+        let tab = EventHubTabID.new()
+        f.manager.handleWebEvent(EventHubFixture.webEvent("test"), tabID: tab)
+
+        // The harder half of the rule above: firing while backgrounded starts no new period, so the
+        // telemetry is gone entirely until the next foreground rebuilds it. The tab still never
+        // navigated, so the page must stay de-duplicated across that gap too — which only holds
+        // because dedup lives in the hub's `DedupStore`, not inside the discarded telemetry.
+        f.manager.onAppBackgrounded()
+        f.advance(by: 86400)
+        f.manager.onAppForegrounded()
+        f.manager.handleWebEvent(EventHubFixture.webEvent("test"), tabID: tab)
+
+        #expect(f.count(of: Self.pixel1) == 0)
+    }
+
+    @Test("dedup still resets on navigation after a period boundary")
+    func dedupStillResetsOnNavigationAfterAPeriodBoundary() {
+        let f = EventHubFixture.active(Self.dayConfig)
+        let tab = EventHubTabID.new()
+        f.manager.onNavigationStarted(tabID: tab, url: "https://example.com/page1")
+        f.manager.handleWebEvent(EventHubFixture.webEvent("test"), tabID: tab)
+
+        // Guards the fix for the test above from over-correcting: carrying dedup across the boundary
+        // must not also make it survive a genuine navigation.
+        f.advance(by: 86400)
+        f.manager.onNavigationStarted(tabID: tab, url: "https://example.com/page2")
+        f.manager.handleWebEvent(EventHubFixture.webEvent("test"), tabID: tab)
+
+        #expect(f.count(of: Self.pixel1) == 1)
     }
 
     // MARK: Firing, buckets and attributionPeriod
@@ -280,6 +344,44 @@ struct EventHubTests {
         """
         let f = EventHubFixture.active(disabledPixel)
         #expect(f.manager.activePixelStates.isEmpty)
+    }
+
+    /// The disabled-mid-period config used by the two tests below: `dayConfig` with the pixel's own
+    /// `state` flipped, leaving the governing feature enabled.
+    static let dayConfigPixelDisabled = dayConfig.replacingOccurrences(of: #""state": "enabled""#, with: #""state": "disabled""#)
+
+    @Test("a pixel disabled mid-period still fires that period")
+    func pixelDisabledMidPeriodStillFiresThatPeriod() throws {
+        let f = EventHubFixture.active(Self.dayConfig)
+        f.manager.handleWebEvent(EventHubFixture.webEvent("test"), tabID: .new())
+
+        // Spec: "If a pixel's config changes (or it is disabled) mid-cycle, the change takes effect at
+        // the start of the next cycle." Only disabling the governing eventHub feature clears state
+        // immediately; a single disabled pixel finishes and fires the period it was already running.
+        f.setSettings(Self.dayConfigPixelDisabled)
+        f.manager.onConfigChanged()
+        f.advance(by: 86400)
+
+        let pixel = try #require(f.fired.first)
+        #expect(pixel.name == Self.pixel1)
+        // The single event counted before the pixel was disabled; `dayConfig`'s buckets start
+        // "0", "1-2", … so a count of 1 reports as "1-2".
+        #expect(pixel.parameters["count"] == "1-2")
+    }
+
+    @Test("a pixel disabled mid-period starts no new period after firing")
+    func pixelDisabledMidPeriodStartsNoNewPeriodAfterFiring() {
+        let f = EventHubFixture.active(Self.dayConfig)
+        f.manager.handleWebEvent(EventHubFixture.webEvent("test"), tabID: .new())
+
+        f.setSettings(Self.dayConfigPixelDisabled)
+        f.manager.onConfigChanged()
+        f.advance(by: 86400)
+
+        // The other half of the rule: the final period fires, but nothing is restarted for a pixel
+        // the latest config no longer enables.
+        #expect(f.state(of: Self.pixel1) == nil)
+        #expect(f.repository.pixelState(named: Self.pixel1) == nil)
     }
 
     @Test("onConfigChanged with no settings registers no pixels")

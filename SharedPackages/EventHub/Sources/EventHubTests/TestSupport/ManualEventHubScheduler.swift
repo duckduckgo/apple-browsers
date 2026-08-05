@@ -47,4 +47,13 @@ final class ManualEventHubScheduler: EventHubScheduler {
             action()
         }
     }
+
+    /// Advances the virtual clock *without* invoking the armed callback, leaving whatever was armed
+    /// still armed. Models the real `DispatchSourceTimer` being delivered late: per the Tech Design
+    /// the timer is only "a best-effort optimization" and correctness comes from the persisted period
+    /// end, so `now` can legitimately be past `periodEnd` while the period has not yet been swept.
+    /// Lets a test observe that window, which `advance(by:)` closes automatically.
+    func advanceClockOnly(by interval: TimeInterval) {
+        currentMillis += Int64(interval * 1000)
+    }
 }

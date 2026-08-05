@@ -194,11 +194,9 @@ public final class EventHubConfigParser: EventHubConfigParsing {
     }
 
     /// Decodes/encodes the `buckets` JSON object as an ordered list, because `BucketCounter` is
-    /// first-match-wins and Swift's `Dictionary` would not preserve order. Decoding relies on
-    /// `KeyedDecodingContainer.allKeys` returning keys in document order, which holds for the persisted
-    /// snapshot but NOT for live remote config: that arrives as an unordered `[String: Any]`, so the
-    /// initial order is arbitrary. Harmless while bucket ranges are disjoint (exactly one match, and
-    /// `shouldStopCounting` scans all of them); overlapping ranges would resolve unpredictably.
+    /// first-match-wins and Swift's `Dictionary` would not preserve order. The order is *not* taken from
+    /// the JSON — live remote config reaches us as an unordered dictionary, so document order is
+    /// arbitrary there — it is established explicitly by `sortedByRange`.
     /// A bucket without a lower bound (`gte`) is invalid and disqualifies the whole counter.
     private struct BucketsDTO: Codable {
         let ordered: BucketList
@@ -226,7 +224,21 @@ public final class EventHubConfigParser: EventHubConfigParsing {
                 }
                 result.append(OrderedBucket(name: key.stringValue, config: BucketConfig(gte: gte, lt: dto.lt)))
             }
-            ordered = result
+            ordered = Self.sortedByRange(result)
+        }
+
+        /// Ascending by lower bound, then by upper bound with open-ended last, so a bounded bucket wins
+        /// over an open-ended one sharing its lower bound. Buckets left in identical ranges are
+        /// interchangeable, so their relative order cannot affect the outcome.
+        private static func sortedByRange(_ buckets: BucketList) -> BucketList {
+            buckets.sorted { lhs, rhs in
+                guard lhs.config.gte == rhs.config.gte else { return lhs.config.gte < rhs.config.gte }
+                switch (lhs.config.lt, rhs.config.lt) {
+                case let (lhsLt?, rhsLt?): return lhsLt < rhsLt
+                case (_?, nil): return true
+                case (nil, _): return false
+                }
+            }
         }
 
         func encode(to encoder: Encoder) throws {

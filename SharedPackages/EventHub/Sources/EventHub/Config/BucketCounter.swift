@@ -29,9 +29,10 @@ public struct BucketConfig: Equatable, Sendable {
     }
 }
 
-/// A single (name, config) pair. JSON object key order determines bucket evaluation order
-/// (first-match-wins), so buckets are carried as an ordered list rather than `[String: BucketConfig]`
-/// (Swift's `Dictionary` does not preserve insertion order).
+/// A single (name, config) pair. Evaluation order matters (`BucketCounter` is first-match-wins), so
+/// buckets are carried as an ordered list rather than `[String: BucketConfig]` (Swift's `Dictionary` does
+/// not preserve insertion order). The order is established once, by the parser, sorted by range — never
+/// taken from JSON object key order, which is arbitrary by the time config reaches us.
 public struct OrderedBucket: Equatable, Sendable {
     public let name: String
     public let config: BucketConfig

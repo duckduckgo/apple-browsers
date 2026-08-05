@@ -117,6 +117,43 @@ struct EventHubConfigParserTests {
         #expect(parser.parseTelemetry(json).isEmpty)
     }
 
+    @Test("buckets are ordered by range, not by JSON key order")
+    func bucketsAreOrderedByRangeNotByJSONKeyOrder() throws {
+        let json = settingsDictionary("""
+        { "telemetry": { "test": {
+            "state": "enabled",
+            "trigger": { "period": { "seconds": 86400 } },
+            "parameters": { "c": { "template": "counter", "source": "e", "buckets": {
+                "40+":   {"gte": 40},
+                "0":     {"gte": 0,  "lt": 1},
+                "3-5":   {"gte": 3,  "lt": 6},
+                "1-2":   {"gte": 1,  "lt": 3}
+            } } }
+        } } }
+        """)
+
+        let buckets = try #require(parser.parseTelemetry(json).first?.parameters["c"]?.buckets)
+        #expect(buckets.map(\.name) == ["0", "1-2", "3-5", "40+"])
+    }
+
+    @Test("an open-ended bucket is evaluated after a bounded bucket sharing its lower bound")
+    func openEndedBucketIsEvaluatedAfterBoundedBucketSharingItsLowerBound() throws {
+        let json = settingsDictionary("""
+        { "telemetry": { "test": {
+            "state": "enabled",
+            "trigger": { "period": { "seconds": 86400 } },
+            "parameters": { "c": { "template": "counter", "source": "e", "buckets": {
+                "40+":   {"gte": 40},
+                "40-49": {"gte": 40, "lt": 50}
+            } } }
+        } } }
+        """)
+
+        let buckets = try #require(parser.parseTelemetry(json).first?.parameters["c"]?.buckets)
+        #expect(buckets.map(\.name) == ["40-49", "40+"])
+        #expect(BucketCounter.bucketCount(45, buckets: buckets) == "40-49")
+    }
+
     @Test("telemetry that is not an object returns empty")
     func telemetryThatIsNotAnObjectReturnsEmpty() {
         #expect(parser.parseTelemetry([EventHubConfigParser.telemetryKey: "not an object"]).isEmpty)

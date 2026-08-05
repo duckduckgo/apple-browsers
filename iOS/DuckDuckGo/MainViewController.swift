@@ -312,6 +312,8 @@ class MainViewController: UIViewController {
     let experimentalAIChatManager: ExperimentalAIChatManager
     let daxDialogsManager: DaxDialogsManaging
     let onboardingSearchExperienceSettingsResolver: OnboardingSearchExperienceSettingsResolver
+    // Used to suppress the post-fire search-focus keyboard for that dialog, which must appear with the keyboard down.
+    private let onboardingCompletionDialogDecider: OnboardingEndOfJourneyTryAIDialogDeciding = OnboardingEndOfJourneyTryAIProvider()
     let dbpIOSPublicInterface: DBPIOSInterface.PublicInterface?
     let freemiumPIREligibilityChecker: FreemiumPIREligibilityChecking
     let freemiumPIRDebugSettings: FreemiumPIRDebugSettings
@@ -2132,7 +2134,9 @@ class MainViewController: UIViewController {
                     if wasContextualFireOnboardingDialogVisible {
                         contextualOnboardingPixelReporter.measureFireButtonOnboardingDeleteConfirmed()
                     }
-                    forgetAllWithAnimation(request: fireRequest) {}
+                    // The EOJ Try AI dialog must appear with the keyboard down.
+                    let suppressPostFireKeyboard = wasContextualFireOnboardingDialogVisible && onboardingCompletionDialogDecider.shouldPresentTryAIDialog
+                    forgetAllWithAnimation(request: fireRequest, suppressPostFireKeyboard: suppressPostFireKeyboard)
                 },
                 onCancel: { [weak self] in
                     guard let self else { return }
@@ -6823,7 +6827,8 @@ extension MainViewController {
 
     func forgetAllWithAnimation(request: FireRequest,
                                 transitionCompletion: (() -> Void)? = nil,
-                                showNextDaxDialog: Bool = false) {
+                                showNextDaxDialog: Bool = false,
+                                suppressPostFireKeyboard: Bool = false) {
         let spid = Instruments.shared.startTimedEvent(.clearingData)
         let tabsCount = tabsCount(for: request.scope)
 
@@ -6845,7 +6850,7 @@ extension MainViewController {
             // Ideally this should happen once data clearing has finished AND the animation is finished
             if showNextDaxDialog {
                 self.newTabPageViewController?.showNextDaxDialog()
-            } else if request.options.contains(.tabs) && KeyboardSettings().onNewTab && !self.isEscapeHatchBurn(request) {
+            } else if request.options.contains(.tabs) && KeyboardSettings().onNewTab && !self.isEscapeHatchBurn(request) && !suppressPostFireKeyboard {
                 // Escape-hatch burns restore focus in `restoreFocusModeAfterBurnIfNeeded`.
                 let showKeyboardAfterFireButton = DispatchWorkItem {
                     // A burned Duck.ai chat reopens as a new chat that owns its input; don't focus search over it.

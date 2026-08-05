@@ -44,6 +44,7 @@ class SyncDebugViewController: UITableViewController {
 
         case syncNow
         case ensureAccountInfoKey
+        case validateAccountInfoKey
         case logOut
         case toggleFavoritesDisplayMode
         case resetFaviconsFetcherOnboardingDialog
@@ -115,6 +116,8 @@ class SyncDebugViewController: UITableViewController {
                 cell.textLabel?.text = "Sync now"
             case .ensureAccountInfoKey:
                 cell.textLabel?.text = "Ensure account_info key"
+            case .validateAccountInfoKey:
+                cell.textLabel?.text = "Validate account_info key"
             case .logOut:
                 cell.textLabel?.text = "Log out of sync in 10 seconds"
             case .toggleFavoritesDisplayMode:
@@ -198,6 +201,8 @@ class SyncDebugViewController: UITableViewController {
                 sync.scheduler.requestSyncImmediately()
             case .ensureAccountInfoKey:
                 ensureAccountInfoKey()
+            case .validateAccountInfoKey:
+                validateAccountInfoKey()
             case .logOut:
                 Task {
                     try await Task.sleep(nanoseconds: UInt64(10e9))
@@ -281,6 +286,33 @@ class SyncDebugViewController: UITableViewController {
                 showAlert(title: "Account Info Key Ensured", message: message)
             } catch {
                 showAlert(title: "Unable to Ensure Account Info Key", message: String(reflecting: error))
+            }
+        }
+    }
+
+    private func validateAccountInfoKey() {
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+
+            do {
+                let result = try await sync.validateAccountInfoKeyForDebug()
+                guard result.refreshedKeyID == result.reloadedKeyID else {
+                    let message = """
+                    Refreshed key ID: \(result.refreshedKeyID)
+                    Reloaded key ID: \(result.reloadedKeyID)
+                    """
+                    showAlert(title: "Account Info Key Reload Mismatch", message: message)
+                    return
+                }
+
+                let message = """
+                Key ID: \(result.reloadedKeyID)
+                Key size: \(result.keySizeInBits) bits
+                Cache-first reload: succeeded
+                """
+                showAlert(title: "Account Info Key Validated", message: message)
+            } catch {
+                showAlert(title: "Unable to Validate Account Info Key", message: String(reflecting: error))
             }
         }
     }

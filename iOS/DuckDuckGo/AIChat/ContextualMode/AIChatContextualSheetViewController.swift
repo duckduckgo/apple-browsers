@@ -104,7 +104,9 @@ final class AIChatContextualSheetViewController: UIViewController {
         static let iPadPopoverDefaultHeight: CGFloat = 520
         static let maxHeightRatio: CGFloat = 0.9
         static let initialPromptRevealFallbackDelay: TimeInterval = 1
-        static let suggestedPromptFrontendReadinessTimeout: TimeInterval = 5
+        /// Shared by the suggestion and selection-tool submission paths: both push to the frontend
+        /// and must wait for it to have initialized.
+        static let frontendReadinessTimeout: TimeInterval = 5
     }
 
     // MARK: - Types
@@ -175,6 +177,8 @@ final class AIChatContextualSheetViewController: UIViewController {
     private var isWaitingForInitialPromptResponseState = false
     private var initialPromptRevealFallbackWorkItem: DispatchWorkItem?
     private var suggestionSubmissionTask: Task<Void, Never>?
+    /// Awaits frontend readiness before pushing a selection-scoped tool prompt.
+    private var selectionToolSubmissionTask: Task<Void, Never>?
     private var suggestionSubmissionID: UUID?
 
     /// Tracks whether the "Ask about page" quick action chip is currently on screen, so the impression
@@ -904,6 +908,12 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
     /// Delivers a selection-scoped `AIChatNativePrompt` tool (`.summary` / `.translation`) on the
     /// `submitAIChatNativePrompt` channel — the same wire message the sheet already uses for query
     /// prompts, and the one macOS uses to push these tools into an open sidebar.
+    ///
+    /// Waits for the **frontend** to have initialized, not merely for the page to have loaded. A push
+    /// that arrives before the frontend has registered its handlers is dropped with no error, and
+    /// `AIChatContextualWebViewController.canDeliverPrompt` covers only page + content handler — so
+    /// delivering on that signal worked on every launch of the sheet except the first, which is
+    /// exactly when a user selects text and asks for a summary. Same wait the suggestion path uses.
     private func submitSelectionTool(
         _ selection: AIChatSelectionContextData,
         pageTitle: String?,
@@ -916,11 +926,23 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
         // We deliver the prompt ourselves, so take the same session transition the unified-input path
         // takes (state flip + pixels, no `submitPrompt` effect) rather than `handlePromptSubmission`.
         sessionState.beginChatForUTISubmission()
-        webViewController?.submitNativePrompt(prompt)
+        // Transition first: this is what starts the web view loading, so the wait below has something
+        // to wait for.
         handleFirstUTISubmission()
-        // The text rode inside the tool payload, so any chips standing in for it are now redundant —
-        // and this counts as a submit, which clears selections (matching macOS).
-        delegate?.aiChatContextualSheetViewControllerDidSubmitSelectionTool(self)
+
+        selectionToolSubmissionTask?.cancel()
+        selectionToolSubmissionTask = Task { @MainActor [weak self] in
+            guard let self, let webViewController = self.webViewController else { return }
+            let isFrontendReady = await webViewController.waitUntilFrontendReady(
+                timeout: Constants.frontendReadinessTimeout
+            )
+            guard isFrontendReady, !Task.isCancelled, self.canProcessSuggestionSubmission else { return }
+
+            webViewController.submitNativePrompt(prompt)
+            // The text rode inside the tool payload, so any chips standing in for it are redundant —
+            // and this counts as a submit, which clears selections (matching macOS).
+            self.delegate?.aiChatContextualSheetViewControllerDidSubmitSelectionTool(self)
+        }
     }
 
     /// Target language for selection translation, matching macOS's use of `Locale.preferredLanguages`.
@@ -955,7 +977,7 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
 
             guard let webViewController = self.webViewController else { return }
 
-            let isFrontendReady = await webViewController.waitUntilFrontendReady(timeout: Constants.suggestedPromptFrontendReadinessTimeout)
+            let isFrontendReady = await webViewController.waitUntilFrontendReady(timeout: Constants.frontendReadinessTimeout)
             guard isFrontendReady else { return }
             guard !Task.isCancelled, self.canProcessSuggestionSubmission else { return }
             self.submitSuggestionPrompt(suggestion.prompt)
@@ -1192,6 +1214,8 @@ private extension AIChatContextualSheetViewController {
         suggestionSubmissionTask?.cancel()
         suggestionSubmissionTask = nil
         suggestionSubmissionID = nil
+        selectionToolSubmissionTask?.cancel()
+        selectionToolSubmissionTask = nil
     }
 
     func submitPromptFromNativeInput(_ prompt: String) {

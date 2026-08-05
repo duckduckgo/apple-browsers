@@ -81,8 +81,6 @@ final class AIChatContextualWebViewController: UIViewController {
     /// Page context bundled with a pending prompt submission (consumed together in `submitPromptNow`).
     private var pendingPageContext: AIChatPageContextData?
     private var pendingRichPrompt: PendingRichPrompt?
-    /// Selection-scoped tool prompt (`.summary` / `.translation`), buffered when the web view is not ready yet.
-    private var pendingNativePrompt: AIChatNativePrompt?
     /// Standalone page context for the "Attach Page Content" chip, buffered when WebView isn't ready yet.
     private var pendingChipContext: AIChatPageContextData?
     private var hasPendingChipContext = false
@@ -293,12 +291,12 @@ final class AIChatContextualWebViewController: UIViewController {
         aiChatContentHandler.setAdditionalPageContextsConsumedHandler(handler)
     }
 
-    /// Submits a prompt whose tool the caller chose, buffering it when the web view isn't ready yet.
+    /// Submits a prompt whose tool the caller chose.
+    ///
+    /// Deliberately unbuffered: the caller waits for `waitUntilFrontendReady` first, because
+    /// `canDeliverPrompt` covers only page + content handler readiness and a push delivered on that
+    /// signal alone is dropped before the frontend registers its handlers.
     func submitNativePrompt(_ prompt: AIChatNativePrompt) {
-        guard canDeliverPrompt else {
-            pendingNativePrompt = prompt
-            return
-        }
         aiChatContentHandler.submitNativePrompt(prompt)
     }
 
@@ -325,7 +323,6 @@ final class AIChatContextualWebViewController: UIViewController {
         pendingPrompt = nil
         pendingPageContext = nil
         pendingRichPrompt = nil
-        pendingNativePrompt = nil
         hasPendingChipContext = false
         pendingChipContext = nil
         loadingView.startAnimating()
@@ -411,10 +408,7 @@ final class AIChatContextualWebViewController: UIViewController {
         Logger.aiChat.debug("[ContextualWebVC] submitPendingIfReady - pendingPrompt: \(self.pendingPrompt != nil), pendingRichPrompt: \(self.pendingRichPrompt != nil), hasPendingChipContext: \(self.hasPendingChipContext), isPageReady: \(self.isPageReady), isContentHandlerReady: \(self.isContentHandlerReady), isFrontendReady: \(self.frontendReadinessGate.isReady)")
         guard canDeliverPrompt else { return }
 
-        if let nativePrompt = pendingNativePrompt {
-            pendingNativePrompt = nil
-            aiChatContentHandler.submitNativePrompt(nativePrompt)
-        } else if let richPrompt = pendingRichPrompt {
+        if let richPrompt = pendingRichPrompt {
             pendingRichPrompt = nil
             submitPromptNow(richPrompt)
         } else if let prompt = pendingPrompt {

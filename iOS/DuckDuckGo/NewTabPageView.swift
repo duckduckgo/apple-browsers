@@ -49,8 +49,6 @@ struct NewTabPageView: View {
         self.narrowLayoutInLandscape = narrowLayoutInLandscape
         self.dismissKeyboardOnScroll = dismissKeyboardOnScroll
         self.layoutConfiguration = layoutConfiguration
-
-        self.messagesModel.load()
     }
 
     private var isShowingSections: Bool {
@@ -228,10 +226,39 @@ private extension NewTabPageView {
     }
 
     private var messagesSectionView: some View {
-        ForEach(messagesModel.homeMessageViewModels, id: \.messageId) { messageModel in
-            HomeMessageView(viewModel: messageModel)
-                .frame(maxWidth: horizontalSizeClass == .regular ? Metrics.messageMaximumWidthPad : Metrics.messageMaximumWidth)
-                .transition(.scale.combined(with: .opacity))
+        ForEach(messagesModel.homeMessageRenderItems) { item in
+            switch item.content {
+            case .message(let messageModel):
+                homeMessageView(messageModel)
+
+            case .remoteMessageGate(let gate):
+                remoteMessageGate(gate)
+            }
+        }
+    }
+
+    private func homeMessageView(_ viewModel: HomeMessageViewModel) -> some View {
+        HomeMessageView(viewModel: viewModel)
+            .frame(maxWidth: horizontalSizeClass == .regular ? Metrics.messageMaximumWidthPad : Metrics.messageMaximumWidth)
+            .transition(.scale.combined(with: .opacity))
+    }
+
+    @ViewBuilder
+    private func remoteMessageGate(_ gate: NewTabPageRemoteMessageGate) -> some View {
+        RemoteMessageGateMountView(gate: gate, messagesModel: messagesModel) { mountID in
+            if let renderSession = gate.renderSession {
+                homeMessageView(renderSession.viewModel)
+                    .id(renderSession.id)
+                    .onDisappear {
+                        messagesModel.remoteMessageDidDisappear(
+                            renderSessionID: renderSession.id,
+                            mountID: mountID
+                        )
+                    }
+            } else {
+                Color.clear
+                    .frame(height: 0)
+            }
         }
     }
 
@@ -261,6 +288,43 @@ private extension NewTabPageView {
         }
         let folded = layoutConfiguration.favoritesShareHatchTopInset ? Metrics.nonGridSectionTopPadding : 0
         return sectionsViewPadding(in: geometry) + folded
+    }
+}
+
+/// Gives each physical SwiftUI gate mount an identity for balanced appearance and disappearance callbacks.
+private struct RemoteMessageGateMountView<Content: View>: View {
+    @State private var mountID = UUID()
+
+    let gate: NewTabPageRemoteMessageGate
+    let messagesModel: NewTabPageMessagesModel
+    let content: (UUID) -> Content
+
+    init(
+        gate: NewTabPageRemoteMessageGate,
+        messagesModel: NewTabPageMessagesModel,
+        @ViewBuilder content: @escaping (UUID) -> Content
+    ) {
+        self.gate = gate
+        self.messagesModel = messagesModel
+        self.content = content
+    }
+
+    var body: some View {
+        content(mountID)
+            .onAppear {
+                messagesModel.remoteMessageGateDidAppear(
+                    gateID: gate.id,
+                    messageID: gate.messageID,
+                    mountID: mountID
+                )
+            }
+            .onDisappear {
+                messagesModel.remoteMessageGateDidDisappear(
+                    gateID: gate.id,
+                    messageID: gate.messageID,
+                    mountID: mountID
+                )
+            }
     }
 }
 
@@ -300,14 +364,7 @@ private struct Metrics {
 #Preview("Regular") {
     NewTabPageView(
         viewModel: NewTabPageViewModel(fireTab: false),
-        messagesModel: NewTabPageMessagesModel(
-            homePageMessagesConfiguration: PreviewMessagesConfiguration(
-                homeMessages: []
-            ),
-            messageActionHandler: RemoteMessagingActionHandler(),
-            imageLoader: PreviewImageLoader(),
-            promoCoordinator: PreviewNewTabPagePromoCoordinator()
-        ),
+        messagesModel: makePreviewMessagesModel(homeMessages: []),
         favoritesViewModel: FavoritesPreviewModel()
     )
 }
@@ -315,25 +372,18 @@ private struct Metrics {
 #Preview("With message") {
     NewTabPageView(
         viewModel: NewTabPageViewModel(fireTab: false),
-        messagesModel: NewTabPageMessagesModel(
-            homePageMessagesConfiguration: PreviewMessagesConfiguration(
-                homeMessages: [
-                    HomeMessage.remoteMessage(
-                        remoteMessage: RemoteMessageModel(
-                            id: "0",
-                            surfaces: .newTabPage,
-                            content: .small(titleText: "Title", descriptionText: "Description"),
-                            matchingRules: [],
-                            exclusionRules: [],
-                            isMetricsEnabled: false
-                        )
-                    )
-                ]
-            ),
-            messageActionHandler: RemoteMessagingActionHandler(),
-            imageLoader: PreviewImageLoader(),
-            promoCoordinator: PreviewNewTabPagePromoCoordinator()
-        ),
+        messagesModel: makePreviewMessagesModel(homeMessages: [
+            HomeMessage.remoteMessage(
+                remoteMessage: RemoteMessageModel(
+                    id: "0",
+                    surfaces: .newTabPage,
+                    content: .small(titleText: "Title", descriptionText: "Description"),
+                    matchingRules: [],
+                    exclusionRules: [],
+                    isMetricsEnabled: false
+                )
+            )
+        ]),
         favoritesViewModel: FavoritesPreviewModel()
     )
 }
@@ -341,14 +391,7 @@ private struct Metrics {
 #Preview("No favorites") {
     NewTabPageView(
         viewModel: NewTabPageViewModel(fireTab: false),
-        messagesModel: NewTabPageMessagesModel(
-            homePageMessagesConfiguration: PreviewMessagesConfiguration(
-                homeMessages: []
-            ),
-            messageActionHandler: RemoteMessagingActionHandler(),
-            imageLoader: PreviewImageLoader(),
-            promoCoordinator: PreviewNewTabPagePromoCoordinator()
-        ),
+        messagesModel: makePreviewMessagesModel(homeMessages: []),
         favoritesViewModel: FavoritesPreviewModel(favorites: [])
     )
 }
@@ -356,19 +399,26 @@ private struct Metrics {
 #Preview("Empty") {
     NewTabPageView(
         viewModel: NewTabPageViewModel(fireTab: false),
-        messagesModel: NewTabPageMessagesModel(
-            homePageMessagesConfiguration: PreviewMessagesConfiguration(
-                homeMessages: []
-            ),
-            messageActionHandler: RemoteMessagingActionHandler(),
-            imageLoader: PreviewImageLoader(),
-            promoCoordinator: PreviewNewTabPagePromoCoordinator()
-        ),
+        messagesModel: makePreviewMessagesModel(homeMessages: []),
         favoritesViewModel: FavoritesPreviewModel()
     )
 }
 
 /// An inert, always-disabled promo coordinator for SwiftUI previews.
+@MainActor
+private func makePreviewMessagesModel(homeMessages: [HomeMessage]) -> NewTabPageMessagesModel {
+    let model = NewTabPageMessagesModel(
+        homePageMessagesConfiguration: PreviewMessagesConfiguration(
+            homeMessages: homeMessages
+        ),
+        messageActionHandler: RemoteMessagingActionHandler(),
+        imageLoader: PreviewImageLoader(),
+        promoCoordinator: PreviewNewTabPagePromoCoordinator()
+    )
+    model.load()
+    return model
+}
+
 @MainActor
 private final class PreviewNewTabPagePromoCoordinator: NewTabPagePromoCoordinating {
     let promoQueueFeatureState = PromoQueueFeatureState.disabled

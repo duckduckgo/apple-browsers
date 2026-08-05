@@ -160,6 +160,7 @@ final class BrowsingMenuBuilder: BrowsingMenuBuilding {
                     .init(entryBuilder.makeShareEntry()),
                     .init(entryBuilder.makeFindInPageEntry()),
                     .init(entryBuilder.makeExtractPageTextPOCEntry()),
+                    .init(entryBuilder.makeTranslateFoundationPOCEntry()),
                     .init(entryBuilder.makeZoomEntry()),
                     .init(entryBuilder.makeDesktopSiteEntry())
                 ].compactMap { $0 }
@@ -180,6 +181,7 @@ final class BrowsingMenuBuilder: BrowsingMenuBuilding {
             let tabActionItems: [BrowsingMenuModel.Entry] = [
                 .init(entryBuilder.makeFindInPageEntry()),
                 .init(entryBuilder.makeExtractPageTextPOCEntry()),
+                .init(entryBuilder.makeTranslateFoundationPOCEntry()),
                 .init(entryBuilder.makeZoomEntry()),
                 .init(entryBuilder.makeDesktopSiteEntry())
             ].compactMap { $0 }

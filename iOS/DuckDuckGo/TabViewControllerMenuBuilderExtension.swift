@@ -443,8 +443,8 @@ extension TabViewController {
 
     private func buildTranslateFoundationPOCEntry(forLink link: Link, useSmallIcon: Bool = true) -> BrowsingMenuEntry {
         let image = useSmallIcon ? DesignSystemImages.Glyphs.Size16.globe : DesignSystemImages.Glyphs.Size24.globe
-        return BrowsingMenuEntry.regular(name: "Translate · Foundation Model", image: image, action: { [weak self] in
-            self?.translateFoundationModelPOC()
+        return BrowsingMenuEntry.regular(name: "Translate · HTML probe", image: image, action: { [weak self] in
+            self?.runHTMLProbePOC()
         })
     }
 

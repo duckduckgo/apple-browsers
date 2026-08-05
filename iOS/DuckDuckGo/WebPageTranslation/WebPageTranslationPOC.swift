@@ -159,6 +159,13 @@ extension TabViewController {
             // uniqueTexts is ordered viewport-visible-first; viewportCount is the size of that prefix.
             let (uniqueTexts, textToIDs, viewportCount) = dedupePOC(items)
 
+            // DEBUG (temporary): log every extracted unit in full (one entry each, no truncation).
+            let lengths = uniqueTexts.map { $0.count }.sorted()
+            pocLogger.info("POC extract: \(items.count, privacy: .public) raw, \(uniqueTexts.count, privacy: .public) units, \(viewportCount, privacy: .public) viewport; median \(lengths.isEmpty ? 0 : lengths[lengths.count / 2], privacy: .public), longest \(lengths.last ?? 0, privacy: .public) chars")
+            for (i, unit) in uniqueTexts.enumerated() {
+                pocLogger.info("POC unit [\(i, privacy: .public)] vp=\(i < viewportCount, privacy: .public) len=\(unit.count, privacy: .public): \(unit, privacy: .public)")
+            }
+
             let translatedUnique: Int
             var viewportSeconds: Double?
             switch approach {
@@ -359,6 +366,12 @@ extension TabViewController {
             var updates: [[String: Any]] = []
             for response in responses {
                 guard let index = Int(response.clientIdentifier ?? ""), index < uniqueTexts.count else { continue }
+                // DEBUG (temporary): log every translation pair in full.
+                pocLogger.info("""
+                POC translate [\(index, privacy: .public)]
+                  IN : \(uniqueTexts[index], privacy: .public)
+                  OUT: \(response.targetText, privacy: .public)
+                """)
                 for nodeID in textToIDs[uniqueTexts[index]] ?? [] {
                     updates.append(["id": nodeID, "text": response.targetText])
                 }
@@ -428,6 +441,76 @@ extension TabViewController {
         }
         try await applyTranslationsPOC(buffer)
         return translated
+    }
+
+    // MARK: - HTML probe (temporary manual test)
+
+    // ponytail: throwaway probe reusing the unused Foundation-Model menu slot. Delete with the POC.
+    /// Feeds HTML snippets through Apple's NMT and logs input → output, to see whether inline tags,
+    /// attributes, entities, and placeholders survive translation. Device-only (NMT doesn't run on sim).
+    func runHTMLProbePOC() {
+        guard #available(iOS 18.0, *) else { return }
+        Task { @MainActor [weak self] in await self?.runHTMLProbe() }
+    }
+
+    @available(iOS 18.0, *)
+    @MainActor
+    private func runHTMLProbe() async {
+        let cases = [
+            "Hello <b>world</b>, how are you today?",                         // inline tag
+            "Please <a href=\"https://example.com\">click here</a> to continue.", // link (href must NOT be translated)
+            "<p>The <strong>quick</strong> brown <em>fox</em> jumps.</p>",   // nested inline tags
+            "<img src=\"cat.png\" alt=\"A red car\"> is parked outside.",     // attribute holding translatable text
+            "Salt '&amp;' pepper, with more '&lt;' and '&gt;' signs.",             // HTML entities
+            "First line<br>Second line after the break.",                    // void tag
+            "<span class=\"price\">Total: $20</span> is due now.",           // tag with class + currency
+            "Welcome back, {username}! You have 3 new messages.",            // placeholder token
+            // Alignment stress: en→es reorders adjective↔noun, so a tag must re-anchor to its WORD,
+            // not its slot. If the tag stays positional, emphasis/links land on the wrong word.
+            "The <b>red</b> car is very fast.",                              // expect bold on \"rojo\" (after \"coche\")
+            "A <strong>quick</strong> brown <em>fox</em> jumps.",            // isolates the em-drift from case [2]
+            "Read the <a href=\"https://example.com\">full report</a> now.", // link must wrap \"informe completo\"
+            "Click <a href=\"https://example.com\">here</a> for the <b>latest news</b>." // tags at clause ends
+        ]
+        let requests = cases.enumerated().map {
+            TranslationSession.Request(sourceText: $1, clientIdentifier: String($0))
+        }
+
+        let translator = POCTranslator()
+        let host = UIHostingController(rootView: POCTranslatorView(translator: translator))
+        host.view.frame = view.bounds
+        host.view.backgroundColor = .clear
+        host.view.isUserInteractionEnabled = false
+        addChild(host)
+        view.addSubview(host.view)
+        host.didMove(toParent: self)
+        defer {
+            host.willMove(toParent: nil)
+            host.view.removeFromSuperview()
+            host.removeFromParent()
+        }
+
+        pocLogger.info("HTML probe ▶︎ start (en→es), \(cases.count, privacy: .public) cases")
+        do {
+            let stream = translator.run(batches: [requests],
+                                        source: Locale.Language(identifier: "en"),
+                                        target: Locale.Language(identifier: "es"))
+            for try await responses in stream {
+                for response in responses {
+                    let index = Int(response.clientIdentifier ?? "")
+                    let input = index.flatMap { $0 < cases.count ? cases[$0] : nil } ?? "?"
+                    pocLogger.info("""
+                    HTML probe [\(response.clientIdentifier ?? "?", privacy: .public)]
+                      IN : \(input, privacy: .public)
+                      OUT: \(response.targetText, privacy: .public)
+                    """)
+                }
+            }
+            presentExtractionPOCAlert(title: "HTML probe done", message: "Check Console — subsystem com.duckduckgo.ios, category WebPageTranslationPOC.")
+        } catch {
+            pocLogger.error("HTML probe failed: \(error.localizedDescription, privacy: .public)")
+            presentExtractionPOCAlert(title: "HTML probe failed", message: error.localizedDescription)
+        }
     }
 }
 

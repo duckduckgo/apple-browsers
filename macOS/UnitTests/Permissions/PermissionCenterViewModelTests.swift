@@ -32,6 +32,7 @@ final class PermissionCenterViewModelTests: XCTestCase {
     var mockSystemPermissionManager: MockSystemPermissionManager!
     var mockFeatureFlagger: MockFeatureFlagger!
     var autoplayPreferences: AutoplayPreferences!
+    var pixelFiring: PixelKitMock!
 
     override func setUp() {
         super.setUp()
@@ -39,6 +40,7 @@ final class PermissionCenterViewModelTests: XCTestCase {
         mockSystemPermissionManager = MockSystemPermissionManager()
         mockFeatureFlagger = MockFeatureFlagger()
         autoplayPreferences = AutoplayPreferences()
+        pixelFiring = PixelKitMock()
     }
 
     override func tearDown() {
@@ -46,6 +48,7 @@ final class PermissionCenterViewModelTests: XCTestCase {
         mockSystemPermissionManager = nil
         mockFeatureFlagger = nil
         autoplayPreferences = nil
+        pixelFiring = nil
         super.tearDown()
     }
 
@@ -333,8 +336,6 @@ final class PermissionCenterViewModelTests: XCTestCase {
 
     // Hover events can arrive repeatedly; the promo must only report engagement once.
     func testWhenDisableAutodismissIsCalledRepeatedlyThenEngagedPixelFiresOnce() {
-        var pixelFiring = PixelKitMock()
-
         let viewModel = PermissionCenterViewModel(
             domain: "example.com",
             usedPermissions: Permissions(),
@@ -358,8 +359,6 @@ final class PermissionCenterViewModelTests: XCTestCase {
 
     /// Outside the promo there is nothing to autodismiss, so there is no engagement to report.
     func testWhenDisableAutodismissIsCalledOutsideThePromoThenNoPixelIsFired() {
-        var pixelFiring = PixelKitMock()
-
         let viewModel = PermissionCenterViewModel(
             domain: "example.com",
             usedPermissions: Permissions(),
@@ -381,8 +380,7 @@ final class PermissionCenterViewModelTests: XCTestCase {
     }
 
     func testWhenOpenAutoplaySettingsWithinThePromoThenSettingsLinkClickedPixelIsFired() {
-        var pixelFiring = PixelKitMock()
-        var openedPanes: [PreferencePaneIdentifier] = []
+        var openedPanes: [PreferencesDestination] = []
 
         let viewModel = PermissionCenterViewModel(
             domain: "example.com",
@@ -392,7 +390,7 @@ final class PermissionCenterViewModelTests: XCTestCase {
             featureFlagger: mockFeatureFlagger,
             removePermission: { _ in },
             dismissPopover: { },
-            openSettingsPane: { openedPanes.append($0) },
+            openSettings: { openedPanes.append($0) },
             displaysAutoplayPolicy: true,
             displaysAutoplayDiscovery: true,
             pixelFiring: pixelFiring,
@@ -402,13 +400,12 @@ final class PermissionCenterViewModelTests: XCTestCase {
         viewModel.openAutoplaySettings()
 
         XCTAssertEqual(pixelFiring.actualFireCalls.map(\.pixel.name), [AutoplayPromoPixel.settingsLinkClicked.name])
-        XCTAssertEqual(openedPanes, [.general])
+        XCTAssertEqual(openedPanes, [.generalPermissions])
     }
 
     /// The disclaimer link only exists within the promo: a settings jump from anywhere else isn't promo attribution.
     func testWhenOpenAutoplaySettingsOutsideThePromoThenNoPixelIsFired() {
-        var pixelFiring = PixelKitMock()
-        var openedPanes: [PreferencePaneIdentifier] = []
+        var openedPanes: [PreferencesDestination] = []
 
         let viewModel = PermissionCenterViewModel(
             domain: "example.com",
@@ -418,7 +415,7 @@ final class PermissionCenterViewModelTests: XCTestCase {
             featureFlagger: mockFeatureFlagger,
             removePermission: { _ in },
             dismissPopover: { },
-            openSettingsPane: { openedPanes.append($0) },
+            openSettings: { openedPanes.append($0) },
             displaysAutoplayPolicy: true,
             displaysAutoplayDiscovery: false,
             pixelFiring: pixelFiring,
@@ -428,7 +425,7 @@ final class PermissionCenterViewModelTests: XCTestCase {
         viewModel.openAutoplaySettings()
 
         XCTAssertTrue(pixelFiring.actualFireCalls.isEmpty)
-        XCTAssertEqual(openedPanes, [.general])
+        XCTAssertEqual(openedPanes, [.generalPermissions])
     }
 
     // MARK: - currentAutoplayDecision Tests

@@ -1600,6 +1600,8 @@
 		9F5E5AB02C3E4C6000165F54 /* ContextualOnboardingPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F5E5AAF2C3E4C6000165F54 /* ContextualOnboardingPresenter.swift */; };
 		9F5E5AB22C3E606D00165F54 /* ContextualOnboardingPresenterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F5E5AB12C3E606D00165F54 /* ContextualOnboardingPresenterTests.swift */; };
 		9F5EA7C40000000000000002 /* ContextualOnboardingDialogs+EndOfJourneyTryAI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F5EA7C40000000000000001 /* ContextualOnboardingDialogs+EndOfJourneyTryAI.swift */; };
+		9F5EA7C40000000000000004 /* OnboardingEndOfJourneyTryAIProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F5EA7C40000000000000003 /* OnboardingEndOfJourneyTryAIProvider.swift */; };
+		9F5EA7C40000000000000006 /* OnboardingEndOfJourneyTryAIProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F5EA7C40000000000000005 /* OnboardingEndOfJourneyTryAIProviderTests.swift */; };
 		9F60CBA92E9892CF004D2367 /* SurveyLastSearchStateRefresherTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F60CBA82E9892CF004D2367 /* SurveyLastSearchStateRefresherTests.swift */; };
 		9F60CBAA2E9892CF004D2367 /* RemoteMessagingActionHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F60CBA72E9892CF004D2367 /* RemoteMessagingActionHandlerTests.swift */; };
 		9F60CBAE2E989580004D2367 /* SurveyLastSearchStateRefresherIntegrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F60CBAD2E989580004D2367 /* SurveyLastSearchStateRefresherIntegrationTests.swift */; };
@@ -4466,6 +4468,8 @@
 		9F5E5AAF2C3E4C6000165F54 /* ContextualOnboardingPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContextualOnboardingPresenter.swift; sourceTree = "<group>"; };
 		9F5E5AB12C3E606D00165F54 /* ContextualOnboardingPresenterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContextualOnboardingPresenterTests.swift; sourceTree = "<group>"; };
 		9F5EA7C40000000000000001 /* ContextualOnboardingDialogs+EndOfJourneyTryAI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ContextualOnboardingDialogs+EndOfJourneyTryAI.swift"; sourceTree = "<group>"; };
+		9F5EA7C40000000000000003 /* OnboardingEndOfJourneyTryAIProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingEndOfJourneyTryAIProvider.swift; sourceTree = "<group>"; };
+		9F5EA7C40000000000000005 /* OnboardingEndOfJourneyTryAIProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingEndOfJourneyTryAIProviderTests.swift; sourceTree = "<group>"; };
 		9F60CBA72E9892CF004D2367 /* RemoteMessagingActionHandlerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteMessagingActionHandlerTests.swift; sourceTree = "<group>"; };
 		9F60CBA82E9892CF004D2367 /* SurveyLastSearchStateRefresherTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SurveyLastSearchStateRefresherTests.swift; sourceTree = "<group>"; };
 		9F60CBAD2E989580004D2367 /* SurveyLastSearchStateRefresherIntegrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SurveyLastSearchStateRefresherIntegrationTests.swift; sourceTree = "<group>"; };
@@ -8851,6 +8855,7 @@
 				9FDEC7B32C8FD62F00C7A692 /* OnboardingAddressBarPositionPickerViewModelTests.swift */,
 				9795B2122EC62BF2002A812F /* OnboardingSearchExperienceSelectionHandlerTests.swift */,
 				97EFB15A2EFAB2D600CF06E1 /* OnboardingSearchExperienceSettingsResolverTests.swift */,
+				9F5EA7C40000000000000005 /* OnboardingEndOfJourneyTryAIProviderTests.swift */,
 				9F5179D92D545D4300E40B40 /* DaxDialogsOnboardingMigratorTests.swift */,
 				9FD1BDEB2D8C183C002F4EFE /* OnboardingManagerTests.swift */,
 				FDEC1A2B30260001000000F2 /* IOSMonthlyFreeTrialDeciderTests.swift */,
@@ -9033,6 +9038,7 @@
 				9F5E5AAF2C3E4C6000165F54 /* ContextualOnboardingPresenter.swift */,
 				9F0369F32F23098900A00DCA /* ContextualDaxDialogFactory.swift */,
 				9F0369ED2F2307A000A00DCA /* NewTabDaxDialogFactory.swift */,
+				9F5EA7C40000000000000003 /* OnboardingEndOfJourneyTryAIProvider.swift */,
 				9FF362BD2F3AC78B00824B30 /* ContextualDialogsDynamicMetrics.swift */,
 				9F31833A2F31831B0078DA7F /* ContextualOnboardingDialogs+TrySearch.swift */,
 				9FB71CB42F395A86000AD042 /* ContextualOnboardingDialogs+TrySite.swift */,
@@ -13488,6 +13494,7 @@
 				97D99E622F741FE900EE34E7 /* AIVoiceChatIntent.swift in Sources */,
 				9FF362DA2F3DC6A200824B30 /* ContextualOnboardingDialogs+SubscriptionPromo.swift in Sources */,
 				9F5EA7C40000000000000002 /* ContextualOnboardingDialogs+EndOfJourneyTryAI.swift in Sources */,
+				9F5EA7C40000000000000004 /* OnboardingEndOfJourneyTryAIProvider.swift in Sources */,
 				8569E1702D52C9A4004A3CB7 /* TabSwitcherBarsStateHandler.swift in Sources */,
 				9FE08BDC2C2A88FA001D5EBC /* OnboardingIntroViewController.swift in Sources */,
 				3666D86330016E4D00B63F99 /* SubscriptionOnboardingFreeTrialCalendarCard.swift in Sources */,
@@ -15078,6 +15085,7 @@
 				310742AB2848E6FD0012660B /* BackForwardMenuHistoryItemURLSanitizerTests.swift in Sources */,
 				C1935A222C89CA9F001AD72D /* AutofillSurveyManagerTests.swift in Sources */,
 				97EFB15B2EFAB2D600CF06E1 /* OnboardingSearchExperienceSettingsResolverTests.swift in Sources */,
+				9F5EA7C40000000000000006 /* OnboardingEndOfJourneyTryAIProviderTests.swift in Sources */,
 				22CB1ED8203DDD2C00D2C724 /* AppDeepLinksTests.swift in Sources */,
 				9847C00527A41A0A00DB07AA /* WebViewTestHelper.swift in Sources */,
 				3170048227A9504F00C03F35 /* DownloadMocks.swift in Sources */,

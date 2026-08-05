@@ -147,8 +147,12 @@ final class NewTabPageMessagesModel: ObservableObject {
 
     // MARK: - Lifecycle
 
+    /// The owning controller must call this once after construction; repeat calls are ignored.
     func load() {
         guard !isLoaded, !isTornDown else {
+            if isTornDown {
+                assertionFailure("A torn-down messages model must not be reloaded")
+            }
             return
         }
 

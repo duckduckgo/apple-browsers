@@ -27,6 +27,13 @@ import DesignResourcesKitIcons
 
 extension OnboardingRebranding {
 
+    static let daxAnimation = DaxAnimation(
+        animationName: "Dax-EndOfJourney-TryWebsite",
+        size: CGSize(width: 153, height: 169.67),
+        position: .left(bottomPadding: -70.0, xOffset: 0.0),
+        largeScreenPosition: .left(bottomPadding: 0.0, xOffset: 0.0)
+    )
+
     /// https://www.figma.com/design/YPE94Xkcrk2uqiF2l4VmSv/Onboarding--2026-?node-id=12206-51627&m=dev
     struct OnboardingEndOfJourneyDialog: View {
         @Environment(\.verticalSizeClass) private var vSizeClass
@@ -56,13 +63,6 @@ extension OnboardingRebranding {
             self.onManualDismiss = onManualDismiss
         }
 
-        static let daxAnimation = DaxAnimation(
-            animationName: "Dax-EndOfJourney-TryWebsite",
-            size: CGSize(width: 153, height: 169.67),
-            position: .left(bottomPadding: -70.0, xOffset: 0.0),
-            largeScreenPosition: .left(bottomPadding: 0.0, xOffset: 0.0)
-        )
-
         var body: some View {
             OnboardingBubbleView(tailPosition: showsDaxAnimation && !OnboardingBubbleAnimationMetrics.shouldHideBubbleTail(for: dynamicTypeSize) ? .bottom(offset: 0.2, direction: .leading) : nil) {
                 OnboardingRebranding.ContextualDaxDialogContent(
@@ -86,7 +86,7 @@ extension OnboardingRebranding {
                 // Keyboard-aware placement on every non-compact device. Replaces the prior
                 // iPhone-only path that left iPad's keyboard covering Dax.
                 if showsDaxAnimation && !OnboardingBubbleAnimationMetrics.isCompactDevice {
-                    ScreenBottomDaxOverlay(animation: Self.daxAnimation)
+                    ScreenBottomDaxOverlay(animation: OnboardingRebranding.daxAnimation)
                 }
             }
         }
@@ -99,7 +99,7 @@ extension OnboardingRebranding {
 /// Positions Dax at the screen bottom via global coordinates; re-anchors to the keyboard's
 /// top edge when the keyboard is visible so it doesn't get covered. Renders beyond the
 /// hosting controller's bounds (which doesn't clip).
-private struct ScreenBottomDaxOverlay: View {
+struct ScreenBottomDaxOverlay: View {
     let animation: DaxAnimation
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion

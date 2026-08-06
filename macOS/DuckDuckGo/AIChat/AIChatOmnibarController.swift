@@ -1254,7 +1254,8 @@ final class AIChatOmnibarController {
             } else {
                 pageContextPayload = await self.extractPageContextsForOmnibarSubmit(
                     tabAttachments: snapshotTabAttachments,
-                    activeTabUUID: snapshotActiveTabUUID
+                    activeTabUUID: snapshotActiveTabUUID,
+                    promptStore: snapshotDraftStore
                 )
                 pixelHandler.fire(.submittedWithTabs(count: snapshotTabAttachments.count))
             }
@@ -1324,7 +1325,8 @@ final class AIChatOmnibarController {
     @MainActor
     private func extractPageContextsForOmnibarSubmit(
         tabAttachments: [AIChatTabAttachment],
-        activeTabUUID: String?
+        activeTabUUID: String?,
+        promptStore: (any DuckAIPromptDraftStoring)?
     ) async -> AIChatPageContextPayload? {
         guard !tabAttachments.isEmpty, let origin = origin?.originTabCollectionViewModel else { return nil }
 
@@ -1345,14 +1347,16 @@ final class AIChatOmnibarController {
 
         // Stamp `tabId` on each successful extraction (or strip it if the entry matches the
         // active tab), then re-order to match the carousel's insertion order.
-        // Extraction resolves the live tab, which may have navigated since submit started. With page
-        // content not sent automatically, only the page the user actually attached may ship.
+        // Extraction resolves the live tab, which may have navigated while the extraction ran. With
+        // page content not sent automatically, only the page still attached by then may ship — read
+        // after the await, so a redirect the tracker accepted counts and a drop it made is honoured.
         let sendsAnyPage = aiChatMenuConfiguration.shouldAutomaticallySendPageContext
-        let attachedURLsById = Dictionary(tabAttachments.map { ($0.id, $0.url) }, uniquingKeysWith: { _, latest in latest })
+        let attachedURLsById = Dictionary((promptStore?.aiChatTabAttachments ?? tabAttachments).map { ($0.id, $0.url) },
+                                          uniquingKeysWith: { _, latest in latest })
         var byId: [String: AIChatPageContextData] = [:]
         for (tabId, maybeContext) in extracted {
             guard let ctx = maybeContext else { continue }
-            if !sendsAnyPage, let attachedURL = attachedURLsById[tabId], URL(string: ctx.url) != attachedURL { continue }
+            if !sendsAnyPage, URL(string: ctx.url) != attachedURLsById[tabId] { continue }
             let stampedTabId: String? = (tabId == activeTabUUID) ? nil : tabId
             byId[tabId] = ctx.withTabId(stampedTabId)
         }

@@ -161,11 +161,9 @@ final class AIChatAttachedTabNavigationPolicyTests: XCTestCase {
     func testNavigationToNonURLContentDropsAttachment() {
         for automaticallySendsPageContext in [true, false] {
             let action = AIChatAttachedTabNavigationPolicy.action(for: attachment(),
-                                                                 content: .newtab,
-                                                                 title: nil,
-                                                                 favicon: nil,
+                                                                 page: AIChatAttachedTabPage(content: .newtab, title: nil, favicon: nil),
                                                                  isSettlingLoadFromAttachTime: false,
-                                                             automaticallySendsPageContext: automaticallySendsPageContext)
+                                                                 automaticallySendsPageContext: automaticallySendsPageContext)
 
             XCTAssertEqual(action, .drop, "New tab page isn't attachable (auto-send: \(automaticallySendsPageContext))")
         }

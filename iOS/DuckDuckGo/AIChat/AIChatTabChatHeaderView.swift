@@ -91,15 +91,6 @@ final class AIChatTabChatHeaderView: UIView {
         !state.isVoiceSessionActive
     }
 
-    private var isPaidTitleVisible: Bool {
-        state.isSubscriptionActive == true
-    }
-
-    /// Voice mode owns its own dismiss UI, so it hides the chat-list pill.
-    private var isChatListVisible: Bool {
-        !state.isVoiceSessionActive
-    }
-
     private var isUpgradePlateVisible: Bool {
         state.isContainerVisible && isTitleHolderVisible && isTitleContainerVisible
     }
@@ -296,7 +287,18 @@ final class AIChatTabChatHeaderView: UIView {
         return label
     }()
 
-    private lazy var titleLabel = Self.makeNavigationTitleLabel(text: UserText.aiChatHeaderPaidTitle)
+    private lazy var titleLabel: UILabel = {
+        let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.text = UserText.aiChatHeaderPaidTitle
+        label.font = AIChatTabChatHeaderView.makeNavigationTitleFont()
+        label.textColor = UIColor(designSystemColor: .textPrimary)
+        label.textAlignment = .center
+        label.adjustsFontForContentSizeCategory = true
+        label.adjustsFontSizeToFitWidth = true
+        label.minimumScaleFactor = Constants.titleMinimumScaleFactor
+        return label
+    }()
 
     private lazy var paidIconView: UIImageView = {
         let imageView = UIImageView(image: DesignSystemImages.Color.Size16.aiChat)
@@ -342,19 +344,6 @@ final class AIChatTabChatHeaderView: UIView {
     private static func makeNavigationTitleFont() -> UIFont {
         let descriptor = UIFontDescriptor.preferredFontDescriptor(withTextStyle: .headline)
         return UIFont(descriptor: descriptor, size: descriptor.pointSize)
-    }
-
-    private static func makeNavigationTitleLabel(text: String) -> UILabel {
-        let label = UILabel()
-        label.translatesAutoresizingMaskIntoConstraints = false
-        label.text = text
-        label.font = makeNavigationTitleFont()
-        label.textColor = UIColor(designSystemColor: .textPrimary)
-        label.textAlignment = .center
-        label.adjustsFontForContentSizeCategory = true
-        label.adjustsFontSizeToFitWidth = true
-        label.minimumScaleFactor = Constants.titleMinimumScaleFactor
-        return label
     }
 
     private lazy var leftStack: UIStackView = {
@@ -433,17 +422,17 @@ final class AIChatTabChatHeaderView: UIView {
     }
 
     private func applyState() {
-        // Pills and their inner buttons are hidden together so the surrounding glass pill
-        // background disappears too. The two non-trivial rules are named properties above.
+        // During fire onboarding, hide the free/upgrade title to avoid distraction.
         titleContainer.isHidden = !isTitleContainerVisible
-        paidTitleStack.isHidden = !isPaidTitleVisible
+        paidTitleStack.isHidden = state.isSubscriptionActive != true
+        let voiceActive = state.isVoiceSessionActive
         titleHolder.isHidden = !isTitleHolderVisible
-        chatListButtonPill.isHidden = !isChatListVisible
-        chatListButton.isHidden = !isChatListVisible
-        // Voice owns its own dismiss UI.
-        closeButtonPill.isHidden = state.isVoiceSessionActive
-        closeButton.isHidden = state.isVoiceSessionActive
-
+        // Hide each pill (and its button inside it) together so the surrounding glass pill
+        // background also disappears during voice sessions. Voice mode owns its own dismiss UI.
+        chatListButtonPill.isHidden = voiceActive
+        chatListButton.isHidden = voiceActive
+        closeButtonPill.isHidden = voiceActive
+        closeButton.isHidden = voiceActive
         titleSpacingConstraints.forEach { $0.isActive = !titleHolder.isHidden }
     }
 

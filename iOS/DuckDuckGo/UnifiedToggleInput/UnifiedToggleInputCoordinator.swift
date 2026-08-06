@@ -770,9 +770,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         showCollapsed()
     }
 
-    /// The single point that fans edit mode out to each part: the input (`setEditMode` cascades to
-    /// the toolbar controls, and later the disclaimer / "Update" label) and the host chrome
-    /// (transcript whiteout + header, via the delegate). Nothing else needs to know about editing.
+    /// Fans edit mode out to the input (`setEditMode`) and the host chrome (via the delegate).
     private func applyEditMode() {
         viewController.setEditMode(isEditing)
         delegate?.unifiedToggleInputDidChangeEditMode(isEditing)
@@ -1960,8 +1958,7 @@ private extension UnifiedToggleInputCoordinator {
             .store(in: &cancellables)
     }
 
-    /// Cancels an in-progress edit when the app backgrounds, so we don't return to (or, on a
-    /// subsequent kill, leave behind) a half-open edit. `endEditMode` is a no-op when not editing.
+    /// Cancels an in-progress edit when the app backgrounds. `endEditMode` is a no-op when not editing.
     func subscribeToAppLifecycle() {
         NotificationCenter.default.publisher(for: UIApplication.didEnterBackgroundNotification)
             .receive(on: DispatchQueue.main)

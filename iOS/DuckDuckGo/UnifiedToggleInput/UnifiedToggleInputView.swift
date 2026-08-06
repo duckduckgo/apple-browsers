@@ -361,8 +361,7 @@ final class UnifiedToggleInputView: UIView {
     /// Puts the toolbar into/out of edit mode (hides the tools / reasoning / model controls).
     func setEditMode(_ editing: Bool) {
         toolsToolbar.isEditing = editing
-        // Shown whenever editing for now. Once the FE bridge supplies `hasResponsesToLose` on the
-        // edit request, gate this on that flag so it only appears when a response would be replaced.
+        // TODO: gate on the FE-supplied `hasResponsesToLose`; shown whenever editing for now.
         setEditReplaceDisclaimerCardVisible(editing)
     }
 

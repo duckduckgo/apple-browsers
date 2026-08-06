@@ -20,14 +20,12 @@
 import DesignResourcesKit
 import UIKit
 
-/// The glass capsule chrome shared by the Duck.ai tab headers. `self` is the shadow host (drop
-/// shadow, unclipped); it wraps a clipped inner host carrying a Liquid-Glass effect on iOS 26+ or a
-/// raised fill on legacy. Callers add their controls to `contentView`. The two-view split lets the
-/// drop shadow render outside the capsule while menu-dismiss highlights stay clipped inside — a
-/// single layer can't do both.
+/// Glass capsule chrome for the Duck.ai tab headers; add controls to `contentView`. Split into an
+/// outer shadow host and an inner clipped host so the shadow renders outside the capsule while
+/// content (and menu-dismiss highlights) stay clipped inside.
 final class AIChatHeaderGlassPill: UIView {
 
-    /// Where callers add pill content (a single icon button, or a multi-icon stack).
+    /// Add pill content here (an icon button, or a multi-icon stack).
     let contentView = UIView()
 
     private let cornerRadius: CGFloat
@@ -82,8 +80,6 @@ final class AIChatHeaderGlassPill: UIView {
             clipHost.bottomAnchor.constraint(equalTo: bottomAnchor),
         ])
 
-        // Shadow on the outer host so it renders outside the capsule bounds; corner radius mirrored
-        // here too so the shadow follows the capsule shape.
         layer.cornerRadius = cornerRadius
         applyShadow(dimmed: false)
     }
@@ -92,7 +88,7 @@ final class AIChatHeaderGlassPill: UIView {
         fatalError("init(coder:) has not been implemented")
     }
 
-    /// Re-resolves the glass style for the current light/dark appearance. No-op on legacy.
+    /// Re-resolve the glass style for the current light/dark appearance. No-op on legacy.
     func refreshGlassForCurrentTraits() {
         guard #available(iOS 26, *), let glassEffectView else { return }
         glassEffectView.effect = Self.glassEffect(for: traitCollection)

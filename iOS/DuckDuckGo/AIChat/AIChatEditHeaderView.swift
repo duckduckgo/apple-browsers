@@ -25,9 +25,8 @@ protocol AIChatEditHeaderViewDelegate: AnyObject {
     func aiChatEditHeaderDidTapCancel()
 }
 
-/// Minimal header shown in place of `AIChatTabChatHeaderView` while editing a message: a leading ✕
-/// (cancels the edit) and a centred "Edit Message" title. Kept separate so the normal header stays
-/// edit-unaware; the shared glass ✕ pill comes from `AIChatHeaderGlassPill`.
+/// Header shown while editing a message: a leading ✕ that cancels the edit and a centred
+/// "Edit Message" title.
 final class AIChatEditHeaderView: UIView {
 
     private enum Constants {

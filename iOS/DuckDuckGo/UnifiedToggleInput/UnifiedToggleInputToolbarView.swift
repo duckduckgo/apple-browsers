@@ -201,12 +201,10 @@ final class UnifiedToggleInputToolbarView: UIView {
     var isEditing: Bool = false {
         didSet {
             guard oldValue != isEditing else { return }
-            // Editing only allows text edits + attachment removal, so hide the secondary controls as
-            // groups (attach/tools/tool-chip on the left, reasoning/model-chip on the right), leaving
-            // just the submit cluster. Grouping avoids weaving `isEditing` into each control's setter.
+            // Editing hides the secondary-control groups, leaving the submit cluster.
             leftControlsGroup.isHidden = isEditing
             secondaryTrailingGroup.isHidden = isEditing
-            // Refresh so an empty field in edit shows a disabled submit rather than the mic.
+            // Keep an empty field showing a disabled submit rather than the voice mic.
             updateSubmitButtonAppearance()
         }
     }
@@ -401,8 +399,7 @@ final class UnifiedToggleInputToolbarView: UIView {
         return button
     }()
 
-    /// Secondary controls grouped so edit mode can hide each group with a single `isHidden`,
-    /// instead of weaving `isEditing` into every control's setter.
+    /// Secondary controls, grouped so edit mode can hide them with one `isHidden` per group.
     private lazy var leftControlsGroup: UIStackView = {
         let stack = UIStackView(arrangedSubviews: [imageButton, toolsButton, selectedToolChipView])
         stack.axis = .horizontal
@@ -441,8 +438,6 @@ private extension UnifiedToggleInputToolbarView {
         spacer.setContentHuggingPriority(.defaultLow, for: .horizontal)
         spacer.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 
-        // reasoning + model-chip nest in `secondaryTrailingGroup` so edit mode can hide them as a
-        // unit alongside `leftControlsGroup`, leaving the return/submit/stop cluster in place.
         let rightGroup = UIStackView(arrangedSubviews: [secondaryTrailingGroup, returnKeyButton, submitButton, stopButton])
         rightGroup.axis = .horizontal
         rightGroup.spacing = Constants.rightGroupSpacing
@@ -523,8 +518,7 @@ private extension UnifiedToggleInputToolbarView {
     }
 
     func updateSubmitButtonAppearance() {
-        // No voice affordance while editing an existing message — an empty field there should stay a
-        // (disabled) submit button, not flip to the mic.
+        // No voice mic while editing — an empty field stays a disabled submit button.
         let showVoice = isAIVoiceChatActive && !isSubmitEnabled && !isEditing
         let usesReturnKeyStyle = usesNewPromptSubmitStyle || preservesSubmitStyleDuringDismissal
         let icon: UIImage? = {

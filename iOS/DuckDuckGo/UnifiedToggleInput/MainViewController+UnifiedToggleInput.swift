@@ -446,9 +446,7 @@ private extension MainViewController {
             .store(in: &unifiedToggleInputCancellables)
     }
 
-    /// Central point for host-side edit-mode chrome (transcript whiteout + header swap), driven
-    /// off the coordinator's `isEditing`. Keeping both here mirrors the input-side
-    /// `applyEditModeToInput` so all edit-mode UI changes live in one place per layer.
+    /// Host-side edit chrome: transcript whiteout + header swap.
     private func applyEditModeChrome(_ isEditing: Bool) {
         setDuckAITranscriptDimmedForEditing(isEditing)
         // Swap the normal header for the minimal edit header (both live in the same container).
@@ -456,9 +454,7 @@ private extension MainViewController {
         aiChatEditHeaderView?.isHidden = !isEditing
     }
 
-    /// Whites out the Duck.ai transcript while editing so the edit input stands alone (per the
-    /// "Edit Message" design), and restores it on exit. Full-tab only for now; the contextual
-    /// panel is a follow-up slice.
+    /// Whites out the Duck.ai transcript while editing and restores it on exit. Full-tab only.
     private func setDuckAITranscriptDimmedForEditing(_ isEditing: Bool) {
         guard currentTab?.isAITab == true, let webView = currentTab?.webView else { return }
         UIView.animate(withDuration: 0.2) {

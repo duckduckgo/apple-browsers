@@ -1555,6 +1555,19 @@ class TabViewController: UIViewController {
             }
         }
 
+        if case .tabTermination = actionableErrorPage {
+            if webView.canGoBack, webView.goBack() != nil {
+                duckPlayerNavigationHandler.handleGoBack(webView: webView)
+                chromeDelegate?.omniBar.endEditing()
+            } else if openingTab != nil {
+                stashReopenableStateOnOpener()
+                delegate?.tabDidRequestClose(self)
+            } else if let url {
+                load(url: url)
+            }
+            return
+        }
+
         if isError {
             hideErrorMessage()
             if let url = webView.url, safariRedirectHandler.isAfterSuppressedXSafariRedirect(for: url), webView.canGoBack {

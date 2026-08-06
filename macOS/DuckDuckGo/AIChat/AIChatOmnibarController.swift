@@ -101,6 +101,13 @@ final class AIChatOmnibarController {
     /// Shared 4-view cap across both pickers (reuses `FreeTrialBadgePersistor`, separately keyed).
     /// Past the cap the badge mutes instead of hiding — it's the only entry point to the upsell.
     private let badgeImpressionPersistor: FreeTrialBadgePersisting
+    /// Source of the "Automatically send page content" setting, which decides whether an attached
+    /// tab's card follows that tab's navigation or is dropped. Resolved on use rather than in `init`
+    /// so constructing a controller never reaches for the app delegate.
+    private let injectedAIChatMenuConfiguration: AIChatMenuVisibilityConfigurable?
+    private var aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable {
+        injectedAIChatMenuConfiguration ?? NSApp.delegateTyped.aiChatMenuConfiguration
+    }
     private var preferences: AIChatPreferencesPersisting
     private var cancellables = Set<AnyCancellable>()
     private var draftStoreCancellable: AnyCancellable?
@@ -148,6 +155,10 @@ final class AIChatOmnibarController {
     /// Cancellable for the active tab's `$aiChatPanelAttachments` subscription. Re-subscribed
     /// every time the selected tab changes.
     private var panelAttachmentsCancellable: AnyCancellable?
+
+    /// One subscription per attached tab, keyed by tab uuid, watching that tab's own navigation so
+    /// its card can follow it or be dropped — see `AIChatAttachedTabNavigationPolicy`.
+    private var attachedTabCancellables: [String: AnyCancellable] = [:]
 
     /// View model for managing chat suggestions. Always initialized, but only populated when feature flag is enabled.
     let suggestionsViewModel: AIChatSuggestionsViewModel
@@ -280,7 +291,9 @@ final class AIChatOmnibarController {
         // are both @MainActor-isolated; a default *parameter value* is evaluated in a nonisolated
         // context even though this initializer's body is not, so the real default is resolved below.
         subscriptionUpsellPresenter: AIChatOmnibarSubscriptionUpselling? = nil,
-        badgeImpressionPersistor: FreeTrialBadgePersisting = FreeTrialBadgePersistor(keyValueStore: UserDefaults.standard, keyPrefix: "aichat-omnibar")
+        badgeImpressionPersistor: FreeTrialBadgePersisting = FreeTrialBadgePersistor(keyValueStore: UserDefaults.standard, keyPrefix: "aichat-omnibar"),
+        /// Defaults to the app-wide configuration, resolved lazily on first use.
+        aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable? = nil
     ) {
         self.aiChatTabOpener = aiChatTabOpener
         self.surface = surface
@@ -298,6 +311,7 @@ final class AIChatOmnibarController {
         self.subscriptionUpsellPresenter = subscriptionUpsellPresenter
             ?? AIChatOmnibarSubscriptionUpsellPresenter(coordinator: Application.appDelegate.subscriptionNavigationCoordinator)
         self.badgeImpressionPersistor = badgeImpressionPersistor
+        self.injectedAIChatMenuConfiguration = aiChatMenuConfiguration
         self.suggestionsViewModel = AIChatSuggestionsViewModel(
             maxSuggestions: suggestionsReader?.maxHistoryCount ?? AIChatSuggestionsViewModel.defaultMaxSuggestions
         )
@@ -836,6 +850,62 @@ final class AIChatOmnibarController {
     /// Called by the container VC whenever the tab attachment list changes (toggle from menu, removal from carousel).
     func persistTabAttachmentsToActiveTab(_ attachments: [AIChatTabAttachment]) {
         draftStore?.setAIChatTabAttachments(attachments)
+        syncAttachedTabObservers()
+    }
+
+    /// Keeps one navigation observer per attached tab: adds observers for newly attached tabs, drops
+    /// them for detached ones. A tab picks up an observer only once, and is reconciled against its
+    /// current page right after — that catches navigation that happened while its draft wasn't the
+    /// active one.
+    private func syncAttachedTabObservers() {
+        let attachedIds = Set(activeTabAttachments.map(\.id))
+        for (id, cancellable) in attachedTabCancellables where !attachedIds.contains(id) {
+            cancellable.cancel()
+            attachedTabCancellables[id] = nil
+        }
+
+        guard let collection = origin?.originTabCollectionViewModel else { return }
+        for id in attachedIds where attachedTabCancellables[id] == nil {
+            guard let tab = loadedTab(withId: id, in: collection) else { continue }
+            // `dropFirst` skips the replayed current values: the observer must be stored before any
+            // policy runs, otherwise a policy-driven re-sync would subscribe to the same tab twice.
+            attachedTabCancellables[id] = Publishers.CombineLatest(tab.$content, tab.$title)
+                .dropFirst()
+                .sink { [weak self, weak tab] content, title in
+                    self?.applyNavigationPolicy(forAttachedTabId: id, content: content, title: title, favicon: tab?.favicon)
+                }
+            applyNavigationPolicy(forAttachedTabId: id, content: tab.content, title: tab.title, favicon: tab.favicon)
+        }
+    }
+
+    private func loadedTab(withId id: String, in collection: TabCollectionViewModel) -> Tab? {
+        let allTabs = (collection.pinnedTabsCollection?.tabs ?? []) + collection.tabCollection.tabs
+        return allTabs.lazy.compactMap { anyTab -> Tab? in
+            guard case .loaded(let tab) = anyTab, tab.uuid == id else { return nil }
+            return tab
+        }.first
+    }
+
+    private func applyNavigationPolicy(forAttachedTabId id: String, content: Tab.TabContent, title: String?, favicon: NSImage?) {
+        var current = activeTabAttachments
+        guard let index = current.firstIndex(where: { $0.id == id }) else { return }
+
+        let action = AIChatAttachedTabNavigationPolicy.action(
+            for: current[index],
+            content: content,
+            title: title,
+            favicon: favicon,
+            automaticallySendsPageContext: aiChatMenuConfiguration.shouldAutomaticallySendPageContext
+        )
+        switch action {
+        case .keep:
+            return
+        case .drop:
+            current.remove(at: index)
+        case .refresh(let refreshed):
+            current[index] = refreshed
+        }
+        persistTabAttachmentsToActiveTab(current)
     }
 
     /// The tab attachments persisted for the current tab, or an empty list if none / no shared state.
@@ -1111,6 +1181,9 @@ final class AIChatOmnibarController {
                     .sink { [weak self] panelAttachments in
                         self?.onActiveTabPanelAttachmentsChanged?(panelAttachments)
                     }
+                // The incoming tab has its own attachments — watch those tabs instead, and reconcile
+                // any navigation they made while this draft wasn't the active one.
+                self.syncAttachedTabObservers()
                 if store == nil {
                     // No store → empty carousel; nothing can deliver the empty value for us.
                     self.onActiveTabPanelAttachmentsChanged?([])

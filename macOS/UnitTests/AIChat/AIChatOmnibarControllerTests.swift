@@ -670,6 +670,70 @@ final class AIChatOmnibarControllerTests: XCTestCase {
                        "Attaching beyond the display cap is a no-op")
     }
 
+    // MARK: - Attached tabs navigating
+
+    /// Selected tab A holds the prompt; tab B is attached to it and then navigates.
+    private func makeControllerWithAttachedOtherTab(automaticallySendPageContext: Bool) -> (AIChatOmnibarController, Tab) {
+        let promptTab = Tab(content: .url(URL(string: "https://prompt.example")!, credential: nil, source: .ui))
+        let attachedTab = Tab(content: .url(URL(string: "https://example.com")!, credential: nil, source: .ui))
+        _ = tabCollectionViewModel.append(tab: attachedTab, selected: false)
+        _ = tabCollectionViewModel.append(tab: promptTab, selected: true)
+
+        let menuConfig = MockAIChatConfig()
+        menuConfig.shouldAutomaticallySendPageContext = automaticallySendPageContext
+
+        let controller = AIChatOmnibarController(
+            aiChatTabOpener: mockTabOpener,
+            surface: .addressBar,
+            draftSource: TabPromptDraftSource(tabCollectionViewModel: tabCollectionViewModel),
+            origin: WindowPromptOrigin(tabCollectionViewModel: tabCollectionViewModel),
+            pixelHandler: AddressBarPromptPixelHandler(),
+            featureFlagger: featureFlagger,
+            searchPreferencesPersistor: searchPreferencesPersistor,
+            preferences: mockPreferences,
+            modelsService: mockModelsService,
+            subscriptionManager: mockSubscriptionManager,
+            subscriptionUpsellPresenter: mockSubscriptionUpsellPresenter,
+            badgeImpressionPersistor: mockBadgeImpressionPersistor,
+            aiChatMenuConfiguration: menuConfig
+        )
+        controller.toggleTabAttachment(AIChatTabAttachment(id: attachedTab.uuid,
+                                                           title: "Example",
+                                                           url: URL(string: "https://example.com")!,
+                                                           favicon: nil))
+        XCTAssertEqual(controller.activeTabAttachments.map(\.id), [attachedTab.uuid])
+        return (controller, attachedTab)
+    }
+
+    func testWhenAttachedTabNavigatesAndPageContentIsSentAutomatically_ThenAttachmentFollowsTheNewPage() {
+        let (controller, attachedTab) = makeControllerWithAttachedOtherTab(automaticallySendPageContext: true)
+
+        _ = attachedTab.setContent(.url(URL(string: "https://apple.com")!, credential: nil, source: .ui))
+
+        XCTAssertEqual(controller.activeTabAttachments.map(\.url.absoluteString), ["https://apple.com"],
+                       "With auto-send on, the attachment refreshes to the page the tab is now on")
+        XCTAssertEqual(controller.activeTabAttachments.map(\.id), [attachedTab.uuid])
+    }
+
+    func testWhenAttachedTabNavigatesAndPageContentIsNotSentAutomatically_ThenAttachmentIsDropped() {
+        let (controller, attachedTab) = makeControllerWithAttachedOtherTab(automaticallySendPageContext: false)
+
+        _ = attachedTab.setContent(.url(URL(string: "https://apple.com")!, credential: nil, source: .ui))
+
+        XCTAssertTrue(controller.activeTabAttachments.isEmpty,
+                      "The user attached one specific page; navigating away drops it rather than sending another page")
+    }
+
+    func testWhenAttachedTabIsDetached_ThenItsNavigationNoLongerTouchesTheAttachments() {
+        let (controller, attachedTab) = makeControllerWithAttachedOtherTab(automaticallySendPageContext: true)
+        controller.removeTabAttachmentFromActiveTab(id: attachedTab.uuid)
+        controller.toggleTabAttachment(makeTabAttachment(id: "other-tab"))
+
+        _ = attachedTab.setContent(.url(URL(string: "https://apple.com")!, credential: nil, source: .ui))
+
+        XCTAssertEqual(controller.activeTabAttachments.map(\.id), ["other-tab"])
+    }
+
     func testTabAttachmentFullAndExcessPredicates() {
         XCTAssertFalse(controller.isActiveTabAttachmentsFull)
         XCTAssertFalse(controller.hasExcessTabAttachments)

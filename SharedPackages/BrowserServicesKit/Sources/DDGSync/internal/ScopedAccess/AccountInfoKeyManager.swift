@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import os.log
 import Security
 
 struct AccountInfoKey: @unchecked Sendable {
@@ -58,7 +59,9 @@ actor AccountInfoKeyManager: AccountInfoKeyManaging {
     func loadKey(for account: SyncAccount) async throws -> AccountInfoKey {
         if let protectedKeys = cachedProtectedKeys() {
             do {
-                return try await makeAccountInfoKey(from: protectedKeys, account: account)
+                let key = try await makeAccountInfoKey(from: protectedKeys, account: account)
+                Logger.sync.debug("Sync-UnifiedDevices: loaded account_info key from secure storage")
+                return key
             } catch {
                 // Preserve structurally valid cached keys until an authoritative refresh succeeds.
             }
@@ -67,6 +70,7 @@ actor AccountInfoKeyManager: AccountInfoKeyManaging {
     }
 
     func refreshKey(for account: SyncAccount) async throws -> AccountInfoKey {
+        Logger.sync.debug("Sync-UnifiedDevices: fetching account_info key from server")
         let protectedKeys = try await scopedAccess.fetchProtectedKeys(account)
             .removingDuplicateWrappingIdentities()
         let key = try await makeAccountInfoKey(from: protectedKeys, account: account)
@@ -115,7 +119,13 @@ actor AccountInfoKeyManager: AccountInfoKeyManaging {
             hasSupportedWrapper = true
             do {
                 let privateKeyPKCS8 = try await unwrapPrivateKey(protectedKey, account: account)
-                return try makeAccountInfoKey(protectedKey: protectedKey, privateKeyPKCS8: privateKeyPKCS8)
+                let key = try makeAccountInfoKey(protectedKey: protectedKey, privateKeyPKCS8: privateKeyPKCS8)
+                if protectedKey.encryptedWith == SyncCredentialID.defaultCredential {
+                    Logger.sync.debug("Sync-UnifiedDevices: unwrapped account_info key with ddg credential")
+                } else {
+                    Logger.sync.debug("Sync-UnifiedDevices: unwrapped account_info key with 3party credential")
+                }
+                return key
             } catch {
                 lastError = error
             }

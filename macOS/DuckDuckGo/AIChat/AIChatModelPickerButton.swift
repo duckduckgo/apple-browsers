@@ -314,6 +314,10 @@ final class AIChatModelPickerButton: NSView {
         )
         addTrackingArea(newTrackingArea)
         trackingArea = newTrackingArea
+
+        // Picking a model resizes the pill and lands here. A freshly added tracking area reports
+        // nothing about a pointer that is already outside it, so re-sync explicitly.
+        refreshHoverState()
     }
 
     override func mouseEntered(with event: NSEvent) {
@@ -327,6 +331,21 @@ final class AIChatModelPickerButton: NSView {
 
     override func mouseExited(with event: NSEvent) {
         isHovered = false
+    }
+
+    /// Re-derives hover from the pointer's real position, for the cases where the tracking area
+    /// can't be trusted — see `sendMenuOpeningAction` and `updateTrackingAreas`.
+    private func refreshHoverState() {
+        guard let window else {
+            isHovered = false
+            return
+        }
+        isHovered = bounds.contains(convert(window.mouseLocationOutsideOfEventStream, from: nil))
+    }
+
+    func resetTransientFillState() {
+        isMouseDown = false
+        refreshHoverState()
     }
 
     override func mouseDown(with event: NSEvent) {
@@ -343,7 +362,10 @@ final class AIChatModelPickerButton: NSView {
         let locationInView = convert(event.locationInWindow, from: nil)
         if bounds.contains(locationInView) && isMouseDown {
             if let action, let target {
-                NSApp.sendAction(action, to: target, from: self)
+                sendMenuOpeningAction {
+                    NSApp.sendAction(action, to: target, from: self)
+                }
+                return
             }
         }
         isMouseDown = false

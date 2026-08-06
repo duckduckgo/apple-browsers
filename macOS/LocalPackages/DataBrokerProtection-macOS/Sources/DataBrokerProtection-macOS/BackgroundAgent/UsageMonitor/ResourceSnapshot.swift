@@ -28,20 +28,11 @@ public struct ResourceSnapshot: Equatable, Sendable {
         public let webContentTime: TimeInterval
         /// Total CPU time normalized by elapsed monitoring time; 100% represents one fully occupied core.
         public let averagePercent: Double
-        /// WebContent process discovery and readability for the latest CPU accounting sample.
-        public let coverage: ProcessCoverage
 
         /// Cumulative agent and observed WebContent CPU time; measures total captured CPU cost.
         public var totalTime: TimeInterval {
             agentTime + webContentTime
         }
-    }
-
-    public struct ProcessCoverage: Equatable, Sendable {
-        /// WebContent processes discovered for CPU accounting.
-        public let discoveredCount: Int
-        /// Discovered WebContent processes with readable CPU counters.
-        public let readableCount: Int
     }
 
     public struct MemoryUsage: Equatable, Sendable {
@@ -67,8 +58,8 @@ public struct ResourceSnapshot: Equatable, Sendable {
         public let hadCriticalPressure: Bool
     }
 
-    /// The publication time, used to establish sample freshness and cadence.
-    public let sampledAt: Date
+    /// The publication time, used to establish report freshness and cadence.
+    public let reportedAt: Date
     public let cpu: CPUUsage
     public let memory: MemoryUsage
 }

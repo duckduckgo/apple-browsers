@@ -19,7 +19,6 @@
 import Foundation
 import DataBrokerProtectionCore
 import os.log
-import WebKit
 
 public protocol ResourceMonitoring: AnyObject {
     var debugResourceUsage: DBPDebugResourceUsage { get }
@@ -27,51 +26,36 @@ public protocol ResourceMonitoring: AnyObject {
     func stop()
 }
 
-// Every access is serialized by the lock; Sendable allows debug-server reads off the main actor.
-private final class ResourceUsageStore: @unchecked Sendable {
-    private let lock = NSLock()
-    private var resourceUsage = DBPDebugResourceUsage(isMonitoring: false, latestSample: nil)
-
-    func get() -> DBPDebugResourceUsage {
-        lock.withLock { resourceUsage }
-    }
-
-    func update(isMonitoring: Bool, latestSample: DBPDebugResourceUsage.Sample?) {
-        lock.withLock {
-            resourceUsage = DBPDebugResourceUsage(isMonitoring: isMonitoring, latestSample: latestSample)
-        }
-    }
-}
-
-/// Monitors one accepted PIR queue run on a dedicated serial queue. CPU is collected every 10 seconds;
-/// memory is sampled and snapshots are published after 10 seconds, every 60 seconds, and at run end.
-/// Only WebKit PID discovery hops to the main queue because WebKit owns those proxy objects there.
+/// Monitors one accepted PIR queue run on a dedicated serial queue. CPU accounting runs more frequently
+/// than reporting; memory is sampled when snapshots are published and at run end. Only WebKit PID discovery
+/// hops to the main queue because WebKit owns those proxy objects there.
 public final class ResourceMonitor: ResourceMonitoring, @unchecked Sendable {
 
-    // MARK: - State
+    // MARK: - Run State
 
-    private enum Constants {
-        static let cpuSampleIntervalNanoseconds = UInt64(10) * NSEC_PER_SEC
+    private struct ActiveRun {
+        var cpu: CPUUsageMonitor
+        var memory: MemoryUsageMonitor
+        var cpuSamplesUntilNextReport: Int
+        let timer: DispatchSourceTimer
+        let memoryPressureSource: DispatchSourceMemoryPressure
+    }
+
+    // MARK: - Dependencies and State
+
+    private struct Constants {
+        static let cpuSampleInterval: TimeInterval = 10
         static let cpuSamplesPerReport = 6
         static let bytesPerMebibyte = Double(1 << 20)
         static let bytesPerGibibyte = Double(1 << 30)
     }
 
-    // Mutable monitoring state is accessed only on this queue; debug reads use the locked store above.
+    // Mutable monitoring state is accessed only on this queue; debug reads use the locked store below.
     private let monitorQueue = DispatchQueue(label: "com.duckduckgo.pir.resource-monitor", qos: .utility)
     // Stores the latest published state for reads that do not run on monitorQueue.
     private let resourceUsageStore = ResourceUsageStore()
-    // Drives 10-second CPU accounting while a PIR queue run is active.
-    private var monitoringTimer: DispatchSourceTimer?
-    // Records critical memory-pressure events for the active run.
-    private var memoryPressureSource: DispatchSourceMemoryPressure?
-    // The last published snapshot, retained after monitoring stops for debugging.
-    private var latestSnapshot: ResourceSnapshot?
-    private var isMonitoring = false
-    // Counts CPU samples so every sixth 10-second sample publishes a snapshot.
-    private var cpuSampleIndex = 0
-    private var cpuUsageMonitor = CPUUsageMonitor()
-    private var memoryUsageMonitor = MemoryUsageMonitor()
+    private let webContentProcessIDProvider = WebContentProcessIDProvider()
+    private var activeRun: ActiveRun?
 
     // MARK: - Public API
 
@@ -95,95 +79,105 @@ public final class ResourceMonitor: ResourceMonitoring, @unchecked Sendable {
     }
 
     deinit {
-        monitoringTimer?.cancel()
-        memoryPressureSource?.cancel()
+        activeRun?.timer.cancel()
+        activeRun?.memoryPressureSource.cancel()
     }
 
     // MARK: - Run Lifecycle
 
     private func startMonitoring() {
-        guard !isMonitoring else { return }
-
-        resetRunState()
-        isMonitoring = true
-        resourceUsageStore.update(
-            isMonitoring: true,
-            latestSample: latestSnapshot.map(DBPDebugResourceUsage.Sample.init)
-        )
-        startMemoryPressureMonitoring()
+        guard activeRun == nil else { return }
 
         let runStartAbsoluteTime = mach_absolute_time()
-        cpuUsageMonitor.start(
-            webContentPIDs: currentWebContentPIDs(),
+        let webContentPIDs = webContentProcessIDProvider.currentProcessIDs()
+        var cpu = CPUUsageMonitor()
+        cpu.start(
+            webContentPIDs: Set(webContentPIDs ?? []),
             runStartAbsoluteTime: runStartAbsoluteTime
         )
-        memoryUsageMonitor.start(webContentPIDs: Self.webContentPIDs())
+        var memory = MemoryUsageMonitor()
+        memory.start(webContentPIDs: webContentPIDs)
 
         let timer = DispatchSource.makeTimerSource(queue: monitorQueue)
+        let memoryPressureSource = DispatchSource.makeMemoryPressureSource(
+            eventMask: .critical,
+            queue: monitorQueue
+        )
+        let sampleInterval = DispatchTimeInterval.nanoseconds(
+            Int(Constants.cpuSampleInterval * Double(NSEC_PER_SEC))
+        )
         timer.schedule(
-            deadline: .now() + .nanoseconds(Int(Constants.cpuSampleIntervalNanoseconds)),
-            repeating: .nanoseconds(Int(Constants.cpuSampleIntervalNanoseconds))
+            deadline: .now() + sampleInterval,
+            repeating: sampleInterval
         )
         timer.setEventHandler { [weak self] in
-            guard let self else { return }
-            self.sampleCPU()
-            if self.cpuSampleIndex.isMultiple(of: Constants.cpuSamplesPerReport) {
-                self.publishSnapshot()
-            }
-            self.cpuSampleIndex += 1
+            self?.handleTimerEvent()
         }
+        memoryPressureSource.setEventHandler { [weak self, weak memoryPressureSource] in
+            guard let self, memoryPressureSource?.data.contains(.critical) == true else { return }
+            // Pressure is event-based, so keep it set for the remainder of this run.
+            self.activeRun?.memory.recordCriticalPressure()
+            self.recordResourcesAndPublishSnapshot()
+        }
+        activeRun = ActiveRun(
+            cpu: cpu,
+            memory: memory,
+            cpuSamplesUntilNextReport: 1,
+            timer: timer,
+            memoryPressureSource: memoryPressureSource
+        )
+        resourceUsageStore.setMonitoring(true)
         timer.resume()
-        monitoringTimer = timer
+        memoryPressureSource.resume()
     }
 
     private func stopMonitoring() {
-        guard isMonitoring else { return }
+        guard activeRun != nil else { return }
 
-        sampleCPU()
-        publishSnapshot()
-        monitoringTimer?.cancel()
-        monitoringTimer = nil
-        memoryPressureSource?.cancel()
-        memoryPressureSource = nil
-        isMonitoring = false
-        resourceUsageStore.update(
-            isMonitoring: false,
-            latestSample: latestSnapshot.map(DBPDebugResourceUsage.Sample.init)
-        )
-    }
-
-    private func resetRunState() {
-        cpuSampleIndex = 0
-        cpuUsageMonitor.reset()
-        memoryUsageMonitor.reset()
+        recordResourcesAndPublishSnapshot()
+        activeRun?.timer.cancel()
+        activeRun?.memoryPressureSource.cancel()
+        activeRun = nil
+        resourceUsageStore.setMonitoring(false)
     }
 
     // MARK: - Sampling and Publication
 
-    private func sampleCPU() {
-        cpuUsageMonitor.recordSample(webContentPIDs: currentWebContentPIDs())
+    private func handleTimerEvent() {
+        let webContentPIDs = webContentProcessIDProvider.currentProcessIDs()
+        activeRun?.cpu.recordSample(webContentPIDs: Set(webContentPIDs ?? []))
+        activeRun?.cpuSamplesUntilNextReport -= 1
+
+        guard activeRun?.cpuSamplesUntilNextReport == 0 else { return }
+
+        activeRun?.cpuSamplesUntilNextReport = Constants.cpuSamplesPerReport
+        activeRun?.memory.recordSample(webContentPIDs: webContentPIDs)
+        publishSnapshot()
+    }
+
+    private func recordResourcesAndPublishSnapshot() {
+        let webContentPIDs = webContentProcessIDProvider.currentProcessIDs()
+        activeRun?.cpu.recordSample(webContentPIDs: Set(webContentPIDs ?? []))
+        activeRun?.memory.recordSample(webContentPIDs: webContentPIDs)
+        publishSnapshot()
     }
 
     private func publishSnapshot() {
-        let cpuUsage = cpuUsageMonitor.makeReport(at: ProcessInfo.processInfo.systemUptime)
-        let memoryUsage = memoryUsageMonitor.makeReport(
-            webContentPIDs: Self.webContentPIDs()
-        )
+        guard let activeRun else { return }
+
         let snapshot = ResourceSnapshot(
-            sampledAt: Date(),
-            cpu: cpuUsage,
-            memory: memoryUsage
+            reportedAt: Date(),
+            cpu: activeRun.cpu.makeReport(),
+            memory: activeRun.memory.makeReport()
         )
-        latestSnapshot = snapshot
-        resourceUsageStore.update(
-            isMonitoring: isMonitoring,
-            latestSample: DBPDebugResourceUsage.Sample(snapshot)
-        )
+        resourceUsageStore.publish(DBPDebugResourceUsage.Sample(snapshot))
         log(snapshot)
     }
+}
 
-    // MARK: - Logging
+// MARK: - Debug & logging
 
+private extension ResourceMonitor {
     private func log(_ snapshot: ResourceSnapshot) {
         let webContentFootprint = snapshot.memory.webContent.footprintBytes.map(Self.formattedMemory) ?? "unavailable"
         let peakWebContentFootprint = snapshot.memory.webContent.peakFootprintBytes
@@ -199,8 +193,6 @@ public final class ResourceMonitor: ResourceMonitoring, @unchecked Sendable {
             "webContentFootprint=\(webContentFootprint)",
             "peakWebContentFootprint=\(peakWebContentFootprint)",
             "webContentProcessCount=\(webContentCount)",
-            "webContentCPUPIDs=\(snapshot.cpu.coverage.readableCount)/"
-                + "\(snapshot.cpu.coverage.discoveredCount)",
             "criticalMemoryPressure=\(snapshot.memory.hadCriticalPressure)"
         ]
         let message = "PIR resource sample: " + fields.joined(separator: ", ")
@@ -214,76 +206,60 @@ public final class ResourceMonitor: ResourceMonitoring, @unchecked Sendable {
         }
         return String(format: "%.1f MiB (%llu bytes)", value / Constants.bytesPerMebibyte, bytes)
     }
-
-    // MARK: - Memory Pressure
-
-    private func startMemoryPressureMonitoring() {
-        let source = DispatchSource.makeMemoryPressureSource(eventMask: .critical, queue: monitorQueue)
-        source.setEventHandler { [weak self, weak source] in
-            guard source?.data.contains(.critical) == true else { return }
-            // Pressure is event-based, so keep it set for the remainder of this run.
-            self?.memoryUsageMonitor.recordCriticalPressure()
-            self?.sampleCPU()
-            self?.publishSnapshot()
-        }
-        source.resume()
-        memoryPressureSource = source
-    }
-
-    // MARK: - WebContent Process Discovery
-
-    private func currentWebContentPIDs() -> Set<pid_t> {
-        // WebKit only exposes currently live PIDs. A process born and terminated between ticks is unobservable.
-        return Set(Self.webContentPIDs() ?? [])
-    }
-
-    private static func webContentPIDs() -> [pid_t]? {
-        let processInfoSelector = Selector(("_webContentProcessInfo"))
-        let pidSelector = Selector(("pid"))
-        let collectPIDs: () -> [pid_t]? = {
-            autoreleasepool {
-                guard WKProcessPool.responds(to: processInfoSelector) else { return nil }
-                guard let processInfoList = WKProcessPool.perform(processInfoSelector)?
-                    .takeUnretainedValue() as? [NSObject] else {
-                    return nil
-                }
-                return processInfoList.compactMap { processInfo in
-                    guard processInfo.responds(to: pidSelector),
-                          let pid = processInfo.value(forKey: "pid") as? pid_t,
-                          pid > 0 else {
-                        return nil
-                    }
-                    return pid
-                }
-            }
-        }
-
-        // WebKit owns these unretained proxy objects on the main thread. The monitor queue is never
-        // synchronously awaited, so this main-queue hop cannot form a queue-to-main deadlock.
-        return Thread.isMainThread
-            ? collectPIDs()
-            : DispatchQueue.main.sync(execute: collectPIDs)
-    }
 }
-
-// MARK: - Debug API Mapping
 
 private extension DBPDebugResourceUsage.Sample {
     init(_ snapshot: ResourceSnapshot) {
         self.init(
-            sampledAt: snapshot.sampledAt,
-            cpuTimeSeconds: snapshot.cpu.totalTime,
-            agentCPUTimeSeconds: snapshot.cpu.agentTime,
-            webContentCPUTimeSeconds: snapshot.cpu.webContentTime,
-            averageCPUPercent: snapshot.cpu.averagePercent,
-            agentPhysicalFootprintBytes: snapshot.memory.agent.footprintBytes,
-            peakAgentPhysicalFootprintBytes: snapshot.memory.agent.peakFootprintBytes,
-            webContentFootprintBytes: snapshot.memory.webContent.footprintBytes,
-            peakWebContentFootprintBytes: snapshot.memory.webContent.peakFootprintBytes,
-            webContentProcessCount: snapshot.memory.webContent.processCount,
-            webContentCPUDiscoveredProcessCount: snapshot.cpu.coverage.discoveredCount,
-            webContentCPUReadableProcessCount: snapshot.cpu.coverage.readableCount,
-            didEncounterCriticalMemoryPressure: snapshot.memory.hadCriticalPressure
+            reportedAt: snapshot.reportedAt,
+            cpu: .init(
+                totalTimeSeconds: snapshot.cpu.totalTime,
+                agentTimeSeconds: snapshot.cpu.agentTime,
+                webContentTimeSeconds: snapshot.cpu.webContentTime,
+                averagePercent: snapshot.cpu.averagePercent
+            ),
+            memory: .init(
+                agent: .init(
+                    footprintBytes: snapshot.memory.agent.footprintBytes,
+                    peakFootprintBytes: snapshot.memory.agent.peakFootprintBytes
+                ),
+                webContent: .init(
+                    footprintBytes: snapshot.memory.webContent.footprintBytes,
+                    peakFootprintBytes: snapshot.memory.webContent.peakFootprintBytes,
+                    processCount: snapshot.memory.webContent.processCount
+                ),
+                hadCriticalPressure: snapshot.memory.hadCriticalPressure
+            )
         )
+    }
+}
+
+// MARK: - Private
+
+// Every access is serialized by the lock; Sendable allows debug-server reads off the main actor.
+private final class ResourceUsageStore: @unchecked Sendable {
+    private let lock = NSLock()
+    private var resourceUsage = DBPDebugResourceUsage(isMonitoring: false, latestSample: nil)
+
+    func get() -> DBPDebugResourceUsage {
+        lock.withLock { resourceUsage }
+    }
+
+    func setMonitoring(_ isMonitoring: Bool) {
+        lock.withLock {
+            resourceUsage = DBPDebugResourceUsage(
+                isMonitoring: isMonitoring,
+                latestSample: resourceUsage.latestSample
+            )
+        }
+    }
+
+    func publish(_ sample: DBPDebugResourceUsage.Sample) {
+        lock.withLock {
+            resourceUsage = DBPDebugResourceUsage(
+                isMonitoring: resourceUsage.isMonitoring,
+                latestSample: sample
+            )
+        }
     }
 }

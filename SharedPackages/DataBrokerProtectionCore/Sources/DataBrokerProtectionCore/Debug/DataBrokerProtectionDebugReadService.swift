@@ -72,7 +72,7 @@ public struct DataBrokerProtectionDebugReadService {
 
         if provider.resourceUsage != nil {
             endpoints.insert(.init(path: "/api/resource-usage",
-                                   description: "Latest macOS PIR agent CPU, memory, and pressure sample."), at: 0)
+                                   description: "Latest macOS PIR agent CPU, memory, and pressure report."), at: 0)
         }
 
         return endpoints

@@ -56,46 +56,65 @@ public struct DBPDebugResourceUsage: Encodable, Equatable, Sendable {
     }
 
     public struct Sample: Encodable, Equatable, Sendable {
-        public let sampledAt: Date
-        public let cpuTimeSeconds: TimeInterval
-        public let agentCPUTimeSeconds: TimeInterval
-        public let webContentCPUTimeSeconds: TimeInterval
-        public let averageCPUPercent: Double
-        public let agentPhysicalFootprintBytes: UInt64
-        public let peakAgentPhysicalFootprintBytes: UInt64
-        public let webContentFootprintBytes: UInt64?
-        public let peakWebContentFootprintBytes: UInt64?
-        public let webContentProcessCount: Int?
-        public let webContentCPUDiscoveredProcessCount: Int
-        public let webContentCPUReadableProcessCount: Int
-        public let didEncounterCriticalMemoryPressure: Bool
+        public struct CPUUsage: Encodable, Equatable, Sendable {
+            public let totalTimeSeconds: TimeInterval
+            public let agentTimeSeconds: TimeInterval
+            public let webContentTimeSeconds: TimeInterval
+            public let averagePercent: Double
 
-        public init(sampledAt: Date,
-                    cpuTimeSeconds: TimeInterval,
-                    agentCPUTimeSeconds: TimeInterval,
-                    webContentCPUTimeSeconds: TimeInterval,
-                    averageCPUPercent: Double,
-                    agentPhysicalFootprintBytes: UInt64,
-                    peakAgentPhysicalFootprintBytes: UInt64,
-                    webContentFootprintBytes: UInt64?,
-                    peakWebContentFootprintBytes: UInt64?,
-                    webContentProcessCount: Int?,
-                    webContentCPUDiscoveredProcessCount: Int,
-                    webContentCPUReadableProcessCount: Int,
-                    didEncounterCriticalMemoryPressure: Bool) {
-            self.sampledAt = sampledAt
-            self.cpuTimeSeconds = cpuTimeSeconds
-            self.agentCPUTimeSeconds = agentCPUTimeSeconds
-            self.webContentCPUTimeSeconds = webContentCPUTimeSeconds
-            self.averageCPUPercent = averageCPUPercent
-            self.agentPhysicalFootprintBytes = agentPhysicalFootprintBytes
-            self.peakAgentPhysicalFootprintBytes = peakAgentPhysicalFootprintBytes
-            self.webContentFootprintBytes = webContentFootprintBytes
-            self.peakWebContentFootprintBytes = peakWebContentFootprintBytes
-            self.webContentProcessCount = webContentProcessCount
-            self.webContentCPUDiscoveredProcessCount = webContentCPUDiscoveredProcessCount
-            self.webContentCPUReadableProcessCount = webContentCPUReadableProcessCount
-            self.didEncounterCriticalMemoryPressure = didEncounterCriticalMemoryPressure
+            public init(totalTimeSeconds: TimeInterval,
+                        agentTimeSeconds: TimeInterval,
+                        webContentTimeSeconds: TimeInterval,
+                        averagePercent: Double) {
+                self.totalTimeSeconds = totalTimeSeconds
+                self.agentTimeSeconds = agentTimeSeconds
+                self.webContentTimeSeconds = webContentTimeSeconds
+                self.averagePercent = averagePercent
+            }
+        }
+
+        public struct MemoryUsage: Encodable, Equatable, Sendable {
+            public struct Agent: Encodable, Equatable, Sendable {
+                public let footprintBytes: UInt64
+                public let peakFootprintBytes: UInt64
+
+                public init(footprintBytes: UInt64, peakFootprintBytes: UInt64) {
+                    self.footprintBytes = footprintBytes
+                    self.peakFootprintBytes = peakFootprintBytes
+                }
+            }
+
+            public struct WebContent: Encodable, Equatable, Sendable {
+                public let footprintBytes: UInt64?
+                public let peakFootprintBytes: UInt64?
+                public let processCount: Int?
+
+                public init(footprintBytes: UInt64?, peakFootprintBytes: UInt64?, processCount: Int?) {
+                    self.footprintBytes = footprintBytes
+                    self.peakFootprintBytes = peakFootprintBytes
+                    self.processCount = processCount
+                }
+            }
+
+            public let agent: Agent
+            public let webContent: WebContent
+            public let hadCriticalPressure: Bool
+
+            public init(agent: Agent, webContent: WebContent, hadCriticalPressure: Bool) {
+                self.agent = agent
+                self.webContent = webContent
+                self.hadCriticalPressure = hadCriticalPressure
+            }
+        }
+
+        public let reportedAt: Date
+        public let cpu: CPUUsage
+        public let memory: MemoryUsage
+
+        public init(reportedAt: Date, cpu: CPUUsage, memory: MemoryUsage) {
+            self.reportedAt = reportedAt
+            self.cpu = cpu
+            self.memory = memory
         }
     }
 }

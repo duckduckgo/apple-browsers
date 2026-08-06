@@ -18,28 +18,42 @@
 
 import Foundation
 
+/// One point-in-time read of agent and WebContent physical footprints.
 struct MemoryUsageSample {
-    let agentFootprintBytes: UInt64
-    let webContentFootprintBytes: UInt64?
+    /// Physical memory footprint in bytes.
+    typealias MemoryFootprint = UInt64
+
+    /// Current agent physical footprint, or zero when `task_info` fails.
+    let agentFootprint: MemoryFootprint
+    /// Sum of readable WebContent footprints, or `nil` when PID discovery was unavailable.
+    let webContentFootprint: MemoryFootprint?
+    /// WebContent PIDs discovered before unreadable footprints were discarded.
     let webContentCount: Int?
+
+    static let unavailable = MemoryUsageSample(
+        agentFootprint: 0,
+        webContentFootprint: nil,
+        webContentCount: nil
+    )
 }
 
 /// Agent memory mirrors AppHealth's `getCurrentMemoryUsage()`. WebContent uses physical footprint
 /// instead of the resident size used by `getWebContentProcessMemory()` to avoid inflated shared mappings.
 struct MemoryUsageSampler {
 
+    /// Treats `nil` PIDs as unavailable and an empty collection as zero WebContent usage.
     func takeSample(webContentPIDs: [pid_t]?) -> MemoryUsageSample {
-        let webContentBytes = webContentPIDs.map { pids in
+        let webContentFootprint = webContentPIDs.map { pids in
             pids.compactMap(Self.physicalFootprint).reduce(0, +)
         }
         return MemoryUsageSample(
-            agentFootprintBytes: Self.agentPhysicalFootprint(),
-            webContentFootprintBytes: webContentBytes,
+            agentFootprint: Self.agentPhysicalFootprint(),
+            webContentFootprint: webContentFootprint,
             webContentCount: webContentPIDs?.count
         )
     }
 
-    private static func agentPhysicalFootprint() -> UInt64 {
+    private static func agentPhysicalFootprint() -> MemoryUsageSample.MemoryFootprint {
         var vmInfo = task_vm_info_data_t()
         var vmInfoCount = mach_msg_type_number_t(MemoryLayout<task_vm_info_data_t>.size) / 4
         let result = withUnsafeMutablePointer(to: &vmInfo) { pointer in
@@ -50,7 +64,7 @@ struct MemoryUsageSampler {
         return result == KERN_SUCCESS ? UInt64(vmInfo.phys_footprint) : 0
     }
 
-    private static func physicalFootprint(for pid: pid_t) -> UInt64? {
+    private static func physicalFootprint(for pid: pid_t) -> MemoryUsageSample.MemoryFootprint? {
         var usage = rusage_info_v4()
         let result = withUnsafeMutablePointer(to: &usage) { pointer in
             pointer.withMemoryRebound(to: rusage_info_t?.self, capacity: 1) {

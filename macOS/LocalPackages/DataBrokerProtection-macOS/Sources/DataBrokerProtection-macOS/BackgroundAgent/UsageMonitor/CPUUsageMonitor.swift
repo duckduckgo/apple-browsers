@@ -19,22 +19,45 @@
 import Foundation
 
 /// Tracks cumulative CPU usage across one PIR queue run. WebContent counters become unavailable when
-/// a process exits, so the resource monitor records them every 10 seconds to reduce missed work.
+/// a process exits, so the resource monitor records them regularly to reduce missed work.
 struct CPUUsageMonitor {
 
     private typealias Identity = CPUUsageSample.ProcessIdentity
-    private typealias Reading = CPUUsageSample.ProcessReading
+    private typealias ProcessCPUTime = CPUUsageSample.ProcessCPUTime
+
+    /// Converts cumulative process-lifetime readings into CPU consumed during the monitored run.
+    /// In the `CPUUsageSample` example, the agent contributes `3s`, A contributes `2s`, and B contributes
+    /// its first `2s` plus a `3s` delta. The accumulated result is `agent: 3s`, `WebContent: 7s`, even
+    /// after A exits.
+    private struct CPUCounter {
+        private var previous: ProcessCPUTime?
+        private(set) var total: ProcessCPUTime = 0
+
+        init(baseline: ProcessCPUTime? = nil) {
+            previous = baseline
+        }
+
+        mutating func record(_ current: ProcessCPUTime, wasCreatedDuringRun: Bool = false) {
+            if let previous, current >= previous {
+                // Process CPU counters are cumulative, so subsequent readings contribute only their delta.
+                total += current - previous
+            } else if previous == nil, wasCreatedDuringRun {
+                // A process created during this run contributes its entire first lifetime reading.
+                total += current
+            }
+            previous = current
+        }
+    }
 
     private let sampler = CPUUsageSampler()
-    private var previousAgent: Reading?
-    // Retaining the last reading across disappearance avoids resetting a temporarily undiscovered process.
-    private var previousWebContent: [Identity: Reading] = [:]
-    private var agentTimeNanoseconds: UInt64 = 0
-    private var webContentTimeNanoseconds: UInt64 = 0
+    private var agent = CPUCounter()
+    // Retaining counters across disappearance preserves CPU already observed for each WebContent process.
+    private var webContent: [Identity: CPUCounter] = [:]
+    // Used to include lifetime CPU only for WebContent processes created during this run.
     private var runStartAbsoluteTime: UInt64?
+    // Used to normalize cumulative CPU time into average core-equivalent utilization.
     private var startUptime: TimeInterval?
-    private var discoveredCount = 0
-    private var readableCount = 0
+    private var latestUptime: TimeInterval?
 
     // MARK: - Run Lifecycle
 
@@ -42,11 +65,11 @@ struct CPUUsageMonitor {
     mutating func start(webContentPIDs: Set<pid_t>, runStartAbsoluteTime: UInt64) {
         reset()
         let sample = sampler.takeSample(webContentPIDs: webContentPIDs)
-        previousAgent = sample.agent
-        previousWebContent = sample.webContent
+        agent = CPUCounter(baseline: sample.agent)
+        webContent = sample.webContent.mapValues { CPUCounter(baseline: $0) }
         self.runStartAbsoluteTime = runStartAbsoluteTime
         startUptime = sample.uptime
-        updateProcessCounts(with: sample)
+        latestUptime = sample.uptime
     }
 
     /// Adds CPU consumed since the previous sample to the active run.
@@ -54,26 +77,29 @@ struct CPUUsageMonitor {
         let sample = sampler.takeSample(webContentPIDs: webContentPIDs)
         updateAgentCPUTime(with: sample.agent)
         updateWebContentCPUTime(with: sample.webContent)
-        updateProcessCounts(with: sample)
+        latestUptime = sample.uptime
     }
 
     mutating func reset() {
-        previousAgent = nil
-        previousWebContent = [:]
-        agentTimeNanoseconds = 0
-        webContentTimeNanoseconds = 0
+        agent = CPUCounter()
+        webContent = [:]
         runStartAbsoluteTime = nil
         startUptime = nil
-        discoveredCount = 0
-        readableCount = 0
+        latestUptime = nil
     }
 
     // MARK: - Reporting
 
-    func makeReport(at systemUptime: TimeInterval) -> ResourceSnapshot.CPUUsage {
-        let elapsedTime = max(0, systemUptime - (startUptime ?? systemUptime))
-        let agentTime = TimeInterval(agentTimeNanoseconds) / TimeInterval(NSEC_PER_SEC)
-        let webContentTime = TimeInterval(webContentTimeNanoseconds) / TimeInterval(NSEC_PER_SEC)
+    func makeReport() -> ResourceSnapshot.CPUUsage {
+        let elapsedTime: TimeInterval
+        if let startUptime, let latestUptime {
+            elapsedTime = max(0, latestUptime - startUptime)
+        } else {
+            elapsedTime = 0
+        }
+        let agentTime = TimeInterval(agent.total) / TimeInterval(NSEC_PER_SEC)
+        let webContentCPUTime = webContent.values.reduce(ProcessCPUTime(0)) { $0 + $1.total }
+        let webContentTime = TimeInterval(webContentCPUTime) / TimeInterval(NSEC_PER_SEC)
         let totalTime = agentTime + webContentTime
         // This is core-equivalent utilization: one fully occupied core is 100%, so totals may exceed 100%.
         let averagePercent = elapsedTime > 0 ? totalTime / elapsedTime * 100 : 0
@@ -81,54 +107,27 @@ struct CPUUsageMonitor {
         return ResourceSnapshot.CPUUsage(
             agentTime: agentTime,
             webContentTime: webContentTime,
-            averagePercent: averagePercent,
-            coverage: .init(
-                discoveredCount: discoveredCount,
-                readableCount: readableCount
-            )
+            averagePercent: averagePercent
         )
     }
 
     // MARK: - CPU Accumulation
 
-    private mutating func updateAgentCPUTime(with reading: Reading?) {
-        guard let reading else { return }
-
-        agentTimeNanoseconds += cpuDelta(
-            for: reading,
-            previousReading: previousAgent,
-            includeLifetimeForNewProcess: false
-        )
-        previousAgent = reading
+    private mutating func updateAgentCPUTime(with cpuTime: ProcessCPUTime?) {
+        guard let cpuTime else { return }
+        agent.record(cpuTime)
     }
 
     private mutating func updateWebContentCPUTime(
-        with readings: [Identity: Reading]
+        with counters: [Identity: ProcessCPUTime]
     ) {
-        for (identity, reading) in readings {
+        for (identity, cpuTime) in counters {
             // A process created during this run contributes its lifetime CPU; an older process's first
             // reading is only a baseline. Start time also distinguishes recycled PIDs.
-            webContentTimeNanoseconds += cpuDelta(
-                for: reading,
-                previousReading: previousWebContent[identity],
-                includeLifetimeForNewProcess: identity.startAbsoluteTime >= (runStartAbsoluteTime ?? .max)
+            webContent[identity, default: CPUCounter()].record(
+                cpuTime,
+                wasCreatedDuringRun: identity.startAbsoluteTime >= (runStartAbsoluteTime ?? .max)
             )
-            previousWebContent[identity] = reading
         }
-    }
-
-    private func cpuDelta(for reading: Reading,
-                          previousReading: Reading?,
-                          includeLifetimeForNewProcess: Bool) -> UInt64 {
-        guard let previousReading else {
-            return includeLifetimeForNewProcess ? reading.totalNanoseconds : 0
-        }
-        guard reading.totalNanoseconds >= previousReading.totalNanoseconds else { return 0 }
-        return reading.totalNanoseconds - previousReading.totalNanoseconds
-    }
-
-    private mutating func updateProcessCounts(with sample: CPUUsageSample) {
-        discoveredCount = sample.discoveredCount
-        readableCount = sample.webContent.count
     }
 }

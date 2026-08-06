@@ -21,55 +21,66 @@ import Foundation
 /// Tracks current and peak memory usage across one PIR queue run.
 struct MemoryUsageMonitor {
 
+    private typealias MemoryFootprint = MemoryUsageSample.MemoryFootprint
+
+    private struct PeakUsage {
+        var agentFootprint: MemoryFootprint = 0
+        var webContentFootprint: MemoryFootprint?
+
+        mutating func record(_ sample: MemoryUsageSample) {
+            agentFootprint = max(agentFootprint, sample.agentFootprint)
+            if let footprint = sample.webContentFootprint {
+                webContentFootprint = max(webContentFootprint ?? 0, footprint)
+            }
+        }
+    }
+
+    private struct RunState {
+        var current = MemoryUsageSample.unavailable
+        var peak = PeakUsage()
+        var hadCriticalPressure = false
+    }
+
     private let sampler = MemoryUsageSampler()
-    private var peakAgentFootprintBytes: UInt64 = 0
-    private var peakWebContentBytes: UInt64?
-    private var hadCriticalPressure = false
+    private var state = RunState()
 
     // MARK: - Run Lifecycle
 
+    /// Resets run state and captures the initial values used by peak reporting.
     mutating func start(webContentPIDs: [pid_t]?) {
         reset()
-        updatePeaks(with: sampler.takeSample(webContentPIDs: webContentPIDs))
+        recordSample(webContentPIDs: webContentPIDs)
+    }
+
+    /// Records current memory usage and advances the run-level peaks.
+    mutating func recordSample(webContentPIDs: [pid_t]?) {
+        let sample = sampler.takeSample(webContentPIDs: webContentPIDs)
+        state.current = sample
+        state.peak.record(sample)
     }
 
     mutating func recordCriticalPressure() {
-        hadCriticalPressure = true
+        state.hadCriticalPressure = true
     }
 
     mutating func reset() {
-        peakAgentFootprintBytes = 0
-        peakWebContentBytes = nil
-        hadCriticalPressure = false
+        state = RunState()
     }
 
     // MARK: - Reporting
 
-    mutating func makeReport(webContentPIDs: [pid_t]?) -> ResourceSnapshot.MemoryUsage {
-        let sample = sampler.takeSample(webContentPIDs: webContentPIDs)
-        updatePeaks(with: sample)
-
+    func makeReport() -> ResourceSnapshot.MemoryUsage {
         return ResourceSnapshot.MemoryUsage(
             agent: .init(
-                footprintBytes: sample.agentFootprintBytes,
-                peakFootprintBytes: peakAgentFootprintBytes
+                footprintBytes: state.current.agentFootprint,
+                peakFootprintBytes: state.peak.agentFootprint
             ),
             webContent: .init(
-                footprintBytes: sample.webContentFootprintBytes,
-                peakFootprintBytes: peakWebContentBytes,
-                processCount: sample.webContentCount
+                footprintBytes: state.current.webContentFootprint,
+                peakFootprintBytes: state.peak.webContentFootprint,
+                processCount: state.current.webContentCount
             ),
-            hadCriticalPressure: hadCriticalPressure
+            hadCriticalPressure: state.hadCriticalPressure
         )
-    }
-
-    private mutating func updatePeaks(with sample: MemoryUsageSample) {
-        peakAgentFootprintBytes = max(
-            peakAgentFootprintBytes,
-            sample.agentFootprintBytes
-        )
-        if let footprintBytes = sample.webContentFootprintBytes {
-            peakWebContentBytes = max(peakWebContentBytes ?? 0, footprintBytes)
-        }
     }
 }

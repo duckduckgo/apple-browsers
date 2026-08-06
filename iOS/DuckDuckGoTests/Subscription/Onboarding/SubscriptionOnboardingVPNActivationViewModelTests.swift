@@ -549,19 +549,6 @@ final class SubscriptionOnboardingVPNActivationViewModelTests: XCTestCase {
         XCTAssertFalse(coordinator.shouldShowHint)
     }
 
-    func testWhenTheVPNConnectsThenTheHintIsHiddenAndDoesNotReturn() async {
-        let coordinator = TapAllowHintCoordinator()
-        coordinator.startTapped()
-        coordinator.appWillResignActive(isVPNConfigured: { false })
-        await waitForHint(coordinator)
-
-        coordinator.connected()
-
-        XCTAssertFalse(coordinator.shouldShowHint)
-        coordinator.appWillResignActive(isVPNConfigured: { false })
-        await assertHintDoesNotShow(coordinator)
-    }
-
     func testWhenTheScreenDisappearsThenTheHintIsHiddenAndDoesNotReturn() async {
         let coordinator = TapAllowHintCoordinator()
         coordinator.startTapped()

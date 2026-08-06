@@ -58,10 +58,6 @@ final class TapAllowHintCoordinator: ObservableObject {
         reset()
     }
 
-    func connected() {
-        reset()
-    }
-
     func permissionDenied() {
         reset()
     }
@@ -118,8 +114,7 @@ final class TapAllowHintOverlayWindow {
         let hostingController = UIHostingController(rootView: Self.hintView)
         hostingController.view.backgroundColor = .clear
         let window = UIWindow(windowScene: scene)
-        // The system permission dialog dims the screen with a scrim that sits above `.alert`, so `.alert + 1`
-        // leaves the hint rendered underneath it (dimmed).
+        // The permission dialog's scrim sits above `.alert`, so anything lower renders underneath it, dimmed.
         window.windowLevel = UIWindow.Level(rawValue: .greatestFiniteMagnitude)
         window.backgroundColor = .clear
         window.isUserInteractionEnabled = false

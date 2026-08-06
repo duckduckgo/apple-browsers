@@ -183,7 +183,10 @@ struct AccountManager: AccountManaging {
                 }
             }
         }
-        return RegisteredDeviceMappingResult(devices: devices, needsCurrentDeviceInfoRepair: false)
+        return RegisteredDeviceMappingResult(
+            devices: devices,
+            needsCurrentDeviceInfoRepair: false,
+            debugDevices: devices.map { RegisteredDeviceDebugInfo(device: $0, source: .legacy, deviceInfoIssue: nil) })
     }
 
     func updateDevice(_ update: UpdateDevices.Update, for account: SyncAccount) async throws -> [RegisteredDevice] {

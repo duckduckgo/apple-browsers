@@ -289,6 +289,11 @@ public protocol DDGSyncingDebuggingSupport {
     func ensureAccountInfoKeyForDebug() async throws -> Int
     /// Refreshes the account_info key and returns metadata from a subsequent cache-first reload.
     func validateAccountInfoKeyForDebug() async throws -> (refreshedKeyID: String, reloadedKeyID: String, keySizeInBits: Int)
+    /// Fetches devices through the production mapping path and includes the source used for each displayed device.
+    func fetchDevicesForDebug() async throws -> [RegisteredDeviceDebugInfo]
+    func isDeviceInfoMigrationCompleteForDebug() throws -> Bool
+    func runDeviceInfoMigrationForDebug() async throws
+    func resetDeviceInfoMigrationForDebug()
 }
 
 public extension DDGSyncingDebuggingSupport {
@@ -299,6 +304,33 @@ public extension DDGSyncingDebuggingSupport {
     func validateAccountInfoKeyForDebug() async throws -> (refreshedKeyID: String, reloadedKeyID: String, keySizeInBits: Int) {
         throw SyncError.accountNotFound
     }
+
+    func fetchDevicesForDebug() async throws -> [RegisteredDeviceDebugInfo] {
+        throw SyncError.accountNotFound
+    }
+
+    func isDeviceInfoMigrationCompleteForDebug() throws -> Bool {
+        throw SyncError.accountNotFound
+    }
+
+    func runDeviceInfoMigrationForDebug() async throws {
+        throw SyncError.accountNotFound
+    }
+
+    func resetDeviceInfoMigrationForDebug() {}
+}
+
+public struct RegisteredDeviceDebugInfo: Sendable {
+
+    public enum Source: String, Sendable {
+        case deviceInfo = "device_info"
+        case legacy
+        case placeholder
+    }
+
+    public let device: RegisteredDevice
+    public let source: Source
+    public let deviceInfoIssue: String?
 }
 
 public enum ServerEnvironment: LosslessStringConvertible {

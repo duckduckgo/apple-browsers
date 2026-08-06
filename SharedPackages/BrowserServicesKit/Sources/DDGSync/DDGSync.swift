@@ -324,6 +324,37 @@ public class DDGSync: DDGSyncing {
                 keySizeInBits: SecKeyGetBlockSize(reloadedKey.publicKey) * 8)
     }
 
+    public func fetchDevicesForDebug() async throws -> [RegisteredDeviceDebugInfo] {
+        guard let account = try dependencies.secureStore.account() else {
+            throw SyncError.accountNotFound
+        }
+
+        do {
+            return try await dependencies.account.fetchDevicesForAccount(account).debugDevices
+        } catch {
+            throw handleUnauthenticatedAndMap(error)
+        }
+    }
+
+    public func isDeviceInfoMigrationCompleteForDebug() throws -> Bool {
+        guard let account = try dependencies.secureStore.account() else {
+            throw SyncError.accountNotFound
+        }
+        return deviceInfoMigrationCoordinator.hasCompletedMigration(for: account)
+    }
+
+    public func runDeviceInfoMigrationForDebug() async throws {
+        guard let account = try dependencies.secureStore.account() else {
+            throw SyncError.accountNotFound
+        }
+        scheduleDeviceInfoMigration(for: account)
+        await deviceInfoMigrationTask?.value
+    }
+
+    public func resetDeviceInfoMigrationForDebug() {
+        deviceInfoMigrationCoordinator.reset()
+    }
+
     public func prepareThirdPartyRecoveryCode(purpose: String) async throws -> String {
         guard let account else {
             throw SyncError.accountNotFound

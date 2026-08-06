@@ -581,6 +581,7 @@ final class DeviceInfoMigrationCoordinatingMock: DeviceInfoMigrationCoordinating
     private var recordedCalls: [Call] = []
     private var recordedRepairCalls: [Call] = []
     private var recordedResetCallCount = 0
+    var hasCompletedMigrationStub = false
     var calls: [Call] {
         lock.lock()
         defer { lock.unlock() }
@@ -607,6 +608,10 @@ final class DeviceInfoMigrationCoordinatingMock: DeviceInfoMigrationCoordinating
     func repairCurrentDeviceInfo(for account: SyncAccount) async {
         let handler = recordRepair(Call(account: account))
         await handler?()
+    }
+
+    func hasCompletedMigration(for account: SyncAccount) -> Bool {
+        hasCompletedMigrationStub
     }
 
     func reset() {

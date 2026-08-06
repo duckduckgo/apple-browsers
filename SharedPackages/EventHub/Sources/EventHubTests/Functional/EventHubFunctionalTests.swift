@@ -86,7 +86,8 @@ struct EventHubFunctionalTests {
         private let spyPixelFiring = SpyPixelFiring()
         private let tabIDBox = TabIDBox()
         private let enabledSubject = CurrentValueSubject<Bool, Never>(true)
-        var fired: [FiredPixel] { spyPixelFiring.fired }
+        /// Fences on the manager's queue first — it records fired pixels there, asynchronously.
+        var fired: [FiredPixel] { manager.settle(); return spyPixelFiring.fired }
 
         init(settingsJSON: String) {
             let parser = EventHubConfigParser()
@@ -95,6 +96,7 @@ struct EventHubFunctionalTests {
             let settings = StaticSettingsProviding(json: settingsJSON, enabled: enabledSubject.eraseToAnyPublisher())
             manager = EventHub(store: repository, parser: parser, settings: settings,
                                 scheduler: scheduler, pixelFiring: spyPixelFiring)
+            scheduler.settle = { [weak manager] in manager?.settle() }
             let tabIDBox = tabIDBox
             handler = WebEventsHandler(manager: manager, tabIDProvider: { _ in tabIDBox.value })
             manager.onAppForegrounded()
@@ -216,6 +218,7 @@ struct EventHubFunctionalTests {
         let firstManager = EventHub(store: firstRepository, parser: parser,
                                      settings: StaticSettingsProviding(json: Self.adwallConfig),
                                      scheduler: firstScheduler, pixelFiring: SpyPixelFiring())
+        firstScheduler.settle = { [weak firstManager] in firstManager?.settle() }
         let firstHandler = WebEventsHandler(manager: firstManager, tabIDProvider: { _ in tab })
         firstManager.onAppForegrounded()
         firstManager.onConfigChanged()
@@ -233,9 +236,11 @@ struct EventHubFunctionalTests {
         let secondManager = EventHub(store: secondRepository, parser: parser,
                                       settings: StaticSettingsProviding(json: Self.adwallConfig),
                                       scheduler: secondScheduler, pixelFiring: secondPixelFiring)
+        secondScheduler.settle = { [weak secondManager] in secondManager?.settle() }
 
         secondManager.onAppForegrounded()
         secondManager.onConfigChanged()
+        secondManager.settle()
 
         #expect(secondPixelFiring.fired.contains { $0.name == "webTelemetry_adwalls_day" && $0.parameters["adwallCount"] == "1" })
     }

@@ -38,6 +38,8 @@ public struct BrokenSiteReport {
         case appMenu
         /// From the privacy dashboard's "Website not working?"
         case dashboard
+        /// From a browser error page
+        case errorPage
         /// From the app menu's "Disable Privacy Protection"
         case onProtectionsOffMenu
         /// From the privacy dashboard's on protections toggle off
@@ -51,6 +53,7 @@ public struct BrokenSiteReport {
             switch self {
             case .appMenu: return "menu"
             case .dashboard: return "dashboard"
+            case .errorPage: return "error_page"
             case .onProtectionsOffMenu: return "on_protections_off_menu"
             case .onProtectionsOffDashboard: return "on_protections_off_dashboard_main"
             case .prompt: return "reload-three-times-within-20-seconds" // previously multiple events were under this; now there's only one

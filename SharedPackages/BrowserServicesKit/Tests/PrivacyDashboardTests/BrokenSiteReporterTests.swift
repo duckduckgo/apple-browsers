@@ -171,6 +171,12 @@ final class BrokenSiteReporterTests: XCTestCase {
         waitForExpectations(timeout: 3)
     }
 
+    func testWhenReportFlowIsErrorPageThenParameterIsErrorPage() {
+        let report = makeReport(cookieConsentInfo: nil, reportFlow: .errorPage)
+
+        XCTAssertEqual(report.requestParameters["reportFlow"], "error_page")
+    }
+
 #if os(iOS)
     func testWhenReportIsAfterTabTerminationThenParameterIsIncluded() {
         let report = makeReport(cookieConsentInfo: nil, isAfterTabTermination: true)
@@ -186,6 +192,7 @@ final class BrokenSiteReporterTests: XCTestCase {
 #endif
 
     private func makeReport(cookieConsentInfo: CookieConsentInfo?,
+                            reportFlow: BrokenSiteReport.Source = .appMenu,
                             isAfterTabTermination: Bool = false) -> BrokenSiteReport {
 #if os(iOS)
         BrokenSiteReport(siteUrl: URL(string: "https://duckduckgo.com")!,
@@ -202,7 +209,7 @@ final class BrokenSiteReporterTests: XCTestCase {
                          ampURL: "test",
                          urlParametersRemoved: true,
                          protectionsState: true,
-                         reportFlow: .appMenu,
+                         reportFlow: reportFlow,
                          siteType: .desktop,
                          model: "test",
                          errors: nil,
@@ -233,7 +240,7 @@ final class BrokenSiteReporterTests: XCTestCase {
                          ampURL: "test",
                          urlParametersRemoved: true,
                          protectionsState: true,
-                         reportFlow: .appMenu,
+                         reportFlow: reportFlow,
                          errors: nil,
                          httpStatusCodes: nil,
                          openerContext: nil,

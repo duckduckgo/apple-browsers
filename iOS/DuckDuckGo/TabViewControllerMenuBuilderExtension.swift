@@ -834,7 +834,7 @@ extension TabViewController {
     
     private func onReportBrokenSiteAction() {
         Pixel.fire(pixel: .browsingMenuReportBrokenSite)
-        delegate?.tabDidRequestReportBrokenSite(tab: self)
+        delegate?.tabDidRequestReportBrokenSite(tab: self, entryPoint: .report)
     }
     
     private func onOpenDownloadsAction() {

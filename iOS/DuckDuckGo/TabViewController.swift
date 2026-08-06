@@ -4078,15 +4078,16 @@ extension TabViewController: UserContentControllerDelegate {
 
     @objc
     func onReportBrokenSiteFromErrorPage() {
-        if case .tabTermination = actionableErrorPage {
+        switch actionableErrorPage {
+        case .tabTermination:
             tabTerminationErrorPageInstrumentation.sendFeedbackSelected()
-            delegate?.tabDidRequestReportBrokenSite(tab: self)
+        case .safariRedirectLoop:
+            PixelKit.fire(SafariRedirectPixel.reportBrokenSiteFromErrorPage, frequency: .legacyDailyAndCount)
+        case nil:
             return
         }
 
-        guard case .safariRedirectLoop = actionableErrorPage else { return }
-        DailyPixel.fireDailyAndCount(pixel: .webViewExternalSchemeNavigationSafariRedirectLoopErrorPageReportSiteBreakage, error: nil, withAdditionalParameters: [:])
-        delegate?.tabDidRequestReportBrokenSite(tab: self)
+        delegate?.tabDidRequestReportBrokenSite(tab: self, entryPoint: .errorPage)
     }
 
 }
@@ -5225,13 +5226,13 @@ extension TabViewController: SERPSettingsUserScriptDelegate {
 extension TabViewController: SafariRedirectHandlerDelegate {
 
     func safariRedirectHandler(_ handler: SafariRedirectHandling, didRequestLoadURL url: URL) {
-        DailyPixel.fireDailyAndCount(pixel: .webViewExternalSchemeNavigationSafariRedirectLoadURLRequested, error: nil, withAdditionalParameters: [:])
+        PixelKit.fire(SafariRedirectPixel.loadURLRequested, frequency: .dailyAndCount)
         shouldUseSafariOnlyUserAgentForNextMainFrameNavigation = true
         load(url: url, didUpgradeURL: false)
     }
 
     func safariRedirectHandler(_ handler: SafariRedirectHandling, didRequestShowSafariRedirectLoopErrorForURL url: URL) {
-        DailyPixel.fireDailyAndCount(pixel: .webViewExternalSchemeNavigationSafariRedirectLoopErrorPageShown, error: nil, withAdditionalParameters: [:])
+        PixelKit.fire(SafariRedirectPixel.loopErrorPageShown, frequency: .dailyAndCount)
         shouldUseSafariOnlyUserAgentForNextMainFrameNavigation = false
         showSafariRedirectLoopError(for: url)
     }

@@ -6265,8 +6265,8 @@ extension MainViewController: TabDelegate {
         return tab.tabModel.daxEasterEggLogoURL
     }
 
-    func tabDidRequestReportBrokenSite(tab: TabViewController) {
-        segueToReportBrokenSite()
+    func tabDidRequestReportBrokenSite(tab: TabViewController, entryPoint: PrivacyDashboardEntryPoint) {
+        segueToReportBrokenSite(entryPoint: entryPoint)
     }
 
     func tab(_ tab: TabViewController, didRequestToggleReportWithCompletionHandler completionHandler: @escaping (Bool) -> Void) {

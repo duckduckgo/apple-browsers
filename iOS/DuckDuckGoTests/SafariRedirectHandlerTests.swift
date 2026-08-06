@@ -173,6 +173,18 @@ final class SafariRedirectHandlerTests: XCTestCase {
         let differentHostURL = URL(string: "https://other.com/page")!
         XCTAssertFalse(handler.isAfterSuppressedXSafariRedirect(for: differentHostURL))
     }
+
+    func testWhenSafariRedirectPixelsAreCreatedThenNamesArePreserved() {
+        XCTAssertEqual(
+            SafariRedirectPixel.loadURLRequested.name,
+            "m_webview_external-scheme-navigation_safari-redirect_load-url-requested")
+        XCTAssertEqual(
+            SafariRedirectPixel.loopErrorPageShown.name,
+            "m_webview_external-scheme-navigation_safari-redirect-loop_error-page-shown")
+        XCTAssertEqual(
+            SafariRedirectPixel.reportBrokenSiteFromErrorPage.name,
+            "m_webview_external-scheme-navigation_safari-redirect-loop_error-page_report-broken-site")
+    }
 }
 
 // MARK: - Mock Delegate

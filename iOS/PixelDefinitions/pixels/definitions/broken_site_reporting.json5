@@ -100,6 +100,7 @@
                 "enum": [
                     "menu",
                     "dashboard",
+                    "error_page",
                     "on_protections_off_menu",
                     "on_protections_off_dashboard_main",
                     "reload-three-times-within-20-seconds",
@@ -479,6 +480,7 @@
                 "enum": [
                     "menu",
                     "dashboard",
+                    "error_page",
                     "on_protections_off_menu",
                     "on_protections_off_dashboard_main",
                     "reload-three-times-within-20-seconds",

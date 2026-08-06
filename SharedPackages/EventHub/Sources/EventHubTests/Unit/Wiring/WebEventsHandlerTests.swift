@@ -33,7 +33,6 @@ struct WebEventsHandlerTests {
         func onNavigationStarted(tabID: EventHubTabID, url: String) {}
         func onTabClosed(tabID: EventHubTabID) {}
         func onConfigChanged() {}
-        func isEnabled() -> Bool { true }
         func onAppForegrounded() {}
         func onAppBackgrounded() {}
     }

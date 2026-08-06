@@ -46,9 +46,6 @@ public protocol EventHubManaging: AnyObject {
     /// Notifies that the remote feature config (state and/or settings) has changed.
     func onConfigChanged()
 
-    /// Returns whether the eventHub feature is currently enabled.
-    func isEnabled() -> Bool
-
     /// Signals that the app has entered the foreground (catches up periods, re-arms timers).
     func onAppForegrounded()
 
@@ -259,8 +256,6 @@ public final class EventHub: EventHubManaging {
         store.deleteAllPixelStates()
         rearmSchedulerLocked()
     }
-
-    public func isEnabled() -> Bool { queue.sync { latestEnabled } }
 
     public func onAppForegrounded() {
         queue.sync {

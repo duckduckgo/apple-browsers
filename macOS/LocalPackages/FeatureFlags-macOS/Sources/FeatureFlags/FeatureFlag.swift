@@ -462,6 +462,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215597855114765?focus=true
     case syncCanShowV2ConnectCode
 
+    /// Gates the Simplified Sync Setup follow-up screens.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217243916693082?focus=true
+    case simplifiedSyncSetupV2
+
     /// Gates the macOS Prompt Bar: a system-wide Duck.ai entry point opened via a global
     /// keyboard shortcut or a menu bar icon, plus its rows on the AI Features settings screen.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216850216210288?focus=true
@@ -780,6 +784,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(SyncSubfeature.canUseV2ConnectFlow), category: .sync)
         case .syncCanShowV2ConnectCode:
             Config(source: .remoteReleasable(SyncSubfeature.canShowV2ConnectCode), category: .sync)
+        case .simplifiedSyncSetupV2:
+            Config(source: .remoteReleasable(SyncSubfeature.simplifiedSyncSetupV2), category: .sync)
         case .promptBar:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.promptBar), category: .duckAI)
         case .bookmarksReorderByName:

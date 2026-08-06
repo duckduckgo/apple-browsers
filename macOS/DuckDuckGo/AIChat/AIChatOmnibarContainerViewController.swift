@@ -336,7 +336,6 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         super.viewDidLoad()
 
         setupUI()
-        setupBurnerStyleIfNeeded()
         setupSuggestionsView()
         subscribeToThemeChanges()
         subscribeToTextChanges()
@@ -891,16 +890,6 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         modelPickerButton.trailingAnchor.constraint(equalTo: submitButton.leadingAnchor, constant: -Constants.modelPickerTrailingSpacing).isActive = true
 
         applyTheme(theme: themeManager.theme)
-    }
-
-    // MARK: - Burner Style
-
-    private func setupBurnerStyleIfNeeded() {
-        guard burnerMode.isBurner, themeManager.isAppRebranded else { return }
-
-        let style = BurnerAppearanceStyle()
-        style.enableDarkModeOverride(in: view)
-        style.enableDarkModeOverride(in: suggestionsView)
     }
 
     // MARK: - Suggestions Setup

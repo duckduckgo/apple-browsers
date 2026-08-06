@@ -216,20 +216,21 @@ struct AccountManager: AccountManaging {
             let keys = try accountInfoKeyFactory.makeProtectedKeys(accountSecretKey: accountSecretKey,
                                                                   thirdPartyMainKey: nil)
             guard let protectedKey = keys.first else {
-                Logger.sync.error("Failed to prepare unified device info for signup: missing account_info protected key")
+                Logger.sync.error("Sync-UnifiedDevices: failed to prepare unified device info for signup: missing account_info protected key")
                 return nil
             }
             let encryptedDeviceInfo = try deviceInfoCodec.encrypt(DeviceInfo(name: name, type: type),
                                                                   using: protectedKey)
             guard encryptedDeviceInfo.utf8.count <= DeviceInfo.maximumEncryptedLength else {
-                Logger.sync.error("Failed to prepare unified device info for signup: encrypted payload exceeds the maximum length")
+                Logger.sync.error("Sync-UnifiedDevices: failed to prepare unified device info for signup: encrypted payload exceeds the maximum length")
                 return nil
             }
+            Logger.sync.debug("Sync-UnifiedDevices: prepared account_info key and device_info for signup")
             return (keys: keys, deviceInfo: encryptedDeviceInfo)
         } catch {
             // Device info is additive, so local preparation failures must not block legacy signup.
             let errorType = String(describing: type(of: error))
-            Logger.sync.error("Failed to prepare unified device info for signup: \(errorType, privacy: .public)")
+            Logger.sync.error("Sync-UnifiedDevices: failed to prepare unified device info for signup: \(errorType)")
             return nil
         }
     }

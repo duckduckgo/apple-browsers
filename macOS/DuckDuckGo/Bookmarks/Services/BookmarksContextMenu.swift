@@ -19,7 +19,7 @@
 import AppKit
 import Bookmarks
 import DesignResourcesKitIcons
-import FeatureFlags
+import FeatureFlags_macOS
 import PrivacyConfig
 
 protocol BookmarksContextMenuDelegate: NSMenuDelegate, BookmarkSearchMenuItemSelectors {

@@ -181,6 +181,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
     @Published var isEditingPresets: Bool = false
     @Published var presetsText: String = ""
     @Published var presets: [ProfilePreset] = []
+    @Published var usesConfiguredTimeouts = true
 
     var alert: AlertUI?
     var selectedDataBroker: DataBroker?
@@ -213,6 +214,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
     private let authenticationManager: DataBrokerProtectionAuthenticationManaging
     let featureFlagger: DBPFeatureFlagging
     let applicationNameForUserAgentProvider: () -> String?
+    let brokerJobExecutionConfig = BrokerJobExecutionConfig()
 
     private var isSyncingAgeFields = false
 
@@ -304,6 +306,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                 self.selectedDataBroker = dataBroker
                 let brokerProfileQueryData = createBrokerProfileQueryData(for: dataBroker)
                 let group = DispatchGroup()
+                let usesConfiguredTimeouts = self.usesConfiguredTimeouts
 
                 for query in brokerProfileQueryData {
                     group.enter()
@@ -334,10 +337,17 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                                 applicationNameForUserAgentProvider: self.applicationNameForUserAgentProvider,
                                 stageDurationCalculator: stageCalculator,
                                 pixelHandler: fakePixelHandler,
-                                executionConfig: .init(),
+                                executionConfig: self.brokerJobExecutionConfig,
                                 shouldRunNextStep: { true }
                             )
-                            let extractedProfiles = try await runner.scan(showWebView: true) { true }
+                            let extractedProfiles: [ExtractedProfile]
+                            if usesConfiguredTimeouts {
+                                extractedProfiles = try await withTimeout(self.brokerJobExecutionConfig.scanJobTimeout) {
+                                    try await runner.scan(showWebView: true) { true }
+                                }
+                            } else {
+                                extractedProfiles = try await runner.scan(showWebView: true) { true }
+                            }
                             let brokerId = DebugHelper.stableId(for: query.dataBroker)
                             let profileQueryId = DebugHelper.stableId(for: query.profileQuery)
                             let assignedProfiles: [ExtractedProfile] = extractedProfiles.map { profile in
@@ -398,6 +408,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
         isProgressActive = true
         progressText = "Starting opt-out..."
         addOptOutStartedEvent(for: scanResult)
+        let usesConfiguredTimeouts = self.usesConfiguredTimeouts
         let brokerProfileQueryData = BrokerProfileQueryData(
             dataBroker: dataBroker,
             profileQuery: scanResult.profileQuery,
@@ -431,13 +442,20 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                     applicationNameForUserAgentProvider: self.applicationNameForUserAgentProvider,
                     stageCalculator: stageCalculator,
                     pixelHandler: fakePixelHandler,
-                    executionConfig: .init(),
+                    executionConfig: self.brokerJobExecutionConfig,
                     actionsHandlerMode: .optOut,
                     shouldRunNextStep: { true }
                 )
 
-                try await runner.optOut(extractedProfile: scanResult.extractedProfile,
-                                        showWebView: true) { true }
+                if usesConfiguredTimeouts {
+                    try await withTimeout(self.brokerJobExecutionConfig.optOutJobTimeout) {
+                        try await runner.optOut(extractedProfile: scanResult.extractedProfile,
+                                                showWebView: true) { true }
+                    }
+                } else {
+                    try await runner.optOut(extractedProfile: scanResult.extractedProfile,
+                                            showWebView: true) { true }
+                }
 
                 if scanResult.dataBroker.requiresEmailConfirmationDuringOptOut() {
                     addOptOutAwaitingEmailConfirmationEvent(for: scanResult)

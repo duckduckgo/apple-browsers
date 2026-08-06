@@ -43,6 +43,7 @@ class SyncDebugViewController: UITableViewController {
     enum InfoRows: Int, CaseIterable {
 
         case syncNow
+        case ensureAccountInfoKey
         case logOut
         case toggleFavoritesDisplayMode
         case resetFaviconsFetcherOnboardingDialog
@@ -112,6 +113,8 @@ class SyncDebugViewController: UITableViewController {
             switch InfoRows(rawValue: indexPath.row) {
             case .syncNow:
                 cell.textLabel?.text = "Sync now"
+            case .ensureAccountInfoKey:
+                cell.textLabel?.text = "Ensure account_info key"
             case .logOut:
                 cell.textLabel?.text = "Log out of sync in 10 seconds"
             case .toggleFavoritesDisplayMode:
@@ -193,6 +196,8 @@ class SyncDebugViewController: UITableViewController {
             switch InfoRows(rawValue: indexPath.row) {
             case .syncNow:
                 sync.scheduler.requestSyncImmediately()
+            case .ensureAccountInfoKey:
+                ensureAccountInfoKey()
             case .logOut:
                 Task {
                     try await Task.sleep(nanoseconds: UInt64(10e9))
@@ -257,6 +262,33 @@ class SyncDebugViewController: UITableViewController {
         }
 
         tableView.deselectRow(at: indexPath, animated: true)
+    }
+
+    private func ensureAccountInfoKey() {
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+
+            do {
+                let wrapperCount = try await sync.ensureAccountInfoKeyForDebug()
+                let message: String
+                if wrapperCount == 0 {
+                    message = "No wrappers were returned."
+                } else if wrapperCount == 1 {
+                    message = "Ensured 1 wrapper."
+                } else {
+                    message = "Ensured \(wrapperCount) wrappers."
+                }
+                showAlert(title: "Account Info Key Ensured", message: message)
+            } catch {
+                showAlert(title: "Unable to Ensure Account Info Key", message: String(reflecting: error))
+            }
+        }
+    }
+
+    private func showAlert(title: String, message: String) {
+        let alertController = UIAlertController(title: title, message: message, preferredStyle: .alert)
+        alertController.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alertController, animated: true)
     }
 
     private func showCopyPasteCodeAlert() {

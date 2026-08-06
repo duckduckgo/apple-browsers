@@ -99,8 +99,8 @@ extension NotificationServiceManager {
     static func handleInactivityNotification(actionIdentifier: String,
                                              userInfo: [AnyHashable: Any],
                                              stateStore: InactivityNotificationStateStoring) {
-        let daysInactiveKey = InactivityNotificationSchedulerService.Constants.daysInactiveSettingKey
-        let daysInactive = userInfo[daysInactiveKey] as? Int ?? InactivityNotificationSchedulerService.Constants.defaultDaysInactive
+        let daysInactiveKey = InactivityNotificationSchedulerService.Settings.daysInactive.rawValue
+        let daysInactive = userInfo[daysInactiveKey] as? Int ?? InactivityNotificationSchedulerService.Settings.daysInactive.defaultValue
 
         switch actionIdentifier {
         case UNNotificationDefaultActionIdentifier:

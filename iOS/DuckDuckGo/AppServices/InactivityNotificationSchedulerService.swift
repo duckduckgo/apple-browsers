@@ -29,8 +29,6 @@ final class InactivityNotificationSchedulerService {
     // MARK: - Constants
     
     enum Constants {
-        static let daysInactiveSettingKey: String = "daysInactive"
-        static let defaultDaysInactive: Int = 7 // default to 7 days
         static let notificationIdentifier = "com.duckduckgo.inactivity.notification"
         static let subfeature: any PrivacySubfeature = iOSBrowserConfigSubfeature.inactivityNotification
 
@@ -39,24 +37,39 @@ final class InactivityNotificationSchedulerService {
                                                                  intentIdentifiers: [],
                                                                  options: [.customDismissAction])
     }
-    
+
+    enum Settings: String {
+        case daysInactive
+        case maxInteractions
+
+        var defaultValue: Int {
+            switch self {
+            case .daysInactive: return 7 // default to 7 days
+            case .maxInteractions: return 4 // default to 4 interactions
+            }
+        }
+    }
+
     // MARK: - Dependencies
-    
+
     private let featureFlagger: FeatureFlagger
     private let notificationServiceManager: NotificationServiceManaging
     private let privacyConfigurationManager: PrivacyConfigurationManaging
+    private let stateStore: InactivityNotificationStateStoring
     private let userNotificationCenter: UNUserNotificationCenterRepresentable
-    
+
     init(featureFlagger: FeatureFlagger,
          notificationServiceManager: NotificationServiceManaging,
          privacyConfigurationManager: PrivacyConfigurationManaging,
+         stateStore: InactivityNotificationStateStoring,
          userNotificationCenter: UNUserNotificationCenterRepresentable = UNUserNotificationCenter.current(),
     ) {
         self.featureFlagger = featureFlagger
         self.notificationServiceManager = notificationServiceManager
         self.privacyConfigurationManager = privacyConfigurationManager
+        self.stateStore = stateStore
         self.userNotificationCenter = userNotificationCenter
-        
+
         self.userNotificationCenter.delegate = notificationServiceManager
     }
     
@@ -64,7 +77,8 @@ final class InactivityNotificationSchedulerService {
     
     @discardableResult
     func resume() -> Task<Void, Never> {
-        guard isFeatureEnabled() else {
+        guard isFeatureEnabled(),
+              stateStore.interactionCount < maxInteractions else {
             cancelPendingNotifications()
             return Task {} // noop
         }
@@ -72,14 +86,17 @@ final class InactivityNotificationSchedulerService {
             await schedule()
         }
     }
-    
+
     func schedule() async {
         cancelPendingNotifications()
         await requestProvisionalAuthorizationIfNeeded()
-        
+
         let status = await userNotificationCenter.authorizationStatus()
-        guard status == .provisional else { return }
-            
+        guard status == .provisional || status == .authorized,
+              stateStore.interactionCount < maxInteractions else {
+            return
+        }
+
         let request = buildUNNotificationRequest()
         do {
             try await userNotificationCenter.add(request)
@@ -103,34 +120,43 @@ final class InactivityNotificationSchedulerService {
         }
     }
     
-    func makeUNNotificationContent(with daysInactive: Int = Constants.defaultDaysInactive) -> UNNotificationContent {
+    func makeUNNotificationContent(with daysInactive: Int = Settings.daysInactive.defaultValue) -> UNNotificationContent {
         let content = UNMutableNotificationContent()
         content.title = UserText.inactivityNotificationTitle
         content.body = UserText.inactivityNotificationBody
-        content.userInfo = [Constants.daysInactiveSettingKey: daysInactive]
+        content.userInfo = [Settings.daysInactive.rawValue: daysInactive]
         content.categoryIdentifier = Constants.notificationIdentifier
         return content
     }
-    
-    func makeDaysInactive() -> Int {
-        guard let settings = privacyConfigurationManager.privacyConfig.settings(for: Constants.subfeature),
-              let jsonData = settings.data(using: .utf8) else { return Constants.defaultDaysInactive }
-        
-        do {
-            if let settingsDict = try JSONSerialization.jsonObject(with: jsonData) as? [String: String],
-               let daysInactiveStr = settingsDict[Constants.daysInactiveSettingKey],
-               let daysInactive = Int(daysInactiveStr), daysInactive >= 1 {
-                return daysInactive
-            }
-        } catch {
-            Logger.pushNotification.error("Inactivity notification daysInactiveSettingKey parsed failed with \(error.localizedDescription, privacy: .public)")
+
+    var daysInactive: Int {
+        guard let daysInactive = subfeatureSettings?[Settings.daysInactive.rawValue] as? Int, daysInactive >= 1 else {
+            return Settings.daysInactive.defaultValue
         }
-        
-        return Constants.defaultDaysInactive
+        return daysInactive
     }
-    
+
+    var maxInteractions: Int {
+        guard let maxInteractions = subfeatureSettings?[Settings.maxInteractions.rawValue] as? Int, maxInteractions >= 1 else {
+            return Settings.maxInteractions.defaultValue
+        }
+        return maxInteractions
+    }
+
     // MARK: - Private
-    
+
+    private var subfeatureSettings: [String: Any]? {
+        guard let settings = privacyConfigurationManager.privacyConfig.settings(for: Constants.subfeature),
+              let jsonData = settings.data(using: .utf8) else { return nil }
+
+        do {
+            return try JSONSerialization.jsonObject(with: jsonData) as? [String: Any]
+        } catch {
+            Logger.pushNotification.error("Inactivity notification subfeature settings parsing failed with \(error.localizedDescription, privacy: .public)")
+            return nil
+        }
+    }
+
     private func isFeatureEnabled() -> Bool {
         return featureFlagger.isFeatureOn(.inactivityNotification)
     }
@@ -140,7 +166,6 @@ final class InactivityNotificationSchedulerService {
     }
     
     private func buildUNNotificationRequest() -> UNNotificationRequest {
-        let daysInactive = makeDaysInactive()
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: .days(daysInactive), repeats: false)
         return UNNotificationRequest(
             identifier: Constants.notificationIdentifier,

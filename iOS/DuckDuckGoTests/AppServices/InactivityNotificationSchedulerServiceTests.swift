@@ -19,6 +19,7 @@
 
 import XCTest
 import FoundationExtensions
+import PersistenceTestingUtils
 @testable import DuckDuckGo
 @testable import Core
 @testable import BrowserServicesKit
@@ -26,24 +27,27 @@ import FoundationExtensions
 final class MockNotificationServiceManager: NSObject, NotificationServiceManaging {}
 
 final class InactivityNotificationSchedulerServiceTests: XCTestCase {
-    
+
     var mockFeatureFlagger: MockFeatureFlagger!
     var mockPrivacyConfigManager: PrivacyConfigurationManagerMock!
     var mockNotificationServiceManager: MockNotificationServiceManager!
     var mockUserNotificationCenter: MockUNUserNotificationCenter!
+    var stateStore: InactivityNotificationStateStoring!
     var service: InactivityNotificationSchedulerService!
-    
+
     override func setUp() {
         super.setUp()
         mockPrivacyConfigManager = PrivacyConfigurationManagerMock()
         mockFeatureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.inactivityNotification])
         mockNotificationServiceManager = MockNotificationServiceManager()
         mockUserNotificationCenter = MockUNUserNotificationCenter()
-        
+        stateStore = InactivityNotificationStateStore(keyValueStore: MockKeyValueFileStore())
+
         service = InactivityNotificationSchedulerService(
             featureFlagger: mockFeatureFlagger,
             notificationServiceManager: mockNotificationServiceManager,
             privacyConfigurationManager: mockPrivacyConfigManager,
+            stateStore: stateStore,
             userNotificationCenter: mockUserNotificationCenter
         )
     }
@@ -53,6 +57,7 @@ final class InactivityNotificationSchedulerServiceTests: XCTestCase {
         mockFeatureFlagger = nil
         mockNotificationServiceManager = nil
         mockUserNotificationCenter = nil
+        stateStore = nil
         service = nil
         super.tearDown()
     }
@@ -88,7 +93,7 @@ final class InactivityNotificationSchedulerServiceTests: XCTestCase {
         XCTAssertEqual(notificationRequest.content.body, UserText.inactivityNotificationBody)
         XCTAssertEqual(notificationRequest.trigger, UNTimeIntervalNotificationTrigger(timeInterval: .days(7), repeats: false))
         
-        guard let daysInactive = notificationRequest.content.userInfo[ InactivityNotificationSchedulerService.Constants.daysInactiveSettingKey] as? Int else {
+        guard let daysInactive = notificationRequest.content.userInfo[ InactivityNotificationSchedulerService.Settings.daysInactive.rawValue] as? Int else {
             return XCTFail("Expected Int for daysInactive in userInfo")
         }
         XCTAssertEqual(daysInactive, 7)
@@ -136,20 +141,59 @@ final class InactivityNotificationSchedulerServiceTests: XCTestCase {
         }
     }
     
-    // MARK: - Schedule
-    
-    func test_schedule_statusNotProvisional_doNotSchedule() async {
+    func test_resume_whenInteractionLimitReached_cancelsAndDoesNotSchedule() async throws {
         // Given
-        mockUserNotificationCenter.authorizationStatus = .authorized
-        
+        mockUserNotificationCenter.authorizationStatus = .provisional
+        for _ in 0..<4 { stateStore.recordInteraction() }
+
         // When
-        await service.schedule()
-        
-        
+        await service.resume().value
+
         // Then
         XCTAssertTrue(mockUserNotificationCenter.removedIdentifiers.contains { $0.contains(InactivityNotificationSchedulerService.Constants.notificationIdentifier) })
-        XCTAssertTrue(mockUserNotificationCenter.didCheckAuthorizationStatus)
+        XCTAssertTrue(mockUserNotificationCenter.addedRequests.isEmpty)
+    }
+
+    func test_resume_whenRemoteMaxInteractionsDropsBelowCurrentCount_doesNotSchedule() async {
+        // Given: remote config now caps interactions at 2, and the user has already interacted twice.
+        (mockPrivacyConfigManager.privacyConfig as? PrivacyConfigurationMock)?.subfeatureSettings = [
+            "inactivityNotification": """
+                {"maxInteractions": 2}
+            """
+        ]
+        mockUserNotificationCenter.authorizationStatus = .provisional
+        for _ in 0..<2 { stateStore.recordInteraction() }
+
+        // When
+        await service.resume().value
+
+        // Then
+        XCTAssertTrue(mockUserNotificationCenter.addedRequests.isEmpty)
+    }
+
+    // MARK: - Schedule
+
+    func test_schedule_statusAuthorized_schedules() async {
+        // Given
+        mockUserNotificationCenter.authorizationStatus = .authorized
+
+        // When
+        await service.schedule()
+
+        // Then
+        XCTAssertEqual(mockUserNotificationCenter.addedRequests.count, 1)
         XCTAssertFalse(mockUserNotificationCenter.didRequestAuthorization)
+    }
+
+    func test_schedule_statusDenied_doesNotSchedule() async {
+        // Given
+        mockUserNotificationCenter.authorizationStatus = .denied
+
+        // When
+        await service.schedule()
+
+        // Then
+        XCTAssertTrue(mockUserNotificationCenter.addedRequests.isEmpty)
     }
     
     func test_schedule_statusIsNotDetermined_requestAndSchedule() async {
@@ -196,7 +240,38 @@ final class InactivityNotificationSchedulerServiceTests: XCTestCase {
         XCTAssertFalse(mockUserNotificationCenter.didRequestAuthorization)
         XCTAssertEqual(mockUserNotificationCenter.addedRequests.count, 0)
     }
-    
+
+    func test_schedule_whenInteractionLimitReachedBetweenResumeCheckAndSchedule_doesNotSchedule() async {
+        // Given: simulates the race where `resume()`'s outer gate passed, but interactions were
+        // recorded (e.g. from a concurrent notification response) before `schedule()`'s own
+        // add() call runs. `schedule()` must re-check the cap itself as defense-in-depth.
+        mockUserNotificationCenter.authorizationStatus = .provisional
+        for _ in 0..<InactivityNotificationSchedulerService.Settings.maxInteractions.defaultValue {
+            stateStore.recordInteraction()
+        }
+
+        // When
+        await service.schedule()
+
+        // Then
+        XCTAssertTrue(mockUserNotificationCenter.addedRequests.isEmpty)
+    }
+
+    func test_scheduledContent_hasInactivityIdentifier() async throws {
+        // Given
+        mockUserNotificationCenter.authorizationStatus = .provisional
+
+        // When
+        await service.schedule()
+
+        // Then
+        let request = try XCTUnwrap(mockUserNotificationCenter.addedRequests.first)
+        XCTAssertEqual(
+            request.content.categoryIdentifier,
+            InactivityNotificationSchedulerService.Constants.notificationIdentifier
+        )
+    }
+
     // MARK: - RequestAuthorizationIfNeeded
     
     func test_requestAuthIfNeeded_statusIsNotNotDetermined_doNotRequest() async {
@@ -238,24 +313,24 @@ final class InactivityNotificationSchedulerServiceTests: XCTestCase {
         XCTAssertTrue(mockUserNotificationCenter.requestedAuthorizationOptions.contains(.provisional))
     }
     
-    // MARK: - MakeDaysInactive
-    
-    func test_makeDaysInactive_readsConfiguredValue() {
+    // MARK: - daysInactive
+
+    func test_daysInactive_readsConfiguredValue() {
         // Given
         (mockPrivacyConfigManager.privacyConfig as? PrivacyConfigurationMock)?.subfeatureSettings = [
             "inactivityNotification": """
-                {"daysInactive": "5"}
+                {"daysInactive": 5}
             """
         ]
         
         // When
-        let result = service.makeDaysInactive()
-        
+        let result = service.daysInactive
+
         // Then
         XCTAssertEqual(result, 5)
     }
         
-    func test_makeDaysInactive_invalidValue_usesDefault() {
+    func test_daysInactive_invalidValue_usesDefault() {
         // Given
         (mockPrivacyConfigManager.privacyConfig as? PrivacyConfigurationMock)?.subfeatureSettings = [
             "inactivityNotification": """
@@ -264,38 +339,96 @@ final class InactivityNotificationSchedulerServiceTests: XCTestCase {
         ]
         
         // When
-        let result = service.makeDaysInactive()
-        
+        let result = service.daysInactive
+
         // Then
         XCTAssertEqual(result, 7)
     }
     
-    func test_makeDaysInactive_lessThanOne_usesDefault() {
+    func test_daysInactive_lessThanOne_usesDefault() {
         // Given
         (mockPrivacyConfigManager.privacyConfig as? PrivacyConfigurationMock)?.subfeatureSettings = [
             "inactivityNotification": """
-                {"daysInactive": "0"}
+                {"daysInactive": 0}
             """
         ]
         
         // When
-        let result = service.makeDaysInactive()
-        
+        let result = service.daysInactive
+
         // Then
         XCTAssertEqual(result, 7)
     }
     
-    func test_makeDaysInactive_emptyValue_usesDefault() {
+    func test_daysInactive_emptyValue_usesDefault() {
         // Given
         (mockPrivacyConfigManager.privacyConfig as? PrivacyConfigurationMock)?.subfeatureSettings = [:]
         
         // When
-        let result = service.makeDaysInactive()
-        
+        let result = service.daysInactive
+
         // Then
         XCTAssertEqual(result, 7)
     }
-    
+
+    // MARK: - maxInteractions
+
+    func test_maxInteractions_readsConfiguredValue() {
+        // Given
+        (mockPrivacyConfigManager.privacyConfig as? PrivacyConfigurationMock)?.subfeatureSettings = [
+            "inactivityNotification": """
+                {"maxInteractions": 3}
+            """
+        ]
+
+        // When
+        let result = service.maxInteractions
+
+        // Then
+        XCTAssertEqual(result, 3)
+    }
+
+    func test_maxInteractions_invalidValue_usesDefault() {
+        // Given
+        (mockPrivacyConfigManager.privacyConfig as? PrivacyConfigurationMock)?.subfeatureSettings = [
+            "inactivityNotification": """
+                {"maxInteractions": "x"}
+            """
+        ]
+
+        // When
+        let result = service.maxInteractions
+
+        // Then
+        XCTAssertEqual(result, InactivityNotificationSchedulerService.Settings.maxInteractions.defaultValue)
+    }
+
+    func test_maxInteractions_lessThanOne_usesDefault() {
+        // Given
+        (mockPrivacyConfigManager.privacyConfig as? PrivacyConfigurationMock)?.subfeatureSettings = [
+            "inactivityNotification": """
+                {"maxInteractions": 0}
+            """
+        ]
+
+        // When
+        let result = service.maxInteractions
+
+        // Then
+        XCTAssertEqual(result, InactivityNotificationSchedulerService.Settings.maxInteractions.defaultValue)
+    }
+
+    func test_maxInteractions_emptyValue_usesDefault() {
+        // Given
+        (mockPrivacyConfigManager.privacyConfig as? PrivacyConfigurationMock)?.subfeatureSettings = [:]
+
+        // When
+        let result = service.maxInteractions
+
+        // Then
+        XCTAssertEqual(result, InactivityNotificationSchedulerService.Settings.maxInteractions.defaultValue)
+    }
+
     // MARK: - makeNotficationContent
         
     func test_makeNotificationContent_setsTitleBodyAndUserInfo() {
@@ -306,7 +439,7 @@ final class InactivityNotificationSchedulerServiceTests: XCTestCase {
         XCTAssertEqual(content.title, UserText.inactivityNotificationTitle)
         XCTAssertEqual(content.body, UserText.inactivityNotificationBody)
         
-        if let daysInactive = content.userInfo[InactivityNotificationSchedulerService.Constants.daysInactiveSettingKey] as? Int {
+        if let daysInactive = content.userInfo[InactivityNotificationSchedulerService.Settings.daysInactive.rawValue] as? Int {
             XCTAssertEqual(daysInactive, 5)
         } else {
             XCTFail("Expected daysInactive in userInfo")
@@ -318,8 +451,8 @@ final class InactivityNotificationSchedulerServiceTests: XCTestCase {
         let content = service.makeUNNotificationContent()
         
         // Then
-        if let daysInactive = content.userInfo[InactivityNotificationSchedulerService.Constants.daysInactiveSettingKey] as? Int {
-            XCTAssertEqual(daysInactive, InactivityNotificationSchedulerService.Constants.defaultDaysInactive)
+        if let daysInactive = content.userInfo[InactivityNotificationSchedulerService.Settings.daysInactive.rawValue] as? Int {
+            XCTAssertEqual(daysInactive, InactivityNotificationSchedulerService.Settings.daysInactive.defaultValue)
         } else {
             XCTFail("Expected daysInactive in userInfo")
         }

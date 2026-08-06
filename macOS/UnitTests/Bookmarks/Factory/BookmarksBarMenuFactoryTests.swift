@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import DesignResourcesKitIcons
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -28,16 +29,62 @@ final class BookmarksBarMenuFactoryTests: XCTestCase {
         XCTAssertTrue(menu.items.isEmpty)
 
         // WHEN
-        BookmarksBarMenuFactory.addToMenuWithManageBookmarksSection(menu, target: targetMock, addFolderSelector: #selector(targetMock.addFolder(_:)), manageBookmarksSelector: #selector(targetMock.manageBookmarks), prefs: NSApp.delegateTyped.appearancePreferences)
+        BookmarksBarMenuFactory.addToMenuWithManageBookmarksSection(
+            menu,
+            target: targetMock,
+            addFolderSelector: #selector(targetMock.addFolder(_:)),
+            reorderByNameSelector: #selector(targetMock.reorderByName(_:)),
+            manageBookmarksSelector: #selector(targetMock.manageBookmarks),
+            prefs: NSApp.delegateTyped.appearancePreferences)
 
         // THEN
-        XCTAssertEqual(menu.items.count, 4)
+        XCTAssertEqual(menu.items.count, 5)
         XCTAssertEqual(menu.items[1].title, "")
         XCTAssertNil(menu.items[1].action)
         XCTAssertEqual(menu.items[2].title, UserText.addFolder)
         XCTAssertEqual(menu.items[2].action, #selector(targetMock.addFolder(_:)))
-        XCTAssertEqual(menu.items[3].title, UserText.bookmarksManageBookmarks)
-        XCTAssertEqual(menu.items[3].action, #selector(targetMock.manageBookmarks))
+        XCTAssertEqual(menu.items[3].title, UserText.bookmarksBarContextMenuReorderByName)
+        XCTAssertEqual(menu.items[3].action, #selector(targetMock.reorderByName(_:)))
+        XCTAssertEqual(menu.items[3].image?.pngData(), DesignSystemImages.Glyphs.Size12.arrowUpDown.pngData())
+        XCTAssertEqual(menu.items[4].title, UserText.bookmarksManageBookmarks)
+        XCTAssertEqual(menu.items[4].action, #selector(targetMock.manageBookmarks))
+    }
+
+    func testReorderByNameIsMissingWhenSelectorIsNil() {
+        // GIVEN
+        let menu = NSMenu(title: "")
+        let targetMock = BookmarksBarTargetMock()
+
+        // WHEN
+        BookmarksBarMenuFactory.addToMenuWithManageBookmarksSection(
+            menu,
+            target: targetMock,
+            addFolderSelector: #selector(targetMock.addFolder(_:)),
+            reorderByNameSelector: nil,
+            manageBookmarksSelector: #selector(targetMock.manageBookmarks),
+            prefs: NSApp.delegateTyped.appearancePreferences)
+
+        // THEN
+        XCTAssertEqual(menu.items.count, 4)
+        XCTAssertFalse(menu.items.contains(where: { $0.title == UserText.bookmarksBarContextMenuReorderByName }))
+    }
+
+    func testReorderByNameMovesTopLevelEntitiesWithinRoot() {
+        // GIVEN
+        let zulu = Bookmark(id: "zulu", url: "https://zulu.example", title: "Zulu", isFavorite: false)
+        let alpha = BookmarkFolder(id: "alpha", title: "Alpha")
+        let bookmarkManager = MockBookmarkManager(
+            list: BookmarkList(entities: [zulu], topLevelEntities: [zulu, alpha]),
+            sortMode: .nameDescending)
+
+        // WHEN
+        bookmarkManager.reorderByName(bookmarkManager.list?.topLevelEntities ?? [], withinParentFolder: .root)
+
+        // THEN
+        XCTAssertEqual(
+            bookmarkManager.moveObjectsCalled,
+            .init(objectUUIDs: [alpha.id, zulu.id], toIndex: 0, withinParentFolder: .root))
+        XCTAssertEqual(bookmarkManager.sortMode, .manual)
     }
 
     func testShouldNotReturnAddFolderAndManageBookmarksWhenAddToMenuIsCalled() {
@@ -55,5 +102,6 @@ final class BookmarksBarMenuFactoryTests: XCTestCase {
 
 private class BookmarksBarTargetMock: NSObject {
     @objc func addFolder(_ sender: NSMenuItem) {}
+    @objc func reorderByName(_ sender: NSMenuItem) {}
     @objc func manageBookmarks() {}
 }

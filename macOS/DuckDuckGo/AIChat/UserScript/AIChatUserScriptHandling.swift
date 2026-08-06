@@ -195,10 +195,9 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
 
     var isFireWindowProvider: (() -> Bool)?
 
-    /// The surface that opened this chat. Consumed once from `AIChatConversationSourceHandler.shared`
-    /// when the chat's native config is first fetched (at load), then retained so the deferred
-    /// conversation pixels (`start_new_conversation` / `sent_prompt_ongoing_chat`) can be attributed.
+    /// Surface that opened this chat, consumed once at load and retained for the conversation's pixels.
     private var conversationSource: AIChatConversationSource?
+    private var didConsumeConversationSource = false
 
     init(
         storage: AIChatPreferencesStorage,
@@ -257,10 +256,11 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     }
 
     public func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) async -> Encodable? {
-        // Consumed once, at the chat's first native-config fetch (load time), before the user can
-        // submit a prompt — so the conversation pixels fired later in `didReportMetric` can attribute
-        // the conversation to the surface that opened it.
-        if conversationSource == nil {
+        // Consume exactly once, at load, before the user can submit a prompt. Guarded by a flag (not
+        // by `conversationSource == nil`) so a chat that loaded with an empty mailbox can't later
+        // steal a different chat's pending source on a subsequent config fetch.
+        if !didConsumeConversationSource {
+            didConsumeConversationSource = true
             conversationSource = AIChatConversationSourceHandler.shared.consumeData()
         }
         let isFireWindow = isFireWindowProvider?() ?? false

@@ -560,6 +560,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
     @MainActor
     private func makeAIChatMenu() -> AIChatMenu {
         let actions = AIChatMenu.Actions.makeDefault(
+            conversationSource: .moreOptionsMenu,
             remoteSettings: AIChatRemoteSettings(),
             tabOpener: NSApp.delegateTyped.aiChatTabOpener,
             historyCleaner: NSApp.delegateTyped.aiChatHistoryCleaner,

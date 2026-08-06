@@ -89,8 +89,8 @@ final class AIChatSummarizer: AIChatSummarizing {
                 ),
                 frequency: .dailyAndStandard
             )
+            AIChatConversationSourceHandler.shared.setData(.summarization)
         }
-        AIChatConversationSourceHandler.shared.setData(.summarization)
         aiChatCoordinator.revealChat(for: prompt)
     }
 }

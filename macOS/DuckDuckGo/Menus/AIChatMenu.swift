@@ -320,6 +320,7 @@ extension AIChatMenu.Actions {
 
     @MainActor
     static func makeDefault(
+        conversationSource: AIChatConversationSource,
         remoteSettings: AIChatRemoteSettings,
         tabOpener: AIChatTabOpening,
         historyCleaner: AIChatHistoryCleaning,
@@ -328,7 +329,7 @@ extension AIChatMenu.Actions {
     ) -> AIChatMenu.Actions {
         AIChatMenu.Actions(
             openNewChat: {
-                AIChatConversationSourceHandler.shared.setData(.tabBarButton)
+                AIChatConversationSourceHandler.shared.setData(conversationSource)
                 tabOpener.openAIChatTab(with: .newChat, behavior: .newTab(selected: true))
             },
             openNewVoiceChat: {

@@ -66,7 +66,8 @@ final class AIChatSelectionContextAttacher: AIChatSelectionContextAttaching {
 
         pixelFiring?.fire(AIChatPixel.aiChatAttachSelection, frequency: .dailyAndStandard)
 
-        if !aiChatCoordinator.isChatPresentedForCurrentTab() {
+        let isChatAlreadyPresented = aiChatCoordinator.isChatPresentedForCurrentTab()
+        if !isChatAlreadyPresented {
             pixelFiring?.fire(
                 AIChatPixel.aiChatSidebarOpened(
                     source: .attachSelection,
@@ -93,7 +94,9 @@ final class AIChatSelectionContextAttacher: AIChatSelectionContextAttaching {
 
         // Append the selection, then reveal the sidebar; the tab extension flushes it once the chat VC is up.
         currentPageContextProvider()?.appendSelectionContext(selection)
-        AIChatConversationSourceHandler.shared.setData(.attachSelection)
+        if !isChatAlreadyPresented {
+            AIChatConversationSourceHandler.shared.setData(.attachSelection)
+        }
         aiChatCoordinator.revealChat()
     }
 }

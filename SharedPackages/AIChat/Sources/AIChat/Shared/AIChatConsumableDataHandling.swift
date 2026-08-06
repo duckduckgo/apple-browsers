@@ -62,13 +62,8 @@ public final class AIChatPromptHandler: AIChatConsumableDataHandling {
     }
 }
 
-/// The user-facing surface that initiated a Duck.ai conversation. Written to
-/// `AIChatConversationSourceHandler.shared` at open time and attached to the conversation
-/// pixels (`aichat_start_new_conversation` / `aichat_sent_prompt_ongoing_chat`) so a started
-/// conversation can be attributed to its entry point — chiefly to measure the redesigned
-/// Duck.ai tab-bar button. Raw values are the pixel parameter values; keep in sync with the
-/// `source` enum in `aichat_pixels.json5`. Aligned with the Windows `InvocationSource` taxonomy
-/// (reconcile exact strings with the Windows owner before shipping cross-platform dashboards).
+/// The user-facing surface that opened a Duck.ai conversation, attached as `source` to the
+/// conversation pixels. Raw values mirror the `source` enum in `aichat_pixels.json5`.
 public enum AIChatConversationSource: String, CaseIterable {
     /// Duck.ai tab-bar button — new chat (direct click or the button menu's "New Chat").
     case tabBarButton = "tab-bar-button"
@@ -112,11 +107,8 @@ public enum AIChatConversationSource: String, CaseIterable {
     case other = "other"
 }
 
-/// Carries the `AIChatConversationSource` from the surface that opens a Duck.ai chat to the
-/// per-webview `AIChatUserScriptHandler` that fires the conversation pixels. Mirrors
-/// `AIChatPromptHandler.shared`: a global one-shot slot written just before the chat is opened
-/// and consumed once when the chat's user script loads. The handler stores the consumed value
-/// for the lifetime of the conversation, so the deferred first-prompt pixel can read it.
+/// One-shot mailbox carrying the opening surface to the chat's handler. Mirrors
+/// `AIChatPromptHandler.shared`: written just before the chat opens, consumed once at load.
 public final class AIChatConversationSourceHandler: AIChatConsumableDataHandling {
     public typealias DataType = AIChatConversationSource
     private var data: DataType?

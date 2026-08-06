@@ -1143,8 +1143,8 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
                     ),
                     frequency: .dailyAndStandard
                 )
+                AIChatConversationSourceHandler.shared.setData(.askAboutPage)
             }
-            AIChatConversationSourceHandler.shared.setData(.askAboutPage)
             aiChatCoordinator?.revealChat()
         }
 

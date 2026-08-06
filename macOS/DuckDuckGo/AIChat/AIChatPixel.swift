@@ -383,12 +383,10 @@ enum AIChatPixel: PixelKitEvent {
 
     // MARK: - Prompt Metrics
 
-    /// Event Trigger: User submits their first prompt in a new Duck.ai conversation.
-    /// `source` attributes the conversation to the surface that opened the chat.
+    /// Event Trigger: User submits their first prompt in a new Duck.ai conversation. `source` is the opening surface.
     case aiChatMetricStartNewConversation(source: AIChatConversationSource)
 
-    /// Event Trigger: User submits a prompt in an ongoing Duck.ai conversation.
-    /// `source` attributes the conversation to the surface that opened the chat.
+    /// Event Trigger: User submits a prompt in an ongoing Duck.ai conversation. `source` is the opening surface.
     case aiChatMetricSentPromptOngoingChat(source: AIChatConversationSource)
 
     /// Event Trigger: User taps a sidebar page-suggestion chip (a tailored prompt or "Ask about this page").

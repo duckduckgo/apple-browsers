@@ -164,6 +164,8 @@ final class AIChatOmnibarController {
 
     private struct AttachedTabObserver {
         weak var store: (any DuckAIPromptDraftStoring)?
+        /// Suspending a tab swaps the `Tab` behind the same uuid, stranding the old subscription.
+        weak var tab: Tab?
         let cancellable: AnyCancellable
         /// While set, a URL change is that load settling (redirect, committed URL), not a page change.
         var isSettlingLoadFromAttachTime: Bool
@@ -868,15 +870,17 @@ final class AIChatOmnibarController {
         let pinnedTabs = collection.pinnedTabsCollection?.$tabs.eraseToAnyPublisher()
             ?? Just([]).eraseToAnyPublisher()
         Publishers.CombineLatest(collection.tabCollection.$tabs, pinnedTabs)
-            .map { unpinned, pinned in Set((unpinned + pinned).map(\.uuid)) }
-            .removeDuplicates()
-            .sink { [weak self] openTabIds in
-                self?.dropAttachmentsForClosedTabs(openTabIds: openTabIds)
+            // Moves between the two collections are two mutations; read the lists once both landed.
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _, _ in
+                self?.dropAttachmentsForClosedTabs()
             }
             .store(in: &cancellables)
     }
 
-    private func dropAttachmentsForClosedTabs(openTabIds: Set<String>) {
+    private func dropAttachmentsForClosedTabs() {
+        guard let collection = origin?.originTabCollectionViewModel else { return }
+        let openTabIds = Set(((collection.pinnedTabsCollection?.tabs ?? []) + collection.tabCollection.tabs).map(\.uuid))
         var stores: [any DuckAIPromptDraftStoring] = attachedTabObservers.values.compactMap(\.store)
         if let draftStore {
             stores.append(draftStore)
@@ -892,13 +896,14 @@ final class AIChatOmnibarController {
     /// Observers for other drafts keep running; a newly observed tab is reconciled right after.
     private func syncAttachedTabObservers() {
         attachedTabObservers = attachedTabObservers.filter { key, observer in
-            observer.store?.aiChatTabAttachments.contains { $0.id == key.tabId } ?? false
+            observer.tab != nil && observer.store?.aiChatTabAttachments.contains { $0.id == key.tabId } ?? false
         }
 
         guard let store = draftStore, let collection = origin?.originTabCollectionViewModel else { return }
         for attachment in store.aiChatTabAttachments {
             let key = AttachedTabObserverKey(store: ObjectIdentifier(store), tabId: attachment.id)
-            guard attachedTabObservers[key] == nil, let tab = attachedTab(withId: attachment.id, in: collection) else { continue }
+            guard let tab = loadedTab(withId: attachment.id, in: collection),
+                  attachedTabObservers[key]?.tab !== tab else { continue }
 
             // `dropFirst`: store the observer before any policy runs, or a re-sync subscribes twice.
             let cancellable = Publishers.CombineLatest4(tab.$content, tab.$title, tab.$favicon, tab.$isLoading)
@@ -914,6 +919,7 @@ final class AIChatOmnibarController {
                                                isSettlingLoadFromAttachTime: isSettling)
                 }
             attachedTabObservers[key] = AttachedTabObserver(store: store,
+                                                            tab: tab,
                                                             cancellable: cancellable,
                                                             isSettlingLoadFromAttachTime: tab.isLoading)
             applyNavigationPolicy(forAttachedTabId: attachment.id, in: store,
@@ -922,9 +928,13 @@ final class AIChatOmnibarController {
         }
     }
 
-    /// Materializes a suspended tab (never selects it), otherwise it would carry no observer.
-    private func attachedTab(withId id: String, in collection: TabCollectionViewModel) -> Tab? {
-        AIChatTabPickerSource.materializeAttachableTab(withId: id, forOrigin: collection)?.tab
+    /// Suspended tabs are skipped: they can't navigate, and the tab-list watch re-observes on resume.
+    private func loadedTab(withId id: String, in collection: TabCollectionViewModel) -> Tab? {
+        let allTabs = (collection.pinnedTabsCollection?.tabs ?? []) + collection.tabCollection.tabs
+        return allTabs.lazy.compactMap { anyTab -> Tab? in
+            guard case .loaded(let tab) = anyTab, tab.uuid == id else { return nil }
+            return tab
+        }.first
     }
 
     /// `store` is the prompt's own store, which is not necessarily the active one.
@@ -1499,9 +1509,14 @@ final class AIChatOmnibarController {
 
         // Stamp `tabId` on each successful extraction (or strip it if the entry matches the
         // active tab), then re-order to match the carousel's insertion order.
+        // Extraction resolves the live tab, which may have navigated since submit started. With page
+        // content not sent automatically, only the page the user actually attached may ship.
+        let sendsAnyPage = aiChatMenuConfiguration.shouldAutomaticallySendPageContext
+        let attachedURLsById = Dictionary(tabAttachments.map { ($0.id, $0.url) }, uniquingKeysWith: { _, latest in latest })
         var byId: [String: AIChatPageContextData] = [:]
         for (tabId, maybeContext) in extracted {
             guard let ctx = maybeContext else { continue }
+            if !sendsAnyPage, let attachedURL = attachedURLsById[tabId], URL(string: ctx.url) != attachedURL { continue }
             let stampedTabId: String? = (tabId == activeTabUUID) ? nil : tabId
             byId[tabId] = ctx.withTabId(stampedTabId)
         }

@@ -35,16 +35,20 @@ enum AIChatAttachedTabNavigationPolicy {
                        favicon: NSImage?,
                        isSettlingLoadFromAttachTime: Bool,
                        automaticallySendsPageContext: Bool) -> Action {
-        guard case .url(let url, _, _) = content, !AIChatTabMetadata.shouldExcludeFromTabPicker(url) else {
+        guard case .url(let url, _, let source) = content, !AIChatTabMetadata.shouldExcludeFromTabPicker(url) else {
             return .drop
         }
 
-        let resolvedTitle = title ?? url.host ?? ""
-
         guard url == attachment.url else {
-            // A load in flight at attach time is settling (redirect, committed URL), not a page change.
-            guard automaticallySendsPageContext || isSettlingLoadFromAttachTime else { return .drop }
-            return .refresh(AIChatTabAttachment(id: attachment.id, title: resolvedTitle, url: url, favicon: favicon))
+            // Only the web view settling the load that was in flight at attach time (redirect,
+            // committed URL) counts as the same pick; anything the user drove is a page change.
+            let isSettling = isSettlingLoadFromAttachTime && source == .webViewUpdated
+            guard automaticallySendsPageContext || isSettling else { return .drop }
+            // The old title and favicon still describe the previous page until the new ones land.
+            return .refresh(AIChatTabAttachment(id: attachment.id,
+                                                title: url.host ?? url.absoluteString,
+                                                url: url,
+                                                favicon: nil))
         }
 
         // Title and favicon land after the page; never downgrade to nil / the host fallback.

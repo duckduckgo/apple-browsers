@@ -673,6 +673,14 @@ final class AIChatOmnibarControllerTests: XCTestCase {
     // MARK: - Attached tabs navigating
 
     /// Selected tab A holds the prompt; tab B is attached to it and then navigates.
+    /// Pruning closed tabs is deferred one main-queue turn, so a move between the pinned and
+    /// unpinned collections isn't read mid-transaction.
+    private func waitForPendingMainQueueWork() {
+        let pending = expectation(description: "pending main queue work")
+        DispatchQueue.main.async { pending.fulfill() }
+        wait(for: [pending], timeout: 1)
+    }
+
     private func makeControllerWithAttachedOtherTab(automaticallySendPageContext: Bool) -> (AIChatOmnibarController, Tab) {
         let promptTab = Tab(content: .url(URL(string: "https://prompt.example")!, credential: nil, source: .ui))
         let attachedTab = Tab(content: .url(URL(string: "https://example.com")!, credential: nil, source: .ui))
@@ -705,11 +713,20 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         return (controller, attachedTab)
     }
 
-    /// Tabs built here never finish loading, so they stand in for attaching a mid-load tab.
-    func testWhenTabAttachedMidLoadLandsOnAnotherURL_ThenAttachmentRebasesInsteadOfBeingDropped() {
+    func testWhenAttachedTabNavigatesAndPageContentIsNotSentAutomatically_ThenAttachmentIsDropped() {
         let (controller, attachedTab) = makeControllerWithAttachedOtherTab(automaticallySendPageContext: false)
 
         _ = attachedTab.setContent(.url(URL(string: "https://apple.com")!, credential: nil, source: .ui))
+
+        XCTAssertTrue(controller.activeTabAttachments.isEmpty,
+                      "The user attached one specific page; navigating away drops it rather than sending another page")
+    }
+
+    /// Tabs built here never finish loading, so they stand in for attaching a mid-load tab.
+    func testWhenTabAttachedMidLoadSettlesOnAnotherURL_ThenAttachmentRebasesInsteadOfBeingDropped() {
+        let (controller, attachedTab) = makeControllerWithAttachedOtherTab(automaticallySendPageContext: false)
+
+        _ = attachedTab.setContent(.url(URL(string: "https://apple.com")!, credential: nil, source: .webViewUpdated))
 
         XCTAssertEqual(controller.activeTabAttachments.map(\.url.absoluteString), ["https://apple.com"],
                        "Dropping here would lose the tab the user just attached")
@@ -734,6 +751,7 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         let attachedIndex = tabCollectionViewModel.indexInAllTabs(where: { $0.uuid == attachedTab.uuid })
 
         tabCollectionViewModel.remove(at: try XCTUnwrap(attachedIndex))
+        waitForPendingMainQueueWork()
 
         XCTAssertTrue(controller.activeTabAttachments.isEmpty, "A closed tab has no page content left to send")
     }

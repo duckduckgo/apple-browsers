@@ -17,7 +17,9 @@
 //  limitations under the License.
 //
 
+import FeatureFlags_iOS
 import Foundation
+import PersistenceTestingUtils
 import UIKit
 import XCTest
 @testable import Core
@@ -269,6 +271,7 @@ class LargeOmniBarStateTests: XCTestCase {
         XCTAssertTrue(testee.showVoiceSearch)
         XCTAssertFalse(testee.showAbort)
         XCTAssertFalse(testee.showRefresh)
+        XCTAssertFalse(testee.showCustomizableButton)
 
         XCTAssertTrue(testee.hasLargeWidth)
         XCTAssertTrue(testee.showBackButton)
@@ -289,6 +292,7 @@ class LargeOmniBarStateTests: XCTestCase {
         XCTAssertFalse(testee.showVoiceSearch)
         XCTAssertFalse(testee.showAbort)
         XCTAssertFalse(testee.showRefresh)
+        XCTAssertFalse(testee.showCustomizableButton)
 
         XCTAssertTrue(testee.hasLargeWidth)
         XCTAssertTrue(testee.showBackButton)
@@ -300,6 +304,33 @@ class LargeOmniBarStateTests: XCTestCase {
     func testWhenEnteringHomeNonEditingStateThenTextIsCleared() {
         let testee = LargeOmniBarState.HomeNonEditingState(dependencies: MockOmnibarDependency(voiceSearchHelper: enabledVoiceSearchHelper, featureFlagger: mockFeatureFlagger), isLoading: false)
         XCTAssertTrue(testee.clearTextOnStart)
+    }
+
+    func testWhenCustomizeNTPIconsIsEnabledAndButtonDoesNotRequireWebPageThenHomeNonEditingStateShowsCustomizableButton() {
+        mockFeatureFlagger.enabledFeatureFlags = [.customizeNTPIcons]
+        let mobileCustomization = MobileCustomization(keyValueStore: MockThrowingKeyValueStore(), isPad: false)
+        var customizationState = mobileCustomization.state
+        customizationState.currentAddressBarButton = .home
+        mobileCustomization.persist(customizationState)
+        let testee = LargeOmniBarState.HomeNonEditingState(
+            dependencies: MockOmnibarDependency(voiceSearchHelper: enabledVoiceSearchHelper,
+                                                featureFlagger: mockFeatureFlagger,
+                                                mobileCustomization: mobileCustomization),
+            isLoading: false)
+
+        XCTAssertTrue(testee.showCustomizableButton)
+    }
+
+    func testWhenCustomizeNTPIconsIsEnabledAndButtonRequiresWebPageThenHomeNonEditingStateHidesCustomizableButton() {
+        mockFeatureFlagger.enabledFeatureFlags = [.customizeNTPIcons]
+        let mobileCustomization = MobileCustomization(keyValueStore: MockThrowingKeyValueStore(), isPad: false)
+        let testee = LargeOmniBarState.HomeNonEditingState(
+            dependencies: MockOmnibarDependency(voiceSearchHelper: enabledVoiceSearchHelper,
+                                                featureFlagger: mockFeatureFlagger,
+                                                mobileCustomization: mobileCustomization),
+            isLoading: false)
+
+        XCTAssertFalse(testee.showCustomizableButton)
     }
 
     func testWhenInHomeNonEditingStateThenEditingStartedTransitionsToEmptyEditingState() {

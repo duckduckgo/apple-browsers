@@ -23,6 +23,7 @@ import Foundation
 import Persistence
 import PrivacyConfig
 import WebExtensions
+import FeatureFlags_iOS
 
 protocol DarkReaderFeatureSettings: DarkReaderExcludedDomainsProviding {
 

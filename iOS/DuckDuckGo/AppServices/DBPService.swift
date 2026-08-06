@@ -27,6 +27,7 @@ import PixelKit
 import Networking
 import Subscription
 import os.log
+import FeatureFlags_iOS
 
 final class DBPService: NSObject {
     private let dbpIOSManager: DataBrokerProtectionIOSManager?
@@ -186,10 +187,6 @@ final class DBPFeatureFlagger: DBPFeatureFlagging, FreemiumPIRFeatureFlagging {
     
     private let appDependencies: DependencyProvider
     private let freemiumPIRDebugSettings: FreemiumPIRDebugSettings
-
-    var isRemoteBrokerDeliveryFeatureOn: Bool {
-        appDependencies.featureFlagger.isFeatureOn(.dbpRemoteBrokerDelivery)
-    }
 
     var isForegroundRunningOnAppActiveFeatureOn: Bool {
         appDependencies.featureFlagger.isFeatureOn(.dbpForegroundRunningOnAppActive)

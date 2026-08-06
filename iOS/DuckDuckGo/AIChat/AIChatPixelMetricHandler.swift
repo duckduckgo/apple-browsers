@@ -20,6 +20,7 @@
 import Foundation
 import AIChat
 import Core
+import Subscription
 
 // MARK: - Protocol
 
@@ -38,13 +39,51 @@ final class AIChatPixelMetricHandler: AIChatPixelMetricHandling {
     private let pixelFiring: PixelFiring.Type
     private let timestampParameterKey = "delta-timestamp-minutes"
 
-    private let metricToEventMap: [AIChatMetricName: Pixel.Event] = [
+    static let metricToEventMap: [AIChatMetricName: Pixel.Event] = [
         .userDidSubmitPrompt: .aiChatMetricSentPromptOngoingChat,
         .userDidSubmitFirstPrompt: .aiChatMetricStartNewConversation,
         .userDidOpenHistory: .aiChatMetricOpenHistory,
         .userDidSelectFirstHistoryItem: .aiChatMetricOpenMostRecentHistoryChat,
         .userDidCreateNewChat: .aiChatMetricStartNewConversationButtonClicked,
         .userDidTapKeyboardReturnKey: .aiChatMetricDuckAIKeyboardReturnPressed
+    ]
+
+    /// Subscription-funnel metrics: metric name → the pixel to fire and the `origin` value identifying the
+    /// entry point. Each of the ten frontend-reported entry points contributes a view metric (impression)
+    /// and a click metric (click).
+    ///
+    /// `userDidViewFreePlanBadge` and `userDidClickFreePlanUpgradeButton` are **deliberately absent**. That
+    /// entry point is native on iOS.
+    static let funnelMetricToPixelMap: [AIChatMetricName: (event: Pixel.Event, origin: SubscriptionFunnelOrigin)] = [
+        .userDidViewAiSidebarUpgradeButton: (.aiChatSubscriptionFunnelImpression, .duckAIAiSidebar),
+        .userDidClickAiSidebarUpgradeButton: (.aiChatSubscriptionFunnelClick, .duckAIAiSidebar),
+
+        .userDidViewActivateSubscriptionBanner: (.aiChatSubscriptionFunnelImpression, .duckAIActivateSubscription),
+        .userDidClickActivateSubscriptionButton: (.aiChatSubscriptionFunnelClick, .duckAIActivateSubscription),
+
+        .userDidViewFreeLimitMessage: (.aiChatSubscriptionFunnelImpression, .duckAIFreeLimit),
+        .userDidClickFreeLimitSubscribeLink: (.aiChatSubscriptionFunnelClick, .duckAIFreeLimit),
+
+        .userDidViewImageGenerationLimitMessage: (.aiChatSubscriptionFunnelImpression, .duckAIImageGenerationLimit),
+        .userDidClickImageGenerationLimitSubscribeButton: (.aiChatSubscriptionFunnelClick, .duckAIImageGenerationLimit),
+
+        .userDidViewPlusLimitMessage: (.aiChatSubscriptionFunnelImpression, .duckAIPlusLimit),
+        .userDidClickPlusLimitUpgradeLink: (.aiChatSubscriptionFunnelClick, .duckAIPlusLimit),
+
+        .userDidViewPromotionCard: (.aiChatSubscriptionFunnelImpression, .duckAIPromotionCard),
+        .userDidClickPromotionCardButton: (.aiChatSubscriptionFunnelClick, .duckAIPromotionCard),
+
+        .userDidViewSettingsSubscribeButton: (.aiChatSubscriptionFunnelImpression, .duckAISettings),
+        .userDidClickSettingsSubscribeButton: (.aiChatSubscriptionFunnelClick, .duckAISettings),
+
+        .userDidViewProUpgradeDisclaimerBanner: (.aiChatSubscriptionFunnelImpression, .duckAIDisclaimerBanner),
+        .userDidClickProUpgradeDisclaimerBannerButton: (.aiChatSubscriptionFunnelClick, .duckAIDisclaimerBanner),
+
+        .userDidViewVoiceChatLimitModal: (.aiChatSubscriptionFunnelImpression, .duckAIVoiceChatLimit),
+        .userDidClickVoiceChatLimitModalSubscribeButton: (.aiChatSubscriptionFunnelClick, .duckAIVoiceChatLimit),
+
+        .userDidViewVoiceChatDurationLimitModal: (.aiChatSubscriptionFunnelImpression, .duckAIVoiceChatDurationLimit),
+        .userDidClickVoiceChatDurationLimitModalSubscribeButton: (.aiChatSubscriptionFunnelClick, .duckAIVoiceChatDurationLimit)
     ]
 
     // MARK: - Initialization
@@ -62,16 +101,21 @@ final class AIChatPixelMetricHandler: AIChatPixelMetricHandling {
     }
 
     func firePixelWithMetric(_ metric: AIChatMetric) {
-        guard let event = metricToEventMap[metric.metricName] else {
+        if let event = Self.metricToEventMap[metric.metricName] {
+            var parameters: [String: String] = [:]
+            if metric.shouldIncludeTimestampParameters {
+                parameters = timestampParameters ?? [:]
+            }
+
+            pixelFiring.fire(event, withAdditionalParameters: parameters)
             return
         }
 
-        var parameters: [String: String] = [:]
-        if metric.shouldIncludeTimestampParameters {
-            parameters = timestampParameters ?? [:]
+        if let funnelPixel = Self.funnelMetricToPixelMap[metric.metricName] {
+            pixelFiring.fire(funnelPixel.event,
+                             withAdditionalParameters: [AttributionParameter.origin: funnelPixel.origin.rawValue])
+            return
         }
-        
-        pixelFiring.fire(event, withAdditionalParameters: parameters)
     }
 
     // MARK: - Private Helpers

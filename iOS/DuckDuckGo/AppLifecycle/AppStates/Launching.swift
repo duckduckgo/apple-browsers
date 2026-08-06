@@ -30,6 +30,7 @@ import BrowserServicesKit
 import Subscription
 import RemoteMessaging
 import WebExtensions
+import FeatureFlags_iOS
 
 /// Represents the transient state where the app is being prepared for user interaction after being launched by the system.
 /// - Usage:
@@ -247,7 +248,8 @@ struct Launching: LaunchingHandling {
         )
 
         // Has to be initialised after configuration.start in case values need to be migrated
-        aiChatSettings = AIChatSettings()
+        let aiChatSettings = AIChatSettings()
+        self.aiChatSettings = aiChatSettings
 
         // Create What's New repository for use in modal prompts and settings
         let whatsNewRepository = DefaultWhatsNewMessageRepository(
@@ -270,15 +272,17 @@ struct Launching: LaunchingHandling {
         )
         let subscriptionPromoExistingUserPresenter = SubscriptionPromoPresenter(coordinator: subscriptionPromoExistingUserCoordinator)
 
-        // Initialise modal prompts coordination
+        // Initialise promo coordination
         let omniBarFocuser = OmniBarFocuserProvider()
-        let modalPromptCoordinationService = ModalPromptCoordinationFactory.makeService(
+        let promoQueueLeaseArbiter = PromoQueueLeaseArbiter()
+        let promoCoordinationService = PromoCoordinationFactory.makeService(
             dependency: .init(
                 launchSourceManager: launchSourceManager,
                 contextualOnboardingStatusProvider: daxDialogs,
                 keyValueFileStoreService: appKeyValueFileStoreService.keyValueFilesStore,
                 privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager,
                 featureFlagger: featureFlagger,
+                promoQueueLeaseArbiter: promoQueueLeaseArbiter,
                 whatsNewRepository: whatsNewRepository,
                 remoteMessagingActionHandler: remoteMessagingService.remoteMessagingActionHandler,
                 remoteMessagingPixelReporter: remoteMessagingService.pixelReporter,
@@ -298,7 +302,10 @@ struct Launching: LaunchingHandling {
             )
         )
 
-        let mobileCustomization = MobileCustomization(keyValueStore: appKeyValueFileStoreService.keyValueFilesStore)
+        let mobileCustomization = MobileCustomization(
+            keyValueStore: appKeyValueFileStoreService.keyValueFilesStore,
+            connectionStatusObserver: AppDependencyProvider.shared.connectionObserver,
+            isDuckAIEnabled: { aiChatSettings.isAIChatEnabled })
 
         // MARK: - Main Coordinator Setup
         // Initialize the main coordinator which manages the app's primary view controller
@@ -332,7 +339,7 @@ struct Launching: LaunchingHandling {
                                               freemiumPIRDebugSettings: freemiumPIRDebugSettings,
                                               freemiumDBPUserStateManager: dbpService.freemiumDBPUserStateManager,
                                               profileStateManager: dbpService.profileStateManager,
-                                              modalPromptCoordinationService: modalPromptCoordinationService,
+                                              promoCoordinationService: promoCoordinationService,
                                               mobileCustomization: mobileCustomization,
                                               productSurfaceTelemetry: productSurfaceTelemetry,
                                               whatsNewRepository: whatsNewRepository,

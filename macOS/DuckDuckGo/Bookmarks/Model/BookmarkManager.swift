@@ -85,6 +85,26 @@ extension BookmarkManager {
     func move(objectUUIDs: [String], toIndex index: Int?, withinParentFolder parent: ParentFolderType) {
         move(objectUUIDs: objectUUIDs, toIndex: index, withinParentFolder: parent) { _ in }
     }
+
+    func reorderByName(_ children: [BaseBookmarkEntity], withinParentFolder parentFolder: ParentFolderType) {
+        let sortedChildIDs = children
+            .sorted(by: .nameAscending)
+            .map(\.id)
+
+        guard sortedChildIDs != children.map(\.id) else {
+            sortMode = .manual
+            return
+        }
+
+        move(objectUUIDs: sortedChildIDs, toIndex: 0, withinParentFolder: parentFolder) { [weak self] error in
+            guard let error else {
+                self?.sortMode = .manual
+                return
+            }
+
+            Logger.bookmarks.error("Failed to reorder bookmarks by name: \(error.localizedDescription, privacy: .public)")
+        }
+    }
 }
 final class LocalBookmarkManager: BookmarkManager {
     init(

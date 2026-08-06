@@ -26,7 +26,7 @@ import FoundationExtensions
 import PixelKit
 import PixelExperimentKit
 import os.log
-import FeatureFlags
+import FeatureFlags_macOS
 import WebExtensions
 
 protocol PrivacyDashboardViewControllerSizeDelegate: AnyObject {

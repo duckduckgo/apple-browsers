@@ -18,7 +18,7 @@
 
 import AIChat
 import AppKit
-import FeatureFlags
+import FeatureFlags_macOS
 import PrivacyConfig
 import PrivacyConfigTestsUtils
 import SubscriptionTestingUtilities
@@ -274,7 +274,8 @@ final class PromptBarOmnibarContentLayoutTests: XCTestCase {
             containerViewController: containerViewController,
             textViewController: textViewController,
             draftStore: draftStore,
-            promptSubmitter: StubPromptBarPromptSubmitter()
+            promptSubmitter: StubPromptBarPromptSubmitter(),
+            themeManager: themeManager
         )
     }
 }

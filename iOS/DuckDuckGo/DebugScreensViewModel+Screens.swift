@@ -168,7 +168,7 @@ extension DebugScreensViewModel {
             .view(title: "Win-back Offer", { d in
                 WinBackOfferDebugView(keyValueStore: d.keyValueStore)
             }),
-            .view(title: "Modal Prompt Coordination", { d in
+            .view(title: "Prompt Presentation Coordiantion", { d in
                 ModalPromptCoordinationDebugView(
                     keyValueStore: d.keyValueStore,
                     promoQueueDebugSnapshotProvider: d.promoQueueDebugSnapshotProvider

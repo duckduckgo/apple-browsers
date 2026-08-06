@@ -6550,25 +6550,25 @@ extension MainViewController: TabSwitcherDelegate {
 
     private func animateLogoAppearance() {
         guard let newTabPageViewController else { return }
-        newTabPageViewController.setPromoSurfaceVisible(false)
+        let visibilityGeneration = newTabPageViewController.setPromoSurfaceVisible(false)
         newTabPageViewController.view.transform = CGAffineTransform().scaledBy(x: 0.5, y: 0.5)
         newTabPageViewController.view.alpha = 0.0
         UIView.animate(withDuration: 0.2, delay: 0.1, options: [.curveEaseInOut, .beginFromCurrentState]) {
             newTabPageViewController.view.transform = .identity
             newTabPageViewController.view.alpha = 1.0
-        } completion: { _ in
-            newTabPageViewController.setPromoSurfaceVisible(true)
+        } completion: { [weak newTabPageViewController] _ in
+            newTabPageViewController?.restorePromoSurfaceVisibility(ifCurrent: visibilityGeneration)
         }
     }
 
     private func deferNTPAppearance() {
         guard let newTabPageViewController else { return }
-        newTabPageViewController.setPromoSurfaceVisible(false)
+        let visibilityGeneration = newTabPageViewController.setPromoSurfaceVisible(false)
         newTabPageViewController.view.alpha = 0.0
         UIView.animate(withDuration: 0.2, delay: 0.2, options: [.curveEaseInOut, .beginFromCurrentState]) {
             newTabPageViewController.view.alpha = 1.0
-        } completion: { _ in
-            newTabPageViewController.setPromoSurfaceVisible(true)
+        } completion: { [weak newTabPageViewController] _ in
+            newTabPageViewController?.restorePromoSurfaceVisibility(ifCurrent: visibilityGeneration)
         }
     }
 

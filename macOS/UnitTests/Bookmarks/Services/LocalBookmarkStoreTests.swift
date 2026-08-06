@@ -667,6 +667,46 @@ final class LocalBookmarkStoreTests: XCTestCase {
     }
 
     @MainActor
+    func testWhenMovingAllFolderChildrenInNameOrderThenOrderIsPersisted() async throws {
+        // GIVEN
+        let bookmarkStore = LocalBookmarkStore(context: container.viewContext)
+        let parent = BookmarkFolder(id: UUID().uuidString, title: "Parent")
+        let zulu = Bookmark(
+            id: UUID().uuidString,
+            url: "https://zulu.example",
+            title: "Zulu",
+            isFavorite: false,
+            parentFolderUUID: parent.id
+        )
+        let alpha = BookmarkFolder(id: UUID().uuidString, title: "alpha", parentFolderUUID: parent.id)
+        let bravo = Bookmark(
+            id: UUID().uuidString,
+            url: "https://bravo.example",
+            title: "Bravo",
+            isFavorite: false,
+            parentFolderUUID: parent.id
+        )
+
+        _ = try await bookmarkStore.save(folder: parent)
+        _ = try await bookmarkStore.save(folder: alpha)
+        _ = try await bookmarkStore.save(bookmark: zulu, index: nil)
+        _ = try await bookmarkStore.save(bookmark: bravo, index: nil)
+
+        // WHEN
+        let error = await bookmarkStore.move(
+            objectUUIDs: [alpha.id, bravo.id, zulu.id],
+            toIndex: 0,
+            withinParentFolder: .parent(uuid: parent.id)
+        )
+
+        // THEN
+        XCTAssertNil(error)
+        let topLevelEntities = try await bookmarkStore.loadAll(type: .topLevelEntities)
+        let persistedParent = try XCTUnwrap(topLevelEntities.first(where: { $0.id == parent.id }) as? BookmarkFolder)
+        XCTAssertEqual(persistedParent.children.map(\.id), [alpha.id, bravo.id, zulu.id])
+    }
+
+    @MainActor
     func testWhenMovingBookmarkToRootFolder_AndIndexIsValid_ThenBookmarkIsMoved() async throws {
         guard let testState = try await createInitialEntityMovementTestState() else {
             XCTFail("Failed to configure test state")

@@ -38,6 +38,10 @@ final class AIChatEditHeaderView: UIView {
 
     weak var delegate: AIChatEditHeaderViewDelegate?
 
+    /// Own height when set; when nil the header is sized by the caller's constraints (e.g. pinned to
+    /// a host header of a different height, as in the contextual sheet).
+    private let preferredHeight: CGFloat?
+
     private lazy var cancelPill = AIChatHeaderGlassPill(cornerRadius: Constants.buttonSize / 2)
 
     private lazy var cancelButton: UIButton = {
@@ -72,8 +76,9 @@ final class AIChatEditHeaderView: UIView {
         return view
     }()
 
-    override init(frame: CGRect) {
-        super.init(frame: frame)
+    init(preferredHeight: CGFloat? = Constants.headerHeight) {
+        self.preferredHeight = preferredHeight
+        super.init(frame: .zero)
         setupUI()
     }
 
@@ -96,9 +101,11 @@ final class AIChatEditHeaderView: UIView {
         addSubview(bottomSeparator)
         cancelPill.contentView.addSubview(cancelButton)
 
-        NSLayoutConstraint.activate([
-            heightAnchor.constraint(equalToConstant: Constants.headerHeight),
+        if let preferredHeight {
+            heightAnchor.constraint(equalToConstant: preferredHeight).isActive = true
+        }
 
+        NSLayoutConstraint.activate([
             cancelPill.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Constants.horizontalPadding),
             cancelPill.centerYAnchor.constraint(equalTo: centerYAnchor),
             cancelPill.widthAnchor.constraint(equalToConstant: Constants.buttonSize),

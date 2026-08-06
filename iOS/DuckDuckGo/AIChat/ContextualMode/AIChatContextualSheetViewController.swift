@@ -190,6 +190,15 @@ final class AIChatContextualSheetViewController: UIViewController {
         return view
     }()
 
+    /// Swaps in over `headerView` while editing a message (✕ + "Edit Message"), sized to match it.
+    private lazy var aiChatEditHeaderView: AIChatEditHeaderView = {
+        let header = AIChatEditHeaderView(preferredHeight: nil)
+        header.delegate = self
+        header.translatesAutoresizingMaskIntoConstraints = false
+        header.isHidden = true
+        return header
+    }()
+
     private lazy var leftButtonContainer: UIView = {
         let view = PillView()
         view.backgroundColor = UIColor(designSystemColor: .controlsFillPrimary)
@@ -813,6 +822,12 @@ private extension AIChatContextualSheetViewController {
 
 // MARK: - UIGestureRecognizerDelegate
 
+extension AIChatContextualSheetViewController: AIChatEditHeaderViewDelegate {
+    func aiChatEditHeaderDidTapCancel() {
+        persistentUTIHost?.endEditMode()
+    }
+}
+
 extension AIChatContextualSheetViewController: UIGestureRecognizerDelegate {
     func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
         Self.isPredominantlyVerticalDrag(velocity: contentDragKeyboardDismissRecognizer.velocity(in: contentContainerView))
@@ -1118,6 +1133,8 @@ private extension AIChatContextualSheetViewController {
 private extension AIChatContextualSheetViewController {
 
     func prepareForDismissal() {
+        // End any in-progress message edit so its chrome doesn't linger if the sheet reopens.
+        persistentUTIHost?.endEditMode()
         guard canProcessSuggestionSubmission else { return }
         canProcessSuggestionSubmission = false
         cancelSuggestionSubmission()
@@ -1215,6 +1232,7 @@ private extension AIChatContextualSheetViewController {
         view.addSubview(topSeparator)
 
         view.addSubview(headerView)
+        view.addSubview(aiChatEditHeaderView)
 
         headerView.addSubview(leftButtonContainer)
         leftButtonContainer.addSubview(leftButtonStack)
@@ -1290,6 +1308,11 @@ private extension AIChatContextualSheetViewController {
             headerView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             headerView.heightAnchor.constraint(equalToConstant: Constants.headerHeight),
 
+            aiChatEditHeaderView.topAnchor.constraint(equalTo: headerView.topAnchor),
+            aiChatEditHeaderView.leadingAnchor.constraint(equalTo: headerView.leadingAnchor),
+            aiChatEditHeaderView.trailingAnchor.constraint(equalTo: headerView.trailingAnchor),
+            aiChatEditHeaderView.bottomAnchor.constraint(equalTo: headerView.bottomAnchor),
+
             leftButtonContainer.leadingAnchor.constraint(equalTo: headerView.leadingAnchor, constant: Constants.headerHorizontalPadding),
             leftButtonContainer.centerYAnchor.constraint(equalTo: headerView.centerYAnchor),
 
@@ -1325,6 +1348,10 @@ private extension AIChatContextualSheetViewController {
     func mountPersistentUTIHostIfNeeded() {
         guard let persistentUTIHost else { return }
 
+        persistentUTIHost.onEditModeChange = { [weak self] isEditing in
+            self?.setEditMode(isEditing)
+        }
+
         let utiView = persistentUTIHost.mountAtSheetLevel(in: self)
         contentContainerBottomConstraint?.isActive = false
         let bottomConstraint = contentContainerView.bottomAnchor.constraint(equalTo: utiView.topAnchor)
@@ -1336,6 +1363,15 @@ private extension AIChatContextualSheetViewController {
     @objc private func handleContentDragToDismissKeyboard(_ gesture: UIPanGestureRecognizer) {
         guard gesture.state == .began else { return }
         persistentUTIHost?.deactivateInput()
+    }
+
+    /// Swaps the sheet header for the edit header and fades the chat out while editing a message.
+    private func setEditMode(_ editing: Bool) {
+        headerView.isHidden = editing
+        aiChatEditHeaderView.isHidden = !editing
+        UIView.animate(withDuration: 0.2) {
+            self.contentContainerView.alpha = editing ? 0 : 1
+        }
     }
     
     func updateShadowPath() {

@@ -45,6 +45,8 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate {
     /// Fires on every prompt delivery so the session state can mark context delivered and re-render the chip.
     var onPromptDelivered: (() -> Void)?
     var onAIVoiceChatRequested: (() -> Void)?
+    /// Fires when the input enters/exits edit mode so the sheet can apply its edit chrome.
+    var onEditModeChange: ((Bool) -> Void)?
 
     var attachedContextURL: URL? {
         chipViewModel.attachedContext.flatMap { URL(string: $0.contextData.url) }
@@ -228,6 +230,11 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate {
         coordinator.viewController.deactivateInput()
     }
 
+    /// Exits edit mode if active. Safe to call unconditionally (no-op when not editing).
+    func endEditMode() {
+        coordinator.endEditMode()
+    }
+
     func submitQuickActionPrompt(_ prompt: String) {
         coordinator.submitProgrammatic(text: prompt)
     }
@@ -304,6 +311,9 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate {
     func unifiedToggleInputDidCommitMode(_ mode: TextEntryMode) {}
     func unifiedToggleInputDidRequestFire() {}
     func unifiedToggleInputDidRequestAppMenu() {}
+    func unifiedToggleInputDidChangeEditMode(_ isEditing: Bool) {
+        onEditModeChange?(isEditing)
+    }
 }
 
 // MARK: - Duck.ai Wide Event

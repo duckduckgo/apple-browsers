@@ -63,14 +63,20 @@ enum FireModeSwitchSource: String {
     case aiChatHeaderPlusMenu = "ai_chat_header_plus_menu"
 }
 
+enum TabControllerCacheEvictionReason: Equatable {
+    case webContentProcessTermination
+    case memoryWarning
+    case lruCapacity
+}
+
 /// Receives lifecycle events for TabViewController instances managed by TabManager.
 @MainActor
 protocol TabControllerCacheDelegate: AnyObject {
     /// Called when a new TabViewController has been created and added to the cache for the first time.
     func tabManager(_ tabManager: TabManager, didCreateController controller: TabViewController)
-    /// Called when a background tab's WebKit process terminated and its controller was evicted
-    /// from the cache. The tab still exists in the model; a replacement will be created on next activation.
-    func tabManager(_ tabManager: TabManager, didInvalidateController controller: TabViewController)
+    func tabManager(_ tabManager: TabManager,
+                    didEvictController controller: TabViewController,
+                    reason: TabControllerCacheEvictionReason)
 }
 
 @MainActor
@@ -139,6 +145,9 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     private let onboardingPixelReporter: OnboardingPixelReporting
     private let featureFlagger: FeatureFlagger
     private let tabTerminationTelemetry: any TabTerminationTelemetry
+    private let tabEvictionSettings: TabEvictionSettings
+    private let applicationState: @MainActor () -> UIApplication.State
+    private let isPad: Bool
     private let contentScopeExperimentManager: ContentScopeExperimentsManaging
     private let textZoomCoordinatorProvider: TextZoomCoordinatorProviding
     private let autoconsentManagementProvider: AutoconsentManagementProviding
@@ -221,7 +230,9 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
          duckAiFireModeStorageHandler: DuckAiNativeStorageHandling? = nil,
          toggleModeStorage: ToggleModeStoring = ToggleModeStorage(),
          adBlockingAvailability: AdBlockingAvailabilityProviding,
-         tabTerminationTelemetry: (any TabTerminationTelemetry)? = nil
+         tabTerminationTelemetry: (any TabTerminationTelemetry)? = nil,
+         applicationState: (@MainActor () -> UIApplication.State)? = nil,
+         isPad: Bool? = nil
     ) {
         self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
         self.duckAiFireModeStorageHandler = duckAiFireModeStorageHandler
@@ -239,9 +250,14 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         self.contextualOnboardingLogic = contextualOnboardingLogic
         self.onboardingPixelReporter = onboardingPixelReporter
         self.featureFlagger = featureFlagger
+        let tabEvictionSettings = TabEvictionSettings(privacyConfigurationManager: privacyConfigurationManager)
+        self.tabEvictionSettings = tabEvictionSettings
         self.tabTerminationTelemetry = tabTerminationTelemetry ?? DefaultTabTerminationTelemetry(
             featureFlagger: featureFlagger,
-            keyValueStore: UserDefaults.app)
+            keyValueStore: UserDefaults.app,
+            memoryWarningTelemetryWindow: { tabEvictionSettings.memoryWarningTelemetryWindow })
+        self.applicationState = applicationState ?? { UIApplication.shared.applicationState }
+        self.isPad = isPad ?? (UIDevice.current.userInterfaceIdiom == .pad)
         self.contentScopeExperimentManager = contentScopeExperimentManager
         self.appSettings = appSettings
         self.autoplaySettings = autoplaySettings
@@ -376,8 +392,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
             Logger.general.debug("Tab not in cache, creating")
             let tabInteractionState = interactionStateSource?.popLastStateForTab(tab)
             let controller = buildController(forTab: tab, inheritedAttribution: nil, interactionState: tabInteractionState)
-            tabControllerCache.append(controller)
-            cacheDelegate?.tabManager(self, didCreateController: controller)
+            addToCache(controller)
             return controller
         } else {
             return nil
@@ -397,8 +412,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
 
         let tabInteractionState = interactionStateSource?.popLastStateForTab(tab)
         let controller = buildController(forTab: tab, inheritedAttribution: nil, interactionState: tabInteractionState)
-        tabControllerCache.append(controller)
-        cacheDelegate?.tabManager(self, didCreateController: controller)
+        addToCache(controller)
         return controller
     }
 
@@ -493,8 +507,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         controller.delegate = delegate
         controller.loadViewIfNeeded()
         controller.applyInheritedAttribution(inheritedAttribution)
-        tabControllerCache.append(controller)
-        cacheDelegate?.tabManager(self, didCreateController: controller)
+        addToCache(controller)
 
         _ = save()
         return controller
@@ -547,7 +560,9 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         }
         model.select(tab: tab)
         _ = save()
-        return current(createIfNeeded: true)
+        let controller = current(createIfNeeded: true)
+        markAsMostRecentlyViewed(controller)
+        return controller
     }
 
     @MainActor
@@ -564,14 +579,12 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         let link = url == nil ? nil : Link(title: nil, url: url!)
         let tab = Tab(link: link, fireTab: model.shouldCreateFireTabs)
         let controller = buildController(forTab: tab, url: url, inheritedAttribution: inheritedAttribution, interactionState: nil)
-        tabControllerCache.append(controller)
-
         model.insert(tab: tab, placement: .afterCurrentTab, selectNewTab: !inBackground)
         if !inBackground {
             tab.viewed = true
         }
 
-        cacheDelegate?.tabManager(self, didCreateController: controller)
+        addToCache(controller)
 
         _ = save()
         return controller
@@ -638,6 +651,41 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         controller.dismiss()
     }
 
+    @MainActor
+    private func addToCache(_ controller: TabViewController) {
+        tabControllerCache.append(controller)
+        cacheDelegate?.tabManager(self, didCreateController: controller)
+        enforceCacheCapacityIfNeeded()
+    }
+
+    @MainActor
+    private func markAsMostRecentlyViewed(_ controller: TabViewController?) {
+        guard let controller,
+              let index = tabControllerCache.firstIndex(of: controller),
+              index != tabControllerCache.count - 1 else { return }
+        tabControllerCache.remove(at: index)
+        tabControllerCache.append(controller)
+    }
+
+    @MainActor
+    private func enforceCacheCapacityIfNeeded() {
+        guard featureFlagger.isFeatureOn(.tabLRUEviction) else { return }
+        let maximumCapacity = tabEvictionSettings.maximumCapacity(isPad: isPad)
+        while tabControllerCache.count > maximumCapacity {
+            guard let controller = tabControllerCache.first(where: { $0 !== current() }) else { return }
+            evictFromCache(controller, reason: .lruCapacity)
+        }
+    }
+
+    @MainActor
+    private func evictFromCache(_ controller: TabViewController, reason: TabControllerCacheEvictionReason) {
+        if reason != .webContentProcessTermination {
+            interactionStateSource?.saveState(controller.webView.interactionState, for: controller.tabModel)
+        }
+        removeFromCache(controller)
+        cacheDelegate?.tabManager(self, didEvictController: controller, reason: reason)
+    }
+
     func removeLeftoverInteractionStates() {
         _ = interactionStateSource?.removeAll(excluding: allTabsModel.tabs)
     }
@@ -658,8 +706,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
 
             current()?.reload()
         } else {
-            removeFromCache(controller)
-            cacheDelegate?.tabManager(self, didInvalidateController: controller)
+            evictFromCache(controller, reason: .webContentProcessTermination)
         }
     }
 
@@ -949,7 +996,13 @@ extension TabManager {
     @MainActor
     @objc
     private func onMemoryWarning(_ notification: NSNotification) {
-        tabTerminationTelemetry.didReceiveMemoryWarning()
+        tabTerminationTelemetry.didReceiveMemoryWarning(activeTabCount: tabControllerCache.count)
+        if featureFlagger.isFeatureOn(.tabEvictionOnMemoryWarning), applicationState() == .background {
+            let currentController = current()
+            tabControllerCache
+                .filter { $0 !== currentController }
+                .forEach { evictFromCache($0, reason: .memoryWarning) }
+        }
         flushPendingSave()
     }
 

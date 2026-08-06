@@ -71,5 +71,34 @@
         "triggers": ["exception"],
         "suffixes": ["time_bucket", "platform", "form_factor"],
         "parameters": ["appVersion"]
+    },
+    "debug_memory_warning_active-tabs_": {
+        "description": "Fires with the number of in-memory tab view controllers when a memory warning is received.",
+        "owners": ["brindy"],
+        "triggers": ["exception"],
+        "suffixes": [
+            {
+                "description": "In-memory tab view controller count bucket",
+                "enum": ["1", "2-5", "6-10", "11-20", "21-40", "41-60", "61-80", "81-plus"]
+            },
+            "platform",
+            "form_factor",
+            "daily_count"
+        ],
+        "parameters": ["appVersion"]
+    },
+    "debug_memory_warning_occurrence-in-window_": {
+        "description": "Fires for each memory warning with the number received in the configured rolling window.",
+        "owners": ["brindy"],
+        "triggers": ["exception"],
+        "suffixes": [
+            {
+                "description": "Memory warning occurrence bucket in the rolling window",
+                "enum": ["1", "2", "3", "4", "5-plus"]
+            },
+            "platform",
+            "form_factor"
+        ],
+        "parameters": ["appVersion"]
     }
 }

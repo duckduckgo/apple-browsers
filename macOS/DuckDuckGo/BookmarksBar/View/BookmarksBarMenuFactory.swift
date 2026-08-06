@@ -36,10 +36,25 @@ struct BookmarksBarMenuFactory {
         menu.addItem(makeMenuItem(prefs))
     }
 
-    static func addToMenuWithManageBookmarksSection(_ menu: NSMenu, target: AnyObject, addFolderSelector: Selector, manageBookmarksSelector: Selector, prefs: AppearancePreferences) {
+    static func addToMenuWithManageBookmarksSection(
+        _ menu: NSMenu,
+        target: AnyObject,
+        addFolderSelector: Selector,
+        reorderByNameSelector: Selector?,
+        manageBookmarksSelector: Selector,
+        prefs: AppearancePreferences
+    ) {
         addToMenu(menu, prefs: prefs)
         menu.addItem(.separator())
         menu.addItem(NSMenuItem(title: UserText.addFolder, action: addFolderSelector, target: target).withImage(DesignSystemImages.Glyphs.Size12.folderAdd))
+        if let reorderByNameSelector {
+            let reorderByNameItem = NSMenuItem(
+                title: UserText.bookmarksBarContextMenuReorderByName,
+                action: reorderByNameSelector,
+                target: target
+            ).withImage(DesignSystemImages.Glyphs.Size12.arrowUpDown)
+            menu.addItem(reorderByNameItem)
+        }
         menu.addItem(NSMenuItem(title: UserText.bookmarksManageBookmarks, action: manageBookmarksSelector, target: target).withImage(DesignSystemImages.Glyphs.Size12.bookmarks))
     }
 

@@ -159,14 +159,16 @@ final class AIChatTabPickerSourceTests: XCTestCase {
 
     // MARK: - Filtering
 
-    func testAttachableTabsExcludesNonURLAndDuckAITabs() {
+    /// A SERP carries page content worth attaching, so only the homepage, Duck.ai and non-URL tabs go.
+    func testAttachableTabsExcludesNonURLHomepageAndDuckAITabs() {
         let page = Tab(content: .url(URL(string: "https://example.com")!, credential: nil, source: .ui))
         let newTab = Tab(content: .newtab)
-        let serp = Tab(content: .url(URL(string: "https://duckduckgo.com/?q=test&ia=web")!, credential: nil, source: .ui))
+        let homepage = Tab(content: .url(URL(string: "https://duckduckgo.com/")!, credential: nil, source: .ui))
         let duckAI = Tab(content: .url(URL(string: "https://duckduckgo.com/?ia=chat")!, credential: nil, source: .ui))
-        let origin = collection([page, newTab, serp, duckAI].map { AnyTab.loaded($0) })
+        let serp = Tab(content: .url(URL(string: "https://duckduckgo.com/?q=test")!, credential: nil, source: .ui))
+        let origin = collection([page, newTab, homepage, duckAI, serp].map { AnyTab.loaded($0) })
 
-        XCTAssertEqual(attachableURLs(forOrigin: origin), ["https://example.com"])
+        XCTAssertEqual(attachableURLs(forOrigin: origin), ["https://example.com", "https://duckduckgo.com/?q=test"])
     }
 
     private func attachableURLs(forOrigin origin: TabCollectionViewModel) -> [String] {

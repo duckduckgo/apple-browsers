@@ -1399,12 +1399,16 @@ final class AIChatOmnibarController {
         // page content not sent automatically, only the page still attached by then may ship — read
         // after the await, so a redirect the tracker accepted counts and a drop it made is honoured.
         let sendsAnyPage = aiChatMenuConfiguration.shouldAutomaticallySendPageContext
-        let attachedURLsById = Dictionary((promptStore?.aiChatTabAttachments ?? tabAttachments).map { ($0.id, $0.url) },
-                                          uniquingKeysWith: { _, latest in latest })
+        let submittedInstanceIDs = Dictionary(tabAttachments.map { ($0.id, $0.instanceID) }, uniquingKeysWith: { _, latest in latest })
+        // Matched on instanceID, so a tab detached and reattached mid-submit is a different
+        // attachment and its new page can't ride along with this prompt.
+        let attachedNow = Dictionary((promptStore?.aiChatTabAttachments ?? tabAttachments)
+            .filter { submittedInstanceIDs[$0.id] == $0.instanceID }
+            .map { ($0.id, $0.url) }, uniquingKeysWith: { _, latest in latest })
         var byId: [String: AIChatPageContextData] = [:]
         for (tabId, maybeContext) in extracted {
             guard let ctx = maybeContext else { continue }
-            if !sendsAnyPage, !Self.isSameAttachedPage(ctx.url, as: attachedURLsById[tabId]) { continue }
+            if !sendsAnyPage, !Self.isSameAttachedPage(ctx.url, as: attachedNow[tabId]) { continue }
             let stampedTabId: String? = (tabId == activeTabUUID) ? nil : tabId
             byId[tabId] = ctx.withTabId(stampedTabId)
         }

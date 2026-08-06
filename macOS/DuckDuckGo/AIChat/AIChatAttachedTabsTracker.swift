@@ -39,9 +39,10 @@ final class AIChatAttachedTabsTracker {
         let cancellable: AnyCancellable
         /// While set, a URL change is that load settling (redirect, committed URL), not a page change.
         var isSettlingLoadFromAttachTime: Bool
-        /// What the web view had committed when the tab was attached. A redirect resolves into the
-        /// same navigation; a link or a script sending the tab elsewhere commits a different one.
+        /// What the web view had committed when the tab was attached, replaced once by the load that
+        /// was in flight. A further commit is a navigation the user (or the page) chose.
         weak var navigationAtAttachTime: WKBackForwardListItem?
+        var hasCommittedSinceAttach = false
         /// Title and favicon of the page just navigated away from. WebKit keeps publishing them for a
         /// beat after the URL changes, and adopting them would undo the reset the new page needs.
         var metadataOfPreviousPage: (title: String?, favicon: NSImage?)?
@@ -115,7 +116,13 @@ final class AIChatAttachedTabsTracker {
     }
 
     private func observeAttachedTabs() {
-        guard let store = activeStore, let collection = origin?.originTabCollectionViewModel else { return }
+        guard let collection = origin?.originTabCollectionViewModel else { return }
+        for store in trackedStores {
+            observeAttachedTabs(of: store, in: collection)
+        }
+    }
+
+    private func observeAttachedTabs(of store: any DuckAIPromptDraftStoring, in collection: TabCollectionViewModel) {
         for attachment in store.aiChatTabAttachments {
             guard let tab = loadedTab(withId: attachment.id, in: collection) else { continue }
             let key = ObserverKey(promptStore: ObjectIdentifier(store), tabId: attachment.id)
@@ -150,15 +157,16 @@ final class AIChatAttachedTabsTracker {
     private func isSettlingLoad(for key: ObserverKey, page: AIChatAttachedTabPage) -> Bool {
         guard let observer = observers[key], observer.isSettlingLoadFromAttachTime else { return false }
 
+        // The load in flight commits once — over the attach-time item for a fresh tab, or as a new
+        // item when a page was already committed. A second commit is the user going elsewhere.
         let committed = observer.tab?.webView.backForwardList.currentItem
-        guard let attachTimeNavigation = observer.navigationAtAttachTime else {
-            // Nothing was committed at attach time, so the first commit is the load we're waiting on.
+        if committed !== observer.navigationAtAttachTime {
+            guard !observer.hasCommittedSinceAttach else {
+                observers[key]?.isSettlingLoadFromAttachTime = false
+                return false
+            }
+            observers[key]?.hasCommittedSinceAttach = true
             observers[key]?.navigationAtAttachTime = committed
-            return finishSettlingIfLoaded(key: key, page: page)
-        }
-        guard committed === attachTimeNavigation else {
-            observers[key]?.isSettlingLoadFromAttachTime = false
-            return false
         }
         return finishSettlingIfLoaded(key: key, page: page)
     }
@@ -174,6 +182,11 @@ final class AIChatAttachedTabsTracker {
     /// shows the new page's host until the real ones arrive.
     private func discardingMetadataOfPreviousPage(from page: AIChatAttachedTabPage, for key: ObserverKey) -> AIChatAttachedTabPage {
         guard let stale = observers[key]?.metadataOfPreviousPage else { return page }
+        guard page.isLoading else {
+            // Loaded: whatever it publishes now belongs to this page, even if it matches the old one.
+            observers[key]?.metadataOfPreviousPage = nil
+            return page
+        }
 
         let title = page.title == stale.title ? nil : page.title
         let favicon = page.favicon === stale.favicon ? nil : page.favicon

@@ -1501,6 +1501,8 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         guard let candidate = sender.representedObject as? AIChatTabAttachment else { return }
         didMutateDuringAttachMenuSession = true
         let wasAttached = omnibarController.activeTabAttachments.contains { $0.id == candidate.id }
+        // The menu's rows are a snapshot; a tab closed since it opened can't be attached.
+        guard wasAttached || omnibarController.openTabsForOmnibarPicker().contains(where: { $0.id == candidate.id }) else { return }
         omnibarController.toggleTabAttachment(candidate)
         omnibarController.pixelHandler.fire(wasAttached ? .tabAttachmentRemoved : .tabChosen)
         updateAttachmentsLayout()
@@ -1526,8 +1528,10 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     }
 
     private func applyTabSelection(_ selected: [AIChatTabAttachment], offered: [AIChatTabAttachment]) {
+        // The modal holds the candidates it opened with; anything closed since then can't be attached.
+        let stillOpenIds = Set(omnibarController.openTabsForOmnibarPicker().map(\.id))
         let diff = AIChatTabSelectionDiff.compute(current: omnibarController.activeTabAttachments,
-                                                 selected: selected,
+                                                 selected: selected.filter { stillOpenIds.contains($0.id) },
                                                  offered: offered)
         for id in diff.remove {
             omnibarController.removeTabAttachmentFromActiveTab(id: id)

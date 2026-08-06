@@ -75,7 +75,8 @@ enum AIChatAttachedTabNavigationPolicy {
         return .refresh(AIChatTabAttachment(id: attachment.id,
                                             title: url.host ?? url.absoluteString,
                                             url: url,
-                                            favicon: nil))
+                                            favicon: nil,
+                                            instanceID: attachment.instanceID))
     }
 
     /// Same page: title and favicon land after it does, and neither is ever downgraded back to nil.
@@ -83,6 +84,10 @@ enum AIChatAttachedTabNavigationPolicy {
         let title = page.title ?? attachment.title
         let favicon = page.favicon ?? attachment.favicon
         guard title != attachment.title || favicon !== attachment.favicon else { return .keep }
-        return .refresh(AIChatTabAttachment(id: attachment.id, title: title, url: attachment.url, favicon: favicon))
+        return .refresh(AIChatTabAttachment(id: attachment.id,
+                                            title: title,
+                                            url: attachment.url,
+                                            favicon: favicon,
+                                            instanceID: attachment.instanceID))
     }
 }

@@ -1,0 +1,7 @@
+# Observe actual RMF visibility rather than predicting schedules
+
+Ben S's scope-thread objection ("there's no reliable way to predict when an RMF will appear or what type it will be") is real — RMF rules re-evaluate on config download / 24h invalidation (`RemoteMessagingConfigProcessor`; confirmed again in the Fire Mode thread). The useful macOS design principle is to observe current state rather than predict future schedules.
+
+macOS's `RemoteMessagePromoDelegate` observes selected supported-message presence, not actual window visibility. That is sufficient for its current policy but should not be copied literally to iOS: iOS creates a messages model per NTP, and a scheduled or selected message may be off-screen. Treating selection as visibility would unnecessarily suppress launch modals. Conversely, relying only on a store notification leaves a race while a modal is committing.
+
+Why it mattered: iteration 1 should observe two explicit states on the main actor: manager-owned modal commitment/visibility and per-NTP actual RMF visibility/render permission. If RMF is visible first, modal evaluation waits until the next foreground. If a modal commits first, RMF rendering waits without consumption until a checkpoint — the next eligible foreground or NTP admission attempt — confirms the modal is gone; dismissal is not signalled immediately (see `TECH_DESIGN_FINAL.md`). This remains compatible with a future RMF-owned, client-owned, or hybrid design without registering RMF as a macOS-style `ExternalPromo` today.

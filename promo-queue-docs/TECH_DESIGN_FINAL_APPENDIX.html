@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Promo Queue — Iteration 1 · Tech Design Visual Appendix</title>
+<style>
+  :root {
+    --blue:#3969EF; --blue-dark:#2B4ECB; --blue-soft:#EAF0FF; --navy:#16213E;
+    --ink:#1D2433; --muted:#5A6478; --line:#E4E8F0; --bg:#F5F7FB; --card:#FFF;
+    --orange:#DE5833; --orange-soft:#FDEDE7; --green:#12855B; --green-soft:#E4F6EE;
+    --amber:#B7791F; --amber-soft:#FBF1DC; --red:#C0392B; --red-soft:#FCEBE9;
+    --shadow:0 1px 2px rgba(20,30,60,.06),0 6px 24px rgba(20,30,60,.07);
+    --radius:14px;
+    --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box} html{scroll-behavior:smooth;scroll-padding-top:70px}
+  body{margin:0;font-family:var(--sans);color:var(--ink);background:var(--bg);line-height:1.58;-webkit-font-smoothing:antialiased}
+  h1,h2,h3,h4{line-height:1.24;color:var(--navy);margin:0} p{margin:0 0 1em} a{color:var(--blue);text-decoration:none}
+  code,.src{font-family:var(--mono);font-size:.78em;background:#EEF1F7;color:#35406B;padding:.12em .4em;border-radius:5px;overflow-wrap:anywhere}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+  nav{position:sticky;top:0;z-index:100;background:rgba(255,255,255,.88);backdrop-filter:saturate(180%) blur(12px);border-bottom:1px solid var(--line)}
+  .nav-inner{display:flex;align-items:center;gap:5px;max-width:1080px;margin:auto;padding:8px 24px;overflow-x:auto}
+  .brand{font-weight:750;color:var(--navy);margin-right:auto;white-space:nowrap;display:flex;align-items:center;gap:8px;font-size:14px}
+  .brand i{width:10px;height:10px;border-radius:50%;background:var(--orange);display:block}
+  nav a{padding:6px 10px;border-radius:8px;color:var(--muted);font-weight:650;font-size:12.5px;white-space:nowrap}
+  nav a:hover{background:var(--blue-soft);color:var(--blue-dark)}
+  header.hero{background:radial-gradient(1100px 380px at 12% -8%,rgba(57,105,239,.15),transparent 60%),radial-gradient(850px 360px at 100% 0,rgba(222,88,51,.12),transparent 55%),linear-gradient(180deg,#FFF,#F5F7FB);border-bottom:1px solid var(--line);padding:48px 0 38px}
+  .kicker{display:inline-flex;gap:8px;align-items:center;font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--blue-dark);background:var(--blue-soft);padding:6px 12px;border-radius:999px;margin-bottom:16px}
+  .hero h1{font-size:36px;letter-spacing:-.025em;margin-bottom:10px}.hero .sub{font-size:17px;color:var(--muted);max-width:840px;margin-bottom:20px}
+  .meta-row{display:flex;gap:9px;flex-wrap:wrap}.meta{background:#fff;border:1px solid var(--line);border-radius:10px;padding:8px 13px;font-size:12.5px;box-shadow:var(--shadow)}.meta span{color:var(--muted)}
+  section{padding:42px 0 4px}.sec-head{margin-bottom:18px}.sec-num{font-family:var(--mono);font-size:12px;color:var(--blue);font-weight:800}.sec-head h2{font-size:26px;margin-top:3px}.lede{font-size:15.5px;color:var(--muted);max-width:860px;margin-top:8px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px 22px}
+  .fig{padding:14px 16px 8px}
+  .fig svg{width:100%;height:auto;display:block;font-family:var(--sans)}
+  .figcap{font-size:13px;color:var(--muted);padding:10px 6px 8px;border-top:1px solid var(--line);margin-top:10px}
+  .figcap b{color:var(--navy)}
+  .legend{display:flex;gap:16px;flex-wrap:wrap;padding:2px 6px 12px;font-size:12.5px;color:var(--muted);align-items:center}
+  .legend .sw{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+  .stats{display:flex;gap:13px;flex-wrap:wrap;margin-top:16px}.stat{flex:1;min-width:150px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 16px;box-shadow:var(--shadow)}.stat .big{font-size:27px;font-weight:850;color:var(--navy)}.stat .lbl{font-size:12.5px;color:var(--muted)}
+  .callout{border-left:4px solid var(--orange);background:var(--orange-soft);padding:14px 18px;border-radius:0 12px 12px 0;margin-top:15px}.callout.blue{border-color:var(--blue);background:var(--blue-soft)}.callout.green{border-color:var(--green);background:var(--green-soft)}.callout h4{font-size:15px;margin-bottom:4px}.callout p{font-size:13.5px;margin:0}
+  .grid{display:grid;gap:15px}.g2{grid-template-columns:repeat(2,1fr)}
+  footer{margin-top:44px;padding:26px 0 52px;border-top:1px solid var(--line);font-size:12.5px;color:var(--muted)}footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+
+  /* SVG shared classes */
+  .nb{fill:#fff;stroke:var(--line);stroke-width:1.5}
+  .nbB{stroke:#B9CBFA}.nbO{stroke:#F2C3B4}
+  .accB{fill:var(--blue)}.accO{fill:var(--orange)}
+  .nt{font-size:12.5px;font-weight:700;fill:var(--navy)}
+  .ns{font-size:10.5px;fill:var(--muted)}
+  .lbl{font-size:10.5px;fill:var(--muted)}
+  .lblb{font-size:10.5px;font-weight:700;fill:var(--navy)}
+  .mono{font-family:var(--mono)}
+  .flow{stroke:#98A2B8;stroke-width:1.8;fill:none}
+  .flowB{stroke:var(--blue);stroke-width:1.8;fill:none}
+  .flowO{stroke:var(--orange);stroke-width:1.8;fill:none}
+  .flowR{stroke:var(--red);stroke-width:1.8;fill:none}
+  .flowG{stroke:var(--green);stroke-width:1.8;fill:none}
+  .dash{stroke-dasharray:5 4}
+  .pill{fill:#fff;stroke-width:1.6}
+  .badR{fill:var(--red-soft);stroke:var(--red);stroke-width:1.3}
+  .badG{fill:var(--green-soft);stroke:var(--green);stroke-width:1.3}
+  .badA{fill:var(--amber-soft);stroke:var(--amber);stroke-width:1.3}
+  .btxtR{font-size:11px;font-weight:800;fill:var(--red)}
+  .btxtG{font-size:11px;font-weight:800;fill:var(--green)}
+  .btxtA{font-size:11px;font-weight:800;fill:var(--amber)}
+  .life{stroke:#C9D1E0;stroke-width:1.4;stroke-dasharray:3 4}
+  .lifehead{fill:#fff;stroke:var(--line);stroke-width:1.5}
+
+  @media(max-width:900px){.g2{grid-template-columns:1fr}.hero h1{font-size:29px}}
+  @media print{nav{position:static}.hero{padding:26px 0!important}section{padding-top:26px}.card{box-shadow:none;break-inside:avoid}}
+</style>
+</head>
+<body>
+<nav><div class="nav-inner"><div class="brand"><i></i> Promo Queue · Iteration 1 · Appendix</div><a href="#problem">Problem</a><a href="#races">Races</a><a href="#model">Lease model</a><a href="#arch">Architecture</a><a href="#flows">Flows</a><a href="#ntp">Multi-NTP</a><a href="#accounting">Accounting</a></div></nav>
+
+<header class="hero"><div class="wrap">
+  <span class="kicker">Visual appendix · Tech design iteration 1</span>
+  <h1>The iOS promo lease model, in pictures</h1>
+  <p class="sub">Companion to <code>TECH_DESIGN_FINAL.md</code>. It adds no new decisions — each figure illustrates one part of the design: why the overlap happens, why a plain permission check is not enough, and how the transactional lease arbiter closes the gap without changing existing provider priority, eligibility, or cooldown policy.</p>
+  <div class="meta-row"><div class="meta"><b>Scope</b> <span>· launch modals × NTP RMF cards only</span></div><div class="meta"><b>New state</b> <span>· in-memory, main-actor, nothing persisted</span></div><div class="meta"><b>Updated</b> <span>· Aug 6, 2026</span></div></div>
+  <div class="stats">
+    <div class="stat"><div class="big">1</div><div class="lbl">new arbiter — the only new authority</div></div>
+    <div class="stat"><div class="big">2</div><div class="lbl">race windows closed by leases</div></div>
+    <div class="stat"><div class="big">7</div><div class="lbl">modal providers keep their existing policy</div></div>
+    <div class="stat"><div class="big">0</div><div class="lbl">bytes of persisted queue history</div></div>
+  </div>
+</div></header>
+
+<main class="wrap">
+
+<!-- ============================ 01 PROBLEM ============================ -->
+<section id="problem"><div class="sec-head"><span class="sec-num">01</span><h2>Pre-iteration baseline: two paths that never talked</h2><p class="lede">Before coordination, launch modals and NTP RMF cards were driven by two independent pipelines over the same foreground moment. Neither knew the other had committed, so both could end up on screen.</p></div>
+<div class="card fig">
+  <div class="legend"><span><span class="sw" style="background:var(--blue)"></span>Launch-modal path</span><span><span class="sw" style="background:var(--orange)"></span>NTP / RMF path</span><span><span class="sw" style="background:var(--red)"></span>Failure mode</span></div>
+  <svg viewBox="0 0 940 600" role="img" aria-label="Diagram of the two uncoordinated pipelines: the launch-modal call chain and the NTP RMF pipeline, with the overlap failure at the bottom.">
+    <defs>
+      <marker id="m1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#98A2B8"/></marker>
+      <marker id="m1r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#C0392B"/></marker>
+    </defs>
+    <!-- left column: modal path -->
+    <g>
+      <rect class="nb nbB" x="60" y="16" width="340" height="52" rx="9"/><rect class="accB" x="60" y="26" width="4" height="32" rx="2"/>
+      <text class="nt" x="80" y="38">Foreground.onTransition()</text><text class="ns" x="80" y="55">every foreground · starts UIInteractionManager</text>
+      <line class="flow" x1="230" y1="68" x2="230" y2="92" marker-end="url(#m1)"/>
+      <rect class="nb nbB" x="60" y="94" width="340" height="52" rx="9"/><rect class="accB" x="60" y="104" width="4" height="32" rx="2"/>
+      <text class="nt" x="80" y="116">UIInteractionManager</text><text class="ns" x="80" y="133">async onAppReadyForInteractions callback</text>
+      <line class="flow" x1="230" y1="146" x2="230" y2="170" marker-end="url(#m1)"/>
+      <rect class="nb nbB" x="60" y="172" width="340" height="52" rx="9"/><rect class="accB" x="60" y="182" width="4" height="32" rx="2"/>
+      <text class="nt" x="80" y="194">MainCoordinator</text><text class="ns" x="80" y="211">presentModalPromptIfNeeded()</text>
+      <line class="flow" x1="230" y1="224" x2="230" y2="248" marker-end="url(#m1)"/>
+      <rect class="nb nbB" x="60" y="250" width="340" height="66" rx="9"/><rect class="accB" x="60" y="260" width="4" height="46" rx="2"/>
+      <text class="nt" x="80" y="272">PromoCoordinationService</text>
+      <text class="ns" x="80" y="289">gates: standard launch · no unrelated UIKit</text>
+      <text class="ns" x="80" y="303">modal / incompatible OmniBar route</text>
+      <line class="flow" x1="230" y1="316" x2="230" y2="340" marker-end="url(#m1)"/>
+      <rect class="nb nbB" x="60" y="342" width="340" height="66" rx="9"/><rect class="accB" x="60" y="352" width="4" height="46" rx="2"/>
+      <text class="nt" x="80" y="364">ModalPromptCoordinationManager</text>
+      <text class="ns" x="80" y="381">priority over 7 providers · cooldown ·</text>
+      <text class="ns" x="80" y="395">0.1 s presentation delay</text>
+      <line class="flow" x1="230" y1="408" x2="230" y2="432" marker-end="url(#m1)"/>
+      <rect class="nb nbB" x="60" y="434" width="340" height="52" rx="9"/><rect class="accB" x="60" y="444" width="4" height="32" rx="2"/>
+      <text class="nt" x="80" y="456">UIKit present(modal)</text><text class="ns" x="80" y="473">cooldown + didPresentModal() in completion</text>
+    </g>
+    <!-- right column: NTP path -->
+    <g>
+      <rect class="nb nbO" x="540" y="16" width="340" height="52" rx="9"/><rect class="accO" x="540" y="26" width="4" height="32" rx="2"/>
+      <text class="nt" x="560" y="38">NewTabPageViewController × N</text><text class="ns" x="560" y="55">one per tab · suggestion tray · input container</text>
+      <line class="flow" x1="710" y1="68" x2="710" y2="92" marker-end="url(#m1)"/>
+      <rect class="nb nbO" x="540" y="94" width="340" height="52" rx="9"/><rect class="accO" x="540" y="104" width="4" height="32" rx="2"/>
+      <text class="nt" x="560" y="116">NewTabPageMessagesModel (per NTP)</text><text class="ns" x="560" y="133">maps candidate → view model eagerly</text>
+      <line class="flow" x1="710" y1="146" x2="710" y2="170" marker-end="url(#m1)"/>
+      <rect class="nb nbO" x="540" y="172" width="340" height="66" rx="9"/><rect class="accO" x="540" y="182" width="4" height="46" rx="2"/>
+      <text class="nt" x="560" y="194">HomePageConfiguration + RMF store</text>
+      <text class="ns" x="560" y="211">shared scheduled / selected message state —</text>
+      <text class="ns" x="560" y="225">the baseline's only cross-NTP signal</text>
+      <line class="flow" x1="710" y1="238" x2="710" y2="262" marker-end="url(#m1)"/>
+      <rect class="nb nbO" x="540" y="264" width="340" height="52" rx="9"/><rect class="accO" x="540" y="274" width="4" height="32" rx="2"/>
+      <text class="nt" x="560" y="286">HomeMessageView (SwiftUI)</text><text class="ns" x="560" y="303">.onAppear — fires in a separate, later callback</text>
+    </g>
+    <!-- center: no coordination -->
+    <g>
+      <line class="flowR dash" x1="470" y1="30" x2="470" y2="360"/>
+      <rect class="badR" x="415" y="372" width="110" height="40" rx="9"/>
+      <text class="btxtR" x="470" y="389" text-anchor="middle">no shared</text>
+      <text class="btxtR" x="470" y="403" text-anchor="middle">visibility state</text>
+    </g>
+    <!-- overlap illustration -->
+    <g>
+      <rect x="60" y="508" width="820" height="76" rx="10" fill="var(--red-soft)" stroke="var(--red)" stroke-width="1.3" stroke-dasharray="6 4"/>
+      <text class="btxtR" x="120" y="536">Failure mode — overlap</text>
+      <text class="lbl" x="120" y="553" style="fill:#7A2C22">Both pipelines run inside the same foreground window. Nothing prevents a launch modal from presenting</text>
+      <text class="lbl" x="120" y="567" style="fill:#7A2C22">while an RMF card is rendered on the NTP underneath it — and both record their normal “shown” state.</text>
+      <!-- tiny phone glyph -->
+      <rect x="795" y="516" width="46" height="60" rx="7" fill="#fff" stroke="#98A2B8" stroke-width="1.5"/>
+      <rect x="801" y="528" width="34" height="16" rx="3" fill="var(--orange-soft)" stroke="var(--orange)" stroke-width="1.2"/>
+      <rect x="806" y="540" width="34" height="28" rx="4" fill="var(--blue-soft)" stroke="var(--blue)" stroke-width="1.4"/>
+    </g>
+  </svg>
+  <div class="figcap"><b>Fig 1 · The pre-iteration pipelines.</b> The modal chain evaluated once per eligible foreground; every NTP instance independently mapped RMF view models from shared scheduled state. Scheduled, selected, rendered, and visible are four different states — and the baseline had no app-level source saying “an RMF card is rendered in an active NTP.” <span class="src">TECH_DESIGN_FINAL.md · Problem Statement</span></div>
+</div>
+</section>
+
+<!-- ============================ 02 RACES ============================ -->
+<section id="races"><div class="sec-head"><span class="sec-num">02</span><h2>Why a permission check is not enough</h2><p class="lede">A Boolean “may I show?” check plus a later visibility report leaves two real windows where both surfaces get admitted. Both existed in the pre-iteration code; the lease model was chosen specifically to close them.</p></div>
+
+<div class="card fig">
+  <svg viewBox="0 0 940 258" role="img" aria-label="Timeline of race one: a modal commits between the RMF render check and the RMF onAppear visibility report.">
+    <defs><marker id="m2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#98A2B8"/></marker></defs>
+    <text class="lblb" x="60" y="26" style="font-size:13px">Race 1 · the check-to-onAppear window</text>
+    <!-- race band -->
+    <rect x="235" y="44" width="420" height="168" rx="8" fill="var(--red-soft)" opacity="0.55"/>
+    <rect x="235" y="44" width="420" height="168" rx="8" fill="none" stroke="var(--red)" stroke-width="1.2" stroke-dasharray="6 4"/>
+    <text class="btxtR" x="445" y="60" text-anchor="middle">race window — checked, but not yet “visible”</text>
+    <!-- RMF lane -->
+    <text class="lblb" x="60" y="92" style="fill:var(--orange)">NTP / RMF</text>
+    <line class="flow" x1="150" y1="88" x2="880" y2="88"/>
+    <circle cx="220" cy="88" r="5.5" fill="var(--orange)"/>
+    <text class="lbl" x="220" y="112" text-anchor="middle">render check passes:</text>
+    <text class="lbl" x="220" y="125" text-anchor="middle">“no modal active” ✓</text>
+    <circle cx="670" cy="88" r="5.5" fill="var(--orange)"/>
+    <text class="lbl" x="670" y="112" text-anchor="middle">SwiftUI .onAppear →</text>
+    <text class="lbl" x="670" y="125" text-anchor="middle">reports “RMF visible”</text>
+    <!-- modal lane -->
+    <text class="lblb" x="60" y="162" style="fill:var(--blue)">Launch modal</text>
+    <line class="flow" x1="150" y1="158" x2="880" y2="158"/>
+    <circle cx="360" cy="158" r="5.5" fill="var(--blue)"/>
+    <text class="lbl" x="360" y="181" text-anchor="middle">evaluates: “no RMF</text>
+    <text class="lbl" x="360" y="194" text-anchor="middle">visible yet” ✓</text>
+    <circle cx="520" cy="158" r="5.5" fill="var(--blue)"/>
+    <text class="lbl" x="520" y="181" text-anchor="middle">commits + schedules</text>
+    <text class="lbl" x="520" y="194" text-anchor="middle">presentation</text>
+    <!-- result -->
+    <rect class="badR" x="740" y="140" width="150" height="36" rx="9"/>
+    <text class="btxtR" x="815" y="157" text-anchor="middle">both surfaces</text>
+    <text class="btxtR" x="815" y="170" text-anchor="middle">end up visible ✗</text>
+    <!-- axis -->
+    <line class="flow" x1="60" y1="226" x2="880" y2="226" marker-end="url(#m2)"/>
+    <text class="lbl" x="60" y="245">time → view-model publication and .onAppear are separate callbacks; both sides pass their check inside the gap</text>
+  </svg>
+  <div class="figcap"><b>Fig 2a · Race 1.</b> Publication of the RMF view model and the card’s <code>.onAppear</code> happen in different run-loop turns. A check-based coordinator lets the modal commit inside that gap. A lease closes it: the render gate <i>atomically acquires</i> the lease before the card is even constructed, so one side always loses the exchange. <span class="src">TECH_DESIGN_FINAL.md · Why a Lease Model (1)</span></div>
+</div>
+
+<div class="card fig" style="margin-top:15px">
+  <svg viewBox="0 0 940 250" role="img" aria-label="Timeline of race two: the non-cancellable 0.1 second presentation delay lets a stale closure present after conditions changed.">
+    <defs>
+      <marker id="m3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#98A2B8"/></marker>
+      <pattern id="hatch" width="8" height="8" patternTransform="rotate(45)" patternUnits="userSpaceOnUse"><rect width="8" height="8" fill="var(--amber-soft)"/><line x1="0" y1="0" x2="0" y2="8" stroke="var(--amber)" stroke-width="1.4" opacity=".55"/></pattern>
+    </defs>
+    <text class="lblb" x="60" y="26" style="font-size:13px">Race 2 · the un-cancellable 0.1 s scheduling delay</text>
+    <!-- delay band -->
+    <rect x="240" y="66" width="330" height="56" rx="8" fill="url(#hatch)" stroke="var(--amber)" stroke-width="1.2"/>
+    <text class="btxtA" x="405" y="59" text-anchor="middle">0.1 s delay — no cancellation handle, no generation check</text>
+    <!-- modal lane -->
+    <text class="lblb" x="60" y="98" style="fill:var(--blue)">Launch modal</text>
+    <line class="flow" x1="150" y1="94" x2="880" y2="94"/>
+    <circle cx="240" cy="94" r="5.5" fill="var(--blue)"/>
+    <text class="lbl" x="240" y="140" text-anchor="middle">provider selected →</text>
+    <text class="lbl" x="240" y="153" text-anchor="middle">committed</text>
+    <circle cx="405" cy="94" r="5.5" fill="var(--amber)"/>
+    <text class="lbl" x="405" y="140" text-anchor="middle">world changes mid-delay:</text>
+    <text class="lbl" x="405" y="153" text-anchor="middle">app backgrounds · presenter</text>
+    <text class="lbl" x="405" y="166" text-anchor="middle">detaches · RMF admitted</text>
+    <circle cx="570" cy="94" r="5.5" fill="var(--red)"/>
+    <text class="lbl" x="570" y="140" text-anchor="middle">stale closure still fires —</text>
+    <text class="lbl" x="570" y="153" text-anchor="middle">only the modal/OmniBar chain</text>
+    <text class="lbl" x="570" y="166" text-anchor="middle">is re-checked at fire time</text>
+    <rect class="badR" x="700" y="76" width="190" height="36" rx="9"/>
+    <text class="btxtR" x="795" y="93" text-anchor="middle">presents anyway, or orphans</text>
+    <text class="btxtR" x="795" y="106" text-anchor="middle">committed state ✗</text>
+    <!-- axis -->
+    <line class="flow" x1="60" y1="196" x2="880" y2="196" marker-end="url(#m3)"/>
+    <text class="lbl" x="60" y="218">time → generation-aware scheduling + revalidation (attempt · feature · app · host · provider / prepared config) before UIKit present</text>
+  </svg>
+  <div class="figcap"><b>Fig 2b · Race 2.</b> In the baseline, commitment happened before a fixed delay that could not be revoked. The implementation makes scheduling generation-aware and revalidates the attempt, provider, and prepared configuration immediately before presentation; a failed attempt keeps at most one prepared configuration for a later foreground without holding the RMF slot. <span class="src">TECH_DESIGN_FINAL.md · Why a Lease Model (2) · Change Inventory</span></div>
+</div>
+</section>
+
+<!-- ============================ 03 LEASE MODEL ============================ -->
+<section id="model"><div class="sec-head"><span class="sec-num">03</span><h2>The lease model</h2><p class="lede">One app-scoped, main-actor arbiter owns exactly one invariant. It tracks who holds the slot; the Manager keeps the modal's detailed lifecycle. Admission on either side is a check-and-mutate lease acquisition — never a Boolean query followed by a later report.</p></div>
+<div class="card fig">
+  <svg viewBox="0 0 940 486" role="img" aria-label="The Manager-owned modal lifecycle and per-NTP RMF render lifecycle under the arbiter invariant that their leases never coexist.">
+    <defs>
+      <marker id="m4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#98A2B8"/></marker>
+      <marker id="m4b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#3969EF"/></marker>
+      <marker id="m4o" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#DE5833"/></marker>
+    </defs>
+    <!-- invariant banner -->
+    <rect x="150" y="14" width="640" height="44" rx="10" fill="var(--navy)"/>
+    <text x="470" y="34" text-anchor="middle" style="font-size:11px;font-weight:800;letter-spacing:.08em;fill:#9FB4E8">INVARIANT — ENFORCED BY THE ARBITER</text>
+    <text x="470" y="50" text-anchor="middle" style="font-size:12.5px;font-weight:700;fill:#fff">A modal attempt and any RMF lease never coexist</text>
+    <!-- left: Manager-owned modal phases -->
+    <text class="lblb" x="150" y="96" style="font-size:12.5px;fill:var(--blue-dark)">Manager-owned modal lifecycle</text>
+    <g>
+      <rect class="pill" x="80" y="110" width="150" height="34" rx="17" stroke="#98A2B8"/><text class="nt" x="155" y="131" text-anchor="middle">idle</text>
+      <line class="flowB" x1="155" y1="144" x2="155" y2="176" marker-end="url(#m4b)"/>
+      <text class="lbl" x="168" y="163">acquire evaluation lease (after existing gates)</text>
+      <rect class="pill" x="80" y="178" width="150" height="34" rx="17" stroke="var(--blue)"/><text class="nt" x="155" y="199" text-anchor="middle">evaluating</text>
+      <line class="flowB" x1="155" y1="212" x2="155" y2="244" marker-end="url(#m4b)"/>
+      <text class="lbl" x="168" y="231">provider selected — before the 0.1 s delay</text>
+      <rect class="pill" x="80" y="246" width="150" height="34" rx="17" stroke="var(--blue)"/><text class="nt" x="155" y="267" text-anchor="middle">committed</text>
+      <line class="flowB" x1="155" y1="280" x2="155" y2="312" marker-end="url(#m4b)"/>
+      <text class="lbl" x="168" y="299">revalidated → UIKit root attached</text>
+      <rect class="pill" x="80" y="314" width="150" height="34" rx="17" stroke="var(--blue)"/><text class="nt" x="155" y="335" text-anchor="middle">presentation-active</text>
+      <!-- return rail -->
+      <path class="flow dash" d="M80 195 C 40 195 40 127 74 127" marker-end="url(#m4)"/>
+      <path class="flow dash" d="M80 263 C 30 263 30 127 74 127" marker-end="url(#m4)"/>
+      <path class="flow dash" d="M80 331 C 20 331 20 127 74 127" marker-end="url(#m4)"/>
+      <text class="lbl" x="80" y="378">releases back to idle:</text>
+      <text class="lbl" x="80" y="392">· no eligible provider → released synchronously</text>
+      <text class="lbl" x="80" y="406">· pre-present revalidation fails → cancel (+ ≤ 1 pending config)</text>
+      <text class="lbl" x="80" y="420">· promo root gone — verified at the next checkpoint (foreground / NTP admission)</text>
+    </g>
+    <!-- right: RMF lease -->
+    <text class="lblb" x="600" y="96" style="font-size:12.5px;fill:#B4482B">RMF render lease — per (surface instance, promo identity)</text>
+    <g>
+      <rect class="pill" x="600" y="110" width="170" height="34" rx="17" stroke="#98A2B8"/><text class="nt" x="685" y="131" text-anchor="middle">no lease</text>
+      <line class="flowO" x1="685" y1="144" x2="685" y2="176" marker-end="url(#m4o)"/>
+      <text class="lbl" x="698" y="156">render gate admission —</text>
+      <text class="lbl" x="698" y="169">active NTP · no modal attempt</text>
+      <rect class="pill" x="600" y="178" width="170" height="34" rx="17" stroke="var(--orange)"/><text class="nt" x="685" y="199" text-anchor="middle">reserved</text>
+      <line class="flowO" x1="685" y1="212" x2="685" y2="244" marker-end="url(#m4o)"/>
+      <text class="lbl" x="698" y="224">card .onAppear → shown</text>
+      <text class="lbl" x="698" y="237">accounting fires (once)</text>
+      <rect class="pill" x="600" y="246" width="170" height="34" rx="17" stroke="var(--orange)"/><text class="nt" x="685" y="267" text-anchor="middle">visible</text>
+      <path class="flow dash" d="M600 263 C 556 263 556 127 594 127" marker-end="url(#m4)"/>
+      <path class="flow dash" d="M600 195 C 566 195 566 127 594 127" marker-end="url(#m4)"/>
+      <text class="lbl" x="600" y="308">released (idempotent) when:</text>
+      <text class="lbl" x="600" y="322">· the message changes or is dismissed</text>
+      <text class="lbl" x="600" y="336">· owner coverage / visibility withdraws the mounted gate</text>
+      <text class="lbl" x="600" y="350">· reachable teardown; weak token pruning covers abandonment</text>
+      <text class="lbl" x="600" y="372" style="font-weight:700;fill:var(--navy)">Blocked candidate: stays selected, is never rendered,</text>
+      <text class="lbl" x="600" y="386" style="font-weight:700;fill:var(--navy)">and records no shown / dismissed state.</text>
+    </g>
+    <!-- bottom note -->
+    <rect x="80" y="434" width="780" height="40" rx="7" fill="#EEF1F7"/>
+    <text class="lbl mono" x="470" y="450" text-anchor="middle">Manager owns modal phases · arbiter tracks only identity-bearing leases held / released</text>
+    <text class="lbl mono" x="470" y="464" text-anchor="middle">release is explicit + idempotent · stale callbacks for older attempts / leases are no-ops</text>
+  </svg>
+  <div class="figcap"><b>Fig 3 · Detailed modal state stays in the Manager; mutual exclusion stays in the arbiter.</b> The same modal lease remains held through evaluating, committed, and presentation-active. The arbiter only knows that the modal side holds the slot, so the NTP treats every modal phase the same. <span class="src">TECH_DESIGN_FINAL.md · Ownership · Behavioral Rules 2–5</span></div>
+</div>
+</section>
+
+<!-- ============================ 04 ARCHITECTURE ============================ -->
+<section id="arch"><div class="sec-head"><span class="sec-num">04</span><h2>Where the arbiter sits</h2><p class="lede">Existing components keep their policy ownership. The arbiter is inserted at two seams: before provider evaluation on the coordinated modal side, and in front of card construction on the NTP side.</p></div>
+<div class="card fig">
+  <div class="legend"><span><span class="sw" style="background:var(--blue)"></span>Existing modal path</span><span><span class="sw" style="background:var(--orange)"></span>Existing NTP / RMF path</span><span><span class="sw" style="background:var(--navy)"></span>New arbiter</span><span><span class="sw" style="background:#fff;border:1.5px dashed var(--green)"></span>New seam</span></div>
+  <svg viewBox="0 0 940 480" role="img" aria-label="Architecture diagram: the lease arbiter between the modal coordination service and manager on one side and the NTP render gate on the other.">
+    <defs>
+      <marker id="m5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#98A2B8"/></marker>
+      <marker id="m5n" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#16213E"/></marker>
+    </defs>
+    <!-- left column -->
+    <rect class="nb nbB" x="40" y="30" width="280" height="70" rx="9"/><rect class="accB" x="40" y="40" width="4" height="50" rx="2"/>
+    <text class="nt" x="60" y="54">PromoCoordinationService</text>
+    <text class="ns" x="60" y="71">existing gates unchanged; then acquires</text>
+    <text class="ns" x="60" y="85">the evaluation lease before providers</text>
+    <line class="flow" x1="180" y1="100" x2="180" y2="128" marker-end="url(#m5)"/>
+    <rect class="nb nbB" x="40" y="130" width="280" height="84" rx="9"/><rect class="accB" x="40" y="140" width="4" height="64" rx="2"/>
+    <text class="nt" x="60" y="154">ModalPromptCoordinationManager</text>
+    <text class="ns" x="60" y="171">provider priority · PromptCooldownManager ·</text>
+    <text class="ns" x="60" y="185">presentation · owns detailed modal phase ·</text>
+    <text class="ns" x="60" y="199">retains the same lease until root removal</text>
+    <line class="flow" x1="180" y1="214" x2="180" y2="242" marker-end="url(#m5)"/>
+    <rect class="nb nbB" x="40" y="244" width="280" height="64" rx="9"/><rect class="accB" x="40" y="254" width="4" height="44" rx="2"/>
+    <text class="nt" x="60" y="268">Scheduler + UIKit present</text>
+    <text class="ns" x="60" y="285">now cancellable / generation-aware,</text>
+    <text class="ns" x="60" y="299">revalidates immediately before present</text>
+    <rect x="40" y="322" width="280" height="58" rx="9" fill="#fff" stroke="var(--green)" stroke-width="1.5" stroke-dasharray="6 4"/>
+    <text class="nt" x="60" y="344" style="fill:var(--green)">Checkpoint release (new)</text>
+    <text class="ns" x="60" y="361">provider policy unchanged; prepared work revalidated</text>
+    <text class="ns" x="60" y="375">release when a checkpoint finds the root gone</text>
+    <!-- right column -->
+    <rect class="nb nbO" x="620" y="30" width="280" height="70" rx="9"/><rect class="accO" x="620" y="40" width="4" height="50" rx="2"/>
+    <text class="nt" x="640" y="54">NTP controller × N</text>
+    <text class="ns" x="640" y="71">stable surface ID · composed owner activity</text>
+    <text class="ns" x="640" y="85">readiness · visibility · coverage · window</text>
+    <line class="flow" x1="760" y1="100" x2="760" y2="128" marker-end="url(#m5)"/>
+    <rect class="nb nbO" x="620" y="130" width="280" height="70" rx="9"/><rect class="accO" x="620" y="140" width="4" height="50" rx="2"/>
+    <text class="nt" x="640" y="154">NewTabPageMessagesModel</text>
+    <text class="ns" x="640" y="171">selection / candidate retention unchanged —</text>
+    <text class="ns" x="640" y="185">feature-on mapping becomes a stable gate</text>
+    <line class="flow" x1="760" y1="200" x2="760" y2="228" marker-end="url(#m5)"/>
+    <rect x="620" y="230" width="280" height="78" rx="9" fill="#fff" stroke="var(--green)" stroke-width="1.5" stroke-dasharray="6 4"/>
+    <text class="nt" x="640" y="252" style="fill:var(--green)">Render gate (new)</text>
+    <text class="ns" x="640" y="269">acquires the lease before constructing</text>
+    <text class="ns" x="640" y="283">HomeMessageView; denied → card not built</text>
+    <line class="flow" x1="760" y1="308" x2="760" y2="336" marker-end="url(#m5)"/>
+    <rect class="nb nbO" x="620" y="338" width="280" height="52" rx="9"/><rect class="accO" x="620" y="348" width="4" height="32" rx="2"/>
+    <text class="nt" x="640" y="360">HomeMessageView</text>
+    <text class="ns" x="640" y="377">.onAppear promotes lease → shown fires once</text>
+    <!-- center arbiter -->
+    <rect x="368" y="140" width="204" height="150" rx="12" fill="var(--navy)"/>
+    <text x="470" y="168" text-anchor="middle" style="font-size:13px;font-weight:800;fill:#fff">Cross-surface</text>
+    <text x="470" y="185" text-anchor="middle" style="font-size:13px;font-weight:800;fill:#fff">lease arbiter</text>
+    <text x="470" y="208" text-anchor="middle" style="font-size:10.5px;fill:#9FB4E8">@MainActor · app-scoped</text>
+    <text x="470" y="223" text-anchor="middle" style="font-size:10.5px;fill:#9FB4E8">in-memory only</text>
+    <text x="470" y="246" text-anchor="middle" style="font-size:10.5px;fill:#9FB4E8">owns mutual exclusion —</text>
+    <text x="470" y="261" text-anchor="middle" style="font-size:10.5px;fill:#9FB4E8">and nothing else</text>
+    <!-- connections -->
+    <line class="flow" x1="320" y1="65" x2="368" y2="160" marker-end="url(#m5n)"/>
+    <text class="lbl" x="336" y="96" text-anchor="middle">acquire</text>
+    <text class="lbl" x="336" y="109" text-anchor="middle">eval lease</text>
+    <line class="flow" x1="320" y1="192" x2="368" y2="214" marker-end="url(#m5n)"/>
+    <text class="lbl" x="344" y="165" text-anchor="middle">hold same</text>
+    <text class="lbl" x="344" y="178" text-anchor="middle">lease · release</text>
+    <line class="flow" x1="640" y1="230" x2="578" y2="212" marker-end="url(#m5n)"/>
+    <text class="lbl" x="648" y="222">acquire render lease</text>
+    <path class="flow dash" d="M572 270 C 600 300 610 300 618 300" marker-end="url(#m5)"/>
+    <text class="lbl" x="588" y="316" text-anchor="middle">notify waiting</text>
+    <text class="lbl" x="588" y="329" text-anchor="middle">gates on release</text>
+    <!-- bottom band -->
+    <rect x="40" y="408" width="860" height="52" rx="10" fill="var(--blue-soft)"/>
+    <text class="lbl" x="470" y="430" text-anchor="middle" style="font-weight:700;fill:var(--blue-dark)">Not owned by the arbiter: provider priority · cooldown · modal phase · onboarding / launch-source / unrelated-modal gates ·</text>
+    <text class="lbl" x="470" y="446" text-anchor="middle" style="font-weight:700;fill:var(--blue-dark)">RMF selection / persistence · provider accounting · actual-presentation history · active / pending AI-promo suppression</text>
+  </svg>
+  <div class="figcap"><b>Fig 4 · Insertion points, not replacement.</b> Three pieces are new (arbiter, render gate, checkpoint reconciliation); two pieces are hardened (scheduler, NTP activity reporting). Everything is behind the iOS <code>promoPresentationCoordination</code> feature flag and bypassed when it is off. <span class="src">TECH_DESIGN_FINAL.md · Ownership · Design-Level Change Inventory</span></div>
+</div>
+</section>
+
+<!-- ============================ 05 FLOWS ============================ -->
+<section id="flows"><div class="sec-head"><span class="sec-num">05</span><h2>The two orderings, end to end</h2><p class="lede">Whichever side wins admission, the other waits without burning state — a blocked provider is never queried, a blocked card is never marked shown.</p></div>
+
+<div class="card fig">
+  <svg viewBox="0 0 940 300" role="img" aria-label="Sequence diagram: RMF holds the lease first, so modal admission is denied and providers are never queried.">
+    <defs><marker id="m6" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#98A2B8"/></marker>
+    <marker id="m6r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#C0392B"/></marker></defs>
+    <text class="lblb" x="40" y="24" style="font-size:13px">Flow A · RMF first (Behavioral Rule 1)</text>
+    <!-- lifelines -->
+    <g>
+      <rect class="lifehead" x="60" y="40" width="150" height="30" rx="8"/><text class="nt" x="135" y="59" text-anchor="middle">Service</text>
+      <rect class="lifehead" x="285" y="40" width="150" height="30" rx="8"/><text class="nt" x="360" y="59" text-anchor="middle">Manager</text>
+      <rect class="lifehead" x="510" y="40" width="150" height="30" rx="8"/><text class="nt" x="585" y="59" text-anchor="middle">Arbiter</text>
+      <rect class="lifehead" x="735" y="40" width="150" height="30" rx="8"/><text class="nt" x="810" y="59" text-anchor="middle">Active NTP gate</text>
+      <line class="life" x1="135" y1="70" x2="135" y2="268"/>
+      <line class="life" x1="360" y1="70" x2="360" y2="268"/>
+      <line class="life" x1="585" y1="70" x2="585" y2="268"/>
+      <line class="life" x1="810" y1="70" x2="810" y2="268"/>
+    </g>
+    <rect class="badG" x="726" y="86" width="168" height="24" rx="7"/><text class="btxtG" x="810" y="102" text-anchor="middle">holds (instance, msg) lease</text>
+    <text class="lbl" x="135" y="126" text-anchor="middle" style="font-weight:700">foreground → existing gates pass</text>
+    <line class="flow" x1="135" y1="146" x2="580" y2="146" marker-end="url(#m6)"/>
+    <text class="lbl" x="358" y="140" text-anchor="middle">acquire modal-evaluation lease?</text>
+    <line class="flowR" x1="585" y1="174" x2="140" y2="174" marker-end="url(#m6r)"/>
+    <text class="btxtR" x="358" y="168" text-anchor="middle">✗ denied — an RMF lease is active</text>
+    <line class="flow dash" x1="135" y1="212" x2="355" y2="212" marker-end="url(#m6)" opacity=".45"/>
+    <text class="lbl" x="245" y="206" text-anchor="middle" style="font-style:italic">never called — providers not queried</text>
+    <text class="lbl" x="245" y="228" text-anchor="middle">no seen state · no cooldown · no impressions burned</text>
+    <rect class="badA" x="36" y="246" width="490" height="24" rx="7"/><text class="btxtA" x="281" y="262" text-anchor="middle">modal reconsidered on the next eligible foreground — not when the card disappears</text>
+  </svg>
+  <div class="figcap"><b>Fig 5a · RMF wins.</b> Admission fails before any provider runs, so nothing is recorded anywhere — important because Default Browser burns “seen” state during eligibility itself. An undismissed card defers modals on each foreground where it is rendered in the active NTP (bounded by dismissal, expiry, or config replacement). <span class="src">TECH_DESIGN_FINAL.md · Behavioral Rule 1</span></div>
+</div>
+
+<div class="card fig" style="margin-top:15px">
+  <svg viewBox="0 0 940 388" role="img" aria-label="Sequence diagram: the modal acquires the evaluation lease first; the RMF render gate is denied while the modal attempt is active, and the lease is released at the next checkpoint after dismissal.">
+    <defs><marker id="m7" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#98A2B8"/></marker>
+    <marker id="m7r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#C0392B"/></marker>
+    <marker id="m7g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#12855B"/></marker></defs>
+    <text class="lblb" x="40" y="24" style="font-size:13px">Flow B · Modal first (Behavioral Rules 2–5)</text>
+    <g>
+      <rect class="lifehead" x="60" y="40" width="150" height="30" rx="8"/><text class="nt" x="135" y="59" text-anchor="middle">Service</text>
+      <rect class="lifehead" x="285" y="40" width="150" height="30" rx="8"/><text class="nt" x="360" y="59" text-anchor="middle">Manager</text>
+      <rect class="lifehead" x="510" y="40" width="150" height="30" rx="8"/><text class="nt" x="585" y="59" text-anchor="middle">Arbiter</text>
+      <rect class="lifehead" x="735" y="40" width="150" height="30" rx="8"/><text class="nt" x="810" y="59" text-anchor="middle">Active NTP gate</text>
+      <line class="life" x1="135" y1="70" x2="135" y2="356"/>
+      <line class="life" x1="360" y1="70" x2="360" y2="356"/>
+      <line class="life" x1="585" y1="70" x2="585" y2="356"/>
+      <line class="life" x1="810" y1="70" x2="810" y2="356"/>
+    </g>
+    <line class="flow" x1="135" y1="92" x2="580" y2="92" marker-end="url(#m7)"/>
+    <text class="lbl" x="358" y="86" text-anchor="middle">acquire evaluation lease → <tspan class="btxtG">✓ granted — new RMF rendering now blocked</tspan></text>
+    <line class="flow" x1="135" y1="120" x2="355" y2="120" marker-end="url(#m7)"/>
+    <text class="lbl" x="245" y="114" text-anchor="middle">evaluate providers (ordered)</text>
+    <line class="flow dash" x1="360" y1="148" x2="580" y2="148"/>
+    <text class="lbl" x="468" y="142" text-anchor="middle">Manager commits before delay; arbiter still holds the same lease</text>
+    <line class="flow" x1="810" y1="176" x2="590" y2="176" marker-end="url(#m7)"/>
+    <text class="lbl" x="700" y="170" text-anchor="middle">candidate mapped → acquire render lease?</text>
+    <line class="flowR" x1="585" y1="204" x2="805" y2="204" marker-end="url(#m7r)"/>
+    <text class="btxtR" x="700" y="198" text-anchor="middle">✗ denied — card not built, nothing marked shown</text>
+    <text class="lbl" x="360" y="232" text-anchor="middle" style="font-weight:700">revalidate → UIKit present → presentation-active</text>
+    <text class="lbl" x="360" y="260" text-anchor="middle">…user closes / completes the modal — nothing fires at dismissal…</text>
+    <line class="flow" x1="360" y1="284" x2="580" y2="284" marker-end="url(#m7)"/>
+    <text class="lbl" x="468" y="276" text-anchor="middle">next checkpoint (foreground / NTP admission) → exact root gone → release</text>
+    <text class="lbl" x="468" y="291" text-anchor="middle">foreground reconciliation runs before modal evaluation — the waiting RMF retries first</text>
+    <line class="flowG dash" x1="585" y1="312" x2="805" y2="312" marker-end="url(#m7g)"/>
+    <text class="lbl" x="700" y="306" text-anchor="middle">waiting gate retries at the checkpoint → <tspan class="btxtG">✓ granted</tspan></text>
+    <rect class="badG" x="640" y="330" width="254" height="24" rx="7"/><text class="btxtG" x="767" y="346" text-anchor="middle">card renders → shown accounting fires once</text>
+  </svg>
+  <div class="figcap"><b>Fig 5b · Modal wins.</b> The evaluation lease blocks RMF <i>before</i> provider selection. The Manager moves the attempt to committed before the delay while the arbiter keeps the same lease held. A presentation-active modal is never retracted for RMF; release happens at the first checkpoint after the root is gone (the accepted delay), and nested child flows do not finish the promo session. <span class="src">TECH_DESIGN_FINAL.md · Behavioral Rules 2–5</span></div>
+</div>
+</section>
+
+<!-- ============================ 06 MULTI-NTP ============================ -->
+<section id="ntp"><div class="sec-head"><span class="sec-num">06</span><h2>Many NTP instances, one truth</h2><p class="lede">NTPs exist in more places than tabs — the suggestion tray and input container build live instances over the same shared state. Only an on-window NTP whose composed owner, readiness, visibility, coverage, and gate-mount state is renderable may hold a lease.</p></div>
+<div class="card fig">
+  <svg viewBox="0 0 940 330" role="img" aria-label="Three NTP instances: only the active on-window one holds a lease; off-window instances cannot suppress modals.">
+    <!-- instance A -->
+    <rect x="50" y="30" width="260" height="196" rx="12" fill="#fff" stroke="var(--green)" stroke-width="1.8"/>
+    <rect class="badG" x="70" y="48" width="120" height="22" rx="7"/><text class="btxtG" x="130" y="63" text-anchor="middle">active · on-window</text>
+    <text class="nt" x="70" y="94">NTP A — current tab</text>
+    <text class="ns" x="70" y="112">owner active · gate physically mounted</text>
+    <rect x="70" y="128" width="220" height="42" rx="8" fill="var(--orange-soft)" stroke="var(--orange)" stroke-width="1.3"/>
+    <text class="lblb" x="180" y="146" text-anchor="middle" style="fill:#B4482B">holds lease (A, msg-42)</text>
+    <text class="lbl" x="180" y="161" text-anchor="middle" style="fill:#B4482B">card rendered · shown fired once</text>
+    <text class="ns" x="70" y="192">survives backgrounding (view stays</text>
+    <text class="ns" x="70" y="206">in hierarchy) — revalidated on foreground</text>
+    <!-- instance B -->
+    <rect x="340" y="30" width="260" height="196" rx="12" fill="#fff" stroke="var(--line)" stroke-width="1.5" stroke-dasharray="7 5"/>
+    <rect x="360" y="48" width="118" height="22" rx="7" fill="#EEF1F7"/><text class="lblb" x="419" y="63" text-anchor="middle">loaded · off-window</text>
+    <text class="nt" x="360" y="94">NTP B — suggestion tray</text>
+    <text class="ns" x="360" y="112">model mapped the same candidate</text>
+    <rect x="360" y="128" width="220" height="42" rx="8" fill="#F7F8FB" stroke="#C9D1E0" stroke-width="1.2" stroke-dasharray="4 3"/>
+    <text class="lblb" x="470" y="146" text-anchor="middle" style="fill:var(--muted)">cannot acquire a lease</text>
+    <text class="lbl" x="470" y="161" text-anchor="middle">controller not active in a window</text>
+    <text class="ns" x="360" y="192">mapping / refreshing alone can neither</text>
+    <text class="ns" x="360" y="206">suppress modals nor record “shown”</text>
+    <!-- instance C -->
+    <rect x="630" y="30" width="260" height="196" rx="12" fill="#fff" stroke="var(--line)" stroke-width="1.5" stroke-dasharray="7 5"/>
+    <rect x="650" y="48" width="118" height="22" rx="7" fill="#EEF1F7"/><text class="lblb" x="709" y="63" text-anchor="middle">cached · off-window</text>
+    <text class="nt" x="650" y="94">NTP C — background tab</text>
+    <text class="ns" x="650" y="112">retained but not visible</text>
+    <rect x="650" y="128" width="220" height="42" rx="8" fill="#F7F8FB" stroke="#C9D1E0" stroke-width="1.2" stroke-dasharray="4 3"/>
+    <text class="lblb" x="760" y="146" text-anchor="middle" style="fill:var(--muted)">cannot acquire a lease</text>
+    <text class="lbl" x="760" y="161" text-anchor="middle">same rule, per instance</text>
+    <text class="ns" x="650" y="192">disappearing releases only its own</text>
+    <text class="ns" x="650" y="206">lease — never another instance’s</text>
+    <!-- bottom notes -->
+    <rect x="50" y="248" width="840" height="60" rx="10" fill="var(--blue-soft)"/>
+    <text class="lbl" x="470" y="272" text-anchor="middle" style="font-weight:700;fill:var(--blue-dark)">Leases are keyed by (surface instance, promo identity) — NTP × message in iteration 1. Global RMF dismissal still updates every instance,</text>
+    <text class="lbl" x="470" y="288" text-anchor="middle" style="font-weight:700;fill:var(--blue-dark)">reachable lifecycle paths release explicitly; weak registration and token pruning make correctness independent of deinit timing.</text>
+  </svg>
+  <div class="figcap"><b>Fig 6 · Per-instance leases.</b> This is why “selected” must not mean “visible”: with one shared candidate and N live models, treating selection as visibility would let an off-screen tray NTP suppress launch modals indefinitely. <span class="src">TECH_DESIGN_FINAL.md · Behavioral Rules 6, 9 · Problem Statement</span></div>
+</div>
+</section>
+
+<!-- ============================ 07 ACCOUNTING ============================ -->
+<section id="accounting"><div class="sec-head"><span class="sec-num">07</span><h2>Shown accounting: before and after</h2><p class="lede">In the pre-coordination baseline, shown fired at map time, again on appearance, and again on refreshes — and unique could double-fire. PR 2 ties normal shown to one admitted render-session appearance; PR 3 adds the shared atomic unique winner.</p></div>
+<div class="card fig">
+  <svg viewBox="0 0 940 320" role="img" aria-label="Before and after comparison of remote message shown accounting: multiple fires in the baseline versus a single admitted-appearance fire under coordination.">
+    <defs><marker id="m8" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#98A2B8"/></marker></defs>
+    <!-- divider -->
+    <line x1="470" y1="24" x2="470" y2="268" stroke="var(--line)" stroke-width="1.5"/>
+    <!-- BEFORE -->
+    <rect class="badR" x="40" y="20" width="86" height="24" rx="7"/><text class="btxtR" x="83" y="36" text-anchor="middle">baseline</text>
+    <text class="lblb" x="40" y="70">remoteMessageShown — one message, one NTP</text>
+    <line class="flow" x1="40" y1="96" x2="440" y2="96" marker-end="url(#m8)"/>
+    <circle cx="90" cy="96" r="5.5" fill="var(--red)"/><text class="lbl" x="90" y="118" text-anchor="middle">map time</text><text class="lbl" x="90" y="131" text-anchor="middle">(didAppear)</text>
+    <circle cx="200" cy="96" r="5.5" fill="var(--red)"/><text class="lbl" x="200" y="118" text-anchor="middle">.onAppear</text><text class="lbl" x="200" y="131" text-anchor="middle">(again)</text>
+    <circle cx="310" cy="96" r="5.5" fill="var(--red)"/><circle cx="345" cy="96" r="5.5" fill="var(--red)"/><circle cx="380" cy="96" r="5.5" fill="var(--red)"/>
+    <text class="lbl" x="345" y="118" text-anchor="middle">every refresh</text><text class="lbl" x="345" y="131" text-anchor="middle">re-fires</text>
+    <text class="lblb" x="40" y="170">remoteMessageShownUnique — two NTP instances</text>
+    <text class="lbl" x="40" y="192">both read hasShown = false before the async write lands →</text>
+    <rect class="badR" x="40" y="204" width="240" height="24" rx="7"/><text class="btxtR" x="160" y="220" text-anchor="middle">“unique” pixel fires 2× (races)</text>
+    <text class="lbl" x="40" y="252">a shown mark also starts the dismissAfterDaysShown</text>
+    <text class="lbl" x="40" y="266">clock — even for a card the user never actually saw</text>
+    <!-- AFTER -->
+    <rect class="badG" x="500" y="20" width="150" height="24" rx="7"/><text class="btxtG" x="575" y="36" text-anchor="middle">coordinated path</text>
+    <text class="lblb" x="500" y="70">remoteMessageShown — per admitted appearance</text>
+    <line class="flow" x1="500" y1="96" x2="900" y2="96" marker-end="url(#m8)"/>
+    <circle cx="640" cy="96" r="6.5" fill="var(--green)"/>
+    <text class="lbl" x="640" y="118" text-anchor="middle">lease → visible</text>
+    <text class="lbl" x="640" y="131" text-anchor="middle">(fires exactly once)</text>
+    <text class="lblb" x="500" y="170">remoteMessageShownUnique — atomic winner</text>
+    <text class="lbl" x="500" y="192">shared main-actor reservation picks the first winner</text>
+    <text class="lbl" x="500" y="206">before the async store update → only one unique fire</text>
+    <rect class="badG" x="500" y="218" width="200" height="24" rx="7"/><text class="btxtG" x="600" y="234" text-anchor="middle">exactly 1× across all NTPs</text>
+    <text class="lbl" x="500" y="262">blocked cards record nothing — no shown date, no expiry clock</text>
+    <!-- bottom note -->
+    <rect x="40" y="282" width="860" height="28" rx="8" fill="var(--amber-soft)"/>
+    <text class="lbl" x="470" y="300" text-anchor="middle" style="font-weight:700;fill:var(--amber)">Rollout note: expect a step decrease in remoteMessageShown volume when the flag enables — dashboards should anticipate it.</text>
+  </svg>
+  <div class="figcap"><b>Fig 7 · The accounting correction across PRs 2–3.</b> Once a card can be blocked, map-time “shown” is wrong because it starts expiry for a never-rendered card. PR 2 gates normal shown behind admitted <code>onDidAppear</code>; PR 3 adds the shared reservation that makes unique shown atomic across NTPs. Feature off keeps the baseline accounting path unchanged. <span class="src">TECH_DESIGN_FINAL.md · Goal · Accounting bullets · Testing</span></div>
+</div>
+<div class="callout green" style="margin-top:17px"><h4>What this appendix should leave you with</h4><p>The design is a <b>narrow insertion, not a rewrite</b>: one in-memory arbiter enforcing one invariant, one new gate in front of the card, a hardened scheduler, and checkpoint-based release. All seven providers keep their eligibility policy, priority, cooldown, and accounting ownership while their adapters revalidate delayed work. RMF selection stays in its current owner, and the whole path remains removable behind the feature flag if iteration 3 picks a different owner.</p></div>
+</section>
+
+</main>
+
+<footer><div class="wrap"><div>Appendix to <code>TECH_DESIGN_FINAL.md</code> · iOS Promo Queue — Iteration 1</div><div>Diagrams illustrate the reviewed implementation contract · Aug 6, 2026</div></div></footer>
+</body>
+</html>

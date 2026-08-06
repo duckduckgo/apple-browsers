@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Promo Queue — Iteration 3 System Decision</title>
+<style>
+  :root {
+    --blue:#3969EF;--blue-dark:#2B4ECB;--blue-soft:#EAF0FF;--navy:#16213E;
+    --ink:#1D2433;--muted:#5A6478;--line:#E4E8F0;--bg:#F5F7FB;--card:#FFF;
+    --orange:#DE5833;--orange-soft:#FDEDE7;--green:#12855B;--green-soft:#E4F6EE;
+    --amber:#B7791F;--amber-soft:#FBF1DC;--red:#C0392B;--red-soft:#FCEBE9;
+    --purple:#7656C9;--purple-soft:#F0EBFF;
+    --shadow:0 1px 2px rgba(20,30,60,.06),0 6px 24px rgba(20,30,60,.07);
+    --radius:14px;--mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:82px}
+  body{margin:0;font-family:var(--sans);color:var(--ink);background:var(--bg);line-height:1.58;-webkit-font-smoothing:antialiased}
+  h1,h2,h3,h4{line-height:1.24;color:var(--navy);margin:0}p{margin:0 0 1em}a{color:var(--blue);text-decoration:none}
+  code,.src{font-family:var(--mono);font-size:.78em;background:#EEF1F7;color:#35406B;padding:.12em .4em;border-radius:5px;overflow-wrap:anywhere}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 24px}
+  nav{position:sticky;top:0;z-index:100;background:rgba(255,255,255,.88);backdrop-filter:saturate(180%) blur(12px);border-bottom:1px solid var(--line)}
+  .nav-inner{display:flex;align-items:center;gap:5px;max-width:1180px;margin:auto;padding:8px 24px;overflow-x:auto}
+  .brand{font-weight:750;color:var(--navy);margin-right:auto;white-space:nowrap;display:flex;align-items:center;gap:8px;font-size:14px}.brand i{width:10px;height:10px;border-radius:50%;background:var(--orange);display:block}
+  nav a{padding:6px 10px;border-radius:8px;color:var(--muted);font-weight:650;font-size:12.5px;white-space:nowrap}nav a:hover,nav a.active{background:var(--blue-soft);color:var(--blue-dark)}
+  header.hero{background:radial-gradient(1100px 380px at 12% -8%,rgba(57,105,239,.17),transparent 60%),radial-gradient(850px 360px at 100% 0,rgba(222,88,51,.13),transparent 55%),linear-gradient(180deg,#FFF,#F5F7FB);border-bottom:1px solid var(--line);padding:54px 0 42px}
+  .kicker{display:inline-flex;gap:8px;align-items:center;font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--blue-dark);background:var(--blue-soft);padding:6px 12px;border-radius:999px;margin-bottom:16px}
+  .hero h1{font-size:40px;letter-spacing:-.025em;margin-bottom:10px}.hero .sub{font-size:18px;color:var(--muted);max-width:880px;margin-bottom:22px}
+  .meta-row{display:flex;gap:9px;flex-wrap:wrap}.meta{background:#fff;border:1px solid var(--line);border-radius:10px;padding:8px 13px;font-size:12.5px;box-shadow:var(--shadow)}.meta span{color:var(--muted)}
+  section{padding:45px 0 8px}.sec-head{margin-bottom:21px}.sec-num{font-family:var(--mono);font-size:12px;color:var(--blue);font-weight:800}.sec-head h2{font-size:27px;margin-top:3px}.lede{font-size:16px;color:var(--muted);max-width:900px;margin-top:8px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:21px 23px}.grid{display:grid;gap:15px}.g2{grid-template-columns:repeat(2,1fr)}.g3{grid-template-columns:repeat(3,1fr)}.g4{grid-template-columns:repeat(4,1fr)}
+  .stats{display:flex;gap:13px;flex-wrap:wrap;margin-top:18px}.stat{flex:1;min-width:145px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:15px 17px;box-shadow:var(--shadow)}.stat .big{font-size:30px;font-weight:850;color:var(--navy)}.stat .lbl{font-size:12.5px;color:var(--muted)}
+  .callout{border-left:4px solid var(--orange);background:var(--orange-soft);padding:15px 19px;border-radius:0 12px 12px 0;margin-top:17px}.callout.blue{border-color:var(--blue);background:var(--blue-soft)}.callout.green{border-color:var(--green);background:var(--green-soft)}.callout.purple{border-color:var(--purple);background:var(--purple-soft)}.callout h4{font-size:15px;margin-bottom:4px}.callout p{font-size:14px;margin:0}
+  .tag{display:inline-block;font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.035em;padding:3px 8px;border-radius:6px}.t-green{background:var(--green-soft);color:var(--green)}.t-amber{background:var(--amber-soft);color:var(--amber)}.t-red{background:var(--red-soft);color:var(--red)}.t-blue{background:var(--blue-soft);color:var(--blue-dark)}.t-purple{background:var(--purple-soft);color:var(--purple)}.t-gray{background:#EEF1F7;color:var(--muted)}
+  .matrix-scroll{overflow-x:auto}.matrix{width:100%;border-collapse:collapse;font-size:12.5px;background:#fff;border-radius:12px;overflow:hidden;box-shadow:var(--shadow)}.matrix th,.matrix td{padding:11px 12px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}.matrix thead th{background:var(--navy);color:#fff;font-size:11.5px;white-space:nowrap}.matrix tbody th{color:var(--navy);font-weight:700}.matrix tr:last-child td,.matrix tr:last-child th{border-bottom:0}.matrix .yes{color:var(--green);font-weight:850}.matrix .part{color:var(--amber);font-weight:850}.matrix .no{color:var(--red);font-weight:850}.matrix .center{text-align:center}.matrix .soft{background:#FAFBFD}.matrix .best{background:var(--green-soft)}.matrix .score{font-size:20px;font-weight:900}.matrix [title]{cursor:help;border-bottom:1px dotted currentColor}
+  details{background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);margin-bottom:12px}summary{cursor:pointer;padding:15px 18px;font-weight:750;color:var(--navy)}details>div{padding:0 18px 17px;border-top:1px solid var(--line);font-size:14px}
+  .persona h3{font-size:15px;margin:9px 0 5px}.persona p{font-size:13px;color:var(--muted);margin:0}.option h3{font-size:18px;margin:9px 0 7px}.option p{font-size:13.5px;color:var(--muted);margin:0}.option.reco{border:2px solid var(--green)}
+  .req{display:grid;grid-template-columns:52px 1fr;gap:13px;padding:13px 0;border-bottom:1px solid var(--line)}.req:last-child{border:0}.req-id{font-family:var(--mono);font-weight:850;color:var(--blue-dark)}.req h4{font-size:14px}.req p{font-size:12.5px;color:var(--muted);margin:3px 0 0}
+  .contract{display:grid;grid-template-columns:1fr 58px 1fr;gap:14px;align-items:stretch}.contract .layer{background:#fff;border:1px solid var(--line);border-radius:13px;padding:18px;box-shadow:var(--shadow)}.contract .layer h3{font-size:16px;margin-bottom:8px}.contract .layer ul{font-size:13px;color:var(--muted);padding-left:18px;margin:0}.contract .arrow{display:grid;place-items:center;color:var(--blue);font-size:28px;font-weight:900}
+  .step{display:grid;grid-template-columns:35px 1fr;gap:11px;padding:11px 0;border-bottom:1px solid var(--line)}.step:last-child{border:0}.step b:first-child{display:grid;place-items:center;width:27px;height:27px;background:var(--blue-soft);color:var(--blue-dark);border-radius:8px;font-family:var(--mono)}.step h4{font-size:14px}.step p{font-size:12.5px;color:var(--muted);margin:2px 0 0}
+  .bom h3{font-size:16px;margin-bottom:8px}.bom ul{padding-left:18px;margin:0}.bom li{font-size:13px;color:var(--muted);margin:5px 0}.size{font-family:var(--mono);font-weight:850;color:var(--blue-dark)}
+  .scorebar{height:9px;background:#EEF1F7;border-radius:999px;overflow:hidden;margin:8px 0 4px}.scorebar i{height:100%;display:block;background:linear-gradient(90deg,var(--blue),#7A98F8);border-radius:inherit}.scorebar.green i{background:linear-gradient(90deg,var(--green),#4BC193)}
+  .q-list{counter-reset:q;display:grid;grid-template-columns:1fr 1fr;gap:10px}.question{counter-increment:q;background:#fff;border:1px solid var(--line);border-radius:11px;padding:13px 15px;font-size:13.5px;box-shadow:var(--shadow)}.question:before{content:counter(q);display:inline-grid;place-items:center;width:22px;height:22px;border-radius:6px;background:var(--blue-soft);color:var(--blue-dark);font-family:var(--mono);font-weight:800;margin-right:8px}
+  footer{margin-top:48px;padding:28px 0 56px;border-top:1px solid var(--line);font-size:12.5px;color:var(--muted)}footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  @media(max-width:900px){.g4,.g3,.g2{grid-template-columns:1fr}.hero h1{font-size:31px}.contract{grid-template-columns:1fr}.contract .arrow{transform:rotate(90deg)}.q-list{grid-template-columns:1fr}}
+  @media print{nav{position:static}.hero{padding:28px 0!important}section{padding-top:28px}.card,.matrix,details,.contract .layer{box-shadow:none}.matrix{font-size:8.5px}.matrix th,.matrix td{padding:5px}.q-list{grid-template-columns:1fr 1fr}details>div{display:block!important}summary{list-style:none}}
+</style>
+</head>
+<body>
+<nav><div class="nav-inner"><div class="brand"><i></i> Promo Queue · Iteration 3</div><a href="#question">Question</a><a href="#requirements">Requirements</a><a href="#options">Options</a><a href="#evaluation">Evaluation</a><a href="#contract">Contract</a><a href="#migration">Migration</a><a href="#decision">Decision tree</a><a href="#questions">Questions</a></div></nav>
+
+<header class="hero"><div class="wrap">
+  <span class="kicker">Research program B · Decision pre-read</span>
+  <h1>Which system should own the promo queue?</h1>
+  <p class="sub">The evidence favors one client-side visibility arbiter, bounded remote queue policy, and RMF campaign candidates where remote content adds value. That is a proposed layered contract—not a decision and not an RMF-versus-queue compromise.</p>
+  <div class="meta-row"><div class="meta"><b>Audience</b> <span>· Mark · Stephen · Cristian · Chris · O-L/O-A</span></div><div class="meta"><b>Verified</b> <span>· Jul 10, 2026 · current local checkouts</span></div><div class="meta"><b>Inputs</b> <span>· 74 reported names · 12 blocked RMF candidates</span></div><div class="meta"><b>Status</b> <span>· Proposed, not decided</span></div></div>
+</div></header>
+
+<main class="wrap">
+<section id="question"><div class="sec-head"><span class="sec-num">01</span><h2>The question and who is judging it</h2><p class="lede">Not “is RMF good?” The choice is which system schedules, arbitrates, controls, and measures promos without forcing desktop to discard shipped work.</p></div>
+  <div class="grid g4">
+    <div class="card persona"><span class="tag t-blue">Desktop</span><h3>Mark</h3><p>Requirements and an honest desktop gap list first; improve existing systems before replacement or divergence.</p></div>
+    <div class="card persona"><span class="tag t-purple">Mobile</span><h3>Aitor + Craig</h3><p>Default to RMF and extend/simplify first; also keep a central arbiter for surfaces RMF cannot cover.</p></div>
+    <div class="card persona"><span class="tag t-amber">Product</span><h3>Chris Thelwell</h3><p>Evaluate remote control, measurement, disabling, and possible RMF modal/queue extensions after requirements.</p></div>
+    <div class="card persona"><span class="tag t-green">Contract</span><h3>Cristian + Stephen</h3><p>One paved road and an explicit contract; delay rather than suppress; owners must understand lost delivery.</p></div>
+  </div>
+  <p style="font-size:12px;color:var(--muted);margin-top:10px">All stakeholder positions above are <b>reported (Asana), not code-verifiable</b>. <span class="src">iteration_3_research.md:11-22</span></p>
+  <div class="grid g4" style="margin-top:18px">
+    <div class="card option"><span class="tag t-red">A · Replace</span><h3>RMF is the queue</h3><p>All promos become messages; RMF gains arbitration, frequency, surfaces, events, and measurement.</p></div>
+    <div class="card option"><span class="tag t-blue">B · Extend</span><h3>Client queue</h3><p>Client policy engine owns every promo; RMF remains an observed/registered content input.</p></div>
+    <div class="card option reco"><span class="tag t-green">C · Proposed</span><h3>Layered contract</h3><p>RMF supplies campaign candidates; the client queue alone grants visibility now.</p></div>
+    <div class="card option"><span class="tag t-purple">B+ · Control</span><h3>Remote queue policy</h3><p>Client arbitration plus bounded remote kill, priority, cooldown, cap, and expiry.</p></div>
+  </div>
+  <div class="callout green"><h4>Proposed framing</h4><p><b>C with the B+ policy contract.</b> First ship the narrow iteration-1 NTP/modal permit seam without extracting <code>PromoService</code>. If C is approved, build the client arbiter, add bounded remote controls, bridge RMF candidates through native surfaces, and only then price per-surface RMF scheduling or generic modal rendering. <span class="src">iteration_3_findings.md §0</span></p></div>
+  <div class="callout"><h4>Corrections that change the evaluation</h4><p>Iteration 1 does not create <code>SharedPackages/PromoQueue</code>; PromoService extraction remains future Option-B/C work. RMF supports <code>expVariant</code>; only privacy-config cohort flags are excluded. New surfaces do not inherently require a Core Data migration because surfaces already persist as a bitmask. <span class="src">iteration_3_findings.md §0 · AppAttributeMatcher.swift:111-130 · RemoteMessagingConfigMatcherProvider.swift:165-167 · RemoteMessageModel.swift:193-210</span></p></div>
+</section>
+
+<section id="requirements"><div class="sec-head"><span class="sec-num">02</span><h2>The yardstick: 20 numbered requirements</h2><p class="lede">Twelve Must, six Should, and two Nice requirements. The labels are proposed for TD approval; product/guideline sources are reported Asana context, not code facts.</p></div>
+  <div class="grid g3">
+    <div class="card"><span class="tag t-red">Must · 12</span>
+      <div class="req"><div class="req-id">M1</div><div><h4>Collision safety</h4><p>One Med–High and one NTP message; common coexistence decision.</p></div></div>
+      <div class="req"><div class="req-id">M2</div><div><h4>Frequency &amp; dismissal</h4><p>1/day app, 1/hour user, ≥28d normally, never after explicit rejection.</p></div></div>
+      <div class="req"><div class="req-id">M3</div><div><h4>Delay, deterministic priority</h4><p>Stable tie-break; persist losers and retry when the blocker clears or at the next relevant trigger.</p></div></div>
+      <div class="req"><div class="req-id">M4</div><div><h4>Campaign lifecycle</h4><p>Caps, cooldowns, absolute/hard expiry, badge lifecycle.</p></div></div>
+    </div>
+    <div class="card"><span class="tag t-red">Must · continued</span>
+      <div class="req"><div class="req-id">M5</div><div><h4>Local safety gates</h4><p>Onboarding/deep-link rules, immediate eligibility, essential preemption.</p></div></div>
+      <div class="req"><div class="req-id">M6</div><div><h4>Complete collision coverage</h4><p>Every promo registers; native utilities publish visibility when needed.</p></div></div>
+      <div class="req"><div class="req-id">M7</div><div><h4>Remote bounded control</h4><p>Kill plus policy within compiled safety bounds.</p></div></div>
+      <div class="req"><div class="req-id">M8</div><div><h4>Privacy-preserving execution</h4><p>Static config, same for all, local decisions/history.</p></div></div>
+    </div>
+    <div class="card"><span class="tag t-red">Must · continued</span>
+      <div class="req"><div class="req-id">M9</div><div><h4>Offline/bootstrap</h4><p>Deterministic defaults; explicit stale and kill semantics.</p></div></div>
+      <div class="req"><div class="req-id">M10</div><div><h4>Measurement &amp; owner accounting</h4><p>One actual shown event; delay/eligible-not-shown reasons.</p></div></div>
+      <div class="req"><div class="req-id">M11</div><div><h4>Cross-platform, no rewrite</h4><p>One contract; platform engines allowed; desktop retained.</p></div></div>
+      <div class="req"><div class="req-id">M12</div><div><h4>Native safety authority</h4><p>Consent, OS, StoreKit, transactions, runtime effects remain local.</p></div></div>
+    </div>
+  </div>
+  <div class="grid g2" style="margin-top:15px">
+    <div class="card"><span class="tag t-amber">Should · 6</span>
+      <div class="req"><div class="req-id">S1</div><div><h4>Remote content/targeting where valuable</h4></div></div>
+      <div class="req"><div class="req-id">S2</div><div><h4>Named event-driven response</h4></div></div>
+      <div class="req"><div class="req-id">S3</div><div><h4>Validation, diagnostics, preview, debug</h4></div></div>
+      <div class="req"><div class="req-id">S4</div><div><h4>Paved road and AOR</h4></div></div>
+      <div class="req"><div class="req-id">S5</div><div><h4>Privacy-preserving experiments</h4></div></div>
+      <div class="req"><div class="req-id">S6</div><div><h4>Reversible staged migration</h4></div></div>
+    </div>
+    <div class="card"><span class="tag t-green">Nice · 2</span>
+      <div class="req"><div class="req-id">N1</div><div><h4>Rich low-interruption policy</h4><p>Timeouts, dots/text badges, tips, surface display behavior.</p></div></div>
+      <div class="req"><div class="req-id">N2</div><div><h4>Shared implementation where languages permit</h4><p>Shared Swift on Apple; normative spec/conformance across Kotlin/C#.</p></div></div>
+      <div class="callout blue"><h4>Source baseline</h4><p>Stephen V1, Mobile Global Guidelines, company promo guidance, remote-disable and measurement asks, delay accounting, and paved-road process are <b>reported (Asana), not code-verifiable</b>. <span class="src">iteration_2_research.md:43-55 · iteration_3_research.md:52-54</span></p></div>
+    </div>
+  </div>
+  <details><summary>Why measurement is promoted to Must here</summary><div><p>The stakeholder brief calls standard measurement a stretch, but the queue cannot satisfy “delay, not suppress” or owner-visible delivery loss without one accounting contract. The classification is explicitly proposed for approval. Current RMF has shown/dismiss/action pixels; neither current system owns delayed/eligible-not-shown. <span class="src">RemoteMessagingPixelReporter.swift:31-43,66-127 · iteration_3_findings.md §A M10</span></p></div></details>
+</section>
+
+<section id="options"><div class="sec-head"><span class="sec-num">03</span><h2>What each option actually requires</h2><p class="lede">A label is not a design. These are the minimum credible bills of materials, including release coupling and desktop impact.</p></div>
+  <div class="grid g2">
+    <div class="card bom"><span class="tag t-red">Option A</span><h3>RMF becomes the queue</h3><ul>
+      <li><span class="size">L</span> multi-message/per-surface scheduler and starvation rules</li><li><span class="size">L</span> priority/severity/context/initiated/essential policy across clients</li><li><span class="size">L</span> cross-message history, pacing, caps, cooldowns, absolute dates</li><li><span class="size">M + S–M/surface</span> registry and native-surface bridge</li><li><span class="size">L portfolio</span> modals, headers/cards, dots/badges, page/runtime surfaces</li><li><span class="size">L</span> event bus; at least eight known matcher families</li><li><span class="size">M</span> bootstrap, config/localization tooling, metrics, debug, AOR</li><li><span class="size">L/platform</span> desktop replacement or compatibility migration</li>
+    </ul><p style="margin-top:10px"><b>First increment:</b> per-surface scheduler plus one permit-gated native bridge.</p><span class="src">RemoteMessagingConfigMatcher.swift:51-78 · RemoteMessagingStore.swift:92-125,443-506</span></div>
+    <div class="card bom"><span class="tag t-blue">Option B</span><h3>Client queue is the system</h3><ul>
+      <li><span class="size">M–L</span> extract and adapt the macOS engine into a future Apple package</li><li><span class="size">M</span> real iOS eligibility/result/visibility adapters; one whole-modal wrapper is insufficient today</li><li><span class="size">M</span> pending/retry scheduling, caps, expiry, essential preemption, tie-break, delay reasons</li><li><span class="size">M + S/family</span> iOS contexts and registrations</li><li><span class="size">M + S/surface</span> bidirectional RMF bridge with one pixel owner</li><li><span class="size">S/promo</span> basic flags; does not scale cleanly to the full inventory</li><li><span class="size">M</span> measurement and paved-road operation</li><li><span class="size">L</span> Android-equivalent queue; <span class="size">M</span> desktop conformance</li><li><span class="size">L optional</span> RMF per-surface scheduling only if remote surfaces demand it</li>
+    </ul><p style="margin-top:10px"><b>First increment if B is selected:</b> prove the shared-engine/iOS-adapter contract, then complete queue policy and register the passwords-header chain.</p><span class="src">PromoDelegate.swift:33-55 · ModalPromptProvider.swift:40-50 · PromoService.swift:322-330,488-510,621-649</span></div>
+    <div class="card bom" style="border:2px solid var(--green)"><span class="tag t-green">Option C</span><h3>Layered campaign + visibility contract</h3><ul>
+      <li><span class="size">M–L</span> client-arbiter foundation if C is approved; choose evolution versus PromoService extraction/adaptation</li><li><span class="size">M</span> stable ID/candidate envelope and permit protocol</li><li><span class="size">M</span> surface bridge with immediate local eligibility</li><li><span class="size">M + S each</span> seven header/card/chrome first-wave migrations</li><li><span class="size">S each</span> Home-row, VPN dot, conditional PIR badge</li><li><span class="size">M</span> two hybrid modal prototypes</li><li><span class="size">M</span> B+ policy and canonical measurement seam</li><li><span class="size">L conditional</span> per-surface RMF candidates only when required</li><li><span class="size">L</span> Android arbiter that passes the same contract fixtures</li>
+    </ul><p style="margin-top:10px"><b>First increment:</b> static IDs and a passwords-header bridge.</p><span class="src">iteration_2_findings.md:253-307 · iteration_3_findings.md §C</span></div>
+    <div class="card bom"><span class="tag t-purple">Option B+</span><h3>Bounded remote queue policy</h3><ul>
+      <li><span class="size">S</span> Privacy Config pilot on three promos</li><li><span class="size">M</span> dedicated validated manifest at inventory scale</li><li>Stable <code>promoKey</code>; enable, bounded order, cooldown, cap, start/expiry, min version</li><li>Remote edits can narrow compiled policy, never weaken it</li><li>Unknown IDs ignored/reported; invalid config retains last-known-good</li><li>Compiled defaults keep local arbitration deterministic before fetch</li><li>RMF remains available independently for remote content candidates</li>
+    </ul><p style="margin-top:10px"><b>First increment:</b> remote disable/cap/cooldown pilot on three local promos.</p><span class="src">PrivacyFeature.swift:912-916 · PromptCooldownIntervalProvider.swift:29-62</span></div>
+  </div>
+  <details><summary>Mark's honest “desktop doesn't support” list</summary><div><p>No generic remote content or per-promo policy; no impression caps/absolute dates; no delay dashboard; no essential-preemption contract; no pending/retry scheduler after a blocker clears; fixed registrations; per-surface delegates/gates; observation-only RMF integration; one global RMF winner; no single cross-platform implementation; no iOS/Android long-tail coverage; no generic queue measurement; no macOS NTP remote imagery; no first-fetch remote-content fallback. <span class="src">iteration_3_findings.md §B.3 · PromoService.swift:322-330,488-510,621-649 · PromoServiceFactory.swift:60-78</span></p></div></details>
+</section>
+
+<section id="evaluation"><div class="sec-head"><span class="sec-num">04</span><h2>Requirements-weighted evaluation</h2><p class="lede">Must ×3, Should ×2, Nice ×1; ✓=2, ~=1, ✗=0; maximum 100. Hover a mark for the short justification. Totals rank current evidence, not immutable truth.</p></div>
+  <div class="matrix-scroll"><table class="matrix"><thead><tr><th>Requirement</th><th>A · RMF queue</th><th>B · client queue</th><th>C · layered</th><th>B+ · remote rules</th></tr></thead><tbody>
+    <tr><th>M1 Collision</th><td><span class="part" title="Requires rebuilding queue semantics in RMF">~ rebuild</span></td><td><span class="yes" title="Native queue responsibility">✓ native</span></td><td><span class="yes" title="One explicit client arbiter">✓ arbiter</span></td><td><span class="yes" title="Same client arbiter">✓ arbiter</span></td></tr>
+    <tr><th>M2 Frequency</th><td><span class="part" title="New RMF history/frequency engine">~ new engine</span></td><td><span class="part" title="Global cooldown exists; caps/28-day policy incomplete">~ complete</span></td><td><span class="yes" title="Queue policy plus bounded remote values">✓ contract</span></td><td><span class="yes" title="Core purpose of remote policy">✓ policy</span></td></tr>
+    <tr><th>M3 Delay/determinism</th><td><span class="part" title="Replace first-winner and done semantics">~ redesign</span></td><td><span class="yes" title="Priced pending state and retry-on-blocker-clear extension">✓ after extension</span></td><td><span class="yes" title="Contract preserves and retries native/RMF candidates">✓ preserved</span></td><td><span class="yes" title="Remote order feeds a pending/retry local queue">✓ policy</span></td></tr>
+    <tr><th>M4 Lifecycle</th><td><span class="part" title="New schema/store for caps and absolute dates">~ new store</span></td><td><span class="part" title="Local fragments exist but not uniform">~ complete</span></td><td><span class="yes" title="Bounded manifest plus queue history">✓ combined</span></td><td><span class="yes" title="Manifest defines bounded cap/expiry">✓ policy</span></td></tr>
+    <tr><th>M5 Local safety</th><td><span class="part" title="Many native plugins remain necessary">~ plugins</span></td><td><span class="part" title="Gates exist; essential preemption is open">~ extend</span></td><td><span class="yes" title="Adapter owns immediate native truth">✓ native truth</span></td><td><span class="yes" title="Compiled queue bounds stay authoritative">✓ compiled</span></td></tr>
+    <tr><th>M6 Coverage</th><td><span class="part" title="Large surface portfolio and native wrappers">~ portfolio</span></td><td><span class="yes" title="Registration handles native surfaces">✓ register</span></td><td><span class="yes" title="Hybrids plus native registration">✓ both paths</span></td><td><span class="yes" title="Registration model unchanged">✓ register</span></td></tr>
+    <tr><th>M7 Remote control</th><td><span class="yes" title="Remote config is RMF's core strength">✓ core</span></td><td><span class="part" title="Per-promo flags do not scale">~ flags</span></td><td><span class="yes" title="RMF kill plus bounded local policy">✓ both</span></td><td><span class="yes" title="Defining capability">✓ core</span></td></tr>
+    <tr><th>M8 Privacy</th><td><span class="yes" title="Can preserve static/local RMF posture">✓ preserve</span></td><td><span class="yes" title="Local by design">✓ local</span></td><td><span class="yes" title="Both layers static and local">✓ local</span></td><td><span class="yes" title="Static manifest evaluated locally">✓ local</span></td></tr>
+    <tr><th>M9 Offline</th><td><span class="part" title="Needs bundle/bootstrap semantics">~ design</span></td><td><span class="yes" title="Local promos and history operate">✓ local</span></td><td><span class="yes" title="Local fallback with explicit remote staleness">✓ explicit</span></td><td><span class="yes" title="Compiled defaults remain available">✓ defaults</span></td></tr>
+    <tr><th>M10 Measurement</th><td><span class="part" title="Delay accounting does not exist">~ build</span></td><td><span class="part" title="Queue telemetry/dashboard does not exist">~ build</span></td><td><span class="part" title="Shared analytics plus deduplication project">~ seam</span></td><td><span class="part" title="Remote policy does not create reporting">~ build</span></td></tr>
+    <tr><th>M11 No desktop rewrite</th><td><span class="no" title="Pure A replaces queues or becomes C">✗ conflict</span></td><td><span class="yes" title="Preserves shipped engines">✓ preserve</span></td><td><span class="yes" title="Preserves and improves bridges">✓ preserve</span></td><td><span class="yes" title="Preserves engines">✓ preserve</span></td></tr>
+    <tr><th>M12 Native safety</th><td><span class="part" title="Conflicts with uniformly thin renderer ideal">~ native core</span></td><td><span class="yes" title="Natural local authority">✓ natural</span></td><td><span class="yes" title="Explicit adapter invariant">✓ explicit</span></td><td><span class="yes" title="Compiled bounds cannot be weakened">✓ bounds</span></td></tr>
+    <tr><th>S1 Remote content</th><td><span class="yes" title="Core strength">✓ core</span></td><td><span class="part" title="RMF stays a separate subset input">~ subset</span></td><td><span class="yes" title="Remote by default where valuable">✓ core</span></td><td><span class="part" title="B+ controls policy, not content">~ optional</span></td></tr>
+    <tr><th>S2 Events</th><td><span class="part" title="Generic RMF event bus is large">~ new bus</span></td><td><span class="yes" title="Local events are natural">✓ local</span></td><td><span class="yes" title="Immediate local eligibility beside RMF">✓ hybrid</span></td><td><span class="yes" title="Local events remain">✓ local</span></td></tr>
+    <tr><th>S3 Operations</th><td><span class="part" title="Rebuild tooling at config/queue scale">~ rebuild</span></td><td><span class="yes" title="Existing queue debug foundation">✓ base</span></td><td><span class="yes" title="Queue diagnostics plus validated bridge/policy">✓ combined</span></td><td><span class="yes" title="Validated manifest and queue tooling">✓ manifest</span></td></tr>
+    <tr><th>S4 Paved road</th><td><span class="part" title="AOR/process still needed">~ process</span></td><td><span class="part" title="AOR/process still needed">~ process</span></td><td><span class="part" title="Joint contract ownership needed">~ process</span></td><td><span class="part" title="Queue-policy ownership needed">~ process</span></td></tr>
+    <tr><th>S5 Experiments</th><td><span class="yes" title="expVariant and percentile exist">✓ exists</span></td><td><span class="part" title="Native promos lack one common contract">~ mixed</span></td><td><span class="yes" title="RMF experiments plus local arbitration">✓ fit</span></td><td><span class="part" title="Policy/native experiment contract needed">~ mixed</span></td></tr>
+    <tr><th>S6 Reversible</th><td><span class="no" title="Replacement and parity create flag-day risk">✗ risky</span></td><td><span class="yes" title="Incremental registration">✓ staged</span></td><td><span class="yes" title="Incremental per surface">✓ staged</span></td><td><span class="yes" title="Compiled fallback and manifest rollback">✓ staged</span></td></tr>
+    <tr><th>N1 Rich policy</th><td><span class="part" title="New display/surface policy">~ build</span></td><td><span class="yes" title="Type model foundation exists">✓ type model</span></td><td><span class="yes" title="Native type plus remote content">✓ both</span></td><td><span class="yes" title="Native type plus remote values">✓ both</span></td></tr>
+    <tr><th>N2 Shared where possible</th><td><span class="yes" title="Shared Apple code plus normative contract elsewhere">✓ contract</span></td><td><span class="yes" title="Shared Apple queue plus normative contract elsewhere">✓ contract</span></td><td><span class="yes" title="Shared Apple queue plus normative contract elsewhere">✓ contract</span></td><td><span class="yes" title="Shared Apple queue plus normative contract elsewhere">✓ contract</span></td></tr>
+    <tr><th>Weighted score</th><td><span class="score">56</span> / 100</td><td><span class="score">79</span> / 100</td><td class="best"><span class="score">95</span> / 100</td><td><span class="score">91</span> / 100</td></tr>
+  </tbody></table></div>
+  <div class="grid g4" style="margin-top:15px">
+    <div class="card"><b>A · 56</b><div class="scorebar"><i style="width:56%"></i></div><p style="font-size:12px;color:var(--muted);margin:0">Remote strength; replacement and parity cost dominate.</p></div>
+    <div class="card"><b>B · 79</b><div class="scorebar"><i style="width:79%"></i></div><p style="font-size:12px;color:var(--muted);margin:0">Established on macOS; material extraction/adaptation on iOS; weak remote policy/content story alone.</p></div>
+    <div class="card"><b>C · 95</b><div class="scorebar green"><i style="width:95%"></i></div><p style="font-size:12px;color:var(--muted);margin:0">Best balanced fit, with an accounting seam to engineer.</p></div>
+    <div class="card"><b>B+ · 91</b><div class="scorebar"><i style="width:91%"></i></div><p style="font-size:12px;color:var(--muted);margin:0">Best control path; remote content remains optional RMF input.</p></div>
+  </div>
+  <div class="callout blue"><h4>Sensitivity</h4><p>A one-mark change on every Must can move a score by 36 points. The robust finding is not “95 is mathematically correct”; it is that C/B+ preserve the proven arbiter while closing remote-control/content gaps, whereas A pays L replacement cost before parity. <span class="src">iteration_3_findings.md §D</span></p></div>
+</section>
+
+<section id="contract"><div class="sec-head"><span class="sec-num">05</span><h2>The proposed C contract</h2><p class="lede">Campaign availability and visibility permission are different decisions. The contract makes one owner explicit for each.</p></div>
+  <div class="contract">
+    <div class="layer"><span class="tag t-purple">RMF</span><h3>Campaign candidate</h3><ul><li>Remote copy, localization, imagery</li><li>Coarse local targeting</li><li>Campaign activation/kill</li><li><code>messageID</code> telemetry identity</li><li>Candidate add/change/remove</li></ul></div>
+    <div class="arrow">→</div>
+    <div class="layer"><span class="tag t-blue">Queue</span><h3>Visibility permit</h3><ul><li>Priority, severity, context</li><li>Pacing, cooldown, caps, expiry</li><li>Pending state + retry on blocker clear</li><li>Onboarding/deep-link/essential rules</li><li><code>promoKey</code> history identity</li><li>Admit, delay, ineligible, unsupported</li></ul></div>
+  </div>
+  <div class="contract" style="margin-top:14px;grid-template-columns:1fr 58px 1fr">
+    <div class="layer"><span class="tag t-green">Native adapter</span><h3>Immediate truth + render</h3><ul><li>Re-check local eligibility</li><li>Idempotent show/hide</li><li>Consent/OS/StoreKit/runtime actions</li><li>Confirm actual visibility</li></ul></div>
+    <div class="arrow">→</div>
+    <div class="layer"><span class="tag t-amber">Accounting</span><h3>Exactly-once outcome</h3><ul><li>One actual shown event</li><li>Dismiss/action outcome</li><li>Queue delay reason</li><li>Idempotency by promo/message/presentation</li></ul></div>
+  </div>
+  <div class="callout green"><h4>Identity rule</h4><p>One bridge per native surface; one queue identity per canonical promo/campaign—not one queue registration per localized RMF object. <code>promoKey</code> owns long-lived policy/history; <code>messageID</code> owns RMF campaign telemetry. Unknown IDs fail closed. <span class="src">iteration_3_findings.md §C.2</span></p></div>
+  <div class="grid g2" style="margin-top:15px">
+    <details open><summary>RMF obligations</summary><div><p>Publish candidates per surface; preserve delayed state; provide stable IDs/version; stop global surface monopoly before relying on independent remote surfaces; do not author unvalidated queue policy; version-gate new matchers/actions/surfaces.</p><span class="src">RemoteMessagingStore.swift:92-125,443-506 · JsonToRemoteMessageModelMapper.swift:415-423</span></div></details>
+    <details open><summary>Queue + adapter obligations</summary><div><p>Return admitted/delayed/ineligible/unsupported; persist delayed candidates; retry them when blockers clear and on the next relevant trigger; emit actual outcome once; revoke permits safely; avoid starvation; report delay reasons. The adapter never renders without a permit and keeps native safety effects local.</p><span class="src">PromoService.swift:322-330,488-510,621-649 · iteration_3_findings.md §C.3</span></div></details>
+  </div>
+  <details><summary>Top failure modes and defenses</summary><div><p><b>Starvation:</b> per-surface candidates and diagnostics. <b>Priority conflict:</b> RMF order selects candidate availability only. <b>Double pixels:</b> one coordinator/idempotency key. <b>ID churn:</b> stable <code>promoKey</code>. <b>Old client:</b> fail closed/min version. <b>Offline kill:</b> honest delivery semantics. <b>Render race:</b> versioned permit and visibility confirmation. <b>Unsafe policy:</b> narrowing-only schema and compiled bounds. <b>Platform drift:</b> registry plus conformance reports.</p></div></details>
+  <details><summary>Why the current ExternalPromo seam is transitional</summary><div><p>macOS registers separate NTP and tab-bar RMF ExternalPromos. They control their own visibility and ignore queue cooldown; the queue reacts and may retract internal promos. The final C seam reverses authority: RMF requests admission and the surface waits for a permit. <span class="src">PromoServiceFactory+RemoteMessage.swift:24-46 · Promo.swift:97-124 · PromoService.swift:431-457</span></p></div></details>
+</section>
+
+<section id="migration"><div class="sec-head"><span class="sec-num">06</span><h2>Migration narratives and scoped work</h2><p class="lede">The options are also sequences. The targeted iteration-1 permit seam is evidence, not a pre-commitment to the client-queue option.</p></div>
+  <div class="grid g4">
+    <div class="card option"><span class="tag t-red">A</span><h3>Replace after parity</h3><p>Build scheduler, policy, history, events, surfaces, metrics, tooling, and offline behavior; reconcile all 74 reported names, retire stale/non-promos, and migrate active units; replace/wrap desktop; build Android. Keeping the queue as arbiter is C.</p></div>
+    <div class="card option"><span class="tag t-blue">B</span><h3>Extract, adapt, then register</h3><p>Build the Apple engine and real iOS provider/lifecycle adapters, complete pending/retry and policy, migrate private priority chains, retain RMF input, align desktop by spec, and build the Android twin.</p></div>
+    <div class="card option reco"><span class="tag t-green">C</span><h3>Bridge in waves</h3><p>If approved, build the client-arbiter foundation; stable IDs + bridge; seven headers/cards; two attention surfaces; two modal prototypes; class-(c) visibility adapters; optional scheduler later.</p></div>
+    <div class="card option"><span class="tag t-purple">B+</span><h3>Control before content</h3><p>Three-promo pilot, then validated manifest. Content can stay native or use RMF independently. Compiled bounds remain authoritative.</p></div>
+  </div>
+  <div class="matrix-scroll" style="margin-top:17px"><table class="matrix"><thead><tr><th>Follow-up project</th><th>Size</th><th>First shippable outcome</th></tr></thead><tbody>
+    <tr><th>Cross-team contract TD, AOR, IDs, pixel ownership</th><td>S</td><td>Approved protocol and decision log</td></tr>
+    <tr><th>Apple client-arbiter extraction/adaptation (if B/C selected)</th><td>M–L</td><td>Shared engine plus a real iOS adapter contract</td></tr>
+    <tr><th>Queue pending/retry, caps, expiry, essential preemption, delay reasons</th><td>M</td><td>Blocked candidate retries and shared policy fixtures pass</td></tr>
+    <tr><th>iOS native-surface/RMF bridge</th><td>M</td><td>One permit-gated static candidate</td></tr>
+    <tr><th>Passwords queue + four hybrids</th><td>M</td><td>Private priority chain replaced</td></tr>
+    <tr><th>Sync bookmarks/import/Duck.ai hybrids</th><td>M</td><td>Three further registered surfaces</td></tr>
+    <tr><th>Home-row, VPN dot, PIR badge</th><td>S each</td><td>Visibility + bounded policy</td></tr>
+    <tr><th>Subscription/Cookie modal prototypes</th><td>M</td><td>Native action + remote candidate proof</td></tr>
+    <tr><th>B+ pilot / dedicated manifest</th><td>S / M</td><td>Three promos / validated scalable config</td></tr>
+    <tr><th>Canonical pixels + owner delay report</th><td>M + analytics</td><td>Event stream and first report</td></tr>
+    <tr><th>Per-surface RMF scheduling</th><td>L, conditional</td><td>Two remote surfaces active independently</td></tr>
+    <tr><th>Generic RMF modal renderer</th><td>M–L, conditional</td><td>One non-What's-New template</td></tr>
+    <tr><th>Android queue and contract parity</th><td>L</td><td>Kotlin engine passes shared fixtures</td></tr>
+    <tr><th>Schema/CI cleanup + paved-road process</th><td>S–M</td><td>Vocabulary validation, docs, review question</td></tr>
+  </tbody></table></div>
+  <p style="font-size:12px;color:var(--muted);margin-top:8px">Sizes are relative research classes, not delivery commitments. Android/Windows status is <b>reported (Asana), not code-verifiable</b>. <span class="src">iteration_3_findings.md §E–F.6</span></p>
+  <div class="callout blue"><h4>Verified Chromium direction</h4><p>Chromium's Feature Engagement backend is client-side, records local events, grants trigger permission, enforces windows/rates/blocking, and accepts client/server/mixed config. It is prior art for a config-driven client policy engine—closer to B+/C than to server/config scheduling as the sole arbiter. <span class="src">Chromium //components/feature_engagement/README.md:20-22,157-170,202-252,281-375,403-545</span></p></div>
+</section>
+
+<section id="decision"><div class="sec-head"><span class="sec-num">07</span><h2>Decision tree for every new promo</h2><p class="lede">Formalizes the reported “why not RMF?” ladder without turning “RMF percentage” into the outcome metric.</p></div>
+  <div class="card">
+    <div class="step"><b>1</b><div><h4>Is it actually a promo?</h4><p>Transactional alerts, utilities, and persistent IA use their native contract; publish visibility if collision-capable.</p></div></div>
+    <div class="step"><b>2</b><div><h4>Does off-the-shelf RMF fit content, surface, action, targeting, and latency?</h4><p>Use an RMF candidate plus queue admission.</p></div></div>
+    <div class="step"><b>3</b><div><h4>Only a small privacy-clean matcher/action missing?</h4><p>Use the cross-platform proposal process, ship vocabulary, then configure.</p></div></div>
+    <div class="step"><b>4</b><div><h4>Can product simplify the special requirement?</h4><p>Record the latency/targeting behavior deliberately dropped.</p></div></div>
+    <div class="step"><b>5</b><div><h4>Must rendering or immediate eligibility remain native?</h4><p>Use the native-surface/RMF hybrid bridge.</p></div></div>
+    <div class="step"><b>6</b><div><h4>No remote-content value?</h4><p>Use a queue-registered InternalPromo plus bounded B+ kill/policy.</p></div></div>
+    <div class="step"><b>7</b><div><h4>Persistent Settings information architecture?</h4><p>Keep local unless a time-bounded campaign requirement is explicit.</p></div></div>
+    <div class="step"><b>8</b><div><h4>Bespoke and unqueued?</h4><p>Not an allowed endpoint; escalate a documented exception through the AOR.</p></div></div>
+  </div>
+  <p style="font-size:12px;color:var(--muted);margin-top:8px">The escalation ladder and enforcement intent are <b>reported (Asana), not code-verifiable</b>. <span class="src">iteration_2_research.md:31-35,71-83</span></p>
+</section>
+
+<section id="questions"><div class="sec-head"><span class="sec-num">08</span><h2>Questions for humans</h2><p class="lede">These choices materially change the contract. The research does not guess them.</p></div>
+  <div class="q-list">
+    <div class="question">Approve the Must/Should/Nice ordering, especially no forced desktop rewrite and native safety authority?</div>
+    <div class="question">Does “one system” mean one contract and ID registry, or literally one implementation?</div>
+    <div class="question">Is ≤24-hour RMF latency acceptable per promo, by class, or never for event-driven cases?</div>
+    <div class="question">May B+ ever raise priority, shorten cooldown, raise a cap, or extend expiry remotely?</div>
+    <div class="question">What remote-disable service level should be promised, especially offline?</div>
+    <div class="question">Are simultaneous RMF surfaces required for the first C waves?</div>
+    <div class="question">Does history key to long-lived <code>promoKey</code> or reset per campaign?</div>
+    <div class="question">Who owns canonical pixels, retention, and the owner delay report?</div>
+    <div class="question">Which of the 12 candidates genuinely need remote copy/imagery versus policy only?</div>
+    <div class="question">Should What's New remain an internal queue modal fed by RMF?</div>
+    <div class="question">Are persistent Settings sections queue-paced promos or information architecture?</div>
+    <div class="question">Who approves essential status, and what may it preempt?</div>
+    <div class="question">Is Android parity staffed in this program or a separate L project?</div>
+    <div class="question">Who are the Queue AOR and RMF AOR, and who owns conformance fixtures?</div>
+    <div class="question">Is <code>expVariant</code>/percentile the approved privacy-preserving experiment route?</div>
+  </div>
+</section>
+</main>
+
+<footer><div class="wrap"><div>Promo Queue · Iteration 3 system decision research</div><div>Source of truth: <code>promo-queue-docs/iteration_3_findings.md</code></div></div></footer>
+<script>
+  const links=[...document.querySelectorAll('nav a')];
+  const sections=links.map(a=>document.querySelector(a.getAttribute('href')));
+  function spy(){const y=scrollY+100;let active=0;sections.forEach((s,i)=>{if(s&&s.offsetTop<=y)active=i});links.forEach((a,i)=>a.classList.toggle('active',i===active))}
+  addEventListener('scroll',spy,{passive:true});spy();
+</script>
+</body>
+</html>

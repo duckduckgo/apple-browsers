@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Promo Queue — Iteration 2 RMF Migration Findings</title>
+<style>
+  :root {
+    --blue:#3969EF; --blue-dark:#2B4ECB; --blue-soft:#EAF0FF; --navy:#16213E;
+    --ink:#1D2433; --muted:#5A6478; --line:#E4E8F0; --bg:#F5F7FB; --card:#FFF;
+    --orange:#DE5833; --orange-soft:#FDEDE7; --green:#12855B; --green-soft:#E4F6EE;
+    --amber:#B7791F; --amber-soft:#FBF1DC; --red:#C0392B; --red-soft:#FCEBE9;
+    --shadow:0 1px 2px rgba(20,30,60,.06),0 6px 24px rgba(20,30,60,.07);
+    --shadow-lg:0 10px 40px rgba(20,30,60,.13); --radius:14px;
+    --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box} html{scroll-behavior:smooth;scroll-padding-top:82px}
+  body{margin:0;font-family:var(--sans);color:var(--ink);background:var(--bg);line-height:1.58;-webkit-font-smoothing:antialiased}
+  h1,h2,h3,h4{line-height:1.24;color:var(--navy);margin:0} p{margin:0 0 1em} a{color:var(--blue);text-decoration:none}
+  code,.src{font-family:var(--mono);font-size:.78em;background:#EEF1F7;color:#35406B;padding:.12em .4em;border-radius:5px;overflow-wrap:anywhere}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 24px}
+  nav{position:sticky;top:0;z-index:100;background:rgba(255,255,255,.88);backdrop-filter:saturate(180%) blur(12px);border-bottom:1px solid var(--line)}
+  .nav-inner{display:flex;align-items:center;gap:5px;max-width:1180px;margin:auto;padding:8px 24px;overflow-x:auto}
+  .brand{font-weight:750;color:var(--navy);margin-right:auto;white-space:nowrap;display:flex;align-items:center;gap:8px;font-size:14px}
+  .brand i{width:10px;height:10px;border-radius:50%;background:var(--orange);display:block}
+  nav a{padding:6px 10px;border-radius:8px;color:var(--muted);font-weight:650;font-size:12.5px;white-space:nowrap}
+  nav a:hover,nav a.active{background:var(--blue-soft);color:var(--blue-dark)}
+  header.hero{background:radial-gradient(1100px 380px at 12% -8%,rgba(57,105,239,.17),transparent 60%),radial-gradient(850px 360px at 100% 0,rgba(222,88,51,.13),transparent 55%),linear-gradient(180deg,#FFF,#F5F7FB);border-bottom:1px solid var(--line);padding:54px 0 42px}
+  .kicker{display:inline-flex;gap:8px;align-items:center;font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--blue-dark);background:var(--blue-soft);padding:6px 12px;border-radius:999px;margin-bottom:16px}
+  .hero h1{font-size:40px;letter-spacing:-.025em;margin-bottom:10px}.hero .sub{font-size:18px;color:var(--muted);max-width:850px;margin-bottom:22px}
+  .meta-row{display:flex;gap:9px;flex-wrap:wrap}.meta{background:#fff;border:1px solid var(--line);border-radius:10px;padding:8px 13px;font-size:12.5px;box-shadow:var(--shadow)}.meta span{color:var(--muted)}
+  section{padding:45px 0 8px}.sec-head{margin-bottom:21px}.sec-num{font-family:var(--mono);font-size:12px;color:var(--blue);font-weight:800}.sec-head h2{font-size:27px;margin-top:3px}.lede{font-size:16px;color:var(--muted);max-width:860px;margin-top:8px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:21px 23px}
+  .grid{display:grid;gap:15px}.g2{grid-template-columns:repeat(2,1fr)}.g3{grid-template-columns:repeat(3,1fr)}.g4{grid-template-columns:repeat(4,1fr)}
+  .stats{display:flex;gap:13px;flex-wrap:wrap;margin-top:18px}.stat{flex:1;min-width:145px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:15px 17px;box-shadow:var(--shadow)}.stat .big{font-size:30px;font-weight:850;color:var(--navy)}.stat .lbl{font-size:12.5px;color:var(--muted)}
+  .callout{border-left:4px solid var(--orange);background:var(--orange-soft);padding:15px 19px;border-radius:0 12px 12px 0;margin-top:17px}.callout.blue{border-color:var(--blue);background:var(--blue-soft)}.callout.green{border-color:var(--green);background:var(--green-soft)}.callout h4{font-size:15px;margin-bottom:4px}.callout p{font-size:14px;margin:0}
+  .tag{display:inline-block;font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.035em;padding:3px 8px;border-radius:6px}.t-green{background:var(--green-soft);color:var(--green)}.t-amber{background:var(--amber-soft);color:var(--amber)}.t-red{background:var(--red-soft);color:var(--red)}.t-blue{background:var(--blue-soft);color:var(--blue-dark)}.t-gray{background:#EEF1F7;color:var(--muted)}
+  .matrix-scroll{overflow-x:auto}.matrix{width:100%;border-collapse:collapse;font-size:12.5px;background:#fff;border-radius:12px;overflow:hidden;box-shadow:var(--shadow)}
+  .matrix th,.matrix td{padding:11px 12px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}.matrix thead th{background:var(--navy);color:#fff;font-size:11.5px;white-space:nowrap}.matrix tbody th{color:var(--navy);font-weight:700}.matrix tr:last-child td,.matrix tr:last-child th{border-bottom:0}.matrix .yes{color:var(--green);font-weight:800}.matrix .part{color:var(--amber);font-weight:800}.matrix .no{color:var(--red);font-weight:800}.matrix .center{text-align:center}.matrix .soft{background:#FAFBFD}.matrix .src{display:inline-block;margin-top:4px;line-height:1.35}
+  details{background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);margin-bottom:12px}summary{cursor:pointer;padding:15px 18px;font-weight:750;color:var(--navy)}details>div{padding:0 18px 17px;border-top:1px solid var(--line);font-size:14px}
+  .finding{display:flex;gap:14px;align-items:flex-start}.finding .ic{width:38px;height:38px;display:grid;place-items:center;border-radius:10px;background:var(--orange-soft);color:var(--orange);font-weight:850;flex:none}.finding h3{font-size:15.5px;margin-bottom:4px}.finding p{font-size:13.5px;color:var(--muted);margin:0}
+  .class-card{position:relative}.class-card h3{font-size:17px;margin:8px 0 7px}.class-card p{font-size:13.5px;color:var(--muted);margin:0}.class-letter{font-size:25px;font-weight:900;color:var(--navy)}
+  .gap{display:grid;grid-template-columns:40px 1fr 170px;gap:14px;align-items:center;padding:14px 0;border-bottom:1px solid var(--line)}.gap:last-child{border:0}.rank{font-family:var(--mono);font-weight:800;color:var(--blue)}.gap h4{font-size:14.5px}.gap p{font-size:12.5px;color:var(--muted);margin:2px 0 0}.bar{height:9px;background:#EEF1F7;border-radius:999px;overflow:hidden}.bar i{height:100%;display:block;background:linear-gradient(90deg,var(--blue),#7A98F8);border-radius:inherit}.count{text-align:right;font-size:12px;font-weight:750;color:var(--navy);margin-top:4px}
+  .wave{display:grid;grid-template-columns:100px 1fr 150px;gap:16px;padding:17px 0;border-bottom:1px solid var(--line)}.wave:last-child{border:0}.wave-id{font-weight:850;color:var(--blue-dark)}.wave h3{font-size:15px;margin-bottom:4px}.wave p{font-size:13px;color:var(--muted);margin:0}.effort{text-align:right;font-size:12.5px;color:var(--muted)}
+  .q-list{counter-reset:q;display:grid;grid-template-columns:1fr 1fr;gap:10px}.question{counter-increment:q;background:#fff;border:1px solid var(--line);border-radius:11px;padding:13px 15px;font-size:13.5px;box-shadow:var(--shadow)}.question:before{content:counter(q);display:inline-grid;place-items:center;width:22px;height:22px;border-radius:6px;background:var(--blue-soft);color:var(--blue-dark);font-family:var(--mono);font-weight:800;margin-right:8px}
+  footer{margin-top:48px;padding:28px 0 56px;border-top:1px solid var(--line);font-size:12.5px;color:var(--muted)}footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  @media(max-width:900px){.g4,.g3,.g2{grid-template-columns:1fr}.hero h1{font-size:31px}.gap{grid-template-columns:35px 1fr}.gap>div:last-child{grid-column:2}.wave{grid-template-columns:80px 1fr}.effort{grid-column:2;text-align:left}.q-list{grid-template-columns:1fr}}
+  @media print{nav{position:static}.hero{padding:28px 0!important}section{padding-top:28px}.card,.matrix,details{box-shadow:none}.matrix{font-size:9px}.matrix th,.matrix td{padding:6px}.q-list{grid-template-columns:1fr 1fr}details>div{display:block!important}summary{list-style:none}}
+</style>
+</head>
+<body>
+<nav><div class="nav-inner"><div class="brand"><i></i> Promo Queue · Iteration 2</div><a href="#answer">Answer</a><a href="#capability">RMF capability</a><a href="#classification">Classification</a><a href="#gaps">Gaps</a><a href="#waves">Migration</a><a href="#queue">Queue remains</a><a href="#questions">Questions</a></div></nav>
+
+<header class="hero"><div class="wrap">
+  <span class="kicker">Research program A · Decision pre-read</span>
+  <h1>Which iOS promos can move to RMF?</h1>
+  <p class="sub">RMF is ready for the surfaces it already owns. The practical next move is a hybrid contract for native headers/cards—not a wholesale rewrite—while iteration 3 decides the long-term arbitration owner.</p>
+  <div class="meta-row"><div class="meta"><b>Audience</b> <span>· Mark · Stephen · Cristian · Chris · O-L/O-A</span></div><div class="meta"><b>Verified</b> <span>· Jul 10, 2026 · current local checkouts</span></div><div class="meta"><b>Inventory</b> <span>· 74 reported names reconciled to canonical code units</span></div><div class="meta"><b>Status</b> <span>· Research proposal, not a decision</span></div></div>
+</div></header>
+
+<main class="wrap">
+<section id="answer"><div class="sec-head"><span class="sec-num">01</span><h2>The answer in one screen</h2><p class="lede">Surfaces—not navigation—are the recurring blocker. Treat RMF as remote scheduling/content/kill and require a clear visibility arbiter without pre-deciding the iteration-3 architecture.</p></div>
+  <div class="grid g4">
+    <div class="card class-card"><span class="tag t-green">Already remote</span><div class="class-letter">2</div><h3>End-to-end paths</h3><p>RMF NTP channel (including win-back urgency) and What's New/cards-list infrastructure.</p></div>
+    <div class="card class-card"><span class="tag t-amber">Named gaps</span><div class="class-letter">12</div><h3>Migration candidates</h3><p>Every candidate needs a surface bridge; eight also need new local-state targeting.</p></div>
+    <div class="card class-card"><span class="tag t-blue">First wave</span><div class="class-letter">7</div><h3>Headers &amp; cards</h3><p>Four Sync touchpoints plus import, extension, and survey headers.</p></div>
+    <div class="card class-card"><span class="tag t-red">Structural</span><div class="class-letter">1</div><h3>Scheduled RMF globally</h3><p>One message can monopolize every RMF surface until dismissal, expiry, or config replacement/removal.</p></div>
+  </div>
+  <div class="callout green"><h4>Proposed framing</h4><p><b>Build the hybrid surface contract first.</b> It preserves native timing/state, gives remote control where valuable, and can feed whichever arbiter iteration 3 selects. Iteration 1 is only a narrow NTP/modal permit precedent. <span class="src">iteration_2_findings.md §0, §C–E</span></p></div>
+  <div class="callout"><h4>Two corrections the decision group should know</h4><p>RMF already opens Settings → Sync, and it does support <code>expVariant</code> experiment targeting. The verified gaps are surfaces, scheduling capacity, policy, and missing per-feature state—not a blanket action or experimentation limitation. <span class="src">RemoteMessageModel.swift:356-377 · MessageNavigator.swift:50-72 · AppAttributeMatcher.swift:111-130</span></p></div>
+  <div class="stats"><div class="stat"><div class="big">24 / 10</div><div class="lbl">live iOS message objects / distinct IDs</div></div><div class="stat"><div class="big">44 / 38</div><div class="lbl">Apple parser keys / effective iOS attributes</div></div><div class="stat"><div class="big">0</div><div class="lbl">live iOS modal/cards-list messages today</div></div><div class="stat"><div class="big">24h</div><div class="lbl">local-state re-evaluation ceiling without invalidation/version change</div></div></div>
+</section>
+
+<section id="capability"><div class="sec-head"><span class="sec-num">02</span><h2>RMF capability matrix</h2><p class="lede">Only Apple clients and iOS/macOS schemas are in these checkouts. Android/Windows live JSON proves authored content, not renderer behavior.</p></div>
+  <div class="matrix-scroll"><table class="matrix"><thead><tr><th>Capability</th><th>iOS</th><th>macOS</th><th>Decision implication</th></tr></thead><tbody>
+    <tr><th>Banner templates</th><td class="yes">✓ Five types → NTP</td><td class="part">~ Four effective on NTP; tab bar restricted</td><td>Current NTP promos can be config-only when attributes/actions already exist.<br><span class="src">DefaultRemoteMessagingSurfacesProvider.swift:25-31 · NewTabPageDataModel+RMF.swift:32-73</span></td></tr>
+    <tr><th>Cards list / modal</th><td class="part">~ What's New only</td><td class="no">✗ No effective consumer</td><td>Not a generic promotional or consent sheet.<br><span class="src">WhatsNewRepository.swift:56-75 · ActiveRemoteMessageModel.swift:219-222</span></td></tr>
+    <tr><th>Other surfaces</th><td class="no">✗ Headers, rows, dots, pills, toasts</td><td class="part">~ Survey-only tab bar</td><td>Use native hybrid bridges before inventing many tiny remote renderers.<br><span class="src">DefaultRemoteMessagingSurfacesProvider.swift:25-31 · TabBarRemoteMessageViewModel.swift:63-93</span></td></tr>
+    <tr><th>Actions / navigation</th><td class="yes">✓ Seven action kinds; eight useful targets</td><td class="part">~ Smaller effective set</td><td>Sync and import navigation are not blockers; arbitrary setting mutation is.<br><span class="src">RemoteMessageModel.swift:356-377 · MessageNavigator.swift:50-72</span></td></tr>
+    <tr><th>Images / localization</th><td class="yes">✓ Remote images + inline translations</td><td class="part">~ Renderer/schema gaps</td><td>Remote content is a real migration benefit.<br><span class="src">RemoteMessagingImageProvider.swift:27-61 · JsonToRemoteMessageModelMapper.swift:440-455</span></td></tr>
+    <tr><th>Selection / capacity</th><td class="no">✗ First JSON match; one scheduled globally</td><td class="no">✗ Shared store</td><td>RMF is not a multi-surface promo queue today.<br><span class="src">RemoteMessagingConfigMatcher.swift:51-78 · RemoteMessagingStore.swift:443-506</span></td></tr>
+    <tr><th>Frequency policy</th><td class="no">✗ No cap, cooldown, global pacing</td><td class="no">✗ Shared store</td><td>A separate policy mechanism remains necessary unless RMF gains it.<br><span class="src">RemoteMessaging 3.xcdatamodel/contents:3-14</span></td></tr>
+    <tr><th>Expiry</th><td class="part">~ Days after first show</td><td class="part">~ Shared store</td><td>No absolute campaign date; config removal is operational kill.<br><span class="src">RemoteMessagingStore.swift:255-264</span></td></tr>
+    <tr><th>Experiments</th><td class="part">~ <code>expVariant</code> + percentile</td><td class="part">~ Shared matcher</td><td>Correct “none” to “legacy variant + percentile; cohort flags excluded.”<br><span class="src">AppAttributeMatcher.swift:111-130 · RemoteMessagingConfigMatcherProvider.swift:165-167</span></td></tr>
+    <tr><th>Measurement</th><td class="yes">✓ Shown/unique/dismiss/action</td><td class="yes">✓ Base shown/action</td><td>CTR is computable; delayed/eligible-not-shown is absent.<br><span class="src">HomePageConfiguration.swift:99-123 · NewTabPageMessagesModel.swift:121-155</span></td></tr>
+  </tbody></table></div>
+  <details><summary>Full matching vocabulary and schema drift</summary><div><p>RMF parses 44 Apple keys; 38 are effective on iOS: 31 shared and seven iOS-only (<code>widgetAdded</code>, <code>syncEnabled</code>, <code>ntpAfterIdleState</code>, win-back urgency, and three freemium-PIR states). Six are macOS-only. The iOS schema lists 41 and misses recent client keys while admitting desktop keys. New real attributes require a client release. <span class="src">JsonToRemoteMessageModelMapper.swift:24-68,415-423 · UserAttributeMatcher.swift:117-137,318-396 · schemas/ios/schema.json:389-429</span></p></div></details>
+  <details><summary>All 10 live iOS IDs</summary><div><p><code>ios_privacy_pro_exit_survey_1</code> (8 objects, big single); <code>ios_privacy_pro_subscriber_survey_1</code> (8, big single); <code>ddg_ios_survey_1</code> (big single, 60%); three freemium-PIR big-single messages; <code>ios_winback_offer_urgency</code> (big two); <code>ios_ntp_after_idle_existing_users_2026</code> (big two, after-idle, 5-day relative expiry); and two remote-image YouTube/ad-blocker medium messages. All are NTP; none is modal. Targeting details are in the Markdown source. <span class="src">remote-messaging-config/live/ios-config/ios-config.json:5-860,865-1505 · iteration_2_findings.md §A.3</span></p></div></details>
+</section>
+
+<section id="classification"><div class="sec-head"><span class="sec-num">03</span><h2>Final classification</h2><p class="lede">One row represents one presentation/eligibility/state machine. Product aliases are reconciled separately in the markdown, so gap counts are not inflated.</p></div>
+  <div class="grid g3" style="margin-bottom:18px">
+    <div class="card class-card"><span class="tag t-green">(a) Ready</span><h3>Already RMF</h3><p>NTP channel + live win-back urgency; What's New/cards-list infrastructure. No live modal campaign today.</p></div>
+    <div class="card class-card"><span class="tag t-amber">(b) Blocked</span><h3>Remote value, named gap</h3><p>12 active units: 7 headers/cards, 2 modals, Home-row, VPN dot, and PIR badge.</p></div>
+    <div class="card class-card"><span class="tag t-blue">(c) Local</span><h3>Keep local, expose visibility</h3><p>Transactional, StoreKit, page-event, live OS state, persistent Settings IA, Duck Player timing, and essential alerts.</p></div>
+  </div>
+  <div class="matrix-scroll"><table class="matrix"><thead><tr><th>(b) Candidate</th><th>Current surface</th><th>Named RMF gap(s)</th><th>Proposed shape</th></tr></thead><tbody>
+    <tr><th>Subscription reinstaller</th><td>Launch sheet</td><td>Hero/modal + skipped-onboarding attribute</td><td>Hybrid native sheet</td></tr>
+    <tr><th>Cookie opt-in</th><td>Consent sheet</td><td>Consent modal + state/action/cap</td><td>Hybrid; consent remains local</td></tr>
+    <tr><th>Sync · Bookmarks</th><td>List header</td><td>Bookmarks-header surface</td><td>Hybrid; existing matcher/action</td></tr>
+    <tr><th>Sync · Passwords</th><td>List header</td><td>Passwords header + credential count</td><td>Shared header queue</td></tr>
+    <tr><th>Sync · Import summary</th><td>Summary card</td><td>Surface + import event + latency</td><td>Local eligibility, remote content</td></tr>
+    <tr><th>Sync · Duck.ai</th><td>Switch-bar card</td><td>Surface + live UI state + cap/latency</td><td>Local eligibility, remote content</td></tr>
+    <tr><th>Password import</th><td>Passwords header</td><td>Surface + credential/import state</td><td>Priority 1 in shared header queue</td></tr>
+    <tr><th>Autofill survey</th><td>Passwords header</td><td>Surface + <code>saved_passwords</code> param</td><td>Priority 2, native URL enrichment</td></tr>
+    <tr><th>Autofill extension</th><td>Passwords header</td><td>Surface + provider/count + action</td><td>Priority 4, native action</td></tr>
+    <tr><th>Home-row reminder</th><td>Floating banner</td><td>Surface + onboarding state</td><td>One-shot hybrid</td></tr>
+    <tr><th>VPN promo dot</th><td>Browsing menu</td><td>Dot surface + cap semantics</td><td>Capped hybrid</td></tr>
+    <tr><th>PIR <code>NEW</code></th><td>Settings badge</td><td>Badge surface/lifecycle</td><td>Hybrid only if remote value is clear</td></tr>
+  </tbody></table></div>
+  <p style="font-size:12px;color:var(--muted);margin-top:8px">Row evidence: <span class="src">iteration_2_findings.md §B.3</span>. Each row there contains current trigger, config, storage/pacing, and file:line citations.</p>
+  <details><summary>What stays client-side</summary><div><p>Win-back launch; address-bar forced choice; default-browser active/reactivation; VPN expired entitlement; in-browser import/extension; Email signup; StoreKit rating; Duck Player pills/toast/explainer; VPN TipKit; persistent Settings rows; Return-to-Tab/tracker count utilities; broken-site prompt; inactivity notification; and post-import continuation cards. Collision-capable in-app units still need queue permission or visibility observation. <span class="src">iteration_2_findings.md §B.4–B.5</span></p></div></details>
+  <details><summary>Product-list reconciliation: stale, renamed, and shadow</summary><div><p>The 74 reported names collapse heavily: five modal labels are duplicates/umbrellas; seven passwords-list labels map to four active headers; many dots/status indicators are not promos. Stale/no-current counterparts include the Default Browser NTP message, Indonesia card, 14-day Next Steps hide, Get Desktop Browser, and several old dots/pills. Shadow units include Cookie opt-in, Data-import Sync, VPN TipKit, inactivity notification, and live RMF surveys/PIR/YouTube/win-back urgency. Product names are <b>reported (Asana), not code-verifiable</b>. <span class="src">iteration_2_research.md:57-69 · iteration_2_findings.md §B.6</span></p></div></details>
+</section>
+
+<section id="gaps"><div class="sec-head"><span class="sec-num">04</span><h2>Ranked gaps</h2><p class="lede">Counts are non-additive across the 12 class-(b) units. “Surface bridge” is the umbrella contract; exact renderers and state/action work remain per promo.</p></div>
+  <div class="card">
+    <div class="gap"><div class="rank">01</div><div><h4>Native surface ↔ RMF bridge</h4><p>Active state, render contract, accounting ownership, arbitration seam, and render gate.</p></div><div><div class="bar"><i style="width:100%"></i></div><div class="count">12 units · M + S each</div></div></div>
+    <div class="gap"><div class="rank">02</div><div><h4>Local-state matchers</h4><p>Skipped onboarding, consent/count, credentials/import/provider, Duck.ai state, onboarding state.</p></div><div><div class="bar"><i style="width:67%"></i></div><div class="count">8 units · S each</div></div></div>
+    <div class="gap"><div class="rank">03</div><div><h4>Header/card/chrome renderers</h4><p>Bookmarks, passwords, import summary, and Duck.ai. Passwords header alone covers four.</p></div><div><div class="bar"><i style="width:58%"></i></div><div class="count">7 units · M + S each</div></div></div>
+    <div class="gap"><div class="rank">04</div><div><h4>Impression/view caps</h4><p>Preserve Cookie 3, Duck.ai 3, and VPN dot 4.</p></div><div><div class="bar"><i style="width:25%"></i></div><div class="count">3 units · M policy</div></div></div>
+    <div class="gap"><div class="rank">05</div><div><h4>Generic promo/consent modal</h4><p>Hybrid first; a first-class RMF renderer is larger and cross-platform.</p></div><div><div class="bar"><i style="width:17%"></i></div><div class="count">2 units · M–L</div></div></div>
+    <div class="gap"><div class="rank">06</div><div><h4>First-class-only actions + event latency</h4><p>Two actions would be needed only for full RMF rendering; hybrids keep them local. Two immediate-event cases retain local eligibility.</p></div><div><div class="bar"><i style="width:17%"></i></div><div class="count">2 each · S/L</div></div></div>
+    <div class="gap"><div class="rank">07</div><div><h4>Survey parameter mapping</h4><p>Autofill Survey adds <code>saved_passwords</code>, which RMF's whitelist does not support; the hybrid can preserve native enrichment.</p></div><div><div class="bar"><i style="width:9%"></i></div><div class="count">1 unit · S</div></div></div>
+  </div>
+  <p style="font-size:12px;color:var(--muted);margin-top:8px"><span class="src">iteration_2_findings.md §C · RemoteMessagingStore.swift:443-506 · JsonToRemoteMessageModelMapper.swift:415-423</span></p>
+</section>
+
+<section id="waves"><div class="sec-head"><span class="sec-num">05</span><h2>Draft migration waves</h2><p class="lede">Proposed sequence, not an approved roadmap. Value × effort favors a reusable hybrid contract and the private header queues first.</p></div>
+  <div class="card">
+    <div class="wave"><div class="wave-id">Wave 0</div><div><h3>Document what is already remote</h3><p>NTP + What's New paths; fix schema drift; publish “Sync navigation exists.”</p></div><div class="effort"><b>S</b><br>config/process</div></div>
+    <div class="wave"><div class="wave-id">Wave 1</div><div><h3>Hybrid contract + seven headers/cards</h3><p>Four Sync touchpoints, Password Import, Autofill Survey, Autofill Extension. Preserve immediate local eligibility and the passwords-header priority chain.</p></div><div class="effort"><b>M + S each</b><br>relative research class</div></div>
+    <div class="wave"><div class="wave-id">Wave 2</div><div><h3>Small attention surfaces</h3><p>Home-row, VPN menu dot, PIR <code>NEW</code>. Preserve one-shot/cap/expiry locally.</p></div><div class="effort"><b>S each</b><br>after foundation</div></div>
+    <div class="wave"><div class="wave-id">Wave 3</div><div><h3>Modal candidates</h3><p>Prototype Subscription as an RMF-scheduled native sheet; keep Cookie consent/action local. Price a generic renderer only after the prototype.</p></div><div class="effort"><b>M / M–L</b><br>release-gated</div></div>
+    <div class="wave"><div class="wave-id">Wave 4</div><div><h3>Integrate after iteration-3 decision</h3><p>Local reactive/system promos join the chosen permission/visibility contract, including an explicit essential-alert rule.</p></div><div class="effort"><b>S adapters</b><br>parallel follow-ups</div></div>
+  </div>
+  <div class="callout blue"><h4>Why Wave 1 is urgent</h4><p>Several active Sync/import/extension headers have no impression cap or hard expiry, and the passwords list has a private four-way priority chain invisible outside that screen. <span class="src">SyncPromoManager.swift:141-171 · AutofillLoginListViewController.swift:746-795</span></p></div>
+</section>
+
+<section id="queue"><div class="sec-head"><span class="sec-num">06</span><h2>What RMF migration still does not solve</h2><p class="lede">RMF migration improves remote control; it does not supply cross-system arbitration or the frequency policy in the reported requirements. Iteration 3 still chooses the owner.</p></div>
+  <div class="grid g3">
+    <div class="card"><span class="tag t-green">RMF buys</span><h3 style="font-size:16px;margin:9px 0 7px">Remote scheduling &amp; content</h3><p style="font-size:13.5px;color:var(--muted)">Copy, translations, targeting, images, config kill/removal, shown/dismiss/action pixels.</p><span class="src">JsonToRemoteMessageModelMapper.swift:440-455 · RemoteMessagingImageProvider.swift:27-61</span></div>
+    <div class="card"><span class="tag t-blue">Arbiter must own</span><h3 style="font-size:16px;margin:9px 0 7px">Visibility now</h3><p style="font-size:13.5px;color:var(--muted)">Priority against local promos, severity/context conflicts, app/user pacing, delay-not-suppress, and local event arbitration. Iteration 1 handles only NTP RMF versus launch modals.</p><span class="src">PromoService.swift:488-553 · PromoInitiated.swift:21-34</span></div>
+    <div class="card"><span class="tag t-red">Still missing</span><h3 style="font-size:16px;margin:9px 0 7px">Policy &amp; owner feedback</h3><p style="font-size:13.5px;color:var(--muted)">Unified impression caps, absolute windows, essential preemption, delayed/eligible-not-shown accounting, owner dashboard.</p><span class="src">RemoteMessaging 3.xcdatamodel/contents:3-14 · iteration_2_research.md:43-55 (reported Asana)</span></div>
+  </div>
+  <div class="callout"><h4>Corrected iteration-1 baseline</h4><p>Iteration 1 does not add iOS ExternalPromos or extract a shared PromoQueue. It adds a narrow app-level permit coordinator between the existing modal group and actually visible NTP RMF. Every new modal/header/badge surface still needs explicit visibility, accounting, and arbitration integration. <span class="src">iteration_2_findings.md §E · PromoServiceFactory+RemoteMessage.swift:24-46</span></p></div>
+</section>
+
+<section id="questions"><div class="sec-head"><span class="sec-num">07</span><h2>Questions for humans</h2><p class="lede">These are product/contract choices. The code cannot answer them.</p></div>
+  <div class="q-list">
+    <div class="question">Is ≤24-hour latency acceptable per promo, especially Data Import and Duck.ai?</div>
+    <div class="question">Are stale entries retired, or should any be resurrected?</div>
+    <div class="question">Does “Cookie Consent Notifications” mean the active Cookie Pop-up opt-in?</div>
+    <div class="question">Is VPN expiry in promo scope, and what is the essential-preemption rule?</div>
+    <div class="question">Are persistent Settings rows promos or navigation IA?</div>
+    <div class="question">Does hybrid native rendering count as an RMF migration?</div>
+    <div class="question">May remote config ever select a preference-changing consent action?</div>
+    <div class="question">Should Default Browser recurrence stay at 14 active days or align to ≥28?</div>
+    <div class="question">Is <code>expVariant</code> a paved road or legacy compatibility?</div>
+    <div class="question">Who owns hybrid pixels and delayed/eligible-not-shown accounting?</div>
+    <div class="question">Must per-surface scheduling land before the first non-NTP hybrid?</div>
+    <div class="question">Who owns and approves the matcher/surface/queue contract?</div>
+  </div>
+</section>
+</main>
+
+<footer><div class="wrap"><div>Promo Queue · Iteration 2 RMF migration findings</div><div>Source of truth: <code>promo-queue-docs/iteration_2_findings.md</code></div></div></footer>
+<script>
+  const links=[...document.querySelectorAll('nav a')];
+  const sections=links.map(a=>document.querySelector(a.getAttribute('href')));
+  function spy(){const y=scrollY+100;let active=0;sections.forEach((s,i)=>{if(s&&s.offsetTop<=y)active=i});links.forEach((a,i)=>a.classList.toggle('active',i===active))}
+  addEventListener('scroll',spy,{passive:true});spy();
+</script>
+</body>
+</html>

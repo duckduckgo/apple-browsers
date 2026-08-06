@@ -182,8 +182,11 @@ final class AIChatAttachedTabsTracker {
     /// Blanks the title while it still holds the previous page's, so the card shows the new page's
     /// host until its own title arrives.
     private func discardingTitleOfPreviousPage(from page: AIChatAttachedTabPage, for key: ObserverKey) -> AIChatAttachedTabPage {
-        // A finished load publishes the new page's own title, so the old one can't come back after it.
-        guard let stale = observers[key]?.titleOfPreviousPage, page.isLoading, page.title == stale else {
+        // No load event tells us the new page's title has arrived — `handleUrlDidChange` assigns
+        // content directly, leaving the old title in place, and it can outlive the load. So the old
+        // value is refused for as long as it is published; a page whose title matches the previous
+        // one keeps the host, which is plain but never another page's name.
+        guard let stale = observers[key]?.titleOfPreviousPage, page.title == stale else {
             observers[key]?.titleOfPreviousPage = nil
             return page
         }

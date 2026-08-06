@@ -17,6 +17,7 @@
 //
 
 import AppKit
+import Carbon.HIToolbox
 import DesignResourcesKitIcons
 import SwiftUI
 import SwiftUIExtensions
@@ -41,6 +42,9 @@ struct AIChatAttachTabsModal: ModalView {
 
     @State private var selectedIds: Set<String>
     @State private var searchQuery: String = ""
+    /// Row the arrow keys are on. Nil until the first arrow press, so typing a space still types.
+    @State private var highlightedId: String?
+    @State private var keyMonitor: Any?
 
     private var filteredTabs: [AIChatTabAttachment] {
         AIChatMentionPickerFilter.filter(tabs, query: searchQuery, currentTabId: currentTabId)
@@ -76,21 +80,29 @@ struct AIChatAttachTabsModal: ModalView {
                 .padding(.bottom, 14)
 
             let visibleTabs = filteredTabs
-            ScrollView {
-                VStack(alignment: .leading, spacing: Layout.rowSpacing) {
-                    if visibleTabs.isEmpty {
-                        Text(searchQuery.isEmpty ? UserText.aiChatAttachMenuNoOpenTabs : UserText.aiChatMentionPickerNoMatches)
-                            .font(.system(size: 13))
-                            .foregroundColor(Color(designSystemColor: .textSecondary))
-                            .frame(height: Layout.rowHeight)
+            ScrollViewReader { scroller in
+                ScrollView {
+                    VStack(alignment: .leading, spacing: Layout.rowSpacing) {
+                        if visibleTabs.isEmpty {
+                            Text(searchQuery.isEmpty ? UserText.aiChatAttachMenuNoOpenTabs : UserText.aiChatMentionPickerNoMatches)
+                                .font(.system(size: 13))
+                                .foregroundColor(Color(designSystemColor: .textSecondary))
+                                .frame(height: Layout.rowHeight)
+                        }
+                        ForEach(visibleTabs) { tab in
+                            row(for: tab)
+                                .frame(height: Layout.rowHeight)
+                                .background(highlightBackground(for: tab))
+                                .id(tab.id)
+                        }
                     }
-                    ForEach(visibleTabs) { tab in
-                        row(for: tab)
-                            .frame(height: Layout.rowHeight)
-                    }
+                    .padding(.leading, 20)
+                    .padding(.trailing, Layout.listTrailingInset)
                 }
-                .padding(.leading, 20)
-                .padding(.trailing, Layout.listTrailingInset)
+                .onChange(of: highlightedId) { id in
+                    guard let id else { return }
+                    scroller.scrollTo(id)
+                }
             }
             .frame(height: min(CGFloat(max(tabs.count, 1)) * (Layout.rowHeight + Layout.rowSpacing), Layout.maxListHeight))
 
@@ -122,6 +134,60 @@ struct AIChatAttachTabsModal: ModalView {
         }
         .frame(width: 340)
         .background(Color(designSystemColor: .surfaceSecondary, palette: themeManager.designColorPalette))
+        .onAppear { startKeyMonitor() }
+        .onDisappear { stopKeyMonitor() }
+    }
+
+    // MARK: - Keyboard
+
+    /// Arrow keys move a highlight through the filtered rows and space toggles the highlighted one,
+    /// while the search field keeps focus for typing. A monitor rather than `onMoveCommand` because
+    /// the field consumes arrow keys itself.
+    private func startKeyMonitor() {
+        guard keyMonitor == nil else { return }
+        keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+            // The monitor is app-wide; keys typed in another window are none of this sheet's business.
+            guard event.window?.isSheet == true else { return event }
+            switch Int(event.keyCode) {
+            case kVK_DownArrow: return moveHighlight(by: 1) ? nil : event
+            case kVK_UpArrow: return moveHighlight(by: -1) ? nil : event
+            case kVK_Space where highlightedId != nil: return toggleHighlighted() ? nil : event
+            default: return event
+            }
+        }
+    }
+
+    private func stopKeyMonitor() {
+        keyMonitor.map(NSEvent.removeMonitor)
+        keyMonitor = nil
+    }
+
+    private func moveHighlight(by offset: Int) -> Bool {
+        let visibleTabs = filteredTabs
+        guard !visibleTabs.isEmpty else { return false }
+        let current = highlightedId.flatMap { id in visibleTabs.firstIndex { $0.id == id } }
+        let next = current.map { min(max($0 + offset, 0), visibleTabs.count - 1) } ?? (offset > 0 ? 0 : visibleTabs.count - 1)
+        highlightedId = visibleTabs[next].id
+        return true
+    }
+
+    private func toggleHighlighted() -> Bool {
+        guard let highlightedId, let tab = filteredTabs.first(where: { $0.id == highlightedId }) else { return false }
+        if selectedIds.contains(tab.id) {
+            selectedIds.remove(tab.id)
+        } else if selectedIds.count < maxSelection {
+            selectedIds.insert(tab.id)
+        }
+        return true
+    }
+
+    @ViewBuilder
+    private func highlightBackground(for tab: AIChatTabAttachment) -> some View {
+        if tab.id == highlightedId {
+            RoundedRectangle(cornerRadius: 4)
+                .fill(Color(designSystemColor: .controlsFillPrimary, palette: themeManager.designColorPalette))
+                .padding(.horizontal, -6)
+        }
     }
 
     private func row(for tab: AIChatTabAttachment) -> some View {

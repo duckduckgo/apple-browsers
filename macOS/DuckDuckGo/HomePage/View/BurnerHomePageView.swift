@@ -28,10 +28,7 @@ struct BurnerHomePageView: View {
     enum Const {
         static let verticalPadding = 40.0
         static let contentGap = 20.0
-
-        /// Where the content's vertical center sits, as a fraction of the available height.
-        static let verticalCenterRatio = 0.40
-        static let verticalCenterOffsetRatio = 1 - 2 * verticalCenterRatio
+        static let verticalCenterOffsetRatio = 0.2
     }
 
     @ObservedObject var promoViewModel: SubscriptionPromoViewModel

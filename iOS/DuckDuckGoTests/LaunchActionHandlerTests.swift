@@ -97,12 +97,17 @@ final class MockIdleReturnEvaluator: IdleReturnEvaluating {
 final class MockIdleReturnLaunchDelegate: IdleReturnLaunchDelegate {
     var showNewTabPageAfterIdleReturnCalled = false
     var markLastUsedTabAsResumedAfterIdleCalled = false
+    var recordOrdinaryReturnCalled = false
 
-    func showNewTabPageAfterIdleReturn() {
+    func recordOrdinaryReturn(timeAwayMs: Int?) {
+        recordOrdinaryReturnCalled = true
+    }
+
+    func showNewTabPageAfterIdleReturn(timeAwayMs: Int?) {
         showNewTabPageAfterIdleReturnCalled = true
     }
 
-    func markLastUsedTabAsResumedAfterIdle() {
+    func markLastUsedTabAsResumedAfterIdle(timeAwayMs: Int?) {
         markLastUsedTabAsResumedAfterIdleCalled = true
     }
 }
@@ -188,6 +193,26 @@ final class LaunchActionHandlerTests {
 
         #expect(keyboardPresenter.showKeyboardOnLaunchCalled)
         #expect(keyboardPresenter.lastBackgroundDate == date)
+    }
+
+    @Test("Record ordinary return when a standard launch is not after idle")
+    func recordOrdinaryReturnWhenNotAfterIdle() {
+        idleReturnEvaluator.didReturnAfterIdleResult = false
+
+        launchActionHandler.handleLaunchAction(.standardLaunch(lastBackgroundDate: Date(), isFirstForeground: false))
+
+        #expect(idleReturnDelegate.recordOrdinaryReturnCalled)
+    }
+
+    @Test("Do not record ordinary return when the return is after idle")
+    func noOrdinaryReturnWhenAfterIdle() {
+        idleReturnEvaluator.didReturnAfterIdleResult = true
+        idleReturnEvaluator.treatmentForIdleReturnResult = .ntp
+
+        launchActionHandler.handleLaunchAction(.standardLaunch(lastBackgroundDate: Date(), isFirstForeground: false))
+
+        #expect(!idleReturnDelegate.recordOrdinaryReturnCalled)
+        #expect(idleReturnDelegate.showNewTabPageAfterIdleReturnCalled)
     }
 
     @Test(

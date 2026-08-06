@@ -23,8 +23,8 @@ import FoundationExtensions
 import PixelKit
 
 /// Wide-event payload for the post-idle session pixel
-/// (`m_ios_wide_post_idle_session`). Captures the full journey of an
-/// NTP-after-idle or LUT-after-idle session.
+/// (`m_ios_wide_post_idle_session`). Captures the full journey of a return
+/// session — after-idle (NTP or LUT treatment) or an ordinary return.
 final class PostIdleSessionWideEventData: WideEventData {
 
     static let metadata = WideEventMetadata(
@@ -33,7 +33,7 @@ final class PostIdleSessionWideEventData: WideEventData {
         mobileMetaType: "ios-post-idle-session",
         // API requires both; only mobileMetaType is read on iOS.
         desktopMetaType: "macos-post-idle-session",
-        version: "1.2.0"
+        version: "1.3.0"
     )
 
     enum Surface: String, Codable, CaseIterable {
@@ -41,8 +41,27 @@ final class PostIdleSessionWideEventData: WideEventData {
         case lut
     }
 
+    /// What the user actually landed on when the session started. `ntp` is the
+    /// after-idle NTP; `ntpUserInitiated` is an NTP reached without the treatment.
+    enum LandedOn: String, Codable, CaseIterable {
+        case ntp
+        case ntpUserInitiated = "ntp_user_initiated"
+        case web
+        case serp
+        case duckAI = "duck_ai"
+
+        var surface: Surface {
+            switch self {
+            case .ntp, .ntpUserInitiated: return .ntp
+            case .web, .serp, .duckAI: return .lut
+            }
+        }
+    }
+
     enum StatusReason: String, Codable, CaseIterable {
-        case barUsed = "bar_used"
+        case searchSubmitted = "search_submitted"
+        case aiPromptSubmitted = "ai_prompt_submitted"
+        case urlSubmitted = "url_submitted"
         case returnToPageTapped = "return_to_page_tapped"
         case tabSwitcherSelected = "tab_switcher_selected"
         case appBackgrounded = "app_backgrounded"
@@ -65,6 +84,11 @@ final class PostIdleSessionWideEventData: WideEventData {
     var openingScreenChanged: Bool
     var closeTabTapped: Bool
     var burnTabTapped: Bool
+    // Optional so pending flows persisted by earlier versions still decode.
+    var afterIdle: Bool?
+    var landedOn: LandedOn?
+    var timeAwayMs: Int?
+    var focused: Bool?
 
     init(surface: Surface,
          startedAt: Date = Date(),
@@ -75,11 +99,19 @@ final class PostIdleSessionWideEventData: WideEventData {
          openingScreenChanged: Bool = false,
          closeTabTapped: Bool = false,
          burnTabTapped: Bool = false,
+         afterIdle: Bool? = nil,
+         landedOn: LandedOn? = nil,
+         timeAwayMs: Int? = nil,
+         focused: Bool? = nil,
          contextData: WideEventContextData = WideEventContextData(),
          appData: WideEventAppData = WideEventAppData(),
          globalData: WideEventGlobalData = WideEventGlobalData()) {
         self.surface = surface
         self.statusReason = statusReason
+        self.afterIdle = afterIdle
+        self.landedOn = landedOn
+        self.timeAwayMs = timeAwayMs
+        self.focused = focused
         self.sessionInterval = WideEvent.MeasuredInterval(start: startedAt)
         self.firstInteractionInterval = WideEvent.MeasuredInterval(start: startedAt)
         self.pageEngaged = pageEngaged
@@ -111,6 +143,12 @@ extension PostIdleSessionWideEventData {
         return thresholds.last(where: { $0 <= ms }) ?? 0
     }
 
+    /// Buckets time away with idle-relevant thresholds (lower end, in ms): 1m, 5m, 15m, 30m, 60m.
+    static func timeAwayBucketMs(_ ms: Int) -> Int {
+        let thresholds = [0, 60_000, 300_000, 900_000, 1_800_000, 3_600_000]
+        return thresholds.last(where: { $0 <= ms }) ?? 0
+    }
+
     func jsonParameters() -> [String: Encodable] {
         let bucket = Self.durationBucket
         return Dictionary(compacting: [
@@ -124,6 +162,10 @@ extension PostIdleSessionWideEventData {
             (WideEventParameter.PostIdleSessionFeature.openingScreenChanged, openingScreenChanged),
             (WideEventParameter.PostIdleSessionFeature.closeTabTapped, closeTabTapped),
             (WideEventParameter.PostIdleSessionFeature.burnTabTapped, burnTabTapped),
+            (WideEventParameter.PostIdleSessionFeature.afterIdle, afterIdle),
+            (WideEventParameter.PostIdleSessionFeature.landedOn, landedOn?.rawValue),
+            (WideEventParameter.PostIdleSessionFeature.timeAwayMsBucketed, timeAwayMs.map { String(Self.timeAwayBucketMs($0)) }),
+            (WideEventParameter.PostIdleSessionFeature.focused, focused),
         ])
     }
 }
@@ -140,5 +182,9 @@ extension WideEventParameter {
         static let openingScreenChanged = "feature.data.ext.opening_screen_changed"
         static let closeTabTapped = "feature.data.ext.close_tab_tapped"
         static let burnTabTapped = "feature.data.ext.burn_tab_tapped"
+        static let afterIdle = "feature.data.ext.after_idle"
+        static let landedOn = "feature.data.ext.landed_on"
+        static let timeAwayMsBucketed = "feature.data.ext.time_away_ms_bucketed"
+        static let focused = "feature.data.ext.focused"
     }
 }

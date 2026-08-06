@@ -58,7 +58,7 @@ struct PostIdleSessionInstrumentationTests {
     @Test("When no active session then sessionEnded is a no-op", .timeLimit(.minutes(1)))
     func sessionEndedWithoutActiveSessionIsNoop() {
         let (sut, wideEvent, _) = makeSUT()
-        sut.sessionEnded(reason: .barUsed)
+        sut.sessionEnded(reason: .searchSubmitted)
         #expect(wideEvent.completions.isEmpty)
     }
 
@@ -89,16 +89,41 @@ struct PostIdleSessionInstrumentationTests {
     @Test("When sessionStarted with ntp then a flow is started with surface=ntp", .timeLimit(.minutes(1)))
     func sessionStartedNtpStartsFlow() {
         let (sut, wideEvent, _) = makeSUT()
-        sut.sessionStarted(surface: .ntp)
+        sut.sessionStarted(landedOn: .ntp, afterIdle: true, focused: false)
         let started = startedData(wideEvent)
         #expect(started?.surface == .ntp)
+    }
+
+    @available(iOS 16, *)
+    @Test("sessionStarted records the return context fields", .timeLimit(.minutes(1)))
+    func sessionStartedRecordsReturnContext() {
+        let (sut, wideEvent, _) = makeSUT()
+        sut.sessionStarted(landedOn: .serp, afterIdle: false, focused: true)
+        let started = startedData(wideEvent)
+        #expect(started?.surface == .lut)
+        #expect(started?.landedOn == .serp)
+        #expect(started?.afterIdle == false)
+        #expect(started?.focused == true)
+    }
+
+    @available(iOS 16, *)
+    @Test("noteReturn's time away is consumed by the next sessionStarted only", .timeLimit(.minutes(1)))
+    func noteReturnTimeAwayConsumedOnce() {
+        let (sut, wideEvent, _) = makeSUT()
+        sut.noteReturn(timeAwayMs: 42_000)
+
+        sut.sessionStarted(landedOn: .ntp, afterIdle: true, focused: false)
+        #expect(startedData(wideEvent)?.timeAwayMs == 42_000)
+
+        sut.sessionStarted(landedOn: .ntp, afterIdle: true, focused: false)
+        #expect(startedData(wideEvent)?.timeAwayMs == nil)
     }
 
     @available(iOS 16, *)
     @Test("When sessionStarted with lut then a flow is started with surface=lut", .timeLimit(.minutes(1)))
     func sessionStartedLutStartsFlow() {
         let (sut, wideEvent, _) = makeSUT()
-        sut.sessionStarted(surface: .lut)
+        sut.sessionStarted(landedOn: .web, afterIdle: true, focused: false)
         let started = startedData(wideEvent)
         #expect(started?.surface == .lut)
     }
@@ -107,9 +132,9 @@ struct PostIdleSessionInstrumentationTests {
     @Test("Restarting cancels the previous active session", .timeLimit(.minutes(1)))
     func restartingSessionCancelsPrevious() {
         let (sut, wideEvent, clock) = makeSUT()
-        sut.sessionStarted(surface: .ntp)
+        sut.sessionStarted(landedOn: .ntp, afterIdle: true, focused: false)
         clock.advance(by: 1)
-        sut.sessionStarted(surface: .ntp)
+        sut.sessionStarted(landedOn: .ntp, afterIdle: true, focused: false)
 
         guard let cancelled = wideEvent.completions.first,
               let data = cancelled.0 as? PostIdleSessionWideEventData else {
@@ -129,7 +154,7 @@ struct PostIdleSessionInstrumentationTests {
     @Test("pageEngaged sets pageEngaged=true and marks first interaction", .timeLimit(.minutes(1)))
     func pageEngagedSetsFlagsAndFirstInteraction() {
         let (sut, wideEvent, clock) = makeSUT()
-        sut.sessionStarted(surface: .ntp)
+        sut.sessionStarted(landedOn: .ntp, afterIdle: true, focused: false)
         clock.advance(by: 0.5)
         sut.pageEngaged()
 
@@ -142,7 +167,7 @@ struct PostIdleSessionInstrumentationTests {
     @Test("toggleUsed sets toggleUsed=true", .timeLimit(.minutes(1)))
     func toggleUsedSetsFlag() {
         let (sut, wideEvent, _) = makeSUT()
-        sut.sessionStarted(surface: .ntp)
+        sut.sessionStarted(landedOn: .ntp, afterIdle: true, focused: false)
         sut.toggleUsed()
         let last = wideEvent.updates.compactMap { $0 as? PostIdleSessionWideEventData }.last
         #expect(last?.toggleUsed == true)
@@ -152,7 +177,7 @@ struct PostIdleSessionInstrumentationTests {
     @Test("backPressed sets backPressed=true", .timeLimit(.minutes(1)))
     func backPressedSetsFlag() {
         let (sut, wideEvent, _) = makeSUT()
-        sut.sessionStarted(surface: .ntp)
+        sut.sessionStarted(landedOn: .ntp, afterIdle: true, focused: false)
         sut.backPressed()
         let last = wideEvent.updates.compactMap { $0 as? PostIdleSessionWideEventData }.last
         #expect(last?.backPressed == true)
@@ -162,7 +187,7 @@ struct PostIdleSessionInstrumentationTests {
     @Test("openingScreenChanged sets flag and marks first interaction", .timeLimit(.minutes(1)))
     func openingScreenChangedSetsFlagsAndFirstInteraction() {
         let (sut, wideEvent, clock) = makeSUT()
-        sut.sessionStarted(surface: .ntp)
+        sut.sessionStarted(landedOn: .ntp, afterIdle: true, focused: false)
         clock.advance(by: 0.75)
         sut.openingScreenChanged()
 
@@ -175,7 +200,7 @@ struct PostIdleSessionInstrumentationTests {
     @Test("closeTabTapped sets closeTabTapped=true and marks first interaction", .timeLimit(.minutes(1)))
     func closeTabTappedSetsFlagAndFirstInteraction() {
         let (sut, wideEvent, clock) = makeSUT()
-        sut.sessionStarted(surface: .ntp)
+        sut.sessionStarted(landedOn: .ntp, afterIdle: true, focused: false)
         clock.advance(by: 0.5)
         sut.closeTabTapped()
 
@@ -188,7 +213,7 @@ struct PostIdleSessionInstrumentationTests {
     @Test("burnTabTapped sets burnTabTapped=true and marks first interaction", .timeLimit(.minutes(1)))
     func burnTabTappedSetsFlagAndFirstInteraction() {
         let (sut, wideEvent, clock) = makeSUT()
-        sut.sessionStarted(surface: .ntp)
+        sut.sessionStarted(landedOn: .ntp, afterIdle: true, focused: false)
         clock.advance(by: 0.75)
         sut.burnTabTapped()
 
@@ -201,7 +226,7 @@ struct PostIdleSessionInstrumentationTests {
     @Test("First interaction is only set once across multiple updates", .timeLimit(.minutes(1)))
     func firstInteractionMarkedOnlyOnce() {
         let (sut, wideEvent, clock) = makeSUT()
-        sut.sessionStarted(surface: .ntp)
+        sut.sessionStarted(landedOn: .ntp, afterIdle: true, focused: false)
 
         clock.advance(by: 0.5)
         let firstStamp = clock.now
@@ -220,15 +245,15 @@ struct PostIdleSessionInstrumentationTests {
     @Test("sessionEnded completes flow as success with given reason", .timeLimit(.minutes(1)))
     func sessionEndedCompletesAsSuccess() {
         let (sut, wideEvent, clock) = makeSUT()
-        sut.sessionStarted(surface: .ntp)
+        sut.sessionStarted(landedOn: .ntp, afterIdle: true, focused: false)
         clock.advance(by: 2)
-        sut.sessionEnded(reason: .barUsed)
+        sut.sessionEnded(reason: .searchSubmitted)
 
         guard let completion = lastCompletion(wideEvent) else {
             Issue.record("Expected a completion")
             return
         }
-        #expect(completion.0.statusReason == .barUsed)
+        #expect(completion.0.statusReason == .searchSubmitted)
         #expect(completion.0.sessionInterval.end == clock.now)
         if case .success(let reason) = completion.1 {
             #expect(reason == "bar_used")
@@ -241,9 +266,9 @@ struct PostIdleSessionInstrumentationTests {
     @Test("sessionEnded sets first interaction if not yet set", .timeLimit(.minutes(1)))
     func sessionEndedMarksFirstInteractionIfNotSet() {
         let (sut, wideEvent, clock) = makeSUT()
-        sut.sessionStarted(surface: .ntp)
+        sut.sessionStarted(landedOn: .ntp, afterIdle: true, focused: false)
         clock.advance(by: 1.5)
-        sut.sessionEnded(reason: .barUsed)
+        sut.sessionEnded(reason: .searchSubmitted)
         guard let completion = lastCompletion(wideEvent) else {
             Issue.record("Expected a completion")
             return
@@ -255,12 +280,12 @@ struct PostIdleSessionInstrumentationTests {
     @Test("sessionEnded preserves prior first-interaction timestamp", .timeLimit(.minutes(1)))
     func sessionEndedPreservesEarlierFirstInteraction() {
         let (sut, wideEvent, clock) = makeSUT()
-        sut.sessionStarted(surface: .ntp)
+        sut.sessionStarted(landedOn: .ntp, afterIdle: true, focused: false)
         clock.advance(by: 0.5)
         let firstStamp = clock.now
         sut.pageEngaged()
         clock.advance(by: 2)
-        sut.sessionEnded(reason: .barUsed)
+        sut.sessionEnded(reason: .searchSubmitted)
         guard let completion = lastCompletion(wideEvent) else {
             Issue.record("Expected a completion")
             return
@@ -272,8 +297,8 @@ struct PostIdleSessionInstrumentationTests {
     @Test("sessionEnded clears the active session", .timeLimit(.minutes(1)))
     func sessionEndedClearsActiveSession() {
         let (sut, wideEvent, _) = makeSUT()
-        sut.sessionStarted(surface: .ntp)
-        sut.sessionEnded(reason: .barUsed)
+        sut.sessionStarted(landedOn: .ntp, afterIdle: true, focused: false)
+        sut.sessionEnded(reason: .searchSubmitted)
         // Subsequent signals should be no-ops.
         sut.pageEngaged()
         sut.sessionEnded(reason: .returnToPageTapped)
@@ -286,7 +311,7 @@ struct PostIdleSessionInstrumentationTests {
     @Test("sessionCancelledByBackground completes as cancelled with app_backgrounded", .timeLimit(.minutes(1)))
     func sessionCancelledCompletesAsCancelled() {
         let (sut, wideEvent, clock) = makeSUT()
-        sut.sessionStarted(surface: .ntp)
+        sut.sessionStarted(landedOn: .ntp, afterIdle: true, focused: false)
         clock.advance(by: 3)
         sut.sessionCancelledByBackground()
 
@@ -305,7 +330,7 @@ struct PostIdleSessionInstrumentationTests {
     @Test("sessionCancelledByBackground clears the active session", .timeLimit(.minutes(1)))
     func sessionCancelledClearsActiveSession() {
         let (sut, wideEvent, _) = makeSUT()
-        sut.sessionStarted(surface: .ntp)
+        sut.sessionStarted(landedOn: .ntp, afterIdle: true, focused: false)
         sut.sessionCancelledByBackground()
         sut.sessionCancelledByBackground()
         #expect(wideEvent.completions.count == 1)
@@ -320,7 +345,7 @@ struct PostIdleSessionInstrumentationTests {
         let orphan = PostIdleSessionWideEventData(surface: .ntp)
         wideEvent.startFlow(orphan)
 
-        sut.sessionStarted(surface: .ntp)
+        sut.sessionStarted(landedOn: .ntp, afterIdle: true, focused: false)
 
         let orphanCompletion = wideEvent.completions.first {
             ($0.0 as? PostIdleSessionWideEventData)?.globalData.id == orphan.globalData.id
@@ -343,7 +368,7 @@ struct PostIdleSessionInstrumentationTests {
         let orphan = PostIdleSessionWideEventData(surface: .ntp)
         wideEvent.startFlow(orphan)
 
-        sut.sessionStarted(surface: .lut)
+        sut.sessionStarted(landedOn: .web, afterIdle: true, focused: false)
 
         #expect(wideEvent.started.count == 2)
         #expect((wideEvent.started[1] as? PostIdleSessionWideEventData)?.surface == .lut)
@@ -362,7 +387,7 @@ struct PostIdleSessionInstrumentationTests {
         wideEvent.startFlow(firstOrphan)
         wideEvent.startFlow(secondOrphan)
 
-        sut.sessionStarted(surface: .ntp)
+        sut.sessionStarted(landedOn: .ntp, afterIdle: true, focused: false)
 
         let unknownCompletions = wideEvent.completions.filter {
             if case .unknown = $0.1 { return true } else { return false }
@@ -374,7 +399,7 @@ struct PostIdleSessionInstrumentationTests {
     @Test("sessionStarted with no orphans does not produce spurious completions", .timeLimit(.minutes(1)))
     func sessionStartedWithoutOrphansProducesNoCompletions() {
         let (sut, wideEvent, _) = makeSUT()
-        sut.sessionStarted(surface: .ntp)
+        sut.sessionStarted(landedOn: .ntp, afterIdle: true, focused: false)
         #expect(wideEvent.completions.isEmpty)
     }
 }

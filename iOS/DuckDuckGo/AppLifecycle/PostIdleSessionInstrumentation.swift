@@ -29,8 +29,14 @@ import PixelKit
 /// the previous one.
 protocol PostIdleSessionInstrumentation: AnyObject {
 
-    /// The post-idle surface (NTP or LUT) was displayed.
-    func sessionStarted(surface: PostIdleSessionWideEventData.Surface)
+    /// Stashes this return's time away; consumed by the next `sessionStarted`.
+    /// Used when the session start happens downstream of the launch handling
+    /// (the after-idle NTP starts its session when the NTP actually renders).
+    func noteReturn(timeAwayMs: Int?)
+
+    /// A return session began on the given landing surface — after-idle
+    /// (NTP or LUT treatment) or an ordinary return.
+    func sessionStarted(landedOn: PostIdleSessionWideEventData.LandedOn, afterIdle: Bool, focused: Bool)
 
     /// User scrolled or activated an in-page link. Idempotent within a session.
     func pageEngaged()
@@ -64,6 +70,7 @@ final class DefaultPostIdleSessionInstrumentation: PostIdleSessionInstrumentatio
     private var activeSessionID: String?
     /// Skips `updateFlow` (synchronous disk I/O) on every scroll tick after the first.
     private var pageEngagedSent = false
+    private var pendingTimeAwayMs: Int?
 
     init(wideEvent: WideEventManaging,
          dateProvider: @escaping () -> Date = { Date() }) {
@@ -71,7 +78,11 @@ final class DefaultPostIdleSessionInstrumentation: PostIdleSessionInstrumentatio
         self.dateProvider = dateProvider
     }
 
-    func sessionStarted(surface: PostIdleSessionWideEventData.Surface) {
+    func noteReturn(timeAwayMs: Int?) {
+        pendingTimeAwayMs = timeAwayMs
+    }
+
+    func sessionStarted(landedOn: PostIdleSessionWideEventData.LandedOn, afterIdle: Bool, focused: Bool) {
         // If a session is already active, cancel it before starting a new one.
         // Quick background-foreground cycles over the idle threshold can trigger
         // this; the previous session is reported as CANCELLED so we don't lose it.
@@ -85,7 +96,13 @@ final class DefaultPostIdleSessionInstrumentation: PostIdleSessionInstrumentatio
         // WideEventService.resume() which would otherwise complete new flows as UNKNOWN.
         completeOrphanedFlows()
 
-        let data = PostIdleSessionWideEventData(surface: surface, startedAt: dateProvider())
+        let data = PostIdleSessionWideEventData(surface: landedOn.surface,
+                                                startedAt: dateProvider(),
+                                                afterIdle: afterIdle,
+                                                landedOn: landedOn,
+                                                timeAwayMs: pendingTimeAwayMs,
+                                                focused: focused)
+        pendingTimeAwayMs = nil
         activeSessionID = data.globalData.id
         pageEngagedSent = false
         wideEvent.startFlow(data)

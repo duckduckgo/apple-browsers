@@ -898,7 +898,7 @@ extension MainCoordinator: UserActivityHandling {
 
 extension MainCoordinator: IdleReturnLaunchDelegate {
 
-    func showNewTabPageAfterIdleReturn() {
+    func showNewTabPageAfterIdleReturn(timeAwayMs: Int?) {
         if voiceShortcutFeature.isAvailable, voiceSessionStateManager.isVoiceSessionActive {
             return
         }
@@ -914,14 +914,29 @@ extension MainCoordinator: IdleReturnLaunchDelegate {
             return
         }
 
+        // The NTP session starts when the NTP actually renders; stash the time away so it carries it.
+        controller.postIdleSessionInstrumentation.noteReturn(timeAwayMs: timeAwayMs)
         controller.prepareForIdleReturnNTP { [weak self] in
             guard let self else { return }
             self.controller.newTab(reuseExisting: true, allowingKeyboard: true, openedAfterIdle: true)
         }
     }
 
-    func markLastUsedTabAsResumedAfterIdle() {
-        controller.postIdleSessionInstrumentation.sessionStarted(surface: .lut)
+    func markLastUsedTabAsResumedAfterIdle(timeAwayMs: Int?) {
+        controller.postIdleSessionInstrumentation.noteReturn(timeAwayMs: timeAwayMs)
+        controller.postIdleSessionInstrumentation.sessionStarted(landedOn: landedOnForCurrentTab(), afterIdle: true, focused: false)
+    }
+
+    func recordOrdinaryReturn(timeAwayMs: Int?) {
+        controller.postIdleSessionInstrumentation.noteReturn(timeAwayMs: timeAwayMs)
+        controller.postIdleSessionInstrumentation.sessionStarted(landedOn: landedOnForCurrentTab(), afterIdle: false, focused: false)
+    }
+
+    private func landedOnForCurrentTab() -> PostIdleSessionWideEventData.LandedOn {
+        guard let url = tabManager.currentTabsModel.currentTab?.link?.url else { return .ntpUserInitiated }
+        if url.isDuckAIURL { return .duckAI }
+        if url.isDuckDuckGoSearch { return .serp }
+        return .web
     }
 
 }

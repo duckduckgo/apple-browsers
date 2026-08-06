@@ -132,13 +132,11 @@ final class UnifiedToggleInputView: UIView {
         /// dismiss shares the field row (toggle disabled, top position).
         static let fieldRowInlineDismissSpacing: CGFloat = 4
 
-        // Edit-mode "replace response" card — a second card stacked behind the input card, lifting
-        // it so a strip peeks out below with the copy. Content-driven (no fixed height) so the strip
-        // grows for longer / wrapped translations. Same width, only bottom-corner-rounded.
-        // `overlap` is how much of the card's top hides behind the input card (> the 28pt radius).
+        /// Edit-mode "replace response" card — a second card stacked behind the input card, lifting
+        /// it so a strip peeks out below with the copy.
         static let editDisclaimerOverlap: CGFloat = 44
         static let editDisclaimerTopGap: CGFloat = 12
-        // Copy in the peeking strip: 24pt info icon + caption, bottom-left aligned.
+        /// Copy in the peeking strip: 24pt info icon + caption, bottom-left aligned.
         static let editDisclaimerIconSize: CGFloat = 24
         static let editDisclaimerIconTextGap: CGFloat = 12
         static let editDisclaimerContentLeading: CGFloat = 20
@@ -394,8 +392,8 @@ final class UnifiedToggleInputView: UIView {
         card.isHidden = true
 
         // Info icon + caption, bottom-left aligned so they sit in the strip that peeks below the
-        // input card. The 16pt color icon is a vector, so it renders crisply at 24pt.
-        let icon = UIImageView(image: DesignSystemImages.Color.Size16.infoFeedback)
+        // input card.
+        let icon = UIImageView(image: DesignSystemImages.Color.Size24.infoFeedback)
         icon.translatesAutoresizingMaskIntoConstraints = false
         icon.contentMode = .scaleAspectFit
         icon.setContentHuggingPriority(.required, for: .horizontal)
@@ -485,8 +483,7 @@ final class UnifiedToggleInputView: UIView {
     private let attachmentsStrip = UnifiedToggleInputAttachmentsStripView()
     private let toolsToolbar = UnifiedToggleInputToolbarView()
 
-    /// Slightly-off-white card stacked behind the input card in edit mode, lifted so a bottom strip
-    /// peeks out below (it holds the "replace response" copy in a later slice). Hidden otherwise.
+    /// Card stacked behind the input card in edit mode
     private lazy var editReplaceDisclaimerCard = Self.makeEditReplaceDisclaimerCard()
     private var pageContextChipCancellables = Set<AnyCancellable>()
 
@@ -620,8 +617,6 @@ final class UnifiedToggleInputView: UIView {
     private var cardTrailingConstraint: NSLayoutConstraint!
     private var cardTrailingFlankedConstraint: NSLayoutConstraint!
     private var cardBottomConstraint: NSLayoutConstraint!
-    /// Active only in edit mode: raises the input card off the view's bottom (replacing
-    /// `cardBottomConstraint`) so the disclaimer card peeks out below it.
     private var cardEditBottomConstraint: NSLayoutConstraint!
     private var cardPinnedHeightConstraint: NSLayoutConstraint!
     private var toggleTopConstraint: NSLayoutConstraint!
@@ -1479,7 +1474,6 @@ private extension UnifiedToggleInputView {
         cardView.layer.shadowRadius = 12
         cardView.isUserInteractionEnabled = false
         addSubview(cardView)
-        // Behind the input card so the input card covers its top; only its bottom strip peeks out.
         insertSubview(editReplaceDisclaimerCard, belowSubview: cardView)
         addSubview(aiTabCollapsedFireButton)
         addSubview(aiTabCollapsedMenuButton)

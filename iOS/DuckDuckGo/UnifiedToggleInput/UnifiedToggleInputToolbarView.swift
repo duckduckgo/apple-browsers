@@ -221,15 +221,14 @@ final class UnifiedToggleInputToolbarView: UIView {
     }
 
     /// True while the native input is editing an existing message. Editing only changes text and
-    /// removes attachments, so the tools, reasoning, and model controls are hidden (the attach
-    /// button is hidden by the attachment controller). Captures the pre-edit visibility of the
-    /// tools/reasoning buttons — which have no single update method — and restores it on exit;
-    /// the model/tool chips are handled directly in `updateChipVisibility`.
+    /// removes attachments, so the tools, reasoning, and model controls are hidden.
     var isEditing: Bool = false {
         didSet {
             guard oldValue != isEditing else { return }
             applyEditableControlVisibility()
             updateChipVisibility()
+            // Refresh so entering edit with an empty field doesn't leave the mic showing.
+            updateSubmitButtonAppearance()
         }
     }
 
@@ -529,7 +528,9 @@ private extension UnifiedToggleInputToolbarView {
     }
 
     func updateSubmitButtonAppearance() {
-        let showVoice = isAIVoiceChatActive && !isSubmitEnabled
+        // No voice affordance while editing an existing message — an empty field there should stay a
+        // (disabled) submit button, not flip to the mic.
+        let showVoice = isAIVoiceChatActive && !isSubmitEnabled && !isEditing
         let usesReturnKeyStyle = usesNewPromptSubmitStyle || preservesSubmitStyleDuringDismissal
         let icon: UIImage? = {
             if showVoice {

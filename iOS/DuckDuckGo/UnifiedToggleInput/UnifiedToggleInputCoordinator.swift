@@ -123,8 +123,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     @Published var attachmentUsage: AIChatAttachmentUsage?
 
     /// True while the native input is in "edit an existing message" mode. Hosts observe this to
-    /// apply the edit-mode chrome (dim the transcript, swap the header). Independent of how the
-    /// edit is triggered — set by `beginEditMode`, cleared by `endEditMode` (the single exit).
+    /// apply the edit-mode chrome (dim the transcript, swap the header).
     @Published private(set) var isEditing: Bool = false {
         didSet {
             guard oldValue != isEditing else { return }
@@ -647,8 +646,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     /// is actively building; they belong to the tab, not to the global last-used
     /// defaults, and must not write through to global preferences.
     private func persistDraftToStore() {
-        // Don't persist the prefilled edit content as the tab's draft — edit mode is transient,
-        // and this keeps a stray half-edited draft from surviving a background/kill.
         guard !isApplyingState, !isPerformingDismissCleanup, !isEditing, let uid = currentTabUID else { return }
         stateStore.update(snapshotCurrentState(), for: uid)
     }
@@ -691,7 +688,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     // MARK: - AI Tab State
 
     func showCollapsed() {
-        clearEditModeFlag()
         // Contextual chat has no AI tab collapsed mode; the host always renders expanded.
         if host == .contextualChat { return }
         keyboardMonitor.disarm()
@@ -756,8 +752,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     // MARK: - Edit mode
 
     /// Enters "edit an existing message" mode: opens the input prefilled with the message's text
-    /// and attachments and flips `isEditing` so hosts apply the edit-mode chrome. Independent of
-    /// the FE / messaging layer — callers (the FE bridge, or the debug trigger) supply the content.
+    /// and attachments and flips `isEditing` so hosts apply the edit-mode chrome.
     func beginEditMode(prompt: String, attachments: [UnifiedToggleInputAttachment] = []) {
         isEditing = true
         showExpanded(prefilledText: prompt, inputMode: .aiChat, activatesInput: true)
@@ -773,14 +768,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         clearAttachments()
         setText("")
         showCollapsed()
-    }
-
-    /// Clears the edit-mode flag without touching layout — for exits where the input is already
-    /// collapsing or hiding (so we don't recurse into those methods). The `isEditing` observer
-    /// restores host chrome (e.g. the transcript whiteout), and re-entering edit mode later
-    /// re-fires it because the flag is back to its resting value.
-    private func clearEditModeFlag() {
-        if isEditing { isEditing = false }
     }
 
     /// The single point that fans edit mode out to each part: the input (`setEditMode` cascades to
@@ -804,7 +791,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 #endif
 
     func hide() {
-        clearEditModeFlag()
         keyboardMonitor.disarm()
         displayState = .hidden
         isClearingModelPickerPinWithoutPersist = true
@@ -1511,8 +1497,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
                 return
             }
 
-            // In edit mode, submitting exits edit mode instead of sending a new prompt. (When the
-            // messaging layer lands, this is also where the editPrompt reply gets resolved.)
+            // In edit mode, submitting exits edit mode instead of sending a new prompt.
             if isEditing {
                 endEditMode()
                 return

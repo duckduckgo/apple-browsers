@@ -117,11 +117,7 @@ final class AIChatTabAttachmentCardView: NSView {
         cardView.addSubview(titleLabel)
         addSubview(removeButton) // outside the card so its overflow can clip past the corner.
 
-        let displayTitle = attachment.title.isEmpty ? attachment.url.host ?? attachment.url.absoluteString : attachment.title
-        titleLabel.stringValue = displayTitle
-        // Surface the full title on hover (the most useful thing to disambiguate truncated entries);
-        // the URL would be more accurate but is rarely what the user wants to read.
-        titleLabel.toolTip = displayTitle
+        update(with: attachment)
 
         removeButton.image = DesignSystemImages.Glyphs.Size16.clearSolid
         removeButton.imageScaling = .scaleNone
@@ -167,6 +163,17 @@ final class AIChatTabAttachmentCardView: NSView {
 
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+
+    /// Re-renders a reused card for the same attachment id: the attached tab can navigate, and its
+    /// title and favicon land after the page does.
+    func update(with attachment: AIChatTabAttachment) {
+        let displayTitle = attachment.title.isEmpty ? attachment.url.host ?? attachment.url.absoluteString : attachment.title
+        titleLabel.stringValue = displayTitle
+        // Surface the full title on hover (the most useful thing to disambiguate truncated entries);
+        // the URL would be more accurate but is rarely what the user wants to read.
+        titleLabel.toolTip = displayTitle
+        pagePreviewView.updateFavicon(attachment.favicon)
     }
 
     @objc private func removeButtonClicked() {
@@ -301,6 +308,10 @@ private final class AIChatTabPagePreviewView: NSView {
         addSubview(faviconView)
 
         updateAppearance()
+    }
+
+    func updateFavicon(_ favicon: NSImage?) {
+        faviconView.image = favicon ?? DesignSystemImages.Glyphs.Size16.pageContentAttach
     }
 
     required init?(coder: NSCoder) {

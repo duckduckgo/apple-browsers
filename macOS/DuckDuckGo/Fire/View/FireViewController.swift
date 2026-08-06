@@ -22,7 +22,7 @@ import Combine
 import Common
 import ConcurrencyExtensions
 import DesignResourcesKit
-import FeatureFlags
+import FeatureFlags_macOS
 import FoundationExtensions
 import Lottie
 import OSLog

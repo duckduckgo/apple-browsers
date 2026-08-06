@@ -18,7 +18,7 @@
 
 import AppKit
 import Foundation
-import FeatureFlags
+import FeatureFlags_macOS
 import Persistence
 import PrivacyConfig
 

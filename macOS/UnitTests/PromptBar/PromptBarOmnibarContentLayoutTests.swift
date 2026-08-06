@@ -18,7 +18,7 @@
 
 import AIChat
 import AppKit
-import FeatureFlags
+import FeatureFlags_macOS
 import PrivacyConfig
 import PrivacyConfigTestsUtils
 import SubscriptionTestingUtilities

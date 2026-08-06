@@ -22,6 +22,7 @@ import BrowserServicesKit
 import DDGSync
 import Core
 import PrivacyConfig
+import FeatureFlags_iOS
 
 protocol DataImportSummaryViewModelDelegate: AnyObject {
     func dataImportSummaryViewModelDidRequestLaunchSync(_ viewModel: DataImportSummaryViewModel, source: String?)

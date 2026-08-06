@@ -19,7 +19,7 @@
 import Carbon
 import Combine
 import ConcurrencyExtensions
-import FeatureFlags
+import FeatureFlags_macOS
 import Foundation
 import History
 import MaliciousSiteProtection

@@ -21,7 +21,7 @@ import BrowserServicesKit
 import Common
 import FoundationExtensions
 import DataBrokerProtection_macOS
-import FeatureFlags
+import FeatureFlags_macOS
 import Foundation
 import Freemium
 import Persistence

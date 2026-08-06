@@ -25,6 +25,7 @@ import Foundation
 import os.log
 import Persistence
 import PrivacyConfig
+import FeatureFlags_iOS
 /// Owns the iOS fire-mode Duck.ai native storage handler and rotates it on burn.
 ///
 /// The underlying disk-backed handler lives at

@@ -22,7 +22,7 @@ import Common
 import FoundationExtensions
 import PixelKit
 import PrivacyConfig
-import FeatureFlags
+import FeatureFlags_macOS
 import Networking
 import os.log
 

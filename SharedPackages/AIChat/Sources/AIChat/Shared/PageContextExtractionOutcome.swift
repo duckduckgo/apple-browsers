@@ -23,6 +23,7 @@ public enum PageContextExtractionOutcome: Equatable {
     public enum FailureReason: String, Equatable {
         case emptyContent = "empty_content"
         case deserializeFailed = "deserialize_failed"
+        case scriptError = "script_error"
         case timeout
         case noWebView = "no_webview"
         case postFailed = "post_failed"

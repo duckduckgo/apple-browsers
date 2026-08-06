@@ -58,31 +58,43 @@ public struct DBPDebugResourceUsage: Encodable, Equatable, Sendable {
     public struct Sample: Encodable, Equatable, Sendable {
         public let sampledAt: Date
         public let cpuTimeSeconds: TimeInterval
+        public let agentCPUTimeSeconds: TimeInterval
+        public let webContentCPUTimeSeconds: TimeInterval
         public let averageCPUPercent: Double
         public let agentPhysicalFootprintBytes: UInt64
         public let peakAgentPhysicalFootprintBytes: UInt64
         public let webContentResidentBytes: UInt64?
         public let peakWebContentResidentBytes: UInt64?
         public let webContentProcessCount: Int?
+        public let webContentCPUDiscoveredProcessCount: Int
+        public let webContentCPUReadableProcessCount: Int
         public let didEncounterCriticalMemoryPressure: Bool
 
         public init(sampledAt: Date,
                     cpuTimeSeconds: TimeInterval,
+                    agentCPUTimeSeconds: TimeInterval,
+                    webContentCPUTimeSeconds: TimeInterval,
                     averageCPUPercent: Double,
                     agentPhysicalFootprintBytes: UInt64,
                     peakAgentPhysicalFootprintBytes: UInt64,
                     webContentResidentBytes: UInt64?,
                     peakWebContentResidentBytes: UInt64?,
                     webContentProcessCount: Int?,
+                    webContentCPUDiscoveredProcessCount: Int,
+                    webContentCPUReadableProcessCount: Int,
                     didEncounterCriticalMemoryPressure: Bool) {
             self.sampledAt = sampledAt
             self.cpuTimeSeconds = cpuTimeSeconds
+            self.agentCPUTimeSeconds = agentCPUTimeSeconds
+            self.webContentCPUTimeSeconds = webContentCPUTimeSeconds
             self.averageCPUPercent = averageCPUPercent
             self.agentPhysicalFootprintBytes = agentPhysicalFootprintBytes
             self.peakAgentPhysicalFootprintBytes = peakAgentPhysicalFootprintBytes
             self.webContentResidentBytes = webContentResidentBytes
             self.peakWebContentResidentBytes = peakWebContentResidentBytes
             self.webContentProcessCount = webContentProcessCount
+            self.webContentCPUDiscoveredProcessCount = webContentCPUDiscoveredProcessCount
+            self.webContentCPUReadableProcessCount = webContentCPUReadableProcessCount
             self.didEncounterCriticalMemoryPressure = didEncounterCriticalMemoryPressure
         }
     }

@@ -24,12 +24,16 @@ import WebKit
 public struct DataBrokerProtectionResourceSnapshot: Equatable, Sendable {
     public let sampledAt: Date
     public let cpuTime: TimeInterval
+    public let agentCPUTime: TimeInterval
+    public let webContentCPUTime: TimeInterval
     public let averageCPUPercent: Double
     public let agentPhysicalFootprintBytes: UInt64
     public let peakAgentPhysicalFootprintBytes: UInt64
     public let webContentResidentBytes: UInt64?
     public let peakWebContentResidentBytes: UInt64?
     public let webContentProcessCount: Int?
+    public let webContentCPUDiscoveredProcessCount: Int
+    public let webContentCPUReadableProcessCount: Int
     public let didEncounterCriticalMemoryPressure: Bool
 }
 
@@ -59,24 +63,40 @@ private final class ResourceUsageStore: @unchecked Sendable {
     }
 }
 
-private struct ProcessResourceUsage {
+private struct ProcessIdentity: Hashable {
+    let pid: pid_t
+    let startAbsoluteTime: UInt64
+}
+
+private struct ProcessCPUUsage {
+    let identity: ProcessIdentity
     let cpuTimeNanoseconds: UInt64
 }
 
-private struct ResourceMeasurement {
-    let processUsages: [pid_t: ProcessResourceUsage]
-    let agentPhysicalFootprintBytes: UInt64
-    let webContentResidentBytes: UInt64?
-    let webContentProcessCount: Int?
+private struct CPUMeasurement {
+    let agentUsage: ProcessCPUUsage?
+    let webContentUsages: [ProcessIdentity: ProcessCPUUsage]
+    let webContentDiscoveredProcessCount: Int
     let systemUptime: TimeInterval
 }
 
+private struct MemoryMeasurement {
+    let agentPhysicalFootprintBytes: UInt64
+    let webContentResidentBytes: UInt64?
+    let webContentProcessCount: Int?
+}
+
+/// Monitors one accepted PIR queue run. CPU counters are sampled every 10 seconds and accumulated
+/// for the agent and its live WebContent processes; memory is sampled when a snapshot is published.
+/// The first snapshot is published after 10 seconds, then every 60 seconds, and once when the run ends.
 @MainActor
 public final class DataBrokerProtectionResourceMonitor: DataBrokerProtectionResourceMonitoring {
 
     private enum Constants {
-        static let initialSampleDelayNanoseconds = UInt64(10) * NSEC_PER_SEC
-        static let sampleIntervalNanoseconds = UInt64(60) * NSEC_PER_SEC
+        static let cpuSampleIntervalNanoseconds = UInt64(10) * NSEC_PER_SEC
+        static let cpuSamplesPerReport = 6
+        static let bytesPerMebibyte = Double(1 << 20)
+        static let bytesPerGibibyte = Double(1 << 30)
     }
 
     public private(set) var latestSnapshot: DataBrokerProtectionResourceSnapshot?
@@ -89,9 +109,15 @@ public final class DataBrokerProtectionResourceMonitor: DataBrokerProtectionReso
     private nonisolated let resourceUsageStore = ResourceUsageStore()
     private var monitoringTask: Task<Void, Never>?
     private var memoryPressureSource: DispatchSourceMemoryPressure?
-    private var previousProcessUsages: [pid_t: ProcessResourceUsage] = [:]
-    private var accumulatedCPUTimeNanoseconds: UInt64 = 0
+    private var previousAgentUsage: ProcessCPUUsage?
+    // Retaining the last reading across disappearance avoids resetting a temporarily undiscovered process.
+    private var previousWebContentUsages: [ProcessIdentity: ProcessCPUUsage] = [:]
+    private var accumulatedAgentCPUTimeNanoseconds: UInt64 = 0
+    private var accumulatedWebContentCPUTimeNanoseconds: UInt64 = 0
+    private var runStartAbsoluteTime: UInt64?
     private var monitoringStartUptime: TimeInterval?
+    private var webContentCPUDiscoveredProcessCount = 0
+    private var webContentCPUReadableProcessCount = 0
     private var peakAgentPhysicalFootprintBytes: UInt64 = 0
     private var peakWebContentResidentBytes: UInt64?
     private var didEncounterCriticalMemoryPressure = false
@@ -109,20 +135,26 @@ public final class DataBrokerProtectionResourceMonitor: DataBrokerProtectionReso
         )
         startMemoryPressureMonitoring()
 
-        let initialMeasurement = collectMeasurement()
-        previousProcessUsages = initialMeasurement.processUsages
-        monitoringStartUptime = initialMeasurement.systemUptime
-        updateMemoryPeaks(with: initialMeasurement)
+        runStartAbsoluteTime = mach_absolute_time()
+        let initialCPUMeasurement = collectCPUMeasurement()
+        previousAgentUsage = initialCPUMeasurement.agentUsage
+        previousWebContentUsages = initialCPUMeasurement.webContentUsages
+        monitoringStartUptime = initialCPUMeasurement.systemUptime
+        updateCPUProcessCounts(with: initialCPUMeasurement)
+        updateMemoryPeaks(with: collectMemoryMeasurement())
 
         monitoringTask = Task { [weak self] in
             do {
-                try await Task.sleep(nanoseconds: Constants.initialSampleDelayNanoseconds)
+                var cpuSampleIndex = 0
                 while !Task.isCancelled {
-                    self?.sample()
-                    try await Task.sleep(nanoseconds: Constants.sampleIntervalNanoseconds)
+                    try await Task.sleep(nanoseconds: Constants.cpuSampleIntervalNanoseconds)
+                    try Task.checkCancellation()
+                    self?.sampleCPU()
+                    if cpuSampleIndex.isMultiple(of: Constants.cpuSamplesPerReport) {
+                        self?.publishSnapshot()
+                    }
+                    cpuSampleIndex += 1
                 }
-            } catch is CancellationError {
-                return
             } catch {
                 return
             }
@@ -132,7 +164,8 @@ public final class DataBrokerProtectionResourceMonitor: DataBrokerProtectionReso
     public func stop() {
         guard isMonitoring else { return }
 
-        sample()
+        sampleCPU()
+        publishSnapshot()
         monitoringTask?.cancel()
         monitoringTask = nil
         memoryPressureSource?.cancel()
@@ -145,32 +178,51 @@ public final class DataBrokerProtectionResourceMonitor: DataBrokerProtectionReso
     }
 
     private func resetRunState() {
-        previousProcessUsages = [:]
-        accumulatedCPUTimeNanoseconds = 0
+        previousAgentUsage = nil
+        previousWebContentUsages = [:]
+        accumulatedAgentCPUTimeNanoseconds = 0
+        accumulatedWebContentCPUTimeNanoseconds = 0
+        runStartAbsoluteTime = nil
         monitoringStartUptime = nil
+        webContentCPUDiscoveredProcessCount = 0
+        webContentCPUReadableProcessCount = 0
         peakAgentPhysicalFootprintBytes = 0
         peakWebContentResidentBytes = nil
         didEncounterCriticalMemoryPressure = false
     }
 
-    private func sample() {
-        let measurement = collectMeasurement()
-        updateCPUTime(with: measurement.processUsages)
-        updateMemoryPeaks(with: measurement)
+    private func sampleCPU() {
+        let measurement = collectCPUMeasurement()
+        updateAgentCPUTime(with: measurement.agentUsage)
+        updateWebContentCPUTime(with: measurement.webContentUsages)
+        updateCPUProcessCounts(with: measurement)
+    }
 
-        let elapsedTime = max(0, measurement.systemUptime - (monitoringStartUptime ?? measurement.systemUptime))
-        let cpuTime = TimeInterval(accumulatedCPUTimeNanoseconds) / TimeInterval(NSEC_PER_SEC)
+    private func publishSnapshot() {
+        let memoryMeasurement = collectMemoryMeasurement()
+        updateMemoryPeaks(with: memoryMeasurement)
+
+        let systemUptime = ProcessInfo.processInfo.systemUptime
+        let elapsedTime = max(0, systemUptime - (monitoringStartUptime ?? systemUptime))
+        let agentCPUTime = TimeInterval(accumulatedAgentCPUTimeNanoseconds) / TimeInterval(NSEC_PER_SEC)
+        let webContentCPUTime = TimeInterval(accumulatedWebContentCPUTimeNanoseconds) / TimeInterval(NSEC_PER_SEC)
+        let cpuTime = agentCPUTime + webContentCPUTime
+        // This is core-equivalent utilization: one fully occupied core is 100%, so totals may exceed 100%.
         let averageCPUPercent = elapsedTime > 0 ? cpuTime / elapsedTime * 100 : 0
 
         let snapshot = DataBrokerProtectionResourceSnapshot(
             sampledAt: Date(),
             cpuTime: cpuTime,
+            agentCPUTime: agentCPUTime,
+            webContentCPUTime: webContentCPUTime,
             averageCPUPercent: averageCPUPercent,
-            agentPhysicalFootprintBytes: measurement.agentPhysicalFootprintBytes,
+            agentPhysicalFootprintBytes: memoryMeasurement.agentPhysicalFootprintBytes,
             peakAgentPhysicalFootprintBytes: peakAgentPhysicalFootprintBytes,
-            webContentResidentBytes: measurement.webContentResidentBytes,
+            webContentResidentBytes: memoryMeasurement.webContentResidentBytes,
             peakWebContentResidentBytes: peakWebContentResidentBytes,
-            webContentProcessCount: measurement.webContentProcessCount,
+            webContentProcessCount: memoryMeasurement.webContentProcessCount,
+            webContentCPUDiscoveredProcessCount: webContentCPUDiscoveredProcessCount,
+            webContentCPUReadableProcessCount: webContentCPUReadableProcessCount,
             didEncounterCriticalMemoryPressure: didEncounterCriticalMemoryPressure
         )
         latestSnapshot = snapshot
@@ -182,34 +234,67 @@ public final class DataBrokerProtectionResourceMonitor: DataBrokerProtectionReso
     }
 
     private func log(_ snapshot: DataBrokerProtectionResourceSnapshot) {
-        let webContentResidentBytes = snapshot.webContentResidentBytes.map(String.init) ?? "unavailable"
-        let peakWebContentResidentBytes = snapshot.peakWebContentResidentBytes.map(String.init) ?? "unavailable"
+        let webContentResident = snapshot.webContentResidentBytes.map(Self.formattedMemory) ?? "unavailable"
+        let peakWebContentResident = snapshot.peakWebContentResidentBytes.map(Self.formattedMemory) ?? "unavailable"
         let webContentProcessCount = snapshot.webContentProcessCount.map(String.init) ?? "unavailable"
         let fields = [
-            "cpuTimeSeconds=\(snapshot.cpuTime)",
+            "agentCPUTimeSeconds=\(snapshot.agentCPUTime)",
+            "webContentCPUTimeSeconds=\(snapshot.webContentCPUTime)",
+            "totalCPUTimeSeconds=\(snapshot.cpuTime)",
             "averageCPUPercent=\(snapshot.averageCPUPercent)",
-            "agentFootprintBytes=\(snapshot.agentPhysicalFootprintBytes)",
-            "peakAgentFootprintBytes=\(snapshot.peakAgentPhysicalFootprintBytes)",
-            "webContentResidentBytes=\(webContentResidentBytes)",
-            "peakWebContentResidentBytes=\(peakWebContentResidentBytes)",
+            "agentFootprint=\(Self.formattedMemory(snapshot.agentPhysicalFootprintBytes))",
+            "peakAgentFootprint=\(Self.formattedMemory(snapshot.peakAgentPhysicalFootprintBytes))",
+            "webContentResident=\(webContentResident)",
+            "peakWebContentResident=\(peakWebContentResident)",
             "webContentProcessCount=\(webContentProcessCount)",
+            "webContentCPUPIDs=\(snapshot.webContentCPUReadableProcessCount)/"
+                + "\(snapshot.webContentCPUDiscoveredProcessCount)",
             "criticalMemoryPressure=\(snapshot.didEncounterCriticalMemoryPressure)"
         ]
         let message = "PIR resource sample: " + fields.joined(separator: ", ")
         Logger.dataBrokerProtection.info("\(message, privacy: .public)")
     }
 
-    private func updateCPUTime(with processUsages: [pid_t: ProcessResourceUsage]) {
-        for (pid, usage) in processUsages {
-            let previousCPUTime = previousProcessUsages[pid]?.cpuTimeNanoseconds ?? 0
-            if usage.cpuTimeNanoseconds >= previousCPUTime {
-                accumulatedCPUTimeNanoseconds += usage.cpuTimeNanoseconds - previousCPUTime
-            }
-        }
-        previousProcessUsages = processUsages
+    private func updateAgentCPUTime(with usage: ProcessCPUUsage?) {
+        guard let usage else { return }
+
+        accumulatedAgentCPUTimeNanoseconds += cpuDelta(
+            for: usage,
+            previousUsage: previousAgentUsage,
+            includeLifetimeForNewProcess: false
+        )
+        previousAgentUsage = usage
     }
 
-    private func updateMemoryPeaks(with measurement: ResourceMeasurement) {
+    private func updateWebContentCPUTime(with usages: [ProcessIdentity: ProcessCPUUsage]) {
+        for (identity, usage) in usages {
+            // A process created during this run contributes its lifetime CPU; an older process's first
+            // reading is only a baseline. Start time also distinguishes recycled PIDs.
+            accumulatedWebContentCPUTimeNanoseconds += cpuDelta(
+                for: usage,
+                previousUsage: previousWebContentUsages[identity],
+                includeLifetimeForNewProcess: identity.startAbsoluteTime >= (runStartAbsoluteTime ?? .max)
+            )
+            previousWebContentUsages[identity] = usage
+        }
+    }
+
+    private func cpuDelta(for usage: ProcessCPUUsage,
+                          previousUsage: ProcessCPUUsage?,
+                          includeLifetimeForNewProcess: Bool) -> UInt64 {
+        guard let previousUsage else {
+            return includeLifetimeForNewProcess ? usage.cpuTimeNanoseconds : 0
+        }
+        guard usage.cpuTimeNanoseconds >= previousUsage.cpuTimeNanoseconds else { return 0 }
+        return usage.cpuTimeNanoseconds - previousUsage.cpuTimeNanoseconds
+    }
+
+    private func updateCPUProcessCounts(with measurement: CPUMeasurement) {
+        webContentCPUDiscoveredProcessCount = measurement.webContentDiscoveredProcessCount
+        webContentCPUReadableProcessCount = measurement.webContentUsages.count
+    }
+
+    private func updateMemoryPeaks(with measurement: MemoryMeasurement) {
         peakAgentPhysicalFootprintBytes = max(
             peakAgentPhysicalFootprintBytes,
             measurement.agentPhysicalFootprintBytes
@@ -224,34 +309,47 @@ public final class DataBrokerProtectionResourceMonitor: DataBrokerProtectionReso
         let source = DispatchSource.makeMemoryPressureSource(eventMask: .critical, queue: .main)
         source.setEventHandler { [weak self, weak source] in
             guard source?.data.contains(.critical) == true else { return }
+            // Pressure is event-based, so keep it set for the remainder of this run.
             self?.didEncounterCriticalMemoryPressure = true
-            self?.sample()
+            self?.sampleCPU()
+            self?.publishSnapshot()
         }
         source.resume()
         memoryPressureSource = source
     }
 
-    private func collectMeasurement() -> ResourceMeasurement {
+    private func collectCPUMeasurement() -> CPUMeasurement {
         let agentPID = getpid()
-        let webContentPIDs = Self.webContentProcessIdentifiers()
-        let processIdentifiers = Set([agentPID] + (webContentPIDs ?? []))
-        let processUsages = Dictionary(uniqueKeysWithValues: processIdentifiers.compactMap { pid in
-            Self.resourceUsage(for: pid).map { (pid, $0) }
+        // WebKit only exposes currently live PIDs. A process born and terminated between ticks is unobservable.
+        let webContentPIDs = Set(Self.webContentProcessIdentifiers() ?? [])
+        let webContentUsages = Dictionary(uniqueKeysWithValues: webContentPIDs.compactMap { pid in
+            Self.cpuUsage(for: pid).map { ($0.identity, $0) }
         })
-        let webContentMemory = webContentPIDs.map { processIdentifiers in
-            processIdentifiers.compactMap(Self.residentMemorySize).reduce(0, +)
-        }
 
-        return ResourceMeasurement(
-            processUsages: processUsages,
-            agentPhysicalFootprintBytes: Self.agentPhysicalFootprint(),
-            webContentResidentBytes: webContentMemory,
-            webContentProcessCount: webContentPIDs?.count,
+        return CPUMeasurement(
+            agentUsage: Self.cpuUsage(for: agentPID),
+            webContentUsages: webContentUsages,
+            webContentDiscoveredProcessCount: webContentPIDs.count,
             systemUptime: ProcessInfo.processInfo.systemUptime
         )
     }
 
-    private static func resourceUsage(for pid: pid_t) -> ProcessResourceUsage? {
+    private func collectMemoryMeasurement() -> MemoryMeasurement {
+        let webContentPIDs = Self.webContentProcessIdentifiers()
+        // AppHealth uses the same split: TASK_VM_INFO physical footprint for this process and
+        // PROC_PIDTASKINFO resident size summed across WebContent processes.
+        let webContentMemory = webContentPIDs.map { processIdentifiers in
+            processIdentifiers.compactMap(Self.residentMemorySize).reduce(0, +)
+        }
+
+        return MemoryMeasurement(
+            agentPhysicalFootprintBytes: Self.agentPhysicalFootprint(),
+            webContentResidentBytes: webContentMemory,
+            webContentProcessCount: webContentPIDs?.count
+        )
+    }
+
+    private static func cpuUsage(for pid: pid_t) -> ProcessCPUUsage? {
         var usage = rusage_info_v4()
         let result = withUnsafeMutablePointer(to: &usage) { pointer in
             pointer.withMemoryRebound(to: rusage_info_t?.self, capacity: 1) {
@@ -260,9 +358,18 @@ public final class DataBrokerProtectionResourceMonitor: DataBrokerProtectionReso
         }
         guard result == 0 else { return nil }
 
-        return ProcessResourceUsage(
+        return ProcessCPUUsage(
+            identity: ProcessIdentity(pid: pid, startAbsoluteTime: usage.ri_proc_start_abstime),
             cpuTimeNanoseconds: usage.ri_user_time + usage.ri_system_time
         )
+    }
+
+    private static func formattedMemory(_ bytes: UInt64) -> String {
+        let value = Double(bytes)
+        if value >= Constants.bytesPerGibibyte {
+            return String(format: "%.2f GiB (%llu bytes)", value / Constants.bytesPerGibibyte, bytes)
+        }
+        return String(format: "%.1f MiB (%llu bytes)", value / Constants.bytesPerMebibyte, bytes)
     }
 
     private static func agentPhysicalFootprint() -> UInt64 {
@@ -315,12 +422,16 @@ private extension DBPDebugResourceUsage.Sample {
         self.init(
             sampledAt: snapshot.sampledAt,
             cpuTimeSeconds: snapshot.cpuTime,
+            agentCPUTimeSeconds: snapshot.agentCPUTime,
+            webContentCPUTimeSeconds: snapshot.webContentCPUTime,
             averageCPUPercent: snapshot.averageCPUPercent,
             agentPhysicalFootprintBytes: snapshot.agentPhysicalFootprintBytes,
             peakAgentPhysicalFootprintBytes: snapshot.peakAgentPhysicalFootprintBytes,
             webContentResidentBytes: snapshot.webContentResidentBytes,
             peakWebContentResidentBytes: snapshot.peakWebContentResidentBytes,
             webContentProcessCount: snapshot.webContentProcessCount,
+            webContentCPUDiscoveredProcessCount: snapshot.webContentCPUDiscoveredProcessCount,
+            webContentCPUReadableProcessCount: snapshot.webContentCPUReadableProcessCount,
             didEncounterCriticalMemoryPressure: snapshot.didEncounterCriticalMemoryPressure
         )
     }

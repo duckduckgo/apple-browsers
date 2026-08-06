@@ -135,8 +135,10 @@ final class MockBookmarkManager: BookmarkManager, URLFavoriteStatusProviding, Re
         var withinParentFolder: ParentFolderType
     }
     var moveObjectsCalled: MoveArgs?
+    var moveObjectsError: Error?
     func move(objectUUIDs: [String], toIndex: Int?, withinParentFolder: ParentFolderType, completion: @escaping (Error?) -> Void) {
         moveObjectsCalled = .init(objectUUIDs: objectUUIDs, toIndex: toIndex, withinParentFolder: withinParentFolder)
+        completion(moveObjectsError)
     }
 
     func moveFavorites(with objectUUIDs: [String], toIndex: Int?, completion: @escaping (Error?) -> Void) {}

@@ -21,6 +21,7 @@ import Combine
 import Common
 import ConcurrencyExtensions
 import DesignResourcesKitIcons
+import FeatureFlags
 import Foundation
 import FoundationExtensions
 import os.log
@@ -60,6 +61,7 @@ final class BookmarksBarViewController: NSViewController {
     private let viewModel: BookmarksBarViewModel
     private let tabCollectionViewModel: TabCollectionViewModel
     private let appereancePreferences: AppearancePreferencesPersistor
+    private let featureFlagger: FeatureFlagger
 
     let themeManager: ThemeManaging
     var themeUpdateCancellable: AnyCancellable?
@@ -80,9 +82,22 @@ final class BookmarksBarViewController: NSViewController {
     @UserDefaultsWrapper(key: .bookmarksBarPromptShown, defaultValue: false)
     var bookmarksBarPromptShown: Bool
 
-    static func create(tabCollectionViewModel: TabCollectionViewModel, bookmarkManager: BookmarkManager, dragDropManager: BookmarkDragDropManager, pinningManager: PinningManager) -> BookmarksBarViewController {
+    static func create(
+        tabCollectionViewModel: TabCollectionViewModel,
+        bookmarkManager: BookmarkManager,
+        dragDropManager: BookmarkDragDropManager,
+        pinningManager: PinningManager,
+        featureFlagger: FeatureFlagger
+    ) -> BookmarksBarViewController {
         NSStoryboard(name: "BookmarksBar", bundle: nil).instantiateInitialController { coder in
-            self.init(coder: coder, tabCollectionViewModel: tabCollectionViewModel, bookmarkManager: bookmarkManager, dragDropManager: dragDropManager, pinningManager: pinningManager)
+            self.init(
+                coder: coder,
+                tabCollectionViewModel: tabCollectionViewModel,
+                bookmarkManager: bookmarkManager,
+                dragDropManager: dragDropManager,
+                pinningManager: pinningManager,
+                featureFlagger: featureFlagger
+            )
         }!
     }
 
@@ -91,6 +106,7 @@ final class BookmarksBarViewController: NSViewController {
           bookmarkManager: BookmarkManager,
           dragDropManager: BookmarkDragDropManager,
           pinningManager: PinningManager,
+          featureFlagger: FeatureFlagger,
           appereancePreferences: AppearancePreferencesPersistor = AppearancePreferencesUserDefaultsPersistor(keyValueStore: NSApp.delegateTyped.keyValueStore),
           themeManager: ThemeManaging = NSApp.delegateTyped.themeManager,
     ) {
@@ -99,6 +115,7 @@ final class BookmarksBarViewController: NSViewController {
         self.pinningManager = pinningManager
         self.appereancePreferences = appereancePreferences
         self.themeManager = themeManager
+        self.featureFlagger = featureFlagger
 
         self.tabCollectionViewModel = tabCollectionViewModel
         self.viewModel = BookmarksBarViewModel(bookmarkManager: bookmarkManager,
@@ -558,6 +575,10 @@ private extension BookmarksBarViewController {
         showDialog(BookmarksDialogViewFactory.makeAddBookmarkFolderView(parentFolder: nil, bookmarkManager: bookmarkManager))
     }
 
+    @objc func reorderBookmarksBarByName(_ sender: NSMenuItem) {
+        bookmarkManager.reorderByName(bookmarkManager.list?.topLevelEntities ?? [], withinParentFolder: .root)
+    }
+
 }
 // MARK: - NSMenuDelegate
 extension BookmarksBarViewController: NSMenuDelegate {
@@ -568,6 +589,7 @@ extension BookmarksBarViewController: NSMenuDelegate {
             menu,
             target: self,
             addFolderSelector: #selector(addFolder(sender:)),
+            reorderByNameSelector: featureFlagger.isFeatureOn(.bookmarksReorderByName) ? #selector(reorderBookmarksBarByName(_:)) : nil,
             manageBookmarksSelector: #selector(manageBookmarks),
             prefs: NSApp.delegateTyped.appearancePreferences
         )

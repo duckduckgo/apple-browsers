@@ -184,27 +184,42 @@ final class AIChatSelectionContextBuilderTests: XCTestCase {
 
     // MARK: - displayTitle
 
-    func testDisplayTitleQuotesTheSnippet() {
-        XCTAssertEqual(AIChatSelectionContextBuilder.displayTitle(for: "hello"), "“hello”")
+    /// The size leads, because it survives truncation and separates a whole-article selection from a
+    /// phrase; the snippet follows so several chips are told apart by content.
+    func testDisplayTitleLeadsWithTheWordCountThenASnippet() {
+        let selection = AIChatSelectionContextBuilder.makeSelection(text: "a dog barked", url: url)
+
+        let title = AIChatSelectionContextBuilder.displayTitle(for: selection)
+
+        XCTAssertEqual(title, "\(UserText.aiChatTextSelectionWordCount(3)) · a dog barked")
     }
 
     func testDisplayTitleCollapsesWhitespaceSoChipsStaySingleLine() {
-        XCTAssertEqual(AIChatSelectionContextBuilder.displayTitle(for: "first line\n\n  second   line"), "“first line second line”")
+        let selection = AIChatSelectionContextBuilder.makeSelection(text: "first line\n\n  second   line", url: url)
+
+        XCTAssertTrue(AIChatSelectionContextBuilder.displayTitle(for: selection).hasSuffix("first line second line"))
+    }
+
+    /// The count describes the whole selection even when the snippet and the wire payload were cut.
+    func testDisplayTitleWordCountDescribesTheUntruncatedSelection() {
+        let text = String(repeating: "word ", count: 4000)
+        let selection = AIChatSelectionContextBuilder.makeSelection(text: text, url: url)
+
+        XCTAssertTrue(AIChatSelectionContextBuilder.displayTitle(for: selection)
+            .hasPrefix(UserText.aiChatTextSelectionWordCount(4000)))
     }
 
     func testLongDisplayTitleIsTruncatedWithAnEllipsis() {
         let content = String(repeating: "a", count: AIChatSelectionContextBuilder.maxDisplayTitleLength + 50)
-        let title = AIChatSelectionContextBuilder.displayTitle(for: content)
+        let selection = AIChatSelectionContextBuilder.makeSelection(text: content, url: url)
 
-        XCTAssertTrue(title.hasSuffix("…”"))
-        // Quotes plus the ellipsis sit outside the bounded snippet.
-        XCTAssertEqual(title.count, AIChatSelectionContextBuilder.maxDisplayTitleLength + 3)
+        XCTAssertTrue(AIChatSelectionContextBuilder.displayTitle(for: selection).hasSuffix("…"))
     }
 
     func testDisplayTitleAtTheLimitIsNotTruncated() {
         let content = String(repeating: "a", count: AIChatSelectionContextBuilder.maxDisplayTitleLength)
-        let title = AIChatSelectionContextBuilder.displayTitle(for: content)
+        let selection = AIChatSelectionContextBuilder.makeSelection(text: content, url: url)
 
-        XCTAssertFalse(title.contains("…"))
+        XCTAssertFalse(AIChatSelectionContextBuilder.displayTitle(for: selection).contains("…"))
     }
 }

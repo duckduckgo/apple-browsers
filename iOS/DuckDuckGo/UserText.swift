@@ -2257,6 +2257,10 @@ public struct UserText {
     public static let aiChatAttachmentFileUnreadable = NSLocalizedString("aichat.attachment.file.unreadable", value: "We can't read one of the files attached. Please check that it isn't corrupted and try again.", comment: "Error message displayed when one or more attached files cannot be read")
     public static let aiChatAttachmentUnavailable = NSLocalizedString("aichat.attachment.unavailable", value: "Attachments are temporarily unavailable. Please try again later.", comment: "Generic fallback error message displayed when attachments cannot be validated because the backend-provided attachment limits are unavailable")
     public static let aiChatTextSelectionTitle = NSLocalizedString("duckai.text-selection.context-title", value: "Text selection", comment: "Generic title shown on the Duck.ai attachment chip when the attached content is a user text selection rather than a full web page")
+    public static func aiChatTextSelectionWordCount(_ count: Int) -> String {
+        let message = NSLocalizedString("duckai.text-selection.word-count", value: "%d words", comment: "Prefix on the Duck.ai attachment chip for a text selection, giving the size of the selection before a snippet of it. Pluralization is handled by Localizable.stringsdict.")
+        return String.localizedStringWithFormat(message, count)
+    }
     public static func aiChatTextSelectionLimitReached(_ limit: Int) -> String {
         let message = NSLocalizedString("duckai.text-selection.limit-reached", value: "You can add up to %d text selections. Remove one to add another.", comment: "Message shown when the user selects text and asks Duck.ai about it but has already attached the maximum number of selections. Parameter is that maximum.")
         return message.format(arguments: limit)

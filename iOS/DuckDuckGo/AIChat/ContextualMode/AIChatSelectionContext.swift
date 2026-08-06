@@ -89,14 +89,17 @@ enum AIChatSelectionContextBuilder {
         )
     }
 
-    /// Label for a selection's chip: the selected text, whitespace-collapsed and curly-quoted as
-    /// macOS quotes it, so several chips are told apart by what they contain rather than all reading
-    /// "Text selection".
-    static func displayTitle(for content: String) -> String {
-        let collapsed = content.split(whereSeparator: \.isWhitespace).joined(separator: " ")
+    /// Label for a selection's chip: how much was selected, then a snippet of it — "312 words · a dog…".
+    ///
+    /// The size comes first because it is the part that stays legible when the chip truncates, and it is
+    /// what distinguishes a whole-article selection from a phrase. The snippet then tells several chips
+    /// apart by what they contain. Word count is taken from the payload, so it describes the whole
+    /// selection even when `content` was truncated for the wire.
+    static func displayTitle(for selection: AIChatSelectionContextData) -> String {
+        let collapsed = selection.content.split(whereSeparator: \.isWhitespace).joined(separator: " ")
         let snippet = collapsed.count > maxDisplayTitleLength
             ? String(collapsed.prefix(maxDisplayTitleLength)).trimmingCharacters(in: .whitespaces) + "…"
             : collapsed
-        return "“\(snippet)”"
+        return "\(UserText.aiChatTextSelectionWordCount(selection.wordCount)) · \(snippet)"
     }
 }

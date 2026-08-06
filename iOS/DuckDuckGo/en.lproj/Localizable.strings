@@ -2170,6 +2170,9 @@
 /* Message shown when the user selects text and asks Duck.ai about it but has already attached the maximum number of selections. Parameter is that maximum. */
 "duckai.text-selection.limit-reached" = "You can add up to %d text selections. Remove one to add another.";
 
+/* Prefix on the Duck.ai attachment chip for a text selection, giving the size of the selection before a snippet of it. Pluralization is handled by Localizable.stringsdict. */
+"duckai.text-selection.word-count" = "%d words";
+
 /* Welcome message in Duck.ai contextual sheet. %@ is replaced by a shield icon. */
 "duckai.welcome.message" = "All chats are %@ private";
 

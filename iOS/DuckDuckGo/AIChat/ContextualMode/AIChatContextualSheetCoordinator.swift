@@ -22,6 +22,7 @@ import BrowserServicesKit
 import Combine
 import Common
 import ConcurrencyExtensions
+import DesignResourcesKitIcons
 import FoundationExtensions
 import Core
 import os.log
@@ -500,15 +501,18 @@ private extension AIChatContextualSheetCoordinator {
 
     /// Re-renders one chip per attached selection from session state.
     ///
-    /// The label is the quoted snippet rather than the payload's generic title, and the favicon is
-    /// decoded here, so several chips are told apart by their text and each carries its source page's
-    /// icon.
+    /// Shows an explicit text-selection glyph rather than the source page's favicon: a favicon says
+    /// "this is that page", which is what the page-context chip means, and reusing it here made a
+    /// selection look like a second copy of the page. The label carries the provenance instead.
+    ///
+    /// Rendered as a template so it takes the chip's own tint, matching the placeholder state.
     func refreshSelectionChips() {
         guard let host = persistentUTIHost else { return }
+        let icon = DesignSystemImages.Glyphs.Size24.note.withRenderingMode(.alwaysTemplate)
         let items = sessionState.attachedSelections.map {
             (id: $0.id,
-             title: AIChatSelectionContextBuilder.displayTitle(for: $0.content),
-             favicon: AIChatPageContext.decodeFaviconImage(from: $0.favicon))
+             title: AIChatSelectionContextBuilder.displayTitle(for: $0),
+             favicon: icon)
         }
         host.setSelectionChips(items) { [weak self] removedID in
             guard let self else { return }

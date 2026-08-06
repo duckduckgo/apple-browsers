@@ -1056,9 +1056,12 @@ final class AIChatOmnibarControllerTests: XCTestCase {
                      "No tab attachments → omnibar omits `pageContext` entirely on the prompt")
     }
 
-    func testWhenTabSwitchesToTabWithSavedTabAttachments_ThenPanelAttachmentsCallbackFires() throws {
-        // Given — tab 1 has a saved attachment; its tab has to be open, closed ones are pruned.
-        let attachment = makeTabAttachment(id: try XCTUnwrap(tabCollectionViewModel.selectedTabViewModel?.tab.uuid))
+    func testWhenTabSwitchesToTabWithSavedTabAttachments_ThenPanelAttachmentsCallbackFires() {
+        // Given — tab 1 has a saved attachment. It has to name an open tab sitting on the page the
+        // attachment records: a closed tab is pruned, and one on another page is a navigation.
+        let attachedTab = Tab(content: .url(URL(string: "https://example.com")!, credential: nil, source: .ui))
+        _ = tabCollectionViewModel.append(tab: attachedTab, selected: false)
+        let attachment = makeTabAttachment(id: attachedTab.uuid)
         tabCollectionViewModel.selectedTabViewModel?.addressBarSharedTextState.setAIChatTabAttachments([attachment])
 
         var receivedLists: [[AIChatPanelAttachment]] = []

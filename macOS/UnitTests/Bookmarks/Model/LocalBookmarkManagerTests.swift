@@ -20,10 +20,11 @@ import Bookmarks
 import Combine
 import ConcurrencyExtensions
 import Foundation
-import os.log
+import PixelKitTestingUtilities
 import SharedTestUtilities
 import Utilities
 import XCTest
+import os.log
 
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -81,7 +82,7 @@ final class LocalBookmarkManagerTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenBookmarksAreLoadedThenBookmarkCountPixelReceivesTotalBookmarks() {
+    func testWhenBookmarksAreLoadedThenBookmarkCountPixelReceivesBucketedTotalBookmarks() {
         let bookmarks = (0..<11).map { index in
             Bookmark(
                 id: "bookmark-\(index)",
@@ -91,32 +92,34 @@ final class LocalBookmarkManagerTests: XCTestCase {
             )
         }
         let folder = BookmarkFolder(id: "folder", title: "Folder", children: bookmarks)
-        var reportedBookmarksCount: Int?
+        let pixelFiring = PixelKitMock(expecting: [
+            ExpectedFireCall(pixel: BookmarksPixel.count(.elevenToFifty), frequency: .daily),
+        ])
         let bookmarkManager = LocalBookmarkManager(
             bookmarkStore: BookmarkStoreMock(bookmarks: [folder]),
             appearancePreferences: .mock,
-            fireBookmarksCountPixel: { reportedBookmarksCount = $0 }
+            pixelFiring: pixelFiring
         )
 
         bookmarkManager.loadBookmarks()
 
-        XCTAssertEqual(reportedBookmarksCount, 11)
+        pixelFiring.verifyExpectations()
     }
 
     @MainActor
     func testWhenLoadingBookmarksFailsThenBookmarkCountPixelIsNotFired() {
         let bookmarkStore = BookmarkStoreMock()
         bookmarkStore.loadError = BookmarkManagerError.somethingReallyBad
-        var reportedBookmarksCount: Int?
+        let pixelFiring = PixelKitMock(expecting: [])
         let bookmarkManager = LocalBookmarkManager(
             bookmarkStore: bookmarkStore,
             appearancePreferences: .mock,
-            fireBookmarksCountPixel: { reportedBookmarksCount = $0 }
+            pixelFiring: pixelFiring
         )
 
         bookmarkManager.loadBookmarks()
 
-        XCTAssertNil(reportedBookmarksCount)
+        pixelFiring.verifyExpectations()
     }
 
     @MainActor

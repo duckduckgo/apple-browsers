@@ -3,7 +3,7 @@
     "m_mac_bookmarks_count": {
         "description": "Fires once daily for active users after bookmarks load to report the user's total bookmark count in a privacy-preserving bucket",
         "owners": ["andremartingo"],
-        "triggers": ["scheduled"],
+        "triggers": ["startup"],
         "suffixes": ["daily"],
         "parameters": [
             "appVersion",

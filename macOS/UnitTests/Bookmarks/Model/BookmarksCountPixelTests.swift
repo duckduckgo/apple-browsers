@@ -17,6 +17,7 @@
 //
 
 import PixelKit
+import PixelKitTestingUtilities
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -36,7 +37,7 @@ final class BookmarksCountPixelTests: XCTestCase {
         ]
 
         for (count, expectedBucket) in expectedBuckets {
-            XCTAssertEqual(BookmarksPixel.BookmarksCountBucket(count), expectedBucket)
+            XCTAssertEqual(BookmarksPixel.BookmarksCountBucket(count), expectedBucket, "count: \(count)")
         }
     }
 
@@ -53,16 +54,15 @@ final class BookmarksCountPixelTests: XCTestCase {
         }
     }
 
-    func testPixelFiresWithConfiguredFrequencyAndBucketedCount() throws {
-        let pixelFiring = CapturingPixelFiring()
+    func testPixelFiresWithConfiguredFrequencyAndBucketedCount() {
         let pixel = BookmarksPixel.count(.init(51))
+        let pixelFiring = PixelKitMock(expecting: [
+            ExpectedFireCall(pixel: pixel, frequency: .daily),
+        ])
 
         pixel.fire(pixelFiring: pixelFiring)
 
-        let capturedPixel = try XCTUnwrap(pixelFiring.lastEvent as? BookmarksPixel)
-        XCTAssertEqual(capturedPixel.parameters, ["bookmarks_count_bucket": "51-100"])
-        XCTAssertEqual(pixel.frequency, .daily)
-        XCTAssertEqual(pixelFiring.lastFrequency, .daily)
+        pixelFiring.verifyExpectations()
     }
 
     func testBookmarkListCountIncludesFavoritesAndNestedBookmarksButExcludesFolders() {
@@ -72,24 +72,5 @@ final class BookmarksCountPixelTests: XCTestCase {
         let bookmarkList = BookmarkList(entities: [favorite, folder, nestedBookmark])
 
         XCTAssertEqual(bookmarkList.totalBookmarks, 2)
-    }
-}
-
-private final class CapturingPixelFiring: PixelFiring {
-    private(set) var lastEvent: PixelKitEvent?
-    private(set) var lastFrequency: PixelKit.Frequency?
-
-    func fire(
-        _ event: PixelKitEvent,
-        frequency: PixelKit.Frequency,
-        includeAppVersionParameter: Bool,
-        withAdditionalParameters: [String: String]?,
-        withNamePrefix: String?,
-        doNotEnforcePrefix: Bool,
-        onComplete: @escaping PixelKit.CompletionBlock
-    ) {
-        lastEvent = event
-        lastFrequency = frequency
-        onComplete(true, nil)
     }
 }

@@ -23,9 +23,11 @@ import Combine
 import Common
 import ConcurrencyExtensions
 import FoundationExtensions
+import PixelKit
 import os.log
 
 protocol BookmarkManager: AnyObject {
+
     func isUrlBookmarked(url: URL) -> Bool
     func isAnyUrlVariantBookmarked(url: URL) -> Bool
     func isUrlFavorited(url: URL) -> Bool
@@ -107,19 +109,18 @@ extension BookmarkManager {
     }
 }
 final class LocalBookmarkManager: BookmarkManager {
+
     init(
         bookmarkStore: BookmarkStore,
         foldersStore: BookmarkFoldersStore = UserDefaultsBookmarkFoldersStore(),
         sortRepository: SortBookmarksRepository = SortBookmarksUserDefaults(),
         appearancePreferences: AppearancePreferences,
-        fireBookmarksCountPixel: @escaping (Int) -> Void = { bookmarksCount in
-            BookmarksPixel.count(.init(bookmarksCount)).fire()
-        }
+        pixelFiring: PixelFiring? = PixelKit.shared
     ) {
         self.foldersStore = foldersStore
         self.bookmarkStore = bookmarkStore
         self.sortRepository = sortRepository
-        self.fireBookmarksCountPixel = fireBookmarksCountPixel
+        self.pixelFiring = pixelFiring
 
         subscribeToFavoritesDisplayMode(with: appearancePreferences)
         sortMode = sortRepository.storedSortMode
@@ -150,7 +151,7 @@ final class LocalBookmarkManager: BookmarkManager {
     private let bookmarkStore: BookmarkStore
     private let sortRepository: SortBookmarksRepository
     private let foldersStore: BookmarkFoldersStore
-    private let fireBookmarksCountPixel: (Int) -> Void
+    private let pixelFiring: PixelFiring?
 
     private var favoritesDisplayMode: FavoritesDisplayMode = .displayNative(.desktop)
     private var favoritesDisplayModeCancellable: AnyCancellable?
@@ -182,10 +183,14 @@ final class LocalBookmarkManager: BookmarkManager {
                     let bookmarkList = BookmarkList(entities: bookmarks, topLevelEntities: topLevelEntities, favorites: favorites)
                     self.isLoading = false
                     self.list = bookmarkList
-                    self.fireBookmarksCountPixel(bookmarkList.totalBookmarks)
+                    self.fireBookmarksCountPixel(bookmarksCount: bookmarkList.totalBookmarks)
                 }
             }
         }
+    }
+
+    private func fireBookmarksCountPixel(bookmarksCount: Int) {
+        BookmarksPixel.count(.init(bookmarksCount)).fire(pixelFiring: pixelFiring)
     }
 
     func isUrlBookmarked(url: URL) -> Bool {

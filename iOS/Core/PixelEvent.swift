@@ -2060,12 +2060,6 @@ extension Pixel {
 
         case webExtensionDailyAdBlockingState
 
-        case webExtensionAdBlockingDetectedAdBlockerDaily
-        case webExtensionAdBlockingDetectedPlayabilityErrorDaily
-        case webExtensionAdBlockingDetectedVideoAdDaily
-        case webExtensionAdBlockingDetectedStaticAdDaily
-        case webExtensionAdBlockingDetectedBufferingDaily
-
         // MARK: - Fire Mode
         case browsingModeSwitched
         case tabSwitcherModeToggled
@@ -4022,12 +4016,6 @@ extension Pixel.Event {
         case .webExtensionAdBlockingPickerAlwaysOff: return "m_web_extension_ad_blocking_picker_always_off"
         case .webExtensionAdBlockingPickerDisableUntilRelaunch: return "m_web_extension_ad_blocking_picker_disable_until_relaunch"
         case .webExtensionAdBlockingBreakageReportEntered: return "m_web_extension_ad_blocking_breakage_report_entered"
-
-        case .webExtensionAdBlockingDetectedAdBlockerDaily: return "m_web_extension_adblocking_detected_ad_blocker_daily"
-        case .webExtensionAdBlockingDetectedPlayabilityErrorDaily: return "m_web_extension_adblocking_detected_playability_error_daily"
-        case .webExtensionAdBlockingDetectedVideoAdDaily: return "m_web_extension_adblocking_detected_video_ad_daily"
-        case .webExtensionAdBlockingDetectedStaticAdDaily: return "m_web_extension_adblocking_detected_static_ad_daily"
-        case .webExtensionAdBlockingDetectedBufferingDaily: return "m_web_extension_adblocking_detected_buffering_daily"
 
         // MARK: - Fire Mode
         case .browsingModeSwitched: return "m_browsing-mode_switched"

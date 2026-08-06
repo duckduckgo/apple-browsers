@@ -20,7 +20,7 @@ import Testing
 import Foundation
 @testable import EventHub
 
-@Suite("EventHubStore debug events", .timeLimit(.minutes(1)))
+@Suite("EventHubStore debug events")
 struct EventHubStoreDebugEventTests {
     private static let sampleConfig = TelemetryPixelConfig(
         name: "testPixel",

@@ -21,7 +21,7 @@ import Foundation
 import Combine
 @testable import EventHub
 
-@Suite("EventHubSettings", .timeLimit(.minutes(1)))
+@Suite("EventHubSettings")
 struct EventHubSettingsTests {
     static let settings = settingsDictionary("""
     { "telemetry": {

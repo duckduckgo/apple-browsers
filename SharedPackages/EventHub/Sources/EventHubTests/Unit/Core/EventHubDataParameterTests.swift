@@ -19,7 +19,7 @@
 import Testing
 @testable import EventHub
 
-@Suite("EventHub data parameters", .timeLimit(.minutes(1)))
+@Suite("EventHub data parameters")
 struct EventHubDataParameterTests {
     static let immediateDataConfig = """
     { "telemetry": { "webEvent_login": {

@@ -486,6 +486,7 @@ public extension DesignSystemImages {
                     ? .init(resource: .importColor24)
                     : .init(resource: .importColor24Legacy)
             }
+            public static var infoFeedback: DesignSystemImage { .init(resource: .infoFeedbackColor24) }
             public static var key: DesignSystemImage {
                 AppRebrand.isAppRebranded()
                     ? .init(resource: .keyColor24)

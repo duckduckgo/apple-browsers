@@ -737,6 +737,7 @@ public class DDGSync: DDGSyncing {
               !hasAttemptedCurrentDeviceInfoRepair else {
             return
         }
+        Logger.sync.debug("Sync-UnifiedDevices: scheduling current device_info repair")
         let deviceInfoMigrationCoordinator = deviceInfoMigrationCoordinator
         let taskID = UUID()
         currentDeviceInfoRepairTaskID = taskID

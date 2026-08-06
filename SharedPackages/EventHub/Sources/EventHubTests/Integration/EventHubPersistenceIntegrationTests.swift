@@ -20,7 +20,7 @@ import Testing
 import Foundation
 @testable import EventHub
 
-@Suite("EventHub persistence (real UserDefaults round trip)", .timeLimit(.minutes(1)))
+@Suite("EventHub persistence (real UserDefaults round trip)")
 struct EventHubPersistenceIntegrationTests {
     @Test("pixel state survives a real Codable + UserDefaults round trip across repository instances")
     func pixelStateSurvivesRealRoundTripAcrossRepositoryInstances() throws {

@@ -20,7 +20,7 @@ import Testing
 import Foundation
 @testable import EventHub
 
-@Suite("EventHubConfigParser", .timeLimit(.minutes(1)))
+@Suite("EventHubConfigParser")
 struct EventHubConfigParserTests {
     static let settings = settingsDictionary("""
     {

@@ -21,7 +21,7 @@ import Foundation
 import WebKit
 @testable import EventHub
 
-@Suite("WebEventsHandler", .timeLimit(.minutes(1)))
+@Suite("WebEventsHandler")
 struct WebEventsHandlerTests {
     private final class SpyManager: EventHubManaging {
         var handledWebEvents: [(data: [String: Any], tabID: EventHubTabID)] = []

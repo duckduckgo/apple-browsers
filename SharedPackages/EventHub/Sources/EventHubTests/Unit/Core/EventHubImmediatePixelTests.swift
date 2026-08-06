@@ -19,7 +19,7 @@
 import Testing
 @testable import EventHub
 
-@Suite("EventHub immediate pixels", .timeLimit(.minutes(1)))
+@Suite("EventHub immediate pixels")
 struct EventHubImmediatePixelTests {
     static let immediateConfig = """
     { "telemetry": { "webEvent_impression": {

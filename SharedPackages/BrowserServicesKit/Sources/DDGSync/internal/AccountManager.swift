@@ -202,6 +202,7 @@ struct AccountManager: AccountManaging {
             throw SyncError.unableToDecodeResponse("Failed to decode devices update")
         }
 
+        Logger.sync.debug("Sync-UnifiedDevices: device update PATCH succeeded")
         return result
     }
 

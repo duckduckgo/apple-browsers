@@ -1483,7 +1483,9 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             item.target = self
             item.representedObject = candidate
             item.toolTip = candidate.url.absoluteString
-            item.isEnabled = !isAttached && !atCap
+            // An attached tab stays clickable so the same row detaches it; the cap only blocks adding.
+            item.isEnabled = isAttached || !atCap
+            item.state = isAttached ? .on : .off
             item.image = menuFavicon(for: candidate)
             menu.addItem(item)
         }
@@ -1498,8 +1500,9 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     @objc private func recentTabClicked(_ sender: NSMenuItem) {
         guard let candidate = sender.representedObject as? AIChatTabAttachment else { return }
         didMutateDuringAttachMenuSession = true
+        let wasAttached = omnibarController.activeTabAttachments.contains { $0.id == candidate.id }
         omnibarController.toggleTabAttachment(candidate)
-        omnibarController.pixelHandler.fire(.tabChosen)
+        omnibarController.pixelHandler.fire(wasAttached ? .tabAttachmentRemoved : .tabChosen)
         updateAttachmentsLayout()
     }
 

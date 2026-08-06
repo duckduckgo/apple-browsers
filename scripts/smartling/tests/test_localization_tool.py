@@ -20,13 +20,21 @@ async def no_sleep(_):
 
 class FakeSmartlingClient:
 
-    def __init__(self, report=None, pending_jobs=None, estimate_status='COMPLETED'):
+    def __init__(self,
+                 report=None,
+                 pending_jobs=None,
+                 estimate_status='COMPLETED',
+                 cancellation_state='COMPLETED',
+                 job_status='CANCELLED'):
         self.report = report or {}
         self.pending_jobs = pending_jobs or []
         self.estimate_status = estimate_status
+        self.cancellation_state = cancellation_state
+        self.job_status = job_status
         self.authorized_jobs = []
         self.deleted_jobs = []
         self.created_jobs = []
+        self.operations = []
 
     async def list_jobs(self, _job_name, _statuses):
         return self.pending_jobs
@@ -56,7 +64,18 @@ class FakeSmartlingClient:
     async def get_estimate_report(self, _report_id):
         return self.report
 
+    async def cancel_job(self, job_id):
+        self.operations.append(f'cancel:{job_id}')
+        return 'process-123'
+
+    async def get_job_process_state(self, _job_id, _process_id):
+        return self.cancellation_state
+
+    async def get_job(self, _job_id):
+        return {'jobStatus': self.job_status}
+
     async def delete_job(self, job_id):
+        self.operations.append(f'delete:{job_id}')
         self.deleted_jobs.append(job_id)
 
     async def authorize_job(self, job_id):
@@ -86,6 +105,22 @@ class NightlySmartlingTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result.outcome, 'no_content')
         self.assertEqual(client.deleted_jobs, ['job-123'])
         self.assertEqual(client.authorized_jobs, [])
+        self.assertEqual(client.operations, ['cancel:job-123', 'delete:job-123'])
+
+    async def testWhenEmptyJobCancellationFailsThenJobIsNotDeleted(self):
+        client = FakeSmartlingClient(
+            report={
+                'totalStrings': 0,
+                'priceInformation': None,
+            },
+            cancellation_state='FAILED'
+        )
+
+        result = await self.run_nightly(client)
+
+        self.assertEqual(result.outcome, 'review_required')
+        self.assertIn('cancellation failed', result.reason)
+        self.assertEqual(client.operations, ['cancel:job-123'])
 
     async def testWhenMaximumEstimateIsExactlyLimitThenJobIsAuthorized(self):
         client = FakeSmartlingClient(report={

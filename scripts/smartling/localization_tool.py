@@ -152,8 +152,29 @@ class SmartlingClient:
             json={'localeWorkflows': []}
         )
 
+    async def cancel_job(self, job_id: str) -> str:
+        """Cancel a translation job and return its process ID."""
+        data = await self._request(
+            'POST',
+            f'/jobs-api/v3/projects/{self.creds.project_id}/jobs/{job_id}/cancel',
+            json={'reason': 'No untranslated strings'}
+        )
+        process_url = data['response']['data'].get('url', '')
+        process_id = process_url.rstrip('/').rsplit('/', 1)[-1]
+        if not process_url or not process_id:
+            raise RuntimeError("Smartling cancellation returned no process ID")
+        return process_id
+
+    async def get_job_process_state(self, job_id: str, process_id: str) -> str:
+        """Get an asynchronous job process state."""
+        data = await self._request(
+            'GET',
+            f'/jobs-api/v3/projects/{self.creds.project_id}/jobs/{job_id}/processes/{process_id}'
+        )
+        return data['response']['data']['processState']
+
     async def delete_job(self, job_id: str):
-        """Delete an empty translation job."""
+        """Delete a cancelled translation job."""
         await self._request(
             'DELETE',
             f'/jobs-api/v3/projects/{self.creds.project_id}/jobs/{job_id}'
@@ -287,6 +308,23 @@ async def wait_for_estimate(client: SmartlingClient, report_id: str, sleep=async
     raise RuntimeError("Smartling cost estimate timed out")
 
 
+async def wait_for_job_cancellation(client: SmartlingClient,
+                                    job_id: str,
+                                    process_id: str,
+                                    sleep=asyncio.sleep):
+    """Wait until a Smartling job is cancelled."""
+    for _ in range(60):
+        state = await client.get_job_process_state(job_id, process_id)
+        if state == 'FAILED':
+            raise RuntimeError("Smartling job cancellation failed")
+        if state == 'COMPLETED':
+            job = await client.get_job(job_id)
+            if job.get('jobStatus') == 'CANCELLED':
+                return
+        await sleep(2)
+    raise RuntimeError("Smartling job cancellation timed out")
+
+
 def parse_estimate(report: Dict) -> tuple[int, Decimal]:
     """Return untranslated string count and the maximum USD estimate."""
     errors = report.get('errors') or []
@@ -357,6 +395,8 @@ async def run_nightly(client: SmartlingClient,
         total_strings, max_usd = parse_estimate(report)
 
         if total_strings == 0:
+            process_id = await client.cancel_job(job_id)
+            await wait_for_job_cancellation(client, job_id, process_id, sleep)
             await client.delete_job(job_id)
             return NightlyResult(outcome='no_content')
         if max_usd <= threshold:

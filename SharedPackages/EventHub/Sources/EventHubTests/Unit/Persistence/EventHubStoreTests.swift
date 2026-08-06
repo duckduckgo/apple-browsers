@@ -161,4 +161,20 @@ struct EventHubStoreTests {
         let restored = try #require(repository.pixelState(named: "testPixel"))
         #expect(restored.params.isEmpty)
     }
+
+    @Test("a nil backing store reports absence and drops writes without failing")
+    func nilBackingStoreReportsAbsenceAndDropsWrites() {
+        let repository: EventHubStore = EventHubKeyValueStore(store: nil, parser: EventHubConfigParser())
+        let state = PixelState(pixelName: "testPixel", periodStartMillis: 0, periodEndMillis: 86_400_000,
+                                config: Self.sampleConfig, params: ["count": ParamState(value: 3)])
+
+        repository.savePixelState(state)
+
+        #expect(repository.pixelState(named: "testPixel") == nil)
+        #expect(repository.allPixelStates().isEmpty)
+
+        // Must be no-ops rather than trapping.
+        repository.deletePixelState(named: "testPixel")
+        repository.deleteAllPixelStates()
+    }
 }

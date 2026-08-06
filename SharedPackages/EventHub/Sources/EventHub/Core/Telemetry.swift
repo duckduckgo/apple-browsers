@@ -83,6 +83,17 @@ final class Telemetry {
                     config: config, params: parameters.mapValues(\.state))
     }
 
+    /// Raw (pre-bucketing) counts per counter parameter, keyed by parameter name. For debug logging
+    /// only — the fired pixel carries the privacy-safe bucketed value (from `buildPixelParameters`),
+    /// never these exact numbers.
+    var rawCounterValues: [String: Int] {
+        var result: [String: Int] = [:]
+        for (paramName, paramConfig) in config.parameters where paramConfig.isCounter {
+            if let parameter = parameters[paramName] { result[paramName] = parameter.state.value }
+        }
+        return result
+    }
+
     /// The query parameters to emit for this pixel, or `nil` if nothing meaningful was measured
     /// (e.g. no counter matched a bucket and no data parameter has a value).
     func buildPixelParameters() -> [String: String]? {

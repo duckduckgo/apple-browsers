@@ -97,6 +97,14 @@ public final class EventHub: EventHubManaging {
     private var isForeground = false
     private var subscriptions = Set<AnyCancellable>()
 
+    /// `false` until `init` has consumed the settings publishers' initial replay. While `false` the
+    /// subscriptions only record state without applying it: applying during `init` would let a
+    /// transient `enabled == false` — e.g. remote config not loaded yet on a cold launch — reach
+    /// `disableLocked()` and wipe persisted period state that a later `enabled == true` cannot recover.
+    /// Startup instead applies config on the first `onAppForegrounded()`, which is also the earliest
+    /// point a period is allowed to start.
+    private var hasConsumedInitialSettings = false
+
     /// `internal`, not `public` — visible to `@testable import EventHub`, mirroring the Windows
     /// `internal IReadOnlyCollection<PixelState> ActivePixelStates` marker (exposed to tests only).
     var activePixelStates: [PixelState] {
@@ -125,16 +133,31 @@ public final class EventHub: EventHubManaging {
         self.queue = queue
         queue.setSpecific(key: Self.ownQueueIdentityKey, value: ObjectIdentifier(queue))
 
+        // Both subscriptions re-apply the config themselves, so any change in enablement *or* in the
+        // settings (including a consent grant/revoke, which `EventHubSettings` folds into the settings
+        // JSON) takes effect immediately. Integrators do not need to call `onConfigChanged()`.
         settings.enabledPublisher
-            .sink { [weak self] enabled in self?.queue.sync { self?.latestEnabled = enabled } }
+            .sink { [weak self] enabled in
+                self?.queue.sync {
+                    guard let self, self.latestEnabled != enabled else { return }
+                    self.latestEnabled = enabled
+                    Logger.eventHub.info("feature enabled = \(enabled, privacy: .public)")
+                    if self.hasConsumedInitialSettings { self.applyConfigLocked() }
+                }
+            }
             .store(in: &subscriptions)
         settings.settingsPublisher
             .sink { [weak self] settings in
                 self?.queue.sync {
-                    self?.latestConfigs = settings.map { self?.parser.parseTelemetry($0) ?? [] } ?? []
+                    guard let self else { return }
+                    self.latestConfigs = settings.map { self.parser.parseTelemetry($0) } ?? []
+                    Logger.eventHub.info("parsed \(self.latestConfigs.count, privacy: .public) telemetry config(s) from settings")
+                    if self.hasConsumedInitialSettings { self.applyConfigLocked() }
                 }
             }
             .store(in: &subscriptions)
+
+        queue.sync { hasConsumedInitialSettings = true }
     }
 
     public func handleWebEvent(_ webEventData: [String: Any], tabID: EventHubTabID) {
@@ -291,6 +314,11 @@ public final class EventHub: EventHubManaging {
             if let periodSeconds = telemetry.config.trigger.period?.periodSeconds {
                 params["attributionPeriod"] = String(EventHubAttribution.startOfIntervalSeconds(
                     periodStartMillis: telemetry.periodStartMillis, periodSeconds: periodSeconds))
+                let rawCounts = telemetry.rawCounterValues
+                    .sorted { $0.key < $1.key }
+                    .map { "\($0.key)=\($0.value)" }
+                    .joined(separator: ", ")
+                Logger.eventHub.info("firing period pixel \(name, privacy: .public), raw counts [\(rawCounts, privacy: .public)]")
                 pixelFiring.enqueueFirePixel(named: name, parameters: params)
             } else {
                 Logger.eventHub.error("pixel \(name, privacy: .public) not fired, its period trigger has no period to attribute to")

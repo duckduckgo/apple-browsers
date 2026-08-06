@@ -313,6 +313,50 @@ struct EventHubTests {
         #expect(f.count(of: Self.pixel1) == 1)
     }
 
+    // MARK: Settings changes apply without an explicit onConfigChanged
+
+    @Test("a settings change that adds a pixel starts counting it without an explicit onConfigChanged")
+    func settingsChangeAddingPixelAppliesWithoutOnConfigChanged() {
+        // Starts with the pixel absent, as a consent-gated entry stripped by EventHubSettings would be.
+        let f = EventHubFixture.active(#"{ "telemetry": { } }"#)
+        #expect(f.state(of: Self.pixel1) == nil)
+
+        // Consent granted: the entry reappears in the settings JSON. No onConfigChanged() call here —
+        // EventHub must pick it up itself, otherwise events are silently dropped until the next
+        // foreground or remote-config update.
+        f.setSettings(Self.dayConfig)
+
+        f.manager.handleWebEvent(EventHubFixture.webEvent("test"), tabID: .new())
+        #expect(f.count(of: Self.pixel1) == 1)
+    }
+
+    @Test("a settings change that removes a pixel tears it down without an explicit onConfigChanged")
+    func settingsChangeRemovingPixelAppliesWithoutOnConfigChanged() {
+        let f = EventHubFixture.active(Self.dayConfig)
+        f.manager.handleWebEvent(EventHubFixture.webEvent("test"), tabID: .new())
+        f.advance(by: EventHubFixture.writeBehindFlush)
+        #expect(f.repository.pixelState(named: Self.pixel1) != nil)
+
+        // Consent revoked: the entry is stripped. Again no explicit onConfigChanged().
+        f.setSettings(#"{ "telemetry": { } }"#)
+
+        #expect(f.state(of: Self.pixel1) == nil)
+        #expect(f.repository.pixelState(named: Self.pixel1) == nil)
+    }
+
+    @Test("disabling the feature clears state without an explicit onConfigChanged")
+    func disablingFeatureAppliesWithoutOnConfigChanged() {
+        let f = EventHubFixture.active(Self.dayConfig)
+        f.manager.handleWebEvent(EventHubFixture.webEvent("test"), tabID: .new())
+        f.advance(by: EventHubFixture.writeBehindFlush)
+        #expect(f.repository.pixelState(named: Self.pixel1) != nil)
+
+        f.setEnabled(false)
+
+        #expect(f.state(of: Self.pixel1) == nil)
+        #expect(f.repository.pixelState(named: Self.pixel1) == nil)
+    }
+
     // MARK: onConfigChanged lifecycle
 
     @Test("onConfigChanged initialises new pixels")

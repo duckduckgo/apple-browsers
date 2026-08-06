@@ -22,6 +22,7 @@ import Combine
 import CombineExtensions
 import Common
 import ConcurrencyExtensions
+import EventHub
 import FeatureFlags
 import Foundation
 import FoundationExtensions
@@ -72,6 +73,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
         var autoplayPreferences: AutoplayPreferences
         var permissionManager: PermissionManagerProtocol
         var webTrackingProtectionPreferences: WebTrackingProtectionPreferences
+        let eventHub: EventHubManaging
     }
 
     fileprivate weak var delegate: TabDelegate?
@@ -160,7 +162,8 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
                      aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable? = nil,
                      aiChatSessionStore: AIChatSessionStoring? = nil,
                      tabCrashAggregator: TabCrashAggregator? = nil,
-                     themeManager: ThemeManaging? = nil
+                     themeManager: ThemeManaging? = nil,
+                     eventHub: EventHubManaging? = nil
     ) {
 
         let duckPlayer = duckPlayer
@@ -227,7 +230,8 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
                   aiChatMenuConfiguration: aiChatMenuConfiguration ?? NSApp.delegateTyped.aiChatMenuConfiguration,
                   aiChatSessionStore: aiChatSessionStore ?? NSApp.delegateTyped.aiChatSessionStore,
                   tabCrashAggregator: tabCrashAggregator ?? NSApp.delegateTyped.tabCrashAggregator,
-                  themeManager: themeManager ?? NSApp.delegateTyped.themeManager
+                  themeManager: themeManager ?? NSApp.delegateTyped.themeManager,
+                  eventHub: eventHub ?? NSApp.delegateTyped.eventHubIntegration.eventHub
         )
     }
 
@@ -278,7 +282,8 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
          aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable,
          aiChatSessionStore: AIChatSessionStoring,
          tabCrashAggregator: TabCrashAggregator,
-         themeManager: ThemeManaging
+         themeManager: ThemeManaging,
+         eventHub: EventHubManaging
     ) {
         self._id = id
         self.uuid = uuid ?? UUID().uuidString
@@ -362,7 +367,8 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
                                                           tabsPreferences: tabsPreferences,
                                                           autoplayPreferences: autoplayPreferences,
                                                           permissionManager: permissionManager,
-                                                          webTrackingProtectionPreferences: webTrackingProtectionPreferences)
+                                                          webTrackingProtectionPreferences: webTrackingProtectionPreferences,
+                                                          eventHub: eventHub)
         let tabExtensionsBuilderArguments: TabExtensionsBuilderArguments = (tabIdentifier: instrumentation.currentTabIdentifier,
                                                                             tabID: self.uuid,
                                                                             isTabPinned: { tabGetter().map { tab in pinnedTabsManagerProvider.pinnedTabsManager(for: tab)?.isTabPinned(tab) ?? false } ?? false },

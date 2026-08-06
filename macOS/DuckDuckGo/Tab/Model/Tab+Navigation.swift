@@ -103,6 +103,9 @@ extension Tab: NavigationResponder {
             // Tab Suspension
             .weak(nullable: self.tabSuspension),
 
+            // EventHub — observe navigation starts to reset per-tab web-event dedup on URL change
+            .weak(nullable: self.eventHub),
+
             // should be the last, for Unit Tests navigation events tracking
             .struct(nullable: testsClosureNavigationResponder)
             // !! don't add Tab Extensions after this line !!

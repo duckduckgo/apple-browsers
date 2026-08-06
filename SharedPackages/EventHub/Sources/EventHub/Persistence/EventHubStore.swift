@@ -49,12 +49,13 @@ public final class EventHubKeyValueStore: EventHubStore {
     /// The single key under which the map of pixel-name to `EventHubStoredPixelState` is stored.
     public static let storageKey = "eventhub_pixel_states"
 
-    private let store: ThrowingKeyValueStoring
+    /// `nil` when the platform could not open its store: reads report absence, writes are dropped.
+    private let store: ThrowingKeyValueStoring?
     private let parser: EventHubConfigParsing
     private let eventMapping: EventMapping<EventHubDebugEvent>?
 
     public init(
-        store: ThrowingKeyValueStoring,
+        store: ThrowingKeyValueStoring?,
         parser: EventHubConfigParsing,
         eventMapping: EventMapping<EventHubDebugEvent>? = nil
     ) {
@@ -96,7 +97,7 @@ public final class EventHubKeyValueStore: EventHubStore {
 
     public func deleteAllPixelStates() {
         do {
-            try store.removeObject(forKey: Self.storageKey)
+            try store?.removeObject(forKey: Self.storageKey)
         } catch {
             Logger.eventHub.error("store: could not delete all pixel state: \(error.localizedDescription, privacy: .public)")
             eventMapping?.fire(.pixelStatePersistenceFailed(operation: .delete), error: error)
@@ -106,7 +107,7 @@ public final class EventHubKeyValueStore: EventHubStore {
     private func readMap() -> [String: EventHubStoredPixelState] {
         let stored: Any?
         do {
-            stored = try store.object(forKey: Self.storageKey)
+            stored = try store?.object(forKey: Self.storageKey)
         } catch {
             Logger.eventHub.error("store: could not read pixel state: \(error.localizedDescription, privacy: .public)")
             eventMapping?.fire(.pixelStatePersistenceFailed(operation: .read), error: error)
@@ -134,7 +135,7 @@ public final class EventHubKeyValueStore: EventHubStore {
             return
         }
         do {
-            try store.set(data, forKey: Self.storageKey)
+            try store?.set(data, forKey: Self.storageKey)
         } catch {
             Logger.eventHub.error("store: could not persist pixel state: \(error.localizedDescription, privacy: .public)")
             eventMapping?.fire(.pixelStatePersistenceFailed(operation: .write), error: error)

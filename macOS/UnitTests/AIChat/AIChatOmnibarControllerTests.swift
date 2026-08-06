@@ -705,23 +705,17 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         return (controller, attachedTab)
     }
 
-    func testWhenAttachedTabNavigatesAndPageContentIsSentAutomatically_ThenAttachmentFollowsTheNewPage() {
-        let (controller, attachedTab) = makeControllerWithAttachedOtherTab(automaticallySendPageContext: true)
-
-        _ = attachedTab.setContent(.url(URL(string: "https://apple.com")!, credential: nil, source: .ui))
-
-        XCTAssertEqual(controller.activeTabAttachments.map(\.url.absoluteString), ["https://apple.com"],
-                       "With auto-send on, the attachment refreshes to the page the tab is now on")
-        XCTAssertEqual(controller.activeTabAttachments.map(\.id), [attachedTab.uuid])
-    }
-
-    func testWhenAttachedTabNavigatesAndPageContentIsNotSentAutomatically_ThenAttachmentIsDropped() {
+    /// Tabs built here never finish loading (no network), so they stand in for the attach-a-loading-tab
+    /// case: the URL change is that load settling, and the attachment rebases instead of being lost —
+    /// even with auto-send off, where a settled tab would be dropped. The drop itself is covered by
+    /// `AIChatAttachedTabNavigationPolicyTests`, which can pin the load state.
+    func testWhenTabAttachedMidLoadLandsOnAnotherURL_ThenAttachmentRebasesInsteadOfBeingDropped() {
         let (controller, attachedTab) = makeControllerWithAttachedOtherTab(automaticallySendPageContext: false)
 
         _ = attachedTab.setContent(.url(URL(string: "https://apple.com")!, credential: nil, source: .ui))
 
-        XCTAssertTrue(controller.activeTabAttachments.isEmpty,
-                      "The user attached one specific page; navigating away drops it rather than sending another page")
+        XCTAssertEqual(controller.activeTabAttachments.map(\.url.absoluteString), ["https://apple.com"],
+                       "Dropping here would lose the tab the user just attached")
     }
 
     /// The reported bug: switching to the attached tab used to cancel its observer, so navigating
@@ -1048,9 +1042,10 @@ final class AIChatOmnibarControllerTests: XCTestCase {
                      "No tab attachments → omnibar omits `pageContext` entirely on the prompt")
     }
 
-    func testWhenTabSwitchesToTabWithSavedTabAttachments_ThenPanelAttachmentsCallbackFires() {
-        // Given — tab 1 has a saved tab attachment; register the unified-panel callback.
-        let attachment = makeTabAttachment(id: "tab-A")
+    func testWhenTabSwitchesToTabWithSavedTabAttachments_ThenPanelAttachmentsCallbackFires() throws {
+        // Given — tab 1 has a saved tab attachment; register the unified-panel callback. The
+        // attachment has to name a tab that is actually open: attachments for closed tabs are pruned.
+        let attachment = makeTabAttachment(id: try XCTUnwrap(tabCollectionViewModel.selectedTabViewModel?.tab.uuid))
         tabCollectionViewModel.selectedTabViewModel?.addressBarSharedTextState.setAIChatTabAttachments([attachment])
 
         var receivedLists: [[AIChatPanelAttachment]] = []

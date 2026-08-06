@@ -75,11 +75,13 @@ final class AIChatAttachedTabNavigationPolicyTests: XCTestCase {
 
     // MARK: - Same page
 
-    func testSamePageWithUnchangedTitleIsKept() {
-        let action = AIChatAttachedTabNavigationPolicy.action(for: attachment(),
+    func testSamePageWithUnchangedTitleAndFaviconIsKept() {
+        let favicon = NSImage()
+
+        let action = AIChatAttachedTabNavigationPolicy.action(for: attachment(favicon: favicon),
                                                              content: content(attachedURL),
                                                              title: "Article",
-                                                             favicon: NSImage(),
+                                                             favicon: favicon,
                                                              isSettlingLoadFromAttachTime: false,
                                                              automaticallySendsPageContext: false)
 

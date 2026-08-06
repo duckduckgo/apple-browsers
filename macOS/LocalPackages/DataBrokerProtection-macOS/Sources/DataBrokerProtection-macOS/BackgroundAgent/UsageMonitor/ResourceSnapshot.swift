@@ -53,10 +53,10 @@ public struct ResourceSnapshot: Equatable, Sendable {
         }
 
         public struct WebContent: Equatable, Sendable {
-            /// Current summed resident memory, or `nil` if unavailable; identifies sustained usage.
-            public let residentBytes: UInt64?
-            /// Highest sampled resident-memory sum; identifies broker-page memory spikes.
-            public let peakResidentBytes: UInt64?
+            /// Current summed physical footprint, or `nil` if unavailable; identifies sustained usage.
+            public let footprintBytes: UInt64?
+            /// Highest sampled physical-footprint sum; identifies broker-page memory spikes.
+            public let peakFootprintBytes: UInt64?
             /// Current process count, or `nil` if unavailable; relates usage to process fan-out.
             public let processCount: Int?
         }

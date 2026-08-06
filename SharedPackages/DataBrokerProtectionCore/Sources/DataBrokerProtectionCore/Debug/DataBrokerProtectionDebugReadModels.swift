@@ -63,8 +63,8 @@ public struct DBPDebugResourceUsage: Encodable, Equatable, Sendable {
         public let averageCPUPercent: Double
         public let agentPhysicalFootprintBytes: UInt64
         public let peakAgentPhysicalFootprintBytes: UInt64
-        public let webContentResidentBytes: UInt64?
-        public let peakWebContentResidentBytes: UInt64?
+        public let webContentFootprintBytes: UInt64?
+        public let peakWebContentFootprintBytes: UInt64?
         public let webContentProcessCount: Int?
         public let webContentCPUDiscoveredProcessCount: Int
         public let webContentCPUReadableProcessCount: Int
@@ -77,8 +77,8 @@ public struct DBPDebugResourceUsage: Encodable, Equatable, Sendable {
                     averageCPUPercent: Double,
                     agentPhysicalFootprintBytes: UInt64,
                     peakAgentPhysicalFootprintBytes: UInt64,
-                    webContentResidentBytes: UInt64?,
-                    peakWebContentResidentBytes: UInt64?,
+                    webContentFootprintBytes: UInt64?,
+                    peakWebContentFootprintBytes: UInt64?,
                     webContentProcessCount: Int?,
                     webContentCPUDiscoveredProcessCount: Int,
                     webContentCPUReadableProcessCount: Int,
@@ -90,8 +90,8 @@ public struct DBPDebugResourceUsage: Encodable, Equatable, Sendable {
             self.averageCPUPercent = averageCPUPercent
             self.agentPhysicalFootprintBytes = agentPhysicalFootprintBytes
             self.peakAgentPhysicalFootprintBytes = peakAgentPhysicalFootprintBytes
-            self.webContentResidentBytes = webContentResidentBytes
-            self.peakWebContentResidentBytes = peakWebContentResidentBytes
+            self.webContentFootprintBytes = webContentFootprintBytes
+            self.peakWebContentFootprintBytes = peakWebContentFootprintBytes
             self.webContentProcessCount = webContentProcessCount
             self.webContentCPUDiscoveredProcessCount = webContentCPUDiscoveredProcessCount
             self.webContentCPUReadableProcessCount = webContentCPUReadableProcessCount

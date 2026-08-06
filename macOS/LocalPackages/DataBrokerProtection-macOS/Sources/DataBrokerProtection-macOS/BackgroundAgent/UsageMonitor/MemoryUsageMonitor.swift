@@ -55,8 +55,8 @@ struct MemoryUsageMonitor {
                 peakFootprintBytes: peakAgentFootprintBytes
             ),
             webContent: .init(
-                residentBytes: sample.webContentResidentBytes,
-                peakResidentBytes: peakWebContentBytes,
+                footprintBytes: sample.webContentFootprintBytes,
+                peakFootprintBytes: peakWebContentBytes,
                 processCount: sample.webContentCount
             ),
             hadCriticalPressure: hadCriticalPressure
@@ -68,8 +68,8 @@ struct MemoryUsageMonitor {
             peakAgentFootprintBytes,
             sample.agentFootprintBytes
         )
-        if let residentBytes = sample.webContentResidentBytes {
-            peakWebContentBytes = max(peakWebContentBytes ?? 0, residentBytes)
+        if let footprintBytes = sample.webContentFootprintBytes {
+            peakWebContentBytes = max(peakWebContentBytes ?? 0, footprintBytes)
         }
     }
 }

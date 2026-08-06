@@ -185,8 +185,8 @@ public final class ResourceMonitor: ResourceMonitoring, @unchecked Sendable {
     // MARK: - Logging
 
     private func log(_ snapshot: ResourceSnapshot) {
-        let webContentResident = snapshot.memory.webContent.residentBytes.map(Self.formattedMemory) ?? "unavailable"
-        let peakWebContentResident = snapshot.memory.webContent.peakResidentBytes
+        let webContentFootprint = snapshot.memory.webContent.footprintBytes.map(Self.formattedMemory) ?? "unavailable"
+        let peakWebContentFootprint = snapshot.memory.webContent.peakFootprintBytes
             .map(Self.formattedMemory) ?? "unavailable"
         let webContentCount = snapshot.memory.webContent.processCount.map(String.init) ?? "unavailable"
         let fields = [
@@ -196,8 +196,8 @@ public final class ResourceMonitor: ResourceMonitoring, @unchecked Sendable {
             "averageCPUPercent=\(snapshot.cpu.averagePercent)",
             "agentFootprint=\(Self.formattedMemory(snapshot.memory.agent.footprintBytes))",
             "peakAgentFootprint=\(Self.formattedMemory(snapshot.memory.agent.peakFootprintBytes))",
-            "webContentResident=\(webContentResident)",
-            "peakWebContentResident=\(peakWebContentResident)",
+            "webContentFootprint=\(webContentFootprint)",
+            "peakWebContentFootprint=\(peakWebContentFootprint)",
             "webContentProcessCount=\(webContentCount)",
             "webContentCPUPIDs=\(snapshot.cpu.coverage.readableCount)/"
                 + "\(snapshot.cpu.coverage.discoveredCount)",
@@ -278,8 +278,8 @@ private extension DBPDebugResourceUsage.Sample {
             averageCPUPercent: snapshot.cpu.averagePercent,
             agentPhysicalFootprintBytes: snapshot.memory.agent.footprintBytes,
             peakAgentPhysicalFootprintBytes: snapshot.memory.agent.peakFootprintBytes,
-            webContentResidentBytes: snapshot.memory.webContent.residentBytes,
-            peakWebContentResidentBytes: snapshot.memory.webContent.peakResidentBytes,
+            webContentFootprintBytes: snapshot.memory.webContent.footprintBytes,
+            peakWebContentFootprintBytes: snapshot.memory.webContent.peakFootprintBytes,
             webContentProcessCount: snapshot.memory.webContent.processCount,
             webContentCPUDiscoveredProcessCount: snapshot.cpu.coverage.discoveredCount,
             webContentCPUReadableProcessCount: snapshot.cpu.coverage.readableCount,

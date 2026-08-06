@@ -20,22 +20,21 @@ import Foundation
 
 struct MemoryUsageSample {
     let agentFootprintBytes: UInt64
-    let webContentResidentBytes: UInt64?
+    let webContentFootprintBytes: UInt64?
     let webContentCount: Int?
 }
 
-/// Mirrors `getCurrentMemoryUsage()` and `getWebContentProcessMemory()` in the AppHealth
-/// `MemoryUsageMonitor`.
+/// Agent memory mirrors AppHealth's `getCurrentMemoryUsage()`. WebContent uses physical footprint
+/// instead of the resident size used by `getWebContentProcessMemory()` to avoid inflated shared mappings.
 struct MemoryUsageSampler {
 
     func takeSample(webContentPIDs: [pid_t]?) -> MemoryUsageSample {
-        // getWebContentProcessMemory() also sums resident size, including shared mappings at full size.
-        let residentBytes = webContentPIDs.map { pids in
-            pids.compactMap(Self.residentMemorySize).reduce(0, +)
+        let webContentBytes = webContentPIDs.map { pids in
+            pids.compactMap(Self.physicalFootprint).reduce(0, +)
         }
         return MemoryUsageSample(
             agentFootprintBytes: Self.agentPhysicalFootprint(),
-            webContentResidentBytes: residentBytes,
+            webContentFootprintBytes: webContentBytes,
             webContentCount: webContentPIDs?.count
         )
     }
@@ -51,10 +50,13 @@ struct MemoryUsageSampler {
         return result == KERN_SUCCESS ? UInt64(vmInfo.phys_footprint) : 0
     }
 
-    private static func residentMemorySize(for pid: pid_t) -> UInt64? {
-        var taskInfo = proc_taskinfo()
-        let size = Int32(MemoryLayout<proc_taskinfo>.size)
-        let result = proc_pidinfo(pid, PROC_PIDTASKINFO, 0, &taskInfo, size)
-        return result == size ? taskInfo.pti_resident_size : nil
+    private static func physicalFootprint(for pid: pid_t) -> UInt64? {
+        var usage = rusage_info_v4()
+        let result = withUnsafeMutablePointer(to: &usage) { pointer in
+            pointer.withMemoryRebound(to: rusage_info_t?.self, capacity: 1) {
+                proc_pid_rusage(pid, RUSAGE_INFO_V4, $0)
+            }
+        }
+        return result == 0 ? usage.ri_phys_footprint : nil
     }
 }

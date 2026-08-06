@@ -1539,21 +1539,46 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         updateAttachmentsLayout()
     }
 
-    /// Attaches dropped images and PDFs, keeping only what the selected model accepts, through the
-    /// same validation as the picker. Returns `false` when none of them can be attached, so the
-    /// text view falls back to dropping the path into the prompt.
-    /// - Returns: `true` if any file was taken.
+    /// Attaches dropped images and PDFs through the same validation as the picker. A file of a kind
+    /// the omnibar attaches always consumes the drag, even when it can't be taken — letting it fall
+    /// through would put its absolute path into the prompt as text.
+    /// - Returns: `true` if the drop was consumed.
     func addAttachmentsFromDrop(_ urls: [URL]) -> Bool {
-        let accepted = urls.filter { url in
-            guard let type = UTType(filenameExtension: url.pathExtension.lowercased()) else { return false }
-            return type.conforms(to: .image) ? canPickAdditionalImages : omnibarController.selectedModelSupportsFileUpload
-        }
-        guard !accepted.isEmpty else { return false }
-        // A successful drop is a pick action from the user's perspective, so clear any stale
-        // pick-time rejection error (matching the file/image picker path).
+        let dropped = urls.compactMap { url in UTType(filenameExtension: url.pathExtension.lowercased()).map { (url: url, type: $0) } }
+        let images = dropped.filter { $0.type.conforms(to: .image) }
+        let files = dropped.filter { !$0.type.conforms(to: .image) }
+        guard !dropped.isEmpty else { return false }
+
+        // Images keep the picker's one-over cue; a file has to be a type the model listed, since
+        // supporting files at all doesn't mean supporting PDFs.
+        let imageRoom = max(0, omnibarController.imageAttachmentsDisplayCap - omnibarController.activeImageAttachments.count)
+        let acceptedImages = shouldShowImageUpload ? images.prefix(imageRoom).map(\.url) : []
+        let acceptedFiles = files.filter { canAttachDroppedFile(ofType: $0.type) }.map(\.url)
+
+        // A drop is a pick action from the user's perspective, so clear any stale pick-time error.
         lastAttachmentError = nil
-        addPickedAttachments(from: accepted)
+        guard !acceptedImages.isEmpty || !acceptedFiles.isEmpty else {
+            lastAttachmentError = dropRejectionMessage(hasFiles: !files.isEmpty)
+            updateAttachmentsLayout()
+            return true
+        }
+        addPickedAttachments(from: acceptedImages + acceptedFiles)
         return true
+    }
+
+    private func canAttachDroppedFile(ofType type: UTType) -> Bool {
+        guard omnibarController.selectedModelSupportsFileUpload else { return false }
+        return omnibarController.selectedModelSupportedFileTypes
+            .compactMap(UTType.init(mimeType:))
+            .contains { type.conforms(to: $0) }
+    }
+
+    private func dropRejectionMessage(hasFiles: Bool) -> String {
+        guard !hasFiles, shouldShowImageUpload else {
+            let acceptedNames = omnibarController.selectedModelSupportedFileTypes.map(AIChatAttachmentValidator.fileTypeName(for:))
+            return UserText.aiChatAttachmentUnsupportedFileType(acceptedFileTypes: acceptedNames)
+        }
+        return UserText.aiChatAttachmentImageTurnLimit(maxImagesPerTurn: omnibarController.maxImageAttachments)
     }
 
     /// Reads file bytes off disk and builds a file attachment (PDFs etc.), inspecting PDFs for page

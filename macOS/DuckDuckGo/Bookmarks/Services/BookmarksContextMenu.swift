@@ -17,7 +17,11 @@
 //
 
 import AppKit
+import Bookmarks
 import DesignResourcesKitIcons
+import FeatureFlags
+import PrivacyConfig
+import os.log
 
 protocol BookmarksContextMenuDelegate: NSMenuDelegate, BookmarkSearchMenuItemSelectors {
     var isSearching: Bool { get }
@@ -34,6 +38,7 @@ final class BookmarksContextMenu: NSMenu {
 
     let bookmarkManager: BookmarkManager
     let windowControllersManager: WindowControllersManagerProtocol
+    private let featureFlagger: FeatureFlagger
 
     private weak var bookmarksContextMenuDelegate: BookmarksContextMenuDelegate? {
         guard let delegate = delegate as? BookmarksContextMenuDelegate else {
@@ -44,9 +49,15 @@ final class BookmarksContextMenu: NSMenu {
     }
 
     @MainActor
-    init(bookmarkManager: BookmarkManager? = nil, windowControllersManager: WindowControllersManagerProtocol? = nil, delegate: BookmarksContextMenuDelegate) {
+    init(
+        bookmarkManager: BookmarkManager? = nil,
+        windowControllersManager: WindowControllersManagerProtocol? = nil,
+        featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
+        delegate: BookmarksContextMenuDelegate
+    ) {
         self.bookmarkManager = bookmarkManager ?? NSApp.delegateTyped.bookmarkManager
         self.windowControllersManager = windowControllersManager ?? Application.appDelegate.windowControllersManager
+        self.featureFlagger = featureFlagger
         super.init(title: "")
         self.delegate = delegate
         self.autoenablesItems = false
@@ -57,10 +68,13 @@ final class BookmarksContextMenu: NSMenu {
     }
 
     override func update() {
-        items = Self.menuItems(for: bookmarksContextMenuDelegate?.selectedItems() ?? [],
-                               target: self,
-                               forSearch: bookmarksContextMenuDelegate?.isSearching ?? false,
-                               includeManageBookmarksItem: bookmarksContextMenuDelegate?.shouldIncludeManageBookmarksItem ?? true)
+        items = Self.menuItems(
+            for: bookmarksContextMenuDelegate?.selectedItems() ?? [],
+            target: self,
+            forSearch: bookmarksContextMenuDelegate?.isSearching ?? false,
+            includeManageBookmarksItem: bookmarksContextMenuDelegate?.shouldIncludeManageBookmarksItem ?? true,
+            includeReorderByNameItem: featureFlagger.isFeatureOn(.bookmarksReorderByName)
+        )
     }
 
 }
@@ -72,7 +86,13 @@ extension BookmarksContextMenu {
     ///   - objects: The objects to create the menu for.
     ///   - forSearch: Boolean that indicates if a bookmark search is currently happening.
     /// - Returns: An instance of NSMenu or nil if `objects` is not a `Bookmark` or a `Folder`.
-    static func menuItems(for objects: [Any]?, target: AnyObject?, forSearch: Bool, includeManageBookmarksItem: Bool) -> [NSMenuItem] {
+    static func menuItems(
+        for objects: [Any]?,
+        target: AnyObject?,
+        forSearch: Bool,
+        includeManageBookmarksItem: Bool,
+        includeReorderByNameItem: Bool
+    ) -> [NSMenuItem] {
         guard let objects, !objects.isEmpty else {
             return [addNewFolderMenuItem(entity: nil, target: target)]
         }
@@ -93,7 +113,12 @@ extension BookmarksContextMenu {
             return []
         }
 
-        let menuItems = menuItems(for: object, target: target, forSearch: forSearch, includeManageBookmarksItem: includeManageBookmarksItem)
+        let menuItems = menuItems(
+            for: object,
+            target: target,
+            forSearch: forSearch,
+            includeManageBookmarksItem: includeManageBookmarksItem,
+            includeReorderByNameItem: includeReorderByNameItem)
 
         return menuItems
     }
@@ -105,12 +130,23 @@ extension BookmarksContextMenu {
     ///   - target: The target to associate to the `NSMenuItem`
     ///   - forSearch: Boolean that indicates if a bookmark search is currently happening.
     /// - Returns: An instance of NSMenu or nil if `entity` is not a `Bookmark` or a `Folder`.
-    static func menuItems(for entity: BaseBookmarkEntity, target: AnyObject?, forSearch: Bool, includeManageBookmarksItem: Bool) -> [NSMenuItem] {
+    static func menuItems(
+        for entity: BaseBookmarkEntity,
+        target: AnyObject?,
+        forSearch: Bool,
+        includeManageBookmarksItem: Bool,
+        includeReorderByNameItem: Bool
+    ) -> [NSMenuItem] {
         switch entity {
         case let bookmark as Bookmark:
             return menuItems(for: bookmark, target: target, isFavorite: bookmark.isFavorite, forSearch: forSearch, includeManageBookmarksItem: includeManageBookmarksItem)
         case let folder as BookmarkFolder:
-            return menuItems(for: folder, target: target, forSearch: forSearch, includeManageBookmarksItem: includeManageBookmarksItem)
+            return menuItems(
+                for: folder,
+                target: target,
+                forSearch: forSearch,
+                includeManageBookmarksItem: includeManageBookmarksItem,
+                includeReorderByNameItem: includeReorderByNameItem)
         default:
             assertionFailure("Unexpected entity \(entity)")
             return []
@@ -144,7 +180,13 @@ extension BookmarksContextMenu {
         return items
     }
 
-    static func menuItems(for folder: BookmarkFolder, target: AnyObject?, forSearch: Bool, includeManageBookmarksItem: Bool) -> [NSMenuItem] {
+    static func menuItems(
+        for folder: BookmarkFolder,
+        target: AnyObject?,
+        forSearch: Bool,
+        includeManageBookmarksItem: Bool,
+        includeReorderByNameItem: Bool
+    ) -> [NSMenuItem] {
         // disable "Open All" if no Bookmarks in folder
         let hasBookmarks = folder.children.contains(where: { $0 is Bookmark })
         var items = [
@@ -158,6 +200,9 @@ extension BookmarksContextMenu {
             addNewFolderMenuItem(entity: folder, target: target),
         ]
 
+        if includeReorderByNameItem {
+            items.insert(reorderByNameMenuItem(folder: folder, target: target), at: 5)
+        }
         if includeManageBookmarksItem {
             items.append(manageBookmarksMenuItem(target: target))
         }
@@ -225,6 +270,12 @@ extension BookmarksContextMenu {
 
     static func moveToEndMenuItem(entity: BaseBookmarkEntity?, target: AnyObject?) -> NSMenuItem {
         NSMenuItem(title: UserText.bookmarksBarContextMenuMoveToEnd, action: #selector(BookmarkMenuItemSelectors.moveToEnd(_:)), target: target, representedObject: entity)
+            .withImage(DesignSystemImages.Glyphs.Size12.arrowDown)
+    }
+
+    static func reorderByNameMenuItem(folder: BookmarkFolder?, target: AnyObject?) -> NSMenuItem {
+        NSMenuItem(title: UserText.bookmarksBarContextMenuReorderByName, action: #selector(FolderMenuItemSelectors.reorderByName(_:)), target: target, representedObject: folder)
+            .withImage(DesignSystemImages.Glyphs.Size12.arrowUpDown)
     }
 
     static func showInFolderMenuItem(bookmark: Bookmark?, target: AnyObject?) -> NSMenuItem {
@@ -411,6 +462,32 @@ extension BookmarksContextMenu: BookmarkMenuItemSelectors {
 }
 // MARK: - FolderMenuItemSelectors
 extension BookmarksContextMenu: FolderMenuItemSelectors {
+    @MainActor
+    @objc func reorderByName(_ sender: NSMenuItem) {
+        guard let folder = sender.representedObject as? BookmarkFolder else {
+            assertionFailure("Failed to retrieve BookmarkFolder from Reorder by Name context menu item")
+            return
+        }
+
+        let sortedChildIDs = folder.children
+            .sorted(by: .nameAscending)
+            .map(\.id)
+
+        guard sortedChildIDs != folder.children.map(\.id) else {
+            bookmarkManager.sortMode = .manual
+            return
+        }
+
+        let bookmarkManager = bookmarkManager
+        bookmarkManager.move(objectUUIDs: sortedChildIDs, toIndex: 0, withinParentFolder: .parent(uuid: folder.id)) { error in
+            guard let error else {
+                bookmarkManager.sortMode = .manual
+                return
+            }
+
+            Logger.bookmarks.error("Failed to reorder bookmark folder by name: \(error.localizedDescription, privacy: .public)")
+        }
+    }
 
     @MainActor
     @objc func newFolder(_ sender: Any?) {
@@ -492,7 +569,6 @@ extension BookmarksContextMenu: FolderMenuItemSelectors {
 }
 
 extension BookmarksContextMenu: BookmarkSearchMenuItemSelectors {
-
     func showInFolder(_ sender: NSMenuItem) {
         bookmarksContextMenuDelegate?.showInFolder(sender)
     }

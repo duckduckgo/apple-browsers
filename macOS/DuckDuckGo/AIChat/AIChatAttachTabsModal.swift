@@ -158,7 +158,9 @@ struct AIChatAttachTabsModal: ModalView {
     }
 
     private func stopKeyMonitor() {
-        keyMonitor.map(NSEvent.removeMonitor)
+        if let keyMonitor {
+            NSEvent.removeMonitor(keyMonitor)
+        }
         keyMonitor = nil
     }
 

@@ -1569,7 +1569,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     private func canAttachDroppedFile(ofType type: UTType) -> Bool {
         guard omnibarController.selectedModelSupportsFileUpload else { return false }
         return omnibarController.selectedModelSupportedFileTypes
-            .compactMap(UTType.init(mimeType:))
+            .compactMap { UTType(mimeType: $0) }
             .contains { type.conforms(to: $0) }
     }
 

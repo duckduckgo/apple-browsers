@@ -3177,6 +3177,10 @@ class MainViewController: UIViewController {
     /// clipping (keeps the pill shadow and below-bar overflow) and tints the exposed container darker
     /// so the notch shows.
     private func updateWindowedAddressBarCorners() {
+        // Runs every layout pass; on iPhone it can only repaint the container over the unified
+        // toggle input chrome, which owns it there.
+        guard AppWidthObserver.shared.isPad else { return }
+
         // Floating UI and the move animation own the container background; don't fight them. Both
         // re-run this via decorate().
         guard !isFloatingUIEnabled, !isAddressBarMoveInProgress else { return }

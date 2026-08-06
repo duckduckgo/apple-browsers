@@ -19,6 +19,7 @@
 import AppKit
 import Combine
 import Foundation
+import WebKit
 
 /// Keeps each prompt's tab attachments in step with the tabs they point at: cards follow or drop on
 /// navigation per `AIChatAttachedTabNavigationPolicy`, and closed tabs lose their attachment.
@@ -38,6 +39,9 @@ final class AIChatAttachedTabsTracker {
         let cancellable: AnyCancellable
         /// While set, a URL change is that load settling (redirect, committed URL), not a page change.
         var isSettlingLoadFromAttachTime: Bool
+        /// What the web view had committed when the tab was attached. A redirect resolves into the
+        /// same navigation; a link or a script sending the tab elsewhere commits a different one.
+        weak var navigationAtAttachTime: WKBackForwardListItem?
         /// Title and favicon of the page just navigated away from. WebKit keeps publishing them for a
         /// beat after the URL changes, and adopting them would undo the reset the new page needs.
         var metadataOfPreviousPage: (title: String?, favicon: NSImage?)?
@@ -117,7 +121,8 @@ final class AIChatAttachedTabsTracker {
             observers[key] = Observer(promptStore: store,
                                       tab: tab,
                                       cancellable: observe(tab, key: key, in: store),
-                                      isSettlingLoadFromAttachTime: tab.isLoading)
+                                      isSettlingLoadFromAttachTime: tab.isLoading,
+                                      navigationAtAttachTime: tab.webView.backForwardList.currentItem)
             // Reconcile against the page the tab is on now, which may predate this observer.
             applyPolicy(for: key, in: store, page: AIChatAttachedTabPage(tab: tab), isSettlingLoad: tab.isLoading)
         }
@@ -137,14 +142,29 @@ final class AIChatAttachedTabsTracker {
             }
     }
 
-    /// Whether this change is still the load that was running when the tab was attached. Clears once
-    /// that load finishes, so later navigation is judged as a page change.
+    /// Whether this change is still the load that was running when the tab was attached. Ends at the
+    /// first navigation the web view commits on top of that one, and when the load finishes.
     private func isSettlingLoad(for key: ObserverKey, page: AIChatAttachedTabPage) -> Bool {
-        let isSettling = observers[key]?.isSettlingLoadFromAttachTime ?? false
-        if isSettling, !page.isLoading {
+        guard let observer = observers[key], observer.isSettlingLoadFromAttachTime else { return false }
+
+        let committed = observer.tab?.webView.backForwardList.currentItem
+        guard let attachTimeNavigation = observer.navigationAtAttachTime else {
+            // Nothing was committed at attach time, so the first commit is the load we're waiting on.
+            observers[key]?.navigationAtAttachTime = committed
+            return finishSettlingIfLoaded(key: key, page: page)
+        }
+        guard committed === attachTimeNavigation else {
+            observers[key]?.isSettlingLoadFromAttachTime = false
+            return false
+        }
+        return finishSettlingIfLoaded(key: key, page: page)
+    }
+
+    private func finishSettlingIfLoaded(key: ObserverKey, page: AIChatAttachedTabPage) -> Bool {
+        if !page.isLoading {
             observers[key]?.isSettlingLoadFromAttachTime = false
         }
-        return isSettling
+        return true
     }
 
     /// Blanks out title and favicon while they still hold the previous page's values, so the card

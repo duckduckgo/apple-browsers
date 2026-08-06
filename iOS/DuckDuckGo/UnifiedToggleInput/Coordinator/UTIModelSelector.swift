@@ -119,6 +119,28 @@ final class UTIModelSelector {
         }
     }
 
+#if DEBUG
+    func handleModelPickerSubscriptionCallToAction(flowType: UpsellFlowType) {
+        let userTier: AIChatUserTier
+        let requiredTier: AIChatModelPublicAccessTier
+        switch flowType {
+        case .purchase:
+            userTier = .free
+            requiredTier = .plus
+        case .upgrade:
+            userTier = .plus
+            requiredTier = .pro
+        }
+
+        subscriptionUpsellPresenter.routeGatedSelection(
+            requiredTier: requiredTier,
+            userTier: userTier,
+            source: .modelPicker,
+            isAITabState: environment.isDuckAISurfaceForAttribution()
+        )
+    }
+#endif
+
     func updateSelectedModel(_ modelId: String) {
         modelStore.updateSelectedModel(modelId, isNewChatContext: !environment.hasSubmittedPrompt())
         callbacks.onModelsUpdated()
@@ -132,8 +154,13 @@ final class UTIModelSelector {
             return false
         }
 
-        return subscriptionUpsellPresenter.routeGatedSelection(
-            requiredTier: requiredPublicTier,
+        return routeModelPickerSubscriptionUpsell(requiredTier: requiredPublicTier)
+    }
+
+    @discardableResult
+    private func routeModelPickerSubscriptionUpsell(requiredTier: AIChatModelPublicAccessTier) -> Bool {
+        subscriptionUpsellPresenter.routeGatedSelection(
+            requiredTier: requiredTier,
             userTier: modelStore.subscriptionState.userTier,
             source: .modelPicker,
             isAITabState: environment.isDuckAISurfaceForAttribution()

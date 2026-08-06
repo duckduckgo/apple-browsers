@@ -3642,6 +3642,8 @@ class MainViewController: UIViewController {
             launchSettings(deepLinkTarget: .subscriptionSettings)
         case .restoreFlow:
             launchSettings(deepLinkTarget: .restoreFlow)
+        case .general:
+            launchSettings(deepLinkTarget: .general)
         default:
             return
         }

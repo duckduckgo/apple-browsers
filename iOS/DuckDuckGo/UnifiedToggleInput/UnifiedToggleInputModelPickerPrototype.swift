@@ -36,6 +36,7 @@ struct UnifiedToggleInputModelPickerContent {
     struct CallToAction {
         let prefix: String
         let actionTitle: String
+        let flowType: UpsellFlowType
     }
 
     struct Item: Identifiable {
@@ -63,19 +64,17 @@ struct UnifiedToggleInputModelPickerView: View {
     @Binding var selectedModelID: String
     let onSelect: (String) -> Void
     let onInfo: (String) -> Void
-    let onCallToAction: () -> Void
+    let onCallToAction: (UpsellFlowType) -> Void
 
     var body: some View {
         ScrollView {
-            LazyVStack(spacing: 0) {
-                ForEach(Array(content.sections.enumerated()), id: \.element.id) { index, section in
-                    if index > 0 {
-                        Divider()
-                            .padding(.horizontal, Metrics.horizontalPadding)
-                    }
-
+            LazyVStack(spacing: Metrics.itemSpacing) {
+                ForEach(content.sections) { section in
                     if let callToAction = section.callToAction {
-                        CallToActionView(callToAction: callToAction, action: onCallToAction)
+                        CallToActionView(
+                            callToAction: callToAction,
+                            action: { onCallToAction(callToAction.flowType) }
+                        )
                     }
 
                     ForEach(section.items) { item in
@@ -100,7 +99,7 @@ struct UnifiedToggleInputModelPickerView: View {
 private extension UnifiedToggleInputModelPickerView {
 
     enum Metrics {
-        static let horizontalPadding: CGFloat = 12
+        static let itemSpacing: CGFloat = 4
         static let verticalPadding: CGFloat = 8
     }
 }
@@ -113,56 +112,61 @@ private struct ModelRow: View {
     let onInfo: () -> Void
 
     var body: some View {
-        HStack(spacing: 0) {
+        HStack(spacing: Metrics.rowContentSpacing) {
             Button(action: onSelect) {
-                HStack(spacing: Metrics.iconTextSpacing) {
-                    providerIcon
+                HStack(spacing: 0) {
+                    HStack(spacing: Metrics.iconTextSpacing) {
+                        providerIcon
 
-                    VStack(alignment: .leading, spacing: Metrics.textSpacing) {
-                        modelName
+                        VStack(alignment: .leading, spacing: Metrics.textSpacing) {
+                            modelName
 
-                        if let subtitle = item.subtitle {
-                            Text(subtitle)
-                                .daxFootnoteRegular()
-                                .foregroundStyle(Color(designSystemColor: .textSecondary))
+                            if let subtitle = item.subtitle {
+                                Text(subtitle)
+                                    .daxSubheadRegular()
+                                    .foregroundStyle(Color(designSystemColor: .textSecondary))
+                            }
                         }
                     }
+                    .opacity(item.isDimmed ? Metrics.dimmedOpacity : 1)
 
                     Spacer(minLength: Metrics.minimumTrailingSpacing)
 
                     if let badge = item.badge {
                         Text(badge.rawValue)
-                            .daxCaption1()
+                            .kerning(Metrics.badgeTracking)
+                            .daxCaptionBold()
                             .foregroundStyle(Color(designSystemColor: .textTertiary))
+                            .padding(.horizontal, Metrics.badgeHorizontalPadding)
+                            .frame(minHeight: Metrics.badgeHeight)
                     }
                 }
-                .padding(.leading, Metrics.horizontalPadding)
-                .padding(.trailing, item.showsInfo ? Metrics.infoSpacing : Metrics.horizontalPadding)
-                .frame(maxWidth: .infinity, minHeight: item.subtitle == nil ? Metrics.rowHeight : Metrics.rowWithSubtitleHeight)
+                .frame(maxWidth: .infinity)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
 
             if item.showsInfo {
                 Button(action: onInfo) {
-                    Image(uiImage: DesignSystemImages.Glyphs.Size16.infoSolid)
+                    Image(uiImage: DesignSystemImages.Glyphs.Size12.info)
                         .renderingMode(.template)
                         .foregroundStyle(Color(designSystemColor: .iconsTertiary))
-                        .frame(width: Metrics.infoButtonWidth, height: Metrics.rowHeight)
+                        .frame(width: Metrics.infoIconSize, height: Metrics.infoIconSize)
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Model information")
             }
         }
+        .padding(.horizontal, Metrics.horizontalPadding)
+        .frame(maxWidth: .infinity, minHeight: item.subtitle == nil ? Metrics.rowHeight : Metrics.rowWithSubtitleHeight)
         .background {
             if isSelected {
                 RoundedRectangle(cornerRadius: Metrics.selectionCornerRadius)
-                    .fill(Color(designSystemColor: .controlsFillPrimary))
+                    .fill(Color(designSystemColor: .controlsFillSecondary))
             }
         }
         .padding(.horizontal, Metrics.outerHorizontalPadding)
-        .opacity(item.isDimmed ? Metrics.dimmedOpacity : 1)
     }
 
     private var providerIcon: some View {
@@ -179,12 +183,12 @@ private struct ModelRow: View {
 
         return HStack(spacing: Metrics.nameSpacing) {
             Text(components.first ?? item.name)
-                .daxBodyBold()
+                .daxSubheadSemibold()
                 .foregroundStyle(Color(designSystemColor: .textPrimary))
 
             if components.count > 1 {
                 Text(components[1])
-                    .daxBodyRegular()
+                    .daxSubheadRegular()
                     .foregroundStyle(Color(designSystemColor: .textSecondary))
             }
         }
@@ -212,19 +216,22 @@ private struct ModelRow: View {
 private extension ModelRow {
 
     enum Metrics {
-        static let rowHeight: CGFloat = 48
-        static let rowWithSubtitleHeight: CGFloat = 56
-        static let iconSize: CGFloat = 18
-        static let iconTextSpacing: CGFloat = 14
+        static let rowHeight: CGFloat = 36
+        static let rowWithSubtitleHeight: CGFloat = 50
+        static let iconSize: CGFloat = 16
+        static let iconTextSpacing: CGFloat = 12
+        static let rowContentSpacing: CGFloat = 8
         static let textSpacing: CGFloat = 1
         static let nameSpacing: CGFloat = 4
-        static let horizontalPadding: CGFloat = 12
+        static let horizontalPadding: CGFloat = 16
         static let outerHorizontalPadding: CGFloat = 8
         static let minimumTrailingSpacing: CGFloat = 8
-        static let infoSpacing: CGFloat = 4
-        static let infoButtonWidth: CGFloat = 40
-        static let selectionCornerRadius: CGFloat = 12
-        static let dimmedOpacity = 0.32
+        static let infoIconSize: CGFloat = 12
+        static let badgeHorizontalPadding: CGFloat = 4
+        static let badgeHeight: CGFloat = 20
+        static let badgeTracking: CGFloat = 0.5
+        static let selectionCornerRadius: CGFloat = 16
+        static let dimmedOpacity = 0.3
     }
 }
 
@@ -236,12 +243,12 @@ private struct CallToActionView: View {
     var body: some View {
         HStack(spacing: Metrics.spacing) {
             Text(callToAction.prefix)
-                .daxFootnoteRegular()
+                .daxSubheadRegular()
                 .foregroundStyle(Color(designSystemColor: .textSecondary))
 
             Button(action: action) {
                 Text(callToAction.actionTitle)
-                    .daxFootnoteRegular()
+                    .daxSubheadRegular()
                     .foregroundStyle(Color(designSystemColor: .accentPrimary))
             }
             .buttonStyle(.plain)
@@ -249,7 +256,9 @@ private struct CallToActionView: View {
             Spacer()
         }
         .padding(.horizontal, Metrics.horizontalPadding)
-        .padding(.vertical, Metrics.verticalPadding)
+        .padding(.top, Metrics.topPadding)
+        .padding(.bottom, Metrics.bottomPadding)
+        .frame(minHeight: Metrics.height)
     }
 }
 
@@ -258,7 +267,9 @@ private extension CallToActionView {
     enum Metrics {
         static let spacing: CGFloat = 4
         static let horizontalPadding: CGFloat = 20
-        static let verticalPadding: CGFloat = 12
+        static let topPadding: CGFloat = 20
+        static let bottomPadding: CGFloat = 8
+        static let height: CGFloat = 49
     }
 }
 
@@ -279,14 +290,19 @@ final class UnifiedToggleInputModelPickerPrototypePresenter: NSObject {
                  sourceView: UIView,
                  onSelect: @escaping (String) -> Void,
                  onInfo: @escaping (String) -> Void,
-                 onCallToAction: @escaping () -> Void) {
+                 onCallToAction: @escaping (UpsellFlowType) -> Void) {
         guard presentedViewController == nil else { return }
 
         let rootView = UnifiedToggleInputModelPickerPrototypeHost(
             onSelect: onSelect,
             onInfo: onInfo,
-            onCallToAction: onCallToAction
+            onCallToAction: { [weak self] flowType in
+                self?.dismiss {
+                    onCallToAction(flowType)
+                }
+            }
         )
+        .presentationCornerRadiusIfAvailable(Metrics.cornerRadius)
         let hostingController = UIHostingController(rootView: rootView)
         hostingController.view.backgroundColor = UIColor(designSystemColor: .background)
         hostingController.modalPresentationStyle = .popover
@@ -302,11 +318,22 @@ final class UnifiedToggleInputModelPickerPrototypePresenter: NSObject {
         popover.sourceView = sourceView
         popover.sourceRect = sourceView.bounds
         popover.permittedArrowDirections = [.up, .down]
+        // popover.permittedArrowDirections = []
         popover.backgroundColor = UIColor(designSystemColor: .background)
         popover.delegate = self
 
         presentingViewController.present(hostingController, animated: true)
         presentedViewController = hostingController
+    }
+
+    private func dismiss(completion: @escaping () -> Void) {
+        guard let presentedViewController else {
+            completion()
+            return
+        }
+
+        self.presentedViewController = nil
+        presentedViewController.dismiss(animated: true, completion: completion)
     }
 }
 
@@ -324,9 +351,22 @@ extension UnifiedToggleInputModelPickerPrototypePresenter: UIPopoverPresentation
 private extension UnifiedToggleInputModelPickerPrototypePresenter {
 
     enum Metrics {
-        static let width: CGFloat = 348
-        static let height: CGFloat = 640
+        static let width: CGFloat = 290
+        static let height: CGFloat = 600
+        static let cornerRadius: CGFloat = 48
         static let minimumVerticalMargin: CGFloat = 48
+    }
+}
+
+private extension View {
+
+    @ViewBuilder
+    func presentationCornerRadiusIfAvailable(_ cornerRadius: CGFloat) -> some View {
+        if #available(iOS 16.4, *) {
+            presentationCornerRadius(cornerRadius)
+        } else {
+            self
+        }
     }
 }
 
@@ -337,7 +377,7 @@ private struct UnifiedToggleInputModelPickerPrototypeHost: View {
 
     let onSelect: (String) -> Void
     let onInfo: (String) -> Void
-    let onCallToAction: () -> Void
+    let onCallToAction: (UpsellFlowType) -> Void
 
     private var content: UnifiedToggleInputModelPickerContent {
         UnifiedToggleInputModelPickerPrototypeFixtures.content(for: level)
@@ -422,7 +462,7 @@ private enum UnifiedToggleInputModelPickerPrototypeFixtures {
             ]),
             .init(
                 id: "subscriber-exclusive",
-                callToAction: .init(prefix: "Subscriber exclusive.", actionTitle: "Try for free"),
+                callToAction: .init(prefix: "Subscriber exclusive.", actionTitle: "Try for free", flowType: .purchase),
                 items: [
                     item("gpt-5.2", "GPT-5.2", provider: .openAI, badge: .plus, isDimmed: true),
                     item("gpt-5.5", "GPT-5.5", provider: .openAI, badge: .pro, isDimmed: true),
@@ -450,7 +490,7 @@ private enum UnifiedToggleInputModelPickerPrototypeFixtures {
             ]),
             .init(
                 id: "pro-exclusive",
-                callToAction: .init(prefix: "Pro exclusive.", actionTitle: "Upgrade"),
+                callToAction: .init(prefix: "Pro exclusive.", actionTitle: "Upgrade", flowType: .upgrade),
                 items: [
                     item("gpt-5.5", "GPT-5.5", provider: .openAI, badge: .pro, isDimmed: true),
                     item("claude-opus-4.6", "Claude Opus 4.6", provider: .anthropic, badge: .pro, isDimmed: true),

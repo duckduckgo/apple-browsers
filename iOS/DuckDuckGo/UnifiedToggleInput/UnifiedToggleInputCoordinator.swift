@@ -1669,8 +1669,15 @@ private extension UnifiedToggleInputCoordinator {
             from: presentingViewController,
             sourceView: viewController.modelPickerSourceView,
             onSelect: { _ in },
-            onInfo: { _ in },
-            onCallToAction: {}
+            onInfo: { _ in
+                NotificationCenter.default.post(
+                    name: .settingsDeepLinkNotification,
+                    object: SettingsViewModel.SettingsDeepLinkSection.general
+                )
+            },
+            onCallToAction: { [weak self] flowType in
+                self?.modelSelector.handleModelPickerSubscriptionCallToAction(flowType: flowType)
+            }
         )
     }
 #endif

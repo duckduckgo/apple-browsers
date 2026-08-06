@@ -457,9 +457,15 @@ private extension MainViewController {
 
     /// Whites out the Duck.ai transcript while editing and restores it on exit. Full-tab only.
     private func setDuckAITranscriptDimmedForEditing(_ isEditing: Bool) {
-        guard currentTab?.isAITab == true, let webView = currentTab?.webView else { return }
-        UIView.animate(withDuration: 0.2) {
-            webView.alpha = isEditing ? 0 : 1
+        if isEditing {
+            guard currentTab?.isAITab == true, let webView = currentTab?.webView else { return }
+            whitenedTranscriptWebView = webView
+            UIView.animate(withDuration: 0.2) { webView.alpha = 0 }
+        } else {
+            // Restore the exact web view we whitened, not `currentTab`'s — the tab may have changed.
+            let webView = whitenedTranscriptWebView
+            whitenedTranscriptWebView = nil
+            UIView.animate(withDuration: 0.2) { webView?.alpha = 1 }
         }
     }
 

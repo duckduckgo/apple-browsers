@@ -662,6 +662,8 @@ final class UnifiedToggleInputView: UIView {
             // Resync the stored shadows so `CompositeShadowView`'s own trait handler doesn't
             // revert dynamic colors to the init-time config.
             expandedShadowView.shadows = currentLayout == .flanked ? flankedShadows : expandedShadows
+            // The disclaimer card's shadowColor is a snapshotted cgColor; re-resolve it here.
+            editReplaceDisclaimerCard.layer.shadowColor = UIColor(designSystemColor: .shadowSecondary).cgColor
             if isExpanded {
                 cardView.layer.borderColor = expandedBorderColor
             }

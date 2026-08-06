@@ -46,7 +46,7 @@ public class DataBrokerProtectionAgentManagerProvider {
                                     featureFlagger: DBPFeatureFlagging,
                                     wideEvent: WideEventManaging,
                                     vpnBypassService: VPNBypassFeatureProvider,
-                                    resourceMonitor: DataBrokerProtectionResourceMonitoring,
+                                    resourceMonitor: ResourceMonitoring,
                                     applicationNameForUserAgentProvider: @escaping () -> String?) -> DataBrokerProtectionAgentManager? {
         guard let pixelKit = PixelKit.shared else {
             assertionFailure("PixelKit not set up")
@@ -202,7 +202,7 @@ public final class DataBrokerProtectionAgentManager {
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let authenticationManager: DataBrokerProtectionAuthenticationManaging
     private let freemiumDBPUserStateManager: FreemiumDBPUserStateManager
-    private let resourceMonitor: DataBrokerProtectionResourceMonitoring?
+    private let resourceMonitor: ResourceMonitoring?
     private let wideEventSweeper: DBPWideEventSweeper?
 
     // Used for debug functions only, so not injected
@@ -240,7 +240,7 @@ public final class DataBrokerProtectionAgentManager {
          privacyConfigurationManager: PrivacyConfigurationManaging,
          authenticationManager: DataBrokerProtectionAuthenticationManaging,
          freemiumDBPUserStateManager: FreemiumDBPUserStateManager,
-         resourceMonitor: DataBrokerProtectionResourceMonitoring? = nil,
+         resourceMonitor: ResourceMonitoring? = nil,
          wideEvent: WideEventManaging? = nil
     ) {
         self.eventsHandler = eventsHandler

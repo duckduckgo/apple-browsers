@@ -340,6 +340,78 @@ final class WebViewPreviewSnapshotGeometryTests: XCTestCase {
 
         XCTAssertNil(WebViewPreviewSnapshotGeometry.visibleRect(webViewBounds: bounds, contentInset: contentInset))
     }
+
+    func testWhenCapturingFullBoundsThenContentInsetsDoNotCropTheViewport() {
+        let bounds = CGRect(x: 0, y: 0, width: 320, height: 640)
+        let contentInset = UIEdgeInsets(top: 50, left: 0, bottom: 30, right: 0)
+
+        XCTAssertEqual(WebViewPreviewSnapshotGeometry.visibleRect(webViewBounds: bounds,
+                                                                  contentInset: contentInset,
+                                                                  capturesFullBounds: true),
+                       bounds)
+    }
+}
+
+final class WebViewScrollViewInsetUpdaterTests: XCTestCase {
+
+    func testWhenContentInsetsAreUnchangedThenContentOffsetIsUnchanged() {
+        let scrollView = UIScrollView()
+        let insets = UIEdgeInsets(top: 20, left: 0, bottom: 30, right: 0)
+        scrollView.contentInset = insets
+        scrollView.contentOffset = CGPoint(x: 0, y: 40)
+
+        WebViewScrollViewInsetUpdater.update(scrollView, insets: insets)
+
+        XCTAssertEqual(scrollView.contentOffset, CGPoint(x: 0, y: 40))
+    }
+
+    func testWhenPinnedToTopThenUpdatingInsetsPreservesPinnedPosition() {
+        let scrollView = UIScrollView()
+        scrollView.contentInset = UIEdgeInsets(top: 20, left: 0, bottom: 0, right: 0)
+        scrollView.contentOffset = CGPoint(x: 0, y: -20)
+
+        WebViewScrollViewInsetUpdater.update(scrollView,
+                                             insets: UIEdgeInsets(top: 50, left: 0, bottom: 30, right: 0))
+
+        XCTAssertEqual(scrollView.contentOffset.y, -50)
+    }
+
+    func testWhenNotPinnedToTopThenUpdatingInsetsPreservesContentOffset() {
+        let scrollView = UIScrollView(frame: CGRect(x: 0, y: 0, width: 320, height: 640))
+        scrollView.contentSize = CGSize(width: 320, height: 2_000)
+        scrollView.contentInset = UIEdgeInsets(top: 20, left: 0, bottom: 0, right: 0)
+        scrollView.contentOffset = CGPoint(x: 0, y: 40)
+
+        WebViewScrollViewInsetUpdater.update(scrollView,
+                                             insets: UIEdgeInsets(top: 50, left: 0, bottom: 30, right: 0))
+
+        XCTAssertEqual(scrollView.contentOffset.y, 40)
+    }
+
+    func testWhenUpdatingInsetsThenBothScrollIndicatorInsetsAreUpdated() {
+        let scrollView = UIScrollView()
+        let insets = UIEdgeInsets(top: 50, left: 2, bottom: 30, right: 4)
+
+        WebViewScrollViewInsetUpdater.update(scrollView, insets: insets)
+
+        XCTAssertEqual(scrollView.verticalScrollIndicatorInsets, insets)
+        XCTAssertEqual(scrollView.horizontalScrollIndicatorInsets, insets)
+    }
+
+    func testWhenClearingInsetsThenContentAndIndicatorInsetsAreZero() {
+        let scrollView = UIScrollView()
+        let insets = UIEdgeInsets(top: 50, left: 2, bottom: 30, right: 4)
+        scrollView.contentInset = insets
+        scrollView.verticalScrollIndicatorInsets = insets
+        scrollView.horizontalScrollIndicatorInsets = insets
+        scrollView.contentOffset = CGPoint(x: 0, y: 40)
+
+        WebViewScrollViewInsetUpdater.update(scrollView, insets: .zero)
+
+        XCTAssertEqual(scrollView.contentInset, .zero)
+        XCTAssertEqual(scrollView.verticalScrollIndicatorInsets, .zero)
+        XCTAssertEqual(scrollView.horizontalScrollIndicatorInsets, .zero)
+    }
 }
 
 final class FloatingSwipePreviewGeometryTests: XCTestCase {

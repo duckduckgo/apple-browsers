@@ -731,7 +731,11 @@ private extension MainViewController {
             return false
         }
         ensureStandardChromeVisibleForAITabRefresh()
-        tab.webView.scrollView.contentInset = .zero
+        if isFloatingUIEnabled {
+            tab.updateWebViewBottomAnchor(for: currentBarsVisibility)
+        } else {
+            tab.webView.scrollView.contentInset = .zero
+        }
         // We're swapping into AI-tab layout, not dismissing the omnibar in place.
         // Skip the dismiss animation — otherwise it runs concurrently with the AI-tab show
         // and the user perceives a top-to-bottom slide.

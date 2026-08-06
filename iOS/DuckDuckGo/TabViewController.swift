@@ -72,6 +72,28 @@ enum WebViewPreviewSnapshotGeometry {
                                                     bottom: contentInset.bottom,
                                                     right: 0))
     }
+
+    static func visibleRect(webViewBounds: CGRect, contentInset: UIEdgeInsets, capturesFullBounds: Bool) -> CGRect? {
+        capturesFullBounds
+            ? visibleRect(webViewBounds: webViewBounds)
+            : visibleRect(webViewBounds: webViewBounds, contentInset: contentInset)
+    }
+}
+
+enum WebViewScrollViewInsetUpdater {
+
+    static func update(_ scrollView: UIScrollView, insets: UIEdgeInsets) {
+        if scrollView.contentInset != insets {
+            let isPinnedToTop = scrollView.contentOffset.y <= -scrollView.adjustedContentInset.top
+            scrollView.contentInset = insets
+            if isPinnedToTop {
+                scrollView.contentOffset.y = -insets.top
+            }
+        }
+
+        scrollView.verticalScrollIndicatorInsets = insets
+        scrollView.horizontalScrollIndicatorInsets = insets
+    }
 }
 
 class TabViewController: UIViewController {
@@ -201,6 +223,7 @@ class TabViewController: UIViewController {
     let progressWorker = WebProgressWorker()
 
     private(set) var webView: WKWebView!
+    private var hasAppliedFloatingUIScrollViewInsets = false
     private lazy var appRatingPrompt: AppRatingPrompt = AppRatingPrompt(featureFlagger: self.featureFlagger)
     let unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding
     public weak var privacyDashboard: PrivacyDashboardViewController?
@@ -963,17 +986,11 @@ class TabViewController: UIViewController {
                 // `obscuredContentInsets`, which positions page fixed/sticky elements and the layout
                 // viewport reliably (including on load) and lets content scroll behind the glass.
                 webViewBottomAnchorConstraint?.constant = 0
-                // `obscuredContentInsets` does not adjust the scroll view's content/indicator insets in
-                // UIKit, so scrollable content would rest behind the bars. Feed the chrome region
-                // (beyond the device safe area, which the scroll view already accounts for) into
-                // `additionalSafeAreaInsets` so at-rest content and scroll indicators clear the bars too.
-                let deviceSafeArea = view.window?.safeAreaInsets ?? .zero
-                additionalSafeAreaInsets = UIEdgeInsets(
-                    top: max(0, obscuredInsets.top - deviceSafeArea.top),
-                    left: 0,
-                    bottom: max(0, obscuredInsets.bottom - deviceSafeArea.bottom),
-                    right: 0
-                )
+                if additionalSafeAreaInsets != .zero {
+                    additionalSafeAreaInsets = .zero
+                }
+                WebViewScrollViewInsetUpdater.update(webView.scrollView, insets: obscuredInsets)
+                hasAppliedFloatingUIScrollViewInsets = true
             } else {
                 // iOS 18 fallback: physically resize the web view so its bottom edge sits at the top of
                 // the visible bottom chrome (toolbar -> capsule -> safe area), and inset the top via
@@ -982,6 +999,10 @@ class TabViewController: UIViewController {
                     ? 0
                     : (chromeDelegate?.floatingWebViewBottomObscuredHeight(for: barsVisibilityPercent) ?? 0)
                 webViewBottomAnchorConstraint?.constant = -bottomObscuredHeight
+                if hasAppliedFloatingUIScrollViewInsets {
+                    WebViewScrollViewInsetUpdater.update(webView.scrollView, insets: .zero)
+                    hasAppliedFloatingUIScrollViewInsets = false
+                }
                 updateFloatingUISafeAreaInsets()
             }
         } else {
@@ -989,6 +1010,13 @@ class TabViewController: UIViewController {
             borderView.bottomAlpha = AppWidthObserver.shared.isLargeWidth ? 0 : barsVisibilityPercent
             // Defensive: clear any obscured insets left over if floating UI was toggled off at runtime.
             setWebViewObscuredContentInsetsIfSupported(.zero)
+            if hasAppliedFloatingUIScrollViewInsets {
+                WebViewScrollViewInsetUpdater.update(webView.scrollView, insets: .zero)
+                hasAppliedFloatingUIScrollViewInsets = false
+            }
+            if additionalSafeAreaInsets != .zero {
+                additionalSafeAreaInsets = .zero
+            }
         }
     }
 
@@ -2295,10 +2323,11 @@ extension TabViewController: WKNavigationDelegate {
                 return
             }
 
-            let visibleRect = capturesFullBounds
-                ? WebViewPreviewSnapshotGeometry.visibleRect(webViewBounds: webView.bounds)
-                : WebViewPreviewSnapshotGeometry.visibleRect(webViewBounds: webView.bounds,
-                                                            contentInset: webView.scrollView.contentInset)
+            let visibleRect = WebViewPreviewSnapshotGeometry.visibleRect(
+                webViewBounds: webView.bounds,
+                contentInset: webView.scrollView.contentInset,
+                capturesFullBounds: capturesFullBounds
+            )
             guard let visibleRect else {
                 completion(nil)
                 return
@@ -2320,12 +2349,12 @@ extension TabViewController: WKNavigationDelegate {
             return
         }
 
-        let contentInset = webView.scrollView.contentInset
-        let rect = webView.bounds.inset(by: UIEdgeInsets(top: contentInset.top,
-                                                        left: 0,
-                                                        bottom: contentInset.bottom,
-                                                        right: 0))
-        guard rect.width > 0, rect.height > 0 else {
+        let capturesFullBounds = FloatingUIManager(featureFlagger: featureFlagger).isFloatingUIEnabled
+        guard let rect = WebViewPreviewSnapshotGeometry.visibleRect(
+            webViewBounds: webView.bounds,
+            contentInset: webView.scrollView.contentInset,
+            capturesFullBounds: capturesFullBounds
+        ) else {
             completion(nil)
             return
         }
@@ -2346,13 +2375,15 @@ extension TabViewController: WKNavigationDelegate {
     private func preparePreviewSync(afterScreenUpdates: Bool = false) -> UIImage? {
         guard let webView, webView.bounds.height > 0, webView.bounds.width > 0 else { return nil }
 
+        let capturesFullBounds = FloatingUIManager(featureFlagger: featureFlagger).isFloatingUIEnabled
+        let contentInset = capturesFullBounds ? UIEdgeInsets.zero : webView.scrollView.contentInset
         let size = CGSize(width: webView.frame.size.width,
-                          height: webView.frame.size.height - webView.scrollView.contentInset.top - webView.scrollView.contentInset.bottom)
+                          height: webView.frame.size.height - contentInset.top - contentInset.bottom)
         guard size.width > 0, size.height > 0 else { return nil }
 
         let renderer = UIGraphicsImageRenderer(size: size)
         return renderer.image { context in
-            context.cgContext.translateBy(x: 0, y: -webView.scrollView.contentInset.top)
+            context.cgContext.translateBy(x: 0, y: -contentInset.top)
             webView.drawHierarchy(in: webView.bounds, afterScreenUpdates: afterScreenUpdates)
             if let jsAlertView {
                 jsAlertView.drawHierarchy(in: jsAlertView.bounds, afterScreenUpdates: false)

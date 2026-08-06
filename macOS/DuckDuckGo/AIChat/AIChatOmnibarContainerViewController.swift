@@ -1289,7 +1289,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     /// surfaced in the error label. Limits are evaluated cumulatively so a multi-select batch can't
     /// collectively overshoot. Images keep the `displayCap` (one-over) cue since they have no
     /// size / page dimension and a single submission is bounded to the per-turn image count.
-    private func addPickedAttachments(from urls: [URL]) {
+    private func addPickedAttachments(from urls: [URL], rejection: String? = nil) {
         // Reading bytes off disk and parsing PDFs (page count / encryption) is offloaded to a
         // background task per file — a large PDF would otherwise block the main thread. Validation,
         // attachment, and label updates stay on the main actor; files are processed in order so the
@@ -1339,7 +1339,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
                 }
             }
 
-            self.lastAttachmentError = firstFileError
+            self.lastAttachmentError = firstFileError ?? rejection
             self.updateAttachmentsLayout()
         }
     }
@@ -1557,12 +1557,17 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
         // A drop is a pick action from the user's perspective, so clear any stale pick-time error.
         lastAttachmentError = nil
+        // Files of a type the model doesn't take never reach the validator, so their rejection has
+        // to be reported here — including when it rode along with images that were taken.
+        let rejection = acceptedFiles.count < files.count || acceptedImages.count < images.count
+            ? dropRejectionMessage(hasRejectedFiles: acceptedFiles.count < files.count)
+            : nil
         guard !acceptedImages.isEmpty || !acceptedFiles.isEmpty else {
-            lastAttachmentError = dropRejectionMessage(hasFiles: !files.isEmpty)
+            lastAttachmentError = rejection
             updateAttachmentsLayout()
             return true
         }
-        addPickedAttachments(from: acceptedImages + acceptedFiles)
+        addPickedAttachments(from: acceptedImages + acceptedFiles, rejection: rejection)
         return true
     }
 
@@ -1573,8 +1578,8 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             .contains { type.conforms(to: $0) }
     }
 
-    private func dropRejectionMessage(hasFiles: Bool) -> String {
-        guard !hasFiles, shouldShowImageUpload else {
+    private func dropRejectionMessage(hasRejectedFiles: Bool) -> String {
+        guard !hasRejectedFiles, shouldShowImageUpload else {
             let acceptedNames = omnibarController.selectedModelSupportedFileTypes.map(AIChatAttachmentValidator.fileTypeName(for:))
             return UserText.aiChatAttachmentUnsupportedFileType(acceptedFileTypes: acceptedNames)
         }

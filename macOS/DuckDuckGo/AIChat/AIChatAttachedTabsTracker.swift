@@ -182,7 +182,8 @@ final class AIChatAttachedTabsTracker {
     /// Blanks the title while it still holds the previous page's, so the card shows the new page's
     /// host until its own title arrives.
     private func discardingTitleOfPreviousPage(from page: AIChatAttachedTabPage, for key: ObserverKey) -> AIChatAttachedTabPage {
-        guard let stale = observers[key]?.titleOfPreviousPage, page.title == stale else {
+        // A finished load publishes the new page's own title, so the old one can't come back after it.
+        guard let stale = observers[key]?.titleOfPreviousPage, page.isLoading, page.title == stale else {
             observers[key]?.titleOfPreviousPage = nil
             return page
         }
@@ -209,7 +210,9 @@ final class AIChatAttachedTabsTracker {
             attachments.remove(at: index)
         case .refresh(let refreshed):
             if refreshed.url != attachments[index].url {
-                observers[key]?.titleOfPreviousPage = page.title
+                // The tab's own title, not the one on `page`: that has been through the discard
+                // filter already and may be blanked, which would let the old title back in.
+                observers[key]?.titleOfPreviousPage = observers[key]?.tab?.title
             }
             attachments[index] = refreshed
         }

@@ -45,6 +45,7 @@ struct AIChatAttachTabsModal: ModalView {
     /// Row the arrow keys are on. Nil until the first arrow press, so typing a space still types.
     @State private var highlightedId: String?
     @State private var keyMonitor: Any?
+    @State private var sheetWindow: NSWindow?
 
     private var filteredTabs: [AIChatTabAttachment] {
         AIChatMentionPickerFilter.filter(tabs, query: searchQuery, currentTabId: currentTabId)
@@ -134,6 +135,7 @@ struct AIChatAttachTabsModal: ModalView {
         }
         .frame(width: 340)
         .background(Color(designSystemColor: .surfaceSecondary, palette: themeManager.designColorPalette))
+        .background(WindowReader { sheetWindow = $0 })
         .onAppear { startKeyMonitor() }
         .onDisappear { stopKeyMonitor() }
     }
@@ -146,8 +148,8 @@ struct AIChatAttachTabsModal: ModalView {
     private func startKeyMonitor() {
         guard keyMonitor == nil else { return }
         keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
-            // The monitor is app-wide; keys typed in another window are none of this sheet's business.
-            guard event.window?.isSheet == true else { return event }
+            // The monitor is app-wide; only this sheet's keys are this view's business.
+            guard let sheetWindow, event.window === sheetWindow else { return event }
             switch Int(event.keyCode) {
             case kVK_DownArrow: return moveHighlight(by: 1) ? nil : event
             case kVK_UpArrow: return moveHighlight(by: -1) ? nil : event
@@ -231,5 +233,22 @@ struct AIChatAttachTabsModal: ModalView {
         } else {
             Image(nsImage: DesignSystemImages.Glyphs.Size16.globe).resizable().aspectRatio(contentMode: .fit)
         }
+    }
+}
+
+/// Hands back the window hosting this SwiftUI view, so a key monitor can tell this sheet's events
+/// from every other window's.
+private struct WindowReader: NSViewRepresentable {
+
+    let onWindow: (NSWindow?) -> Void
+
+    func makeNSView(context: Context) -> NSView {
+        let view = NSView()
+        DispatchQueue.main.async { onWindow(view.window) }
+        return view
+    }
+
+    func updateNSView(_ nsView: NSView, context: Context) {
+        DispatchQueue.main.async { onWindow(nsView.window) }
     }
 }

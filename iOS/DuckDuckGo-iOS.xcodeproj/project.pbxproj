@@ -1803,6 +1803,7 @@
 		9FF967BB2E0E704000E45B54 /* DefaultBrowserPromptUserActivityKeyValueFilesStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FF967BA2E0E703C00E45B54 /* DefaultBrowserPromptUserActivityKeyValueFilesStoreTests.swift */; };
 		9FF967BF2E0E7F5200E45B54 /* DefaultBrowserPromptActivityKeyValueFilesStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FF967BE2E0E7F4F00E45B54 /* DefaultBrowserPromptActivityKeyValueFilesStoreTests.swift */; };
 		9FF967CE2E12183700E45B54 /* DefaultBrowserPromptDebugView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FF967CD2E12183100E45B54 /* DefaultBrowserPromptDebugView.swift */; };
+		9FF97164302441E40077DC5B /* ContextualOnboardingContentProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FF97163302441D90077DC5B /* ContextualOnboardingContentProvider.swift */; };
 		9FF9F2C32FE121F80026080A /* default-browser-tutorial-rebranded.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = 9FF9F2C22FE121F80026080A /* default-browser-tutorial-rebranded.mp4 */; };
 		9FFABF2A543E444D8A9127DE /* RebrandedOnboardingView+DaxAnimationOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0DB842C9EB504CCBA5A14D4C /* RebrandedOnboardingView+DaxAnimationOverlay.swift */; };
 		9FFDA8372DFA885C007923F7 /* PictureInPictureControllerFactoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FFDA8362DFA8854007923F7 /* PictureInPictureControllerFactoryTests.swift */; };
@@ -4621,6 +4622,7 @@
 		9FF967BA2E0E703C00E45B54 /* DefaultBrowserPromptUserActivityKeyValueFilesStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserPromptUserActivityKeyValueFilesStoreTests.swift; sourceTree = "<group>"; };
 		9FF967BE2E0E7F4F00E45B54 /* DefaultBrowserPromptActivityKeyValueFilesStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserPromptActivityKeyValueFilesStoreTests.swift; sourceTree = "<group>"; };
 		9FF967CD2E12183100E45B54 /* DefaultBrowserPromptDebugView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserPromptDebugView.swift; sourceTree = "<group>"; };
+		9FF97163302441D90077DC5B /* ContextualOnboardingContentProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContextualOnboardingContentProvider.swift; sourceTree = "<group>"; };
 		9FF9F2C12FE121F80026080A /* Base */ = {isa = PBXFileReference; lastKnownFileType = file; name = Base; path = "Base.lproj/default-browser-tutorial-rebranded.mp4"; sourceTree = "<group>"; };
 		9FF9F2C42FE122050026080A /* nl */ = {isa = PBXFileReference; lastKnownFileType = file; name = nl; path = "nl.lproj/default-browser-tutorial-rebranded.mp4"; sourceTree = "<group>"; };
 		9FF9F2C52FE1220E0026080A /* fr */ = {isa = PBXFileReference; lastKnownFileType = file; name = fr; path = "fr.lproj/default-browser-tutorial-rebranded.mp4"; sourceTree = "<group>"; };
@@ -9170,6 +9172,7 @@
 		9F880BEC2F331CD200BF211E /* Components */ = {
 			isa = PBXGroup;
 			children = (
+				9FF97163302441D90077DC5B /* ContextualOnboardingContentProvider.swift */,
 				858650CF2469BCC100C36F8A /* DaxOnboarding */,
 				9F880BED2F331CD900BF211E /* FadeInView.swift */,
 				C1F112B22DC487CF0090F0DE /* OnboardingSubscriptionPromotionHelper.swift */,
@@ -13657,6 +13660,7 @@
 				D64648AD2B59936B0033090B /* SubscriptionEmailView.swift in Sources */,
 				85E803732E786B95008E87CA /* AIChatService.swift in Sources */,
 				F4147354283BF834004AA7A5 /* AutofillContentScopeFeatureToggles.swift in Sources */,
+				9FF97164302441E40077DC5B /* ContextualOnboardingContentProvider.swift in Sources */,
 				7BC16BAC2E72550A0016EE8E /* LoggingDebugViewController.swift in Sources */,
 				986DA94A24884B18004A7E39 /* WebViewTransition.swift in Sources */,
 				9F0949A72D389F1E0079291B /* MaliciousSiteProtectionAPI.swift in Sources */,

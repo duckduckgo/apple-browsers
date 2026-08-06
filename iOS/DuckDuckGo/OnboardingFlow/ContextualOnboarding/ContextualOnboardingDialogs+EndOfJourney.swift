@@ -27,7 +27,7 @@ import DesignResourcesKitIcons
 
 extension OnboardingRebranding {
 
-    static let daxAnimation = DaxAnimation(
+    static let contextualThumbsUpDaxAnimation = DaxAnimation(
         animationName: "Dax-EndOfJourney-TryWebsite",
         size: CGSize(width: 153, height: 169.67),
         position: .left(bottomPadding: -70.0, xOffset: 0.0),
@@ -66,7 +66,7 @@ extension OnboardingRebranding {
                 primaryAction: .completeAndActivateSearch,
                 secondaryCTA: nil,
                 secondaryAction: nil,
-                showsDaxAnimation: showsDaxAnimation,
+                daxAnimation: showsDaxAnimation ? OnboardingRebranding.contextualThumbsUpDaxAnimation : nil,
                 isManuallyDismissable: onManualDismiss != nil
             )
             self.onAction = { action in
@@ -78,7 +78,7 @@ extension OnboardingRebranding {
         }
 
         var body: some View {
-            OnboardingBubbleView(tailPosition: content.showsDaxAnimation && !OnboardingBubbleAnimationMetrics.shouldHideBubbleTail(for: dynamicTypeSize) ? .bottom(offset: 0.2, direction: .leading) : nil) {
+            OnboardingBubbleView(tailPosition: content.daxAnimation != nil && !OnboardingBubbleAnimationMetrics.shouldHideBubbleTail(for: dynamicTypeSize) ? .bottom(offset: 0.2, direction: .leading) : nil) {
                 dialogContent
             }
             .if(content.isManuallyDismissable) { view in
@@ -91,8 +91,8 @@ extension OnboardingRebranding {
             .overlay {
                 // Bottom, keyboard-aware Dax on every non-compact device. Hidden on compact (no room)
                 // and when the content opts out (e.g. the chat-path completion).
-                if content.showsDaxAnimation && !OnboardingBubbleAnimationMetrics.isCompactDevice {
-                    ScreenBottomDaxOverlay(animation: OnboardingRebranding.daxAnimation)
+                if let daxAnimation = content.daxAnimation, !OnboardingBubbleAnimationMetrics.isCompactDevice {
+                    ScreenBottomDaxOverlay(animation: daxAnimation)
                 }
             }
         }

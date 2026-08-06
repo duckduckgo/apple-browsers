@@ -411,11 +411,13 @@ struct ScopedAccessCredentialManager: ScopedAccessCredentialManaging {
                                                              scopedPassword: scopedPassword)
         var repairedKeys = accountInfoKeys
         if needsDefaultWrapper {
+            Logger.sync.debug("Sync-UnifiedDevices: repairing missing account_info ddg wrapper")
             repairedKeys.append(try makeDefaultAccountInfoWrapper(sourceKey: sourceKey,
                                                                   privateKeyPKCS8: privateKeyPKCS8,
                                                                   accountSecretKey: account.secretKey))
         }
         if needsThirdPartyWrapper {
+            Logger.sync.debug("Sync-UnifiedDevices: repairing missing account_info 3party wrapper")
             repairedKeys.append(try makeThirdPartyAccountInfoWrapper(sourceKey: sourceKey,
                                                                      privateKeyPKCS8: privateKeyPKCS8,
                                                                      scopedPassword: scopedPassword,
@@ -427,8 +429,10 @@ struct ScopedAccessCredentialManager: ScopedAccessCredentialManaging {
                                      for: account)
         let storedKeys = try await fetchStoredProtectedKeys(for: ProtectedKeyPurpose.accountInfo,
                                                            account: account)
-        return try validateAccountInfoProtectedKeys(storedKeys,
-                                                    requiresThirdPartyWrapper: requiresThirdPartyWrapper)
+        let validatedKeys = try validateAccountInfoProtectedKeys(storedKeys,
+                                                                 requiresThirdPartyWrapper: requiresThirdPartyWrapper)
+        Logger.sync.debug("Sync-UnifiedDevices: account_info wrapper repair complete")
+        return validatedKeys
     }
 
     private func validateAccountInfoProtectedKeyIdentity(_ keys: [ProtectedKey]) throws -> [ProtectedKey] {

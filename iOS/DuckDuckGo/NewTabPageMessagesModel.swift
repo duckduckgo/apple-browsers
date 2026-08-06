@@ -78,7 +78,7 @@ final class NewTabPageMessagesModel: ObservableObject {
         let id: UUID
         let gateID: UUID
         let identity: VisiblePromoIdentity
-        let lease: PromoQueueVisiblePromoLease
+        let admission: PromoQueueVisiblePromoAdmission
         var message: HomeMessage
         var viewModel: HomeMessageViewModel
         var appearanceRecorded: Bool
@@ -263,7 +263,7 @@ final class NewTabPageMessagesModel: ObservableObject {
             }
             admittedRemoteMessageSession = nil
             publishRenderItems()
-            promoCoordinator.releaseVisiblePromoLease(session.lease)
+            promoCoordinator.releaseVisiblePromoAdmission(session.admission)
             scheduleAdmissionAfterPhysicalRemoval()
         }
     }
@@ -540,6 +540,10 @@ final class NewTabPageMessagesModel: ObservableObject {
             return
         }
 
+        guard session.admission.confirmAppearance() else {
+            return
+        }
+
         session.appearanceRecorded = true
         admittedRemoteMessageSession = session
         didAppear(message)
@@ -585,9 +589,9 @@ final class NewTabPageMessagesModel: ObservableObject {
 
         let admissionResult = admissionHandler(identity)
         switch admissionResult {
-        case .acquired(let lease):
+        case .acquired(let admission):
             guard case .remoteMessage(let remoteMessage) = message else {
-                promoCoordinator.releaseVisiblePromoLease(lease)
+                promoCoordinator.releaseVisiblePromoAdmission(admission)
                 return
             }
             let renderSessionID = UUID()
@@ -596,26 +600,32 @@ final class NewTabPageMessagesModel: ObservableObject {
                 message: message,
                 renderSessionID: renderSessionID
             ) else {
-                promoCoordinator.releaseVisiblePromoLease(lease)
+                promoCoordinator.releaseVisiblePromoAdmission(admission)
                 return
             }
             admittedRemoteMessageSession = AdmittedRemoteMessageSession(
                 id: renderSessionID,
                 gateID: gateIdentity.id,
                 identity: identity,
-                lease: lease,
+                admission: admission,
                 message: message,
                 viewModel: viewModel,
                 appearanceRecorded: false
             )
             publishRenderItems()
 
-        case .blockedByModal, .occupiedSurfaceSlot, .featureDisabled, .unavailableDuringTransition:
+        case .blockedByModal,
+             .blockedByCooldown,
+             .blockedByProvisionalReservation,
+             .occupiedSurfaceSlot,
+             .featureDisabled,
+             .unavailableDuringTransition:
             break
         }
     }
 
     private func withdrawAdmittedRemoteMessage() {
+        promoCoordinator.cancelVisiblePromoCooldownRetry(for: surfaceID)
         guard let session = admittedRemoteMessageSession else {
             return
         }
@@ -626,7 +636,7 @@ final class NewTabPageMessagesModel: ObservableObject {
         // bounds any physical-removal overlap to that single animation.
         let promoCoordinator = promoCoordinator
         DispatchQueue.main.async { [weak self, promoCoordinator, session] in
-            promoCoordinator.releaseVisiblePromoLease(session.lease)
+            promoCoordinator.releaseVisiblePromoAdmission(session.admission)
             self?.attemptRemoteMessageAdmission()
         }
     }

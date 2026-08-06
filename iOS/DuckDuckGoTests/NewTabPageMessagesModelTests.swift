@@ -182,6 +182,7 @@ final class NewTabPageMessagesModelTests: XCTestCase {
         session.viewModel.onDidAppear()
         session.viewModel.onDidAppear()
 
+        XCTAssertEqual(promoCoordinator.confirmationCallCount, 1)
         XCTAssertEqual(messagesConfiguration.appearanceCallCount, 1)
         XCTAssertEqual(messagesConfiguration.lastAppearedHomeMessage, message)
     }
@@ -267,7 +268,41 @@ final class NewTabPageMessagesModelTests: XCTestCase {
         XCTAssertEqual(refreshedSession.id, originalSession.id)
         XCTAssertEqual(refreshedSession.viewModel.title, "Updated")
         XCTAssertEqual(messagesConfiguration.appearanceCallCount, 1)
+        XCTAssertEqual(promoCoordinator.confirmationCallCount, 1)
         XCTAssertEqual(promoCoordinator.arbiter.snapshot.visiblePromoCount, 1)
+    }
+
+    func testCooldownDenialRetainsGateWithoutPublishingOrRecordingRemoteCard() throws {
+        let promoCoordinator = ArbitratingNewTabPagePromoCoordinatorMock(featureState: .enabled)
+        promoCoordinator.admissionOverride = { _ in
+            .blockedByCooldown(nextEligibleDate: Date(timeIntervalSince1970: 600))
+        }
+        messagesConfiguration.homeMessages = [.mockRemote(id: "message-a", withType: .small(titleText: "Title", descriptionText: "Body"))]
+        let sut = createRenderableSUT(promoCoordinator: promoCoordinator)
+
+        try appearRemoteMessageGate(in: sut, expectedMessageID: "message-a")
+
+        XCTAssertNotNil(try remoteMessageGate(in: sut))
+        XCTAssertNil(try remoteRenderSession(in: sut))
+        XCTAssertTrue(sut.homeMessageViewModels.isEmpty)
+        XCTAssertEqual(promoCoordinator.confirmationCallCount, 0)
+        XCTAssertEqual(messagesConfiguration.appearanceCallCount, 0)
+    }
+
+    func testFailedReservationConfirmationDoesNotRecordAppearance() throws {
+        let promoCoordinator = ArbitratingNewTabPagePromoCoordinatorMock(featureState: .enabled)
+        promoCoordinator.shouldConfirmAppearance = false
+        let message = HomeMessage.mockRemote(id: "message-a", withType: .small(titleText: "Title", descriptionText: "Body"))
+        messagesConfiguration.homeMessages = [message]
+        let sut = createRenderableSUT(promoCoordinator: promoCoordinator)
+        try appearRemoteMessageGate(in: sut, expectedMessageID: "message-a")
+        let session = try XCTUnwrap(try remoteRenderSession(in: sut))
+
+        session.viewModel.onDidAppear()
+
+        XCTAssertEqual(promoCoordinator.confirmationCallCount, 1)
+        XCTAssertEqual(messagesConfiguration.appearanceCallCount, 0)
+        XCTAssertNil(messagesConfiguration.lastAppearedHomeMessage)
     }
 
     func testReplacementMountAppearingBeforeStaleMountDisappearsKeepsCurrentSessionAndLease() throws {
@@ -391,6 +426,8 @@ final class NewTabPageMessagesModelTests: XCTestCase {
         await waitForNextMainQueueTurn()
 
         XCTAssertEqual(promoCoordinator.arbiter.snapshot.visiblePromoCount, 0)
+        XCTAssertEqual(promoCoordinator.confirmationCallCount, 0)
+        XCTAssertEqual(promoCoordinator.releaseCallCount, 1)
     }
 
     func testConfigurationRemovalClearsBlockedCandidateWithoutAppearanceAccounting() throws {
@@ -973,6 +1010,10 @@ private final class ArbitratingNewTabPagePromoCoordinatorMock: NewTabPagePromoCo
     private(set) var registrationCount = 0
     private(set) var deregistrationCount = 0
     private(set) var publicAdmissionCallCount = 0
+    private(set) var confirmationCallCount = 0
+    private(set) var releaseCallCount = 0
+    var shouldConfirmAppearance = true
+    var admissionOverride: ((VisiblePromoIdentity) -> VisiblePromoAdmissionResult)?
     private var modalLease: PromoQueueModalLease?
 
     init(featureState: PromoQueueFeatureState = .disabled) {
@@ -989,6 +1030,9 @@ private final class ArbitratingNewTabPagePromoCoordinatorMock: NewTabPagePromoCo
 
     func admitVisiblePromo(_ identity: VisiblePromoIdentity) -> VisiblePromoAdmissionResult {
         publicAdmissionCallCount += 1
+        if let admissionOverride {
+            return admissionOverride(identity)
+        }
         switch promoQueueFeatureState {
         case .disabled:
             return .featureDisabled
@@ -1000,7 +1044,19 @@ private final class ArbitratingNewTabPagePromoCoordinatorMock: NewTabPagePromoCo
 
         switch arbiter.acquireVisiblePromoLease(for: identity) {
         case .acquired(let lease):
-            return .acquired(lease)
+            return .acquired(PromoQueueVisiblePromoAdmission(
+                confirmationHandler: { [weak self] in
+                    guard let self else {
+                        return false
+                    }
+                    confirmationCallCount += 1
+                    return shouldConfirmAppearance
+                },
+                releaseHandler: { [weak self] in
+                    self?.releaseCallCount += 1
+                    lease.release()
+                }
+            ))
         case .blockedByModal:
             return .blockedByModal
         case .occupiedSurfaceSlot(let identity):
@@ -1008,8 +1064,11 @@ private final class ArbitratingNewTabPagePromoCoordinatorMock: NewTabPagePromoCo
         }
     }
 
-    func releaseVisiblePromoLease(_ lease: PromoQueueVisiblePromoLease) {
-        lease.release()
+    func releaseVisiblePromoAdmission(_ admission: PromoQueueVisiblePromoAdmission) {
+        admission.release()
+    }
+
+    func cancelVisiblePromoCooldownRetry(for surfaceID: UUID) {
     }
 
     func registerVisiblePromoRetry(

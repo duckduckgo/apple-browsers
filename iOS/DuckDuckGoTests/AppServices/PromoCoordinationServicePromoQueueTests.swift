@@ -236,8 +236,8 @@ final class PromoCoordinationServicePromoQueueTests {
     }
 
     @available(iOS 16, *)
-    @Test("Visible Admission Checkpoint Admits Triggering Surface Before Retrying Other Surface", .timeLimit(.minutes(1)))
-    func whenVisibleAdmissionReleasesDetachedModalThenTriggeringSurfaceWinsBeforeRetrySnapshot() {
+    @Test("Visible Admission Checkpoint Reserves Triggering Surface Before Retrying Other Surface", .timeLimit(.minutes(1)))
+    func whenVisibleAdmissionReleasesDetachedModalThenTriggeringSurfaceReservesBeforeRetrySnapshot() {
         featureFlaggerMock.enabledFeatureFlags = [.promoPresentationCoordination]
         sut = PromoCoordinationService(
             launchSourceManager: launchSourceManagerMock,
@@ -257,8 +257,8 @@ final class PromoCoordinationServicePromoQueueTests {
         let otherSurfaceID = UUID()
         let triggeringTarget = MockNewTabPagePromoRetryTarget()
         let otherTarget = MockNewTabPagePromoRetryTarget()
-        // A real NTP surface keeps the token it was admitted with, and the arbiter reclaims a slot whose token has
-        // deallocated, so the retried surface has to keep its token for the slot to stay taken.
+        // The triggering surface takes the one global provisional reservation before the retry snapshot runs, so the
+        // other surface must remain blocked until that first admission confirms or withdraws.
         otherTarget.identityToAdmitOnRetry = VisiblePromoIdentity(
             surfaceID: otherSurfaceID,
             promoType: .remoteMessage,
@@ -284,8 +284,8 @@ final class PromoCoordinationServicePromoQueueTests {
         }
         #expect(triggeringTarget.retryCount == 0)
         #expect(otherTarget.retryCount == 1)
-        #expect(otherTarget.retainedLease != nil)
-        #expect(promoQueueLeaseArbiter.snapshot.visiblePromoCount == 2)
+        #expect(otherTarget.retainedLease == nil)
+        #expect(promoQueueLeaseArbiter.snapshot.visiblePromoCount == 1)
     }
 
     @available(iOS 16, *)
@@ -497,7 +497,7 @@ final class PromoCoordinationServicePromoQueueTests {
         }
         #expect(promoQueueLeaseArbiter.snapshot.visiblePromoIdentities == [identity])
 
-        sut.releaseVisiblePromoLease(lease)
+        sut.releaseVisiblePromoAdmission(lease)
 
         // Withdrawing a promo has to hand the slot back, so the same surface can admit the next message for it.
         #expect(promoQueueLeaseArbiter.snapshot.visiblePromoIdentities.isEmpty)
@@ -537,7 +537,7 @@ final class PromoCoordinationServicePromoQueueTests {
         featureFlaggerMock.triggerUpdate()
         await waitForFeatureFlagUpdateDelivery()
 
-        #expect(target.events == ["will-enable", "did-enable"])
+        #expect(target.events == ["will-enable", "did-enable", "retry"])
         #expect(callbackStates == [.transitioning(to: .enabled), .transitioning(to: .enabled)])
 
         target.events.removeAll()
@@ -557,6 +557,295 @@ final class PromoCoordinationServicePromoQueueTests {
         #expect(callbackStates == [.transitioning(to: .disabled), .transitioning(to: .disabled)])
         #expect(callbackVisibleLeaseCounts == [1, 0])
         _ = (registration, lease)
+    }
+
+    // MARK: - Directional Cooldowns
+
+    @available(iOS 16, *)
+    @Test("RMF To Modal Cooldown Blocks Before Manager Evaluation And Admits At Boundary", .timeLimit(.minutes(1)))
+    func whenRemoteMessageWasConfirmedThenModalWaitsForExactTwentyFourHourBoundary() {
+        let confirmedAppearance = Date(timeIntervalSince1970: 1_000_000)
+        let clock = PromoQueueCooldownTestClock(now: confirmedAppearance)
+        let modalStore = PromoQueueModalHistoryStoreMock()
+        let remoteMessageStore = PromoQueueRemoteMessageHistoryStoreMock()
+        remoteMessageStore.lastConfirmedRemoteMessageTimestamp = clock.now.timeIntervalSince1970
+        let cooldownPolicy = PromoQueueCooldownPolicy(
+            modalPresentationStore: modalStore,
+            remoteMessagePresentationStore: remoteMessageStore,
+            dateProvider: { clock.now }
+        )
+        featureFlaggerMock.enabledFeatureFlags = [.promoPresentationCoordination]
+        launchSourceManagerMock.source = .standard
+        presenterMock.presentedViewController = nil
+        managerMock.coordinatedPresentationDisposition = .released
+        sut = PromoCoordinationService(
+            launchSourceManager: launchSourceManagerMock,
+            modalPromptCoordinationManager: managerMock,
+            featureFlagger: featureFlaggerMock,
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
+            promoQueueCooldownPolicy: cooldownPolicy
+        )
+
+        clock.now = clock.now.addingTimeInterval(PromoQueueCooldownPolicy.modalAfterRemoteMessageInterval - 1)
+        sut.presentModalPromptIfNeeded(from: presenterMock)
+
+        #expect(managerMock.callCount == 0)
+        #expect(managerMock.capturedModalLease == nil)
+        #expect(!promoQueueLeaseArbiter.snapshot.hasModalLease)
+
+        clock.now = confirmedAppearance.addingTimeInterval(PromoQueueCooldownPolicy.modalAfterRemoteMessageInterval)
+        sut.presentModalPromptIfNeeded(from: presenterMock)
+
+        #expect(managerMock.callCount == 1)
+        #expect(managerMock.capturedModalLease != nil)
+        #expect(!promoQueueLeaseArbiter.snapshot.hasModalLease)
+    }
+
+    @available(iOS 16, *)
+    @Test("RMF Cooldown Returns Boundary And Schedules One Exact Retry", .timeLimit(.minutes(1)))
+    func whenRemoteMessageAdmissionIsInCooldownThenOneRetryRunsAtExactBoundary() {
+        let confirmedAppearance = Date(timeIntervalSince1970: 2_000_000)
+        let clock = PromoQueueCooldownTestClock(now: confirmedAppearance)
+        let modalStore = PromoQueueModalHistoryStoreMock()
+        let remoteMessageStore = PromoQueueRemoteMessageHistoryStoreMock()
+        remoteMessageStore.lastConfirmedRemoteMessageTimestamp = confirmedAppearance.timeIntervalSince1970
+        let cooldownPolicy = PromoQueueCooldownPolicy(
+            modalPresentationStore: modalStore,
+            remoteMessagePresentationStore: remoteMessageStore,
+            dateProvider: { clock.now }
+        )
+        let scheduler = PromoQueueCooldownSchedulerMock()
+        featureFlaggerMock.enabledFeatureFlags = [.promoPresentationCoordination]
+        sut = PromoCoordinationService(
+            launchSourceManager: launchSourceManagerMock,
+            modalPromptCoordinationManager: managerMock,
+            featureFlagger: featureFlaggerMock,
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
+            promoQueueCooldownPolicy: cooldownPolicy,
+            promoQueueCooldownScheduler: scheduler
+        )
+        let surfaceID = UUID()
+        let identity = VisiblePromoIdentity(surfaceID: surfaceID, promoType: .remoteMessage, promoID: "rmf")
+        let target = MockNewTabPagePromoRetryTarget()
+        target.identityToAdmitOnRetry = identity
+        let registration = sut.registerVisiblePromoRetry(for: surfaceID, target: target)
+        let expectedBoundary = confirmedAppearance.addingTimeInterval(PromoQueueCooldownPolicy.remoteMessageTargetInterval)
+
+        let firstResult = sut.admitVisiblePromo(identity)
+        let duplicateResult = sut.admitVisiblePromo(identity)
+
+        guard case .blockedByCooldown(let firstBoundary) = firstResult,
+              case .blockedByCooldown(let duplicateBoundary) = duplicateResult else {
+            Issue.record("Expected both RMF admission attempts to return the cooldown boundary")
+            return
+        }
+        #expect(firstBoundary == expectedBoundary)
+        #expect(duplicateBoundary == expectedBoundary)
+        #expect(scheduler.scheduleCallCount == 1)
+        #expect(scheduler.pendingDates == [expectedBoundary])
+        #expect(sut.promoQueueDebugSnapshot.scheduledRemoteMessageRetry == expectedBoundary)
+
+        clock.now = expectedBoundary
+        scheduler.fire(at: expectedBoundary)
+
+        #expect(target.retryCount == 1)
+        #expect(target.retainedLease != nil)
+        #expect(promoQueueLeaseArbiter.snapshot.visiblePromoIdentities == [identity])
+        #expect(scheduler.pendingDates.isEmpty)
+        #expect(sut.promoQueueDebugSnapshot.scheduledRemoteMessageRetry == nil)
+        _ = registration
+    }
+
+    @available(iOS 16, *)
+    @Test("Confirming Provisional RMF Serializes Other Surface Until Cooldown Boundary", .timeLimit(.minutes(1)))
+    func whenFirstSurfaceConfirmsThenOtherSurfaceRetriesIntoGlobalCooldown() {
+        let clock = PromoQueueCooldownTestClock(now: Date(timeIntervalSince1970: 3_000_000))
+        let modalStore = PromoQueueModalHistoryStoreMock()
+        let remoteMessageStore = PromoQueueRemoteMessageHistoryStoreMock()
+        let cooldownPolicy = PromoQueueCooldownPolicy(
+            modalPresentationStore: modalStore,
+            remoteMessagePresentationStore: remoteMessageStore,
+            dateProvider: { clock.now }
+        )
+        let scheduler = PromoQueueCooldownSchedulerMock()
+        featureFlaggerMock.enabledFeatureFlags = [.promoPresentationCoordination]
+        sut = PromoCoordinationService(
+            launchSourceManager: launchSourceManagerMock,
+            modalPromptCoordinationManager: managerMock,
+            featureFlagger: featureFlaggerMock,
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
+            promoQueueCooldownPolicy: cooldownPolicy,
+            promoQueueCooldownScheduler: scheduler
+        )
+        let firstIdentity = VisiblePromoIdentity(surfaceID: UUID(), promoType: .remoteMessage, promoID: "first")
+        let secondIdentity = VisiblePromoIdentity(surfaceID: UUID(), promoType: .remoteMessage, promoID: "second")
+        let secondTarget = MockNewTabPagePromoRetryTarget()
+        secondTarget.identityToAdmitOnRetry = secondIdentity
+        let secondRegistration = sut.registerVisiblePromoRetry(for: secondIdentity.surfaceID, target: secondTarget)
+
+        guard case .acquired(let firstAdmission) = sut.admitVisiblePromo(firstIdentity) else {
+            Issue.record("Expected the first RMF surface to reserve admission")
+            return
+        }
+        guard case .blockedByProvisionalReservation = sut.admitVisiblePromo(secondIdentity) else {
+            Issue.record("Expected the second RMF surface to be serialized behind the provisional owner")
+            return
+        }
+
+        #expect(firstAdmission.confirmAppearance())
+
+        let expectedBoundary = clock.now.addingTimeInterval(PromoQueueCooldownPolicy.remoteMessageTargetInterval)
+        #expect(remoteMessageStore.lastConfirmedRemoteMessageTimestamp == clock.now.timeIntervalSince1970)
+        #expect(secondTarget.retryCount == 1)
+        #expect(secondTarget.retainedLease == nil)
+        #expect(scheduler.pendingDates == [expectedBoundary])
+        #expect(promoQueueLeaseArbiter.snapshot.visiblePromoIdentities == [firstIdentity])
+        #expect(cooldownPolicy.snapshot.provisionalRemoteMessageIdentity == nil)
+        _ = secondRegistration
+    }
+
+    @available(iOS 16, *)
+    @Test("Withdrawing Provisional RMF Immediately Retries Other Surface Without History", .timeLimit(.minutes(1)))
+    func whenFirstSurfaceWithdrawsBeforeAppearanceThenOtherSurfaceCanReserveImmediately() {
+        let clock = PromoQueueCooldownTestClock(now: Date(timeIntervalSince1970: 4_000_000))
+        let modalStore = PromoQueueModalHistoryStoreMock()
+        let remoteMessageStore = PromoQueueRemoteMessageHistoryStoreMock()
+        let cooldownPolicy = PromoQueueCooldownPolicy(
+            modalPresentationStore: modalStore,
+            remoteMessagePresentationStore: remoteMessageStore,
+            dateProvider: { clock.now }
+        )
+        let scheduler = PromoQueueCooldownSchedulerMock()
+        featureFlaggerMock.enabledFeatureFlags = [.promoPresentationCoordination]
+        sut = PromoCoordinationService(
+            launchSourceManager: launchSourceManagerMock,
+            modalPromptCoordinationManager: managerMock,
+            featureFlagger: featureFlaggerMock,
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
+            promoQueueCooldownPolicy: cooldownPolicy,
+            promoQueueCooldownScheduler: scheduler
+        )
+        let firstIdentity = VisiblePromoIdentity(surfaceID: UUID(), promoType: .remoteMessage, promoID: "first")
+        let secondIdentity = VisiblePromoIdentity(surfaceID: UUID(), promoType: .remoteMessage, promoID: "second")
+        let secondTarget = MockNewTabPagePromoRetryTarget()
+        secondTarget.identityToAdmitOnRetry = secondIdentity
+        let secondRegistration = sut.registerVisiblePromoRetry(for: secondIdentity.surfaceID, target: secondTarget)
+
+        guard case .acquired(let firstAdmission) = sut.admitVisiblePromo(firstIdentity) else {
+            Issue.record("Expected the first RMF surface to reserve admission")
+            return
+        }
+        guard case .blockedByProvisionalReservation = sut.admitVisiblePromo(secondIdentity) else {
+            Issue.record("Expected the second RMF surface to be serialized behind the provisional owner")
+            return
+        }
+
+        sut.releaseVisiblePromoAdmission(firstAdmission)
+
+        #expect(remoteMessageStore.lastConfirmedRemoteMessageTimestamp == nil)
+        #expect(secondTarget.retryCount == 1)
+        #expect(secondTarget.retainedLease != nil)
+        #expect(scheduler.scheduleCallCount == 0)
+        #expect(promoQueueLeaseArbiter.snapshot.visiblePromoIdentities == [secondIdentity])
+        #expect(cooldownPolicy.snapshot.provisionalRemoteMessageIdentity == secondIdentity)
+        _ = secondRegistration
+    }
+
+    @available(iOS 16, *)
+    @Test("Feature Off Bypasses Cooldown Policy Reservations And Retry Timer", .timeLimit(.minutes(1)))
+    func whenFeatureIsOffThenLegacyPathsNeverConsultDirectionalCooldownState() {
+        let cooldownPolicy = PromoQueueCooldownPolicySpy()
+        let scheduler = PromoQueueCooldownSchedulerMock()
+        launchSourceManagerMock.source = .standard
+        presenterMock.presentedViewController = nil
+        sut = PromoCoordinationService(
+            launchSourceManager: launchSourceManagerMock,
+            modalPromptCoordinationManager: managerMock,
+            featureFlagger: featureFlaggerMock,
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
+            promoQueueCooldownPolicy: cooldownPolicy,
+            promoQueueCooldownScheduler: scheduler
+        )
+
+        let visibleResult = sut.admitVisiblePromo(
+            VisiblePromoIdentity(surfaceID: UUID(), promoType: .remoteMessage, promoID: "rmf")
+        )
+        sut.presentModalPromptIfNeeded(from: presenterMock)
+        _ = sut.promoQueueDebugSnapshot
+
+        guard case .featureDisabled = visibleResult else {
+            Issue.record("Expected disabled RMF admission to use the legacy feature-off result")
+            return
+        }
+        #expect(managerMock.didCallPresentModalPromptIfNeeded)
+        #expect(managerMock.capturedModalLease == nil)
+        #expect(cooldownPolicy.snapshotReadCount == 0)
+        #expect(cooldownPolicy.modalEvaluationCount == 0)
+        #expect(cooldownPolicy.remoteMessageReservationCount == 0)
+        #expect(cooldownPolicy.resetTransientStateCount == 0)
+        #expect(scheduler.scheduleCallCount == 0)
+        #expect(!promoQueueLeaseArbiter.snapshot.hasModalLease)
+        #expect(promoQueueLeaseArbiter.snapshot.visiblePromoIdentities.isEmpty)
+    }
+
+    @available(iOS 16, *)
+    @Test("Live Disable Clears Cooldown Timer And Reservation But Preserves History", .timeLimit(.minutes(1)))
+    func whenFeatureIsDisabledLiveThenOnlyTransientCooldownStateIsCleared() async {
+        let confirmedModalAppearance = Date(timeIntervalSince1970: 4_900_000)
+        let confirmedRemoteMessageAppearance = Date(timeIntervalSince1970: 5_000_000)
+        let clock = PromoQueueCooldownTestClock(now: confirmedRemoteMessageAppearance)
+        let modalStore = PromoQueueModalHistoryStoreMock()
+        modalStore.lastPresentationTimestamp = confirmedModalAppearance.timeIntervalSince1970
+        let remoteMessageStore = PromoQueueRemoteMessageHistoryStoreMock()
+        remoteMessageStore.lastConfirmedRemoteMessageTimestamp = confirmedRemoteMessageAppearance.timeIntervalSince1970
+        let cooldownPolicy = PromoQueueCooldownPolicy(
+            modalPresentationStore: modalStore,
+            remoteMessagePresentationStore: remoteMessageStore,
+            dateProvider: { clock.now }
+        )
+        let scheduler = PromoQueueCooldownSchedulerMock()
+        featureFlaggerMock.enabledFeatureFlags = [.promoPresentationCoordination]
+        sut = PromoCoordinationService(
+            launchSourceManager: launchSourceManagerMock,
+            modalPromptCoordinationManager: managerMock,
+            featureFlagger: featureFlaggerMock,
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
+            promoQueueCooldownPolicy: cooldownPolicy,
+            promoQueueCooldownScheduler: scheduler
+        )
+        let blockedIdentity = VisiblePromoIdentity(surfaceID: UUID(), promoType: .remoteMessage, promoID: "blocked")
+        let blockedTarget = MockNewTabPagePromoRetryTarget()
+        blockedTarget.identityToAdmitOnRetry = blockedIdentity
+        let registration = sut.registerVisiblePromoRetry(for: blockedIdentity.surfaceID, target: blockedTarget)
+
+        guard case .blockedByCooldown = sut.admitVisiblePromo(blockedIdentity) else {
+            Issue.record("Expected the first surface to establish an RMF cooldown retry")
+            return
+        }
+        let expectedBoundary = confirmedRemoteMessageAppearance.addingTimeInterval(PromoQueueCooldownPolicy.remoteMessageTargetInterval)
+        #expect(scheduler.pendingDates == [expectedBoundary])
+
+        clock.now = expectedBoundary
+        let provisionalIdentity = VisiblePromoIdentity(surfaceID: UUID(), promoType: .remoteMessage, promoID: "provisional")
+        guard case .acquired(let provisionalAdmission) = sut.admitVisiblePromo(provisionalIdentity) else {
+            Issue.record("Expected a provisional RMF admission at the inclusive boundary")
+            return
+        }
+        #expect(cooldownPolicy.snapshot.provisionalRemoteMessageIdentity == provisionalIdentity)
+
+        featureFlaggerMock.enabledFeatureFlags = []
+        featureFlaggerMock.triggerUpdate()
+        await waitForFeatureFlagUpdateDelivery()
+
+        #expect(sut.promoQueueFeatureState == .disabled)
+        #expect(sut.promoQueueDebugSnapshot.scheduledRemoteMessageRetry == nil)
+        #expect(scheduler.pendingDates.isEmpty)
+        #expect(cooldownPolicy.snapshot.provisionalRemoteMessageIdentity == nil)
+        #expect(modalStore.lastPresentationTimestamp == confirmedModalAppearance.timeIntervalSince1970)
+        #expect(remoteMessageStore.lastConfirmedRemoteMessageTimestamp == confirmedRemoteMessageAppearance.timeIntervalSince1970)
+        #expect(!provisionalAdmission.confirmAppearance())
+        #expect(promoQueueLeaseArbiter.snapshot.visiblePromoIdentities.isEmpty)
+        _ = registration
     }
 
     // MARK: - Promo Queue Feature State
@@ -763,7 +1052,7 @@ final class PromoCoordinationServicePromoQueueTests {
         )
         let identity = VisiblePromoIdentity(surfaceID: UUID(), promoType: .remoteMessage, promoID: "rmf")
         var publishedStates = [PromoQueueFeatureState]()
-        var retainedLease: PromoQueueVisiblePromoLease?
+        var retainedLease: PromoQueueVisiblePromoAdmission?
         let cancellable = sut.promoQueueFeatureStatePublisher.sink { [weak self] state in
             guard let self else { return }
             publishedStates.append(state)
@@ -789,6 +1078,96 @@ final class PromoCoordinationServicePromoQueueTests {
         }
     }
 
+}
+
+private final class PromoQueueCooldownTestClock {
+    var now: Date
+
+    init(now: Date) {
+        self.now = now
+    }
+}
+
+private final class PromoQueueModalHistoryStoreMock: PromptCooldownStore {
+    var lastPresentationTimestamp: TimeInterval?
+}
+
+private final class PromoQueueRemoteMessageHistoryStoreMock: PromoQueueRemoteMessageCooldownStoring {
+    var lastConfirmedRemoteMessageTimestamp: TimeInterval?
+}
+
+@MainActor
+private final class PromoQueueCooldownPolicySpy: PromoQueueCooldownPolicying {
+    private(set) var snapshotReadCount = 0
+    private(set) var modalEvaluationCount = 0
+    private(set) var remoteMessageReservationCount = 0
+    private(set) var resetTransientStateCount = 0
+
+    var snapshot: PromoQueueCooldownSnapshot {
+        snapshotReadCount += 1
+        return PromoQueueCooldownSnapshot(
+            lastConfirmedModalAppearance: nil,
+            lastConfirmedRemoteMessageAppearance: nil,
+            nextRemoteMessageEligibility: nil,
+            nextModalEligibility: nil,
+            provisionalRemoteMessageIdentity: nil
+        )
+    }
+
+    func evaluateModalAdmission() -> PromoQueueModalCooldownAdmissionResult {
+        modalEvaluationCount += 1
+        return .eligible
+    }
+
+    func reserveRemoteMessageAdmission(for identity: VisiblePromoIdentity) -> PromoQueueRemoteMessageCooldownReservationResult {
+        remoteMessageReservationCount += 1
+        return .provisionalReservationInProgress
+    }
+
+    func resetTransientState() {
+        resetTransientStateCount += 1
+    }
+}
+
+@MainActor
+private final class PromoQueueCooldownSchedulerMock: PromoQueueCooldownScheduling {
+    private final class Request {
+        let date: Date
+        let execute: @MainActor () -> Void
+        var isPending = true
+
+        init(date: Date, execute: @escaping @MainActor () -> Void) {
+            self.date = date
+            self.execute = execute
+        }
+    }
+
+    private var requests = [Request]()
+
+    private(set) var scheduleCallCount = 0
+
+    var pendingDates: [Date] {
+        requests.filter(\.isPending).map(\.date)
+    }
+
+    func schedule(at date: Date, execute: @escaping @MainActor () -> Void) -> PromoQueueCooldownScheduledTask {
+        scheduleCallCount += 1
+        let request = Request(date: date, execute: execute)
+        requests.append(request)
+        return PromoQueueCooldownScheduledTask {
+            request.isPending = false
+        }
+    }
+
+    func fire(at date: Date) {
+        guard let request = requests.first(where: { $0.isPending && $0.date == date }) else {
+            Issue.record("Expected a pending cooldown retry at \(date)")
+            return
+        }
+
+        request.isPending = false
+        request.execute()
+    }
 }
 
 private final class ModalPromptCoordinationSubscriptionHookFeatureFlagger: FeatureFlagger {
@@ -851,7 +1230,7 @@ private final class MockNewTabPagePromoRetryTarget: NewTabPagePromoRetrying {
     var onDidTransition: (@MainActor (PromoQueueFeatureTargetState) -> Void)?
     var events = [String]()
     private(set) var retryCount = 0
-    private(set) var retainedLease: PromoQueueVisiblePromoLease?
+    private(set) var retainedLease: PromoQueueVisiblePromoAdmission?
 
     func retryVisiblePromoAdmission(using admissionHandler: VisiblePromoAdmissionHandler) {
         retryCount += 1

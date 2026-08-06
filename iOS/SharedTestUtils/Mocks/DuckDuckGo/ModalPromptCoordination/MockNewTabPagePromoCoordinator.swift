@@ -26,7 +26,8 @@ final class MockNewTabPagePromoCoordinator: NewTabPagePromoCoordinating {
     var admitVisiblePromoResult: VisiblePromoAdmissionResult = .featureDisabled
 
     private(set) var admittedIdentities = [VisiblePromoIdentity]()
-    private(set) var releasedLeases = [PromoQueueVisiblePromoLease]()
+    private(set) var releasedAdmissions = [PromoQueueVisiblePromoAdmission]()
+    private(set) var cancelledCooldownRetrySurfaceIDs = [UUID]()
     private(set) var registeredRetrySurfaceIDs = [UUID]()
 
     init(promoQueueFeatureState: PromoQueueFeatureState = .disabled) {
@@ -38,9 +39,13 @@ final class MockNewTabPagePromoCoordinator: NewTabPagePromoCoordinating {
         return admitVisiblePromoResult
     }
 
-    func releaseVisiblePromoLease(_ lease: PromoQueueVisiblePromoLease) {
-        releasedLeases.append(lease)
-        lease.release()
+    func releaseVisiblePromoAdmission(_ admission: PromoQueueVisiblePromoAdmission) {
+        releasedAdmissions.append(admission)
+        admission.release()
+    }
+
+    func cancelVisiblePromoCooldownRetry(for surfaceID: UUID) {
+        cancelledCooldownRetrySurfaceIDs.append(surfaceID)
     }
 
     func registerVisiblePromoRetry(

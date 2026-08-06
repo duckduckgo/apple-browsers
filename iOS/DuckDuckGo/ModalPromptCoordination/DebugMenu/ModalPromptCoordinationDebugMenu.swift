@@ -46,6 +46,12 @@ struct ModalPromptCoordinationDebugView: View {
                 snapshotRow(title: "Manager Phase", value: viewModel.formattedModalAttemptPhase)
                 snapshotRow(title: "Pending Modal", value: viewModel.formattedPendingModalState)
                 snapshotRow(title: "Active Visible Leases", value: viewModel.formattedActiveVisibleLeaseCount)
+                snapshotRow(title: "Last Modal", value: viewModel.formattedLastModalAppearance)
+                snapshotRow(title: "Last RMF", value: viewModel.formattedLastRemoteMessageAppearance)
+                snapshotRow(title: "Next RMF", value: viewModel.formattedNextRemoteMessageEligibility)
+                snapshotRow(title: "Next Modal", value: viewModel.formattedNextModalEligibility)
+                snapshotRow(title: "Provisional RMF", value: viewModel.formattedProvisionalRemoteMessage)
+                snapshotRow(title: "Scheduled RMF Retry", value: viewModel.formattedScheduledRemoteMessageRetry)
                 Button("Refresh Snapshot") {
                     viewModel.refresh()
                 }
@@ -104,6 +110,12 @@ private final class ModalPromptCoordinationDebugViewModel: ObservableObject {
     @Published private(set) var formattedModalAttemptPhase = "Unavailable"
     @Published private(set) var formattedPendingModalState = "Unavailable"
     @Published private(set) var formattedActiveVisibleLeaseCount = "Unavailable"
+    @Published private(set) var formattedLastModalAppearance = "Unavailable"
+    @Published private(set) var formattedLastRemoteMessageAppearance = "Unavailable"
+    @Published private(set) var formattedNextRemoteMessageEligibility = "Unavailable"
+    @Published private(set) var formattedNextModalEligibility = "Unavailable"
+    @Published private(set) var formattedProvisionalRemoteMessage = "Unavailable"
+    @Published private(set) var formattedScheduledRemoteMessageRetry = "Unavailable"
 
     init(
         store: PromptCooldownStore,
@@ -153,6 +165,20 @@ private final class ModalPromptCoordinationDebugViewModel: ObservableObject {
         formattedModalAttemptPhase = formattedModalAttemptPhase(snapshot.modalAttemptPhase)
         formattedPendingModalState = snapshot.hasPendingModalPrompt ? "Yes" : "No"
         formattedActiveVisibleLeaseCount = String(snapshot.activeVisiblePromoLeaseCount)
+        formattedLastModalAppearance = formattedDate(snapshot.cooldown.lastConfirmedModalAppearance)
+        formattedLastRemoteMessageAppearance = formattedDate(snapshot.cooldown.lastConfirmedRemoteMessageAppearance)
+        formattedNextRemoteMessageEligibility = formattedDate(snapshot.cooldown.nextRemoteMessageEligibility)
+        formattedNextModalEligibility = formattedDate(snapshot.cooldown.nextModalEligibility)
+        formattedScheduledRemoteMessageRetry = formattedDate(snapshot.scheduledRemoteMessageRetry)
+        if let provisionalIdentity = snapshot.cooldown.provisionalRemoteMessageIdentity {
+            formattedProvisionalRemoteMessage = "\(provisionalIdentity.promoID) / \(provisionalIdentity.surfaceID.uuidString)"
+        } else {
+            formattedProvisionalRemoteMessage = "None"
+        }
+    }
+
+    private func formattedDate(_ date: Date?) -> String {
+        date.map(Self.dateFormatter.string(from:)) ?? "None"
     }
 
     private func formattedFeatureState(_ state: PromoQueueFeatureState) -> String {

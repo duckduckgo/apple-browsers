@@ -427,8 +427,11 @@ private final class PreviewNewTabPagePromoCoordinator: NewTabPagePromoCoordinati
         .featureDisabled
     }
 
-    func releaseVisiblePromoLease(_ lease: PromoQueueVisiblePromoLease) {
-        lease.release()
+    func releaseVisiblePromoAdmission(_ admission: PromoQueueVisiblePromoAdmission) {
+        admission.release()
+    }
+
+    func cancelVisiblePromoCooldownRetry(for surfaceID: UUID) {
     }
 
     func registerVisiblePromoRetry(

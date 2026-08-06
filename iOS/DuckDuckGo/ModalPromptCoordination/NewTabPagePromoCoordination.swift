@@ -21,16 +21,52 @@ import Combine
 import Foundation
 
 enum VisiblePromoAdmissionResult {
-    /// Admitted: the caller owns the lease and must release it.
-    case acquired(PromoQueueVisiblePromoLease)
+    /// Admitted: the caller owns the identity-bound admission and must release it.
+    case acquired(PromoQueueVisiblePromoAdmission)
     /// A coordinated modal attempt owns the slot.
     case blockedByModal
+    /// Confirmed modal or RMF history blocks this RMF until the inclusive boundary.
+    case blockedByCooldown(nextEligibleDate: Date)
+    /// Another RMF has reserved admission but has not appeared or withdrawn yet.
+    case blockedByProvisionalReservation
     /// The requesting surface's `(surfaceID, promoType)` slot already holds a lease; carries the occupying identity.
     case occupiedSurfaceSlot(VisiblePromoIdentity)
     /// The `promoPresentationCoordination` flag is off, so admission is not arbitrated.
     case featureDisabled
     /// A flag transition barrier is up; the caller should retry after the transition.
     case unavailableDuringTransition
+}
+
+/// Owns one arbiter lease and its provisional RMF cooldown reservation without adding history to the arbiter.
+@MainActor
+final class PromoQueueVisiblePromoAdmission {
+    private var confirmationHandler: (() -> Bool)?
+    private var releaseHandler: (() -> Void)?
+
+    init(
+        confirmationHandler: @escaping () -> Bool,
+        releaseHandler: @escaping () -> Void
+    ) {
+        self.confirmationHandler = confirmationHandler
+        self.releaseHandler = releaseHandler
+    }
+
+    @discardableResult
+    func confirmAppearance() -> Bool {
+        guard let confirmationHandler else {
+            return false
+        }
+
+        self.confirmationHandler = nil
+        return confirmationHandler()
+    }
+
+    func release() {
+        confirmationHandler = nil
+        let releaseHandler = releaseHandler
+        self.releaseHandler = nil
+        releaseHandler?()
+    }
 }
 
 typealias VisiblePromoAdmissionHandler = @MainActor (VisiblePromoIdentity) -> VisiblePromoAdmissionResult
@@ -78,7 +114,8 @@ protocol NewTabPagePromoCoordinating: AnyObject {
     var promoQueueFeatureStatePublisher: AnyPublisher<PromoQueueFeatureState, Never> { get }
 
     func admitVisiblePromo(_ identity: VisiblePromoIdentity) -> VisiblePromoAdmissionResult
-    func releaseVisiblePromoLease(_ lease: PromoQueueVisiblePromoLease)
+    func releaseVisiblePromoAdmission(_ admission: PromoQueueVisiblePromoAdmission)
+    func cancelVisiblePromoCooldownRetry(for surfaceID: UUID)
     func registerVisiblePromoRetry(
         for surfaceID: UUID,
         target: NewTabPagePromoRetrying

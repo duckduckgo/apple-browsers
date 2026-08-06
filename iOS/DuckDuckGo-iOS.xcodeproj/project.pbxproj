@@ -1643,6 +1643,8 @@
 		9FA09DA62EA71F2900E26F3F /* PromptCooldownIntervalProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FA09DA22EA71F2900E26F3F /* PromptCooldownIntervalProvider.swift */; };
 		9FA09DA72EA71F2900E26F3F /* PromptCooldownStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FA09DA32EA71F2900E26F3F /* PromptCooldownStore.swift */; };
 		9FA09DA82EA71F2900E26F3F /* PromptCooldownManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FA09DA42EA71F2900E26F3F /* PromptCooldownManager.swift */; };
+		B6A7C25131A1000100F00D01 /* PromoQueueCooldownPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6A7C25031A1000100F00D01 /* PromoQueueCooldownPolicy.swift */; };
+		B6A7C25331A1000100F00D01 /* PromoQueueCooldownPolicyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6A7C25231A1000100F00D01 /* PromoQueueCooldownPolicyTests.swift */; };
 		9FA09DAC2EA7400200E26F3F /* PromptCooldownStorePixelReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FA09DAB2EA7400200E26F3F /* PromptCooldownStorePixelReporter.swift */; };
 		9FA09DAF2EA84F5D00E26F3F /* ModalPromptScheduling.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FA09DAE2EA84F5200E26F3F /* ModalPromptScheduling.swift */; };
 		9FA0AF192EB4855000713387 /* MockRemoteMessagingPixelReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FA0AF182EB4855000713387 /* MockRemoteMessagingPixelReporter.swift */; };
@@ -4453,6 +4455,8 @@
 		9FA09DA22EA71F2900E26F3F /* PromptCooldownIntervalProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptCooldownIntervalProvider.swift; sourceTree = "<group>"; };
 		9FA09DA32EA71F2900E26F3F /* PromptCooldownStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptCooldownStore.swift; sourceTree = "<group>"; };
 		9FA09DA42EA71F2900E26F3F /* PromptCooldownManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptCooldownManager.swift; sourceTree = "<group>"; };
+		B6A7C25031A1000100F00D01 /* PromoQueueCooldownPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromoQueueCooldownPolicy.swift; sourceTree = "<group>"; };
+		B6A7C25231A1000100F00D01 /* PromoQueueCooldownPolicyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromoQueueCooldownPolicyTests.swift; sourceTree = "<group>"; };
 		9FA09DAB2EA7400200E26F3F /* PromptCooldownStorePixelReporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptCooldownStorePixelReporter.swift; sourceTree = "<group>"; };
 		9FA09DAE2EA84F5200E26F3F /* ModalPromptScheduling.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModalPromptScheduling.swift; sourceTree = "<group>"; };
 		9FA0AF182EB4855000713387 /* MockRemoteMessagingPixelReporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockRemoteMessagingPixelReporter.swift; sourceTree = "<group>"; };
@@ -9007,6 +9011,7 @@
 		9F7634BC2EA8633300804550 /* Cooldown */ = {
 			isa = PBXGroup;
 			children = (
+				B6A7C25231A1000100F00D01 /* PromoQueueCooldownPolicyTests.swift */,
 				9F7634BB2EA8633300804550 /* PromptCooldownIntervalProviderTests.swift */,
 				9F387DD72EA86CE3006861F8 /* PromptCooldownStoreTests.swift */,
 				9F387DD92EA87C0F006861F8 /* PromptCooldownManagerTests.swift */,
@@ -9177,6 +9182,7 @@
 			isa = PBXGroup;
 			children = (
 				9FA09DAA2EA73FD700E26F3F /* Monitoring */,
+				B6A7C25031A1000100F00D01 /* PromoQueueCooldownPolicy.swift */,
 				9FA09DA22EA71F2900E26F3F /* PromptCooldownIntervalProvider.swift */,
 				9FA09DA32EA71F2900E26F3F /* PromptCooldownStore.swift */,
 				9FA09DA42EA71F2900E26F3F /* PromptCooldownManager.swift */,
@@ -14066,6 +14072,7 @@
 				80A198C72F1AB3A90015521B /* TabViewModel.swift in Sources */,
 				5BF65FDA2F5A2CB800BCC9F4 /* AutoplaySettings.swift in Sources */,
 				9FA09DA82EA71F2900E26F3F /* PromptCooldownManager.swift in Sources */,
+				B6A7C25131A1000100F00D01 /* PromoQueueCooldownPolicy.swift in Sources */,
 				80A09D642F6BBA1F00AACDEE /* DataStoreWarmupWorker.swift in Sources */,
 				1E4DCF4E27B6A69600961E25 /* DownloadsListHostingController.swift in Sources */,
 				850F93DB2B594AB800823EEA /* ZippedPassKitPreviewHelper.swift in Sources */,
@@ -14763,6 +14770,7 @@
 				98E564A22DE8EDCE00E6E75F /* CapturingSyncPausedStateManager.swift in Sources */,
 				9FE7CD5C2E14C6CD006691AB /* DefaultBrowserPromptUserActivityManagerTests.swift in Sources */,
 				9F387DDA2EA87C0F006861F8 /* PromptCooldownManagerTests.swift in Sources */,
+				B6A7C25331A1000100F00D01 /* PromoQueueCooldownPolicyTests.swift in Sources */,
 				98E563F72DE8B32D00E6E75F /* OnboardingHostingControllerMock.swift in Sources */,
 				BBFF22EF2F3469160055A710 /* MockFreeTrialConversionInstrumentationService.swift in Sources */,
 				98E563F82DE8B32D00E6E75F /* MockOmniBar.swift in Sources */,

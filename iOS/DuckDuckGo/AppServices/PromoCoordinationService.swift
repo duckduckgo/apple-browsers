@@ -46,6 +46,8 @@ struct PromoQueueDebugSnapshot: Equatable {
     let modalAttemptPhase: ModalPromptAttemptPhase
     let hasPendingModalPrompt: Bool
     let activeVisiblePromoLeaseCount: Int
+    let cooldown: PromoQueueCooldownSnapshot
+    let scheduledRemoteMessageRetry: Date?
 }
 
 @MainActor
@@ -86,11 +88,16 @@ final class PromoCoordinationService {
     private let modalPromptCoordinationManager: ModalPromptCoordinationManaging
     private let launchSourceManager: LaunchSourceManaging
     private let promoQueueLeaseArbiter: PromoQueueLeaseArbitrating
+    private let promoQueueCooldownPolicy: PromoQueueCooldownPolicying
+    private let promoQueueCooldownScheduler: PromoQueueCooldownScheduling
     private let featureFlagger: FeatureFlagger
     private var promoQueueFeatureStateCancellable: AnyCancellable?
     private var pendingPromoQueueFeatureTargetState: PromoQueueFeatureTargetState?
     private var promoRetryRegistrations = [WeakPromoRetryRegistration]()
     private var isRetryingVisiblePromoRegistrations = false
+    private var cooldownBlockedSurfaces = [UUID: Date]()
+    private var scheduledRemoteMessageRetry: Date?
+    private var scheduledRemoteMessageRetryTask: PromoQueueCooldownScheduledTask?
     private let promoQueueFeatureStateSubject: CurrentValueSubject<PromoQueueFeatureState, Never>
 
     private(set) var promoQueueFeatureState: PromoQueueFeatureState
@@ -129,6 +136,11 @@ final class PromoCoordinationService {
         let presentationStore = PromptCooldownKeyValueFilesStore(keyValueStore: keyValueStore, eventMapper: PromptCooldownStorePixelReporter())
         let cooldownIntervalProvider = PromptCooldownIntervalProvider(privacyConfigManager: privacyConfigManager)
         let cooldownManager = PromptCooldownManager(presentationStore: presentationStore, cooldownIntervalProvider: cooldownIntervalProvider)
+        let remoteMessagePresentationStore = PromoQueueRemoteMessageCooldownKeyValueFilesStore(keyValueStore: keyValueStore)
+        let promoQueueCooldownPolicy = PromoQueueCooldownPolicy(
+            modalPresentationStore: presentationStore,
+            remoteMessagePresentationStore: remoteMessagePresentationStore
+        )
 
         let modalPromptCoordinationManager = ModalPromptCoordinationManager(
             providers: providers,
@@ -141,7 +153,8 @@ final class PromoCoordinationService {
             launchSourceManager: launchSourceManager,
             modalPromptCoordinationManager: modalPromptCoordinationManager,
             featureFlagger: featureFlagger,
-            promoQueueLeaseArbiter: promoQueueLeaseArbiter
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
+            promoQueueCooldownPolicy: promoQueueCooldownPolicy
         )
     }
 
@@ -149,12 +162,19 @@ final class PromoCoordinationService {
         launchSourceManager: LaunchSourceManaging,
         modalPromptCoordinationManager: ModalPromptCoordinationManaging,
         featureFlagger: FeatureFlagger,
-        promoQueueLeaseArbiter: PromoQueueLeaseArbitrating
+        promoQueueLeaseArbiter: PromoQueueLeaseArbitrating,
+        promoQueueCooldownPolicy: PromoQueueCooldownPolicying? = nil,
+        promoQueueCooldownScheduler: PromoQueueCooldownScheduling? = nil
     ) {
         self.launchSourceManager = launchSourceManager
         self.modalPromptCoordinationManager = modalPromptCoordinationManager
         self.featureFlagger = featureFlagger
         self.promoQueueLeaseArbiter = promoQueueLeaseArbiter
+        self.promoQueueCooldownPolicy = promoQueueCooldownPolicy ?? PromoQueueCooldownPolicy(
+            modalPresentationStore: InMemoryPromptCooldownStore(),
+            remoteMessagePresentationStore: InMemoryPromoQueueRemoteMessageCooldownStore()
+        )
+        self.promoQueueCooldownScheduler = promoQueueCooldownScheduler ?? PromoQueueCooldownScheduler()
 
         let initialTargetState = PromoQueueFeatureTargetState(isEnabled: featureFlagger.isFeatureOn(.promoPresentationCoordination))
         let initialFeatureState = PromoQueueFeatureState(targetState: initialTargetState)
@@ -222,6 +242,12 @@ final class PromoCoordinationService {
 
         switch promoQueueLeaseArbiter.acquireModalLease() {
         case .acquired(let lease):
+            guard case .eligible = promoQueueCooldownPolicy.evaluateModalAdmission() else {
+                lease.release()
+                Logger.modalPrompt.debug("[Promo Queue] - Skipping modal prompt during the fixed RMF-to-modal cooldown.")
+                return
+            }
+
             switch modalPromptCoordinationManager.presentModalPromptIfNeeded(from: viewController, with: lease) {
             case .retained:
                 Logger.modalPrompt.debug("[Modal Prompt Coordination] - The coordinated modal attempt holds the slot.")
@@ -238,12 +264,33 @@ final class PromoCoordinationService {
     private func admitCoordinatedVisiblePromo(_ identity: VisiblePromoIdentity) -> VisiblePromoAdmissionResult {
         let didReleaseModalLease = modalPromptCoordinationManager.reconcilePresentedModal()
         let result: VisiblePromoAdmissionResult
+
         switch promoQueueLeaseArbiter.acquireVisiblePromoLease(for: identity) {
         case .acquired(let lease):
-            result = .acquired(lease)
+            switch promoQueueCooldownPolicy.reserveRemoteMessageAdmission(for: identity) {
+            case .reserved(let reservation):
+                clearCooldownBlock(for: identity.surfaceID)
+                result = .acquired(makeVisiblePromoAdmission(
+                    lease: lease,
+                    reservation: reservation,
+                    surfaceID: identity.surfaceID
+                ))
+            case .blocked(let nextEligibleDate):
+                lease.release()
+                recordCooldownBlock(for: identity.surfaceID, until: nextEligibleDate)
+                result = .blockedByCooldown(nextEligibleDate: nextEligibleDate)
+            case .provisionalReservationInProgress:
+                lease.release()
+                clearCooldownBlock(for: identity.surfaceID)
+                result = .blockedByProvisionalReservation
+            }
+
         case .blockedByModal:
+            clearCooldownBlock(for: identity.surfaceID)
             result = .blockedByModal
+
         case .occupiedSurfaceSlot(let occupyingIdentity):
+            clearCooldownBlock(for: identity.surfaceID)
             result = .occupiedSurfaceSlot(occupyingIdentity)
         }
 
@@ -253,6 +300,30 @@ final class PromoCoordinationService {
             retryActiveVisiblePromoRegistrations(excluding: identity.surfaceID)
         }
         return result
+    }
+
+    private func makeVisiblePromoAdmission(
+        lease: PromoQueueVisiblePromoLease,
+        reservation: PromoQueueRemoteMessageCooldownReservation,
+        surfaceID: UUID
+    ) -> PromoQueueVisiblePromoAdmission {
+        PromoQueueVisiblePromoAdmission(
+            confirmationHandler: { [weak self, reservation] in
+                guard reservation.confirm() else {
+                    return false
+                }
+
+                self?.cooldownHistoryDidChange(excluding: surfaceID)
+                return true
+            },
+            releaseHandler: { [weak self, lease, reservation] in
+                let didReleaseReservation = reservation.release()
+                lease.release()
+                if didReleaseReservation {
+                    self?.cooldownReservationDidWithdraw(excluding: surfaceID)
+                }
+            }
+        )
     }
 
     private func subscribeToPromoQueueFeatureState(initialTargetState: PromoQueueFeatureTargetState) {
@@ -293,6 +364,8 @@ final class PromoCoordinationService {
             if let pendingTargetState = pendingPromoQueueFeatureTargetState {
                 pendingPromoQueueFeatureTargetState = nil
                 transitionPromoQueueFeature(to: pendingTargetState)
+            } else if targetState == .enabled {
+                retryActiveVisiblePromoRegistrations()
             }
         }
 
@@ -302,6 +375,7 @@ final class PromoCoordinationService {
             registration.target?.promoQueueWillTransition(to: targetState)
         }
 
+        resetCooldownTransientState()
         promoQueueLeaseArbiter.invalidateAllLeases()
 
         modalPromptCoordinationManager.promoQueueDidTransition(to: targetState)
@@ -316,8 +390,14 @@ final class PromoCoordinationService {
     }
 
     private func deregisterVisiblePromoRetry(for surfaceID: UUID, registrationID: UUID) {
+        let didRemoveRegistration = promoRetryRegistrations.contains {
+            $0.surfaceID == surfaceID && $0.id == registrationID
+        }
         promoRetryRegistrations.removeAll {
             $0.surfaceID == surfaceID && $0.id == registrationID
+        }
+        if didRemoveRegistration {
+            clearCooldownBlock(for: surfaceID)
         }
     }
 
@@ -354,6 +434,73 @@ final class PromoCoordinationService {
         }
     }
 
+    private func recordCooldownBlock(for surfaceID: UUID, until nextEligibleDate: Date) {
+        cooldownBlockedSurfaces[surfaceID] = nextEligibleDate
+        rescheduleRemoteMessageCooldownRetry()
+    }
+
+    private func clearCooldownBlock(for surfaceID: UUID) {
+        guard cooldownBlockedSurfaces.removeValue(forKey: surfaceID) != nil else {
+            return
+        }
+
+        rescheduleRemoteMessageCooldownRetry()
+    }
+
+    private func rescheduleRemoteMessageCooldownRetry() {
+        let activeSurfaceIDs = Set(promoRetryRegistrations.compactMap { registration in
+            registration.target?.isActiveForPromoRetry == true ? registration.surfaceID : nil
+        })
+        cooldownBlockedSurfaces = cooldownBlockedSurfaces.filter { activeSurfaceIDs.contains($0.key) }
+        let earliestBoundary = cooldownBlockedSurfaces.values.min()
+
+        guard scheduledRemoteMessageRetry != earliestBoundary else {
+            return
+        }
+
+        scheduledRemoteMessageRetryTask?.cancel()
+        scheduledRemoteMessageRetryTask = nil
+        scheduledRemoteMessageRetry = earliestBoundary
+
+        guard let earliestBoundary else {
+            return
+        }
+
+        scheduledRemoteMessageRetryTask = promoQueueCooldownScheduler.schedule(at: earliestBoundary) { [weak self] in
+            guard let self,
+                  scheduledRemoteMessageRetry == earliestBoundary else {
+                return
+            }
+
+            scheduledRemoteMessageRetryTask = nil
+            scheduledRemoteMessageRetry = nil
+            cooldownBlockedSurfaces.removeAll()
+            retryActiveVisiblePromoRegistrations()
+        }
+    }
+
+    private func cooldownHistoryDidChange(excluding surfaceID: UUID) {
+        clearCooldownRetryState()
+        retryActiveVisiblePromoRegistrations(excluding: surfaceID)
+    }
+
+    private func cooldownReservationDidWithdraw(excluding surfaceID: UUID) {
+        clearCooldownRetryState()
+        retryActiveVisiblePromoRegistrations(excluding: surfaceID)
+    }
+
+    private func clearCooldownRetryState() {
+        cooldownBlockedSurfaces.removeAll()
+        scheduledRemoteMessageRetry = nil
+        scheduledRemoteMessageRetryTask?.cancel()
+        scheduledRemoteMessageRetryTask = nil
+    }
+
+    private func resetCooldownTransientState() {
+        clearCooldownRetryState()
+        promoQueueCooldownPolicy.resetTransientState()
+    }
+
 }
 
 extension PromoCoordinationService: NewTabPagePromoCoordinating {
@@ -374,8 +521,12 @@ extension PromoCoordinationService: NewTabPagePromoCoordinating {
         return admitCoordinatedVisiblePromo(identity)
     }
 
-    func releaseVisiblePromoLease(_ lease: PromoQueueVisiblePromoLease) {
-        lease.release()
+    func releaseVisiblePromoAdmission(_ admission: PromoQueueVisiblePromoAdmission) {
+        admission.release()
+    }
+
+    func cancelVisiblePromoCooldownRetry(for surfaceID: UUID) {
+        clearCooldownBlock(for: surfaceID)
     }
 
     func registerVisiblePromoRetry(
@@ -390,6 +541,7 @@ extension PromoCoordinationService: NewTabPagePromoCoordinating {
         )
 
         promoRetryRegistrations.removeAll { $0.surfaceID == surfaceID || $0.target == nil }
+        clearCooldownBlock(for: surfaceID)
         promoRetryRegistrations.append(registration)
 
         return NewTabPagePromoRetryRegistration { [weak self] in
@@ -408,13 +560,16 @@ extension PromoCoordinationService: RecentModalPromptStatusProviding {
 extension PromoCoordinationService: PromoQueueDebugSnapshotProviding {
     var promoQueueDebugSnapshot: PromoQueueDebugSnapshot {
         let leaseSnapshot = promoQueueLeaseArbiter.snapshot
+        let cooldownSnapshot = promoQueueFeatureState == .enabled ? promoQueueCooldownPolicy.snapshot : .empty
         return PromoQueueDebugSnapshot(
             isFeatureEnabled: featureFlagger.isFeatureOn(.promoPresentationCoordination),
             featureState: promoQueueFeatureState,
             hasModalLease: leaseSnapshot.hasModalLease,
             modalAttemptPhase: modalPromptCoordinationManager.modalAttemptPhase,
             hasPendingModalPrompt: modalPromptCoordinationManager.hasPendingModalPrompt,
-            activeVisiblePromoLeaseCount: leaseSnapshot.visiblePromoCount
+            activeVisiblePromoLeaseCount: leaseSnapshot.visiblePromoCount,
+            cooldown: cooldownSnapshot,
+            scheduledRemoteMessageRetry: scheduledRemoteMessageRetry
         )
     }
 }

@@ -891,6 +891,21 @@ final class AIChatOmnibarController {
         resolved.tab.reload()
     }
 
+    /// Attach/detach from a picker, whose rows are a snapshot: a tab closed since it was taken, or
+    /// one that has since left the page the row showed, is no longer the thing the user picked.
+    /// Returns whether the attachments changed, so callers can skip their pixel when nothing did.
+    @discardableResult
+    func togglePickedTabAttachment(_ attachment: AIChatTabAttachment) -> Bool {
+        guard !activeTabAttachments.contains(where: { $0.id == attachment.id }) else {
+            toggleTabAttachment(attachment)
+            return true
+        }
+        guard let stillOffered = openTabsForOmnibarPicker().first(where: { $0.id == attachment.id }),
+              stillOffered.url == attachment.url else { return false }
+        toggleTabAttachment(stillOffered)
+        return true
+    }
+
     /// Removes a tab attachment from the active tab's prompt, identified by `id`. No-op if not
     /// currently attached.
     func removeTabAttachmentFromActiveTab(id: String) {
@@ -1407,8 +1422,8 @@ final class AIChatOmnibarController {
             .map { ($0.id, $0.url) }, uniquingKeysWith: { _, latest in latest })
         var byId: [String: AIChatPageContextData] = [:]
         for (tabId, maybeContext) in extracted {
-            guard let ctx = maybeContext else { continue }
-            if !sendsAnyPage, !Self.isSameAttachedPage(ctx.url, as: attachedNow[tabId]) { continue }
+            guard let ctx = maybeContext, let attachedURL = attachedNow[tabId] else { continue }
+            if !sendsAnyPage, !Self.isSameAttachedPage(ctx.url, as: attachedURL) { continue }
             let stampedTabId: String? = (tabId == activeTabUUID) ? nil : tabId
             byId[tabId] = ctx.withTabId(stampedTabId)
         }
@@ -1416,13 +1431,18 @@ final class AIChatOmnibarController {
         return ordered.isEmpty ? nil : .multiple(ordered)
     }
 
-    /// Web-view and tab-content URLs for one page can differ by a trailing slash.
-    private static func isSameAttachedPage(_ extractedURL: String, as attachedURL: URL?) -> Bool {
-        guard let attachedURL else { return false }
-        func trimmed(_ string: String) -> String {
-            string.hasSuffix("/") ? String(string.dropLast()) : string
+    /// Web-view and tab-content URLs for one page can write the root path as "" or "/".
+    private static func isSameAttachedPage(_ extractedURL: String, as attachedURL: URL) -> Bool {
+        guard let extracted = URL(string: extractedURL) else { return false }
+        return withoutRootSlash(extracted) == withoutRootSlash(attachedURL)
+    }
+
+    private static func withoutRootSlash(_ url: URL) -> String {
+        guard url.path == "/", var components = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
+            return url.absoluteString
         }
-        return trimmed(extractedURL) == trimmed(attachedURL.absoluteString)
+        components.path = ""
+        return components.string ?? url.absoluteString
     }
 
     /// Converts image attachments to base64-encoded `NativePromptImage` values for the JS bridge.

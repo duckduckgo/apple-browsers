@@ -60,6 +60,7 @@ enum AIChatAttachedTabNavigationPolicy {
         }
         return afterPageChange(for: attachment,
                                to: url,
+                               page: page,
                                isSettling: isSettlingLoadFromAttachTime && source == .webViewUpdated,
                                automaticallySendsPageContext: automaticallySendsPageContext)
     }
@@ -68,14 +69,16 @@ enum AIChatAttachedTabNavigationPolicy {
     /// URL) counts as the same pick; anything the user drove is a page change.
     private static func afterPageChange(for attachment: AIChatTabAttachment,
                                         to url: URL,
+                                        page: AIChatAttachedTabPage,
                                         isSettling: Bool,
                                         automaticallySendsPageContext: Bool) -> Action {
         guard automaticallySendsPageContext || isSettling else { return .drop }
-        // The old title and favicon still describe the previous page until the new ones land.
+        // While loading, the old title and favicon still describe the previous page. A URL change
+        // with no load is a same-document one, whose metadata is already this page's.
         return .refresh(AIChatTabAttachment(id: attachment.id,
-                                            title: url.host ?? url.absoluteString,
+                                            title: page.isLoading ? (url.host ?? url.absoluteString) : (page.title ?? url.host ?? url.absoluteString),
                                             url: url,
-                                            favicon: nil,
+                                            favicon: page.isLoading ? nil : page.favicon,
                                             instanceID: attachment.instanceID))
     }
 

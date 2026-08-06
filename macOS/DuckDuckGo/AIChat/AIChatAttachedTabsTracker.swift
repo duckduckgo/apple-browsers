@@ -128,13 +128,14 @@ final class AIChatAttachedTabsTracker {
             let key = ObserverKey(promptStore: ObjectIdentifier(store), tabId: attachment.id)
             guard observers[key]?.tab !== tab else { continue }
 
+            let isSettling = hasUncommittedLoad(tab)
             observers[key] = Observer(promptStore: store,
                                       tab: tab,
                                       cancellable: observe(tab, key: key, in: store),
-                                      isSettlingLoadFromAttachTime: tab.isLoading,
+                                      isSettlingLoadFromAttachTime: isSettling,
                                       navigationAtAttachTime: tab.webView.backForwardList.currentItem)
             // Reconcile against the page the tab is on now, which may predate this observer.
-            applyPolicy(for: key, in: store, page: AIChatAttachedTabPage(tab: tab), isSettlingLoad: tab.isLoading)
+            applyPolicy(for: key, in: store, page: AIChatAttachedTabPage(tab: tab), isSettlingLoad: isSettling)
         }
     }
 
@@ -218,7 +219,7 @@ final class AIChatAttachedTabsTracker {
         case .drop:
             attachments.remove(at: index)
         case .refresh(let refreshed):
-            if refreshed.url != attachments[index].url {
+            if refreshed.url != attachments[index].url, page.isLoading {
                 observers[key]?.metadataOfPreviousPage = (title: page.title, favicon: page.favicon)
             }
             attachments[index] = refreshed
@@ -229,6 +230,13 @@ final class AIChatAttachedTabsTracker {
     }
 
     // MARK: - Tab lookup
+
+    /// A load that hasn't committed: the tab's content is ahead of what the web view is showing. A
+    /// page that has committed and is only finishing subresources isn't one, so a navigation made
+    /// after it can't pass as the attach-time load settling.
+    private func hasUncommittedLoad(_ tab: Tab) -> Bool {
+        tab.isLoading && tab.content.urlForWebView != tab.webView.url
+    }
 
     /// Suspended tabs are skipped: they can't navigate, and the tab-list watch re-observes on resume.
     private func loadedTab(withId id: String, in collection: TabCollectionViewModel) -> Tab? {

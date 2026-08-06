@@ -240,7 +240,10 @@ final class AIChatMentionPickerCoordinator {
         isSplicing = true
         spliceTokenFromTextView()
         isSplicing = false
-        omnibarController.toggleTabAttachment(attachment)
+        guard omnibarController.togglePickedTabAttachment(attachment) else {
+            dismiss(reason: .accept)
+            return
+        }
         let pixel: AIChatPixel = wasAttached
             ? .aiChatAddressBarMentionTabRemoved
             : .aiChatAddressBarMentionTabChosen

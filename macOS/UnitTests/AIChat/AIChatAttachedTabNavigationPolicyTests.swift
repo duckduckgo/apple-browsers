@@ -38,12 +38,27 @@ final class AIChatAttachedTabNavigationPolicyTests: XCTestCase {
 
     func testNavigationRefreshesAttachmentWhenAutomaticallySendingPageContext() {
         let action = AIChatAttachedTabNavigationPolicy.action(for: attachment(),
-                                                             page: AIChatAttachedTabPage(content: content(newURL), title: "Apple", favicon: NSImage()),
+                                                             page: AIChatAttachedTabPage(content: content(newURL),
+                                                                                         title: "Apple",
+                                                                                         favicon: NSImage(),
+                                                                                         isLoading: true),
                                                              isSettlingLoadFromAttachTime: false,
                                                              automaticallySendsPageContext: true)
 
         XCTAssertEqual(action, .refresh(AIChatTabAttachment(id: "tab-1", title: "apple.com", url: newURL, favicon: nil)),
                        "Title and favicon still describe the page being left, so the new URL starts from the host")
+    }
+
+    func testSameDocumentNavigationKeepsTheMetadataItAlreadyPublished() {
+        let favicon = NSImage()
+
+        let action = AIChatAttachedTabNavigationPolicy.action(for: attachment(),
+                                                             page: AIChatAttachedTabPage(content: content(newURL), title: "Apple", favicon: favicon),
+                                                             isSettlingLoadFromAttachTime: false,
+                                                             automaticallySendsPageContext: true)
+
+        XCTAssertEqual(action, .refresh(AIChatTabAttachment(id: "tab-1", title: "Apple", url: newURL, favicon: favicon)),
+                       "No load means the title and favicon already belong to the new URL")
     }
 
     // MARK: - Navigating with the setting off → the explicit pick is dropped
@@ -121,7 +136,10 @@ final class AIChatAttachedTabNavigationPolicyTests: XCTestCase {
     func testLoadInFlightAtAttachTimeRebasesTheAttachmentEvenWithAutoSendOff() {
         // Attaching a loading tab captures its pre-redirect URL; the committed one lands moments later.
         let action = AIChatAttachedTabNavigationPolicy.action(for: attachment(url: URL(string: "http://example.com")!),
-                                                             page: AIChatAttachedTabPage(content: content(attachedURL, source: .webViewUpdated), title: "Article", favicon: nil),
+                                                             page: AIChatAttachedTabPage(content: content(attachedURL, source: .webViewUpdated),
+                                                                                         title: "Article",
+                                                                                         favicon: nil,
+                                                                                         isLoading: true),
                                                              isSettlingLoadFromAttachTime: true,
                                                              automaticallySendsPageContext: false)
 

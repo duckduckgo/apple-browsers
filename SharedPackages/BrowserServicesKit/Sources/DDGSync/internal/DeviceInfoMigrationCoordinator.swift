@@ -82,6 +82,7 @@ struct DeviceInfoMigrationCoordinator: DeviceInfoMigrationCoordinating {
               !Task.isCancelled else {
             return
         }
+        Logger.sync.debug("Sync-UnifiedDevices: migrating current device_info")
 
         do {
             let protectedKey = try await prepareAccountInfoProtectedKey(for: account,
@@ -114,6 +115,7 @@ struct DeviceInfoMigrationCoordinator: DeviceInfoMigrationCoordinating {
                 return
             }
             markMigrationComplete(for: currentAccount)
+            Logger.sync.debug("Sync-UnifiedDevices: current device_info update complete")
         } catch is CancellationError {
             return
         } catch {
@@ -121,7 +123,7 @@ struct DeviceInfoMigrationCoordinator: DeviceInfoMigrationCoordinating {
                 return
             }
             let errorType = String(describing: type(of: error))
-            Logger.sync.error("Failed to migrate current device info: \(errorType, privacy: .public)")
+            Logger.sync.error("Sync-UnifiedDevices: failed to migrate current device_info: \(errorType)")
         }
     }
 

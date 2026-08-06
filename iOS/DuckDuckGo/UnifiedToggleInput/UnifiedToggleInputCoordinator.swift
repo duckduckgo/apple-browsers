@@ -756,6 +756,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     func beginEditMode(prompt: String, attachments: [UnifiedToggleInputAttachment] = []) {
         isEditing = true
         showExpanded(prefilledText: prompt, inputMode: .aiChat, activatesInput: true)
+        viewController.removeAllAttachments()
         attachments.forEach { viewController.addAttachment($0) }
     }
 

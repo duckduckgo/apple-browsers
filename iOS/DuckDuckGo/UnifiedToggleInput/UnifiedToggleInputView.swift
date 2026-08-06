@@ -132,11 +132,8 @@ final class UnifiedToggleInputView: UIView {
         /// dismiss shares the field row (toggle disabled, top position).
         static let fieldRowInlineDismissSpacing: CGFloat = 4
 
-        /// Edit-mode "replace response" card — a second card stacked behind the input card, lifting
-        /// it so a strip peeks out below with the copy.
         static let editDisclaimerOverlap: CGFloat = 44
         static let editDisclaimerTopGap: CGFloat = 12
-        /// Copy in the peeking strip: 24pt info icon + caption, bottom-left aligned.
         static let editDisclaimerIconSize: CGFloat = 24
         static let editDisclaimerIconTextGap: CGFloat = 12
         static let editDisclaimerContentLeading: CGFloat = 20

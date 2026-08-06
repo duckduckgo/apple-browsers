@@ -1681,6 +1681,7 @@ extension Pixel {
         case serpSettingsUnrecognizedValue
 
         case aiChatOpen
+        case aiChatEntryPoint
         case aiChatMetricStartNewConversation
         case aiChatMetricStartNewConversationButtonClicked
         case aiChatMetricOpenHistory
@@ -3593,6 +3594,7 @@ extension Pixel.Event {
         case .aiChatSettingsSearchInputTurnedOn: return "m_aichat_settings_search_input_turned_on"
 
         case .aiChatOpen: return "m_aichat_open"
+        case .aiChatEntryPoint: return "m_aichat_entry_point"
         case .aiChatMetricStartNewConversation: return "m_aichat_start_new_conversation"
         case .aiChatMetricStartNewConversationButtonClicked: return "m_aichat_start_new_conversation_button_clicked"
         case .aiChatMetricOpenHistory: return "m_aichat_open_history"

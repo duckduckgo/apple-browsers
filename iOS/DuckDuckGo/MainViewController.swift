@@ -3685,10 +3685,13 @@ class MainViewController: UIViewController {
                     shouldAutoSend = queryItems.first(where: { $0.name == AIChatURLParameters.autoSubmitPromptQueryName })?.value == AIChatURLParameters.autoSubmitPromptQueryValue
                 }
                 
+                // The interceptor is the enabled-side path for typed duck.ai URLs; the UTI path
+                // only covers disabled users, so this fire completes the direct-navigation series.
+                self?.fireDirectDuckAINavigationPixel()
                 if let query = query {
-                    self?.openAIChat(query, autoSend: shouldAutoSend, payload: payload)
+                    self?.openAIChat(source: .directURL, query, autoSend: shouldAutoSend, payload: payload)
                 } else {
-                    self?.openAIChat(payload: payload)
+                    self?.openAIChat(source: .directURL, payload: payload)
                 }
             }
             .store(in: &urlInterceptorCancellables)
@@ -4107,7 +4110,10 @@ class MainViewController: UIViewController {
         Pixel.fire(pixel: pixel, withAdditionalParameters: pixelParameters)
     }
 
-    func openAIChat(_ query: String? = nil,
+    /// `source` has no default on purpose: the compiler enumerates every entry
+    /// path, so a new Duck.ai entry point can't ship without attribution.
+    func openAIChat(source: AIChatEntryPointSource,
+                    _ query: String? = nil,
                     autoSend: Bool = false,
                     payload: Any? = nil,
                     flowType: AIChatOnboardingFlowType = .default,
@@ -4124,6 +4130,7 @@ class MainViewController: UIViewController {
 
         if aichatFullModeFeature.isAvailable || DevicePlatform.isIpad {
             openAIChatInTab(
+                source: source,
                 query,
                 autoSend: autoSend,
                 payload: payload,
@@ -4136,6 +4143,7 @@ class MainViewController: UIViewController {
                 fromDeepLink: fromDeepLink
             )
         } else {
+            fireAIChatEntryPointPixel(source: source, opensNewTab: false, hasPrompt: query?.isEmpty == false)
             aiChatViewControllerManager.openAIChat(
                 query,
                 payload: payload,
@@ -4149,6 +4157,16 @@ class MainViewController: UIViewController {
                 on: self
             )
         }
+    }
+
+    func fireAIChatEntryPointPixel(source: AIChatEntryPointSource, opensNewTab: Bool, hasPrompt: Bool) {
+        DailyPixel.fireDailyAndCount(pixel: .aiChatEntryPoint, withAdditionalParameters: [
+            PixelParameters.source: source.rawValue,
+            "duckai_enabled": String(aiChatSettings.isAIChatEnabled),
+            "toggle_enabled": String(aiChatSettings.isAIChatSearchInputUserSettingsEnabled),
+            "opens_new_tab": String(opensNewTab),
+            "has_prompt": String(hasPrompt)
+        ])
     }
 
     func onDuckAIVoiceModeRequested() {
@@ -4165,6 +4183,8 @@ class MainViewController: UIViewController {
     }
 
     private func openAIChatInVoiceMode(fromDeepLink: Bool = false) {
+        // Voice mode bypasses `openAIChat`, so fire the entry pixel directly.
+        fireAIChatEntryPointPixel(source: fromDeepLink ? .deepLinkOther : .voice, opensNewTab: false, hasPrompt: false)
         if aichatFullModeFeature.isAvailable || DevicePlatform.isIpad {
             openAIChatVoiceModeInTab(fromDeepLink: fromDeepLink)
         } else {
@@ -4215,7 +4235,8 @@ class MainViewController: UIViewController {
     ///   - tools: Optional RAG tools available in AI Chat
     ///   - modelId: Optional model ID to use for AI Chat
     ///   - images: Optional images to send to AI Chat
-    private func openAIChatInTab(_ query: String? = nil,
+    private func openAIChatInTab(source: AIChatEntryPointSource,
+                                 _ query: String? = nil,
                                  autoSend: Bool = false,
                                  payload: Any? = nil,
                                  flowType: AIChatOnboardingFlowType = .default,
@@ -4241,6 +4262,7 @@ class MainViewController: UIViewController {
                 unifiedToggleInputAvailable: unifiedToggleInputFeature.isAvailable
             ) == .openInNewTab
         }()
+        fireAIChatEntryPointPixel(source: source, opensNewTab: shouldOpenInNewTab, hasPrompt: query?.isEmpty == false)
         if shouldOpenInNewTab, let currentTab {
             // Dismiss contextual onboarding before opening duck.ai via UTI.
             currentTab.contextualOnboardingPresenter.dismissContextualOnboardingIfNeeded(from: currentTab)
@@ -4782,7 +4804,7 @@ extension MainViewController: BrowserChromeDelegate {
             // We intentionally don't forward the resolved model config: the suggestion is offered
             // from Search mode where the model chip is hidden and the user hasn't chosen a model.
             _ = unifiedToggleInputCoordinator?.prepareExternalPromptSubmission()
-            openAIChat(value, autoSend: true)
+            openAIChat(source: .suggestionAskAI, value, autoSend: true)
 
         case .unknown(value: let value), .internalPage(title: let value, url: _, _):
             assertionFailure("Unknown suggestion: \(value)")
@@ -4816,7 +4838,7 @@ extension MainViewController: OmniBarDelegate {
         recordNewTabPageSessionAction { $0.hitSubmit() }
 
         let controlValues = viewCoordinator.omniBar.iPadDuckAIControlValues
-        openAIChat(query, autoSend: true, tools: tools ?? controlValues.selectedTools,
+        openAIChat(source: .ipadTogglePrompt, query, autoSend: true, tools: tools ?? controlValues.selectedTools,
                    modelId: controlValues.selectedModelId,
                    reasoningEffort: controlValues.selectedReasoningEffort,
                    images: controlValues.selectedImages,
@@ -4826,6 +4848,15 @@ extension MainViewController: OmniBarDelegate {
     func onChatHistorySelected(url: URL) {
         postIdleSessionInstrumentation.sessionEnded(reason: .chatSelected)
         newTabPageSessionInstrumentation.visitEnded(terminalAction: .loadPreviousChat)
+
+        // Bypasses `openAIChat` (routes via the boundary helper), so fire the entry pixel directly.
+        let opensNewTab = AIBoundaryNavigationDecision.forProgrammaticNavigation(
+            currentIsAI: currentTab?.isAITab == true,
+            currentHasContent: currentTab?.tabModel.link != nil,
+            targetIsAI: true,
+            unifiedToggleInputAvailable: unifiedToggleInputFeature.isAvailable
+        ) == .openInNewTab
+        fireAIChatEntryPointPixel(source: .chatHistoryOpenChat, opensNewTab: opensNewTab, hasPrompt: false)
         // Route through boundary helper so NTP transforms in-place; web→chat spawns a new tab; chat→chat stays. Matches `onPromptSubmitted`.
         loadUrlRespectingAIBoundary(url)
     }
@@ -5563,10 +5594,10 @@ extension MainViewController: OmniBarDelegate {
             textFieldValue: textFieldValue,
             currentURL: currentTab?.url,
             openWithPromptAndSend: {
-                openAIChat($0, autoSend: true)
+                openAIChat(source: .addressBarIcon, $0, autoSend: true)
             },
             open: {
-                openAIChat()
+                openAIChat(source: .addressBarIcon)
             }
         )
 
@@ -6521,10 +6552,11 @@ extension MainViewController: TabDelegate {
 
     func tabDidRequestAIChat(tab: TabViewController) {
         fireAIChatUsagePixelAndSetFeatureUsed(tab.link == nil ? .browsingMenuAIChatNewTabPage : .browsingMenuAIChatWebPage)
+        let source: AIChatEntryPointSource = tab.link == nil ? .browsingMenuNTP : .browsingMenuWebpage
         if DevicePlatform.isIpad {
             newTab(allowingKeyboard: false, startsNewTabPageSessionVisit: false)
         }
-        openAIChat()
+        openAIChat(source: source)
     }
 
     func tab(_ tab: TabViewController, didRequestAIChatForSelectedText text: String) {
@@ -6959,13 +6991,15 @@ extension MainViewController: TabSwitcherDelegate {
 
     func tabSwitcherDidRequestAIChat(tabSwitcher: TabSwitcherViewController) {
         fireAIChatUsagePixelAndSetFeatureUsed(.openAIChatFromTabManager)
+        // Bypasses `openAIChat` (presents on the switcher), so fire the entry pixel directly.
+        fireAIChatEntryPointPixel(source: .tabSwitcher, opensNewTab: false, hasPrompt: false)
         self.aiChatViewControllerManager.openAIChat(on: tabSwitcher)
     }
-    
+
     func tabSwitcherDidRequestAIChatTab(tabSwitcher: TabSwitcherViewController) {
         fireAIChatUsagePixelAndSetFeatureUsed(.openAIChatFromTabManager)
         newTab(allowingKeyboard: false)
-        openAIChat()
+        openAIChat(source: .tabSwitcher)
     }
 
     private func tabSwitcherNewTabWithAnimation() {
@@ -7709,7 +7743,7 @@ extension MainViewController: VoiceSearchViewControllerDelegate {
                 coordinator.submitVoicePrompt(query)
             } else {
                 performCancel()
-                openAIChat(query, autoSend: true)
+                openAIChat(source: .voice, query, autoSend: true)
             }
         }
     }

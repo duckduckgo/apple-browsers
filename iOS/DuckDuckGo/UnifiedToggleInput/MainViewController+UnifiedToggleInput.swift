@@ -1188,18 +1188,22 @@ extension MainViewController {
         loadQuery(query)
     }
 
-    /// Fires when Duck.ai is disabled under AI Features settings yet the user still reaches Duck.ai by
-    /// typing its address into the UTI. Counts those direct navigations to gauge residual Duck.ai
-    /// demand among users who have turned it off. (Disabling Duck.ai also forces the Search↔Duck.ai
-    /// toggle off, so the `isAIChatEnabled` check is sufficient.) Mirrors `loadQuery`'s URL resolution
-    /// so detection matches what actually gets navigated.
+    /// Fires when the user reaches Duck.ai by typing its address into the UTI, regardless of the
+    /// Duck.ai setting; `duckai_enabled=false` isolates residual demand among users who turned it
+    /// off. Mirrors `loadQuery`'s URL resolution so detection matches what actually gets navigated.
     private func fireDirectDuckAINavigationPixelIfNeeded(for query: String) {
-        guard !aiChatSettings.isAIChatEnabled,
-              let url = URL.makeSearchURL(query: query,
+        guard let url = URL.makeSearchURL(query: query,
                                           useUnifiedLogic: isUnifiedURLPredictionEnabled,
                                           queryContext: currentTab?.url),
               url.isDuckAIURL else { return }
-        DailyPixel.fireDailyAndCount(pixel: .unifiedToggleInputDuckAIDirectNavigation)
+        fireDirectDuckAINavigationPixel()
+    }
+
+    func fireDirectDuckAINavigationPixel() {
+        DailyPixel.fireDailyAndCount(pixel: .unifiedToggleInputDuckAIDirectNavigation, withAdditionalParameters: [
+            "duckai_enabled": String(aiChatSettings.isAIChatEnabled),
+            "toggle_enabled": String(aiChatSettings.isAIChatSearchInputUserSettingsEnabled)
+        ])
     }
 
 }
@@ -1265,7 +1269,7 @@ extension MainViewController: UnifiedToggleInputDelegate {
             loadUrlRespectingAIBoundary(url)
             return
         }
-        openAIChat(prompt, autoSend: true, tools: tools, modelId: modelId, reasoningEffort: reasoningEffort, images: images, files: files)
+        openAIChat(source: .addressBarPrompt, prompt, autoSend: true, tools: tools, modelId: modelId, reasoningEffort: reasoningEffort, images: images, files: files)
     }
 
     func unifiedToggleInputDidSubmitQuery(_ query: String) {
@@ -1301,9 +1305,9 @@ extension MainViewController: UnifiedToggleInputDelegate {
         // This opens the chip handoff in a fresh chat tab and avoids the contextual-sheet branch in onAIChatPressed.
         if currentTab?.isAITab == true {
             if prompt.isEmpty {
-                openAIChat()
+                openAIChat(source: .addressBarShortcutChip)
             } else {
-                openAIChat(prompt, autoSend: true)
+                openAIChat(source: .addressBarShortcutChip, prompt, autoSend: true)
             }
             return
         }
@@ -1355,6 +1359,7 @@ extension MainViewController: UnifiedInputContentContainerViewControllerDelegate
         unifiedToggleInputCoordinator?.clearText()
         unifiedToggleInputCoordinator?.handleExternalSubmission(.prompt)
         openAIChat(
+            source: .addressBarEditingState,
             query,
             autoSend: true,
             tools: tools,

@@ -31,7 +31,7 @@ extension MainViewController: AIChatHistoryViewModelDelegate {
             }
         } else {
             dismiss(animated: true) { [weak self] in
-                self?.openAIChat()
+                self?.openAIChat(source: .chatHistoryNewChat)
             }
         }
     }

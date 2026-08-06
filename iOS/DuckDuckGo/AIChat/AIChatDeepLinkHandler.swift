@@ -24,6 +24,7 @@ import AIChat
 protocol AIChatDeepLinkPresenting: UIViewController {
     func openAIVoiceChatFromDeepLink()
     func openAIChat(
+        source: AIChatEntryPointSource,
         _ query: String?,
         autoSend: Bool,
         payload: Any?,
@@ -41,6 +42,7 @@ extension AIChatDeepLinkPresenting {
 
     func openAIChat(fromDeepLink: Bool) {
         openAIChat(
+            source: .deepLinkOther,
             nil,
             autoSend: false,
             payload: nil,

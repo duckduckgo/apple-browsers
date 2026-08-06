@@ -421,14 +421,19 @@ final class TabViewModel: NSObject {
         }()
     }
 
+    /// Determines the display string for the passive text field.
+    /// - Note:
+    ///     Duck.ai mode takes precedence over all other trusted indicators. The passive text field is used to center the address bar placeholder.
     private func updatePassiveAddressBarString(showFullURL: Bool? = nil, inDuckAIMode: Bool? = nil) {
         let showFullURL = showFullURL ?? appearancePreferences.showFullURL
         let inDuckAIMode = inDuckAIMode ?? addressBarSharedTextState.isInDuckAIMode
         let isAppRebranded = DesignSystemRebrand.isAppRebranded()
 
         passiveAddressBarAttributedString = switch tab.content {
+        case _ where isAppRebranded && inDuckAIMode:
+            .addressBarPlaceholderForDuckAI
         case .newtab where isAppRebranded:
-            inDuckAIMode ? .addressBarPlaceholderForDuckAI : .addressBarPlaceholder
+            .addressBarPlaceholder
         case .none where isAppRebranded:
             .addressBarPlaceholder
         case .newtab, .none:
@@ -461,7 +466,7 @@ final class TabViewModel: NSObject {
             NSAttributedString(string: passiveAddressBarString(with: url, showFullURL: showFullURL))
         }
 
-        passiveAddressBarDisplaysPlaceholder = [.newtab, .none].contains(tab.content)
+        passiveAddressBarDisplaysPlaceholder = isAppRebranded && (inDuckAIMode || [.newtab, .none].contains(tab.content))
     }
 
     private func passiveAddressBarString(with url: URL, showFullURL: Bool) -> String {

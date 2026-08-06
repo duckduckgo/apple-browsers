@@ -46,6 +46,7 @@ struct UTIPixelContext {
     let surface: UnifiedToggleInputPixelSurface
     let isDuckAISurfaceForAttribution: Bool
     let inputMode: TextEntryMode
+    let isToggleVisible: Bool
 }
 
 /// Owns the omnibar UTI's pixel firing. Resolves the surface (and the other live inputs) through a
@@ -68,7 +69,7 @@ final class UTIPixelReporter {
     /// The pair fired whenever the unified input surface first appears in the omnibar host.
     func reportOmnibarInputSurfaceShown() {
         firing.fireDailyAndCount(.aiChatInternalSwitchBarDisplayed)
-        firing.fireDailyAndCount(.aiChatExperimentalOmnibarShown)
+        withContext { firing.fireDailyAndCount(.aiChatExperimentalOmnibarShown, ["toggle_visible": String($0.isToggleVisible)]) }
     }
 
     func reportBackButtonPressed() {

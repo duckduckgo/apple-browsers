@@ -42,10 +42,31 @@ final class UTIPixelReporterTests: XCTestCase {
 
     private func context(surface: UnifiedToggleInputPixelSurface = .addressBar,
                          isDuckAISurfaceForAttribution: Bool = false,
-                         inputMode: TextEntryMode = .search) -> UTIPixelContext {
+                         inputMode: TextEntryMode = .search,
+                         isToggleVisible: Bool = false) -> UTIPixelContext {
         UTIPixelContext(surface: surface,
                         isDuckAISurfaceForAttribution: isDuckAISurfaceForAttribution,
-                        inputMode: inputMode)
+                        inputMode: inputMode,
+                        isToggleVisible: isToggleVisible)
+    }
+
+    // MARK: - Omnibar surface shown (toggle visibility from live context)
+
+    func testWhenOmnibarSurfaceShownWithToggleVisibleThenPixelReportsToggleVisibleTrue() {
+        let reporter = makeReporter { self.context(isToggleVisible: true) }
+
+        reporter.reportOmnibarInputSurfaceShown()
+
+        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.pixelName, Pixel.Event.aiChatExperimentalOmnibarShown.name)
+        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.params, ["toggle_visible": "true"])
+    }
+
+    func testWhenOmnibarSurfaceShownWithToggleHiddenThenPixelReportsToggleVisibleFalse() {
+        let reporter = makeReporter { self.context(isToggleVisible: false) }
+
+        reporter.reportOmnibarInputSurfaceShown()
+
+        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.params, ["toggle_visible": "false"])
     }
 
     // MARK: - Mode switch (non-trivial params, passed per call)

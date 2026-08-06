@@ -169,43 +169,45 @@ final class UnifiedToggleInputToolbarView: UIView {
     }
 
     var isToolsButtonHidden: Bool {
-        get { toolsButtonHiddenByCaller }
+        get { toolsButtonRequestedHidden }
         set {
-            toolsButtonHiddenByCaller = newValue
+            toolsButtonRequestedHidden = newValue
             applyEditableControlVisibility()
         }
     }
 
     var isReasoningButtonHidden: Bool {
-        get { reasoningButtonHiddenByCaller }
+        get { reasoningButtonRequestedHidden }
         set {
-            reasoningButtonHiddenByCaller = newValue
+            reasoningButtonRequestedHidden = newValue
             applyEditableControlVisibility()
         }
     }
 
-    /// Caller-requested visibility for the attach/tools/reasoning buttons, kept separate from the
-    /// applied state so edit mode can force them hidden (a re-render can't un-hide them) and still
-    /// restore the caller's intent on exit.
-    private var toolsButtonHiddenByCaller = false
-    private var reasoningButtonHiddenByCaller = true
+    /// What the caller asked for, stored separately from what's applied to the buttons. The applied
+    /// value is `requested || isEditing` (see `applyEditableControlVisibility`): edit mode force-hides
+    /// these controls, and because the request is remembered here, exiting edit restores exactly what
+    /// the caller wanted — and a re-render mid-edit can't un-hide them.
+    private var toolsButtonRequestedHidden = false
+    private var reasoningButtonRequestedHidden = true
 
-    /// Hidden while editing (only text edits + attachment removal are allowed there), otherwise the
-    /// caller's requested state. Called from the setters and on `isEditing` change.
+    /// Applies `requested || isEditing` to each control: hidden if the caller asked for it, or while
+    /// editing (which only allows text edits + attachment removal). Call from the setters and on any
+    /// `isEditing` change.
     private func applyEditableControlVisibility() {
-        imageButton.isHidden = imageButtonHiddenByCaller || isEditing
-        toolsButton.isHidden = toolsButtonHiddenByCaller || isEditing
-        reasoningButton.isHidden = reasoningButtonHiddenByCaller || isEditing
+        imageButton.isHidden = imageButtonRequestedHidden || isEditing
+        toolsButton.isHidden = toolsButtonRequestedHidden || isEditing
+        reasoningButton.isHidden = reasoningButtonRequestedHidden || isEditing
     }
 
     var isImageButtonHidden: Bool {
-        get { imageButtonHiddenByCaller }
+        get { imageButtonRequestedHidden }
         set {
-            imageButtonHiddenByCaller = newValue
+            imageButtonRequestedHidden = newValue
             applyEditableControlVisibility()
         }
     }
-    private var imageButtonHiddenByCaller = false
+    private var imageButtonRequestedHidden = false
 
     var isImageButtonEnabled: Bool {
         get { imageButton.isEnabled }

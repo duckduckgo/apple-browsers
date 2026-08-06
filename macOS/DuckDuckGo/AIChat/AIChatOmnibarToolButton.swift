@@ -17,6 +17,7 @@
 //
 
 import AppKit
+import ConcurrencyExtensions
 import DesignResourcesKit
 
 /// An image view that doesn't intercept mouse events, allowing its superview to handle them.
@@ -61,7 +62,7 @@ extension FocusRingControlling {
             guard (notification.object as? NSMenu)?.supermenu == nil else { return }
             // `queue: nil` posts synchronously on the posting thread, and menu tracking runs on
             // the main thread, so this is already main-actor in practice.
-            MainActor.assumeIsolated {
+            MainActor.assumeMainThread {
                 self?.resetTransientFillState()
             }
         }

@@ -39,6 +39,7 @@ enum AIChatAttachedTabNavigationPolicy {
                        content: Tab.TabContent,
                        title: String?,
                        favicon: NSImage?,
+                       isSettlingLoadFromAttachTime: Bool,
                        automaticallySendsPageContext: Bool) -> Action {
         guard case .url(let url, _, _) = content, !AIChatTabMetadata.shouldExcludeFromTabPicker(url) else {
             return .drop
@@ -47,17 +48,21 @@ enum AIChatAttachedTabNavigationPolicy {
         let resolvedTitle = title ?? url.host ?? ""
 
         guard url == attachment.url else {
-            guard automaticallySendsPageContext else { return .drop }
+            // A tab attached mid-load is still finishing the navigation the user attached it for:
+            // redirects and the committed URL arrive as URL changes. That is the same pick settling,
+            // not a page the user chose to leave, so it rebases the attachment either way.
+            guard automaticallySendsPageContext || isSettlingLoadFromAttachTime else { return .drop }
             return .refresh(AIChatTabAttachment(id: attachment.id, title: resolvedTitle, url: url, favicon: favicon))
         }
 
-        // Same page: only a real title landing late is worth an update — never replace one with the
-        // host fallback. Keep the favicon we attached with so an equal-but-different NSImage doesn't
-        // churn the carousel.
-        guard let title, title != attachment.title else { return .keep }
+        // Same page: title and favicon both land after the navigation that carried them, so take
+        // whichever has arrived. Neither is ever downgraded back to nil / the host fallback.
+        let refreshedTitle = title ?? attachment.title
+        let refreshedFavicon = favicon ?? attachment.favicon
+        guard refreshedTitle != attachment.title || refreshedFavicon !== attachment.favicon else { return .keep }
         return .refresh(AIChatTabAttachment(id: attachment.id,
-                                            title: title,
+                                            title: refreshedTitle,
                                             url: url,
-                                            favicon: attachment.favicon ?? favicon))
+                                            favicon: refreshedFavicon))
     }
 }

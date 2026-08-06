@@ -724,6 +724,21 @@ final class AIChatOmnibarControllerTests: XCTestCase {
                       "The user attached one specific page; navigating away drops it rather than sending another page")
     }
 
+    /// The reported bug: switching to the attached tab used to cancel its observer, so navigating
+    /// there went unnoticed and the prompt tab's card only caught up a tab-switch later.
+    func testWhenAttachedTabNavigatesWhileItIsSelected_ThenThePromptTabsAttachmentUpdatesImmediately() {
+        let (controller, attachedTab) = makeControllerWithAttachedOtherTab(automaticallySendPageContext: true)
+        let promptTabState = tabCollectionViewModel.selectedTabViewModel?.addressBarSharedTextState
+
+        // User switches to the attached tab and navigates it there.
+        tabCollectionViewModel.select(tab: attachedTab)
+        _ = attachedTab.setContent(.url(URL(string: "https://apple.com")!, credential: nil, source: .ui))
+
+        XCTAssertEqual(promptTabState?.aiChatTabAttachments.map(\.url.absoluteString), ["https://apple.com"],
+                       "The prompt tab's attachment must refresh as the navigation happens, not on the next visit")
+        _ = controller
+    }
+
     func testWhenAttachedTabIsDetached_ThenItsNavigationNoLongerTouchesTheAttachments() {
         let (controller, attachedTab) = makeControllerWithAttachedOtherTab(automaticallySendPageContext: true)
         controller.removeTabAttachmentFromActiveTab(id: attachedTab.uuid)

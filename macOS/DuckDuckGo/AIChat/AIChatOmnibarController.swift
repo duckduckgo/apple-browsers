@@ -156,9 +156,27 @@ final class AIChatOmnibarController {
     /// every time the selected tab changes.
     private var panelAttachmentsCancellable: AnyCancellable?
 
-    /// One subscription per attached tab, keyed by tab uuid, watching that tab's own navigation so
+    /// One subscription per (draft store, attached tab) pair, watching that tab's own navigation so
     /// its card can follow it or be dropped — see `AIChatAttachedTabNavigationPolicy`.
-    private var attachedTabCancellables: [String: AnyCancellable] = [:]
+    ///
+    /// Keyed by store as well as tab because the attachment belongs to the *prompt's* tab, not the
+    /// selected one: attach tab B to tab A's prompt, switch to B and navigate it, and A's card has
+    /// to update right then. Scoping the observers to the active draft would stop watching B exactly
+    /// when the user is on it.
+    private var attachedTabObservers: [AttachedTabObserverKey: AttachedTabObserver] = [:]
+
+    private struct AttachedTabObserverKey: Hashable {
+        let store: ObjectIdentifier
+        let tabId: String
+    }
+
+    private struct AttachedTabObserver {
+        weak var store: (any DuckAIPromptDraftStoring)?
+        let cancellable: AnyCancellable
+        /// True until the load that was in flight when this tab was attached finishes. Until then a
+        /// URL change is that load settling (redirect, committed URL), not the user leaving.
+        var isSettlingLoadFromAttachTime: Bool
+    }
 
     /// View model for managing chat suggestions. Always initialized, but only populated when feature flag is enabled.
     let suggestionsViewModel: AIChatSuggestionsViewModel
@@ -853,41 +871,61 @@ final class AIChatOmnibarController {
         syncAttachedTabObservers()
     }
 
-    /// Keeps one navigation observer per attached tab: adds observers for newly attached tabs, drops
-    /// them for detached ones. A tab picks up an observer only once, and is reconciled against its
-    /// current page right after — that catches navigation that happened while its draft wasn't the
-    /// active one.
+    /// Adds a navigation observer for every tab attached to the current draft, and drops observers
+    /// whose store is gone or no longer holds that attachment. Observers for other tabs' drafts are
+    /// left running, so their cards keep updating while the user is elsewhere.
+    ///
+    /// A newly observed tab is reconciled against its current page right after subscribing, which
+    /// catches navigation from before we started watching.
     private func syncAttachedTabObservers() {
-        let attachedIds = Set(activeTabAttachments.map(\.id))
-        for (id, cancellable) in attachedTabCancellables where !attachedIds.contains(id) {
-            cancellable.cancel()
-            attachedTabCancellables[id] = nil
+        attachedTabObservers = attachedTabObservers.filter { key, observer in
+            observer.store?.aiChatTabAttachments.contains { $0.id == key.tabId } ?? false
         }
 
-        guard let collection = origin?.originTabCollectionViewModel else { return }
-        for id in attachedIds where attachedTabCancellables[id] == nil {
-            guard let tab = loadedTab(withId: id, in: collection) else { continue }
-            // `dropFirst` skips the replayed current values: the observer must be stored before any
-            // policy runs, otherwise a policy-driven re-sync would subscribe to the same tab twice.
-            attachedTabCancellables[id] = Publishers.CombineLatest(tab.$content, tab.$title)
+        guard let store = draftStore, let collection = origin?.originTabCollectionViewModel else { return }
+        for attachment in store.aiChatTabAttachments {
+            let key = AttachedTabObserverKey(store: ObjectIdentifier(store), tabId: attachment.id)
+            guard attachedTabObservers[key] == nil, let tab = attachedTab(withId: attachment.id, in: collection) else { continue }
+
+            // Title and favicon arrive after the navigation that carried them, so all of them feed
+            // the policy. `dropFirst` skips the replayed current values: the observer must be stored
+            // before any policy runs, otherwise a policy-driven re-sync would subscribe twice.
+            let cancellable = Publishers.CombineLatest4(tab.$content, tab.$title, tab.$favicon, tab.$isLoading)
                 .dropFirst()
-                .sink { [weak self, weak tab] content, title in
-                    self?.applyNavigationPolicy(forAttachedTabId: id, content: content, title: title, favicon: tab?.favicon)
+                .sink { [weak self, weak store] content, title, favicon, isLoading in
+                    guard let self, let store else { return }
+                    let isSettling = self.attachedTabObservers[key]?.isSettlingLoadFromAttachTime ?? false
+                    if isSettling, !isLoading {
+                        self.attachedTabObservers[key]?.isSettlingLoadFromAttachTime = false
+                    }
+                    self.applyNavigationPolicy(forAttachedTabId: attachment.id, in: store,
+                                               content: content, title: title, favicon: favicon,
+                                               isSettlingLoadFromAttachTime: isSettling)
                 }
-            applyNavigationPolicy(forAttachedTabId: id, content: tab.content, title: tab.title, favicon: tab.favicon)
+            attachedTabObservers[key] = AttachedTabObserver(store: store,
+                                                            cancellable: cancellable,
+                                                            isSettlingLoadFromAttachTime: tab.isLoading)
+            applyNavigationPolicy(forAttachedTabId: attachment.id, in: store,
+                                  content: tab.content, title: tab.title, favicon: tab.favicon,
+                                  isSettlingLoadFromAttachTime: tab.isLoading)
         }
     }
 
-    private func loadedTab(withId id: String, in collection: TabCollectionViewModel) -> Tab? {
-        let allTabs = (collection.pinnedTabsCollection?.tabs ?? []) + collection.tabCollection.tabs
-        return allTabs.lazy.compactMap { anyTab -> Tab? in
-            guard case .loaded(let tab) = anyTab, tab.uuid == id else { return nil }
-            return tab
-        }.first
+    /// The live `Tab` for an attached id. A suspended tab is materialized (never selected), the same
+    /// thing attaching one does — otherwise it would carry no observer and silently stop updating.
+    private func attachedTab(withId id: String, in collection: TabCollectionViewModel) -> Tab? {
+        AIChatTabPickerSource.materializeAttachableTab(withId: id, forOrigin: collection)?.tab
     }
 
-    private func applyNavigationPolicy(forAttachedTabId id: String, content: Tab.TabContent, title: String?, favicon: NSImage?) {
-        var current = activeTabAttachments
+    /// Applies the policy to `store`, which is the prompt's own store — not necessarily the active
+    /// one, since the attached tab may be the tab the user is looking at.
+    private func applyNavigationPolicy(forAttachedTabId id: String,
+                                       in store: any DuckAIPromptDraftStoring,
+                                       content: Tab.TabContent,
+                                       title: String?,
+                                       favicon: NSImage?,
+                                       isSettlingLoadFromAttachTime: Bool) {
+        var current = store.aiChatTabAttachments
         guard let index = current.firstIndex(where: { $0.id == id }) else { return }
 
         let action = AIChatAttachedTabNavigationPolicy.action(
@@ -895,6 +933,7 @@ final class AIChatOmnibarController {
             content: content,
             title: title,
             favicon: favicon,
+            isSettlingLoadFromAttachTime: isSettlingLoadFromAttachTime,
             automaticallySendsPageContext: aiChatMenuConfiguration.shouldAutomaticallySendPageContext
         )
         switch action {
@@ -905,7 +944,8 @@ final class AIChatOmnibarController {
         case .refresh(let refreshed):
             current[index] = refreshed
         }
-        persistTabAttachmentsToActiveTab(current)
+        store.setAIChatTabAttachments(current)
+        syncAttachedTabObservers()
     }
 
     /// The tab attachments persisted for the current tab, or an empty list if none / no shared state.

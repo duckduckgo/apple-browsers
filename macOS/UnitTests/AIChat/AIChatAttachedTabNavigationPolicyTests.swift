@@ -36,29 +36,27 @@ final class AIChatAttachedTabNavigationPolicyTests: XCTestCase {
 
     // MARK: - Navigating with the setting on → the card follows the tab
 
-    func testNavigationRefreshesAttachmentWhenAutomaticallySendingPageContext() {
-        let action = AIChatAttachedTabNavigationPolicy.action(for: attachment(),
-                                                             page: AIChatAttachedTabPage(content: content(newURL),
-                                                                                         title: "Apple",
-                                                                                         favicon: NSImage(),
-                                                                                         isLoading: true),
+    func testNavigationToAnotherSiteRefreshesAttachmentWhenAutomaticallySendingPageContext() {
+        let action = AIChatAttachedTabNavigationPolicy.action(for: attachment(favicon: NSImage()),
+                                                             page: AIChatAttachedTabPage(content: content(newURL), title: "Apple", favicon: NSImage()),
                                                              isSettlingLoadFromAttachTime: false,
                                                              automaticallySendsPageContext: true)
 
         XCTAssertEqual(action, .refresh(AIChatTabAttachment(id: "tab-1", title: "apple.com", url: newURL, favicon: nil)),
-                       "Title and favicon still describe the page being left, so the new URL starts from the host")
+                       "The published title still describes the page being left, and the icon belongs to the old site")
     }
 
-    func testSameDocumentNavigationKeepsTheMetadataItAlreadyPublished() {
+    func testNavigationWithinTheSameSiteKeepsTheFavicon() {
         let favicon = NSImage()
+        let otherPage = URL(string: "https://example.com/other")!
 
-        let action = AIChatAttachedTabNavigationPolicy.action(for: attachment(),
-                                                             page: AIChatAttachedTabPage(content: content(newURL), title: "Apple", favicon: favicon),
+        let action = AIChatAttachedTabNavigationPolicy.action(for: attachment(favicon: favicon),
+                                                             page: AIChatAttachedTabPage(content: content(otherPage), title: "Article", favicon: favicon),
                                                              isSettlingLoadFromAttachTime: false,
                                                              automaticallySendsPageContext: true)
 
-        XCTAssertEqual(action, .refresh(AIChatTabAttachment(id: "tab-1", title: "Apple", url: newURL, favicon: favicon)),
-                       "No load means the title and favicon already belong to the new URL")
+        XCTAssertEqual(action, .refresh(AIChatTabAttachment(id: "tab-1", title: "example.com", url: otherPage, favicon: favicon)),
+                       "A favicon belongs to the site, so moving within it keeps the icon while the title resets")
     }
 
     // MARK: - Navigating with the setting off → the explicit pick is dropped
@@ -138,8 +136,7 @@ final class AIChatAttachedTabNavigationPolicyTests: XCTestCase {
         let action = AIChatAttachedTabNavigationPolicy.action(for: attachment(url: URL(string: "http://example.com")!),
                                                              page: AIChatAttachedTabPage(content: content(attachedURL, source: .webViewUpdated),
                                                                                          title: "Article",
-                                                                                         favicon: nil,
-                                                                                         isLoading: true),
+                                                                                         favicon: nil),
                                                              isSettlingLoadFromAttachTime: true,
                                                              automaticallySendsPageContext: false)
 

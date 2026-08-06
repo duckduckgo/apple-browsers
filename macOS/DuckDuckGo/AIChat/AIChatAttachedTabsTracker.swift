@@ -43,9 +43,9 @@ final class AIChatAttachedTabsTracker {
         /// was in flight. A further commit is a navigation the user (or the page) chose.
         weak var navigationAtAttachTime: WKBackForwardListItem?
         var hasCommittedSinceAttach = false
-        /// Title and favicon of the page just navigated away from. WebKit keeps publishing them for a
-        /// beat after the URL changes, and adopting them would undo the reset the new page needs.
-        var metadataOfPreviousPage: (title: String?, favicon: NSImage?)?
+        /// The title of the page just navigated away from: it keeps being published for a beat after
+        /// the URL changes, and adopting it would put the old page's name on the new one.
+        var titleOfPreviousPage: String?
     }
 
     private weak var origin: (any DuckAIPromptOriginProviding)?
@@ -148,7 +148,7 @@ final class AIChatAttachedTabsTracker {
                 guard let self, let store else { return }
                 self.applyPolicy(for: key,
                                  in: store,
-                                 page: self.discardingMetadataOfPreviousPage(from: page, for: key),
+                                 page: self.discardingTitleOfPreviousPage(from: page, for: key),
                                  isSettlingLoad: self.isSettlingLoad(for: key, page: page))
             }
     }
@@ -179,25 +179,14 @@ final class AIChatAttachedTabsTracker {
         return true
     }
 
-    /// Blanks out title and favicon while they still hold the previous page's values, so the card
-    /// shows the new page's host until the real ones arrive.
-    private func discardingMetadataOfPreviousPage(from page: AIChatAttachedTabPage, for key: ObserverKey) -> AIChatAttachedTabPage {
-        guard let stale = observers[key]?.metadataOfPreviousPage else { return page }
-        guard page.isLoading else {
-            // Loaded: whatever it publishes now belongs to this page, even if it matches the old one.
-            observers[key]?.metadataOfPreviousPage = nil
+    /// Blanks the title while it still holds the previous page's, so the card shows the new page's
+    /// host until its own title arrives.
+    private func discardingTitleOfPreviousPage(from page: AIChatAttachedTabPage, for key: ObserverKey) -> AIChatAttachedTabPage {
+        guard let stale = observers[key]?.titleOfPreviousPage, page.title == stale else {
+            observers[key]?.titleOfPreviousPage = nil
             return page
         }
-
-        let title = page.title == stale.title ? nil : page.title
-        let favicon = page.favicon === stale.favicon ? nil : page.favicon
-        if title != nil, favicon != nil {
-            observers[key]?.metadataOfPreviousPage = nil
-        } else {
-            observers[key]?.metadataOfPreviousPage = (title: title == nil ? stale.title : nil,
-                                                      favicon: favicon == nil ? stale.favicon : nil)
-        }
-        return AIChatAttachedTabPage(content: page.content, title: title, favicon: favicon, isLoading: page.isLoading)
+        return AIChatAttachedTabPage(content: page.content, title: nil, favicon: page.favicon, isLoading: page.isLoading)
     }
 
     // MARK: - Applying the policy
@@ -219,8 +208,8 @@ final class AIChatAttachedTabsTracker {
         case .drop:
             attachments.remove(at: index)
         case .refresh(let refreshed):
-            if refreshed.url != attachments[index].url, page.isLoading {
-                observers[key]?.metadataOfPreviousPage = (title: page.title, favicon: page.favicon)
+            if refreshed.url != attachments[index].url {
+                observers[key]?.titleOfPreviousPage = page.title
             }
             attachments[index] = refreshed
         }

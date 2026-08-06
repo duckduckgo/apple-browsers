@@ -71,7 +71,7 @@ final class InactivityNotificationSchedulerServiceTests: XCTestCase {
 
         // Then
         let status = await userNotificationCenter.authorizationStatus()
-        guard status == .provisional else {
+        guard status == .provisional || status == .authorized else {
             let pending = await UNUserNotificationCenter.current().pendingNotificationRequests()
             XCTAssertEqual(pending.filter { $0.identifier == targetId }.count, 0)
             return
@@ -93,7 +93,7 @@ final class InactivityNotificationSchedulerServiceTests: XCTestCase {
 
         // Then
         let status = await userNotificationCenter.authorizationStatus()
-        guard status == .provisional else {
+        guard status == .provisional || status == .authorized else {
             let pending = await UNUserNotificationCenter.current().pendingNotificationRequests()
             XCTAssertEqual(pending.filter { $0.identifier == targetId }.count, 0)
             return

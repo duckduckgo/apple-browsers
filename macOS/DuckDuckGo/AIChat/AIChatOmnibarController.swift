@@ -1412,8 +1412,7 @@ final class AIChatOmnibarController {
         return ordered.isEmpty ? nil : .multiple(ordered)
     }
 
-    /// The extracted URL comes from the web view and the attached one from the tab's content, so a
-    /// trailing slash can differ for the same page.
+    /// Web-view and tab-content URLs for one page can differ by a trailing slash.
     private static func isSameAttachedPage(_ extractedURL: String, as attachedURL: URL?) -> Bool {
         guard let attachedURL else { return false }
         func trimmed(_ string: String) -> String {

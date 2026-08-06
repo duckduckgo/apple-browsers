@@ -619,6 +619,7 @@ final class NewTabPageMessagesModel: ObservableObject {
              .blockedByProvisionalReservation,
              .occupiedSurfaceSlot,
              .featureDisabled,
+             .applicationInactive,
              .unavailableDuringTransition:
             break
         }

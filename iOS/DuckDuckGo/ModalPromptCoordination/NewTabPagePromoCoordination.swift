@@ -33,6 +33,8 @@ enum VisiblePromoAdmissionResult {
     case occupiedSurfaceSlot(VisiblePromoIdentity)
     /// The `promoPresentationCoordination` flag is off, so admission is not arbitrated.
     case featureDisabled
+    /// The app is inactive or has not reached foreground interaction readiness; the retained candidate is reconsidered later.
+    case applicationInactive
     /// A flag transition barrier is up; the caller should retry after the transition.
     case unavailableDuringTransition
 }

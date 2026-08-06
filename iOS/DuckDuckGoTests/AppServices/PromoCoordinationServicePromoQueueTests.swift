@@ -387,6 +387,160 @@ final class PromoCoordinationServicePromoQueueTests {
         _ = visibleLease
     }
 
+    @available(iOS 16, *)
+    @Test("RMF Cooldown Retry Pauses While Inactive And Resumes On Temporary Return", .timeLimit(.minutes(1)))
+    func whenCooldownBoundaryPassesDuringTemporaryInactivityThenRetryResumesOnReturn() {
+        let confirmedAppearance = Date(timeIntervalSince1970: 2_500_000)
+        let clock = PromoQueueCooldownTestClock(now: confirmedAppearance)
+        let remoteMessageStore = PromoQueueRemoteMessageHistoryStoreMock()
+        remoteMessageStore.lastConfirmedRemoteMessageTimestamp = confirmedAppearance.timeIntervalSince1970
+        let cooldownPolicy = PromoQueueCooldownPolicy(
+            modalPresentationStore: PromoQueueModalHistoryStoreMock(),
+            remoteMessagePresentationStore: remoteMessageStore,
+            dateProvider: { clock.now }
+        )
+        let scheduler = PromoQueueCooldownSchedulerMock()
+        featureFlaggerMock.enabledFeatureFlags = [.promoPresentationCoordination]
+        launchSourceManagerMock.source = .standard
+        presenterMock.presentedViewController = nil
+        sut = PromoCoordinationService(
+            launchSourceManager: launchSourceManagerMock,
+            modalPromptCoordinationManager: managerMock,
+            featureFlagger: featureFlaggerMock,
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
+            promoQueueCooldownPolicy: cooldownPolicy,
+            promoQueueCooldownScheduler: scheduler
+        )
+        let identity = VisiblePromoIdentity(surfaceID: UUID(), promoType: .remoteMessage, promoID: "rmf")
+        let target = MockNewTabPagePromoRetryTarget()
+        target.identityToAdmitOnRetry = identity
+        let registration = sut.registerVisiblePromoRetry(for: identity.surfaceID, target: target)
+        let boundary = confirmedAppearance.addingTimeInterval(PromoQueueCooldownPolicy.remoteMessageTargetInterval)
+
+        guard case .blockedByCooldown = sut.admitVisiblePromo(identity) else {
+            Issue.record("Expected RMF admission to establish a cooldown retry")
+            return
+        }
+        #expect(scheduler.pendingDates == [boundary])
+
+        sut.applicationWillResignActive()
+        clock.now = boundary.addingTimeInterval(-1)
+
+        #expect(scheduler.pendingDates.isEmpty)
+        #expect(sut.promoQueueDebugSnapshot.scheduledRemoteMessageRetry == nil)
+        guard case .applicationInactive = sut.admitVisiblePromo(identity) else {
+            Issue.record("Expected RMF admission to remain deferred while the app is inactive")
+            return
+        }
+        managerMock.coordinatedAttemptReleaseHandler?()
+        #expect(target.retryCount == 0)
+        #expect(promoQueueLeaseArbiter.snapshot.visiblePromoIdentities.isEmpty)
+
+        sut.applicationDidBecomeActive()
+
+        #expect(target.retryCount == 1)
+        #expect(target.retainedLease == nil)
+        #expect(scheduler.pendingDates == [boundary])
+
+        sut.applicationWillResignActive()
+        clock.now = boundary
+        sut.applicationDidBecomeActive()
+
+        #expect(target.retryCount == 2)
+        #expect(target.retainedLease != nil)
+        #expect(promoQueueLeaseArbiter.snapshot.visiblePromoIdentities == [identity])
+        #expect(scheduler.pendingDates.isEmpty)
+        _ = registration
+    }
+
+    @available(iOS 16, *)
+    @Test("RMF Candidate Denied Only By Temporary Inactivity Retries On Return", .timeLimit(.minutes(1)))
+    func whenCandidateAttemptsAdmissionDuringTemporaryInactivityThenReturnRetriesIt() {
+        featureFlaggerMock.enabledFeatureFlags = [.promoPresentationCoordination]
+        sut = PromoCoordinationService(
+            launchSourceManager: launchSourceManagerMock,
+            modalPromptCoordinationManager: managerMock,
+            featureFlagger: featureFlaggerMock,
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter
+        )
+        let identity = VisiblePromoIdentity(surfaceID: UUID(), promoType: .remoteMessage, promoID: "rmf")
+        let target = MockNewTabPagePromoRetryTarget()
+        target.identityToAdmitOnRetry = identity
+        let registration = sut.registerVisiblePromoRetry(for: identity.surfaceID, target: target)
+
+        sut.applicationWillResignActive()
+        guard case .applicationInactive = sut.admitVisiblePromo(identity) else {
+            Issue.record("Expected RMF admission to remain deferred during temporary inactivity")
+            return
+        }
+        #expect(sut.promoQueueDebugSnapshot.scheduledRemoteMessageRetry == nil)
+        #expect(target.retryCount == 0)
+
+        sut.applicationDidBecomeActive()
+
+        #expect(target.retryCount == 1)
+        #expect(target.retainedLease != nil)
+        #expect(promoQueueLeaseArbiter.snapshot.visiblePromoIdentities == [identity])
+        _ = registration
+    }
+
+    @available(iOS 16, *)
+    @Test("RMF Cooldown Retry Waits For UI Readiness After Full Background", .timeLimit(.minutes(1)))
+    func whenCooldownBoundaryPassesInBackgroundThenRetryWaitsForForegroundCheckpoint() {
+        let confirmedAppearance = Date(timeIntervalSince1970: 2_750_000)
+        let clock = PromoQueueCooldownTestClock(now: confirmedAppearance)
+        let remoteMessageStore = PromoQueueRemoteMessageHistoryStoreMock()
+        remoteMessageStore.lastConfirmedRemoteMessageTimestamp = confirmedAppearance.timeIntervalSince1970
+        let cooldownPolicy = PromoQueueCooldownPolicy(
+            modalPresentationStore: PromoQueueModalHistoryStoreMock(),
+            remoteMessagePresentationStore: remoteMessageStore,
+            dateProvider: { clock.now }
+        )
+        let scheduler = PromoQueueCooldownSchedulerMock()
+        featureFlaggerMock.enabledFeatureFlags = [.promoPresentationCoordination]
+        launchSourceManagerMock.source = .standard
+        presenterMock.presentedViewController = nil
+        sut = PromoCoordinationService(
+            launchSourceManager: launchSourceManagerMock,
+            modalPromptCoordinationManager: managerMock,
+            featureFlagger: featureFlaggerMock,
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
+            promoQueueCooldownPolicy: cooldownPolicy,
+            promoQueueCooldownScheduler: scheduler
+        )
+        let identity = VisiblePromoIdentity(surfaceID: UUID(), promoType: .remoteMessage, promoID: "rmf")
+        let target = MockNewTabPagePromoRetryTarget()
+        target.identityToAdmitOnRetry = identity
+        let registration = sut.registerVisiblePromoRetry(for: identity.surfaceID, target: target)
+        let boundary = confirmedAppearance.addingTimeInterval(PromoQueueCooldownPolicy.remoteMessageTargetInterval)
+
+        guard case .blockedByCooldown = sut.admitVisiblePromo(identity) else {
+            Issue.record("Expected RMF admission to establish a cooldown retry")
+            return
+        }
+
+        sut.applicationWillResignActive()
+        sut.applicationDidEnterBackground()
+        clock.now = boundary
+        sut.applicationDidBecomeActive()
+
+        #expect(scheduler.pendingDates.isEmpty)
+        #expect(target.retryCount == 0)
+        #expect(promoQueueLeaseArbiter.snapshot.visiblePromoIdentities.isEmpty)
+        guard case .applicationInactive = sut.admitVisiblePromo(identity) else {
+            Issue.record("Expected RMF admission to wait for foreground interaction readiness")
+            return
+        }
+
+        sut.presentModalPromptIfNeeded(from: presenterMock)
+
+        #expect(target.retryCount == 1)
+        #expect(target.retainedLease != nil)
+        #expect(promoQueueLeaseArbiter.snapshot.visiblePromoIdentities == [identity])
+        #expect(scheduler.pendingDates.isEmpty)
+        _ = registration
+    }
+
     // MARK: - Visible Promo Admission Results
 
     @available(iOS 16, *)

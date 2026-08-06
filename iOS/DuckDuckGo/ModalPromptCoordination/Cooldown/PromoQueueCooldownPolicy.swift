@@ -57,6 +57,9 @@ final class PromoQueueRemoteMessageCooldownKeyValueFilesStore: PromoQueueRemoteM
     }
 
     private let keyValueStore: ThrowingKeyValueStoring
+    private var cachedTimestamp: TimeInterval?
+    private var hasCachedTimestamp = false
+    private var hasUnpersistedTimestamp = false
 
     init(keyValueStore: ThrowingKeyValueStoring) {
         self.keyValueStore = keyValueStore
@@ -64,16 +67,29 @@ final class PromoQueueRemoteMessageCooldownKeyValueFilesStore: PromoQueueRemoteM
 
     var lastConfirmedRemoteMessageTimestamp: TimeInterval? {
         get {
+            if hasUnpersistedTimestamp {
+                return cachedTimestamp
+            }
+
             do {
-                return try keyValueStore.object(forKey: StorageKey.lastConfirmedRemoteMessageTimestamp) as? TimeInterval
+                let storedTimestamp = try keyValueStore.object(
+                    forKey: StorageKey.lastConfirmedRemoteMessageTimestamp
+                ) as? TimeInterval
+                cachedTimestamp = storedTimestamp
+                hasCachedTimestamp = true
+                return storedTimestamp
             } catch {
                 Logger.modalPrompt.error("[Promo Queue] - Failed to read the last confirmed RMF timestamp.")
-                return nil
+                return hasCachedTimestamp ? cachedTimestamp : nil
             }
         }
         set {
+            cachedTimestamp = newValue
+            hasCachedTimestamp = true
+            hasUnpersistedTimestamp = true
             do {
                 try keyValueStore.set(newValue, forKey: StorageKey.lastConfirmedRemoteMessageTimestamp)
+                hasUnpersistedTimestamp = false
             } catch {
                 Logger.modalPrompt.error("[Promo Queue] - Failed to write the last confirmed RMF timestamp.")
             }

@@ -98,6 +98,8 @@ final class PromoCoordinationService {
     private var cooldownBlockedSurfaces = [UUID: Date]()
     private var scheduledRemoteMessageRetry: Date?
     private var scheduledRemoteMessageRetryTask: PromoQueueCooldownScheduledTask?
+    private var isApplicationActive = true
+    private var isWaitingForForegroundInteractionReadiness = false
     private let promoQueueFeatureStateSubject: CurrentValueSubject<PromoQueueFeatureState, Never>
 
     private(set) var promoQueueFeatureState: PromoQueueFeatureState
@@ -190,18 +192,31 @@ final class PromoCoordinationService {
     }
 
     func applicationWillResignActive() {
+        isApplicationActive = false
+        suspendRemoteMessageCooldownRetry()
         modalPromptCoordinationManager.applicationWillResignActive()
     }
 
     func applicationDidBecomeActive() {
+        isApplicationActive = true
         modalPromptCoordinationManager.applicationDidBecomeActive()
+
+        guard !isWaitingForForegroundInteractionReadiness else {
+            return
+        }
+        retryActiveVisiblePromoRegistrations()
     }
 
     func applicationDidEnterBackground() {
+        isApplicationActive = false
+        isWaitingForForegroundInteractionReadiness = true
+        suspendRemoteMessageCooldownRetry()
         modalPromptCoordinationManager.applicationDidEnterBackground()
     }
 
     func presentModalPromptIfNeeded(from viewController: ModalPromptPresenter) {
+        isWaitingForForegroundInteractionReadiness = false
+
         guard !promoQueueFeatureState.isTransitioning else {
             Logger.modalPrompt.debug("[Modal Prompt Coordination] - Skipping modal prompt during promo queue feature transition.")
             return
@@ -412,7 +427,9 @@ final class PromoCoordinationService {
         excluding excludedSurfaceID: UUID?,
         using admissionHandler: VisiblePromoAdmissionHandler
     ) {
-        guard !isRetryingVisiblePromoRegistrations else {
+        guard isApplicationActive,
+              !isWaitingForForegroundInteractionReadiness,
+              !isRetryingVisiblePromoRegistrations else {
             return
         }
 
@@ -448,6 +465,11 @@ final class PromoCoordinationService {
     }
 
     private func rescheduleRemoteMessageCooldownRetry() {
+        guard isApplicationActive else {
+            suspendRemoteMessageCooldownRetry()
+            return
+        }
+
         let activeSurfaceIDs = Set(promoRetryRegistrations.compactMap { registration in
             registration.target?.isActiveForPromoRetry == true ? registration.surfaceID : nil
         })
@@ -474,9 +496,18 @@ final class PromoCoordinationService {
 
             scheduledRemoteMessageRetryTask = nil
             scheduledRemoteMessageRetry = nil
+            guard isApplicationActive else {
+                return
+            }
             cooldownBlockedSurfaces.removeAll()
             retryActiveVisiblePromoRegistrations()
         }
+    }
+
+    private func suspendRemoteMessageCooldownRetry() {
+        scheduledRemoteMessageRetryTask?.cancel()
+        scheduledRemoteMessageRetryTask = nil
+        scheduledRemoteMessageRetry = nil
     }
 
     private func cooldownHistoryDidChange(excluding surfaceID: UUID) {
@@ -516,6 +547,11 @@ extension PromoCoordinationService: NewTabPagePromoCoordinating {
             return .unavailableDuringTransition
         case .enabled:
             break
+        }
+
+        guard isApplicationActive,
+              !isWaitingForForegroundInteractionReadiness else {
+            return .applicationInactive
         }
 
         return admitCoordinatedVisiblePromo(identity)

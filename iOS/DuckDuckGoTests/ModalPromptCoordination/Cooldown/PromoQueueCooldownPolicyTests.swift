@@ -18,6 +18,7 @@
 //
 
 import Foundation
+import Persistence
 import PersistenceTestingUtils
 import Testing
 @testable import DuckDuckGo
@@ -180,6 +181,45 @@ final class PromoQueueCooldownPolicyTests {
             relaunchedPolicy.evaluateModalAdmission()
                 == .blocked(until: referenceDate.addingTimeInterval(PromoQueueCooldownPolicy.modalAfterRemoteMessageInterval))
         )
+    }
+
+    @Test("Failed RMF history writes remain enforceable in the current process")
+    func failedRemoteMessageHistoryWriteRetainsInMemoryCooldown() throws {
+        let keyValueStore = ThrowingPromoQueueCooldownKeyValueStore()
+        keyValueStore.shouldFailWrites = true
+        let clock = TimeTraveller(date: referenceDate)
+        let policy = PromoQueueCooldownPolicy(
+            modalPresentationStore: InMemoryPromptCooldownStore(),
+            remoteMessagePresentationStore: PromoQueueRemoteMessageCooldownKeyValueFilesStore(keyValueStore: keyValueStore),
+            dateProvider: clock.getDate
+        )
+        let reservation = try requireReservation(from: policy.reserveRemoteMessageAdmission(for: makeIdentity()))
+
+        #expect(reservation.confirm())
+        clock.advanceBy(1)
+
+        #expect(policy.snapshot.lastConfirmedRemoteMessageAppearance == referenceDate)
+        #expect(
+            try requireBlockedBoundary(from: policy.reserveRemoteMessageAdmission(for: makeIdentity()))
+                == referenceDate.addingTimeInterval(PromoQueueCooldownPolicy.remoteMessageTargetInterval)
+        )
+        #expect(
+            policy.evaluateModalAdmission()
+                == .blocked(until: referenceDate.addingTimeInterval(PromoQueueCooldownPolicy.modalAfterRemoteMessageInterval))
+        )
+    }
+
+    @Test("Failed RMF history reads fall back to the last value read in this process")
+    func failedRemoteMessageHistoryReadUsesCachedValue() throws {
+        let keyValueStore = ThrowingPromoQueueCooldownKeyValueStore()
+        keyValueStore.storedValue = referenceDate.timeIntervalSince1970
+        let store = PromoQueueRemoteMessageCooldownKeyValueFilesStore(keyValueStore: keyValueStore)
+
+        #expect(store.lastConfirmedRemoteMessageTimestamp == referenceDate.timeIntervalSince1970)
+
+        keyValueStore.shouldFailReads = true
+
+        #expect(store.lastConfirmedRemoteMessageTimestamp == referenceDate.timeIntervalSince1970)
     }
 
     @Test("One provisional reservation serializes RMF admission across IDs and surfaces")
@@ -370,5 +410,34 @@ private final class RemoteMessageCooldownStoreSpy: PromoQueueRemoteMessageCooldo
             writeCount += 1
             storedTimestamp = newValue
         }
+    }
+}
+
+private final class ThrowingPromoQueueCooldownKeyValueStore: ThrowingKeyValueStoring {
+    enum StorageError: Error {
+        case readFailed
+        case writeFailed
+    }
+
+    var storedValue: Any?
+    var shouldFailReads = false
+    var shouldFailWrites = false
+
+    func object(forKey defaultName: String) throws -> Any? {
+        guard !shouldFailReads else {
+            throw StorageError.readFailed
+        }
+        return storedValue
+    }
+
+    func set(_ value: Any?, forKey defaultName: String) throws {
+        guard !shouldFailWrites else {
+            throw StorageError.writeFailed
+        }
+        storedValue = value
+    }
+
+    func removeObject(forKey defaultName: String) throws {
+        storedValue = nil
     }
 }

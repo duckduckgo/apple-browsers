@@ -278,6 +278,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
                 && isPromoRenderLocationReady
                 && isPromoSurfaceVisible
                 && !isPromoSurfaceCovered
+                && viewIfLoaded?.window != nil
         )
     }
 

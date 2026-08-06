@@ -67,9 +67,10 @@ final class AIChatAttachedTabsTracker {
     func trackAttachments(of store: (any DuckAIPromptDraftStoring)?) {
         activeStore = store
         if let store {
-            seenStores.add(store)
+            seenStores.add(store as AnyObject)
         }
-        dropAttachmentsForClosedTabs()
+        dropObserversForDetachedTabs()
+        observeAttachedTabs()
     }
 
     // MARK: - Closed tabs
@@ -79,6 +80,8 @@ final class AIChatAttachedTabsTracker {
         let pinnedTabs = collection.pinnedTabsCollection?.$tabs.eraseToAnyPublisher()
             ?? Just([]).eraseToAnyPublisher()
         tabListCancellable = Publishers.CombineLatest(collection.tabCollection.$tabs, pinnedTabs)
+            // Nothing has closed at subscription time; only later changes can strand an attachment.
+            .dropFirst()
             // Moves between the two collections are two mutations; read the lists once both landed.
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _, _ in

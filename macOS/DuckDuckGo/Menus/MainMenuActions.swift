@@ -86,7 +86,7 @@ extension AppDelegate {
 
     @objc func newAIChat(_ sender: Any?) {
         DispatchQueue.main.async {
-            AIChatConversationSourceHandler.shared.setData(.mainMenu)
+            NSApp.delegateTyped.aiChatConversationSourceHandler.setData(.mainMenu)
             NSApp.delegateTyped.aiChatTabOpener.openNewAIChat(in: .newTab(selected: true))
             PixelKit.fire(AIChatPixel.aichatApplicationMenuFileClicked, frequency: .dailyAndCount, includeAppVersionParameter: true)
         }
@@ -1363,7 +1363,7 @@ extension MainViewController {
         // Always a plain open/close, no page attach — even in menu-button layout. Only the tab-bar
         // "Ask About Page" item attaches the current page.
         if !tabBarViewController.isDuckAIChatPresented {
-            AIChatConversationSourceHandler.shared.setData(.mainMenu)
+            NSApp.delegateTyped.aiChatConversationSourceHandler.setData(.mainMenu)
         }
         aiChatCoordinator.toggleSidebar()
     }

@@ -64,7 +64,7 @@ final class PromptBarPromptSubmitter: PromptBarPromptSubmitting {
     }
 
     func submit(query: String, payload: AIChatNativePrompt?, preferringWindowOn screen: NSScreen?) {
-        AIChatConversationSourceHandler.shared.setData(.promptBar)
+        NSApp.delegateTyped.aiChatConversationSourceHandler.setData(.promptBar)
         if let windowController = windowToReuse(on: screen) {
             aiChatTabOpener.openAIChatTab(withQuery: query, inNewTabOf: windowController)
         } else if let visibleFrame = screen?.visibleFrame {
@@ -85,7 +85,7 @@ final class PromptBarPromptSubmitter: PromptBarPromptSubmitting {
 
     func openVoiceSession(preferringWindowOn screen: NSScreen?) {
         let sourceCollection = windowToReuse(on: screen)?.mainViewController.tabCollectionViewModel
-        AIChatConversationSourceHandler.shared.setData(.voice)
+        NSApp.delegateTyped.aiChatConversationSourceHandler.setData(.voice)
         aiChatTabOpener.openVoiceSession(inSourceCollection: sourceCollection, behavior: .newTab(selected: true))
         NSApp.activate(ignoringOtherApps: true)
     }

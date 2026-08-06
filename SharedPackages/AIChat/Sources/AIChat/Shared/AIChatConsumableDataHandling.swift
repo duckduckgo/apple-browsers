@@ -107,15 +107,14 @@ public enum AIChatConversationSource: String, CaseIterable {
     case other = "other"
 }
 
-/// One-shot mailbox carrying the opening surface to the chat's handler. Mirrors
-/// `AIChatPromptHandler.shared`: written just before the chat opens, consumed once at load.
+/// One-shot mailbox carrying the opening surface to the chat's handler: written just before the
+/// chat opens, consumed once at load. A single instance is owned by `AppDelegate` and injected
+/// into the user-script handler.
 public final class AIChatConversationSourceHandler: AIChatConsumableDataHandling {
     public typealias DataType = AIChatConversationSource
     private var data: DataType?
 
-    public static let shared = AIChatConversationSourceHandler()
-
-    private init() {}
+    public init() {}
 
     public func setData(_ data: DataType) {
         self.data = data

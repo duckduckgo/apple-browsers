@@ -248,6 +248,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         promptHandler: AIChatPromptHandler.shared,
         aiChatTabManaging: windowControllersManager
     )
+    /// App-scoped mailbox that carries the surface that opened a Duck.ai chat to the conversation pixels.
+    /// Open surfaces stamp it via `NSApp.delegateTyped.aiChatConversationSourceHandler`; the user-script
+    /// handler is injected the same instance.
+    let aiChatConversationSourceHandler = AIChatConversationSourceHandler()
     let aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable
     let aiChatSessionStore: AIChatSessionStoring
     let aiChatPreferences: AIChatPreferences

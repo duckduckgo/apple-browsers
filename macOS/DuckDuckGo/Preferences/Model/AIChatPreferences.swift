@@ -300,7 +300,7 @@ final class AIChatPreferences: ObservableObject {
     }
 
     @MainActor func openAIChatLink() {
-        AIChatConversationSourceHandler.shared.setData(.settings)
+        NSApp.delegateTyped.aiChatConversationSourceHandler.setData(.settings)
         NSApp.delegateTyped.aiChatTabOpener.openNewAIChat(in: .currentTab)
     }
 
@@ -311,7 +311,7 @@ final class AIChatPreferences: ObservableObject {
     /// Opens duck.ai in a new tab and triggers the Duck.ai Settings modal once the page
     /// has wired up its message subscriptions.
     @MainActor func openDuckAiSettings() {
-        AIChatConversationSourceHandler.shared.setData(.settings)
+        NSApp.delegateTyped.aiChatConversationSourceHandler.setData(.settings)
         NSApp.delegateTyped.aiChatTabOpener.openAIChatTab(with: .openSettings, behavior: .newTab(selected: true))
     }
 

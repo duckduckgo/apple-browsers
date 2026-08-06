@@ -198,6 +198,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     /// Surface that opened this chat, consumed once at load and retained for the conversation's pixels.
     private var conversationSource: AIChatConversationSource?
     private var didConsumeConversationSource = false
+    private let conversationSourceHandler: AIChatConversationSourceHandler
 
     init(
         storage: AIChatPreferencesStorage,
@@ -211,7 +212,8 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         aiChatUserScriptErrorEventMapper: EventMapping<AIChatUserScriptErrorEvent>? = nil,
         freeTrialConversionService: FreeTrialConversionInstrumentationService = Application.appDelegate.freeTrialConversionService,
         notificationCenter: NotificationCenter = .default,
-        voiceChatFailureHandler: DuckAiVoiceChatFailureHandling? = nil
+        voiceChatFailureHandler: DuckAiVoiceChatFailureHandling? = nil,
+        conversationSourceHandler: AIChatConversationSourceHandler = Application.appDelegate.aiChatConversationSourceHandler
     ) {
         self.storage = storage
         self.messageHandling = messageHandling
@@ -224,6 +226,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         self.notificationCenter = notificationCenter
         self.featureFlagger = featureFlagger
         self.freeTrialConversionService = freeTrialConversionService
+        self.conversationSourceHandler = conversationSourceHandler
         self.voiceChatFailureHandler = voiceChatFailureHandler ?? DuckAiVoiceChatFailureHandler(
             permissionCenterPresenter: NotificationCenterPermissionCenterPresenter(
                 notificationCenter: notificationCenter,
@@ -261,7 +264,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         // steal a different chat's pending source on a subsequent config fetch.
         if !didConsumeConversationSource {
             didConsumeConversationSource = true
-            conversationSource = AIChatConversationSourceHandler.shared.consumeData()
+            conversationSource = conversationSourceHandler.consumeData()
         }
         let isFireWindow = isFireWindowProvider?() ?? false
         return messageHandling.getNativeConfigValues(isFireWindow: isFireWindow)

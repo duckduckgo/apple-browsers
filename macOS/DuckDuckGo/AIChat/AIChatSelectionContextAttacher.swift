@@ -17,6 +17,7 @@
 //
 
 import AIChat
+import AppKit
 import Foundation
 import PixelKit
 
@@ -95,7 +96,7 @@ final class AIChatSelectionContextAttacher: AIChatSelectionContextAttaching {
         // Append the selection, then reveal the sidebar; the tab extension flushes it once the chat VC is up.
         currentPageContextProvider()?.appendSelectionContext(selection)
         if !isChatAlreadyPresented {
-            AIChatConversationSourceHandler.shared.setData(.attachSelection)
+            NSApp.delegateTyped.aiChatConversationSourceHandler.setData(.attachSelection)
         }
         aiChatCoordinator.revealChat()
     }

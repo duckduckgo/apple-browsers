@@ -17,6 +17,7 @@
 //
 
 import AIChat
+import AppKit
 import BrowserServicesKit
 import Foundation
 import PixelKit
@@ -89,7 +90,7 @@ final class AIChatSummarizer: AIChatSummarizing {
                 ),
                 frequency: .dailyAndStandard
             )
-            AIChatConversationSourceHandler.shared.setData(.summarization)
+            NSApp.delegateTyped.aiChatConversationSourceHandler.setData(.summarization)
         }
         aiChatCoordinator.revealChat(for: prompt)
     }

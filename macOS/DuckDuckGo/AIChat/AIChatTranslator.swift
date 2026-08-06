@@ -19,6 +19,7 @@
 import Foundation
 
 import AIChat
+import AppKit
 import BrowserServicesKit
 import PixelKit
 
@@ -94,7 +95,7 @@ final class AIChatTranslator: AIChatTranslating {
                 ),
                 frequency: .dailyAndStandard
             )
-            AIChatConversationSourceHandler.shared.setData(.translation)
+            NSApp.delegateTyped.aiChatConversationSourceHandler.setData(.translation)
         }
         aiChatCoordinator.revealChat(for: prompt)
     }

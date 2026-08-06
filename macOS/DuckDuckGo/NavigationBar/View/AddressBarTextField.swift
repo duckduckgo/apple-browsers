@@ -487,7 +487,7 @@ final class AddressBarTextField: NSTextField {
             pixel = .aiChatSuggestionAIChatSubmittedMouse
         }
         PixelKit.fire(pixel, frequency: .dailyAndCount, includeAppVersionParameter: true)
-        AIChatConversationSourceHandler.shared.setData(.addressBar)
+        NSApp.delegateTyped.aiChatConversationSourceHandler.setData(.addressBar)
         NSApp.delegateTyped.aiChatTabOpener.openAIChatTab(with: .query(prompt, shouldAutoSubmit: true), behavior: behavior)
         currentEditor()?.selectAll(self)
     }

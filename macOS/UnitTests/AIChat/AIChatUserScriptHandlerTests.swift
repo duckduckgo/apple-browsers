@@ -479,8 +479,8 @@ struct AIChatUserScriptHandlerTests {
     @MainActor
     func testThatConversationPixelCarriesTheOpeningSource() async throws {
         // A surface stamps the pending source just before opening the chat.
-        AIChatConversationSourceHandler.shared.reset()
-        AIChatConversationSourceHandler.shared.setData(.tabBarButton)
+        let sourceHandler = AIChatConversationSourceHandler()
+        sourceHandler.setData(.tabBarButton)
 
         let testPixelFiring = PixelKitMock()
         testPixelFiring.expectedFireCalls = [.init(pixel: AIChatPixel.aiChatMetricStartNewConversation(source: .tabBarButton), frequency: .standard)]
@@ -494,7 +494,8 @@ struct AIChatUserScriptHandlerTests {
             syncServiceProvider: { nil },
             syncErrorHandler: syncErrorHandler,
             featureFlagger: MockFeatureFlagger(),
-            notificationCenter: notificationCenter
+            notificationCenter: notificationCenter,
+            conversationSourceHandler: sourceHandler
         )
 
         // The chat's first native-config fetch (load) consumes and stores the pending source...

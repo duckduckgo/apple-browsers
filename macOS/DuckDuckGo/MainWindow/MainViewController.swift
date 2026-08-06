@@ -612,7 +612,7 @@ final class MainViewController: NSViewController {
         let behavior: LinkOpenBehavior = tabCollectionViewModel.selectedTabViewModel?.tab.content == .newtab
             ? .currentTab
             : .newTab(selected: true)
-        AIChatConversationSourceHandler.shared.setData(.tabBarButton)
+        NSApp.delegateTyped.aiChatConversationSourceHandler.setData(.tabBarButton)
         NSApp.delegateTyped.aiChatTabOpener.openNewAIChat(in: behavior)
     }
 
@@ -1414,7 +1414,7 @@ extension MainViewController: AIChatOmnibarControllerDelegate {
         /// Explicit exit: user selected a saved chat suggestion. Clear the current tab's duck.ai flag.
         tabCollectionViewModel.selectedTabViewModel?.addressBarSharedTextState.setDuckAIMode(false)
         updateAIChatOmnibarContainerVisibility(visible: false, shouldKeepSelection: false)
-        AIChatConversationSourceHandler.shared.setData(.recentChat)
+        NSApp.delegateTyped.aiChatConversationSourceHandler.setData(.recentChat)
         NSApp.delegateTyped.aiChatTabOpener.openAIChatTab(with: .existingChat(chatId: suggestion.chatId), behavior: .currentTab)
     }
 }

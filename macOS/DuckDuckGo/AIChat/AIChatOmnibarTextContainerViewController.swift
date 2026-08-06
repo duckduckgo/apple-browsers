@@ -19,9 +19,8 @@
 import Cocoa
 import Combine
 import AIChat
-import AppKit
+import AppKitExtensions
 import UniformTypeIdentifiers
-import UniformTypeIdentifiersExtensions
 import DesignResourcesKitIcons
 import PixelKit
 import PrivacyConfig

@@ -2394,6 +2394,8 @@
 		CCCFFCD52FA3B82A0093CF07 /* OnboardingSharedPixelsStoring.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCCFFCD42FA3B81F0093CF07 /* OnboardingSharedPixelsStoring.swift */; };
 		CE8BB592D637EDF923F1E25C /* SubscriptionOnboardingNavigationContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 805FC085FDE8FE82A5752D91 /* SubscriptionOnboardingNavigationContainer.swift */; };
 		CF65ADDC7C8E902826B7931B /* AIChatTabChatHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA8E5DCD620608EB3A162D3D /* AIChatTabChatHeaderView.swift */; };
+		AC1147E0B100000000000102 /* AIChatHeaderGlassPill.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC1147E0B100000000000101 /* AIChatHeaderGlassPill.swift */; };
+		AC1147E0B100000000000202 /* AIChatEditHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC1147E0B100000000000201 /* AIChatEditHeaderView.swift */; };
 		D1A0B0112F92000100A1B001 /* DataImportEntryPointHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A0B0012F92000100A1B001 /* DataImportEntryPointHandlerTests.swift */; };
 		D1A0B0122F92000100A1B001 /* DataImportUserActivityHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A0B0022F92000100A1B001 /* DataImportUserActivityHandlerTests.swift */; };
 		D1A0B0132F92000100A1B001 /* ImportPasswordSourceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A0B0032F92000100A1B001 /* ImportPasswordSourceTests.swift */; };
@@ -5316,6 +5318,8 @@
 		E893A63A6D9BB66F042D3770 /* SearchTokenExperimentTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SearchTokenExperimentTests.swift; sourceTree = "<group>"; };
 		EA39B7E1268A1A35000C62CD /* privacy-reference-tests */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = folder; name = "privacy-reference-tests"; path = "../SharedPackages/BrowserServicesKit/Tests/BrowserServicesKitTests/Res/privacy-reference-tests"; sourceTree = SOURCE_ROOT; };
 		EA8E5DCD620608EB3A162D3D /* AIChatTabChatHeaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatTabChatHeaderView.swift; sourceTree = "<group>"; };
+		AC1147E0B100000000000101 /* AIChatHeaderGlassPill.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatHeaderGlassPill.swift; sourceTree = "<group>"; };
+		AC1147E0B100000000000201 /* AIChatEditHeaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatEditHeaderView.swift; sourceTree = "<group>"; };
 		EAB19ED9268963510015D3EA /* DomainMatchingTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DomainMatchingTests.swift; sourceTree = "<group>"; };
 		ED1AD3E43001471400F2ADD6 /* AppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = AppIcon.icon; sourceTree = "<group>"; };
 		ED1AD3E63001475100F2ADD6 /* AppIcon-black.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = "AppIcon-black.icon"; sourceTree = "<group>"; };
@@ -6240,6 +6244,8 @@
 				31F43E1E2F472F3C001BBCDA /* AIChatAddressBarExperience.swift */,
 				31A2B6DF2E1C3BDF00391020 /* SubscriptionAIChatStateHandler.swift */,
 				EA8E5DCD620608EB3A162D3D /* AIChatTabChatHeaderView.swift */,
+				AC1147E0B100000000000101 /* AIChatHeaderGlassPill.swift */,
+				AC1147E0B100000000000201 /* AIChatEditHeaderView.swift */,
 				5AB12C3D4E5F60718293A4B6 /* AIChatHistoryViewController.swift */,
 				5AB12C3D4E5F60718293A4B8 /* AIChatHistoryEmptyStateView.swift */,
 				5AB12C3D4E5F60718293A4BA /* AIChatHistoryViewModel.swift */,
@@ -13951,6 +13957,8 @@
 				CBF259C72D4ED93F00AC63E4 /* OnboardingConfiguration.swift in Sources */,
 				31A2B6E02E1C3BE000391020 /* SubscriptionAIChatStateHandler.swift in Sources */,
 				CF65ADDC7C8E902826B7931B /* AIChatTabChatHeaderView.swift in Sources */,
+				AC1147E0B100000000000102 /* AIChatHeaderGlassPill.swift in Sources */,
+				AC1147E0B100000000000202 /* AIChatEditHeaderView.swift in Sources */,
 				5AB12C3D4E5F60718293A4B5 /* AIChatHistoryViewController.swift in Sources */,
 				5AB12C3D4E5F60718293A4B7 /* AIChatHistoryEmptyStateView.swift in Sources */,
 				5AB12C3D4E5F60718293A4B9 /* AIChatHistoryViewModel.swift in Sources */,

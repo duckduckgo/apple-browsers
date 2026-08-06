@@ -451,7 +451,9 @@ private extension MainViewController {
     /// `applyEditModeToInput` so all edit-mode UI changes live in one place per layer.
     private func applyEditModeChrome(_ isEditing: Bool) {
         setDuckAITranscriptDimmedForEditing(isEditing)
-        aiChatTabChatHeaderView?.setEditMode(isEditing)
+        // Swap the normal header for the minimal edit header (both live in the same container).
+        aiChatTabChatHeaderView?.isHidden = isEditing
+        aiChatEditHeaderView?.isHidden = !isEditing
     }
 
     /// Whites out the Duck.ai transcript while editing so the edit input stands alone (per the
@@ -854,6 +856,20 @@ private extension MainViewController {
         )
         self.aiChatTabChatHeaderView = headerView
         viewCoordinator.aiChatTabChatHeaderView = headerView
+
+        // The edit header shares the container and swaps in over the normal header during edit mode.
+        let editHeaderView = AIChatEditHeaderView()
+        editHeaderView.delegate = self
+        editHeaderView.translatesAutoresizingMaskIntoConstraints = false
+        editHeaderView.isHidden = true
+        viewCoordinator.aiChatTabChatHeaderContainer.addSubview(editHeaderView)
+        NSLayoutConstraint.activate([
+            editHeaderView.topAnchor.constraint(equalTo: viewCoordinator.aiChatTabChatHeaderContainer.topAnchor),
+            editHeaderView.leadingAnchor.constraint(equalTo: viewCoordinator.aiChatTabChatHeaderContainer.leadingAnchor),
+            editHeaderView.trailingAnchor.constraint(equalTo: viewCoordinator.aiChatTabChatHeaderContainer.trailingAnchor),
+            editHeaderView.bottomAnchor.constraint(equalTo: viewCoordinator.aiChatTabChatHeaderContainer.bottomAnchor),
+        ])
+        self.aiChatEditHeaderView = editHeaderView
     }
 
     func refreshAIChatTabChatHeaderSubscriptionState() {
@@ -1458,7 +1474,12 @@ extension MainViewController: AIChatTabChatHeaderViewDelegate {
         requestTabSwitcher()
     }
 
-    func aiChatTabChatHeaderDidTapCancelEdit() {
+}
+
+// MARK: - AIChatEditHeaderViewDelegate
+
+extension MainViewController: AIChatEditHeaderViewDelegate {
+    func aiChatEditHeaderDidTapCancel() {
         unifiedToggleInputCoordinator?.endEditMode()
     }
 }

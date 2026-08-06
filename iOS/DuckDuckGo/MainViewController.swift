@@ -384,6 +384,8 @@ class MainViewController: UIViewController {
     var unifiedToggleInputFloatingReturnKeyKeyboardBottomConstraint: NSLayoutConstraint?
     var unifiedToggleInputFloatingReturnKeyInputTopConstraint: NSLayoutConstraint?
     var aiChatTabChatHeaderView: AIChatTabChatHeaderView?
+    /// Minimal header shown in place of `aiChatTabChatHeaderView` while editing a message.
+    var aiChatEditHeaderView: AIChatEditHeaderView?
 
     /// Tracks live Duck.ai voice sessions per tab. Created in `setUpDuckAIVoiceSessionTracker()`.
     var duckAIVoiceSessionTracker: DuckAIVoiceSessionTracker?

@@ -112,7 +112,10 @@ final class WebCacheManagerTests: XCTestCase {
         ])
 
         let cookieStore = MockHTTPCookieStore(cookies: [
-            .make(domain: "duckduckgo.com")
+            .make(domain: "duckduckgo.com"),
+            .make(domain: ".duckduckgo.com"),
+            .make(domain: "settings.duckduckgo.com"),
+            .make(domain: "example.com")
         ])
 
         let dataStore = MockDataStore()
@@ -127,8 +130,10 @@ final class WebCacheManagerTests: XCTestCase {
         await webCacheManager.clear()
 
         // Assertions after the async operation
-        XCTAssertEqual(cookieStore.cookies.count, 1)
+        XCTAssertEqual(cookieStore.cookies.count, 3)
         XCTAssertEqual(cookieStore.cookies[0].domain, "duckduckgo.com")
+        XCTAssertEqual(cookieStore.cookies[1].domain, ".duckduckgo.com")
+        XCTAssertEqual(cookieStore.cookies[2].domain, "settings.duckduckgo.com")
 
         XCTAssertEqual(dataStore.records.count, 1)
         XCTAssertEqual(dataStore.records.first?.displayName, "duckduckgo.com")
@@ -140,7 +145,10 @@ final class WebCacheManagerTests: XCTestCase {
         ])
 
         let cookieStore = MockHTTPCookieStore(cookies: [
-            .make(domain: "duck.ai")
+            .make(domain: "duck.ai"),
+            .make(domain: ".duck.ai"),
+            .make(domain: "chat.duck.ai"),
+            .make(domain: "example.com")
         ])
 
         let dataStore = MockDataStore()
@@ -155,8 +163,10 @@ final class WebCacheManagerTests: XCTestCase {
         await webCacheManager.clear()
 
         // Assertions after the async operation
-        XCTAssertEqual(cookieStore.cookies.count, 1)
+        XCTAssertEqual(cookieStore.cookies.count, 3)
         XCTAssertEqual(cookieStore.cookies[0].domain, "duck.ai")
+        XCTAssertEqual(cookieStore.cookies[1].domain, ".duck.ai")
+        XCTAssertEqual(cookieStore.cookies[2].domain, "chat.duck.ai")
 
         XCTAssertEqual(dataStore.records.count, 1)
         XCTAssertEqual(dataStore.records.first?.displayName, "duck.ai")

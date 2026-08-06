@@ -42,7 +42,12 @@ final class MacOSEventHubIntegration {
 
     private var cancellables = Set<AnyCancellable>()
 
-    init(privacyConfigurationManager: PrivacyConfigurationManaging, keyValueStore: ThrowingKeyValueStoring) {
+    /// - Parameter keyValueStore: `nil` if the dedicated store could not be opened; telemetry then runs
+    ///   in memory only.
+    init(privacyConfigurationManager: PrivacyConfigurationManaging, keyValueStore: ThrowingKeyValueStoring?) {
+        if keyValueStore == nil {
+            Logger.eventHub.error("Dedicated key value store unavailable — telemetry will not survive a restart")
+        }
         let parser = EventHubConfigParser()
         let store = EventHubKeyValueStore(store: keyValueStore, parser: parser)
 

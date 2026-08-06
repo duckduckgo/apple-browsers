@@ -1049,8 +1049,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                                                 uiHosting: { windowControllersManager.activeViewController },
                                                                                 isOnboardingCompletedProvider: { onboardingManager.state == .onboardingCompleted },
                                                                                 dockCustomization: dockCustomization)
-        eventHubIntegration = MacOSEventHubIntegration(privacyConfigurationManager: privacyConfigurationManager,
-                                                        keyValueStore: keyValueStore)
+        // Dedicated store: EventHub flushes often and `KeyValueFileStore.set` rewrites the whole file.
+        // `try?` — telemetry runs in memory rather than failing launch.
+        eventHubIntegration = MacOSEventHubIntegration(
+            privacyConfigurationManager: privacyConfigurationManager,
+            keyValueStore: try? KeyValueFileStore(location: URL.sandboxApplicationSupportURL, name: "EventHubKeyValueStore"))
 
         if AppVersion.runType.requiresEnvironment {
             remoteMessagingClient = RemoteMessagingClient(

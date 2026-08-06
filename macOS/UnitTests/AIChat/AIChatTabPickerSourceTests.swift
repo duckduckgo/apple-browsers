@@ -143,8 +143,12 @@ final class AIChatTabPickerSourceTests: XCTestCase {
 
     func testFireWindowOriginOffersOnlyItsOwnTabs() {
         let regular = regularCollection(urls: ["https://example.com"])
-        let burner = collection([.loaded(Tab(content: .url(URL(string: "https://fire.example")!, credential: nil, source: .ui)))],
-                                burnerMode: BurnerMode(isBurner: true))
+        // One BurnerMode value for both: each carries its own data store, and a collection whose tab
+        // has a different mode trips the burner-tab-management fatalError.
+        let burnerMode = BurnerMode(isBurner: true)
+        let fireTab = Tab(content: .url(URL(string: "https://fire.example")!, credential: nil, source: .ui),
+                          burnerMode: burnerMode)
+        let burner = collection([.loaded(fireTab)], burnerMode: burnerMode)
 
         let urls = attachableURLs(forOrigin: burner)
 

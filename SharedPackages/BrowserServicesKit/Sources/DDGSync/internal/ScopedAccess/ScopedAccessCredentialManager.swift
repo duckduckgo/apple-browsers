@@ -18,6 +18,7 @@
 
 import CryptoKit
 import Foundation
+import os.log
 
 enum ScopedAccessCredentialError: Error, Equatable {
     case missingThirdPartyCredential
@@ -79,6 +80,7 @@ struct ScopedAccessCredentialManager: ScopedAccessCredentialManaging {
         let storedKeys = try await fetchProtectedKeys(account)
         let storedAccountInfoKeys = protectedKeys(for: ProtectedKeyPurpose.accountInfo, in: storedKeys)
         guard storedAccountInfoKeys.isEmpty else {
+            Logger.sync.debug("Sync-UnifiedDevices: account_info key already exists")
             return storedAccountInfoKeys
         }
 
@@ -91,7 +93,14 @@ struct ScopedAccessCredentialManager: ScopedAccessCredentialManaging {
         }
         let keys = try accountInfoKeyFactory.makeProtectedKeys(accountSecretKey: account.secretKey,
                                                               thirdPartyMainKey: thirdPartyMainKey)
-        return try await setKeysIfAbsent(purpose: ProtectedKeyPurpose.accountInfo, keys: keys, for: account)
+        Logger.sync.debug("Sync-UnifiedDevices: registering account_info key")
+        let registeredKeys = try await setKeysIfAbsent(purpose: ProtectedKeyPurpose.accountInfo, keys: keys, for: account)
+        if keys.first?.kid == registeredKeys.first?.kid {
+            Logger.sync.debug("Sync-UnifiedDevices: registered new account_info key")
+        } else {
+            Logger.sync.debug("Sync-UnifiedDevices: adopted existing account_info key")
+        }
+        return registeredKeys
     }
 
     func makeRecoveryCode(for account: SyncAccount, scopedPassword: Data) -> String? {

@@ -1,30 +1,40 @@
 name: Shared - Merge Snapshots
 
 on:
-  pull_request:
+  pull_request_target:
     types: [labeled]
 
 jobs:
   merge-snapshots:
-    if: github.event.label.name == 'Merge snapshots'
+    if: github.event.label.name == 'Merge snapshots' && github.event.pull_request.head.repo.full_name == github.repository
     name: Merge snapshots PR and update pointer
     runs-on: ubuntu-latest
     permissions:
       contents: write
       pull-requests: write
     steps:
+      - name: Check out trusted automation
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: trusted
+          persist-credentials: false
+          sparse-checkout: scripts/merge-snapshots.sh
+
       - name: Check out the PR branch
         uses: actions/checkout@v6
         with:
-          ref: ${{ github.head_ref }}
+          ref: ${{ github.event.pull_request.head.sha }}
+          path: pull-request
           token: ${{ secrets.GHA_ELEVATED_PERMISSIONS_TOKEN }}
           persist-credentials: true
 
       - name: Merge snapshots PR and update pointer
         env:
           GH_TOKEN: ${{ secrets.GHA_ELEVATED_PERMISSIONS_TOKEN }}
-          PR_BRANCH: ${{ github.head_ref }}
-        run: ./scripts/merge-snapshots.sh "$PR_BRANCH"
+          PR_BRANCH: ${{ github.event.pull_request.head.ref }}
+        working-directory: pull-request
+        run: ../trusted/scripts/merge-snapshots.sh "$PR_BRANCH"
 
       - name: Remove the label
         if: success()

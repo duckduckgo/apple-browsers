@@ -91,10 +91,10 @@ extension OnboardingEndOfJourneyTryAIProvider: OnboardingEndOfJourneyTryAIConten
         }
 
         return OnboardingEndOfJourneyTryAIContent(
-            title: UserText.Onboarding.ContextualOnboarding.EndOFJourney.title,
-            message: UserText.Onboarding.ContextualOnboarding.EndOFJourney.message,
-            primaryCTA: UserText.Onboarding.ContextualOnboarding.EndOFJourney.primaryButton,
-            secondaryCTA: UserText.Onboarding.ContextualOnboarding.EndOFJourney.secondaryButton
+            title: UserText.Onboarding.ContextualOnboarding.EndOfJourneyTryAI.title,
+            message: UserText.Onboarding.ContextualOnboarding.EndOfJourneyTryAI.message,
+            primaryCTA: UserText.Onboarding.ContextualOnboarding.EndOfJourneyTryAI.primaryButton,
+            secondaryCTA: UserText.Onboarding.ContextualOnboarding.EndOfJourneyTryAI.secondaryButton
         )
     }
     

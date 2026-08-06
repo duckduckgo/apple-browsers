@@ -30,6 +30,18 @@ struct UTIWideEventSubmissionInputs {
     let fireMode: Bool
     let hasSubmittedPrompt: Bool
     let entryPoint: DuckAIPromptWideEventData.EntryPoint
+    /// The A2 entry source that opened the current Duck.ai surface, when known.
+    let entrySource: AIChatEntryPointSource?
+
+    /// How the user reached the surface: omnibar and contextual prompts are their own
+    /// entries; an AI-tab prompt inherits the entry that opened the tab.
+    func origin(for entryPoint: DuckAIPromptWideEventData.EntryPoint) -> AIChatEntryPointSource? {
+        switch entryPoint {
+        case .omnibar: return .addressBarPrompt
+        case .contextualChat: return .contextualChat
+        case .aiTab: return entrySource
+        }
+    }
 }
 
 /// Owns the omnibar UTI's Duck.ai wide-event firing: the submission / delivery records plus the
@@ -67,6 +79,7 @@ final class UTIWideEventReporter {
             userTier: inputs.userTier,
             reasoningEffort: reasoningEffort,
             entryPoint: inputs.entryPoint,
+            origin: inputs.origin(for: inputs.entryPoint),
             inputMode: inputMode,
             fireMode: inputs.fireMode,
             isFirstPrompt: !inputs.hasSubmittedPrompt,
@@ -100,6 +113,7 @@ final class UTIWideEventReporter {
             userTier: inputs.userTier,
             reasoningEffort: inputs.persistedReasoningEffort,
             entryPoint: entryPoint,
+            origin: inputs.origin(for: entryPoint),
             inputMode: inputMode,
             fireMode: inputs.fireMode,
             isFirstPrompt: isFirstPrompt,

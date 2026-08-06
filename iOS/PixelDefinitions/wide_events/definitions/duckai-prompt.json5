@@ -4,7 +4,7 @@
         "owners": ["samsymons"],
         "meta": {
             "type": "ios-duckai-prompt",
-            "version": "1.0"
+            "version": "2.0"
         },
         "feature": {
             "name": "duckai-prompt",
@@ -86,6 +86,31 @@
                                 "type": "string",
                                 "description": "Where the user composed and submitted the prompt. `omnibar` = browser address bar composer; `ai_tab` = dedicated Duck.ai tab composer; `contextual_chat` = contextual chat sheet opened from a regular web tab.",
                                 "enum": ["omnibar", "ai_tab", "contextual_chat"]
+                            },
+                            "origin": {
+                                "type": "string",
+                                "description": "How the user reached the surface the prompt was typed on, as opposed to entry_point, which is the surface itself. Omnibar and contextual prompts are their own entries; an ai_tab prompt inherits the m_aichat_entry_point source that opened the tab. Absent when the opening entry is unknown.",
+                                "enum": [
+                                    "address_bar_prompt",
+                                    "address_bar_icon",
+                                    "address_bar_shortcut_chip",
+                                    "address_bar_editing_state",
+                                    "suggestion_ask_ai",
+                                    "ipad_toggle_prompt",
+                                    "browsing_menu_ntp",
+                                    "browsing_menu_webpage",
+                                    "tab_switcher",
+                                    "tabs_bar_button",
+                                    "chat_history_new_chat",
+                                    "chat_history_open_chat",
+                                    "voice",
+                                    "onboarding",
+                                    "direct_url",
+                                    "icon_shortcut",
+                                    "restored_tab",
+                                    "contextual_chat",
+                                    "deep_link_other"
+                                ]
                             },
                             "input_mode": {
                                 "type": "string",

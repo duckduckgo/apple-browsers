@@ -212,6 +212,8 @@ class MainViewController: UIViewController {
     /// The entry whose duck.ai navigation `TabURLInterceptor` is about to cancel, so the
     /// re-entry reports that source instead of a second `direct_url`.
     private var interceptedDuckAIEntrySource: AIChatEntryPointSource?
+    /// The most recent Duck.ai entry, consumed as the `origin` of prompts sent on the opened surface.
+    private(set) var lastDuckAIEntrySource: AIChatEntryPointSource?
     let duckAIWideEventInstrumentation: DuckAIWideEventInstrumentation
     let syncAutoRestoreHandler: SyncAutoRestoreHandling
     private let lastActiveTabStore: LastActiveTabStoring
@@ -4194,11 +4196,20 @@ class MainViewController: UIViewController {
     }
 
     func fireAIChatEntryPointPixel(source: AIChatEntryPointSource, opensNewTab: Bool, hasPrompt: Bool) {
+        lastDuckAIEntrySource = source
         AIChatEntryPointPixel.fire(source: source,
                                    duckAIEnabled: aiChatSettings.isAIChatEnabled,
                                    toggleEnabled: aiChatSettings.isAIChatSearchInputUserSettingsEnabled,
                                    opensNewTab: opensNewTab,
                                    hasPrompt: hasPrompt)
+    }
+
+    /// The page the user is on when a prompt pixel needs `page_type`.
+    func currentPromptPageType() -> UnifiedToggleInputPromptPageType {
+        guard let tab = currentTab else { return .unknown }
+        if tab.isAITab { return .duckAI }
+        guard let url = tab.url else { return .ntp }
+        return url.isDuckDuckGoSearch ? .serp : .website
     }
 
     func onDuckAIVoiceModeRequested() {

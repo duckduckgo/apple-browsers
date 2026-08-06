@@ -357,12 +357,22 @@
         "parameters": ["appVersion"]
     },
     "m_aichat_unified_input_prompt_submitted": {
-        "description": "Fires on every UTI submission in the .aiChat branch, regardless of selected tool. Captures the full submit-time state of the input (tool, model, reasoning effort, attachments, text presence).",
-        "owners": ["pikorddg", "aataraxiaa"],
+        "description": "Fires on every UTI submission in the .aiChat branch, regardless of selected tool. Captures the full submit-time state of the input (tool, model, reasoning effort, attachments, text presence, page type, and the entry origin).",
+        "owners": ["pikorddg", "aataraxiaa", "fbunn"],
         "triggers": ["other"],
         "suffixes": ["daily_count", "platform", "form_factor"],
         "parameters": [
             "appVersion",
+            {
+                "key": "page_type",
+                "description": "The page the user was on when submitting: ntp, serp, website, duck_ai, contextual, or unknown",
+                "type": "string"
+            },
+            {
+                "key": "origin",
+                "description": "How the user reached the surface the prompt was typed on (an m_aichat_entry_point source value). Absent when the opening entry is unknown.",
+                "type": "string"
+            },
             "unified_input_surface",
             {
                 "key": "selected_tool",

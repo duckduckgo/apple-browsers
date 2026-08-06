@@ -60,6 +60,18 @@ enum UnifiedToggleInputPixelSurface: String {
     case contextualChat = "contextual_chat"
 }
 
+/// The page the user was on when submitting a prompt, sent as the `page_type` param.
+/// Distinct from `surface` (where the prompt was typed): an address-bar prompt can be
+/// typed over the NTP, a SERP, or a website.
+enum UnifiedToggleInputPromptPageType: String {
+    case ntp
+    case serp
+    case website
+    case duckAI = "duck_ai"
+    case contextual
+    case unknown
+}
+
 private enum UnifiedPromptSubmittedSelectedToolPixelValue: String {
     case webSearch = "web_search"
     case imageGeneration = "image_generation"
@@ -186,13 +198,15 @@ final class UnifiedToggleInputCoordinatorPixelHelper {
         reasoningMode: AIChatReasoningMode?,
         modelId: String?,
         surface: UnifiedToggleInputPixelSurface,
+        pageType: UnifiedToggleInputPromptPageType? = nil,
+        origin: AIChatEntryPointSource? = nil,
         firing: UTIPixelFiring = .live
     ) {
         let selectedToolValue = UnifiedPromptSubmittedSelectedToolPixelValue(selectedTool: selectedTool).rawValue
         let reasoningEffort = reasoningMode?.rawValue ?? "none"
         let modelId = modelId ?? ""
 
-        firing.fireDailyAndCount(.unifiedToggleInputPromptSubmitted, [
+        var parameters = [
             "selected_tool": selectedToolValue,
             "model_id": modelId,
             "reasoning_effort": reasoningEffort,
@@ -200,7 +214,11 @@ final class UnifiedToggleInputCoordinatorPixelHelper {
             "has_file_attachment": hasFileAttachment(in: attachments) ? "true" : "false",
             "has_text": hasText ? "true" : "false",
             "surface": surface.rawValue
-        ])
+        ]
+        parameters["page_type"] = pageType?.rawValue
+        parameters["origin"] = origin?.rawValue
+
+        firing.fireDailyAndCount(.unifiedToggleInputPromptSubmitted, parameters)
     }
 
     static func fireModelSelectedPixel(modelId: String, surface: UnifiedToggleInputPixelSurface, firing: UTIPixelFiring = .live) {

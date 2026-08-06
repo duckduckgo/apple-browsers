@@ -54,6 +54,9 @@ struct UTIPixelContext {
     let isDuckAISurfaceForAttribution: Bool
     let inputMode: TextEntryMode
     let isToggleVisible: Bool
+    let pageType: UnifiedToggleInputPromptPageType
+    /// The A2 entry source that opened the current Duck.ai surface, when known.
+    let duckAIEntrySource: AIChatEntryPointSource?
 }
 
 /// Owns the omnibar UTI's pixel firing. Resolves the surface (and the other live inputs) through a
@@ -204,8 +207,20 @@ final class UTIPixelReporter {
                 reasoningMode: reasoningMode,
                 modelId: modelId,
                 surface: $0.surface,
+                pageType: $0.pageType,
+                origin: Self.promptOrigin(for: $0),
                 firing: firing
             )
+        }
+    }
+
+    /// How the user reached the surface the prompt was typed on. Address-bar and contextual
+    /// prompts are their own entries; a Duck.ai-tab prompt inherits the entry that opened the tab.
+    static func promptOrigin(for context: UTIPixelContext) -> AIChatEntryPointSource? {
+        switch context.surface {
+        case .addressBar: return .addressBarPrompt
+        case .contextualChat: return .contextualChat
+        case .duckAI: return context.duckAIEntrySource
         }
     }
 

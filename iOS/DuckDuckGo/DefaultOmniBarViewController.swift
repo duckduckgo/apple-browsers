@@ -765,7 +765,8 @@ extension DefaultOmniBarViewController {
             attachments: attachments,
             reasoningMode: iPadReasoningModeForSubmitPixel,
             modelId: modelPickerController?.currentModelId,
-            surface: .addressBar
+            surface: .addressBar,
+            origin: .ipadTogglePrompt
         )
         UnifiedToggleInputCoordinatorPixelHelper.fireToolSubmittedPixelIfNeeded(
             selectedTool: selectedTool,

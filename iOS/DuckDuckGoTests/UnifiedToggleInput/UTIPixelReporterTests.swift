@@ -51,11 +51,15 @@ final class UTIPixelReporterTests: XCTestCase {
     private func context(surface: UnifiedToggleInputPixelSurface = .addressBar,
                          isDuckAISurfaceForAttribution: Bool = false,
                          inputMode: TextEntryMode = .search,
-                         isToggleVisible: Bool = false) -> UTIPixelContext {
+                         isToggleVisible: Bool = false,
+                         pageType: UnifiedToggleInputPromptPageType = .unknown,
+                         duckAIEntrySource: AIChatEntryPointSource? = nil) -> UTIPixelContext {
         UTIPixelContext(surface: surface,
                         isDuckAISurfaceForAttribution: isDuckAISurfaceForAttribution,
                         inputMode: inputMode,
-                        isToggleVisible: isToggleVisible)
+                        isToggleVisible: isToggleVisible,
+                        pageType: pageType,
+                        duckAIEntrySource: duckAIEntrySource)
     }
 
     // MARK: - Omnibar surface shown (toggle visibility from live context)
@@ -112,7 +116,7 @@ final class UTIPixelReporterTests: XCTestCase {
     // MARK: - Prompt submission (daily, non-trivial params)
 
     func testReportPromptSubmittedFiresDailyWithResolvedSurface() {
-        let reporter = makeReporter { self.context(surface: .duckAI) }
+        let reporter = makeReporter { self.context(surface: .duckAI, pageType: .duckAI, duckAIEntrySource: .addressBarIcon) }
 
         reporter.reportPromptSubmitted(hasText: true,
                                        selectedTool: nil,
@@ -128,8 +132,35 @@ final class UTIPixelReporterTests: XCTestCase {
             "has_image_attachment": "false",
             "has_file_attachment": "false",
             "has_text": "true",
-            "surface": "duck_ai"
+            "surface": "duck_ai",
+            "page_type": "duck_ai",
+            "origin": "address_bar_icon"
         ])
+    }
+
+    func testWhenPromptSubmittedFromAddressBarThenOriginIsAddressBarPrompt() {
+        let reporter = makeReporter { self.context(surface: .addressBar, pageType: .serp) }
+
+        reporter.reportPromptSubmitted(hasText: true,
+                                       selectedTool: nil,
+                                       attachments: [],
+                                       reasoningMode: nil,
+                                       modelId: nil)
+
+        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.params?["origin"], "address_bar_prompt")
+        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.params?["page_type"], "serp")
+    }
+
+    func testWhenPromptSubmittedOnDuckAITabWithUnknownEntryThenOriginIsAbsent() {
+        let reporter = makeReporter { self.context(surface: .duckAI, pageType: .duckAI) }
+
+        reporter.reportPromptSubmitted(hasText: true,
+                                       selectedTool: nil,
+                                       attachments: [],
+                                       reasoningMode: nil,
+                                       modelId: nil)
+
+        XCTAssertNil(PixelFiringMock.lastDailyPixelInfo?.params?["origin"])
     }
 
     // MARK: - Regular pixel with surface from context

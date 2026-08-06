@@ -205,6 +205,16 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     var switchBarHandler: SwitchBarHandling { viewController.handler }
     var onAnimatedDismissToOmnibar: ((_ completion: (() -> Void)?) -> Void)?
 
+    /// Supplied by the host: the page the user is on when a prompt pixel needs `page_type`.
+    var pageTypeProvider: (() -> UnifiedToggleInputPromptPageType?)?
+    /// Supplied by the host: the A2 entry source that opened the current Duck.ai surface.
+    var duckAIEntrySourceProvider: (() -> AIChatEntryPointSource?)?
+
+    private var resolvedPromptPageType: UnifiedToggleInputPromptPageType {
+        if host == .contextualChat { return .contextual }
+        return pageTypeProvider?() ?? .unknown
+    }
+
     var isOmnibarSession: Bool { stateMachine.isOmnibarSession }
     var isAITabState: Bool { stateMachine.isAITabState }
     var isAITabExpanded: Bool { stateMachine.isAITabExpanded }
@@ -362,7 +372,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                 surface: self.pixelSurface,
                 isDuckAISurfaceForAttribution: self.isDuckAISurfaceForAttribution,
                 inputMode: self.inputMode,
-                isToggleVisible: self.isToggleVisible
+                isToggleVisible: self.isToggleVisible,
+                pageType: self.resolvedPromptPageType,
+                duckAIEntrySource: self.duckAIEntrySourceProvider?()
             )
         })
         wideEventReporter = UTIWideEventReporter(
@@ -376,7 +388,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                     persistedReasoningEffort: self.persistedReasoningEffort,
                     fireMode: self.viewController.handler.isFireTab,
                     hasSubmittedPrompt: self.hasSubmittedPrompt,
-                    entryPoint: self.duckAIEntryPoint
+                    entryPoint: self.duckAIEntryPoint,
+                    entrySource: self.duckAIEntrySourceProvider?()
                 )
             }
         )

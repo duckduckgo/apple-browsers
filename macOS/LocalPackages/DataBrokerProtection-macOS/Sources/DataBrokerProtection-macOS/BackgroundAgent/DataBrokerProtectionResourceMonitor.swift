@@ -39,11 +39,7 @@ public struct DataBrokerProtectionResourceSnapshot: Equatable, Sendable {
 
 public protocol DataBrokerProtectionResourceMonitoring: AnyObject {
     var debugResourceUsage: DBPDebugResourceUsage { get }
-
-    @MainActor
     func start()
-
-    @MainActor
     func stop()
 }
 
@@ -86,11 +82,10 @@ private struct MemoryMeasurement {
     let webContentProcessCount: Int?
 }
 
-/// Monitors one accepted PIR queue run. CPU counters are sampled every 10 seconds and accumulated
-/// for the agent and its live WebContent processes; memory is sampled when a snapshot is published.
-/// The first snapshot is published after 10 seconds, then every 60 seconds, and once when the run ends.
-@MainActor
-public final class DataBrokerProtectionResourceMonitor: DataBrokerProtectionResourceMonitoring {
+/// Monitors one accepted PIR queue run on a dedicated serial queue. CPU counters are sampled every
+/// 10 seconds; memory is sampled when publishing after 10 seconds, every 60 seconds, and at run end.
+/// Only WebKit PID discovery hops to the main queue because WebKit owns those proxy objects there.
+public final class DataBrokerProtectionResourceMonitor: DataBrokerProtectionResourceMonitoring, @unchecked Sendable {
 
     private enum Constants {
         static let cpuSampleIntervalNanoseconds = UInt64(10) * NSEC_PER_SEC
@@ -99,16 +94,18 @@ public final class DataBrokerProtectionResourceMonitor: DataBrokerProtectionReso
         static let bytesPerGibibyte = Double(1 << 30)
     }
 
-    public private(set) var latestSnapshot: DataBrokerProtectionResourceSnapshot?
-    public private(set) var isMonitoring = false
-
-    public nonisolated var debugResourceUsage: DBPDebugResourceUsage {
+    public var debugResourceUsage: DBPDebugResourceUsage {
         resourceUsageStore.get()
     }
 
-    private nonisolated let resourceUsageStore = ResourceUsageStore()
-    private var monitoringTask: Task<Void, Never>?
+    // Mutable monitoring state is accessed only on this queue; debug reads use the locked store above.
+    private let monitorQueue = DispatchQueue(label: "com.duckduckgo.pir.resource-monitor", qos: .utility)
+    private let resourceUsageStore = ResourceUsageStore()
+    private var monitoringTimer: DispatchSourceTimer?
     private var memoryPressureSource: DispatchSourceMemoryPressure?
+    private var latestSnapshot: DataBrokerProtectionResourceSnapshot?
+    private var isMonitoring = false
+    private var cpuSampleIndex = 0
     private var previousAgentUsage: ProcessCPUUsage?
     // Retaining the last reading across disappearance avoids resetting a temporarily undiscovered process.
     private var previousWebContentUsages: [ProcessIdentity: ProcessCPUUsage] = [:]
@@ -125,6 +122,18 @@ public final class DataBrokerProtectionResourceMonitor: DataBrokerProtectionReso
     public init() {}
 
     public func start() {
+        monitorQueue.async { [weak self] in
+            self?.startMonitoring()
+        }
+    }
+
+    public func stop() {
+        monitorQueue.async { [weak self] in
+            self?.stopMonitoring()
+        }
+    }
+
+    private func startMonitoring() {
         guard !isMonitoring else { return }
 
         resetRunState()
@@ -143,31 +152,30 @@ public final class DataBrokerProtectionResourceMonitor: DataBrokerProtectionReso
         updateCPUProcessCounts(with: initialCPUMeasurement)
         updateMemoryPeaks(with: collectMemoryMeasurement())
 
-        monitoringTask = Task { [weak self] in
-            do {
-                var cpuSampleIndex = 0
-                while !Task.isCancelled {
-                    try await Task.sleep(nanoseconds: Constants.cpuSampleIntervalNanoseconds)
-                    try Task.checkCancellation()
-                    self?.sampleCPU()
-                    if cpuSampleIndex.isMultiple(of: Constants.cpuSamplesPerReport) {
-                        self?.publishSnapshot()
-                    }
-                    cpuSampleIndex += 1
-                }
-            } catch {
-                return
+        let timer = DispatchSource.makeTimerSource(queue: monitorQueue)
+        timer.schedule(
+            deadline: .now() + .nanoseconds(Int(Constants.cpuSampleIntervalNanoseconds)),
+            repeating: .nanoseconds(Int(Constants.cpuSampleIntervalNanoseconds))
+        )
+        timer.setEventHandler { [weak self] in
+            guard let self else { return }
+            self.sampleCPU()
+            if self.cpuSampleIndex.isMultiple(of: Constants.cpuSamplesPerReport) {
+                self.publishSnapshot()
             }
+            self.cpuSampleIndex += 1
         }
+        timer.resume()
+        monitoringTimer = timer
     }
 
-    public func stop() {
+    private func stopMonitoring() {
         guard isMonitoring else { return }
 
         sampleCPU()
         publishSnapshot()
-        monitoringTask?.cancel()
-        monitoringTask = nil
+        monitoringTimer?.cancel()
+        monitoringTimer = nil
         memoryPressureSource?.cancel()
         memoryPressureSource = nil
         isMonitoring = false
@@ -180,6 +188,7 @@ public final class DataBrokerProtectionResourceMonitor: DataBrokerProtectionReso
     private func resetRunState() {
         previousAgentUsage = nil
         previousWebContentUsages = [:]
+        cpuSampleIndex = 0
         accumulatedAgentCPUTimeNanoseconds = 0
         accumulatedWebContentCPUTimeNanoseconds = 0
         runStartAbsoluteTime = nil
@@ -306,7 +315,7 @@ public final class DataBrokerProtectionResourceMonitor: DataBrokerProtectionReso
     }
 
     private func startMemoryPressureMonitoring() {
-        let source = DispatchSource.makeMemoryPressureSource(eventMask: .critical, queue: .main)
+        let source = DispatchSource.makeMemoryPressureSource(eventMask: .critical, queue: monitorQueue)
         source.setEventHandler { [weak self, weak source] in
             guard source?.data.contains(.critical) == true else { return }
             // Pressure is event-based, so keep it set for the remainder of this run.
@@ -392,27 +401,34 @@ public final class DataBrokerProtectionResourceMonitor: DataBrokerProtectionReso
 
     private static func webContentProcessIdentifiers() -> [pid_t]? {
         let processInfoSelector = Selector(("_webContentProcessInfo"))
-        guard WKProcessPool.responds(to: processInfoSelector) else { return nil }
-
         let pidSelector = Selector(("pid"))
-        return autoreleasepool {
-            guard let processInfoList = WKProcessPool.perform(processInfoSelector)?
-                .takeUnretainedValue() as? [NSObject] else {
-                return nil
-            }
-            return processInfoList.compactMap { processInfo in
-                guard processInfo.responds(to: pidSelector),
-                      let pid = processInfo.value(forKey: "pid") as? pid_t,
-                      pid > 0 else {
+        let collectProcessIdentifiers: () -> [pid_t]? = {
+            autoreleasepool {
+                guard WKProcessPool.responds(to: processInfoSelector) else { return nil }
+                guard let processInfoList = WKProcessPool.perform(processInfoSelector)?
+                    .takeUnretainedValue() as? [NSObject] else {
                     return nil
                 }
-                return pid
+                return processInfoList.compactMap { processInfo in
+                    guard processInfo.responds(to: pidSelector),
+                          let pid = processInfo.value(forKey: "pid") as? pid_t,
+                          pid > 0 else {
+                        return nil
+                    }
+                    return pid
+                }
             }
         }
+
+        // WebKit owns these unretained proxy objects on the main thread. The monitor queue is never
+        // synchronously awaited, so this main-queue hop cannot form a queue-to-main deadlock.
+        return Thread.isMainThread
+            ? collectProcessIdentifiers()
+            : DispatchQueue.main.sync(execute: collectProcessIdentifiers)
     }
 
     deinit {
-        monitoringTask?.cancel()
+        monitoringTimer?.cancel()
         memoryPressureSource?.cancel()
     }
 }

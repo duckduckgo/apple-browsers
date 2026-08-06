@@ -407,15 +407,11 @@ extension DataBrokerProtectionAgentManager: JobQueueManagerDelegate {
     }
 
     public func queueManagerDidStartOperations(_ queueManager: JobQueueManaging) {
-        Task { @MainActor [weak self] in
-            self?.resourceMonitor?.start()
-        }
+        resourceMonitor?.start()
     }
 
     public func queueManagerDidFinishOperations(_ queueManager: JobQueueManaging) {
-        Task { @MainActor [weak self] in
-            self?.resourceMonitor?.stop()
-        }
+        resourceMonitor?.stop()
     }
 
     public func queueManagerDidCompleteIndividualJob(_ queueManager: any DataBrokerProtectionCore.JobQueueManaging, identifier: CompletedJobIdentifier?) {

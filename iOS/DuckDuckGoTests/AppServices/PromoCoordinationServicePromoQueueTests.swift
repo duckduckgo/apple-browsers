@@ -89,35 +89,6 @@ final class PromoCoordinationServicePromoQueueTests {
         #expect(snapshot.activeVisiblePromoLeaseCount == 0)
     }
 
-    @available(iOS 16, *)
-    @Test("Every Modal Admission Denied By A Remote Message Is Reported", .timeLimit(.minutes(1)))
-    func whenVisibleRemoteMessageOwnsSlotThenEveryModalDenialIsReported() {
-        featureFlaggerMock.enabledFeatureFlags = [.promoPresentationCoordination]
-        launchSourceManagerMock.source = .standard
-        presenterMock.presentedViewController = nil
-        let pixelReporter = MockPromoQueuePixelReporter()
-        let visibleIdentity = VisiblePromoIdentity(surfaceID: UUID(), promoType: .remoteMessage, promoID: "rmf")
-        guard case .acquired(let visibleLease) = promoQueueLeaseArbiter.acquireVisiblePromoLease(for: visibleIdentity) else {
-            Issue.record("Expected visible promo lease acquisition")
-            return
-        }
-        sut = PromoCoordinationService(
-            launchSourceManager: launchSourceManagerMock,
-            modalPromptCoordinationManager: managerMock,
-            featureFlagger: featureFlaggerMock,
-            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
-            promoQueuePixelReporter: pixelReporter
-        )
-
-        sut.presentModalPromptIfNeeded(from: presenterMock)
-        sut.presentModalPromptIfNeeded(from: presenterMock)
-
-        #expect(pixelReporter.modalAdmissionBlockedByRemoteMessageCount == 2)
-        #expect(pixelReporter.remoteMessageAdmissionBlockedByModalCount == 0)
-        #expect(!managerMock.didCallPresentModalPromptIfNeeded)
-        _ = visibleLease
-    }
-
     // MARK: - Promo Queue Admission
 
     // The arbiter reclaims a lease whose token has deallocated, so a test that needs a lease to keep holding its slot
@@ -911,18 +882,5 @@ private extension PromoQueueFeatureTargetState {
         case .disabled: return "disable"
         case .enabled: return "enable"
         }
-    }
-}
-
-private final class MockPromoQueuePixelReporter: PromoQueuePixelReporting {
-    private(set) var modalAdmissionBlockedByRemoteMessageCount = 0
-    private(set) var remoteMessageAdmissionBlockedByModalCount = 0
-
-    func fireModalAdmissionBlockedByRemoteMessage() {
-        modalAdmissionBlockedByRemoteMessageCount += 1
-    }
-
-    func fireRemoteMessageAdmissionBlockedByModal() {
-        remoteMessageAdmissionBlockedByModalCount += 1
     }
 }

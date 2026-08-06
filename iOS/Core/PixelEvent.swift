@@ -992,8 +992,6 @@ extension Pixel {
 
         case debugPromptCoordinationFailedToSaveLastPresentationDate
         case debugPromptCoordinationFailedToRetrieveLastPresentationDate
-        case promoQueueModalAdmissionBlockedByRemoteMessage
-        case promoQueueRemoteMessageAdmissionBlockedByModal
 
         // Return user measurement
         case debugReturnUserAddATB
@@ -3071,8 +3069,6 @@ extension Pixel.Event {
 
         case .debugPromptCoordinationFailedToSaveLastPresentationDate: return "m_debug_prompt-coordination_failed-to-save_last-presentation-date"
         case .debugPromptCoordinationFailedToRetrieveLastPresentationDate: return "m_debug_prompt-coordination_failed-to-retrieve_last-presentation-date"
-        case .promoQueueModalAdmissionBlockedByRemoteMessage: return "m_promo-queue_modal-admission-blocked-by-remote-message"
-        case .promoQueueRemoteMessageAdmissionBlockedByModal: return "m_promo-queue_remote-message-admission-blocked-by-modal"
 
             // MARK: Ad Attribution
 

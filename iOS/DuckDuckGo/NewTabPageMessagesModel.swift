@@ -113,7 +113,6 @@ final class NewTabPageMessagesModel: ObservableObject {
     private let imageLoader: RemoteMessagingImageLoading
     private let pixelReporter: RemoteMessagingPixelReporting?
     private let promoCoordinator: NewTabPagePromoCoordinating
-    private let promoQueuePixelReporter: PromoQueuePixelReporting
     private let isOpenedAfterIdle: () -> Bool
 
     // MARK: - Initialization
@@ -127,7 +126,6 @@ final class NewTabPageMessagesModel: ObservableObject {
          imageLoader: RemoteMessagingImageLoading,
          pixelReporter: RemoteMessagingPixelReporting? = nil,
          promoCoordinator: NewTabPagePromoCoordinating,
-         promoQueuePixelReporter: PromoQueuePixelReporting = PromoQueuePixelReporter(),
          isOpenedAfterIdle: @escaping () -> Bool = { false }) {
         self.homePageMessagesConfiguration = homePageMessagesConfiguration
         self.surfaceID = surfaceID
@@ -138,7 +136,6 @@ final class NewTabPageMessagesModel: ObservableObject {
         self.imageLoader = imageLoader
         self.pixelReporter = pixelReporter
         self.promoCoordinator = promoCoordinator
-        self.promoQueuePixelReporter = promoQueuePixelReporter
         self.isOpenedAfterIdle = isOpenedAfterIdle
     }
 
@@ -613,10 +610,7 @@ final class NewTabPageMessagesModel: ObservableObject {
             )
             publishRenderItems()
 
-        case .blockedByModal:
-            promoQueuePixelReporter.fireRemoteMessageAdmissionBlockedByModal()
-
-        case .occupiedSurfaceSlot, .featureDisabled, .unavailableDuringTransition:
+        case .blockedByModal, .occupiedSurfaceSlot, .featureDisabled, .unavailableDuringTransition:
             break
         }
     }

@@ -44,17 +44,6 @@ class PixelTests: XCTestCase {
         super.tearDown()
     }
 
-    func testPromoQueuePixelEventNames() {
-        XCTAssertEqual(
-            Pixel.Event.promoQueueModalAdmissionBlockedByRemoteMessage.name,
-            "m_promo-queue_modal-admission-blocked-by-remote-message"
-        )
-        XCTAssertEqual(
-            Pixel.Event.promoQueueRemoteMessageAdmissionBlockedByModal.name,
-            "m_promo-queue_remote-message-admission-blocked-by-modal"
-        )
-    }
-
     func testUnifiedToggleInputPixelEventNames() {
         let expectedNames: [(Pixel.Event, String)] = [
             (.unifiedToggleInputImageGenerationSelected, "m_aichat_unified_input_image_generation_selected"),

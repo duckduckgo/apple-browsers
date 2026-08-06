@@ -53,37 +53,6 @@ protocol PromoQueueDebugSnapshotProviding: AnyObject {
     var promoQueueDebugSnapshot: PromoQueueDebugSnapshot { get }
 }
 
-// MARK: - Promo Queue Pixel Reporting
-
-protocol PromoQueuePixelReporting {
-    func fireModalAdmissionBlockedByRemoteMessage()
-    func fireRemoteMessageAdmissionBlockedByModal()
-}
-
-struct PromoQueuePixelReporter: PromoQueuePixelReporting {
-    private let dailyPixelFiring: DailyPixelFiring.Type
-
-    init(dailyPixelFiring: DailyPixelFiring.Type = DailyPixel.self) {
-        self.dailyPixelFiring = dailyPixelFiring
-    }
-
-    func fireModalAdmissionBlockedByRemoteMessage() {
-        dailyPixelFiring.fireDailyAndCount(
-            .promoQueueModalAdmissionBlockedByRemoteMessage,
-            error: nil,
-            withAdditionalParameters: [:]
-        )
-    }
-
-    func fireRemoteMessageAdmissionBlockedByModal() {
-        dailyPixelFiring.fireDailyAndCount(
-            .promoQueueRemoteMessageAdmissionBlockedByModal,
-            error: nil,
-            withAdditionalParameters: [:]
-        )
-    }
-}
-
 // MARK: - Service
 
 struct ModalPromptProviders {
@@ -118,7 +87,6 @@ final class PromoCoordinationService {
     private let launchSourceManager: LaunchSourceManaging
     private let promoQueueLeaseArbiter: PromoQueueLeaseArbitrating
     private let featureFlagger: FeatureFlagger
-    private let promoQueuePixelReporter: PromoQueuePixelReporting
     private var promoQueueFeatureStateCancellable: AnyCancellable?
     private var pendingPromoQueueFeatureTargetState: PromoQueueFeatureTargetState?
     private var promoRetryRegistrations = [WeakPromoRetryRegistration]()
@@ -134,8 +102,7 @@ final class PromoCoordinationService {
         privacyConfigManager: PrivacyConfigurationManaging,
         providers: ModalPromptProviders,
         featureFlagger: FeatureFlagger,
-        promoQueueLeaseArbiter: PromoQueueLeaseArbitrating,
-        promoQueuePixelReporter: PromoQueuePixelReporting = PromoQueuePixelReporter()
+        promoQueueLeaseArbiter: PromoQueueLeaseArbitrating
     ) {
 
         // Providers are sort from highest to lowest priority, with item at index 0 being the highest priority.
@@ -174,8 +141,7 @@ final class PromoCoordinationService {
             launchSourceManager: launchSourceManager,
             modalPromptCoordinationManager: modalPromptCoordinationManager,
             featureFlagger: featureFlagger,
-            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
-            promoQueuePixelReporter: promoQueuePixelReporter
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter
         )
     }
 
@@ -183,14 +149,12 @@ final class PromoCoordinationService {
         launchSourceManager: LaunchSourceManaging,
         modalPromptCoordinationManager: ModalPromptCoordinationManaging,
         featureFlagger: FeatureFlagger,
-        promoQueueLeaseArbiter: PromoQueueLeaseArbitrating,
-        promoQueuePixelReporter: PromoQueuePixelReporting = PromoQueuePixelReporter()
+        promoQueueLeaseArbiter: PromoQueueLeaseArbitrating
     ) {
         self.launchSourceManager = launchSourceManager
         self.modalPromptCoordinationManager = modalPromptCoordinationManager
         self.featureFlagger = featureFlagger
         self.promoQueueLeaseArbiter = promoQueueLeaseArbiter
-        self.promoQueuePixelReporter = promoQueuePixelReporter
 
         let initialTargetState = PromoQueueFeatureTargetState(isEnabled: featureFlagger.isFeatureOn(.promoPresentationCoordination))
         let initialFeatureState = PromoQueueFeatureState(targetState: initialTargetState)
@@ -266,11 +230,8 @@ final class PromoCoordinationService {
             }
         case .blockedByModal:
             Logger.modalPrompt.debug("[Modal Prompt Coordination] - Skipping modal prompt - A coordinated modal attempt already owns the slot.")
-        case .blockedByVisiblePromos(let identities):
+        case .blockedByVisiblePromos:
             Logger.modalPrompt.debug("[Modal Prompt Coordination] - Skipping modal prompt - One or more visible promos own the slot.")
-            if identities.contains(where: { $0.promoType == .remoteMessage }) {
-                promoQueuePixelReporter.fireModalAdmissionBlockedByRemoteMessage()
-            }
         }
     }
 

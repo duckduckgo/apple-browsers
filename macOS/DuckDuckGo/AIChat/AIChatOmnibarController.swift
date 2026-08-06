@@ -106,6 +106,12 @@ final class AIChatOmnibarController {
     private var aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable {
         injectedAIChatMenuConfiguration ?? NSApp.delegateTyped.aiChatMenuConfiguration
     }
+    private lazy var attachedTabsTracker = AIChatAttachedTabsTracker(
+        origin: origin,
+        automaticallySendsPageContext: { [weak self] in
+            self?.aiChatMenuConfiguration.shouldAutomaticallySendPageContext ?? false
+        }
+    )
     private var preferences: AIChatPreferencesPersisting
     private var cancellables = Set<AnyCancellable>()
     private var draftStoreCancellable: AnyCancellable?
@@ -153,23 +159,6 @@ final class AIChatOmnibarController {
     /// Cancellable for the active tab's `$aiChatPanelAttachments` subscription. Re-subscribed
     /// every time the selected tab changes.
     private var panelAttachmentsCancellable: AnyCancellable?
-
-    /// Keyed by store too: an attachment belongs to the prompt's tab, not the selected one.
-    private var attachedTabObservers: [AttachedTabObserverKey: AttachedTabObserver] = [:]
-
-    private struct AttachedTabObserverKey: Hashable {
-        let store: ObjectIdentifier
-        let tabId: String
-    }
-
-    private struct AttachedTabObserver {
-        weak var store: (any DuckAIPromptDraftStoring)?
-        /// Suspending a tab swaps the `Tab` behind the same uuid, stranding the old subscription.
-        weak var tab: Tab?
-        let cancellable: AnyCancellable
-        /// While set, a URL change is that load settling (redirect, committed URL), not a page change.
-        var isSettlingLoadFromAttachTime: Bool
-    }
 
     /// View model for managing chat suggestions. Always initialized, but only populated when feature flag is enabled.
     let suggestionsViewModel: AIChatSuggestionsViewModel
@@ -329,7 +318,6 @@ final class AIChatOmnibarController {
         subscribeToDraftSource()
         subscribeToTextChangesForSuggestions()
         subscribeToToolModeChangesForDraftStore()
-        subscribeToTabClosures()
     }
 
     /// Opens a voice chat. Focuses an existing voice session in the origin window when there is one;
@@ -861,158 +849,7 @@ final class AIChatOmnibarController {
     /// Called by the container VC whenever the tab attachment list changes (toggle from menu, removal from carousel).
     func persistTabAttachmentsToActiveTab(_ attachments: [AIChatTabAttachment]) {
         draftStore?.setAIChatTabAttachments(attachments)
-        syncAttachedTabObservers()
-    }
-
-    /// A closed tab has no page content left to send, in any of the window's prompts.
-    private func subscribeToTabClosures() {
-        guard let collection = origin?.originTabCollectionViewModel else { return }
-        let pinnedTabs = collection.pinnedTabsCollection?.$tabs.eraseToAnyPublisher()
-            ?? Just([]).eraseToAnyPublisher()
-        Publishers.CombineLatest(collection.tabCollection.$tabs, pinnedTabs)
-            // Moves between the two collections are two mutations; read the lists once both landed.
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _, _ in
-                self?.dropAttachmentsForClosedTabs()
-            }
-            .store(in: &cancellables)
-    }
-
-    private func dropAttachmentsForClosedTabs() {
-        guard let collection = origin?.originTabCollectionViewModel else { return }
-        let openTabIds = Set(((collection.pinnedTabsCollection?.tabs ?? []) + collection.tabCollection.tabs).map(\.uuid))
-        var stores: [any DuckAIPromptDraftStoring] = attachedTabObservers.values.compactMap(\.store)
-        if let draftStore {
-            stores.append(draftStore)
-        }
-        for store in stores {
-            let remaining = store.aiChatTabAttachments.filter { openTabIds.contains($0.id) }
-            guard remaining.count != store.aiChatTabAttachments.count else { continue }
-            store.setAIChatTabAttachments(remaining)
-        }
-        syncAttachedTabObservers()
-    }
-
-    /// Observers for other drafts keep running; a newly observed tab is reconciled right after.
-    private func syncAttachedTabObservers() {
-        attachedTabObservers = attachedTabObservers.filter { key, observer in
-            observer.tab != nil && observer.store?.aiChatTabAttachments.contains { $0.id == key.tabId } ?? false
-        }
-
-        guard let store = draftStore, let collection = origin?.originTabCollectionViewModel else { return }
-        for attachment in store.aiChatTabAttachments {
-            let key = AttachedTabObserverKey(store: ObjectIdentifier(store), tabId: attachment.id)
-            guard let tab = loadedTab(withId: attachment.id, in: collection),
-                  attachedTabObservers[key]?.tab !== tab else { continue }
-
-            // `dropFirst`: store the observer before any policy runs, or a re-sync subscribes twice.
-            let cancellable = Publishers.CombineLatest4(tab.$content, tab.$title, tab.$favicon, tab.$isLoading)
-                .dropFirst()
-                .sink { [weak self, weak store] content, title, favicon, isLoading in
-                    guard let self, let store else { return }
-                    let isSettling = self.attachedTabObservers[key]?.isSettlingLoadFromAttachTime ?? false
-                    if isSettling, !isLoading {
-                        self.attachedTabObservers[key]?.isSettlingLoadFromAttachTime = false
-                    }
-                    self.applyNavigationPolicy(forAttachedTabId: attachment.id, in: store,
-                                               content: content, title: title, favicon: favicon,
-                                               isSettlingLoadFromAttachTime: isSettling)
-                }
-            attachedTabObservers[key] = AttachedTabObserver(store: store,
-                                                            tab: tab,
-                                                            cancellable: cancellable,
-                                                            isSettlingLoadFromAttachTime: tab.isLoading)
-            applyNavigationPolicy(forAttachedTabId: attachment.id, in: store,
-                                  content: tab.content, title: tab.title, favicon: tab.favicon,
-                                  isSettlingLoadFromAttachTime: tab.isLoading)
-        }
-    }
-
-    /// Suspended tabs are skipped: they can't navigate, and the tab-list watch re-observes on resume.
-    private func loadedTab(withId id: String, in collection: TabCollectionViewModel) -> Tab? {
-        let allTabs = (collection.pinnedTabsCollection?.tabs ?? []) + collection.tabCollection.tabs
-        return allTabs.lazy.compactMap { anyTab -> Tab? in
-            guard case .loaded(let tab) = anyTab, tab.uuid == id else { return nil }
-            return tab
-        }.first
-    }
-
-    /// `store` is the prompt's own store, which is not necessarily the active one.
-    private func applyNavigationPolicy(forAttachedTabId id: String,
-                                       in store: any DuckAIPromptDraftStoring,
-                                       content: Tab.TabContent,
-                                       title: String?,
-                                       favicon: NSImage?,
-                                       isSettlingLoadFromAttachTime: Bool) {
-        var current = store.aiChatTabAttachments
-        guard let index = current.firstIndex(where: { $0.id == id }) else { return }
-
-        let action = AIChatAttachedTabNavigationPolicy.action(
-            for: current[index],
-            content: content,
-            title: title,
-            favicon: favicon,
-            isSettlingLoadFromAttachTime: isSettlingLoadFromAttachTime,
-            automaticallySendsPageContext: aiChatMenuConfiguration.shouldAutomaticallySendPageContext
-        )
-        switch action {
-        case .keep:
-            return
-        case .drop:
-            current.remove(at: index)
-        case .refresh(let refreshed):
-            current[index] = refreshed
-        }
-        store.setAIChatTabAttachments(current)
-        syncAttachedTabObservers()
-    }
-
-    /// The tab attachments persisted for the current tab, or an empty list if none / no shared state.
-    var activeTabAttachments: [AIChatTabAttachment] {
-        draftStore?.aiChatTabAttachments ?? []
-    }
-
-    /// The unified, insertion-ordered attachments list for the current tab — both image
-    /// uploads and page-content tabs interleaved in the order the user attached them.
-    var activePanelAttachments: [AIChatPanelAttachment] {
-        draftStore?.aiChatPanelAttachments ?? []
-    }
-
-    /// Toggles whether a tab is attached to the current tab's prompt:
-    /// adds the attachment if absent, removes it if already present (matched by `id`).
-    /// Persists the resulting list to shared state — the unified-attachments publisher then
-    /// fires `onActiveTabPanelAttachmentsChanged`, which drives the carousel.
-    func toggleTabAttachment(_ attachment: AIChatTabAttachment) {
-        var current = activeTabAttachments
-        if let index = current.firstIndex(where: { $0.id == attachment.id }) {
-            current.remove(at: index)
-        } else {
-            // Allow one over the cap (for the over-limit cue); block beyond.
-            guard current.count < tabAttachmentsDisplayCap else { return }
-            current.append(attachment)
-            prewarmAttachedTab(id: attachment.id)
-        }
-        persistTabAttachmentsToActiveTab(current)
-    }
-
-    /// Starts loading a just-attached tab whose page isn't loaded yet, so it's ready by submit time.
-    /// Fire-and-forget: the submit path waits regardless, this just keeps it off the critical path.
-    private func prewarmAttachedTab(id: String) {
-        guard let originTabCollection = origin?.originTabCollectionViewModel,
-              let resolved = AIChatTabPickerSource.materializeAttachableTab(withId: id, forOrigin: originTabCollection),
-              resolved.needsLoad else {
-            return
-        }
-        resolved.tab.reload()
-    }
-
-    /// Removes a tab attachment from the active tab's prompt, identified by `id`. No-op if not
-    /// currently attached.
-    func removeTabAttachmentFromActiveTab(id: String) {
-        var current = activeTabAttachments
-        guard current.contains(where: { $0.id == id }) else { return }
-        current.removeAll { $0.id == id }
-        persistTabAttachmentsToActiveTab(current)
+        attachedTabsTracker.trackAttachments(of: draftStore)
     }
 
     /// Image attachments persisted on the current tab. Empty when no tab is active.
@@ -1240,8 +1077,7 @@ final class AIChatOmnibarController {
                     .sink { [weak self] panelAttachments in
                         self?.onActiveTabPanelAttachmentsChanged?(panelAttachments)
                     }
-                // The incoming tab has its own attachments to watch and reconcile.
-                self.syncAttachedTabObservers()
+                self.attachedTabsTracker.trackAttachments(of: store)
                 if store == nil {
                     // No store → empty carousel; nothing can deliver the empty value for us.
                     self.onActiveTabPanelAttachmentsChanged?([])

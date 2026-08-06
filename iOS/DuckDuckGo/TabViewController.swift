@@ -32,6 +32,7 @@ import Persistence
 import Common
 import FoundationExtensions
 import DDGSync
+import EventHub
 import PrivacyDashboard
 import UserScript
 import ContentBlocking
@@ -499,7 +500,8 @@ class TabViewController: UIViewController {
                                    autoplaySettings: AutoplaySettings,
                                    duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
                                    duckAiFireModeStorageHandler: DuckAiNativeStorageHandling? = nil,
-                                   adBlockingAvailability: AdBlockingAvailabilityProviding) -> TabViewController {
+                                   adBlockingAvailability: AdBlockingAvailabilityProviding,
+                                   eventHub: EventHubManaging) -> TabViewController {
 
         return TabViewController(tabModel: model,
                                  privacyConfigurationManager: privacyConfigurationManager,
@@ -534,7 +536,8 @@ class TabViewController: UIViewController {
                                  autoplaySettings: autoplaySettings,
                                  duckAiNativeStorageHandler: duckAiNativeStorageHandler,
                                  duckAiFireModeStorageHandler: duckAiFireModeStorageHandler,
-                                 adBlockingAvailability: adBlockingAvailability)
+                                 adBlockingAvailability: adBlockingAvailability,
+                                 eventHub: eventHub)
     }
 
     private var userContentController: UserContentController {
@@ -544,6 +547,18 @@ class TabViewController: UIViewController {
 
     let historyManager: HistoryManaging
     let adBlockingAvailability: AdBlockingAvailabilityProviding
+
+    let eventHub: EventHubManaging
+
+    /// This tab's EventHub identity. Derived from the tab model's UUID string, so it is stable for the
+    /// tab's lifetime and unique per tab — which is what EventHub's per-tab web-event dedup keys off.
+    private let eventHubTabID: EventHubTabID
+
+    /// Owns this tab's `webEvents` subfeature. Held here rather than on `UserScripts` because
+    /// `UserScripts` is rebuilt on every content-blocking update and carries no tab identity of its own.
+    /// The handler is stateless, so re-registering the same instance with each new content scope script
+    /// is all that is needed.
+    private let eventHubWebEventsHandler: WebEventsHandler
 
     private(set) lazy var adBlockingNavigationHandler: AdBlockingNavigationHandling = {
         return AdBlockingNavigationHandler(
@@ -682,7 +697,8 @@ class TabViewController: UIViewController {
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
          duckAiFireModeStorageHandler: DuckAiNativeStorageHandling? = nil,
          addressBarURLFilter: AddressBarURLFiltering = AddressBarURLFilter(),
-         adBlockingAvailability: AdBlockingAvailabilityProviding) {
+         adBlockingAvailability: AdBlockingAvailabilityProviding,
+         eventHub: EventHubManaging) {
 
         self.tabModel = tabModel
         self.viewModel = TabViewModel(tab: tabModel, historyManager: historyManager)
@@ -732,6 +748,12 @@ class TabViewController: UIViewController {
         self.duckAiFireModeStorageHandler = duckAiFireModeStorageHandler
         self.addressBarURLFilter = addressBarURLFilter
         self.adBlockingAvailability = adBlockingAvailability
+        self.eventHub = eventHub
+
+        // Captured by value so the handler's provider closure doesn't retain the controller.
+        let eventHubTabID = EventHubTabID(rawValue: UUID(uuidString: tabModel.uid) ?? UUID())
+        self.eventHubTabID = eventHubTabID
+        self.eventHubWebEventsHandler = WebEventsHandler(manager: eventHub, tabIDProvider: { _ in eventHubTabID })
 
         self.productSurfaceTelemetry = productSurfaceTelemetry
 
@@ -1948,6 +1970,7 @@ class TabViewController: UIViewController {
 
     deinit {
         rulesCompilationMonitor.tabWillClose(tabModel.uid)
+        eventHub.onTabClosed(tabID: eventHubTabID)
         removeObservers()
         temporaryDownloadForPreviewedFile?.cancel()
         cleanUpBeforeClosing()
@@ -2201,6 +2224,8 @@ extension TabViewController: WKNavigationDelegate {
         referrerTrimming.onBeginNavigation(to: webView.url)
         adClickAttributionDetection.onStartNavigation(url: webView.url)
         adClickExternalOpenDetector.startNavigation()
+        // Resets this tab's per-tab web-event dedup when the URL changes.
+        eventHub.onNavigationStarted(tabID: eventHubTabID, url: webView.url?.absoluteString ?? "")
     }
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
@@ -3906,6 +3931,7 @@ extension TabViewController: UserContentControllerDelegate {
         userScripts.autoconsentUserScript.delegate = self
         userScripts.autoconsentUserScript.management = autoconsentManagement
         userScripts.contentScopeUserScript.delegate = self
+        userScripts.registerEventHubSubfeature(eventHubWebEventsHandler)
         userScripts.serpSettingsUserScript.delegate = self
         userScripts.serpSettingsUserScript.setStore(keyValueStore)
         userScripts.serpSettingsUserScript.webView = webView

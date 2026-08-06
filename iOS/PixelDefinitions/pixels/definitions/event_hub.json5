@@ -1,0 +1,132 @@
+{
+    // Names here are the bare governed config names from the remote `eventHub` settings. EventHub fires
+    // them verbatim; PixelKit appends `_ios_phone` / `_ios_tablet`, which is what the `platform` and
+    // `form_factor` suffixes below declare. Do not add a platform marker to the names themselves, and do
+    // not add an `m_` prefix — see `IOSEventHubPixelFiring` for how both are avoided. macOS declares an
+    // explicit `_macos` suffix instead, because PixelKit resolves names differently on that platform.
+    "webTelemetry_youtube_adBlocker_day": {
+        "description": "Daily bucketed count of YouTube ad-blocker-challenge detections, with the user's login state at detection time. Fired by the eventHub feature at the end of each 1-day period. Successor to the retired m_web_extension_adblocking_detected_ad_blocker_daily pixel.",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "count",
+                "type": "string",
+                "description": "Bucketed detection count for the period (e.g. \"0\", \"1+\")",
+                "pattern": "^\\d+(-\\d+|\\+)?$"
+            },
+            {
+                "key": "loginState",
+                "type": "string",
+                "description": "User's YouTube login state at detection time, as percent-encoded JSON (e.g. %22logged-in%22)"
+            },
+            {
+                "key": "attributionPeriod",
+                "type": "integer",
+                "description": "Unix timestamp (UTC) denoting the start of the measurement period"
+            }
+        ]
+    },
+    "webTelemetry_youtube_playabilityError_day": {
+        "description": "Daily bucketed count of YouTube playability-error detections, with the user's login state at detection time. Fired by the eventHub feature at the end of each 1-day period. Successor to the retired m_web_extension_adblocking_detected_playability_error_daily pixel.",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "count",
+                "type": "string",
+                "description": "Bucketed detection count for the period (e.g. \"0\", \"1+\")",
+                "pattern": "^\\d+(-\\d+|\\+)?$"
+            },
+            {
+                "key": "loginState",
+                "type": "string",
+                "description": "User's YouTube login state at detection time, as percent-encoded JSON (e.g. %22logged-in%22)"
+            },
+            {
+                "key": "attributionPeriod",
+                "type": "integer",
+                "description": "Unix timestamp (UTC) denoting the start of the measurement period"
+            }
+        ]
+    },
+    "webTelemetry_youtube_videoAd_day": {
+        "description": "Daily bucketed count of YouTube video-ad detections, with the user's login state at detection time. Fired by the eventHub feature at the end of each 1-day period. Successor to the retired m_web_extension_adblocking_detected_video_ad_daily pixel.",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "count",
+                "type": "string",
+                "description": "Bucketed detection count for the period (e.g. \"0\", \"1+\")",
+                "pattern": "^\\d+(-\\d+|\\+)?$"
+            },
+            {
+                "key": "loginState",
+                "type": "string",
+                "description": "User's YouTube login state at detection time, as percent-encoded JSON (e.g. %22logged-in%22)"
+            },
+            {
+                "key": "attributionPeriod",
+                "type": "integer",
+                "description": "Unix timestamp (UTC) denoting the start of the measurement period"
+            }
+        ]
+    },
+    "webTelemetry_youtube_staticAd_day": {
+        "description": "Daily bucketed count of YouTube static-ad detections, with the user's login state at detection time. Fired by the eventHub feature at the end of each 1-day period. Successor to the retired m_web_extension_adblocking_detected_static_ad_daily pixel.",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "count",
+                "type": "string",
+                "description": "Bucketed detection count for the period (e.g. \"0\", \"1+\")",
+                "pattern": "^\\d+(-\\d+|\\+)?$"
+            },
+            {
+                "key": "loginState",
+                "type": "string",
+                "description": "User's YouTube login state at detection time, as percent-encoded JSON (e.g. %22logged-in%22)"
+            },
+            {
+                "key": "attributionPeriod",
+                "type": "integer",
+                "description": "Unix timestamp (UTC) denoting the start of the measurement period"
+            }
+        ]
+    },
+    "webTelemetry_youtube_buffering_day": {
+        "description": "Daily bucketed count of YouTube playback-buffering detections, with the user's login state at detection time. Fired by the eventHub feature at the end of each 1-day period. Successor to the retired m_web_extension_adblocking_detected_buffering_daily pixel.",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "count",
+                "type": "string",
+                "description": "Bucketed detection count for the period (e.g. \"0\", \"1+\")",
+                "pattern": "^\\d+(-\\d+|\\+)?$"
+            },
+            {
+                "key": "loginState",
+                "type": "string",
+                "description": "User's YouTube login state at detection time, as percent-encoded JSON (e.g. %22logged-in%22)"
+            },
+            {
+                "key": "attributionPeriod",
+                "type": "integer",
+                "description": "Unix timestamp (UTC) denoting the start of the measurement period"
+            }
+        ]
+    }
+}

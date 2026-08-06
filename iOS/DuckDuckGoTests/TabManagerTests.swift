@@ -426,7 +426,8 @@ final class TabManagerTests: XCTestCase {
                           voiceSearchHelper: MockVoiceSearchHelper(),
                           launchSourceManager: launchSourceManager,
                           darkReaderFeatureSettings: MockDarkReaderFeatureSettings(),
-                          adBlockingAvailability: StubAdBlockingAvailability())
+                          adBlockingAvailability: StubAdBlockingAvailability(),
+                          eventHub: StubEventHub())
     }
 
 }

@@ -36,7 +36,8 @@ final class YouTubeAdBlockingTelemetryConsentRequirement: EventHubConsentRequire
     let configNames: Set<String>
     let isGrantedPublisher: AnyPublisher<Bool, Never>
 
-    init(configNames: Set<String>, store: any ObservableKeyValueStoring = UserDefaults.standard) {
+    init(configNames: Set<String> = EventHubGatedConfigNames.youTubeAdBlockingTelemetry,
+         store: any ObservableKeyValueStoring = UserDefaults.standard) {
         self.configNames = configNames
         let settings: any ObservableKeyedStoring<YouTubeAdBlockingSettings> = store.observableKeyedStoring()
         isGrantedPublisher = settings.publisher(for: \.youTubeAdBlockingEnabled)

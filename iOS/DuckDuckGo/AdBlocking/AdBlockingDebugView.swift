@@ -78,33 +78,9 @@ struct AdBlockingDebugView: View {
                 Text(verbatim: "Override the `adBlockingExtension` feature flag from the Feature Flags debug screen to simulate the YouTube Ad Blocking remote-disable contingency state.")
             }
 
-            Section {
-                Button {
-                    clearDetectionPixelDailyStamps()
-                } label: {
-                    Text(verbatim: "Clear today's detection-pixel stamps")
-                }
-            } header: {
-                Text(verbatim: "Detection pixels")
-            } footer: {
-                Text(verbatim: "Clears today's last-fired stamps for the five m_web_extension_adblocking_detected_*_daily pixels so they can fire again today.")
-            }
         }
         .navigationTitle(Text(verbatim: "Ad Blocking"))
         .onAppear(perform: refresh)
-    }
-
-    private func clearDetectionPixelDailyStamps() {
-        let pixels: [Pixel.Event] = [
-            .webExtensionAdBlockingDetectedAdBlockerDaily,
-            .webExtensionAdBlockingDetectedPlayabilityErrorDaily,
-            .webExtensionAdBlockingDetectedVideoAdDaily,
-            .webExtensionAdBlockingDetectedStaticAdDaily,
-            .webExtensionAdBlockingDetectedBufferingDaily
-        ]
-        for pixel in pixels {
-            try? DailyPixel.storage.set(nil, forKey: pixel.name)
-        }
     }
 
     private func triStatePicker(title: String,
@@ -222,6 +198,16 @@ struct AdBlockingDebugView: View {
             try? storage.removeValue(for: key)
         case let bool?:
             try? storage.set(bool, for: key)
+        }
+        // Both flags gate EventHub telemetry consent, and neither store write is observable, so a change
+        // made here has to be announced the same way the real toggles announce theirs.
+        switch key {
+        case \YouTubeAdBlockingKeys.youTubeAnalyticsEnabled:
+            NotificationCenter.default.post(name: YouTubeAdBlockingStorageKeys.youTubeAnalyticsEnabledDidChangeNotification, object: nil)
+        case \YouTubeAdBlockingKeys.youTubeAdBlockingEnabled:
+            NotificationCenter.default.post(name: YouTubeAdBlockingStorageKeys.youTubeAdBlockingEnabledDidChangeNotification, object: nil)
+        default:
+            break
         }
         refresh()
     }

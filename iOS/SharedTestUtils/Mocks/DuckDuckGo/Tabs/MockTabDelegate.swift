@@ -23,6 +23,7 @@ import WebExtensions
 import WebKit
 import BrowserServicesKit
 import BrowserServicesKitTestsUtils
+import EventHub
 import PrivacyDashboard
 import Persistence
 import Subscription
@@ -205,7 +206,8 @@ extension TabViewController {
             voiceSearchHelper: MockVoiceSearchHelper(),
             darkReaderFeatureSettings: MockDarkReaderFeatureSettings(),
             autoplaySettings: MockAutoplaySettings(),
-            adBlockingAvailability: StubAdBlockingAvailability()
+            adBlockingAvailability: StubAdBlockingAvailability(),
+            eventHub: StubEventHub()
         )
         tab.attachWebView(configuration: WKWebViewConfiguration.nonPersistent(), andLoadRequest: nil as URLRequest?, consumeCookies: false, customWebView: customWebView)
         return tab
@@ -294,4 +296,28 @@ final class StubAdBlockingAvailability: AdBlockingAvailabilityProviding {
     var isFeatureSupported: Bool = false
     var isEnabledByUser: Bool = false
     func shouldShowAnimation(for url: URL) -> Bool { false }
+}
+
+/// Records the per-tab signals `TabViewController` reports, so tests can assert on them without
+/// standing up a real `EventHub` (and its store, scheduler and remote-config plumbing).
+final class StubEventHub: EventHubManaging {
+    private(set) var navigationStarts: [(tabID: EventHubTabID, url: String)] = []
+    private(set) var closedTabIDs: [EventHubTabID] = []
+
+    func handleWebEvent(_ webEventData: [String: Any], tabID: EventHubTabID) {}
+    func handleImmediateEvent(_ type: String, data: Encodable?) {}
+    func handleAggregatedEvent(_ type: String, data: Encodable?) {}
+
+    func onNavigationStarted(tabID: EventHubTabID, url: String) {
+        navigationStarts.append((tabID, url))
+    }
+
+    func onTabClosed(tabID: EventHubTabID) {
+        closedTabIDs.append(tabID)
+    }
+
+    func onConfigChanged() {}
+    func isEnabled() -> Bool { false }
+    func onAppForegrounded() {}
+    func onAppBackgrounded() {}
 }

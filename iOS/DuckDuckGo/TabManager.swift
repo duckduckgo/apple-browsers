@@ -21,6 +21,7 @@ import Common
 import FoundationExtensions
 import Core
 import DDGSync
+import EventHub
 import WebKit
 import BrowserServicesKit
 import Persistence
@@ -173,6 +174,9 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     /// Single app-lifetime instance shared across all tabs, MainViewController, and SettingsViewModel.
     let adBlockingAvailability: AdBlockingAvailabilityProviding
 
+    /// Single app-lifetime instance, handed to every tab so it can report its own web and navigation events.
+    let eventHub: EventHubManaging
+
     weak var delegate: TabDelegate?
     weak var aiChatContentDelegate: AIChatContentHandlingDelegate?
     weak var fireModeDelegate: TabManagerFireModeDelegate?
@@ -218,7 +222,8 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
          duckAiFireModeStorageHandler: DuckAiNativeStorageHandling? = nil,
          toggleModeStorage: ToggleModeStoring = ToggleModeStorage(),
-         adBlockingAvailability: AdBlockingAvailabilityProviding
+         adBlockingAvailability: AdBlockingAvailabilityProviding,
+         eventHub: EventHubManaging
     ) {
         self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
         self.duckAiFireModeStorageHandler = duckAiFireModeStorageHandler
@@ -258,6 +263,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         self.toggleModeStorage = toggleModeStorage
         self.darkReaderFeatureSettings = darkReaderFeatureSettings
         self.adBlockingAvailability = adBlockingAvailability
+        self.eventHub = eventHub
         registerForNotifications()
     }
 
@@ -348,7 +354,8 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
                                                               autoplaySettings: autoplaySettings,
                                                               duckAiNativeStorageHandler: duckAiNativeStorageHandler,
                                                               duckAiFireModeStorageHandler: duckAiFireModeStorageHandler,
-                                                              adBlockingAvailability: adBlockingAvailability)
+                                                              adBlockingAvailability: adBlockingAvailability,
+                                                              eventHub: eventHub)
         controller.applyInheritedAttribution(inheritedAttribution)
         controller.attachWebView(configuration: configuration,
                                  interactionStateData: interactionState,
@@ -479,7 +486,8 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
                                                               autoplaySettings: autoplaySettings,
                                                               duckAiNativeStorageHandler: duckAiNativeStorageHandler,
                                                               duckAiFireModeStorageHandler: duckAiFireModeStorageHandler,
-                                                              adBlockingAvailability: adBlockingAvailability)
+                                                              adBlockingAvailability: adBlockingAvailability,
+                                                              eventHub: eventHub)
         controller.attachWebView(configuration: configCopy,
                                  andLoadRequest: request,
                                  consumeCookies: !currentTabsModel.hasActiveTabs,

@@ -170,7 +170,8 @@ extension TabViewController {
             voiceSearchHelper: voiceSearchHelper,
             darkReaderFeatureSettings: darkReaderFeatureSettings,
             autoplaySettings: autoplaySettings,
-            adBlockingAvailability: adBlockingAvailability)
+            adBlockingAvailability: adBlockingAvailability,
+            eventHub: eventHub)
 
         tabController.isLinkPreview = true
         let configuration = WKWebViewConfiguration.nonPersistent()

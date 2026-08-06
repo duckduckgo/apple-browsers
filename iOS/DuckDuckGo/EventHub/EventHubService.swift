@@ -1,5 +1,6 @@
 //
-//  MacOSEventHubIntegration.swift
+//  EventHubService.swift
+//  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -23,17 +24,22 @@ import os.log
 import Persistence
 import PrivacyConfig
 
-/// Owns and wires up the macOS `EventHub` instance: remote-config bridging, persistence, scheduling,
-/// pixel firing, and consent gating. Constructed once by `AppDelegate`.
-final class MacOSEventHubIntegration {
+/// Owns and wires up the iOS `EventHub` instance: remote-config bridging, persistence, scheduling,
+/// pixel firing, and consent gating. Constructed once during `Launching` and held by `AppServices`.
+final class EventHubService {
 
     let eventHub: EventHubManaging
 
     private var cancellables = Set<AnyCancellable>()
 
-    /// - Parameter keyValueStore: `nil` if the dedicated store could not be opened; telemetry then runs
-    ///   in memory only.
-    init(privacyConfigurationManager: PrivacyConfigurationManaging, keyValueStore: ThrowingKeyValueStoring?) {
+    /// - Parameters:
+    ///   - keyValueStore: EventHub's own persistence. `nil` if the dedicated store could not be opened;
+    ///     telemetry then runs in memory only.
+    ///   - consentStore: the app store holding the YouTube opt-ins the consent gate reads. Deliberately
+    ///     separate from `keyValueStore`, which holds only EventHub's period state.
+    init(privacyConfigurationManager: PrivacyConfigurationManaging,
+         keyValueStore: ThrowingKeyValueStoring?,
+         consentStore: ThrowingKeyValueStoring) {
         if keyValueStore == nil {
             Logger.eventHub.error("Dedicated key value store unavailable — telemetry will not survive a restart")
         }
@@ -49,18 +55,17 @@ final class MacOSEventHubIntegration {
             featureEnabledPublisher: enabledSubject.eraseToAnyPublisher(),
             featureSettingsPublisher: settingsSubject.eraseToAnyPublisher(),
             consentRequirements: [
-                YouTubeAdBlockingTelemetryConsentRequirement()
+                YouTubeAdBlockingTelemetryConsentRequirement(keyValueStore: consentStore)
             ]
         )
 
-        let eventHub = EventHub(
+        eventHub = EventHub(
             store: store,
             parser: parser,
             settings: settings,
             scheduler: DispatchQueueEventHubScheduler(queue: DispatchQueue(label: "com.duckduckgo.eventhub.scheduler")),
-            pixelFiring: MacOSEventHubPixelFiring()
+            pixelFiring: IOSEventHubPixelFiring()
         )
-        self.eventHub = eventHub
 
         // Pushing the new values is all that is needed: `EventHub` subscribes to both publishers and
         // re-applies its config whenever either emits, so there is no explicit `onConfigChanged()` call
@@ -77,17 +82,14 @@ final class MacOSEventHubIntegration {
             .store(in: &cancellables)
     }
 
-    func applicationDidBecomeActive() {
+    func resume() {
         eventHub.onAppForegrounded()
     }
 
-    func applicationDidResignActive() {
-        eventHub.onAppBackgrounded()
-    }
-
-    /// Backgrounding is EventHub's flush boundary, so it doubles as the final persist on quit
-    /// (`applicationDidResignActive` is not reliably delivered before termination).
-    func applicationWillTerminate() {
+    /// Backgrounding is EventHub's flush boundary. Unlike macOS there is no separate termination hook to
+    /// mirror it: iOS always moves the app to the background before terminating it, so this is reached on
+    /// the way out of every quit.
+    func suspend() {
         eventHub.onAppBackgrounded()
     }
 }

@@ -2089,21 +2089,6 @@ extension Pixel {
 extension Pixel.Event: Equatable {}
 
 extension Pixel.Event {
-    /// Maps a C-S-S `webEvent` `type` string to the matching pixel case.
-    /// Returns `nil` for unknown types so the caller can no-op.
-    public static func adBlockingDetectedEvent(type: String) -> Pixel.Event? {
-        switch type {
-        case "youtube_adBlocker": return .webExtensionAdBlockingDetectedAdBlockerDaily
-        case "youtube_playabilityError": return .webExtensionAdBlockingDetectedPlayabilityErrorDaily
-        case "youtube_videoAd": return .webExtensionAdBlockingDetectedVideoAdDaily
-        case "youtube_staticAd": return .webExtensionAdBlockingDetectedStaticAdDaily
-        case "youtube_buffering": return .webExtensionAdBlockingDetectedBufferingDaily
-        default: return nil
-        }
-    }
-}
-
-extension Pixel.Event {
 
     public var name: String {
         switch self {

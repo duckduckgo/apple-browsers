@@ -161,6 +161,7 @@ struct Foreground: ForegroundHandling {
         services.dbpService.resume()
         services.inactivityNotificationSchedulerService.resume()
         services.wideEventService.resume()
+        services.eventHubService.resume()
         appDependencies.launchSourceManager.handleAppAction(launchAction)
 
         appDependencies.mainCoordinator.onForeground(isFirstForeground: isFirstForeground)

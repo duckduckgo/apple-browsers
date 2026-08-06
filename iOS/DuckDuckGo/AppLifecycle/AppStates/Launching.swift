@@ -171,6 +171,17 @@ struct Launching: LaunchingHandling {
                                                             fireModeStorageController: fireModeStorageController,
                                                             adBlockingAvailability: adBlockingAvailability)
 
+        // Constructed before MainCoordinator: its `eventHub` is threaded down to every tab.
+        // EventHub gets its own store, matching macOS, so its period state never shares a file with app
+        // settings. `try?` — an unopenable store degrades telemetry to in-memory rather than failing launch.
+        let eventHubStore = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
+            .flatMap { try? KeyValueFileStore(location: $0, name: "EventHubKeyValueStore") }
+        let eventHubService = EventHubService(
+            privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager,
+            keyValueStore: eventHubStore,
+            consentStore: appKeyValueFileStoreService.keyValueFilesStore
+        )
+
         let freemiumPIRDebugSettings = FreemiumPIRDebugSettings(keyValueStore: appKeyValueFileStoreService.keyValueFilesStore)
         let dbpService = DBPService(appDependencies: AppDependencyProvider.shared,
                                     contentBlocking: contentBlockingService.common,
@@ -338,7 +349,8 @@ struct Launching: LaunchingHandling {
                                               whatsNewRepository: whatsNewRepository,
                                               sharedSecureVault: configuration.persistentStoresConfiguration.sharedSecureVault,
                                               wideEvent: AppDependencyProvider.shared.wideEvent,
-                                              onboardingManager: onboardingManager
+                                              onboardingManager: onboardingManager,
+                                              eventHub: eventHubService.eventHub
         )
 
         // MARK: - UI-Dependent Services Setup
@@ -386,7 +398,8 @@ struct Launching: LaunchingHandling {
                                systemSettingsPiPTutorialService: systemSettingsPiPTutorialService,
                                inactivityNotificationSchedulerService: inactivityNotificationSchedulerService,
                                wideEventService: wideEventService,
-                               aiChatService: AIChatService(aiChatSettings: aiChatSettings)
+                               aiChatService: AIChatService(aiChatSettings: aiChatSettings),
+                               eventHubService: eventHubService
         )
 
         // Clean up wide event data at launch

@@ -82,6 +82,26 @@ enum WebViewPreviewSnapshotGeometry {
 
 enum WebViewScrollViewInsetUpdater {
 
+    struct AdjustmentBehavior {
+        let contentInsetAdjustmentBehavior: UIScrollView.ContentInsetAdjustmentBehavior
+        let automaticallyAdjustsScrollIndicatorInsets: Bool
+    }
+
+    static func beginManaging(_ scrollView: UIScrollView) -> AdjustmentBehavior {
+        let behavior = AdjustmentBehavior(
+            contentInsetAdjustmentBehavior: scrollView.contentInsetAdjustmentBehavior,
+            automaticallyAdjustsScrollIndicatorInsets: scrollView.automaticallyAdjustsScrollIndicatorInsets
+        )
+        scrollView.contentInsetAdjustmentBehavior = .never
+        scrollView.automaticallyAdjustsScrollIndicatorInsets = false
+        return behavior
+    }
+
+    static func endManaging(_ scrollView: UIScrollView, restoring behavior: AdjustmentBehavior) {
+        scrollView.contentInsetAdjustmentBehavior = behavior.contentInsetAdjustmentBehavior
+        scrollView.automaticallyAdjustsScrollIndicatorInsets = behavior.automaticallyAdjustsScrollIndicatorInsets
+    }
+
     static func update(_ scrollView: UIScrollView, insets: UIEdgeInsets) {
         if scrollView.contentInset != insets {
             let isPinnedToTop = scrollView.contentOffset.y <= -scrollView.adjustedContentInset.top
@@ -224,6 +244,7 @@ class TabViewController: UIViewController {
 
     private(set) var webView: WKWebView!
     private var hasAppliedFloatingUIScrollViewInsets = false
+    private var scrollViewAdjustmentBehaviorBeforeFloatingUI: WebViewScrollViewInsetUpdater.AdjustmentBehavior?
     private lazy var appRatingPrompt: AppRatingPrompt = AppRatingPrompt(featureFlagger: self.featureFlagger)
     let unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding
     public weak var privacyDashboard: PrivacyDashboardViewController?
@@ -981,6 +1002,9 @@ class TabViewController: UIViewController {
             let obscuredInsets: UIEdgeInsets = isUnifiedToggleInputAffectingLayout
                 ? .zero
                 : (chromeDelegate?.floatingWebViewObscuredInsets(for: barsVisibilityPercent) ?? .zero)
+            if scrollViewAdjustmentBehaviorBeforeFloatingUI == nil {
+                scrollViewAdjustmentBehaviorBeforeFloatingUI = WebViewScrollViewInsetUpdater.beginManaging(webView.scrollView)
+            }
             if setWebViewObscuredContentInsetsIfSupported(obscuredInsets) {
                 // Keep the web view full-bleed and reserve the chrome region via WebKit's public
                 // `obscuredContentInsets`, which positions page fixed/sticky elements and the layout
@@ -1003,6 +1027,7 @@ class TabViewController: UIViewController {
                     WebViewScrollViewInsetUpdater.update(webView.scrollView, insets: .zero)
                     hasAppliedFloatingUIScrollViewInsets = false
                 }
+                restoreScrollViewAdjustmentBehaviorAfterFloatingUI()
                 updateFloatingUISafeAreaInsets()
             }
         } else {
@@ -1014,10 +1039,17 @@ class TabViewController: UIViewController {
                 WebViewScrollViewInsetUpdater.update(webView.scrollView, insets: .zero)
                 hasAppliedFloatingUIScrollViewInsets = false
             }
+            restoreScrollViewAdjustmentBehaviorAfterFloatingUI()
             if additionalSafeAreaInsets != .zero {
                 additionalSafeAreaInsets = .zero
             }
         }
+    }
+
+    private func restoreScrollViewAdjustmentBehaviorAfterFloatingUI() {
+        guard let behavior = scrollViewAdjustmentBehaviorBeforeFloatingUI else { return }
+        WebViewScrollViewInsetUpdater.endManaging(webView.scrollView, restoring: behavior)
+        scrollViewAdjustmentBehaviorBeforeFloatingUI = nil
     }
 
     /// In floating UI mode the web view underflows the top glass chrome, so communicate the top

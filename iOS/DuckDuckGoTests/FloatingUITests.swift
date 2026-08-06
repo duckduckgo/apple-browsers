@@ -354,6 +354,22 @@ final class WebViewPreviewSnapshotGeometryTests: XCTestCase {
 
 final class WebViewScrollViewInsetUpdaterTests: XCTestCase {
 
+    func testWhenManagingInsetsThenAutomaticAdjustmentIsDisabledAndCanBeRestored() {
+        let scrollView = UIScrollView()
+        scrollView.contentInsetAdjustmentBehavior = .automatic
+        scrollView.automaticallyAdjustsScrollIndicatorInsets = true
+
+        let behavior = WebViewScrollViewInsetUpdater.beginManaging(scrollView)
+
+        XCTAssertEqual(scrollView.contentInsetAdjustmentBehavior, .never)
+        XCTAssertFalse(scrollView.automaticallyAdjustsScrollIndicatorInsets)
+
+        WebViewScrollViewInsetUpdater.endManaging(scrollView, restoring: behavior)
+
+        XCTAssertEqual(scrollView.contentInsetAdjustmentBehavior, .automatic)
+        XCTAssertTrue(scrollView.automaticallyAdjustsScrollIndicatorInsets)
+    }
+
     func testWhenContentInsetsAreUnchangedThenContentOffsetIsUnchanged() {
         let scrollView = UIScrollView()
         let insets = UIEdgeInsets(top: 20, left: 0, bottom: 30, right: 0)

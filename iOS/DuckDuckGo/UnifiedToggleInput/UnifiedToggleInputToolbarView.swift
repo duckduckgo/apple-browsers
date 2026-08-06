@@ -169,45 +169,19 @@ final class UnifiedToggleInputToolbarView: UIView {
     }
 
     var isToolsButtonHidden: Bool {
-        get { toolsButtonRequestedHidden }
-        set {
-            toolsButtonRequestedHidden = newValue
-            applyEditableControlVisibility()
-        }
+        get { toolsButton.isHidden }
+        set { toolsButton.isHidden = newValue }
     }
 
     var isReasoningButtonHidden: Bool {
-        get { reasoningButtonRequestedHidden }
-        set {
-            reasoningButtonRequestedHidden = newValue
-            applyEditableControlVisibility()
-        }
-    }
-
-    /// What the caller asked for, stored separately from what's applied to the buttons. The applied
-    /// value is `requested || isEditing` (see `applyEditableControlVisibility`): edit mode force-hides
-    /// these controls, and because the request is remembered here, exiting edit restores exactly what
-    /// the caller wanted — and a re-render mid-edit can't un-hide them.
-    private var toolsButtonRequestedHidden = false
-    private var reasoningButtonRequestedHidden = true
-
-    /// Applies `requested || isEditing` to each control: hidden if the caller asked for it, or while
-    /// editing (which only allows text edits + attachment removal). Call from the setters and on any
-    /// `isEditing` change.
-    private func applyEditableControlVisibility() {
-        imageButton.isHidden = imageButtonRequestedHidden || isEditing
-        toolsButton.isHidden = toolsButtonRequestedHidden || isEditing
-        reasoningButton.isHidden = reasoningButtonRequestedHidden || isEditing
+        get { reasoningButton.isHidden }
+        set { reasoningButton.isHidden = newValue }
     }
 
     var isImageButtonHidden: Bool {
-        get { imageButtonRequestedHidden }
-        set {
-            imageButtonRequestedHidden = newValue
-            applyEditableControlVisibility()
-        }
+        get { imageButton.isHidden }
+        set { imageButton.isHidden = newValue }
     }
-    private var imageButtonRequestedHidden = false
 
     var isImageButtonEnabled: Bool {
         get { imageButton.isEnabled }
@@ -227,9 +201,12 @@ final class UnifiedToggleInputToolbarView: UIView {
     var isEditing: Bool = false {
         didSet {
             guard oldValue != isEditing else { return }
-            applyEditableControlVisibility()
-            updateChipVisibility()
-            // Refresh so entering edit with an empty field doesn't leave the mic showing.
+            // Editing only allows text edits + attachment removal, so hide the secondary controls as
+            // groups (attach/tools/tool-chip on the left, reasoning/model-chip on the right), leaving
+            // just the submit cluster. Grouping avoids weaving `isEditing` into each control's setter.
+            leftControlsGroup.isHidden = isEditing
+            secondaryTrailingGroup.isHidden = isEditing
+            // Refresh so an empty field in edit shows a disabled submit rather than the mic.
             updateSubmitButtonAppearance()
         }
     }
@@ -424,6 +401,26 @@ final class UnifiedToggleInputToolbarView: UIView {
         return button
     }()
 
+    /// Secondary controls grouped so edit mode can hide each group with a single `isHidden`,
+    /// instead of weaving `isEditing` into every control's setter.
+    private lazy var leftControlsGroup: UIStackView = {
+        let stack = UIStackView(arrangedSubviews: [imageButton, toolsButton, selectedToolChipView])
+        stack.axis = .horizontal
+        stack.spacing = Constants.leftGroupSpacing
+        stack.alignment = .center
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        return stack
+    }()
+
+    private lazy var secondaryTrailingGroup: UIStackView = {
+        let stack = UIStackView(arrangedSubviews: [reasoningButton, modelChipButton])
+        stack.axis = .horizontal
+        stack.spacing = Constants.rightGroupSpacing
+        stack.alignment = .center
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        return stack
+    }()
+
     // MARK: - Initialization
 
     override init(frame: CGRect) {
@@ -439,18 +436,14 @@ final class UnifiedToggleInputToolbarView: UIView {
 private extension UnifiedToggleInputToolbarView {
 
     private func setupUI() {
-        let leftGroup = UIStackView(arrangedSubviews: [imageButton, toolsButton, selectedToolChipView])
-        leftGroup.axis = .horizontal
-        leftGroup.spacing = Constants.leftGroupSpacing
-        leftGroup.alignment = .center
-        leftGroup.translatesAutoresizingMaskIntoConstraints = false
-
         let spacer = UIView()
         spacer.translatesAutoresizingMaskIntoConstraints = false
         spacer.setContentHuggingPriority(.defaultLow, for: .horizontal)
         spacer.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 
-        let rightGroup = UIStackView(arrangedSubviews: [reasoningButton, modelChipButton, returnKeyButton, submitButton, stopButton])
+        // reasoning + model-chip nest in `secondaryTrailingGroup` so edit mode can hide them as a
+        // unit alongside `leftControlsGroup`, leaving the return/submit/stop cluster in place.
+        let rightGroup = UIStackView(arrangedSubviews: [secondaryTrailingGroup, returnKeyButton, submitButton, stopButton])
         rightGroup.axis = .horizontal
         rightGroup.spacing = Constants.rightGroupSpacing
         rightGroup.alignment = .center
@@ -458,7 +451,7 @@ private extension UnifiedToggleInputToolbarView {
         rightGroup.setContentHuggingPriority(.required, for: .horizontal)
         rightGroup.setContentCompressionResistancePriority(.required, for: .horizontal)
 
-        let outerStack = UIStackView(arrangedSubviews: [leftGroup, spacer, rightGroup])
+        let outerStack = UIStackView(arrangedSubviews: [leftControlsGroup, spacer, rightGroup])
         outerStack.axis = .horizontal
         outerStack.alignment = .center
         outerStack.translatesAutoresizingMaskIntoConstraints = false
@@ -519,8 +512,8 @@ private extension UnifiedToggleInputToolbarView {
     }
 
     private func updateChipVisibility() {
-        modelChipButton.isHidden = modelChipExplicitlyHidden || isEditing
-        selectedToolChipView.isHidden = (selectedTool == nil) || isEditing
+        modelChipButton.isHidden = modelChipExplicitlyHidden
+        selectedToolChipView.isHidden = (selectedTool == nil)
         selectedToolIconView.image = selectedTool?.toolbarChipIcon
         selectedToolChipView.accessibilityLabel = selectedTool?.toolbarChipAccessibilityLabel
     }

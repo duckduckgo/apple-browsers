@@ -51,16 +51,10 @@ protocol NewTabDaxDialogProviding {
     /// - Returns: Type-erased completion dialog view.
     func createDuckAIFireOnboardingCompletionDialog(message: String, onDismiss: @escaping () -> Void) -> AnyView
 
-    /// Creates the alternative Search-flow end-of-journey completion (the Duck.ai chat variant) for the
-    /// download-reason experiment — a two-button replacement for the standard "You've got this!" dialog.
-    ///
-    /// - Parameters:
-    ///   - content: Title / message / button titles for the dialog.
-    ///   - onTryDuckAI: Primary CTA. Opens Duck.ai; the subscription promo is deferred to the next new tab.
-    ///   - onSkip: Secondary CTA. Dismisses to the new tab page with the subscription promo shown now.
-    ///
-    /// - Returns: Type-erased completion dialog view.
-    func createEndOfJourneyTryAIDialog(content: OnboardingEndOfJourneyTryAIContent, onTryDuckAI: @escaping () -> Void, onSkip: @escaping () -> Void) -> AnyView
+
+    /// Renders an End-Of-Journey dialog from content. Button taps and manual dismiss are forwarded through `onAction`
+    /// All EoJ variants (standard / Try-AI / privateAIChat) are content, so this is the single entrypoint for `.final`.
+    func createEndOfJourneyDialog(content: OnboardingEndOfJourneyContent, onAction: @escaping (OnboardingEndOfJourneyAction) -> Void) -> AnyView
 }
 
 final class NewTabDaxDialogFactory: NewTabDaxDialogProviding {
@@ -97,7 +91,10 @@ final class NewTabDaxDialogFactory: NewTabDaxDialogProviding {
         case .subsequent:
             createSubsequentDialog(onManualDismiss: onManualDismiss)
         case .final:
-            createFinalDialog(onCompletion: onCompletion, onManualDismiss: onManualDismiss)
+            // `.final` is intercepted in NewTabPageViewController and rendered via `createEndOfJourneyDialog`
+            // (content-driven), so it never reaches this switch.
+            assertionFailure("Should not be reached.")
+            EmptyView()
         case .subscriptionPromotion:
             // Re-use same dismiss closure as dismissing the final dialog will set onboarding completed true
             createSubscriptionPromoDialog(proceedButtonText: onboardingSubscriptionPromotionHelper.proceedButtonText, onDismiss: onCompletion)
@@ -168,6 +165,33 @@ extension NewTabDaxDialogFactory {
         )
     }
 
+    // The single content-driven end-of-journey entrypoint. The content provider decides the variant
+    // (standard / Try-AI / privateAIChat); this renders it and dispatches taps through the uniform `onAction`.
+    func createEndOfJourneyDialog(content: OnboardingEndOfJourneyContent, onAction: @escaping (OnboardingEndOfJourneyAction) -> Void) -> AnyView {
+        AnyView(
+            FadeInView {
+                ScrollView(.vertical, showsIndicators: false) {
+                    OnboardingRebranding.OnboardingEndOfJourneyDialog(content: content) { [weak self] action in
+                        switch action {
+                        case .completeAndActivateSearch, .tryDuckAI:
+                            self?.onboardingPixelReporter.measureEndOfJourneyDialogCTAAction()
+                        case .skip, .manualDismiss:
+                            self?.onboardingPixelReporter.measureEndOfJourneyDialogNewTabDismissButtonTapped()
+                        }
+                        onAction(action)
+                    }
+                }
+                .scrollIfNeeded()
+            }
+            .applyNewTabOnboardingBackground(backgroundType: .endOfJourneyNTP)
+            .onFirstAppear { [weak self] in
+                self?.daxDialogsFlowCoordinator.setFinalOnboardingDialogSeen()
+                self?.onboardingPixelReporter.measureScreenImpression(event: .daxDialogsEndOfJourneyNewTabUnique)
+                self?.onboardingPixelReporter.measureScreenImpression(.end(.shown))
+            }
+        )
+    }
+
 }
 
 // MARK: - Subsequent Dialog (Try Visiting A Site!)
@@ -221,81 +245,6 @@ private extension NewTabDaxDialogFactory {
             OnboardingRebranding.OnboardingAddFavorite(message: message)
         }
         .applyNewTabOnboardingBackground(backgroundType: .tryVisitingASiteNTP)
-    }
-
-}
-
-// MARK: - Final Dialog (You've Got This! / Chat-Path Completion)
-
-private extension NewTabDaxDialogFactory {
-
-    func createFinalDialog(onCompletion: @escaping (_ activateSearch: Bool) -> Void, onManualDismiss: @escaping () -> Void) -> some View {
-        return FadeInView {
-            ScrollView(.vertical, showsIndicators: false) {
-                OnboardingRebranding.OnboardingEndOfJourneyDialog(
-                    message: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenMessage,
-                    cta: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenButton,
-                    dismissAction: { [weak self] in
-                        self?.onboardingPixelReporter.measureEndOfJourneyDialogCTAAction()
-                        onCompletion(true)
-                    },
-                    onManualDismiss: { [weak self] in
-                        self?.onboardingPixelReporter.measureEndOfJourneyDialogNewTabDismissButtonTapped()
-                        onManualDismiss()
-                    }
-                )
-            }
-            .scrollIfNeeded()
-        }
-        .applyNewTabOnboardingBackground(backgroundType: .endOfJourneyNTP)
-        .onFirstAppear { [weak self] in
-            self?.daxDialogsFlowCoordinator.setFinalOnboardingDialogSeen()
-            self?.onboardingPixelReporter.measureScreenImpression(event: .daxDialogsEndOfJourneyNewTabUnique)
-            self?.onboardingPixelReporter.measureScreenImpression(.end(.shown))
-        }
-    }
-
-}
-
-// MARK: - Final Dialog (Chat Privately With Popular AIs in Duck.ai)
-
-extension NewTabDaxDialogFactory {
-
-    func createEndOfJourneyTryAIDialog(
-        content: OnboardingEndOfJourneyTryAIContent,
-        onTryDuckAI: @escaping () -> Void,
-        onSkip: @escaping () -> Void
-    ) -> AnyView {
-        AnyView(
-            FadeInView {
-                ScrollView(.vertical, showsIndicators: false) {
-                    OnboardingRebranding.OnboardingEndOfJourneyTryAIDialog(
-                        title: content.title,
-                        message: content.message,
-                        primaryCTA: content.primaryCTA,
-                        secondaryCTA: content.secondaryCTA,
-                        primaryAction: { [weak self] in
-                            self?.onboardingPixelReporter.measureEndOfJourneyDialogCTAAction()
-                            onTryDuckAI()
-                        },
-                        secondaryAction: { [weak self] in
-                            self?.onboardingPixelReporter.measureEndOfJourneyDialogNewTabDismissButtonTapped()
-                            onSkip()
-                        },
-                        showsDaxAnimation: true
-                    )
-                }
-                .scrollIfNeeded()
-            }
-            .applyNewTabOnboardingBackground(backgroundType: .endOfJourneyNTP)
-            .onFirstAppear { [weak self] in
-                // Mark the final dialog seen so the subscription promo becomes eligible. Skip presents it
-                // immediately; Try Duck.ai defers it to the next new tab (both handled by the callers).
-                self?.daxDialogsFlowCoordinator.setFinalOnboardingDialogSeen()
-                self?.onboardingPixelReporter.measureScreenImpression(event: .daxDialogsEndOfJourneyNewTabUnique)
-                self?.onboardingPixelReporter.measureScreenImpression(.end(.shown))
-            }
-        )
     }
 
 }

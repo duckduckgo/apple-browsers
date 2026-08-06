@@ -82,8 +82,8 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
 
     private let internalUserCommands: URLBasedDebugCommands
     private let tutorialSettings: TutorialSettings
-    /// Decides whether the end-of-journey step shows the Try AI version
-    private let onboardingEndOfJourneyAIContentProvider: OnboardingEndOfJourneyTryAIContentProviding
+    /// Supplies the content for the contextual dialogs. Currently only EOJ but we will refactor step by step and "strangle" providing content by DaxDialogs.HomeSpec.
+    private let contextualContentProvider: ContextualOnboardingContentProviding
 
     var onViewDidAppear: (() -> Void)?
 
@@ -111,7 +111,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
          floatingUIManager: FloatingUIManaging = FloatingUIManager(),
          appWidthObserver: AppWidthObserver = .shared,
          tutorialSettings: TutorialSettings = DefaultTutorialSettings(),
-         onboardingEndOfJourneyAIContentProvider: OnboardingEndOfJourneyTryAIContentProviding = OnboardingEndOfJourneyTryAIProvider()) {
+         contextualContentProvider: ContextualOnboardingContentProviding = ContextualOnboardingContentProvider()) {
 
         self.associatedTab = tab
         self.newTabDialogFactory = newTabDialogFactory
@@ -122,7 +122,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
         self.floatingUIManager = floatingUIManager
         self.internalUserCommands = internalUserCommands
         self.tutorialSettings = tutorialSettings
-        self.onboardingEndOfJourneyAIContentProvider = onboardingEndOfJourneyAIContentProvider
+        self.contextualContentProvider = contextualContentProvider
 
         newTabPageViewModel = NewTabPageViewModel(fireTab: tab.fireTab)
         newTabPageViewModel.openedAfterIdle = openedAfterIdle
@@ -707,13 +707,18 @@ extension NewTabPageViewController {
         }
 
         let daxDialogView: AnyView
-        // Check if the EOJ dialog should be the Try AI version when the download-reason flow qualifies (decider owns the gating).
-        if spec == .final, let eojDialogTryAIContent = onboardingEndOfJourneyAIContentProvider.dialogContent {
-            daxDialogView = factory.createEndOfJourneyTryAIDialog(
-                content: eojDialogTryAIContent,
-                onTryDuckAI: { [weak self] in self?.dismissEndOfJourneyTryAIDialog(shouldOpenDuckAI: true) },
-                onSkip: { [weak self] in self?.dismissEndOfJourneyTryAIDialog(shouldOpenDuckAI: false) }
-            )
+        if spec == .final {
+            // Every end-of-journey variant (standard / Try-AI) renders through the single
+            // content-driven entry point — the content provider decides which variant.
+            // Other specs still go through `createDaxDialog` below but we will refactor one by one (strangler pattern).
+            daxDialogView = factory.createEndOfJourneyDialog(content: contextualContentProvider.endOfJourneyContent) { [weak self] action in
+                switch action {
+                case .completeAndActivateSearch: onDismiss(true)
+                case .manualDismiss: onManualDismiss()
+                case .tryDuckAI: self?.dismissEndOfJourneyTryAIDialog(shouldOpenDuckAI: true)
+                case .skip: self?.dismissEndOfJourneyTryAIDialog(shouldOpenDuckAI: false)
+                }
+            }
         } else {
             daxDialogView = AnyView(factory.createDaxDialog(for: spec, onCompletion: onDismiss, onManualDismiss: onManualDismiss))
         }

@@ -4082,7 +4082,7 @@ extension TabViewController: UserContentControllerDelegate {
         case .tabTermination:
             tabTerminationErrorPageInstrumentation.sendFeedbackSelected()
         case .safariRedirectLoop:
-            PixelKit.fire(SafariRedirectPixel.reportBrokenSiteFromErrorPage, frequency: .legacyDailyAndCount)
+            PixelKit.fire(SafariRedirectPixel.reportBrokenSiteFromErrorPage, frequency: .dailyAndCount)
         case nil:
             return
         }

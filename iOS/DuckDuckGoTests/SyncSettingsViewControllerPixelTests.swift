@@ -20,6 +20,7 @@
 import Testing
 import Foundation
 import Core
+import FeatureFlags_iOS
 @testable import DuckDuckGo
 @testable import DDGSync
 import Persistence

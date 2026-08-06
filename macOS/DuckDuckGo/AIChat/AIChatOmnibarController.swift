@@ -101,9 +101,7 @@ final class AIChatOmnibarController {
     /// Shared 4-view cap across both pickers (reuses `FreeTrialBadgePersistor`, separately keyed).
     /// Past the cap the badge mutes instead of hiding — it's the only entry point to the upsell.
     private let badgeImpressionPersistor: FreeTrialBadgePersisting
-    /// Source of the "Automatically send page content" setting, which decides whether an attached
-    /// tab's card follows that tab's navigation or is dropped. Resolved on use rather than in `init`
-    /// so constructing a controller never reaches for the app delegate.
+    /// Resolved on use, so constructing a controller never reaches for the app delegate.
     private let injectedAIChatMenuConfiguration: AIChatMenuVisibilityConfigurable?
     private var aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable {
         injectedAIChatMenuConfiguration ?? NSApp.delegateTyped.aiChatMenuConfiguration
@@ -156,13 +154,7 @@ final class AIChatOmnibarController {
     /// every time the selected tab changes.
     private var panelAttachmentsCancellable: AnyCancellable?
 
-    /// One subscription per (draft store, attached tab) pair, watching that tab's own navigation so
-    /// its card can follow it or be dropped — see `AIChatAttachedTabNavigationPolicy`.
-    ///
-    /// Keyed by store as well as tab because the attachment belongs to the *prompt's* tab, not the
-    /// selected one: attach tab B to tab A's prompt, switch to B and navigate it, and A's card has
-    /// to update right then. Scoping the observers to the active draft would stop watching B exactly
-    /// when the user is on it.
+    /// Keyed by store too: an attachment belongs to the prompt's tab, not the selected one.
     private var attachedTabObservers: [AttachedTabObserverKey: AttachedTabObserver] = [:]
 
     private struct AttachedTabObserverKey: Hashable {
@@ -173,8 +165,7 @@ final class AIChatOmnibarController {
     private struct AttachedTabObserver {
         weak var store: (any DuckAIPromptDraftStoring)?
         let cancellable: AnyCancellable
-        /// True until the load that was in flight when this tab was attached finishes. Until then a
-        /// URL change is that load settling (redirect, committed URL), not the user leaving.
+        /// While set, a URL change is that load settling (redirect, committed URL), not a page change.
         var isSettlingLoadFromAttachTime: Bool
     }
 
@@ -310,7 +301,6 @@ final class AIChatOmnibarController {
         // context even though this initializer's body is not, so the real default is resolved below.
         subscriptionUpsellPresenter: AIChatOmnibarSubscriptionUpselling? = nil,
         badgeImpressionPersistor: FreeTrialBadgePersisting = FreeTrialBadgePersistor(keyValueStore: UserDefaults.standard, keyPrefix: "aichat-omnibar"),
-        /// Defaults to the app-wide configuration, resolved lazily on first use.
         aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable? = nil
     ) {
         self.aiChatTabOpener = aiChatTabOpener
@@ -872,8 +862,7 @@ final class AIChatOmnibarController {
         syncAttachedTabObservers()
     }
 
-    /// A closed tab can't supply page content, so it can't stay attached. Watching the window's tab
-    /// lists covers every prompt in the window, not just the visible one.
+    /// A closed tab has no page content left to send, in any of the window's prompts.
     private func subscribeToTabClosures() {
         guard let collection = origin?.originTabCollectionViewModel else { return }
         let pinnedTabs = collection.pinnedTabsCollection?.$tabs.eraseToAnyPublisher()
@@ -900,12 +889,7 @@ final class AIChatOmnibarController {
         syncAttachedTabObservers()
     }
 
-    /// Adds a navigation observer for every tab attached to the current draft, and drops observers
-    /// whose store is gone or no longer holds that attachment. Observers for other tabs' drafts are
-    /// left running, so their cards keep updating while the user is elsewhere.
-    ///
-    /// A newly observed tab is reconciled against its current page right after subscribing, which
-    /// catches navigation from before we started watching.
+    /// Observers for other drafts keep running; a newly observed tab is reconciled right after.
     private func syncAttachedTabObservers() {
         attachedTabObservers = attachedTabObservers.filter { key, observer in
             observer.store?.aiChatTabAttachments.contains { $0.id == key.tabId } ?? false
@@ -916,9 +900,7 @@ final class AIChatOmnibarController {
             let key = AttachedTabObserverKey(store: ObjectIdentifier(store), tabId: attachment.id)
             guard attachedTabObservers[key] == nil, let tab = attachedTab(withId: attachment.id, in: collection) else { continue }
 
-            // Title and favicon arrive after the navigation that carried them, so all of them feed
-            // the policy. `dropFirst` skips the replayed current values: the observer must be stored
-            // before any policy runs, otherwise a policy-driven re-sync would subscribe twice.
+            // `dropFirst`: store the observer before any policy runs, or a re-sync subscribes twice.
             let cancellable = Publishers.CombineLatest4(tab.$content, tab.$title, tab.$favicon, tab.$isLoading)
                 .dropFirst()
                 .sink { [weak self, weak store] content, title, favicon, isLoading in
@@ -940,14 +922,12 @@ final class AIChatOmnibarController {
         }
     }
 
-    /// The live `Tab` for an attached id. A suspended tab is materialized (never selected), the same
-    /// thing attaching one does — otherwise it would carry no observer and silently stop updating.
+    /// Materializes a suspended tab (never selects it), otherwise it would carry no observer.
     private func attachedTab(withId id: String, in collection: TabCollectionViewModel) -> Tab? {
         AIChatTabPickerSource.materializeAttachableTab(withId: id, forOrigin: collection)?.tab
     }
 
-    /// Applies the policy to `store`, which is the prompt's own store — not necessarily the active
-    /// one, since the attached tab may be the tab the user is looking at.
+    /// `store` is the prompt's own store, which is not necessarily the active one.
     private func applyNavigationPolicy(forAttachedTabId id: String,
                                        in store: any DuckAIPromptDraftStoring,
                                        content: Tab.TabContent,
@@ -1250,8 +1230,7 @@ final class AIChatOmnibarController {
                     .sink { [weak self] panelAttachments in
                         self?.onActiveTabPanelAttachmentsChanged?(panelAttachments)
                     }
-                // The incoming tab has its own attachments — watch those tabs instead, and reconcile
-                // any navigation they made while this draft wasn't the active one.
+                // The incoming tab has its own attachments to watch and reconcile.
                 self.syncAttachedTabObservers()
                 if store == nil {
                     // No store → empty carousel; nothing can deliver the empty value for us.

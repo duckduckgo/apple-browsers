@@ -705,10 +705,7 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         return (controller, attachedTab)
     }
 
-    /// Tabs built here never finish loading (no network), so they stand in for the attach-a-loading-tab
-    /// case: the URL change is that load settling, and the attachment rebases instead of being lost —
-    /// even with auto-send off, where a settled tab would be dropped. The drop itself is covered by
-    /// `AIChatAttachedTabNavigationPolicyTests`, which can pin the load state.
+    /// Tabs built here never finish loading, so they stand in for attaching a mid-load tab.
     func testWhenTabAttachedMidLoadLandsOnAnotherURL_ThenAttachmentRebasesInsteadOfBeingDropped() {
         let (controller, attachedTab) = makeControllerWithAttachedOtherTab(automaticallySendPageContext: false)
 
@@ -718,8 +715,7 @@ final class AIChatOmnibarControllerTests: XCTestCase {
                        "Dropping here would lose the tab the user just attached")
     }
 
-    /// The reported bug: switching to the attached tab used to cancel its observer, so navigating
-    /// there went unnoticed and the prompt tab's card only caught up a tab-switch later.
+    /// Switching to the attached tab used to cancel its observer, losing that tab's navigation.
     func testWhenAttachedTabNavigatesWhileItIsSelected_ThenThePromptTabsAttachmentUpdatesImmediately() {
         let (controller, attachedTab) = makeControllerWithAttachedOtherTab(automaticallySendPageContext: true)
         let promptTabState = tabCollectionViewModel.selectedTabViewModel?.addressBarSharedTextState
@@ -1043,8 +1039,7 @@ final class AIChatOmnibarControllerTests: XCTestCase {
     }
 
     func testWhenTabSwitchesToTabWithSavedTabAttachments_ThenPanelAttachmentsCallbackFires() throws {
-        // Given — tab 1 has a saved tab attachment; register the unified-panel callback. The
-        // attachment has to name a tab that is actually open: attachments for closed tabs are pruned.
+        // Given — tab 1 has a saved attachment; its tab has to be open, closed ones are pruned.
         let attachment = makeTabAttachment(id: try XCTUnwrap(tabCollectionViewModel.selectedTabViewModel?.tab.uuid))
         tabCollectionViewModel.selectedTabViewModel?.addressBarSharedTextState.setAIChatTabAttachments([attachment])
 

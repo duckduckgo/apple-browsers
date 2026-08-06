@@ -20,13 +20,7 @@ import AIChat
 import AppKit
 import Foundation
 
-/// What an attached tab's own navigation does to its attachment card.
-///
-/// With "Automatically send page content" on, an attached tab that navigates keeps feeding the
-/// prompt, so the card follows it to the new page. With the setting off the attachment was an
-/// explicit pick of one page, so navigating away drops it rather than silently sending a page the
-/// user never chose. A tab that lands somewhere unattachable (Duck.ai, new tab page, non-URL
-/// content) is dropped either way.
+/// What an attached tab's navigation does to its card: follow it, or drop the explicit pick.
 enum AIChatAttachedTabNavigationPolicy {
 
     enum Action: Equatable {
@@ -48,15 +42,12 @@ enum AIChatAttachedTabNavigationPolicy {
         let resolvedTitle = title ?? url.host ?? ""
 
         guard url == attachment.url else {
-            // A tab attached mid-load is still finishing the navigation the user attached it for:
-            // redirects and the committed URL arrive as URL changes. That is the same pick settling,
-            // not a page the user chose to leave, so it rebases the attachment either way.
+            // A load in flight at attach time is settling (redirect, committed URL), not a page change.
             guard automaticallySendsPageContext || isSettlingLoadFromAttachTime else { return .drop }
             return .refresh(AIChatTabAttachment(id: attachment.id, title: resolvedTitle, url: url, favicon: favicon))
         }
 
-        // Same page: title and favicon both land after the navigation that carried them, so take
-        // whichever has arrived. Neither is ever downgraded back to nil / the host fallback.
+        // Title and favicon land after the page; never downgrade to nil / the host fallback.
         let refreshedTitle = title ?? attachment.title
         let refreshedFavicon = favicon ?? attachment.favicon
         guard refreshedTitle != attachment.title || refreshedFavicon !== attachment.favicon else { return .keep }

@@ -9562,60 +9562,60 @@
       }
     },
     "aichat.tab-picker.current-tab-suffix" : {
-      "comment" : "Trailing badge in AI chat tab pickers (omnibar add-attachment menu, add-tabs modal and the @-mention picker) next to the user's currently active browser tab. The leading bullet separates it from the tab title.",
+      "comment" : "Trailing badge in AI chat tab pickers (omnibar attach menu and the @-mention picker) next to the user's currently active browser tab",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "(Aktueller Tab)"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "• Current Tab"
+            "value" : "(Current Tab)"
           }
         },
         "es" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "(Pestaña actual)"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "(Onglet actuel)"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "(Scheda attuale)"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "(Huidig tabblad)"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "(Bieżąca karta)"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "(separador atual)"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "(Текущая вкладка)"
           }
         }

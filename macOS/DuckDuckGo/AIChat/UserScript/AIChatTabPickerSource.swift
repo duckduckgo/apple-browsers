@@ -20,15 +20,7 @@ import AIChat
 import AppKit
 import WebKit
 
-/// Single source of truth for which open tabs a Duck.ai "add tabs" picker may offer, shared by
-/// all three surfaces (address bar omnibar, Duck.ai sidebar, New Tab Page omnibar).
-///
-/// Scope is the window the picker was opened from — tabs from other windows are never offered, which
-/// also isolates each Fire Window by construction.
-///
-/// Returned tabs are that window's pinned tabs followed by its unpinned tabs, URL tabs only, run
-/// through `AIChatTabMetadata.shouldExcludeFromTabPicker`. Callers map the `Tab`s to their own output
-/// type and apply any surface-specific filtering / current-tab handling.
+/// Which open tabs a Duck.ai picker may offer: the origin window's pinned then unpinned URL tabs.
 @MainActor
 enum AIChatTabPickerSource {
 
@@ -43,8 +35,7 @@ enum AIChatTabPickerSource {
         return windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel
     }
 
-    /// All attachable tabs (including suspended/unloaded) of the origin window, pinned tabs first.
-    /// Returns `AnyTab` so metadata is available even for unloaded tabs.
+    /// `AnyTab` so metadata is available for suspended/unloaded tabs too.
     static func attachableTabs(forOrigin origin: TabCollectionViewModel) -> [AnyTab] {
         let pinned = origin.pinnedTabsCollection?.tabs ?? []
         return (pinned + origin.tabCollection.tabs).filter { tab in
@@ -66,10 +57,7 @@ enum AIChatTabPickerSource {
         }
     }
 
-    /// Locates the attachable tab with `id` in the origin window — **including suspended/unloaded
-    /// tabs** — and materializes it into a live `Tab` without selecting or focusing it. Applies the
-    /// same URL + `shouldExcludeFromTabPicker` filter as `attachableTabs`, so a tab the picker never
-    /// offered can't be resolved here. Returns `nil` if nothing matches.
+    /// Materializes the attached tab without selecting it; `nil` unless the picker could offer it.
     static func materializeAttachableTab(withId id: String,
                                          forOrigin origin: TabCollectionViewModel) -> ResolvedTab? {
         guard let index = origin.indexInAllTabs(where: { $0.uuid == id }),

@@ -165,8 +165,7 @@ final class AIChatTabAttachmentCardView: NSView {
         fatalError("init(coder:) has not been implemented")
     }
 
-    /// Re-renders a reused card for the same attachment id: the attached tab can navigate, and its
-    /// title and favicon land after the page does.
+    /// Re-renders a reused card whose tab navigated, or whose title / favicon just landed.
     func update(with attachment: AIChatTabAttachment) {
         let displayTitle = attachment.title.isEmpty ? attachment.url.host ?? attachment.url.absoluteString : attachment.title
         titleLabel.stringValue = displayTitle

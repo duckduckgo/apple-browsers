@@ -282,7 +282,7 @@
                 "key": "current_tier",
                 "type": "string",
                 "description": "The user's subscription tier at the time of the gated selection",
-                "enum": ["free", "plus", "pro", "internal", "subscriptionFunnelOrigin"]
+                "enum": ["free", "plus", "pro", "internal"]
             },
             {
                 "key": "required_tier",
@@ -295,7 +295,8 @@
                 "type": "string",
                 "description": "Which subscription flow the user was routed to",
                 "enum": ["purchase", "upgrade"]
-            }
+            },
+            "subscriptionFunnelOrigin"
         ]
     },
     "m_mac_aichat_new_voice_chat_omnibar_native": {

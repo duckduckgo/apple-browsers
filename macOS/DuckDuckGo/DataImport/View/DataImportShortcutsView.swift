@@ -77,6 +77,7 @@ private func importShortcutsRow(image: Image, title: String, subtitle: String, i
         Spacer()
         Toggle("", isOn: isOn)
             .toggleStyle(.switch)
+            .rebrandedControlTint()
     }
     .padding(.horizontal)
     .padding(.vertical, 10)

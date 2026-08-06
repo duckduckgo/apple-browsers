@@ -21,6 +21,7 @@ import Common
 import FoundationExtensions
 import Core
 import DDGSync
+import FeatureFlags_iOS
 import WebKit
 import BrowserServicesKit
 import Persistence
@@ -137,6 +138,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     private let contextualOnboardingLogic: ContextualOnboardingLogic
     private let onboardingPixelReporter: OnboardingPixelReporting
     private let featureFlagger: FeatureFlagger
+    private let tabTerminationTelemetry: any TabTerminationTelemetry
     private let contentScopeExperimentManager: ContentScopeExperimentsManaging
     private let textZoomCoordinatorProvider: TextZoomCoordinatorProviding
     private let autoconsentManagementProvider: AutoconsentManagementProviding
@@ -218,7 +220,8 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
          duckAiFireModeStorageHandler: DuckAiNativeStorageHandling? = nil,
          toggleModeStorage: ToggleModeStoring = ToggleModeStorage(),
-         adBlockingAvailability: AdBlockingAvailabilityProviding
+         adBlockingAvailability: AdBlockingAvailabilityProviding,
+         tabTerminationTelemetry: (any TabTerminationTelemetry)? = nil
     ) {
         self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
         self.duckAiFireModeStorageHandler = duckAiFireModeStorageHandler
@@ -236,6 +239,9 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         self.contextualOnboardingLogic = contextualOnboardingLogic
         self.onboardingPixelReporter = onboardingPixelReporter
         self.featureFlagger = featureFlagger
+        self.tabTerminationTelemetry = tabTerminationTelemetry ?? DefaultTabTerminationTelemetry(
+            featureFlagger: featureFlagger,
+            keyValueStore: UserDefaults.app)
         self.contentScopeExperimentManager = contentScopeExperimentManager
         self.appSettings = appSettings
         self.autoplaySettings = autoplaySettings
@@ -637,6 +643,11 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     }
 
     @MainActor
+    func webContentProcessDidTerminate() {
+        tabTerminationTelemetry.webContentProcessDidTerminate(activeTabCount: tabControllerCache.count)
+    }
+
+    @MainActor
     func invalidateCache(forController controller: TabViewController) {
         if current() === controller {
             DailyPixel.fireDailyAndCount(pixel: .webKitTerminationDidReloadCurrentTab, pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes)
@@ -938,6 +949,7 @@ extension TabManager {
     @MainActor
     @objc
     private func onMemoryWarning(_ notification: NSNotification) {
+        tabTerminationTelemetry.didReceiveMemoryWarning()
         flushPendingSave()
     }
 

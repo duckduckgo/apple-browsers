@@ -22,6 +22,7 @@ import Testing
 import Core
 import Persistence
 import PersistenceTestingUtils
+import FeatureFlags_iOS
 @testable import DuckDuckGo
 
 @Suite("After Inactivity Effective Option Resolver")

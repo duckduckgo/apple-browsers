@@ -466,6 +466,34 @@ final class AIChatPageContextHandlerTests: XCTestCase {
         XCTAssertEqual(extractionPixels.calls.first?.outcome, .failure(.deserializeFailed))
     }
 
+    /// A script error used to be dropped without resolving the request, so it surfaced 30s later as
+    /// a timeout. It must now report its own reason, with a latency, as soon as the reply arrives.
+    func testWhenScriptErrorThenReportsScriptErrorOutcomeNotTimeout() {
+        let mockScript = MockPageContextCollecting()
+        let extractionPixels = MockPageContextExtractionPixelFiring()
+        let policy = makeBlocklistPolicy()
+        let handler = makeHandler(
+            webViewProvider: { WKWebView() },
+            userScriptProvider: { mockScript },
+            attachabilityPolicyProvider: { policy },
+            currentURLProvider: { URL(string: "https://example.com/article") },
+            mimeTypeProvider: { _ in "text/html" },
+            extractionPixelHandler: extractionPixels
+        )
+
+        let expectation = XCTestExpectation(description: "Context published")
+        handler.contextPublisher.dropFirst().first().sink { _ in expectation.fulfill() }.store(in: &cancellables)
+
+        handler.triggerContextCollection(trigger: .userRequest)
+        mockScript.simulateScriptError()
+        wait(for: [expectation], timeout: 1.0)
+
+        XCTAssertEqual(extractionPixels.calls.count, 1)
+        XCTAssertEqual(extractionPixels.calls.first?.outcome, .failure(.scriptError))
+        XCTAssertEqual(extractionPixels.calls.first?.trigger, .userRequest)
+        XCTAssertNotNil(extractionPixels.calls.first?.latency)
+    }
+
     func testWhenNoAttachabilityConfigThenCollectsButFiresNoExtractionPixels() {
         let mockScript = MockPageContextCollecting()
         let extractionPixels = MockPageContextExtractionPixelFiring()
@@ -699,9 +727,9 @@ private final class MockContextualModePixelHandler: AIChatContextualModePixelFir
 // MARK: - Mock Page Context Collecting
 
 private final class MockPageContextCollecting: PageContextCollecting {
-    private let mockSubject = PassthroughSubject<AIChatPageContextData?, Never>()
+    private let mockSubject = PassthroughSubject<PageContextCollectionResult, Never>()
 
-    var collectionResultPublisher: AnyPublisher<AIChatPageContextData?, Never> {
+    var collectionResultPublisher: AnyPublisher<PageContextCollectionResult, Never> {
         mockSubject.eraseToAnyPublisher()
     }
 
@@ -714,7 +742,11 @@ private final class MockPageContextCollecting: PageContextCollecting {
     }
 
     func simulateNilContext() {
-        mockSubject.send(nil)
+        mockSubject.send(.decodeFailed)
+    }
+
+    func simulateScriptError() {
+        mockSubject.send(.scriptError)
     }
 
     func simulateEmptyContext() {
@@ -726,7 +758,7 @@ private final class MockPageContextCollecting: PageContextCollecting {
             truncated: false,
             fullContentLength: 0
         )
-        mockSubject.send(emptyContext)
+        mockSubject.send(.collected(emptyContext))
     }
 
     func simulateValidContext() {
@@ -738,11 +770,11 @@ private final class MockPageContextCollecting: PageContextCollecting {
             truncated: false,
             fullContentLength: 39
         )
-        mockSubject.send(validContext)
+        mockSubject.send(.collected(validContext))
     }
 
     func simulate(context: AIChatPageContextData) {
-        mockSubject.send(context)
+        mockSubject.send(.collected(context))
     }
 }
 

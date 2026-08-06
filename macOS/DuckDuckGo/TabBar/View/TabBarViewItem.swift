@@ -22,7 +22,7 @@ import CombineExtensions
 import Common
 import FoundationExtensions
 import DesignResourcesKitIcons
-import FeatureFlags
+import FeatureFlags_macOS
 import PrivacyConfig
 import WebKit
 

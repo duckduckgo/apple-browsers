@@ -889,6 +889,7 @@ final class UnifiedToggleInputView: UIView {
         } else {
             cardPinnedHeightConstraint.isActive = false
         }
+        textEntryView.trailingButtonsRowHeight = dimensions.pinnedHeight ?? Constants.collapsedCardHeight
 
         cardView.layer.maskedCorners = Constants.allCorners
         cardView.clipsToBounds = expanded && (usesOmnibarMargins || !isToggleEnabled)

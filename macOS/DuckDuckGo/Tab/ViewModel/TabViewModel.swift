@@ -22,7 +22,7 @@ import Combine
 import CombineExtensions
 import Common
 import FoundationExtensions
-import FeatureFlags
+import FeatureFlags_macOS
 import MaliciousSiteProtection
 import PrivacyConfig
 import PrivacyDashboard

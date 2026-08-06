@@ -581,8 +581,14 @@ public extension DesignSystemImages {
         public enum Size32 {
             public static var duckDuckAI: DesignSystemImage { .init(resource: .duckAIColor32) }
             public static var duckDuckGo: DesignSystemImage { .init(resource: .duckDuckGoColor32) }
-            public static var document: DesignSystemImage { .init(resource: .documentColor32) }
+            public static var document: DesignSystemImage { .init(resource: .documentColor32Legacy) }
             public static var shieldUtility: DesignSystemImage { .init(resource: .shieldUtilityColor32) }
+        }
+
+        public enum Size56 {
+            public static var fileCSV: DesignSystemImage { .init(resource: .fileCsv56) }
+            public static var fileDrag: DesignSystemImage { .init(resource: .fileDrag56) }
+            public static var fileDrop: DesignSystemImage { .init(resource: .fileDrop56) }
         }
 
         public enum Size72 {
@@ -649,8 +655,8 @@ public extension DesignSystemImages {
                     ? .init(resource: .success128)
                     : .init(resource: .success128Legacy)
             }
-            public static var fileDrag: DesignSystemImage { .init(resource: .fileDrag128) }
-            public static var fileDrop: DesignSystemImage { .init(resource: .fileDrop128) }
+            public static var fileDrag: DesignSystemImage { .init(resource: .fileDrag128Legacy) }
+            public static var fileDrop: DesignSystemImage { .init(resource: .fileDrop128Legacy) }
             public static var fileIssue: DesignSystemImage {
                 AppRebrand.isAppRebranded()
                     ? .init(resource: .fileIssue128)

@@ -18,15 +18,10 @@
 
 import Foundation
 
-public typealias DBPFeatureFlagging = RemoteBrokerDeliveryFeatureFlagging
-    & ForegroundRunningFeatureFlagging
+public typealias DBPFeatureFlagging = ForegroundRunningFeatureFlagging
     & ContinuedProcessingFeatureFlagging
     & WebViewUserAgentFeatureFlagging
     & OptOutRetryErrorFeatureFlagging
-
-public protocol RemoteBrokerDeliveryFeatureFlagging {
-    var isRemoteBrokerDeliveryFeatureOn: Bool { get }
-}
 
 public protocol ForegroundRunningFeatureFlagging {
     var isForegroundRunningOnAppActiveFeatureOn: Bool { get }

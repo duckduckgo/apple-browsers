@@ -35,6 +35,7 @@ public extension DesignSystemImages {
             public static var arrowLeft: DesignSystemImage { .init(resource: .arrowLeft12) }
             public static var arrowRight: DesignSystemImage { .init(resource: .arrowRight12) }
             public static var arrowUp: DesignSystemImage { .init(resource: .arrowUp12) }
+            public static var arrowUpDown: DesignSystemImage { .init(resource: .arrowUpDown12) }
             public static var arrowUpRight: DesignSystemImage { .init(resource: .arrowUpRight12) }
             public static var assist: DesignSystemImage { .init(resource: .assist12) }
             public static var assistAlt: DesignSystemImage { .init(resource: .assistAlt12) }
@@ -354,6 +355,7 @@ public extension DesignSystemImages {
             public static var systemTheme: DesignSystemImage { .init(resource: .systemTheme16) }
             public static var tabCloseAlt: DesignSystemImage { .init(resource: .tabCloseAlt16) }
             public static var tabContent: DesignSystemImage { .init(resource: .tabContent16) }
+            public static var tabContentAttach: DesignSystemImage { .init(resource: .tabContentAttach16) }
             public static var tabDesktop: DesignSystemImage { .init(resource: .tabDesktop16) }
             public static var tabMobile: DesignSystemImage { .init(resource: .tabMobile16) }
             public static var tabReopen: DesignSystemImage { .init(resource: .tabReopen16) }

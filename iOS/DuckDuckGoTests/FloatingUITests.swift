@@ -317,6 +317,29 @@ final class WebViewPreviewSnapshotGeometryTests: XCTestCase {
     func testWhenViewportIsEmptyThenVisibleRectIsNil() {
         XCTAssertNil(WebViewPreviewSnapshotGeometry.visibleRect(webViewBounds: .zero))
     }
+
+    func testWhenContentInsetIsGivenThenVisibleRectExcludesTopAndBottomInsets() {
+        let bounds = CGRect(x: 0, y: 0, width: 320, height: 640)
+        let contentInset = UIEdgeInsets(top: 50, left: 0, bottom: 30, right: 0)
+
+        XCTAssertEqual(WebViewPreviewSnapshotGeometry.visibleRect(webViewBounds: bounds, contentInset: contentInset),
+                       CGRect(x: 0, y: 50, width: 320, height: 560))
+    }
+
+    func testWhenContentInsetHasHorizontalValuesThenVisibleRectKeepsFullWidth() {
+        let bounds = CGRect(x: 0, y: 0, width: 320, height: 640)
+        let contentInset = UIEdgeInsets(top: 0, left: 20, bottom: 0, right: 20)
+
+        XCTAssertEqual(WebViewPreviewSnapshotGeometry.visibleRect(webViewBounds: bounds, contentInset: contentInset),
+                       bounds)
+    }
+
+    func testWhenContentInsetsExceedHeightThenVisibleRectIsNil() {
+        let bounds = CGRect(x: 0, y: 0, width: 320, height: 100)
+        let contentInset = UIEdgeInsets(top: 60, left: 0, bottom: 60, right: 0)
+
+        XCTAssertNil(WebViewPreviewSnapshotGeometry.visibleRect(webViewBounds: bounds, contentInset: contentInset))
+    }
 }
 
 final class FloatingSwipePreviewGeometryTests: XCTestCase {

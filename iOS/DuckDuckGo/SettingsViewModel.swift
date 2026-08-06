@@ -38,6 +38,7 @@ import DataBrokerProtection_iOS
 import SystemSettingsPiPTutorial
 import SERPSettings
 import Networking
+import FeatureFlags_iOS
 
 enum YouTubeAdBlockingStorageKeys: String, StorageKeyDescribing {
     case youTubeAdBlockingEnabled = "com_duckduckgo_ios_youTubeAdBlockingEnabled"
@@ -1906,6 +1907,8 @@ extension SettingsViewModel {
                                                                   object: nil,
                                                                   queue: .main, using: { [weak self] _ in
             guard let self = self else { return }
+            self.mobileCustomization.refreshAvailability()
+            self.state.mobileCustomization = self.mobileCustomization.state
             Task { @MainActor in
                 self.refreshAutoClearOptionsIfNeeded()
             }

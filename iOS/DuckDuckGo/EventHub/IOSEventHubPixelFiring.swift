@@ -54,7 +54,7 @@ struct IOSEventHubPixelFiring: EventHubPixelFiring {
 
     func enqueueFirePixel(named name: String, parameters: [String: String]) {
         // The governed name, without the platform suffix PixelKit appends when it builds the request.
-        Logger.eventHub.info("PixelKit fire: \(name, privacy: .public) \(parameters, privacy: .public)")
+        Logger.eventHub.info("PixelKit fire: \(name, privacy: .public) \(parameters, privacy: .private)")
         // `frequency` stays `.standard`: EventHub has already done the period aggregation, so PixelKit
         // must not apply a second layer of daily de-duplication on top of it.
         PixelKit.fire(EventHubPixelKitEvent(name: name, parameters: parameters, error: nil))
@@ -68,7 +68,7 @@ final class IOSEventHubDebugEventMapping: EventMapping<EventHubDebugEvent> {
 
     init() {
         super.init { event, error, _, _ in
-            Logger.eventHub.error("PixelKit fire: \(event.pixelName, privacy: .public) \(event.pixelParameters, privacy: .public)")
+            Logger.eventHub.error("PixelKit fire: \(event.pixelName, privacy: .public) \(event.pixelParameters, privacy: .private)")
             // `.dailyAndCount`, unlike the telemetry path: these fire from failures that repeat on every
             // attempt — a store that cannot write fails again at each flush — so the daily pixel bounds
             // how many users are affected while the count keeps the rate visible.

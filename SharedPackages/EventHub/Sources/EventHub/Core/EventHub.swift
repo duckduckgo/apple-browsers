@@ -339,7 +339,7 @@ public final class EventHub: EventHubManaging {
                     .sorted { $0.key < $1.key }
                     .map { "\($0.key)=\($0.value)" }
                     .joined(separator: ", ")
-                Logger.eventHub.info("firing period pixel \(name, privacy: .public), raw counts [\(rawCounts, privacy: .public)]")
+                Logger.eventHub.debug("firing period pixel \(name, privacy: .public), raw counts [\(rawCounts, privacy: .private)]")
                 pixelFiring.enqueueFirePixel(named: name, parameters: params)
             } else {
                 Logger.eventHub.error("pixel \(name, privacy: .public) not fired, its period trigger has no period to attribute to")

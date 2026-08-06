@@ -43,7 +43,7 @@ struct MacOSEventHubPixelFiring: EventHubPixelFiring {
 
     func enqueueFirePixel(named name: String, parameters: [String: String]) {
         let pixelName = name + macOSSuffix
-        Logger.eventHub.info("PixelKit fire: \(pixelName, privacy: .public) \(parameters, privacy: .public)")
+        Logger.eventHub.info("PixelKit fire: \(pixelName, privacy: .public) \(parameters, privacy: .private)")
         // `doNotEnforcePrefix` is required: these names already carry the `_macos` platform suffix, and
         // without it PixelKit prepends `m_mac_` to any macOS name that lacks that prefix — which would
         // both double the platform marker and diverge from the names declared in event_hub.json5.
@@ -60,7 +60,7 @@ final class MacOSEventHubDebugEventMapping: EventMapping<EventHubDebugEvent> {
     init() {
         super.init { event, error, _, _ in
             let pixelName = event.pixelName + macOSSuffix
-            Logger.eventHub.error("PixelKit fire: \(pixelName, privacy: .public) \(event.pixelParameters, privacy: .public)")
+            Logger.eventHub.error("PixelKit fire: \(pixelName, privacy: .public) \(event.pixelParameters, privacy: .private)")
             // `.dailyAndCount`, unlike the telemetry path: these fire from failures that repeat on every
             // attempt — a store that cannot write fails again at each flush — so the daily pixel bounds
             // how many users are affected while the count keeps the rate visible.

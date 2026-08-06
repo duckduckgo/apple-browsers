@@ -19,7 +19,9 @@
 import Cocoa
 import Combine
 import AIChat
-import AppKitExtensions
+import AppKit
+import UniformTypeIdentifiers
+import UniformTypeIdentifiersExtensions
 import DesignResourcesKitIcons
 import PixelKit
 import PrivacyConfig
@@ -689,16 +691,9 @@ extension AIChatOmnibarTextContainerViewController: FocusableTextViewNavigationD
         return true
     }
 
-    func textViewDidReceiveImageDrop(_ fileURLs: [URL]) -> Bool {
-        guard let containerVC = containerViewController else { return false }
-        guard omnibarController.isOmnibarToolsEnabled else { return false }
-        let canAttach = omnibarController.isImageGenerationMode || omnibarController.selectedModelSupportsImageUpload
-        guard canAttach else { return false }
-        var accepted = false
-        for url in fileURLs where containerVC.addImageAttachmentFromDrop(url) {
-            accepted = true
-        }
-        return accepted
+    func textViewDidReceiveAttachmentDrop(_ fileURLs: [URL]) -> Bool {
+        guard let containerVC = containerViewController, omnibarController.isOmnibarToolsEnabled else { return false }
+        return containerVC.addAttachmentsFromDrop(fileURLs)
     }
 }
 
@@ -715,9 +710,9 @@ protocol FocusableTextViewNavigationDelegate: AnyObject {
     /// Called when user presses Enter while a suggestion is selected
     /// - Returns: `true` if a suggestion was selected, `false` otherwise
     func textViewDidRequestSelectCurrentSuggestion() -> Bool
-    /// Called when the user drops image files onto the text view
-    /// - Returns: `true` if any images were accepted, `false` otherwise
-    func textViewDidReceiveImageDrop(_ fileURLs: [URL]) -> Bool
+    /// Called when the user drops files onto the text view
+    /// - Returns: `true` if any were accepted, `false` otherwise
+    func textViewDidReceiveAttachmentDrop(_ fileURLs: [URL]) -> Bool
 }
 
 /// NSTextField label that forwards mouse hits to a configured target view.
@@ -766,42 +761,45 @@ private final class FocusableTextView: NSTextView {
         return didResign
     }
 
-    private static let imageExtensions: Set<String> = ["jpg", "jpeg", "png", "gif", "webp", "heic", "heif", "bmp", "tiff", "tif"]
-
     func registerForImageDrop() {
         registerForDraggedTypes([.fileURL])
     }
 
     override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {
-        if !Self.imageFileURLs(from: sender).isEmpty {
+        if !Self.attachableFileURLs(from: sender).isEmpty {
             return .copy
         }
         return super.draggingEntered(sender)
     }
 
     override func draggingUpdated(_ sender: NSDraggingInfo) -> NSDragOperation {
-        if !Self.imageFileURLs(from: sender).isEmpty {
+        if !Self.attachableFileURLs(from: sender).isEmpty {
             return .copy
         }
         return super.draggingUpdated(sender)
     }
 
     override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
-        let imageURLs = Self.imageFileURLs(from: sender)
-        if !imageURLs.isEmpty,
-           navigationDelegate?.textViewDidReceiveImageDrop(imageURLs) == true {
+        let fileURLs = Self.attachableFileURLs(from: sender)
+        if !fileURLs.isEmpty,
+           navigationDelegate?.textViewDidReceiveAttachmentDrop(fileURLs) == true {
             return true
         }
         return super.performDragOperation(sender)
     }
 
-    private static func imageFileURLs(from draggingInfo: NSDraggingInfo) -> [URL] {
+    /// Images and PDFs, matching what the attach menu offers. Anything else falls through to the
+    /// text view, which drops a file path into the prompt.
+    private static func attachableFileURLs(from draggingInfo: NSDraggingInfo) -> [URL] {
         guard let urls = draggingInfo.draggingPasteboard.readObjects(forClasses: [NSURL.self], options: [
             .urlReadingFileURLsOnly: true
         ]) as? [URL] else {
             return []
         }
-        return urls.filter { imageExtensions.contains($0.pathExtension.lowercased()) }
+        return urls.filter { url in
+            guard let type = UTType(filenameExtension: url.pathExtension.lowercased()) else { return false }
+            return type.conforms(to: .image) || type.conforms(to: .pdf)
+        }
     }
 
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool {

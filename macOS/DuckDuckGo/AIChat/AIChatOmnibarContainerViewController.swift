@@ -1539,15 +1539,20 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         updateAttachmentsLayout()
     }
 
-    /// Attempts to add an image attachment from a drag-and-drop operation.
-    /// - Returns: `true` if the image was accepted, `false` if attachments are full.
-    func addImageAttachmentFromDrop(_ url: URL) -> Bool {
-        guard omnibarController.activeImageAttachments.count < omnibarController.imageAttachmentsDisplayCap else { return false }
+    /// Attaches dropped images and PDFs, keeping only what the selected model accepts, through the
+    /// same validation as the picker. Returns `false` when none of them can be attached, so the
+    /// text view falls back to dropping the path into the prompt.
+    /// - Returns: `true` if any file was taken.
+    func addAttachmentsFromDrop(_ urls: [URL]) -> Bool {
+        let accepted = urls.filter { url in
+            guard let type = UTType(filenameExtension: url.pathExtension.lowercased()) else { return false }
+            return type.conforms(to: .image) ? canPickAdditionalImages : omnibarController.selectedModelSupportsFileUpload
+        }
+        guard !accepted.isEmpty else { return false }
         // A successful drop is a pick action from the user's perspective, so clear any stale
         // pick-time rejection error (matching the file/image picker path).
         lastAttachmentError = nil
-        addImageAttachment(from: url)
-        updateAttachmentsLayout()
+        addPickedAttachments(from: accepted)
         return true
     }
 

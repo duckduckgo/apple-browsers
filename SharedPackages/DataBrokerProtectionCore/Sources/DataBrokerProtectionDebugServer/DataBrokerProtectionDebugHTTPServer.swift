@@ -99,6 +99,14 @@ public final class DataBrokerProtectionDebugHTTPServer {
             return try Self.json(status)
         }
 
+        server.addRoute("/api/resource-usage", method: .GET) { _ in
+            let service = service.value
+            guard let resourceUsage = service.resourceUsage() else {
+                return .text("Resource usage is only available on macOS", status: .notFound)
+            }
+            return try Self.json(resourceUsage)
+        }
+
         if let logReader {
             server.addRoute("/api/logs", method: .GET) { request in
                 let logReader = logReader.value

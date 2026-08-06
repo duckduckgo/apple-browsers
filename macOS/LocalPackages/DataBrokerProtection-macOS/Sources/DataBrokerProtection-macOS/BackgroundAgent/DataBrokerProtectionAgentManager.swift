@@ -46,6 +46,7 @@ public class DataBrokerProtectionAgentManagerProvider {
                                     featureFlagger: DBPFeatureFlagging,
                                     wideEvent: WideEventManaging,
                                     vpnBypassService: VPNBypassFeatureProvider,
+                                    resourceMonitor: DataBrokerProtectionResourceMonitoring,
                                     applicationNameForUserAgentProvider: @escaping () -> String?) -> DataBrokerProtectionAgentManager? {
         guard let pixelKit = PixelKit.shared else {
             assertionFailure("PixelKit not set up")
@@ -168,6 +169,7 @@ public class DataBrokerProtectionAgentManagerProvider {
             privacyConfigurationManager: privacyConfigurationManager,
             authenticationManager: authenticationManager,
             freemiumDBPUserStateManager: freemiumDBPUserStateManager,
+            resourceMonitor: resourceMonitor,
             wideEvent: wideEvent)
     }
 }
@@ -200,6 +202,7 @@ public final class DataBrokerProtectionAgentManager {
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let authenticationManager: DataBrokerProtectionAuthenticationManaging
     private let freemiumDBPUserStateManager: FreemiumDBPUserStateManager
+    private let resourceMonitor: DataBrokerProtectionResourceMonitoring?
     private let wideEventSweeper: DBPWideEventSweeper?
 
     // Used for debug functions only, so not injected
@@ -237,6 +240,7 @@ public final class DataBrokerProtectionAgentManager {
          privacyConfigurationManager: PrivacyConfigurationManaging,
          authenticationManager: DataBrokerProtectionAuthenticationManaging,
          freemiumDBPUserStateManager: FreemiumDBPUserStateManager,
+         resourceMonitor: DataBrokerProtectionResourceMonitoring? = nil,
          wideEvent: WideEventManaging? = nil
     ) {
         self.eventsHandler = eventsHandler
@@ -257,6 +261,7 @@ public final class DataBrokerProtectionAgentManager {
         self.privacyConfigurationManager = privacyConfigurationManager
         self.authenticationManager = authenticationManager
         self.freemiumDBPUserStateManager = freemiumDBPUserStateManager
+        self.resourceMonitor = resourceMonitor
         self.wideEventSweeper = wideEvent.map { DBPWideEventSweeper(wideEvent: $0) }
 
         self.activityScheduler.delegate = self
@@ -398,6 +403,18 @@ extension DataBrokerProtectionAgentManager: JobQueueManagerDelegate {
             do {
                 try await brokerUpdater.checkForUpdates()
             }
+        }
+    }
+
+    public func queueManagerDidStartOperations(_ queueManager: JobQueueManaging) {
+        Task { @MainActor [weak self] in
+            self?.resourceMonitor?.start()
+        }
+    }
+
+    public func queueManagerDidFinishOperations(_ queueManager: JobQueueManaging) {
+        Task { @MainActor [weak self] in
+            self?.resourceMonitor?.stop()
         }
     }
 
@@ -618,6 +635,8 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionDebugReadProvidi
     public var schedulerStateString: String { queueManager.debugRunningStatusString }
 
     public var lastSchedulerTrigger: Date? { activityScheduler.lastTriggerTimestamp }
+
+    public var resourceUsage: DBPDebugResourceUsage? { resourceMonitor?.debugResourceUsage }
 
     public var environmentName: String {
         debugSettings.selectedEnvironment == .production ? "production" : "staging"

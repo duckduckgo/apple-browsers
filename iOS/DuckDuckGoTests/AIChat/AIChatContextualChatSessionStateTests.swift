@@ -2410,15 +2410,25 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         XCTAssertEqual(mockPixelHandler.promptSubmittedWithSelectionsCounts, [1])
     }
 
-    /// Quick actions survive an attached selection even though suggestions don't. "Ask about page" is
-    /// the only route to attaching page context, so hiding it would make a selection and page context
-    /// mutually exclusive — which the coexistence decision forbids.
-    func testQuickActionsRemainVisibleWhileASelectionIsAttached() {
+    /// Every quick action is page-scoped, so beside an attached selection they would offer to act on the
+    /// wrong thing. Page context stays reachable through the input's attach affordance, so hiding these
+    /// doesn't make a selection and page context mutually exclusive.
+    func testPageScopedQuickActionsAreHiddenWhileASelectionIsAttached() {
         sessionState.updateContext(makeTestContext())
-        let expected = sessionState.viewState.quickActions
-        XCTAssertFalse(expected.isEmpty, "precondition: the page offers quick actions")
+        XCTAssertFalse(sessionState.viewState.quickActions.isEmpty, "precondition: the page offers quick actions")
 
         sessionState.attachSelection(makeSelection(), pageTitle: "Article")
+
+        XCTAssertTrue(sessionState.viewState.quickActions.isEmpty)
+    }
+
+    func testQuickActionsReturnWhenTheLastSelectionIsRemoved() {
+        sessionState.updateContext(makeTestContext())
+        let expected = sessionState.viewState.quickActions
+        let selection = makeSelection()
+        sessionState.attachSelection(selection, pageTitle: "Article")
+
+        sessionState.removeAttachedSelection(id: selection.id)
 
         XCTAssertEqual(sessionState.viewState.quickActions, expected)
     }

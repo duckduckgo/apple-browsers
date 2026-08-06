@@ -873,11 +873,17 @@ private extension AIChatContextualChatSessionState {
     }
 
     private func resolveQuickActions() -> [AIChatContextualQuickAction] {
-        // Deliberately NOT suppressed while a selection is attached, unlike the suggestions.
-        // "Ask about page" is the only route to attaching page context, so hiding it would make a
-        // selection and page context mutually exclusive — contradicting the decision that the two
-        // coexist, and macOS's TS3 ruling that attaching page content to an ongoing chat must keep
-        // working.
+        // Every quick action here is page-scoped ("Ask about page", "Summarize page"), so beside an
+        // attached selection they offer to act on the wrong thing — the same reason the page
+        // suggestions go. Pre-submit only: once a chat is running the frontend drives the UI.
+        //
+        // This does not make a selection and page context mutually exclusive, so macOS's TS3 ruling
+        // still holds: the unified input's attach affordance carries its own page-context action
+        // (`UTIAttachmentController`'s `pageContextActionHandler`), so that route survives the chip
+        // being hidden.
+        if !attachedSelections.isEmpty, frontendState == .noChat {
+            return []
+        }
         // No "Ask about page" for pages that can't be attached — it would no-op on tap.
         guard isCurrentPageAttachable() else { return [] }
         if featureFlagger.isFeatureOn(.contextualSuggestedPrompts) {

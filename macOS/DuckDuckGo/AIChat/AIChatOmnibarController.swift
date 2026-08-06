@@ -852,6 +852,54 @@ final class AIChatOmnibarController {
         attachedTabsTracker.trackAttachments(of: draftStore)
     }
 
+    /// The tab attachments persisted for the current tab, or an empty list if none / no shared state.
+    var activeTabAttachments: [AIChatTabAttachment] {
+        draftStore?.aiChatTabAttachments ?? []
+    }
+
+    /// The unified, insertion-ordered attachments list for the current tab — both image
+    /// uploads and page-content tabs interleaved in the order the user attached them.
+    var activePanelAttachments: [AIChatPanelAttachment] {
+        draftStore?.aiChatPanelAttachments ?? []
+    }
+
+    /// Toggles whether a tab is attached to the current tab's prompt:
+    /// adds the attachment if absent, removes it if already present (matched by `id`).
+    /// Persists the resulting list to shared state — the unified-attachments publisher then
+    /// fires `onActiveTabPanelAttachmentsChanged`, which drives the carousel.
+    func toggleTabAttachment(_ attachment: AIChatTabAttachment) {
+        var current = activeTabAttachments
+        if let index = current.firstIndex(where: { $0.id == attachment.id }) {
+            current.remove(at: index)
+        } else {
+            // Allow one over the cap (for the over-limit cue); block beyond.
+            guard current.count < tabAttachmentsDisplayCap else { return }
+            current.append(attachment)
+            prewarmAttachedTab(id: attachment.id)
+        }
+        persistTabAttachmentsToActiveTab(current)
+    }
+
+    /// Starts loading a just-attached tab whose page isn't loaded yet, so it's ready by submit time.
+    /// Fire-and-forget: the submit path waits regardless, this just keeps it off the critical path.
+    private func prewarmAttachedTab(id: String) {
+        guard let originTabCollection = origin?.originTabCollectionViewModel,
+              let resolved = AIChatTabPickerSource.materializeAttachableTab(withId: id, forOrigin: originTabCollection),
+              resolved.needsLoad else {
+            return
+        }
+        resolved.tab.reload()
+    }
+
+    /// Removes a tab attachment from the active tab's prompt, identified by `id`. No-op if not
+    /// currently attached.
+    func removeTabAttachmentFromActiveTab(id: String) {
+        var current = activeTabAttachments
+        guard current.contains(where: { $0.id == id }) else { return }
+        current.removeAll { $0.id == id }
+        persistTabAttachmentsToActiveTab(current)
+    }
+
     /// Image attachments persisted on the current tab. Empty when no tab is active.
     var activeImageAttachments: [AIChatImageAttachment] {
         draftStore?.aiChatAttachments ?? []

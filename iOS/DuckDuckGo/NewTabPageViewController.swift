@@ -80,6 +80,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     private var isPromoRenderLocationReady = false
     /// Opt-out: callers mute visibility around alpha animations/handoffs, unlike the opt-in owner-activity and render-location signals a host must assert.
     private var isPromoSurfaceVisible = true
+    private var promoSurfaceVisibilityGeneration = 0
     private var isPromoSurfaceCovered = false
     private let appSettings: AppSettings
     private let appWidthObserver: AppWidthObserver
@@ -246,9 +247,20 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
         updatePromoSurfaceExposure()
     }
 
-    func setPromoSurfaceVisible(_ isVisible: Bool) {
+    @discardableResult
+    func setPromoSurfaceVisible(_ isVisible: Bool) -> Int {
+        promoSurfaceVisibilityGeneration += 1
         isPromoSurfaceVisible = isVisible
         updatePromoSurfaceExposure()
+        return promoSurfaceVisibilityGeneration
+    }
+
+    func restorePromoSurfaceVisibility(ifCurrent generation: Int) {
+        guard promoSurfaceVisibilityGeneration == generation else {
+            return
+        }
+
+        setPromoSurfaceVisible(true)
     }
 
     func tearDownPromoSurface() {

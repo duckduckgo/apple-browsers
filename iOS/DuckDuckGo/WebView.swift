@@ -112,15 +112,15 @@ final class WebView: WKWebView {
             self?.requestAskAIChatWithSelectedText(action: .ask)
         }
 
-        // Appended at the end of the root menu so the system's own items come first — per design:
-        // Copy, Look Up, the rest of the system's items, then ours. Inserting as a sibling after
-        // `.standardEdit` (the previous behaviour) put it directly after Cut/Copy/Paste and so *ahead*
-        // of Look Up, pre-empting actions the user is more likely to want.
+        // Anchored directly after the Cut/Copy/Paste group, so the item sits beside Copy in the part of
+        // the menu that is visible without tapping the overflow chevron.
         //
-        // Last place is not guaranteed: WebKit and the system can append their own items after this
-        // runs, so the final order is worth confirming on device rather than assuming.
-        builder.insertChild(UIMenu(title: "", options: .displayInline, children: [askAction]),
-                            atEndOfMenu: .root)
+        // Appending to the end of the root menu was tried, to match the design's Copy → Look Up →
+        // system items → ours ordering, and verified wrong on device: iOS put the item in the overflow
+        // menu *only*, where nothing would find it. There is no `.copy` menu identifier to anchor to —
+        // Copy is an action inside `.standardEdit` — so the group is the closest available anchor.
+        builder.insertSibling(UIMenu(title: "", options: .displayInline, children: [askAction]),
+                              afterMenu: .standardEdit)
     }
 
     /// The items belong to the selection edit menu only; the main menu system drives the iPad menu bar, which

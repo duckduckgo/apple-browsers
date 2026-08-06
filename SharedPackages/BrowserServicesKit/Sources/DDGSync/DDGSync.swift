@@ -628,8 +628,8 @@ public class DDGSync: DDGSyncing {
         do {
             return try await dependencies.scopedAccess.ensureAccountInfoProtectedKeys(for: account)
         } catch {
-            let errorType = String(describing: type(of: error))
-            Logger.sync.error("Failed to ensure account_info protected keys after login: \(errorType, privacy: .public)")
+            let errorType = String(describing: Swift.type(of: error))
+            Logger.sync.error("Sync-UnifiedDevices: failed to ensure account_info protected keys after login: \(errorType)")
             return []
         }
     }

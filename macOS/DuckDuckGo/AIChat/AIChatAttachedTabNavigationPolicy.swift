@@ -20,6 +20,25 @@ import AIChat
 import AppKit
 import Foundation
 
+/// Everything an attached tab publishes about the page it is on.
+struct AIChatAttachedTabPage {
+    let content: Tab.TabContent
+    let title: String?
+    let favicon: NSImage?
+    var isLoading: Bool = false
+
+    init(content: Tab.TabContent, title: String?, favicon: NSImage?, isLoading: Bool = false) {
+        self.content = content
+        self.title = title
+        self.favicon = favicon
+        self.isLoading = isLoading
+    }
+
+    init(tab: Tab) {
+        self.init(content: tab.content, title: tab.title, favicon: tab.favicon, isLoading: tab.isLoading)
+    }
+}
+
 /// What an attached tab's navigation does to its card: follow it, or drop the explicit pick.
 enum AIChatAttachedTabNavigationPolicy {
 
@@ -30,34 +49,40 @@ enum AIChatAttachedTabNavigationPolicy {
     }
 
     static func action(for attachment: AIChatTabAttachment,
-                       content: Tab.TabContent,
-                       title: String?,
-                       favicon: NSImage?,
+                       page: AIChatAttachedTabPage,
                        isSettlingLoadFromAttachTime: Bool,
                        automaticallySendsPageContext: Bool) -> Action {
-        guard case .url(let url, _, let source) = content, !AIChatTabMetadata.shouldExcludeFromTabPicker(url) else {
+        guard case .url(let url, _, let source) = page.content, !AIChatTabMetadata.shouldExcludeFromTabPicker(url) else {
             return .drop
         }
-
-        guard url == attachment.url else {
-            // Only the web view settling the load that was in flight at attach time (redirect,
-            // committed URL) counts as the same pick; anything the user drove is a page change.
-            let isSettling = isSettlingLoadFromAttachTime && source == .webViewUpdated
-            guard automaticallySendsPageContext || isSettling else { return .drop }
-            // The old title and favicon still describe the previous page until the new ones land.
-            return .refresh(AIChatTabAttachment(id: attachment.id,
-                                                title: url.host ?? url.absoluteString,
-                                                url: url,
-                                                favicon: nil))
+        guard url != attachment.url else {
+            return updatedMetadata(for: attachment, page: page)
         }
+        return afterPageChange(for: attachment,
+                               to: url,
+                               isSettling: isSettlingLoadFromAttachTime && source == .webViewUpdated,
+                               automaticallySendsPageContext: automaticallySendsPageContext)
+    }
 
-        // Title and favicon land after the page; never downgrade to nil / the host fallback.
-        let refreshedTitle = title ?? attachment.title
-        let refreshedFavicon = favicon ?? attachment.favicon
-        guard refreshedTitle != attachment.title || refreshedFavicon !== attachment.favicon else { return .keep }
+    /// Only the web view settling the load that was in flight at attach time (redirect, committed
+    /// URL) counts as the same pick; anything the user drove is a page change.
+    private static func afterPageChange(for attachment: AIChatTabAttachment,
+                                        to url: URL,
+                                        isSettling: Bool,
+                                        automaticallySendsPageContext: Bool) -> Action {
+        guard automaticallySendsPageContext || isSettling else { return .drop }
+        // The old title and favicon still describe the previous page until the new ones land.
         return .refresh(AIChatTabAttachment(id: attachment.id,
-                                            title: refreshedTitle,
+                                            title: url.host ?? url.absoluteString,
                                             url: url,
-                                            favicon: refreshedFavicon))
+                                            favicon: nil))
+    }
+
+    /// Same page: title and favicon land after it does, and neither is ever downgraded back to nil.
+    private static func updatedMetadata(for attachment: AIChatTabAttachment, page: AIChatAttachedTabPage) -> Action {
+        let title = page.title ?? attachment.title
+        let favicon = page.favicon ?? attachment.favicon
+        guard title != attachment.title || favicon !== attachment.favicon else { return .keep }
+        return .refresh(AIChatTabAttachment(id: attachment.id, title: title, url: attachment.url, favicon: favicon))
     }
 }

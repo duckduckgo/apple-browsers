@@ -25,13 +25,14 @@ import Foundation
 @MainActor
 final class AIChatAttachedTabsTracker {
 
+    /// Keyed by store too: an attachment belongs to the prompt's tab, not the selected one.
     private struct ObserverKey: Hashable {
-        let store: ObjectIdentifier
+        let promptStore: ObjectIdentifier
         let tabId: String
     }
 
     private struct Observer {
-        weak var store: (any DuckAIPromptDraftStoring)?
+        weak var promptStore: (any DuckAIPromptDraftStoring)?
         /// Suspending a tab swaps the `Tab` behind the same uuid, stranding the old subscription.
         weak var tab: Tab?
         let cancellable: AnyCancellable
@@ -42,7 +43,6 @@ final class AIChatAttachedTabsTracker {
     private weak var origin: (any DuckAIPromptOriginProviding)?
     private let automaticallySendsPageContext: () -> Bool
 
-    /// Keyed by store too: an attachment belongs to the prompt's tab, not the selected one.
     private var observers: [ObserverKey: Observer] = [:]
     private weak var activeStore: (any DuckAIPromptDraftStoring)?
     private var tabListCancellable: AnyCancellable?
@@ -50,16 +50,19 @@ final class AIChatAttachedTabsTracker {
     init(origin: (any DuckAIPromptOriginProviding)?, automaticallySendsPageContext: @escaping () -> Bool) {
         self.origin = origin
         self.automaticallySendsPageContext = automaticallySendsPageContext
-        subscribeToTabList()
+        watchTabListForClosedTabs()
     }
 
     /// Call whenever the prompt's own attachments change or the active draft switches.
     func trackAttachments(of store: (any DuckAIPromptDraftStoring)?) {
         activeStore = store
-        syncObservers()
+        dropObserversForDetachedTabs()
+        observeAttachedTabs()
     }
 
-    private func subscribeToTabList() {
+    // MARK: - Closed tabs
+
+    private func watchTabListForClosedTabs() {
         guard let collection = origin?.originTabCollectionViewModel else { return }
         let pinnedTabs = collection.pinnedTabsCollection?.$tabs.eraseToAnyPublisher()
             ?? Just([]).eraseToAnyPublisher()
@@ -73,95 +76,108 @@ final class AIChatAttachedTabsTracker {
 
     private func dropAttachmentsForClosedTabs() {
         guard let collection = origin?.originTabCollectionViewModel else { return }
-        let openTabIds = Set(((collection.pinnedTabsCollection?.tabs ?? []) + collection.tabCollection.tabs).map(\.uuid))
-        for store in storesWithAttachments {
+        let openTabIds = Set(allTabs(in: collection).map(\.uuid))
+        for store in trackedStores {
             let remaining = store.aiChatTabAttachments.filter { openTabIds.contains($0.id) }
             guard remaining.count != store.aiChatTabAttachments.count else { continue }
             store.setAIChatTabAttachments(remaining)
         }
-        syncObservers()
+        dropObserversForDetachedTabs()
+        observeAttachedTabs()
     }
 
-    private var storesWithAttachments: [any DuckAIPromptDraftStoring] {
-        var stores: [any DuckAIPromptDraftStoring] = observers.values.compactMap(\.store)
+    /// Every prompt this tracker knows of, not only the one on screen.
+    private var trackedStores: [any DuckAIPromptDraftStoring] {
+        var stores: [any DuckAIPromptDraftStoring] = observers.values.compactMap(\.promptStore)
         if let activeStore {
             stores.append(activeStore)
         }
         return stores
     }
 
-    /// Observers for other drafts keep running; a newly observed tab is reconciled right after.
-    private func syncObservers() {
-        observers = observers.filter { key, observer in
-            observer.tab != nil && observer.store?.aiChatTabAttachments.contains { $0.id == key.tabId } ?? false
-        }
+    // MARK: - Observing
 
+    /// Observers for other prompts keep running, so their cards update while the user is elsewhere.
+    private func dropObserversForDetachedTabs() {
+        observers = observers.filter { key, observer in
+            observer.tab != nil && observer.promptStore?.aiChatTabAttachments.contains { $0.id == key.tabId } ?? false
+        }
+    }
+
+    private func observeAttachedTabs() {
         guard let store = activeStore, let collection = origin?.originTabCollectionViewModel else { return }
         for attachment in store.aiChatTabAttachments {
             guard let tab = loadedTab(withId: attachment.id, in: collection) else { continue }
-            let key = ObserverKey(store: ObjectIdentifier(store), tabId: attachment.id)
+            let key = ObserverKey(promptStore: ObjectIdentifier(store), tabId: attachment.id)
             guard observers[key]?.tab !== tab else { continue }
 
-            observers[key] = Observer(store: store,
+            observers[key] = Observer(promptStore: store,
                                       tab: tab,
-                                      cancellable: observe(tab, for: attachment.id, in: store, key: key),
+                                      cancellable: observe(tab, key: key, in: store),
                                       isSettlingLoadFromAttachTime: tab.isLoading)
-            apply(to: attachment.id, in: store, content: tab.content, title: tab.title, favicon: tab.favicon,
-                  isSettlingLoadFromAttachTime: tab.isLoading)
+            // Reconcile against the page the tab is on now, which may predate this observer.
+            applyPolicy(for: key, in: store, page: AIChatAttachedTabPage(tab: tab), isSettlingLoad: tab.isLoading)
         }
     }
 
     /// `dropFirst`: the observer must be stored before any policy runs, or a re-sync subscribes twice.
-    private func observe(_ tab: Tab,
-                         for tabId: String,
-                         in store: any DuckAIPromptDraftStoring,
-                         key: ObserverKey) -> AnyCancellable {
+    private func observe(_ tab: Tab, key: ObserverKey, in store: any DuckAIPromptDraftStoring) -> AnyCancellable {
         Publishers.CombineLatest4(tab.$content, tab.$title, tab.$favicon, tab.$isLoading)
             .dropFirst()
-            .sink { [weak self, weak store] content, title, favicon, isLoading in
+            .map(AIChatAttachedTabPage.init)
+            .sink { [weak self, weak store] page in
                 guard let self, let store else { return }
-                let isSettling = self.observers[key]?.isSettlingLoadFromAttachTime ?? false
-                if isSettling, !isLoading {
-                    self.observers[key]?.isSettlingLoadFromAttachTime = false
-                }
-                self.apply(to: tabId, in: store, content: content, title: title, favicon: favicon,
-                           isSettlingLoadFromAttachTime: isSettling)
+                self.applyPolicy(for: key, in: store, page: page, isSettlingLoad: self.isSettlingLoad(for: key, page: page))
             }
     }
 
-    /// `store` is the prompt's own store, which is not necessarily the active one.
-    private func apply(to tabId: String,
-                       in store: any DuckAIPromptDraftStoring,
-                       content: Tab.TabContent,
-                       title: String?,
-                       favicon: NSImage?,
-                       isSettlingLoadFromAttachTime: Bool) {
-        var current = store.aiChatTabAttachments
-        guard let index = current.firstIndex(where: { $0.id == tabId }) else { return }
+    /// Whether this change is still the load that was running when the tab was attached. Clears once
+    /// that load finishes, so later navigation is judged as a page change.
+    private func isSettlingLoad(for key: ObserverKey, page: AIChatAttachedTabPage) -> Bool {
+        let isSettling = observers[key]?.isSettlingLoadFromAttachTime ?? false
+        if isSettling, !page.isLoading {
+            observers[key]?.isSettlingLoadFromAttachTime = false
+        }
+        return isSettling
+    }
 
-        switch AIChatAttachedTabNavigationPolicy.action(for: current[index],
-                                                       content: content,
-                                                       title: title,
-                                                       favicon: favicon,
-                                                       isSettlingLoadFromAttachTime: isSettlingLoadFromAttachTime,
+    // MARK: - Applying the policy
+
+    /// `store` is the prompt's own store, which is not necessarily the active one.
+    private func applyPolicy(for key: ObserverKey,
+                             in store: any DuckAIPromptDraftStoring,
+                             page: AIChatAttachedTabPage,
+                             isSettlingLoad: Bool) {
+        var attachments = store.aiChatTabAttachments
+        guard let index = attachments.firstIndex(where: { $0.id == key.tabId }) else { return }
+
+        switch AIChatAttachedTabNavigationPolicy.action(for: attachments[index],
+                                                       page: page,
+                                                       isSettlingLoadFromAttachTime: isSettlingLoad,
                                                        automaticallySendsPageContext: automaticallySendsPageContext()) {
         case .keep:
             return
         case .drop:
-            current.remove(at: index)
+            attachments.remove(at: index)
         case .refresh(let refreshed):
-            current[index] = refreshed
+            attachments[index] = refreshed
         }
-        store.setAIChatTabAttachments(current)
-        syncObservers()
+        store.setAIChatTabAttachments(attachments)
+        dropObserversForDetachedTabs()
+        observeAttachedTabs()
     }
+
+    // MARK: - Tab lookup
 
     /// Suspended tabs are skipped: they can't navigate, and the tab-list watch re-observes on resume.
     private func loadedTab(withId id: String, in collection: TabCollectionViewModel) -> Tab? {
-        let allTabs = (collection.pinnedTabsCollection?.tabs ?? []) + collection.tabCollection.tabs
-        return allTabs.lazy.compactMap { anyTab -> Tab? in
+        allTabs(in: collection).lazy.compactMap { anyTab -> Tab? in
             guard case .loaded(let tab) = anyTab, tab.uuid == id else { return nil }
             return tab
         }.first
+    }
+
+    private func allTabs(in collection: TabCollectionViewModel) -> [AnyTab] {
+        (collection.pinnedTabsCollection?.tabs ?? []) + collection.tabCollection.tabs
     }
 }

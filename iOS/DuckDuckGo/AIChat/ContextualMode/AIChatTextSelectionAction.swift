@@ -19,6 +19,16 @@
 
 import Foundation
 
+/// Where a text selection reached Duck.ai from. Both routes mean the same thing to the user, so they
+/// behave identically — this exists only so telemetry can tell them apart, since which one people
+/// actually use decides where future effort goes.
+enum AIChatSelectionEntryPoint: String {
+    /// The Duck.ai item in the system text-selection edit menu.
+    case selectionMenu = "selection_menu"
+    /// The omnibar's Duck.ai icon, tapped while text happened to be selected.
+    case omnibar
+}
+
 /// The Duck.ai actions that can be taken on a text selection.
 ///
 /// Only `ask` is offered in the selection edit menu — see `WebView.buildMenu`. Summarize and translate

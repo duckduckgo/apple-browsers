@@ -207,15 +207,29 @@ final class AIChatContextualSheetCoordinator {
     // MARK: - Public Methods
 
     /// Presents the contextual AI chat sheet.
+    ///
+    /// - Parameter skippingAutoAttach: pass `true` when the sheet is being opened *because* the user
+    ///   attached something specific — a text selection. Auto-attaching the whole page on top of that
+    ///   makes the selection the second attachment, which hides the selection's own suggestions and
+    ///   buries the passage the user chose under page content they didn't ask for. Page signals are
+    ///   still collected, so the Translate suggestion's language condition keeps working.
     func presentSheet(from presentingViewController: UIViewController,
-                      restoreURL: URL? = nil) async {
+                      restoreURL: URL? = nil,
+                      skippingAutoAttach: Bool = false) async {
         sessionState.refreshAutoAttachSetting()
         sessionState.updateUnifiedToggleInputActive(isWebUTIEnabled, isImmediateContextual: isImmediateContextualUTIEnabled)
         clearStaleManualContextIfNeeded()
 
         startObservingContextUpdates()
 
-        if currentPageURL != nil, sessionState.shouldTriggerAutoCollect(for: currentPageURL) {
+        if skippingAutoAttach, currentPageURL != nil {
+            // Signals-only: no page chip, but the page-type signals the suggestions need still arrive.
+            sessionState.markPendingSignalsOnlyCollection()
+            if sessionState.showsSuggestionsStartSurface {
+                sessionState.beginLoadingSuggestions()
+            }
+            pageContextHandler.triggerContextCollection(trigger: .tabContent)
+        } else if currentPageURL != nil, sessionState.shouldTriggerAutoCollect(for: currentPageURL) {
             if sessionState.showsSuggestionsStartSurface {
                 sessionState.beginLoadingSuggestions()
             }
@@ -250,13 +264,12 @@ final class AIChatContextualSheetCoordinator {
     /// At the cap, ask refuses the selection and says why, but the sheet still presents so the user can
     /// see the chips they already have and act on them.
     func handleSelectionAction(_ action: AIChatTextSelectionAction,
+                               entryPoint: AIChatSelectionEntryPoint,
                                text: String,
                                url: URL?,
                                pageTitle: String?,
                                faviconBase64: String?,
                                from presentingViewController: UIViewController) async {
-        pixelHandler.fireSelectionAction(action)
-
         let selection = AIChatSelectionContextBuilder.makeSelection(
             text: text,
             url: url,
@@ -266,15 +279,19 @@ final class AIChatContextualSheetCoordinator {
         var didHitCap = false
         if action.attachesSelection {
             didHitCap = !sessionState.attachSelection(selection, pageTitle: pageTitle)
+            // Reported per *attach*, matching macOS's `aichat_attach_selection`, so a refusal at the cap
+            // isn't counted as one.
             if didHitCap {
                 pixelHandler.fireSelectionLimitReached()
+            } else {
+                pixelHandler.fireSelectionAttached(from: entryPoint)
             }
         } else {
             // Submitting consumes whatever was collected, so the input is clean for the next question.
             sessionState.clearAttachedSelections()
         }
 
-        await presentSheet(from: presentingViewController)
+        await presentSheet(from: presentingViewController, skippingAutoAttach: true)
         refreshSelectionChips()
 
         if didHitCap {

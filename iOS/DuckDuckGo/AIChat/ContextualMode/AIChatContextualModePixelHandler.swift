@@ -59,10 +59,10 @@ protocol AIChatContextualModePixelFiring {
     func firePageContextRemovedFrontend()
 
     // MARK: - Text Selections
-    /// Fired for every pick from the text-selection menu, with the action in `source`, so we can see
-    /// the usage mix across the three — the question desktop answered with Translate 75% /
-    /// Summarize 13% / Ask 12%.
-    func fireSelectionAction(_ action: AIChatTextSelectionAction)
+    /// Fired once per selection actually attached, matching macOS's `aichat_attach_selection`, with the
+    /// entry point in `source`. A refusal at the cap is reported by `fireSelectionLimitReached` instead,
+    /// so attach counts stay attach counts.
+    func fireSelectionAttached(from entryPoint: AIChatSelectionEntryPoint)
     func fireSelectionLimitReached()
     func fireSelectionRemoved()
     /// Closes the Ask funnel: how much collected text actually reaches a submitted question, and
@@ -203,8 +203,8 @@ final class AIChatContextualModePixelHandler: AIChatContextualModePixelFiring {
 
     // MARK: - Text Selections
 
-    func fireSelectionAction(_ action: AIChatTextSelectionAction) {
-        firePixelWithParameters(.aiChatContextualSelectionAction, [PixelParameters.source: action.rawValue])
+    func fireSelectionAttached(from entryPoint: AIChatSelectionEntryPoint) {
+        firePixelWithParameters(.aiChatContextualSelectionAttached, [PixelParameters.source: entryPoint.rawValue])
     }
 
     func fireSelectionLimitReached() {

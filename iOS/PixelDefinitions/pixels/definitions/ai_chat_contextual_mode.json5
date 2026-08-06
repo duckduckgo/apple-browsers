@@ -276,8 +276,8 @@
         "suffixes": ["first_daily_count", "platform", "form_factor"],
         "parameters": ["appVersion"]
     },
-    "m_aichat_contextual_selection_action": {
-        "description": "Fired when the user picks one of the Duck.ai actions from the text-selection edit menu. The source parameter says which one",
+    "m_aichat_contextual_selection_attached": {
+        "description": "Fired once per text selection attached to Duck.ai, matching macOS's aichat_attach_selection. The source parameter says which entry point was used. A refusal at the 5-selection cap is reported separately and is not counted here",
         "owners": ["pikorddg"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],

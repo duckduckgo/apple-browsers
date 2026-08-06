@@ -400,8 +400,9 @@ final class AIChatContextualModePixelHandlerTests {
 
     // MARK: - Text Selection Pixels
 
-    @Test("Selection action pixel carries the menu action as its source", arguments: AIChatTextSelectionAction.allCases)
-    func selection_action_pixel_carries_source(action: AIChatTextSelectionAction) {
+    @Test("Selection attached pixel carries the entry point as its source",
+          arguments: [AIChatSelectionEntryPoint.selectionMenu, .omnibar])
+    func selection_attached_pixel_carries_entry_point(entryPoint: AIChatSelectionEntryPoint) {
         var firedEventName: String?
         var firedParameters: [String: String]?
         let sut = AIChatContextualModePixelHandler(
@@ -411,10 +412,10 @@ final class AIChatContextualModePixelHandlerTests {
                 firedParameters = parameters
             })
 
-        sut.fireSelectionAction(action)
+        sut.fireSelectionAttached(from: entryPoint)
 
-        #expect(firedEventName == Pixel.Event.aiChatContextualSelectionAction.name)
-        #expect(firedParameters?[PixelParameters.source] == action.rawValue)
+        #expect(firedEventName == Pixel.Event.aiChatContextualSelectionAttached.name)
+        #expect(firedParameters?[PixelParameters.source] == entryPoint.rawValue)
     }
 
     @Test("Selection limit reached pixel fires correctly")

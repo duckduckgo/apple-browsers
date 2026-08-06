@@ -6283,7 +6283,10 @@ extension MainViewController: TabDelegate {
 
     func tab(_ tab: TabViewController, didRequestAIChatAction action: AIChatTextSelectionAction, withSelectedText text: String) {
         Task { @MainActor in
-            await tab.presentContextualAIChatSheet(withSelectedText: text, action: action, from: self)
+            await tab.presentContextualAIChatSheet(withSelectedText: text,
+                                                   action: action,
+                                                   entryPoint: .selectionMenu,
+                                                   from: self)
         }
     }
 

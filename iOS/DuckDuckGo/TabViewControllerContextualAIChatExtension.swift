@@ -37,7 +37,10 @@ extension TabViewController {
             // routes to the same intent.
             if isAskAIChatSelectionAvailable,
                let selection = await (webView as? WebView)?.currentAskAIChatSelection() {
-                await presentContextualAIChatSheet(withSelectedText: selection, action: .ask, from: presentingViewController)
+                await presentContextualAIChatSheet(withSelectedText: selection,
+                                                   action: .ask,
+                                                   entryPoint: .omnibar,
+                                                   from: presentingViewController)
                 return
             }
 
@@ -64,14 +67,17 @@ extension TabViewController {
     /// - Parameters:
     ///   - text: The trimmed page selection.
     ///   - action: The Duck.ai action the user picked in the selection menu.
+    ///   - entryPoint: Which route the selection arrived by, for telemetry only.
     ///   - presentingViewController: The view controller to present the sheet from.
     @MainActor
     func presentContextualAIChatSheet(withSelectedText text: String,
                                       action: AIChatTextSelectionAction,
+                                      entryPoint: AIChatSelectionEntryPoint,
                                       from presentingViewController: UIViewController) async {
         let url = webView.url
         await aiChatContextualSheetCoordinator.handleSelectionAction(
             action,
+            entryPoint: entryPoint,
             text: text,
             url: url,
             pageTitle: link?.displayTitle,

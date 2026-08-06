@@ -322,8 +322,8 @@
     "aiChatSelectionSource": {
         "key": "source",
         "type": "string",
-        "description": "Which Duck.ai text-selection menu action attached the selection",
-        "enum": ["ask", "summarize", "translate"]
+        "description": "Where a Duck.ai text selection was attached from: the system selection edit menu, or the omnibar icon tapped with text already selected",
+        "enum": ["selection_menu", "omnibar"]
     },
     "aiChatSelectionCount": {
         "key": "selection_count",

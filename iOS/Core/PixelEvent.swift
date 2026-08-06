@@ -1841,7 +1841,7 @@ extension Pixel {
         case aiChatContextualExpandButtonTapped
         case aiChatContextualNewChatButtonTapped
         case aiChatContextualQuickActionSummarizeSelected
-        case aiChatContextualSelectionAction
+        case aiChatContextualSelectionAttached
         case aiChatContextualPromptSubmittedWithSelections
         case aiChatContextualSelectionLimitReached
         case aiChatContextualSelectionRemoved
@@ -3785,7 +3785,7 @@ extension Pixel.Event {
         case .aiChatContextualExpandButtonTapped: return "m_aichat_contextual_expand_button_tapped"
         case .aiChatContextualNewChatButtonTapped: return "m_aichat_contextual_new_chat_button_tapped"
         case .aiChatContextualQuickActionSummarizeSelected: return "m_aichat_contextual_quick_action_summarize_selected"
-        case .aiChatContextualSelectionAction: return "m_aichat_contextual_selection_action"
+        case .aiChatContextualSelectionAttached: return "m_aichat_contextual_selection_attached"
         case .aiChatContextualPromptSubmittedWithSelections: return "m_aichat_contextual_prompt_submitted_with_selections"
         case .aiChatContextualSelectionLimitReached: return "m_aichat_contextual_selection_limit_reached"
         case .aiChatContextualSelectionRemoved: return "m_aichat_contextual_selection_removed"

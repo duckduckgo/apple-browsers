@@ -683,7 +683,7 @@ final class AIChatPageContextHandlerTests: XCTestCase {
 // MARK: - Mock Pixel Handler
 
 private final class MockContextualModePixelHandler: AIChatContextualModePixelFiring {
-    func fireSelectionAction(_ action: AIChatTextSelectionAction) {}
+    func fireSelectionAttached(from entryPoint: AIChatSelectionEntryPoint) {}
     func fireSelectionLimitReached() {}
     func fireSelectionRemoved() {}
     func firePromptSubmittedWithSelections(count: Int) { promptSubmittedWithSelectionsCounts.append(count) }

@@ -1681,7 +1681,7 @@ class TabViewController: UIViewController {
         errorReportBrokenSiteButton.setTitle(UserText.tabTerminationErrorPageSendFeedbackButton, for: .normal)
         errorReportBrokenSiteButton.isHidden = false
         error.layoutIfNeeded()
-        webpageDidFailToLoad()
+        webpageDidFailToLoad(preservePrivacyInfo: true)
         tabTerminationErrorPageInstrumentation.errorPageShown()
     }
 
@@ -2702,14 +2702,24 @@ extension TabViewController: WKNavigationDelegate {
         notifyDelegateIfDuckAINavigationFailed(error: error)
     }
 
-    private func webpageDidFailToLoad() {
+    private func webpageDidFailToLoad(preservePrivacyInfo: Bool = false) {
         Logger.general.debug("webpageLoading failed")
 
         wasLoadingStoppedExternally = false
 
         if isError {
             showBars(animated: true)
-            privacyInfo = PrivacyInfo(url: .empty, parentEntity: nil, protectionStatus: .init(unprotectedTemporary: false, enabledFeatures: [], allowlisted: false, denylisted: false), isSpecialErrorPageVisible: true)
+            if preservePrivacyInfo {
+                privacyInfo?.isSpecialErrorPageVisible = true
+            } else {
+                privacyInfo = PrivacyInfo(url: .empty,
+                                          parentEntity: nil,
+                                          protectionStatus: .init(unprotectedTemporary: false,
+                                                                  enabledFeatures: [],
+                                                                  allowlisted: false,
+                                                                  denylisted: false),
+                                          isSpecialErrorPageVisible: true)
+            }
             onPrivacyInfoChanged()
         }
 

@@ -44,7 +44,9 @@ final class EventHubService {
             Logger.eventHub.error("Dedicated key value store unavailable — telemetry will not survive a restart")
         }
         let parser = EventHubConfigParser()
-        let store = EventHubKeyValueStore(store: keyValueStore, parser: parser)
+        // Shared by the store and the settings: both report their failures as the same error pixels.
+        let debugEvents = IOSEventHubDebugEventMapping()
+        let store = EventHubKeyValueStore(store: keyValueStore, parser: parser, eventMapping: debugEvents)
 
         let enabledSubject = CurrentValueSubject<Bool, Never>(
             privacyConfigurationManager.privacyConfig.isEnabled(featureKey: .eventHub))
@@ -56,7 +58,8 @@ final class EventHubService {
             featureSettingsPublisher: settingsSubject.eraseToAnyPublisher(),
             consentRequirements: [
                 YouTubeAdBlockingTelemetryConsentRequirement(keyValueStore: consentStore)
-            ]
+            ],
+            eventMapping: debugEvents
         )
 
         eventHub = EventHub(

@@ -1,4 +1,31 @@
 {
+    // EventHub's own failure pixels. Unlike the telemetry names above these are client-side and governed
+    // here, so they use the snake_case `eventhub_` convention. Fired via `MacOSEventHubDebugEventMapping`,
+    // which appends `_macos` exactly as the telemetry path does.
+    "eventhub_pixel_state_persistence_failed_macos": {
+        "description": "Fired when EventHub cannot read, decode, write or delete its own persisted period state, so counting silently restarts or a finished period is lost. The failing step is in the `operation` parameter.",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "errorDomain",
+            "errorCode",
+            {
+                "key": "operation",
+                "type": "string",
+                "description": "Which persistence step failed",
+                "enum": ["read", "decode", "write", "delete"]
+            }
+        ]
+    },
+    "eventhub_consent_strip_failed_macos": {
+        "description": "Fired when EventHub cannot remove a consent-gated telemetry entry from the remote settings and therefore fails closed, running no telemetry at all. Does not fire for the normal 'nothing configured yet' state.",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion"]
+    },
     "webTelemetry_youtube_adBlocker_day_macos": {
         "description": "Daily bucketed count of YouTube ad-blocker-challenge detections, with the user's login state at detection time. Fired by the eventHub feature at the end of each 1-day period. Successor to the retired m_mac_web_extension_adblocking_detected_ad_blocker pixel.",
         "owners": ["miasma13"],

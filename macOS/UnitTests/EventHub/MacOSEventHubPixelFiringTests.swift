@@ -16,6 +16,8 @@
 //  limitations under the License.
 //
 
+import Common
+import EventHub
 import PixelKit
 import XCTest
 
@@ -26,6 +28,8 @@ import XCTest
 /// requests — not the name we pass in — is what keeps these in sync with `event_hub.json5`.
 final class MacOSEventHubPixelFiringTests: XCTestCase {
 
+    private static let suiteName = "MacOSEventHubPixelFiringTests"
+
     private var firedNames: [String] = []
     private var firedParameters: [[String: String]] = []
 
@@ -33,12 +37,17 @@ final class MacOSEventHubPixelFiringTests: XCTestCase {
         super.setUp()
         firedNames = []
         firedParameters = []
+        // Cleared per test: the debug-event pixels fire `.dailyAndCount`, and PixelKit records the last
+        // daily fire in these defaults — a suite surviving from an earlier run would suppress the
+        // `_daily` half and make the assertions below depend on when they last ran.
+        let defaults = UserDefaults(suiteName: Self.suiteName)!
+        defaults.removePersistentDomain(forName: Self.suiteName)
         // `dryRun: false` — PixelKit deliberately skips `fireRequest` entirely when dry-running.
         PixelKit.setUp(dryRun: false,
                        appVersion: "1.0.0",
                        session: "test",
                        defaultHeaders: [:],
-                       defaults: UserDefaults(suiteName: "\(type(of: self))")!) { name, _, parameters, _, _, _ in
+                       defaults: defaults) { name, _, parameters, _, _, _ in
             self.firedNames.append(name)
             self.firedParameters.append(parameters)
         }
@@ -63,5 +72,36 @@ final class MacOSEventHubPixelFiringTests: XCTestCase {
 
         XCTAssertEqual(firedParameters.first?["count"], "1+")
         XCTAssertEqual(firedParameters.first?["attributionPeriod"], "1769126400")
+    }
+
+    // MARK: - Debug events
+
+    func testDebugEventFiresDailyAndCountUnderTheMacOSName() {
+        MacOSEventHubDebugEventMapping().fire(.pixelStatePersistenceFailed(operation: .write))
+
+        XCTAssertEqual(firedNames, ["eventhub_pixel_state_persistence_failed_macos_daily",
+                                    "eventhub_pixel_state_persistence_failed_macos_count"])
+    }
+
+    func testDebugEventCarriesTheFailingOperation() {
+        MacOSEventHubDebugEventMapping().fire(.pixelStatePersistenceFailed(operation: .decode))
+
+        XCTAssertEqual(firedParameters.first?["operation"], "decode")
+    }
+
+    func testDebugEventCarriesTheUnderlyingError() {
+        let error = NSError(domain: "TestDomain", code: 42)
+
+        MacOSEventHubDebugEventMapping().fire(.pixelStatePersistenceFailed(operation: .read), error: error)
+
+        XCTAssertEqual(firedParameters.first?["d"], "TestDomain")
+        XCTAssertEqual(firedParameters.first?["e"], "42")
+    }
+
+    func testConsentStripFailedFiresUnderItsOwnName() {
+        MacOSEventHubDebugEventMapping().fire(.consentStripFailed)
+
+        XCTAssertEqual(firedNames, ["eventhub_consent_strip_failed_macos_daily",
+                                    "eventhub_consent_strip_failed_macos_count"])
     }
 }

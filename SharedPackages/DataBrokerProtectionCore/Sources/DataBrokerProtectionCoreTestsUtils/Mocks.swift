@@ -333,8 +333,11 @@ public final class WebViewHandlerMock: NSObject, WebViewHandler {
     public var wasLoadCalledWithURL: URL?
     public var wasWaitForWebViewLoadCalled = false
     public var wasFinishCalled = false
+    public var finishCallCount = 0
+    public var finishHandler: (() -> Void)?
     public var executeCallCount = 0
     public var executeHandler: (() -> Void)?
+    public var initializeWebViewHandler: (() async -> Void)?
     public var wasExecuteCalledForUserData = false
     public var wasExecuteCalledForSolveCaptcha = false
     public var wasExecuteJavascriptCalled = false
@@ -343,6 +346,7 @@ public final class WebViewHandlerMock: NSObject, WebViewHandler {
 
     public func initializeWebView(showWebView: Bool) async {
         wasInitializeWebViewCalled = true
+        await initializeWebViewHandler?()
     }
 
     public func load(url: URL) async throws {
@@ -358,6 +362,8 @@ public final class WebViewHandlerMock: NSObject, WebViewHandler {
 
     public func finish() async {
         wasFinishCalled = true
+        finishCallCount += 1
+        finishHandler?()
     }
 
     public func execute(action: Action, ofType stepType: StepType?, data: CCFRequestData) async {
@@ -395,8 +401,11 @@ public final class WebViewHandlerMock: NSObject, WebViewHandler {
         wasLoadCalledWithURL = nil
         wasWaitForWebViewLoadCalled = false
         wasFinishCalled = false
+        finishCallCount = 0
+        finishHandler = nil
         executeCallCount = 0
         executeHandler = nil
+        initializeWebViewHandler = nil
         wasExecuteCalledForSolveCaptcha = false
         wasExecuteJavascriptCalled = false
         wasExecuteCalledForUserData = false
@@ -1014,10 +1023,15 @@ public class MockDataBrokerProtectionPixelsHandler: EventMapping<DataBrokerProte
 
     private static let queue = DispatchQueue(label: "MockDataBrokerProtectionPixelsHandler.queue")
     private static var _lastPixelsFired = [DataBrokerProtectionSharedPixels]()
+    private var _firedEvents = [DataBrokerProtectionSharedPixels]()
 
     public static var lastPixelsFired: [DataBrokerProtectionSharedPixels] {
         get { queue.sync { _lastPixelsFired } }
         set { queue.sync { _lastPixelsFired = newValue } }
+    }
+
+    public var firedEvents: [DataBrokerProtectionSharedPixels] {
+        Self.queue.sync { _firedEvents }
     }
 
     public var lastFiredEvent: DataBrokerProtectionSharedPixels?
@@ -1031,9 +1045,12 @@ public class MockDataBrokerProtectionPixelsHandler: EventMapping<DataBrokerProte
         }
 
         mockMapping = { [weak self] event, _, params, _ in
-            self?.lastFiredEvent = event
-            self?.lastPassedParameters = params
+            guard let self else { return }
+
+            self.lastFiredEvent = event
+            self.lastPassedParameters = params
             MockDataBrokerProtectionPixelsHandler.queue.sync {
+                self._firedEvents.append(event)
                 MockDataBrokerProtectionPixelsHandler._lastPixelsFired.append(event)
             }
         }
@@ -1045,6 +1062,7 @@ public class MockDataBrokerProtectionPixelsHandler: EventMapping<DataBrokerProte
 
     public func clear() {
         MockDataBrokerProtectionPixelsHandler.queue.sync {
+            _firedEvents.removeAll()
             MockDataBrokerProtectionPixelsHandler._lastPixelsFired.removeAll()
         }
         lastFiredEvent = nil

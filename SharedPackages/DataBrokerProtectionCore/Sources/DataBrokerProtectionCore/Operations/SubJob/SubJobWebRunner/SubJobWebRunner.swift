@@ -50,7 +50,8 @@ public protocol SubJobWebRunning: CCFCommunicationDelegate {
     var actionsHandler: ActionsHandler? { get }
     var continuation: CheckedContinuation<ReturnValue, Error>? { get set }
     var extractedProfile: ExtractedProfile? { get set }
-    var shouldRunNextStep: () -> Bool { get }
+    /// Shares cancellation with WebView, CAPTCHA, and email-confirmation callbacks running outside the runner task.
+    var runnerCancellation: SubJobRunnerCancellationState { get }
     var retriesCountOnError: Int { get set }
     var clickAwaitTime: TimeInterval { get }
     var postLoadingSiteStartTime: Date? { get set }
@@ -84,6 +85,24 @@ public protocol SubJobWebRunning: CCFCommunicationDelegate {
 }
 
 public extension SubJobWebRunning {
+
+    // MARK: - Cancellation
+
+    var isCancelled: Bool {
+        runnerCancellation.isCancelled
+    }
+
+    /// Weak on purpose: a web view handler that outlives its runner must stop driving actions.
+    var shouldRunNextStep: () -> Bool {
+        { [weak self] in self?.runnerCancellation.shouldRunNextStep ?? false }
+    }
+
+    /// Resumes the continuation before tearing down the web view.
+    /// Safe to call repeatedly.
+    func failAsCancelledAndTearDown() async {
+        failed(with: DataBrokerProtectionError.cancelled)
+        await webViewHandler?.finish()
+    }
 
     // MARK: - Shared functions
 
@@ -351,20 +370,20 @@ public extension SubJobWebRunning {
     }
 
     func complete(_ value: ReturnValue) {
-        self.firePostLoadingDurationPixel(hasError: false)
-
         guard let continuation else { return }
 
         self.continuation = nil
+        // Claim the continuation before firing terminal telemetry so late callbacks cannot duplicate the pixel.
+        self.firePostLoadingDurationPixel(hasError: false)
         continuation.resume(returning: value)
     }
 
     func failed(with error: Error) {
-        self.firePostLoadingDurationPixel(hasError: true)
-
         guard let continuation else { return }
 
         self.continuation = nil
+        // Claim the continuation before firing terminal telemetry so late callbacks cannot duplicate the pixel.
+        self.firePostLoadingDurationPixel(hasError: true)
         continuation.resume(throwing: error)
     }
 
@@ -537,9 +556,10 @@ public extension SubJobWebRunning {
                          actionType: actionsHandler?.currentAction()?.actionType,
                          details: errorDetails(error))
 
+        // Once the parent asks this sub-job to stop, cancellation is the terminal result.
+        // The underlying action error is retained in the debug event above.
         guard shouldRunNextStep() else {
-            await webViewHandler?.finish()
-            failed(with: DataBrokerProtectionError.cancelled)
+            await failAsCancelledAndTearDown()
             return
         }
 

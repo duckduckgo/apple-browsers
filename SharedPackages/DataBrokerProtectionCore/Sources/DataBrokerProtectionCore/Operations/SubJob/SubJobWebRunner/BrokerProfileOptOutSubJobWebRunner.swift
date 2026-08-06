@@ -70,14 +70,7 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
     public var continuation: CheckedContinuation<Void, Error>?
     public var extractedProfile: ExtractedProfile?
     private let operationAwaitTime: TimeInterval
-    private let shouldRunNextStepHandler: () -> Bool
-    private var isCancelled = false
-    public var shouldRunNextStep: () -> Bool {
-        { [weak self] in
-            guard let self else { return false }
-            return !self.isCancelled && self.shouldRunNextStepHandler()
-        }
-    }
+    public let runnerCancellation: SubJobRunnerCancellationState
     public var clickAwaitTime: TimeInterval {
         executionConfig.clickAwaitTimeForOptOut
     }
@@ -115,7 +108,7 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
         self.captchaService = captchaService
         self.operationAwaitTime = operationAwaitTime
         self.stageCalculator = stageCalculator
-        self.shouldRunNextStepHandler = shouldRunNextStep
+        self.runnerCancellation = SubJobRunnerCancellationState(shouldRunNextStep: shouldRunNextStep)
         self.cookieHandler = cookieHandler
         self.pixelHandler = pixelHandler
         self.executionConfig = executionConfig
@@ -181,23 +174,22 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
                         if self.shouldRunNextStep() {
                             await executeNextStep()
                         } else {
-                            failed(with: DataBrokerProtectionError.cancelled)
+                            await failAsCancelledAndTearDown()
                         }
 
                     } else {
                         // If we try to run an optout on a broker without an optout step, we throw.
+                        await self.webViewHandler?.finish()
                         failed(with: DataBrokerProtectionError.noOptOutStep)
                     }
                 }
             }
         } onCancel: {
             Task { @MainActor [weak self] in
-                guard let self, !self.isCancelled else { return }
+                guard let self, self.runnerCancellation.markCancelled() else { return }
 
-                self.isCancelled = true
                 task?.cancel()
-                await self.webViewHandler?.finish()
-                self.failed(with: DataBrokerProtectionError.cancelled)
+                await self.failAsCancelledAndTearDown()
             }
         }
     }
@@ -207,7 +199,10 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
     }
 
     public func executeNextStep() async {
-        guard !isCancelled else { return }
+        guard !isCancelled else {
+            await failAsCancelledAndTearDown()
+            return
+        }
 
         resetRetriesCount()
         Logger.action.debug(loggerContext(), message: "Waiting \(self.operationAwaitTime) seconds...")

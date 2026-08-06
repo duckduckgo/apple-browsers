@@ -22,13 +22,20 @@ import XCTest
 @MainActor
 final class AIChatTabPickerSourceTests: XCTestCase {
 
+    /// `pinnedTabsManagerProvider: nil` throughout: the convenience initialiser reaches for the
+    /// app-wide provider, whose pinned tabs are shared by every collection and listed first.
+    private func collection(_ tabs: [AnyTab], burnerMode: BurnerMode = .regular) -> TabCollectionViewModel {
+        TabCollectionViewModel(tabCollection: TabCollection(tabs: tabs),
+                               pinnedTabsManagerProvider: nil,
+                               burnerMode: burnerMode)
+    }
+
     private func regularCollection(urls: [String]) -> TabCollectionViewModel {
-        let tabs = urls.map { Tab(content: .url(URL(string: $0)!, credential: nil, source: .ui)) }
-        return TabCollectionViewModel(tabCollection: TabCollection(tabs: tabs))
+        collection(urls.map { .loaded(Tab(content: .url(URL(string: $0)!, credential: nil, source: .ui))) })
     }
 
     private func burnerCollection() -> TabCollectionViewModel {
-        TabCollectionViewModel(tabCollection: TabCollection(), burnerMode: BurnerMode(isBurner: true))
+        collection([], burnerMode: BurnerMode(isBurner: true))
     }
 
     /// A regular collection whose first tab is a loaded (selected) page and whose second tab is a
@@ -36,7 +43,7 @@ final class AIChatTabPickerSourceTests: XCTestCase {
     private func collectionWithSuspendedTab(id: String, url: String) -> TabCollectionViewModel {
         let loaded = Tab(content: .url(URL(string: "https://selected.example")!, credential: nil, source: .ui))
         let suspended = UnloadedTab(uuid: id, content: .url(URL(string: url)!, credential: nil, source: .ui), isSuspended: true)
-        return TabCollectionViewModel(tabCollection: TabCollection(tabs: [.loaded(loaded), .unloaded(suspended)]))
+        return collection([.loaded(loaded), .unloaded(suspended)])
     }
 
     // MARK: - materializeAttachableTab (wake suspended tabs)
@@ -99,9 +106,9 @@ final class AIChatTabPickerSourceTests: XCTestCase {
     func testNeedsLoadIsTrueForRestoredTabThatWasAlreadyLoadedButNeverNavigated() {
         let restored = Tab(content: .url(URL(string: "https://pinned.example")!, credential: nil, source: .pendingStateRestoration),
                            interactionStateData: Data())
-        let collection = TabCollectionViewModel(tabCollection: TabCollection(tabs: [restored]))
+        let origin = collection([.loaded(restored)])
 
-        let resolved = AIChatTabPickerSource.materializeAttachableTab(withId: restored.uuid, forOrigin: collection)
+        let resolved = AIChatTabPickerSource.materializeAttachableTab(withId: restored.uuid, forOrigin: origin)
 
         XCTAssertNotNil(resolved)
         XCTAssertFalse(resolved?.wasMaterialized ?? true, "Nothing to materialize — the tab is already .loaded")
@@ -136,10 +143,8 @@ final class AIChatTabPickerSourceTests: XCTestCase {
 
     func testFireWindowOriginOffersOnlyItsOwnTabs() {
         let regular = regularCollection(urls: ["https://example.com"])
-        let burner = TabCollectionViewModel(
-            tabCollection: TabCollection(tabs: [Tab(content: .url(URL(string: "https://fire.example")!, credential: nil, source: .ui))]),
-            burnerMode: BurnerMode(isBurner: true)
-        )
+        let burner = collection([.loaded(Tab(content: .url(URL(string: "https://fire.example")!, credential: nil, source: .ui)))],
+                                burnerMode: BurnerMode(isBurner: true))
 
         let urls = attachableURLs(forOrigin: burner)
 
@@ -155,7 +160,7 @@ final class AIChatTabPickerSourceTests: XCTestCase {
         let newTab = Tab(content: .newtab)
         let serp = Tab(content: .url(URL(string: "https://duckduckgo.com/?q=test&ia=web")!, credential: nil, source: .ui))
         let duckAI = Tab(content: .url(URL(string: "https://duckduckgo.com/?ia=chat")!, credential: nil, source: .ui))
-        let origin = TabCollectionViewModel(tabCollection: TabCollection(tabs: [page, newTab, serp, duckAI]))
+        let origin = collection([page, newTab, serp, duckAI].map { AnyTab.loaded($0) })
 
         XCTAssertEqual(attachableURLs(forOrigin: origin), ["https://example.com"])
     }

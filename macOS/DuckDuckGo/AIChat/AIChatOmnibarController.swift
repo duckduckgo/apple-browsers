@@ -337,6 +337,7 @@ final class AIChatOmnibarController {
         subscribeToDraftSource()
         subscribeToTextChangesForSuggestions()
         subscribeToToolModeChangesForDraftStore()
+        subscribeToTabClosures()
     }
 
     /// Opens a voice chat. Focuses an existing voice session in the origin window when there is one;
@@ -868,6 +869,34 @@ final class AIChatOmnibarController {
     /// Called by the container VC whenever the tab attachment list changes (toggle from menu, removal from carousel).
     func persistTabAttachmentsToActiveTab(_ attachments: [AIChatTabAttachment]) {
         draftStore?.setAIChatTabAttachments(attachments)
+        syncAttachedTabObservers()
+    }
+
+    /// A closed tab can't supply page content, so it can't stay attached. Watching the window's tab
+    /// lists covers every prompt in the window, not just the visible one.
+    private func subscribeToTabClosures() {
+        guard let collection = origin?.originTabCollectionViewModel else { return }
+        let pinnedTabs = collection.pinnedTabsCollection?.$tabs.eraseToAnyPublisher()
+            ?? Just([]).eraseToAnyPublisher()
+        Publishers.CombineLatest(collection.tabCollection.$tabs, pinnedTabs)
+            .map { unpinned, pinned in Set((unpinned + pinned).map(\.uuid)) }
+            .removeDuplicates()
+            .sink { [weak self] openTabIds in
+                self?.dropAttachmentsForClosedTabs(openTabIds: openTabIds)
+            }
+            .store(in: &cancellables)
+    }
+
+    private func dropAttachmentsForClosedTabs(openTabIds: Set<String>) {
+        var stores: [any DuckAIPromptDraftStoring] = attachedTabObservers.values.compactMap(\.store)
+        if let draftStore {
+            stores.append(draftStore)
+        }
+        for store in stores {
+            let remaining = store.aiChatTabAttachments.filter { openTabIds.contains($0.id) }
+            guard remaining.count != store.aiChatTabAttachments.count else { continue }
+            store.setAIChatTabAttachments(remaining)
+        }
         syncAttachedTabObservers()
     }
 

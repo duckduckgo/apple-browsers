@@ -739,6 +739,15 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         _ = controller
     }
 
+    func testWhenAttachedTabIsClosed_ThenTheAttachmentIsDropped() throws {
+        let (controller, attachedTab) = makeControllerWithAttachedOtherTab(automaticallySendPageContext: true)
+        let attachedIndex = tabCollectionViewModel.indexInAllTabs(where: { $0.uuid == attachedTab.uuid })
+
+        tabCollectionViewModel.remove(at: try XCTUnwrap(attachedIndex))
+
+        XCTAssertTrue(controller.activeTabAttachments.isEmpty, "A closed tab has no page content left to send")
+    }
+
     func testWhenAttachedTabIsDetached_ThenItsNavigationNoLongerTouchesTheAttachments() {
         let (controller, attachedTab) = makeControllerWithAttachedOtherTab(automaticallySendPageContext: true)
         controller.removeTabAttachmentFromActiveTab(id: attachedTab.uuid)

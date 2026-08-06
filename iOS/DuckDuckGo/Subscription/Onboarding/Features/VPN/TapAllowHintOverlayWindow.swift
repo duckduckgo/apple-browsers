@@ -22,11 +22,8 @@ import UIKit
 import DesignResourcesKit
 import UIComponents
 
-/// Decides whether the "Tap allow" pointer should be visible. The screen forwards lifecycle and VPN
-/// events; this publishes the single ``shouldShowHint`` the view maps onto ``TapAllowHintOverlayWindow``.
-///
-/// The hint is shown only while the customer has tapped "Turn On VPN" and no VPN configuration is
-/// installed yet — i.e. while the system permission dialog is the reason the app lost focus.
+/// Shows the "Tap allow" pointer only while the customer has tapped "Turn On VPN" and no configuration is
+/// installed yet — i.e. while the system permission dialog is why the app lost focus.
 @MainActor
 final class TapAllowHintCoordinator: ObservableObject {
 

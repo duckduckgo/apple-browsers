@@ -20,9 +20,8 @@
 import Foundation
 import Networking
 
-/// The current connection's public IP and coarse geolocation, as returned by
-/// `https://duckduckgo.com/connection.json`. While the VPN is off this describes the customer's real
-/// (visible) connection; once the VPN is on the same endpoint reports the VPN egress connection instead.
+/// The public IP and coarse geolocation of whichever path the request left by: the customer's real
+/// connection while the VPN is off, the VPN's egress once it is on.
 struct SubscriptionOnboardingConnectionInfo: Decodable, Equatable {
     /// The public IPv4 address, e.g. `"31.120.130.50"`.
     let ip: String
@@ -52,9 +51,8 @@ protocol SubscriptionOnboardingConnectionInfoService {
     func fetchConnectionInfo() async throws -> SubscriptionOnboardingConnectionInfo
 }
 
-/// Reads `https://duckduckgo.com/connection.json` through `APIService`, which supplies the request logging and
-/// cancellation checking. The status check below is deliberately local: `fetch` returns non-2xx responses as-is
-/// rather than throwing, so without it an error body would reach the decoder.
+/// The status check below is deliberately local: `fetch` returns non-2xx responses as-is rather than
+/// throwing, so without it an error body would reach the decoder.
 struct DefaultSubscriptionOnboardingConnectionInfoService: SubscriptionOnboardingConnectionInfoService {
     private static let connectionInfoURL = URL(string: "https://duckduckgo.com/connection.json")!
     private static let requestTimeout: TimeInterval = 10

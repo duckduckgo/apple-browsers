@@ -22,11 +22,8 @@ import DesignResourcesKit
 import DesignResourcesKitIcons
 import UIComponents
 
-/// The completion progress card: a percentage read-out with a green progress bar in the header (with the
-/// card's automatic divider below it), then the activation checklist — a filled check for completed
-/// items, an outlined circle with a chevron affordance for the ones still to do. The percentage and items
-/// are supplied by the caller, so the same card renders the intermediate and complete states. Tapping an
-/// incomplete row (e.g. Personal Information Removal) is handled by the caller.
+/// The completion progress card. The percentage and items come from the caller, so the same card renders
+/// both the intermediate and complete states.
 struct SubscriptionOnboardingProgressView: View {
     private enum Metrics {
         static let headerPadding: CGFloat = 24

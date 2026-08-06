@@ -21,11 +21,7 @@ import Combine
 import Foundation
 import VPN
 
-/// Drives the VPN activation screen. It reads the original
-/// connection info from the shared ``SubscriptionOnboardingPrefetcher`` while off, retrying the fetch on appearance if it hasn't resolved yet;
-/// starts the VPN through the injected controller; and describes the new (egress) IP and location
-/// from the shared server-info observer and reports
-/// completion up to the flow via ``SubscriptionOnboardingSectionDelegate``.
+/// Drives the VPN activation screen, from the pre-VPN connection info through to reporting completion.
 @MainActor
 final class SubscriptionOnboardingVPNActivationViewModel: ObservableObject {
 
@@ -329,9 +325,7 @@ struct PreviewSubscriptionOnboardingVPNController: SubscriptionOnboardingVPNCont
     func isVPNConfigured() async -> Bool { false }
 }
 
-/// A preview controller that starts disconnected and flips to connected when `start()` is called, so the
-/// off→on reveal (and its slide-in) can be exercised in a preview — by the harness that turns the VPN on,
-/// or by tapping "Turn On VPN" in a Live Preview.
+/// A preview controller that starts disconnected and flips to connected on `start()`, for the off→on reveal.
 struct RevealPreviewSubscriptionOnboardingVPNController: SubscriptionOnboardingVPNControlling {
     private let subject = CurrentValueSubject<Bool, Never>(false)
 

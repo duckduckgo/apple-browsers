@@ -19,10 +19,7 @@
 
 import SwiftUI
 
-/// The "Add DuckDuckGo VPN Widget to Your Home Screen" screen, reached from the VPN activation "Next" (or
-/// the "Skip" shown after a declined permission prompt). Reuses `WidgetEducationContentView` (the shared
-/// numbered steps extracted from `WidgetEducationView`) inside the onboarding page chrome, with a single
-/// "Got it" button that continues to the VPN tips carousel.
+/// The widget education screen, reached from the VPN activation "Next" or the "Skip" shown after a denial.
 struct SubscriptionOnboardingVPNWidgetEducationView: View {
 
     var title: String?

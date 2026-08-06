@@ -45,10 +45,7 @@ struct SubscriptionOnboardingVPNTipsView: View {
 
 // MARK: - Tips carousel
 
-/// The "What to know about using your VPN" carousel: three horizontally-scrolling cards, each an icon +
-/// headline + body. Cards are a fixed width with the neighbours peeking at the edges; the row scrolls
-/// freely. Each card reuses
-/// `SubscriptionOnboardingCard` + `CardItem` for its surface and content.
+/// The VPN tips carousel: fixed-width cards with the neighbours peeking at the edges.
 private struct VPNTipsCarousel: View {
     private enum Metrics {
         static let cardWidth: CGFloat = 217

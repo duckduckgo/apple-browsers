@@ -66,9 +66,7 @@ final class DefaultSubscriptionOnboardingAIModelProvider: SubscriptionOnboarding
     }
 }
 
-/// Backs the Duck.ai onboarding screen: reads the available AI models from the shared
-/// ``SubscriptionOnboardingPrefetcher`` (retrying on appearance if the fetch hasn't resolved yet), tracks the
-/// selected one, and persists it so the launched chat opens with it.
+/// Backs the Duck.ai onboarding screen, persisting the selected model so the launched chat opens with it.
 @MainActor
 final class SubscriptionOnboardingDuckAIViewModel: ObservableObject {
 

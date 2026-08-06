@@ -21,11 +21,8 @@ import SwiftUI
 import DesignResourcesKit
 import UIComponents
 
-/// Debug harness that renders a hand-built mock of the system "Add VPN Configurations" permission dialog in
-/// both the iOS 26 and iOS 18 visual styles, with ``FloatingPointerBubble`` laid on top using the same
-/// screen-centre-relative offsets as `TapAllowHintOverlayWindow`. The real dialog can't be summoned or styled
-/// on demand, so this lets us eyeball and tune the hint alignment without triggering the real permission
-/// prompt. Reached from the Subscription debug menu's Onboarding section.
+/// Debug harness for tuning the hint's alignment. The real permission dialog can't be summoned on demand,
+/// so this mocks it in both the iOS 26 and iOS 18 styles using the same offsets as the real overlay.
 struct TapAllowHintOverlayPlaygroundView: View {
 
     enum Metrics {

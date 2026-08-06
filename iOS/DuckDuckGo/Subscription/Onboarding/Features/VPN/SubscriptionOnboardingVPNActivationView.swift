@@ -23,9 +23,7 @@ import UIKit
 import DesignResourcesKit
 import UIComponents
 
-/// The VPN activation screen. It owns the activation view
-/// model and renders the activation screen. The header, body and footer all switch on
-/// the view model's `connectionState`.
+/// The VPN activation screen. Header, body and footer all switch on the view model's `connectionState`.
 struct SubscriptionOnboardingVPNActivationView: View {
     private enum Metrics {
         static let offContentSpacing: CGFloat = 33
@@ -324,9 +322,7 @@ private func activationPreview(state: SubscriptionOnboardingVPNActivationViewMod
     .dynamicTypeSize(.accessibility5)
 }
 
-/// Exercises the off→on reveal (and its slide-in) in the canvas: starts off, then turns the VPN on after a
-/// beat so the on-state content slides in. Re-run the preview (⌥⌘P) to replay; in a Live Preview you can
-/// also tap "Turn On VPN" to trigger it manually.
+/// Exercises the off→on reveal: re-run the preview (⌥⌘P) to replay, or tap "Turn On VPN" in a Live Preview.
 private struct VPNRevealPreview: View {
     @StateObject private var viewModel = SubscriptionOnboardingVPNActivationViewModel.previewReveal(
         original: .madrid, vpn: .valencia)

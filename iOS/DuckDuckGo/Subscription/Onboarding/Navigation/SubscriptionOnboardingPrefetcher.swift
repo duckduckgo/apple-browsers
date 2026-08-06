@@ -20,10 +20,8 @@
 import Foundation
 import AIChat
 
-/// Prefetches the data the flow's sections need before the customer reaches them: the current (pre-VPN) connection
-/// info and the available Duck.ai models. Fetched once at flow start, so the result is cached here and simply read
-/// by the VPN and Duck.ai screens rather than refetched on every visit.
-///
+/// Prefetches what the flow's sections need, once at flow start, so screens read the result rather than
+/// refetching on every visit.
 // TODO: will be owned by SubscriptionOnboardingFlowViewModel.swift calling `prefetch()` once at flow start
 @MainActor
 final class SubscriptionOnboardingPrefetcher: ObservableObject {
@@ -115,10 +113,8 @@ extension SubscriptionOnboardingPrefetcher.FetchState: Equatable where Value: Eq
 
 #if DEBUG
 extension SubscriptionOnboardingPrefetcher {
-    /// Builds a prefetcher pre-seeded with resolved fetch states for previews. Seeding here rather than on the
-    /// view model matters: the view model subscribes to `$connectionInfo`, and a live `@Published` re-emits its
-    /// current value on subscribe — which would otherwise immediately clobber a value seeded on the view model
-    /// with the prefetcher's `.idle`. A `.loaded` seed also makes `fetchConnectionInfoIfNeeded()` a no-op.
+    /// Seed previews here rather than on the view model: `@Published` re-emits on subscribe, so a value seeded
+    /// on the view model would be clobbered by the prefetcher's `.idle`.
     @MainActor
     static func preview(connectionInfo: FetchState<SubscriptionOnboardingConnectionInfo> = .idle,
                         models: FetchState<[AIChatModel]> = .idle) -> SubscriptionOnboardingPrefetcher {

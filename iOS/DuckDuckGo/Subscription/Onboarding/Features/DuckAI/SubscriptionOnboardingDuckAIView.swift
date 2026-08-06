@@ -23,10 +23,7 @@ import UIComponents
 import AIChat
 import Common
 
-/// The Duck.ai model-picker onboarding screen, built on ``SubscriptionOnboardingBaseView``.
-/// It lists the available AI models (from
-/// ``SubscriptionOnboardingDuckAIViewModel``), presents the "Learn More" info sheet, and — on
-/// "Start Duck.ai Chat" — persists the selected model and launch Duck.ai chat.
+/// The Duck.ai model-picker onboarding screen.
 struct SubscriptionOnboardingDuckAIView: View {
     private enum Metrics {
         static let iconTextSpacing: CGFloat = 16
@@ -84,9 +81,6 @@ private extension SubscriptionOnboardingDuckAIView {
 
 // MARK: - Model picker
 
-/// The Duck.ai model picker: every available model is a row in a single `SubscriptionOnboardingCard`,
-/// with a "PLUS"/"PRO" tier marker on paid models and a checkmark on the selected one. The model list comes
-/// from a backend call (`AIChatModelsService`) prefetched by ``SubscriptionOnboardingPrefetcher``
 /// Rows are non-interactive on iPad: model preselection has no way to reach a fresh iPad chat session.
 private extension SubscriptionOnboardingDuckAIView {
     var modelPicker: some View {

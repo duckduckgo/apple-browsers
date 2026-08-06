@@ -21,11 +21,8 @@ import SwiftUI
 import DesignResourcesKit
 import UIComponents
 
-/// Precomputes what `SubscriptionOnboardingFreeTrialCalendarCard` renders — the current trial day, the
-/// calendar strip's day-of-month labels, the marker position, and the billing line — deriving them at
-/// `init` from the `freeTrialStartDate` / `billingStartDate` inputs, which aren't themselves stored. The
-/// strip is anchored at `freeTrialStartDate` and spans `trialLength` days, so the marker advances to
-/// "today" as the trial progresses. `now` and `calendar` are injectable for deterministic tests/previews.
+/// Derives everything the calendar card renders at `init`; the start dates themselves aren't stored.
+/// `now` and `calendar` are injectable so tests and previews are deterministic.
 struct SubscriptionOnboardingFreeTrialCalendarCardModel {
     let trialLength: Int
 
@@ -76,10 +73,7 @@ struct SubscriptionOnboardingFreeTrialCalendarCardModel {
     }
 }
 
-/// The "Day N of your free trial" card: a centered heading emphasising the current trial day, a billing
-/// line, and a calendar strip (day-of-month labels over a capsule bar filled up to today's marker). Values
-/// come from `SubscriptionOnboardingFreeTrialCalendarCardModel`. Built on `UIComponents.BubbleView` for its
-/// translucent fill.
+/// The "Day N of your free trial" card, with a calendar strip filled up to today's marker.
 struct SubscriptionOnboardingFreeTrialCalendarCard: View {
     private let model: SubscriptionOnboardingFreeTrialCalendarCardModel
 

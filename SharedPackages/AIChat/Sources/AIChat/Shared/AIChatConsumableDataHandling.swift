@@ -105,6 +105,18 @@ public enum AIChatConversationSource: String, CaseIterable {
     case settings = "settings"
     /// Origin unknown / not instrumented (restored chats, external deep links, etc.).
     case other = "other"
+
+    /// Whether this surface is a gesture on the title-bar Ask Duck.ai button — its "New Chat"
+    /// (dropdown or middle-click), its "Ask About Page" sidebar entry, or the sidebar toggle.
+    /// This is what the conversation pixels report as `isOpenedFromAskDuckAiButton`.
+    public var isAskDuckAiButton: Bool {
+        switch self {
+        case .tabBarButton, .askAboutPage, .tabBarSidebar:
+            return true
+        default:
+            return false
+        }
+    }
 }
 
 /// One-shot mailbox carrying the opening surface to the chat's handler: written just before the

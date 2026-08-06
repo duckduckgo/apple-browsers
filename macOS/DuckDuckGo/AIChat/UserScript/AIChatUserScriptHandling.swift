@@ -200,6 +200,12 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     private var didConsumeConversationSource = false
     private let conversationSourceHandler: AIChatConversationSourceHandler
 
+    /// Whether page context with content is currently attached to this chat — set by the native
+    /// auto-attach push and updated by the frontend's add/remove toggle. Read at prompt submit for
+    /// the conversation pixels' `hasPageContext`. Best-effort, mirroring Windows: only sidebar chats
+    /// (whose underlying page is attachable) can report true.
+    private var hasAttachedPageContext = false
+
     init(
         storage: AIChatPreferencesStorage,
         messageHandling: AIChatMessageHandling = AIChatMessageHandler(),
@@ -448,6 +454,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     }
 
     func submitAIChatPageContext(_ pageContext: AIChatPageContextData?) {
+        hasAttachedPageContext = pageContext.map { $0.attached != false && !$0.content.isEmpty } ?? false
         pageContextSubject.send(pageContext)
     }
 
@@ -651,6 +658,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         guard let payload: TogglePageContextTelemetry = DecodableHelper.decode(from: params) else {
             return nil
         }
+        hasAttachedPageContext = payload.enabled
         let pixel: PixelKitEvent = {
             if payload.enabled {
                 return AIChatPixel.aiChatPageContextAdded(automaticEnabled: storage.shouldAutomaticallySendPageContext)
@@ -1019,7 +1027,7 @@ extension AIChatUserScriptHandler: AIChatMetricReportingHandling {
             pageContextConsumedSubject.send()
             // Selections were consumed by the prompt; clear the pull-store so a later init doesn't resurrect them.
             messageHandling.clearSelectionContexts()
-            pixelFiring?.fire(AIChatPixel.aiChatMetricStartNewConversation(source: conversationSource ?? .other), frequency: .standard)
+            pixelFiring?.fire(AIChatPixel.aiChatMetricStartNewConversation(isOpenedFromAskDuckAiButton: conversationSource?.isAskDuckAiButton ?? false, hasPageContext: hasAttachedPageContext), frequency: .standard)
             DispatchQueue.main.async { [self] in
                 refreshAtbs(completion: completion)
             }
@@ -1028,7 +1036,7 @@ extension AIChatUserScriptHandler: AIChatMetricReportingHandling {
             markDuckAIActivatedIfNeeded(metric)
             pageContextConsumedSubject.send()
             messageHandling.clearSelectionContexts()
-            pixelFiring?.fire(AIChatPixel.aiChatMetricSentPromptOngoingChat(source: conversationSource ?? .other), frequency: .standard)
+            pixelFiring?.fire(AIChatPixel.aiChatMetricSentPromptOngoingChat(isOpenedFromAskDuckAiButton: conversationSource?.isAskDuckAiButton ?? false, hasPageContext: hasAttachedPageContext), frequency: .standard)
             DispatchQueue.main.async { [self] in
                 refreshAtbs(completion: completion)
             }

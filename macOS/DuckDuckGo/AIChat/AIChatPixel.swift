@@ -18,7 +18,6 @@
 
 import Foundation
 import PixelKit
-import AIChat
 
 /// This enum keeps pixels related to AI Chat (duck.ai)
 /// > Related links:
@@ -383,11 +382,11 @@ enum AIChatPixel: PixelKitEvent {
 
     // MARK: - Prompt Metrics
 
-    /// Event Trigger: User submits their first prompt in a new Duck.ai conversation. `source` is the opening surface.
-    case aiChatMetricStartNewConversation(source: AIChatConversationSource)
+    /// Event Trigger: User submits their first prompt in a new Duck.ai conversation.
+    case aiChatMetricStartNewConversation(isOpenedFromAskDuckAiButton: Bool, hasPageContext: Bool)
 
-    /// Event Trigger: User submits a prompt in an ongoing Duck.ai conversation. `source` is the opening surface.
-    case aiChatMetricSentPromptOngoingChat(source: AIChatConversationSource)
+    /// Event Trigger: User submits a prompt in an ongoing Duck.ai conversation.
+    case aiChatMetricSentPromptOngoingChat(isOpenedFromAskDuckAiButton: Bool, hasPageContext: Bool)
 
     /// Event Trigger: User taps a sidebar page-suggestion chip (a tailored prompt or "Ask about this page").
     /// `suggestionId` is the FE's fixed catalog key; `pageType` is the FE's coarse page classification.
@@ -893,9 +892,12 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatNtpCustomizeResponsesOpened,
                 .serpSettingsUnrecognizedValue:
             return nil
-        case .aiChatMetricStartNewConversation(let source),
-                .aiChatMetricSentPromptOngoingChat(let source):
-            return ["source": source.rawValue]
+        case .aiChatMetricStartNewConversation(let isOpenedFromAskDuckAiButton, let hasPageContext),
+                .aiChatMetricSentPromptOngoingChat(let isOpenedFromAskDuckAiButton, let hasPageContext):
+            return [
+                "isOpenedFromAskDuckAiButton": isOpenedFromAskDuckAiButton ? "true" : "false",
+                "hasPageContext": hasPageContext ? "true" : "false"
+            ]
         case .aiChatAddressBarSubscriptionUpsellTriggered(let currentTier, let requiredTier, let flowType):
             return ["current_tier": currentTier, "required_tier": requiredTier, "flow_type": flowType]
         case .aiChatSubscriptionFunnelImpression(let origin),

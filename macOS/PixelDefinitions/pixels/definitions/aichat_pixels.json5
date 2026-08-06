@@ -101,31 +101,16 @@
             "pixelSource",
             "channel",
             {
-                "key": "source",
-                "description": "The user-facing surface that opened the chat this conversation was started from",
+                "key": "isOpenedFromAskDuckAiButton",
+                "description": "Whether the chat this prompt was submitted in was opened from the tab-bar Ask Duck.ai button, by any of its gestures: the menu's 'New Chat', a middle-click on the button, or its sidebar entry ('Ask About Page' / 'Open Sidebar'). False for every other surface, and for a chat nothing was recorded for (a session restored at startup or a direct navigation to duck.ai).",
                 "type": "string",
-                "enum": [
-                    "tab-bar-button",
-                    "ask-about-page",
-                    "tab-bar-sidebar",
-                    "address-bar",
-                    "new-tab-page",
-                    "omnibar",
-                    "prompt-bar",
-                    "main-menu",
-                    "more-options-menu",
-                    "summarization",
-                    "translation",
-                    "attach-selection",
-                    "context-menu",
-                    "serp",
-                    "sidebar-handoff",
-                    "voice",
-                    "image",
-                    "recent-chat",
-                    "settings",
-                    "other"
-                ]
+                "enum": ["true", "false"]
+            },
+            {
+                "key": "hasPageContext",
+                "description": "Whether page context with content was attached to the chat when the prompt was submitted. In practice only sidebar chats can report true, since a full-tab Duck.ai chat is never attachable. Text selections do not count (separate channel). Best-effort native signal, matching Windows' win_aichat_start_new_conversation.",
+                "type": "string",
+                "enum": ["true", "false"]
             }
         ]
     },
@@ -138,31 +123,16 @@
             "pixelSource",
             "channel",
             {
-                "key": "source",
-                "description": "The user-facing surface that opened the chat this conversation belongs to",
+                "key": "isOpenedFromAskDuckAiButton",
+                "description": "Whether the chat this prompt was submitted in was opened from the tab-bar Ask Duck.ai button, by any of its gestures: the menu's 'New Chat', a middle-click on the button, or its sidebar entry ('Ask About Page' / 'Open Sidebar'). False for every other surface, and for a chat nothing was recorded for (a session restored at startup or a direct navigation to duck.ai).",
                 "type": "string",
-                "enum": [
-                    "tab-bar-button",
-                    "ask-about-page",
-                    "tab-bar-sidebar",
-                    "address-bar",
-                    "new-tab-page",
-                    "omnibar",
-                    "prompt-bar",
-                    "main-menu",
-                    "more-options-menu",
-                    "summarization",
-                    "translation",
-                    "attach-selection",
-                    "context-menu",
-                    "serp",
-                    "sidebar-handoff",
-                    "voice",
-                    "image",
-                    "recent-chat",
-                    "settings",
-                    "other"
-                ]
+                "enum": ["true", "false"]
+            },
+            {
+                "key": "hasPageContext",
+                "description": "Whether page context with content was attached to the chat when the prompt was submitted. In practice only sidebar chats can report true, since a full-tab Duck.ai chat is never attachable. Text selections do not count (separate channel). Best-effort native signal, matching Windows' win_aichat_sent_prompt_ongoing_chat.",
+                "type": "string",
+                "enum": ["true", "false"]
             }
         ]
     },

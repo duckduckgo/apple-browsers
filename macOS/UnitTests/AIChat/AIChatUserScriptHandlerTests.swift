@@ -451,7 +451,7 @@ struct AIChatUserScriptHandlerTests {
     @MainActor
     func testThatUserDidSubmitFirstPromptFiresStartNewConversationPixel() async throws {
         let testPixelFiring = PixelKitMock()
-        testPixelFiring.expectedFireCalls = [.init(pixel: AIChatPixel.aiChatMetricStartNewConversation(source: .other), frequency: .standard)]
+        testPixelFiring.expectedFireCalls = [.init(pixel: AIChatPixel.aiChatMetricStartNewConversation(isOpenedFromAskDuckAiButton: false, hasPageContext: false), frequency: .standard)]
 
         let testHandler = AIChatUserScriptHandler(
             storage: storage,
@@ -475,15 +475,15 @@ struct AIChatUserScriptHandlerTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("didReportMetric attributes the conversation pixel to the surface that opened the chat", .timeLimit(.minutes(1)))
+    @Test("didReportMetric reports isOpenedFromAskDuckAiButton=true when the chat was opened from the Duck.ai button", .timeLimit(.minutes(1)))
     @MainActor
-    func testThatConversationPixelCarriesTheOpeningSource() async throws {
-        // A surface stamps the pending source just before opening the chat.
+    func testThatConversationPixelReportsOpenedFromAskDuckAiButton() async throws {
+        // A tab-bar Duck.ai button gesture stamps the pending source just before opening the chat.
         let sourceHandler = AIChatConversationSourceHandler()
         sourceHandler.setData(.tabBarButton)
 
         let testPixelFiring = PixelKitMock()
-        testPixelFiring.expectedFireCalls = [.init(pixel: AIChatPixel.aiChatMetricStartNewConversation(source: .tabBarButton), frequency: .standard)]
+        testPixelFiring.expectedFireCalls = [.init(pixel: AIChatPixel.aiChatMetricStartNewConversation(isOpenedFromAskDuckAiButton: true, hasPageContext: false), frequency: .standard)]
 
         let testHandler = AIChatUserScriptHandler(
             storage: storage,
@@ -516,7 +516,7 @@ struct AIChatUserScriptHandlerTests {
     @MainActor
     func testThatUserDidSubmitPromptFiresSentPromptOngoingChatPixel() async throws {
         let testPixelFiring = PixelKitMock()
-        testPixelFiring.expectedFireCalls = [.init(pixel: AIChatPixel.aiChatMetricSentPromptOngoingChat(source: .other), frequency: .standard)]
+        testPixelFiring.expectedFireCalls = [.init(pixel: AIChatPixel.aiChatMetricSentPromptOngoingChat(isOpenedFromAskDuckAiButton: false, hasPageContext: false), frequency: .standard)]
 
         let testHandler = AIChatUserScriptHandler(
             storage: storage,

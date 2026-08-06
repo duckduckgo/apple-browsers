@@ -1555,16 +1555,7 @@ class TabViewController: UIViewController {
             }
         }
 
-        if case .tabTermination = actionableErrorPage {
-            if webView.canGoBack, webView.goBack() != nil {
-                duckPlayerNavigationHandler.handleGoBack(webView: webView)
-                chromeDelegate?.omniBar.endEditing()
-            } else if openingTab != nil {
-                stashReopenableStateOnOpener()
-                delegate?.tabDidRequestClose(self)
-            } else if let url {
-                load(url: url)
-            }
+        if handleBackFromTabTerminationErrorPage() {
             return
         }
 
@@ -1591,6 +1582,21 @@ class TabViewController: UIViewController {
             delegate?.tabDidRequestClose(self)
         }
 
+    }
+
+    private func handleBackFromTabTerminationErrorPage() -> Bool {
+        guard case .tabTermination = actionableErrorPage else { return false }
+
+        if webView.canGoBack, webView.goBack() != nil {
+            duckPlayerNavigationHandler.handleGoBack(webView: webView)
+            chromeDelegate?.omniBar.endEditing()
+        } else if openingTab != nil {
+            stashReopenableStateOnOpener()
+            delegate?.tabDidRequestClose(self)
+        } else if let url {
+            load(url: url)
+        }
+        return true
     }
 
     /// Records the closed tab's URL on the opener so its forward button can re-open it.

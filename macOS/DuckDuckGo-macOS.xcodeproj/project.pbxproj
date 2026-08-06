@@ -20669,9 +20669,9 @@
 			buildConfigurations = (
 				4B2D06462A11CFBE00DE1F49 /* Debug */,
 				4B2D06472A11CFBE00DE1F49 /* CI */,
-				4B2D06482A11CFBE00DE1F49 /* Release */,
 				370AB8852E2635AE00BBBDE0 /* Alpha */,
 				4B2D06492A11CFBE00DE1F49 /* Review */,
+				4B2D06482A11CFBE00DE1F49 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
@@ -20681,9 +20681,9 @@
 			buildConfigurations = (
 				4B2D06762A13318600DE1F49 /* Debug */,
 				4B2D06772A13318600DE1F49 /* CI */,
-				4B2D06782A13318600DE1F49 /* Release */,
 				370AB8862E2635AE00BBBDE0 /* Alpha */,
 				4B2D06792A13318600DE1F49 /* Review */,
+				4B2D06782A13318600DE1F49 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
@@ -20765,9 +20765,9 @@
 			buildConfigurations = (
 				9D9AE8CD2AAA39A70026E7DC /* Debug */,
 				9D9AE8CE2AAA39A70026E7DC /* CI */,
-				9D9AE8CF2AAA39A70026E7DC /* Release */,
 				370AB8872E2635AE00BBBDE0 /* Alpha */,
 				9D9AE8D02AAA39A70026E7DC /* Review */,
+				9D9AE8CF2AAA39A70026E7DC /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
@@ -20777,9 +20777,9 @@
 			buildConfigurations = (
 				9D9AE8EE2AAA39D30026E7DC /* Debug */,
 				9D9AE8EF2AAA39D30026E7DC /* CI */,
-				9D9AE8F02AAA39D30026E7DC /* Release */,
 				370AB8882E2635AE00BBBDE0 /* Alpha */,
 				9D9AE8F12AAA39D30026E7DC /* Review */,
+				9D9AE8F02AAA39D30026E7DC /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

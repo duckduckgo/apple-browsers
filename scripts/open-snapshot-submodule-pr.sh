@@ -15,18 +15,26 @@ SUBMODULE_PATH="SnapshotReferences"
 SUBMODULE_REPO="duckduckgo/apple-browsers-snapshots"
 BASE_BRANCH="main"
 
-DIRTY="$(git -C "$SUBMODULE_PATH" status --porcelain)"
-ON_REMOTE="$(git -C "$SUBMODULE_PATH" branch -r --contains HEAD 2>/dev/null || true)"
-
-if [ -z "$DIRTY" ] && [ -n "$ON_REMOTE" ]; then
-	echo "ℹ️  $SUBMODULE_PATH is clean and already pushed — nothing to sync."
-	exit 0
+TOP_LEVEL="$(git rev-parse --show-toplevel)"
+SUBMODULE_ROOT="$(git -C "$SUBMODULE_PATH" rev-parse --show-toplevel 2>/dev/null || true)"
+if [ "$SUBMODULE_ROOT" != "$TOP_LEVEL/$SUBMODULE_PATH" ]; then
+	echo "❌ $SUBMODULE_PATH is not initialized. Run 'git submodule update --init $SUBMODULE_PATH' first."
+	exit 1
 fi
+
+DIRTY="$(git -C "$SUBMODULE_PATH" status --porcelain)"
+SUBMODULE_HEAD="$(git -C "$SUBMODULE_PATH" rev-parse HEAD)"
+COMMITTED_SUBMODULE_HEAD="$(git rev-parse "HEAD:$SUBMODULE_PATH")"
 
 BRANCH="$(git rev-parse --abbrev-ref HEAD)"
 if [ "$BRANCH" = "HEAD" ] || [ "$BRANCH" = "$BASE_BRANCH" ]; then
 	echo "❌ Refusing to sync from '$BRANCH'. Check out a feature branch first."
 	exit 1
+fi
+
+if [ -z "$DIRTY" ] && [ "$SUBMODULE_HEAD" = "$COMMITTED_SUBMODULE_HEAD" ]; then
+	echo "ℹ️  $SUBMODULE_PATH has no changes to sync."
+	exit 0
 fi
 
 echo "🔄 Syncing snapshot references on branch '$BRANCH'..."

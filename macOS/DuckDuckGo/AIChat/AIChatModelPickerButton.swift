@@ -32,6 +32,7 @@ final class AIChatModelPickerButton: NSView {
         static let chevronSize: CGFloat = 16
         static let fontSize: CGFloat = 12
         static let cornerRadius: CGFloat = 14
+        static let borderWidth: CGFloat = 1
     }
 
     private let themeManager: ThemeManaging = NSApp.delegateTyped.themeManager
@@ -62,6 +63,16 @@ final class AIChatModelPickerButton: NSView {
     }()
 
     private let backgroundLayer = CALayer()
+
+    /// Resting outline. Kept on its own layer because `backgroundLayer` is faded in and out
+    /// for hover/press, and the outline has to stay visible in every state.
+    private let borderLayer: CALayer = {
+        let layer = CALayer()
+        layer.cornerRadius = Constants.cornerRadius
+        layer.borderWidth = Constants.borderWidth
+        return layer
+    }()
+
     private let focusRingLayer: CAShapeLayer = {
         let layer = CAShapeLayer()
         layer.fillColor = nil
@@ -93,6 +104,17 @@ final class AIChatModelPickerButton: NSView {
     /// via `applyTheme(theme:)` so the ring follows in-app theme switches (Pink, Blue, etc.).
     var focusRingColor: NSColor = NSColor(designSystemColor: .accentPrimary) {
         didSet { updateFocusRingStrokeColor() }
+    }
+
+    /// `borderColor` is a `CGColor`, so the dynamic `lines` colour has to be resolved against the
+    /// view's own appearance — `NSApp`'s would be wrong in a burner window's dark override.
+    private func updateBorderColor() {
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        effectiveAppearance.performAsCurrentDrawingAppearance {
+            borderLayer.borderColor = NSColor(designSystemColor: .lines).cgColor
+        }
+        CATransaction.commit()
     }
 
     private func updateFocusRingStrokeColor() {
@@ -197,6 +219,11 @@ final class AIChatModelPickerButton: NSView {
         backgroundLayer.opacity = 0
         layer?.insertSublayer(backgroundLayer, at: 0)
 
+        // Outline above the background fill, below the focus ring, so a focused pill still
+        // reads as focused rather than double-stroked.
+        layer?.addSublayer(borderLayer)
+        updateBorderColor()
+
         // Focus ring sublayer sits above the background so it stays visible while hovered.
         // Stroke colour follows `focusRingColor` and re-resolves against the view's effective
         // appearance — see `updateFocusRingStrokeColor()`.
@@ -224,6 +251,7 @@ final class AIChatModelPickerButton: NSView {
     override func layout() {
         super.layout()
         backgroundLayer.frame = bounds
+        borderLayer.frame = bounds
 
         // Focus ring sits 1pt outside the pill. Rendered as a sublayer rather than
         // in `draw(_:)` so the 1pt overflow is not clipped by the view's backing layer
@@ -341,6 +369,7 @@ final class AIChatModelPickerButton: NSView {
     override func viewDidChangeEffectiveAppearance() {
         super.viewDidChangeEffectiveAppearance()
         updateAppearance()
+        updateBorderColor()
         updateFocusRingStrokeColor()
     }
 

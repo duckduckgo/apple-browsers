@@ -19,9 +19,12 @@
 import Foundation
 import os.log
 
-extension Logger {
+public extension Logger {
     /// Replaces the Windows implementation's `Diagnostic.cs` ETW source: every fail-safe boundary in
     /// EventHub logs here rather than swallowing silently. Local only — never PII, never a URL.
+    ///
+    /// `public` so each platform's wiring layer logs to the same subsystem, keeping all EventHub
+    /// activity filterable as one stream.
     ///
     /// Only config-governed identifiers (pixel names, parameter names, bucket names, data keys) and
     /// error descriptions are interpolated as `.public`; web-page-derived event payloads are never

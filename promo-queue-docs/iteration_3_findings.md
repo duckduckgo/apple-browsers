@@ -8,6 +8,8 @@
 
 This report answers iteration-3 RQ1–RQ5. It consumes the code-verified Program A inventory and evaluates four named choices: **A** (RMF becomes the queue), **B** (client queue; RMF is an input), **C** (layered: RMF schedules campaigns; the queue arbitrates visibility), and **B+** (B with bounded remote queue policy).
 
+> **Iteration-one status update — 2026-08-06:** The finding that RMF itself lacks cooldown/frequency policy remains true. PR 3 commit `06a2417373` implements only a fixed launch-modal/NTP-RMF matrix: modal→RMF 10m, RMF→RMF 10m globally, RMF→modal fixed 24h, and modal→modal the existing remote-tunable interval (currently/default 24h). A service-owned policy reuses the persisted modal timestamp and adds one confirmed-RMF timestamp; the arbiter remains transient. Commit `1f12bf8a66` removes the proposed collision pixels, deferring telemetry to a separate project. This narrow precedent does not satisfy the broader B/B+/C requirements evaluated below.
+
 > **Source rule.** Stakeholder positions, Windows/Android status, product requirements, and the Android Fire Mode precedent are **reported (Asana), not code-verifiable** and cite the local research digests. Code and config claims cite the current checkouts. Effort classes are relative: **S** = a bounded seam measured in days; **M** = coordinated multi-component work; **L** = an architectural, multi-platform, or multi-release program. They are not delivery commitments.
 
 ## 0. Decision summary and corrections to the brief
@@ -16,7 +18,7 @@ This report answers iteration-3 RQ1–RQ5. It consumes the code-verified Program
 
 Propose **Option C with the B+ policy contract**, in phases:
 
-1. Ship the narrow iteration-1 iOS NTP/modal permit seam without extracting `PromoService`.
+1. Ship the narrow iteration-1 iOS NTP/modal permit plus fixed directional cooldown seam without extracting `PromoService`.
 2. If the cross-team decision approves C, build/evolve the client arbiter and make it the only authority for **visibility now**.
 3. Add bounded remote queue policy for kill, priority, cooldown, caps, and expiry.
 4. Feed RMF candidates through a native-surface bridge; migrate the seven Program A header/card/chrome candidates first.
@@ -37,7 +39,7 @@ This is the highest-scoring framing (**95/100**) because it preserves the shippe
 - The research brief's “no experiment/cohort integration” is too broad. RMF supports `expVariant`; privacy-config cohort flags are excluded from `allFeatureFlagsEnabled`. `SharedPackages/BrowserServicesKit/Sources/RemoteMessaging/Mappers/JsonToRemoteMessageModelMapper.swift:24-34,70-81`; `SharedPackages/BrowserServicesKit/Sources/RemoteMessaging/Matchers/AppAttributeMatcher.swift:111-130`; `iOS/DuckDuckGo/RemoteMessagingConfigMatcherProvider.swift:165-167`
 - Adding an RMF surface does **not inherently require a Core Data migration**: surfaces already persist in an `Int16` bitmask. A model migration is needed only if persisted shape/semantics change. `SharedPackages/BrowserServicesKit/Sources/RemoteMessaging/Model/RemoteMessageModel.swift:193-210`; `SharedPackages/BrowserServicesKit/Sources/RemoteMessaging/RemoteMessagingStore.swift:443-459`; `SharedPackages/BrowserServicesKit/Sources/RemoteMessaging/CoreData/RemoteMessaging.xcdatamodeld/RemoteMessaging 3.xcdatamodel/contents:3-14`
 - There is no shared Apple `PromoQueue` package and iteration 1 no longer plans one. The macOS engine remains in `macOS/DuckDuckGo/Promotions/`; extraction is an Option-B/C bill-of-material item only if iteration 3 selects that direction.
-- The iOS and macOS 24-hour values are not equivalent policy: iOS persists the last successful presentation through `PromptCooldownManager`, whereas macOS applies app-initiated cooldown from qualifying dismissal history. Matching duration does not remove integration work.
+- The existing iOS modal-to-modal and macOS 24-hour values are not equivalent policy: iOS persists the last successful modal presentation through `PromptCooldownManager`, whereas macOS applies app-initiated cooldown from qualifying dismissal history. Iteration one's separate fixed RMF-to-modal 24-hour rule is also presentation-based and scoped only to NTP RMF. Matching duration does not remove integration work.
 - A pure-A renderer cannot be uniformly “thin.” StoreKit requests, TipKit, OS/default-browser state, live page callbacks, consent mutations, subscription state, and other Program A class-(c) cases retain native logic. If RMF grants visibility and calls those plugins, this is A with substantial native plugins; it becomes C only if the client queue remains the final visibility arbiter. `promo-queue-docs/iteration_2_findings.md:114-157`
 
 ---
@@ -152,7 +154,7 @@ It does **not** support:
 9. Bidirectional control of RMF; current ExternalPromos observe RMF and retract conflicting internals, but RMF does not request a permit. `macOS/DuckDuckGo/Promotions/PromoService.swift:431-457`
 10. Multiple concurrent RMF inputs because RMF is globally single-scheduled. `SharedPackages/BrowserServicesKit/Sources/RemoteMessaging/RemoteMessagingStore.swift:92-125,443-506`
 11. A single cross-platform binary. macOS is app-target Swift; the Windows parallel implementation and Android absence are **reported (Asana), not code-verifiable**. `promo-queue-docs/iteration_3_research.md:44-50`
-12. iOS/Android long-tail coverage; iteration 1 supplies only a targeted iOS NTP/modal permit seam, not a shared Apple queue. Android coverage is **reported (Asana), not code-verifiable**. `promo-queue-docs/iteration_3_research.md:7,44-50`
+12. iOS/Android long-tail coverage; iteration 1 supplies only a targeted iOS NTP/modal permit plus fixed cooldown seam, not a shared Apple queue or general frequency engine. Android coverage is **reported (Asana), not code-verifiable**. `promo-queue-docs/iteration_3_research.md:7,44-50`
 13. Remote images in the macOS NTP RMF renderer: the shared model accepts a URL, but the renderer maps only local placeholders. `macOS/LocalPackages/NewTabPage/Sources/NewTabPage/RMF/NewTabPageDataModel+RMF.swift:57-71`
 14. First-fetch remote-content fallback; local queue promos can work offline, while RMF has no candidate without fetched/cached config. `SharedPackages/BrowserServicesKit/Sources/RemoteMessaging/RemoteMessagingConfigFetcher.swift:41-62`
 
@@ -162,7 +164,7 @@ It does **not** support:
 
 ### C.1 Layering rules
 
-This is a proposed long-term contract, not the iteration-1 implementation. The narrow iOS permit coordinator has no generic promo registry, history, severity/context policy, or pending scheduler. If C is selected, the follow-up TD must choose whether to evolve that seam or extract/adapt `PromoService`; neither is assumed here.
+This is a proposed long-term contract, not the iteration-one implementation. The narrow iOS coordinator has no generic promo registry, severity/context policy, cap/expiry model, or general pending scheduler. Its persisted history is limited to one existing modal and one new RMF source-event timestamp for the fixed matrix. If C is selected, the follow-up TD must choose whether to evolve that seam or extract/adapt `PromoService`; neither is assumed here.
 
 1. **RMF owns campaign availability:** remote content, localization, imagery, coarse targeting, campaign kill/removal, and RMF message identity. Its output is a candidate, not permission to render. Current RMF target evaluation is local and config-order based. `SharedPackages/BrowserServicesKit/Sources/RemoteMessaging/RemoteMessagingConfigMatcher.swift:51-100`
 2. **The queue exclusively owns visibility now:** priority, initiated kind, severity, context/coexistence, onboarding/deep-link gates, global and per-promo cooldown, caps, expiry, essential preemption, and delay reason. Current desktop policy demonstrates the core seam. `macOS/DuckDuckGo/Promotions/PromoService.swift:488-553`
@@ -302,7 +304,7 @@ Each requirement is weighted **Must 3 / Should 2 / Nice 1**. A cell scores **✓
 
 ### D.4 Complementarity
 
-The evidence does **not** justify “A versus B forever.” A coherent sequence, if the cross-team decision selects client-side arbitration, is **targeted iteration-1 permit seam → client-arbiter foundation → B+ policy → C bridges → optional A-like RMF capabilities**. Per-surface scheduling may become valuable after several remote-content surfaces exist; it does not require moving final visibility arbitration into RMF. Conversely, retaining a client arbiter after adding extensive RMF content is still C, not failed A.
+The evidence does **not** justify “A versus B forever.” A coherent sequence, if the cross-team decision selects client-side arbitration, is **targeted iteration-one permit/fixed-cooldown seam → client-arbiter foundation → B+ policy → C bridges → optional A-like RMF capabilities**. Per-surface scheduling may become valuable after several remote-content surfaces exist; it does not require moving final visibility arbitration into RMF. Conversely, retaining a client arbiter after adding extensive RMF content is still C, not failed A.
 
 ---
 

@@ -41,6 +41,7 @@
   .stats{display:flex;gap:13px;flex-wrap:wrap;margin-top:16px}.stat{flex:1;min-width:150px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 16px;box-shadow:var(--shadow)}.stat .big{font-size:27px;font-weight:850;color:var(--navy)}.stat .lbl{font-size:12.5px;color:var(--muted)}
   .callout{border-left:4px solid var(--orange);background:var(--orange-soft);padding:14px 18px;border-radius:0 12px 12px 0;margin-top:15px}.callout.blue{border-color:var(--blue);background:var(--blue-soft)}.callout.green{border-color:var(--green);background:var(--green-soft)}.callout h4{font-size:15px;margin-bottom:4px}.callout p{font-size:13.5px;margin:0}
   .grid{display:grid;gap:15px}.g2{grid-template-columns:repeat(2,1fr)}
+  .matrix-scroll{overflow-x:auto}.matrix{width:100%;border-collapse:collapse;font-size:13px;background:#fff;border-radius:12px;overflow:hidden;box-shadow:var(--shadow)}.matrix th,.matrix td{padding:12px 14px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}.matrix thead th{background:var(--navy);color:#fff}.matrix tbody th{color:var(--navy)}.matrix tr:last-child td,.matrix tr:last-child th{border-bottom:0}
   footer{margin-top:44px;padding:26px 0 52px;border-top:1px solid var(--line);font-size:12.5px;color:var(--muted)}footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
 
   /* SVG shared classes */
@@ -73,18 +74,18 @@
 </style>
 </head>
 <body>
-<nav><div class="nav-inner"><div class="brand"><i></i> Promo Queue · Iteration 1 · Appendix</div><a href="#problem">Problem</a><a href="#races">Races</a><a href="#model">Lease model</a><a href="#arch">Architecture</a><a href="#flows">Flows</a><a href="#ntp">Multi-NTP</a><a href="#accounting">Accounting</a></div></nav>
+<nav><div class="nav-inner"><div class="brand"><i></i> Promo Queue · Iteration 1 · Appendix</div><a href="#problem">Problem</a><a href="#races">Races</a><a href="#model">Lease model</a><a href="#cooldown">Cooldown</a><a href="#arch">Architecture</a><a href="#flows">Flows</a><a href="#ntp">Multi-NTP</a><a href="#accounting">Accounting</a></div></nav>
 
 <header class="hero"><div class="wrap">
   <span class="kicker">Visual appendix · Tech design iteration 1</span>
   <h1>The iOS promo lease model, in pictures</h1>
-  <p class="sub">Companion to <code>TECH_DESIGN_FINAL.md</code>. It adds no new decisions — each figure illustrates one part of the design: why the overlap happens, why a plain permission check is not enough, and how the transactional lease arbiter closes the gap without changing existing provider priority, eligibility, or cooldown policy.</p>
-  <div class="meta-row"><div class="meta"><b>Scope</b> <span>· launch modals × NTP RMF cards only</span></div><div class="meta"><b>New state</b> <span>· in-memory, main-actor, nothing persisted</span></div><div class="meta"><b>Updated</b> <span>· Aug 6, 2026</span></div></div>
+  <p class="sub">Companion to <code>TECH_DESIGN_FINAL.md</code>. It illustrates the transactional lease model and the August 2026 directional cooldown decision implemented by PR 3 commit <code>06a2417373</code>, without turning the arbiter or RMF into a general policy engine.</p>
+  <div class="meta-row"><div class="meta"><b>Scope</b> <span>· launch modals × NTP RMF cards only</span></div><div class="meta"><b>State</b> <span>· transient leases + one new confirmed-RMF timestamp</span></div><div class="meta"><b>Updated</b> <span>· Aug 6, 2026</span></div></div>
   <div class="stats">
     <div class="stat"><div class="big">1</div><div class="lbl">new arbiter — the only new authority</div></div>
     <div class="stat"><div class="big">2</div><div class="lbl">race windows closed by leases</div></div>
     <div class="stat"><div class="big">7</div><div class="lbl">modal providers keep their existing policy</div></div>
-    <div class="stat"><div class="big">0</div><div class="lbl">bytes of persisted queue history</div></div>
+    <div class="stat"><div class="big">1 + 1</div><div class="lbl">new RMF timestamp + existing modal timestamp reused</div></div>
   </div>
 </div></header>
 
@@ -302,8 +303,22 @@
 </div>
 </section>
 
+<section id="cooldown"><div class="sec-head"><span class="sec-num">03B</span><h2>The iteration-one cooldown matrix</h2><p class="lede">Mutual exclusion answers “may these be visible together?” A separate service-owned policy answers “has enough time passed?” The arbiter remains transient and history-free; RMF still has no generic frequency engine.</p></div>
+  <div class="matrix-scroll"><table class="matrix"><thead><tr><th>Previous confirmed appearance</th><th>Next appearance</th><th>Minimum elapsed time</th></tr></thead><tbody>
+    <tr><th>Modal</th><td>NTP RMF</td><td><b>10 minutes</b> · fixed</td></tr>
+    <tr><th>NTP RMF</th><td>NTP RMF</td><td><b>10 minutes</b> · fixed, global across IDs and NTPs</td></tr>
+    <tr><th>NTP RMF</th><td>Modal</td><td><b>24 hours</b> · fixed</td></tr>
+    <tr><th>Modal</th><td>Modal</td><td><b>Existing interval</b> · remote-tunable, currently/default 24 hours</td></tr>
+  </tbody></table></div>
+  <div class="grid g2" style="margin-top:17px">
+    <div class="card"><span class="tag t-blue">Confirmed source events</span><h3 style="font-size:16px;margin:9px 0 7px">Write only when actually shown</h3><p style="font-size:13.5px;color:var(--muted)">Modal: UIKit completion or attached-root adoption. RMF: first <code>onAppear</code> of the admitted render session. Mapping, selection, lease acquisition, denial, pending work, withdrawal, and failed presentation write nothing.</p></div>
+    <div class="card"><span class="tag t-amber">Serialized RMF admission</span><h3 style="font-size:16px;margin:9px 0 7px">One provisional winner</h3><p style="font-size:13.5px;color:var(--muted)">One global identity-bound reservation prevents concurrent NTPs from passing before appearance. Appearance persists the event; withdrawal releases without writing. The exact boundary is eligible.</p></div>
+  </div>
+  <div class="callout blue"><h4>Persistence and retry</h4><p>The service reuses the existing modal timestamp and persists one last-confirmed-RMF timestamp across relaunch. RMF-target denials retain the candidate and schedule one retry at the earliest 10-minute boundary. Modal-target denials remain foreground/checkpoint-driven. Feature off bypasses new checks, writes, reservations, and timers while preserving confirmed history.</p></div>
+</section>
+
 <!-- ============================ 04 ARCHITECTURE ============================ -->
-<section id="arch"><div class="sec-head"><span class="sec-num">04</span><h2>Where the arbiter sits</h2><p class="lede">Existing components keep their policy ownership. The arbiter is inserted at two seams: before provider evaluation on the coordinated modal side, and in front of card construction on the NTP side.</p></div>
+<section id="arch"><div class="sec-head"><span class="sec-num">04</span><h2>Where the arbiter sits</h2><p class="lede">Existing components keep their policy ownership. The arbiter is inserted at two seams; the separate service-owned cooldown policy checks confirmed history before modal provider evaluation or RMF publication.</p></div>
 <div class="card fig">
   <div class="legend"><span><span class="sw" style="background:var(--blue)"></span>Existing modal path</span><span><span class="sw" style="background:var(--orange)"></span>Existing NTP / RMF path</span><span><span class="sw" style="background:var(--navy)"></span>New arbiter</span><span><span class="sw" style="background:#fff;border:1.5px dashed var(--green)"></span>New seam</span></div>
   <svg viewBox="0 0 940 480" role="img" aria-label="Architecture diagram: the lease arbiter between the modal coordination service and manager on one side and the NTP render gate on the other.">
@@ -372,10 +387,10 @@
     <text class="lbl" x="588" y="329" text-anchor="middle">gates on release</text>
     <!-- bottom band -->
     <rect x="40" y="408" width="860" height="52" rx="10" fill="var(--blue-soft)"/>
-    <text class="lbl" x="470" y="430" text-anchor="middle" style="font-weight:700;fill:var(--blue-dark)">Not owned by the arbiter: provider priority · cooldown · modal phase · onboarding / launch-source / unrelated-modal gates ·</text>
+    <text class="lbl" x="470" y="430" text-anchor="middle" style="font-weight:700;fill:var(--blue-dark)">Not owned by the arbiter: provider priority · directional cooldown policy/history · modal phase · onboarding / launch-source / unrelated-modal gates ·</text>
     <text class="lbl" x="470" y="446" text-anchor="middle" style="font-weight:700;fill:var(--blue-dark)">RMF selection / persistence · provider accounting · actual-presentation history · active / pending AI-promo suppression</text>
   </svg>
-  <div class="figcap"><b>Fig 4 · Insertion points, not replacement.</b> Three pieces are new (arbiter, render gate, checkpoint reconciliation); two pieces are hardened (scheduler, NTP activity reporting). Everything is behind the iOS <code>promoPresentationCoordination</code> feature flag and bypassed when it is off. <span class="src">TECH_DESIGN_FINAL.md · Ownership · Design-Level Change Inventory</span></div>
+  <div class="figcap"><b>Fig 4 · Insertion points, not replacement.</b> The service also owns the narrow cooldown policy, persisted RMF timestamp, provisional reservation, and earliest-boundary RMF retry. Everything new is behind <code>promoPresentationCoordination</code> and bypassed when it is off; the legacy modal cooldown remains. <span class="src">TECH_DESIGN_FINAL.md · Ownership · Design-Level Change Inventory</span></div>
 </div>
 </section>
 
@@ -406,14 +421,14 @@
     <text class="btxtR" x="358" y="168" text-anchor="middle">✗ denied — an RMF lease is active</text>
     <line class="flow dash" x1="135" y1="212" x2="355" y2="212" marker-end="url(#m6)" opacity=".45"/>
     <text class="lbl" x="245" y="206" text-anchor="middle" style="font-style:italic">never called — providers not queried</text>
-    <text class="lbl" x="245" y="228" text-anchor="middle">no seen state · no cooldown · no impressions burned</text>
+    <text class="lbl" x="245" y="228" text-anchor="middle">no seen state · no modal cooldown write · no impressions burned</text>
     <rect class="badA" x="36" y="246" width="490" height="24" rx="7"/><text class="btxtA" x="281" y="262" text-anchor="middle">modal reconsidered on the next eligible foreground — not when the card disappears</text>
   </svg>
-  <div class="figcap"><b>Fig 5a · RMF wins.</b> Admission fails before any provider runs, so nothing is recorded anywhere — important because Default Browser burns “seen” state during eligibility itself. An undismissed card defers modals on each foreground where it is rendered in the active NTP (bounded by dismissal, expiry, or config replacement). <span class="src">TECH_DESIGN_FINAL.md · Behavioral Rule 1</span></div>
+  <div class="figcap"><b>Fig 5a · RMF wins.</b> Lease denial still occurs before any provider runs. After all RMF leases release, the latest confirmed RMF appearance imposes a fixed 24-hour modal-target cooldown; an active card continues blocking modals even after that time. Cooldown denial consumes no provider state. Iteration one emits no Promo Queue admission/cooldown telemetry. <span class="src">TECH_DESIGN_FINAL.md · Behavioral Rule 1 · Cooldown Policy</span></div>
 </div>
 
 <div class="card fig" style="margin-top:15px">
-  <svg viewBox="0 0 940 388" role="img" aria-label="Sequence diagram: the modal acquires the evaluation lease first; the RMF render gate is denied while the modal attempt is active, and the lease is released at the next checkpoint after dismissal.">
+  <svg viewBox="0 0 940 388" role="img" aria-label="Sequence diagram: the modal acquires the evaluation lease first; the RMF render gate is denied while active, then remains cooldown-blocked until the 10-minute boundary after checkpoint release.">
     <defs><marker id="m7" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#98A2B8"/></marker>
     <marker id="m7r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#C0392B"/></marker>
     <marker id="m7g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#12855B"/></marker></defs>
@@ -444,15 +459,15 @@
     <text class="lbl" x="468" y="276" text-anchor="middle">next checkpoint (foreground / NTP admission) → exact root gone → release</text>
     <text class="lbl" x="468" y="291" text-anchor="middle">foreground reconciliation runs before modal evaluation — the waiting RMF retries first</text>
     <line class="flowG dash" x1="585" y1="312" x2="805" y2="312" marker-end="url(#m7g)"/>
-    <text class="lbl" x="700" y="306" text-anchor="middle">waiting gate retries at the checkpoint → <tspan class="btxtG">✓ granted</tspan></text>
+    <text class="lbl" x="700" y="306" text-anchor="middle">checkpoint releases lease → 10m boundary retry → <tspan class="btxtG">✓ granted</tspan></text>
     <rect class="badG" x="640" y="330" width="254" height="24" rx="7"/><text class="btxtG" x="767" y="346" text-anchor="middle">card renders → shown accounting fires once</text>
   </svg>
-  <div class="figcap"><b>Fig 5b · Modal wins.</b> The evaluation lease blocks RMF <i>before</i> provider selection. The Manager moves the attempt to committed before the delay while the arbiter keeps the same lease held. A presentation-active modal is never retracted for RMF; release happens at the first checkpoint after the root is gone (the accepted delay), and nested child flows do not finish the promo session. <span class="src">TECH_DESIGN_FINAL.md · Behavioral Rules 2–5</span></div>
+  <div class="figcap"><b>Fig 5b · Modal wins.</b> The evaluation lease blocks RMF <i>before</i> provider selection. Once the exact root is gone, an RMF still waits until 10 minutes after confirmed modal presentation. One earliest-boundary retry is scheduled; denied candidates remain unrendered and unaccounted. <span class="src">TECH_DESIGN_FINAL.md · Behavioral Rules 2–5 · Cooldown Policy</span></div>
 </div>
 </section>
 
 <!-- ============================ 06 MULTI-NTP ============================ -->
-<section id="ntp"><div class="sec-head"><span class="sec-num">06</span><h2>Many NTP instances, one truth</h2><p class="lede">NTPs exist in more places than tabs — the suggestion tray and input container build live instances over the same shared state. Only an on-window NTP whose composed owner, readiness, visibility, coverage, and gate-mount state is renderable may hold a lease.</p></div>
+<section id="ntp"><div class="sec-head"><span class="sec-num">06</span><h2>Many NTP instances, one truth</h2><p class="lede">NTPs exist in more places than tabs. Renderability remains per instance, while one global provisional reservation serializes the first cooldown-eligible RMF appearance across all IDs and NTPs.</p></div>
 <div class="card fig">
   <svg viewBox="0 0 940 330" role="img" aria-label="Three NTP instances: only the active on-window one holds a lease; off-window instances cannot suppress modals.">
     <!-- instance A -->
@@ -495,7 +510,7 @@
 </section>
 
 <!-- ============================ 07 ACCOUNTING ============================ -->
-<section id="accounting"><div class="sec-head"><span class="sec-num">07</span><h2>Shown accounting: before and after</h2><p class="lede">In the pre-coordination baseline, shown fired at map time, again on appearance, and again on refreshes — and unique could double-fire. PR 2 ties normal shown to one admitted render-session appearance; PR 3 adds the shared atomic unique winner.</p></div>
+<section id="accounting"><div class="sec-head"><span class="sec-num">07</span><h2>Shown accounting: before and after</h2><p class="lede">In the pre-coordination baseline, shown fired at map time, again on appearance, and again on refreshes — and unique could double-fire. PR 3 ties normal shown to one admitted render-session appearance, adds the shared atomic unique winner, and confirms cooldown history from that same appearance.</p></div>
 <div class="card fig">
   <svg viewBox="0 0 940 320" role="img" aria-label="Before and after comparison of remote message shown accounting: multiple fires in the baseline versus a single admitted-appearance fire under coordination.">
     <defs><marker id="m8" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#98A2B8"/></marker></defs>
@@ -530,9 +545,9 @@
     <rect x="40" y="282" width="860" height="28" rx="8" fill="var(--amber-soft)"/>
     <text class="lbl" x="470" y="300" text-anchor="middle" style="font-weight:700;fill:var(--amber)">Rollout note: expect a step decrease in remoteMessageShown volume when the flag enables — dashboards should anticipate it.</text>
   </svg>
-  <div class="figcap"><b>Fig 7 · The accounting correction across PRs 2–3.</b> Once a card can be blocked, map-time “shown” is wrong because it starts expiry for a never-rendered card. PR 2 gates normal shown behind admitted <code>onDidAppear</code>; PR 3 adds the shared reservation that makes unique shown atomic across NTPs. Feature off keeps the baseline accounting path unchanged. <span class="src">TECH_DESIGN_FINAL.md · Goal · Accounting bullets · Testing</span></div>
+  <div class="figcap"><b>Fig 7 · The accounting correction across PRs 2–3.</b> The first admitted <code>onDidAppear</code> confirms both normal shown accounting and the matching provisional cooldown reservation. PR 3 includes the shared unique winner and directional cooldowns; feature off keeps the baseline accounting path and writes no new RMF cooldown history. <span class="src">TECH_DESIGN_FINAL.md · Goal · Accounting bullets · Cooldown Policy · Testing</span></div>
 </div>
-<div class="callout green" style="margin-top:17px"><h4>What this appendix should leave you with</h4><p>The design is a <b>narrow insertion, not a rewrite</b>: one in-memory arbiter enforcing one invariant, one new gate in front of the card, a hardened scheduler, and checkpoint-based release. All seven providers keep their eligibility policy, priority, cooldown, and accounting ownership while their adapters revalidate delayed work. RMF selection stays in its current owner, and the whole path remains removable behind the feature flag if iteration 3 picks a different owner.</p></div>
+<div class="callout green" style="margin-top:17px"><h4>What this appendix should leave you with</h4><p>The design is a <b>narrow insertion, not a rewrite</b>: one transient arbiter, one render gate, a hardened scheduler, checkpoint release, and one service-owned four-row cooldown policy. Modal-to-modal keeps its existing remote-tunable interval; the fixed cross-surface values reuse the modal timestamp and add one RMF timestamp. RMF selection remains in RMF, and feature off bypasses all new cross-surface behavior.</p></div>
 </section>
 
 </main>

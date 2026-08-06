@@ -24,15 +24,35 @@ import WebKit
 @MainActor
 enum AIChatTabPickerSource {
 
-    /// Resolves the tab collection of the window that owns `webView`, falling back to the key main
-    /// window when the webView can't be mapped to a main window (e.g. a floating AI chat window).
+    /// Resolves the tab collection of the window that owns `webView`.
     static func originTabCollectionViewModel(for webView: WKWebView?,
                                              in windowControllersManager: WindowControllersManagerProtocol) -> TabCollectionViewModel? {
-        if let window = webView?.window,
+        guard let webView else {
+            return windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel
+        }
+        if let window = webView.window,
            let controller = windowControllersManager.mainWindowControllers.first(where: { $0.window === window }) {
             return controller.mainViewController.tabCollectionViewModel
         }
-        return windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel
+        // A detached Duck.ai window belongs to the tab it was opened from, which is not necessarily
+        // in the key window — resolving to that one would hand a Fire Window chat regular tabs.
+        guard let tabID = hostingAIChatViewController(of: webView)?.tabID else {
+            return webView.window == nil
+                ? windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel
+                : nil
+        }
+        return windowControllersManager.allTabCollectionViewModels.first { collection in
+            collection.indexInAllTabs(where: { $0.uuid == tabID }) != nil
+        }
+    }
+
+    private static func hostingAIChatViewController(of webView: WKWebView) -> AIChatViewController? {
+        var responder: NSResponder? = webView
+        while let current = responder {
+            if let viewController = current as? AIChatViewController { return viewController }
+            responder = current.nextResponder
+        }
+        return nil
     }
 
     /// `AnyTab` so metadata is available for suspended/unloaded tabs too.

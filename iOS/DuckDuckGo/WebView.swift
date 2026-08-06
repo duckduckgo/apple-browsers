@@ -112,8 +112,15 @@ final class WebView: WKWebView {
             self?.requestAskAIChatWithSelectedText(action: .ask)
         }
 
-        builder.insertSibling(UIMenu(title: "", options: .displayInline, children: [askAction]),
-                              afterMenu: .standardEdit)
+        // Appended at the end of the root menu so the system's own items come first — per design:
+        // Copy, Look Up, the rest of the system's items, then ours. Inserting as a sibling after
+        // `.standardEdit` (the previous behaviour) put it directly after Cut/Copy/Paste and so *ahead*
+        // of Look Up, pre-empting actions the user is more likely to want.
+        //
+        // Last place is not guaranteed: WebKit and the system can append their own items after this
+        // runs, so the final order is worth confirming on device rather than assuming.
+        builder.insertChild(UIMenu(title: "", options: .displayInline, children: [askAction]),
+                            atEndOfMenu: .root)
     }
 
     /// The items belong to the selection edit menu only; the main menu system drives the iPad menu bar, which

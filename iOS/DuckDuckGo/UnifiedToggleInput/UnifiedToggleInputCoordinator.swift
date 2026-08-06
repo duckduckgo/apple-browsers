@@ -171,7 +171,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private var pixelReporter: UTIPixelReporter!
     private var wideEventReporter: UTIWideEventReporter!
     private var modelSelector: UTIModelSelector!
-#if DEBUG
+#if DEBUG || ALPHA
     private let modelPickerPrototypePresenter = UnifiedToggleInputModelPickerPrototypePresenter()
 #endif
     private var attachmentController: UTIAttachmentController!
@@ -388,7 +388,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                 onModelApplied: { [weak self] in self?.notifyFrontendOfActiveChatModelChange($0) }
             )
         )
-#if DEBUG
+#if DEBUG || ALPHA
         viewController.usesCustomModelPickerPresentation = true
         viewController.onCustomModelPickerTapped = { [weak self] in
             self?.presentModelPickerPrototype()
@@ -1658,7 +1658,7 @@ private extension UnifiedToggleInputCoordinator {
         return scene.keyWindow?.rootViewController
     }
 
-#if DEBUG
+#if DEBUG || ALPHA
     func presentModelPickerPrototype() {
         guard let presentingViewController = attachmentPresenterViewController,
               viewController.modelPickerSourceView.window != nil else {

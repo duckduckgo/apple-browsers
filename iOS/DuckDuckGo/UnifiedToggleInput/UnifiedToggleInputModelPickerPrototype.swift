@@ -273,7 +273,7 @@ private extension CallToActionView {
     }
 }
 
-#if DEBUG
+#if DEBUG || ALPHA
 
 enum UnifiedToggleInputModelPickerPrototypeLevel: String, CaseIterable {
     case free = "Free"

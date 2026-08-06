@@ -119,7 +119,7 @@ final class UTIModelSelector {
         }
     }
 
-#if DEBUG
+#if DEBUG || ALPHA
     func handleModelPickerSubscriptionCallToAction(flowType: UpsellFlowType) {
         let userTier: AIChatUserTier
         let requiredTier: AIChatModelPublicAccessTier

@@ -1404,12 +1404,22 @@ final class AIChatOmnibarController {
         var byId: [String: AIChatPageContextData] = [:]
         for (tabId, maybeContext) in extracted {
             guard let ctx = maybeContext else { continue }
-            if !sendsAnyPage, URL(string: ctx.url) != attachedURLsById[tabId] { continue }
+            if !sendsAnyPage, !Self.isSameAttachedPage(ctx.url, as: attachedURLsById[tabId]) { continue }
             let stampedTabId: String? = (tabId == activeTabUUID) ? nil : tabId
             byId[tabId] = ctx.withTabId(stampedTabId)
         }
         let ordered: [AIChatPageContextData] = tabAttachments.compactMap { byId[$0.id] }
         return ordered.isEmpty ? nil : .multiple(ordered)
+    }
+
+    /// The extracted URL comes from the web view and the attached one from the tab's content, so a
+    /// trailing slash can differ for the same page.
+    private static func isSameAttachedPage(_ extractedURL: String, as attachedURL: URL?) -> Bool {
+        guard let attachedURL else { return false }
+        func trimmed(_ string: String) -> String {
+            string.hasSuffix("/") ? String(string.dropLast()) : string
+        }
+        return trimmed(extractedURL) == trimmed(attachedURL.absoluteString)
     }
 
     /// Converts image attachments to base64-encoded `NativePromptImage` values for the JS bridge.

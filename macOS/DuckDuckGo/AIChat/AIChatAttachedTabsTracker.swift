@@ -135,7 +135,7 @@ final class AIChatAttachedTabsTracker {
     private func observe(_ tab: Tab, key: ObserverKey, in store: any DuckAIPromptDraftStoring) -> AnyCancellable {
         Publishers.CombineLatest4(tab.$content, tab.$title, tab.$favicon, tab.$isLoading)
             .dropFirst()
-            .map(AIChatAttachedTabPage.init)
+            .map { AIChatAttachedTabPage(content: $0, title: $1, favicon: $2, isLoading: $3) }
             .sink { [weak self, weak store] page in
                 guard let self, let store else { return }
                 self.applyPolicy(for: key,

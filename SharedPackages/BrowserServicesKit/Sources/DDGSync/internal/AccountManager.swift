@@ -229,7 +229,7 @@ struct AccountManager: AccountManaging {
             return (keys: keys, deviceInfo: encryptedDeviceInfo)
         } catch {
             // Device info is additive, so local preparation failures must not block legacy signup.
-            let errorType = String(describing: type(of: error))
+            let errorType = String(describing: Swift.type(of: error))
             Logger.sync.error("Sync-UnifiedDevices: failed to prepare unified device info for signup: \(errorType)")
             return nil
         }

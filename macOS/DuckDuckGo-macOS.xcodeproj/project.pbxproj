@@ -20585,9 +20585,9 @@
 			buildConfigurations = (
 				3706FCFB293F65D500E42796 /* Debug */,
 				3706FCFE293F65D500E42796 /* CI */,
-				3706FCFF293F65D500E42796 /* Release */,
 				370AB8772E2635AE00BBBDE0 /* Alpha */,
 				3706FD02293F65D500E42796 /* Review */,
+				3706FCFF293F65D500E42796 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
@@ -20801,9 +20801,9 @@
 			buildConfigurations = (
 				AA585DA5248FD31500E9A3E2 /* Debug */,
 				4B1AD8B125FC322600261379 /* CI */,
-				AA585DA6248FD31500E9A3E2 /* Release */,
 				370AB8762E2635AE00BBBDE0 /* Alpha */,
 				AAE814AC2716DFE8009D3531 /* Review */,
+				AA585DA6248FD31500E9A3E2 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

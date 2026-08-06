@@ -425,18 +425,29 @@ final class TabViewModel: NSObject {
     /// - Note:
     ///     Duck.ai mode takes precedence over all other trusted indicators. The passive text field is used to center the address bar placeholder.
     private func updatePassiveAddressBarString(showFullURL: Bool? = nil, inDuckAIMode: Bool? = nil) {
-        let isAppRebranded = DesignSystemRebrand.isAppRebranded()
         let showFullURL = showFullURL ?? appearancePreferences.showFullURL
         let inDuckAIMode = inDuckAIMode ?? addressBarSharedTextState.isInDuckAIMode
-        let isNTP = [.newtab, .none].contains(tab.content)
+        let placeholder = placeholder(tabContent: tab.content, inDuckAIMode: inDuckAIMode)
 
-        passiveAddressBarAttributedString = switch tab.content {
-        case _ where isAppRebranded && inDuckAIMode:
-            .addressBarPlaceholderForDuckAI
-        case .newtab where isAppRebranded:
-            .addressBarPlaceholder
-        case .none where isAppRebranded:
-            .addressBarPlaceholder
+        passiveAddressBarAttributedString = placeholder ?? trustedIndicator(tabContent: tab.content, showFullURL: showFullURL)
+        passiveAddressBarDisplaysPlaceholder = placeholder != nil
+
+    }
+
+    private func placeholder(tabContent: TabContent, inDuckAIMode: Bool) -> NSAttributedString? {
+        guard DesignSystemRebrand.isAppRebranded() else {
+            return nil
+        }
+
+        if inDuckAIMode {
+            return .addressBarPlaceholderForDuckAI
+        }
+
+        return [.newtab, .none].contains(tabContent) ? .addressBarPlaceholder : nil
+    }
+
+    private func trustedIndicator(tabContent: TabContent, showFullURL: Bool) -> NSAttributedString {
+        switch tabContent {
         case .newtab, .none:
             .init() // legacy: empty
         case .onboarding:
@@ -466,8 +477,6 @@ final class TabViewModel: NSObject {
         case .url(let url, _, _), .webExtensionUrl(let url):
             NSAttributedString(string: passiveAddressBarString(with: url, showFullURL: showFullURL))
         }
-
-        passiveAddressBarDisplaysPlaceholder = isAppRebranded && (inDuckAIMode || isNTP)
     }
 
     private func passiveAddressBarString(with url: URL, showFullURL: Bool) -> String {

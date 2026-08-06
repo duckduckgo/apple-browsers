@@ -37,10 +37,12 @@ final class NewTabPageOmnibarSubscriptionDialogPresenter: NewTabPageOmnibarSubsc
     }
 
     func showSubscriptionUpsellDialog(source: NewTabPageDataModel.OmnibarSubscriptionUpsellSource) async {
+        Self.fireDialogShown(source: source)
         makeUpsellDialog(userTier: await resolveUserTier(), source: source).show()
     }
 
     func showSubscriptionUpgradeDialog(source: NewTabPageDataModel.OmnibarSubscriptionUpsellSource) {
+        Self.fireDialogShown(source: source)
         makeUpgradeDialog(source: source).show()
     }
 
@@ -96,6 +98,14 @@ final class NewTabPageOmnibarSubscriptionDialogPresenter: NewTabPageOmnibarSubsc
         case .model: .newTabPageModelPicker
         case .reasoning: .newTabPageReasoningDropdown
         }
+    }
+
+    private static func fireDialogShown(source: NewTabPageDataModel.OmnibarSubscriptionUpsellSource) {
+        PixelKit.fire(
+            AIChatPixel.aiChatNtpSubscriptionUpsellShown(origin: origin(for: source).rawValue),
+            frequency: .dailyAndCount,
+            includeAppVersionParameter: true
+        )
     }
 
     private static func firePixel(flowType: String, source: NewTabPageDataModel.OmnibarSubscriptionUpsellSource) {

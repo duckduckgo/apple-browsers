@@ -48,7 +48,10 @@ enum DuckAIPromptPixelEvent: Equatable {
     /// its own origin, so the event itself carries none.
     case modelPickerShown
     case reasoningPickerShown
-    case subscriptionUpsellTriggered(currentTier: String, requiredTier: String, flowType: String)
+    /// The native upsell dialog was shown after a gated pick. Carries the origin because it varies
+    /// per picker within a surface.
+    case subscriptionUpsellShown(origin: String)
+    case subscriptionUpsellTriggered(currentTier: String, requiredTier: String, flowType: String, origin: String)
     case voiceChatOpened
 }
 
@@ -97,8 +100,13 @@ struct AddressBarPromptPixelHandler: DuckAIPromptPixelFiring {
             .aiChatAddressBarModelPickerShown(origin: SubscriptionFunnelOrigin.addressBarModelPicker.rawValue)
         case .reasoningPickerShown:
             .aiChatAddressBarReasoningPickerShown(origin: SubscriptionFunnelOrigin.addressBarReasoningDropdown.rawValue)
-        case .subscriptionUpsellTriggered(let currentTier, let requiredTier, let flowType):
-            .aiChatAddressBarSubscriptionUpsellTriggered(currentTier: currentTier, requiredTier: requiredTier, flowType: flowType)
+        case .subscriptionUpsellShown(let origin):
+            .aiChatAddressBarSubscriptionUpsellShown(origin: origin)
+        case .subscriptionUpsellTriggered(let currentTier, let requiredTier, let flowType, let origin):
+            .aiChatAddressBarSubscriptionUpsellTriggered(currentTier: currentTier,
+                                                        requiredTier: requiredTier,
+                                                        flowType: flowType,
+                                                        origin: origin)
         case .voiceChatOpened: nil
         }
     }

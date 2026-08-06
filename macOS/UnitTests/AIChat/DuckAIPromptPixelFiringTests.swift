@@ -50,8 +50,11 @@ final class DuckAIPromptPixelFiringTests: XCTestCase {
         (.reasoningEffortSelected, .aiChatAddressBarReasoningEffortSelected),
         (.modelPickerShown, .aiChatAddressBarModelPickerShown(origin: "funnel_addressbar_macos__modelpicker")),
         (.reasoningPickerShown, .aiChatAddressBarReasoningPickerShown(origin: "funnel_addressbar_macos__reasoningdropdown")),
-        (.subscriptionUpsellTriggered(currentTier: "free", requiredTier: "plus", flowType: "modal"),
-         .aiChatAddressBarSubscriptionUpsellTriggered(currentTier: "free", requiredTier: "plus", flowType: "modal")),
+        (.subscriptionUpsellShown(origin: "funnel_addressbar_macos__modelpicker"),
+         .aiChatAddressBarSubscriptionUpsellShown(origin: "funnel_addressbar_macos__modelpicker")),
+        (.subscriptionUpsellTriggered(currentTier: "free", requiredTier: "plus", flowType: "modal", origin: "funnel_addressbar_macos__modelpicker"),
+         .aiChatAddressBarSubscriptionUpsellTriggered(currentTier: "free", requiredTier: "plus", flowType: "modal",
+                                                      origin: "funnel_addressbar_macos__modelpicker")),
         (.voiceChatOpened, nil)
     ]
 
@@ -83,7 +86,8 @@ final class DuckAIPromptPixelFiringTests: XCTestCase {
         (.reasoningEffortSelected, .reasoningEffortSelected),
         (.modelPickerShown, .modelPickerShown(origin: "funnel_promptbar_macos__modelpicker")),
         (.reasoningPickerShown, .reasoningPickerShown(origin: "funnel_promptbar_macos__reasoningdropdown")),
-        (.subscriptionUpsellTriggered(currentTier: "free", requiredTier: "plus", flowType: "modal"), nil),
+        (.subscriptionUpsellShown(origin: "x"), nil),
+        (.subscriptionUpsellTriggered(currentTier: "free", requiredTier: "plus", flowType: "modal", origin: "x"), nil),
         (.voiceChatOpened, .newVoiceChat)
     ]
 

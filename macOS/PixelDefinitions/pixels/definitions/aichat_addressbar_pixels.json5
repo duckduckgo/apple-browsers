@@ -262,6 +262,13 @@
         "suffixes": ["daily_count"],
         "parameters": ["appVersion", "pixelSource", "channel"]
     },
+    "m_mac_aichat_addressbar_subscription_upsell_shown": {
+        "description": "Fired when the native subscription upsell dialog is shown after the user taps a gated model or reasoning effort in the address bar's Duck.ai picker. Pairs with m_mac_aichat_addressbar_subscription_upsell_triggered for a view-to-click rate. See https://app.asana.com/1/137249556945/task/1216395339071571",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel", "subscriptionFunnelOrigin"]
+    },
     "m_mac_aichat_addressbar_subscription_upsell_triggered": {
         "description": "Fired when user taps a gated model or reasoning effort in the native omnibar picker, routing them to the subscription purchase/upgrade flow",
         "owners": ["tomasstrba"],
@@ -275,7 +282,7 @@
                 "key": "current_tier",
                 "type": "string",
                 "description": "The user's subscription tier at the time of the gated selection",
-                "enum": ["free", "plus", "pro", "internal"]
+                "enum": ["free", "plus", "pro", "internal", "subscriptionFunnelOrigin"]
             },
             {
                 "key": "required_tier",

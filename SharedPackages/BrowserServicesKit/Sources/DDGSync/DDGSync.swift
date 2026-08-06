@@ -293,6 +293,14 @@ public class DDGSync: DDGSyncing {
         initializeIfNeeded()
     }
 
+    public func ensureAccountInfoKeyForDebug() async throws -> Int {
+        guard let account = try dependencies.secureStore.account() else {
+            throw SyncError.accountNotFound
+        }
+
+        return try await dependencies.scopedAccess.ensureAccountInfoProtectedKeys(for: account).count
+    }
+
     public func prepareThirdPartyRecoveryCode(purpose: String) async throws -> String {
         guard let account else {
             throw SyncError.accountNotFound

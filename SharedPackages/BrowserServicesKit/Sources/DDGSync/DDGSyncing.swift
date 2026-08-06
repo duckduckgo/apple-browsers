@@ -285,6 +285,14 @@ public protocol DDGSyncing: DDGSyncingDebuggingSupport {
 public protocol DDGSyncingDebuggingSupport {
     var serverEnvironment: ServerEnvironment { get }
     func updateServerEnvironment(_ serverEnvironment: ServerEnvironment)
+    /// Creates or fetches the account_info key and returns its wrapper count.
+    func ensureAccountInfoKeyForDebug() async throws -> Int
+}
+
+public extension DDGSyncingDebuggingSupport {
+    func ensureAccountInfoKeyForDebug() async throws -> Int {
+        throw SyncError.accountNotFound
+    }
 }
 
 public enum ServerEnvironment: LosslessStringConvertible {

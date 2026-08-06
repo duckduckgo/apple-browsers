@@ -172,9 +172,14 @@ struct Launching: LaunchingHandling {
                                                             adBlockingAvailability: adBlockingAvailability)
 
         // Constructed before MainCoordinator: its `eventHub` is threaded down to every tab.
+        // EventHub gets its own store, matching macOS, so its period state never shares a file with app
+        // settings. `try?` — an unopenable store degrades telemetry to in-memory rather than failing launch.
+        let eventHubStore = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
+            .flatMap { try? KeyValueFileStore(location: $0, name: "EventHubKeyValueStore") }
         let eventHubService = EventHubService(
             privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager,
-            keyValueStore: appKeyValueFileStoreService.keyValueFilesStore
+            keyValueStore: eventHubStore,
+            consentStore: appKeyValueFileStoreService.keyValueFilesStore
         )
 
         let freemiumPIRDebugSettings = FreemiumPIRDebugSettings(keyValueStore: appKeyValueFileStoreService.keyValueFilesStore)

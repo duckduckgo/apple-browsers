@@ -32,20 +32,30 @@ final class EventHubService {
 
     private var cancellables = Set<AnyCancellable>()
 
-    init(privacyConfigurationManager: PrivacyConfigurationManaging, keyValueStore: ThrowingKeyValueStoring) {
+    /// - Parameters:
+    ///   - keyValueStore: EventHub's own persistence. `nil` if the dedicated store could not be opened;
+    ///     telemetry then runs in memory only.
+    ///   - consentStore: the app store holding the YouTube opt-ins the consent gate reads. Deliberately
+    ///     separate from `keyValueStore`, which holds only EventHub's period state.
+    init(privacyConfigurationManager: PrivacyConfigurationManaging,
+         keyValueStore: ThrowingKeyValueStoring?,
+         consentStore: ThrowingKeyValueStoring) {
+        if keyValueStore == nil {
+            Logger.eventHub.error("Dedicated key value store unavailable — telemetry will not survive a restart")
+        }
         let parser = EventHubConfigParser()
         let store = EventHubKeyValueStore(store: keyValueStore, parser: parser)
 
         let enabledSubject = CurrentValueSubject<Bool, Never>(
             privacyConfigurationManager.privacyConfig.isEnabled(featureKey: .eventHub))
-        let settingsSubject = CurrentValueSubject<Data?, Never>(
-            Self.settingsData(from: privacyConfigurationManager))
+        let settingsSubject = CurrentValueSubject<[String: Any]?, Never>(
+            privacyConfigurationManager.privacyConfig.settings(for: PrivacyFeature.eventHub))
 
         let settings = EventHubSettings(
             featureEnabledPublisher: enabledSubject.eraseToAnyPublisher(),
             featureSettingsPublisher: settingsSubject.eraseToAnyPublisher(),
             consentRequirements: [
-                YouTubeAdBlockingTelemetryConsentRequirement(keyValueStore: keyValueStore)
+                YouTubeAdBlockingTelemetryConsentRequirement(keyValueStore: consentStore)
             ]
         )
 
@@ -67,7 +77,7 @@ final class EventHubService {
                 let enabled = privacyConfigurationManager.privacyConfig.isEnabled(featureKey: .eventHub)
                 Logger.eventHub.debug("Remote config updated — pushing to EventHub (enabled=\(enabled, privacy: .public))")
                 enabledSubject.send(enabled)
-                settingsSubject.send(Self.settingsData(from: privacyConfigurationManager))
+                settingsSubject.send(privacyConfigurationManager.privacyConfig.settings(for: PrivacyFeature.eventHub))
             }
             .store(in: &cancellables)
     }
@@ -81,9 +91,5 @@ final class EventHubService {
     /// the way out of every quit.
     func suspend() {
         eventHub.onAppBackgrounded()
-    }
-
-    private static func settingsData(from privacyConfigurationManager: PrivacyConfigurationManaging) -> Data? {
-        try? JSONSerialization.data(withJSONObject: privacyConfigurationManager.privacyConfig.settings(for: PrivacyFeature.eventHub))
     }
 }

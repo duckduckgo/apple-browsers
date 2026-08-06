@@ -20,7 +20,7 @@ import Foundation
 import Testing
 @testable import EventHub
 
-@Suite("EventHub native ingress")
+@Suite("EventHub native ingress", .timeLimit(.minutes(1)))
 struct EventHubNativeIngressTests {
     static let pixel1 = "webTelemetry_testPixel1"
 

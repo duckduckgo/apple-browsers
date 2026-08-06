@@ -17,13 +17,16 @@
 //
 
 import Foundation
+import os.log
 
 /// Parses the remote `eventHub` feature settings JSON into validated telemetry pixel configs, and
 /// serialises a single config back to JSON for persistence as a period's config snapshot.
 public protocol EventHubConfigParsing {
-    /// Parses the `telemetry` map from the feature settings JSON, returning only valid, fully-formed
-    /// pixel configs. Malformed or invalid input yields an empty list (never throws).
-    func parseTelemetry(_ settingsJSON: Data) -> [TelemetryPixelConfig]
+    /// Parses the `telemetry` map from the feature settings, returning only valid, fully-formed pixel
+    /// configs. Malformed or invalid input yields an empty list (never throws). Takes the settings in the
+    /// `[String: Any]` shape remote config already holds them in (BSK's `settings(for:)`), so no JSON
+    /// round trip is needed to reach the parser.
+    func parseTelemetry(_ settings: [String: Any]) -> [TelemetryPixelConfig]
 
     /// Parses a single serialised pixel config (as produced by `serializePixelConfig`), returning `nil`
     /// if it is malformed or invalid.
@@ -34,6 +37,10 @@ public protocol EventHubConfigParsing {
 }
 
 public final class EventHubConfigParser: EventHubConfigParsing {
+    /// The feature-settings key holding the per-pixel telemetry map. Also read by `EventHubSettings`,
+    /// which strips consent-gated entries out of it.
+    static let telemetryKey = "telemetry"
+
     private static let periodType = "period"
     private static let immediateType = "immediate"
     private static let counterTemplate = "counter"
@@ -41,11 +48,24 @@ public final class EventHubConfigParser: EventHubConfigParsing {
 
     public init() {}
 
-    public func parseTelemetry(_ settingsJSON: Data) -> [TelemetryPixelConfig] {
-        guard let settings = try? JSONDecoder().decode(SettingsDTO.self, from: settingsJSON) else {
+    public func parseTelemetry(_ settings: [String: Any]) -> [TelemetryPixelConfig] {
+        // An absent `telemetry` key is the normal pre-rollout state ("eventHub enabled, nothing configured
+        // yet"), not malformed settings, so it must stay distinguishable from the failures below.
+        guard let telemetry = settings[Self.telemetryKey] else { return [] }
+        // `isValidJSONObject` first: `data(withJSONObject:)` raises an ObjC exception Swift cannot catch
+        // for values JSON can't represent, and this is a public entry point taking untyped input.
+        guard JSONSerialization.isValidJSONObject(telemetry) else {
+            Logger.eventHub.error("config: `\(Self.telemetryKey, privacy: .public)` is not a valid JSON object, no telemetry configured")
             return []
         }
-        return settings.telemetry.compactMap { name, pixel in Self.toPixelConfig(name: name, pixel: pixel) }
+        do {
+            let data = try JSONSerialization.data(withJSONObject: telemetry)
+            return try JSONDecoder().decode([String: PixelDTO].self, from: data)
+                .compactMap { name, pixel in Self.toPixelConfig(name: name, pixel: pixel) }
+        } catch {
+            Logger.eventHub.error("config: `\(Self.telemetryKey, privacy: .public)` could not be decoded, no telemetry configured: \(error.localizedDescription, privacy: .public)")
+            return []
+        }
     }
 
     public func parseSinglePixelConfig(name: String, json: String) -> TelemetryPixelConfig? {
@@ -62,53 +82,68 @@ public final class EventHubConfigParser: EventHubConfigParsing {
     }
 
     private static func toPixelConfig(name: String, pixel: PixelDTO) -> TelemetryPixelConfig? {
-        guard let state = pixel.state, let triggerDTO = pixel.trigger, let trigger = toTrigger(triggerDTO) else {
+        guard let state = pixel.state, let triggerDTO = pixel.trigger else {
+            Logger.eventHub.error("config: pixel \(name, privacy: .public) skipped, missing state and/or trigger")
             return nil
         }
-        let parameters = toParameters(pixel.parameters ?? [:])
+        guard let trigger = toTrigger(triggerDTO, pixelName: name) else { return nil }
+        let parameters = toParameters(pixel.parameters ?? [:], pixelName: name)
         // A period pixel with no parameters has nothing to report; immediate pixels may legitimately
         // carry none (they fire on the event alone).
         if trigger.isPeriod && parameters.isEmpty {
+            Logger.eventHub.error("config: period pixel \(name, privacy: .public) skipped, no valid parameters")
             return nil
         }
         return TelemetryPixelConfig(name: name, state: state, trigger: trigger, parameters: parameters)
     }
 
-    private static func toTrigger(_ dto: TriggerDTO) -> TelemetryTriggerConfig? {
+    private static func toTrigger(_ dto: TriggerDTO, pixelName: String) -> TelemetryTriggerConfig? {
         let type = dto.type ?? periodType
         if type == immediateType {
-            guard let source = dto.source, !source.isEmpty else { return nil }
+            guard let source = dto.source, !source.isEmpty else {
+                Logger.eventHub.error("config: pixel \(pixelName, privacy: .public) skipped, immediate trigger with no source")
+                return nil
+            }
             return TelemetryTriggerConfig(type: immediateType, source: source)
         }
         if type == periodType {
-            guard let period = dto.period, period.seconds > 0 else { return nil }
+            guard let period = dto.period, period.seconds > 0 else {
+                Logger.eventHub.error("config: pixel \(pixelName, privacy: .public) skipped, period seconds missing or not positive")
+                return nil
+            }
             return TelemetryTriggerConfig(type: periodType, period: TelemetryPeriodConfig(seconds: period.seconds))
         }
+        Logger.eventHub.error("config: pixel \(pixelName, privacy: .public) skipped, unknown trigger type \(type, privacy: .public)")
         return nil
     }
 
-    private static func toParameters(_ parameters: [String: ParameterDTO]) -> [String: TelemetryParameterConfig] {
+    private static func toParameters(_ parameters: [String: ParameterDTO], pixelName: String) -> [String: TelemetryParameterConfig] {
         var result: [String: TelemetryParameterConfig] = [:]
         for (name, parameter) in parameters {
-            if let mapped = toParameter(parameter) {
+            if let mapped = toParameter(parameter, pixelName: pixelName, parameterName: name) {
                 result[name] = mapped
             }
         }
         return result
     }
 
-    private static func toParameter(_ parameter: ParameterDTO) -> TelemetryParameterConfig? {
+    private static func toParameter(_ parameter: ParameterDTO, pixelName: String, parameterName: String) -> TelemetryParameterConfig? {
         if parameter.template == counterTemplate {
             guard let source = parameter.source, !source.isEmpty,
                   let buckets = parameter.buckets, !buckets.ordered.isEmpty else {
+                Logger.eventHub.error("config: counter parameter \(pixelName, privacy: .public)/\(parameterName, privacy: .public) dropped, missing source and/or usable buckets")
                 return nil
             }
             return TelemetryParameterConfig(template: counterTemplate, source: source, buckets: buckets.ordered)
         }
         if parameter.template == dataTemplate {
-            guard let dataKey = parameter.dataKey, !dataKey.isEmpty else { return nil }
+            guard let dataKey = parameter.dataKey, !dataKey.isEmpty else {
+                Logger.eventHub.error("config: data parameter \(pixelName, privacy: .public)/\(parameterName, privacy: .public) dropped, missing dataKey")
+                return nil
+            }
             return TelemetryParameterConfig(template: dataTemplate, source: parameter.source, dataKey: dataKey)
         }
+        Logger.eventHub.error("config: parameter \(pixelName, privacy: .public)/\(parameterName, privacy: .public) dropped, unknown template \(parameter.template ?? "<none>", privacy: .public)")
         return nil
     }
 
@@ -129,10 +164,6 @@ public final class EventHubConfigParser: EventHubConfigParsing {
     }
 
     // MARK: DTOs
-
-    private struct SettingsDTO: Decodable {
-        let telemetry: [String: PixelDTO]
-    }
 
     private struct PixelDTO: Codable {
         let state: String?
@@ -162,8 +193,10 @@ public final class EventHubConfigParser: EventHubConfigParsing {
         let lt: Int?
     }
 
-    /// Decodes/encodes the `buckets` JSON object preserving key order (`BucketCounter` is
-    /// first-match-wins), relying on `KeyedDecodingContainer.allKeys` returning keys in document order.
+    /// Decodes/encodes the `buckets` JSON object as an ordered list, because `BucketCounter` is
+    /// first-match-wins and Swift's `Dictionary` would not preserve order. The order is *not* taken from
+    /// the JSON — live remote config reaches us as an unordered dictionary, so document order is
+    /// arbitrary there — it is established explicitly by `sortedByRange`.
     /// A bucket without a lower bound (`gte`) is invalid and disqualifies the whole counter.
     private struct BucketsDTO: Codable {
         let ordered: BucketList
@@ -185,12 +218,27 @@ public final class EventHubConfigParser: EventHubConfigParsing {
             for key in container.allKeys {
                 let dto = try container.decode(BucketDTO.self, forKey: key)
                 guard let gte = dto.gte else {
+                    Logger.eventHub.error("config: bucket \(key.stringValue, privacy: .public) has no `gte` lower bound, counter discarded")
                     ordered = []
                     return
                 }
                 result.append(OrderedBucket(name: key.stringValue, config: BucketConfig(gte: gte, lt: dto.lt)))
             }
-            ordered = result
+            ordered = Self.sortedByRange(result)
+        }
+
+        /// Ascending by lower bound, then by upper bound with open-ended last, so a bounded bucket wins
+        /// over an open-ended one sharing its lower bound. Buckets left in identical ranges are
+        /// interchangeable, so their relative order cannot affect the outcome.
+        private static func sortedByRange(_ buckets: BucketList) -> BucketList {
+            buckets.sorted { lhs, rhs in
+                guard lhs.config.gte == rhs.config.gte else { return lhs.config.gte < rhs.config.gte }
+                switch (lhs.config.lt, rhs.config.lt) {
+                case let (lhsLt?, rhsLt?): return lhsLt < rhsLt
+                case (_?, nil): return true
+                case (nil, _): return false
+                }
+            }
         }
 
         func encode(to encoder: Encoder) throws {

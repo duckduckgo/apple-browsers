@@ -19,6 +19,7 @@
 import Foundation
 import WebKit
 import UserScript
+import os.log
 
 /// Routes inbound content-scope-scripts `webEvent` messages to `EventHubManaging`: extracts the
 /// event payload (`{ type, data }`) and forwards only events whose `type` is present and non-empty.
@@ -40,9 +41,13 @@ public final class WebEventsHandler: Subfeature {
     public func handler(forMethodNamed methodName: String) -> Handler? {
         guard methodName == "webEvent" else { return nil }
         return { [weak self] params, original in
-            guard let self,
-                  let dict = params as? [String: Any],
-                  let type = dict["type"] as? String, !type.isEmpty else {
+            guard let self else { return nil }
+            guard let dict = params as? [String: Any] else {
+                Logger.eventHub.error("webEvent message ignored, params were not an object")
+                return nil
+            }
+            guard let type = dict["type"] as? String, !type.isEmpty else {
+                Logger.eventHub.error("webEvent message ignored, `type` was missing, not a string, or empty")
                 return nil
             }
             self.manager.handleWebEvent(dict, tabID: self.tabIDProvider(original))

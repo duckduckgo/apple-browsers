@@ -20,7 +20,7 @@ import Testing
 import Foundation
 @testable import EventHub
 
-@Suite("EventHubStoredPixelState")
+@Suite("EventHubStoredPixelState", .timeLimit(.minutes(1)))
 struct EventHubStoredPixelStateTests {
     @Test("round trips all fields")
     func roundTripsAllFields() throws {

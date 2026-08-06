@@ -40,7 +40,7 @@ final class EventHubFixture {
     var fired: [FiredPixel] { spyPixelFiring.fired }
 
     private let enabledSubject: CurrentValueSubject<Bool, Never>
-    private let settingsSubject: CurrentValueSubject<Data?, Never>
+    private let settingsSubject: CurrentValueSubject<[String: Any]?, Never>
     private let settingsJSON: String
 
     private init(store: InMemoryKeyValueStore, settingsJSON: String, enabled: Bool, hasSettings: Bool) {
@@ -51,7 +51,7 @@ final class EventHubFixture {
         let parser = EventHubConfigParser()
         self.repository = EventHubKeyValueStore(store: store, parser: parser)
         self.enabledSubject = CurrentValueSubject(enabled)
-        self.settingsSubject = CurrentValueSubject(hasSettings ? settingsJSON.data(using: .utf8) : nil)
+        self.settingsSubject = CurrentValueSubject(hasSettings ? settingsDictionary(settingsJSON) : nil)
 
         let settingsProvider = FakeEventHubSettingsProviding(enabled: enabledSubject.eraseToAnyPublisher(), settings: settingsSubject.eraseToAnyPublisher())
 
@@ -100,7 +100,7 @@ final class EventHubFixture {
 
     func setEnabled(_ value: Bool) { enabledSubject.send(value) }
 
-    func setSettings(_ json: String) { settingsSubject.send(json.data(using: .utf8)) }
+    func setSettings(_ json: String) { settingsSubject.send(settingsDictionary(json)) }
 
     func advance(by interval: TimeInterval) { scheduler.advance(by: interval) }
 
@@ -131,8 +131,8 @@ final class EventHubFixture {
 
     private struct FakeEventHubSettingsProviding: EventHubSettingsProviding {
         let enabledPublisher: AnyPublisher<Bool, Never>
-        let settingsPublisher: AnyPublisher<Data?, Never>
-        init(enabled: AnyPublisher<Bool, Never>, settings: AnyPublisher<Data?, Never>) {
+        let settingsPublisher: AnyPublisher<[String: Any]?, Never>
+        init(enabled: AnyPublisher<Bool, Never>, settings: AnyPublisher<[String: Any]?, Never>) {
             self.enabledPublisher = enabled
             self.settingsPublisher = settings
         }

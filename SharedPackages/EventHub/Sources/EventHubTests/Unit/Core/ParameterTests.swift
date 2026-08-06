@@ -20,7 +20,7 @@ import Testing
 import Foundation
 @testable import EventHub
 
-@Suite("CounterParameter")
+@Suite("CounterParameter", .timeLimit(.minutes(1)))
 struct CounterParameterTests {
     static let buckets: BucketList = [
         OrderedBucket(name: "0", config: BucketConfig(gte: 0, lt: 1)),
@@ -115,7 +115,7 @@ struct CounterParameterTests {
     }
 }
 
-@Suite("DataParameter")
+@Suite("DataParameter", .timeLimit(.minutes(1)))
 struct DataParameterTests {
     @Test("captures and percent-encodes a matching data key")
     func capturesAndEncodesMatchingKey() {

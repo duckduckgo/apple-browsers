@@ -42,7 +42,7 @@ private final class FireRecorder: @unchecked Sendable {
     }
 }
 
-@Suite("DispatchQueueEventHubScheduler")
+@Suite("DispatchQueueEventHubScheduler", .timeLimit(.minutes(1)))
 struct DispatchQueueEventHubSchedulerTests {
     @Test("fires the armed action once the real deadline elapses")
     func firesArmedActionOnceRealDeadlineElapses() async throws {

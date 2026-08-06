@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import os.log
 
 /// A single pixel parameter's runtime behavior. `CounterParameter` owns its counter value and the
 /// stop-at-max-bucket logic, and makes the per-tab dedup decision against the hub-owned `DedupStore`
@@ -115,7 +116,10 @@ final class DataParameter: Parameter {
     func handle(data: [String: Any]?, tabID: EventHubTabID) -> Bool {
         guard let dataKey, let data, let raw = data[dataKey] else { return false }
         guard let encoded = try? JSONSerialization.data(withJSONObject: raw, options: [.fragmentsAllowed]),
-              let compact = String(data: encoded, encoding: .utf8) else { return false }
+              let compact = String(data: encoded, encoding: .utf8) else {
+            Logger.eventHub.error("data parameter for key \(dataKey, privacy: .public) is not JSON-serialisable, value dropped")
+            return false
+        }
         lastValue = compact.addingPercentEncoding(withAllowedCharacters: Self.unreservedCharacters)
         return true
     }

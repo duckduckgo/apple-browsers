@@ -21,18 +21,17 @@ import Foundation
 import Combine
 @testable import EventHub
 
-@Suite("EventHubSettings")
+@Suite("EventHubSettings", .timeLimit(.minutes(1)))
 struct EventHubSettingsTests {
-    static let json = """
+    static let settings = settingsDictionary("""
     { "telemetry": {
         "gated_pixel":   { "state": "enabled", "trigger": { "type": "period", "period": { "seconds": 60 } } },
         "ungated_pixel": { "state": "enabled", "trigger": { "type": "period", "period": { "seconds": 60 } } }
     } }
-    """.data(using: .utf8)!
+    """)
 
-    private static func telemetryKeys(_ settings: Data?) throws -> [String] {
-        let object = try JSONSerialization.jsonObject(with: settings ?? Data()) as? [String: Any]
-        let telemetry = object?["telemetry"] as? [String: Any] ?? [:]
+    private static func telemetryKeys(_ settings: [String: Any]?) -> [String] {
+        let telemetry = settings?[EventHubConfigParser.telemetryKey] as? [String: Any] ?? [:]
         return telemetry.keys.sorted()
     }
 
@@ -44,20 +43,59 @@ struct EventHubSettingsTests {
     }
 
     @Test("removes the gated config while consent is withheld")
-    func removesGatedConfigWhileConsentIsWithheld() throws {
+    func removesGatedConfigWhileConsentIsWithheld() {
         let requirement = FakeConsentRequirement()
         let subject = EventHubSettings(
             featureEnabledPublisher: Just(true).eraseToAnyPublisher(),
-            featureSettingsPublisher: Just(Self.json as Data?).eraseToAnyPublisher(),
+            featureSettingsPublisher: Just(Self.settings as [String: Any]?).eraseToAnyPublisher(),
             consentRequirements: [requirement])
 
-        var latest: Data?
+        var latest: [String: Any]?
         let cancellable = subject.settingsPublisher.sink { latest = $0 }
         defer { cancellable.cancel() }
 
-        #expect(try Self.telemetryKeys(latest) == ["ungated_pixel"])
+        #expect(Self.telemetryKeys(latest) == ["ungated_pixel"])
 
         requirement.granted.send(true)
-        #expect(try Self.telemetryKeys(latest) == ["gated_pixel", "ungated_pixel"])
+        #expect(Self.telemetryKeys(latest) == ["gated_pixel", "ungated_pixel"])
+    }
+
+    // Regression guard: "eventHub enabled, nothing configured yet" is the normal pre-rollout state. It
+    // holds no gated data, so failing closed on it would black out all telemetry — and fire the debug
+    // event — for every install running a config that has not reached the rollout yet.
+    @Test("settings without a telemetry key pass through untouched and fire nothing")
+    func settingsWithoutTelemetryKeyPassThroughUntouchedAndFireNothing() {
+        let capture = CapturingEventMapping()
+        let subject = EventHubSettings(
+            featureEnabledPublisher: Just(true).eraseToAnyPublisher(),
+            featureSettingsPublisher: Just(["other": "value"] as [String: Any]?).eraseToAnyPublisher(),
+            consentRequirements: [FakeConsentRequirement()],
+            eventMapping: capture.eventMapping)
+
+        var latest: [String: Any]?
+        let cancellable = subject.settingsPublisher.sink { latest = $0 }
+        defer { cancellable.cancel() }
+
+        #expect(latest?["other"] as? String == "value")
+        #expect(capture.fired.isEmpty)
+    }
+
+    @Test("telemetry in a shape that cannot be stripped fails closed and reports it")
+    func telemetryInUnstrippableShapeFailsClosedAndReportsIt() {
+        let capture = CapturingEventMapping()
+        let subject = EventHubSettings(
+            featureEnabledPublisher: Just(true).eraseToAnyPublisher(),
+            featureSettingsPublisher: Just([EventHubConfigParser.telemetryKey: "not an object"] as [String: Any]?).eraseToAnyPublisher(),
+            consentRequirements: [FakeConsentRequirement()],
+            eventMapping: capture.eventMapping)
+
+        var latest: [String: Any]?
+        var received = false
+        let cancellable = subject.settingsPublisher.sink { latest = $0; received = true }
+        defer { cancellable.cancel() }
+
+        #expect(received)
+        #expect(latest == nil)
+        #expect(capture.fired == [.consentStripFailed])
     }
 }

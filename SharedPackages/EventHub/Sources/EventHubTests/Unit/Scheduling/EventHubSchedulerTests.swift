@@ -19,7 +19,7 @@
 import Testing
 @testable import EventHub
 
-@Suite("ManualEventHubScheduler")
+@Suite("ManualEventHubScheduler", .timeLimit(.minutes(1)))
 struct EventHubSchedulerTests {
     @Test("fires the armed action once the deadline is reached")
     func firesArmedActionOnceDeadlineReached() {

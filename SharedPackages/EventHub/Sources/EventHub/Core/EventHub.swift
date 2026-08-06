@@ -18,6 +18,7 @@
 
 import Foundation
 import Combine
+import os.log
 
 /// The EventHub runtime. Receives web events and browser-native signals, routes them to the configured
 /// telemetry, maintains aggregation state and period windows, and fires telemetry pixels. Lifecycle and
@@ -71,10 +72,10 @@ public final class EventHub: EventHubManaging {
     /// How often pending (dirty) pixel state is persisted, absent a period boundary sooner than that.
     private static let flushInterval: Int64 = 10_000 // milliseconds
 
-    /// Debug-only marker for the same-queue misconfiguration described on `init`'s and
+    /// Marker for the same-queue misconfiguration described on `init`'s and
     /// `DispatchQueueEventHubScheduler`'s doc comments. Dispatch doesn't expose a clean way to compare
     /// two `DispatchQueue` instances for identity from inside a closure running on one of them, so
-    /// `init` associates this key with `queue` via `setSpecific`, and `assertSchedulerFiredOnADifferentQueue`
+    /// `init` associates this key with `queue` via `setSpecific`, and `requireSchedulerFiredOnADifferentQueue`
     /// checks whether that same value is visible on whichever queue the scheduler's callback is
     /// currently executing on.
     private static let ownQueueIdentityKey = DispatchSpecificKey<ObjectIdentifier>()
@@ -106,8 +107,9 @@ public final class EventHub: EventHubManaging {
     ///   with a **different** `DispatchQueue` instance than `queue`. The scheduler's timer fires on its
     ///   own queue; `EventHub`'s scheduler-fire handler then calls `queue.sync { ... }` from inside that
     ///   callback. If both queues were the same instance, the timer would fire on `queue` and then
-    ///   `.sync` onto itself — a silent deadlock. See `DispatchQueueEventHubScheduler`'s doc comment for
-    ///   the same constraint from the scheduler's side.
+    ///   `.sync` onto itself, which deadlocks — so `requireSchedulerFiredOnADifferentQueue` traps on the
+    ///   first timer fire instead, in release builds too. See `DispatchQueueEventHubScheduler`'s doc
+    ///   comment for the same constraint from the scheduler's side.
     public init(
         store: EventHubStore,
         parser: EventHubConfigParsing,
@@ -127,9 +129,9 @@ public final class EventHub: EventHubManaging {
             .sink { [weak self] enabled in self?.queue.sync { self?.latestEnabled = enabled } }
             .store(in: &subscriptions)
         settings.settingsPublisher
-            .sink { [weak self] data in
+            .sink { [weak self] settings in
                 self?.queue.sync {
-                    self?.latestConfigs = data.map { self?.parser.parseTelemetry($0) ?? [] } ?? []
+                    self?.latestConfigs = settings.map { self?.parser.parseTelemetry($0) ?? [] } ?? []
                 }
             }
             .store(in: &subscriptions)
@@ -282,11 +284,17 @@ public final class EventHub: EventHubManaging {
         store.deletePixelState(named: name)
 
         if var params = telemetry.buildPixelParameters() {
-            let attributionPeriod = EventHubAttribution.startOfIntervalSeconds(
-                periodStartMillis: telemetry.periodStartMillis,
-                periodSeconds: telemetry.config.trigger.period?.periodSeconds ?? 0)
-            params["attributionPeriod"] = String(attributionPeriod)
-            pixelFiring.enqueueFirePixel(named: name, parameters: params)
+            // `periodSeconds` is the divisor in the attribution calculation, so a missing period would
+            // trap. `EventHubConfigParser` rejects a period trigger without a positive `seconds`, on both
+            // the live-config and restored-snapshot paths, so this only guards that invariant — if it ever
+            // breaks, skip the fire rather than crash.
+            if let periodSeconds = telemetry.config.trigger.period?.periodSeconds {
+                params["attributionPeriod"] = String(EventHubAttribution.startOfIntervalSeconds(
+                    periodStartMillis: telemetry.periodStartMillis, periodSeconds: periodSeconds))
+                pixelFiring.enqueueFirePixel(named: name, parameters: params)
+            } else {
+                Logger.eventHub.error("pixel \(name, privacy: .public) not fired, its period trigger has no period to attribute to")
+            }
         }
 
         if let latest = latestConfigs.first(where: { $0.name == name }) {
@@ -314,19 +322,26 @@ public final class EventHub: EventHubManaging {
         let nextFlush = dirtyNames.isEmpty ? nil : scheduler.nowMillis() + Self.flushInterval
         let candidates = [earliestPeriodEnd, nextFlush].compactMap { $0 }
         scheduler.arm(atMillis: candidates.min()) { [weak self] in
-            self?.assertSchedulerFiredOnADifferentQueue()
+            self?.requireSchedulerFiredOnADifferentQueue()
             self?.queue.sync { self?.onSchedulerFiredLocked() }
         }
     }
 
-    /// Debug-only guard for the same-queue misconfiguration described on `init`'s doc comment: if the
-    /// scheduler's timer fires directly on `queue` (i.e. the integrator passed the same `DispatchQueue`
-    /// instance to both `EventHub.init(queue:)` and `DispatchQueueEventHubScheduler.init(queue:)`), the
-    /// `.sync` immediately below would deadlock. Compiled out entirely in release builds (the `assert`
-    /// condition is an autoclosure that's never evaluated with `-O`), so this costs nothing there; the
-    /// one-time `setSpecific` call in `init` is the only cost paid in release.
-    private func assertSchedulerFiredOnADifferentQueue() {
-        assert(DispatchQueue.getSpecific(key: Self.ownQueueIdentityKey) != ObjectIdentifier(queue),
+    /// Guards the same-queue misconfiguration described on `init`'s doc comment: if the scheduler's timer
+    /// fires directly on `queue` (i.e. the integrator passed the same `DispatchQueue` instance to both
+    /// `EventHub.init(queue:)` and `DispatchQueueEventHubScheduler.init(queue:)`), the `.sync` immediately
+    /// below would deadlock.
+    ///
+    /// Deliberately a `precondition`, not an `assert`: `assert` is compiled out under `-O`, so in release
+    /// the deadlock would happen instead. And it would not stay contained — every public entry point goes
+    /// through `queue.sync`, so once that queue is wedged the next caller blocks too, including the main
+    /// thread via `handleWebEvent`. A hang attributed to an unrelated thread is far harder to diagnose
+    /// than a trap naming the exact wiring mistake. The condition depends only on how the two objects were
+    /// constructed, so it is constant for a build: it trips on the first timer fire for everyone or for
+    /// nobody, which is what makes it safe to ship. Cost in release is one `getSpecific` TLS read per
+    /// scheduler fire, plus the one-time `setSpecific` in `init`.
+    private func requireSchedulerFiredOnADifferentQueue() {
+        precondition(DispatchQueue.getSpecific(key: Self.ownQueueIdentityKey) != ObjectIdentifier(queue),
                "EventHub's scheduler must fire on a different DispatchQueue than EventHub's own `queue` — " +
                "passing the same DispatchQueue instance to both EventHub.init(queue:) and " +
                "DispatchQueueEventHubScheduler.init(queue:) causes the timer to fire on `queue` and then " +
@@ -364,10 +379,16 @@ public final class EventHub: EventHubManaging {
 
     private static func encode(_ data: Encodable?) -> [String: Any]? {
         guard let data else { return nil }
-        guard let encoded = try? JSONEncoder().encode(data),
-              let object = try? JSONSerialization.jsonObject(with: encoded) as? [String: Any] else {
+        do {
+            let encoded = try JSONEncoder().encode(data)
+            guard let object = try JSONSerialization.jsonObject(with: encoded) as? [String: Any] else {
+                Logger.eventHub.error("native event payload is not a JSON object, payload dropped")
+                return nil
+            }
+            return object
+        } catch {
+            Logger.eventHub.error("native event payload could not be serialised, payload dropped: \(error.localizedDescription, privacy: .public)")
             return nil
         }
-        return object
     }
 }

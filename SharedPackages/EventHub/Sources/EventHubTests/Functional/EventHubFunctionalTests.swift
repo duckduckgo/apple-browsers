@@ -22,7 +22,7 @@ import Combine
 import WebKit
 @testable import EventHub
 
-@Suite("EventHub functional (message handler through manager to fired pixel)")
+@Suite("EventHub functional (message handler through manager to fired pixel)", .timeLimit(.minutes(1)))
 struct EventHubFunctionalTests {
     static let periodSeconds: TimeInterval = 60
 
@@ -120,9 +120,9 @@ struct EventHubFunctionalTests {
     /// `FakeEventHubSettingsProviding`.
     private struct StaticSettingsProviding: EventHubSettingsProviding {
         let enabledPublisher: AnyPublisher<Bool, Never>
-        let settingsPublisher: AnyPublisher<Data?, Never>
+        let settingsPublisher: AnyPublisher<[String: Any]?, Never>
         init(json: String, enabled: AnyPublisher<Bool, Never> = Just(true).eraseToAnyPublisher()) {
-            settingsPublisher = Just(json.data(using: .utf8)).eraseToAnyPublisher()
+            settingsPublisher = Just(settingsDictionary(json)).eraseToAnyPublisher()
             enabledPublisher = enabled
         }
     }

@@ -350,11 +350,17 @@
           "fill-specializations" : [
             {
               "value" : {
-                "solid" : "gray:1.00000,1.00000"
+                "solid" : "extended-gray:1.00000,1.00000"
               }
             },
             {
               "appearance" : "dark",
+              "value" : {
+                "solid" : "extended-gray:1.00000,1.00000"
+              }
+            },
+            {
+              "appearance" : "tinted",
               "value" : {
                 "solid" : "extended-gray:1.00000,1.00000"
               }
@@ -385,67 +391,6 @@
       "translucency" : {
         "enabled" : true,
         "value" : 0.16
-      }
-    },
-    {
-      "hidden-specializations" : [
-        {
-          "value" : true
-        },
-        {
-          "appearance" : "dark",
-          "value" : true
-        }
-      ],
-      "layers" : [
-        {
-          "fill-specializations" : [
-            {
-              "value" : {
-                "linear-gradient" : [
-                  "srgb:1.00000,0.36154,0.20000,1.00000",
-                  "srgb:0.91000,0.27816,0.11830,1.00000"
-                ]
-              }
-            },
-            {
-              "appearance" : "dark",
-              "value" : {
-                "linear-gradient" : [
-                  "display-p3:0.14902,0.50980,0.41961,1.00000",
-                  "display-p3:0.13279,0.45000,0.36885,1.00000"
-                ]
-              }
-            }
-          ],
-          "glass" : false,
-          "hidden" : false,
-          "image-name" : "BG 2.svg",
-          "name" : "BG",
-          "position" : {
-            "scale" : 1,
-            "translation-in-points" : [
-              0,
-              0
-            ]
-          }
-        }
-      ],
-      "name" : "Circle BG",
-      "position" : {
-        "scale" : 0.88,
-        "translation-in-points" : [
-          0,
-          0
-        ]
-      },
-      "shadow" : {
-        "kind" : "layer-color",
-        "opacity" : 0.5
-      },
-      "translucency" : {
-        "enabled" : false,
-        "value" : 0.5
       }
     }
   ],

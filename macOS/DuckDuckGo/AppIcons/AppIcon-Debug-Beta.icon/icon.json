@@ -350,7 +350,7 @@
           "fill-specializations" : [
             {
               "value" : {
-                "solid" : "gray:1.00000,1.00000"
+                "solid" : "extended-gray:1.00000,1.00000"
               }
             },
             {

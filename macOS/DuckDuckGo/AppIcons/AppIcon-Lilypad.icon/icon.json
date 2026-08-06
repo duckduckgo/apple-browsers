@@ -292,9 +292,19 @@
           }
         },
         {
-          "fill" : {
-            "solid" : "extended-gray:1.00000,1.00000"
-          },
+          "fill-specializations" : [
+            {
+              "value" : {
+                "solid" : "extended-gray:1.00000,1.00000"
+              }
+            },
+            {
+              "appearance" : "dark",
+              "value" : {
+                "solid" : "extended-gray:1.00000,1.00000"
+              }
+            }
+          ],
           "glass" : true,
           "hidden" : false,
           "image-name" : "Head and Ring.svg",

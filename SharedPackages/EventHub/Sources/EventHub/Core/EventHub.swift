@@ -333,8 +333,9 @@ public final class EventHub: EventHubManaging {
             // the live-config and restored-snapshot paths, so this only guards that invariant — if it ever
             // breaks, skip the fire rather than crash.
             if let periodSeconds = telemetry.config.trigger.period?.periodSeconds {
-                params["attributionPeriod"] = String(EventHubAttribution.startOfIntervalSeconds(
-                    periodStartMillis: telemetry.periodStartMillis, periodSeconds: periodSeconds))
+                // Integer division truncates, so this rounds the period start down to the start of the
+                // interval of length `periodSeconds` that contains it, in UTC epoch seconds.
+                params["attributionPeriod"] = String(telemetry.periodStartMillis / 1000 / periodSeconds * periodSeconds)
                 let rawCounts = telemetry.rawCounterValues
                     .sorted { $0.key < $1.key }
                     .map { "\($0.key)=\($0.value)" }

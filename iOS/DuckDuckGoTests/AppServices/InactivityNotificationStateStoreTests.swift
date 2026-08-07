@@ -41,4 +41,16 @@ final class InactivityNotificationStateStoreTests: XCTestCase {
         let second = InactivityNotificationStateStore(keyValueStore: kv)
         XCTAssertEqual(second.interactionCount, 1)
     }
+
+    func testWhenReadFailsThenRecordInteractionDoesNotResetPersistedCount() throws {
+        let kv = MockKeyValueFileStore(underlyingDict: [InactivityNotificationStateStore.StorageKey.interactionCount: 5])
+        let store = InactivityNotificationStateStore(keyValueStore: kv)
+
+        kv.throwOnRead = MockKeyValueFileStore.MockError.getError
+        store.recordInteraction()
+
+        // The write should have been abandoned rather than resetting the counter to 1.
+        kv.throwOnRead = nil
+        XCTAssertEqual(store.interactionCount, 5)
+    }
 }

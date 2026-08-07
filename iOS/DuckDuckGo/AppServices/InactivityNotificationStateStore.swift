@@ -38,20 +38,19 @@ final class InactivityNotificationStateStore: InactivityNotificationStateStoring
     }
 
     var interactionCount: Int {
-        do {
-            return try keyValueStore.object(forKey: StorageKey.interactionCount) as? Int ?? 0
-        } catch {
-            Logger.pushNotification.error("Inactivity notification interactionCount read failed with \(error.localizedDescription, privacy: .public)")
-            return 0
-        }
+        (try? readInteractionCount()) ?? 0
     }
 
     func recordInteraction() {
-        let next = interactionCount + 1
         do {
+            let next = try readInteractionCount() + 1
             try keyValueStore.set(next, forKey: StorageKey.interactionCount)
         } catch {
-            Logger.pushNotification.error("Inactivity notification recordInteraction write failed with \(error.localizedDescription, privacy: .public)")
+            Logger.pushNotification.error("Inactivity notification recordInteraction failed with \(error.localizedDescription, privacy: .public)")
         }
+    }
+
+    private func readInteractionCount() throws -> Int {
+        try keyValueStore.object(forKey: StorageKey.interactionCount) as? Int ?? 0
     }
 }

@@ -95,16 +95,15 @@ final class BookmarksContextMenu: NSMenu {
                 topLevelEntities: bookmarkManager.list?.topLevelEntities ?? [],
                 target: self
             )
-            return
+        } else {
+            items = Self.menuItems(
+                for: selectedItems,
+                target: self,
+                forSearch: bookmarksContextMenuDelegate?.isSearching ?? false,
+                includeManageBookmarksItem: bookmarksContextMenuDelegate?.shouldIncludeManageBookmarksItem ?? true,
+                includeReorderByNameItem: featureFlagger.isFeatureOn(.bookmarksReorderByName)
+            )
         }
-
-        items = Self.menuItems(
-            for: selectedItems,
-            target: self,
-            forSearch: bookmarksContextMenuDelegate?.isSearching ?? false,
-            includeManageBookmarksItem: bookmarksContextMenuDelegate?.shouldIncludeManageBookmarksItem ?? true,
-            includeReorderByNameItem: featureFlagger.isFeatureOn(.bookmarksReorderByName)
-        )
     }
 
     private func isBookmarksRootTheOnlySelectedItem(in selectedItems: [Any]) -> Bool {

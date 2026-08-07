@@ -385,7 +385,10 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217109908046478?focus=true
     case tabTerminationTelemetry
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217244101759199?focus=true
     case tabEvictionOnMemoryWarning
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217244101759205?focus=true
     case tabLRUEviction
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214974217398704?focus=true

@@ -54,4 +54,8 @@ public enum OnboardingImageResources {
         public static let blockAds = OnboardingImageResource(name: "Rebranding/Block-Ads", bundle: .module)
     }
 
+    public enum Personalization {
+        public static let addressBarToggleMode = OnboardingImageResource(name: "Rebranding/AddressBarToggleMode", bundle: .module)
+    }
+
 }

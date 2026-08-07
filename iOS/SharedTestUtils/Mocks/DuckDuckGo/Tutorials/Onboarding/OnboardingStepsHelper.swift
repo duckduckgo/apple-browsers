@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import Onboarding
 @testable import DuckDuckGo
 
 struct OnboardingStepsHelper {
@@ -53,5 +54,24 @@ struct OnboardingStepsHelper {
             .setDefaultBrowser,
             .addressBarPositionSelection
         ]
+    }
+
+    /// The remaining steps that follow the Download Screen for a given reason
+    static func expectedRemainingSteps(for reason: OnboardingDownloadReason) -> [OnboardingIntroStep] {
+        let commonSteps: [OnboardingIntroStep] = [.addressBarPositionSelection, .addToDockPromo, .appIconSelection, .duckAIQuerySelection]
+
+        let personalisationSteps: [OnboardingIntroStep]
+        switch reason {
+        case .browserPrivately:
+            personalisationSteps = [.searchPrivacySettingsSelection, .searchExperienceSelection]
+        case .privateAIChat:
+            personalisationSteps = [.aiModelSelection, .toggleInputModeSelection]
+        case .noAI:
+            personalisationSteps = [.aiSearchSettingsSelection, .keepDuckAISelection]
+        case .blockAds:
+            personalisationSteps = [.duckPlayerSelection, .searchExperienceSelection]
+        }
+
+        return [.setDefaultBrowser] + personalisationSteps + commonSteps
     }
 }

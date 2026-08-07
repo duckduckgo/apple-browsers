@@ -100,7 +100,6 @@ final class SuggestionViewController: NSViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        setupBurnerStyleIfNeeded()
         setupTableView()
         addTrackingArea()
         subscribeToSuggestionResult()
@@ -142,13 +141,6 @@ final class SuggestionViewController: NSViewController {
         tableView.sizeToFit()
         let column = tableView.tableColumns.first
         column?.width = tableView.frame.width
-    }
-
-    private func setupBurnerStyleIfNeeded() {
-        guard isBurner, themeManager.isAppRebranded else { return }
-
-        let style = BurnerAppearanceStyle()
-        style.enableDarkModeOverride(in: view)
     }
 
     private func setupTableView() {

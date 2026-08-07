@@ -261,7 +261,7 @@ public final class EventHub: EventHubManaging {
     }
 
     private func startNewPeriodLocked(_ config: TelemetryPixelConfig) {
-        guard isForeground, latestEnabled, config.isEnabled, config.trigger.period != nil else { return }
+        guard isForeground, latestEnabled, config.isEnabled, config.trigger.periodSeconds != nil else { return }
         let telemetry = Telemetry(config: config, periodStartMillis: scheduler.nowMillis(), dedupStore: dedupStore)
         telemetries[config.name] = telemetry
         dirtyNames.insert(config.name)
@@ -334,7 +334,7 @@ public final class EventHub: EventHubManaging {
             // trap. `EventHubConfigParser` rejects a period trigger without a positive `seconds`, on both
             // the live-config and restored-snapshot paths, so this only guards that invariant — if it ever
             // breaks, skip the fire rather than crash.
-            if let periodSeconds = telemetry.config.trigger.period?.periodSeconds {
+            if let periodSeconds = telemetry.config.trigger.periodSeconds {
                 // Integer division truncates, so this rounds the period start down to the start of the
                 // interval of length `periodSeconds` that contains it, in UTC epoch seconds.
                 params["attributionPeriod"] = String(telemetry.periodStartMillis / 1000 / periodSeconds * periodSeconds)

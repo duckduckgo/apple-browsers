@@ -25,7 +25,7 @@ struct EventHubStoreTests {
     static let sampleConfig = TelemetryPixelConfig(
         name: "testPixel",
         state: "enabled",
-        trigger: TelemetryTriggerConfig(type: "period", period: TelemetryPeriodConfig(seconds: 86400)),
+        trigger: TelemetryTriggerConfig(type: "period", periodSeconds: 86400),
         parameters: [
             "count": TelemetryParameterConfig(
                 template: "counter",
@@ -58,7 +58,7 @@ struct EventHubStoreTests {
         #expect(restored.params["count"]?.value == 3)
         #expect(restored.params["count"]?.stopCounting == false)
         #expect(restored.config.name == original.config.name)
-        #expect(restored.config.trigger.period?.periodSeconds == 86400)
+        #expect(restored.config.trigger.periodSeconds == 86400)
         #expect(restored.config.parameters.count == original.config.parameters.count)
     }
 

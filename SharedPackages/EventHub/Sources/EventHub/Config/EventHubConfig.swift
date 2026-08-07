@@ -18,28 +18,19 @@
 
 import Foundation
 
-/// Aggregation period. Authored as seconds (config-generation collapses any authored unit to seconds
-/// before it reaches the client — see the ported README).
-public struct TelemetryPeriodConfig: Equatable, Sendable {
-    public let seconds: Int
-
-    public init(seconds: Int) {
-        self.seconds = seconds
-    }
-
-    public var periodSeconds: Int64 { Int64(seconds) }
-}
-
 /// Describes when a pixel fires. `type` is `"period"` (aggregated, the default) or `"immediate"` (one
-/// pixel per event). Period triggers carry a `period`; immediate triggers carry a `source` event name.
+/// pixel per event). Period triggers carry a `periodSeconds`; immediate triggers carry a `source` event
+/// name.
 public struct TelemetryTriggerConfig: Equatable, Sendable {
     public let type: String
-    public let period: TelemetryPeriodConfig?
+    /// Length of the aggregation period. Always seconds — config generation collapses any authored unit
+    /// to seconds before it reaches the client (see the ported README).
+    public let periodSeconds: Int64?
     public let source: String?
 
-    public init(type: String, period: TelemetryPeriodConfig? = nil, source: String? = nil) {
+    public init(type: String, periodSeconds: Int64? = nil, source: String? = nil) {
         self.type = type
-        self.period = period
+        self.periodSeconds = periodSeconds
         self.source = source
     }
 

@@ -25,7 +25,7 @@ struct EventHubStoreDebugEventTests {
     private static let sampleConfig = TelemetryPixelConfig(
         name: "testPixel",
         state: "enabled",
-        trigger: TelemetryTriggerConfig(type: "period", period: TelemetryPeriodConfig(seconds: 86400)),
+        trigger: TelemetryTriggerConfig(type: "period", periodSeconds: 86400),
         parameters: [
             "count": TelemetryParameterConfig(
                 template: "counter",

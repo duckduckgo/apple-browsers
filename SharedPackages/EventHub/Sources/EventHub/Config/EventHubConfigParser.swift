@@ -111,7 +111,7 @@ public final class EventHubConfigParser: EventHubConfigParsing {
                 Logger.eventHub.error("config: pixel \(pixelName, privacy: .public) skipped, period seconds missing or not positive")
                 return nil
             }
-            return TelemetryTriggerConfig(type: periodType, period: TelemetryPeriodConfig(seconds: period.seconds))
+            return TelemetryTriggerConfig(type: periodType, periodSeconds: Int64(period.seconds))
         }
         Logger.eventHub.error("config: pixel \(pixelName, privacy: .public) skipped, unknown trigger type \(type, privacy: .public)")
         return nil
@@ -152,7 +152,7 @@ public final class EventHubConfigParser: EventHubConfigParsing {
             state: config.state,
             trigger: TriggerDTO(
                 type: config.trigger.type,
-                period: config.trigger.period.map { PeriodDTO(seconds: $0.seconds) },
+                period: config.trigger.periodSeconds.map { PeriodDTO(seconds: Int($0)) },
                 source: config.trigger.source),
             parameters: config.parameters.mapValues { parameter in
                 ParameterDTO(

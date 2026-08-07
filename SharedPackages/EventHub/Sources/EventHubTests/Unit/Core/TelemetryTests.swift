@@ -25,7 +25,7 @@ struct TelemetryTests {
     static let config = TelemetryPixelConfig(
         name: "webTelemetry_test",
         state: "enabled",
-        trigger: TelemetryTriggerConfig(type: "period", period: TelemetryPeriodConfig(seconds: 60)),
+        trigger: TelemetryTriggerConfig(type: "period", periodSeconds: 60),
         parameters: [
             "count": TelemetryParameterConfig(template: "counter", source: "test", buckets: [
                 OrderedBucket(name: "0", config: BucketConfig(gte: 0, lt: 1)),

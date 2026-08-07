@@ -59,7 +59,7 @@ struct EventHubConfigParserTests {
         #expect(telemetry.count == 1)
         let pixel = telemetry[0]
         #expect(pixel.isEnabled)
-        #expect(pixel.trigger.period?.periodSeconds == 86400)
+        #expect(pixel.trigger.periodSeconds == 86400)
     }
 
     @Test("counter parameter with map buckets is parsed correctly")
@@ -84,7 +84,7 @@ struct EventHubConfigParserTests {
         } } }
         """)
 
-        #expect(parser.parseTelemetry(json).first?.trigger.period?.periodSeconds == 30)
+        #expect(parser.parseTelemetry(json).first?.trigger.periodSeconds == 30)
     }
 
     @Test("empty JSON returns empty telemetry")
@@ -228,7 +228,7 @@ struct EventHubConfigParserTests {
 
         #expect(restored.name == original.name)
         #expect(restored.state == original.state)
-        #expect(restored.trigger.period?.periodSeconds == original.trigger.period?.periodSeconds)
+        #expect(restored.trigger.periodSeconds == original.trigger.periodSeconds)
         #expect(restored.parameters.count == original.parameters.count)
         #expect(restored.parameters["count"]?.source == original.parameters["count"]?.source)
         #expect(restored.parameters["count"]?.buckets?.count == original.parameters["count"]?.buckets?.count)
@@ -239,7 +239,7 @@ struct EventHubConfigParserTests {
         let config = TelemetryPixelConfig(
             name: "test",
             state: "enabled",
-            trigger: TelemetryTriggerConfig(type: "period", period: TelemetryPeriodConfig(seconds: 86400)),
+            trigger: TelemetryTriggerConfig(type: "period", periodSeconds: 86400),
             parameters: ["c": TelemetryParameterConfig(template: "counter", source: "e", buckets: [OrderedBucket(name: "0+", config: BucketConfig(gte: 0))])])
 
         #expect(parser.serializePixelConfig(config) != nil)

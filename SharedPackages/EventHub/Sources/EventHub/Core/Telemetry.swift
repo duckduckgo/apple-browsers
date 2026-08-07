@@ -32,7 +32,7 @@ final class Telemetry {
         self.name = config.name
         self.config = config
         self.periodStartMillis = periodStartMillis
-        self.periodEndMillis = periodStartMillis + (config.trigger.period?.periodSeconds ?? 0) * 1000
+        self.periodEndMillis = periodStartMillis + (config.trigger.periodSeconds ?? 0) * 1000
         self.parameters = Self.makeParameters(config: config, dedupStore: dedupStore)
     }
 

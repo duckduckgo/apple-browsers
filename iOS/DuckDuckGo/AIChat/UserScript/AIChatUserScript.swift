@@ -351,8 +351,8 @@ final class AIChatUserScript: NSObject, Subfeature {
         return (try? encoder.encode(reply)).flatMap { String(data: $0, encoding: .utf8) }
     }
 
-    /// 1×1 transparent PNG.
-    private static let debugPNGBase64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M8AAAMCAYAAAABzoDgAAAAASUVORK5CYII="
+    /// 96×96 checkerboard PNG so the attachment thumbnail is visibly non-empty.
+    private static let debugPNGBase64 = "iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAIAAABt+uBvAAAArElEQVR42u3bQQ0AIAwDwHnijSCsYHqY2IM0l1RAd99mtU6PpO8eyW99ChAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECFAEUOphU30AAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAZQAZDi2rgAABAgQIECBAgAABAgQIECBAgAABAgQIECBA/sUMh4AAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAigB4/LNWF1N0KpwAAAABJRU5ErkJggg=="
     /// "Debug file contents" as UTF-8.
     private static let debugTextBase64 = "RGVidWcgZmlsZSBjb250ZW50cw=="
 
